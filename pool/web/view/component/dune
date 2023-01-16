@@ -6,6 +6,7 @@
   filter
   http_utils
   invitation
+  message_template
   pool_location
   service
   session

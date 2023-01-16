@@ -16,7 +16,34 @@ let contact_info email_address =
   email_address, "password", "Jane", "Doe", Some Language.En
 ;;
 
+let allowed_email_suffixes =
+  [ "gmail.com" ]
+  |> CCList.map Settings.EmailSuffix.create
+  |> CCResult.flatten_l
+  |> CCResult.get_exn
+;;
+
 let tenant = Tenant_test.Data.full_tenant |> CCResult.get_exn
+
+let confirmation_mail contact =
+  let email =
+    Contact.(contact |> email_address |> Pool_user.EmailAddress.value)
+  in
+  let open Message_template in
+  let sender = "test@econ.uzh.ch" in
+  let ({ email_subject; email_text; _ } : Message_template.t) =
+    Test_utils.Model.create_message_template ()
+  in
+  Sihl_email.
+    { sender
+    ; recipient = email
+    ; subject = email_subject |> EmailSubject.value
+    ; text = ""
+    ; html = Some (email_text |> EmailText.value)
+    ; cc = []
+    ; bcc = []
+    }
+;;
 
 let sign_up_contact contact_info =
   let email_address, password, firstname, lastname, _ = contact_info in
@@ -69,21 +96,40 @@ let create_contact verified contact_info =
   }
 ;;
 
+let verification_email (email_address, _, _, _, _) =
+  let open Message_template in
+  let sender = "test@econ.uzh.ch" in
+  let ({ email_subject; email_text; _ } : Message_template.t) =
+    Test_utils.Model.create_message_template ()
+  in
+  Sihl_email.
+    { sender
+    ; recipient = email_address
+    ; subject = email_subject |> EmailSubject.value
+    ; text = ""
+    ; html = Some (email_text |> EmailText.value)
+    ; cc = []
+    ; bcc = []
+    }
+;;
+
 let sign_up_not_allowed_suffix () =
+  let open Contact_command.SignUp in
   let allowed_email_suffixes =
     [ "gmail.com" ]
     |> CCList.map Settings.EmailSuffix.create
     |> CCResult.flatten_l
     |> CCResult.get_exn
   in
+  let contact_info = "john@bluewin.com" |> contact_info in
+  let ({ email; _ } as decoded) =
+    contact_info |> sign_up_contact |> decode |> CCResult.get_exn
+  in
+  let token = Email.Token.create "testtoken" in
+  let verification_email = verification_email contact_info in
   let events =
-    let open Contact_command.SignUp in
-    "john@bluewin.com"
-    |> contact_info
-    |> sign_up_contact
-    |> decode
-    |> Pool_common.Utils.get_or_failwith
-    |> handle ~allowed_email_suffixes tenant None
+    decoded
+    |> handle ~allowed_email_suffixes token email verification_email None
   in
   let expected =
     Error
@@ -103,6 +149,11 @@ let sign_up () =
     =
     contact_info "john@gmail.com"
   in
+  let email =
+    "john@gmail.com" |> Pool_user.EmailAddress.create |> CCResult.get_exn
+  in
+  let token = Email.Token.create "testtoken" in
+  let verification_email = verification_email contact_info in
   let events =
     let open CCResult in
     let open Contact_command.SignUp in
@@ -119,7 +170,9 @@ let sign_up () =
          ~allowed_email_suffixes
          ~user_id
          ~terms_accepted_at
-         tenant
+         token
+         email
+         verification_email
          language
   in
   let expected =
@@ -141,14 +194,8 @@ let sign_up () =
     in
     Ok
       [ Contact.Created contact |> Pool_event.contact
-      ; Email.Created
-          ( email
-          , user_id
-          , firstname
-          , lastname
-          , language |> CCOption.get_exn_or "Test failed"
-          , Email.Helper.layout_from_tenant tenant )
-        |> Pool_event.email_verification
+      ; Email.Created (email, token, user_id) |> Pool_event.email_verification
+      ; Email.Sent verification_email |> Pool_event.email
       ]
   in
   check_result expected events
@@ -186,11 +233,12 @@ let update_language () =
 ;;
 
 let update_password () =
-  let ((_, password, _, _, language) as contact_info) =
+  let ((_, password, _, _, _) as contact_info) =
     "john@gmail.com" |> contact_info
   in
   let contact = contact_info |> create_contact true in
   let new_password = "testing" in
+  let confirmation_mail = confirmation_mail contact in
   let events =
     Contact_command.UpdatePassword.(
       [ Field.(CurrentPassword |> show), [ password ]
@@ -199,10 +247,12 @@ let update_password () =
       ]
       |> decode
       |> Pool_common.Utils.get_or_failwith
-      |> handle ~password_policy:(CCFun.const (CCResult.pure ())) tenant contact)
+      |> handle
+           ~password_policy:(CCFun.const (CCResult.pure ()))
+           contact
+           confirmation_mail)
   in
   let expected =
-    let email_layout = Email.Helper.layout_from_tenant tenant in
     Ok
       [ Contact.PasswordUpdated
           ( contact
@@ -214,11 +264,7 @@ let update_password () =
             |> Pool_common.Utils.get_or_failwith
           , new_password |> Pool_user.PasswordConfirmed.create )
         |> Pool_event.contact
-      ; Email.ChangedPassword
-          ( contact.Contact.user
-          , language |> CCOption.get_or ~default:Pool_common.Language.En
-          , email_layout )
-        |> Pool_event.email
+      ; Email.Sent confirmation_mail |> Pool_event.email
       ]
   in
   check_result expected events
@@ -228,6 +274,7 @@ let update_password_wrong_current_password () =
   let contact = "john@gmail.com" |> contact_info |> create_contact true in
   let current_password = "something else" in
   let new_password = "short" in
+  let confirmation_mail = confirmation_mail contact in
   let events =
     Contact_command.UpdatePassword.(
       [ Field.(CurrentPassword |> show), [ current_password ]
@@ -236,7 +283,7 @@ let update_password_wrong_current_password () =
       ]
       |> decode
       |> Pool_common.Utils.get_or_failwith
-      |> handle tenant contact)
+      |> handle contact confirmation_mail)
   in
   let expected = Error Message.(Invalid Field.CurrentPassword) in
   check_result expected events
@@ -248,6 +295,7 @@ let update_password_wrong_policy () =
   in
   let contact = contact_info |> create_contact true in
   let new_password = "short" in
+  let confirmation_mail = confirmation_mail contact in
   let events =
     Contact_command.UpdatePassword.(
       [ Field.(CurrentPassword |> show), [ password ]
@@ -256,7 +304,7 @@ let update_password_wrong_policy () =
       ]
       |> decode
       |> Pool_common.Utils.get_or_failwith
-      |> handle tenant contact)
+      |> handle contact confirmation_mail)
   in
   let expected = Error Message.PasswordPolicy in
   check_result expected events
@@ -269,6 +317,7 @@ let update_password_wrong_confirmation () =
   let contact = contact_info |> create_contact true in
   let new_password = "testing" in
   let confirmed_password = "something else" in
+  let confirmation_mail = confirmation_mail contact in
   let events =
     Contact_command.UpdatePassword.(
       [ Field.(CurrentPassword |> show), [ password ]
@@ -277,46 +326,25 @@ let update_password_wrong_confirmation () =
       ]
       |> decode
       |> Pool_common.Utils.get_or_failwith
-      |> handle ~password_policy:(CCFun.const (CCResult.pure ())) tenant contact)
+      |> handle
+           ~password_policy:(CCFun.const (CCResult.pure ()))
+           contact
+           confirmation_mail)
   in
   let expected = Error Pool_common.Message.PasswordConfirmationDoesNotMatch in
   check_result expected events
 ;;
 
 let request_email_validation () =
-  let contact = "john@gmail.com" |> contact_info |> create_contact true in
-  let new_email = "john.doe@gmail.com" in
-  let events =
-    let open CCResult in
-    let* allowed_email_suffixes =
-      [ "gmail.com" ]
-      |> CCList.map Settings.EmailSuffix.create
-      |> CCResult.flatten_l
-    in
-    Contact_command.RequestEmailValidation.(
-      new_email
-      |> Pool_user.EmailAddress.create
-      |> Pool_common.Utils.get_or_failwith
-      |> handle ~allowed_email_suffixes tenant contact)
+  let contact_info = "john@gmail.com" |> contact_info in
+  let contact = contact_info |> create_contact true in
+  let new_email =
+    "john.doe@gmail.com"
+    |> Pool_user.EmailAddress.create
+    |> Pool_common.Utils.get_or_failwith
   in
-  let expected =
-    let email_layout = Email.Helper.layout_from_tenant tenant in
-    Ok
-      [ Email.Updated
-          ( new_email |> Pool_user.EmailAddress.of_string
-          , contact.Contact.user
-          , contact.Contact.language
-            |> CCOption.get_or ~default:Pool_common.Language.En
-          , email_layout )
-        |> Pool_event.email_verification
-      ]
-  in
-  check_result expected events
-;;
-
-let request_email_validation_wrong_suffix () =
-  let contact = "john@gmail.com" |> contact_info |> create_contact true in
-  let new_email = "john.doe@gmx.com" in
+  let token = Email.Token.create "testtoken" in
+  let verification_email = verification_email contact_info in
   let allowed_email_suffixes =
     [ "gmail.com" ]
     |> CCList.map Settings.EmailSuffix.create
@@ -325,10 +353,37 @@ let request_email_validation_wrong_suffix () =
   in
   let events =
     Contact_command.RequestEmailValidation.(
-      new_email
-      |> Pool_user.EmailAddress.create
-      |> Pool_common.Utils.get_or_failwith
-      |> handle ~allowed_email_suffixes tenant contact)
+      handle ~allowed_email_suffixes token verification_email contact new_email)
+  in
+  let expected =
+    Ok
+      [ Email.Created (new_email, token, Contact.id contact)
+        |> Pool_event.email_verification
+      ; Email.Sent verification_email |> Pool_event.email
+      ]
+  in
+  check_result expected events
+;;
+
+let request_email_validation_wrong_suffix () =
+  let contact_info = "john@gmail.com" |> contact_info in
+  let contact = contact_info |> create_contact true in
+  let new_email =
+    "john.doe@gmx.ch"
+    |> Pool_user.EmailAddress.create
+    |> Pool_common.Utils.get_or_failwith
+  in
+  let token = Email.Token.create "testtoken" in
+  let verification_email = verification_email contact_info in
+  let allowed_email_suffixes =
+    [ "gmail.com" ]
+    |> CCList.map Settings.EmailSuffix.create
+    |> CCResult.flatten_l
+    |> CCResult.get_exn
+  in
+  let events =
+    Contact_command.RequestEmailValidation.(
+      handle ~allowed_email_suffixes token verification_email contact new_email)
   in
   let expected =
     Error

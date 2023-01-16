@@ -1,12 +1,15 @@
 module CustomMiddleware = Middleware
 open Sihl.Web
+module Field = Pool_common.Message.Field
 
 let add_key ?(prefix = "") ?(suffix = "") field =
-  let open Pool_common.Message.Field in
+  let open Field in
   [ prefix; field |> url_key; suffix ]
-  |> CCList.filter (fun m -> m |> CCString.is_empty |> not)
+  |> CCList.filter CCFun.(CCString.is_empty %> not)
   |> CCString.concat "/"
 ;;
+
+let add_human_field = CCFun.(Field.human_url %> Format.asprintf "/%s")
 
 let global_middlewares =
   [ Middleware.id ~id:(fun () -> CCString.sub (Sihl.Random.base64 12) 0 10) ()
@@ -75,34 +78,32 @@ module Contact = struct
   module Session = Handler.Contact.Session
   module Assignment = Handler.Contact.Assignment
 
-  let public =
+  let public_not_logged_in =
     [ get "/signup" SignUp.sign_up
     ; post "/signup" SignUp.sign_up_create
     ; get "/email-confirmation" Handler.Public.email_confirmation_note
-    ; get "/email-verified" SignUp.email_verification
     ]
   ;;
+
+  let public = [ get "/email-verified" SignUp.email_verification ]
 
   let locked_routes =
     let locked =
       let experiments =
         let build_scope subdir =
-          Format.asprintf
-            "/%s/%s"
-            Pool_common.Message.Field.(Experiment |> url_key)
-            subdir
+          Format.asprintf "/%s/%s" Field.(Experiment |> url_key) subdir
         in
         let waiting_list =
           [ post "" WaitingList.create; post "/remove" WaitingList.delete ]
         in
         let sessions =
-          let open Pool_common.Message.Field in
+          let open Field in
           [ get (Session |> url_key) Session.show
           ; post (Session |> url_key) Assignment.create
           ]
         in
         [ get "" Experiment.index
-        ; get Pool_common.Message.Field.(Experiment |> url_key) Experiment.show
+        ; get Field.(Experiment |> url_key) Experiment.show
         ; choose ~scope:(build_scope "waiting-list") waiting_list
         ; choose ~scope:(build_scope "sessions") sessions
         ]
@@ -135,6 +136,12 @@ module Contact = struct
           ~middlewares:
             [ CustomMiddleware.Guardian.require_user_type_of
                 Pool_context.UserType.[ Guest ]
+            ]
+          public_not_logged_in
+      ; choose
+          ~middlewares:
+            [ CustomMiddleware.Guardian.require_user_type_of
+                Pool_context.UserType.[ Guest; Contact ]
             ]
           public
       ; choose
@@ -172,8 +179,19 @@ module Admin = struct
   ;;
 
   let routes =
-    let open Pool_common.Message.Field in
+    let open Field in
     let open Handler.Admin in
+    let label_specific_template edit update new_form create =
+      let specific = [ get "/edit" edit; post "" update ] in
+      [ get "" new_form
+      ; post "" create
+      ; choose ~scope:(MessageTemplate |> url_key) specific
+      ]
+    in
+    let add_template_label label =
+      let open Message_template.Label in
+      label |> human_url |> Format.asprintf "/%s"
+    in
     let location =
       let open Location in
       let files =
@@ -209,7 +227,7 @@ module Admin = struct
     let filter =
       let open Handler.Admin.Filter in
       let specific =
-        [ get "edit" ~middlewares:[ Access.update ] edit
+        [ get "/edit" ~middlewares:[ Access.update ] edit
         ; post "" ~middlewares:[ Access.update ] update_template
         ]
       in
@@ -220,6 +238,17 @@ module Admin = struct
           (filter_form (toggle_key, toggle_predicate_type, add_predicate))
           ~middlewares:[ Access.create ]
       ; choose ~scope:(Filter |> url_key) specific
+      ]
+    in
+    let message_templates =
+      let open Handler.Admin.MessageTemplate in
+      let specific =
+        [ get "/edit" ~middlewares:[ Access.update ] edit
+        ; post "" ~middlewares:[ Access.update ] update
+        ]
+      in
+      [ get "" ~middlewares:[ Access.index ] index
+      ; choose ~scope:(MessageTemplate |> url_key) specific
       ]
     in
     let experiments =
@@ -271,6 +300,18 @@ module Admin = struct
       let sessions =
         let open Session in
         let specific =
+          let message_templates =
+            let open Message_template.Label in
+            let open Handler.Admin.Session in
+            let label_specific =
+              label_specific_template edit_template update_template
+            in
+            [ choose
+                ~scope:(add_template_label SessionReminder)
+                ~middlewares:[ Access.session_reminder ]
+                (label_specific new_session_reminder new_session_reminder_post)
+            ]
+          in
           [ get "" ~middlewares:[ Access.read ] show
           ; post "" ~middlewares:[ Access.update ] update
           ; get "/edit" ~middlewares:[ Access.update ] edit
@@ -283,6 +324,7 @@ module Admin = struct
           ; post "/reschedule" ~middlewares:[ Access.reschedule ] reschedule
           ; get "/close" ~middlewares:[ Access.close ] close
           ; post "/close" ~middlewares:[ Access.close ] close_post
+          ; choose ~scope:(add_human_field MessageTemplate) message_templates
           ]
         in
         [ get "" ~middlewares:[ Access.index ] list
@@ -346,6 +388,22 @@ module Admin = struct
               ~middlewares:[ Experiments.Access.update ]
           ]
       in
+      let message_templates =
+        let open Message_template.Label in
+        let open Handler.Admin.Experiments.MessageTemplates in
+        let label_specific =
+          label_specific_template edit_template update_template
+        in
+        [ choose
+            ~scope:(add_template_label ExperimentInvitation)
+            ~middlewares:[ Access.invitation ]
+            (label_specific new_invitation new_invitation_post)
+        ; choose
+            ~scope:(add_template_label SessionReminder)
+            ~middlewares:[ Access.session_reminder ]
+            (label_specific new_session_reminder new_session_reminder_post)
+        ]
+      in
       let specific =
         Experiments.
           [ get "" ~middlewares:[ Access.read ] show
@@ -364,6 +422,7 @@ module Admin = struct
           ; choose ~scope:"/assignments" assignments
           ; choose ~scope:"/mailings" mailings
           ; choose ~scope:"/filter" filter
+          ; choose ~scope:(add_human_field MessageTemplate) message_templates
           ]
       in
       Experiments.
@@ -484,6 +543,7 @@ module Admin = struct
       ; choose ~scope:"/contacts" contacts
       ; choose ~scope:"/admins" admins
       ; choose ~scope:"/custom-fields" custom_fields
+      ; choose ~scope:(add_human_field MessageTemplate) message_templates
       ]
   ;;
 end
@@ -517,7 +577,7 @@ module Root = struct
   let locked_middlewares = [ CustomMiddleware.Root.require_root () ]
 
   let locked_routes =
-    let open Pool_common.Message.Field in
+    let open Field in
     let open Handler.Root in
     let build_route appendix =
       Format.asprintf "%s/%s" (Tenant |> url_key) appendix

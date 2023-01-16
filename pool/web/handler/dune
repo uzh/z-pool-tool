@@ -9,6 +9,7 @@
   http_utils
   htmx
   mailing
+  message_template
   middleware
   page
   pool_common

@@ -6,6 +6,12 @@ let create_layout req = General.create_tenant_layout req
 let experiment_id = HttpUtils.find_id Experiment.Id.of_string Field.Experiment
 let session_id = HttpUtils.find_id Pool_common.Id.of_string Field.Session
 
+let template_id =
+  HttpUtils.find_id
+    Message_template.Id.of_string
+    Pool_common.Message.Field.MessageTemplate
+;;
+
 let location urlencoded database_label =
   let open Utils.Lwt_result.Infix in
   let open Pool_common.Message in
@@ -17,72 +23,6 @@ let location urlencoded database_label =
   >|+ List.assoc Field.(Location |> show)
   >|+ Pool_location.Id.of_string
   >>= Pool_location.find database_label
-;;
-
-let reschedule_messages tenant database_label sys_languages session =
-  let open Utils.Lwt_result.Infix in
-  let create_message sys_languages contact (session : Session.t) template =
-    (* TODO[timhub]: What text element are required? Do we need custom
-       template? *)
-    let name = Contact.fullname contact in
-    let email = Contact.email_address contact in
-    let session_overview =
-      (CCList.map (fun lang ->
-         ( Format.asprintf "sessionOverview%s" (Pool_common.Language.show lang)
-         , Session.(to_email_text lang session) )))
-        sys_languages
-    in
-    Email.Helper.prepare_boilerplate_email
-      template
-      (email |> Pool_user.EmailAddress.value)
-      (("name", name) :: session_overview)
-  in
-  let* assignments =
-    Assignment.find_by_session database_label session.Session.id
-  in
-  let* default_language =
-    CCList.head_opt sys_languages
-    |> CCOption.to_result Pool_common.Message.(Retrieve Field.Language)
-    |> Lwt_result.lift
-  in
-  let i18n_texts = Hashtbl.create ~random:true (CCList.length sys_languages) in
-  Lwt_list.map_s
-    (fun (Assignment.{ contact; _ } : Assignment.t) ->
-      let message_language =
-        CCOption.value ~default:default_language contact.Contact.language
-      in
-      let email_layout = Email.Helper.layout_from_tenant tenant in
-      match Hashtbl.find_opt i18n_texts message_language with
-      | Some template ->
-        create_message sys_languages contact session template
-        |> Lwt_result.return
-      | None ->
-        let* subject =
-          I18n.(
-            find_by_key
-              database_label
-              Key.RescheduleSessionSubject
-              message_language)
-        in
-        let* text =
-          I18n.(
-            find_by_key
-              database_label
-              Key.RescheduleSessionText
-              message_language)
-        in
-        let template =
-          Email.CustomTemplate.
-            { subject = Subject.I18n subject
-            ; content = Content.I18n text
-            ; layout = email_layout
-            }
-        in
-        let () = Hashtbl.add i18n_texts message_language template in
-        create_message sys_languages contact session template
-        |> Lwt_result.return)
-    assignments
-  ||> CCResult.flatten_l
 ;;
 
 let list req =
@@ -128,8 +68,8 @@ let new_helper req page =
        in
        let%lwt locations = Pool_location.find_all database_label in
        let flash_fetcher = CCFun.flip Sihl.Web.Flash.find req in
-       let* sys_languages =
-         Pool_context.Tenant.get_tenant_languages req |> Lwt_result.lift
+       let%lwt default_reminder_lead_time =
+         Settings.find_default_reminder_lead_time database_label
        in
        let html =
          match page with
@@ -139,19 +79,19 @@ let new_helper req page =
            Page.Admin.Session.follow_up
              context
              experiment
+             default_reminder_lead_time
              duplicate_session
              parent_session
              locations
-             sys_languages
              flash_fetcher
            |> Lwt_result.return
          | `Parent ->
            Page.Admin.Session.new_form
              context
              experiment
+             default_reminder_lead_time
              duplicate_session
              locations
-             sys_languages
              flash_fetcher
            |> Lwt_result.return
        in
@@ -220,14 +160,25 @@ let detail req page =
        |> Lwt.return_ok
      | `Edit ->
        let%lwt locations = Pool_location.find_all database_label in
+       let%lwt session_reminder_templates =
+         Message_template.find_all_of_entity_by_label
+           database_label
+           session_id
+           Message_template.Label.SessionReminder
+       in
+       let%lwt default_reminder_lead_time =
+         Settings.find_default_reminder_lead_time database_label
+       in
        let* sys_languages =
          Pool_context.Tenant.get_tenant_languages req |> Lwt_result.lift
        in
        Page.Admin.Session.edit
          context
          experiment
+         default_reminder_lead_time
          session
          locations
+         session_reminder_templates
          sys_languages
          flash_fetcher
        |> Lwt.return_ok
@@ -310,20 +261,29 @@ let update_handler action req =
              |> Lwt_result.lift)
          | `Reschedule ->
            let open Cqrs_command.Session_command.Reschedule in
-           let* (decoded : Session.reschedule) =
-             urlencoded |> decode |> Lwt_result.lift
+           let* assignments =
+             Assignment.find_by_session database_label session.Session.id
            in
            let* system_languages =
              Pool_context.Tenant.get_tenant_languages req |> Lwt_result.lift
            in
-           let (Session.{ start; duration } : Session.reschedule) = decoded in
-           let* messages =
-             Session.{ session with start; duration }
-             |> reschedule_messages tenant database_label system_languages
+           let* create_message =
+             Message_template.SessionReschedule.prepare
+               database_label
+               tenant
+               system_languages
+               session
            in
-           decoded
-           |> handle ~tags ?parent_session:parent follow_ups session messages
+           urlencoded
+           |> decode
            |> Lwt_result.lift
+           >== handle
+                 ~tags
+                 ?parent_session:parent
+                 follow_ups
+                 session
+                 assignments
+                 create_message
        in
        let%lwt () = Pool_event.handle_events ~tags database_label events in
        Http_utils.redirect_to_with_actions
@@ -354,7 +314,7 @@ let cancel req =
     ||> HttpUtils.format_request_boolean_values
           Pool_common.Message.Field.[ show Email; show SMS ]
   in
-  let result { Pool_context.database_label; language; _ } =
+  let result { Pool_context.database_label; _ } =
     Utils.Lwt_result.map_error (fun err ->
       err, error_path, [ HttpUtils.urlencoded_to_flash urlencoded ])
     @@ let* session = Session.find database_label session_id in
@@ -370,20 +330,16 @@ let cancel req =
          let* { Pool_context.Tenant.tenant; _ } =
            Pool_context.Tenant.find req |> Lwt_result.lift
          in
-         let* messages_fn =
-           Session.build_cancellation_messages
-             tenant
+         let* create_message =
+           Message_template.SessionCancellation.prepare
              database_label
-             (* TODO this language is wrong, need experiment language
-                implemented, issue #190 *)
-             language
+             tenant
              system_languages
              session
-             contacts
          in
          let open CCResult.Infix in
          Cqrs_command.Session_command.Cancel.(
-           urlencoded |> decode >>= handle ~tags session messages_fn)
+           urlencoded |> decode >>= handle ~tags session contacts create_message)
          |> Lwt_result.lift
        in
        let%lwt () = Pool_event.handle_events ~tags database_label events in
@@ -520,11 +476,125 @@ let close_post req =
   result |> HttpUtils.extract_happy_path req
 ;;
 
+let message_template_form ?template_id label req =
+  let open Utils.Lwt_result.Infix in
+  let experiment_id = experiment_id req in
+  let session_id = session_id req in
+  let result ({ Pool_context.database_label; _ } as context) =
+    Utils.Lwt_result.map_error (fun err ->
+      ( err
+      , experiment_id
+        |> Experiment.Id.value
+        |> Format.asprintf "/admin/experiments/%s/edit" ))
+    @@
+    let flash_fetcher key = Sihl.Web.Flash.find key req in
+    let* { Pool_context.Tenant.tenant; _ } =
+      Pool_context.Tenant.find req |> Lwt_result.lift
+    in
+    let* experiment = Experiment.find database_label experiment_id in
+    let* session = Session.find database_label session_id in
+    let* template =
+      template_id
+      |> CCOption.map_or ~default:(Lwt_result.return None) (fun id ->
+           Message_template.find database_label id >|+ CCOption.pure)
+    in
+    let* available_languages =
+      match template_id with
+      | None ->
+        Pool_context.Tenant.get_tenant_languages req
+        |> Lwt_result.lift
+        |>> Message_template.find_available_languages
+              database_label
+              session_id
+              label
+        >|+ CCOption.pure
+      | Some _ -> Lwt_result.return None
+    in
+    Page.Admin.Session.message_template_form
+      context
+      tenant
+      experiment
+      session
+      available_languages
+      label
+      template
+      flash_fetcher
+    |> create_layout req context
+    >|+ Sihl.Web.Response.of_html
+  in
+  result |> HttpUtils.extract_happy_path req
+;;
+
+let new_session_reminder req =
+  message_template_form Message_template.Label.SessionReminder req
+;;
+
+let new_session_reminder_post req =
+  let open Admin_message_templates in
+  let experiment_id = experiment_id req in
+  let session_id = session_id req in
+  let label = Message_template.Label.SessionReminder in
+  let redirect =
+    let base =
+      Format.asprintf
+        "/admin/experiments/%s/sessions/%s/%s"
+        (Experiment.Id.value experiment_id)
+        (Pool_common.Id.value session_id)
+    in
+    { success = base "edit"
+    ; error = base (Message_template.Label.prefixed_human_url label)
+    }
+  in
+  (write (Create (session_id, label, redirect))) req
+;;
+
+let edit_template req =
+  let template_id = template_id req in
+  message_template_form
+    ~template_id
+    Message_template.Label.ExperimentInvitation
+    req
+;;
+
+let update_template req =
+  let open Admin_message_templates in
+  let open Utils.Lwt_result.Infix in
+  let open Message_template in
+  let experiment_id = experiment_id req in
+  let session_id = session_id req in
+  let template_id = template_id req in
+  let session_path =
+    Format.asprintf
+      "/admin/experiments/%s/sessions/%s/%s"
+      (Experiment.Id.value experiment_id)
+      (Pool_common.Id.value session_id)
+  in
+  let%lwt template =
+    req
+    |> database_label_of_req
+    |> Lwt_result.lift
+    >>= CCFun.flip find template_id
+  in
+  match template with
+  | Ok template ->
+    let redirect =
+      { success = session_path "edit"
+      ; error = session_path (prefixed_template_url ~append:"edit" template)
+      }
+    in
+    (write (Update (template_id, redirect))) req
+  | Error err ->
+    HttpUtils.redirect_to_with_actions
+      (session_path "edit")
+      [ HttpUtils.Message.set ~error:[ err ] ]
+;;
+
 module Access : sig
   include Helpers.AccessSig
 
   val reschedule : Rock.Middleware.t
   val cancel : Rock.Middleware.t
+  val session_reminder : Rock.Middleware.t
   val send_reminder : Rock.Middleware.t
   val close : Rock.Middleware.t
 end = struct
@@ -573,6 +643,16 @@ end = struct
 
   let cancel =
     [ SessionCommand.Cancel.effects ]
+    |> session_effects
+    |> Middleware.Guardian.validate_generic
+  ;;
+
+  let session_reminder =
+    [ (fun id ->
+        [ `Update, `Target (id |> Guard.Uuid.target_of Pool_common.Id.value)
+        ; `Update, `TargetEntity `Session
+        ])
+    ]
     |> session_effects
     |> Middleware.Guardian.validate_generic
   ;;

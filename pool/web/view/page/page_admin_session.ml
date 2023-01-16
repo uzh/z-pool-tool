@@ -7,6 +7,13 @@ let session_title (s : Session.t) =
   Pool_common.I18n.SessionDetailTitle (s.Session.start |> Session.Start.value)
 ;;
 
+let session_path experiment session =
+  Format.asprintf
+    "/admin/experiments/%s/sessions/%s"
+    Experiment.(Id.value experiment.id)
+    (Pool_common.Id.value session.Session.id)
+;;
+
 let location_select options selected ?(attributes = []) () =
   let open Pool_location in
   let name = Message.Field.(show Location) in
@@ -40,11 +47,11 @@ let session_form
   csrf
   language
   (experiment : Experiment.t)
+  default_reminder_lead_time
   ?(session : Session.t option)
   ?(follow_up_to : Session.t option)
   ?(duplicate : Session.t option)
   locations
-  sys_languages
   ~flash_fetcher
   =
   let open CCFun in
@@ -85,9 +92,6 @@ let session_form
     |> CCOption.map_or
          ~default:""
          (Reminder.LeadTime.value %> Utils.Time.timespan_spanpicker)
-  in
-  let to_default_value html =
-    div ~a:[ a_class [ "gap"; "inset-sm"; "border-left" ] ] [ html ]
   in
   let action, submit =
     let open Pool_common in
@@ -195,56 +199,16 @@ let session_form
                     ~value:
                       (value (fun s -> s.reminder_lead_time |> lead_time_value))
                     ~flash_fetcher
-                ; experiment.Experiment.session_reminder_lead_time
-                  |> CCOption.map_or ~default:(txt "") (fun leadtime ->
-                       Utils.text_to_string
-                         language
-                         (I18n.SessionReminderDefaultLeadTime
-                            (leadtime |> Reminder.LeadTime.value))
-                       |> txt
-                       |> to_default_value)
-                ]
-            ; div
-                ~a:[ a_class [ "full-width" ] ]
-                [ MessageTextElements.session_reminder_help
+                ; (experiment.Experiment.session_reminder_lead_time
+                  |> CCOption.value ~default:default_reminder_lead_time
+                  |> fun t ->
+                  Utils.text_to_string
                     language
-                    sys_languages
-                    ?session:default_value_session
-                    ()
+                    (I18n.SessionReminderDefaultLeadTime
+                       (t |> Reminder.LeadTime.value))
+                  |> txt
+                  |> HttpUtils.default_value_style)
                 ]
-            ; input_element
-                language
-                `Text
-                Message.Field.ReminderSubject
-                ~value:
-                  (value (fun s ->
-                     s.reminder_subject
-                     |> CCOption.map_or ~default:"" Reminder.Subject.value))
-                ~flash_fetcher
-            ; experiment.Experiment.session_reminder_subject
-              |> CCOption.map_or ~default:(txt "") (fun text ->
-                   Utils.text_to_string
-                     language
-                     (I18n.SessionReminderDefaultSubject
-                        (text |> Reminder.Subject.value))
-                   |> Http_utils.add_line_breaks
-                   |> to_default_value)
-            ; textarea_element
-                language
-                Message.Field.ReminderText
-                ~value:
-                  (value (fun s ->
-                     s.reminder_text
-                     |> CCOption.map_or ~default:"" Reminder.Text.value))
-                ~flash_fetcher
-            ; experiment.Experiment.session_reminder_text
-              |> CCOption.map_or ~default:(txt "") (fun text ->
-                   Utils.text_to_string
-                     language
-                     (I18n.SessionReminderDefaultText
-                        (text |> Reminder.Text.value))
-                   |> Http_utils.add_line_breaks
-                   |> to_default_value)
             ]
         ]
     ; div
@@ -434,9 +398,9 @@ let index
 let new_form
   Pool_context.{ language; csrf; _ }
   experiment
+  default_reminder_lead_time
   duplicate_session
   locations
-  sys_languages
   flash_fetcher
   =
   Page_admin_experiments.experiment_layout
@@ -447,9 +411,9 @@ let new_form
        csrf
        language
        experiment
+       default_reminder_lead_time
        ?duplicate:duplicate_session
        locations
-       sys_languages
        ~flash_fetcher)
 ;;
 
@@ -618,27 +582,57 @@ let detail
 let edit
   Pool_context.{ language; csrf; _ }
   experiment
+  default_reminder_lead_time
   (session : Session.t)
   locations
+  session_reminder_templates
   sys_languages
   flash_fetcher
   =
-  div
-    [ p
-        [ txt
-            (session
-            |> session_title
-            |> Pool_common.Utils.text_to_string language)
-        ]
-    ; session_form
-        csrf
-        language
-        experiment
-        ~session
-        locations
-        sys_languages
-        ~flash_fetcher
-    ]
+  let open Message_template in
+  let session_path =
+    Format.asprintf "%s/%s" (session_path experiment session)
+  in
+  let form =
+    div
+      [ p
+          [ txt
+              (session
+              |> session_title
+              |> Pool_common.Utils.text_to_string language)
+          ]
+      ; session_form
+          csrf
+          language
+          experiment
+          default_reminder_lead_time
+          ~session
+          locations
+          ~flash_fetcher
+      ]
+  in
+  let message_templates_html label list =
+    let edit_path m =
+      Message_template.prefixed_template_url ~append:"edit" m |> session_path
+    in
+    let new_path =
+      if CCList.is_empty (Message_template.filter_languages sys_languages list)
+      then None
+      else session_path Label.(prefixed_human_url label) |> CCOption.pure
+    in
+    div
+      [ h3 ~a:[ a_class [ "heading-2" ] ] [ txt (Label.to_human label) ]
+      ; Page_admin_message_template.table language list new_path edit_path
+      ]
+  in
+  let html =
+    div
+      ~a:[ a_class [ "stack-lg" ] ]
+      [ form
+      ; message_templates_html Label.SessionReminder session_reminder_templates
+      ]
+  in
+  html
   |> Page_admin_experiments.experiment_layout
        language
        (Page_admin_experiments.Control Message.(Edit (Some Field.Session)))
@@ -648,10 +642,10 @@ let edit
 let follow_up
   Pool_context.{ language; csrf; _ }
   experiment
+  default_reminder_lead_time
   duplicate_session
   (parent_session : Session.t)
   locations
-  sys_languages
   flash_fetcher
   =
   let open Pool_common in
@@ -670,10 +664,10 @@ let follow_up
         csrf
         language
         experiment
+        default_reminder_lead_time
         ~follow_up_to:parent_session
         ?duplicate:duplicate_session
         locations
-        sys_languages
         ~flash_fetcher
     ]
   |> Page_admin_experiments.experiment_layout
@@ -852,4 +846,56 @@ let cancel
        language
        (Page_admin_experiments.Control Message.(Cancel (Some Field.Session)))
        experiment
+;;
+
+let message_template_form
+  ({ Pool_context.language; _ } as context)
+  tenant
+  experiment
+  session
+  languages
+  label
+  template
+  flash_fetcher
+  =
+  let open Message_template in
+  let action =
+    let go =
+      Format.asprintf
+        "/admin/experiments/%s/sessions/%s/%s"
+        Experiment.(Id.value experiment.Experiment.id)
+        (Pool_common.Id.value session.Session.id)
+    in
+    match template with
+    | None -> go (Label.prefixed_human_url label)
+    | Some template -> prefixed_template_url template |> go
+  in
+  let title =
+    let open Pool_common in
+    (match template with
+     | None -> Message.(Create None)
+     | Some _ -> Message.(Edit None))
+    |> fun control ->
+    Page_admin_experiments.String
+      (Format.asprintf
+         "%s %s"
+         (control |> Utils.control_to_string language)
+         (label |> Label.to_human |> CCString.lowercase_ascii))
+  in
+  let text_elements =
+    Component.MessageTextElements.message_template_help
+      ~experiment
+      ~session
+      language
+      tenant
+      label
+  in
+  Page_admin_message_template.template_form
+    context
+    ~text_elements
+    ?languages
+    template
+    action
+    flash_fetcher
+  |> Page_admin_experiments.experiment_layout language title experiment
 ;;

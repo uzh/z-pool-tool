@@ -4,6 +4,7 @@ module Invitations = Admin_experiments_invitations
 module WaitingList = Admin_experiments_waiting_list
 module Assignment = Admin_experiments_assignments
 module Mailings = Admin_experiments_mailing
+module MessageTemplates = Admin_experiments_message_templates
 module Users = Admin_experiments_users
 
 let create_layout req = General.create_tenant_layout req
@@ -32,14 +33,17 @@ let index req =
 let new_form req =
   let open Utils.Lwt_result.Infix in
   let error_path = "/admin/experiments" in
-  let result context =
+  let result ({ Pool_context.database_label; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, error_path)
     @@
     let flash_fetcher key = Sihl.Web.Flash.find key req in
-    let* sys_languages =
-      Pool_context.Tenant.get_tenant_languages req |> Lwt_result.lift
+    let%lwt default_reminder_lead_time =
+      Settings.find_default_reminder_lead_time database_label
     in
-    Page.Admin.Experiments.create context sys_languages flash_fetcher
+    Page.Admin.Experiments.create
+      context
+      default_reminder_lead_time
+      flash_fetcher
     |> create_layout req context
     >|+ Sihl.Web.Response.of_html
   in
@@ -95,14 +99,32 @@ let detail edit req =
        Page.Admin.Experiments.detail experiment session_count context
        |> Lwt.return_ok
      | true ->
+       let open Message_template in
        let flash_fetcher key = Sihl.Web.Flash.find key req in
        let* sys_languages =
          Pool_context.Tenant.get_tenant_languages req |> Lwt_result.lift
+       in
+       let%lwt default_reminder_lead_time =
+         Settings.find_default_reminder_lead_time database_label
+       in
+       let find_templates =
+         find_all_of_entity_by_label
+           database_label
+           (id |> Experiment.Id.to_common)
+       in
+       let%lwt invitation_templates =
+         find_templates Label.ExperimentInvitation
+       in
+       let%lwt session_reminder_templates =
+         find_templates Label.SessionReminder
        in
        Page.Admin.Experiments.edit
          experiment
          context
          sys_languages
+         default_reminder_lead_time
+         invitation_templates
+         session_reminder_templates
          flash_fetcher
        |> Lwt.return_ok)
     >>= create_layout req context

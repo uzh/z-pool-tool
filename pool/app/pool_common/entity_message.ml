@@ -67,6 +67,8 @@ module Field = struct
         [@printer go "email_address_unverified"]
     | EmailAddressVerified [@name "email_address_verified"]
         [@printer go "email_address_verified"]
+    | EmailSubject [@name "email_subject"] [@printer go "email_subject"]
+    | EmailText [@name "email_text"] [@printer go "email_text"]
     | EmailSuffix [@name "email_suffix"] [@printer go "email_suffix"]
     | End [@name "end"] [@printer go "end"]
     | Experiment [@name "experiment"] [@printer go "experiment"]
@@ -115,6 +117,8 @@ module Field = struct
     | MaxParticipants [@name "max_participants"]
         [@printer go "max_participants"]
     | MessageChannel [@name "message_channel"] [@printer go "message_channel"]
+    | MessageTemplate [@name "message_template"]
+        [@printer go "message_template"]
     | MinParticipants [@name "min_participants"]
         [@printer go "min_participants"]
     | Model [@name "model"] [@printer go "model"]
@@ -161,6 +165,7 @@ module Field = struct
     | Setting [@name "setting"] [@printer go "setting"]
     | ShowUp [@name "show_up"] [@printer go "show_up"]
     | SMS [@name "sms"] [@printer go "sms"]
+    | SmsText [@name "sms_text"] [@printer go "sms_text"]
     | SmtpAuthMethod [@name "smtp_auth_method"] [@printer go "smtp_auth_method"]
     | SmtpAuthServer [@name "smtp_auth_server"] [@printer go "smtp_auth_server"]
     | SmtpPassword [@name "smtp_password"] [@printer go "smtp_password"]
@@ -210,6 +215,7 @@ module Field = struct
 
   let url_key m = m |> show |> Format.asprintf ":%s"
   let array_key m = m |> show |> Format.asprintf "%s[]"
+  let human_url m = m |> show |> CCString.replace ~sub:"_" ~by:"-"
 end
 
 (* TODO [aerben] make these general, compare what fields exist already, whenever
@@ -248,7 +254,6 @@ type error =
   | InvalidEmailSuffix of string list
   | InvalidOptionSelected
   | InvalidHtmxRequest
-  | InvitationSubjectAndTextRequired
   | LoginProvideDetails
   | MeantimeUpdate of Field.t
   | NegativeAmount
@@ -281,7 +286,6 @@ type error =
   | SessionRegistrationViaParent
   | SessionTenantNotFound
   | ReadOnlyModel
-  | ReminderSubjectAndTextRequired
   | RequiredFieldsMissing
   | SessionAlreadyCanceled of string
   | SessionAlreadyClosed of string

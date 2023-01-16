@@ -61,12 +61,8 @@ let to_string = function
   | SessionIndent -> "Indentations group follow-up sessions."
   | SessionReminderDefaultLeadTime leadtime ->
     Format.asprintf
-      "The experiment default lead time is: %s"
+      "The default lead time is: %s"
       (leadtime |> Pool_common_utils.Time.formatted_timespan)
-  | SessionReminderDefaultText text ->
-    Format.asprintf "The experiment default reminder text is:\n\n %s" text
-  | SessionReminderDefaultSubject text ->
-    Format.asprintf "The experiment default subject is:\n\n %s" text
   | SessionReminder -> "Session reminder"
   | SessionRegistrationTitle -> "Register for this session"
   | SignUpAcceptTermsAndConditions -> "I accept the terms and conditions."
@@ -102,6 +98,7 @@ let nav_link_to_string = function
   | LoginInformation -> "Login information"
   | Logout -> "Logout"
   | Mailings -> "Mailings"
+  | MessageTemplates -> "Message templates"
   | Overview -> "Overview"
   | PersonalDetails -> "Personal details"
   | Profile -> "Profile"

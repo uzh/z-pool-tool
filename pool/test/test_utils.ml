@@ -204,9 +204,6 @@ module Model = struct
           |> CCResult.map_err show_error
           |> CCResult.get_or_failwith
       ; filter = None
-      ; invitation_template = None
-      ; session_reminder_subject = None
-      ; session_reminder_text = None
       ; session_reminder_lead_time =
           Ptime.Span.of_int_s @@ (60 * 60)
           |> Pool_common.Reminder.LeadTime.create
@@ -310,9 +307,7 @@ module Model = struct
           ParticipantAmount.create 1 |> Pool_common.Utils.get_or_failwith
       ; overbook =
           ParticipantAmount.create 4 |> Pool_common.Utils.get_or_failwith
-      ; reminder_subject = None
       ; reminder_lead_time = None
-      ; reminder_text = None
       ; reminder_sent_at = None
       ; assignment_count =
           0 |> AssignmentCount.create |> Pool_common.Utils.get_or_failwith
@@ -401,6 +396,19 @@ module Model = struct
       ; created_at = Pool_common.CreatedAt.create ()
       ; updated_at = Pool_common.UpdatedAt.create ()
       }
+  ;;
+
+  let create_message_template () =
+    let exn = CCResult.get_exn in
+    let open Message_template in
+    { id = Id.create ()
+    ; label = Label.AssignmentConfirmation
+    ; language = Pool_common.Language.En
+    ; entity_uuid = None
+    ; email_subject = "Subject" |> EmailSubject.create |> exn
+    ; email_text = "<div>Hello</div>" |> EmailText.create |> exn
+    ; sms_text = "Hello" |> SmsText.create |> exn
+    }
   ;;
 end
 

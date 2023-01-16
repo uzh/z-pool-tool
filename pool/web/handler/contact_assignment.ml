@@ -30,6 +30,9 @@ let create req =
            contact
            experiment
        in
+       let* { Pool_context.Tenant.tenant; _ } =
+         Pool_context.Tenant.find req |> Lwt_result.lift
+       in
        let* confirmation_email =
          let* language =
            let* default = Settings.default_language database_label in
@@ -37,19 +40,12 @@ let create req =
            |> CCOption.value ~default
            |> Lwt_result.return
          in
-         let* subject =
-           I18n.find_by_key database_label I18n.Key.ConfirmationSubject language
-           >|+ I18n.content
-         in
-         let* text =
-           I18n.find_by_key database_label I18n.Key.ConfirmationText language
-           >|+ I18n.content
-         in
-         let session_text = Session.(public_to_email_text language session) in
-         Lwt_result.return Email.{ subject; text; language; session_text }
-       in
-       let* { Pool_context.Tenant.tenant; _ } =
-         Pool_context.Tenant.find req |> Lwt_result.lift
+         Message_template.AssignmentConfirmation.create_from_public_session
+           database_label
+           language
+           tenant
+           session
+           contact
        in
        let%lwt already_enrolled =
          let open Utils.Lwt_result.Infix in
@@ -61,13 +57,13 @@ let create req =
          ||> not
        in
        let events =
+         (* TODO: merge emails, one confirmation for all sessions *)
          let open Cqrs_command.Assignment_command.Create in
          CCList.map
            (fun (session, waiting_list) ->
              handle
                ~tags
                { contact; session; waiting_list; experiment }
-               tenant
                confirmation_email
                already_enrolled)
            ((session, waiting_list) :: CCList.map (fun m -> m, None) follow_ups)

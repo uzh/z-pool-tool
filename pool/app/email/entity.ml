@@ -161,7 +161,7 @@ let create address user token =
   Unverified
     { address
     ; user
-    ; token
+    ; token = Token.value token
     ; created_at = Ptime_clock.now ()
     ; updated_at = Ptime_clock.now ()
     }

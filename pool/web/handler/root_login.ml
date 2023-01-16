@@ -72,11 +72,11 @@ let request_reset_password_get req =
 let request_reset_password_post req =
   let open HttpUtils in
   let open Cqrs_command.Common_command.ResetPassword in
+  let open Message_template in
   let result { Pool_context.database_label; language; _ } =
     let open Utils.Lwt_result.Infix in
     let tags = Logger.req req in
     let redirect_path = "/root/request-reset-password" in
-    let email_layout = Email.Helper.root_layout () in
     Sihl.Web.Request.to_urlencoded req
     ||> decode
     >>= (fun email ->
@@ -84,7 +84,8 @@ let request_reset_password_post req =
           |> Pool_user.EmailAddress.value
           |> Service.User.find_by_email_opt ~ctx
           ||> CCOption.to_result Pool_common.Message.PasswordResetFailMessage)
-    >== handle email_layout language
+    >>= PasswordReset.create database_label language Root
+    >>= CCFun.(handle %> Lwt_result.lift)
     |>> Pool_event.handle_events ~tags database_label
     >|> function
     | Ok () | Error (_ : Pool_common.Message.error) ->

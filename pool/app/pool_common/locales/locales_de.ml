@@ -48,6 +48,8 @@ let field_to_string =
   | EmailAddressUnverified -> "Unverifizierte E-Mail Adresse"
   | EmailAddressVerified -> "Verifizierte E-Mail Adresse"
   | EmailSuffix -> "E-Mail Endung"
+  | EmailSubject -> "E-Mail Betreff"
+  | EmailText -> "E-Mail Text"
   | End -> "Ende"
   | Experiment -> "Experiment"
   | ExperimentType -> "Experimenttyp"
@@ -128,6 +130,7 @@ let field_to_string =
   | Setting -> "Einstellung"
   | ShowUp -> "Anwesend"
   | SMS -> "SMS"
+  | SmsText -> "SMS Text"
   | SmtpAuthMethod -> "Smtp Authentifizierungsmethode"
   | SmtpAuthServer -> "Smtp Authentifizierungsserver"
   | SmtpPassword -> "Smtp Passwort"
@@ -142,6 +145,7 @@ let field_to_string =
   | Street -> "Strasse"
   | Styles -> "Styles"
   | Template -> "Template"
+  | MessageTemplate -> "Nachrichtentemplate"
   | Tenant -> "Tenant"
   | TenantDisabledFlag -> "Deaktiviert"
   | TenantId -> "Tenant Identifier"
@@ -292,9 +296,7 @@ let rec error_to_string = function
       (CCString.concat ", " suffixes)
   | InvalidOptionSelected -> "Ungültige Option ausgewählt."
   | InvalidHtmxRequest -> "Ungültige Anfrage."
-  | InvitationSubjectAndTextRequired ->
-    "Bitte geben Sie sowohl den Betreff als auch den Text der Einladung an."
-  | LoginProvideDetails -> "Bitte E-Mail Adresse und Passwort eintragen."
+  | LoginProvideDetails -> "Bitte Email Adresse und Passwort eintragen."
   | MeantimeUpdate field ->
     field_message
       ""
@@ -347,9 +349,6 @@ let rec error_to_string = function
       (field_to_string f2)
   | ReadOnlyModel -> "Model ausschliesslich um von der Datenbank zu lesen!"
   | RegistrationDisabled -> "Registrierung ist deaktiviert."
-  | ReminderSubjectAndTextRequired ->
-    "Bitte geben Sie sowohl den Betreff als auch den Text für die Session \
-     Erinnerung an."
   | RequestRequiredFields -> "Bitte alle notwendigen Felder ausfüllen."
   | RequiredFieldsMissing ->
     "Bitte beantworten Sie die folgenden Fragen um fortzufahren."

@@ -186,3 +186,5 @@ let user_fullname user =
     (user |> user_firstname |> Firstname.value)
     (user |> user_lastname |> Lastname.value)
 ;;
+
+let user_email_address user = user.Sihl_user.email |> EmailAddress.of_string

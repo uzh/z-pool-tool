@@ -67,6 +67,7 @@ module Root = struct
       [ Migration_tenant.migration ()
       ; Migration_authorization.migration ()
       ; Migration_tenant_logo_mappings.migration ()
+      ; Migration_message_templates.migration ()
       ]
   ;;
 
@@ -100,6 +101,7 @@ module Tenant = struct
       ; Migration_custom_field_options.migration ()
       ; Migration_custom_field_groups.migration ()
       ; Migration_custom_field_answer_versions.migration ()
+      ; Migration_message_templates.migration ()
       ]
   ;;
 

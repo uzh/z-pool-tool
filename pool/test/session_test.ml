@@ -31,8 +31,6 @@ module Data = struct
     let max_participants = 24
     let min_participants = 5
     let overbook = 0
-    let subject = "Subject"
-    let text = "Text"
     let lead_time = Ptime.Span.of_int_s 1800
 
     let sent_at =
@@ -60,8 +58,6 @@ module Data = struct
     let max_participants = Raw.max_participants |> string_of_int
     let min_participants = Raw.min_participants |> string_of_int
     let overbook = Raw.overbook |> string_of_int
-    let subject = Raw.subject
-    let text = Raw.text
 
     let lead_time =
       Raw.lead_time
@@ -101,12 +97,6 @@ module Data = struct
       Session.ParticipantAmount.create Raw.overbook |> CCResult.get_exn
     ;;
 
-    let subject =
-      Pool_common.Reminder.Subject.create Raw.subject |> CCResult.get_exn
-    ;;
-
-    let text = Pool_common.Reminder.Text.create Raw.text |> CCResult.get_exn
-
     let lead_time =
       Pool_common.Reminder.LeadTime.create Raw.lead_time |> CCResult.get_exn
     ;;
@@ -141,8 +131,6 @@ module Data = struct
     ; show MaxParticipants, [ String.max_participants ]
     ; show MinParticipants, [ String.min_participants ]
     ; show Overbook, [ String.overbook ]
-    ; show ReminderSubject, [ String.subject ]
-    ; show ReminderText, [ String.text ]
     ; show LeadTime, [ String.lead_time ]
     ; show SentAt, [ String.sent_at ]
     ; show AssignmentCount, [ String.assignment_count ]
@@ -158,8 +146,6 @@ module Data = struct
     ; show MaxParticipants, [ max ]
     ; show MinParticipants, [ min ]
     ; show Overbook, [ overbook ]
-    ; show ReminderSubject, [ subject ]
-    ; show ReminderText, [ text ]
     ; show LeadTime, [ lead_time ]
     ]
   ;;
@@ -228,8 +214,6 @@ let create_invalid_data () =
           ; MaxParticipants, NotANumber max
           ; MinParticipants, NotANumber min
           ; Overbook, NotANumber overbook
-          ; ReminderSubject, NoValue
-          ; ReminderText, NoValue
           ; LeadTime, NegativeAmount
           ]))
     res
@@ -257,14 +241,7 @@ let create_no_optional () =
   let open Pool_common.Message.Field in
   let input =
     let open Data in
-    delete_from_input
-      [ Description
-      ; ReminderSubject
-      ; ReminderText
-      ; LeadTime
-      ; SentAt
-      ; AssignmentCount
-      ]
+    delete_from_input [ Description; LeadTime; SentAt; AssignmentCount ]
   in
   let experiment_id = Experiment.Id.create () in
   let location = Location_test.create_location () in
@@ -282,8 +259,6 @@ let create_no_optional () =
                 ; max_participants
                 ; min_participants
                 ; overbook
-                ; reminder_subject = None
-                ; reminder_text = None
                 ; reminder_lead_time = None
                 }
               , None
@@ -311,8 +286,6 @@ let create_full () =
                 ; max_participants
                 ; min_participants
                 ; overbook
-                ; reminder_subject = Some subject
-                ; reminder_text = Some text
                 ; reminder_lead_time = Some lead_time
                 }
               , None
@@ -345,8 +318,6 @@ let create_min_eq_max () =
                 ; max_participants = max_participants2
                 ; min_participants
                 ; overbook
-                ; reminder_subject = Some subject
-                ; reminder_text = Some text
                 ; reminder_lead_time = Some lead_time
                 }
               , None
@@ -396,8 +367,6 @@ let update_invalid_data () =
           ; MaxParticipants, NotANumber max
           ; MinParticipants, NotANumber min
           ; Overbook, NotANumber overbook
-          ; ReminderSubject, NoValue
-          ; ReminderText, NoValue
           ; LeadTime, NegativeAmount
           ]))
     res
@@ -423,14 +392,7 @@ let update_no_optional () =
   let open Pool_common.Message.Field in
   let input =
     let open Data in
-    delete_from_input
-      [ Description
-      ; ReminderSubject
-      ; ReminderText
-      ; LeadTime
-      ; SentAt
-      ; AssignmentCount
-      ]
+    delete_from_input [ Description; LeadTime; SentAt; AssignmentCount ]
   in
   let session = Test_utils.Model.create_session () in
   let location = Location_test.create_location () in
@@ -446,8 +408,6 @@ let update_no_optional () =
                 ; max_participants
                 ; min_participants
                 ; overbook
-                ; reminder_subject = None
-                ; reminder_text = None
                 ; reminder_lead_time = None
                 }
               , location
@@ -476,8 +436,6 @@ let update_full () =
                 ; max_participants
                 ; min_participants
                 ; overbook
-                ; reminder_subject = Some subject
-                ; reminder_text = Some text
                 ; reminder_lead_time = Some lead_time
                 }
               , location
@@ -507,8 +465,6 @@ let update_min_eq_max () =
                 ; max_participants = max_participants2
                 ; min_participants
                 ; overbook
-                ; reminder_subject = Some subject
-                ; reminder_text = Some text
                 ; reminder_lead_time = Some lead_time
                 }
               , location
@@ -548,29 +504,28 @@ let delete_session_with_assignments () =
   check_result (Error Pool_common.Message.SessionHasAssignments) res
 ;;
 
+let create_cancellation_message reason contact =
+  let recipient =
+    contact |> Contact.email_address |> Pool_user.EmailAddress.value
+  in
+  let email = Test_utils.Model.create_email ~recipient () in
+  reason
+  |> Session.CancellationReason.value
+  |> CCFun.flip Sihl_email.set_text email
+;;
+
 let cancel_no_reason () =
   let open CCResult.Infix in
   let session = Test_utils.Model.create_session () in
   let contact1 = Test_utils.Model.create_contact () in
   let contact2 = Test_utils.Model.create_contact () in
-  let email1 =
-    Test_utils.Model.create_email
-      ~recipient:contact1.Contact.user.Sihl_user.email
-      ()
-  in
-  let email2 =
-    Test_utils.Model.create_email
-      ~recipient:contact2.Contact.user.Sihl_user.email
-      ()
-  in
+  let contacts = [ contact1; contact2 ] in
   let res =
     SessionC.Cancel.(
       [ "reason", [ "" ]; "email", [ "true" ]; "sms", [ "true" ] ]
       |> decode
-      >>= handle session (fun reason ->
-            CCList.map
-              (reason |> Session.CancellationReason.value |> Sihl_email.set_text)
-              [ email1; email2 ]))
+      >>= handle session contacts (fun r c ->
+            create_cancellation_message r c |> CCResult.pure))
   in
   check_result
     (Error
@@ -584,16 +539,7 @@ let cancel_no_message_channels () =
   let session = Test_utils.Model.create_session () in
   let contact1 = Test_utils.Model.create_contact () in
   let contact2 = Test_utils.Model.create_contact () in
-  let email1 =
-    Test_utils.Model.create_email
-      ~recipient:contact1.Contact.user.Sihl_user.email
-      ()
-  in
-  let email2 =
-    Test_utils.Model.create_email
-      ~recipient:contact2.Contact.user.Sihl_user.email
-      ()
-  in
+  let contacts = [ contact1; contact2 ] in
   let res =
     SessionC.Cancel.(
       [ "reason", [ "Experimenter is ill" ]
@@ -601,10 +547,8 @@ let cancel_no_message_channels () =
       ; "sms", [ "false" ]
       ]
       |> decode
-      >>= handle session (fun reason ->
-            CCList.map
-              (reason |> Session.CancellationReason.value |> Sihl_email.set_text)
-              [ email1; email2 ]))
+      >>= handle session contacts (fun r c ->
+            create_cancellation_message r c |> CCResult.pure))
   in
   check_result (Error Pool_common.Message.PickMessageChannel) res
 ;;
@@ -623,16 +567,7 @@ let cancel_in_past () =
   in
   let contact1 = Test_utils.Model.create_contact () in
   let contact2 = Test_utils.Model.create_contact () in
-  let email1 =
-    Test_utils.Model.create_email
-      ~recipient:contact1.Contact.user.Sihl_user.email
-      ()
-  in
-  let email2 =
-    Test_utils.Model.create_email
-      ~recipient:contact2.Contact.user.Sihl_user.email
-      ()
-  in
+  let contacts = [ contact1; contact2 ] in
   let res =
     SessionC.Cancel.(
       [ "reason", [ "Experimenter is ill" ]
@@ -640,10 +575,8 @@ let cancel_in_past () =
       ; "sms", [ "false" ]
       ]
       |> decode
-      >>= handle session (fun reason ->
-            CCList.map
-              (reason |> Session.CancellationReason.value |> Sihl_email.set_text)
-              [ email1; email2 ]))
+      >>= handle session contacts (fun r c ->
+            create_cancellation_message r c |> CCResult.pure))
   in
   check_result (Error Pool_common.Message.SessionInPast) res
 ;;
@@ -656,16 +589,7 @@ let cancel_already_canceled () =
   in
   let contact1 = Test_utils.Model.create_contact () in
   let contact2 = Test_utils.Model.create_contact () in
-  let email1 =
-    Test_utils.Model.create_email
-      ~recipient:contact1.Contact.user.Sihl_user.email
-      ()
-  in
-  let email2 =
-    Test_utils.Model.create_email
-      ~recipient:contact2.Contact.user.Sihl_user.email
-      ()
-  in
+  let contacts = [ contact1; contact2 ] in
   let res =
     SessionC.Cancel.(
       [ "reason", [ "Experimenter is ill" ]
@@ -673,10 +597,8 @@ let cancel_already_canceled () =
       ; "sms", [ "false" ]
       ]
       |> decode
-      >>= handle session (fun reason ->
-            CCList.map
-              (reason |> Session.CancellationReason.value |> Sihl_email.set_text)
-              [ email1; email2 ]))
+      >>= handle session contacts (fun r c ->
+            create_cancellation_message r c |> CCResult.pure))
   in
   check_result
     (now
@@ -691,32 +613,25 @@ let cancel_valid () =
   let session1 = Test_utils.Model.create_session () in
   let contact1 = Test_utils.Model.create_contact () in
   let contact2 = Test_utils.Model.create_contact () in
-  let email1 =
-    Test_utils.Model.create_email
-      ~recipient:contact1.Contact.user.Sihl_user.email
-      ()
-  in
-  let email2 =
-    Test_utils.Model.create_email
-      ~recipient:contact2.Contact.user.Sihl_user.email
-      ()
-  in
+  let contacts = [ contact1; contact2 ] in
   let reason = "Experimenter is ill" in
   let res =
     SessionC.Cancel.(
       [ "reason", [ reason ]; "email", [ "true" ]; "sms", [ "true" ] ]
       |> decode
-      >>= handle session1 (fun reason ->
-            CCList.map
-              (reason |> Session.CancellationReason.value |> Sihl_email.set_text)
-              [ email1; email2 ]))
+      >>= handle session1 contacts (fun r c ->
+            create_cancellation_message r c |> CCResult.pure))
+  in
+  let messages =
+    contacts
+    |> CCList.map
+         (create_cancellation_message
+            (reason |> Session.CancellationReason.of_string))
   in
   check_result
     (Ok
        (* TODO issue #149 extend test with sms events *)
-       [ Pool_event.Email
-           (Email.BulkSent
-              (CCList.map (reason |> Sihl_email.set_text) [ email1; email2 ]))
+       [ Pool_event.Email (Email.BulkSent messages)
        ; Pool_event.Session (Session.Canceled session1)
        ])
     res;
@@ -735,10 +650,8 @@ let cancel_valid () =
     SessionC.Cancel.(
       [ "reason", [ reason ]; "email", [ "false" ]; "sms", [ "true" ] ]
       |> decode
-      >>= handle session2 (fun reason ->
-            CCList.map
-              (reason |> Session.CancellationReason.value |> Sihl_email.set_text)
-              [ email1; email2 ]))
+      >>= handle session2 contacts (fun r c ->
+            create_cancellation_message r c |> CCResult.pure))
   in
   check_result
     (Ok
@@ -825,8 +738,6 @@ let create_follow_up_later () =
                 ; max_participants
                 ; min_participants
                 ; overbook
-                ; reminder_subject = Some subject
-                ; reminder_text = Some text
                 ; reminder_lead_time = Some lead_time
                 }
               , Some session.Session.id
@@ -881,8 +792,6 @@ let update_follow_up_later () =
                 ; max_participants
                 ; min_participants
                 ; overbook
-                ; reminder_subject = Some subject
-                ; reminder_text = Some text
                 ; reminder_lead_time = Some lead_time
                 }
               , location
@@ -983,8 +892,6 @@ let update_follow_ups_later () =
                 ; max_participants
                 ; min_participants
                 ; overbook
-                ; reminder_subject = Some subject
-                ; reminder_text = Some text
                 ; reminder_lead_time = Some lead_time
                 }
               , location
@@ -1019,8 +926,6 @@ let update_follow_ups_later () =
                 ; max_participants
                 ; min_participants
                 ; overbook
-                ; reminder_subject = Some subject
-                ; reminder_text = Some text
                 ; reminder_lead_time = Some lead_time
                 }
               , location
@@ -1031,6 +936,9 @@ let update_follow_ups_later () =
 
 let reschedule_to_past () =
   let session = Test_utils.Model.create_session () in
+  let create_message _ _ _ =
+    Test_utils.Model.create_email () |> CCResult.return
+  in
   let command =
     Session.
       { start =
@@ -1040,7 +948,9 @@ let reschedule_to_past () =
       ; duration = session.Session.duration
       }
   in
-  let events = SessionC.Reschedule.handle [] session [] command in
+  let events =
+    SessionC.Reschedule.handle [] session [] create_message command
+  in
   let expected = Error Pool_common.Message.TimeInPast in
   Test_utils.check_result expected events
 ;;

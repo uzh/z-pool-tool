@@ -136,14 +136,6 @@ let () =
             "delete experiment with sessions"
             `Quick
             Experiment_test.delete_with_sessions
-        ; test_case
-            "create with missing invitation text"
-            `Quick
-            Experiment_test.with_missing_invitation_text
-        ; test_case
-            "create with missing reminder subject"
-            `Quick
-            Experiment_test.with_missing_reminder_subject
         ] )
     ; ( "waiting list"
       , [ test_case "sign up" `Quick Waiting_list_test.create
@@ -306,6 +298,16 @@ let () =
             "create invitations"
             `Quick
             Matcher_test.create_invitations_model
+        ] )
+    ; ( "message template"
+      , [ test_case
+            "create message template"
+            `Quick
+            Message_template_test.create
+        ; test_case
+            "create message template with invalid language"
+            `Quick
+            Message_template_test.create_with_unavailable_language
         ] )
     ]
 ;;

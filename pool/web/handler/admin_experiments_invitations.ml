@@ -1,20 +1,6 @@
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 
-let invitation_template_data database_label system_languages =
-  let open Utils.Lwt_result.Infix in
-  let%lwt res =
-    Lwt_list.map_s
-      (fun lang ->
-        let find = CCFun.flip (I18n.find_by_key database_label) lang in
-        let* subject = find I18n.Key.InvitationSubject in
-        let* text = find I18n.Key.InvitationText in
-        Lwt_result.return (lang, (subject, text)))
-      system_languages
-  in
-  CCList.all_ok res |> Lwt.return
-;;
-
 let create_layout req = General.create_tenant_layout req
 
 let experiment_id =
@@ -118,27 +104,21 @@ let create req =
            |> fun ids ->
            Error Pool_common.Message.(NotFoundList (Field.Contacts, ids))
        in
-       let* system_languages =
-         Pool_context.Tenant.get_tenant_languages req |> Lwt_result.lift
-       in
-       let* i18n_texts =
-         invitation_template_data database_label system_languages
-       in
        let%lwt invited_contacts =
          Invitation.find_multiple_by_experiment_and_contacts
            database_label
            (CCList.map Contact.id contacts)
            experiment
        in
+       let* create_message =
+         Message_template.ExperimentInvitation.prepare tenant experiment
+       in
        let tags = Logger.req req in
        let%lwt events =
          Cqrs_command.Invitation_command.Create.(
            handle
              ~tags
-             { experiment; contacts; invited_contacts }
-             tenant
-             system_languages
-             i18n_texts
+             { experiment; contacts; invited_contacts; create_message }
            |> Lwt_result.lift)
        in
        let handle events =
@@ -175,21 +155,15 @@ let resend req =
        in
        let* invitation = Invitation.find database_label id in
        let* experiment = Experiment.find database_label experiment_id in
-       let* system_languages =
-         Pool_context.Tenant.get_tenant_languages req |> Lwt_result.lift
-       in
-       let* i18n_texts =
-         invitation_template_data database_label system_languages
+       let* invitation_mail =
+         Message_template.ExperimentInvitation.create
+           tenant
+           experiment
+           invitation.Invitation.contact
        in
        let events =
          let open Cqrs_command.Invitation_command.Resend in
-         handle
-           ~tags
-           { invitation; experiment }
-           tenant
-           system_languages
-           i18n_texts
-         |> Lwt.return
+         handle ~tags invitation_mail { invitation; experiment } |> Lwt.return
        in
        let handle events =
          let%lwt () =

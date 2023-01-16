@@ -63,16 +63,8 @@ let to_string = function
   | SessionIndent -> "Einrückungen groupieren Folgesessions."
   | SessionReminderDefaultLeadTime leadtime ->
     Format.asprintf
-      "Die Standardvorlaufzeit dieses Experiments ist: %s"
+      "Die Standardvorlaufzeit ist: %s"
       (leadtime |> Pool_common_utils.Time.formatted_timespan)
-  | SessionReminderDefaultText text ->
-    Format.asprintf
-      "Die Standarderinnerungstext dieses Experiments ist:\n %s"
-      text
-  | SessionReminderDefaultSubject text ->
-    Format.asprintf
-      "Der Standarderinnerungsbetreff dieses Experiments ist:\n %s"
-      text
   | SessionReminder -> "Sessionerinnerung"
   | SessionRegistrationTitle -> "Für diese Session anmelden"
   | SignUpAcceptTermsAndConditions -> "Ich akzeptiere die Nutzungsbedingungen."
@@ -108,6 +100,7 @@ let nav_link_to_string = function
   | Login -> "Login"
   | Logout -> "Logout"
   | Mailings -> "Versand"
+  | MessageTemplates -> "Nachrichtentemplates"
   | Overview -> "Übersicht"
   | PersonalDetails -> "Persönliche Angaben"
   | Profile -> "Profil"

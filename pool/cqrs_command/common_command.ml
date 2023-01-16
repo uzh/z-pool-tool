@@ -9,12 +9,7 @@ module ResetPassword : sig
 
   type t = Pool_user.EmailAddress.t
 
-  val handle
-    :  Email.email_layout
-    -> Pool_common.Language.t
-    -> Sihl_user.t
-    -> (Pool_event.t list, 'a) result
-
+  val handle : Sihl_email.t -> (Pool_event.t list, 'a) result
   val decode : Conformist.input -> (t, Conformist.error_msg) result
   val effects : Sihl_user.t -> Guard.Authorizer.effect list
 end = struct
@@ -26,10 +21,9 @@ end = struct
     Conformist.(make Field.[ Pool_user.EmailAddress.schema () ] command)
   ;;
 
-  let handle email_layout language user =
+  let handle reset_email =
     Logs.info (fun m -> m "Handle command ResetPassword");
-    Ok
-      [ Email.ResetPassword (user, language, email_layout) |> Pool_event.email ]
+    Ok [ Email.Sent reset_email |> Pool_event.email ]
   ;;
 
   let decode data =

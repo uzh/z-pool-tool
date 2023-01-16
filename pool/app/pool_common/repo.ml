@@ -88,18 +88,6 @@ module File = struct
 end
 
 module Reminder = struct
-  module Subject = struct
-    include Reminder.Text
-
-    let t = Caqti_type.string
-  end
-
-  module Text = struct
-    include Reminder.Text
-
-    let t = Caqti_type.string
-  end
-
   module LeadTime = struct
     include Reminder.LeadTime
 

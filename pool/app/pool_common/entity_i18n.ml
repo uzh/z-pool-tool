@@ -41,8 +41,6 @@ type t =
   | SessionIndent
   | SessionReminder
   | SessionReminderDefaultLeadTime of Entity.Reminder.LeadTime.t
-  | SessionReminderDefaultSubject of Entity.Reminder.Subject.t
-  | SessionReminderDefaultText of Entity.Reminder.Text.t
   | SessionRegistrationTitle
   | SignUpAcceptTermsAndConditions
   | SignUpCTA
@@ -74,6 +72,7 @@ type nav_link =
   | LoginInformation
   | Logout
   | Mailings
+  | MessageTemplates
   | Overview
   | PersonalDetails
   | Profile

@@ -70,38 +70,6 @@ let count_of_rate ?(interval = Sihl.Time.OneMinute) rate =
   |> CCInt.of_float
 ;;
 
-let i18n_templates pool { Experiment.invitation_template; _ } languages =
-  let open Utils.Lwt_result.Infix in
-  let open Experiment.InvitationTemplate in
-  let open I18n in
-  Lwt_list.map_s
-    (fun language ->
-      let%lwt subject =
-        find_by_key pool Key.InvitationSubject language ||> get_or_failwith
-      in
-      let%lwt text =
-        find_by_key pool Key.InvitationText language ||> get_or_failwith
-      in
-      let subject =
-        invitation_template
-        |> CCOption.map_or ~default:subject (fun { subject; _ } ->
-             subject
-             |> Subject.value
-             |> Content.of_string
-             |> create Key.InvitationSubject language)
-      in
-      let text =
-        invitation_template
-        |> CCOption.map_or ~default:text (fun { text; _ } ->
-             text
-             |> Text.value
-             |> Content.of_string
-             |> create Key.ImportInvitationText language)
-      in
-      (language, (subject, text)) |> Lwt.return)
-    languages
-;;
-
 let find_contacts_by_mailing pool { Mailing.id; distribution; _ } limit =
   let open Utils.Lwt_result.Infix in
   let%lwt ({ Experiment.id; _ } as experiment) =
@@ -119,10 +87,7 @@ let find_contacts_by_mailing pool { Mailing.id; distribution; _ } limit =
       (id |> Experiment.Id.to_common)
       experiment.Experiment.filter
   in
-  let%lwt i18n_templates =
-    i18n_templates pool experiment Pool_common.Language.all
-  in
-  (experiment, contacts, i18n_templates) |> Lwt_result.return
+  (experiment, contacts) |> Lwt_result.return
 ;;
 
 let calculate_mailing_limits ?interval pool_based_mailings =
@@ -171,9 +136,8 @@ let match_invitations ?interval pools =
       (let open Pool_event in
       function[@warning "-4"]
       (* TODO: Account based internal/external email count *)
-      | Email (Email.Sent _) | Email (Email.InvitationSent _) -> Some 1
+      | Email (Email.Sent _) -> Some 1
       | Email (Email.BulkSent mails) -> Some (CCList.length mails)
-      | Email (Email.InvitationBulkSent mails) -> Some (CCList.length mails)
       | _ -> None)
     %> sum
   in
@@ -220,8 +184,12 @@ let match_invitations ?interval pools =
         limited_mailings
         |> Lwt_list.map_s (fun (mailing, limit) ->
              find_contacts_by_mailing pool mailing limit
-             >|+ fun (experiment, contacts, i18n_templates) ->
-             { tenant; mailing; experiment; contacts; i18n_templates })
+             >>= fun (experiment, contacts) ->
+             let* create_message =
+               Message_template.ExperimentInvitation.prepare tenant experiment
+             in
+             { mailing; experiment; contacts; create_message }
+             |> Lwt_result.return)
         ||> CCList.all_ok
       in
       let open CCResult in

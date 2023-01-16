@@ -155,3 +155,4 @@ end
 val user_firstname : Sihl_user.t -> Firstname.t
 val user_lastname : Sihl_user.t -> Lastname.t
 val user_fullname : Sihl_user.t -> string
+val user_email_address : Sihl_user.t -> EmailAddress.t

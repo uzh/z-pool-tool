@@ -36,34 +36,40 @@ Example: contact.signup econ-uzh example@mail.com securePassword Max Muster onli
       when CCString.equal terms_accepted "accept" ->
       let%lwt pool = Command_utils.is_available_exn db_pool in
       let%lwt tenant = Pool_tenant.find_by_label pool ||> get_or_failwith in
-      let events =
-        let open CCResult.Infix in
+      let%lwt events =
         let open Cqrs_command.Contact_command.SignUp in
         let language =
           Pool_common.Language.create language |> CCResult.to_opt
         in
-        [ "email", [ email ]
-        ; "password", [ password ]
-        ; "firstname", [ firstname ]
-        ; "lastname", [ lastname ]
-        ]
-        |> decode
-        >>= handle tenant language
+        let ({ firstname; lastname; email; _ } as decoded) =
+          [ "email", [ email ]
+          ; "password", [ password ]
+          ; "firstname", [ firstname ]
+          ; "lastname", [ lastname ]
+          ]
+          |> decode
+          |> get_or_failwith
+        in
+        let%lwt token = Email.create_token pool email in
+        let%lwt verification_mail =
+          Message_template.SignUpVerification.create
+            pool
+            (CCOption.value ~default:Pool_common.Language.En language)
+            tenant
+            email
+            token
+            firstname
+            lastname
+          ||> get_or_failwith
+        in
+        decoded
+        |> handle token email verification_mail language
         |> get_or_failwith
+        |> Lwt.return
       in
       let%lwt () = Lwt_list.iter_s (Pool_event.handle_event pool) events in
       Lwt.return_some ()
     | _ -> Command_utils.failwith_missmatch help)
-;;
-
-let create_message contact template =
-  (* TODO[tinhub]: Sihl 4.0: add text elements to for subject *)
-  let name = Contact.fullname contact in
-  let email = Contact.email_address contact in
-  Email.Helper.prepare_boilerplate_email
-    template
-    (email |> Pool_user.EmailAddress.value)
-    [ "name", name ]
 ;;
 
 let trigger_profile_update_by_tenant pool =
@@ -73,42 +79,14 @@ let trigger_profile_update_by_tenant pool =
   match contacts with
   | [] -> Lwt_result.return ()
   | contacts ->
-    let* default_language = Settings.default_language pool in
-    let template (msg_language : Pool_common.Language.t) =
-      let i18n_texts =
-        Hashtbl.create ~random:true (CCList.length Pool_common.Language.all)
-      in
-      match Hashtbl.find_opt i18n_texts msg_language with
-      | Some template -> Lwt.return_ok template
-      | None ->
-        let* subject =
-          I18n.(find_by_key pool Key.TriggerProfileUpdateSubject msg_language)
-          >|+ Email.CustomTemplate.Subject.i18n
-        in
-        let* content =
-          I18n.(find_by_key pool Key.TriggerProfileUpdateText msg_language)
-          >|+ Email.CustomTemplate.Content.i18n
-        in
-        let layout = Email.Helper.layout_from_tenant tenant in
-        let template = Email.CustomTemplate.{ subject; content; layout } in
-        let () = Hashtbl.add i18n_texts msg_language template in
-        Lwt_result.return template
+    let* create_message =
+      Message_template.ProfileUpdateTrigger.prepare pool tenant
     in
-    let messages =
-      Lwt_list.map_s
-        (fun (contact : Contact.t) ->
-          let* template =
-            template
-              (CCOption.value
-                 ~default:default_language
-                 contact.Contact.language)
-          in
-          create_message contact template |> Lwt_result.return)
-        contacts
-      ||> CCResult.flatten_l
+    let* emails =
+      CCList.map create_message contacts
+      |> CCResult.flatten_l
+      |> Lwt_result.lift
     in
-    messages
-    >>= fun emails ->
     Cqrs_command.Contact_command.SendProfileUpdateTrigger.(
       { contacts; emails }
       |> handle

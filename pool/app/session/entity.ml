@@ -97,8 +97,6 @@ type t =
   ; min_participants : ParticipantAmount.t
   ; overbook : ParticipantAmount.t
   ; reminder_lead_time : Pool_common.Reminder.LeadTime.t option
-  ; reminder_subject : Pool_common.Reminder.Subject.t option
-  ; reminder_text : Pool_common.Reminder.Text.t option
   ; reminder_sent_at : Pool_common.Reminder.SentAt.t option
   ; assignment_count : AssignmentCount.t
   ; (* TODO [aerben] want multiple follow up session?
@@ -129,8 +127,6 @@ let create
   max_participants
   min_participants
   overbook
-  reminder_subject
-  reminder_text
   reminder_lead_time
   =
   { id = id |> CCOption.value ~default:(Pool_common.Id.create ())
@@ -142,8 +138,6 @@ let create
   ; max_participants
   ; min_participants
   ; overbook
-  ; reminder_subject
-  ; reminder_text
   ; reminder_lead_time
   ; reminder_sent_at = None
   ; assignment_count = 0

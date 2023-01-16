@@ -15,11 +15,7 @@ let default_schema command =
         ; RegistrationDisabled.schema ()
         ; AllowUninvitedSignup.schema ()
         ; Conformist.optional @@ Pool_common.ExperimentType.schema ()
-        ; Conformist.optional @@ InvitationTemplate.Subject.schema ()
-        ; Conformist.optional @@ InvitationTemplate.Text.schema ()
         ; Conformist.optional @@ Pool_common.Reminder.LeadTime.schema ()
-        ; Conformist.optional @@ Pool_common.Reminder.Subject.schema ()
-        ; Conformist.optional @@ Pool_common.Reminder.Text.schema ()
         ]
       command)
 ;;
@@ -32,11 +28,7 @@ let default_command
   registration_disabled
   allow_uninvited_signup
   experiment_type
-  invitation_subject
-  invitation_text
   session_reminder_lead_time
-  session_reminder_subject
-  session_reminder_text
   =
   { title
   ; public_title
@@ -45,11 +37,7 @@ let default_command
   ; registration_disabled
   ; allow_uninvited_signup
   ; experiment_type
-  ; invitation_subject
-  ; invitation_text
   ; session_reminder_lead_time
-  ; session_reminder_subject
-  ; session_reminder_text
   }
 ;;
 
@@ -79,11 +67,7 @@ end = struct
         command.registration_disabled
         command.allow_uninvited_signup
         command.experiment_type
-        command.invitation_subject
-        command.invitation_text
         command.session_reminder_lead_time
-        command.session_reminder_subject
-        command.session_reminder_text
     in
     Ok [ Experiment.Created experiment |> Pool_event.experiment ]
   ;;
@@ -126,11 +110,7 @@ end = struct
         command.registration_disabled
         command.allow_uninvited_signup
         command.experiment_type
-        command.invitation_subject
-        command.invitation_text
         command.session_reminder_lead_time
-        command.session_reminder_subject
-        command.session_reminder_text
     in
     Ok [ Experiment.Updated experiment |> Pool_event.experiment ]
   ;;

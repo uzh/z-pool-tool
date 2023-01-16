@@ -21,7 +21,9 @@ module SignUp : sig
          (User.Password.t -> (unit, Pool_common.Message.error) result)
     -> ?user_id:Id.t
     -> ?terms_accepted_at:User.TermsAccepted.t option
-    -> Pool_tenant.t
+    -> Email.Token.t
+    -> User.EmailAddress.t
+    -> Sihl_email.t
     -> Pool_common.Language.t option
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
@@ -61,7 +63,9 @@ end = struct
     ?password_policy
     ?(user_id = Id.create ())
     ?(terms_accepted_at = Some (User.TermsAccepted.create_now ()))
-    tenant
+    token
+    unverified_email
+    verification_email
     default_language
     command
     =
@@ -80,17 +84,11 @@ end = struct
         ; language = default_language
         }
     in
-    let email_layout = Email.Helper.layout_from_tenant tenant in
     Ok
       [ Contact.Created contact |> Pool_event.contact
-      ; Email.Created
-          ( command.email
-          , user_id
-          , command.firstname
-          , command.lastname
-          , default_language |> CCOption.get_or ~default:Pool_common.Language.En
-          , email_layout )
+      ; Email.Created (unverified_email, token, user_id)
         |> Pool_event.email_verification
+      ; Email.Sent verification_email |> Pool_event.email
       ]
   ;;
 
@@ -169,8 +167,8 @@ module UpdatePassword : sig
     :  ?tags:Logs.Tag.set
     -> ?password_policy:
          (User.Password.t -> (unit, Pool_common.Message.error) result)
-    -> Pool_tenant.t
     -> Contact.t
+    -> Sihl_email.t
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
@@ -202,7 +200,13 @@ end = struct
         command)
   ;;
 
-  let handle ?(tags = Logs.Tag.empty) ?password_policy tenant contact command =
+  let handle
+    ?(tags = Logs.Tag.empty)
+    ?password_policy
+    contact
+    notification
+    command
+    =
     Logs.info ~src (fun m -> m "Handle command UpdatePassword" ~tags);
     let open CCResult in
     let* () =
@@ -216,7 +220,6 @@ end = struct
         command.new_password
         command.password_confirmation
     in
-    let email_layout = Email.Helper.layout_from_tenant tenant in
     Ok
       [ Contact.PasswordUpdated
           ( contact
@@ -224,12 +227,7 @@ end = struct
           , command.new_password
           , command.password_confirmation )
         |> Pool_event.contact
-      ; Email.ChangedPassword
-          ( contact.Contact.user
-          , contact.Contact.language
-            |> CCOption.get_or ~default:Pool_common.Language.En
-          , email_layout )
-        |> Pool_event.email
+      ; Email.Sent notification |> Pool_event.email
       ]
   ;;
 
@@ -254,7 +252,8 @@ module RequestEmailValidation : sig
   val handle
     :  ?tags:Logs.Tag.set
     -> ?allowed_email_suffixes:Settings.EmailSuffix.t list
-    -> Pool_tenant.t
+    -> Email.Token.t
+    -> Sihl_email.t
     -> Contact.t
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
@@ -266,22 +265,18 @@ end = struct
   let handle
     ?(tags = Logs.Tag.empty)
     ?allowed_email_suffixes
-    tenant
+    token
+    verification_email
     (contact : Contact.t)
     email
     =
     Logs.info ~src (fun m -> m "Handle command RequestEmailValidation" ~tags);
     let open CCResult in
     let* () = User.EmailAddress.validate allowed_email_suffixes email in
-    let layout = Email.Helper.layout_from_tenant tenant in
     Ok
-      [ Email.Updated
-          ( email
-          , contact.Contact.user
-          , contact.Contact.language
-            |> CCOption.get_or ~default:Pool_common.Language.En
-          , layout )
+      [ Email.Created (email, token, Contact.id contact)
         |> Pool_event.email_verification
+      ; Email.Sent verification_email |> Pool_event.email
       ]
   ;;
 

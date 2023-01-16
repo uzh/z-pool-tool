@@ -172,37 +172,6 @@ module File = struct
 end
 
 module Reminder = struct
-  module Subject = struct
-    type t = string [@@deriving eq, show, sexp_of]
-
-    let create subject =
-      if CCString.is_empty subject then Error PoolError.NoValue else Ok subject
-    ;;
-
-    let value m = m
-
-    let schema () =
-      Pool_common_utils.schema_decoder
-        create
-        value
-        PoolError.Field.ReminderSubject
-    ;;
-  end
-
-  module Text = struct
-    type t = string [@@deriving eq, show, sexp_of]
-
-    let create text =
-      if CCString.is_empty text then Error PoolError.NoValue else Ok text
-    ;;
-
-    let value m = m
-
-    let schema () =
-      Pool_common_utils.schema_decoder create value PoolError.Field.ReminderText
-    ;;
-  end
-
   module LeadTime = struct
     type t = Ptime.Span.t [@@deriving eq, show]
 

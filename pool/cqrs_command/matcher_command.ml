@@ -2,11 +2,11 @@ let get_or_failwith = Pool_common.Utils.get_or_failwith
 
 module Run : sig
   type t =
-    { tenant : Pool_tenant.t
-    ; mailing : Mailing.t
+    { mailing : Mailing.t
     ; experiment : Experiment.t
     ; contacts : Contact.t list
-    ; i18n_templates : (Pool_common.Language.t * (I18n.t * I18n.t)) list
+    ; create_message :
+        Contact.t -> (Sihl_email.t, Pool_common.Message.error) result
     }
 
   val handle : t list -> (Pool_event.t list, Pool_common.Message.error) result
@@ -16,23 +16,23 @@ module Run : sig
     -> (Guard.Authorizer.effect list, Pool_common.Message.error) Lwt_result.t
 end = struct
   type t =
-    { tenant : Pool_tenant.t
-    ; mailing : Mailing.t
+    { mailing : Mailing.t
     ; experiment : Experiment.t
     ; contacts : Contact.t list
-    ; i18n_templates : (Pool_common.Language.t * (I18n.t * I18n.t)) list
+    ; create_message :
+        Contact.t -> (Sihl_email.t, Pool_common.Message.error) result
     }
 
   let handle mailings =
     let open CCFun.Infix in
+    let open CCList in
     mailings
-    |> CCList.map (fun { tenant; experiment; contacts; i18n_templates; _ } ->
-         let open Invitation_command in
-         let languages = Pool_common.Language.all in
-         let command = Create.{ experiment; contacts; invited_contacts = [] } in
-         Create.handle command tenant languages i18n_templates)
-       %> CCList.all_ok
-       %> CCResult.map CCList.flatten
+    |> map (fun { experiment; contacts; create_message; _ } ->
+         let open Invitation_command.Create in
+         { experiment; contacts; invited_contacts = []; create_message }
+         |> handle)
+       %> all_ok
+       %> CCResult.map flatten
   ;;
 
   let effects db_label =

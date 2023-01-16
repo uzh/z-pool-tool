@@ -1,6 +1,7 @@
 open Tyxml.Html
 open Component.Input
 module HttpUtils = Http_utils
+module Message = Pool_common.Message
 
 let txt_to_string lang m = [ txt (Pool_common.Utils.text_to_string lang m) ]
 
@@ -175,14 +176,19 @@ let request_reset_password Pool_context.{ language; query_language; csrf; _ } =
     ]
 ;;
 
-let reset_password token Pool_context.{ language; query_language; csrf; _ } =
-  let open Pool_common in
+let reset_password
+  token
+  Pool_context.{ language; query_language; csrf; _ }
+  password_policy
+  =
   let externalize = HttpUtils.externalize_path_with_lang query_language in
   div
     ~a:[ a_class [ "trim"; "narrow"; "safety-margin" ] ]
     [ h1
         ~a:[ a_class [ "heading-1" ] ]
-        [ txt (Utils.text_to_string language I18n.ResetPasswordTitle) ]
+        [ txt
+            Pool_common.(Utils.text_to_string language I18n.ResetPasswordTitle)
+        ]
     ; form
         ~a:
           [ a_action (externalize "/reset-password")
@@ -191,7 +197,13 @@ let reset_password token Pool_context.{ language; query_language; csrf; _ } =
           ]
         [ csrf_element csrf ()
         ; input_element language `Hidden Message.Field.Token ~value:token
-        ; input_element language `Password Message.Field.Password
+        ; input_element
+            ~help:
+              (Pool_common.I18n.I18nText
+                 (password_policy |> I18n.content_to_string))
+            language
+            `Password
+            Message.Field.Password
         ; input_element language `Password Message.Field.PasswordConfirmation
         ; div
             ~a:[ a_class [ "flexrow" ] ]

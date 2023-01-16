@@ -9,8 +9,6 @@ let create_command
   max_participants
   min_participants
   overbook
-  reminder_subject
-  reminder_text
   reminder_lead_time
   : Session.base
   =
@@ -21,8 +19,6 @@ let create_command
     ; max_participants
     ; min_participants
     ; overbook
-    ; reminder_subject
-    ; reminder_text
     ; reminder_lead_time
     }
 ;;
@@ -39,8 +35,6 @@ let create_schema =
         ; Session.ParticipantAmount.schema
             Pool_common.Message.Field.MinParticipants
         ; Session.ParticipantAmount.schema Pool_common.Message.Field.Overbook
-        ; Conformist.optional @@ Pool_common.Reminder.Subject.schema ()
-        ; Conformist.optional @@ Pool_common.Reminder.Text.schema ()
         ; Conformist.optional @@ Pool_common.Reminder.LeadTime.schema ()
         ]
       create_command)
@@ -53,8 +47,6 @@ let update_command
   max_participants
   min_participants
   overbook
-  reminder_subject
-  reminder_text
   reminder_lead_time
   : Session.update
   =
@@ -65,8 +57,6 @@ let update_command
     ; max_participants
     ; min_participants
     ; overbook
-    ; reminder_subject
-    ; reminder_text
     ; reminder_lead_time
     }
 ;;
@@ -83,8 +73,6 @@ let update_schema =
         ; Session.ParticipantAmount.schema
             Pool_common.Message.Field.MinParticipants
         ; Session.ParticipantAmount.schema Pool_common.Message.Field.Overbook
-        ; Conformist.optional @@ Pool_common.Reminder.Subject.schema ()
-        ; Conformist.optional @@ Pool_common.Reminder.Text.schema ()
         ; Conformist.optional @@ Pool_common.Reminder.LeadTime.schema ()
         ]
       update_command)
@@ -154,8 +142,6 @@ end = struct
        ; min_participants
        ; (* TODO [aerben] find a better name *)
          overbook
-       ; reminder_subject
-       ; reminder_text
        ; reminder_lead_time
        } :
       Session.base)
@@ -179,8 +165,6 @@ end = struct
         ; max_participants
         ; min_participants
         ; overbook
-        ; reminder_subject
-        ; reminder_text
         ; reminder_lead_time
         }
     in
@@ -235,8 +219,6 @@ end = struct
        ; max_participants
        ; min_participants
        ; overbook
-       ; reminder_subject
-       ; reminder_text
        ; reminder_lead_time
        } :
       Session.update)
@@ -274,8 +256,6 @@ end = struct
         ; max_participants
         ; min_participants
         ; overbook
-        ; reminder_subject
-        ; reminder_text
         ; reminder_lead_time
         }
     in
@@ -303,7 +283,11 @@ module Reschedule : sig
     -> ?parent_session:Session.t
     -> Session.t list
     -> Session.t
-    -> Sihl_email.t list
+    -> Assignment.t list
+    -> (Contact.t
+        -> Session.Start.t
+        -> Session.Duration.t
+        -> (Sihl_email.t, Pool_common.Message.error) result)
     -> t
     -> (Pool_event.t list, Conformist.error_msg) result
 
@@ -327,8 +311,9 @@ end = struct
     ?parent_session
     follow_up_sessions
     session
-    emails
-    (Session.{ start; _ } as reschedule : Session.reschedule)
+    assignments
+    create_message
+    (Session.{ start; duration } as reschedule : Session.reschedule)
     =
     Logs.info ~src (fun m -> m "Handle command Reschedule" ~tags);
     let open CCResult in
@@ -339,6 +324,13 @@ end = struct
            (start |> Session.Start.value)
       then Error Pool_common.Message.TimeInPast
       else Ok ()
+    in
+    let* emails =
+      let open Assignment in
+      assignments
+      |> CCList.map (fun ({ contact; _ } : t) ->
+           create_message contact start duration)
+      |> CCResult.flatten_l
     in
     Ok
       ((Session.Rescheduled (session, reschedule) |> Pool_event.session)
@@ -389,7 +381,10 @@ module Cancel : sig
   val handle
     :  ?tags:Logs.Tag.set
     -> Session.t
-    -> (Session.CancellationReason.t -> Sihl_email.t list)
+    -> Contact.t list
+    -> (Session.CancellationReason.t
+        -> Contact.t
+        -> (Sihl_email.t, Pool_common.Message.error) result)
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
@@ -402,18 +397,27 @@ end = struct
     ; reason : Session.CancellationReason.t
     }
 
-  let handle ?(tags = Logs.Tag.empty) session messages_fn command =
+  let handle
+    ?(tags = Logs.Tag.empty)
+    session
+    (contacts : Contact.t list)
+    messages_fn
+    command
+    =
     Logs.info ~src (fun m -> m "Handle command Cancel" ~tags);
-    let open CCResult.Infix in
+    let open CCResult in
     let* () =
       if not (command.notify_email || command.notify_sms)
       then Error Pool_common.Message.PickMessageChannel
       else Ok ()
     in
     let* () = Session.is_cancellable session in
+    let* emails =
+      contacts |> CCList.map (messages_fn command.reason) |> CCResult.flatten_l
+    in
     let email_event =
       if command.notify_email
-      then [ Email.BulkSent (messages_fn command.reason) |> Pool_event.email ]
+      then [ Email.BulkSent emails |> Pool_event.email ]
       else []
     in
     (* TODO issue #149 implement this and then fix test *)

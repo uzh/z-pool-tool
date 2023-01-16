@@ -128,6 +128,18 @@ let rename_filter_column =
     |sql}
 ;;
 
+let remove_message_columns =
+  Sihl.Database.Migration.create_step
+    ~label:"rename filter column"
+    {sql|
+      ALTER TABLE pool_experiments
+      DROP COLUMN session_reminder_subject,
+      DROP COLUMN session_reminder_text,
+      DROP COLUMN invitation_subject,
+      DROP COLUMN invitation_text
+    |sql}
+;;
+
 let migration () =
   Sihl.Database.Migration.(
     empty "pool_experiments"
@@ -143,5 +155,6 @@ let migration () =
     |> add_step add_experiment_type_column
     |> add_step add_public_visibility_and_uninvited_signup_flags
     |> add_step make_filter_uuid_foreign_key
-    |> add_step rename_filter_column)
+    |> add_step rename_filter_column
+    |> add_step remove_message_columns)
 ;;

@@ -52,7 +52,9 @@ let update = Helpers.PartialUpdate.update
 let update_email req =
   let open Pool_common.Message in
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-  let result ({ Pool_context.database_label; query_language; _ } as context) =
+  let result
+    ({ Pool_context.database_label; query_language; language; _ } as context)
+    =
     let open Utils.Lwt_result.Infix in
     Utils.Lwt_result.map_error (fun msg ->
       HttpUtils.(
@@ -70,12 +72,28 @@ let update_email req =
            |> CCList.hd)
          |> Lwt_result.lift
        in
+       let%lwt token = Email.create_token database_label new_email in
        let* { Pool_context.Tenant.tenant; _ } =
          Pool_context.Tenant.find req |> Lwt_result.lift
        in
+       let* verification_mail =
+         let open Message_template in
+         EmailVerification.create
+           database_label
+           language
+           (Tenant tenant)
+           contact
+           new_email
+           token
+       in
        let* events =
          Command.RequestEmailValidation.(
-           handle ?allowed_email_suffixes tenant contact new_email
+           handle
+             ?allowed_email_suffixes
+             token
+             verification_mail
+             contact
+             new_email
            |> Lwt_result.lift)
        in
        Utils.Database.with_transaction database_label (fun () ->
@@ -92,7 +110,9 @@ let update_email req =
 
 let update_password req =
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-  let result ({ Pool_context.database_label; query_language; _ } as context) =
+  let result
+    ({ Pool_context.database_label; query_language; language; _ } as context)
+    =
     let open Utils.Lwt_result.Infix in
     let tags = Logger.req req in
     Utils.Lwt_result.map_error (fun msg ->
@@ -102,10 +122,17 @@ let update_password req =
        let* { Pool_context.Tenant.tenant; _ } =
          Pool_context.Tenant.find req |> Lwt_result.lift
        in
+       let* notification =
+         Message_template.PasswordChange.create
+           database_label
+           language
+           tenant
+           contact.Contact.user
+       in
        let* events =
          let open CCResult.Infix in
          Command.UpdatePassword.(
-           decode urlencoded >>= handle ~tags tenant contact)
+           decode urlencoded >>= handle ~tags contact notification)
          |> Lwt_result.lift
        in
        Utils.Database.with_transaction database_label (fun () ->

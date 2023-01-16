@@ -103,6 +103,7 @@ val verify : unverified t -> verified t
 val address : 'email t -> Pool_user.EmailAddress.t
 val user_id : 'email t -> Pool_common.Id.t
 val user_is_confirmed : 'email t -> bool
+val create : Pool_user.EmailAddress.t -> Sihl_user.t -> Token.t -> unverified t
 
 val find_unverified_by_user
   :  Pool_database.Label.t
@@ -124,6 +125,11 @@ val delete_unverified_by_user
   -> Pool_common.Id.t
   -> unit Lwt.t
 
+val create_token
+  :  Pool_database.Label.t
+  -> Pool_user.EmailAddress.t
+  -> Token.t Lwt.t
+
 module TemplateLabel : sig
   type t =
     | Boilerplate
@@ -141,24 +147,9 @@ module TemplateLabel : sig
 end
 
 type text_component = (string, string) CCPair.t
-type default
-
-val default_values_root : default
-val default_values_tenant : default
 
 type verification_event =
-  | Created of
-      Pool_user.EmailAddress.t
-      * Pool_common.Id.t
-      * Pool_user.Firstname.t
-      * Pool_user.Lastname.t
-      * Pool_common.Language.t
-      * email_layout
-  | Updated of
-      Pool_user.EmailAddress.t
-      * Sihl_user.t
-      * Pool_common.Language.t
-      * email_layout
+  | Created of Pool_user.EmailAddress.t * Token.t * Pool_common.Id.t
   | EmailVerified of unverified t
 
 val handle_verification_event
@@ -179,50 +170,9 @@ type confirmation_email =
 type event =
   | Sent of Sihl_email.t
   | BulkSent of Sihl_email.t list
-  | ResetPassword of Sihl_user.t * Pool_common.Language.t * email_layout
-  | ChangedPassword of Sihl_user.t * Pool_common.Language.t * email_layout
-  | AssignmentConfirmationSent of
-      Sihl_user.t * confirmation_email * email_layout
-  | InvitationSent of Sihl_user.t * text_component list * CustomTemplate.t
-  | InvitationBulkSent of
-      (Sihl_user.t * text_component list * CustomTemplate.t) list
-  | DefaultRestored of default
 
 val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
 val verification_event_name : verification_event -> string
-
-module Helper : sig
-  val layout_from_tenant : Pool_tenant.t -> email_layout
-  val root_layout : unit -> email_layout
-
-  val prepare_email
-    :  Pool_database.Label.t
-    -> Pool_common.Language.t
-    -> TemplateLabel.t
-    -> string
-    -> string
-    -> email_layout
-    -> (string * string) list
-    -> Sihl_email.t Lwt.t
-
-  val prepare_boilerplate_email
-    :  CustomTemplate.t
-    -> string
-    -> (string * string) list
-    -> Sihl_email.t
-
-  module ConfirmationEmail : sig
-    val create
-      :  Pool_database.Label.t
-      -> Pool_common.Language.t
-      -> email_layout
-      -> unverified t
-      -> Pool_user.Firstname.t option
-      -> Pool_user.Lastname.t option
-      -> TemplateLabel.t
-      -> Sihl_email.t Lwt.t
-  end
-end

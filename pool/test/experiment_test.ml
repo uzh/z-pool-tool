@@ -64,9 +64,6 @@ module Data = struct
       ; registration_disabled = false |> RegistrationDisabled.create
       ; allow_uninvited_signup = false |> AllowUninvitedSignup.create
       ; experiment_type = Some Pool_common.ExperimentType.Lab
-      ; invitation_template = None
-      ; session_reminder_subject = None
-      ; session_reminder_text = None
       ; session_reminder_lead_time = None
       ; created_at = Common.CreatedAt.create ()
       ; updated_at = Common.UpdatedAt.create ()
@@ -132,37 +129,4 @@ let delete_with_sessions () =
   in
   let expected = Error Pool_common.Message.ExperimentSessionCountNotZero in
   Test_utils.check_result expected events
-;;
-
-let urlencoded =
-  [ "title", [ "The Wallet Game" ]
-  ; "public_title", [ "the_wallet_game" ]
-  ; "description", [ "Description." ]
-  ]
-;;
-
-let create_with_missing_text_element additional error =
-  let open CCResult in
-  let events =
-    let open CCResult.Infix in
-    let open Cqrs_command.Experiment_command.Create in
-    urlencoded @ additional
-    |> Http_utils.format_request_boolean_values experiment_boolean_fields
-    |> decode
-    >>= handle
-  in
-  let expected = Error error in
-  Test_utils.check_result expected events
-;;
-
-let with_missing_invitation_text () =
-  create_with_missing_text_element
-    [ "invitation_subject", [ "Invitation Subject" ] ]
-    Pool_common.Message.InvitationSubjectAndTextRequired
-;;
-
-let with_missing_reminder_subject () =
-  create_with_missing_text_element
-    [ "reminder_text", [ "Session reminder text" ] ]
-    Pool_common.Message.ReminderSubjectAndTextRequired
 ;;

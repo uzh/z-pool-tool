@@ -14,6 +14,7 @@ type t =
   }
 
 val root : Label.t
+val is_root : Label.t -> bool
 val equal : t -> t -> bool
 val pp : Format.formatter -> t -> unit
 val create : string -> string -> (t, Pool_common.Message.error) result

@@ -38,29 +38,6 @@ module AllowUninvitedSignup : sig
     -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
 end
 
-module InvitationTemplate : sig
-  module Subject : sig
-    include Pool_common.Model.StringSig
-
-    val of_string : string -> t
-  end
-
-  module Text : sig
-    include Pool_common.Model.StringSig
-
-    val of_string : string -> t
-  end
-
-  type t =
-    { subject : Subject.t
-    ; text : Text.t
-    }
-
-  val create : string -> string -> (t, Pool_common.Message.error) result
-  val subject_value : t -> string
-  val text_value : t -> string
-end
-
 type t =
   { id : Id.t
   ; title : Title.t
@@ -71,10 +48,7 @@ type t =
   ; registration_disabled : RegistrationDisabled.t
   ; allow_uninvited_signup : AllowUninvitedSignup.t
   ; experiment_type : Pool_common.ExperimentType.t option
-  ; invitation_template : InvitationTemplate.t option
   ; session_reminder_lead_time : Pool_common.Reminder.LeadTime.t option
-  ; session_reminder_subject : Pool_common.Reminder.Subject.t option
-  ; session_reminder_text : Pool_common.Reminder.Text.t option
   ; created_at : Ptime.t
   ; updated_at : Ptime.t
   }
@@ -92,11 +66,7 @@ val create
   -> RegistrationDisabled.t
   -> AllowUninvitedSignup.t
   -> Pool_common.ExperimentType.t option
-  -> InvitationTemplate.Subject.t option
-  -> InvitationTemplate.Text.t option
   -> Pool_common.Reminder.LeadTime.t option
-  -> Pool_common.Reminder.Subject.t option
-  -> Pool_common.Reminder.Text.t option
   -> (t, Pool_common.Message.error) result
 
 type create =
@@ -107,11 +77,7 @@ type create =
   ; registration_disabled : RegistrationDisabled.t
   ; allow_uninvited_signup : AllowUninvitedSignup.t
   ; experiment_type : Pool_common.ExperimentType.t option
-  ; invitation_subject : InvitationTemplate.Subject.t option
-  ; invitation_text : InvitationTemplate.Text.t option
   ; session_reminder_lead_time : Pool_common.Reminder.LeadTime.t option
-  ; session_reminder_subject : Pool_common.Reminder.Subject.t option
-  ; session_reminder_text : Pool_common.Reminder.Text.t option
   }
 
 val equal_create : create -> create -> bool
@@ -181,8 +147,6 @@ val possible_participants : t -> Contact.t list Lwt.t
 val title_value : t -> string
 val public_title_value : t -> string
 val description_value : t -> string
-val session_reminder_subject_value : t -> string option
-val session_reminder_text_value : t -> string option
 val session_reminder_lead_time_value : t -> Ptime.span option
 val direct_registration_disabled_value : t -> bool
 val registration_disabled_value : t -> bool
