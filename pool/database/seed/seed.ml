@@ -30,4 +30,6 @@ module Tenant = struct
         Lwt.return_unit)
       db_pools
   ;;
+
+  let create_contacts db_label () = Seed_user.contacts db_label
 end
