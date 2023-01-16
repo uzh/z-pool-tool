@@ -51,6 +51,7 @@ let create_rand_persons n_persons =
         min_allowed
         max_allowed);
   let api_url =
+    (* NOTE: API returns object directly if only 1 is requested *)
     Format.asprintf
       "https://random-data-api.com/api/v2/users?size=%d"
       (max min_allowed (min max_allowed n_persons))
@@ -89,17 +90,22 @@ let create_persons db_label n_persons =
   in
   let rec persons_chunked acc =
     let current_count = length acc in
+    let log_amount current =
+      Logs.info (fun m ->
+        m "Seed: generating person data (%i/%i)" current n_persons)
+    in
     if current_count < n_persons
     then (
-      Logs.info (fun m ->
-        m "Seed: generating person data (%i/%i)" current_count n_persons);
+      log_amount current_count;
       let%lwt iter =
-        n_persons - current_count
+        max 2 (n_persons - current_count)
         |> generate_persons
         ||> flatten_filter_combine acc
       in
       persons_chunked iter)
-    else take_drop n_persons acc |> fst |> Lwt.return
+    else (
+      log_amount n_persons;
+      take_drop n_persons acc |> fst |> Lwt.return)
   in
   persons_chunked []
 ;;

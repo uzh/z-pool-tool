@@ -37,7 +37,7 @@ let tenant_data_clean =
     let%lwt db_pools = Command_utils.setup_databases () in
     let%lwt () =
       Lwt_list.iter_s
-        (fun pool -> Utils.Database.clean_all (Pool_database.Label.value pool))
+        CCFun.(Pool_database.Label.value %> Utils.Database.clean_all)
         db_pools
     in
     let%lwt () = Database.Tenant.Seed.create db_pools () in
