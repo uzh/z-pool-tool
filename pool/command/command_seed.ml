@@ -70,3 +70,15 @@ let tenant_seed_default =
     in
     Lwt.return_some ())
 ;;
+
+let tenant_data_contacts_specific =
+  let name = "seed.tenant.specific.contacts" in
+  let description =
+    "Seed 200 additional contacts (development data!) to specific tenant \
+     database"
+  in
+  Command_utils.make_pool_specific name description (fun pool ->
+    let%lwt () = Utils.Database.clean_all (Pool_database.Label.value pool) in
+    let%lwt () = Database.Tenant.Seed.create_contacts pool () in
+    Lwt.return_some ())
+;;

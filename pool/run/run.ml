@@ -9,6 +9,7 @@ let commands =
   ; Seed.tenant_data
   ; Seed.tenant_data_clean
   ; Seed.tenant_data_clean_specific
+  ; Seed.tenant_data_contacts_specific
   ; Seed.tenant_seed_default
   ; Tenant_pool.create_tenant_pool
   ; Contact.sign_up
