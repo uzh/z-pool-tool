@@ -111,8 +111,8 @@ type email_verified =
 (* TODO hide private constructors if possible *)
 (* Don't use these private constructors *)
 (* They are needed so the typechecker understands they are disjoint *)
-type unverified = private XUnverifiedP [@@deriving eq, show]
-type verified = private XVerifiedP [@@deriving eq, show]
+type unverified = private XUnverifiedP
+type verified = private XVerifiedP
 
 type _ t =
   | Unverified : email_unverified -> unverified t

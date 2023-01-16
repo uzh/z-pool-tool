@@ -227,7 +227,7 @@ module Admin = struct
     let filter =
       let open Handler.Admin.Filter in
       let specific =
-        [ get "edit" ~middlewares:[ Access.update ] edit
+        [ get "/edit" ~middlewares:[ Access.update ] edit
         ; post "" ~middlewares:[ Access.update ] update_template
         ]
       in
@@ -243,7 +243,7 @@ module Admin = struct
     let message_templates =
       let open Handler.Admin.MessageTemplate in
       let specific =
-        [ get "edit" ~middlewares:[ Access.update ] edit
+        [ get "/edit" ~middlewares:[ Access.update ] edit
         ; post "" ~middlewares:[ Access.update ] update
         ]
       in
