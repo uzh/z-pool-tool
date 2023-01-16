@@ -87,7 +87,7 @@ let create_persons db_label n_persons =
     %> map sum
     %> Lwt_list.map_s create_rand_persons
   in
-  let rec persons_chunked acc n_persons =
+  let rec persons_chunked acc =
     let current_count = length acc in
     if current_count < n_persons
     then (
@@ -98,10 +98,10 @@ let create_persons db_label n_persons =
         |> generate_persons
         ||> flatten_filter_combine acc
       in
-      persons_chunked iter n_persons)
+      persons_chunked iter)
     else take_drop n_persons acc |> fst |> Lwt.return
   in
-  persons_chunked [] n_persons
+  persons_chunked []
 ;;
 
 let admins db_label =
