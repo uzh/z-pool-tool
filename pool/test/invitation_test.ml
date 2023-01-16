@@ -28,9 +28,7 @@ let create () =
     InvitationCommand.Create.handle command
   in
   let expected =
-    let email =
-      Matcher_test.create_message experiment contact |> CCResult.get_exn
-    in
+    let email = Matcher_test.create_message contact |> CCResult.get_exn in
     Ok
       [ Invitation.(Created ([ contact ], experiment)) |> Pool_event.invitation
       ; Email.BulkSent [ email ] |> Pool_event.email

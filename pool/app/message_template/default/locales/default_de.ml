@@ -104,10 +104,18 @@ let experiment_invitation =
   let label = Label.ExperimentInvitation in
   let email_text =
     [ p [ txt "Wir möchten Sie zu einem bevorstehenden Experiment einladen:" ]
-    ; p [ txt "{experimentPublicTitle}" ]
+    ; p [ strong [ txt "{experimentPublicTitle}" ] ]
     ; p [ txt "{experimentDescription}" ]
-    ; p [ txt "Das Experiment wird an folgenden Daten durchgeführt:" ]
-    ; p [ txt "Sessions......" ]
+    ; p
+        [ txt "Informationen zu den Sessions finden Sie "
+        ; a ~a:[ a_href "{experimentUrl}" ] [ txt "hier" ]
+        ; txt "."
+        ]
+    ; p
+        [ txt
+            "Falls der obige Link nicht funktioniert, kopiere bitte den \
+             folgenden manuell in deinen Browser: {experimentUrl}"
+        ]
     ]
     |> add_salutation
     |> html_to_string
@@ -236,7 +244,7 @@ let password_reset =
 
 {resetUrl}
 
-Wenn du dies nicht beantragt hast, kannst du diese E-Mail ignorieren oder mit und Kontakt aufnehmen. Der Link ist für die nächste Stunde valid, anschliessend muss ein neuer beantragt werden.|}
+Wenn du dies nicht beantragt hast, kannst du diese E-Mail ignorieren oder mit und Kontakt aufnehmen. Der Link ist für die nächste Stunde gültig, anschliessend muss ein neuer beantragt werden.|}
     |> SmsText.of_string
   in
   { id = Id.create ()
@@ -300,9 +308,10 @@ let session_cancellation =
     [ p
         [ txt
             "Die folgende Session, zu der du angemeldet warst, wurde abgesagt:"
-        ; br ()
-        ; txt "{sessionOverview}"
         ]
+    ; p [ txt "{sessionOverview}" ]
+    ; p [ txt "Grund:" ]
+    ; p [ txt "{reason}" ]
     ]
     |> add_salutation
     |> html_to_string
@@ -366,9 +375,9 @@ let session_reschedule =
     ; p
         [ txt "Der neue Zeitpunkt ist:"
         ; br ()
-        ; txt "{newSessionStart}"
+        ; txt "{newStart}"
         ; br ()
-        ; txt "{newSessionDuration}"
+        ; txt "{newDuration}"
         ]
     ]
     |> add_salutation
@@ -384,8 +393,8 @@ let session_reschedule =
 {sessionOverview}
 
 Neu:
-{newSessionStart}
-{newSessionDuration}
+{newStart}
+{newDuration}
 |}
     |> SmsText.of_string
   in

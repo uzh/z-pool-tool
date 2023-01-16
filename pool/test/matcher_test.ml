@@ -4,9 +4,7 @@ module Model = Test_utils.Model
 
 let expected_events experiment contacts create_message =
   let emails =
-    CCList.map (create_message experiment) contacts
-    |> CCResult.flatten_l
-    |> CCResult.get_exn
+    CCList.map create_message contacts |> CCResult.flatten_l |> CCResult.get_exn
   in
   Ok
     ([ Invitation.Created (contacts, experiment) |> Pool_event.invitation
@@ -18,7 +16,7 @@ let expected_events experiment contacts create_message =
         contacts)
 ;;
 
-let create_message (_ : Experiment.t) (_ : Contact.t) =
+let create_message (_ : Contact.t) =
   Sihl_email.
     { sender = "it@econ.uzh.ch"
     ; recipient = "contact@econ.uzh.ch"
@@ -48,8 +46,9 @@ let create_invitations_repo _ () =
   let pool = Test_utils.Data.database_label in
   let tenant = Tenant_test.Data.full_tenant |> CCResult.get_exn in
   let%lwt () =
-    let%lwt create_message =
-      Message_template.ExperimentInvitation.prepare tenant ||> CCResult.get_exn
+    let create_message experiment =
+      Message_template.ExperimentInvitation.prepare tenant experiment
+      ||> CCResult.get_exn
     in
     Mailing.find_current pool
     >|> Lwt_list.iter_s (fun ({ Mailing.rate; _ } as mailing : Mailing.t) ->
@@ -61,6 +60,7 @@ let create_invitations_repo _ () =
               (Mailing.Rate.value rate)
             ||> CCResult.get_exn
           in
+          let%lwt create_message = create_message experiment in
           let events =
             { mailing; experiment; contacts; create_message }
             |> CCList.pure
@@ -68,7 +68,7 @@ let create_invitations_repo _ () =
           in
           let expected =
             let emails =
-              CCList.map (create_message experiment) contacts
+              CCList.map create_message contacts
               |> CCList.all_ok
               |> CCResult.get_exn
             in

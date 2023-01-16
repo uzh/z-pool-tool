@@ -178,9 +178,8 @@ module ExperimentInvitation : sig
 
   val prepare
     :  Pool_tenant.t
-    -> ( Experiment.t
-         -> Contact.t
-         -> (Sihl_email.t, Pool_common.Message.error) result
+    -> Experiment.t
+    -> ( Contact.t -> (Sihl_email.t, Pool_common.Message.error) result
        , Pool_common.Message.error )
        result
        Lwt.t
@@ -257,6 +256,17 @@ module SessionReminder : sig
     -> Session.t
     -> Contact.t
     -> (Sihl_email.t, Pool_common.Message.error) result Lwt.t
+
+  val prepare
+    :  Pool_database.Label.t
+    -> Pool_tenant.t
+    -> Pool_common.Language.t list
+    -> Experiment.t
+    -> Session.t
+    -> ( Contact.t -> (Sihl_email.t, Pool_common.Message.error) result
+       , Pool_common.Message.error )
+       result
+       Lwt.t
 end
 
 module SessionReschedule : sig

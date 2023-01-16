@@ -8,9 +8,7 @@ module Create : sig
     ; contacts : Contact.t list
     ; invited_contacts : Pool_common.Id.t list
     ; create_message :
-        Experiment.t
-        -> Contact.t
-        -> (Sihl_email.t, Pool_common.Message.error) result
+        Contact.t -> (Sihl_email.t, Pool_common.Message.error) result
     }
 
   val handle
@@ -23,9 +21,7 @@ end = struct
     ; contacts : Contact.t list
     ; invited_contacts : Pool_common.Id.t list
     ; create_message :
-        Experiment.t
-        -> Contact.t
-        -> (Sihl_email.t, Pool_common.Message.error) result
+        Contact.t -> (Sihl_email.t, Pool_common.Message.error) result
     }
 
   let handle
@@ -44,7 +40,7 @@ end = struct
         contacts
     in
     let errors = CCList.map CCFun.(Contact.id %> Pool_common.Id.value) errors in
-    let emails = CCList.map (create_message experiment) contacts in
+    let emails = CCList.map create_message contacts in
     if CCList.is_empty errors |> not
     then Error Pool_common.Message.(AlreadyInvitedToExperiment errors)
     else (

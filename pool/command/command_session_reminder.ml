@@ -6,21 +6,22 @@ let create_reminders pool tenant sys_languages session =
   let* assignments =
     Assignment.find_uncanceled_by_session pool session.Session.id
   in
+  let* create_message =
+    Message_template.SessionReminder.prepare
+      pool
+      tenant
+      sys_languages
+      experiment
+      session
+  in
   let emails =
-    Lwt_list.map_s
+    CCList.map
       (fun (assignment : Assignment.t) ->
         let contact = assignment.Assignment.contact in
-        Message_template.SessionReminder.create
-          pool
-          tenant
-          sys_languages
-          experiment
-          session
-          contact)
+        create_message contact)
       assignments
   in
-  let open Utils.Lwt_result.Infix in
-  emails ||> CCResult.flatten_l
+  emails |> CCResult.flatten_l |> Lwt_result.lift
 ;;
 
 let send_tenant_reminder pool =

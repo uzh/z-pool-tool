@@ -6,9 +6,7 @@ module Run : sig
     ; experiment : Experiment.t
     ; contacts : Contact.t list
     ; create_message :
-        Experiment.t
-        -> Contact.t
-        -> (Sihl_email.t, Pool_common.Message.error) result
+        Contact.t -> (Sihl_email.t, Pool_common.Message.error) result
     }
 
   val handle : t list -> (Pool_event.t list, Pool_common.Message.error) result
@@ -22,9 +20,7 @@ end = struct
     ; experiment : Experiment.t
     ; contacts : Contact.t list
     ; create_message :
-        Experiment.t
-        -> Contact.t
-        -> (Sihl_email.t, Pool_common.Message.error) result
+        Contact.t -> (Sihl_email.t, Pool_common.Message.error) result
     }
 
   let handle mailings =

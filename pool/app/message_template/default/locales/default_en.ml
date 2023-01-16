@@ -95,10 +95,18 @@ let experiment_invitation =
   let label = Label.ExperimentInvitation in
   let email_text =
     [ p [ txt "We would like to invite you to the following experiment:" ]
-    ; p [ txt "{experimentPublicTitle}" ]
+    ; p [ strong [ txt "{experimentPublicTitle}" ] ]
     ; p [ txt "{experimentDescription}" ]
-    ; p [ txt "The experiment is performed on the following dates:" ]
-    ; p [ txt "Sessions......" ]
+    ; p
+        [ txt "Information about the sessions can be found "
+        ; a ~a:[ a_href "{experimentUrl}" ] [ txt "here" ]
+        ; txt "."
+        ]
+    ; p
+        [ txt
+            "If the above link doesn't work, please copy the following link \
+             into your browser manually: {experimentUrl}"
+        ]
     ]
     |> add_salutation
     |> html_to_string
@@ -284,11 +292,10 @@ If this action wasn`t performed by you, please ignore this email or reply to let
 let session_cancellation =
   let label = Label.SessionCancellation in
   let email_text =
-    [ p
-        [ txt "The following session you have registered to was canceled:"
-        ; br ()
-        ; txt "{sessionOverview}"
-        ]
+    [ p [ txt "The following session you have registered to was canceled:" ]
+    ; p [ txt "{sessionOverview}" ]
+    ; p [ txt "Reason:" ]
+    ; p [ txt "{reason}" ]
     ]
     |> add_salutation
     |> html_to_string
@@ -352,9 +359,9 @@ let session_reschedule =
     ; p
         [ txt "The new date and time is:"
         ; br ()
-        ; txt "{newSessionStart}"
+        ; txt "{newStart}"
         ; br ()
-        ; txt "{newSessionDuration}"
+        ; txt "{newDuration}"
         ]
     ]
     |> add_salutation
@@ -368,8 +375,8 @@ let session_reschedule =
 {sessionOverview}
 
 New:
-{newSessionStart}
-{newSessionDuration}
+{newStart}
+{newDuration}
 |}
     |> SmsText.of_string
   in

@@ -8,10 +8,11 @@ let find = Repo.find
 let all_default = Repo.all_default
 let find_all_of_entity_by_label = Repo.find_all_of_entity_by_label
 
-let find_all_by_label_and_languages pool languages label =
+let find_all_by_label_and_languages ?entity_uuid pool languages label =
   let open Utils.Lwt_result.Infix in
   Lwt_list.map_s
-    (fun lang -> Repo.find_by_label pool lang label >|+ CCPair.make lang)
+    (fun lang ->
+      Repo.find_by_label ?entity_uuid pool lang label >|+ CCPair.make lang)
     languages
   ||> CCResult.flatten_l
 ;;
@@ -132,17 +133,21 @@ module ExperimentInvitation = struct
     @ experiment_params experiment
   ;;
 
-  let prepare tenant =
+  let prepare tenant experiment =
     let open Message_utils in
     let open Utils.Lwt_result.Infix in
     let pool = tenant.Pool_tenant.database_label in
     let%lwt sys_langs = Settings.find_languages pool in
     let* templates =
-      find_all_by_label_and_languages pool sys_langs Label.SessionReschedule
+      find_all_by_label_and_languages
+        ~entity_uuid:Experiment.(Id.to_common experiment.Experiment.id)
+        pool
+        sys_langs
+        Label.ExperimentInvitation
     in
     let%lwt tenant_url = Pool_tenant.Url.of_pool pool in
     let layout = layout_from_tenant tenant in
-    let fnc experiment (contact : Contact.t) =
+    let fnc (contact : Contact.t) =
       let open CCResult in
       let* lang, template = template_by_contact sys_langs templates contact in
       let params = email_params experiment tenant_url contact in
@@ -271,7 +276,7 @@ module SessionCancellation = struct
     let open Message_utils in
     let open Utils.Lwt_result.Infix in
     let* templates =
-      find_all_by_label_and_languages pool sys_langs Label.SessionReschedule
+      find_all_by_label_and_languages pool sys_langs Label.SessionCancellation
     in
     let layout = layout_from_tenant tenant in
     let fnc reason (contact : Contact.t) =
@@ -298,7 +303,14 @@ module SessionReminder = struct
     let* language =
       message_langauge system_languages contact |> Lwt_result.lift
     in
-    let* template = Repo.find_by_label pool language Label.SessionReminder in
+    (* TODO: Fallback to experiment if session templates undefined *)
+    let* template =
+      Repo.find_by_label
+        ~entity_uuid:Experiment.(Id.to_common experiment.Experiment.id)
+        pool
+        language
+        Label.SessionReminder
+    in
     let layout = layout_from_tenant tenant in
     let params = email_params language experiment session contact in
     prepare_email
@@ -308,6 +320,28 @@ module SessionReminder = struct
       layout
       params
     |> Lwt_result.return
+  ;;
+
+  let prepare pool tenant sys_langs experiment session =
+    let open Message_utils in
+    let open Utils.Lwt_result.Infix in
+    let* templates =
+      (* TODO: Fallback to experiment if session templates undefined *)
+      find_all_by_label_and_languages
+        ~entity_uuid:Experiment.(Id.to_common experiment.Experiment.id)
+        pool
+        sys_langs
+        Label.SessionReminder
+    in
+    let layout = layout_from_tenant tenant in
+    let fnc contact =
+      let open CCResult in
+      let* lang, template = template_by_contact sys_langs templates contact in
+      let params = email_params lang experiment session contact in
+      prepare_email lang template (Contact.email_address contact) layout params
+      |> CCResult.pure
+    in
+    Lwt_result.return fnc
   ;;
 end
 

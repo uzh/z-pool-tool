@@ -111,7 +111,7 @@ let create req =
            experiment
        in
        let* create_message =
-         Message_template.ExperimentInvitation.prepare tenant
+         Message_template.ExperimentInvitation.prepare tenant experiment
        in
        let tags = Logger.req req in
        let%lwt events =
