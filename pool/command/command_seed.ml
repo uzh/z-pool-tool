@@ -78,7 +78,6 @@ let tenant_data_contacts_specific =
      database"
   in
   Command_utils.make_pool_specific name description (fun pool ->
-    let%lwt () = Utils.Database.clean_all (Pool_database.Label.value pool) in
     let%lwt () = Database.Tenant.Seed.create_contacts pool () in
     Lwt.return_some ())
 ;;
