@@ -75,14 +75,16 @@ let update pool t =
   Utils.Database.exec (Database.Label.value pool) update_request t
 ;;
 
-let find_by_label pool ?entity_uuid language label =
+(* The template are prioritised according to the entity_uuids list, from left to
+   right. If none are found, the default template will be returned. *)
+let find_by_label pool ?entity_uuids language label =
   let open Utils.Lwt_result.Infix in
   let open Caqti_request.Infix in
   let where =
     Format.asprintf
       {sql|
-    pool_message_templates.label = ?
-    AND pool_message_templates.language = ?
+    pool_message_templates.label = $1
+    AND pool_message_templates.language = $2
     %s
     |sql}
   in
@@ -93,21 +95,38 @@ let find_by_label pool ?entity_uuid language label =
       |> add Caqti_type.string (Pool_common.Language.show language))
   in
   let where, dyn =
-    match entity_uuid with
-    | None ->
+    match entity_uuids with
+    | None | Some [] ->
       where {sql| AND pool_message_templates.entity_uuid IS NULL |sql}, dyn
-    | Some entity_uuid ->
-      ( where
+    | Some entity_uuids ->
+      let id_list, dyn =
+        CCList.foldi
+          (fun (id_list, dyn) i entity_uuid ->
+            let index = i + 3 in
+            ( Format.asprintf "UNHEX(REPLACE($%i, '-', ''))" index :: id_list
+            , dyn
+              |> Dynparam.add
+                   Caqti_type.string
+                   (Pool_common.Id.value entity_uuid) ))
+          ([], dyn)
+          entity_uuids
+      in
+      id_list
+      |> CCString.concat ","
+      |> fun ids ->
+      ( Format.asprintf
           {sql| AND(
                   pool_message_templates.entity_uuid IS NULL
                   OR
-                  pool_message_templates.entity_uuid = UNHEX(REPLACE(?, '-', '')))
+                  pool_message_templates.entity_uuid IN (%s))
                 ORDER BY
-                pool_message_templates.entity_uuid DESC
+                FIELD(entity_uuid, %s) DESC
                 LIMIT 1
               |sql}
-      , dyn |> Dynparam.add Caqti_type.string (Pool_common.Id.value entity_uuid)
-      )
+          ids
+          ids
+        |> where
+      , dyn )
   in
   let (Dynparam.Pack (pt, pv)) = dyn in
   let request =

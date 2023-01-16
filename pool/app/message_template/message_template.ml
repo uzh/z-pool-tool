@@ -8,11 +8,11 @@ let find = Repo.find
 let all_default = Repo.all_default
 let find_all_of_entity_by_label = Repo.find_all_of_entity_by_label
 
-let find_all_by_label_and_languages ?entity_uuid pool languages label =
+let find_all_by_label_and_languages ?entity_uuids pool languages label =
   let open Utils.Lwt_result.Infix in
   Lwt_list.map_s
     (fun lang ->
-      Repo.find_by_label ?entity_uuid pool lang label >|+ CCPair.make lang)
+      Repo.find_by_label ?entity_uuids pool lang label >|+ CCPair.make lang)
     languages
   ||> CCResult.flatten_l
 ;;
@@ -140,7 +140,7 @@ module ExperimentInvitation = struct
     let%lwt sys_langs = Settings.find_languages pool in
     let* templates =
       find_all_by_label_and_languages
-        ~entity_uuid:Experiment.(Id.to_common experiment.Experiment.id)
+        ~entity_uuids:[ Experiment.(Id.to_common experiment.Experiment.id) ]
         pool
         sys_langs
         Label.ExperimentInvitation
@@ -303,10 +303,12 @@ module SessionReminder = struct
     let* language =
       message_langauge system_languages contact |> Lwt_result.lift
     in
-    (* TODO: Fallback to experiment if session templates undefined *)
     let* template =
       Repo.find_by_label
-        ~entity_uuid:Experiment.(Id.to_common experiment.Experiment.id)
+        ~entity_uuids:
+          [ session.Session.id
+          ; Experiment.(Id.to_common experiment.Experiment.id)
+          ]
         pool
         language
         Label.SessionReminder
@@ -326,9 +328,11 @@ module SessionReminder = struct
     let open Message_utils in
     let open Utils.Lwt_result.Infix in
     let* templates =
-      (* TODO: Fallback to experiment if session templates undefined *)
       find_all_by_label_and_languages
-        ~entity_uuid:Experiment.(Id.to_common experiment.Experiment.id)
+        ~entity_uuids:
+          [ session.Session.id
+          ; Experiment.(Id.to_common experiment.Experiment.id)
+          ]
         pool
         sys_langs
         Label.SessionReminder
