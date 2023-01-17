@@ -20,7 +20,10 @@ let from_root_only () =
 
 let require_root () =
   let fail_action req =
-    Http_utils.invalid_session_redirect ~login_path:"/root/login" req None
+    Http_utils.invalid_session_redirect
+      ~login_path:(CCFun.flip Http_utils.intended_of_request "/root/login")
+      req
+      None
   in
   let filter handler req =
     let context = Pool_context.find req in

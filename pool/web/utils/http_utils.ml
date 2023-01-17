@@ -8,6 +8,33 @@ type json_response =
   }
 [@@deriving yojson]
 
+let find_intended_opt = Sihl.Web.Request.query "location"
+
+let intended_to_url url intended =
+  let open CCFun in
+  let open Uri in
+  let key = "location" in
+  of_string url
+  |> flip remove_query_param key
+  |> (fun uri ->
+       if CCString.equal (Uri.path uri) intended
+       then uri
+       else add_query_param' uri (key, intended))
+  |> to_string
+;;
+
+let intended_or ?default url =
+  let open CCOption in
+  let default = get_or ~default:url default in
+  map_or ~default (intended_to_url url)
+;;
+
+let intended_of_request ({ Sihl.Web.Request.target; _ } as req) =
+  match find_intended_opt req with
+  | Some intended -> CCFun.flip intended_to_url intended
+  | None -> CCFun.flip intended_to_url target
+;;
+
 let user_from_session db_pool req : Sihl_user.t option Lwt.t =
   let ctx = Pool_tenant.to_ctx db_pool in
   Service.User.Web.user_from_session ~ctx req
@@ -284,12 +311,14 @@ let externalize_path_with_lang lang path =
 
 let add_line_breaks = Utils.Html.handle_line_breaks Tyxml.Html.span
 
-let invalid_session_redirect ?(login_path = "/login") req query_lang =
+let invalid_session_redirect
+  ?(login_path = fun req -> "/login" |> intended_of_request req)
+  req
+  query_lang
+  =
   redirect_to_with_actions
-    (path_with_language query_lang login_path)
-    [ Message.set ~error:[ Pool_common.Message.SessionInvalid ]
-    ; Sihl.Web.Flash.set [ "_redirect_to", req.Rock.Request.target ]
-    ]
+    (path_with_language query_lang (login_path req))
+    [ Message.set ~error:[ Pool_common.Message.SessionInvalid ] ]
 ;;
 
 let find_id encode field req =

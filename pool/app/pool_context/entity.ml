@@ -76,10 +76,10 @@ let user_of_sihl_user database_label user =
     ||> CCOption.map_or ~default:Guest contact
 ;;
 
-let dashboard_path = function
+let dashboard_path ?(guest = "/index") = function
   | Admin _ -> "/admin/dashboard"
   | Contact _ -> "/dashboard"
-  | Guest -> "/index"
+  | Guest -> guest
 ;;
 
 let find_authenticatable { user; database_label; _ } =

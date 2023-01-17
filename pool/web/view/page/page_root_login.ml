@@ -2,8 +2,11 @@ open Tyxml.Html
 open Component.Input
 module Message = Pool_common.Message
 
-let login Pool_context.{ language; csrf; _ } =
+let login ?intended Pool_context.{ language; csrf; _ } =
   let input_element = input_element language in
+  let action =
+    HttpUtils.intended_or "/root/login" intended |> Sihl.Web.externalize_path
+  in
   div
     ~a:[ a_class [ "trim"; "narrow" ] ]
     [ div
@@ -12,11 +15,7 @@ let login Pool_context.{ language; csrf; _ } =
             ~a:[ a_class [ "heading-1" ] ]
             [ txt Pool_common.(Utils.text_to_string language I18n.LoginTitle) ]
         ; form
-            ~a:
-              [ a_action (Sihl.Web.externalize_path "/root/login")
-              ; a_method `Post
-              ; a_class [ "stack" ]
-              ]
+            ~a:[ a_action action; a_method `Post; a_class [ "stack" ] ]
             [ csrf_element csrf ()
             ; input_element `Text Message.Field.Email
             ; input_element `Password Message.Field.Password

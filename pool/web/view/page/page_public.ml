@@ -7,10 +7,13 @@ let txt_to_string lang m = [ txt (Pool_common.Utils.text_to_string lang m) ]
 
 let login_form
   ?(hide_signup = false)
+  ?intended
+  ?flash_fetcher
   Pool_context.{ language; query_language; csrf; _ }
   =
   let open Pool_common in
   let externalize = HttpUtils.externalize_path_with_lang query_language in
+  let action = HttpUtils.intended_or "/login" intended |> externalize in
   let reset_password =
     a
       ~a:[ a_href (externalize "/request-reset-password") ]
@@ -27,13 +30,9 @@ let login_form
   div
     ~a:[ a_class [ "stack" ] ]
     [ form
-        ~a:
-          [ a_action (externalize "/login")
-          ; a_method `Post
-          ; a_class [ "stack" ]
-          ]
+        ~a:[ a_action action; a_method `Post; a_class [ "stack" ] ]
         [ csrf_element csrf ()
-        ; input_element language `Text Message.Field.Email
+        ; input_element ?flash_fetcher language `Text Message.Field.Email
         ; input_element language `Password Message.Field.Password
         ; div
             ~a:[ a_class [ "flexrow"; "align-center"; "flex-gap" ] ]
@@ -134,14 +133,14 @@ let index
     ]
 ;;
 
-let login Pool_context.({ language; _ } as context) =
+let login ?intended Pool_context.({ language; _ } as context) flash_fetcher =
   let txt_to_string = txt_to_string language in
   div
     ~a:[ a_class [ "trim"; "narrow"; "safety-margin" ] ]
     [ h1
         ~a:[ a_class [ "heading-1" ] ]
         (txt_to_string Pool_common.I18n.LoginTitle)
-    ; login_form context
+    ; login_form ?intended ~flash_fetcher context
     ]
 ;;
 

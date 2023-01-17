@@ -1,17 +1,20 @@
 let require_user_type_of (user_type : Pool_context.UserType.t list) =
   let filter handler req =
     let open Utils.Lwt_result.Infix in
-    let%lwt result =
-      req
-      |> Pool_context.find
-      |> Lwt_result.lift
-      >|- (fun _ -> "/not-found")
-      >== fun { Pool_context.user; _ } ->
+    let validate_user_type { Pool_context.user; _ } =
       if Pool_context.UserType.user_in user_type user
       then Ok ()
-      else Error (Pool_context.dashboard_path user)
+      else
+        Error
+          (Pool_context.dashboard_path
+             ~guest:(Http_utils.intended_of_request req "/login")
+             user)
     in
-    match result with
+    Pool_context.find req
+    |> Lwt_result.lift
+    >|- (fun _ -> "/not-found")
+    >== validate_user_type
+    >|> function
     | Ok _ -> handler req
     | Error path -> Http_utils.redirect_to path
   in
