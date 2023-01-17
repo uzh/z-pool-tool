@@ -47,40 +47,40 @@ let find_all_public_by_contact_request =
   let not_assigned =
     {sql|
     NOT EXISTS (
-				SELECT
-					1 FROM pool_assignments
-				WHERE
-					pool_assignments.contact_id = (
-						SELECT
-							id FROM pool_contacts
-						WHERE
-							user_uuid = UNHEX(REPLACE($1, '-', '')))
-						AND pool_assignments.session_id IN(
-							SELECT
-								id FROM pool_sessions
-							WHERE
-								pool_sessions.experiment_uuid = pool_experiments.uuid))
+        SELECT
+          1 FROM pool_assignments
+        WHERE
+          pool_assignments.contact_id = (
+            SELECT
+              id FROM pool_contacts
+            WHERE
+              user_uuid = UNHEX(REPLACE($1, '-', '')))
+            AND pool_assignments.session_id IN(
+              SELECT
+                id FROM pool_sessions
+              WHERE
+                pool_sessions.experiment_uuid = pool_experiments.uuid))
       |sql}
   in
   let not_on_waitinglist =
     {sql|
     NOT EXISTS (
-				SELECT
-					1 FROM pool_waiting_list
-				WHERE
-          pool_waiting_list.contact_id = (
-						SELECT
-							id FROM pool_contacts
-						WHERE
-							user_uuid = UNHEX(REPLACE($1, '-', '')))
-						AND pool_waiting_list.experiment_id = pool_experiments.id)
+      SELECT
+        1 FROM pool_waiting_list
+      WHERE
+        pool_waiting_list.contact_id = (
+          SELECT
+            id FROM pool_contacts
+          WHERE
+            user_uuid = UNHEX(REPLACE($1, '-', '')))
+          AND pool_waiting_list.experiment_id = pool_experiments.id)
       |sql}
   in
   let is_invited =
     {sql| (pool_invitations.contact_id = (SELECT id FROM pool_contacts WHERE user_uuid = UNHEX(REPLACE($1, '-', '')))) |sql}
   in
   Format.asprintf
-    "%s WHERE %s AND %s AND (%s) AND (%s OR %s)"
+    "%s WHERE %s AND %s AND %s AND (%s OR %s)"
     pool_invitations_left_join
     not_assigned
     not_on_waitinglist
