@@ -175,6 +175,11 @@ val find_all_public_by_contact
   -> Contact.t
   -> Public.t list Lwt.t
 
+val find_where_contact_is_on_waitinglist
+  :  Pool_database.Label.t
+  -> Contact.t
+  -> Public.t list Lwt.t
+
 val session_count : Pool_database.Label.t -> Id.t -> int Lwt.t
 val possible_participant_count : t -> int Lwt.t
 val possible_participants : t -> Contact.t list Lwt.t
@@ -190,7 +195,7 @@ val allow_uninvited_signup_value : t -> bool
 
 module Repo : sig
   module Public : sig
-    val select_from_experiments_sql : string -> string
+    val select_from_experiments_sql : ?distinct:bool -> string -> string
 
     module Entity : sig
       val t : Public.t Caqti_type.t

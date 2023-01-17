@@ -1,4 +1,7 @@
 type t =
+  | Canceled
+  | ContactWaitingListEmpty
+  | ContactWaitingListTitle
   | DashboardTitle
   | DontHaveAnAccount
   | EmailConfirmationNote
@@ -28,6 +31,7 @@ type t =
   | NoEntries of Entity_message.Field.t
   | NotifyVia
   | OurPartners
+  | ProfileCompletionText
   | ProfileCompletionTitle
   | RateTotalSent of int
   | Reminder

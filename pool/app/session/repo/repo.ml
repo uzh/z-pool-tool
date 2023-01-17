@@ -181,7 +181,6 @@ module Sql = struct
     ||> CCOption.to_result Pool_common.Message.(NotFound Field.Session)
   ;;
 
-  (* TODO[timhub]: Filter only by closed at or add start > now? *)
   let find_public_upcoming_by_contact_request =
     let open Caqti_request.Infix in
     {sql|
@@ -189,6 +188,8 @@ module Sql = struct
         ON pool_assignments.session_id = pool_sessions.id
       WHERE
         pool_sessions.closed_at IS NULL
+      AND
+        pool_sessions.start > NOW()
       AND
         pool_assignments.contact_id = (SELECT id FROM pool_contacts WHERE pool_contacts.user_uuid = UNHEX(REPLACE(?, '-', '')))
       ORDER BY
@@ -524,7 +525,7 @@ let find_upcoming_public_by_contact pool contact_id =
   Sql.find_public_upcoming_by_contact pool contact_id
   >|> Lwt_list.map_s (location_to_public_repo_entity pool)
   ||> CCResult.flatten_l
-  >|+ group_and_sort
+  >|+ group_and_sort_keep_followups
   >>= fun lst ->
   lst
   |> Lwt_list.map_s (fun (parent, follow_ups) ->

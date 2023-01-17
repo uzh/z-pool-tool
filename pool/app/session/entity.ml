@@ -246,6 +246,30 @@ module Public = struct
     |> CCList.map (fun (_, (p, fs)) -> p, CCList.sort compare_start fs)
     |> CCList.sort (fun (f1, _) (f2, _) -> compare_start f1 f2)
   ;;
+
+  let group_and_sort_keep_followups sessions =
+    let parents, follow_ups =
+      CCList.fold_left
+        (fun (parents, follow_ups) (s : t) ->
+          let add_parent (s : t) = parents @ [ s.id, (s, []) ], follow_ups in
+          match s.follow_up_to with
+          | None -> add_parent s
+          | Some id ->
+            (match
+               CCList.find_opt
+                 (fun (parent, _) -> Pool_common.Id.equal parent id)
+                 parents
+             with
+             | None -> add_parent s
+             | Some _ -> parents, follow_ups @ [ id, s ]))
+        ([], [])
+        sessions
+    in
+    follow_ups
+    |> CCList.fold_left add_follow_ups_to_parents parents
+    |> CCList.map (fun (_, (p, fs)) -> p, CCList.sort compare_start fs)
+    |> CCList.sort (fun (f1, _) (f2, _) -> compare_start f1 f2)
+  ;;
 end
 
 let to_public

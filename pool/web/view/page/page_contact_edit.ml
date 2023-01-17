@@ -112,13 +112,6 @@ let personal_details
             contact
             custom_fields
             is_admin
-        ; p
-            [ a
-                ~a:[ a_href (Sihl.Web.externalize_path "/user") ]
-                [ txt
-                    Pool_common.(Utils.control_to_string language Message.Back)
-                ]
-            ]
         ]
     ]
   |> contact_profile_layout language Pool_common.I18n.PersonalDetails
@@ -213,11 +206,6 @@ let login_information
     [ div
         ~a:[ a_class [ "grid-col-2"; "gap-lg" ] ]
         [ email_form; password_form ]
-    ; p
-        [ a
-            ~a:[ a_href (Sihl.Web.externalize_path "/user") ]
-            [ txt Pool_common.(Utils.control_to_string language Message.Back) ]
-        ]
     ]
   |> contact_profile_layout language Pool_common.I18n.LoginInformation
 ;;

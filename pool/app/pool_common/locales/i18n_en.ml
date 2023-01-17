@@ -1,6 +1,9 @@
 open Entity_i18n
 
 let to_string = function
+  | Canceled -> "Canceled"
+  | ContactWaitingListEmpty -> "You are currently not on any waiting list."
+  | ContactWaitingListTitle -> "On the waiting list"
   | DashboardTitle -> "Dashboard"
   | DontHaveAnAccount -> "Don't have an account?"
   | EmailConfirmationNote ->
@@ -31,6 +34,9 @@ let to_string = function
     Format.asprintf "There are no %s yet." (Locales_en.field_to_string field)
   | NotifyVia -> "Notify via"
   | OurPartners -> "Our partners"
+  | ProfileCompletionText ->
+    "Your profile is incomplete. To be invited to more experiments, fulfill \
+     your profile."
   | ProfileCompletionTitle -> "Profile completion"
   | LocationFileNew -> "Add file to location"
   | LocationListTitle -> "Location"
