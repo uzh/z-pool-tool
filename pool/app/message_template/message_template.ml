@@ -128,7 +128,7 @@ module ExperimentInvitation = struct
     let id = experiment.Experiment.id |> Id.value in
     global_params contact.Contact.user
     @ [ ( "experimentUrl"
-        , create_public_url public_url (Format.asprintf "experiment/%s" id) )
+        , create_public_url public_url (Format.asprintf "experiments/%s" id) )
       ]
     @ experiment_params experiment
   ;;

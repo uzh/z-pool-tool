@@ -248,7 +248,7 @@ let signup_verification =
   let label = Label.SignUpVerification in
   let email_text =
     [ p
-        [ txt "Thank your for sigin up for the Pool Tool."
+        [ txt "Thank your for signing up for the Pool Tool."
         ; br ()
         ; txt "Follow this"
         ; a ~a:[ a_href "{verificationUrl}" ] [ txt " link " ]
@@ -269,9 +269,9 @@ let signup_verification =
     |> html_to_string
     |> EmailText.of_string
   in
-  let email_subject = "Signup verification" |> EmailSubject.of_string in
+  let email_subject = "Sign up verification" |> EmailSubject.of_string in
   let sms_text =
-    {|Thank your for sigin up for the Pool Tool.
+    {|Thank your for signing up for the Pool Tool.
 Follow the link below to activate your account.
 
 {verificationUrl}
