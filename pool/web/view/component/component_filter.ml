@@ -497,9 +497,9 @@ let filter_form csrf language param key_list template_list =
     | FilterParam _ -> txt ""
     | ExperimentParam experiment ->
       div
+        ~a:[ a_class [ "flexrow"; "flex-gap-xs" ] ]
         [ txt
             Pool_common.(Utils.text_to_string language I18n.FilterNrOfContacts)
-        ; txt " "
         ; span
             ~a:
               [ a_id "contact-counter"
@@ -511,6 +511,35 @@ let filter_form csrf language param key_list template_list =
                   |> Sihl.Web.externalize_path)
               ]
             []
+        ]
+  in
+  let delete_form =
+    match param with
+    | FilterParam _ -> txt ""
+    | ExperimentParam experiment
+      when CCOption.is_none experiment.Experiment.filter -> txt ""
+    | ExperimentParam experiment ->
+      Tyxml.Html.form
+        ~a:
+          [ a_method `Post
+          ; a_action
+              (Sihl.Web.externalize_path
+                 (Format.asprintf
+                    "/admin/experiments/%s/filter/delete"
+                    (experiment.Experiment.id |> Experiment.Id.value)))
+          ; a_user_data
+              "confirmable"
+              Pool_common.(
+                Utils.confirmable_to_string language I18n.DeleteExperimentFilter)
+          ]
+        [ Input.csrf_element csrf ()
+        ; Input.submit_element
+            language
+            Pool_common.Message.(Delete (Some Field.Filter))
+            ~classnames:[ "small" ]
+            ~submit_type:`Error
+            ~has_icon:`TrashOutline
+            ()
         ]
   in
   let templates_disabled =
@@ -565,8 +594,9 @@ let filter_form csrf language param key_list template_list =
         ; title_input
         ; predicates
         ; div
-            ~a:[ a_class [ "flexrow" ] ]
-            [ Component_input.submit_element
+            ~a:[ a_class [ "flexrow"; "align-center" ] ]
+            [ delete_form
+            ; Component_input.submit_element
                 language
                 ~classnames:[ "push" ]
                 ~attributes:

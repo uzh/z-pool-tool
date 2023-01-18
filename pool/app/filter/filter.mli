@@ -160,6 +160,7 @@ val find_multiple_templates
 
 type event =
   | Created of t
+  | Deleted of t
   | Updated of t
 
 val equal_event : event -> event -> bool

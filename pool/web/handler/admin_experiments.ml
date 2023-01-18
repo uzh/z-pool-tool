@@ -185,13 +185,14 @@ let delete req =
           "%s/%s"
           experiments_path
           (Experiment.Id.value experiment_id) ))
-    @@ let%lwt session_count =
+    @@ let* experiment = Experiment.find database_label experiment_id in
+       let%lwt session_count =
          Experiment.session_count database_label experiment_id
        in
        let tags = Logger.req req in
        let events =
          Cqrs_command.Experiment_command.Delete.(
-           handle ~tags { experiment_id; session_count })
+           handle ~tags { experiment; session_count })
          |> Lwt_result.lift
        in
        let handle events =
@@ -221,6 +222,45 @@ module Filter = struct
   ;;
 
   let toggle_key = Admin_filter.toggle_key
+
+  let delete req =
+    let open Utils.Lwt_result.Infix in
+    let result { Pool_context.database_label; _ } =
+      let experiment_id =
+        HttpUtils.find_id
+          Experiment.Id.of_string
+          Pool_common.Message.Field.Experiment
+          req
+      in
+      let redirect_path =
+        Format.asprintf
+          "/admin/experiments/%s/invitations"
+          (Experiment.Id.value experiment_id)
+      in
+      Utils.Lwt_result.map_error (fun err -> err, redirect_path)
+      @@ let* experiment = Experiment.find database_label experiment_id in
+         let tags = Logger.req req in
+         let events =
+           Cqrs_command.Experiment_command.DeleteFilter.(
+             handle ~tags experiment)
+           |> Lwt_result.lift
+         in
+         let handle events =
+           let%lwt () =
+             Lwt_list.iter_s
+               (Pool_event.handle_event ~tags database_label)
+               events
+           in
+           Http_utils.redirect_to_with_actions
+             redirect_path
+             [ Message.set
+                 ~success:[ Pool_common.Message.(Deleted Field.Filter) ]
+             ]
+         in
+         events |>> handle
+    in
+    result |> HttpUtils.extract_happy_path req
+  ;;
 end
 
 module Access : sig

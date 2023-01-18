@@ -136,6 +136,10 @@ let () =
             "delete experiment with sessions"
             `Quick
             Experiment_test.delete_with_sessions
+        ; test_case
+            "delete experiment with filter"
+            `Quick
+            Experiment_test.delete_with_filter
         ] )
     ; ( "waiting list"
       , [ test_case "sign up" `Quick Waiting_list_test.create

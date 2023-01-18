@@ -131,7 +131,7 @@ module Delete : sig
   include Common.CommandSig
 
   type t =
-    { experiment_id : Id.t
+    { experiment : Experiment.t
     ; session_count : int
     }
 
@@ -145,16 +145,25 @@ end = struct
   (* Only when no sessions added *)
 
   type t =
-    { experiment_id : Id.t
+    { experiment : Experiment.t
     ; session_count : int
     }
 
-  let handle ?(tags = Logs.Tag.empty) { experiment_id; session_count } =
+  let handle ?(tags = Logs.Tag.empty) { experiment; session_count } =
     Logs.info ~src (fun m -> m "Handle command Delete" ~tags);
     match session_count > 0 with
     | true -> Error Pool_common.Message.ExperimentSessionCountNotZero
     | false ->
-      Ok [ Experiment.Destroyed experiment_id |> Pool_event.experiment ]
+      let filter_event =
+        experiment.Experiment.filter
+        |> CCOption.map_or ~default:[] (fun f ->
+             [ Filter.Deleted f |> Pool_event.filter ])
+      in
+      Ok
+        ([ Experiment.Destroyed experiment.Experiment.id
+           |> Pool_event.experiment
+         ]
+        @ filter_event)
   ;;
 
   let effects id =
@@ -290,6 +299,37 @@ end = struct
   ;;
 
   (* TODO[timhub]: Make sure both rules are true *)
+  let effects experiment_id =
+    [ `Update, `Target (experiment_id |> BaseGuard.Uuid.target_of Id.value)
+    ; `Update, `TargetEntity (`Admin `Experimenter)
+    ]
+  ;;
+end
+
+module DeleteFilter : sig
+  include Common.CommandSig with type t = Experiment.t
+
+  val handle
+    :  ?tags:Logs.Tag.set
+    -> t
+    -> (Pool_event.t list, Pool_common.Message.error) result
+
+  val effects : Experiment.Id.t -> BaseGuard.Authorizer.effect list
+end = struct
+  type t = Experiment.t
+
+  let handle ?(tags = Logs.Tag.empty) experiment =
+    Logs.info ~src (fun m -> m "Handle command Delete" ~tags);
+    let filter_event =
+      experiment.Experiment.filter
+      |> CCOption.map_or ~default:[] (fun f ->
+           [ Filter.Deleted f |> Pool_event.filter ])
+    in
+    let experiment = Experiment.{ experiment with filter = None } in
+    Ok
+      ([ Experiment.Updated experiment |> Pool_event.experiment ] @ filter_event)
+  ;;
+
   let effects experiment_id =
     [ `Update, `Target (experiment_id |> BaseGuard.Uuid.target_of Id.value)
     ; `Update, `TargetEntity (`Admin `Experimenter)

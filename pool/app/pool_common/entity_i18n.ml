@@ -139,6 +139,7 @@ type confirmable =
   | DeleteCustomFieldOption
   | DeleteEmailSuffix
   | DeleteExperiment
+  | DeleteExperimentFilter
   | DeleteFile
   | DeleteMailing
   | DeleteSession

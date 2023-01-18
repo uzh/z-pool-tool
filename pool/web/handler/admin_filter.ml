@@ -168,7 +168,8 @@ let create ?model req =
        (200, Collection.(set_success [ Updated Field.Filter ] empty))
        |> htmx_notification)
   | Error err ->
-    (400, Collection.(set_error [ err ] empty)) |> htmx_notification
+    (* HTMX will only swap the content if respose is 200 *)
+    (200, Collection.(set_error [ err ] empty)) |> htmx_notification
 ;;
 
 let create_for_experiment req = create ~model:`Experiment req

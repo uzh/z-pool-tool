@@ -304,6 +304,16 @@ let filtered_params ?group_by ?order_by template_list experiment_id filter =
     match filter with
     | None -> Ok (id_param, filtered_base_condition)
     | Some filter ->
+      let test = filter_to_sql template_list id_param filter in
+      let () =
+        match test with
+        | Ok _ -> Logs.info (fun m -> m "%s" "It is ok")
+        | Error err ->
+          Logs.info (fun m ->
+            m
+              "ERROROROROROR: %s"
+              (Pool_common.Utils.error_to_string Pool_common.Language.De err))
+      in
       filter_to_sql template_list id_param filter
       >|= fun (dyn, sql) ->
       dyn, Format.asprintf "%s\n AND %s" filtered_base_condition sql

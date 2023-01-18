@@ -131,7 +131,7 @@ module Partials = struct
             (ExperimentParam experiment)
             key_list
             template_list)
-      ; filtered_contacts_form
+      ; div ~a:[ a_class [ "gap-lg" ] ] [ filtered_contacts_form ]
       ]
   ;;
 end

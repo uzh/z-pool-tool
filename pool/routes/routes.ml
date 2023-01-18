@@ -379,8 +379,12 @@ module Admin = struct
         Handler.Admin.
           [ post
               "/create"
-              ~middlewares:[ Experiments.Access.create ]
+              ~middlewares:[ Experiments.Access.update ]
               Filter.create_for_experiment
+          ; post
+              "/delete"
+              ~middlewares:[ Experiments.Access.update ]
+              Experiments.Filter.delete
           ; choose
               (filter_form
                  Experiments.Filter.(
