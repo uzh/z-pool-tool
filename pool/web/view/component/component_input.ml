@@ -230,7 +230,7 @@ let checkbox_element
   let value =
     CCOption.bind flash_fetcher (fun flash_fetcher ->
       name |> Field.show |> flash_fetcher)
-    |> CCOption.map (fun s -> CCString.equal "true" s)
+    |> CCOption.map (CCString.equal "true")
     |> CCOption.value ~default:value
   in
   let value_attrs =

@@ -5,6 +5,7 @@ module Lwt_result = Lwt_trace
 
 let todo _ = failwith "todo"
 let fcn_ok fcn m = m |> fcn |> CCResult.pure
+let equal_key (a, _) (b, _) = CCString.equal a b
 
 module Url = struct
   let public_host =

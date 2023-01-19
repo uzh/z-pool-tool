@@ -8,18 +8,32 @@ type json_response =
   }
 [@@deriving yojson]
 
-let find_intended_opt = Sihl.Web.Request.query "location"
+let find_intended_opt req =
+  let open Uri in
+  let key = Pool_common.Message.Field.(location |> show) in
+  let remove_key = CCList.filter (fun (a, _) -> CCString.equal key a |> not) in
+  req
+  |> Sihl.Web.Request.query key
+  |> CCOption.map (fun intended ->
+       Sihl.Web.Request.query_list req
+       |> CCList.uniq ~eq:Utils.equal_key
+       |> remove_key
+       |> with_query (of_string intended)
+       |> to_string)
+;;
 
 let intended_to_url url intended =
   let open CCFun in
   let open Uri in
-  let key = "location" in
-  of_string url
-  |> flip remove_query_param key
-  |> (fun uri ->
-       if CCString.equal (Uri.path uri) intended
-       then uri
-       else add_query_param' uri (key, intended))
+  let key = Pool_common.Message.Field.(location |> show) in
+  let equal_path a b = CCString.equal (path a) (path b) in
+  let intended = intended |> of_string in
+  let url = url |> of_string in
+  (if equal_path url intended then [] else [ key, [ path intended ] ])
+  @ query intended
+  @ query url
+  |> CCList.uniq ~eq:Utils.equal_key
+  |> with_query url
   |> to_string
 ;;
 
