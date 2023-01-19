@@ -434,6 +434,8 @@ val all_required_answered
   -> Pool_common.Id.t
   -> bool Lwt.t
 
+val all_answered : Pool_database.Label.t -> Pool_common.Id.t -> bool Lwt.t
+
 val find_option
   :  Pool_database.Label.t
   -> SelectOption.Id.t

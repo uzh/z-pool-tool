@@ -11,7 +11,23 @@ let index req =
        let%lwt experiment_list =
          Experiment.find_all_public_by_contact database_label contact
        in
-       Page.Contact.Experiment.index experiment_list context
+       let* upcoming_sessions =
+         Session.find_upcoming_public_by_contact
+           database_label
+           (Contact.id contact)
+       in
+       let%lwt custom_fields_ansered =
+         Custom_field.all_answered database_label (Contact.id contact)
+       in
+       let%lwt waiting_list =
+         Experiment.find_where_contact_is_on_waitinglist database_label contact
+       in
+       Page.Contact.Experiment.index
+         experiment_list
+         upcoming_sessions
+         waiting_list
+         custom_fields_ansered
+         context
        |> create_layout ~active_navigation:"/experiments" req context
        >|+ Sihl.Web.Response.of_html
   in

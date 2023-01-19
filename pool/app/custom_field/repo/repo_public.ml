@@ -205,27 +205,31 @@ module Sql = struct
     |> Lwt_result.lift
   ;;
 
-  let all_required_answered_request =
+  let all_answered_request required =
     let open Caqti_request.Infix in
-    Format.asprintf
-      {sql|
+    let base =
+      Format.asprintf
+        {sql|
       SELECT count(*) questions FROM pool_custom_fields
       %s
       WHERE pool_custom_fields.model = $2
       %s
-      AND pool_custom_fields.required = 1
       AND pool_custom_field_answers.value IS NULL
       |sql}
-      answers_left_join
-      (base_filter_conditions false)
+        answers_left_join
+        (base_filter_conditions false)
+    in
+    (match required with
+     | false -> base
+     | true -> Format.asprintf "%s AND pool_custom_fields.required = 1" base)
     |> Caqti_type.(tup2 string string ->! int)
   ;;
 
-  let all_required_answered pool contact_id =
+  let all_answered required pool contact_id =
     let open Utils.Lwt_result.Infix in
     Utils.Database.find
       (Database.Label.value pool)
-      all_required_answered_request
+      (all_answered_request required)
       (Pool_common.Id.value contact_id, Entity.Model.(show Contact))
     ||> CCInt.equal 0
   ;;
@@ -341,4 +345,5 @@ let find_all_required_by_contact = find_all_by_contact ~required:true
 let find_multiple_by_contact = Sql.find_multiple_by_contact
 let find_by_contact = Sql.find_by_contact
 let upsert_answer = Sql.upsert_answer
-let all_required_answered = Sql.all_required_answered
+let all_required_answered = Sql.all_answered true
+let all_answered = Sql.all_answered false

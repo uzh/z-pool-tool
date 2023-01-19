@@ -1,9 +1,10 @@
 module RepoEntity = Repo_entity
 
-let select_from_experiments_sql where_fragment =
+let select_from_experiments_sql ?(distinct = false) where_fragment =
   let select_from =
-    {sql|
-        SELECT
+    Format.asprintf
+      {sql|
+        SELECT %s
           LOWER(CONCAT(
             SUBSTR(HEX(pool_experiments.uuid), 1, 8), '-',
             SUBSTR(HEX(pool_experiments.uuid), 9, 4), '-',
@@ -17,6 +18,7 @@ let select_from_experiments_sql where_fragment =
           pool_experiments.experiment_type
         FROM pool_experiments
       |sql}
+      (if distinct then "DISTINCT" else "")
   in
   Format.asprintf "%s %s" select_from where_fragment
 ;;
@@ -42,12 +44,49 @@ let condition_allow_uninvited_signup =
 
 let find_all_public_by_contact_request =
   let open Caqti_request.Infix in
-  {sql| (pool_invitations.contact_id = (SELECT id FROM pool_contacts WHERE user_uuid = UNHEX(REPLACE($1, '-', '')))) |sql}
-  |> Format.asprintf
-       "%s WHERE %s AND (%s OR %s)"
-       pool_invitations_left_join
-       condition_registration_not_disabled
-       condition_allow_uninvited_signup
+  let not_assigned =
+    {sql|
+    NOT EXISTS (
+        SELECT
+          1 FROM pool_assignments
+        WHERE
+          pool_assignments.contact_id = (
+            SELECT
+              id FROM pool_contacts
+            WHERE
+              user_uuid = UNHEX(REPLACE($1, '-', '')))
+            AND pool_assignments.session_id IN(
+              SELECT
+                id FROM pool_sessions
+              WHERE
+                pool_sessions.experiment_uuid = pool_experiments.uuid))
+      |sql}
+  in
+  let not_on_waitinglist =
+    {sql|
+    NOT EXISTS (
+      SELECT
+        1 FROM pool_waiting_list
+      WHERE
+        pool_waiting_list.contact_id = (
+          SELECT
+            id FROM pool_contacts
+          WHERE
+            user_uuid = UNHEX(REPLACE($1, '-', '')))
+          AND pool_waiting_list.experiment_id = pool_experiments.id)
+      |sql}
+  in
+  let is_invited =
+    {sql| (pool_invitations.contact_id = (SELECT id FROM pool_contacts WHERE user_uuid = UNHEX(REPLACE($1, '-', '')))) |sql}
+  in
+  Format.asprintf
+    "%s WHERE %s AND %s AND %s AND (%s OR %s)"
+    pool_invitations_left_join
+    not_assigned
+    not_on_waitinglist
+    condition_registration_not_disabled
+    condition_allow_uninvited_signup
+    is_invited
   |> Repo.Sql.select_from_experiments_sql
   |> Pool_common.Repo.Id.t ->* RepoEntity.t
 ;;
@@ -63,6 +102,28 @@ let find_all_public_by_contact pool contact =
         then Contact.matches_filter pool id filter contact
         else Lwt.return_true)
   ||> CCList.map Entity.to_public
+;;
+
+let find_where_contact_is_on_waitinglist_request =
+  let open Caqti_request.Infix in
+  let join =
+    {sql|
+    INNER JOIN pool_waiting_list
+      ON pool_waiting_list.experiment_id = pool_experiments.id
+      AND
+      pool_waiting_list.contact_id = (SELECT id FROM pool_contacts WHERE user_uuid = UNHEX(REPLACE(?, '-', '')))
+  |sql}
+  in
+  join
+  |> select_from_experiments_sql ~distinct:true
+  |> Pool_common.Repo.Id.t ->* RepoEntity.Public.t
+;;
+
+let find_where_contact_is_on_waitinglist pool contact =
+  Utils.Database.collect
+    (Pool_database.Label.value pool)
+    find_where_contact_is_on_waitinglist_request
+    (Contact.id contact)
 ;;
 
 let find_request =

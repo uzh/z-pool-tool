@@ -47,6 +47,7 @@ let responsive_horizontal_table
   header
   ?(align_top = false)
   ?(align_last_end = false)
+  ?row_formatter
   rows
   =
   let classes = table_classes layout align_top align_last_end in
@@ -70,15 +71,24 @@ let responsive_horizontal_table
   table
     ~thead
     ~a:[ a_class ("break-mobile" :: classes) ]
-    (CCList.map
-       (fun row ->
-         tr
-           (CCList.mapi
-              (fun i cell ->
-                match find_label i with
-                | None -> td [ cell ]
-                | Some label -> td ~a:[ a_user_data "label" label ] [ cell ])
-              row))
+    (CCList.mapi
+       (fun i row ->
+         let cells =
+           CCList.mapi
+             (fun i cell ->
+               match find_label i with
+               | None -> td [ cell ]
+               | Some label -> td ~a:[ a_user_data "label" label ] [ cell ])
+             row
+         in
+         match row_formatter with
+         | None -> tr cells
+         | Some fnc ->
+           i
+           |> fnc
+           |> (function
+           | Some classnames -> tr ~a:[ a_class classnames ] cells
+           | None -> tr cells))
        rows)
 ;;
 

@@ -170,6 +170,14 @@ val find_public_by_assignment
   -> Pool_common.Id.t
   -> (Public.t, Pool_common.Message.error) Lwt_result.t
 
+val find_upcoming_public_by_contact
+  :  Pool_database.Label.t
+  -> Pool_common.Id.t
+  -> ( (Experiment.Public.t * Public.t * Public.t list) list
+     , Pool_common.Message.error )
+     result
+     Lwt.t
+
 val find_by_assignment
   :  Pool_database.Label.t
   -> Pool_common.Id.t

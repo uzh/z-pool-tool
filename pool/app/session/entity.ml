@@ -226,6 +226,13 @@ module Public = struct
 
   let compare_start (s1 : t) (s2 : t) = Start.compare s1.start s2.start
 
+  let add_follow_ups_and_sort parents =
+    let open CCFun in
+    CCList.fold_left add_follow_ups_to_parents parents
+    %> CCList.map (fun (_, (p, fs)) -> p, CCList.sort compare_start fs)
+    %> CCList.sort (fun (f1, _) (f2, _) -> compare_start f1 f2)
+  ;;
+
   (* Group follow ups into main sessions and sort by start date *)
   let group_and_sort sessions =
     let parents, follow_ups =
@@ -235,10 +242,26 @@ module Public = struct
            | None -> `Left (session.id, (session, []))
            | Some parent -> `Right (parent, session))
     in
-    follow_ups
-    |> CCList.fold_left add_follow_ups_to_parents parents
-    |> CCList.map (fun (_, (p, fs)) -> p, CCList.sort compare_start fs)
-    |> CCList.sort (fun (f1, _) (f2, _) -> compare_start f1 f2)
+    add_follow_ups_and_sort parents follow_ups
+  ;;
+
+  let group_and_sort_keep_followups sessions =
+    let parents, follow_ups =
+      CCList.fold_left
+        (fun (parents, follow_ups) (s : t) ->
+          let add_parent (s : t) = parents @ [ s.id, (s, []) ], follow_ups in
+          match s.follow_up_to with
+          | None -> add_parent s
+          | Some id
+            when CCOption.is_some
+                   (CCList.find_opt
+                      (fun (parent, _) -> Pool_common.Id.equal parent id)
+                      parents) -> parents, follow_ups @ [ id, s ]
+          | Some _ -> add_parent s)
+        ([], [])
+        sessions
+    in
+    add_follow_ups_and_sort parents follow_ups
   ;;
 end
 

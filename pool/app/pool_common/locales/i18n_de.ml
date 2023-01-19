@@ -1,6 +1,9 @@
 open Entity_i18n
 
 let to_string = function
+  | Canceled -> "Abgesagt"
+  | ContactWaitingListEmpty -> "Sie sind aktuell auf keiner Warteliste."
+  | ContactWaitingListTitle -> "Auf der Warteliste"
   | DashboardTitle -> "Dashboard"
   | DontHaveAnAccount -> "Noch kein Zugang?"
   | EmailConfirmationNote ->
@@ -33,6 +36,9 @@ let to_string = function
       (Locales_de.field_to_string field)
   | NotifyVia -> "Benachrichtigen via"
   | OurPartners -> "Unsere Partner"
+  | ProfileCompletionText ->
+    "Ihr Profil ist unvollständig. Um zu mehr Experimenten eingeladen zu \
+     werden, vervollständigen Sie Ihr Profil."
   | ProfileCompletionTitle -> "Profilvervollständigung"
   | LocationFileNew -> "Neue Datei zu Standort hinzufügen"
   | LocationListTitle -> "Standorte"
@@ -75,6 +81,9 @@ let to_string = function
   | SwitchGrouped -> "Zu gruppierter Ansicht wechseln"
   | TermsAndConditionsTitle -> "Nutzungsbedingungen"
   | TextTemplates -> "Textelemente"
+  | UpcomingSessionsListEmpty ->
+    "Sie sind aktuell an keine kommenden Sessions angemeldet."
+  | UpcomingSessionsTitle -> "Ihre nächsten Sessions"
   | UserProfileDetailsSubtitle -> "Persönliche Angaben"
   | UserProfileLoginSubtitle -> "Anmeldeinformationen"
   | UserProfilePausedNote ->

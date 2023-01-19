@@ -54,3 +54,9 @@ $icons-font-path: "../node_modules/@econ/frontend-framework/dist/font";
         }
     }
 }
+
+// Color
+.bg-red-lighter,
+[class*="-on-red-lighter"] {
+    background-color: $red-lighter;
+}
