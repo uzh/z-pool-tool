@@ -4,17 +4,17 @@ module Message = HttpUtils.Message
 let to_ctx = Pool_tenant.to_ctx
 let create_layout req = General.create_tenant_layout req
 
-let redirect_to_dashboard user =
-  Pool_context.dashboard_path user |> HttpUtils.redirect_to
-;;
-
 let login_get req =
   let open Utils.Lwt_result.Infix in
+  let flash_fetcher = CCFun.flip Sihl.Web.Flash.find req in
   let result context =
     Utils.Lwt_result.map_error (fun err -> err, "/index")
     @@
     let open Sihl.Web in
-    Page.Public.login context
+    Page.Public.login
+      ?intended:(HttpUtils.find_intended_opt req)
+      context
+      flash_fetcher
     |> create_layout req ~active_navigation:"/login" context
     >|+ Response.of_html
   in
@@ -26,7 +26,10 @@ let login_post req =
   let result { Pool_context.database_label; query_language; _ } =
     let open Utils.Lwt_result.Infix in
     let open Pool_common.Message in
-    Utils.Lwt_result.map_error (fun err -> err, "/login")
+    Utils.Lwt_result.map_error (fun err ->
+      ( err
+      , "/login" |> HttpUtils.intended_of_request req
+      , [ HttpUtils.urlencoded_to_flash urlencoded ] ))
     @@ let* params =
          Field.[ Email; Password ]
          |> CCList.map Field.show
@@ -66,7 +69,12 @@ let login_post req =
        let success () =
          let open Pool_context in
          let%lwt path =
-           user |> user_of_sihl_user database_label ||> dashboard_path
+           match HttpUtils.find_intended_opt req with
+           | Some intended -> Lwt.return intended
+           | None ->
+             user
+             |> user_of_sihl_user database_label
+             ||> Pool_context.dashboard_path
          in
          login path []
        in
@@ -103,7 +111,7 @@ let login_post req =
                      ~error:[ Pool_common.Message.(RequiredFieldsMissing) ]
                  ]))
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path_with_actions req
 ;;
 
 let request_reset_password_get req =

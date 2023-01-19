@@ -16,7 +16,7 @@ let login_get req =
     | None ->
       Logs.info (fun m -> m "User not found in session" ~tags:(Logger.req req));
       let open Sihl.Web in
-      Page.Root.Login.login context
+      Page.Root.Login.login ?intended:(HttpUtils.find_intended_opt req) context
       |> General.create_root_layout ~active_navigation:"/root/login" context
       |> Response.of_html
       |> Lwt_result.return

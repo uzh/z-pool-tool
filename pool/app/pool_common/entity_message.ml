@@ -402,10 +402,14 @@ let to_conformist_error error_list =
   |> conformist
 ;;
 
-let add_field_query_params path params =
-  CCList.map (CCPair.map_fst Field.show) params
-  |> Uri.add_query_params' (Uri.of_string path)
-  |> Uri.to_string
+let add_field_query_params url params =
+  let open CCList in
+  let open Uri in
+  map (CCPair.map_fst Field.show) params
+  |> add_query_params' (of_string url)
+  |> fun uri ->
+  with_query uri (query uri |> rev |> uniq ~eq:Utils.equal_key |> rev)
+  |> to_string
 ;;
 
 module Collection = struct

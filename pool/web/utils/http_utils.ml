@@ -8,6 +8,47 @@ type json_response =
   }
 [@@deriving yojson]
 
+let find_intended_opt req =
+  let open Uri in
+  let key = Pool_common.Message.Field.(location |> show) in
+  let remove_key = CCList.filter (fun (a, _) -> CCString.equal key a |> not) in
+  req
+  |> Sihl.Web.Request.query key
+  |> CCOption.map (fun intended ->
+       Sihl.Web.Request.query_list req
+       |> CCList.uniq ~eq:Utils.equal_key
+       |> remove_key
+       |> with_query (of_string intended)
+       |> to_string)
+;;
+
+let intended_to_url url intended =
+  let open CCFun in
+  let open Uri in
+  let key = Pool_common.Message.Field.(location |> show) in
+  let equal_path a b = CCString.equal (path a) (path b) in
+  let intended = intended |> of_string in
+  let url = url |> of_string in
+  (if equal_path url intended then [] else [ key, [ path intended ] ])
+  @ query intended
+  @ query url
+  |> CCList.uniq ~eq:Utils.equal_key
+  |> with_query url
+  |> to_string
+;;
+
+let intended_or ?default url =
+  let open CCOption in
+  let default = get_or ~default:url default in
+  map_or ~default (intended_to_url url)
+;;
+
+let intended_of_request ({ Sihl.Web.Request.target; _ } as req) =
+  match find_intended_opt req with
+  | Some intended -> CCFun.flip intended_to_url intended
+  | None -> CCFun.flip intended_to_url target
+;;
+
 let user_from_session db_pool req : Sihl_user.t option Lwt.t =
   let ctx = Pool_tenant.to_ctx db_pool in
   Service.User.Web.user_from_session ~ctx req
@@ -284,12 +325,14 @@ let externalize_path_with_lang lang path =
 
 let add_line_breaks = Utils.Html.handle_line_breaks Tyxml.Html.span
 
-let invalid_session_redirect ?(login_path = "/login") req query_lang =
+let invalid_session_redirect
+  ?(login_path = fun req -> "/login" |> intended_of_request req)
+  req
+  query_lang
+  =
   redirect_to_with_actions
-    (path_with_language query_lang login_path)
-    [ Message.set ~error:[ Pool_common.Message.SessionInvalid ]
-    ; Sihl.Web.Flash.set [ "_redirect_to", req.Rock.Request.target ]
-    ]
+    (path_with_language query_lang (login_path req))
+    [ Message.set ~error:[ Pool_common.Message.SessionInvalid ] ]
 ;;
 
 let find_id encode field req =

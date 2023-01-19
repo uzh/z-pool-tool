@@ -79,7 +79,7 @@ let update ?contact req =
       | Some contact -> Lwt_result.return contact
       | None ->
         Pool_context.find_contact context
-        |> with_redirect "/login"
+        |> with_redirect ("/login" |> HttpUtils.intended_of_request req)
         |> Lwt_result.lift
     in
     let back_path =

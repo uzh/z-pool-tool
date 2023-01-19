@@ -14,11 +14,7 @@ let extend_migrations additional_steps () =
   in
   let migrations = (registered_migrations |> Map.to_list) @ additional_steps in
   match
-    CCList.length migrations
-    == CCList.length
-         (CCList.uniq
-            ~eq:(fun (k1, _) (k2, _) -> CCString.equal k1 k2)
-            migrations)
+    CCList.(length migrations == length (uniq ~eq:Utils.equal_key migrations))
   with
   | true -> migrations
   | false ->
