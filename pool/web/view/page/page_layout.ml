@@ -37,12 +37,10 @@ let viewport =
 let favicon path = link ~rel:[ `Icon ] ~href:path ()
 
 let global_stylesheets =
-  [ "/assets/index.css", true ]
-  |> CCList.map (fun (url, externalize) ->
-       link
-         ~rel:[ `Stylesheet ]
-         ~href:(if externalize then Sihl.Web.externalize_path url else url)
-         ())
+  link
+    ~rel:[ `Stylesheet ]
+    ~href:(Http_utils.externalized_path_with_version "/assets/index.css")
+    ()
 ;;
 
 let app_title query_language title =
@@ -322,7 +320,10 @@ module Tenant = struct
     let message = Message.create message active_lang () in
     let scripts =
       script
-        ~a:[ a_src (Sihl.Web.externalize_path "/assets/index.js"); a_defer () ]
+        ~a:
+          [ a_src (Http_utils.externalized_path_with_version "/assets/index.js")
+          ; a_defer ()
+          ]
         (txt "")
     in
     let header_content =
@@ -343,7 +344,8 @@ module Tenant = struct
     html
       (head
          page_title
-         ([ charset; viewport; custom_stylesheet; favicon ] @ global_stylesheets))
+         ([ charset; viewport; custom_stylesheet; favicon ]
+         @ [ global_stylesheets ]))
       (body
          ~a:[ a_class body_tag_classnames ]
          [ website_header ~children:header_content query_language title_text
@@ -373,7 +375,10 @@ let create_root_layout children language message user ?active_navigation () =
   let message = Message.create message language () in
   let scripts =
     script
-      ~a:[ a_src (Sihl.Web.externalize_path "/assets/index.js"); a_defer () ]
+      ~a:
+        [ a_src (Http_utils.externalized_path_with_version "/assets/index.js")
+        ; a_defer ()
+        ]
       (txt "")
   in
   let content = main_tag [ message; children ] in
@@ -381,7 +386,7 @@ let create_root_layout children language message user ?active_navigation () =
     (head
        page_title
        ([ charset; viewport; favicon "/assets/images/favicon.png" ]
-       @ global_stylesheets))
+       @ [ global_stylesheets ]))
     (body
        ~a:[ a_class body_tag_classnames ]
        [ website_header None ~children:[ navigation ] title_text
@@ -396,12 +401,15 @@ let create_error_layout children =
   let page_title = title (txt title_text) in
   let scripts =
     script
-      ~a:[ a_src (Sihl.Web.externalize_path "/assets/index.js"); a_defer () ]
+      ~a:
+        [ a_src (Http_utils.externalized_path_with_version "/assets/index.js")
+        ; a_defer ()
+        ]
       (txt "")
   in
   let content = main_tag [ children ] in
   html
-    (head page_title ([ charset; viewport ] @ global_stylesheets))
+    (head page_title ([ charset; viewport ] @ [ global_stylesheets ]))
     (body
        ~a:[ a_class body_tag_classnames ]
        [ website_header None title_text; content; footer title_text; scripts ])

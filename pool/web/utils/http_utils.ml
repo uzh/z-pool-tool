@@ -300,3 +300,10 @@ let default_value_style elms =
   let open Tyxml.Html in
   div ~a:[ a_class [ "gap-sm"; "inset-sm"; "border-left" ] ] [ elms ]
 ;;
+
+let externalized_path_with_version url =
+  (if Sihl.Configuration.(is_development () || is_test ())
+  then url
+  else Format.asprintf "%s?v=%s" url Version.to_string)
+  |> Sihl.Web.externalize_path
+;;
