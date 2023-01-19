@@ -445,13 +445,14 @@ let selector
   show
   options
   selected
-  ?flash_fetcher
-  ?(required = false)
-  ?help
-  ?option_formatter
+  ?(add_empty = false)
   ?(attributes = [])
   ?(classnames = [])
-  ?(add_empty = false)
+  ?(required = false)
+  ?error
+  ?flash_fetcher
+  ?help
+  ?option_formatter
   ()
   =
   let name = Field.(show field) in
@@ -461,6 +462,11 @@ let selector
     bind flash_fetcher (fun flash_fetcher ->
       field |> Field.show |> flash_fetcher)
     <+> map show selected
+  in
+  let attributes =
+    if CCOption.is_some error
+    then a_class [ "has-error" ] :: attributes
+    else attributes
   in
   let options =
     CCList.map
@@ -489,9 +495,7 @@ let selector
         then [ a_selected (); base_attr ]
         else [ base_attr ]
       in
-      let attrs =
-        if required then [ a_disabled (); a_hidden () ] @ attrs else attrs
-      in
+      let attrs = if required then [ a_disabled () ] @ attrs else attrs in
       let default =
         option
           ~a:attrs
@@ -504,19 +508,21 @@ let selector
     | false -> options
   in
   let help = Elements.help language help in
+  let error = Elements.error language error in
   div
     ~a:[ a_class (Elements.group_class classnames `Vertical) ]
-    [ label [ input_label |> txt ]
-    ; div
-        ~a:[ a_class [ "select" ] ]
-        [ select
-            ~a:
-              ((a_name name :: attributes)
-              @ if required then [ a_required () ] else [])
-            options
-        ]
-    ; div help
-    ]
+    ([ label [ input_label |> txt ]
+     ; div
+         ~a:[ a_class [ "select" ] ]
+         [ select
+             ~a:
+               ((a_name name :: attributes)
+               @ if required then [ a_required () ] else [])
+             options
+         ]
+     ]
+    @ help
+    @ error)
 ;;
 
 type 'a multi_select =

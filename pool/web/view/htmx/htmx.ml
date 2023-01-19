@@ -179,11 +179,13 @@ let create
       field
   | Select { show; options; option_formatter; selected } ->
     Input.selector
-      ~attributes:(additional_attributes ())
+      ?error
       ?help
       ?option_formatter
       ?required
       ~add_empty:true
+      ~attributes:(additional_attributes ())
+      ~classnames
       language
       field
       show
