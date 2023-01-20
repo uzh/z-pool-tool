@@ -1,8 +1,13 @@
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 module Field = Pool_common.Message.Field
+open HttpUtils.Filter
 
 let templates_disabled_key = Component.Filter.templates_disabled_key
+
+let template_id =
+  HttpUtils.find_id Filter.Id.of_string Pool_common.Message.Field.Filter
+;;
 
 let templates_disabled urlencoded =
   let open CCOption in
@@ -82,7 +87,7 @@ let form is_edit req =
 let edit = form true
 let new_form = form false
 
-let create ?model req =
+let write action req =
   let open Utils.Lwt_result.Infix in
   let language =
     let open CCResult in
@@ -107,34 +112,27 @@ let create ?model req =
     in
     let tags = Logger.req req in
     let events =
-      let open Pool_common.Message in
-      let open HttpUtils in
       let lift = Lwt_result.lift in
       let open CCFun.Infix in
-      match model with
-      | Some `Experiment ->
-        let experiment_id =
-          find_id Experiment.Id.of_string Field.Experiment req
-        in
-        let* experiment = Experiment.find database_label experiment_id in
-        let open Cqrs_command.Experiment_command.UpdateFilter in
-        handle ~tags experiment key_list template_list query |> Lwt_result.lift
-      | Some `Filter ->
-        let filter_id =
-          get_field_router_param req Field.Filter |> Pool_common.Id.of_string
-        in
-        let* filter = Filter.find_template database_label filter_id in
-        let open Cqrs_command.Filter_command.Update in
-        urlencoded
-        |> decode
-        |> lift
-        >>= handle ~tags key_list template_list filter query %> lift
-      | None ->
-        let open Cqrs_command.Filter_command.Create in
-        urlencoded
-        |> decode
-        |> lift
-        >>= handle ~tags key_list template_list query %> lift
+      match action with
+      | Experiment exp ->
+        let open Cqrs_command.Experiment_command in
+        (match exp.Experiment.filter with
+         | None ->
+           CreateFilter.handle ~tags exp key_list template_list query
+           |> Lwt_result.lift
+         | Some filter ->
+           UpdateFilter.handle ~tags key_list template_list filter query
+           |> Lwt_result.lift)
+      | Template filter ->
+        let open Cqrs_command.Filter_command in
+        let* decoded = urlencoded |> default_decode |> lift in
+        (match filter with
+         | None ->
+           Create.handle ~tags key_list template_list query decoded |> lift
+         | Some filter ->
+           Update.handle ~tags key_list template_list filter query decoded
+           |> lift)
     in
     let handle events =
       Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
@@ -158,13 +156,20 @@ let create ?model req =
   in
   match result with
   | Ok () ->
-    (match model with
-     | None ->
-       HttpUtils.htmx_redirect
-         "/admin/filter"
-         ~actions:[ Message.set ~success:[ Created Field.Filter ] ]
-         ()
-     | Some _ ->
+    let created path =
+      HttpUtils.htmx_redirect
+        path
+        ~actions:[ Message.set ~success:[ Created Field.Filter ] ]
+        ()
+    in
+    (match action with
+     | Template None -> created "/admin/filter"
+     | Experiment exp when CCOption.is_none exp.Experiment.filter ->
+       created
+         (Format.asprintf
+            "/admin/experiments/%s/invitations"
+            Experiment.(Id.value exp.id))
+     | Experiment _ | Template _ ->
        (200, Collection.(set_success [ Updated Field.Filter ] empty))
        |> htmx_notification)
   | Error err ->
@@ -172,11 +177,7 @@ let create ?model req =
     (200, Collection.(set_error [ err ] empty)) |> htmx_notification
 ;;
 
-let create_for_experiment req = create ~model:`Experiment req
-let create_template req = create req
-let update_template req = create ~model:`Filter req
-
-let handle_toggle_predicate_type ?experiment_id req =
+let handle_toggle_predicate_type action req =
   let open Utils.Lwt_result.Infix in
   let%lwt result =
     let* { Pool_context.language; database_label; _ } =
@@ -187,11 +188,6 @@ let handle_toggle_predicate_type ?experiment_id req =
     let%lwt key_list = Filter.all_keys database_label in
     let%lwt template_list =
       find_all_templates database_label templates_disabled
-    in
-    let* experiment =
-      experiment_id
-      |> CCOption.map_or ~default:(Lwt_result.return None) (fun id ->
-           Experiment.find database_label id >|+ CCOption.pure)
     in
     let* query =
       let open CCResult in
@@ -210,7 +206,7 @@ let handle_toggle_predicate_type ?experiment_id req =
     Component.Filter.(
       predicate_form
         language
-        experiment
+        action
         key_list
         template_list
         templates_disabled
@@ -232,9 +228,7 @@ let handle_toggle_predicate_type ?experiment_id req =
   |> Lwt.return
 ;;
 
-let toggle_predicate_type req = handle_toggle_predicate_type req
-
-let toggle_key req =
+let handle_toggle_key req =
   let open Utils.Lwt_result.Infix in
   let%lwt result =
     let* { Pool_context.language; database_label; _ } =
@@ -261,16 +255,11 @@ let toggle_key req =
   |> Lwt.return
 ;;
 
-let handle_add_predicate ?experiment_id req =
+let handle_add_predicate action req =
   let open Utils.Lwt_result.Infix in
   let%lwt result =
     let* { Pool_context.language; database_label; _ } =
       Pool_context.find req |> Lwt_result.lift
-    in
-    let* experiment =
-      experiment_id
-      |> CCOption.map_or ~default:(Lwt_result.return None) (fun id ->
-           Experiment.find database_label id >|+ CCOption.pure)
     in
     let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
     let templates_disabled = templates_disabled urlencoded in
@@ -289,7 +278,7 @@ let handle_add_predicate ?experiment_id req =
     let filter_form =
       Component.Filter.predicate_form
         language
-        experiment
+        action
         key_list
         template_list
         templates_disabled
@@ -299,7 +288,7 @@ let handle_add_predicate ?experiment_id req =
     in
     let add_button =
       Component.Filter.add_predicate_btn
-        experiment
+        action
         (increment_identifier identifier)
         templates_disabled
     in
@@ -317,8 +306,6 @@ let handle_add_predicate ?experiment_id req =
   |> HttpUtils.multi_html_to_plain_text_response
   |> Lwt.return
 ;;
-
-let add_predicate req = handle_add_predicate req
 
 let count_contacts req =
   let experiment_id =
@@ -360,6 +347,37 @@ let count_contacts req =
   HttpUtils.yojson_response ~status:(status |> Opium.Status.of_code) json
   |> Lwt.return
 ;;
+
+(* TODO: Toggle Key *)
+module Create = struct
+  let action = Template None
+  let create_template = write action
+  let add_predicate = handle_add_predicate action
+  let toggle_predicate_type = handle_toggle_predicate_type action
+  let toggle_key = handle_toggle_key
+end
+
+module Update = struct
+  let handler fnc req =
+    let open Utils.Lwt_result.Infix in
+    let id = template_id req in
+    req
+    |> database_label_from_req
+    >>= CCFun.flip Filter.find id
+    |>> (fun e -> fnc (Template (Some e)) req)
+    >|> function
+    | Ok res -> Lwt.return res
+    | Error err ->
+      Http_utils.redirect_to_with_actions
+        "/admin/filter"
+        [ Message.set ~error:[ err ] ]
+  ;;
+
+  let update_template = handler write
+  let add_predicate = handler handle_add_predicate
+  let toggle_predicate_type = handler handle_toggle_predicate_type
+  let toggle_key = handle_toggle_key
+end
 
 module Access : Helpers.AccessSig = struct
   module FilterCommand = Cqrs_command.Filter_command

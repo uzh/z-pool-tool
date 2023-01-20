@@ -4,7 +4,7 @@ type event =
   | Created of t
   | Deleted of t
   | Updated of t
-[@@deriving eq, show]
+[@@deriving eq, show, variants]
 
 let handle_event pool : event -> unit Lwt.t = function
   | Created t ->

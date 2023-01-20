@@ -156,60 +156,18 @@ end = struct
     | false ->
       let filter_event =
         experiment.Experiment.filter
-        |> CCOption.map_or ~default:[] (fun f ->
-             [ Filter.Deleted f |> Pool_event.filter ])
+        |> CCOption.map_or
+             ~default:[]
+             CCFun.(Filter.deleted %> Pool_event.filter %> CCList.pure)
       in
       Ok
-        ([ Experiment.Destroyed experiment.Experiment.id
-           |> Pool_event.experiment
-         ]
-        @ filter_event)
+        ((Experiment.Destroyed experiment.Experiment.id |> Pool_event.experiment)
+        :: filter_event)
   ;;
 
   let effects id =
     [ `Delete, `Target (id |> BaseGuard.Uuid.target_of Experiment.Id.value)
     ; `Delete, `TargetEntity `Experiment
-    ]
-  ;;
-end
-
-module UpdateFilter : sig
-  include Common.CommandSig with type t = Filter.query
-
-  val handle
-    :  ?tags:Logs.Tag.set
-    -> Experiment.t
-    -> Filter.Key.human list
-    -> Filter.t list
-    -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
-
-  val effects : Experiment.Id.t -> BaseGuard.Authorizer.effect list
-end = struct
-  type t = Filter.query
-
-  let handle ?(tags = Logs.Tag.empty) experiment key_list template_list query =
-    Logs.info ~src (fun m -> m "Handle command UpdateFilter" ~tags);
-    let open CCResult in
-    let* query = Filter.validate_query key_list template_list query in
-    match experiment.filter with
-    | None ->
-      let id = Pool_common.Id.create () in
-      let filter = Filter.create ~id None query in
-      let experiment = Experiment.{ experiment with filter = Some filter } in
-      Ok
-        [ Filter.Created filter |> Pool_event.filter
-        ; Experiment.Updated experiment |> Pool_event.experiment
-        ]
-    | Some current_filter ->
-      let filter = Filter.{ current_filter with query } in
-      Ok [ Filter.Updated filter |> Pool_event.filter ]
-  ;;
-
-  (* TODO: Make sure user has experiment AND filter permission *)
-  let effects id =
-    [ `Update, `Target (id |> BaseGuard.Uuid.target_of Id.value)
-    ; `Update, `TargetEntity `Experiment
     ]
   ;;
 end
@@ -306,6 +264,73 @@ end = struct
   ;;
 end
 
+module CreateFilter : sig
+  include Common.CommandSig with type t = Filter.query
+
+  val handle
+    :  ?tags:Logs.Tag.set
+    -> Experiment.t
+    -> Filter.Key.human list
+    -> Filter.t list
+    -> t
+    -> (Pool_event.t list, Pool_common.Message.error) result
+
+  val effects : Experiment.Id.t -> BaseGuard.Authorizer.effect list
+end = struct
+  type t = Filter.query
+
+  let handle ?(tags = Logs.Tag.empty) experiment key_list template_list query =
+    Logs.info ~src (fun m -> m "Handle command UpdateFilter" ~tags);
+    let open CCResult in
+    let* query = Filter.validate_query key_list template_list query in
+    let id = Pool_common.Id.create () in
+    let filter = Filter.create ~id None query in
+    let experiment = Experiment.{ experiment with filter = Some filter } in
+    Ok
+      [ Filter.Created filter |> Pool_event.filter
+      ; Experiment.Updated experiment |> Pool_event.experiment
+      ]
+  ;;
+
+  (* TODO: Make sure authorization is inherited from experiment *)
+  let effects id =
+    [ `Manage, `Target (id |> BaseGuard.Uuid.target_of Experiment.Id.value)
+    ; `Create, `TargetEntity `Filter
+    ]
+  ;;
+end
+
+module UpdateFilter : sig
+  include Common.CommandSig with type t = Filter.query
+
+  val handle
+    :  ?tags:Logs.Tag.set
+    -> Filter.Key.human list
+    -> Filter.t list
+    -> Filter.t
+    -> t
+    -> (Pool_event.t list, Pool_common.Message.error) result
+
+  val effects : Filter.Id.t -> BaseGuard.Authorizer.effect list
+end = struct
+  type t = Filter.query
+
+  let handle ?(tags = Logs.Tag.empty) key_list template_list filter query =
+    Logs.info ~src (fun m -> m "Handle command UpdateFilter" ~tags);
+    let open CCResult in
+    let* query = Filter.validate_query key_list template_list query in
+    let filter = Filter.{ filter with query } in
+    Ok [ Filter.Updated filter |> Pool_event.filter ]
+  ;;
+
+  (* TODO: Make sure authorization is inherited from experiment *)
+  let effects id =
+    [ `Update, `Target (id |> BaseGuard.Uuid.target_of Filter.Id.value)
+    ; `Update, `TargetEntity `Filter
+    ]
+  ;;
+end
+
 module DeleteFilter : sig
   include Common.CommandSig with type t = Experiment.t
 
@@ -314,7 +339,7 @@ module DeleteFilter : sig
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val effects : Experiment.Id.t -> BaseGuard.Authorizer.effect list
+  val effects : Filter.Id.t -> BaseGuard.Authorizer.effect list
 end = struct
   type t = Experiment.t
 
@@ -330,9 +355,10 @@ end = struct
       ([ Experiment.Updated experiment |> Pool_event.experiment ] @ filter_event)
   ;;
 
-  let effects experiment_id =
-    [ `Update, `Target (experiment_id |> BaseGuard.Uuid.target_of Id.value)
-    ; `Update, `TargetEntity (`Admin `Experimenter)
+  (* TODO: Make sure authorization is inherited from experiment *)
+  let effects id =
+    [ `Delete, `Target (id |> BaseGuard.Uuid.target_of Filter.Id.value)
+    ; `Delete, `TargetEntity `Filter
     ]
   ;;
 end

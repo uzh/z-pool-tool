@@ -218,7 +218,7 @@ function configRequest(e, form) {
         try {
             e.detail.parameters.query = predicateToJson(elm, allowEmpty);
             const title = document.querySelector('#filter-form [name="title"]');
-            if (title) {
+            if (title && isSubmit) {
                 if (!title.value) {
                     throw "Please add a title.";
                 } else {

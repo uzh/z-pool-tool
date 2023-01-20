@@ -167,6 +167,9 @@ val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
 val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
+val created : t -> event
+val deleted : t -> event
+val updated : t -> event
 
 module UtilsF : sig
   type filter_label =

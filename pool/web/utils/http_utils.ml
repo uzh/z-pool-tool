@@ -1,5 +1,6 @@
-module Message = Http_utils_message
 module File = Http_utils_file
+module Filter = Http_utils_filter
+module Message = Http_utils_message
 module StringMap = CCMap.Make (CCString)
 
 type json_response =
