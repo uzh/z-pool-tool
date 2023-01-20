@@ -138,6 +138,10 @@ let hint_to_string = function
   | CustomFieldSessionModel -> "Anpassbare Attribute für Sessions."
   | CustomFieldGroups ->
     {|Gruppen, nach denen benutzerdefinierte Felder gruppiert werden können. Das Gruppieren von benutzerdefinierten Feldern hat keine keine Auswirkungen auf ihre Funktionalität. Sie hat lediglich grafische Auswirkungen.|}
+  | CustomFieldOptionsCompleteness ->
+    "Vergewissern Sie sich, dass diese Liste vollständig ist, oder fügen Sie \
+     eine Option hinzu, die Sie auswählen können, wenn keine der anderen \
+     Optionen zutreffend ist."
   | CustomFieldSort field ->
     Format.asprintf
       "In dieser Reihenfolge werden die %s den Kontakten angezeigt."

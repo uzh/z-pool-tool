@@ -136,6 +136,9 @@ let hint_to_string = function
   | CustomFieldSessionModel -> "Customziable attributes for sessions."
   | CustomFieldGroups ->
     {|Groups to group custom fields by. Grouping custom fields does not have any effect on their functionality. It only has a graphical impact.|}
+  | CustomFieldOptionsCompleteness ->
+    "Make sure this list is complete or add an option to select if none of the \
+     others are applicable."
   | CustomFieldSort field ->
     Format.asprintf
       "The %s will be displayed to the contacts in this order."

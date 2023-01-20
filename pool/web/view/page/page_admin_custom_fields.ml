@@ -419,6 +419,13 @@ let field_form
                        (Url.Option.new_path (model m, id m))
                    ]
                ]
+           ; p
+               [ txt
+                   Pool_common.(
+                     Utils.hint_to_string
+                       language
+                       I18n.CustomFieldOptionsCompleteness)
+               ]
            ; div ~a:[ a_class [ "gap" ] ] list
            ]
        | Boolean _ | Number _ | Text _ -> empty)

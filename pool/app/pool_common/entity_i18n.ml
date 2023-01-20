@@ -93,6 +93,7 @@ type hint =
   | CustomFieldContactModel
   | CustomFieldExperimentModel
   | CustomFieldGroups
+  | CustomFieldOptionsCompleteness
   | CustomFieldSessionModel
   | CustomFieldSort of Entity_message.Field.t
   | CustomFieldTypeText
