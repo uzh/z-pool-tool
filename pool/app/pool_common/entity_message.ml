@@ -235,6 +235,7 @@ type error =
   | ConformistModuleErrorType
   | ContactSignupInvalidEmail
   | ContactUnconfirmed
+  | CustomFieldTypeChangeNotAllowed
   | Decode of Field.t
   | DecodeAction
   | DirectRegistrationIsDisabled

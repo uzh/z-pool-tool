@@ -423,6 +423,32 @@ let field_form
            ]
        | Boolean _ | Number _ | Text _ -> empty)
   in
+  let field_type_selector =
+    match custom_field with
+    | Some field when CCOption.is_some (Custom_field.published_at field) ->
+      let field_type = Custom_field.field_type field in
+      selector
+        language
+        Message.Field.FieldType
+        FieldType.show
+        [ field_type ]
+        (Some field_type)
+        ~read_only:true
+        ~option_formatter:FieldType.to_string
+        ()
+    | Some _ | None ->
+      selector
+        language
+        Message.Field.FieldType
+        FieldType.show
+        FieldType.all
+        field_type_opt
+        ~option_formatter:FieldType.to_string
+        ~add_empty:true
+        ~required:true
+        ~flash_fetcher
+        ()
+  in
   let field_type_hints =
     let open Pool_common in
     I18n.[ CustomFieldTypeText, FieldType.Text ]
@@ -454,18 +480,7 @@ let field_form
           ~a:[ a_class [ "grid-col-2" ] ]
           [ div
               ~a:[ a_class [ "stack-xs" ] ]
-              (selector
-                 language
-                 Message.Field.FieldType
-                 FieldType.show
-                 FieldType.all
-                 field_type_opt
-                 ~option_formatter:FieldType.to_string
-                 ~add_empty:true
-                 ~required:true
-                 ~flash_fetcher
-                 ()
-              :: field_type_hints)
+              (field_type_selector :: field_type_hints)
           ; Group.(
               selector
                 language

@@ -242,6 +242,40 @@ let update () =
       events)
 ;;
 
+let update_type_of_published_field () =
+  let open CCResult in
+  let custom_field =
+    Data.custom_text_field
+      ~published_at:(Custom_field.PublishedAt.create_now ())
+      ()
+  in
+  let events =
+    let data =
+      Message.
+        [ (Field.(FieldType |> show), Custom_field.FieldType.(Number |> show))
+        ; Field.(AdminHint |> show), Data.admin_hint
+        ]
+      |> CCList.map (fun (f, l) -> f, l |> CCList.pure)
+    in
+    data
+    |> Http_utils.format_request_boolean_values boolean_fields
+    |> CustomFieldCommand.base_decode
+    >>= CustomFieldCommand.Update.handle
+          Data.sys_languages
+          custom_field
+          Data.name
+          Data.hint
+          Data.validation_data
+  in
+  let expected = Error Pool_common.Message.CustomFieldTypeChangeNotAllowed in
+  Alcotest.(
+    check
+      (result (list Test_utils.event) Test_utils.error)
+      "succeeds"
+      expected
+      events)
+;;
+
 let create_option () =
   let select_field = Data.custom_select_field () in
   let option_id = Custom_field.SelectOption.Id.create () in

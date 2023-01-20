@@ -449,6 +449,7 @@ let selector
   ?(attributes = [])
   ?(classnames = [])
   ?(required = false)
+  ?(read_only = false)
   ?error
   ?flash_fetcher
   ?help
@@ -464,9 +465,15 @@ let selector
     <+> map show selected
   in
   let attributes =
-    if CCOption.is_some error
-    then a_class [ "has-error" ] :: attributes
-    else attributes
+    let checks =
+      [ CCOption.is_some error, a_class [ "has-error" ]
+      ; read_only, a_disabled ()
+      ]
+    in
+    CCList.fold_left
+      (fun attrs (check, attr) -> if check then attr :: attrs else attrs)
+      attributes
+      checks
   in
   let options =
     CCList.map
@@ -507,6 +514,18 @@ let selector
       [ default ] @ options
     | false -> options
   in
+  let hidden_field =
+    if read_only
+    then
+      input
+        ~a:
+          [ a_input_type `Hidden
+          ; a_name name
+          ; a_value (CCOption.value ~default:"" selected)
+          ]
+        ()
+    else txt ""
+  in
   let help = Elements.help language help in
   let error = Elements.error language error in
   div
@@ -519,6 +538,7 @@ let selector
                ((a_name name :: attributes)
                @ if required then [ a_required () ] else [])
              options
+         ; hidden_field
          ]
      ]
     @ help
