@@ -92,9 +92,10 @@ type hint =
   | CustomFieldAdminViewOnly
   | CustomFieldContactModel
   | CustomFieldExperimentModel
-  | CustomFieldSessionModel
   | CustomFieldGroups
+  | CustomFieldSessionModel
   | CustomFieldSort of Entity_message.Field.t
+  | CustomFieldTypeText
   | CustomHtmx of string
   | DirectRegistrationDisbled
   | Distribution

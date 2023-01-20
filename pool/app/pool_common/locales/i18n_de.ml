@@ -142,6 +142,10 @@ let hint_to_string = function
     Format.asprintf
       "In dieser Reihenfolge werden die %s den Kontakten angezeigt."
       (Locales_de.field_to_string field)
+  | CustomFieldTypeText ->
+    "Bitte berücksichtigen Sie, dass die Datenqualität bei Texteingaben tiefer \
+     ist. Falls die Daten in einer anderen Form erhoben werden können, ist \
+     dies zu bevorzugen."
   | CustomHtmx s -> s
   | DirectRegistrationDisbled ->
     "Ist diese Option aktiviert, können sich Kontakte auf die Warteliste \

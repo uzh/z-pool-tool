@@ -263,8 +263,9 @@ let field_form
         var select = document.querySelector("[name='field_type']");
         select.addEventListener("change", function(e) {
           var type = e.currentTarget.value;
-          var inputs = document.querySelectorAll("[data-field-type]");
-          inputs.forEach(function(elm){
+          var validations = document.querySelectorAll(".form-group[data-field-type]");
+          var hints = document.querySelectorAll(".help[data-field-type]");
+          validations.forEach(function(elm){
             if(elm.dataset.fieldType != type) {
               elm.classList.add("disabled")
             } else {
@@ -272,6 +273,13 @@ let field_form
             }
             var input = elm.querySelector('input');
             input.disabled = elm.dataset.fieldType != type;
+          })
+          hints.forEach(function(elm){
+            if(elm.dataset.fieldType != type) {
+              elm.classList.add("hidden")
+            } else {
+              elm.classList.remove("hidden")
+            }
           })
         })
     |js}
@@ -415,6 +423,26 @@ let field_form
            ]
        | Boolean _ | Number _ | Text _ -> empty)
   in
+  let field_type_hints =
+    let open Pool_common in
+    I18n.[ CustomFieldTypeText, FieldType.Text ]
+    |> CCList.map (fun (hint, field_type) ->
+         let hidden =
+           field_type_opt
+           |> CCOption.map_or
+                ~default:true
+                CCFun.(FieldType.(equal Text) %> not)
+           |> function
+           | true -> [ "hidden" ]
+           | false -> []
+         in
+         div
+           ~a:
+             [ a_class ("help" :: hidden)
+             ; a_user_data "field-type" (FieldType.show field_type)
+             ]
+           [ txt (Utils.hint_to_string language hint) ])
+  in
   [ form
       ~a:
         [ a_method `Post
@@ -424,17 +452,20 @@ let field_form
       [ csrf_element csrf ()
       ; div
           ~a:[ a_class [ "grid-col-2" ] ]
-          [ selector
-              language
-              Message.Field.FieldType
-              FieldType.show
-              FieldType.all
-              field_type_opt
-              ~option_formatter:FieldType.to_string
-              ~add_empty:true
-              ~required:true
-              ~flash_fetcher
-              ()
+          [ div
+              ~a:[ a_class [ "stack-xs" ] ]
+              (selector
+                 language
+                 Message.Field.FieldType
+                 FieldType.show
+                 FieldType.all
+                 field_type_opt
+                 ~option_formatter:FieldType.to_string
+                 ~add_empty:true
+                 ~required:true
+                 ~flash_fetcher
+                 ()
+              :: field_type_hints)
           ; Group.(
               selector
                 language
