@@ -52,3 +52,25 @@ Example: %s econ-uzh
       fcn pool
     | _ -> failwith_missmatch help)
 ;;
+
+let encrypt_string =
+  let name = "utils.encrypt.aes" in
+  let description = "Utility function, encrypt a string with AES (CTR)." in
+  let help =
+    Format.asprintf
+      {|<string>
+
+Provide the following variables:
+        <string>      : string to encrypt
+
+Example: %s hello world
+  |}
+      name
+  in
+  Sihl.Command.make ~name ~description ~help (fun decrypted ->
+    let encrypted =
+      Utils.Crypto.String.encrypt_to_string (CCString.concat " " decrypted)
+    in
+    let () = print_endline (Format.asprintf "Encrypted: %s" encrypted) in
+    Lwt.return_some ())
+;;

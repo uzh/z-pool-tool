@@ -24,6 +24,7 @@ let commands =
   ; Admin.create
   ; Admin.grant_role
   ; Admin.list_roles
+  ; Utils.encrypt_string
   ; version
   ]
 ;;
