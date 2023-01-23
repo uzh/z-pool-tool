@@ -300,27 +300,17 @@ module Sql = struct
     |> Caqti_type.(tup2 Id.t Id.t) ->. Caqti_type.unit
   ;;
 
-  let clear_answer_version_increment_request =
-    let open Caqti_request.Infix in
-    let open Pool_common.Repo in
-    {sql|
-      UPDATE pool_custom_field_answer_versions
-        SET version = version + 1
-      WHERE
-        custom_field_uuid = UNHEX(REPLACE($1, '-', ''))
-      AND
-        entity_uuid = UNHEX(REPLACE($2, '-', ''))
-      |sql}
-    |> Caqti_type.(tup2 Id.t Id.t) ->. Caqti_type.unit
-  ;;
-
   let clear_answer pool field_id entity_uuid () =
-    let exec = Utils.Database.exec (Database.Label.value pool) in
-    let%lwt () = exec clear_answer_request (field_id, entity_uuid) in
-    exec clear_answer_version_increment_request (field_id, entity_uuid)
+    Utils.Database.exec
+      (Database.Label.value pool)
+      clear_answer_request
+      (field_id, entity_uuid)
   ;;
 
-  let map_or ~clear fnc t = CCOption.map_or ~default:(clear ()) fnc t
+  let map_or ~clear fnc = function
+    | Some value -> fnc value
+    | None -> clear ()
+  ;;
 
   let upsert_answer pool entity_uuid t =
     let upsert =
