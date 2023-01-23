@@ -284,6 +284,8 @@ let rec error_to_string = function
       (field_to_string field)
       (field_to_string required)
   | FilterMustNotContainTemplate -> "Filter darf keine Template enthalten."
+  | FilterAndOrMustNotBeEmpty ->
+    "'And' und 'Or' Prädikate dürfen nicht leer sein."
   | FollowUpIsEarlierThanMain ->
     "Folgesession kann nicht vor Hauptsession starten."
   | HtmxVersionNotFound field ->

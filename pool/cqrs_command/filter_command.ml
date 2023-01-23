@@ -10,6 +10,11 @@ let default_schema command =
 
 let default_command = CCFun.id
 
+let default_decode data =
+  Conformist.decode_and_validate (default_schema default_command) data
+  |> CCResult.map_err Pool_common.Message.to_conformist_error
+;;
+
 let validate_query key_list template_list query =
   let open CCResult in
   let* query = Filter.validate_query key_list template_list query in
@@ -31,10 +36,6 @@ module Create : sig
     -> Filter.query
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
-
-  val decode
-    :  (string * string list) list
-    -> (t, Pool_common.Message.error) result
 end = struct
   type t = Filter.Title.t
 
@@ -44,11 +45,6 @@ end = struct
     let* query = validate_query key_list template_list query in
     Ok
       [ Filter.Created (Filter.create (Some title) query) |> Pool_event.filter ]
-  ;;
-
-  let decode data =
-    Conformist.decode_and_validate (default_schema default_command) data
-    |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
   let effects = [ `Create, `TargetEntity `Filter ]
@@ -66,10 +62,6 @@ module Update : sig
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val decode
-    :  (string * string list) list
-    -> (t, Pool_common.Message.error) result
-
   val effects : Filter.Id.t -> Guard.Authorizer.effect list
 end = struct
   type t = Filter.Title.t
@@ -82,11 +74,6 @@ end = struct
       Filter.
         [ Updated { filter with query; title = Some title } |> Pool_event.filter
         ]
-  ;;
-
-  let decode data =
-    Conformist.decode_and_validate (default_schema default_command) data
-    |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
   let effects id =

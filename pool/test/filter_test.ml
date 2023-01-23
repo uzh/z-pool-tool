@@ -275,9 +275,8 @@ let filter_by_email _ () =
 let validate_filter_with_unknown_field _ () =
   let open Test_utils in
   let%lwt () =
-    let experiment = Model.create_experiment () in
     let%lwt key_list = Filter.all_keys Data.database_label in
-    let filter =
+    let query =
       let open Filter in
       Pred
         (Predicate.create
@@ -285,12 +284,13 @@ let validate_filter_with_unknown_field _ () =
            Operator.Equal
            (Single (Nr 1.2)))
     in
+    let filter = Filter.create None query in
     let events =
       Cqrs_command.Experiment_command.UpdateFilter.handle
-        experiment
         key_list
         []
         filter
+        query
     in
     let expected = Error Pool_common.Message.(Invalid Field.Key) in
     Test_utils.check_result expected events |> Lwt.return
@@ -301,9 +301,8 @@ let validate_filter_with_unknown_field _ () =
 let validate_filter_with_invalid_value _ () =
   let open Test_utils in
   let%lwt () =
-    let experiment = Model.create_experiment () in
     let%lwt key_list = Filter.all_keys Data.database_label in
-    let filter =
+    let query =
       let open Filter in
       Pred
         (Predicate.create
@@ -311,12 +310,13 @@ let validate_filter_with_invalid_value _ () =
            Operator.Equal
            (Single (Str "Not a number")))
     in
+    let filter = Filter.create None query in
     let events =
       Cqrs_command.Experiment_command.UpdateFilter.handle
-        experiment
         key_list
         []
         filter
+        query
     in
     let expected =
       Error Pool_common.Message.(QueryNotCompatible (Field.Value, Field.Key))
@@ -518,10 +518,10 @@ let create_filter_template_with_template _ () =
     in
     let filter = Template template_id in
     let events =
-      let open Cqrs_command.Filter_command.Create in
+      let open Cqrs_command.Filter_command in
       Message.Field.[ show Title, [ "Some title" ] ]
-      |> decode
-      >>= handle [] [ template ] filter
+      |> default_decode
+      >>= Create.handle [] [ template ] filter
     in
     let expected = Error Message.FilterMustNotContainTemplate in
     Alcotest.(

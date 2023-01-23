@@ -150,6 +150,19 @@ module Sql = struct
   let update pool =
     Utils.Database.exec (Pool_database.Label.value pool) update_request
   ;;
+
+  let delete_request =
+    let open Caqti_request.Infix in
+    {sql|
+      DELETE FROM pool_filter
+      WHERE uuid = UNHEX(REPLACE($1, '-', ''))
+    |sql}
+    |> Pool_common.Repo.Id.t ->. Caqti_type.unit
+  ;;
+
+  let delete pool =
+    Utils.Database.exec (Pool_database.Label.value pool) delete_request
+  ;;
 end
 
 let find = Sql.find
@@ -158,3 +171,4 @@ let find_template = Sql.find_template
 let find_multiple_templates = Sql.find_multiple_templates
 let insert = Sql.insert
 let update = Sql.update
+let delete = Sql.delete

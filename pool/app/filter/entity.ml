@@ -422,20 +422,20 @@ let rec yojson_of_query f : Yojson.Safe.t =
 
 let rec query_of_yojson json =
   let error = Pool_common.Message.(Invalid Field.Query) in
-  let open CCResult in
+  let open CCResult.Infix in
+  let not_empty l =
+    match l with
+    | [] -> Error Pool_common.Message.FilterAndOrMustNotBeEmpty
+    | _ -> Ok l
+  in
+  let to_query_list json =
+    json |> not_empty >>= CCFun.(CCList.map query_of_yojson %> CCList.all_ok)
+  in
   match json with
   | `Assoc [ (key, filter) ] ->
     (match key, filter with
-     | "and", `List queries ->
-       queries
-       |> CCList.map query_of_yojson
-       |> CCList.all_ok
-       >|= fun lst -> And lst
-     | "or", `List queries ->
-       queries
-       |> CCList.map query_of_yojson
-       |> CCList.all_ok
-       >|= fun lst -> Or lst
+     | "and", `List json -> json |> to_query_list >|= fun lst -> And lst
+     | "or", `List json -> json |> to_query_list >|= fun lst -> Or lst
      | "not", f -> f |> query_of_yojson >|= not
      | "pred", p -> p |> Predicate.t_of_yojson >|= pred
      | "template", `String id ->

@@ -49,6 +49,11 @@ let edit { Pool_context.language; csrf; _ } filter key_list =
         Pool_common.Message.Field.Filter
         filter
     ; Component.Filter.(
-        filter_form csrf language (FilterParam filter) key_list [])
+        filter_form
+          csrf
+          language
+          (Http_utils.Filter.Template filter)
+          key_list
+          [])
     ]
 ;;

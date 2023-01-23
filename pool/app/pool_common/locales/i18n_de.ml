@@ -243,6 +243,7 @@ let confirmable_to_string confirmable =
    | DeleteCustomFieldOption -> "das Option", "löschen", None
    | DeleteEmailSuffix -> "das Suffix", "löschen", None
    | DeleteExperiment -> "das Experiment", "löschen", None
+   | DeleteExperimentFilter -> "den Filter", "löschen", None
    | DeleteFile -> "die Datei", "löschen", None
    | DeleteMailing -> "den Versand", "löschen", None
    | DeleteSession -> "die Session", "löschen", None

@@ -1,22 +1,42 @@
 const errorClass = "error-message";
+const globalErrorMsg = "An Error occurred";
 const csrfToken = () => {
     return document.getElementById("filter-form").querySelector('[name="_csrf"]').value;
 }
+const form = document.getElementById("filter-form");
 
+const icon = (classnames) => {
+    const i = document.createElement("i");
+    i.classList.add(...classnames)
+    return i
+}
+
+const fadeOut = (elm) => {
+    elm.classList.add("fade-out", "no-delay");
+}
+
+function addCloseListener() {
+    const notification = document.getElementById("filter-notification");
+    const iconClose = notification ? notification.querySelector(".notification-close") : false;
+    if (iconClose) {
+        iconClose.addEventListener("click", () => fadeOut(notification));
+    }
+}
 
 const notifyUser = (classname, msg) => {
     const notificationId = "filter-notification";
     const inner = document.createElement("div")
     inner.classList.add("notification", classname);
     inner.innerHTML = msg;
-
+    const closeIcon = icon(["icon-close", "notification-close"])
     const wrapper = document.createElement("div");
-    wrapper.classList.add("notification-fixed", "fade-out");
+    wrapper.classList.add("notification-fixed");
     wrapper.id = notificationId
+    inner.appendChild(closeIcon);
     wrapper.appendChild(inner);
-
     const notification = document.getElementById(notificationId)
     notification.parentElement.replaceChild(wrapper, notification)
+    addCloseListener();
 }
 
 const isListOperator = (operator) => {
@@ -43,11 +63,13 @@ const updateContactCount = async () => {
     const target = document.getElementById("contact-counter");
     if (target) {
         const action = target.dataset.action;
+        const spinner = icon(["icon-spinner-outline", "rotate"])
+        target.appendChild(spinner);
         try {
             const response = await fetch(action);
             const data = await response.json();
             if (!response.ok) {
-                throw (data.message || response.statusText || "An Error occurred")
+                throw (data.message || response.statusText || globalErrorMsg)
             }
             if (response.status < 200 || response.status > 300) {
                 notifyUser("error", data.message)
@@ -55,6 +77,7 @@ const updateContactCount = async () => {
                 target.innerHTML = data.count
             }
         } catch (error) {
+            target.innerHTML = globalErrorMsg;
             notifyUser("error", error)
         };
     }
@@ -104,7 +127,6 @@ const predicateToJson = (outerPredicate, allowEmpty = false) => {
                         }
                         break;
                     case "bool":
-                        console.log(valueInput)
                         value = {
                             [inputDataType]: (valueInput.value == "true")
                         }
@@ -196,7 +218,7 @@ function configRequest(e, form) {
         try {
             e.detail.parameters.query = predicateToJson(elm, allowEmpty);
             const title = document.querySelector('#filter-form [name="title"]');
-            if (title) {
+            if (title && isSubmit) {
                 if (!title.value) {
                     throw "Please add a title.";
                 } else {
@@ -211,7 +233,6 @@ function configRequest(e, form) {
     }
 }
 
-const form = document.getElementById("filter-form");
 if (form) {
     const submitButton = document.getElementById("submit-filter-form");
     submitButton.addEventListener('htmx:beforeSwap', (e) => {
@@ -225,6 +246,7 @@ if (form) {
         if (e.detail.target.type === "submit") {
             updateContactCount();
         }
+        addCloseListener();
     })
     updateContactCount()
     form.addEventListener('htmx:configRequest', (e) => configRequest(e, form))

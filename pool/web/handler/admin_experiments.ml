@@ -6,6 +6,7 @@ module Assignment = Admin_experiments_assignments
 module Mailings = Admin_experiments_mailing
 module MessageTemplates = Admin_experiments_message_templates
 module Users = Admin_experiments_users
+module FilterEntity = Filter
 
 let create_layout req = General.create_tenant_layout req
 
@@ -185,13 +186,14 @@ let delete req =
           "%s/%s"
           experiments_path
           (Experiment.Id.value experiment_id) ))
-    @@ let%lwt session_count =
+    @@ let* experiment = Experiment.find database_label experiment_id in
+       let%lwt session_count =
          Experiment.session_count database_label experiment_id
        in
        let tags = Logger.req req in
        let events =
          Cqrs_command.Experiment_command.Delete.(
-           handle ~tags { experiment_id; session_count })
+           handle ~tags { experiment; session_count })
          |> Lwt_result.lift
        in
        let handle events =
@@ -210,21 +212,77 @@ let delete req =
 ;;
 
 module Filter = struct
-  let toggle_predicate_type req =
+  open HttpUtils.Filter
+  open Utils.Lwt_result.Infix
+
+  let handler fnc req =
     let id = experiment_id req in
-    Admin_filter.handle_toggle_predicate_type ~experiment_id:id req
+    req
+    |> database_label_from_req
+    >>= CCFun.flip Experiment.find id
+    |>> (fun e -> fnc (Experiment e) req)
+    >|> function
+    | Ok res -> Lwt.return res
+    | Error err ->
+      let path =
+        Format.asprintf
+          "/admin/experiments/%s/invitations"
+          (Experiment.Id.value id)
+      in
+      Http_utils.redirect_to_with_actions path [ Message.set ~error:[ err ] ]
   ;;
 
-  let add_predicate req =
-    let id = experiment_id req in
-    Admin_filter.handle_add_predicate ~experiment_id:id req
-  ;;
+  let toggle_predicate_type = handler Admin_filter.handle_toggle_predicate_type
+  let add_predicate = handler Admin_filter.handle_add_predicate
+  let toggle_key = Admin_filter.handle_toggle_key
+  let create = handler Admin_filter.write
+  let update = handler Admin_filter.write
 
-  let toggle_key = Admin_filter.toggle_key
+  let delete req =
+    let result { Pool_context.database_label; _ } =
+      let experiment_id =
+        HttpUtils.find_id
+          Experiment.Id.of_string
+          Pool_common.Message.Field.Experiment
+          req
+      in
+      let redirect_path =
+        Format.asprintf
+          "/admin/experiments/%s/invitations"
+          (Experiment.Id.value experiment_id)
+      in
+      Utils.Lwt_result.map_error (fun err -> err, redirect_path)
+      @@ let* experiment = Experiment.find database_label experiment_id in
+         let tags = Logger.req req in
+         let events =
+           Cqrs_command.Experiment_command.DeleteFilter.(
+             handle ~tags experiment)
+           |> Lwt_result.lift
+         in
+         let handle events =
+           let%lwt () =
+             Lwt_list.iter_s
+               (Pool_event.handle_event ~tags database_label)
+               events
+           in
+           Http_utils.redirect_to_with_actions
+             redirect_path
+             [ Message.set
+                 ~success:[ Pool_common.Message.(Deleted Field.Filter) ]
+             ]
+         in
+         events |>> handle
+    in
+    result |> HttpUtils.extract_happy_path req
+  ;;
 end
 
 module Access : sig
   include Helpers.AccessSig
+
+  module Filter : sig
+    include Helpers.AccessSig
+  end
 end = struct
   module Field = Pool_common.Message.Field
   module ExperimentCommand = Cqrs_command.Experiment_command
@@ -264,4 +322,35 @@ end = struct
     |> experiment_effects
     |> Middleware.Guardian.validate_generic
   ;;
+
+  module Filter = struct
+    let index = Middleware.Guardian.denied
+    let read = Middleware.Guardian.denied
+
+    let filter_effects =
+      Middleware.Guardian.id_effects FilterEntity.Id.of_string Field.Filter
+    ;;
+
+    let create =
+      [ ExperimentCommand.CreateFilter.effects ]
+      |> experiment_effects
+      |> Middleware.Guardian.validate_generic
+    ;;
+
+    let update =
+      [ ExperimentCommand.UpdateFilter.effects ]
+      |> filter_effects
+      |> Middleware.Guardian.validate_generic
+    ;;
+
+    let delete =
+      [ (fun id ->
+          [ `Delete, `Target (id |> Guard.Uuid.target_of FilterEntity.Id.value)
+          ; `Delete, `TargetEntity `Filter
+          ])
+      ]
+      |> filter_effects
+      |> Middleware.Guardian.validate_generic
+    ;;
+  end
 end

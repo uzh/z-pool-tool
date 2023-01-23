@@ -128,10 +128,10 @@ module Partials = struct
           filter_form
             csrf
             language
-            (ExperimentParam experiment)
+            (Http_utils.Filter.Experiment experiment)
             key_list
             template_list)
-      ; filtered_contacts_form
+      ; div ~a:[ a_class [ "gap-lg" ] ] [ filtered_contacts_form ]
       ]
   ;;
 end

@@ -1,5 +1,6 @@
 open Tyxml.Html
 open Filter
+open Http_utils.Filter
 module Input = Component_input
 
 let templates_disabled_key = "templates_disabled"
@@ -19,13 +20,23 @@ let format_identifiers ?prefix identifiers =
   | Some prefix -> Format.asprintf "%s-%s" prefix ids
 ;;
 
-let form_action experiment =
-  match experiment with
-  | None -> Format.asprintf "/admin/filter/%s"
-  | Some experiment ->
-    Format.asprintf
-      "/admin/experiments/%s/filter/%s"
-      Experiment.(experiment.Experiment.id |> Id.value)
+let form_action = function
+  | Experiment exp ->
+    let base =
+      Format.asprintf
+        "/admin/experiments/%s/filter"
+        Experiment.(Id.value exp.id)
+    in
+    (match exp.Experiment.filter with
+     | None -> Format.asprintf "%s/%s" base
+     | Some filter ->
+       Format.asprintf "%s/%s/%s" base Filter.(Id.value filter.id))
+  | Template filter ->
+    let base = Format.asprintf "/admin/filter" in
+    (match filter with
+     | None -> Format.asprintf "%s/%s" base
+     | Some filter ->
+       Format.asprintf "%s/%s/%s" base Filter.(Id.value filter.id))
 ;;
 
 let htmx_attribs
@@ -262,7 +273,7 @@ let predicate_value_form language ?key ?value ?operator () =
 
 let single_predicate_form
   language
-  experiment
+  param
   identifier
   key_list
   templates_disabled
@@ -278,7 +289,7 @@ let single_predicate_form
   let key_selector =
     let attributes =
       htmx_attribs
-        ~action:(form_action experiment "toggle-key")
+        ~action:(form_action param "toggle-key")
         ~trigger:"change"
         ~swap:"innerHTML"
         ~target:toggle_id
@@ -363,7 +374,7 @@ let add_predicate_btn experiment identifier templates_disabled =
 
 let rec predicate_form
   language
-  experiment
+  param
   key_list
   template_list
   templates_disabled
@@ -390,12 +401,7 @@ let rec predicate_form
   in
   let predicate_form =
     let to_form =
-      predicate_form
-        language
-        experiment
-        key_list
-        template_list
-        templates_disabled
+      predicate_form language param key_list template_list templates_disabled
     in
     let open Human in
     match query with
@@ -406,7 +412,7 @@ let rec predicate_form
           to_form query ~identifier:(identifier @ [ i ]) ())
         queries
       @ [ add_predicate_btn
-            experiment
+            param
             (identifier @ [ CCList.length queries ])
             templates_disabled
         ]
@@ -416,7 +422,7 @@ let rec predicate_form
       let ({ Predicate.key; operator; value } : Predicate.human) = predicate in
       single_predicate_form
         language
-        experiment
+        param
         identifier
         key_list
         templates_disabled
@@ -453,7 +459,7 @@ let rec predicate_form
       @ data_attr)
     ([ predicate_type_select
          language
-         experiment
+         param
          predicate_identifier
          identifier
          templates_disabled
@@ -464,27 +470,18 @@ let rec predicate_form
     @ if CCList.length identifier > 1 then [ delete_button () ] else [])
 ;;
 
-type form_param =
-  | ExperimentParam of Experiment.t
-  | FilterParam of Filter.t option
-
 let filter_form csrf language param key_list template_list =
-  let filter, action, experiment =
+  let filter, action =
     let open Experiment in
     match param with
-    | ExperimentParam experiment ->
-      ( experiment.filter
-      , Format.asprintf
-          "/admin/experiments/%s/filter/create"
-          (Experiment.Id.value experiment.Experiment.id)
-      , Some experiment )
-    | FilterParam filter ->
-      ( filter
-      , (match filter with
-         | Some filter ->
-           Format.asprintf "/admin/filter/%s" (filter.id |> Pool_common.Id.value)
-         | None -> "/admin/filter")
-      , None )
+    | Experiment experiment ->
+      let action =
+        match experiment.filter with
+        | None -> "create"
+        | Some _ -> ""
+      in
+      experiment.filter, form_action param action
+    | Template filter -> filter, form_action param ""
   in
   let filter_query =
     filter
@@ -494,12 +491,12 @@ let filter_form csrf language param key_list template_list =
   in
   let result_counter =
     match param with
-    | FilterParam _ -> txt ""
-    | ExperimentParam experiment ->
+    | Template _ -> txt ""
+    | Experiment experiment ->
       div
+        ~a:[ a_class [ "flexrow"; "flex-gap-xs" ] ]
         [ txt
             Pool_common.(Utils.text_to_string language I18n.FilterNrOfContacts)
-        ; txt " "
         ; span
             ~a:
               [ a_id "contact-counter"
@@ -513,15 +510,48 @@ let filter_form csrf language param key_list template_list =
             []
         ]
   in
+  let delete_form =
+    match param with
+    | Template _ -> txt ""
+    | Experiment experiment ->
+      (match experiment.Experiment.filter with
+       | None -> txt ""
+       | Some filter ->
+         Tyxml.Html.form
+           ~a:
+             [ a_method `Post
+             ; a_action
+                 (Sihl.Web.externalize_path
+                    (Format.asprintf
+                       "/admin/experiments/%s/filter/%s/delete"
+                       (experiment.Experiment.id |> Experiment.Id.value)
+                       (filter.Filter.id |> Filter.Id.value)))
+             ; a_user_data
+                 "confirmable"
+                 Pool_common.(
+                   Utils.confirmable_to_string
+                     language
+                     I18n.DeleteExperimentFilter)
+             ]
+           [ Input.csrf_element csrf ()
+           ; Input.submit_element
+               language
+               Pool_common.Message.(Delete (Some Field.Filter))
+               ~classnames:[ "small" ]
+               ~submit_type:`Error
+               ~has_icon:`TrashOutline
+               ()
+           ])
+  in
   let templates_disabled =
     match param with
-    | ExperimentParam _ -> false
-    | FilterParam _ -> true
+    | Experiment _ -> false
+    | Template _ -> true
   in
   let predicates =
     predicate_form
       language
-      experiment
+      param
       key_list
       template_list
       templates_disabled
@@ -530,7 +560,7 @@ let filter_form csrf language param key_list template_list =
   in
   let title_input, _ =
     match param with
-    | FilterParam _ ->
+    | Template _ ->
       let open CCOption.Infix in
       let open Pool_common.Message in
       ( Component_input.input_element
@@ -540,13 +570,13 @@ let filter_form csrf language param key_list template_list =
           `Text
           Field.Title
       , [ a_user_data "hx-params" Field.(show Title) ] )
-    | ExperimentParam _ -> txt "", []
+    | Experiment _ -> txt "", []
   in
   let filter_id =
     (match param with
-     | ExperimentParam experiment ->
+     | Experiment experiment ->
        experiment.Experiment.filter |> CCOption.map (fun f -> f.id)
-     | FilterParam f -> f |> CCOption.map (fun f -> f.Filter.id))
+     | Template f -> f |> CCOption.map (fun f -> f.Filter.id))
     |> CCOption.map_or ~default:[] (fun id ->
          Pool_common.[ a_user_data Message.Field.(show filter) (Id.value id) ])
   in
@@ -565,8 +595,9 @@ let filter_form csrf language param key_list template_list =
         ; title_input
         ; predicates
         ; div
-            ~a:[ a_class [ "flexrow" ] ]
-            [ Component_input.submit_element
+            ~a:[ a_class [ "flexrow"; "align-center" ] ]
+            [ delete_form
+            ; Component_input.submit_element
                 language
                 ~classnames:[ "push" ]
                 ~attributes:

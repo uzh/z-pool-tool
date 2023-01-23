@@ -2,6 +2,7 @@
  (name http_utils)
  (libraries
   contact
+  experiment
   logger
   pool_common
   pool_context

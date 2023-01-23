@@ -227,18 +227,25 @@ module Admin = struct
     let filter =
       let open Handler.Admin.Filter in
       let specific =
-        [ get "/edit" ~middlewares:[ Access.update ] edit
-        ; post "" ~middlewares:[ Access.update ] update_template
-        ]
+        Update.
+          [ get "/edit" edit
+          ; post "" update_template
+          ; choose
+              (filter_form (toggle_key, toggle_predicate_type, add_predicate))
+          ]
       in
-      [ get "" ~middlewares:[ Access.index ] index
-      ; post "" ~middlewares:[ Access.create ] create_template
-      ; get "/new" ~middlewares:[ Access.create ] new_form
-      ; choose
-          (filter_form (toggle_key, toggle_predicate_type, add_predicate))
-          ~middlewares:[ Access.create ]
-      ; choose ~scope:(Filter |> url_key) specific
-      ]
+      Create.
+        [ get "" ~middlewares:[ Access.index ] index
+        ; post "" ~middlewares:[ Access.create ] create_template
+        ; get "/new" ~middlewares:[ Access.create ] new_form
+        ; choose
+            (filter_form (toggle_key, toggle_predicate_type, add_predicate))
+            ~middlewares:[ Access.create ]
+        ; choose
+            ~middlewares:[ Access.update ]
+            ~scope:(Filter |> url_key)
+            specific
+        ]
     in
     let message_templates =
       let open Handler.Admin.MessageTemplate in
@@ -376,17 +383,24 @@ module Admin = struct
         ]
       in
       let filter =
-        Handler.Admin.
-          [ post
-              "/create"
-              ~middlewares:[ Experiments.Access.create ]
-              Filter.create_for_experiment
-          ; choose
-              (filter_form
-                 Experiments.Filter.(
-                   toggle_key, toggle_predicate_type, add_predicate))
-              ~middlewares:[ Experiments.Access.update ]
+        let open Handler.Admin.Experiments in
+        let form_handlers middlewares =
+          choose
+            (filter_form
+               Experiments.Filter.(
+                 toggle_key, toggle_predicate_type, add_predicate))
+            ~middlewares
+        in
+        let specific =
+          [ post "" ~middlewares:[ Access.Filter.update ] Filter.update
+          ; post "/delete" ~middlewares:[ Access.Filter.delete ] Filter.delete
+          ; form_handlers [ Access.Filter.update ]
           ]
+        in
+        [ post "/create" ~middlewares:[ Access.Filter.create ] Filter.create
+        ; form_handlers [ Access.Filter.create ]
+        ; choose ~scope:(Filter |> url_key) specific
+        ]
       in
       let message_templates =
         let open Message_template.Label in
