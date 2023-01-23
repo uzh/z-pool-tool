@@ -72,7 +72,7 @@ module Write = struct
     { server : Server.t
     ; port : Port.t
     ; username : Username.t
-    ; password : Password.t
+    ; password : Password.t [@opaque]
     ; authentication_method : AuthenticationMethod.t
     ; protocol : Protocol.t
     }

@@ -10,6 +10,7 @@
   settings
   sihl
   tenant
-  utils)
+  utils
+  version)
  (preprocess
   (pps lwt_ppx ppx_deriving.show)))

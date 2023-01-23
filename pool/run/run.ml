@@ -12,6 +12,7 @@ let commands =
   ; Seed.tenant_data_contacts_specific
   ; Seed.tenant_seed_default
   ; Tenant_pool.create_tenant_pool
+  ; Tenant_pool.update_tenant_database_url
   ; Contact.sign_up
   ; SessionReminder.all_tenants_session_reminder
   ; SessionReminder.tenant_specific_session_reminder
@@ -23,6 +24,7 @@ let commands =
   ; Admin.create
   ; Admin.grant_role
   ; Admin.list_roles
+  ; version
   ]
 ;;
 

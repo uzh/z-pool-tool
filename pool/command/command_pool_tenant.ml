@@ -84,3 +84,45 @@ Provide all fields to create a new tenant:
       Lwt.return_some ()
     | _ -> Command_utils.failwith_missmatch help)
 ;;
+
+let update_tenant_database_url =
+  let name = "tenant.database.update_url" in
+  let description = "Update the database url of the specified tenant." in
+  let help =
+    Format.asprintf
+      {|<database_label> <database_url>
+
+Provide the following variables:
+        <database_label>      : string
+        <database_url>        : string
+
+
+Example: %s econ-uzh mariadb://user:pw@localhost:3306/dev_econ
+  |}
+      name
+  in
+  Sihl.Command.make ~name ~description ~help (function
+    | [ pool; database_url ] ->
+      let open Utils.Lwt_result.Infix in
+      let open Pool_tenant in
+      let%lwt pool = Command_utils.is_available_exn pool in
+      let result =
+        let open Cqrs_command.Pool_tenant_command.EditDatabase in
+        let* tenant = find_by_label pool >>= fun { id; _ } -> find_full id in
+        let* url = Database.Url.create database_url |> Lwt_result.lift in
+        let updated_database =
+          Database.
+            { database_url = url; database_label = tenant.Write.database.label }
+        in
+        handle tenant updated_database |> Lwt.return
+      in
+      (match%lwt result with
+       | Ok events ->
+         let%lwt () = Pool_event.handle_events Pool_database.root events in
+         Lwt.return_some ()
+       | Error err ->
+         let open Pool_common in
+         let (_ : Message.error) = Utils.with_log_error err in
+         Lwt.return_none)
+    | _ -> Command_utils.failwith_missmatch help)
+;;
