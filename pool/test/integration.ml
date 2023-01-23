@@ -58,6 +58,14 @@ let suite =
               "update non overwrite field as admin"
               `Slow
               update_non_overwrite_field_as_admin
+          ; test_case
+              "set value of none required field to null"
+              `Slow
+              set_value_of_none_required_field_to_null
+          ; test_case
+              "set value of  required field to null"
+              `Slow
+              set_value_of_required_field_to_null
           ] )
     ; ( "filter"
       , Filter_test.

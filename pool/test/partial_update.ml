@@ -153,3 +153,27 @@ let update_non_overwrite_field_as_admin _ () =
   let expected = Error Message.NotEligible in
   partial_update_exec ~is_admin:true ~custom_field expected ()
 ;;
+
+let set_value_of_none_required_field_to_null _ () =
+  let open Custom_field in
+  let custom_field = Custom_field_test.Data.custom_text_field () in
+  let value = "" in
+  let[@warning "-4"] expected =
+    let public = Custom_field_test.Data.to_public custom_field in
+    match public with
+    | Public.Text (public, _) ->
+      Contact.PartialUpdate.(
+        Custom (Public.Text (public, None)) |> increment_version)
+      |> CCResult.pure
+    | _ -> failwith "Invailid field type "
+  in
+  partial_update_exec ~custom_field ~value expected ()
+;;
+
+let set_value_of_required_field_to_null _ () =
+  let required = Custom_field.Required.create true in
+  let custom_field = Custom_field_test.Data.custom_text_field ~required () in
+  let value = "" in
+  let expected = Error Message.(NoValue) in
+  partial_update_exec ~custom_field ~value expected ()
+;;

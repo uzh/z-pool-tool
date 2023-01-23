@@ -277,6 +277,10 @@ let () =
             Custom_field_test.create_with_missing_name
         ; test_case "update custom field" `Quick Custom_field_test.update
         ; test_case
+            "update field type of published field"
+            `Quick
+            Custom_field_test.update_type_of_published_field
+        ; test_case
             "crate custom field option"
             `Quick
             Custom_field_test.create_option

@@ -38,7 +38,13 @@ module Data = struct
       }
   ;;
 
-  let custom_field ?published_at ?validation ?(admin = admin) field_type =
+  let custom_field
+    ?published_at
+    ?validation
+    ?(admin = admin)
+    ?(required = required)
+    field_type
+    =
     let name = Name.create sys_languages name |> get in
     let hint = Hint.create hint |> get in
     Custom_field.create
@@ -56,8 +62,8 @@ module Data = struct
     |> CCResult.get_exn
   ;;
 
-  let custom_text_field ?published_at ?validation ?admin () =
-    custom_field ?published_at ?validation ?admin FieldType.Text
+  let custom_text_field ?published_at ?validation ?admin ?required () =
+    custom_field ?published_at ?validation ?admin ?required FieldType.Text
   ;;
 
   let custom_select_field () = custom_field ~validation:[] FieldType.Select
