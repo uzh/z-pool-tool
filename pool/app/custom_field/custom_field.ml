@@ -57,9 +57,9 @@ let validate_htmx value (m : Public.t) =
      | None, true -> no_value)
   | MultiSelect (public, options, _) ->
     let to_field a = Public.MultiSelect (public, options, a) in
-    (match value with
-     | [] -> no_value
-     | vals ->
+    (match value, required with
+     | [], true -> no_value
+     | vals, _ ->
        let open SelectOption in
        vals
        |> CCList.map (fun value ->
