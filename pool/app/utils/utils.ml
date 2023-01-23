@@ -2,6 +2,7 @@ module Countries = Countries
 module Database = Database
 module LanguageCodes = Language_codes
 module Lwt_result = Lwt_trace
+module Crypto = Crypto
 
 let todo _ = failwith "todo"
 let fcn_ok fcn m = m |> fcn |> CCResult.pure

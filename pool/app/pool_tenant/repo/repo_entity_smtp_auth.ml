@@ -21,7 +21,21 @@ end
 module Password = struct
   include Password
 
-  let t = Caqti_type.string
+  let t =
+    let open CCResult in
+    let open CCFun in
+    Caqti_type.(
+      custom
+        ~encode:(Utils.Crypto.String.encrypt_to_string %> CCResult.pure)
+        ~decode:(fun m ->
+          map_err (fun _ ->
+            let open Pool_common in
+            Utils.error_to_string
+              Language.En
+              Message.(Decode Field.SmtpPassword))
+          @@ Utils.Crypto.String.decrypt_from_string m)
+        string)
+  ;;
 end
 
 module AuthenticationMethod = struct
