@@ -320,7 +320,9 @@ end = struct
   ;;
 
   let effects { Pool_tenant.Write.id; _ } =
-    [ `Update, `Target (id |> Guard.Uuid.target_of Id.value) ]
+    [ `Update, `Target (id |> Guard.Uuid.target_of Id.value)
+    ; `Update, `TargetEntity `Tenant
+    ]
   ;;
 end
 
@@ -383,6 +385,7 @@ end = struct
     let* tenant = Pool_tenant.find_by_label dblabel in
     Lwt.return_ok
       [ `Update, `Target (tenant.Pool_tenant.id |> Guard.Uuid.target_of Id.value)
+      ; `Update, `TargetEntity `Tenant
       ]
   ;;
 end
@@ -401,7 +404,7 @@ end = struct
     Ok [ Pool_tenant.LogoDeleted (tenant, asset_id) |> Pool_event.pool_tenant ]
   ;;
 
-  let effects = [ `Create, `TargetEntity `Tenant ]
+  let effects = [ `Update, `TargetEntity `Tenant ]
 end
 
 module Destroy : sig
