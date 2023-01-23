@@ -4,16 +4,25 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/pool/tree/HEAD)
 
+## [0.1.0](https://github.com/uzh/pool/tree/0.1.0) - 2023-01-23
+
 ### Added
 
-- Handling of entity based email templates (e.g. Experiment Invitation, Experiment - Session Reminder, Session - Session Reminder)
-- Detailed email template form description, show available text elements
+- handling of entity based email templates (e.g. Experiment Invitation, Experiment - Session Reminder, Session - Session Reminder)
+- detailed email template form description, show available text elements
+- version to assets
+- participant dashboard
+- redirect to intended page when login is needed
+- keep email address on failed login page
+- encrypting root database information
 
 ### Fixed
 
 - development seed - don't generate duplicate persons
+- empty filter
+- deleting an experiment removes it's filter as well
 
-## [0.0.4](https://github.com/uzh/pool/tree/0.0.3) - 2023-01-13
+## [0.0.4](https://github.com/uzh/pool/tree/0.0.4) - 2023-01-13
 
 ### Added
 
