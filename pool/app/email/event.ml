@@ -15,7 +15,7 @@ let sender_of_pool pool =
   then Lwt.return (Sihl.Configuration.read_string "SMTP_SENDER")
   else (
     let%lwt sender_email =
-      Settings.find_contact_email pool ||> Settings.ContactEmail.show
+      Settings.find_contact_email pool ||> Settings.ContactEmail.value
     in
     let%lwt tenant = Pool_tenant.find_by_label pool ||> CCResult.get_exn in
     Format.sprintf
