@@ -143,21 +143,26 @@ let request_reset_password_post req =
     let* { Pool_context.Tenant.tenant; _ } =
       Pool_context.Tenant.find req |> Lwt_result.lift
     in
-    Sihl.Web.Request.to_urlencoded req
-    ||> decode
-    >>= Contact.find_by_email database_label
-    >>= fun { Contact.user; _ } ->
-    PasswordReset.create database_label language (Tenant tenant) user
-    >== handle
-    |>> Pool_event.handle_events ~tags database_label
-    >|> function
-    | Ok () | Error (_ : Pool_common.Message.error) ->
-      redirect_to_with_actions
-        redirect_path
-        [ Message.set
-            ~success:[ Pool_common.Message.PasswordResetSuccessMessage ]
-        ]
-      >|> Lwt_result.return
+    let ctx = Pool_tenant.to_ctx database_label in
+    let* user =
+      Sihl.Web.Request.to_urlencoded req
+      ||> decode
+      >|+ Pool_user.EmailAddress.value
+      |>> Service.User.find_by_email_opt ~ctx
+    in
+    let* () =
+      match user with
+      | None -> Lwt_result.return ()
+      | Some user ->
+        PasswordReset.create database_label language (Tenant tenant) user
+        >== handle
+        |>> Pool_event.handle_events ~tags database_label
+    in
+    redirect_to_with_actions
+      redirect_path
+      [ Message.set ~success:[ Pool_common.Message.PasswordResetSuccessMessage ]
+      ]
+    >|> Lwt_result.return
   in
   result |> extract_happy_path_with_actions req
 ;;

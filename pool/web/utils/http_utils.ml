@@ -28,7 +28,15 @@ let intended_to_url url intended =
   let open Uri in
   let key = Pool_common.Message.Field.(location |> show) in
   let equal_path a b = CCString.equal (path a) (path b) in
-  let intended = intended |> of_string in
+  let intended =
+    let open CCOption in
+    Sihl.Configuration.read_string "PREFIX_PATH"
+    >|= (fun p ->
+          if CCString.prefix ~pre:"/" p then p else Format.asprintf "/%s" p)
+    |> value ~default:""
+    |> fun pre ->
+    CCString.chop_prefix ~pre intended |> value ~default:intended |> of_string
+  in
   let url = url |> of_string in
   (if equal_path url intended then [] else [ key, [ path intended ] ])
   @ query intended
