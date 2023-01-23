@@ -348,7 +348,6 @@ let count_contacts req =
   |> Lwt.return
 ;;
 
-(* TODO: Toggle Key *)
 module Create = struct
   let action = Template None
   let create_template = write action
