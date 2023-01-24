@@ -19,17 +19,25 @@ let answer_custom_fields fields contact =
   let open Custom_field in
   let open Public in
   let select_random options =
-    Random.int (List.length options) |> CCList.nth options |> Answer.create
+    Random.int (List.length options) |> CCList.nth options
   in
   CCList.filter_map
     (fun field ->
       match (field : Public.t) with
       | Select (public, options, _) ->
-        Public.Select (public, options, select_random options |> CCOption.pure)
+        Public.Select
+          ( public
+          , options
+          , select_random options |> Answer.create |> CCOption.pure )
         |> CCOption.pure
       | MultiSelect (public, options, _) ->
         Public.MultiSelect
-          (public, options, select_random options |> CCList.pure)
+          ( public
+          , options
+          , select_random options
+            |> CCList.pure
+            |> Answer.create
+            |> CCOption.pure )
         |> CCOption.pure
       | Boolean _ | Number _ | Text _ -> None)
     fields

@@ -106,9 +106,8 @@ module Data = struct
       let answer =
         field_options
         |> CCList.head_opt
-        |> CCOption.map (fun option ->
-             Answer.{ id = answer_id; value = option } |> CCList.pure)
-        |> CCOption.value ~default:[]
+        |> CCOption.map (fun opt ->
+             opt |> CCList.pure |> Answer.create ~id:answer_id)
       in
       Public.MultiSelect
         ( { Public.id

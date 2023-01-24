@@ -339,13 +339,18 @@ module Sql = struct
         answer
         |> map_or ~clear (fun { id; value; _ } ->
              update_answer id (Utils.Bool.to_string value))
-      | MultiSelect (_, _, answers) ->
+      | MultiSelect (_, _, answer) ->
         let%lwt () =
           delete_all_answers_of_multiselect pool field_id entity_uuid
         in
-        answers
-        |> Lwt_list.iter_s (fun { Entity_answer.id; value } ->
-             update_answer id (value |> option_id))
+        answer
+        |> map_or ~clear (fun { id; value; _ } ->
+             value
+             |> CCList.map (fun { Entity.SelectOption.Public.id; _ } -> id)
+             |> fun (ids : Repo_entity.multi_select_answer) ->
+             Repo_entity.yojson_of_multi_select_answer ids
+             |> Yojson.Safe.to_string
+             |> update_answer id)
       | Number (_, answer) ->
         answer
         |> map_or ~clear (fun { id; value; _ } ->

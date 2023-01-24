@@ -211,9 +211,10 @@ let custom_field_to_htmx_value language =
   function
   | Public.Boolean (_, answer) ->
     answer >|= (fun a -> a.Answer.value) |> value ~default:false |> boolean
-  | Public.MultiSelect (_, options, answers) ->
-    answers
-    |> CCList.map (fun { Answer.value; _ } -> value)
+  | Public.MultiSelect (_, options, answer) ->
+    answer
+    >|= (fun a -> a.Answer.value)
+    |> value ~default:[]
     |> fun selected ->
     Input.
       { options

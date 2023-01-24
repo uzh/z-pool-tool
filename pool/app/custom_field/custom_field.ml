@@ -56,21 +56,27 @@ let validate_htmx value (m : Public.t) =
        |> to_field
      | None, false -> to_field None
      | None, true -> no_value)
-  | MultiSelect (public, options, _) ->
+  | MultiSelect (public, options, answer) ->
     let to_field a = Public.MultiSelect (public, options, a) in
+    let id = Answer.id_opt answer in
     (match value, required with
      | [], true -> no_value
      | vals, _ ->
        let open SelectOption in
-       vals
-       |> CCList.map (fun value ->
-            let id = value |> Id.of_string in
-            CCList.find_opt (fun option -> Id.equal option.Public.id id) options
-            |> CCOption.to_result
-                 Pool_common.Message.(Invalid Field.CustomFieldOption)
-            >|= Answer.create)
-       |> CCList.all_ok
-       >|= to_field)
+       let a =
+         vals
+         |> CCList.map (fun value ->
+              CCList.find_opt
+                (fun option ->
+                  Id.equal option.Public.id (value |> Id.of_string))
+                options
+              |> CCOption.to_result
+                   Pool_common.Message.(Invalid Field.CustomFieldOption))
+         |> CCList.all_ok
+         >|= Answer.create ?id
+         >|= CCOption.pure
+       in
+       a >|= to_field)
   | Number (({ validation; _ } as public), answer) ->
     let to_field a = Public.Number (public, a) in
     let id = Answer.id_opt answer in
@@ -104,16 +110,6 @@ let validate_htmx value (m : Public.t) =
        value |> go validation >|= Answer.create ?id %> CCOption.pure %> to_field
      | None, false -> Ok (to_field None)
      | None, true -> no_value)
-;;
-
-let validate_multiselect (public, options) values =
-  let ids = values |> CCList.map SelectOption.Id.of_string in
-  options
-  |> CCList.filter_map (fun ({ SelectOption.Public.id; _ } as option) ->
-       if CCList.mem ~eq:SelectOption.Id.equal id ids
-       then Answer.create option |> CCOption.pure
-       else None)
-  |> fun answers -> Public.multiselect public options answers
 ;;
 
 module Repo = struct

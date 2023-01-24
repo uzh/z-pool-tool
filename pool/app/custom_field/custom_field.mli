@@ -246,7 +246,7 @@ module Public : sig
     | MultiSelect of
         SelectOption.Public.t list public
         * SelectOption.Public.t list
-        * SelectOption.Public.t Answer.t list
+        * SelectOption.Public.t list Answer.t option
     | Number of int public * int Answer.t option
     | Select of
         SelectOption.Public.t public
@@ -460,11 +460,6 @@ val validate_htmx
   :  string list
   -> Public.t
   -> (Public.t, Pool_common.Message.error) result
-
-val validate_multiselect
-  :  SelectOption.Public.t list Public.public * SelectOption.Public.t list
-  -> string list
-  -> Public.t
 
 module Repo : sig
   module Id : sig

@@ -117,7 +117,8 @@ module CustomFieldData = struct
     let open Custom_field in
     let answer =
       multi_select_options_public_by_index answer_index
-      |> CCList.map Answer.create
+      |> Answer.create
+      |> CCOption.pure
     in
     let version = 0 |> Pool_common.Version.of_int in
     Public.MultiSelect

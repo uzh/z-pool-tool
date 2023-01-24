@@ -12,6 +12,8 @@ let decode_yojson t_of_yojson field t =
       Pool_common.(Utils.error_to_string Language.En Message.(Invalid field))
 ;;
 
+type multi_select_answer = SelectOption.Id.t list [@@deriving yojson]
+
 module Model = struct
   include Model
 
@@ -282,6 +284,7 @@ module Public = struct
     ; version : Pool_common.Version.t option
     ; answer : Repo_entity_answer.repo option
     }
+  [@@deriving show, eq]
 
   let to_entity
     select_options
@@ -297,7 +300,6 @@ module Public = struct
     ; version
     ; _
     }
-    answers
     =
     let open CCOption.Infix in
     let validation_schema schema =
@@ -375,23 +377,30 @@ module Public = struct
         , options
         , answer )
     | FieldType.MultiSelect ->
-      let options =
+      let select_options =
         CCList.filter_map
           (fun (field_id, option) ->
             if Pool_common.Id.equal field_id id then Some option else None)
           select_options
       in
-      let answers =
+      let answer =
         let open SelectOption in
-        answers
-        |> CCList.filter_map (fun Answer.{ id; value } ->
-             value
-             |> Id.of_string
-             |> fun selected ->
-             CCList.find_opt
-               (fun { SelectOption.Public.id; _ } -> Id.equal id selected)
-               options
-             >|= Entity_answer.create ~id)
+        answer
+        |> CCOption.map (fun { Repo_entity_answer.id; value } ->
+             let options =
+               try
+                 value
+                 |> Yojson.Safe.from_string
+                 |> multi_select_answer_of_yojson
+               with
+               | _ -> []
+             in
+             options
+             |> CCList.filter_map (fun option_id ->
+                  CCList.find_opt
+                    (fun { SelectOption.Public.id; _ } -> Id.equal id option_id)
+                    select_options)
+             |> Entity_answer.create ~id)
       in
       Public.MultiSelect
         ( { Public.id
@@ -403,8 +412,8 @@ module Public = struct
           ; admin_input_only
           ; version
           }
-        , options
-        , answers )
+        , select_options
+        , answer )
     | FieldType.Text ->
       let answer =
         answer >|= fun Answer.{ id; value } -> value |> Entity_answer.create ~id
@@ -423,45 +432,17 @@ module Public = struct
         , answer )
   ;;
 
-  let group_fields lst =
-    let open CCList in
-    fold_left
-      (fun acc (field : repo) ->
-        match assoc_opt ~eq:Id.equal field.id acc with
-        | None -> acc @ [ field.id, [ field ] ]
-        | Some fields ->
-          Assoc.set ~eq:Id.equal field.id (fields @ [ field ]) acc)
-      []
-      lst
-    |> map snd
-  ;;
-
-  let single_to_entity options field_list =
-    let fst = CCList.hd field_list in
-    field_list
-    |> CCList.filter_map (fun field -> field.answer)
-    |> to_entity options fst
-  ;;
-
-  let to_ungrouped_entities select_options fields =
-    let to_entity = single_to_entity select_options in
-    fields |> group_fields |> CCList.map to_entity
-  ;;
-
   let to_grouped_entities select_options groups fields =
-    let to_entity = single_to_entity select_options in
+    let to_entity = to_entity select_options in
     let partition_map fields { Group.id; _ } =
-      CCList.fold_left
-        (fun (of_group, rest) (fields : repo list) ->
-          let ({ custom_field_group_id; _ } : repo) = CCList.hd fields in
-          CCOption.map_or
-            ~default:false
-            (fun group_id -> Pool_common.Id.equal group_id id)
-            custom_field_group_id
-          |> function
-          | true -> of_group @ [ fields |> to_entity ], rest
-          | false -> of_group, rest @ [ fields ])
-        ([], [])
+      CCList.partition_filter_map
+        (fun (field : repo) ->
+          match
+            field.custom_field_group_id
+            |> CCOption.map_or ~default:false (Id.equal id)
+          with
+          | true -> `Left (to_entity field)
+          | false -> `Right field)
         fields
     in
     let grouped, ungrouped =
@@ -472,12 +453,17 @@ module Public = struct
             Group.{ Public.id = group.id; name = group.name; fields = of_group }
           in
           CCList.append groups [ group ], rest)
-        ([], group_fields fields)
+        ([], fields)
         groups
     in
     ( grouped
       |> CCList.filter (fun g -> CCList.is_empty g.Group.Public.fields |> not)
     , ungrouped |> CCList.map to_entity )
+  ;;
+
+  let to_ungrouped_entities select_options fields =
+    let to_entity = to_entity select_options in
+    fields |> CCList.map to_entity
   ;;
 
   let t =

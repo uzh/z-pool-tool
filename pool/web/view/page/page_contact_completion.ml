@@ -29,8 +29,12 @@ let custom_field_to_input ?flash_fetcher language custom_field =
       ?value
       language
       field
-  | Public.MultiSelect (_, options, answers) ->
-    let selected = CCList.map (fun { Answer.value; _ } -> value) answers in
+  | Public.MultiSelect (_, options, answer) ->
+    let selected =
+      answer
+      |> CCOption.map (fun a -> a.Answer.value)
+      |> CCOption.value ~default:[]
+    in
     let t =
       Input.
         { options
