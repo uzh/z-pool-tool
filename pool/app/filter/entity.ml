@@ -327,9 +327,10 @@ module Operator = struct
     | NotEqual -> "<>"
     | Like ->
       "LIKE"
-      (* List operators are used to query custom fields by their value,
-         therefore '=' *)
-    | ContainsSome | ContainsNone | ContainsAll -> "="
+      (* List operators are used to query custom field answers by their value
+         which store json arrays *)
+    | ContainsSome | ContainsAll -> "LIKE"
+    | ContainsNone -> "NOT LIKE"
   ;;
 
   let validate (key : Key.t) operator =

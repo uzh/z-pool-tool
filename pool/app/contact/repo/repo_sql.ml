@@ -137,16 +137,25 @@ let find_confirmed pool email =
 
 let filter_to_sql template_list dyn query =
   let open Filter in
-  let add_value_to_params value dyn =
+  let wrap_in_percentage operator value =
+    let wrap s = CCString.concat "" [ "%"; s; "%" ] in
+    let open Operator in
+    match operator with
+    | ContainsSome | ContainsNone | ContainsAll | Like -> wrap value
+    | Less | LessEqual | Greater | GreaterEqual | Equal | NotEqual -> value
+  in
+  let add_value_to_params operator value dyn =
     let add c v = Dynparam.add c v dyn in
-    ( (match value with
-       | Bool b -> add Caqti_type.bool b
-       | Date d -> add Caqti_type.ptime d
-       | Language lang -> add Caqti_type.string (Pool_common.Language.show lang)
-       | Nr n -> add Caqti_type.float n
-       | Option id -> add Custom_field.Repo.SelectOption.Id.t id
-       | Str s -> add Caqti_type.string s)
-    , "?" )
+    match value with
+    | Bool b -> add Caqti_type.bool b
+    | Date d -> add Caqti_type.ptime d
+    | Language lang -> add Caqti_type.string (Pool_common.Language.show lang)
+    | Nr n -> add Caqti_type.float n
+    | Option id ->
+      add
+        Caqti_type.string
+        (id |> Custom_field.SelectOption.Id.value |> wrap_in_percentage operator)
+    | Str s -> add Caqti_type.string (wrap_in_percentage operator s)
   in
   let open CCResult in
   let rec query_sql (dyn, sql) query : (Dynparam.t * 'a, 'b) result =
@@ -186,37 +195,37 @@ let filter_to_sql template_list dyn query =
       |> CCOption.to_result Pool_common.Message.(NotFound Field.Template)
       >>= fun filter -> query_sql (dyn, sql) filter.query
     | Pred { Predicate.key; operator; value } ->
-      let add_single_value dyn value =
-        match key with
-        | Key.Hardcoded h ->
-          let dyn, param = add_value_to_params value dyn in
-          let sql =
-            Format.asprintf
-              "%s %s %s"
-              (Key.hardcoded_to_sql h)
-              (Operator.to_sql operator)
-              param
-          in
-          dyn, sql
-        | Key.CustomField id ->
-          let dyn, param =
-            Dynparam.(
-              dyn |> add Custom_field.Repo.Id.t id |> add_value_to_params value)
-          in
-          (* Check existence and value of rows (custom field answers) *)
-          let sql =
-            Format.asprintf
-              {sql|
+      let custom_field_sql =
+        (* Check existence and value of rows (custom field answers) *)
+        Format.asprintf
+          {sql|
                 SELECT (1) FROM pool_custom_field_answers
                   WHERE
                     pool_custom_field_answers.custom_field_uuid = UNHEX(REPLACE(?, '-', ''))
                   AND
                     pool_custom_field_answers.entity_uuid = user_users.uuid
                   AND
-                    value %s %s
+                    (%s)
               |sql}
-              (Operator.to_sql operator)
-              param
+      in
+      let where_clause = Format.asprintf "%s %s ?" in
+      let add_single_value dyn value =
+        match key with
+        | Key.Hardcoded h ->
+          let dyn = add_value_to_params operator value dyn in
+          let sql =
+            where_clause (Key.hardcoded_to_sql h) (Operator.to_sql operator)
+          in
+          dyn, sql
+        | Key.CustomField id ->
+          let dyn =
+            Dynparam.(
+              dyn
+              |> add Custom_field.Repo.Id.t id
+              |> add_value_to_params operator value)
+          in
+          let sql =
+            where_clause "value" (Operator.to_sql operator) |> custom_field_sql
           in
           dyn, sql
       in
@@ -228,32 +237,38 @@ let filter_to_sql template_list dyn query =
             add_single_value dyn value
             |> fun (dyn, sql) ->
             (dyn, Format.asprintf "EXISTS (%s)" sql) |> CCResult.pure)
+       | Lst [] -> Ok (dyn, sql)
        | Lst values ->
          (match key with
           | Key.Hardcoded _ ->
             Error
               Pool_common.Message.(QueryNotCompatible (Field.Value, Field.Key))
-          | Key.CustomField _ ->
+          | Key.CustomField id ->
             let dyn, subqueries =
               CCList.fold_left
                 (fun (dyn, lst_sql) value ->
-                  let dyn, new_sql = add_single_value dyn value in
+                  let dyn = add_value_to_params operator value dyn in
+                  let new_sql =
+                    where_clause "value" (Operator.to_sql operator)
+                  in
                   dyn, lst_sql @ [ new_sql ])
-                (dyn, [])
+                (Dynparam.(dyn |> add Custom_field.Repo.Id.t id), [])
                 values
             in
             let open Operator in
-            let build_query existence operator =
+            let build_query operator =
               ( dyn
               , subqueries
-                |> CCList.map (Format.asprintf "%s (%s)" existence)
-                |> CCString.concat (Format.asprintf " %s " operator) )
+                |> CCList.map (Format.asprintf "(%s)")
+                |> CCString.concat (Format.asprintf " %s " operator)
+                |> custom_field_sql
+                |> Format.asprintf "EXISTS (%s)" )
               |> CCResult.pure
             in
             (match operator with
-             | ContainsAll -> build_query "EXISTS" "AND"
-             | ContainsNone -> build_query "NOT EXISTS" "AND"
-             | ContainsSome -> build_query "EXISTS" "OR"
+             | ContainsAll -> build_query "AND"
+             | ContainsNone -> build_query "AND"
+             | ContainsSome -> build_query "OR"
              | Less
              | LessEqual
              | Greater
@@ -306,6 +321,7 @@ let filtered_params ?group_by ?order_by template_list experiment_id filter =
     | Some filter ->
       filter_to_sql template_list id_param filter
       >|= fun (dyn, sql) ->
+      (* Make sure it does not break if filter is empty *)
       dyn, Format.asprintf "%s\n AND %s" filtered_base_condition sql
   in
   query
@@ -347,6 +363,10 @@ let find_filtered pool ?order_by ?limit experiment_id filter =
     |> find_filtered_request_sql ?limit
     |> pt ->* Repo_model.t
   in
+  let () =
+    Caqti_request.make_pp_with_param () Format.std_formatter (request, pv)
+  in
+  print_endline "XXXXXXX";
   let%lwt contacts =
     Utils.Database.collect (pool |> Pool_database.Label.value) request pv
   in
