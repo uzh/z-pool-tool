@@ -52,8 +52,16 @@ let rec of_yojson (key_list : Entity.Key.human list) json
   let open CCResult in
   let error = Pool_common.Message.(Invalid Field.Query) in
   let of_yojson = of_yojson key_list in
+  let not_empty l =
+    match l with
+    | [] -> Error Pool_common.Message.FilterAndOrMustNotBeEmpty
+    | _ -> Ok l
+  in
   let of_list to_predicate queries =
-    queries |> CCList.map of_yojson |> CCList.all_ok >|= to_predicate
+    queries
+    |> not_empty
+    >>= CCFun.(CCList.map of_yojson %> CCList.all_ok)
+    >|= to_predicate
   in
   match json with
   | `Assoc [ (key, query) ] ->

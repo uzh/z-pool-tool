@@ -321,7 +321,6 @@ let filtered_params ?group_by ?order_by template_list experiment_id filter =
     | Some filter ->
       filter_to_sql template_list id_param filter
       >|= fun (dyn, sql) ->
-      (* Make sure it does not break if filter is empty *)
       dyn, Format.asprintf "%s\n AND %s" filtered_base_condition sql
   in
   query
@@ -363,10 +362,6 @@ let find_filtered pool ?order_by ?limit experiment_id filter =
     |> find_filtered_request_sql ?limit
     |> pt ->* Repo_model.t
   in
-  let () =
-    Caqti_request.make_pp_with_param () Format.std_formatter (request, pv)
-  in
-  print_endline "XXXXXXX";
   let%lwt contacts =
     Utils.Database.collect (pool |> Pool_database.Label.value) request pv
   in

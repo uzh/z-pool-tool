@@ -288,6 +288,8 @@ let rec error_to_string = function
   | FilterMustNotContainTemplate -> "Filter darf keine Template enthalten."
   | FilterAndOrMustNotBeEmpty ->
     "'And' und 'Or' Prädikate dürfen nicht leer sein."
+  | FilterListValueMustNotBeEmpty ->
+    "Es muss mindestens eine Option angewählt werden."
   | FollowUpIsEarlierThanMain ->
     "Folgesession kann nicht vor Hauptsession starten."
   | HtmxVersionNotFound field ->

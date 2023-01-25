@@ -250,6 +250,7 @@ type error =
   | FieldRequiresCheckbox of (Field.t * Field.t)
   | FilterMustNotContainTemplate
   | FilterAndOrMustNotBeEmpty
+  | FilterListValueMustNotBeEmpty
   | FollowUpIsEarlierThanMain
   | HtmxVersionNotFound of string
   | Invalid of Field.t
