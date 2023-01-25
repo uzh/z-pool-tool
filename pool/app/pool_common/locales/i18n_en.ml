@@ -145,10 +145,16 @@ let hint_to_string = function
   | CustomFieldSessionModel -> "Customziable attributes for sessions."
   | CustomFieldGroups ->
     {|Groups to group custom fields by. Grouping custom fields does not have any effect on their functionality. It only has a graphical impact.|}
+  | CustomFieldOptionsCompleteness ->
+    "Make sure this list is complete or add an option to select if none of the \
+     others are applicable."
   | CustomFieldSort field ->
     Format.asprintf
       "The %s will be displayed to the contacts in this order."
       (Locales_en.field_to_string field)
+  | CustomFieldTypeText ->
+    "Please take into account that the data quality is lower for text entries. \
+     If the data can be collected in another form, this is preferable."
   | CustomHtmx s -> s
   | DirectRegistrationDisbled ->
     "If this option is enabled, contacts can join the waiting list but cannot \

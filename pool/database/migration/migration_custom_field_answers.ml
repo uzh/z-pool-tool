@@ -26,9 +26,19 @@ let remove_version_column =
     |sql}
 ;;
 
+let make_value_nullable =
+  Sihl.Database.Migration.create_step
+    ~label:"remove version column"
+    {sql|
+      ALTER TABLE pool_custom_field_answers
+        MODIFY COLUMN value text
+    |sql}
+;;
+
 let migration () =
   Sihl.Database.Migration.(
     empty "custom_field_answers"
     |> add_step create_custom_field_answers_table
-    |> add_step remove_version_column)
+    |> add_step remove_version_column
+    |> add_step make_value_nullable)
 ;;

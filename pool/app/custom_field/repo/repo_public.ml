@@ -44,16 +44,17 @@ module Sql = struct
   let answers_left_join =
     {sql|
       LEFT JOIN pool_custom_field_answers
-      ON pool_custom_field_answers.custom_field_uuid = pool_custom_fields.uuid
-      AND pool_custom_field_answers.entity_uuid = UNHEX(REPLACE($1, '-', ''))
+        ON pool_custom_field_answers.custom_field_uuid = pool_custom_fields.uuid
+        AND pool_custom_field_answers.entity_uuid = UNHEX(REPLACE($1, '-', ''))
+        AND pool_custom_field_answers.value IS NOT NULL
     |sql}
   ;;
 
   let version_left_join =
     {sql|
       LEFT JOIN pool_custom_field_answer_versions
-      ON pool_custom_field_answer_versions.custom_field_uuid = pool_custom_fields.uuid
-      AND pool_custom_field_answer_versions.entity_uuid = UNHEX(REPLACE($1, '-', ''))
+        ON pool_custom_field_answer_versions.custom_field_uuid = pool_custom_fields.uuid
+        AND pool_custom_field_answer_versions.entity_uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}
   ;;
 
@@ -289,11 +290,30 @@ module Sql = struct
       Pool_common.Id.(field_id |> value, entity_id |> value)
   ;;
 
-  let map_or
-    (fnc : 'a Entity.Answer.t -> unit Lwt.t)
-    (t : 'a Entity.Answer.t option)
-    =
-    CCOption.map_or ~default:Lwt.return_unit fnc t
+  let clear_answer_request =
+    let open Caqti_request.Infix in
+    let open Pool_common.Repo in
+    {sql|
+      UPDATE pool_custom_field_answers
+        SET value = NULL
+      WHERE
+        custom_field_uuid = UNHEX(REPLACE($1, '-', ''))
+      AND
+        entity_uuid = UNHEX(REPLACE($2, '-', ''))
+      |sql}
+    |> Caqti_type.(tup2 Id.t Id.t) ->. Caqti_type.unit
+  ;;
+
+  let clear_answer pool field_id entity_uuid () =
+    Utils.Database.exec
+      (Database.Label.value pool)
+      clear_answer_request
+      (field_id, entity_uuid)
+  ;;
+
+  let map_or ~clear fnc = function
+    | Some value -> fnc value
+    | None -> clear ()
   ;;
 
   let upsert_answer pool entity_uuid t =
@@ -303,6 +323,7 @@ module Sql = struct
     let option_id = Entity.SelectOption.Public.show_id in
     let open Entity.Public in
     let field_id = id t in
+    let clear = clear_answer pool field_id entity_uuid in
     let update_answer id value =
       Repo_entity_answer.Write.of_entity id field_id entity_uuid value |> upsert
     in
@@ -316,7 +337,7 @@ module Sql = struct
       match t with
       | Boolean (_, answer) ->
         answer
-        |> map_or (fun { id; value; _ } ->
+        |> map_or ~clear (fun { id; value; _ } ->
              update_answer id (Utils.Bool.to_string value))
       | MultiSelect (_, _, answers) ->
         let%lwt () =
@@ -327,14 +348,14 @@ module Sql = struct
              update_answer id (value |> option_id))
       | Number (_, answer) ->
         answer
-        |> map_or (fun { id; value; _ } ->
+        |> map_or ~clear (fun { id; value; _ } ->
              update_answer id (CCInt.to_string value))
       | Select (_, _, answer) ->
         answer
-        |> map_or (fun { id; value; _ } ->
+        |> map_or ~clear (fun { id; value; _ } ->
              update_answer id (value |> option_id))
       | Text (_, answer) ->
-        answer |> map_or (fun { id; value; _ } -> update_answer id value)
+        answer |> map_or ~clear (fun { id; value; _ } -> update_answer id value)
     in
     update_version ()
   ;;

@@ -445,13 +445,15 @@ let selector
   show
   options
   selected
-  ?flash_fetcher
-  ?(required = false)
-  ?help
-  ?option_formatter
+  ?(add_empty = false)
   ?(attributes = [])
   ?(classnames = [])
-  ?(add_empty = false)
+  ?(required = false)
+  ?(read_only = false)
+  ?error
+  ?flash_fetcher
+  ?help
+  ?option_formatter
   ()
   =
   let name = Field.(show field) in
@@ -461,6 +463,17 @@ let selector
     bind flash_fetcher (fun flash_fetcher ->
       field |> Field.show |> flash_fetcher)
     <+> map show selected
+  in
+  let attributes =
+    let checks =
+      [ CCOption.is_some error, a_class [ "has-error" ]
+      ; read_only, a_disabled ()
+      ]
+    in
+    CCList.fold_left
+      (fun attrs (check, attr) -> if check then attr :: attrs else attrs)
+      attributes
+      checks
   in
   let options =
     CCList.map
@@ -489,9 +502,7 @@ let selector
         then [ a_selected (); base_attr ]
         else [ base_attr ]
       in
-      let attrs =
-        if required then [ a_disabled (); a_hidden () ] @ attrs else attrs
-      in
+      let attrs = if required then [ a_disabled () ] @ attrs else attrs in
       let default =
         option
           ~a:attrs
@@ -503,20 +514,35 @@ let selector
       [ default ] @ options
     | false -> options
   in
+  let hidden_field =
+    if read_only
+    then
+      input
+        ~a:
+          [ a_input_type `Hidden
+          ; a_name name
+          ; a_value (CCOption.value ~default:"" selected)
+          ]
+        ()
+    else txt ""
+  in
   let help = Elements.help language help in
+  let error = Elements.error language error in
   div
     ~a:[ a_class (Elements.group_class classnames `Vertical) ]
-    [ label [ input_label |> txt ]
-    ; div
-        ~a:[ a_class [ "select" ] ]
-        [ select
-            ~a:
-              ((a_name name :: attributes)
-              @ if required then [ a_required () ] else [])
-            options
-        ]
-    ; div help
-    ]
+    ([ label [ input_label |> txt ]
+     ; div
+         ~a:[ a_class [ "select" ] ]
+         [ select
+             ~a:
+               ((a_name name :: attributes)
+               @ if required then [ a_required () ] else [])
+             options
+         ; hidden_field
+         ]
+     ]
+    @ help
+    @ error)
 ;;
 
 type 'a multi_select =

@@ -38,7 +38,13 @@ module Data = struct
       }
   ;;
 
-  let custom_field ?published_at ?validation ?(admin = admin) field_type =
+  let custom_field
+    ?published_at
+    ?validation
+    ?(admin = admin)
+    ?(required = required)
+    field_type
+    =
     let name = Name.create sys_languages name |> get in
     let hint = Hint.create hint |> get in
     Custom_field.create
@@ -56,8 +62,8 @@ module Data = struct
     |> CCResult.get_exn
   ;;
 
-  let custom_text_field ?published_at ?validation ?admin () =
-    custom_field ?published_at ?validation ?admin FieldType.Text
+  let custom_text_field ?published_at ?validation ?admin ?required () =
+    custom_field ?published_at ?validation ?admin ?required FieldType.Text
   ;;
 
   let custom_select_field () = custom_field ~validation:[] FieldType.Select
@@ -234,6 +240,39 @@ let update () =
   let expected =
     Ok [ Custom_field.Updated custom_field |> Pool_event.custom_field ]
   in
+  Alcotest.(
+    check
+      (result (list Test_utils.event) Test_utils.error)
+      "succeeds"
+      expected
+      events)
+;;
+
+let update_type_of_published_field () =
+  let open CCResult in
+  let custom_field =
+    Data.custom_text_field
+      ~published_at:(Custom_field.PublishedAt.create_now ())
+      ()
+  in
+  let events =
+    let data =
+      Message.
+        [ Field.(FieldType |> show), [ Custom_field.FieldType.(Number |> show) ]
+        ; Field.(AdminHint |> show), [ Data.admin_hint ]
+        ]
+    in
+    data
+    |> Http_utils.format_request_boolean_values boolean_fields
+    |> CustomFieldCommand.base_decode
+    >>= CustomFieldCommand.Update.handle
+          Data.sys_languages
+          custom_field
+          Data.name
+          Data.hint
+          Data.validation_data
+  in
+  let expected = Error Pool_common.Message.CustomFieldTypeChangeNotAllowed in
   Alcotest.(
     check
       (result (list Test_utils.event) Test_utils.error)

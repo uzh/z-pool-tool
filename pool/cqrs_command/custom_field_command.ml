@@ -168,6 +168,14 @@ end = struct
         admin_input_only
     in
     let id = Custom_field.id custom_field in
+    let* () =
+      if Custom_field.FieldType.equal
+           field_type
+           (Custom_field.field_type custom_field)
+         || CCOption.is_none Custom_field.(published_at custom_field)
+      then Ok ()
+      else Error Pool_common.Message.CustomFieldTypeChangeNotAllowed
+    in
     let* t =
       Custom_field.create
         ~id
