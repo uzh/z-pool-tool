@@ -50,14 +50,6 @@ module Sql = struct
     |sql}
   ;;
 
-  let version_left_join =
-    {sql|
-      LEFT JOIN pool_custom_field_answer_versions
-        ON pool_custom_field_answer_versions.custom_field_uuid = pool_custom_fields.uuid
-        AND pool_custom_field_answer_versions.entity_uuid = UNHEX(REPLACE($1, '-', ''))
-    |sql}
-  ;;
-
   let select_sql =
     Format.asprintf
       {sql|
@@ -91,13 +83,11 @@ module Sql = struct
           SUBSTR(HEX(pool_custom_field_answers.uuid), 21)
         )),
         pool_custom_field_answers.value,
-        pool_custom_field_answer_versions.version
+        pool_custom_field_answers.version
       FROM pool_custom_fields
-      %s
       %s
     |sql}
       answers_left_join
-      version_left_join
   ;;
 
   let find_all_by_model_request required is_admin =
@@ -242,52 +232,20 @@ module Sql = struct
         uuid,
         custom_field_uuid,
         entity_uuid,
-        value
-      ) VALUES (
-        UNHEX(REPLACE($1, '-', '')),
-        UNHEX(REPLACE($2, '-', '')),
-        UNHEX(REPLACE($3, '-', '')),
-        $4
-      )
-      ON DUPLICATE KEY UPDATE
-      value = VALUES(value)
-      |sql}
-    |> Repo_entity_answer.Write.t ->. Caqti_type.unit
-  ;;
-
-  let upsert_version_request =
-    let open Caqti_request.Infix in
-    {sql|
-      INSERT INTO pool_custom_field_answer_versions (
-        custom_field_uuid,
-        entity_uuid,
+        value,
         version
       ) VALUES (
         UNHEX(REPLACE($1, '-', '')),
         UNHEX(REPLACE($2, '-', '')),
-        $3
+        UNHEX(REPLACE($3, '-', '')),
+        $4,
+        $5
       )
       ON DUPLICATE KEY UPDATE
-      version = VALUES(version)
+        value = VALUES(value),
+        version = VALUES(version)
       |sql}
-    |> Repo_entity_answer.Version.t ->. Caqti_type.unit
-  ;;
-
-  let delete_all_answers_of_multiselect_request =
-    let open Caqti_request.Infix in
-    {sql|
-      DELETE FROM pool_custom_field_answers
-      WHERE custom_field_uuid = UNHEX(REPLACE($1, '-', ''))
-      AND entity_uuid = UNHEX(REPLACE($2, '-', ''))
-    |sql}
-    |> Caqti_type.(tup2 string string ->. unit)
-  ;;
-
-  let delete_all_answers_of_multiselect pool field_id entity_id =
-    Utils.Database.exec
-      (Pool_database.Label.value pool)
-      delete_all_answers_of_multiselect_request
-      Pool_common.Id.(field_id |> value, entity_id |> value)
+    |> Repo_entity_answer.Write.t ->. Caqti_type.unit
   ;;
 
   let clear_answer_request =
@@ -295,7 +253,9 @@ module Sql = struct
     let open Pool_common.Repo in
     {sql|
       UPDATE pool_custom_field_answers
-        SET value = NULL
+        SET
+          value = NULL,
+          version = version + 1
       WHERE
         custom_field_uuid = UNHEX(REPLACE($1, '-', ''))
       AND
@@ -317,52 +277,40 @@ module Sql = struct
   ;;
 
   let upsert_answer pool entity_uuid t =
-    let upsert =
-      Utils.Database.exec (Database.Label.value pool) upsert_answer_request
-    in
     let option_id = Entity.SelectOption.Public.show_id in
     let open Entity.Public in
     let field_id = id t in
     let clear = clear_answer pool field_id entity_uuid in
+    let version = version t in
     let update_answer id value =
-      Repo_entity_answer.Write.of_entity id field_id entity_uuid value |> upsert
+      Repo_entity_answer.Write.of_entity id field_id entity_uuid value version
+      |> Utils.Database.exec (Database.Label.value pool) upsert_answer_request
     in
-    let update_version () =
-      let version = version t in
-      Repo_entity_answer.Version.create field_id entity_uuid version
-      |> Utils.Database.exec (Database.Label.value pool) upsert_version_request
-    in
-    let%lwt () =
-      let open Entity.Answer in
-      match t with
-      | Boolean (_, answer) ->
-        answer
-        |> map_or ~clear (fun { id; value; _ } ->
-             update_answer id (Utils.Bool.to_string value))
-      | MultiSelect (_, _, answer) ->
-        let%lwt () =
-          delete_all_answers_of_multiselect pool field_id entity_uuid
-        in
-        answer
-        |> map_or ~clear (fun { id; value; _ } ->
-             value
-             |> CCList.map (fun { Entity.SelectOption.Public.id; _ } -> id)
-             |> fun (ids : Repo_entity.multi_select_answer) ->
-             Repo_entity.yojson_of_multi_select_answer ids
-             |> Yojson.Safe.to_string
-             |> update_answer id)
-      | Number (_, answer) ->
-        answer
-        |> map_or ~clear (fun { id; value; _ } ->
-             update_answer id (CCInt.to_string value))
-      | Select (_, _, answer) ->
-        answer
-        |> map_or ~clear (fun { id; value; _ } ->
-             update_answer id (value |> option_id))
-      | Text (_, answer) ->
-        answer |> map_or ~clear (fun { id; value; _ } -> update_answer id value)
-    in
-    update_version ()
+    let open Entity.Answer in
+    match t with
+    | Boolean (_, answer) ->
+      answer
+      |> map_or ~clear (fun { id; value; _ } ->
+           update_answer id (Utils.Bool.to_string value))
+    | MultiSelect (_, _, answer) ->
+      answer
+      |> map_or ~clear (fun { id; value; _ } ->
+           value
+           |> CCList.map (fun { Entity.SelectOption.Public.id; _ } -> id)
+           |> fun ids ->
+           Repo_entity.yojson_of_multi_select_answer ids
+           |> Yojson.Safe.to_string
+           |> update_answer id)
+    | Number (_, answer) ->
+      answer
+      |> map_or ~clear (fun { id; value; _ } ->
+           update_answer id (CCInt.to_string value))
+    | Select (_, _, answer) ->
+      answer
+      |> map_or ~clear (fun { id; value; _ } ->
+           update_answer id (value |> option_id))
+    | Text (_, answer) ->
+      answer |> map_or ~clear (fun { id; value; _ } -> update_answer id value)
   ;;
 end
 

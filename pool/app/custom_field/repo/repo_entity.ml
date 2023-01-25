@@ -348,15 +348,15 @@ module Public = struct
       let answer =
         let open SelectOption in
         answer
-        >|= fun Answer.{ id; value } ->
+        >>= fun Answer.{ id; value } ->
         value
         |> Id.of_string
         |> fun selected ->
-        CCList.find
+        CCList.find_opt
           (fun (_, { SelectOption.Public.id; _ }) -> Id.equal id selected)
           select_options
-        |> snd
-        |> Entity_answer.create ~id
+        >|= snd
+        >|= Entity_answer.create ~id
       in
       let options =
         CCList.filter_map
