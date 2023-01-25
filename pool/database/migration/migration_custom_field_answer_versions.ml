@@ -17,7 +17,7 @@ let create_custom_field_answer_versions_table =
 
 let add_unique_combination_constraint =
   Sihl.Database.Migration.create_step
-    ~label:"remove version column"
+    ~label:"add unique combination constraint to custom field versions"
     {sql|
       ALTER TABLE pool_custom_field_answer_versions
         ADD CONSTRAINT field_entity_combination

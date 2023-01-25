@@ -258,10 +258,9 @@ let update_type_of_published_field () =
   let events =
     let data =
       Message.
-        [ (Field.(FieldType |> show), Custom_field.FieldType.(Number |> show))
-        ; Field.(AdminHint |> show), Data.admin_hint
+        [ Field.(FieldType |> show), [ Custom_field.FieldType.(Number |> show) ]
+        ; Field.(AdminHint |> show), [ Data.admin_hint ]
         ]
-      |> CCList.map (fun (f, l) -> f, l |> CCList.pure)
     in
     data
     |> Http_utils.format_request_boolean_values boolean_fields
