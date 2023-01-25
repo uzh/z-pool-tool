@@ -27,11 +27,11 @@ module TestContacts = struct
 end
 
 module CustomFieldData = struct
-  let admin_data = Custom_field_test.Data.admin
   let nr_of_siblings_answer = 3
   let published = () |> Custom_field.PublishedAt.create_now |> CCOption.pure
 
   let nr_of_siblings =
+    let open Custom_field_test in
     Custom_field.(
       Number
         { id = Id.create ()
@@ -43,13 +43,17 @@ module CustomFieldData = struct
         ; required = false |> Required.create
         ; disabled = false |> Disabled.create
         ; custom_field_group_id = None
-        ; admin = admin_data
+        ; admin_hint = Data.admin_hint
+        ; admin_overwrite = Data.admin_overwrite
+        ; admin_view_only = Data.admin_view_only
+        ; admin_input_only = Data.admin_input_only
         ; published_at = published
         })
   ;;
 
   let nr_of_siblings_public answer_value =
     let open Custom_field in
+    let open Custom_field_test in
     let answer = Answer.create answer_value |> CCOption.pure in
     let version = 0 |> Pool_common.Version.of_int in
     Public.Number
@@ -58,8 +62,8 @@ module CustomFieldData = struct
         ; hint = hint nr_of_siblings
         ; validation = Validation.pure
         ; required = required nr_of_siblings
-        ; admin_overwrite = admin_data.Admin.overwrite
-        ; admin_input_only = admin_data.Admin.input_only
+        ; admin_overwrite = Data.admin_overwrite
+        ; admin_input_only = Data.admin_input_only
         ; version
         }
       , answer )
@@ -97,6 +101,7 @@ module CustomFieldData = struct
 
   let multi_select_custom_field =
     let open Custom_field in
+    let open Custom_field_test in
     MultiSelect
       ( { id = Id.create ()
         ; model = Model.Contact
@@ -107,7 +112,10 @@ module CustomFieldData = struct
         ; required = false |> Required.create
         ; disabled = false |> Disabled.create
         ; custom_field_group_id = None
-        ; admin = admin_data
+        ; admin_hint = Data.admin_hint
+        ; admin_overwrite = Data.admin_overwrite
+        ; admin_view_only = Data.admin_view_only
+        ; admin_input_only = Data.admin_input_only
         ; published_at = published
         }
       , multi_select_options )
@@ -115,6 +123,7 @@ module CustomFieldData = struct
 
   let multi_select_custom_field_public answer_index =
     let open Custom_field in
+    let open Custom_field_test in
     let answer =
       multi_select_options_public_by_index answer_index
       |> Answer.create
@@ -127,8 +136,8 @@ module CustomFieldData = struct
         ; hint = hint multi_select_custom_field
         ; validation = Validation.pure
         ; required = required multi_select_custom_field
-        ; admin_overwrite = admin_data.Admin.overwrite
-        ; admin_input_only = admin_data.Admin.input_only
+        ; admin_overwrite = Data.admin_overwrite
+        ; admin_input_only = Data.admin_input_only
         ; version
         }
       , multi_select_options_public

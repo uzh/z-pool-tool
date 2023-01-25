@@ -119,39 +119,20 @@ module PublishedAt : sig
   include Pool_common.Model.PtimeSig
 end
 
-module Admin : sig
-  module Hint : sig
-    include Pool_common.Model.StringSig
-  end
+module AdminHint : sig
+  include Pool_common.Model.StringSig
+end
 
-  module Overwrite : sig
-    include Pool_common.Model.BooleanSig
-  end
+module AdminOverwrite : sig
+  include Pool_common.Model.BooleanSig
+end
 
-  module ViewOnly : sig
-    include Pool_common.Model.BooleanSig
-  end
+module AdminViewOnly : sig
+  include Pool_common.Model.BooleanSig
+end
 
-  module InputOnly : sig
-    include Pool_common.Model.BooleanSig
-  end
-
-  type t =
-    { hint : Hint.t option
-    ; overwrite : Overwrite.t
-    ; view_only : ViewOnly.t
-    ; input_only : InputOnly.t
-    }
-
-  val create
-    :  Hint.t option
-    -> Overwrite.t
-    -> ViewOnly.t
-    -> InputOnly.t
-    -> (t, Pool_common.Message.error) result
-
-  val equal : t -> t -> bool
-  val pp : Format.formatter -> t -> unit
+module AdminInputOnly : sig
+  include Pool_common.Model.BooleanSig
 end
 
 module Validation : sig
@@ -226,8 +207,8 @@ module Public : sig
     ; hint : Hint.t
     ; validation : 'a Validation.t
     ; required : Required.t
-    ; admin_overwrite : Admin.Overwrite.t
-    ; admin_input_only : Admin.InputOnly.t
+    ; admin_overwrite : AdminOverwrite.t
+    ; admin_input_only : AdminInputOnly.t
     ; version : Pool_common.Version.t
     }
 
@@ -261,8 +242,8 @@ module Public : sig
   val name_value : Pool_common.Language.t -> t -> string
   val hint : Pool_common.Language.t -> t -> Hint.hint option
   val required : t -> Required.t
-  val admin_overwrite : t -> Admin.Overwrite.t
-  val admin_input_only : t -> Admin.InputOnly.t
+  val admin_overwrite : t -> AdminOverwrite.t
+  val admin_input_only : t -> AdminInputOnly.t
   val is_disabled : bool -> t -> bool
   val version : t -> Pool_common.Version.t
   val field_type : t -> FieldType.t
@@ -323,7 +304,10 @@ type 'a custom_field =
   ; required : Required.t
   ; disabled : Disabled.t
   ; custom_field_group_id : Group.Id.t option
-  ; admin : Admin.t
+  ; admin_hint : AdminHint.t option
+  ; admin_overwrite : AdminOverwrite.t
+  ; admin_view_only : AdminViewOnly.t
+  ; admin_input_only : AdminInputOnly.t
   ; published_at : PublishedAt.t option
   }
 
@@ -350,7 +334,10 @@ val create
   -> Required.t
   -> Disabled.t
   -> Group.Id.t option
-  -> Admin.t
+  -> AdminHint.t option
+  -> AdminOverwrite.t
+  -> AdminViewOnly.t
+  -> AdminInputOnly.t
   -> (t, Pool_common.Message.error) result
 
 val boolean_fields : Pool_common.Message.Field.t list
@@ -363,7 +350,10 @@ val required : t -> Required.t
 val disabled : t -> Disabled.t
 val published_at : t -> PublishedAt.t option
 val group_id : t -> Group.Id.t option
-val admin : t -> Admin.t
+val admin_hint : t -> AdminHint.t option
+val admin_overwrite : t -> AdminOverwrite.t
+val admin_view_only : t -> AdminViewOnly.t
+val admin_input_only : t -> AdminInputOnly.t
 val field_type : t -> FieldType.t
 val validation_strings : t -> (string * string) list
 val validation_to_yojson : t -> Yojson.Safe.t

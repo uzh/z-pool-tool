@@ -130,26 +130,22 @@ let update_custom_field_with_invalid_answer _ () =
 
 let update_admin_input_only_field_as_user _ () =
   let open Custom_field in
-  let admin =
-    Admin.
-      { Custom_field_test.Data.admin with
-        input_only = true |> InputOnly.create
-      }
+  let custom_field =
+    Custom_field_test.Data.custom_text_field
+      ~admin_input_only:(AdminInputOnly.create true)
+      ()
   in
-  let custom_field = Custom_field_test.Data.custom_text_field ~admin () in
   let expected = Error Message.NotEligible in
   partial_update_exec ~custom_field expected ()
 ;;
 
 let update_non_overwrite_field_as_admin _ () =
   let open Custom_field in
-  let admin =
-    Admin.
-      { Custom_field_test.Data.admin with
-        overwrite = false |> Overwrite.create
-      }
+  let custom_field =
+    Custom_field_test.Data.custom_text_field
+      ~admin_overwrite:(AdminOverwrite.create false)
+      ()
   in
-  let custom_field = Custom_field_test.Data.custom_text_field ~admin () in
   let expected = Error Message.NotEligible in
   partial_update_exec ~is_admin:true ~custom_field expected ()
 ;;

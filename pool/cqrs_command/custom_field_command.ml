@@ -7,10 +7,10 @@ type command =
   ; required : Custom_field.Required.t
   ; disabled : Custom_field.Disabled.t
   ; custom_field_group_id : Custom_field.Group.Id.t option
-  ; admin_hint : Custom_field.Admin.Hint.t option
-  ; admin_overwrite : Custom_field.Admin.Overwrite.t
-  ; admin_view_only : Custom_field.Admin.ViewOnly.t
-  ; admin_input_only : Custom_field.Admin.InputOnly.t
+  ; admin_hint : Custom_field.AdminHint.t option
+  ; admin_overwrite : Custom_field.AdminOverwrite.t
+  ; admin_view_only : Custom_field.AdminViewOnly.t
+  ; admin_input_only : Custom_field.AdminInputOnly.t
   }
 
 let base_command
@@ -43,10 +43,10 @@ let base_schema =
         ; Required.schema ()
         ; Disabled.schema ()
         ; Conformist.optional @@ Group.Id.schema ()
-        ; Conformist.optional @@ Admin.Hint.schema ()
-        ; Admin.Overwrite.schema ()
-        ; Admin.ViewOnly.schema ()
-        ; Admin.InputOnly.schema ()
+        ; Conformist.optional @@ AdminHint.schema ()
+        ; AdminOverwrite.schema ()
+        ; AdminViewOnly.schema ()
+        ; AdminInputOnly.schema ()
         ]
       base_command)
 ;;
@@ -96,13 +96,6 @@ end = struct
     let open CCResult in
     let* name = Custom_field.Name.create sys_languages name in
     let* hint = Custom_field.Hint.create hint in
-    let* admin =
-      Custom_field.Admin.create
-        admin_hint
-        admin_overwrite
-        admin_view_only
-        admin_input_only
-    in
     let* t =
       Custom_field.create
         ?id
@@ -114,7 +107,10 @@ end = struct
         required
         disabled
         custom_field_group_id
-        admin
+        admin_hint
+        admin_overwrite
+        admin_view_only
+        admin_input_only
     in
     Ok [ Custom_field.Created t |> Pool_event.custom_field ]
   ;;
@@ -160,13 +156,6 @@ end = struct
     let open CCResult in
     let* name = Custom_field.Name.create sys_languages name in
     let* hint = Custom_field.Hint.create hint in
-    let* admin =
-      Custom_field.Admin.create
-        admin_hint
-        admin_overwrite
-        admin_view_only
-        admin_input_only
-    in
     let id = Custom_field.id custom_field in
     let* () =
       if Custom_field.FieldType.equal
@@ -187,7 +176,10 @@ end = struct
         required
         disabled
         custom_field_group_id
-        admin
+        admin_hint
+        admin_overwrite
+        admin_view_only
+        admin_input_only
     in
     Ok [ Custom_field.Updated t |> Pool_event.custom_field ]
   ;;

@@ -126,44 +126,29 @@ module PublishedAt = struct
   let schema = schema Pool_common.Message.Field.PublishedAt create
 end
 
-module Admin = struct
-  module Hint = struct
-    include Pool_common.Model.String
+module AdminHint = struct
+  include Pool_common.Model.String
 
-    let field = Message.Field.AdminHint
-    let schema = schema field ?validation:None
-  end
+  let field = Message.Field.AdminHint
+  let schema = schema field ?validation:None
+end
 
-  module Overwrite = struct
-    include Pool_common.Model.Boolean
+module AdminOverwrite = struct
+  include Pool_common.Model.Boolean
 
-    let schema = schema Message.Field.Overwrite
-  end
+  let schema = schema Message.Field.Overwrite
+end
 
-  module ViewOnly = struct
-    include Pool_common.Model.Boolean
+module AdminViewOnly = struct
+  include Pool_common.Model.Boolean
 
-    let schema = schema Message.Field.AdminViewOnly
-  end
+  let schema = schema Message.Field.AdminViewOnly
+end
 
-  module InputOnly = struct
-    include Pool_common.Model.Boolean
+module AdminInputOnly = struct
+  include Pool_common.Model.Boolean
 
-    let schema = schema Message.Field.AdminInputOnly
-  end
-
-  type t =
-    { hint : Hint.t option
-    ; overwrite : Overwrite.t
-    ; view_only : ViewOnly.t
-    ; input_only : InputOnly.t
-    }
-  [@@deriving eq, show]
-
-  let create hint overwrite view_only input_only =
-    let input_only = if view_only then true else input_only in
-    Ok { hint; overwrite; view_only; input_only }
-  ;;
+  let schema = schema Message.Field.AdminInputOnly
 end
 
 module Validation = struct
@@ -385,8 +370,8 @@ module Public = struct
     ; hint : Hint.t
     ; validation : 'a Validation.t
     ; required : Required.t
-    ; admin_overwrite : Admin.Overwrite.t
-    ; admin_input_only : Admin.InputOnly.t
+    ; admin_overwrite : AdminOverwrite.t
+    ; admin_input_only : AdminInputOnly.t
     ; version : Pool_common.Version.t
     }
   [@@deriving eq, show]
@@ -465,10 +450,10 @@ module Public = struct
   let is_disabled is_admin m =
     if is_admin
     then
-      (m |> admin_overwrite |> Admin.Overwrite.value
-      || m |> admin_input_only |> Admin.InputOnly.value)
+      (m |> admin_overwrite |> AdminOverwrite.value
+      || m |> admin_input_only |> AdminInputOnly.value)
       |> not
-    else m |> admin_input_only |> Admin.InputOnly.value
+    else m |> admin_input_only |> AdminInputOnly.value
   ;;
 
   let version = function
@@ -560,7 +545,10 @@ type 'a custom_field =
   ; required : Required.t
   ; disabled : Disabled.t
   ; custom_field_group_id : Group.Id.t option
-  ; admin : Admin.t
+  ; admin_hint : AdminHint.t option
+  ; admin_overwrite : AdminOverwrite.t
+  ; admin_view_only : AdminViewOnly.t
+  ; admin_input_only : AdminInputOnly.t
   ; published_at : PublishedAt.t option
   }
 [@@deriving eq, show]
@@ -585,10 +573,13 @@ let create
   required
   disabled
   custom_field_group_id
-  admin
+  admin_hint
+  admin_overwrite
+  admin_view_only
+  admin_input_only
   =
   let open CCResult in
-  let required = if admin.Admin.input_only then false else required in
+  let required = if admin_input_only then false else required in
   match (field_type : FieldType.t) with
   | FieldType.Boolean ->
     Ok
@@ -601,7 +592,10 @@ let create
          ; required
          ; disabled
          ; custom_field_group_id
-         ; admin
+         ; admin_hint
+         ; admin_overwrite
+         ; admin_view_only
+         ; admin_input_only
          ; published_at
          })
   | FieldType.Number ->
@@ -616,7 +610,10 @@ let create
          ; required
          ; disabled
          ; custom_field_group_id
-         ; admin
+         ; admin_hint
+         ; admin_overwrite
+         ; admin_view_only
+         ; admin_input_only
          ; published_at
          })
   | FieldType.Text ->
@@ -631,7 +628,10 @@ let create
          ; required
          ; disabled
          ; custom_field_group_id
-         ; admin
+         ; admin_hint
+         ; admin_overwrite
+         ; admin_view_only
+         ; admin_input_only
          ; published_at
          })
   | FieldType.MultiSelect ->
@@ -648,7 +648,10 @@ let create
                   required. *)
            ; disabled
            ; custom_field_group_id
-           ; admin
+           ; admin_hint
+           ; admin_overwrite
+           ; admin_view_only
+           ; admin_input_only
            ; published_at
            }
          , select_options ))
@@ -663,7 +666,10 @@ let create
            ; required
            ; disabled
            ; custom_field_group_id
-           ; admin
+           ; admin_hint
+           ; admin_overwrite
+           ; admin_view_only
+           ; admin_input_only
            ; published_at
            }
          , select_options ))
@@ -741,12 +747,36 @@ let group_id = function
   | Text { custom_field_group_id; _ } -> custom_field_group_id
 ;;
 
-let admin = function
-  | Boolean { admin; _ }
-  | Number { admin; _ }
-  | MultiSelect ({ admin; _ }, _)
-  | Select ({ admin; _ }, _)
-  | Text { admin; _ } -> admin
+let admin_hint = function
+  | Boolean { admin_hint; _ }
+  | Number { admin_hint; _ }
+  | MultiSelect ({ admin_hint; _ }, _)
+  | Select ({ admin_hint; _ }, _)
+  | Text { admin_hint; _ } -> admin_hint
+;;
+
+let admin_overwrite = function
+  | Boolean { admin_overwrite; _ }
+  | Number { admin_overwrite; _ }
+  | MultiSelect ({ admin_overwrite; _ }, _)
+  | Select ({ admin_overwrite; _ }, _)
+  | Text { admin_overwrite; _ } -> admin_overwrite
+;;
+
+let admin_view_only = function
+  | Boolean { admin_view_only; _ }
+  | Number { admin_view_only; _ }
+  | MultiSelect ({ admin_view_only; _ }, _)
+  | Select ({ admin_view_only; _ }, _)
+  | Text { admin_view_only; _ } -> admin_view_only
+;;
+
+let admin_input_only = function
+  | Boolean { admin_input_only; _ }
+  | Number { admin_input_only; _ }
+  | MultiSelect ({ admin_input_only; _ }, _)
+  | Select ({ admin_input_only; _ }, _)
+  | Text { admin_input_only; _ } -> admin_input_only
 ;;
 
 let field_type = function
@@ -786,7 +816,10 @@ module Write = struct
     ; required : Required.t
     ; disabled : Disabled.t
     ; custom_field_group_id : Group.Id.t option
-    ; admin : Admin.t
+    ; admin_hint : AdminHint.t option
+    ; admin_overwrite : AdminOverwrite.t
+    ; admin_view_only : AdminViewOnly.t
+    ; admin_input_only : AdminInputOnly.t
     }
   [@@deriving eq, show]
 end

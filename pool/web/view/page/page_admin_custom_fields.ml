@@ -187,6 +187,7 @@ let field_form
   tenant_languages
   flash_fetcher
   =
+  let open CCFun in
   let open Custom_field in
   let action =
     match custom_field with
@@ -553,23 +554,25 @@ let field_form
               ~orientation:`Horizontal
               ~value:
                 (value (fun f ->
-                   (f |> admin).Admin.hint
-                   |> CCOption.map_or ~default:"" Admin.Hint.value))
+                   f
+                   |> admin_hint
+                   |> CCOption.map_or ~default:"" AdminHint.value))
               ~flash_fetcher
           ; checkbox_element Message.Field.Overwrite (fun f ->
-              (f |> admin).Admin.overwrite |> Admin.Overwrite.value)
+              f |> admin_overwrite |> AdminOverwrite.value)
           ; checkbox_element
               ~disabled:
                 (custom_field
-                |> CCOption.map_or ~default:false (fun f ->
-                     (f |> admin).Admin.view_only |> Admin.ViewOnly.value))
+                |> CCOption.map_or
+                     ~default:false
+                     (admin_view_only %> AdminViewOnly.value))
               ~help:Pool_common.I18n.CustomFieldAdminInputOnly
               Message.Field.AdminInputOnly
-              (fun f -> (f |> admin).Admin.input_only |> Admin.InputOnly.value)
+              (admin_input_only %> AdminInputOnly.value)
           ; checkbox_element
               ~help:Pool_common.I18n.CustomFieldAdminViewOnly
               Message.Field.AdminViewOnly
-              (fun f -> (f |> admin).Admin.view_only |> Admin.ViewOnly.value)
+              (admin_view_only %> AdminViewOnly.value)
           ]
       ; div
           ~a:[ a_class [ "stack" ] ]
@@ -577,10 +580,10 @@ let field_form
               ~disabled:
                 (custom_field
                 |> CCOption.map_or ~default:false (fun f ->
-                     (f |> admin).Admin.input_only |> Admin.InputOnly.value
+                     f |> admin_input_only |> AdminInputOnly.value
                      || FieldType.(equal (f |> field_type) MultiSelect)))
               Message.Field.Required
-              (fun f -> f |> required |> Required.value)
+              (required %> Required.value)
           ; checkbox_element Message.Field.Disabled (fun f ->
               f |> disabled |> Disabled.value)
           ; div
