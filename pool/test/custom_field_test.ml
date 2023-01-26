@@ -101,9 +101,13 @@ module Data = struct
     let admin_overwrite = AdminOverwrite.create false in
     let admin_input_only = AdminInputOnly.create false in
     let version = 0 |> Pool_common.Version.of_int in
+    let overridden_value = None in
     match field_type with
     | FieldType.Boolean ->
-      let answer = Answer.{ id = answer_id; value = true } |> CCOption.pure in
+      let answer =
+        Answer.{ id = answer_id; value = true; overridden_value }
+        |> CCOption.pure
+      in
       Public.Boolean
         ( { Public.id
           ; name
@@ -135,7 +139,9 @@ module Data = struct
         , field_options
         , answer )
     | FieldType.Number ->
-      let answer = Answer.{ id = answer_id; value = 3 } |> CCOption.pure in
+      let answer =
+        Answer.{ id = answer_id; value = 3; overridden_value } |> CCOption.pure
+      in
       let validation = validation_schema Validation.Number.schema in
       Public.Number
         ( { Public.id
@@ -152,7 +158,7 @@ module Data = struct
       let answer =
         CCList.head_opt field_options
         |> CCOption.map (fun option ->
-             Answer.{ id = answer_id; value = option })
+             Answer.{ id = answer_id; value = option; overridden_value })
       in
       Public.Select
         ( { Public.id
@@ -167,7 +173,10 @@ module Data = struct
         , field_options
         , answer )
     | FieldType.Text ->
-      let answer = Answer.{ id = answer_id; value = "test" } |> CCOption.pure in
+      let answer =
+        Answer.{ id = answer_id; value = "test"; overridden_value }
+        |> CCOption.pure
+      in
       let validation = validation_schema Validation.Text.schema in
       Public.Text
         ( { Public.id

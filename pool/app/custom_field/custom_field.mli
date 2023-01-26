@@ -6,12 +6,13 @@ module Answer : sig
   type 'a t =
     { id : Id.t
     ; value : 'a
+    ; overridden_value : 'a option
     }
 
   val equal : ('a -> 'a -> bool) -> 'a t -> 'a t -> bool
   val pp : (Format.formatter -> 'a -> unit) -> Format.formatter -> 'a t -> unit
   val show : (Format.formatter -> 'a -> unit) -> 'a t -> string
-  val create : ?id:Id.t -> 'a -> 'a t
+  val create : ?id:Id.t -> ?overridden_value:'a -> 'a -> 'a t
   val id : 'a t -> Id.t
 end
 
