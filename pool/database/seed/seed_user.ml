@@ -262,9 +262,9 @@ let contacts db_label =
       (fun (contacts, fields)
            (user_id, _, _, _, _, _, paused, disabled, verified) ->
         let%lwt contact = Contact.find db_label user_id in
-        let%lwt custom_fields =
+        let custom_fields contact =
           let open Custom_field in
-          find_all_by_contact db_label user_id
+          find_all_by_contact db_label (Pool_context.Contact contact) user_id
           ||> fun (grouped, ungrouped) ->
           ungrouped
           @ CCList.flatten
@@ -272,6 +272,7 @@ let contacts db_label =
         in
         match contact with
         | Ok contact ->
+          let%lwt custom_fields = custom_fields contact in
           let field_events =
             [ Custom_field.PartialUpdate
                 ( Custom_field.PartialUpdate.Paused

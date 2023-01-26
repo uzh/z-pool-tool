@@ -19,7 +19,7 @@ let index req =
 let detail_view action req =
   (* TODO: Impelement authorization *)
   let open Utils.Lwt_result.Infix in
-  let result ({ Pool_context.database_label; _ } as context) =
+  let result ({ Pool_context.database_label; user; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, "/admin/contacts")
     @@ let* contact =
          HttpUtils.get_field_router_param req Pool_common.Message.Field.Contact
@@ -37,8 +37,8 @@ let detail_view action req =
          in
          let%lwt custom_fields =
            Custom_field.find_all_by_contact
-             ~is_admin:true
              database_label
+             user
              (Contact.id contact)
          in
          Page.Admin.Contact.edit context tenant_languages contact custom_fields

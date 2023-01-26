@@ -278,18 +278,30 @@ module Public = struct
     ; admin_input_only : AdminInputOnly.t
     ; answer_id : Pool_common.Id.t option
     ; answer_value : string option
+    ; answer_admin_value : string option
     ; version : Pool_common.Version.t option
+    ; admin_version : Pool_common.Version.t option
     }
   [@@deriving show, eq]
 
-  let create_answer id value parse_value =
-    match id, value with
-    | Some id, Some value ->
-      value |> parse_value |> CCOption.map (Entity_answer.create ~id)
-    | _, _ -> None
+  let create_answer is_admin id value admin_value parse_value =
+    let open CCOption.Infix in
+    match id with
+    | None -> None
+    | Some id ->
+      (match is_admin with
+       | false -> value >>= parse_value >|= Entity_answer.create ~id
+       | true ->
+         let value = value >>= parse_value in
+         let admin_value = admin_value >>= parse_value in
+         (match admin_value, value with
+          | Some admin_value, _ ->
+            Some (Entity_answer.create ~id ?overridden_value:value admin_value)
+          | _ -> value >|= Entity_answer.create ~id))
   ;;
 
   let to_entity
+    is_admin
     select_options
     { id
     ; name
@@ -299,9 +311,11 @@ module Public = struct
     ; required
     ; admin_overwrite
     ; admin_input_only
-    ; version
     ; answer_id
     ; answer_value
+    ; answer_admin_value
+    ; version
+    ; admin_version
     ; _
     }
     =
@@ -310,14 +324,17 @@ module Public = struct
       Validation.(validation |> raw_of_yojson |> schema)
     in
     let version =
-      CCOption.value ~default:(Pool_common.Version.create ()) version
+      (if is_admin then admin_version else version)
+      |> CCOption.value ~default:(Pool_common.Version.create ())
     in
     match field_type with
     | FieldType.Boolean ->
       let answer =
         create_answer
+          is_admin
           answer_id
           answer_value
+          answer_admin_value
           CCFun.(Utils.Bool.of_string %> CCOption.pure)
       in
       Public.Boolean
@@ -332,7 +349,14 @@ module Public = struct
           }
         , answer )
     | FieldType.Number ->
-      let answer = create_answer answer_id answer_value CCInt.of_string in
+      let answer =
+        create_answer
+          is_admin
+          answer_id
+          answer_value
+          answer_admin_value
+          CCInt.of_string
+      in
       let validation = validation_schema Validation.Number.schema in
       Public.Number
         ( { Public.id
@@ -356,7 +380,7 @@ module Public = struct
             select_options
           >|= snd
         in
-        create_answer answer_id answer_value create
+        create_answer is_admin answer_id answer_value answer_admin_value create
       in
       let options =
         CCList.filter_map
@@ -402,7 +426,7 @@ module Public = struct
                    select_options)
             |> CCOption.pure
         in
-        create_answer answer_id answer_value create
+        create_answer is_admin answer_id answer_value answer_admin_value create
       in
       Public.MultiSelect
         ( { Public.id
@@ -417,7 +441,14 @@ module Public = struct
         , select_options
         , answer )
     | FieldType.Text ->
-      let answer = create_answer answer_id answer_value CCOption.pure in
+      let answer =
+        create_answer
+          is_admin
+          answer_id
+          answer_value
+          answer_admin_value
+          CCOption.pure
+      in
       let validation = validation_schema Validation.Text.schema in
       Public.Text
         ( { Public.id
@@ -432,8 +463,8 @@ module Public = struct
         , answer )
   ;;
 
-  let to_grouped_entities select_options groups fields =
-    let to_entity = to_entity select_options in
+  let to_grouped_entities is_admin select_options groups fields =
+    let to_entity = to_entity is_admin select_options in
     let partition_map fields { Group.id; _ } =
       CCList.partition_filter_map
         (fun (field : repo) ->
@@ -461,8 +492,8 @@ module Public = struct
     , ungrouped |> CCList.map to_entity )
   ;;
 
-  let to_ungrouped_entities select_options fields =
-    let to_entity = to_entity select_options in
+  let to_ungrouped_entities is_admin select_options fields =
+    let to_entity = to_entity is_admin select_options in
     fields |> CCList.map to_entity
   ;;
 
@@ -480,8 +511,11 @@ module Public = struct
               , ( required
                 , ( custom_field_group_id
                   , ( admin_overwrite
-                    , (admin_input_only, (answer_id, (answer_value, version)))
-                    ) ) ) ) ) ) ) )
+                    , ( admin_input_only
+                      , ( answer_id
+                        , ( answer_value
+                          , (answer_admin_value, (version, admin_version)) ) )
+                      ) ) ) ) ) ) ) ) )
       =
       Ok
         { id
@@ -495,7 +529,9 @@ module Public = struct
         ; custom_field_group_id
         ; answer_id
         ; answer_value
+        ; answer_admin_value
         ; version
+        ; admin_version
         }
     in
     Caqti_type.(
@@ -524,7 +560,11 @@ module Public = struct
                                       (option Common.Repo.Id.t)
                                       (tup2
                                          (option Caqti_type.string)
-                                         (option Common.Repo.Version.t)))))))))))))
+                                         (tup2
+                                            (option Caqti_type.string)
+                                            (tup2
+                                               (option Common.Repo.Version.t)
+                                               (option Common.Repo.Version.t)))))))))))))))
   ;;
 end
 

@@ -7,7 +7,7 @@ module PoolField = Pool_common.Message.Field
 let create_layout = Contact_general.create_layout
 
 let show usage req =
-  let result ({ Pool_context.database_label; language; _ } as context) =
+  let result ({ Pool_context.database_label; language; user; _ } as context) =
     let open Utils.Lwt_result.Infix in
     Utils.Lwt_result.map_error (fun err -> err, "/login")
     @@ let* contact = Pool_context.find_contact context |> Lwt_result.lift in
@@ -29,7 +29,10 @@ let show usage req =
            >|+ fun c -> c.Pool_context.Tenant.tenant_languages
          in
          let%lwt custom_fields =
-           Custom_field.find_all_by_contact database_label (Contact.id contact)
+           Custom_field.find_all_by_contact
+             database_label
+             user
+             (Contact.id contact)
          in
          Page.Contact.personal_details
            contact
@@ -148,7 +151,7 @@ let update_password req =
 
 let completion req =
   let open Utils.Lwt_result.Infix in
-  let result ({ Pool_context.database_label; _ } as context) =
+  let result ({ Pool_context.database_label; user; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, "/login")
     @@
     let flash_fetcher key = Sihl.Web.Flash.find key req in
@@ -156,6 +159,7 @@ let completion req =
     let%lwt custom_fields =
       Custom_field.find_all_required_by_contact
         database_label
+        user
         (Contact.id contact)
     in
     Page.Contact.completion context flash_fetcher custom_fields

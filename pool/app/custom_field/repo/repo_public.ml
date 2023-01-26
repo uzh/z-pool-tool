@@ -22,10 +22,11 @@ let get_options_of_multiple pool fields =
   |> Repo_option.Public.find_by_multiple_fields pool
 ;;
 
-let to_grouped_public pool model fields =
+let to_grouped_public is_admin pool model fields =
   let%lwt groups = Repo_group.find_by_model pool model in
   let%lwt options = get_options_of_multiple pool fields in
-  Repo_entity.Public.to_grouped_entities options groups fields |> Lwt.return
+  Repo_entity.Public.to_grouped_entities is_admin options groups fields
+  |> Lwt.return
 ;;
 
 let base_filter_conditions is_admin =
@@ -82,7 +83,9 @@ module Sql = struct
           SUBSTR(HEX(pool_custom_field_answers.uuid), 21)
         )),
         pool_custom_field_answers.value,
-        pool_custom_field_answers.version
+        pool_custom_field_answers.admin_value,
+        pool_custom_field_answers.version,
+        pool_custom_field_answers.admin_version
       FROM pool_custom_fields
       %s
     |sql}
@@ -106,13 +109,13 @@ module Sql = struct
     |> Caqti_type.(tup2 string string ->* Repo_entity.Public.t)
   ;;
 
-  let find_all_by_model model ?(required = false) ?(is_admin = false) pool id =
+  let find_all_by_model model ~required ~is_admin pool id =
     let open Utils.Lwt_result.Infix in
     Utils.Database.collect
       (Database.Label.value pool)
       (find_all_by_model_request required is_admin)
       (Pool_common.Id.value id, Entity.Model.show model)
-    >|> to_grouped_public pool model
+    >|> to_grouped_public is_admin pool model
   ;;
 
   let find_multiple_by_contact_request is_admin ids =
@@ -159,7 +162,9 @@ module Sql = struct
       Utils.Database.collect (pool |> Database.Label.value) request pv
       >|> fun fields ->
       let%lwt options = get_options_of_multiple pool fields in
-      fields |> Repo_entity.Public.to_ungrouped_entities options |> Lwt.return
+      fields
+      |> Repo_entity.Public.to_ungrouped_entities is_admin options
+      |> Lwt.return
   ;;
 
   let find_by_contact_request is_admin =
@@ -189,7 +194,7 @@ module Sql = struct
       |> CCList.head_opt
       |> CCOption.map_or ~default:(Lwt.return []) (get_options pool)
     in
-    Repo_entity.Public.to_ungrouped_entities options field_list
+    Repo_entity.Public.to_ungrouped_entities is_admin options field_list
     |> CCList.head_opt
     |> CCOption.to_result Pool_common.Message.(NotFound Field.CustomField)
     |> Lwt_result.lift
@@ -226,7 +231,6 @@ module Sql = struct
 end
 
 let find_all_by_contact = Sql.find_all_by_model Entity.Model.Contact
-let find_all_required_by_contact = find_all_by_contact ~required:true
 let find_multiple_by_contact = Sql.find_multiple_by_contact
 let find_by_contact = Sql.find_by_contact
 let all_required_answered = Sql.all_answered true

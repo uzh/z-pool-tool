@@ -421,13 +421,14 @@ val find
   -> (t, Pool_common.Message.error) result Lwt.t
 
 val find_all_by_contact
-  :  ?is_admin:bool
-  -> Pool_database.Label.t
+  :  Pool_database.Label.t
+  -> Pool_context.user
   -> Pool_common.Id.t
   -> (Group.Public.t list * Public.t list) Lwt.t
 
 val find_all_required_by_contact
   :  Pool_database.Label.t
+  -> Pool_context.user
   -> Pool_common.Id.t
   -> (Group.Public.t list * Public.t list) Lwt.t
 
