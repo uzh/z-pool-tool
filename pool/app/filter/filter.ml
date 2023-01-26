@@ -4,7 +4,11 @@ include Event
 let find = Repo.find
 let find_all_templates = Repo.find_all_templates
 let find_template = Repo.find_template
+let find_templates_of_query = Repo.find_templates_of_query
 let find_multiple_templates = Repo.find_multiple_templates
+let find_filtered_contacts = Repo.find_filtered_contacts
+let count_filtered_contacts = Repo.count_filtered_contacts
+let contact_matches_filter = Repo.contact_matches_filter
 
 module Human = struct
   include Entity_human
@@ -87,35 +91,4 @@ let toggle_predicate_type (filter : Human.t) predicate_type =
   | "pred" -> Ok (Pred (find_predicate filter) : t)
   | "template" -> Ok (Template None)
   | _ -> Error Pool_common.Message.(Invalid Field.Filter)
-;;
-
-let rec search_templates ids query =
-  let search_list ids =
-    CCList.fold_left (fun ids filter -> search_templates ids filter) ids
-  in
-  match query with
-  | And lst | Or lst -> search_list ids lst
-  | Not f -> search_templates ids f
-  | Pred _ -> ids
-  | Template id -> id :: ids
-;;
-
-let find_templates_of_query tenant_db query =
-  let open Utils.Lwt_result.Infix in
-  let rec go queries ids templates =
-    match queries with
-    | [] -> templates |> Lwt.return
-    | _ ->
-      let new_ids = CCList.flat_map (search_templates []) queries in
-      CCList.filter
-        (fun id -> Stdlib.not (CCList.mem ~eq:Pool_common.Id.equal id ids))
-        new_ids
-      |> find_multiple_templates tenant_db
-      >|> fun filter_list ->
-      go
-        (filter_list |> CCList.map (fun f -> f.query))
-        (ids @ new_ids)
-        (templates @ filter_list)
-  in
-  go [ query ] [] []
 ;;

@@ -1,6 +1,7 @@
 module Message = Pool_common.Message
 module Language = Pool_common.Language
 module Answer = Entity_answer
+module User = Pool_user
 
 let printer m fmt _ = Format.pp_print_string fmt m
 
@@ -837,3 +838,31 @@ let group_fields groups fields =
     ([], fields)
     groups
 ;;
+
+module PartialUpdate = struct
+  module PoolField = Pool_common.Message.Field
+  module Conformist = Pool_common.Utils.PoolConformist
+
+  type t =
+    | Firstname of Pool_common.Version.t * User.Firstname.t
+    | Lastname of Pool_common.Version.t * User.Lastname.t
+    | Paused of Pool_common.Version.t * User.Paused.t
+    | Language of Pool_common.Version.t * Pool_common.Language.t option
+    | Custom of Public.t
+  [@@deriving eq, show, variants]
+
+  let is_required = function
+    | Firstname _ | Lastname _ | Paused _ | Language _ -> true
+    | Custom field -> Public.required field |> Required.value
+  ;;
+
+  let increment_version =
+    let increment = Pool_common.Version.increment in
+    function
+    | Firstname (version, value) -> firstname (version |> increment) value
+    | Lastname (version, value) -> lastname (version |> increment) value
+    | Paused (version, value) -> paused (version |> increment) value
+    | Language (version, value) -> language (version |> increment) value
+    | Custom custom_field -> Custom (Public.increment_version custom_field)
+  ;;
+end

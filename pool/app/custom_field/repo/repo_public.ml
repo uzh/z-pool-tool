@@ -223,100 +223,11 @@ module Sql = struct
       (Pool_common.Id.value contact_id, Entity.Model.(show Contact))
     ||> CCInt.equal 0
   ;;
-
-  let upsert_answer_request =
-    let open Caqti_request.Infix in
-    {sql|
-      INSERT INTO pool_custom_field_answers (
-        uuid,
-        custom_field_uuid,
-        entity_uuid,
-        value,
-        version
-      ) VALUES (
-        UNHEX(REPLACE($1, '-', '')),
-        UNHEX(REPLACE($2, '-', '')),
-        UNHEX(REPLACE($3, '-', '')),
-        $4,
-        $5
-      )
-      ON DUPLICATE KEY UPDATE
-        value = VALUES(value),
-        version = VALUES(version)
-      |sql}
-    |> Repo_entity_answer.Write.t ->. Caqti_type.unit
-  ;;
-
-  let clear_answer_request =
-    let open Caqti_request.Infix in
-    let open Pool_common.Repo in
-    {sql|
-      UPDATE pool_custom_field_answers
-        SET
-          value = NULL,
-          version = version + 1
-      WHERE
-        custom_field_uuid = UNHEX(REPLACE($1, '-', ''))
-      AND
-        entity_uuid = UNHEX(REPLACE($2, '-', ''))
-      |sql}
-    |> Caqti_type.(tup2 Id.t Id.t) ->. Caqti_type.unit
-  ;;
-
-  let clear_answer pool field_id entity_uuid () =
-    Utils.Database.exec
-      (Database.Label.value pool)
-      clear_answer_request
-      (field_id, entity_uuid)
-  ;;
-
-  let map_or ~clear fnc = function
-    | Some value -> fnc value
-    | None -> clear ()
-  ;;
-
-  let upsert_answer pool entity_uuid t =
-    let option_id = Entity.SelectOption.Public.show_id in
-    let open Entity.Public in
-    let field_id = id t in
-    let clear = clear_answer pool field_id entity_uuid in
-    let version = version t in
-    let update_answer id value =
-      Repo_entity_answer.Write.of_entity id field_id entity_uuid value version
-      |> Utils.Database.exec (Database.Label.value pool) upsert_answer_request
-    in
-    let open Entity.Answer in
-    match t with
-    | Boolean (_, answer) ->
-      answer
-      |> map_or ~clear (fun { id; value; _ } ->
-           update_answer id (Utils.Bool.to_string value))
-    | MultiSelect (_, _, answer) ->
-      answer
-      |> map_or ~clear (fun { id; value; _ } ->
-           value
-           |> CCList.map (fun { Entity.SelectOption.Public.id; _ } -> id)
-           |> fun ids ->
-           Repo_entity.yojson_of_multi_select_answer ids
-           |> Yojson.Safe.to_string
-           |> update_answer id)
-    | Number (_, answer) ->
-      answer
-      |> map_or ~clear (fun { id; value; _ } ->
-           update_answer id (CCInt.to_string value))
-    | Select (_, _, answer) ->
-      answer
-      |> map_or ~clear (fun { id; value; _ } ->
-           update_answer id (value |> option_id))
-    | Text (_, answer) ->
-      answer |> map_or ~clear (fun { id; value; _ } -> update_answer id value)
-  ;;
 end
 
 let find_all_by_contact = Sql.find_all_by_model Entity.Model.Contact
 let find_all_required_by_contact = find_all_by_contact ~required:true
 let find_multiple_by_contact = Sql.find_multiple_by_contact
 let find_by_contact = Sql.find_by_contact
-let upsert_answer = Sql.upsert_answer
 let all_required_answered = Sql.all_answered true
 let all_answered = Sql.all_answered false

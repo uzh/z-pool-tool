@@ -359,6 +359,36 @@ val field_type : t -> FieldType.t
 val validation_strings : t -> (string * string) list
 val validation_to_yojson : t -> Yojson.Safe.t
 
+module PartialUpdate : sig
+  type t =
+    | Firstname of Pool_common.Version.t * Pool_user.Firstname.t
+    | Lastname of Pool_common.Version.t * Pool_user.Lastname.t
+    | Paused of Pool_common.Version.t * Pool_user.Paused.t
+    | Language of Pool_common.Version.t * Pool_common.Language.t option
+    | Custom of Public.t
+
+  val is_required : t -> bool
+  val show : t -> string
+  val pp : Format.formatter -> t -> unit
+  val equal : t -> t -> bool
+  val increment_version : t -> t
+end
+
+val validate_htmx
+  :  string list
+  -> Public.t
+  -> (Public.t, Pool_common.Message.error) result
+
+val validate_partial_update
+  :  ?is_admin:bool
+  -> Contact.t
+  -> Pool_database.Label.t
+  -> Pool_common.Message.Field.t
+     * Pool_common.Version.t
+     * string list
+     * Id.t option
+  -> (PartialUpdate.t, Pool_common.Message.error) Lwt_result.t
+
 type event =
   | AnswerUpserted of Public.t * Pool_common.Id.t
   | Created of t
@@ -373,6 +403,7 @@ type event =
   | OptionPublished of SelectOption.t
   | OptionsSorted of SelectOption.t list
   | OptionUpdated of SelectOption.t
+  | PartialUpdate of PartialUpdate.t * Contact.t
   | Published of t
   | Updated of t
 
@@ -414,12 +445,6 @@ val find_by_contact
   -> Id.t
   -> (Public.t, Pool_common.Message.error) result Lwt.t
 
-val upsert_answer
-  :  Pool_database.Label.t
-  -> Pool_common.Id.t
-  -> Public.t
-  -> unit Lwt.t
-
 val all_required_answered
   :  Pool_database.Label.t
   -> Pool_common.Id.t
@@ -446,11 +471,6 @@ val find_groups_by_model
   :  Pool_database.Label.t
   -> Model.t
   -> Group.t list Lwt.t
-
-val validate_htmx
-  :  string list
-  -> Public.t
-  -> (Public.t, Pool_common.Message.error) result
 
 module Repo : sig
   module Id : sig

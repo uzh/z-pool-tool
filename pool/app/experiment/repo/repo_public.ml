@@ -99,7 +99,7 @@ let find_all_public_by_contact pool contact =
     (Contact.id contact)
   >|> Lwt_list.filter_s (fun { Entity.id; filter; allow_uninvited_signup; _ } ->
         if allow_uninvited_signup
-        then Contact.matches_filter pool id filter contact
+        then Filter.contact_matches_filter pool id filter contact
         else Lwt.return_true)
   ||> CCList.map Entity.to_public
 ;;

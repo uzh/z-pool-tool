@@ -6,7 +6,9 @@ end
 let event = Alcotest.testable Pool_event.pp Pool_event.equal
 
 let partial_update =
-  Alcotest.testable Contact.PartialUpdate.pp Contact.PartialUpdate.equal
+  Alcotest.testable
+    Custom_field.PartialUpdate.pp
+    Custom_field.PartialUpdate.equal
 ;;
 
 let tenant_smtp_auth =

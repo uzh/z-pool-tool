@@ -42,8 +42,8 @@ let answer_custom_fields fields contact =
       | Boolean _ | Number _ | Text _ -> None)
     fields
   |> CCList.map (fun field ->
-       Contact.PartialUpdate.Custom field
-       |> fun update -> Contact.Updated (update, contact))
+       Custom_field.PartialUpdate.Custom field
+       |> fun update -> Custom_field.PartialUpdate (update, contact))
 ;;
 
 let create_rand_persons n_persons =
@@ -257,37 +257,45 @@ let contacts db_label =
     >|> Lwt_list.iter_s (Contact.handle_event db_label)
   in
   Logs.info (fun m -> m "Seed: add additional infos to contacts");
-  Lwt_list.fold_left_s
-    (fun contacts (user_id, _, _, _, _, _, paused, disabled, verified) ->
-      let%lwt contact = Contact.find db_label user_id in
-      let%lwt custom_fields =
-        let open Custom_field in
-        find_all_by_contact db_label user_id
-        ||> fun (grouped, ungrouped) ->
-        ungrouped
-        @ CCList.flatten
-            (CCList.map (fun { Group.Public.fields; _ } -> fields) grouped)
-      in
-      match contact with
-      | Ok contact ->
-        [ Contact.Updated
-            ( Contact.PartialUpdate.Paused
-                ( Pool_common.Version.create ()
-                , paused |> Pool_user.Paused.create )
-            , contact )
-        ]
-        @ (if disabled then [ Contact.Disabled contact ] else [])
-        @ (if verified
-          then
-            Contact.EmailVerified contact
-            :: answer_custom_fields custom_fields contact
-          else [])
-        @ contacts
-        |> Lwt.return
-      | Error err ->
-        let _ = Pool_common.Utils.with_log_error ~level:Logs.Debug err in
-        contacts |> Lwt.return)
-    []
-    users
-  >|> Lwt_list.iter_s (Contact.handle_event db_label)
+  let%lwt contact_events, field_events =
+    Lwt_list.fold_left_s
+      (fun (contacts, fields)
+           (user_id, _, _, _, _, _, paused, disabled, verified) ->
+        let%lwt contact = Contact.find db_label user_id in
+        let%lwt custom_fields =
+          let open Custom_field in
+          find_all_by_contact db_label user_id
+          ||> fun (grouped, ungrouped) ->
+          ungrouped
+          @ CCList.flatten
+              (CCList.map (fun { Group.Public.fields; _ } -> fields) grouped)
+        in
+        match contact with
+        | Ok contact ->
+          let field_events =
+            [ Custom_field.PartialUpdate
+                ( Custom_field.PartialUpdate.Paused
+                    ( Pool_common.Version.create ()
+                    , paused |> Pool_user.Paused.create )
+                , contact )
+            ]
+            @
+            if verified then answer_custom_fields custom_fields contact else []
+          in
+          let contact_events =
+            if disabled
+            then [ Contact.Disabled contact ]
+            else [] @ if verified then [ Contact.EmailVerified contact ] else []
+          in
+          (contacts @ contact_events, fields @ field_events) |> Lwt.return
+        | Error err ->
+          let _ = Pool_common.Utils.with_log_error ~level:Logs.Debug err in
+          (contacts, fields) |> Lwt.return)
+      ([], [])
+      users
+  in
+  let%lwt () =
+    contact_events |> Lwt_list.iter_s (Contact.handle_event db_label)
+  in
+  field_events |> Lwt_list.iter_s (Custom_field.handle_event db_label)
 ;;

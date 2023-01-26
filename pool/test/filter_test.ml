@@ -226,7 +226,7 @@ let filter_contacts _ () =
     in
     let expected = true in
     let%lwt filtered_contacts =
-      Contact.find_filtered
+      Filter.find_filtered_contacts
         Test_utils.Data.database_label
         (experiment.Experiment.id |> convert_id)
         experiment.Experiment.filter
@@ -270,7 +270,7 @@ let filter_by_email _ () =
     in
     let expected = true in
     let%lwt filtered_contacts =
-      Contact.find_filtered
+      Filter.find_filtered_contacts
         Test_utils.Data.database_label
         (experiment.Experiment.id |> convert_id)
         experiment.Experiment.filter
@@ -369,7 +369,7 @@ let test_list_filter answer_index operator contact experiment expected =
            (Pool_event.handle_event Test_utils.Data.database_label)
     in
     let%lwt filtered_contacts =
-      Contact.find_filtered
+      Filter.find_filtered_contacts
         Test_utils.Data.database_label
         (experiment.Experiment.id |> convert_id)
         experiment.Experiment.filter
@@ -488,7 +488,7 @@ let retrieve_fitleterd_and_ordered_contacts _ () =
       Sorted [ InvitationCount, SortOrder.Ascending ] |> get_order_element
     in
     let%lwt contacts =
-      Contact.find_filtered
+      Filter.find_filtered_contacts
         ~order_by
         Data.database_label
         Experiment.(experiment.Experiment.id |> Id.to_common)

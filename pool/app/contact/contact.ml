@@ -3,12 +3,9 @@ include Event
 
 let find = Repo.find
 let find_multiple = Repo.find_multiple
-let find_filtered = Repo.find_filtered
-let count_filtered = Repo.count_filtered
 let find_by_email = Repo.find_by_email
 let find_all = Repo.find_all
 let find_to_trigger_profile_update = Repo.find_to_trigger_profile_update
-let matches_filter = Repo.matches_filter
 
 let find_by_user pool (user : Sihl_user.t) =
   user.Sihl_user.id |> Pool_common.Id.of_string |> Repo.find pool
@@ -18,6 +15,14 @@ let has_terms_accepted = Event.has_terms_accepted
 
 module Repo = struct
   module Preview = Repo_model.Preview
+
+  module Model = struct
+    let t = Repo_model.t
+  end
+
+  module Sql = struct
+    let find_request_sql = Repo_sql.find_request_sql
+  end
 end
 
 module Guard = struct

@@ -130,7 +130,7 @@ end
 module Update : sig
   include Common.CommandSig
 
-  type t = Contact.PartialUpdate.t
+  type t = Custom_field.PartialUpdate.t
 
   val handle
     :  ?tags:Logs.Tag.set
@@ -140,11 +140,12 @@ module Update : sig
 
   val effects : Contact.Id.t -> Guard.Authorizer.effect list
 end = struct
-  type t = Contact.PartialUpdate.t
+  type t = Custom_field.PartialUpdate.t
 
   let handle ?(tags = Logs.Tag.empty) contact (field : t) =
     Logs.info ~src (fun m -> m "Handle command Update" ~tags);
-    Ok [ Contact.Updated (field, contact) |> Pool_event.contact ]
+    Ok
+      [ Custom_field.PartialUpdate (field, contact) |> Pool_event.custom_field ]
   ;;
 
   let effects id =

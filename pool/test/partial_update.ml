@@ -28,7 +28,7 @@ let update_with_old_version _ () =
     let field = Message.Field.Language in
     let%lwt partial_update =
       let version = 0 |> Pool_common.Version.of_int in
-      Contact.validate_partial_update
+      Custom_field.validate_partial_update
         contact
         database_label
         (field, version, [ Pool_common.Language.show language ], None)
@@ -58,7 +58,7 @@ let update_custom_field _ () =
     let new_value = "new value" in
     let%lwt partial_update =
       let version = 0 |> Pool_common.Version.of_int in
-      Contact.validate_partial_update
+      Custom_field.validate_partial_update
         contact
         database_label
         (field, version, [ new_value ], Some (Public.id public))
@@ -74,7 +74,7 @@ let update_custom_field _ () =
           Public.Text (p, answer)
         | _ -> failwith "Wrong field type"
       in
-      Ok Contact.PartialUpdate.(Custom expected_field |> increment_version)
+      Ok Custom_field.PartialUpdate.(Custom expected_field |> increment_version)
     in
     Alcotest.(
       check
@@ -103,7 +103,7 @@ let partial_update_exec
     let field = Public.to_common_field language public in
     let%lwt partial_update =
       let version = 0 |> Pool_common.Version.of_int in
-      Contact.validate_partial_update
+      Custom_field.validate_partial_update
         ?is_admin
         contact
         database_label
@@ -158,7 +158,7 @@ let set_value_of_none_required_field_to_null _ () =
     let public = Custom_field_test.Data.to_public custom_field in
     match public with
     | Public.Text (public, _) ->
-      Contact.PartialUpdate.(
+      Custom_field.PartialUpdate.(
         Custom (Public.Text (public, None)) |> increment_version)
       |> CCResult.pure
     | _ -> failwith "Invailid field type "

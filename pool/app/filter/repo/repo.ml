@@ -1,5 +1,7 @@
 module Database = Pool_database
 module Dynparam = Utils.Database.Dynparam
+open Entity
+open Repo_utils
 
 module Sql = struct
   let select_filter_sql where_fragment =
@@ -163,12 +165,160 @@ module Sql = struct
   let delete pool =
     Utils.Database.exec (Pool_database.Label.value pool) delete_request
   ;;
+
+  let find_templates_of_query tenant_db query =
+    let open Utils.Lwt_result.Infix in
+    let rec go queries ids templates =
+      match queries with
+      | [] -> templates |> Lwt.return
+      | _ ->
+        let new_ids = CCList.flat_map (search_templates []) queries in
+        CCList.filter
+          (fun id -> Stdlib.not (CCList.mem ~eq:Pool_common.Id.equal id ids))
+          new_ids
+        |> find_multiple_templates tenant_db
+        >|> fun filter_list ->
+        go
+          (filter_list |> CCList.map (fun f -> f.query))
+          (ids @ new_ids)
+          (templates @ filter_list)
+    in
+    go [ query ] [] []
+  ;;
+
+  let find_filtered_request_sql ?limit where_fragment =
+    let base = Contact.Repo.Sql.find_request_sql where_fragment in
+    match limit with
+    | None -> base
+    | Some limit -> Format.asprintf "%s\nLIMIT %i" base limit
+  ;;
+
+  let find_filtered_contacts pool ?order_by ?limit experiment_id filter =
+    let filter = filter |> CCOption.map (fun f -> f.Entity.query) in
+    let open Utils.Lwt_result.Infix in
+    let%lwt template_list =
+      match filter with
+      | None -> Lwt.return []
+      | Some filter -> find_templates_of_query pool filter
+    in
+    filtered_params
+      template_list
+      ~group_by:"pool_contacts.user_uuid"
+      ?order_by
+      experiment_id
+      filter
+    |> Lwt_result.lift
+    >>= fun (dyn, sql) ->
+    let (Dynparam.Pack (pt, pv)) = dyn in
+    let open Caqti_request.Infix in
+    let request =
+      sql
+      |> where_prefix
+      |> find_filtered_request_sql ?limit
+      |> pt ->* Contact.Repo.Model.t
+    in
+    let%lwt contacts =
+      Utils.Database.collect (pool |> Pool_database.Label.value) request pv
+    in
+    Lwt_result.return contacts
+  ;;
+
+  let contact_matches_filter
+    ?(default = false)
+    pool
+    experiment_id
+    filter
+    (contact : Contact.t)
+    =
+    let open Utils.Lwt_result.Infix in
+    let query = filter |> CCOption.map (fun f -> f.query) in
+    let find_sql where_fragment =
+      Format.asprintf
+        {sql|
+        SELECT 1
+        FROM pool_contacts
+          LEFT JOIN user_users
+          ON pool_contacts.user_uuid = user_users.uuid
+        WHERE
+        %s
+        AND pool_contacts.user_uuid = UNHEX(REPLACE(?, '-', ''))
+      |sql}
+        where_fragment
+    in
+    let%lwt template_list =
+      match query with
+      | None -> Lwt.return []
+      | Some query -> find_templates_of_query pool query
+    in
+    filtered_params template_list experiment_id query
+    |> CCResult.map_err (fun err ->
+         let () =
+           Logs.info (fun m ->
+             m
+               "%s\n%s"
+               ([%show: Contact.t] contact)
+               ([%show: Pool_common.Id.t] experiment_id))
+         in
+         Pool_common.Utils.with_log_error ~level:Logs.Warning err)
+    |> CCResult.get_or
+         ~default:(Dynparam.empty, if default then "TRUE" else "FALSE")
+    |> fun (dyn, sql) ->
+    let dyn =
+      Dynparam.(
+        dyn |> add Caqti_type.string Contact.(contact |> id |> Id.value))
+    in
+    let (Dynparam.Pack (pt, pv)) = dyn in
+    let open Caqti_request.Infix in
+    let request = sql |> find_sql |> pt ->? Caqti_type.int in
+    let%lwt contacts =
+      Utils.Database.find_opt (pool |> Pool_database.Label.value) request pv
+      ||> CCOption.map_or ~default (CCInt.equal 1)
+    in
+    Lwt.return contacts
+  ;;
+
+  let count_filtered_request_sql where_fragment =
+    let select =
+      {sql|
+      SELECT COUNT(*)
+      FROM pool_contacts
+        LEFT JOIN user_users
+        ON pool_contacts.user_uuid = user_users.uuid
+    |sql}
+    in
+    Format.asprintf "%s\n%s" select where_fragment
+  ;;
+
+  let count_filtered_contacts pool experiment_id query =
+    let open Utils.Lwt_result.Infix in
+    let%lwt template_list =
+      match query with
+      | None -> Lwt.return []
+      | Some query -> find_templates_of_query pool query
+    in
+    filtered_params template_list experiment_id query
+    |> Lwt_result.lift
+    >>= fun (dyn, sql) ->
+    let (Dynparam.Pack (pt, pv)) = dyn in
+    let open Caqti_request.Infix in
+    let request =
+      sql |> where_prefix |> count_filtered_request_sql |> pt ->! Caqti_type.int
+    in
+    let%lwt count =
+      Utils.Database.find_opt (pool |> Pool_database.Label.value) request pv
+    in
+    Lwt_result.return (count |> CCOption.value ~default:0)
+  ;;
 end
 
 let find = Sql.find
 let find_all_templates = Sql.find_all_templates
 let find_template = Sql.find_template
 let find_multiple_templates = Sql.find_multiple_templates
+let find_templates_of_query = Sql.find_templates_of_query
+let find_filtered_contacts = Sql.find_filtered_contacts
+let count_filtered_contacts = Sql.count_filtered_contacts
+let contact_matches_filter = Sql.contact_matches_filter
 let insert = Sql.insert
 let update = Sql.update
 let delete = Sql.delete

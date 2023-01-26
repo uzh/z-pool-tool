@@ -1,9 +1,7 @@
 (library
  (name contact)
  (libraries
-  custom_field
   email
-  filter
   guard
   pool_common
   pool_user

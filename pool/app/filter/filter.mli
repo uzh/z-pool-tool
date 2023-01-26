@@ -209,3 +209,25 @@ val toggle_predicate_type
   :  Human.t
   -> string
   -> (Human.t, Pool_common.Message.error) result
+
+val find_filtered_contacts
+  :  Pool_database.Label.t
+  -> ?order_by:string
+  -> ?limit:int
+  -> Pool_common.Id.t
+  -> t option
+  -> (Contact.t list, Pool_common.Message.error) Lwt_result.t
+
+val count_filtered_contacts
+  :  Pool_database.Label.t
+  -> Pool_common.Id.t
+  -> query option
+  -> (int, Pool_common.Message.error) Lwt_result.t
+
+val contact_matches_filter
+  :  ?default:bool
+  -> Pool_database.Label.t
+  -> Pool_common.Id.t
+  -> t option
+  -> Contact.t
+  -> bool Lwt.t

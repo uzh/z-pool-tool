@@ -213,7 +213,7 @@ let completion_post req =
              CCList.assoc_opt ~eq:CCString.equal id urlencoded
              |> CCOption.value ~default:[]
              |> Lwt.return)
-          ||> CCFun.flip validate_htmx field
+          ||> CCFun.flip Custom_field.validate_htmx field
           >>= fun field -> handle field |> Lwt_result.lift)
         custom_fields
       ||> CCList.all_ok

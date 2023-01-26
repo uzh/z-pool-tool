@@ -59,31 +59,6 @@ type t =
   ; updated_at : Ptime.t
   }
 
-module PartialUpdate : sig
-  type t =
-    | Firstname of Pool_common.Version.t * Pool_user.Firstname.t
-    | Lastname of Pool_common.Version.t * Pool_user.Lastname.t
-    | Paused of Pool_common.Version.t * Pool_user.Paused.t
-    | Language of Pool_common.Version.t * Pool_common.Language.t option
-    | Custom of Custom_field.Public.t
-
-  val is_required : t -> bool
-  val show : t -> string
-  val pp : Format.formatter -> t -> unit
-  val equal : t -> t -> bool
-  val increment_version : t -> t
-end
-
-val validate_partial_update
-  :  ?is_admin:bool
-  -> t
-  -> Pool_database.Label.t
-  -> Pool_common.Message.Field.t
-     * Pool_common.Version.t
-     * string list
-     * Custom_field.Id.t option
-  -> (PartialUpdate.t, Pool_common.Message.error) Lwt_result.t
-
 val profile_completion_cookie : string
 val id : t -> Pool_common.Id.t
 val firstname : t -> Pool_user.Firstname.t
@@ -103,20 +78,6 @@ val find_multiple
   -> Pool_common.Id.t list
   -> t list Lwt.t
 
-val find_filtered
-  :  Pool_database.Label.t
-  -> ?order_by:string
-  -> ?limit:int
-  -> Pool_common.Id.t
-  -> Filter.t option
-  -> (t list, Pool_common.Message.error) Lwt_result.t
-
-val count_filtered
-  :  Pool_database.Label.t
-  -> Pool_common.Id.t
-  -> Filter.query option
-  -> (int, Pool_common.Message.error) Lwt_result.t
-
 val find_by_email
   :  Pool_database.Label.t
   -> Pool_user.EmailAddress.t
@@ -132,14 +93,6 @@ val find_all : Pool_database.Label.t -> unit -> t list Lwt.t
 val find_to_trigger_profile_update
   :  Pool_database.Label.t
   -> (t list, 'a) Lwt_result.t
-
-val matches_filter
-  :  ?default:bool
-  -> Pool_database.Label.t
-  -> Pool_common.Id.t
-  -> Filter.t option
-  -> t
-  -> bool Lwt.t
 
 val has_terms_accepted : Pool_database.Label.t -> t -> bool Lwt.t
 
@@ -160,7 +113,6 @@ type session_participation =
 
 type event =
   | Created of create
-  | Updated of PartialUpdate.t * t
   | EmailUpdated of t * Pool_user.EmailAddress.t
   | PasswordUpdated of
       t
@@ -205,6 +157,14 @@ end
 module Repo : sig
   module Preview : sig
     val t : Preview.t Caqti_type.t
+  end
+
+  module Model : sig
+    val t : t Caqti_type.t
+  end
+
+  module Sql : sig
+    val find_request_sql : string -> string
   end
 end
 

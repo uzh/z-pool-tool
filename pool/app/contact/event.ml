@@ -45,7 +45,6 @@ let has_terms_accepted pool (contact : t) =
 
 type event =
   | Created of create
-  | Updated of PartialUpdate.t * t
   | EmailUpdated of t * User.EmailAddress.t
   | PasswordUpdated of
       t * User.Password.t * User.Password.t * User.PasswordConfirmed.t
@@ -101,7 +100,6 @@ let handle_event pool : event -> unit Lwt.t =
     Entity_guard.Target.to_authorizable ~ctx:(Pool_tenant.to_ctx pool) contact
     ||> Pool_common.Utils.get_or_failwith
     ||> fun (_ : [> `Contact ] Guard.AuthorizableTarget.t) -> ()
-  | Updated (update, contact) -> Repo.partial_update pool update contact
   | EmailUpdated (contact, email) ->
     let%lwt _ =
       Service.User.update

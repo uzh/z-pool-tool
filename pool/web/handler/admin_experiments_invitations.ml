@@ -22,7 +22,7 @@ let index req =
          if Sihl.Configuration.is_production ()
          then Lwt_result.return None
          else
-           Contact.find_filtered
+           Filter.find_filtered_contacts
              database_label
              (experiment.Experiment.id |> Experiment.Id.to_common)
              experiment.Experiment.filter

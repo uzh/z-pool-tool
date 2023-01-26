@@ -16,7 +16,6 @@ let find_all_required_by_contact pool id =
 
 let find_multiple_by_contact = Repo_public.find_multiple_by_contact
 let find_by_contact = Repo_public.find_by_contact
-let upsert_answer = Repo_public.upsert_answer
 let all_required_answered = Repo_public.all_required_answered
 let all_answered = Repo_public.all_answered
 let find_option = Repo_option.find
@@ -28,6 +27,18 @@ let find_options_by_field pool id =
 
 let find_group = Repo_group.find
 let find_groups_by_model = Repo_group.find_by_model
+
+module Repo = struct
+  module Id = struct
+    include Pool_common.Repo.Id
+  end
+
+  module SelectOption = struct
+    module Id = struct
+      include Repo_entity.Option.Id
+    end
+  end
+end
 
 let validate_htmx value (m : Public.t) =
   let open Public in
@@ -112,14 +123,71 @@ let validate_htmx value (m : Public.t) =
      | None, true -> no_value)
 ;;
 
-module Repo = struct
-  module Id = struct
-    include Pool_common.Repo.Id
-  end
-
-  module SelectOption = struct
-    module Id = struct
-      include Repo_entity.Option.Id
-    end
-  end
-end
+let validate_partial_update
+  ?(is_admin = false)
+  contact
+  tenand_db
+  (field, current_version, value, field_id)
+  =
+  let open PartialUpdate in
+  let check_version old_v t =
+    let open Pool_common.Version in
+    if old_v |> value > (current_version |> value)
+    then Error Pool_common.Message.(MeantimeUpdate field)
+    else t |> increment_version |> CCResult.pure
+  in
+  let validate schema =
+    let schema =
+      Pool_common.Utils.PoolConformist.(make Field.[ schema () ] CCFun.id)
+    in
+    Conformist.decode_and_validate
+      schema
+      [ field |> Pool_common.Message.Field.show, value ]
+    |> CCResult.map_err Pool_common.Message.to_conformist_error
+  in
+  let open CCResult in
+  match[@warning "-4"] field with
+  | PoolField.Firstname ->
+    User.Firstname.schema
+    |> validate
+    >|= (fun m -> Firstname (current_version, m))
+    >>= check_version contact.Contact.firstname_version
+    |> Lwt.return
+  | PoolField.Lastname ->
+    User.Lastname.schema
+    |> validate
+    >|= (fun m -> Lastname (current_version, m))
+    >>= check_version contact.Contact.lastname_version
+    |> Lwt.return
+  | PoolField.Paused ->
+    User.Paused.schema
+    |> validate
+    >|= (fun m -> Paused (current_version, m))
+    >>= check_version contact.Contact.paused_version
+    |> Lwt.return
+  | PoolField.Language ->
+    (fun () -> Conformist.optional @@ Pool_common.Language.schema ())
+    |> validate
+    >|= (fun m -> Language (current_version, m))
+    >>= check_version contact.Contact.language_version
+    |> Lwt.return
+  | _ ->
+    let open Utils.Lwt_result.Infix in
+    let check_permission m =
+      Lwt_result.lift
+      @@
+      if Public.is_disabled is_admin m
+      then Error Pool_common.Message.NotEligible
+      else Ok m
+    in
+    let* custom_field =
+      field_id
+      |> CCOption.to_result Pool_common.Message.InvalidHtmxRequest
+      |> Lwt_result.lift
+      >>= Repo_public.find_by_contact ~is_admin tenand_db (Contact.id contact)
+      >>= check_permission
+      >>= fun f -> f |> validate_htmx value |> Lwt_result.lift
+    in
+    let old_v = Public.version custom_field in
+    custom_field |> custom |> check_version old_v |> Lwt_result.lift
+;;

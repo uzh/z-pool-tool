@@ -1,6 +1,7 @@
 (library
  (name filter)
  (libraries
+  contact
   custom_field
   pool_database
   pool_common

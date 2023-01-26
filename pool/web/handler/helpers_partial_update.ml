@@ -108,7 +108,7 @@ let update ?contact req =
         [ html ] |> HttpUtils.multi_html_to_plain_text_response |> Lwt.return
       in
       let%lwt partial_update =
-        Contact.validate_partial_update
+        Custom_field.validate_partial_update
           ~is_admin
           contact
           database_label

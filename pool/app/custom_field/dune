@@ -1,9 +1,11 @@
 (library
  (name custom_field)
  (libraries
+  contact
   guardian
   guard
   pool_common
+  pool_context
   ptime
   role
   service

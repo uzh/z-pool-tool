@@ -267,7 +267,7 @@ let partial_update_to_htmx
   partial_update
   ?hx_post
   =
-  let open Contact.PartialUpdate in
+  let open Custom_field.PartialUpdate in
   let to_html m =
     create
       ~required:(is_required partial_update)

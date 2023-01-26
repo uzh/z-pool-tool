@@ -37,7 +37,7 @@ let waiting_list pool =
         with
         | true ->
           let%lwt filtered_contacts =
-            Contact.find_filtered
+            Filter.find_filtered_contacts
               pool
               (experiment.id |> Id.to_common)
               experiment.filter

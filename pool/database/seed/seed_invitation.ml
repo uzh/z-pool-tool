@@ -5,7 +5,7 @@ let invitations pool =
     Lwt_list.fold_left_s
       (fun events experiment ->
         let%lwt filtered_contacts =
-          Contact.find_filtered
+          Filter.find_filtered_contacts
             pool
             (experiment.Experiment.id |> Experiment.Id.to_common)
             experiment.Experiment.filter
