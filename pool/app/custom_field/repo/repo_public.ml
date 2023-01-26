@@ -46,7 +46,6 @@ module Sql = struct
       LEFT JOIN pool_custom_field_answers
         ON pool_custom_field_answers.custom_field_uuid = pool_custom_fields.uuid
         AND pool_custom_field_answers.entity_uuid = UNHEX(REPLACE($1, '-', ''))
-        AND pool_custom_field_answers.value IS NOT NULL
     |sql}
   ;;
 

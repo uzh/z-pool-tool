@@ -276,10 +276,18 @@ module Public = struct
     ; custom_field_group_id : Group.Id.t option
     ; admin_overwrite : AdminOverwrite.t
     ; admin_input_only : AdminInputOnly.t
+    ; answer_id : Pool_common.Id.t option
+    ; answer_value : string option
     ; version : Pool_common.Version.t option
-    ; answer : Repo_entity_answer.repo option
     }
   [@@deriving show, eq]
+
+  let create_answer id value parse_value =
+    match id, value with
+    | Some id, Some value ->
+      value |> parse_value |> CCOption.map (Entity_answer.create ~id)
+    | _, _ -> None
+  ;;
 
   let to_entity
     select_options
@@ -291,8 +299,9 @@ module Public = struct
     ; required
     ; admin_overwrite
     ; admin_input_only
-    ; answer
     ; version
+    ; answer_id
+    ; answer_value
     ; _
     }
     =
@@ -306,9 +315,10 @@ module Public = struct
     match field_type with
     | FieldType.Boolean ->
       let answer =
-        answer
-        >|= fun { Answer.id; value } ->
-        value |> Utils.Bool.of_string |> Entity_answer.create ~id
+        create_answer
+          answer_id
+          answer_value
+          CCFun.(Utils.Bool.of_string %> CCOption.pure)
       in
       Public.Boolean
         ( { Public.id
@@ -322,11 +332,7 @@ module Public = struct
           }
         , answer )
     | FieldType.Number ->
-      let answer =
-        answer
-        >>= fun Answer.{ id; value } ->
-        value |> CCInt.of_string >|= Entity_answer.create ~id
-      in
+      let answer = create_answer answer_id answer_value CCInt.of_string in
       let validation = validation_schema Validation.Number.schema in
       Public.Number
         ( { Public.id
@@ -341,17 +347,16 @@ module Public = struct
         , answer )
     | FieldType.Select ->
       let answer =
-        let open SelectOption in
-        answer
-        >>= fun Answer.{ id; value } ->
-        value
-        |> Id.of_string
-        |> fun selected ->
-        CCList.find_opt
-          (fun (_, { SelectOption.Public.id; _ }) -> Id.equal id selected)
-          select_options
-        >|= snd
-        >|= Entity_answer.create ~id
+        let create value =
+          value
+          |> Id.of_string
+          |> fun selected ->
+          CCList.find_opt
+            (fun (_, { SelectOption.Public.id; _ }) -> Id.equal id selected)
+            select_options
+          >|= snd
+        in
+        create_answer answer_id answer_value create
       in
       let options =
         CCList.filter_map
@@ -380,22 +385,24 @@ module Public = struct
       in
       let answer =
         let open SelectOption in
-        answer
-        |> CCOption.map (fun { Repo_entity_answer.id; value } ->
-             let options =
-               try
-                 value
-                 |> Yojson.Safe.from_string
-                 |> multi_select_answer_of_yojson
-               with
-               | _ -> []
-             in
-             options
-             |> CCList.filter_map (fun option_id ->
-                  CCList.find_opt
-                    (fun { SelectOption.Public.id; _ } -> Id.equal id option_id)
-                    select_options)
-             |> Entity_answer.create ~id)
+        let create value =
+          let options =
+            try
+              value |> Yojson.Safe.from_string |> multi_select_answer_of_yojson
+            with
+            | _ -> []
+          in
+          match options with
+          | [] -> None
+          | options ->
+            options
+            |> CCList.filter_map (fun option_id ->
+                 CCList.find_opt
+                   (fun { SelectOption.Public.id; _ } -> Id.equal id option_id)
+                   select_options)
+            |> CCOption.pure
+        in
+        create_answer answer_id answer_value create
       in
       Public.MultiSelect
         ( { Public.id
@@ -410,9 +417,7 @@ module Public = struct
         , select_options
         , answer )
     | FieldType.Text ->
-      let answer =
-        answer >|= fun Answer.{ id; value } -> value |> Entity_answer.create ~id
-      in
+      let answer = create_answer answer_id answer_value CCOption.pure in
       let validation = validation_schema Validation.Text.schema in
       Public.Text
         ( { Public.id
@@ -474,8 +479,9 @@ module Public = struct
             , ( field_type
               , ( required
                 , ( custom_field_group_id
-                  , (admin_overwrite, (admin_input_only, (answer, version))) )
-                ) ) ) ) ) )
+                  , ( admin_overwrite
+                    , (admin_input_only, (answer_id, (answer_value, version)))
+                    ) ) ) ) ) ) ) )
       =
       Ok
         { id
@@ -487,7 +493,8 @@ module Public = struct
         ; admin_overwrite
         ; admin_input_only
         ; custom_field_group_id
-        ; answer
+        ; answer_id
+        ; answer_value
         ; version
         }
     in
@@ -514,8 +521,10 @@ module Public = struct
                                 (tup2
                                    AdminInputOnly.t
                                    (tup2
-                                      (option Answer.t)
-                                      (option Common.Repo.Version.t))))))))))))
+                                      (option Common.Repo.Id.t)
+                                      (tup2
+                                         (option Caqti_type.string)
+                                         (option Common.Repo.Version.t)))))))))))))
   ;;
 end
 
