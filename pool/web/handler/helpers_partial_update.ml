@@ -44,9 +44,9 @@ let parse_urlencoded req database_label language urlencoded contact_id =
     |> Lwt_result.lift
   in
   let* value =
-    match field_id, find_param_opt Htmx.multi_select_key with
-    | Some _, Some param when CCString.equal param Htmx.multi_select_value ->
-      HttpUtils.htmx_urlencoded_list field_str req |> Lwt_result.ok
+    match field_id, find_param_opt Htmx.multi_select_htmx_key with
+    | Some _, Some param when CCString.equal param Htmx.multi_select_htmx_value
+      -> HttpUtils.htmx_urlencoded_list field_str req |> Lwt_result.ok
     | _ ->
       find_param_list field_str
       |> CCOption.to_result InvalidHtmxRequest
@@ -64,7 +64,8 @@ let update ?contact req =
     ||> HttpUtils.format_htmx_request_boolean_values Field.[ Paused |> show ]
   in
   let result
-    ({ Pool_context.database_label; language; query_language; _ } as context)
+    ({ Pool_context.database_label; language; query_language; user; _ } as
+    context)
     =
     let path_with_lang = HttpUtils.path_with_language query_language in
     let with_redirect path res =
@@ -134,6 +135,7 @@ let update ?contact req =
         | Ok partial_update ->
           Htmx.partial_update_to_htmx
             language
+            user
             tenant_languages
             is_admin
             partial_update
@@ -188,6 +190,7 @@ let update ?contact req =
                     ())
               | Ok field ->
                 Htmx.custom_field_to_htmx
+                  user
                   language
                   is_admin
                   field

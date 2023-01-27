@@ -35,6 +35,7 @@ let show usage req =
              (Contact.id contact)
          in
          Page.Contact.personal_details
+           user
            contact
            custom_fields
            tenant_languages

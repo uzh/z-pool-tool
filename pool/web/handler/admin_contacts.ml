@@ -17,7 +17,6 @@ let index req =
 ;;
 
 let detail_view action req =
-  (* TODO: Impelement authorization *)
   let open Utils.Lwt_result.Infix in
   let result ({ Pool_context.database_label; user; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, "/admin/contacts")

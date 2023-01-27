@@ -60,3 +60,8 @@ $icons-font-path: "../node_modules/@econ/frontend-framework/dist/font";
 [class*="-on-red-lighter"] {
     background-color: $red-lighter;
 }
+
+// Flex
+.flex-basis-100 {
+    flex-basis: 100%;
+}

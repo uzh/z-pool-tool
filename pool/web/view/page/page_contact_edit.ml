@@ -33,6 +33,7 @@ let grouped_custom_fields_form language custom_fields to_html =
 let personal_details_form
   csrf
   language
+  user
   query_language
   action
   tenant_languages
@@ -48,7 +49,7 @@ let personal_details_form
     Htmx.create ~required:true field language ~hx_post:action ()
   in
   let custom_field_to_html field =
-    Htmx.custom_field_to_htmx language is_admin ~hx_post:action field ()
+    Htmx.custom_field_to_htmx user language is_admin ~hx_post:action field ()
   in
   let open Message in
   form
@@ -93,7 +94,8 @@ let personal_details_form
 ;;
 
 let personal_details
-  (contact : Contact.t)
+  user
+  contact
   custom_fields
   tenant_languages
   Pool_context.{ language; query_language; csrf; _ }
@@ -106,6 +108,7 @@ let personal_details
         [ personal_details_form
             csrf
             language
+            user
             query_language
             action
             tenant_languages

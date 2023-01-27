@@ -121,6 +121,7 @@ let input_element
   ?value
   ?error
   ?(additional_attributes = [])
+  ?(append_html = [])
   language
   input_type
   name
@@ -147,7 +148,8 @@ let input_element
       ~a:[ a_class group_class ]
       ([ label ~a:[ a_label_for id ] [ txt input_label ]; input_element ]
       @ help
-      @ error)
+      @ error
+      @ append_html)
 ;;
 
 let flatpicker_element
@@ -212,17 +214,18 @@ let flatpicker_element
 ;;
 
 let checkbox_element
+  ?(additional_attributes = [])
   ?(as_switch = false)
-  ?(orientation = `Vertical)
   ?(classnames = [])
-  ?label_field
-  ?help
   ?error
-  ?identifier
   ?flash_fetcher
+  ?help
+  ?identifier
+  ?label_field
+  ?(orientation = `Vertical)
   ?(required = false)
   ?(value = false)
-  ?(additional_attributes = [])
+  ?(append_html = [])
   language
   name
   =
@@ -273,7 +276,7 @@ let checkbox_element
       ; div ~a:[ a_class [ "input-group" ] ] [ checkbox ]
       ]
   in
-  div ~a:[ a_class group_class ] (input_element @ help @ error)
+  div ~a:[ a_class group_class ] (input_element @ help @ error @ append_html)
 ;;
 
 let input_element_file
@@ -454,6 +457,7 @@ let selector
   ?flash_fetcher
   ?help
   ?option_formatter
+  ?(append_html = [])
   ()
   =
   let name = Field.(show field) in
@@ -542,7 +546,8 @@ let selector
          ]
      ]
     @ help
-    @ error)
+    @ error
+    @ append_html)
 ;;
 
 type 'a multi_select =
@@ -562,6 +567,7 @@ let multi_select
   ?error
   ?(disabled = false)
   ?(required = false)
+  ?append_html
   ()
   =
   let error = Elements.error language error in
@@ -598,9 +604,18 @@ let multi_select
     input ~a:[ a_input_type `Hidden; a_name group_name; a_value group_name ] ()
     :: options_html
   in
+  let classnames =
+    if CCOption.is_some append_html
+    then classnames @ [ "flexrow"; "wrap" ]
+    else classnames
+  in
   div
     ~a:[ a_class (Elements.group_class classnames orientation) ]
     [ label [ txt (Elements.input_label language group_field None required) ]
     ; div ~a:[ a_class [ "input-group" ] ] (inputs @ error)
+    ; append_html
+      |> CCOption.map_or
+           ~default:(txt "")
+           (div ~a:[ a_class [ "flex-basis-100" ] ])
     ]
 ;;

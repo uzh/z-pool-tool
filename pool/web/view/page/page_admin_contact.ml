@@ -67,7 +67,7 @@ let detail Pool_context.{ language; _ } contact =
 ;;
 
 let edit
-  Pool_context.{ language; csrf; query_language; _ }
+  Pool_context.{ language; csrf; query_language; user; _ }
   tenant_languages
   contact
   custom_fields
@@ -79,6 +79,7 @@ let edit
     ; Page_contact_edit.personal_details_form
         csrf
         language
+        user
         query_language
         (Htmx.admin_profile_hx_post (Contact.id contact))
         tenant_languages

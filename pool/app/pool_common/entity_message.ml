@@ -129,6 +129,8 @@ module Field = struct
     | Operator [@name "operator"] [@printer go "operator"]
     | Operators [@name "operators"] [@printer go "operators"]
     | Overbook [@name "overbook"] [@printer go "overbook"]
+    | OverriddenValue [@name "overridden_value"]
+        [@printer go "overridden_value"]
     | Overwrite [@name "overwrite"] [@printer go "overwrite"]
     | Page [@name "page"] [@printer go "page"]
     | Participant [@name "participant"] [@printer go "participant"]
