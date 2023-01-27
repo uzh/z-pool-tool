@@ -90,6 +90,10 @@ let suite =
               "create filter template with template"
               `Slow
               create_filter_template_with_template
+          ; test_case
+              "test filter with admin overridden values"
+              `Slow
+              filter_with_admin_value
           ] )
     ; ( "matcher"
       , Matcher_test.

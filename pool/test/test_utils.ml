@@ -101,29 +101,27 @@ let i18n_templates languages =
 ;;
 
 module Model = struct
+  let create_sihl_user () =
+    Sihl_user.
+      { id = Pool_common.Id.(create () |> value)
+      ; email =
+          Format.asprintf "test+%s@econ.uzh.ch" (Uuidm.v `V4 |> Uuidm.to_string)
+      ; username = None
+      ; name = Some "Doe"
+      ; given_name = Some "Jane"
+      ; password =
+          "somepassword" |> Sihl_user.Hashing.hash |> CCResult.get_or_failwith
+      ; status = Sihl_user.status_of_string "active" |> CCResult.get_or_failwith
+      ; admin = false
+      ; confirmed = true
+      ; created_at = Pool_common.CreatedAt.create ()
+      ; updated_at = Pool_common.UpdatedAt.create ()
+      }
+  ;;
+
   let create_contact ?(with_terms_accepted = true) () =
     Contact.
-      { user =
-          Sihl_user.
-            { id = Pool_common.Id.(create () |> value)
-            ; email =
-                Format.asprintf
-                  "test+%s@econ.uzh.ch"
-                  (Uuidm.v `V4 |> Uuidm.to_string)
-            ; username = None
-            ; name = Some "Doe"
-            ; given_name = Some "Jane"
-            ; password =
-                "somepassword"
-                |> Sihl_user.Hashing.hash
-                |> CCResult.get_or_failwith
-            ; status =
-                Sihl_user.status_of_string "active" |> CCResult.get_or_failwith
-            ; admin = false
-            ; confirmed = true
-            ; created_at = Pool_common.CreatedAt.create ()
-            ; updated_at = Pool_common.UpdatedAt.create ()
-            }
+      { user = create_sihl_user ()
       ; terms_accepted_at =
           (if with_terms_accepted
           then Pool_user.TermsAccepted.create_now () |> CCOption.pure
@@ -150,6 +148,10 @@ module Model = struct
       ; created_at = Pool_common.CreatedAt.create ()
       ; updated_at = Pool_common.UpdatedAt.create ()
       }
+  ;;
+
+  let create_admin () =
+    () |> create_sihl_user |> Admin.create |> Pool_context.admin
   ;;
 
   let create_location () =

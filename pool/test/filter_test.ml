@@ -148,13 +148,18 @@ module CustomFieldData = struct
     Custom_field.Created nr_of_siblings |> Pool_event.custom_field
   ;;
 
-  let answer_nr_of_siblings ?(answer_value = nr_of_siblings_answer) contacts =
+  let answer_nr_of_siblings
+    ?(answer_value = nr_of_siblings_answer)
+    ?admin
+    contacts
+    =
     CCList.map
       (fun contact ->
+        let user =
+          admin |> CCOption.value ~default:(Pool_context.Contact contact)
+        in
         Custom_field.AnswerUpserted
-          ( nr_of_siblings_public answer_value
-          , Contact.id contact
-          , Pool_context.Contact contact )
+          (nr_of_siblings_public answer_value, Contact.id contact, user)
         |> Pool_event.custom_field)
       contacts
   ;;
@@ -186,13 +191,16 @@ module CustomFieldData = struct
   ;;
 end
 
-let nr_of_siblings =
+let nr_of_siblings ?nr () =
   let open Filter in
+  let value =
+    nr |> CCOption.value ~default:CustomFieldData.nr_of_siblings_answer
+  in
   Pred
     (Predicate.create
        Key.(CustomField (CustomFieldData.nr_of_siblings |> Custom_field.id))
        Operator.Equal
-       (Single (Nr (CustomFieldData.nr_of_siblings_answer |> CCFloat.of_int))))
+       (Single (Nr (value |> CCFloat.of_int))))
 ;;
 
 let firstname firstname =
@@ -218,7 +226,7 @@ let filter_contacts _ () =
       |> Lwt_list.iter_s
            (Pool_event.handle_event Test_utils.Data.database_label)
     in
-    let filter = Filter.create None nr_of_siblings in
+    let filter = Filter.create None (nr_of_siblings ()) in
     let experiment = Experiment.{ experiment with filter = Some filter } in
     let%lwt () =
       (* Save filter *)
@@ -259,7 +267,7 @@ let filter_by_email _ () =
         create
           None
           (And
-             [ nr_of_siblings
+             [ nr_of_siblings ()
              ; firstname (Contact.firstname contact |> Pool_user.Firstname.value)
              ]))
     in
@@ -545,6 +553,47 @@ let create_filter_template_with_template _ () =
         expected
         events)
     |> Lwt.return
+  in
+  Lwt.return_unit
+;;
+
+let filter_with_admin_value _ () =
+  let%lwt () =
+    let open Utils.Lwt_result.Infix in
+    let%lwt experiment_id =
+      Experiment.find_all Test_utils.Data.database_label ()
+      ||> CCList.hd
+      ||> fun { Experiment.id; _ } -> id |> Experiment.Id.to_common
+    in
+    let%lwt contact = TestContacts.get_contact 0 in
+    let admin = Test_utils.Model.create_admin () in
+    let%lwt () =
+      (* Save field and answer with 0 *)
+      CustomFieldData.(
+        answer_nr_of_siblings ~answer_value:3 [ contact ]
+        @ answer_nr_of_siblings ~answer_value:1 ~admin [ contact ])
+      |> Lwt_list.iter_s
+           (Pool_event.handle_event Test_utils.Data.database_label)
+    in
+    let find =
+      Filter.find_filtered_contacts Test_utils.Data.database_label experiment_id
+    in
+    let search filter =
+      filter
+      |> CCOption.pure
+      |> find
+      ||> CCResult.get_exn
+      ||> CCList.find_opt (Contact.equal contact)
+      ||> CCOption.is_some
+    in
+    let%lwt should_not_contain =
+      Filter.create None (nr_of_siblings ~nr:3 ()) |> search
+    in
+    let%lwt should_contain =
+      Filter.create None (nr_of_siblings ~nr:1 ()) |> search
+    in
+    let res = should_contain && not should_not_contain in
+    Alcotest.(check bool "succeeds" true res) |> Lwt.return
   in
   Lwt.return_unit
 ;;

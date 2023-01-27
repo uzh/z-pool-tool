@@ -132,7 +132,7 @@ let delete_with_sessions () =
 
 let delete_with_filter () =
   let experiment = Model.create_experiment () in
-  let filter = Filter.create None Filter_test.nr_of_siblings in
+  let filter = Filter.create None (Filter_test.nr_of_siblings ()) in
   let experiment = Experiment.{ experiment with filter = Some filter } in
   let events =
     let session_count = 0 in
