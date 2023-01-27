@@ -134,6 +134,7 @@ module Update : sig
 
   val handle
     :  ?tags:Logs.Tag.set
+    -> Pool_context.user
     -> Contact.t
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
@@ -142,10 +143,12 @@ module Update : sig
 end = struct
   type t = Custom_field.PartialUpdate.t
 
-  let handle ?(tags = Logs.Tag.empty) contact (field : t) =
+  let handle ?(tags = Logs.Tag.empty) user contact (field : t) =
     Logs.info ~src (fun m -> m "Handle command Update" ~tags);
     Ok
-      [ Custom_field.PartialUpdate (field, contact) |> Pool_event.custom_field ]
+      [ Custom_field.PartialUpdate (field, contact, user)
+        |> Pool_event.custom_field
+      ]
   ;;
 
   let effects id =

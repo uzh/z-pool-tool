@@ -43,7 +43,8 @@ let answer_custom_fields fields contact =
     fields
   |> CCList.map (fun field ->
        Custom_field.PartialUpdate.Custom field
-       |> fun update -> Custom_field.PartialUpdate (update, contact))
+       |> fun update ->
+       Custom_field.PartialUpdate (update, contact, Pool_context.Contact contact))
 ;;
 
 let create_rand_persons n_persons =
@@ -278,7 +279,8 @@ let contacts db_label =
                 ( Custom_field.PartialUpdate.Paused
                     ( Pool_common.Version.create ()
                     , paused |> Pool_user.Paused.create )
-                , contact )
+                , contact
+                , Pool_context.Contact contact )
             ]
             @
             if verified then answer_custom_fields custom_fields contact else []

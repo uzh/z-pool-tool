@@ -152,7 +152,9 @@ module CustomFieldData = struct
     CCList.map
       (fun contact ->
         Custom_field.AnswerUpserted
-          (nr_of_siblings_public answer_value, Contact.id contact)
+          ( nr_of_siblings_public answer_value
+          , Contact.id contact
+          , Pool_context.Contact contact )
         |> Pool_event.custom_field)
       contacts
   ;;
@@ -170,7 +172,9 @@ module CustomFieldData = struct
     CCList.map
       (fun contact ->
         Custom_field.AnswerUpserted
-          (multi_select_custom_field_public answer_index, Contact.id contact)
+          ( multi_select_custom_field_public answer_index
+          , Contact.id contact
+          , Pool_context.Contact contact )
         |> Pool_event.custom_field)
       contacts
   ;;

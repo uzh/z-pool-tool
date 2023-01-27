@@ -1,7 +1,7 @@
 open Entity
 
 type event =
-  | AnswerUpserted of Public.t * Pool_common.Id.t
+  | AnswerUpserted of Public.t * Pool_common.Id.t * Pool_context.user
   | Created of t
   | Deleted of t
   | FieldsSorted of t list
@@ -14,14 +14,14 @@ type event =
   | OptionPublished of SelectOption.t
   | OptionsSorted of SelectOption.t list
   | OptionUpdated of SelectOption.t
-  | PartialUpdate of PartialUpdate.t * Contact.t
+  | PartialUpdate of PartialUpdate.t * Contact.t * Pool_context.user
   | Published of t
   | Updated of t
 [@@deriving eq, show, variants]
 
 let handle_event pool : event -> unit Lwt.t = function
-  | AnswerUpserted (m, entity_uuid) ->
-    Repo_partial_update.upsert_answer pool entity_uuid m
+  | AnswerUpserted (m, entity_uuid, user) ->
+    Repo_partial_update.upsert_answer pool user entity_uuid m
   | Created m -> Repo.insert pool m
   | Deleted m -> Repo.delete pool m
   | FieldsSorted m -> CCList.map (fun m -> id m) m |> Repo.sort_fields pool
@@ -36,8 +36,8 @@ let handle_event pool : event -> unit Lwt.t = function
   | OptionsSorted m ->
     CCList.map (fun m -> m.SelectOption.id) m |> Repo_option.sort_options pool
   | OptionUpdated m -> Repo_option.update pool m
-  | PartialUpdate (update, contact) ->
-    Repo_partial_update.update pool update contact
+  | PartialUpdate (update, contact, user) ->
+    Repo_partial_update.update pool user update contact
   | Published m -> Repo.publish pool m
   | Updated m -> Repo.update pool m
 ;;

@@ -225,10 +225,14 @@ let update_language () =
   let partial_update =
     Custom_field.PartialUpdate.(Language (version, Some language))
   in
-  let events = partial_update |> Contact_command.Update.handle contact in
+  let events =
+    partial_update
+    |> Contact_command.Update.handle (Pool_context.Contact contact) contact
+  in
   let expected =
     Ok
-      [ Custom_field.PartialUpdate (partial_update, contact)
+      [ Custom_field.PartialUpdate
+          (partial_update, contact, Pool_context.Contact contact)
         |> Pool_event.custom_field
       ]
   in

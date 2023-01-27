@@ -119,7 +119,7 @@ let update ?contact req =
       let events =
         let open CCResult in
         partial_update
-        >>= Cqrs_command.Contact_command.Update.handle ~tags contact
+        >>= Cqrs_command.Contact_command.Update.handle ~tags user contact
       in
       let htmx_element () =
         let hx_post =

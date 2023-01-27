@@ -390,7 +390,7 @@ val validate_partial_update
   -> (PartialUpdate.t, Pool_common.Message.error) Lwt_result.t
 
 type event =
-  | AnswerUpserted of Public.t * Pool_common.Id.t
+  | AnswerUpserted of Public.t * Pool_common.Id.t * Pool_context.user
   | Created of t
   | Deleted of t
   | FieldsSorted of t list
@@ -403,7 +403,7 @@ type event =
   | OptionPublished of SelectOption.t
   | OptionsSorted of SelectOption.t list
   | OptionUpdated of SelectOption.t
-  | PartialUpdate of PartialUpdate.t * Contact.t
+  | PartialUpdate of PartialUpdate.t * Contact.t * Pool_context.user
   | Published of t
   | Updated of t
 

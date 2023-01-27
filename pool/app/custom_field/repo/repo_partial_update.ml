@@ -18,15 +18,25 @@ let update_sql column_fragment =
   Format.asprintf "%s %s %s" base column_fragment where_fragment
 ;;
 
-let upsert_answer_request =
+let upsert_answer_request is_admin =
   let open Caqti_request.Infix in
-  {sql|
+  let fields, duplicate =
+    match is_admin with
+    | false ->
+      ( {sql| value, version |sql}
+      , {sql| value = VALUES(value), version = VALUES(version) |sql} )
+    | true ->
+      ( {sql| admin_value, admin_version |sql}
+      , {sql| admin_value = VALUES(admin_value), admin_version = VALUES(admin_version) |sql}
+      )
+  in
+  Format.asprintf
+    {sql|
     INSERT INTO pool_custom_field_answers (
       uuid,
       custom_field_uuid,
       entity_uuid,
-      value,
-      version
+      %s
     ) VALUES (
       UNHEX(REPLACE($1, '-', '')),
       UNHEX(REPLACE($2, '-', '')),
@@ -35,32 +45,49 @@ let upsert_answer_request =
       $5
     )
     ON DUPLICATE KEY UPDATE
-      value = VALUES(value),
-      version = VALUES(version)
+      %s
     |sql}
+    fields
+    duplicate
   |> Repo_entity_answer.Write.t ->. Caqti_type.unit
 ;;
 
-let clear_answer_request =
+let clear_answer_request is_admin =
   let open Caqti_request.Infix in
   let open Pool_common.Repo in
-  {sql|
-    UPDATE pool_custom_field_answers
-      SET
-        value = NULL,
-        version = version + 1
+  let where =
+    {sql|
     WHERE
       custom_field_uuid = UNHEX(REPLACE($1, '-', ''))
-    AND
+        AND
       entity_uuid = UNHEX(REPLACE($2, '-', ''))
     |sql}
+  in
+  let update =
+    match is_admin with
+    | false ->
+      {sql|
+      UPDATE pool_custom_field_answers
+        SET
+          value = NULL,
+          version = version + 1
+    |sql}
+    | true ->
+      {sql|
+      UPDATE pool_custom_field_answers
+        SET
+          admin_value = NULL,
+          admin_version = admin_version + 1
+    |sql}
+  in
+  Format.asprintf "%s %s" update where
   |> Caqti_type.(tup2 Id.t Id.t) ->. Caqti_type.unit
 ;;
 
-let clear_answer pool field_id entity_uuid () =
+let clear_answer pool is_admin field_id entity_uuid () =
   Utils.Database.exec
     (Database.Label.value pool)
-    clear_answer_request
+    (clear_answer_request is_admin)
     (field_id, entity_uuid)
 ;;
 
@@ -69,15 +96,23 @@ let map_or ~clear fnc = function
   | None -> clear ()
 ;;
 
-let upsert_answer pool entity_uuid t =
+let upsert_answer pool user entity_uuid t =
+  let is_admin =
+    let open Pool_context in
+    match user with
+    | Guest | Contact _ -> false
+    | Admin _ -> true
+  in
   let option_id = Entity.SelectOption.Public.show_id in
   let open Entity.Public in
   let field_id = id t in
-  let clear = clear_answer pool field_id entity_uuid in
+  let clear = clear_answer pool is_admin field_id entity_uuid in
   let version = version t in
   let update_answer id value =
     Repo_entity_answer.Write.of_entity id field_id entity_uuid value version
-    |> Utils.Database.exec (Database.Label.value pool) upsert_answer_request
+    |> Utils.Database.exec
+         (Database.Label.value pool)
+         (upsert_answer_request is_admin)
   in
   let open Entity.Answer in
   match t with
@@ -106,7 +141,7 @@ let upsert_answer pool entity_uuid t =
     answer |> map_or ~clear (fun { id; value; _ } -> update_answer id value)
 ;;
 
-let update pool (field : PartialUpdate.t) (contact : Contact.t) =
+let update pool user (field : PartialUpdate.t) (contact : Contact.t) =
   let open Entity in
   let base_caqti = Pool_common.Repo.Id.t in
   let dyn =
@@ -166,5 +201,5 @@ let update pool (field : PartialUpdate.t) (contact : Contact.t) =
               |sql}
     )
     |> update_user_table
-  | Custom field -> (upsert_answer pool (Contact.id contact)) field
+  | Custom field -> (upsert_answer pool user (Contact.id contact)) field
 ;;

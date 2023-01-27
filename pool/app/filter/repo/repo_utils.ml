@@ -122,7 +122,10 @@ let filter_to_sql template_list dyn query =
               |> add_value_to_params operator value)
           in
           let sql =
-            where_clause "value" (Operator.to_sql operator) |> custom_field_sql
+            where_clause
+              "COALESCE(admin_value, value)"
+              (Operator.to_sql operator)
+            |> custom_field_sql
           in
           dyn, sql
       in
@@ -146,7 +149,9 @@ let filter_to_sql template_list dyn query =
                 (fun (dyn, lst_sql) value ->
                   let dyn = add_value_to_params operator value dyn in
                   let new_sql =
-                    where_clause "value" (Operator.to_sql operator)
+                    where_clause
+                      "COALESCE(admin_value, value)"
+                      (Operator.to_sql operator)
                   in
                   dyn, lst_sql @ [ new_sql ])
                 (Dynparam.(dyn |> add Custom_field.Repo.Id.t id), [])

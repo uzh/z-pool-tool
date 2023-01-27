@@ -178,7 +178,8 @@ let completion_post req =
     ||> HttpUtils.remove_empty_values
   in
   let result
-    ({ Pool_context.database_label; query_language; language; _ } as context)
+    ({ Pool_context.database_label; query_language; language; user; _ } as
+    context)
     =
     Utils.Lwt_result.map_error (fun err ->
       HttpUtils.(
@@ -202,6 +203,7 @@ let completion_post req =
       let handle =
         Cqrs_command.Custom_field_answer_command.UpdateMultiple.handle
           ~tags
+          user
           (Contact.id contact)
       in
       Lwt_list.map_s
