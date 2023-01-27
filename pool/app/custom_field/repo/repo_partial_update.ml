@@ -97,12 +97,7 @@ let map_or ~clear fnc = function
 ;;
 
 let upsert_answer pool user entity_uuid t =
-  let is_admin =
-    let open Pool_context in
-    match user with
-    | Guest | Contact _ -> false
-    | Admin _ -> true
-  in
+  let is_admin = Pool_context.user_is_admin user in
   let option_id = Entity.SelectOption.Public.show_id in
   let open Entity.Public in
   let field_id = id t in

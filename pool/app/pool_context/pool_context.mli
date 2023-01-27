@@ -75,3 +75,4 @@ end
 val sexp_of_t : t -> Sexplib.Sexp.t
 val show_log : t -> string
 val is_from_root : t -> bool
+val user_is_admin : user -> bool

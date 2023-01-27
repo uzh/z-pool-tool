@@ -72,14 +72,13 @@ let edit
   contact
   custom_fields
   =
-  let is_admin = true in
+  let is_admin = Pool_context.user_is_admin user in
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
     [ h1 ~a:[ a_class [ "heading-1" ] ] [ txt (Contact.fullname contact) ]
     ; Page_contact_edit.personal_details_form
         csrf
         language
-        user
         query_language
         (Htmx.admin_profile_hx_post (Contact.id contact))
         tenant_languages

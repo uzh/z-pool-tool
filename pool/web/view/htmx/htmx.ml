@@ -104,7 +104,7 @@ let create_entity ?help ?htmx_attributes version field value =
 let create
   ({ version; field; value; help; htmx_attributes } : 'a t)
   language
-  ?admin_value
+  ?overridden_value
   ?(classnames = [])
   ?disabled
   ?error
@@ -131,7 +131,7 @@ let create
         ()
   in
   let default s = Option.value ~default:"" s in
-  let append_html = admin_value in
+  let append_html = overridden_value in
   let fetched_value =
     CCOption.bind flash_fetcher (fun flash_fetcher ->
       field |> Pool_common.Message.Field.show |> flash_fetcher)
@@ -256,11 +256,10 @@ let custom_field_to_htmx_value language =
   | Public.Text (_, answer) -> answer >|= (fun a -> a.Answer.value) |> text
 ;;
 
-let custom_field_overridden_value user lang m =
-  let open Pool_context in
-  match user with
-  | Guest | Contact _ -> None
-  | Admin _ ->
+let custom_field_overridden_value is_admin lang m =
+  match is_admin with
+  | false -> None
+  | true ->
     let open CCOption in
     let open Custom_field in
     let open CCFun in
@@ -300,12 +299,16 @@ let custom_field_overridden_value user lang m =
        >|= txt %> add_prefix %> wrap)
 ;;
 
-let custom_field_to_htmx ?version user language is_admin custom_field ?hx_post =
+let custom_field_to_htmx ?version language is_admin custom_field ?hx_post =
   let required =
     Custom_field.(Public.required custom_field |> Required.value)
   in
-  let admin_value = custom_field_overridden_value user language custom_field in
-  let to_html disabled m = create ~required ~disabled ?admin_value m language in
+  let overridden_value =
+    custom_field_overridden_value is_admin language custom_field
+  in
+  let to_html disabled m =
+    create ~required ~disabled ?overridden_value m language
+  in
   let open Custom_field in
   let field_id = Public.id custom_field in
   let htmx_attributes = custom_field_htmx_attributes field_id in
@@ -320,7 +323,6 @@ let custom_field_to_htmx ?version user language is_admin custom_field ?hx_post =
 
 let partial_update_to_htmx
   language
-  user
   sys_languages
   is_admin
   partial_update
@@ -333,7 +335,7 @@ let partial_update_to_htmx
   let open Custom_field.PartialUpdate in
   let to_html m =
     create
-      ~admin_value:[]
+      ~overridden_value:[]
       ~disabled:false
       ?classnames
       ?error
@@ -379,7 +381,6 @@ let partial_update_to_htmx
       ?flash_fetcher
       ?hx_post
       ?success
-      user
       language
       is_admin
       field

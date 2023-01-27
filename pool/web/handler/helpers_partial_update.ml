@@ -56,7 +56,6 @@ let parse_urlencoded req database_label language urlencoded contact_id =
 ;;
 
 let update ?contact req =
-  let is_admin = CCOption.is_some contact in
   let open Utils.Lwt_result.Infix in
   let open Pool_common.Message in
   let%lwt urlencoded =
@@ -67,6 +66,7 @@ let update ?contact req =
     ({ Pool_context.database_label; language; query_language; user; _ } as
     context)
     =
+    let is_admin = Pool_context.user_is_admin user in
     let path_with_lang = HttpUtils.path_with_language query_language in
     let with_redirect path res =
       res |> CCResult.map_err (fun err -> err, path_with_lang path)
@@ -135,7 +135,6 @@ let update ?contact req =
         | Ok partial_update ->
           Htmx.partial_update_to_htmx
             language
-            user
             tenant_languages
             is_admin
             partial_update
@@ -190,7 +189,6 @@ let update ?contact req =
                     ())
               | Ok field ->
                 Htmx.custom_field_to_htmx
-                  user
                   language
                   is_admin
                   field
