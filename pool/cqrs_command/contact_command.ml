@@ -158,6 +158,36 @@ end = struct
   ;;
 end
 
+module ClearAnswer : sig
+  include Common.CommandSig
+
+  type t = Contact.t
+
+  val handle
+    :  ?tags:Logs.Tag.set
+    -> Custom_field.Public.t
+    -> t
+    -> (Pool_event.t list, Pool_common.Message.error) result
+
+  val effects : Contact.Id.t -> Guard.Authorizer.effect list
+end = struct
+  type t = Contact.t
+
+  let handle ?(tags = Logs.Tag.empty) field contact =
+    Logs.info ~src (fun m -> m "Handle command Update" ~tags);
+    Ok
+      [ Custom_field.AdminAnswerCleared (field, Contact.id contact)
+        |> Pool_event.custom_field
+      ]
+  ;;
+
+  let effects id =
+    [ `Update, `Target (id |> Guard.Uuid.target_of Contact.Id.value)
+    ; `Update, `TargetEntity `Contact
+    ]
+  ;;
+end
+
 module UpdatePassword : sig
   include Common.CommandSig
 

@@ -48,7 +48,18 @@ let personal_details_form
     Htmx.create ~required:true field language ~hx_post:action ()
   in
   let custom_field_to_html field =
-    Htmx.custom_field_to_htmx language is_admin ~hx_post:action field ()
+    let hx_delete =
+      Htmx.admin_profile_hx_delete
+        (Contact.id contact)
+        (Custom_field.Public.id field)
+    in
+    Htmx.custom_field_to_htmx
+      language
+      is_admin
+      ~hx_post:action
+      ~hx_delete
+      field
+      ()
   in
   let open Message in
   let static_fields =

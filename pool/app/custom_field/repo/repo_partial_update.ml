@@ -84,7 +84,7 @@ let clear_answer_request is_admin =
   |> Caqti_type.(tup2 Id.t Id.t) ->. Caqti_type.unit
 ;;
 
-let clear_answer pool is_admin field_id entity_uuid () =
+let clear_answer pool ~is_admin ~field_id ~entity_uuid () =
   Utils.Database.exec
     (Database.Label.value pool)
     (clear_answer_request is_admin)
@@ -101,7 +101,7 @@ let upsert_answer pool user entity_uuid t =
   let option_id = Entity.SelectOption.Public.show_id in
   let open Entity.Public in
   let field_id = id t in
-  let clear = clear_answer pool is_admin field_id entity_uuid in
+  let clear = clear_answer pool ~is_admin ~field_id ~entity_uuid in
   let version = version t in
   let update_answer id value =
     Repo_entity_answer.Write.of_entity id field_id entity_uuid value version

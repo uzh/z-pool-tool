@@ -7,6 +7,7 @@ let hx_trigger = a_user_data "hx-trigger"
 let hx_post = a_user_data "hx-post"
 let hx_get = a_user_data "hx-get"
 let hx_target = a_user_data "hx-target"
+let hx_target_closest_group = hx_target "closest .form-group"
 let hx_swap = a_user_data "hx-swap"
 let hx_params = a_user_data "hx-params"
 let hx_vals = a_user_data "hx-vals"
@@ -15,6 +16,13 @@ let contact_profile_hx_post = "/user/update"
 
 let admin_profile_hx_post id =
   Format.asprintf "/admin/contacts/%s" (id |> Pool_common.Id.value)
+;;
+
+let admin_profile_hx_delete id field_id =
+  Format.asprintf
+    "%s/field/%s"
+    (admin_profile_hx_post id)
+    Custom_field.(field_id |> Id.value)
 ;;
 
 let field_id_key = "field_id"
@@ -40,7 +48,7 @@ let base_hx_attributes name version ?action ?(additional_attributes = []) () =
   in
   [ hx_swap "outerHTML"
   ; hx_params (CCString.concat ", " (CCList.cons name params))
-  ; hx_target "closest .form-group"
+  ; hx_target_closest_group
   ; hx_vals
       (Format.asprintf
          {|{%s}|}
@@ -256,7 +264,23 @@ let custom_field_to_htmx_value language =
   | Public.Text (_, answer) -> answer >|= (fun a -> a.Answer.value) |> text
 ;;
 
-let custom_field_overridden_value is_admin lang m =
+let custom_field_overridden_value ?hx_delete is_admin lang m =
+  let delete_form () =
+    let open Input in
+    match is_admin, hx_delete with
+    | true, Some path ->
+      span
+        ~a:
+          [ hx_swap "outerHTML"
+          ; hx_target_closest_group
+          ; hx_params "_csrf"
+          ; hx_post path
+          ; hx_trigger "click"
+          ; a_class [ "color-red"; "push"; "pointer" ]
+          ]
+        [ abbr ~a:[ a_title "Reset value" ] [ Icon.icon `TrashOutline ] ]
+    | _, _ -> txt ""
+  in
   match is_admin with
   | false -> None
   | true ->
@@ -269,7 +293,10 @@ let custom_field_overridden_value is_admin lang m =
       |> txt
     in
     let add_prefix m = [ prefix; txt ": "; m ] in
-    let wrap = div ~a:[ a_class [ "help" ] ] %> CCList.pure in
+    let wrap html =
+      div ~a:[ a_class [ "help"; "flexrow" ] ] (html @ [ delete_form () ])
+      |> CCList.pure
+    in
     (match m with
      | Public.Boolean (_, answer) ->
        answer
@@ -299,12 +326,19 @@ let custom_field_overridden_value is_admin lang m =
        >|= txt %> add_prefix %> wrap)
 ;;
 
-let custom_field_to_htmx ?version language is_admin custom_field ?hx_post =
+let custom_field_to_htmx
+  ?version
+  language
+  is_admin
+  custom_field
+  ?hx_post
+  ?hx_delete
+  =
   let required =
     Custom_field.(Public.required custom_field |> Required.value)
   in
   let overridden_value =
-    custom_field_overridden_value is_admin language custom_field
+    custom_field_overridden_value ?hx_delete is_admin language custom_field
   in
   let to_html disabled m =
     create ~required ~disabled ?overridden_value m language
@@ -326,6 +360,7 @@ let partial_update_to_htmx
   sys_languages
   is_admin
   partial_update
+  ?hx_delete
   ?hx_post
   ?classnames
   ?error
@@ -380,6 +415,7 @@ let partial_update_to_htmx
       ?error
       ?flash_fetcher
       ?hx_post
+      ?hx_delete
       ?success
       language
       is_admin

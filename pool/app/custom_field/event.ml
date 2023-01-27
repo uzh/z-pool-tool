@@ -1,6 +1,7 @@
 open Entity
 
 type event =
+  | AdminAnswerCleared of Public.t * Pool_common.Id.t
   | AnswerUpserted of Public.t * Pool_common.Id.t * Pool_context.user
   | Created of t
   | Deleted of t
@@ -20,6 +21,13 @@ type event =
 [@@deriving eq, show, variants]
 
 let handle_event pool : event -> unit Lwt.t = function
+  | AdminAnswerCleared (m, entity_uuid) ->
+    Repo_partial_update.clear_answer
+      pool
+      ~is_admin:true
+      ~field_id:(Public.id m)
+      ~entity_uuid
+      ()
   | AnswerUpserted (m, entity_uuid, user) ->
     Repo_partial_update.upsert_answer pool user entity_uuid m
   | Created m -> Repo.insert pool m

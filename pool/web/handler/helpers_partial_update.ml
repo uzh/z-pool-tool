@@ -130,6 +130,10 @@ let update ?contact req =
           |> path_with_lang
           |> Sihl.Web.externalize_path
         in
+        let hx_delete =
+          field_id
+          |> CCOption.map (Htmx.admin_profile_hx_delete (Contact.id contact))
+        in
         let open Pool_common.Message in
         match partial_update with
         | Ok partial_update ->
@@ -139,6 +143,7 @@ let update ?contact req =
             is_admin
             partial_update
             ~hx_post
+            ?hx_delete
             ~success:true
             ()
           |> html_response

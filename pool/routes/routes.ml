@@ -462,9 +462,15 @@ module Admin = struct
     let contacts =
       let open Handler.Admin.Contacts in
       let specific =
+        let field_specific =
+          [ post "" ~middlewares:[ Access.delete_answer ] delete_answer ]
+        in
         [ get "" ~middlewares:[ Access.read ] detail
         ; post "" ~middlewares:[ Access.update ] update
         ; get "/edit" ~middlewares:[ Access.update ] edit
+        ; choose
+            ~scope:(Format.asprintf "field/%s" (CustomField |> url_key))
+            field_specific
         ]
       in
       [ get "" ~middlewares:[ Access.index ] index
