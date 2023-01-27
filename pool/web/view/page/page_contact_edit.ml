@@ -51,9 +51,9 @@ let personal_details_form
     Htmx.custom_field_to_htmx language is_admin ~hx_post:action field ()
   in
   let open Message in
-  form
-    ~a:form_attrs
-    [ div
+  let static_fields =
+    let fields =
+      div
         ~a:[ a_class [ "grid-col-2" ] ]
         (csrf_element csrf ()
         :: CCList.map
@@ -86,6 +86,25 @@ let personal_details_form
                  , Field.Paused
                  , Boolean (contact.paused |> User.Paused.value) )
                ])
+    in
+    match is_admin with
+    | true ->
+      div
+        ~a:[ a_class [ "inset"; "border"; "bg-grey-light" ] ]
+        [ p
+            [ txt
+                Pool_common.(
+                  Utils.hint_to_string
+                    language
+                    I18n.ContactProfileVisibleOverride)
+            ]
+        ; fields
+        ]
+    | false -> fields
+  in
+  form
+    ~a:form_attrs
+    [ static_fields
     ; div
         ~a:[ a_class [ "gap-lg" ] ]
         (grouped_custom_fields_form language custom_fields custom_field_to_html)

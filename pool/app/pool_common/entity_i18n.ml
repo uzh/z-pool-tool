@@ -94,6 +94,7 @@ type hint =
   | AllowUninvitedSignup
   | AssignContactFromWaitingList
   | ContactOnWaitingList
+  | ContactProfileVisibleOverride
   | CustomFieldAdminInputOnly
   | CustomFieldAdminViewOnly
   | CustomFieldContactModel

@@ -130,6 +130,9 @@ let hint_to_string = function
   | ContactOnWaitingList ->
     "Sie stehen auf der Warteliste. Das Rekrutierungsteam wird Sie einer \
      Session zuweisen."
+  | ContactProfileVisibleOverride ->
+    "Wenn Sie diese Werte überschreiben werden die Änderungen dem Kontakt \
+     angezeigt."
   | CustomFieldAdminInputOnly ->
     Format.asprintf
       "Diese Option schliesst \"%s\" aus."

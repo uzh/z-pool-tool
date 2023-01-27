@@ -128,6 +128,8 @@ let hint_to_string = function
   | ContactOnWaitingList ->
     "You are on the waiting list. The recruitment team will assign you to a \
      session."
+  | ContactProfileVisibleOverride ->
+    "If you overwrite these values, the changes will be visible to the contact."
   | CustomFieldAdminInputOnly ->
     Format.asprintf
       "This option excludes \"%s\"."
