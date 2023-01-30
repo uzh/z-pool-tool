@@ -103,6 +103,17 @@ let update ?contact req =
         Contact.(contact |> id)
       ||> with_redirect back_path
     in
+    let* custom_field =
+      field_id
+      |> CCOption.map_or ~default:(Lwt_result.return None) (fun id ->
+           Custom_field.find_by_contact
+             ~is_admin
+             database_label
+             (Contact.id contact)
+             id
+           ||> with_redirect back_path
+           >|+ CCOption.pure)
+    in
     let%lwt response =
       let open CCResult in
       let html_response html =
@@ -112,8 +123,8 @@ let update ?contact req =
         Custom_field.validate_partial_update
           ~is_admin
           contact
-          database_label
-          (field, version, value, field_id)
+          custom_field
+          (field, version, value)
       in
       let tags = Logger.req req in
       let events =
@@ -163,7 +174,7 @@ let update ?contact req =
              Htmx.Text (value |> CCList.head_opt) |> create_htmx
            | Field.Lastname ->
              Htmx.Text (value |> CCList.head_opt) |> create_htmx
-           | Field.Paused -> Htmx.Boolean false |> create_htmx
+           | Field.Paused -> Htmx.Boolean (Some false) |> create_htmx
            | Field.Language ->
              Htmx.Select
                Htmx.

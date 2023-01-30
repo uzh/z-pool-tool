@@ -289,15 +289,11 @@ module Public = struct
     match id with
     | None -> None
     | Some id ->
-      (match is_admin with
-       | false -> value >>= parse_value >|= Entity_answer.create ~id
-       | true ->
-         let value = value >>= parse_value in
-         let admin_value = admin_value >>= parse_value in
-         (match admin_value, value with
-          | Some admin_value, _ ->
-            Some (Entity_answer.create ~id ?overridden_value:value admin_value)
-          | _ -> value >|= Entity_answer.create ~id))
+      let value = value >>= parse_value in
+      let admin_value =
+        if is_admin then admin_value >>= parse_value else None
+      in
+      Entity_answer.create ~id ?admin_value value |> CCOption.pure
   ;;
 
   let to_entity

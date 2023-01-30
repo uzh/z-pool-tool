@@ -21,7 +21,7 @@ let custom_field_to_input ?flash_fetcher language custom_field =
   match custom_field with
   | Public.Boolean (_, answer) ->
     answer
-    >|= (fun a -> a.Answer.value)
+    >>= (fun a -> a.Answer.value)
     |> fun value ->
     Input.checkbox_element
       ~as_switch:true
@@ -31,9 +31,7 @@ let custom_field_to_input ?flash_fetcher language custom_field =
       field
   | Public.MultiSelect (_, options, answer) ->
     let selected =
-      answer
-      |> CCOption.map (fun a -> a.Answer.value)
-      |> CCOption.value ~default:[]
+      answer >>= (fun a -> a.Answer.value) |> CCOption.value ~default:[]
     in
     let t =
       Input.
@@ -45,11 +43,11 @@ let custom_field_to_input ?flash_fetcher language custom_field =
     in
     Input.multi_select language t field ()
   | Public.Number (_, answer) ->
-    answer >|= (fun a -> a.Answer.value |> CCInt.to_string) |> create `Number
+    answer >>= (fun a -> a.Answer.value >|= CCInt.to_string) |> create `Number
   | Public.Text (_, answer) ->
-    answer >|= (fun a -> a.Answer.value) |> create `Text
+    answer >>= (fun a -> a.Answer.value) |> create `Text
   | Public.Select (_, options, answer) ->
-    let value = answer >|= fun a -> a.Answer.value in
+    let value = answer >>= fun a -> a.Answer.value in
     Input.selector
       ?flash_fetcher
       ?help

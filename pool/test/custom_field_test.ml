@@ -101,11 +101,11 @@ module Data = struct
     let admin_overwrite = admin_overwrite m in
     let admin_input_only = admin_input_only m in
     let version = 0 |> Pool_common.Version.of_int in
-    let overridden_value = None in
+    let admin_value = None in
     match field_type with
     | FieldType.Boolean ->
       let answer =
-        Answer.{ id = answer_id; value = true; overridden_value }
+        Answer.{ id = answer_id; value = Some true; admin_value }
         |> CCOption.pure
       in
       Public.Boolean
@@ -123,8 +123,8 @@ module Data = struct
       let answer =
         field_options
         |> CCList.head_opt
-        |> CCOption.map (fun opt ->
-             opt |> CCList.pure |> Answer.create ~id:answer_id)
+        |> fun opt ->
+        opt |> CCOption.map CCList.pure |> Answer.create ~id:answer_id
       in
       Public.MultiSelect
         ( { Public.id
@@ -137,10 +137,10 @@ module Data = struct
           ; version
           }
         , field_options
-        , answer )
+        , Some answer )
     | FieldType.Number ->
       let answer =
-        Answer.{ id = answer_id; value = 3; overridden_value } |> CCOption.pure
+        Answer.{ id = answer_id; value = Some 3; admin_value } |> CCOption.pure
       in
       let validation = validation_schema Validation.Number.schema in
       Public.Number
@@ -157,8 +157,8 @@ module Data = struct
     | FieldType.Select ->
       let answer =
         CCList.head_opt field_options
-        |> CCOption.map (fun option ->
-             Answer.{ id = answer_id; value = option; overridden_value })
+        |> fun option ->
+        Answer.{ id = answer_id; value = option; admin_value } |> CCOption.pure
       in
       Public.Select
         ( { Public.id
@@ -174,7 +174,7 @@ module Data = struct
         , answer )
     | FieldType.Text ->
       let answer =
-        Answer.{ id = answer_id; value = "test"; overridden_value }
+        Answer.{ id = answer_id; value = Some "test"; admin_value }
         |> CCOption.pure
       in
       let validation = validation_schema Validation.Text.schema in

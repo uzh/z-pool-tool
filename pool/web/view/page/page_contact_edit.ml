@@ -95,7 +95,10 @@ let personal_details_form
                      } )
                ; ( contact.paused_version
                  , Field.Paused
-                 , Boolean (contact.paused |> User.Paused.value) )
+                 , contact.paused
+                   |> User.Paused.value
+                   |> CCOption.pure
+                   |> boolean )
                ])
     in
     match is_admin with

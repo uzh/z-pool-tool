@@ -5,14 +5,14 @@ module Answer : sig
 
   type 'a t =
     { id : Id.t
-    ; value : 'a
-    ; overridden_value : 'a option
+    ; value : 'a option
+    ; admin_value : 'a option
     }
 
   val equal : ('a -> 'a -> bool) -> 'a t -> 'a t -> bool
   val pp : (Format.formatter -> 'a -> unit) -> Format.formatter -> 'a t -> unit
   val show : (Format.formatter -> 'a -> unit) -> 'a t -> string
-  val create : ?id:Id.t -> ?overridden_value:'a -> 'a -> 'a t
+  val create : ?id:Id.t -> ?admin_value:'a -> 'a option -> 'a t
   val id : 'a t -> Id.t
 end
 
@@ -375,18 +375,16 @@ module PartialUpdate : sig
 end
 
 val validate_htmx
-  :  string list
+  :  is_admin:bool
+  -> string list
   -> Public.t
   -> (Public.t, Pool_common.Message.error) result
 
 val validate_partial_update
   :  ?is_admin:bool
   -> Contact.t
-  -> Pool_database.Label.t
-  -> Pool_common.Message.Field.t
-     * Pool_common.Version.t
-     * string list
-     * Id.t option
+  -> Public.t option
+  -> Pool_common.Message.Field.t * Pool_common.Version.t * string list
   -> (PartialUpdate.t, Pool_common.Message.error) Lwt_result.t
 
 type event =

@@ -18,25 +18,15 @@ let update_sql column_fragment =
   Format.asprintf "%s %s %s" base column_fragment where_fragment
 ;;
 
-let upsert_answer_request is_admin =
+let upsert_answer_request =
   let open Caqti_request.Infix in
-  let fields, duplicate =
-    match is_admin with
-    | false ->
-      ( {sql| value, version |sql}
-      , {sql| value = VALUES(value), version = VALUES(version) |sql} )
-    | true ->
-      ( {sql| admin_value, admin_version |sql}
-      , {sql| admin_value = VALUES(admin_value), admin_version = VALUES(admin_version) |sql}
-      )
-  in
-  Format.asprintf
-    {sql|
+  {sql|
     INSERT INTO pool_custom_field_answers (
       uuid,
       custom_field_uuid,
       entity_uuid,
-      %s
+      value,
+      version
     ) VALUES (
       UNHEX(REPLACE($1, '-', '')),
       UNHEX(REPLACE($2, '-', '')),
@@ -45,10 +35,32 @@ let upsert_answer_request is_admin =
       $5
     )
     ON DUPLICATE KEY UPDATE
-      %s
+      value = VALUES(value),
+      version = VALUES(version)
     |sql}
-    fields
-    duplicate
+  |> Repo_entity_answer.Write.t ->. Caqti_type.unit
+;;
+
+let upsert_admin_answer_request =
+  let open Caqti_request.Infix in
+  {sql|
+  INSERT INTO pool_custom_field_answers (
+    uuid,
+    custom_field_uuid,
+    entity_uuid,
+    admin_value,
+    admin_version
+  ) VALUES (
+    UNHEX(REPLACE($1, '-', '')),
+    UNHEX(REPLACE($2, '-', '')),
+    UNHEX(REPLACE($3, '-', '')),
+    $4,
+    $5
+  )
+  ON DUPLICATE KEY UPDATE
+    admin_value = VALUES(admin_value),
+    admin_version = VALUES(admin_version)
+  |sql}
   |> Repo_entity_answer.Write.t ->. Caqti_type.unit
 ;;
 
@@ -96,6 +108,17 @@ let map_or ~clear fnc = function
   | None -> clear ()
 ;;
 
+let value_to_store is_admin answer =
+  let open Answer in
+  let open CCOption in
+  answer
+  >>= fun ({ Answer.id; _ } as a) ->
+  let pair = CCPair.make id in
+  match is_admin with
+  | true -> a.admin_value >|= pair
+  | false -> a.value >|= pair
+;;
+
 let upsert_answer pool user entity_uuid t =
   let is_admin = Pool_context.user_is_admin user in
   let option_id = Entity.SelectOption.Public.show_id in
@@ -104,36 +127,40 @@ let upsert_answer pool user entity_uuid t =
   let clear = clear_answer pool ~is_admin ~field_id ~entity_uuid in
   let version = version t in
   let update_answer id value =
+    let request =
+      if is_admin then upsert_admin_answer_request else upsert_answer_request
+    in
     Repo_entity_answer.Write.of_entity id field_id entity_uuid value version
-    |> Utils.Database.exec
-         (Database.Label.value pool)
-         (upsert_answer_request is_admin)
+    |> Utils.Database.exec (Database.Label.value pool) request
   in
-  let open Entity.Answer in
   match t with
   | Boolean (_, answer) ->
     answer
-    |> map_or ~clear (fun { id; value; _ } ->
+    |> value_to_store is_admin
+    |> map_or ~clear (fun (id, value) ->
          update_answer id (Utils.Bool.to_string value))
   | MultiSelect (_, _, answer) ->
     answer
-    |> map_or ~clear (fun { id; value; _ } ->
+    |> value_to_store is_admin
+    |> map_or ~clear (fun (id, value) ->
          value
          |> CCList.map (fun { Entity.SelectOption.Public.id; _ } -> id)
-         |> fun ids ->
-         Repo_entity.yojson_of_multi_select_answer ids
+         |> Repo_entity.yojson_of_multi_select_answer
          |> Yojson.Safe.to_string
          |> update_answer id)
   | Number (_, answer) ->
     answer
-    |> map_or ~clear (fun { id; value; _ } ->
+    |> value_to_store is_admin
+    |> map_or ~clear (fun (id, value) ->
          update_answer id (CCInt.to_string value))
   | Select (_, _, answer) ->
     answer
-    |> map_or ~clear (fun { id; value; _ } ->
-         update_answer id (value |> option_id))
+    |> value_to_store is_admin
+    |> map_or ~clear (fun (id, value) -> update_answer id (option_id value))
   | Text (_, answer) ->
-    answer |> map_or ~clear (fun { id; value; _ } -> update_answer id value)
+    answer
+    |> value_to_store is_admin
+    |> map_or ~clear (fun (id, value) -> update_answer id value)
 ;;
 
 let update pool user (field : PartialUpdate.t) (contact : Contact.t) =

@@ -31,8 +31,8 @@ let update_with_old_version _ () =
       let version = 0 |> Pool_common.Version.of_int in
       Custom_field.validate_partial_update
         contact
-        database_label
-        (field, version, [ Pool_common.Language.show language ], None)
+        None
+        (field, version, [ Pool_common.Language.show language ])
     in
     let expected = Error Message.(MeantimeUpdate field) in
     Alcotest.(
@@ -61,8 +61,8 @@ let update_custom_field _ () =
       let version = 0 |> Pool_common.Version.of_int in
       Custom_field.validate_partial_update
         contact
-        database_label
-        (field, version, [ new_value ], Some (Public.id public))
+        (Some public)
+        (field, version, [ new_value ])
     in
     let expected =
       let[@warning "-4"] expected_field =
@@ -70,7 +70,7 @@ let update_custom_field _ () =
         | Public.Text (p, answer) ->
           let answer =
             answer
-            |> CCOption.map (fun a -> Answer.{ a with value = new_value })
+            |> CCOption.map (fun a -> Answer.{ a with value = Some new_value })
           in
           Public.Text (p, answer)
         | _ -> failwith "Wrong field type"
@@ -107,8 +107,8 @@ let partial_update_exec
       Custom_field.validate_partial_update
         ?is_admin
         contact
-        database_label
-        (field, version, [ value ], Some (Public.id public))
+        (Some public)
+        (field, version, [ value ])
     in
     Alcotest.(
       check
@@ -137,7 +137,7 @@ let update_admin_input_only_field_as_user _ () =
       ()
   in
   let expected = Error Message.NotEligible in
-  partial_update_exec ~custom_field expected ()
+  partial_update_exec ~is_admin:false ~custom_field expected ()
 ;;
 
 let update_non_overwrite_field_as_admin _ () =

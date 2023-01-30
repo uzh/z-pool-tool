@@ -4,14 +4,13 @@ end
 
 type 'a t =
   { id : Id.t
-  ; value : 'a
-  ; overridden_value : 'a option
+  ; value : 'a option
+  ; admin_value : 'a option
   }
 [@@deriving eq, show]
 
-let create ?(id = Id.create ()) ?overridden_value value =
-  { id; value; overridden_value }
-;;
-
+let create ?(id = Id.create ()) ?admin_value value = { id; value; admin_value }
 let id { id; _ } = id
 let id_opt t = t |> CCOption.map id
+let admin_value { admin_value; _ } = admin_value
+let admin_value_opt t = CCOption.bind t admin_value

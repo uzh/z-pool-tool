@@ -45,16 +45,25 @@ module Repo = struct
   end
 end
 
-let validate_htmx value (m : Public.t) =
+let create_answer is_admin answer new_value =
+  let id = Answer.id_opt answer in
+  let value = CCOption.bind answer (fun a -> a.Answer.value) in
+  (match is_admin with
+   | true -> Answer.create ?id ~admin_value:new_value value
+   | false -> Answer.create ?id (Some new_value))
+  |> CCOption.pure
+;;
+
+let validate_htmx ~is_admin value (m : Public.t) =
   let open Public in
   let open CCResult.Infix in
-  let open CCFun in
   let no_value = Error Pool_common.Message.NoValue in
-  let required = Public.required m in
+  (* Allow admins to reset required answers *)
+  let required = Public.required m && not is_admin in
   let single_value =
     value
     |> CCList.head_opt
-    |> flip CCOption.bind (fun v ->
+    |> CCFun.flip CCOption.bind (fun v ->
          if CCString.is_empty v then None else Some v)
   in
   let go validation value = validation |> fst |> fun rule -> rule value in
@@ -62,19 +71,16 @@ let validate_htmx value (m : Public.t) =
   | Boolean (public, answer) ->
     (* TODO: Find UI way to do this *)
     let to_field a = Public.Boolean (public, a) |> CCResult.return in
-    let id = Answer.id_opt answer in
     (match single_value, required with
      | Some value, _ ->
        value
        |> Utils.Bool.of_string
-       |> Answer.create ?id
-       |> CCOption.pure
+       |> create_answer is_admin answer
        |> to_field
      | None, false -> to_field None
      | None, true -> no_value)
   | MultiSelect (public, options, answer) ->
     let to_field a = Public.MultiSelect (public, options, a) in
-    let id = Answer.id_opt answer in
     (match value, required with
      | [], true -> no_value
      | vals, _ ->
@@ -89,25 +95,23 @@ let validate_htmx value (m : Public.t) =
               |> CCOption.to_result
                    Pool_common.Message.(Invalid Field.CustomFieldOption))
          |> CCList.all_ok
-         >|= Answer.create ?id
-         >|= CCOption.pure
+         >|= create_answer is_admin answer
        in
        a >|= to_field)
   | Number (({ validation; _ } as public), answer) ->
     let to_field a = Public.Number (public, a) in
-    let id = Answer.id_opt answer in
     (match single_value, required with
      | Some value, _ ->
        value
        |> CCInt.of_string
        |> CCOption.to_result Message.(NotANumber value)
        >>= go validation
-       >|= Answer.create ?id %> CCOption.pure %> to_field
+       >|= create_answer is_admin answer
+       >|= to_field
      | None, false -> Ok (to_field None)
      | None, true -> no_value)
   | Select (public, options, answer) ->
     let to_field a = Public.Select (public, options, a) in
-    let id = Answer.id_opt answer in
     (match single_value, required with
      | Some value, _ ->
        let open SelectOption in
@@ -115,15 +119,15 @@ let validate_htmx value (m : Public.t) =
          (fun option -> Id.equal option.Public.id (Id.of_string value))
          options
        |> CCOption.to_result Message.InvalidOptionSelected
-       >|= Answer.create ?id %> CCOption.pure %> to_field
+       >|= create_answer is_admin answer
+       >|= to_field
      | None, false -> Ok (to_field None)
      | None, true -> no_value)
   | Text (({ validation; _ } as public), answer) ->
     let to_field a = Public.Text (public, a) in
-    let id = Answer.id_opt answer in
     (match single_value, required with
      | Some value, _ ->
-       value |> go validation >|= Answer.create ?id %> CCOption.pure %> to_field
+       value |> go validation >|= create_answer is_admin answer >|= to_field
      | None, false -> Ok (to_field None)
      | None, true -> no_value)
 ;;
@@ -131,8 +135,8 @@ let validate_htmx value (m : Public.t) =
 let validate_partial_update
   ?(is_admin = false)
   contact
-  tenand_db
-  (field, current_version, value, field_id)
+  custom_field
+  (field, current_version, value)
   =
   let open PartialUpdate in
   let check_version old_v t =
@@ -186,12 +190,11 @@ let validate_partial_update
       else Ok m
     in
     let* custom_field =
-      field_id
+      custom_field
       |> CCOption.to_result Pool_common.Message.InvalidHtmxRequest
       |> Lwt_result.lift
-      >>= Repo_public.find_by_contact ~is_admin tenand_db (Contact.id contact)
       >>= check_permission
-      >>= fun f -> f |> validate_htmx value |> Lwt_result.lift
+      >>= fun f -> f |> validate_htmx ~is_admin value |> Lwt_result.lift
     in
     let old_v = Public.version custom_field in
     custom_field |> custom |> check_version old_v |> Lwt_result.lift

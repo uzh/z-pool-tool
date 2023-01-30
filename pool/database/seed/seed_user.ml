@@ -28,7 +28,10 @@ let answer_custom_fields fields contact =
         Public.Select
           ( public
           , options
-          , select_random options |> Answer.create |> CCOption.pure )
+          , select_random options
+            |> CCOption.pure
+            |> Answer.create
+            |> CCOption.pure )
         |> CCOption.pure
       | MultiSelect (public, options, _) ->
         Public.MultiSelect
@@ -36,6 +39,7 @@ let answer_custom_fields fields contact =
           , options
           , select_random options
             |> CCList.pure
+            |> CCOption.pure
             |> Answer.create
             |> CCOption.pure )
         |> CCOption.pure

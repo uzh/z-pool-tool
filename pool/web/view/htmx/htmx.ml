@@ -90,7 +90,7 @@ type 'a selector =
   }
 
 type 'a value =
-  | Boolean of bool
+  | Boolean of bool option
   | MultiSelect of 'a Input.multi_select
   | Number of int option
   | Select of 'a selector
@@ -151,7 +151,7 @@ let create
       ~additional_attributes:(additional_attributes ())
       ?append_html
       ~classnames
-      ~value:boolean
+      ?value:boolean
       ?help
       ?error
       ?required
@@ -223,8 +223,6 @@ let create
       field
 ;;
 
-let boolean_value v = v |> CCOption.value ~default:false |> boolean
-
 let multi_select_value language options v =
   let open Custom_field in
   v
@@ -250,18 +248,34 @@ let select_value language options v =
   |> select
 ;;
 
-let custom_field_to_htmx_value language =
+let field_value is_admin answer =
+  let open Custom_field.Answer in
+  let open CCOption in
+  let { value; admin_value; _ } = answer in
+  match is_admin with
+  | true -> admin_value <+> value
+  | false -> value
+;;
+
+let custom_field_to_htmx_value language is_admin =
   let open CCOption in
   let open Custom_field in
   function
-  | Public.Boolean (_, answer) ->
-    answer >|= (fun a -> a.Answer.value) |> boolean_value
+  | Public.Boolean (_, answer) -> answer >>= field_value is_admin |> boolean
   | Public.MultiSelect (_, options, answer) ->
-    answer >|= (fun a -> a.Answer.value) |> multi_select_value language options
-  | Public.Number (_, answer) -> answer >|= (fun a -> a.Answer.value) |> number
+    answer >>= field_value is_admin |> multi_select_value language options
+  | Public.Number (_, answer) -> answer >>= field_value is_admin |> number
   | Public.Select (_, options, answer) ->
-    answer >|= (fun a -> a.Answer.value) |> select_value language options
-  | Public.Text (_, answer) -> answer >|= (fun a -> a.Answer.value) |> text
+    answer >>= field_value is_admin |> select_value language options
+  | Public.Text (_, answer) -> answer >>= field_value is_admin |> text
+;;
+
+let field_overridden_value answer =
+  let open Custom_field.Answer in
+  let { value; admin_value; _ } = answer in
+  match admin_value, value with
+  | Some _, Some v -> Some v
+  | _, _ -> None
 ;;
 
 let custom_field_overridden_value ?hx_delete is_admin lang m =
@@ -300,11 +314,11 @@ let custom_field_overridden_value ?hx_delete is_admin lang m =
     (match m with
      | Public.Boolean (_, answer) ->
        answer
-       >>= (fun a -> a.Answer.overridden_value)
+       >>= field_overridden_value
        >|= Pool_common.Utils.bool_to_string lang %> txt %> add_prefix %> wrap
      | Public.MultiSelect (_, _, answer) ->
        answer
-       >>= (fun a -> a.Answer.overridden_value)
+       >>= field_overridden_value
        >|= CCList.map (SelectOption.Public.name lang %> txt %> CCList.pure %> li)
            %> ul
            %> (fun html ->
@@ -314,16 +328,14 @@ let custom_field_overridden_value ?hx_delete is_admin lang m =
            %> wrap
      | Public.Number (_, answer) ->
        answer
-       >>= (fun a -> a.Answer.overridden_value)
+       >>= field_overridden_value
        >|= CCInt.to_string %> txt %> add_prefix %> wrap
      | Public.Select (_, _, answer) ->
        answer
-       >>= (fun a -> a.Answer.overridden_value)
+       >>= field_overridden_value
        >|= SelectOption.Public.name lang %> txt %> add_prefix %> wrap
      | Public.Text (_, answer) ->
-       answer
-       >>= (fun a -> a.Answer.overridden_value)
-       >|= txt %> add_prefix %> wrap)
+       answer >>= field_overridden_value >|= txt %> add_prefix %> wrap)
 ;;
 
 let custom_field_to_htmx
@@ -349,7 +361,7 @@ let custom_field_to_htmx
   let field = Public.to_common_field language custom_field in
   let version = CCOption.value ~default:(Public.version custom_field) version in
   let disabled = Public.is_disabled is_admin custom_field in
-  let value = custom_field_to_htmx_value language custom_field in
+  let value = custom_field_to_htmx_value language is_admin custom_field in
   let help = Public.to_common_hint language custom_field in
   { version; field; value; htmx_attributes = Some htmx_attributes; help }
   |> to_html disabled ?hx_post
@@ -396,7 +408,10 @@ let partial_update_to_htmx
       (Text (lastname |> User.Lastname.value |> CCOption.pure))
     |> to_html
   | Paused (v, paused) ->
-    create_entity v Field.Paused (Boolean (paused |> User.Paused.value))
+    create_entity
+      v
+      Field.Paused
+      (paused |> User.Paused.value |> CCOption.pure |> boolean)
     |> to_html
   | Language (v, lang) ->
     create_entity

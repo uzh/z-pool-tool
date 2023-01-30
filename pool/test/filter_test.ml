@@ -51,10 +51,14 @@ module CustomFieldData = struct
         })
   ;;
 
-  let nr_of_siblings_public answer_value =
+  let nr_of_siblings_public is_admin answer_value =
     let open Custom_field in
     let open Custom_field_test in
-    let answer = Answer.create answer_value |> CCOption.pure in
+    let answer =
+      match is_admin with
+      | true -> Answer.create ?admin_value:answer_value None
+      | false -> Answer.create answer_value
+    in
     let version = 0 |> Pool_common.Version.of_int in
     Public.Number
       ( { Public.id = id nr_of_siblings
@@ -66,7 +70,7 @@ module CustomFieldData = struct
         ; admin_input_only = Data.admin_input_only
         ; version
         }
-      , answer )
+      , Some answer )
   ;;
 
   let multi_select_option_data =
@@ -126,6 +130,7 @@ module CustomFieldData = struct
     let open Custom_field_test in
     let answer =
       multi_select_options_public_by_index answer_index
+      |> CCOption.pure
       |> Answer.create
       |> CCOption.pure
     in
@@ -159,7 +164,9 @@ module CustomFieldData = struct
           admin |> CCOption.value ~default:(Pool_context.Contact contact)
         in
         Custom_field.AnswerUpserted
-          (nr_of_siblings_public answer_value, Contact.id contact, user)
+          ( nr_of_siblings_public (CCOption.is_some admin) (Some answer_value)
+          , Contact.id contact
+          , user )
         |> Pool_event.custom_field)
       contacts
   ;;
@@ -568,7 +575,6 @@ let filter_with_admin_value _ () =
     let%lwt contact = TestContacts.get_contact 0 in
     let admin = Test_utils.Model.create_admin () in
     let%lwt () =
-      (* Save field and answer with 0 *)
       CustomFieldData.(
         answer_nr_of_siblings ~answer_value:3 [ contact ]
         @ answer_nr_of_siblings ~answer_value:1 ~admin [ contact ])
@@ -618,15 +624,15 @@ let no_admin_values_shown_to_contacts _ () =
       custom_fields
       |> CCList.filter (function
            | Public.Boolean (_, answer) ->
-             answer >>= (fun a -> a.overridden_value) |> is_some
+             answer >>= (fun a -> a.admin_value) |> is_some
            | Public.MultiSelect (_, _, answer) ->
-             answer >>= (fun a -> a.overridden_value) |> is_some
+             answer >>= (fun a -> a.admin_value) |> is_some
            | Public.Number (_, answer) ->
-             answer >>= (fun a -> a.overridden_value) |> is_some
+             answer >>= (fun a -> a.admin_value) |> is_some
            | Public.Select (_, _, answer) ->
-             answer >>= (fun a -> a.overridden_value) |> is_some
+             answer >>= (fun a -> a.admin_value) |> is_some
            | Public.Text (_, answer) ->
-             answer >>= (fun a -> a.overridden_value) |> is_some)
+             answer >>= (fun a -> a.admin_value) |> is_some)
       |> CCList.is_empty
     in
     Alcotest.(check bool "succeeds" true res) |> Lwt.return

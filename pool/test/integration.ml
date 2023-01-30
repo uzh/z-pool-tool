@@ -102,7 +102,8 @@ let suite =
     ; ( "matcher"
       , Matcher_test.
           [ test_case "send invitations" `Slow create_invitations_repo ] )
-    ; "cleanup", [ test_case "clean up test database" `Quick Seed.cleanup ]
+      (* ; "cleanup", [ test_case "clean up test database" `Quick Seed.cleanup
+         ] *)
     ]
 ;;
 
