@@ -98,8 +98,8 @@ module Data = struct
     let hint = hint m in
     let name = name m in
     let required = required m in
-    let admin_overwrite = AdminOverwrite.create false in
-    let admin_input_only = AdminInputOnly.create false in
+    let admin_overwrite = admin_overwrite m in
+    let admin_input_only = admin_input_only m in
     let version = 0 |> Pool_common.Version.of_int in
     let overridden_value = None in
     match field_type with
