@@ -65,7 +65,7 @@ let template_form
       selector ~required:true language Field.Language show languages None ()
   in
   let textarea_element ~value =
-    textarea_element language ~value ~flash_fetcher ~required:true
+    rich_text_editor language ~value ~flash_fetcher ~required:true
   in
   let submit =
     let open Pool_common.Message in

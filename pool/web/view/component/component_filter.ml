@@ -612,12 +612,5 @@ let filter_form csrf language param key_list template_list =
                 ()
             ]
         ]
-    ; script
-        ~a:
-          [ a_src
-              (Http_utils.externalized_path_with_version "/assets/filter.js")
-          ; a_defer ()
-          ]
-        (txt "")
     ]
 ;;

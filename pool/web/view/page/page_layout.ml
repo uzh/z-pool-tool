@@ -318,13 +318,26 @@ module Tenant = struct
         ()
     in
     let message = Message.create message active_lang () in
+    (* TODO: Use contect function after rebase *)
     let scripts =
-      script
-        ~a:
-          [ a_src (Http_utils.externalized_path_with_version "/assets/index.js")
-          ; a_defer ()
-          ]
-        (txt "")
+      let open Pool_context in
+      let global = "index.js" in
+      let files =
+        match user with
+        | Contact _ | Guest -> [ global ]
+        | Admin _ -> [ global; "admin.js" ]
+      in
+      files
+      |> CCList.map (fun file ->
+           script
+             ~a:
+               [ a_src
+                   (file
+                   |> Format.asprintf "/assets/%s"
+                   |> Http_utils.externalized_path_with_version)
+               ; a_defer ()
+               ]
+             (txt ""))
     in
     let header_content =
       navigation
@@ -348,11 +361,11 @@ module Tenant = struct
          @ [ global_stylesheets ]))
       (body
          ~a:[ a_class body_tag_classnames ]
-         [ website_header ~children:header_content query_language title_text
-         ; content
-         ; footer title_text
-         ; scripts
-         ])
+         ([ website_header ~children:header_content query_language title_text
+          ; content
+          ; footer title_text
+          ]
+         @ scripts))
   ;;
 end
 
