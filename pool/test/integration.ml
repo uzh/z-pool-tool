@@ -94,6 +94,10 @@ let suite =
               "test filter with admin overridden values"
               `Slow
               filter_with_admin_value
+          ; test_case
+              "no admin values shown to contacts"
+              `Slow
+              no_admin_values_shown_to_contacts
           ] )
     ; ( "matcher"
       , Matcher_test.

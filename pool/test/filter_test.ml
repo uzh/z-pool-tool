@@ -597,3 +597,39 @@ let filter_with_admin_value _ () =
   in
   Lwt.return_unit
 ;;
+
+let no_admin_values_shown_to_contacts _ () =
+  let%lwt () =
+    let open Utils.Lwt_result.Infix in
+    let open Custom_field in
+    let%lwt contact = TestContacts.get_contact 0 in
+    let%lwt custom_fields =
+      find_all_by_contact
+        Test_utils.Data.database_label
+        (Pool_context.Contact contact)
+        (Contact.id contact)
+      ||> fun (grouped, ungrouped) ->
+      ungrouped
+      @ CCList.flat_map Group.Public.(fun group -> group.fields) grouped
+    in
+    let res =
+      let open CCOption in
+      let open Answer in
+      custom_fields
+      |> CCList.filter (function
+           | Public.Boolean (_, answer) ->
+             answer >>= (fun a -> a.overridden_value) |> is_some
+           | Public.MultiSelect (_, _, answer) ->
+             answer >>= (fun a -> a.overridden_value) |> is_some
+           | Public.Number (_, answer) ->
+             answer >>= (fun a -> a.overridden_value) |> is_some
+           | Public.Select (_, _, answer) ->
+             answer >>= (fun a -> a.overridden_value) |> is_some
+           | Public.Text (_, answer) ->
+             answer >>= (fun a -> a.overridden_value) |> is_some)
+      |> CCList.is_empty
+    in
+    Alcotest.(check bool "succeeds" true res) |> Lwt.return
+  in
+  Lwt.return_unit
+;;
