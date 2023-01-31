@@ -5,8 +5,8 @@ module Key = struct
   type t =
     | CreditsText
     | GreetingsText
-    | PasswordPolicyText (* In use *)
-    | WelcomeText (* In use *)
+    | PasswordPolicyText
+    | WelcomeText
   [@@deriving eq, show, enum]
 
   let all : t list =
