@@ -1,6 +1,7 @@
 
 import ClassicEditor from "@ckeditor/ckeditor5-build-classic";
 
+<<<<<<< HEAD
 ClassicEditor.defaultConfig = {
     toolbar: {
         items: [
@@ -35,6 +36,8 @@ ClassicEditor.defaultConfig = {
     language: 'en'
 };
 
+=======
+>>>>>>> add wysiwyg editor
 export function initRichTextEditor() {
     document.querySelectorAll(".rich-text").forEach(element => {
         ClassicEditor.create(element)
