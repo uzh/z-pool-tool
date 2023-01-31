@@ -52,7 +52,7 @@ module Elements = struct
       |> Pool_common.Utils.field_to_string language
       |> CCString.capitalize_ascii
     in
-    if required then Format.asprintf "%s *" base else base
+    if required then Format.asprintf "%s*" base else base
   ;;
 
   let attributes input_type name id additional_attributes =

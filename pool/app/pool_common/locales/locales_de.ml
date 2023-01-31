@@ -118,8 +118,6 @@ let field_to_string =
   | Rate -> "Höchstrate"
   | Reason -> "Grund"
   | RegistrationDisabled -> "Registrierung deaktiviert"
-  | ReminderText -> "Erinnerungstext"
-  | ReminderSubject -> "Erinnerungsbetreff"
   | Required -> "Benötigt"
   | ResentAt -> "Erneut verschickt"
   | Role -> "Rolle"
