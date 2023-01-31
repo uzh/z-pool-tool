@@ -58,23 +58,6 @@ let add_unique_combination_constraint =
     |sql}
 ;;
 
-(* This only works if the database has been migrated before. Won't work on clean
-   database *)
-let copy_current_versions =
-  Sihl.Database.Migration.create_step
-    ~label:"copy current versions"
-    {sql|
-      UPDATE pool_custom_field_answers LEFT JOIN
-        pool_custom_field_answer_versions
-          ON
-            pool_custom_field_answer_versions.custom_field_uuid =
-            pool_custom_field_answers.custom_field_uuid
-          AND
-            pool_custom_field_answer_versions.entity_uuid = pool_custom_field_answers.entity_uuid
-          SET pool_custom_field_answers.version = pool_custom_field_answer_versions.version
-    |sql}
-;;
-
 let migration () =
   Sihl.Database.Migration.(
     empty "custom_field_answers"
