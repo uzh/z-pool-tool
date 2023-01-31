@@ -87,6 +87,13 @@ module EmailText = struct
   let schema = schema ?validation:None field
 end
 
+module PlainText = struct
+  include Pool_common.Model.String
+
+  let field = Field.PlainText
+  let schema = schema ?validation:None field
+end
+
 module SmsText = struct
   include Pool_common.Model.String
 
@@ -101,6 +108,7 @@ type t =
   ; language : Pool_common.Language.t
   ; email_subject : EmailSubject.t
   ; email_text : EmailText.t
+  ; plain_text : PlainText.t
   ; sms_text : SmsText.t
   }
 [@@deriving eq, show]

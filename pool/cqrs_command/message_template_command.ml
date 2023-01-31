@@ -9,6 +9,7 @@ module Create : sig
     { language : Pool_common.Language.t
     ; email_subject : Message_template.EmailSubject.t
     ; email_text : Message_template.EmailText.t
+    ; plain_text : Message_template.PlainText.t
     ; sms_text : Message_template.SmsText.t
     }
 
@@ -28,11 +29,12 @@ end = struct
     { language : Pool_common.Language.t
     ; email_subject : Message_template.EmailSubject.t
     ; email_text : Message_template.EmailText.t
+    ; plain_text : Message_template.PlainText.t
     ; sms_text : Message_template.SmsText.t
     }
 
-  let command language email_subject email_text sms_text =
-    { language; email_subject; email_text; sms_text }
+  let command language email_subject email_text plain_text sms_text =
+    { language; email_subject; email_text; plain_text; sms_text }
   ;;
 
   let schema =
@@ -43,6 +45,7 @@ end = struct
           [ Pool_common.Language.schema ()
           ; EmailSubject.schema ()
           ; EmailText.schema ()
+          ; PlainText.schema ()
           ; SmsText.schema ()
           ]
         command)
@@ -54,7 +57,7 @@ end = struct
     label
     entity_uuid
     available_languages
-    { language; email_subject; email_text; sms_text }
+    { language; email_subject; email_text; plain_text; sms_text }
     =
     let open CCResult in
     Logs.info ~src (fun m -> m "Handle command Create" ~tags);
@@ -71,6 +74,7 @@ end = struct
         ; language
         ; email_subject
         ; email_text
+        ; plain_text
         ; sms_text
         }
     in
@@ -106,15 +110,20 @@ module Update : sig
 end = struct
   type t = Message_template.update
 
-  let command email_subject email_text sms_text =
-    Message_template.{ email_subject; email_text; sms_text }
+  let command email_subject email_text plain_text sms_text =
+    Message_template.{ email_subject; email_text; plain_text; sms_text }
   ;;
 
   let schema =
     let open Message_template in
     Pool_common.Utils.PoolConformist.(
       make
-        Field.[ EmailSubject.schema (); EmailText.schema (); SmsText.schema () ]
+        Field.
+          [ EmailSubject.schema ()
+          ; EmailText.schema ()
+          ; PlainText.schema ()
+          ; SmsText.schema ()
+          ]
         command)
   ;;
 

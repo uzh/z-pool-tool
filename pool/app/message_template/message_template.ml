@@ -37,13 +37,13 @@ let prepare_email language template email layout params =
   match Sihl.Configuration.read_string "SMTP_SENDER" with
   | None -> failwith "SMTP_SENDER not found in configuration"
   | Some sender ->
-    let { Entity.email_subject; email_text; _ } = template in
+    let { Entity.email_subject; email_text; plain_text; _ } = template in
     let mail =
       Sihl_email.
         { sender
         ; recipient = Pool_user.EmailAddress.value email
         ; subject = email_subject
-        ; text = "" (* TODO: Plaintext, #305 *)
+        ; text = PlainText.value plain_text
         ; html = Some (combine_html language (Some email_subject))
         ; cc = []
         ; bcc = []

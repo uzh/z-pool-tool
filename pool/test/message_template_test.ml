@@ -18,7 +18,7 @@ module Data = struct
     urlencoded
     |> decode
     |> CCResult.get_exn
-    |> fun { language; email_subject; email_text; sms_text } ->
+    |> fun { language; email_subject; email_text; plain_text; sms_text } ->
     Message_template.
       { id
       ; label
@@ -26,6 +26,7 @@ module Data = struct
       ; language
       ; email_subject
       ; email_text
+      ; plain_text
       ; sms_text
       }
   ;;

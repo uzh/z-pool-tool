@@ -20,7 +20,38 @@ let create_pool_message_table =
     |sql}
 ;;
 
+let add_plain_text_column =
+  Sihl.Database.Migration.create_step
+    ~label:"add plain text column"
+    {sql|
+      ALTER TABLE pool_message_templates
+        ADD COLUMN email_text_plain text AFTER email_text_html
+    |sql}
+;;
+
+let set_plain_text_to_sms_text =
+  Sihl.Database.Migration.create_step
+    ~label:"set plain text to sms text"
+    {sql|
+      UPDATE pool_message_templates
+        SET email_text_plain = sms_text
+    |sql}
+;;
+
+let make_plain_text_not_nullable =
+  Sihl.Database.Migration.create_step
+    ~label:"make plain text not nullable"
+    {sql|
+    ALTER TABLE pool_message_templates
+        MODIFY email_text_plain text NOT NULL
+    |sql}
+;;
+
 let migration () =
   Sihl.Database.Migration.(
-    empty "pool_message" |> add_step create_pool_message_table)
+    empty "pool_message"
+    |> add_step create_pool_message_table
+    |> add_step add_plain_text_column
+    |> add_step set_plain_text_to_sms_text
+    |> add_step make_plain_text_not_nullable)
 ;;

@@ -24,6 +24,7 @@ let select_sql =
       pool_message_templates.language,
       pool_message_templates.email_subject,
       pool_message_templates.email_text_html,
+      pool_message_templates.email_text_plain,
       pool_message_templates.sms_text
     FROM
       pool_message_templates
@@ -40,11 +41,13 @@ let insert_request =
         language,
         email_subject,
         email_text_html,
+        email_text_plain,
         sms_text
       ) VALUES (
         UNHEX(REPLACE(?, '-', '')),
         ?,
         UNHEX(REPLACE(?, '-', '')),
+        ?,
         ?,
         ?,
         ?,
@@ -64,7 +67,8 @@ let update_request =
       SET
         email_subject = $5,
         email_text_html = $6,
-        sms_text = $7
+        email_text_plain = $7,
+        sms_text = $8
       WHERE
         uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}

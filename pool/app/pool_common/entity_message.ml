@@ -139,11 +139,12 @@ module Field = struct
     | Participants [@name "participants"] [@printer go "participants"]
     | Participated [@name "participated"] [@printer go "participated"]
     | PartnerLogos [@name "partner_logos"] [@printer go "partner_logos"]
-    | Predicate [@name "predicate"] [@printer go "predicate"]
     | Password [@name "password"] [@printer go "password"]
     | PasswordConfirmation [@name "password_confirmation"]
         [@printer go "password_confirmation"]
     | Paused [@name "paused"] [@printer go "paused"]
+    | PlainText [@name "plain_text"] [@printer go "plain_text"]
+    | Predicate [@name "predicate"] [@printer go "predicate"]
     | Profile [@name "profile"] [@printer go "profile"]
     | PublicTitle [@name "public_title"] [@printer go "public_title"]
     | PublishedAt [@name "published_at"] [@printer go "published_at"]
@@ -384,6 +385,7 @@ type control =
   | PleaseSelect
   | Publish of Field.t option
   | Register
+  | ResetPlainText
   | RemoveFromWaitingList
   | Reschedule of Field.t option
   | Resend of Field.t option

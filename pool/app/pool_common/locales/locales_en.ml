@@ -110,6 +110,7 @@ let field_to_string =
   | Password -> "password"
   | PasswordConfirmation -> "password confirmation"
   | Paused -> "paused"
+  | PlainText -> "plaintext"
   | Predicate -> "predicate"
   | Profile -> "profile"
   | PublicTitle -> "public title"
@@ -402,12 +403,17 @@ let control_to_string = function
   | Publish field -> format_submit "publish" field
   | Register -> format_submit "register" None
   | RemoveFromWaitingList -> "Remove from waiting list"
+  | Reschedule field -> format_submit "reschedule" field
   | Resend field -> format_submit "resend" field
+  | ResetPlainText ->
+    Format.asprintf
+      "Reset %s to rich '%s'"
+      (field_to_string Field.PlainText)
+      (field_to_string Field.EmailText)
   | Save field -> format_submit "save" field
   | SelectAll field -> format_submit "select all" field
   | SelectFilePlaceholder -> format_submit "select file.." None
   | Send field -> format_submit "send" field
-  | Reschedule field -> format_submit "reschedule" field
   | SendResetLink -> format_submit "send reset link" None
   | Show -> format_submit "show" None
   | SignUp -> format_submit "sign up" None
