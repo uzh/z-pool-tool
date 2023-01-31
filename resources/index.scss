@@ -74,3 +74,8 @@ $icons-font-path: "../node_modules/@econ/frontend-framework/dist/font";
 abbr[title] {
     text-decoration: none;
 }
+
+// CK Editor
+.form-group:not(.horizontal)>*~.ck {
+    margin-top: $space-xs;
+}

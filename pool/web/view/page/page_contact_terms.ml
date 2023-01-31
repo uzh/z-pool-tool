@@ -12,11 +12,7 @@ let terms user_id terms Pool_context.{ language; query_language; csrf; _ } =
     [ h1
         ~a:[ a_class [ "heading-1" ] ]
         [ txt (Utils.text_to_string language I18n.TermsAndConditionsTitle) ]
-    ; p
-        [ terms
-          |> Settings.TermsAndConditions.Terms.value
-          |> Http_utils.add_line_breaks
-        ]
+    ; div [ terms |> Settings.TermsAndConditions.Terms.value |> Unsafe.data ]
     ; form
         ~a:[ a_action submit_url; a_method `Post; a_class [ "stack" ] ]
         [ csrf_element csrf ()

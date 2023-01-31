@@ -327,19 +327,21 @@ let input_element_file
 ;;
 
 let textarea_element
-  ?(orientation = `Vertical)
-  ?(classnames = [])
   ?(attributes = [])
-  ?(required = false)
-  ?label_field
-  ?value
+  ?(classnames = [])
   ?flash_fetcher
+  ?(orientation = `Vertical)
+  ?label_field
+  ?(required = false)
+  ?(rich_text = false)
+  ?value
   language
   name
   =
   let input_label = Elements.input_label language name label_field required in
   let textarea_attributes =
     let base = [ a_name (name |> Field.show) ] in
+    let base = if rich_text then a_class [ "rich-text" ] :: base else base in
     match required with
     | true -> base @ [ a_required () ]
     | false -> base
@@ -352,41 +354,6 @@ let textarea_element
   let value = old_value <+> value |> CCOption.get_or ~default:"" in
   let textarea =
     let base = textarea ~a:(textarea_attributes @ attributes) (txt value) in
-    match orientation with
-    | `Vertical -> base
-    | `Horizontal -> div ~a:[ a_class [ "input-group" ] ] [ base ]
-  in
-  div
-    ~a:[ a_class (Elements.group_class [] orientation @ classnames) ]
-    [ label [ txt input_label ]; textarea ]
-;;
-
-let[@warning "-27"] [@warning "-26"] rich_text_editor
-  ?(orientation = `Vertical)
-  ?(classnames = [])
-  ?(attributes = [])
-  ?(required = false)
-  ?label_field
-  ?value
-  ?flash_fetcher
-  language
-  name
-  =
-  let input_label = Elements.input_label language name label_field required in
-  let textarea_attributes =
-    let base = [ a_name (name |> Field.show) ] in
-    match required with
-    | true -> base @ [ a_required () ]
-    | false -> base
-  in
-  let ( <+> ) = CCOption.( <+> ) in
-  let old_value =
-    CCOption.bind flash_fetcher (fun flash_fetcher ->
-      name |> Field.show |> flash_fetcher)
-  in
-  let value = old_value <+> value |> CCOption.get_or ~default:"" in
-  let textarea =
-    let base = div ~a:[ a_class [ "rich-text-editor" ] ] [ txt value ] in
     match orientation with
     | `Vertical -> base
     | `Horizontal -> div ~a:[ a_class [ "input-group" ] ] [ base ]

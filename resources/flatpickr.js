@@ -2,7 +2,7 @@ import flatpickr from 'flatpickr'
 import { German } from "flatpickr/dist/l10n/de.js"
 import Default from "flatpickr/dist/l10n/default.js"
 
-import 'flatpickr/dist/themes/light.css'
+import 'flatpickr/dist/themes/light.css';
 
 
 function getLocale(elm) {

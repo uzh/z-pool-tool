@@ -64,8 +64,8 @@ let template_form
       let open Pool_common.Language in
       selector ~required:true language Field.Language show languages None ()
   in
-  let textarea_element ~value =
-    rich_text_editor language ~value ~flash_fetcher ~required:true
+  let textarea_element ?rich_text ~value =
+    textarea_element language ?rich_text ~value ~flash_fetcher ~required:true
   in
   let submit =
     let open Pool_common.Message in
@@ -113,9 +113,11 @@ let template_form
           ; language_select
           ]
       ; textarea_element
+          ~rich_text:true
           ~value:(value (fun t -> t.email_text |> EmailText.value))
           Field.EmailText
       ; textarea_element
+          ~rich_text:false
           ~value:(value (fun t -> t.sms_text |> SmsText.value))
           Field.SmsText
       ; div

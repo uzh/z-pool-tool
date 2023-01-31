@@ -36,12 +36,14 @@ let viewport =
 
 let favicon path = link ~rel:[ `Icon ] ~href:path ()
 
-let global_stylesheets =
+let css_link_tag file =
   link
     ~rel:[ `Stylesheet ]
-    ~href:(Http_utils.externalized_path_with_version "/assets/index.css")
+    ~href:(Http_utils.externalized_path_with_version file)
     ()
 ;;
+
+let global_stylesheet = "/assets/index.css"
 
 let app_title query_language title =
   div
@@ -307,20 +309,24 @@ module Tenant = struct
     query_language
     active_navigation
     =
+    let open Pool_context in
     let title_text = Pool_tenant.(Title.value tenant.title) in
     let page_title =
       title (txt (Format.asprintf "%s - %s" title_text "Pool Tool"))
     in
-    let custom_stylesheet =
-      link
-        ~rel:[ `Stylesheet ]
-        ~href:(Sihl.Web.externalize_path "/custom/assets/index.css")
-        ()
+    let stylesheets =
+      (* TODO: Use contect function after rebase *)
+      let global = [ global_stylesheet; "/custom/assets/index.css" ] in
+      let files =
+        match user with
+        | Contact _ | Guest -> global
+        | Admin _ -> CCList.cons "/assets/admin.css" global
+      in
+      files |> CCList.map css_link_tag
     in
     let message = Message.create message active_lang () in
     (* TODO: Use contect function after rebase *)
     let scripts =
-      let open Pool_context in
       let global = "index.js" in
       let files =
         match user with
@@ -355,10 +361,7 @@ module Tenant = struct
         tenant.icon |> Icon.value |> Pool_common.File.path |> favicon)
     in
     html
-      (head
-         page_title
-         ([ charset; viewport; custom_stylesheet; favicon ]
-         @ [ global_stylesheets ]))
+      (head page_title ([ charset; viewport; favicon ] @ stylesheets))
       (body
          ~a:[ a_class body_tag_classnames ]
          ([ website_header ~children:header_content query_language title_text
@@ -399,7 +402,7 @@ let create_root_layout children language message user ?active_navigation () =
     (head
        page_title
        ([ charset; viewport; favicon "/assets/images/favicon.png" ]
-       @ [ global_stylesheets ]))
+       @ [ global_stylesheet |> css_link_tag ]))
     (body
        ~a:[ a_class body_tag_classnames ]
        [ website_header None ~children:[ navigation ] title_text
@@ -422,7 +425,9 @@ let create_error_layout children =
   in
   let content = main_tag [ children ] in
   html
-    (head page_title ([ charset; viewport ] @ [ global_stylesheets ]))
+    (head
+       page_title
+       ([ charset; viewport ] @ [ global_stylesheet |> css_link_tag ]))
     (body
        ~a:[ a_class body_tag_classnames ]
        [ website_header None title_text; content; footer title_text; scripts ])
