@@ -1,37 +1,14 @@
 module Key : sig
   type t =
-    | ConfirmationSubject
-    | ConfirmationText
-    | ConfirmationWithoutSelfRegistrationSubject
-    | ConfirmationWithoutSelfRegistrationText
     | CreditsText
-    | ExperimentFinishSubject
-    | ExperimentFinishText
     | GreetingsText
-    | ImportInvitationSubject
-    | ImportInvitationText
-    | InvitationSubject
-    | InvitationText
-    | InvitationWithoutSelfRegistrationSubject
-    | InvitationWithoutSelfRegistrationText
     | PasswordPolicyText
-    | ReminderSubject
-    | ReminderSmsText
-    | ReminderText
-    | RescheduleSessionSubject
-    | RescheduleSessionText
-    | SessionCancellationSubject
-    | SessionCancellationText
-    | SessionFinishSubject
-    | SessionFinishText
-    | TriggerProfileUpdateSubject
-    | TriggerProfileUpdateText
     | WelcomeText
 
   val to_string : t -> string
   val equal : t -> t -> bool
   val of_string : string -> (t, Pool_common.Message.error) result
-  val is_textarea : t -> bool
+  val is_rich_text : t -> bool
   val all : t list
 
   val schema

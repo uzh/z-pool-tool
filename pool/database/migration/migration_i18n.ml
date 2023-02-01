@@ -16,6 +16,16 @@ let create_i18n_table =
     |sql}
 ;;
 
+let remove_unused_rows =
+  Sihl.Database.Migration.create_step
+    ~label:"remove unused rows from i18n table"
+    {sql|
+      DELETE FROM pool_i18n
+      WHERE i18n_key IN ('confirmation_subject', 'confirmation_text', 'confirmation_without_self_registration_subject', 'confirmation_without_self_registration_text', 'experiment_finish_subject', 'experiment_finish_text', 'import_invitation_subject', 'import_invitation_text', 'invitation_subject', 'invitation_text', 'invitation_without_self_registration_subject', 'invitation_without_self_registration_text', 'reminder_subject', 'reminder_sms_text', 'reminder_text', 'reschedule_session_subject', 'reschedule_session_text', 'session_cancellation_subject', 'session_cancellation_text', 'session_finish_subject', 'session_finish_text', 'trigger_profile_update_subject', 'trigger_profile_update_text')
+    |sql}
+;;
+
 let migration () =
-  Sihl.Database.Migration.(empty "i18n" |> add_step create_i18n_table)
+  Sihl.Database.Migration.(
+    empty "i18n" |> add_step create_i18n_table |> add_step remove_unused_rows)
 ;;

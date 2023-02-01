@@ -52,7 +52,7 @@ module Elements = struct
       |> Pool_common.Utils.field_to_string language
       |> CCString.capitalize_ascii
     in
-    if required then Format.asprintf "%s *" base else base
+    if required then Format.asprintf "%s*" base else base
   ;;
 
   let attributes input_type name id additional_attributes =
@@ -327,19 +327,21 @@ let input_element_file
 ;;
 
 let textarea_element
-  ?(orientation = `Vertical)
-  ?(classnames = [])
   ?(attributes = [])
-  ?(required = false)
-  ?label_field
-  ?value
+  ?(classnames = [])
   ?flash_fetcher
+  ?(orientation = `Vertical)
+  ?label_field
+  ?(required = false)
+  ?(rich_text = false)
+  ?value
   language
   name
   =
   let input_label = Elements.input_label language name label_field required in
   let textarea_attributes =
     let base = [ a_name (name |> Field.show) ] in
+    let base = if rich_text then a_class [ "rich-text" ] :: base else base in
     match required with
     | true -> base @ [ a_required () ]
     | false -> base

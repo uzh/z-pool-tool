@@ -118,8 +118,6 @@ let field_to_string =
   | RandomOrder -> "select the contacts in random order."
   | Rate -> "rate limit"
   | Reason -> "reason"
-  | ReminderText -> "reminder text"
-  | ReminderSubject -> "reminder subject"
   | RegistrationDisabled -> "registration disabled"
   | ResentAt -> "resent at"
   | Required -> "required"

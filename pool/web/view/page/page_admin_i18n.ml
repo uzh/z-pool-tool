@@ -3,19 +3,9 @@ open Component.Input
 module Message = Pool_common.Message
 
 let list translation_list Pool_context.{ language; csrf; _ } =
-  let input_element translation =
-    input_element
-      ~orientation:`Horizontal
-      ~classnames:[ "grow" ]
-      ~label_field:(Pool_common.Language.field_of_t (I18n.language translation))
-      ~required:true
-      ~value:(translation |> I18n.content |> I18n.Content.value)
-      language
-      `Text
-      Pool_common.Message.Field.Translation
-  in
-  let textarea_element translation =
+  let textarea_element ?rich_text translation =
     textarea_element
+      ?rich_text
       ~orientation:`Horizontal
       ~classnames:[ "grow" ]
       ~label_field:(Pool_common.Language.field_of_t (I18n.language translation))
@@ -37,9 +27,9 @@ let list translation_list Pool_context.{ language; csrf; _ } =
                      (translation |> I18n.id |> Pool_common.Id.value))
               in
               let text_input =
-                match I18n.Key.is_textarea key with
-                | true -> textarea_element translation
-                | false -> input_element translation
+                textarea_element
+                  ~rich_text:(I18n.Key.is_rich_text key)
+                  translation
               in
               form
                 ~a:

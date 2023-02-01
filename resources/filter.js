@@ -233,22 +233,23 @@ function configRequest(e, form) {
     }
 }
 
-if (form) {
-    const submitButton = document.getElementById("submit-filter-form");
-    submitButton.addEventListener('htmx:beforeSwap', (e) => {
-        if (e.detail.xhr.status > 200 && e.detail.xhr.status < 300) {
-            e.detail.shouldSwap = true;
-        }
-    })
-    addRemovePredicateListener(form);
-    form.addEventListener('htmx:afterSwap', (e) => {
-        addRemovePredicateListener(e.detail.elt)
-        if (e.detail.target.type === "submit") {
-            updateContactCount();
-        }
-        addCloseListener();
-    })
-    updateContactCount()
-    form.addEventListener('htmx:configRequest', (e) => configRequest(e, form))
+export function initFilterForm() {
+    if (form) {
+        const submitButton = document.getElementById("submit-filter-form");
+        submitButton.addEventListener('htmx:beforeSwap', (e) => {
+            if (e.detail.xhr.status > 200 && e.detail.xhr.status < 300) {
+                e.detail.shouldSwap = true;
+            }
+        })
+        addRemovePredicateListener(form);
+        form.addEventListener('htmx:afterSwap', (e) => {
+            addRemovePredicateListener(e.detail.elt)
+            if (e.detail.target.type === "submit") {
+                updateContactCount();
+            }
+            addCloseListener();
+        })
+        updateContactCount()
+        form.addEventListener('htmx:configRequest', (e) => configRequest(e, form))
+    }
 }
-

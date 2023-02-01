@@ -255,6 +255,7 @@ let show
           textarea_element
             language
             field
+            ~rich_text:true
             ~value:
               (CCList.assoc_opt
                  ~eq:Pool_common.Language.equal

@@ -105,10 +105,7 @@ let index
             ([ h1
                  ~a:[ a_class [ "heading-1" ] ]
                  [ txt (text_to_string Pool_common.I18n.HomeTitle) ]
-             ; div
-                 [ I18n.content_to_string welcome_text
-                   |> HttpUtils.add_line_breaks
-                 ]
+             ; div [ welcome_text |> I18n.content_to_string |> Unsafe.data ]
              ]
             @ sign_up_cta
             @ partner_html)
