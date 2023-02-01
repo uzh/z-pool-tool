@@ -75,14 +75,9 @@ let filter_to_sql template_list dyn query =
         |> Format.asprintf "%s (%s)" sql )
     in
     match query with
-    | And queries ->
-      if CCList.is_empty queries
-      then Ok (dyn, sql)
-      else of_list (dyn, sql) queries "AND"
-    | Or queries ->
-      if CCList.is_empty queries
-      then Ok (dyn, sql)
-      else of_list (dyn, sql) queries "OR"
+    | (And queries | Or queries) when CCList.is_empty queries -> Ok (dyn, sql)
+    | And queries -> of_list (dyn, sql) queries "AND"
+    | Or queries -> of_list (dyn, sql) queries "OR"
     | Not f ->
       query_sql (dyn, sql) f
       >|= fun (dyn, sql) -> dyn, Format.asprintf "NOT %s" sql

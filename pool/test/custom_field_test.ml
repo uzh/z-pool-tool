@@ -105,7 +105,7 @@ module Data = struct
     match field_type with
     | FieldType.Boolean ->
       let answer =
-        Answer.{ id = answer_id; value = Some true; admin_value }
+        { Answer.id = answer_id; value = Some true; admin_value }
         |> CCOption.pure
       in
       Public.Boolean
@@ -140,7 +140,7 @@ module Data = struct
         , Some answer )
     | FieldType.Number ->
       let answer =
-        Answer.{ id = answer_id; value = Some 3; admin_value } |> CCOption.pure
+        { Answer.id = answer_id; value = Some 3; admin_value } |> CCOption.pure
       in
       let validation = validation_schema Validation.Number.schema in
       Public.Number
@@ -158,7 +158,7 @@ module Data = struct
       let answer =
         CCList.head_opt field_options
         |> fun option ->
-        Answer.{ id = answer_id; value = option; admin_value } |> CCOption.pure
+        { Answer.id = answer_id; value = option; admin_value } |> CCOption.pure
       in
       Public.Select
         ( { Public.id
@@ -174,7 +174,7 @@ module Data = struct
         , answer )
     | FieldType.Text ->
       let answer =
-        Answer.{ id = answer_id; value = Some "test"; admin_value }
+        { Answer.id = answer_id; value = Some "test"; admin_value }
         |> CCOption.pure
       in
       let validation = validation_schema Validation.Text.schema in

@@ -20,7 +20,7 @@ let admin_profile_hx_post id =
 
 let admin_profile_hx_delete id field_id =
   Format.asprintf
-    "%s/field/%s"
+    "%s/field/%s/delete"
     (admin_profile_hx_post id)
     Custom_field.(field_id |> Id.value)
 ;;

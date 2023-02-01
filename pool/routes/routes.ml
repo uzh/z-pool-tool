@@ -463,7 +463,7 @@ module Admin = struct
       let open Handler.Admin.Contacts in
       let specific =
         let field_specific =
-          [ post "" ~middlewares:[ Access.delete_answer ] delete_answer ]
+          [ post "/delete" ~middlewares:[ Access.delete_answer ] delete_answer ]
         in
         [ get "" ~middlewares:[ Access.read ] detail
         ; post "" ~middlewares:[ Access.update ] update

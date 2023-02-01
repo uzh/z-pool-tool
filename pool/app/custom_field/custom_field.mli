@@ -14,6 +14,7 @@ module Answer : sig
   val show : (Format.formatter -> 'a -> unit) -> 'a t -> string
   val create : ?id:Id.t -> ?admin_value:'a -> 'a option -> 'a t
   val id : 'a t -> Id.t
+  val admin_value : 'a t -> 'a option
 end
 
 module Id : sig

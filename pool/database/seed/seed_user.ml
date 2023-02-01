@@ -46,9 +46,9 @@ let answer_custom_fields fields contact =
       | Boolean _ | Number _ | Text _ -> None)
     fields
   |> CCList.map (fun field ->
-       Custom_field.PartialUpdate.Custom field
-       |> fun update ->
-       Custom_field.PartialUpdate (update, contact, Pool_context.Contact contact))
+       let open Custom_field in
+       PartialUpdate
+         (PartialUpdate.Custom field, contact, Pool_context.Contact contact))
 ;;
 
 let create_rand_persons n_persons =
@@ -272,8 +272,7 @@ let contacts db_label =
           find_all_by_contact db_label (Pool_context.Contact contact) user_id
           ||> fun (grouped, ungrouped) ->
           ungrouped
-          @ CCList.flatten
-              (CCList.map (fun { Group.Public.fields; _ } -> fields) grouped)
+          @ CCList.flat_map (fun { Group.Public.fields; _ } -> fields) grouped
         in
         match contact with
         | Ok contact ->

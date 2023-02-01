@@ -558,8 +558,9 @@ let field_form
                    |> admin_hint
                    |> CCOption.map_or ~default:"" AdminHint.value))
               ~flash_fetcher
-          ; checkbox_element Message.Field.Overwrite (fun f ->
-              f |> admin_overwrite |> AdminOverwrite.value)
+          ; checkbox_element
+              Message.Field.Overwrite
+              (admin_overwrite %> AdminOverwrite.value)
           ; checkbox_element
               ~disabled:
                 (custom_field
