@@ -7,13 +7,14 @@ let database_label = Test_utils.Data.database_label
 let create () =
   let events =
     let open CCResult.Infix in
+    let open I18nCommand.Create in
     Pool_common.Message.Field.
       [ Key |> show, [ "welcome_text" ]
       ; Language |> show, [ "EN" ]
       ; Translation |> show, [ "Welcome" ]
       ]
-    |> I18nCommand.Create.decode
-    >>= I18nCommand.Create.handle
+    |> decode
+    >>= handle
   in
   let expected =
     let open CCResult in
