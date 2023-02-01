@@ -64,14 +64,8 @@ let template_form
       let open Pool_common.Language in
       selector ~required:true language Field.Language show languages None ()
   in
-  let textarea_element ?(attributes = []) ?rich_text ~value =
-    textarea_element
-      language
-      ~attributes
-      ?rich_text
-      ~value
-      ~flash_fetcher
-      ~required:true
+  let textarea_element ?rich_text ~value =
+    textarea_element language ?rich_text ~value ~flash_fetcher ~required:true
   in
   let submit =
     let open Pool_common.Message in
