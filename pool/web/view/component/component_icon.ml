@@ -23,7 +23,7 @@ let icon ?(classnames = []) icon_type =
    | `MenuOutline -> "menu-outline"
    | `Person -> "person"
    | `PersonOutline -> "person-outline"
-   | `RefreshOutline -> "refresh-outlline"
+   | `RefreshOutline -> "refresh-outline"
    | `Save -> "save"
    | `SaveOutline -> "save-outline"
    | `School -> "school"

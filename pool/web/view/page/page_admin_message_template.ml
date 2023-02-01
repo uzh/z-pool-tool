@@ -123,7 +123,7 @@ let template_form
               [ txt
                   Pool_common.(
                     Utils.control_to_string language Message.ResetPlainText)
-              ; Component.Icon.icon `Save
+              ; Component.Icon.icon `RefreshOutline
               ]
           ]
       ; textarea
