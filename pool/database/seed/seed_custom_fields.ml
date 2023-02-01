@@ -9,7 +9,7 @@ let create pool =
     values |> Name.create system_languages |> get_or_failwith
   in
   let admin_hint = None in
-  let admin_overwrite = true |> AdminOverwrite.create in
+  let admin_override = true |> AdminOverride.create in
   let admin_view_only = false |> AdminViewOnly.create in
   let admin_input_only = false |> AdminInputOnly.create in
   let create_group (model, name) =
@@ -174,7 +174,7 @@ let create pool =
             disabled
             (group |> CCOption.map (fun g -> g.Group.id))
             admin_hint
-            admin_overwrite
+            admin_override
             admin_view_only
             admin_input_only
           |> get_or_failwith

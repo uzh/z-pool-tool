@@ -126,7 +126,7 @@ module AdminHint : sig
   include Pool_common.Model.StringSig
 end
 
-module AdminOverwrite : sig
+module AdminOverride : sig
   include Pool_common.Model.BooleanSig
 end
 
@@ -210,7 +210,7 @@ module Public : sig
     ; hint : Hint.t
     ; validation : 'a Validation.t
     ; required : Required.t
-    ; admin_overwrite : AdminOverwrite.t
+    ; admin_override : AdminOverride.t
     ; admin_input_only : AdminInputOnly.t
     ; version : Pool_common.Version.t
     }
@@ -245,7 +245,7 @@ module Public : sig
   val name_value : Pool_common.Language.t -> t -> string
   val hint : Pool_common.Language.t -> t -> Hint.hint option
   val required : t -> Required.t
-  val admin_overwrite : t -> AdminOverwrite.t
+  val admin_override : t -> AdminOverride.t
   val admin_input_only : t -> AdminInputOnly.t
   val is_disabled : bool -> t -> bool
   val version : t -> Pool_common.Version.t
@@ -308,7 +308,7 @@ type 'a custom_field =
   ; disabled : Disabled.t
   ; custom_field_group_id : Group.Id.t option
   ; admin_hint : AdminHint.t option
-  ; admin_overwrite : AdminOverwrite.t
+  ; admin_override : AdminOverride.t
   ; admin_view_only : AdminViewOnly.t
   ; admin_input_only : AdminInputOnly.t
   ; published_at : PublishedAt.t option
@@ -338,7 +338,7 @@ val create
   -> Disabled.t
   -> Group.Id.t option
   -> AdminHint.t option
-  -> AdminOverwrite.t
+  -> AdminOverride.t
   -> AdminViewOnly.t
   -> AdminInputOnly.t
   -> (t, Pool_common.Message.error) result
@@ -354,7 +354,7 @@ val disabled : t -> Disabled.t
 val published_at : t -> PublishedAt.t option
 val group_id : t -> Group.Id.t option
 val admin_hint : t -> AdminHint.t option
-val admin_overwrite : t -> AdminOverwrite.t
+val admin_override : t -> AdminOverride.t
 val admin_view_only : t -> AdminViewOnly.t
 val admin_input_only : t -> AdminInputOnly.t
 val field_type : t -> FieldType.t

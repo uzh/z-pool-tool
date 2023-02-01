@@ -140,11 +140,11 @@ let update_admin_input_only_field_as_user _ () =
   partial_update_exec ~is_admin:false ~custom_field expected ()
 ;;
 
-let update_non_overwrite_field_as_admin _ () =
+let update_non_override_field_as_admin _ () =
   let open Custom_field in
   let custom_field =
     Custom_field_test.Data.custom_text_field
-      ~admin_overwrite:(AdminOverwrite.create false)
+      ~admin_override:(AdminOverride.create false)
       ()
   in
   let expected = Error Message.NotEligible in

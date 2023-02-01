@@ -29,7 +29,7 @@ module Data = struct
   ;;
 
   let admin_hint = AdminHint.create admin_hint |> get |> CCOption.pure
-  let admin_overwrite = AdminOverwrite.create false
+  let admin_override = AdminOverride.create false
   let admin_view_only = AdminViewOnly.create false
   let admin_input_only = AdminInputOnly.create false
 
@@ -37,7 +37,7 @@ module Data = struct
     ?published_at
     ?validation
     ?(required = required)
-    ?(admin_overwrite = AdminOverwrite.create false)
+    ?(admin_override = AdminOverride.create false)
     ?(admin_input_only = AdminInputOnly.create false)
     field_type
     =
@@ -56,7 +56,7 @@ module Data = struct
       disabled
       None
       admin_hint
-      admin_overwrite
+      admin_override
       admin_view_only
       admin_input_only
     |> CCResult.get_exn
@@ -65,7 +65,7 @@ module Data = struct
   let custom_text_field
     ?published_at
     ?validation
-    ?admin_overwrite
+    ?admin_override
     ?admin_input_only
     ?required
     ()
@@ -73,7 +73,7 @@ module Data = struct
     custom_field
       ?published_at
       ?validation
-      ?admin_overwrite
+      ?admin_override
       ?admin_input_only
       ?required
       FieldType.Text
@@ -98,7 +98,7 @@ module Data = struct
     let hint = hint m in
     let name = name m in
     let required = required m in
-    let admin_overwrite = admin_overwrite m in
+    let admin_override = admin_override m in
     let admin_input_only = admin_input_only m in
     let version = 0 |> Pool_common.Version.of_int in
     let admin_value = None in
@@ -114,7 +114,7 @@ module Data = struct
           ; hint
           ; validation = Validation.pure
           ; required
-          ; admin_overwrite
+          ; admin_override
           ; admin_input_only
           ; version
           }
@@ -132,7 +132,7 @@ module Data = struct
           ; hint
           ; validation = Validation.pure
           ; required
-          ; admin_overwrite
+          ; admin_override
           ; admin_input_only
           ; version
           }
@@ -149,7 +149,7 @@ module Data = struct
           ; hint
           ; validation
           ; required
-          ; admin_overwrite
+          ; admin_override
           ; admin_input_only
           ; version
           }
@@ -166,7 +166,7 @@ module Data = struct
           ; hint
           ; validation = Validation.pure
           ; required
-          ; admin_overwrite
+          ; admin_override
           ; admin_input_only
           ; version
           }
@@ -184,7 +184,7 @@ module Data = struct
           ; hint
           ; validation
           ; required
-          ; admin_overwrite
+          ; admin_override
           ; admin_input_only
           ; version
           }

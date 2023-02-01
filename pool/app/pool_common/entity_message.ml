@@ -131,7 +131,7 @@ module Field = struct
     | Overbook [@name "overbook"] [@printer go "overbook"]
     | OverriddenValue [@name "overridden_value"]
         [@printer go "overridden_value"]
-    | Overwrite [@name "overwrite"] [@printer go "overwrite"]
+    | Override [@name "override"] [@printer go "override"]
     | Page [@name "page"] [@printer go "page"]
     | Participant [@name "participant"] [@printer go "participant"]
     | ParticipantCount [@name "participant_count"]

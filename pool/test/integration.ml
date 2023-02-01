@@ -55,9 +55,9 @@ let suite =
               `Slow
               update_admin_input_only_field_as_user
           ; test_case
-              "update non overwrite field as admin"
+              "update non override field as admin"
               `Slow
-              update_non_overwrite_field_as_admin
+              update_non_override_field_as_admin
           ; test_case
               "set value of none required field to null"
               `Slow

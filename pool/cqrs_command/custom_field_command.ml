@@ -8,7 +8,7 @@ type command =
   ; disabled : Custom_field.Disabled.t
   ; custom_field_group_id : Custom_field.Group.Id.t option
   ; admin_hint : Custom_field.AdminHint.t option
-  ; admin_overwrite : Custom_field.AdminOverwrite.t
+  ; admin_override : Custom_field.AdminOverride.t
   ; admin_view_only : Custom_field.AdminViewOnly.t
   ; admin_input_only : Custom_field.AdminInputOnly.t
   }
@@ -19,7 +19,7 @@ let base_command
   disabled
   custom_field_group_id
   admin_hint
-  admin_overwrite
+  admin_override
   admin_view_only
   admin_input_only
   =
@@ -28,7 +28,7 @@ let base_command
   ; disabled
   ; custom_field_group_id
   ; admin_hint
-  ; admin_overwrite
+  ; admin_override
   ; admin_view_only
   ; admin_input_only
   }
@@ -44,7 +44,7 @@ let base_schema =
         ; Disabled.schema ()
         ; Conformist.optional @@ Group.Id.schema ()
         ; Conformist.optional @@ AdminHint.schema ()
-        ; AdminOverwrite.schema ()
+        ; AdminOverride.schema ()
         ; AdminViewOnly.schema ()
         ; AdminInputOnly.schema ()
         ]
@@ -87,7 +87,7 @@ end = struct
     ; disabled
     ; custom_field_group_id
     ; admin_hint
-    ; admin_overwrite
+    ; admin_override
     ; admin_view_only
     ; admin_input_only
     }
@@ -108,7 +108,7 @@ end = struct
         disabled
         custom_field_group_id
         admin_hint
-        admin_overwrite
+        admin_override
         admin_view_only
         admin_input_only
     in
@@ -147,7 +147,7 @@ end = struct
     ; disabled
     ; custom_field_group_id
     ; admin_hint
-    ; admin_overwrite
+    ; admin_override
     ; admin_view_only
     ; admin_input_only
     }
@@ -177,7 +177,7 @@ end = struct
         disabled
         custom_field_group_id
         admin_hint
-        admin_overwrite
+        admin_override
         admin_view_only
         admin_input_only
     in

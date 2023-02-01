@@ -134,10 +134,10 @@ module AdminHint = struct
   let schema = schema field ?validation:None
 end
 
-module AdminOverwrite = struct
+module AdminOverride = struct
   include Pool_common.Model.Boolean
 
-  let schema = schema Message.Field.Overwrite
+  let schema = schema Message.Field.Override
 end
 
 module AdminViewOnly = struct
@@ -371,7 +371,7 @@ module Public = struct
     ; hint : Hint.t
     ; validation : 'a Validation.t
     ; required : Required.t
-    ; admin_overwrite : AdminOverwrite.t
+    ; admin_override : AdminOverride.t
     ; admin_input_only : AdminInputOnly.t
     ; version : Pool_common.Version.t
     }
@@ -430,13 +430,13 @@ module Public = struct
     | Text ({ required; _ }, _) -> required
   ;;
 
-  let admin_overwrite (t : t) =
+  let admin_override (t : t) =
     match t with
-    | Boolean ({ admin_overwrite; _ }, _)
-    | MultiSelect ({ admin_overwrite; _ }, _, _)
-    | Number ({ admin_overwrite; _ }, _)
-    | Select ({ admin_overwrite; _ }, _, _)
-    | Text ({ admin_overwrite; _ }, _) -> admin_overwrite
+    | Boolean ({ admin_override; _ }, _)
+    | MultiSelect ({ admin_override; _ }, _, _)
+    | Number ({ admin_override; _ }, _)
+    | Select ({ admin_override; _ }, _, _)
+    | Text ({ admin_override; _ }, _) -> admin_override
   ;;
 
   let admin_input_only (t : t) =
@@ -451,7 +451,7 @@ module Public = struct
   let is_disabled is_admin m =
     if is_admin
     then
-      (m |> admin_overwrite |> AdminOverwrite.value
+      (m |> admin_override |> AdminOverride.value
       || m |> admin_input_only |> AdminInputOnly.value)
       |> not
     else m |> admin_input_only |> AdminInputOnly.value
@@ -547,7 +547,7 @@ type 'a custom_field =
   ; disabled : Disabled.t
   ; custom_field_group_id : Group.Id.t option
   ; admin_hint : AdminHint.t option
-  ; admin_overwrite : AdminOverwrite.t
+  ; admin_override : AdminOverride.t
   ; admin_view_only : AdminViewOnly.t
   ; admin_input_only : AdminInputOnly.t
   ; published_at : PublishedAt.t option
@@ -575,7 +575,7 @@ let create
   disabled
   custom_field_group_id
   admin_hint
-  admin_overwrite
+  admin_override
   admin_view_only
   admin_input_only
   =
@@ -594,7 +594,7 @@ let create
          ; disabled
          ; custom_field_group_id
          ; admin_hint
-         ; admin_overwrite
+         ; admin_override
          ; admin_view_only
          ; admin_input_only
          ; published_at
@@ -612,7 +612,7 @@ let create
          ; disabled
          ; custom_field_group_id
          ; admin_hint
-         ; admin_overwrite
+         ; admin_override
          ; admin_view_only
          ; admin_input_only
          ; published_at
@@ -630,7 +630,7 @@ let create
          ; disabled
          ; custom_field_group_id
          ; admin_hint
-         ; admin_overwrite
+         ; admin_override
          ; admin_view_only
          ; admin_input_only
          ; published_at
@@ -650,7 +650,7 @@ let create
            ; disabled
            ; custom_field_group_id
            ; admin_hint
-           ; admin_overwrite
+           ; admin_override
            ; admin_view_only
            ; admin_input_only
            ; published_at
@@ -668,7 +668,7 @@ let create
            ; disabled
            ; custom_field_group_id
            ; admin_hint
-           ; admin_overwrite
+           ; admin_override
            ; admin_view_only
            ; admin_input_only
            ; published_at
@@ -756,12 +756,12 @@ let admin_hint = function
   | Text { admin_hint; _ } -> admin_hint
 ;;
 
-let admin_overwrite = function
-  | Boolean { admin_overwrite; _ }
-  | Number { admin_overwrite; _ }
-  | MultiSelect ({ admin_overwrite; _ }, _)
-  | Select ({ admin_overwrite; _ }, _)
-  | Text { admin_overwrite; _ } -> admin_overwrite
+let admin_override = function
+  | Boolean { admin_override; _ }
+  | Number { admin_override; _ }
+  | MultiSelect ({ admin_override; _ }, _)
+  | Select ({ admin_override; _ }, _)
+  | Text { admin_override; _ } -> admin_override
 ;;
 
 let admin_view_only = function
@@ -803,7 +803,7 @@ let validation_to_yojson = function
 ;;
 
 let boolean_fields =
-  Message.Field.[ Required; Disabled; Overwrite; AdminInputOnly; AdminViewOnly ]
+  Message.Field.[ Required; Disabled; Override; AdminInputOnly; AdminViewOnly ]
 ;;
 
 module Write = struct
@@ -818,7 +818,7 @@ module Write = struct
     ; disabled : Disabled.t
     ; custom_field_group_id : Group.Id.t option
     ; admin_hint : AdminHint.t option
-    ; admin_overwrite : AdminOverwrite.t
+    ; admin_override : AdminOverride.t
     ; admin_view_only : AdminViewOnly.t
     ; admin_input_only : AdminInputOnly.t
     }

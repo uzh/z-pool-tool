@@ -92,8 +92,8 @@ module AdminHint = struct
   let t = Caqti_type.string
 end
 
-module AdminOverwrite = struct
-  include AdminOverwrite
+module AdminOverride = struct
+  include AdminOverride
 
   let t = Caqti_type.bool
 end
@@ -206,7 +206,7 @@ module Write = struct
       ; disabled = disabled t
       ; custom_field_group_id = group_id t
       ; admin_hint = admin_hint t
-      ; admin_overwrite = admin_overwrite t
+      ; admin_override = admin_override t
       ; admin_view_only = admin_view_only t
       ; admin_input_only = admin_input_only t
       }
@@ -226,7 +226,7 @@ module Write = struct
                     , ( m.disabled
                       , ( m.custom_field_group_id
                         , ( m.admin_hint
-                          , ( m.admin_overwrite
+                          , ( m.admin_override
                             , (m.admin_view_only, m.admin_input_only) ) ) ) ) )
                   ) ) ) ) ) )
     in
@@ -260,7 +260,7 @@ module Write = struct
                                    (tup2
                                       (option AdminHint.t)
                                       (tup2
-                                         AdminOverwrite.t
+                                         AdminOverride.t
                                          (tup2 AdminViewOnly.t AdminInputOnly.t)))))))))))))
   ;;
 end
@@ -274,7 +274,7 @@ module Public = struct
     ; field_type : FieldType.t
     ; required : Required.t
     ; custom_field_group_id : Group.Id.t option
-    ; admin_overwrite : AdminOverwrite.t
+    ; admin_override : AdminOverride.t
     ; admin_input_only : AdminInputOnly.t
     ; answer_id : Pool_common.Id.t option
     ; answer_value : string option
@@ -305,7 +305,7 @@ module Public = struct
     ; validation
     ; field_type
     ; required
-    ; admin_overwrite
+    ; admin_override
     ; admin_input_only
     ; answer_id
     ; answer_value
@@ -339,7 +339,7 @@ module Public = struct
           ; hint
           ; validation = Validation.pure
           ; required
-          ; admin_overwrite
+          ; admin_override
           ; admin_input_only
           ; version
           }
@@ -360,7 +360,7 @@ module Public = struct
           ; hint
           ; validation
           ; required
-          ; admin_overwrite
+          ; admin_override
           ; admin_input_only
           ; version
           }
@@ -390,7 +390,7 @@ module Public = struct
           ; hint
           ; validation = Validation.pure
           ; required
-          ; admin_overwrite
+          ; admin_override
           ; admin_input_only
           ; version
           }
@@ -430,7 +430,7 @@ module Public = struct
           ; hint
           ; validation = Validation.pure
           ; required
-          ; admin_overwrite
+          ; admin_override
           ; admin_input_only
           ; version
           }
@@ -452,7 +452,7 @@ module Public = struct
           ; hint
           ; validation
           ; required
-          ; admin_overwrite
+          ; admin_override
           ; admin_input_only
           ; version
           }
@@ -505,7 +505,7 @@ module Public = struct
             , ( field_type
               , ( required
                 , ( custom_field_group_id
-                  , ( admin_overwrite
+                  , ( admin_override
                     , ( admin_input_only
                       , ( answer_id
                         , ( answer_value
@@ -519,7 +519,7 @@ module Public = struct
         ; validation
         ; field_type
         ; required
-        ; admin_overwrite
+        ; admin_override
         ; admin_input_only
         ; custom_field_group_id
         ; answer_id
@@ -548,7 +548,7 @@ module Public = struct
                           (tup2
                              (option Common.Repo.Id.t)
                              (tup2
-                                AdminOverwrite.t
+                                AdminOverride.t
                                 (tup2
                                    AdminInputOnly.t
                                    (tup2
@@ -574,7 +574,7 @@ type repo =
   ; disabled : Disabled.t
   ; custom_field_group_id : Group.Id.t option
   ; admin_hint : AdminHint.t option
-  ; admin_overwrite : AdminOverwrite.t
+  ; admin_override : AdminOverride.t
   ; admin_view_only : AdminViewOnly.t
   ; admin_input_only : AdminInputOnly.t
   ; published_at : PublishedAt.t option
@@ -596,7 +596,7 @@ let t =
                 , ( disabled
                   , ( custom_field_group_id
                     , ( admin_hint
-                      , ( admin_overwrite
+                      , ( admin_override
                         , (admin_view_only, (admin_input_only, published_at)) )
                       ) ) ) ) ) ) ) ) ) )
     =
@@ -612,7 +612,7 @@ let t =
       ; disabled
       ; custom_field_group_id
       ; admin_hint
-      ; admin_overwrite
+      ; admin_override
       ; admin_view_only
       ; admin_input_only
       ; published_at
@@ -643,7 +643,7 @@ let t =
                                  (tup2
                                     (option AdminHint.t)
                                     (tup2
-                                       AdminOverwrite.t
+                                       AdminOverride.t
                                        (tup2
                                           AdminViewOnly.t
                                           (tup2
@@ -663,7 +663,7 @@ let to_entity
   ; disabled
   ; custom_field_group_id
   ; admin_hint
-  ; admin_overwrite
+  ; admin_override
   ; admin_view_only
   ; admin_input_only
   ; published_at
@@ -684,7 +684,7 @@ let to_entity
       ; disabled
       ; custom_field_group_id
       ; admin_hint
-      ; admin_overwrite
+      ; admin_override
       ; admin_view_only
       ; admin_input_only
       ; published_at
@@ -701,7 +701,7 @@ let to_entity
       ; disabled
       ; custom_field_group_id
       ; admin_hint
-      ; admin_overwrite
+      ; admin_override
       ; admin_view_only
       ; admin_input_only
       ; published_at
@@ -723,7 +723,7 @@ let to_entity
         ; disabled
         ; custom_field_group_id
         ; admin_hint
-        ; admin_overwrite
+        ; admin_override
         ; admin_view_only
         ; admin_input_only
         ; published_at
@@ -746,7 +746,7 @@ let to_entity
         ; disabled
         ; custom_field_group_id
         ; admin_hint
-        ; admin_overwrite
+        ; admin_override
         ; admin_view_only
         ; admin_input_only
         ; published_at
@@ -764,7 +764,7 @@ let to_entity
       ; disabled
       ; custom_field_group_id
       ; admin_hint
-      ; admin_overwrite
+      ; admin_override
       ; admin_view_only
       ; admin_input_only
       ; published_at

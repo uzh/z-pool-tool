@@ -44,7 +44,7 @@ module CustomFieldData = struct
         ; disabled = false |> Disabled.create
         ; custom_field_group_id = None
         ; admin_hint = Data.admin_hint
-        ; admin_overwrite = Data.admin_overwrite
+        ; admin_override = Data.admin_override
         ; admin_view_only = Data.admin_view_only
         ; admin_input_only = Data.admin_input_only
         ; published_at = published
@@ -66,7 +66,7 @@ module CustomFieldData = struct
         ; hint = hint nr_of_siblings
         ; validation = Validation.pure
         ; required = required nr_of_siblings
-        ; admin_overwrite = Data.admin_overwrite
+        ; admin_override = Data.admin_override
         ; admin_input_only = Data.admin_input_only
         ; version
         }
@@ -117,7 +117,7 @@ module CustomFieldData = struct
         ; disabled = false |> Disabled.create
         ; custom_field_group_id = None
         ; admin_hint = Data.admin_hint
-        ; admin_overwrite = Data.admin_overwrite
+        ; admin_override = Data.admin_override
         ; admin_view_only = Data.admin_view_only
         ; admin_input_only = Data.admin_input_only
         ; published_at = published
@@ -141,7 +141,7 @@ module CustomFieldData = struct
         ; hint = hint multi_select_custom_field
         ; validation = Validation.pure
         ; required = required multi_select_custom_field
-        ; admin_overwrite = Data.admin_overwrite
+        ; admin_override = Data.admin_override
         ; admin_input_only = Data.admin_input_only
         ; version
         }

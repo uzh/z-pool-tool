@@ -64,7 +64,7 @@ module Sql = struct
           SUBSTR(HEX(pool_custom_fields.custom_field_group_uuid), 21)
         )),
         pool_custom_fields.admin_hint,
-        pool_custom_fields.admin_overwrite,
+        pool_custom_fields.admin_override,
         pool_custom_fields.admin_view_only,
         pool_custom_fields.admin_input_only,
         pool_custom_fields.published_at
@@ -157,7 +157,7 @@ module Sql = struct
         disabled,
         custom_field_group_uuid,
         admin_hint,
-        admin_overwrite,
+        admin_override,
         admin_view_only,
         admin_input_only,
         position
@@ -209,7 +209,7 @@ module Sql = struct
         disabled = $8,
         custom_field_group_uuid = UNHEX(REPLACE($9, '-', '')),
         admin_hint = $10,
-        admin_overwrite = $11,
+        admin_override = $11,
         admin_view_only = $12,
         admin_input_only = $13
       WHERE

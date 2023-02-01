@@ -100,7 +100,7 @@ let field_to_string =
   | Operators -> "Operatoren"
   | Overbook -> "Überbuchen"
   | OverriddenValue -> "Überschriebene Kontakt-Antwort"
-  | Overwrite -> "Überschreiben"
+  | Override -> "Überschreiben"
   | Page -> "Seite"
   | Participant | Participants -> "Teilnehmer"
   | ParticipantCount -> "Anzahl Teilnehmer"

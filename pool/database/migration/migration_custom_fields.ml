@@ -68,6 +68,15 @@ let add_published_at_to_custom_fields =
     |sql}
 ;;
 
+let rename_overwrite_to_override =
+  Sihl.Database.Migration.create_step
+    ~label:"rename overwrite to override"
+    {sql|
+      ALTER TABLE pool_custom_fields
+        RENAME COLUMN admin_overwrite TO admin_override
+    |sql}
+;;
+
 let migration () =
   Sihl.Database.Migration.(
     empty "custom_fields"
@@ -76,5 +85,6 @@ let migration () =
     |> add_step add_group_column_to_custom_fields
     |> add_step add_position_to_custom_fields
     |> add_step change_position_datatype
-    |> add_step add_published_at_to_custom_fields)
+    |> add_step add_published_at_to_custom_fields
+    |> add_step rename_overwrite_to_override)
 ;;

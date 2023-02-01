@@ -73,7 +73,7 @@ module Sql = struct
           SUBSTR(HEX(pool_custom_fields.custom_field_group_uuid), 17, 4), '-',
           SUBSTR(HEX(pool_custom_fields.custom_field_group_uuid), 21)
         )),
-        pool_custom_fields.admin_overwrite,
+        pool_custom_fields.admin_override,
         pool_custom_fields.admin_input_only,
         LOWER(CONCAT(
           SUBSTR(HEX(pool_custom_field_answers.uuid), 1, 8), '-',
