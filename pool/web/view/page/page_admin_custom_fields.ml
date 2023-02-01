@@ -553,10 +553,8 @@ let field_form
               Message.Field.AdminHint
               ~orientation:`Horizontal
               ~value:
-                (value (fun f ->
-                   f
-                   |> admin_hint
-                   |> CCOption.map_or ~default:"" AdminHint.value))
+                (value
+                   (admin_hint %> CCOption.map_or ~default:"" AdminHint.value))
               ~flash_fetcher
           ; checkbox_element
               Message.Field.Overwrite
@@ -585,8 +583,7 @@ let field_form
                      || FieldType.(equal (f |> field_type) MultiSelect)))
               Message.Field.Required
               (required %> Required.value)
-          ; checkbox_element Message.Field.Disabled (fun f ->
-              f |> disabled |> Disabled.value)
+          ; checkbox_element Message.Field.Disabled (disabled %> Disabled.value)
           ; div
               ~a:[ a_class [ "flexrow" ] ]
               [ submit_element

@@ -47,7 +47,7 @@ end
 
 let create_answer is_admin answer new_value =
   let id = Answer.id_opt answer in
-  let value = CCOption.bind answer (fun a -> a.Answer.value) in
+  let value = CCOption.bind answer Answer.value in
   (match is_admin with
    | true -> Answer.create ?id ~admin_value:new_value value
    | false -> Answer.create ?id (Some new_value))
