@@ -100,6 +100,7 @@ type hint =
   | CustomFieldContactModel
   | CustomFieldExperimentModel
   | CustomFieldGroups
+  | CustomFieldNoContactValue
   | CustomFieldOptionsCompleteness
   | CustomFieldSessionModel
   | CustomFieldSort of Entity_message.Field.t

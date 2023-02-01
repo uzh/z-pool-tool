@@ -92,8 +92,7 @@ let clear_answer_request is_admin =
           admin_version = admin_version + 1
     |sql}
   in
-  Format.asprintf "%s %s" update where
-  |> Caqti_type.(tup2 Id.t Id.t) ->. Caqti_type.unit
+  Format.asprintf "%s %s" update where |> Caqti_type.(tup2 Id.t Id.t ->. unit)
 ;;
 
 let clear_answer pool ~is_admin ~field_id ~entity_uuid () =
@@ -109,14 +108,13 @@ let map_or ~clear fnc = function
 ;;
 
 let value_to_store is_admin answer =
-  let open Answer in
   let open CCOption in
   answer
-  >>= fun ({ Answer.id; _ } as a) ->
+  >>= fun { Answer.id; admin_value; value; _ } ->
   let pair = CCPair.make id in
   match is_admin with
-  | true -> a.admin_value >|= pair
-  | false -> a.value >|= pair
+  | true -> admin_value >|= pair
+  | false -> value >|= pair
 ;;
 
 let upsert_answer pool user entity_uuid t =
@@ -188,8 +186,8 @@ let update pool user (field : PartialUpdate.t) (contact : Contact.t) =
     in
     ( dyn |> Dynparam.add Pool_common.Repo.Version.t version
     , {sql|
-          firstname_version = $3
-        |sql} )
+        firstname_version = $3
+      |sql} )
     |> update_user_table
   | Lastname (version, value) ->
     let%lwt (_ : Sihl_user.t) =
@@ -200,28 +198,26 @@ let update pool user (field : PartialUpdate.t) (contact : Contact.t) =
     in
     ( dyn |> Dynparam.add Pool_common.Repo.Version.t version
     , {sql|
-            lastname_version = $3
-          |sql} )
+        lastname_version = $3
+      |sql} )
     |> update_user_table
   | Paused (version, value) ->
     ( dyn
       |> Dynparam.add Caqti_type.bool (value |> Pool_user.Paused.value)
       |> Dynparam.add Pool_common.Repo.Version.t version
     , {sql|
-              paused = $3,
-              paused_version = $4
-            |sql}
-    )
+        paused = $3,
+        paused_version = $4
+      |sql} )
     |> update_user_table
   | Language (version, value) ->
     ( dyn
       |> Dynparam.add Caqti_type.(option Pool_common.Repo.Language.t) value
       |> Dynparam.add Pool_common.Repo.Version.t version
     , {sql|
-                language = $3,
-                language_version = $4
-              |sql}
-    )
+        language = $3,
+        language_version = $4
+      |sql} )
     |> update_user_table
   | Custom field -> (upsert_answer pool user (Contact.id contact)) field
 ;;

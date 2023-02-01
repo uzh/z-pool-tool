@@ -489,8 +489,7 @@ module Public = struct
   ;;
 
   let to_ungrouped_entities is_admin select_options fields =
-    let to_entity = to_entity is_admin select_options in
-    fields |> CCList.map to_entity
+    fields |> CCList.map (to_entity is_admin select_options)
   ;;
 
   let t =

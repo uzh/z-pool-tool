@@ -255,7 +255,7 @@ module Sql = struct
           position = $1
         WHERE uuid = UNHEX(REPLACE($2, '-', ''))
     |sql}
-    |> Caqti_type.(tup2 int string ->. Caqti_type.unit)
+    |> Caqti_type.(tup2 int string ->. unit)
   ;;
 
   let delete_request =
@@ -266,7 +266,7 @@ module Sql = struct
         uuid = UNHEX(REPLACE($1, '-', ''))
         AND published_at IS NULL
     |sql}
-    |> Caqti_type.string ->. Caqti_type.unit
+    |> Caqti_type.(string ->. unit)
   ;;
 
   let delete pool t =

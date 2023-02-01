@@ -85,19 +85,16 @@ let validate_htmx ~is_admin value (m : Public.t) =
      | [], true -> no_value
      | vals, _ ->
        let open SelectOption in
-       let a =
-         vals
-         |> CCList.map (fun value ->
-              CCList.find_opt
-                (fun option ->
-                  Id.equal option.Public.id (value |> Id.of_string))
-                options
-              |> CCOption.to_result
-                   Pool_common.Message.(Invalid Field.CustomFieldOption))
-         |> CCList.all_ok
-         >|= create_answer is_admin answer
-       in
-       a >|= to_field)
+       vals
+       |> CCList.map (fun value ->
+            CCList.find_opt
+              (fun { Public.id; _ } -> Id.equal id (value |> Id.of_string))
+              options
+            |> CCOption.to_result
+                 Pool_common.Message.(Invalid Field.CustomFieldOption))
+       |> CCList.all_ok
+       >|= create_answer is_admin answer
+       >|= to_field)
   | Number (({ validation; _ } as public), answer) ->
     let to_field a = Public.Number (public, a) in
     (match single_value, required with
@@ -194,7 +191,7 @@ let validate_partial_update
       |> CCOption.to_result Pool_common.Message.InvalidHtmxRequest
       |> Lwt_result.lift
       >>= check_permission
-      >>= fun f -> f |> validate_htmx ~is_admin value |> Lwt_result.lift
+      >>= CCFun.(validate_htmx ~is_admin value %> Lwt_result.lift)
     in
     let old_v = Public.version custom_field in
     custom_field |> custom |> check_version old_v |> Lwt_result.lift

@@ -270,11 +270,10 @@ let custom_field_to_htmx_value language is_admin =
   | Public.Text (_, answer) -> answer >>= field_value is_admin |> text
 ;;
 
-let field_overridden_value answer =
-  let open Custom_field.Answer in
-  let { value; admin_value; _ } = answer in
+let field_overridden_value { Custom_field.Answer.value; admin_value; _ } =
   match admin_value, value with
-  | Some _, Some v -> Some v
+  | Some _, Some v -> Some (`Overridden v)
+  | Some _, None -> Some `NoValue
   | _, _ -> None
 ;;
 
@@ -308,34 +307,50 @@ let custom_field_overridden_value ?hx_delete is_admin lang m =
     in
     let add_prefix m = [ prefix; txt ": "; m ] in
     let wrap html =
-      div ~a:[ a_class [ "help"; "flexrow" ] ] (html @ [ delete_form () ])
+      div
+        ~a:[ a_class [ "help"; "flexrow"; "flex-gap" ] ]
+        (html @ [ delete_form () ])
       |> CCList.pure
+    in
+    let no_value =
+      Pool_common.(Utils.hint_to_string lang I18n.CustomFieldNoContactValue)
+      |> txt
+      |> CCList.pure
+      |> wrap
+    in
+    let build_html to_html value =
+      match value with
+      | `Overridden v -> v |> to_html |> add_prefix |> wrap
+      | `NoValue -> no_value
     in
     (match m with
      | Public.Boolean (_, answer) ->
        answer
        >>= field_overridden_value
-       >|= Pool_common.Utils.bool_to_string lang %> txt %> add_prefix %> wrap
+       >|= build_html (Pool_common.Utils.bool_to_string lang %> txt)
      | Public.MultiSelect (_, _, answer) ->
        answer
        >>= field_overridden_value
-       >|= CCList.map (SelectOption.Public.name lang %> txt %> CCList.pure %> li)
-           %> ul
-           %> (fun html ->
-                [ label [ prefix ]
-                ; div ~a:[ a_class [ "input-group" ] ] [ html ]
-                ])
-           %> wrap
+       >|= (function
+       | `NoValue -> no_value
+       | `Overridden lst ->
+         lst
+         |> CCList.map
+              (SelectOption.Public.name lang %> txt %> CCList.pure %> li)
+            %> ul
+            %> (fun html ->
+                 [ span [ prefix; txt ":" ]
+                 ; div ~a:[ a_class [ "input-group" ] ] [ html ]
+                 ])
+            %> wrap)
      | Public.Number (_, answer) ->
-       answer
-       >>= field_overridden_value
-       >|= CCInt.to_string %> txt %> add_prefix %> wrap
+       answer >>= field_overridden_value >|= build_html (CCInt.to_string %> txt)
      | Public.Select (_, _, answer) ->
        answer
        >>= field_overridden_value
-       >|= SelectOption.Public.name lang %> txt %> add_prefix %> wrap
+       >|= build_html (SelectOption.Public.name lang %> txt)
      | Public.Text (_, answer) ->
-       answer >>= field_overridden_value >|= txt %> add_prefix %> wrap)
+       answer >>= field_overridden_value >|= build_html txt)
 ;;
 
 let custom_field_to_htmx
