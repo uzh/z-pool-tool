@@ -189,6 +189,7 @@ let field_form
   =
   let open CCFun in
   let open Custom_field in
+  let open Pool_common in
   let action =
     match custom_field with
     | None -> Url.Field.create_path current_model
@@ -199,17 +200,27 @@ let field_form
     ?orientation
     ?help
     ?(default = false)
+    ?append_html
     field
     fnc
     =
     checkbox_element
       language
       ~additional_attributes:(if disabled then [ a_disabled () ] else [])
+      ?append_html
       ?orientation
       ?help
       field
       ~value:(custom_field |> CCOption.map_or ~default fnc)
       ~flash_fetcher
+  in
+  let warning hint =
+    div
+      [ div
+          ~a:[ a_class [ "help"; "error-message" ] ]
+          [ txt (Utils.hint_to_string language hint) ]
+      ]
+    |> CCList.pure
   in
   let value = CCFun.flip (CCOption.map_or ~default:"") custom_field in
   let field_type_opt = CCOption.map field_type custom_field in
@@ -457,7 +468,6 @@ let field_form
         ()
   in
   let field_type_hints =
-    let open Pool_common in
     I18n.[ CustomFieldTypeText, FieldType.Text ]
     |> CCList.map (fun (hint, field_type) ->
          let hidden =
@@ -519,20 +529,16 @@ let field_form
               [ h4
                   ~a:[ a_class [ "heading-3" ] ]
                   [ txt
-                      Pool_common.(
-                        Message.Field.Hint
-                        |> Utils.field_to_string language
-                        |> CCString.capitalize_ascii)
+                      (Message.Field.Hint
+                      |> Utils.field_to_string language
+                      |> CCString.capitalize_ascii)
                   ]
               ; div ~a:[ a_class [ "stack" ] ] hint_inputs
               ]
           ; div
               [ h4
                   ~a:[ a_class [ "heading-3" ] ]
-                  [ txt
-                      Pool_common.(
-                        I18n.Validation |> Utils.text_to_string language)
-                  ]
+                  [ txt (I18n.Validation |> Utils.text_to_string language) ]
               ; validation_subform
               ]
           ]
@@ -541,10 +547,9 @@ let field_form
           [ h4
               ~a:[ a_class [ "heading-3" ] ]
               [ txt
-                  Pool_common.(
-                    Message.Field.Admin
-                    |> Utils.field_to_string language
-                    |> CCString.capitalize_ascii)
+                  (Message.Field.Admin
+                  |> Utils.field_to_string language
+                  |> CCString.capitalize_ascii)
               ]
           ; input_element
               language
@@ -557,6 +562,14 @@ let field_form
               ~flash_fetcher
           ; checkbox_element
               Message.Field.Override
+              ~help:I18n.CustomFieldAdminOverride
+              ?append_html:
+                (if custom_field
+                    |> CCOption.map_or
+                         ~default:false
+                         (admin_override %> AdminOverride.value)
+                then Some (warning I18n.CustomFieldAdminOverrideUpdate)
+                else None)
               (admin_override %> AdminOverride.value)
           ; checkbox_element
               ~disabled:
@@ -564,11 +577,11 @@ let field_form
                 |> CCOption.map_or
                      ~default:false
                      (admin_view_only %> AdminViewOnly.value))
-              ~help:Pool_common.I18n.CustomFieldAdminInputOnly
+              ~help:I18n.CustomFieldAdminInputOnly
               Message.Field.AdminInputOnly
               (admin_input_only %> AdminInputOnly.value)
           ; checkbox_element
-              ~help:Pool_common.I18n.CustomFieldAdminViewOnly
+              ~help:I18n.CustomFieldAdminViewOnly
               Message.Field.AdminViewOnly
               (admin_view_only %> AdminViewOnly.value)
           ]
@@ -652,7 +665,7 @@ let field_buttons language csrf current_model field =
         ; a_method `Post
         ; a_user_data
             "confirmable"
-            (Pool_common.Utils.confirmable_to_string language confirmable)
+            (Utils.confirmable_to_string language confirmable)
         ]
       [ csrf_element csrf (); submit_element language msg ~submit_type () ]
   in
