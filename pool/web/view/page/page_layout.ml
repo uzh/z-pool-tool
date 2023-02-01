@@ -315,23 +315,19 @@ module Tenant = struct
       title (txt (Format.asprintf "%s - %s" title_text "Pool Tool"))
     in
     let stylesheets =
-      (* TODO: Use contect function after rebase *)
       let global = [ global_stylesheet; "/custom/assets/index.css" ] in
       let files =
-        match user with
-        | Contact _ | Guest -> global
-        | Admin _ -> CCList.cons "/assets/admin.css" global
+        if user_is_admin user
+        then CCList.cons "/assets/admin.css" global
+        else global
       in
       files |> CCList.map css_link_tag
     in
     let message = Message.create message active_lang () in
-    (* TODO: Use contect function after rebase *)
     let scripts =
       let global = "index.js" in
       let files =
-        match user with
-        | Contact _ | Guest -> [ global ]
-        | Admin _ -> [ global; "admin.js" ]
+        if user_is_admin user then [ global; "admin.js" ] else [ global ]
       in
       files
       |> CCList.map (fun file ->
