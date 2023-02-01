@@ -228,8 +228,7 @@ let field_form
   in
   let validation_subform =
     let current_values =
-      custom_field
-      |> CCOption.map_or ~default:[] (fun f -> f |> validation_strings)
+      custom_field |> CCOption.map_or ~default:[] validation_strings
     in
     let rule_input field_type name input_type value disabled =
       let prefixed_name =
@@ -558,7 +557,7 @@ let field_form
               ~flash_fetcher
           ; checkbox_element
               Message.Field.Overwrite
-              (admin_overwrite %> AdminOverwrite.value)
+              (admin_override %> AdminOverride.value)
           ; checkbox_element
               ~disabled:
                 (custom_field
