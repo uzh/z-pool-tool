@@ -174,7 +174,7 @@ module Sql = struct
           comment = $1
         WHERE uuid = UNHEX(REPLACE($2, '-', ''))
     |sql}
-    |> Caqti_type.(tup2 (option string) string) ->. Caqti_type.unit
+    |> Caqti_type.(tup2 (option string) string ->. unit)
   ;;
 
   let update pool (m : Entity.t) =

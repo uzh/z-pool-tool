@@ -25,9 +25,18 @@ let add_unique_combination_constraint =
     |sql}
 ;;
 
+let drop_table =
+  Sihl.Database.Migration.create_step
+    ~label:"drop custom fields answer versions table"
+    {sql|
+      DROP TABLE IF EXISTS pool_custom_field_answer_versions
+    |sql}
+;;
+
 let migration () =
   Sihl.Database.Migration.(
     empty "custom_field_answer_versions"
     |> add_step create_custom_field_answer_versions_table
-    |> add_step add_unique_combination_constraint)
+    |> add_step add_unique_combination_constraint
+    |> add_step drop_table)
 ;;

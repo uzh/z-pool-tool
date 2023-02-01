@@ -5,14 +5,17 @@ module Answer : sig
 
   type 'a t =
     { id : Id.t
-    ; value : 'a
+    ; value : 'a option
+    ; admin_value : 'a option
     }
 
   val equal : ('a -> 'a -> bool) -> 'a t -> 'a t -> bool
   val pp : (Format.formatter -> 'a -> unit) -> Format.formatter -> 'a t -> unit
   val show : (Format.formatter -> 'a -> unit) -> 'a t -> string
-  val create : ?id:Id.t -> 'a -> 'a t
+  val create : ?id:Id.t -> ?admin_value:'a -> 'a option -> 'a t
   val id : 'a t -> Id.t
+  val value : 'a t -> 'a option
+  val admin_value : 'a t -> 'a option
 end
 
 module Id : sig
@@ -119,39 +122,20 @@ module PublishedAt : sig
   include Pool_common.Model.PtimeSig
 end
 
-module Admin : sig
-  module Hint : sig
-    include Pool_common.Model.StringSig
-  end
+module AdminHint : sig
+  include Pool_common.Model.StringSig
+end
 
-  module Overwrite : sig
-    include Pool_common.Model.BooleanSig
-  end
+module AdminOverride : sig
+  include Pool_common.Model.BooleanSig
+end
 
-  module ViewOnly : sig
-    include Pool_common.Model.BooleanSig
-  end
+module AdminViewOnly : sig
+  include Pool_common.Model.BooleanSig
+end
 
-  module InputOnly : sig
-    include Pool_common.Model.BooleanSig
-  end
-
-  type t =
-    { hint : Hint.t option
-    ; overwrite : Overwrite.t
-    ; view_only : ViewOnly.t
-    ; input_only : InputOnly.t
-    }
-
-  val create
-    :  Hint.t option
-    -> Overwrite.t
-    -> ViewOnly.t
-    -> InputOnly.t
-    -> (t, Pool_common.Message.error) result
-
-  val equal : t -> t -> bool
-  val pp : Format.formatter -> t -> unit
+module AdminInputOnly : sig
+  include Pool_common.Model.BooleanSig
 end
 
 module Validation : sig
@@ -226,8 +210,8 @@ module Public : sig
     ; hint : Hint.t
     ; validation : 'a Validation.t
     ; required : Required.t
-    ; admin_overwrite : Admin.Overwrite.t
-    ; admin_input_only : Admin.InputOnly.t
+    ; admin_override : AdminOverride.t
+    ; admin_input_only : AdminInputOnly.t
     ; version : Pool_common.Version.t
     }
 
@@ -246,7 +230,7 @@ module Public : sig
     | MultiSelect of
         SelectOption.Public.t list public
         * SelectOption.Public.t list
-        * SelectOption.Public.t Answer.t list
+        * SelectOption.Public.t list Answer.t option
     | Number of int public * int Answer.t option
     | Select of
         SelectOption.Public.t public
@@ -261,8 +245,8 @@ module Public : sig
   val name_value : Pool_common.Language.t -> t -> string
   val hint : Pool_common.Language.t -> t -> Hint.hint option
   val required : t -> Required.t
-  val admin_overwrite : t -> Admin.Overwrite.t
-  val admin_input_only : t -> Admin.InputOnly.t
+  val admin_override : t -> AdminOverride.t
+  val admin_input_only : t -> AdminInputOnly.t
   val is_disabled : bool -> t -> bool
   val version : t -> Pool_common.Version.t
   val field_type : t -> FieldType.t
@@ -323,7 +307,10 @@ type 'a custom_field =
   ; required : Required.t
   ; disabled : Disabled.t
   ; custom_field_group_id : Group.Id.t option
-  ; admin : Admin.t
+  ; admin_hint : AdminHint.t option
+  ; admin_override : AdminOverride.t
+  ; admin_view_only : AdminViewOnly.t
+  ; admin_input_only : AdminInputOnly.t
   ; published_at : PublishedAt.t option
   }
 
@@ -350,7 +337,10 @@ val create
   -> Required.t
   -> Disabled.t
   -> Group.Id.t option
-  -> Admin.t
+  -> AdminHint.t option
+  -> AdminOverride.t
+  -> AdminViewOnly.t
+  -> AdminInputOnly.t
   -> (t, Pool_common.Message.error) result
 
 val boolean_fields : Pool_common.Message.Field.t list
@@ -363,13 +353,45 @@ val required : t -> Required.t
 val disabled : t -> Disabled.t
 val published_at : t -> PublishedAt.t option
 val group_id : t -> Group.Id.t option
-val admin : t -> Admin.t
+val admin_hint : t -> AdminHint.t option
+val admin_override : t -> AdminOverride.t
+val admin_view_only : t -> AdminViewOnly.t
+val admin_input_only : t -> AdminInputOnly.t
 val field_type : t -> FieldType.t
 val validation_strings : t -> (string * string) list
 val validation_to_yojson : t -> Yojson.Safe.t
 
+module PartialUpdate : sig
+  type t =
+    | Firstname of Pool_common.Version.t * Pool_user.Firstname.t
+    | Lastname of Pool_common.Version.t * Pool_user.Lastname.t
+    | Paused of Pool_common.Version.t * Pool_user.Paused.t
+    | Language of Pool_common.Version.t * Pool_common.Language.t option
+    | Custom of Public.t
+
+  val is_required : t -> bool
+  val show : t -> string
+  val pp : Format.formatter -> t -> unit
+  val equal : t -> t -> bool
+  val increment_version : t -> t
+end
+
+val validate_htmx
+  :  is_admin:bool
+  -> string list
+  -> Public.t
+  -> (Public.t, Pool_common.Message.error) result
+
+val validate_partial_update
+  :  ?is_admin:bool
+  -> Contact.t
+  -> Public.t option
+  -> Pool_common.Message.Field.t * Pool_common.Version.t * string list
+  -> (PartialUpdate.t, Pool_common.Message.error) Lwt_result.t
+
 type event =
-  | AnswerUpserted of Public.t * Pool_common.Id.t
+  | AdminAnswerCleared of Public.t * Pool_common.Id.t
+  | AnswerUpserted of Public.t * Pool_common.Id.t * Pool_context.user
   | Created of t
   | Deleted of t
   | FieldsSorted of t list
@@ -382,6 +404,7 @@ type event =
   | OptionPublished of SelectOption.t
   | OptionsSorted of SelectOption.t list
   | OptionUpdated of SelectOption.t
+  | PartialUpdate of PartialUpdate.t * Contact.t * Pool_context.user
   | Published of t
   | Updated of t
 
@@ -399,13 +422,14 @@ val find
   -> (t, Pool_common.Message.error) result Lwt.t
 
 val find_all_by_contact
-  :  ?is_admin:bool
-  -> Pool_database.Label.t
+  :  Pool_database.Label.t
+  -> Pool_context.user
   -> Pool_common.Id.t
   -> (Group.Public.t list * Public.t list) Lwt.t
 
 val find_all_required_by_contact
   :  Pool_database.Label.t
+  -> Pool_context.user
   -> Pool_common.Id.t
   -> (Group.Public.t list * Public.t list) Lwt.t
 
@@ -422,12 +446,6 @@ val find_by_contact
   -> Pool_common.Id.t
   -> Id.t
   -> (Public.t, Pool_common.Message.error) result Lwt.t
-
-val upsert_answer
-  :  Pool_database.Label.t
-  -> Pool_common.Id.t
-  -> Public.t
-  -> unit Lwt.t
 
 val all_required_answered
   :  Pool_database.Label.t
@@ -455,16 +473,6 @@ val find_groups_by_model
   :  Pool_database.Label.t
   -> Model.t
   -> Group.t list Lwt.t
-
-val validate_htmx
-  :  string list
-  -> Public.t
-  -> (Public.t, Pool_common.Message.error) result
-
-val validate_multiselect
-  :  SelectOption.Public.t list Public.public * SelectOption.Public.t list
-  -> string list
-  -> Public.t
 
 module Repo : sig
   module Id : sig

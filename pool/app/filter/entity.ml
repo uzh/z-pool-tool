@@ -61,13 +61,16 @@ let single_value_of_yojson (yojson : Yojson.Safe.t) =
   | _ -> Error error
 ;;
 
-let value_of_yojson (yojson : Yojson.Safe.t) =
+let value_of_yojson yojson =
   let open CCResult in
   let error = Pool_common.Message.(Invalid Field.Value) in
   match yojson with
   | `Assoc _ -> single_value_of_yojson yojson >|= single
   | `List values ->
-    values |> CCList.map single_value_of_yojson |> CCList.all_ok >|= lst
+    (match values with
+     | [] -> Error Pool_common.Message.FilterListValueMustNotBeEmpty
+     | values ->
+       values |> CCList.map single_value_of_yojson |> CCList.all_ok >|= lst)
   | _ -> Error error
 ;;
 
@@ -327,9 +330,10 @@ module Operator = struct
     | NotEqual -> "<>"
     | Like ->
       "LIKE"
-      (* List operators are used to query custom fields by their value,
-         therefore '=' *)
-    | ContainsSome | ContainsNone | ContainsAll -> "="
+      (* List operators are used to query custom field answers by their value
+         which store json arrays *)
+    | ContainsSome | ContainsAll -> "LIKE"
+    | ContainsNone -> "NOT LIKE"
   ;;
 
   let validate (key : Key.t) operator =

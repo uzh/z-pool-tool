@@ -48,12 +48,23 @@ let personal_details_form
     Htmx.create ~required:true field language ~hx_post:action ()
   in
   let custom_field_to_html field =
-    Htmx.custom_field_to_htmx language is_admin ~hx_post:action field ()
+    let hx_delete =
+      Htmx.admin_profile_hx_delete
+        (Contact.id contact)
+        (Custom_field.Public.id field)
+    in
+    Htmx.custom_field_to_htmx
+      language
+      is_admin
+      ~hx_post:action
+      ~hx_delete
+      field
+      ()
   in
   let open Message in
-  form
-    ~a:form_attrs
-    [ div
+  let static_fields =
+    let fields =
+      div
         ~a:[ a_class [ "grid-col-2" ] ]
         (csrf_element csrf ()
         :: CCList.map
@@ -84,8 +95,30 @@ let personal_details_form
                      } )
                ; ( contact.paused_version
                  , Field.Paused
-                 , Boolean (contact.paused |> User.Paused.value) )
+                 , contact.paused
+                   |> User.Paused.value
+                   |> CCOption.pure
+                   |> boolean )
                ])
+    in
+    match is_admin with
+    | true ->
+      div
+        ~a:[ a_class [ "inset"; "border"; "bg-grey-light" ] ]
+        [ p
+            [ txt
+                Pool_common.(
+                  Utils.hint_to_string
+                    language
+                    I18n.ContactProfileVisibleOverride)
+            ]
+        ; fields
+        ]
+    | false -> fields
+  in
+  form
+    ~a:form_attrs
+    [ static_fields
     ; div
         ~a:[ a_class [ "gap-lg" ] ]
         (grouped_custom_fields_form language custom_fields custom_field_to_html)
@@ -93,7 +126,7 @@ let personal_details_form
 ;;
 
 let personal_details
-  (contact : Contact.t)
+  contact
   custom_fields
   tenant_languages
   Pool_context.{ language; query_language; csrf; _ }

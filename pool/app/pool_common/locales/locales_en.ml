@@ -99,7 +99,8 @@ let field_to_string =
   | Operator -> "operator"
   | Operators -> "operators"
   | Overbook -> "overbook"
-  | Overwrite -> "overwrite"
+  | OverriddenValue -> "overriden contact answer"
+  | Override -> "override"
   | Page -> "page"
   | Participant -> "participant"
   | ParticipantCount -> "number of participants"
@@ -275,6 +276,7 @@ let rec error_to_string = function
       (field_to_string required)
   | FilterMustNotContainTemplate -> "Filter must not contain templates."
   | FilterAndOrMustNotBeEmpty -> "'And' and 'Or' predicates must not be empty."
+  | FilterListValueMustNotBeEmpty -> "At least one option must be selected."
   | FollowUpIsEarlierThanMain ->
     "Follow-up session can't start before main session."
   | HtmxVersionNotFound field ->

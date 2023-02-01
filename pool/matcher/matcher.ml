@@ -80,7 +80,7 @@ let find_contacts_by_mailing pool { Mailing.id; distribution; _ } limit =
     distribution |> CCOption.map Mailing.Distribution.get_order_element
   in
   let* contacts =
-    Contact.find_filtered
+    Filter.find_filtered_contacts
       ?order_by
       ~limit:(max limit 0)
       pool

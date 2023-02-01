@@ -130,21 +130,55 @@ end
 module Update : sig
   include Common.CommandSig
 
-  type t = Contact.PartialUpdate.t
+  type t = Custom_field.PartialUpdate.t
 
   val handle
     :  ?tags:Logs.Tag.set
+    -> Pool_context.user
     -> Contact.t
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
   val effects : Contact.Id.t -> Guard.Authorizer.effect list
 end = struct
-  type t = Contact.PartialUpdate.t
+  type t = Custom_field.PartialUpdate.t
 
-  let handle ?(tags = Logs.Tag.empty) contact (field : t) =
+  let handle ?(tags = Logs.Tag.empty) user contact (field : t) =
     Logs.info ~src (fun m -> m "Handle command Update" ~tags);
-    Ok [ Contact.Updated (field, contact) |> Pool_event.contact ]
+    Ok
+      [ Custom_field.PartialUpdate (field, contact, user)
+        |> Pool_event.custom_field
+      ]
+  ;;
+
+  let effects id =
+    [ `Update, `Target (id |> Guard.Uuid.target_of Contact.Id.value)
+    ; `Update, `TargetEntity `Contact
+    ]
+  ;;
+end
+
+module ClearAnswer : sig
+  include Common.CommandSig
+
+  type t = Contact.t
+
+  val handle
+    :  ?tags:Logs.Tag.set
+    -> Custom_field.Public.t
+    -> t
+    -> (Pool_event.t list, Pool_common.Message.error) result
+
+  val effects : Contact.Id.t -> Guard.Authorizer.effect list
+end = struct
+  type t = Contact.t
+
+  let handle ?(tags = Logs.Tag.empty) field contact =
+    Logs.info ~src (fun m -> m "Handle command Update" ~tags);
+    Ok
+      [ Custom_field.AdminAnswerCleared (field, Contact.id contact)
+        |> Pool_event.custom_field
+      ]
   ;;
 
   let effects id =

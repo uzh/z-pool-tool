@@ -20,17 +20,14 @@ let custom_field_to_input ?flash_fetcher language custom_field =
   in
   match custom_field with
   | Public.Boolean (_, answer) ->
-    answer
-    >|= (fun a -> a.Answer.value)
-    |> fun value ->
     Input.checkbox_element
       ~as_switch:true
       ~orientation:`Horizontal
-      ?value
+      ?value:(answer >>= Answer.value)
       language
       field
-  | Public.MultiSelect (_, options, answers) ->
-    let selected = CCList.map (fun { Answer.value; _ } -> value) answers in
+  | Public.MultiSelect (_, options, answer) ->
+    let selected = answer >>= Answer.value |> CCOption.value ~default:[] in
     let t =
       Input.
         { options
@@ -41,11 +38,10 @@ let custom_field_to_input ?flash_fetcher language custom_field =
     in
     Input.multi_select language t field ()
   | Public.Number (_, answer) ->
-    answer >|= (fun a -> a.Answer.value |> CCInt.to_string) |> create `Number
-  | Public.Text (_, answer) ->
-    answer >|= (fun a -> a.Answer.value) |> create `Text
+    answer >>= Answer.value >|= CCInt.to_string |> create `Number
+  | Public.Text (_, answer) -> answer >>= Answer.value |> create `Text
   | Public.Select (_, options, answer) ->
-    let value = answer >|= fun a -> a.Answer.value in
+    let value = answer >>= Answer.value in
     Input.selector
       ?flash_fetcher
       ?help

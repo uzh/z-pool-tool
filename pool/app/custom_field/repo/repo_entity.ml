@@ -12,6 +12,8 @@ let decode_yojson t_of_yojson field t =
       Pool_common.(Utils.error_to_string Language.En Message.(Invalid field))
 ;;
 
+type multi_select_answer = SelectOption.Id.t list [@@deriving yojson]
+
 module Model = struct
   include Model
 
@@ -84,46 +86,28 @@ module PublishedAt = struct
   let t = Caqti_type.ptime
 end
 
-module Admin = struct
-  include Admin
+module AdminHint = struct
+  include AdminHint
 
-  module Hint = struct
-    include Hint
+  let t = Caqti_type.string
+end
 
-    let t = Caqti_type.string
-  end
+module AdminOverride = struct
+  include AdminOverride
 
-  module Overwrite = struct
-    include Overwrite
+  let t = Caqti_type.bool
+end
 
-    let t = Caqti_type.bool
-  end
+module AdminViewOnly = struct
+  include AdminViewOnly
 
-  module ViewOnly = struct
-    include ViewOnly
+  let t = Caqti_type.bool
+end
 
-    let t = Caqti_type.bool
-  end
+module AdminInputOnly = struct
+  include AdminInputOnly
 
-  module InputOnly = struct
-    include InputOnly
-
-    let t = Caqti_type.bool
-  end
-
-  let t =
-    let encode m =
-      Ok (m.Admin.hint, (m.overwrite, (m.view_only, m.input_only)))
-    in
-    let decode (hint, (overwrite, (view_only, input_only))) =
-      Ok { hint; overwrite; view_only; input_only }
-    in
-    Caqti_type.(
-      custom
-        ~encode
-        ~decode
-        (tup2 (option Hint.t) (tup2 Overwrite.t (tup2 ViewOnly.t InputOnly.t))))
-  ;;
+  let t = Caqti_type.bool
 end
 
 module Option = struct
@@ -221,7 +205,10 @@ module Write = struct
       ; required = required t
       ; disabled = disabled t
       ; custom_field_group_id = group_id t
-      ; admin = admin t
+      ; admin_hint = admin_hint t
+      ; admin_override = admin_override t
+      ; admin_view_only = admin_view_only t
+      ; admin_input_only = admin_input_only t
       }
   ;;
 
@@ -236,8 +223,12 @@ module Write = struct
               , ( m.field_type
                 , ( m.validation
                   , ( m.required
-                    , (m.disabled, (m.custom_field_group_id, m.admin)) ) ) ) )
-            ) ) )
+                    , ( m.disabled
+                      , ( m.custom_field_group_id
+                        , ( m.admin_hint
+                          , ( m.admin_override
+                            , (m.admin_view_only, m.admin_input_only) ) ) ) ) )
+                  ) ) ) ) ) )
     in
     let decode _ =
       failwith
@@ -264,7 +255,13 @@ module Write = struct
                              Required.t
                              (tup2
                                 Disabled.t
-                                (tup2 (option Common.Repo.Id.t) Admin.t))))))))))
+                                (tup2
+                                   (option Common.Repo.Id.t)
+                                   (tup2
+                                      (option AdminHint.t)
+                                      (tup2
+                                         AdminOverride.t
+                                         (tup2 AdminViewOnly.t AdminInputOnly.t)))))))))))))
   ;;
 end
 
@@ -277,13 +274,30 @@ module Public = struct
     ; field_type : FieldType.t
     ; required : Required.t
     ; custom_field_group_id : Group.Id.t option
-    ; admin_overwrite : Admin.Overwrite.t
-    ; admin_input_only : Admin.InputOnly.t
+    ; admin_override : AdminOverride.t
+    ; admin_input_only : AdminInputOnly.t
+    ; answer_id : Pool_common.Id.t option
+    ; answer_value : string option
+    ; answer_admin_value : string option
     ; version : Pool_common.Version.t option
-    ; answer : Repo_entity_answer.repo option
+    ; admin_version : Pool_common.Version.t option
     }
+  [@@deriving show, eq]
+
+  let create_answer is_admin id value admin_value parse_value =
+    let open CCOption.Infix in
+    match id with
+    | None -> None
+    | Some id ->
+      let value = value >>= parse_value in
+      let admin_value =
+        if is_admin then admin_value >>= parse_value else None
+      in
+      Entity_answer.create ~id ?admin_value value |> CCOption.pure
+  ;;
 
   let to_entity
+    is_admin
     select_options
     { id
     ; name
@@ -291,27 +305,33 @@ module Public = struct
     ; validation
     ; field_type
     ; required
-    ; admin_overwrite
+    ; admin_override
     ; admin_input_only
-    ; answer
+    ; answer_id
+    ; answer_value
+    ; answer_admin_value
     ; version
+    ; admin_version
     ; _
     }
-    answers
     =
     let open CCOption.Infix in
     let validation_schema schema =
       Validation.(validation |> raw_of_yojson |> schema)
     in
     let version =
-      CCOption.value ~default:(Pool_common.Version.create ()) version
+      (if is_admin then admin_version else version)
+      |> CCOption.value ~default:(Pool_common.Version.create ())
     in
     match field_type with
     | FieldType.Boolean ->
       let answer =
-        answer
-        >|= fun { Answer.id; value } ->
-        value |> Utils.Bool.of_string |> Entity_answer.create ~id
+        create_answer
+          is_admin
+          answer_id
+          answer_value
+          answer_admin_value
+          CCFun.(Utils.Bool.of_string %> CCOption.pure)
       in
       Public.Boolean
         ( { Public.id
@@ -319,16 +339,19 @@ module Public = struct
           ; hint
           ; validation = Validation.pure
           ; required
-          ; admin_overwrite
+          ; admin_override
           ; admin_input_only
           ; version
           }
         , answer )
     | FieldType.Number ->
       let answer =
-        answer
-        >>= fun Answer.{ id; value } ->
-        value |> CCInt.of_string >|= Entity_answer.create ~id
+        create_answer
+          is_admin
+          answer_id
+          answer_value
+          answer_admin_value
+          CCInt.of_string
       in
       let validation = validation_schema Validation.Number.schema in
       Public.Number
@@ -337,24 +360,23 @@ module Public = struct
           ; hint
           ; validation
           ; required
-          ; admin_overwrite
+          ; admin_override
           ; admin_input_only
           ; version
           }
         , answer )
     | FieldType.Select ->
       let answer =
-        let open SelectOption in
-        answer
-        >|= fun Answer.{ id; value } ->
-        value
-        |> Id.of_string
-        |> fun selected ->
-        CCList.find
-          (fun (_, { SelectOption.Public.id; _ }) -> Id.equal id selected)
-          select_options
-        |> snd
-        |> Entity_answer.create ~id
+        let create value =
+          value
+          |> Id.of_string
+          |> fun selected ->
+          CCList.find_opt
+            (fun (_, { SelectOption.Public.id; _ }) -> Id.equal id selected)
+            select_options
+          >|= snd
+        in
+        create_answer is_admin answer_id answer_value answer_admin_value create
       in
       let options =
         CCList.filter_map
@@ -368,30 +390,39 @@ module Public = struct
           ; hint
           ; validation = Validation.pure
           ; required
-          ; admin_overwrite
+          ; admin_override
           ; admin_input_only
           ; version
           }
         , options
         , answer )
     | FieldType.MultiSelect ->
-      let options =
+      let select_options =
         CCList.filter_map
           (fun (field_id, option) ->
             if Pool_common.Id.equal field_id id then Some option else None)
           select_options
       in
-      let answers =
+      let answer =
         let open SelectOption in
-        answers
-        |> CCList.filter_map (fun Answer.{ id; value } ->
-             value
-             |> Id.of_string
-             |> fun selected ->
-             CCList.find_opt
-               (fun { SelectOption.Public.id; _ } -> Id.equal id selected)
-               options
-             >|= Entity_answer.create ~id)
+        let create value =
+          let options =
+            try
+              value |> Yojson.Safe.from_string |> multi_select_answer_of_yojson
+            with
+            | _ -> []
+          in
+          match options with
+          | [] -> None
+          | options ->
+            options
+            |> CCList.filter_map (fun option_id ->
+                 CCList.find_opt
+                   (fun { SelectOption.Public.id; _ } -> Id.equal id option_id)
+                   select_options)
+            |> CCOption.pure
+        in
+        create_answer is_admin answer_id answer_value answer_admin_value create
       in
       Public.MultiSelect
         ( { Public.id
@@ -399,15 +430,20 @@ module Public = struct
           ; hint
           ; validation = Validation.pure
           ; required
-          ; admin_overwrite
+          ; admin_override
           ; admin_input_only
           ; version
           }
-        , options
-        , answers )
+        , select_options
+        , answer )
     | FieldType.Text ->
       let answer =
-        answer >|= fun Answer.{ id; value } -> value |> Entity_answer.create ~id
+        create_answer
+          is_admin
+          answer_id
+          answer_value
+          answer_admin_value
+          CCOption.pure
       in
       let validation = validation_schema Validation.Text.schema in
       Public.Text
@@ -416,52 +452,24 @@ module Public = struct
           ; hint
           ; validation
           ; required
-          ; admin_overwrite
+          ; admin_override
           ; admin_input_only
           ; version
           }
         , answer )
   ;;
 
-  let group_fields lst =
-    let open CCList in
-    fold_left
-      (fun acc (field : repo) ->
-        match assoc_opt ~eq:Id.equal field.id acc with
-        | None -> acc @ [ field.id, [ field ] ]
-        | Some fields ->
-          Assoc.set ~eq:Id.equal field.id (fields @ [ field ]) acc)
-      []
-      lst
-    |> map snd
-  ;;
-
-  let single_to_entity options field_list =
-    let fst = CCList.hd field_list in
-    field_list
-    |> CCList.filter_map (fun field -> field.answer)
-    |> to_entity options fst
-  ;;
-
-  let to_ungrouped_entities select_options fields =
-    let to_entity = single_to_entity select_options in
-    fields |> group_fields |> CCList.map to_entity
-  ;;
-
-  let to_grouped_entities select_options groups fields =
-    let to_entity = single_to_entity select_options in
+  let to_grouped_entities is_admin select_options groups fields =
+    let to_entity = to_entity is_admin select_options in
     let partition_map fields { Group.id; _ } =
-      CCList.fold_left
-        (fun (of_group, rest) (fields : repo list) ->
-          let ({ custom_field_group_id; _ } : repo) = CCList.hd fields in
-          CCOption.map_or
-            ~default:false
-            (fun group_id -> Pool_common.Id.equal group_id id)
-            custom_field_group_id
-          |> function
-          | true -> of_group @ [ fields |> to_entity ], rest
-          | false -> of_group, rest @ [ fields ])
-        ([], [])
+      CCList.partition_filter_map
+        (fun (field : repo) ->
+          match
+            field.custom_field_group_id
+            |> CCOption.map_or ~default:false (Id.equal id)
+          with
+          | true -> `Left (to_entity field)
+          | false -> `Right field)
         fields
     in
     let grouped, ungrouped =
@@ -472,12 +480,16 @@ module Public = struct
             Group.{ Public.id = group.id; name = group.name; fields = of_group }
           in
           CCList.append groups [ group ], rest)
-        ([], group_fields fields)
+        ([], fields)
         groups
     in
     ( grouped
       |> CCList.filter (fun g -> CCList.is_empty g.Group.Public.fields |> not)
     , ungrouped |> CCList.map to_entity )
+  ;;
+
+  let to_ungrouped_entities is_admin select_options fields =
+    fields |> CCList.map (to_entity is_admin select_options)
   ;;
 
   let t =
@@ -493,8 +505,12 @@ module Public = struct
             , ( field_type
               , ( required
                 , ( custom_field_group_id
-                  , (admin_overwrite, (admin_input_only, (answer, version))) )
-                ) ) ) ) ) )
+                  , ( admin_override
+                    , ( admin_input_only
+                      , ( answer_id
+                        , ( answer_value
+                          , (answer_admin_value, (version, admin_version)) ) )
+                      ) ) ) ) ) ) ) ) )
       =
       Ok
         { id
@@ -503,11 +519,14 @@ module Public = struct
         ; validation
         ; field_type
         ; required
-        ; admin_overwrite
+        ; admin_override
         ; admin_input_only
         ; custom_field_group_id
-        ; answer
+        ; answer_id
+        ; answer_value
+        ; answer_admin_value
         ; version
+        ; admin_version
         }
     in
     Caqti_type.(
@@ -529,12 +548,18 @@ module Public = struct
                           (tup2
                              (option Common.Repo.Id.t)
                              (tup2
-                                Admin.Overwrite.t
+                                AdminOverride.t
                                 (tup2
-                                   Admin.InputOnly.t
+                                   AdminInputOnly.t
                                    (tup2
-                                      (option Answer.t)
-                                      (option Common.Repo.Version.t))))))))))))
+                                      (option Common.Repo.Id.t)
+                                      (tup2
+                                         (option Caqti_type.string)
+                                         (tup2
+                                            (option Caqti_type.string)
+                                            (tup2
+                                               (option Common.Repo.Version.t)
+                                               (option Common.Repo.Version.t)))))))))))))))
   ;;
 end
 
@@ -548,7 +573,10 @@ type repo =
   ; required : Required.t
   ; disabled : Disabled.t
   ; custom_field_group_id : Group.Id.t option
-  ; admin : Admin.t
+  ; admin_hint : AdminHint.t option
+  ; admin_override : AdminOverride.t
+  ; admin_view_only : AdminViewOnly.t
+  ; admin_input_only : AdminInputOnly.t
   ; published_at : PublishedAt.t option
   }
 
@@ -565,8 +593,12 @@ let t =
           , ( field_type
             , ( validation
               , ( required
-                , (disabled, (custom_field_group_id, (admin, published_at))) )
-              ) ) ) ) ) )
+                , ( disabled
+                  , ( custom_field_group_id
+                    , ( admin_hint
+                      , ( admin_override
+                        , (admin_view_only, (admin_input_only, published_at)) )
+                      ) ) ) ) ) ) ) ) ) )
     =
     let open CCResult in
     Ok
@@ -579,7 +611,10 @@ let t =
       ; required
       ; disabled
       ; custom_field_group_id
-      ; admin
+      ; admin_hint
+      ; admin_override
+      ; admin_view_only
+      ; admin_input_only
       ; published_at
       }
   in
@@ -605,7 +640,15 @@ let t =
                               Disabled.t
                               (tup2
                                  (option Common.Repo.Id.t)
-                                 (tup2 Admin.t (option PublishedAt.t))))))))))))
+                                 (tup2
+                                    (option AdminHint.t)
+                                    (tup2
+                                       AdminOverride.t
+                                       (tup2
+                                          AdminViewOnly.t
+                                          (tup2
+                                             AdminInputOnly.t
+                                             (option PublishedAt.t)))))))))))))))
 ;;
 
 let to_entity
@@ -619,7 +662,10 @@ let to_entity
   ; required
   ; disabled
   ; custom_field_group_id
-  ; admin
+  ; admin_hint
+  ; admin_override
+  ; admin_view_only
+  ; admin_input_only
   ; published_at
   }
   =
@@ -637,7 +683,10 @@ let to_entity
       ; required
       ; disabled
       ; custom_field_group_id
-      ; admin
+      ; admin_hint
+      ; admin_override
+      ; admin_view_only
+      ; admin_input_only
       ; published_at
       }
   | FieldType.Number ->
@@ -651,7 +700,10 @@ let to_entity
       ; required
       ; disabled
       ; custom_field_group_id
-      ; admin
+      ; admin_hint
+      ; admin_override
+      ; admin_view_only
+      ; admin_input_only
       ; published_at
       }
   | FieldType.Select ->
@@ -670,7 +722,10 @@ let to_entity
         ; required
         ; disabled
         ; custom_field_group_id
-        ; admin
+        ; admin_hint
+        ; admin_override
+        ; admin_view_only
+        ; admin_input_only
         ; published_at
         }
       , options )
@@ -690,7 +745,10 @@ let to_entity
         ; required
         ; disabled
         ; custom_field_group_id
-        ; admin
+        ; admin_hint
+        ; admin_override
+        ; admin_view_only
+        ; admin_input_only
         ; published_at
         }
       , options )
@@ -705,7 +763,10 @@ let to_entity
       ; required
       ; disabled
       ; custom_field_group_id
-      ; admin
+      ; admin_hint
+      ; admin_override
+      ; admin_view_only
+      ; admin_input_only
       ; published_at
       }
 ;;

@@ -27,11 +27,11 @@ module TestContacts = struct
 end
 
 module CustomFieldData = struct
-  let admin_data = Custom_field_test.Data.admin
   let nr_of_siblings_answer = 3
   let published = () |> Custom_field.PublishedAt.create_now |> CCOption.pure
 
   let nr_of_siblings =
+    let open Custom_field_test in
     Custom_field.(
       Number
         { id = Id.create ()
@@ -43,14 +43,22 @@ module CustomFieldData = struct
         ; required = false |> Required.create
         ; disabled = false |> Disabled.create
         ; custom_field_group_id = None
-        ; admin = admin_data
+        ; admin_hint = Data.admin_hint
+        ; admin_override = Data.admin_override
+        ; admin_view_only = Data.admin_view_only
+        ; admin_input_only = Data.admin_input_only
         ; published_at = published
         })
   ;;
 
-  let nr_of_siblings_public answer_value =
+  let nr_of_siblings_public is_admin answer_value =
     let open Custom_field in
-    let answer = Answer.create answer_value |> CCOption.pure in
+    let open Custom_field_test in
+    let answer =
+      match is_admin with
+      | true -> Answer.create ?admin_value:answer_value None
+      | false -> Answer.create answer_value
+    in
     let version = 0 |> Pool_common.Version.of_int in
     Public.Number
       ( { Public.id = id nr_of_siblings
@@ -58,11 +66,11 @@ module CustomFieldData = struct
         ; hint = hint nr_of_siblings
         ; validation = Validation.pure
         ; required = required nr_of_siblings
-        ; admin_overwrite = admin_data.Admin.overwrite
-        ; admin_input_only = admin_data.Admin.input_only
+        ; admin_override = Data.admin_override
+        ; admin_input_only = Data.admin_input_only
         ; version
         }
-      , answer )
+      , Some answer )
   ;;
 
   let multi_select_option_data =
@@ -97,6 +105,7 @@ module CustomFieldData = struct
 
   let multi_select_custom_field =
     let open Custom_field in
+    let open Custom_field_test in
     MultiSelect
       ( { id = Id.create ()
         ; model = Model.Contact
@@ -107,7 +116,10 @@ module CustomFieldData = struct
         ; required = false |> Required.create
         ; disabled = false |> Disabled.create
         ; custom_field_group_id = None
-        ; admin = admin_data
+        ; admin_hint = Data.admin_hint
+        ; admin_override = Data.admin_override
+        ; admin_view_only = Data.admin_view_only
+        ; admin_input_only = Data.admin_input_only
         ; published_at = published
         }
       , multi_select_options )
@@ -115,9 +127,12 @@ module CustomFieldData = struct
 
   let multi_select_custom_field_public answer_index =
     let open Custom_field in
+    let open Custom_field_test in
     let answer =
       multi_select_options_public_by_index answer_index
-      |> CCList.map Answer.create
+      |> CCOption.pure
+      |> Answer.create
+      |> CCOption.pure
     in
     let version = 0 |> Pool_common.Version.of_int in
     Public.MultiSelect
@@ -126,8 +141,8 @@ module CustomFieldData = struct
         ; hint = hint multi_select_custom_field
         ; validation = Validation.pure
         ; required = required multi_select_custom_field
-        ; admin_overwrite = admin_data.Admin.overwrite
-        ; admin_input_only = admin_data.Admin.input_only
+        ; admin_override = Data.admin_override
+        ; admin_input_only = Data.admin_input_only
         ; version
         }
       , multi_select_options_public
@@ -138,11 +153,20 @@ module CustomFieldData = struct
     Custom_field.Created nr_of_siblings |> Pool_event.custom_field
   ;;
 
-  let answer_nr_of_siblings ?(answer_value = nr_of_siblings_answer) contacts =
+  let answer_nr_of_siblings
+    ?(answer_value = nr_of_siblings_answer)
+    ?admin
+    contacts
+    =
     CCList.map
       (fun contact ->
+        let user =
+          admin |> CCOption.value ~default:(Pool_context.Contact contact)
+        in
         Custom_field.AnswerUpserted
-          (nr_of_siblings_public answer_value, Contact.id contact)
+          ( nr_of_siblings_public (CCOption.is_some admin) (Some answer_value)
+          , Contact.id contact
+          , user )
         |> Pool_event.custom_field)
       contacts
   ;;
@@ -160,7 +184,9 @@ module CustomFieldData = struct
     CCList.map
       (fun contact ->
         Custom_field.AnswerUpserted
-          (multi_select_custom_field_public answer_index, Contact.id contact)
+          ( multi_select_custom_field_public answer_index
+          , Contact.id contact
+          , Pool_context.Contact contact )
         |> Pool_event.custom_field)
       contacts
   ;;
@@ -172,13 +198,16 @@ module CustomFieldData = struct
   ;;
 end
 
-let nr_of_siblings =
+let nr_of_siblings ?nr () =
   let open Filter in
+  let value =
+    nr |> CCOption.value ~default:CustomFieldData.nr_of_siblings_answer
+  in
   Pred
     (Predicate.create
        Key.(CustomField (CustomFieldData.nr_of_siblings |> Custom_field.id))
        Operator.Equal
-       (Single (Nr (CustomFieldData.nr_of_siblings_answer |> CCFloat.of_int))))
+       (Single (Nr (value |> CCFloat.of_int))))
 ;;
 
 let firstname firstname =
@@ -204,7 +233,7 @@ let filter_contacts _ () =
       |> Lwt_list.iter_s
            (Pool_event.handle_event Test_utils.Data.database_label)
     in
-    let filter = Filter.create None nr_of_siblings in
+    let filter = Filter.create None (nr_of_siblings ()) in
     let experiment = Experiment.{ experiment with filter = Some filter } in
     let%lwt () =
       (* Save filter *)
@@ -216,7 +245,7 @@ let filter_contacts _ () =
     in
     let expected = true in
     let%lwt filtered_contacts =
-      Contact.find_filtered
+      Filter.find_filtered_contacts
         Test_utils.Data.database_label
         (experiment.Experiment.id |> convert_id)
         experiment.Experiment.filter
@@ -245,7 +274,7 @@ let filter_by_email _ () =
         create
           None
           (And
-             [ nr_of_siblings
+             [ nr_of_siblings ()
              ; firstname (Contact.firstname contact |> Pool_user.Firstname.value)
              ]))
     in
@@ -260,7 +289,7 @@ let filter_by_email _ () =
     in
     let expected = true in
     let%lwt filtered_contacts =
-      Contact.find_filtered
+      Filter.find_filtered_contacts
         Test_utils.Data.database_label
         (experiment.Experiment.id |> convert_id)
         experiment.Experiment.filter
@@ -359,7 +388,7 @@ let test_list_filter answer_index operator contact experiment expected =
            (Pool_event.handle_event Test_utils.Data.database_label)
     in
     let%lwt filtered_contacts =
-      Contact.find_filtered
+      Filter.find_filtered_contacts
         Test_utils.Data.database_label
         (experiment.Experiment.id |> convert_id)
         experiment.Experiment.filter
@@ -478,7 +507,7 @@ let retrieve_fitleterd_and_ordered_contacts _ () =
       Sorted [ InvitationCount, SortOrder.Ascending ] |> get_order_element
     in
     let%lwt contacts =
-      Contact.find_filtered
+      Filter.find_filtered_contacts
         ~order_by
         Data.database_label
         Experiment.(experiment.Experiment.id |> Id.to_common)
@@ -531,6 +560,78 @@ let create_filter_template_with_template _ () =
         expected
         events)
     |> Lwt.return
+  in
+  Lwt.return_unit
+;;
+
+let filter_with_admin_value _ () =
+  let%lwt () =
+    let open Utils.Lwt_result.Infix in
+    let%lwt experiment_id =
+      Experiment.find_all Test_utils.Data.database_label ()
+      ||> CCList.hd
+      ||> fun { Experiment.id; _ } -> id |> Experiment.Id.to_common
+    in
+    let%lwt contact = TestContacts.get_contact 0 in
+    let admin = Test_utils.Model.create_admin () in
+    let%lwt () =
+      CustomFieldData.(
+        answer_nr_of_siblings ~answer_value:3 [ contact ]
+        @ answer_nr_of_siblings ~answer_value:1 ~admin [ contact ])
+      |> Lwt_list.iter_s
+           (Pool_event.handle_event Test_utils.Data.database_label)
+    in
+    let find =
+      Filter.find_filtered_contacts Test_utils.Data.database_label experiment_id
+    in
+    let search filter =
+      filter
+      |> CCOption.pure
+      |> find
+      ||> CCResult.get_exn
+      ||> CCList.find_opt (Contact.equal contact)
+      ||> CCOption.is_some
+    in
+    let%lwt should_not_contain =
+      Filter.create None (nr_of_siblings ~nr:3 ()) |> search
+    in
+    let%lwt should_contain =
+      Filter.create None (nr_of_siblings ~nr:1 ()) |> search
+    in
+    let res = should_contain && not should_not_contain in
+    Alcotest.(check bool "succeeds" true res) |> Lwt.return
+  in
+  Lwt.return_unit
+;;
+
+let no_admin_values_shown_to_contacts _ () =
+  let%lwt () =
+    let open Utils.Lwt_result.Infix in
+    let%lwt contact = TestContacts.get_contact 0 in
+    let open Custom_field in
+    let%lwt custom_fields =
+      find_all_by_contact
+        Test_utils.Data.database_label
+        (Pool_context.Contact contact)
+        (Contact.id contact)
+      ||> fun (grouped, ungrouped) ->
+      ungrouped
+      @ CCList.flat_map Group.Public.(fun group -> group.fields) grouped
+    in
+    let res =
+      let open Custom_field.Answer in
+      let open CCOption in
+      custom_fields
+      |> CCList.filter (function
+           | Public.Boolean (_, answer) -> answer >>= admin_value |> is_some
+           | Public.MultiSelect (_, _, answer) ->
+             answer >>= admin_value |> is_some
+           | Public.Number (_, answer) -> answer >>= admin_value |> is_some
+           | Public.Select (_, _, answer) -> answer >>= admin_value |> is_some
+           | Public.Text (_, answer) -> answer >>= admin_value |> is_some)
+      |> CCList.is_empty
+    in
+    Alcotest.(check bool "succeeds" true res) |> Lwt.return
   in
   Lwt.return_unit
 ;;

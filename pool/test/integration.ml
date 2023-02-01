@@ -55,9 +55,9 @@ let suite =
               `Slow
               update_admin_input_only_field_as_user
           ; test_case
-              "update non overwrite field as admin"
+              "update non override field as admin"
               `Slow
-              update_non_overwrite_field_as_admin
+              update_non_override_field_as_admin
           ; test_case
               "set value of none required field to null"
               `Slow
@@ -90,6 +90,14 @@ let suite =
               "create filter template with template"
               `Slow
               create_filter_template_with_template
+          ; test_case
+              "test filter with admin overridden values"
+              `Slow
+              filter_with_admin_value
+          ; test_case
+              "no admin values shown to contacts"
+              `Slow
+              no_admin_values_shown_to_contacts
           ] )
     ; ( "matcher"
       , Matcher_test.

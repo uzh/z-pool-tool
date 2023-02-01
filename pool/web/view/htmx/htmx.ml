@@ -7,6 +7,7 @@ let hx_trigger = a_user_data "hx-trigger"
 let hx_post = a_user_data "hx-post"
 let hx_get = a_user_data "hx-get"
 let hx_target = a_user_data "hx-target"
+let hx_target_closest_group = hx_target "closest .form-group"
 let hx_swap = a_user_data "hx-swap"
 let hx_params = a_user_data "hx-params"
 let hx_vals = a_user_data "hx-vals"
@@ -17,11 +18,21 @@ let admin_profile_hx_post id =
   Format.asprintf "/admin/contacts/%s" (id |> Pool_common.Id.value)
 ;;
 
+let admin_profile_hx_delete id field_id =
+  Format.asprintf
+    "%s/field/%s/delete"
+    (admin_profile_hx_post id)
+    Custom_field.(field_id |> Id.value)
+;;
+
 let field_id_key = "field_id"
 let custom_field_htmx_attributes id = [ field_id_key, Custom_field.Id.value id ]
-let multi_select_key = "multi"
-let multi_select_value = "true"
-let multi_select_htmx_attributes = [ multi_select_key, multi_select_value ]
+let multi_select_htmx_key = "multi"
+let multi_select_htmx_value = "true"
+
+let multi_select_htmx_attributes =
+  [ multi_select_htmx_key, multi_select_htmx_value ]
+;;
 
 let base_hx_attributes name version ?action ?(additional_attributes = []) () =
   let params, vals =
@@ -37,7 +48,7 @@ let base_hx_attributes name version ?action ?(additional_attributes = []) () =
   in
   [ hx_swap "outerHTML"
   ; hx_params (CCString.concat ", " (CCList.cons name params))
-  ; hx_target "closest .form-group"
+  ; hx_target_closest_group
   ; hx_vals
       (Format.asprintf
          {|{%s}|}
@@ -79,7 +90,7 @@ type 'a selector =
   }
 
 type 'a value =
-  | Boolean of bool
+  | Boolean of bool option
   | MultiSelect of 'a Input.multi_select
   | Number of int option
   | Select of 'a selector
@@ -101,13 +112,14 @@ let create_entity ?help ?htmx_attributes version field value =
 let create
   ({ version; field; value; help; htmx_attributes } : 'a t)
   language
+  ?overridden_value
   ?(classnames = [])
-  ?hx_post
-  ?error
-  ?success
-  ?flash_fetcher
   ?disabled
+  ?error
+  ?flash_fetcher
+  ?hx_post
   ?required
+  ?success
   ()
   =
   let input_class =
@@ -127,6 +139,7 @@ let create
         ()
   in
   let default s = Option.value ~default:"" s in
+  let append_html = overridden_value in
   let fetched_value =
     CCOption.bind flash_fetcher (fun flash_fetcher ->
       field |> Pool_common.Message.Field.show |> flash_fetcher)
@@ -136,8 +149,9 @@ let create
     Input.checkbox_element
       ~as_switch:true
       ~additional_attributes:(additional_attributes ())
+      ?append_html
       ~classnames
-      ~value:boolean
+      ?value:boolean
       ?help
       ?error
       ?required
@@ -158,6 +172,7 @@ let create
       t
       field
       ~additional_attributes
+      ?append_html
       ~classnames
       ?required
       ?error
@@ -171,6 +186,7 @@ let create
         |> CCOption.value ~default:(n |> CCOption.map CCInt.to_string |> default)
         )
       ~additional_attributes:(additional_attributes ())
+      ?append_html
       ?error
       ?required
       ?help
@@ -179,13 +195,14 @@ let create
       field
   | Select { show; options; option_formatter; selected } ->
     Input.selector
+      ~attributes:(additional_attributes ())
+      ?append_html
+      ~classnames
       ?error
       ?help
       ?option_formatter
       ?required
       ~add_empty:true
-      ~attributes:(additional_attributes ())
-      ~classnames
       language
       field
       show
@@ -194,66 +211,172 @@ let create
       ()
   | Text str ->
     Input.input_element
-      ~classnames
-      ~value:(fetched_value |> CCOption.value ~default:(str |> default))
       ~additional_attributes:(additional_attributes ())
+      ?append_html
+      ~classnames
       ?error
-      ?required
       ?help
+      ~value:(fetched_value |> CCOption.value ~default:(str |> default))
+      ?required
       language
       `Text
       field
 ;;
 
-let custom_field_to_htmx_value language =
+let multi_select_value language options v =
+  let open Custom_field in
+  v
+  |> CCOption.value ~default:[]
+  |> fun selected ->
+  Input.
+    { options
+    ; selected
+    ; to_label = SelectOption.Public.name language
+    ; to_value = SelectOption.Public.show_id
+    }
+  |> multiselect
+;;
+
+let select_value language options v =
+  let open Custom_field in
+  ({ show = SelectOption.Public.show_id
+   ; options
+   ; option_formatter = Some SelectOption.Public.(name language)
+   ; selected = v
+   }
+    : 'a selector)
+  |> select
+;;
+
+let field_value is_admin answer =
+  let open Custom_field.Answer in
+  let open CCOption in
+  let { value; admin_value; _ } = answer in
+  match is_admin with
+  | true -> admin_value <+> value
+  | false -> value
+;;
+
+let custom_field_to_htmx_value language is_admin =
   let open CCOption in
   let open Custom_field in
   function
-  | Public.Boolean (_, answer) ->
-    answer >|= (fun a -> a.Answer.value) |> value ~default:false |> boolean
-  | Public.MultiSelect (_, options, answers) ->
-    answers
-    |> CCList.map (fun { Answer.value; _ } -> value)
-    |> fun selected ->
-    Input.
-      { options
-      ; selected
-      ; to_label = SelectOption.Public.name language
-      ; to_value = SelectOption.Public.show_id
-      }
-    |> multiselect
-  | Public.Number (_, answer) -> answer >|= (fun a -> a.Answer.value) |> number
+  | Public.Boolean (_, answer) -> answer >>= field_value is_admin |> boolean
+  | Public.MultiSelect (_, options, answer) ->
+    answer >>= field_value is_admin |> multi_select_value language options
+  | Public.Number (_, answer) -> answer >>= field_value is_admin |> number
   | Public.Select (_, options, answer) ->
-    answer
-    >|= (fun a -> a.Answer.value)
-    |> fun value ->
-    ({ show = SelectOption.Public.show_id
-     ; options
-     ; option_formatter = Some SelectOption.Public.(name language)
-     ; selected = value
-     }
-      : 'a selector)
-    |> select
-  | Public.Text (_, answer) -> answer >|= (fun a -> a.Answer.value) |> text
+    answer >>= field_value is_admin |> select_value language options
+  | Public.Text (_, answer) -> answer >>= field_value is_admin |> text
 ;;
 
-let custom_field_to_htmx ?version ?value language is_admin custom_field ?hx_post
+let field_overridden_value { Custom_field.Answer.value; admin_value; _ } =
+  match admin_value, value with
+  | Some _, Some v -> Some (`Overridden v)
+  | Some _, None -> Some `NoValue
+  | _, _ -> None
+;;
+
+let custom_field_overridden_value ?hx_delete is_admin lang m =
+  let delete_form () =
+    let open Input in
+    match is_admin, hx_delete with
+    | true, Some path ->
+      span
+        ~a:
+          [ hx_swap "outerHTML"
+          ; hx_target_closest_group
+          ; hx_params "_csrf"
+          ; hx_post path
+          ; hx_trigger "click"
+          ; a_class [ "color-red"; "push"; "pointer" ]
+          ]
+        [ abbr ~a:[ a_title "Reset value" ] [ Icon.icon `TrashOutline ] ]
+    | _, _ -> txt ""
+  in
+  match is_admin with
+  | false -> None
+  | true ->
+    let open CCOption in
+    let open Custom_field in
+    let open CCFun in
+    let prefix =
+      Pool_common.(Utils.field_to_string lang Message.Field.OverriddenValue)
+      |> CCString.capitalize_ascii
+      |> txt
+    in
+    let add_prefix m = [ prefix; txt ": "; m ] in
+    let wrap html =
+      div
+        ~a:[ a_class [ "help"; "flexrow"; "flex-gap" ] ]
+        (html @ [ delete_form () ])
+      |> CCList.pure
+    in
+    let no_value =
+      Pool_common.(Utils.hint_to_string lang I18n.CustomFieldNoContactValue)
+      |> txt
+      |> CCList.pure
+      |> wrap
+    in
+    let build_html to_html value =
+      match value with
+      | `Overridden v -> v |> to_html |> add_prefix |> wrap
+      | `NoValue -> no_value
+    in
+    (match m with
+     | Public.Boolean (_, answer) ->
+       answer
+       >>= field_overridden_value
+       >|= build_html (Pool_common.Utils.bool_to_string lang %> txt)
+     | Public.MultiSelect (_, _, answer) ->
+       answer
+       >>= field_overridden_value
+       >|= (function
+       | `NoValue -> no_value
+       | `Overridden lst ->
+         lst
+         |> CCList.map
+              (SelectOption.Public.name lang %> txt %> CCList.pure %> li)
+            %> ul
+            %> (fun html ->
+                 [ span [ prefix; txt ":" ]
+                 ; div ~a:[ a_class [ "input-group" ] ] [ html ]
+                 ])
+            %> wrap)
+     | Public.Number (_, answer) ->
+       answer >>= field_overridden_value >|= build_html (CCInt.to_string %> txt)
+     | Public.Select (_, _, answer) ->
+       answer
+       >>= field_overridden_value
+       >|= build_html (SelectOption.Public.name lang %> txt)
+     | Public.Text (_, answer) ->
+       answer >>= field_overridden_value >|= build_html txt)
+;;
+
+let custom_field_to_htmx
+  ?version
+  language
+  is_admin
+  custom_field
+  ?hx_post
+  ?hx_delete
   =
   let required =
     Custom_field.(Public.required custom_field |> Required.value)
   in
-  let to_html disabled m = create ~required ~disabled m language in
+  let overridden_value =
+    custom_field_overridden_value ?hx_delete is_admin language custom_field
+  in
+  let to_html disabled m =
+    create ~required ~disabled ?overridden_value m language
+  in
   let open Custom_field in
   let field_id = Public.id custom_field in
   let htmx_attributes = custom_field_htmx_attributes field_id in
   let field = Public.to_common_field language custom_field in
   let version = CCOption.value ~default:(Public.version custom_field) version in
   let disabled = Public.is_disabled is_admin custom_field in
-  let value =
-    value
-    |> CCOption.value
-         ~default:(custom_field_to_htmx_value language custom_field)
-  in
+  let value = custom_field_to_htmx_value language is_admin custom_field in
   let help = Public.to_common_hint language custom_field in
   { version; field; value; htmx_attributes = Some htmx_attributes; help }
   |> to_html disabled ?hx_post
@@ -264,14 +387,24 @@ let partial_update_to_htmx
   sys_languages
   is_admin
   partial_update
+  ?hx_delete
   ?hx_post
+  ?classnames
+  ?error
+  ?flash_fetcher
+  ?success
   =
-  let open Contact.PartialUpdate in
+  let open Custom_field.PartialUpdate in
   let to_html m =
     create
-      ~required:(is_required partial_update)
-      ?hx_post
+      ~overridden_value:[]
       ~disabled:false
+      ?classnames
+      ?error
+      ?flash_fetcher
+      ?hx_post
+      ~required:(is_required partial_update)
+      ?success
       m
       language
   in
@@ -290,7 +423,10 @@ let partial_update_to_htmx
       (Text (lastname |> User.Lastname.value |> CCOption.pure))
     |> to_html
   | Paused (v, paused) ->
-    create_entity v Field.Paused (Boolean (paused |> User.Paused.value))
+    create_entity
+      v
+      Field.Paused
+      (paused |> User.Paused.value |> CCOption.pure |> boolean)
     |> to_html
   | Language (v, lang) ->
     create_entity
@@ -303,5 +439,15 @@ let partial_update_to_htmx
          ; selected = lang
          })
     |> to_html
-  | Custom field -> custom_field_to_htmx language is_admin field ?hx_post
+  | Custom field ->
+    custom_field_to_htmx
+      ?classnames
+      ?error
+      ?flash_fetcher
+      ?hx_post
+      ?hx_delete
+      ?success
+      language
+      is_admin
+      field
 ;;

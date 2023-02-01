@@ -9,7 +9,8 @@ let save_custom_fields custom_field contact =
   let events =
     [ Custom_field.Created custom_field |> Pool_event.custom_field
     ; Custom_field.Published custom_field |> Pool_event.custom_field
-    ; Custom_field.AnswerUpserted (public, Contact.id contact)
+    ; Custom_field.AnswerUpserted
+        (public, Contact.id contact, Pool_context.Contact contact)
       |> Pool_event.custom_field
     ]
   in
@@ -28,10 +29,10 @@ let update_with_old_version _ () =
     let field = Message.Field.Language in
     let%lwt partial_update =
       let version = 0 |> Pool_common.Version.of_int in
-      Contact.validate_partial_update
+      Custom_field.validate_partial_update
         contact
-        database_label
-        (field, version, [ Pool_common.Language.show language ], None)
+        None
+        (field, version, [ Pool_common.Language.show language ])
     in
     let expected = Error Message.(MeantimeUpdate field) in
     Alcotest.(
@@ -58,10 +59,10 @@ let update_custom_field _ () =
     let new_value = "new value" in
     let%lwt partial_update =
       let version = 0 |> Pool_common.Version.of_int in
-      Contact.validate_partial_update
+      Custom_field.validate_partial_update
         contact
-        database_label
-        (field, version, [ new_value ], Some (Public.id public))
+        (Some public)
+        (field, version, [ new_value ])
     in
     let expected =
       let[@warning "-4"] expected_field =
@@ -69,12 +70,12 @@ let update_custom_field _ () =
         | Public.Text (p, answer) ->
           let answer =
             answer
-            |> CCOption.map (fun a -> Answer.{ a with value = new_value })
+            |> CCOption.map (fun a -> Answer.{ a with value = Some new_value })
           in
           Public.Text (p, answer)
         | _ -> failwith "Wrong field type"
       in
-      Ok Contact.PartialUpdate.(Custom expected_field |> increment_version)
+      Ok Custom_field.PartialUpdate.(Custom expected_field |> increment_version)
     in
     Alcotest.(
       check
@@ -103,11 +104,11 @@ let partial_update_exec
     let field = Public.to_common_field language public in
     let%lwt partial_update =
       let version = 0 |> Pool_common.Version.of_int in
-      Contact.validate_partial_update
+      Custom_field.validate_partial_update
         ?is_admin
         contact
-        database_label
-        (field, version, [ value ], Some (Public.id public))
+        (Some public)
+        (field, version, [ value ])
     in
     Alcotest.(
       check
@@ -130,26 +131,22 @@ let update_custom_field_with_invalid_answer _ () =
 
 let update_admin_input_only_field_as_user _ () =
   let open Custom_field in
-  let admin =
-    Admin.
-      { Custom_field_test.Data.admin with
-        input_only = true |> InputOnly.create
-      }
+  let custom_field =
+    Custom_field_test.Data.custom_text_field
+      ~admin_input_only:(AdminInputOnly.create true)
+      ()
   in
-  let custom_field = Custom_field_test.Data.custom_text_field ~admin () in
   let expected = Error Message.NotEligible in
-  partial_update_exec ~custom_field expected ()
+  partial_update_exec ~is_admin:false ~custom_field expected ()
 ;;
 
-let update_non_overwrite_field_as_admin _ () =
+let update_non_override_field_as_admin _ () =
   let open Custom_field in
-  let admin =
-    Admin.
-      { Custom_field_test.Data.admin with
-        overwrite = false |> Overwrite.create
-      }
+  let custom_field =
+    Custom_field_test.Data.custom_text_field
+      ~admin_override:(AdminOverride.create false)
+      ()
   in
-  let custom_field = Custom_field_test.Data.custom_text_field ~admin () in
   let expected = Error Message.NotEligible in
   partial_update_exec ~is_admin:true ~custom_field expected ()
 ;;
@@ -162,7 +159,7 @@ let set_value_of_none_required_field_to_null _ () =
     let public = Custom_field_test.Data.to_public custom_field in
     match public with
     | Public.Text (public, _) ->
-      Contact.PartialUpdate.(
+      Custom_field.PartialUpdate.(
         Custom (Public.Text (public, None)) |> increment_version)
       |> CCResult.pure
     | _ -> failwith "Invailid field type "

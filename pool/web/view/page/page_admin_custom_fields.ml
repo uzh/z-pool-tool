@@ -187,6 +187,7 @@ let field_form
   tenant_languages
   flash_fetcher
   =
+  let open CCFun in
   let open Custom_field in
   let action =
     match custom_field with
@@ -227,8 +228,7 @@ let field_form
   in
   let validation_subform =
     let current_values =
-      custom_field
-      |> CCOption.map_or ~default:[] (fun f -> f |> validation_strings)
+      custom_field |> CCOption.map_or ~default:[] validation_strings
     in
     let rule_input field_type name input_type value disabled =
       let prefixed_name =
@@ -552,24 +552,25 @@ let field_form
               Message.Field.AdminHint
               ~orientation:`Horizontal
               ~value:
-                (value (fun f ->
-                   (f |> admin).Admin.hint
-                   |> CCOption.map_or ~default:"" Admin.Hint.value))
+                (value
+                   (admin_hint %> CCOption.map_or ~default:"" AdminHint.value))
               ~flash_fetcher
-          ; checkbox_element Message.Field.Overwrite (fun f ->
-              (f |> admin).Admin.overwrite |> Admin.Overwrite.value)
+          ; checkbox_element
+              Message.Field.Override
+              (admin_override %> AdminOverride.value)
           ; checkbox_element
               ~disabled:
                 (custom_field
-                |> CCOption.map_or ~default:false (fun f ->
-                     (f |> admin).Admin.view_only |> Admin.ViewOnly.value))
+                |> CCOption.map_or
+                     ~default:false
+                     (admin_view_only %> AdminViewOnly.value))
               ~help:Pool_common.I18n.CustomFieldAdminInputOnly
               Message.Field.AdminInputOnly
-              (fun f -> (f |> admin).Admin.input_only |> Admin.InputOnly.value)
+              (admin_input_only %> AdminInputOnly.value)
           ; checkbox_element
               ~help:Pool_common.I18n.CustomFieldAdminViewOnly
               Message.Field.AdminViewOnly
-              (fun f -> (f |> admin).Admin.view_only |> Admin.ViewOnly.value)
+              (admin_view_only %> AdminViewOnly.value)
           ]
       ; div
           ~a:[ a_class [ "stack" ] ]
@@ -577,12 +578,11 @@ let field_form
               ~disabled:
                 (custom_field
                 |> CCOption.map_or ~default:false (fun f ->
-                     (f |> admin).Admin.input_only |> Admin.InputOnly.value
+                     f |> admin_input_only |> AdminInputOnly.value
                      || FieldType.(equal (f |> field_type) MultiSelect)))
               Message.Field.Required
-              (fun f -> f |> required |> Required.value)
-          ; checkbox_element Message.Field.Disabled (fun f ->
-              f |> disabled |> Disabled.value)
+              (required %> Required.value)
+          ; checkbox_element Message.Field.Disabled (disabled %> Disabled.value)
           ; div
               ~a:[ a_class [ "flexrow" ] ]
               [ submit_element

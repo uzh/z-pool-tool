@@ -44,9 +44,9 @@ let parse_urlencoded req database_label language urlencoded contact_id =
     |> Lwt_result.lift
   in
   let* value =
-    match field_id, find_param_opt Htmx.multi_select_key with
-    | Some _, Some param when CCString.equal param Htmx.multi_select_value ->
-      HttpUtils.htmx_urlencoded_list field_str req |> Lwt_result.ok
+    match field_id, find_param_opt Htmx.multi_select_htmx_key with
+    | Some _, Some param when CCString.equal param Htmx.multi_select_htmx_value
+      -> HttpUtils.htmx_urlencoded_list field_str req |> Lwt_result.ok
     | _ ->
       find_param_list field_str
       |> CCOption.to_result InvalidHtmxRequest
@@ -56,7 +56,6 @@ let parse_urlencoded req database_label language urlencoded contact_id =
 ;;
 
 let update ?contact req =
-  let is_admin = CCOption.is_some contact in
   let open Utils.Lwt_result.Infix in
   let open Pool_common.Message in
   let%lwt urlencoded =
@@ -64,8 +63,10 @@ let update ?contact req =
     ||> HttpUtils.format_htmx_request_boolean_values Field.[ Paused |> show ]
   in
   let result
-    ({ Pool_context.database_label; language; query_language; _ } as context)
+    ({ Pool_context.database_label; language; query_language; user; _ } as
+    context)
     =
+    let is_admin = Pool_context.user_is_admin user in
     let path_with_lang = HttpUtils.path_with_language query_language in
     let with_redirect path res =
       res |> CCResult.map_err (fun err -> err, path_with_lang path)
@@ -102,23 +103,34 @@ let update ?contact req =
         Contact.(contact |> id)
       ||> with_redirect back_path
     in
+    let* custom_field =
+      field_id
+      |> CCOption.map_or ~default:(Lwt_result.return None) (fun id ->
+           Custom_field.find_by_contact
+             ~is_admin
+             database_label
+             (Contact.id contact)
+             id
+           ||> with_redirect back_path
+           >|+ CCOption.pure)
+    in
     let%lwt response =
       let open CCResult in
       let html_response html =
         [ html ] |> HttpUtils.multi_html_to_plain_text_response |> Lwt.return
       in
       let%lwt partial_update =
-        Contact.validate_partial_update
+        Custom_field.validate_partial_update
           ~is_admin
           contact
-          database_label
-          (field, version, value, field_id)
+          custom_field
+          (field, version, value)
       in
       let tags = Logger.req req in
       let events =
         let open CCResult in
         partial_update
-        >>= Cqrs_command.Contact_command.Update.handle ~tags contact
+        >>= Cqrs_command.Contact_command.Update.handle ~tags user contact
       in
       let htmx_element () =
         let hx_post =
@@ -129,6 +141,10 @@ let update ?contact req =
           |> path_with_lang
           |> Sihl.Web.externalize_path
         in
+        let hx_delete =
+          field_id
+          |> CCOption.map (Htmx.admin_profile_hx_delete (Contact.id contact))
+        in
         let open Pool_common.Message in
         match partial_update with
         | Ok partial_update ->
@@ -138,6 +154,7 @@ let update ?contact req =
             is_admin
             partial_update
             ~hx_post
+            ?hx_delete
             ~success:true
             ()
           |> html_response
@@ -157,7 +174,7 @@ let update ?contact req =
              Htmx.Text (value |> CCList.head_opt) |> create_htmx
            | Field.Lastname ->
              Htmx.Text (value |> CCList.head_opt) |> create_htmx
-           | Field.Paused -> Htmx.Boolean false |> create_htmx
+           | Field.Paused -> Htmx.Boolean (Some false) |> create_htmx
            | Field.Language ->
              Htmx.Select
                Htmx.

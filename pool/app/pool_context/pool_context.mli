@@ -3,6 +3,8 @@ type user =
   | Contact of Contact.t
   | Guest
 
+val equal_user : user -> user -> bool
+val pp_user : Format.formatter -> user -> unit
 val sexp_of_user : user -> Ppx_sexp_conv_lib.Sexp.t
 val admin : Admin.t -> user
 val contact : Contact.t -> user
@@ -73,3 +75,4 @@ end
 val sexp_of_t : t -> Sexplib.Sexp.t
 val show_log : t -> string
 val is_from_root : t -> bool
+val user_is_admin : user -> bool

@@ -334,7 +334,7 @@ let count_contacts req =
               (fun str -> str |> Filter.query_of_string >|= CCOption.pure)
          |> Lwt_result.lift
        in
-       Contact.count_filtered
+       Filter.count_filtered_contacts
          database_label
          (experiment.Experiment.id |> Experiment.Id.to_common)
          query

@@ -99,7 +99,8 @@ let field_to_string =
   | Operator -> "Operator"
   | Operators -> "Operatoren"
   | Overbook -> "Überbuchen"
-  | Overwrite -> "overwrite"
+  | OverriddenValue -> "Überschriebene Kontakt-Antwort"
+  | Override -> "Überschreiben"
   | Page -> "Seite"
   | Participant | Participants -> "Teilnehmer"
   | ParticipantCount -> "Anzahl Teilnehmer"
@@ -288,6 +289,8 @@ let rec error_to_string = function
   | FilterMustNotContainTemplate -> "Filter darf keine Template enthalten."
   | FilterAndOrMustNotBeEmpty ->
     "'And' und 'Or' Prädikate dürfen nicht leer sein."
+  | FilterListValueMustNotBeEmpty ->
+    "Es muss mindestens eine Option angewählt werden."
   | FollowUpIsEarlierThanMain ->
     "Folgesession kann nicht vor Hauptsession starten."
   | HtmxVersionNotFound field ->

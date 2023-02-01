@@ -28,25 +28,22 @@ module Data = struct
     |> CCList.map (fun (f, l) -> f, l |> CCList.pure)
   ;;
 
-  let admin =
-    let admin_hint = Admin.Hint.create admin_hint |> get in
-    Admin.
-      { hint = Some admin_hint
-      ; overwrite = Overwrite.create false
-      ; view_only = ViewOnly.create false
-      ; input_only = InputOnly.create false
-      }
-  ;;
+  let admin_hint = AdminHint.create admin_hint |> get |> CCOption.pure
+  let admin_override = AdminOverride.create false
+  let admin_view_only = AdminViewOnly.create false
+  let admin_input_only = AdminInputOnly.create false
 
   let custom_field
     ?published_at
     ?validation
-    ?(admin = admin)
     ?(required = required)
+    ?(admin_override = AdminOverride.create false)
+    ?(admin_input_only = AdminInputOnly.create false)
     field_type
     =
     let name = Name.create sys_languages name |> get in
     let hint = Hint.create hint |> get in
+    let admin_view_only = AdminViewOnly.create false in
     Custom_field.create
       ~id:(Id.create ())
       ?published_at
@@ -58,12 +55,28 @@ module Data = struct
       required
       disabled
       None
-      admin
+      admin_hint
+      admin_override
+      admin_view_only
+      admin_input_only
     |> CCResult.get_exn
   ;;
 
-  let custom_text_field ?published_at ?validation ?admin ?required () =
-    custom_field ?published_at ?validation ?admin ?required FieldType.Text
+  let custom_text_field
+    ?published_at
+    ?validation
+    ?admin_override
+    ?admin_input_only
+    ?required
+    ()
+    =
+    custom_field
+      ?published_at
+      ?validation
+      ?admin_override
+      ?admin_input_only
+      ?required
+      FieldType.Text
   ;;
 
   let custom_select_field () = custom_field ~validation:[] FieldType.Select
@@ -85,19 +98,23 @@ module Data = struct
     let hint = hint m in
     let name = name m in
     let required = required m in
-    let admin_overwrite = (admin m).Admin.overwrite in
-    let admin_input_only = (admin m).Admin.input_only in
+    let admin_override = admin_override m in
+    let admin_input_only = admin_input_only m in
     let version = 0 |> Pool_common.Version.of_int in
+    let admin_value = None in
     match field_type with
     | FieldType.Boolean ->
-      let answer = Answer.{ id = answer_id; value = true } |> CCOption.pure in
+      let answer =
+        { Answer.id = answer_id; value = Some true; admin_value }
+        |> CCOption.pure
+      in
       Public.Boolean
         ( { Public.id
           ; name
           ; hint
           ; validation = Validation.pure
           ; required
-          ; admin_overwrite
+          ; admin_override
           ; admin_input_only
           ; version
           }
@@ -106,9 +123,8 @@ module Data = struct
       let answer =
         field_options
         |> CCList.head_opt
-        |> CCOption.map (fun option ->
-             Answer.{ id = answer_id; value = option } |> CCList.pure)
-        |> CCOption.value ~default:[]
+        |> CCOption.map CCList.pure
+        |> Answer.create ~id:answer_id
       in
       Public.MultiSelect
         ( { Public.id
@@ -116,14 +132,16 @@ module Data = struct
           ; hint
           ; validation = Validation.pure
           ; required
-          ; admin_overwrite
+          ; admin_override
           ; admin_input_only
           ; version
           }
         , field_options
-        , answer )
+        , Some answer )
     | FieldType.Number ->
-      let answer = Answer.{ id = answer_id; value = 3 } |> CCOption.pure in
+      let answer =
+        { Answer.id = answer_id; value = Some 3; admin_value } |> CCOption.pure
+      in
       let validation = validation_schema Validation.Number.schema in
       Public.Number
         ( { Public.id
@@ -131,7 +149,7 @@ module Data = struct
           ; hint
           ; validation
           ; required
-          ; admin_overwrite
+          ; admin_override
           ; admin_input_only
           ; version
           }
@@ -139,8 +157,8 @@ module Data = struct
     | FieldType.Select ->
       let answer =
         CCList.head_opt field_options
-        |> CCOption.map (fun option ->
-             Answer.{ id = answer_id; value = option })
+        |> fun option ->
+        { Answer.id = answer_id; value = option; admin_value } |> CCOption.pure
       in
       Public.Select
         ( { Public.id
@@ -148,14 +166,17 @@ module Data = struct
           ; hint
           ; validation = Validation.pure
           ; required
-          ; admin_overwrite
+          ; admin_override
           ; admin_input_only
           ; version
           }
         , field_options
         , answer )
     | FieldType.Text ->
-      let answer = Answer.{ id = answer_id; value = "test" } |> CCOption.pure in
+      let answer =
+        { Answer.id = answer_id; value = Some "test"; admin_value }
+        |> CCOption.pure
+      in
       let validation = validation_schema Validation.Text.schema in
       Public.Text
         ( { Public.id
@@ -163,7 +184,7 @@ module Data = struct
           ; hint
           ; validation
           ; required
-          ; admin_overwrite
+          ; admin_override
           ; admin_input_only
           ; version
           }
@@ -259,7 +280,7 @@ let update_type_of_published_field () =
     let data =
       Message.
         [ Field.(FieldType |> show), [ Custom_field.FieldType.(Number |> show) ]
-        ; Field.(AdminHint |> show), [ Data.admin_hint ]
+        ; Field.(AdminHint |> show), [ "hint" ]
         ]
     in
     data
@@ -307,27 +328,6 @@ let create_option () =
       "succeeds"
       expected
       events)
-;;
-
-let create_with_missing_admin_option () =
-  let open Custom_field.Admin in
-  let overwrite = true |> Overwrite.create in
-  let view_only = true |> ViewOnly.create in
-  let hint = None in
-  let admin =
-    let input_only = false |> InputOnly.create in
-    create hint overwrite view_only input_only
-  in
-  let expected =
-    let input_only = true |> InputOnly.create in
-    create hint overwrite view_only input_only
-  in
-  Alcotest.(
-    check
-      (result Test_utils.custom_field_admin Test_utils.error)
-      "succeeds"
-      admin
-      expected)
 ;;
 
 let delete_published_field () =

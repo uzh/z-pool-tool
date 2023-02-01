@@ -5,6 +5,7 @@ module UpdateMultiple : sig
 
   val handle
     :  ?tags:Logs.Tag.set
+    -> Pool_context.user
     -> Pool_common.Id.t
     -> t
     -> (Pool_event.t, Pool_common.Message.error) result
@@ -13,9 +14,11 @@ module UpdateMultiple : sig
 end = struct
   type t = Custom_field.Public.t
 
-  let handle ?(tags = Logs.Tag.empty) contact_id f =
+  let handle ?(tags = Logs.Tag.empty) user contact_id f =
     Logs.info ~src (fun m -> m "Handle command UpdateMultiple" ~tags);
-    Ok (Custom_field.AnswerUpserted (f, contact_id) |> Pool_event.custom_field)
+    Ok
+      (Custom_field.AnswerUpserted (f, contact_id, user)
+      |> Pool_event.custom_field)
   ;;
 
   let effects id =

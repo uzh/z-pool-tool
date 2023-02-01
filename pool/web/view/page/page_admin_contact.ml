@@ -67,12 +67,12 @@ let detail Pool_context.{ language; _ } contact =
 ;;
 
 let edit
-  Pool_context.{ language; csrf; query_language; _ }
+  Pool_context.{ language; csrf; query_language; user; _ }
   tenant_languages
   contact
   custom_fields
   =
-  let is_admin = true in
+  let is_admin = Pool_context.user_is_admin user in
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
     [ h1 ~a:[ a_class [ "heading-1" ] ] [ txt (Contact.fullname contact) ]

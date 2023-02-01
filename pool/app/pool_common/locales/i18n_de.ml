@@ -130,6 +130,9 @@ let hint_to_string = function
   | ContactOnWaitingList ->
     "Sie stehen auf der Warteliste. Das Rekrutierungsteam wird Sie einer \
      Session zuweisen."
+  | ContactProfileVisibleOverride ->
+    "Wenn Sie diese Werte überschreiben werden die Änderungen dem Kontakt \
+     angezeigt."
   | CustomFieldAdminInputOnly ->
     Format.asprintf
       "Diese Option schliesst \"%s\" aus."
@@ -147,6 +150,7 @@ let hint_to_string = function
   | CustomFieldSessionModel -> "Anpassbare Attribute für Sessions."
   | CustomFieldGroups ->
     {|Gruppen, nach denen benutzerdefinierte Felder gruppiert werden können. Das Gruppieren von benutzerdefinierten Feldern hat keine keine Auswirkungen auf ihre Funktionalität. Sie hat lediglich grafische Auswirkungen.|}
+  | CustomFieldNoContactValue -> "Durch Kontakt nicht beantwortet"
   | CustomFieldOptionsCompleteness ->
     "Vergewissern Sie sich, dass diese Liste vollständig ist, oder fügen Sie \
      eine Option hinzu, die Sie gewählt werden kann, wenn keine der anderen \

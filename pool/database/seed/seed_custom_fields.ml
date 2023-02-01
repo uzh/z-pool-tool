@@ -8,14 +8,10 @@ let create pool =
   let make_names values =
     values |> Name.create system_languages |> get_or_failwith
   in
-  let admin =
-    Admin.
-      { hint = None
-      ; overwrite = true |> Overwrite.create
-      ; view_only = false |> ViewOnly.create
-      ; input_only = false |> InputOnly.create
-      }
-  in
+  let admin_hint = None in
+  let admin_override = true |> AdminOverride.create in
+  let admin_view_only = false |> AdminViewOnly.create in
+  let admin_input_only = false |> AdminInputOnly.create in
   let create_group (model, name) =
     let name = make_names name in
     Custom_field.Group.create model name
@@ -177,7 +173,10 @@ let create pool =
             required
             disabled
             (group |> CCOption.map (fun g -> g.Group.id))
-            admin
+            admin_hint
+            admin_override
+            admin_view_only
+            admin_input_only
           |> get_or_failwith
         in
         let create_field_event = Custom_field.Created field in

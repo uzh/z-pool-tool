@@ -129,7 +129,9 @@ module Field = struct
     | Operator [@name "operator"] [@printer go "operator"]
     | Operators [@name "operators"] [@printer go "operators"]
     | Overbook [@name "overbook"] [@printer go "overbook"]
-    | Overwrite [@name "overwrite"] [@printer go "overwrite"]
+    | OverriddenValue [@name "overridden_value"]
+        [@printer go "overridden_value"]
+    | Override [@name "override"] [@printer go "override"]
     | Page [@name "page"] [@printer go "page"]
     | Participant [@name "participant"] [@printer go "participant"]
     | ParticipantCount [@name "participant_count"]
@@ -250,6 +252,7 @@ type error =
   | FieldRequiresCheckbox of (Field.t * Field.t)
   | FilterMustNotContainTemplate
   | FilterAndOrMustNotBeEmpty
+  | FilterListValueMustNotBeEmpty
   | FollowUpIsEarlierThanMain
   | HtmxVersionNotFound of string
   | Invalid of Field.t
