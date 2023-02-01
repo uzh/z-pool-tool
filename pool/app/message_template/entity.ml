@@ -7,27 +7,6 @@ end
 module Label = struct
   let go m fmt _ = Format.pp_print_string fmt m
 
-  (** ConfirmationWithoutSelfRegistration
-
-      - Your expression of interest to the experiment.
-      - We have received your expression of interest to the experiment and \
-        will contact you shortly.
-
-      ImportInvitation
-
-      - We have updated our management software for organizing experiments.
-
-      InvitationWithoutSelfRegistrationSubject
-
-      - We would like to invite you to an upcoming the experiment.
-
-      ExperimentFinish
-
-      - Please complete the participants data.
-
-      SessionFinishSubject
-
-      - Please complete the participants data. *)
   type t =
     | AssignmentConfirmation [@name "assignment_confirmation"]
         [@printer go "assignment_confirmation"]
