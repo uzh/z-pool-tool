@@ -7,6 +7,7 @@ module Data = struct
       [ Language |> show, [ "DE" ]
       ; EmailSubject |> show, [ "Subject" ]
       ; EmailText |> show, [ "Lorem ipsum" ]
+      ; PlainText |> show, [ "Lorem ipsum" ]
       ; SmsText |> show, [ "Lorem ipsum" ]
       ]
   ;;
