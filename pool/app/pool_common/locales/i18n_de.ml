@@ -203,6 +203,7 @@ let hint_to_string = function
      Experimente nicht mehr angezeigt, obwohl im E-Mail aufgeführt. Sobald \
      alle verfügbaren Plätze einer Session belegt sind wird es nichtmehr \
      angezeigt."
+  | FilterContacts -> "Definieren Sie die Kriterien, anhand welchen Kontakte an dieses Experiment eingeladen werden."
   | I18nText str -> str
   | LocationFiles ->
     "Zusatzinformationen zum Standort, wie z.B. eine Wegbeschreibung. \

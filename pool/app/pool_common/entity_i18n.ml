@@ -117,6 +117,7 @@ type hint =
   | ExperimentSessions
   | ExperimentSessionsPublic
   | ExperimentWaitingList
+  | FilterContacts
   | I18nText of string
   | LocationFiles
   | Locations

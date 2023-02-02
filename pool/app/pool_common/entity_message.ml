@@ -378,6 +378,7 @@ type control =
   | Edit of Field.t option
   | Enable
   | Enroll
+  | Filter of Field.t option
   | Login
   | Manage of Field.t
   | More

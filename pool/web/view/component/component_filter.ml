@@ -559,14 +559,14 @@ let filter_form csrf language param key_list template_list =
     match param with
     | Template _ ->
       let open CCOption.Infix in
-      let open Pool_common.Message in
+      let open Pool_common in
       ( Component_input.input_element
           ?value:(filter >>= fun filter -> filter.title >|= Title.value)
           ~required:true
           language
           `Text
-          Field.Title
-      , [ a_user_data "hx-params" Field.(show Title) ] )
+          Message.Field.Title
+      , [ a_user_data "hx-params" Message.Field.(show Title) ] )
     | Experiment _ -> txt "", []
   in
   let filter_id =
@@ -578,21 +578,16 @@ let filter_form csrf language param key_list template_list =
          Pool_common.[ a_user_data Message.Field.(show filter) (Id.value id) ])
   in
   div
-    ~a:[ a_class [ "stack" ] ]
+    ~a:[ a_class [ "stack-sm" ] ]
     [ result_counter
     ; div
-        ~a:
-          ([ a_user_data "action" action
-           ; a_id "filter-form"
-           ; a_class [ "stack" ]
-           ]
-          @ filter_id)
+        ~a:([ a_user_data "action" action; a_id "filter-form" ] @ filter_id)
         [ div ~a:[ a_id notification_id ] []
         ; Component_input.csrf_element csrf ()
         ; title_input
         ; predicates
         ; div
-            ~a:[ a_class [ "flexrow"; "align-center" ] ]
+            ~a:[ a_class [ "flexrow"; "align-center"; "gap" ] ]
             [ delete_form
             ; Component_input.submit_element
                 language

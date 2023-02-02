@@ -195,6 +195,8 @@ let hint_to_string = function
     "Please note: Maybe sessions or complete experiments are no longer \
      displayed, although listed in the email. Once all the available seats are \
      assigned a session, it is no longer displayed."
+  | FilterContacts ->
+    "Define the criteria by which contacts will be invited to this experiment."
   | LocationFiles ->
     "Additional information about the location, such as directions. Contacts \
      who are participating in a session at this location can access access \
