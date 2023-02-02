@@ -1,6 +1,6 @@
 {
   "name": "pool",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "license": "GPL-2.0-or-later",
   "scripts": {
     "build": "export NODE_OPTIONS=--trace-warnings; parcel build resources/index.js resources/admin.js resources/images/** --dist-dir public --public-url $PREFIX_PATH/assets/",
