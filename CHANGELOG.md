@@ -4,6 +4,15 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/pool/tree/HEAD)
 
+### Added
+
+- add wysiwyg editor
+- add plain text email
+- hide overriden admin values from contacts
+- only show user value when admin_override is disabled
+- display a hint or answers of the contact when overridden
+- allow non required fields to be cleared
+
 ## [0.1.0](https://github.com/uzh/pool/tree/0.1.0) - 2023-01-23
 
 ### Added
