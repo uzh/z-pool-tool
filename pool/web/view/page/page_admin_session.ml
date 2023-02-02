@@ -14,33 +14,18 @@ let session_path experiment session =
     (Pool_common.Id.value session.Session.id)
 ;;
 
-let location_select options selected ?(attributes = []) () =
+let location_select language options selected () =
   let open Pool_location in
-  let name = Message.Field.(show Location) in
-  div
-    ~a:[ a_class [ "form-group" ] ]
-    [ label [ txt (name |> CCString.capitalize_ascii) ]
-    ; div
-        ~a:[ a_class [ "select" ] ]
-        [ select
-            ~a:([ a_name name ] @ attributes)
-            (CCList.map
-               (fun l ->
-                 let is_selected =
-                   selected
-                   |> CCOption.map (fun selected ->
-                        if Pool_location.equal selected l
-                        then [ a_selected () ]
-                        else [])
-                   |> CCOption.value ~default:[]
-                 in
-                 option
-                   ~a:
-                     ([ a_value (l.id |> Pool_location.Id.value) ] @ is_selected)
-                   (txt (l.name |> Pool_location.Name.value)))
-               options)
-        ]
-    ]
+  selector
+    ~add_empty:true
+    ~option_formatter:(fun (l : t) -> l.name |> Name.value)
+    ~required:true
+    language
+    Message.Field.Location
+    (fun (l : t) -> l.id |> Id.value)
+    options
+    selected
+    ()
 ;;
 
 let session_form
@@ -160,7 +145,11 @@ let session_form
               (value (fun s ->
                  s.description |> CCOption.map_or ~default:"" Description.value))
             ~flash_fetcher
-        ; location_select locations None ()
+        ; location_select
+            language
+            locations
+            (session |> CCOption.map (fun s -> s.location))
+            ()
         ; input_element
             language
             `Number
