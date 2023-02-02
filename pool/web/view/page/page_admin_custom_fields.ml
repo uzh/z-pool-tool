@@ -751,8 +751,6 @@ let index field_list group_list current_model Pool_context.{ language; csrf; _ }
     let open Custom_field.Model in
     match current_model with
     | Contact -> CustomFieldContactModel
-    | Experiment -> CustomFieldExperimentModel
-    | Session -> CustomFieldSessionModel
   in
   let rows =
     let open Custom_field in
