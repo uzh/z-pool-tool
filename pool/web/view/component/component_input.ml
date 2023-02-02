@@ -455,6 +455,7 @@ let selector
   ?(add_empty = false)
   ?(attributes = [])
   ?(classnames = [])
+  ?(hide_label = false)
   ?(required = false)
   ?(read_only = false)
   ?error
@@ -538,7 +539,7 @@ let selector
   let error = Elements.error language error in
   div
     ~a:[ a_class (Elements.group_class classnames `Vertical) ]
-    ([ label [ input_label |> txt ]
+    ([ (if hide_label then txt "" else label [ input_label |> txt ])
      ; div
          ~a:[ a_class [ "select" ] ]
          [ select

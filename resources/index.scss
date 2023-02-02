@@ -49,7 +49,7 @@ $icons-font-path: "../node_modules/@econ/frontend-framework/dist/font";
 
         &[data-predicate="and"],
         &[data-predicate="or"] {
-            &>.predicate-wrapper {
+            &>.predicate-inner>.predicate-wrapper {
                 padding-left: $space-sm;
                 border-left: 2px solid $grey-border;
             }
@@ -58,10 +58,6 @@ $icons-font-path: "../node_modules/@econ/frontend-framework/dist/font";
 
     [data-delete-predicate] {
         color: $red;
-        position: absolute;
-        top: 0.5rem;
-        right: 1rem;
-        margin: 0;
         cursor: pointer;
     }
 

@@ -344,6 +344,7 @@ let predicate_type_select
   Component_input.selector
     ~option_formatter:to_label
     ~attributes
+    ~hide_label:true
     language
     Pool_common.Message.Field.Predicate
     show_filter_label
@@ -450,23 +451,29 @@ let rec predicate_form
       |> CCList.pure
   in
   let data_attr = [ a_user_data "predicate" Filter.Human.(show query) ] in
+  let predicate_html =
+    div
+      ~a:[ a_class [ stack; "grow"; "predicate-inner" ] ]
+      [ predicate_type_select
+          language
+          param
+          predicate_identifier
+          identifier
+          templates_disabled
+          ~selected
+          ()
+      ; div ~a:[ a_class [ "predicate-wrapper"; stack ] ] predicate_form
+      ]
+  in
   div
     ~a:
-      ([ a_class [ stack; inset; "border"; "predicate" ]
+      ([ a_class [ inset; "border"; "predicate"; "flexrow"; "flex-gap-sm" ]
        ; a_id predicate_identifier
        ]
       @ data_attr)
-    ([ predicate_type_select
-         language
-         param
-         predicate_identifier
-         identifier
-         templates_disabled
-         ~selected
-         ()
-     ; div ~a:[ a_class [ "predicate-wrapper"; stack ] ] predicate_form
-     ]
-    @ if CCList.length identifier > 1 then [ delete_button () ] else [])
+    [ predicate_html
+    ; (if CCList.length identifier > 1 then delete_button () else txt "")
+    ]
 ;;
 
 let filter_form csrf language param key_list template_list =
@@ -580,7 +587,7 @@ let filter_form csrf language param key_list template_list =
          Pool_common.[ a_user_data Message.Field.(show filter) (Id.value id) ])
   in
   div
-    ~a:[ a_class [ "stack-sm" ] ]
+    ~a:[ a_class [ stack ] ]
     [ result_counter
     ; div
         ~a:([ a_user_data "action" action; a_id "filter-form" ] @ filter_id)
