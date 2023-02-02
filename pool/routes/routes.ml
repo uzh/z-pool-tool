@@ -267,9 +267,9 @@ module Admin = struct
               ~middlewares:[ Access.assign_assistant ]
               assign_assistant
           ; post
-              "divest"
-              ~middlewares:[ Access.divest_assistant ]
-              divest_assistant
+              "unassign"
+              ~middlewares:[ Access.unassign_assistant ]
+              unassign_assistant
           ]
         in
         [ get "" ~middlewares:[ Access.index_assistants ] index_assistants
@@ -284,9 +284,9 @@ module Admin = struct
               ~middlewares:[ Access.assign_experimenter ]
               assign_experimenter
           ; post
-              "divest"
-              ~middlewares:[ Access.divest_experimenter ]
-              divest_experimenter
+              "unassign"
+              ~middlewares:[ Access.unassign_experimenter ]
+              unassign_experimenter
           ]
         in
         [ get "" ~middlewares:[ Access.index_experimenter ] index_experimenter

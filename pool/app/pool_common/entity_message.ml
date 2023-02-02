@@ -333,7 +333,7 @@ type success =
   | RemovedFromWaitingList
   | Rescheduled of Field.t
   | RoleAssigned
-  | RoleDivested
+  | RoleUnassigned
   | SentList of Field.t
   | SettingsUpdated
   | Stopped of Field.t
@@ -374,7 +374,6 @@ type control =
   | Delete of Field.t option
   | Descending
   | Disable
-  | Divest of Field.t option
   | Duplicate of Field.t option
   | Edit of Field.t option
   | Enable
@@ -397,6 +396,7 @@ type control =
   | Show
   | SignUp
   | Stop of Field.t option
+  | Unassign of Field.t option
   | Update of Field.t option
   | UpdateOrder
 [@@deriving eq, show, yojson, variants, sexp_of]

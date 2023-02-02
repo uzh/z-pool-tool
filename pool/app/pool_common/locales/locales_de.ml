@@ -201,7 +201,7 @@ let success_to_string : success -> string = function
   | Rescheduled field ->
     field_message "" (field_to_string field) "wurden erfolgreich verschoben."
   | RoleAssigned -> "Rolle wurde zugewiesen."
-  | RoleDivested -> "Rolle wurde entzogen."
+  | RoleUnassigned -> "Rolle wurde entzogen."
   | SentList field ->
     field_message "" (field_to_string field) "wurden erfolgreich verschickt."
   | SettingsUpdated -> "Die Einstellungen wurden erfolgreich gespeichert."
@@ -422,7 +422,6 @@ let control_to_string = function
   | Delete field -> format_submit "löschen" field
   | Descending -> "absteigend"
   | Disable -> format_submit "deaktivieren" None
-  | Divest field -> format_submit "entziehen" field
   | Duplicate field -> format_submit "duplizieren" field
   | Edit field -> format_submit "bearbeiten" field
   | Enable -> format_submit "aktivieren" None
@@ -449,6 +448,7 @@ let control_to_string = function
   | Show -> "anzeigen"
   | SignUp -> format_submit "anmelden" None
   | Stop field -> format_submit "stoppen" field
+  | Unassign field -> format_submit "entfernen" field
   | Update field -> format_submit "aktualisieren" field
   | UpdateOrder -> "Reihenfolge anpassen"
 ;;

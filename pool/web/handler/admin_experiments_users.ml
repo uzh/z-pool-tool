@@ -56,8 +56,8 @@ let toggle_role action req =
         (Experiment.Id.value experiment_id)
     in
     (match action with
-     | `AssignAssistant | `DivestAssistant -> "assistants"
-     | `AssignExperimenter | `DivestExperimenter -> "experimenter")
+     | `AssignAssistant | `UnassignAssistant -> "assistants"
+     | `AssignExperimenter | `UnassignExperimenter -> "experimenter")
     |> base_path
   in
   let result { Pool_context.database_label; _ } =
@@ -70,7 +70,7 @@ let toggle_role action req =
          let open Pool_common.Message in
          match action with
          | `AssignAssistant | `AssignExperimenter -> RoleAssigned
-         | `DivestAssistant | `DivestExperimenter -> RoleDivested
+         | `UnassignAssistant | `UnassignExperimenter -> RoleUnassigned
        in
        let* events =
          let open Cqrs_command.Experiment_command in
@@ -79,9 +79,9 @@ let toggle_role action req =
          @@
          match action with
          | `AssignAssistant -> AssignAssistant.(handle ~tags update)
-         | `DivestAssistant -> DivestAssistant.(handle ~tags update)
+         | `UnassignAssistant -> UnassignAssistant.(handle ~tags update)
          | `AssignExperimenter -> AssignExperimenter.(handle ~tags update)
-         | `DivestExperimenter -> DivestExperimenter.(handle ~tags update)
+         | `UnassignExperimenter -> UnassignExperimenter.(handle ~tags update)
        in
        let%lwt () = Pool_event.handle_events database_label events in
        Http_utils.redirect_to_with_actions
@@ -93,19 +93,19 @@ let toggle_role action req =
 ;;
 
 let assign_assistant = toggle_role `AssignAssistant
-let divest_assistant = toggle_role `DivestAssistant
+let unassign_assistant = toggle_role `UnassignAssistant
 let assign_experimenter = toggle_role `AssignExperimenter
-let divest_experimenter = toggle_role `DivestExperimenter
+let unassign_experimenter = toggle_role `UnassignExperimenter
 
 module Access : sig
   include Helpers.AccessSig
 
   val index_assistants : Rock.Middleware.t
   val assign_assistant : Rock.Middleware.t
-  val divest_assistant : Rock.Middleware.t
+  val unassign_assistant : Rock.Middleware.t
   val index_experimenter : Rock.Middleware.t
   val assign_experimenter : Rock.Middleware.t
-  val divest_experimenter : Rock.Middleware.t
+  val unassign_experimenter : Rock.Middleware.t
 end = struct
   module Field = Pool_common.Message.Field
   module ExperimentCommand = Cqrs_command.Experiment_command
@@ -121,7 +121,7 @@ end = struct
   let delete = Middleware.Guardian.denied
 
   let index_assistants =
-    ExperimentCommand.[ AssignAssistant.effects; DivestAssistant.effects ]
+    ExperimentCommand.[ AssignAssistant.effects; UnassignAssistant.effects ]
     |> experiment_effects
     |> Middleware.Guardian.validate_generic
   ;;
@@ -132,14 +132,15 @@ end = struct
     |> Middleware.Guardian.validate_generic
   ;;
 
-  let divest_assistant =
-    [ ExperimentCommand.DivestAssistant.effects ]
+  let unassign_assistant =
+    [ ExperimentCommand.UnassignAssistant.effects ]
     |> experiment_effects
     |> Middleware.Guardian.validate_generic
   ;;
 
   let index_experimenter =
-    ExperimentCommand.[ AssignExperimenter.effects; DivestExperimenter.effects ]
+    ExperimentCommand.
+      [ AssignExperimenter.effects; UnassignExperimenter.effects ]
     |> experiment_effects
     |> Middleware.Guardian.validate_generic
   ;;
@@ -150,8 +151,8 @@ end = struct
     |> Middleware.Guardian.validate_generic
   ;;
 
-  let divest_experimenter =
-    [ ExperimentCommand.DivestExperimenter.effects ]
+  let unassign_experimenter =
+    [ ExperimentCommand.UnassignExperimenter.effects ]
     |> experiment_effects
     |> Middleware.Guardian.validate_generic
   ;;

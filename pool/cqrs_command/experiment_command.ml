@@ -195,7 +195,7 @@ end = struct
   ;;
 end
 
-module DivestAssistant : sig
+module UnassignAssistant : sig
   include Common.CommandSig with type t = update_role
 
   val effects : Experiment.Id.t -> BaseGuard.Authorizer.effect list
@@ -203,9 +203,9 @@ end = struct
   type t = update_role
 
   let handle ?(tags = Logs.Tag.empty) { admin; experiment } =
-    Logs.info ~src (fun m -> m "Handle command DivestAssistant" ~tags);
+    Logs.info ~src (fun m -> m "Handle command UnassignAssistant" ~tags);
     Ok
-      [ Experiment.AssistantDivested (experiment, admin)
+      [ Experiment.AssistantUnassigned (experiment, admin)
         |> Pool_event.experiment
       ]
   ;;
@@ -241,7 +241,7 @@ end = struct
   ;;
 end
 
-module DivestExperimenter : sig
+module UnassignExperimenter : sig
   include Common.CommandSig with type t = update_role
 
   val effects : Experiment.Id.t -> BaseGuard.Authorizer.effect list
@@ -249,9 +249,9 @@ end = struct
   type t = update_role
 
   let handle ?(tags = Logs.Tag.empty) { admin; experiment } =
-    Logs.info ~src (fun m -> m "Handle command DivestExperimenter" ~tags);
+    Logs.info ~src (fun m -> m "Handle command UnassignExperimenter" ~tags);
     Ok
-      [ Experiment.ExperimenterDivested (experiment, admin)
+      [ Experiment.ExperimenterUnassigned (experiment, admin)
         |> Pool_event.experiment
       ]
   ;;

@@ -6,7 +6,7 @@ let role_assignment
   field
   Pool_context.{ language; csrf; _ }
   ~assign
-  ~divest
+  ~unassign
   ~applicable:available
   ~current:existing
   =
@@ -30,7 +30,7 @@ let role_assignment
     let url, control, style =
       match action with
       | `Assign -> assign, Message.(Assign None), `Success
-      | `Divest -> divest, Message.(Divest None), `Error
+      | `Unassign -> unassign, Message.(Unassign None), `Error
     in
     div
       ~a:
@@ -53,7 +53,7 @@ let role_assignment
   in
   let existing =
     existing
-    |> CCList.map (form `Divest)
+    |> CCList.map (form `Unassign)
     |> column ~hint:(RoleCurrentlyNoneAssigned field) RoleCurrentlyAssigned
   in
   let available =

@@ -521,7 +521,7 @@ let users
     field
     context
     ~assign:"assign"
-    ~divest:"divest"
+    ~unassign:"unassign"
     ~applicable:applicable_admins
     ~current:currently_assigned
   |> experiment_layout
