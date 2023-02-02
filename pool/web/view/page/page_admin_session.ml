@@ -148,7 +148,7 @@ let session_form
         ; location_select
             language
             locations
-            (session |> CCOption.map (fun s -> s.location))
+            (default_value_session |> CCOption.map (fun s -> s.location))
             ()
         ; input_element
             language
@@ -713,7 +713,19 @@ let close
         ]
     in
     let table =
-      let link (id, label) = span ~a:[ a_id id ] [ txt label ] in
+      let link (id, label) =
+        span
+          ~a:[ a_id id ]
+          [ abbr
+              ~a:
+                [ a_title
+                    Pool_common.(
+                      Utils.control_to_string language Message.ToggleAll
+                      |> CCString.capitalize_ascii)
+                ]
+              [ txt label ]
+          ]
+      in
       let thead =
         txt ""
         :: ([ "all-showup", "S"; "all-participated", "P" ] |> CCList.map link)
@@ -757,37 +769,44 @@ let close
           })
         }
 
-        const toggleShowUp = document.getElementById("all-showup");
-
         const isActive = (elm) => {
           return elm.dataset.active;
         }
 
-        const toggleActive = (elm) => {
-          if(isActive(elm)) {
-            elm.removeAttribute("data-active");
-          } else {
+        const toggleActive = (elm, state) => {
+          const newState = state == null ? !isActive(elm) : state;
+          if(newState) {
             elm.dataset.active = true;
+          } else {
+            elm.removeAttribute("data-active");
           }
         }
 
-        toggleShowUp.addEventListener("click", () => {
+        function setAllShowUp(value) {
           showUp.forEach((elm) => {
             var event = new Event('change');
-            elm.checked = !isActive(toggleShowUp);
+            elm.checked = value;
             elm.dispatchEvent(event);
           });
+        }
+
+        const toggleShowUp = document.getElementById("all-showup");
+        toggleShowUp.addEventListener("click", () => {
+          setAllShowUp(!isActive(toggleShowUp));
           toggleActive(toggleShowUp);
         })
 
         const toggleParticipated = document.getElementById("all-participated");
         toggleParticipated.addEventListener("click", () => {
+          const state = !isActive(toggleParticipated);
+          if(state) {
+            setAllShowUp(true);
+            toggleActive(toggleShowUp, true);
+          }
           participated.forEach((elm) => {
-            if(!elm.disabled) {
-              elm.checked = !isActive(toggleParticipated);
-            }
+            elm.checked = state;
           });
-          toggleActive(toggleParticipated)
+          toggleActive(toggleParticipated);
         })
       |js}
     in

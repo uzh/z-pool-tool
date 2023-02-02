@@ -396,6 +396,7 @@ type control =
   | Show
   | SignUp
   | Stop of Field.t option
+  | ToggleAll
   | Unassign of Field.t option
   | Update of Field.t option
   | UpdateOrder

@@ -448,6 +448,7 @@ let control_to_string = function
   | Show -> "anzeigen"
   | SignUp -> format_submit "anmelden" None
   | Stop field -> format_submit "stoppen" field
+  | ToggleAll -> "alle umschalten"
   | Unassign field -> format_submit "entfernen" field
   | Update field -> format_submit "aktualisieren" field
   | UpdateOrder -> "Reihenfolge anpassen"

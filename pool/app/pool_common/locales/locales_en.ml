@@ -417,6 +417,7 @@ let control_to_string = function
   | Show -> format_submit "show" None
   | SignUp -> format_submit "sign up" None
   | Stop field -> format_submit "stop" field
+  | ToggleAll -> "toggle all"
   | Unassign field -> format_submit "unassign" field
   | Update field -> format_submit "update" field
   | UpdateOrder -> format_submit "update order" None
