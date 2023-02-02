@@ -42,6 +42,7 @@ The participation in the session is compulsory.|}
   ; entity_uuid
   ; email_text
   ; email_subject
+  ; plain_text = sms_text
   ; sms_text
   }
 ;;
@@ -87,6 +88,7 @@ If this action wasn`t performed by you, please ignore this email or reply to let
   ; entity_uuid
   ; email_text
   ; email_subject
+  ; plain_text = sms_text
   ; sms_text
   }
 ;;
@@ -130,6 +132,7 @@ Sessions......|}
   ; entity_uuid
   ; email_text
   ; email_subject
+  ; plain_text = sms_text
   ; sms_text
   }
 ;;
@@ -161,6 +164,7 @@ If you did not change your password, please get in contact with us.|}
   ; entity_uuid
   ; email_text
   ; email_subject
+  ; plain_text = sms_text
   ; sms_text
   }
 ;;
@@ -192,6 +196,7 @@ Please check your profile: {profileUrl}|}
   ; entity_uuid
   ; email_text
   ; email_subject
+  ; plain_text = sms_text
   ; sms_text
   }
 ;;
@@ -240,6 +245,7 @@ hour.|}
   ; entity_uuid
   ; email_text
   ; email_subject
+  ; plain_text = sms_text
   ; sms_text
   }
 ;;
@@ -285,6 +291,7 @@ If this action wasn`t performed by you, please ignore this email or reply to let
   ; entity_uuid
   ; email_text
   ; email_subject
+  ; plain_text = sms_text
   ; sms_text
   }
 ;;
@@ -314,6 +321,7 @@ let session_cancellation =
   ; entity_uuid
   ; email_text
   ; email_subject
+  ; plain_text = sms_text
   ; sms_text
   }
 ;;
@@ -344,6 +352,7 @@ let session_reminder =
   ; entity_uuid
   ; email_text
   ; email_subject
+  ; plain_text = sms_text
   ; sms_text
   }
 ;;
@@ -386,6 +395,7 @@ New:
   ; entity_uuid
   ; email_text
   ; email_subject
+  ; plain_text = sms_text
   ; sms_text
   }
 ;;

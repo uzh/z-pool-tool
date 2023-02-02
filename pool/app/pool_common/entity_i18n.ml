@@ -108,15 +108,16 @@ type hint =
   | CustomHtmx of string
   | DirectRegistrationDisbled
   | Distribution
+  | EmailPlainText
   | ExperimentAssignment
   | ExperimentMailings
-  | ExperimentWaitingList
   | ExperimentSessions
   | ExperimentSessionsPublic
-  | LocationFiles
-  | LocationSessions
-  | Locations
+  | ExperimentWaitingList
   | I18nText of string
+  | LocationFiles
+  | Locations
+  | LocationSessions
   | NumberIsDaysHint
   | NumberIsSecondsHint
   | NumberIsWeeksHint
@@ -129,9 +130,9 @@ type hint =
   | SelectedDateIsPast
   | SessionCancelMessage
   | SessionClose
-  | SessionReminderLanguageHint
-  | SessionRegistrationHint
   | SessionRegistrationFollowUpHint
+  | SessionRegistrationHint
+  | SessionReminderLanguageHint
   | SignUpForWaitingList
   | TemplateTextElementsHint
   | TimeSpanPickerHint

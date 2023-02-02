@@ -170,6 +170,8 @@ let hint_to_string = function
   | Distribution ->
     "Mit der Verteilung kann beeinflusst werden, welche Einladungen als erstes \
      versendet werden."
+  | EmailPlainText ->
+    "Stellen Sie sicher, dass Links als reiner Text angezeigt werden."
   | ExperimentAssignment ->
     "Alle Anmeldungen von Kontakten an Sessions dieses Experiments, sortiert \
      nach Session."

@@ -93,6 +93,43 @@ let template_form
           |> Component.Table.horizontal_table `Simple ~align_top:true
         ]
   in
+  let plain_text_element =
+    let id = Field.(show PlainText) in
+    div
+      ~a:[ a_class [ "form-group" ] ]
+      [ p
+          [ txt Pool_common.(Utils.hint_to_string language I18n.EmailPlainText)
+          ]
+      ; div
+          ~a:[ a_class [ "flexrow"; "flex-gap"; "justify-between" ] ]
+          [ label
+              ~a:[ a_label_for id ]
+              [ Pool_common.(Utils.field_to_string language Field.PlainText)
+                |> CCString.capitalize_ascii
+                |> Format.asprintf "%s*"
+                |> txt
+              ]
+          ; div
+              ~a:
+                [ a_class [ "flexrow"; "flex-gap-sm"; "pointer" ]
+                ; a_user_data "toggle-reset-plaintext" Field.(show EmailText)
+                ]
+              [ txt
+                  Pool_common.(
+                    Utils.control_to_string language Message.ResetPlainText)
+              ; Component.Icon.icon `RefreshOutline
+              ]
+          ]
+      ; textarea
+          ~a:
+            [ a_name id
+            ; a_id id
+            ; a_required ()
+            ; a_user_data "plain-text-for" Field.(show EmailText)
+            ]
+          (txt (value (fun t -> t.plain_text |> PlainText.value)))
+      ]
+  in
   let form =
     form
       ~a:
@@ -116,6 +153,7 @@ let template_form
           ~rich_text:true
           ~value:(value (fun t -> t.email_text |> EmailText.value))
           Field.EmailText
+      ; plain_text_element
       ; textarea_element
           ~rich_text:false
           ~value:(value (fun t -> t.sms_text |> SmsText.value))

@@ -165,6 +165,7 @@ let hint_to_string = function
   | Distribution ->
     "The distribution can be used to influence which invitations are sent \
      first."
+  | EmailPlainText -> "Make sure to show links as plain text."
   | ExperimentAssignment ->
     "All assignments of contacts to sessions of this experiment, sorted by \
      session."

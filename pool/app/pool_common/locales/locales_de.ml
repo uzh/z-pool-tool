@@ -109,6 +109,7 @@ let field_to_string =
   | Password -> "Passwort"
   | PasswordConfirmation -> "Passwort wiederholen"
   | Paused -> "Pausiert"
+  | PlainText -> "Klartext"
   | Predicate -> "Prädikat"
   | Profile -> "Profil"
   | PublicTitle -> "Öffentlicher Titel"
@@ -434,6 +435,11 @@ let control_to_string = function
   | Register -> format_submit "einschreiben" None
   | RemoveFromWaitingList -> "Ich möchte mich von der Warteliste austragen"
   | Reschedule field -> format_submit "verschieben" field
+  | ResetPlainText ->
+    Format.asprintf
+      "%s zu formatiertem '%s' zurücksetzen"
+      (field_to_string Field.PlainText)
+      (field_to_string Field.EmailText)
   | Resend field -> format_submit "erneut senden" field
   | Save field -> format_submit "speichern" field
   | SelectAll field -> format_submit "alle auswählen" field

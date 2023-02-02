@@ -50,6 +50,7 @@ Die Teilnahme ist obligatorisch.|}
   ; entity_uuid
   ; email_text
   ; email_subject
+  ; plain_text = sms_text
   ; sms_text
   }
 ;;
@@ -96,6 +97,7 @@ Wenn Sie diese Aktion nicht ausgeführt haben, dann ignorieren Sie diese E-Mail 
   ; entity_uuid
   ; email_text
   ; email_subject
+  ; plain_text = sms_text
   ; sms_text
   }
 ;;
@@ -141,6 +143,7 @@ Sessions......|}
   ; entity_uuid
   ; email_text
   ; email_subject
+  ; plain_text = sms_text
   ; sms_text
   }
 ;;
@@ -172,6 +175,7 @@ Wenn du dein Passwort nicht geändert hast, dann kontaktiere uns bitte umgehend.
   ; entity_uuid
   ; email_text
   ; email_subject
+  ; plain_text = sms_text
   ; sms_text
   }
 ;;
@@ -205,6 +209,7 @@ Bitte kontrollieren Sie die Angaben in Ihrem Profil: {profileUrl}|}
   ; entity_uuid
   ; email_text
   ; email_subject
+  ; plain_text = sms_text
   ; sms_text
   }
 ;;
@@ -253,6 +258,7 @@ Wenn du dies nicht beantragt hast, kannst du diese E-Mail ignorieren oder mit un
   ; entity_uuid
   ; email_text
   ; email_subject
+  ; plain_text = sms_text
   ; sms_text
   }
 ;;
@@ -298,6 +304,7 @@ Wenn du dies nicht beantragt hast, kannst du diese E-Mail ignorieren oder mit un
   ; entity_uuid
   ; email_text
   ; email_subject
+  ; plain_text = sms_text
   ; sms_text
   }
 ;;
@@ -330,6 +337,7 @@ let session_cancellation =
   ; entity_uuid
   ; email_text
   ; email_subject
+  ; plain_text = sms_text
   ; sms_text
   }
 ;;
@@ -360,6 +368,7 @@ let session_reminder =
   ; entity_uuid
   ; email_text
   ; email_subject
+  ; plain_text = sms_text
   ; sms_text
   }
 ;;
@@ -404,6 +413,7 @@ Neu:
   ; entity_uuid
   ; email_text
   ; email_subject
+  ; plain_text = sms_text
   ; sms_text
   }
 ;;

@@ -35,6 +35,10 @@ module EmailText : sig
   include Pool_common.Model.StringSig
 end
 
+module PlainText : sig
+  include Pool_common.Model.StringSig
+end
+
 module SmsText : sig
   include Pool_common.Model.StringSig
 end
@@ -46,6 +50,7 @@ type t =
   ; language : Pool_common.Language.t
   ; email_subject : EmailSubject.t
   ; email_text : EmailText.t
+  ; plain_text : PlainText.t
   ; sms_text : SmsText.t
   }
 
@@ -56,6 +61,7 @@ val show : t -> string
 type update =
   { email_subject : EmailSubject.t
   ; email_text : EmailText.t
+  ; plain_text : PlainText.t
   ; sms_text : SmsText.t
   }
 

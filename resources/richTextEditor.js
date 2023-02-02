@@ -1,5 +1,7 @@
 
 import ClassicEditor from "@ckeditor/ckeditor5-build-classic";
+import viewToPlainText from '@ckeditor/ckeditor5-clipboard/src/utils/viewtoplaintext';
+
 
 ClassicEditor.defaultConfig = {
     toolbar: {
@@ -38,6 +40,17 @@ ClassicEditor.defaultConfig = {
 export function initRichTextEditor() {
     document.querySelectorAll(".rich-text").forEach(element => {
         ClassicEditor.create(element)
+            .then((editor) => {
+                const id = editor.sourceElement.id;
+                const toggle = document.querySelector(`[data-toggle-reset-plaintext="${id}"]`)
+                const plainText = document.querySelector(`[data-plain-text-for="${id}"]`)
+                if (toggle && plainText) {
+                    toggle.addEventListener("click", () => {
+                        plainText.value = viewToPlainText(editor.editing.view.document.getRoot());
+                    })
+                }
+
+            })
             .catch(error => {
                 console.error(error);
             });

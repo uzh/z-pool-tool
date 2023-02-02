@@ -3,6 +3,7 @@ open Entity
 type update =
   { email_subject : EmailSubject.t
   ; email_text : EmailText.t
+  ; plain_text : PlainText.t
   ; sms_text : SmsText.t
   }
 [@@deriving eq, show]
@@ -26,6 +27,7 @@ let handle_event pool : event -> unit Lwt.t = function
   | Created template -> insert_template pool template
   | DefaultRestored templates ->
     Lwt_list.iter_s (insert_template pool) templates
-  | Updated (template, { email_subject; email_text; sms_text }) ->
-    { template with email_subject; email_text; sms_text } |> Repo.update pool
+  | Updated (template, { email_subject; email_text; plain_text; sms_text }) ->
+    { template with email_subject; email_text; plain_text; sms_text }
+    |> Repo.update pool
 ;;

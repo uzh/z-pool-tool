@@ -332,15 +332,17 @@ let textarea_element
   ?flash_fetcher
   ?(orientation = `Vertical)
   ?label_field
+  ?identifier
   ?(required = false)
   ?(rich_text = false)
   ?value
   language
   name
   =
+  let id = Elements.identifier ?identifier name in
   let input_label = Elements.input_label language name label_field required in
   let textarea_attributes =
-    let base = [ a_name (name |> Field.show) ] in
+    let base = [ a_name (name |> Field.show); a_id id ] in
     let base = if rich_text then a_class [ "rich-text" ] :: base else base in
     match required with
     | true -> base @ [ a_required () ]
@@ -360,7 +362,7 @@ let textarea_element
   in
   div
     ~a:[ a_class (Elements.group_class [] orientation @ classnames) ]
-    [ label [ txt input_label ]; textarea ]
+    [ label ~a:[ a_label_for id ] [ txt input_label ]; textarea ]
 ;;
 
 let submit_element

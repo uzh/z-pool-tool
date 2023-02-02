@@ -388,6 +388,7 @@ module Model = struct
     ; entity_uuid = None
     ; email_subject = "Subject" |> EmailSubject.create |> exn
     ; email_text = "<div>Hello</div>" |> EmailText.create |> exn
+    ; plain_text = "Hello" |> PlainText.create |> exn
     ; sms_text = "Hello" |> SmsText.create |> exn
     }
   ;;
