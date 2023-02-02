@@ -336,6 +336,21 @@ module Operator = struct
     | ContainsNone -> "NOT LIKE"
   ;;
 
+  let to_human m =
+    (match m with
+     | Less -> "less"
+     | LessEqual -> "less or equal"
+     | Greater -> "greater"
+     | GreaterEqual -> "greater or equal"
+     | Equal -> "equal"
+     | NotEqual -> "not equal"
+     | Like -> "contains" (* it is intended to display 'like' as 'contains' *)
+     | ContainsSome -> "contains some"
+     | ContainsNone -> "contains none"
+     | ContainsAll -> "contains all")
+    |> CCString.capitalize_ascii
+  ;;
+
   let validate (key : Key.t) operator =
     match key with
     | Key.Hardcoded k ->

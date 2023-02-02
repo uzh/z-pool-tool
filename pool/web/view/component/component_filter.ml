@@ -98,14 +98,11 @@ let select_default_option language selected =
 ;;
 
 let operators_select language ?operators ?selected () =
-  let format label =
-    CCString.replace ~sub:"_" ~by:" " label |> CCString.capitalize_ascii
-  in
   match operators with
   | None -> txt ""
   | Some operators ->
     Component_input.selector
-      ~option_formatter:CCFun.(Operator.show %> format)
+      ~option_formatter:Operator.to_human
       language
       Pool_common.Message.Field.Operator
       Operator.show
