@@ -73,6 +73,89 @@ module CustomFieldData = struct
       , Some answer )
   ;;
 
+  let create_nr_of_siblings () =
+    Custom_field.Created nr_of_siblings |> Pool_event.custom_field
+  ;;
+
+  let answer_nr_of_siblings
+    ?(answer_value = nr_of_siblings_answer)
+    ?admin
+    contacts
+    =
+    CCList.map
+      (fun contact ->
+        let user =
+          admin |> CCOption.value ~default:(Pool_context.Contact contact)
+        in
+        Custom_field.AnswerUpserted
+          ( nr_of_siblings_public (CCOption.is_some admin) (Some answer_value)
+          , Contact.id contact
+          , user )
+        |> Pool_event.custom_field)
+      contacts
+  ;;
+
+  let admin_override_nr_field =
+    let open Custom_field_test in
+    Custom_field.(
+      Number
+        { id = Id.create ()
+        ; model = Model.Contact
+        ; name =
+            Name.create [ lang ] [ lang, "admin_override_nr_field" ]
+            |> CCResult.get_exn
+        ; hint = [] |> Hint.create |> CCResult.get_exn
+        ; validation = Validation.pure
+        ; required = false |> Required.create
+        ; disabled = false |> Disabled.create
+        ; custom_field_group_id = None
+        ; admin_hint = Data.admin_hint
+        ; admin_override = true |> AdminOverride.create
+        ; admin_view_only = Data.admin_view_only
+        ; admin_input_only = Data.admin_input_only
+        ; published_at = published
+        })
+  ;;
+
+  let admin_override_nr_field_public is_admin answer_value =
+    let open Custom_field in
+    let answer =
+      match is_admin with
+      | true -> Answer.create ~admin_value:answer_value None
+      | false -> Answer.create (Some answer_value)
+    in
+    let version = 0 |> Pool_common.Version.of_int in
+    Public.Number
+      ( { Public.id = id admin_override_nr_field
+        ; name = name admin_override_nr_field
+        ; hint = hint admin_override_nr_field
+        ; validation = Validation.pure
+        ; required = required admin_override_nr_field
+        ; admin_override = admin_override admin_override_nr_field
+        ; admin_input_only = admin_input_only admin_override_nr_field
+        ; version
+        }
+      , Some answer )
+  ;;
+
+  let create_admin_override_nr_field () =
+    Custom_field.Created admin_override_nr_field |> Pool_event.custom_field
+  ;;
+
+  let answer_admin_override_nr_field ?admin ~answer_value contacts =
+    CCList.map
+      (fun contact ->
+        let user =
+          admin |> CCOption.value ~default:(Pool_context.Contact contact)
+        in
+        Custom_field.AnswerUpserted
+          ( admin_override_nr_field_public (CCOption.is_some admin) answer_value
+          , Contact.id contact
+          , user )
+        |> Pool_event.custom_field)
+      contacts
+  ;;
+
   let multi_select_option_data =
     let open Custom_field in
     let open CCList in
@@ -149,28 +232,6 @@ module CustomFieldData = struct
       , answer )
   ;;
 
-  let create_nr_of_siblings () =
-    Custom_field.Created nr_of_siblings |> Pool_event.custom_field
-  ;;
-
-  let answer_nr_of_siblings
-    ?(answer_value = nr_of_siblings_answer)
-    ?admin
-    contacts
-    =
-    CCList.map
-      (fun contact ->
-        let user =
-          admin |> CCOption.value ~default:(Pool_context.Contact contact)
-        in
-        Custom_field.AnswerUpserted
-          ( nr_of_siblings_public (CCOption.is_some admin) (Some answer_value)
-          , Contact.id contact
-          , user )
-        |> Pool_event.custom_field)
-      contacts
-  ;;
-
   let create_multi_select () =
     let open Custom_field in
     CCList.cons
@@ -198,7 +259,7 @@ module CustomFieldData = struct
   ;;
 end
 
-let nr_of_siblings ?nr () =
+let nr_of_siblings_filter ?nr () =
   let open Filter in
   let value =
     nr |> CCOption.value ~default:CustomFieldData.nr_of_siblings_answer
@@ -208,6 +269,16 @@ let nr_of_siblings ?nr () =
        Key.(CustomField (CustomFieldData.nr_of_siblings |> Custom_field.id))
        Operator.Equal
        (Single (Nr (value |> CCFloat.of_int))))
+;;
+
+let admin_override_nr_field_filter ~nr () =
+  let open Filter in
+  Pred
+    (Predicate.create
+       Key.(
+         CustomField (CustomFieldData.admin_override_nr_field |> Custom_field.id))
+       Operator.Equal
+       (Single (Nr (nr |> CCFloat.of_int))))
 ;;
 
 let firstname firstname =
@@ -233,7 +304,7 @@ let filter_contacts _ () =
       |> Lwt_list.iter_s
            (Pool_event.handle_event Test_utils.Data.database_label)
     in
-    let filter = Filter.create None (nr_of_siblings ()) in
+    let filter = Filter.create None (nr_of_siblings_filter ()) in
     let experiment = Experiment.{ experiment with filter = Some filter } in
     let%lwt () =
       (* Save filter *)
@@ -274,7 +345,7 @@ let filter_by_email _ () =
         create
           None
           (And
-             [ nr_of_siblings ()
+             [ nr_of_siblings_filter ()
              ; firstname (Contact.firstname contact |> Pool_user.Firstname.value)
              ]))
     in
@@ -564,6 +635,19 @@ let create_filter_template_with_template _ () =
   Lwt.return_unit
 ;;
 
+let find_contact_in_filtered_list contact experiment_id filter =
+  let open Utils.Lwt_result.Infix in
+  let find =
+    Filter.find_filtered_contacts Test_utils.Data.database_label experiment_id
+  in
+  filter
+  |> CCOption.pure
+  |> find
+  ||> CCResult.get_exn
+  ||> CCList.find_opt (Contact.equal contact)
+  ||> CCOption.is_some
+;;
+
 let filter_with_admin_value _ () =
   let%lwt () =
     let open Utils.Lwt_result.Infix in
@@ -576,27 +660,18 @@ let filter_with_admin_value _ () =
     let admin = Test_utils.Model.create_admin () in
     let%lwt () =
       CustomFieldData.(
-        answer_nr_of_siblings ~answer_value:3 [ contact ]
-        @ answer_nr_of_siblings ~answer_value:1 ~admin [ contact ])
+        create_admin_override_nr_field ()
+        :: (answer_admin_override_nr_field ~answer_value:3 [ contact ]
+           @ answer_admin_override_nr_field ~answer_value:1 ~admin [ contact ]))
       |> Lwt_list.iter_s
            (Pool_event.handle_event Test_utils.Data.database_label)
     in
-    let find =
-      Filter.find_filtered_contacts Test_utils.Data.database_label experiment_id
-    in
-    let search filter =
-      filter
-      |> CCOption.pure
-      |> find
-      ||> CCResult.get_exn
-      ||> CCList.find_opt (Contact.equal contact)
-      ||> CCOption.is_some
-    in
+    let search = find_contact_in_filtered_list contact experiment_id in
     let%lwt should_not_contain =
-      Filter.create None (nr_of_siblings ~nr:3 ()) |> search
+      Filter.create None (admin_override_nr_field_filter ~nr:3 ()) |> search
     in
     let%lwt should_contain =
-      Filter.create None (nr_of_siblings ~nr:1 ()) |> search
+      Filter.create None (admin_override_nr_field_filter ~nr:1 ()) |> search
     in
     let res = should_contain && not should_not_contain in
     Alcotest.(check bool "succeeds" true res) |> Lwt.return
@@ -630,6 +705,40 @@ let no_admin_values_shown_to_contacts _ () =
            | Public.Select (_, _, answer) -> answer >>= admin_value |> is_some
            | Public.Text (_, answer) -> answer >>= admin_value |> is_some)
       |> CCList.is_empty
+    in
+    Alcotest.(check bool "succeeds" true res) |> Lwt.return
+  in
+  Lwt.return_unit
+;;
+
+let filter_ignore_admin_value _ () =
+  let%lwt () =
+    let open Utils.Lwt_result.Infix in
+    let open CustomFieldData in
+    let answer_value = 3 in
+    let%lwt experiment_id =
+      Experiment.find_all Test_utils.Data.database_label ()
+      ||> CCList.hd
+      ||> fun { Experiment.id; _ } -> id |> Experiment.Id.to_common
+    in
+    let%lwt contact = TestContacts.get_contact 0 in
+    let%lwt () =
+      let open Custom_field in
+      let override_field =
+        match[@warning "-4"] admin_override_nr_field with
+        | Number field ->
+          Number { field with admin_override = AdminOverride.create false }
+        | _ -> failwith "Invalid field type"
+      in
+      (Updated override_field |> Pool_event.custom_field)
+      :: answer_admin_override_nr_field ~answer_value [ contact ]
+      |> Lwt_list.iter_s
+           (Pool_event.handle_event Test_utils.Data.database_label)
+    in
+    let search = find_contact_in_filtered_list contact experiment_id in
+    let%lwt res =
+      Filter.create None (admin_override_nr_field_filter ~nr:answer_value ())
+      |> search
     in
     Alcotest.(check bool "succeeds" true res) |> Lwt.return
   in

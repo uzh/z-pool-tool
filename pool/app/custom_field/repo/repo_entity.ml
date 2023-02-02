@@ -284,14 +284,23 @@ module Public = struct
     }
   [@@deriving show, eq]
 
-  let create_answer is_admin id value admin_value parse_value =
+  let create_answer
+    id
+    ~is_admin
+    ~admin_override
+    ~answer_value
+    ~answer_admin_value
+    parse_value
+    =
     let open CCOption.Infix in
     match id with
     | None -> None
     | Some id ->
-      let value = value >>= parse_value in
+      let value = answer_value >>= parse_value in
       let admin_value =
-        if is_admin then admin_value >>= parse_value else None
+        if is_admin && admin_override
+        then answer_admin_value >>= parse_value
+        else None
       in
       Entity_answer.create ~id ?admin_value value |> CCOption.pure
   ;;
@@ -327,10 +336,11 @@ module Public = struct
     | FieldType.Boolean ->
       let answer =
         create_answer
-          is_admin
           answer_id
-          answer_value
-          answer_admin_value
+          ~is_admin
+          ~admin_override
+          ~answer_value
+          ~answer_admin_value
           CCFun.(Utils.Bool.of_string %> CCOption.pure)
       in
       Public.Boolean
@@ -347,10 +357,11 @@ module Public = struct
     | FieldType.Number ->
       let answer =
         create_answer
-          is_admin
           answer_id
-          answer_value
-          answer_admin_value
+          ~is_admin
+          ~admin_override
+          ~answer_value
+          ~answer_admin_value
           CCInt.of_string
       in
       let validation = validation_schema Validation.Number.schema in
@@ -376,7 +387,13 @@ module Public = struct
             select_options
           >|= snd
         in
-        create_answer is_admin answer_id answer_value answer_admin_value create
+        create_answer
+          answer_id
+          ~is_admin
+          ~admin_override
+          ~answer_value
+          ~answer_admin_value
+          create
       in
       let options =
         CCList.filter_map
@@ -422,7 +439,13 @@ module Public = struct
                    select_options)
             |> CCOption.pure
         in
-        create_answer is_admin answer_id answer_value answer_admin_value create
+        create_answer
+          answer_id
+          ~is_admin
+          ~admin_override
+          ~answer_value
+          ~answer_admin_value
+          create
       in
       Public.MultiSelect
         ( { Public.id
@@ -439,10 +462,11 @@ module Public = struct
     | FieldType.Text ->
       let answer =
         create_answer
-          is_admin
           answer_id
-          answer_value
-          answer_admin_value
+          ~is_admin
+          ~admin_override
+          ~answer_value
+          ~answer_admin_value
           CCOption.pure
       in
       let validation = validation_schema Validation.Text.schema in

@@ -96,6 +96,8 @@ type hint =
   | ContactOnWaitingList
   | ContactProfileVisibleOverride
   | CustomFieldAdminInputOnly
+  | CustomFieldAdminOverride
+  | CustomFieldAdminOverrideUpdate
   | CustomFieldAdminViewOnly
   | CustomFieldContactModel
   | CustomFieldExperimentModel

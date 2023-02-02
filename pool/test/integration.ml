@@ -98,6 +98,10 @@ let suite =
               "no admin values shown to contacts"
               `Slow
               no_admin_values_shown_to_contacts
+          ; test_case
+              "filter ignore admin value"
+              `Slow
+              filter_ignore_admin_value
           ] )
     ; ( "matcher"
       , Matcher_test.

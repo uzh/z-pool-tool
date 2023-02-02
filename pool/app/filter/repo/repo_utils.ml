@@ -92,6 +92,8 @@ let filter_to_sql template_list dyn query =
         Format.asprintf
           {sql|
                 SELECT (1) FROM pool_custom_field_answers
+                  INNER JOIN pool_custom_fields
+                  ON pool_custom_fields.uuid = pool_custom_field_answers.custom_field_uuid
                   WHERE
                     pool_custom_field_answers.custom_field_uuid = UNHEX(REPLACE(?, '-', ''))
                   AND
@@ -99,6 +101,10 @@ let filter_to_sql template_list dyn query =
                   AND
                     (%s)
               |sql}
+      in
+      (* if admin_override is set, use admin_value > value, else value *)
+      let coalesce_value =
+        {sql| IF(pool_custom_fields.admin_override,COALESCE(admin_value,value),value) |sql}
       in
       let where_clause = Format.asprintf "%s %s ?" in
       let add_single_value dyn value =
@@ -117,9 +123,7 @@ let filter_to_sql template_list dyn query =
               |> add_value_to_params operator value)
           in
           let sql =
-            where_clause
-              "COALESCE(admin_value, value)"
-              (Operator.to_sql operator)
+            where_clause coalesce_value (Operator.to_sql operator)
             |> custom_field_sql
           in
           dyn, sql
@@ -144,9 +148,7 @@ let filter_to_sql template_list dyn query =
                 (fun (dyn, lst_sql) value ->
                   let dyn = add_value_to_params operator value dyn in
                   let new_sql =
-                    where_clause
-                      "COALESCE(admin_value, value)"
-                      (Operator.to_sql operator)
+                    where_clause coalesce_value (Operator.to_sql operator)
                   in
                   dyn, lst_sql @ [ new_sql ])
                 (Dynparam.(dyn |> add Custom_field.Repo.Id.t id), [])

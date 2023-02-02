@@ -135,6 +135,12 @@ let hint_to_string = function
       "This option excludes \"%s\"."
       (Locales_en.field_to_string Entity_message.Field.Required
       |> CCString.capitalize_ascii)
+  | CustomFieldAdminOverride ->
+    "Allows administrators to override the answers specified by the contact. \
+     Contacts cannot view the overridden answers."
+  | CustomFieldAdminOverrideUpdate ->
+    "Unchecking this option will make the filter ignore all currently existing \
+     overridden answers."
   | CustomFieldAdminViewOnly ->
     Format.asprintf
       "This option implies \"%s\"."
