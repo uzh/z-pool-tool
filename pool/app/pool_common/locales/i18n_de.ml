@@ -140,11 +140,11 @@ let hint_to_string = function
       |> CCString.capitalize_ascii)
   | CustomFieldAdminOverride ->
     "Erlaubt Administratoren die vom Kontakt angegebenen Anworten zu \
-     überschreiben. Kontakte können die überschreibenden Antworten nicht \
+     überschreiben. Kontakte können die überschriebenen Antworten nicht \
      einsehen."
   | CustomFieldAdminOverrideUpdate ->
     "Wenn Sie diese Option deaktivieren, ignoriert der Filter alle derzeit \
-     vorhandenen überschreibenden Antworten."
+     vorhandenen überschriebenen Antworten."
   | CustomFieldAdminViewOnly ->
     Format.asprintf
       "Diese Option impliziert \"%s\"."

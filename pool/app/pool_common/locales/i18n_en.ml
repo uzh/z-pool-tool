@@ -137,10 +137,10 @@ let hint_to_string = function
       |> CCString.capitalize_ascii)
   | CustomFieldAdminOverride ->
     "Allows administrators to override the answers specified by the contact. \
-     Contacts cannot view the overriding answers."
+     Contacts cannot view the overridden answers."
   | CustomFieldAdminOverrideUpdate ->
     "Unchecking this option will make the filter ignore all currently existing \
-     overriding answers."
+     overridden answers."
   | CustomFieldAdminViewOnly ->
     Format.asprintf
       "This option implies \"%s\"."
