@@ -5,6 +5,8 @@ module Input = Component_input
 
 let templates_disabled_key = "templates_disabled"
 let notification_id = "filter-notification"
+let stack = "stack-sm"
+let inset = "inset-sm"
 
 let format_identifiers ?prefix identifiers =
   let ids =
@@ -450,7 +452,7 @@ let rec predicate_form
   let data_attr = [ a_user_data "predicate" Filter.Human.(show query) ] in
   div
     ~a:
-      ([ a_class [ "stack"; "inset"; "border"; "predicate" ]
+      ([ a_class [ stack; inset; "border"; "predicate" ]
        ; a_id predicate_identifier
        ]
       @ data_attr)
@@ -462,7 +464,7 @@ let rec predicate_form
          templates_disabled
          ~selected
          ()
-     ; div ~a:[ a_class [ "predicate-wrapper"; "stack" ] ] predicate_form
+     ; div ~a:[ a_class [ "predicate-wrapper"; stack ] ] predicate_form
      ]
     @ if CCList.length identifier > 1 then [ delete_button () ] else [])
 ;;
