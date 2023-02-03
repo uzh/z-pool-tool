@@ -123,7 +123,7 @@ let nav_link_to_string = function
   | WaitingList -> "Waiting list"
 ;;
 
-let hint_to_string = function
+let rec hint_to_string = function
   | AllowUninvitedSignup ->
     "Contacts who have not been invited will be able to sign up for the \
      experiment."
@@ -168,6 +168,10 @@ let hint_to_string = function
   | CustomFieldTypeText ->
     "Please take into account that the data quality is lower for text entries. \
      If the data can be collected in another form, this is preferable."
+  | CustomFieldTypeSelect ->
+    "You will be able to create the available options in the section 'Option' \
+     after the custom field is created."
+  | CustomFieldTypeMultiSelect -> hint_to_string CustomFieldTypeSelect
   | CustomHtmx s -> s
   | DirectRegistrationDisbled ->
     "If this option is enabled, contacts can join the waiting list but cannot \

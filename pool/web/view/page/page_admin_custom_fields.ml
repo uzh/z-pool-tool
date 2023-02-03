@@ -468,7 +468,11 @@ let field_form
         ()
   in
   let field_type_hints =
-    I18n.[ CustomFieldTypeText, FieldType.Text ]
+    I18n.
+      [ CustomFieldTypeText, FieldType.Text
+      ; CustomFieldTypeSelect, FieldType.Select
+      ; CustomFieldTypeMultiSelect, FieldType.MultiSelect
+      ]
     |> CCList.map (fun (hint, field_type) ->
          let hidden =
            field_type_opt

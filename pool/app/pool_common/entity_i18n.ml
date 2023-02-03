@@ -108,6 +108,8 @@ type hint =
   | CustomFieldSessionModel
   | CustomFieldSort of Entity_message.Field.t
   | CustomFieldTypeText
+  | CustomFieldTypeSelect
+  | CustomFieldTypeMultiSelect
   | CustomHtmx of string
   | DirectRegistrationDisbled
   | Distribution
