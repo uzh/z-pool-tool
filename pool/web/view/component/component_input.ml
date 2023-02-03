@@ -376,19 +376,21 @@ let textarea_element
   =
   let id = Elements.identifier ?identifier name in
   let input_label = Elements.input_label language name label_field required in
-  let textarea_attributes =
-    let base = [ a_name (name |> Field.show); a_id id ] in
-    let base = if rich_text then a_class [ "rich-text" ] :: base else base in
-    match required with
-    | true -> base @ [ a_required () ]
-    | false -> base
-  in
   let ( <+> ) = CCOption.( <+> ) in
   let old_value =
     CCOption.bind flash_fetcher (fun flash_fetcher ->
       name |> Field.show |> flash_fetcher)
   in
   let value = old_value <+> value |> CCOption.get_or ~default:"" in
+  let textarea_attributes =
+    let base = [ a_name (name |> Field.show); a_id id ] in
+    let base = if rich_text then a_class [ "rich-text" ] :: base else base in
+    (* Chome has problems with CKEditor, when field is required and initially
+       empty *)
+    match rich_text, required, CCString.(trim value |> length) > 0 with
+    | false, true, _ | true, true, true -> base @ [ a_required () ]
+    | true, _, _ | _, false, _ -> base
+  in
   let textarea =
     let base = textarea ~a:(textarea_attributes @ attributes) (txt value) in
     match orientation with

@@ -8,7 +8,6 @@ function getFormValues(form) {
 export function initFormConfirmation() {
     var originalValues = {}
     const forms = [...document.querySelectorAll("form[data-detect-unsaved-changes]")];
-
     function handleWindowUnload(e) {
         var unsubmitted = forms.find((form, i) => {
             var values = getFormValues(form);
@@ -24,7 +23,6 @@ export function initFormConfirmation() {
         var values = getFormValues(form);
         originalValues[i] = values;
         form.addEventListener('submit', () => {
-            console.log("Submit");
             window.removeEventListener("beforeunload", handleWindowUnload);
         })
     })
