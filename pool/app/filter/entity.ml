@@ -103,7 +103,8 @@ module Key = struct
     | Nr [@printer print "nr"]
     | Str [@printer print "str"]
     | Select of Custom_field.SelectOption.t list [@printer print "option"]
-    | MultiSelect of Custom_field.SelectOption.t list [@printer print "list"]
+    | MultiSelect of Custom_field.SelectOption.t list
+        [@printer print "multi_select"]
   [@@deriving show]
 
   type hardcoded =
