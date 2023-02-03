@@ -1,7 +1,5 @@
-
 import ClassicEditor from "@ckeditor/ckeditor5-build-classic";
 import viewToPlainText from '@ckeditor/ckeditor5-clipboard/src/utils/viewtoplaintext';
-
 
 ClassicEditor.defaultConfig = {
     toolbar: {
