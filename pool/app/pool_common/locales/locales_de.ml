@@ -1,6 +1,6 @@
 open Entity_message
 
-let field_to_string =
+let rec field_to_string =
   let open Field in
   function
   | Admin -> "Administrator"
@@ -52,6 +52,8 @@ let field_to_string =
   | EmailText -> "E-Mail Text"
   | End -> "Ende"
   | Experiment -> "Experiment"
+  | ExperimentReminderLeadTime ->
+    Format.asprintf "Experimentspezifische %s" (field_to_string LeadTime)
   | ExperimentType -> "Experimenttyp"
   | Experimenter -> "Experimenter"
   | FieldType -> "Feldtyp"
@@ -146,6 +148,7 @@ let field_to_string =
   | Styles -> "Styles"
   | Template -> "Template"
   | MessageTemplate -> "Nachrichtentemplate"
+  | MessageTemplates -> "Nachrichtentemplates"
   | Tenant -> "Tenant"
   | TenantDisabledFlag -> "Deaktiviert"
   | TenantId -> "Tenant Identifier"

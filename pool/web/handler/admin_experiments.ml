@@ -88,36 +88,38 @@ let create req =
 ;;
 
 let detail edit req =
+  Logs.info (fun m -> m "%s" "IN HANDLER");
+  Logs.info (fun m -> m "Edit is %s" (if edit then "true" else "false"));
   let open Utils.Lwt_result.Infix in
   let result ({ Pool_context.database_label; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, "/admin/experiments")
     @@
+    let open Message_template in
     let id = experiment_id req in
     let* experiment = Experiment.find database_label id in
+    let* sys_languages =
+      Pool_context.Tenant.get_tenant_languages req |> Lwt_result.lift
+    in
+    let find_templates =
+      find_all_of_entity_by_label database_label (id |> Experiment.Id.to_common)
+    in
+    let%lwt invitation_templates = find_templates Label.ExperimentInvitation in
+    let%lwt session_reminder_templates = find_templates Label.SessionReminder in
     (match edit with
      | false ->
        let%lwt session_count = Experiment.session_count database_label id in
-       Page.Admin.Experiments.detail experiment session_count context
+       Page.Admin.Experiments.detail
+         experiment
+         session_count
+         invitation_templates
+         session_reminder_templates
+         sys_languages
+         context
        |> Lwt.return_ok
      | true ->
-       let open Message_template in
        let flash_fetcher key = Sihl.Web.Flash.find key req in
-       let* sys_languages =
-         Pool_context.Tenant.get_tenant_languages req |> Lwt_result.lift
-       in
        let%lwt default_reminder_lead_time =
          Settings.find_default_reminder_lead_time database_label
-       in
-       let find_templates =
-         find_all_of_entity_by_label
-           database_label
-           (id |> Experiment.Id.to_common)
-       in
-       let%lwt invitation_templates =
-         find_templates Label.ExperimentInvitation
-       in
-       let%lwt session_reminder_templates =
-         find_templates Label.SessionReminder
        in
        Page.Admin.Experiments.edit
          experiment
