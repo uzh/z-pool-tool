@@ -425,13 +425,18 @@ let detail
   =
   let open Session in
   let open Pool_common in
-  let session_link (show, url, control) =
+  let session_link ?style (show, url, control) =
+    let style, icon =
+      style |> CCOption.map_or ~default:(`Primary, None) CCFun.id
+    in
     match show with
     | false -> None
     | true ->
       link_as_button
         ~control:(language, control)
         ~classnames:[ "small" ]
+        ~style
+        ?icon
         (Format.asprintf
            "/admin/experiments/%s/sessions/%s/%s"
            (Experiment.Id.value experiment.Experiment.id)
@@ -500,48 +505,67 @@ let detail
       @@ CCOption.map_or ~default:rows (CCList.cons' rows) parent
     in
     let links =
-      Message.
-        [ ( CCOption.is_none session.follow_up_to
-          , "follow-up"
-          , Create (Some Field.FollowUpSession) )
-        ; ( session.assignment_count |> AssignmentCount.value > 0
-            && CCOption.is_none session.closed_at
-          , "reschedule"
-          , Reschedule (Some Field.Session) )
-        ; ( session |> is_cancellable |> CCResult.is_ok
-          , "cancel"
-          , Cancel (Some Field.Session) )
-        ; ( session |> is_closable |> CCResult.is_ok
-          , "close"
-          , Close (Some Field.Session) )
-        ]
-      |> CCList.filter_map session_link
-    in
-    let duplicate =
-      let link =
-        match session.follow_up_to with
-        | Some parent_session ->
+      let duplicate =
+        let base =
           Format.asprintf
-            "/admin/experiments/%s/sessions/%s/follow-up?duplicate_id=%s"
+            "/admin/experiments/%s/sessions"
             (Experiment.Id.value experiment.Experiment.id)
-            (Pool_common.Id.value parent_session)
-            (Pool_common.Id.value session.id)
-        | None ->
-          Format.asprintf
-            "/admin/experiments/%s/sessions/create/?duplicate_id=%s"
-            (Experiment.Id.value experiment.Experiment.id)
-            (Pool_common.Id.value session.id)
+        in
+        let id_value = Pool_common.Id.value in
+        let link =
+          match session.follow_up_to with
+          | Some parent_session ->
+            Format.asprintf
+              "%s/%s/follow-up?duplicate_id=%s"
+              base
+              (id_value parent_session)
+              (id_value session.id)
+          | None ->
+            Format.asprintf
+              "%s/create/?duplicate_id=%s"
+              base
+              (id_value session.id)
+        in
+        link_as_button
+          ~control:(language, Message.Duplicate (Some Field.Session))
+          ~classnames:[ "small" ]
+          link
       in
-      link_as_button
-        ~control:(language, Message.Duplicate (Some Field.Session))
-        ~classnames:[ "small" ]
-        link
+      let wrap = div ~a:[ a_class [ "flexrow"; "flex-gap" ] ] in
+      let right =
+        Message.
+          [ ( CCOption.is_none session.follow_up_to
+            , "follow-up"
+            , Create (Some Field.FollowUpSession) )
+          ]
+        |> CCList.filter_map session_link
+        |> CCList.cons duplicate
+        |> wrap
+      in
+      let left =
+        Message.
+          [ ( ( session.assignment_count |> AssignmentCount.value > 0
+                && CCOption.is_none session.closed_at
+              , "reschedule"
+              , Reschedule (Some Field.Session) )
+            , None )
+          ; ( ( session |> is_closable |> CCResult.is_ok
+              , "close"
+              , Close (Some Field.Session) )
+            , None )
+          ; ( ( session |> is_cancellable |> CCResult.is_ok
+              , "cancel"
+              , Cancel (Some Field.Session) )
+            , Some (`Error, Some `CloseCircle) )
+          ]
+        |> CCList.filter_map (fun (t, style) -> session_link ?style t)
+        |> wrap
+      in
+      div
+        ~a:[ a_class [ "flexrow"; "flex-gap"; "justify-between" ] ]
+        [ left; right ]
     in
-    div
-      ~a:[ a_class [ "stack" ] ]
-      [ table
-      ; p ~a:[ a_class [ "flexrow"; "flex-gap" ] ] (links @ [ duplicate ])
-      ]
+    div ~a:[ a_class [ "stack" ] ] [ table; links ]
   in
   let assignments_html =
     let assignment_list =

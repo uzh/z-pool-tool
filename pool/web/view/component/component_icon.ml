@@ -8,6 +8,7 @@ let icon ?(classnames = []) icon_type =
    | `CreateOutline -> "create-outline"
    | `Create -> "create"
    | `Close -> "close"
+   | `CloseCircle -> "close-circle"
    | `Earth -> "earth"
    | `EarthOutline -> "earth-outline"
    | `Eye -> "eye"
