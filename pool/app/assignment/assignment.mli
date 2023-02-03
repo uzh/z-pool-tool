@@ -40,6 +40,15 @@ type t =
 val pp : Format.formatter -> t -> unit
 val equal : t -> t -> bool
 
+val create
+  :  ?id:Pool_common.Id.t
+  -> ?show_up:ShowUp.t
+  -> ?participated:Participated.t
+  -> ?matches_filter:MatchesFilter.t
+  -> ?canceled_at:CanceledAt.t
+  -> Contact.t
+  -> t
+
 module Public : sig
   type t =
     { id : Pool_common.Id.t

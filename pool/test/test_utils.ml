@@ -270,33 +270,45 @@ module Model = struct
       "Hello"
   ;;
 
-  let create_session () =
+  let hour = Ptime.Span.of_int_s @@ (60 * 60)
+
+  let an_hour_ago () =
     let hour = Ptime.Span.of_int_s @@ (60 * 60) in
-    Session.
-      { id = Pool_common.Id.create ()
-      ; follow_up_to = None
-      ; start =
-          Ptime.add_span (Ptime_clock.now ()) hour
-          |> CCOption.get_exn_or "Invalid start"
-          |> Start.create
-      ; duration = Duration.create hour |> Pool_common.Utils.get_or_failwith
-      ; description = None
-      ; location = create_location ()
-      ; max_participants =
-          ParticipantAmount.create 30 |> Pool_common.Utils.get_or_failwith
-      ; min_participants =
-          ParticipantAmount.create 1 |> Pool_common.Utils.get_or_failwith
-      ; overbook =
-          ParticipantAmount.create 4 |> Pool_common.Utils.get_or_failwith
-      ; reminder_lead_time = None
-      ; reminder_sent_at = None
-      ; assignment_count =
-          0 |> AssignmentCount.create |> Pool_common.Utils.get_or_failwith
-      ; closed_at = None
-      ; canceled_at = None
-      ; created_at = Pool_common.CreatedAt.create ()
-      ; updated_at = Pool_common.UpdatedAt.create ()
-      }
+    Ptime.sub_span (Ptime_clock.now ()) hour
+    |> CCOption.get_exn_or "Invalid start"
+    |> Session.Start.create
+  ;;
+
+  let in_an_hour () =
+    let hour = Ptime.Span.of_int_s @@ (60 * 60) in
+    Ptime.add_span (Ptime_clock.now ()) hour
+    |> CCOption.get_exn_or "Invalid start"
+    |> Session.Start.create
+  ;;
+
+  let create_session ?start () =
+    let open Session in
+    let start = start |> CCOption.value ~default:(in_an_hour ()) in
+    { id = Pool_common.Id.create ()
+    ; follow_up_to = None
+    ; start
+    ; duration = Duration.create hour |> Pool_common.Utils.get_or_failwith
+    ; description = None
+    ; location = create_location ()
+    ; max_participants =
+        ParticipantAmount.create 30 |> Pool_common.Utils.get_or_failwith
+    ; min_participants =
+        ParticipantAmount.create 1 |> Pool_common.Utils.get_or_failwith
+    ; overbook = ParticipantAmount.create 4 |> Pool_common.Utils.get_or_failwith
+    ; reminder_lead_time = None
+    ; reminder_sent_at = None
+    ; assignment_count =
+        0 |> AssignmentCount.create |> Pool_common.Utils.get_or_failwith
+    ; closed_at = None
+    ; canceled_at = None
+    ; created_at = Pool_common.CreatedAt.create ()
+    ; updated_at = Pool_common.UpdatedAt.create ()
+    }
   ;;
 
   let create_public_session () =

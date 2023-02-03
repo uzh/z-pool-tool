@@ -246,6 +246,14 @@ let () =
             Session_test.close_before_start
         ; test_case "close session" `Quick Session_test.close_valid
         ; test_case
+            "close session with valid assignments"
+            `Quick
+            Session_test.close_valid_with_assignments
+        ; test_case
+            "close session with invalid participation"
+            `Quick
+            Session_test.validate_invalid_participation
+        ; test_case
             "send reminders for session succeeds"
             `Quick
             Session_test.send_reminder
