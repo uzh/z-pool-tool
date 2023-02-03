@@ -206,17 +206,14 @@ let experiment_form
             ; div
                 ~a:[ a_class [ "grid-col-2" ] ]
                 [ div
-                    [ flatpicker_element
+                    [ timespan_picker
                         language
-                        `Time
                         Field.LeadTime
                         ~help:I18n.TimeSpanPickerHint
-                        ~value:
-                          (value (fun e ->
-                             session_reminder_lead_time_value e
-                             |> CCOption.map_or
-                                  ~default:""
-                                  Utils.Time.timespan_spanpicker))
+                        ?value:
+                          (CCOption.bind experiment (fun (e : t) ->
+                             e.session_reminder_lead_time
+                             |> CCOption.map Pool_common.Reminder.LeadTime.value))
                         ~flash_fetcher
                     ; Utils.text_to_string
                         language

@@ -282,15 +282,12 @@ let show
       ; form
           ~a:(form_attrs `UpdateDefaultLeadTime)
           [ csrf_element csrf ()
-          ; flatpicker_element
+          ; timespan_picker
               language
-              `Time
               Message.Field.LeadTime
               ~value:
                 Pool_common.(
-                  default_reminder_lead_time
-                  |> Reminder.LeadTime.value
-                  |> Utils.Time.timespan_spanpicker)
+                  default_reminder_lead_time |> Reminder.LeadTime.value)
               ~required:true
               ~flash_fetcher
           ; submit ()

@@ -454,7 +454,6 @@ let form
                   ]
                 [ flatpicker_element
                     language
-                    `Datetime_local
                     Field.Start
                     ~flash_fetcher
                     ~required:true
@@ -468,7 +467,6 @@ let form
                          mailing)
                 ; flatpicker_element
                     language
-                    `Datetime_local
                     Field.End
                     ~flash_fetcher
                     ~disable_past:true

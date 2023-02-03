@@ -190,7 +190,6 @@ let value_input language input_type ?value () =
          ~additional_attributes
          ?value
          language
-         `Datetime_local
          field_name
      | Key.Select options ->
        let selected =

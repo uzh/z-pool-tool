@@ -260,7 +260,8 @@ let hint_to_string = function
      einen Termin zuzuweisen, wenn ein freier Platz vorhanden ist."
   | TemplateTextElementsHint ->
     "Die folgenden Textbausteine können in den Templates verwendet werden:"
-  | TimeSpanPickerHint -> "Stunden und Minuten"
+  | TimeSpanPickerHint ->
+    "Zeitdauer in Stunden. '1.5' entspricht 1h 30m. '0.75' entspricht 45min."
 ;;
 
 let confirmable_to_string confirmable =

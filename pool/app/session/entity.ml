@@ -44,7 +44,7 @@ module Start = struct
 end
 
 module Duration = struct
-  type t = Ptime.Span.t [@@deriving eq, show]
+  include Pool_common.Model.PtimeSpan
 
   let create m =
     if Ptime.Span.abs m |> Ptime.Span.equal m
@@ -52,14 +52,8 @@ module Duration = struct
     else Error Pool_common.Message.NegativeAmount
   ;;
 
-  let value m = m
-
-  let schema () =
-    let open CCResult in
-    let decode str = Pool_common.(Utils.Time.parse_time_span str >>= create) in
-    let encode span = Pool_common.Utils.Time.print_time_span span in
-    Pool_common.(Utils.schema_decoder decode encode Message.Field.Duration)
-  ;;
+  let field = Pool_common.Message.Field.Duration
+  let schema = schema field create
 end
 
 module AssignmentCount = struct

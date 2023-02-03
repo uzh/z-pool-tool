@@ -247,7 +247,9 @@ let hint_to_string = function
      there is a free place."
   | TemplateTextElementsHint ->
     "The following text elements can be used inside the templates:"
-  | TimeSpanPickerHint -> "Hours and minutes"
+  | TimeSpanPickerHint ->
+    "Time duration in hours. '1.5' corresponds to 1h 30m. '0.75' corresponds \
+     to 45min."
 ;;
 
 let confirmable_to_string confirmable =

@@ -72,12 +72,6 @@ let session_form
   in
   let value = CCFun.flip (CCOption.map_or ~default:"") default_value_session in
   let amount fnc = value (fnc %> ParticipantAmount.value %> CCInt.to_string) in
-  let lead_time_value time =
-    time
-    |> CCOption.map_or
-         ~default:""
-         (Reminder.LeadTime.value %> Utils.Time.timespan_spanpicker)
-  in
   let action, submit =
     let open Pool_common in
     let base =
@@ -117,7 +111,6 @@ let session_form
            in
            flatpicker_element
              language
-             `Datetime_local
              Message.Field.Start
              ~required:true
              ~flash_fetcher
@@ -125,15 +118,15 @@ let session_form
              ~warn_past:true
              ~additional_attributes:
                (if has_assignments then [ a_disabled () ] else []))
-        ; flatpicker_element
+        ; timespan_picker
             language
             ~required:true
-            `Time
             Message.Field.Duration
             ~help:I18n.TimeSpanPickerHint
-            ~value:
-              (value (fun s ->
-                 s.duration |> Duration.value |> Utils.Time.timespan_spanpicker))
+            ?value:
+              (CCOption.map
+                 (fun (s : t) -> s.duration |> Duration.value)
+                 session)
             ~flash_fetcher
             ~additional_attributes:
               (if has_assignments then [ a_disabled () ] else [])
@@ -180,13 +173,14 @@ let session_form
         ; div
             ~a:[ a_class [ "grid-col-2" ] ]
             [ div
-                [ flatpicker_element
+                [ timespan_picker
                     language
-                    `Time
                     Message.Field.LeadTime
                     ~help:I18n.TimeSpanPickerHint
-                    ~value:
-                      (value (fun s -> s.reminder_lead_time |> lead_time_value))
+                    ?value:
+                      (CCOption.bind session (fun (e : t) ->
+                         e.reminder_lead_time
+                         |> CCOption.map Pool_common.Reminder.LeadTime.value))
                     ~flash_fetcher
                 ; (experiment.Experiment.session_reminder_lead_time
                   |> CCOption.value ~default:default_reminder_lead_time
@@ -229,20 +223,17 @@ let reschedule_session
     [ csrf_element csrf ()
     ; flatpicker_element
         language
-        `Datetime_local
         Message.Field.Start
         ~required:true
         ~flash_fetcher
         ~value:(session.start |> Start.value |> Ptime.to_rfc3339)
         ~disable_past:true
-    ; flatpicker_element
+    ; timespan_picker
         language
         ~required:true
-        `Time
         Message.Field.Duration
         ~help:I18n.TimeSpanPickerHint
-        ~value:
-          (session.duration |> Duration.value |> Utils.Time.timespan_spanpicker)
+        ~value:(session.duration |> Duration.value)
         ~flash_fetcher
     ; div
         ~a:[ a_class [ "flexrow" ] ]
