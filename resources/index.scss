@@ -95,3 +95,7 @@ abbr[title] {
 .form-group:not(.horizontal)>*~.ck {
     margin-top: $space-xs;
 }
+
+.ck-content {
+    @extend textarea;
+}
