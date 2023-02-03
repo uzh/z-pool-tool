@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 ### Added
 
 - add description to user profile completion page
+- allow sessions to be closed before they end
 
 ## [0.1.1](https://github.com/uzh/pool/tree/0.1.1) - 2023-02-02
 

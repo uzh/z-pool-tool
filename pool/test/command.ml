@@ -241,6 +241,11 @@ let () =
             Session_test.cancel_already_canceled
         ; test_case "cancel session succeeds" `Quick Session_test.cancel_valid
         ; test_case
+            "close session before start"
+            `Quick
+            Session_test.close_before_start
+        ; test_case "close session" `Quick Session_test.close_valid
+        ; test_case
             "send reminders for session succeeds"
             `Quick
             Session_test.send_reminder

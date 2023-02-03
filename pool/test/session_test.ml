@@ -660,6 +660,31 @@ let cancel_valid () =
     res
 ;;
 
+let close_before_start () =
+  let start =
+    Ptime.Span.of_int_s @@ (60 * 60)
+    |> Ptime.add_span (Ptime_clock.now ())
+    |> CCOption.get_exn_or "Invalid start"
+    |> Session.Start.create
+  in
+  let session = Session.{ (Test_utils.Model.create_session ()) with start } in
+  let res = Cqrs_command.Assignment_command.SetAttendance.handle session [] in
+  check_result (Error Pool_common.Message.SessionNotStarted) res
+;;
+
+let close_valid () =
+  let open Cqrs_command.Assignment_command.SetAttendance in
+  let start =
+    Ptime.Span.of_int_s @@ (60 * 60)
+    |> Ptime.sub_span (Ptime_clock.now ())
+    |> CCOption.get_exn_or "Invalid start"
+    |> Session.Start.create
+  in
+  let session = Session.{ (Test_utils.Model.create_session ()) with start } in
+  let res = handle session [] in
+  check_result (Ok [ Session.Closed session |> Pool_event.session ]) res
+;;
+
 let send_reminder () =
   let session1 = Test_utils.Model.create_session () in
   let session2 =
