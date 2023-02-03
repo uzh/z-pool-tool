@@ -801,6 +801,7 @@ let index field_list group_list current_model Pool_context.{ language; csrf; _ }
               ; a_action
                   (Sihl.Web.externalize_path (Url.index_path current_model)
                   |> Format.asprintf "%s/sort-fields")
+              ; a_user_data "detect-unsaved-changes" ""
               ]
             [ csrf_element csrf ()
             ; CCList.map
@@ -870,6 +871,7 @@ let index field_list group_list current_model Pool_context.{ language; csrf; _ }
                   |> Format.asprintf "%s/group/sort"
                   |> Sihl.Web.externalize_path)
               ; a_class [ "stack" ]
+              ; a_user_data "detect-unsaved-changes" ""
               ]
             (CCList.cons
                (CCList.map
