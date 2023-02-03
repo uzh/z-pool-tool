@@ -188,14 +188,17 @@ module Sql = struct
           uuid = UNHEX(REPLACE($1, '-', ''))
       |sql}
     |> Caqti_type.(
-         tup2 string (tup2 bool (tup2 bool (tup2 bool (option ptime)))) ->. unit)
+         tup2
+           string
+           (tup2 (option bool) (tup2 (option bool) (tup2 bool (option ptime))))
+         ->. unit)
   ;;
 
   let format_update m =
     Entity.(
       ( m.id |> Pool_common.Id.value
-      , ( m.show_up |> ShowUp.value
-        , ( m.participated |> Participated.value
+      , ( m.show_up
+        , ( m.participated
           , ( m.matches_filter |> MatchesFilter.value
             , CCOption.map CanceledAt.value m.canceled_at ) ) ) ))
   ;;

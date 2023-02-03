@@ -14,7 +14,8 @@ type event =
 
 let handle_event pool : event -> unit Lwt.t = function
   | AttendanceSet (assignment, show_up, participated) ->
-    { assignment with participated; show_up } |> Repo.update pool
+    { assignment with participated = Some participated; show_up = Some show_up }
+    |> Repo.update pool
   | Canceled assignment ->
     let%lwt () =
       (* TODO: Check timestamps? Issue #126 *)

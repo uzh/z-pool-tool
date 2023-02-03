@@ -370,8 +370,8 @@ module Model = struct
     Assignment.
       { id = Pool_common.Id.create ()
       ; contact = create_contact ()
-      ; show_up = ShowUp.init
-      ; participated = Participated.init
+      ; show_up = None
+      ; participated = None
       ; matches_filter = MatchesFilter.init
       ; canceled_at = None
       ; created_at = Pool_common.CreatedAt.create ()

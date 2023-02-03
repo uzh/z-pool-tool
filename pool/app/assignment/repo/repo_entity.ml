@@ -26,8 +26,8 @@ type t =
   { id : Pool_common.Id.t
   ; session_id : Pool_common.Id.t
   ; contact_id : Pool_common.Id.t
-  ; show_up : ShowUp.t
-  ; participated : Participated.t
+  ; show_up : ShowUp.t option
+  ; participated : Participated.t option
   ; matches_filter : MatchesFilter.t
   ; canceled_at : CanceledAt.t option
   ; created_at : Pool_common.CreatedAt.t
@@ -66,7 +66,7 @@ let t =
       ( m.id
       , ( m.session_id
         , ( m.contact_id
-          , ( ShowUp.value m.show_up
+          , ( m.show_up
             , ( m.participated
               , (m.matches_filter, (m.canceled_at, (m.created_at, m.updated_at)))
               ) ) ) ) )
@@ -85,8 +85,8 @@ let t =
       { id
       ; session_id
       ; contact_id
-      ; show_up = ShowUp.create show_up
-      ; participated = Participated.create participated
+      ; show_up
+      ; participated
       ; matches_filter = MatchesFilter.create matches_filter
       ; canceled_at = CCOption.map CanceledAt.value canceled_at
       ; created_at
@@ -104,9 +104,9 @@ let t =
             (tup2
                Pool_common.Repo.Id.t
                (tup2
-                  ShowUp.t
+                  (option ShowUp.t)
                   (tup2
-                     Participated.t
+                     (option Participated.t)
                      (tup2
                         MatchesFilter.t
                         (tup2

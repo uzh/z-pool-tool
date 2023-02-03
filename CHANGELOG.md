@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 - add description to user profile completion page
 - allow sessions to be closed before they end
+- make pool_assignments `show_up` and `participated` nullable
 
 ## [0.1.1](https://github.com/uzh/pool/tree/0.1.1) - 2023-02-02
 

@@ -36,8 +36,8 @@ end
 type t =
   { id : Pool_common.Id.t
   ; contact : Contact.t
-  ; show_up : ShowUp.t
-  ; participated : Participated.t
+  ; show_up : ShowUp.t option
+  ; participated : Participated.t option
   ; matches_filter : MatchesFilter.t
   ; canceled_at : CanceledAt.t option
   ; created_at : Pool_common.CreatedAt.t
@@ -47,8 +47,8 @@ type t =
 
 let create
   ?(id = Pool_common.Id.create ())
-  ?(show_up = ShowUp.create false)
-  ?(participated = Participated.create false)
+  ?show_up
+  ?participated
   ?(matches_filter = MatchesFilter.create true)
   ?canceled_at
   contact
