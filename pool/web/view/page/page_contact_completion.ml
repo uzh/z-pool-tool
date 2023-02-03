@@ -71,7 +71,11 @@ let form
         ~a:[ a_class [ "heading-1" ] ]
         [ txt
             Pool_common.(
-              Utils.text_to_string language I18n.ProfileCompletionTitle)
+              Utils.text_to_string language I18n.DashboardProfileCompletionTitle)
+        ]
+    ; p
+        [ Pool_common.(Utils.text_to_string language I18n.ProfileCompletionText)
+          |> Http_utils.add_line_breaks
         ]
     ; form
         ~a:

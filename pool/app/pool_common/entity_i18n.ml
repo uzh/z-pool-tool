@@ -2,6 +2,8 @@ type t =
   | Canceled
   | ContactWaitingListEmpty
   | ContactWaitingListTitle
+  | DashboardProfileCompletionText
+  | DashboardProfileCompletionTitle
   | DashboardTitle
   | DontHaveAnAccount
   | EmailConfirmationNote
@@ -32,7 +34,6 @@ type t =
   | NotifyVia
   | OurPartners
   | ProfileCompletionText
-  | ProfileCompletionTitle
   | RateTotalSent of int
   | Reminder
   | ResetPasswordLink
