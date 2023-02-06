@@ -73,7 +73,7 @@ let remove_message_columns =
 
 let drop_start_default_value =
   Sihl.Database.Migration.create_step
-    ~label:"rename filter column"
+    ~label:"drop start default value"
     {sql|
       ALTER TABLE pool_sessions
         MODIFY COLUMN `start` TIMESTAMP NULL;
