@@ -86,10 +86,10 @@ let htmx_attribs
   @ CCList.filter_map CCFun.id [ target ]
 ;;
 
-let search_experiments_results ?(value = "") results =
+let search_experiments_results ?(value = "") param results =
   let open Experiment in
   div
-    ~a:[ a_class [ "flexcolumn"; "query-box" ] ]
+    ~a:[ a_class [ "flexcolumn" ]; a_user_data "query" "input" ]
     [ input
         ~a:
           ([ a_input_type `Text
@@ -97,10 +97,9 @@ let search_experiments_results ?(value = "") results =
            ; a_name Pool_common.Message.Field.(show Query)
            ]
           @ htmx_attribs
-              ~action:
-                "/admin/experiments/437bf16f-339f-4833-b2c0-35c7f508ce52/filter/experiments"
+              ~action:(form_action param "experiments")
               ~trigger:"keyup changed delay:1s"
-              ~target:"closest .query-box"
+              ~target:"closest [data-query='input']"
               ())
         ()
     ; div
@@ -122,21 +121,29 @@ let search_experiments_results ?(value = "") results =
                  [ a_user_data "id" (Id.value id)
                  ; a_class [ "has-icon"; "pointer"; "inset-xs" ]
                  ]
-               [ Component_icon.icon `Add; span [ txt (Title.value title) ] ])
+               [ Component_icon.icon `Add
+               ; span [ txt (Title.value title) ]
+               ; input
+                   ~a:
+                     [ a_input_type `Checkbox
+                     ; a_class [ "hidden" ]
+                     ; a_name Pool_common.Message.Field.(array_key Value)
+                     ; a_value (Id.value id)
+                     ; a_checked ()
+                     ]
+                   ()
+               ])
            results)
     ]
 ;;
 
-let search_experiments ?value language results =
+let search_experiments ?value language param results =
   div
-    ~a:
-      [ a_class [ "form-group" ]
-      ; a_user_data "query" Pool_common.Message.Field.(show Experiment)
-      ]
+    ~a:[ a_class [ "form-group" ]; a_user_data "query" "wrapper" ]
     [ label
         [ txt Pool_common.(Utils.nav_link_to_string language I18n.Experiments) ]
-    ; div [ txt "Selected here..." ]
-    ; search_experiments_results ?value results
+    ; div ~a:[ a_user_data "query" "results" ] [ txt "Selected here..." ]
+    ; search_experiments_results ?value param results
     ]
 ;;
 
@@ -167,7 +174,7 @@ let operators_select language ?operators ?selected () =
       ()
 ;;
 
-let value_input language input_type ?value () =
+let value_input language param input_type ?value () =
   let open Filter in
   let open CCOption.Infix in
   let field_name = Pool_common.Message.Field.Value in
@@ -309,17 +316,17 @@ let value_input language input_type ?value () =
          multi_select
          field_name
          ()
-     | Key.QueryExpeirments -> search_experiments language [])
+     | Key.QueryExpeirments -> search_experiments language param [])
 ;;
 
-let predicate_value_form language ?key ?value ?operator () =
+let predicate_value_form language param ?key ?value ?operator () =
   let open CCOption.Infix in
   let input_type = key >|= Filter.Key.type_of_key in
   let operators = input_type >|= Filter.Operator.input_type_to_operator in
   let operator_select =
     operators_select language ?operators ?selected:operator ()
   in
-  let input_field = value_input language input_type ?value () in
+  let input_field = value_input language param input_type ?value () in
   div
     ~a:[ a_class [ "switcher-sm"; "flex-gap" ] ]
     [ operator_select; input_field ]
@@ -338,7 +345,7 @@ let single_predicate_form
   =
   let toggle_id = format_identifiers ~prefix:"pred-s" identifier in
   let toggled_content =
-    predicate_value_form language ?key ?value ?operator ()
+    predicate_value_form language param ?key ?value ?operator ()
   in
   let key_selector =
     let attributes =
@@ -417,7 +424,7 @@ let add_predicate_btn experiment identifier templates_disabled =
           (htmx_attribs
              ~action:(form_action experiment "add-predicate")
              ~trigger:"click"
-             ~target:id
+             ~target:(as_target_id id)
              ~identifier
              ~allow_empty_values:true
              ~templates_disabled

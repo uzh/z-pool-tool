@@ -32,8 +32,7 @@ let filtered_base_condition =
     |sql}
 ;;
 
-let filter_to_sql template_list dyn query =
-  let open Entity in
+let add_value_to_params operator value dyn =
   let wrap_in_percentage operator value =
     let wrap s = CCString.concat "" [ "%"; s; "%" ] in
     let open Operator in
@@ -41,19 +40,83 @@ let filter_to_sql template_list dyn query =
     | ContainsSome | ContainsNone | ContainsAll | Like -> wrap value
     | Less | LessEqual | Greater | GreaterEqual | Equal | NotEqual -> value
   in
-  let add_value_to_params operator value dyn =
-    let add c v = Dynparam.add c v dyn in
-    match value with
-    | Bool b -> add Caqti_type.bool b
-    | Date d -> add Caqti_type.ptime d
-    | Language lang -> add Caqti_type.string (Pool_common.Language.show lang)
-    | Nr n -> add Caqti_type.float n
-    | Option id ->
-      add
-        Caqti_type.string
-        (id |> Custom_field.SelectOption.Id.value |> wrap_in_percentage operator)
-    | Str s -> add Caqti_type.string (wrap_in_percentage operator s)
+  let add c v = Dynparam.add c v dyn in
+  match value with
+  | Bool b -> add Caqti_type.bool b
+  | Date d -> add Caqti_type.ptime d
+  | Language lang -> add Caqti_type.string (Pool_common.Language.show lang)
+  | Nr n -> add Caqti_type.float n
+  | Option id ->
+    add
+      Caqti_type.string
+      (id |> Custom_field.SelectOption.Id.value |> wrap_in_percentage operator)
+  | Str s -> add Caqti_type.string (wrap_in_percentage operator s)
+;;
+
+(** QUESTIONS
+
+    * Should canceled assignments on current experiment be allowed / not
+    allowed?
+
+    * Should canceled assignments when filtering by participation be allowed /
+    not allowed?
+
+    * Should no shows when filtering by participation be allowed / not allowed? *)
+
+let participation_subquery _ dyn operator ids =
+  let open CCResult in
+  let* dyn, query_params =
+    CCList.fold_left
+      (fun query id ->
+        query
+        >>= fun (dyn, params) ->
+        match id with
+        | Bool _ | Date _ | Language _ | Nr _ | Option _ ->
+          Error
+            Pool_common.Message.(QueryNotCompatible (Field.Value, Field.Key))
+        | Str id ->
+          Ok
+            ( add_value_to_params Operator.Equal (Str id) dyn
+            , "UNHEX(REPLACE(?, '-', ''))" :: params ))
+      (Ok (dyn, []))
+      ids
+    >|= fun (dyn, ids) -> dyn, CCString.concat "," ids
   in
+  let subquery =
+    Format.asprintf
+      {sql|
+        SELECT
+          COUNT(DISTINCT pool_experiments.uuid)
+        FROM
+          pool_assignments
+          INNER JOIN pool_sessions ON pool_sessions.id = pool_assignments.session_id
+          INNER JOIN pool_experiments ON pool_sessions.experiment_uuid = pool_experiments.uuid
+        WHERE
+          pool_assignments.contact_id = pool_contacts.id
+          AND pool_experiments.uuid IN (%s)
+          AND pool_assignments.participated = 1
+        GROUP BY
+          pool_experiments.uuid
+      |sql}
+      query_params
+  in
+  let* condition, dyn =
+    let format comparison = Format.asprintf "(%s) %s" subquery comparison in
+    let open Operator in
+    match operator with
+    | ContainsAll ->
+      (format " = ? ", Dynparam.add Caqti_type.int (CCList.length ids) dyn)
+      |> pure
+    | ContainsNone -> (format " = 0 ", dyn) |> pure
+    | ContainsSome -> (format " > 0 ", dyn) |> pure
+    | Less | LessEqual | Greater | GreaterEqual | Equal | NotEqual | Like ->
+      Error Pool_common.Message.(Invalid Field.Operator)
+  in
+  (dyn, Format.asprintf "(%s)" condition) |> pure
+;;
+
+let filter_to_sql template_list dyn query =
+  let open Entity in
   let open CCResult in
   let rec query_sql (dyn, sql) query : (Dynparam.t * 'a, 'b) result =
     let of_list (dyn, sql) queries operator =
@@ -138,11 +201,22 @@ let filter_to_sql template_list dyn query =
             (dyn, Format.asprintf "EXISTS (%s)" sql) |> CCResult.pure)
        | Lst [] -> Ok (dyn, sql)
        | Lst values ->
+         let open Key in
          (match key with
-          | Key.Hardcoded _ ->
-            Error
-              Pool_common.Message.(QueryNotCompatible (Field.Value, Field.Key))
-          | Key.CustomField id ->
+          | Hardcoded hardcoded ->
+            (match hardcoded with
+             | Participation -> participation_subquery sql dyn operator values
+             | ContactLanguage
+             | Firstname
+             | Name
+             | NumAssignments
+             | NumInvitations
+             | NumParticipations
+             | NumShowUps ->
+               Error
+                 Pool_common.Message.(
+                   QueryNotCompatible (Field.Value, Field.Key)))
+          | CustomField id ->
             let dyn, subqueries =
               CCList.fold_left
                 (fun (dyn, lst_sql) value ->

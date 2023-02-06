@@ -43,6 +43,10 @@ const isListOperator = (operator) => {
     return ["contains_all", "contains_some", "contains_none"].includes(operator)
 }
 
+const isQueryKey = (key) => {
+    return ["participation"].includes(key)
+}
+
 const findChildPredicates = (wrapper) => {
     return [...wrapper.querySelector(".predicate-wrapper").children].filter((elm) => elm.classList.contains("predicate"))
 }
@@ -168,7 +172,12 @@ const predicateToJson = (outerPredicate, allowEmpty = false) => {
         let value;
         let isList = isListOperator(operator)
         if (isList) {
-            const values = [...outerPredicate.querySelectorAll(`[name="value[]"]:checked`)];
+            var values = []
+            if (isQueryKey(key)) {
+                values = [...outerPredicate.querySelectorAll(`[data-query="results"] [name="value[]"]:checked`)];
+            } else {
+                values = [...outerPredicate.querySelectorAll(`[name="value[]"]:checked`)];
+            }
             value = values.map(toValue)
         } else {
             const valueInput = findElm("value");
@@ -200,6 +209,16 @@ function addRemovePredicateListener(element) {
     [...element.querySelectorAll("[data-delete-predicate]")].forEach(elm => {
         elm.addEventListener("click", (e) => {
             e.currentTarget.closest(".predicate").remove();
+        })
+    })
+}
+
+function addQueryPredicateListeners(queryInput) {
+    var wrapper = queryInput.closest("[data-query='wrapper']");
+    var results = wrapper.querySelector("[data-query='results']");
+    [...queryInput.querySelectorAll("[data-id]")].forEach(item => {
+        item.addEventListener("click", () => {
+            results.appendChild(item);
         })
     })
 }
@@ -242,8 +261,12 @@ export function initFilterForm() {
             }
         })
         addRemovePredicateListener(form);
+        [...form.querySelectorAll("[data-query='input']")].forEach(e => addQueryPredicateListeners(e))
         form.addEventListener('htmx:afterSwap', (e) => {
             addRemovePredicateListener(e.detail.elt)
+            if (e.detail.elt.dataset.query) {
+                addQueryPredicateListeners(e.detail.elt)
+            }
             if (e.detail.target.type === "submit") {
                 updateContactCount();
             }

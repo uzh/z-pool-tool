@@ -231,7 +231,7 @@ let handle_toggle_predicate_type action req =
   |> Lwt.return
 ;;
 
-let handle_toggle_key req =
+let handle_toggle_key action req =
   let open Utils.Lwt_result.Infix in
   let%lwt result =
     let* { Pool_context.language; database_label; _ } =
@@ -243,7 +243,8 @@ let handle_toggle_key req =
       |> Lwt_result.lift
       >>= Filter.key_of_string database_label
     in
-    Component.Filter.predicate_value_form language ~key () |> Lwt.return_ok
+    Component.Filter.predicate_value_form language action ~key ()
+    |> Lwt.return_ok
   in
   (match result with
    | Ok html -> html
@@ -299,7 +300,7 @@ let handle_add_predicate action req =
   |> Lwt.return
 ;;
 
-let search_experiments req =
+let search_experiments action req =
   let open Utils.Lwt_result.Infix in
   let%lwt result =
     let* { Pool_context.database_label; _ } =
@@ -319,7 +320,7 @@ let search_experiments req =
            ~default:(Lwt.return [])
            (Experiment.search database_label)
     in
-    Component.Filter.search_experiments_results ?value:query results
+    Component.Filter.search_experiments_results ?value:query action results
     |> Lwt.return_ok
   in
   (match result with
@@ -376,8 +377,8 @@ module Create = struct
   let create_template = write action
   let add_predicate = handle_add_predicate action
   let toggle_predicate_type = handle_toggle_predicate_type action
-  let toggle_key = handle_toggle_key
-  let search_experiments = search_experiments
+  let toggle_key = handle_toggle_key action
+  let search_experiments = search_experiments action
 end
 
 module Update = struct
@@ -399,8 +400,8 @@ module Update = struct
   let update_template = handler write
   let add_predicate = handler handle_add_predicate
   let toggle_predicate_type = handler handle_toggle_predicate_type
-  let toggle_key = handle_toggle_key
-  let search_experiments = search_experiments
+  let toggle_key = handler handle_toggle_key
+  let search_experiments = handler search_experiments
 end
 
 module Access : Helpers.AccessSig = struct

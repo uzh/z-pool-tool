@@ -249,6 +249,7 @@ module Key = struct
           options
         |> CCOption.to_result error
         >|= CCFun.const ()
+      | Str _, QueryExpeirments -> Ok ()
       | _ -> Error error
     in
     let validate_value value input_type =

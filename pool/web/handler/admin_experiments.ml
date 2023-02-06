@@ -234,8 +234,8 @@ module Filter = struct
 
   let toggle_predicate_type = handler Admin_filter.handle_toggle_predicate_type
   let add_predicate = handler Admin_filter.handle_add_predicate
-  let toggle_key = Admin_filter.handle_toggle_key
-  let search_experiments = Admin_filter.search_experiments
+  let toggle_key = handler Admin_filter.handle_toggle_key
+  let search_experiments = handler Admin_filter.search_experiments
   let create = handler Admin_filter.write
   let update = handler Admin_filter.write
 
