@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 - add description to user profile completion page
 
+### Fixed
+
+- removed default value from pool_sessions.start
+
 ## [0.1.1](https://github.com/uzh/pool/tree/0.1.1) - 2023-02-02
 
 ### Added

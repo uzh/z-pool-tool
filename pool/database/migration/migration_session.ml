@@ -71,6 +71,15 @@ let remove_message_columns =
     |sql}
 ;;
 
+let drop_start_default_value =
+  Sihl.Database.Migration.create_step
+    ~label:"drop start default value"
+    {sql|
+      ALTER TABLE pool_sessions
+        MODIFY COLUMN `start` TIMESTAMP NULL;
+    |sql}
+;;
+
 let migration () =
   Sihl.Database.Migration.(
     empty "session"
@@ -78,5 +87,6 @@ let migration () =
     |> add_step add_location
     |> add_step add_follow_up
     |> add_step add_reminder_columns
-    |> add_step add_closed_at_column)
+    |> add_step add_closed_at_column
+    |> add_step drop_start_default_value)
 ;;
