@@ -25,6 +25,7 @@ module Key : sig
     | Str
     | Select of Custom_field.SelectOption.t list
     | MultiSelect of Custom_field.SelectOption.t list
+    | QueryExpeirments
 
   val show_input_type : input_type -> string
 
@@ -36,6 +37,7 @@ module Key : sig
     | NumInvitations
     | NumParticipations
     | NumShowUps
+    | Participation
 
   type t =
     | CustomField of Custom_field.Id.t

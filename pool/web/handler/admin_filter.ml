@@ -9,6 +9,14 @@ let template_id =
   HttpUtils.find_id Filter.Id.of_string Pool_common.Message.Field.Filter
 ;;
 
+let error_to_html ?(language = Pool_common.Language.En) err =
+  err
+  |> Pool_common.(Utils.error_to_string language)
+  |> Tyxml.Html.txt
+  |> CCList.pure
+  |> Tyxml.Html.div
+;;
+
 let templates_disabled urlencoded =
   let open CCOption in
   CCList.assoc_opt ~eq:CCString.equal templates_disabled_key urlencoded
@@ -217,12 +225,7 @@ let handle_toggle_predicate_type action req =
   in
   (match result with
    | Ok html -> html
-   | Error err ->
-     err
-     |> Pool_common.(Utils.error_to_string Pool_common.Language.En)
-     |> Tyxml.Html.txt
-     |> CCList.pure
-     |> Tyxml.Html.div)
+   | Error err -> error_to_html err)
   |> CCList.pure
   |> HttpUtils.multi_html_to_plain_text_response
   |> Lwt.return
@@ -244,12 +247,7 @@ let handle_toggle_key req =
   in
   (match result with
    | Ok html -> html
-   | Error err ->
-     err
-     |> Pool_common.(Utils.error_to_string Pool_common.Language.En)
-     |> Tyxml.Html.txt
-     |> CCList.pure
-     |> Tyxml.Html.div)
+   | Error err -> err |> error_to_html)
   |> CCList.pure
   |> HttpUtils.multi_html_to_plain_text_response
   |> Lwt.return
@@ -296,13 +294,38 @@ let handle_add_predicate action req =
   in
   (match result with
    | Ok html -> html
-   | Error err ->
-     err
-     |> Pool_common.(Utils.error_to_string Pool_common.Language.En)
-     |> Tyxml.Html.txt
-     |> CCList.pure
-     |> Tyxml.Html.div
-     |> CCList.pure)
+   | Error err -> error_to_html err |> CCList.pure)
+  |> HttpUtils.multi_html_to_plain_text_response
+  |> Lwt.return
+;;
+
+let search_experiments req =
+  let open Utils.Lwt_result.Infix in
+  let%lwt result =
+    let* { Pool_context.database_label; _ } =
+      Pool_context.find req |> Lwt_result.lift
+    in
+    let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+    let query =
+      CCList.assoc_opt
+        ~eq:CCString.equal
+        Pool_common.Message.Field.(show Query)
+        urlencoded
+      |> CCFun.flip CCOption.bind CCList.head_opt
+    in
+    let%lwt results =
+      query
+      |> CCOption.map_or
+           ~default:(Lwt.return [])
+           (Experiment.search database_label)
+    in
+    Component.Filter.search_experiments_results ?value:query results
+    |> Lwt.return_ok
+  in
+  (match result with
+   | Ok html -> html
+   | Error err -> error_to_html err)
+  |> CCList.pure
   |> HttpUtils.multi_html_to_plain_text_response
   |> Lwt.return
 ;;
@@ -354,6 +377,7 @@ module Create = struct
   let add_predicate = handle_add_predicate action
   let toggle_predicate_type = handle_toggle_predicate_type action
   let toggle_key = handle_toggle_key
+  let search_experiments = search_experiments
 end
 
 module Update = struct
@@ -376,6 +400,7 @@ module Update = struct
   let add_predicate = handler handle_add_predicate
   let toggle_predicate_type = handler handle_toggle_predicate_type
   let toggle_key = handle_toggle_key
+  let search_experiments = search_experiments
 end
 
 module Access : Helpers.AccessSig = struct

@@ -5,6 +5,7 @@ module Input = Component_input
 
 let templates_disabled_key = "templates_disabled"
 let notification_id = "filter-notification"
+let as_target_id = Format.asprintf "#%s"
 
 let format_identifiers ?prefix identifiers =
   let ids =
@@ -50,9 +51,7 @@ let htmx_attribs
   ()
   =
   let target =
-    target
-    |> CCOption.map (fun target ->
-         a_user_data "hx-target" (Format.asprintf "#%s" target))
+    target |> CCOption.map (fun target -> a_user_data "hx-target" target)
   in
   let hx_vals =
     let identifier =
@@ -85,6 +84,60 @@ let htmx_attribs
   ]
   @ hx_vals
   @ CCList.filter_map CCFun.id [ target ]
+;;
+
+let search_experiments_results ?(value = "") results =
+  let open Experiment in
+  div
+    ~a:[ a_class [ "flexcolumn"; "query-box" ] ]
+    [ input
+        ~a:
+          ([ a_input_type `Text
+           ; a_value value
+           ; a_name Pool_common.Message.Field.(show Query)
+           ]
+          @ htmx_attribs
+              ~action:
+                "/admin/experiments/437bf16f-339f-4833-b2c0-35c7f508ce52/filter/experiments"
+              ~trigger:"keyup changed delay:1s"
+              ~target:"closest .query-box"
+              ())
+        ()
+    ; div
+        ~a:
+          [ a_class
+              [ "flexcolumn"
+              ; "gap-sm"
+              ; "striped"
+              ; "bg-white"
+              ; "inset-sm"
+              ; "border"
+              ; "border-radius"
+              ]
+          ]
+        (CCList.map
+           (fun (id, title) ->
+             div
+               ~a:
+                 [ a_user_data "id" (Id.value id)
+                 ; a_class [ "has-icon"; "pointer"; "inset-xs" ]
+                 ]
+               [ Component_icon.icon `Add; span [ txt (Title.value title) ] ])
+           results)
+    ]
+;;
+
+let search_experiments ?value language results =
+  div
+    ~a:
+      [ a_class [ "form-group" ]
+      ; a_user_data "query" Pool_common.Message.Field.(show Experiment)
+      ]
+    [ label
+        [ txt Pool_common.(Utils.nav_link_to_string language I18n.Experiments) ]
+    ; div [ txt "Selected here..." ]
+    ; search_experiments_results ?value results
+    ]
 ;;
 
 let select_default_option language selected =
@@ -226,7 +279,7 @@ let value_input language input_type ?value () =
          selected
          ()
      | Key.MultiSelect options ->
-       let[@warning "-4"] selected =
+       let selected =
          CCOption.map_or
            ~default:[]
            (fun value ->
@@ -235,7 +288,7 @@ let value_input language input_type ?value () =
              | Lst lst ->
                CCList.filter_map
                  (fun value ->
-                   match value with
+                   match[@warning "-4"] value with
                    | Option id -> find_in_options options id
                    | _ -> None)
                  lst)
@@ -255,7 +308,8 @@ let value_input language input_type ?value () =
          language
          multi_select
          field_name
-         ())
+         ()
+     | Key.QueryExpeirments -> search_experiments language [])
 ;;
 
 let predicate_value_form language ?key ?value ?operator () =
@@ -292,7 +346,7 @@ let single_predicate_form
         ~action:(form_action param "toggle-key")
         ~trigger:"change"
         ~swap:"innerHTML"
-        ~target:toggle_id
+        ~target:(as_target_id toggle_id)
         ~allow_empty_values:true
         ~templates_disabled
         ()
@@ -330,7 +384,7 @@ let predicate_type_select
     htmx_attribs
       ~action:(form_action experiment "toggle-predicate-type")
       ~trigger:"change"
-      ~target
+      ~target:(as_target_id target)
       ~identifier
       ~allow_empty_values:true
       ~templates_disabled

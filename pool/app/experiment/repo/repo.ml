@@ -199,6 +199,30 @@ module Sql = struct
       destroy_request
       (id |> Entity.Id.value)
   ;;
+
+  let search_request =
+    let open Caqti_request.Infix in
+    {sql|
+    SELECT
+      LOWER(CONCAT(
+        SUBSTR(HEX(pool_experiments.uuid), 1, 8), '-',
+        SUBSTR(HEX(pool_experiments.uuid), 9, 4), '-',
+        SUBSTR(HEX(pool_experiments.uuid), 13, 4), '-',
+        SUBSTR(HEX(pool_experiments.uuid), 17, 4), '-',
+        SUBSTR(HEX(pool_experiments.uuid), 21)
+      )),
+      pool_experiments.title
+    FROM pool_experiments
+    WHERE pool_experiments.title LIKE ?
+    LIMIT 10
+    |sql}
+    |> Caqti_type.(string ->* Repo_entity.(tup2 RepoId.t Title.t))
+  ;;
+
+  let search pool query =
+    "%" ^ query ^ "%"
+    |> Utils.Database.collect (Pool_database.Label.value pool) search_request
+  ;;
 end
 
 let find = Sql.find
@@ -209,5 +233,6 @@ let session_count = Sql.session_count
 let insert = Sql.insert
 let update = Sql.update
 let destroy = Sql.destroy
+let search = Sql.search
 
 module Id = Pool_common.Repo.Id

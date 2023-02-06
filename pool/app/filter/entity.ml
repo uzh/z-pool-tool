@@ -105,6 +105,7 @@ module Key = struct
     | Select of Custom_field.SelectOption.t list [@printer print "option"]
     | MultiSelect of Custom_field.SelectOption.t list
         [@printer print "multi_select"]
+    | QueryExpeirments
   [@@deriving show]
 
   type hardcoded =
@@ -119,6 +120,7 @@ module Key = struct
     | NumParticipations [@printer print "num_participations"]
         [@name "num_participations"]
     | NumShowUps [@printer print "num_show_ups"] [@name "num_show_ups"]
+    | Participation [@printer print "participation"] [@name "participation"]
   [@@deriving show { with_path = false }, eq, yojson, variants, enum]
 
   type human =
@@ -196,6 +198,7 @@ module Key = struct
     | NumInvitations -> "pool_contacts.num_invitations"
     | NumParticipations -> "pool_contacts.num_participations"
     | NumShowUps -> "pool_contacts.num_show_ups"
+    | Participation -> failwith "TODO"
   ;;
 
   let type_of_hardcoded m : input_type =
@@ -204,6 +207,7 @@ module Key = struct
     | Firstname -> Str
     | Name -> Str
     | NumAssignments | NumInvitations | NumParticipations | NumShowUps -> Nr
+    | Participation -> QueryExpeirments
   ;;
 
   let type_of_custom_field m : input_type =
@@ -305,7 +309,8 @@ module Operator = struct
     | Key.Date | Nr ->
       [ Equal; NotEqual; Greater; GreaterEqual; Less; LessEqual ]
     | Key.Languages _ -> [ Equal; NotEqual ]
-    | MultiSelect _ -> [ ContainsAll; ContainsSome; ContainsNone ]
+    | MultiSelect _ | QueryExpeirments ->
+      [ ContainsAll; ContainsSome; ContainsNone ]
     | Select _ -> [ Equal; NotEqual ]
     | Str -> [ Equal; NotEqual; Like ]
   ;;
