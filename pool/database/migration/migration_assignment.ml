@@ -51,7 +51,7 @@ let make_show_up_participated_nullable =
     ~label:"make show_up and participated nullable"
     {sql|
       ALTER TABLE pool_assignments
-        MODIFY COLUMN show_up BOOLEAN,
+        MODIFY COLUMN show_up BOOLEAN NULL,
         MODIFY COLUMN participated BOOLEAN
     |sql}
 ;;
