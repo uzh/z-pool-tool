@@ -61,14 +61,13 @@ let file_to_storage file =
 let dummy_to_file (dummy : Database.SeedAssets.file) =
   let open Database.SeedAssets in
   let open Pool_common in
-  let get_or_failwith res =
-    res
-    |> CCResult.map_err (Utils.error_to_string Language.En)
-    |> CCResult.get_or_failwith
+  let name = File.Name.create dummy.filename |> get_or_failwith_pool_error in
+  let filesize =
+    File.Size.create dummy.filesize |> get_or_failwith_pool_error
   in
-  let name = File.Name.create dummy.filename |> get_or_failwith in
-  let filesize = File.Size.create dummy.filesize |> get_or_failwith in
-  let mime_type = File.Mime.of_string dummy.mime |> get_or_failwith in
+  let mime_type =
+    File.Mime.of_string dummy.mime |> get_or_failwith_pool_error
+  in
   File.
     { id = dummy.id |> Id.of_string
     ; name
@@ -292,18 +291,18 @@ module Model = struct
     { id = Pool_common.Id.create ()
     ; follow_up_to = None
     ; start
-    ; duration = Duration.create hour |> Pool_common.Utils.get_or_failwith
+    ; duration = Duration.create hour |> get_or_failwith_pool_error
     ; description = None
     ; location = create_location ()
     ; max_participants =
-        ParticipantAmount.create 30 |> Pool_common.Utils.get_or_failwith
+        ParticipantAmount.create 30 |> get_or_failwith_pool_error
     ; min_participants =
-        ParticipantAmount.create 1 |> Pool_common.Utils.get_or_failwith
-    ; overbook = ParticipantAmount.create 4 |> Pool_common.Utils.get_or_failwith
+        ParticipantAmount.create 1 |> get_or_failwith_pool_error
+    ; overbook = ParticipantAmount.create 4 |> get_or_failwith_pool_error
     ; reminder_lead_time = None
     ; reminder_sent_at = None
     ; assignment_count =
-        0 |> AssignmentCount.create |> Pool_common.Utils.get_or_failwith
+        0 |> AssignmentCount.create |> get_or_failwith_pool_error
     ; closed_at = None
     ; canceled_at = None
     ; created_at = Pool_common.CreatedAt.create ()
