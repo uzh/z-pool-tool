@@ -46,11 +46,22 @@ let rename_table_to_assignments =
     |sql}
 ;;
 
+let make_show_up_participated_nullable =
+  Sihl.Database.Migration.create_step
+    ~label:"make show_up and participated nullable"
+    {sql|
+      ALTER TABLE pool_assignments
+        MODIFY COLUMN show_up BOOLEAN NULL,
+        MODIFY COLUMN participated BOOLEAN
+    |sql}
+;;
+
 let migration () =
   Sihl.Database.Migration.(
     empty "participation"
     |> add_step create_participation_table
     |> add_step rename_participant_to_subject
     |> add_step rename_subject_to_contact
-    |> add_step rename_table_to_assignments)
+    |> add_step rename_table_to_assignments
+    |> add_step make_show_up_participated_nullable)
 ;;

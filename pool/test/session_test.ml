@@ -660,6 +660,76 @@ let cancel_valid () =
     res
 ;;
 
+let close_before_start () =
+  let session = Test_utils.Model.(create_session ~start:(in_an_hour ())) () in
+  let res = Cqrs_command.Assignment_command.SetAttendance.handle session [] in
+  check_result (Error Pool_common.Message.SessionNotStarted) res
+;;
+
+let close_valid () =
+  let open Cqrs_command.Assignment_command.SetAttendance in
+  let session = Test_utils.Model.(create_session ~start:(an_hour_ago ())) () in
+  let res = handle session [] in
+  check_result (Ok [ Session.Closed session |> Pool_event.session ]) res
+;;
+
+let close_valid_with_assignments () =
+  let open Cqrs_command.Assignment_command.SetAttendance in
+  let open Assignment in
+  let session = Test_utils.Model.(create_session ~start:(an_hour_ago ())) () in
+  let assignments =
+    [ true ]
+    |> CCList.map (fun participated ->
+         ()
+         |> Test_utils.Model.create_contact
+         |> create
+         |> fun assignment ->
+         assignment, true |> ShowUp.create, Participated.create participated)
+  in
+  let res = handle session assignments in
+  let expected =
+    CCList.fold_left
+      (fun events
+           (((assignment : Assignment.t), showup, participated) as
+           participation) ->
+        let contact_event =
+          let open Contact in
+          let update =
+            { show_up = ShowUp.value showup
+            ; participated = Participated.value participated
+            }
+          in
+          SessionParticipationSet (assignment.contact, update)
+          |> Pool_event.contact
+        in
+        events
+        @ [ AttendanceSet participation |> Pool_event.assignment
+          ; contact_event
+          ])
+      [ Session.Closed session |> Pool_event.session ]
+      assignments
+    |> CCResult.pure
+  in
+  check_result expected res
+;;
+
+let validate_invalid_participation () =
+  let open Cqrs_command.Assignment_command.SetAttendance in
+  let open Assignment in
+  let session = Test_utils.Model.(create_session ~start:(an_hour_ago ())) () in
+  let participation =
+    ( Test_utils.Model.create_contact () |> create
+    , ShowUp.create false
+    , Participated.create true )
+  in
+  let res = handle session [ participation ] in
+  let expected =
+    Error
+      Pool_common.Message.(FieldRequiresCheckbox Field.(Participated, ShowUp))
+  in
+  check_result expected res
+;;
+
 let send_reminder () =
   let session1 = Test_utils.Model.create_session () in
   let session2 =

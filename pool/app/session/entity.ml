@@ -387,9 +387,7 @@ let is_closable session =
   let open Pool_common.Message in
   let* () = not_closed session in
   let* () = not_canceled session in
-  if Ptime.is_earlier
-       (session |> get_session_end |> Start.value)
-       ~than:Ptime_clock.(now ())
+  if Ptime.is_earlier session.start ~than:Ptime_clock.(now ())
   then Ok ()
   else Error SessionNotStarted
 ;;

@@ -29,8 +29,8 @@ end
 type t =
   { id : Pool_common.Id.t
   ; contact : Contact.t
-  ; show_up : ShowUp.t
-  ; participated : Participated.t
+  ; show_up : ShowUp.t option
+  ; participated : Participated.t option
   ; matches_filter : MatchesFilter.t
   ; canceled_at : CanceledAt.t option
   ; created_at : Pool_common.CreatedAt.t
@@ -39,6 +39,15 @@ type t =
 
 val pp : Format.formatter -> t -> unit
 val equal : t -> t -> bool
+
+val create
+  :  ?id:Pool_common.Id.t
+  -> ?show_up:ShowUp.t
+  -> ?participated:Participated.t
+  -> ?matches_filter:MatchesFilter.t
+  -> ?canceled_at:CanceledAt.t
+  -> Contact.t
+  -> t
 
 module Public : sig
   type t =
