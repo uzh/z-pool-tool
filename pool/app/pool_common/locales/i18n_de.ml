@@ -4,6 +4,10 @@ let to_string = function
   | Canceled -> "Abgesagt"
   | ContactWaitingListEmpty -> "Sie sind aktuell auf keiner Warteliste."
   | ContactWaitingListTitle -> "Auf der Warteliste"
+  | DashboardProfileCompletionText ->
+    "Ihr Profil ist unvollständig. Um zu mehr Experimenten eingeladen zu \
+     werden, vervollständigen Sie Ihr Profil."
+  | DashboardProfileCompletionTitle -> "Profilvervollständigung"
   | DashboardTitle -> "Dashboard"
   | DontHaveAnAccount -> "Noch kein Zugang?"
   | EmailConfirmationNote ->
@@ -37,9 +41,9 @@ let to_string = function
   | NotifyVia -> "Benachrichtigen via"
   | OurPartners -> "Unsere Partner"
   | ProfileCompletionText ->
-    "Ihr Profil ist unvollständig. Um zu mehr Experimenten eingeladen zu \
-     werden, vervollständigen Sie Ihr Profil."
-  | ProfileCompletionTitle -> "Profilvervollständigung"
+    {|Die folgenden Angaben werden benötigt, um an Experimente eingeladen werden zu können. Weitere Angaben können anschliessend in Ihrem Profil gemacht werden.
+
+Sie kommen für mehr Experimente in Frage, umso kompletter Ihr Profil ist.|}
   | LocationFileNew -> "Neue Datei zu Standort hinzufügen"
   | LocationListTitle -> "Standorte"
   | LocationNewTitle -> "Neuer Standort erstellen"

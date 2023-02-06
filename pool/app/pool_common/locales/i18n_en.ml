@@ -4,6 +4,10 @@ let to_string = function
   | Canceled -> "Canceled"
   | ContactWaitingListEmpty -> "You are currently not on any waiting list."
   | ContactWaitingListTitle -> "On the waiting list"
+  | DashboardProfileCompletionText ->
+    "Your profile is incomplete. To be invited to more experiments, fulfill \
+     your profile."
+  | DashboardProfileCompletionTitle -> "Profile completion"
   | DashboardTitle -> "Dashboard"
   | DontHaveAnAccount -> "Don't have an account?"
   | EmailConfirmationNote ->
@@ -35,9 +39,9 @@ let to_string = function
   | NotifyVia -> "Notify via"
   | OurPartners -> "Our partners"
   | ProfileCompletionText ->
-    "Your profile is incomplete. To be invited to more experiments, fulfill \
-     your profile."
-  | ProfileCompletionTitle -> "Profile completion"
+    {|The following information is required to be invited to experiments. Further information can be entered in your profile afterwards.
+
+    You will be considered for more experiments, the more complete your profile is.|}
   | LocationFileNew -> "Add file to location"
   | LocationListTitle -> "Location"
   | LocationNewTitle -> "Create new location"

@@ -41,7 +41,9 @@ let index
              [ div
                  [ txt
                      Pool_common.(
-                       Utils.text_to_string language I18n.ProfileCompletionText)
+                       Utils.text_to_string
+                         language
+                         I18n.DashboardProfileCompletionText)
                  ]
              ; div
                  ~a:[ a_class [ "push" ] ]
