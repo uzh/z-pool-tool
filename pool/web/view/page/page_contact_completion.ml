@@ -85,6 +85,7 @@ let form
               (Http_utils.externalize_path_with_lang
                  query_language
                  "/user/completion")
+          ; a_user_data "detect-unsaved-changes" ""
           ]
         Component.(
           (Input.csrf_element csrf () :: custom_fields_form)
