@@ -80,3 +80,24 @@ let rec of_yojson (key_list : Entity.Key.human list) json
      | _ -> Error error)
   | _ -> Error error
 ;;
+
+(* TODO: Fix warning 40 *)
+let[@warning "-4"] [@warning "-40"] all_query_experiments (query : t) =
+  let open Entity.Predicate in
+  let rec find = function
+    | And queries | Or queries -> CCList.flat_map find queries
+    | Not p -> find p
+    | Pred { key; value; _ } ->
+      let open Entity.Key in
+      (match key, value with
+       | Some (Hardcoded Participation), Some (Lst lst) ->
+         lst
+         |> CCList.filter_map (fun (value : Entity.single_val) ->
+              match value with
+              | Str id -> Some (Pool_common.Id.of_string id)
+              | _ -> None)
+       | _, _ -> [])
+    | Template _ -> []
+  in
+  query |> find
+;;

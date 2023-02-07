@@ -41,7 +41,7 @@ let index { Pool_context.language; _ } filter_list =
     ]
 ;;
 
-let edit { Pool_context.language; csrf; _ } filter key_list =
+let edit { Pool_context.language; csrf; _ } filter key_list query_experiments =
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
     [ Component.Partials.form_title
@@ -54,6 +54,7 @@ let edit { Pool_context.language; csrf; _ } filter key_list =
           language
           (Http_utils.Filter.Template filter)
           key_list
-          [])
+          []
+          query_experiments)
     ]
 ;;

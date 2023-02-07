@@ -125,6 +125,8 @@ module Human : sig
     :  Key.human list
     -> Yojson.Safe.t
     -> (t, Pool_common.Message.error) result
+
+  val all_query_experiments : t -> Pool_common.Id.t list
 end
 
 val equal : t -> t -> bool
@@ -211,6 +213,8 @@ val toggle_predicate_type
   :  Human.t
   -> string
   -> (Human.t, Pool_common.Message.error) result
+
+val all_query_experiments : t -> Pool_common.Id.t list
 
 val find_filtered_contacts
   :  Pool_database.Label.t

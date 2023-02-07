@@ -84,8 +84,16 @@ let form is_edit req =
            >|+ CCOption.pure
          else Lwt.return_none |> Lwt_result.ok
        in
+       let%lwt query_experiments =
+         match filter with
+         | None -> Lwt.return []
+         | Some filter ->
+           filter
+           |> Filter.all_query_experiments
+           |> Experiment.multiple_search_results_by_id database_label
+       in
        let%lwt key_list = Filter.all_keys database_label in
-       Page.Admin.Filter.edit context filter key_list
+       Page.Admin.Filter.edit context filter key_list query_experiments
        |> create_layout req context
        >|+ Sihl.Web.Response.of_html
   in
@@ -211,6 +219,11 @@ let handle_toggle_predicate_type action req =
          Filter.toggle_predicate_type current predicate_type
     in
     let* identifier = find_identifier urlencoded |> Lwt_result.lift in
+    let%lwt quey_experiments =
+      query
+      |> Filter.Human.all_query_experiments
+      |> Experiment.multiple_search_results_by_id database_label
+    in
     Component.Filter.(
       predicate_form
         language
@@ -218,6 +231,7 @@ let handle_toggle_predicate_type action req =
         key_list
         template_list
         templates_disabled
+        quey_experiments
         (Some query)
         ~identifier
         ())
@@ -243,7 +257,7 @@ let handle_toggle_key action req =
       |> Lwt_result.lift
       >>= Filter.key_of_string database_label
     in
-    Component.Filter.predicate_value_form language action ~key ()
+    Component.Filter.predicate_value_form language action [] ~key ()
     |> Lwt.return_ok
   in
   (match result with
@@ -281,6 +295,7 @@ let handle_add_predicate action req =
         key_list
         template_list
         templates_disabled
+        []
         query
         ~identifier
         ()
@@ -308,17 +323,24 @@ let search_experiments action req =
     in
     let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
     let query =
-      CCList.assoc_opt
-        ~eq:CCString.equal
-        Pool_common.Message.Field.(show Query)
-        urlencoded
-      |> CCFun.flip CCOption.bind CCList.head_opt
+      find_in_params urlencoded Pool_common.Message.Field.Title
+      |> CCResult.to_opt
+    in
+    let%lwt exclude =
+      let current_experiment =
+        match action with
+        | Template _ -> None
+        | Experiment experiment -> Some experiment.Experiment.id
+      in
+      Sihl.Web.Request.urlencoded_list "exclude[]" req
+      ||> CCList.map Experiment.Id.of_string
+      ||> CCList.cons_maybe current_experiment
     in
     let%lwt results =
       query
       |> CCOption.map_or
            ~default:(Lwt.return [])
-           (Experiment.search database_label)
+           (Experiment.search database_label exclude)
     in
     Component.Filter.search_experiments_input ?value:query action results
     |> Lwt.return_ok

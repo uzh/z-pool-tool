@@ -86,15 +86,36 @@ let htmx_attribs
   @ CCList.filter_map CCFun.id [ target ]
 ;;
 
-let search_experiments_input ?(value = "") param results =
+let search_experiment_item (id, title) =
   let open Experiment in
+  div
+    ~a:
+      [ a_user_data "id" (Id.value id)
+      ; a_class [ "has-icon"; "pointer"; "inset-xs" ]
+      ]
+    [ Component_icon.icon `Add
+    ; span [ txt (Title.value title) ]
+    ; input
+        ~a:
+          [ a_input_type `Checkbox
+          ; a_class [ "hidden" ]
+          ; a_name Pool_common.Message.Field.(array_key Value)
+          ; a_value (Id.value id)
+          ; a_checked ()
+          ]
+        ()
+    ]
+;;
+
+let search_experiments_input ?(value = "") param results =
   div
     ~a:[ a_class [ "flexcolumn" ]; a_user_data "query" "input" ]
     [ input
         ~a:
           ([ a_input_type `Text
            ; a_value value
-           ; a_name Pool_common.Message.Field.(show Query)
+           ; a_name Pool_common.Message.Field.(show Title)
+           ; a_class [ "query-input" ]
            ]
           @ htmx_attribs
               ~action:(form_action param "experiments")
@@ -114,35 +135,18 @@ let search_experiments_input ?(value = "") param results =
               ; "border-radius"
               ]
           ]
-        (CCList.map
-           (fun (id, title) ->
-             div
-               ~a:
-                 [ a_user_data "id" (Id.value id)
-                 ; a_class [ "has-icon"; "pointer"; "inset-xs" ]
-                 ]
-               [ Component_icon.icon `Add
-               ; span [ txt (Title.value title) ]
-               ; input
-                   ~a:
-                     [ a_input_type `Checkbox
-                     ; a_class [ "hidden" ]
-                     ; a_name Pool_common.Message.Field.(array_key Value)
-                     ; a_value (Id.value id)
-                     ; a_checked ()
-                     ]
-                   ()
-               ])
-           results)
+        (CCList.map search_experiment_item results)
     ]
 ;;
 
-let search_experiments ?value language param results =
+let search_experiments ?value language param ~current ~results =
   div
     ~a:[ a_class [ "form-group" ]; a_user_data "query" "wrapper" ]
     [ label
         [ txt Pool_common.(Utils.nav_link_to_string language I18n.Experiments) ]
-    ; div ~a:[ a_user_data "query" "results" ] [ txt "Selected here..." ]
+    ; div
+        ~a:[ a_user_data "query" "results" ]
+        (CCList.map search_experiment_item current)
     ; search_experiments_input ?value param results
     ]
 ;;
@@ -174,7 +178,7 @@ let operators_select language ?operators ?selected () =
       ()
 ;;
 
-let value_input language param input_type ?value () =
+let value_input language param query_experiments input_type ?value () =
   let open Filter in
   let open CCOption.Infix in
   let field_name = Pool_common.Message.Field.Value in
@@ -317,18 +321,44 @@ let value_input language param input_type ?value () =
          field_name
          ()
      | Key.QueryExpeirments ->
-       let values = [] in
-       search_experiments language param values)
+       let current =
+         value
+         |> CCOption.map_or ~default:[] (fun value ->
+              match value with
+              | Single _ -> []
+              | Lst lst ->
+                CCList.filter_map
+                  (fun value ->
+                    match[@warning "-4"] value with
+                    | Str id ->
+                      let experiment_id = id |> Experiment.Id.of_string in
+                      CCList.find_opt
+                        (fun (id, _) -> Experiment.Id.equal id experiment_id)
+                        query_experiments
+                    | _ -> None)
+                  lst)
+       in
+       search_experiments language param ~current ~results:[])
 ;;
 
-let predicate_value_form language param ?key ?value ?operator () =
+let predicate_value_form
+  language
+  param
+  query_experiments
+  ?key
+  ?value
+  ?operator
+  ()
+  =
   let open CCOption.Infix in
   let input_type = key >|= Filter.Key.type_of_key in
   let operators = input_type >|= Filter.Operator.input_type_to_operator in
   let operator_select =
     operators_select language ?operators ?selected:operator ()
   in
-  let input_field = value_input language param input_type ?value () in
+  let input_field =
+    value_input language param query_experiments input_type ?value ()
+  in
   div
     ~a:[ a_class [ "switcher-sm"; "flex-gap" ] ]
     [ operator_select; input_field ]
@@ -340,6 +370,7 @@ let single_predicate_form
   identifier
   key_list
   templates_disabled
+  query_experiments
   ?key
   ?operator
   ?value
@@ -347,7 +378,14 @@ let single_predicate_form
   =
   let toggle_id = format_identifiers ~prefix:"pred-s" identifier in
   let toggled_content =
-    predicate_value_form language param ?key ?value ?operator ()
+    predicate_value_form
+      language
+      param
+      query_experiments
+      ?key
+      ?value
+      ?operator
+      ()
   in
   let key_selector =
     let attributes =
@@ -441,6 +479,7 @@ let rec predicate_form
   key_list
   template_list
   templates_disabled
+  query_experiments
   query
   ?(identifier = [ 0 ])
   ()
@@ -464,7 +503,13 @@ let rec predicate_form
   in
   let predicate_form =
     let to_form =
-      predicate_form language param key_list template_list templates_disabled
+      predicate_form
+        language
+        param
+        key_list
+        template_list
+        templates_disabled
+        query_experiments
     in
     let open Human in
     match query with
@@ -489,6 +534,7 @@ let rec predicate_form
         identifier
         key_list
         templates_disabled
+        query_experiments
         ?key
         ?operator
         ?value
@@ -533,7 +579,7 @@ let rec predicate_form
     @ if CCList.length identifier > 1 then [ delete_button () ] else [])
 ;;
 
-let filter_form csrf language param key_list template_list =
+let filter_form csrf language param key_list template_list query_experiments =
   let filter, action =
     let open Experiment in
     match param with
@@ -618,6 +664,7 @@ let filter_form csrf language param key_list template_list =
       key_list
       template_list
       templates_disabled
+      query_experiments
       filter_query
       ()
   in

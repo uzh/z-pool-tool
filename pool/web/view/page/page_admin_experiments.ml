@@ -406,6 +406,7 @@ let invitations
   experiment
   key_list
   template_list
+  query_experiments
   filtered_contacts
   (Pool_context.{ language; _ } as context)
   =
@@ -428,6 +429,7 @@ let invitations
           experiment
           key_list
           template_list
+          query_experiments
           filtered_contacts
       ]
   in

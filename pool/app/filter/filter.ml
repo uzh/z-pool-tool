@@ -92,3 +92,22 @@ let toggle_predicate_type (filter : Human.t) predicate_type =
   | "template" -> Ok (Template None)
   | _ -> Error Pool_common.Message.(Invalid Field.Filter)
 ;;
+
+let[@warning "-4"] all_query_experiments { query; _ } =
+  let rec find = function
+    | And queries | Or queries -> CCList.flat_map find queries
+    | Not p -> find p
+    | Pred { Predicate.key; value; _ } ->
+      let open Key in
+      (match key, value with
+       | Hardcoded Participation, Lst lst ->
+         lst
+         |> CCList.filter_map (fun (value : single_val) ->
+              match value with
+              | Str id -> Some (Pool_common.Id.of_string id)
+              | _ -> None)
+       | _, _ -> [])
+    | Template _ -> []
+  in
+  query |> find
+;;

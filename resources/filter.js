@@ -62,7 +62,7 @@ const addRequiredError = (elm) => {
     }
 }
 
-// Should this update every time, the filter gets adjusted but not safed?
+// Should this update every time, the filter gets adjusted but not saved?
 const updateContactCount = async () => {
     const target = document.getElementById("contact-counter");
     if (target) {
@@ -227,15 +227,27 @@ function configRequest(e, form) {
     const isPredicateType = e.detail.parameters.predicate;
     const allowEmpty = e.detail.parameters.allow_empty_values;
     const isSubmit = e.target.type === "submit"
+    const isSearchForm = Boolean(e.detail.elt.classList.contains("query-input"));
+
     e.detail.parameters._csrf = csrfToken();
+
     const filterId = form.dataset.filter;
     if (filterId) {
         e.detail.parameters.filter = filterId;
     }
-    if (isPredicateType || isSubmit) {
+
+    if (isPredicateType || isSubmit || isSearchForm) {
         const elm = isSubmit ? form.querySelector(".predicate") : e.target.closest('.predicate');
         try {
-            e.detail.parameters.query = predicateToJson(elm, allowEmpty);
+            if (isSearchForm) {
+                // Exclude currently selected experiments form query results
+                var wrapper = e.detail.elt.closest("[data-query='wrapper']");
+                var exclude = [...wrapper.querySelectorAll(`[data-query="results"] [name="value[]"]:checked`)].map(elt => elt.value);
+                e.detail.parameters["exclude[]"] = exclude;
+            } else {
+                e.detail.parameters.query = predicateToJson(elm, allowEmpty);
+            }
+            // Only relevant when creating a filter template
             const title = document.querySelector('#filter-form [name="title"]');
             if (title && isSubmit) {
                 if (!title.value) {
