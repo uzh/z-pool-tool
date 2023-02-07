@@ -348,6 +348,7 @@ let field_form
                           (Url.Field.detail_path (model m, id m)
                           |> Format.asprintf "%s/sort-options"))
                    ; a_class [ "stack" ]
+                   ; a_user_data "detect-unsaved-changes" ""
                    ]
                  (CCList.cons
                     (CCList.map
@@ -495,6 +496,7 @@ let field_form
         [ a_method `Post
         ; a_action (Sihl.Web.externalize_path action)
         ; a_class [ "stack-lg" ]
+        ; a_user_data "detect-unsaved-changes" ""
         ]
       [ csrf_element csrf ()
       ; div

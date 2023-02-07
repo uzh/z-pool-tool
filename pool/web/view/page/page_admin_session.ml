@@ -96,6 +96,7 @@ let session_form
       [ a_class [ "stack" ]
       ; a_method `Post
       ; a_action (action |> Sihl.Web.externalize_path)
+      ; a_user_data "detect-unsaved-changes" ""
       ]
     [ csrf_element csrf ()
     ; div
@@ -740,6 +741,7 @@ let close
                  (Experiment.Id.value experiment.Experiment.id)
                  (Id.value session.Session.id)
               |> Sihl.Web.externalize_path)
+          ; a_user_data "detect-unsaved-changes" ""
           ]
         [ Input.csrf_element csrf ()
         ; table

@@ -24,7 +24,11 @@ let show
       [ submit_element ~classnames:[ "push" ] language control () ]
   in
   let form_attrs action =
-    [ a_method `Post; a_action (action_path action); a_class [ "stack" ] ]
+    [ a_method `Post
+    ; a_action (action_path action)
+    ; a_class [ "stack" ]
+    ; a_user_data "detect-unsaved-changes" ""
+    ]
   in
   let languages_html =
     let all_languages =

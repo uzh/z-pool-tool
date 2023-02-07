@@ -426,7 +426,12 @@ let form
       ~a:[ a_class [ "stack" ] ]
       (fully_booked_note
       @ [ form
-            ~a:[ a_class [ "stack" ]; a_method `Post; a_action action ]
+            ~a:
+              [ a_class [ "stack" ]
+              ; a_method `Post
+              ; a_action action
+              ; a_user_data "detect-unsaved-changes" ""
+              ]
             [ csrf_element csrf ()
             ; input
                 ~a:

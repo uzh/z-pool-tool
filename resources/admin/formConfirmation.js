@@ -1,3 +1,4 @@
+// TODO: Transfer to framework
 function getFormValues(form) {
     var inputs = form.querySelectorAll("[name]");
     return [...inputs].reduce((acc, curr) => {
@@ -7,7 +8,7 @@ function getFormValues(form) {
 
 export function initFormConfirmation() {
     var originalValues = {}
-    const forms = [...document.querySelectorAll("form[data-detect-unsaved-changes]")];
+    const forms = [...document.querySelectorAll("[data-detect-unsaved-changes]")];
     function handleWindowUnload(e) {
         var unsubmitted = forms.find((form, i) => {
             var values = getFormValues(form);

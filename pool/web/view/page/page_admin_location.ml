@@ -103,6 +103,7 @@ let file_form
           ; a_action (Sihl.Web.externalize_path action)
           ; a_enctype "multipart/form-data"
           ; a_class [ "stack" ]
+          ; a_user_data "detect-unsaved-changes" ""
           ]
         [ csrf_element csrf ()
         ; label_select
@@ -195,6 +196,7 @@ let form
           [ a_method `Post
           ; a_action (Sihl.Web.externalize_path action)
           ; a_class [ "stack" ]
+          ; a_user_data "detect-unsaved-changes" ""
           ]
         ([ csrf_element csrf ()
          ; div

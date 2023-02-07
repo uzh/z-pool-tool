@@ -37,6 +37,7 @@ let list translation_list Pool_context.{ language; csrf; _ } =
                   [ a_action action
                   ; a_method `Post
                   ; a_class [ "flexrow"; "flex-gap" ]
+                  ; a_user_data "detect-unsaved-changes" ""
                   ]
                 [ csrf_element csrf ()
                 ; text_input

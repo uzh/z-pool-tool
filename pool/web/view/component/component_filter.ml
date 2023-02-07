@@ -589,7 +589,12 @@ let filter_form csrf language param key_list template_list =
     ~a:[ a_class [ stack ] ]
     [ result_counter
     ; div
-        ~a:([ a_user_data "action" action; a_id "filter-form" ] @ filter_id)
+        ~a:
+          ([ a_user_data "action" action
+           ; a_id "filter-form"
+           ; a_user_data "detect-unsaved-changes" ""
+           ]
+          @ filter_id)
         [ div ~a:[ a_id notification_id ] []
         ; Component_input.csrf_element csrf ()
         ; title_input
