@@ -86,7 +86,7 @@ let htmx_attribs
   @ CCList.filter_map CCFun.id [ target ]
 ;;
 
-let search_experiments_results ?(value = "") param results =
+let search_experiments_input ?(value = "") param results =
   let open Experiment in
   div
     ~a:[ a_class [ "flexcolumn" ]; a_user_data "query" "input" ]
@@ -143,7 +143,7 @@ let search_experiments ?value language param results =
     [ label
         [ txt Pool_common.(Utils.nav_link_to_string language I18n.Experiments) ]
     ; div ~a:[ a_user_data "query" "results" ] [ txt "Selected here..." ]
-    ; search_experiments_results ?value param results
+    ; search_experiments_input ?value param results
     ]
 ;;
 
@@ -316,7 +316,9 @@ let value_input language param input_type ?value () =
          multi_select
          field_name
          ()
-     | Key.QueryExpeirments -> search_experiments language param [])
+     | Key.QueryExpeirments ->
+       let values = [] in
+       search_experiments language param values)
 ;;
 
 let predicate_value_form language param ?key ?value ?operator () =

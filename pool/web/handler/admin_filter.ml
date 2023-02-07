@@ -320,7 +320,7 @@ let search_experiments action req =
            ~default:(Lwt.return [])
            (Experiment.search database_label)
     in
-    Component.Filter.search_experiments_results ?value:query action results
+    Component.Filter.search_experiments_input ?value:query action results
     |> Lwt.return_ok
   in
   (match result with
