@@ -225,7 +225,7 @@ function addQueryPredicateListeners(queryInput) {
     [...queryInput.querySelectorAll("[data-id]")].forEach(item => {
         item.addEventListener("click", () => {
             results.appendChild(item);
-            item.querySelector(".toggle").addEventListener("click", () => destroySelectedQueryResult(item));
+            item.querySelector(".toggle-item").addEventListener("click", () => destroySelectedQueryResult(item));
         }, { once: true })
     })
 }
@@ -283,7 +283,7 @@ export function initFilterForm() {
         // Query event listeners
         [...form.querySelectorAll("[data-query='input']")].forEach(e => addQueryPredicateListeners(e));
         [...form.querySelectorAll("[data-query='results'] [data-id]")].forEach(e =>
-            e.querySelector(".toggle").addEventListener("click", () => destroySelectedQueryResult(e))
+            e.querySelector(".toggle-item").addEventListener("click", () => destroySelectedQueryResult(e))
         );
 
         form.addEventListener('htmx:afterSwap', (e) => {

@@ -90,7 +90,7 @@ let search_experiment_item (id, title) =
   let open Experiment in
   div
     ~a:[ a_user_data "id" (Id.value id); a_class [ "has-icon"; "inset-xs" ] ]
-    [ Component_icon.icon ~classnames:[ "toggle" ] `CloseCircle
+    [ Component_icon.icon ~classnames:[ "toggle-item" ] `CloseCircle
     ; span [ txt (Title.value title) ]
     ; input
         ~a:

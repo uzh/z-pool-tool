@@ -65,13 +65,13 @@ $icons-font-path: "../node_modules/@econ/frontend-framework/dist/font";
             cursor: pointer;
         }
 
-        .toggle {
+        .toggle-item {
             color: $green;
             transform: rotate(45deg)
         }
     }
 
-    [data-query="results"] .toggle {
+    [data-query="results"] .toggle-item {
         color: $red;
         cursor: pointer;
     }
