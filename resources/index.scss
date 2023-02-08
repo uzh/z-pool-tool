@@ -55,6 +55,28 @@ $icons-font-path: "../node_modules/@econ/frontend-framework/dist/font";
     }
 }
 
+.hide-empty:empty {
+    display: none;
+}
+
+#filter-form {
+    [data-query="input"] {
+        [data-id] {
+            cursor: pointer;
+        }
+
+        .toggle {
+            color: $green;
+            transform: rotate(45deg)
+        }
+    }
+
+    [data-query="results"] .toggle {
+        color: $red;
+        cursor: pointer;
+    }
+}
+
 // Color
 .bg-red-lighter,
 [class*="-on-red-lighter"] {

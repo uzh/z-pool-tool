@@ -213,13 +213,20 @@ function addRemovePredicateListener(element) {
     })
 }
 
+
+function destroySelectedQueryResult(item) {
+    item.remove();
+}
+
 function addQueryPredicateListeners(queryInput) {
     var wrapper = queryInput.closest("[data-query='wrapper']");
     var results = wrapper.querySelector("[data-query='results']");
+
     [...queryInput.querySelectorAll("[data-id]")].forEach(item => {
         item.addEventListener("click", () => {
             results.appendChild(item);
-        })
+            item.querySelector(".toggle").addEventListener("click", () => destroySelectedQueryResult(item));
+        }, { once: true })
     })
 }
 
@@ -273,7 +280,12 @@ export function initFilterForm() {
             }
         })
         addRemovePredicateListener(form);
-        [...form.querySelectorAll("[data-query='input']")].forEach(e => addQueryPredicateListeners(e))
+        // Query event listeners
+        [...form.querySelectorAll("[data-query='input']")].forEach(e => addQueryPredicateListeners(e));
+        [...form.querySelectorAll("[data-query='results'] [data-id]")].forEach(e =>
+            e.querySelector(".toggle").addEventListener("click", () => destroySelectedQueryResult(e))
+        );
+
         form.addEventListener('htmx:afterSwap', (e) => {
             addRemovePredicateListener(e.detail.elt)
             if (e.detail.elt.dataset.query) {

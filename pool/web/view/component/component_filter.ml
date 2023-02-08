@@ -89,11 +89,8 @@ let htmx_attribs
 let search_experiment_item (id, title) =
   let open Experiment in
   div
-    ~a:
-      [ a_user_data "id" (Id.value id)
-      ; a_class [ "has-icon"; "pointer"; "inset-xs" ]
-      ]
-    [ Component_icon.icon `Add
+    ~a:[ a_user_data "id" (Id.value id); a_class [ "has-icon"; "inset-xs" ] ]
+    [ Component_icon.icon ~classnames:[ "toggle" ] `CloseCircle
     ; span [ txt (Title.value title) ]
     ; input
         ~a:
@@ -107,23 +104,10 @@ let search_experiment_item (id, title) =
     ]
 ;;
 
-let search_experiments_input ?(value = "") param results =
-  div
-    ~a:[ a_class [ "flexcolumn" ]; a_user_data "query" "input" ]
-    [ input
-        ~a:
-          ([ a_input_type `Text
-           ; a_value value
-           ; a_name Pool_common.Message.Field.(show Title)
-           ; a_class [ "query-input" ]
-           ]
-          @ htmx_attribs
-              ~action:(form_action param "experiments")
-              ~trigger:"keyup changed delay:1s"
-              ~target:"closest [data-query='input']"
-              ())
-        ()
-    ; div
+let search_experiments_input ?(value = "") ?results param =
+  let result_list =
+    let wrap =
+      div
         ~a:
           [ a_class
               [ "flexcolumn"
@@ -133,21 +117,44 @@ let search_experiments_input ?(value = "") param results =
               ; "inset-sm"
               ; "border"
               ; "border-radius"
+              ; "hide-empty"
               ]
           ]
-        (CCList.map search_experiment_item results)
+    in
+    match results with
+    | None -> txt ""
+    | Some [] -> txt "No results found" |> CCList.pure |> wrap
+    | Some results -> results |> CCList.map search_experiment_item |> wrap
+  in
+  div
+    ~a:[ a_class [ "flexcolumn" ]; a_user_data "query" "input" ]
+    [ input
+        ~a:
+          ([ a_input_type `Text
+           ; a_value value
+           ; a_name Pool_common.Message.Field.(show Title)
+           ; a_class [ "query-input" ]
+           ; a_placeholder "Search by experiment title"
+           ]
+          @ htmx_attribs
+              ~action:(form_action param "experiments")
+              ~trigger:"keyup changed delay:1s"
+              ~target:"closest [data-query='input']"
+              ())
+        ()
+    ; result_list
     ]
 ;;
 
-let search_experiments ?value language param ~current ~results =
+let search_experiments ?value language param ~current ?results () =
   div
     ~a:[ a_class [ "form-group" ]; a_user_data "query" "wrapper" ]
     [ label
         [ txt Pool_common.(Utils.nav_link_to_string language I18n.Experiments) ]
+    ; search_experiments_input ?value ?results param
     ; div
-        ~a:[ a_user_data "query" "results" ]
+        ~a:[ a_user_data "query" "results"; a_class [ "hide-empty" ] ]
         (CCList.map search_experiment_item current)
-    ; search_experiments_input ?value param results
     ]
 ;;
 
@@ -338,7 +345,7 @@ let value_input language param query_experiments input_type ?value () =
                     | _ -> None)
                   lst)
        in
-       search_experiments language param ~current ~results:[])
+       search_experiments language param ~current ())
 ;;
 
 let predicate_value_form
