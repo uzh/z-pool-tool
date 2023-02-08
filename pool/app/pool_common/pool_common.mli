@@ -17,9 +17,9 @@ module Model : sig
     val t_of_sexp : Sexplib0.Sexp.t -> t
 
     val schema
-      :  ?field:Entity_message.Field.t
+      :  ?field:Message.Field.t
       -> unit
-      -> (Entity_message.error, t) Pool_common_utils.PoolConformist.Field.t
+      -> (Message.error, t) Pool_common_utils.PoolConformist.Field.t
   end
 
   module Boolean : sig
@@ -37,7 +37,7 @@ module Model : sig
     val of_string : string -> t
 
     val schema
-      :  Entity_message.Field.t
+      :  Message.Field.t
       -> unit
       -> (Message.error, t) Pool_common_utils.PoolConformist.Field.t
   end
@@ -70,13 +70,13 @@ module Model : sig
     val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
     val t_of_yojson : Yojson.Safe.t -> t
     val yojson_of_t : t -> Yojson.Safe.t
-    val create : string -> (t, Entity_message.error) result
+    val create : string -> (t, Message.error) result
     val value : t -> string
     val of_string : string -> t
 
     val schema
-      :  Entity_message.Field.t
-      -> ?validation:(t -> (t, Entity_message.error) result)
+      :  Message.Field.t
+      -> ?validation:(t -> (t, Message.error) result)
       -> unit
       -> (Message.error, t) Pool_common_utils.PoolConformist.Field.t
   end
@@ -90,13 +90,13 @@ module Model : sig
     val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
     val t_of_yojson : Yojson.Safe.t -> t
     val yojson_of_t : t -> Yojson.Safe.t
-    val create : string -> (t, Entity_message.error) result
+    val create : string -> (t, Message.error) result
     val value : t -> string
     val of_string : string -> t
 
     val schema
       :  unit
-      -> (Entity_message.error, t) Pool_common_utils.PoolConformist.Field.t
+      -> (Message.error, t) Pool_common_utils.PoolConformist.Field.t
   end
 
   module Integer : sig
@@ -111,10 +111,10 @@ module Model : sig
     val value : t -> int
 
     val schema
-      :  Entity_message.Field.t
-      -> (int -> (t, Entity_message.error) result)
+      :  Message.Field.t
+      -> (int -> (t, Message.error) result)
       -> unit
-      -> (Entity_message.error, t) Pool_common_utils.PoolConformist.Field.t
+      -> (Message.error, t) Pool_common_utils.PoolConformist.Field.t
   end
 
   module type IntegerSig = sig
@@ -126,12 +126,12 @@ module Model : sig
     val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
     val t_of_yojson : Yojson.Safe.t -> t
     val yojson_of_t : t -> Yojson.Safe.t
-    val create : int -> (t, Entity_message.error) result
+    val create : int -> (t, Message.error) result
     val value : t -> int
 
     val schema
       :  unit
-      -> (Entity_message.error, t) Pool_common_utils.PoolConformist.Field.t
+      -> (Message.error, t) Pool_common_utils.PoolConformist.Field.t
   end
 
   module PtimeSpan : sig
@@ -184,10 +184,10 @@ module Model : sig
     val to_human : t -> string
 
     val schema
-      :  Entity_message.Field.t
-      -> (Ptime.t -> (t, Entity_message.error) result)
+      :  Message.Field.t
+      -> (Ptime.t -> (t, Message.error) result)
       -> unit
-      -> (Entity_message.error, t) Pool_common_utils.PoolConformist.Field.t
+      -> (Message.error, t) Pool_common_utils.PoolConformist.Field.t
   end
 
   module type PtimeSig = sig
@@ -205,7 +205,7 @@ module Model : sig
 
     val schema
       :  unit
-      -> (Entity_message.error, t) Pool_common_utils.PoolConformist.Field.t
+      -> (Message.error, t) Pool_common_utils.PoolConformist.Field.t
   end
 
   module type BaseSig = sig
@@ -214,7 +214,7 @@ module Model : sig
     val equal : t -> t -> bool
     val pp : Format.formatter -> t -> unit
     val show : t -> string
-    val create : string -> (t, Entity_message.error) result
+    val create : string -> (t, Message.error) result
 
     val schema
       :  unit
@@ -456,13 +456,13 @@ module Utils : sig
     :  ?default:'b
     -> (string -> ('b, Message.error) result)
     -> ('b -> string)
-    -> Entity_message.Field.t
+    -> Message.Field.t
     -> (Message.error, 'b) PoolConformist.Field.t
 
   val schema_list_decoder
-    :  (string list -> ('a, Entity_message.error) result)
+    :  (string list -> ('a, Message.error) result)
     -> ('a -> string list)
-    -> Entity_message.Field.t
+    -> Message.Field.t
     -> ('b, 'a) PoolConformist.Field.t
 
   val to_string : Language.t -> Message.t -> string
@@ -480,17 +480,13 @@ module Utils : sig
   val with_log_info : ?level:Logs.level -> Message.info -> Message.info
   val with_log_success : ?level:Logs.level -> Message.success -> Message.success
   val bool_to_string : Language.t -> bool -> string
-
-  val with_log_warning
-    :  ?level:Logs.level
-    -> Entity_message.warning
-    -> Entity_message.warning
+  val with_log_warning : ?level:Logs.level -> Message.warning -> Message.warning
 
   val with_log_error
     :  ?level:Logs.level
     -> ?tags:Logs.Tag.set
-    -> Entity_message.error
-    -> Entity_message.error
+    -> Message.error
+    -> Message.error
 
   val with_log_result_error
     :  tags:Logs.Tag.set

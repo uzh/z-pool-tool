@@ -217,7 +217,7 @@ let detail (tenant : Pool_tenant.t) Pool_context.{ language; csrf; _ } =
       ; Field.Description, Description.value tenant.description
       ; Field.Url, Pool_tenant.Url.value tenant.url
       ; Field.SmtpAuthServer, Server.value tenant.smtp_auth.server
-      ; Field.SmtpPort, Port.value tenant.smtp_auth.port
+      ; Field.SmtpPort, Port.value tenant.smtp_auth.port |> CCInt.to_string
       ; Field.SmtpUsername, Username.value tenant.smtp_auth.username
       ; ( Field.SmtpAuthMethod
         , AuthenticationMethod.value tenant.smtp_auth.authentication_method )

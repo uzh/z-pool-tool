@@ -87,8 +87,8 @@ type event =
 let handle_event pool : event -> unit Lwt.t = function
   | Sent email ->
     let%lwt sender = sender_of_pool pool in
-    Service.Email.send ?sender ~ctx:(Pool_tenant.to_ctx pool) email
+    Pool_tenant.(Service.Email.send ?sender ~ctx:(to_ctx pool) email)
   | BulkSent emails ->
     let%lwt sender = sender_of_pool pool in
-    Service.Email.bulk_send ?sender ~ctx:(Pool_tenant.to_ctx pool) emails
+    Pool_tenant.(Service.Email.bulk_send ?sender ~ctx:(to_ctx pool) emails)
 ;;

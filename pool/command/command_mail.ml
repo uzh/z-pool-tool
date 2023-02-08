@@ -22,7 +22,7 @@ Example: mail admin@mail.com contact@mail.com
       let message = "Hi! \n\n This is a test message." in
       let subject = "Test subject" in
       let email = Sihl_email.create ~sender ~recipient ~subject message in
-      let%lwt () = Service.Email.send ~ctx ~sender email in
+      let%lwt () = Pool_tenant.Service.Email.send ~ctx ~sender email in
       Lwt.return_some ()
     | _ -> Command_utils.failwith_missmatch help)
 ;;

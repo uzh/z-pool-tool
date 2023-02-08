@@ -17,7 +17,7 @@ let validate_email _ () =
   let open Lwt.Syntax in
   let* () =
     let msg = "Missing 'TEST_EMAIL' env variable." in
-    Service.Email.handle
+    Pool_tenant.Service.Email.handle
       ~without_email_fcn:(fun ?ctx:_ _ -> failwith msg)
       (fun ?ctx:_ email ->
         Alcotest.(
@@ -28,7 +28,9 @@ let validate_email _ () =
             Data.subject);
         Lwt.return_unit)
       (fun ?ctx:_ email new_recipient ->
-        let email = Service.Email.redirected_email new_recipient email in
+        let email =
+          Pool_tenant.Service.Email.redirected_email new_recipient email
+        in
         Alcotest.(
           check
             string

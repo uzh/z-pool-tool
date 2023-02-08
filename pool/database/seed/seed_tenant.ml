@@ -37,7 +37,7 @@ let create () =
         , database_url
         , "econ-test"
         , "smtp.uzh.ch"
-        , "587"
+        , 587
         , "test@econ.uzh.ch"
         , "emailemail"
         , "LOGIN"
@@ -53,7 +53,7 @@ let create () =
         , "mariadb://root@database-tenant:3306/dev_econ"
         , "econ-uzh"
         , "smtp.uzh.ch"
-        , "587"
+        , 587
         , "engineering@econ.uzh.ch"
         , "emailemail"
         , "LOGIN"
@@ -67,7 +67,7 @@ let create () =
         , "mariadb://root@database-tenant:3306/dev_zhaw"
         , "zhaw"
         , "smtp.zhaw.ch"
-        , "465"
+        , 465
         , "engineering@zhaw.ch"
         , "emailemail"
         , "LOGIN"

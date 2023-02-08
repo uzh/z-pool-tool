@@ -25,7 +25,7 @@ module Data = struct
 
   let database_label = "econ-test"
   let smtp_auth_server = "smtp.uzh.ch"
-  let smtp_auth_port = "587"
+  let smtp_auth_port = 587
   let smtp_auth_username = "engineering@econ.uzh.ch"
   let smtp_auth_password = "emailemail"
   let smtp_auth_authentication_method = "LOGIN"
@@ -59,7 +59,7 @@ module Data = struct
     ; Field.DatabaseUrl, [ database_url ]
     ; Field.DatabaseLabel, [ database_label ]
     ; Field.SmtpAuthServer, [ smtp_auth_server ]
-    ; Field.SmtpPort, [ smtp_auth_port ]
+    ; Field.SmtpPort, [ smtp_auth_port |> CCInt.to_string ]
     ; Field.SmtpUsername, [ smtp_auth_username ]
     ; Field.SmtpPassword, [ smtp_auth_password ]
     ; Field.SmtpAuthMethod, [ smtp_auth_authentication_method ]

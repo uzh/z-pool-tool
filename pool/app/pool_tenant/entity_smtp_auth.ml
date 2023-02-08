@@ -8,17 +8,11 @@ module Server = struct
 end
 
 module Port = struct
-  include Pool_common.Model.String
+  include Pool_common.Model.Integer
 
   let field = PoolError.Field.SmtpPort
-
-  let create port =
-    if CCString.is_empty port && CCInt.of_string port |> CCOption.is_none
-    then Error PoolError.(Invalid field)
-    else Ok port
-  ;;
-
-  let schema = schema ~validation:create field
+  let create port = Ok port
+  let schema = schema field create
 end
 
 module Username = struct

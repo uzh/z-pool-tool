@@ -216,6 +216,30 @@ module Sql = struct
     ||> CCOption.to_result Pool_common.Message.(NotFound Field.Tenant)
   ;;
 
+  let find_smtp_by_label_request =
+    let open Caqti_request.Infix in
+    {sql| SELECT
+            smtp_auth_server,
+            smtp_auth_port,
+            smtp_auth_username,
+            smtp_auth_password,
+            smtp_auth_authentication_method,
+            smtp_auth_protocol,
+          FROM pool_tenant
+          WHERE database_label = ?
+    |sql}
+    |> Caqti_type.string ->! Repo_entity_smtp_auth.Write.t
+  ;;
+
+  let find_smtp_by_label pool label =
+    let open Utils.Lwt_result.Infix in
+    Utils.Database.find_opt
+      (Database.Label.value pool)
+      find_smtp_by_label_request
+      (Database.Label.value label)
+    ||> CCOption.to_result Pool_common.Message.(NotFound Field.Tenant)
+  ;;
+
   let find_all_request =
     let open Caqti_request.Infix in
     select_from_tenants_sql "" false |> Caqti_type.unit ->* RepoEntity.t
@@ -352,6 +376,13 @@ let find_by_label pool label =
   let* tenant = Sql.find_by_label pool label in
   let%lwt logos = LogoMappingRepo.find_by_tenant tenant.Entity.Read.id in
   set_logos tenant logos |> Lwt.return_ok
+;;
+
+let find_smtp_by_label label =
+  let open CCFun in
+  if Pool_database.Label.equal Pool_database.root label
+  then Repo_entity_smtp_auth.Write.load_from_environment () |> Lwt_result.lift
+  else Sql.find_smtp_by_label Pool_database.root label
 ;;
 
 let find_full = Sql.find_full

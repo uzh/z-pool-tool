@@ -9,7 +9,7 @@ end
 module Port = struct
   include Port
 
-  let t = Caqti_type.string
+  let t = Caqti_type.int
 end
 
 module Username = struct
@@ -121,5 +121,66 @@ module Write = struct
               (tup2
                  Username.t
                  (tup2 Password.t (tup2 AuthenticationMethod.t Protocol.t))))))
+  ;;
+
+  let schema_decoder create_fcn encode_fnc field name =
+    let error_to_string = Pool_common.(Utils.error_to_string Language.En) in
+    let decoder create_fcn field l =
+      let open CCResult in
+      match l with
+      | x :: _ -> create_fcn x |> map_err error_to_string
+      | [] -> Error (PoolError.Undefined field |> error_to_string)
+    in
+    Conformist.custom
+      (decoder create_fcn field)
+      (fun l -> l |> encode_fnc |> CCList.pure)
+      name
+  ;;
+
+  let schema =
+    let command server port username password authentication_method protocol =
+      { server; port; username; password; authentication_method; protocol }
+    in
+    let open Entity_smtp_auth in
+    let open PoolError.Field in
+    Conformist.(
+      make
+        Field.
+          [ Server.(schema_decoder create value SmtpAuthServer "SMTP_HOST")
+          ; Port.(
+              schema_decoder
+                (fun str ->
+                  let open CCResult in
+                  CCInt.of_string str
+                  |> CCOption.to_result PoolError.(NotANumber str)
+                  >>= create)
+                CCInt.to_string
+                SmtpPort
+                "SMTP_PORT")
+            (* TODO wrap as pair as described in
+               https://github.com/oxidizing/conformist/issues/11, once exists *)
+          ; Username.(schema_decoder create value SmtpUsername "SMTP_USERNAME")
+          ; Password.(schema_decoder create value SmtpPassword "SMTP_PASSWORD")
+          ; AuthenticationMethod.(
+              schema_decoder create value SmtpAuthMethod "SMTP_MECHANISM")
+          ; Protocol.(schema_decoder create value SmtpProtocol "SMTP_PROTOCOL")
+          ]
+        command)
+  ;;
+
+  let load_from_environment () =
+    try Ok (Sihl.Configuration.read schema) with
+    | _ ->
+      Error
+        PoolError.(
+          notfoundlist
+            Field.Value
+            [ "SMTP_HOST"
+            ; "SMTP_PORT"
+            ; "SMTP_USERNAME"
+            ; "SMTP_PASSWORD"
+            ; "SMTP_MECHANISM"
+            ; "SMTP_PROTOCOL"
+            ])
   ;;
 end

@@ -1,0 +1,152 @@
+let status =
+  let open Sihl.Contract.Queue in
+  let to_string = function
+    | Pending -> "pending"
+    | Succeeded -> "succeeded"
+    | Failed -> "failed"
+    | Cancelled -> "cancelled"
+  in
+  let of_string = function
+    | "pending" -> Ok Pending
+    | "succeeded" -> Ok Succeeded
+    | "failed" -> Ok Failed
+    | "cancelled" -> Ok Cancelled
+    | str -> Error (Format.asprintf "Unexpected job status %s found" str)
+  in
+  let encode m = Ok (to_string m) in
+  let decode = of_string in
+  Caqti_type.(custom ~encode ~decode string)
+;;
+
+type ctx = (string * string) list [@@deriving yojson]
+
+let ctx =
+  let encode =
+    CCFun.(yojson_of_ctx %> Yojson.Safe.to_string %> CCResult.pure)
+  in
+  let decode m =
+    try Yojson.Safe.from_string m |> ctx_of_yojson |> CCResult.pure with
+    | _ -> Error (Format.sprintf "failed to decode ctx %s" m)
+  in
+  Caqti_type.(custom ~encode ~decode string)
+;;
+
+let job =
+  let open Sihl.Contract.Queue in
+  let encode m =
+    Ok
+      ( m.id
+      , ( m.name
+        , ( m.input
+          , ( m.tries
+            , ( m.next_run_at
+              , ( m.max_tries
+                , ( m.status
+                  , (m.last_error, (m.last_error_at, (m.tag, Some m.ctx))) ) )
+              ) ) ) ) )
+  in
+  let decode
+    ( id
+    , ( name
+      , ( input
+        , ( tries
+          , ( next_run_at
+            , (max_tries, (status, (last_error, (last_error_at, (tag, ctx)))))
+            ) ) ) ) )
+    =
+    Ok
+      { id
+      ; name
+      ; input
+      ; tries
+      ; next_run_at
+      ; max_tries
+      ; status
+      ; last_error
+      ; last_error_at
+      ; tag
+      ; ctx = Option.value ~default:[] ctx
+      }
+  in
+  Caqti_type.(
+    custom
+      ~encode
+      ~decode
+      (tup2
+         string
+         (tup2
+            string
+            (tup2
+               string
+               (tup2
+                  int
+                  (tup2
+                     ptime
+                     (tup2
+                        int
+                        (tup2
+                           status
+                           (tup2
+                              (option string)
+                              (tup2
+                                 (option ptime)
+                                 (tup2 (option string) (option ctx))))))))))))
+;;
+
+let update_request =
+  let open Caqti_request.Infix in
+  {sql|
+      UPDATE queue_jobs
+      SET
+        name = $2,
+        input = $3,
+        tries = $4,
+        next_run_at = $5,
+        max_tries = $6,
+        status = $7,
+        last_error = $8,
+        last_error_at = $9,
+        tag = $10,
+        ctx = $11
+      WHERE
+        queue_jobs.uuid = UNHEX(REPLACE($1, '-', ''))
+    |sql}
+  |> job ->. Caqti_type.unit
+;;
+
+let update ?ctx job_instance =
+  Sihl.Database.exec ?ctx update_request job_instance
+;;
+
+let find_workable_request =
+  let open Caqti_request.Infix in
+  {sql|
+      SELECT
+        LOWER(CONCAT(
+          SUBSTR(HEX(uuid), 1, 8), '-',
+          SUBSTR(HEX(uuid), 9, 4), '-',
+          SUBSTR(HEX(uuid), 13, 4), '-',
+          SUBSTR(HEX(uuid), 17, 4), '-',
+          SUBSTR(HEX(uuid), 21)
+          )),
+        name,
+        input,
+        tries,
+        next_run_at,
+        max_tries,
+        status,
+        last_error,
+        last_error_at,
+        tag,
+        ctx
+      FROM queue_jobs
+      WHERE
+        status = "pending"
+        AND next_run_at <= NOW()
+        AND tries < max_tries
+      ORDER BY id DESC
+    |sql}
+  |> Caqti_type.unit ->* job
+;;
+
+let find_workable ?ctx () = Sihl.Database.collect ?ctx find_workable_request ()

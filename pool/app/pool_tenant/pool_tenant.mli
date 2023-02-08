@@ -6,7 +6,7 @@ module SmtpAuth : sig
   end
 
   module Port : sig
-    include Pool_common.Model.StringSig
+    include Pool_common.Model.IntegerSig
   end
 
   module Username : sig
@@ -359,5 +359,57 @@ module Guard : sig
          Lwt_result.t
 
     type t
+  end
+end
+
+module Service : sig
+  module Queue : Sihl.Contract.Queue.Sig
+
+  module Email : sig
+    module Smtp : sig
+      val inbox : unit -> Sihl.Contract.Email.t list
+      val add_to_inbox : Sihl.Contract.Email.t -> unit
+      val clear_inbox : unit -> unit
+      val send' : Database.Label.t -> Sihl.Contract.Email.t -> unit Lwt.t
+      val send : ?ctx:(string * string) list -> Sihl_email.t -> unit Lwt.t
+      val bulk_send : ?ctx:'a -> 'b -> 'c
+      val start : unit -> unit Lwt.t
+      val stop : unit -> unit Lwt.t
+      val lifecycle : Sihl.Container.lifecycle
+      val register : unit -> Sihl.Container.Service.t
+    end
+
+    val inbox : unit -> Sihl_email.t list
+    val clear_inbox : unit -> unit
+    val register : unit -> Sihl.Container.Service.t
+    val lifecycle : Sihl.Container.lifecycle
+
+    module Job : sig
+      val send : Sihl_email.t Sihl_queue.job
+    end
+
+    val redirected_email : string -> Sihl_email.t -> Sihl_email.t
+
+    val handle
+      :  ?ctx:'a
+      -> ?without_email_fcn:(?ctx:'a -> 'b -> unit Lwt.t)
+      -> (?ctx:'a -> 'b -> unit Lwt.t)
+      -> (?ctx:'a -> 'b -> string -> unit Lwt.t)
+      -> 'b
+      -> unit Lwt.t
+
+    val set_email_sender : ?sender:string -> Sihl_email.t -> Sihl_email.t
+
+    val send
+      :  ?sender:string
+      -> ?ctx:(string * string) list
+      -> Sihl_email.t
+      -> unit Lwt.t
+
+    val bulk_send
+      :  ?sender:string
+      -> ?ctx:(string * string) list
+      -> Sihl_email.t list
+      -> unit Lwt.t
   end
 end
