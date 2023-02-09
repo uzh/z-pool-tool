@@ -5,6 +5,11 @@ let assignment_confirmation = function
   | En -> Default_en.assignment_confirmation
 ;;
 
+let contact_resignup = function
+  | De -> Default_de.contact_resignup
+  | En -> Default_en.contact_resignup
+;;
+
 let email_verification = function
   | De -> Default_de.email_verification
   | En -> Default_en.email_verification
@@ -56,8 +61,10 @@ let ( @@@ ) constructors =
 
 let default_values_root = [ password_reset ] @@@ [ En; De ]
 
+(* TODO: Make query "insert if not exists" *)
 let default_values_tenant =
   [ assignment_confirmation
+  ; contact_resignup
   ; email_verification
   ; experiment_invitation
   ; password_change

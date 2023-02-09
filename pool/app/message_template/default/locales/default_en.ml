@@ -399,3 +399,56 @@ New:
   ; sms_text
   }
 ;;
+
+let contact_resignup =
+  let label = Label.ContactRegistrationAttempt in
+  let email_text =
+    [ p
+        [ txt
+            "there was an attempt to create an account with the email address \
+             '{emailAddress}' on {tenantUrl}."
+        ; br ()
+        ; txt "An account with this email address already exists."
+        ]
+    ; p
+        [ txt
+            "If this was you and you forgot your login credentials, you can \
+             reset you can reset your password "
+        ; a ~a:[ a_href "{resetUrl}" ] [ txt "here" ]
+        ; txt "."
+        ]
+    ; p
+        [ txt
+            "If this action was not performed by you, you can ignore this \
+             message or inform the administrators."
+        ]
+    ; p
+        [ txt
+            "If the above link does not work, please copy the following link \
+             into your browser manually: {resetUrl}"
+        ]
+    ]
+    |> add_salutation
+    |> html_to_string
+    |> EmailText.of_string
+  in
+  let email_subject = "Signup attempt" |> EmailSubject.of_string in
+  let sms_text =
+    {|There was an attempt to create an account with the email address '{emailAddress}' on {tenantUrl}.
+
+If this was you and you forgot your login credentials, you can reset you can reset your password here: {resetUrl}
+
+If this action was not performed by you, you can ignore this message or inform the administrators.
+|}
+    |> SmsText.of_string
+  in
+  { id = Id.create ()
+  ; label
+  ; language
+  ; entity_uuid
+  ; email_text
+  ; email_subject
+  ; plain_text = sms_text
+  ; sms_text
+  }
+;;

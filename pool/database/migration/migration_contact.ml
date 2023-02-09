@@ -127,6 +127,15 @@ let remove_recruitment_channel =
     |sql}
 ;;
 
+let add_registration_attempt_notification_sent_timestamp =
+  Sihl.Database.Migration.create_step
+    ~label:"add registration_attempt_notification_sent_at timestamp"
+    {sql|
+      ALTER TABLE pool_contacts
+      ADD COLUMN registration_attempt_notification_sent_at timestamp NULL AFTER profile_updated_at
+    |sql}
+;;
+
 let migration () =
   Sihl.Database.Migration.(
     empty "participant"
@@ -141,5 +150,6 @@ let migration () =
     |> add_step add_profile_update_triggered_timestamp
     |> add_step make_recruitment_channel_optional
     |> add_step add_contact_participation_counts
-    |> add_step remove_recruitment_channel)
+    |> add_step remove_recruitment_channel
+    |> add_step add_registration_attempt_notification_sent_timestamp)
 ;;

@@ -94,6 +94,11 @@ val find_to_trigger_profile_update
   :  Pool_database.Label.t
   -> (t list, 'a) Lwt_result.t
 
+val should_send_signup_attempt_notification
+  :  Pool_database.Label.t
+  -> t
+  -> bool Lwt.t
+
 val has_terms_accepted : Pool_database.Label.t -> t -> bool Lwt.t
 
 type create =
@@ -129,6 +134,7 @@ type event =
   | NumInvitationsIncreased of t
   | ProfileUpdateTriggeredAtUpdated of t list
   | SessionParticipationSet of t * session_participation
+  | ResignUpNotificationSent of t
 
 val created : create -> event
 val handle_event : Pool_database.Label.t -> event -> unit Lwt.t

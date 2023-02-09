@@ -421,6 +421,31 @@ end = struct
   ;;
 end
 
+module SendRegistrationAttemptNotifitacion : sig
+  include Common.CommandSig with type t = Contact.t
+
+  val handle
+    :  ?tags:Logs.Tag.set
+    -> t
+    -> Sihl_email.t
+    -> (Pool_event.t list, Pool_common.Message.error) result
+
+  val effects : Guard.Authorizer.effect list
+end = struct
+  type t = Contact.t
+
+  let handle ?(tags = Logs.Tag.empty) contact email =
+    Logs.info ~src (fun m ->
+      m "Handle command SendRegistrationAttemptNotifitacion" ~tags);
+    Ok
+      [ Email.Sent email |> Pool_event.email
+      ; Contact.ResignUpNotificationSent contact |> Pool_event.contact
+      ]
+  ;;
+
+  let effects = []
+end
+
 module Verify = struct
   (* TODO issue #90 step 2 *)
   (* TODO Verify the contact itself with ID/Pass *)
