@@ -53,16 +53,9 @@ let add_value_to_params operator value dyn =
   | Str s -> add Caqti_type.string (wrap_in_percentage operator s)
 ;;
 
-(** QUESTIONS
-
-    * Should canceled assignments on current experiment be allowed / not
-    allowed?
-
-    * Should canceled assignments when filtering by participation be allowed /
-    not allowed?
-
-    * Should no shows when filtering by participation be allowed / not allowed? *)
-
+(* The subquery does not return any contacts that have shown up at a session of
+   the current experiment. It does not make a difference, it they
+   participated. *)
 let participation_subquery _ dyn operator ids =
   let open CCResult in
   let* dyn, query_params =
@@ -93,8 +86,9 @@ let participation_subquery _ dyn operator ids =
           INNER JOIN pool_experiments ON pool_sessions.experiment_uuid = pool_experiments.uuid
         WHERE
           pool_assignments.contact_id = pool_contacts.id
+          AND pool_assignments.show_up = 1
+          AND pool_assignments.canceled_at IS NULL
           AND pool_experiments.uuid IN (%s)
-          AND pool_assignments.participated = 1
         GROUP BY
           pool_experiments.uuid
       |sql}
