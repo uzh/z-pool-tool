@@ -20,7 +20,7 @@ depends: [
   "base-bytes" {= "base"}
   "base-threads" {= "base"}
   "base-unix" {= "base"}
-  "base64" {= "3.5.0"}
+  "base64" {= "3.5.1"}
   "bigarray-compat" {= "1.1.0"}
   "bigarray-overlap" {= "0.2.1"}
   "bigstringaf" {= "0.9.0"}
@@ -37,9 +37,9 @@ depends: [
   "cohttp-lwt-unix" {= "5.0.0"}
   "coin" {= "0.1.4"}
   "colombe" {= "0.7.0"}
-  "conduit" {= "6.0.1"}
-  "conduit-lwt" {= "6.0.1"}
-  "conduit-lwt-unix" {= "6.0.1"}
+  "conduit" {= "6.1.0"}
+  "conduit-lwt" {= "6.1.0"}
+  "conduit-lwt-unix" {= "6.1.0"}
   "conf-gcc" {= "1.0"}
   "conf-gmp" {= "4"}
   "conf-gmp-powm-sec" {= "3"}
@@ -59,9 +59,9 @@ depends: [
   "ctypes" {= "0.20.1"}
   "digestif" {= "1.1.3"}
   "domain-name" {= "0.4.0"}
-  "dune" {= "2.9.3"}
-  "dune-build-info" {= "2.9.3"}
-  "dune-configurator" {= "2.9.3"}
+  "dune" {= "3.6.1"}
+  "dune-build-info" {= "3.6.1"}
+  "dune-configurator" {= "3.6.1"}
   "duration" {= "0.2.1"}
   "either" {= "1.0.0"}
   "emile" {= "1.1"}
@@ -88,7 +88,7 @@ depends: [
   "jst-config" {= "v0.14.1"}
   "jwto" {= "0.4.0"}
   "ke" {= "0.6"}
-  "letters" {= "0.3.1"}
+  "letters" {= "0.3.2"}
   "logs" {= "0.7.0"}
   "lwt" {= "5.6.1"}
   "lwt_ppx" {= "2.1.0"}
@@ -114,7 +114,7 @@ depends: [
   "ocaml" {= "4.12.1"}
   "ocaml-compiler-libs" {= "v0.12.4"}
   "ocaml-syntax-shims" {= "1.0.0"}
-  "ocaml-version" {= "3.5.0"}
+  "ocaml-version" {= "3.6.0"}
   "ocamlbuild" {= "0.14.2"}
   "ocamlfind" {= "1.9.5"}
   "ocamlformat" {= "0.24.1"}
@@ -159,21 +159,21 @@ depends: [
   "seq" {= "base"}
   "sexplib" {= "v0.14.0"}
   "sexplib0" {= "v0.14.0"}
-  "sihl" {= "3.0.5"}
-  "sihl-cache" {= "3.0.5"}
-  "sihl-email" {= "3.0.5"}
-  "sihl-queue" {= "3.0.5"}
-  "sihl-storage" {= "3.0.5"}
-  "sihl-token" {= "3.0.5"}
-  "sihl-user" {= "3.0.5"}
+  "sihl" {= "4.0.0"}
+  "sihl-cache" {= "4.0.0"}
+  "sihl-email" {= "4.0.0"}
+  "sihl-queue" {= "4.0.0"}
+  "sihl-storage" {= "4.0.0"}
+  "sihl-token" {= "4.0.0"}
+  "sihl-user" {= "4.0.0"}
   "sqlite3" {= "5.1.0"}
   "ssl" {= "0.5.13"}
   "stdio" {= "v0.14.0"}
   "stdlib-shims" {= "0.3.0"}
   "stringext" {= "1.6.0"}
   "time_now" {= "v0.14.0"}
-  "tls" {= "0.15.3"}
-  "topkg" {= "1.0.6"}
+  "tls" {= "0.15.4"}
+  "topkg" {= "1.0.7"}
   "tsort" {= "2.1.0"}
   "tyxml" {= "4.5.0"}
   "tyxml-ppx" {= "4.5.0"}
@@ -210,15 +210,15 @@ build: [
 dev-repo: "git+https://gitlab.uzh.ch/econ/study-coordination/pool"
 name: "pool"
 pin-depends: [
-  ["sihl-user.3.0.5" "git+https://github.com/oxidizing/sihl.git"]
-  ["sihl-token.3.0.5" "git+https://github.com/oxidizing/sihl.git"]
-  ["sihl-storage.3.0.5" "git+https://github.com/oxidizing/sihl.git"]
-  ["sihl-queue.3.0.5" "git+https://github.com/oxidizing/sihl.git"]
-  ["sihl-email.3.0.5" "git+https://github.com/oxidizing/sihl.git"]
-  ["sihl-cache.3.0.5" "git+https://github.com/oxidizing/sihl.git"]
+  ["sihl-user.4.0.0" "git+https://github.com/oxidizing/sihl.git"]
+  ["sihl-token.4.0.0" "git+https://github.com/oxidizing/sihl.git"]
+  ["sihl-storage.4.0.0" "git+https://github.com/oxidizing/sihl.git"]
+  ["sihl-queue.4.0.0" "git+https://github.com/oxidizing/sihl.git"]
+  ["sihl-email.4.0.0" "git+https://github.com/oxidizing/sihl.git"]
+  ["sihl-cache.4.0.0" "git+https://github.com/oxidizing/sihl.git"]
   ["guardian.0.0.5" "git+https://github.com/uzh/guardian.git"]
   ["canary.0.0.1" "git+https://github.com/uzh/canary.git"]
-  ["letters.0.3.1" "git+https://github.com/oxidizing/letters.git"]
-  ["sihl.3.0.5" "git+https://github.com/oxidizing/sihl.git"]
+  ["letters.0.3.2" "git+https://github.com/oxidizing/letters.git"]
+  ["sihl.4.0.0" "git+https://github.com/oxidizing/sihl.git"]
   ["conformist.0.8.1" "git+https://github.com/oxidizing/conformist.git"]
 ]

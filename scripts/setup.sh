@@ -9,7 +9,7 @@ opam remote add default https://opam.ocaml.org
 
 repo_oxi=https://github.com/oxidizing
 repo_uzh=https://github.com/uzh
-repo_sihl=$repo_oxi/sihl.git
+repo_sihl=$repo_oxi/sihl.git#d0fb1e0bff4964453d22c2b1d28aa8f9eb2969cb
 
 # pin Sihl repos to ensure edge is available
 opam pin add -yn sihl $repo_sihl
@@ -20,7 +20,7 @@ opam pin add -yn sihl-storage $repo_sihl
 opam pin add -yn sihl-token $repo_sihl
 opam pin add -yn sihl-user $repo_sihl
 opam pin add -yn conformist $repo_oxi/conformist.git
-opam pin add -yn letters $repo_oxi/letters.git
+opam pin add -yn letters $repo_oxi/letters.git#e41e1a73aa70e6f8e964f94f2e7d1a26093ce436
 
 # pin custom libraries
 opam pin add -yn canary $repo_uzh/canary.git
