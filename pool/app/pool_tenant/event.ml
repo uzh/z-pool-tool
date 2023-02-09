@@ -5,7 +5,7 @@ module Database = Pool_database
 type smtp_auth_update =
   { server : SmtpAuth.Server.t
   ; port : SmtpAuth.Port.t
-  ; username : SmtpAuth.Username.t
+  ; username : SmtpAuth.Username.t option
   ; authentication_method : SmtpAuth.AuthenticationMethod.t
   ; protocol : SmtpAuth.Protocol.t
   }
@@ -62,6 +62,10 @@ let handle_event pool : event -> unit Lwt.t = function
     Lwt.return_unit
   | DetailsEdited (tenant, update_t) ->
     let open Entity.Write in
+    let () =
+      Pool_tenant_service.Email.remove_from_cache
+        tenant.database.Pool_database.label
+    in
     let smtp_auth =
       SmtpAuth.Write.
         { tenant.smtp_auth with

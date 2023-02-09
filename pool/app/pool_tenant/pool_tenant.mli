@@ -28,7 +28,7 @@ module SmtpAuth : sig
   type t =
     { server : Server.t
     ; port : Port.t
-    ; username : Username.t
+    ; username : Username.t option
     ; authentication_method : AuthenticationMethod.t
     ; protocol : Protocol.t
     }
@@ -40,8 +40,8 @@ module SmtpAuth : sig
     type t =
       { server : Server.t
       ; port : Port.t
-      ; username : Username.t
-      ; password : Password.t
+      ; username : Username.t option
+      ; password : Password.t option
       ; authentication_method : AuthenticationMethod.t
       ; protocol : Protocol.t
       }
@@ -49,8 +49,8 @@ module SmtpAuth : sig
     val create
       :  Server.t
       -> Port.t
-      -> Username.t
-      -> Password.t
+      -> Username.t option
+      -> Password.t option
       -> AuthenticationMethod.t
       -> Protocol.t
       -> (t, Pool_common.Message.error) result
@@ -272,7 +272,7 @@ end
 type smtp_auth_update =
   { server : SmtpAuth.Server.t
   ; port : SmtpAuth.Port.t
-  ; username : SmtpAuth.Username.t
+  ; username : SmtpAuth.Username.t option
   ; authentication_method : SmtpAuth.AuthenticationMethod.t
   ; protocol : SmtpAuth.Protocol.t
   }
@@ -367,49 +367,28 @@ module Service : sig
 
   module Email : sig
     module Smtp : sig
-      val inbox : unit -> Sihl.Contract.Email.t list
-      val add_to_inbox : Sihl.Contract.Email.t -> unit
-      val clear_inbox : unit -> unit
-      val send' : Database.Label.t -> Sihl.Contract.Email.t -> unit Lwt.t
-      val send : ?ctx:(string * string) list -> Sihl_email.t -> unit Lwt.t
-      val bulk_send : ?ctx:'a -> 'b -> 'c
-      val start : unit -> unit Lwt.t
-      val stop : unit -> unit Lwt.t
-      val lifecycle : Sihl.Container.lifecycle
-      val register : unit -> Sihl.Container.Service.t
-    end
+      type prepared =
+        { sender : string
+        ; recipients : Letters.recipient list
+        ; subject : string
+        ; body : Letters.body
+        ; config : Letters.Config.t
+        }
 
-    val inbox : unit -> Sihl_email.t list
-    val clear_inbox : unit -> unit
-    val register : unit -> Sihl.Container.Service.t
-    val lifecycle : Sihl.Container.lifecycle
+      val inbox : unit -> Sihl_email.t list
+      val clear_inbox : unit -> unit
+      val prepare : Database.Label.t -> Sihl_email.t -> prepared Lwt.t
+    end
 
     module Job : sig
       val send : Sihl_email.t Sihl_queue.job
     end
 
-    val redirected_email : string -> Sihl_email.t -> Sihl_email.t
-
-    val handle
-      :  ?ctx:'a
-      -> ?without_email_fcn:(?ctx:'a -> 'b -> unit Lwt.t)
-      -> (?ctx:'a -> 'b -> unit Lwt.t)
-      -> (?ctx:'a -> 'b -> string -> unit Lwt.t)
-      -> 'b
-      -> unit Lwt.t
-
-    val set_email_sender : ?sender:string -> Sihl_email.t -> Sihl_email.t
-
-    val send
-      :  ?sender:string
-      -> ?ctx:(string * string) list
-      -> Sihl_email.t
-      -> unit Lwt.t
-
-    val bulk_send
-      :  ?sender:string
-      -> ?ctx:(string * string) list
-      -> Sihl_email.t list
-      -> unit Lwt.t
+    val remove_from_cache : Pool_database.Label.t -> unit
+    val intercept : (Sihl_email.t -> unit Lwt.t) -> Sihl_email.t -> unit Lwt.t
+    val send : Pool_database.Label.t -> Sihl_email.t -> unit Lwt.t
+    val bulk_send : Pool_database.Label.t -> Sihl_email.t list -> unit Lwt.t
+    val lifecycle : Sihl.Container.lifecycle
+    val register : unit -> Sihl.Container.Service.t
   end
 end

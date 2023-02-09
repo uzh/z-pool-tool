@@ -23,8 +23,8 @@ module Create : sig
     ; database_label : Pool_database.Label.t
     ; smtp_auth_server : Pool_tenant.SmtpAuth.Server.t
     ; smtp_auth_port : Pool_tenant.SmtpAuth.Port.t
-    ; smtp_auth_username : Pool_tenant.SmtpAuth.Username.t
-    ; smtp_auth_password : Pool_tenant.SmtpAuth.Password.t
+    ; smtp_auth_username : Pool_tenant.SmtpAuth.Username.t option
+    ; smtp_auth_password : Pool_tenant.SmtpAuth.Password.t option
     ; smtp_auth_authentication_method :
         Pool_tenant.SmtpAuth.AuthenticationMethod.t
     ; smtp_auth_protocol : Pool_tenant.SmtpAuth.Protocol.t
@@ -54,8 +54,8 @@ end = struct
     ; database_label : Pool_database.Label.t
     ; smtp_auth_server : Pool_tenant.SmtpAuth.Server.t
     ; smtp_auth_port : Pool_tenant.SmtpAuth.Port.t
-    ; smtp_auth_username : Pool_tenant.SmtpAuth.Username.t
-    ; smtp_auth_password : Pool_tenant.SmtpAuth.Password.t
+    ; smtp_auth_username : Pool_tenant.SmtpAuth.Username.t option
+    ; smtp_auth_password : Pool_tenant.SmtpAuth.Password.t option
     ; smtp_auth_authentication_method :
         Pool_tenant.SmtpAuth.AuthenticationMethod.t
     ; smtp_auth_protocol : Pool_tenant.SmtpAuth.Protocol.t
@@ -114,8 +114,8 @@ end = struct
           ; Pool_database.Label.schema ()
           ; Pool_tenant.SmtpAuth.Server.schema ()
           ; Pool_tenant.SmtpAuth.Port.schema ()
-          ; Pool_tenant.SmtpAuth.Username.schema ()
-          ; Pool_tenant.SmtpAuth.Password.schema ()
+          ; Conformist.optional @@ Pool_tenant.SmtpAuth.Username.schema ()
+          ; Conformist.optional @@ Pool_tenant.SmtpAuth.Password.schema ()
           ; Pool_tenant.SmtpAuth.AuthenticationMethod.schema ()
           ; Pool_tenant.SmtpAuth.Protocol.schema ()
           ; Pool_tenant.Styles.Write.schema ()
@@ -188,7 +188,7 @@ module EditDetails : sig
     ; url : Pool_tenant.Url.t
     ; smtp_auth_server : Pool_tenant.SmtpAuth.Server.t
     ; smtp_auth_port : Pool_tenant.SmtpAuth.Port.t
-    ; smtp_auth_username : Pool_tenant.SmtpAuth.Username.t
+    ; smtp_auth_username : Pool_tenant.SmtpAuth.Username.t option
     ; smtp_auth_authentication_method :
         Pool_tenant.SmtpAuth.AuthenticationMethod.t
     ; smtp_auth_protocol : Pool_tenant.SmtpAuth.Protocol.t
@@ -216,7 +216,7 @@ end = struct
     ; url : Pool_tenant.Url.t
     ; smtp_auth_server : Pool_tenant.SmtpAuth.Server.t
     ; smtp_auth_port : Pool_tenant.SmtpAuth.Port.t
-    ; smtp_auth_username : Pool_tenant.SmtpAuth.Username.t
+    ; smtp_auth_username : Pool_tenant.SmtpAuth.Username.t option
     ; smtp_auth_authentication_method :
         Pool_tenant.SmtpAuth.AuthenticationMethod.t
     ; smtp_auth_protocol : Pool_tenant.SmtpAuth.Protocol.t
@@ -264,7 +264,7 @@ end = struct
           ; Pool_tenant.Url.schema ()
           ; Pool_tenant.SmtpAuth.Server.schema ()
           ; Pool_tenant.SmtpAuth.Port.schema ()
-          ; Pool_tenant.SmtpAuth.Username.schema ()
+          ; Conformist.optional @@ Pool_tenant.SmtpAuth.Username.schema ()
           ; Pool_tenant.SmtpAuth.AuthenticationMethod.schema ()
           ; Pool_tenant.SmtpAuth.Protocol.schema ()
           ; Pool_tenant.Disabled.schema ()

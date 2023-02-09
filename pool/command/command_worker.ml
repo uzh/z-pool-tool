@@ -1,14 +1,11 @@
-let run_forever () =
-  let p, _ = Lwt.wait () in
-  p
-;;
+let run_forever () = Lwt.wait () |> fst
 
 let run ?(services = []) () =
   Command_utils.make_no_args
     "worker.run"
     "Run worker (no server services)"
     (fun () ->
-    Logs.info (fun m ->
+    Logs.debug (fun m ->
       m
         "Running the following services: %s"
         ([%show: string list]

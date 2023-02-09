@@ -105,8 +105,12 @@ let create () =
                 Write.create
                   (Server.create smtp_auth_server |> get_or_failwith)
                   (Port.create smtp_auth_port |> get_or_failwith)
-                  (Username.create smtp_auth_username |> get_or_failwith)
-                  (Password.create smtp_auth_password |> get_or_failwith)
+                  (Username.create smtp_auth_username
+                  |> get_or_failwith
+                  |> CCOption.pure)
+                  (Password.create smtp_auth_password
+                  |> get_or_failwith
+                  |> CCOption.pure)
                   (AuthenticationMethod.create smtp_auth_authentication_method
                   |> get_or_failwith)
                   (Protocol.create smtp_auth_protocol |> get_or_failwith)

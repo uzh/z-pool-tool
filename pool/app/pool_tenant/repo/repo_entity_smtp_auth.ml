@@ -1,5 +1,11 @@
 include Entity.SmtpAuth
 
+let create_result_to_option create_fcn =
+  CCOption.map_or
+    ~default:(Ok None)
+    CCFun.(create_fcn %> CCResult.map CCOption.pure)
+;;
+
 module Server = struct
   include Server
 
@@ -63,7 +69,7 @@ let t =
       Utils.error_to_string Language.En Message.(Decode Field.SmtpReadModel))
     @@ let* server = Server.create server in
        let* port = Port.create port in
-       let* username = Username.create username in
+       let* username = create_result_to_option Username.create username in
        let* authentication_method =
          AuthenticationMethod.create authentication_method
        in
@@ -78,7 +84,7 @@ let t =
          Server.t
          (tup2
             Port.t
-            (tup2 Username.t (tup2 AuthenticationMethod.t Protocol.t)))))
+            (tup2 (option Username.t) (tup2 AuthenticationMethod.t Protocol.t)))))
 ;;
 
 module Write = struct
@@ -101,8 +107,8 @@ module Write = struct
         Utils.error_to_string Language.En Message.(Decode Field.SmtpWriteModel))
       @@ let* server = Server.create server in
          let* port = Port.create port in
-         let* username = Username.create username in
-         let* password = Password.create password in
+         let* username = create_result_to_option Username.create username in
+         let* password = create_result_to_option Password.create password in
          let* authentication_method =
            AuthenticationMethod.create authentication_method
          in
@@ -119,8 +125,10 @@ module Write = struct
            (tup2
               Port.t
               (tup2
-                 Username.t
-                 (tup2 Password.t (tup2 AuthenticationMethod.t Protocol.t))))))
+                 (option Username.t)
+                 (tup2
+                    (option Password.t)
+                    (tup2 AuthenticationMethod.t Protocol.t))))))
   ;;
 
   let schema_decoder create_fcn encode_fnc field name =
@@ -159,8 +167,12 @@ module Write = struct
                 "SMTP_PORT")
             (* TODO wrap as pair as described in
                https://github.com/oxidizing/conformist/issues/11, once exists *)
-          ; Username.(schema_decoder create value SmtpUsername "SMTP_USERNAME")
-          ; Password.(schema_decoder create value SmtpPassword "SMTP_PASSWORD")
+          ; Conformist.optional
+              Username.(
+                schema_decoder create value SmtpUsername "SMTP_USERNAME")
+          ; Conformist.optional
+              Password.(
+                schema_decoder create value SmtpPassword "SMTP_PASSWORD")
           ; AuthenticationMethod.(
               schema_decoder create value SmtpAuthMethod "SMTP_MECHANISM")
           ; Protocol.(schema_decoder create value SmtpProtocol "SMTP_PROTOCOL")

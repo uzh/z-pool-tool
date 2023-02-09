@@ -84,10 +84,14 @@ module Data = struct
       let* smtp_auth_server = smtp_auth_server |> SmtpAuth.Server.create in
       let* smtp_auth_port = smtp_auth_port |> SmtpAuth.Port.create in
       let* smtp_auth_username =
-        smtp_auth_username |> SmtpAuth.Username.create
+        smtp_auth_username
+        |> SmtpAuth.Username.create
+        |> CCResult.map CCOption.pure
       in
       let* smtp_auth_password =
-        smtp_auth_password |> SmtpAuth.Password.create
+        smtp_auth_password
+        |> SmtpAuth.Password.create
+        |> CCResult.map CCOption.pure
       in
       let* smtp_auth_authentication_method =
         smtp_auth_authentication_method |> SmtpAuth.AuthenticationMethod.create
@@ -212,7 +216,9 @@ let create_smtp_auth () =
     let open CCResult in
     let* server = smtp_auth_server |> Server.create in
     let* port = smtp_auth_port |> Port.create in
-    let* username = smtp_auth_username |> Username.create in
+    let* username =
+      smtp_auth_username |> Username.create |> CCResult.map CCOption.pure
+    in
     let* authentication_method =
       smtp_auth_authentication_method |> AuthenticationMethod.create
     in
@@ -280,8 +286,12 @@ let[@warning "-4"] create_tenant () =
       let open Pool_tenant.SmtpAuth in
       let* server = smtp_auth_server |> Server.create in
       let* port = smtp_auth_port |> Port.create in
-      let* username = smtp_auth_username |> Username.create in
-      let* password = smtp_auth_password |> Password.create in
+      let* username =
+        smtp_auth_username |> Username.create |> CCResult.map CCOption.pure
+      in
+      let* password =
+        smtp_auth_password |> Password.create |> CCResult.map CCOption.pure
+      in
       let* authentication_method =
         smtp_auth_authentication_method |> AuthenticationMethod.create
       in
@@ -365,7 +375,11 @@ let[@warning "-4"] update_tenant_details () =
       let* smtp_auth =
         let* server = smtp_auth_server |> SmtpAuth.Server.create in
         let* port = smtp_auth_port |> SmtpAuth.Port.create in
-        let* username = smtp_auth_username |> SmtpAuth.Username.create in
+        let* username =
+          smtp_auth_username
+          |> SmtpAuth.Username.create
+          |> CCResult.map CCOption.pure
+        in
         let* authentication_method =
           smtp_auth_authentication_method
           |> SmtpAuth.AuthenticationMethod.create

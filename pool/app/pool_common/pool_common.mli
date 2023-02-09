@@ -64,6 +64,7 @@ module Model : sig
   module String : sig
     type t = string
 
+    val compare : t -> t -> int
     val equal : t -> t -> bool
     val pp : Format.formatter -> t -> unit
     val show : t -> string
@@ -84,6 +85,7 @@ module Model : sig
   module type StringSig = sig
     type t
 
+    val compare : t -> t -> int
     val equal : t -> t -> bool
     val pp : Format.formatter -> t -> unit
     val show : t -> string

@@ -55,7 +55,7 @@ end
 type t =
   { server : Server.t
   ; port : Port.t
-  ; username : Username.t
+  ; username : Username.t option [@sexp.option]
   ; authentication_method : AuthenticationMethod.t
   ; protocol : Protocol.t
   }
@@ -65,8 +65,8 @@ module Write = struct
   type t =
     { server : Server.t
     ; port : Port.t
-    ; username : Username.t
-    ; password : Password.t [@opaque]
+    ; username : Username.t option
+    ; password : Password.t option [@opaque]
     ; authentication_method : AuthenticationMethod.t
     ; protocol : Protocol.t
     }

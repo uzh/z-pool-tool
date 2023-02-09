@@ -127,7 +127,6 @@ let services =
   ; Service.Token.register ()
   ; Pool_tenant.Service.Email.register ()
   ; Pool_tenant.Service.Queue.register ()
-  ; Pool_tenant.Service.Email.Smtp.register ()
   ; Service.Storage.register ()
   ]
 ;;

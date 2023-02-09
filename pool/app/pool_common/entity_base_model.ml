@@ -72,6 +72,7 @@ module String = struct
 
   type t = string [@@deriving eq, show, sexp_of, yojson]
 
+  let compare = CCString.compare
   let value m = m
   let of_string m = m
 
@@ -88,6 +89,7 @@ end
 module type StringSig = sig
   type t
 
+  val compare : t -> t -> int
   val equal : t -> t -> bool
   val pp : Format.formatter -> t -> unit
   val show : t -> string

@@ -85,10 +85,6 @@ type event =
 [@@deriving eq, show]
 
 let handle_event pool : event -> unit Lwt.t = function
-  | Sent email ->
-    let%lwt sender = sender_of_pool pool in
-    Pool_tenant.(Service.Email.send ?sender ~ctx:(to_ctx pool) email)
-  | BulkSent emails ->
-    let%lwt sender = sender_of_pool pool in
-    Pool_tenant.(Service.Email.bulk_send ?sender ~ctx:(to_ctx pool) emails)
+  | Sent email -> Pool_tenant.Service.Email.send pool email
+  | BulkSent emails -> Pool_tenant.Service.Email.bulk_send pool emails
 ;;
