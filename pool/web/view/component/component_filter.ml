@@ -327,7 +327,7 @@ let value_input language param query_experiments input_type ?value () =
          multi_select
          field_name
          ()
-     | Key.QueryExpeirments ->
+     | Key.QueryExperiments ->
        let current =
          value
          |> CCOption.map_or ~default:[] (fun value ->

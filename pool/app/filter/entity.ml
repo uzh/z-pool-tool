@@ -105,7 +105,7 @@ module Key = struct
     | Select of Custom_field.SelectOption.t list [@printer print "option"]
     | MultiSelect of Custom_field.SelectOption.t list
         [@printer print "multi_select"]
-    | QueryExpeirments
+    | QueryExperiments
   [@@deriving show]
 
   type hardcoded =
@@ -207,7 +207,7 @@ module Key = struct
     | Firstname -> Str
     | Name -> Str
     | NumAssignments | NumInvitations | NumParticipations | NumShowUps -> Nr
-    | Participation -> QueryExpeirments
+    | Participation -> QueryExperiments
   ;;
 
   let type_of_custom_field m : input_type =
@@ -249,7 +249,7 @@ module Key = struct
           options
         |> CCOption.to_result error
         >|= CCFun.const ()
-      | Str _, QueryExpeirments -> Ok ()
+      | Str _, QueryExperiments -> Ok ()
       | _ -> Error error
     in
     let validate_value value input_type =
@@ -310,7 +310,7 @@ module Operator = struct
     | Key.Date | Nr ->
       [ Equal; NotEqual; Greater; GreaterEqual; Less; LessEqual ]
     | Key.Languages _ -> [ Equal; NotEqual ]
-    | MultiSelect _ | QueryExpeirments ->
+    | MultiSelect _ | QueryExperiments ->
       [ ContainsAll; ContainsSome; ContainsNone ]
     | Select _ -> [ Equal; NotEqual ]
     | Str -> [ Equal; NotEqual; Like ]

@@ -25,7 +25,7 @@ module Key : sig
     | Str
     | Select of Custom_field.SelectOption.t list
     | MultiSelect of Custom_field.SelectOption.t list
-    | QueryExpeirments
+    | QueryExperiments
 
   val show_input_type : input_type -> string
 
