@@ -151,7 +151,7 @@ module PtimeSpan = struct
     let open Pool_common_utils in
     let open CCResult in
     let decode str = Time.parse_time_span str >>= create in
-    let encode span = Time.print_time_span span in
+    let encode = Time.print_time_span in
     schema_decoder decode encode field
   ;;
 end

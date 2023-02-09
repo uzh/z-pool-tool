@@ -203,7 +203,7 @@ let create_invalid_data () =
     res
 ;;
 
-let[@warning "-21"] create_min_gt_max () =
+let create_min_gt_max () =
   let open CCResult.Infix in
   let open Pool_common.Message in
   let open Field in

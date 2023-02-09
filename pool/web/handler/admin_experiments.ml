@@ -88,8 +88,6 @@ let create req =
 ;;
 
 let detail edit req =
-  Logs.info (fun m -> m "%s" "IN HANDLER");
-  Logs.info (fun m -> m "Edit is %s" (if edit then "true" else "false"));
   let open Utils.Lwt_result.Infix in
   let result ({ Pool_context.database_label; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, "/admin/experiments")

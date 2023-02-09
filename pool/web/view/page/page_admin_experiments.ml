@@ -20,7 +20,7 @@ let title_to_string language text =
   | String str -> str
 ;;
 
-let experiment_path experiment =
+let build_experiment_path experiment =
   Format.asprintf "/admin/experiments/%s/%s" Experiment.(Id.value experiment.id)
 ;;
 
@@ -93,7 +93,9 @@ let message_templates_html
   list
   =
   let open Message_template in
-  let edit_path m = prefixed_template_url ~append:"edit" m |> experiment_path in
+  let edit_path =
+    CCFun.(prefixed_template_url ~append:"edit" %> experiment_path)
+  in
   let new_path =
     if CCList.is_empty (filter_languages sys_languages list)
     then None
@@ -343,7 +345,7 @@ let detail
   sys_languages
   Pool_context.{ language; csrf; _ }
   =
-  let experiment_path = experiment_path experiment in
+  let experiment_path = build_experiment_path experiment in
   let delete_form =
     match session_count > 0 with
     | true ->

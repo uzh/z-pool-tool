@@ -83,7 +83,6 @@ let parse_time str =
 
 let parse_time_span str =
   let error = Entity_message.(Invalid Field.Duration) in
-  Logs.info (fun m -> m "parse_time_span: %s" str);
   if CCString.is_empty str
   then Error Entity_message.NoValue
   else
