@@ -1,3 +1,6 @@
+module Model = Test_utils.Model
+
+let get_exn_poolerror = Test_utils.get_or_failwith_pool_error
 let contact_email_address = "jane.doe@email.com"
 let lang = Pool_common.Language.En
 let tenant = Tenant_test.Data.full_tenant
@@ -6,7 +9,7 @@ let allowed_email_suffixes =
   [ "mail.com" ]
   |> CCList.map Settings.EmailSuffix.create
   |> CCResult.flatten_l
-  |> CCResult.get_exn
+  |> get_exn_poolerror
 ;;
 
 let convert_id = CCFun.(Experiment.Id.value %> Pool_common.Id.of_string)
@@ -22,7 +25,7 @@ module TestContacts = struct
     index
     |> CCList.nth Seed.Contacts.contact_ids
     |> Contact.find Test_utils.Data.database_label
-    ||> CCResult.get_exn
+    ||> get_exn_poolerror
   ;;
 end
 
@@ -37,8 +40,8 @@ module CustomFieldData = struct
         { id = Id.create ()
         ; model = Model.Contact
         ; name =
-            Name.create [ lang ] [ lang, "Nr of siblings" ] |> CCResult.get_exn
-        ; hint = [] |> Hint.create |> CCResult.get_exn
+            Name.create [ lang ] [ lang, "Nr of siblings" ] |> get_exn_poolerror
+        ; hint = [] |> Hint.create |> get_exn_poolerror
         ; validation = Validation.pure
         ; required = false |> Required.create
         ; disabled = false |> Disabled.create
@@ -103,8 +106,8 @@ module CustomFieldData = struct
         ; model = Model.Contact
         ; name =
             Name.create [ lang ] [ lang, "admin_override_nr_field" ]
-            |> CCResult.get_exn
-        ; hint = [] |> Hint.create |> CCResult.get_exn
+            |> get_exn_poolerror
+        ; hint = [] |> Hint.create |> get_exn_poolerror
         ; validation = Validation.pure
         ; required = false |> Required.create
         ; disabled = false |> Disabled.create
@@ -163,7 +166,7 @@ module CustomFieldData = struct
     |> map (fun i -> [ lang, CCInt.to_string i ])
     |> map (Name.create [ lang ])
     |> CCList.all_ok
-    |> CCResult.get_exn
+    |> get_exn_poolerror
     |> map (fun name -> Custom_field.SelectOption.Id.create (), name)
   ;;
 
@@ -193,8 +196,8 @@ module CustomFieldData = struct
       ( { id = Id.create ()
         ; model = Model.Contact
         ; name =
-            Name.create [ lang ] [ lang, "Multi select" ] |> CCResult.get_exn
-        ; hint = [] |> Hint.create |> CCResult.get_exn
+            Name.create [ lang ] [ lang, "Multi select" ] |> get_exn_poolerror
+        ; hint = [] |> Hint.create |> get_exn_poolerror
         ; validation = Validation.pure
         ; required = false |> Required.create
         ; disabled = false |> Disabled.create
@@ -281,6 +284,15 @@ let admin_override_nr_field_filter ~nr () =
        (Single (Nr (nr |> CCFloat.of_int))))
 ;;
 
+let participation_filter experiment_id operator () =
+  let open Filter in
+  Pred
+    (Predicate.create
+       Key.(Hardcoded Participation)
+       operator
+       (Lst [ Str (experiment_id |> Experiment.Id.value) ]))
+;;
+
 let firstname firstname =
   let open Filter in
   Pred
@@ -320,7 +332,7 @@ let filter_contacts _ () =
         Test_utils.Data.database_label
         (experiment.Experiment.id |> convert_id)
         experiment.Experiment.filter
-      ||> CCResult.get_exn
+      ||> get_exn_poolerror
     in
     let res =
       filtered_contacts
@@ -364,7 +376,7 @@ let filter_by_email _ () =
         Test_utils.Data.database_label
         (experiment.Experiment.id |> convert_id)
         experiment.Experiment.filter
-      ||> CCResult.get_exn
+      ||> get_exn_poolerror
     in
     let res = CCList.mem ~eq:Contact.equal contact filtered_contacts in
     Alcotest.(check bool "succeeds" expected res) |> Lwt.return
@@ -463,7 +475,7 @@ let test_list_filter answer_index operator contact experiment expected =
         Test_utils.Data.database_label
         (experiment.Experiment.id |> convert_id)
         experiment.Experiment.filter
-      ||> CCResult.get_exn
+      ||> get_exn_poolerror
     in
     let res = CCList.mem ~eq:Contact.equal contact filtered_contacts in
     Alcotest.(check bool "succeeds" expected res) |> Lwt.return
@@ -549,7 +561,7 @@ let retrieve_fitleterd_and_ordered_contacts _ () =
       |> Format.asprintf "contact-%i@econ.uzh.ch"
       |> Pool_user.EmailAddress.of_string
       |> Contact.find_by_email pool
-      |> Lwt.map CCResult.get_exn
+      |> Lwt.map get_exn_poolerror
     in
     let%lwt contact_one = find_contact 11 in
     let%lwt contact_two = find_contact 12 in
@@ -583,7 +595,7 @@ let retrieve_fitleterd_and_ordered_contacts _ () =
         Data.database_label
         Experiment.(experiment.Experiment.id |> Id.to_common)
         (Some filter)
-      |> Lwt.map CCResult.get_exn
+      |> Lwt.map get_exn_poolerror
     in
     let get_index contact =
       CCList.find_idx
@@ -643,7 +655,7 @@ let find_contact_in_filtered_list contact experiment_id filter =
   filter
   |> CCOption.pure
   |> find
-  ||> CCResult.get_exn
+  ||> get_exn_poolerror
   ||> CCList.find_opt (Contact.equal contact)
   ||> CCOption.is_some
 ;;
@@ -743,4 +755,64 @@ let filter_ignore_admin_value _ () =
     Alcotest.(check bool "succeeds" true res) |> Lwt.return
   in
   Lwt.return_unit
+;;
+
+let filter_by_experiment_participation _ () =
+  let open Assignment in
+  let open Utils.Lwt_result.Infix in
+  let hd = CCList.hd in
+  let database_label = Test_utils.Data.database_label in
+  let%lwt all_experiments = Experiment.find_all database_label () in
+  let participated_experiment =
+    CCList.nth all_experiments 0 |> Experiment.(fun exp -> exp.id)
+  in
+  let%lwt session =
+    Session.find_all_for_experiment database_label participated_experiment
+    ||> get_exn_poolerror
+    ||> hd
+  in
+  let%lwt contact = TestContacts.get_contact 2 in
+  let%lwt () =
+    let run =
+      Lwt_list.iter_s (Pool_event.handle_event Test_utils.Data.database_label)
+    in
+    let%lwt () =
+      [ Created { contact; session_id = session.Session.id }
+        |> Pool_event.assignment
+      ]
+      |> run
+    in
+    let%lwt assignment =
+      Assignment.find_by_session database_label session.Session.id
+      >|+ CCList.find (fun (assignment : t) ->
+            Contact.equal assignment.contact contact)
+      ||> get_exn_poolerror
+    in
+    [ AttendanceSet (assignment, ShowUp.create true, Participated.create true)
+      |> Pool_event.assignment
+    ; Session.Closed session |> Pool_event.session
+    ]
+    |> run
+  in
+  let experiment_id =
+    CCList.nth all_experiments 1
+    |> Experiment.(fun exp -> exp.id |> Id.to_common)
+  in
+  let search = find_contact_in_filtered_list contact experiment_id in
+  let%lwt should_not_contain =
+    Filter.(
+      create
+        None
+        (participation_filter participated_experiment Operator.ContainsNone ()))
+    |> search
+  in
+  let%lwt should_contain =
+    Filter.(
+      create
+        None
+        (participation_filter participated_experiment Operator.ContainsAll ()))
+    |> search
+  in
+  let res = should_contain && not should_not_contain in
+  Alcotest.(check bool "succeeds" true res) |> Lwt.return
 ;;

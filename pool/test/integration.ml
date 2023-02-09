@@ -102,6 +102,10 @@ let suite =
               "filter ignore admin value"
               `Slow
               filter_ignore_admin_value
+          ; test_case
+              "filter by experiment participation"
+              `Slow
+              filter_by_experiment_participation
           ] )
     ; ( "matcher"
       , Matcher_test.

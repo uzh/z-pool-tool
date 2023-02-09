@@ -102,15 +102,7 @@ let canceled_with_closed_session () =
 let set_attendance () =
   let open Assignment in
   let assignment = Model.create_assignment () in
-  let session = Model.create_session () in
-  let hour = 3600 |> Ptime.Span.of_int_s in
-  let start =
-    Ptime_clock.now ()
-    |> CCFun.flip Ptime.sub_span hour
-    |> CCOption.get_exn_or "Invalid time span"
-    |> Session.Start.create
-  in
-  let session = Session.{ session with start } in
+  let session = Model.(create_session ~start:(an_hour_ago ()) ()) in
   let show_up = true |> ShowUp.create in
   let participated = false |> Participated.create in
   let events =
@@ -139,15 +131,7 @@ let set_attendance () =
 let set_invalid_attendance () =
   let open Assignment in
   let assignment = Model.create_assignment () in
-  let session = Model.create_session () in
-  let hour = 3600 |> Ptime.Span.of_int_s in
-  let start =
-    Ptime_clock.now ()
-    |> CCFun.flip Ptime.sub_span hour
-    |> CCOption.get_exn_or "Invalid time span"
-    |> Session.Start.create
-  in
-  let session = Session.{ session with start } in
+  let session = Model.(create_session ~start:(an_hour_ago ()) ()) in
   let show_up = false |> ShowUp.create in
   let participated = true |> Participated.create in
   let events =
