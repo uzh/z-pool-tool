@@ -61,7 +61,6 @@ let ( @@@ ) constructors =
 
 let default_values_root = [ password_reset ] @@@ [ En; De ]
 
-(* TODO: Make query "insert if not exists" *)
 let default_values_tenant =
   [ assignment_confirmation
   ; contact_resignup
