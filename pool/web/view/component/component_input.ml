@@ -165,7 +165,6 @@ let flatpicker_element
   ?(disable_past = false)
   ?(additional_attributes = [])
   language
-  input_type
   name
   =
   let input_label = Elements.input_label language name label_field required in
@@ -174,13 +173,8 @@ let flatpicker_element
     span ~a:[ a_class [ "help"; "datepicker-msg"; "error-message" ] ] []
     |> CCList.pure
   in
-  let input_classes =
-    match input_type with
-    | `Datetime_local | `Datetime -> [ "datepicker" ]
-    | `Time -> [ "spanpicker" ]
-  in
   let flatpicker_attributes =
-    [ a_class input_classes
+    [ a_class [ "datepicker" ]
     ; a_user_data "language" (Pool_common.Language.show language)
     ]
     @ additional_attributes
@@ -197,7 +191,7 @@ let flatpicker_element
   let id = Elements.identifier ?identifier name in
   let attributes =
     Elements.attributes
-      input_type
+      `Datetime_local
       name
       id
       ([ a_value value ] @ flatpicker_attributes)
@@ -211,6 +205,47 @@ let flatpicker_element
     ([ label ~a:[ a_label_for id ] [ txt input_label ]; input_element ]
     @ help
     @ flat_picker_help)
+;;
+
+let timespan_picker
+  ?(additional_attributes = [])
+  ?(orientation = `Vertical)
+  ?(classnames = [])
+  ?help
+  ?identifier
+  ?(required = false)
+  ?flash_fetcher
+  ?value
+  ?error
+  language
+  name
+  =
+  let input_label = Elements.input_label language name None required in
+  let value =
+    flash_fetched_value
+      flash_fetcher
+      (value |> CCOption.map Pool_common.Utils.Time.timespan_to_hours)
+      name
+  in
+  let id = Elements.identifier ?identifier name in
+  let attributes =
+    let attrs =
+      Elements.attributes `Number name id [ a_value value ]
+      @ additional_attributes
+      @ [ a_input_min (`Number 0); a_step (Some 0.01) ]
+    in
+    let attrs = if required then a_required () :: attrs else attrs in
+    if CCOption.is_some error then a_class [ "has-error" ] :: attrs else attrs
+  in
+  let group_class = Elements.group_class classnames orientation in
+  let help = Elements.help language help in
+  let error = Elements.error language error in
+  let input_element = Elements.apply_orientation attributes orientation in
+  div
+    ~a:[ a_class group_class ]
+    ([ label ~a:[ a_label_for id ] [ txt input_label ]; input_element ]
+    @ help
+    @ error)
 ;;
 
 let checkbox_element
@@ -341,19 +376,21 @@ let textarea_element
   =
   let id = Elements.identifier ?identifier name in
   let input_label = Elements.input_label language name label_field required in
-  let textarea_attributes =
-    let base = [ a_name (name |> Field.show); a_id id ] in
-    let base = if rich_text then a_class [ "rich-text" ] :: base else base in
-    match required with
-    | true -> base @ [ a_required () ]
-    | false -> base
-  in
   let ( <+> ) = CCOption.( <+> ) in
   let old_value =
     CCOption.bind flash_fetcher (fun flash_fetcher ->
       name |> Field.show |> flash_fetcher)
   in
   let value = old_value <+> value |> CCOption.get_or ~default:"" in
+  let textarea_attributes =
+    let base = [ a_name (name |> Field.show); a_id id ] in
+    let base = if rich_text then a_class [ "rich-text" ] :: base else base in
+    (* Chrome has problems with CKEditor, when field is required and initially
+       empty *)
+    match rich_text, required, CCString.(trim value |> length) > 0 with
+    | false, true, _ | true, true, true -> base @ [ a_required () ]
+    | true, _, _ | _, false, _ -> base
+  in
   let textarea =
     let base = textarea ~a:(textarea_attributes @ attributes) (txt value) in
     match orientation with
@@ -455,6 +492,7 @@ let selector
   ?(add_empty = false)
   ?(attributes = [])
   ?(classnames = [])
+  ?(hide_label = false)
   ?(required = false)
   ?(read_only = false)
   ?error
@@ -538,7 +576,7 @@ let selector
   let error = Elements.error language error in
   div
     ~a:[ a_class (Elements.group_class classnames `Vertical) ]
-    ([ label [ input_label |> txt ]
+    ([ (if hide_label then txt "" else label [ input_label |> txt ])
      ; div
          ~a:[ a_class [ "select" ] ]
          [ select

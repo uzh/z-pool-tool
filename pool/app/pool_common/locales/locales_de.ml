@@ -1,6 +1,6 @@
 open Entity_message
 
-let field_to_string =
+let rec field_to_string =
   let open Field in
   function
   | Admin -> "Administrator"
@@ -52,6 +52,8 @@ let field_to_string =
   | EmailText -> "E-Mail Text"
   | End -> "Ende"
   | Experiment -> "Experiment"
+  | ExperimentReminderLeadTime ->
+    Format.asprintf "Experimentspezifische %s" (field_to_string LeadTime)
   | ExperimentType -> "Experimenttyp"
   | Experimenter -> "Experimenter"
   | FieldType -> "Feldtyp"
@@ -146,6 +148,7 @@ let field_to_string =
   | Styles -> "Styles"
   | Template -> "Template"
   | MessageTemplate -> "Nachrichtentemplate"
+  | MessageTemplates -> "Nachrichtentemplates"
   | Tenant -> "Tenant"
   | TenantDisabledFlag -> "Deaktiviert"
   | TenantId -> "Tenant Identifier"
@@ -201,7 +204,7 @@ let success_to_string : success -> string = function
   | Rescheduled field ->
     field_message "" (field_to_string field) "wurden erfolgreich verschoben."
   | RoleAssigned -> "Rolle wurde zugewiesen."
-  | RoleDivested -> "Rolle wurde entzogen."
+  | RoleUnassigned -> "Rolle wurde entzogen."
   | SentList field ->
     field_message "" (field_to_string field) "wurden erfolgreich verschickt."
   | SettingsUpdated -> "Die Einstellungen wurden erfolgreich gespeichert."
@@ -422,11 +425,11 @@ let control_to_string = function
   | Delete field -> format_submit "löschen" field
   | Descending -> "absteigend"
   | Disable -> format_submit "deaktivieren" None
-  | Divest field -> format_submit "entziehen" field
   | Duplicate field -> format_submit "duplizieren" field
   | Edit field -> format_submit "bearbeiten" field
   | Enable -> format_submit "aktivieren" None
   | Enroll -> format_submit "einschreiben" None
+  | Filter field -> format_submit "filtern" field
   | Login -> format_submit "login" None
   | Manage field -> format_submit "manage" (Some field)
   | More -> "mehr"
@@ -449,6 +452,8 @@ let control_to_string = function
   | Show -> "anzeigen"
   | SignUp -> format_submit "anmelden" None
   | Stop field -> format_submit "stoppen" field
+  | ToggleAll -> "alle umschalten"
+  | Unassign field -> format_submit "entfernen" field
   | Update field -> format_submit "aktualisieren" field
   | UpdateOrder -> "Reihenfolge anpassen"
 ;;

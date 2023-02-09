@@ -125,7 +125,7 @@ let nav_link_to_string = function
   | WaitingList -> "Warteliste"
 ;;
 
-let hint_to_string = function
+let rec hint_to_string = function
   | AllowUninvitedSignup ->
     "Kontakte, die nicht eingeladen wurden, können sich für das Experiment \
      anmelden."
@@ -174,6 +174,10 @@ let hint_to_string = function
     "Bitte berücksichtigen Sie, dass die Datenqualität bei Texteingaben tiefer \
      ist. Falls die Daten in einer anderen Form erhoben werden können, ist \
      dies zu bevorzugen."
+  | CustomFieldTypeSelect ->
+    "Nachdem das Feld erstellt wurde, können Sie die verfügbaren Optionen im \
+     Abschnitt 'Option' erstellen."
+  | CustomFieldTypeMultiSelect -> hint_to_string CustomFieldTypeSelect
   | CustomHtmx s -> s
   | DirectRegistrationDisbled ->
     "Ist diese Option aktiviert, können sich Kontakte auf die Warteliste \
@@ -203,6 +207,9 @@ let hint_to_string = function
      Experimente nicht mehr angezeigt, obwohl im E-Mail aufgeführt. Sobald \
      alle verfügbaren Plätze einer Session belegt sind wird es nichtmehr \
      angezeigt."
+  | FilterContacts ->
+    "Definieren Sie die Kriterien, anhand welchen Kontakte an dieses \
+     Experiment eingeladen werden."
   | I18nText str -> str
   | LocationFiles ->
     "Zusatzinformationen zum Standort, wie z.B. eine Wegbeschreibung. \
@@ -257,7 +264,8 @@ let hint_to_string = function
      einen Termin zuzuweisen, wenn ein freier Platz vorhanden ist."
   | TemplateTextElementsHint ->
     "Die folgenden Textbausteine können in den Templates verwendet werden:"
-  | TimeSpanPickerHint -> "Stunden und Minuten"
+  | TimeSpanPickerHint ->
+    "Zeitdauer in Stunden. '1.5' entspricht 1h 30m. '0.75' entspricht 45min."
 ;;
 
 let confirmable_to_string confirmable =

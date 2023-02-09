@@ -134,6 +134,42 @@ module Model : sig
       -> (Entity_message.error, t) Pool_common_utils.PoolConformist.Field.t
   end
 
+  module PtimeSpan : sig
+    type t = Ptime.Span.t
+
+    val equal : t -> t -> bool
+    val pp : Format.formatter -> t -> unit
+    val show : t -> string
+    val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+    val t_of_yojson : Yojson.Safe.t -> t
+    val yojson_of_t : t -> Yojson.Safe.t
+    val value : t -> Ptime.Span.t
+    val to_human : t -> string
+
+    val schema
+      :  Entity_message.Field.t
+      -> (Ptime.Span.t -> (t, Entity_message.error) result)
+      -> unit
+      -> (Entity_message.error, t) Pool_common_utils.PoolConformist.Field.t
+  end
+
+  module type PtimeSpanSig = sig
+    type t
+
+    val equal : t -> t -> bool
+    val pp : Format.formatter -> t -> unit
+    val show : t -> string
+    val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+    val t_of_yojson : Yojson.Safe.t -> t
+    val yojson_of_t : t -> Yojson.Safe.t
+    val value : t -> Ptime.Span.t
+    val to_human : t -> string
+
+    val schema
+      :  unit
+      -> (Entity_message.error, t) Pool_common_utils.PoolConformist.Field.t
+  end
+
   module Ptime : sig
     type t = Ptime.t
 
@@ -409,7 +445,7 @@ module Utils : sig
     val formatted_date_time : Ptime.t -> string
     val ptime_to_formatted_date : Ptime.t -> string
     val formatted_timespan : Ptime.span -> string
-    val timespan_spanpicker : Ptime.span -> string
+    val timespan_to_hours : Ptime.span -> string
     val parse_time : string -> (Ptime.t, Message.error) result
     val parse_time_span : string -> (Ptime.Span.t, Message.error) result
     val print_time_span : Ptime.Span.t -> string

@@ -29,7 +29,7 @@ end = struct
   ;;
 end
 
-module DivestOperator : sig
+module UnassignOperator : sig
   (* TODO: Type safety *)
   type t =
     { user_id : string
@@ -49,7 +49,7 @@ end = struct
     }
 
   let handle tenant_id user =
-    Ok [ Tenant.OperatorDivested (tenant_id, user) |> Pool_event.tenant ]
+    Ok [ Tenant.OperatorUnassigned (tenant_id, user) |> Pool_event.tenant ]
   ;;
 
   let can t =

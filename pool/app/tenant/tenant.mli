@@ -6,7 +6,7 @@ end
 
 type event =
   | OperatorAssigned of Pool_common.Id.t * Admin.t
-  | OperatorDivested of Pool_common.Id.t * Admin.t
+  | OperatorUnassigned of Pool_common.Id.t * Admin.t
   | StatusReportGenerated of unit
 
 val handle_event : Pool_database.Label.t -> event -> unit Lwt.t

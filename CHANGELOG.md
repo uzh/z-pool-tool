@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 - add description to user profile completion page
 - allow sessions to be closed before they end
 - make pool_assignments `show_up` and `participated` nullable
+- detect unsaved changes in forms
 
 ### Fixed
 
