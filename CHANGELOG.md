@@ -12,6 +12,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 - detect unsaved changes in forms
 - send notification to contacts when there is an registration attempt with in-use email address
 - allow contacts to be filtered by experiment participation
+- split server command and queue worker command
+- integrate email service in tenant
 
 ### Fixed
 
@@ -27,8 +29,6 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 - only show user value when admin_override is disabled
 - display a hint or answers of the contact when overridden
 - allow non required fields to be cleared
-- split server command and queue worker command
-- integrate email service in tenant
 
 ## [0.1.0](https://github.com/uzh/pool/tree/0.1.0) - 2023-01-23
 
