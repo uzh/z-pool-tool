@@ -90,7 +90,7 @@ let form is_edit req =
          | Some filter ->
            filter
            |> Filter.all_query_experiments
-           |> Experiment.multiple_search_results_by_id database_label
+           |> Experiment.search_multiple_by_id database_label
        in
        let%lwt key_list = Filter.all_keys database_label in
        Page.Admin.Filter.edit context filter key_list query_experiments
@@ -222,7 +222,7 @@ let handle_toggle_predicate_type action req =
     let%lwt quey_experiments =
       query
       |> Filter.Human.all_query_experiments
-      |> Experiment.multiple_search_results_by_id database_label
+      |> Experiment.search_multiple_by_id database_label
     in
     Component.Filter.(
       predicate_form

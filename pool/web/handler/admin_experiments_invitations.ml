@@ -24,7 +24,7 @@ let index req =
          | Some filter ->
            filter
            |> Filter.all_query_experiments
-           |> Experiment.multiple_search_results_by_id database_label
+           |> Experiment.search_multiple_by_id database_label
        in
        let* filtered_contacts =
          if Sihl.Configuration.is_production ()

@@ -154,7 +154,7 @@ val search
   -> string
   -> (Id.t * Title.t) list Lwt.t
 
-val multiple_search_results_by_id
+val search_multiple_by_id
   :  Pool_database.Label.t
   -> Pool_common.Id.t list
   -> (Id.t * Title.t) list Lwt.t

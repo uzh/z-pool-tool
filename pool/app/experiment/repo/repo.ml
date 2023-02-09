@@ -249,7 +249,7 @@ module Sql = struct
     Utils.Database.collect (pool |> Database.Label.value) request pv
   ;;
 
-  let multiple_search_results_by_id_request ids =
+  let search_multiple_by_id_request ids =
     Format.asprintf
       {sql|
         SELECT
@@ -268,7 +268,7 @@ module Sql = struct
       |> CCString.concat ",")
   ;;
 
-  let multiple_search_results_by_id pool ids =
+  let search_multiple_by_id pool ids =
     let open Caqti_request.Infix in
     match ids with
     | [] -> Lwt.return []
@@ -282,7 +282,7 @@ module Sql = struct
       in
       let (Dynparam.Pack (pt, pv)) = dyn in
       let request =
-        multiple_search_results_by_id_request ids
+        search_multiple_by_id_request ids
         |> pt ->* Caqti_type.(Repo_entity.(tup2 RepoId.t Title.t))
       in
       Utils.Database.collect (pool |> Database.Label.value) request pv
@@ -298,6 +298,6 @@ let insert = Sql.insert
 let update = Sql.update
 let destroy = Sql.destroy
 let search = Sql.search
-let multiple_search_results_by_id = Sql.multiple_search_results_by_id
+let search_multiple_by_id = Sql.search_multiple_by_id
 
 module Id = Pool_common.Repo.Id

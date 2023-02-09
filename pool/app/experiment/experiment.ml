@@ -27,6 +27,6 @@ let find_of_session = Repo.find_of_session
 let find_of_mailing = Repo.find_of_mailing
 let session_count = Repo.session_count
 let search = Repo.search
-let multiple_search_results_by_id = Repo.multiple_search_results_by_id
+let search_multiple_by_id = Repo.search_multiple_by_id
 let possible_participant_count _ = Lwt.return 0
 let possible_participants _ = Lwt.return []
