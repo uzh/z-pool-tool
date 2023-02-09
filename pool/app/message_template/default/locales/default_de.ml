@@ -418,7 +418,7 @@ Neu:
   }
 ;;
 
-let contact_resignup =
+let contact_registration_attempt =
   let label = Label.ContactRegistrationAttempt in
   let email_text =
     [ p

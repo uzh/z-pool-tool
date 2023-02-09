@@ -5,9 +5,9 @@ let assignment_confirmation = function
   | En -> Default_en.assignment_confirmation
 ;;
 
-let contact_resignup = function
-  | De -> Default_de.contact_resignup
-  | En -> Default_en.contact_resignup
+let contact_registration_attempt = function
+  | De -> Default_de.contact_registration_attempt
+  | En -> Default_en.contact_registration_attempt
 ;;
 
 let email_verification = function
@@ -63,7 +63,7 @@ let default_values_root = [ password_reset ] @@@ [ En; De ]
 
 let default_values_tenant =
   [ assignment_confirmation
-  ; contact_resignup
+  ; contact_registration_attempt
   ; email_verification
   ; experiment_invitation
   ; password_change

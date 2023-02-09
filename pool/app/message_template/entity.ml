@@ -10,8 +10,8 @@ module Label = struct
   type t =
     | AssignmentConfirmation [@name "assignment_confirmation"]
         [@printer go "assignment_confirmation"]
-    | ContactRegistrationAttempt [@name "contact_resignup"]
-        [@printer go "contact_resignup"]
+    | ContactRegistrationAttempt [@name "contact_registration_attempt"]
+        [@printer go "contact_registration_attempt"]
     | EmailVerification [@name "email_verification"]
         [@printer go "email_verification"]
     | ExperimentInvitation [@name "experiment_invitation"]

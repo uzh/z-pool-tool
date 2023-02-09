@@ -99,7 +99,7 @@ let sign_up_create req =
            |> (function
            | Ok contact when contact.Contact.user.Sihl_user.confirmed ->
              let%lwt send_notification =
-               Contact.should_send_signup_attempt_notification
+               Contact.should_send_registration_attempt_notification
                  database_label
                  contact
              in

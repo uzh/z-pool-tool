@@ -338,7 +338,7 @@ let update_profile_updated_triggered pool ids =
   Utils.Database.exec (pool |> Pool_database.Label.value) request pv
 ;;
 
-let should_send_signup_attempt_notification_request =
+let should_send_registration_attempt_notification_request =
   let open Caqti_request.Infix in
   {|
     SELECT 1
@@ -349,11 +349,11 @@ let should_send_signup_attempt_notification_request =
   |> Caqti_type.(tup2 string int ->? int)
 ;;
 
-let should_send_signup_attempt_notification pool contact =
+let should_send_registration_attempt_notification pool contact =
   let send_notification_again_after = 900 in
   Utils.Database.find_opt
     (Database.Label.value pool)
-    should_send_signup_attempt_notification_request
+    should_send_registration_attempt_notification_request
     (Entity.(id contact |> Id.value), send_notification_again_after)
   |> Lwt.map Option.is_none
 ;;
@@ -369,14 +369,6 @@ let set_registration_attempt_notification_sent_at_request =
 ;;
 
 let set_registration_attempt_notification_sent_at pool t =
-  let () =
-    Caqti_request.make_pp
-      ()
-      Format.std_formatter
-      set_registration_attempt_notification_sent_at_request
-  in
-  Logs.info (fun m -> m "%s" Entity.(id t |> Id.value));
-  print_endline "==============================================";
   Utils.Database.exec
     (Database.Label.value pool)
     set_registration_attempt_notification_sent_at_request

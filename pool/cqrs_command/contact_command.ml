@@ -439,7 +439,8 @@ end = struct
       m "Handle command SendRegistrationAttemptNotifitacion" ~tags);
     Ok
       [ Email.Sent email |> Pool_event.email
-      ; Contact.ResignUpNotificationSent contact |> Pool_event.contact
+      ; Contact.RegistrationAttemptNotificationSent contact
+        |> Pool_event.contact
       ]
   ;;
 

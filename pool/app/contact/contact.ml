@@ -7,8 +7,8 @@ let find_by_email = Repo.find_by_email
 let find_all = Repo.find_all
 let find_to_trigger_profile_update = Repo.find_to_trigger_profile_update
 
-let should_send_signup_attempt_notification =
-  Repo.should_send_signup_attempt_notification
+let should_send_registration_attempt_notification =
+  Repo.should_send_registration_attempt_notification
 ;;
 
 let find_by_user pool (user : Sihl_user.t) =
