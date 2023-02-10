@@ -226,7 +226,7 @@ let terms_accept req =
     in
     let tags = Logger.req req in
     let%lwt () = Pool_event.handle_events ~tags database_label events in
-    HttpUtils.(redirect_to (path_with_language query_language "/dashboard"))
+    HttpUtils.(redirect_to (path_with_language query_language "/experiments"))
     |> Lwt_result.ok
   in
   result |> HttpUtils.extract_happy_path req

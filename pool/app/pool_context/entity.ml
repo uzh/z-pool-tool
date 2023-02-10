@@ -78,7 +78,7 @@ let user_of_sihl_user database_label user =
 
 let dashboard_path ?(guest = "/index") = function
   | Admin _ -> "/admin/dashboard"
-  | Contact _ -> "/dashboard"
+  | Contact _ -> "/experiments"
   | Guest -> guest
 ;;
 

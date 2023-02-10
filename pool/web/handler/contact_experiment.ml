@@ -4,7 +4,7 @@ let create_layout = Contact_general.create_layout
 
 let index req =
   let open Utils.Lwt_result.Infix in
-  let error_path = "/dashboard" in
+  let error_path = "/" in
   let result ({ Pool_context.database_label; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, error_path)
     @@ let* contact = Pool_context.find_contact context |> Lwt_result.lift in

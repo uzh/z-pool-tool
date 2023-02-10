@@ -73,7 +73,9 @@ let form
             Pool_common.(
               Utils.text_to_string language I18n.DashboardProfileCompletionTitle)
         ]
-    ; p
+    ; Component.Notification.notification
+        language
+        `Warning
         [ Pool_common.(Utils.text_to_string language I18n.ProfileCompletionText)
           |> Http_utils.add_line_breaks
         ]
