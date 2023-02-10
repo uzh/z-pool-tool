@@ -544,13 +544,7 @@ let retrieve_fitleterd_and_ordered_contacts _ () =
         |> CCList.map create_contact
         |> fun contact_data -> create ~contact_data Data.database_label)
     in
-    let find_contact id =
-      id
-      |> Format.asprintf "contact-%i@econ.uzh.ch"
-      |> Pool_user.EmailAddress.of_string
-      |> Contact.find_by_email pool
-      |> Lwt.map CCResult.get_exn
-    in
+    let find_contact = Seed.Contacts.find_contact_by_id pool in
     let%lwt contact_one = find_contact 11 in
     let%lwt contact_two = find_contact 12 in
     let%lwt experiment =

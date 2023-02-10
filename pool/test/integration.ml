@@ -106,6 +106,13 @@ let suite =
     ; ( "matcher"
       , Matcher_test.
           [ test_case "send invitations" `Slow create_invitations_repo ] )
+    ; ( "contact"
+      , Contact_test.
+          [ test_case
+              "should not send registration notification"
+              `Slow
+              should_not_send_registration_notification
+          ] )
     ; "cleanup", [ test_case "clean up test database" `Quick Seed.cleanup ]
     ]
 ;;
