@@ -405,7 +405,7 @@ let contact_registration_attempt =
   let email_text =
     [ p
         [ txt
-            "there was an attempt to create an account with the email address \
+            "There was an attempt to create an account with the email address \
              '{emailAddress}' on {tenantUrl}."
         ; br ()
         ; txt "An account with this email address already exists."
@@ -413,7 +413,7 @@ let contact_registration_attempt =
     ; p
         [ txt
             "If this was you and you forgot your login credentials, you can \
-             reset you can reset your password "
+             reset your password "
         ; a ~a:[ a_href "{resetUrl}" ] [ txt "here" ]
         ; txt "."
         ]

@@ -466,13 +466,6 @@ let accept_terms_and_conditions () =
   check_result expected events
 ;;
 
-let accept_terms_and_conditions2 () =
-  let contact = "john@gmail.com" |> contact_info |> create_contact true in
-  let events = Contact_command.AcceptTermsAndConditions.handle contact in
-  let expected = Ok [ Contact.TermsAccepted contact |> Pool_event.contact ] in
-  check_result expected events
-;;
-
 let should_not_send_registration_notification _ () =
   let database_label = Test_utils.Data.database_label in
   let%lwt () =

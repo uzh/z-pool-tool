@@ -14,7 +14,7 @@ type event =
   | Updated of t * update
 [@@deriving eq, show]
 
-let insert_template db_label ~default t =
+let insert_template ?(default = true) db_label t =
   let open Utils.Lwt_result.Infix in
   let insert =
     if default then Repo.insert_default_if_not_exists else Repo.insert

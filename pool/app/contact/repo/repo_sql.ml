@@ -355,7 +355,7 @@ let should_send_registration_attempt_notification pool contact =
     (Database.Label.value pool)
     should_send_registration_attempt_notification_request
     (Entity.(id contact |> Id.value), send_notification_again_after)
-  |> Lwt.map Option.is_none
+  |> Lwt.map CCOption.is_none
 ;;
 
 let set_registration_attempt_notification_sent_at_request =
