@@ -98,7 +98,20 @@ let sign_up_create req =
            contact
            |> (function
            | Ok contact when contact.Contact.user.Sihl_user.confirmed ->
-             Lwt_result.return []
+             let%lwt send_notification =
+               Contact.should_send_registration_attempt_notification
+                 database_label
+                 contact
+             in
+             if not send_notification
+             then Lwt_result.return []
+             else
+               contact
+               |> Message_template.ContactRegistrationAttempt.create
+                    database_label
+                    (CCOption.value ~default:language contact.Contact.language)
+                    tenant
+               >== Command.SendRegistrationAttemptNotifitacion.handle contact
            | Ok contact ->
              let* create_contact_events = create_contact_events () in
              let open CCResult.Infix in
@@ -226,7 +239,7 @@ let terms_accept req =
     in
     let tags = Logger.req req in
     let%lwt () = Pool_event.handle_events ~tags database_label events in
-    HttpUtils.(redirect_to (path_with_language query_language "/dashboard"))
+    HttpUtils.(redirect_to (path_with_language query_language "/experiments"))
     |> Lwt_result.ok
   in
   result |> HttpUtils.extract_happy_path req

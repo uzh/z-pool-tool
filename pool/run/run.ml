@@ -25,6 +25,7 @@ let commands =
   ; Admin.grant_role
   ; Admin.list_roles
   ; Utils.encrypt_string
+  ; DefaultData.insert
   ; version
   ]
 ;;

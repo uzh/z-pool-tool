@@ -1,6 +1,6 @@
 open Entity_message
 
-let field_to_string =
+let rec field_to_string =
   let open Field in
   function
   | Admin -> "admin"
@@ -52,6 +52,8 @@ let field_to_string =
   | EmailText -> "email text"
   | End -> "end"
   | Experiment -> "experiment"
+  | ExperimentReminderLeadTime ->
+    Format.asprintf "experiment specific %s" (field_to_string LeadTime)
   | ExperimentType -> "experiment type"
   | Experimenter -> "experimenter"
   | FieldType -> "field type"
@@ -147,6 +149,7 @@ let field_to_string =
   | Styles -> "styles"
   | Template -> "template"
   | MessageTemplate -> "message template"
+  | MessageTemplates -> "message templates"
   | Tenant -> "tenant"
   | TenantDisabledFlag -> "disabled"
   | TenantId -> "tenant identifier"
@@ -202,7 +205,7 @@ let success_to_string : success -> string = function
   | Rescheduled field ->
     field_message "" (field_to_string field) "was successfully rescheduled."
   | RoleAssigned -> "Role was assigned."
-  | RoleDivested -> "Role was divested."
+  | RoleUnassigned -> "Role was unassigned."
   | SentList field ->
     field_message "" (field_to_string field) "were successfully sent."
   | SettingsUpdated -> "Settings were updated successfully."
@@ -391,11 +394,11 @@ let control_to_string = function
   | Delete field -> format_submit "delete" field
   | Descending -> format_submit "descending" None
   | Disable -> format_submit "disable" None
-  | Divest field -> format_submit "divest" field
   | Duplicate field -> format_submit "duplicate" field
   | Edit field -> format_submit "edit" field
   | Enable -> format_submit "enable" None
   | Enroll -> format_submit "enroll" None
+  | Filter field -> format_submit "filter" field
   | Login -> format_submit "login" None
   | Manage field -> format_submit "manage" (Some field)
   | More -> format_submit "more" None
@@ -418,6 +421,8 @@ let control_to_string = function
   | Show -> format_submit "show" None
   | SignUp -> format_submit "sign up" None
   | Stop field -> format_submit "stop" field
+  | ToggleAll -> "toggle all"
+  | Unassign field -> format_submit "unassign" field
   | Update field -> format_submit "update" field
   | UpdateOrder -> format_submit "update order" None
 ;;

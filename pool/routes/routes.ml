@@ -108,8 +108,7 @@ module Contact = struct
         ; choose ~scope:(build_scope "sessions") sessions
         ]
       in
-      [ get "/dashboard" Handler.Contact.dashboard
-      ; get "/user/personal-details" UserProfile.personal_details
+      [ get "/user/personal-details" UserProfile.personal_details
       ; get "/user/login-information" UserProfile.login_information
       ; post "/user/update" UserProfile.update
       ; post "/user/update-email" UserProfile.update_email
@@ -278,9 +277,9 @@ module Admin = struct
               ~middlewares:[ Access.assign_assistant ]
               assign_assistant
           ; post
-              "divest"
-              ~middlewares:[ Access.divest_assistant ]
-              divest_assistant
+              "unassign"
+              ~middlewares:[ Access.unassign_assistant ]
+              unassign_assistant
           ]
         in
         [ get "" ~middlewares:[ Access.index_assistants ] index_assistants
@@ -295,9 +294,9 @@ module Admin = struct
               ~middlewares:[ Access.assign_experimenter ]
               assign_experimenter
           ; post
-              "divest"
-              ~middlewares:[ Access.divest_experimenter ]
-              divest_experimenter
+              "unassign"
+              ~middlewares:[ Access.unassign_experimenter ]
+              unassign_experimenter
           ]
         in
         [ get "" ~middlewares:[ Access.index_experimenter ] index_experimenter

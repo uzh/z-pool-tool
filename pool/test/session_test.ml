@@ -45,28 +45,12 @@ module Data = struct
     let start1 = Raw.start1 |> Ptime.to_rfc3339 ~frac_s:12
     let start2 = Raw.start2 |> Ptime.to_rfc3339 ~frac_s:12
     let start3 = Raw.start3 |> Ptime.to_rfc3339 ~frac_s:12
-
-    let duration =
-      Raw.duration
-      |> Ptime.of_span
-      |> CCOption.get_exn_or "Invalid duration"
-      |> Ptime.to_date_time
-      |> fun (_, ((h, m, s), _)) -> Format.asprintf "%i:%i:%i" h m s
-    ;;
-
+    let duration = Raw.duration |> Pool_common.Utils.Time.timespan_to_hours
     let description = Raw.description
     let max_participants = Raw.max_participants |> string_of_int
     let min_participants = Raw.min_participants |> string_of_int
     let overbook = Raw.overbook |> string_of_int
-
-    let lead_time =
-      Raw.lead_time
-      |> Ptime.of_span
-      |> CCOption.get_exn_or "Invalid lead time"
-      |> Ptime.to_date_time
-      |> fun (_, ((h, m, s), _)) -> Format.asprintf "%i:%i:%i" h m s
-    ;;
-
+    let lead_time = Raw.lead_time |> Pool_common.Utils.Time.timespan_to_hours
     let sent_at = Raw.sent_at |> Ptime.to_rfc3339 ~frac_s:12
     let assignment_count = Raw.assignment_count |> string_of_int
   end
@@ -119,7 +103,7 @@ module Data = struct
         , text
         , lead_time )
       =
-      "01", "long", "", "many", "few", "none", "", "", "-1:30:00"
+      "01", "long", "", "many", "few", "none", "", "", "-1.5"
     ;;
   end
 

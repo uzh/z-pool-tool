@@ -7,6 +7,7 @@ module Seed = Command_seed
 module SessionReminder = Command_session_reminder
 module Tenant_pool = Command_pool_tenant
 module Utils = Command_utils
+module DefaultData = Command_default_data
 
 let version =
   Command_utils.make_no_args

@@ -235,7 +235,7 @@ let completion_post req =
       | true ->
         Http_utils.(
           redirect_to_with_actions
-            "/dashboard"
+            "/experiments"
             [ Message.set
                 ~success:[ Pool_common.Message.(Updated Field.Profile) ]
             ])

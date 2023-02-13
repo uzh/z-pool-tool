@@ -39,21 +39,21 @@ let formatted_timespan timespan =
   Format.flush_str_formatter ()
 ;;
 
-let timespan_spanpicker timespan =
+let timespan_to_hours timespan =
   timespan
   |> Ptime.Span.to_int_s
   |> CCOption.map_or ~default:"" (fun timespan ->
-       let h = timespan / 3600 in
-       let timespan = timespan - (h * 3600) in
-       let min = timespan / 60 in
-       let timespan = timespan - (min * 60) in
-       let s = timespan in
-       Format.asprintf "%s:%s:%s" (h |> decimal) (min |> decimal) (s |> decimal))
+       (timespan |> CCFloat.of_int) /. 3600. |> Format.asprintf "%.2f")
 ;;
 
 (* Utilities *)
 let ptime_to_sexp p =
   let formatted = p |> formatted_date_time in
+  Sexplib0.Sexp.Atom formatted
+;;
+
+let ptime_span_to_sexp p =
+  let formatted = p |> formatted_timespan in
   Sexplib0.Sexp.Atom formatted
 ;;
 
@@ -86,13 +86,11 @@ let parse_time_span str =
   if CCString.is_empty str
   then Error Entity_message.NoValue
   else
-    let open CCResult in
-    CCString.split ~by:":" str
-    |> CCList.map (fun s -> s |> CCInt.of_string |> CCOption.to_result error)
-    |> CCList.all_ok
-    >>= function
-    | [ h; m; s ] -> Ok ((h * 3600) + (m * 60) + s |> Ptime.Span.of_int_s)
-    | _ -> Error error
+    let open CCResult.Infix in
+    str
+    |> CCFloat.of_string_opt
+    |> CCOption.to_result error
+    >|= fun h -> h *. 3600. |> CCInt.of_float |> Ptime.Span.of_int_s
 ;;
 
 let print_time_span span =

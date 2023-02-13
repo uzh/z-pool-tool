@@ -135,7 +135,8 @@ let template_form
       ~a:
         [ a_action (action |> externalize)
         ; a_method `Post
-        ; a_class [ "stack-lg" ]
+        ; a_class [ "stack" ]
+        ; a_user_data "detect-unsaved-changes" ""
         ]
       [ csrf_element csrf ()
       ; div

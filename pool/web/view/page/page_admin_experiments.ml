@@ -20,6 +20,10 @@ let title_to_string language text =
   | String str -> str
 ;;
 
+let build_experiment_path experiment =
+  Format.asprintf "/admin/experiments/%s/%s" Experiment.(Id.value experiment.id)
+;;
+
 let experiment_layout ?buttons ?hint language title experiment ?active html =
   let tab_links =
     I18n.
@@ -73,6 +77,44 @@ let experiment_layout ?buttons ?hint language title experiment ?active html =
         ~a:[ a_class [ "heading-1" ] ]
         [ txt (experiment.title |> Title.value) ]
     ; Navigation.tab_navigation language tab_links active html
+    ]
+;;
+
+let message_templates_html
+  ?(title =
+    fun label ->
+      h2
+        ~a:[ a_class [ "heading-2" ] ]
+        [ txt (Message_template.Label.to_human label) ])
+  language
+  experiment_path
+  sys_languages
+  label
+  list
+  =
+  let open Message_template in
+  let edit_path =
+    CCFun.(prefixed_template_url ~append:"edit" %> experiment_path)
+  in
+  let new_path =
+    if CCList.is_empty (filter_languages sys_languages list)
+    then None
+    else experiment_path Label.(prefixed_human_url label) |> CCOption.pure
+  in
+  div
+    [ title label
+    ; Page_admin_message_template.table language list new_path edit_path
+    ; p
+        ~a:[ a_class [ "gap-sm" ] ]
+        [ txt
+            (if CCList.is_empty list
+            then
+              Pool_common.(
+                Utils.text_to_string
+                  language
+                  (I18n.NoEntries Field.MessageTemplates))
+            else "")
+        ]
     ]
 ;;
 
@@ -151,6 +193,7 @@ let experiment_form
       [ a_method `Post
       ; a_action (Sihl.Web.externalize_path action)
       ; a_class [ "stack" ]
+      ; a_user_data "detect-unsaved-changes" ""
       ]
     [ csrf_element csrf ()
     ; div
@@ -205,17 +248,14 @@ let experiment_form
             ; div
                 ~a:[ a_class [ "grid-col-2" ] ]
                 [ div
-                    [ flatpicker_element
+                    [ timespan_picker
                         language
-                        `Time
                         Field.LeadTime
                         ~help:I18n.TimeSpanPickerHint
-                        ~value:
-                          (value (fun e ->
-                             session_reminder_lead_time_value e
-                             |> CCOption.map_or
-                                  ~default:""
-                                  Utils.Time.timespan_spanpicker))
+                        ?value:
+                          (CCOption.bind experiment (fun (e : t) ->
+                             e.session_reminder_lead_time
+                             |> CCOption.map Pool_common.Reminder.LeadTime.value))
                         ~flash_fetcher
                     ; Utils.text_to_string
                         language
@@ -279,20 +319,8 @@ let edit
       "/admin/experiments/%s/%s"
       Experiment.(Id.value experiment.id)
   in
-  let message_templates_html label list =
-    let open Message_template in
-    let edit_path m =
-      prefixed_template_url ~append:"edit" m |> experiment_path
-    in
-    let new_path =
-      if CCList.is_empty (filter_languages sys_languages list)
-      then None
-      else experiment_path Label.(prefixed_human_url label) |> CCOption.pure
-    in
-    div
-      [ h3 ~a:[ a_class [ "heading-2" ] ] [ txt (Label.to_human label) ]
-      ; Page_admin_message_template.table language list new_path edit_path
-      ]
+  let message_templates_html =
+    message_templates_html language experiment_path sys_languages
   in
   let html =
     div
@@ -309,7 +337,15 @@ let edit
     html
 ;;
 
-let detail experiment session_count Pool_context.{ language; csrf; _ } =
+let detail
+  experiment
+  session_count
+  invitation_templates
+  session_reminder_templates
+  sys_languages
+  Pool_context.{ language; csrf; _ }
+  =
+  let experiment_path = build_experiment_path experiment in
   let delete_form =
     match session_count > 0 with
     | true ->
@@ -379,10 +415,38 @@ let detail experiment session_count Pool_context.{ language; csrf; _ } =
           , registration_disabled_value |> boolean_value )
         ; ( Field.AllowUninvitedSignup
           , allow_uninvited_signup_value |> boolean_value )
+        ; ( Field.ExperimentReminderLeadTime
+          , session_reminder_lead_time_value experiment
+            |> CCOption.map_or
+                 ~default:"-"
+                 Pool_common.Utils.Time.formatted_timespan
+            |> txt )
         ]
       |> vertical_table
     in
-    div ~a:[ a_class [ "stack-lg" ] ] [ experiment_table; delete_form ]
+    let message_template =
+      let open Message_template in
+      let list =
+        let title label = h4 [ txt (Label.to_human label) ] in
+        message_templates_html ~title language experiment_path sys_languages
+      in
+      div
+        [ h3
+            ~a:[ a_class [ "heading-3" ] ]
+            [ txt
+                Pool_common.(
+                  Utils.nav_link_to_string language I18n.MessageTemplates)
+            ]
+        ; div
+            ~a:[ a_class [ "stack" ] ]
+            [ list Label.ExperimentInvitation invitation_templates
+            ; list Label.SessionReminder session_reminder_templates
+            ]
+        ]
+    in
+    div
+      ~a:[ a_class [ "stack-lg" ] ]
+      [ experiment_table; message_template; delete_form ]
   in
   let edit_button =
     link_as_button
@@ -523,7 +587,7 @@ let users
     field
     context
     ~assign:"assign"
-    ~divest:"divest"
+    ~unassign:"unassign"
     ~applicable:applicable_admins
     ~current:currently_assigned
   |> experiment_layout

@@ -269,6 +269,8 @@ function configRequest(e, form) {
             notifyUser("error", error)
         }
     }
+    var event = new Event('submit');
+    form.dispatchEvent(event);
 }
 
 export function initFilterForm() {

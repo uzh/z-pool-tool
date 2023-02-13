@@ -76,6 +76,7 @@ module Operator : sig
     | ContainsAll
 
   val to_sql : t -> string
+  val to_human : t -> string
   val equal : t -> t -> bool
   val show : t -> string
   val input_type_to_operator : Key.input_type -> t list

@@ -138,6 +138,41 @@ module type IntegerSig = sig
     -> (Entity_message.error, t) Pool_common_utils.PoolConformist.Field.t
 end
 
+module PtimeSpan = struct
+  type t = Ptime.Span.t [@@deriving eq, show]
+
+  let sexp_of_t = Pool_common_utils.Time.ptime_span_to_sexp
+  let t_of_yojson = Utils_time.ptime_span_of_yojson
+  let yojson_of_t = Utils_time.yojson_of_ptime_span
+  let value m = m
+  let to_human = Pool_common_utils.Time.formatted_timespan
+
+  let schema field create () =
+    let open Pool_common_utils in
+    let open CCResult in
+    let decode str = Time.parse_time_span str >>= create in
+    let encode = Time.print_time_span in
+    schema_decoder decode encode field
+  ;;
+end
+
+module type PtimeSpanSig = sig
+  type t
+
+  val equal : t -> t -> bool
+  val pp : Format.formatter -> t -> unit
+  val show : t -> string
+  val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+  val t_of_yojson : Yojson.Safe.t -> t
+  val yojson_of_t : t -> Yojson.Safe.t
+  val value : t -> Ptime.Span.t
+  val to_human : t -> string
+
+  val schema
+    :  unit
+    -> (Entity_message.error, t) Pool_common_utils.PoolConformist.Field.t
+end
+
 module Ptime = struct
   type t = Ptime.t [@@deriving eq, show]
 

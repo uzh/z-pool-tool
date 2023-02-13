@@ -348,6 +348,7 @@ let field_form
                           (Url.Field.detail_path (model m, id m)
                           |> Format.asprintf "%s/sort-options"))
                    ; a_class [ "stack" ]
+                   ; a_user_data "detect-unsaved-changes" ""
                    ]
                  (CCList.cons
                     (CCList.map
@@ -468,7 +469,11 @@ let field_form
         ()
   in
   let field_type_hints =
-    I18n.[ CustomFieldTypeText, FieldType.Text ]
+    I18n.
+      [ CustomFieldTypeText, FieldType.Text
+      ; CustomFieldTypeSelect, FieldType.Select
+      ; CustomFieldTypeMultiSelect, FieldType.MultiSelect
+      ]
     |> CCList.map (fun (hint, field_type) ->
          let hidden =
            field_type_opt
@@ -491,6 +496,7 @@ let field_form
         [ a_method `Post
         ; a_action (Sihl.Web.externalize_path action)
         ; a_class [ "stack-lg" ]
+        ; a_user_data "detect-unsaved-changes" ""
         ]
       [ csrf_element csrf ()
       ; div
@@ -751,8 +757,6 @@ let index field_list group_list current_model Pool_context.{ language; csrf; _ }
     let open Custom_field.Model in
     match current_model with
     | Contact -> CustomFieldContactModel
-    | Experiment -> CustomFieldExperimentModel
-    | Session -> CustomFieldSessionModel
   in
   let rows =
     let open Custom_field in
@@ -803,6 +807,7 @@ let index field_list group_list current_model Pool_context.{ language; csrf; _ }
               ; a_action
                   (Sihl.Web.externalize_path (Url.index_path current_model)
                   |> Format.asprintf "%s/sort-fields")
+              ; a_user_data "detect-unsaved-changes" ""
               ]
             [ csrf_element csrf ()
             ; CCList.map
@@ -872,6 +877,7 @@ let index field_list group_list current_model Pool_context.{ language; csrf; _ }
                   |> Format.asprintf "%s/group/sort"
                   |> Sihl.Web.externalize_path)
               ; a_class [ "stack" ]
+              ; a_user_data "detect-unsaved-changes" ""
               ]
             (CCList.cons
                (CCList.map

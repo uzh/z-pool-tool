@@ -72,6 +72,8 @@ module Field = struct
     | EmailSuffix [@name "email_suffix"] [@printer go "email_suffix"]
     | End [@name "end"] [@printer go "end"]
     | Experiment [@name "experiment"] [@printer go "experiment"]
+    | ExperimentReminderLeadTime [@name "experiment_reminder_lead_time"]
+        [@printer go "experiment_reminder_lead_time"]
     | ExperimentType [@name "experiment_type"] [@printer go "experiment_type"]
     | Experimenter [@name "experimenter"] [@printer go "experimenter"]
     | FieldType [@name "field_type"] [@printer go "field_type"]
@@ -119,6 +121,8 @@ module Field = struct
     | MessageChannel [@name "message_channel"] [@printer go "message_channel"]
     | MessageTemplate [@name "message_template"]
         [@printer go "message_template"]
+    | MessageTemplates [@name "message_templates"]
+        [@printer go "message_templates"]
     | MinParticipants [@name "min_participants"]
         [@printer go "min_participants"]
     | Model [@name "model"] [@printer go "model"]
@@ -333,7 +337,7 @@ type success =
   | RemovedFromWaitingList
   | Rescheduled of Field.t
   | RoleAssigned
-  | RoleDivested
+  | RoleUnassigned
   | SentList of Field.t
   | SettingsUpdated
   | Stopped of Field.t
@@ -374,11 +378,11 @@ type control =
   | Delete of Field.t option
   | Descending
   | Disable
-  | Divest of Field.t option
   | Duplicate of Field.t option
   | Edit of Field.t option
   | Enable
   | Enroll
+  | Filter of Field.t option
   | Login
   | Manage of Field.t
   | More
@@ -397,6 +401,8 @@ type control =
   | Show
   | SignUp
   | Stop of Field.t option
+  | ToggleAll
+  | Unassign of Field.t option
   | Update of Field.t option
   | UpdateOrder
 [@@deriving eq, show, yojson, variants, sexp_of]

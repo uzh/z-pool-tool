@@ -417,3 +417,56 @@ Neu:
   ; sms_text
   }
 ;;
+
+let contact_registration_attempt =
+  let label = Label.ContactRegistrationAttempt in
+  let email_text =
+    [ p
+        [ txt
+            "Es wurde versucht, auf {tenantUrl} ein Konto mit der \
+             E-Mail-Adresse '{emailAddress}' zu erstellen."
+        ; br ()
+        ; txt "Es existiert bereits ein Konto mit dieser E-Mail-Adresse."
+        ]
+    ; p
+        [ txt
+            "Wenn Sie dies waren und Ihre Anmeldedaten vergessen haben, können \
+             Sie Ihr Passwort "
+        ; a ~a:[ a_href "{resetUrl}" ] [ txt "hier" ]
+        ; txt "zurücksetzen."
+        ]
+    ; p
+        [ txt
+            "Wenn diese Aktion nicht von Ihnen durchgeführt wurde, können Sie \
+             diese Meldung ignorieren oder die Administratoren informieren."
+        ]
+    ; p
+        [ txt
+            "Wenn der obige Link nicht funktioniert, kopieren Sie bitte den \
+             folgenden Link manuell in Ihren Browser: {resetUrl}"
+        ]
+    ]
+    |> add_salutation
+    |> html_to_string
+    |> EmailText.of_string
+  in
+  let email_subject = "Registrierungsversuch" |> EmailSubject.of_string in
+  let sms_text =
+    {|Es wurde versucht, ein Konto mit der E-Mail-Adresse '{emailAddress}' auf {tenantUrl} zu erstellen.
+
+    Wenn dies Sie waren und Sie Ihre Anmeldedaten vergessen haben, können Sie Ihr Passwort hier zurücksetzen: {resetUrl}
+
+    Wenn diese Aktion nicht von Ihnen durchgeführt wurde, können Sie diese Meldung ignorieren oder die Administratoren informieren.
+|}
+    |> SmsText.of_string
+  in
+  { id = Id.create ()
+  ; label
+  ; language
+  ; entity_uuid
+  ; email_text
+  ; email_subject
+  ; plain_text = sms_text
+  ; sms_text
+  }
+;;

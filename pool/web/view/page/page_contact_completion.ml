@@ -73,7 +73,9 @@ let form
             Pool_common.(
               Utils.text_to_string language I18n.DashboardProfileCompletionTitle)
         ]
-    ; p
+    ; Component.Notification.notification
+        language
+        `Warning
         [ Pool_common.(Utils.text_to_string language I18n.ProfileCompletionText)
           |> Http_utils.add_line_breaks
         ]
@@ -85,6 +87,7 @@ let form
               (Http_utils.externalize_path_with_lang
                  query_language
                  "/user/completion")
+          ; a_user_data "detect-unsaved-changes" ""
           ]
         Component.(
           (Input.csrf_element csrf () :: custom_fields_form)

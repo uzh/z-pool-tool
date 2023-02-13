@@ -58,6 +58,7 @@ type event =
   | NumInvitationsIncreased of t
   | ProfileUpdateTriggeredAtUpdated of t list
   | SessionParticipationSet of t * session_participation
+  | RegistrationAttemptNotificationSent of t
 [@@deriving eq, show, variants]
 
 let handle_event pool : event -> unit Lwt.t =
@@ -181,4 +182,6 @@ let handle_event pool : event -> unit Lwt.t =
       else num_participations
     in
     { contact with num_show_ups; num_participations } |> Repo.update pool
+  | RegistrationAttemptNotificationSent t ->
+    Repo.set_registration_attempt_notification_sent_at pool t
 ;;

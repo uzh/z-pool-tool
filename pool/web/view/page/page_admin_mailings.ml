@@ -426,7 +426,12 @@ let form
       ~a:[ a_class [ "stack" ] ]
       (fully_booked_note
       @ [ form
-            ~a:[ a_class [ "stack" ]; a_method `Post; a_action action ]
+            ~a:
+              [ a_class [ "stack" ]
+              ; a_method `Post
+              ; a_action action
+              ; a_user_data "detect-unsaved-changes" ""
+              ]
             [ csrf_element csrf ()
             ; input
                 ~a:
@@ -454,7 +459,6 @@ let form
                   ]
                 [ flatpicker_element
                     language
-                    `Datetime_local
                     Field.Start
                     ~flash_fetcher
                     ~required:true
@@ -468,7 +472,6 @@ let form
                          mailing)
                 ; flatpicker_element
                     language
-                    `Datetime_local
                     Field.End
                     ~flash_fetcher
                     ~disable_past:true

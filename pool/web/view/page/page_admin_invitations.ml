@@ -122,8 +122,11 @@ module Partials = struct
           ~a:[ a_class [ "heading-3" ] ]
           [ txt
               Pool_common.(
-                Message.(Send (Some Field.Invitation))
+                Message.(Filter (Some Field.Contacts))
                 |> Utils.control_to_string language)
+          ]
+      ; p
+          [ txt Pool_common.(Utils.hint_to_string language I18n.FilterContacts)
           ]
       ; Filter.(
           filter_form

@@ -196,3 +196,12 @@ let find pool id =
     (Pool_common.Id.value id)
   ||> CCOption.to_result Pool_common.Message.(NotFound Field.MessageTemplate)
 ;;
+
+let insert_default_if_not_exists pool t =
+  let open Utils.Lwt_result.Infix in
+  find_by_label pool t.Entity.language t.Entity.label
+  ||> CCResult.to_opt
+  >|> function
+  | None -> insert pool t
+  | Some _ -> Lwt.return ()
+;;

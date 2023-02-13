@@ -23,10 +23,7 @@ module Id : sig
 end
 
 module Model : sig
-  type t =
-    | Contact
-    | Experiment
-    | Session
+  type t = Contact
 
   val equal : t -> t -> bool
   val pp : Format.formatter -> t -> unit

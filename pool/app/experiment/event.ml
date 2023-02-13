@@ -17,9 +17,9 @@ type event =
   | Updated of t
   | Destroyed of Common.Id.t
   | AssistantAssigned of t * Admin.t
-  | AssistantDivested of t * Admin.t
+  | AssistantUnassigned of t * Admin.t
   | ExperimenterAssigned of t * Admin.t
-  | ExperimenterDivested of t * Admin.t
+  | ExperimenterUnassigned of t * Admin.t
 [@@deriving eq, show]
 
 let handle_event pool : event -> unit Lwt.t =
@@ -61,11 +61,11 @@ let handle_event pool : event -> unit Lwt.t =
   | Destroyed experiment_id -> Repo.destroy pool experiment_id
   | AssistantAssigned (experiment, admin) ->
     grant_role (`Assistant (experiment |> to_target)) admin
-  | AssistantDivested (experiment, admin) ->
+  | AssistantUnassigned (experiment, admin) ->
     revoke_role (`Assistant (experiment |> to_target)) admin
   | ExperimenterAssigned (experiment, admin) ->
     grant_role (`Experimenter (experiment |> to_target)) admin
-  | ExperimenterDivested (experiment, admin) ->
+  | ExperimenterUnassigned (experiment, admin) ->
     revoke_role (`Experimenter (experiment |> to_target)) admin
   [@@deriving eq, show]
 ;;

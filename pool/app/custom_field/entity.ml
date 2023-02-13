@@ -12,10 +12,7 @@ end
 module Model = struct
   let go m fmt _ = Format.pp_print_string fmt m
 
-  type t =
-    | Contact [@name "contact"] [@printer printer "contact"]
-    | Experiment [@name "experiment"] [@printer printer "experiment"]
-    | Session [@name "session"] [@printer printer "session"]
+  type t = Contact [@name "contact"] [@printer printer "contact"]
   [@@deriving eq, show { with_path = false }, yojson, enum]
 
   let field = Message.Field.Model

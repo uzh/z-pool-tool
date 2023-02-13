@@ -24,7 +24,11 @@ let show
       [ submit_element ~classnames:[ "push" ] language control () ]
   in
   let form_attrs action =
-    [ a_method `Post; a_action (action_path action); a_class [ "stack" ] ]
+    [ a_method `Post
+    ; a_action (action_path action)
+    ; a_class [ "stack" ]
+    ; a_user_data "detect-unsaved-changes" ""
+    ]
   in
   let languages_html =
     let all_languages =
@@ -282,15 +286,12 @@ let show
       ; form
           ~a:(form_attrs `UpdateDefaultLeadTime)
           [ csrf_element csrf ()
-          ; flatpicker_element
+          ; timespan_picker
               language
-              `Time
               Message.Field.LeadTime
               ~value:
                 Pool_common.(
-                  default_reminder_lead_time
-                  |> Reminder.LeadTime.value
-                  |> Utils.Time.timespan_spanpicker)
+                  default_reminder_lead_time |> Reminder.LeadTime.value)
               ~required:true
               ~flash_fetcher
           ; submit ()

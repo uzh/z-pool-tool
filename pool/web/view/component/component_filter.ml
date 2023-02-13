@@ -6,6 +6,8 @@ module Input = Component_input
 let templates_disabled_key = "templates_disabled"
 let notification_id = "filter-notification"
 let as_target_id = Format.asprintf "#%s"
+let stack = "stack-sm"
+let inset = "inset-sm"
 
 let format_identifiers ?prefix identifiers =
   let ids =
@@ -167,14 +169,11 @@ let select_default_option language selected =
 ;;
 
 let operators_select language ?operators ?selected () =
-  let format label =
-    CCString.replace ~sub:"_" ~by:" " label |> CCString.capitalize_ascii
-  in
   match operators with
   | None -> txt ""
   | Some operators ->
     Component_input.selector
-      ~option_formatter:CCFun.(Operator.show %> format)
+      ~option_formatter:Operator.to_human
       language
       Pool_common.Message.Field.Operator
       Operator.show
@@ -260,7 +259,6 @@ let value_input language param query_experiments input_type ?value () =
          ~additional_attributes
          ?value
          language
-         `Datetime_local
          field_name
      | Key.Select options ->
        let selected =
@@ -450,6 +448,7 @@ let predicate_type_select
   Component_input.selector
     ~option_formatter:to_label
     ~attributes
+    ~hide_label:true
     language
     Pool_common.Message.Field.Predicate
     show_filter_label
@@ -564,23 +563,29 @@ let rec predicate_form
       |> CCList.pure
   in
   let data_attr = [ a_user_data "predicate" Filter.Human.(show query) ] in
+  let predicate_html =
+    div
+      ~a:[ a_class [ stack; "grow"; "predicate-inner" ] ]
+      [ predicate_type_select
+          language
+          param
+          predicate_identifier
+          identifier
+          templates_disabled
+          ~selected
+          ()
+      ; div ~a:[ a_class [ "predicate-wrapper"; stack ] ] predicate_form
+      ]
+  in
   div
     ~a:
-      ([ a_class [ "stack"; "inset"; "border"; "predicate" ]
+      ([ a_class [ inset; "border"; "predicate"; "flexrow"; "flex-gap-sm" ]
        ; a_id predicate_identifier
        ]
       @ data_attr)
-    ([ predicate_type_select
-         language
-         param
-         predicate_identifier
-         identifier
-         templates_disabled
-         ~selected
-         ()
-     ; div ~a:[ a_class [ "predicate-wrapper"; "stack" ] ] predicate_form
-     ]
-    @ if CCList.length identifier > 1 then [ delete_button () ] else [])
+    [ predicate_html
+    ; (if CCList.length identifier > 1 then delete_button () else txt "")
+    ]
 ;;
 
 let filter_form csrf language param key_list template_list query_experiments =
@@ -676,14 +681,14 @@ let filter_form csrf language param key_list template_list query_experiments =
     match param with
     | Template _ ->
       let open CCOption.Infix in
-      let open Pool_common.Message in
+      let open Pool_common in
       ( Component_input.input_element
           ?value:(filter >>= fun filter -> filter.title >|= Title.value)
           ~required:true
           language
           `Text
-          Field.Title
-      , [ a_user_data "hx-params" Field.(show Title) ] )
+          Message.Field.Title
+      , [ a_user_data "hx-params" Message.Field.(show Title) ] )
     | Experiment _ -> txt "", []
   in
   let filter_id =
@@ -695,13 +700,13 @@ let filter_form csrf language param key_list template_list query_experiments =
          Pool_common.[ a_user_data Message.Field.(show filter) (Id.value id) ])
   in
   div
-    ~a:[ a_class [ "stack" ] ]
+    ~a:[ a_class [ stack ] ]
     [ result_counter
     ; div
         ~a:
           ([ a_user_data "action" action
            ; a_id "filter-form"
-           ; a_class [ "stack" ]
+           ; a_user_data "detect-unsaved-changes" ""
            ]
           @ filter_id)
         [ div ~a:[ a_id notification_id ] []
@@ -709,7 +714,7 @@ let filter_form csrf language param key_list template_list query_experiments =
         ; title_input
         ; predicates
         ; div
-            ~a:[ a_class [ "flexrow"; "align-center" ] ]
+            ~a:[ a_class [ "flexrow"; "align-center"; "gap" ] ]
             [ delete_form
             ; Component_input.submit_element
                 language

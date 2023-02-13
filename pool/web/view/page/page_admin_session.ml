@@ -14,33 +14,18 @@ let session_path experiment session =
     (Pool_common.Id.value session.Session.id)
 ;;
 
-let location_select options selected ?(attributes = []) () =
+let location_select language options selected () =
   let open Pool_location in
-  let name = Message.Field.(show Location) in
-  div
-    ~a:[ a_class [ "form-group" ] ]
-    [ label [ txt (name |> CCString.capitalize_ascii) ]
-    ; div
-        ~a:[ a_class [ "select" ] ]
-        [ select
-            ~a:([ a_name name ] @ attributes)
-            (CCList.map
-               (fun l ->
-                 let is_selected =
-                   selected
-                   |> CCOption.map (fun selected ->
-                        if Pool_location.equal selected l
-                        then [ a_selected () ]
-                        else [])
-                   |> CCOption.value ~default:[]
-                 in
-                 option
-                   ~a:
-                     ([ a_value (l.id |> Pool_location.Id.value) ] @ is_selected)
-                   (txt (l.name |> Pool_location.Name.value)))
-               options)
-        ]
-    ]
+  selector
+    ~add_empty:true
+    ~option_formatter:(fun (l : t) -> l.name |> Name.value)
+    ~required:true
+    language
+    Message.Field.Location
+    (fun (l : t) -> l.id |> Id.value)
+    options
+    selected
+    ()
 ;;
 
 let session_form
@@ -87,12 +72,6 @@ let session_form
   in
   let value = CCFun.flip (CCOption.map_or ~default:"") default_value_session in
   let amount fnc = value (fnc %> ParticipantAmount.value %> CCInt.to_string) in
-  let lead_time_value time =
-    time
-    |> CCOption.map_or
-         ~default:""
-         (Reminder.LeadTime.value %> Utils.Time.timespan_spanpicker)
-  in
   let action, submit =
     let open Pool_common in
     let base =
@@ -117,6 +96,7 @@ let session_form
       [ a_class [ "stack" ]
       ; a_method `Post
       ; a_action (action |> Sihl.Web.externalize_path)
+      ; a_user_data "detect-unsaved-changes" ""
       ]
     [ csrf_element csrf ()
     ; div
@@ -132,7 +112,6 @@ let session_form
            in
            flatpicker_element
              language
-             `Datetime_local
              Message.Field.Start
              ~required:true
              ~flash_fetcher
@@ -140,15 +119,15 @@ let session_form
              ~warn_past:true
              ~additional_attributes:
                (if has_assignments then [ a_disabled () ] else []))
-        ; flatpicker_element
+        ; timespan_picker
             language
             ~required:true
-            `Time
             Message.Field.Duration
             ~help:I18n.TimeSpanPickerHint
-            ~value:
-              (value (fun s ->
-                 s.duration |> Duration.value |> Utils.Time.timespan_spanpicker))
+            ?value:
+              (CCOption.map
+                 (fun (s : t) -> s.duration |> Duration.value)
+                 session)
             ~flash_fetcher
             ~additional_attributes:
               (if has_assignments then [ a_disabled () ] else [])
@@ -160,7 +139,11 @@ let session_form
               (value (fun s ->
                  s.description |> CCOption.map_or ~default:"" Description.value))
             ~flash_fetcher
-        ; location_select locations None ()
+        ; location_select
+            language
+            locations
+            (default_value_session |> CCOption.map (fun s -> s.location))
+            ()
         ; input_element
             language
             `Number
@@ -191,13 +174,14 @@ let session_form
         ; div
             ~a:[ a_class [ "grid-col-2" ] ]
             [ div
-                [ flatpicker_element
+                [ timespan_picker
                     language
-                    `Time
                     Message.Field.LeadTime
                     ~help:I18n.TimeSpanPickerHint
-                    ~value:
-                      (value (fun s -> s.reminder_lead_time |> lead_time_value))
+                    ?value:
+                      (CCOption.bind session (fun (e : t) ->
+                         e.reminder_lead_time
+                         |> CCOption.map Pool_common.Reminder.LeadTime.value))
                     ~flash_fetcher
                 ; (experiment.Experiment.session_reminder_lead_time
                   |> CCOption.value ~default:default_reminder_lead_time
@@ -240,20 +224,17 @@ let reschedule_session
     [ csrf_element csrf ()
     ; flatpicker_element
         language
-        `Datetime_local
         Message.Field.Start
         ~required:true
         ~flash_fetcher
         ~value:(session.start |> Start.value |> Ptime.to_rfc3339)
         ~disable_past:true
-    ; flatpicker_element
+    ; timespan_picker
         language
         ~required:true
-        `Time
         Message.Field.Duration
         ~help:I18n.TimeSpanPickerHint
-        ~value:
-          (session.duration |> Duration.value |> Utils.Time.timespan_spanpicker)
+        ~value:(session.duration |> Duration.value)
         ~flash_fetcher
     ; div
         ~a:[ a_class [ "flexrow" ] ]
@@ -724,7 +705,19 @@ let close
         ]
     in
     let table =
-      let link (id, label) = span ~a:[ a_id id ] [ txt label ] in
+      let link (id, label) =
+        span
+          ~a:[ a_id id ]
+          [ abbr
+              ~a:
+                [ a_title
+                    Pool_common.(
+                      Utils.control_to_string language Message.ToggleAll
+                      |> CCString.capitalize_ascii)
+                ]
+              [ txt label ]
+          ]
+      in
       let thead =
         txt ""
         :: ([ "all-showup", "S"; "all-participated", "P" ] |> CCList.map link)
@@ -748,6 +741,7 @@ let close
                  (Experiment.Id.value experiment.Experiment.id)
                  (Id.value session.Session.id)
               |> Sihl.Web.externalize_path)
+          ; a_user_data "detect-unsaved-changes" ""
           ]
         [ Input.csrf_element csrf ()
         ; table
@@ -768,37 +762,44 @@ let close
           })
         }
 
-        const toggleShowUp = document.getElementById("all-showup");
-
         const isActive = (elm) => {
           return elm.dataset.active;
         }
 
-        const toggleActive = (elm) => {
-          if(isActive(elm)) {
-            elm.removeAttribute("data-active");
-          } else {
+        const toggleActive = (elm, state) => {
+          const newState = state == null ? !isActive(elm) : state;
+          if(newState) {
             elm.dataset.active = true;
+          } else {
+            elm.removeAttribute("data-active");
           }
         }
 
-        toggleShowUp.addEventListener("click", () => {
+        function setAllShowUp(value) {
           showUp.forEach((elm) => {
             var event = new Event('change');
-            elm.checked = !isActive(toggleShowUp);
+            elm.checked = value;
             elm.dispatchEvent(event);
           });
+        }
+
+        const toggleShowUp = document.getElementById("all-showup");
+        toggleShowUp.addEventListener("click", () => {
+          setAllShowUp(!isActive(toggleShowUp));
           toggleActive(toggleShowUp);
         })
 
         const toggleParticipated = document.getElementById("all-participated");
         toggleParticipated.addEventListener("click", () => {
+          const state = !isActive(toggleParticipated);
+          if(state) {
+            setAllShowUp(true);
+            toggleActive(toggleShowUp, true);
+          }
           participated.forEach((elm) => {
-            if(!elm.disabled) {
-              elm.checked = !isActive(toggleParticipated);
-            }
+            elm.checked = state;
           });
-          toggleActive(toggleParticipated)
+          toggleActive(toggleParticipated);
         })
       |js}
     in
