@@ -314,10 +314,18 @@ let index
             ; txt
                 (CCInt.to_string
                    (session.assignment_count |> AssignmentCount.value))
-            ; txt (CCInt.to_string (session.show_up_count |> ShowUpCount.value))
             ; txt
-                (CCInt.to_string
-                   (session.participant_count |> ParticipantCount.value))
+                (if CCOption.is_some session.closed_at
+                then
+                  session.show_up_count |> ShowUpCount.value |> CCInt.to_string
+                else "")
+            ; txt
+                (if CCOption.is_some session.closed_at
+                then
+                  session.participant_count
+                  |> ParticipantCount.value
+                  |> CCInt.to_string
+                else "")
             ; session.canceled_at
               |> CCOption.map_or ~default:"" (fun t ->
                    Utils.Time.formatted_date_time t)
