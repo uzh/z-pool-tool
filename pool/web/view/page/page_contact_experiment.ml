@@ -25,41 +25,23 @@ let index
     let custom_fields_ansered =
       if custom_fields_ansered
       then None
-      else
+      else (
+        let text =
+          [ div
+              [ txt
+                  Pool_common.(
+                    Utils.text_to_string
+                      language
+                      I18n.DashboardProfileCompletionText)
+              ]
+          ]
+        in
         Some
-          (div
-             ~a:
-               [ a_class
-                   [ "notification"
-                   ; "warning"
-                   ; "flexrow"
-                   ; "wrap"
-                   ; "flex-gap"
-                   ; "justify-between"
-                   ]
-               ]
-             [ div
-                 [ txt
-                     Pool_common.(
-                       Utils.text_to_string
-                         language
-                         I18n.DashboardProfileCompletionText)
-                 ]
-             ; div
-                 ~a:[ a_class [ "push" ] ]
-                 [ a
-                     ~a:
-                       [ a_href
-                           (Sihl.Web.externalize_path "/user/personal-details")
-                       ]
-                     [ txt
-                         Pool_common.(
-                           Utils.nav_link_to_string
-                             language
-                             I18n.PersonalDetails)
-                     ]
-                 ]
-             ])
+          (Component.Notification.notification
+             ~link:"/user/personal-details"
+             language
+             `Warning
+             text))
     in
     [ custom_fields_ansered ]
     |> CCList.filter_map CCFun.id

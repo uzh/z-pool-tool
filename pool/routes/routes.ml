@@ -108,8 +108,7 @@ module Contact = struct
         ; choose ~scope:(build_scope "sessions") sessions
         ]
       in
-      [ get "/dashboard" Handler.Contact.dashboard
-      ; get "/user/personal-details" UserProfile.personal_details
+      [ get "/user/personal-details" UserProfile.personal_details
       ; get "/user/login-information" UserProfile.login_information
       ; post "/user/update" UserProfile.update
       ; post "/user/update-email" UserProfile.update_email
