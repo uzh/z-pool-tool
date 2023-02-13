@@ -90,7 +90,9 @@ let index
   in
   let session_html =
     let experiment_overview ((exp : Experiment.Public.t), parent, follow_ups) =
-      let thead = Field.[ Some Start; Some Duration; Some Location ] in
+      let thead =
+        Field.[ Some Start; Some Duration; Some End; Some Location ]
+      in
       let session_item = PageSession.session_item `Upcoming language exp in
       let sessions = parent :: follow_ups in
       let row_formatter i =
