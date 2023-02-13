@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 - make pool_assignments `show_up` and `participated` nullable
 - detect unsaved changes in forms
 - send notification to contacts when there is an registration attempt with in-use email address
+- allow contacts to be filtered by experiment participation
 
 ### Fixed
 
