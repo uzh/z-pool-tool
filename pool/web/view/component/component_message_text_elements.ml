@@ -206,6 +206,9 @@ let message_template_help
       language
       (create_session ())
       (create_contact ())
+  | ContactRegistrationAttempt ->
+    let tenant_url = tenant.Pool_tenant.url in
+    ContactRegistrationAttempt.email_params tenant_url (create_contact ())
   | EmailVerification ->
     let validation_url =
       Pool_common.[ Message.Field.Token, Email.Token.value token ]

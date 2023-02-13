@@ -5,6 +5,7 @@ end
 module Label : sig
   type t =
     | AssignmentConfirmation
+    | ContactRegistrationAttempt
     | EmailVerification
     | ExperimentInvitation
     | PasswordChange
@@ -152,6 +153,17 @@ module AssignmentConfirmation : sig
     -> Pool_common.Language.t
     -> Pool_tenant.t
     -> Session.Public.t
+    -> Contact.t
+    -> (Sihl_email.t, Pool_common.Message.error) result Lwt.t
+end
+
+module ContactRegistrationAttempt : sig
+  val email_params : Pool_tenant.Url.t -> Contact.t -> (string * string) list
+
+  val create
+    :  Pool_database.Label.t
+    -> Pool_common.Language.t
+    -> Pool_tenant.t
     -> Contact.t
     -> (Sihl_email.t, Pool_common.Message.error) result Lwt.t
 end

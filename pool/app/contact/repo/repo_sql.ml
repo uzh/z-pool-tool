@@ -337,3 +337,40 @@ let update_profile_updated_triggered pool ids =
   in
   Utils.Database.exec (pool |> Pool_database.Label.value) request pv
 ;;
+
+let should_send_registration_attempt_notification_request =
+  let open Caqti_request.Infix in
+  {|
+    SELECT 1
+    FROM pool_contacts
+    WHERE user_uuid = UNHEX(REPLACE(?, '-', ''))
+    AND registration_attempt_notification_sent_at >= DATE_SUB(NOW(), INTERVAL ? SECOND)
+  |}
+  |> Caqti_type.(tup2 string int ->? int)
+;;
+
+let should_send_registration_attempt_notification pool contact =
+  let send_notification_again_after = 900 in
+  Utils.Database.find_opt
+    (Database.Label.value pool)
+    should_send_registration_attempt_notification_request
+    (Entity.(id contact |> Id.value), send_notification_again_after)
+  |> Lwt.map CCOption.is_none
+;;
+
+let set_registration_attempt_notification_sent_at_request =
+  let open Caqti_request.Infix in
+  {|
+    UPDATE pool_contacts
+    SET registration_attempt_notification_sent_at = NOW()
+    WHERE user_uuid = UNHEX(REPLACE(?, '-', ''))
+  |}
+  |> Caqti_type.(string ->. unit)
+;;
+
+let set_registration_attempt_notification_sent_at pool t =
+  Utils.Database.exec
+    (Database.Label.value pool)
+    set_registration_attempt_notification_sent_at_request
+    Entity.(id t |> Id.value)
+;;

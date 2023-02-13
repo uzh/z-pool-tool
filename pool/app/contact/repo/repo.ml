@@ -7,3 +7,11 @@ let insert = Repo_sql.insert
 let update = Repo_sql.update
 let delete_unverified = Repo_sql.delete_unverified
 let update_profile_updated_triggered = Repo_sql.update_profile_updated_triggered
+
+let should_send_registration_attempt_notification =
+  Repo_sql.should_send_registration_attempt_notification
+;;
+
+let set_registration_attempt_notification_sent_at =
+  Repo_sql.set_registration_attempt_notification_sent_at
+;;

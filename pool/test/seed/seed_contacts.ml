@@ -28,8 +28,6 @@ let create ?contact_data db_pool =
   let data = CCOption.value ~default:data contact_data in
   let open Utils.Lwt_result.Infix in
   let ctx = Pool_tenant.to_ctx db_pool in
-  (* let error = CCList.map (fun (k, v) -> Format.asprintf "%s: %s" k v) ctx |>
-     CCString.concat " +++ " in failwith error; *)
   let password =
     Sys.getenv_opt "POOL_USER_DEFAULT_PASSWORD"
     |> CCOption.value ~default:"user"
@@ -85,6 +83,14 @@ let create ?contact_data db_pool =
   ||> CCList.filter_map CCFun.id
   ||> CCList.flatten
   >|> Lwt_list.iter_s (Contact.handle_event db_pool)
+;;
+
+let find_contact_by_id pool id =
+  id
+  |> Format.asprintf "contact-%i@econ.uzh.ch"
+  |> Pool_user.EmailAddress.of_string
+  |> Contact.find_by_email pool
+  |> Lwt.map CCResult.get_exn
 ;;
 
 let cleanup db_pool =

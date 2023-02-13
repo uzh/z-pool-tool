@@ -98,6 +98,35 @@ module AssignmentConfirmation = struct
   ;;
 end
 
+module ContactRegistrationAttempt = struct
+  let email_params tenant_url contact =
+    let reset_url = create_public_url tenant_url "/request-reset-password" in
+    global_params contact.Contact.user
+    @ [ "tenantUrl", Pool_tenant.Url.value tenant_url
+      ; "resetUrl", reset_url
+      ; ( "emailAddress"
+        , Pool_user.EmailAddress.value (Contact.email_address contact) )
+      ]
+  ;;
+
+  let create pool language tenant contact =
+    let open Message_utils in
+    let open Utils.Lwt_result.Infix in
+    let* template =
+      Repo.find_by_label pool language Label.ContactRegistrationAttempt
+    in
+    let layout = layout_from_tenant tenant in
+    let tenant_url = tenant.Pool_tenant.url in
+    prepare_email
+      language
+      template
+      (contact |> Contact.email_address)
+      layout
+      (email_params tenant_url contact)
+    |> Lwt_result.return
+  ;;
+end
+
 module EmailVerification = struct
   let email_params validation_url contact =
     global_params contact.Contact.user @ [ "verificationUrl", validation_url ]
