@@ -132,9 +132,7 @@ let experiment_invitation =
 {experimentPublicTitle}
 {experimentDescription}
 
-Das Experiment wird an folgenden Daten durchgeführt:
-
-Sessions......|}
+Informationen zu den Sessions finden Sie hier: {experimentUrl}|}
     |> SmsText.of_string
   in
   { id = Id.create ()

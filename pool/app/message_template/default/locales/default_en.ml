@@ -121,9 +121,7 @@ let experiment_invitation =
 {experimentPublicTitle}
 {experimentDescription}
 
-The experiment is performed on the following dates:
-
-Sessions......|}
+Information about the sessions can be found here: {experimentUrl}|}
     |> SmsText.of_string
   in
   { id = Id.create ()

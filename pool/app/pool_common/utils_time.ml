@@ -30,8 +30,12 @@ let formatted_date_time (date : Ptime.t) =
     (time_to_human (Ptime.to_date_time date))
 ;;
 
-let ptime_to_formatted_date ptime =
+let formatted_date ptime =
   ptime |> to_local_date |> Ptime.to_date |> date_to_human
+;;
+
+let formatted_time ptime =
+  ptime |> to_local_date |> Ptime.to_date_time |> time_to_human
 ;;
 
 let formatted_timespan timespan =
