@@ -29,7 +29,7 @@ let insert_template ?(default = true) db_label t =
 let handle_event pool : event -> unit Lwt.t = function
   | Created template -> insert_template pool ~default:false template
   | DefaultRestored templates ->
-    Lwt_list.iter_s (insert_template pool ~default:true) templates
+    Lwt_list.iter_s (insert_template pool) templates
   | Updated (template, { email_subject; email_text; plain_text; sms_text }) ->
     { template with email_subject; email_text; plain_text; sms_text }
     |> Repo.update pool
