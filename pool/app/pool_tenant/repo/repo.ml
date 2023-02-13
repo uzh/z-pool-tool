@@ -224,7 +224,7 @@ module Sql = struct
             smtp_auth_username,
             smtp_auth_password,
             smtp_auth_authentication_method,
-            smtp_auth_protocol,
+            smtp_auth_protocol
           FROM pool_tenant
           WHERE database_label = ?
     |sql}
