@@ -16,6 +16,8 @@ type t =
   ; reminder_lead_time : Reminder.LeadTime.t option
   ; reminder_sent_at : Reminder.SentAt.t option
   ; assignment_count : Entity.AssignmentCount.t
+  ; show_up_count : Entity.ShowUpCount.t
+  ; participant_count : Entity.ParticipantCount.t
   ; closed_at : Ptime.t option
   ; canceled_at : Ptime.t option
   ; created_at : Pool_common.CreatedAt.t
@@ -36,6 +38,8 @@ let of_entity (m : Entity.t) =
   ; reminder_lead_time = m.Entity.reminder_lead_time
   ; reminder_sent_at = m.Entity.reminder_sent_at
   ; assignment_count = m.Entity.assignment_count
+  ; show_up_count = m.Entity.show_up_count
+  ; participant_count = m.Entity.participant_count
   ; closed_at = m.Entity.closed_at
   ; canceled_at = m.Entity.canceled_at
   ; created_at = m.Entity.created_at
@@ -57,6 +61,8 @@ let to_entity (m : t) location : Entity.t =
     ; reminder_lead_time = m.reminder_lead_time
     ; reminder_sent_at = m.reminder_sent_at
     ; assignment_count = m.assignment_count
+    ; show_up_count = m.show_up_count
+    ; participant_count = m.participant_count
     ; closed_at = m.closed_at
     ; canceled_at = m.canceled_at
     ; created_at = m.created_at
@@ -80,9 +86,11 @@ let t =
                       , ( m.reminder_lead_time
                         , ( m.reminder_sent_at
                           , ( m.assignment_count
-                            , ( m.closed_at
-                              , (m.canceled_at, (m.created_at, m.updated_at)) )
-                            ) ) ) ) ) ) ) ) ) ) ) )
+                            , ( m.show_up_count
+                              , ( m.participant_count
+                                , ( m.closed_at
+                                  , (m.canceled_at, (m.created_at, m.updated_at))
+                                  ) ) ) ) ) ) ) ) ) ) ) ) ) ) )
   in
   let decode
     ( id
@@ -97,7 +105,10 @@ let t =
                     , ( reminder_lead_time
                       , ( reminder_sent_at
                         , ( assignment_count
-                          , (closed_at, (canceled_at, (created_at, updated_at)))
+                          , ( show_up_count
+                            , ( participant_count
+                              , ( closed_at
+                                , (canceled_at, (created_at, updated_at)) ) ) )
                           ) ) ) ) ) ) ) ) ) ) ) )
     =
     Ok
@@ -113,6 +124,8 @@ let t =
       ; reminder_lead_time
       ; reminder_sent_at
       ; assignment_count
+      ; show_up_count
+      ; participant_count
       ; closed_at
       ; canceled_at
       ; created_at
@@ -148,10 +161,14 @@ let t =
                                        (tup2
                                           int
                                           (tup2
-                                             (option ptime)
+                                             int
                                              (tup2
-                                                (option ptime)
-                                                (tup2 ptime ptime))))))))))))))))
+                                                int
+                                                (tup2
+                                                   (option ptime)
+                                                   (tup2
+                                                      (option ptime)
+                                                      (tup2 ptime ptime))))))))))))))))))
 ;;
 
 module Write = struct

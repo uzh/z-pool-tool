@@ -68,6 +68,30 @@ module AssignmentCount = struct
   ;;
 end
 
+module ShowUpCount = struct
+  type t = int [@@deriving eq, show]
+
+  let value m = m
+
+  let create m =
+    if m < 0
+    then Error Pool_common.Message.(Invalid Field.ShowUpCount)
+    else Ok m
+  ;;
+end
+
+module ParticipantCount = struct
+  type t = int [@@deriving eq, show]
+
+  let value m = m
+
+  let create m =
+    if m < 0
+    then Error Pool_common.Message.(Invalid Field.ParticipantCount)
+    else Ok m
+  ;;
+end
+
 module CancellationReason = struct
   include Pool_common.Model.String
 
@@ -93,6 +117,8 @@ type t =
   ; reminder_lead_time : Pool_common.Reminder.LeadTime.t option
   ; reminder_sent_at : Pool_common.Reminder.SentAt.t option
   ; assignment_count : AssignmentCount.t
+  ; show_up_count : ShowUpCount.t
+  ; participant_count : ParticipantCount.t
   ; (* TODO [aerben] want multiple follow up session?
      * 1. Ja es gibt immer wieder Sessions mit mehreren Following Sessions
      * 2. Eigentlich ist es immer eine Hauptsession mit mehreren Following Sessions
@@ -135,6 +161,8 @@ let create
   ; reminder_lead_time
   ; reminder_sent_at = None
   ; assignment_count = 0
+  ; show_up_count = 0
+  ; participant_count = 0
   ; closed_at = None
   ; canceled_at = None
   ; created_at = Ptime_clock.now ()

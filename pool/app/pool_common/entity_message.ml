@@ -168,6 +168,7 @@ module Field = struct
     | Sessions [@name "sessions"] [@printer go "sessions"]
     | Setting [@name "setting"] [@printer go "setting"]
     | ShowUp [@name "show_up"] [@printer go "show_up"]
+    | ShowUpCount [@name "show_up_count"] [@printer go "show_up_count"]
     | SMS [@name "sms"] [@printer go "sms"]
     | SmsText [@name "sms_text"] [@printer go "sms_text"]
     | SmtpAuthMethod [@name "smtp_auth_method"] [@printer go "smtp_auth_method"]

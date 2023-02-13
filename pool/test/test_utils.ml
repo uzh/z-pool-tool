@@ -303,6 +303,9 @@ module Model = struct
     ; reminder_sent_at = None
     ; assignment_count =
         0 |> AssignmentCount.create |> get_or_failwith_pool_error
+    ; show_up_count = 0 |> ShowUpCount.create |> get_or_failwith_pool_error
+    ; participant_count =
+        0 |> ParticipantCount.create |> get_or_failwith_pool_error
     ; closed_at = None
     ; canceled_at = None
     ; created_at = Pool_common.CreatedAt.create ()
