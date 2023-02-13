@@ -50,7 +50,11 @@ module Key : sig
   val pp : Format.formatter -> t -> unit
   val equal : t -> t -> bool
   val show : t -> string
-  val hardcoded_to_sql : hardcoded -> string
+
+  val hardcoded_to_single_value_sql
+    :  hardcoded
+    -> (string, Pool_common.Message.error) result
+
   val equal_human : human -> human -> bool
   val show_human : human -> string
   val type_of_key : human -> input_type

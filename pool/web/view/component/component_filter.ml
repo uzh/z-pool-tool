@@ -50,9 +50,7 @@ let htmx_attribs
   ?identifier
   ()
   =
-  let target =
-    target |> CCOption.map (fun target -> a_user_data "hx-target" target)
-  in
+  let target = target |> CCOption.map (a_user_data "hx-target") in
   let hx_vals =
     let identifier =
       identifier
@@ -330,8 +328,7 @@ let value_input language param query_experiments input_type ?value () =
      | Key.QueryExperiments ->
        let current =
          value
-         |> CCOption.map_or ~default:[] (fun value ->
-              match value with
+         |> CCOption.map_or ~default:[] (function
               | Single _ -> []
               | Lst lst ->
                 CCList.filter_map

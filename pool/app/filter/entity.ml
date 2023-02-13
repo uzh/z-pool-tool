@@ -190,15 +190,16 @@ module Key = struct
     | CustomField f -> Custom_field.(f |> id |> Id.value)
   ;;
 
-  let hardcoded_to_sql = function
-    | ContactLanguage -> "pool_contacts.language"
-    | Firstname -> "user_users.given_name"
-    | Name -> "user_users.name"
-    | NumAssignments -> "pool_contacts.num_assignments"
-    | NumInvitations -> "pool_contacts.num_invitations"
-    | NumParticipations -> "pool_contacts.num_participations"
-    | NumShowUps -> "pool_contacts.num_show_ups"
-    | Participation -> failwith "TODO"
+  let hardcoded_to_single_value_sql = function
+    | ContactLanguage -> Ok "pool_contacts.language"
+    | Firstname -> Ok "user_users.given_name"
+    | Name -> Ok "user_users.name"
+    | NumAssignments -> Ok "pool_contacts.num_assignments"
+    | NumInvitations -> Ok "pool_contacts.num_invitations"
+    | NumParticipations -> Ok "pool_contacts.num_participations"
+    | NumShowUps -> Ok "pool_contacts.num_show_ups"
+    | Participation ->
+      Error Pool_common.Message.(QueryNotCompatible (Field.Key, Field.Value))
   ;;
 
   let type_of_hardcoded m : input_type =

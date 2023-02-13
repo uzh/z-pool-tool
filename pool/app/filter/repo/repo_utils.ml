@@ -54,9 +54,9 @@ let add_value_to_params operator value dyn =
 ;;
 
 (* The subquery does not return any contacts that have shown up at a session of
-   the current experiment. It does not make a difference, it they
+   the current experiment. It does not make a difference, if they
    participated. *)
-let participation_subquery _ dyn operator ids =
+let participation_subquery dyn operator ids =
   let open CCResult in
   let* dyn, query_params =
     CCList.fold_left
@@ -168,10 +168,11 @@ let filter_to_sql template_list dyn query =
         match key with
         | Key.Hardcoded h ->
           let dyn = add_value_to_params operator value dyn in
-          let sql =
-            where_clause (Key.hardcoded_to_sql h) (Operator.to_sql operator)
+          let* sql =
+            Key.hardcoded_to_single_value_sql h
+            >|= fun key -> where_clause key (Operator.to_sql operator)
           in
-          dyn, sql
+          Ok (dyn, sql)
         | Key.CustomField id ->
           let dyn =
             Dynparam.(
@@ -183,23 +184,22 @@ let filter_to_sql template_list dyn query =
             where_clause coalesce_value (Operator.to_sql operator)
             |> custom_field_sql
           in
-          dyn, sql
+          Ok (dyn, sql)
       in
       (match value with
        | Single value ->
          (match key with
-          | Key.Hardcoded _ -> add_single_value dyn value |> CCResult.pure
+          | Key.Hardcoded _ -> add_single_value dyn value
           | Key.CustomField _ ->
             add_single_value dyn value
-            |> fun (dyn, sql) ->
-            (dyn, Format.asprintf "EXISTS (%s)" sql) |> CCResult.pure)
+            >|= fun (dyn, sql) -> dyn, Format.asprintf "EXISTS (%s)" sql)
        | Lst [] -> Ok (dyn, sql)
        | Lst values ->
          let open Key in
          (match key with
           | Hardcoded hardcoded ->
             (match hardcoded with
-             | Participation -> participation_subquery sql dyn operator values
+             | Participation -> participation_subquery dyn operator values
              | ContactLanguage
              | Firstname
              | Name
