@@ -1,34 +1,32 @@
 open Entity
 
+let caqti_type_t caqti_type create value =
+  let open CCFun in
+  let encode = Utils.fcn_ok value in
+  let decode =
+    create %> CCResult.map_err (Utils_to_string.error_to_string Language.En)
+  in
+  Caqti_type.(custom ~encode ~decode caqti_type)
+;;
+
 module Id = struct
   include Id
 
   let t =
-    let encode = Utils.fcn_ok value in
-    let decode = Utils.fcn_ok of_string in
-    Caqti_type.(custom ~encode ~decode string)
+    caqti_type_t Caqti_type.string CCFun.(of_string %> CCResult.pure) value
   ;;
 end
 
 module Language = struct
   include Language
 
-  let encode m = m |> show |> CCResult.pure
-
-  let decode m =
-    m
-    |> create
-    |> CCResult.map_err (fun _ ->
-         Locales_en.error_to_string Entity_message.(Decode Field.Language))
-  ;;
-
-  let t = Caqti_type.(custom ~encode ~decode string)
+  let t = caqti_type_t Caqti_type.string create show
 end
 
 module Version = struct
   include Version
 
-  let t = Caqti_type.int
+  let t = caqti_type_t Caqti_type.int CCFun.(of_int %> CCResult.pure) value
 end
 
 module CreatedAt = struct
@@ -49,27 +47,19 @@ module File = struct
   module Name = struct
     include Name
 
-    let t = Caqti_type.string
+    let t = caqti_type_t Caqti_type.string create value
   end
 
   module Size = struct
     include Size
 
-    let t = Caqti_type.int
+    let t = caqti_type_t Caqti_type.int create value
   end
 
   module Mime = struct
     include Mime
 
-    let t =
-      let open CCResult in
-      Caqti_type.(
-        custom
-          ~encode:(fun m -> m |> to_string |> pure)
-          ~decode:(fun m ->
-            map_err (fun _ -> "decode mime type") @@ of_string m)
-          string)
-    ;;
+    let t = caqti_type_t Caqti_type.string of_string to_string
   end
 
   let t =
@@ -91,13 +81,13 @@ module Reminder = struct
   module LeadTime = struct
     include Reminder.LeadTime
 
-    let t = Caqti_type.ptime_span
+    let t = caqti_type_t Caqti_type.ptime_span create value
   end
 
   module SentAt = struct
     include Reminder.SentAt
 
-    let t = Caqti_type.ptime
+    let t = caqti_type_t Caqti_type.ptime CCFun.(create %> CCResult.pure) value
   end
 end
 
@@ -105,11 +95,10 @@ module ExperimentType = struct
   include ExperimentType
 
   let t =
-    let open CCResult in
-    Caqti_type.(
-      custom
-        ~encode:(fun m -> m |> yojson_of_t |> Yojson.Safe.to_string |> pure)
-        ~decode:(fun m -> m |> Yojson.Safe.from_string |> t_of_yojson |> pure)
-        string)
+    let open CCFun in
+    caqti_type_t
+      Caqti_type.string
+      (Yojson.Safe.from_string %> t_of_yojson %> CCResult.pure)
+      (yojson_of_t %> Yojson.Safe.to_string)
   ;;
 end

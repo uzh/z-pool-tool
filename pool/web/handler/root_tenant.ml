@@ -75,7 +75,7 @@ let manage_operators req =
     @@
     let id =
       HttpUtils.get_field_router_param req Pool_common.Message.Field.Tenant
-      |> Pool_common.Id.of_string
+      |> Pool_tenant.Id.of_string
     in
     let* tenant = Pool_tenant.find id in
     Page.Root.Tenant.manage_operators tenant context
@@ -91,10 +91,10 @@ let create_operator req =
   let open Utils.Lwt_result.Infix in
   let id =
     HttpUtils.get_field_router_param req Field.Tenant
-    |> Pool_common.Id.of_string
+    |> Pool_tenant.Id.of_string
   in
   let redirect_path =
-    Format.asprintf "/root/tenants/%s" (Pool_common.Id.value id)
+    Format.asprintf "/root/tenants/%s" (Pool_tenant.Id.value id)
   in
   let result _ =
     Lwt_result.map_error (fun err ->
@@ -140,7 +140,7 @@ let tenant_detail req =
     @@
     let id =
       HttpUtils.get_field_router_param req Pool_common.Message.Field.Tenant
-      |> Pool_common.Id.of_string
+      |> Pool_tenant.Id.of_string
     in
     let* tenant = Pool_tenant.find id in
     Page.Root.Tenant.detail tenant context

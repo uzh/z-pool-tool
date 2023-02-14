@@ -77,6 +77,41 @@ Example: admin.create econ-uzh example@mail.com securePassword Max Muster Recrui
     | _ -> Command_utils.failwith_missmatch help)
 ;;
 
+let create_root_admin =
+  let create_exn email password given_name name =
+    let ctx = Pool_tenant.to_ctx Pool_database.root in
+    match%lwt Service.User.find_by_email_opt ~ctx email with
+    | None ->
+      let%lwt (admin : Sihl_user.t) =
+        Service.User.create_admin ~ctx ~name ~given_name ~password email
+      in
+      let%lwt () = grant_role ctx admin `OperatorAll in
+      Lwt.return_some ()
+    | Some _ -> failwith "The user already exists."
+  in
+  let help =
+    {|<email> <password> <firstname> <lastname>
+
+Provide all fields to sign up a new contact:
+        <email>               : string
+        <password>            : string
+        <firstname>           : string
+        <lastname>            : string
+
+Example: admin.root.create example@mail.com securePassword Max Muster
+        |}
+  in
+  Sihl.Command.make
+    ~name:"admin.root.create"
+    ~description:"New admin"
+    ~help
+    (function
+    | [ email; password; given_name; name ] ->
+      let () = Database.Root.setup () in
+      create_exn email password given_name name
+    | _ -> Command_utils.failwith_missmatch help)
+;;
+
 let grant_role =
   let grant_if_admin pool email role =
     let ctx = Pool_tenant.to_ctx pool in

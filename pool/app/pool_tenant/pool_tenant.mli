@@ -1,6 +1,13 @@
 module Database = Pool_database
+module Id : module type of Pool_common.Id
 
 module SmtpAuth : sig
+  module Id : module type of Pool_common.Id
+
+  module Label : sig
+    include Pool_common.Model.StringSig
+  end
+
   module Server : sig
     include Pool_common.Model.StringSig
   end
@@ -26,11 +33,18 @@ module SmtpAuth : sig
   end
 
   type t =
-    { server : Server.t
+    { id : Id.t
+    ; label : Label.t
+    ; server : Server.t
     ; port : Port.t
     ; username : Username.t option
     ; authentication_method : AuthenticationMethod.t
     ; protocol : Protocol.t
+    }
+
+  type update_password =
+    { id : Id.t
+    ; password : Password.t option
     }
 
   val pp : Format.formatter -> t -> unit
@@ -38,7 +52,9 @@ module SmtpAuth : sig
 
   module Write : sig
     type t =
-      { server : Server.t
+      { id : Id.t
+      ; label : Label.t
+      ; server : Server.t
       ; port : Port.t
       ; username : Username.t option
       ; password : Password.t option
@@ -47,7 +63,9 @@ module SmtpAuth : sig
       }
 
     val create
-      :  Server.t
+      :  ?id:Id.t
+      -> Label.t
+      -> Server.t
       -> Port.t
       -> Username.t option
       -> Password.t option
@@ -204,7 +222,7 @@ module LogoMapping : sig
   module Write : sig
     type t =
       { id : Pool_common.Id.t
-      ; tenant_id : Pool_common.Id.t
+      ; tenant_id : Id.t
       ; asset_id : Pool_common.Id.t
       ; logo_type : LogoType.t
       }
@@ -216,12 +234,11 @@ module LogoMapping : sig
 end
 
 type t =
-  { id : Pool_common.Id.t
+  { id : Id.t
   ; title : Title.t
   ; description : Description.t
   ; url : Url.t
   ; database_label : Database.Label.t
-  ; smtp_auth : SmtpAuth.t
   ; styles : Styles.t
   ; icon : Icon.t
   ; logos : Logos.t
@@ -233,19 +250,18 @@ type t =
   ; updated_at : Pool_common.UpdatedAt.t
   }
 
-val id : t -> Pool_common.Id.t
+val id : t -> Id.t
 val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
 val pp : Format.formatter -> t -> unit
 val equal : t -> t -> bool
 
 module Write : sig
   type t =
-    { id : Pool_common.Id.t
+    { id : Id.t
     ; title : Title.t
     ; description : Description.t
     ; url : Url.t
     ; database : Database.t
-    ; smtp_auth : SmtpAuth.Write.t
     ; styles : Styles.Write.t
     ; icon : Icon.Write.t
     ; maintenance : Maintenance.t
@@ -260,7 +276,6 @@ module Write : sig
     -> Description.t
     -> Url.t
     -> Database.t
-    -> SmtpAuth.Write.t
     -> Styles.Write.t
     -> Icon.Write.t
     -> Pool_common.Language.t
@@ -269,19 +284,10 @@ module Write : sig
   val show : t -> string
 end
 
-type smtp_auth_update =
-  { server : SmtpAuth.Server.t
-  ; port : SmtpAuth.Port.t
-  ; username : SmtpAuth.Username.t option
-  ; authentication_method : SmtpAuth.AuthenticationMethod.t
-  ; protocol : SmtpAuth.Protocol.t
-  }
-
 type update =
   { title : Title.t
   ; description : Description.t
   ; url : Url.t
-  ; smtp_auth : smtp_auth_update
   ; disabled : Disabled.t
   ; default_language : Pool_common.Language.t
   }
@@ -294,7 +300,10 @@ type event =
   | LogoDeleted of t * Pool_common.Id.t
   | DetailsEdited of Write.t * update
   | DatabaseEdited of Write.t * Database.t
-  | Destroyed of Pool_common.Id.t
+  | SmtpCreated of SmtpAuth.Write.t
+  | SmtpEdited of SmtpAuth.t
+  | SmtpPasswordEdited of SmtpAuth.update_password
+  | Destroyed of Id.t
   | ActivateMaintenance of Write.t
   | DeactivateMaintenance of Write.t
 
@@ -303,11 +312,8 @@ val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
 val to_ctx : Database.Label.t -> (string * string) list
-val find : Pool_common.Id.t -> (t, Pool_common.Message.error) Lwt_result.t
-
-val find_full
-  :  Pool_common.Id.t
-  -> (Write.t, Pool_common.Message.error) Lwt_result.t
+val find : Id.t -> (t, Pool_common.Message.error) Lwt_result.t
+val find_full : Id.t -> (Write.t, Pool_common.Message.error) Lwt_result.t
 
 val find_by_label
   :  Database.Label.t

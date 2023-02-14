@@ -38,9 +38,52 @@ let change_description_column_type =
     |sql}
 ;;
 
-let migration () =
+let create_smtp_table =
+  Sihl.Database.Migration.create_step
+    ~label:"create smtp table"
+    {sql|
+      CREATE TABLE IF NOT EXISTS pool_smtp (
+        `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+        `uuid` binary(16) NOT NULL,
+        `label` varchar(255) NOT NULL,
+        `server` varchar(255) NOT NULL,
+        `port` integer NOT NULL,
+        `username` varchar(255) NULL,
+        `password` varchar(255) NULL,
+        `authentication_method` varchar(255) NOT NULL,
+        `protocol` varchar(255) NOT NULL,
+        `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      PRIMARY KEY (id),
+      UNIQUE KEY `unique_uuid` (`uuid`),
+      UNIQUE KEY `unique_label` (`label`)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    |sql}
+;;
+
+let remove_smtp_from_tenant_table =
+  Sihl.Database.Migration.create_step
+    ~label:"remove smtp columns from tenant table"
+    {sql|
+      ALTER TABLE pool_tenant
+        DROP smtp_auth_server,
+        DROP smtp_auth_port,
+        DROP smtp_auth_username,
+        DROP smtp_auth_password,
+        DROP smtp_auth_authentication_method,
+        DROP smtp_auth_protocol
+    |sql}
+;;
+
+let migration_root () =
   Sihl.Database.Migration.(
     empty "tenant"
     |> add_step create_tenant_table
-    |> add_step change_description_column_type)
+    |> add_step change_description_column_type
+    |> add_step remove_smtp_from_tenant_table
+    |> add_step create_smtp_table)
+;;
+
+let migration_tenant () =
+  Sihl.Database.Migration.(empty "tenant" |> add_step create_smtp_table)
 ;;

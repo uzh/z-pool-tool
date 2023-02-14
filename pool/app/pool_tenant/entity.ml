@@ -5,7 +5,7 @@ module Id = Common.Id
 module CreatedAt = Common.CreatedAt
 module UpdatedAt = Common.UpdatedAt
 module File = Common.File
-module SmtpAuth = Entity_smtp_auth
+module SmtpAuth = Entity_smtp
 module LogoMapping = Entity_logo_mapping
 module PoolError = Common.Message
 
@@ -110,7 +110,6 @@ type t =
   ; description : Description.t
   ; url : Url.t
   ; database_label : Database.Label.t
-  ; smtp_auth : SmtpAuth.t
   ; styles : Styles.t
   ; icon : Icon.t
   ; logos : Logos.t
@@ -132,7 +131,6 @@ module Read = struct
     ; description : Description.t
     ; url : Url.t
     ; database_label : Database.Label.t
-    ; smtp_auth : SmtpAuth.t
     ; styles : Styles.t
     ; icon : Icon.t
     ; maintenance : Maintenance.t
@@ -151,7 +149,6 @@ module Write = struct
     ; description : Description.t
     ; url : Url.t
     ; database : Database.t
-    ; smtp_auth : SmtpAuth.Write.t
     ; styles : Styles.Write.t
     ; icon : Icon.Write.t
     ; maintenance : Maintenance.t
@@ -162,22 +159,12 @@ module Write = struct
     }
   [@@deriving eq, show]
 
-  let create
-    title
-    description
-    url
-    database
-    smtp_auth
-    styles
-    icon
-    default_language
-    =
+  let create title description url database styles icon default_language =
     { id = Id.create ()
     ; title
     ; description
     ; url
     ; database
-    ; smtp_auth
     ; styles
     ; icon
     ; maintenance = Maintenance.create false

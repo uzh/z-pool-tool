@@ -52,9 +52,13 @@ let () =
         ] )
     ; ( "tenant"
       , [ test_case
-            "create tenant smtp auth"
+            "create tenant smtp auth invalid"
             `Quick
-            Tenant_test.create_smtp_auth
+            Tenant_test.create_smtp_auth_invalid
+        ; test_case
+            "create tenant smtp auth valid"
+            `Quick
+            Tenant_test.create_smtp_auth_valid
         ; test_case "create tenant" `Quick Tenant_test.create_tenant
         ; test_case
             "update tenant details"

@@ -61,7 +61,7 @@ end = struct
   let effects tenant =
     [ ( `Update
       , `Target
-          (tenant.Pool_tenant.id |> Guard.Uuid.target_of Pool_common.Id.value) )
+          (tenant.Pool_tenant.id |> Guard.Uuid.target_of Pool_tenant.Id.value) )
     ; `Create, `TargetEntity `I18n
     ]
   ;;
@@ -106,7 +106,7 @@ end = struct
   let effects tenant id =
     [ ( `Update
       , `Target
-          (tenant.Pool_tenant.id |> Guard.Uuid.target_of Pool_common.Id.value) )
+          (tenant.Pool_tenant.id |> Guard.Uuid.target_of Pool_tenant.Id.value) )
     ; `Update, `TargetEntity `Tenant
     ; `Update, `Target (id |> Guard.Uuid.target_of Pool_common.Id.value)
     ; `Update, `TargetEntity `I18n

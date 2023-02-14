@@ -43,6 +43,7 @@ let commands =
   ; Admin.create
   ; Admin.grant_role
   ; Admin.list_roles
+  ; Admin.create_root_admin
   ; Utils.encrypt_string
   ; DefaultData.insert
   ; Worker.run ~services:worker_services ()

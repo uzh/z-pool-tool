@@ -10,10 +10,10 @@ let update req command success_message =
     let open Common.Message.Field in
     let id =
       HttpUtils.get_field_router_param req Pool_common.Message.Field.Tenant
-      |> Pool_common.Id.of_string
+      |> Pool_tenant.Id.of_string
     in
     let redirect_path =
-      Format.asprintf "/root/tenants/%s" (Common.Id.value id)
+      Format.asprintf "/root/tenants/%s" (Pool_tenant.Id.value id)
     in
     let events tenant =
       let open Utils.Lwt_result.Infix in
@@ -84,11 +84,11 @@ let update_database req =
 let delete_asset req =
   let open Sihl.Web in
   let open Common.Message in
-  let go m = m |> Router.param req |> Common.Id.of_string in
-  let asset_id = go Field.(AssetId |> show) in
-  let tenant_id = go Field.(Tenant |> show) in
+  let go m fcn = m |> Router.param req |> fcn in
+  let asset_id = go Field.(AssetId |> show) Common.Id.of_string in
+  let tenant_id = go Field.(Tenant |> show) Pool_tenant.Id.of_string in
   let redirect_path =
-    Format.asprintf "root/tenants/%s" (Common.Id.value tenant_id)
+    Format.asprintf "root/tenants/%s" (Pool_tenant.Id.value tenant_id)
   in
   let result { Pool_context.database_label; _ } =
     Utils.Lwt_result.map_error (fun err -> err, redirect_path)

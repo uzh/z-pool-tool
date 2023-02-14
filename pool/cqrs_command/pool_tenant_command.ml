@@ -1,6 +1,5 @@
 module Conformist = Pool_common.Utils.PoolConformist
-module Id = Pool_common.Id
-module User = Pool_user
+module Id = Pool_tenant.Id
 module File = Pool_common.File
 
 let src = Logs.Src.create "pool_tenant.cqrs"
@@ -10,7 +9,11 @@ let create_logo_mappings files tenant logo_type =
   CCList.map
     (fun asset_id ->
       LogoMapping.Write.
-        { id = Id.create (); tenant_id = tenant.Write.id; asset_id; logo_type })
+        { id = Pool_common.Id.create ()
+        ; tenant_id = tenant.Write.id
+        ; asset_id
+        ; logo_type
+        })
     files
 ;;
 
@@ -21,18 +24,11 @@ module Create : sig
     ; url : Pool_tenant.Url.t
     ; database_url : Pool_database.Url.t
     ; database_label : Pool_database.Label.t
-    ; smtp_auth_server : Pool_tenant.SmtpAuth.Server.t
-    ; smtp_auth_port : Pool_tenant.SmtpAuth.Port.t
-    ; smtp_auth_username : Pool_tenant.SmtpAuth.Username.t option
-    ; smtp_auth_password : Pool_tenant.SmtpAuth.Password.t option
-    ; smtp_auth_authentication_method :
-        Pool_tenant.SmtpAuth.AuthenticationMethod.t
-    ; smtp_auth_protocol : Pool_tenant.SmtpAuth.Protocol.t
     ; styles : Pool_tenant.Styles.Write.t
     ; icon : Pool_tenant.Icon.Write.t
     ; default_language : Pool_common.Language.t
-    ; tenant_logos : Id.t list
-    ; partner_logos : Id.t list
+    ; tenant_logos : Pool_common.Id.t list
+    ; partner_logos : Pool_common.Id.t list
     }
 
   val handle
@@ -52,18 +48,11 @@ end = struct
     ; url : Pool_tenant.Url.t
     ; database_url : Pool_database.Url.t
     ; database_label : Pool_database.Label.t
-    ; smtp_auth_server : Pool_tenant.SmtpAuth.Server.t
-    ; smtp_auth_port : Pool_tenant.SmtpAuth.Port.t
-    ; smtp_auth_username : Pool_tenant.SmtpAuth.Username.t option
-    ; smtp_auth_password : Pool_tenant.SmtpAuth.Password.t option
-    ; smtp_auth_authentication_method :
-        Pool_tenant.SmtpAuth.AuthenticationMethod.t
-    ; smtp_auth_protocol : Pool_tenant.SmtpAuth.Protocol.t
     ; styles : Pool_tenant.Styles.Write.t
     ; icon : Pool_tenant.Icon.Write.t
     ; default_language : Pool_common.Language.t
-    ; tenant_logos : Id.t list
-    ; partner_logos : Id.t list
+    ; tenant_logos : Pool_common.Id.t list
+    ; partner_logos : Pool_common.Id.t list
     }
 
   let command
@@ -72,12 +61,6 @@ end = struct
     url
     database_url
     database_label
-    smtp_auth_server
-    smtp_auth_port
-    smtp_auth_username
-    smtp_auth_password
-    smtp_auth_authentication_method
-    smtp_auth_protocol
     styles
     icon
     default_language
@@ -89,12 +72,6 @@ end = struct
     ; url
     ; database_url
     ; database_label
-    ; smtp_auth_server
-    ; smtp_auth_port
-    ; smtp_auth_username
-    ; smtp_auth_password
-    ; smtp_auth_authentication_method
-    ; smtp_auth_protocol
     ; styles
     ; icon
     ; default_language
@@ -112,12 +89,6 @@ end = struct
           ; Pool_tenant.Url.schema ()
           ; Pool_database.Url.schema ()
           ; Pool_database.Label.schema ()
-          ; Pool_tenant.SmtpAuth.Server.schema ()
-          ; Pool_tenant.SmtpAuth.Port.schema ()
-          ; Conformist.optional @@ Pool_tenant.SmtpAuth.Username.schema ()
-          ; Conformist.optional @@ Pool_tenant.SmtpAuth.Password.schema ()
-          ; Pool_tenant.SmtpAuth.AuthenticationMethod.schema ()
-          ; Pool_tenant.SmtpAuth.Protocol.schema ()
           ; Pool_tenant.Styles.Write.schema ()
           ; Pool_tenant.Icon.Write.schema ()
           ; Pool_common.Language.schema ()
@@ -139,14 +110,6 @@ end = struct
         command.description
         command.url
         database
-        Pool_tenant.SmtpAuth.Write.
-          { server = command.smtp_auth_server
-          ; port = command.smtp_auth_port
-          ; username = command.smtp_auth_username
-          ; password = command.smtp_auth_password
-          ; authentication_method = command.smtp_auth_authentication_method
-          ; protocol = command.smtp_auth_protocol
-          }
         command.styles
         command.icon
         command.default_language
@@ -186,16 +149,10 @@ module EditDetails : sig
     { title : Pool_tenant.Title.t
     ; description : Pool_tenant.Description.t
     ; url : Pool_tenant.Url.t
-    ; smtp_auth_server : Pool_tenant.SmtpAuth.Server.t
-    ; smtp_auth_port : Pool_tenant.SmtpAuth.Port.t
-    ; smtp_auth_username : Pool_tenant.SmtpAuth.Username.t option
-    ; smtp_auth_authentication_method :
-        Pool_tenant.SmtpAuth.AuthenticationMethod.t
-    ; smtp_auth_protocol : Pool_tenant.SmtpAuth.Protocol.t
     ; disabled : Pool_tenant.Disabled.t
     ; default_language : Pool_common.Language.t
-    ; tenant_logos : Id.t list option
-    ; partner_logos : Id.t list option
+    ; tenant_logos : Pool_common.Id.t list option
+    ; partner_logos : Pool_common.Id.t list option
     }
 
   val handle
@@ -214,27 +171,16 @@ end = struct
     { title : Pool_tenant.Title.t
     ; description : Pool_tenant.Description.t
     ; url : Pool_tenant.Url.t
-    ; smtp_auth_server : Pool_tenant.SmtpAuth.Server.t
-    ; smtp_auth_port : Pool_tenant.SmtpAuth.Port.t
-    ; smtp_auth_username : Pool_tenant.SmtpAuth.Username.t option
-    ; smtp_auth_authentication_method :
-        Pool_tenant.SmtpAuth.AuthenticationMethod.t
-    ; smtp_auth_protocol : Pool_tenant.SmtpAuth.Protocol.t
     ; disabled : Pool_tenant.Disabled.t
     ; default_language : Pool_common.Language.t
-    ; tenant_logos : Id.t list option
-    ; partner_logos : Id.t list option
+    ; tenant_logos : Pool_common.Id.t list option
+    ; partner_logos : Pool_common.Id.t list option
     }
 
   let command
     title
     description
     url
-    smtp_auth_server
-    smtp_auth_port
-    smtp_auth_username
-    smtp_auth_authentication_method
-    smtp_auth_protocol
     disabled
     default_language
     tenant_logos
@@ -243,11 +189,6 @@ end = struct
     { title
     ; description
     ; url
-    ; smtp_auth_server
-    ; smtp_auth_port
-    ; smtp_auth_username
-    ; smtp_auth_authentication_method
-    ; smtp_auth_protocol
     ; disabled
     ; default_language
     ; tenant_logos
@@ -262,11 +203,6 @@ end = struct
           [ Pool_tenant.Title.schema ()
           ; Pool_tenant.Description.schema ()
           ; Pool_tenant.Url.schema ()
-          ; Pool_tenant.SmtpAuth.Server.schema ()
-          ; Pool_tenant.SmtpAuth.Port.schema ()
-          ; Conformist.optional @@ Pool_tenant.SmtpAuth.Username.schema ()
-          ; Pool_tenant.SmtpAuth.AuthenticationMethod.schema ()
-          ; Pool_tenant.SmtpAuth.Protocol.schema ()
           ; Pool_tenant.Disabled.schema ()
           ; Pool_common.Language.schema ()
           ; Conformist.optional @@ Pool_tenant.Logos.schema ()
@@ -286,13 +222,6 @@ end = struct
         { title = command.title
         ; description = command.description
         ; url = command.url
-        ; smtp_auth =
-            { server = command.smtp_auth_server
-            ; port = command.smtp_auth_port
-            ; username = command.smtp_auth_username
-            ; authentication_method = command.smtp_auth_authentication_method
-            ; protocol = command.smtp_auth_protocol
-            }
         ; disabled = command.disabled
         ; default_language = command.default_language
         }
@@ -394,7 +323,7 @@ module DestroyLogo : sig
   val handle
     :  ?tags:Logs.Tag.set
     -> Pool_tenant.t
-    -> Id.t
+    -> Pool_common.Id.t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
   val effects : Guard.Authorizer.effect list

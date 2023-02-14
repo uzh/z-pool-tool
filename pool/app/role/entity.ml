@@ -95,6 +95,7 @@ module Target = struct
     | `MessageTemplate
     | `Session
     | `Setting
+    | `Smtp
     | `System
     | `Tenant
     | `WaitingList

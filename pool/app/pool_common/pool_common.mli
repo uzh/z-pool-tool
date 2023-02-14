@@ -382,6 +382,12 @@ module ExperimentType : sig
 end
 
 module Repo : sig
+  val caqti_type_t
+    :  'a Caqti_type.t
+    -> ('a -> ('b, Message.error) result)
+    -> ('b -> 'a)
+    -> 'b Caqti_type.t
+
   module Id : sig
     type t = Id.t
 

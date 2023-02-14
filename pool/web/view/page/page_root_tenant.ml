@@ -2,7 +2,7 @@ open Tyxml.Html
 open Component.Input
 module Table = Component.Table
 module File = Pool_common.File
-module Id = Pool_common.Id
+module Id = Pool_tenant.Id
 module Message = Pool_common.Message
 
 let list tenant_list root_list Pool_context.{ language; csrf; _ } =
@@ -14,8 +14,8 @@ let list tenant_list root_list Pool_context.{ language; csrf; _ } =
     let open Pool_tenant in
     let body =
       CCList.map
-        (fun (tenant : Pool_tenant.t) ->
-          [ txt (tenant.title |> Pool_tenant.Title.value)
+        (fun (tenant : t) ->
+          [ txt (tenant.title |> Title.value)
           ; a
               ~a:
                 [ a_href
@@ -166,7 +166,7 @@ let manage_operators { Pool_tenant.id; _ } Pool_context.{ language; csrf; _ } =
                   (Sihl.Web.externalize_path
                      (Format.asprintf
                         "/root/tenants/%s/create-operator"
-                        (Id.value id)))
+                        (Pool_tenant.Id.value id)))
               ; a_method `Post
               ; a_class [ "stack" ]
               ]
@@ -209,21 +209,12 @@ let manage_operators { Pool_tenant.id; _ } Pool_context.{ language; csrf; _ } =
 
 let detail (tenant : Pool_tenant.t) Pool_context.{ language; csrf; _ } =
   let open Pool_tenant in
-  let open Pool_tenant.SmtpAuth in
   let control_to_string = Pool_common.Utils.control_to_string language in
   let detail_fields =
     Message.
       [ Field.Title, Title.value tenant.title
       ; Field.Description, Description.value tenant.description
-      ; Field.Url, Pool_tenant.Url.value tenant.url
-      ; Field.SmtpAuthServer, Server.value tenant.smtp_auth.server
-      ; Field.SmtpPort, Port.value tenant.smtp_auth.port |> CCInt.to_string
-      ; ( Field.SmtpUsername
-        , (CCOption.map_or ~default:"" Username.value) tenant.smtp_auth.username
-        )
-      ; ( Field.SmtpAuthMethod
-        , AuthenticationMethod.value tenant.smtp_auth.authentication_method )
-      ; Field.SmtpProtocol, Protocol.value tenant.smtp_auth.protocol
+      ; Field.Url, Url.value tenant.url
       ]
   in
   let database_fields =
@@ -285,7 +276,7 @@ let detail (tenant : Pool_tenant.t) Pool_context.{ language; csrf; _ } =
     checkbox_element
       language
       Message.Field.TenantDisabledFlag
-      ~value:(tenant.disabled |> Pool_tenant.Disabled.value)
+      ~value:(tenant.disabled |> Disabled.value)
   in
   let delete_img_form files =
     div
@@ -306,7 +297,7 @@ let detail (tenant : Pool_tenant.t) Pool_context.{ language; csrf; _ } =
                           (Format.asprintf
                              "/root/tenants/%s/assets/%s/delete"
                              (tenant.id |> Id.value)
-                             (File.id file |> Id.value)))
+                             (File.id file |> Pool_common.Id.value)))
                    ; a_method `Post
                    ; a_class [ "stack" ]
                    ]
@@ -349,7 +340,7 @@ let detail (tenant : Pool_tenant.t) Pool_context.{ language; csrf; _ } =
                   (Sihl.Web.externalize_path
                      (Format.asprintf
                         "/root/tenants/%s/operator"
-                        (tenant.id |> Pool_common.Id.value)))
+                        (tenant.id |> Id.value)))
               ]
             [ txt
                 (control_to_string Pool_common.Message.(Manage Field.Operators))

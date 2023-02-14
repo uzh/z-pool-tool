@@ -1,4 +1,4 @@
-module SmtpAuth = Entity_smtp_auth
+module SmtpAuth = Entity.SmtpAuth
 module AccountMap = CCMap.Make (Pool_database.Label)
 module Queue = Sihl_queue.MariaDb
 
@@ -132,7 +132,7 @@ Html:
         try !accounts |> AccountMap.find database_label |> Lwt.return with
         | _ ->
           let%lwt from_repo =
-            Repo.find_smtp_by_label database_label
+            Repo.Smtp.find_full_by_label database_label
             >|- with_log_error
             ||> get_or_failwith
           in
@@ -202,20 +202,8 @@ Html:
       "Bulk sending with the SMTP backend not supported, please use sihl-queue"
   ;;
 
-  let start () =
-    (* Make sure that configuration is valid *)
-    if Sihl.Configuration.is_production ()
-    then Sihl.Configuration.require Repo.RepoEntity.SmtpAuth.Write.schema
-    else ();
-    (* If mail is intercepted, don't punish user for not providing SMTP
-       credentials *)
-    if bypass () && CCOption.is_some (bypass_email_address ())
-    then Sihl.Configuration.require Repo.RepoEntity.SmtpAuth.Write.schema
-    else ();
-    Lwt.return ()
-  ;;
-
-  let stop () = Lwt.return ()
+  let start () = Lwt.return_unit
+  let stop () = Lwt.return_unit
 
   let lifecycle =
     Sihl.Container.create_lifecycle
@@ -226,9 +214,7 @@ Html:
   ;;
 
   let register () =
-    let configuration =
-      Sihl.Configuration.make ~schema:Repo.RepoEntity.SmtpAuth.Write.schema ()
-    in
+    let configuration = Sihl.Configuration.make () in
     Sihl.Container.Service.create ~configuration lifecycle
   ;;
 

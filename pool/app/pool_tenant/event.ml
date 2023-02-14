@@ -2,20 +2,13 @@ open Entity
 module Id = Pool_common.Id
 module Database = Pool_database
 
-type smtp_auth_update =
-  { server : SmtpAuth.Server.t
-  ; port : SmtpAuth.Port.t
-  ; username : SmtpAuth.Username.t option
-  ; authentication_method : SmtpAuth.AuthenticationMethod.t
-  ; protocol : SmtpAuth.Protocol.t
-  }
-[@@deriving eq, show]
+let to_ctx pool = [ "pool", Database.Label.value pool ]
+let get_or_failwith = Pool_common.Utils.get_or_failwith
 
 type update =
   { title : Title.t
   ; description : Description.t
   ; url : Url.t
-  ; smtp_auth : smtp_auth_update
   ; disabled : Disabled.t
   ; default_language : Pool_common.Language.t
   }
@@ -29,6 +22,9 @@ type event =
   | LogoDeleted of t * Id.t
   | DetailsEdited of Write.t * update
   | DatabaseEdited of Write.t * Database.t
+  | SmtpCreated of SmtpAuth.Write.t
+  | SmtpEdited of SmtpAuth.t
+  | SmtpPasswordEdited of SmtpAuth.update_password
   | Destroyed of Id.t
   | ActivateMaintenance of Write.t
   | DeactivateMaintenance of Write.t
@@ -37,20 +33,19 @@ type event =
 let handle_event pool : event -> unit Lwt.t = function
   | Created ({ Write.id; _ } as tenant) ->
     let open Utils.Lwt_result.Infix in
+    let ctx = to_ctx pool in
     let%lwt () = Repo.insert Database.root tenant in
-    let%lwt tenant = Repo.find pool id ||> Pool_common.Utils.get_or_failwith in
-    (* This is Pool_tenant.to_ctx, to avoid circular dependencies *)
-    let ctx = [ "pool", Database.Label.value pool ] in
     let%lwt () =
       let target_id = Guard.Uuid.target_of Entity.Id.value id in
       (`ActorEntity (`Operator target_id), `Manage, `Target target_id)
       |> Guard.Persistence.Actor.save_rule ~ctx
       >|- (fun err -> Pool_common.Message.nothandled err)
-      ||> Pool_common.Utils.get_or_failwith
+      ||> get_or_failwith
     in
     let%lwt () =
-      Entity_guard.Target.to_authorizable ~ctx tenant
-      ||> Pool_common.Utils.get_or_failwith
+      Repo.find pool id
+      >>= Entity_guard.Target.to_authorizable ~ctx
+      ||> get_or_failwith
       ||> fun (_ : [> `Tenant ] Guard.AuthorizableTarget.t) -> ()
     in
     Lwt.return_unit
@@ -66,28 +61,16 @@ let handle_event pool : event -> unit Lwt.t = function
       Pool_tenant_service.Email.remove_from_cache
         tenant.database.Pool_database.label
     in
-    let smtp_auth =
-      SmtpAuth.Write.
-        { tenant.smtp_auth with
-          server = update_t.smtp_auth.server
-        ; port = update_t.smtp_auth.port
-        ; username = update_t.smtp_auth.username
-        ; protocol = update_t.smtp_auth.protocol
-        }
-    in
     let%lwt () =
-      let tenant =
-        { tenant with
-          title = update_t.title
-        ; description = update_t.description
-        ; url = update_t.url
-        ; smtp_auth
-        ; disabled = update_t.disabled
-        ; default_language = update_t.default_language
-        ; updated_at = Ptime_clock.now ()
-        }
-      in
-      Repo.update Database.root tenant
+      { tenant with
+        title = update_t.title
+      ; description = update_t.description
+      ; url = update_t.url
+      ; disabled = update_t.disabled
+      ; default_language = update_t.default_language
+      ; updated_at = Ptime_clock.now ()
+      }
+      |> Repo.update Database.root
     in
     Lwt.return_unit
   | DatabaseEdited (tenant, database) ->
@@ -96,6 +79,23 @@ let handle_event pool : event -> unit Lwt.t = function
       { tenant with database; updated_at = Ptime_clock.now () }
       |> Repo.update Database.root
     in
+    Lwt.return_unit
+  | SmtpCreated ({ SmtpAuth.Write.id; _ } as created) ->
+    let open Utils.Lwt_result.Infix in
+    let ctx = to_ctx pool in
+    let%lwt () = Repo.Smtp.insert pool created in
+    let%lwt () =
+      Repo.Smtp.find pool id
+      >>= Entity_guard.SmtpTarget.to_authorizable ~ctx
+      ||> get_or_failwith
+      ||> fun (_ : [> `Smtp ] Guard.AuthorizableTarget.t) -> ()
+    in
+    Lwt.return_unit
+  | SmtpEdited updated ->
+    let%lwt () = Repo.Smtp.update pool updated in
+    Lwt.return_unit
+  | SmtpPasswordEdited updated_password ->
+    let%lwt () = Repo.Smtp.update_password pool updated_password in
     Lwt.return_unit
   | Destroyed tenant_id -> Repo.destroy tenant_id
   | ActivateMaintenance tenant ->

@@ -8,7 +8,6 @@ module Url = struct
   let of_pool = Repo.Url.of_pool
 end
 
-let to_ctx pool = [ "pool", Database.Label.value pool ]
 let find = Repo.find Database.root
 let find_full = Repo.find_full Database.root
 let find_by_label = Repo.find_by_label Database.root
