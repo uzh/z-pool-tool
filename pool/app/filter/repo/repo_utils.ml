@@ -9,6 +9,7 @@ let filtered_base_condition =
     AND user_users.confirmed = 1
     AND pool_contacts.paused = 0
     AND pool_contacts.disabled = 0
+    AND pool_contacts.terms_accepted_at IS NOT NULL
     AND NOT EXISTS
       (SELECT 1
       FROM pool_invitations
