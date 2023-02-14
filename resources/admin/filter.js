@@ -43,6 +43,10 @@ const isListOperator = (operator) => {
     return ["contains_all", "contains_some", "contains_none"].includes(operator)
 }
 
+const isQueryKey = (key) => {
+    return ["participation"].includes(key)
+}
+
 const findChildPredicates = (wrapper) => {
     return [...wrapper.querySelector(".predicate-wrapper").children].filter((elm) => elm.classList.contains("predicate"))
 }
@@ -58,7 +62,7 @@ const addRequiredError = (elm) => {
     }
 }
 
-// Should this update every time, the filter gets adjusted but not safed?
+// Should this update every time, the filter gets adjusted but not saved?
 const updateContactCount = async () => {
     const target = document.getElementById("contact-counter");
     if (target) {
@@ -141,7 +145,7 @@ const predicateToJson = (outerPredicate, allowEmpty = false) => {
                             [inputDataType]: valueInput.value
                         }
                         break;
-                    case "list":
+                    case "multi_select":
                         value = {
                             ["option"]: valueInput.value
                         }
@@ -168,7 +172,12 @@ const predicateToJson = (outerPredicate, allowEmpty = false) => {
         let value;
         let isList = isListOperator(operator)
         if (isList) {
-            const values = [...outerPredicate.querySelectorAll(`[name="value[]"]:checked`)];
+            var values = []
+            if (isQueryKey(key)) {
+                values = [...outerPredicate.querySelectorAll(`[data-query="results"] [name="value[]"]:checked`)];
+            } else {
+                values = [...outerPredicate.querySelectorAll(`[name="value[]"]:checked`)];
+            }
             value = values.map(toValue)
         } else {
             const valueInput = findElm("value");
@@ -204,19 +213,48 @@ function addRemovePredicateListener(element) {
     })
 }
 
+
+function destroySelectedQueryResult(item) {
+    item.remove();
+}
+
+function addQueryPredicateListeners(queryInput) {
+    var wrapper = queryInput.closest("[data-query='wrapper']");
+    var results = wrapper.querySelector("[data-query='results']");
+
+    [...queryInput.querySelectorAll("[data-id]")].forEach(item => {
+        item.addEventListener("click", () => {
+            results.appendChild(item);
+            item.querySelector(".toggle-item").addEventListener("click", () => destroySelectedQueryResult(item));
+        }, { once: true })
+    })
+}
+
 function configRequest(e, form) {
     const isPredicateType = e.detail.parameters.predicate;
     const allowEmpty = e.detail.parameters.allow_empty_values;
     const isSubmit = e.target.type === "submit"
+    const isSearchForm = Boolean(e.detail.elt.classList.contains("query-input"));
+
     e.detail.parameters._csrf = csrfToken();
+
     const filterId = form.dataset.filter;
     if (filterId) {
         e.detail.parameters.filter = filterId;
     }
-    if (isPredicateType || isSubmit) {
+
+    if (isPredicateType || isSubmit || isSearchForm) {
         const elm = isSubmit ? form.querySelector(".predicate") : e.target.closest('.predicate');
         try {
-            e.detail.parameters.query = predicateToJson(elm, allowEmpty);
+            if (isSearchForm) {
+                // Exclude currently selected experiments form query results
+                var wrapper = e.detail.elt.closest("[data-query='wrapper']");
+                var exclude = [...wrapper.querySelectorAll(`[data-query="results"] [name="value[]"]:checked`)].map(elt => elt.value);
+                e.detail.parameters["exclude[]"] = exclude;
+            } else {
+                e.detail.parameters.query = predicateToJson(elm, allowEmpty);
+            }
+            // Only relevant when creating a filter template
             const title = document.querySelector('#filter-form [name="title"]');
             if (title && isSubmit) {
                 if (!title.value) {
@@ -244,8 +282,17 @@ export function initFilterForm() {
             }
         })
         addRemovePredicateListener(form);
+        // Query event listeners
+        [...form.querySelectorAll("[data-query='input']")].forEach(e => addQueryPredicateListeners(e));
+        [...form.querySelectorAll("[data-query='results'] [data-id]")].forEach(e =>
+            e.querySelector(".toggle-item").addEventListener("click", () => destroySelectedQueryResult(e))
+        );
+
         form.addEventListener('htmx:afterSwap', (e) => {
             addRemovePredicateListener(e.detail.elt)
+            if (e.detail.elt.dataset.query) {
+                addQueryPredicateListeners(e.detail.elt)
+            }
             if (e.detail.target.type === "submit") {
                 updateContactCount();
             }

@@ -147,6 +147,18 @@ val find_where_contact_is_on_waitinglist
   -> Public.t list Lwt.t
 
 val session_count : Pool_database.Label.t -> Id.t -> int Lwt.t
+
+val search
+  :  Pool_database.Label.t
+  -> Id.t list
+  -> string
+  -> (Id.t * Title.t) list Lwt.t
+
+val search_multiple_by_id
+  :  Pool_database.Label.t
+  -> Pool_common.Id.t list
+  -> (Id.t * Title.t) list Lwt.t
+
 val possible_participant_count : t -> int Lwt.t
 val possible_participants : t -> Contact.t list Lwt.t
 val title_value : t -> string

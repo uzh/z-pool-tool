@@ -25,6 +25,7 @@ module Key : sig
     | Str
     | Select of Custom_field.SelectOption.t list
     | MultiSelect of Custom_field.SelectOption.t list
+    | QueryExperiments
 
   val show_input_type : input_type -> string
 
@@ -36,6 +37,7 @@ module Key : sig
     | NumInvitations
     | NumParticipations
     | NumShowUps
+    | Participation
 
   type t =
     | CustomField of Custom_field.Id.t
@@ -48,7 +50,11 @@ module Key : sig
   val pp : Format.formatter -> t -> unit
   val equal : t -> t -> bool
   val show : t -> string
-  val hardcoded_to_sql : hardcoded -> string
+
+  val hardcoded_to_single_value_sql
+    :  hardcoded
+    -> (string, Pool_common.Message.error) result
+
   val equal_human : human -> human -> bool
   val show_human : human -> string
   val type_of_key : human -> input_type
@@ -124,6 +130,8 @@ module Human : sig
     :  Key.human list
     -> Yojson.Safe.t
     -> (t, Pool_common.Message.error) result
+
+  val all_query_experiments : t -> Pool_common.Id.t list
 end
 
 val equal : t -> t -> bool
@@ -210,6 +218,8 @@ val toggle_predicate_type
   :  Human.t
   -> string
   -> (Human.t, Pool_common.Message.error) result
+
+val all_query_experiments : t -> Pool_common.Id.t list
 
 val find_filtered_contacts
   :  Pool_database.Label.t

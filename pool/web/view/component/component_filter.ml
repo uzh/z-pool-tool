@@ -5,6 +5,7 @@ module Input = Component_input
 
 let templates_disabled_key = "templates_disabled"
 let notification_id = "filter-notification"
+let as_target_id = Format.asprintf "#%s"
 let stack = "stack-sm"
 let inset = "inset-sm"
 
@@ -51,11 +52,7 @@ let htmx_attribs
   ?identifier
   ()
   =
-  let target =
-    target
-    |> CCOption.map (fun target ->
-         a_user_data "hx-target" (Format.asprintf "#%s" target))
-  in
+  let target = target |> CCOption.map (a_user_data "hx-target") in
   let hx_vals =
     let identifier =
       identifier
@@ -89,6 +86,78 @@ let htmx_attribs
   @ CCList.filter_map CCFun.id [ target ]
 ;;
 
+let search_experiment_item (id, title) =
+  let open Experiment in
+  div
+    ~a:[ a_user_data "id" (Id.value id); a_class [ "has-icon"; "inset-xs" ] ]
+    [ Component_icon.icon ~classnames:[ "toggle-item" ] `CloseCircle
+    ; span [ txt (Title.value title) ]
+    ; input
+        ~a:
+          [ a_input_type `Checkbox
+          ; a_class [ "hidden" ]
+          ; a_name Pool_common.Message.Field.(array_key Value)
+          ; a_value (Id.value id)
+          ; a_checked ()
+          ]
+        ()
+    ]
+;;
+
+let search_experiments_input ?(value = "") ?results param =
+  let result_list =
+    let wrap =
+      div
+        ~a:
+          [ a_class
+              [ "flexcolumn"
+              ; "gap-sm"
+              ; "striped"
+              ; "bg-white"
+              ; "inset-sm"
+              ; "border"
+              ; "border-radius"
+              ; "hide-empty"
+              ]
+          ]
+    in
+    match results with
+    | None -> txt ""
+    | Some [] -> txt "No results found" |> CCList.pure |> wrap
+    | Some results -> results |> CCList.map search_experiment_item |> wrap
+  in
+  div
+    ~a:[ a_class [ "flexcolumn" ]; a_user_data "query" "input" ]
+    [ input
+        ~a:
+          ([ a_input_type `Text
+           ; a_value value
+           ; a_name Pool_common.Message.Field.(show Title)
+           ; a_class [ "query-input" ]
+           ; a_placeholder "Search by experiment title"
+           ]
+          @ htmx_attribs
+              ~action:(form_action param "experiments")
+              ~trigger:"keyup changed delay:1s"
+              ~target:"closest [data-query='input']"
+              ())
+        ()
+    ; result_list
+    ]
+;;
+
+let search_experiments ?value language param ~current ?results () =
+  div
+    ~a:[ a_class [ "form-group" ]; a_user_data "query" "wrapper" ]
+    [ label
+        [ txt Pool_common.(Utils.nav_link_to_string language I18n.Experiments) ]
+    ; search_experiments_input ?value ?results param
+    ; div
+        ~a:[ a_user_data "query" "results"; a_class [ "hide-empty" ] ]
+        (CCList.map search_experiment_item current)
+    ]
+;;
+
 let select_default_option language selected =
   let attrs = if selected then [ a_selected () ] else [] in
   option
@@ -113,7 +182,7 @@ let operators_select language ?operators ?selected () =
       ()
 ;;
 
-let value_input language input_type ?value () =
+let value_input language param query_experiments input_type ?value () =
   let open Filter in
   let open CCOption.Infix in
   let field_name = Pool_common.Message.Field.Value in
@@ -224,7 +293,7 @@ let value_input language input_type ?value () =
          selected
          ()
      | Key.MultiSelect options ->
-       let[@warning "-4"] selected =
+       let selected =
          CCOption.map_or
            ~default:[]
            (fun value ->
@@ -233,7 +302,7 @@ let value_input language input_type ?value () =
              | Lst lst ->
                CCList.filter_map
                  (fun value ->
-                   match value with
+                   match[@warning "-4"] value with
                    | Option id -> find_in_options options id
                    | _ -> None)
                  lst)
@@ -253,17 +322,45 @@ let value_input language input_type ?value () =
          language
          multi_select
          field_name
-         ())
+         ()
+     | Key.QueryExperiments ->
+       let current =
+         value
+         |> CCOption.map_or ~default:[] (function
+              | Single _ -> []
+              | Lst lst ->
+                CCList.filter_map
+                  (fun value ->
+                    match[@warning "-4"] value with
+                    | Str id ->
+                      let experiment_id = id |> Experiment.Id.of_string in
+                      CCList.find_opt
+                        (fun (id, _) -> Experiment.Id.equal id experiment_id)
+                        query_experiments
+                    | _ -> None)
+                  lst)
+       in
+       search_experiments language param ~current ())
 ;;
 
-let predicate_value_form language ?key ?value ?operator () =
+let predicate_value_form
+  language
+  param
+  query_experiments
+  ?key
+  ?value
+  ?operator
+  ()
+  =
   let open CCOption.Infix in
   let input_type = key >|= Filter.Key.type_of_key in
   let operators = input_type >|= Filter.Operator.input_type_to_operator in
   let operator_select =
     operators_select language ?operators ?selected:operator ()
   in
-  let input_field = value_input language input_type ?value () in
+  let input_field =
+    value_input language param query_experiments input_type ?value ()
+  in
   div
     ~a:[ a_class [ "switcher-sm"; "flex-gap" ] ]
     [ operator_select; input_field ]
@@ -275,6 +372,7 @@ let single_predicate_form
   identifier
   key_list
   templates_disabled
+  query_experiments
   ?key
   ?operator
   ?value
@@ -282,7 +380,14 @@ let single_predicate_form
   =
   let toggle_id = format_identifiers ~prefix:"pred-s" identifier in
   let toggled_content =
-    predicate_value_form language ?key ?value ?operator ()
+    predicate_value_form
+      language
+      param
+      query_experiments
+      ?key
+      ?value
+      ?operator
+      ()
   in
   let key_selector =
     let attributes =
@@ -290,7 +395,7 @@ let single_predicate_form
         ~action:(form_action param "toggle-key")
         ~trigger:"change"
         ~swap:"innerHTML"
-        ~target:toggle_id
+        ~target:(as_target_id toggle_id)
         ~allow_empty_values:true
         ~templates_disabled
         ()
@@ -328,7 +433,7 @@ let predicate_type_select
     htmx_attribs
       ~action:(form_action experiment "toggle-predicate-type")
       ~trigger:"change"
-      ~target
+      ~target:(as_target_id target)
       ~identifier
       ~allow_empty_values:true
       ~templates_disabled
@@ -362,7 +467,7 @@ let add_predicate_btn experiment identifier templates_disabled =
           (htmx_attribs
              ~action:(form_action experiment "add-predicate")
              ~trigger:"click"
-             ~target:id
+             ~target:(as_target_id id)
              ~identifier
              ~allow_empty_values:true
              ~templates_disabled
@@ -377,6 +482,7 @@ let rec predicate_form
   key_list
   template_list
   templates_disabled
+  query_experiments
   query
   ?(identifier = [ 0 ])
   ()
@@ -400,7 +506,13 @@ let rec predicate_form
   in
   let predicate_form =
     let to_form =
-      predicate_form language param key_list template_list templates_disabled
+      predicate_form
+        language
+        param
+        key_list
+        template_list
+        templates_disabled
+        query_experiments
     in
     let open Human in
     match query with
@@ -425,6 +537,7 @@ let rec predicate_form
         identifier
         key_list
         templates_disabled
+        query_experiments
         ?key
         ?operator
         ?value
@@ -475,7 +588,7 @@ let rec predicate_form
     ]
 ;;
 
-let filter_form csrf language param key_list template_list =
+let filter_form csrf language param key_list template_list query_experiments =
   let filter, action =
     let open Experiment in
     match param with
@@ -560,6 +673,7 @@ let filter_form csrf language param key_list template_list =
       key_list
       template_list
       templates_disabled
+      query_experiments
       filter_query
       ()
   in

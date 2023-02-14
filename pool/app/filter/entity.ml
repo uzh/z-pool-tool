@@ -103,7 +103,9 @@ module Key = struct
     | Nr [@printer print "nr"]
     | Str [@printer print "str"]
     | Select of Custom_field.SelectOption.t list [@printer print "option"]
-    | MultiSelect of Custom_field.SelectOption.t list [@printer print "list"]
+    | MultiSelect of Custom_field.SelectOption.t list
+        [@printer print "multi_select"]
+    | QueryExperiments
   [@@deriving show]
 
   type hardcoded =
@@ -118,6 +120,7 @@ module Key = struct
     | NumParticipations [@printer print "num_participations"]
         [@name "num_participations"]
     | NumShowUps [@printer print "num_show_ups"] [@name "num_show_ups"]
+    | Participation [@printer print "participation"] [@name "participation"]
   [@@deriving show { with_path = false }, eq, yojson, variants, enum]
 
   type human =
@@ -187,14 +190,16 @@ module Key = struct
     | CustomField f -> Custom_field.(f |> id |> Id.value)
   ;;
 
-  let hardcoded_to_sql = function
-    | ContactLanguage -> "pool_contacts.language"
-    | Firstname -> "user_users.given_name"
-    | Name -> "user_users.name"
-    | NumAssignments -> "pool_contacts.num_assignments"
-    | NumInvitations -> "pool_contacts.num_invitations"
-    | NumParticipations -> "pool_contacts.num_participations"
-    | NumShowUps -> "pool_contacts.num_show_ups"
+  let hardcoded_to_single_value_sql = function
+    | ContactLanguage -> Ok "pool_contacts.language"
+    | Firstname -> Ok "user_users.given_name"
+    | Name -> Ok "user_users.name"
+    | NumAssignments -> Ok "pool_contacts.num_assignments"
+    | NumInvitations -> Ok "pool_contacts.num_invitations"
+    | NumParticipations -> Ok "pool_contacts.num_participations"
+    | NumShowUps -> Ok "pool_contacts.num_show_ups"
+    | Participation ->
+      Error Pool_common.Message.(QueryNotCompatible (Field.Key, Field.Value))
   ;;
 
   let type_of_hardcoded m : input_type =
@@ -203,6 +208,7 @@ module Key = struct
     | Firstname -> Str
     | Name -> Str
     | NumAssignments | NumInvitations | NumParticipations | NumShowUps -> Nr
+    | Participation -> QueryExperiments
   ;;
 
   let type_of_custom_field m : input_type =
@@ -244,6 +250,7 @@ module Key = struct
           options
         |> CCOption.to_result error
         >|= CCFun.const ()
+      | Str _, QueryExperiments -> Ok ()
       | _ -> Error error
     in
     let validate_value value input_type =
@@ -304,7 +311,8 @@ module Operator = struct
     | Key.Date | Nr ->
       [ Equal; NotEqual; Greater; GreaterEqual; Less; LessEqual ]
     | Key.Languages _ -> [ Equal; NotEqual ]
-    | MultiSelect _ -> [ ContainsAll; ContainsSome; ContainsNone ]
+    | MultiSelect _ | QueryExperiments ->
+      [ ContainsAll; ContainsSome; ContainsNone ]
     | Select _ -> [ Equal; NotEqual ]
     | Str -> [ Equal; NotEqual; Like ]
   ;;

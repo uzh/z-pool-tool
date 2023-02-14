@@ -1,4 +1,5 @@
 module Database = Pool_database
+module Dynparam = Utils.Database.Dynparam
 
 module Sql = struct
   let insert_sql =
@@ -199,6 +200,93 @@ module Sql = struct
       destroy_request
       (id |> Entity.Id.value)
   ;;
+
+  let search_request ids =
+    let base =
+      {sql|
+        SELECT
+          LOWER(CONCAT(
+            SUBSTR(HEX(pool_experiments.uuid), 1, 8), '-',
+            SUBSTR(HEX(pool_experiments.uuid), 9, 4), '-',
+            SUBSTR(HEX(pool_experiments.uuid), 13, 4), '-',
+            SUBSTR(HEX(pool_experiments.uuid), 17, 4), '-',
+            SUBSTR(HEX(pool_experiments.uuid), 21)
+          )),
+          pool_experiments.title
+        FROM pool_experiments
+        WHERE pool_experiments.title LIKE $1
+      |sql}
+    in
+    match ids with
+    | [] -> base
+    | ids ->
+      CCList.mapi
+        (fun i _ -> Format.asprintf "UNHEX(REPLACE($%i, '-', ''))" (i + 2))
+        ids
+      |> CCString.concat ","
+      |> Format.asprintf
+           {sql|
+              %s
+              AND pool_experiments.uuid NOT IN (%s)
+          |sql}
+           base
+  ;;
+
+  let search pool exclude query =
+    let open Caqti_request.Infix in
+    let dyn =
+      CCList.fold_left
+        (fun dyn id ->
+          dyn |> Dynparam.add Caqti_type.string (id |> Entity.Id.value))
+        Dynparam.(empty |> add Caqti_type.string ("%" ^ query ^ "%"))
+        exclude
+    in
+    let (Dynparam.Pack (pt, pv)) = dyn in
+    let request =
+      search_request exclude
+      |> pt ->* Caqti_type.(Repo_entity.(tup2 RepoId.t Title.t))
+    in
+    Utils.Database.collect (pool |> Database.Label.value) request pv
+  ;;
+
+  let search_multiple_by_id_request ids =
+    Format.asprintf
+      {sql|
+        SELECT
+          LOWER(CONCAT(
+            SUBSTR(HEX(pool_experiments.uuid), 1, 8), '-',
+            SUBSTR(HEX(pool_experiments.uuid), 9, 4), '-',
+            SUBSTR(HEX(pool_experiments.uuid), 13, 4), '-',
+            SUBSTR(HEX(pool_experiments.uuid), 17, 4), '-',
+            SUBSTR(HEX(pool_experiments.uuid), 21)
+          )),
+          pool_experiments.title
+        FROM pool_experiments
+        WHERE pool_experiments.uuid in ( %s )
+      |sql}
+      (CCList.map (fun _ -> Format.asprintf "UNHEX(REPLACE(?, '-', ''))") ids
+      |> CCString.concat ",")
+  ;;
+
+  let search_multiple_by_id pool ids =
+    let open Caqti_request.Infix in
+    match ids with
+    | [] -> Lwt.return []
+    | ids ->
+      let dyn =
+        CCList.fold_left
+          (fun dyn id ->
+            dyn |> Dynparam.add Caqti_type.string (id |> Pool_common.Id.value))
+          Dynparam.empty
+          ids
+      in
+      let (Dynparam.Pack (pt, pv)) = dyn in
+      let request =
+        search_multiple_by_id_request ids
+        |> pt ->* Caqti_type.(Repo_entity.(tup2 RepoId.t Title.t))
+      in
+      Utils.Database.collect (pool |> Database.Label.value) request pv
+  ;;
 end
 
 let find = Sql.find
@@ -209,5 +297,7 @@ let session_count = Sql.session_count
 let insert = Sql.insert
 let update = Sql.update
 let destroy = Sql.destroy
+let search = Sql.search
+let search_multiple_by_id = Sql.search_multiple_by_id
 
 module Id = Pool_common.Repo.Id

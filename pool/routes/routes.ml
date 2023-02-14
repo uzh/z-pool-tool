@@ -217,10 +217,13 @@ module Admin = struct
       ; choose ~scope:(add_key Location) specific
       ]
     in
-    let filter_form (toggle_key, toggle_predicate_type, add_predicate) =
+    let filter_form
+      (toggle_key, toggle_predicate_type, add_predicate, search_experiments)
+      =
       [ post "/toggle-key" toggle_key
       ; post "/toggle-predicate-type" toggle_predicate_type
       ; post "/add-predicate" add_predicate
+      ; post "/experiments" search_experiments
       ]
     in
     let filter =
@@ -230,7 +233,11 @@ module Admin = struct
           [ get "/edit" edit
           ; post "" update_template
           ; choose
-              (filter_form (toggle_key, toggle_predicate_type, add_predicate))
+              (filter_form
+                 ( toggle_key
+                 , toggle_predicate_type
+                 , add_predicate
+                 , search_experiments ))
           ]
       in
       Create.
@@ -238,7 +245,11 @@ module Admin = struct
         ; post "" ~middlewares:[ Access.create ] create_template
         ; get "/new" ~middlewares:[ Access.create ] new_form
         ; choose
-            (filter_form (toggle_key, toggle_predicate_type, add_predicate))
+            (filter_form
+               ( toggle_key
+               , toggle_predicate_type
+               , add_predicate
+               , search_experiments ))
             ~middlewares:[ Access.create ]
         ; choose
             ~middlewares:[ Access.update ]
@@ -387,7 +398,10 @@ module Admin = struct
           choose
             (filter_form
                Experiments.Filter.(
-                 toggle_key, toggle_predicate_type, add_predicate))
+                 ( toggle_key
+                 , toggle_predicate_type
+                 , add_predicate
+                 , search_experiments )))
             ~middlewares
         in
         let specific =
