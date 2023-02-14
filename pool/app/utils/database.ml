@@ -53,6 +53,21 @@ let collect db_pool request input =
       Connection.collect_list request input ||> raise_caqti_error)
 ;;
 
+let collect_and_count db_pool request input count =
+  let count_request count =
+    let open Caqti_request.Infix in
+    count |> Caqti_type.(unit ->! int)
+  in
+  let%lwt rows = collect db_pool request input in
+  let%lwt count =
+    let open CCOption.Infix in
+    count
+    >|= count_request
+    |> CCOption.map_or ~default:(Lwt.return 0) (fun sql -> find db_pool sql ())
+  in
+  Lwt.return (rows, count)
+;;
+
 let exec db_pool request input =
   let open Lwt_result.Infix in
   Sihl.Database.query

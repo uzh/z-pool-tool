@@ -2,6 +2,9 @@ module Database = Pool_database
 module Dynparam = Utils.Database.Dynparam
 
 module Sql = struct
+  (* let default_order_by = "pool_experiments.created_at" *)
+  let default_order_by = "pool_experiments.id"
+
   let insert_sql =
     {sql|
       INSERT INTO pool_experiments (
@@ -79,14 +82,39 @@ module Sql = struct
     Format.asprintf "%s %s" select_from where_fragment
   ;;
 
-  let find_all_request =
-    let open Caqti_request.Infix in
-    "" |> select_from_experiments_sql |> Caqti_type.unit ->* Repo_entity.t
+  let select_count where_fragment =
+    let select_from =
+      {sql|
+        SELECT COUNT(*)
+        FROM pool_experiments
+      |sql}
+    in
+    Format.asprintf "%s %s" select_from where_fragment
   ;;
 
-  let find_all pool =
-    Utils.Database.collect (Pool_database.Label.value pool) find_all_request
+  let find_all_request query =
+    let open Caqti_request.Infix in
+    ""
+    |> select_from_experiments_sql
+    |> Query.append_pagination_to_sql query
+    |> Caqti_type.unit ->* Repo_entity.t
   ;;
+
+  let find_all pool ?query () =
+    let open Utils.Lwt_result.Infix in
+    let pool = Pool_database.Label.value pool in
+    let request = find_all_request query in
+    match query with
+    | None ->
+      Utils.Database.collect pool request ()
+      ||> fun rows -> rows, Query.empty ()
+    | Some query ->
+      Utils.Database.collect_and_count pool request () (Some (select_count ""))
+      ||> fun (rows, count) -> rows, Query.set_page_count query count
+  ;;
+
+  (* let find_all pool ?query = Utils.Database.collect_and_count
+     (Pool_database.Label.value pool) (find_all_request query) ;; *)
 
   let find_request =
     let open Caqti_request.Infix in
