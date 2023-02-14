@@ -14,9 +14,9 @@ module Pagination = struct
   module Page = struct
     include Common.Model.Integer
 
-    let default = 0
+    let default = 1
     let field = Message.Field.Page
-    let create m = if m >= 0 then Ok m else Error (Message.Invalid field)
+    let create m = if m > 0 then Ok m else Error (Message.Invalid field)
     let schema = schema field create
   end
 
@@ -47,14 +47,14 @@ module Pagination = struct
     { limit; page; page_count }
   ;;
 
-  (* TODO[timhub]: make sure rounding is correct *)
   let set_page_count row_count t =
-    let page_count = row_count / t.limit in
+    let open CCFloat in
+    let page_count = to_int ((of_int row_count /. of_int t.limit) + 0.5) in
     { t with page_count }
   ;;
 
   let query_to_sql { limit; page; _ } =
-    let offset = limit * page in
+    let offset = limit * (page - 1) in
     Format.asprintf "LIMIT %i OFFSET %i " limit offset
   ;;
 end

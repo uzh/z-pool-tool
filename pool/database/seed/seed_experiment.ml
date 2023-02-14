@@ -214,6 +214,160 @@ let experiments pool =
          value is the sum of the signal."
       , false
       , None )
+    ; ( "30"
+      , "Finance experiment"
+      , "Students bid for an object in a first-price auction. Each receives an \
+         independently drawn signal of the value of the object. The actual \
+         value is the sum of the signal."
+      , false
+      , None )
+    ; ( "29"
+      , "Finance experiment"
+      , "Students bid for an object in a first-price auction. Each receives an \
+         independently drawn signal of the value of the object. The actual \
+         value is the sum of the signal."
+      , false
+      , None )
+    ; ( "29"
+      , "Finance experiment"
+      , "Students bid for an object in a first-price auction. Each receives an \
+         independently drawn signal of the value of the object. The actual \
+         value is the sum of the signal."
+      , false
+      , None )
+    ; ( "29"
+      , "Finance experiment"
+      , "Students bid for an object in a first-price auction. Each receives an \
+         independently drawn signal of the value of the object. The actual \
+         value is the sum of the signal."
+      , false
+      , None )
+    ; ( "29"
+      , "Finance experiment"
+      , "Students bid for an object in a first-price auction. Each receives an \
+         independently drawn signal of the value of the object. The actual \
+         value is the sum of the signal."
+      , false
+      , None )
+    ; ( "29"
+      , "Finance experiment"
+      , "Students bid for an object in a first-price auction. Each receives an \
+         independently drawn signal of the value of the object. The actual \
+         value is the sum of the signal."
+      , false
+      , None )
+    ; ( "29"
+      , "Finance experiment"
+      , "Students bid for an object in a first-price auction. Each receives an \
+         independently drawn signal of the value of the object. The actual \
+         value is the sum of the signal."
+      , false
+      , None )
+    ; ( "29"
+      , "Finance experiment"
+      , "Students bid for an object in a first-price auction. Each receives an \
+         independently drawn signal of the value of the object. The actual \
+         value is the sum of the signal."
+      , false
+      , None )
+    ; ( "29"
+      , "Finance experiment"
+      , "Students bid for an object in a first-price auction. Each receives an \
+         independently drawn signal of the value of the object. The actual \
+         value is the sum of the signal."
+      , false
+      , None )
+    ; ( "29"
+      , "Finance experiment"
+      , "Students bid for an object in a first-price auction. Each receives an \
+         independently drawn signal of the value of the object. The actual \
+         value is the sum of the signal."
+      , false
+      , None )
+    ; ( "29"
+      , "Finance experiment"
+      , "Students bid for an object in a first-price auction. Each receives an \
+         independently drawn signal of the value of the object. The actual \
+         value is the sum of the signal."
+      , false
+      , None )
+    ; ( "29"
+      , "Finance experiment"
+      , "Students bid for an object in a first-price auction. Each receives an \
+         independently drawn signal of the value of the object. The actual \
+         value is the sum of the signal."
+      , false
+      , None )
+    ; ( "29"
+      , "Finance experiment"
+      , "Students bid for an object in a first-price auction. Each receives an \
+         independently drawn signal of the value of the object. The actual \
+         value is the sum of the signal."
+      , false
+      , None )
+    ; ( "29"
+      , "Finance experiment"
+      , "Students bid for an object in a first-price auction. Each receives an \
+         independently drawn signal of the value of the object. The actual \
+         value is the sum of the signal."
+      , false
+      , None )
+    ; ( "29"
+      , "Finance experiment"
+      , "Students bid for an object in a first-price auction. Each receives an \
+         independently drawn signal of the value of the object. The actual \
+         value is the sum of the signal."
+      , false
+      , None )
+    ; ( "29"
+      , "Finance experiment"
+      , "Students bid for an object in a first-price auction. Each receives an \
+         independently drawn signal of the value of the object. The actual \
+         value is the sum of the signal."
+      , false
+      , None )
+    ; ( "29"
+      , "Finance experiment"
+      , "Students bid for an object in a first-price auction. Each receives an \
+         independently drawn signal of the value of the object. The actual \
+         value is the sum of the signal."
+      , false
+      , None )
+    ; ( "29"
+      , "Finance experiment"
+      , "Students bid for an object in a first-price auction. Each receives an \
+         independently drawn signal of the value of the object. The actual \
+         value is the sum of the signal."
+      , false
+      , None )
+    ; ( "29"
+      , "Finance experiment"
+      , "Students bid for an object in a first-price auction. Each receives an \
+         independently drawn signal of the value of the object. The actual \
+         value is the sum of the signal."
+      , false
+      , None )
+    ; ( "29"
+      , "Finance experiment"
+      , "Students bid for an object in a first-price auction. Each receives an \
+         independently drawn signal of the value of the object. The actual \
+         value is the sum of the signal."
+      , false
+      , None )
+    ; ( "29"
+      , "Finance experiment"
+      , "Students bid for an object in a first-price auction. Each receives an \
+         independently drawn signal of the value of the object. The actual \
+         value is the sum of the signal."
+      , false
+      , None )
+    ; ( "29"
+      , "Finance experiment"
+      , "Students bid for an object in a first-price auction. Each receives an \
+         independently drawn signal of the value of the object. The actual \
+         value is the sum of the signal."
+      , false
+      , None )
     ]
   in
   let events =

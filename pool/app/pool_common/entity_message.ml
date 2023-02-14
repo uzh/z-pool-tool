@@ -405,7 +405,9 @@ type control =
   | Login
   | Manage of Field.t
   | More
+  | NextPage
   | PleaseSelect
+  | PreviousPage
   | Publish of Field.t option
   | Register
   | RemoveFromWaitingList

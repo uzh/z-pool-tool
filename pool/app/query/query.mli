@@ -5,6 +5,8 @@ module Pagination : sig
 
   module Page : sig
     include Pool_common.Model.IntegerSig
+
+    val default : t
   end
 
   module PageCount : sig

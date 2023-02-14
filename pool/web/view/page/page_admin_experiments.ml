@@ -119,36 +119,37 @@ let message_templates_html
 ;;
 
 let index experiment_list Pool_context.{ language; _ } =
-  let thead =
-    Message.
-      [ Field.Title |> Table.field_to_txt language
-      ; link_as_button
-          ~style:`Success
-          ~icon:`Add
-          ~control:(language, Message.(Add (Some Field.Experiment)))
-          "/admin/experiments/create"
-      ]
-  in
-  let rows =
-    CCList.map
-      (fun (experiment : Experiment.t) ->
-        let open Experiment in
-        [ txt (Title.value experiment.title)
-        ; Format.asprintf
-            "/admin/experiments/%s"
-            (experiment.id |> Experiment.Id.value)
-          |> edit_link
-        ])
-      experiment_list
+  let experiment_table experiments =
+    let thead =
+      Message.
+        [ Field.Title |> Table.field_to_txt language
+        ; link_as_button
+            ~style:`Success
+            ~icon:`Add
+            ~control:(language, Message.(Add (Some Field.Experiment)))
+            "/admin/experiments/create"
+        ]
+    in
+    let rows =
+      CCList.map
+        (fun (experiment : Experiment.t) ->
+          let open Experiment in
+          [ txt (Title.value experiment.title)
+          ; Format.asprintf
+              "/admin/experiments/%s"
+              (experiment.id |> Experiment.Id.value)
+            |> edit_link
+          ])
+        experiments
+    in
+    Table.horizontal_table `Striped ~align_last_end:true ~thead rows
   in
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
     [ h1
         ~a:[ a_class [ "heading-1" ] ]
         [ txt (Utils.text_to_string language I18n.ExperimentListTitle) ]
-    ; div
-        ~a:[ a_class [ "stack" ] ]
-        [ Table.horizontal_table `Striped ~align_last_end:true ~thead rows ]
+    ; Component.List.create language experiment_table experiment_list
     ]
 ;;
 
