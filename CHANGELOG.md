@@ -12,8 +12,13 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 - detect unsaved changes in forms
 - send notification to contacts when there is an registration attempt with in-use email address
 - allow contacts to be filtered by experiment participation
+
+### Changed
+
 - split server command and queue worker command
+- move smtp configurations from root to tenants
 - integrate email service in tenant
+- show add configuration when not configured already
 
 ### Fixed
 
