@@ -341,6 +341,7 @@ type success =
   | RoleUnassigned
   | SentList of Field.t
   | SettingsUpdated
+  | SmtpConfigurationAdded
   | SmtpDetailsUpdated
   | SmtpPasswordUpdated
   | Stopped of Field.t

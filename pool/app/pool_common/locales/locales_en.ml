@@ -210,6 +210,7 @@ let success_to_string : success -> string = function
   | SentList field ->
     field_message "" (field_to_string field) "were successfully sent."
   | SettingsUpdated -> "Settings were updated successfully."
+  | SmtpConfigurationAdded -> "The SMTP configuration was added successfully."
   | SmtpDetailsUpdated -> "SMTP settings successfully updated."
   | SmtpPasswordUpdated -> "SMTP password successfully updated."
   | Stopped field ->

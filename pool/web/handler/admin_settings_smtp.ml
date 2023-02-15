@@ -11,19 +11,58 @@ let show req =
   let result ({ Pool_context.database_label; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, "/")
     @@
+    let open Page.Admin.Settings.Smtp in
     let flash_fetcher = CCFun.flip Sihl.Web.Flash.find req in
     SmtpAuth.find_by_label database_label
-    >|+ Page.Admin.Settings.Smtp.show context flash_fetcher
-    >>= General.create_tenant_layout req ~active_navigation context
+    ||> (function
+          | Ok smtp -> show context flash_fetcher smtp
+          | Error _ -> smtp_create_form context flash_fetcher)
+    >|> General.create_tenant_layout req ~active_navigation context
     >|+ Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path req
 ;;
 
-let update command success_message req =
+let create ?(redirect_path = active_navigation) req =
   let tags = Logger.req req in
   let result { Pool_context.database_label; _ } =
-    let redirect_path = "/admin/settings/smtp" in
+    let validate () =
+      SmtpAuth.find_by_label database_label
+      ||> function
+      | Ok _ -> Error (Pool_common.Message.Invalid Field.Smtp)
+      | Error _ -> Ok ()
+    in
+    let%lwt urlencoded =
+      Sihl.Web.Request.to_urlencoded req
+      ||> HttpUtils.remove_empty_values
+      ||> CCList.cons
+            ("smtp_label", [ Pool_database.Label.value database_label ])
+    in
+    let events () =
+      let open CCResult.Infix in
+      Command.Create.(decode urlencoded >>= handle ~tags)
+    in
+    let handle =
+      Lwt_list.iter_s (Pool_event.handle_event ~tags database_label)
+    in
+    let return_to_overview () =
+      HttpUtils.redirect_to_with_actions
+        redirect_path
+        [ Message.set ~success:[ Pool_common.Message.SmtpConfigurationAdded ] ]
+    in
+    validate ()
+    >== events
+    >|- (fun err -> err, redirect_path)
+    |>> handle
+    |>> return_to_overview
+  in
+  result |> HttpUtils.extract_happy_path req
+;;
+
+let update_base ?(redirect_path = active_navigation) command success_message req
+  =
+  let tags = Logger.req req in
+  let result { Pool_context.database_label; _ } =
     let id =
       HttpUtils.get_field_router_param req Field.Smtp |> SmtpAuth.Id.of_string
     in
@@ -58,10 +97,10 @@ let update command success_message req =
 ;;
 
 let update_password =
-  update `UpdatePassword Pool_common.Message.SmtpPasswordUpdated
+  update_base `UpdatePassword Pool_common.Message.SmtpPasswordUpdated
 ;;
 
-let update = update `UpdateDetails Pool_common.Message.SmtpDetailsUpdated
+let update = update_base `UpdateDetails Pool_common.Message.SmtpDetailsUpdated
 
 module Access : Helpers.AccessSig = struct
   module Guardian = Middleware.Guardian

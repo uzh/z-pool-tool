@@ -128,3 +128,63 @@ let show
     ; div ~a:[ a_class [ "stack" ] ] [ smtp_details; smtp_password ]
     ]
 ;;
+
+let smtp_create_form
+  ?(settings_path = "/admin/settings")
+  Pool_context.{ language; csrf; _ }
+  flash_fetcher
+  =
+  let action_path =
+    Sihl.Web.externalize_path (Format.asprintf "%s/smtp/create" settings_path)
+  in
+  let submit () =
+    div
+      ~a:[ a_class [ "flexrow" ] ]
+      [ submit_element
+          ~has_icon:`Save
+          ~classnames:[ "push" ]
+          language
+          Message.(Create None)
+          ()
+      ]
+  in
+  let create_form =
+    let open SmtpAuth in
+    let required = true in
+    form
+      ~a:
+        [ a_method `Post
+        ; a_action action_path
+        ; a_class [ "stack" ]
+        ; a_user_data "detect-unsaved-changes" ""
+        ]
+      [ csrf_element csrf ()
+      ; input_element ~required ~flash_fetcher language `Text Field.SmtpServer
+      ; input_element ~required ~flash_fetcher language `Number Field.SmtpPort
+      ; input_element ~flash_fetcher language `Text Field.SmtpUsername
+      ; input_element language `Password Field.SmtpPassword
+      ; selector
+          ~required
+          language
+          Field.SmtpMechanism
+          Mechanism.show
+          Mechanism.all
+          None
+          ()
+      ; selector
+          ~required
+          language
+          Field.SmtpProtocol
+          Protocol.show
+          Protocol.all
+          None
+          ()
+      ; submit ()
+      ]
+  in
+  div
+    ~a:[ a_class [ "trim"; "narrow"; "safety-margin" ] ]
+    [ h1 ~a:[ a_class [ "heading-1" ] ] [ txt "Configure Email Server (SMTP)" ]
+    ; div ~a:[ a_class [ "stack" ] ] [ div [ create_form ] ]
+    ]
+;;

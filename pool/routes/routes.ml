@@ -569,6 +569,7 @@ module Admin = struct
           ]
         in
         [ get "" ~middlewares:[ Access.index ] show
+        ; post "/create" ~middlewares:[ Access.create ] create
         ; choose ~scope:(Smtp |> url_key) specific
         ]
       in
@@ -665,6 +666,7 @@ module Root = struct
       let smtp =
         let open Handler.Root.Settings in
         [ get "" ~middlewares:[ Access.index ] show_smtp
+        ; post "/create" ~middlewares:[ Access.create ] create_smtp
         ; post "/:smtp" ~middlewares:[ Access.update ] update_smtp
         ; post
             "/:smtp/password"
