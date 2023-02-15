@@ -39,25 +39,65 @@ module Password = struct
 end
 
 module Mechanism = struct
-  include Pool_common.Model.String
+  let go m fmt _ = Format.pp_print_string fmt m
 
-  let field = PoolError.Field.SmtpMechanism
-  let schema = schema ?validation:None field
-  let show _ = "<opaque>"
+  (* Open NTLM protocol issue: https://github.com/mirage/colombe/issues/63 *)
+  type t =
+    | PLAIN [@name "PLAIN"] [@printer go "PLAIN"]
+    | LOGIN [@name "LOGIN"] [@printer go "LOGIN"]
+  [@@deriving enum, eq, sexp_of, show { with_path = false }, yojson]
+
+  let read m =
+    m |> Format.asprintf "[\"%s\"]" |> Yojson.Safe.from_string |> t_of_yojson
+  ;;
+
+  let all : t list =
+    CCList.range min max
+    |> CCList.map of_enum
+    |> CCList.all_some
+    |> CCOption.get_exn_or
+         "SMTP auth mechanism: Could not create list of all keys!"
+  ;;
+
+  let schema () =
+    Pool_common.Utils.schema_decoder
+      CCFun.(read %> CCResult.pure)
+      show
+      PoolError.Field.SmtpMechanism
+  ;;
+
+  let to_sendmail = function
+    | PLAIN -> Sendmail.PLAIN
+    | LOGIN -> Sendmail.LOGIN
+  ;;
 end
 
 module Protocol = struct
-  include Pool_common.Model.String
+  let go m fmt _ = Format.pp_print_string fmt m
 
-  let field = PoolError.Field.SmtpProtocol
+  type t =
+    | STARTTLS [@name "STARTTLS"] [@printer go "STARTTLS"]
+    | SSL_TLS [@name "SSL/TLS"] [@printer go "SSL/TLS"]
+  [@@deriving enum, eq, sexp_of, show { with_path = false }, yojson]
 
-  let create protocol =
-    if CCList.mem protocol [ "STARTTLS"; "SSL/TLS" ]
-    then Ok protocol
-    else Error PoolError.(Invalid field)
+  let read m =
+    m |> Format.asprintf "[\"%s\"]" |> Yojson.Safe.from_string |> t_of_yojson
   ;;
 
-  let schema = schema ~validation:create field
+  let all : t list =
+    CCList.range min max
+    |> CCList.map of_enum
+    |> CCList.all_some
+    |> CCOption.get_exn_or
+         "SMTP auth mechanism: Could not create list of all keys!"
+  ;;
+
+  let schema () =
+    Pool_common.Utils.schema_decoder
+      CCFun.(read %> CCResult.pure)
+      show
+      PoolError.Field.SmtpProtocol
+  ;;
 end
 
 type t =

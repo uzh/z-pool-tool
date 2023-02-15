@@ -115,6 +115,7 @@ Html:
       { Sihl.Contract.Email.sender; recipient; subject; text; html; cc; bcc }
       =
       let open Utils.Lwt_result.Infix in
+      let open SmtpAuth in
       let recipients =
         CCList.concat
           [ [ Letters.To recipient ]
@@ -139,33 +140,21 @@ Html:
           accounts := AccountMap.add database_label from_repo !accounts;
           Lwt.return from_repo
       in
-      let username =
-        CCOption.(SmtpAuth.(config.Write.username >|= Username.value))
-      in
-      let password =
-        CCOption.(SmtpAuth.(config.Write.password >|= Password.value))
-      in
-      let hostname = SmtpAuth.(Server.value config.Write.server) in
-      let port = Some SmtpAuth.(Port.value config.Write.port) in
+      let username = CCOption.(config.Write.username >|= Username.value) in
+      let password = CCOption.(config.Write.password >|= Password.value) in
+      let hostname = Server.value config.Write.server in
+      let port = Some (Port.value config.Write.port) in
       let mechanism =
-        SmtpAuth.(Mechanism.value config.Write.mechanism)
-        |> function
-        | "LOGIN" when CCOption.is_none username || CCOption.is_none password ->
+        if Mechanism.(equal LOGIN) config.Write.mechanism
+           && (CCOption.is_none username || CCOption.is_none password)
+        then
           raise
             (Sihl.Contract.Email.Exception
                "SMTP auth mechanism cannot be set to LOGIN when no username or \
                 password is set.")
-        | "LOGIN" -> Sendmail.LOGIN
-        | "PLAIN" -> Sendmail.PLAIN
-        | _ ->
-          raise
-            (Sihl.Contract.Email.Exception
-               "SMTP Authentication mechanism not set")
+        else Mechanism.to_sendmail config.Write.mechanism
       in
-      let with_starttls =
-        CCString.uppercase_ascii SmtpAuth.(Protocol.value config.Write.protocol)
-        |> CCString.equal "STARTTLS"
-      in
+      let with_starttls = Protocol.(equal STARTTLS) config.Write.protocol in
       let config =
         Letters.Config.create
           ~mechanism

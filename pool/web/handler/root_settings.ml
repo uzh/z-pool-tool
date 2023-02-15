@@ -6,7 +6,8 @@ module Message = HttpUtils.Message
 module SmtpAuth = Pool_tenant.SmtpAuth
 
 let root_path = "/root"
-let active_navigation = "/root/settings"
+let settings_path = "/root/settings"
+let active_navigation = "/root/settings/smtp"
 
 let show_smtp req =
   let result ({ Pool_context.database_label; _ } as context) =
@@ -14,10 +15,7 @@ let show_smtp req =
     @@
     let flash_fetcher = CCFun.flip Sihl.Web.Flash.find req in
     SmtpAuth.find_by_label database_label
-    >|+ Page.Admin.Settings.Smtp.show
-          ~settings_path:active_navigation
-          context
-          flash_fetcher
+    >|+ Page.Admin.Settings.Smtp.show ~settings_path context flash_fetcher
     >|+ General.create_root_layout ~active_navigation context
     >|+ Sihl.Web.Response.of_html
   in
@@ -27,7 +25,6 @@ let show_smtp req =
 let update command success_message req =
   let tags = Logger.req req in
   let result _ =
-    let redirect_path = "/root/settings/smtp" in
     let id =
       HttpUtils.get_field_router_param req Field.Smtp |> SmtpAuth.Id.of_string
     in
@@ -49,12 +46,12 @@ let update command success_message req =
     in
     let return_to_overview () =
       HttpUtils.redirect_to_with_actions
-        redirect_path
+        active_navigation
         [ Message.set ~success:[ success_message ] ]
     in
     validate id
     >== events
-    >|- (fun err -> err, redirect_path)
+    >|- (fun err -> err, active_navigation)
     |>> handle
     |>> return_to_overview
   in

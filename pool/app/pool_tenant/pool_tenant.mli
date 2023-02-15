@@ -8,8 +8,44 @@ module SmtpAuth : sig
   module Port : Pool_common.Model.IntegerSig
   module Username : Pool_common.Model.StringSig
   module Password : Pool_common.Model.StringSig
-  module Mechanism : Pool_common.Model.StringSig
-  module Protocol : Pool_common.Model.StringSig
+
+  module Mechanism : sig
+    type t =
+      | PLAIN
+      | LOGIN
+
+    val equal : t -> t -> bool
+    val pp : Format.formatter -> t -> unit
+    val show : t -> string
+    val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+    val t_of_yojson : Yojson.Safe.t -> t
+    val yojson_of_t : t -> Yojson.Safe.t
+    val read : string -> t
+    val all : t list
+
+    val schema
+      :  unit
+      -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
+  end
+
+  module Protocol : sig
+    type t =
+      | STARTTLS
+      | SSL_TLS
+
+    val equal : t -> t -> bool
+    val pp : Format.formatter -> t -> unit
+    val show : t -> string
+    val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+    val t_of_yojson : Yojson.Safe.t -> t
+    val yojson_of_t : t -> Yojson.Safe.t
+    val read : string -> t
+    val all : t list
+
+    val schema
+      :  unit
+      -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
+  end
 
   type t =
     { id : Id.t

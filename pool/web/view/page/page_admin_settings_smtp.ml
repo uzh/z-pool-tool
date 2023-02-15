@@ -75,8 +75,22 @@ let show
               language
               `Text
               Field.SmtpUsername
-          ; input_element_root Field.SmtpMechanism Mechanism.value mechanism
-          ; input_element_root Field.SmtpProtocol Protocol.value protocol
+          ; selector
+              ~required:true
+              language
+              Field.SmtpMechanism
+              Mechanism.show
+              Mechanism.all
+              (Some mechanism)
+              ()
+          ; selector
+              ~required:true
+              language
+              Field.SmtpProtocol
+              Protocol.show
+              Protocol.all
+              (Some protocol)
+              ()
           ; submit ()
           ]
       ]

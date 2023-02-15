@@ -3,6 +3,7 @@ module Pool_tenant_command = Cqrs_command.Pool_tenant_command
 module Admin_command = Cqrs_command.Admin_command
 module HttpUtils = Http_utils
 module Common = Pool_common
+module SmtpAuth = Pool_tenant.SmtpAuth
 
 module Data = struct
   open Database.SeedAssets
@@ -66,14 +67,14 @@ module Data = struct
   ;;
 
   module Smtp = struct
-    let id = Pool_tenant.SmtpAuth.Id.create ()
+    let id = SmtpAuth.Id.create ()
     let label = database_label
     let server = "smtp.uzh.ch"
     let port = 587
     let username = "engineering@econ.uzh.ch"
     let password = "emailemail"
-    let mechanism = "LOGIN"
-    let protocol = "STARTTLS"
+    let mechanism = SmtpAuth.Mechanism.LOGIN, "login"
+    let protocol = SmtpAuth.Protocol.STARTTLS, "STARTTLS"
 
     let urlencoded =
       let open Common.Message in
@@ -82,8 +83,8 @@ module Data = struct
       ; Field.SmtpPort, [ port |> CCInt.to_string ]
       ; Field.SmtpUsername, [ username ]
       ; Field.SmtpPassword, [ password ]
-      ; Field.SmtpMechanism, [ mechanism ]
-      ; Field.SmtpProtocol, [ protocol ]
+      ; Field.SmtpMechanism, [ snd mechanism ]
+      ; Field.SmtpProtocol, [ snd protocol ]
       ]
       |> CCList.map (CCPair.map_fst Field.show)
     ;;
@@ -101,8 +102,8 @@ module Data = struct
         let* password =
           password |> Password.create |> CCResult.map CCOption.pure
         in
-        let* mechanism = mechanism |> Mechanism.create in
-        let* protocol = protocol |> Protocol.create in
+        let mechanism = fst mechanism in
+        let protocol = fst protocol in
         Write.create ~id label server port username password mechanism protocol
       in
       auth |> CCResult.get_exn
@@ -195,30 +196,7 @@ module Data = struct
   ;;
 end
 
-let create_smtp_auth_invalid () =
-  let open Pool_tenant.SmtpAuth in
-  let smtp_auth =
-    let open CCResult in
-    let* label = Data.Smtp.label |> Label.create in
-    let* server = Data.Smtp.server |> Server.create in
-    let* port = Data.Smtp.port |> Port.create in
-    let* username =
-      Data.Smtp.username |> Username.create |> CCResult.map CCOption.pure
-    in
-    let* mechanism = Data.Smtp.mechanism |> Mechanism.create in
-    let* protocol = "http" |> Protocol.create in
-    Ok { id = Data.Smtp.id; label; server; port; username; mechanism; protocol }
-  in
-  let expected = Error Common.Message.(Invalid Field.SmtpProtocol) in
-  Alcotest.(
-    check
-      (result Test_utils.tenant_smtp_auth Test_utils.error)
-      "succeeds"
-      expected
-      smtp_auth)
-;;
-
-let create_smtp_auth_valid () =
+let create_smtp_auth () =
   let open Pool_tenant in
   let events =
     let open CCResult in

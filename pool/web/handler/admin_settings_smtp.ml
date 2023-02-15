@@ -5,7 +5,7 @@ module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 module SmtpAuth = Pool_tenant.SmtpAuth
 
-let active_navigation = "/admin/settings"
+let active_navigation = "/admin/settings/smtp"
 
 let show req =
   let result ({ Pool_context.database_label; _ } as context) =
