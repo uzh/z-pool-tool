@@ -85,6 +85,7 @@ type nav_link =
   | Profile
   | Sessions
   | Settings
+  | Smtp
   | SystemSettings
   | Tenants
   | Users

@@ -89,7 +89,7 @@ module ToggleStatus : sig
     -> Admin.t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val effects : Guard.Authorizer.effect list
+  val effects : Pool_common.Id.t -> Guard.Authorizer.effect list
 end = struct
   type t = Admin.t
 
@@ -102,5 +102,10 @@ end = struct
     | Inactive -> Ok [ Admin.Enabled admin |> Pool_event.admin ]
   ;;
 
-  let effects = [ `Manage, `TargetEntity `System ]
+  let effects id =
+    [ `Update, `Target (id |> Guard.Uuid.target_of Pool_common.Id.value)
+    ; `Update, `TargetEntity `System
+    ; `Update, `TargetEntity (`Admin `Operator)
+    ]
+  ;;
 end

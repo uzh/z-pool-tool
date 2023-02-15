@@ -134,7 +134,7 @@ let denied req =
          query_language
          None
      | false, Error _ | true, Ok _ | true, Error _ ->
-       Page.Layout.create_root_layout html language None Pool_context.Guest ())
+       Page.Layout.Root.create_layout Pool_context.Guest None html)
     |> Sihl.Web.Response.of_html
     |> Lwt.return
 ;;

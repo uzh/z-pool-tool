@@ -46,8 +46,8 @@ module Password = struct
   ;;
 end
 
-module AuthenticationMethod = struct
-  include AuthenticationMethod
+module Mechanism = struct
+  include Mechanism
 
   let t = Pool_common.Repo.caqti_type_t Caqti_type.string create value
 end
@@ -62,16 +62,11 @@ let t =
   let encode (m : t) =
     Ok
       ( m.id
-      , ( m.label
-        , ( m.server
-          , (m.port, (m.username, (m.authentication_method, m.protocol))) ) ) )
+      , (m.label, (m.server, (m.port, (m.username, (m.mechanism, m.protocol)))))
+      )
   in
-  let decode
-    ( id
-    , (label, (server, (port, (username, (authentication_method, protocol)))))
-    )
-    =
-    Ok { id; label; server; port; username; authentication_method; protocol }
+  let decode (id, (label, (server, (port, (username, (mechanism, protocol)))))) =
+    Ok { id; label; server; port; username; mechanism; protocol }
   in
   Caqti_type.(
     custom
@@ -85,9 +80,7 @@ let t =
                Server.t
                (tup2
                   Port.t
-                  (tup2
-                     (option Username.t)
-                     (tup2 AuthenticationMethod.t Protocol.t)))))))
+                  (tup2 (option Username.t) (tup2 Mechanism.t Protocol.t)))))))
 ;;
 
 module Write = struct
@@ -99,28 +92,16 @@ module Write = struct
         ( m.id
         , ( m.label
           , ( m.server
-            , ( m.port
-              , (m.username, (m.password, (m.authentication_method, m.protocol)))
-              ) ) ) )
+            , (m.port, (m.username, (m.password, (m.mechanism, m.protocol)))) )
+          ) )
     in
     let decode
       ( id
-      , ( label
-        , ( server
-          , (port, (username, (password, (authentication_method, protocol)))) )
-        ) )
+      , (label, (server, (port, (username, (password, (mechanism, protocol))))))
+      )
       =
       let open CCResult in
-      Ok
-        { id
-        ; label
-        ; server
-        ; port
-        ; username
-        ; password
-        ; authentication_method
-        ; protocol
-        }
+      Ok { id; label; server; port; username; password; mechanism; protocol }
     in
     Caqti_type.(
       custom
@@ -136,8 +117,6 @@ module Write = struct
                     Port.t
                     (tup2
                        (option Username.t)
-                       (tup2
-                          (option Password.t)
-                          (tup2 AuthenticationMethod.t Protocol.t))))))))
+                       (tup2 (option Password.t) (tup2 Mechanism.t Protocol.t))))))))
   ;;
 end

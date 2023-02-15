@@ -11,7 +11,7 @@ end
 module Server = struct
   include Pool_common.Model.String
 
-  let field = PoolError.Field.SmtpAuthServer
+  let field = PoolError.Field.SmtpServer
   let schema = schema ?validation:None field
 end
 
@@ -38,10 +38,10 @@ module Password = struct
   let show _ = "<opaque>"
 end
 
-module AuthenticationMethod = struct
+module Mechanism = struct
   include Pool_common.Model.String
 
-  let field = PoolError.Field.SmtpAuthMethod
+  let field = PoolError.Field.SmtpMechanism
   let schema = schema ?validation:None field
   let show _ = "<opaque>"
 end
@@ -66,7 +66,7 @@ type t =
   ; server : Server.t
   ; port : Port.t
   ; username : Username.t option [@sexp.option]
-  ; authentication_method : AuthenticationMethod.t
+  ; mechanism : Mechanism.t
   ; protocol : Protocol.t
   }
 [@@deriving eq, show, sexp_of]
@@ -85,21 +85,12 @@ module Write = struct
     ; port : Port.t
     ; username : Username.t option
     ; password : Password.t option [@opaque]
-    ; authentication_method : AuthenticationMethod.t
+    ; mechanism : Mechanism.t
     ; protocol : Protocol.t
     }
   [@@deriving eq, show]
 
-  let create
-    ?id
-    label
-    server
-    port
-    username
-    password
-    authentication_method
-    protocol
-    =
+  let create ?id label server port username password mechanism protocol =
     Ok
       { id = id |> CCOption.value ~default:(Id.create ())
       ; label
@@ -107,7 +98,7 @@ module Write = struct
       ; port
       ; username
       ; password
-      ; authentication_method
+      ; mechanism
       ; protocol
       }
   ;;

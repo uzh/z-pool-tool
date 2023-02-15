@@ -2,6 +2,11 @@ module CustomMiddleware = Middleware
 open Sihl.Web
 module Field = Pool_common.Message.Field
 
+let validate_entity action entity =
+  CustomMiddleware.Guardian.validate_admin_entity
+    [ action, `TargetEntity entity ]
+;;
+
 let add_key ?(prefix = "") ?(suffix = "") field =
   let open Field in
   [ prefix; field |> url_key; suffix ]
@@ -162,11 +167,6 @@ module Contact = struct
 end
 
 module Admin = struct
-  let validate_entity action entity =
-    CustomMiddleware.Guardian.validate_admin_entity
-      [ action, `TargetEntity entity ]
-  ;;
-
   let require_read = validate_entity `Read
 
   let middlewares =
@@ -561,8 +561,20 @@ module Admin = struct
     in
     let settings =
       let open Settings in
+      let smtp =
+        let open Smtp in
+        let specific =
+          [ post "" ~middlewares:[ Access.update ] update
+          ; post "/password" ~middlewares:[ Access.update ] update_password
+          ]
+        in
+        [ get "" ~middlewares:[ Access.index ] show
+        ; choose ~scope:(Smtp |> url_key) specific
+        ]
+      in
       [ get "" ~middlewares:[ Access.index ] show
       ; post "/:action" ~middlewares:[ Access.update ] update_settings
+      ; choose ~scope:"/smtp" smtp
       ]
     in
     choose
@@ -582,11 +594,6 @@ module Admin = struct
 end
 
 module Root = struct
-  let validate_entity action entity =
-    CustomMiddleware.Guardian.validate_admin_entity
-      [ action, `TargetEntity entity ]
-  ;;
-
   let middlewares =
     [ CustomMiddleware.Root.from_root_only ()
     ; CustomMiddleware.Context.context ()
@@ -612,63 +619,66 @@ module Root = struct
   let locked_routes =
     let open Field in
     let open Handler.Root in
-    let build_route appendix =
-      Format.asprintf "%s/%s" (Tenant |> url_key) appendix
-    in
     let tenants =
+      let open Tenant in
       let specific =
-        Tenant.
-          [ get "" ~middlewares:[ Access.read ] tenant_detail
-          ; get
-              ~middlewares:[ Access.read_operator ]
-              "operator"
-              manage_operators
-          ; post
-              "create-operator"
-              ~middlewares:[ Access.create_operator ]
-              create_operator
-          ; post
-              "update-detail"
-              ~middlewares:[ Access.update ]
-              Update.update_detail
-          ; post
-              "update-database"
-              ~middlewares:[ Access.update ]
-              Update.update_database
-          ]
-      in
-      Tenant.
-        [ get "" ~middlewares:[ Access.index ] Tenant.tenants
-        ; post "/create" ~middlewares:[ Access.create ] Tenant.create
-        ; choose ~scope:(Tenant |> url_key) specific
+        [ get "" ~middlewares:[ Access.read ] tenant_detail
+        ; get ~middlewares:[ Access.read_operator ] "operator" manage_operators
         ; post
-            (build_route
-               (Format.asprintf "assets/%s/delete" (AssetId |> url_key)))
+            "/create-operator"
+            ~middlewares:[ Access.create_operator ]
+            create_operator
+        ; post
+            "/update-detail"
+            ~middlewares:[ Access.update ]
+            Update.update_detail
+        ; post
+            "/update-database"
+            ~middlewares:[ Access.update ]
+            Update.update_database
+        ; post
+            (Format.asprintf "/assets/%s/delete" (AssetId |> url_key))
             ~middlewares:[ Access.update ]
             Tenant.Update.delete_asset
         ]
-    in
-    let root =
-      [ post
-          "/create"
-          ~middlewares:[ validate_entity `Create `System ]
-          Root.create
-      ; post
-          (Format.asprintf "/%s/toggle-status" (Root |> url_key))
-          ~middlewares:[ validate_entity `Update `System ]
-          Root.toggle_status
+      in
+      [ get "" ~middlewares:[ Access.index ] Tenant.tenants
+      ; post "/create" ~middlewares:[ Access.create ] Tenant.create
+      ; choose ~scope:(Tenant |> url_key) specific
       ]
+    in
+    let users =
+      let open Users in
+      let specific =
+        [ post
+            "/toggle-status"
+            ~middlewares:[ Access.toggle_status ]
+            toggle_status
+        ]
+      in
+      [ get "" ~middlewares:[ Access.read ] index
+      ; post "/create" ~middlewares:[ Access.create ] create
+      ; choose ~scope:(Root |> url_key) specific
+      ]
+    in
+    let settings =
+      let smtp =
+        let open Handler.Root.Settings in
+        [ get "" ~middlewares:[ Access.index ] show_smtp
+        ; post "/:smtp" ~middlewares:[ Access.update ] update_smtp
+        ; post
+            "/:smtp/password"
+            ~middlewares:[ Access.update ]
+            update_smtp_password
+        ]
+      in
+      [ choose ~scope:"/smtp" smtp ]
     in
     [ choose
         [ get "/logout" Login.logout
-        ; choose
-            ~scope:"tenants"
-            ~middlewares:[ validate_entity `Read `Tenant ]
-            tenants
-        ; choose
-            ~scope:"root"
-            ~middlewares:[ validate_entity `Read `System ]
-            root
+        ; choose ~scope:"/settings" settings
+        ; choose ~scope:"/tenants" tenants
+        ; choose ~scope:"/users" users
         ]
     ]
   ;;
@@ -676,7 +686,12 @@ module Root = struct
   let routes =
     choose
       ~middlewares
-      [ choose public_routes
+      [ choose
+          ~middlewares:
+            [ CustomMiddleware.Guardian.require_user_type_of
+                Pool_context.UserType.[ Guest ]
+            ]
+          public_routes
       ; choose ~middlewares:locked_middlewares locked_routes
       ]
   ;;

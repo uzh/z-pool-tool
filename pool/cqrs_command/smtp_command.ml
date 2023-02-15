@@ -10,7 +10,7 @@ module Create : sig
     ; port : SmtpAuth.Port.t
     ; username : SmtpAuth.Username.t option
     ; password : SmtpAuth.Password.t option
-    ; authentication_method : SmtpAuth.AuthenticationMethod.t
+    ; mechanism : SmtpAuth.Mechanism.t
     ; protocol : SmtpAuth.Protocol.t
     }
 
@@ -32,15 +32,14 @@ end = struct
     ; port : SmtpAuth.Port.t
     ; username : SmtpAuth.Username.t option
     ; password : SmtpAuth.Password.t option
-    ; authentication_method : SmtpAuth.AuthenticationMethod.t
+    ; mechanism : SmtpAuth.Mechanism.t
     ; protocol : SmtpAuth.Protocol.t
     }
 
   type t = create
 
-  let command label server port username password authentication_method protocol
-    =
-    { label; server; port; username; password; authentication_method; protocol }
+  let command label server port username password mechanism protocol =
+    { label; server; port; username; password; mechanism; protocol }
   ;;
 
   let schema =
@@ -52,7 +51,7 @@ end = struct
           ; SmtpAuth.Port.schema ()
           ; Conformist.optional @@ SmtpAuth.Username.schema ()
           ; Conformist.optional @@ SmtpAuth.Password.schema ()
-          ; SmtpAuth.AuthenticationMethod.schema ()
+          ; SmtpAuth.Mechanism.schema ()
           ; SmtpAuth.Protocol.schema ()
           ]
         command)
@@ -68,7 +67,7 @@ end = struct
       command.port
       command.username
       command.password
-      command.authentication_method
+      command.mechanism
       command.protocol
     >|= fun smtp -> [ Pool_tenant.SmtpCreated smtp |> Pool_event.pool_tenant ]
   ;;
@@ -81,7 +80,7 @@ end = struct
   ;;
 end
 
-module Edit : sig
+module Update : sig
   include Common.CommandSig with type t = SmtpAuth.t
 
   val handle
@@ -97,15 +96,8 @@ module Edit : sig
 end = struct
   type t = SmtpAuth.t
 
-  let command id label server port username authentication_method protocol =
-    { SmtpAuth.id
-    ; label
-    ; server
-    ; port
-    ; username
-    ; authentication_method
-    ; protocol
-    }
+  let command id label server port username mechanism protocol =
+    { SmtpAuth.id; label; server; port; username; mechanism; protocol }
   ;;
 
   let schema =
@@ -117,7 +109,7 @@ end = struct
           ; SmtpAuth.Server.schema ()
           ; SmtpAuth.Port.schema ()
           ; Conformist.optional @@ SmtpAuth.Username.schema ()
-          ; SmtpAuth.AuthenticationMethod.schema ()
+          ; SmtpAuth.Mechanism.schema ()
           ; SmtpAuth.Protocol.schema ()
           ]
         command)
@@ -131,7 +123,7 @@ end = struct
       ; server = command.SmtpAuth.server
       ; port = command.SmtpAuth.port
       ; username = command.SmtpAuth.username
-      ; authentication_method = command.SmtpAuth.authentication_method
+      ; mechanism = command.SmtpAuth.mechanism
       ; protocol = command.SmtpAuth.protocol
       }
     in

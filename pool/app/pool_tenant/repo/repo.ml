@@ -292,7 +292,7 @@ module Sql = struct
               port,
               username,
               %s
-              authentication_method,
+              mechanism,
               protocol
             FROM pool_smtp
           |sql}
@@ -356,7 +356,7 @@ module Sql = struct
           port,
           username,
           password,
-          authentication_method,
+          mechanism,
           protocol
         ) VALUES (
           UNHEX(REPLACE(?, '-', '')),
@@ -385,7 +385,7 @@ module Sql = struct
           server = $3,
           port = $4,
           username = $5,
-          authentication_method = $6,
+          mechanism = $6,
           protocol = $7
         WHERE
           uuid = UNHEX(REPLACE($1, '-', ''))

@@ -5,7 +5,7 @@ module File = Pool_common.File
 module Id = Pool_tenant.Id
 module Message = Pool_common.Message
 
-let list tenant_list root_list Pool_context.{ language; csrf; _ } =
+let list tenant_list Pool_context.{ language; csrf; _ } =
   let build_tenant_rows tenant_list =
     let thead =
       Pool_common.Message.
@@ -29,53 +29,9 @@ let list tenant_list root_list Pool_context.{ language; csrf; _ } =
     in
     Table.horizontal_table `Striped ~thead ~align_last_end:true body
   in
-  let build_root_rows root_list =
-    let open Sihl.Contract.User in
-    let status_toggle (status : Sihl.Contract.User.status) id =
-      let text, style =
-        match status with
-        | Active -> Message.Disable, "error"
-        | Inactive -> Message.Enable, "primary"
-      in
-      form
-        ~a:
-          [ a_action
-              (Sihl.Web.externalize_path
-                 (Format.asprintf "/root/root/%s/toggle-status" id))
-          ; a_method `Post
-          ; a_class [ "stack" ]
-          ]
-        [ submit_element language text ~classnames:[ style ] () ]
-    in
-    let thead =
-      Pool_common.Message.[ Field.Email |> Table.field_to_txt language; txt "" ]
-    in
-    let rows =
-      CCList.map
-        (fun root ->
-          let user = root |> Admin.user in
-          let status = status_toggle user.status user.id in
-          [ txt user.email; status ])
-        root_list
-    in
-    Component.Table.horizontal_table `Striped rows ~align_last_end:true ~thead
-  in
   let tenant_list = build_tenant_rows tenant_list in
-  let root_list = build_root_rows root_list in
   let text_fields =
-    Message.Field.
-      [ Title
-      ; Description
-      ; Url
-      ; DatabaseUrl
-      ; DatabaseLabel
-      ; SmtpAuthServer
-      ; SmtpPort
-      ; SmtpUsername
-      ; SmtpPassword
-      ; SmtpAuthMethod
-      ; SmtpProtocol
-      ]
+    Message.Field.[ Title; Description; Url; DatabaseUrl; DatabaseLabel ]
   in
   let input_fields =
     let language_select =
@@ -125,26 +81,6 @@ let list tenant_list root_list Pool_context.{ language; csrf; _ } =
                       ]
                   ])
             ]
-        ; h2 ~a:[ a_class [ "heading-2" ] ] [ txt "Root users" ]
-        ; root_list
-        ; form
-            ~a:
-              [ a_action (Sihl.Web.externalize_path "/root/root/create")
-              ; a_method `Post
-              ; a_class [ "stack" ]
-              ]
-            (CCList.map
-               (input_element language `Text)
-               Message.Field.[ Email; Password; Firstname; Lastname ]
-            @ [ div
-                  ~a:[ a_class [ "flexrow" ] ]
-                  [ submit_element
-                      ~classnames:[ "push" ]
-                      language
-                      Message.(Create (Some Field.root))
-                      ()
-                  ]
-              ])
         ]
     ]
 ;;

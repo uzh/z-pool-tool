@@ -119,6 +119,7 @@ let nav_link_to_string = function
   | Profile -> "Profil"
   | Sessions -> "Sessions"
   | Settings -> "Einstellungen"
+  | Smtp -> "E-Mail Server"
   | SystemSettings -> "Systemeinstellungen"
   | Tenants -> "Tenants"
   | Users -> "Benutzer"

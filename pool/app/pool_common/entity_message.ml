@@ -172,15 +172,13 @@ module Field = struct
     | SMS [@name "sms"] [@printer go "sms"]
     | SmsText [@name "sms_text"] [@printer go "sms_text"]
     | Smtp [@name "smtp"] [@printer go "smtp"]
-    | SmtpAuthMethod [@name "smtp_auth_method"] [@printer go "smtp_auth_method"]
-    | SmtpAuthServer [@name "smtp_auth_server"] [@printer go "smtp_auth_server"]
     | SmtpLabel [@name "smtp_label"] [@printer go "smtp_label"]
+    | SmtpMechanism [@name "smtp_mechanism"] [@printer go "smtp_mechanism"]
     | SmtpPassword [@name "smtp_password"] [@printer go "smtp_password"]
     | SmtpPort [@name "smtp_port"] [@printer go "smtp_port"]
     | SmtpProtocol [@name "smtp_protocol"] [@printer go "smtp_protocol"]
-    | SmtpReadModel [@name "smtp_read_model"] [@printer go "smtp_read_model"]
+    | SmtpServer [@name "smtp_server"] [@printer go "smtp_server"]
     | SmtpUsername [@name "smtp_username"] [@printer go "smtp_username"]
-    | SmtpWriteModel [@name "smtp_write_model"] [@printer go "smtp_write_model"]
     | SortOrder [@name "sort_order"] [@printer go "sort_order"]
     | Start [@name "start"] [@printer go "start"]
     | Status [@name "status"] [@printer go "status"]
@@ -343,6 +341,8 @@ type success =
   | RoleUnassigned
   | SentList of Field.t
   | SettingsUpdated
+  | SmtpDetailsUpdated
+  | SmtpPasswordUpdated
   | Stopped of Field.t
   | TenantUpdateDatabase
   | TenantUpdateDetails

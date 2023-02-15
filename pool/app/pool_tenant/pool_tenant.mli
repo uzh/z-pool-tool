@@ -3,34 +3,13 @@ module Id : module type of Pool_common.Id
 
 module SmtpAuth : sig
   module Id : module type of Pool_common.Id
-
-  module Label : sig
-    include Pool_common.Model.StringSig
-  end
-
-  module Server : sig
-    include Pool_common.Model.StringSig
-  end
-
-  module Port : sig
-    include Pool_common.Model.IntegerSig
-  end
-
-  module Username : sig
-    include Pool_common.Model.StringSig
-  end
-
-  module Password : sig
-    include Pool_common.Model.StringSig
-  end
-
-  module AuthenticationMethod : sig
-    include Pool_common.Model.StringSig
-  end
-
-  module Protocol : sig
-    include Pool_common.Model.StringSig
-  end
+  module Label : Pool_common.Model.StringSig
+  module Server : Pool_common.Model.StringSig
+  module Port : Pool_common.Model.IntegerSig
+  module Username : Pool_common.Model.StringSig
+  module Password : Pool_common.Model.StringSig
+  module Mechanism : Pool_common.Model.StringSig
+  module Protocol : Pool_common.Model.StringSig
 
   type t =
     { id : Id.t
@@ -38,7 +17,7 @@ module SmtpAuth : sig
     ; server : Server.t
     ; port : Port.t
     ; username : Username.t option
-    ; authentication_method : AuthenticationMethod.t
+    ; mechanism : Mechanism.t
     ; protocol : Protocol.t
     }
 
@@ -58,7 +37,7 @@ module SmtpAuth : sig
       ; port : Port.t
       ; username : Username.t option
       ; password : Password.t option
-      ; authentication_method : AuthenticationMethod.t
+      ; mechanism : Mechanism.t
       ; protocol : Protocol.t
       }
 
@@ -69,47 +48,30 @@ module SmtpAuth : sig
       -> Port.t
       -> Username.t option
       -> Password.t option
-      -> AuthenticationMethod.t
+      -> Mechanism.t
       -> Protocol.t
       -> (t, Pool_common.Message.error) result
   end
+
+  val find
+    :  Database.Label.t
+    -> Id.t
+    -> (t, Pool_common.Message.error) Lwt_result.t
+
+  val find_by_label
+    :  Database.Label.t
+    -> (t, Pool_common.Message.error) Lwt_result.t
+
+  val find_full_by_label
+    :  Database.Label.t
+    -> (Write.t, Pool_common.Message.error) Lwt_result.t
 end
 
-module Title : sig
-  type t
-
-  val value : t -> string
-  val equal : t -> t -> bool
-  val create : string -> (t, Pool_common.Message.error) result
-
-  val schema
-    :  unit
-    -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
-end
-
-module Description : sig
-  type t
-
-  val value : t -> string
-  val equal : t -> t -> bool
-  val create : string -> (t, Pool_common.Message.error) result
-
-  val schema
-    :  unit
-    -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
-end
+module Title : Pool_common.Model.StringSig
+module Description : Pool_common.Model.StringSig
 
 module Url : sig
-  type t
-
-  val value : t -> string
-  val equal : t -> t -> bool
-  val pp : Format.formatter -> t -> unit
-  val create : string -> (t, Pool_common.Message.error) result
-
-  val schema
-    :  unit
-    -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
+  include Pool_common.Model.StringSig
 
   val of_pool : Database.Label.t -> t Lwt.t
 end
@@ -184,28 +146,8 @@ module PartnerLogos : sig
   val of_files : Pool_common.File.t list -> t
 end
 
-module Maintenance : sig
-  type t
-
-  val equal : t -> t -> bool
-  val create : bool -> t
-
-  val schema
-    :  unit
-    -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
-end
-
-module Disabled : sig
-  type t
-
-  val equal : t -> t -> bool
-  val create : bool -> t
-  val value : t -> bool
-
-  val schema
-    :  unit
-    -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
-end
+module Maintenance : Pool_common.Model.BooleanSig
+module Disabled : Pool_common.Model.BooleanSig
 
 module LogoMapping : sig
   module LogoType : sig

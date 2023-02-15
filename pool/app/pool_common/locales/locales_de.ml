@@ -135,15 +135,13 @@ let rec field_to_string =
   | SMS -> "SMS"
   | SmsText -> "SMS Text"
   | Smtp -> "SMTP"
-  | SmtpAuthMethod -> "SMTP Authentifizierungsmethode"
-  | SmtpAuthServer -> "SMTP Authentifizierungsserver"
-  | SmtpLabel -> "SMTP Label"
-  | SmtpPassword -> "SMTP Passwort"
-  | SmtpPort -> "SMTP Port"
-  | SmtpProtocol -> "SMTP Protokoll"
-  | SmtpReadModel -> "SMTP read model"
-  | SmtpUsername -> "SMTP Benutzername"
-  | SmtpWriteModel -> "SMTP write model"
+  | SmtpLabel -> "Label"
+  | SmtpMechanism -> "Authentifizierungsmechanismus"
+  | SmtpPassword -> "Passwort"
+  | SmtpPort -> "Port"
+  | SmtpProtocol -> "Protokoll"
+  | SmtpServer -> "Server"
+  | SmtpUsername -> "Benutzername"
   | SortOrder -> "Sortierung"
   | Start -> "Start"
   | Status -> "Status"
@@ -211,6 +209,9 @@ let success_to_string : success -> string = function
   | SentList field ->
     field_message "" (field_to_string field) "wurden erfolgreich verschickt."
   | SettingsUpdated -> "Die Einstellungen wurden erfolgreich gespeichert."
+  | SmtpDetailsUpdated ->
+    "Die SMTP Einstellungen wurden erfolgreich gespeichert."
+  | SmtpPasswordUpdated -> "Das SMTP Passwort wurde erfolgreich gespeichert."
   | Stopped field ->
     field_message "" (field_to_string field) "wurde erfolgreich gestoppt."
   | TenantUpdateDatabase ->

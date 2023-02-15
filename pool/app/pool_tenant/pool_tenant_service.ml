@@ -148,7 +148,7 @@ Html:
       let hostname = SmtpAuth.(Server.value config.Write.server) in
       let port = Some SmtpAuth.(Port.value config.Write.port) in
       let mechanism =
-        SmtpAuth.(AuthenticationMethod.value config.Write.authentication_method)
+        SmtpAuth.(Mechanism.value config.Write.mechanism)
         |> function
         | "LOGIN" when CCOption.is_none username || CCOption.is_none password ->
           raise

@@ -50,7 +50,7 @@ let create_smtp_table =
         `port` integer NOT NULL,
         `username` varchar(255) NULL,
         `password` varchar(255) NULL,
-        `authentication_method` varchar(255) NOT NULL,
+        `mechanism` varchar(255) NOT NULL,
         `protocol` varchar(255) NOT NULL,
         `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
         `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

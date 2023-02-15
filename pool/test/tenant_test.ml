@@ -72,17 +72,17 @@ module Data = struct
     let port = 587
     let username = "engineering@econ.uzh.ch"
     let password = "emailemail"
-    let authentication_method = "LOGIN"
+    let mechanism = "LOGIN"
     let protocol = "STARTTLS"
 
     let urlencoded =
       let open Common.Message in
       [ Field.SmtpLabel, [ label ]
-      ; Field.SmtpAuthServer, [ server ]
+      ; Field.SmtpServer, [ server ]
       ; Field.SmtpPort, [ port |> CCInt.to_string ]
       ; Field.SmtpUsername, [ username ]
       ; Field.SmtpPassword, [ password ]
-      ; Field.SmtpAuthMethod, [ authentication_method ]
+      ; Field.SmtpMechanism, [ mechanism ]
       ; Field.SmtpProtocol, [ protocol ]
       ]
       |> CCList.map (CCPair.map_fst Field.show)
@@ -101,19 +101,9 @@ module Data = struct
         let* password =
           password |> Password.create |> CCResult.map CCOption.pure
         in
-        let* authentication_method =
-          authentication_method |> AuthenticationMethod.create
-        in
+        let* mechanism = mechanism |> Mechanism.create in
         let* protocol = protocol |> Protocol.create in
-        Write.create
-          ~id
-          label
-          server
-          port
-          username
-          password
-          authentication_method
-          protocol
+        Write.create ~id label server port username password mechanism protocol
       in
       auth |> CCResult.get_exn
     ;;
@@ -215,19 +205,9 @@ let create_smtp_auth_invalid () =
     let* username =
       Data.Smtp.username |> Username.create |> CCResult.map CCOption.pure
     in
-    let* authentication_method =
-      Data.Smtp.authentication_method |> AuthenticationMethod.create
-    in
+    let* mechanism = Data.Smtp.mechanism |> Mechanism.create in
     let* protocol = "http" |> Protocol.create in
-    Ok
-      { id = Data.Smtp.id
-      ; label
-      ; server
-      ; port
-      ; username
-      ; authentication_method
-      ; protocol
-      }
+    Ok { id = Data.Smtp.id; label; server; port; username; mechanism; protocol }
   in
   let expected = Error Common.Message.(Invalid Field.SmtpProtocol) in
   Alcotest.(
