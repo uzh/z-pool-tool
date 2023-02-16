@@ -59,12 +59,28 @@ Html:
 
   let redirected_email
     new_recipient
-    (Sihl_email.{ recipient; subject; _ } as email)
+    (Sihl_email.{ recipient; subject; cc; bcc; text; _ } as email)
     =
     let subject =
-      Format.asprintf "[Pool Tool] %s (original to: %s)" subject recipient
+      Format.asprintf
+        "[Pool Tool] %s (original to: %s%s)"
+        subject
+        recipient
+        (if cc @ bcc |> CCList.is_empty |> not then ", DEL CC/BCC" else "")
     in
-    Sihl_email.{ email with subject; recipient = new_recipient }
+    Sihl_email.
+      { email with
+        subject
+      ; recipient = new_recipient
+      ; cc = []
+      ; bcc = []
+      ; text =
+          Format.asprintf
+            "DELETED CC: %s\nDELETED BCC: %s\n\n%s"
+            ([%show: string list] cc)
+            ([%show: string list] bcc)
+            text
+      }
   ;;
 
   let intercept_prepare email =
