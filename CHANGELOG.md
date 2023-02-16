@@ -23,6 +23,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 ### Fixed
 
 - removed default value from pool_sessions.start
+- add language parameter to email links
 
 ## [0.1.1](https://github.com/uzh/pool/tree/0.1.1) - 2023-02-02
 
