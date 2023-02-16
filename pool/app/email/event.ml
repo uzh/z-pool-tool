@@ -9,23 +9,6 @@ type confirmation_email =
   }
 [@@deriving eq, show]
 
-let sender_of_pool pool =
-  let open Utils.Lwt_result.Infix in
-  if Pool_database.is_root pool
-  then Lwt.return (Sihl.Configuration.read_string "SMTP_SENDER")
-  else (
-    let%lwt sender_email =
-      Settings.find_contact_email pool ||> Settings.ContactEmail.value
-    in
-    let%lwt tenant = Pool_tenant.find_by_label pool ||> CCResult.get_exn in
-    Format.sprintf
-      "%s <%s>"
-      (Pool_tenant.Title.value tenant.Pool_tenant.title)
-      sender_email
-    |> CCOption.pure
-    |> Lwt.return)
-;;
-
 let deactivate_token pool token =
   Service.Token.deactivate ~ctx:(Pool_tenant.to_ctx pool) token
 ;;
@@ -85,6 +68,6 @@ type event =
 [@@deriving eq, show]
 
 let handle_event pool : event -> unit Lwt.t = function
-  | Sent email -> Pool_tenant.Service.Email.send pool email
-  | BulkSent emails -> Pool_tenant.Service.Email.bulk_send pool emails
+  | Sent email -> Pool_tenant.Service.Email.dispatch pool email
+  | BulkSent emails -> Pool_tenant.Service.Email.dispatch_all pool emails
 ;;

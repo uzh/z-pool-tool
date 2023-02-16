@@ -9,6 +9,8 @@ module SmtpAuth = Entity_smtp
 module LogoMapping = Entity_logo_mapping
 module PoolError = Common.Message
 
+let to_ctx pool = [ "pool", Database.Label.value pool ]
+
 module Title = struct
   include Pool_common.Model.String
 

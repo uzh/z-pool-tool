@@ -15,26 +15,26 @@ end
 
 let validate_email _ () =
   let open Pool_tenant.Service.Email in
-  let send' database_label email =
-    let open Smtp in
-    let msg = "Missing 'TEST_EMAIL' env variable." in
-    let%lwt { subject; _ } = prepare database_label email in
-    Alcotest.(
-      check
-        string
-        "intercepted subject"
-        subject
-        (Format.asprintf
-           "[Pool Tool] %s (original to: %s)"
-           Data.subject
-           Data.recipient));
-    Alcotest.(
-      check
-        string
-        "intercepted recipient"
-        email.Sihl_email.recipient
-        (Sihl.Configuration.read_string "TEST_EMAIL" |> CCOption.get_exn_or msg));
-    Lwt.return_unit
+  let open Smtp in
+  let email =
+    Data.create_email () |> intercept_prepare |> CCResult.get_or_failwith
   in
-  intercept (send' Test_utils.Data.database_label) (Data.create_email ())
+  let msg = "Missing 'TEST_EMAIL' env variable." in
+  let%lwt { subject; _ } = prepare Test_utils.Data.database_label email in
+  Alcotest.(
+    check
+      string
+      "intercepted subject"
+      subject
+      (Format.asprintf
+         "[Pool Tool] %s (original to: %s)"
+         Data.subject
+         Data.recipient));
+  Alcotest.(
+    check
+      string
+      "intercepted recipient"
+      email.Sihl_email.recipient
+      (Sihl.Configuration.read_string "TEST_EMAIL" |> CCOption.get_exn_or msg));
+  Lwt.return_unit
 ;;

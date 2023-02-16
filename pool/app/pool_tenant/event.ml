@@ -2,7 +2,6 @@ open Entity
 module Id = Pool_common.Id
 module Database = Pool_database
 
-let to_ctx pool = [ "pool", Database.Label.value pool ]
 let get_or_failwith = Pool_common.Utils.get_or_failwith
 
 type update =
@@ -57,10 +56,6 @@ let handle_event pool : event -> unit Lwt.t = function
     Lwt.return_unit
   | DetailsEdited (tenant, update_t) ->
     let open Entity.Write in
-    let () =
-      Pool_tenant_service.Email.remove_from_cache
-        tenant.database.Pool_database.label
-    in
     let%lwt () =
       { tenant with
         title = update_t.title
@@ -90,12 +85,15 @@ let handle_event pool : event -> unit Lwt.t = function
       ||> get_or_failwith
       ||> fun (_ : [> `Smtp ] Guard.AuthorizableTarget.t) -> ()
     in
+    let () = Pool_tenant_service.Email.remove_from_cache pool in
     Lwt.return_unit
   | SmtpEdited updated ->
     let%lwt () = Repo.Smtp.update pool updated in
+    let () = Pool_tenant_service.Email.remove_from_cache pool in
     Lwt.return_unit
   | SmtpPasswordEdited updated_password ->
     let%lwt () = Repo.Smtp.update_password pool updated_password in
+    let () = Pool_tenant_service.Email.remove_from_cache pool in
     Lwt.return_unit
   | Destroyed tenant_id -> Repo.destroy tenant_id
   | ActivateMaintenance tenant ->

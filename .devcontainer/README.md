@@ -18,7 +18,6 @@ This project is setup to run in a DevContainer. Ensure requirements to run in a 
 1. [Docker](/Technologies/Docker) installed
 1. [Visual Studio Code](https://code.visualstudio.com/) (VS Code) installed
 1. VS Code Extension [Remote Container](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) installed
-1. Set environment variable `ECON_SMTP_APP_PASSWORD` to our SMTP account password (see 1Password) on your local machine.
 
 Your SSH folder and Git config gets mapped to the container. You should be able to use SSH and Git inside the
 container. Please ensure `~/.gitconfig` doesn't contain absolute paths (you may use the `~` profile prefix, i.e.

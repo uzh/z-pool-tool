@@ -369,9 +369,9 @@ module Service : sig
     end
 
     val remove_from_cache : Pool_database.Label.t -> unit
-    val intercept : (Sihl_email.t -> unit Lwt.t) -> Sihl_email.t -> unit Lwt.t
-    val send : Pool_database.Label.t -> Sihl_email.t -> unit Lwt.t
-    val bulk_send : Pool_database.Label.t -> Sihl_email.t list -> unit Lwt.t
+    val intercept_prepare : Sihl_email.t -> (Sihl_email.t, string) result
+    val dispatch : Database.Label.t -> Sihl_email.t -> unit Lwt.t
+    val dispatch_all : Database.Label.t -> Sihl_email.t list -> unit Lwt.t
     val lifecycle : Sihl.Container.lifecycle
     val register : unit -> Sihl.Container.Service.t
   end

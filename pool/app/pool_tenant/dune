@@ -1,6 +1,14 @@
 (library
  (name pool_tenant)
- (libraries conformist guard pool_common pool_database sihl sihl-user utils)
+ (libraries
+  conformist
+  guard
+  pool_common
+  pool_database
+  settings
+  sihl
+  sihl-user
+  utils)
  (preprocess
   (pps
    lwt_ppx

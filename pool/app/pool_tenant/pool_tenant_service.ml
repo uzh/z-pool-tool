@@ -17,9 +17,9 @@ module Email = struct
     let clear_inbox () = dev_inbox := []
   end
 
-  let print email =
+  let print ?(log_level = Logs.Debug) email =
     let open Sihl.Contract.Email in
-    Logs.info (fun m ->
+    Logs.msg log_level (fun m ->
       m
         {|
 -----------------------
@@ -49,7 +49,13 @@ Html:
       (Sihl.Configuration.read_bool "EMAIL_BYPASS_INTERCEPT")
   ;;
 
-  let bypass_email_address () = Sihl.Configuration.read_string "TEST_EMAIL"
+  let intercept_email_address () = Sihl.Configuration.read_string "TEST_EMAIL"
+
+  let console () =
+    CCOption.get_or
+      ~default:(Sihl.Configuration.is_development ())
+      (Sihl.Configuration.read_bool "EMAIL_CONSOLE")
+  ;;
 
   let redirected_email
     new_recipient
@@ -61,42 +67,30 @@ Html:
     Sihl_email.{ email with subject; recipient = new_recipient }
   ;;
 
-  let intercept sender email =
-    let is_production = Sihl.Configuration.is_production () in
-    let bypass = bypass () in
-    let bypass_email_address = bypass_email_address () in
-    let console =
-      CCOption.get_or
-        ~default:(Sihl.Configuration.is_development ())
-        (Sihl.Configuration.read_bool "EMAIL_CONSOLE")
-    in
-    let () = if console then print email else () in
-    match is_production, bypass_email_address with
-    | true, _ -> sender email
-    | false, Some new_recipient when bypass ->
-      Logs.info (fun m ->
-        m
-          "Sending email intercepted. Sending email(s) to new recipient ('%s')"
-          new_recipient);
-      email |> redirected_email new_recipient |> sender
+  let intercept_prepare email =
+    let () = if console () then print ~log_level:Logs.Info email else () in
+    match Sihl.Configuration.is_production (), intercept_email_address () with
+    | true, _ -> Ok email
     | false, Some new_recipient ->
       Logs.info (fun m ->
         m
-          "Sending email intercepted (non production environment -> DevInbox). \
-           Sending email(s) to new recipient ('%s')"
+          "Sending email intercepted. Sending email to new recipient ('%s')"
           new_recipient);
-      email
-      |> redirected_email new_recipient
-      |> DevInbox.add_to_inbox
-      |> Lwt.return
+      email |> redirected_email new_recipient |> CCResult.pure
     | false, None ->
-      Logs.err (fun m ->
-        m
-          "%s"
-          "Sending email intercepted! As no redirect email is specified \
-           it/they wont be sent. Please define environment variable \
-           'TEST_EMAIL'.");
-      Lwt.return_unit
+      Error
+        "Sending email intercepted! As no redirect email is specified it/they \
+         wont be sent. Please define environment variable 'TEST_EMAIL'."
+  ;;
+
+  let intercept_send sender email =
+    let () = if console () then print email else () in
+    match Sihl.Configuration.is_production (), bypass () with
+    | true, _ | _, true -> sender email
+    | false, false ->
+      Logs.info (fun m ->
+        m "Sending email intercepted (non production environment -> DevInbox).");
+      email |> DevInbox.add_to_inbox |> Lwt.return
   ;;
 
   module Smtp = struct
@@ -114,6 +108,7 @@ Html:
       database_label
       { Sihl.Contract.Email.sender; recipient; subject; text; html; cc; bcc }
       =
+      let open CCFun in
       let open Utils.Lwt_result.Infix in
       let open SmtpAuth in
       let recipients =
@@ -165,10 +160,34 @@ Html:
           ()
         |> Letters.Config.set_port port
       in
+      let%lwt sender =
+        let valid_email =
+          let open Re in
+          (* Checks for more than 1 character before and more than 2 characters
+             after the @ sign *)
+          seq [ repn any 1 None; char '@'; repn any 2 None ]
+          |> whole_string
+          |> compile
+          |> Re.execp
+        in
+        let%lwt sender_of_pool =
+          if Pool_database.is_root database_label
+          then Lwt.return (Sihl.Configuration.read_string "SMTP_SENDER")
+          else
+            Settings.find_contact_email database_label
+            ||> Settings.ContactEmail.value
+            ||> CCOption.pure
+        in
+        [ username; sender_of_pool ]
+        |> CCList.filter (CCOption.map_or ~default:false valid_email)
+        |> CCOption.choice
+        |> CCOption.get_or ~default:sender
+        |> Lwt.return
+      in
       Lwt.return { sender; recipients; subject; body; config }
     ;;
 
-    let send' database_label email =
+    let send database_label email =
       let%lwt { sender; recipients; subject; body; config } =
         prepare database_label email
       in
@@ -179,16 +198,10 @@ Html:
     ;;
   end
 
-  let send database_label email =
-    Logs.info (fun m -> m "Send email to %s" email.Sihl_email.recipient);
-    let%lwt () = intercept (Smtp.send' database_label) email in
-    Logs.info (fun m -> m "Email sent");
+  let send database_label ({ Sihl_email.sender; recipient; _ } as email) =
+    Logs.info (fun m -> m "Send email as %s to %s" sender recipient);
+    let%lwt () = intercept_send (Smtp.send database_label) email in
     Lwt.return_unit
-  ;;
-
-  let bulk_send _ _ =
-    failwith
-      "Bulk sending with the SMTP backend not supported, please use sihl-queue"
   ;;
 
   let start () = Lwt.return_unit
@@ -248,4 +261,20 @@ Html:
         "send_email"
     ;;
   end
+
+  let dispatch database_label email =
+    Logs.info (fun m -> m "Dispatch email to %s" email.Sihl_email.recipient);
+    print email;
+    Queue.dispatch
+      ~ctx:(Entity.to_ctx database_label)
+      (email |> intercept_prepare |> CCResult.get_or_failwith)
+      Job.send
+  ;;
+
+  let dispatch_all database_label emails =
+    let recipients = CCList.map (fun m -> m.Sihl_email.recipient) emails in
+    Logs.info (fun m ->
+      m "Dispatch email to %s" ([%show: string list] recipients));
+    Queue.dispatch_all ~ctx:(Entity.to_ctx database_label) emails Job.send
+  ;;
 end

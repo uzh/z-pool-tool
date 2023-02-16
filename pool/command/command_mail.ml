@@ -11,7 +11,7 @@ Example: mail admin@mail.com contact@mail.com
   in
   Sihl.Command.make
     ~name:"mail"
-    ~description:"Send pre-defined test email to the provided recipient"
+    ~description:"Dispatch pre-defined test email to the provided recipient"
     ~help
     (function
     | [ sender; recipient ] ->
@@ -21,7 +21,9 @@ Example: mail admin@mail.com contact@mail.com
       let message = "Hi! \n\n This is a test message." in
       let subject = "Test subject" in
       let email = Sihl_email.create ~sender ~recipient ~subject message in
-      let%lwt () = Pool_tenant.Service.Email.send Pool_database.root email in
+      let%lwt () =
+        Pool_tenant.Service.Email.dispatch Pool_database.root email
+      in
       Lwt.return_some ()
     | _ -> Command_utils.failwith_missmatch help)
 ;;
