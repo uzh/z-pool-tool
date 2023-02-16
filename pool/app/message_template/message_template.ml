@@ -138,7 +138,11 @@ module EmailVerification = struct
     let* template = Repo.find_by_label pool language Label.EmailVerification in
     let%lwt url = Pool_tenant.Url.of_pool pool in
     let validation_url =
-      Pool_common.[ Message.Field.Token, Email.Token.value token ]
+      Pool_common.
+        [ ( Message.Field.Language
+          , language |> Language.show |> CCString.lowercase_ascii )
+        ; Message.Field.Token, Email.Token.value token
+        ]
       |> create_public_url_with_params url "/email-verified"
     in
     prepare_email
@@ -425,7 +429,11 @@ module SignUpVerification = struct
     let* template = Repo.find_by_label pool language Label.SignUpVerification in
     let%lwt url = Pool_tenant.Url.of_pool pool in
     let verification_url =
-      Pool_common.[ Message.Field.Token, Email.Token.value token ]
+      Pool_common.
+        [ ( Message.Field.Language
+          , language |> Language.show |> CCString.lowercase_ascii )
+        ; Message.Field.Token, Email.Token.value token
+        ]
       |> create_public_url_with_params url "/email-verified"
     in
     prepare_email
