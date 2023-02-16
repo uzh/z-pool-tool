@@ -209,17 +209,15 @@ Html:
       in
       Letters.build_email ~from:sender ~recipients ~subject ~body
       |> function
-      | Ok message -> Letters.send ~config ~sender ~recipients ~message
+      | Ok message ->
+        Logs.info (fun m ->
+          m "Send email as %s to %s" sender email.Sihl_email.recipient);
+        Letters.send ~config ~sender ~recipients ~message
       | Error msg -> raise (Sihl.Contract.Email.Exception msg)
     ;;
   end
 
-  let send database_label ({ Sihl_email.sender; recipient; _ } as email) =
-    Logs.info (fun m -> m "Send email as %s to %s" sender recipient);
-    let%lwt () = intercept_send (Smtp.send database_label) email in
-    Lwt.return_unit
-  ;;
-
+  let send database_label = intercept_send (Smtp.send database_label)
   let start () = Lwt.return_unit
   let stop () = Lwt.return_unit
 
