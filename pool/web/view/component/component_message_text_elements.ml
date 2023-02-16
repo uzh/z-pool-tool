@@ -117,6 +117,10 @@ module DummyData = struct
       ; reminder_sent_at = None
       ; assignment_count =
           0 |> AssignmentCount.create |> Pool_common.Utils.get_or_failwith
+      ; show_up_count =
+          0 |> ShowUpCount.create |> Pool_common.Utils.get_or_failwith
+      ; participant_count =
+          0 |> ParticipantCount.create |> Pool_common.Utils.get_or_failwith
       ; closed_at = None
       ; canceled_at = None
       ; created_at = Pool_common.CreatedAt.create ()

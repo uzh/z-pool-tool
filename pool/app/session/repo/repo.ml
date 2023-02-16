@@ -15,7 +15,10 @@ module Sql = struct
     |sql}
   ;;
 
-  let find_sql where =
+  let find_sql ?order_by where =
+    let order_by =
+      order_by |> CCOption.map_or ~default:"" (Format.asprintf "ORDER BY %s")
+    in
     let select =
       {sql|
         SELECT
@@ -48,17 +51,21 @@ module Sql = struct
           pool_sessions.overbook,
           pool_sessions.reminder_lead_time,
           pool_sessions.reminder_sent_at,
-          (SELECT count(pool_assignments.id) FROM pool_assignments WHERE session_id=pool_sessions.id),
+          COUNT(pool_assignments.id),
+          COALESCE( SUM(pool_assignments.show_up), 0),
+          COALESCE( SUM(pool_assignments.participated), 0),
           pool_sessions.closed_at,
           pool_sessions.canceled_at,
           pool_sessions.created_at,
           pool_sessions.updated_at
         FROM pool_sessions
+        LEFT JOIN pool_assignments
+          ON pool_assignments.session_id = pool_sessions.id
         INNER JOIN pool_locations
           ON pool_locations.id = pool_sessions.location_id
       |sql}
     in
-    Format.asprintf "%s %s" select where
+    Format.asprintf "%s %s GROUP BY pool_sessions.uuid %s" select where order_by
   ;;
 
   let find_public_sql where =
@@ -125,9 +132,8 @@ module Sql = struct
     (* TODO [aerben] order by what here? *)
     {sql|
       WHERE pool_sessions.experiment_uuid = UNHEX(REPLACE(?, '-', ''))
-      ORDER BY pool_sessions.start
     |sql}
-    |> find_sql
+    |> find_sql ~order_by:"pool_sessions.start"
     |> Caqti_type.string ->* RepoEntity.t
   ;;
 
@@ -207,8 +213,6 @@ module Sql = struct
   let find_by_assignment_request =
     let open Caqti_request.Infix in
     {sql|
-      INNER JOIN pool_assignments
-        ON pool_assignments.session_id = pool_sessions.id
       WHERE pool_assignments.uuid = UNHEX(REPLACE(?, '-', ''))
     |sql}
     |> find_sql
@@ -344,9 +348,8 @@ module Sql = struct
     (* TODO [aerben] order by what here? *)
     {sql|
         WHERE pool_sessions.follow_up_to = UNHEX(REPLACE(?, '-', ''))
-        ORDER BY pool_sessions.start
       |sql}
-    |> find_sql
+    |> find_sql ~order_by:"pool_sessions.start"
     |> Caqti_type.string ->* RepoEntity.t
   ;;
 

@@ -309,36 +309,54 @@ let index
             then [ a_class [ "inset"; "left" ] ]
             else []
           in
-          [ div ~a:attrs [ txt (session |> Session.session_date_to_human) ]
-          ; txt
-              (CCInt.to_string
-                 (session.Session.assignment_count
-                 |> Session.AssignmentCount.value))
-          ; session.Session.canceled_at
-            |> CCOption.map_or ~default:"" (fun t ->
-                 Utils.Time.formatted_date_time t)
-            |> txt
-          ; session.Session.closed_at
-            |> CCOption.map_or ~default:"" (fun t ->
-                 Utils.Time.formatted_date_time t)
-            |> txt
-          ; div
-              ~a:[ a_class [ "flexrow"; "flex-gap"; "justify-end" ] ]
-              [ Format.asprintf
-                  "/admin/experiments/%s/sessions/%s"
-                  (Experiment.Id.value experiment_id)
-                  (Id.value session.id)
-                |> edit_link
-              ; delete_form
-              ]
-          ]
+          Session.
+            [ div ~a:attrs [ txt (session |> session_date_to_human) ]
+            ; txt
+                (CCInt.to_string
+                   (session.assignment_count |> AssignmentCount.value))
+            ; txt
+                (if CCOption.is_some session.closed_at
+                then
+                  session.show_up_count |> ShowUpCount.value |> CCInt.to_string
+                else "")
+            ; txt
+                (if CCOption.is_some session.closed_at
+                then
+                  session.participant_count
+                  |> ParticipantCount.value
+                  |> CCInt.to_string
+                else "")
+            ; session.canceled_at
+              |> CCOption.map_or ~default:"" (fun t ->
+                   Utils.Time.formatted_date_time t)
+              |> txt
+            ; session.closed_at
+              |> CCOption.map_or ~default:"" (fun t ->
+                   Utils.Time.formatted_date_time t)
+              |> txt
+            ; div
+                ~a:[ a_class [ "flexrow"; "flex-gap"; "justify-end" ] ]
+                [ Format.asprintf
+                    "/admin/experiments/%s/sessions/%s"
+                    (Experiment.Id.value experiment_id)
+                    (Id.value session.id)
+                  |> edit_link
+                ; delete_form
+                ]
+            ]
         in
         session_row parent :: CCList.map session_row follow_ups)
       grouped_sessions
   in
   let thead =
     Message.(
-      [ Field.Date; Field.AssignmentCount; Field.CanceledAt; Field.ClosedAt ]
+      [ Field.Date
+      ; Field.AssignmentCount
+      ; Field.ShowUpCount
+      ; Field.ParticipantCount
+      ; Field.CanceledAt
+      ; Field.ClosedAt
+      ]
       |> Table.fields_to_txt language)
     @ [ add_session_btn ]
   in
