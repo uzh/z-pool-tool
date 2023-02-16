@@ -73,7 +73,7 @@ module Data = struct
     let port = 587
     let username = "engineering@econ.uzh.ch"
     let password = "emailemail"
-    let mechanism = SmtpAuth.Mechanism.LOGIN, "login"
+    let mechanism = SmtpAuth.Mechanism.LOGIN, "LOGIN"
     let protocol = SmtpAuth.Protocol.STARTTLS, "STARTTLS"
 
     let urlencoded =

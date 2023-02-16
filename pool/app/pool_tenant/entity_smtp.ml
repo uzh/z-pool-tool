@@ -48,7 +48,11 @@ module Mechanism = struct
   [@@deriving enum, eq, sexp_of, show { with_path = false }, yojson]
 
   let read m =
-    m |> Format.asprintf "[\"%s\"]" |> Yojson.Safe.from_string |> t_of_yojson
+    m
+    |> CCString.uppercase_ascii
+    |> Format.asprintf "[\"%s\"]"
+    |> Yojson.Safe.from_string
+    |> t_of_yojson
   ;;
 
   let all : t list =
@@ -81,7 +85,11 @@ module Protocol = struct
   [@@deriving enum, eq, sexp_of, show { with_path = false }, yojson]
 
   let read m =
-    m |> Format.asprintf "[\"%s\"]" |> Yojson.Safe.from_string |> t_of_yojson
+    m
+    |> CCString.uppercase_ascii
+    |> Format.asprintf "[\"%s\"]"
+    |> Yojson.Safe.from_string
+    |> t_of_yojson
   ;;
 
   let all : t list =
