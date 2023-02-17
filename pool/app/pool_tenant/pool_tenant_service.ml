@@ -243,11 +243,8 @@ Html:
           let open CCOption in
           ctx
           >>= CCList.assoc_opt ~eq:( = ) "pool"
-          |> function
-          | Some context ->
-            Pool_database.Label.create context
-            |> Pool_common.Utils.get_or_failwith
-          | None -> raise (Failure "Invalid context passed!")
+          >|= Pool_database.Label.create %> Pool_common.Utils.get_or_failwith
+          |> get_exn_or "Invalid context passed!"
         in
         Lwt.catch
           (fun () -> send database_label email ||> CCResult.pure)
