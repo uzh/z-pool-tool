@@ -35,6 +35,7 @@ depends: [
   "ppx_variants_conv" {= "v0.14.2"}
   "canary"
   "guardian" {= "0.0.5"}
+  "tls" {= "0.15.4"}
   "alcotest-lwt" {with-test}
   "ppx_inline_test" {with-test}
   "odoc" {with-doc}
