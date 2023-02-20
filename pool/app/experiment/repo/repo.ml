@@ -92,29 +92,26 @@ module Sql = struct
     Format.asprintf "%s %s" select_from where_fragment
   ;;
 
-  let find_all_request query =
-    let open Caqti_request.Infix in
-    ""
-    |> select_from_experiments_sql
-    |> Query.append_pagination_to_sql query
-    |> Caqti_type.unit ->* Repo_entity.t
-  ;;
-
   let find_all pool ?query () =
     let open Utils.Lwt_result.Infix in
+    let open Caqti_request.Infix in
     let pool = Pool_database.Label.value pool in
-    let request = find_all_request query in
-    match query with
-    | None ->
-      Utils.Database.collect pool request ()
-      ||> fun rows -> rows, Query.empty ()
-    | Some query ->
-      Utils.Database.collect_and_count pool request () (Some (select_count ""))
-      ||> fun (rows, count) -> rows, Query.set_page_count query count
+    let dyn, where, pagination =
+      Query.append_query_to_sql (Dynparam.empty, "") None query
+    in
+    let (Dynparam.Pack (pt, pv)) = dyn in
+    let request =
+      let base = select_from_experiments_sql where in
+      pagination
+      |> CCOption.map_or ~default:base (Format.asprintf "%s %s" base)
+      |> pt ->* Repo_entity.t
+    in
+    let count_request = select_count where |> pt ->! Caqti_type.int in
+    Utils.Database.collect_and_count pool request count_request pv
+    ||> fun (rows, count) ->
+    let query = CCOption.value ~default:(Query.empty ()) query in
+    rows, Query.set_page_count query count
   ;;
-
-  (* let find_all pool ?query = Utils.Database.collect_and_count
-     (Pool_database.Label.value pool) (find_all_request query) ;; *)
 
   let find_request =
     let open Caqti_request.Infix in

@@ -50,10 +50,21 @@ let pagination language { Pagination.page; page_count; _ } =
     ]
 ;;
 
+let search language =
+  form
+    ~a:[ a_method `Get; a_action "?" ]
+    [ Component_input.input_element
+        language
+        `Text
+        Pool_common.Message.Field.Query
+    ]
+;;
+
 let create language to_table (items, query) =
   div
     ~a:[ a_class [ "stack" ] ]
-    [ to_table items
+    [ search language
+    ; to_table items
     ; query.pagination
       |> CCOption.map_or ~default:(txt "") (pagination language)
     ]

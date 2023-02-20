@@ -205,3 +205,5 @@ module Guard : sig
     val show : t -> string
   end
 end
+
+val searchable_columns : string list

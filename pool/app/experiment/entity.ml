@@ -143,3 +143,7 @@ let boolean_fields =
   Pool_common.Message.Field.
     [ DirectRegistrationDisabled; RegistrationDisabled; AllowUninvitedSignup ]
 ;;
+
+let searchable_columns =
+  [ "pool_experiments.title"; "pool_experiments.public_title" ]
+;;

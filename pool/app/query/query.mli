@@ -20,9 +20,30 @@ module Pagination : sig
     }
 end
 
-type t = { pagination : Pagination.t option }
+module Search : sig
+  module Query : sig
+    include Pool_common.Model.StringSig
+  end
 
-val from_request : Rock.Request.t -> t
+  type t =
+    { query : Query.t
+    ; columns : string list
+    }
+end
+
+type t =
+  { pagination : Pagination.t option
+  ; search : Search.t option
+  }
+
+val show : t -> string
+val from_request : ?searchable_columns:string list -> Rock.Request.t -> t
 val empty : unit -> t
-val append_pagination_to_sql : t option -> string -> string
+
+val append_query_to_sql
+  :  Utils.Database.Dynparam.t * string
+  -> string option
+  -> t option
+  -> Utils.Database.Dynparam.t * string * string option
+
 val set_page_count : t -> int -> t

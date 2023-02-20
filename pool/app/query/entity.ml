@@ -1,5 +1,6 @@
 module Common = Pool_common
 module Message = Common.Message
+module Dynparam = Utils.Database.Dynparam
 
 module Pagination = struct
   module Limit = struct
@@ -53,20 +54,61 @@ module Pagination = struct
     { t with page_count }
   ;;
 
-  let query_to_sql { limit; page; _ } =
+  let to_sql { limit; page; _ } =
     let offset = limit * (page - 1) in
     Format.asprintf "LIMIT %i OFFSET %i " limit offset
   ;;
 end
 
-type t = { pagination : Pagination.t option } [@@deriving eq, show]
+module Search = struct
+  module Query = struct
+    include Common.Model.String
+
+    let field = Common.Message.Field.Query
+    let schema = schema ?validation:None field
+    let of_string m = m
+  end
+
+  type t =
+    { query : Query.t
+    ; columns : string list
+    }
+  [@@deriving eq, show]
+
+  let create query columns = { query; columns }
+
+  let to_sql dyn { columns; query } =
+    match columns with
+    | [] -> dyn, None
+    | columns ->
+      let dyn, where =
+        CCList.fold_left
+          (fun (dyn, columns) column ->
+            ( dyn |> Dynparam.add Caqti_type.string ("%" ^ query ^ "%")
+            , Format.asprintf "%s LIKE ? " column :: columns ))
+          (dyn, [])
+          columns
+      in
+      where
+      |> CCString.concat ") OR ("
+      |> Format.asprintf "(%s)"
+      |> fun where -> dyn, Some where
+  ;;
+end
+
+type t =
+  { pagination : Pagination.t option
+  ; search : Search.t option
+  }
+[@@deriving eq, show]
 
 let pagination { pagination; _ } = pagination
-let create ?pagination () = { pagination }
+let search { search; _ } = search
+let create ?pagination ?search () = { pagination; search } [@@deriving eq, show]
 
-let set_page_count t row_count =
+let set_page_count { pagination; search } row_count =
   let pagination =
-    t.pagination |> CCOption.map (Pagination.set_page_count row_count)
+    pagination |> CCOption.map (Pagination.set_page_count row_count)
   in
-  { pagination }
+  { pagination; search }
 ;;

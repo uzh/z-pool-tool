@@ -1,6 +1,6 @@
 include Entity
 
-let from_request req =
+let from_request ?searchable_columns req =
   let query_params = Sihl.Web.Request.query_list req in
   let open CCOption in
   let find field =
@@ -16,15 +16,31 @@ let from_request req =
     let page = find Page.field >>= CCInt.of_string in
     create ?limit ?page ()
   in
-  create ~pagination ()
+  let search =
+    let open Search in
+    let open CCOption in
+    searchable_columns
+    >>= fun columns ->
+    find Query.field >|= Query.of_string >|= fun query -> create query columns
+  in
+  create ~pagination ?search ()
 ;;
 
-let empty () = { pagination = None }
+let empty () = { pagination = None; search = None }
 
-let append_pagination_to_sql t sql =
-  let open CCFun in
-  CCOption.bind t pagination
-  |> CCOption.map_or
-       ~default:sql
-       (Pagination.query_to_sql %> Format.asprintf "%s %s" sql)
+let append_query_to_sql (dyn, sql) where t =
+  let open CCOption in
+  let pagination = t >>= pagination >|= Pagination.to_sql in
+  let dyn, search =
+    t >>= search |> CCOption.map_or ~default:(dyn, None) (Search.to_sql dyn)
+  in
+  let sql =
+    match search, where with
+    | Some search, Some where ->
+      Format.asprintf "%s WHERE %s AND %s" sql where search
+    | None, Some where | Some where, None ->
+      Format.asprintf "%s WHERE %s" sql where
+    | None, None -> sql
+  in
+  dyn, sql, pagination
 ;;
