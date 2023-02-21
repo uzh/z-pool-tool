@@ -45,7 +45,7 @@ module Content = struct
   include Pool_common.Model.String
 
   let field = Common.Message.Field.Translation
-  let schema = schema ?validation:None field
+  let schema () = schema field ()
 end
 
 type t =

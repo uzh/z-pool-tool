@@ -6,19 +6,19 @@ module SmtpAuth = Repo_entity_smtp_auth
 module Title = struct
   include Title
 
-  let t = Pool_common.Repo.caqti_type_t Caqti_type.string create value
+  let t = Pool_common.Repo.make_caqti_type Caqti_type.string create value
 end
 
 module Description = struct
   include Description
 
-  let t = Pool_common.Repo.caqti_type_t Caqti_type.string create value
+  let t = Pool_common.Repo.make_caqti_type Caqti_type.string create value
 end
 
 module Url = struct
   include Entity.Url
 
-  let t = Pool_common.Repo.caqti_type_t Caqti_type.string create value
+  let t = Pool_common.Repo.make_caqti_type Caqti_type.string create value
 
   let find_url_request =
     let open Caqti_request.Infix in
@@ -48,7 +48,7 @@ module Styles = struct
   module Write = struct
     include Write
 
-    let t = Pool_common.Repo.caqti_type_t Caqti_type.string create value
+    let t = Pool_common.Repo.make_caqti_type Caqti_type.string create value
   end
 end
 
@@ -60,7 +60,7 @@ module Icon = struct
   module Write = struct
     include Write
 
-    let t = Pool_common.Repo.caqti_type_t Caqti_type.string create value
+    let t = Pool_common.Repo.make_caqti_type Caqti_type.string create value
   end
 end
 
@@ -68,7 +68,7 @@ module Maintenance = struct
   include Maintenance
 
   let t =
-    Pool_common.Repo.caqti_type_t
+    Pool_common.Repo.make_caqti_type
       Caqti_type.bool
       CCFun.(create %> CCResult.pure)
       value
@@ -79,7 +79,7 @@ module Disabled = struct
   include Disabled
 
   let t =
-    Pool_common.Repo.caqti_type_t
+    Pool_common.Repo.make_caqti_type
       Caqti_type.bool
       CCFun.(create %> CCResult.pure)
       value

@@ -58,28 +58,28 @@ module EmailSubject = struct
   include Pool_common.Model.String
 
   let field = Field.EmailSubject
-  let schema = schema ?validation:None field
+  let schema () = schema field ()
 end
 
 module EmailText = struct
   include Pool_common.Model.String
 
   let field = Field.EmailText
-  let schema = schema ?validation:None field
+  let schema () = schema field ()
 end
 
 module PlainText = struct
   include Pool_common.Model.String
 
   let field = Field.PlainText
-  let schema = schema ?validation:None field
+  let schema () = schema field ()
 end
 
 module SmsText = struct
   include Pool_common.Model.String
 
   let field = Field.SmsText
-  let schema = schema ?validation:None field
+  let schema () = schema field ()
 end
 
 type t =

@@ -12,21 +12,21 @@ module Name = struct
   include Pool_common.Model.String
 
   let field = Field.Name
-  let schema = schema ?validation:None field
+  let schema () = schema field ()
 end
 
 module Description = struct
   include Pool_common.Model.String
 
   let field = Field.Description
-  let schema = schema ?validation:None field
+  let schema () = schema field ()
 end
 
 module Link = struct
   include Pool_common.Model.String
 
   let field = Field.Link
-  let schema = schema ?validation:None field
+  let schema () = schema field ()
 end
 
 module Status = struct

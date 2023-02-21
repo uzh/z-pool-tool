@@ -19,7 +19,7 @@ module ContactEmail = struct
   let field = Message.Field.EmailAddress
   (* TODO: email address validation *)
 
-  let schema = schema ?validation:None field
+  let schema () = schema field ()
   let of_string m = m
 end
 
@@ -29,7 +29,7 @@ module EmailSuffix = struct
   let field = Message.Field.EmailSuffix
   (* TODO: email address validation *)
 
-  let schema = schema ?validation:None field
+  let schema () = schema field ()
   let of_string m = m
 end
 
@@ -111,7 +111,7 @@ module TermsAndConditions = struct
     let field = Message.Field.TermsAndConditions
     (* TODO: email address validation *)
 
-    let schema = schema ?validation:None field
+    let schema () = schema field ()
     let of_string m = m
   end
 

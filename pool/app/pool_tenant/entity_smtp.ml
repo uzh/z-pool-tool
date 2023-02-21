@@ -5,14 +5,14 @@ module Label = struct
   include Pool_common.Model.String
 
   let field = PoolError.Field.SmtpLabel
-  let schema = schema ?validation:None field
+  let schema () = schema field ()
 end
 
 module Server = struct
   include Pool_common.Model.String
 
   let field = PoolError.Field.SmtpServer
-  let schema = schema ?validation:None field
+  let schema () = schema field ()
 end
 
 module Port = struct
@@ -27,14 +27,14 @@ module Username = struct
   include Pool_common.Model.String
 
   let field = PoolError.Field.SmtpUsername
-  let schema = schema ?validation:None field
+  let schema () = schema field ()
 end
 
 module Password = struct
   include Pool_common.Model.String
 
   let field = PoolError.Field.SmtpPassword
-  let schema = schema ?validation:None field
+  let schema () = schema field ()
   let show _ = "<opaque>"
 end
 

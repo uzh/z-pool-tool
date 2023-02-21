@@ -128,7 +128,7 @@ module AdminHint = struct
   include Pool_common.Model.String
 
   let field = Message.Field.AdminHint
-  let schema = schema field ?validation:None
+  let schema () = schema field ()
 end
 
 module AdminOverride = struct

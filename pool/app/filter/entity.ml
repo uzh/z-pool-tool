@@ -10,7 +10,7 @@ module Title = struct
   include Pool_common.Model.String
 
   let field = Pool_common.Message.Field.Title
-  let schema = schema ?validation:None field
+  let schema () = schema field ()
 end
 
 let read of_yojson yojson =

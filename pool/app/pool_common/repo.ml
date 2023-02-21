@@ -1,6 +1,6 @@
 open Entity
 
-let caqti_type_t caqti_type create value =
+let make_caqti_type caqti_type create value =
   let open CCFun in
   let encode = Utils.fcn_ok value in
   let decode =
@@ -13,20 +13,20 @@ module Id = struct
   include Id
 
   let t =
-    caqti_type_t Caqti_type.string CCFun.(of_string %> CCResult.pure) value
+    make_caqti_type Caqti_type.string CCFun.(of_string %> CCResult.pure) value
   ;;
 end
 
 module Language = struct
   include Language
 
-  let t = caqti_type_t Caqti_type.string create show
+  let t = make_caqti_type Caqti_type.string create show
 end
 
 module Version = struct
   include Version
 
-  let t = caqti_type_t Caqti_type.int CCFun.(of_int %> CCResult.pure) value
+  let t = make_caqti_type Caqti_type.int CCFun.(of_int %> CCResult.pure) value
 end
 
 module CreatedAt = struct
@@ -47,19 +47,19 @@ module File = struct
   module Name = struct
     include Name
 
-    let t = caqti_type_t Caqti_type.string create value
+    let t = make_caqti_type Caqti_type.string create value
   end
 
   module Size = struct
     include Size
 
-    let t = caqti_type_t Caqti_type.int create value
+    let t = make_caqti_type Caqti_type.int create value
   end
 
   module Mime = struct
     include Mime
 
-    let t = caqti_type_t Caqti_type.string of_string to_string
+    let t = make_caqti_type Caqti_type.string of_string to_string
   end
 
   let t =
@@ -81,13 +81,15 @@ module Reminder = struct
   module LeadTime = struct
     include Reminder.LeadTime
 
-    let t = caqti_type_t Caqti_type.ptime_span create value
+    let t = make_caqti_type Caqti_type.ptime_span create value
   end
 
   module SentAt = struct
     include Reminder.SentAt
 
-    let t = caqti_type_t Caqti_type.ptime CCFun.(create %> CCResult.pure) value
+    let t =
+      make_caqti_type Caqti_type.ptime CCFun.(create %> CCResult.pure) value
+    ;;
   end
 end
 
@@ -96,7 +98,7 @@ module ExperimentType = struct
 
   let t =
     let open CCFun in
-    caqti_type_t
+    make_caqti_type
       Caqti_type.string
       (Yojson.Safe.from_string %> t_of_yojson %> CCResult.pure)
       (yojson_of_t %> Yojson.Safe.to_string)

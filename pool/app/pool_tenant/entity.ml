@@ -15,21 +15,21 @@ module Title = struct
   include Pool_common.Model.String
 
   let field = Common.Message.Field.Title
-  let schema = schema ?validation:None field
+  let schema () = schema field ()
 end
 
 module Description = struct
   include Pool_common.Model.String
 
   let field = Common.Message.Field.Description
-  let schema = schema ?validation:None field
+  let schema () = schema field ()
 end
 
 module Url = struct
   include Pool_common.Model.String
 
   let field = Common.Message.Field.Url
-  let schema = schema ?validation:None field
+  let schema () = schema field ()
 end
 
 module Styles = struct
@@ -44,7 +44,7 @@ module Styles = struct
     include Pool_common.Model.String
 
     let field = Common.Message.Field.Styles
-    let schema = schema ?validation:None field
+    let schema () = schema field ()
   end
 end
 
@@ -58,7 +58,7 @@ module Icon = struct
     include Pool_common.Model.String
 
     let field = Common.Message.Field.Icon
-    let schema = schema ?validation:None field
+    let schema () = schema field ()
   end
 end
 

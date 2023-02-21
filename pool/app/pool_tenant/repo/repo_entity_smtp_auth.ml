@@ -4,25 +4,25 @@ module Id = Pool_common.Repo.Id
 module Label = struct
   include Label
 
-  let t = Pool_common.Repo.caqti_type_t Caqti_type.string create value
+  let t = Pool_common.Repo.make_caqti_type Caqti_type.string create value
 end
 
 module Server = struct
   include Server
 
-  let t = Pool_common.Repo.caqti_type_t Caqti_type.string create value
+  let t = Pool_common.Repo.make_caqti_type Caqti_type.string create value
 end
 
 module Port = struct
   include Port
 
-  let t = Pool_common.Repo.caqti_type_t Caqti_type.int create value
+  let t = Pool_common.Repo.make_caqti_type Caqti_type.int create value
 end
 
 module Username = struct
   include Username
 
-  let t = Pool_common.Repo.caqti_type_t Caqti_type.string create value
+  let t = Pool_common.Repo.make_caqti_type Caqti_type.string create value
 end
 
 module Password = struct
@@ -51,7 +51,7 @@ module Mechanism = struct
 
   let t =
     let open CCFun in
-    Pool_common.Repo.caqti_type_t
+    Pool_common.Repo.make_caqti_type
       Caqti_type.string
       (Yojson.Safe.from_string %> t_of_yojson %> CCResult.pure)
       (yojson_of_t %> Yojson.Safe.to_string)
@@ -63,7 +63,7 @@ module Protocol = struct
 
   let t =
     let open CCFun in
-    Pool_common.Repo.caqti_type_t
+    Pool_common.Repo.make_caqti_type
       Caqti_type.string
       (Yojson.Safe.from_string %> t_of_yojson %> CCResult.pure)
       (yojson_of_t %> Yojson.Safe.to_string)
