@@ -285,6 +285,11 @@ module Public = struct
     in
     add_follow_ups_and_sort parents follow_ups
   ;;
+
+  let get_session_end (session : t) =
+    Ptime.add_span session.start session.duration
+    |> CCOption.get_exn_or "Session end not in range"
+  ;;
 end
 
 let to_public

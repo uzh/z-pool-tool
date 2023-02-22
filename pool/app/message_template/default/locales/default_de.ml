@@ -42,6 +42,7 @@ let assignment_confirmation =
 {sessionOverview}
 
 Die Teilnahme ist obligatorisch.|}
+    |> add_salutation_to_text
     |> SmsText.of_string
   in
   { id = Id.create ()
@@ -89,6 +90,7 @@ let email_verification =
 {verificationUrl}
 
 Wenn Sie diese Aktion nicht ausgeführt haben, dann ignorieren Sie diese E-Mail oder trete mit uns in Kontakt.|}
+    |> add_salutation_to_text
     |> SmsText.of_string
   in
   { id = Id.create ()
@@ -132,9 +134,8 @@ let experiment_invitation =
 {experimentPublicTitle}
 {experimentDescription}
 
-Das Experiment wird an folgenden Daten durchgeführt:
-
-Sessions......|}
+Informationen zu den Sessions finden Sie hier: {experimentUrl}|}
+    |> add_salutation_to_text
     |> SmsText.of_string
   in
   { id = Id.create ()
@@ -167,6 +168,7 @@ let password_change =
     {|Du hast kürzlich das Passwort deines Accounts geändert.
 
 Wenn du dein Passwort nicht geändert hast, dann kontaktiere uns bitte umgehend.|}
+    |> add_salutation_to_text
     |> SmsText.of_string
   in
   { id = Id.create ()
@@ -201,6 +203,7 @@ let profile_update_trigger =
     {|Ihr Profil wurde schon länger nicht aktualisiert.
 
 Bitte kontrollieren Sie die Angaben in Ihrem Profil: {profileUrl}|}
+    |> add_salutation_to_text
     |> SmsText.of_string
   in
   { id = Id.create ()
@@ -250,6 +253,7 @@ let password_reset =
 {resetUrl}
 
 Wenn du dies nicht beantragt hast, kannst du diese E-Mail ignorieren oder mit und Kontakt aufnehmen. Der Link ist für die nächste Stunde gültig, anschliessend muss ein neuer beantragt werden.|}
+    |> add_salutation_to_text
     |> SmsText.of_string
   in
   { id = Id.create ()
@@ -297,6 +301,7 @@ Nutze den folgenden Link um deinen Account zu aktivieren.
 
 Wenn du dies nicht beantragt hast, kannst du diese E-Mail ignorieren oder mit und Kontakt aufnehmen.|}
     |> SmsText.of_string
+    |> add_salutation_to_text
   in
   { id = Id.create ()
   ; label
@@ -328,7 +333,11 @@ let session_cancellation =
   let sms_text =
     {|Die folgende Session, zu der du angemeldet warst, wurde abgesagt:
 
-{sessionOverview}|}
+{sessionOverview}
+
+Grund: {reason}
+|}
+    |> add_salutation_to_text
     |> SmsText.of_string
   in
   { id = Id.create ()
@@ -360,6 +369,7 @@ let session_reminder =
     {|Hiermit erinnern wir Sie an die Experiment-Session
 
 {sessionOverview}|}
+    |> add_salutation_to_text
     |> SmsText.of_string
   in
   { id = Id.create ()
@@ -405,6 +415,7 @@ Neu:
 {newStart}
 {newDuration}
 |}
+    |> add_salutation_to_text
     |> SmsText.of_string
   in
   { id = Id.create ()
@@ -458,6 +469,7 @@ let contact_registration_attempt =
 
     Wenn diese Aktion nicht von Ihnen durchgeführt wurde, können Sie diese Meldung ignorieren oder die Administratoren informieren.
 |}
+    |> add_salutation_to_text
     |> SmsText.of_string
   in
   { id = Id.create ()

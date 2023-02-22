@@ -149,6 +149,7 @@ module Public : sig
   val show : t -> string
   val is_fully_booked : t -> bool
   val group_and_sort : t list -> (t * t list) list
+  val get_session_end : t -> Ptime.t
 end
 
 val to_public : t -> Public.t

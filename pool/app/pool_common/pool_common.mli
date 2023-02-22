@@ -443,7 +443,8 @@ module Utils : sig
   module Time : sig
     val ptime_to_sexp : Ptime.t -> Sexplib0.Sexp.t
     val formatted_date_time : Ptime.t -> string
-    val ptime_to_formatted_date : Ptime.t -> string
+    val formatted_date : Ptime.t -> string
+    val formatted_time : Ptime.t -> string
     val formatted_timespan : Ptime.span -> string
     val timespan_to_hours : Ptime.span -> string
     val parse_time : string -> (Ptime.t, Message.error) result

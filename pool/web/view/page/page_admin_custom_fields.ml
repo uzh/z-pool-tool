@@ -770,8 +770,7 @@ let index field_list group_list current_model Pool_context.{ language; csrf; _ }
           |> CCOption.map_or
                ~default:""
                CCFun.(
-                 PublishedAt.value
-                 %> Pool_common.Utils.Time.ptime_to_formatted_date))
+                 PublishedAt.value %> Pool_common.Utils.Time.formatted_date))
       ; Url.Field.edit_path (model field, id field) |> edit_link
       ]
     in

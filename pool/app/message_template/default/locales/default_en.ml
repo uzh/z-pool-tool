@@ -34,6 +34,7 @@ let assignment_confirmation =
 {sessionOverview}
 
 The participation in the session is compulsory.|}
+    |> add_salutation_to_text
     |> SmsText.of_string
   in
   { id = Id.create ()
@@ -80,6 +81,7 @@ Follow the link below to activate it.
 {verificationUrl}
 
 If this action wasn`t performed by you, please ignore this email or reply to let us know.|}
+    |> add_salutation_to_text
     |> SmsText.of_string
   in
   { id = Id.create ()
@@ -121,9 +123,8 @@ let experiment_invitation =
 {experimentPublicTitle}
 {experimentDescription}
 
-The experiment is performed on the following dates:
-
-Sessions......|}
+Information about the sessions can be found here: {experimentUrl}|}
+    |> add_salutation_to_text
     |> SmsText.of_string
   in
   { id = Id.create ()
@@ -156,6 +157,7 @@ let password_change =
     {|You recently changed your password for your account.
 
 If you did not change your password, please get in contact with us.|}
+    |> add_salutation_to_text
     |> SmsText.of_string
   in
   { id = Id.create ()
@@ -188,6 +190,7 @@ let profile_update_trigger =
     {|Your profile has not been updated in a while.
 
 Please check your profile: {profileUrl}|}
+    |> add_salutation_to_text
     |> SmsText.of_string
   in
   { id = Id.create ()
@@ -237,6 +240,7 @@ Follow the link below to reset it.
 If you did not request a password reset, please ignore this email or
 reply to let us know. This password reset is only valid for the next
 hour.|}
+    |> add_salutation_to_text
     |> SmsText.of_string
   in
   { id = Id.create ()
@@ -283,6 +287,7 @@ Follow the link below to activate your account.
 {verificationUrl}
 
 If this action wasn`t performed by you, please ignore this email or reply to let us know.|}
+    |> add_salutation_to_text
     |> SmsText.of_string
   in
   { id = Id.create ()
@@ -312,7 +317,10 @@ let session_cancellation =
   let sms_text =
     {|The following session you have registered to was canceled:
 
-{sessionOverview}|}
+{sessionOverview}
+
+Reason: {reason}|}
+    |> add_salutation_to_text
     |> SmsText.of_string
   in
   { id = Id.create ()
@@ -344,6 +352,7 @@ let session_reminder =
     {|Herewith we remind you about your upcoming experiment session:
 
 {sessionOverview}|}
+    |> add_salutation_to_text
     |> SmsText.of_string
   in
   { id = Id.create ()
@@ -387,6 +396,7 @@ New:
 {newStart}
 {newDuration}
 |}
+    |> add_salutation_to_text
     |> SmsText.of_string
   in
   { id = Id.create ()
@@ -440,6 +450,7 @@ If this was you and you forgot your login credentials, you can reset you can res
 
 If this action was not performed by you, you can ignore this message or inform the administrators.
 |}
+    |> add_salutation_to_text
     |> SmsText.of_string
   in
   { id = Id.create ()
