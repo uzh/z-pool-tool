@@ -142,7 +142,7 @@ Html:
       let%lwt config =
         let open Pool_common.Utils in
         try !accounts |> AccountMap.find database_label |> Lwt.return with
-        | _ ->
+        | Not_found ->
           let%lwt from_repo =
             Repo.Smtp.find_full_by_label database_label
             >|- with_log_error
@@ -254,11 +254,13 @@ Html:
       let decode email =
         let open CCResult.Infix in
         (try Ok (Yojson.Safe.from_string email) with
-         | _ ->
+         | Yojson.Json_error msg ->
            Logs.err (fun m ->
              m
                "Serialized email string was NULL, can not deserialize email. \
-                Please fix the string manually and reset the job instance.");
+                Please fix the string manually and reset the job instance. \
+                Error: %s"
+               msg);
            Error "Invalid serialized email string received")
         >>= Sihl.Contract.Email.of_yojson
             %> CCOption.to_result "Failed to deserialize email"
@@ -274,8 +276,7 @@ Html:
   end
 
   let dispatch database_label email =
-    Logs.info (fun m -> m "Dispatch email to %s" email.Sihl_email.recipient);
-    print email;
+    Logs.debug (fun m -> m "Dispatch email to %s" email.Sihl_email.recipient);
     Queue.dispatch
       ~ctx:(Entity.to_ctx database_label)
       (email |> intercept_prepare |> CCResult.get_or_failwith)
@@ -284,7 +285,7 @@ Html:
 
   let dispatch_all database_label emails =
     let recipients = CCList.map (fun m -> m.Sihl_email.recipient) emails in
-    Logs.info (fun m ->
+    Logs.debug (fun m ->
       m "Dispatch email to %s" ([%show: string list] recipients));
     Queue.dispatch_all ~ctx:(Entity.to_ctx database_label) emails Job.send
   ;;
