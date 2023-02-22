@@ -255,7 +255,7 @@ let update_password () =
       |> decode
       |> Pool_common.Utils.get_or_failwith
       |> handle
-           ~password_policy:(CCFun.const (CCResult.pure ()))
+           ~password_policy:(fun (_ : Pool_user.Password.t) -> Ok ())
            contact
            confirmation_mail)
   in
@@ -334,7 +334,7 @@ let update_password_wrong_confirmation () =
       |> decode
       |> Pool_common.Utils.get_or_failwith
       |> handle
-           ~password_policy:(CCFun.const (CCResult.pure ()))
+           ~password_policy:(fun (_ : Pool_user.Password.t) -> Ok ())
            contact
            confirmation_mail)
   in

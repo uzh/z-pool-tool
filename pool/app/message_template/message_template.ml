@@ -185,7 +185,7 @@ module ExperimentInvitation = struct
       let* lang, template = template_by_contact sys_langs templates contact in
       let params = email_params experiment tenant_url contact in
       prepare_email lang template (Contact.email_address contact) layout params
-      |> CCResult.pure
+      |> CCResult.return
     in
     Lwt_result.return fnc
   ;;
@@ -291,7 +291,7 @@ module ProfileUpdateTrigger = struct
         (Contact.email_address contact)
         (layout_from_tenant tenant)
         (email_params url contact)
-      |> CCResult.pure
+      |> CCResult.return
     in
     fnc |> Lwt_result.return
   ;;
@@ -317,7 +317,7 @@ module SessionCancellation = struct
       let* lang, template = template_by_contact sys_langs templates contact in
       let params = email_params lang session reason contact in
       prepare_email lang template (Contact.email_address contact) layout params
-      |> CCResult.pure
+      |> CCResult.return
     in
     Lwt_result.return fnc
   ;;
@@ -376,7 +376,7 @@ module SessionReminder = struct
       let* lang, template = template_by_contact sys_langs templates contact in
       let params = email_params lang experiment session contact in
       prepare_email lang template (Contact.email_address contact) layout params
-      |> CCResult.pure
+      |> CCResult.return
     in
     Lwt_result.return fnc
   ;;
@@ -405,7 +405,7 @@ module SessionReschedule = struct
       let* lang, template = template_by_contact sys_langs templates contact in
       let params = email_params lang session new_start new_duration contact in
       prepare_email lang template (Contact.email_address contact) layout params
-      |> CCResult.pure
+      |> CCResult.return
     in
     Lwt_result.return fnc
   ;;

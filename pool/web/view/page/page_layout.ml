@@ -79,11 +79,10 @@ let desktop_nav elements =
 ;;
 
 let mobile_nav query_language title navigation =
-  let pure = CCList.pure in
   let id = "navigation-overlay" in
   let label label =
     Component.Icon.icon label
-    |> pure
+    |> CCList.pure
     |> div ~a:[ a_user_data "modal" id; a_class [ "icon-lg" ] ]
   in
   let overlay =

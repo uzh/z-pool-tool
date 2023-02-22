@@ -101,13 +101,13 @@ let participation_subquery dyn operator ids =
     match operator with
     | ContainsAll ->
       (format " = ? ", Dynparam.add Caqti_type.int (CCList.length ids) dyn)
-      |> pure
-    | ContainsNone -> (format " = 0 ", dyn) |> pure
-    | ContainsSome -> (format " > 0 ", dyn) |> pure
+      |> CCResult.return
+    | ContainsNone -> (format " = 0 ", dyn) |> CCResult.return
+    | ContainsSome -> (format " > 0 ", dyn) |> CCResult.return
     | Less | LessEqual | Greater | GreaterEqual | Equal | NotEqual | Like ->
       Error Pool_common.Message.(Invalid Field.Operator)
   in
-  (dyn, Format.asprintf "(%s)" condition) |> pure
+  (dyn, Format.asprintf "(%s)" condition) |> CCResult.return
 ;;
 
 let filter_to_sql template_list dyn query =
@@ -231,7 +231,7 @@ let filter_to_sql template_list dyn query =
                 |> CCString.concat (Format.asprintf " %s " operator)
                 |> custom_field_sql
                 |> Format.asprintf "EXISTS (%s)" )
-              |> CCResult.pure
+              |> CCResult.return
             in
             (match operator with
              | ContainsAll -> build_query "AND"

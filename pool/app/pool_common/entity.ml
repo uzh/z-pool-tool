@@ -1,3 +1,4 @@
+open CCFun
 open Sexplib.Conv
 module PoolError = Entity_message
 module Model = Entity_base_model
@@ -13,7 +14,7 @@ module Id = struct
   let value m = m
 
   let schema ?(field = PoolError.Field.Id) () =
-    Pool_common_utils.schema_decoder (Utils.fcn_ok of_string) value field
+    Pool_common_utils.schema_decoder (of_string %> CCResult.return) value field
   ;;
 end
 

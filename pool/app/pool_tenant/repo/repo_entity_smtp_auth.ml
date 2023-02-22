@@ -1,3 +1,4 @@
+open CCFun
 include Entity.SmtpAuth
 module Id = Pool_common.Repo.Id
 
@@ -29,20 +30,13 @@ module Password = struct
   include Password
 
   let t =
-    let open CCResult in
-    let open CCFun in
-    Caqti_type.(
-      custom
-        ~encode:
-          (Utils.Crypto.String.encrypt_to_string %> of_string %> CCResult.pure)
-        ~decode:(fun m ->
-          map_err (fun _ ->
-            let open Pool_common in
-            Utils.error_to_string
-              Language.En
-              Message.(Decode Field.SmtpPassword))
-          @@ (m |> value |> Utils.Crypto.String.decrypt_from_string))
-        string)
+    let open Utils.Crypto.String in
+    Pool_common.Repo.make_caqti_type
+      Caqti_type.string
+      (decrypt_from_string
+      %> CCResult.map_err (fun _ ->
+           Pool_common.Message.(Decode Field.DatabaseUrl)))
+      encrypt_to_string
   ;;
 end
 

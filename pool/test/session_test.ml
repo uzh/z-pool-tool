@@ -509,7 +509,7 @@ let cancel_no_reason () =
       [ "reason", [ "" ]; "email", [ "true" ]; "sms", [ "true" ] ]
       |> decode
       >>= handle session contacts (fun r c ->
-            create_cancellation_message r c |> CCResult.pure))
+            create_cancellation_message r c |> CCResult.return))
   in
   check_result
     (Error
@@ -532,7 +532,7 @@ let cancel_no_message_channels () =
       ]
       |> decode
       >>= handle session contacts (fun r c ->
-            create_cancellation_message r c |> CCResult.pure))
+            create_cancellation_message r c |> CCResult.return))
   in
   check_result (Error Pool_common.Message.PickMessageChannel) res
 ;;
@@ -560,7 +560,7 @@ let cancel_in_past () =
       ]
       |> decode
       >>= handle session contacts (fun r c ->
-            create_cancellation_message r c |> CCResult.pure))
+            create_cancellation_message r c |> CCResult.return))
   in
   check_result (Error Pool_common.Message.SessionInPast) res
 ;;
@@ -582,7 +582,7 @@ let cancel_already_canceled () =
       ]
       |> decode
       >>= handle session contacts (fun r c ->
-            create_cancellation_message r c |> CCResult.pure))
+            create_cancellation_message r c |> CCResult.return))
   in
   check_result
     (now
@@ -604,7 +604,7 @@ let cancel_valid () =
       [ "reason", [ reason ]; "email", [ "true" ]; "sms", [ "true" ] ]
       |> decode
       >>= handle session1 contacts (fun r c ->
-            create_cancellation_message r c |> CCResult.pure))
+            create_cancellation_message r c |> CCResult.return))
   in
   let messages =
     contacts
@@ -635,7 +635,7 @@ let cancel_valid () =
       [ "reason", [ reason ]; "email", [ "false" ]; "sms", [ "true" ] ]
       |> decode
       >>= handle session2 contacts (fun r c ->
-            create_cancellation_message r c |> CCResult.pure))
+            create_cancellation_message r c |> CCResult.return))
   in
   check_result
     (Ok
@@ -692,7 +692,7 @@ let close_valid_with_assignments () =
           ])
       [ Session.Closed session |> Pool_event.session ]
       assignments
-    |> CCResult.pure
+    |> CCResult.return
   in
   check_result expected res
 ;;

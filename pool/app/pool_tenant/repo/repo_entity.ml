@@ -1,3 +1,4 @@
+open CCFun
 open Entity
 module Common = Pool_common
 module Database = Pool_database
@@ -70,7 +71,7 @@ module Maintenance = struct
   let t =
     Pool_common.Repo.make_caqti_type
       Caqti_type.bool
-      CCFun.(create %> CCResult.pure)
+      (create %> CCResult.return)
       value
   ;;
 end
@@ -81,7 +82,7 @@ module Disabled = struct
   let t =
     Pool_common.Repo.make_caqti_type
       Caqti_type.bool
-      CCFun.(create %> CCResult.pure)
+      (create %> CCResult.return)
       value
   ;;
 end

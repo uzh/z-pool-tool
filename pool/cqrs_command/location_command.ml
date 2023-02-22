@@ -205,7 +205,6 @@ end = struct
   let command label language asset_id = { label; language; asset_id }
 
   let schema =
-    let fcn_ok = Utils.fcn_ok in
     Conformist.(
       make
         Field.
@@ -213,7 +212,7 @@ end = struct
           ; Pool_common.Language.schema ()
           ; Pool_common.(
               Utils.schema_decoder
-                (fcn_ok Id.of_string)
+                CCFun.(Id.of_string %> CCResult.return)
                 Id.value
                 Message.Field.FileMapping)
           ]

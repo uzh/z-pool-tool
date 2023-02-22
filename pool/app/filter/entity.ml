@@ -466,7 +466,7 @@ let rec query_of_yojson json =
      | "not", f -> f |> query_of_yojson >|= not
      | "pred", p -> p |> Predicate.t_of_yojson >|= pred
      | "template", `String id ->
-       id |> Pool_common.Id.of_string |> template |> CCResult.pure
+       id |> Pool_common.Id.of_string |> template |> CCResult.return
      | _ -> Error error)
   | _ -> Error error
 ;;

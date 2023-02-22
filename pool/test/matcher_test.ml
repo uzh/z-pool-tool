@@ -26,7 +26,7 @@ let create_message (_ : Contact.t) =
     ; cc = []
     ; bcc = []
     }
-  |> CCResult.pure
+  |> CCResult.return
 ;;
 
 let create_invitations_model () =

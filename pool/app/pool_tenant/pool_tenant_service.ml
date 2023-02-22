@@ -3,7 +3,6 @@ module AccountMap = CCMap.Make (Pool_database.Label)
 module Queue = Sihl_queue.MariaDb
 
 module Email = struct
-  let dev_inbox : Sihl.Contract.Email.t list ref = ref []
   let accounts : SmtpAuth.Write.t AccountMap.t ref = ref AccountMap.empty
 
   let remove_from_cache label =
@@ -12,8 +11,9 @@ module Email = struct
   ;;
 
   module DevInbox = struct
+    let dev_inbox : Sihl.Contract.Email.t list ref = ref []
     let inbox () = !dev_inbox
-    let add_to_inbox email = dev_inbox := List.cons email !dev_inbox
+    let add_to_inbox email = dev_inbox := email :: !dev_inbox
     let clear_inbox () = dev_inbox := []
   end
 
@@ -92,7 +92,7 @@ Html:
         m
           "Sending email intercepted. Sending email to new recipient ('%s')"
           new_recipient);
-      email |> redirected_email new_recipient |> CCResult.pure
+      email |> redirected_email new_recipient |> CCResult.return
     | false, None ->
       Error
         "Sending email intercepted! As no redirect email is specified it/they \
@@ -247,7 +247,7 @@ Html:
           |> get_exn_or "Invalid context passed!"
         in
         Lwt.catch
-          (fun () -> send database_label email ||> CCResult.pure)
+          (fun () -> send database_label email ||> CCResult.return)
           (Printexc.to_string %> Lwt.return_error)
       in
       let encode = Sihl.Contract.Email.to_yojson %> Yojson.Safe.to_string in

@@ -8,68 +8,41 @@ module Id = struct
   include Id
 
   let t =
-    let encode = Utils.fcn_ok value in
-    let decode = Utils.fcn_ok of_string in
-    Caqti_type.(custom ~encode ~decode string)
+    Pool_common.Repo.make_caqti_type
+      Caqti_type.string
+      (of_string %> CCResult.return)
+      value
   ;;
 end
 
 module Label = struct
-  let t =
-    Caqti_type.(
-      custom
-        ~encode:(Label.show %> CCResult.pure)
-        ~decode:(Label.of_string %> CCResult.map_err show_error)
-        string)
-  ;;
+  include Label
+
+  let t = Pool_common.Repo.make_caqti_type Caqti_type.string of_string show
 end
 
 module EmailSubject = struct
   include EmailSubject
 
-  let t =
-    Caqti_type.(
-      custom
-        ~encode:(value %> CCResult.pure)
-        ~decode:(create %> CCResult.map_err show_error)
-        string)
-  ;;
+  let t = Pool_common.Repo.make_caqti_type Caqti_type.string create value
 end
 
 module EmailText = struct
   include EmailText
 
-  let t =
-    Caqti_type.(
-      custom
-        ~encode:(value %> CCResult.pure)
-        ~decode:(create %> CCResult.map_err show_error)
-        string)
-  ;;
+  let t = Pool_common.Repo.make_caqti_type Caqti_type.string create value
 end
 
 module PlainText = struct
   include PlainText
 
-  let t =
-    Caqti_type.(
-      custom
-        ~encode:(value %> CCResult.pure)
-        ~decode:(create %> CCResult.map_err show_error)
-        string)
-  ;;
+  let t = Pool_common.Repo.make_caqti_type Caqti_type.string create value
 end
 
 module SmsText = struct
   include SmsText
 
-  let t =
-    Caqti_type.(
-      custom
-        ~encode:(value %> CCResult.pure)
-        ~decode:(create %> CCResult.map_err show_error)
-        string)
-  ;;
+  let t = Pool_common.Repo.make_caqti_type Caqti_type.string create value
 end
 
 let t =

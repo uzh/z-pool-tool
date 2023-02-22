@@ -1,3 +1,5 @@
+open CCFun
+
 let status =
   let open Sihl.Contract.Queue in
   let to_string = function
@@ -21,11 +23,9 @@ let status =
 type ctx = (string * string) list [@@deriving yojson]
 
 let ctx =
-  let encode =
-    CCFun.(yojson_of_ctx %> Yojson.Safe.to_string %> CCResult.pure)
-  in
+  let encode = yojson_of_ctx %> Yojson.Safe.to_string %> CCResult.return in
   let decode m =
-    try Yojson.Safe.from_string m |> ctx_of_yojson |> CCResult.pure with
+    try Yojson.Safe.from_string m |> ctx_of_yojson |> CCResult.return with
     | _ -> Error (Format.sprintf "failed to decode ctx %s" m)
   in
   Caqti_type.(custom ~encode ~decode string)

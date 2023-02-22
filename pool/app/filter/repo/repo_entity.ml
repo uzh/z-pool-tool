@@ -1,3 +1,4 @@
+open CCFun
 open Entity
 module Common = Pool_common
 module Id = Common.Id
@@ -6,26 +7,18 @@ module RepoId = Common.Repo.Id
 module Title = struct
   include Title
 
-  let t =
-    let encode = Utils.fcn_ok value in
-    let decode m =
-      m |> create |> CCResult.map_err Common.(Utils.error_to_string Language.En)
-    in
-    Caqti_type.(custom ~encode ~decode string)
-  ;;
+  let t = Pool_common.Repo.make_caqti_type Caqti_type.string create value
 end
 
 module Filter = struct
   let t =
-    let open CCResult in
     Caqti_type.(
       custom
-        ~encode:(fun m -> m |> yojson_of_query |> Yojson.Safe.to_string |> pure)
-        ~decode:(fun m ->
-          m
-          |> Yojson.Safe.from_string
-          |> query_of_yojson
-          |> CCResult.map_err Common.(Utils.error_to_string Language.En))
+        ~encode:(yojson_of_query %> Yojson.Safe.to_string %> CCResult.return)
+        ~decode:
+          (Yojson.Safe.from_string
+          %> query_of_yojson
+          %> CCResult.map_err Common.(Utils.error_to_string Language.En))
         string)
   ;;
 end

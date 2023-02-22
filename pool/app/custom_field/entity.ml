@@ -258,7 +258,7 @@ module Validation = struct
     CCOption.value ~default:key (text <+> number)
   ;;
 
-  let pure = CCResult.pure, []
+  let pure = CCResult.return, []
   let encode_to_yojson t = t |> snd |> yojson_of_raw
 
   let to_strings all m =

@@ -42,7 +42,7 @@ let predicate_of_yojson key_list (yojson : Yojson.Safe.t) =
     in
     let operator = go operator_string (Operator.of_yojson %> of_result) in
     let value = go value_string value_of_yojson_opt in
-    Predicate.create_human ?key ?operator ?value () |> CCResult.pure
+    Predicate.create_human ?key ?operator ?value () |> CCResult.return
   | _ -> Error Pool_common.Message.(Invalid Field.Predicate)
 ;;
 

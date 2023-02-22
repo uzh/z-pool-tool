@@ -139,7 +139,7 @@ module Distribution = struct
     let default = false in
     Utils.schema_decoder
       ~default
-      CCFun.(bool_of_string_opt %> CCOption.get_or ~default %> CCResult.pure)
+      CCFun.(bool_of_string_opt %> CCOption.get_or ~default %> CCResult.return)
       string_of_bool
       Pool_common.Message.Field.RandomOrder
   ;;
@@ -147,7 +147,9 @@ module Distribution = struct
   let schema () =
     let encode m = m |> yojson_of_sorted |> Yojson.Safe.to_string in
     let decode m =
-      try m |> Yojson.Safe.from_string |> sorted_of_yojson |> CCResult.pure with
+      try
+        m |> Yojson.Safe.from_string |> sorted_of_yojson |> CCResult.return
+      with
       | Ppx_yojson_conv_lib.Yojson_conv.Of_yojson_error (exn, yojson) ->
         Pool_common.Utils.handle_ppx_yojson_err (exn, yojson)
       | _ -> Error Pool_common.Message.(Invalid field)

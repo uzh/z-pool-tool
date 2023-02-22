@@ -1,3 +1,5 @@
+open CCFun
+
 module Id = struct
   include Pool_common.Id
   include Pool_common.Repo.Id
@@ -18,25 +20,17 @@ end
 module Rate = struct
   include Entity.Rate
 
-  let t =
-    let decode m =
-      m
-      |> create
-      |> CCResult.map_err Pool_common.(Utils.error_to_string Language.En)
-    in
-    Caqti_type.(custom ~encode:(Utils.fcn_ok value) ~decode int)
-  ;;
+  let t = Pool_common.Repo.make_caqti_type Caqti_type.int create value
 end
 
 module Distribution = struct
   include Entity.Distribution
 
   let t =
-    let open CCResult in
     Caqti_type.(
       custom
-        ~encode:(fun m -> m |> yojson_of_t |> Yojson.Safe.to_string |> pure)
-        ~decode:(fun m -> m |> Yojson.Safe.from_string |> t_of_yojson |> pure)
+        ~encode:(yojson_of_t %> Yojson.Safe.to_string %> CCResult.return)
+        ~decode:(Yojson.Safe.from_string %> t_of_yojson %> CCResult.return)
         string)
   ;;
 end

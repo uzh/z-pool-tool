@@ -44,7 +44,7 @@ module Boolean = struct
         m
         |> bool_of_string_opt
         |> CCOption.get_or ~default:false
-        |> CCResult.pure)
+        |> CCResult.return)
       string_of_bool
       field
   ;;

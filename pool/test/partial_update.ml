@@ -161,7 +161,7 @@ let set_value_of_none_required_field_to_null _ () =
     | Public.Text (public, _) ->
       Custom_field.PartialUpdate.(
         Custom (Public.Text (public, None)) |> increment_version)
-      |> CCResult.pure
+      |> CCResult.return
     | _ -> failwith "Invailid field type "
   in
   partial_update_exec ~custom_field ~value expected ()

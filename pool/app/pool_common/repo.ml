@@ -1,8 +1,8 @@
+open CCFun
 open Entity
 
 let make_caqti_type caqti_type create value =
-  let open CCFun in
-  let encode = Utils.fcn_ok value in
+  let encode = value %> CCResult.return in
   let decode =
     create %> CCResult.map_err (Utils_to_string.error_to_string Language.En)
   in
@@ -20,9 +20,7 @@ end
 module Id = struct
   include Id
 
-  let t =
-    make_caqti_type Caqti_type.string CCFun.(of_string %> CCResult.pure) value
-  ;;
+  let t = make_caqti_type Caqti_type.string (of_string %> CCResult.return) value
 end
 
 module Language = Model.SelectorType (Language)
@@ -30,7 +28,7 @@ module Language = Model.SelectorType (Language)
 module Version = struct
   include Version
 
-  let t = make_caqti_type Caqti_type.int CCFun.(of_int %> CCResult.pure) value
+  let t = make_caqti_type Caqti_type.int (of_int %> CCResult.return) value
 end
 
 module CreatedAt = struct
@@ -91,9 +89,7 @@ module Reminder = struct
   module SentAt = struct
     include Reminder.SentAt
 
-    let t =
-      make_caqti_type Caqti_type.ptime CCFun.(create %> CCResult.pure) value
-    ;;
+    let t = make_caqti_type Caqti_type.ptime (create %> CCResult.return) value
   end
 end
 
