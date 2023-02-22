@@ -5,9 +5,10 @@ module Key : sig
     | PasswordPolicyText
     | WelcomeText
 
-  val to_string : t -> string
+  val create : string -> (t, Pool_common.Message.error) result
+  val show : t -> string
   val equal : t -> t -> bool
-  val of_string : string -> (t, Pool_common.Message.error) result
+  val compare : t -> t -> int
   val is_rich_text : t -> bool
   val all : t list
 

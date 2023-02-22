@@ -48,14 +48,11 @@ let distribution_sort_select language ?field current_order =
                 | Some field ->
                   Format.asprintf
                     "%s,%s"
-                    (Mailing.Distribution.show_sortable_field field)
+                    (Mailing.Distribution.SortableField.show field)
                     (order |> show))
            ]
           @ selected)
-        (order
-        |> CCFun.flip to_human language
-        |> CCString.capitalize_ascii
-        |> txt))
+        (order |> to_human language |> CCString.capitalize_ascii |> txt))
     all
   |> fun options ->
   div ~a:[ a_class [ "select" ] ] [ select ~a:[ a_name select_name ] options ]
@@ -70,7 +67,7 @@ let distribution_form_field language (field, current_order) =
     [ div
         ~a:[ a_class [ "switcher"; "flex-gap"; "align-center"; "grow" ] ]
         [ label
-            [ Mailing.Distribution.sortable_field_to_string language field
+            [ Mailing.Distribution.SortableField.to_human language field
               |> CCString.capitalize_ascii
               |> txt
             ]
@@ -86,7 +83,7 @@ let distribution_form_field language (field, current_order) =
               ; a_button_type `Button
               ; a_user_data
                   "field"
-                  (Mailing.Distribution.show_sortable_field field)
+                  (Mailing.Distribution.SortableField.show field)
               ]
             [ Icon.icon `Trash ]
         ]
@@ -248,7 +245,7 @@ let form
       CCOption.map_or
         ~default:false
         (fun dist ->
-          dist |> find_dist |> CCList.mem_assoc ~eq:equal_sortable_field field)
+          dist |> find_dist |> CCList.mem_assoc ~eq:SortableField.equal field)
         distribution
     in
     let distribution_fncs =
@@ -313,12 +310,12 @@ let form
             if is_disabled field then [ a_disabled () ] else []
           in
           option
-            ~a:([ a_value (field |> show_sortable_field) ] @ is_disabled)
+            ~a:([ a_value (field |> SortableField.show) ] @ is_disabled)
             (field
-            |> sortable_field_to_string language
+            |> SortableField.to_human language
             |> CCString.capitalize_ascii
             |> txt))
-        all_sortable_fields
+        SortableField.all
       |> fun options ->
       select
         ~a:[ a_id "distribution-select"; a_name Field.(show DistributionField) ]

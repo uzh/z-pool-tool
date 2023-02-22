@@ -35,22 +35,32 @@ module Rate : sig
 end
 
 module Distribution : sig
-  type sortable_field =
-    | AssignmentCount
-    | Firstname
-    | InvitationCount
-    | Lastname
+  module SortableField : sig
+    val field : Pool_common.Message.Field.t
 
-  val all_sortable_fields : sortable_field list
-  val pp_sortable_field : Format.formatter -> sortable_field -> unit
-  val show_sortable_field : sortable_field -> string
-  val equal_sortable_field : sortable_field -> sortable_field -> bool
-  val read_sortable_field : string -> sortable_field
+    type t =
+      | AssignmentCount
+      | Firstname
+      | InvitationCount
+      | Lastname
 
-  val sortable_field_to_string
-    :  Pool_common.Language.t
-    -> sortable_field
-    -> string
+    val equal : t -> t -> bool
+    val compare : t -> t -> int
+    val pp : Format.formatter -> t -> unit
+    val show : t -> string
+    val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+    val t_of_yojson : Yojson.Safe.t -> t
+    val yojson_of_t : t -> Yojson.Safe.t
+    val to_human : Pool_common.Language.t -> t -> string
+    val to_sql : t -> string
+    val read : string -> t
+    val create : string -> (t, Pool_common.Message.error) result
+    val all : t list
+
+    val schema
+      :  unit
+      -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
+  end
 
   module SortOrder : sig
     type t =
@@ -60,10 +70,9 @@ module Distribution : sig
     val equal : t -> t -> bool
     val pp : Format.formatter -> t -> unit
     val show : t -> string
-    val to_human : t -> Pool_common.Language.t -> string
+    val to_human : Pool_common.Language.t -> t -> string
     val read : string -> t
     val create : string -> (t, Pool_common.Message.error) result
-    val label : t -> string
     val all : t list
     val default : t
 
@@ -72,7 +81,7 @@ module Distribution : sig
       -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
   end
 
-  type sorted = (sortable_field * SortOrder.t) list
+  type sorted = (SortableField.t * SortOrder.t) list
 
   val equal_sorted : sorted -> sorted -> bool
   val pp_sorted : Format.formatter -> sorted -> unit
@@ -89,7 +98,7 @@ module Distribution : sig
   val show : t -> string
   val is_random : t -> bool
   val find_dist : t -> sorted
-  val create_sorted : (sortable_field * SortOrder.t) list -> t
+  val create_sorted : (SortableField.t * SortOrder.t) list -> t
   val t_of_yojson : Yojson.Safe.t -> t
   val yojson_of_t : t -> Yojson.Safe.t
   val get_order_element : t -> string

@@ -48,26 +48,12 @@ end
 
 module Mechanism = struct
   include Mechanism
-
-  let t =
-    let open CCFun in
-    Pool_common.Repo.make_caqti_type
-      Caqti_type.string
-      (Yojson.Safe.from_string %> t_of_yojson %> CCResult.pure)
-      (yojson_of_t %> Yojson.Safe.to_string)
-  ;;
+  include Pool_common.Repo.Model.SelectorType (Core)
 end
 
 module Protocol = struct
   include Protocol
-
-  let t =
-    let open CCFun in
-    Pool_common.Repo.make_caqti_type
-      Caqti_type.string
-      (Yojson.Safe.from_string %> t_of_yojson %> CCResult.pure)
-      (yojson_of_t %> Yojson.Safe.to_string)
-  ;;
+  include Pool_common.Repo.Model.SelectorType (Core)
 end
 
 let t =

@@ -40,15 +40,12 @@ module Sql = struct
         pool_locations.uuid = UNHEX(REPLACE(?, '-', ''))
     |sql}
     |> Format.asprintf "%s\n%s" select_sql
-    |> Caqti_type.string ->! t
+    |> Id.t ->! t
   ;;
 
   let find pool id =
     let open Utils.Lwt_result.Infix in
-    Utils.Database.find_opt
-      (Pool_database.Label.value pool)
-      find_request
-      (Pool_common.Id.value id)
+    Utils.Database.find_opt (Pool_database.Label.value pool) find_request id
     ||> CCOption.to_result Pool_common.Message.(NotFound Field.Location)
   ;;
 
@@ -137,12 +134,7 @@ module Sql = struct
     Utils.Database.exec
       (Pool_database.Label.value pool)
       update_request
-      ( id
-      , ( name |> Entity.Name.value
-        , ( description |> CCOption.map Entity.Description.value
-          , ( address
-            , ( link |> CCOption.map Entity.Link.value
-              , status |> Entity.Status.show ) ) ) ) )
+      (id, (name, (description, (address, (link, status)))))
   ;;
 end
 

@@ -235,7 +235,7 @@ let add_condition req =
       let open Mailing.Distribution in
       let open CCResult in
       let* field =
-        Field.DistributionField |> find_in_urlencoded read_sortable_field
+        Field.DistributionField |> find_in_urlencoded SortableField.read
       in
       let* order = Field.SortOrder |> find_in_urlencoded SortOrder.read in
       Ok (field, order)

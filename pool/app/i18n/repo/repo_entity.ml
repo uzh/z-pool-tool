@@ -1,30 +1,17 @@
 open Entity
 module Common = Pool_common
-
-module Key = struct
-  include Key
-
-  let t = Caqti_type.string
-end
+module Key = Pool_common.Repo.Model.SelectorType (Key)
 
 module Content = struct
   include Content
 
-  let t = Caqti_type.string
+  let t = Pool_common.Repo.make_caqti_type Caqti_type.string create show
 end
 
 let t =
-  let encode m = Ok (m.id, (Key.to_string m.key, (m.language, m.content))) in
+  let encode m = Ok (m.id, (m.key, (m.language, m.content))) in
   let decode (id, (key, (language, content))) =
-    let open CCResult in
-    map_err (fun _ ->
-      Common.(
-        Utils.error_to_string
-          Common.Language.En
-          (Message.Decode Message.Field.I18n)))
-    @@ let* key = Key.of_string key in
-       let* content = Content.create content in
-       Ok { id; key; language; content }
+    Ok { id; key; language; content }
   in
   Caqti_type.(
     custom

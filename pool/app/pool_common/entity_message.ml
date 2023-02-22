@@ -1,7 +1,7 @@
 open Sexplib.Conv
 
 module Field = struct
-  let go m fmt _ = Format.pp_print_string fmt m
+  let go = Utils.ppx_printer
 
   let custom _ fmt t =
     let _, name = t in

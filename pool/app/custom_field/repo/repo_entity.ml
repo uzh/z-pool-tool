@@ -14,17 +14,7 @@ let decode_yojson t_of_yojson field t =
 
 type multi_select_answer = SelectOption.Id.t list [@@deriving yojson]
 
-module Model = struct
-  include Model
-
-  let t =
-    let encode = Utils.fcn_ok value in
-    let decode m =
-      m |> create |> CCResult.map_err Common.(Utils.error_to_string Language.En)
-    in
-    Caqti_type.(custom ~encode ~decode string)
-  ;;
-end
+module Model = Pool_common.Repo.Model.SelectorType (Model)
 
 module Name = struct
   include Name
@@ -47,15 +37,8 @@ module Hint = struct
 end
 
 module FieldType = struct
+  include Pool_common.Repo.Model.SelectorType (FieldType)
   include FieldType
-
-  let t =
-    let encode = Utils.fcn_ok value in
-    let decode m =
-      m |> create |> CCResult.map_err Common.(Utils.error_to_string Language.En)
-    in
-    Caqti_type.(custom ~encode ~decode string)
-  ;;
 end
 
 module Validation = struct

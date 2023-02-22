@@ -9,33 +9,20 @@ module File = struct
 end
 
 module Label = struct
-  let field = Pool_common.Message.Field.Label
-  let go m fmt _ = Format.pp_print_string fmt m
+  let print = Utils.ppx_printer
 
-  type t =
-    | Direction [@name "direction"] [@printer go "direction"]
-    | AdditionalInformation [@name "additional_information"]
-        [@printer go "additional_information"]
-  [@@deriving enum, eq, show { with_path = false }, yojson]
+  module Core = struct
+    let field = Pool_common.Message.Field.Label
 
-  let all : t list =
-    CCList.range min max
-    |> CCList.map of_enum
-    |> CCList.all_some
-    |> CCOption.get_exn_or
-         "Location Mapping Label: Could not create list of all keys!"
-  ;;
+    type t =
+      | Direction [@name "direction"] [@printer print "direction"]
+      | AdditionalInformation [@name "additional_information"]
+          [@printer print "additional_information"]
+    [@@deriving enum, eq, ord, sexp_of, show { with_path = false }, yojson]
+  end
 
-  let read m =
-    m |> Format.asprintf "[\"%s\"]" |> Yojson.Safe.from_string |> t_of_yojson
-  ;;
-
-  let create m =
-    try Ok (read m) with
-    | _ -> Error Pool_common.Message.(Invalid field)
-  ;;
-
-  let schema () = Pool_common.Utils.schema_decoder create show field
+  include Pool_common.Model.SelectorType (Core)
+  include Core
 end
 
 type file =

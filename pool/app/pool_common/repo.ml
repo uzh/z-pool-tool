@@ -9,6 +9,14 @@ let make_caqti_type caqti_type create value =
   Caqti_type.(custom ~encode ~decode caqti_type)
 ;;
 
+module Model = struct
+  module SelectorType (Core : Entity_base_model.SelectorTypeSig) = struct
+    include Entity_base_model.SelectorType (Core)
+
+    let t = make_caqti_type Caqti_type.string create Core.show
+  end
+end
+
 module Id = struct
   include Id
 
@@ -17,11 +25,7 @@ module Id = struct
   ;;
 end
 
-module Language = struct
-  include Language
-
-  let t = make_caqti_type Caqti_type.string create show
-end
+module Language = Model.SelectorType (Language)
 
 module Version = struct
   include Version
@@ -93,14 +97,4 @@ module Reminder = struct
   end
 end
 
-module ExperimentType = struct
-  include ExperimentType
-
-  let t =
-    let open CCFun in
-    make_caqti_type
-      Caqti_type.string
-      (Yojson.Safe.from_string %> t_of_yojson %> CCResult.pure)
-      (yojson_of_t %> Yojson.Safe.to_string)
-  ;;
-end
+module ExperimentType = Model.SelectorType (ExperimentType)

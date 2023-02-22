@@ -38,7 +38,9 @@ module Data = struct
 
     let distribution =
       Mailing.Distribution.
-        [ Lastname, SortOrder.Ascending; InvitationCount, SortOrder.Descending ]
+        [ SortableField.Lastname, SortOrder.Ascending
+        ; SortableField.InvitationCount, SortOrder.Descending
+        ]
     ;;
 
     let create =
@@ -110,14 +112,13 @@ let create_with_distribution () =
   let open Mailing.Distribution in
   let mailing = create_mailing () in
   let distribution =
-    [ InvitationCount, Distribution.SortOrder.Ascending
-    ; AssignmentCount, Distribution.SortOrder.Descending
-    ]
+    SortableField.
+      [ InvitationCount, SortOrder.Ascending
+      ; AssignmentCount, SortOrder.Descending
+      ]
   in
   let mailing =
-    { mailing with
-      distribution = Some (distribution |> Distribution.create_sorted)
-    }
+    { mailing with distribution = Some (distribution |> create_sorted) }
   in
   let experiment = Model.create_experiment () in
   let urlencoded () =
@@ -125,9 +126,9 @@ let create_with_distribution () =
     |> CCList.map (fun (field, sort) ->
          Format.asprintf
            "%s,%s"
-           (show_sortable_field field)
-           (Distribution.SortOrder.show sort))
-    |> Distribution.of_urlencoded_list
+           (SortableField.show field)
+           (SortOrder.show sort))
+    |> of_urlencoded_list
     >|= fun distribution ->
     let show = Field.show in
     [ show Field.Start, mailing.start_at |> StartAt.value |> Ptime.to_rfc3339
@@ -138,6 +139,8 @@ let create_with_distribution () =
     |> CCList.map (fun (field, value) -> field, [ value ])
     |> Http_utils.format_request_boolean_values Field.[ RandomOrder |> show ]
   in
+  (* let () = let encoded = urlencoded () |> Pool_common.Utils.get_or_failwith
+     in raise (Failure ([%show: (string * string list) list] encoded)) in *)
   let events =
     () |> urlencoded >>= decode >>= handle ~id:Data.Mailing.id experiment
   in

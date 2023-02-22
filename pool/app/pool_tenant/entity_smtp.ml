@@ -1,6 +1,8 @@
 module PoolError = Pool_common.Message
 module Id = Pool_common.Id
 
+let print = Utils.ppx_printer
+
 module Label = struct
   include Pool_common.Model.String
 
@@ -39,36 +41,18 @@ module Password = struct
 end
 
 module Mechanism = struct
-  let go m fmt _ = Format.pp_print_string fmt m
+  module Core = struct
+    let field = Pool_common.Message.Field.SmtpMechanism
 
-  (* Open NTLM protocol issue: https://github.com/mirage/colombe/issues/63 *)
-  type t =
-    | PLAIN [@name "PLAIN"] [@printer go "PLAIN"]
-    | LOGIN [@name "LOGIN"] [@printer go "LOGIN"]
-  [@@deriving enum, eq, sexp_of, show { with_path = false }, yojson]
+    (* Open NTLM protocol issue: https://github.com/mirage/colombe/issues/63 *)
+    type t =
+      | PLAIN [@name "plain"] [@printer print "plain"]
+      | LOGIN [@name "login"] [@printer print "login"]
+    [@@deriving enum, eq, ord, sexp_of, show { with_path = false }, yojson]
+  end
 
-  let read m =
-    m
-    |> CCString.uppercase_ascii
-    |> Format.asprintf "[\"%s\"]"
-    |> Yojson.Safe.from_string
-    |> t_of_yojson
-  ;;
-
-  let all : t list =
-    CCList.range min max
-    |> CCList.map of_enum
-    |> CCList.all_some
-    |> CCOption.get_exn_or
-         "SMTP auth mechanism: Could not create list of all keys!"
-  ;;
-
-  let schema () =
-    Pool_common.Utils.schema_decoder
-      CCFun.(read %> CCResult.pure)
-      show
-      PoolError.Field.SmtpMechanism
-  ;;
+  include Pool_common.Model.SelectorType (Core)
+  include Core
 
   let to_sendmail = function
     | PLAIN -> Sendmail.PLAIN
@@ -77,35 +61,17 @@ module Mechanism = struct
 end
 
 module Protocol = struct
-  let go m fmt _ = Format.pp_print_string fmt m
+  module Core = struct
+    let field = Pool_common.Message.Field.SmtpProtocol
 
-  type t =
-    | STARTTLS [@name "STARTTLS"] [@printer go "STARTTLS"]
-    | SSL_TLS [@name "SSL/TLS"] [@printer go "SSL/TLS"]
-  [@@deriving enum, eq, sexp_of, show { with_path = false }, yojson]
+    type t =
+      | STARTTLS [@name "starttls"] [@printer print "starttls"]
+      | SSL_TLS [@name "ssl/tls"] [@printer print "ssl/tls"]
+    [@@deriving enum, eq, ord, sexp_of, show { with_path = false }, yojson]
+  end
 
-  let read m =
-    m
-    |> CCString.uppercase_ascii
-    |> Format.asprintf "[\"%s\"]"
-    |> Yojson.Safe.from_string
-    |> t_of_yojson
-  ;;
-
-  let all : t list =
-    CCList.range min max
-    |> CCList.map of_enum
-    |> CCList.all_some
-    |> CCOption.get_exn_or
-         "SMTP auth mechanism: Could not create list of all keys!"
-  ;;
-
-  let schema () =
-    Pool_common.Utils.schema_decoder
-      CCFun.(read %> CCResult.pure)
-      show
-      PoolError.Field.SmtpProtocol
-  ;;
+  include Pool_common.Model.SelectorType (Core)
+  include Core
 end
 
 type t =

@@ -36,7 +36,9 @@ module Boolean = struct
     | _ -> false
   ;;
 
-  let schema field () =
+  let schema field ()
+    : (Entity_message.error, t) Pool_common_utils.PoolConformist.Field.t
+    =
     Pool_common_utils.schema_decoder
       (fun m ->
         m
@@ -80,7 +82,9 @@ module String = struct
     if CCString.is_empty str then Error Entity_message.NoValue else Ok str
   ;;
 
-  let schema field ?validation () =
+  let schema field ?validation ()
+    : (Entity_message.error, t) Pool_common_utils.PoolConformist.Field.t
+    =
     let create = CCOption.value ~default:create validation in
     Pool_common_utils.schema_decoder create value field
   ;;
@@ -112,7 +116,9 @@ module Integer = struct
 
   let value m = m
 
-  let schema field create () =
+  let schema field create ()
+    : (Entity_message.error, t) Pool_common_utils.PoolConformist.Field.t
+    =
     let decode str =
       let open CCResult in
       CCInt.of_string str
@@ -149,7 +155,9 @@ module PtimeSpan = struct
   let value m = m
   let to_human = Pool_common_utils.Time.formatted_timespan
 
-  let schema field create () =
+  let schema field create ()
+    : (Entity_message.error, t) Pool_common_utils.PoolConformist.Field.t
+    =
     let open Pool_common_utils in
     let open CCResult in
     let decode str = Time.parse_time_span str >>= create in
@@ -193,7 +201,9 @@ module Ptime = struct
   let create_now = Ptime_clock.now
   let to_human = Pool_common_utils.Time.formatted_date_time
 
-  let schema field create () =
+  let schema field create ()
+    : (Entity_message.error, t) Pool_common_utils.PoolConformist.Field.t
+    =
     let decode str =
       let open CCResult in
       Pool_common_utils.Time.parse_time str >>= create
@@ -231,4 +241,48 @@ module type BaseSig = sig
   val schema
     :  unit
     -> (Entity_message.error, t) Pool_common_utils.PoolConformist.Field.t
+end
+
+module type SelectorTypeSig = sig
+  type t
+
+  val field : Entity_message.Field.t
+  val min : int
+  val max : int
+  val to_enum : t -> int
+  val of_enum : int -> t option
+  val equal : t -> t -> bool
+  val compare : t -> t -> int
+  val pp : Format.formatter -> t -> unit
+  val show : t -> string
+  val t_of_yojson : Yojson.Safe.t -> t
+  val yojson_of_t : t -> Yojson.Safe.t
+  val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+end
+
+module SelectorType (Core : SelectorTypeSig) = struct
+  open CCFun
+  include Core
+
+  let to_yojson_string m = m |> Format.asprintf "[\"%s\"]"
+  let read = to_yojson_string %> Yojson.Safe.from_string %> Core.t_of_yojson
+
+  let create m =
+    try Ok (read m) with
+    | Ppx_yojson_conv_lib.Yojson_conv.Of_yojson_error (exn, yojson) ->
+      Pool_common_utils.handle_ppx_yojson_err (exn, yojson)
+    | _ -> Error Entity_message.(Invalid field)
+  ;;
+
+  let all : t list =
+    CCList.range min max
+    |> CCList.map of_enum
+    |> CCList.all_some
+    |> CCOption.get_exn_or
+         (Format.asprintf
+            "%s: Could not create list of all keys!"
+            ([%show: Entity_message.Field.t] field))
+  ;;
+
+  let schema () = Pool_common_utils.schema_decoder create show field
 end

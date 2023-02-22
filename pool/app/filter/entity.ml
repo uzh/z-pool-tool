@@ -21,17 +21,17 @@ let read of_yojson yojson =
   |> of_yojson
 ;;
 
-let print m fmt _ = Format.pp_print_string fmt m
+let print = Utils.ppx_printer
 
 type single_val =
-  | Bool of bool [@printer print "bool"] [@name "bool"]
-  | Date of Ptime.t [@printer print "date"] [@name "date"]
-  | Language of Pool_common.Language.t [@printer print "language"]
-      [@name "language"]
-  | Nr of float [@printer print "nr"] [@name "nr"]
-  | Option of Custom_field.SelectOption.Id.t [@printer print "option"]
-      [@name "option"]
-  | Str of string [@printer print "str"] [@name "str"]
+  | Bool of bool [@name "bool"] [@printer print "bool"]
+  | Date of Ptime.t [@name "date"] [@printer print "date"]
+  | Language of Pool_common.Language.t [@name "language"]
+      [@printer print "language"]
+  | Nr of float [@name "nr"] [@printer print "nr"]
+  | Option of Custom_field.SelectOption.Id.t [@name "option"]
+      [@printer print "option"]
+  | Str of string [@name "str"] [@printer print "str"]
 [@@deriving show { with_path = false }, eq]
 
 type value =
