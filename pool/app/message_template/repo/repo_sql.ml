@@ -161,15 +161,16 @@ let find_all_by_entity_uuid_and_label_request dyn languages =
     , dyn )
   in
   let base =
-    Format.asprintf "%s WHERE label = ? AND %s" select_sql languages_sql
+    Format.asprintf "%s WHERE label = ? AND %s " select_sql languages_sql
   in
   function
   | None ->
-    dyn, Format.asprintf "%s pool_message_templates.entity_uuid IS NULL" base
+    ( dyn
+    , Format.asprintf "%s AND pool_message_templates.entity_uuid IS NULL" base )
   | Some id ->
     ( dyn |> Dynparam.add Pool_common.Repo.Id.t id
     , Format.asprintf
-        "%s pool_message_templates.entity_uuid = UNHEX(REPLACE(?, '-', ''))"
+        "%s AND pool_message_templates.entity_uuid = UNHEX(REPLACE(?, '-', ''))"
         base )
 ;;
 
