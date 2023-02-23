@@ -214,6 +214,11 @@ let rec hint_to_string = function
     "Locations, where experiments are conducted. Every session has to have a \
      location."
   | I18nText str -> str
+  | MissingMessageTemplates (label, languages) ->
+    Format.asprintf
+      "The '%s' template is missing is the following languages: %s"
+      label
+      (languages |> CCString.concat ", ")
   | NumberIsSecondsHint -> "Nr. of seconds"
   | NumberIsDaysHint -> "Nr. of days"
   | NumberIsWeeksHint -> "Nr. of weeks"

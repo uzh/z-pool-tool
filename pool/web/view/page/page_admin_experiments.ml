@@ -354,6 +354,39 @@ let detail
   Pool_context.{ language; csrf; _ }
   =
   let experiment_path = build_experiment_path experiment in
+  let notifications =
+    let open CCList in
+    let open Pool_common in
+    let open Message_template in
+    Label.
+      [ invitation_templates, ExperimentInvitation
+      ; session_reminder_templates, SessionReminder
+      ]
+    |> filter_map (fun (templates, label) ->
+         if is_empty templates
+         then None
+         else
+           filter
+             (fun lang ->
+               find_opt
+                 (fun { language; _ } -> Language.equal language lang)
+                 templates
+               |> CCOption.is_none)
+             sys_languages
+           |> function
+           | [] -> None
+           | langs ->
+             I18n.MissingMessageTemplates
+               (Label.to_human label, CCList.map Language.show langs)
+             |> Utils.hint_to_string language
+             |> txt
+             |> pure
+             |> Notification.notification language `Warning
+             |> CCOption.pure)
+    |> function
+    | [] -> txt ""
+    | notifications -> div ~a:[ a_class [ "stack" ] ] notifications
+  in
   let delete_form =
     match session_count > 0 with
     | true ->
@@ -454,7 +487,7 @@ let detail
     in
     div
       ~a:[ a_class [ "stack-lg" ] ]
-      [ experiment_table; message_template; delete_form ]
+      [ notifications; experiment_table; message_template; delete_form ]
   in
   let edit_button =
     link_as_button
