@@ -243,7 +243,7 @@ module type BaseSig = sig
     -> (Entity_message.error, t) Pool_common_utils.PoolConformist.Field.t
 end
 
-module type SelectorTypeSig = sig
+module type SelectorCoreTypeSig = sig
   type t
 
   val field : Entity_message.Field.t
@@ -260,7 +260,7 @@ module type SelectorTypeSig = sig
   val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
 end
 
-module SelectorType (Core : SelectorTypeSig) = struct
+module SelectorType (Core : SelectorCoreTypeSig) = struct
   open CCFun
   include Core
 

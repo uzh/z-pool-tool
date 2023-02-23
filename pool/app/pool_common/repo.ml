@@ -10,7 +10,7 @@ let make_caqti_type caqti_type create value =
 ;;
 
 module Model = struct
-  module SelectorType (Core : Entity_base_model.SelectorTypeSig) = struct
+  module SelectorType (Core : Entity_base_model.SelectorCoreTypeSig) = struct
     include Entity_base_model.SelectorType (Core)
 
     let t = make_caqti_type Caqti_type.string create Core.show

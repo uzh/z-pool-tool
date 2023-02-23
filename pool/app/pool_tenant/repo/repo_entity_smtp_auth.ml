@@ -40,15 +40,8 @@ module Password = struct
   ;;
 end
 
-module Mechanism = struct
-  include Mechanism
-  include Pool_common.Repo.Model.SelectorType (Core)
-end
-
-module Protocol = struct
-  include Protocol
-  include Pool_common.Repo.Model.SelectorType (Core)
-end
+module Mechanism = Pool_common.Repo.Model.SelectorType (Mechanism)
+module Protocol = Pool_common.Repo.Model.SelectorType (Protocol)
 
 let t =
   let encode (m : t) =

@@ -15,7 +15,7 @@ module Model : sig
   module type IntegerSig = Entity_base_model.IntegerSig
   module type PtimeSig = Entity_base_model.PtimeSig
   module type PtimeSpanSig = Entity_base_model.PtimeSpanSig
-  module type SelectorTypeSig = Entity_base_model.SelectorTypeSig
+  module type SelectorCoreTypeSig = Entity_base_model.SelectorCoreTypeSig
   module type StringSig = Entity_base_model.StringSig
 end
 

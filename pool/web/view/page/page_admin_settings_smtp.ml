@@ -125,6 +125,10 @@ let show
   div
     ~a:[ a_class [ "trim"; "narrow"; "safety-margin" ] ]
     [ h1 ~a:[ a_class [ "heading-1" ] ] [ txt "Email Server Settings (SMTP)" ]
+    ; p
+        [ Pool_common.(Utils.hint_to_string language I18n.SmtpSettingsIntro)
+          |> HttpUtils.add_line_breaks
+        ]
     ; div ~a:[ a_class [ "stack" ] ] [ smtp_details; smtp_password ]
     ]
 ;;
@@ -185,6 +189,10 @@ let smtp_create_form
   div
     ~a:[ a_class [ "trim"; "narrow"; "safety-margin" ] ]
     [ h1 ~a:[ a_class [ "heading-1" ] ] [ txt "Configure Email Server (SMTP)" ]
+    ; p
+        [ Pool_common.(Utils.hint_to_string language I18n.SmtpSettingsIntro)
+          |> HttpUtils.add_line_breaks
+        ]
     ; div ~a:[ a_class [ "stack" ] ] [ div [ create_form ] ]
     ]
 ;;

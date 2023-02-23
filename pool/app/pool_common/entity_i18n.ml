@@ -141,6 +141,7 @@ type hint =
   | SessionRegistrationHint
   | SessionReminderLanguageHint
   | SignUpForWaitingList
+  | SmtpSettingsIntro
   | TemplateTextElementsHint
   | TimeSpanPickerHint
 

@@ -46,8 +46,8 @@ module Mechanism = struct
 
     (* Open NTLM protocol issue: https://github.com/mirage/colombe/issues/63 *)
     type t =
-      | PLAIN [@name "plain"] [@printer print "plain"]
-      | LOGIN [@name "login"] [@printer print "login"]
+      | PLAIN [@name "PLAIN"] [@printer print "PLAIN"]
+      | LOGIN [@name "LOGIN"] [@printer print "LOGIN"]
     [@@deriving enum, eq, ord, sexp_of, show { with_path = false }, yojson]
   end
 
@@ -65,8 +65,8 @@ module Protocol = struct
     let field = Pool_common.Message.Field.SmtpProtocol
 
     type t =
-      | STARTTLS [@name "starttls"] [@printer print "starttls"]
-      | SSL_TLS [@name "ssl/tls"] [@printer print "ssl/tls"]
+      | STARTTLS [@name "STARTTLS"] [@printer print "STARTTLS"]
+      | SSL_TLS [@name "SSL/TLS"] [@printer print "SSL/TLS"]
     [@@deriving enum, eq, ord, sexp_of, show { with_path = false }, yojson]
   end
 
