@@ -95,6 +95,7 @@ module Target = struct
     | `MessageTemplate
     | `Session
     | `Setting
+    | `Smtp
     | `System
     | `Tenant
     | `WaitingList
@@ -135,6 +136,7 @@ module Target = struct
     | "mailing", [] -> `Mailing
     | "session", [] -> `Session
     | "setting", [] -> `Setting
+    | "smtp", [] -> `Smtp
     | "system", [] -> `System
     | "tenant", [] -> `Tenant
     | "waitinglist", [] -> `WaitingList
@@ -158,6 +160,7 @@ module Target = struct
       ; `Mailing
       ; `Session
       ; `Setting
+      ; `Smtp
       ; `System
       ; `Tenant
       ; `WaitingList
@@ -182,6 +185,7 @@ module Target = struct
       ; `Mailing
       ; `Session
       ; `Setting
+      ; `Smtp
       ; `System
       ; `Tenant
       ; `WaitingList

@@ -168,7 +168,7 @@ end = struct
   let effects tenant =
     [ ( `Delete
       , `Target
-          (tenant |> Pool_tenant.id |> Guard.Uuid.target_of Pool_common.Id.value)
+          (tenant |> Pool_tenant.id |> Guard.Uuid.target_of Pool_tenant.Id.value)
       )
     ]
   ;;

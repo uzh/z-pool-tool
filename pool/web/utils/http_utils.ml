@@ -315,19 +315,6 @@ let multi_html_to_plain_text_response ?(status = 200) html_els =
        ~headers
 ;;
 
-let browser_language_from_req req =
-  let open CCOption in
-  let to_lang lang = lang |> Pool_common.Language.create |> of_result in
-  req
-  |> Opium.Request.header "Accept-Language"
-  >|= CCString.split ~by:","
-  >>= CCList.head_opt
-  >|= (fun lang -> CCString.split ~by:";" lang)
-  >>= CCList.head_opt
-  >>= Utils.LanguageCodes.find
-  >>= to_lang
-;;
-
 let externalize_path_with_lang lang path =
   path_with_language lang path |> Sihl.Web.externalize_path
 ;;

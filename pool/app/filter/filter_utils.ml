@@ -1,4 +1,4 @@
-let print m fmt _ = Format.pp_print_string fmt m
+let print = Utils.ppx_printer
 
 type filter_label =
   | And [@printer print "and"]

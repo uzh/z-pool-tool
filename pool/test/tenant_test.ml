@@ -3,6 +3,7 @@ module Pool_tenant_command = Cqrs_command.Pool_tenant_command
 module Admin_command = Cqrs_command.Admin_command
 module HttpUtils = Http_utils
 module Common = Pool_common
+module SmtpAuth = Pool_tenant.SmtpAuth
 
 module Data = struct
   open Database.SeedAssets
@@ -24,12 +25,6 @@ module Data = struct
   ;;
 
   let database_label = "econ-test"
-  let smtp_auth_server = "smtp.uzh.ch"
-  let smtp_auth_port = "587"
-  let smtp_auth_username = "engineering@econ.uzh.ch"
-  let smtp_auth_password = "emailemail"
-  let smtp_auth_authentication_method = "LOGIN"
-  let smtp_auth_protocol = "STARTTLS"
 
   let styles =
     Asset.styles
@@ -58,12 +53,6 @@ module Data = struct
     ; Field.Url, [ url ]
     ; Field.DatabaseUrl, [ database_url ]
     ; Field.DatabaseLabel, [ database_label ]
-    ; Field.SmtpAuthServer, [ smtp_auth_server ]
-    ; Field.SmtpPort, [ smtp_auth_port ]
-    ; Field.SmtpUsername, [ smtp_auth_username ]
-    ; Field.SmtpPassword, [ smtp_auth_password ]
-    ; Field.SmtpAuthMethod, [ smtp_auth_authentication_method ]
-    ; Field.SmtpProtocol, [ smtp_auth_protocol ]
     ; Field.Styles, [ Asset.styles ]
     ; Field.Icon, [ Asset.icon ]
     ; Field.TenantLogos, [ tenant_logo ]
@@ -77,50 +66,64 @@ module Data = struct
     |> CCList.map (CCPair.map_fst Field.show)
   ;;
 
-  let smtp_auth =
-    let open CCResult in
-    let open Pool_tenant in
-    let auth =
-      let* smtp_auth_server = smtp_auth_server |> SmtpAuth.Server.create in
-      let* smtp_auth_port = smtp_auth_port |> SmtpAuth.Port.create in
-      let* smtp_auth_username =
-        smtp_auth_username |> SmtpAuth.Username.create
+  module Smtp = struct
+    let id = SmtpAuth.Id.create ()
+    let label = database_label
+    let server = "smtp.uzh.ch"
+    let port = 587
+    let username = "engineering@econ.uzh.ch"
+    let password = "emailemail"
+    let mechanism = SmtpAuth.Mechanism.(LOGIN, LOGIN |> show)
+    let protocol = SmtpAuth.Protocol.(STARTTLS, STARTTLS |> show)
+
+    let urlencoded =
+      let open Common.Message in
+      [ Field.SmtpLabel, [ label ]
+      ; Field.SmtpServer, [ server ]
+      ; Field.SmtpPort, [ port |> CCInt.to_string ]
+      ; Field.SmtpUsername, [ username ]
+      ; Field.SmtpPassword, [ password ]
+      ; Field.SmtpMechanism, [ snd mechanism ]
+      ; Field.SmtpProtocol, [ snd protocol ]
+      ]
+      |> CCList.map (CCPair.map_fst Field.show)
+    ;;
+
+    let create () =
+      let open CCResult in
+      let open Pool_tenant.SmtpAuth in
+      let auth =
+        let* label = label |> Label.create in
+        let* server = server |> Server.create in
+        let* port = port |> Port.create in
+        let* username =
+          username |> Username.create |> CCResult.map CCOption.pure
+        in
+        let* password =
+          password |> Password.create |> CCResult.map CCOption.pure
+        in
+        let mechanism = fst mechanism in
+        let protocol = fst protocol in
+        Write.create ~id label server port username password mechanism protocol
       in
-      let* smtp_auth_password =
-        smtp_auth_password |> SmtpAuth.Password.create
-      in
-      let* smtp_auth_authentication_method =
-        smtp_auth_authentication_method |> SmtpAuth.AuthenticationMethod.create
-      in
-      let* smtp_auth_protocol =
-        smtp_auth_protocol |> SmtpAuth.Protocol.create
-      in
-      SmtpAuth.Write.create
-        smtp_auth_server
-        smtp_auth_port
-        smtp_auth_username
-        smtp_auth_password
-        smtp_auth_authentication_method
-        smtp_auth_protocol
-    in
-    auth |> CCResult.get_exn
-  ;;
+      auth |> CCResult.get_exn
+    ;;
+  end
 
   let tenant =
     let open Pool_tenant in
     let open CCResult in
     let* title = title |> Title.create in
     let* description = description |> Description.create in
-    let* url = url |> Pool_tenant.Url.create in
+    let* url = url |> Url.create in
     let* database = Pool_database.create database_label database_url in
     Ok
       Write.
-        { id = Common.Id.create ()
+        { id = Id.create ()
         ; title
         ; description
         ; url
         ; database
-        ; smtp_auth
         ; styles
         ; icon
         ; maintenance = Maintenance.create false
@@ -134,20 +137,9 @@ module Data = struct
   let full_tenant =
     let open Pool_tenant in
     let open CCResult in
-    let smtp_auth =
-      (SmtpAuth.
-         { server = smtp_auth.SmtpAuth.Write.server
-         ; port = smtp_auth.SmtpAuth.Write.port
-         ; username = smtp_auth.SmtpAuth.Write.username
-         ; authentication_method =
-             smtp_auth.SmtpAuth.Write.authentication_method
-         ; protocol = smtp_auth.SmtpAuth.Write.protocol
-         }
-        : SmtpAuth.t)
-    in
     let* title = title |> Title.create in
     let* description = description |> Description.create in
-    let* url = url |> Pool_tenant.Url.create in
+    let* url = url |> Url.create in
     let* database_label = database_label |> Pool_database.Label.create in
     let styles =
       let open Pool_common.File in
@@ -186,12 +178,11 @@ module Data = struct
     in
     let icon = logo_file |> CCResult.get_exn |> Icon.of_file in
     Ok
-      { id = Common.Id.create ()
+      { id = Id.create ()
       ; title
       ; description
       ; url
       ; database_label
-      ; smtp_auth
       ; styles = styles |> CCResult.get_exn
       ; icon
       ; logos
@@ -206,26 +197,21 @@ module Data = struct
 end
 
 let create_smtp_auth () =
-  let open Data in
-  let open Pool_tenant.SmtpAuth in
-  let smtp_auth =
+  let open Pool_tenant in
+  let events =
     let open CCResult in
-    let* server = smtp_auth_server |> Server.create in
-    let* port = smtp_auth_port |> Port.create in
-    let* username = smtp_auth_username |> Username.create in
-    let* authentication_method =
-      smtp_auth_authentication_method |> AuthenticationMethod.create
-    in
-    let* protocol = "http" |> Protocol.create in
-    Ok { server; port; username; authentication_method; protocol }
+    let open Cqrs_command.Smtp_command.Create in
+    decode Data.Smtp.urlencoded >>= handle ~id:Data.Smtp.id
   in
-  let expected = Error Common.Message.(Invalid Field.SmtpProtocol) in
+  let expected =
+    Ok [ SmtpCreated (Data.Smtp.create ()) |> Pool_event.pool_tenant ]
+  in
   Alcotest.(
     check
-      (result Test_utils.tenant_smtp_auth Test_utils.error)
+      (result (list Test_utils.event) Test_utils.error)
       "succeeds"
       expected
-      smtp_auth)
+      events)
 ;;
 
 let[@warning "-4"] create_tenant () =
@@ -276,20 +262,6 @@ let[@warning "-4"] create_tenant () =
       let* url = database_url |> Pool_tenant.Database.Url.create in
       Ok Pool_database.{ url; label = database_label }
     in
-    let* smtp_auth =
-      let open Pool_tenant.SmtpAuth in
-      let* server = smtp_auth_server |> Server.create in
-      let* port = smtp_auth_port |> Port.create in
-      let* username = smtp_auth_username |> Username.create in
-      let* password = smtp_auth_password |> Password.create in
-      let* authentication_method =
-        smtp_auth_authentication_method |> AuthenticationMethod.create
-      in
-      let* protocol = smtp_auth_protocol |> Protocol.create in
-      Ok
-        Write.
-          { server; port; username; password; authentication_method; protocol }
-    in
     let* default_language = default_language |> Common.Language.create in
     let create : Pool_tenant.Write.t =
       Pool_tenant.Write.
@@ -298,7 +270,6 @@ let[@warning "-4"] create_tenant () =
         ; description
         ; url
         ; database
-        ; smtp_auth
         ; styles
         ; icon
         ; maintenance = Pool_tenant.Maintenance.create false
@@ -362,21 +333,10 @@ let[@warning "-4"] update_tenant_details () =
       let* title = title |> Title.create in
       let* description = description |> Description.create in
       let* url = url |> Pool_tenant.Url.create in
-      let* smtp_auth =
-        let* server = smtp_auth_server |> SmtpAuth.Server.create in
-        let* port = smtp_auth_port |> SmtpAuth.Port.create in
-        let* username = smtp_auth_username |> SmtpAuth.Username.create in
-        let* authentication_method =
-          smtp_auth_authentication_method
-          |> SmtpAuth.AuthenticationMethod.create
-        in
-        let* protocol = smtp_auth_protocol |> SmtpAuth.Protocol.create in
-        Ok { server; port; username; authentication_method; protocol }
-      in
       let* default_language = default_language |> Common.Language.create in
       let disabled = false |> Disabled.create in
       let update : update =
-        { title; description; url; smtp_auth; default_language; disabled }
+        { title; description; url; default_language; disabled }
       in
       let logo_event =
         (* read logo event, as it's not value of update in this test *)

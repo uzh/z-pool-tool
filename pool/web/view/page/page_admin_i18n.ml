@@ -50,7 +50,7 @@ let list translation_list Pool_context.{ language; csrf; _ } =
               ~a:[ a_class [ "heading-2" ] ]
               [ txt
                   (key
-                  |> I18n.Key.to_string
+                  |> I18n.Key.show
                   |> CCString.replace ~which:`All ~sub:"_" ~by:" "
                   |> CCString.capitalize_ascii)
               ]

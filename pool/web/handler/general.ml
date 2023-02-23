@@ -30,16 +30,6 @@ let create_tenant_layout
   |> Lwt_result.return
 ;;
 
-let create_root_layout
-  ?active_navigation
-  Pool_context.{ language; message; user; _ }
-  children
-  =
-  Page.Layout.create_root_layout
-    children
-    language
-    message
-    user
-    ?active_navigation
-    ()
+let create_root_layout ?active_navigation Pool_context.{ message; user; _ } =
+  Page.Layout.Root.create_layout ?active_navigation user message
 ;;

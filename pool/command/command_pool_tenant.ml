@@ -1,10 +1,8 @@
 let create_tenant_pool =
   let help =
     {|<title> <description> <url> <database_url> <database_label>
-      <smtp_auth_server> <smtp_auth_port> <smtp_auth_username>
-      <smtp_auth_password> <smtp_auth_authentication_method>
-      <smtp_auth_protocol> <styles> <icon> <logos> <default_language>
-      <operator_email> <operator_password> <operator_firstname> <operator_lastname>
+      <styles> <icon> <logos> <default_language> <operator_email>
+      <operator_password> <operator_firstname> <operator_lastname>
 
 Provide all fields to create a new tenant:
       <title>                             : string
@@ -12,12 +10,6 @@ Provide all fields to create a new tenant:
       <url>                               : string
       <database_url>                      : string
       <database_label>                    : string
-      <smtp_auth_server>                  : string
-      <smtp_auth_port>                    : string
-      <smtp_auth_username>                : string
-      <smtp_auth_password>                : string
-      <smtp_auth_authentication_method>   : string
-      <smtp_auth_protocol>                : 'STARTTLS' | 'SSL/TLS'
       <styles>                            : uuid
       <icon>                              : uuid
       <logos>                             : uuid
@@ -38,12 +30,6 @@ Provide all fields to create a new tenant:
       ; url
       ; database_url
       ; database_label
-      ; smtp_auth_server
-      ; smtp_auth_port
-      ; smtp_auth_username
-      ; smtp_auth_password
-      ; smtp_auth_authentication_method
-      ; smtp_auth_protocol
       ; styles
       ; icon
       ; logos
@@ -61,13 +47,6 @@ Provide all fields to create a new tenant:
           ; "url", [ url ]
           ; "database_url", [ database_url ]
           ; "database_label", [ database_label ]
-          ; "smtp_auth_server", [ smtp_auth_server ]
-          ; "smtp_auth_port", [ smtp_auth_port ]
-          ; "smtp_auth_username", [ smtp_auth_username ]
-          ; "smtp_auth_password", [ smtp_auth_password ]
-          ; ( "smtp_auth_authentication_method"
-            , [ smtp_auth_authentication_method ] )
-          ; "smtp_auth_protocol", [ smtp_auth_protocol ]
           ; "styles", [ styles ]
           ; "icon", [ icon ]
           ; "logos", [ logos ]

@@ -2,10 +2,10 @@ open Tyxml.Html
 open Component.Input
 module Table = Component.Table
 module File = Pool_common.File
-module Id = Pool_common.Id
+module Id = Pool_tenant.Id
 module Message = Pool_common.Message
 
-let list tenant_list root_list Pool_context.{ language; csrf; _ } =
+let list tenant_list Pool_context.{ language; csrf; _ } =
   let build_tenant_rows tenant_list =
     let thead =
       Pool_common.Message.
@@ -14,8 +14,8 @@ let list tenant_list root_list Pool_context.{ language; csrf; _ } =
     let open Pool_tenant in
     let body =
       CCList.map
-        (fun (tenant : Pool_tenant.t) ->
-          [ txt (tenant.title |> Pool_tenant.Title.value)
+        (fun (tenant : t) ->
+          [ txt (tenant.title |> Title.value)
           ; a
               ~a:
                 [ a_href
@@ -29,53 +29,9 @@ let list tenant_list root_list Pool_context.{ language; csrf; _ } =
     in
     Table.horizontal_table `Striped ~thead ~align_last_end:true body
   in
-  let build_root_rows root_list =
-    let open Sihl.Contract.User in
-    let status_toggle (status : Sihl.Contract.User.status) id =
-      let text, style =
-        match status with
-        | Active -> Message.Disable, "error"
-        | Inactive -> Message.Enable, "primary"
-      in
-      form
-        ~a:
-          [ a_action
-              (Sihl.Web.externalize_path
-                 (Format.asprintf "/root/root/%s/toggle-status" id))
-          ; a_method `Post
-          ; a_class [ "stack" ]
-          ]
-        [ submit_element language text ~classnames:[ style ] () ]
-    in
-    let thead =
-      Pool_common.Message.[ Field.Email |> Table.field_to_txt language; txt "" ]
-    in
-    let rows =
-      CCList.map
-        (fun root ->
-          let user = root |> Admin.user in
-          let status = status_toggle user.status user.id in
-          [ txt user.email; status ])
-        root_list
-    in
-    Component.Table.horizontal_table `Striped rows ~align_last_end:true ~thead
-  in
   let tenant_list = build_tenant_rows tenant_list in
-  let root_list = build_root_rows root_list in
   let text_fields =
-    Message.Field.
-      [ Title
-      ; Description
-      ; Url
-      ; DatabaseUrl
-      ; DatabaseLabel
-      ; SmtpAuthServer
-      ; SmtpPort
-      ; SmtpUsername
-      ; SmtpPassword
-      ; SmtpAuthMethod
-      ; SmtpProtocol
-      ]
+    Message.Field.[ Title; Description; Url; DatabaseUrl; DatabaseLabel ]
   in
   let input_fields =
     let language_select =
@@ -125,26 +81,6 @@ let list tenant_list root_list Pool_context.{ language; csrf; _ } =
                       ]
                   ])
             ]
-        ; h2 ~a:[ a_class [ "heading-2" ] ] [ txt "Root users" ]
-        ; root_list
-        ; form
-            ~a:
-              [ a_action (Sihl.Web.externalize_path "/root/root/create")
-              ; a_method `Post
-              ; a_class [ "stack" ]
-              ]
-            (CCList.map
-               (input_element language `Text)
-               Message.Field.[ Email; Password; Firstname; Lastname ]
-            @ [ div
-                  ~a:[ a_class [ "flexrow" ] ]
-                  [ submit_element
-                      ~classnames:[ "push" ]
-                      language
-                      Message.(Create (Some Field.root))
-                      ()
-                  ]
-              ])
         ]
     ]
 ;;
@@ -166,7 +102,7 @@ let manage_operators { Pool_tenant.id; _ } Pool_context.{ language; csrf; _ } =
                   (Sihl.Web.externalize_path
                      (Format.asprintf
                         "/root/tenants/%s/create-operator"
-                        (Id.value id)))
+                        (Pool_tenant.Id.value id)))
               ; a_method `Post
               ; a_class [ "stack" ]
               ]
@@ -209,19 +145,12 @@ let manage_operators { Pool_tenant.id; _ } Pool_context.{ language; csrf; _ } =
 
 let detail (tenant : Pool_tenant.t) Pool_context.{ language; csrf; _ } =
   let open Pool_tenant in
-  let open Pool_tenant.SmtpAuth in
   let control_to_string = Pool_common.Utils.control_to_string language in
   let detail_fields =
     Message.
       [ Field.Title, Title.value tenant.title
       ; Field.Description, Description.value tenant.description
-      ; Field.Url, Pool_tenant.Url.value tenant.url
-      ; Field.SmtpAuthServer, Server.value tenant.smtp_auth.server
-      ; Field.SmtpPort, Port.value tenant.smtp_auth.port
-      ; Field.SmtpUsername, Username.value tenant.smtp_auth.username
-      ; ( Field.SmtpAuthMethod
-        , AuthenticationMethod.value tenant.smtp_auth.authentication_method )
-      ; Field.SmtpProtocol, Protocol.value tenant.smtp_auth.protocol
+      ; Field.Url, Url.value tenant.url
       ]
   in
   let database_fields =
@@ -283,7 +212,7 @@ let detail (tenant : Pool_tenant.t) Pool_context.{ language; csrf; _ } =
     checkbox_element
       language
       Message.Field.TenantDisabledFlag
-      ~value:(tenant.disabled |> Pool_tenant.Disabled.value)
+      ~value:(tenant.disabled |> Disabled.value)
   in
   let delete_img_form files =
     div
@@ -304,7 +233,7 @@ let detail (tenant : Pool_tenant.t) Pool_context.{ language; csrf; _ } =
                           (Format.asprintf
                              "/root/tenants/%s/assets/%s/delete"
                              (tenant.id |> Id.value)
-                             (File.id file |> Id.value)))
+                             (File.id file |> Pool_common.Id.value)))
                    ; a_method `Post
                    ; a_class [ "stack" ]
                    ]
@@ -347,7 +276,7 @@ let detail (tenant : Pool_tenant.t) Pool_context.{ language; csrf; _ } =
                   (Sihl.Web.externalize_path
                      (Format.asprintf
                         "/root/tenants/%s/operator"
-                        (tenant.id |> Pool_common.Id.value)))
+                        (tenant.id |> Id.value)))
               ]
             [ txt
                 (control_to_string Pool_common.Message.(Manage Field.Operators))

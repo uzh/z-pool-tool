@@ -6,6 +6,7 @@
   matcher
   pool_event
   pool_user
+  queue
   service
   settings
   sihl

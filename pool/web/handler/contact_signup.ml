@@ -46,7 +46,6 @@ let sign_up_create req =
          ||> fun suffixes ->
          if CCList.is_empty suffixes then None else Some suffixes
        in
-       let preferred_language = HttpUtils.browser_language_from_req req in
        let* { Pool_context.Tenant.tenant; _ } =
          Pool_context.Tenant.find req |> Lwt_result.lift
        in
@@ -64,7 +63,7 @@ let sign_up_create req =
          let* verification_mail =
            Message_template.SignUpVerification.create
              database_label
-             (CCOption.value ~default:language preferred_language)
+             (CCOption.value ~default:language query_language)
              tenant
              email_address
              token
@@ -79,7 +78,7 @@ let sign_up_create req =
               token
               email_address
               verification_mail
-              preferred_language
+              query_language
          |> Lwt_result.lift
        in
        let%lwt existing_user =

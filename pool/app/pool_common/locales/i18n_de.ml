@@ -119,6 +119,7 @@ let nav_link_to_string = function
   | Profile -> "Profil"
   | Sessions -> "Sessions"
   | Settings -> "Einstellungen"
+  | Smtp -> "E-Mail Server"
   | SystemSettings -> "Systemeinstellungen"
   | Tenants -> "Tenants"
   | Users -> "Benutzer"
@@ -262,6 +263,11 @@ let rec hint_to_string = function
   | SignUpForWaitingList ->
     "Das Rekrutierungsteam wird sich mit Ihnen in Verbindung setzen, um Ihnen \
      einen Termin zuzuweisen, wenn ein freier Platz vorhanden ist."
+  | SmtpSettingsIntro ->
+    {|Die folgende Konfiguration wird vom E-Mail Service verwendet.
+
+    Beachte: Bei Verwendung des Mechanismus für "LOGIN" muss ein Benutzername und Passwort angegeben werden.
+    |}
   | TemplateTextElementsHint ->
     "Die folgenden Textbausteine können in den Templates verwendet werden:"
   | TimeSpanPickerHint ->

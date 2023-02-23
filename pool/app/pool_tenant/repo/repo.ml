@@ -15,19 +15,13 @@ module Sql = struct
         url = $4,
         database_url = $5,
         database_label = $6,
-        smtp_auth_server = $7,
-        smtp_auth_port = $8,
-        smtp_auth_username = $9,
-        smtp_auth_password = $10,
-        smtp_auth_authentication_method = $11,
-        smtp_auth_protocol = $12,
-        styles = UNHEX(REPLACE($13, '-', '')),
-        icon = UNHEX(REPLACE($14, '-', '')),
-        mainenance = $15,
-        disabled = $16,
-        default_language = $17,
-        created_at = $18,
-        updated_at = $19
+        styles = UNHEX(REPLACE($7, '-', '')),
+        icon = UNHEX(REPLACE($8, '-', '')),
+        mainenance = $9,
+        disabled = $10,
+        default_language = $11,
+        created_at = $12,
+        updated_at = $13
       WHERE
       pool_tenant.uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}
@@ -48,26 +42,6 @@ module Sql = struct
         |sql}
       | false -> {sql|
           pool_tenant.database_label,
-        |sql}
-    in
-    let smtp_auth_fragment =
-      match full with
-      | true ->
-        {sql|
-          pool_tenant.smtp_auth_server,
-          pool_tenant.smtp_auth_port,
-          pool_tenant.smtp_auth_username,
-          pool_tenant.smtp_auth_password,
-          pool_tenant.smtp_auth_authentication_method,
-          pool_tenant.smtp_auth_protocol,
-        |sql}
-      | false ->
-        {sql|
-          pool_tenant.smtp_auth_server,
-          pool_tenant.smtp_auth_port,
-          pool_tenant.smtp_auth_username,
-          pool_tenant.smtp_auth_authentication_method,
-          pool_tenant.smtp_auth_protocol,
         |sql}
     in
     let styles_fragment =
@@ -143,7 +117,6 @@ module Sql = struct
             %s
             %s
             %s
-            %s
             pool_tenant.mainenance,
             pool_tenant.disabled,
             pool_tenant.default_language,
@@ -156,7 +129,6 @@ module Sql = struct
             ON pool_tenant.icon = icon.uuid
         |sql}
         database_fragment
-        smtp_auth_fragment
         styles_fragment
         icon_fragment
     in
@@ -251,12 +223,6 @@ module Sql = struct
         url,
         database_url,
         database_label,
-        smtp_auth_server,
-        smtp_auth_port,
-        smtp_auth_username,
-        smtp_auth_password,
-        smtp_auth_authentication_method,
-        smtp_auth_protocol,
         styles,
         icon,
         mainenance,
@@ -266,12 +232,6 @@ module Sql = struct
         updated_at
       ) VALUES (
         UNHEX(REPLACE(?, '-', '')),
-        ?,
-        ?,
-        ?,
-        ?,
-        ?,
-        ?,
         ?,
         ?,
         ?,
@@ -308,6 +268,152 @@ module Sql = struct
   let find_selectable pool =
     Utils.Database.collect (Database.Label.value pool) find_selectable_request
   ;;
+
+  module Smtp = struct
+    module Id = Entity_smtp.Id
+
+    let select_smtp_sql ?(with_password = false) where_fragment =
+      let with_password_fragment =
+        if with_password then {sql|password,|sql} else {sql||sql}
+      in
+      let select_from =
+        Format.asprintf
+          {sql|
+            SELECT
+              LOWER(CONCAT(
+                SUBSTR(HEX(uuid), 1, 8), '-',
+                SUBSTR(HEX(uuid), 9, 4), '-',
+                SUBSTR(HEX(uuid), 13, 4), '-',
+                SUBSTR(HEX(uuid), 17, 4), '-',
+                SUBSTR(HEX(uuid), 21)
+              )),
+              label,
+              server,
+              port,
+              username,
+              %s
+              mechanism,
+              protocol
+            FROM pool_smtp
+          |sql}
+          with_password_fragment
+      in
+      Format.asprintf "%s %s" select_from where_fragment
+    ;;
+
+    let find_request =
+      let open Caqti_request.Infix in
+      {sql|WHERE uuid = UNHEX(REPLACE(?, '-', ''))|sql}
+      |> select_smtp_sql
+      |> RepoEntity.SmtpAuth.(Id.t ->! t)
+    ;;
+
+    let find pool id =
+      let open Utils.Lwt_result.Infix in
+      Utils.Database.find_opt (Database.Label.value pool) find_request id
+      ||> CCOption.to_result Pool_common.Message.(NotFound Field.Smtp)
+    ;;
+
+    let find_by_label_request =
+      let open Caqti_request.Infix in
+      {sql|WHERE label = ?|sql}
+      |> select_smtp_sql
+      |> Caqti_type.string ->! RepoEntity.SmtpAuth.t
+    ;;
+
+    let find_full_by_label_request =
+      let open Caqti_request.Infix in
+      {sql|WHERE label = ?|sql}
+      |> select_smtp_sql ~with_password:true
+      |> Caqti_type.string ->! RepoEntity.SmtpAuth.Write.t
+    ;;
+
+    let find_by_label pool label =
+      let open Utils.Lwt_result.Infix in
+      Utils.Database.find_opt
+        (Database.Label.value pool)
+        find_by_label_request
+        (Entity.SmtpAuth.Label.value label)
+      ||> CCOption.to_result Pool_common.Message.(NotFound Field.Smtp)
+    ;;
+
+    let find_full_by_label pool label =
+      let open Utils.Lwt_result.Infix in
+      Utils.Database.find_opt
+        (Database.Label.value pool)
+        find_full_by_label_request
+        (Entity.SmtpAuth.Label.value label)
+      ||> CCOption.to_result Pool_common.Message.(NotFound Field.Smtp)
+    ;;
+
+    let insert_request =
+      let open Caqti_request.Infix in
+      {sql|
+        INSERT INTO pool_smtp (
+          uuid,
+          label,
+          server,
+          port,
+          username,
+          password,
+          mechanism,
+          protocol
+        ) VALUES (
+          UNHEX(REPLACE(?, '-', '')),
+          ?,
+          ?,
+          ?,
+          ?,
+          ?,
+          ?,
+          ?
+        )
+      |sql}
+      |> RepoEntity.SmtpAuth.Write.t ->. Caqti_type.unit
+    ;;
+
+    let insert pool =
+      Utils.Database.exec (Database.Label.value pool) insert_request
+    ;;
+
+    let update_request =
+      let open Caqti_request.Infix in
+      {sql|
+        UPDATE pool_smtp
+        SET
+          label = $2,
+          server = $3,
+          port = $4,
+          username = $5,
+          mechanism = $6,
+          protocol = $7
+        WHERE
+          uuid = UNHEX(REPLACE($1, '-', ''))
+      |sql}
+      |> RepoEntity.SmtpAuth.t ->. Caqti_type.unit
+    ;;
+
+    let update pool =
+      Utils.Database.exec (Database.Label.value pool) update_request
+    ;;
+
+    let update_password_request =
+      let open Caqti_request.Infix in
+      {sql|
+          UPDATE pool_smtp
+          SET
+            password = $2
+          WHERE
+            uuid = UNHEX(REPLACE($1, '-', ''))
+      |sql}
+      |> Caqti_type.(
+           RepoEntity.SmtpAuth.(tup2 Id.t (option Password.t)) ->. unit)
+    ;;
+
+    let update_password pool =
+      Utils.Database.exec (Database.Label.value pool) update_password_request
+    ;;
+  end
 end
 
 let set_logos tenant logos =
@@ -327,7 +433,6 @@ let set_logos tenant logos =
     ; description = tenant.description
     ; url = tenant.url
     ; database_label = tenant.database_label
-    ; smtp_auth = tenant.smtp_auth
     ; styles = tenant.styles
     ; icon = tenant.icon
     ; logos = tenant_logos
@@ -371,6 +476,29 @@ let find_selectable = Sql.find_selectable
 let insert = Sql.insert
 let update = Sql.update
 let destroy = Utils.todo
+
+module Smtp = struct
+  let find = Sql.Smtp.find
+
+  let find_by_label label =
+    Sql.Smtp.find_by_label
+      label
+      (label |> Database.Label.value |> Entity.SmtpAuth.Label.of_string)
+  ;;
+
+  let find_full_by_label label =
+    Sql.Smtp.find_full_by_label
+      label
+      (label |> Database.Label.value |> Entity.SmtpAuth.Label.of_string)
+  ;;
+
+  let insert = Sql.Smtp.insert
+  let update = Sql.Smtp.update
+
+  let update_password label Entity.SmtpAuth.{ id; password } =
+    Sql.Smtp.update_password label (id, password)
+  ;;
+end
 
 module Url = struct
   let of_pool = RepoEntity.Url.of_pool

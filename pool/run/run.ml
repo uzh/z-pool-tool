@@ -1,5 +1,24 @@
 let () = Printexc.record_backtrace true
 
+let worker_services =
+  [ Database.register ()
+  ; Service.Storage.register ()
+  ; Queue.register ~jobs:[ Queue.hide Pool_tenant.Service.Email.Job.send ] ()
+  ; Matcher.register ()
+  ]
+;;
+
+let services =
+  [ Database.register ()
+  ; Service.User.register ~commands:[] ()
+  ; Service.Token.register ()
+  ; Pool_tenant.Service.Email.register ()
+  ; Pool_tenant.Service.Queue.register ()
+  ; Service.Storage.register ()
+  ; Sihl.Web.Http.register ~middlewares:Routes.global_middlewares Routes.router
+  ]
+;;
+
 let commands =
   let open Command in
   [ Migrate.root
@@ -24,23 +43,11 @@ let commands =
   ; Admin.create
   ; Admin.grant_role
   ; Admin.list_roles
+  ; Admin.create_root_admin
   ; Utils.encrypt_string
   ; DefaultData.insert
+  ; Worker.run ~services:worker_services ()
   ; version
-  ]
-;;
-
-let services =
-  [ Database.register ()
-  ; Service.User.register ~commands:[] ()
-  ; Service.Token.register ()
-  ; Service.BlockingEmail.register ()
-  ; Service.Email.register ()
-  ; Service.EmailTemplate.register ()
-  ; Service.Queue.register ()
-  ; Service.Storage.register ()
-  ; Matcher.register ()
-  ; Sihl.Web.Http.register ~middlewares:Routes.global_middlewares Routes.router
   ]
 ;;
 

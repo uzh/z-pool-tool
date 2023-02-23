@@ -30,3 +30,20 @@ module Target = struct
     |> Lwt_result.map_error Pool_common.Message.authorization
   ;;
 end
+
+module SmtpTarget = struct
+  type t = Entity.SmtpAuth.t
+
+  let to_authorizable ?ctx t =
+    Guard.Persistence.Target.decorate
+      ?ctx
+      (fun (t : t) ->
+        Guard.AuthorizableTarget.make
+          (Guard.TargetRoleSet.singleton `Smtp)
+          `Smtp
+          (Guard.Uuid.Target.of_string_exn
+             (Pool_common.Id.value t.Entity.SmtpAuth.id)))
+      t
+    |> Lwt_result.map_error Pool_common.Message.authorization
+  ;;
+end

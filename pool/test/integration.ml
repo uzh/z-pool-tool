@@ -125,10 +125,8 @@ let services =
   [ Database.register ()
   ; Service.User.register ()
   ; Service.Token.register ()
-  ; Service.BlockingEmail.register ()
-  ; Service.Email.register ()
-  ; Service.EmailTemplate.register ()
-  ; Service.Queue.register ()
+  ; Pool_tenant.Service.Email.register ()
+  ; Pool_tenant.Service.Queue.register ()
   ; Service.Storage.register ()
   ]
 ;;

@@ -1,43 +1,27 @@
 module Common = Pool_common
 module PoolError = Common.Message
 
+let print = Utils.ppx_printer
+
 module Key = struct
-  type t =
-    | CreditsText
-    | GreetingsText
-    | PasswordPolicyText
-    | WelcomeText
-  [@@deriving eq, show, enum]
+  module Core = struct
+    let field = Pool_common.Message.Field.Key
 
-  let all : t list =
-    CCList.range min max
-    |> CCList.map of_enum
-    |> CCList.all_some
-    |> CCOption.get_exn_or "I18n Keys: Could not create list of all keys!"
-  ;;
+    type t =
+      | CreditsText [@name "credits_text"] [@printer print "credits_text"]
+      | GreetingsText [@name "greetings_text"] [@printer print "greetings_text"]
+      | PasswordPolicyText [@name "password_policy_text"]
+          [@printer print "password_policy_text"]
+      | WelcomeText [@name "welcome_text"] [@printer print "welcome_text"]
+    [@@deriving enum, eq, ord, sexp_of, show { with_path = false }, yojson]
+  end
 
-  let to_string = function
-    | CreditsText -> "credits_text"
-    | GreetingsText -> "greetings_text"
-    | PasswordPolicyText -> "password_policy_text"
-    | WelcomeText -> "welcome_text"
-  ;;
-
-  let of_string = function
-    | "credits_text" -> Ok CreditsText
-    | "greetings_text" -> Ok GreetingsText
-    | "password_policy_text" -> Ok PasswordPolicyText
-    | "welcome_text" -> Ok WelcomeText
-    | _ -> Error PoolError.(Invalid Field.Key)
-  ;;
+  include Pool_common.Model.SelectorType (Core)
+  include Core
 
   let is_rich_text = function
     | CreditsText | GreetingsText | WelcomeText -> true
     | PasswordPolicyText -> false
-  ;;
-
-  let schema () =
-    Common.Utils.schema_decoder of_string to_string PoolError.Field.Key
   ;;
 end
 
@@ -45,7 +29,7 @@ module Content = struct
   include Pool_common.Model.String
 
   let field = Common.Message.Field.Translation
-  let schema = schema ?validation:None field
+  let schema () = schema field ()
 end
 
 type t =

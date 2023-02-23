@@ -1,6 +1,9 @@
+open CCFun
 open Sexplib.Conv
 module PoolError = Entity_message
 module Model = Entity_base_model
+
+let print = Utils.ppx_printer
 
 (* TODO [aerben] to get more type-safety, every entity should have its own ID *)
 module Id = struct
@@ -11,42 +14,25 @@ module Id = struct
   let value m = m
 
   let schema ?(field = PoolError.Field.Id) () =
-    Pool_common_utils.schema_decoder (Utils.fcn_ok of_string) value field
+    Pool_common_utils.schema_decoder (of_string %> CCResult.return) value field
   ;;
 end
 
 module Language = struct
-  let field = PoolError.Field.Language
-  let go m fmt _ = Format.pp_print_string fmt m
+  module Core = struct
+    let field = PoolError.Field.Language
 
-  type t =
-    | En [@name "EN"] [@printer go "EN"]
-    | De [@name "DE"] [@printer go "DE"]
-  [@@deriving enum, eq, show { with_path = false }, yojson, sexp_of]
+    type t =
+      | En [@name "EN"] [@printer print "EN"]
+      | De [@name "DE"] [@printer print "DE"]
+    [@@deriving enum, eq, ord, sexp_of, show { with_path = false }, yojson]
+  end
 
-  let read m =
-    m |> Format.asprintf "[\"%s\"]" |> Yojson.Safe.from_string |> t_of_yojson
-  ;;
-
-  let create m =
-    try Ok (read m) with
-    | _ -> Error PoolError.(Invalid field)
-  ;;
+  include Entity_base_model.SelectorType (Core)
+  include Core
 
   let label country_code = country_code |> show |> Utils.Countries.find
-
-  let schema () =
-    Pool_common_utils.schema_decoder create show PoolError.Field.Language
-  ;;
-
-  let all : t list =
-    CCList.range min max
-    |> CCList.map of_enum
-    |> CCList.all_some
-    |> CCOption.get_exn_or "I18n Keys: Could not create list of all keys!"
-  ;;
-
-  let all_codes = [ En; De ] |> CCList.map show
+  let all_codes = all |> CCList.map show
 
   let field_of_t =
     let open Entity_message.Field in
@@ -204,29 +190,15 @@ module Reminder = struct
 end
 
 module ExperimentType = struct
-  let go m fmt _ = Format.pp_print_string fmt m
+  module Core = struct
+    let field = PoolError.Field.ExperimentType
 
-  type t =
-    | Lab [@name "lab"] [@printer go "lab"]
-    | Online [@name "online"] [@printer go "online"]
-  [@@deriving eq, show { with_path = false }, enum, yojson]
+    type t =
+      | Lab [@name "lab"] [@printer print "lab"]
+      | Online [@name "online"] [@printer print "online"]
+    [@@deriving enum, eq, ord, sexp_of, show { with_path = false }, yojson]
+  end
 
-  let read m =
-    m |> Format.asprintf "[\"%s\"]" |> Yojson.Safe.from_string |> t_of_yojson
-  ;;
-
-  let all : t list =
-    CCList.range min max
-    |> CCList.map of_enum
-    |> CCList.all_some
-    |> CCOption.get_exn_or
-         "Experiment types: Could not create list of all keys!"
-  ;;
-
-  let schema () =
-    Pool_common_utils.schema_decoder
-      (fun m -> m |> read |> CCResult.pure)
-      show
-      PoolError.Field.ExperimentType
-  ;;
+  include Entity_base_model.SelectorType (Core)
+  include Core
 end

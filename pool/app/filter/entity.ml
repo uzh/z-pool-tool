@@ -10,7 +10,7 @@ module Title = struct
   include Pool_common.Model.String
 
   let field = Pool_common.Message.Field.Title
-  let schema = schema ?validation:None field
+  let schema () = schema field ()
 end
 
 let read of_yojson yojson =
@@ -21,17 +21,17 @@ let read of_yojson yojson =
   |> of_yojson
 ;;
 
-let print m fmt _ = Format.pp_print_string fmt m
+let print = Utils.ppx_printer
 
 type single_val =
-  | Bool of bool [@printer print "bool"] [@name "bool"]
-  | Date of Ptime.t [@printer print "date"] [@name "date"]
-  | Language of Pool_common.Language.t [@printer print "language"]
-      [@name "language"]
-  | Nr of float [@printer print "nr"] [@name "nr"]
-  | Option of Custom_field.SelectOption.Id.t [@printer print "option"]
-      [@name "option"]
-  | Str of string [@printer print "str"] [@name "str"]
+  | Bool of bool [@name "bool"] [@printer print "bool"]
+  | Date of Ptime.t [@name "date"] [@printer print "date"]
+  | Language of Pool_common.Language.t [@name "language"]
+      [@printer print "language"]
+  | Nr of float [@name "nr"] [@printer print "nr"]
+  | Option of Custom_field.SelectOption.Id.t [@name "option"]
+      [@printer print "option"]
+  | Str of string [@name "str"] [@printer print "str"]
 [@@deriving show { with_path = false }, eq]
 
 type value =
@@ -466,7 +466,7 @@ let rec query_of_yojson json =
      | "not", f -> f |> query_of_yojson >|= not
      | "pred", p -> p |> Predicate.t_of_yojson >|= pred
      | "template", `String id ->
-       id |> Pool_common.Id.of_string |> template |> CCResult.pure
+       id |> Pool_common.Id.of_string |> template |> CCResult.return
      | _ -> Error error)
   | _ -> Error error
 ;;

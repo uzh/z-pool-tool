@@ -12,52 +12,40 @@ module Name = struct
   include Pool_common.Model.String
 
   let field = Field.Name
-  let schema = schema ?validation:None field
+  let schema () = schema field ()
 end
 
 module Description = struct
   include Pool_common.Model.String
 
   let field = Field.Description
-  let schema = schema ?validation:None field
+  let schema () = schema field ()
 end
 
 module Link = struct
   include Pool_common.Model.String
 
   let field = Field.Link
-  let schema = schema ?validation:None field
+  let schema () = schema field ()
 end
 
 module Status = struct
-  let field = Pool_common.Message.Field.Status
-  let go m fmt _ = Format.pp_print_string fmt m
+  let print = Utils.ppx_printer
 
-  type t =
-    | Active [@name "active"] [@printer go "active"]
-    | Maintenance [@name "maintenance"] [@printer go "maintenance"]
-    | Closed [@name "closed"] [@printer go "closed"]
-  [@@deriving enum, eq, show { with_path = false }, yojson, sexp_of]
+  module Core = struct
+    let field = Pool_common.Message.Field.Status
 
-  let read m =
-    m |> Format.asprintf "[\"%s\"]" |> Yojson.Safe.from_string |> t_of_yojson
-  ;;
+    type t =
+      | Active [@name "active"] [@printer print "active"]
+      | Maintenance [@name "maintenance"] [@printer print "maintenance"]
+      | Closed [@name "closed"] [@printer print "closed"]
+    [@@deriving enum, eq, ord, sexp_of, show { with_path = false }, yojson]
+  end
 
-  let create m =
-    try Ok (read m) with
-    | _ -> Error Pool_common.Message.(Invalid field)
-  ;;
+  include Pool_common.Model.SelectorType (Core)
+  include Core
 
   let init = Active
-
-  let all : t list =
-    CCList.range min max
-    |> CCList.map of_enum
-    |> CCList.all_some
-    |> CCOption.get_exn_or "Location Status: Could not create list of all keys!"
-  ;;
-
-  let schema () = Pool_common.Utils.schema_decoder create show field
 end
 
 type t =

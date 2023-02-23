@@ -1,36 +1,65 @@
 module Database = Pool_database
+module Id : module type of Pool_common.Id
 
 module SmtpAuth : sig
-  module Server : sig
-    include Pool_common.Model.StringSig
-  end
+  module Id : module type of Pool_common.Id
+  module Label : Pool_common.Model.StringSig
+  module Server : Pool_common.Model.StringSig
+  module Port : Pool_common.Model.IntegerSig
+  module Username : Pool_common.Model.StringSig
+  module Password : Pool_common.Model.StringSig
 
-  module Port : sig
-    include Pool_common.Model.StringSig
-  end
+  module Mechanism : sig
+    type t =
+      | PLAIN
+      | LOGIN
 
-  module Username : sig
-    include Pool_common.Model.StringSig
-  end
+    val equal : t -> t -> bool
+    val pp : Format.formatter -> t -> unit
+    val show : t -> string
+    val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+    val t_of_yojson : Yojson.Safe.t -> t
+    val yojson_of_t : t -> Yojson.Safe.t
+    val read : string -> t
+    val all : t list
 
-  module Password : sig
-    include Pool_common.Model.StringSig
-  end
-
-  module AuthenticationMethod : sig
-    include Pool_common.Model.StringSig
+    val schema
+      :  unit
+      -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
   end
 
   module Protocol : sig
-    include Pool_common.Model.StringSig
+    type t =
+      | STARTTLS
+      | SSL_TLS
+
+    val equal : t -> t -> bool
+    val pp : Format.formatter -> t -> unit
+    val show : t -> string
+    val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+    val t_of_yojson : Yojson.Safe.t -> t
+    val yojson_of_t : t -> Yojson.Safe.t
+    val read : string -> t
+    val all : t list
+
+    val schema
+      :  unit
+      -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
   end
 
   type t =
-    { server : Server.t
+    { id : Id.t
+    ; label : Label.t
+    ; server : Server.t
     ; port : Port.t
-    ; username : Username.t
-    ; authentication_method : AuthenticationMethod.t
+    ; username : Username.t option
+    ; mechanism : Mechanism.t
     ; protocol : Protocol.t
+    }
+
+  type update_password =
+    { id : Id.t
+    ; password : Password.t option
     }
 
   val pp : Format.formatter -> t -> unit
@@ -38,60 +67,47 @@ module SmtpAuth : sig
 
   module Write : sig
     type t =
-      { server : Server.t
+      { id : Id.t
+      ; label : Label.t
+      ; server : Server.t
       ; port : Port.t
-      ; username : Username.t
-      ; password : Password.t
-      ; authentication_method : AuthenticationMethod.t
+      ; username : Username.t option
+      ; password : Password.t option
+      ; mechanism : Mechanism.t
       ; protocol : Protocol.t
       }
 
     val create
-      :  Server.t
+      :  ?id:Id.t
+      -> Label.t
+      -> Server.t
       -> Port.t
-      -> Username.t
-      -> Password.t
-      -> AuthenticationMethod.t
+      -> Username.t option
+      -> Password.t option
+      -> Mechanism.t
       -> Protocol.t
       -> (t, Pool_common.Message.error) result
   end
+
+  val find
+    :  Database.Label.t
+    -> Id.t
+    -> (t, Pool_common.Message.error) Lwt_result.t
+
+  val find_by_label
+    :  Database.Label.t
+    -> (t, Pool_common.Message.error) Lwt_result.t
+
+  val find_full_by_label
+    :  Database.Label.t
+    -> (Write.t, Pool_common.Message.error) Lwt_result.t
 end
 
-module Title : sig
-  type t
-
-  val value : t -> string
-  val equal : t -> t -> bool
-  val create : string -> (t, Pool_common.Message.error) result
-
-  val schema
-    :  unit
-    -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
-end
-
-module Description : sig
-  type t
-
-  val value : t -> string
-  val equal : t -> t -> bool
-  val create : string -> (t, Pool_common.Message.error) result
-
-  val schema
-    :  unit
-    -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
-end
+module Title : Pool_common.Model.StringSig
+module Description : Pool_common.Model.StringSig
 
 module Url : sig
-  type t
-
-  val value : t -> string
-  val equal : t -> t -> bool
-  val pp : Format.formatter -> t -> unit
-  val create : string -> (t, Pool_common.Message.error) result
-
-  val schema
-    :  unit
-    -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
+  include Pool_common.Model.StringSig
 
   val of_pool : Database.Label.t -> t Lwt.t
 end
@@ -166,28 +182,8 @@ module PartnerLogos : sig
   val of_files : Pool_common.File.t list -> t
 end
 
-module Maintenance : sig
-  type t
-
-  val equal : t -> t -> bool
-  val create : bool -> t
-
-  val schema
-    :  unit
-    -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
-end
-
-module Disabled : sig
-  type t
-
-  val equal : t -> t -> bool
-  val create : bool -> t
-  val value : t -> bool
-
-  val schema
-    :  unit
-    -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
-end
+module Maintenance : Pool_common.Model.BooleanSig
+module Disabled : Pool_common.Model.BooleanSig
 
 module LogoMapping : sig
   module LogoType : sig
@@ -204,7 +200,7 @@ module LogoMapping : sig
   module Write : sig
     type t =
       { id : Pool_common.Id.t
-      ; tenant_id : Pool_common.Id.t
+      ; tenant_id : Id.t
       ; asset_id : Pool_common.Id.t
       ; logo_type : LogoType.t
       }
@@ -216,12 +212,11 @@ module LogoMapping : sig
 end
 
 type t =
-  { id : Pool_common.Id.t
+  { id : Id.t
   ; title : Title.t
   ; description : Description.t
   ; url : Url.t
   ; database_label : Database.Label.t
-  ; smtp_auth : SmtpAuth.t
   ; styles : Styles.t
   ; icon : Icon.t
   ; logos : Logos.t
@@ -233,19 +228,18 @@ type t =
   ; updated_at : Pool_common.UpdatedAt.t
   }
 
-val id : t -> Pool_common.Id.t
+val id : t -> Id.t
 val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
 val pp : Format.formatter -> t -> unit
 val equal : t -> t -> bool
 
 module Write : sig
   type t =
-    { id : Pool_common.Id.t
+    { id : Id.t
     ; title : Title.t
     ; description : Description.t
     ; url : Url.t
     ; database : Database.t
-    ; smtp_auth : SmtpAuth.Write.t
     ; styles : Styles.Write.t
     ; icon : Icon.Write.t
     ; maintenance : Maintenance.t
@@ -260,7 +254,6 @@ module Write : sig
     -> Description.t
     -> Url.t
     -> Database.t
-    -> SmtpAuth.Write.t
     -> Styles.Write.t
     -> Icon.Write.t
     -> Pool_common.Language.t
@@ -269,19 +262,10 @@ module Write : sig
   val show : t -> string
 end
 
-type smtp_auth_update =
-  { server : SmtpAuth.Server.t
-  ; port : SmtpAuth.Port.t
-  ; username : SmtpAuth.Username.t
-  ; authentication_method : SmtpAuth.AuthenticationMethod.t
-  ; protocol : SmtpAuth.Protocol.t
-  }
-
 type update =
   { title : Title.t
   ; description : Description.t
   ; url : Url.t
-  ; smtp_auth : smtp_auth_update
   ; disabled : Disabled.t
   ; default_language : Pool_common.Language.t
   }
@@ -294,7 +278,10 @@ type event =
   | LogoDeleted of t * Pool_common.Id.t
   | DetailsEdited of Write.t * update
   | DatabaseEdited of Write.t * Database.t
-  | Destroyed of Pool_common.Id.t
+  | SmtpCreated of SmtpAuth.Write.t
+  | SmtpEdited of SmtpAuth.t
+  | SmtpPasswordEdited of SmtpAuth.update_password
+  | Destroyed of Id.t
   | ActivateMaintenance of Write.t
   | DeactivateMaintenance of Write.t
 
@@ -303,11 +290,8 @@ val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
 val to_ctx : Database.Label.t -> (string * string) list
-val find : Pool_common.Id.t -> (t, Pool_common.Message.error) Lwt_result.t
-
-val find_full
-  :  Pool_common.Id.t
-  -> (Write.t, Pool_common.Message.error) Lwt_result.t
+val find : Id.t -> (t, Pool_common.Message.error) Lwt_result.t
+val find_full : Id.t -> (Write.t, Pool_common.Message.error) Lwt_result.t
 
 val find_by_label
   :  Database.Label.t
@@ -359,5 +343,36 @@ module Guard : sig
          Lwt_result.t
 
     type t
+  end
+end
+
+module Service : sig
+  module Queue : Sihl.Contract.Queue.Sig
+
+  module Email : sig
+    module Smtp : sig
+      type prepared =
+        { sender : string
+        ; recipients : Letters.recipient list
+        ; subject : string
+        ; body : Letters.body
+        ; config : Letters.Config.t
+        }
+
+      val inbox : unit -> Sihl_email.t list
+      val clear_inbox : unit -> unit
+      val prepare : Database.Label.t -> Sihl_email.t -> prepared Lwt.t
+    end
+
+    module Job : sig
+      val send : Sihl_email.t Sihl_queue.job
+    end
+
+    val remove_from_cache : Pool_database.Label.t -> unit
+    val intercept_prepare : Sihl_email.t -> (Sihl_email.t, string) result
+    val dispatch : Database.Label.t -> Sihl_email.t -> unit Lwt.t
+    val dispatch_all : Database.Label.t -> Sihl_email.t list -> unit Lwt.t
+    val lifecycle : Sihl.Container.lifecycle
+    val register : unit -> Sihl.Container.Service.t
   end
 end

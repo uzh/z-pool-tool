@@ -85,6 +85,7 @@ type nav_link =
   | Profile
   | Sessions
   | Settings
+  | Smtp
   | SystemSettings
   | Tenants
   | Users
@@ -140,6 +141,7 @@ type hint =
   | SessionRegistrationHint
   | SessionReminderLanguageHint
   | SignUpForWaitingList
+  | SmtpSettingsIntro
   | TemplateTextElementsHint
   | TimeSpanPickerHint
 

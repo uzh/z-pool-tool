@@ -117,6 +117,7 @@ let nav_link_to_string = function
   | Profile -> "Profile"
   | Sessions -> "Sessions"
   | Settings -> "Settings"
+  | Smtp -> "Email Server"
   | SystemSettings -> "System settings"
   | Tenants -> "Tenants"
   | Users -> "Users"
@@ -238,8 +239,8 @@ let rec hint_to_string = function
     {|S: the contact showed up
     P: the contact participated in the experiment
 
-  To set 'participated', 'show up' is required.
-  |}
+    To set 'participated', 'show up' is required.
+    |}
   | SelectedDateIsPast -> "The selected date is in the past."
   | SessionReminderLanguageHint ->
     "If you provide a custom reminder text, select its language here."
@@ -249,6 +250,11 @@ let rec hint_to_string = function
   | SignUpForWaitingList ->
     "The recruitment team will contact you, to assign you to a session, if \
      there is a free place."
+  | SmtpSettingsIntro ->
+    {|The following configuration is used by the email service.
+
+    Note: When using the mechanism "LOGIN" a username and password are required.
+    |}
   | TemplateTextElementsHint ->
     "The following text elements can be used inside the templates:"
   | TimeSpanPickerHint ->

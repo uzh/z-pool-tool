@@ -69,6 +69,16 @@ module PoolConformist = struct
   ;;
 end
 
+let handle_ppx_yojson_err (exn, yojson) =
+  let msg =
+    Format.asprintf
+      "Yojson_conv error: %s\n\nAffected yojson: %s"
+      (Printexc.to_string exn)
+      ([%show: Yojson.Safe.t] yojson)
+  in
+  Error Entity_message.(NotHandled msg)
+;;
+
 let with_log_info ?(level = info) info =
   Logs.msg level (fun m -> m "%s" (Locales_en.info_to_string info));
   info
@@ -92,13 +102,11 @@ let with_log_error ?(level = error) ?(tags = Logs.Tag.empty) err =
 
 let with_log_result_error ~tags fcn =
   CCResult.map_err (fun err ->
-    let _ = err |> fcn |> with_log_error ~tags in
+    let (_ : Entity_message.error) = err |> fcn |> with_log_error ~tags in
     err)
 ;;
 
-let decoder create_fcn field l =
-  let open CCResult in
-  match l with
+let decoder create_fcn field = function
   | x :: _ -> create_fcn x
   | [] -> Error (Entity_message.Undefined field |> with_log_error ~level:info)
 ;;
@@ -107,15 +115,13 @@ let schema_decoder ?default create_fcn encode_fnc field =
   PoolConformist.custom
     ?default
     (decoder create_fcn field)
-    (fun l -> l |> encode_fnc |> CCList.pure)
+    CCFun.(encode_fnc %> CCList.pure)
     Entity_message.Field.(field |> show)
 ;;
 
-let list_decoder create_fcn l = create_fcn l
-
 let schema_list_decoder create_fcn encode_fnc field =
   PoolConformist.custom
-    (list_decoder create_fcn)
-    (fun l -> l |> encode_fnc)
+    create_fcn
+    encode_fnc
     Entity_message.Field.(field |> show)
 ;;

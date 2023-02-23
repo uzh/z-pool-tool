@@ -1,3 +1,4 @@
+open CCFun
 open Entity
 module Common = Pool_common
 module Database = Pool_database
@@ -6,19 +7,19 @@ module SmtpAuth = Repo_entity_smtp_auth
 module Title = struct
   include Title
 
-  let t = Caqti_type.string
+  let t = Pool_common.Repo.make_caqti_type Caqti_type.string create value
 end
 
 module Description = struct
   include Description
 
-  let t = Caqti_type.string
+  let t = Pool_common.Repo.make_caqti_type Caqti_type.string create value
 end
 
 module Url = struct
   include Entity.Url
 
-  let t = Caqti_type.string
+  let t = Pool_common.Repo.make_caqti_type Caqti_type.string create value
 
   let find_url_request =
     let open Caqti_request.Infix in
@@ -48,7 +49,7 @@ module Styles = struct
   module Write = struct
     include Write
 
-    let t = Caqti_type.string
+    let t = Pool_common.Repo.make_caqti_type Caqti_type.string create value
   end
 end
 
@@ -60,20 +61,30 @@ module Icon = struct
   module Write = struct
     include Write
 
-    let t = Caqti_type.string
+    let t = Pool_common.Repo.make_caqti_type Caqti_type.string create value
   end
 end
 
 module Maintenance = struct
   include Maintenance
 
-  let t = Caqti_type.bool
+  let t =
+    Pool_common.Repo.make_caqti_type
+      Caqti_type.bool
+      (create %> CCResult.return)
+      value
+  ;;
 end
 
 module Disabled = struct
   include Disabled
 
-  let t = Caqti_type.bool
+  let t =
+    Pool_common.Repo.make_caqti_type
+      Caqti_type.bool
+      (create %> CCResult.return)
+      value
+  ;;
 end
 
 let t =
@@ -85,13 +96,12 @@ let t =
         , ( m.description
           , ( Url.value m.url
             , ( m.database_label
-              , ( m.smtp_auth
-                , ( m.styles
-                  , ( m.icon
-                    , ( m.maintenance
-                      , ( m.disabled
-                        , (m.default_language, (m.created_at, m.updated_at)) )
-                      ) ) ) ) ) ) ) ) )
+              , ( m.styles
+                , ( m.icon
+                  , ( m.maintenance
+                    , ( m.disabled
+                      , (m.default_language, (m.created_at, m.updated_at)) ) )
+                  ) ) ) ) ) ) )
   in
   let decode
     ( id
@@ -99,33 +109,26 @@ let t =
       , ( description
         , ( url
           , ( database_label
-            , ( smtp_auth
-              , ( styles
-                , ( icon
-                  , ( maintenance
-                    , (disabled, (default_language, (created_at, updated_at)))
-                    ) ) ) ) ) ) ) ) )
+            , ( styles
+              , ( icon
+                , ( maintenance
+                  , (disabled, (default_language, (created_at, updated_at))) )
+                ) ) ) ) ) ) )
     =
-    let open CCResult in
-    map_err (fun _ -> "decode tenant read")
-    @@ let* title = Title.create title in
-       let* description = Description.create description in
-       let* url = Url.create url in
-       Ok
-         { id
-         ; title
-         ; description
-         ; url
-         ; database_label
-         ; smtp_auth
-         ; styles
-         ; icon
-         ; maintenance = Maintenance.create maintenance
-         ; disabled = Disabled.create disabled
-         ; default_language
-         ; created_at
-         ; updated_at
-         }
+    Ok
+      { id
+      ; title
+      ; description
+      ; url
+      ; database_label
+      ; styles
+      ; icon
+      ; maintenance
+      ; disabled
+      ; default_language
+      ; created_at
+      ; updated_at
+      }
   in
   Caqti_type.(
     custom
@@ -142,20 +145,18 @@ let t =
                   (tup2
                      Database.Repo.Label.t
                      (tup2
-                        SmtpAuth.t
+                        Styles.t
                         (tup2
-                           Styles.t
+                           Icon.t
                            (tup2
-                              Icon.t
+                              Maintenance.t
                               (tup2
-                                 Maintenance.t
+                                 Disabled.t
                                  (tup2
-                                    Disabled.t
+                                    Pool_common.Repo.Language.t
                                     (tup2
-                                       Pool_common.Repo.Language.t
-                                       (tup2
-                                          Common.Repo.CreatedAt.t
-                                          Common.Repo.UpdatedAt.t)))))))))))))
+                                       Common.Repo.CreatedAt.t
+                                       Common.Repo.UpdatedAt.t))))))))))))
 ;;
 
 module Write = struct
@@ -169,13 +170,12 @@ module Write = struct
           , ( m.description
             , ( Url.value m.url
               , ( m.database
-                , ( m.smtp_auth
-                  , ( m.styles
-                    , ( m.icon
-                      , ( m.maintenance
-                        , ( m.disabled
-                          , (m.default_language, (m.created_at, m.updated_at))
-                          ) ) ) ) ) ) ) ) ) )
+                , ( m.styles
+                  , ( m.icon
+                    , ( m.maintenance
+                      , ( m.disabled
+                        , (m.default_language, (m.created_at, m.updated_at)) )
+                      ) ) ) ) ) ) ) )
     in
     let decode
       ( id
@@ -183,33 +183,26 @@ module Write = struct
         , ( description
           , ( url
             , ( database
-              , ( smtp_auth
-                , ( styles
-                  , ( icon
-                    , ( maintenance
-                      , (disabled, (default_language, (created_at, updated_at)))
-                      ) ) ) ) ) ) ) ) )
+              , ( styles
+                , ( icon
+                  , ( maintenance
+                    , (disabled, (default_language, (created_at, updated_at)))
+                    ) ) ) ) ) ) ) )
       =
-      let open CCResult in
-      map_err (fun _ -> "decode tenant write")
-      @@ let* title = Title.create title in
-         let* description = Description.create description in
-         let* url = Url.create url in
-         Ok
-           { id
-           ; title
-           ; description
-           ; url
-           ; database
-           ; smtp_auth
-           ; styles
-           ; icon
-           ; maintenance = Maintenance.create maintenance
-           ; disabled = Disabled.create disabled
-           ; default_language
-           ; created_at
-           ; updated_at
-           }
+      Ok
+        { id
+        ; title
+        ; description
+        ; url
+        ; database
+        ; styles
+        ; icon
+        ; maintenance
+        ; disabled
+        ; default_language
+        ; created_at
+        ; updated_at
+        }
     in
     Caqti_type.(
       custom
@@ -226,20 +219,18 @@ module Write = struct
                     (tup2
                        Database.Repo.t
                        (tup2
-                          SmtpAuth.Write.t
+                          Styles.Write.t
                           (tup2
-                             Styles.Write.t
+                             Icon.Write.t
                              (tup2
-                                Icon.Write.t
+                                Maintenance.t
                                 (tup2
-                                   Maintenance.t
+                                   Disabled.t
                                    (tup2
-                                      Disabled.t
+                                      Pool_common.Repo.Language.t
                                       (tup2
-                                         Pool_common.Repo.Language.t
-                                         (tup2
-                                            Common.Repo.CreatedAt.t
-                                            Common.Repo.UpdatedAt.t)))))))))))))
+                                         Common.Repo.CreatedAt.t
+                                         Common.Repo.UpdatedAt.t))))))))))))
   ;;
 end
 
@@ -247,13 +238,8 @@ module Selection = struct
   open Entity.Selection
 
   let t =
-    let encode m = Ok (Url.value m.Selection.url, m.database_label) in
-    let decode (url, database_label) =
-      let open CCResult in
-      map_err (fun _ -> "decode tenant selection")
-      @@ let* url = Url.create url in
-         Ok { url; database_label }
-    in
+    let encode m = Ok (m.Selection.url, m.database_label) in
+    let decode (url, database_label) = Ok { url; database_label } in
     Caqti_type.(custom ~encode ~decode (tup2 Url.t Database.Repo.Label.t))
   ;;
 end

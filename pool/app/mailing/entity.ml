@@ -34,91 +34,69 @@ module Rate = struct
 end
 
 module Distribution = struct
-  (* let sortable_fields = Pool_common.Message.Field. [ AssignmentCount;
-     InvitationCount; Firstname; Name ] ;; *)
-  let print m fmt _ = Format.pp_print_string fmt m
+  let print = Utils.ppx_printer
 
-  type sortable_field =
-    | AssignmentCount [@name "assignment_count"]
-        [@printer print "assignment_count"]
-    | Firstname [@name "firstname"] [@printer print "firstname"]
-    | InvitationCount [@name "invitation_count"]
-        [@printer print "invitation_count"]
-    | Lastname [@name "lastname"] [@printer print "lastname"]
-  [@@deriving eq, show, yojson, enum]
+  module SortableField = struct
+    module Core = struct
+      let field = Pool_common.Message.Field.Distribution
 
-  let all_sortable_fields : sortable_field list =
-    CCList.range min_sortable_field max_sortable_field
-    |> CCList.map sortable_field_of_enum
-    |> CCList.all_some
-    |> CCOption.get_exn_or
-         "Distribution order: Could not create list of all sortable keys!"
-  ;;
+      type t =
+        | AssignmentCount [@name "assignment_count"]
+            [@printer print "assignment_count"]
+        | Firstname [@name "firstname"] [@printer print "firstname"]
+        | InvitationCount [@name "invitation_count"]
+            [@printer print "invitation_count"]
+        | Lastname [@name "lastname"] [@printer print "lastname"]
+      [@@deriving enum, eq, ord, sexp_of, show { with_path = false }, yojson]
+    end
 
-  let sortable_field_to_string language =
-    let go = Pool_common.Utils.field_to_string language in
-    let open Pool_common.Message in
-    function
-    | AssignmentCount -> Field.AssignmentCount |> go
-    | Firstname -> Field.Firstname |> go
-    | InvitationCount -> Field.InvitationCount |> go
-    | Lastname -> Field.Lastname |> go
-  ;;
+    include Pool_common.Model.SelectorType (Core)
+    include Core
 
-  let sortable_field_to_sql = function
-    | AssignmentCount -> "pool_contacts.num_assignments"
-    | Firstname -> "user_users.given_name"
-    | InvitationCount -> "pool_contacts.num_invitations"
-    | Lastname -> "user_users.name"
-  ;;
+    let to_human language =
+      let go = Pool_common.Utils.field_to_string language in
+      let open Pool_common.Message in
+      function
+      | AssignmentCount -> Field.AssignmentCount |> go
+      | Firstname -> Field.Firstname |> go
+      | InvitationCount -> Field.InvitationCount |> go
+      | Lastname -> Field.Lastname |> go
+    ;;
 
-  let read_sortable_field m =
-    m
-    |> Format.asprintf "[\"%s\"]"
-    |> Yojson.Safe.from_string
-    |> sortable_field_of_yojson
-  ;;
+    let to_sql = function
+      | AssignmentCount -> "pool_contacts.num_assignments"
+      | Firstname -> "user_users.given_name"
+      | InvitationCount -> "pool_contacts.num_invitations"
+      | Lastname -> "user_users.name"
+    ;;
+  end
 
   module SortOrder = struct
-    let field = Pool_common.Message.Field.SortOrder
+    module Core = struct
+      let field = Pool_common.Message.Field.SortOrder
 
-    type t =
-      | Ascending [@name "ASC"] [@printer print "ASC"]
-      | Descending [@name "DESC"] [@printer print "DESC"]
-    [@@deriving eq, show, yojson, enum]
+      type t =
+        | Ascending [@name "ASC"] [@printer print "ASC"]
+        | Descending [@name "DESC"] [@printer print "DESC"]
+      [@@deriving enum, eq, ord, sexp_of, show { with_path = false }, yojson]
+    end
 
-    let to_human m lang =
+    include Pool_common.Model.SelectorType (Core)
+    include Core
+
+    let to_human lang =
+      let open CCFun in
       let open Pool_common in
-      Utils.control_to_string
-        lang
-        (match m with
-         | Ascending -> Message.Ascending
-         | Descending -> Message.Descending)
-    ;;
-
-    let read m =
-      m |> Format.asprintf "[\"%s\"]" |> Yojson.Safe.from_string |> t_of_yojson
-    ;;
-
-    let create m =
-      try Ok (read m) with
-      | _ -> Error Pool_common.Message.(Invalid field)
-    ;;
-
-    let all : t list =
-      CCList.range min max
-      |> CCList.map of_enum
-      |> CCList.all_some
-      |> CCOption.get_exn_or
-           "Distribution order: Could not create list of all keys!"
+      (function
+       | Ascending -> Message.Ascending
+       | Descending -> Message.Descending)
+      %> Utils.control_to_string lang
     ;;
 
     let default = Ascending
-    let label m = m |> show |> Utils.Countries.find
-    let schema () = Pool_common.Utils.schema_decoder create show field
   end
 
-  type sorted = (sortable_field * SortOrder.t) list
+  type sorted = (SortableField.t * SortOrder.t) list
   [@@deriving eq, show, yojson]
 
   type t =
@@ -150,7 +128,7 @@ module Distribution = struct
        |> CCList.map (fun (field, order) ->
             CCString.concat
               " "
-              [ field |> sortable_field_to_sql; order |> SortOrder.show ])
+              [ field |> SortableField.to_sql; order |> SortOrder.show ])
        |> CCString.concat ", "
        |> CCOption.pure)
     %> CCOption.map_or ~default:"" (Format.asprintf "ORDER BY %s")
@@ -161,16 +139,20 @@ module Distribution = struct
     let default = false in
     Utils.schema_decoder
       ~default
-      CCFun.(bool_of_string_opt %> CCOption.get_or ~default %> CCResult.pure)
+      CCFun.(bool_of_string_opt %> CCOption.get_or ~default %> CCResult.return)
       string_of_bool
       Pool_common.Message.Field.RandomOrder
   ;;
 
   let schema () =
     let encode m = m |> yojson_of_sorted |> Yojson.Safe.to_string in
-    let decode =
-      CCResult.(
-        fun m -> m |> Yojson.Safe.from_string |> sorted_of_yojson |> pure)
+    let decode m =
+      try
+        m |> Yojson.Safe.from_string |> sorted_of_yojson |> CCResult.return
+      with
+      | Ppx_yojson_conv_lib.Yojson_conv.Of_yojson_error (exn, yojson) ->
+        Pool_common.Utils.handle_ppx_yojson_err (exn, yojson)
+      | _ -> Error Pool_common.Message.(Invalid field)
     in
     Pool_common.Utils.schema_decoder decode encode field
   ;;

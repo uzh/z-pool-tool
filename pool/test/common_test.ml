@@ -14,39 +14,27 @@ module Data = struct
 end
 
 let validate_email _ () =
-  let open Lwt.Syntax in
-  let* () =
-    let msg = "Missing 'TEST_EMAIL' env variable." in
-    Service.Email.handle
-      ~without_email_fcn:(fun _ -> failwith msg)
-      (fun email ->
-        Alcotest.(
-          check
-            string
-            "production subject"
-            email.Sihl_email.subject
-            Data.subject);
-        Lwt.return_unit)
-      (fun email new_recipient ->
-        let email = Service.Email.redirected_email new_recipient email in
-        Alcotest.(
-          check
-            string
-            "intercepted subject"
-            email.Sihl_email.subject
-            (Format.asprintf
-               "[Pool Tool] %s (original to: %s)"
-               Data.subject
-               Data.recipient));
-        Alcotest.(
-          check
-            string
-            "intercepted recipient"
-            email.Sihl_email.recipient
-            (Sihl.Configuration.read_string "TEST_EMAIL"
-            |> CCOption.get_exn_or msg));
-        Lwt.return_unit)
-      (Data.create_email ())
+  let open Pool_tenant.Service.Email in
+  let open Smtp in
+  let email =
+    Data.create_email () |> intercept_prepare |> CCResult.get_or_failwith
   in
-  Lwt.return ()
+  let msg = "Missing 'TEST_EMAIL' env variable." in
+  let%lwt { subject; _ } = prepare Test_utils.Data.database_label email in
+  Alcotest.(
+    check
+      string
+      "intercepted subject"
+      subject
+      (Format.asprintf
+         "[Pool Tool] %s (original to: %s)"
+         Data.subject
+         Data.recipient));
+  Alcotest.(
+    check
+      string
+      "intercepted recipient"
+      email.Sihl_email.recipient
+      (Sihl.Configuration.read_string "TEST_EMAIL" |> CCOption.get_exn_or msg));
+  Lwt.return_unit
 ;;

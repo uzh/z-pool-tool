@@ -152,7 +152,7 @@ let message_langauge sys (contact : Contact.t) =
   contact.Contact.language
   >>= (fun contact_lang -> CCList.find_opt (Language.equal contact_lang) sys)
   |> value ~default
-  |> CCResult.pure
+  |> CCResult.return
 ;;
 
 let search_by_language templates language =

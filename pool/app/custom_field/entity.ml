@@ -3,38 +3,22 @@ module Language = Pool_common.Language
 module Answer = Entity_answer
 module User = Pool_user
 
-let printer m fmt _ = Format.pp_print_string fmt m
+let printer = Utils.ppx_printer
 
 module Id = struct
   include Pool_common.Id
 end
 
 module Model = struct
-  let go m fmt _ = Format.pp_print_string fmt m
+  module Core = struct
+    let field = Message.Field.Model
 
-  type t = Contact [@name "contact"] [@printer printer "contact"]
-  [@@deriving eq, show { with_path = false }, yojson, enum]
+    type t = Contact [@name "contact"] [@printer printer "contact"]
+    [@@deriving enum, eq, ord, sexp_of, show { with_path = false }, yojson]
+  end
 
-  let field = Message.Field.Model
-
-  let read m =
-    m |> Format.asprintf "[\"%s\"]" |> Yojson.Safe.from_string |> t_of_yojson
-  ;;
-
-  let all : t list =
-    CCList.range min max
-    |> CCList.map of_enum
-    |> CCList.all_some
-    |> CCOption.get_exn_or "Models: Could not create list of all models!"
-  ;;
-
-  let create s =
-    try Ok (read s) with
-    | _ -> Error Message.(Invalid field)
-  ;;
-
-  let value = show
-  let schema () = Pool_common.Utils.schema_decoder create value field
+  include Pool_common.Model.SelectorType (Core)
+  include Core
 end
 
 module Name = struct
@@ -71,38 +55,24 @@ module Hint = struct
 end
 
 module FieldType = struct
-  type t =
-    | Boolean [@name "boolean"] [@printer printer "boolean"]
-    | MultiSelect [@name "multi_select"] [@printer printer "multi_select"]
-    | Number [@name "number"] [@printer printer "number"]
-    | Select [@name "select"] [@printer printer "select"]
-    | Text [@name "text"] [@printer printer "text"]
-  [@@deriving eq, show { with_path = false }, yojson, enum]
+  module Core = struct
+    let field = Message.Field.FieldType
+
+    type t =
+      | Boolean [@name "boolean"] [@printer printer "boolean"]
+      | MultiSelect [@name "multi_select"] [@printer printer "multi_select"]
+      | Number [@name "number"] [@printer printer "number"]
+      | Select [@name "select"] [@printer printer "select"]
+      | Text [@name "text"] [@printer printer "text"]
+    [@@deriving enum, eq, ord, sexp_of, show { with_path = false }, yojson]
+  end
+
+  include Pool_common.Model.SelectorType (Core)
+  include Core
 
   let to_string t =
     t |> show |> CCString.replace ~sub:"_" ~by:" " |> CCString.capitalize_ascii
   ;;
-
-  let field = Message.Field.FieldType
-
-  let read m =
-    m |> Format.asprintf "[\"%s\"]" |> Yojson.Safe.from_string |> t_of_yojson
-  ;;
-
-  let all : t list =
-    CCList.range min max
-    |> CCList.map of_enum
-    |> CCList.all_some
-    |> CCOption.get_exn_or "Models: Could not create list of all models!"
-  ;;
-
-  let create s =
-    try Ok (read s) with
-    | _ -> Error Message.(Invalid field)
-  ;;
-
-  let value = show
-  let schema () = Pool_common.Utils.schema_decoder create value field
 end
 
 module Required = struct
@@ -128,7 +98,7 @@ module AdminHint = struct
   include Pool_common.Model.String
 
   let field = Message.Field.AdminHint
-  let schema = schema field ?validation:None
+  let schema () = schema field ()
 end
 
 module AdminOverride = struct
@@ -150,8 +120,6 @@ module AdminInputOnly = struct
 end
 
 module Validation = struct
-  let printer m fmt _ = Format.pp_print_string fmt m
-
   type raw = (string * string) list [@@deriving show, eq, yojson]
 
   type 'a t =
@@ -290,7 +258,7 @@ module Validation = struct
     CCOption.value ~default:key (text <+> number)
   ;;
 
-  let pure = CCResult.pure, []
+  let pure = CCResult.return, []
   let encode_to_yojson t = t |> snd |> yojson_of_raw
 
   let to_strings all m =

@@ -5,29 +5,30 @@ module Id = struct
 end
 
 module Label = struct
-  let go m fmt _ = Format.pp_print_string fmt m
+  let print = Utils.ppx_printer
 
   type t =
     | AssignmentConfirmation [@name "assignment_confirmation"]
-        [@printer go "assignment_confirmation"]
+        [@printer print "assignment_confirmation"]
     | ContactRegistrationAttempt [@name "contact_registration_attempt"]
-        [@printer go "contact_registration_attempt"]
+        [@printer print "contact_registration_attempt"]
     | EmailVerification [@name "email_verification"]
-        [@printer go "email_verification"]
+        [@printer print "email_verification"]
     | ExperimentInvitation [@name "experiment_invitation"]
-        [@printer go "experiment_invitation"]
-    | PasswordChange [@name "password_change"] [@printer go "password_change"]
-    | PasswordReset [@name "password_reset"] [@printer go "password_reset"]
+        [@printer print "experiment_invitation"]
+    | PasswordChange [@name "password_change"]
+        [@printer print "password_change"]
+    | PasswordReset [@name "password_reset"] [@printer print "password_reset"]
     | ProfileUpdateTrigger [@name "profile_update_trigger"]
-        [@printer go "profile_update_trigger"]
+        [@printer print "profile_update_trigger"]
     | SignUpVerification [@name "signup_verification"]
-        [@printer go "signup_verification"]
+        [@printer print "signup_verification"]
     | SessionCancellation [@name "session_cancellation"]
-        [@printer go "session_cancellation"]
+        [@printer print "session_cancellation"]
     | SessionReminder [@name "session_reminder"]
-        [@printer go "session_reminder"]
+        [@printer print "session_reminder"]
     | SessionReschedule [@name "session_reschedule"]
-        [@printer go "session_reschedule"]
+        [@printer print "session_reschedule"]
   [@@deriving eq, show { with_path = false }, yojson, variants]
 
   let read m =
@@ -58,28 +59,28 @@ module EmailSubject = struct
   include Pool_common.Model.String
 
   let field = Field.EmailSubject
-  let schema = schema ?validation:None field
+  let schema () = schema field ()
 end
 
 module EmailText = struct
   include Pool_common.Model.String
 
   let field = Field.EmailText
-  let schema = schema ?validation:None field
+  let schema () = schema field ()
 end
 
 module PlainText = struct
   include Pool_common.Model.String
 
   let field = Field.PlainText
-  let schema = schema ?validation:None field
+  let schema () = schema field ()
 end
 
 module SmsText = struct
   include Pool_common.Model.String
 
   let field = Field.SmsText
-  let schema = schema ?validation:None field
+  let schema () = schema field ()
 end
 
 type t =

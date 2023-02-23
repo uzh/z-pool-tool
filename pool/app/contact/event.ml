@@ -118,7 +118,7 @@ let handle_event pool : event -> unit Lwt.t =
     let%lwt _ =
       Service.User.update_password
         ~ctx
-        ~password_policy:(CCFun.const (CCResult.pure ()))
+        ~password_policy:(CCFun.const (CCResult.return ()))
         ~old_password
         ~new_password
         ~new_password_confirmation

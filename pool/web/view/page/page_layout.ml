@@ -1,6 +1,7 @@
 open Tyxml.Html
 module Message = Page_message
 module I18n = Pool_common.I18n
+module Language = Pool_common.Language
 
 type nav_element =
   { url : string
@@ -73,12 +74,15 @@ let website_header ?(children = []) query_language title =
     [ app_title query_language title; div children ]
 ;;
 
+let desktop_nav elements =
+  div ~a:[ a_class [ "desktop-nav"; "flexrow"; "flex-gap" ] ] elements
+;;
+
 let mobile_nav query_language title navigation =
-  let pure = CCList.pure in
   let id = "navigation-overlay" in
   let label label =
     Component.Icon.icon label
-    |> pure
+    |> CCList.pure
     |> div ~a:[ a_user_data "modal" id; a_class [ "icon-lg" ] ]
   in
   let overlay =
@@ -196,6 +200,7 @@ let to_main_nav ?mobile language query_language active_navigation items =
 
 module Tenant = struct
   let i18n_links tenant_languages active_lang mobile =
+    let open Pool_common.Message in
     let link_classes = [ "nav-link" ] in
     let nav_class =
       if mobile
@@ -206,8 +211,8 @@ module Tenant = struct
       ~a:[ a_class nav_class ]
       (CCList.map
          (fun tenant_language ->
-           let label = Pool_common.Language.show tenant_language in
-           if Pool_common.Language.equal tenant_language active_lang
+           let label = Language.show tenant_language in
+           if Language.equal tenant_language active_lang
            then
              span
                ~a:[ a_class (CCList.cons "active" link_classes) ]
@@ -216,14 +221,12 @@ module Tenant = struct
              a
                ~a:
                  [ a_href
-                     Pool_common.(
-                       Message.(
-                         add_field_query_params
-                           ""
-                           [ ( Field.Language
-                             , Language.show tenant_language
-                               |> CCString.lowercase_ascii )
-                           ]))
+                     (add_field_query_params
+                        ""
+                        [ ( Field.Language
+                          , Language.show tenant_language
+                            |> CCString.lowercase_ascii )
+                        ])
                  ; a_class link_classes
                  ]
                [ txt label ])
@@ -239,7 +242,7 @@ module Tenant = struct
     active_lang
     title
     =
-    let open Pool_common.I18n in
+    let open I18n in
     let open Pool_context in
     let to_main_nav mobile =
       to_main_nav ~mobile language query_language active_navigation
@@ -264,7 +267,7 @@ module Tenant = struct
           ]
           |> CCList.map (fun (url, label, icon, children) ->
                create_nav_element ?icon ?children url label)
-          |> (fun links -> links @ [ logout_nav_link ])
+          |> CCList.cons logout_nav_link
           |> to_main_nav mobile
         ; language_switch mobile
         ]
@@ -274,6 +277,7 @@ module Tenant = struct
           ; "/admin/filter", Filter
           ; "/admin/locations", Locations
           ; "/admin/settings", SystemSettings
+          ; "/admin/settings/smtp", Smtp
           ; "/admin/message-template", MessageTemplates
           ; "/admin/i18n", I18n
           ]
@@ -288,14 +292,10 @@ module Tenant = struct
         in
         ([ "/admin/dashboard", Dashboard; "/admin/experiments", Experiments ]
         |> to_nav_elements)
-        @ [ settings_nav; user_nav ]
-        |> fun links ->
-        links @ [ logout_nav_link ] |> to_main_nav mobile |> CCList.pure
+        @ [ settings_nav; user_nav; logout_nav_link ]
+        |> CCFun.(to_main_nav mobile %> CCList.pure)
     in
-    let desktop_nav =
-      nav_links false
-      |> div ~a:[ a_class [ "desktop-nav"; "flexrow"; "flex-gap" ] ]
-    in
+    let desktop_nav = nav_links false |> desktop_nav in
     let mobile_nav = nav_links true |> mobile_nav query_language title in
     [ desktop_nav; mobile_nav ]
   ;;
@@ -368,45 +368,67 @@ module Tenant = struct
   ;;
 end
 
-let create_root_layout children language message user ?active_navigation () =
-  let navigation =
-    let to_main_nav =
-      to_main_nav Pool_common.Language.En None active_navigation
-    in
-    let open Pool_common.I18n in
+module Root = struct
+  let navigation user active_navigation title =
+    let open CCFun in
+    let open I18n in
     let open Pool_context in
-    let not_logged_in = [ "/root/login", Login ] in
+    let to_main_nav mobile =
+      to_main_nav ~mobile Language.En None active_navigation %> CCList.pure
+    in
+    let not_logged_in = [ "/root/login", Login ] |> to_nav_elements in
     (match user with
      | Contact _ | Guest -> not_logged_in
-     | Admin _ -> [ "/root/tenants", Tenants; "/root/logout", Logout ])
-    |> to_nav_elements
-    |> to_main_nav
-  in
-  let title_text = "Pool Tool" in
-  let page_title = title (txt title_text) in
-  let message = Message.create message language () in
-  let scripts =
-    script
-      ~a:
-        [ a_src (Http_utils.externalized_path_with_version "/assets/index.js")
-        ; a_defer ()
-        ]
-      (txt "")
-  in
-  let content = main_tag [ message; children ] in
-  html
-    (head
-       page_title
-       ([ charset; viewport; favicon "/assets/images/favicon.png" ]
-       @ [ global_stylesheet |> css_link_tag ]))
-    (body
-       ~a:[ a_class body_tag_classnames ]
-       [ website_header None ~children:[ navigation ] title_text
-       ; content
-       ; footer title_text
-       ; scripts
-       ])
-;;
+     | Admin _ ->
+       let base_nav : nav_element list =
+         [ "/root/tenants", Tenants; "/root/users", Users ] |> to_nav_elements
+       in
+       let settings_nav : nav_element =
+         [ "/root/settings/smtp", Smtp ]
+         |> to_nav_elements
+         |> fun children ->
+         create_nav_element ~children "/root/settings" Settings
+       in
+       let logout_nav : nav_element list =
+         [ "/root/logout", Logout ] |> to_nav_elements
+       in
+       base_nav @ [ settings_nav ] @ logout_nav)
+    |> fun elements ->
+    let desktop_nav = to_main_nav false %> desktop_nav in
+    let mobile_nav = to_main_nav true %> mobile_nav None title in
+    [ desktop_nav elements; mobile_nav elements ]
+  ;;
+
+  let create_layout ?active_navigation user message children =
+    let title_text = "Pool Tool" in
+    let page_title = title (txt title_text) in
+    let message = Message.create message Language.En () in
+    let scripts =
+      script
+        ~a:
+          [ a_src (Http_utils.externalized_path_with_version "/assets/index.js")
+          ; a_defer ()
+          ]
+        (txt "")
+    in
+    let content = main_tag [ message; children ] in
+    let children =
+      navigation user active_navigation (Pool_tenant.Title.of_string title_text)
+    in
+    html
+      (head
+         page_title
+         ([ charset; viewport; favicon "/assets/images/favicon.png" ]
+         @ [ global_stylesheet |> css_link_tag ]))
+      (body
+         ~a:[ a_class body_tag_classnames ]
+         [ website_header None ~children title_text
+         ; content
+         ; footer title_text
+         ; scripts
+         ])
+  ;;
+end
 
 let create_error_layout children =
   let title_text = "Pool Tool" in

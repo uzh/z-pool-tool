@@ -5,29 +5,31 @@ module Id = Common.Id
 module CreatedAt = Common.CreatedAt
 module UpdatedAt = Common.UpdatedAt
 module File = Common.File
-module SmtpAuth = Entity_smtp_auth
+module SmtpAuth = Entity_smtp
 module LogoMapping = Entity_logo_mapping
 module PoolError = Common.Message
+
+let to_ctx pool = [ "pool", Database.Label.value pool ]
 
 module Title = struct
   include Pool_common.Model.String
 
   let field = Common.Message.Field.Title
-  let schema = schema ?validation:None field
+  let schema () = schema field ()
 end
 
 module Description = struct
   include Pool_common.Model.String
 
   let field = Common.Message.Field.Description
-  let schema = schema ?validation:None field
+  let schema () = schema field ()
 end
 
 module Url = struct
   include Pool_common.Model.String
 
   let field = Common.Message.Field.Url
-  let schema = schema ?validation:None field
+  let schema () = schema field ()
 end
 
 module Styles = struct
@@ -42,7 +44,7 @@ module Styles = struct
     include Pool_common.Model.String
 
     let field = Common.Message.Field.Styles
-    let schema = schema ?validation:None field
+    let schema () = schema field ()
   end
 end
 
@@ -56,7 +58,7 @@ module Icon = struct
     include Pool_common.Model.String
 
     let field = Common.Message.Field.Icon
-    let schema = schema ?validation:None field
+    let schema () = schema field ()
   end
 end
 
@@ -110,7 +112,6 @@ type t =
   ; description : Description.t
   ; url : Url.t
   ; database_label : Database.Label.t
-  ; smtp_auth : SmtpAuth.t
   ; styles : Styles.t
   ; icon : Icon.t
   ; logos : Logos.t
@@ -132,7 +133,6 @@ module Read = struct
     ; description : Description.t
     ; url : Url.t
     ; database_label : Database.Label.t
-    ; smtp_auth : SmtpAuth.t
     ; styles : Styles.t
     ; icon : Icon.t
     ; maintenance : Maintenance.t
@@ -151,7 +151,6 @@ module Write = struct
     ; description : Description.t
     ; url : Url.t
     ; database : Database.t
-    ; smtp_auth : SmtpAuth.Write.t
     ; styles : Styles.Write.t
     ; icon : Icon.Write.t
     ; maintenance : Maintenance.t
@@ -162,22 +161,12 @@ module Write = struct
     }
   [@@deriving eq, show]
 
-  let create
-    title
-    description
-    url
-    database
-    smtp_auth
-    styles
-    icon
-    default_language
-    =
+  let create title description url database styles icon default_language =
     { id = Id.create ()
     ; title
     ; description
     ; url
     ; database
-    ; smtp_auth
     ; styles
     ; icon
     ; maintenance = Maintenance.create false

@@ -32,7 +32,7 @@ let default_values =
       ] )
   ]
   |> CCList.map (fun (key, data) ->
-       let key = key |> Key.of_string |> get_or_failwith in
+       let key = key |> Key.create |> get_or_failwith in
        CCList.map
          (fun (language, content) ->
            create

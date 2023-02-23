@@ -140,7 +140,7 @@ let validate_partial_update
     let open Pool_common.Version in
     if old_v |> value > (current_version |> value)
     then Error Pool_common.Message.(MeantimeUpdate field)
-    else t |> increment_version |> CCResult.pure
+    else t |> increment_version |> CCResult.return
   in
   let validate schema =
     let schema =

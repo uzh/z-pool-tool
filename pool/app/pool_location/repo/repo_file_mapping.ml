@@ -6,20 +6,7 @@ module Id = struct
   let t = Pool_common.Repo.Id.t
 end
 
-module Label = struct
-  include Label
-
-  let t =
-    let encode = Utils.fcn_ok show in
-    let decode m =
-      m
-      |> create
-      |> CCResult.map_err (fun err ->
-           Pool_common.(Utils.error_to_string Language.En err))
-    in
-    Caqti_type.(custom ~encode ~decode string)
-  ;;
-end
+module Label = Pool_common.Repo.Model.SelectorType (Label)
 
 module File = struct
   include Pool_common.File
@@ -109,7 +96,7 @@ module Sql = struct
       WHERE pool_location_file_mappings.uuid = UNHEX(REPLACE(?, '-', ''))
     |sql}
     |> select_from_location_file_mappings_sql
-    |> Caqti_type.string ->! file
+    |> Id.t ->! file
   ;;
 
   let find pool mapping_id =
@@ -117,7 +104,7 @@ module Sql = struct
     Utils.Database.find_opt
       (Pool_database.Label.value pool)
       find_request
-      (Pool_common.Id.value mapping_id)
+      mapping_id
     ||> CCOption.to_result Pool_common.Message.(NotFound Field.FileMapping)
   ;;
 
@@ -127,14 +114,14 @@ module Sql = struct
       WHERE pool_location_file_mappings.location_id = (SELECT id FROM pool_locations WHERE uuid = UNHEX(REPLACE(?, '-', '')))
     |sql}
     |> select_from_location_file_mappings_sql
-    |> Caqti_type.string ->* file
+    |> Repo_entity.Id.t ->* file
   ;;
 
   let find_by_location pool location =
     Utils.Database.collect
       (Pool_database.Label.value pool)
       find_by_location_request
-      (Pool_common.Id.value location)
+      location
   ;;
 
   let insert_request =
@@ -167,7 +154,7 @@ module Sql = struct
       DELETE FROM pool_location_file_mappings
       WHERE uuid = UNHEX(REPLACE(?, '-', ''))
     |sql}
-    |> Caqti_type.(string ->. unit)
+    |> Id.t ->. Caqti_type.unit
   ;;
 
   let delete pool id =
@@ -175,10 +162,7 @@ module Sql = struct
     (* TODO: Transaction *)
     let%lwt { file; _ } = find pool id ||> Pool_common.Utils.get_or_failwith in
     let%lwt () =
-      Utils.Database.exec
-        (Pool_database.Label.value pool)
-        delete_request
-        (Id.value id)
+      Utils.Database.exec (Pool_database.Label.value pool) delete_request id
     in
     Service.Storage.delete
       ~ctx:(Pool_tenant.to_ctx pool)

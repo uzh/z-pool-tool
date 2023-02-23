@@ -1,5 +1,11 @@
 include Entity
 include Event
+module Service = Pool_tenant_service
+
+module SmtpAuth = struct
+  include Entity.SmtpAuth
+  include Repo.Smtp
+end
 
 module Url = struct
   include Entity.Url
@@ -7,7 +13,6 @@ module Url = struct
   let of_pool = Repo.Url.of_pool
 end
 
-let to_ctx pool = [ "pool", Database.Label.value pool ]
 let find = Repo.find Database.root
 let find_full = Repo.find_full Database.root
 let find_by_label = Repo.find_by_label Database.root
@@ -28,7 +33,6 @@ module Selection = struct
   let find_all = Repo.find_selectable Database.root
 end
 
-(* Logo mappings *)
 module LogoMapping = struct
   include LogoMapping
 end

@@ -23,18 +23,19 @@ type email_layout =
 [@@deriving eq, show { with_path = false }]
 
 module TemplateLabel = struct
-  let go m fmt _ = Format.pp_print_string fmt m
+  let print = Utils.ppx_printer
 
   type t =
-    | Boilerplate [@name "boilerplate"] [@printer go "boilerplate"]
+    | Boilerplate [@name "boilerplate"] [@printer print "boilerplate"]
     | EmailVerification [@name "email_verification"]
-        [@printer go "email_verification"]
-    | Invitation [@name "invitation"] [@printer go "invitation"]
-    | PasswordChange [@name "password_change"] [@printer go "password_change"]
-    | PasswordReset [@name "password_reset"] [@printer go "password_reset"]
+        [@printer print "email_verification"]
+    | Invitation [@name "invitation"] [@printer print "invitation"]
+    | PasswordChange [@name "password_change"]
+        [@printer print "password_change"]
+    | PasswordReset [@name "password_reset"] [@printer print "password_reset"]
     | SignUpVerification [@name "signup_verification"]
     | SessionCancellation [@name "session_cancellation"]
-        [@printer go "session_cancellation"]
+        [@printer print "session_cancellation"]
   [@@deriving eq, show { with_path = false }, yojson, variants]
 
   let read m =

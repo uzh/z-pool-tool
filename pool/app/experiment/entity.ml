@@ -10,21 +10,21 @@ module Title = struct
   include Pool_common.Model.String
 
   let field = Common.Message.Field.Title
-  let schema = schema ?validation:None field
+  let schema () = schema field ()
 end
 
 module PublicTitle = struct
   include Pool_common.Model.String
 
   let field = Common.Message.Field.PublicTitle
-  let schema = schema ?validation:None field
+  let schema () = schema field ()
 end
 
 module Description = struct
   include Pool_common.Model.String
 
   let field = Common.Message.Field.Description
-  let schema = schema ?validation:None field
+  let schema () = schema field ()
 end
 
 module DirectRegistrationDisabled = struct

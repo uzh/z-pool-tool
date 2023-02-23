@@ -138,7 +138,11 @@ module EmailVerification = struct
     let* template = Repo.find_by_label pool language Label.EmailVerification in
     let%lwt url = Pool_tenant.Url.of_pool pool in
     let validation_url =
-      Pool_common.[ Message.Field.Token, Email.Token.value token ]
+      Pool_common.
+        [ ( Message.Field.Language
+          , language |> Language.show |> CCString.lowercase_ascii )
+        ; Message.Field.Token, Email.Token.value token
+        ]
       |> create_public_url_with_params url "/email-verified"
     in
     prepare_email
@@ -181,7 +185,7 @@ module ExperimentInvitation = struct
       let* lang, template = template_by_contact sys_langs templates contact in
       let params = email_params experiment tenant_url contact in
       prepare_email lang template (Contact.email_address contact) layout params
-      |> CCResult.pure
+      |> CCResult.return
     in
     Lwt_result.return fnc
   ;;
@@ -287,7 +291,7 @@ module ProfileUpdateTrigger = struct
         (Contact.email_address contact)
         (layout_from_tenant tenant)
         (email_params url contact)
-      |> CCResult.pure
+      |> CCResult.return
     in
     fnc |> Lwt_result.return
   ;;
@@ -313,7 +317,7 @@ module SessionCancellation = struct
       let* lang, template = template_by_contact sys_langs templates contact in
       let params = email_params lang session reason contact in
       prepare_email lang template (Contact.email_address contact) layout params
-      |> CCResult.pure
+      |> CCResult.return
     in
     Lwt_result.return fnc
   ;;
@@ -372,7 +376,7 @@ module SessionReminder = struct
       let* lang, template = template_by_contact sys_langs templates contact in
       let params = email_params lang experiment session contact in
       prepare_email lang template (Contact.email_address contact) layout params
-      |> CCResult.pure
+      |> CCResult.return
     in
     Lwt_result.return fnc
   ;;
@@ -401,7 +405,7 @@ module SessionReschedule = struct
       let* lang, template = template_by_contact sys_langs templates contact in
       let params = email_params lang session new_start new_duration contact in
       prepare_email lang template (Contact.email_address contact) layout params
-      |> CCResult.pure
+      |> CCResult.return
     in
     Lwt_result.return fnc
   ;;
@@ -425,7 +429,11 @@ module SignUpVerification = struct
     let* template = Repo.find_by_label pool language Label.SignUpVerification in
     let%lwt url = Pool_tenant.Url.of_pool pool in
     let verification_url =
-      Pool_common.[ Message.Field.Token, Email.Token.value token ]
+      Pool_common.
+        [ ( Message.Field.Language
+          , language |> Language.show |> CCString.lowercase_ascii )
+        ; Message.Field.Token, Email.Token.value token
+        ]
       |> create_public_url_with_params url "/email-verified"
     in
     prepare_email

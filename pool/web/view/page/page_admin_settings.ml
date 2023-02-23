@@ -1,6 +1,7 @@
 open Tyxml.Html
 open Component.Input
 module Message = Pool_common.Message
+module Smtp = Page_admin_settings_smtp
 
 let show
   tenant_languages

@@ -16,13 +16,13 @@ depends: [
   "dune" {>= "2.8"}
   "ocaml" {>= "4.12.0"}
   "conformist" {>= "0.8.1"}
-  "sihl" {>= "3.0.5" & < "4.0.0"}
-  "sihl-cache" {>= "3.0.5" & < "4.0.0"}
-  "sihl-email" {>= "3.0.5" & < "4.0.0"}
-  "sihl-queue" {>= "3.0.5" & < "4.0.0"}
-  "sihl-storage" {>= "3.0.5" & < "4.0.0"}
-  "sihl-token" {>= "3.0.5" & < "4.0.0"}
-  "sihl-user" {>= "3.0.5" & < "4.0.0"}
+  "sihl" {>= "4.0.0" & < "5.0.0"}
+  "sihl-cache" {>= "4.0.0" & < "5.0.0"}
+  "sihl-email" {>= "4.0.0" & < "5.0.0"}
+  "sihl-queue" {>= "4.0.0" & < "5.0.0"}
+  "sihl-storage" {>= "4.0.0" & < "5.0.0"}
+  "sihl-token" {>= "4.0.0" & < "5.0.0"}
+  "sihl-user" {>= "4.0.0" & < "5.0.0"}
   "lwt" {>= "5.6.1"}
   "logs" {>= "0.7.0"}
   "containers" {>= "3.6"}
@@ -35,6 +35,7 @@ depends: [
   "ppx_variants_conv" {= "v0.14.2"}
   "canary"
   "guardian" {= "0.0.5"}
+  "tls" {= "0.15.4"}
   "alcotest-lwt" {with-test}
   "ppx_inline_test" {with-test}
   "odoc" {with-doc}

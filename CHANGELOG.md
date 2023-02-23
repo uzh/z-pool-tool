@@ -13,9 +13,17 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 - send notification to contacts when there is an registration attempt with in-use email address
 - allow contacts to be filtered by experiment participation
 
+### Changed
+
+- split server command and queue worker command
+- move smtp configurations from root to tenants
+- integrate email service in tenant
+- show add configuration when not configured already
+
 ### Fixed
 
 - removed default value from pool_sessions.start
+- add language parameter to email links
 
 ## [0.1.1](https://github.com/uzh/pool/tree/0.1.1) - 2023-02-02
 

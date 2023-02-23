@@ -581,7 +581,8 @@ let retrieve_fitleterd_and_ordered_contacts _ () =
     in
     let order_by =
       let open Mailing.Distribution in
-      Sorted [ InvitationCount, SortOrder.Ascending ] |> get_order_element
+      Sorted [ SortableField.InvitationCount, SortOrder.Ascending ]
+      |> get_order_element
     in
     let%lwt contacts =
       Filter.find_filtered_contacts

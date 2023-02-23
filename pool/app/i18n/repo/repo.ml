@@ -27,15 +27,12 @@ module Sql = struct
       WHERE uuid = UNHEX(REPLACE(?, '-', ''))
     |sql}
     |> select_from_i18n_sql
-    |> Caqti_type.string ->! RepoEntity.t
+    |> Pool_common.Repo.Id.t ->! RepoEntity.t
   ;;
 
   let find pool id =
     let open Utils.Lwt_result.Infix in
-    Utils.Database.find_opt
-      (Pool_database.Label.value pool)
-      find_request
-      (id |> Pool_common.Id.value)
+    Utils.Database.find_opt (Pool_database.Label.value pool) find_request id
     ||> CCOption.to_result Pool_common.Message.(NotFound Field.I18n)
   ;;
 
@@ -45,7 +42,8 @@ module Sql = struct
       WHERE i18n_key = ? AND language = ?
     |sql}
     |> select_from_i18n_sql
-    |> Caqti_type.(tup2 string string) ->! RepoEntity.t
+    |> Caqti_type.(tup2 RepoEntity.Key.t Pool_common.Repo.Language.t)
+       ->! RepoEntity.t
   ;;
 
   let find_by_key pool key language =
@@ -53,7 +51,7 @@ module Sql = struct
     Utils.Database.find_opt
       (Pool_database.Label.value pool)
       find_by_key_request
-      (key |> Entity.Key.to_string, language |> Pool_common.Language.show)
+      (key, language)
     ||> CCOption.to_result Pool_common.Message.(NotFound Field.I18n)
   ;;
 
@@ -115,7 +113,7 @@ module Sql = struct
       DELETE FROM pool_i18n
       WHERE i18n_key = ?
     |sql}
-    |> Caqti_type.(string ->. unit)
+    |> RepoEntity.Key.t ->. Caqti_type.unit
   ;;
 
   let delete_by_key pool =
@@ -128,7 +126,4 @@ let find_by_key = Sql.find_by_key
 let find_all = Sql.find_all
 let insert = Sql.insert
 let update = Sql.update
-
-let delete_by_key pool key =
-  key |> Entity.Key.to_string |> Sql.delete_by_key pool
-;;
+let delete_by_key = Sql.delete_by_key

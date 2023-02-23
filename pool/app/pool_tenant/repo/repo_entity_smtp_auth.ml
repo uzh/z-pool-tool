@@ -1,125 +1,107 @@
+open CCFun
 include Entity.SmtpAuth
+module Id = Pool_common.Repo.Id
+
+module Label = struct
+  include Label
+
+  let t = Pool_common.Repo.make_caqti_type Caqti_type.string create value
+end
 
 module Server = struct
   include Server
 
-  let t = Caqti_type.string
+  let t = Pool_common.Repo.make_caqti_type Caqti_type.string create value
 end
 
 module Port = struct
   include Port
 
-  let t = Caqti_type.string
+  let t = Pool_common.Repo.make_caqti_type Caqti_type.int create value
 end
 
 module Username = struct
   include Username
 
-  let t = Caqti_type.string
+  let t = Pool_common.Repo.make_caqti_type Caqti_type.string create value
 end
 
 module Password = struct
   include Password
 
   let t =
-    let open CCResult in
-    let open CCFun in
-    Caqti_type.(
-      custom
-        ~encode:(Utils.Crypto.String.encrypt_to_string %> CCResult.pure)
-        ~decode:(fun m ->
-          map_err (fun _ ->
-            let open Pool_common in
-            Utils.error_to_string
-              Language.En
-              Message.(Decode Field.SmtpPassword))
-          @@ Utils.Crypto.String.decrypt_from_string m)
-        string)
+    let open Utils.Crypto.String in
+    Pool_common.Repo.make_caqti_type
+      Caqti_type.string
+      (decrypt_from_string
+      %> CCResult.map_err (fun _ ->
+           Pool_common.Message.(Decode Field.DatabaseUrl)))
+      encrypt_to_string
   ;;
 end
 
-module AuthenticationMethod = struct
-  include AuthenticationMethod
-
-  let t = Caqti_type.string
-end
-
-module Protocol = struct
-  include Protocol
-
-  let t = Caqti_type.string
-end
+module Mechanism = Pool_common.Repo.Model.SelectorType (Mechanism)
+module Protocol = Pool_common.Repo.Model.SelectorType (Protocol)
 
 let t =
-  let encode m =
+  let encode (m : t) =
     Ok
-      ( m.Entity.SmtpAuth.server
-      , (m.port, (m.username, (m.authentication_method, m.protocol))) )
+      ( m.id
+      , (m.label, (m.server, (m.port, (m.username, (m.mechanism, m.protocol)))))
+      )
   in
-  let decode (server, (port, (username, (authentication_method, protocol)))) =
-    let open CCResult in
-    map_err (fun _ ->
-      let open Pool_common in
-      Utils.error_to_string Language.En Message.(Decode Field.SmtpReadModel))
-    @@ let* server = Server.create server in
-       let* port = Port.create port in
-       let* username = Username.create username in
-       let* authentication_method =
-         AuthenticationMethod.create authentication_method
-       in
-       let* protocol = Protocol.create protocol in
-       Ok { server; port; username; authentication_method; protocol }
+  let decode (id, (label, (server, (port, (username, (mechanism, protocol)))))) =
+    Ok { id; label; server; port; username; mechanism; protocol }
   in
   Caqti_type.(
     custom
       ~encode
       ~decode
       (tup2
-         Server.t
+         Id.t
          (tup2
-            Port.t
-            (tup2 Username.t (tup2 AuthenticationMethod.t Protocol.t)))))
+            Label.t
+            (tup2
+               Server.t
+               (tup2
+                  Port.t
+                  (tup2 (option Username.t) (tup2 Mechanism.t Protocol.t)))))))
 ;;
 
 module Write = struct
   open Entity.SmtpAuth.Write
 
   let t =
-    let encode m =
+    let encode (m : t) =
       Ok
-        ( m.Entity.SmtpAuth.Write.server
-        , ( m.port
-          , (m.username, (m.password, (m.authentication_method, m.protocol))) )
-        )
+        ( m.id
+        , ( m.label
+          , ( m.server
+            , (m.port, (m.username, (m.password, (m.mechanism, m.protocol)))) )
+          ) )
     in
     let decode
-      (server, (port, (username, (password, (authentication_method, protocol)))))
+      ( id
+      , (label, (server, (port, (username, (password, (mechanism, protocol))))))
+      )
       =
       let open CCResult in
-      map_err (fun _ ->
-        let open Pool_common in
-        Utils.error_to_string Language.En Message.(Decode Field.SmtpWriteModel))
-      @@ let* server = Server.create server in
-         let* port = Port.create port in
-         let* username = Username.create username in
-         let* password = Password.create password in
-         let* authentication_method =
-           AuthenticationMethod.create authentication_method
-         in
-         let* protocol = Protocol.create protocol in
-         Ok
-           { server; port; username; password; authentication_method; protocol }
+      Ok { id; label; server; port; username; password; mechanism; protocol }
     in
     Caqti_type.(
       custom
         ~encode
         ~decode
         (tup2
-           Server.t
+           Id.t
            (tup2
-              Port.t
+              Label.t
               (tup2
-                 Username.t
-                 (tup2 Password.t (tup2 AuthenticationMethod.t Protocol.t))))))
+                 Server.t
+                 (tup2
+                    Port.t
+                    (tup2
+                       (option Username.t)
+                       (tup2 (option Password.t) (tup2 Mechanism.t Protocol.t))))))))
   ;;
 end

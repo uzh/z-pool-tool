@@ -1,3 +1,4 @@
+open CCFun
 module Countries = Countries
 module Database = Database
 module LanguageCodes = Language_codes
@@ -5,8 +6,8 @@ module Lwt_result = Lwt_trace
 module Crypto = Crypto
 
 let todo _ = failwith "todo"
-let fcn_ok fcn m = m |> fcn |> CCResult.pure
 let equal_key (a, _) (b, _) = CCString.equal a b
+let ppx_printer m fmt _ = Format.pp_print_string fmt m
 
 module Url = struct
   let public_host =

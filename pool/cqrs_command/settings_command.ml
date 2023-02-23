@@ -5,7 +5,7 @@ let src = Logs.Src.create "settings.cqrs"
 let effects action tenant =
   [ ( action
     , `Target
-        (tenant.Pool_tenant.id |> Guard.Uuid.target_of Pool_common.Id.value) )
+        (tenant.Pool_tenant.id |> Guard.Uuid.target_of Pool_tenant.Id.value) )
   ; action, `TargetEntity `Setting
   ]
 ;;

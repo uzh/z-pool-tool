@@ -5,13 +5,13 @@ end
 module Name = struct
   include Entity.Name
 
-  let t = Caqti_type.string
+  let t = Pool_common.Repo.make_caqti_type Caqti_type.string create value
 end
 
 module Description = struct
   include Entity.Description
 
-  let t = Caqti_type.string
+  let t = Pool_common.Repo.make_caqti_type Caqti_type.string create value
 end
 
 module Address = struct
@@ -23,37 +23,37 @@ module Address = struct
     module Institution = struct
       include Institution
 
-      let t = Caqti_type.string
+      let t = Pool_common.Repo.make_caqti_type Caqti_type.string create value
     end
 
     module Room = struct
       include Room
 
-      let t = Caqti_type.string
+      let t = Pool_common.Repo.make_caqti_type Caqti_type.string create value
     end
 
     module Building = struct
       include Building
 
-      let t = Caqti_type.string
+      let t = Pool_common.Repo.make_caqti_type Caqti_type.string create value
     end
 
     module Street = struct
       include Street
 
-      let t = Caqti_type.string
+      let t = Pool_common.Repo.make_caqti_type Caqti_type.string create value
     end
 
     module Zip = struct
       include Zip
 
-      let t = Caqti_type.string
+      let t = Pool_common.Repo.make_caqti_type Caqti_type.string create value
     end
 
     module City = struct
       include City
 
-      let t = Caqti_type.string
+      let t = Pool_common.Repo.make_caqti_type Caqti_type.string create value
     end
 
     let t =
@@ -96,14 +96,10 @@ end
 module Link = struct
   include Entity.Link
 
-  let t = Caqti_type.string
+  let t = Pool_common.Repo.make_caqti_type Caqti_type.string create value
 end
 
-module Status = struct
-  include Entity.Status
-
-  let t = Caqti_type.string
-end
+module Status = Pool_common.Repo.Model.SelectorType (Entity.Status)
 
 type t =
   { id : Pool_common.Id.t
@@ -123,9 +119,8 @@ let t =
       ( m.id
       , ( m.name
         , ( m.description
-          , ( m.address
-            , (m.link, (m.status |> Status.show, (m.created_at, m.updated_at)))
-            ) ) ) )
+          , (m.address, (m.link, (m.status, (m.created_at, m.updated_at)))) ) )
+      )
   in
   let decode
     ( id
@@ -134,16 +129,7 @@ let t =
     )
     =
     let open CCResult in
-    Ok
-      { id
-      ; name
-      ; description
-      ; address
-      ; link
-      ; status = status |> Status.read
-      ; created_at
-      ; updated_at
-      }
+    Ok { id; name; description; address; link; status; created_at; updated_at }
   in
   Caqti_type.(
     custom

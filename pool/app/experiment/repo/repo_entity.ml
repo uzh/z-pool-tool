@@ -1,3 +1,4 @@
+open CCFun
 open Entity
 module Common = Pool_common
 module Id = Common.Id
@@ -6,63 +7,60 @@ module RepoId = Common.Repo.Id
 module Title = struct
   include Title
 
-  let t =
-    let encode = Utils.fcn_ok value in
-    let decode m =
-      m |> create |> CCResult.map_err Common.(Utils.error_to_string Language.En)
-    in
-    Caqti_type.(custom ~encode ~decode string)
-  ;;
+  let t = Pool_common.Repo.make_caqti_type Caqti_type.string create value
 end
 
 module PublicTitle = struct
   include PublicTitle
 
-  let t =
-    let encode = Utils.fcn_ok value in
-    let decode m =
-      m |> create |> CCResult.map_err Common.(Utils.error_to_string Language.En)
-    in
-    Caqti_type.(custom ~encode ~decode string)
-  ;;
+  let t = Pool_common.Repo.make_caqti_type Caqti_type.string create value
 end
 
 module Description = struct
   include Description
 
-  let t =
-    let encode = Utils.fcn_ok value in
-    let decode m =
-      m |> create |> CCResult.map_err Common.(Utils.error_to_string Language.En)
-    in
-    Caqti_type.(custom ~encode ~decode string)
-  ;;
+  let t = Pool_common.Repo.make_caqti_type Caqti_type.string create value
 end
 
 module DirectRegistrationDisabled = struct
   include DirectRegistrationDisabled
 
-  let t = Caqti_type.bool
+  let t =
+    Pool_common.Repo.make_caqti_type
+      Caqti_type.bool
+      (create %> CCResult.return)
+      value
+  ;;
 end
 
 module RegistrationDisabled = struct
   include RegistrationDisabled
 
-  let t = Caqti_type.bool
+  let t =
+    Pool_common.Repo.make_caqti_type
+      Caqti_type.bool
+      (create %> CCResult.return)
+      value
+  ;;
 end
 
 module AllowUninvitedSignup = struct
   include AllowUninvitedSignup
 
-  let t = Caqti_type.bool
+  let t =
+    Pool_common.Repo.make_caqti_type
+      Caqti_type.bool
+      (create %> CCResult.return)
+      value
+  ;;
 end
 
 let t =
   let encode (m : t) =
     Ok
       ( m.id
-      , ( Title.value m.title
-        , ( PublicTitle.value m.public_title
+      , ( m.title
+        , ( m.public_title
           , ( m.description
             , ( m.filter
               , ( m.direct_registration_disabled
@@ -137,9 +135,9 @@ module Write = struct
       let filter = m.filter |> CCOption.map (fun filter -> filter.Filter.id) in
       Ok
         ( m.id
-        , ( Title.value m.title
-          , ( PublicTitle.value m.public_title
-            , ( Description.value m.description
+        , ( m.title
+          , ( m.public_title
+            , ( m.description
               , ( filter
                 , ( m.direct_registration_disabled
                   , ( m.registration_disabled

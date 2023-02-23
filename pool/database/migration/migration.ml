@@ -60,7 +60,7 @@ let run_pending_migrations db_pools migration_steps =
 module Root = struct
   let steps =
     extend_migrations
-      [ Migration_tenant.migration ()
+      [ Migration_tenant.migration_root ()
       ; Migration_authorization.migration ()
       ; Migration_tenant_logo_mappings.migration ()
       ; Migration_message_templates.migration ()
@@ -98,6 +98,7 @@ module Tenant = struct
       ; Migration_custom_field_groups.migration ()
       ; Migration_custom_field_answer_versions.migration ()
       ; Migration_message_templates.migration ()
+      ; Migration_tenant.migration_tenant ()
       ]
   ;;
 

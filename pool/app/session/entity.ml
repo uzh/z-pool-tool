@@ -2,7 +2,7 @@ module Description = struct
   include Pool_common.Model.String
 
   let field = Pool_common.Message.Field.Description
-  let schema = schema ?validation:None field
+  let schema () = schema field ()
 end
 
 (* TODO [aerben] rename to contact *)
