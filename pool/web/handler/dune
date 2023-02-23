@@ -13,6 +13,7 @@
   middleware
   page
   pool_common
+  schedule
   service
   sihl
   waiting_list)

@@ -7,6 +7,7 @@ module Status : sig
     | Active
     | Finished
     | Paused
+    | Running
     | Stopped
 
   val create : string -> (t, Pool_common.Message.error) result
@@ -38,20 +39,17 @@ type t =
   ; fcn : unit -> unit Lwt.t [@opaque] [@equal fun _ _ -> true]
   }
 
-module RegisteredSchedules : sig
-  type t = Entity.t
+val create : string -> scheduled_time -> (unit -> unit Lwt.t) -> t
 
-  val find_all : unit -> t list
-  val iter : (t -> unit) -> unit
-  val add : t -> unit Lwt.t
-  val add_multiple : t list -> unit Lwt.t
-  val update_last_run : t -> unit Lwt.t
-  val finish : t -> unit Lwt.t
-  val update_run_status : scheduled_time -> t -> unit Lwt.t
-  val stop_all_active : unit -> unit Lwt.t
-end
+type public =
+  { label : Label.t
+  ; scheduled_time : scheduled_time
+  ; status : Status.t
+  ; last_run : LastRun.t option
+  }
 
-val start : 'a -> unit Lwt.t
-val stop : 'a -> unit Lwt.t
+val add_and_start : t -> unit Lwt.t
+val stop : unit -> unit Lwt.t
 val lifecycle : Sihl.Container.lifecycle
-val register : t list -> Sihl.Container.Service.t Lwt.t
+val register : ?schedules:t list -> unit -> Sihl.Container.Service.t
+val find_all : unit -> public list Lwt.t

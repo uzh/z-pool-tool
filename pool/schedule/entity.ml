@@ -45,6 +45,7 @@ module Status = struct
       | Active [@name "active"] [@printer go "active"]
       | Finished [@name "finished"] [@printer go "finished"]
       | Paused [@name "paused"] [@printer go "paused"]
+      | Running [@name "running"] [@printer go "running"]
       | Stopped [@name "stopped"] [@printer go "stopped"]
     [@@deriving enum, eq, ord, show { with_path = false }, yojson, sexp_of]
   end
@@ -69,7 +70,7 @@ type t =
   }
 [@@deriving eq, show]
 
-let create scheduled_time fcn label =
+let create label scheduled_time fcn =
   { label; scheduled_time; status = Status.init; last_run = None; fcn }
 ;;
 
@@ -80,3 +81,11 @@ let run_in ?(now = false) schedule =
   | Every duration ->
     duration |> ScheduledTimeSpan.value |> Ptime.Span.to_float_s
 ;;
+
+type public =
+  { label : Label.t
+  ; scheduled_time : scheduled_time
+  ; status : Status.t
+  ; last_run : LastRun.t option
+  }
+[@@deriving eq, show]

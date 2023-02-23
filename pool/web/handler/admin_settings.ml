@@ -1,5 +1,6 @@
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
+module Schedule = Admin_settings_schedule
 module Smtp = Admin_settings_smtp
 
 let create_layout req = General.create_tenant_layout req

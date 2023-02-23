@@ -26,13 +26,14 @@ end
 
 module Status = Pool_common.Repo.Model.SelectorType (Entity.Status)
 
+let encode_time_span = function
+  | Every span -> Some span, None
+  | At time -> None, Some time
+;;
+
 let t =
   let encode (m : t) =
-    let span, time =
-      match m.scheduled_time with
-      | Every span -> Some span, None
-      | At time -> None, Some time
-    in
+    let span, time = encode_time_span m.scheduled_time in
     Ok (m.label, (time, (span, (m.status, m.last_run))))
   in
   let decode _ =
@@ -52,16 +53,67 @@ let t =
                (tup2 Status.t (option LastRun.t))))))
 ;;
 
+let public =
+  let encode (m : public) =
+    let span, time = encode_time_span m.scheduled_time in
+    Ok (m.label, (time, (span, (m.status, m.last_run))))
+  in
+  let decode (label, (time, (span, (status, last_run)))) =
+    let open CCResult in
+    let* scheduled_time =
+      match time, span with
+      | Some time, None -> At time |> return
+      | None, Some span -> Every span |> return
+      | _ ->
+        let open Pool_common in
+        Error
+          (Message.(Decode Field.ScheduledTime)
+          |> Utils.error_to_string Language.En)
+    in
+    Ok { label; scheduled_time; status; last_run }
+  in
+  Caqti_type.(
+    custom
+      ~encode
+      ~decode
+      (tup2
+         Label.t
+         (tup2
+            (option ScheduledTime.t)
+            (tup2
+               (option ScheduledTimeSpan.t)
+               (tup2 Status.t (option LastRun.t))))))
+;;
+
 module Sql = struct
-  let upsert_request =
+  let find_all_request =
     let open Caqti_request.Infix in
     {sql|
-      INSERT INTO pool_schedule (
+      SELECT
         label,
         scheduled_time,
         scheduled_time_span,
         status,
-        last_run_at
+        last_run
+      FROM pool_schedules
+      ORDER BY last_run DESC
+    |sql}
+    |> Caqti_type.unit ->* public
+  ;;
+
+  let find_all pool =
+    Utils.Database.collect (Pool_database.Label.value pool) find_all_request
+  ;;
+
+  let upsert_request =
+    let open Caqti_request.Infix in
+    {sql|
+      INSERT INTO pool_schedules (
+        label,
+        scheduled_time,
+        scheduled_time_span,
+        status,
+        last_run
       ) VALUES (
         ?,
         ?,
@@ -70,8 +122,9 @@ module Sql = struct
         ?
       ) ON DUPLICATE KEY UPDATE
         scheduled_time = VALUES(scheduled_time),
-        scheduled_time_span = VALUES(scheduled_time_span)
+        scheduled_time_span = VALUES(scheduled_time_span),
         status = VALUES(status),
+        last_run = VALUES(last_run)
     |sql}
     |> t ->. Caqti_type.unit
   ;;
@@ -79,6 +132,27 @@ module Sql = struct
   let upsert pool =
     Utils.Database.exec (Pool_database.Label.value pool) upsert_request
   ;;
+
+  let change_all_status_request =
+    let open Caqti_request.Infix in
+    {sql|
+      UPDATE pool_schedules
+      SET
+        status = $2
+      WHERE
+        status = $1
+    |sql}
+    |> Caqti_type.(tup2 Status.t Status.t ->. unit)
+  ;;
+
+  let stop_all_active pool =
+    Utils.Database.exec
+      (Pool_database.Label.value pool)
+      change_all_status_request
+      Entity.Status.(Active, Stopped)
+  ;;
 end
 
+let find_all = Sql.find_all Pool_database.root
 let upsert = Sql.upsert Pool_database.root
+let stop_all_active () = Sql.stop_all_active Pool_database.root

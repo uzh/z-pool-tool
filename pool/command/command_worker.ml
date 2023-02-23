@@ -1,20 +1,18 @@
 let run_forever () = Lwt.wait () |> fst
 
 let run ?(services = []) () =
-  Command_utils.make_no_args
-    "worker"
-    "Run worker (no server services)"
-    (fun () ->
-    Logs.debug (fun m ->
-      m
-        "Running the following services: %s"
-        ([%show: string list]
-           (services |> CCList.map Sihl.Container.Service.name)));
-    let services =
-      CCList.filter CCFun.(Sihl.Container.Service.server %> not) services
-    in
-    let%lwt (_ : Sihl.Container.lifecycle list) =
-      Sihl.Container.start_services services
-    in
-    run_forever ())
+  let dependencies =
+    CCList.map
+      (fun { Sihl.Container.Service.lifecycle; _ } -> lifecycle)
+      services
+  in
+  let name = "worker" in
+  let description = "Run worker (no server services)" in
+  let help = Format.asprintf {|
+
+Example: %s
+  |} name in
+  Sihl.Command.make ~name ~description ~help ~dependencies (function
+    | [] -> run_forever ()
+    | _ -> Command_utils.failwith_missmatch help)
 ;;

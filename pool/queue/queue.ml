@@ -1,3 +1,4 @@
+open CCFun
 include Sihl.Contract.Queue
 
 let log_src = Logs.Src.create "pool.queue"
@@ -14,7 +15,6 @@ let increment_tries (retry_delay : Ptime.Span.t) (job_instance : instance) =
 ;;
 
 let registered_jobs : job' list ref = ref []
-let stop_schedule : (unit -> unit) option ref = ref None
 
 let run_job
   (input : string)
@@ -117,13 +117,11 @@ let work_queue database_labels jobs =
     Lwt.return_unit)
 ;;
 
-let start () =
+let create_schedule () =
   let open Utils.Lwt_result.Infix in
-  let open Sihl.Schedule in
-  Logs.debug (fun m -> m "Start job queue");
-  (* This function runs every second, the request context gets created here with
-     each tick *)
-  let periodic_function () =
+  let open Schedule in
+  let interval = Every (Ptime.Span.of_int_s 1 |> ScheduledTimeSpan.of_span) in
+  let periodic_fcn () =
     let%lwt database_labels =
       Pool_tenant.find_all ()
       ||> CCList.map (fun { Pool_tenant.database_label; _ } -> database_label)
@@ -146,27 +144,20 @@ let start () =
           ([%show: string list] job_strings));
       work_queue database_labels jobs)
   in
-  let job_queue = create every_second periodic_function "job_queue" in
-  stop_schedule := Some (schedule job_queue);
-  Lwt.return_unit
+  create "job_queue" interval periodic_fcn
 ;;
+
+let start = create_schedule %> Schedule.add_and_start
 
 let stop () =
   registered_jobs := [];
-  (match !stop_schedule with
-   | Some stop_schedule -> stop_schedule ()
-   | None -> Logs.warn (fun m -> m "Can not stop schedule"));
   Lwt.return_unit
 ;;
 
 let lifecycle =
   Sihl.Container.create_lifecycle
     "Multitenant Queue"
-    ~dependencies:(fun () ->
-      [ Schedule.lifecycle
-      ; Sihl.Database.lifecycle
-      ; Pool_tenant.Service.Queue.lifecycle
-      ])
+    ~dependencies:(fun () -> [ Sihl.Database.lifecycle; Schedule.lifecycle ])
     ~start
     ~stop
 ;;

@@ -1,3 +1,7 @@
+let log_src = Logs.Src.create "pool.matcher"
+
+module Logs = (val Logs.src_log log_src : Logs.LOG)
+
 type config =
   { start : bool option
   ; rate_limit : int
@@ -59,14 +63,11 @@ let get_or_failwith element =
 
 let sum = CCList.fold_left ( + ) 0
 
-let count_of_rate ?(interval = Sihl.Time.OneMinute) rate =
+let count_of_rate ?(interval = Ptime.Span.of_int_s 60) rate =
   (* calculated number of invitations from the rate per hour to the specified
      interval *)
   let rate = max rate 0 in
-  let interval_to_seconds =
-    CCFun.(Sihl.Time.duration_to_span %> Ptime.Span.to_float_s)
-  in
-  CCFloat.(of_int rate / 3600. * (interval |> interval_to_seconds) |> round)
+  CCFloat.(of_int rate / 3600. * (interval |> Ptime.Span.to_float_s) |> round)
   |> CCInt.of_float
 ;;
 
@@ -169,7 +170,7 @@ let match_invitations ?interval pools =
     let ok_or_log_error = function
       | Ok (pool, events) when CCList.is_empty events ->
         Logs.info (fun m ->
-          m "Matcher: No actions for pool %a" Pool_database.Label.pp pool);
+          m "No actions for pool %a" Pool_database.Label.pp pool);
         None
       | Ok m -> Some m
       | Error err ->
@@ -203,7 +204,7 @@ let match_invitations ?interval pools =
     Lwt_list.iter_s (fun (pool, events) ->
       Logs.info (fun m ->
         m
-          "Matcher: Sending %4d intivation emails for tenant %a"
+          "Sending %4d intivation emails for tenant %a"
           (count_mails events)
           Pool_database.Label.pp
           pool);
@@ -215,26 +216,23 @@ let match_invitations ?interval pools =
   >|> handle_events
 ;;
 
-let stop_matcher : (unit -> unit) option ref = ref None
-
 let start_matcher () =
   let open Utils.Lwt_result.Infix in
-  let interval = Sihl.Time.TenMinutes in
-  Logs.debug (fun m -> m "Start matcher");
-  let scheduled_function () =
-    Logs.info (fun m -> m "Matcher: Run");
+  let open Schedule in
+  let interval = Ptime.Span.of_int_s (10 * 60) in
+  let periodic_fcn () =
+    Logs.debug (fun m -> m "Run");
     Pool_tenant.find_all ()
     ||> CCList.map (fun Pool_tenant.{ database_label; _ } -> database_label)
     >|> match_invitations ~interval
   in
   let schedule =
-    Sihl.Schedule.create
-      (Sihl.Schedule.Every interval)
-      scheduled_function
-      (Format.asprintf "matcher (Interval: %a)" Sihl.Time.pp_duration interval)
+    create
+      "matcher"
+      (Every (interval |> ScheduledTimeSpan.of_span))
+      periodic_fcn
   in
-  stop_matcher := Some (Sihl.Schedule.schedule schedule);
-  Lwt.return ()
+  Schedule.add_and_start schedule
 ;;
 
 let start () =
@@ -242,20 +240,12 @@ let start () =
   if read_bool Run then start_matcher () else Lwt.return_unit
 ;;
 
-let stop () =
-  match !stop_matcher with
-  | Some stop_matcher ->
-    stop_matcher ();
-    Lwt.return ()
-  | None ->
-    Logs.warn (fun m -> m "Can not stop schedule");
-    Lwt.return ()
-;;
+let stop () = Lwt.return_unit
 
 let lifecycle =
   Sihl.Container.create_lifecycle
     "Matcher"
-    ~dependencies:(fun () -> [ Sihl.Schedule.lifecycle ])
+    ~dependencies:(fun () -> [ Schedule.lifecycle ])
     ~start
     ~stop
 ;;

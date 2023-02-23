@@ -117,6 +117,7 @@ let nav_link_to_string = function
   | Overview -> "Übersicht"
   | PersonalDetails -> "Persönliche Angaben"
   | Profile -> "Profil"
+  | Schedules -> "Prozesse"
   | Sessions -> "Sessions"
   | Settings -> "Einstellungen"
   | Smtp -> "E-Mail Server"
@@ -243,6 +244,19 @@ let rec hint_to_string = function
     "Ist diese Option aktiviert, können sich Kontakte weder anmelden noch auf \
      die Warteliste setzen. Das Experiment ist für die Kontakte nicht \
      ersichtlich."
+  | ScheduleEvery sec ->
+    sec
+    |> Pool_common_utils.Time.formatted_timespan
+    |> Format.asprintf "jede %s"
+  | ScheduleAt time ->
+    time
+    |> Pool_common_utils.Time.formatted_date_time
+    |> Format.asprintf "Am %s"
+  | ScheduledInto ->
+    {|Informationen über alle periodischen Hintergrund-Prozesse.
+
+    Beachte: Wenn die Applikation neugestartet wird, werden alle auf "stopped" gesetzt
+    |}
   | SessionCancelMessage ->
     "Dieser Grund wird allen angemeldeten Kontakten gezeigt."
   | SessionClose ->

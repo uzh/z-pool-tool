@@ -115,6 +115,7 @@ let nav_link_to_string = function
   | Overview -> "Overview"
   | PersonalDetails -> "Personal details"
   | Profile -> "Profile"
+  | Schedules -> "Schedules"
   | Sessions -> "Sessions"
   | Settings -> "Settings"
   | Smtp -> "Email Server"
@@ -233,6 +234,19 @@ let rec hint_to_string = function
   | RegistrationDisabled ->
     "If this option is activated, contacts can neither register nor join the \
      waiting list. The experiment is not visible to the contacts."
+  | ScheduleEvery sec ->
+    sec
+    |> Pool_common_utils.Time.formatted_timespan
+    |> Format.asprintf "every %s"
+  | ScheduleAt time ->
+    time
+    |> Pool_common_utils.Time.formatted_date_time
+    |> Format.asprintf "at %s"
+  | ScheduledInto ->
+    {|Information about all periodic background processes.
+
+      Note: When the application restarts all active schedules get stopped.
+      |}
   | SessionCancelMessage ->
     "This reason will be provided to all contacts assigned to this session."
   | SessionClose ->

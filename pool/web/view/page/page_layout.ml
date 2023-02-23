@@ -278,6 +278,7 @@ module Tenant = struct
           ; "/admin/locations", Locations
           ; "/admin/settings", SystemSettings
           ; "/admin/settings/smtp", Smtp
+          ; "/admin/settings/schedules", Schedules
           ; "/admin/message-template", MessageTemplates
           ; "/admin/i18n", I18n
           ]

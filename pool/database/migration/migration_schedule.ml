@@ -2,7 +2,7 @@ let create_schedule_table =
   Sihl.Database.Migration.create_step
     ~label:"create registered schedule table"
     {sql|
-      CREATE TABLE IF NOT EXISTS pool_schedule (
+      CREATE TABLE IF NOT EXISTS pool_schedules (
         `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
         `label` varchar(255) NOT NULL,
         `scheduled_time` timestamp NULL,

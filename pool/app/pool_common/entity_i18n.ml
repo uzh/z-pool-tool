@@ -83,6 +83,7 @@ type nav_link =
   | Overview
   | PersonalDetails
   | Profile
+  | Schedules
   | Sessions
   | Settings
   | Smtp
@@ -134,6 +135,9 @@ type hint =
   | RateDependencyWithout
   | RateNumberPerMinutes of int * float
   | RegistrationDisabled
+  | ScheduleEvery of Ptime.Span.t
+  | ScheduleAt of Ptime.t
+  | ScheduledInto
   | SelectedDateIsPast
   | SessionCancelMessage
   | SessionClose

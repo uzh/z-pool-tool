@@ -576,6 +576,7 @@ module Admin = struct
       [ get "" ~middlewares:[ Access.index ] show
       ; post "/:action" ~middlewares:[ Access.update ] update_settings
       ; choose ~scope:"/smtp" smtp
+      ; get "/schedules" ~middlewares:[ Schedule.Access.index ] Schedule.show
       ]
     in
     choose

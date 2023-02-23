@@ -1,3 +1,6 @@
+let log_src = Logs.Src.create "pool.database"
+
+module Logs = (val Logs.src_log log_src : Logs.LOG)
 module SeedAssets = Seed_assets
 
 type config =
