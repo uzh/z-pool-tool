@@ -155,17 +155,20 @@ let message_langauge sys (contact : Contact.t) =
   |> CCResult.return
 ;;
 
-let search_by_language templates language =
-  let open CCResult in
+let search_by_language templates lang =
   let open Pool_common in
-  CCList.find_opt (fun t -> t |> fst |> Language.equal language) templates
+  CCList.find_opt
+    (fun { language; _ } -> Language.equal language lang)
+    templates
+  |> (function
+       | None -> templates |> CCList.head_opt
+       | Some template -> CCOption.pure template)
+  |> CCOption.map (fun ({ language; _ } as t) -> language, t)
   |> CCOption.to_result (Message.NotFound Field.MessageTemplate)
-  >|= snd
 ;;
 
 let template_by_contact sys_langs templates contact =
   let open CCResult in
-  let* language = message_langauge sys_langs contact in
-  let* template = search_by_language templates language in
-  Ok (language, template)
+  let* preferred_language = message_langauge sys_langs contact in
+  search_by_language templates preferred_language
 ;;

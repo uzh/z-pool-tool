@@ -151,6 +151,17 @@ let detail req page =
     let* session = Session.find database_label session_id in
     let* experiment = Experiment.find database_label experiment_id in
     let flash_fetcher = CCFun.flip Sihl.Web.Flash.find req in
+    let* { Pool_context.Tenant.tenant; tenant_languages } =
+      Pool_context.Tenant.find req |> Lwt_result.lift
+    in
+    let* _ =
+      Message_template.SessionReminder.prepare
+        database_label
+        tenant
+        tenant_languages
+        experiment
+        session
+    in
     (match page with
      | `Detail ->
        let* assignments =

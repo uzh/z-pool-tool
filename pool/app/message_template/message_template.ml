@@ -9,15 +9,6 @@ let find = Repo.find
 let all_default = Repo.all_default
 let find_all_of_entity_by_label = Repo.find_all_of_entity_by_label
 
-let find_all_by_label_and_languages ?entity_uuids pool languages label =
-  let open Utils.Lwt_result.Infix in
-  Lwt_list.map_s
-    (fun lang ->
-      Repo.find_by_label ?entity_uuids pool lang label >|+ CCPair.make lang)
-    languages
-  ||> CCResult.flatten_l
-;;
-
 let filter_languages languages templates =
   languages
   |> CCList.filter (fun lang ->
@@ -79,7 +70,7 @@ module AssignmentConfirmation = struct
 
   let create pool language tenant session contact =
     let open Utils.Lwt_result.Infix in
-    let* template = template pool language in
+    let* template, language = template pool language in
     let params = email_params language session contact in
     let layout = layout_from_tenant tenant in
     let email = contact |> Contact.email_address in
@@ -90,7 +81,7 @@ module AssignmentConfirmation = struct
 
   let create_from_public_session pool language tenant session contact =
     let open Utils.Lwt_result.Infix in
-    let* template = template pool language in
+    let* template, language = template pool language in
     let params = email_params_public_session language session contact in
     let layout = layout_from_tenant tenant in
     let email = contact |> Contact.email_address in
@@ -114,7 +105,7 @@ module ContactRegistrationAttempt = struct
   let create pool language tenant contact =
     let open Message_utils in
     let open Utils.Lwt_result.Infix in
-    let* template =
+    let* template, language =
       Repo.find_by_label pool language Label.ContactRegistrationAttempt
     in
     let layout = layout_from_tenant tenant in
@@ -139,7 +130,9 @@ module EmailVerification = struct
   let create pool language layout contact email_address token =
     let open Message_utils in
     let open Utils.Lwt_result.Infix in
-    let* template = Repo.find_by_label pool language Label.EmailVerification in
+    let* template, language =
+      Repo.find_by_label pool language Label.EmailVerification
+    in
     let%lwt url = Pool_tenant.Url.of_pool pool in
     let validation_url =
       Pool_common.
@@ -178,9 +171,9 @@ module ExperimentInvitation = struct
     let pool = tenant.Pool_tenant.database_label in
     let%lwt sys_langs = Settings.find_languages pool in
     let* templates =
-      find_all_by_label_and_languages
-        ~entity_uuids:[ Experiment.(Id.to_common experiment.Experiment.id) ]
+      Repo.find_all_by_label
         pool
+        ~entity_uuids:[ Experiment.(Id.to_common experiment.Experiment.id) ]
         sys_langs
         Label.ExperimentInvitation
     in
@@ -233,9 +226,11 @@ end
 module PasswordChange = struct
   let email_params user = global_params user
 
-  let create pool language tenant user =
+  let create pool preferred_langauge tenant user =
     let open Utils.Lwt_result.Infix in
-    let* template = Repo.find_by_label pool language Label.PasswordChange in
+    let* template, language =
+      Repo.find_by_label pool preferred_langauge Label.PasswordChange
+    in
     let layout = layout_from_tenant tenant in
     let email = Pool_user.user_email_address user in
     let%lwt sender = Pool_tenant.Service.Email.sender_of_pool pool in
@@ -249,11 +244,13 @@ module PasswordReset = struct
     (user |> global_params) @ [ "resetUrl", reset_url ]
   ;;
 
-  let create pool language layout user =
+  let create pool preferred_language layout user =
     let open Message_utils in
     let open Utils.Lwt_result.Infix in
     let email = Pool_user.user_email_address user in
-    let* template = Repo.find_by_label pool language Label.PasswordReset in
+    let* template, language =
+      Repo.find_by_label pool preferred_language Label.PasswordReset
+    in
     let%lwt url = Pool_tenant.Url.of_pool pool in
     let%lwt sender = Pool_tenant.Service.Email.sender_of_pool pool in
     let open Pool_common in
@@ -301,7 +298,7 @@ module ProfileUpdateTrigger = struct
     let open Utils.Lwt_result.Infix in
     let%lwt sys_langs = Settings.find_languages pool in
     let* templates =
-      find_all_by_label_and_languages pool sys_langs Label.SessionReschedule
+      Repo.find_all_by_label pool sys_langs Label.SessionReschedule
     in
     let%lwt url = Pool_tenant.Url.of_pool pool in
     let%lwt sender = Pool_tenant.Service.Email.sender_of_pool pool in
@@ -333,7 +330,7 @@ module SessionCancellation = struct
     let open Message_utils in
     let open Utils.Lwt_result.Infix in
     let* templates =
-      find_all_by_label_and_languages pool sys_langs Label.SessionCancellation
+      Repo.find_all_by_label pool sys_langs Label.SessionCancellation
     in
     let%lwt sender = Pool_tenant.Service.Email.sender_of_pool pool in
     let layout = layout_from_tenant tenant in
@@ -364,17 +361,17 @@ module SessionReminder = struct
   let create pool tenant system_languages experiment session contact =
     let open Message_utils in
     let open Utils.Lwt_result.Infix in
-    let* language =
+    let* preferred_language =
       message_langauge system_languages contact |> Lwt_result.lift
     in
-    let* template =
+    let* template, language =
       Repo.find_by_label
         ~entity_uuids:
           [ session.Session.id
           ; Experiment.(Id.to_common experiment.Experiment.id)
           ]
         pool
-        language
+        preferred_language
         Label.SessionReminder
     in
     let%lwt sender = Pool_tenant.Service.Email.sender_of_pool pool in
@@ -394,7 +391,7 @@ module SessionReminder = struct
     let open Message_utils in
     let open Utils.Lwt_result.Infix in
     let* templates =
-      find_all_by_label_and_languages
+      Repo.find_all_by_label
         ~entity_uuids:
           [ session.Session.id
           ; Experiment.(Id.to_common experiment.Experiment.id)
@@ -437,7 +434,7 @@ module SessionReschedule = struct
     let open Message_utils in
     let open Utils.Lwt_result.Infix in
     let* templates =
-      find_all_by_label_and_languages pool sys_langs Label.SessionReschedule
+      Repo.find_all_by_label pool sys_langs Label.SessionReschedule
     in
     let%lwt sender = Pool_tenant.Service.Email.sender_of_pool pool in
     let layout = layout_from_tenant tenant in
@@ -473,7 +470,9 @@ module SignUpVerification = struct
   let create pool language tenant email_address token firstname lastname =
     let open Message_utils in
     let open Utils.Lwt_result.Infix in
-    let* template = Repo.find_by_label pool language Label.SignUpVerification in
+    let* template, language =
+      Repo.find_by_label pool language Label.SignUpVerification
+    in
     let%lwt url = Pool_tenant.Url.of_pool pool in
     let%lwt sender = Pool_tenant.Service.Email.sender_of_pool pool in
     let verification_url =
