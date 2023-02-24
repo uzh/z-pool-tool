@@ -53,13 +53,6 @@ let collect db_pool request input =
       Connection.collect_list request input ||> raise_caqti_error)
 ;;
 
-(* let collect_and_count db_pool select where count pagination caqti_type pt pv
-   = let open Caqti_request.Infix in let request = let base = select where in
-   pagination |> CCOption.map_or ~default:base (Format.asprintf "%s %s" base) |>
-   pt ->* caqti_type in let count_request = count where |> pt ->! Caqti_type.int
-   in let%lwt rows = collect db_pool request pv in let%lwt count = find db_pool
-   count_request pv in Lwt.return (rows, count) ;; *)
-
 let exec db_pool request input =
   let open Lwt_result.Infix in
   Sihl.Database.query
