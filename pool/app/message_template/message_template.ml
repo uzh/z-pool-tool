@@ -204,11 +204,14 @@ module ExperimentInvitation = struct
     let open Message_utils in
     let open Utils.Lwt_result.Infix in
     let%lwt system_languages = Settings.find_languages database_label in
-    let* language =
-      message_langauge system_languages contact |> Lwt_result.lift
+    let* preferred_langauge =
+      preferred_language system_languages contact |> Lwt_result.lift
     in
     let* template, language =
-      find_by_label_to_send pool preferred_langauge Label.ExperimentInvitation
+      find_by_label_to_send
+        database_label
+        preferred_langauge
+        Label.ExperimentInvitation
     in
     let%lwt tenant_url = Pool_tenant.Url.of_pool database_label in
     let%lwt sender = Pool_tenant.Service.Email.sender_of_pool database_label in
@@ -247,7 +250,6 @@ module PasswordReset = struct
   ;;
 
   let create pool preferred_language layout user =
-    let open Message_utils in
     let open Utils.Lwt_result.Infix in
     let email = Pool_user.user_email_address user in
     let* template, language =
@@ -364,7 +366,7 @@ module SessionReminder = struct
     let open Message_utils in
     let open Utils.Lwt_result.Infix in
     let* preferred_language =
-      message_langauge system_languages contact |> Lwt_result.lift
+      preferred_language system_languages contact |> Lwt_result.lift
     in
     let* template, language =
       find_by_label_to_send
