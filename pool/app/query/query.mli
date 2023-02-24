@@ -41,9 +41,17 @@ val from_request : ?searchable_columns:string list -> Rock.Request.t -> t
 val empty : unit -> t
 
 val append_query_to_sql
-  :  Utils.Database.Dynparam.t * string
+  :  Utils.Database.Dynparam.t
   -> string option
   -> t option
   -> Utils.Database.Dynparam.t * string * string option
+
+val collect_and_count
+  :  Pool_database.Label.t
+  -> t option
+  -> select:(string -> string)
+  -> count:(string -> string)
+  -> 'a Caqti_type.t
+  -> ('a list * t) Lwt.t
 
 val set_page_count : t -> int -> t

@@ -93,24 +93,12 @@ module Sql = struct
   ;;
 
   let find_all pool ?query () =
-    let open Utils.Lwt_result.Infix in
-    let open Caqti_request.Infix in
-    let pool = Pool_database.Label.value pool in
-    let dyn, where, pagination =
-      Query.append_query_to_sql (Dynparam.empty, "") None query
-    in
-    let (Dynparam.Pack (pt, pv)) = dyn in
-    let request =
-      let base = select_from_experiments_sql where in
-      pagination
-      |> CCOption.map_or ~default:base (Format.asprintf "%s %s" base)
-      |> pt ->* Repo_entity.t
-    in
-    let count_request = select_count where |> pt ->! Caqti_type.int in
-    Utils.Database.collect_and_count pool request count_request pv
-    ||> fun (rows, count) ->
-    let query = CCOption.value ~default:(Query.empty ()) query in
-    rows, Query.set_page_count query count
+    Query.collect_and_count
+      pool
+      query
+      ~select:select_from_experiments_sql
+      ~count:select_count
+      Repo_entity.t
   ;;
 
   let find_request =

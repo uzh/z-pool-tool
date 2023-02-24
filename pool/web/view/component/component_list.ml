@@ -3,6 +3,9 @@ open Query
 
 (* TODO[timhub]: Limit number of displayed buttons *)
 let pagination language { Pagination.page; page_count; _ } =
+  Logs.info (fun m -> m "page: %i" (page |> Pagination.Page.value));
+  Logs.info (fun m ->
+    m "page count: %i" (page_count |> Pagination.PageCount.value));
   let page_list_classes = [ "btn"; "small" ] in
   let open Pagination in
   let add_page_param page =

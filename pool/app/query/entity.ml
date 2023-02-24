@@ -32,11 +32,11 @@ module Pagination = struct
   type t =
     { limit : Limit.t
     ; page : Page.t
-    ; page_count : PageCount.t (* TODO[timhub]: Maybe use a separate type *)
+    ; page_count : PageCount.t
     }
   [@@deriving eq, show]
 
-  let create ?limit ?page ?(page_count = 0) () =
+  let create ?limit ?page ?(page_count = 1) () =
     let open CCOption in
     let open CCFun in
     let get_value = value in
@@ -50,7 +50,13 @@ module Pagination = struct
 
   let set_page_count row_count t =
     let open CCFloat in
-    let page_count = to_int ((of_int row_count /. of_int t.limit) + 0.5) in
+    let page_count =
+      ceil (of_int row_count /. of_int t.limit)
+      |> to_int
+      |> function
+      | 0 -> 1
+      | i -> i
+    in
     { t with page_count }
   ;;
 
