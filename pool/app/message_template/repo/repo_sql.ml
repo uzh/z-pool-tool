@@ -147,7 +147,7 @@ let find_by_label_to_send pool ?entity_uuids language label =
   >|+ fun ({ language; _ } as t) -> t, language
 ;;
 
-let find_all_by_entity_uuid_and_label_request dyn languages =
+let find_all_by_entity_uuid_and_label_request dyn languages entity_uuid =
   let languages_sql, dyn =
     CCList.fold_left
       (fun (params, dyn) lang ->
@@ -163,15 +163,31 @@ let find_all_by_entity_uuid_and_label_request dyn languages =
   let base =
     Format.asprintf "%s WHERE label = ? AND %s " select_sql languages_sql
   in
-  function
-  | None ->
-    ( dyn
-    , Format.asprintf "%s AND pool_message_templates.entity_uuid IS NULL" base )
-  | Some id ->
-    ( dyn |> Dynparam.add Pool_common.Repo.Id.t id
-    , Format.asprintf
-        "%s AND pool_message_templates.entity_uuid = UNHEX(REPLACE(?, '-', ''))"
-        base )
+  let dyn, sql =
+    match entity_uuid with
+    | None ->
+      ( dyn
+      , Format.asprintf "%s AND pool_message_templates.entity_uuid IS NULL" base
+      )
+    | Some id ->
+      ( dyn |> Dynparam.add Pool_common.Repo.Id.t id
+      , Format.asprintf
+          "%s AND pool_message_templates.entity_uuid = UNHEX(REPLACE(?, '-', \
+           ''))"
+          base )
+  in
+  let dyn, order =
+    CCList.fold_left
+      (fun (dyn, order) lang ->
+        dyn |> Dynparam.add Pool_common.Repo.Language.t lang, "?" :: order)
+      (dyn, [])
+      languages
+  in
+  ( dyn
+  , Format.asprintf
+      "%s ORDER BY FIELD(pool_message_templates.language, %s)"
+      sql
+      (CCString.concat "," order) )
 ;;
 
 let find_all_by_label_to_send pool ?entity_uuids languages label =
