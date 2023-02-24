@@ -70,9 +70,9 @@ module AssignmentConfirmation = struct
     find_by_label_to_send pool language Label.AssignmentConfirmation
   ;;
 
-  let create pool language tenant session contact =
+  let create pool preferred_language tenant session contact =
     let open Utils.Lwt_result.Infix in
-    let* template, language = template pool language in
+    let* template, language = template pool preferred_language in
     let params = email_params language session contact in
     let layout = layout_from_tenant tenant in
     let email = contact |> Contact.email_address in
@@ -81,9 +81,9 @@ module AssignmentConfirmation = struct
     |> Lwt_result.return
   ;;
 
-  let create_from_public_session pool language tenant session contact =
+  let create_from_public_session pool preferred_language tenant session contact =
     let open Utils.Lwt_result.Infix in
-    let* template, language = template pool language in
+    let* template, language = template pool preferred_language in
     let params = email_params_public_session language session contact in
     let layout = layout_from_tenant tenant in
     let email = contact |> Contact.email_address in
@@ -104,11 +104,13 @@ module ContactRegistrationAttempt = struct
       ]
   ;;
 
-  let create pool language tenant contact =
-    let open Message_utils in
+  let create pool preferred_language tenant contact =
     let open Utils.Lwt_result.Infix in
     let* template, language =
-      find_by_label_to_send pool language Label.ContactRegistrationAttempt
+      find_by_label_to_send
+        pool
+        preferred_language
+        Label.ContactRegistrationAttempt
     in
     let layout = layout_from_tenant tenant in
     let tenant_url = tenant.Pool_tenant.url in
@@ -129,11 +131,10 @@ module EmailVerification = struct
     global_params contact.Contact.user @ [ "verificationUrl", validation_url ]
   ;;
 
-  let create pool language layout contact email_address token =
-    let open Message_utils in
+  let create pool preferred_language layout contact email_address token =
     let open Utils.Lwt_result.Infix in
     let* template, language =
-      find_by_label_to_send pool language Label.EmailVerification
+      find_by_label_to_send pool preferred_language Label.EmailVerification
     in
     let%lwt url = Pool_tenant.Url.of_pool pool in
     let validation_url =
@@ -471,11 +472,18 @@ module SignUpVerification = struct
     ]
   ;;
 
-  let create pool language tenant email_address token firstname lastname =
-    let open Message_utils in
+  let create
+    pool
+    preferred_language
+    tenant
+    email_address
+    token
+    firstname
+    lastname
+    =
     let open Utils.Lwt_result.Infix in
     let* template, language =
-      find_by_label_to_send pool language Label.SignUpVerification
+      find_by_label_to_send pool preferred_language Label.SignUpVerification
     in
     let%lwt url = Pool_tenant.Url.of_pool pool in
     let%lwt sender = Pool_tenant.Service.Email.sender_of_pool pool in
