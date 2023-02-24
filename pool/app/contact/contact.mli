@@ -88,7 +88,11 @@ val find_by_user
   -> Sihl_user.t
   -> (t, Pool_common.Message.error) result Lwt.t
 
-val find_all : Pool_database.Label.t -> unit -> t list Lwt.t
+val find_all
+  :  Pool_database.Label.t
+  -> ?query:Query.t
+  -> unit
+  -> (t list * Query.t) Lwt.t
 
 val find_to_trigger_profile_update
   :  Pool_database.Label.t
@@ -159,6 +163,12 @@ module Preview : sig
   val fullname : t -> string
   val email_address : t -> Pool_user.EmailAddress.t
 end
+
+val searchable_by : (Pool_common.Message.Field.t * string) list
+val searchable_columns : string list
+val searchable_fields : Pool_common.Message.Field.t list
+val sortable_by : (Pool_common.Message.Field.t * string) list
+val sortable_fields : Pool_common.Message.Field.t list
 
 module Repo : sig
   module Preview : sig

@@ -9,10 +9,15 @@ let index req =
   let open Utils.Lwt_result.Infix in
   let result ({ Pool_context.database_label; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, "/admin/dashboard")
-    @@ let%lwt contacts = Contact.find_all database_label () in
-       Page.Admin.Contact.index context contacts
-       |> create_layout req ~active_navigation:"/admin/contacts" context
-       >|+ Sihl.Web.Response.of_html
+    @@
+    let query =
+      let open Contact in
+      Query.from_request ~searchable_columns ~sortable_by req
+    in
+    let%lwt contacts = Contact.find_all ~query database_label () in
+    Page.Admin.Contact.index context contacts
+    |> create_layout req ~active_navigation:"/admin/contacts" context
+    >|+ Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path req
 ;;

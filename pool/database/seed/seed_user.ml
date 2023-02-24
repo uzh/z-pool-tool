@@ -85,7 +85,7 @@ let create_persons db_label n_persons =
   let sum = fold_left ( + ) 0 in
   let%lwt contacts =
     Contact.find_all db_label ()
-    ||> map (Contact.email_address %> User.EmailAddress.value)
+    ||> fst %> map (Contact.email_address %> User.EmailAddress.value)
   in
   let%lwt admins = Admin.find_all db_label () ||> map Admin.email in
   let flatten_filter_combine a b =

@@ -146,8 +146,25 @@ let find_all_request =
   find_request_sql "" |> Caqti_type.unit ->* Repo_model.t
 ;;
 
-let find_all pool =
-  Utils.Database.collect (Database.Label.value pool) find_all_request
+let select_count where_fragment =
+  let select_from =
+    {sql|
+      SELECT COUNT(*)
+      FROM pool_contacts
+      LEFT JOIN user_users
+        ON pool_contacts.user_uuid = user_users.uuid
+    |sql}
+  in
+  Format.asprintf "%s %s" select_from where_fragment
+;;
+
+let find_all pool ?query () =
+  Query.collect_and_count
+    pool
+    query
+    ~select:find_request_sql
+    ~count:select_count
+    Repo_model.t
 ;;
 
 let insert_request =

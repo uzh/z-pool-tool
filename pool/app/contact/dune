@@ -11,7 +11,8 @@
   settings
   sihl
   sihl-user
-  utils)
+  utils
+  query)
  (preprocess
   (pps
    lwt_ppx

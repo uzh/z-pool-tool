@@ -141,3 +141,21 @@ module Preview = struct
 end
 
 let profile_completion_cookie = "profile_completion"
+
+let searchable_by =
+  Pool_common.Message.
+    [ Field.Email, "user_users.email"
+    ; Field.Firstname, "user_users.given_name"
+    ; Field.Lastname, "user_users.name"
+    ]
+;;
+
+let searchable_columns = searchable_by |> CCList.map snd
+let searchable_fields = searchable_by |> CCList.map fst
+
+let sortable_by =
+  searchable_by
+  @ Pool_common.Message.[ Field.CreatedAt, "pool_contacts.created_at" ]
+;;
+
+let sortable_fields = sortable_by |> CCList.map fst
