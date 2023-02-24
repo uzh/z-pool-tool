@@ -258,6 +258,10 @@ let rec hint_to_string = function
 
     Beachte: Wenn die Applikation neugestartet wird, werden alle auf "stopped" gesetzt
     |}
+  | SearchByFields fields ->
+    Format.asprintf
+      "Suche nach: %s"
+      (fields |> CCList.map Locales_en.field_to_string |> CCString.concat ", ")
   | SessionCancelMessage ->
     "Dieser Grund wird allen angemeldeten Kontakten gezeigt."
   | SessionClose ->

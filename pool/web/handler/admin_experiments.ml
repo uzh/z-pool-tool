@@ -26,7 +26,7 @@ let index req =
     @@
     let query =
       let open Experiment in
-      Query.from_request ~searchable_columns ~sortable_columns req
+      Query.from_request ~searchable_columns ~sortable_by req
     in
     let%lwt expermient_list = Experiment.find_all database_label ~query () in
     Page.Admin.Experiments.index expermient_list context

@@ -256,6 +256,10 @@ let rec hint_to_string = function
 
     To set 'participated', 'show up' is required.
     |}
+  | SearchByFields fields ->
+    Format.asprintf
+      "Search by: %s"
+      (fields |> CCList.map Locales_en.field_to_string |> CCString.concat ", ")
   | SelectedDateIsPast -> "The selected date is in the past."
   | SessionReminderLanguageHint ->
     "If you provide a custom reminder text, select its language here."

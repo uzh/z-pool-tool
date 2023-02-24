@@ -70,9 +70,10 @@ let pagination language query { Pagination.page; page_count; _ } =
     ]
 ;;
 
-let search language query =
+let search language query searchable_fields =
   [ Component_input.input_element
       ?value:(query.search |> CCOption.map Search.query_string)
+      ~help:(Pool_common.I18n.SearchByFields searchable_fields)
       language
       `Text
       Pool_common.Message.Field.Query
@@ -111,18 +112,18 @@ let sort language sortable_fields query =
   [ field; order ]
 ;;
 
-let search_and_sort language query sortable_fields =
+let search_and_sort language query sortable_fields searchable_fields =
   form
     ~a:[ a_method `Get; a_action "?"; a_class [ "flexrow"; "flex-gap" ] ]
-    [ div ~a:[ a_class [ "grow" ] ] (search language query)
+    [ div ~a:[ a_class [ "grow" ] ] (search language query searchable_fields)
     ; div (sort language sortable_fields query)
     ]
 ;;
 
-let create language to_table sortable_fields (items, query) =
+let create language to_table sortable_fields searchable_fields (items, query) =
   div
     ~a:[ a_class [ "stack" ] ]
-    [ search_and_sort language query sortable_fields
+    [ search_and_sort language query sortable_fields searchable_fields
     ; to_table items
     ; query.pagination
       |> CCOption.map_or ~default:(txt "") (pagination language query)

@@ -1,6 +1,6 @@
 include Entity
 
-let from_request ?searchable_columns ?sortable_columns req =
+let from_request ?searchable_columns ?sortable_by req =
   let query_params = Sihl.Web.Request.query_list req in
   let open CCOption in
   let find field =
@@ -31,7 +31,7 @@ let from_request ?searchable_columns ?sortable_columns req =
       try find Field.SortOrder >|= Sort.SortOrder.read with
       | _ -> None
     in
-    sortable_columns
+    sortable_by
     >>= fun columns ->
     find Field.Order >|= Field.read >>= Sort.create ?order columns
   in

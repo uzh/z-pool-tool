@@ -139,6 +139,7 @@ type hint =
   | ScheduleEvery of Ptime.Span.t
   | ScheduleAt of Ptime.t
   | ScheduledIntro
+  | SearchByFields of Entity_message.Field.t list
   | SelectedDateIsPast
   | SessionCancelMessage
   | SessionClose

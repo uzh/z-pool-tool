@@ -124,10 +124,10 @@ module Sort = struct
     }
   [@@deriving eq, show]
 
-  let create sortable_columns ?(order = SortOrder.default) field =
+  let create sortable_by ?(order = SortOrder.default) field =
     CCList.find_opt
       (fun column -> column |> fst |> Pool_common.Message.Field.equal field)
-      sortable_columns
+      sortable_by
     |> CCOption.map (fun column -> { column; order })
   ;;
 

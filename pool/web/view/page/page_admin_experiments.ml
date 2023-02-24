@@ -153,6 +153,7 @@ let index experiment_list Pool_context.{ language; _ } =
         language
         experiment_table
         Experiment.sortable_fields
+        Experiment.searchable_fields
         experiment_list
     ]
 ;;

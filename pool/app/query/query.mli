@@ -69,7 +69,7 @@ val show : t -> string
 
 val from_request
   :  ?searchable_columns:string list
-  -> ?sortable_columns:(Pool_common.Message.Field.t * string) list
+  -> ?sortable_by:(Pool_common.Message.Field.t * string) list
   -> Rock.Request.t
   -> t
 
