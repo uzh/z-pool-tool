@@ -11,6 +11,14 @@ let partial_update =
     Custom_field.PartialUpdate.equal
 ;;
 
+let language =
+  Alcotest.testable Pool_common.Language.pp Pool_common.Language.equal
+;;
+
+let message_template =
+  Alcotest.testable Message_template.pp Message_template.equal
+;;
+
 let tenant_smtp_auth =
   Alcotest.testable Pool_tenant.SmtpAuth.pp Pool_tenant.SmtpAuth.equal
 ;;
@@ -393,13 +401,15 @@ module Model = struct
       }
   ;;
 
-  let create_message_template () =
-    let exn = CCResult.get_exn in
+  let create_message_template ?label ?language ?entity_uuid () =
     let open Message_template in
+    let exn = CCResult.get_exn in
+    let label = CCOption.value ~default:Label.AssignmentConfirmation label in
+    let language = CCOption.value ~default:Pool_common.Language.En language in
     { id = Id.create ()
-    ; label = Label.AssignmentConfirmation
-    ; language = Pool_common.Language.En
-    ; entity_uuid = None
+    ; label
+    ; language
+    ; entity_uuid
     ; email_subject = "Subject" |> EmailSubject.create |> exn
     ; email_text = "<div>Hello</div>" |> EmailText.create |> exn
     ; plain_text = "Hello" |> PlainText.create |> exn

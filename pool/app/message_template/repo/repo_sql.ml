@@ -81,7 +81,7 @@ let update pool t =
 
 (* The template are prioritised according to the entity_uuids list, from left to
    right. If none are found, the default template will be returned. *)
-let find_by_label pool ?entity_uuids language label =
+let find_by_label_to_send pool ?entity_uuids language label =
   let open Utils.Lwt_result.Infix in
   let open Caqti_request.Infix in
   let where =
@@ -174,13 +174,13 @@ let find_all_by_entity_uuid_and_label_request dyn languages =
         base )
 ;;
 
-let find_all_by_label pool ?entity_uuids languages label =
+let find_all_by_label_to_send pool ?entity_uuids languages label =
   if CCList.is_empty languages
   then Lwt_result.return []
   else
     let open Utils.Lwt_result.Infix in
     let open Caqti_request.Infix in
-    find_by_label pool ?entity_uuids Pool_common.Language.En label
+    find_by_label_to_send pool ?entity_uuids Pool_common.Language.En label
     |>> fun ({ entity_uuid; _ }, _) ->
     let dyn = Dynparam.(empty |> add Caqti_type.string (Label.show label)) in
     let dyn, sql =
@@ -250,7 +250,7 @@ let find pool id =
 
 let insert_default_if_not_exists pool t =
   let open Utils.Lwt_result.Infix in
-  find_by_label pool t.Entity.language t.Entity.label
+  find_by_label_to_send pool t.Entity.language t.Entity.label
   ||> CCResult.to_opt
   >|> function
   | None -> insert pool t
