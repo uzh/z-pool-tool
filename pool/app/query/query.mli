@@ -29,6 +29,8 @@ module Search : sig
     { query : Query.t
     ; columns : string list
     }
+
+  val query_string : t -> string
 end
 
 type t =

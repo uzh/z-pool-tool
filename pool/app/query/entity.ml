@@ -100,6 +100,8 @@ module Search = struct
       |> Format.asprintf "(%s)"
       |> fun where -> dyn, Some where
   ;;
+
+  let query_string t = t.query |> Query.value
 end
 
 type t =

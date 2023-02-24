@@ -2,15 +2,19 @@ open Tyxml.Html
 open Query
 
 (* TODO[timhub]: Limit number of displayed buttons *)
-let pagination language { Pagination.page; page_count; _ } =
-  Logs.info (fun m -> m "page: %i" (page |> Pagination.Page.value));
-  Logs.info (fun m ->
-    m "page count: %i" (page_count |> Pagination.PageCount.value));
+let pagination language query { Pagination.page; page_count; _ } =
   let page_list_classes = [ "btn"; "small" ] in
   let open Pagination in
   let add_page_param page =
-    Pool_common.Message.(
-      add_field_query_params "?" [ Field.Page, CCInt.to_string page ])
+    let open Pool_common.Message in
+    let search =
+      let open Search in
+      query.search
+      |> CCOption.map (fun { query; _ } ->
+           [ Field.Query, query |> Query.value ])
+      |> CCOption.value ~default:[]
+    in
+    add_field_query_params "?" ((Field.Page, CCInt.to_string page) :: search)
   in
   let previous =
     let label =
@@ -53,10 +57,11 @@ let pagination language { Pagination.page; page_count; _ } =
     ]
 ;;
 
-let search language =
+let search language query =
   form
     ~a:[ a_method `Get; a_action "?" ]
     [ Component_input.input_element
+        ?value:(query.search |> CCOption.map Search.query_string)
         language
         `Text
         Pool_common.Message.Field.Query
@@ -66,9 +71,9 @@ let search language =
 let create language to_table (items, query) =
   div
     ~a:[ a_class [ "stack" ] ]
-    [ search language
+    [ search language query
     ; to_table items
     ; query.pagination
-      |> CCOption.map_or ~default:(txt "") (pagination language)
+      |> CCOption.map_or ~default:(txt "") (pagination language query)
     ]
 ;;
