@@ -72,17 +72,7 @@ module Distribution = struct
   end
 
   module SortOrder = struct
-    module Core = struct
-      let field = Pool_common.Message.Field.SortOrder
-
-      type t =
-        | Ascending [@name "ASC"] [@printer print "ASC"]
-        | Descending [@name "DESC"] [@printer print "DESC"]
-      [@@deriving enum, eq, ord, sexp_of, show { with_path = false }, yojson]
-    end
-
-    include Pool_common.Model.SelectorType (Core)
-    include Core
+    include Pool_common.SortOrder
 
     let to_human lang =
       let open CCFun in
@@ -92,8 +82,6 @@ module Distribution = struct
        | Descending -> Message.Descending)
       %> Utils.control_to_string lang
     ;;
-
-    let default = Ascending
   end
 
   type sorted = (SortableField.t * SortOrder.t) list

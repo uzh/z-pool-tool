@@ -33,13 +33,46 @@ module Search : sig
   val query_string : t -> string
 end
 
+module Sort : sig
+  module SortOrder : sig
+    type t =
+      | Ascending
+      | Descending
+
+    val equal : t -> t -> bool
+    val pp : Format.formatter -> t -> unit
+    val show : t -> string
+    val to_human : Pool_common.Language.t -> t -> string
+    val read : string -> t
+    val create : string -> (t, Pool_common.Message.error) result
+    val all : t list
+    val default : t
+
+    val schema
+      :  unit
+      -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
+  end
+
+  type t =
+    { column : Pool_common.Message.Field.t * string
+    ; order : SortOrder.t
+    }
+end
+
 type t =
   { pagination : Pagination.t option
   ; search : Search.t option
+  ; sort : Sort.t option
   }
 
 val show : t -> string
-val from_request : ?searchable_columns:string list -> Rock.Request.t -> t
+
+val from_request
+  :  ?searchable_columns:string list
+  -> ?sortable_columns:(Pool_common.Message.Field.t * string) list
+  -> Rock.Request.t
+  -> t
+
 val empty : unit -> t
 
 val append_query_to_sql

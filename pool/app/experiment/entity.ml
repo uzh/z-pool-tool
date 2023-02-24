@@ -144,6 +144,20 @@ let boolean_fields =
     [ DirectRegistrationDisabled; RegistrationDisabled; AllowUninvitedSignup ]
 ;;
 
-let searchable_columns =
-  [ "pool_experiments.title"; "pool_experiments.public_title" ]
+let searchable_by =
+  Pool_common.Message.
+    [ Field.Title, "pool_experiments.title"
+    ; Field.PublicTitle, "pool_experiments.public_title"
+    ]
 ;;
+
+let searchable_columns = searchable_by |> CCList.map snd
+
+let sortable_columns =
+  Pool_common.Message.
+    [ Field.Title, "pool_experiments.title"
+    ; Field.CreatedAt, "pool_experiments.created_at"
+    ]
+;;
+
+let sortable_fields = sortable_columns |> CCList.map fst

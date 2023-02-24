@@ -149,7 +149,11 @@ let index experiment_list Pool_context.{ language; _ } =
     [ h1
         ~a:[ a_class [ "heading-1" ] ]
         [ txt (Utils.text_to_string language I18n.ExperimentListTitle) ]
-    ; Component.List.create language experiment_table experiment_list
+    ; Component.List.create
+        language
+        experiment_table
+        Experiment.sortable_fields
+        experiment_list
     ]
 ;;
 

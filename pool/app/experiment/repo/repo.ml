@@ -2,8 +2,7 @@ module Database = Pool_database
 module Dynparam = Utils.Database.Dynparam
 
 module Sql = struct
-  (* let default_order_by = "pool_experiments.created_at" *)
-  let default_order_by = "pool_experiments.id"
+  let default_order_by = "pool_experiments.created_at"
 
   let insert_sql =
     {sql|

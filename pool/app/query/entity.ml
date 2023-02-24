@@ -104,19 +104,53 @@ module Search = struct
   let query_string t = t.query |> Query.value
 end
 
+module Sort = struct
+  module SortOrder = struct
+    include Pool_common.SortOrder
+
+    let to_human lang =
+      let open CCFun in
+      let open Pool_common in
+      (function
+       | Ascending -> Message.Ascending
+       | Descending -> Message.Descending)
+      %> Utils.control_to_string lang
+    ;;
+  end
+
+  type t =
+    { column : Pool_common.Message.Field.t * string
+    ; order : SortOrder.t
+    }
+  [@@deriving eq, show]
+
+  let create sortable_columns ?(order = SortOrder.default) field =
+    CCList.find_opt
+      (fun column -> column |> fst |> Pool_common.Message.Field.equal field)
+      sortable_columns
+    |> CCOption.map (fun column -> { column; order })
+  ;;
+
+  let to_sql { column; order } =
+    Format.asprintf "%s %s" (snd column) (SortOrder.show order)
+  ;;
+end
+
 type t =
   { pagination : Pagination.t option
   ; search : Search.t option
+  ; sort : Sort.t option
   }
 [@@deriving eq, show]
 
 let pagination { pagination; _ } = pagination
 let search { search; _ } = search
-let create ?pagination ?search () = { pagination; search } [@@deriving eq, show]
+let sort { sort; _ } = sort
+let create ?pagination ?search ?sort () = { pagination; search; sort }
 
-let set_page_count { pagination; search } row_count =
+let set_page_count ({ pagination; _ } as t) row_count =
   let pagination =
     pagination |> CCOption.map (Pagination.set_page_count row_count)
   in
-  { pagination; search }
+  { t with pagination }
 ;;
