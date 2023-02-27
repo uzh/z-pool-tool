@@ -1,6 +1,10 @@
 include Entity
 
-let from_request ?searchable_columns ?sortable_by req =
+let from_request
+  ?(searchable_by : Column.t list option)
+  ?(sortable_by : Column.t list option)
+  req
+  =
   let query_params = Sihl.Web.Request.query_list req in
   let open CCOption in
   let find field =
@@ -21,7 +25,7 @@ let from_request ?searchable_columns ?sortable_by req =
   in
   let search =
     let open Search in
-    searchable_columns
+    searchable_by
     >>= fun columns ->
     find Query.field >|= Query.of_string >|= fun query -> create query columns
   in

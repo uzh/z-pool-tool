@@ -12,7 +12,7 @@ let index req =
     @@
     let query =
       let open Contact in
-      Query.from_request ~searchable_columns ~sortable_by req
+      Query.from_request ~searchable_by ~sortable_by req
     in
     let%lwt contacts = Contact.find_all ~query database_label () in
     Page.Admin.Contact.index context contacts

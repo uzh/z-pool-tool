@@ -1,7 +1,16 @@
+module Column : sig
+  type t
+
+  val equal : t -> t -> bool
+  val pp : Format.formatter -> t -> unit
+  val show : t -> string
+  val field : t -> Pool_common.Message.Field.t
+  val sql_column : t -> string
+  val create_list : (Pool_common.Message.Field.t * string) list -> t list
+end
+
 module Pagination : sig
-  module Limit : sig
-    include Pool_common.Model.IntegerSig
-  end
+  module Limit : Pool_common.Model.IntegerSig
 
   module Page : sig
     include Pool_common.Model.IntegerSig
@@ -9,9 +18,7 @@ module Pagination : sig
     val default : t
   end
 
-  module PageCount : sig
-    include Pool_common.Model.IntegerSig
-  end
+  module PageCount : Pool_common.Model.IntegerSig
 
   type t =
     { limit : Limit.t
@@ -21,13 +28,11 @@ module Pagination : sig
 end
 
 module Search : sig
-  module Query : sig
-    include Pool_common.Model.StringSig
-  end
+  module Query : Pool_common.Model.StringSig
 
   type t =
     { query : Query.t
-    ; columns : string list
+    ; columns : Column.t list
     }
 
   val query_string : t -> string
@@ -54,7 +59,7 @@ module Sort : sig
   end
 
   type t =
-    { column : Pool_common.Message.Field.t * string
+    { column : Column.t
     ; order : SortOrder.t
     }
 end
@@ -68,8 +73,8 @@ type t =
 val show : t -> string
 
 val from_request
-  :  ?searchable_columns:string list
-  -> ?sortable_by:(Pool_common.Message.Field.t * string) list
+  :  ?searchable_by:Column.t list
+  -> ?sortable_by:Column.t list
   -> Rock.Request.t
   -> t
 

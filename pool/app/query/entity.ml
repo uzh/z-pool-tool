@@ -2,6 +2,14 @@ module Common = Pool_common
 module Message = Common.Message
 module Dynparam = Utils.Database.Dynparam
 
+module Column = struct
+  type t = Common.Message.Field.t * string [@@deriving eq, show]
+
+  let field m = fst m
+  let sql_column m = snd m
+  let create_list lst = lst
+end
+
 module Pagination = struct
   module Limit = struct
     include Common.Model.Integer
@@ -39,9 +47,8 @@ module Pagination = struct
   let create ?limit ?page ?(page_count = 1) () =
     let open CCOption in
     let open CCFun in
-    let get_value = value in
     let build input create default =
-      input |> map_or ~default (create %> of_result %> get_value ~default)
+      input |> map_or ~default (create %> of_result %> value ~default)
     in
     let page = Page.(build page create default) in
     let limit = value ~default:Limit.default limit in
@@ -51,11 +58,7 @@ module Pagination = struct
   let set_page_count row_count t =
     let open CCFloat in
     let page_count =
-      ceil (of_int row_count /. of_int t.limit)
-      |> to_int
-      |> function
-      | 0 -> 1
-      | i -> i
+      ceil (of_int row_count /. of_int t.limit) |> to_int |> CCInt.max 1
     in
     { t with page_count }
   ;;
@@ -77,7 +80,7 @@ module Search = struct
 
   type t =
     { query : Query.t
-    ; columns : string list
+    ; columns : Column.t list
     }
   [@@deriving eq, show]
 
@@ -88,12 +91,13 @@ module Search = struct
     | [] -> dyn, None
     | columns ->
       let dyn, where =
-        CCList.fold_left
-          (fun (dyn, columns) column ->
-            ( dyn |> Dynparam.add Caqti_type.string ("%" ^ query ^ "%")
-            , Format.asprintf "%s LIKE ? " column :: columns ))
-          (dyn, [])
-          columns
+        columns
+        |> CCList.map Column.sql_column
+        |> CCList.fold_left
+             (fun (dyn, columns) column ->
+               ( dyn |> Dynparam.add Caqti_type.string ("%" ^ query ^ "%")
+               , Format.asprintf "%s LIKE ? " column :: columns ))
+             (dyn, [])
       in
       where
       |> CCString.concat ") OR ("
@@ -119,7 +123,7 @@ module Sort = struct
   end
 
   type t =
-    { column : Pool_common.Message.Field.t * string
+    { column : Column.t
     ; order : SortOrder.t
     }
   [@@deriving eq, show]

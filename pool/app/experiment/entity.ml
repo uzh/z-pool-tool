@@ -149,16 +149,13 @@ let searchable_by =
     [ Field.Title, "pool_experiments.title"
     ; Field.PublicTitle, "pool_experiments.public_title"
     ]
+  |> Query.Column.create_list
 ;;
-
-let searchable_columns = searchable_by |> CCList.map snd
-let searchable_fields = searchable_by |> CCList.map fst
 
 let sortable_by =
   Pool_common.Message.
     [ Field.Title, "pool_experiments.title"
     ; Field.CreatedAt, "pool_experiments.created_at"
     ]
+  |> Query.Column.create_list
 ;;
-
-let sortable_fields = sortable_by |> CCList.map fst

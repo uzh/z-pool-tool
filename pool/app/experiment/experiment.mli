@@ -206,8 +206,5 @@ module Guard : sig
   end
 end
 
-val searchable_by : (Pool_common.Message.Field.t * string) list
-val searchable_columns : string list
-val searchable_fields : Pool_common.Message.Field.t list
-val sortable_by : (Pool_common.Message.Field.t * string) list
-val sortable_fields : Pool_common.Message.Field.t list
+val searchable_by : Query.Column.t list
+val sortable_by : Query.Column.t list

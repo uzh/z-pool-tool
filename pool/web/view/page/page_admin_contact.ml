@@ -35,8 +35,8 @@ let contact_overview language contacts =
   Component.List.create
     language
     user_table
-    Contact.sortable_fields
-    Contact.searchable_fields
+    Contact.sortable_by
+    Contact.searchable_by
     contacts
 ;;
 

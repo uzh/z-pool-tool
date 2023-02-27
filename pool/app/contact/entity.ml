@@ -148,14 +148,11 @@ let searchable_by =
     ; Field.Firstname, "user_users.given_name"
     ; Field.Lastname, "user_users.name"
     ]
+  |> Query.Column.create_list
 ;;
-
-let searchable_columns = searchable_by |> CCList.map snd
-let searchable_fields = searchable_by |> CCList.map fst
 
 let sortable_by =
   searchable_by
-  @ Pool_common.Message.[ Field.CreatedAt, "pool_contacts.created_at" ]
+  @ (Pool_common.Message.[ Field.CreatedAt, "pool_contacts.created_at" ]
+    |> Query.Column.create_list)
 ;;
-
-let sortable_fields = sortable_by |> CCList.map fst

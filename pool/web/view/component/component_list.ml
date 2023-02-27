@@ -12,7 +12,7 @@ let retain_search_and_sort query =
     let open Sort in
     query.sort
     |> CCOption.map (fun { column; order } ->
-         [ Field.Order, column |> fst |> Field.show
+         [ Field.Order, column |> Column.field |> Field.show
          ; Field.SortOrder, order |> SortOrder.show
          ])
   in
@@ -125,23 +125,24 @@ let pagination language query { Pagination.page; page_count; _ } =
     ]
 ;;
 
-let search language query searchable_fields =
+let search language query searchable_by =
   [ Component_input.input_element
       ?value:(query.search |> CCOption.map Search.query_string)
-      ~help:(Pool_common.I18n.SearchByFields searchable_fields)
+      ~help:
+        (Pool_common.I18n.SearchByFields (CCList.map Column.field searchable_by))
       language
       `Text
       Pool_common.Message.Field.Search
   ]
 ;;
 
-let sort language sortable_fields query =
+let sort language sortable_by query =
   let open Sort in
   let open Pool_common.Message in
   let classnames = [ "grow" ] in
   let field =
     let selected =
-      query.sort |> CCOption.map (fun { column; _ } -> column |> fst)
+      query.sort |> CCOption.map (fun { column; _ } -> column |> Column.field)
     in
     Component_input.selector
       ~add_empty:true
@@ -150,7 +151,7 @@ let sort language sortable_fields query =
       language
       Field.Order
       Field.show
-      sortable_fields
+      (CCList.map Column.field sortable_by)
       selected
       ()
   in
@@ -170,17 +171,15 @@ let sort language sortable_fields query =
   [ field; order ]
 ;;
 
-let search_and_sort language query sortable_fields searchable_fields =
+let search_and_sort language query sortable_by searchable_by =
   form
     ~a:[ a_method `Get; a_action "?"; a_class [ "flexcolumn"; "flex-gap" ] ]
     [ div
         ~a:[ a_class [ "flexrow"; "flex-gap"; "flexcolumn-mobile" ] ]
-        [ div
-            ~a:[ a_class [ "grow-3" ] ]
-            (search language query searchable_fields)
+        [ div ~a:[ a_class [ "grow-3" ] ] (search language query searchable_by)
         ; div
             ~a:[ a_class [ "flexrow"; "flex-gap"; "grow-1" ] ]
-            (sort language sortable_fields query)
+            (sort language sortable_by query)
         ]
     ; div
         ~a:[ a_class [ "flexrow" ] ]
@@ -201,10 +200,10 @@ let search_and_sort language query sortable_fields searchable_fields =
     ]
 ;;
 
-let create language to_table sortable_fields searchable_fields (items, query) =
+let create language to_table sortable_by searchable_by (items, query) =
   div
     ~a:[ a_class [ "stack" ] ]
-    [ search_and_sort language query sortable_fields searchable_fields
+    [ search_and_sort language query sortable_by searchable_by
     ; to_table items
     ; query.pagination
       |> CCOption.map_or ~default:(txt "") (pagination language query)

@@ -152,8 +152,8 @@ let index experiment_list Pool_context.{ language; _ } =
     ; Component.List.create
         language
         experiment_table
-        Experiment.sortable_fields
-        Experiment.searchable_fields
+        Experiment.sortable_by
+        Experiment.searchable_by
         experiment_list
     ]
 ;;
