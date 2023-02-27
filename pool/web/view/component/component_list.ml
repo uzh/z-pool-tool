@@ -35,17 +35,31 @@ let pagination language query { Pagination.page; page_count; _ } =
     let label =
       Pool_common.(Utils.control_to_string language Message.PreviousPage)
     in
+    let icon = Component_icon.icon `PrevCircleOutline in
     if Page.(value page > value default)
-    then a ~a:[ a_href (add_page_param (Page.value page - 1)) ] [ txt label ]
-    else span ~a:[] [ txt label ]
+    then
+      a
+        ~a:
+          [ a_href (add_page_param (Page.value page - 1))
+          ; a_class [ "has-icon" ]
+          ]
+        [ icon; span [ txt label ] ]
+    else span ~a:[ a_class [ "has-icon" ] ] [ icon; span [ txt label ] ]
   in
   let next =
     let label =
       Pool_common.(Utils.control_to_string language Message.NextPage)
     in
+    let icon = Component_icon.icon `NextCircleOutline in
     if PageCount.value page_count > Page.value page
-    then a ~a:[ a_href (add_page_param (Page.value page + 1)) ] [ txt label ]
-    else span ~a:[] [ txt label ]
+    then
+      a
+        ~a:
+          [ a_href (add_page_param (Page.value page + 1))
+          ; a_class [ "has-icon" ]
+          ]
+        [ span [ txt label ]; icon ]
+    else span ~a:[ a_class [ "has-icon" ] ] [ span [ txt label ]; icon ]
   in
   let page_list =
     let create buttons =

@@ -422,9 +422,9 @@ let control_to_string = function
   | Login -> format_submit "login" None
   | Manage field -> format_submit "manage" (Some field)
   | More -> format_submit "more" None
-  | NextPage -> "next page"
+  | NextPage -> "next"
   | PleaseSelect -> "please select"
-  | PreviousPage -> "previous page"
+  | PreviousPage -> "previous"
   | Publish field -> format_submit "publish" field
   | Register -> format_submit "register" None
   | RemoveFromWaitingList -> "Remove from waiting list"

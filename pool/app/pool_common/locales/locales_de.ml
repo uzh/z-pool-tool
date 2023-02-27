@@ -455,9 +455,9 @@ let control_to_string = function
   | Login -> format_submit "login" None
   | Manage field -> format_submit "manage" (Some field)
   | More -> "mehr"
-  | NextPage -> "nächste Seite"
+  | NextPage -> "weiter"
   | PleaseSelect -> "bitte wählen"
-  | PreviousPage -> "vorherige Seite"
+  | PreviousPage -> "zurück"
   | Publish field -> format_submit "veröffentlichen" field
   | Register -> format_submit "einschreiben" None
   | RemoveFromWaitingList -> "Ich möchte mich von der Warteliste austragen"
