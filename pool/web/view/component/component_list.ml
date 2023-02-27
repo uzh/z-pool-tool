@@ -34,31 +34,37 @@ let pagination language query { Pagination.page; page_count; _ } =
     let label =
       Pool_common.(Utils.control_to_string language Message.PreviousPage)
     in
-    let icon = Component_icon.icon `PrevCircleOutline in
+    let icon =
+      Component_icon.icon ~classnames:[ "icon-lg" ] `PrevCircleOutline
+    in
     if Page.(value page > value default)
     then
       a
         ~a:
           [ a_href (add_page_param (Page.value page - 1))
-          ; a_class [ "has-icon" ]
+          ; a_class [ "has-icon"; "undecorated" ]
+          ; a_aria "label" [ label ]
           ]
-        [ icon; span [ txt label ] ]
-    else span ~a:[ a_class [ "has-icon" ] ] [ icon; span [ txt label ] ]
+        [ icon; span ~a:[ a_class [ "hidden-mobile" ] ] [ txt label ] ]
+    else span ~a:[ a_class [ "has-icon" ] ] [ icon ]
   in
   let next =
     let label =
       Pool_common.(Utils.control_to_string language Message.NextPage)
     in
-    let icon = Component_icon.icon `NextCircleOutline in
+    let icon =
+      Component_icon.icon ~classnames:[ "icon-lg" ] `NextCircleOutline
+    in
     if PageCount.value page_count > Page.value page
     then
       a
         ~a:
           [ a_href (add_page_param (Page.value page + 1))
-          ; a_class [ "has-icon" ]
+          ; a_class [ "has-icon"; "undecorated" ]
+          ; a_aria "label" [ label ]
           ]
-        [ span [ txt label ]; icon ]
-    else span ~a:[ a_class [ "has-icon" ] ] [ span [ txt label ]; icon ]
+        [ span ~a:[ a_class [ "hidden-mobile" ] ] [ txt label ]; icon ]
+    else span ~a:[ a_class [ "has-icon" ] ] [ icon ]
   in
   let page_list =
     let create buttons =
