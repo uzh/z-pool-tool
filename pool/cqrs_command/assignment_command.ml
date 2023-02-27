@@ -240,3 +240,38 @@ end = struct
     [ `Update, `TargetEntity `WaitingList; `Create, `TargetEntity `Assignment ]
   ;;
 end
+
+(* TODO: under which circumstances should an assignment be maked_as_deleted *)
+module MarkAsDeleted : sig
+  include Common.CommandSig with type t = Assignment.t
+
+  val effects : Assignment.Id.t -> Guard.Authorizer.effect list
+end = struct
+  type t = Assignment.t
+
+  let handle ?(tags = Logs.Tag.empty) assignment
+    : (Pool_event.t list, Pool_common.Message.error) result
+    =
+    let open CCResult in
+    Logs.info ~src (fun m -> m "Handle command MarkAsDeleted" ~tags);
+    let mark_as_deleted =
+      Assignment.MarkedAsDeleted assignment |> Pool_event.assignment
+    in
+    let events =
+      match assignment.Assignment.canceled_at with
+      | None ->
+        [ Contact.NumAssignmentsDecreased assignment.Assignment.contact
+          |> Pool_event.contact
+        ; mark_as_deleted
+        ]
+      | Some _ -> [ mark_as_deleted ]
+    in
+    Ok events
+  ;;
+
+  let effects id =
+    [ `Delete, `Target (id |> Guard.Uuid.target_of Assignment.Id.value)
+    ; `Delete, `TargetEntity `Assignment
+    ]
+  ;;
+end

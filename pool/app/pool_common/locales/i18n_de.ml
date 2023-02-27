@@ -310,6 +310,12 @@ let confirmable_to_string confirmable =
    | DeleteFile -> "die Datei", "löschen", None
    | DeleteMailing -> "den Versand", "löschen", None
    | DeleteSession -> "die Session", "löschen", None
+   | MarkAssignmentAsDeleted ->
+     ( Format.asprintf
+         "die %s"
+         (Locales_de.field_to_string Entity_message.Field.Assignment)
+     , "als gelöscht markieren"
+     , None )
    | PublisCustomField ->
      ( "das Feld und alle dazugehörigen Optionen"
      , "publizieren"

@@ -78,9 +78,46 @@ let cancel req =
   result |> HttpUtils.extract_happy_path req
 ;;
 
+let mark_as_deleted req =
+  let open Utils.Lwt_result.Infix in
+  let experiment_id, id =
+    let open Pool_common.Message.Field in
+    ( HttpUtils.find_id Experiment.Id.of_string Experiment req
+    , HttpUtils.find_id Assignment.Id.of_string Assignment req )
+  in
+  let redirect_path =
+    Format.asprintf
+      "/admin/experiments/%s/assignments"
+      (Experiment.Id.value experiment_id)
+  in
+  let result { Pool_context.database_label; _ } =
+    Utils.Lwt_result.map_error (fun err -> err, redirect_path)
+    @@ let* assignment = Assignment.find database_label id in
+       let tags = Logger.req req in
+       let events =
+         Cqrs_command.Assignment_command.MarkAsDeleted.handle ~tags assignment
+         |> Lwt.return
+       in
+       let handle events =
+         let%lwt () =
+           Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
+         in
+         Http_utils.redirect_to_with_actions
+           redirect_path
+           [ Message.set
+               ~success:
+                 [ Pool_common.Message.(MarkedAsDeleted Field.Assignment) ]
+           ]
+       in
+       events |>> handle
+  in
+  result |> HttpUtils.extract_happy_path req
+;;
+
 module Access : sig
-  val cancel : Rock.Middleware.t
   val index : Rock.Middleware.t
+  val cancel : Rock.Middleware.t
+  val mark_as_deleted : Rock.Middleware.t
 end = struct
   module AssignmentCommand = Cqrs_command.Assignment_command
 
@@ -95,6 +132,12 @@ end = struct
 
   let cancel =
     [ AssignmentCommand.Cancel.effects ]
+    |> assignment_effects
+    |> Middleware.Guardian.validate_generic
+  ;;
+
+  let mark_as_deleted =
+    [ AssignmentCommand.MarkAsDeleted.effects ]
     |> assignment_effects
     |> Middleware.Guardian.validate_generic
   ;;

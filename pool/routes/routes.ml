@@ -365,7 +365,12 @@ module Admin = struct
       let assignments =
         let open Experiments.Assignment in
         let specific =
-          [ post "/cancel" ~middlewares:[ Access.cancel ] cancel ]
+          [ post "/cancel" ~middlewares:[ Access.cancel ] cancel
+          ; post
+              "/mark-as-deleted"
+              ~middlewares:[ Access.mark_as_deleted ]
+              mark_as_deleted
+          ]
         in
         [ get "" ~middlewares:[ Access.index ] index
         ; choose ~scope:(Assignment |> url_key) specific

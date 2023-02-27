@@ -32,12 +32,40 @@ module Partials = struct
     assignments
     =
     let cancelable = Session.assignments_cancelable session |> CCResult.is_ok in
-    let action assignment =
+    (* TODO: under which circumstances should an assignment be
+       maked_as_deleted *)
+    let deletable = true in
+    let action assignment suffix =
       Format.asprintf
-        "/admin/experiments/%s/assignments/%s/cancel"
+        "/admin/experiments/%s/assignments/%s/%s"
         (experiment_id |> Experiment.Id.value)
         (assignment.Assignment.id |> Pool_common.Id.value)
+        suffix
       |> Sihl.Web.externalize_path
+    in
+    let button_form suffix confirmable control assignment =
+      form
+        ~a:
+          [ a_action (action assignment suffix)
+          ; a_method `Post
+          ; a_user_data
+              "confirmable"
+              Pool_common.(Utils.confirmable_to_string language confirmable)
+          ]
+        [ csrf_element csrf ()
+        ; submit_element language control ~submit_type:`Error ()
+        ]
+    in
+    let cancel =
+      let open Pool_common in
+      button_form "cancel" I18n.CancelAssignment (Message.Cancel None)
+    in
+    let mark_as_deleted =
+      let open Pool_common in
+      button_form
+        "mark-as-deleted"
+        I18n.MarkAssignmentAsDeleted
+        Message.MarkAsDeleted
     in
     match CCList.is_empty assignments with
     | true -> p [ language |> empty ]
@@ -58,32 +86,14 @@ module Partials = struct
               ; assignment |> canceled_at
               ]
             in
-            let cancel assignment =
-              form
-                ~a:
-                  [ a_action (action assignment)
-                  ; a_method `Post
-                  ; a_user_data
-                      "confirmable"
-                      Pool_common.(
-                        Utils.confirmable_to_string
-                          language
-                          I18n.CancelAssignment)
-                  ]
-                [ csrf_element csrf ()
-                ; submit_element
-                    language
-                    (Pool_common.Message.Cancel None)
-                    ~submit_type:`Error
-                    ()
-                ]
+            let buttons =
+              [ cancelable, cancel; deletable, mark_as_deleted ]
+              |> CCList.filter_map (fun (active, form) ->
+                   if not active then None else Some (form assignment))
+              |> div ~a:[ a_class [ "flexrow"; "flex-gap"; "inline-flex" ] ]
+              |> CCList.pure
             in
-            match cancelable with
-            | false -> base
-            | true ->
-              (match assignment.canceled_at with
-               | None -> base @ [ cancel assignment ]
-               | Some _ -> base @ [ txt "" ]))
+            base @ buttons)
           assignments
       in
       Component.Table.horizontal_table `Striped ~align_last_end:true ~thead rows

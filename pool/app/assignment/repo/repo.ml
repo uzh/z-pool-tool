@@ -209,6 +209,26 @@ module Sql = struct
       update_request
       (format_update m)
   ;;
+
+  let marked_as_deleted_request =
+    let open Caqti_request.Infix in
+    {sql|
+        UPDATE
+          pool_assignments
+        SET
+          marked_as_deleted = 1
+        WHERE
+          uuid = UNHEX(REPLACE($1, '-', ''))
+      |sql}
+    |> Caqti_type.(string ->. unit)
+  ;;
+
+  let marked_as_deleted pool id =
+    Utils.Database.exec
+      (Pool_database.Label.value pool)
+      marked_as_deleted_request
+      (id |> Entity.Id.value)
+  ;;
 end
 
 let contact_to_assignment pool assignment =
@@ -254,3 +274,4 @@ let insert pool session_id model =
 
 let update = Sql.update
 let find_by_experiment_and_contact_opt = Sql.find_by_experiment_and_contact_opt
+let marked_as_deleted = Sql.marked_as_deleted

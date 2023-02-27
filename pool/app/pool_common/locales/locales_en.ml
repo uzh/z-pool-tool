@@ -210,6 +210,8 @@ let success_to_string : success -> string = function
      given email address is still available."
   | EmailVerified -> "Email successfully verified."
   | FileDeleted -> "File was successfully deleted."
+  | MarkedAsDeleted field ->
+    field_message "" (field_to_string field) "was marked as deleted."
   | PasswordChanged -> "Password successfully changed."
   | PasswordReset -> "Password reset, you can now log in."
   | PasswordResetSuccessMessage ->
@@ -425,6 +427,7 @@ let control_to_string = function
   | Filter field -> format_submit "filter" field
   | Login -> format_submit "login" None
   | Manage field -> format_submit "manage" (Some field)
+  | MarkAsDeleted -> format_submit "mark as deleted" None
   | More -> format_submit "more" None
   | NextPage -> "next"
   | PleaseSelect -> "please select"

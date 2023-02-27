@@ -10,6 +10,7 @@ type event =
   | AttendanceSet of (t * ShowUp.t * Participated.t)
   | Canceled of t
   | Created of create
+  | MarkedAsDeleted of t
 [@@deriving eq, show]
 
 let handle_event pool : event -> unit Lwt.t = function
@@ -33,4 +34,5 @@ let handle_event pool : event -> unit Lwt.t = function
       assignment
     ||> Pool_common.Utils.get_or_failwith
     ||> fun (_ : [> `Assignment ] Guard.AuthorizableTarget.t) -> ()
+  | MarkedAsDeleted assignment -> assignment.id |> Repo.marked_as_deleted pool
 ;;

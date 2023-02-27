@@ -86,6 +86,7 @@ type event =
   | AttendanceSet of (t * ShowUp.t * Participated.t)
   | Canceled of t
   | Created of create
+  | MarkedAsDeleted of t
 
 val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool

@@ -349,6 +349,7 @@ type success =
   | EmailConfirmationMessage
   | EmailVerified
   | FileDeleted
+  | MarkedAsDeleted of Field.t
   | PasswordChanged
   | PasswordReset
   | PasswordResetSuccessMessage
@@ -408,6 +409,7 @@ type control =
   | Filter of Field.t option
   | Login
   | Manage of Field.t
+  | MarkAsDeleted
   | More
   | NextPage
   | PleaseSelect
