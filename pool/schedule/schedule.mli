@@ -22,7 +22,7 @@ module Status : sig
   val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
 end
 
-module LastRun : Pool_common.Model.PtimeSig
+module LastRunAt : Pool_common.Model.PtimeSig
 module ScheduledTime : Pool_common.Model.PtimeSig
 module ScheduledTimeSpan : Pool_common.Model.PtimeSpanSig
 
@@ -35,7 +35,7 @@ type t =
   { label : Label.t
   ; scheduled_time : scheduled_time
   ; status : Status.t
-  ; last_run : LastRun.t option
+  ; last_run : LastRunAt.t option
   ; fcn : unit -> unit Lwt.t [@opaque] [@equal fun _ _ -> true]
   }
 
@@ -45,7 +45,7 @@ type public =
   { label : Label.t
   ; scheduled_time : scheduled_time
   ; status : Status.t
-  ; last_run : LastRun.t option
+  ; last_run : LastRunAt.t option
   }
 
 val add_and_start : t -> unit Lwt.t

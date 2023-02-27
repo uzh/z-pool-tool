@@ -85,7 +85,7 @@ let rec field_to_string =
   | LanguageDe -> "Deutsch"
   | LanguageEn -> "Englisch"
   | Lastname -> "Nachname"
-  | LastRun -> "Letzter Durchlauf"
+  | LastRunAt -> "Letzter Durchlauf"
   | LeadTime -> "Vorlaufzeit"
   | Link -> "Link"
   | Location -> "Lokalität"

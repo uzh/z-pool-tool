@@ -247,12 +247,12 @@ let rec hint_to_string = function
   | ScheduleEvery sec ->
     sec
     |> Pool_common_utils.Time.formatted_timespan
-    |> Format.asprintf "jede %s"
+    |> Format.asprintf "alle %s"
   | ScheduleAt time ->
     time
     |> Pool_common_utils.Time.formatted_date_time
     |> Format.asprintf "Am %s"
-  | ScheduledInto ->
+  | ScheduledIntro ->
     {|Informationen über alle periodischen Hintergrund-Prozesse.
 
     Beachte: Wenn die Applikation neugestartet wird, werden alle auf "stopped" gesetzt

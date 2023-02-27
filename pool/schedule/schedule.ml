@@ -41,7 +41,7 @@ module Registered = struct
   ;;
 
   let update_last_run_base ({ label; _ } : t) =
-    let last_run = Some (LastRun.create_now ()) in
+    let last_run = Some (LastRunAt.create_now ()) in
     let add_last_run = CCOption.map (fun (s : t) -> { s with last_run }) in
     registered := ScheduleMap.update label add_last_run !registered
   ;;
@@ -55,7 +55,7 @@ module Registered = struct
     let open ScheduleMap in
     let add_finished =
       CCOption.map (fun schedule : Entity.t ->
-        let last_run = Some (LastRun.create_now ()) in
+        let last_run = Some (LastRunAt.create_now ()) in
         let status = Status.Finished in
         { schedule with last_run; status })
     in
@@ -86,9 +86,9 @@ module Registered = struct
   ;;
 end
 
-let run ?now ({ label; scheduled_time; status; _ } as schedule : t) =
+let run ({ label; scheduled_time; status; _ } as schedule : t) =
   let open Utils.Lwt_result.Infix in
-  let delay = run_in ?now schedule in
+  let delay = run_in scheduled_time in
   let paused () =
     Logs.debug (fun m -> m "%s: Run is paused" label);
     Lwt.return_unit

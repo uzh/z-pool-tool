@@ -242,7 +242,7 @@ let rec hint_to_string = function
     time
     |> Pool_common_utils.Time.formatted_date_time
     |> Format.asprintf "at %s"
-  | ScheduledInto ->
+  | ScheduledIntro ->
     {|Information about all periodic background processes.
 
       Note: When the application restarts all active schedules get stopped.

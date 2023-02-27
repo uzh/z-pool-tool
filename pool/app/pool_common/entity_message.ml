@@ -110,7 +110,7 @@ module Field = struct
     | LanguageDe [@name "DE"] [@printer go "DE"]
     | LanguageEn [@name "EN"] [@printer go "EN"]
     | Lastname [@name "lastname"] [@printer go "lastname"]
-    | LastRun [@name "last_run"] [@printer go "last_run"]
+    | LastRunAt [@name "last_run"] [@printer go "last_run"]
     | LeadTime [@name "lead_time"] [@printer go "lead_time"]
     | Link [@name "link"] [@printer go "link"]
     | Location [@name "location"] [@printer go "location"]

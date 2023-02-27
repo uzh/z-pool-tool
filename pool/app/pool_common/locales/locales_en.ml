@@ -85,7 +85,7 @@ let rec field_to_string =
   | LanguageDe -> "german"
   | LanguageEn -> "english"
   | Lastname -> "lastname"
-  | LastRun -> "last run"
+  | LastRunAt -> "last run"
   | Link -> "link"
   | Location -> "location"
   | LogoType -> "logo type"

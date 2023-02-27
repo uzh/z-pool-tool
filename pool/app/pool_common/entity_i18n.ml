@@ -137,7 +137,7 @@ type hint =
   | RegistrationDisabled
   | ScheduleEvery of Ptime.Span.t
   | ScheduleAt of Ptime.t
-  | ScheduledInto
+  | ScheduledIntro
   | SelectedDateIsPast
   | SessionCancelMessage
   | SessionClose

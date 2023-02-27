@@ -28,10 +28,10 @@ module ScheduledTimeSpan = struct
   let schema = schema field create
 end
 
-module LastRun = struct
+module LastRunAt = struct
   include Pool_common.Model.Ptime
 
-  let field = Pool_common.Message.Field.LastRun
+  let field = Pool_common.Message.Field.LastRunAt
   let create m = Ok m
   let schema = schema field create
 end
@@ -65,7 +65,7 @@ type t =
   { label : Label.t
   ; scheduled_time : scheduled_time
   ; status : Status.t
-  ; last_run : LastRun.t option
+  ; last_run : LastRunAt.t option
   ; fcn : unit -> unit Lwt.t [@opaque] [@equal fun _ _ -> true]
   }
 [@@deriving eq, show]
@@ -74,10 +74,9 @@ let create label scheduled_time fcn =
   { label; scheduled_time; status = Status.init; last_run = None; fcn }
 ;;
 
-let run_in ?(now = false) schedule =
-  match schedule.scheduled_time with
-  | At _ -> CCFloat.of_int 0
-  | Every _ when now -> CCFloat.of_int 0
+let run_in = function
+  | At time ->
+    Ptime.diff time (Ptime_clock.now ()) |> Ptime.Span.to_float_s |> max 1.
   | Every duration ->
     duration |> ScheduledTimeSpan.value |> Ptime.Span.to_float_s
 ;;
@@ -86,6 +85,6 @@ type public =
   { label : Label.t
   ; scheduled_time : scheduled_time
   ; status : Status.t
-  ; last_run : LastRun.t option
+  ; last_run : LastRunAt.t option
   }
 [@@deriving eq, show]

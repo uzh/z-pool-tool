@@ -6,8 +6,8 @@ module Label = struct
   let t = Pool_common.Repo.make_caqti_type Caqti_type.string create value
 end
 
-module LastRun = struct
-  include LastRun
+module LastRunAt = struct
+  include LastRunAt
 
   let t = Caqti_type.ptime
 end
@@ -50,7 +50,7 @@ let t =
             (option ScheduledTime.t)
             (tup2
                (option ScheduledTimeSpan.t)
-               (tup2 Status.t (option LastRun.t))))))
+               (tup2 Status.t (option LastRunAt.t))))))
 ;;
 
 let public =
@@ -82,7 +82,7 @@ let public =
             (option ScheduledTime.t)
             (tup2
                (option ScheduledTimeSpan.t)
-               (tup2 Status.t (option LastRun.t))))))
+               (tup2 Status.t (option LastRunAt.t))))))
 ;;
 
 module Sql = struct
@@ -94,9 +94,9 @@ module Sql = struct
         scheduled_time,
         scheduled_time_span,
         status,
-        last_run
+        last_run_at
       FROM pool_schedules
-      ORDER BY last_run DESC
+      ORDER BY last_run_at DESC
     |sql}
     |> Caqti_type.unit ->* public
   ;;
@@ -113,7 +113,7 @@ module Sql = struct
         scheduled_time,
         scheduled_time_span,
         status,
-        last_run
+        last_run_at
       ) VALUES (
         ?,
         ?,
@@ -124,7 +124,7 @@ module Sql = struct
         scheduled_time = VALUES(scheduled_time),
         scheduled_time_span = VALUES(scheduled_time_span),
         status = VALUES(status),
-        last_run = VALUES(last_run)
+        last_run_at = VALUES(last_run_at)
     |sql}
     |> t ->. Caqti_type.unit
   ;;

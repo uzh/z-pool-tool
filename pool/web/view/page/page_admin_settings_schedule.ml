@@ -5,7 +5,7 @@ module HttpUtils = Http_utils
 let schedule_overview language schedules =
   let open Pool_common in
   let thead =
-    Message.Field.[ Label; ScheduledTime; Status; LastRun ]
+    Message.Field.[ Label; ScheduledTime; Status; LastRunAt ]
     |> Component.Table.fields_to_txt language
   in
   CCList.map
@@ -30,7 +30,7 @@ let schedule_overview language schedules =
           (last_run
           |> CCOption.map_or
                ~default:"---"
-               (LastRun.value %> Pool_common.Utils.Time.formatted_date_time))
+               (LastRunAt.value %> Pool_common.Utils.Time.formatted_date_time))
       ])
     schedules
   |> Component.Table.horizontal_table `Striped ~align_last_end:true ~thead
@@ -43,7 +43,7 @@ let index Pool_context.{ language; _ } schedules =
         ~a:[ a_class [ "heading-1" ] ]
         [ txt Pool_common.(Utils.nav_link_to_string language I18n.Schedules) ]
     ; p
-        [ Pool_common.(Utils.hint_to_string language I18n.ScheduledInto)
+        [ Pool_common.(Utils.hint_to_string language I18n.ScheduledIntro)
           |> HttpUtils.add_line_breaks
         ]
     ; schedule_overview language schedules

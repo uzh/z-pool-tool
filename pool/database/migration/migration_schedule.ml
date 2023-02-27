@@ -8,7 +8,7 @@ let create_schedule_table =
         `scheduled_time` timestamp NULL,
         `scheduled_time_span` integer NULL,
         `status` varchar(128) NOT NULL,
-        `last_run` timestamp NULL,
+        `last_run_at` timestamp NULL,
         `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
         `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
       PRIMARY KEY (id),
