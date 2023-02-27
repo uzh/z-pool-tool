@@ -90,6 +90,7 @@ let create_invitation language ?entity_uuid () =
 ;;
 
 let get_template_with_language_missing _ () =
+  let open Utils.Lwt_result.Infix in
   let%lwt () =
     let database_label = Test_utils.Data.database_label in
     let label = Message_template.Label.ExperimentInvitation in
@@ -109,8 +110,8 @@ let get_template_with_language_missing _ () =
              ~entity_uuids:Experiment.[ experiment.id |> Id.to_common ]
              lang
              label
-           |> Lwt.map CCResult.get_exn
-           |> Lwt.map fst)
+           ||> CCResult.get_exn
+           ||> fst)
     in
     (* When one entity specific template exists, expect this to be returned
        every time *)
@@ -122,6 +123,7 @@ let get_template_with_language_missing _ () =
 ;;
 
 let get_templates_in_multile_languages _ () =
+  let open Utils.Lwt_result.Infix in
   let%lwt () =
     let database_label = Test_utils.Data.database_label in
     let label = Message_template.Label.ExperimentInvitation in
@@ -143,8 +145,8 @@ let get_templates_in_multile_languages _ () =
              ~entity_uuids:Experiment.[ experiment.id |> Id.to_common ]
              lang
              label
-           |> Lwt.map CCResult.get_exn
-           |> Lwt.map fst)
+           ||> CCResult.get_exn
+           ||> fst)
     in
     (* Expect all created templates to be returned *)
     Alcotest.(check (list Test_utils.message_template) "succeeds" templates res)
