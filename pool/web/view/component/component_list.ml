@@ -21,8 +21,7 @@ let retain_search_and_sort query =
 
 let pagination language query { Pagination.page; page_count; _ } =
   let max_button_count = 7 in
-  let button_group_min_count = 2 in
-  let button_count_threshold = button_group_min_count + 1 in
+  let button_count_threshold = 3 in
   let page_list_classes = [ "btn"; "small" ] in
   let open Pagination in
   let add_page_param page =
@@ -77,7 +76,7 @@ let pagination language query { Pagination.page; page_count; _ } =
     in
     let wrap = div ~a:[ a_class [ "flexrow"; "flex-gap-xs" ] ] in
     let create_grouped (buttons : int list list) =
-      let spacer = span ~a:[ a_class page_list_classes ] [ txt "..." ] in
+      let spacer = span ~a:[ a_class [ "inset-xs" ] ] [ txt "..." ] in
       let rec build html buttons =
         match buttons with
         | [] -> html
@@ -93,17 +92,19 @@ let pagination language query { Pagination.page; page_count; _ } =
     | _ when page_count > max_button_count ->
       (match current with
        | _ when current <= button_count_threshold ->
-         let left = range 1 (max_button_count - button_count_threshold) in
-         let right = [ page_count - 1; page_count ] in
+         let left = range 1 (button_count_threshold + 1) in
+         let right = [ page_count ] in
          [ left; right ] |> create_grouped
        | _ when current >= page_count - button_count_threshold ->
-         let left = range 1 button_group_min_count in
-         let right = range (page_count - button_count_threshold) page_count in
+         let left = [ 1 ] in
+         let right =
+           range (page_count - button_count_threshold - 1) page_count
+         in
          [ left; right ] |> create_grouped
        | _ ->
-         let left = range 1 button_group_min_count in
+         let left = [ 1 ] in
          let mid = range (current - 1) (current + 1) in
-         let right = [ page_count - 1; page_count ] in
+         let right = [ page_count ] in
          [ left; mid; right ] |> create_grouped)
     | _ -> range 1 page_count |> create |> wrap
   in
