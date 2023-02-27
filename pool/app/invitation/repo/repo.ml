@@ -35,9 +35,9 @@ module Sql = struct
         pool_invitations.updated_at
       FROM
         pool_invitations
-      INNER JOIN pool_contacts
+      LEFT JOIN pool_contacts
         ON pool_invitations.contact_id = pool_contacts.id
-      INNER JOIN user_users
+      LEFT JOIN user_users
         ON pool_contacts.user_uuid = user_users.uuid
       LEFT JOIN pool_experiments
         ON pool_invitations.experiment_id = pool_experiments.id
@@ -52,9 +52,9 @@ module Sql = struct
       SELECT COUNT(*)
         FROM
         pool_invitations
-      INNER JOIN pool_contacts
+        LEFT JOIN pool_contacts
         ON pool_invitations.contact_id = pool_contacts.id
-      INNER JOIN user_users
+      LEFT JOIN user_users
         ON pool_contacts.user_uuid = user_users.uuid
       LEFT JOIN pool_experiments
         ON pool_invitations.experiment_id = pool_experiments.id

@@ -49,3 +49,11 @@ module ExperimentList = struct
     }
   [@@deriving eq, show]
 end
+
+let searchable_by = Contact.searchable_by
+
+let sortable_by =
+  searchable_by
+  @ (Pool_common.Message.[ Field.CreatedAt, "pool_invitations.created_at" ]
+    |> Query.Column.create_list)
+;;

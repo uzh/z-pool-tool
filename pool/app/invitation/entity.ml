@@ -46,14 +46,7 @@ let email_experiment_elements (experiment : Experiment.t) =
   ]
 ;;
 
-let searchable_by =
-  Pool_common.Message.
-    [ Field.Firstname, "user_users.given_name"
-    ; Field.Lastname, "user_users.name"
-    ; Field.Email, "user_users.email"
-    ]
-  |> Query.Column.create_list
-;;
+let searchable_by = Contact.searchable_by
 
 let sortable_by =
   searchable_by

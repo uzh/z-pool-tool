@@ -535,9 +535,12 @@ let sent_invitations
     html
 ;;
 
-let waiting_list waiting_list experiment Pool_context.{ language; _ } =
+let waiting_list
+  ({ Waiting_list.ExperimentList.experiment; waiting_list_entries }, query)
+  Pool_context.{ language; _ }
+  =
   let open Waiting_list.ExperimentList in
-  let waiting_list_entries () =
+  let waiting_list_table waiting_list_entries =
     let thead =
       (Field.[ Name; Email; CreatedAt; Comment ] |> Table.fields_to_txt language)
       @ [ txt "" ]
@@ -558,13 +561,21 @@ let waiting_list waiting_list experiment Pool_context.{ language; _ } =
             |> HttpUtils.add_line_breaks
           ; Format.asprintf
               "/admin/experiments/%s/waiting-list/%s"
-              (waiting_list.experiment.Experiment.id |> Experiment.Id.value)
+              (experiment.Experiment.id |> Experiment.Id.value)
               (entry.id |> Id.value)
             |> edit_link
           ])
-        waiting_list.waiting_list_entries
+        waiting_list_entries
     in
     Table.horizontal_table `Striped ~align_last_end:true ~thead rows
+  in
+  let html =
+    Component.List.create
+      language
+      waiting_list_table
+      Waiting_list.sortable_by
+      Waiting_list.searchable_by
+      (waiting_list_entries, query)
   in
   experiment_layout
     ~hint:I18n.ExperimentWaitingList
@@ -572,7 +583,7 @@ let waiting_list waiting_list experiment Pool_context.{ language; _ } =
     (NavLink I18n.WaitingList)
     experiment
     ~active:I18n.WaitingList
-    (waiting_list_entries ())
+    html
 ;;
 
 let users

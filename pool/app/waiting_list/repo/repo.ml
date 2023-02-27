@@ -1,5 +1,6 @@
 module RepoEntity = Repo_entity
 module Database = Pool_database
+module Dynparam = Utils.Database.Dynparam
 
 module Sql = struct
   let select_sql where_fragment =
@@ -134,11 +135,39 @@ module Sql = struct
     |> Caqti_type.string ->* RepoEntity.Experiment.t
   ;;
 
-  let find_by_experiment pool id =
-    Utils.Database.collect
-      (Pool_database.Label.value pool)
-      find_by_experiment_request
-      (Experiment.Id.value id)
+  let select_count =
+    let select_from =
+      {sql|
+      SELECT COUNT(*)
+        FROM
+        pool_waiting_list
+      LEFT JOIN pool_contacts
+        ON pool_waiting_list.contact_id = pool_contacts.id
+      LEFT JOIN user_users
+        ON pool_contacts.user_uuid = user_users.uuid
+      |sql}
+    in
+    Format.asprintf "%s %s" select_from
+  ;;
+
+  let find_by_experiment ?query pool id =
+    let where =
+      let sql =
+        {sql| pool_waiting_list.experiment_id = (SELECT id FROM pool_experiments WHERE uuid = UNHEX(REPLACE(?, '-', ''))) |sql}
+      in
+      let dyn =
+        Dynparam.(
+          empty |> add Pool_common.Repo.Id.t (Experiment.Id.to_common id))
+      in
+      sql, dyn
+    in
+    Query.collect_and_count
+      pool
+      query
+      ~select:find_multiple_sql
+      ~count:select_count
+      ~where
+      RepoEntity.Experiment.t
   ;;
 
   let insert_request =
@@ -230,11 +259,11 @@ let user_is_enlisted pool contact experiment =
   | Some _ -> true
 ;;
 
-let find_by_experiment pool id =
+let find_by_experiment ?query pool id =
   let open Utils.Lwt_result.Infix in
-  let%lwt entries = Sql.find_by_experiment pool id in
+  let%lwt entries, query = Sql.find_by_experiment ?query pool id in
   let* experiment = Experiment.find pool id in
-  Entity.ExperimentList.{ waiting_list_entries = entries; experiment }
+  (Entity.ExperimentList.{ waiting_list_entries = entries; experiment }, query)
   |> Lwt.return_ok
 ;;
 

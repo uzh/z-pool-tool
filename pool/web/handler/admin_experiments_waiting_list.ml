@@ -16,8 +16,17 @@ let index req =
     @@
     let database_label = context.Pool_context.database_label in
     let* experiment = Experiment.find database_label id in
-    let* waiting_list = Waiting_list.find_by_experiment database_label id in
-    Page.Admin.Experiments.waiting_list waiting_list experiment context
+    let query =
+      let open Waiting_list in
+      Query.from_request ~searchable_by ~sortable_by req
+    in
+    let* waiting_list =
+      Waiting_list.find_by_experiment
+        ~query
+        database_label
+        experiment.Experiment.id
+    in
+    Page.Admin.Experiments.waiting_list waiting_list context
     |> create_layout req context
     >|+ Sihl.Web.Response.of_html
   in
