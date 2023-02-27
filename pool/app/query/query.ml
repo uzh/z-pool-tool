@@ -66,14 +66,17 @@ let append_query_to_sql dyn where t =
   dyn, sql, paginate_and_sort
 ;;
 
-(* TODO: Add possibility to add additional where *)
-let collect_and_count db_pool query ~select ~count caqti_type =
+let collect_and_count db_pool query ~select ~count ?where caqti_type =
   let open Utils.Database in
   let open Caqti_request.Infix in
-  let db_pool = Pool_database.Label.value db_pool in
-  let dyn, where, paginate_and_sort =
-    append_query_to_sql Dynparam.empty None query
+  let where, dyn =
+    CCOption.map_or
+      ~default:(None, Dynparam.empty)
+      (fun (where, dyn) -> Some where, dyn)
+      where
   in
+  let db_pool = Pool_database.Label.value db_pool in
+  let dyn, where, paginate_and_sort = append_query_to_sql dyn where query in
   let (Dynparam.Pack (pt, pv)) = dyn in
   let request =
     let base = select where in

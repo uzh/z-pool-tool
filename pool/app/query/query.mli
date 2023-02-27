@@ -86,6 +86,7 @@ val collect_and_count
   -> t option
   -> select:(string -> string)
   -> count:(string -> string)
+  -> ?where:string * Utils.Database.Dynparam.t
   -> 'a Caqti_type.t
   -> ('a list * t) Lwt.t
 
