@@ -124,6 +124,14 @@ let () =
             "assign to session with follow ups"
             `Quick
             Assignment_test.assign_to_session_with_follow_ups
+        ; test_case
+            "mark uncanceled as deleted"
+            `Quick
+            Assignment_test.marked_uncanceled_as_deleted
+        ; test_case
+            "mark canceled as deleted"
+            `Quick
+            Assignment_test.marked_canceled_as_deleted
         ] )
     ; ( "invitation"
       , [ test_case "create invitation" `Quick Invitation_test.create

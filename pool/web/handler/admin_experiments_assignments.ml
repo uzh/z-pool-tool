@@ -93,7 +93,7 @@ let mark_as_deleted req =
   let result { Pool_context.database_label; _ } =
     Utils.Lwt_result.map_error (fun err -> err, redirect_path)
     @@ let* assignment = Assignment.find database_label id in
-       let tags = Logger.req req in
+       let tags = Pool_context.Logger.Tags.req req in
        let events =
          Cqrs_command.Assignment_command.MarkAsDeleted.handle ~tags assignment
          |> Lwt.return

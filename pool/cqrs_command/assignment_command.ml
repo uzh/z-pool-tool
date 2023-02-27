@@ -260,9 +260,9 @@ end = struct
     let events =
       match assignment.Assignment.canceled_at with
       | None ->
-        [ Contact.NumAssignmentsDecreased assignment.Assignment.contact
+        [ mark_as_deleted
+        ; Contact.NumAssignmentsDecreasedBy (assignment.Assignment.contact, 1)
           |> Pool_event.contact
-        ; mark_as_deleted
         ]
       | Some _ -> [ mark_as_deleted ]
     in
