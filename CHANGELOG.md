@@ -12,6 +12,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 - detect unsaved changes in forms
 - send notification to contacts when there is an registration attempt with in-use email address
 - allow contacts to be filtered by experiment participation
+- UI displaying schedules (label, interval, status, last_run)
+- UI displaying jobs in queue
 
 ### Changed
 
@@ -19,11 +21,14 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 - move smtp configurations from root to tenants
 - integrate email service in tenant
 - show add configuration when not configured already
+- extract worker scheduler
+- improve lwt ignore handling
 
 ### Fixed
 
 - removed default value from pool_sessions.start
 - add language parameter to email links
+- improve consistency (schedule, queue worker, matcher)
 
 ## [0.1.1](https://github.com/uzh/pool/tree/0.1.1) - 2023-02-02
 

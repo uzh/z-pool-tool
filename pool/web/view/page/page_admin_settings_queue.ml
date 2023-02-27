@@ -75,7 +75,7 @@ let job_detail
     ]
     |> vertical_table
   in
-  div ~a:[ a_class [ "stack-lg" ] ] [ job_detail ]
+  div [ job_detail ]
 ;;
 
 let layout language children =
