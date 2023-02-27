@@ -46,6 +46,10 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 - add language parameter to email links
 - improve consistency (schedule, queue worker, matcher)
 
+### Changed
+
+- message_template does not fall back to global template, if a language of entity specific templates is missing.
+
 ## [0.1.1](https://github.com/uzh/pool/tree/0.1.1) - 2023-02-02
 
 ### Added
