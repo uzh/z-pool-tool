@@ -63,7 +63,7 @@ let append_query_to_sql dyn where t =
   in
   let sql =
     match search, where with
-    | Some search, Some where -> format "WHERE %s AND %s" where search
+    | Some search, Some where -> format "WHERE %s AND (%s)" where search
     | None, Some where | Some where, None -> format "WHERE %s" where
     | None, None -> ""
   in

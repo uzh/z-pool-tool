@@ -6,7 +6,8 @@ let of_entity = RepoEntity.of_entity
 
 module Sql = struct
   let select_sql =
-    {sql|
+    let select =
+      {sql|
       SELECT
         LOWER(CONCAT(
           SUBSTR(HEX(pool_invitations.uuid), 1, 8), '-',
@@ -34,11 +35,32 @@ module Sql = struct
         pool_invitations.updated_at
       FROM
         pool_invitations
-      LEFT JOIN pool_contacts
+      INNER JOIN pool_contacts
         ON pool_invitations.contact_id = pool_contacts.id
+      INNER JOIN user_users
+        ON pool_contacts.user_uuid = user_users.uuid
       LEFT JOIN pool_experiments
         ON pool_invitations.experiment_id = pool_experiments.id
     |sql}
+    in
+    Format.asprintf "%s\n%s" select
+  ;;
+
+  let select_count =
+    let select_from =
+      {sql|
+      SELECT COUNT(*)
+        FROM
+        pool_invitations
+      INNER JOIN pool_contacts
+        ON pool_invitations.contact_id = pool_contacts.id
+      INNER JOIN user_users
+        ON pool_contacts.user_uuid = user_users.uuid
+      LEFT JOIN pool_experiments
+        ON pool_invitations.experiment_id = pool_experiments.id
+      |sql}
+    in
+    Format.asprintf "%s %s" select_from
   ;;
 
   let find_request =
@@ -47,7 +69,7 @@ module Sql = struct
       WHERE
         pool_invitations.uuid = UNHEX(REPLACE(?, '-', ''))
     |sql}
-    |> Format.asprintf "%s\n%s" select_sql
+    |> select_sql
     |> Caqti_type.string ->! RepoEntity.t
   ;;
 
@@ -66,15 +88,28 @@ module Sql = struct
       WHERE
         experiment_id = (SELECT id FROM pool_experiments WHERE uuid = UNHEX(REPLACE(?, '-', '')))
     |sql}
-    |> Format.asprintf "%s\n%s" select_sql
+    |> select_sql
     |> Caqti_type.string ->* RepoEntity.t
   ;;
 
-  let find_by_experiment pool id =
-    Utils.Database.collect
-      (Pool_database.Label.value pool)
-      find_by_experiment_request
-      (Experiment.Id.value id)
+  let find_by_experiment ?query pool id =
+    let where =
+      let sql =
+        {sql| experiment_id = (SELECT id FROM pool_experiments WHERE uuid = UNHEX(REPLACE(?, '-', ''))) |sql}
+      in
+      let dyn =
+        Dynparam.(
+          empty |> add Pool_common.Repo.Id.t (Experiment.Id.to_common id))
+      in
+      sql, dyn
+    in
+    Query.collect_and_count
+      pool
+      query
+      ~select:select_sql
+      ~count:select_count
+      ~where
+      Repo_entity.t
   ;;
 
   let find_by_contact_request =
@@ -83,7 +118,7 @@ module Sql = struct
       WHERE
         contact_id = (SELECT id FROM pool_contacts WHERE user_uuid = UNHEX(REPLACE(?, '-', ''))),
     |sql}
-    |> Format.asprintf "%s\n%s" select_sql
+    |> select_sql
     |> Caqti_type.string ->* RepoEntity.t
   ;;
 
@@ -151,7 +186,7 @@ module Sql = struct
         (SELECT id FROM pool_contacts WHERE pool_contacts.user_uuid = UNHEX(REPLACE($2, '-', '')))
       LIMIT 1
       |sql}
-    |> Format.asprintf "%s\n%s" select_sql
+    |> select_sql
     |> Caqti_type.(tup2 string string) ->! Pool_common.Repo.Id.t
   ;;
 
@@ -225,12 +260,14 @@ let find pool id =
   Sql.find pool id >>= contact_to_invitation pool
 ;;
 
-let find_by_experiment pool id =
+let find_by_experiment ?query pool id =
   let open Utils.Lwt_result.Infix in
   (* TODO Implement as transaction *)
-  Sql.find_by_experiment pool id
-  >|> Lwt_list.map_s (contact_to_invitation pool)
+  let%lwt list, query = Sql.find_by_experiment ?query pool id in
+  list
+  |> Lwt_list.map_s (contact_to_invitation pool)
   ||> CCList.all_ok
+  >|+ fun invitations -> invitations, query
 ;;
 
 let find_by_contact pool contact =

@@ -517,7 +517,15 @@ let sent_invitations
   invitations
   =
   let html =
-    Page_admin_invitations.Partials.list context experiment invitations
+    let invitation_table =
+      Page_admin_invitations.Partials.list context experiment
+    in
+    Component.List.create
+      language
+      invitation_table
+      Invitation.sortable_by
+      Invitation.searchable_by
+      invitations
   in
   experiment_layout
     language

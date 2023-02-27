@@ -4,7 +4,7 @@ let assignment pool =
   let%lwt session_invitations =
     Lwt_list.map_s
       (fun experiment ->
-        let%lwt experiment_invitations =
+        let%lwt experiment_invitations, (_ : Query.t) =
           Invitation.find_by_experiment pool experiment.Experiment.id
           ||> CCResult.get_exn
         in

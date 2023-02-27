@@ -45,3 +45,21 @@ let email_experiment_elements (experiment : Experiment.t) =
   ; "experimentDescription", experiment.description |> Description.value
   ]
 ;;
+
+let searchable_by =
+  Pool_common.Message.
+    [ Field.Firstname, "user_users.given_name"
+    ; Field.Lastname, "user_users.name"
+    ; Field.Email, "user_users.email"
+    ]
+  |> Query.Column.create_list
+;;
+
+let sortable_by =
+  searchable_by
+  @ (Pool_common.Message.
+       [ Field.ResentAt, "pool_invitations.resent_at"
+       ; Field.CreatedAt, "pool_invitations.created_at"
+       ]
+    |> Query.Column.create_list)
+;;
