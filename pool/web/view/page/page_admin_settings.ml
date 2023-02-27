@@ -1,6 +1,8 @@
 open Tyxml.Html
 open Component.Input
 module Message = Pool_common.Message
+module Queue = Page_admin_settings_queue
+module Schedule = Page_admin_settings_schedule
 module Smtp = Page_admin_settings_smtp
 
 let show

@@ -1,3 +1,4 @@
+open CCFun
 include Sihl.Contract.Queue
 
 let log_src = Logs.Src.create "pool.queue"
@@ -14,7 +15,7 @@ let increment_tries (retry_delay : Ptime.Span.t) (job_instance : instance) =
 ;;
 
 let registered_jobs : job' list ref = ref []
-let stop_schedule : (unit -> unit) option ref = ref None
+let find = Repo.find
 
 let run_job
   (input : string)
@@ -54,13 +55,15 @@ let run_job
     Lwt.return @@ Ok ()
 ;;
 
-let update ?ctx job_instance = Repo.update ?ctx job_instance
+let update = Repo.update
 
 let work_job
   ({ retry_delay; max_tries; _ } as job : job')
   ({ input; tries; ctx; _ } as job_instance : instance)
   =
-  let ctx = if CCList.is_empty ctx then None else Some ctx in
+  let database_label =
+    CCList.assq "pool" ctx |> Pool_database.Label.of_string
+  in
   let now = Ptime_clock.now () in
   if should_run job_instance now
   then (
@@ -81,7 +84,7 @@ let work_job
         }
       | Ok () -> { job_instance with status = Succeeded }
     in
-    update ?ctx job_instance)
+    update database_label job_instance)
   else (
     Logs.debug (fun m ->
       m "Not going to run job instance %s" ([%show: instance] job_instance));
@@ -91,10 +94,7 @@ let work_job
 let work_queue database_labels jobs =
   let open Utils.Lwt_result.Infix in
   let%lwt pending_job_instances =
-    Lwt_list.map_s
-      (fun label -> Repo.find_workable ~ctx:(Pool_tenant.to_ctx label) ())
-      database_labels
-    ||> CCList.flatten
+    Lwt_list.map_s Repo.find_workable database_labels ||> CCList.flatten
   in
   if CCList.is_empty pending_job_instances
   then Lwt.return_unit
@@ -117,13 +117,11 @@ let work_queue database_labels jobs =
     Lwt.return_unit)
 ;;
 
-let start () =
+let create_schedule () =
   let open Utils.Lwt_result.Infix in
-  let open Sihl.Schedule in
-  Logs.debug (fun m -> m "Start job queue");
-  (* This function runs every second, the request context gets created here with
-     each tick *)
-  let periodic_function () =
+  let open Schedule in
+  let interval = Every (Ptime.Span.of_int_s 1 |> ScheduledTimeSpan.of_span) in
+  let periodic_fcn () =
     let%lwt database_labels =
       Pool_tenant.find_all ()
       ||> CCList.map (fun { Pool_tenant.database_label; _ } -> database_label)
@@ -146,27 +144,20 @@ let start () =
           ([%show: string list] job_strings));
       work_queue database_labels jobs)
   in
-  let job_queue = create every_second periodic_function "job_queue" in
-  stop_schedule := Some (schedule job_queue);
-  Lwt.return_unit
+  create "job_queue" interval periodic_fcn
 ;;
+
+let start = create_schedule %> Schedule.add_and_start
 
 let stop () =
   registered_jobs := [];
-  (match !stop_schedule with
-   | Some stop_schedule -> stop_schedule ()
-   | None -> Logs.warn (fun m -> m "Can not stop schedule"));
   Lwt.return_unit
 ;;
 
 let lifecycle =
   Sihl.Container.create_lifecycle
     "Multitenant Queue"
-    ~dependencies:(fun () ->
-      [ Sihl.Schedule.lifecycle
-      ; Sihl.Database.lifecycle
-      ; Pool_tenant.Service.Queue.lifecycle
-      ])
+    ~dependencies:(fun () -> [ Database.lifecycle; Schedule.lifecycle ])
     ~start
     ~stop
 ;;

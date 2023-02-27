@@ -5,3 +5,8 @@ val register
   :  ?jobs:Sihl.Contract.Queue.job' list
   -> unit
   -> Sihl.Container.Service.t
+
+val find
+  :  Pool_database.Label.t
+  -> Pool_common.Id.t
+  -> (Sihl_queue.instance, Pool_common.Message.error) Lwt_result.t

@@ -153,6 +153,7 @@ module PtimeSpan = struct
   let t_of_yojson = Utils_time.ptime_span_of_yojson
   let yojson_of_t = Utils_time.yojson_of_ptime_span
   let value m = m
+  let of_span m = m
   let to_human = Pool_common_utils.Time.formatted_timespan
 
   let schema field create ()
@@ -176,6 +177,7 @@ module type PtimeSpanSig = sig
   val t_of_yojson : Yojson.Safe.t -> t
   val yojson_of_t : t -> Yojson.Safe.t
   val value : t -> Ptime.Span.t
+  val of_span : Ptime.Span.t -> t
   val to_human : t -> string
 
   val schema

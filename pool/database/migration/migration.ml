@@ -64,6 +64,7 @@ module Root = struct
       ; Migration_authorization.migration ()
       ; Migration_tenant_logo_mappings.migration ()
       ; Migration_message_templates.migration ()
+      ; Migration_schedule.migration ()
       ]
   ;;
 

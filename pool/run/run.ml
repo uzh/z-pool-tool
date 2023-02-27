@@ -3,6 +3,7 @@ let () = Printexc.record_backtrace true
 let worker_services =
   [ Database.register ()
   ; Service.Storage.register ()
+  ; Schedule.register ()
   ; Queue.register ~jobs:[ Queue.hide Pool_tenant.Service.Email.Job.send ] ()
   ; Matcher.register ()
   ]
@@ -57,6 +58,11 @@ let () =
     empty
     |> with_services services
     |> before_start (fun () ->
+         (Lwt.async_exception_hook
+            := fun exn ->
+                 Pool_common.Message.NotHandled (Printexc.to_string exn)
+                 |> Pool_common.Utils.with_log_error
+                 |> ignore);
          Logger.create_logs_dir ();
          Lwt.return @@ Middleware.Error.before_start ())
     |> run ~commands ~log_reporter:Logger.reporter)
