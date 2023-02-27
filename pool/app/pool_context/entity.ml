@@ -128,5 +128,5 @@ let show_log ({ database_label; user; _ } : t) =
   Format.sprintf
     "%s %s"
     (show_log_user user)
-    (Pool_database.Label.show database_label)
+    (Pool_database.Label.value database_label)
 ;;

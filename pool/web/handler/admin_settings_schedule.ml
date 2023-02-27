@@ -1,9 +1,6 @@
 open Utils.Lwt_result.Infix
-module Command = Cqrs_command.Smtp_command
-module Field = Pool_common.Message.Field
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
-module SmtpAuth = Pool_tenant.SmtpAuth
 
 let active_navigation = "/admin/settings/schedules"
 

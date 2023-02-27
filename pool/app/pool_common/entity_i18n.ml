@@ -83,6 +83,7 @@ type nav_link =
   | Overview
   | PersonalDetails
   | Profile
+  | Queue
   | Schedules
   | Sessions
   | Settings

@@ -93,6 +93,7 @@ module Target = struct
     | `LocationFile
     | `Mailing
     | `MessageTemplate
+    | `Queue
     | `Schedule
     | `Session
     | `Setting
@@ -135,6 +136,7 @@ module Target = struct
     | "location", [] -> `Location
     | "locationfile", [] -> `LocationFile
     | "mailing", [] -> `Mailing
+    | "queue", [] -> `Queue
     | "schedule", [] -> `Schedule
     | "session", [] -> `Session
     | "setting", [] -> `Setting
@@ -160,6 +162,7 @@ module Target = struct
       ; `LocationFile
       ; `MessageTemplate
       ; `Mailing
+      ; `Queue
       ; `Schedule
       ; `Session
       ; `Setting
@@ -186,6 +189,7 @@ module Target = struct
       ; `LocationFile
       ; `MessageTemplate
       ; `Mailing
+      ; `Queue
       ; `Schedule
       ; `Session
       ; `Setting

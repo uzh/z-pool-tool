@@ -15,6 +15,7 @@ let increment_tries (retry_delay : Ptime.Span.t) (job_instance : instance) =
 ;;
 
 let registered_jobs : job' list ref = ref []
+let find = Repo.find
 
 let run_job
   (input : string)
@@ -54,13 +55,15 @@ let run_job
     Lwt.return @@ Ok ()
 ;;
 
-let update ?ctx job_instance = Repo.update ?ctx job_instance
+let update = Repo.update
 
 let work_job
   ({ retry_delay; max_tries; _ } as job : job')
   ({ input; tries; ctx; _ } as job_instance : instance)
   =
-  let ctx = if CCList.is_empty ctx then None else Some ctx in
+  let database_label =
+    CCList.assq "pool" ctx |> Pool_database.Label.of_string
+  in
   let now = Ptime_clock.now () in
   if should_run job_instance now
   then (
@@ -81,7 +84,7 @@ let work_job
         }
       | Ok () -> { job_instance with status = Succeeded }
     in
-    update ?ctx job_instance)
+    update database_label job_instance)
   else (
     Logs.debug (fun m ->
       m "Not going to run job instance %s" ([%show: instance] job_instance));
@@ -91,10 +94,7 @@ let work_job
 let work_queue database_labels jobs =
   let open Utils.Lwt_result.Infix in
   let%lwt pending_job_instances =
-    Lwt_list.map_s
-      (fun label -> Repo.find_workable ~ctx:(Pool_tenant.to_ctx label) ())
-      database_labels
-    ||> CCList.flatten
+    Lwt_list.map_s Repo.find_workable database_labels ||> CCList.flatten
   in
   if CCList.is_empty pending_job_instances
   then Lwt.return_unit
@@ -157,7 +157,7 @@ let stop () =
 let lifecycle =
   Sihl.Container.create_lifecycle
     "Multitenant Queue"
-    ~dependencies:(fun () -> [ Sihl.Database.lifecycle; Schedule.lifecycle ])
+    ~dependencies:(fun () -> [ Database.lifecycle; Schedule.lifecycle ])
     ~start
     ~stop
 ;;

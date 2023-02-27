@@ -115,6 +115,7 @@ let nav_link_to_string = function
   | Overview -> "Overview"
   | PersonalDetails -> "Personal details"
   | Profile -> "Profile"
+  | Queue -> "Queued jobs"
   | Schedules -> "Schedules"
   | Sessions -> "Sessions"
   | Settings -> "Settings"

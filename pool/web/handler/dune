@@ -13,6 +13,7 @@
   middleware
   page
   pool_common
+  queue
   schedule
   service
   sihl

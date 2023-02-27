@@ -114,39 +114,70 @@ let update_request =
   |> job ->. Caqti_type.unit
 ;;
 
-let update ?ctx job_instance =
-  Sihl.Database.exec ?ctx update_request job_instance
+let update label job_instance =
+  Utils.Database.exec
+    (Pool_database.Label.value label)
+    update_request
+    job_instance
+;;
+
+let select_from_fragment =
+  {sql|
+    SELECT
+      LOWER(CONCAT(
+        SUBSTR(HEX(uuid), 1, 8), '-',
+        SUBSTR(HEX(uuid), 9, 4), '-',
+        SUBSTR(HEX(uuid), 13, 4), '-',
+        SUBSTR(HEX(uuid), 17, 4), '-',
+        SUBSTR(HEX(uuid), 21)
+        )),
+      name,
+      input,
+      tries,
+      next_run_at,
+      max_tries,
+      status,
+      last_error,
+      last_error_at,
+      tag,
+      ctx
+    FROM queue_jobs
+  |sql}
+;;
+
+let find_request =
+  let open Caqti_request.Infix in
+  Format.asprintf
+    {sql| %s WHERE queue_jobs.uuid = UNHEX(REPLACE(?, '-', '')) |sql}
+    select_from_fragment
+  |> Pool_common.Repo.Id.t ->? job
+;;
+
+let find label id =
+  let open Utils.Lwt_result.Infix in
+  Logs.warn (fun m -> m "%s" ([%show: Pool_database.Label.t] label));
+  Utils.Database.find_opt (Pool_database.Label.value label) find_request id
+  ||> CCOption.to_result Pool_common.Message.(NotFound Field.Queue)
 ;;
 
 let find_workable_request =
   let open Caqti_request.Infix in
-  {sql|
-      SELECT
-        LOWER(CONCAT(
-          SUBSTR(HEX(uuid), 1, 8), '-',
-          SUBSTR(HEX(uuid), 9, 4), '-',
-          SUBSTR(HEX(uuid), 13, 4), '-',
-          SUBSTR(HEX(uuid), 17, 4), '-',
-          SUBSTR(HEX(uuid), 21)
-          )),
-        name,
-        input,
-        tries,
-        next_run_at,
-        max_tries,
-        status,
-        last_error,
-        last_error_at,
-        tag,
-        ctx
-      FROM queue_jobs
+  Format.asprintf
+    {sql|
+      %s
       WHERE
         status = "pending"
         AND next_run_at <= NOW()
         AND tries < max_tries
       ORDER BY id DESC
     |sql}
+    select_from_fragment
   |> Caqti_type.unit ->* job
 ;;
 
-let find_workable ?ctx () = Sihl.Database.collect ?ctx find_workable_request ()
+let find_workable label =
+  Utils.Database.collect
+    (Pool_database.Label.value label)
+    find_workable_request
+    ()
+;;
