@@ -141,6 +141,7 @@ let rec field_to_string =
   | Root -> "root"
   | ScheduledTime -> "scheduled time"
   | ScheduledTimeSpan -> "scheduled interval"
+  | Search -> "search"
   | SentAt -> "sent at"
   | Session -> "session"
   | Sessions -> "sessions"
@@ -402,6 +403,7 @@ let control_to_string = function
   | Add field -> format_submit "add" field
   | AddToWaitingList -> "Sign up for the waiting list"
   | Ascending -> format_submit "ascending" None
+  | Apply -> "apply"
   | Assign field -> format_submit "assign" field
   | Back -> format_submit "back" None
   | Cancel field -> format_submit "cancel" field
@@ -428,6 +430,7 @@ let control_to_string = function
   | RemoveFromWaitingList -> "Remove from waiting list"
   | Reschedule field -> format_submit "reschedule" field
   | Resend field -> format_submit "resend" field
+  | Reset -> "reset"
   | ResetPlainText ->
     Format.asprintf
       "Reset %s to rich '%s'"

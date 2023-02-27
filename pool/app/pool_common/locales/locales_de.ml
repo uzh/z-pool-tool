@@ -140,6 +140,7 @@ let rec field_to_string =
   | Root -> "Root"
   | ScheduledTime -> "Geplante Zeit"
   | ScheduledTimeSpan -> "Wiederholungs Interval"
+  | Search -> "Suche"
   | SentAt -> "Verschickt am"
   | Session -> "Session"
   | Sessions -> "Sessions"
@@ -435,6 +436,7 @@ let control_to_string = function
   | Add field -> format_submit "hinzufügen" field
   | AddToWaitingList -> "Ich möchte mich zur Warteliste hinzufügen"
   | Ascending -> "aufsteigend"
+  | Apply -> "anwenden"
   | Assign field -> format_submit "zuweisen" field
   | Back -> format_submit "zurück" None
   | Cancel field -> format_submit "absagen" field
@@ -466,6 +468,7 @@ let control_to_string = function
       (field_to_string Field.PlainText)
       (field_to_string Field.EmailText)
   | Resend field -> format_submit "erneut senden" field
+  | Reset -> "zurücksetzen"
   | Save field -> format_submit "speichern" field
   | SelectAll field -> format_submit "alle auswählen" field
   | SelectFilePlaceholder -> format_submit "datei auswählen.." None

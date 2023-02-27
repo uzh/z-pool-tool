@@ -110,7 +110,7 @@ let search language query searchable_fields =
       ~help:(Pool_common.I18n.SearchByFields searchable_fields)
       language
       `Text
-      Pool_common.Message.Field.Query
+      Pool_common.Message.Field.Search
   ]
 ;;
 
@@ -151,15 +151,32 @@ let sort language sortable_fields query =
 
 let search_and_sort language query sortable_fields searchable_fields =
   form
-    ~a:
-      [ a_method `Get
-      ; a_action "?"
-      ; a_class [ "flexrow"; "flex-gap"; "flexcolumn-mobile" ]
-      ]
-    [ div ~a:[ a_class [ "grow-3" ] ] (search language query searchable_fields)
+    ~a:[ a_method `Get; a_action "?"; a_class [ "flexcolumn"; "flex-gap" ] ]
+    [ div
+        ~a:[ a_class [ "flexrow"; "flex-gap"; "flexcolumn-mobile" ] ]
+        [ div
+            ~a:[ a_class [ "grow-3" ] ]
+            (search language query searchable_fields)
+        ; div
+            ~a:[ a_class [ "flexrow"; "flex-gap"; "grow-1" ] ]
+            (sort language sortable_fields query)
+        ]
     ; div
-        ~a:[ a_class [ "flexrow"; "flex-gap"; "grow-1" ] ]
-        (sort language sortable_fields query)
+        ~a:[ a_class [ "flexrow" ] ]
+        [ div
+            ~a:[ a_class [ "push"; "flexrow"; "flex-gap"; "align-center" ] ]
+            [ a
+                ~a:[ a_href "?" ]
+                [ txt
+                    Pool_common.(Utils.control_to_string language Message.Reset)
+                ]
+            ; Component_input.submit_element
+                ~classnames:[ "small" ]
+                language
+                Pool_common.Message.Apply
+                ()
+            ]
+        ]
     ]
 ;;
 

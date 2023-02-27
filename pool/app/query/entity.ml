@@ -70,7 +70,7 @@ module Search = struct
   module Query = struct
     include Common.Model.String
 
-    let field = Common.Message.Field.Query
+    let field = Common.Message.Field.Search
     let schema = schema ?validation:None field
     let of_string m = m
   end

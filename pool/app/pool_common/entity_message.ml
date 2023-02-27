@@ -176,6 +176,7 @@ module Field = struct
     | ScheduledTime [@name "scheduled_time"] [@printer go "scheduled_time"]
     | ScheduledTimeSpan [@name "scheduled_time_span"]
         [@printer go "scheduled_time_span"]
+    | Search [@name "search"] [@printer go "search"]
     | SentAt [@name "sent_at"] [@printer go "sent_at"]
     | Session [@name "session"] [@printer go "session"]
     | Sessions [@name "sessions"] [@printer go "sessions"]
@@ -386,6 +387,7 @@ type control =
   | Accept of Field.t option
   | Add of Field.t option
   | AddToWaitingList
+  | Apply
   | Ascending
   | Assign of Field.t option
   | Back
@@ -414,6 +416,7 @@ type control =
   | Reschedule of Field.t option
   | Resend of Field.t option
   | ResetPlainText
+  | Reset
   | Save of Field.t option
   | SelectAll of Field.t option
   | SelectFilePlaceholder
