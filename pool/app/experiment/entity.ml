@@ -153,9 +153,7 @@ let searchable_by =
 ;;
 
 let sortable_by =
-  Pool_common.Message.
-    [ Field.Title, "pool_experiments.title"
-    ; Field.CreatedAt, "pool_experiments.created_at"
-    ]
-  |> Query.Column.create_list
+  searchable_by
+  @ (Pool_common.Message.[ Field.CreatedAt, "pool_experiments.created_at" ]
+    |> Query.Column.create_list)
 ;;

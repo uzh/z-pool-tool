@@ -136,18 +136,17 @@ module Sql = struct
   ;;
 
   let select_count =
-    let select_from =
+    Format.asprintf
       {sql|
-      SELECT COUNT(*)
-        FROM
-        pool_waiting_list
-      LEFT JOIN pool_contacts
-        ON pool_waiting_list.contact_id = pool_contacts.id
-      LEFT JOIN user_users
-        ON pool_contacts.user_uuid = user_users.uuid
+        SELECT COUNT(*)
+          FROM
+          pool_waiting_list
+        LEFT JOIN pool_contacts
+          ON pool_waiting_list.contact_id = pool_contacts.id
+        LEFT JOIN user_users
+          ON pool_contacts.user_uuid = user_users.uuid
+        %s
       |sql}
-    in
-    Format.asprintf "%s %s" select_from
   ;;
 
   let find_by_experiment ?query pool id =

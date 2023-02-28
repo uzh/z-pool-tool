@@ -6,61 +6,59 @@ let of_entity = RepoEntity.of_entity
 
 module Sql = struct
   let select_sql =
-    let select =
+    Format.asprintf
       {sql|
-      SELECT
-        LOWER(CONCAT(
-          SUBSTR(HEX(pool_invitations.uuid), 1, 8), '-',
-          SUBSTR(HEX(pool_invitations.uuid), 9, 4), '-',
-          SUBSTR(HEX(pool_invitations.uuid), 13, 4), '-',
-          SUBSTR(HEX(pool_invitations.uuid), 17, 4), '-',
-          SUBSTR(HEX(pool_invitations.uuid), 21)
-        )),
-        LOWER(CONCAT(
-          SUBSTR(HEX(pool_experiments.uuid), 1, 8), '-',
-          SUBSTR(HEX(pool_experiments.uuid), 9, 4), '-',
-          SUBSTR(HEX(pool_experiments.uuid), 13, 4), '-',
-          SUBSTR(HEX(pool_experiments.uuid), 17, 4), '-',
-          SUBSTR(HEX(pool_experiments.uuid), 21)
-        )),
-        LOWER(CONCAT(
-          SUBSTR(HEX(pool_contacts.user_uuid), 1, 8), '-',
-          SUBSTR(HEX(pool_contacts.user_uuid), 9, 4), '-',
-          SUBSTR(HEX(pool_contacts.user_uuid), 13, 4), '-',
-          SUBSTR(HEX(pool_contacts.user_uuid), 17, 4), '-',
-          SUBSTR(HEX(pool_contacts.user_uuid), 21)
-        )),
-        pool_invitations.resent_at,
-        pool_invitations.created_at,
-        pool_invitations.updated_at
-      FROM
-        pool_invitations
-      LEFT JOIN pool_contacts
-        ON pool_invitations.contact_id = pool_contacts.id
-      LEFT JOIN user_users
-        ON pool_contacts.user_uuid = user_users.uuid
-      LEFT JOIN pool_experiments
-        ON pool_invitations.experiment_id = pool_experiments.id
-    |sql}
-    in
-    Format.asprintf "%s\n%s" select
+        SELECT
+          LOWER(CONCAT(
+            SUBSTR(HEX(pool_invitations.uuid), 1, 8), '-',
+            SUBSTR(HEX(pool_invitations.uuid), 9, 4), '-',
+            SUBSTR(HEX(pool_invitations.uuid), 13, 4), '-',
+            SUBSTR(HEX(pool_invitations.uuid), 17, 4), '-',
+            SUBSTR(HEX(pool_invitations.uuid), 21)
+          )),
+          LOWER(CONCAT(
+            SUBSTR(HEX(pool_experiments.uuid), 1, 8), '-',
+            SUBSTR(HEX(pool_experiments.uuid), 9, 4), '-',
+            SUBSTR(HEX(pool_experiments.uuid), 13, 4), '-',
+            SUBSTR(HEX(pool_experiments.uuid), 17, 4), '-',
+            SUBSTR(HEX(pool_experiments.uuid), 21)
+          )),
+          LOWER(CONCAT(
+            SUBSTR(HEX(pool_contacts.user_uuid), 1, 8), '-',
+            SUBSTR(HEX(pool_contacts.user_uuid), 9, 4), '-',
+            SUBSTR(HEX(pool_contacts.user_uuid), 13, 4), '-',
+            SUBSTR(HEX(pool_contacts.user_uuid), 17, 4), '-',
+            SUBSTR(HEX(pool_contacts.user_uuid), 21)
+          )),
+          pool_invitations.resent_at,
+          pool_invitations.created_at,
+          pool_invitations.updated_at
+        FROM
+          pool_invitations
+        LEFT JOIN pool_contacts
+          ON pool_invitations.contact_id = pool_contacts.id
+        LEFT JOIN user_users
+          ON pool_contacts.user_uuid = user_users.uuid
+        LEFT JOIN pool_experiments
+          ON pool_invitations.experiment_id = pool_experiments.id
+        %s
+      |sql}
   ;;
 
   let select_count =
-    let select_from =
+    Format.asprintf
       {sql|
-      SELECT COUNT(*)
+        SELECT COUNT(*)
         FROM
-        pool_invitations
+          pool_invitations
         LEFT JOIN pool_contacts
-        ON pool_invitations.contact_id = pool_contacts.id
-      LEFT JOIN user_users
-        ON pool_contacts.user_uuid = user_users.uuid
-      LEFT JOIN pool_experiments
-        ON pool_invitations.experiment_id = pool_experiments.id
+          ON pool_invitations.contact_id = pool_contacts.id
+        LEFT JOIN user_users
+          ON pool_contacts.user_uuid = user_users.uuid
+        LEFT JOIN pool_experiments
+          ON pool_invitations.experiment_id = pool_experiments.id
+        %s
       |sql}
-    in
-    Format.asprintf "%s %s" select_from
   ;;
 
   let find_request =
@@ -263,8 +261,8 @@ let find pool id =
 let find_by_experiment ?query pool id =
   let open Utils.Lwt_result.Infix in
   (* TODO Implement as transaction *)
-  let%lwt list, query = Sql.find_by_experiment ?query pool id in
-  list
+  let%lwt invitations, query = Sql.find_by_experiment ?query pool id in
+  invitations
   |> Lwt_list.map_s (contact_to_invitation pool)
   ||> CCList.all_ok
   >|+ fun invitations -> invitations, query

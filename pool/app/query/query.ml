@@ -33,7 +33,8 @@ let from_request
     let open Pool_common.Message in
     let order =
       try find Field.SortOrder >|= Sort.SortOrder.read with
-      | _ -> None
+      | Yojson.Json_error _
+      | Ppx_yojson_conv_lib.Yojson_conv.Of_yojson_error (_, _) -> None
     in
     sortable_by
     >>= fun columns ->
@@ -59,7 +60,7 @@ let append_query_to_sql dyn where t =
     | Some order_by, Some pagination ->
       Some (format "%s %s" order_by pagination)
     | Some str, None | None, Some str -> Some str
-    | _ -> None
+    | None, None -> None
   in
   let sql =
     match search, where with

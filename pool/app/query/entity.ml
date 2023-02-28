@@ -6,7 +6,7 @@ module Column = struct
   type t = Common.Message.Field.t * string [@@deriving eq, show]
 
   let field m = fst m
-  let sql_column m = snd m
+  let to_sql m = snd m
   let create_list lst = lst
 end
 
@@ -92,7 +92,7 @@ module Search = struct
     | columns ->
       let dyn, where =
         columns
-        |> CCList.map Column.sql_column
+        |> CCList.map Column.to_sql
         |> CCList.fold_left
              (fun (dyn, columns) column ->
                ( dyn |> Dynparam.add Caqti_type.string ("%" ^ query ^ "%")
@@ -130,7 +130,7 @@ module Sort = struct
 
   let create sortable_by ?(order = SortOrder.default) field =
     CCList.find_opt
-      (fun column -> column |> fst |> Pool_common.Message.Field.equal field)
+      CCFun.(fst %> Pool_common.Message.Field.equal field)
       sortable_by
     |> CCOption.map (fun column -> { column; order })
   ;;

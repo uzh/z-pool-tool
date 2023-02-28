@@ -123,6 +123,7 @@ let index experiment_list Pool_context.{ language; _ } =
     let thead =
       Message.
         [ Field.Title |> Table.field_to_txt language
+        ; Field.PublicTitle |> Table.field_to_txt language
         ; link_as_button
             ~style:`Success
             ~icon:`Add
@@ -135,6 +136,7 @@ let index experiment_list Pool_context.{ language; _ } =
         (fun (experiment : Experiment.t) ->
           let open Experiment in
           [ txt (Title.value experiment.title)
+          ; txt (PublicTitle.value experiment.public_title)
           ; Format.asprintf
               "/admin/experiments/%s"
               (experiment.id |> Experiment.Id.value)
