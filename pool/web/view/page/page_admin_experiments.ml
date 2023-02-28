@@ -113,7 +113,7 @@ let notifications
            |> txt
            |> pure
            |> Notification.notification language `Warning
-           |> CCOption.pure)
+           |> CCOption.return)
   |> function
   | [] -> txt ""
   | notifications -> div ~a:[ a_class [ "stack" ] ] notifications

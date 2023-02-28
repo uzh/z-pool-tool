@@ -127,8 +127,7 @@ type hint =
   | LocationFiles
   | Locations
   | LocationSessions
-  | MissingMessageTemplates of string * string list (* TODO[timhub]*)
-  (* | MissingMessageTemplates of string * Entity.Language.t list *)
+  | MissingMessageTemplates of string * string list
   | NumberIsDaysHint
   | NumberIsSecondsHint
   | NumberIsWeeksHint
