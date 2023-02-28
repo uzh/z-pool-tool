@@ -45,7 +45,12 @@ let create () =
   let events =
     let command =
       AssignmentCommand.Create.
-        { contact; session; waiting_list = Some waiting_list; experiment }
+        { contact
+        ; session
+        ; waiting_list = Some waiting_list
+        ; experiment
+        ; follow_ups = None
+        }
     in
     AssignmentCommand.Create.handle command (confirmation_email contact) false
   in
@@ -156,7 +161,12 @@ let assign_to_fully_booked_session () =
   let events =
     let command =
       AssignmentCommand.Create.
-        { contact; session; waiting_list = Some waiting_list; experiment }
+        { contact
+        ; session
+        ; waiting_list = Some waiting_list
+        ; experiment
+        ; follow_ups = None
+        }
     in
     AssignmentCommand.Create.handle command (confirmation_email contact) false
   in
@@ -181,7 +191,12 @@ let assign_to_experiment_with_direct_registration_disabled () =
   let events =
     let command =
       AssignmentCommand.Create.
-        { contact; session; waiting_list = Some waiting_list; experiment }
+        { contact
+        ; session
+        ; waiting_list = Some waiting_list
+        ; experiment
+        ; follow_ups = None
+        }
     in
     AssignmentCommand.Create.handle command (confirmation_email contact) false
   in
@@ -199,7 +214,12 @@ let assign_to_session_contact_is_already_assigned () =
   let events =
     let command =
       AssignmentCommand.Create.
-        { contact; session; waiting_list = Some waiting_list; experiment }
+        { contact
+        ; session
+        ; waiting_list = Some waiting_list
+        ; experiment
+        ; follow_ups = None
+        }
     in
     AssignmentCommand.Create.handle
       command

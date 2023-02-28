@@ -156,6 +156,7 @@ module AssignmentConfirmation : sig
   val email_params
     :  Pool_common.Language.t
     -> Session.t
+    -> ?follow_ups:Session.t list
     -> Contact.t
     -> (string * string) list
 
@@ -164,6 +165,7 @@ module AssignmentConfirmation : sig
     -> Pool_common.Language.t
     -> Pool_tenant.t
     -> Session.t
+    -> ?follow_ups:Session.t list
     -> Contact.t
     -> (Sihl_email.t, Pool_common.Message.error) result Lwt.t
 
@@ -172,6 +174,7 @@ module AssignmentConfirmation : sig
     -> Pool_common.Language.t
     -> Pool_tenant.t
     -> Session.Public.t
+    -> ?follow_ups:Session.Public.t list
     -> Contact.t
     -> (Sihl_email.t, Pool_common.Message.error) result Lwt.t
 end

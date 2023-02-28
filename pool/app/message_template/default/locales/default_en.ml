@@ -17,7 +17,7 @@ let assignment_confirmation =
   let label = Label.AssignmentConfirmation in
   let email_text =
     [ p
-        [ txt "You successfully registered to the following session:"
+        [ txt "You successfully registered to the following session/s:"
         ; br ()
         ; txt "{sessionOverview}"
         ]
@@ -29,7 +29,7 @@ let assignment_confirmation =
   in
   let email_subject = "Assignment confirmation" |> EmailSubject.of_string in
   let sms_text =
-    {|You successfully registered to the following session:
+    {|You successfully registered to the following session/s:
 
 {sessionOverview}
 
