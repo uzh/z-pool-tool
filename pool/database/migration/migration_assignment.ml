@@ -61,7 +61,7 @@ let add_marked_as_deleted_column =
     ~label:"rename subject id to contact id"
     {sql|
       ALTER TABLE pool_assignments
-        ADD COLUMN marked_as_deleted boolean AFTER canceled_at
+        ADD COLUMN marked_as_deleted boolean DEFAULT 0 AFTER canceled_at
     |sql}
 ;;
 

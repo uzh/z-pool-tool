@@ -50,6 +50,8 @@ let find_all_public_by_contact_request =
         SELECT
           1 FROM pool_assignments
         WHERE
+          pool_assignments.marked_as_deleted = 0
+        AND
           pool_assignments.contact_id = (
             SELECT
               id FROM pool_contacts

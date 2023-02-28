@@ -88,6 +88,8 @@ module Sql = struct
       {sql|
         WHERE
           session_id = (SELECT id FROM pool_sessions WHERE uuid = UNHEX(REPLACE(?, '-', '')))
+        AND
+          marked_as_deleted = 0
       |sql}
     in
     where_condition
@@ -110,6 +112,8 @@ module Sql = struct
     {sql|
       WHERE
         contact_id = (SELECT id FROM pool_contacts WHERE uuid = UNHEX(REPLACE(?, '-', '')))
+      AND
+        marked_as_deleted = 0
     |sql}
     |> Format.asprintf "%s\n%s" select_sql
     |> Caqti_type.string ->* RepoEntity.t
@@ -129,6 +133,8 @@ module Sql = struct
         pool_sessions.experiment_uuid = UNHEX(REPLACE(?, '-', ''))
       AND
         pool_assignments.contact_id = (SELECT id FROM pool_contacts WHERE pool_contacts.user_uuid = UNHEX(REPLACE(?, '-', '')))
+      AND
+        marked_as_deleted = 0
     |sql}
     |> Format.asprintf "%s\n%s" select_public_sql
     |> Caqti_type.(tup2 string string) ->* RepoEntity.Public.t

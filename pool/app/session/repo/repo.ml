@@ -5,16 +5,6 @@ let of_entity = RepoEntity.of_entity
 let to_entity = RepoEntity.to_entity
 
 module Sql = struct
-  let contact_was_invited_join =
-    {sql|
-      INNER JOIN pool_experiments
-        ON pool_experiments.uuid = pool_sessions.experiment_uuid
-      INNER JOIN pool_invitations
-        ON pool_invitations.contact_id = (SELECT id FROM pool_contacts WHERE user_uuid = UNHEX(REPLACE(?, '-', '')))
-        AND pool_experiments.id = pool_invitations.experiment_id
-    |sql}
-  ;;
-
   let find_sql ?order_by where =
     let order_by =
       order_by |> CCOption.map_or ~default:"" (Format.asprintf "ORDER BY %s")
@@ -61,6 +51,7 @@ module Sql = struct
         FROM pool_sessions
         LEFT JOIN pool_assignments
           ON pool_assignments.session_id = pool_sessions.id
+          AND pool_assignments.marked_as_deleted = 0
         INNER JOIN pool_locations
           ON pool_locations.id = pool_sessions.location_id
       |sql}
@@ -99,7 +90,7 @@ module Sql = struct
           pool_sessions.max_participants,
           pool_sessions.min_participants,
           pool_sessions.overbook,
-          (SELECT count(pool_assignments.id) FROM pool_assignments WHERE session_id=pool_sessions.id),
+          (SELECT count(pool_assignments.id) FROM pool_assignments WHERE session_id=pool_sessions.id AND marked_as_deleted = 0),
           pool_sessions.canceled_at
         FROM pool_sessions
         INNER JOIN pool_locations
@@ -171,6 +162,7 @@ module Sql = struct
       INNER JOIN pool_assignments
         ON pool_assignments.session_id = pool_sessions.id
       WHERE pool_assignments.uuid = UNHEX(REPLACE(?, '-', ''))
+        AND pool_assignments.marked_as_deleted = 0
     |sql}
     |> find_public_sql
     |> Caqti_type.string ->! RepoEntity.Public.t
@@ -196,6 +188,8 @@ module Sql = struct
         pool_sessions.start > NOW()
       AND
         pool_assignments.contact_id = (SELECT id FROM pool_contacts WHERE pool_contacts.user_uuid = UNHEX(REPLACE(?, '-', '')))
+      AND
+        pool_assignments.marked_as_deleted = 0
       ORDER BY
         pool_sessions.start ASC
     |sql}
