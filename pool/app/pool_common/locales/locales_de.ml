@@ -96,6 +96,7 @@ let rec field_to_string =
   | LogoType -> "Logo Typ"
   | Mailing -> "Versand"
   | MainSession -> "Hauptsession"
+  | MarkedAsDeleted -> "Als gelöscht markiert"
   | MaxParticipants -> "Maximum an Teilnehmern"
   | MaxTries -> "Maximum an Versuchen"
   | MessageChannel -> "Nachrichtenkanal"
@@ -255,6 +256,11 @@ let rec error_to_string = function
       "' in allen Sprachen an."
   | AlreadyInPast ->
     "Mindestens der Startzeitpunkt liegt bereits in der Vergangenheit."
+  | AlreadyMarkedAsDeleted field ->
+    field_message
+      ""
+      (field |> field_to_string |> CCString.trim)
+      "wurde bereits als gelöscht markiert."
   | AlreadySignedUpForExperiment ->
     "Sie haben sich für dieses Experiment bereits angemeldet."
   | AlreadyPublished field ->
@@ -262,6 +268,7 @@ let rec error_to_string = function
       ""
       (field |> field_to_string |> CCString.trim)
       "wurde bereits veröffentlich."
+  | AssignmentIsCanceled -> "Anmeldung wurde abgesagt."
   | AlreadyStarted ->
     "Bereits gestarted oder beendet, aktion nicht mehr möglich."
   | AlreadyInvitedToExperiment names ->

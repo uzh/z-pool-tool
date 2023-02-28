@@ -121,6 +121,8 @@ module Field = struct
     | LogoType [@name "logo_type"] [@printer go "logo_type"]
     | Mailing [@name "mailing"] [@printer go "mailing"]
     | MainSession [@name "main_session"] [@printer go "main_session"]
+    | MarkedAsDeleted [@name "marked_as_deleted"]
+        [@printer go "marked_as_deleted"]
     | MaxParticipants [@name "max_participants"]
         [@printer go "max_participants"]
     | MaxTries [@name "max_tries"] [@printer go "max_tries"]
@@ -248,9 +250,11 @@ type error =
   | AllLanguagesRequired of Field.t
   | AlreadyInPast
   | AlreadyInvitedToExperiment of string list
+  | AlreadyMarkedAsDeleted of Field.t
   | AlreadyPublished of Field.t
   | AlreadySignedUpForExperiment
   | AlreadyStarted
+  | AssignmentIsCanceled
   | Authorization of string
   | Conformist of (Field.t * error) list
   | ConformistModuleErrorType

@@ -32,6 +32,7 @@ module Sql = struct
         pool_assignments.participated,
         pool_assignments.matches_filter,
         pool_assignments.canceled_at,
+        pool_assignments.marked_as_deleted,
         pool_assignments.created_at,
         pool_assignments.updated_at
       FROM
@@ -104,6 +105,25 @@ module Sql = struct
     Utils.Database.collect
       (Pool_database.Label.value pool)
       (find_by_session_request ?where_condition ())
+      (Pool_common.Id.value id)
+  ;;
+
+  let find_deleted_by_session_request () =
+    let open Caqti_request.Infix in
+    {sql|
+        WHERE
+          session_id = (SELECT id FROM pool_sessions WHERE uuid = UNHEX(REPLACE(?, '-', '')))
+        AND
+          marked_as_deleted = 1
+      |sql}
+    |> Format.asprintf "%s\n%s" select_sql
+    |> Caqti_type.string ->* RepoEntity.t
+  ;;
+
+  let find_deleted_by_session pool id =
+    Utils.Database.collect
+      (Pool_database.Label.value pool)
+      (find_deleted_by_session_request ())
       (Pool_common.Id.value id)
   ;;
 
@@ -258,6 +278,7 @@ let find_by_session filter pool id =
     | `All -> Sql.find_by_session pool id
     | `Uncanceled ->
       Sql.find_by_session ~where_condition:uncanceled_condition pool id
+    | `Deleted -> Sql.find_deleted_by_session pool id
   in
   sql >|> Lwt_list.map_s (contact_to_assignment pool) ||> CCList.all_ok
 ;;

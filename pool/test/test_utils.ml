@@ -396,6 +396,7 @@ module Model = struct
       ; participated = None
       ; matches_filter = MatchesFilter.init
       ; canceled_at = None
+      ; marked_as_deleted = MarkedAsDeleted.init
       ; created_at = Pool_common.CreatedAt.create ()
       ; updated_at = Pool_common.UpdatedAt.create ()
       }

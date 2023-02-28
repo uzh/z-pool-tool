@@ -9,6 +9,7 @@ let to_string = function
      werden, vervollständigen Sie Ihr Profil."
   | DashboardProfileCompletionTitle -> "Profilvervollständigung"
   | DashboardTitle -> "Dashboard"
+  | DeletedAssignments -> "Gelöschte Anmeldungen"
   | DontHaveAnAccount -> "Noch kein Zugang?"
   | EmailConfirmationNote ->
     "Bitte prüfen Sie zunächst Ihre E-Mails und bestätigen Sie Ihre Adresse."
@@ -134,6 +135,10 @@ let rec hint_to_string = function
      anmelden."
   | AssignContactFromWaitingList ->
     "Wählen Sie die Session, zu welcher Sie den Kontakt zuweisen wollen."
+  | AssignmentsMarkedAsClosed ->
+    "Diese Anmeldungen wurden als gelöscht markiert. Insofern die Kontakte den \
+     Experimentkriterien noch entsprechen, können Sie sich erneut an Sessions \
+     anmelden."
   | ContactOnWaitingList ->
     "Sie stehen auf der Warteliste. Das Rekrutierungsteam wird Sie einer \
      Session zuweisen."

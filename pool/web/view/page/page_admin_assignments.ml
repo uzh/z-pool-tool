@@ -1,6 +1,12 @@
 open Tyxml.Html
 open Component.Input
 
+let assignments_path experiment_id =
+  Format.asprintf
+    "/admin/experiments/%s/assignments"
+    (experiment_id |> Experiment.Id.value)
+;;
+
 module Partials = struct
   open Assignment
 
@@ -31,19 +37,20 @@ module Partials = struct
     session
     assignments
     =
-    let cancelable = Session.assignments_cancelable session |> CCResult.is_ok in
-    (* TODO: under which circumstances should an assignment be
-       maked_as_deleted *)
-    let deletable = true in
+    let deletable m = m |> Assignment.is_deletable |> CCResult.is_ok in
+    let cancelable m =
+      Session.assignments_cancelable session |> CCResult.is_ok && deletable m
+    in
     let action assignment suffix =
-      Format.asprintf
-        "/admin/experiments/%s/assignments/%s/%s"
-        (experiment_id |> Experiment.Id.value)
-        (assignment.Assignment.id |> Pool_common.Id.value)
-        suffix
+      experiment_id
+      |> assignments_path
+      |> Format.asprintf
+           "%s/%s/%s"
+           (assignment.Assignment.id |> Pool_common.Id.value)
+           suffix
       |> Sihl.Web.externalize_path
     in
-    let button_form suffix confirmable control assignment =
+    let button_form suffix confirmable control icon assignment =
       form
         ~a:
           [ a_action (action assignment suffix)
@@ -53,12 +60,16 @@ module Partials = struct
               Pool_common.(Utils.confirmable_to_string language confirmable)
           ]
         [ csrf_element csrf ()
-        ; submit_element language control ~submit_type:`Error ()
+        ; submit_element language control ~submit_type:`Error ~has_icon:icon ()
         ]
     in
     let cancel =
       let open Pool_common in
-      button_form "cancel" I18n.CancelAssignment (Message.Cancel None)
+      button_form
+        "cancel"
+        I18n.CancelAssignment
+        (Message.Cancel None)
+        `CloseCircle
     in
     let mark_as_deleted =
       let open Pool_common in
@@ -66,16 +77,15 @@ module Partials = struct
         "mark-as-deleted"
         I18n.MarkAssignmentAsDeleted
         Message.MarkAsDeleted
+        `Trash
     in
     match CCList.is_empty assignments with
     | true -> p [ language |> empty ]
     | false ->
       let thead =
-        let base =
-          Pool_common.Message.Field.[ Name; Email; CanceledAt ]
-          |> Component.Table.fields_to_txt language
-        in
-        if cancelable then base @ [ txt "" ] else base
+        (Pool_common.Message.Field.[ Name; Email; CanceledAt ]
+        |> Component.Table.fields_to_txt language)
+        @ [ txt "" ]
       in
       let rows =
         CCList.map
@@ -87,7 +97,9 @@ module Partials = struct
               ]
             in
             let buttons =
-              [ cancelable, cancel; deletable, mark_as_deleted ]
+              [ cancelable assignment, cancel
+              ; deletable assignment, mark_as_deleted
+              ]
               |> CCList.filter_map (fun (active, form) ->
                    if not active then None else Some (form assignment))
               |> div ~a:[ a_class [ "flexrow"; "flex-gap"; "inline-flex" ] ]
@@ -98,10 +110,12 @@ module Partials = struct
       in
       Component.Table.horizontal_table `Striped ~align_last_end:true ~thead rows
   ;;
-end
 
-let list assignments experiment (Pool_context.{ language; _ } as context) =
-  let html =
+  let grouped_overview_lists
+    (Pool_context.{ language; _ } as context)
+    experiment
+    assignments
+    =
     CCList.map
       (fun (session, assignments) ->
         let attrs, to_title =
@@ -120,14 +134,31 @@ let list assignments experiment (Pool_context.{ language; _ } as context) =
         div
           ~a:attrs
           [ h3 ~a:[ a_class [ "heading-3" ] ] [ txt (session |> to_title) ]
-          ; Partials.overview_list
-              context
-              experiment.Experiment.id
-              session
-              assignments
+          ; overview_list context experiment.Experiment.id session assignments
           ])
       assignments
     |> div ~a:[ a_class [ "stack-lg" ] ]
+  ;;
+end
+
+let list experiment (Pool_context.{ language; _ } as context) assignments =
+  let html =
+    div
+      [ p
+          [ a
+              ~a:
+                [ a_href
+                    (assignments_path experiment.Experiment.id
+                    |> Format.asprintf "%s/deleted"
+                    |> Sihl.Web.externalize_path)
+                ]
+              [ txt
+                  Pool_common.(
+                    Utils.text_to_string language I18n.DeletedAssignments)
+              ]
+          ]
+      ; Partials.grouped_overview_lists context experiment assignments
+      ]
   in
   Page_admin_experiments.experiment_layout
     ~hint:Pool_common.I18n.ExperimentAssignment
@@ -135,5 +166,29 @@ let list assignments experiment (Pool_context.{ language; _ } as context) =
     (Page_admin_experiments.NavLink Pool_common.I18n.Assignments)
     experiment
     ~active:Pool_common.I18n.Assignments
+    html
+;;
+
+let marked_as_deleted
+  experiment
+  (Pool_context.{ language; _ } as context)
+  assignments
+  =
+  let html =
+    let notification =
+      let open Pool_common in
+      [ I18n.AssignmentsMarkedAsClosed |> Utils.hint_to_string language |> txt ]
+      |> div
+      |> CCList.pure
+      |> Component.Notification.notification language `Warning
+    in
+    let list = Partials.grouped_overview_lists context experiment assignments in
+    div ~a:[ a_class [ "stack-lg" ] ] [ notification; list ]
+  in
+  Page_admin_experiments.experiment_layout
+    ~hint:Pool_common.I18n.ExperimentAssignment
+    language
+    (Page_admin_experiments.I18n Pool_common.I18n.DeletedAssignments)
+    experiment
     html
 ;;

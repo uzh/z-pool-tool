@@ -107,6 +107,7 @@ end = struct
     let open CCResult in
     Logs.info ~src (fun m -> m "Handle command Cancel" ~tags);
     let* () = Session.assignments_cancelable session in
+    let* () = Assignment.is_cancellable assignment in
     Ok
       [ Assignment.Canceled assignment |> Pool_event.assignment
       ; Contact.NumAssignmentsDecreasedBy (assignment.Assignment.contact, 1)
@@ -155,9 +156,10 @@ end = struct
         >>= fun events ->
         participation
         |> validate_participation
-        >|= fun ((assignment : Assignment.t), showup, participated) ->
-        let contact_event =
+        >>= fun ((assignment : Assignment.t), showup, participated) ->
+        let* contact_event =
           let open Contact in
+          let* () = Assignment.attendance_settable assignment in
           let update =
             { show_up = ShowUp.value showup
             ; participated = Participated.value participated
@@ -165,12 +167,14 @@ end = struct
           in
           SessionParticipationSet (assignment.contact, update)
           |> Pool_event.contact
+          |> CCResult.return
         in
         events
         @ [ Assignment.AttendanceSet (assignment, showup, participated)
             |> Pool_event.assignment
           ; contact_event
-          ])
+          ]
+        |> CCResult.return)
       (Ok [ Closed session |> Pool_event.session ])
       command
   ;;
@@ -241,7 +245,6 @@ end = struct
   ;;
 end
 
-(* TODO: under which circumstances should an assignment be maked_as_deleted *)
 module MarkAsDeleted : sig
   include Common.CommandSig with type t = Assignment.t
 
@@ -254,6 +257,7 @@ end = struct
     =
     let open CCResult in
     Logs.info ~src (fun m -> m "Handle command MarkAsDeleted" ~tags);
+    let* () = Assignment.is_deletable assignment in
     let mark_as_deleted =
       Assignment.MarkedAsDeleted assignment |> Pool_event.assignment
     in

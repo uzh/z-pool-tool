@@ -4,7 +4,7 @@ module Field = Pool_common.Message.Field
 
 let create_layout req = General.create_tenant_layout req
 
-let index req =
+let list ?(marked_as_deleted = false) req =
   let open Utils.Lwt_result.Infix in
   let id =
     let open Pool_common.Message.Field in
@@ -22,22 +22,41 @@ let index req =
          >|+ CCList.flat_map (fun (session, follow_ups) ->
                session :: follow_ups)
        in
-       let* assignments =
-         Lwt_list.map_s
-           (fun session ->
-             let* assignments =
-               Assignment.find_by_session database_label session.Session.id
-             in
-             Lwt_result.return (session, assignments))
-           sessions
-         ||> CCList.all_ok
+       let* html =
+         match marked_as_deleted with
+         | false ->
+           Lwt_list.map_s
+             (fun session ->
+               let* assignments =
+                 Assignment.find_by_session database_label session.Session.id
+               in
+               Lwt_result.return (session, assignments))
+             sessions
+           ||> CCList.all_ok
+           >|+ Page.Admin.Assignment.list experiment context
+         | true ->
+           Lwt_list.fold_left_s
+             (fun res session ->
+               res
+               |> Lwt_result.lift
+               >>= fun sessions ->
+               Assignment.find_deleted_by_session
+                 database_label
+                 session.Session.id
+               >|+ function
+               | [] -> sessions
+               | assignments -> sessions @ [ session, assignments ])
+             (Ok [])
+             sessions
+           >|+ Page.Admin.Assignment.marked_as_deleted experiment context
        in
-       Page.Admin.Assignment.list assignments experiment context
-       |> create_layout req context
-       >|+ Sihl.Web.Response.of_html
+       html |> create_layout req context >|+ Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path req
 ;;
+
+let index req = list req
+let deleted req = list ~marked_as_deleted:true req
 
 let cancel req =
   let open Utils.Lwt_result.Infix in
@@ -116,6 +135,7 @@ let mark_as_deleted req =
 
 module Access : sig
   val index : Rock.Middleware.t
+  val deleted : Rock.Middleware.t
   val cancel : Rock.Middleware.t
   val mark_as_deleted : Rock.Middleware.t
 end = struct
@@ -126,6 +146,11 @@ end = struct
   ;;
 
   let index =
+    Middleware.Guardian.validate_admin_entity
+      [ `Read, `TargetEntity `Assignment ]
+  ;;
+
+  let deleted =
     Middleware.Guardian.validate_admin_entity
       [ `Read, `TargetEntity `Assignment ]
   ;;

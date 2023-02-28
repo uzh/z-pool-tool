@@ -373,6 +373,7 @@ module Admin = struct
           ]
         in
         [ get "" ~middlewares:[ Access.index ] index
+        ; get "deleted" ~middlewares:[ Access.deleted ] deleted
         ; choose ~scope:(Assignment |> url_key) specific
         ]
       in

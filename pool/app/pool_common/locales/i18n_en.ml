@@ -9,6 +9,7 @@ let to_string = function
      your profile."
   | DashboardProfileCompletionTitle -> "Profile completion"
   | DashboardTitle -> "Dashboard"
+  | DeletedAssignments -> "Deleted assignments"
   | DontHaveAnAccount -> "Don't have an account?"
   | EmailConfirmationNote ->
     "Please check your emails and confirm your address first."
@@ -132,6 +133,10 @@ let rec hint_to_string = function
      experiment."
   | AssignContactFromWaitingList ->
     "Select the session to which you want to assign the contact."
+  | AssignmentsMarkedAsClosed ->
+    "These assignments have been marked as deleted. Provided that the contacts \
+     still meet the experiment criteria, they can register for a sessions \
+     again."
   | ContactOnWaitingList ->
     "You are on the waiting list. The recruitment team will assign you to a \
      session."

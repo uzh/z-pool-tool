@@ -5,6 +5,7 @@ type t =
   | DashboardProfileCompletionText
   | DashboardProfileCompletionTitle
   | DashboardTitle
+  | DeletedAssignments
   | DontHaveAnAccount
   | EmailConfirmationNote
   | EmailConfirmationTitle
@@ -97,6 +98,7 @@ type nav_link =
 type hint =
   | AllowUninvitedSignup
   | AssignContactFromWaitingList
+  | AssignmentsMarkedAsClosed
   | ContactOnWaitingList
   | ContactProfileVisibleOverride
   | CustomFieldAdminInputOnly
