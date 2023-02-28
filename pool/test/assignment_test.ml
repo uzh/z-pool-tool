@@ -285,3 +285,53 @@ let assign_contact_from_waiting_list_to_disabled_experiment () =
   let expected = Error Pool_common.Message.(RegistrationDisabled) in
   Test_utils.check_result expected events
 ;;
+
+let assign_to_session_with_follow_ups () =
+  let { session; experiment; contact } = assignment_data () in
+  let follow_ups =
+    let base =
+      Test_utils.Model.(create_public_session ~start:(in_an_hour ())) ()
+    in
+    Session.Public.
+      { base with
+        id = Pool_common.Id.create ()
+      ; follow_up_to = Some session.Session.Public.id
+      }
+    |> CCList.return
+  in
+  let experiment = experiment |> Model.experiment_to_public_experiment in
+  let events =
+    let command =
+      AssignmentCommand.Create.
+        { contact
+        ; session
+        ; waiting_list = None
+        ; experiment
+        ; follow_ups = Some follow_ups
+        }
+    in
+    AssignmentCommand.Create.handle command (confirmation_email contact) false
+  in
+  let expected =
+    let session_list = session :: follow_ups in
+    let create_events =
+      session_list
+      |> CCList.map (fun session ->
+           let create =
+             Assignment.{ contact; session_id = session.Session.Public.id }
+           in
+           Assignment.Created create |> Pool_event.assignment)
+    in
+    let increase_num_events =
+      let open CCList in
+      range 1 (length session_list)
+      |> map (fun _ ->
+           Contact.NumAssignmentsIncreased contact |> Pool_event.contact)
+    in
+    let email_event =
+      [ Email.Sent (confirmation_email contact) |> Pool_event.email ]
+    in
+    create_events @ increase_num_events @ email_event |> CCResult.return
+  in
+  Test_utils.check_result expected events
+;;

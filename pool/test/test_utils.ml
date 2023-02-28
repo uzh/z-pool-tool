@@ -321,7 +321,7 @@ module Model = struct
     }
   ;;
 
-  let create_public_session () =
+  let create_public_session ?start () =
     let Session.
           { id
           ; follow_up_to
@@ -337,7 +337,7 @@ module Model = struct
           ; _
           }
       =
-      create_session ()
+      create_session ?start ()
     in
     Session.Public.
       { id
