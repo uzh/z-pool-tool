@@ -714,6 +714,24 @@ let close_valid_with_assignments () =
   check_result expected res
 ;;
 
+let close_with_deleted_assignment () =
+  let session = Test_utils.Model.(create_session ~start:(an_hour_ago ())) () in
+  let command =
+    let open Assignment in
+    let base = Test_utils.Model.create_assignment () in
+    let assignment =
+      { base with marked_as_deleted = MarkedAsDeleted.create true }
+    in
+    let show_up = ShowUp.create true in
+    let participated = Participated.create true in
+    assignment, show_up, participated
+  in
+  let res =
+    Cqrs_command.Assignment_command.SetAttendance.handle session [ command ]
+  in
+  check_result (Error Pool_common.Message.(IsMarkedAsDeleted Field.Assignment)) res
+;;
+
 let validate_invalid_participation () =
   let open Cqrs_command.Assignment_command.SetAttendance in
   let open Assignment in

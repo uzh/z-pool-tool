@@ -359,3 +359,17 @@ let marked_canceled_as_deleted () =
   in
   Test_utils.check_result expected events
 ;;
+
+let cancel_deleted_assignment () =
+  let session = Model.(create_session ~start:(an_hour_ago ()) ()) in
+  let assignment = Model.create_assignment () in
+  let assignment =
+    Assignment.
+      { assignment with marked_as_deleted = MarkedAsDeleted.create true }
+  in
+  let events = AssignmentCommand.Cancel.handle (assignment, session) in
+  let expected =
+    Error Pool_common.Message.(IsMarkedAsDeleted Field.Assignment)
+  in
+  Test_utils.check_result expected events
+;;

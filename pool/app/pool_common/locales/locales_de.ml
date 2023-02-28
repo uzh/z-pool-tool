@@ -256,11 +256,6 @@ let rec error_to_string = function
       "' in allen Sprachen an."
   | AlreadyInPast ->
     "Mindestens der Startzeitpunkt liegt bereits in der Vergangenheit."
-  | AlreadyMarkedAsDeleted field ->
-    field_message
-      ""
-      (field |> field_to_string |> CCString.trim)
-      "wurde bereits als gelöscht markiert."
   | AlreadySignedUpForExperiment ->
     "Sie haben sich für dieses Experiment bereits angemeldet."
   | AlreadyPublished field ->
@@ -336,6 +331,11 @@ let rec error_to_string = function
   | InvalidJson exn -> Format.asprintf "Ungültiges Json: %s" exn
   | InvalidOptionSelected -> "Ungültige Option ausgewählt."
   | InvalidHtmxRequest -> "Ungültige Anfrage."
+  | IsMarkedAsDeleted field ->
+    field_message
+      ""
+      (field |> field_to_string |> CCString.trim)
+      "wurde als gelöscht markiert."
   | LoginProvideDetails -> "Bitte Email Adresse und Passwort eintragen."
   | MeantimeUpdate field ->
     field_message

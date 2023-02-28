@@ -189,8 +189,8 @@ module Sql = struct
         $5,
         $6,
         $7,
-        $8,
-        $9
+        $9,
+        $10
       )
     |sql}
     |> RepoEntity.t ->. Caqti_type.unit

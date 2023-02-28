@@ -250,7 +250,6 @@ type error =
   | AllLanguagesRequired of Field.t
   | AlreadyInPast
   | AlreadyInvitedToExperiment of string list
-  | AlreadyMarkedAsDeleted of Field.t
   | AlreadyPublished of Field.t
   | AlreadySignedUpForExperiment
   | AlreadyStarted
@@ -283,6 +282,7 @@ type error =
   | InvalidJson of string
   | InvalidHtmxRequest
   | InvalidOptionSelected
+  | IsMarkedAsDeleted of Field.t
   | LoginProvideDetails
   | MeantimeUpdate of Field.t
   | NegativeAmount

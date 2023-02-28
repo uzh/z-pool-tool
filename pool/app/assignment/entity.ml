@@ -77,7 +77,7 @@ let create
 let is_not_deleted { marked_as_deleted; _ } =
   if not marked_as_deleted
   then Ok ()
-  else Error Pool_common.Message.(AlreadyMarkedAsDeleted Field.Assignment)
+  else Error Pool_common.Message.(IsMarkedAsDeleted Field.Assignment)
 ;;
 
 let is_not_canceled { canceled_at; _ } =
