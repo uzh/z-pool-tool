@@ -42,12 +42,11 @@ module Partials = struct
       Session.assignments_cancelable session |> CCResult.is_ok && deletable m
     in
     let action assignment suffix =
-      experiment_id
-      |> assignments_path
-      |> Format.asprintf
-           "%s/%s/%s"
-           (assignment.Assignment.id |> Pool_common.Id.value)
-           suffix
+      Format.asprintf
+        "%s/%s/%s"
+        (experiment_id |> assignments_path)
+        (assignment.Assignment.id |> Pool_common.Id.value)
+        suffix
       |> Sihl.Web.externalize_path
     in
     let button_form suffix confirmable control icon assignment =
