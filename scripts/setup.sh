@@ -20,7 +20,7 @@ opam pin add -yn sihl-storage $repo_sihl
 opam pin add -yn sihl-token $repo_sihl
 opam pin add -yn sihl-user $repo_sihl
 opam pin add -yn conformist $repo_oxi/conformist.git
-opam pin add -yn letters $repo_oxi/letters.git#e41e1a73aa70e6f8e964f94f2e7d1a26093ce436
+opam pin add -yn letters $repo_oxi/letters.git#35f7594d15e3e670a5b99c8f6f75248bad9f7f85
 
 # pin custom libraries
 opam pin add -yn canary $repo_uzh/canary.git
