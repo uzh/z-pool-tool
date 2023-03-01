@@ -168,6 +168,7 @@ module Field = struct
     | RandomOrder [@name "random_order"] [@printer go "random_order"]
     | Rate [@name "rate"] [@printer go "rate"]
     | Reason [@name "reason"] [@printer go "reason"]
+    | Redirect [@name "redirect"] [@printer go "redirect"]
     | RegistrationDisabled [@name "registration_disabled"]
         [@printer go "registration_disabled"]
     | Required [@name "required"] [@printer go "required"]

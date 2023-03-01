@@ -133,6 +133,7 @@ let rec field_to_string =
   | RandomOrder -> "Wähle die Kontakte in zufälliger Reihenfolge."
   | Rate -> "Höchstrate"
   | Reason -> "Grund"
+  | Redirect -> "Weiterleitung"
   | RegistrationDisabled -> "Registrierung deaktiviert"
   | Required -> "Benötigt"
   | ResentAt -> "Erneut verschickt"

@@ -93,7 +93,12 @@ let is_deletable m =
   Ok ()
 ;;
 
-let is_cancellable = is_deletable
+let is_cancellable m =
+  let open CCResult in
+  let* () = is_deletable m in
+  let* () = is_not_canceled m in
+  Ok ()
+;;
 
 let attendance_settable m =
   let open CCResult in

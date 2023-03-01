@@ -308,11 +308,11 @@ let confirmable_to_string confirmable =
      , "publish"
      , Some "You will not be able to delete it field anymore." )
    | MarkAssignmentAsDeleted ->
-     ( Format.asprintf
-         "%s as deleted"
-         (Locales_en.field_to_string Entity_message.Field.Assignment)
+     ( "assignment as deleted"
      , "mark"
-     , None )
+     , Some
+         "Assignments to follow-up sessions will be marked as deleted as well."
+     )
    | PublisCustomFieldOption ->
      "option", "publish", Some "You will not be able to delete the it anymore."
    | StopMailing -> "mailing", "stop", None)

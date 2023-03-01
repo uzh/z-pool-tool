@@ -329,6 +329,18 @@ module Admin = struct
                 (label_specific new_session_reminder new_session_reminder_post)
             ]
           in
+          let assignments =
+            let open Experiments.Assignment in
+            let specific =
+              [ post "/cancel" ~middlewares:[ Access.cancel ] cancel
+              ; post
+                  "/mark-as-deleted"
+                  ~middlewares:[ Access.mark_as_deleted ]
+                  mark_as_deleted
+              ]
+            in
+            [ choose ~scope:(Assignment |> url_key) specific ]
+          in
           [ get "" ~middlewares:[ Access.read ] show
           ; post "" ~middlewares:[ Access.update ] update
           ; get "/edit" ~middlewares:[ Access.update ] edit
@@ -341,6 +353,7 @@ module Admin = struct
           ; post "/reschedule" ~middlewares:[ Access.reschedule ] reschedule
           ; get "/close" ~middlewares:[ Access.close ] close
           ; post "/close" ~middlewares:[ Access.close ] close_post
+          ; choose ~scope:(add_human_field Assignments) assignments
           ; choose ~scope:(add_human_field MessageTemplate) message_templates
           ]
         in
@@ -364,17 +377,8 @@ module Admin = struct
       in
       let assignments =
         let open Experiments.Assignment in
-        let specific =
-          [ post "/cancel" ~middlewares:[ Access.cancel ] cancel
-          ; post
-              "/mark-as-deleted"
-              ~middlewares:[ Access.mark_as_deleted ]
-              mark_as_deleted
-          ]
-        in
         [ get "" ~middlewares:[ Access.index ] index
         ; get "deleted" ~middlewares:[ Access.deleted ] deleted
-        ; choose ~scope:(Assignment |> url_key) specific
         ]
       in
       let mailings =

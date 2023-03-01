@@ -316,11 +316,10 @@ let confirmable_to_string confirmable =
    | DeleteMailing -> "den Versand", "löschen", None
    | DeleteSession -> "die Session", "löschen", None
    | MarkAssignmentAsDeleted ->
-     ( Format.asprintf
-         "die %s"
-         (Locales_de.field_to_string Entity_message.Field.Assignment)
+     ( "die Anmeldung"
      , "als gelöscht markieren"
-     , None )
+     , Some
+         "Anmeldungen an Folgesession werden ebenfalls als gelöscht markiert." )
    | PublisCustomField ->
      ( "das Feld und alle dazugehörigen Optionen"
      , "publizieren"

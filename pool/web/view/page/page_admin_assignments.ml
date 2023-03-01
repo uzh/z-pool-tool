@@ -7,6 +7,31 @@ let assignments_path experiment_id =
     (experiment_id |> Experiment.Id.value)
 ;;
 
+let assignment_specific_path experiment_id session assignment =
+  let open Pool_common in
+  Format.asprintf
+    "/admin/experiments/%s/sessions/%s/%s/%s/%s"
+    (experiment_id |> Experiment.Id.value)
+    (session.Session.id |> Id.value)
+    Message.Field.(human_url Assignments)
+    (assignment.Assignment.id |> Id.value)
+;;
+
+type assignment_redirect =
+  | Assignments
+  | DeletedAssignments
+  | Session
+[@@deriving show { with_path = false }, yojson]
+
+let read_assignment_redirect m =
+  m
+  |> Format.asprintf "[\"%s\"]"
+  |> Yojson.Safe.from_string
+  |> fun json ->
+  try Some (assignment_redirect_of_yojson json) with
+  | _ -> None
+;;
+
 module Partials = struct
   open Assignment
 
@@ -32,6 +57,7 @@ module Partials = struct
   ;;
 
   let overview_list
+    redirect
     Pool_context.{ language; csrf; _ }
     experiment_id
     session
@@ -39,17 +65,22 @@ module Partials = struct
     =
     let deletable m = m |> Assignment.is_deletable |> CCResult.is_ok in
     let cancelable m =
-      Session.assignments_cancelable session |> CCResult.is_ok && deletable m
+      Session.assignments_cancelable session |> CCResult.is_ok
+      && Assignment.is_cancellable m |> CCResult.is_ok
     in
     let action assignment suffix =
-      Format.asprintf
-        "%s/%s/%s"
-        (experiment_id |> assignments_path)
-        (assignment.Assignment.id |> Pool_common.Id.value)
-        suffix
+      assignment_specific_path experiment_id session assignment suffix
       |> Sihl.Web.externalize_path
     in
     let button_form suffix confirmable control icon assignment =
+      let hidden_redirect_input =
+        let open Pool_common.Message in
+        input_element
+          ~value:(show_assignment_redirect redirect)
+          language
+          `Hidden
+          Field.Redirect
+      in
       form
         ~a:
           [ a_action (action assignment suffix)
@@ -59,6 +90,7 @@ module Partials = struct
               Pool_common.(Utils.confirmable_to_string language confirmable)
           ]
         [ csrf_element csrf ()
+        ; hidden_redirect_input
         ; submit_element language control ~submit_type:`Error ~has_icon:icon ()
         ]
     in
@@ -72,6 +104,8 @@ module Partials = struct
     in
     let mark_as_deleted =
       let open Pool_common in
+      (* TODO[timhub]: Add hint, only if this assignment has a follow-up
+         assignment? Or only if this session has follow-up session *)
       button_form
         "mark-as-deleted"
         I18n.MarkAssignmentAsDeleted
@@ -111,6 +145,7 @@ module Partials = struct
   ;;
 
   let grouped_overview_lists
+    redirect
     (Pool_context.{ language; _ } as context)
     experiment
     assignments
@@ -133,7 +168,12 @@ module Partials = struct
         div
           ~a:attrs
           [ h3 ~a:[ a_class [ "heading-3" ] ] [ txt (session |> to_title) ]
-          ; overview_list context experiment.Experiment.id session assignments
+          ; overview_list
+              redirect
+              context
+              experiment.Experiment.id
+              session
+              assignments
           ])
       assignments
     |> div ~a:[ a_class [ "stack-lg" ] ]
@@ -156,7 +196,11 @@ let list experiment (Pool_context.{ language; _ } as context) assignments =
                     Utils.text_to_string language I18n.DeletedAssignments)
               ]
           ]
-      ; Partials.grouped_overview_lists context experiment assignments
+      ; Partials.grouped_overview_lists
+          Assignments
+          context
+          experiment
+          assignments
       ]
   in
   Page_admin_experiments.experiment_layout
@@ -181,7 +225,13 @@ let marked_as_deleted
       |> CCList.pure
       |> Component.Notification.notification language `Warning
     in
-    let list = Partials.grouped_overview_lists context experiment assignments in
+    let list =
+      Partials.grouped_overview_lists
+        DeletedAssignments
+        context
+        experiment
+        assignments
+    in
     div ~a:[ a_class [ "stack-lg" ] ] [ notification; list ]
   in
   Page_admin_experiments.experiment_layout

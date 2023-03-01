@@ -134,6 +134,7 @@ let rec field_to_string =
   | RandomOrder -> "select the contacts in random order."
   | Rate -> "rate limit"
   | Reason -> "reason"
+  | Redirect -> "redirect"
   | RegistrationDisabled -> "registration disabled"
   | Required -> "required"
   | ResentAt -> "resent at"
