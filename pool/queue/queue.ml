@@ -62,7 +62,11 @@ let work_job
   ({ input; tries; ctx; _ } as job_instance : instance)
   =
   let database_label =
-    CCList.assq "pool" ctx |> Pool_database.Label.of_string
+    let open Pool_common in
+    CCList.assoc_opt ~eq:( = ) "pool" ctx
+    |> CCOption.to_result Message.(Undefined Field.DatabaseLabel)
+    |> Utils.get_or_failwith
+    |> Pool_database.Label.of_string
   in
   let now = Ptime_clock.now () in
   if should_run job_instance now

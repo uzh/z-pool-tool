@@ -4,6 +4,10 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/pool/tree/HEAD)
 
+### Fixed
+
+- queue worker service context parsing
+
 ## [0.1.2](https://github.com/uzh/pool/tree/0.1.2) - 2023-02-27
 
 ### Added
