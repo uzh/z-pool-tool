@@ -4,6 +4,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/pool/tree/HEAD)
 
+## [0.1.3](https://github.com/uzh/pool/tree/0.1.3) - 2023-03-01
+
 ### Added
 
 - pagination, search and sort functionality for lists
