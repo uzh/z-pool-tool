@@ -327,4 +327,6 @@ module Utils : sig
   val handle_ppx_yojson_err
     :  exn * Yojson.Safe.t
     -> ('a, Entity_message.error) result
+
+  val handle_json_parse_err : string -> ('a, Entity_message.error) result
 end

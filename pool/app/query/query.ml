@@ -30,11 +30,14 @@ let from_request
     find Query.field >|= Query.of_string >|= fun query -> create query columns
   in
   let sort =
-    let open Pool_common.Message in
+    let open Pool_common in
+    let open Message in
     let order =
       try find Field.SortOrder >|= Sort.SortOrder.read with
-      | Yojson.Json_error _
-      | Ppx_yojson_conv_lib.Yojson_conv.Of_yojson_error (_, _) -> None
+      | Yojson.Json_error exn ->
+        Utils.handle_json_parse_err exn |> CCFun.const None
+      | Ppx_yojson_conv_lib.Yojson_conv.Of_yojson_error (exn, yojson) ->
+        Utils.handle_ppx_yojson_err (exn, yojson) |> CCFun.const None
     in
     sortable_by
     >>= fun columns ->

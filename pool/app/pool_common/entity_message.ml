@@ -276,6 +276,7 @@ type error =
   | HtmxVersionNotFound of string
   | Invalid of Field.t
   | InvalidEmailSuffix of string list
+  | InvalidJson of string
   | InvalidHtmxRequest
   | InvalidOptionSelected
   | LoginProvideDetails

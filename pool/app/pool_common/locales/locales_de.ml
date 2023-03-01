@@ -324,6 +324,7 @@ let rec error_to_string = function
       "%s Die folgenden E-Mail-Endungen sind erlaubt: %s"
       (error_to_string (Invalid Field.EmailSuffix))
       (CCString.concat ", " suffixes)
+  | InvalidJson exn -> Format.asprintf "Ungültiges Json: %s" exn
   | InvalidOptionSelected -> "Ungültige Option ausgewählt."
   | InvalidHtmxRequest -> "Ungültige Anfrage."
   | LoginProvideDetails -> "Bitte Email Adresse und Passwort eintragen."
