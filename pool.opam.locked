@@ -36,10 +36,10 @@ depends: [
   "cohttp-lwt" {= "5.0.0"}
   "cohttp-lwt-unix" {= "5.0.0"}
   "coin" {= "0.1.4"}
-  "colombe" {= "0.7.0"}
-  "conduit" {= "6.1.0"}
-  "conduit-lwt" {= "6.1.0"}
-  "conduit-lwt-unix" {= "6.1.0"}
+  "colombe" {= "0.8.0"}
+  "conduit" {= "6.2.0"}
+  "conduit-lwt" {= "6.2.0"}
+  "conduit-lwt-unix" {= "6.2.0"}
   "conf-gcc" {= "1.0"}
   "conf-gmp" {= "4"}
   "conf-gmp-powm-sec" {= "3"}
@@ -59,9 +59,9 @@ depends: [
   "ctypes" {= "0.20.1"}
   "digestif" {= "1.1.3"}
   "domain-name" {= "0.4.0"}
-  "dune" {= "3.6.2"}
-  "dune-build-info" {= "3.6.2"}
-  "dune-configurator" {= "3.6.2"}
+  "dune" {= "3.7.0"}
+  "dune-build-info" {= "3.7.0"}
+  "dune-configurator" {= "3.7.0"}
   "duration" {= "0.2.1"}
   "either" {= "1.0.0"}
   "emile" {= "1.1"}
@@ -155,7 +155,7 @@ depends: [
   "rosetta" {= "0.3.0"}
   "rresult" {= "0.7.0"}
   "safepass" {= "3.1"}
-  "sendmail" {= "0.7.0"}
+  "sendmail" {= "0.8.0"}
   "seq" {= "base"}
   "sexplib" {= "v0.14.0"}
   "sexplib0" {= "v0.14.0"}
@@ -238,7 +238,7 @@ pin-depends: [
   ["canary.0.0.1" "git+https://github.com/uzh/canary.git"]
   [
     "letters.0.3.2"
-    "git+https://github.com/oxidizing/letters.git#e41e1a73aa70e6f8e964f94f2e7d1a26093ce436"
+    "git+https://github.com/oxidizing/letters.git#35f7594d15e3e670a5b99c8f6f75248bad9f7f85"
   ]
   [
     "sihl.4.0.0"
