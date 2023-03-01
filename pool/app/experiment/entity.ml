@@ -143,3 +143,17 @@ let boolean_fields =
   Pool_common.Message.Field.
     [ DirectRegistrationDisabled; RegistrationDisabled; AllowUninvitedSignup ]
 ;;
+
+let searchable_by =
+  Pool_common.Message.
+    [ Field.Title, "pool_experiments.title"
+    ; Field.PublicTitle, "pool_experiments.public_title"
+    ]
+  |> Query.Column.create_list
+;;
+
+let sortable_by =
+  searchable_by
+  @ (Pool_common.Message.[ Field.CreatedAt, "pool_experiments.created_at" ]
+    |> Query.Column.create_list)
+;;

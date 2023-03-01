@@ -90,6 +90,7 @@ let rec field_to_string =
   | Lastname -> "Nachname"
   | LastRunAt -> "Letzter Durchlauf"
   | LeadTime -> "Vorlaufzeit"
+  | Limit -> "Limit"
   | Link -> "Link"
   | Location -> "Lokalität"
   | LogoType -> "Logo Typ"
@@ -105,6 +106,7 @@ let rec field_to_string =
   | Name -> "Name"
   | NewPassword -> "Neues Passwort"
   | NextRunAt -> "Nächster Versuch um"
+  | Offset -> "Offset"
   | Operator -> "Operator"
   | Operators -> "Operatoren"
   | Order -> "Reihenfolge"
@@ -112,6 +114,7 @@ let rec field_to_string =
   | OverriddenValue -> "Überschriebene Kontakt-Antwort"
   | Override -> "Überschreiben"
   | Page -> "Seite"
+  | PageCount -> "Anzahl Seiten"
   | Participant | Participants -> "Teilnehmer"
   | ParticipantCount -> "Teilnehmer"
   | Participated -> "teilgenommen"
@@ -137,6 +140,7 @@ let rec field_to_string =
   | Root -> "Root"
   | ScheduledTime -> "Geplante Zeit"
   | ScheduledTimeSpan -> "Wiederholungs Interval"
+  | Search -> "Suche"
   | SentAt -> "Verschickt am"
   | Session -> "Session"
   | Sessions -> "Sessions"
@@ -320,6 +324,7 @@ let rec error_to_string = function
       "%s Die folgenden E-Mail-Endungen sind erlaubt: %s"
       (error_to_string (Invalid Field.EmailSuffix))
       (CCString.concat ", " suffixes)
+  | InvalidJson exn -> Format.asprintf "Ungültiges Json: %s" exn
   | InvalidOptionSelected -> "Ungültige Option ausgewählt."
   | InvalidHtmxRequest -> "Ungültige Anfrage."
   | LoginProvideDetails -> "Bitte Email Adresse und Passwort eintragen."
@@ -432,6 +437,7 @@ let control_to_string = function
   | Add field -> format_submit "hinzufügen" field
   | AddToWaitingList -> "Ich möchte mich zur Warteliste hinzufügen"
   | Ascending -> "aufsteigend"
+  | Apply -> "anwenden"
   | Assign field -> format_submit "zuweisen" field
   | Back -> format_submit "zurück" None
   | Cancel field -> format_submit "absagen" field
@@ -450,7 +456,9 @@ let control_to_string = function
   | Login -> format_submit "login" None
   | Manage field -> format_submit "manage" (Some field)
   | More -> "mehr"
+  | NextPage -> "weiter"
   | PleaseSelect -> "bitte wählen"
+  | PreviousPage -> "zurück"
   | Publish field -> format_submit "veröffentlichen" field
   | Register -> format_submit "einschreiben" None
   | RemoveFromWaitingList -> "Ich möchte mich von der Warteliste austragen"
@@ -461,6 +469,7 @@ let control_to_string = function
       (field_to_string Field.PlainText)
       (field_to_string Field.EmailText)
   | Resend field -> format_submit "erneut senden" field
+  | Reset -> "zurücksetzen"
   | Save field -> format_submit "speichern" field
   | SelectAll field -> format_submit "alle auswählen" field
   | SelectFilePlaceholder -> format_submit "datei auswählen.." None

@@ -115,6 +115,7 @@ module Field = struct
     | Lastname [@name "lastname"] [@printer go "lastname"]
     | LastRunAt [@name "last_run_at"] [@printer go "last_run_at"]
     | LeadTime [@name "lead_time"] [@printer go "lead_time"]
+    | Limit [@name "limit"] [@printer go "limit"]
     | Link [@name "link"] [@printer go "link"]
     | Location [@name "location"] [@printer go "location"]
     | LogoType [@name "logo_type"] [@printer go "logo_type"]
@@ -135,6 +136,7 @@ module Field = struct
     | NewPassword [@name "new_password"] [@printer go "new_password"]
         [@printer go "num_invitations"]
     | NextRunAt [@name "next_run_at"] [@printer go "next_run_at"]
+    | Offset [@name "offset"] [@printer go "offset"]
     | Operator [@name "operator"] [@printer go "operator"]
     | Operators [@name "operators"] [@printer go "operators"]
     | Order [@name "order"] [@printer go "order"]
@@ -143,6 +145,7 @@ module Field = struct
         [@printer go "overridden_value"]
     | Override [@name "override"] [@printer go "override"]
     | Page [@name "page"] [@printer go "page"]
+    | PageCount [@name "page_count"] [@printer go "page_count"]
     | Participant [@name "participant"] [@printer go "participant"]
     | ParticipantCount [@name "participant_count"]
         [@printer go "participant_count"]
@@ -173,6 +176,7 @@ module Field = struct
     | ScheduledTime [@name "scheduled_time"] [@printer go "scheduled_time"]
     | ScheduledTimeSpan [@name "scheduled_time_span"]
         [@printer go "scheduled_time_span"]
+    | Search [@name "search"] [@printer go "search"]
     | SentAt [@name "sent_at"] [@printer go "sent_at"]
     | Session [@name "session"] [@printer go "session"]
     | Sessions [@name "sessions"] [@printer go "sessions"]
@@ -272,6 +276,7 @@ type error =
   | HtmxVersionNotFound of string
   | Invalid of Field.t
   | InvalidEmailSuffix of string list
+  | InvalidJson of string
   | InvalidHtmxRequest
   | InvalidOptionSelected
   | LoginProvideDetails
@@ -383,6 +388,7 @@ type control =
   | Accept of Field.t option
   | Add of Field.t option
   | AddToWaitingList
+  | Apply
   | Ascending
   | Assign of Field.t option
   | Back
@@ -402,13 +408,16 @@ type control =
   | Login
   | Manage of Field.t
   | More
+  | NextPage
   | PleaseSelect
+  | PreviousPage
   | Publish of Field.t option
   | Register
   | RemoveFromWaitingList
   | Reschedule of Field.t option
   | Resend of Field.t option
   | ResetPlainText
+  | Reset
   | Save of Field.t option
   | SelectAll of Field.t option
   | SelectFilePlaceholder

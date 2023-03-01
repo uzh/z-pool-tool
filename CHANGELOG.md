@@ -4,6 +4,10 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/pool/tree/HEAD)
 
+### Added
+
+- pagination, search and sort functionality for lists
+
 ### Fixed
 
 - queue worker service context parsing

@@ -119,36 +119,44 @@ let message_templates_html
 ;;
 
 let index experiment_list Pool_context.{ language; _ } =
-  let thead =
-    Message.
-      [ Field.Title |> Table.field_to_txt language
-      ; link_as_button
-          ~style:`Success
-          ~icon:`Add
-          ~control:(language, Message.(Add (Some Field.Experiment)))
-          "/admin/experiments/create"
-      ]
-  in
-  let rows =
-    CCList.map
-      (fun (experiment : Experiment.t) ->
-        let open Experiment in
-        [ txt (Title.value experiment.title)
-        ; Format.asprintf
-            "/admin/experiments/%s"
-            (experiment.id |> Experiment.Id.value)
-          |> edit_link
-        ])
-      experiment_list
+  let experiment_table experiments =
+    let thead =
+      Message.
+        [ Field.Title |> Table.field_to_txt language
+        ; Field.PublicTitle |> Table.field_to_txt language
+        ; link_as_button
+            ~style:`Success
+            ~icon:`Add
+            ~control:(language, Message.(Add (Some Field.Experiment)))
+            "/admin/experiments/create"
+        ]
+    in
+    let rows =
+      CCList.map
+        (fun (experiment : Experiment.t) ->
+          let open Experiment in
+          [ txt (Title.value experiment.title)
+          ; txt (PublicTitle.value experiment.public_title)
+          ; Format.asprintf
+              "/admin/experiments/%s"
+              (experiment.id |> Experiment.Id.value)
+            |> edit_link
+          ])
+        experiments
+    in
+    Table.horizontal_table `Striped ~align_last_end:true ~thead rows
   in
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
     [ h1
         ~a:[ a_class [ "heading-1" ] ]
         [ txt (Utils.text_to_string language I18n.ExperimentListTitle) ]
-    ; div
-        ~a:[ a_class [ "stack" ] ]
-        [ Table.horizontal_table `Striped ~align_last_end:true ~thead rows ]
+    ; Component.List.create
+        language
+        experiment_table
+        Experiment.sortable_by
+        Experiment.searchable_by
+        experiment_list
     ]
 ;;
 
@@ -511,7 +519,15 @@ let sent_invitations
   invitations
   =
   let html =
-    Page_admin_invitations.Partials.list context experiment invitations
+    let invitation_table =
+      Page_admin_invitations.Partials.list context experiment
+    in
+    Component.List.create
+      language
+      invitation_table
+      Invitation.sortable_by
+      Invitation.searchable_by
+      invitations
   in
   experiment_layout
     language
@@ -521,9 +537,12 @@ let sent_invitations
     html
 ;;
 
-let waiting_list waiting_list experiment Pool_context.{ language; _ } =
+let waiting_list
+  ({ Waiting_list.ExperimentList.experiment; waiting_list_entries }, query)
+  Pool_context.{ language; _ }
+  =
   let open Waiting_list.ExperimentList in
-  let waiting_list_entries () =
+  let waiting_list_table waiting_list_entries =
     let thead =
       (Field.[ Name; Email; CreatedAt; Comment ] |> Table.fields_to_txt language)
       @ [ txt "" ]
@@ -544,13 +563,21 @@ let waiting_list waiting_list experiment Pool_context.{ language; _ } =
             |> HttpUtils.add_line_breaks
           ; Format.asprintf
               "/admin/experiments/%s/waiting-list/%s"
-              (waiting_list.experiment.Experiment.id |> Experiment.Id.value)
+              (experiment.Experiment.id |> Experiment.Id.value)
               (entry.id |> Id.value)
             |> edit_link
           ])
-        waiting_list.waiting_list_entries
+        waiting_list_entries
     in
     Table.horizontal_table `Striped ~align_last_end:true ~thead rows
+  in
+  let html =
+    Component.List.create
+      language
+      waiting_list_table
+      Waiting_list.sortable_by
+      Waiting_list.searchable_by
+      (waiting_list_entries, query)
   in
   experiment_layout
     ~hint:I18n.ExperimentWaitingList
@@ -558,7 +585,7 @@ let waiting_list waiting_list experiment Pool_context.{ language; _ } =
     (NavLink I18n.WaitingList)
     experiment
     ~active:I18n.WaitingList
-    (waiting_list_entries ())
+    html
 ;;
 
 let users

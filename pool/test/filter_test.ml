@@ -5,6 +5,16 @@ let contact_email_address = "jane.doe@email.com"
 let lang = Pool_common.Language.En
 let tenant = Tenant_test.Data.full_tenant
 
+let all_experiments () =
+  let open Utils.Lwt_result.Infix in
+  Experiment.find_all Test_utils.Data.database_label () ||> fst
+;;
+
+let first_experiment () =
+  let open Utils.Lwt_result.Infix in
+  all_experiments () ||> CCList.hd
+;;
+
 let allowed_email_suffixes =
   [ "mail.com" ]
   |> CCList.map Settings.EmailSuffix.create
@@ -306,9 +316,7 @@ let filter_contacts _ () =
   let%lwt () =
     let open Utils.Lwt_result.Infix in
     let%lwt contacts = TestContacts.all () in
-    let%lwt experiment =
-      Experiment.find_all Test_utils.Data.database_label () ||> CCList.hd
-    in
+    let%lwt experiment = first_experiment () in
     let%lwt () =
       (* Save field and answer with 3 *)
       CustomFieldData.(
@@ -349,9 +357,7 @@ let filter_by_email _ () =
   let%lwt () =
     let open Utils.Lwt_result.Infix in
     let%lwt contact = TestContacts.get_contact 0 in
-    let%lwt experiment =
-      Experiment.find_all Test_utils.Data.database_label () ||> CCList.hd
-    in
+    let%lwt experiment = first_experiment () in
     let filter =
       Filter.(
         create
@@ -485,7 +491,6 @@ let test_list_filter answer_index operator contact experiment expected =
 
 let filter_by_list_contains_all _ () =
   let%lwt () =
-    let open Utils.Lwt_result.Infix in
     let%lwt contact = TestContacts.get_contact 0 in
     let answer_index = [ 0; 1 ] in
     let%lwt () =
@@ -497,9 +502,7 @@ let filter_by_list_contains_all _ () =
       |> Lwt_list.iter_s
            (Pool_event.handle_event Test_utils.Data.database_label)
     in
-    let%lwt experiment =
-      Experiment.find_all Test_utils.Data.database_label () ||> CCList.hd
-    in
+    let%lwt experiment = first_experiment () in
     test_list_filter
       answer_index
       Filter.Operator.ContainsAll
@@ -512,12 +515,9 @@ let filter_by_list_contains_all _ () =
 
 let filter_by_list_contains_none _ () =
   let%lwt () =
-    let open Utils.Lwt_result.Infix in
     let%lwt contact = TestContacts.get_contact 0 in
     let answer_index = [ 1; 2 ] in
-    let%lwt experiment =
-      Experiment.find_all Test_utils.Data.database_label () ||> CCList.hd
-    in
+    let%lwt experiment = first_experiment () in
     test_list_filter
       answer_index
       Filter.Operator.ContainsNone
@@ -530,12 +530,9 @@ let filter_by_list_contains_none _ () =
 
 let filter_by_list_contains_some _ () =
   let%lwt () =
-    let open Utils.Lwt_result.Infix in
     let%lwt contact = TestContacts.get_contact 0 in
     let answer_index = [ 1; 2 ] in
-    let%lwt experiment =
-      Experiment.find_all Test_utils.Data.database_label () ||> CCList.hd
-    in
+    let%lwt experiment = first_experiment () in
     test_list_filter
       answer_index
       Filter.Operator.ContainsSome
@@ -559,9 +556,7 @@ let retrieve_fitleterd_and_ordered_contacts _ () =
     let find_contact = Seed.Contacts.find_contact_by_id pool in
     let%lwt contact_one = find_contact 11 in
     let%lwt contact_two = find_contact 12 in
-    let%lwt experiment =
-      Experiment.find_all Test_utils.Data.database_label () |> Lwt.map CCList.hd
-    in
+    let%lwt experiment = first_experiment () in
     let filter =
       let open Filter in
       Pred
@@ -659,8 +654,7 @@ let filter_with_admin_value _ () =
   let%lwt () =
     let open Utils.Lwt_result.Infix in
     let%lwt experiment_id =
-      Experiment.find_all Test_utils.Data.database_label ()
-      ||> CCList.hd
+      first_experiment ()
       ||> fun { Experiment.id; _ } -> id |> Experiment.Id.to_common
     in
     let%lwt contact = TestContacts.get_contact 0 in
@@ -724,8 +718,7 @@ let filter_ignore_admin_value _ () =
     let open CustomFieldData in
     let answer_value = 3 in
     let%lwt experiment_id =
-      Experiment.find_all Test_utils.Data.database_label ()
-      ||> CCList.hd
+      first_experiment ()
       ||> fun { Experiment.id; _ } -> id |> Experiment.Id.to_common
     in
     let%lwt contact = TestContacts.get_contact 0 in
@@ -757,7 +750,7 @@ let filter_by_experiment_participation _ () =
   let open Utils.Lwt_result.Infix in
   let hd = CCList.hd in
   let database_label = Test_utils.Data.database_label in
-  let%lwt all_experiments = Experiment.find_all database_label () in
+  let%lwt all_experiments = all_experiments () in
   let participated_experiment =
     CCList.nth all_experiments 0 |> Experiment.(fun exp -> exp.id)
   in

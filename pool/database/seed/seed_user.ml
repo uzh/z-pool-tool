@@ -85,7 +85,7 @@ let create_persons db_label n_persons =
   let sum = fold_left ( + ) 0 in
   let%lwt contacts =
     Contact.find_all db_label ()
-    ||> map (Contact.email_address %> User.EmailAddress.value)
+    ||> fst %> map (Contact.email_address %> User.EmailAddress.value)
   in
   let%lwt admins = Admin.find_all db_label () ||> map Admin.email in
   let flatten_filter_combine a b =
@@ -125,10 +125,12 @@ let create_persons db_label n_persons =
 
 let admins db_label =
   let open Utils.Lwt_result.Infix in
+  let open CCFun in
   let%lwt experimenter_roles =
     Experiment.find_all db_label ()
-    ||> CCList.map (fun { Experiment.id; _ } ->
-          `Experimenter (Guard.Uuid.target_of Experiment.Id.value id))
+    ||> fst
+        %> CCList.map (fun { Experiment.id; _ } ->
+             `Experimenter (Guard.Uuid.target_of Experiment.Id.value id))
   in
   let data =
     [ "The", "One", "admin@example.com", [ `Admin ] @ experimenter_roles

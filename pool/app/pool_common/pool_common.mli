@@ -131,6 +131,27 @@ module File : sig
   val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
 end
 
+module SortOrder : sig
+  type t =
+    | Ascending
+    | Descending
+
+  val equal : t -> t -> bool
+  val pp : Format.formatter -> t -> unit
+  val show : t -> string
+  val t_of_yojson : Yojson.Safe.t -> t
+  val yojson_of_t : t -> Yojson.Safe.t
+  val all : t list
+  val create : string -> (t, Message.error) result
+  val read : string -> t
+
+  val schema
+    :  unit
+    -> (Message.error, t) Pool_common_utils.PoolConformist.Field.t
+
+  val default : t
+end
+
 module Reminder : sig
   module LeadTime : sig
     type t
@@ -306,4 +327,6 @@ module Utils : sig
   val handle_ppx_yojson_err
     :  exn * Yojson.Safe.t
     -> ('a, Entity_message.error) result
+
+  val handle_json_parse_err : string -> ('a, Entity_message.error) result
 end

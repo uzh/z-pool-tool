@@ -18,7 +18,7 @@ let test_filter =
 ;;
 
 let filter pool =
-  let%lwt experiments = Experiment.find_all pool () in
+  let%lwt experiments, (_ : Query.t) = Experiment.find_all pool () in
   let filter_events, experiment_events =
     CCList.fold_left
       (fun (filter_events, experiment_events) experiment ->

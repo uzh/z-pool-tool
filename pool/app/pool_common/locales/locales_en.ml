@@ -90,6 +90,7 @@ let rec field_to_string =
   | Lastname -> "lastname"
   | LastRunAt -> "last run"
   | LeadTime -> "lead time"
+  | Limit -> "Limit"
   | Link -> "link"
   | Location -> "location"
   | LogoType -> "logo type"
@@ -105,6 +106,7 @@ let rec field_to_string =
   | Name -> "name"
   | NewPassword -> "new password"
   | NextRunAt -> "next run"
+  | Offset -> "offset"
   | Operator -> "operator"
   | Operators -> "operators"
   | Order -> "order"
@@ -112,6 +114,7 @@ let rec field_to_string =
   | OverriddenValue -> "overriden contact answer"
   | Override -> "override"
   | Page -> "page"
+  | PageCount -> "nr of pages"
   | Participant -> "participant"
   | ParticipantCount -> "participants"
   | Participants -> "participants"
@@ -138,6 +141,7 @@ let rec field_to_string =
   | Root -> "root"
   | ScheduledTime -> "scheduled time"
   | ScheduledTimeSpan -> "scheduled interval"
+  | Search -> "search"
   | SentAt -> "sent at"
   | Session -> "session"
   | Sessions -> "sessions"
@@ -304,6 +308,7 @@ let rec error_to_string = function
       "%s The following email suffixes are allowed: %s"
       (error_to_string (Invalid Field.EmailSuffix))
       (CCString.concat ", " suffixes)
+  | InvalidJson exn -> Format.asprintf "Invalid Json: %s" exn
   | InvalidOptionSelected -> "Invalid option selected."
   | InvalidHtmxRequest -> "Invalid request."
   | LoginProvideDetails -> "Please provide email and password"
@@ -399,6 +404,7 @@ let control_to_string = function
   | Add field -> format_submit "add" field
   | AddToWaitingList -> "Sign up for the waiting list"
   | Ascending -> format_submit "ascending" None
+  | Apply -> "apply"
   | Assign field -> format_submit "assign" field
   | Back -> format_submit "back" None
   | Cancel field -> format_submit "cancel" field
@@ -417,12 +423,15 @@ let control_to_string = function
   | Login -> format_submit "login" None
   | Manage field -> format_submit "manage" (Some field)
   | More -> format_submit "more" None
+  | NextPage -> "next"
   | PleaseSelect -> "please select"
+  | PreviousPage -> "previous"
   | Publish field -> format_submit "publish" field
   | Register -> format_submit "register" None
   | RemoveFromWaitingList -> "Remove from waiting list"
   | Reschedule field -> format_submit "reschedule" field
   | Resend field -> format_submit "resend" field
+  | Reset -> "reset"
   | ResetPlainText ->
     Format.asprintf
       "Reset %s to rich '%s'"

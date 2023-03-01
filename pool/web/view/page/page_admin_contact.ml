@@ -16,17 +16,28 @@ let contact_overview language contacts =
     |> Component.Table.fields_to_txt language)
     @ [ txt "" ]
   in
-  CCList.map
-    (fun contact ->
-      [ txt (email_address contact |> Pool_user.EmailAddress.value)
-      ; txt (fullname contact)
-      ; id contact
-        |> Pool_common.Id.value
-        |> Format.asprintf "/admin/contacts/%s"
-        |> Component.Input.edit_link
-      ])
+  let user_table contacts =
+    let rows =
+      CCList.map
+        (fun contact ->
+          [ txt (email_address contact |> Pool_user.EmailAddress.value)
+          ; txt (fullname contact)
+          ; id contact
+            |> Pool_common.Id.value
+            |> Format.asprintf "/admin/contacts/%s"
+            |> Component.Input.edit_link
+          ])
+        contacts
+    in
+    rows
+    |> Component.Table.horizontal_table `Striped ~align_last_end:true ~thead
+  in
+  Component.List.create
+    language
+    user_table
+    Contact.sortable_by
+    Contact.searchable_by
     contacts
-  |> Component.Table.horizontal_table `Striped ~align_last_end:true ~thead
 ;;
 
 let index Pool_context.{ language; _ } contacts =

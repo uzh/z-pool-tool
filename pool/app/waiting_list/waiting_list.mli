@@ -86,15 +86,19 @@ val user_is_enlisted
   -> bool Lwt.t
 
 val find_by_experiment
-  :  Pool_database.Label.t
+  :  ?query:Query.t
+  -> Pool_database.Label.t
   -> Experiment.Id.t
-  -> (ExperimentList.t, Pool_common.Message.error) Lwt_result.t
+  -> (ExperimentList.t * Query.t, Pool_common.Message.error) Lwt_result.t
 
 val find_by_contact_and_experiment
   :  Pool_database.Label.t
   -> Contact.t
   -> Experiment.Public.t
   -> (t option, Pool_common.Message.error) result Lwt.t
+
+val searchable_by : Query.Column.t list
+val sortable_by : Query.Column.t list
 
 module Guard : sig
   module Target : sig

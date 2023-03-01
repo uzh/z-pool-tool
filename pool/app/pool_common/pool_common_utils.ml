@@ -79,6 +79,11 @@ let handle_ppx_yojson_err (exn, yojson) =
   Error Entity_message.(NotHandled msg)
 ;;
 
+let handle_json_parse_err str =
+  let msg = Format.asprintf "Json parse error: %s" str in
+  Error Entity_message.(InvalidJson msg)
+;;
+
 let with_log_info ?(level = info) info =
   Logs.msg level (fun m -> m "%s" (Locales_en.info_to_string info));
   info

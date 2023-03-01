@@ -58,8 +58,15 @@ let sent_invitations req =
   let result ({ Pool_context.database_label; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, error_path)
     @@ let* experiment = Experiment.find database_label id in
+       let query =
+         let open Invitation in
+         Query.from_request ~searchable_by ~sortable_by req
+       in
        let* invitations =
-         Invitation.find_by_experiment database_label experiment.Experiment.id
+         Invitation.find_by_experiment
+           ~query
+           database_label
+           experiment.Experiment.id
        in
        Page.Admin.Experiments.sent_invitations context experiment invitations
        |> create_layout req context

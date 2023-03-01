@@ -118,7 +118,11 @@ val find
   -> Id.t
   -> (t, Pool_common.Message.error) result Lwt.t
 
-val find_all : Pool_database.Label.t -> unit -> t list Lwt.t
+val find_all
+  :  Pool_database.Label.t
+  -> ?query:Query.t
+  -> unit
+  -> (t list * Query.t) Lwt.t
 
 val find_public
   :  Pool_database.Label.t
@@ -201,3 +205,6 @@ module Guard : sig
     val show : t -> string
   end
 end
+
+val searchable_by : Query.Column.t list
+val sortable_by : Query.Column.t list

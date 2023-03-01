@@ -56,9 +56,10 @@ val find
   -> (t, Pool_common.Message.error) Lwt_result.t
 
 val find_by_experiment
-  :  Pool_database.Label.t
+  :  ?query:Query.t
+  -> Pool_database.Label.t
   -> Experiment.Id.t
-  -> (t list, Pool_common.Message.error) result Lwt.t
+  -> (t list * Query.t, Pool_common.Message.error) result Lwt.t
 
 val find_by_contact
   :  Pool_database.Label.t
@@ -81,6 +82,9 @@ val contact_was_invited_to_experiment
   -> Experiment.t
   -> Contact.t
   -> bool Lwt.t
+
+val searchable_by : Query.Column.t list
+val sortable_by : Query.Column.t list
 
 module Guard : sig
   module Target : sig

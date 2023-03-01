@@ -1,5 +1,5 @@
 let invitations pool =
-  let%lwt experiments = Experiment.find_all pool () in
+  let%lwt experiments, (_ : Query.t) = Experiment.find_all pool () in
   let%lwt events =
     let open Utils.Lwt_result.Infix in
     Lwt_list.fold_left_s

@@ -8,6 +8,7 @@
   invitation
   message_template
   pool_location
+  query
   service
   session
   sihl

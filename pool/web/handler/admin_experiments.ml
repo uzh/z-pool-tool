@@ -23,10 +23,15 @@ let index req =
   let error_path = "/admin/dashboard" in
   let result ({ Pool_context.database_label; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, error_path)
-    @@ let%lwt expermient_list = Experiment.find_all database_label () in
-       Page.Admin.Experiments.index expermient_list context
-       |> create_layout ~active_navigation:"/admin/experiments" req context
-       >|+ Sihl.Web.Response.of_html
+    @@
+    let query =
+      let open Experiment in
+      Query.from_request ~searchable_by ~sortable_by req
+    in
+    let%lwt expermient_list = Experiment.find_all database_label ~query () in
+    Page.Admin.Experiments.index expermient_list context
+    |> create_layout ~active_navigation:"/admin/experiments" req context
+    >|+ Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path req
 ;;

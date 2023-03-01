@@ -157,6 +157,22 @@ module File = struct
   ;;
 end
 
+module SortOrder = struct
+  module Core = struct
+    let field = Entity_message.Field.SortOrder
+
+    type t =
+      | Ascending [@name "ASC"] [@printer print "ASC"]
+      | Descending [@name "DESC"] [@printer print "DESC"]
+    [@@deriving enum, eq, ord, sexp_of, show { with_path = false }, yojson]
+  end
+
+  include Entity_base_model.SelectorType (Core)
+  include Core
+
+  let default = Ascending
+end
+
 module Reminder = struct
   module LeadTime = struct
     type t = Ptime.Span.t [@@deriving eq, show]
