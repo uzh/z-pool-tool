@@ -2,6 +2,9 @@ module SmtpAuth = Entity.SmtpAuth
 module AccountMap = CCMap.Make (Pool_database.Label)
 module Queue = Sihl_queue.MariaDb
 
+let src = Logs.Src.create "pool_tenant.service"
+let tags = Pool_database.(Logs.create root)
+
 module Email = struct
   let accounts : SmtpAuth.Write.t AccountMap.t ref = ref AccountMap.empty
 
@@ -17,10 +20,11 @@ module Email = struct
     let clear_inbox () = dev_inbox := []
   end
 
-  let print ?(log_level = Logs.Debug) email =
+  let print ?(tags = tags) ?(log_level = Logs.Debug) email =
     let open Sihl.Contract.Email in
-    Logs.msg log_level (fun m ->
+    Logs.msg ~src log_level (fun m ->
       m
+        ~tags
         {|
 -----------------------
 Email sent by: %s
@@ -88,8 +92,9 @@ Html:
     match Sihl.Configuration.is_production (), intercept_email_address () with
     | true, _ -> Ok email
     | false, Some new_recipient ->
-      Logs.info (fun m ->
+      Logs.info ~src (fun m ->
         m
+          ~tags
           "Sending email intercepted. Sending email to new recipient ('%s')"
           new_recipient);
       email |> redirected_email new_recipient |> CCResult.return
@@ -104,8 +109,10 @@ Html:
     match Sihl.Configuration.is_production (), bypass () with
     | true, _ | _, true -> sender email
     | false, false ->
-      Logs.info (fun m ->
-        m "Sending email intercepted (non production environment -> DevInbox).");
+      Logs.info ~src (fun m ->
+        m
+          ~tags
+          "Sending email intercepted (non production environment -> DevInbox).");
       email |> DevInbox.add_to_inbox |> Lwt.return
   ;;
 
@@ -213,8 +220,12 @@ Html:
       Letters.create_email ~reply_to ~from:sender ~recipients ~subject ~body ()
       |> function
       | Ok message ->
-        Logs.info (fun m ->
-          m "Send email as %s to %s" sender email.Sihl_email.recipient);
+        Logs.info ~src (fun m ->
+          m
+            ~tags:(Pool_database.Logs.create database_label)
+            "Send email as %s to %s"
+            sender
+            email.Sihl_email.recipient);
         Letters.send ~config ~sender ~recipients ~message
       | Error msg -> raise (Sihl.Contract.Email.Exception msg)
     ;;
@@ -258,8 +269,9 @@ Html:
         let open CCResult.Infix in
         (try Ok (Yojson.Safe.from_string email) with
          | Yojson.Json_error msg ->
-           Logs.err (fun m ->
+           Logs.err ~src (fun m ->
              m
+               ~tags
                "Serialized email string was NULL, can not deserialize email. \
                 Please fix the string manually and reset the job instance. \
                 Error: %s"
@@ -279,7 +291,11 @@ Html:
   end
 
   let dispatch database_label email =
-    Logs.debug (fun m -> m "Dispatch email to %s" email.Sihl_email.recipient);
+    Logs.debug ~src (fun m ->
+      m
+        ~tags:(Pool_database.Logs.create database_label)
+        "Dispatch email to %s"
+        email.Sihl_email.recipient);
     Queue.dispatch
       ~ctx:(Entity.to_ctx database_label)
       (email |> intercept_prepare |> CCResult.get_or_failwith)
@@ -288,8 +304,11 @@ Html:
 
   let dispatch_all database_label emails =
     let recipients = CCList.map (fun m -> m.Sihl_email.recipient) emails in
-    Logs.debug (fun m ->
-      m "Dispatch email to %s" ([%show: string list] recipients));
+    Logs.debug ~src (fun m ->
+      m
+        ~tags:(Pool_database.Logs.create database_label)
+        "Dispatch email to %s"
+        ([%show: string list] recipients));
     Queue.dispatch_all ~ctx:(Entity.to_ctx database_label) emails Job.send
   ;;
 end

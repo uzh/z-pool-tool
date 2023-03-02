@@ -1,14 +1,20 @@
-let log_rules =
+let src = Logs.Src.create "guard.events"
+
+let log_rules ~tags =
   let open CCFun in
   Lwt_result.map (fun success ->
-    Logs.debug (fun m ->
+    Logs.debug ~src (fun m ->
       m
+        ~tags
         "Save rules successful: %s"
         Core.Authorizer.([%show: auth_rule list] success));
     success)
   %> Lwt_result.map_error (fun err ->
-       Logs.err (fun m ->
-         m "Save rules failed: %s" Core.Authorizer.([%show: auth_rule list] err));
+       Logs.err ~src (fun m ->
+         m
+           ~tags
+           "Save rules failed: %s"
+           Core.Authorizer.([%show: auth_rule list] err));
        err)
 ;;
 
@@ -20,11 +26,12 @@ type event =
 
 let handle_event pool : event -> unit Lwt.t =
   let open Repo in
+  let tags = Pool_database.Logs.create pool in
   let ctx = [ "pool", Pool_database.Label.value pool ] in
   function
   | DefaultRestored permissions ->
     let%lwt (_ : (auth_rule list, auth_rule list) result) =
-      Actor.save_rules ~ctx permissions |> log_rules
+      Actor.save_rules ~ctx permissions |> log_rules ~tags
     in
     Lwt.return_unit
   | RolesGranted (actor, roles) ->
@@ -37,7 +44,7 @@ let handle_event pool : event -> unit Lwt.t =
     Lwt.return_unit
   | RulesSaved rules ->
     let%lwt (_ : (auth_rule list, auth_rule list) result) =
-      Actor.save_rules ~ctx rules |> log_rules
+      Actor.save_rules ~ctx rules |> log_rules ~tags
     in
     Lwt.return_unit
 ;;

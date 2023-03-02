@@ -1,3 +1,5 @@
+let src = Logs.Src.create "middleware.guardian"
+
 let require_user_type_of (user_type : Pool_context.UserType.t list) =
   let filter handler req =
     let open Utils.Lwt_result.Infix in
@@ -21,7 +23,10 @@ let require_user_type_of (user_type : Pool_context.UserType.t list) =
   Rock.Middleware.create ~name:"guardian.require_type" ~filter
 ;;
 
-let validate_access { Pool_context.user; database_label; _ } effects =
+let validate_access
+  ({ Pool_context.user; database_label; _ } as context)
+  effects
+  =
   let open Utils.Lwt_result.Infix in
   let open Pool_common.Message in
   let ctx = Pool_tenant.to_ctx database_label in
@@ -34,8 +39,9 @@ let validate_access { Pool_context.user; database_label; _ } effects =
   | Pool_context.Admin admin ->
     let* auth = Admin.Guard.Actor.to_authorizable ~ctx admin in
     let () =
-      Logs.debug (fun m ->
+      Logs.debug ~src (fun m ->
         m
+          ~tags:(Pool_context.Logger.Tags.context context)
           "Guard admin middleware:\n%s\n%s\nEFFECTS: %s"
           ([%show: Admin.t] admin)
           ([%show: [> `Admin ] Guard.Authorizable.t] auth)

@@ -63,31 +63,32 @@ let toggle_role action req =
   let result { Pool_context.database_label; _ } =
     let open Utils.Lwt_result.Infix in
     Lwt_result.map_error (fun err -> err, redirect_path)
-    @@ let* experiment = Experiment.find database_label experiment_id in
-       let* admin = Admin.find database_label admin_id in
-       let tags = Logger.req req in
-       let message =
-         let open Pool_common.Message in
-         match action with
-         | `AssignAssistant | `AssignExperimenter -> RoleAssigned
-         | `UnassignAssistant | `UnassignExperimenter -> RoleUnassigned
-       in
-       let* events =
-         let open Cqrs_command.Experiment_command in
-         let update = { admin; experiment } in
-         Lwt_result.lift
-         @@
-         match action with
-         | `AssignAssistant -> AssignAssistant.(handle ~tags update)
-         | `UnassignAssistant -> UnassignAssistant.(handle ~tags update)
-         | `AssignExperimenter -> AssignExperimenter.(handle ~tags update)
-         | `UnassignExperimenter -> UnassignExperimenter.(handle ~tags update)
-       in
-       let%lwt () = Pool_event.handle_events database_label events in
-       Http_utils.redirect_to_with_actions
-         redirect_path
-         [ Message.set ~success:[ message ] ]
-       |> Lwt_result.ok
+    @@
+    let tags = Pool_context.Logger.Tags.req req in
+    let* experiment = Experiment.find database_label experiment_id in
+    let* admin = Admin.find database_label admin_id in
+    let message =
+      let open Pool_common.Message in
+      match action with
+      | `AssignAssistant | `AssignExperimenter -> RoleAssigned
+      | `UnassignAssistant | `UnassignExperimenter -> RoleUnassigned
+    in
+    let* events =
+      let open Cqrs_command.Experiment_command in
+      let update = { admin; experiment } in
+      Lwt_result.lift
+      @@
+      match action with
+      | `AssignAssistant -> AssignAssistant.(handle ~tags update)
+      | `UnassignAssistant -> UnassignAssistant.(handle ~tags update)
+      | `AssignExperimenter -> AssignExperimenter.(handle ~tags update)
+      | `UnassignExperimenter -> UnassignExperimenter.(handle ~tags update)
+    in
+    let%lwt () = Pool_event.handle_events database_label events in
+    Http_utils.redirect_to_with_actions
+      redirect_path
+      [ Message.set ~success:[ message ] ]
+    |> Lwt_result.ok
   in
   result |> HttpUtils.extract_happy_path req
 ;;

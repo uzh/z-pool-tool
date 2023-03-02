@@ -1,6 +1,7 @@
 module User = Pool_user
 module Id = Pool_common.Id
 
+let src = Logs.Src.create "database.seed.user"
 let get_or_failwith = Pool_common.Utils.get_or_failwith
 
 type person =
@@ -51,15 +52,16 @@ let answer_custom_fields fields contact =
          (PartialUpdate.Custom field, contact, Pool_context.Contact contact))
 ;;
 
-let create_rand_persons n_persons =
+let create_rand_persons ?tags n_persons =
   let open Cohttp in
   let open Cohttp_lwt_unix in
   let min_allowed = 1 in
   let max_allowed = 100 in
   if n_persons < min_allowed && n_persons > max_allowed
   then
-    Logs.warn (fun m ->
+    Logs.warn ~src (fun m ->
       m
+        ?tags
         "Contact generator: Limit number! (Allowed range from %d to %d)"
         min_allowed
         max_allowed);
@@ -81,6 +83,7 @@ let create_persons db_label n_persons =
   let open CCFun in
   let open CCList in
   let open Utils.Lwt_result.Infix in
+  let tags = Pool_database.Logs.create db_label in
   let chunk_size = 100 in
   let sum = fold_left ( + ) 0 in
   let%lwt contacts =
@@ -99,13 +102,13 @@ let create_persons db_label n_persons =
     flip repeat [ 1 ]
     %> chunks chunk_size
     %> map sum
-    %> Lwt_list.map_s create_rand_persons
+    %> Lwt_list.map_s (create_rand_persons ~tags)
   in
   let rec persons_chunked acc =
     let current_count = length acc in
     let log_amount current =
-      Logs.info (fun m ->
-        m "Seed: generating person data (%i/%i)" current n_persons)
+      Logs.info ~src (fun m ->
+        m ~tags "Seed: generating person data (%i/%i)" current n_persons)
     in
     if current_count < n_persons
     then (
@@ -167,13 +170,18 @@ let admins db_label =
         in
         Lwt.return_unit
       | Some _ ->
-        Logs.debug (fun m -> m "%s" "Admin user already exists");
+        Logs.debug ~src (fun m ->
+          m
+            ~tags:(Pool_database.Logs.create db_label)
+            "%s"
+            "Admin user already exists");
         Lwt.return_unit)
     data
 ;;
 
 let contacts db_label =
   let open Utils.Lwt_result.Infix in
+  let tags = Pool_database.Logs.create db_label in
   let n_contacts = 200 in
   let ctx = Pool_tenant.to_ctx db_label in
   let combinations =
@@ -188,13 +196,14 @@ let contacts db_label =
     <*> booleans
     <*> booleans
   in
-  Logs.info (fun m -> m "Seed: start generate contacts");
+  Logs.info ~src (fun m -> m ~tags "Seed: start generate contacts");
   let%lwt persons = create_persons db_label n_contacts in
   let () =
     if n_contacts < CCList.length combinations
     then
-      Logs.warn (fun m ->
+      Logs.warn ~src (fun m ->
         m
+          ~tags
           "User seed: only %d out of %d possible combinations covered!"
           n_contacts
           (CCList.length combinations));
@@ -254,8 +263,9 @@ let contacts db_label =
                  }
              ]
          | Some { Sihl_user.id; _ } ->
-           Logs.debug (fun m ->
+           Logs.debug ~src (fun m ->
              m
+               ~tags
                "Contact already exists (%s): %s"
                (db_label |> Pool_database.Label.value)
                id);
@@ -263,7 +273,7 @@ let contacts db_label =
     ||> CCList.flatten
     >|> Lwt_list.iter_s (Contact.handle_event db_label)
   in
-  Logs.info (fun m -> m "Seed: add additional infos to contacts");
+  Logs.info ~src (fun m -> m ~tags "Seed: add additional infos to contacts");
   let%lwt contact_events, field_events =
     Lwt_list.fold_left_s
       (fun (contacts, fields)
@@ -297,7 +307,9 @@ let contacts db_label =
           in
           (contacts @ contact_events, fields @ field_events) |> Lwt.return
         | Error err ->
-          let _ = Pool_common.Utils.with_log_error ~level:Logs.Debug err in
+          let _ =
+            Pool_common.Utils.with_log_error ~tags ~level:Logs.Debug err
+          in
           (contacts, fields) |> Lwt.return)
       ([], [])
       users

@@ -4,7 +4,7 @@ let create_layout = Contact_general.create_layout
 
 let create req =
   let open Utils.Lwt_result.Infix in
-  let tags = Logger.req req in
+  let tags = Pool_context.Logger.Tags.req req in
   let experiment_id, id =
     let open Pool_common.Message.Field in
     ( HttpUtils.find_id Experiment.Id.of_string Experiment req

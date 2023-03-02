@@ -66,7 +66,7 @@ let write action req =
     Utils.Lwt_result.map_error (fun err ->
       err, redirect.error, [ HttpUtils.urlencoded_to_flash urlencoded ])
     @@
-    let tags = Logger.req req in
+    let tags = Pool_context.Logger.Tags.req req in
     let events =
       let open Cqrs_command.Message_template_command in
       match action with
@@ -83,7 +83,7 @@ let write action req =
           urlencoded
           |> decode
           |> Lwt_result.lift
-          >== handle label entity_id available_languages)
+          >== handle ~tags label entity_id available_languages)
       | Update (id, _) ->
         let* template = Message_template.find database_label id in
         Update.(urlencoded |> decode |> Lwt_result.lift >== handle template)

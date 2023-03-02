@@ -1,9 +1,8 @@
 open CCFun
 include Sihl.Contract.Queue
 
-let log_src = Logs.Src.create "pool.queue"
-
-module Logs = (val Logs.src_log log_src : Logs.LOG)
+let src = Logs.Src.create "queue.service"
+let tags = Pool_database.(Logs.create root)
 
 let increment_tries (retry_delay : Ptime.Span.t) (job_instance : instance) =
   let next_run_at =
@@ -18,14 +17,15 @@ let registered_jobs : job' list ref = ref []
 let find = Repo.find
 
 let run_job
+  ?tags
   (input : string)
   ({ handle; failed; _ } : job')
   ({ id; ctx; _ } as job_instance : instance)
   : (unit, string) Lwt_result.t
   =
-  let with_log_error message exn =
+  let with_log_error ?tags message exn =
     let exn_string = Printexc.to_string exn in
-    Logs.err (fun m -> m message exn_string);
+    Logs.err ~src (fun m -> m ?tags message exn_string);
     Lwt.return_error exn_string
   in
   let ctx = if CCList.is_empty ctx then None else Some ctx in
@@ -33,13 +33,15 @@ let run_job
     Lwt.catch
       (fun () -> handle ?ctx input)
       (with_log_error
+         ?tags
          "Exception caught while running job, this is a bug in your job \
           handler. Don't throw exceptions there, use Result.t instead. '%s'")
   in
   match result with
   | Error msg ->
-    Logs.err (fun m ->
+    Logs.err ~src (fun m ->
       m
+        ?tags
         "Failure while running job instance %s %s"
         ([%show: instance] job_instance)
         msg);
@@ -48,10 +50,11 @@ let run_job
         let%lwt () = failed ?ctx msg job_instance in
         Lwt.return_error msg)
       (with_log_error
+         ?tags
          "Exception caught while cleaning up job, this is a bug in your job \
           failure handler, make sure to not throw exceptions there '%s")
   | Ok () ->
-    Logs.debug (fun m -> m "Successfully ran job instance '%s'" id);
+    Logs.debug ~src (fun m -> m "Successfully ran job instance '%s'" id);
     Lwt.return @@ Ok ()
 ;;
 
@@ -61,17 +64,12 @@ let work_job
   ({ retry_delay; max_tries; _ } as job : job')
   ({ input; tries; ctx; _ } as job_instance : instance)
   =
-  let database_label =
-    let open Pool_common in
-    CCList.assoc_opt ~eq:( = ) "pool" ctx
-    |> CCOption.to_result Message.(Undefined Field.DatabaseLabel)
-    |> Utils.get_or_failwith
-    |> Pool_database.Label.of_string
-  in
+  let database_label = Pool_tenant.of_ctx_exn ctx in
+  let tags = Pool_database.Logs.create database_label in
   let now = Ptime_clock.now () in
   if should_run job_instance now
   then (
-    let%lwt job_run_status = run_job input job job_instance in
+    let%lwt job_run_status = run_job ~tags input job job_instance in
     let job_instance = job_instance |> increment_tries retry_delay in
     let job_instance =
       match job_run_status with
@@ -90,8 +88,11 @@ let work_job
     in
     update database_label job_instance)
   else (
-    Logs.debug (fun m ->
-      m "Not going to run job instance %s" ([%show: instance] job_instance));
+    Logs.debug ~src (fun m ->
+      m
+        ~tags
+        "Not going to run job instance %s"
+        ([%show: instance] job_instance));
     Lwt.return_unit)
 ;;
 
@@ -103,8 +104,11 @@ let work_queue database_labels jobs =
   if CCList.is_empty pending_job_instances
   then Lwt.return_unit
   else (
-    Logs.info (fun m ->
-      m "Start working queue of length %d" (CCList.length pending_job_instances));
+    Logs.info ~src (fun m ->
+      m
+        ~tags
+        "Start working queue of length %d"
+        (CCList.length pending_job_instances));
     let rec loop job_instances jobs =
       match job_instances with
       | [] -> Lwt.return_unit
@@ -117,7 +121,7 @@ let work_queue database_labels jobs =
         | Some job -> work_job job job_instance)
     in
     let%lwt () = loop pending_job_instances jobs in
-    Logs.info (fun m -> m "Finish working queue");
+    Logs.info ~src (fun m -> m ~tags "Finish working queue");
     Lwt.return_unit)
 ;;
 
@@ -131,19 +135,22 @@ let create_schedule () =
       ||> CCList.map (fun { Pool_tenant.database_label; _ } -> database_label)
     in
     let database_labels = Pool_database.root :: database_labels in
-    Logs.debug (fun m ->
+    Logs.debug ~src (fun m ->
       m
+        ~tags
         "Running Queue for databases: %s"
         ([%show: Pool_database.Label.t list] database_labels));
     let jobs = !registered_jobs in
     if CCList.is_empty jobs
     then (
-      Logs.debug (fun m -> m "No jobs found to run, trying again later");
+      Logs.debug ~src (fun m ->
+        m ~tags "No jobs found to run, trying again later");
       Lwt.return_unit)
     else (
       let job_strings = jobs |> CCList.map (fun (job : job') -> job.name) in
-      Logs.debug (fun m ->
+      Logs.debug ~src (fun m ->
         m
+          ~tags
           "Run job queue with registered jobs: %s"
           ([%show: string list] job_strings));
       work_queue database_labels jobs)

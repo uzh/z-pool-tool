@@ -1,11 +1,9 @@
 module HttpUtils = Http_utils
-module Message = HttpUtils.Message
+module HttpMessage = HttpUtils.Message
+module Field = Pool_common.Message.Field
 
 let create_layout req = General.create_tenant_layout req
-
-let experiment_id =
-  HttpUtils.find_id Experiment.Id.of_string Pool_common.Message.Field.Experiment
-;;
+let experiment_id = HttpUtils.find_id Experiment.Id.of_string Field.Experiment
 
 let index req =
   let open Utils.Lwt_result.Infix in
@@ -83,81 +81,75 @@ let create req =
   in
   let result { Pool_context.database_label; _ } =
     Utils.Lwt_result.map_error (fun err -> err, redirect_path)
-    @@ let* contact_ids =
-         let open Utils.Lwt_result.Infix in
-         Sihl.Web.Request.urlencoded_list
-           Pool_common.Message.Field.(Contacts |> array_key)
-           req
-         ||> CCList.map Pool_common.Id.of_string
-         ||> fun list ->
-         if CCList.is_empty list
-         then Error Pool_common.Message.(NoOptionSelected Field.Contact)
-         else Ok list
-       in
-       let* { Pool_context.Tenant.tenant; _ } =
-         Pool_context.Tenant.find req |> Lwt_result.lift
-       in
-       let* experiment = Experiment.find database_label id in
-       let* contacts =
-         let find_missing contacts =
-           let retrieved_ids = CCList.map Contact.id contacts in
-           CCList.fold_left
-             (fun missing id ->
-               match CCList.mem ~eq:Pool_common.Id.equal id retrieved_ids with
-               | true -> missing
-               | false -> CCList.cons id missing)
-             []
-             contact_ids
-         in
-         let%lwt contacts = Contact.find_multiple database_label contact_ids in
-         Lwt_result.lift
-         @@
-         match CCList.length contact_ids == CCList.length contacts with
-         | true -> Ok contacts
-         | false ->
-           find_missing contacts
-           |> CCList.map Pool_common.Id.value
-           |> fun ids ->
-           Error Pool_common.Message.(NotFoundList (Field.Contacts, ids))
-       in
-       let%lwt invited_contacts =
-         Invitation.find_multiple_by_experiment_and_contacts
-           database_label
-           (CCList.map Contact.id contacts)
-           experiment
-       in
-       let* create_message =
-         Message_template.ExperimentInvitation.prepare tenant experiment
-       in
-       let tags = Logger.req req in
-       let%lwt events =
-         Cqrs_command.Invitation_command.Create.(
-           handle
-             ~tags
-             { experiment; contacts; invited_contacts; create_message }
-           |> Lwt_result.lift)
-       in
-       let handle events =
-         let%lwt () =
-           Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
-         in
-         Http_utils.redirect_to_with_actions
-           redirect_path
-           [ Message.set
-               ~success:[ Pool_common.Message.(SentList Field.Invitations) ]
-           ]
-       in
-       events |> Lwt_result.lift |>> handle
+    @@
+    let open Pool_common in
+    let tags = Pool_context.Logger.Tags.req req in
+    let* contact_ids =
+      Sihl.Web.Request.urlencoded_list Field.(Contacts |> array_key) req
+      ||> CCList.map Id.of_string
+      ||> fun list ->
+      if CCList.is_empty list
+      then Error Message.(NoOptionSelected Field.Contact)
+      else Ok list
+    in
+    let* { Pool_context.Tenant.tenant; _ } =
+      Pool_context.Tenant.find req |> Lwt_result.lift
+    in
+    let* experiment = Experiment.find database_label id in
+    let* contacts =
+      let find_missing contacts =
+        let retrieved_ids = CCList.map Contact.id contacts in
+        CCList.fold_left
+          (fun missing id ->
+            match CCList.mem ~eq:Id.equal id retrieved_ids with
+            | true -> missing
+            | false -> CCList.cons id missing)
+          []
+          contact_ids
+      in
+      let%lwt contacts = Contact.find_multiple database_label contact_ids in
+      Lwt_result.lift
+      @@
+      match CCList.length contact_ids == CCList.length contacts with
+      | true -> Ok contacts
+      | false ->
+        find_missing contacts
+        |> CCList.map Id.value
+        |> fun ids -> Error Message.(NotFoundList (Field.Contacts, ids))
+    in
+    let%lwt invited_contacts =
+      Invitation.find_multiple_by_experiment_and_contacts
+        database_label
+        (CCList.map Contact.id contacts)
+        experiment
+    in
+    let* create_message =
+      Message_template.ExperimentInvitation.prepare tenant experiment
+    in
+    let%lwt events =
+      let open Cqrs_command.Invitation_command.Create in
+      handle ~tags { experiment; contacts; invited_contacts; create_message }
+      |> Lwt_result.lift
+    in
+    let handle events =
+      let%lwt () =
+        Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
+      in
+      Http_utils.redirect_to_with_actions
+        redirect_path
+        [ HttpMessage.set ~success:[ Message.(SentList Field.Invitations) ] ]
+    in
+    events |> Lwt_result.lift |>> handle
   in
   result |> HttpUtils.extract_happy_path req
 ;;
 
 let resend req =
   let open Utils.Lwt_result.Infix in
-  let tags = Logger.req req in
+  let tags = Pool_context.Logger.Tags.req req in
   let experiment_id, id =
-    let open Pool_common.Message.Field in
-    experiment_id req, HttpUtils.find_id Pool_common.Id.of_string Invitation req
+    ( experiment_id req
+    , HttpUtils.find_id Pool_common.Id.of_string Field.Invitation req )
   in
   let redirect_path =
     Format.asprintf
@@ -187,7 +179,7 @@ let resend req =
          in
          Http_utils.redirect_to_with_actions
            redirect_path
-           [ Message.set
+           [ HttpMessage.set
                ~success:[ Pool_common.Message.(SentList Field.Invitations) ]
            ]
        in

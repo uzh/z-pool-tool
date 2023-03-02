@@ -13,7 +13,7 @@ let model_from_router req =
   let open CCResult in
   HttpUtils.find_field_router_param_opt req Message.Field.Model
   |> CCOption.to_result Message.(NotFound Field.Model)
-  >>= fun s -> s |> Model.create
+  >>= Model.create
 ;;
 
 let get_model fnc req =
@@ -133,7 +133,7 @@ let write ?id req model =
     Utils.Lwt_result.map_error (fun err ->
       err, error_path, [ HttpUtils.urlencoded_to_flash urlencoded ])
     @@
-    let tags = Logger.req req in
+    let tags = Pool_context.Logger.Tags.req req in
     let events =
       let open Utils.Lwt_result.Infix in
       let* sys_languages =
@@ -198,32 +198,32 @@ let toggle_action action req =
   in
   let result { Pool_context.database_label; _ } =
     Utils.Lwt_result.map_error (fun err -> err, Url.fallback_path, [])
-    @@ let* custom_field = Custom_field.find database_label id in
-       let* model = model_from_router req |> Lwt_result.lift in
-       let tags = Logger.req req in
-       let events =
-         match action with
-         | `Publish ->
-           Cqrs_command.Custom_field_command.Publish.handle ~tags custom_field
-           |> Lwt_result.lift
-         | `Delete ->
-           Cqrs_command.Custom_field_command.Delete.handle ~tags custom_field
-           |> Lwt_result.lift
-       in
-       let success =
-         match action with
-         | `Publish -> Pool_common.Message.(Published Field.CustomField)
-         | `Delete -> Pool_common.Message.(Deleted Field.CustomField)
-       in
-       let handle events =
-         let%lwt () =
-           Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
-         in
-         Http_utils.redirect_to_with_actions
-           (Url.index_path model)
-           [ HttpUtils.Message.set ~success:[ success ] ]
-       in
-       events |>> handle
+    @@
+    let tags = Pool_context.Logger.Tags.req req in
+    let* custom_field = Custom_field.find database_label id in
+    let* model = model_from_router req |> Lwt_result.lift in
+    let events =
+      let open Cqrs_command.Custom_field_command in
+      Lwt_result.lift
+      @@
+      match action with
+      | `Publish -> Publish.handle ~tags custom_field
+      | `Delete -> Delete.handle ~tags custom_field
+    in
+    let success =
+      match action with
+      | `Publish -> Message.(Published Field.CustomField)
+      | `Delete -> Message.(Deleted Field.CustomField)
+    in
+    let handle events =
+      let%lwt () =
+        Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
+      in
+      Http_utils.redirect_to_with_actions
+        (Url.index_path model)
+        [ HttpUtils.Message.set ~success:[ success ] ]
+    in
+    events |>> handle
   in
   result |> HttpUtils.extract_happy_path_with_actions req
 ;;
@@ -241,46 +241,42 @@ let sort_options req =
     let redirect_path = Url.Field.edit_path (model, custom_field_id) in
     let result { Pool_context.database_label; _ } =
       Utils.Lwt_result.map_error (fun err -> err, redirect_path, [])
-      @@ let* custom_field =
-           custom_field_id |> Custom_field.find database_label
-         in
-         let%lwt ids =
-           Sihl.Web.Request.urlencoded_list
-             Message.Field.(CustomFieldOption |> array_key)
-             req
-         in
-         let%lwt options =
-           let open Utils.Lwt_result.Infix in
-           let open Custom_field in
-           find_options_by_field database_label (id custom_field)
-           ||> fun options ->
-           CCList.filter_map
-             (fun id ->
-               CCList.find_opt
-                 SelectOption.(
-                   fun (option : t) -> Id.equal (Id.of_string id) option.id)
-                 options)
-             ids
-         in
-         let tags = Logger.req req in
-         let events =
-           options
-           |> Cqrs_command.Custom_field_option_command.Sort.handle ~tags
-           |> Lwt_result.lift
-         in
-         let handle events =
-           let%lwt () =
-             Lwt_list.iter_s
-               (Pool_event.handle_event ~tags database_label)
-               events
-           in
-           Http_utils.redirect_to_with_actions
-             redirect_path
-             [ HttpUtils.Message.set
-                 ~success:[ Message.(Updated Field.CustomField) ]
-             ]
-         in
-         events |>> handle
+      @@
+      let tags = Pool_context.Logger.Tags.req req in
+      let* custom_field = custom_field_id |> Custom_field.find database_label in
+      let%lwt ids =
+        Sihl.Web.Request.urlencoded_list
+          Message.Field.(CustomFieldOption |> array_key)
+          req
+      in
+      let%lwt options =
+        let open Utils.Lwt_result.Infix in
+        let open Custom_field in
+        find_options_by_field database_label (id custom_field)
+        ||> fun options ->
+        CCList.filter_map
+          (fun id ->
+            CCList.find_opt
+              SelectOption.(
+                fun (option : t) -> Id.equal (Id.of_string id) option.id)
+              options)
+          ids
+      in
+      let events =
+        let open Cqrs_command.Custom_field_option_command.Sort in
+        options |> handle ~tags |> Lwt_result.lift
+      in
+      let handle events =
+        let%lwt () =
+          Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
+        in
+        Http_utils.redirect_to_with_actions
+          redirect_path
+          [ HttpUtils.Message.set
+              ~success:[ Message.(Updated Field.CustomField) ]
+          ]
+      in
+      events |>> handle
     in
     result |> HttpUtils.extract_happy_path_with_actions req
   in
@@ -299,6 +295,7 @@ let sort_fields req ?group () =
       Utils.Lwt_result.map_error (fun err -> err, redirect_path, [])
       @@
       let open Custom_field in
+      let tags = Pool_context.Logger.Tags.req req in
       let%lwt ids =
         Sihl.Web.Request.urlencoded_list
           Message.Field.(CustomField |> array_key)
@@ -317,11 +314,9 @@ let sort_fields req ?group () =
               fields)
           ids
       in
-      let tags = Logger.req req in
       let events =
-        fields
-        |> Cqrs_command.Custom_field_command.Sort.handle ~tags
-        |> Lwt_result.lift
+        let open Cqrs_command.Custom_field_command.Sort in
+        fields |> handle ~tags |> Lwt_result.lift
       in
       let handle events =
         let%lwt () =

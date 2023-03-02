@@ -138,7 +138,7 @@ let request_reset_password_post req =
     Lwt_result.map_error (fun err ->
       err, redirect_path, [ (fun res -> Message.set ~error:[ err ] res) ])
     @@
-    let tags = Logger.req req in
+    let tags = Pool_context.Logger.Tags.req req in
     let open Utils.Lwt_result.Infix in
     let* { Pool_context.Tenant.tenant; _ } =
       Pool_context.Tenant.find req |> Lwt_result.lift
@@ -155,7 +155,7 @@ let request_reset_password_post req =
       | None -> Lwt_result.return ()
       | Some user ->
         PasswordReset.create database_label language (Tenant tenant) user
-        >== handle
+        >== handle ~tags
         |>> Pool_event.handle_events ~tags database_label
     in
     redirect_to_with_actions

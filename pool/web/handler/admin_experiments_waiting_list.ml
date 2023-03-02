@@ -80,27 +80,28 @@ let update req =
   let result { Pool_context.database_label; _ } =
     Utils.Lwt_result.map_error (fun err ->
       err, redirect_path, [ HttpUtils.urlencoded_to_flash urlencoded ])
-    @@ let* waiting_list = Waiting_list.find database_label waiting_list_id in
-       let tags = Logger.req req in
-       let events =
-         let open Cqrs_command.Waiting_list_command in
-         let open CCResult in
-         urlencoded
-         |> Update.decode
-         >>= Update.handle ~tags waiting_list
-         |> Lwt_result.lift
-       in
-       let handle events =
-         let%lwt () =
-           Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
-         in
-         Http_utils.redirect_to_with_actions
-           redirect_path
-           [ Message.set
-               ~success:[ Pool_common.Message.(Updated Field.WaitingList) ]
-           ]
-       in
-       events |>> handle
+    @@
+    let tags = Pool_context.Logger.Tags.req req in
+    let* waiting_list = Waiting_list.find database_label waiting_list_id in
+    let events =
+      let open Cqrs_command.Waiting_list_command in
+      let open CCResult in
+      urlencoded
+      |> Update.decode
+      >>= Update.handle ~tags waiting_list
+      |> Lwt_result.lift
+    in
+    let handle events =
+      let%lwt () =
+        Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
+      in
+      Http_utils.redirect_to_with_actions
+        redirect_path
+        [ Message.set
+            ~success:[ Pool_common.Message.(Updated Field.WaitingList) ]
+        ]
+    in
+    events |>> handle
   in
   result |> HttpUtils.extract_happy_path_with_actions req
 ;;
@@ -122,63 +123,62 @@ let assign_contact req =
           "%s/%s"
           redirect_path
           (Pool_common.Id.value waiting_list_id) ))
-    @@ let* { Pool_context.Tenant.tenant; _ } =
-         Pool_context.Tenant.find req |> Lwt_result.lift
-       in
-       let* waiting_list = Waiting_list.find database_label waiting_list_id in
-       let* session =
-         let open Pool_common.Message in
-         let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-         urlencoded
-         |> CCList.assoc_opt ~eq:CCString.equal Field.(show Session)
-         |> CCFun.flip CCOption.bind CCList.head_opt
-         |> CCOption.to_result NoValue
-         |> Lwt_result.lift
-         >>= fun id ->
-         id |> Pool_common.Id.of_string |> Session.find database_label
-       in
-       let%lwt already_enrolled =
-         let open Utils.Lwt_result.Infix in
-         Assignment.find_by_experiment_and_contact_opt
-           database_label
-           experiment_id
-           waiting_list.Waiting_list.contact
-         ||> CCList.is_empty
-         ||> not
-       in
-       let* confirmation_email =
-         let contact = waiting_list.Waiting_list.contact in
-         let* language =
-           let* default = Settings.default_language database_label in
-           contact.Contact.language
-           |> CCOption.value ~default
-           |> Lwt_result.return
-         in
-         Message_template.AssignmentConfirmation.create
-           database_label
-           language
-           tenant
-           session
-           contact
-       in
-       let tags = Logger.req req in
-       let events =
-         Cqrs_command.Assignment_command.CreateFromWaitingList.(
-           handle ~tags { session; waiting_list; already_enrolled })
-           confirmation_email
-         |> Lwt_result.lift
-       in
-       let handle events =
-         let%lwt () =
-           Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
-         in
-         Http_utils.redirect_to_with_actions
-           redirect_path
-           [ HttpUtils.Message.set
-               ~success:[ Pool_common.Message.(AssignmentCreated) ]
-           ]
-       in
-       events |>> handle
+    @@
+    let tags = Pool_context.Logger.Tags.req req in
+    let* { Pool_context.Tenant.tenant; _ } =
+      Pool_context.Tenant.find req |> Lwt_result.lift
+    in
+    let* waiting_list = Waiting_list.find database_label waiting_list_id in
+    let* session =
+      let open Pool_common.Message in
+      let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+      urlencoded
+      |> CCList.assoc_opt ~eq:CCString.equal Field.(show Session)
+      |> CCFun.flip CCOption.bind CCList.head_opt
+      |> CCOption.to_result NoValue
+      |> Lwt_result.lift
+      >>= fun id ->
+      id |> Pool_common.Id.of_string |> Session.find database_label
+    in
+    let%lwt already_enrolled =
+      let open Utils.Lwt_result.Infix in
+      Assignment.find_by_experiment_and_contact_opt
+        database_label
+        experiment_id
+        waiting_list.Waiting_list.contact
+      ||> CCList.is_empty
+      ||> not
+    in
+    let* confirmation_email =
+      let contact = waiting_list.Waiting_list.contact in
+      let* language =
+        let* default = Settings.default_language database_label in
+        contact.Contact.language |> CCOption.value ~default |> Lwt_result.return
+      in
+      Message_template.AssignmentConfirmation.create
+        database_label
+        language
+        tenant
+        session
+        contact
+    in
+    let events =
+      let open Cqrs_command.Assignment_command.CreateFromWaitingList in
+      (handle ~tags { session; waiting_list; already_enrolled })
+        confirmation_email
+      |> Lwt_result.lift
+    in
+    let handle events =
+      let%lwt () =
+        Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
+      in
+      Http_utils.redirect_to_with_actions
+        redirect_path
+        [ HttpUtils.Message.set
+            ~success:[ Pool_common.Message.(AssignmentCreated) ]
+        ]
+    in
+    events |>> handle
   in
   result |> HttpUtils.extract_happy_path req
 ;;

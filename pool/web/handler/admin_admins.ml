@@ -22,10 +22,7 @@ let admin_detail req is_edit =
   let result ({ Pool_context.database_label; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, "/admin/admins")
     @@
-    let id =
-      let open Pool_common.Message.Field in
-      HttpUtils.find_id Admin.Id.of_string Admin req
-    in
+    let id = HttpUtils.find_id Admin.Id.of_string Field.Admin req in
     let* admin = id |> Admin.find database_label in
     let* () =
       let* _ = General.admin_from_session database_label req in
@@ -62,8 +59,8 @@ let create_admin req =
     Lwt_result.map_error (fun err ->
       err, Format.asprintf "%s/new" redirect_path)
     @@
+    let tags = Pool_context.Logger.Tags.req req in
     let admin_id = Pool_common.Id.create () in
-    let tags = Logger.req req in
     let validate_user () =
       Sihl.Web.Request.urlencoded Field.(Email |> show) req
       ||> CCOption.to_result EmailAddressMissingAdmin

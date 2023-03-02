@@ -112,6 +112,7 @@ let write action req =
     |> get_or ~default:Pool_common.Language.En
   in
   let%lwt result =
+    let tags = Pool_context.Logger.Tags.req req in
     let { Pool_context.database_label; _ } =
       Pool_context.find req |> CCResult.get_exn
     in
@@ -126,7 +127,6 @@ let write action req =
     let%lwt template_list =
       Filter.find_templates_of_query database_label query
     in
-    let tags = Logger.req req in
     let events =
       let lift = Lwt_result.lift in
       let open CCFun.Infix in

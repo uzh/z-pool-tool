@@ -3,6 +3,8 @@ module Dynparam = Utils.Database.Dynparam
 open Entity
 open Repo_utils
 
+let src = Logs.Src.create "filter.repo"
+
 module Sql = struct
   let select_filter_sql where_fragment =
     let select_from =
@@ -231,6 +233,7 @@ module Sql = struct
     (contact : Contact.t)
     =
     let open Utils.Lwt_result.Infix in
+    let tags = Pool_database.Logs.create pool in
     let query = filter |> CCOption.map (fun f -> f.query) in
     let find_sql where_fragment =
       Format.asprintf
@@ -253,13 +256,14 @@ module Sql = struct
     filtered_params template_list experiment_id query
     |> CCResult.map_err (fun err ->
          let () =
-           Logs.info (fun m ->
+           Logs.info ~src (fun m ->
              m
+               ~tags
                "%s\n%s"
                ([%show: Contact.t] contact)
                ([%show: Pool_common.Id.t] experiment_id))
          in
-         Pool_common.Utils.with_log_error ~level:Logs.Warning err)
+         Pool_common.Utils.with_log_error ~level:Logs.Warning ~tags err)
     |> CCResult.get_or
          ~default:(Dynparam.empty, if default then "TRUE" else "FALSE")
     |> fun (dyn, sql) ->

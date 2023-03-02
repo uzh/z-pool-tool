@@ -1,5 +1,6 @@
 module User = Pool_user
 
+let src = Logs.Src.create "test.database.seed.contacts"
 let defafult_range = CCList.range 0 10
 
 let create_contact i =
@@ -57,8 +58,9 @@ let create ?contact_data db_pool =
           ]
           @ contacts
         | Some { Sihl_user.id; _ } ->
-          Logs.debug (fun m ->
+          Logs.debug ~src (fun m ->
             m
+              ~tags:(Pool_database.Logs.create db_pool)
               "Contact already exists (%s): %s"
               (db_pool |> Pool_database.Label.value)
               id);

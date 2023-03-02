@@ -2,9 +2,7 @@
    https://github.com/rgrinberg/opium/blob/master/opium/src/middlewares/middleware_logger.ml *)
 include Sexplib0
 
-let log_src = Logs.Src.create "middleware.logger"
-
-module Logs = (val Logs.src_log log_src : Logs.LOG)
+let src = Logs.Src.create "middleware.logger"
 
 module Exn = struct
   type t = exn
@@ -84,6 +82,7 @@ let response_to_string (response : Opium.Response.t) =
 
 let respond handler req =
   let open Opium in
+  let tags () = Pool_context.Logger.Tags.req req in
   let time_f f =
     let t1 = Mtime_clock.now () in
     let x = f () in
@@ -95,28 +94,28 @@ let respond handler req =
   let span, response_lwt = time_f f in
   let%lwt response = response_lwt in
   let code = response.Response.status |> Status.to_string in
-  Logs.info (fun m ->
-    m "Responded %s in %a" code Mtime.Span.pp span ~tags:(Logger.req req));
+  Logs.info ~src (fun m ->
+    m ~tags:(tags ()) "Responded %s in %a" code Mtime.Span.pp span);
   let%lwt response_string = response_to_string response in
-  Logs.debug (fun m -> m "%s" response_string ~tags:(Logger.req req));
+  Logs.debug ~src (fun m -> m ~tags:(tags ()) "%s" response_string);
   Lwt.return response
 ;;
 
 let logger =
   let open Opium in
   let filter handler req =
+    let tags () = Pool_context.Logger.Tags.req req in
     let meth = Method.to_string req.Request.meth in
     let uri = req.Request.target |> Uri.of_string |> Uri.path_and_query in
-    let tags = Logger.req req in
-    Logs.info (fun m -> m "%s %S" meth uri ~tags);
+    Logs.info ~src (fun m -> m ~tags:(tags ()) "%s %S" meth uri);
     let%lwt request_string = request_to_string req in
-    Logs.debug (fun m -> m "%s" request_string ~tags:(Logger.req req));
+    Logs.debug ~src (fun m -> m ~tags:(tags ()) "%s" request_string);
     Lwt.catch
       (fun () -> respond handler req)
       (fun exn ->
-        Logs.err (fun f -> f "%s" (Exn.to_string exn) ~tags:(Logger.req req));
-        Logs.err (fun f ->
-          f "%s" (Printexc.get_backtrace ()) ~tags:(Logger.req req));
+        Logs.err ~src (fun m -> m ~tags:(tags ()) "%s" (Exn.to_string exn));
+        Logs.err ~src (fun m ->
+          m ~tags:(tags ()) "%s" (Printexc.get_backtrace ()));
         Lwt.fail exn)
   in
   Rock.Middleware.create ~name:"Logger" ~filter

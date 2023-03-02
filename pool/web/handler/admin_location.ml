@@ -42,7 +42,7 @@ let create req =
       , "/admin/locations/create"
       , [ HttpUtils.urlencoded_to_flash urlencoded ] ))
     @@
-    let tags = Logger.req req in
+    let tags = Pool_context.Logger.Tags.req req in
     let events =
       let open CCResult.Infix in
       let open Cqrs_command.Location_command.Create in
@@ -96,51 +96,52 @@ let add_file req =
   let result { Pool_context.database_label; _ } =
     Utils.Lwt_result.map_error (fun err ->
       err, Format.asprintf "%s/files/create" path)
-    @@ let* location = Pool_location.find database_label id in
-       let%lwt multipart_encoded =
-         Sihl.Web.Request.to_multipart_form_data_exn req
-       in
-       let* files =
-         HttpUtils.File.upload_files
-           database_label
-           [ Field.(FileMapping |> show) ]
-           req
-       in
-       let tags = Logger.req req in
-       let finalize = function
-         | Ok resp -> Lwt.return_ok resp
-         | Error err ->
-           let%lwt () =
-             Lwt_list.iter_s
-               (fun (_, asset_id) ->
-                 asset_id
-                 |> Service.Storage.delete
-                      ~ctx:(Pool_tenant.to_ctx database_label))
-               files
-           in
-           Logs.err (fun m -> m "One of the events failed while adding a file");
-           Lwt.return_error err
-       in
-       let events =
-         let open CCResult.Infix in
-         let open Cqrs_command.Location_command.AddFile in
-         files @ multipart_encoded
-         |> HttpUtils.File.multipart_form_data_to_urlencoded
-         |> decode
-         >>= handle ~tags location
-         |> Lwt_result.lift
-       in
-       let handle events =
-         let%lwt () =
-           Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
-         in
-         Http_utils.redirect_to_with_actions
-           path
-           [ Message.set
-               ~success:[ Pool_common.Message.(Created Field.FileMapping) ]
-           ]
-       in
-       events >|> finalize |>> handle
+    @@
+    let tags = Pool_context.Logger.Tags.req req in
+    let* location = Pool_location.find database_label id in
+    let%lwt multipart_encoded =
+      Sihl.Web.Request.to_multipart_form_data_exn req
+    in
+    let* files =
+      HttpUtils.File.upload_files
+        database_label
+        [ Field.(FileMapping |> show) ]
+        req
+    in
+    let finalize = function
+      | Ok resp -> Lwt.return_ok resp
+      | Error err ->
+        let%lwt () =
+          Lwt_list.iter_s
+            (fun (_, asset_id) ->
+              asset_id
+              |> Service.Storage.delete ~ctx:(Pool_tenant.to_ctx database_label))
+            files
+        in
+        Logs.err (fun m ->
+          m ~tags "One of the events failed while adding a file");
+        Lwt.return_error err
+    in
+    let events =
+      let open CCResult.Infix in
+      let open Cqrs_command.Location_command.AddFile in
+      files @ multipart_encoded
+      |> HttpUtils.File.multipart_form_data_to_urlencoded
+      |> decode
+      >>= handle ~tags location
+      |> Lwt_result.lift
+    in
+    let handle events =
+      let%lwt () =
+        Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
+      in
+      Http_utils.redirect_to_with_actions
+        path
+        [ Message.set
+            ~success:[ Pool_common.Message.(Created Field.FileMapping) ]
+        ]
+    in
+    events >|> finalize |>> handle
   in
   result |> HttpUtils.extract_happy_path req
 ;;
@@ -218,7 +219,7 @@ let update req =
       , Format.asprintf "%s/edit" detail_path
       , [ HttpUtils.urlencoded_to_flash urlencoded ] ))
     @@ let* location = Pool_location.find database_label id in
-       let tags = Logger.req req in
+       let tags = Pool_context.Logger.Tags.req req in
        let events =
          let open CCResult.Infix in
          let open Cqrs_command.Location_command.Update in
@@ -258,7 +259,7 @@ let delete req =
     Utils.Lwt_result.map_error (fun err -> err, path)
     @@
     let open Utils.Lwt_result.Infix in
-    let tags = Logger.req req in
+    let tags = Pool_context.Logger.Tags.req req in
     let* events =
       mapping_id
       |> Cqrs_command.Location_command.DeleteFile.handle ~tags

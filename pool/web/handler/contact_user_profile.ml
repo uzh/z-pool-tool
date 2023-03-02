@@ -59,6 +59,7 @@ let update_email req =
     ({ Pool_context.database_label; query_language; language; _ } as context)
     =
     let open Utils.Lwt_result.Infix in
+    let tags = Pool_context.Logger.Tags.req req in
     Utils.Lwt_result.map_error (fun msg ->
       HttpUtils.(
         msg, "/user/login-information", [ urlencoded_to_flash urlencoded ]))
@@ -92,6 +93,7 @@ let update_email req =
        let* events =
          Command.RequestEmailValidation.(
            handle
+             ~tags
              ?allowed_email_suffixes
              token
              verification_mail
@@ -100,7 +102,6 @@ let update_email req =
            |> Lwt_result.lift)
        in
        Utils.Database.with_transaction database_label (fun () ->
-         let tags = Logger.req req in
          let%lwt () = Pool_event.handle_events ~tags database_label events in
          HttpUtils.(
            redirect_to_with_actions
@@ -117,7 +118,7 @@ let update_password req =
     ({ Pool_context.database_label; query_language; language; _ } as context)
     =
     let open Utils.Lwt_result.Infix in
-    let tags = Logger.req req in
+    let tags = Pool_context.Logger.Tags.req req in
     Utils.Lwt_result.map_error (fun msg ->
       HttpUtils.(
         msg, "/user/login-information", [ urlencoded_to_flash urlencoded ]))
@@ -187,6 +188,7 @@ let completion_post req =
         , [ urlencoded_to_flash urlencoded ] )))
     @@
     let open Custom_field in
+    let tags = Pool_context.Logger.Tags.req req in
     let* contact = Pool_context.find_contact context |> Lwt_result.lift in
     let%lwt custom_fields =
       urlencoded
@@ -195,7 +197,6 @@ let completion_post req =
            database_label
            (Contact.id contact)
     in
-    let tags = Logger.req req in
     let events =
       let open Utils.Lwt_result.Infix in
       let open Public in

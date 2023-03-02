@@ -69,13 +69,11 @@ let create req =
       , "/admin/experiments/create"
       , [ HttpUtils.urlencoded_to_flash urlencoded ] ))
     @@
-    let tags = Logger.req req in
+    let tags = Pool_context.Logger.Tags.req req in
     let events =
       let open CCResult.Infix in
-      urlencoded
-      |> Cqrs_command.Experiment_command.Create.decode
-      >>= Cqrs_command.Experiment_command.Create.handle ~tags
-      |> Lwt_result.lift
+      let open Cqrs_command.Experiment_command.Create in
+      urlencoded |> decode >>= handle ~tags |> Lwt_result.lift
     in
     let handle events =
       let%lwt () =
@@ -158,24 +156,25 @@ let update req =
       ( err
       , Format.asprintf "%s/edit" detail_path
       , [ HttpUtils.urlencoded_to_flash urlencoded ] ))
-    @@ let* experiment = Experiment.find database_label id in
-       let tags = Logger.req req in
-       let events =
-         let open CCResult.Infix in
-         let open Cqrs_command.Experiment_command.Update in
-         urlencoded |> decode >>= handle ~tags experiment |> Lwt_result.lift
-       in
-       let handle events =
-         let%lwt () =
-           Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
-         in
-         Http_utils.redirect_to_with_actions
-           detail_path
-           [ Message.set
-               ~success:[ Pool_common.Message.(Updated Field.Experiment) ]
-           ]
-       in
-       events |>> handle
+    @@
+    let tags = Pool_context.Logger.Tags.req req in
+    let* experiment = Experiment.find database_label id in
+    let events =
+      let open CCResult.Infix in
+      let open Cqrs_command.Experiment_command.Update in
+      urlencoded |> decode >>= handle ~tags experiment |> Lwt_result.lift
+    in
+    let handle events =
+      let%lwt () =
+        Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
+      in
+      Http_utils.redirect_to_with_actions
+        detail_path
+        [ Message.set
+            ~success:[ Pool_common.Message.(Updated Field.Experiment) ]
+        ]
+    in
+    events |>> handle
   in
   result |> HttpUtils.extract_happy_path_with_actions req
 ;;
@@ -191,27 +190,27 @@ let delete req =
           "%s/%s"
           experiments_path
           (Experiment.Id.value experiment_id) ))
-    @@ let* experiment = Experiment.find database_label experiment_id in
-       let%lwt session_count =
-         Experiment.session_count database_label experiment_id
-       in
-       let tags = Logger.req req in
-       let events =
-         Cqrs_command.Experiment_command.Delete.(
-           handle ~tags { experiment; session_count })
-         |> Lwt_result.lift
-       in
-       let handle events =
-         let%lwt () =
-           Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
-         in
-         Http_utils.redirect_to_with_actions
-           experiments_path
-           [ Message.set
-               ~success:[ Pool_common.Message.(Created Field.Experiment) ]
-           ]
-       in
-       events |>> handle
+    @@
+    let tags = Pool_context.Logger.Tags.req req in
+    let* experiment = Experiment.find database_label experiment_id in
+    let%lwt session_count =
+      Experiment.session_count database_label experiment_id
+    in
+    let events =
+      let open Cqrs_command.Experiment_command.Delete in
+      handle ~tags { experiment; session_count } |> Lwt_result.lift
+    in
+    let handle events =
+      let%lwt () =
+        Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
+      in
+      Http_utils.redirect_to_with_actions
+        experiments_path
+        [ Message.set
+            ~success:[ Pool_common.Message.(Created Field.Experiment) ]
+        ]
+    in
+    events |>> handle
   in
   result |> HttpUtils.extract_happy_path req
 ;;
@@ -258,26 +257,23 @@ module Filter = struct
           (Experiment.Id.value experiment_id)
       in
       Utils.Lwt_result.map_error (fun err -> err, redirect_path)
-      @@ let* experiment = Experiment.find database_label experiment_id in
-         let tags = Logger.req req in
-         let events =
-           Cqrs_command.Experiment_command.DeleteFilter.(
-             handle ~tags experiment)
-           |> Lwt_result.lift
-         in
-         let handle events =
-           let%lwt () =
-             Lwt_list.iter_s
-               (Pool_event.handle_event ~tags database_label)
-               events
-           in
-           Http_utils.redirect_to_with_actions
-             redirect_path
-             [ Message.set
-                 ~success:[ Pool_common.Message.(Deleted Field.Filter) ]
-             ]
-         in
-         events |>> handle
+      @@
+      let tags = Pool_context.Logger.Tags.req req in
+      let* experiment = Experiment.find database_label experiment_id in
+      let events =
+        let open Cqrs_command.Experiment_command.DeleteFilter in
+        handle ~tags experiment |> Lwt_result.lift
+      in
+      let handle events =
+        let%lwt () =
+          Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
+        in
+        Http_utils.redirect_to_with_actions
+          redirect_path
+          [ Message.set ~success:[ Pool_common.Message.(Deleted Field.Filter) ]
+          ]
+      in
+      events |>> handle
     in
     result |> HttpUtils.extract_happy_path req
   ;;

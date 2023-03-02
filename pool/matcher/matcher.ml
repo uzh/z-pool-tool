@@ -1,6 +1,5 @@
-let log_src = Logs.Src.create "pool.matcher"
-
-module Logs = (val Logs.src_log log_src : Logs.LOG)
+let src = Logs.Src.create "matcher.service"
+let tags = Pool_database.(Logs.create root)
 
 type config =
   { start : bool option
@@ -57,7 +56,7 @@ let schema =
 
 let get_or_failwith element =
   element
-  |> CCResult.map_err Pool_common.Utils.with_log_error
+  |> CCResult.map_err (Pool_common.Utils.with_log_error ~tags)
   |> Pool_common.Utils.get_or_failwith
 ;;
 
@@ -169,13 +168,13 @@ let match_invitations ?interval pools =
     let open Cqrs_command.Matcher_command.Run in
     let ok_or_log_error = function
       | Ok (pool, events) when CCList.is_empty events ->
-        Logs.info (fun m ->
-          m "No actions for pool %a" Pool_database.Label.pp pool);
+        Logs.info ~src (fun m ->
+          m ~tags:(Pool_database.Logs.create pool) "No action");
         None
       | Ok m -> Some m
       | Error err ->
         let open Pool_common in
-        let (_ : Message.error) = Utils.with_log_error err in
+        let (_ : Message.error) = Utils.with_log_error ~tags err in
         None
     in
     Lwt_list.filter_map_s (fun (pool, limited_mailings) ->
@@ -202,12 +201,11 @@ let match_invitations ?interval pools =
   in
   let handle_events =
     Lwt_list.iter_s (fun (pool, events) ->
-      Logs.info (fun m ->
+      Logs.info ~src (fun m ->
         m
-          "Sending %4d intivation emails for tenant %a"
-          (count_mails events)
-          Pool_database.Label.pp
-          pool);
+          ~tags:(Pool_database.Logs.create pool)
+          "Sending %4d intivation emails"
+          (count_mails events));
       Pool_event.handle_events pool events)
   in
   pool_based_mailings
@@ -221,7 +219,7 @@ let start_matcher () =
   let open Schedule in
   let interval = Ptime.Span.of_int_s (10 * 60) in
   let periodic_fcn () =
-    Logs.debug (fun m -> m "Run");
+    Logs.debug ~src (fun m -> m ~tags:Pool_database.(Logs.create root) "Run");
     Pool_tenant.find_all ()
     ||> CCList.map (fun Pool_tenant.{ database_label; _ } -> database_label)
     >|> match_invitations ~interval

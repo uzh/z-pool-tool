@@ -19,7 +19,7 @@ let tenants req =
 ;;
 
 let create req =
-  let tags = Logger.req req in
+  let tags = Pool_context.Logger.Tags.req req in
   let result { Pool_context.database_label; _ } =
     let events () =
       Utils.Lwt_result.map_error (fun err -> err, tenants_path)
@@ -98,7 +98,7 @@ let create_operator req =
       err, Format.asprintf "%s/operator" redirect_path)
     @@
     let open CCFun in
-    let tags = Logger.req req in
+    let tags = Pool_context.Logger.Tags.req req in
     let* tenant_db =
       Pool_tenant.find_full tenant_id
       >|+ fun { Pool_tenant.Write.database; _ } -> database.Database.label

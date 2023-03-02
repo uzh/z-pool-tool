@@ -73,6 +73,12 @@ module Tenant : sig
 end
 
 val sexp_of_t : t -> Sexplib.Sexp.t
-val show_log : t -> string
 val is_from_root : t -> bool
 val user_is_admin : user -> bool
+
+module Logger : sig
+  module Tags : sig
+    val req : Sihl.Web.Request.t -> Logs.Tag.set
+    val context : t -> Logs.Tag.set
+  end
+end

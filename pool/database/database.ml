@@ -1,6 +1,5 @@
-let log_src = Logs.Src.create "pool.database"
+let src = Logs.Src.create "database"
 
-module Logs = (val Logs.src_log log_src : Logs.LOG)
 module SeedAssets = Seed_assets
 
 type config =
@@ -114,7 +113,8 @@ let handle_event _ : event -> unit Lwt.t = function
 ;;
 
 let start () =
-  Logs.info (fun m -> m "Start database %s" Root.label);
+  let tags = Pool_database.Logs.create Pool_database.root in
+  Logs.info ~src (fun m -> m ~tags "Start database %s" Root.label);
   Root.setup ();
   let%lwt () =
     Service.Migration.check_migrations_status
@@ -125,8 +125,8 @@ let start () =
   let%lwt db_pools = Tenant.setup () in
   Lwt_list.iter_s
     (fun pool ->
-      Logs.info (fun m ->
-        m "Start database %s" (Pool_database.Label.value pool));
+      Logs.info ~src (fun m ->
+        m ~tags "Start database %s" (Pool_database.Label.value pool));
       Service.Migration.check_migrations_status
         ~ctx:(Pool_tenant.to_ctx pool)
         ~migrations:(Tenant.Migration.steps ())

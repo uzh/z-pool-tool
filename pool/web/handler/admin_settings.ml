@@ -52,8 +52,8 @@ let update_settings req =
   let open Utils.Lwt_result.Infix in
   let open Cqrs_command.Settings_command in
   let lift = Lwt_result.lift in
+  let tags = Pool_context.Logger.Tags.req req in
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-  let tags = Logger.req req in
   let redirect_path = "/admin/settings" in
   let result { Pool_context.database_label; _ } =
     Utils.Lwt_result.map_error (fun err ->

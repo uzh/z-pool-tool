@@ -81,8 +81,8 @@ let update req =
 
 let delete_answer req =
   let open Utils.Lwt_result.Infix in
+  let tags = Pool_context.Logger.Tags.req req in
   let contact_id = contact_id req in
-  let tags = Logger.req req in
   let error_path =
     Format.asprintf "/admin/contacts/%s/edit" (Pool_common.Id.value contact_id)
   in

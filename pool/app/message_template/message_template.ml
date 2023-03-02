@@ -4,6 +4,7 @@ include Default
 include Message_utils
 module Guard = Entity_guard
 
+let src = Logs.Src.create "message_template"
 let find = Repo.find
 let all_default = Repo.all_default
 let find_all_of_entity_by_label = Repo.find_all_of_entity_by_label
@@ -262,7 +263,8 @@ module PasswordReset = struct
         (Pool_user.EmailAddress.value email)
       ||> function
       | None ->
-        Logs.err (fun m -> m "Reset token not found");
+        Logs.err ~src (fun m ->
+          m ~tags:(Pool_database.Logs.create pool) "Reset token not found");
         Error Message.PasswordResetFailMessage
       | Some token -> Ok token
     in

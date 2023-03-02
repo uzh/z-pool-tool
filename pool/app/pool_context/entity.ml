@@ -123,10 +123,3 @@ let show_log_user = function
   | Contact contact -> contact.Contact.user.Sihl_user.email
   | Guest -> "anonymous"
 ;;
-
-let show_log ({ database_label; user; _ } : t) =
-  Format.sprintf
-    "%s %s"
-    (show_log_user user)
-    (Pool_database.Label.value database_label)
-;;
