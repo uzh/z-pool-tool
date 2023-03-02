@@ -109,11 +109,23 @@ Html:
       email |> DevInbox.add_to_inbox |> Lwt.return
   ;;
 
+  let sender_of_pool database_label =
+    let open Settings in
+    if Pool_database.is_root database_label
+    then
+      Sihl.Configuration.read_string "SMTP_SENDER"
+      |> CCOption.get_exn_or "Undefined 'SMTP_SENDER'"
+      |> ContactEmail.of_string
+      |> Lwt.return
+    else find_contact_email database_label
+  ;;
+
   module Smtp = struct
     include DevInbox
 
     type prepared =
       { sender : string
+      ; reply_to : string
       ; recipients : Letters.recipient list
       ; subject : string
       ; body : Letters.body
@@ -176,38 +188,29 @@ Html:
           ()
         |> Letters.Config.set_port port
       in
+      let reply_to = sender in
       let%lwt sender =
         let valid_email =
-          let open Re in
-          (* Checks for more than 1 character before and more than 2 characters
-             after the @ sign *)
-          seq [ repn any 1 None; char '@'; repn any 2 None ]
-          |> whole_string
-          |> compile
-          |> Re.execp
+          let open Pool_user.EmailAddress in
+          of_string %> validate_characters %> CCResult.is_ok
         in
         let%lwt sender_of_pool =
-          if Pool_database.is_root database_label
-          then Lwt.return (Sihl.Configuration.read_string "SMTP_SENDER")
-          else
-            Settings.find_contact_email database_label
-            ||> Settings.ContactEmail.value
-            ||> CCOption.pure
+          sender_of_pool database_label ||> Settings.ContactEmail.value
         in
-        [ username; sender_of_pool ]
+        [ username; Some sender_of_pool ]
         |> CCList.filter (CCOption.map_or ~default:false valid_email)
         |> CCOption.choice
         |> CCOption.get_or ~default:sender
         |> Lwt.return
       in
-      Lwt.return { sender; recipients; subject; body; config }
+      Lwt.return { sender; reply_to; recipients; subject; body; config }
     ;;
 
     let send database_label email =
-      let%lwt { sender; recipients; subject; body; config } =
+      let%lwt { sender; reply_to; recipients; subject; body; config } =
         prepare database_label email
       in
-      Letters.build_email ~from:sender ~recipients ~subject ~body
+      Letters.create_email ~reply_to ~from:sender ~recipients ~subject ~body ()
       |> function
       | Ok message ->
         Logs.info (fun m ->

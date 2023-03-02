@@ -353,6 +353,7 @@ module Service : sig
     module Smtp : sig
       type prepared =
         { sender : string
+        ; reply_to : string
         ; recipients : Letters.recipient list
         ; subject : string
         ; body : Letters.body
@@ -368,6 +369,7 @@ module Service : sig
       val send : Sihl_email.t Sihl_queue.job
     end
 
+    val sender_of_pool : Database.Label.t -> Settings.ContactEmail.t Lwt.t
     val remove_from_cache : Pool_database.Label.t -> unit
     val intercept_prepare : Sihl_email.t -> (Sihl_email.t, string) result
     val dispatch : Database.Label.t -> Sihl_email.t -> unit Lwt.t

@@ -1,4 +1,5 @@
 let insert =
+  let open Utils.Lwt_result.Infix in
   let help =
     {|<table>
 
@@ -16,7 +17,6 @@ Example: default_data.insert message_templates
     ~help
     (function
     | [ "message_templates" ] ->
-      let open Utils.Lwt_result.Infix in
       let root_event =
         Message_template.(DefaultRestored default_values_root)
         |> Pool_event.message_template
@@ -31,6 +31,16 @@ Example: default_data.insert message_templates
               (Pool_event.handle_event pool) tenant_event)
       in
       let%lwt () = Pool_event.handle_event Pool_database.root root_event in
+      Lwt.return_some ()
+    | [ "guardian_rules" ] ->
+      let events =
+        [ Guard.(DefaultRestored root_permissions) |> Pool_event.guard ]
+      in
+      let%lwt () =
+        Command_utils.setup_databases ()
+        ||> CCList.cons Pool_database.root
+        >|> Lwt_list.iter_s CCFun.(flip Pool_event.handle_events events)
+      in
       Lwt.return_some ()
     | _ -> Command_utils.failwith_missmatch help)
 ;;

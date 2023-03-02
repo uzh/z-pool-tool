@@ -98,6 +98,7 @@ module EmailAddress : sig
   val equal : t -> t -> bool
   val pp : Format.formatter -> t -> unit
   val show : t -> string
+  val validate_characters : t -> (t, Pool_common.Message.error) result
 
   val validate
     :  Settings.EmailSuffix.t list option

@@ -3,7 +3,6 @@
  (libraries
   conformist
   containers
-  i18n
   pool_common
   ptime
   service

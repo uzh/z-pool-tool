@@ -33,24 +33,21 @@ let find_available_languages database_label entity_id label languages =
   filter_languages languages existing |> Lwt.return
 ;;
 
-let prepare_email language template email layout params =
-  match Sihl.Configuration.read_string "SMTP_SENDER" with
-  | None -> failwith "SMTP_SENDER not found in configuration"
-  | Some sender ->
-    let { Entity.email_subject; email_text; plain_text; _ } = template in
-    let mail =
-      Sihl_email.
-        { sender
-        ; recipient = Pool_user.EmailAddress.value email
-        ; subject = email_subject
-        ; text = PlainText.value plain_text
-        ; html = Some (combine_html language (Some email_subject))
-        ; cc = []
-        ; bcc = []
-        }
-    in
-    let params = [ "emailText", email_text ] @ layout_params layout @ params in
-    Sihl_email.Template.render_email_with_data params mail
+let prepare_email language template sender email layout params =
+  let { Entity.email_subject; email_text; plain_text; _ } = template in
+  let mail =
+    Sihl_email.
+      { sender = Settings.ContactEmail.value sender
+      ; recipient = Pool_user.EmailAddress.value email
+      ; subject = email_subject
+      ; text = PlainText.value plain_text
+      ; html = Some (combine_html language (Some email_subject))
+      ; cc = []
+      ; bcc = []
+      }
+  in
+  let params = [ "emailText", email_text ] @ layout_params layout @ params in
+  Sihl_email.Template.render_email_with_data params mail
 ;;
 
 let global_params user = [ "name", user |> Pool_user.user_fullname ]
@@ -85,7 +82,9 @@ module AssignmentConfirmation = struct
     let params = email_params language session contact in
     let layout = layout_from_tenant tenant in
     let email = contact |> Contact.email_address in
-    prepare_email language template email layout params |> Lwt_result.return
+    let%lwt sender = Pool_tenant.Service.Email.sender_of_pool pool in
+    prepare_email language template sender email layout params
+    |> Lwt_result.return
   ;;
 
   let create_from_public_session pool language tenant session contact =
@@ -94,7 +93,9 @@ module AssignmentConfirmation = struct
     let params = email_params_public_session language session contact in
     let layout = layout_from_tenant tenant in
     let email = contact |> Contact.email_address in
-    prepare_email language template email layout params |> Lwt_result.return
+    let%lwt sender = Pool_tenant.Service.Email.sender_of_pool pool in
+    prepare_email language template sender email layout params
+    |> Lwt_result.return
   ;;
 end
 
@@ -117,9 +118,11 @@ module ContactRegistrationAttempt = struct
     in
     let layout = layout_from_tenant tenant in
     let tenant_url = tenant.Pool_tenant.url in
+    let%lwt sender = Pool_tenant.Service.Email.sender_of_pool pool in
     prepare_email
       language
       template
+      sender
       (contact |> Contact.email_address)
       layout
       (email_params tenant_url contact)
@@ -145,9 +148,11 @@ module EmailVerification = struct
         ]
       |> create_public_url_with_params url "/email-verified"
     in
+    let%lwt sender = Pool_tenant.Service.Email.sender_of_pool pool in
     prepare_email
       language
       template
+      sender
       email_address
       (create_layout layout)
       (email_params validation_url contact)
@@ -179,34 +184,44 @@ module ExperimentInvitation = struct
         Label.ExperimentInvitation
     in
     let%lwt tenant_url = Pool_tenant.Url.of_pool pool in
+    let%lwt sender =
+      Pool_tenant.Service.Email.sender_of_pool tenant.Pool_tenant.database_label
+    in
     let layout = layout_from_tenant tenant in
     let fnc (contact : Contact.t) =
       let open CCResult in
       let* lang, template = template_by_contact sys_langs templates contact in
       let params = email_params experiment tenant_url contact in
-      prepare_email lang template (Contact.email_address contact) layout params
+      prepare_email
+        lang
+        template
+        sender
+        (Contact.email_address contact)
+        layout
+        params
       |> CCResult.return
     in
     Lwt_result.return fnc
   ;;
 
-  let create tenant experiment contact =
+  let create ({ Pool_tenant.database_label; _ } as tenant) experiment contact =
     let open Message_utils in
     let open Utils.Lwt_result.Infix in
-    let pool = tenant.Pool_tenant.database_label in
-    let%lwt system_languages = Settings.find_languages pool in
+    let%lwt system_languages = Settings.find_languages database_label in
     let* language =
       message_langauge system_languages contact |> Lwt_result.lift
     in
     let* template =
-      Repo.find_by_label pool language Label.ExperimentInvitation
+      Repo.find_by_label database_label language Label.ExperimentInvitation
     in
-    let%lwt tenant_url = Pool_tenant.Url.of_pool pool in
+    let%lwt tenant_url = Pool_tenant.Url.of_pool database_label in
+    let%lwt sender = Pool_tenant.Service.Email.sender_of_pool database_label in
     let layout = layout_from_tenant tenant in
     let params = email_params experiment tenant_url contact in
     prepare_email
       language
       template
+      sender
       (Contact.email_address contact)
       layout
       params
@@ -222,7 +237,8 @@ module PasswordChange = struct
     let* template = Repo.find_by_label pool language Label.PasswordChange in
     let layout = layout_from_tenant tenant in
     let email = Pool_user.user_email_address user in
-    prepare_email language template email layout (email_params user)
+    let%lwt sender = Pool_tenant.Service.Email.sender_of_pool pool in
+    prepare_email language template sender email layout (email_params user)
     |> Lwt_result.return
   ;;
 end
@@ -238,6 +254,7 @@ module PasswordReset = struct
     let email = Pool_user.user_email_address user in
     let* template = Repo.find_by_label pool language Label.PasswordReset in
     let%lwt url = Pool_tenant.Url.of_pool pool in
+    let%lwt sender = Pool_tenant.Service.Email.sender_of_pool pool in
     let open Pool_common in
     let* reset_token =
       Service.PasswordReset.create_reset_token
@@ -261,6 +278,7 @@ module PasswordReset = struct
     prepare_email
       language
       template
+      sender
       email
       (create_layout layout)
       (email_params reset_url user)
@@ -282,18 +300,20 @@ module ProfileUpdateTrigger = struct
       find_all_by_label_and_languages pool sys_langs Label.SessionReschedule
     in
     let%lwt url = Pool_tenant.Url.of_pool pool in
+    let%lwt sender = Pool_tenant.Service.Email.sender_of_pool pool in
     let fnc contact =
       let open CCResult in
       let* lang, template = template_by_contact sys_langs templates contact in
       prepare_email
         lang
         template
+        sender
         (Contact.email_address contact)
         (layout_from_tenant tenant)
         (email_params url contact)
       |> CCResult.return
     in
-    fnc |> Lwt_result.return
+    Lwt_result.return fnc
   ;;
 end
 
@@ -311,12 +331,19 @@ module SessionCancellation = struct
     let* templates =
       find_all_by_label_and_languages pool sys_langs Label.SessionCancellation
     in
+    let%lwt sender = Pool_tenant.Service.Email.sender_of_pool pool in
     let layout = layout_from_tenant tenant in
     let fnc reason (contact : Contact.t) =
       let open CCResult in
       let* lang, template = template_by_contact sys_langs templates contact in
       let params = email_params lang session reason contact in
-      prepare_email lang template (Contact.email_address contact) layout params
+      prepare_email
+        lang
+        template
+        sender
+        (Contact.email_address contact)
+        layout
+        params
       |> CCResult.return
     in
     Lwt_result.return fnc
@@ -346,11 +373,13 @@ module SessionReminder = struct
         language
         Label.SessionReminder
     in
+    let%lwt sender = Pool_tenant.Service.Email.sender_of_pool pool in
     let layout = layout_from_tenant tenant in
     let params = email_params language experiment session contact in
     prepare_email
       language
       template
+      sender
       (Contact.email_address contact)
       layout
       params
@@ -370,12 +399,19 @@ module SessionReminder = struct
         sys_langs
         Label.SessionReminder
     in
+    let%lwt sender = Pool_tenant.Service.Email.sender_of_pool pool in
     let layout = layout_from_tenant tenant in
     let fnc contact =
       let open CCResult in
       let* lang, template = template_by_contact sys_langs templates contact in
       let params = email_params lang experiment session contact in
-      prepare_email lang template (Contact.email_address contact) layout params
+      prepare_email
+        lang
+        template
+        sender
+        (Contact.email_address contact)
+        layout
+        params
       |> CCResult.return
     in
     Lwt_result.return fnc
@@ -399,12 +435,19 @@ module SessionReschedule = struct
     let* templates =
       find_all_by_label_and_languages pool sys_langs Label.SessionReschedule
     in
+    let%lwt sender = Pool_tenant.Service.Email.sender_of_pool pool in
     let layout = layout_from_tenant tenant in
     let fnc (contact : Contact.t) new_start new_duration =
       let open CCResult in
       let* lang, template = template_by_contact sys_langs templates contact in
       let params = email_params lang session new_start new_duration contact in
-      prepare_email lang template (Contact.email_address contact) layout params
+      prepare_email
+        lang
+        template
+        sender
+        (Contact.email_address contact)
+        layout
+        params
       |> CCResult.return
     in
     Lwt_result.return fnc
@@ -428,6 +471,7 @@ module SignUpVerification = struct
     let open Utils.Lwt_result.Infix in
     let* template = Repo.find_by_label pool language Label.SignUpVerification in
     let%lwt url = Pool_tenant.Url.of_pool pool in
+    let%lwt sender = Pool_tenant.Service.Email.sender_of_pool pool in
     let verification_url =
       Pool_common.
         [ ( Message.Field.Language
@@ -439,6 +483,7 @@ module SignUpVerification = struct
     prepare_email
       language
       template
+      sender
       email_address
       (layout_from_tenant tenant)
       (email_params verification_url firstname lastname)
