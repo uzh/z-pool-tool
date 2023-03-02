@@ -191,13 +191,8 @@ Html:
       let reply_to = sender in
       let%lwt sender =
         let valid_email =
-          let open Re in
-          (* Checks for more than 1 character before and more than 2 characters
-             after the @ sign *)
-          seq [ repn any 1 None; char '@'; repn any 2 None ]
-          |> whole_string
-          |> compile
-          |> Re.execp
+          let open Pool_user.EmailAddress in
+          of_string %> validate_characters %> CCResult.is_ok
         in
         let%lwt sender_of_pool =
           sender_of_pool database_label ||> Settings.ContactEmail.value

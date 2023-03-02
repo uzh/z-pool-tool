@@ -1,6 +1,13 @@
 (library
  (name email)
- (libraries pool_common pool_database pool_tenant pool_user service utils)
+ (libraries
+  i18n
+  pool_common
+  pool_database
+  pool_tenant
+  pool_user
+  service
+  utils)
  (preprocess
   (pps
    lwt_ppx

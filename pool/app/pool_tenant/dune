@@ -5,6 +5,7 @@
   guard
   pool_common
   pool_database
+  pool_user
   settings
   sihl
   sihl-user
