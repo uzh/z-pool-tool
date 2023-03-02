@@ -3,7 +3,7 @@ module Id = Pool_common.Id
 module File = Pool_common.File
 
 let src = Logs.Src.create "http_utils.file"
-let tags = Pool_database.(Logs.create root)
+let tags = Pool_database.(Logger.Tags.create root)
 let import_dir = "/tmp/pool/import"
 
 let raise_if_failed msg process_result =

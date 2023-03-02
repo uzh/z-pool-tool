@@ -26,7 +26,7 @@ type event =
 
 let handle_event pool : event -> unit Lwt.t =
   let open Repo in
-  let tags = Pool_database.Logs.create pool in
+  let tags = Pool_database.Logger.Tags.create pool in
   let ctx = [ "pool", Pool_database.Label.value pool ] in
   function
   | DefaultRestored permissions ->

@@ -113,7 +113,7 @@ let handle_event _ : event -> unit Lwt.t = function
 ;;
 
 let start () =
-  let tags = Pool_database.Logs.create Pool_database.root in
+  let tags = Pool_database.Logger.Tags.create Pool_database.root in
   Logs.info ~src (fun m -> m ~tags "Start database %s" Root.label);
   Root.setup ();
   let%lwt () =

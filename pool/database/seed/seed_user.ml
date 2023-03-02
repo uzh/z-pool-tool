@@ -83,7 +83,7 @@ let create_persons db_label n_persons =
   let open CCFun in
   let open CCList in
   let open Utils.Lwt_result.Infix in
-  let tags = Pool_database.Logs.create db_label in
+  let tags = Pool_database.Logger.Tags.create db_label in
   let chunk_size = 100 in
   let sum = fold_left ( + ) 0 in
   let%lwt contacts =
@@ -172,7 +172,7 @@ let admins db_label =
       | Some _ ->
         Logs.debug ~src (fun m ->
           m
-            ~tags:(Pool_database.Logs.create db_label)
+            ~tags:(Pool_database.Logger.Tags.create db_label)
             "%s"
             "Admin user already exists");
         Lwt.return_unit)
@@ -181,7 +181,7 @@ let admins db_label =
 
 let contacts db_label =
   let open Utils.Lwt_result.Infix in
-  let tags = Pool_database.Logs.create db_label in
+  let tags = Pool_database.Logger.Tags.create db_label in
   let n_contacts = 200 in
   let ctx = Pool_tenant.to_ctx db_label in
   let combinations =

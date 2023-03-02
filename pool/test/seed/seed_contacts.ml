@@ -60,7 +60,7 @@ let create ?contact_data db_pool =
         | Some { Sihl_user.id; _ } ->
           Logs.debug ~src (fun m ->
             m
-              ~tags:(Pool_database.Logs.create db_pool)
+              ~tags:(Pool_database.Logger.Tags.create db_pool)
               "Contact already exists (%s): %s"
               (db_pool |> Pool_database.Label.value)
               id);

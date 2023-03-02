@@ -264,7 +264,9 @@ module PasswordReset = struct
       ||> function
       | None ->
         Logs.err ~src (fun m ->
-          m ~tags:(Pool_database.Logs.create pool) "Reset token not found");
+          m
+            ~tags:(Pool_database.Logger.Tags.create pool)
+            "Reset token not found");
         Error Message.PasswordResetFailMessage
       | Some token -> Ok token
     in

@@ -3,7 +3,7 @@ module AccountMap = CCMap.Make (Pool_database.Label)
 module Queue = Sihl_queue.MariaDb
 
 let src = Logs.Src.create "pool_tenant.service"
-let tags = Pool_database.(Logs.create root)
+let tags = Pool_database.(Logger.Tags.create root)
 
 module Email = struct
   let accounts : SmtpAuth.Write.t AccountMap.t ref = ref AccountMap.empty
@@ -222,7 +222,7 @@ Html:
       | Ok message ->
         Logs.info ~src (fun m ->
           m
-            ~tags:(Pool_database.Logs.create database_label)
+            ~tags:(Pool_database.Logger.Tags.create database_label)
             "Send email as %s to %s"
             sender
             email.Sihl_email.recipient);
@@ -293,7 +293,7 @@ Html:
   let dispatch database_label email =
     Logs.debug ~src (fun m ->
       m
-        ~tags:(Pool_database.Logs.create database_label)
+        ~tags:(Pool_database.Logger.Tags.create database_label)
         "Dispatch email to %s"
         email.Sihl_email.recipient);
     Queue.dispatch
@@ -306,7 +306,7 @@ Html:
     let recipients = CCList.map (fun m -> m.Sihl_email.recipient) emails in
     Logs.debug ~src (fun m ->
       m
-        ~tags:(Pool_database.Logs.create database_label)
+        ~tags:(Pool_database.Logger.Tags.create database_label)
         "Dispatch email to %s"
         ([%show: string list] recipients));
     Queue.dispatch_all ~ctx:(Entity.to_ctx database_label) emails Job.send

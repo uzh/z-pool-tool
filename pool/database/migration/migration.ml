@@ -45,7 +45,7 @@ let run_pending_migrations db_pools migration_steps =
   in
   Lwt_list.iter_s
     (fun (label, pending_migrations) ->
-      let tags = Pool_database.Logs.create label in
+      let tags = Pool_database.Logger.Tags.create label in
       let msg prefix =
         Format.asprintf "%s pending migration for database pool: %s" prefix
         @@ value label

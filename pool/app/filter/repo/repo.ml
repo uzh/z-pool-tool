@@ -233,7 +233,7 @@ module Sql = struct
     (contact : Contact.t)
     =
     let open Utils.Lwt_result.Infix in
-    let tags = Pool_database.Logs.create pool in
+    let tags = Pool_database.Logger.Tags.create pool in
     let query = filter |> CCOption.map (fun f -> f.query) in
     let find_sql where_fragment =
       Format.asprintf

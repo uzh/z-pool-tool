@@ -2,7 +2,7 @@ open CCFun
 include Entity
 
 let src = Logs.Src.create "schedule.service"
-let tags = Pool_database.(Logs.create root)
+let tags = Pool_database.(Logger.Tags.create root)
 
 module Registered = struct
   module ScheduleMap = CCMap.Make (Label)

@@ -2,7 +2,7 @@ open CCFun
 include Sihl.Contract.Queue
 
 let src = Logs.Src.create "queue.service"
-let tags = Pool_database.(Logs.create root)
+let tags = Pool_database.(Logger.Tags.create root)
 
 let increment_tries (retry_delay : Ptime.Span.t) (job_instance : instance) =
   let next_run_at =
@@ -65,7 +65,7 @@ let work_job
   ({ input; tries; ctx; _ } as job_instance : instance)
   =
   let database_label = Pool_tenant.of_ctx_exn ctx in
-  let tags = Pool_database.Logs.create database_label in
+  let tags = Pool_database.Logger.Tags.create database_label in
   let now = Ptime_clock.now () in
   if should_run job_instance now
   then (

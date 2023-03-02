@@ -45,7 +45,7 @@ let tenant events = Tenant events
 let waiting_list events = WaitingList events
 
 let handle_event ?(tags = Logs.Tag.empty) pool event =
-  let tags = tags |> Pool_database.Logs.add pool in
+  let tags = tags |> Pool_database.Logger.Tags.add pool in
   match event with
   | Admin event ->
     let src = Logs.Src.create "admin.events" in

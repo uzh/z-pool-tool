@@ -82,7 +82,7 @@ let response_to_string (response : Opium.Response.t) =
 
 let respond handler req =
   let open Opium in
-  let tags () = Pool_context.Logger.Tags.req req in
+  let tags = Pool_context.Logger.Tags.req req in
   let time_f f =
     let t1 = Mtime_clock.now () in
     let x = f () in
@@ -94,28 +94,26 @@ let respond handler req =
   let span, response_lwt = time_f f in
   let%lwt response = response_lwt in
   let code = response.Response.status |> Status.to_string in
-  Logs.info ~src (fun m ->
-    m ~tags:(tags ()) "Responded %s in %a" code Mtime.Span.pp span);
+  Logs.info ~src (fun m -> m ~tags "Responded %s in %a" code Mtime.Span.pp span);
   let%lwt response_string = response_to_string response in
-  Logs.debug ~src (fun m -> m ~tags:(tags ()) "%s" response_string);
+  Logs.debug ~src (fun m -> m ~tags "%s" response_string);
   Lwt.return response
 ;;
 
 let logger =
   let open Opium in
   let filter handler req =
-    let tags () = Pool_context.Logger.Tags.req req in
+    let tags = Pool_context.Logger.Tags.req req in
     let meth = Method.to_string req.Request.meth in
     let uri = req.Request.target |> Uri.of_string |> Uri.path_and_query in
-    Logs.info ~src (fun m -> m ~tags:(tags ()) "%s %S" meth uri);
+    Logs.info ~src (fun m -> m ~tags "%s %S" meth uri);
     let%lwt request_string = request_to_string req in
-    Logs.debug ~src (fun m -> m ~tags:(tags ()) "%s" request_string);
+    Logs.debug ~src (fun m -> m ~tags "%s" request_string);
     Lwt.catch
       (fun () -> respond handler req)
       (fun exn ->
-        Logs.err ~src (fun m -> m ~tags:(tags ()) "%s" (Exn.to_string exn));
-        Logs.err ~src (fun m ->
-          m ~tags:(tags ()) "%s" (Printexc.get_backtrace ()));
+        Logs.err ~src (fun m -> m ~tags "%s" (Exn.to_string exn));
+        Logs.err ~src (fun m -> m ~tags "%s" (Printexc.get_backtrace ()));
         Lwt.fail exn)
   in
   Rock.Middleware.create ~name:"Logger" ~filter
