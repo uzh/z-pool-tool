@@ -31,7 +31,11 @@ let validate_access
   let open Pool_common.Message in
   let ctx = Pool_tenant.to_ctx database_label in
   Lwt_result.map_error (fun err ->
-    let (_ : error) = Pool_common.Utils.with_log_error err in
+    let (_ : error) =
+      Pool_common.Utils.with_log_error
+        ~tags:(Pool_database.Logger.Tags.create database_label)
+        err
+    in
     AccessDenied)
   @@
   match user with

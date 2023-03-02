@@ -57,7 +57,7 @@ let handle_event ~tags pool : event -> unit Lwt.t =
     in
     let%lwt (authorizable : [> `Admin ] Guard.Authorizable.t) =
       Entity_guard.Actor.to_authorizable ~ctx user
-      >|- Pool_common.Utils.with_log_error
+      >|- Pool_common.Utils.with_log_error ~tags
       ||> Pool_common.Utils.get_or_failwith
     in
     let%lwt () =

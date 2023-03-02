@@ -39,6 +39,7 @@ let handle_event pool : event -> unit Lwt.t =
       Actor.grant_roles ~ctx actor roles
       |> Lwt_result.map_error (fun err ->
            Pool_common.Utils.with_log_error
+             ~tags
              (Pool_common.Message.authorization err))
     in
     Lwt.return_unit

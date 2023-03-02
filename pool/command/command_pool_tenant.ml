@@ -101,7 +101,11 @@ Example: %s econ-uzh mariadb://user:pw@localhost:3306/dev_econ
          Lwt.return_some ()
        | Error err ->
          let open Pool_common in
-         let (_ : Message.error) = Utils.with_log_error err in
+         let (_ : Message.error) =
+           Utils.with_log_error
+             ~tags:(Pool_database.Logger.Tags.create pool)
+             err
+         in
          Lwt.return_none)
     | _ -> Command_utils.failwith_missmatch help)
 ;;

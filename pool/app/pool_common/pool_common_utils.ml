@@ -114,15 +114,16 @@ let with_log_result_error ?tags fcn =
     err)
 ;;
 
-let decoder create_fcn field = function
+let decoder ?tags create_fcn field = function
   | x :: _ -> create_fcn x
-  | [] -> Error (Entity_message.Undefined field |> with_log_error ~level:info)
+  | [] ->
+    Error (Entity_message.Undefined field |> with_log_error ?tags ~level:info)
 ;;
 
-let schema_decoder ?default create_fcn encode_fnc field =
+let schema_decoder ?tags ?default create_fcn encode_fnc field =
   PoolConformist.custom
     ?default
-    (decoder create_fcn field)
+    (decoder ?tags create_fcn field)
     CCFun.(encode_fnc %> CCList.pure)
     Entity_message.Field.(field |> show)
 ;;

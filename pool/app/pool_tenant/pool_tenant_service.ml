@@ -165,6 +165,7 @@ Html:
           let%lwt from_repo =
             Repo.Smtp.find_full_by_label database_label
             >|- with_log_error
+                  ~tags:(Pool_database.Logger.Tags.create database_label)
             ||> get_or_failwith
           in
           accounts := AccountMap.add database_label from_repo !accounts;

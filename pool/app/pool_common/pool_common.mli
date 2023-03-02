@@ -281,7 +281,8 @@ module Utils : sig
   end
 
   val schema_decoder
-    :  ?default:'b
+    :  ?tags:Logs.Tag.set
+    -> ?default:'b
     -> (string -> ('b, Message.error) result)
     -> ('b -> string)
     -> Message.Field.t
