@@ -1,8 +1,5 @@
 (* Put infrastructure service setup here. This is where you decide which service
    implementation to use. *)
-let log_src = Logs.Src.create "email"
-
-module Logs = (val Logs.src_log log_src : Logs.LOG)
 module Migration = Sihl.Database.Migration.MariaDb
 
 module User = struct

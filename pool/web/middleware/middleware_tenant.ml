@@ -33,7 +33,9 @@ let valid_tenant () =
          >|> handler
        | Error err ->
          let (_ : Pool_common.Message.error) =
-           Pool_common.Utils.with_log_error ~tags:(Logger.req req) err
+           Pool_common.Utils.with_log_error
+             ~tags:(Pool_context.Logger.Tags.req req)
+             err
          in
          Http_utils.redirect_to "/not-found")
   in

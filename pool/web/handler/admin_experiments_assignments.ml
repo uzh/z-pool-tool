@@ -53,28 +53,27 @@ let cancel req =
   in
   let result { Pool_context.database_label; _ } =
     Utils.Lwt_result.map_error (fun err -> err, redirect_path)
-    @@ let* assignment = Assignment.find database_label id in
-       let* session =
-         Session.find_by_assignment database_label assignment.Assignment.id
-       in
-       let tags = Logger.req req in
-       let events =
-         Cqrs_command.Assignment_command.Cancel.handle
-           ~tags
-           (assignment, session)
-         |> Lwt.return
-       in
-       let handle events =
-         let%lwt () =
-           Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
-         in
-         Http_utils.redirect_to_with_actions
-           redirect_path
-           [ Message.set
-               ~success:[ Pool_common.Message.(Canceled Field.Assignment) ]
-           ]
-       in
-       events |>> handle
+    @@
+    let tags = Pool_context.Logger.Tags.req req in
+    let* assignment = Assignment.find database_label id in
+    let* session =
+      Session.find_by_assignment database_label assignment.Assignment.id
+    in
+    let events =
+      let open Cqrs_command.Assignment_command.Cancel in
+      handle ~tags (assignment, session) |> Lwt.return
+    in
+    let handle events =
+      let%lwt () =
+        Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
+      in
+      Http_utils.redirect_to_with_actions
+        redirect_path
+        [ Message.set
+            ~success:[ Pool_common.Message.(Canceled Field.Assignment) ]
+        ]
+    in
+    events |>> handle
   in
   result |> HttpUtils.extract_happy_path req
 ;;

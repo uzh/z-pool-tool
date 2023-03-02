@@ -1,4 +1,4 @@
-let log_src = Logs.Src.create "pool.utils"
+let src = Logs.Src.create "pool_common.utils"
 let info = Logs.Info
 let warning = Logs.Warning
 let error = Logs.Error
@@ -41,7 +41,7 @@ module PoolConformist = struct
     CCFormat.fprintf f "Schema fields: %s\n\nInput: %s" schema input
   ;;
 
-  let decode_and_validate schema input =
+  let decode_and_validate ?tags schema input =
     let result = decode_and_validate schema input in
     match result with
     | Ok _ as result -> result
@@ -59,8 +59,9 @@ module PoolConformist = struct
         |> CCString.concat ", "
         |> CCFormat.sprintf "(%s)"
       in
-      Logs.warn (fun m ->
+      Logs.warn ~src (fun m ->
         m
+          ?tags
           "Failed to decode conformist schema: \n\n%a \n\nMessage: %s"
           pp_schema
           (schema, input)
@@ -84,42 +85,45 @@ let handle_json_parse_err str =
   Error Entity_message.(InvalidJson msg)
 ;;
 
-let with_log_info ?(level = info) info =
-  Logs.msg level (fun m -> m "%s" (Locales_en.info_to_string info));
+let with_log_info ?(tags = Logs.Tag.empty) ?(level = info) info =
+  Logs.msg ~src level (fun m -> m ~tags "%s" (Locales_en.info_to_string info));
   info
 ;;
 
-let with_log_success ?(level = info) success =
-  Logs.msg level (fun m -> m "%s" (Locales_en.success_to_string success));
+let with_log_success ?(tags = Logs.Tag.empty) ?(level = info) success =
+  Logs.msg ~src level (fun m ->
+    m ~tags "%s" (Locales_en.success_to_string success));
   success
 ;;
 
-let with_log_warning ?(level = warning) warn =
-  Logs.msg level (fun m -> m "%s" (Locales_en.warning_to_string warn));
+let with_log_warning ?(tags = Logs.Tag.empty) ?(level = warning) warn =
+  Logs.msg ~src level (fun m ->
+    m ~tags "%s" (Locales_en.warning_to_string warn));
   warn
 ;;
 
-let with_log_error ?(level = error) ?(tags = Logs.Tag.empty) err =
-  Logs.msg level (fun m ->
-    m "A user experienced an error: %s" (Locales_en.error_to_string err) ~tags);
+let with_log_error ?(tags = Logs.Tag.empty) ?(level = error) err =
+  Logs.msg ~src level (fun m ->
+    m ~tags "A user experienced an error: %s" (Locales_en.error_to_string err));
   err
 ;;
 
-let with_log_result_error ~tags fcn =
+let with_log_result_error ?tags fcn =
   CCResult.map_err (fun err ->
-    let (_ : Entity_message.error) = err |> fcn |> with_log_error ~tags in
+    let (_ : Entity_message.error) = err |> fcn |> with_log_error ?tags in
     err)
 ;;
 
-let decoder create_fcn field = function
+let decoder ?tags create_fcn field = function
   | x :: _ -> create_fcn x
-  | [] -> Error (Entity_message.Undefined field |> with_log_error ~level:info)
+  | [] ->
+    Error (Entity_message.Undefined field |> with_log_error ?tags ~level:info)
 ;;
 
-let schema_decoder ?default create_fcn encode_fnc field =
+let schema_decoder ?tags ?default create_fcn encode_fnc field =
   PoolConformist.custom
     ?default
-    (decoder create_fcn field)
+    (decoder ?tags create_fcn field)
     CCFun.(encode_fnc %> CCList.pure)
     Entity_message.Field.(field |> show)
 ;;

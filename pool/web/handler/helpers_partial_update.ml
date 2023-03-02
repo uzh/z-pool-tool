@@ -116,6 +116,7 @@ let update ?contact req =
     in
     let%lwt response =
       let open CCResult in
+      let tags = Pool_context.Logger.Tags.req req in
       let html_response html =
         [ html ] |> HttpUtils.multi_html_to_plain_text_response |> Lwt.return
       in
@@ -126,7 +127,6 @@ let update ?contact req =
           custom_field
           (field, version, value)
       in
-      let tags = Logger.req req in
       let events =
         let open CCResult in
         partial_update

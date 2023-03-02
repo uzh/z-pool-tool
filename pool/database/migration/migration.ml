@@ -1,6 +1,8 @@
 module Database = Pool_database
 module Map = CCMap.Make (String)
 
+let src = Logs.Src.create "database.migration"
+
 let execute db_pools steps =
   Lwt_list.iter_s
     (fun pool -> Service.Migration.execute ~ctx:(Pool_tenant.to_ctx pool) steps)
@@ -18,7 +20,7 @@ let extend_migrations additional_steps () =
   with
   | true -> migrations
   | false ->
-    Logs.info (fun m ->
+    Logs.info ~src (fun m ->
       m
         "There are duplicated migrations: %s\nRemove or rename them."
         (CCList.fold_left
@@ -43,16 +45,17 @@ let run_pending_migrations db_pools migration_steps =
   in
   Lwt_list.iter_s
     (fun (label, pending_migrations) ->
+      let tags = Pool_database.Logger.Tags.create label in
       let msg prefix =
         Format.asprintf "%s pending migration for database pool: %s" prefix
         @@ value label
       in
       if CCList.length pending_migrations > 0
       then (
-        Logs.debug (fun m -> m "%s" @@ msg "Run");
+        Logs.debug ~src (fun m -> m ~tags "%s" @@ msg "Run");
         execute [ label ] migration_steps)
       else (
-        Logs.debug (fun m -> m "%s" @@ msg "No");
+        Logs.debug ~src (fun m -> m ~tags "%s" @@ msg "No");
         Lwt.return_unit))
     status
 ;;

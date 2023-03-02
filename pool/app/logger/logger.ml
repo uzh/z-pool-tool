@@ -1,13 +1,11 @@
-let tag_req : Sihl.Web.Request.t Logs.Tag.def =
-  let pp (f : Format.formatter) (req : Sihl.Web.Request.t) =
-    let id = Sihl.Web.Id.find req |> CCOption.value ~default:"none" in
-    Format.fprintf f "%s" id
-  in
-  Logs.Tag.def "request" ~doc:"A Sihl request" pp
+let tag_req : string Logs.Tag.def =
+  Logs.Tag.def "request_id" ~doc:"Rock.Request/Response id" CCString.pp
 ;;
 
-let req (req : Sihl.Web.Request.t) : Logs.Tag.set =
-  Logs.Tag.(empty |> add tag_req req)
+let tag_database = Utils.Database.Logger.Tags.add_label
+
+let tag_user : string Logs.Tag.def =
+  Logs.Tag.def "user" ~doc:"User / Administrator email" CCString.pp
 ;;
 
 let empty : Logs.Tag.set = Logs.Tag.empty
@@ -55,41 +53,33 @@ let pp_header ~pp_h ppf (l, h) =
 ;;
 
 let pp_source = Fmt.(styled source_style string)
-let pp_context = Fmt.(styled `Green string)
+let pp_database = Fmt.(styled `Green string)
+let pp_user = Fmt.(styled `Cyan string)
 let pp_id = Fmt.(styled `Red string)
 
 let pp_exec_header tags src =
   let open CCOption.Infix in
-  let pp_h ppf style h =
-    let id =
-      tags
-      >>= Logs.Tag.find tag_req
-      >>= Sihl.Web.Id.find
-      >|= Format.sprintf "%s"
-      |> CCOption.value ~default:"-"
-    in
-    let context =
-      tags
-      >>= Logs.Tag.find tag_req
-      >|= Pool_context.find
-      >>= CCResult.to_opt
-      >|= Pool_context.show_log
-      |> CCOption.value ~default:"-"
-    in
+  let pp_h ppf style level =
+    let value = CCOption.value ~default:"-" in
+    let id = tags >>= Logs.Tag.find tag_req |> value in
+    let user = tags >>= Logs.Tag.find tag_user |> value in
+    let database_label = tags >>= Logs.Tag.find tag_database |> value in
     let src = Logs.Src.name src in
     let now = Ptime_clock.now () |> Ptime.to_rfc3339 in
     Fmt.pf
       ppf
-      "%s [%a] [%a] [%a] [%a]: "
+      "%s [%a][%a][%a][%a][%a]: "
       now
       Fmt.(styled style string)
-      h
+      level
       pp_source
       src
+      pp_database
+      database_label
       pp_id
       id
-      pp_context
-      context
+      pp_user
+      user
   in
   pp_header ~pp_h
 ;;

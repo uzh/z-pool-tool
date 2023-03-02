@@ -8,6 +8,7 @@ let update req command success_message =
   let result _ =
     let open Utils.Lwt_result.Infix in
     let open Common.Message.Field in
+    let tags = Pool_context.Logger.Tags.req req in
     let id =
       HttpUtils.get_field_router_param req Pool_common.Message.Field.Tenant
       |> Pool_tenant.Id.of_string
@@ -38,15 +39,12 @@ let update req command success_message =
           req
       in
       let events_list urlencoded =
-        let tags = Logger.req req in
         let open CCResult.Infix in
+        let open Cqrs_command.Pool_tenant_command in
         match command with
-        | `EditDetail ->
-          Cqrs_command.Pool_tenant_command.EditDetails.(
-            decode urlencoded >>= handle ~tags tenant)
+        | `EditDetail -> EditDetails.(decode urlencoded >>= handle ~tags tenant)
         | `EditDatabase ->
-          Cqrs_command.Pool_tenant_command.EditDatabase.(
-            decode urlencoded >>= handle ~tags tenant)
+          EditDatabase.(decode urlencoded >>= handle ~tags tenant)
       in
       logo_files @ multipart_encoded
       |> File.multipart_form_data_to_urlencoded
@@ -54,7 +52,6 @@ let update req command success_message =
       |> events_list
       |> Lwt_result.lift
     in
-    let tags = Logger.req req in
     let handle =
       Lwt_list.iter_s (Pool_event.handle_event ~tags Database.root)
     in

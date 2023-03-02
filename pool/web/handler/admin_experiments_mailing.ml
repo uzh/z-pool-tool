@@ -62,38 +62,37 @@ let create req =
       ( err
       , experiment_path ~suffix:"mailings/create" experiment_id
       , [ HttpUtils.urlencoded_to_flash urlencoded ] ))
-    @@ let* experiment = Experiment.find database_label experiment_id in
-       let* distribution =
-         Sihl.Web.Request.urlencoded_list Field.(array_key Distribution) req
-         ||> Mailing.Distribution.of_urlencoded_list
-       in
-       let urlencoded =
-         CCList.Assoc.set
-           ~eq:( = )
-           Field.(show Distribution)
-           [ distribution ]
-           urlencoded
-       in
-       let tags = Logger.req req in
-       let events =
-         let open CCResult in
-         let open Cqrs_command.Mailing_command.Create in
-         urlencoded
-         |> HttpUtils.remove_empty_values
-         |> decode
-         >>= handle ~tags experiment
-       in
-       let handle events =
-         let%lwt () =
-           Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
-         in
-         Http_utils.redirect_to_with_actions
-           (experiment_path ~suffix:"mailings" experiment_id)
-           [ Message.set
-               ~success:[ Pool_common.Message.(Created Field.Mailing) ]
-           ]
-       in
-       events |> Lwt_result.lift |>> handle
+    @@
+    let tags = Pool_context.Logger.Tags.req req in
+    let* experiment = Experiment.find database_label experiment_id in
+    let* distribution =
+      Sihl.Web.Request.urlencoded_list Field.(array_key Distribution) req
+      ||> Mailing.Distribution.of_urlencoded_list
+    in
+    let urlencoded =
+      CCList.Assoc.set
+        ~eq:( = )
+        Field.(show Distribution)
+        [ distribution ]
+        urlencoded
+    in
+    let events =
+      let open CCResult in
+      let open Cqrs_command.Mailing_command.Create in
+      urlencoded
+      |> HttpUtils.remove_empty_values
+      |> decode
+      >>= handle ~tags experiment
+    in
+    let handle events =
+      let%lwt () =
+        Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
+      in
+      Http_utils.redirect_to_with_actions
+        (experiment_path ~suffix:"mailings" experiment_id)
+        [ Message.set ~success:[ Pool_common.Message.(Created Field.Mailing) ] ]
+    in
+    events |> Lwt_result.lift |>> handle
   in
   result |> HttpUtils.extract_happy_path_with_actions req
 ;;
@@ -149,35 +148,34 @@ let update req =
     in
     Utils.Lwt_result.map_error (fun err ->
       err, redirect_path, [ HttpUtils.urlencoded_to_flash urlencoded ])
-    @@ let* mailing = Mailing.find database_label id in
-       let* distribution =
-         Sihl.Web.Request.urlencoded_list Field.(array_key Distribution) req
-         ||> Mailing.Distribution.of_urlencoded_list
-       in
-       let urlencoded =
-         CCList.Assoc.set
-           ~eq:( = )
-           Field.(show Distribution)
-           [ distribution ]
-           urlencoded
-       in
-       let tags = Logger.req req in
-       let events =
-         let open CCResult in
-         let open Cqrs_command.Mailing_command.Update in
-         urlencoded |> decode >>= handle ~tags mailing
-       in
-       let handle events =
-         let%lwt () =
-           Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
-         in
-         Http_utils.redirect_to_with_actions
-           redirect_path
-           [ Message.set
-               ~success:[ Pool_common.Message.(Updated Field.Mailing) ]
-           ]
-       in
-       events |> Lwt_result.lift |>> handle
+    @@
+    let tags = Pool_context.Logger.Tags.req req in
+    let* mailing = Mailing.find database_label id in
+    let* distribution =
+      Sihl.Web.Request.urlencoded_list Field.(array_key Distribution) req
+      ||> Mailing.Distribution.of_urlencoded_list
+    in
+    let urlencoded =
+      CCList.Assoc.set
+        ~eq:( = )
+        Field.(show Distribution)
+        [ distribution ]
+        urlencoded
+    in
+    let events =
+      let open CCResult in
+      let open Cqrs_command.Mailing_command.Update in
+      urlencoded |> decode >>= handle ~tags mailing
+    in
+    let handle events =
+      let%lwt () =
+        Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
+      in
+      Http_utils.redirect_to_with_actions
+        redirect_path
+        [ Message.set ~success:[ Pool_common.Message.(Updated Field.Mailing) ] ]
+    in
+    events |> Lwt_result.lift |>> handle
   in
   result |> HttpUtils.extract_happy_path_with_actions req
 ;;
@@ -263,16 +261,17 @@ let disabler command success_handler req =
   let result { Pool_context.database_label; _ } =
     let open Utils.Lwt_result.Infix in
     Utils.Lwt_result.map_error (fun err -> err, redirect_path)
-    @@ let* mailing = Mailing.find database_label mailing_id in
-       let* events = command mailing |> Lwt_result.lift in
-       let tags = Logger.req req in
-       let%lwt () = Pool_event.handle_events ~tags database_label events in
-       Http_utils.redirect_to_with_actions
-         redirect_path
-         [ Message.set
-             ~success:[ Pool_common.Message.(success_handler Field.Mailing) ]
-         ]
-       |> Lwt_result.ok
+    @@
+    let tags = Pool_context.Logger.Tags.req req in
+    let* mailing = Mailing.find database_label mailing_id in
+    let* events = command mailing |> Lwt_result.lift in
+    let%lwt () = Pool_event.handle_events ~tags database_label events in
+    Http_utils.redirect_to_with_actions
+      redirect_path
+      [ Message.set
+          ~success:[ Pool_common.Message.(success_handler Field.Mailing) ]
+      ]
+    |> Lwt_result.ok
   in
   result |> HttpUtils.extract_happy_path req
 ;;

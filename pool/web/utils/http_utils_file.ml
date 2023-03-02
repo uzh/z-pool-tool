@@ -2,6 +2,8 @@ module Database = Pool_database
 module Id = Pool_common.Id
 module File = Pool_common.File
 
+let src = Logs.Src.create "http_utils.file"
+let tags = Pool_database.(Logger.Tags.create root)
 let import_dir = "/tmp/pool/import"
 
 let raise_if_failed msg process_result =
@@ -20,7 +22,7 @@ let raise_if_failed msg process_result =
 
 let prepare_import_directory () =
   let open Utils.Lwt_result.Infix in
-  Logs.debug (fun m -> m "IMPORT: Making sure directory exist");
+  Logs.debug ~src (fun m -> m ~tags "IMPORT: Making sure directory exist");
   let message = Format.asprintf "while creating directory %s" import_dir in
   Lwt_process.exec ("", [| "mkdir"; "-p"; import_dir |])
   ||> raise_if_failed message
@@ -65,7 +67,7 @@ let save_files allow_list req =
 
 let remove_imported_file filename =
   let open Utils.Lwt_result.Infix in
-  Logs.debug (fun m -> m "IMPORT: Remove imported file");
+  Logs.debug ~src (fun m -> m ~tags "IMPORT: Remove imported file");
   Lwt_process.exec ("", [| "rm"; "-f"; filename |])
   ||> raise_if_failed ("while deleting file " ^ filename)
 ;;

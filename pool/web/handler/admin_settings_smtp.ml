@@ -24,7 +24,7 @@ let show req =
 ;;
 
 let create ?(redirect_path = active_navigation) req =
-  let tags = Logger.req req in
+  let tags = Pool_context.Logger.Tags.req req in
   let result { Pool_context.database_label; _ } =
     let validate () =
       SmtpAuth.find_by_label database_label
@@ -61,7 +61,7 @@ let create ?(redirect_path = active_navigation) req =
 
 let update_base ?(redirect_path = active_navigation) command success_message req
   =
-  let tags = Logger.req req in
+  let tags = Pool_context.Logger.Tags.req req in
   let result { Pool_context.database_label; _ } =
     let id =
       HttpUtils.get_field_router_param req Field.Smtp |> SmtpAuth.Id.of_string

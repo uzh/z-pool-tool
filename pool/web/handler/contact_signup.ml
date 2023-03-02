@@ -30,7 +30,7 @@ let sign_up_create req =
   in
   let result { Pool_context.database_label; query_language; language; _ } =
     let open Utils.Lwt_result.Infix in
-    let tags = Logger.req req in
+    let tags = Pool_context.Logger.Tags.req req in
     Utils.Lwt_result.map_error (fun msg ->
       msg, "/signup", [ HttpUtils.urlencoded_to_flash urlencoded ])
     @@ let* () =
@@ -110,7 +110,9 @@ let sign_up_create req =
                     database_label
                     (CCOption.value ~default:language contact.Contact.language)
                     tenant
-               >== Command.SendRegistrationAttemptNotifitacion.handle contact
+               >== Command.SendRegistrationAttemptNotifitacion.handle
+                     ~tags
+                     contact
            | Ok contact ->
              let* create_contact_events = create_contact_events () in
              let open CCResult.Infix in
@@ -121,7 +123,6 @@ let sign_up_create req =
            | Error _ -> Lwt_result.return [])
        in
        Utils.Database.with_transaction database_label (fun () ->
-         let tags = Logger.req req in
          let%lwt () = Pool_event.handle_events ~tags database_label events in
          HttpUtils.(
            redirect_to_with_actions
@@ -136,7 +137,7 @@ let sign_up_create req =
 
 let email_verification req =
   let open Utils.Lwt_result.Infix in
-  let tags = Logger.req req in
+  let tags = Pool_context.Logger.Tags.req req in
   let result ({ Pool_context.database_label; query_language; _ } as context) =
     let open Pool_common.Message in
     let%lwt redirect_path =
@@ -190,6 +191,7 @@ let email_verification req =
        | true, Error _, Error _ | false, Error _, Error _ ->
          Logs.err (fun m ->
            m
+             ~tags
              "Impossible email update tried: %s with context: %s"
              ([%show: Email.t] email)
              ([%show: Pool_context.t] context));
@@ -227,16 +229,15 @@ let terms_accept req =
     Utils.Lwt_result.map_error (fun msg -> msg, "/login")
     @@
     let open Utils.Lwt_result.Infix in
+    let tags = Pool_context.Logger.Tags.req req in
     let id =
       Pool_common.(
         Sihl.Web.Router.param req Message.Field.(Id |> show) |> Id.of_string)
     in
     let* contact = Contact.find database_label id in
-    let tags = Logger.req req in
     let* events =
       Command.AcceptTermsAndConditions.handle ~tags contact |> Lwt_result.lift
     in
-    let tags = Logger.req req in
     let%lwt () = Pool_event.handle_events ~tags database_label events in
     HttpUtils.(redirect_to (path_with_language query_language "/experiments"))
     |> Lwt_result.ok

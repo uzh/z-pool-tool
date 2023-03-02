@@ -19,7 +19,7 @@ let index req =
 
 let create req =
   let result { Pool_context.database_label; _ } =
-    let tags = Logger.req req in
+    let tags = Pool_context.Logger.Tags.req req in
     let user () =
       Sihl.Web.Request.urlencoded Field.(Email |> show) req
       ||> CCOption.to_result Pool_common.Message.EmailAddressMissingRoot
@@ -51,7 +51,7 @@ let create req =
 let toggle_status req =
   let result { Pool_context.database_label; _ } =
     let open CCFun in
-    let tags = Logger.req req in
+    let tags = Pool_context.Logger.Tags.req req in
     let id = HttpUtils.find_id Admin.Id.of_string Field.Admin req in
     let events = RootCommand.ToggleStatus.handle ~tags %> Lwt_result.lift in
     let handle =

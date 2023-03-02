@@ -104,3 +104,10 @@ module GuardBackend : sig
     -> 'a
     -> unit Lwt.t
 end
+
+module Logger : sig
+  module Tags : sig
+    val create : Label.t -> Logs.Tag.set
+    val add : Label.t -> Logs.Tag.set -> Logs.Tag.set
+  end
+end

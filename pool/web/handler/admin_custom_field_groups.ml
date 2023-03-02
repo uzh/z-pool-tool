@@ -65,7 +65,7 @@ let write ?id req model =
     Utils.Lwt_result.map_error (fun err ->
       err, error_path, [ HttpUtils.urlencoded_to_flash urlencoded ])
     @@
-    let tags = Logger.req req in
+    let tags = Pool_context.Logger.Tags.req req in
     let events =
       let%lwt sys_languages = Settings.find_languages database_label in
       match id with
@@ -108,6 +108,7 @@ let update req =
 
 let delete req =
   let handler req model =
+    let tags = Pool_context.Logger.Tags.req req in
     let id = req |> get_group_id in
     let result { Pool_context.database_label; _ } =
       let redirect_path = Url.Group.edit_path (model, id) in
@@ -118,7 +119,7 @@ let delete req =
         let open CCFun.Infix in
         id
         |> Custom_field.find_group database_label
-        >>= Cqrs_command.Custom_field_group_command.Destroy.handle
+        >>= Cqrs_command.Custom_field_group_command.Destroy.handle ~tags
             %> Lwt_result.lift
       in
       let%lwt () = Pool_event.handle_events database_label events in
@@ -140,42 +141,40 @@ let sort req =
     let redirect_path = Url.index_path model in
     let result { Pool_context.database_label; _ } =
       Utils.Lwt_result.map_error (fun err -> err, redirect_path, [])
-      @@ let%lwt ids =
-           Sihl.Web.Request.urlencoded_list
-             Message.Field.(CustomFieldGroup |> array_key)
-             req
-         in
-         let%lwt groups =
-           let open Utils.Lwt_result.Infix in
-           Custom_field.find_groups_by_model database_label model
-           ||> fun options ->
-           CCList.filter_map
-             (fun id ->
-               CCList.find_opt
-                 Custom_field.Group.(
-                   fun (option : t) -> Id.equal (Id.of_string id) option.id)
-                 options)
-             ids
-         in
-         let tags = Logger.req req in
-         let events =
-           groups
-           |> Cqrs_command.Custom_field_group_command.Sort.handle ~tags
-           |> Lwt_result.lift
-         in
-         let handle events =
-           let%lwt () =
-             Lwt_list.iter_s
-               (Pool_event.handle_event ~tags database_label)
-               events
-           in
-           Http_utils.redirect_to_with_actions
-             redirect_path
-             [ HttpUtils.Message.set
-                 ~success:[ Message.(Updated Field.CustomFieldGroup) ]
-             ]
-         in
-         events |>> handle
+      @@
+      let tags = Pool_context.Logger.Tags.req req in
+      let%lwt ids =
+        Sihl.Web.Request.urlencoded_list
+          Message.Field.(CustomFieldGroup |> array_key)
+          req
+      in
+      let%lwt groups =
+        let open Utils.Lwt_result.Infix in
+        Custom_field.find_groups_by_model database_label model
+        ||> fun options ->
+        CCList.filter_map
+          (fun id ->
+            CCList.find_opt
+              Custom_field.Group.(
+                fun (option : t) -> Id.equal (Id.of_string id) option.id)
+              options)
+          ids
+      in
+      let events =
+        let open Cqrs_command.Custom_field_group_command.Sort in
+        groups |> handle ~tags |> Lwt_result.lift
+      in
+      let handle events =
+        let%lwt () =
+          Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
+        in
+        Http_utils.redirect_to_with_actions
+          redirect_path
+          [ HttpUtils.Message.set
+              ~success:[ Message.(Updated Field.CustomFieldGroup) ]
+          ]
+      in
+      events |>> handle
     in
     result |> HttpUtils.extract_happy_path_with_actions req
   in

@@ -1,3 +1,5 @@
+let src = Logs.Src.create "middleware.error"
+
 type config =
   { token : string
   ; uri_base : string
@@ -37,12 +39,12 @@ let before_start () =
   if Sihl.Configuration.is_production ()
   then (
     (* Validate configuration variables for production environment*)
-    let _ = Sihl.Configuration.(read schema) in
+    let (_ : config) = Sihl.Configuration.(read schema) in
     ())
   else ()
 ;;
 
-let reporter (_ : Rock.Request.t) =
+let reporter (request : Rock.Request.t) =
   let config = Sihl.Configuration.(read schema) in
   let module Gitlab_notify =
     Canary.Notifier.Gitlab (struct
@@ -77,11 +79,18 @@ let reporter (_ : Rock.Request.t) =
     in
     match res with
     | Ok iid ->
-      Logs.info (fun m ->
-        m "Successfully reported error to gitlab as issue %d." iid);
+      Logs.info ~src (fun m ->
+        m
+          ~tags:(Pool_context.Logger.Tags.req request)
+          "Successfully reported error to gitlab as issue %d."
+          iid);
       Lwt.return_ok iid
     | Error err ->
-      Logs.info (fun m -> m "Unable to report error to gitlab: %s" err);
+      Logs.info ~src (fun m ->
+        m
+          ~tags:(Pool_context.Logger.Tags.req request)
+          "Unable to report error to gitlab: %s"
+          err);
       Lwt.return_error err
 ;;
 
@@ -90,6 +99,6 @@ let error () =
     ~reporter:(fun req exn ->
       match%lwt reporter req exn with
       | Ok _ -> Lwt.return_unit
-      | Error err -> raise (Failure err))
+      | Error err -> failwith err)
     ()
 ;;

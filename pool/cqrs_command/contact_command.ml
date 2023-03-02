@@ -174,7 +174,7 @@ end = struct
   type t = Contact.t
 
   let handle ?(tags = Logs.Tag.empty) field contact =
-    Logs.info ~src (fun m -> m "Handle command Update" ~tags);
+    Logs.info ~src (fun m -> m "Handle command ClearAnswer" ~tags);
     Ok
       [ Custom_field.AdminAnswerCleared (field, Contact.id contact)
         |> Pool_event.custom_field

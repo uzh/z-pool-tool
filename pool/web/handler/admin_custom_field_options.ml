@@ -72,6 +72,7 @@ let edit req =
 
 let write ?id req custom_field =
   let open Utils.Lwt_result.Infix in
+  let tags = Pool_context.Logger.Tags.req req in
   let%lwt urlencoded =
     Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
   in
@@ -90,7 +91,6 @@ let write ?id req custom_field =
     in
     go Message.Field.Name encode_lang
   in
-  let tags = Logger.req req in
   let result { Pool_context.database_label; _ } =
     Utils.Lwt_result.map_error (fun err ->
       err, error_path, [ HttpUtils.urlencoded_to_flash urlencoded ])
@@ -151,32 +151,30 @@ let toggle_action action req =
         Url.Field.edit_path Custom_field.(model custom_field, id custom_field)
       in
       Utils.Lwt_result.map_error (fun err -> err, redirect_path)
-      @@ let* option = id |> Custom_field.find_option database_label in
-         let tags = Logger.req req in
-         let events =
-           Lwt_result.lift
-           @@
-           match action with
-           | `Delete ->
-             option
-             |> Cqrs_command.Custom_field_option_command.Destroy.handle ~tags
-           | `Publish ->
-             option
-             |> Cqrs_command.Custom_field_option_command.Publish.handle ~tags
-         in
-         let success =
-           let open Pool_common.Message in
-           match action with
-           | `Delete -> Deleted Field.CustomFieldOption
-           | `Publish -> Published Field.CustomFieldOption
-         in
-         let handle events =
-           let%lwt () = Pool_event.handle_events ~tags database_label events in
-           Http_utils.redirect_to_with_actions
-             redirect_path
-             [ Message.set ~success:[ success ] ]
-         in
-         events |>> handle
+      @@
+      let tags = Pool_context.Logger.Tags.req req in
+      let* option = id |> Custom_field.find_option database_label in
+      let events =
+        let open Cqrs_command.Custom_field_option_command in
+        Lwt_result.lift
+        @@
+        match action with
+        | `Delete -> Destroy.handle ~tags option
+        | `Publish -> Publish.handle ~tags option
+      in
+      let success =
+        let open Pool_common.Message in
+        match action with
+        | `Delete -> Deleted Field.CustomFieldOption
+        | `Publish -> Published Field.CustomFieldOption
+      in
+      let handle events =
+        let%lwt () = Pool_event.handle_events ~tags database_label events in
+        Http_utils.redirect_to_with_actions
+          redirect_path
+          [ Message.set ~success:[ success ] ]
+      in
+      events |>> handle
     in
     result |> HttpUtils.extract_happy_path req
   in

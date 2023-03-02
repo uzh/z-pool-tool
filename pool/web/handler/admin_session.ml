@@ -110,6 +110,7 @@ let create req =
   in
   let result context =
     let open Utils.Lwt_result.Infix in
+    let tags = Pool_context.Logger.Tags.req req in
     let%lwt urlencoded =
       Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
     in
@@ -123,9 +124,8 @@ let create req =
     let* events =
       let open CCResult.Infix in
       let open Cqrs_command.Session_command.Create in
-      urlencoded |> decode >>= handle id location |> Lwt_result.lift
+      urlencoded |> decode >>= handle ~tags id location |> Lwt_result.lift
     in
-    let tags = Logger.req req in
     let%lwt () = Pool_event.handle_events ~tags database_label events in
     Http_utils.redirect_to_with_actions
       path
@@ -235,61 +235,62 @@ let update_handler action req =
       ( err
       , Format.asprintf "%s/%s" path error_path
       , [ HttpUtils.urlencoded_to_flash urlencoded ] ))
-    @@ let* { Pool_context.Tenant.tenant; _ } =
-         Pool_context.Tenant.find req |> Lwt_result.lift
-       in
-       let* session = Session.find database_label session_id in
-       let* follow_ups =
-         Session.find_follow_ups database_label session.Session.id
-       in
-       let* parent =
-         match session.Session.follow_up_to with
-         | None -> Lwt_result.return None
-         | Some parent_id ->
-           parent_id |> Session.find database_label >|+ CCOption.some
-       in
-       let tags = Logger.req req in
-       let* events =
-         match action with
-         | `Update ->
-           let* location = location urlencoded database_label in
-           let open CCResult.Infix in
-           Cqrs_command.Session_command.Update.(
-             urlencoded
-             |> decode
-             >>= handle ~tags ?parent_session:parent follow_ups session location
-             |> Lwt_result.lift)
-         | `Reschedule ->
-           let open Cqrs_command.Session_command.Reschedule in
-           let* assignments =
-             Assignment.find_by_session database_label session.Session.id
-           in
-           let* system_languages =
-             Pool_context.Tenant.get_tenant_languages req |> Lwt_result.lift
-           in
-           let* create_message =
-             Message_template.SessionReschedule.prepare
-               database_label
-               tenant
-               system_languages
-               session
-           in
-           urlencoded
-           |> decode
-           |> Lwt_result.lift
-           >== handle
-                 ~tags
-                 ?parent_session:parent
-                 follow_ups
-                 session
-                 assignments
-                 create_message
-       in
-       let%lwt () = Pool_event.handle_events ~tags database_label events in
-       Http_utils.redirect_to_with_actions
-         path
-         [ Message.set ~success:[ success_msg ] ]
-       |> Lwt_result.ok
+    @@
+    let tags = Pool_context.Logger.Tags.req req in
+    let* { Pool_context.Tenant.tenant; _ } =
+      Pool_context.Tenant.find req |> Lwt_result.lift
+    in
+    let* session = Session.find database_label session_id in
+    let* follow_ups =
+      Session.find_follow_ups database_label session.Session.id
+    in
+    let* parent =
+      match session.Session.follow_up_to with
+      | None -> Lwt_result.return None
+      | Some parent_id ->
+        parent_id |> Session.find database_label >|+ CCOption.some
+    in
+    let* events =
+      match action with
+      | `Update ->
+        let* location = location urlencoded database_label in
+        let open CCResult.Infix in
+        let open Cqrs_command.Session_command.Update in
+        urlencoded
+        |> decode
+        >>= handle ~tags ?parent_session:parent follow_ups session location
+        |> Lwt_result.lift
+      | `Reschedule ->
+        let open Cqrs_command.Session_command.Reschedule in
+        let* assignments =
+          Assignment.find_by_session database_label session.Session.id
+        in
+        let* system_languages =
+          Pool_context.Tenant.get_tenant_languages req |> Lwt_result.lift
+        in
+        let* create_message =
+          Message_template.SessionReschedule.prepare
+            database_label
+            tenant
+            system_languages
+            session
+        in
+        urlencoded
+        |> decode
+        |> Lwt_result.lift
+        >== handle
+              ~tags
+              ?parent_session:parent
+              follow_ups
+              session
+              assignments
+              create_message
+    in
+    let%lwt () = Pool_event.handle_events ~tags database_label events in
+    Http_utils.redirect_to_with_actions
+      path
+      [ Message.set ~success:[ success_msg ] ]
+    |> Lwt_result.ok
   in
   result |> HttpUtils.extract_happy_path_with_actions req
 ;;
@@ -317,37 +318,39 @@ let cancel req =
   let result { Pool_context.database_label; _ } =
     Utils.Lwt_result.map_error (fun err ->
       err, error_path, [ HttpUtils.urlencoded_to_flash urlencoded ])
-    @@ let* session = Session.find database_label session_id in
-       let tags = Logger.req req in
-       let* events =
-         let* contacts =
-           Assignment.find_by_session database_label session.Session.id
-           >|+ CCList.map (fun (a : Assignment.t) -> a.Assignment.contact)
-         in
-         let* system_languages =
-           Pool_context.Tenant.get_tenant_languages req |> Lwt_result.lift
-         in
-         let* { Pool_context.Tenant.tenant; _ } =
-           Pool_context.Tenant.find req |> Lwt_result.lift
-         in
-         let* create_message =
-           Message_template.SessionCancellation.prepare
-             database_label
-             tenant
-             system_languages
-             session
-         in
-         let open CCResult.Infix in
-         Cqrs_command.Session_command.Cancel.(
-           urlencoded |> decode >>= handle ~tags session contacts create_message)
-         |> Lwt_result.lift
-       in
-       let%lwt () = Pool_event.handle_events ~tags database_label events in
-       Http_utils.redirect_to_with_actions
-         success_path
-         [ Message.set ~success:[ Pool_common.Message.(Canceled Field.Session) ]
-         ]
-       |> Lwt_result.ok
+    @@
+    let tags = Pool_context.Logger.Tags.req req in
+    let* session = Session.find database_label session_id in
+    let* events =
+      let* contacts =
+        Assignment.find_by_session database_label session.Session.id
+        >|+ CCList.map (fun (a : Assignment.t) -> a.Assignment.contact)
+      in
+      let* system_languages =
+        Pool_context.Tenant.get_tenant_languages req |> Lwt_result.lift
+      in
+      let* { Pool_context.Tenant.tenant; _ } =
+        Pool_context.Tenant.find req |> Lwt_result.lift
+      in
+      let* create_message =
+        Message_template.SessionCancellation.prepare
+          database_label
+          tenant
+          system_languages
+          session
+      in
+      let open CCResult.Infix in
+      let open Cqrs_command.Session_command.Cancel in
+      urlencoded
+      |> decode
+      >>= handle ~tags session contacts create_message
+      |> Lwt_result.lift
+    in
+    let%lwt () = Pool_event.handle_events ~tags database_label events in
+    Http_utils.redirect_to_with_actions
+      success_path
+      [ Message.set ~success:[ Pool_common.Message.(Canceled Field.Session) ] ]
+    |> Lwt_result.ok
   in
   result |> HttpUtils.extract_happy_path_with_actions req
 ;;
@@ -363,13 +366,12 @@ let delete req =
     Utils.Lwt_result.map_error (fun err -> err, error_path)
     @@
     let open Utils.Lwt_result.Infix in
+    let tags = Pool_context.Logger.Tags.req req in
     let session_id = session_id req in
     let* session = Session.find database_label session_id in
-    let tags = Logger.req req in
     let* events =
-      session
-      |> Cqrs_command.Session_command.Delete.handle ~tags
-      |> Lwt_result.lift
+      let open Cqrs_command.Session_command.Delete in
+      session |> handle ~tags |> Lwt_result.lift
     in
     let%lwt () = Pool_event.handle_events ~tags database_label events in
     Http_utils.redirect_to_with_actions
@@ -399,25 +401,25 @@ let create_follow_up req =
       ( err
       , Format.asprintf "%s/follow-up" path
       , [ HttpUtils.urlencoded_to_flash urlencoded ] ))
-    @@ let* location = location urlencoded database_label in
-       let* session = Session.find database_label session_id in
-       let tags = Logger.req req in
-       let* events =
-         let open CCResult.Infix in
-         Cqrs_command.Session_command.Create.(
-           urlencoded
-           |> decode
-           >>= handle ~tags ~parent_session:session experiment_id location)
-         |> Lwt_result.lift
-       in
-       let%lwt () = Pool_event.handle_events ~tags database_label events in
-       Http_utils.redirect_to_with_actions
-         (Format.asprintf
-            "/admin/experiments/%s/sessions"
-            (Experiment.Id.value experiment_id))
-         [ Message.set ~success:[ Pool_common.Message.(Created Field.Session) ]
-         ]
-       |> Lwt_result.ok
+    @@
+    let tags = Pool_context.Logger.Tags.req req in
+    let* location = location urlencoded database_label in
+    let* session = Session.find database_label session_id in
+    let* events =
+      let open CCResult.Infix in
+      let open Cqrs_command.Session_command.Create in
+      urlencoded
+      |> decode
+      >>= handle ~tags ~parent_session:session experiment_id location
+      |> Lwt_result.lift
+    in
+    let%lwt () = Pool_event.handle_events ~tags database_label events in
+    Http_utils.redirect_to_with_actions
+      (Format.asprintf
+         "/admin/experiments/%s/sessions"
+         (Experiment.Id.value experiment_id))
+      [ Message.set ~success:[ Pool_common.Message.(Created Field.Session) ] ]
+    |> Lwt_result.ok
   in
   result |> HttpUtils.extract_happy_path_with_actions req
 ;;

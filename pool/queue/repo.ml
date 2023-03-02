@@ -155,7 +155,6 @@ let find_request =
 
 let find label id =
   let open Utils.Lwt_result.Infix in
-  Logs.warn (fun m -> m "%s" ([%show: Pool_database.Label.t] label));
   Utils.Database.find_opt (Pool_database.Label.value label) find_request id
   ||> CCOption.to_result Pool_common.Message.(NotFound Field.Queue)
 ;;

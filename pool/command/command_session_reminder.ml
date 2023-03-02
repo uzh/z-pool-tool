@@ -25,7 +25,9 @@ let create_reminders pool tenant sys_languages session =
 ;;
 
 let send_tenant_reminder pool =
-  Utils.Lwt_result.map_error Pool_common.Utils.with_log_error
+  Utils.Lwt_result.map_error
+    (Pool_common.Utils.with_log_error
+       ~tags:(Pool_database.Logger.Tags.create pool))
   @@
   let open CCFun in
   let open Utils.Lwt_result.Infix in

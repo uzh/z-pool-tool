@@ -14,7 +14,8 @@ let login_get req =
     >|> function
     | Some _ -> redirect_to_entrypoint |> Lwt_result.ok
     | None ->
-      Logs.info (fun m -> m "User not found in session" ~tags:(Logger.req req));
+      Logs.info (fun m ->
+        m ~tags:(Pool_context.Logger.Tags.req req) "User not found in session");
       let open Sihl.Web in
       Page.Root.Login.login ?intended:(HttpUtils.find_intended_opt req) context
       |> General.create_root_layout ~active_navigation:"/root/login" context
@@ -75,7 +76,7 @@ let request_reset_password_post req =
   let open Message_template in
   let result { Pool_context.database_label; language; _ } =
     let open Utils.Lwt_result.Infix in
-    let tags = Logger.req req in
+    let tags = Pool_context.Logger.Tags.req req in
     let redirect_path = "/root/request-reset-password" in
     Sihl.Web.Request.to_urlencoded req
     ||> decode
@@ -85,7 +86,7 @@ let request_reset_password_post req =
           |> Service.User.find_by_email_opt ~ctx
           ||> CCOption.to_result Pool_common.Message.PasswordResetFailMessage)
     >>= PasswordReset.create database_label language Root
-    >>= CCFun.(handle %> Lwt_result.lift)
+    >>= CCFun.(handle ~tags %> Lwt_result.lift)
     |>> Pool_event.handle_events ~tags database_label
     >|> function
     | Ok () | Error (_ : Pool_common.Message.error) ->

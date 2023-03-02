@@ -1,9 +1,8 @@
 open CCFun
 include Entity
 
-let log_src = Logs.Src.create "pool.schedule"
-
-module Logs = (val Logs.src_log log_src : Logs.LOG)
+let src = Logs.Src.create "schedule.service"
+let tags = Pool_database.(Logger.Tags.create root)
 
 module Registered = struct
   module ScheduleMap = CCMap.Make (Label)
@@ -25,7 +24,7 @@ module Registered = struct
   ;;
 
   let add_base ({ label; _ } as schedule : t) =
-    Logs.debug (fun m -> m "registered '%s'" label);
+    Logs.debug ~src (fun m -> m ~tags "registered '%s'" label);
     registered := ScheduleMap.add label schedule !registered
   ;;
 
@@ -90,17 +89,18 @@ let run ({ label; scheduled_time; status; _ } as schedule : t) =
   let open Utils.Lwt_result.Infix in
   let delay = run_in scheduled_time in
   let paused () =
-    Logs.debug (fun m -> m "%s: Run is paused" label);
+    Logs.debug ~src (fun m -> m ~tags "%s: Run is paused" label);
     Lwt.return_unit
   in
   let run ({ label; scheduled_time; fcn; _ } as schedule) =
-    Logs.debug (fun m -> m "%s: Run in %f seconds" label delay);
+    Logs.debug ~src (fun m -> m ~tags "%s: Run in %f seconds" label delay);
     let%lwt () =
       Lwt.catch
         (fun () -> fcn ())
         (fun exn ->
-          Logs.err (fun m ->
+          Logs.err ~src (fun m ->
             m
+              ~tags
               "Exception caught while running schedule:\n %s"
               (Printexc.to_string exn));
           Lwt.return_unit)
@@ -126,14 +126,14 @@ let run ({ label; scheduled_time; status; _ } as schedule : t) =
 ;;
 
 let start_schedule ({ label; _ } as schedule : t) =
-  Logs.info (fun m -> m "Start %s" label);
+  Logs.info ~src (fun m -> m ~tags "Start %s" label);
   Lwt.ignore_result @@ run schedule;
   Lwt.return_unit
 ;;
 
 let start () =
   let%lwt () = Repo.stop_all_active () in
-  Logs.info (fun m -> m "Start schedule");
+  Logs.info ~src (fun m -> m ~tags "Start schedule");
   Registered.iter_lwt start_schedule
 ;;
 
