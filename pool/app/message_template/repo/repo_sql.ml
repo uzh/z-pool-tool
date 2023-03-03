@@ -205,3 +205,16 @@ let insert_default_if_not_exists pool t =
   | None -> insert pool t
   | Some _ -> Lwt.return ()
 ;;
+
+let delete_request =
+  let open Caqti_request.Infix in
+  {sql|
+    DELETE FROM pool_message_templates
+    WHERE uuid = UNHEX(REPLACE(?, '-', ''))
+  |sql}
+  |> RepoEntity.Id.t ->. Caqti_type.unit
+;;
+
+let delete pool id =
+  Utils.Database.exec (Pool_database.Label.value pool) delete_request id
+;;

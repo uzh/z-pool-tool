@@ -358,9 +358,12 @@ let rec error_to_string = function
   | RequiredFieldsMissing ->
     "To continue, you need to answer the following questions."
   | Retrieve field -> field_message "Cannot retrieve" (field_to_string field) ""
+  | SessionFullyBooked -> "Session is fully booked"
   | SessionHasAssignments ->
     "There are already assignments for this session. It cannot be deleted."
-  | SessionFullyBooked -> "Session is fully booked"
+  | SessionHasFollowUps ->
+    "There is already a follow-up session for this session. It cannot be \
+     deleted."
   | SessionInvalid -> "Invalid session, please login."
   | SessionAlreadyCanceled date ->
     CCFormat.asprintf "This session has already been canceled on %s." date

@@ -164,6 +164,10 @@ type event =
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
+val created : t * Experiment.Id.t -> event
+val updated : update * t -> event
+val deleted : t -> event
+val stopped : t -> event
 val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
 
 val find

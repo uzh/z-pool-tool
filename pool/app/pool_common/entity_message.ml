@@ -311,6 +311,7 @@ type error =
   | SessionAlreadyClosed of string
   | SessionFullyBooked
   | SessionHasAssignments
+  | SessionHasFollowUps
   | SessionInPast
   | SessionInvalid
   | SessionNotStarted

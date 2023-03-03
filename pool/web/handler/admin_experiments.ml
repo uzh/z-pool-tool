@@ -18,6 +18,10 @@ let experiment_boolean_fields =
   Experiment.boolean_fields |> CCList.map Pool_common.Message.Field.show
 ;;
 
+let find_all_with_role database_label role =
+  Admin.find_all_with_role database_label [ role ] ~exclude:[]
+;;
+
 let index req =
   let open Utils.Lwt_result.Infix in
   let error_path = "/admin/dashboard" in
@@ -196,9 +200,40 @@ let delete req =
     let%lwt session_count =
       Experiment.session_count database_label experiment_id
     in
+    let%lwt mailings =
+      Mailing.find_by_experiment database_label experiment_id
+    in
+    let%lwt assistants =
+      find_all_with_role
+        database_label
+        (`Assistant (Guard.Uuid.target_of Experiment.Id.value experiment_id))
+    in
+    let%lwt experimenters =
+      find_all_with_role
+        database_label
+        (`Experimenter (Guard.Uuid.target_of Experiment.Id.value experiment_id))
+    in
+    let%lwt templates =
+      let open Message_template in
+      Label.[ ExperimentInvitation; SessionReminder ]
+      |> Lwt_list.map_s
+           (find_all_of_entity_by_label
+              database_label
+              (experiment_id |> Experiment.Id.to_common))
+      ||> CCList.flatten
+    in
     let events =
       let open Cqrs_command.Experiment_command.Delete in
-      handle ~tags { experiment; session_count } |> Lwt_result.lift
+      handle
+        ~tags
+        { experiment
+        ; session_count
+        ; mailings
+        ; experimenters
+        ; assistants
+        ; templates
+        }
+      |> Lwt_result.lift
     in
     let handle events =
       let%lwt () =

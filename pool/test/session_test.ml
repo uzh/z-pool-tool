@@ -459,7 +459,9 @@ let update_min_eq_max () =
 
 let delete () =
   let session = Test_utils.Model.create_session () in
-  let res = SessionC.Delete.handle session in
+  let res =
+    SessionC.Delete.(handle { session; follow_ups = []; templates = [] })
+  in
   check_result (Ok [ Pool_event.Session (Session.Deleted session) ]) res
 ;;
 
@@ -467,7 +469,9 @@ let delete_closed_session () =
   let closed_at = Ptime_clock.now () in
   let session = Test_utils.Model.create_session () in
   let session = Session.{ session with closed_at = Some closed_at } in
-  let res = SessionC.Delete.handle session in
+  let res =
+    SessionC.Delete.(handle { session; follow_ups = []; templates = [] })
+  in
   check_result
     (closed_at
     |> Pool_common.Utils.Time.formatted_date_time
@@ -484,8 +488,21 @@ let delete_session_with_assignments () =
         assignment_count = AssignmentCount.create 1 |> CCResult.get_exn
       }
   in
-  let res = SessionC.Delete.handle session in
+  let res =
+    SessionC.Delete.(handle { session; follow_ups = []; templates = [] })
+  in
   check_result (Error Pool_common.Message.SessionHasAssignments) res
+;;
+
+let delete_session_with_follow_ups () =
+  let id = Pool_common.Id.create () in
+  let session = Test_utils.Model.create_session ~id () in
+  let follow_up_session = Test_utils.Model.create_session ~follow_up_to:id () in
+  let res =
+    SessionC.Delete.(
+      handle { session; follow_ups = [ follow_up_session ]; templates = [] })
+  in
+  check_result (Error Pool_common.Message.SessionHasFollowUps) res
 ;;
 
 let create_cancellation_message reason contact =

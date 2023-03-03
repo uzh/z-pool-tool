@@ -285,11 +285,11 @@ module Model = struct
     |> Session.Start.create
   ;;
 
-  let create_session ?start () =
+  let create_session ?(id = Pool_common.Id.create ()) ?follow_up_to ?start () =
     let open Session in
     let start = start |> CCOption.value ~default:(in_an_hour ()) in
-    { id = Pool_common.Id.create ()
-    ; follow_up_to = None
+    { id
+    ; follow_up_to
     ; start
     ; duration = Duration.create hour |> get_or_failwith_pool_error
     ; description = None
