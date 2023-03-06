@@ -54,7 +54,7 @@ end = struct
         CCList.fold_left
           (fun res session ->
             res
-            >>= fun _ ->
+            >>= fun () ->
             Session.Public.is_fully_booked session
             |> function
             | true -> Error Pool_common.Message.(SessionFullyBooked)
