@@ -337,7 +337,7 @@ let assign_to_session_with_follow_ups () =
 let marked_uncanceled_as_deleted () =
   let assignment = Model.create_assignment () in
   let assignment = Assignment.{ assignment with canceled_at = None } in
-  let events = AssignmentCommand.MarkAsDeleted.handle assignment in
+  let events = AssignmentCommand.MarkAsDeleted.handle [ assignment ] in
   let expected =
     Ok
       [ Assignment.MarkedAsDeleted assignment |> Pool_event.assignment
@@ -353,7 +353,7 @@ let marked_canceled_as_deleted () =
   let assignment =
     Assignment.{ assignment with canceled_at = Some (CanceledAt.create_now ()) }
   in
-  let events = AssignmentCommand.MarkAsDeleted.handle assignment in
+  let events = AssignmentCommand.MarkAsDeleted.handle [ assignment ] in
   let expected =
     Ok [ Assignment.MarkedAsDeleted assignment |> Pool_event.assignment ]
   in

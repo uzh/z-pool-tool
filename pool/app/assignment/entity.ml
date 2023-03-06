@@ -86,7 +86,6 @@ let is_not_canceled { canceled_at; _ } =
   else Error Pool_common.Message.AssignmentIsCanceled
 ;;
 
-(* TODO: under which circumstances should an assignment be maked_as_deleted *)
 let is_deletable m =
   let open CCResult in
   let* () = is_not_deleted m in

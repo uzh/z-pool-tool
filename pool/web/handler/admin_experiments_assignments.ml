@@ -129,15 +129,12 @@ let mark_as_deleted req =
   let%lwt _, assignment_id, redirect_path = ids_and_redirect_from_req req in
   let result { Pool_context.database_label; _ } =
     Utils.Lwt_result.map_error (fun err -> err, redirect_path)
-<<<<<<< HEAD
-    @@ let* assignment = Assignment.find database_label id in
+    @@ let* assignments =
+         Assignment.find_with_follow_ups database_label assignment_id
+       in
        let tags = Pool_context.Logger.Tags.req req in
-=======
-    @@ let* assignment = Assignment.find database_label assignment_id in
-       let tags = Logger.req req in
->>>>>>> referrer specific redirects
        let events =
-         Cqrs_command.Assignment_command.MarkAsDeleted.handle ~tags assignment
+         Cqrs_command.Assignment_command.MarkAsDeleted.handle ~tags assignments
          |> Lwt.return
        in
        let handle events =

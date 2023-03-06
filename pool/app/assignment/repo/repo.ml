@@ -168,6 +168,39 @@ module Sql = struct
       , Pool_common.Id.value (Contact.id contact) )
   ;;
 
+  let find_with_follow_ups_request =
+    let open Caqti_request.Infix in
+    {sql|
+      WHERE
+        pool_assignments.marked_as_deleted = 0
+      AND(pool_assignments.uuid = $1
+        OR pool_sessions.follow_up_to = (
+          SELECT
+            pool_sessions.uuid
+          FROM
+            pool_sessions
+            INNER JOIN pool_assignments ON pool_assignments.session_id = pool_sessions.id
+          WHERE
+            pool_assignments.uuid = $1))
+        AND pool_assignments.contact_id = (
+          SELECT
+            pool_assignments.contact_id
+          FROM
+            pool_assignments
+          WHERE
+            pool_assignments.uuid = $1)
+    |sql}
+    |> Format.asprintf "%s\n%s" select_public_sql
+    |> Caqti_type.string ->* RepoEntity.t
+  ;;
+
+  let find_with_follow_ups pool id =
+    Utils.Database.collect
+      (Pool_database.Label.value pool)
+      find_with_follow_ups_request
+      (Entity.Id.value id)
+  ;;
+
   let insert_request =
     let open Caqti_request.Infix in
     {sql|
@@ -291,6 +324,13 @@ let find_by_contact pool contact =
   |> Sql.find_by_contact pool
   (* Reload contact from DB, does not allow already made updates of the provided
      contact record *)
+  >|> Lwt_list.map_s (contact_to_assignment pool)
+  ||> CCList.all_ok
+;;
+
+let find_with_follow_ups pool id =
+  let open Utils.Lwt_result.Infix in
+  Sql.find_with_follow_ups pool id
   >|> Lwt_list.map_s (contact_to_assignment pool)
   ||> CCList.all_ok
 ;;

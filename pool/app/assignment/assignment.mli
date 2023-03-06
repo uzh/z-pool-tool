@@ -94,6 +94,11 @@ val find_deleted_by_session
   -> Pool_common.Id.t
   -> (t list, Pool_common.Message.error) result Lwt.t
 
+val find_with_follow_ups
+  :  Pool_database.Label.t
+  -> Id.t
+  -> (t list, Pool_common.Message.error) result Lwt.t
+
 type create =
   { contact : Contact.t
   ; session_id : Pool_common.Id.t
