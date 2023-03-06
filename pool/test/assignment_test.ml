@@ -59,7 +59,7 @@ let create () =
       [ Waiting_list.Deleted waiting_list |> Pool_event.waiting_list
       ; Assignment.(Created { contact; session_id = session.Session.Public.id })
         |> Pool_event.assignment
-      ; Contact.NumAssignmentsIncreased contact |> Pool_event.contact
+      ; Contact.NumAssignmentsIncreasedBy (contact, 1) |> Pool_event.contact
       ; Email.(Sent (confirmation_email contact)) |> Pool_event.email
       ]
   in
@@ -73,7 +73,7 @@ let canceled () =
   let expected =
     Ok
       [ Assignment.Canceled assignment |> Pool_event.assignment
-      ; Contact.NumAssignmentsDecreased assignment.Assignment.contact
+      ; Contact.NumAssignmentsDecreasedBy (assignment.Assignment.contact, 1)
         |> Pool_event.contact
       ]
   in
@@ -323,15 +323,13 @@ let assign_to_session_with_follow_ups () =
            Assignment.Created create |> Pool_event.assignment)
     in
     let increase_num_events =
-      let open CCList in
-      range 1 (length session_list)
-      |> map (fun _ ->
-           Contact.NumAssignmentsIncreased contact |> Pool_event.contact)
+      Contact.NumAssignmentsIncreasedBy (contact, CCList.length session_list)
+      |> Pool_event.contact
     in
     let email_event =
       [ Email.Sent (confirmation_email contact) |> Pool_event.email ]
     in
-    create_events @ increase_num_events @ email_event |> CCResult.return
+    create_events @ [ increase_num_events ] @ email_event |> CCResult.return
   in
   Test_utils.check_result expected events
 ;;

@@ -23,8 +23,8 @@ module NumberOfAssignments = struct
   let init = 0
   let value m = m
   let of_int m = m
-  let increment m = m + 1
-  let decrement m = if m > 0 then m - 1 else 0
+  let increment m by = m + by
+  let decrement m by = if m - by > 0 then m - by else 0
 end
 
 module NumberOfShowUps = struct

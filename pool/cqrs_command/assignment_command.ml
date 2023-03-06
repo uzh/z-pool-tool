@@ -79,18 +79,15 @@ end = struct
         | Some waiting_list ->
           [ Waiting_list.Deleted waiting_list |> Pool_event.waiting_list ]
       in
-      (* TODO: Pass N to event? *)
       let increase_num_events =
-        let open CCList in
-        range 1 (length session_list)
-        |> map (fun _ ->
-             Contact.NumAssignmentsIncreased command.contact
-             |> Pool_event.contact)
+        Contact.NumAssignmentsIncreasedBy
+          (command.contact, CCList.length session_list)
+        |> Pool_event.contact
       in
       Ok
         (delete_events
         @ create_events
-        @ increase_num_events
+        @ [ increase_num_events ]
         @ [ Email.Sent confirmation_email |> Pool_event.email ]))
   ;;
 
@@ -112,7 +109,7 @@ end = struct
     let* () = Session.assignments_cancelable session in
     Ok
       [ Assignment.Canceled assignment |> Pool_event.assignment
-      ; Contact.NumAssignmentsDecreased assignment.Assignment.contact
+      ; Contact.NumAssignmentsDecreasedBy (assignment.Assignment.contact, 1)
         |> Pool_event.contact
       ]
   ;;

@@ -133,8 +133,8 @@ type event =
   | TermsAccepted of t
   | Disabled of t
   | UnverifiedDeleted of t
-  | NumAssignmentsDecreased of t
-  | NumAssignmentsIncreased of t
+  | NumAssignmentsDecreasedBy of (t * int)
+  | NumAssignmentsIncreasedBy of (t * int)
   | NumInvitationsIncreased of t
   | ProfileUpdateTriggeredAtUpdated of t list
   | SessionParticipationSet of t * session_participation
