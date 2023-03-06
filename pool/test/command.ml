@@ -224,6 +224,10 @@ let () =
             `Quick
             Session_test.delete_session_with_assignments
         ; test_case
+            "delete session with follow ups fails"
+            `Quick
+            Session_test.delete_session_with_follow_ups
+        ; test_case
             "cancel session without reason fails"
             `Quick
             Session_test.cancel_no_reason

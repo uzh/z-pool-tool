@@ -3,6 +3,9 @@ open Experiment
 module Conformist = Pool_common.Utils.PoolConformist
 
 let src = Logs.Src.create "experiment_command.cqrs"
+let to_actor = CCFun.(Admin.id %> BaseGuard.Uuid.actor_of Admin.Id.value)
+let to_target { id; _ } = BaseGuard.Uuid.target_of Id.value id
+let to_role = BaseGuard.ActorRoleSet.singleton
 
 let default_schema command =
   Pool_common.Utils.PoolConformist.(
@@ -133,6 +136,10 @@ module Delete : sig
   type t =
     { experiment : Experiment.t
     ; session_count : int
+    ; mailings : Mailing.t list
+    ; assistants : Admin.t list
+    ; experimenters : Admin.t list
+    ; templates : Message_template.t list
     }
 
   val handle
@@ -147,22 +154,54 @@ end = struct
   type t =
     { experiment : Experiment.t
     ; session_count : int
+    ; mailings : Mailing.t list
+    ; assistants : Admin.t list
+    ; experimenters : Admin.t list
+    ; templates : Message_template.t list
     }
 
-  let handle ?(tags = Logs.Tag.empty) { experiment; session_count } =
+  let handle
+    ?(tags = Logs.Tag.empty)
+    { experiment
+    ; session_count
+    ; mailings
+    ; experimenters
+    ; assistants
+    ; templates
+    }
+    =
+    let open CCFun in
     Logs.info ~src (fun m -> m "Handle command Delete" ~tags);
     match session_count > 0 with
     | true -> Error Pool_common.Message.ExperimentSessionCountNotZero
     | false ->
-      let filter_event =
-        experiment.Experiment.filter
-        |> CCOption.map_or
-             ~default:[]
-             CCFun.(Filter.deleted %> Pool_event.filter %> CCList.pure)
+      let delete_mailing = Mailing.deleted %> Pool_event.mailing in
+      let revoke_experimenter admin =
+        BaseGuard.RolesRevoked
+          (admin |> to_actor, `Experimenter (experiment |> to_target) |> to_role)
+        |> Pool_event.guard
+      in
+      let revoke_assistant admin =
+        BaseGuard.RolesRevoked
+          (admin |> to_actor, `Assistant (experiment |> to_target) |> to_role)
+        |> Pool_event.guard
+      in
+      let filter_events =
+        CCOption.map_or
+          ~default:[]
+          (Filter.deleted %> Pool_event.filter %> CCList.return)
+      in
+      let delete_template =
+        Message_template.deleted %> Pool_event.message_template
       in
       Ok
-        ((Experiment.Destroyed experiment.Experiment.id |> Pool_event.experiment)
-        :: filter_event)
+        ([ Experiment.Deleted experiment.Experiment.id |> Pool_event.experiment
+         ]
+        @ (experiment.Experiment.filter |> filter_events)
+        @ (mailings |> CCList.map delete_mailing)
+        @ (experimenters |> CCList.map revoke_experimenter)
+        @ (assistants |> CCList.map revoke_assistant)
+        @ (templates |> CCList.map delete_template))
   ;;
 
   let effects id =
@@ -182,8 +221,9 @@ end = struct
   let handle ?(tags = Logs.Tag.empty) { admin; experiment } =
     Logs.info ~src (fun m -> m "Handle command AssignAssistant" ~tags);
     Ok
-      [ Experiment.AssistantAssigned (experiment, admin)
-        |> Pool_event.experiment
+      [ BaseGuard.RolesGranted
+          (admin |> to_actor, `Assistant (experiment |> to_target) |> to_role)
+        |> Pool_event.guard
       ]
   ;;
 
@@ -205,8 +245,9 @@ end = struct
   let handle ?(tags = Logs.Tag.empty) { admin; experiment } =
     Logs.info ~src (fun m -> m "Handle command UnassignAssistant" ~tags);
     Ok
-      [ Experiment.AssistantUnassigned (experiment, admin)
-        |> Pool_event.experiment
+      [ BaseGuard.RolesRevoked
+          (admin |> to_actor, `Assistant (experiment |> to_target) |> to_role)
+        |> Pool_event.guard
       ]
   ;;
 
@@ -228,8 +269,9 @@ end = struct
   let handle ?(tags = Logs.Tag.empty) { admin; experiment } =
     Logs.info ~src (fun m -> m "Handle command AssignExperimenter" ~tags);
     Ok
-      [ Experiment.ExperimenterAssigned (experiment, admin)
-        |> Pool_event.experiment
+      [ BaseGuard.RolesGranted
+          (admin |> to_actor, `Experimenter (experiment |> to_target) |> to_role)
+        |> Pool_event.guard
       ]
   ;;
 
@@ -251,8 +293,9 @@ end = struct
   let handle ?(tags = Logs.Tag.empty) { admin; experiment } =
     Logs.info ~src (fun m -> m "Handle command UnassignExperimenter" ~tags);
     Ok
-      [ Experiment.ExperimenterUnassigned (experiment, admin)
-        |> Pool_event.experiment
+      [ BaseGuard.RolesRevoked
+          (admin |> to_actor, `Experimenter (experiment |> to_target) |> to_role)
+        |> Pool_event.guard
       ]
   ;;
 

@@ -197,7 +197,7 @@ module Sql = struct
     Utils.Database.exec (Database.Label.value pool) update_request
   ;;
 
-  let destroy_request =
+  let delete_request =
     let open Caqti_request.Infix in
     {sql|
       DELETE FROM pool_experiments
@@ -206,10 +206,10 @@ module Sql = struct
     |> Caqti_type.(string ->. unit)
   ;;
 
-  let destroy pool id =
+  let delete pool id =
     Utils.Database.exec
       (Pool_database.Label.value pool)
-      destroy_request
+      delete_request
       (id |> Entity.Id.value)
   ;;
 
@@ -308,7 +308,7 @@ let find_of_mailing = Sql.find_of_mailing
 let session_count = Sql.session_count
 let insert = Sql.insert
 let update = Sql.update
-let destroy = Sql.destroy
+let delete = Sql.delete
 let search = Sql.search
 let search_multiple_by_id = Sql.search_multiple_by_id
 

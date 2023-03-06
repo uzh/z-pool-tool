@@ -385,10 +385,13 @@ let rec error_to_string = function
     "Bitte beantworten Sie die folgenden Fragen um fortzufahren."
   | Retrieve field ->
     field_message "" (field_to_string field) "konnte nicht gefunden werden."
+  | SessionFullyBooked -> "Session ist ausgebucht"
   | SessionHasAssignments ->
     "Es existieren bereits Anmeldungen für diese Session. Sie kann nicht \
      gelöscht werden."
-  | SessionFullyBooked -> "Session ist ausgebucht"
+  | SessionHasFollowUps ->
+    "Es existieren bereits Folgesessions für diese Session. Sie kann nicht \
+     gelöscht werden."
   | SessionInvalid -> "Ungültige Session, bitte erneut einloggen."
   | SessionRegistrationViaParent -> "Einschreibung via Hauptsession."
   | SessionTenantNotFound ->

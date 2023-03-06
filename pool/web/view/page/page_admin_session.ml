@@ -273,9 +273,9 @@ let index
     CCList.flat_map
       (fun (parent, follow_ups) ->
         let open Session in
-        let session_row session =
+        let session_row session follow_ups =
           let delete_form =
-            if Session.is_deletable session |> CCResult.is_ok
+            if Session.is_deletable session follow_ups |> CCResult.is_ok
             then
               form
                 ~a:
@@ -345,7 +345,8 @@ let index
                 ]
             ]
         in
-        session_row parent :: CCList.map session_row follow_ups)
+        session_row parent follow_ups
+        :: CCList.map CCFun.(flip session_row []) follow_ups)
       grouped_sessions
   in
   let thead =

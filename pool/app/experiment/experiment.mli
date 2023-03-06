@@ -101,16 +101,15 @@ end
 type event =
   | Created of t
   | Updated of t
-  | Destroyed of Id.t
-  | AssistantAssigned of t * Admin.t
-  | AssistantUnassigned of t * Admin.t
-  | ExperimenterAssigned of t * Admin.t
-  | ExperimenterUnassigned of t * Admin.t
+  | Deleted of Id.t
 
 val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
+val created : t -> event
+val updated : t -> event
+val deleted : Pool_common.Id.t -> event
 val boolean_fields : Pool_common.Message.Field.t list
 
 val find

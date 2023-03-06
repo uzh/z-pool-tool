@@ -124,7 +124,15 @@ let delete_with_sessions () =
   let experiment = Model.create_experiment () in
   let events =
     let session_count = 1234 in
-    ExperimentCommand.Delete.(handle { experiment; session_count })
+    ExperimentCommand.Delete.(
+      handle
+        { experiment
+        ; session_count
+        ; mailings = []
+        ; experimenters = []
+        ; assistants = []
+        ; templates = []
+        })
   in
   let expected = Error Pool_common.Message.ExperimentSessionCountNotZero in
   Test_utils.check_result expected events
@@ -136,11 +144,19 @@ let delete_with_filter () =
   let experiment = Experiment.{ experiment with filter = Some filter } in
   let events =
     let session_count = 0 in
-    ExperimentCommand.Delete.(handle { experiment; session_count })
+    ExperimentCommand.Delete.(
+      handle
+        { experiment
+        ; session_count
+        ; mailings = []
+        ; experimenters = []
+        ; assistants = []
+        ; templates = []
+        })
   in
   let expected =
     Ok
-      [ Experiment.Destroyed experiment.Experiment.id |> Pool_event.experiment
+      [ Experiment.Deleted experiment.Experiment.id |> Pool_event.experiment
       ; Filter.Deleted filter |> Pool_event.filter
       ]
   in

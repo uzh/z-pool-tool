@@ -369,9 +369,17 @@ let delete req =
     let tags = Pool_context.Logger.Tags.req req in
     let session_id = session_id req in
     let* session = Session.find database_label session_id in
+    let* follow_ups = Session.find_follow_ups database_label session_id in
+    let%lwt templates =
+      let open Message_template in
+      find_all_of_entity_by_label
+        database_label
+        session_id
+        Label.SessionReminder
+    in
     let* events =
       let open Cqrs_command.Session_command.Delete in
-      session |> handle ~tags |> Lwt_result.lift
+      { session; follow_ups; templates } |> handle ~tags |> Lwt_result.lift
     in
     let%lwt () = Pool_event.handle_events ~tags database_label events in
     Http_utils.redirect_to_with_actions

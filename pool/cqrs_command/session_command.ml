@@ -353,19 +353,41 @@ end = struct
 end
 
 module Delete : sig
-  include Common.CommandSig with type t = Session.t
+  include Common.CommandSig
+
+  type t =
+    { session : Session.t
+    ; follow_ups : Session.t list
+    ; templates : Message_template.t list
+    }
+
+  val handle
+    :  ?tags:Logs.Tag.set
+    -> t
+    -> (Pool_event.t list, Pool_common.Message.error) result
 
   val effects : Pool_common.Id.t -> Guard.Authorizer.effect list
 end = struct
-  type t = Session.t
+  type t =
+    { session : Session.t
+    ; follow_ups : Session.t list
+    ; templates : Message_template.t list
+    }
 
-  let handle ?(tags = Logs.Tag.empty) session =
+  let handle ?(tags = Logs.Tag.empty) { session; follow_ups; templates } =
+    let open CCFun in
     let open CCResult in
     Logs.info ~src (fun m -> m "Handle command Delete" ~tags);
-    (* TODO [aerben] how to deal with follow-ups? currently they just
-       disappear *)
-    let* () = Session.is_deletable session in
-    Ok [ Session.Deleted session |> Pool_event.session ]
+    if CCList.is_empty follow_ups |> not
+    then Error Pool_common.Message.SessionHasFollowUps
+    else
+      let* () = Session.is_deletable session follow_ups in
+      let delete_template =
+        Message_template.deleted %> Pool_event.message_template
+      in
+      Ok
+        ((Session.Deleted session |> Pool_event.session)
+        :: (templates |> CCList.map delete_template))
   ;;
 
   let effects id =

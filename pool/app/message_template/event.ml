@@ -12,7 +12,8 @@ type event =
   | Created of t
   | DefaultRestored of t list
   | Updated of t * update
-[@@deriving eq, show]
+  | Deleted of t
+[@@deriving eq, show, variants]
 
 let insert_template ?(default = true) db_label t =
   let open Utils.Lwt_result.Infix in
@@ -33,4 +34,5 @@ let handle_event pool : event -> unit Lwt.t = function
   | Updated (template, { email_subject; email_text; plain_text; sms_text }) ->
     { template with email_subject; email_text; plain_text; sms_text }
     |> Repo.update pool
+  | Deleted { id; _ } -> Repo.delete pool id
 ;;
