@@ -93,3 +93,15 @@ let create ?(id = Id.create ()) name description address link status files =
     ; updated_at = Pool_common.UpdatedAt.create ()
     }
 ;;
+
+let file_path file =
+  Format.asprintf "files/%s" Pool_common.(Id.value file.File.id)
+;;
+
+let contact_file_path id file =
+  Format.asprintf "/location/%s/%s" (Id.value id) (file_path file)
+;;
+
+let admin_file_path id file =
+  Format.asprintf "/admin/locations/%s/%s" (Id.value id) (file_path file)
+;;

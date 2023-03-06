@@ -115,8 +115,12 @@ module Contact = struct
         ]
       in
       let locations =
-        let specific = [ get "" Location.show ] in
-        [ choose ~scope:Field.(Location |> url_key) specific ]
+        let specific =
+          let open Location in
+          let files = [ choose ~scope:(add_key Field.File) [ get "" asset ] ] in
+          [ get "" show; choose ~scope:"/files" files ]
+        in
+        [ choose ~scope:(add_key Field.Location) specific ]
       in
       [ get "/user/personal-details" UserProfile.personal_details
       ; get "/user/login-information" UserProfile.login_information

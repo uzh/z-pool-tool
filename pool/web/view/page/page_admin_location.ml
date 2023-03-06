@@ -386,13 +386,7 @@ module FileList = struct
     ; language |> Pool_common.Language.show |> txt
     ; div
         ~a:[ a_class [ "flexrow"; "flex-gap"; "align-center" ] ]
-        [ Format.asprintf
-            "/admin/locations/%s/files/%s"
-            (Id.value location_id)
-            Pool_common.(Id.value file.File.id)
-          |> edit_link
-        ; delete_form
-        ]
+        [ admin_file_path location_id file |> edit_link; delete_form ]
     ]
   ;;
 

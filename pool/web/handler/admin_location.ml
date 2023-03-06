@@ -147,21 +147,7 @@ let add_file req =
   result |> HttpUtils.extract_happy_path req
 ;;
 
-let asset req =
-  let open Sihl.Contract.Storage in
-  let id = id req Pool_common.Message.Field.File Pool_common.Id.of_string in
-  let result { Pool_context.database_label; _ } =
-    let ctx = Pool_tenant.to_ctx database_label in
-    let%lwt file = Service.Storage.find ~ctx (Pool_common.Id.value id) in
-    let%lwt content = Service.Storage.download_data_base64 ~ctx file in
-    let mime = file.file.mime in
-    let content = content |> Base64.decode_exn in
-    Sihl.Web.Response.of_plain_text content
-    |> Sihl.Web.Response.set_content_type mime
-    |> Lwt.return_ok
-  in
-  result |> HttpUtils.extract_happy_path req
-;;
+let asset = Contact_location.asset
 
 let detail edit req =
   let open Utils.Lwt_result.Infix in

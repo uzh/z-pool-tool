@@ -222,6 +222,8 @@ val create
   -> Mapping.file list
   -> (t, Pool_common.Message.error) result
 
+val contact_file_path : Id.t -> Pool_common.File.t -> string
+val admin_file_path : Id.t -> Pool_common.File.t -> string
 val to_string : Pool_common.Language.t -> t -> string
 
 type update =
