@@ -729,7 +729,9 @@ let close_with_deleted_assignment () =
   let res =
     Cqrs_command.Assignment_command.SetAttendance.handle session [ command ]
   in
-  check_result (Error Pool_common.Message.(IsMarkedAsDeleted Field.Assignment)) res
+  check_result
+    (Error Pool_common.Message.(IsMarkedAsDeleted Field.Assignment))
+    res
 ;;
 
 let validate_invalid_participation () =
