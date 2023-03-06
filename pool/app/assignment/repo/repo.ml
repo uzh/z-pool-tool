@@ -173,7 +173,7 @@ module Sql = struct
     {sql|
       WHERE
         pool_assignments.marked_as_deleted = 0
-      AND(pool_assignments.uuid = $1
+      AND(pool_assignments.uuid = UNHEX(REPLACE($1, '-', ''))
         OR pool_sessions.follow_up_to = (
           SELECT
             pool_sessions.uuid
@@ -181,16 +181,16 @@ module Sql = struct
             pool_sessions
             INNER JOIN pool_assignments ON pool_assignments.session_id = pool_sessions.id
           WHERE
-            pool_assignments.uuid = $1))
+            pool_assignments.uuid = UNHEX(REPLACE($1, '-', ''))))
         AND pool_assignments.contact_id = (
           SELECT
             pool_assignments.contact_id
           FROM
             pool_assignments
           WHERE
-            pool_assignments.uuid = $1)
+            pool_assignments.uuid = UNHEX(REPLACE($1, '-', '')))
     |sql}
-    |> Format.asprintf "%s\n%s" select_public_sql
+    |> Format.asprintf "%s\n%s" select_sql
     |> Caqti_type.string ->* RepoEntity.t
   ;;
 
