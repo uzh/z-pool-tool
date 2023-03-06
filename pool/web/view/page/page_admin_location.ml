@@ -20,7 +20,7 @@ module List = struct
     @ [ link_as_button
           ~style:`Success
           ~icon:`Add
-          ~classnames:[ "small" ]
+          ~classnames:[ "small"; "nobr" ]
           ~control:(language, Pool_common.Message.(Add (Some Field.Location)))
           "admin/locations/create"
       ]
@@ -29,12 +29,17 @@ module List = struct
   let rows language locations =
     CCList.map
       (fun (location : Pool_location.t) ->
-        [ location.name |> Name.value |> txt
+        [ location.name
+          |> Name.value
+          |> txt
+          |> CCList.return
+          |> span ~a:[ a_class [ "nobr" ] ]
         ; location.description
           |> CCOption.map_or ~default:"" Description.value
-          |> first_n_characters
-          |> txt
+          |> Unsafe.data
         ; Partials.address_to_html language location.address
+          |> CCList.return
+          |> p ~a:[ a_class [ "nobr" ] ]
         ; Format.asprintf
             "/admin/locations/%s"
             (location.Pool_location.id |> Id.value)
@@ -151,15 +156,8 @@ let form
   let status_select_opt =
     match location with
     | Some { status; _ } ->
-      [ selector
-          language
-          Message.Field.Status
-          Status.show
-          states
-          (Some status)
-          ()
-      ]
-    | None -> []
+      selector language Message.Field.Status Status.show states (Some status) ()
+    | None -> txt ""
   in
   let address_value fcn =
     location
@@ -210,18 +208,19 @@ let form
              ; input_element
                  language
                  `Text
-                 Message.Field.Description
-                 ~value:(value_opt (fun m -> m.description) Description.value)
-                 ~flash_fetcher
-             ; input_element
-                 language
-                 `Text
                  Message.Field.Link
                  ~value:(value_opt (fun m -> m.link) Link.value)
                  ~flash_fetcher
+             ; textarea_element
+                 ~rich_text:true
+                 ~classnames:[ "full-width" ]
+                 language
+                 Message.Field.Description
+                 ~value:(value_opt (fun m -> m.description) Description.value)
+                 ~flash_fetcher
+             ; status_select_opt
              ]
          ]
-         @ status_select_opt
          @ [ div
                [ h4
                    ~a:[ a_class [ "heading-4" ] ]
@@ -508,7 +507,7 @@ let detail
     ; ( Field.Description
       , location.description
         |> CCOption.map_or ~default:"" Description.value
-        |> txt )
+        |> Unsafe.data )
     ; Field.Location, Partials.address_to_html language location.address
     ; Field.Link, location.link |> CCOption.map_or ~default:"" Link.value |> txt
     ; Field.Status, location.status |> Status.show |> txt (* TODO: Show files *)

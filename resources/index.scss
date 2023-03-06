@@ -121,3 +121,8 @@ abbr[title] {
 .ck-content {
     @extend textarea;
 }
+
+// Typography
+.nobr {
+    white-space: nowrap;
+}
