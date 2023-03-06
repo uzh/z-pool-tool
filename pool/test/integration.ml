@@ -117,6 +117,17 @@ let suite =
               `Slow
               should_not_send_registration_notification
           ] )
+    ; ( "message_template"
+      , Message_template_test.
+          [ test_case
+              "get template with language missing"
+              `Slow
+              get_template_with_language_missing
+          ; test_case
+              "get templates in multiple languages"
+              `Slow
+              get_templates_in_multile_languages
+          ] )
     ; "cleanup", [ test_case "clean up test database" `Quick Seed.cleanup ]
     ]
 ;;

@@ -63,3 +63,94 @@ let create_with_unavailable_language () =
   let expected = Error Pool_common.Message.(Invalid Field.Language) in
   test_create available_languages expected
 ;;
+
+(* Integration tests *)
+
+let create_experiment () =
+  let database_label = Test_utils.Data.database_label in
+  let experiment = Test_utils.Model.create_experiment () in
+  let%lwt () =
+    [ Experiment.Created experiment |> Pool_event.experiment ]
+    |> Pool_event.handle_events database_label
+  in
+  Lwt.return experiment
+;;
+
+let create_invitation language ?entity_uuid () =
+  let database_label = Test_utils.Data.database_label in
+  let label = Message_template.Label.ExperimentInvitation in
+  let template =
+    Test_utils.Model.create_message_template ~label ~language ?entity_uuid ()
+  in
+  let%lwt () =
+    [ Message_template.Created template |> Pool_event.message_template ]
+    |> Pool_event.handle_events database_label
+  in
+  Lwt.return template
+;;
+
+let get_template_with_language_missing _ () =
+  let open Utils.Lwt_result.Infix in
+  let%lwt () =
+    let database_label = Test_utils.Data.database_label in
+    let label = Message_template.Label.ExperimentInvitation in
+    let%lwt experiment = create_experiment () in
+    let template_language = Pool_common.Language.En in
+    let%lwt template =
+      create_invitation
+        template_language
+        ~entity_uuid:Experiment.(experiment.id |> Id.to_common)
+        ()
+    in
+    let%lwt res =
+      Pool_common.Language.[ De; En ]
+      |> Lwt_list.map_s (fun lang ->
+           Message_template.find_by_label_to_send
+             database_label
+             ~entity_uuids:Experiment.[ experiment.id |> Id.to_common ]
+             lang
+             label
+           ||> CCResult.get_exn
+           ||> fst)
+    in
+    (* When one entity specific template exists, expect this to be returned
+       every time *)
+    let expected = [ template; template ] in
+    Alcotest.(check (list Test_utils.message_template) "succeeds" expected res)
+    |> Lwt.return
+  in
+  Lwt.return_unit
+;;
+
+let get_templates_in_multile_languages _ () =
+  let open Utils.Lwt_result.Infix in
+  let%lwt () =
+    let database_label = Test_utils.Data.database_label in
+    let label = Message_template.Label.ExperimentInvitation in
+    let%lwt experiment = create_experiment () in
+    let languages = Pool_common.Language.[ De; En ] in
+    let%lwt templates =
+      languages
+      |> Lwt_list.map_s (fun lang ->
+           create_invitation
+             lang
+             ~entity_uuid:Experiment.(experiment.id |> Id.to_common)
+             ())
+    in
+    let%lwt res =
+      languages
+      |> Lwt_list.map_s (fun lang ->
+           Message_template.find_by_label_to_send
+             database_label
+             ~entity_uuids:Experiment.[ experiment.id |> Id.to_common ]
+             lang
+             label
+           ||> CCResult.get_exn
+           ||> fst)
+    in
+    (* Expect all created templates to be returned *)
+    Alcotest.(check (list Test_utils.message_template) "succeeds" templates res)
+    |> Lwt.return
+  in
+  Lwt.return_unit
+;;

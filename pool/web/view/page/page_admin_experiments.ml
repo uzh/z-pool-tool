@@ -80,6 +80,45 @@ let experiment_layout ?buttons ?hint language title experiment ?active html =
     ]
 ;;
 
+let notifications
+  language
+  sys_languages
+  invitation_templates
+  session_reminder_templates
+  =
+  let open CCList in
+  let open Pool_common in
+  let open Message_template in
+  Label.
+    [ invitation_templates, ExperimentInvitation
+    ; session_reminder_templates, SessionReminder
+    ]
+  |> filter_map (fun (templates, label) ->
+       if is_empty templates
+       then None
+       else
+         filter
+           (fun lang ->
+             find_opt
+               (fun { language; _ } -> Language.equal language lang)
+               templates
+             |> CCOption.is_none)
+           sys_languages
+         |> function
+         | [] -> None
+         | langs ->
+           I18n.MissingMessageTemplates
+             (Label.to_human label, CCList.map Language.show langs)
+           |> Utils.hint_to_string language
+           |> txt
+           |> pure
+           |> Notification.notification language `Warning
+           |> CCOption.return)
+  |> function
+  | [] -> txt ""
+  | notifications -> div ~a:[ a_class [ "stack" ] ] notifications
+;;
+
 let message_templates_html
   ?(title =
     fun label ->
@@ -319,6 +358,13 @@ let edit
   flash_fetcher
   =
   let open Message_template in
+  let notifications =
+    notifications
+      language
+      sys_languages
+      invitation_templates
+      session_reminder_templates
+  in
   let form =
     experiment_form ~experiment context default_reminder_lead_time flash_fetcher
   in
@@ -333,7 +379,8 @@ let edit
   let html =
     div
       ~a:[ a_class [ "stack-lg" ] ]
-      [ form
+      [ notifications
+      ; form
       ; message_templates_html Label.ExperimentInvitation invitation_templates
       ; message_templates_html Label.SessionReminder session_reminder_templates
       ]
@@ -354,6 +401,13 @@ let detail
   Pool_context.{ language; csrf; _ }
   =
   let experiment_path = build_experiment_path experiment in
+  let notifications =
+    notifications
+      language
+      sys_languages
+      invitation_templates
+      session_reminder_templates
+  in
   let delete_form =
     match session_count > 0 with
     | true ->
@@ -454,7 +508,7 @@ let detail
     in
     div
       ~a:[ a_class [ "stack-lg" ] ]
-      [ experiment_table; message_template; delete_form ]
+      [ notifications; experiment_table; message_template; delete_form ]
   in
   let edit_button =
     link_as_button

@@ -214,6 +214,11 @@ let rec hint_to_string = function
     "Definieren Sie die Kriterien, anhand welchen Kontakte an dieses \
      Experiment eingeladen werden."
   | I18nText str -> str
+  | MissingMessageTemplates (label, languages) ->
+    Format.asprintf
+      "Das '%s' Template fehlt in den folgenden Sprachen: %s"
+      label
+      (languages |> CCString.concat ", ")
   | LocationFiles ->
     "Zusatzinformationen zum Standort, wie z.B. eine Wegbeschreibung. \
      Kontakte, die an einer Session an diesem Standort teilnehmen, können auf \

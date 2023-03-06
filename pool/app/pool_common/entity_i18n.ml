@@ -127,6 +127,7 @@ type hint =
   | LocationFiles
   | Locations
   | LocationSessions
+  | MissingMessageTemplates of string * string list
   | NumberIsDaysHint
   | NumberIsSecondsHint
   | NumberIsWeeksHint
