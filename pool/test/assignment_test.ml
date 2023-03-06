@@ -340,9 +340,9 @@ let marked_uncanceled_as_deleted () =
   let events = AssignmentCommand.MarkAsDeleted.handle [ assignment ] in
   let expected =
     Ok
-      [ Assignment.MarkedAsDeleted assignment |> Pool_event.assignment
-      ; Contact.NumAssignmentsDecreasedBy (assignment.Assignment.contact, 1)
+      [ Contact.NumAssignmentsDecreasedBy (assignment.Assignment.contact, 1)
         |> Pool_event.contact
+      ; Assignment.MarkedAsDeleted assignment |> Pool_event.assignment
       ]
   in
   Test_utils.check_result expected events
