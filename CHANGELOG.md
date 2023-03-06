@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 - reply-to address to emails, using tenant contact email address (system settings)
 
+### Changed
+
+- when signing up for a session with follow-ups, the contact receives one confirmation message containing all sessions
+
 ## [0.1.3](https://github.com/uzh/pool/tree/0.1.3) - 2023-03-01
 
 ### Added
