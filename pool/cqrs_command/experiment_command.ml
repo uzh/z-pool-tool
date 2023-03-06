@@ -177,12 +177,12 @@ end = struct
     | false ->
       let delete_mailing = Mailing.deleted %> Pool_event.mailing in
       let revoke_experimenter admin =
-        BaseGuard.RoleRevoked
+        BaseGuard.RolesRevoked
           (admin |> to_actor, `Experimenter (experiment |> to_target) |> to_role)
         |> Pool_event.guard
       in
       let revoke_assistant admin =
-        BaseGuard.RoleRevoked
+        BaseGuard.RolesRevoked
           (admin |> to_actor, `Assistant (experiment |> to_target) |> to_role)
         |> Pool_event.guard
       in
@@ -245,7 +245,7 @@ end = struct
   let handle ?(tags = Logs.Tag.empty) { admin; experiment } =
     Logs.info ~src (fun m -> m "Handle command UnassignAssistant" ~tags);
     Ok
-      [ BaseGuard.RoleRevoked
+      [ BaseGuard.RolesRevoked
           (admin |> to_actor, `Assistant (experiment |> to_target) |> to_role)
         |> Pool_event.guard
       ]
@@ -293,7 +293,7 @@ end = struct
   let handle ?(tags = Logs.Tag.empty) { admin; experiment } =
     Logs.info ~src (fun m -> m "Handle command UnassignExperimenter" ~tags);
     Ok
-      [ BaseGuard.RoleRevoked
+      [ BaseGuard.RolesRevoked
           (admin |> to_actor, `Experimenter (experiment |> to_target) |> to_role)
         |> Pool_event.guard
       ]

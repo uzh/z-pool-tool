@@ -21,7 +21,7 @@ let log_rules ~tags =
 type event =
   | DefaultRestored of Core.Authorizer.auth_rule list
   | RolesGranted of Repo.Uuid.Actor.t * Core.ActorRoleSet.t
-  | RoleRevoked of Repo.Uuid.Actor.t * Core.ActorRoleSet.t
+  | RolesRevoked of Repo.Uuid.Actor.t * Core.ActorRoleSet.t
   | RulesSaved of Core.Authorizer.auth_rule list
 [@@deriving eq, show]
 
@@ -44,7 +44,7 @@ let handle_event pool : event -> unit Lwt.t =
           %> Pool_common.Utils.with_log_error ~tags
     in
     Lwt.return_unit
-  | RoleRevoked (actor, role) ->
+  | RolesRevoked (actor, role) ->
     let%lwt (_ : (unit, Pool_common.Message.error) result) =
       Actor.revoke_roles ~ctx actor role
       >|- Pool_common.Message.authorization
