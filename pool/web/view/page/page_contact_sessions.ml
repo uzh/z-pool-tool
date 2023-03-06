@@ -53,7 +53,7 @@ let session_item layout language (experiment : Experiment.Public.t) session =
          ])
   ; txt (session.Public.duration |> Duration.value |> Time.formatted_timespan)
   ; txt (session |> Public.get_session_end |> Time.formatted_time)
-  ; session.Public.location |> Component.Location.preview language
+  ; session.Public.location |> Component.Location.preview
   ]
   |> fun cells ->
   match layout with

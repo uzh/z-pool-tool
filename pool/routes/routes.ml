@@ -76,12 +76,13 @@ module Public = struct
 end
 
 module Contact = struct
+  module Assignment = Handler.Contact.Assignment
+  module Experiment = Handler.Contact.Experiment
+  module Location = Handler.Contact.Location
+  module Session = Handler.Contact.Session
   module SignUp = Handler.Contact.SignUp
   module UserProfile = Handler.Contact.UserProfile
-  module Experiment = Handler.Contact.Experiment
   module WaitingList = Handler.Contact.WaitingList
-  module Session = Handler.Contact.Session
-  module Assignment = Handler.Contact.Assignment
 
   let public_not_logged_in =
     [ get "/signup" SignUp.sign_up
@@ -113,12 +114,17 @@ module Contact = struct
         ; choose ~scope:(build_scope "sessions") sessions
         ]
       in
+      let locations =
+        let specific = [ get "" Location.show ] in
+        [ choose ~scope:Field.(Location |> url_key) specific ]
+      in
       [ get "/user/personal-details" UserProfile.personal_details
       ; get "/user/login-information" UserProfile.login_information
       ; post "/user/update" UserProfile.update
       ; post "/user/update-email" UserProfile.update_email
       ; post "/user/update-password" UserProfile.update_password
       ; choose ~scope:"/experiments" experiments
+      ; choose ~scope:Field.(Location |> human_url) locations
       ]
     in
     [ choose

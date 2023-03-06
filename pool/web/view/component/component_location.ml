@@ -27,15 +27,18 @@ let formatted_address language address =
        []
 ;;
 
-let preview language (location : Pool_location.t) =
+let preview (location : Pool_location.t) =
   let open Pool_location in
-  let open CCOption in
   let name = p [ txt (Name.value location.name) ] in
   let link =
-    location.link
-    >|= (fun link ->
-          [ br (); a ~a:[ link |> Link.value |> a_href ] [ txt "Details" ] ])
-    |> value ~default:[]
+    let url =
+      Format.asprintf
+        "%s/%s"
+        Pool_common.Message.Field.(human_url Location)
+        (Id.value location.id)
+      |> Sihl.Web.externalize_path
+    in
+    a ~a:[ a_href url ] [ txt "Details" ]
   in
-  (name :: formatted_address language location.address) @ link |> address
+  [ name; br (); link ] |> address
 ;;
