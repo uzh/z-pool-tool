@@ -31,14 +31,18 @@ let preview (location : Pool_location.t) =
   let open Pool_location in
   let name = p [ txt (Name.value location.name) ] in
   let link =
-    let url =
-      Format.asprintf
-        "%s/%s"
-        Pool_common.Message.Field.(human_url Location)
-        (Id.value location.id)
-      |> Sihl.Web.externalize_path
-    in
-    a ~a:[ a_href url ] [ txt "Details" ]
+    let open Address in
+    match location.address with
+    | Virtual -> txt ""
+    | Physical _ ->
+      let url =
+        Format.asprintf
+          "%s/%s"
+          Pool_common.Message.Field.(human_url Location)
+          (Id.value location.id)
+        |> Sihl.Web.externalize_path
+      in
+      a ~a:[ a_href url ] [ txt "Details" ]
   in
   [ name; br (); link ] |> address
 ;;
