@@ -1,17 +1,5 @@
 let take_n n contacts =
-  CCList.fold_left
-    (fun (selected, available) _ ->
-      if CCList.is_empty available
-      then selected, available
-      else (
-        let contact =
-          Random.int (CCList.length available) |> CCList.nth available
-        in
-        ( contact :: selected
-        , contacts |> CCList.remove ~eq:Contact.equal ~key:contact )))
-    ([], contacts)
-    (CCList.range 0 n)
-  |> fst
+  if CCList.length contacts > 10 then CCList.take n contacts else contacts
 ;;
 
 let waiting_list pool =
