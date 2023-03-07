@@ -230,6 +230,33 @@ let assign_to_session_contact_is_already_assigned () =
   Test_utils.check_result expected events
 ;;
 
+let assign_to_canceled_session () =
+  let { session; experiment; contact } = assignment_data () in
+  let already_assigned = false in
+  let canceled_at = Ptime_clock.now () in
+  let session =
+    Session.Public.{ session with canceled_at = Some canceled_at }
+  in
+  let experiment = experiment |> Model.experiment_to_public_experiment in
+  let events =
+    let command =
+      AssignmentCommand.Create.
+        { contact; session; waiting_list = None; experiment; follow_ups = None }
+    in
+    AssignmentCommand.Create.handle
+      command
+      (confirmation_email contact)
+      already_assigned
+  in
+  let expected =
+    Error
+      Pool_common.Message.(
+        SessionAlreadyCanceled
+          (Pool_common.Utils.Time.formatted_date_time canceled_at))
+  in
+  Test_utils.check_result expected events
+;;
+
 let assign_contact_from_waiting_list () =
   let session = Model.create_session () in
   let waiting_list = Model.create_waiting_list () in
