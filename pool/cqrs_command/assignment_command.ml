@@ -53,12 +53,7 @@ end = struct
       let* () =
         CCList.fold_left
           (fun res session ->
-            res
-            >>= fun () ->
-            Session.Public.is_fully_booked session
-            |> function
-            | true -> Error Pool_common.Message.(SessionFullyBooked)
-            | false -> Ok ())
+            res >>= fun () -> Session.Public.assignment_creatable session)
           (CCResult.return ())
           session_list
       in
@@ -227,12 +222,7 @@ end = struct
       let* () =
         CCList.fold_left
           (fun res session ->
-            res
-            >>= fun () ->
-            Session.is_fully_booked session
-            |> function
-            | true -> Error Pool_common.Message.(SessionFullyBooked)
-            | false -> Ok ())
+            res >>= fun () -> Session.assignment_creatable session)
           (CCResult.return ())
           session_list
       in

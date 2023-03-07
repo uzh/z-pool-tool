@@ -173,6 +173,14 @@ let create
   }
 ;;
 
+let is_canceled_error canceled_at =
+  let open Pool_common.Message in
+  canceled_at
+  |> Pool_common.Utils.Time.formatted_date_time
+  |> sessionalreadycanceled
+  |> CCResult.fail
+;;
+
 let is_fully_booked (m : t) =
   m.assignment_count >= m.max_participants + m.overbook
 ;;
@@ -246,8 +254,26 @@ module Public = struct
     }
   [@@deriving eq, show]
 
+  let not_canceled (session : t) =
+    match session.canceled_at with
+    | None -> Ok ()
+    | Some canceled_at -> is_canceled_error canceled_at
+  ;;
+
   let is_fully_booked (m : t) =
     m.assignment_count >= m.max_participants + m.overbook
+  ;;
+
+  let assignment_creatable session =
+    let open CCResult.Infix in
+    let* () =
+      is_fully_booked session
+      |> function
+      | true -> Error Pool_common.Message.(SessionFullyBooked)
+      | false -> Ok ()
+    in
+    let* () = not_canceled session in
+    Ok ()
   ;;
 
   let compare_start (s1 : t) (s2 : t) = Start.compare s1.start s2.start
@@ -370,14 +396,9 @@ let get_session_end session =
 ;;
 
 let not_canceled session =
-  let open Pool_common.Message in
   match session.canceled_at with
   | None -> Ok ()
-  | Some canceled_at ->
-    canceled_at
-    |> Pool_common.Utils.Time.formatted_date_time
-    |> sessionalreadycanceled
-    |> CCResult.fail
+  | Some canceled_at -> is_canceled_error canceled_at
 ;;
 
 let not_closed session =
@@ -428,6 +449,19 @@ let is_closable session =
 
 let assignments_cancelable session =
   let open CCResult.Infix in
+  let* () = not_canceled session in
+  let* () = not_closed session in
+  Ok ()
+;;
+
+let assignment_creatable session =
+  let open CCResult.Infix in
+  let* () =
+    is_fully_booked session
+    |> function
+    | true -> Error Pool_common.Message.(SessionFullyBooked)
+    | false -> Ok ()
+  in
   let* () = not_canceled session in
   let* () = not_closed session in
   Ok ()
