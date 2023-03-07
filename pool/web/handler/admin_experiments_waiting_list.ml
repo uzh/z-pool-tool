@@ -116,6 +116,7 @@ let update req =
 ;;
 
 let assign_contact req =
+  let open Session in
   let open Utils.Lwt_result.Infix in
   let experiment_id, waiting_list_id =
     ( experiment_id req
@@ -146,9 +147,9 @@ let assign_contact req =
       |> CCFun.flip CCOption.bind CCList.head_opt
       |> CCOption.to_result NoValue
       |> Lwt_result.lift
-      >>= fun id ->
-      id |> Pool_common.Id.of_string |> Session.find database_label
+      >>= fun id -> id |> Pool_common.Id.of_string |> find database_label
     in
+    let* follow_ups = find_follow_ups database_label session.id in
     let%lwt already_enrolled =
       let open Utils.Lwt_result.Infix in
       Assignment.find_by_experiment_and_contact_opt
@@ -165,6 +166,7 @@ let assign_contact req =
         contact.Contact.language |> CCOption.value ~default |> Lwt_result.return
       in
       Message_template.AssignmentConfirmation.create
+        ~follow_ups
         database_label
         language
         tenant
@@ -173,7 +175,7 @@ let assign_contact req =
     in
     let events =
       let open Cqrs_command.Assignment_command.CreateFromWaitingList in
-      (handle ~tags { session; waiting_list; already_enrolled })
+      (handle ~tags { session; waiting_list; already_enrolled; follow_ups })
         confirmation_email
       |> Lwt_result.lift
     in

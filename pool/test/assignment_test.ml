@@ -238,7 +238,7 @@ let assign_contact_from_waiting_list () =
   let events =
     let command =
       AssignmentCommand.CreateFromWaitingList.
-        { session; waiting_list; already_enrolled }
+        { session; waiting_list; already_enrolled; follow_ups = [] }
     in
     AssignmentCommand.CreateFromWaitingList.handle
       command
@@ -252,10 +252,48 @@ let assign_contact_from_waiting_list () =
         }
     in
     Ok
-      [ Waiting_list.Deleted waiting_list |> Pool_event.waiting_list
-      ; Assignment.Created create |> Pool_event.assignment
+      [ Assignment.Created create |> Pool_event.assignment
+      ; Contact.NumAssignmentsIncreasedBy (contact, 1) |> Pool_event.contact
+      ; Waiting_list.Deleted waiting_list |> Pool_event.waiting_list
       ; Email.(Sent (confirmation_email contact)) |> Pool_event.email
       ]
+  in
+  Test_utils.check_result expected events
+;;
+
+let assign_contact_from_waiting_list_with_follow_ups () =
+  let session = Model.create_session () in
+  let follow_up = Model.create_session ~follow_up_to:session.Session.id () in
+  let waiting_list = Model.create_waiting_list () in
+  let already_enrolled = false in
+  let contact = waiting_list.Waiting_list.contact in
+  let events =
+    let command =
+      AssignmentCommand.CreateFromWaitingList.
+        { session; waiting_list; already_enrolled; follow_ups = [ follow_up ] }
+    in
+    AssignmentCommand.CreateFromWaitingList.handle
+      command
+      (confirmation_email contact)
+  in
+  let expected =
+    let create_events =
+      [ session; follow_up ]
+      |> CCList.map (fun session ->
+           let create =
+             Assignment.
+               { contact = waiting_list.Waiting_list.contact
+               ; session_id = session.Session.id
+               }
+           in
+           Assignment.Created create |> Pool_event.assignment)
+    in
+    Ok
+      (create_events
+       @ [ Contact.NumAssignmentsIncreasedBy (contact, 2) |> Pool_event.contact
+         ; Waiting_list.Deleted waiting_list |> Pool_event.waiting_list
+         ; Email.(Sent (confirmation_email contact)) |> Pool_event.email
+         ])
   in
   Test_utils.check_result expected events
 ;;
@@ -276,7 +314,7 @@ let assign_contact_from_waiting_list_to_disabled_experiment () =
   let events =
     let command =
       AssignmentCommand.CreateFromWaitingList.
-        { session; waiting_list; already_enrolled }
+        { session; waiting_list; already_enrolled; follow_ups = [] }
     in
     AssignmentCommand.CreateFromWaitingList.handle
       command

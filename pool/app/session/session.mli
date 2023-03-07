@@ -220,6 +220,11 @@ val find_follow_ups
   -> Pool_common.Id.t
   -> (t list, Pool_common.Message.error) Lwt_result.t
 
+val find_open_with_follow_ups
+  :  Pool_database.Label.t
+  -> Pool_common.Id.t
+  -> (t list, Pool_common.Message.error) Lwt_result.t
+
 val to_email_text : Pool_common.Language.t -> t -> string
 val public_to_email_text : Pool_common.Language.t -> Public.t -> string
 
