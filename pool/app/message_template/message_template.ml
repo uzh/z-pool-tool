@@ -56,26 +56,20 @@ let experiment_params experiment =
 module AssignmentConfirmation = struct
   let base_params contact = contact.Contact.user |> global_params
 
-  let email_params ?follow_ups lang session contact =
+  let email_params lang sessions contact =
     let session_overview =
-      match follow_ups with
-      | None -> Session.to_email_text lang session
-      | Some follow_ups ->
-        session :: follow_ups
-        |> CCList.map (Session.to_email_text lang)
-        |> CCString.concat "\n\n"
+      sessions
+      |> CCList.map (Session.to_email_text lang)
+      |> CCString.concat "\n\n"
     in
     base_params contact @ [ "sessionOverview", session_overview ]
   ;;
 
-  let email_params_public_session ?follow_ups lang session contact =
+  let email_params_public_session lang sessions contact =
     let session_overview =
-      match follow_ups with
-      | None -> Session.public_to_email_text lang session
-      | Some follow_ups ->
-        session :: follow_ups
-        |> CCList.map (Session.public_to_email_text lang)
-        |> CCString.concat "\n\n"
+      sessions
+      |> CCList.map (Session.public_to_email_text lang)
+      |> CCString.concat "\n\n"
     in
     base_params contact @ [ "sessionOverview", session_overview ]
   ;;
@@ -84,10 +78,10 @@ module AssignmentConfirmation = struct
     find_by_label_to_send pool language Label.AssignmentConfirmation
   ;;
 
-  let create ?follow_ups pool preferred_language tenant session contact =
+  let create pool preferred_language tenant sessions contact =
     let open Utils.Lwt_result.Infix in
     let* template, language = template pool preferred_language in
-    let params = email_params ?follow_ups language session contact in
+    let params = email_params language sessions contact in
     let layout = layout_from_tenant tenant in
     let email = contact |> Contact.email_address in
     let%lwt sender = Pool_tenant.Service.Email.sender_of_pool pool in
@@ -95,19 +89,11 @@ module AssignmentConfirmation = struct
     |> Lwt_result.return
   ;;
 
-  let create_from_public_session
-    ?follow_ups
-    pool
-    preferred_language
-    tenant
-    session
-    contact
+  let create_from_public_session pool preferred_language tenant sessions contact
     =
     let open Utils.Lwt_result.Infix in
     let* template, language = template pool preferred_language in
-    let params =
-      email_params_public_session ?follow_ups language session contact
-    in
+    let params = email_params_public_session language sessions contact in
     let layout = layout_from_tenant tenant in
     let email = contact |> Contact.email_address in
     let%lwt sender = Pool_tenant.Service.Email.sender_of_pool pool in

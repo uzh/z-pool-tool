@@ -363,9 +363,9 @@ module Sql = struct
         AND
           pool_sessions.canceled_at IS NULL
         AND (
-          pool_sessions.uuid = UNHEX(REPLACE(?, '-', ''))
+          pool_sessions.uuid = UNHEX(REPLACE($1, '-', ''))
           OR
-          pool_sessions.follow_up_to = UNHEX(REPLACE(?, '-', ''))
+          pool_sessions.follow_up_to = UNHEX(REPLACE($1, '-', ''))
         )
       |sql}
     |> find_sql ~order_by:"pool_sessions.start"

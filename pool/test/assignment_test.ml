@@ -46,10 +46,9 @@ let create () =
     let command =
       AssignmentCommand.Create.
         { contact
-        ; session
+        ; sessions = [ session ]
         ; waiting_list = Some waiting_list
         ; experiment
-        ; follow_ups = None
         }
     in
     AssignmentCommand.Create.handle command (confirmation_email contact) false
@@ -162,10 +161,9 @@ let assign_to_fully_booked_session () =
     let command =
       AssignmentCommand.Create.
         { contact
-        ; session
+        ; sessions = [ session ]
         ; waiting_list = Some waiting_list
         ; experiment
-        ; follow_ups = None
         }
     in
     AssignmentCommand.Create.handle command (confirmation_email contact) false
@@ -192,10 +190,9 @@ let assign_to_experiment_with_direct_registration_disabled () =
     let command =
       AssignmentCommand.Create.
         { contact
-        ; session
+        ; sessions = [ session ]
         ; waiting_list = Some waiting_list
         ; experiment
-        ; follow_ups = None
         }
     in
     AssignmentCommand.Create.handle command (confirmation_email contact) false
@@ -215,10 +212,9 @@ let assign_to_session_contact_is_already_assigned () =
     let command =
       AssignmentCommand.Create.
         { contact
-        ; session
+        ; sessions = [ session ]
         ; waiting_list = Some waiting_list
         ; experiment
-        ; follow_ups = None
         }
     in
     AssignmentCommand.Create.handle
@@ -241,7 +237,7 @@ let assign_to_canceled_session () =
   let events =
     let command =
       AssignmentCommand.Create.
-        { contact; session; waiting_list = None; experiment; follow_ups = None }
+        { contact; sessions = [ session ]; waiting_list = None; experiment }
     in
     AssignmentCommand.Create.handle
       command
@@ -265,7 +261,7 @@ let assign_contact_from_waiting_list () =
   let events =
     let command =
       AssignmentCommand.CreateFromWaitingList.
-        { session; waiting_list; already_enrolled; follow_ups = [] }
+        { sessions = [ session ]; waiting_list; already_enrolled }
     in
     AssignmentCommand.CreateFromWaitingList.handle
       command
@@ -297,7 +293,7 @@ let assign_contact_from_waiting_list_with_follow_ups () =
   let events =
     let command =
       AssignmentCommand.CreateFromWaitingList.
-        { session; waiting_list; already_enrolled; follow_ups = [ follow_up ] }
+        { sessions = [ session; follow_up ]; waiting_list; already_enrolled }
     in
     AssignmentCommand.CreateFromWaitingList.handle
       command
@@ -341,7 +337,7 @@ let assign_contact_from_waiting_list_to_disabled_experiment () =
   let events =
     let command =
       AssignmentCommand.CreateFromWaitingList.
-        { session; waiting_list; already_enrolled; follow_ups = [] }
+        { sessions = [ session ]; waiting_list; already_enrolled }
     in
     AssignmentCommand.CreateFromWaitingList.handle
       command
@@ -353,7 +349,7 @@ let assign_contact_from_waiting_list_to_disabled_experiment () =
 
 let assign_to_session_with_follow_ups () =
   let { session; experiment; contact } = assignment_data () in
-  let follow_ups =
+  let follow_up =
     let base =
       Test_utils.Model.(create_public_session ~start:(in_an_hour ())) ()
     in
@@ -362,25 +358,19 @@ let assign_to_session_with_follow_ups () =
         id = Pool_common.Id.create ()
       ; follow_up_to = Some session.Session.Public.id
       }
-    |> CCList.return
   in
+  let sessions = [ session; follow_up ] in
   let experiment = experiment |> Model.experiment_to_public_experiment in
   let events =
     let command =
       AssignmentCommand.Create.
-        { contact
-        ; session
-        ; waiting_list = None
-        ; experiment
-        ; follow_ups = Some follow_ups
-        }
+        { contact; sessions; waiting_list = None; experiment }
     in
     AssignmentCommand.Create.handle command (confirmation_email contact) false
   in
   let expected =
-    let session_list = session :: follow_ups in
     let create_events =
-      session_list
+      sessions
       |> CCList.map (fun session ->
            let create =
              Assignment.{ contact; session_id = session.Session.Public.id }
@@ -388,7 +378,7 @@ let assign_to_session_with_follow_ups () =
            Assignment.Created create |> Pool_event.assignment)
     in
     let increase_num_events =
-      Contact.NumAssignmentsIncreasedBy (contact, CCList.length session_list)
+      Contact.NumAssignmentsIncreasedBy (contact, CCList.length sessions)
       |> Pool_event.contact
     in
     let email_event =

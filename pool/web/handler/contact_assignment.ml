@@ -19,12 +19,9 @@ let create req =
        let* experiment =
          Experiment.find_public database_label experiment_id contact
        in
-       let* session = Session.find_public database_label id in
-       let* follow_ups =
-         Session.find_follow_ups database_label id
-         >|+ function
-         | [] -> None
-         | follow_ups -> Some (follow_ups |> CCList.map Session.to_public)
+       let* sessions =
+         Session.find_open_with_follow_ups database_label id
+         >|+ CCList.map Session.to_public
        in
        let* waiting_list =
          Waiting_list.find_by_contact_and_experiment
@@ -46,8 +43,7 @@ let create req =
            database_label
            language
            tenant
-           session
-           ?follow_ups
+           sessions
            contact
        in
        let%lwt already_enrolled =
@@ -63,7 +59,7 @@ let create req =
          let open Cqrs_command.Assignment_command.Create in
          handle
            ~tags
-           { contact; session; waiting_list; experiment; follow_ups }
+           { contact; sessions; waiting_list; experiment }
            confirmation_email
            already_enrolled
          |> Lwt_result.lift

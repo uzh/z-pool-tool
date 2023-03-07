@@ -7,10 +7,9 @@ module Create : sig
 
   type t =
     { contact : Contact.t
-    ; session : Session.Public.t
+    ; sessions : Session.Public.t list
     ; waiting_list : Waiting_list.t option
     ; experiment : Experiment.Public.t
-    ; follow_ups : Session.Public.t list option
     }
 
   val handle
@@ -22,10 +21,9 @@ module Create : sig
 end = struct
   type t =
     { contact : Contact.t
-    ; session : Session.Public.t
+    ; sessions : Session.Public.t list
     ; waiting_list : Waiting_list.t option
     ; experiment : Experiment.Public.t
-    ; follow_ups : Session.Public.t list option
     }
 
   let handle
@@ -38,10 +36,7 @@ end = struct
     let open CCResult in
     if already_enrolled
     then Error Pool_common.Message.(AlreadySignedUpForExperiment)
-    else (
-      let session_list =
-        command.session :: CCOption.value ~default:[] command.follow_ups
-      in
+    else
       let* () =
         match
           command.experiment.Experiment.Public.direct_registration_disabled
@@ -55,10 +50,10 @@ end = struct
           (fun res session ->
             res >>= fun () -> Session.Public.assignment_creatable session)
           (CCResult.return ())
-          session_list
+          command.sessions
       in
       let create_events =
-        session_list
+        command.sessions
         |> CCList.map (fun session ->
              let create =
                Assignment.
@@ -76,14 +71,14 @@ end = struct
       in
       let increase_num_events =
         Contact.NumAssignmentsIncreasedBy
-          (command.contact, CCList.length session_list)
+          (command.contact, CCList.length command.sessions)
         |> Pool_event.contact
       in
       Ok
         (delete_events
          @ create_events
          @ [ increase_num_events ]
-         @ [ Email.Sent confirmation_email |> Pool_event.email ]))
+         @ [ Email.Sent confirmation_email |> Pool_event.email ])
   ;;
 
   let effects = [ `Create, `TargetEntity `Assignment ]
@@ -183,10 +178,9 @@ end
 
 module CreateFromWaitingList : sig
   type t =
-    { session : Session.t
+    { sessions : Session.t list
     ; waiting_list : Waiting_list.t
     ; already_enrolled : bool
-    ; follow_ups : Session.t list
     }
 
   val handle
@@ -198,10 +192,9 @@ module CreateFromWaitingList : sig
   val effects : Guard.Authorizer.effect list
 end = struct
   type t =
-    { session : Session.t
+    { sessions : Session.t list
     ; waiting_list : Waiting_list.t
     ; already_enrolled : bool
-    ; follow_ups : Session.t list
     }
 
   let handle ?(tags = Logs.Tag.empty) (command : t) confirmation_email =
@@ -218,17 +211,16 @@ end = struct
         | true -> Error Pool_common.Message.(RegistrationDisabled)
         | false -> Ok ()
       in
-      let session_list = command.session :: command.follow_ups in
       let* () =
         CCList.fold_left
           (fun res session ->
             res >>= fun () -> Session.assignment_creatable session)
           (CCResult.return ())
-          session_list
+          command.sessions
       in
       let contact = command.waiting_list.Waiting_list.contact in
       let create_events =
-        session_list
+        command.sessions
         |> CCList.map (fun session ->
              let create =
                Assignment.{ contact; session_id = session.Session.id }
@@ -238,7 +230,7 @@ end = struct
       Ok
         (create_events
          @ [ Contact.NumAssignmentsIncreasedBy
-               (contact, CCList.length session_list)
+               (contact, CCList.length command.sessions)
              |> Pool_event.contact
            ; Waiting_list.Deleted command.waiting_list
              |> Pool_event.waiting_list
