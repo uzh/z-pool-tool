@@ -50,9 +50,9 @@ let list translation_list Pool_context.{ language; csrf; _ } =
               ~a:[ a_class [ "heading-2" ] ]
               [ txt
                   (key
-                  |> I18n.Key.show
-                  |> CCString.replace ~which:`All ~sub:"_" ~by:" "
-                  |> CCString.capitalize_ascii)
+                   |> I18n.Key.show
+                   |> CCString.replace ~which:`All ~sub:"_" ~by:" "
+                   |> CCString.capitalize_ascii)
               ]
           ; div ~a:[ a_class [ "stack"; "flexcolumn" ] ] translations_html
           ])

@@ -136,11 +136,11 @@ let search_experiments_input ?(value = "") ?results param =
            ; a_class [ "query-input" ]
            ; a_placeholder "Search by experiment title"
            ]
-          @ htmx_attribs
-              ~action:(form_action param "experiments")
-              ~trigger:"keyup changed delay:1s"
-              ~target:"closest [data-query='input']"
-              ())
+           @ htmx_attribs
+               ~action:(form_action param "experiments")
+               ~trigger:"keyup changed delay:1s"
+               ~target:"closest [data-query='input']"
+               ())
         ()
     ; result_list
     ]
@@ -582,7 +582,7 @@ let rec predicate_form
       ([ a_class [ inset; "border"; "predicate"; "flexrow"; "flex-gap-sm" ]
        ; a_id predicate_identifier
        ]
-      @ data_attr)
+       @ data_attr)
     [ predicate_html
     ; (if CCList.length identifier > 1 then delete_button () else txt "")
     ]
@@ -621,9 +621,9 @@ let filter_form csrf language param key_list template_list query_experiments =
               ; a_user_data
                   "action"
                   (experiment.Experiment.id
-                  |> Experiment.Id.value
-                  |> Format.asprintf "/admin/experiments/%s/contact-count"
-                  |> Sihl.Web.externalize_path)
+                   |> Experiment.Id.value
+                   |> Format.asprintf "/admin/experiments/%s/contact-count"
+                   |> Sihl.Web.externalize_path)
               ]
             []
         ]
@@ -708,7 +708,7 @@ let filter_form csrf language param key_list template_list query_experiments =
            ; a_id "filter-form"
            ; a_user_data "detect-unsaved-changes" ""
            ]
-          @ filter_id)
+           @ filter_id)
         [ div ~a:[ a_id notification_id ] []
         ; Component_input.csrf_element csrf ()
         ; title_input
@@ -721,12 +721,12 @@ let filter_form csrf language param key_list template_list query_experiments =
                 ~classnames:[ "push" ]
                 ~attributes:
                   (a_id "submit-filter-form"
-                  :: htmx_attribs
-                       ~action
-                       ~swap:"none"
-                       ~trigger:"click"
-                       ~templates_disabled
-                       ())
+                   :: htmx_attribs
+                        ~action
+                        ~swap:"none"
+                        ~trigger:"click"
+                        ~templates_disabled
+                        ())
                 Pool_common.Message.(Save None)
                 ()
             ]

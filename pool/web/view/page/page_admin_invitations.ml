@@ -18,7 +18,7 @@ module Partials = struct
   let list Pool_context.{ csrf; language; _ } experiment invitation_list =
     let thead =
       (Pool_common.Message.Field.[ Contact; ResentAt; CreatedAt ]
-      |> Table.fields_to_txt language)
+       |> Table.fields_to_txt language)
       @ [ txt "" ]
     in
     let rows =

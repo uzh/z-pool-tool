@@ -68,7 +68,7 @@ let public =
         let open Pool_common in
         Error
           (Message.(Decode Field.ScheduledTime)
-          |> Utils.error_to_string Language.En)
+           |> Utils.error_to_string Language.En)
     in
     Ok { label; scheduled_time; status; last_run }
   in

@@ -16,7 +16,7 @@ module Url = struct
     Repo.make_caqti_type
       Caqti_type.string
       (decrypt_from_string
-      %> CCResult.map_err (fun _ -> Message.(Decode Field.DatabaseUrl)))
+       %> CCResult.map_err (fun _ -> Message.(Decode Field.DatabaseUrl)))
       encrypt_to_string
   ;;
 end

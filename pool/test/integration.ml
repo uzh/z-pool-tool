@@ -145,8 +145,8 @@ let services =
 let () =
   Lwt_main.run
     (let open Test_utils in
-    let%lwt () = setup_test () in
-    let%lwt _ = Sihl.Container.start_services services in
-    let%lwt () = Seed.create Data.database_label () in
-    Alcotest_lwt.run "integration" @@ suite)
+     let%lwt () = setup_test () in
+     let%lwt _ = Sihl.Container.start_services services in
+     let%lwt () = Seed.create Data.database_label () in
+     Alcotest_lwt.run "integration" @@ suite)
 ;;

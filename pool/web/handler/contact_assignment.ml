@@ -22,7 +22,9 @@ let create req =
        let* session = Session.find_public database_label id in
        let* follow_ups =
          Session.find_follow_ups database_label id
-         >|+ CCList.map Session.to_public
+         >|+ function
+         | [] -> None
+         | follow_ups -> Some (follow_ups |> CCList.map Session.to_public)
        in
        let* waiting_list =
          Waiting_list.find_by_contact_and_experiment
@@ -45,6 +47,7 @@ let create req =
            language
            tenant
            session
+           ?follow_ups
            contact
        in
        let%lwt already_enrolled =
@@ -57,18 +60,12 @@ let create req =
          ||> not
        in
        let events =
-         (* TODO: merge emails, one confirmation for all sessions *)
          let open Cqrs_command.Assignment_command.Create in
-         CCList.map
-           (fun (session, waiting_list) ->
-             handle
-               ~tags
-               { contact; session; waiting_list; experiment }
-               confirmation_email
-               already_enrolled)
-           ((session, waiting_list) :: CCList.map (fun m -> m, None) follow_ups)
-         |> CCResult.flatten_l
-         |> CCResult.map CCList.flatten
+         handle
+           ~tags
+           { contact; session; waiting_list; experiment; follow_ups }
+           confirmation_email
+           already_enrolled
          |> Lwt_result.lift
        in
        let handle events =

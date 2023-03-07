@@ -130,7 +130,7 @@ module Sql = struct
         (CCList.mapi
            (fun i _ -> Format.asprintf "UNHEX(REPLACE($%n, '-', ''))" (i + 3))
            ids
-        |> CCString.concat ",")
+         |> CCString.concat ",")
     in
     Format.asprintf "%s \n %s" select_sql where
   ;;

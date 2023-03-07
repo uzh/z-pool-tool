@@ -10,6 +10,7 @@ module Create : sig
     ; session : Session.Public.t
     ; waiting_list : Waiting_list.t option
     ; experiment : Experiment.Public.t
+    ; follow_ups : Session.Public.t list option
     }
 
   val handle
@@ -24,6 +25,7 @@ end = struct
     ; session : Session.Public.t
     ; waiting_list : Waiting_list.t option
     ; experiment : Experiment.Public.t
+    ; follow_ups : Session.Public.t list option
     }
 
   let handle
@@ -36,7 +38,10 @@ end = struct
     let open CCResult in
     if already_enrolled
     then Error Pool_common.Message.(AlreadySignedUpForExperiment)
-    else
+    else (
+      let session_list =
+        command.session :: CCOption.value ~default:[] command.follow_ups
+      in
       let* () =
         match
           command.experiment.Experiment.Public.direct_registration_disabled
@@ -46,16 +51,27 @@ end = struct
         | false -> Ok ()
       in
       let* () =
-        Session.Public.is_fully_booked command.session
-        |> function
-        | true -> Error Pool_common.Message.(SessionFullyBooked)
-        | false -> Ok ()
+        CCList.fold_left
+          (fun res session ->
+            res
+            >>= fun () ->
+            Session.Public.is_fully_booked session
+            |> function
+            | true -> Error Pool_common.Message.(SessionFullyBooked)
+            | false -> Ok ())
+          (CCResult.return ())
+          session_list
       in
-      let create =
-        Assignment.
-          { contact = command.contact
-          ; session_id = command.session.Session.Public.id
-          }
+      let create_events =
+        session_list
+        |> CCList.map (fun session ->
+             let create =
+               Assignment.
+                 { contact = command.contact
+                 ; session_id = session.Session.Public.id
+                 }
+             in
+             Assignment.Created create |> Pool_event.assignment)
       in
       let delete_events =
         match command.waiting_list with
@@ -63,13 +79,16 @@ end = struct
         | Some waiting_list ->
           [ Waiting_list.Deleted waiting_list |> Pool_event.waiting_list ]
       in
+      let increase_num_events =
+        Contact.NumAssignmentsIncreasedBy
+          (command.contact, CCList.length session_list)
+        |> Pool_event.contact
+      in
       Ok
         (delete_events
-        @ [ Assignment.Created create |> Pool_event.assignment
-          ; Contact.NumAssignmentsIncreased command.contact
-            |> Pool_event.contact
-          ; Email.Sent confirmation_email |> Pool_event.email
-          ])
+         @ create_events
+         @ [ increase_num_events ]
+         @ [ Email.Sent confirmation_email |> Pool_event.email ]))
   ;;
 
   let effects = [ `Create, `TargetEntity `Assignment ]
@@ -90,7 +109,7 @@ end = struct
     let* () = Session.assignments_cancelable session in
     Ok
       [ Assignment.Canceled assignment |> Pool_event.assignment
-      ; Contact.NumAssignmentsDecreased assignment.Assignment.contact
+      ; Contact.NumAssignmentsDecreasedBy (assignment.Assignment.contact, 1)
         |> Pool_event.contact
       ]
   ;;

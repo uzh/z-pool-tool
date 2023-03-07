@@ -137,26 +137,26 @@ let show
                           ]
                       ])
                     email_suffixes
-                 |> Component.Table.horizontal_table
-                      ~align_last_end:true
-                      `Striped
-                 |> CCList.pure)
+                  |> Component.Table.horizontal_table
+                       ~align_last_end:true
+                       `Striped
+                  |> CCList.pure)
              ]
            in
            let update =
              form
                ~a:(form_attrs `UpdateTenantEmailSuffixes)
                ([ csrf_element csrf () ]
-               @ CCList.map
-                   (fun suffix ->
-                     input_element
-                       language
-                       `Text
-                       Message.Field.EmailSuffix
-                       ~required:true
-                       ~value:(suffix |> Settings.EmailSuffix.value))
-                   email_suffixes
-               @ [ submit () ])
+                @ CCList.map
+                    (fun suffix ->
+                      input_element
+                        language
+                        `Text
+                        Message.Field.EmailSuffix
+                        ~required:true
+                        ~value:(suffix |> Settings.EmailSuffix.value))
+                    email_suffixes
+                @ [ submit () ])
            in
            if CCList.is_empty email_suffixes
            then constant
@@ -196,8 +196,8 @@ let show
                   Message.Field.InactiveUserDisableAfter
                   ~value:
                     (inactive_user_disable_after
-                    |> DisableAfter.value
-                    |> CCInt.to_string)
+                     |> DisableAfter.value
+                     |> CCInt.to_string)
               ; submit ()
               ]
           ; form
@@ -268,8 +268,8 @@ let show
                  ~eq:Pool_common.Language.equal
                  sys_language
                  terms_and_conditions
-              |> CCOption.map Settings.TermsAndConditions.Terms.value
-              |> CCOption.value ~default:"")
+               |> CCOption.map Settings.TermsAndConditions.Terms.value
+               |> CCOption.value ~default:"")
             ~required:true
             ~flash_fetcher)
         Pool_common.Language.all
@@ -279,8 +279,8 @@ let show
       ; form
           ~a:(form_attrs `UpdateTermsAndConditions)
           ([ csrf_element csrf () ]
-          @ terms_and_conditions_textareas
-          @ [ submit () ])
+           @ terms_and_conditions_textareas
+           @ [ submit () ])
       ]
   in
   let default_lead_time =

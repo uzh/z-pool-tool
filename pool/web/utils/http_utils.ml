@@ -202,17 +202,17 @@ let urlencoded_to_params_opt urlencoded keys =
 let urlencoded_to_params urlencoded keys =
   keys
   |> (CCList.map
-     @@ fun key ->
-     CCOption.bind (List.assoc_opt key urlencoded) CCList.head_opt
-     |> CCOption.map @@ CCPair.make key)
+      @@ fun key ->
+      CCOption.bind (List.assoc_opt key urlencoded) CCList.head_opt
+      |> CCOption.map @@ CCPair.make key)
   |> CCList.all_some
 ;;
 
 let urlencoded_to_flash urlencoded =
   Sihl.Web.Flash.set
     (urlencoded
-    |> CCList.map (fun (m, k) ->
-         m, k |> CCList.head_opt |> CCOption.get_or ~default:""))
+     |> CCList.map (fun (m, k) ->
+          m, k |> CCList.head_opt |> CCOption.get_or ~default:""))
 ;;
 
 (* This is required as HTMX sends "undefined" if all checkboxes are unchecked *)
@@ -342,7 +342,7 @@ let default_value_style elms =
 
 let externalized_path_with_version url =
   (if Sihl.Configuration.(is_development () || is_test ())
-  then url
-  else Format.asprintf "%s?v=%s" url Version.to_string)
+   then url
+   else Format.asprintf "%s?v=%s" url Version.to_string)
   |> Sihl.Web.externalize_path
 ;;

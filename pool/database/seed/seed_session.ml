@@ -86,7 +86,7 @@ let create pool =
           { start =
               Start.create
                 (Ptime.add_span (parent.start |> Session.Start.value) hour
-                |> CCOption.get_exn_or "Invalid time")
+                 |> CCOption.get_exn_or "Invalid time")
           ; duration = Duration.create halfhour |> get_or_failwith
           ; description = Some "MRI Study" >>= Description.create %> of_result
           ; max_participants = parent.max_participants

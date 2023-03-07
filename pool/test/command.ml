@@ -120,6 +120,10 @@ let () =
             `Quick
             Assignment_test
             .assign_contact_from_waiting_list_to_disabled_experiment
+        ; test_case
+            "assign to session with follow ups"
+            `Quick
+            Assignment_test.assign_to_session_with_follow_ups
         ] )
     ; ( "invitation"
       , [ test_case "create invitation" `Quick Invitation_test.create

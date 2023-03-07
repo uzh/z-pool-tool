@@ -147,9 +147,9 @@ let input_element
     div
       ~a:[ a_class group_class ]
       ([ label ~a:[ a_label_for id ] [ txt input_label ]; input_element ]
-      @ help
-      @ error
-      @ append_html)
+       @ help
+       @ error
+       @ append_html)
 ;;
 
 let flatpicker_element
@@ -203,8 +203,8 @@ let flatpicker_element
   div
     ~a:[ a_class group_class ]
     ([ label ~a:[ a_label_for id ] [ txt input_label ]; input_element ]
-    @ help
-    @ flat_picker_help)
+     @ help
+     @ flat_picker_help)
 ;;
 
 let timespan_picker
@@ -244,8 +244,8 @@ let timespan_picker
   div
     ~a:[ a_class group_class ]
     ([ label ~a:[ a_label_for id ] [ txt input_label ]; input_element ]
-    @ help
-    @ error)
+     @ help
+     @ error)
 ;;
 
 let checkbox_element
@@ -430,7 +430,7 @@ let submit_element
   button
     ~a:
       ([ a_button_type `Submit; a_class (classnames @ button_type_class) ]
-      @ attributes)
+       @ attributes)
     content
 ;;
 
@@ -438,7 +438,7 @@ let submit_icon ?(classnames = []) ?(attributes = []) icon_type =
   button
     ~a:
       ([ a_button_type `Submit; a_class (classnames @ [ "has-icon" ]) ]
-      @ attributes)
+       @ attributes)
     [ Icon.icon icon_type ]
 ;;
 
@@ -534,9 +534,9 @@ let selector
         option
           ~a:((l |> show |> a_value) :: is_selected)
           (l
-          |> CCOption.value ~default:show option_formatter
-          |> CCString.capitalize_ascii
-          |> txt))
+           |> CCOption.value ~default:show option_formatter
+           |> CCString.capitalize_ascii
+           |> txt))
       options
   in
   let options =
@@ -555,7 +555,7 @@ let selector
           (txt
              (Pool_common.(
                 Utils.control_to_string language Message.PleaseSelect)
-             |> CCString.capitalize_ascii))
+              |> CCString.capitalize_ascii))
       in
       [ default ] @ options
     | false -> options
@@ -582,14 +582,14 @@ let selector
          [ select
              ~a:
                ((a_name name :: attributes)
-               @ if required then [ a_required () ] else [])
+                @ if required then [ a_required () ] else [])
              options
          ; hidden_field
          ]
      ]
-    @ help
-    @ error
-    @ append_html)
+     @ help
+     @ error
+     @ append_html)
 ;;
 
 type 'a multi_select =
@@ -632,9 +632,9 @@ let multi_select
              ; a_id value
              ; a_value value
              ]
-            @ checked
-            @ disabled
-            @ CCOption.value ~default:[] additional_attributes)
+             @ checked
+             @ disabled
+             @ CCOption.value ~default:[] additional_attributes)
           ()
       in
       let label = label ~a:[ a_label_for value ] [ txt (option |> to_label) ] in

@@ -40,7 +40,7 @@ let index { Pool_context.language; _ } templates =
         ~a:[ a_class [ "heading-1" ] ]
         [ txt
             (Pool_common.(Utils.field_to_string language Field.MessageTemplate)
-            |> CCString.capitalize_ascii)
+             |> CCString.capitalize_ascii)
         ]
     ; table language templates None edit_path
     ]

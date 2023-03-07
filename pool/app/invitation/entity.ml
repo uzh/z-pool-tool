@@ -54,5 +54,5 @@ let sortable_by =
        [ Field.ResentAt, "pool_invitations.resent_at"
        ; Field.CreatedAt, "pool_invitations.created_at"
        ]
-    |> Query.Column.create_list)
+     |> Query.Column.create_list)
 ;;

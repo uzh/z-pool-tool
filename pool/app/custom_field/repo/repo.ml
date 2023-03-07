@@ -8,8 +8,8 @@ let has_options field_type m =
 let to_entity pool to_entity field_type id m =
   let open Utils.Lwt_result.Infix in
   (if has_options field_type m
-  then Repo_option.find_by_field pool (id m)
-  else [] |> Lwt.return)
+   then Repo_option.find_by_field pool (id m)
+   else [] |> Lwt.return)
   ||> fun options -> to_entity options m
 ;;
 

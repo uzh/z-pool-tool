@@ -334,10 +334,10 @@ end = struct
     in
     Ok
       ((Session.Rescheduled (session, reschedule) |> Pool_event.session)
-      ::
-      (if emails |> CCList.is_empty |> not
-      then [ Email.BulkSent emails |> Pool_event.email ]
-      else []))
+       ::
+       (if emails |> CCList.is_empty |> not
+        then [ Email.BulkSent emails |> Pool_event.email ]
+        else []))
   ;;
 
   let decode data =
@@ -387,7 +387,7 @@ end = struct
       in
       Ok
         ((Session.Deleted session |> Pool_event.session)
-        :: (templates |> CCList.map delete_template))
+         :: (templates |> CCList.map delete_template))
   ;;
 
   let effects id =
@@ -488,8 +488,8 @@ end = struct
            (Session.ReminderSent session |> Pool_event.session)
            ::
            (if emails |> CCList.is_empty |> not
-           then [ Email.BulkSent emails |> Pool_event.email ]
-           else []))
+            then [ Email.BulkSent emails |> Pool_event.email ]
+            else []))
          command)
   ;;
 

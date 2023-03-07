@@ -43,8 +43,8 @@ let form
             ~a:[ a_class [ "heading-2" ] ]
             [ txt
                 (Message.Field.CustomField
-                |> Pool_common.Utils.field_to_string language
-                |> CCString.capitalize_ascii)
+                 |> Pool_common.Utils.field_to_string language
+                 |> CCString.capitalize_ascii)
             ]
         ; p
             Pool_common.
@@ -60,7 +60,7 @@ let form
               ; a_action
                   (Sihl.Web.externalize_path
                      (Url.Group.detail_path Group.(group.model, group.id)
-                     |> Format.asprintf "%s/sort-fields"))
+                      |> Format.asprintf "%s/sort-fields"))
               ; a_user_data "detect-unsaved-changes" ""
               ]
             [ csrf_element csrf ()

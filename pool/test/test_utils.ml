@@ -110,8 +110,8 @@ module Model = struct
       { user = create_sihl_user ()
       ; terms_accepted_at =
           (if with_terms_accepted
-          then Pool_user.TermsAccepted.create_now () |> CCOption.pure
-          else None)
+           then Pool_user.TermsAccepted.create_now () |> CCOption.pure
+           else None)
       ; language = Some Pool_common.Language.En
       ; experiment_type_preference = None
       ; paused = Pool_user.Paused.create false
@@ -321,7 +321,7 @@ module Model = struct
     }
   ;;
 
-  let create_public_session () =
+  let create_public_session ?start () =
     let Session.
           { id
           ; follow_up_to
@@ -337,7 +337,7 @@ module Model = struct
           ; _
           }
       =
-      create_session ()
+      create_session ?start ()
     in
     Session.Public.
       { id

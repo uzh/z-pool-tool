@@ -293,7 +293,7 @@ module Tenant = struct
           |> fun children -> create_nav_element ~children "/admin/users" Users
         in
         ([ "/admin/dashboard", Dashboard; "/admin/experiments", Experiments ]
-        |> to_nav_elements)
+         |> to_nav_elements)
         @ [ settings_nav; user_nav; logout_nav_link ]
         |> CCFun.(to_main_nav mobile %> CCList.pure)
     in
@@ -337,8 +337,8 @@ module Tenant = struct
              ~a:
                [ a_src
                    (file
-                   |> Format.asprintf "/assets/%s"
-                   |> Http_utils.externalized_path_with_version)
+                    |> Format.asprintf "/assets/%s"
+                    |> Http_utils.externalized_path_with_version)
                ; a_defer ()
                ]
              (txt ""))
@@ -366,7 +366,7 @@ module Tenant = struct
           ; content
           ; footer title_text
           ]
-         @ scripts))
+          @ scripts))
   ;;
 end
 
@@ -421,7 +421,7 @@ module Root = struct
       (head
          page_title
          ([ charset; viewport; favicon "/assets/images/favicon.png" ]
-         @ [ global_stylesheet |> css_link_tag ]))
+          @ [ global_stylesheet |> css_link_tag ]))
       (body
          ~a:[ a_class body_tag_classnames ]
          [ website_header None ~children title_text

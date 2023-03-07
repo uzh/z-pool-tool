@@ -18,7 +18,7 @@ let index { Pool_context.language; _ } filter_list =
         ~a:[ a_class [ "heading-1" ] ]
         [ txt
             (Pool_common.(Utils.field_to_string language Message.Field.Filter)
-            |> CCString.capitalize_ascii)
+             |> CCString.capitalize_ascii)
         ]
     ; CCList.map
         (fun filter ->
@@ -27,9 +27,9 @@ let index { Pool_context.language; _ } filter_list =
               ~a:
                 [ a_href
                     (filter.Filter.id
-                    |> Pool_common.Id.value
-                    |> Format.asprintf "/admin/filter/%s/edit"
-                    |> Sihl.Web.externalize_path)
+                     |> Pool_common.Id.value
+                     |> Format.asprintf "/admin/filter/%s/edit"
+                     |> Sihl.Web.externalize_path)
                 ]
               [ txt
                   Pool_common.(

@@ -8,7 +8,7 @@ let queue_overview language queued_jobs =
   let open Pool_common in
   let thead =
     (Message.Field.[ Name; Status; Input; LastError; LastErrorAt; NextRunAt ]
-    |> Component.Table.fields_to_txt language)
+     |> Component.Table.fields_to_txt language)
     @ [ txt "" ]
   in
   CCList.map

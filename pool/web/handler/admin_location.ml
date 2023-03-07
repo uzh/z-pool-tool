@@ -12,10 +12,11 @@ let index req =
   let open Utils.Lwt_result.Infix in
   let result ({ Pool_context.database_label; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, "/admin/dashboard")
-    @@ let%lwt location_list = Pool_location.find_all database_label in
-       Page.Admin.Location.index location_list context
-       |> create_layout ~active_navigation:"/admin/locations" req context
-       >|+ Sihl.Web.Response.of_html
+    @@
+    let%lwt location_list = Pool_location.find_all database_label in
+    Page.Admin.Location.index location_list context
+    |> create_layout ~active_navigation:"/admin/locations" req context
+    >|+ Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path req
 ;;

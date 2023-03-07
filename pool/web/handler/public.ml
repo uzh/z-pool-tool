@@ -52,8 +52,8 @@ let index_css req =
     Sihl.Web.Response.of_plain_text content
     |> Sihl.Web.Response.set_content_type
          (styles
-         |> Pool_tenant.Styles.mime_type
-         |> Pool_common.File.Mime.to_string)
+          |> Pool_tenant.Styles.mime_type
+          |> Pool_common.File.Mime.to_string)
     |> Lwt.return_ok
   in
   match result with

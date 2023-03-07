@@ -38,7 +38,7 @@ let address_to_html
     [ txt
         (Pool_common.(
            Utils.field_to_string language Pool_common.Message.Field.Virtual)
-        |> CCString.capitalize_ascii)
+         |> CCString.capitalize_ascii)
     ]
     |> fun html ->
     (match highlight_first_line with
@@ -67,7 +67,7 @@ let location_to_html ?(public = false) language (location : Pool_location.t) =
                  "%s: %s"
                  (Pool_common.(
                     Utils.field_to_string language Message.Field.Status)
-                 |> CCString.capitalize_ascii)
+                  |> CCString.capitalize_ascii)
                  (location.status |> Status.show))
           ]
       ]
