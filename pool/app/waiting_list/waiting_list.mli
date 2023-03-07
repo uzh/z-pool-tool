@@ -1,4 +1,4 @@
-module Comment : sig
+module AdminComment : sig
   type t
 
   val equal : t -> t -> bool
@@ -15,7 +15,7 @@ type t =
   { id : Pool_common.Id.t
   ; contact : Contact.t
   ; experiment : Experiment.t
-  ; comment : Comment.t option
+  ; admin_comment : AdminComment.t option
   ; created_at : Ptime.t
   ; updated_at : Ptime.t
   }
@@ -32,7 +32,7 @@ val equal_create : create -> create -> bool
 val pp_create : Format.formatter -> create -> unit
 val show_create : create -> string
 
-type update = { comment : Comment.t option }
+type update = { admin_comment : AdminComment.t option }
 
 val equal_update : update -> update -> bool
 val pp_update : Format.formatter -> update -> unit
@@ -42,7 +42,7 @@ val create
   :  ?id:Pool_common.Id.t
   -> Contact.t
   -> Experiment.t
-  -> Comment.t option
+  -> AdminComment.t option
   -> t
 
 type event =
@@ -59,7 +59,7 @@ module ExperimentList : sig
   type waiting_list_entry =
     { id : Pool_common.Id.t
     ; contact : Contact.Preview.t
-    ; comment : Comment.t option
+    ; admin_comment : AdminComment.t option
     ; created_at : Ptime.t
     ; updated_at : Ptime.t
     }

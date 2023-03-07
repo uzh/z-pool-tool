@@ -10,6 +10,7 @@ module Field = struct
 
   type t =
     | Admin [@name "admin"] [@printer go "admin"]
+    | AdminComment [@name "admin_comment"] [@printer go "admin_comment"]
     | AdminHint [@name "admin_hint"] [@printer go "admin_hint"]
     | AdminInputOnly [@name "admin_input_only"] [@printer go "admin_input_only"]
     | AdminViewOnly [@name "admin_view_only"] [@printer go "admin_view_only"]
@@ -26,7 +27,6 @@ module Field = struct
     | CanceledAt [@name "canceled_at"] [@printer go "canceled_at"]
     | City [@name "city"] [@printer go "city"]
     | ClosedAt [@name "closed_at"] [@printer go "closed_at"]
-    | Comment [@name "comment"] [@printer go "comment"]
     | Contact [@name "contact"] [@printer go "contact"]
     | ContactEmail [@name "contact_email"] [@printer go "contact_email"]
     | Contacts [@name "contacts"] [@printer go "contacts"]

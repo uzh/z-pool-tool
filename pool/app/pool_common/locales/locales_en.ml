@@ -4,6 +4,7 @@ let rec field_to_string =
   let open Field in
   function
   | Admin -> "admin"
+  | AdminComment -> "admin comment"
   | AdminHint -> "hint for admins"
   | AdminInputOnly -> "input only by admins"
   | AdminViewOnly -> "only visible for admins"
@@ -18,7 +19,6 @@ let rec field_to_string =
   | CanceledAt -> "canceled at"
   | City -> "city"
   | ClosedAt -> "Closed at"
-  | Comment -> "comment"
   | Contact -> "contact"
   | ContactEmail -> "contact email address"
   | Contacts -> "contacts"

@@ -3,7 +3,7 @@ open Component.Input
 module Message = Pool_common.Message
 
 let detail
-  (Waiting_list.{ id; contact; experiment; comment; _ } : Waiting_list.t)
+  (Waiting_list.{ id; contact; experiment; admin_comment; _ } : Waiting_list.t)
   sessions
   experiment_id
   Pool_context.{ language; csrf; _ }
@@ -28,16 +28,19 @@ let detail
           [ csrf_element csrf ()
           ; textarea_element
               language
-              Message.Field.Comment
+              Message.Field.AdminComment
               ~value:
-                (CCOption.map_or ~default:"" Waiting_list.Comment.value comment)
+                (CCOption.map_or
+                   ~default:""
+                   Waiting_list.AdminComment.value
+                   admin_comment)
               ~flash_fetcher
           ; div
               ~a:[ a_class [ "flexrow" ] ]
               [ submit_element
                   ~classnames:[ "push" ]
                   language
-                  Message.(Save (Some Field.Comment))
+                  Message.(Save (Some Field.AdminComment))
                   ()
               ]
           ]

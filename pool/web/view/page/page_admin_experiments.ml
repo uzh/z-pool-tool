@@ -598,7 +598,8 @@ let waiting_list
   let open Waiting_list.ExperimentList in
   let waiting_list_table waiting_list_entries =
     let thead =
-      (Field.[ Name; Email; CreatedAt; Comment ] |> Table.fields_to_txt language)
+      (Field.[ Name; Email; CreatedAt; AdminComment ]
+       |> Table.fields_to_txt language)
       @ [ txt "" ]
     in
     let rows =
@@ -612,8 +613,9 @@ let waiting_list
               (entry.created_at
                |> CreatedAt.value
                |> Utils.Time.formatted_date_time)
-          ; entry.comment
-            |> CCOption.map_or ~default:"" Waiting_list.Comment.value
+          ; entry.admin_comment
+            |> CCOption.map_or ~default:"" Waiting_list.AdminComment.value
+            |> HttpUtils.first_n_characters
             |> HttpUtils.add_line_breaks
           ; Format.asprintf
               "/admin/experiments/%s/waiting-list/%s"
@@ -623,7 +625,12 @@ let waiting_list
           ])
         waiting_list_entries
     in
-    Table.horizontal_table `Striped ~align_last_end:true ~thead rows
+    Table.horizontal_table
+      `Striped
+      ~align_top:true
+      ~align_last_end:true
+      ~thead
+      rows
   in
   let html =
     Component.List.create

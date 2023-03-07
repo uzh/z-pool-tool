@@ -6,7 +6,7 @@ type create =
   }
 [@@deriving eq, show]
 
-type update = { comment : Comment.t option } [@@deriving eq, show]
+type update = { admin_comment : AdminComment.t option } [@@deriving eq, show]
 
 type event =
   | Created of create
@@ -29,6 +29,7 @@ let handle_event pool : event -> unit Lwt.t =
     ||> Pool_common.Utils.get_or_failwith
     ||> fun (_ : [> `WaitingList ] Guard.AuthorizableTarget.t) -> ()
   | Updated (command, waiting_list) ->
-    { waiting_list with comment = command.comment } |> Repo.update pool
+    { waiting_list with admin_comment = command.admin_comment }
+    |> Repo.update pool
   | Deleted m -> Repo.delete pool m
 ;;

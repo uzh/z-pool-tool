@@ -1,7 +1,7 @@
 open Entity
 
-module Comment = struct
-  include Comment
+module AdminComment = struct
+  include AdminComment
 
   let t = Caqti_type.string
 end
@@ -10,17 +10,22 @@ type t =
   { id : Pool_common.Id.t
   ; contact_id : Pool_common.Id.t
   ; experiment_id : Experiment.Id.t
-  ; comment : Comment.t option
+  ; admin_comment : AdminComment.t option
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
   }
 [@@deriving eq, show]
 
-let create ?(id = Pool_common.Id.create ()) contact_id experiment_id comment =
+let create
+  ?(id = Pool_common.Id.create ())
+  contact_id
+  experiment_id
+  admin_comment
+  =
   { id
   ; contact_id
   ; experiment_id
-  ; comment
+  ; admin_comment
   ; created_at = Pool_common.CreatedAt.create ()
   ; updated_at = Pool_common.UpdatedAt.create ()
   }
@@ -31,7 +36,7 @@ let to_entity (m : t) contact experiment =
     { id = m.id
     ; contact
     ; experiment
-    ; comment = m.comment
+    ; admin_comment = m.admin_comment
     ; created_at = m.created_at
     ; updated_at = m.updated_at
     }
@@ -42,16 +47,19 @@ let t =
     Ok
       ( m.id
       , ( m.contact_id
-        , (m.experiment_id, (m.comment, (m.created_at, m.updated_at))) ) )
+        , (m.experiment_id, (m.admin_comment, (m.created_at, m.updated_at))) )
+      )
   in
   let decode
-    (id, (contact_id, (experiment_id, (comment, (created_at, updated_at)))))
+    ( id
+    , (contact_id, (experiment_id, (admin_comment, (created_at, updated_at))))
+    )
     =
     Ok
       { id
       ; contact_id
       ; experiment_id
-      ; comment = CCOption.map Comment.create comment
+      ; admin_comment = CCOption.map AdminComment.create admin_comment
       ; created_at
       ; updated_at
       }
@@ -67,7 +75,7 @@ let t =
             (tup2
                Experiment.Repo.Id.t
                (tup2
-                  (option Comment.t)
+                  (option AdminComment.t)
                   (tup2
                      Pool_common.Repo.CreatedAt.t
                      Pool_common.Repo.UpdatedAt.t))))))
@@ -78,13 +86,13 @@ module Experiment = struct
 
   let t =
     let encode (m : waiting_list_entry) =
-      Ok (m.id, (m.contact, (m.comment, (m.created_at, m.updated_at))))
+      Ok (m.id, (m.contact, (m.admin_comment, (m.created_at, m.updated_at))))
     in
-    let decode (id, (contact, (comment, (created_at, updated_at)))) =
+    let decode (id, (contact, (admin_comment, (created_at, updated_at)))) =
       Ok
         { id
         ; contact
-        ; comment = CCOption.map Comment.create comment
+        ; admin_comment = CCOption.map AdminComment.create admin_comment
         ; created_at
         ; updated_at
         }
@@ -98,7 +106,7 @@ module Experiment = struct
            (tup2
               Contact.Repo.Preview.t
               (tup2
-                 (option Comment.t)
+                 (option AdminComment.t)
                  (tup2
                     Pool_common.Repo.CreatedAt.t
                     Pool_common.Repo.UpdatedAt.t)))))

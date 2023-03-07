@@ -207,7 +207,9 @@ module Sql = struct
 
   let update pool (m : Entity.t) =
     let open Entity in
-    let caqti = m.comment |> Comment.value, m.id |> Pool_common.Id.value in
+    let caqti =
+      m.admin_comment |> AdminComment.value, m.id |> Pool_common.Id.value
+    in
     Utils.Database.exec (Pool_database.Label.value pool) update_request caqti
   ;;
 
