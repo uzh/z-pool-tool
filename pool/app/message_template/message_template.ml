@@ -56,7 +56,7 @@ let experiment_params experiment =
 module AssignmentConfirmation = struct
   let base_params contact = contact.Contact.user |> global_params
 
-  let email_params lang session ?follow_ups contact =
+  let email_params ?follow_ups lang session contact =
     let session_overview =
       match follow_ups with
       | None -> Session.to_email_text lang session
@@ -68,7 +68,7 @@ module AssignmentConfirmation = struct
     base_params contact @ [ "sessionOverview", session_overview ]
   ;;
 
-  let email_params_public_session lang session ?follow_ups contact =
+  let email_params_public_session ?follow_ups lang session contact =
     let session_overview =
       match follow_ups with
       | None -> Session.public_to_email_text lang session
@@ -84,7 +84,7 @@ module AssignmentConfirmation = struct
     find_by_label_to_send pool language Label.AssignmentConfirmation
   ;;
 
-  let create pool preferred_language tenant session ?follow_ups contact =
+  let create ?follow_ups pool preferred_language tenant session contact =
     let open Utils.Lwt_result.Infix in
     let* template, language = template pool preferred_language in
     let params = email_params language session ?follow_ups contact in
@@ -96,17 +96,17 @@ module AssignmentConfirmation = struct
   ;;
 
   let create_from_public_session
+    ?follow_ups
     pool
     preferred_language
     tenant
     session
-    ?follow_ups
     contact
     =
     let open Utils.Lwt_result.Infix in
     let* template, language = template pool preferred_language in
     let params =
-      email_params_public_session language session ?follow_ups contact
+      email_params_public_session ?follow_ups language session contact
     in
     let layout = layout_from_tenant tenant in
     let email = contact |> Contact.email_address in

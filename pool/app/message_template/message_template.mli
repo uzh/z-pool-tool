@@ -154,27 +154,27 @@ val create_public_url_with_params
 
 module AssignmentConfirmation : sig
   val email_params
-    :  Pool_common.Language.t
+    :  ?follow_ups:Session.t list
+    -> Pool_common.Language.t
     -> Session.t
-    -> ?follow_ups:Session.t list
     -> Contact.t
     -> (string * string) list
 
   val create
-    :  Pool_database.Label.t
+    :  ?follow_ups:Session.t list
+    -> Pool_database.Label.t
     -> Pool_common.Language.t
     -> Pool_tenant.t
     -> Session.t
-    -> ?follow_ups:Session.t list
     -> Contact.t
     -> (Sihl_email.t, Pool_common.Message.error) result Lwt.t
 
   val create_from_public_session
-    :  Pool_database.Label.t
+    :  ?follow_ups:Session.Public.t list
+    -> Pool_database.Label.t
     -> Pool_common.Language.t
     -> Pool_tenant.t
     -> Session.Public.t
-    -> ?follow_ups:Session.Public.t list
     -> Contact.t
     -> (Sihl_email.t, Pool_common.Message.error) result Lwt.t
 end
