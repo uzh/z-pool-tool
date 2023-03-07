@@ -22,7 +22,7 @@ let session_item layout language (experiment : Experiment.Public.t) session =
                  "/experiments/%s/sessions/%s"
                  Experiment.(experiment.Public.id |> Id.value)
                  (session.Public.id |> Id.value)
-              |> Sihl.Web.externalize_path)
+               |> Sihl.Web.externalize_path)
           ]
         [ txt (Utils.control_to_string language Message.register) ]
     | false, Some _ ->
@@ -43,14 +43,14 @@ let session_item layout language (experiment : Experiment.Public.t) session =
   [ div
       ~a:attrs
       ((if CCOption.is_some session.Public.canceled_at
-       then
-         [ strong
-             [ txt Pool_common.(Utils.text_to_string language I18n.Canceled) ]
-         ; br ()
-         ]
-       else [])
-      @ [ txt (session.Public.start |> Start.value |> Time.formatted_date_time)
-        ])
+        then
+          [ strong
+              [ txt Pool_common.(Utils.text_to_string language I18n.Canceled) ]
+          ; br ()
+          ]
+        else [])
+       @ [ txt (session.Public.start |> Start.value |> Time.formatted_date_time)
+         ])
   ; txt (session.Public.duration |> Duration.value |> Time.formatted_timespan)
   ; txt (session |> Public.get_session_end |> Time.formatted_time)
   ; session.Public.location |> Component.Location.preview language

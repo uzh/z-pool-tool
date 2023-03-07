@@ -232,8 +232,8 @@ end = struct
         language
         asset_id
         (location.Pool_location.id
-        |> Pool_location.Id.value
-        |> Pool_common.Id.of_string)
+         |> Pool_location.Id.value
+         |> Pool_common.Id.of_string)
     in
     Ok [ FileUploaded file |> Pool_event.pool_location ]
   ;;

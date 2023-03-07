@@ -86,9 +86,9 @@ end = struct
       in
       Ok
         (delete_events
-        @ create_events
-        @ [ increase_num_events ]
-        @ [ Email.Sent confirmation_email |> Pool_event.email ]))
+         @ create_events
+         @ [ increase_num_events ]
+         @ [ Email.Sent confirmation_email |> Pool_event.email ]))
   ;;
 
   let effects = [ `Create, `TargetEntity `Assignment ]

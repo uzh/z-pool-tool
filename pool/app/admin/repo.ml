@@ -71,7 +71,7 @@ module Sql = struct
       (CCList.mapi
          (fun i _ -> Format.asprintf "UNHEX(REPLACE($%n, '-', ''))" (i + 1))
          ids
-      |> CCString.concat ",")
+       |> CCString.concat ",")
     |> select_from_users_sql
   ;;
 
@@ -133,9 +133,9 @@ module Actors = struct
             |> Dynparam.add
                  Caqti_type.string
                  (role
-                 |> Role.Actor.to_yojson
-                 |> Yojson.Safe.to_string
-                 |> fun like -> "%" ^ like ^ "%")
+                  |> Role.Actor.to_yojson
+                  |> Yojson.Safe.to_string
+                  |> fun like -> "%" ^ like ^ "%")
           , sql @ [ "roles LIKE ?" ] ))
         (init, [])
     in

@@ -52,7 +52,7 @@ let signup
               |> Component.Modal.create
                    language
                    (flip Utils.field_to_string Message.Field.TermsAndConditions
-                   %> CCString.capitalize_ascii)
+                    %> CCString.capitalize_ascii)
                    modal_id
             ; div
                 ~a:[ a_class [ "form-group" ] ]

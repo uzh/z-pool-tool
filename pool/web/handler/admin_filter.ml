@@ -64,10 +64,11 @@ let index req =
   let error_path = Format.asprintf "/admin/filter" in
   let result ({ Pool_context.database_label; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, error_path)
-    @@ let%lwt filter_list = Filter.find_all_templates database_label () in
-       Page.Admin.Filter.index context filter_list
-       |> create_layout ~active_navigation:"/admin/filter" req context
-       >|+ Sihl.Web.Response.of_html
+    @@
+    let%lwt filter_list = Filter.find_all_templates database_label () in
+    Page.Admin.Filter.index context filter_list
+    |> create_layout ~active_navigation:"/admin/filter" req context
+    >|+ Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path req
 ;;
@@ -376,7 +377,7 @@ let count_contacts req =
               ~default:
                 (Ok
                    (experiment.Experiment.filter
-                   |> CCOption.map (fun filter -> filter.Filter.query)))
+                    |> CCOption.map (fun filter -> filter.Filter.query)))
               (fun str -> str |> Filter.query_of_string >|= CCOption.pure)
          |> Lwt_result.lift
        in

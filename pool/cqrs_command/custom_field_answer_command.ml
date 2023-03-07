@@ -18,7 +18,7 @@ end = struct
     Logs.info ~src (fun m -> m "Handle command UpdateMultiple" ~tags);
     Ok
       (Custom_field.AnswerUpserted (f, contact_id, user)
-      |> Pool_event.custom_field)
+       |> Pool_event.custom_field)
   ;;
 
   let effects id =

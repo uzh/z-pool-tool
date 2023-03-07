@@ -16,7 +16,7 @@ module List = struct
 
   let thead language =
     (Pool_common.Message.Field.[ Name; Description; Location ]
-    |> Table.fields_to_txt language)
+     |> Table.fields_to_txt language)
     @ [ link_as_button
           ~style:`Success
           ~icon:`Add
@@ -182,7 +182,7 @@ let form
          ; a_input_type `Checkbox
          ; a_name Message.Field.(Virtual |> show)
          ]
-        @ selected)
+         @ selected)
       ()
   in
   div
@@ -221,104 +221,104 @@ let form
                  ~flash_fetcher
              ]
          ]
-        @ status_select_opt
-        @ [ div
-              [ h4
-                  ~a:[ a_class [ "heading-4" ] ]
-                  [ txt
-                      (Message.Field.Location
-                      |> Pool_common.Utils.field_to_string language
-                      |> CCString.capitalize_ascii)
-                  ]
-              ; div
-                  ~a:[ a_class [ "stack" ] ]
-                  [ is_virtual_checkbox
-                  ; label
-                      [ txt
-                          Message.Field.(
-                            Virtual |> show |> CCString.capitalize_ascii)
-                      ]
-                  ; div
-                      ~a:[ a_class [ "toggled"; "stack"; "flexcolumn" ] ]
-                      [ input_element
-                          language
-                          `Text
-                          Message.Field.Institution
-                          ~value:
-                            (address_value
-                               Address.Mail.(
-                                 fun { institution; _ } ->
-                                   institution
-                                   |> CCOption.map_or
-                                        ~default:""
-                                        Institution.value))
-                      ; div
-                          ~a:[ a_class [ "switcher"; "flex-gap" ] ]
-                          [ input_element
-                              language
-                              `Text
-                              Message.Field.Room
-                              ~value:
-                                (address_value
-                                   Address.Mail.(
-                                     fun { room; _ } -> Room.value room))
-                          ; input_element
-                              language
-                              `Text
-                              Message.Field.Building
-                              ~value:
-                                (address_value
-                                   Address.Mail.(
-                                     fun { building; _ } ->
-                                       building
-                                       |> CCOption.map_or
-                                            ~default:""
-                                            Building.value))
-                          ]
-                      ; input_element
-                          language
-                          `Text
-                          Message.Field.Street
-                          ~value:
-                            Address.Mail.(
-                              address_value (fun { street; _ } ->
-                                Street.value street))
-                      ; div
-                          ~a:[ a_class [ "switcher"; "flex-gap" ] ]
-                          [ input_element
-                              language
-                              `Text
-                              Message.Field.Zip
-                              ~value:
+         @ status_select_opt
+         @ [ div
+               [ h4
+                   ~a:[ a_class [ "heading-4" ] ]
+                   [ txt
+                       (Message.Field.Location
+                        |> Pool_common.Utils.field_to_string language
+                        |> CCString.capitalize_ascii)
+                   ]
+               ; div
+                   ~a:[ a_class [ "stack" ] ]
+                   [ is_virtual_checkbox
+                   ; label
+                       [ txt
+                           Message.Field.(
+                             Virtual |> show |> CCString.capitalize_ascii)
+                       ]
+                   ; div
+                       ~a:[ a_class [ "toggled"; "stack"; "flexcolumn" ] ]
+                       [ input_element
+                           language
+                           `Text
+                           Message.Field.Institution
+                           ~value:
+                             (address_value
                                 Address.Mail.(
-                                  address_value (fun { zip; _ } ->
-                                    Zip.value zip))
-                          ; input_element
-                              language
-                              `Text
-                              Message.Field.City
-                              ~value:
-                                Address.Mail.(
-                                  address_value (fun { city; _ } ->
-                                    City.value city))
-                          ]
-                      ]
-                  ]
-              ]
-          ; div
-              ~a:[ a_class [ "flexrow" ] ]
-              [ submit_element
-                  ~classnames:[ "push" ]
-                  language
-                  Message.(
-                    let field = Some Field.location in
-                    match location with
-                    | None -> Create field
-                    | Some _ -> Update field)
-                  ~submit_type:`Primary
-                  ()
-              ]
-          ])
+                                  fun { institution; _ } ->
+                                    institution
+                                    |> CCOption.map_or
+                                         ~default:""
+                                         Institution.value))
+                       ; div
+                           ~a:[ a_class [ "switcher"; "flex-gap" ] ]
+                           [ input_element
+                               language
+                               `Text
+                               Message.Field.Room
+                               ~value:
+                                 (address_value
+                                    Address.Mail.(
+                                      fun { room; _ } -> Room.value room))
+                           ; input_element
+                               language
+                               `Text
+                               Message.Field.Building
+                               ~value:
+                                 (address_value
+                                    Address.Mail.(
+                                      fun { building; _ } ->
+                                        building
+                                        |> CCOption.map_or
+                                             ~default:""
+                                             Building.value))
+                           ]
+                       ; input_element
+                           language
+                           `Text
+                           Message.Field.Street
+                           ~value:
+                             Address.Mail.(
+                               address_value (fun { street; _ } ->
+                                 Street.value street))
+                       ; div
+                           ~a:[ a_class [ "switcher"; "flex-gap" ] ]
+                           [ input_element
+                               language
+                               `Text
+                               Message.Field.Zip
+                               ~value:
+                                 Address.Mail.(
+                                   address_value (fun { zip; _ } ->
+                                     Zip.value zip))
+                           ; input_element
+                               language
+                               `Text
+                               Message.Field.City
+                               ~value:
+                                 Address.Mail.(
+                                   address_value (fun { city; _ } ->
+                                     City.value city))
+                           ]
+                       ]
+                   ]
+               ]
+           ; div
+               ~a:[ a_class [ "flexrow" ] ]
+               [ submit_element
+                   ~classnames:[ "push" ]
+                   language
+                   Message.(
+                     let field = Some Field.location in
+                     match location with
+                     | None -> Create field
+                     | Some _ -> Update field)
+                   ~submit_type:`Primary
+                   ()
+               ]
+           ])
     ]
 ;;
 
@@ -346,13 +346,13 @@ module FileList = struct
       ~classnames:[ "small" ]
       ~control:(language, Message.(Add (Some Field.File)))
       (id
-      |> Pool_location.Id.value
-      |> Format.asprintf "/admin/locations/%s/files/create")
+       |> Pool_location.Id.value
+       |> Format.asprintf "/admin/locations/%s/files/create")
   ;;
 
   let thead language location_id =
     (Pool_common.Message.Field.[ Label; Language ]
-    |> Table.fields_to_txt language)
+     |> Table.fields_to_txt language)
     @ [ add_file_btn language location_id ]
   ;;
 
@@ -370,7 +370,7 @@ module FileList = struct
                  "/admin/locations/%s/mapping/%s/delete"
                  (Id.value location_id)
                  (Mapping.Id.value id)
-              |> Sihl.Web.externalize_path)
+               |> Sihl.Web.externalize_path)
           ; a_user_data
               "confirmable"
               Pool_common.(Utils.confirmable_to_string language I18n.DeleteFile)
@@ -476,7 +476,7 @@ module SessionList = struct
         let thead =
           (Pool_common.Message.Field.
              [ Session; Experiment; Duration; CanceledAt ]
-          |> Table.fields_to_txt language)
+           |> Table.fields_to_txt language)
           @ [ txt "" ]
         in
         let rows = rows sessions in

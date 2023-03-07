@@ -148,9 +148,9 @@ module Validation = struct
       try
         Some
           (m
-          |> Format.asprintf "[\"%s\"]"
-          |> Yojson.Safe.from_string
-          |> key_of_yojson)
+           |> Format.asprintf "[\"%s\"]"
+           |> Yojson.Safe.from_string
+           |> key_of_yojson)
       with
       | _ -> None
     ;;
@@ -208,9 +208,9 @@ module Validation = struct
       try
         Some
           (m
-          |> Format.asprintf "[\"%s\"]"
-          |> Yojson.Safe.from_string
-          |> key_of_yojson)
+           |> Format.asprintf "[\"%s\"]"
+           |> Yojson.Safe.from_string
+           |> key_of_yojson)
       with
       | _ -> None
     ;;
@@ -417,7 +417,7 @@ module Public = struct
     if is_admin
     then
       (m |> admin_override |> AdminOverride.value
-      || m |> admin_input_only |> AdminInputOnly.value)
+       || m |> admin_input_only |> AdminInputOnly.value)
       |> not
     else m |> admin_input_only |> AdminInputOnly.value
   ;;

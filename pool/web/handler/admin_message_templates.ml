@@ -17,10 +17,11 @@ let index req =
   let open Utils.Lwt_result.Infix in
   let result ({ Pool_context.database_label; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, "/admin/dashboard")
-    @@ let%lwt template_list = Message_template.all_default database_label () in
-       Page.Admin.MessageTemplate.index context template_list
-       |> create_layout ~active_navigation:"/admin/message-template" req context
-       >|+ Sihl.Web.Response.of_html
+    @@
+    let%lwt template_list = Message_template.all_default database_label () in
+    Page.Admin.MessageTemplate.index context template_list
+    |> create_layout ~active_navigation:"/admin/message-template" req context
+    >|+ Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path req
 ;;

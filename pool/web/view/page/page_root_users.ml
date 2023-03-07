@@ -51,15 +51,15 @@ let list root_list Pool_context.{ language; csrf; _ } =
         (CCList.map
            (input_element language `Text)
            Message.Field.[ Email; Password; Firstname; Lastname ]
-        @ [ csrf_element csrf ()
-          ; div
-              ~a:[ a_class [ "flexrow" ] ]
-              [ submit_element
-                  ~classnames:[ "push" ]
-                  language
-                  Message.(Create (Some Field.root))
-                  ()
-              ]
-          ])
+         @ [ csrf_element csrf ()
+           ; div
+               ~a:[ a_class [ "flexrow" ] ]
+               [ submit_element
+                   ~classnames:[ "push" ]
+                   language
+                   Message.(Create (Some Field.root))
+                   ()
+               ]
+           ])
     ]
 ;;

@@ -147,12 +147,12 @@ let message_templates_html
         ~a:[ a_class [ "gap-sm" ] ]
         [ txt
             (if CCList.is_empty list
-            then
-              Pool_common.(
-                Utils.text_to_string
-                  language
-                  (I18n.NoEntries Field.MessageTemplates))
-            else "")
+             then
+               Pool_common.(
+                 Utils.text_to_string
+                   language
+                   (I18n.NoEntries Field.MessageTemplates))
+             else "")
         ]
     ]
 ;;
@@ -308,7 +308,7 @@ let experiment_form
                         language
                         (I18n.SessionReminderDefaultLeadTime
                            (default_reminder_lead_time
-                           |> Reminder.LeadTime.value))
+                            |> Reminder.LeadTime.value))
                       |> txt
                       |> HttpUtils.default_value_style
                     ]
@@ -422,7 +422,7 @@ let detail
             [ small
                 [ txt
                     (Message.ExperimentSessionCountNotZero
-                    |> Utils.error_to_string language)
+                     |> Utils.error_to_string language)
                 ]
             ]
         ]
@@ -544,9 +544,9 @@ let invitations
               ~a:
                 [ a_href
                     (experiment.Experiment.id
-                    |> Experiment.Id.value
-                    |> Format.asprintf "admin/experiments/%s/invitations/sent"
-                    |> Sihl.Web.externalize_path)
+                     |> Experiment.Id.value
+                     |> Format.asprintf "admin/experiments/%s/invitations/sent"
+                     |> Sihl.Web.externalize_path)
                 ]
               [ txt (Utils.text_to_string language I18n.SentInvitations) ]
           ]
@@ -607,11 +607,11 @@ let waiting_list
           [ txt (Contact.Preview.fullname entry.contact)
           ; txt
               (Contact.Preview.email_address entry.contact
-              |> Pool_user.EmailAddress.value)
+               |> Pool_user.EmailAddress.value)
           ; txt
               (entry.created_at
-              |> CreatedAt.value
-              |> Utils.Time.formatted_date_time)
+               |> CreatedAt.value
+               |> Utils.Time.formatted_date_time)
           ; entry.comment
             |> CCOption.map_or ~default:"" Waiting_list.Comment.value
             |> HttpUtils.add_line_breaks

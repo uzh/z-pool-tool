@@ -53,8 +53,8 @@ let base_hx_attributes name version ?action ?(additional_attributes = []) () =
       (Format.asprintf
          {|{%s}|}
          (vals
-         |> CCList.map (fun (k, v) -> Format.asprintf "\"%s\": \"%s\"" k v)
-         |> CCString.concat ", "))
+          |> CCList.map (fun (k, v) -> Format.asprintf "\"%s\": \"%s\"" k v)
+          |> CCString.concat ", "))
   ]
   @ CCOption.(CCList.filter_map CCFun.id [ action >|= hx_post ])
 ;;
@@ -183,8 +183,8 @@ let create
       ~classnames
       ~value:
         (fetched_value
-        |> CCOption.value ~default:(n |> CCOption.map CCInt.to_string |> default)
-        )
+         |> CCOption.value
+              ~default:(n |> CCOption.map CCInt.to_string |> default))
       ~additional_attributes:(additional_attributes ())
       ?append_html
       ?error

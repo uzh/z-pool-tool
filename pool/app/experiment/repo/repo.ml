@@ -277,7 +277,7 @@ module Sql = struct
         WHERE pool_experiments.uuid in ( %s )
       |sql}
       (CCList.map (fun _ -> Format.asprintf "UNHEX(REPLACE(?, '-', ''))") ids
-      |> CCString.concat ",")
+       |> CCString.concat ",")
   ;;
 
   let search_multiple_by_id pool ids =

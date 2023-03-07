@@ -67,39 +67,39 @@ let personal_details_form
       div
         ~a:[ a_class [ "grid-col-2" ] ]
         (csrf_element csrf ()
-        :: CCList.map
-             (fun (version, field, value) ->
-               Htmx.create_entity version field value |> htmx_create)
-             Htmx.
-               [ ( contact.firstname_version
-                 , Field.Firstname
-                 , Text
-                     (contact
-                     |> Contact.firstname
-                     |> User.Firstname.value
-                     |> CCOption.pure) )
-               ; ( contact.lastname_version
-                 , Field.Lastname
-                 , Text
-                     (contact
-                     |> Contact.lastname
-                     |> User.Lastname.value
-                     |> CCOption.pure) )
-               ; ( contact.language_version
-                 , Field.Language
-                 , Select
-                     { show = Pool_common.Language.show
-                     ; options = tenant_languages
-                     ; option_formatter = None
-                     ; selected = contact.language
-                     } )
-               ; ( contact.paused_version
-                 , Field.Paused
-                 , contact.paused
-                   |> User.Paused.value
-                   |> CCOption.pure
-                   |> boolean )
-               ])
+         :: CCList.map
+              (fun (version, field, value) ->
+                Htmx.create_entity version field value |> htmx_create)
+              Htmx.
+                [ ( contact.firstname_version
+                  , Field.Firstname
+                  , Text
+                      (contact
+                       |> Contact.firstname
+                       |> User.Firstname.value
+                       |> CCOption.pure) )
+                ; ( contact.lastname_version
+                  , Field.Lastname
+                  , Text
+                      (contact
+                       |> Contact.lastname
+                       |> User.Lastname.value
+                       |> CCOption.pure) )
+                ; ( contact.language_version
+                  , Field.Language
+                  , Select
+                      { show = Pool_common.Language.show
+                      ; options = tenant_languages
+                      ; option_formatter = None
+                      ; selected = contact.language
+                      } )
+                ; ( contact.paused_version
+                  , Field.Paused
+                  , contact.paused
+                    |> User.Paused.value
+                    |> CCOption.pure
+                    |> boolean )
+                ])
     in
     match is_admin with
     | true ->

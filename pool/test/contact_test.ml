@@ -80,8 +80,8 @@ let create_contact verified contact_info =
   ; verified = None
   ; email_verified =
       (if verified
-      then Some (Ptime_clock.now () |> Pool_user.EmailVerified.create)
-      else None)
+       then Some (Ptime_clock.now () |> Pool_user.EmailVerified.create)
+       else None)
   ; num_invitations = Contact.NumberOfInvitations.init
   ; num_assignments = Contact.NumberOfAssignments.init
   ; num_show_ups = Contact.NumberOfShowUps.init

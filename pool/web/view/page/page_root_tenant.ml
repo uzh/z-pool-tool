@@ -71,15 +71,15 @@ let list tenant_list Pool_context.{ language; csrf; _ } =
                   ; a_class [ "stack" ]
                   ]
                 ((csrf_element csrf () :: input_fields)
-                @ [ div
-                      ~a:[ a_class [ "flexrow" ] ]
-                      [ submit_element
-                          ~classnames:[ "push" ]
-                          language
-                          Message.(Create None)
-                          ()
-                      ]
-                  ])
+                 @ [ div
+                       ~a:[ a_class [ "flexrow" ] ]
+                       [ submit_element
+                           ~classnames:[ "push" ]
+                           language
+                           Message.(Create None)
+                           ()
+                       ]
+                   ])
             ]
         ]
     ]
@@ -107,38 +107,38 @@ let manage_operators { Pool_tenant.id; _ } Pool_context.{ language; csrf; _ } =
               ; a_class [ "stack" ]
               ]
             ((csrf_element csrf ()
-             :: CCList.map
-                  (fun (field, input) ->
-                    input_element ~required:true language input field)
-                  Message.Field.
-                    [ Email, `Email
-                    ; Password, `Password
-                    ; Firstname, `Text
-                    ; Lastname, `Text
-                    ])
-            @ [ div
-                  ~a:[ a_class [ "flexrow"; "align-center"; "flex-gap" ] ]
-                  [ div
-                      [ a
-                          ~a:
-                            [ a_href
-                                (Sihl.Web.externalize_path
-                                   (Format.asprintf
-                                      "/root/tenants/%s"
-                                      (Id.value id)))
-                            ]
-                          [ txt
-                              Pool_common.(
-                                Utils.control_to_string language Message.back)
-                          ]
-                      ]
-                  ; submit_element
-                      ~classnames:[ "push" ]
-                      language
-                      Message.(Create (Some Field.operator))
-                      ()
-                  ]
-              ])
+              :: CCList.map
+                   (fun (field, input) ->
+                     input_element ~required:true language input field)
+                   Message.Field.
+                     [ Email, `Email
+                     ; Password, `Password
+                     ; Firstname, `Text
+                     ; Lastname, `Text
+                     ])
+             @ [ div
+                   ~a:[ a_class [ "flexrow"; "align-center"; "flex-gap" ] ]
+                   [ div
+                       [ a
+                           ~a:
+                             [ a_href
+                                 (Sihl.Web.externalize_path
+                                    (Format.asprintf
+                                       "/root/tenants/%s"
+                                       (Id.value id)))
+                             ]
+                           [ txt
+                               Pool_common.(
+                                 Utils.control_to_string language Message.back)
+                           ]
+                       ]
+                   ; submit_element
+                       ~classnames:[ "push" ]
+                       language
+                       Message.(Create (Some Field.operator))
+                       ()
+                   ]
+               ])
         ]
     ]
 ;;
@@ -296,16 +296,16 @@ let detail (tenant : Pool_tenant.t) Pool_context.{ language; csrf; _ } =
               ; a_class [ "stack" ]
               ]
             ((csrf_element csrf () :: detail_input_fields)
-            @ [ disabled
-              ; div
-                  ~a:[ a_class [ "flexrow" ] ]
-                  [ submit_element
-                      ~classnames:[ "push" ]
-                      language
-                      Message.(Update None)
-                      ()
-                  ]
-              ])
+             @ [ disabled
+               ; div
+                   ~a:[ a_class [ "flexrow" ] ]
+                   [ submit_element
+                       ~classnames:[ "push" ]
+                       language
+                       Message.(Update None)
+                       ()
+                   ]
+               ])
         ; delete_file_forms
         ; form
             ~a:
@@ -319,15 +319,15 @@ let detail (tenant : Pool_tenant.t) Pool_context.{ language; csrf; _ } =
               ; a_class [ "stack" ]
               ]
             ((csrf_element csrf () :: database_input_fields)
-            @ [ div
-                  ~a:[ a_class [ "flexrow" ] ]
-                  [ submit_element
-                      ~classnames:[ "push" ]
-                      language
-                      Message.(Update None)
-                      ()
-                  ]
-              ])
+             @ [ div
+                   ~a:[ a_class [ "flexrow" ] ]
+                   [ submit_element
+                       ~classnames:[ "push" ]
+                       language
+                       Message.(Update None)
+                       ()
+                   ]
+               ])
         ; p
             [ a
                 ~a:[ a_href (Sihl.Web.externalize_path "/root/tenants") ]

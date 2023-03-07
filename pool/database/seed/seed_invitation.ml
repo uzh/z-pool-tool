@@ -15,10 +15,10 @@ let invitations pool =
         let contacts = CCList.take n filtered_contacts in
         Lwt.return
           (events
-          @ CCList.map
-              (fun contact ->
-                Invitation.Created (contact |> CCList.pure, experiment))
-              contacts))
+           @ CCList.map
+               (fun contact ->
+                 Invitation.Created (contact |> CCList.pure, experiment))
+               contacts))
       []
       experiments
   in

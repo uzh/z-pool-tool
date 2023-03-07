@@ -383,7 +383,7 @@ module SessionReminder = struct
   let email_params lang experiment session contact =
     global_params contact.Contact.user
     @ (("sessionOverview", Session.to_email_text lang session)
-      :: experiment_params experiment)
+       :: experiment_params experiment)
   ;;
 
   let create pool tenant system_languages experiment session contact =

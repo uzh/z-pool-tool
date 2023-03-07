@@ -15,7 +15,7 @@ let create ?(classnames = []) ?(attributes = []) children =
   div
     ~a:
       ([ a_user_data "sortable" ""; a_class ([ "grow" ] @ classnames) ]
-      @ attributes)
+       @ attributes)
     children
   |> sortable_icon
 ;;

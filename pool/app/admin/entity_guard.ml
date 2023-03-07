@@ -9,8 +9,8 @@ module Actor = struct
           (Guard.ActorRoleSet.singleton `Admin)
           `Admin
           (t
-          |> Entity.user
-          |> fun Sihl_user.{ id; _ } -> id |> Guard.Uuid.Actor.of_string_exn))
+           |> Entity.user
+           |> fun Sihl_user.{ id; _ } -> id |> Guard.Uuid.Actor.of_string_exn))
       t
     |> Lwt_result.map_error Pool_common.Message.authorization
   ;;
@@ -27,8 +27,8 @@ module Target = struct
           (Guard.TargetRoleSet.singleton (`Admin role))
           (`Admin role)
           (t
-          |> Entity.user
-          |> fun Sihl_user.{ id; _ } -> id |> Guard.Uuid.Target.of_string_exn))
+           |> Entity.user
+           |> fun Sihl_user.{ id; _ } -> id |> Guard.Uuid.Target.of_string_exn))
       t
     |> Lwt_result.map_error Pool_common.Message.authorization
   ;;
