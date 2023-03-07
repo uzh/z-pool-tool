@@ -25,6 +25,7 @@ module Field = struct
     | Assistants [@name "assistants"] [@printer go "assistants"]
     | Building [@name "building"] [@printer go "building"]
     | CanceledAt [@name "canceled_at"] [@printer go "canceled_at"]
+    | Chronological [@name "chronological"] [@printer go "chronological"]
     | City [@name "city"] [@printer go "city"]
     | ClosedAt [@name "closed_at"] [@printer go "closed_at"]
     | Contact [@name "contact"] [@printer go "contact"]

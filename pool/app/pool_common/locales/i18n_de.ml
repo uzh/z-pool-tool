@@ -2,6 +2,7 @@ open Entity_i18n
 
 let to_string = function
   | Address -> "Addresse"
+  | AvailableSpots -> "Freie Plätze"
   | Canceled -> "Abgesagt"
   | ContactWaitingListEmpty -> "Sie sind aktuell auf keiner Warteliste."
   | ContactWaitingListTitle -> "Auf der Warteliste"

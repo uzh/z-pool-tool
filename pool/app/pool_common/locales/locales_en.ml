@@ -17,6 +17,7 @@ let rec field_to_string =
   | Assistants -> "assistants"
   | Building -> "building"
   | CanceledAt -> "canceled at"
+  | Chronological -> "chronological"
   | City -> "city"
   | ClosedAt -> "Closed at"
   | Contact -> "contact"

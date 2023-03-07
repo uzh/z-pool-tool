@@ -347,7 +347,7 @@ let externalized_path_with_version url =
   |> Sihl.Web.externalize_path
 ;;
 
-let first_n_characters ?(n = 47) m : string =
+let first_n_characters ?(n = 47) m =
   if CCString.length m > n
   then CCString.sub m 0 n |> Format.asprintf "%s..."
   else m

@@ -49,15 +49,24 @@ let detail req =
     @@ let* waiting_list = Waiting_list.find database_label id in
        let* sessions =
          Session.find_all_for_experiment database_label experiment_id
-         >|+ Session.group_and_sort
+       in
+       let grouped_sessions, chronological =
+         match
+           Sihl.Web.Request.query
+             Pool_common.Message.Field.(show Chronological)
+             req
+         with
+         | Some "true" -> CCList.map (fun s -> s, []) sessions, true
+         | None | Some _ -> Session.group_and_sort sessions, false
        in
        let flash_fetcher key = Sihl.Web.Flash.find key req in
        Page.Admin.WaitingList.detail
          waiting_list
-         sessions
+         grouped_sessions
          experiment_id
          context
          flash_fetcher
+         chronological
        |> create_layout req context
        >|+ Sihl.Web.Response.of_html
   in

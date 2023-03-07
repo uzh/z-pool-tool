@@ -1,5 +1,6 @@
 type t =
   | Address
+  | AvailableSpots
   | Canceled
   | ContactWaitingListEmpty
   | ContactWaitingListTitle
