@@ -154,7 +154,7 @@ module Data = struct
          ; created_at = Ptime_clock.now ()
          ; updated_at = Ptime_clock.now ()
          }
-        |> Styles.create)
+         |> Styles.create)
     in
     let logo_file =
       let open Pool_common.File in

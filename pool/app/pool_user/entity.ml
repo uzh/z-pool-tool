@@ -108,7 +108,7 @@ module EmailAddress = struct
              PoolError.(
                InvalidEmailSuffix
                  (allowed_email_suffixes
-                 |> CCList.map Settings.EmailSuffix.value)))
+                  |> CCList.map Settings.EmailSuffix.value)))
   ;;
 
   let validate = validate_suffix

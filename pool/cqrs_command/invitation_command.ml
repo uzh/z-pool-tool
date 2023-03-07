@@ -51,10 +51,10 @@ end = struct
           ([ Invitation.Created (contacts, experiment) |> Pool_event.invitation
            ; Email.BulkSent emails |> Pool_event.email
            ]
-          @ CCList.map
-              (fun contact ->
-                Contact.NumInvitationsIncreased contact |> Pool_event.contact)
-              contacts)
+           @ CCList.map
+               (fun contact ->
+                 Contact.NumInvitationsIncreased contact |> Pool_event.contact)
+               contacts)
       | Error err -> Error err)
   ;;
 

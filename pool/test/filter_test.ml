@@ -250,7 +250,8 @@ module CustomFieldData = struct
     CCList.cons
       (Created multi_select_custom_field)
       (multi_select_options
-      |> CCList.map (fun o -> OptionCreated (id multi_select_custom_field, o)))
+       |> CCList.map (fun o -> OptionCreated (id multi_select_custom_field, o))
+      )
     |> CCList.map Pool_event.custom_field
   ;;
 
@@ -452,9 +453,9 @@ let test_list_filter answer_index operator contact experiment expected =
       let value =
         Lst
           (answer_index
-          |> CustomFieldData.multi_select_options_by_index
-          |> CCList.map (fun option ->
-               Option option.Custom_field.SelectOption.id))
+           |> CustomFieldData.multi_select_options_by_index
+           |> CCList.map (fun option ->
+                Option option.Custom_field.SelectOption.id))
       in
       create
         None
@@ -663,7 +664,8 @@ let filter_with_admin_value _ () =
       CustomFieldData.(
         create_admin_override_nr_field ()
         :: (answer_admin_override_nr_field ~answer_value:3 [ contact ]
-           @ answer_admin_override_nr_field ~answer_value:1 ~admin [ contact ]))
+            @ answer_admin_override_nr_field ~answer_value:1 ~admin [ contact ]
+           ))
       |> Lwt_list.iter_s
            (Pool_event.handle_event Test_utils.Data.database_label)
     in

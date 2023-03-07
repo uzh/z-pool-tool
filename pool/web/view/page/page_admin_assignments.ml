@@ -117,7 +117,7 @@ module Partials = struct
     | false ->
       let thead =
         (Pool_common.Message.Field.[ Name; Email; CanceledAt ]
-        |> Component.Table.fields_to_txt language)
+         |> Component.Table.fields_to_txt language)
         @ [ txt "" ]
       in
       let rows =
@@ -188,8 +188,8 @@ let list experiment (Pool_context.{ language; _ } as context) assignments =
               ~a:
                 [ a_href
                     (assignments_path experiment.Experiment.id
-                    |> Format.asprintf "%s/deleted"
-                    |> Sihl.Web.externalize_path)
+                     |> Format.asprintf "%s/deleted"
+                     |> Sihl.Web.externalize_path)
                 ]
               [ txt
                   Pool_common.(

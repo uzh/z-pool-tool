@@ -10,10 +10,10 @@ let expected_events experiment contacts create_message =
     ([ Invitation.Created (contacts, experiment) |> Pool_event.invitation
      ; Email.BulkSent emails |> Pool_event.email
      ]
-    @ CCList.map
-        (fun contact ->
-          Contact.NumInvitationsIncreased contact |> Pool_event.contact)
-        contacts)
+     @ CCList.map
+         (fun contact ->
+           Contact.NumInvitationsIncreased contact |> Pool_event.contact)
+         contacts)
 ;;
 
 let create_message (_ : Contact.t) =
@@ -77,11 +77,11 @@ let create_invitations_repo _ () =
                  |> Pool_event.invitation
                ; Email.BulkSent emails |> Pool_event.email
                ]
-              @ CCList.map
-                  (fun contact ->
-                    Contact.NumInvitationsIncreased contact
-                    |> Pool_event.contact)
-                  contacts)
+               @ CCList.map
+                   (fun contact ->
+                     Contact.NumInvitationsIncreased contact
+                     |> Pool_event.contact)
+                   contacts)
           in
           Test_utils.check_result expected events |> Lwt.return)
   in

@@ -65,8 +65,8 @@ let to_string language location =
   CCString.concat
     ", "
     (Address.address_rows_human language location.address
-    |> fun (room, street, city) ->
-    [ room; street; city ] |> CCList.filter CCFun.(CCString.is_empty %> not))
+     |> fun (room, street, city) ->
+     [ room; street; city ] |> CCList.filter CCFun.(CCString.is_empty %> not))
 ;;
 
 let equal m k =

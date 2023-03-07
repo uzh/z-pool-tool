@@ -149,7 +149,7 @@ let rec hint_to_string = function
     Format.asprintf
       "Diese Option schliesst \"%s\" aus."
       (Locales_de.field_to_string Entity_message.Field.Required
-      |> CCString.capitalize_ascii)
+       |> CCString.capitalize_ascii)
   | CustomFieldAdminOverride ->
     "Erlaubt Administratoren die vom Kontakt angegebenen Anworten zu \
      überschreiben. Kontakte können die überschriebenen Antworten nicht \
@@ -161,7 +161,7 @@ let rec hint_to_string = function
     Format.asprintf
       "Diese Option impliziert \"%s\"."
       (Locales_de.field_to_string Entity_message.Field.AdminInputOnly
-      |> CCString.capitalize_ascii)
+       |> CCString.capitalize_ascii)
   | CustomFieldContactModel ->
     "Fragen, die Kontakte beantworten können, bzw. müssen. Anhand dieser \
      Informationen werden die Kontakte zu Experimenten eingeladen."

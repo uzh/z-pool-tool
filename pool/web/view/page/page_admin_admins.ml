@@ -24,7 +24,7 @@ let admin_overview language admins =
              "%s %s"
              (user.given_name |> default_empty)
              (user.name |> default_empty)
-          |> CCString.trim)
+           |> CCString.trim)
       ; Format.asprintf "/admin/admins/%s" user.id |> Input.edit_link
       ])
     admins
@@ -48,24 +48,24 @@ let new_form { Pool_context.language; csrf; _ } =
           ; a_class [ "stack" ]
           ]
         ((Input.csrf_element csrf ()
-         :: CCList.map
-              (fun (field, input) ->
-                Input.input_element ~required:true language input field)
-              Pool_common.Message.Field.
-                [ Email, `Email
-                ; Password, `Password
-                ; Firstname, `Text
-                ; Lastname, `Text
-                ])
-        @ [ div
-              ~a:[ a_class [ "flexrow" ] ]
-              [ Input.submit_element
-                  ~classnames:[ "push" ]
-                  language
-                  Pool_common.Message.(Create (Some Field.admin))
-                  ()
-              ]
-          ])
+          :: CCList.map
+               (fun (field, input) ->
+                 Input.input_element ~required:true language input field)
+               Pool_common.Message.Field.
+                 [ Email, `Email
+                 ; Password, `Password
+                 ; Firstname, `Text
+                 ; Lastname, `Text
+                 ])
+         @ [ div
+               ~a:[ a_class [ "flexrow" ] ]
+               [ Input.submit_element
+                   ~classnames:[ "push" ]
+                   language
+                   Pool_common.Message.(Create (Some Field.admin))
+                   ()
+               ]
+           ])
     ]
 ;;
 
@@ -97,7 +97,7 @@ let detail Pool_context.{ language; _ } admin =
             ~a:
               [ a_href
                   (Format.asprintf "/admin/admins/%s/edit" user.id
-                  |> Sihl.Web.externalize_path)
+                   |> Sihl.Web.externalize_path)
               ]
             [ txt
                 Pool_common.(

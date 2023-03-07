@@ -197,11 +197,11 @@ end = struct
       Ok
         ([ Experiment.Deleted experiment.Experiment.id |> Pool_event.experiment
          ]
-        @ (experiment.Experiment.filter |> filter_events)
-        @ (mailings |> CCList.map delete_mailing)
-        @ (experimenters |> CCList.map revoke_experimenter)
-        @ (assistants |> CCList.map revoke_assistant)
-        @ (templates |> CCList.map delete_template))
+         @ (experiment.Experiment.filter |> filter_events)
+         @ (mailings |> CCList.map delete_mailing)
+         @ (experimenters |> CCList.map revoke_experimenter)
+         @ (assistants |> CCList.map revoke_assistant)
+         @ (templates |> CCList.map delete_template))
   ;;
 
   let effects id =

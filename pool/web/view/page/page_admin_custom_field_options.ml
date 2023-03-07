@@ -86,12 +86,12 @@ let field_buttons language csrf custom_field option =
        div
          [ txt
              (Utils.field_to_string language Message.Field.PublishedAt
-             |> CCString.capitalize_ascii)
+              |> CCString.capitalize_ascii)
          ; txt ": "
          ; txt
              (published_at
-             |> PublishedAt.value
-             |> Utils.Time.formatted_date_time)
+              |> PublishedAt.value
+              |> Utils.Time.formatted_date_time)
          ]
      | None ->
        div
@@ -140,7 +140,7 @@ let detail
                   [ a_href
                       (Url.Field.edit_path
                          Custom_field.(model custom_field, id custom_field)
-                      |> Sihl.Web.externalize_path)
+                       |> Sihl.Web.externalize_path)
                   ]
                 [ txt
                     Pool_common.(

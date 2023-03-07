@@ -28,9 +28,10 @@ let schedule_overview language schedules =
       ; txt (Status.show status)
       ; txt
           (last_run
-          |> CCOption.map_or
-               ~default:"---"
-               (LastRunAt.value %> Pool_common.Utils.Time.formatted_date_time))
+           |> CCOption.map_or
+                ~default:"---"
+                (LastRunAt.value %> Pool_common.Utils.Time.formatted_date_time)
+          )
       ])
     schedules
   |> Component.Table.horizontal_table `Striped ~align_last_end:true ~thead

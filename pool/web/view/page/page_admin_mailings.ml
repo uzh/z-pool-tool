@@ -51,7 +51,7 @@ let distribution_sort_select language ?field current_order =
                     (Mailing.Distribution.SortableField.show field)
                     (order |> show))
            ]
-          @ selected)
+           @ selected)
         (order |> to_human language |> CCString.capitalize_ascii |> txt))
     all
   |> fun options ->
@@ -114,16 +114,17 @@ module List = struct
     in
     let buttons =
       (if with_link
-      then (
-        match
-          StartAt.value mailing.start_at < now, now < EndAt.value mailing.end_at
-        with
-        | true, true ->
-          [ button_form "stop" Message.stop `Primary I18n.StopMailing ]
-        | false, true ->
-          [ button_form "delete" Message.delete `Error I18n.DeleteMailing ]
-        | _ -> [ txt "" ])
-      else [])
+       then (
+         match
+           ( StartAt.value mailing.start_at < now
+           , now < EndAt.value mailing.end_at )
+         with
+         | true, true ->
+           [ button_form "stop" Message.stop `Primary I18n.StopMailing ]
+         | false, true ->
+           [ button_form "delete" Message.delete `Error I18n.DeleteMailing ]
+         | _ -> [ txt "" ])
+       else [])
       @ [ detail_mailing_path experiment_id mailing |> edit_link ]
       |> div ~a:[ a_class [ "flexrow"; "flex-gap"; "justify-end" ] ]
     in
@@ -191,8 +192,8 @@ let detail Pool_context.{ language; _ } experiment (mailing : Mailing.t) =
                   [ th
                       [ txt
                           (field
-                          |> Pool_common.Utils.field_to_string language
-                          |> CCString.capitalize_ascii)
+                           |> Pool_common.Utils.field_to_string language
+                           |> CCString.capitalize_ascii)
                       ]
                   ; td [ txt value ]
                   ])
@@ -301,8 +302,8 @@ let form
         option
           ~a:[ a_value ""; a_disabled (); a_selected () ]
           (Pool_common.(Utils.control_to_string language Message.PleaseSelect)
-          |> CCString.capitalize_ascii
-          |> txt)
+           |> CCString.capitalize_ascii
+           |> txt)
       in
       CCList.map
         (fun field ->
@@ -312,9 +313,9 @@ let form
           option
             ~a:([ a_value (field |> SortableField.show) ] @ is_disabled)
             (field
-            |> SortableField.to_human language
-            |> CCString.capitalize_ascii
-            |> txt))
+             |> SortableField.to_human language
+             |> CCString.capitalize_ascii
+             |> txt))
         SortableField.all
       |> fun options ->
       select
@@ -328,7 +329,7 @@ let form
         [ label
             [ txt
                 (Pool_common.(Utils.field_to_string language field)
-                |> CCString.capitalize_ascii)
+                 |> CCString.capitalize_ascii)
             ]
         ; div ~a:[ a_class [ "select" ] ] [ select ]
         ]
@@ -338,7 +339,7 @@ let form
       [ h3
           [ txt
               (Pool_common.(Utils.field_to_string language Field.Distribution)
-              |> CCString.capitalize_ascii)
+               |> CCString.capitalize_ascii)
           ]
       ; p [ txt Pool_common.(Utils.hint_to_string language I18n.Distribution) ]
       ; checkbox_element
@@ -372,7 +373,7 @@ let form
                         (mailings_path
                            ~suffix:"add-condition"
                            experiment.Experiment.id
-                        |> Sihl.Web.externalize_path)
+                         |> Sihl.Web.externalize_path)
                     ; a_user_data "hx-trigger" "click"
                     ; a_user_data "hx-target" "#distribution-list"
                     ; a_user_data "hx-swap" "beforeend"
@@ -422,92 +423,92 @@ let form
     div
       ~a:[ a_class [ "stack" ] ]
       (fully_booked_note
-      @ [ form
-            ~a:
-              [ a_class [ "stack" ]
-              ; a_method `Post
-              ; a_action action
-              ; a_user_data "detect-unsaved-changes" ""
-              ]
-            [ csrf_element csrf ()
-            ; input
-                ~a:
-                  [ a_input_type `Hidden
-                  ; a_name "id"
-                  ; a_value
-                      (CCOption.map_or
-                         ~default:""
-                         (fun m -> m.Mailing.id |> Mailing.Id.value)
-                         mailing)
-                  ]
-                ()
-            ; div
-                ~a:
-                  [ a_id "mailings"
-                  ; a_class [ "grid-col-2" ]
-                  ; hx_target "#overlaps"
-                  ; hx_trigger "change"
-                  ; hx_swap "innerHTML"
-                  ; hx_post
-                      (mailings_path
-                         ~suffix:"search-info"
-                         experiment.Experiment.id
-                      |> Sihl.Web.externalize_path)
-                  ]
-                [ flatpicker_element
-                    language
-                    Field.Start
-                    ~flash_fetcher
-                    ~required:true
-                    ~disable_past:true
-                    ?value:
-                      (CCOption.map
-                         (fun (m : Mailing.t) ->
-                           m.Mailing.start_at
-                           |> Mailing.StartAt.value
-                           |> Ptime.to_rfc3339 ~space:true)
-                         mailing)
-                ; flatpicker_element
-                    language
-                    Field.End
-                    ~flash_fetcher
-                    ~disable_past:true
-                    ~required:true
-                    ?value:
-                      (CCOption.map
-                         (fun (m : Mailing.t) ->
-                           m.Mailing.end_at
-                           |> Mailing.EndAt.value
-                           |> Ptime.to_rfc3339 ~space:true)
-                         mailing)
-                ; input_element
-                    language
-                    `Number
-                    Field.Rate
-                    ~flash_fetcher
-                    ~required:true
-                    ~help:I18n.Rate
-                    ~value:
-                      (mailing
-                      |> CCOption.map_or
-                           ~default:Mailing.Rate.default
-                           (fun (m : Mailing.t) -> m.Mailing.rate)
-                      |> Mailing.Rate.value
-                      |> CCInt.to_string)
-                    ~additional_attributes:[ a_input_min (`Number 1) ]
-                ]
-            ; distribution_select
-                (CCOption.bind mailing (fun (m : Mailing.t) ->
-                   m.Mailing.distribution))
-              (* TODO: Add detailed description how distribution element
-                 works *)
-            ; div
-                ~a:[ a_class [ "flexrow" ] ]
-                [ submit_element ~classnames:[ "push" ] language submit () ]
-            ]
-        ; div ~a:[ a_id "overlaps" ] []
-        ; script (Unsafe.data functions)
-        ])
+       @ [ form
+             ~a:
+               [ a_class [ "stack" ]
+               ; a_method `Post
+               ; a_action action
+               ; a_user_data "detect-unsaved-changes" ""
+               ]
+             [ csrf_element csrf ()
+             ; input
+                 ~a:
+                   [ a_input_type `Hidden
+                   ; a_name "id"
+                   ; a_value
+                       (CCOption.map_or
+                          ~default:""
+                          (fun m -> m.Mailing.id |> Mailing.Id.value)
+                          mailing)
+                   ]
+                 ()
+             ; div
+                 ~a:
+                   [ a_id "mailings"
+                   ; a_class [ "grid-col-2" ]
+                   ; hx_target "#overlaps"
+                   ; hx_trigger "change"
+                   ; hx_swap "innerHTML"
+                   ; hx_post
+                       (mailings_path
+                          ~suffix:"search-info"
+                          experiment.Experiment.id
+                        |> Sihl.Web.externalize_path)
+                   ]
+                 [ flatpicker_element
+                     language
+                     Field.Start
+                     ~flash_fetcher
+                     ~required:true
+                     ~disable_past:true
+                     ?value:
+                       (CCOption.map
+                          (fun (m : Mailing.t) ->
+                            m.Mailing.start_at
+                            |> Mailing.StartAt.value
+                            |> Ptime.to_rfc3339 ~space:true)
+                          mailing)
+                 ; flatpicker_element
+                     language
+                     Field.End
+                     ~flash_fetcher
+                     ~disable_past:true
+                     ~required:true
+                     ?value:
+                       (CCOption.map
+                          (fun (m : Mailing.t) ->
+                            m.Mailing.end_at
+                            |> Mailing.EndAt.value
+                            |> Ptime.to_rfc3339 ~space:true)
+                          mailing)
+                 ; input_element
+                     language
+                     `Number
+                     Field.Rate
+                     ~flash_fetcher
+                     ~required:true
+                     ~help:I18n.Rate
+                     ~value:
+                       (mailing
+                        |> CCOption.map_or
+                             ~default:Mailing.Rate.default
+                             (fun (m : Mailing.t) -> m.Mailing.rate)
+                        |> Mailing.Rate.value
+                        |> CCInt.to_string)
+                     ~additional_attributes:[ a_input_min (`Number 1) ]
+                 ]
+             ; distribution_select
+                 (CCOption.bind mailing (fun (m : Mailing.t) ->
+                    m.Mailing.distribution))
+               (* TODO: Add detailed description how distribution element
+                  works *)
+             ; div
+                 ~a:[ a_class [ "flexrow" ] ]
+                 [ submit_element ~classnames:[ "push" ] language submit () ]
+             ]
+         ; div ~a:[ a_id "overlaps" ] []
+         ; script (Unsafe.data functions)
+         ])
   in
   Page_admin_experiments.experiment_layout
     language

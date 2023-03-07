@@ -107,8 +107,8 @@ let index
                  [ txt (text_to_string Pool_common.I18n.HomeTitle) ]
              ; div [ welcome_text |> I18n.content_to_string |> Unsafe.data ]
              ]
-            @ sign_up_cta
-            @ partner_html)
+             @ sign_up_cta
+             @ partner_html)
         ; div
             ~a:[ a_class [ "flexcolumn"; "justify-center"; "stack" ] ]
             (CCList.map
@@ -122,10 +122,10 @@ let index
                    ()
                  |> aspect_ratio)
                (tenant.Pool_tenant.logos |> Pool_tenant.Logos.value)
-            @ [ (if is_logged_in
-                then txt ""
-                else login_form ~hide_signup:true context)
-              ])
+             @ [ (if is_logged_in
+                  then txt ""
+                  else login_form ~hide_signup:true context)
+               ])
         ]
     ]
 ;;

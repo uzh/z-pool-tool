@@ -8,10 +8,11 @@ let index req =
   let open Utils.Lwt_result.Infix in
   let result ({ Pool_context.database_label; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, "/admin/dashboard")
-    @@ let%lwt admin_users = Admin.find_all database_label () in
-       Page.Admin.Admins.index context admin_users
-       |> create_layout req ~active_navigation:"/admin/admins" context
-       >|+ Sihl.Web.Response.of_html
+    @@
+    let%lwt admin_users = Admin.find_all database_label () in
+    Page.Admin.Admins.index context admin_users
+    |> create_layout req ~active_navigation:"/admin/admins" context
+    >|+ Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path req
 ;;
@@ -45,8 +46,8 @@ let new_form req =
   let result context =
     Utils.Lwt_result.map_error (fun err -> err, "/admin/admins")
     @@ (Page.Admin.Admins.new_form context
-       |> create_layout req context
-       >|+ Sihl.Web.Response.of_html)
+        |> create_layout req context
+        >|+ Sihl.Web.Response.of_html)
   in
   result |> HttpUtils.extract_happy_path req
 ;;

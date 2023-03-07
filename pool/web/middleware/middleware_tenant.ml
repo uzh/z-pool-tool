@@ -13,7 +13,7 @@ let tenant_of_request req =
     ~eq:(fun m -> CCString.prefix ~pre:m)
     host
     (selections
-    |> CCList.map (fun sel -> Pool_tenant.Selection.(url sel, label sel)))
+     |> CCList.map (fun sel -> Pool_tenant.Selection.(url sel, label sel)))
   |> CCOption.to_result Pool_common.Message.SessionTenantNotFound
   |> Lwt_result.lift
   >>= Pool_tenant.find_by_label

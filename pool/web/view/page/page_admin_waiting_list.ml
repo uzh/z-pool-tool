@@ -138,7 +138,7 @@ let detail
                      "/admin/experiments/%s/waiting-list/%s/assign"
                      (experiment_id |> Experiment.Id.value)
                      (id |> Id.value)
-                  |> Sihl.Web.externalize_path)
+                   |> Sihl.Web.externalize_path)
               ]
             [ csrf_element csrf ()
             ; content
@@ -159,7 +159,7 @@ let detail
       ; p
           [ txt
               (I18n.AssignContactFromWaitingList
-              |> Utils.hint_to_string language)
+               |> Utils.hint_to_string language)
           ]
       ; content
       ]

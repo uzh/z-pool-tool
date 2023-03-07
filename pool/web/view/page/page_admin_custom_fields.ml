@@ -87,8 +87,8 @@ let custom_fields_layout ?hint language current_model html =
         ~a:[ a_class [ "heading-2" ] ]
         [ txt
             (current_model
-            |> Custom_field.Model.show
-            |> CCString.capitalize_ascii)
+             |> Custom_field.Model.show
+             |> CCString.capitalize_ascii)
         ]
     in
     let text =
@@ -171,8 +171,8 @@ let input_by_lang
             ~a:[ a_label_for id ]
             [ txt
                 (if required
-                then Format.asprintf "%s *" label_text
-                else label_text)
+                 then Format.asprintf "%s *" label_text
+                 else label_text)
             ]
         ; input_element
         ])
@@ -346,7 +346,7 @@ let field_form
                    ; a_action
                        (Sihl.Web.externalize_path
                           (Url.Field.detail_path (model m, id m)
-                          |> Format.asprintf "%s/sort-options"))
+                           |> Format.asprintf "%s/sort-options"))
                    ; a_class [ "stack" ]
                    ; a_user_data "detect-unsaved-changes" ""
                    ]
@@ -360,12 +360,12 @@ let field_form
                                [ txt
                                    (if CCOption.is_some
                                          option.SelectOption.published_at
-                                   then
-                                     Pool_common.(
-                                       Utils.field_to_string
-                                         language
-                                         Message.Field.PublishedAt)
-                                   else "")
+                                    then
+                                      Pool_common.(
+                                        Utils.field_to_string
+                                          language
+                                          Message.Field.PublishedAt)
+                                    else "")
                                ]
                            ; td
                                [ input
@@ -387,8 +387,8 @@ let field_form
                                ]
                            ])
                        options
-                    |> Component.Sortable.create_table
-                         ~classnames:[ "table"; "simple"; "sortable" ])
+                     |> Component.Sortable.create_table
+                          ~classnames:[ "table"; "simple"; "sortable" ])
                     [ csrf_element csrf ()
                     ; div
                         ~a:[ a_class [ "flexrow" ] ]
@@ -417,8 +417,8 @@ let field_form
                        ~a:[ a_class [ "heading-2" ] ]
                        [ txt
                            (Message.Field.CustomFieldOption
-                           |> Pool_common.Utils.field_to_string language
-                           |> CCString.capitalize_ascii)
+                            |> Pool_common.Utils.field_to_string language
+                            |> CCString.capitalize_ascii)
                        ]
                    ]
                ; div
@@ -536,8 +536,8 @@ let field_form
                   ~a:[ a_class [ "heading-3" ] ]
                   [ txt
                       (Message.Field.Hint
-                      |> Utils.field_to_string language
-                      |> CCString.capitalize_ascii)
+                       |> Utils.field_to_string language
+                       |> CCString.capitalize_ascii)
                   ]
               ; div ~a:[ a_class [ "stack" ] ] hint_inputs
               ]
@@ -554,8 +554,8 @@ let field_form
               ~a:[ a_class [ "heading-3" ] ]
               [ txt
                   (Message.Field.Admin
-                  |> Utils.field_to_string language
-                  |> CCString.capitalize_ascii)
+                   |> Utils.field_to_string language
+                   |> CCString.capitalize_ascii)
               ]
           ; input_element
               language
@@ -574,15 +574,15 @@ let field_form
                     |> CCOption.map_or
                          ~default:false
                          (admin_override %> AdminOverride.value)
-                then Some (warning I18n.CustomFieldAdminOverrideUpdate)
-                else None)
+                 then Some (warning I18n.CustomFieldAdminOverrideUpdate)
+                 else None)
               (admin_override %> AdminOverride.value)
           ; checkbox_element
               ~disabled:
                 (custom_field
-                |> CCOption.map_or
-                     ~default:false
-                     (admin_view_only %> AdminViewOnly.value))
+                 |> CCOption.map_or
+                      ~default:false
+                      (admin_view_only %> AdminViewOnly.value))
               ~help:I18n.CustomFieldAdminInputOnly
               Message.Field.AdminInputOnly
               (admin_input_only %> AdminInputOnly.value)
@@ -596,9 +596,9 @@ let field_form
           [ checkbox_element
               ~disabled:
                 (custom_field
-                |> CCOption.map_or ~default:false (fun f ->
-                     f |> admin_input_only |> AdminInputOnly.value
-                     || FieldType.(equal (f |> field_type) MultiSelect)))
+                 |> CCOption.map_or ~default:false (fun f ->
+                      f |> admin_input_only |> AdminInputOnly.value
+                      || FieldType.(equal (f |> field_type) MultiSelect)))
               Message.Field.Required
               (required %> Required.value)
           ; checkbox_element Message.Field.Disabled (disabled %> Disabled.value)
@@ -650,7 +650,7 @@ let field_form
            Message.Field.(show Required)
            Message.Field.(show FieldType)
            FieldType.(show MultiSelect)
-        |> fun js -> script (Unsafe.data js))
+         |> fun js -> script (Unsafe.data js))
       ]
   ; select_options_html
   ]
@@ -683,12 +683,12 @@ let field_buttons language csrf current_model field =
        div
          [ txt
              (Utils.field_to_string language Message.Field.PublishedAt
-             |> CCString.capitalize_ascii)
+              |> CCString.capitalize_ascii)
          ; txt ": "
          ; txt
              (published_at
-             |> PublishedAt.value
-             |> Utils.Time.formatted_date_time)
+              |> PublishedAt.value
+              |> Utils.Time.formatted_date_time)
          ]
      | None ->
        div
@@ -740,7 +740,7 @@ let index field_list group_list current_model Pool_context.{ language; csrf; _ }
   let grouped, ungrouped = Custom_field.group_fields group_list field_list in
   let thead =
     (Message.Field.[ Title; CustomFieldGroup; PublishedAt ]
-    |> Table.fields_to_txt language)
+     |> Table.fields_to_txt language)
     @ [ link_as_button
           ~style:`Success
           ~icon:`Add
@@ -766,11 +766,11 @@ let index field_list group_list current_model Pool_context.{ language; csrf; _ }
       ; txt (group >|= Group.name language |> value ~default:"")
       ; txt
           (field
-          |> published_at
-          |> CCOption.map_or
-               ~default:""
-               CCFun.(
-                 PublishedAt.value %> Pool_common.Utils.Time.formatted_date))
+           |> published_at
+           |> CCOption.map_or
+                ~default:""
+                CCFun.(
+                  PublishedAt.value %> Pool_common.Utils.Time.formatted_date))
       ; Url.Field.edit_path (model field, id field) |> edit_link
       ]
     in
@@ -805,7 +805,7 @@ let index field_list group_list current_model Pool_context.{ language; csrf; _ }
               ; a_method `Post
               ; a_action
                   (Sihl.Web.externalize_path (Url.index_path current_model)
-                  |> Format.asprintf "%s/sort-fields")
+                   |> Format.asprintf "%s/sort-fields")
               ; a_user_data "detect-unsaved-changes" ""
               ]
             [ csrf_element csrf ()
@@ -846,7 +846,7 @@ let index field_list group_list current_model Pool_context.{ language; csrf; _ }
              Pool_common.(
                Utils.text_to_string language I18n.SortUngroupedFields)
          ]
-      :: sort_form)
+       :: sort_form)
   in
   let groups_html =
     let list =
@@ -873,8 +873,8 @@ let index field_list group_list current_model Pool_context.{ language; csrf; _ }
               [ a_method `Post
               ; a_action
                   (Url.Group.index_path current_model
-                  |> Format.asprintf "%s/group/sort"
-                  |> Sihl.Web.externalize_path)
+                   |> Format.asprintf "%s/group/sort"
+                   |> Sihl.Web.externalize_path)
               ; a_class [ "stack" ]
               ; a_user_data "detect-unsaved-changes" ""
               ]
@@ -909,7 +909,7 @@ let index field_list group_list current_model Pool_context.{ language; csrf; _ }
                         |> edit_link ~classnames:[ "small" ]
                       ])
                   group_list
-               |> Component.Sortable.create)
+                |> Component.Sortable.create)
                [ csrf_element csrf ()
                ; div
                    ~a:[ a_class [ "flexrow" ] ]
@@ -931,8 +931,8 @@ let index field_list group_list current_model Pool_context.{ language; csrf; _ }
                ~a:[ a_class [ "heading-3" ] ]
                [ txt
                    (Message.Field.CustomFieldGroup
-                   |> Pool_common.Utils.field_to_string language
-                   |> CCString.capitalize_ascii)
+                    |> Pool_common.Utils.field_to_string language
+                    |> CCString.capitalize_ascii)
                ]
            ; link_as_button
                ~style:`Success
@@ -947,7 +947,7 @@ let index field_list group_list current_model Pool_context.{ language; csrf; _ }
                |> HttpUtils.add_line_breaks
              ]
        ]
-      @ list)
+       @ list)
   in
   div
     ~a:[ a_class [ "stack-lg" ] ]

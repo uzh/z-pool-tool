@@ -50,7 +50,7 @@ let login_post req =
            redirect_to_with_actions
              (path_with_language query_language path)
              ([ Sihl.Web.Session.set [ "user_id", user.Sihl_user.id ] ]
-             @ actions))
+              @ actions))
          ||> (fun res ->
                if set_completion_cookie
                then

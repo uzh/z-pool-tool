@@ -146,7 +146,7 @@ let rec hint_to_string = function
     Format.asprintf
       "This option excludes \"%s\"."
       (Locales_en.field_to_string Entity_message.Field.Required
-      |> CCString.capitalize_ascii)
+       |> CCString.capitalize_ascii)
   | CustomFieldAdminOverride ->
     "Allows administrators to override the answers specified by the contact. \
      Contacts cannot view the overridden answers."
@@ -157,7 +157,7 @@ let rec hint_to_string = function
     Format.asprintf
       "This option implies \"%s\"."
       (Locales_en.field_to_string Entity_message.Field.AdminInputOnly
-      |> CCString.capitalize_ascii)
+       |> CCString.capitalize_ascii)
   | CustomFieldContactModel ->
     "Questions that contacts can, or must, answer. Based on this information, \
      contacts are invited to take part in experiments."

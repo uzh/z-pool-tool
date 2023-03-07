@@ -123,7 +123,7 @@ let find_multiple_request ids =
     (CCList.mapi
        (fun i _ -> Format.asprintf "UNHEX(REPLACE($%n, '-', ''))" (i + 1))
        ids
-    |> CCString.concat ",")
+     |> CCString.concat ",")
   |> find_request_sql
 ;;
 
@@ -335,7 +335,7 @@ let update_profile_updated_triggered_request ids =
     (CCList.mapi
        (fun i _ -> Format.asprintf "UNHEX(REPLACE($%n, '-', ''))" (i + 2))
        ids
-    |> CCString.concat ",")
+     |> CCString.concat ",")
 ;;
 
 let update_profile_updated_triggered pool ids =

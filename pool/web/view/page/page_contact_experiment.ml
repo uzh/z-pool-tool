@@ -17,8 +17,8 @@ let index
           ~a:[ a_class [ "heading-2" ] ]
           [ txt Pool_common.(Utils.text_to_string language title) ]
       ; (if CCList.is_empty list
-        then p Pool_common.[ Utils.text_to_string language empty |> txt ]
-        else div ~a:[ a_class classnames ] list)
+         then p Pool_common.[ Utils.text_to_string language empty |> txt ]
+         else div ~a:[ a_class classnames ] list)
       ]
   in
   let notification =
@@ -203,8 +203,10 @@ let show
           [ txt (Utils.text_to_string language I18n.ExperimentWaitingListTitle)
           ]
       ; (if user_is_enlisted
-        then p [ txt (Utils.hint_to_string language I18n.ContactOnWaitingList) ]
-        else p [ txt (Utils.hint_to_string language I18n.SignUpForWaitingList) ])
+         then
+           p [ txt (Utils.hint_to_string language I18n.ContactOnWaitingList) ]
+         else
+           p [ txt (Utils.hint_to_string language I18n.SignUpForWaitingList) ])
       ; form
           ~a:[ a_method `Post; a_action form_action ]
           [ csrf_element csrf ()
@@ -225,7 +227,7 @@ let show
          [ txt
              (Utils.text_to_string language I18n.ExperimentContactEnrolledNote)
          ]
-      :: Page_contact_sessions.public_detail language sessions)
+       :: Page_contact_sessions.public_detail language sessions)
   in
   let html =
     match session_user_is_assigned with

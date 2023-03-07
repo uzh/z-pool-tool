@@ -13,7 +13,7 @@ let contact_overview language contacts =
   let open Contact in
   let thead =
     (Pool_common.Message.Field.[ Email; Name ]
-    |> Component.Table.fields_to_txt language)
+     |> Component.Table.fields_to_txt language)
     @ [ txt "" ]
   in
   let user_table contacts =

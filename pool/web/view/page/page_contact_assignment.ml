@@ -18,27 +18,27 @@ let detail session follow_ups experiment Pool_context.{ language; csrf; _ } =
     ; div
         ~a:[ a_class [ "stack" ] ]
         (Page_contact_sessions.public_detail language (session :: follow_ups)
-        @ [ p
-              [ Utils.hint_to_string
-                  language
-                  (if CCList.is_empty follow_ups
-                  then I18n.SessionRegistrationHint
-                  else I18n.SessionRegistrationFollowUpHint)
-                |> txt
-              ]
-          ; form
-              ~a:[ a_action form_action; a_method `Post ]
-              [ csrf_element csrf ()
-              ; div
-                  ~a:[ a_class [ "flexrow" ] ]
-                  [ submit_element
-                      ~classnames:[ "push" ]
-                      language
-                      Message.Register
-                      ~submit_type:`Primary
-                      ()
-                  ]
-              ]
-          ])
+         @ [ p
+               [ Utils.hint_to_string
+                   language
+                   (if CCList.is_empty follow_ups
+                    then I18n.SessionRegistrationHint
+                    else I18n.SessionRegistrationFollowUpHint)
+                 |> txt
+               ]
+           ; form
+               ~a:[ a_action form_action; a_method `Post ]
+               [ csrf_element csrf ()
+               ; div
+                   ~a:[ a_class [ "flexrow" ] ]
+                   [ submit_element
+                       ~classnames:[ "push" ]
+                       language
+                       Message.Register
+                       ~submit_type:`Primary
+                       ()
+                   ]
+               ]
+           ])
     ]
 ;;

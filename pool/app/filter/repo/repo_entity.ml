@@ -17,8 +17,8 @@ module Filter = struct
         ~encode:(yojson_of_query %> Yojson.Safe.to_string %> CCResult.return)
         ~decode:
           (Yojson.Safe.from_string
-          %> query_of_yojson
-          %> CCResult.map_err Common.(Utils.error_to_string Language.En))
+           %> query_of_yojson
+           %> CCResult.map_err Common.(Utils.error_to_string Language.En))
         string)
   ;;
 end

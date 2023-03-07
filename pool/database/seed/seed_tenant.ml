@@ -79,7 +79,7 @@ let create () =
                (Description.create description |> get_or_failwith)
                (Url.create url |> get_or_failwith)
                (Pool_tenant.Database.create database_label database_url
-               |> get_or_failwith)
+                |> get_or_failwith)
                (Styles.Write.create styles |> get_or_failwith)
                (Icon.Write.create icon |> get_or_failwith)
                (Pool_common.Language.create default_language |> get_or_failwith))

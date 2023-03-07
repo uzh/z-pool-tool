@@ -73,7 +73,7 @@ let update_email req =
        let* new_email =
          Pool_user.EmailAddress.create
            (CCList.assoc ~eq:CCString.equal Field.(Email |> show) urlencoded
-           |> CCList.hd)
+            |> CCList.hd)
          |> Lwt_result.lift
        in
        let%lwt token = Email.create_token database_label new_email in
@@ -214,8 +214,8 @@ let completion_post req =
              req
              |> HttpUtils.htmx_urlencoded_list
                   (field
-                  |> Public.to_common_field language
-                  |> Pool_common.Message.Field.array_key)
+                   |> Public.to_common_field language
+                   |> Pool_common.Message.Field.array_key)
            | Boolean _ | Number _ | Select _ | Text _ ->
              CCList.assoc_opt ~eq:CCString.equal id urlencoded
              |> CCOption.value ~default:[]

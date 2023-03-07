@@ -103,8 +103,8 @@ let calculate_mailing_limits ?interval pool_based_mailings =
          (fun init (_, mailings) ->
            init
            :: (mailings
-              |> CCList.map (fun ({ Mailing.rate; _ } : Mailing.t) ->
-                   rate |> Mailing.Rate.value |> count_of_rate ?interval))
+               |> CCList.map (fun ({ Mailing.rate; _ } : Mailing.t) ->
+                    rate |> Mailing.Rate.value |> count_of_rate ?interval))
            |> sum)
          0
   in
@@ -116,9 +116,9 @@ let calculate_mailing_limits ?interval pool_based_mailings =
          |> CCList.map (fun ({ Mailing.rate; _ } as mailing : Mailing.t) ->
               let limit_per_mailing =
                 (rate
-                |> Mailing.Rate.value
-                |> count_of_rate ?interval
-                |> CCFloat.of_int)
+                 |> Mailing.Rate.value
+                 |> count_of_rate ?interval
+                 |> CCFloat.of_int)
                 *. max reduce_factor 1.
                 |> floor
                 |> CCFloat.to_int
@@ -134,11 +134,11 @@ let match_invitations ?interval pools =
   let count_mails =
     CCList.filter_map
       (let open Pool_event in
-      function[@warning "-4"]
-      (* TODO: Account based internal/external email count *)
-      | Email (Email.Sent _) -> Some 1
-      | Email (Email.BulkSent mails) -> Some (CCList.length mails)
-      | _ -> None)
+       function[@warning "-4"]
+       (* TODO: Account based internal/external email count *)
+       | Email (Email.Sent _) -> Some 1
+       | Email (Email.BulkSent mails) -> Some (CCList.length mails)
+       | _ -> None)
     %> sum
   in
   let%lwt pool_based_mailings =

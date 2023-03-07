@@ -184,14 +184,14 @@ let session_form
                          |> CCOption.map Pool_common.Reminder.LeadTime.value))
                     ~flash_fetcher
                 ; (experiment.Experiment.session_reminder_lead_time
-                  |> CCOption.value ~default:default_reminder_lead_time
-                  |> fun t ->
-                  Utils.text_to_string
-                    language
-                    (I18n.SessionReminderDefaultLeadTime
-                       (t |> Reminder.LeadTime.value))
-                  |> txt
-                  |> HttpUtils.default_value_style)
+                   |> CCOption.value ~default:default_reminder_lead_time
+                   |> fun t ->
+                   Utils.text_to_string
+                     language
+                     (I18n.SessionReminderDefaultLeadTime
+                        (t |> Reminder.LeadTime.value))
+                   |> txt
+                   |> HttpUtils.default_value_style)
                 ]
             ]
         ]
@@ -285,7 +285,7 @@ let index
                          "/admin/experiments/%s/sessions/%s/delete"
                          (Experiment.Id.value experiment_id)
                          (Id.value session.id)
-                      |> Sihl.Web.externalize_path)
+                       |> Sihl.Web.externalize_path)
                   ; a_user_data
                       "confirmable"
                       (Utils.confirmable_to_string language I18n.DeleteSession)
@@ -316,16 +316,16 @@ let index
                    (session.assignment_count |> AssignmentCount.value))
             ; txt
                 (if CCOption.is_some session.closed_at
-                then
-                  session.show_up_count |> ShowUpCount.value |> CCInt.to_string
-                else "")
+                 then
+                   session.show_up_count |> ShowUpCount.value |> CCInt.to_string
+                 else "")
             ; txt
                 (if CCOption.is_some session.closed_at
-                then
-                  session.participant_count
-                  |> ParticipantCount.value
-                  |> CCInt.to_string
-                else "")
+                 then
+                   session.participant_count
+                   |> ParticipantCount.value
+                   |> CCInt.to_string
+                 else "")
             ; session.canceled_at
               |> CCOption.map_or ~default:"" (fun t ->
                    Utils.Time.formatted_date_time t)
@@ -372,12 +372,12 @@ let index
                    "/admin/experiments/%s/sessions%s"
                    (Experiment.Id.value experiment_id)
                    (if chronological then "" else "?chronological=true")
-                |> Sihl.Web.externalize_path)
+                 |> Sihl.Web.externalize_path)
             ]
           [ p
               [ (if chronological
-                then I18n.SwitchGrouped
-                else I18n.SwitchChronological)
+                 then I18n.SwitchGrouped
+                 else I18n.SwitchChronological)
                 |> Utils.text_to_string language
                 |> txt
               ]
@@ -458,7 +458,7 @@ let detail
                          "/admin/experiments/%s/sessions/%s"
                          (Experiment.Id.value experiment.Experiment.id)
                          (Id.value follow_up_to)
-                      |> Sihl.Web.externalize_path)
+                       |> Sihl.Web.externalize_path)
                   ]
                 [ Message.Show
                   |> Utils.control_to_string language
@@ -624,8 +624,8 @@ let edit
       [ p
           [ txt
               (session
-              |> session_title
-              |> Pool_common.Utils.text_to_string language)
+               |> session_title
+               |> Pool_common.Utils.text_to_string language)
           ]
       ; session_form
           csrf
@@ -721,7 +721,7 @@ let close
                ; a_name Message.Field.(array_key field)
                ; a_value (contact |> Contact.id |> Id.value)
                ]
-              @ disabled)
+               @ disabled)
             ()
         ]
     in
@@ -761,7 +761,7 @@ let close
                  "/admin/experiments/%s/sessions/%s/close"
                  (Experiment.Id.value experiment.Experiment.id)
                  (Id.value session.Session.id)
-              |> Sihl.Web.externalize_path)
+               |> Sihl.Web.externalize_path)
           ; a_user_data "detect-unsaved-changes" ""
           ]
         [ Input.csrf_element csrf ()
@@ -829,7 +829,7 @@ let close
           ~a:[ a_class [ "heading-4" ] ]
           [ txt
               (Utils.field_to_string language Message.Field.Participants
-              |> CCString.capitalize_ascii)
+               |> CCString.capitalize_ascii)
           ]
       ; p
           [ Utils.hint_to_string language I18n.SessionClose

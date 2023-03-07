@@ -36,7 +36,7 @@ let find_by_multiple_fields_request ids =
       (CCList.mapi
          (fun i _ -> Format.asprintf "UNHEX(REPLACE($%n, '-', ''))" (i + 1))
          ids
-      |> CCString.concat ",")
+       |> CCString.concat ",")
   in
   select_sql where
 ;;
@@ -268,7 +268,7 @@ module Public = struct
         (CCList.mapi
            (fun i _ -> Format.asprintf "UNHEX(REPLACE($%n, '-', ''))" (i + 1))
            ids
-        |> CCString.concat ",")
+         |> CCString.concat ",")
     in
     select_sql where
   ;;

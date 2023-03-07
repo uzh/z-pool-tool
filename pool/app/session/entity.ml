@@ -328,7 +328,7 @@ let email_text language start duration location =
     Format.asprintf
       "%s: %s"
       (Pool_common.(Utils.field_to_string language label)
-      |> CCString.capitalize_ascii)
+       |> CCString.capitalize_ascii)
       text
   in
   let start =

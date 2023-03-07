@@ -2,26 +2,27 @@ open Entity
 
 let encode_key_value value =
   (let open Value in
-  match value with
-  | DefaultReminderLeadTime v ->
-    ( yojson_of_setting_key ReminderLeadTime
-    , yojson_of_default_reminder_lead_time v )
-  | TenantLanguages v ->
-    yojson_of_setting_key Languages, yojson_of_tenant_languages v
-  | TenantEmailSuffixes v ->
-    yojson_of_setting_key EmailSuffixes, yojson_of_tenant_email_suffixes v
-  | TenantContactEmail v ->
-    yojson_of_setting_key ContactEmail, yojson_of_tenant_contact_email v
-  | InactiveUserDisableAfter v ->
-    ( yojson_of_setting_key InactiveUserDisableAfter
-    , yojson_of_inactive_user_disable_after v )
-  | InactiveUserWarning v ->
-    yojson_of_setting_key InactiveUserWarning, yojson_of_inactive_user_warning v
-  | TermsAndConditions v ->
-    yojson_of_setting_key TermsAndConditions, yojson_of_terms_and_conditions v
-  | TriggerProfileUpdateAfter v ->
-    ( yojson_of_setting_key TriggerProfileUpdateAfter
-    , yojson_of_trigger_profile_update_after v ))
+   match value with
+   | DefaultReminderLeadTime v ->
+     ( yojson_of_setting_key ReminderLeadTime
+     , yojson_of_default_reminder_lead_time v )
+   | TenantLanguages v ->
+     yojson_of_setting_key Languages, yojson_of_tenant_languages v
+   | TenantEmailSuffixes v ->
+     yojson_of_setting_key EmailSuffixes, yojson_of_tenant_email_suffixes v
+   | TenantContactEmail v ->
+     yojson_of_setting_key ContactEmail, yojson_of_tenant_contact_email v
+   | InactiveUserDisableAfter v ->
+     ( yojson_of_setting_key InactiveUserDisableAfter
+     , yojson_of_inactive_user_disable_after v )
+   | InactiveUserWarning v ->
+     ( yojson_of_setting_key InactiveUserWarning
+     , yojson_of_inactive_user_warning v )
+   | TermsAndConditions v ->
+     yojson_of_setting_key TermsAndConditions, yojson_of_terms_and_conditions v
+   | TriggerProfileUpdateAfter v ->
+     ( yojson_of_setting_key TriggerProfileUpdateAfter
+     , yojson_of_trigger_profile_update_after v ))
   |> fun (m, k) -> m |> Yojson.Safe.to_string, k |> Yojson.Safe.to_string
 ;;
 

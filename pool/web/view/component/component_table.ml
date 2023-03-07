@@ -101,7 +101,7 @@ let vertical_table layout language ?(align_top = false) ?(classnames = []) rows 
          [ th
              [ txt
                  (Pool_common.Utils.field_to_string language label
-                 |> CCString.capitalize_ascii)
+                  |> CCString.capitalize_ascii)
              ]
          ; td [ value ]
          ]

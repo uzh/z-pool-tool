@@ -222,7 +222,7 @@ module Sql = struct
       (CCList.mapi
          (fun i _ -> Format.asprintf "UNHEX(REPLACE($%n, '-', ''))" (i + 2))
          ids
-      |> CCString.concat ",")
+       |> CCString.concat ",")
   ;;
 
   let find_multiple_by_experiment_and_contacts pool ids experiment =
@@ -232,9 +232,9 @@ module Sql = struct
         (fun dyn id ->
           dyn |> Dynparam.add Caqti_type.string (id |> Pool_common.Id.value))
         (Dynparam.empty
-        |> Dynparam.add
-             Caqti_type.string
-             (experiment.Experiment.id |> Experiment.Id.value))
+         |> Dynparam.add
+              Caqti_type.string
+              (experiment.Experiment.id |> Experiment.Id.value))
         ids
     in
     let (Dynparam.Pack (pt, pv)) = dyn in
