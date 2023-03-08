@@ -222,6 +222,8 @@ val create
   -> Mapping.file list
   -> (t, Pool_common.Message.error) result
 
+val contact_file_path : Id.t -> Mapping.file -> string
+val admin_file_path : Id.t -> Mapping.file -> string
 val to_string : Pool_common.Language.t -> t -> string
 
 type update =
@@ -263,6 +265,12 @@ val find
   -> (t, Pool_common.Message.error) Lwt_result.t
 
 val find_all : Pool_database.Label.t -> t list Lwt.t
+
+val find_location_file
+  :  Pool_database.Label.t
+  -> Pool_common.Repo.Id.t
+  -> (Mapping.file, Entity.Message.error) result Lwt.t
+
 val default_values : t list
 
 module Guard : sig

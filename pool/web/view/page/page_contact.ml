@@ -1,4 +1,5 @@
 module Experiment = Page_contact_experiment
+module Location = Page_contact_location
 
 let sign_up = Page_contact_signup.signup
 let terms = Page_contact_terms.terms

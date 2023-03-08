@@ -171,6 +171,6 @@ module Sql = struct
 end
 
 let insert = Sql.insert
-let find_by_tenant = Sql.find
+let find = Sql.find
 let find_by_location = Sql.find_by_location
 let delete = Sql.delete
