@@ -38,12 +38,10 @@ end = struct
     then Error Pool_common.Message.(AlreadySignedUpForExperiment)
     else
       let* () =
-        match
-          command.experiment.Experiment.Public.direct_registration_disabled
-          |> Experiment.DirectRegistrationDisabled.value
-        with
-        | true -> Error Pool_common.Message.(DirectRegistrationIsDisabled)
-        | false -> Ok ()
+        command.experiment.Experiment.Public.direct_registration_disabled
+        |> Experiment.DirectRegistrationDisabled.value
+        |> Utils.bool_to_result_not
+             Pool_common.Message.(DirectRegistrationIsDisabled)
       in
       let* () =
         CCList.fold_left
@@ -204,12 +202,9 @@ end = struct
     then Error Pool_common.Message.(AlreadySignedUpForExperiment)
     else
       let* () =
-        match
-          command.waiting_list.Waiting_list.experiment
-          |> Experiment.registration_disabled_value
-        with
-        | true -> Error Pool_common.Message.(RegistrationDisabled)
-        | false -> Ok ()
+        command.waiting_list.Waiting_list.experiment
+        |> Experiment.registration_disabled_value
+        |> Utils.bool_to_result_not Pool_common.Message.(RegistrationDisabled)
       in
       let* () =
         CCList.fold_left

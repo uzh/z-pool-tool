@@ -268,9 +268,7 @@ module Public = struct
     let open CCResult.Infix in
     let* () =
       is_fully_booked session
-      |> function
-      | true -> Error Pool_common.Message.(SessionFullyBooked)
-      | false -> Ok ()
+      |> Utils.bool_to_result_not Pool_common.Message.(SessionFullyBooked)
     in
     let* () = not_canceled session in
     Ok ()
@@ -458,9 +456,7 @@ let assignment_creatable session =
   let open CCResult.Infix in
   let* () =
     is_fully_booked session
-    |> function
-    | true -> Error Pool_common.Message.(SessionFullyBooked)
-    | false -> Ok ()
+    |> Utils.bool_to_result_not Pool_common.Message.(SessionFullyBooked)
   in
   let* () = not_canceled session in
   let* () = not_closed session in

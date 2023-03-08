@@ -9,6 +9,11 @@ let todo _ = failwith "todo"
 let equal_key (a, _) (b, _) = CCString.equal a b
 let ppx_printer m fmt _ = Format.pp_print_string fmt m
 
+let bool_to_result_not err = function
+  | true -> Error err
+  | false -> Ok ()
+;;
+
 module Url = struct
   let public_host =
     let open CCOption in

@@ -171,37 +171,40 @@ end = struct
     }
     =
     let open CCFun in
+    let open CCResult in
     Logs.info ~src (fun m -> m "Handle command Delete" ~tags);
-    match session_count > 0 with
-    | true -> Error Pool_common.Message.ExperimentSessionCountNotZero
-    | false ->
-      let delete_mailing = Mailing.deleted %> Pool_event.mailing in
-      let revoke_experimenter admin =
-        BaseGuard.RolesRevoked
-          (admin |> to_actor, `Experimenter (experiment |> to_target) |> to_role)
-        |> Pool_event.guard
-      in
-      let revoke_assistant admin =
-        BaseGuard.RolesRevoked
-          (admin |> to_actor, `Assistant (experiment |> to_target) |> to_role)
-        |> Pool_event.guard
-      in
-      let filter_events =
-        CCOption.map_or
-          ~default:[]
-          (Filter.deleted %> Pool_event.filter %> CCList.return)
-      in
-      let delete_template =
-        Message_template.deleted %> Pool_event.message_template
-      in
-      Ok
-        ([ Experiment.Deleted experiment.Experiment.id |> Pool_event.experiment
-         ]
-         @ (experiment.Experiment.filter |> filter_events)
-         @ (mailings |> CCList.map delete_mailing)
-         @ (experimenters |> CCList.map revoke_experimenter)
-         @ (assistants |> CCList.map revoke_assistant)
-         @ (templates |> CCList.map delete_template))
+    let* () =
+      session_count
+      > 0
+      |> Utils.bool_to_result_not
+           Pool_common.Message.ExperimentSessionCountNotZero
+    in
+    let delete_mailing = Mailing.deleted %> Pool_event.mailing in
+    let revoke_experimenter admin =
+      BaseGuard.RolesRevoked
+        (admin |> to_actor, `Experimenter (experiment |> to_target) |> to_role)
+      |> Pool_event.guard
+    in
+    let revoke_assistant admin =
+      BaseGuard.RolesRevoked
+        (admin |> to_actor, `Assistant (experiment |> to_target) |> to_role)
+      |> Pool_event.guard
+    in
+    let filter_events =
+      CCOption.map_or
+        ~default:[]
+        (Filter.deleted %> Pool_event.filter %> CCList.return)
+    in
+    let delete_template =
+      Message_template.deleted %> Pool_event.message_template
+    in
+    Ok
+      ([ Experiment.Deleted experiment.Experiment.id |> Pool_event.experiment ]
+       @ (experiment.Experiment.filter |> filter_events)
+       @ (mailings |> CCList.map delete_mailing)
+       @ (experimenters |> CCList.map revoke_experimenter)
+       @ (assistants |> CCList.map revoke_assistant)
+       @ (templates |> CCList.map delete_template))
   ;;
 
   let effects id =
