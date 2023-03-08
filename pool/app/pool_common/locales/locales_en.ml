@@ -96,6 +96,7 @@ let rec field_to_string =
   | LogoType -> "logo type"
   | Mailing -> "mailing"
   | MainSession -> "main session"
+  | MarkedAsDeleted -> "marked as deleted"
   | MaxParticipants -> "maximum participants"
   | MaxTries -> "maximum tries"
   | MessageChannel -> "message channel"
@@ -133,6 +134,7 @@ let rec field_to_string =
   | RandomOrder -> "select the contacts in random order."
   | Rate -> "rate limit"
   | Reason -> "reason"
+  | Redirect -> "redirect"
   | RegistrationDisabled -> "registration disabled"
   | Required -> "required"
   | ResentAt -> "resent at"
@@ -210,6 +212,8 @@ let success_to_string : success -> string = function
      given email address is still available."
   | EmailVerified -> "Email successfully verified."
   | FileDeleted -> "File was successfully deleted."
+  | MarkedAsDeleted field ->
+    field_message "" (field_to_string field) "was marked as deleted."
   | PasswordChanged -> "Password successfully changed."
   | PasswordReset -> "Password reset, you can now log in."
   | PasswordResetSuccessMessage ->
@@ -251,6 +255,7 @@ let rec error_to_string = function
   | AlreadyInPast -> "In minimum the starting point is in the past."
   | AlreadySignedUpForExperiment ->
     "You are already signed up for this experiment."
+  | AssignmentIsCanceled -> "Assignment was canceled."
   | AlreadyStarted -> "Already started or ended, action not possible anymore."
   | AlreadyInvitedToExperiment names ->
     Format.asprintf
@@ -311,6 +316,11 @@ let rec error_to_string = function
   | InvalidJson exn -> Format.asprintf "Invalid Json: %s" exn
   | InvalidOptionSelected -> "Invalid option selected."
   | InvalidHtmxRequest -> "Invalid request."
+  | IsMarkedAsDeleted field ->
+    field_message
+      ""
+      (field |> field_to_string |> CCString.trim)
+      "has been marked as deleted."
   | LoginProvideDetails -> "Please provide email and password"
   | MeantimeUpdate field ->
     field_message "" (field_to_string field) "was updated in the meantime!"
@@ -425,6 +435,7 @@ let control_to_string = function
   | Filter field -> format_submit "filter" field
   | Login -> format_submit "login" None
   | Manage field -> format_submit "manage" (Some field)
+  | MarkAsDeleted -> format_submit "mark as deleted" None
   | More -> format_submit "more" None
   | NextPage -> "next"
   | PleaseSelect -> "please select"

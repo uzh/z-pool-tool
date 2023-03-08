@@ -33,6 +33,13 @@ module CanceledAt = struct
   let schema = schema Pool_common.Message.Field.CanceledAt create
 end
 
+module MarkedAsDeleted = struct
+  include Pool_common.Model.Boolean
+
+  let init = false
+  let schema = schema Pool_common.Message.Field.MarkedAsDeleted
+end
+
 type t =
   { id : Pool_common.Id.t
   ; contact : Contact.t
@@ -40,6 +47,7 @@ type t =
   ; participated : Participated.t option
   ; matches_filter : MatchesFilter.t
   ; canceled_at : CanceledAt.t option
+  ; marked_as_deleted : MarkedAsDeleted.t
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
   }
@@ -51,6 +59,7 @@ let create
   ?participated
   ?(matches_filter = MatchesFilter.create true)
   ?canceled_at
+  ?(marked_as_deleted = MarkedAsDeleted.init)
   contact
   =
   { id
@@ -59,9 +68,42 @@ let create
   ; participated
   ; matches_filter
   ; canceled_at
+  ; marked_as_deleted
   ; created_at = Pool_common.CreatedAt.create ()
   ; updated_at = Pool_common.UpdatedAt.create ()
   }
+;;
+
+let is_not_deleted { marked_as_deleted; _ } =
+  if not marked_as_deleted
+  then Ok ()
+  else Error Pool_common.Message.(IsMarkedAsDeleted Field.Assignment)
+;;
+
+let is_not_canceled { canceled_at; _ } =
+  if CCOption.is_none canceled_at
+  then Ok ()
+  else Error Pool_common.Message.AssignmentIsCanceled
+;;
+
+let is_deletable m =
+  let open CCResult in
+  let* () = is_not_deleted m in
+  Ok ()
+;;
+
+let is_cancellable m =
+  let open CCResult in
+  let* () = is_deletable m in
+  let* () = is_not_canceled m in
+  Ok ()
+;;
+
+let attendance_settable m =
+  let open CCResult in
+  let* () = is_not_deleted m in
+  let* () = is_not_canceled m in
+  Ok ()
 ;;
 
 module Public = struct

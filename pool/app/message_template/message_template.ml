@@ -87,7 +87,7 @@ module AssignmentConfirmation = struct
   let create ?follow_ups pool preferred_language tenant session contact =
     let open Utils.Lwt_result.Infix in
     let* template, language = template pool preferred_language in
-    let params = email_params language session ?follow_ups contact in
+    let params = email_params ?follow_ups language session contact in
     let layout = layout_from_tenant tenant in
     let email = contact |> Contact.email_address in
     let%lwt sender = Pool_tenant.Service.Email.sender_of_pool pool in

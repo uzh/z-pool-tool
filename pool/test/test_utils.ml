@@ -298,6 +298,7 @@ module Model = struct
     let start = start |> CCOption.value ~default:(in_an_hour ()) in
     { id
     ; follow_up_to
+    ; has_follow_ups = false
     ; start
     ; duration = Duration.create hour |> get_or_failwith_pool_error
     ; description = None
@@ -396,6 +397,7 @@ module Model = struct
       ; participated = None
       ; matches_filter = MatchesFilter.init
       ; canceled_at = None
+      ; marked_as_deleted = MarkedAsDeleted.init
       ; created_at = Pool_common.CreatedAt.create ()
       ; updated_at = Pool_common.UpdatedAt.create ()
       }

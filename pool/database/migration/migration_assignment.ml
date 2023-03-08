@@ -56,6 +56,15 @@ let make_show_up_participated_nullable =
     |sql}
 ;;
 
+let add_marked_as_deleted_column =
+  Sihl.Database.Migration.create_step
+    ~label:"rename subject id to contact id"
+    {sql|
+      ALTER TABLE pool_assignments
+        ADD COLUMN marked_as_deleted boolean DEFAULT 0 AFTER canceled_at
+    |sql}
+;;
+
 let migration () =
   Sihl.Database.Migration.(
     empty "participation"
@@ -63,5 +72,6 @@ let migration () =
     |> add_step rename_participant_to_subject
     |> add_step rename_subject_to_contact
     |> add_step rename_table_to_assignments
-    |> add_step make_show_up_participated_nullable)
+    |> add_step make_show_up_participated_nullable
+    |> add_step add_marked_as_deleted_column)
 ;;

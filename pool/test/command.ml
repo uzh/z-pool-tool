@@ -124,6 +124,18 @@ let () =
             "assign to session with follow ups"
             `Quick
             Assignment_test.assign_to_session_with_follow_ups
+        ; test_case
+            "mark uncanceled as deleted"
+            `Quick
+            Assignment_test.marked_uncanceled_as_deleted
+        ; test_case
+            "mark canceled as deleted"
+            `Quick
+            Assignment_test.marked_canceled_as_deleted
+        ; test_case
+            "cancel deleted assignment"
+            `Quick
+            Assignment_test.cancel_deleted_assignment
         ] )
     ; ( "invitation"
       , [ test_case "create invitation" `Quick Invitation_test.create
@@ -257,6 +269,10 @@ let () =
             "close session with valid assignments"
             `Quick
             Session_test.close_valid_with_assignments
+        ; test_case
+            "close session with deleted assignment"
+            `Quick
+            Session_test.close_with_deleted_assignment
         ; test_case
             "close session with invalid participation"
             `Quick

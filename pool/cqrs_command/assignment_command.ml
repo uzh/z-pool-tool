@@ -107,6 +107,7 @@ end = struct
     let open CCResult in
     Logs.info ~src (fun m -> m "Handle command Cancel" ~tags);
     let* () = Session.assignments_cancelable session in
+    let* () = Assignment.is_cancellable assignment in
     Ok
       [ Assignment.Canceled assignment |> Pool_event.assignment
       ; Contact.NumAssignmentsDecreasedBy (assignment.Assignment.contact, 1)
@@ -155,9 +156,10 @@ end = struct
         >>= fun events ->
         participation
         |> validate_participation
-        >|= fun ((assignment : Assignment.t), showup, participated) ->
-        let contact_event =
+        >>= fun ((assignment : Assignment.t), showup, participated) ->
+        let* contact_event =
           let open Contact in
+          let* () = Assignment.attendance_settable assignment in
           let update =
             { show_up = ShowUp.value showup
             ; participated = Participated.value participated
@@ -165,12 +167,14 @@ end = struct
           in
           SessionParticipationSet (assignment.contact, update)
           |> Pool_event.contact
+          |> CCResult.return
         in
         events
         @ [ Assignment.AttendanceSet (assignment, showup, participated)
             |> Pool_event.assignment
           ; contact_event
-          ])
+          ]
+        |> CCResult.return)
       (Ok [ Closed session |> Pool_event.session ])
       command
   ;;
@@ -238,5 +242,56 @@ end = struct
   let effects =
     (* TODO: make sure effects are "AND" and not "OR" *)
     [ `Update, `TargetEntity `WaitingList; `Create, `TargetEntity `Assignment ]
+  ;;
+end
+
+module MarkAsDeleted : sig
+  include Common.CommandSig with type t = Assignment.t list
+
+  val effects : Assignment.Id.t -> Guard.Authorizer.effect list
+end = struct
+  type t = Assignment.t list
+
+  let handle ?(tags = Logs.Tag.empty) assignments
+    : (Pool_event.t list, Pool_common.Message.error) result
+    =
+    let open CCResult in
+    Logs.info ~src (fun m -> m ~tags "Handle command MarkAsDeleted");
+    let* (_ : unit list) =
+      CCList.map Assignment.is_deletable assignments |> CCList.all_ok
+    in
+    let mark_as_deleted =
+      CCList.map
+        (fun assignment ->
+          Assignment.MarkedAsDeleted assignment |> Pool_event.assignment)
+        assignments
+    in
+    let assignment_count_event =
+      let open CCList in
+      let assignment_list =
+        filter
+          (fun assignment -> CCOption.is_none assignment.Assignment.canceled_at)
+          assignments
+      in
+      if length assignment_list > 0
+      then
+        Some
+          (Contact.NumAssignmentsDecreasedBy
+             ((hd assignment_list).Assignment.contact, length assignment_list)
+           |> Pool_event.contact)
+      else None
+    in
+    let events =
+      match assignment_count_event with
+      | Some event -> event :: mark_as_deleted
+      | None -> mark_as_deleted
+    in
+    Ok events
+  ;;
+
+  let effects id =
+    [ `Delete, `Target (id |> Guard.Uuid.target_of Assignment.Id.value)
+    ; `Delete, `TargetEntity `Assignment
+    ]
   ;;
 end

@@ -333,3 +333,43 @@ let assign_to_session_with_follow_ups () =
   in
   Test_utils.check_result expected events
 ;;
+
+let marked_uncanceled_as_deleted () =
+  let assignment = Model.create_assignment () in
+  let assignment = Assignment.{ assignment with canceled_at = None } in
+  let events = AssignmentCommand.MarkAsDeleted.handle [ assignment ] in
+  let expected =
+    Ok
+      [ Contact.NumAssignmentsDecreasedBy (assignment.Assignment.contact, 1)
+        |> Pool_event.contact
+      ; Assignment.MarkedAsDeleted assignment |> Pool_event.assignment
+      ]
+  in
+  Test_utils.check_result expected events
+;;
+
+let marked_canceled_as_deleted () =
+  let assignment = Model.create_assignment () in
+  let assignment =
+    Assignment.{ assignment with canceled_at = Some (CanceledAt.create_now ()) }
+  in
+  let events = AssignmentCommand.MarkAsDeleted.handle [ assignment ] in
+  let expected =
+    Ok [ Assignment.MarkedAsDeleted assignment |> Pool_event.assignment ]
+  in
+  Test_utils.check_result expected events
+;;
+
+let cancel_deleted_assignment () =
+  let session = Model.(create_session ~start:(an_hour_ago ()) ()) in
+  let assignment = Model.create_assignment () in
+  let assignment =
+    Assignment.
+      { assignment with marked_as_deleted = MarkedAsDeleted.create true }
+  in
+  let events = AssignmentCommand.Cancel.handle (assignment, session) in
+  let expected =
+    Error Pool_common.Message.(IsMarkedAsDeleted Field.Assignment)
+  in
+  Test_utils.check_result expected events
+;;

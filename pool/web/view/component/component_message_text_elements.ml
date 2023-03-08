@@ -100,6 +100,7 @@ module DummyData = struct
     Session.
       { id = Pool_common.Id.create ()
       ; follow_up_to = None
+      ; has_follow_ups = false
       ; start =
           Ptime.add_span (Ptime_clock.now ()) hour
           |> CCOption.get_exn_or "Invalid start"

@@ -96,6 +96,7 @@ let rec field_to_string =
   | LogoType -> "Logo Typ"
   | Mailing -> "Versand"
   | MainSession -> "Hauptsession"
+  | MarkedAsDeleted -> "Als gelöscht markiert"
   | MaxParticipants -> "Maximum an Teilnehmern"
   | MaxTries -> "Maximum an Versuchen"
   | MessageChannel -> "Nachrichtenkanal"
@@ -132,6 +133,7 @@ let rec field_to_string =
   | RandomOrder -> "Wähle die Kontakte in zufälliger Reihenfolge."
   | Rate -> "Höchstrate"
   | Reason -> "Grund"
+  | Redirect -> "Weiterleitung"
   | RegistrationDisabled -> "Registrierung deaktiviert"
   | Required -> "Benötigt"
   | ResentAt -> "Erneut verschickt"
@@ -209,6 +211,8 @@ let success_to_string : success -> string = function
      falls die angegebene E-Mail Adresse noch verfügbar ist."
   | EmailVerified -> "E-Mail erfolgreich verifiziert."
   | FileDeleted -> "File wurde erfolgreich gelöscht."
+  | MarkedAsDeleted field ->
+    field_message "" (field_to_string field) "wurde als gelöscht markiert."
   | PasswordChanged -> "Passwort wurde geändert."
   | PasswordReset -> "Passwort ist zurückgesetzt, du kannst dich nun einloggen."
   | PasswordResetSuccessMessage ->
@@ -260,6 +264,7 @@ let rec error_to_string = function
       ""
       (field |> field_to_string |> CCString.trim)
       "wurde bereits veröffentlich."
+  | AssignmentIsCanceled -> "Anmeldung wurde abgesagt."
   | AlreadyStarted ->
     "Bereits gestarted oder beendet, aktion nicht mehr möglich."
   | AlreadyInvitedToExperiment names ->
@@ -327,6 +332,11 @@ let rec error_to_string = function
   | InvalidJson exn -> Format.asprintf "Ungültiges Json: %s" exn
   | InvalidOptionSelected -> "Ungültige Option ausgewählt."
   | InvalidHtmxRequest -> "Ungültige Anfrage."
+  | IsMarkedAsDeleted field ->
+    field_message
+      ""
+      (field |> field_to_string |> CCString.trim)
+      "wurde als gelöscht markiert."
   | LoginProvideDetails -> "Bitte Email Adresse und Passwort eintragen."
   | MeantimeUpdate field ->
     field_message
@@ -458,6 +468,7 @@ let control_to_string = function
   | Filter field -> format_submit "filtern" field
   | Login -> format_submit "login" None
   | Manage field -> format_submit "manage" (Some field)
+  | MarkAsDeleted -> format_submit "als gelöscht markieren" None
   | More -> "mehr"
   | NextPage -> "weiter"
   | PleaseSelect -> "bitte wählen"

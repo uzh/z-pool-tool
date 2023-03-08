@@ -121,6 +121,8 @@ module Field = struct
     | LogoType [@name "logo_type"] [@printer go "logo_type"]
     | Mailing [@name "mailing"] [@printer go "mailing"]
     | MainSession [@name "main_session"] [@printer go "main_session"]
+    | MarkedAsDeleted [@name "marked_as_deleted"]
+        [@printer go "marked_as_deleted"]
     | MaxParticipants [@name "max_participants"]
         [@printer go "max_participants"]
     | MaxTries [@name "max_tries"] [@printer go "max_tries"]
@@ -166,6 +168,7 @@ module Field = struct
     | RandomOrder [@name "random_order"] [@printer go "random_order"]
     | Rate [@name "rate"] [@printer go "rate"]
     | Reason [@name "reason"] [@printer go "reason"]
+    | Redirect [@name "redirect"] [@printer go "redirect"]
     | RegistrationDisabled [@name "registration_disabled"]
         [@printer go "registration_disabled"]
     | Required [@name "required"] [@printer go "required"]
@@ -251,6 +254,7 @@ type error =
   | AlreadyPublished of Field.t
   | AlreadySignedUpForExperiment
   | AlreadyStarted
+  | AssignmentIsCanceled
   | Authorization of string
   | Conformist of (Field.t * error) list
   | ConformistModuleErrorType
@@ -279,6 +283,7 @@ type error =
   | InvalidJson of string
   | InvalidHtmxRequest
   | InvalidOptionSelected
+  | IsMarkedAsDeleted of Field.t
   | LoginProvideDetails
   | MeantimeUpdate of Field.t
   | NegativeAmount
@@ -349,6 +354,7 @@ type success =
   | EmailConfirmationMessage
   | EmailVerified
   | FileDeleted
+  | MarkedAsDeleted of Field.t
   | PasswordChanged
   | PasswordReset
   | PasswordResetSuccessMessage
@@ -408,6 +414,7 @@ type control =
   | Filter of Field.t option
   | Login
   | Manage of Field.t
+  | MarkAsDeleted
   | More
   | NextPage
   | PleaseSelect

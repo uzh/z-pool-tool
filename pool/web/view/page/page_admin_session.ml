@@ -569,11 +569,13 @@ let detail
   in
   let assignments_html =
     let assignment_list =
-      Page_admin_assignments.Partials.overview_list
-        context
-        experiment.Experiment.id
-        session
-        assignments
+      Page_admin_assignments.(
+        Partials.overview_list
+          Session
+          context
+          experiment.Experiment.id
+          session
+          assignments)
     in
     div
       [ h2

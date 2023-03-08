@@ -10,6 +10,7 @@ let to_string = function
      werden, vervollständigen Sie Ihr Profil."
   | DashboardProfileCompletionTitle -> "Profilvervollständigung"
   | DashboardTitle -> "Dashboard"
+  | DeletedAssignments -> "Gelöschte Anmeldungen"
   | DontHaveAnAccount -> "Noch kein Zugang?"
   | EmailConfirmationNote ->
     "Bitte prüfen Sie zunächst Ihre E-Mails und bestätigen Sie Ihre Adresse."
@@ -135,6 +136,10 @@ let rec hint_to_string = function
      anmelden."
   | AssignContactFromWaitingList ->
     "Wählen Sie die Session, zu welcher Sie den Kontakt zuweisen wollen."
+  | AssignmentsMarkedAsClosed ->
+    "Diese Anmeldungen wurden als gelöscht markiert. Insofern die Kontakte den \
+     Experimentkriterien noch entsprechen, können Sie sich erneut an Sessions \
+     anmelden."
   | ContactOnWaitingList ->
     "Sie stehen auf der Warteliste. Das Rekrutierungsteam wird Sie einer \
      Session zuweisen."
@@ -311,6 +316,12 @@ let confirmable_to_string confirmable =
    | DeleteFile -> "die Datei", "löschen", None
    | DeleteMailing -> "den Versand", "löschen", None
    | DeleteSession -> "die Session", "löschen", None
+   | MarkAssignmentAsDeleted -> "die Anmeldung", "als gelöscht markieren", None
+   | MarkAssignmentWithFollowUpsAsDeleted ->
+     ( "die Anmeldung"
+     , "als gelöscht markieren"
+     , Some
+         "Anmeldungen an Folgesession werden ebenfalls als gelöscht markiert." )
    | PublisCustomField ->
      ( "das Feld und alle dazugehörigen Optionen"
      , "publizieren"

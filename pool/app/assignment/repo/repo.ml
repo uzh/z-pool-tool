@@ -32,6 +32,7 @@ module Sql = struct
         pool_assignments.participated,
         pool_assignments.matches_filter,
         pool_assignments.canceled_at,
+        pool_assignments.marked_as_deleted,
         pool_assignments.created_at,
         pool_assignments.updated_at
       FROM
@@ -88,6 +89,8 @@ module Sql = struct
       {sql|
         WHERE
           session_id = (SELECT id FROM pool_sessions WHERE uuid = UNHEX(REPLACE(?, '-', '')))
+        AND
+          marked_as_deleted = 0
       |sql}
     in
     where_condition
@@ -105,11 +108,32 @@ module Sql = struct
       (Pool_common.Id.value id)
   ;;
 
+  let find_deleted_by_session_request () =
+    let open Caqti_request.Infix in
+    {sql|
+        WHERE
+          session_id = (SELECT id FROM pool_sessions WHERE uuid = UNHEX(REPLACE(?, '-', '')))
+        AND
+          marked_as_deleted = 1
+      |sql}
+    |> Format.asprintf "%s\n%s" select_sql
+    |> Caqti_type.string ->* RepoEntity.t
+  ;;
+
+  let find_deleted_by_session pool id =
+    Utils.Database.collect
+      (Pool_database.Label.value pool)
+      (find_deleted_by_session_request ())
+      (Pool_common.Id.value id)
+  ;;
+
   let find_by_contact_request =
     let open Caqti_request.Infix in
     {sql|
       WHERE
         contact_id = (SELECT id FROM pool_contacts WHERE uuid = UNHEX(REPLACE(?, '-', '')))
+      AND
+        marked_as_deleted = 0
     |sql}
     |> Format.asprintf "%s\n%s" select_sql
     |> Caqti_type.string ->* RepoEntity.t
@@ -129,6 +153,8 @@ module Sql = struct
         pool_sessions.experiment_uuid = UNHEX(REPLACE(?, '-', ''))
       AND
         pool_assignments.contact_id = (SELECT id FROM pool_contacts WHERE pool_contacts.user_uuid = UNHEX(REPLACE(?, '-', '')))
+      AND
+        marked_as_deleted = 0
     |sql}
     |> Format.asprintf "%s\n%s" select_public_sql
     |> Caqti_type.(tup2 string string) ->* RepoEntity.Public.t
@@ -140,6 +166,39 @@ module Sql = struct
       find_by_experiment_and_contact_opt_request
       ( Experiment.Id.value experiment_id
       , Pool_common.Id.value (Contact.id contact) )
+  ;;
+
+  let find_with_follow_ups_request =
+    let open Caqti_request.Infix in
+    {sql|
+      WHERE
+        pool_assignments.marked_as_deleted = 0
+      AND(pool_assignments.uuid = UNHEX(REPLACE($1, '-', ''))
+        OR pool_sessions.follow_up_to = (
+          SELECT
+            pool_sessions.uuid
+          FROM
+            pool_sessions
+            INNER JOIN pool_assignments ON pool_assignments.session_id = pool_sessions.id
+          WHERE
+            pool_assignments.uuid = UNHEX(REPLACE($1, '-', ''))))
+        AND pool_assignments.contact_id = (
+          SELECT
+            pool_assignments.contact_id
+          FROM
+            pool_assignments
+          WHERE
+            pool_assignments.uuid = UNHEX(REPLACE($1, '-', '')))
+    |sql}
+    |> Format.asprintf "%s\n%s" select_sql
+    |> Caqti_type.string ->* RepoEntity.t
+  ;;
+
+  let find_with_follow_ups pool id =
+    Utils.Database.collect
+      (Pool_database.Label.value pool)
+      find_with_follow_ups_request
+      (Entity.Id.value id)
   ;;
 
   let insert_request =
@@ -163,8 +222,8 @@ module Sql = struct
         $5,
         $6,
         $7,
-        $8,
-        $9
+        $9,
+        $10
       )
     |sql}
     |> RepoEntity.t ->. Caqti_type.unit
@@ -209,6 +268,26 @@ module Sql = struct
       update_request
       (format_update m)
   ;;
+
+  let marked_as_deleted_request =
+    let open Caqti_request.Infix in
+    {sql|
+        UPDATE
+          pool_assignments
+        SET
+          marked_as_deleted = 1
+        WHERE
+          uuid = UNHEX(REPLACE($1, '-', ''))
+      |sql}
+    |> Caqti_type.(string ->. unit)
+  ;;
+
+  let marked_as_deleted pool id =
+    Utils.Database.exec
+      (Pool_database.Label.value pool)
+      marked_as_deleted_request
+      (id |> Entity.Id.value)
+  ;;
 end
 
 let contact_to_assignment pool assignment =
@@ -232,6 +311,7 @@ let find_by_session filter pool id =
     | `All -> Sql.find_by_session pool id
     | `Uncanceled ->
       Sql.find_by_session ~where_condition:uncanceled_condition pool id
+    | `Deleted -> Sql.find_deleted_by_session pool id
   in
   sql >|> Lwt_list.map_s (contact_to_assignment pool) ||> CCList.all_ok
 ;;
@@ -248,9 +328,17 @@ let find_by_contact pool contact =
   ||> CCList.all_ok
 ;;
 
+let find_with_follow_ups pool id =
+  let open Utils.Lwt_result.Infix in
+  Sql.find_with_follow_ups pool id
+  >|> Lwt_list.map_s (contact_to_assignment pool)
+  ||> CCList.all_ok
+;;
+
 let insert pool session_id model =
   model |> of_entity session_id |> Sql.insert pool
 ;;
 
 let update = Sql.update
 let find_by_experiment_and_contact_opt = Sql.find_by_experiment_and_contact_opt
+let marked_as_deleted = Sql.marked_as_deleted
