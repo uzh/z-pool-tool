@@ -43,7 +43,7 @@ let index_css req =
     in
     let* styles = Pool_tenant.find_styles database_label in
     let* file =
-      Http_utils.get_storage_file
+      Http_utils.File.get_storage_file
         ~tags
         Database.root
         (styles |> Pool_tenant.Styles.id |> Pool_common.Id.value)
@@ -151,7 +151,7 @@ let asset req =
     let asset_id =
       Sihl.Web.Router.param req Common.Message.Field.(Id |> show)
     in
-    let* file = Http_utils.get_storage_file ~tags Database.root asset_id in
+    let* file = Http_utils.File.get_storage_file ~tags Database.root asset_id in
     let%lwt content = Service.Storage.download_data_base64 file in
     let mime = file.file.mime in
     let content = content |> Base64.decode_exn in

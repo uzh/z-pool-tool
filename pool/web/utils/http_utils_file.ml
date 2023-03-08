@@ -157,3 +157,13 @@ let update_files pool files req =
   in
   result |> CCList.all_ok |> Lwt.return
 ;;
+
+let get_storage_file ?tags database_label asset_id =
+  let open Utils.Lwt_result.Infix in
+  Service.Storage.find_opt ~ctx:(Pool_tenant.to_ctx database_label) asset_id
+  ||> CCOption.to_result Pool_common.Message.(NotFound Field.File)
+  >|- fun err ->
+  Logs.warn ~src (fun m ->
+    m ?tags "A user experienced an error: File not found with id %s" asset_id);
+  err
+;;

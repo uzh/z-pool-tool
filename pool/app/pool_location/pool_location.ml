@@ -6,4 +6,4 @@ module Guard = Entity_guard
 
 let find = Repo.find
 let find_all = Repo.find_all
-let find_file_storage_blob = Repo_file_mapping.find_storage_blob
+let find_location_file = Repo_file_mapping.find

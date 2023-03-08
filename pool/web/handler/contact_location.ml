@@ -29,8 +29,15 @@ let asset req =
   let result { Pool_context.database_label; _ } =
     Utils.Lwt_result.map_error (fun err -> err, "/not-found")
     @@
+    let tags = Pool_context.Logger.Tags.req req in
     let ctx = Pool_tenant.to_ctx database_label in
-    let* file = find_file_storage_blob database_label id in
+    let* file =
+      find_location_file database_label id
+      >>= fun { Mapping.file; _ } ->
+      file.Pool_common.File.id
+      |> Pool_common.Id.value
+      |> HttpUtils.File.get_storage_file ~tags database_label
+    in
     let%lwt content = Service.Storage.download_data_base64 ~ctx file in
     let mime = file.file.mime in
     let content = content |> Base64.decode_exn in

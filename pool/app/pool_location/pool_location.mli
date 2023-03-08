@@ -266,10 +266,10 @@ val find
 
 val find_all : Pool_database.Label.t -> t list Lwt.t
 
-val find_file_storage_blob
+val find_location_file
   :  Pool_database.Label.t
   -> Pool_common.Repo.Id.t
-  -> (Sihl_storage.stored, Entity.Message.error) result Lwt.t
+  -> (Mapping.file, Entity.Message.error) result Lwt.t
 
 val default_values : t list
 
