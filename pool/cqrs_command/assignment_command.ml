@@ -43,12 +43,10 @@ end = struct
         |> Utils.bool_to_result_not
              Pool_common.Message.(DirectRegistrationIsDisabled)
       in
-      let* () =
-        CCList.fold_left
-          (fun res session ->
-            res >>= fun () -> Session.Public.assignment_creatable session)
-          (CCResult.return ())
-          command.sessions
+      let* (_ : unit list) =
+        command.sessions
+        |> CCList.map Session.Public.assignment_creatable
+        |> CCList.all_ok
       in
       let create_events =
         command.sessions
@@ -206,12 +204,10 @@ end = struct
         |> Experiment.registration_disabled_value
         |> Utils.bool_to_result_not Pool_common.Message.(RegistrationDisabled)
       in
-      let* () =
-        CCList.fold_left
-          (fun res session ->
-            res >>= fun () -> Session.assignment_creatable session)
-          (CCResult.return ())
-          command.sessions
+      let* (_ : unit list) =
+        command.sessions
+        |> CCList.map Session.assignment_creatable
+        |> CCList.all_ok
       in
       let contact = command.waiting_list.Waiting_list.contact in
       let create_events =
