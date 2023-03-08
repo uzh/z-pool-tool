@@ -37,13 +37,15 @@ let index req =
 let index_css req =
   let%lwt result =
     let open Utils.Lwt_result.Infix in
+    let tags = Pool_context.Logger.Tags.req req in
     let* { Pool_context.database_label; _ } =
       Pool_context.find req |> Lwt_result.lift
     in
     let* styles = Pool_tenant.find_styles database_label in
-    let%lwt file =
-      Service.Storage.find
-        ~ctx:(Pool_tenant.to_ctx Database.root)
+    let* file =
+      Http_utils.get_storage_file
+        ~tags
+        Database.root
         (styles |> Pool_tenant.Styles.id |> Pool_common.Id.value)
     in
     let%lwt content =
@@ -140,17 +142,33 @@ let denied req =
 ;;
 
 let asset req =
+  let open Utils.Lwt_result.Infix in
   let open Sihl.Contract.Storage in
-  let asset_id = Sihl.Web.Router.param req Common.Message.Field.(Id |> show) in
-  let%lwt file =
-    Service.Storage.find ~ctx:(Pool_tenant.to_ctx Database.root) asset_id
+  let%lwt response =
+    Utils.Lwt_result.map_error (fun err -> err, "/not-found")
+    @@
+    let tags = Pool_context.Logger.Tags.req req in
+    let asset_id =
+      Sihl.Web.Router.param req Common.Message.Field.(Id |> show)
+    in
+    let* file = Http_utils.get_storage_file ~tags Database.root asset_id in
+    let%lwt content = Service.Storage.download_data_base64 file in
+    let mime = file.file.mime in
+    let content = content |> Base64.decode_exn in
+    Sihl.Web.Response.of_plain_text content
+    |> Sihl.Web.Response.set_content_type mime
+    |> Lwt.return_ok
   in
-  let%lwt content = Service.Storage.download_data_base64 file in
-  let mime = file.file.mime in
-  let content = content |> Base64.decode_exn in
-  Sihl.Web.Response.of_plain_text content
-  |> Sihl.Web.Response.set_content_type mime
-  |> Lwt.return
+  response
+  |> function
+  | Ok response -> Lwt.return response
+  | Error (err, path) ->
+    Logs.warn ~src:(Logs.Src.create "handler.public.asset") (fun m ->
+      m
+        ~tags:(Pool_context.Logger.Tags.req req)
+        "A user experienced an error: %s"
+        (Message.Message.show_error err));
+    Http_utils.redirect_to path
 ;;
 
 let error req =
