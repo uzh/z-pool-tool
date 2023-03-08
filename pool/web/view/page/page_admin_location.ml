@@ -355,11 +355,7 @@ module FileList = struct
     @ [ add_file_btn language location_id ]
   ;;
 
-  let row
-    csrf
-    location_id
-    (Mapping.{ id; label; language; file } : Mapping.file)
-    =
+  let row csrf location_id (Mapping.{ id; label; language; _ } as file) =
     let delete_form =
       Tyxml.Html.form
         ~a:

@@ -95,7 +95,7 @@ let create ?(id = Id.create ()) name description address link status files =
 ;;
 
 let file_path file =
-  Format.asprintf "files/%s" Pool_common.(Id.value file.File.id)
+  Format.asprintf "files/%s" Mapping.(Id.value file.Mapping.id)
 ;;
 
 let contact_file_path id file =

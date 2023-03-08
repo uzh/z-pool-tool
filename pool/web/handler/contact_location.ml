@@ -22,11 +22,15 @@ let show req =
 ;;
 
 let asset req =
+  let open Utils.Lwt_result.Infix in
   let open Sihl.Contract.Storage in
+  let open Pool_location in
   let id = id req Field.File Pool_common.Id.of_string in
   let result { Pool_context.database_label; _ } =
+    Utils.Lwt_result.map_error (fun err -> err, "/not-found")
+    @@
     let ctx = Pool_tenant.to_ctx database_label in
-    let%lwt file = Service.Storage.find ~ctx (Pool_common.Id.value id) in
+    let* file = find_file_storage_blob database_label id in
     let%lwt content = Service.Storage.download_data_base64 ~ctx file in
     let mime = file.file.mime in
     let content = content |> Base64.decode_exn in

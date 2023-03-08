@@ -222,8 +222,8 @@ val create
   -> Mapping.file list
   -> (t, Pool_common.Message.error) result
 
-val contact_file_path : Id.t -> Pool_common.File.t -> string
-val admin_file_path : Id.t -> Pool_common.File.t -> string
+val contact_file_path : Id.t -> Mapping.file -> string
+val admin_file_path : Id.t -> Mapping.file -> string
 val to_string : Pool_common.Language.t -> t -> string
 
 type update =
@@ -265,6 +265,12 @@ val find
   -> (t, Pool_common.Message.error) Lwt_result.t
 
 val find_all : Pool_database.Label.t -> t list Lwt.t
+
+val find_file_storage_blob
+  :  Pool_database.Label.t
+  -> Pool_common.Repo.Id.t
+  -> (Sihl_storage.stored, Entity.Message.error) result Lwt.t
+
 val default_values : t list
 
 module Guard : sig

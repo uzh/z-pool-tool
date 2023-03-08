@@ -19,7 +19,7 @@ let show { Pool_context.language; _ } (location : Pool_location.t) =
                   (mapping.language |> Pool_common.Language.show)
               in
               let path =
-                contact_file_path location.id mapping.file
+                contact_file_path location.id mapping
                 |> Sihl.Web.externalize_path
               in
               [ a ~a:[ a_href path ] [ txt label ] ])
