@@ -315,7 +315,8 @@ let confirmable_to_string confirmable =
    | DeleteFile -> "die Datei", "löschen", None
    | DeleteMailing -> "den Versand", "löschen", None
    | DeleteSession -> "die Session", "löschen", None
-   | MarkAssignmentAsDeleted ->
+   | MarkAssignmentAsDeleted -> "die Anmeldung", "als gelöscht markieren", None
+   | MarkAssignmentWithFollowUpsAsDeleted ->
      ( "die Anmeldung"
      , "als gelöscht markieren"
      , Some

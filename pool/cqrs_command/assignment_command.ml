@@ -256,7 +256,7 @@ end = struct
     : (Pool_event.t list, Pool_common.Message.error) result
     =
     let open CCResult in
-    Logs.info ~src (fun m -> m "Handle command MarkAsDeleted" ~tags);
+    Logs.info ~src (fun m -> m ~tags "Handle command MarkAsDeleted");
     let* (_ : unit list) =
       CCList.map Assignment.is_deletable assignments |> CCList.all_ok
     in

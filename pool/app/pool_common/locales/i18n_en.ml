@@ -306,7 +306,8 @@ let confirmable_to_string confirmable =
      ( "field an all associated options"
      , "publish"
      , Some "You will not be able to delete it field anymore." )
-   | MarkAssignmentAsDeleted ->
+   | MarkAssignmentAsDeleted -> "assignment as deleted", "mark", None
+   | MarkAssignmentWithFollowUpsAsDeleted ->
      ( "assignment as deleted"
      , "mark"
      , Some

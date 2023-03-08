@@ -166,6 +166,7 @@ type confirmable =
   | DeleteMailing
   | DeleteSession
   | MarkAssignmentAsDeleted
+  | MarkAssignmentWithFollowUpsAsDeleted
   | PublisCustomField
   | PublisCustomFieldOption
   | StopMailing

@@ -26,6 +26,7 @@ module Sql = struct
             SUBSTR(HEX(pool_sessions.follow_up_to), 17, 4), '-',
             SUBSTR(HEX(pool_sessions.follow_up_to), 21)
           )),
+          (SELECT EXISTS (SELECT 1 FROM pool_sessions as s WHERE s.follow_up_to = pool_sessions.uuid LIMIT 1)),
           pool_sessions.start,
           pool_sessions.duration,
           pool_sessions.description,

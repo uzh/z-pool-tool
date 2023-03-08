@@ -63,7 +63,7 @@ module Partials = struct
     session
     assignments
     =
-    let deletable m = m |> Assignment.is_deletable |> CCResult.is_ok in
+    let deletable = CCFun.(Assignment.is_deletable %> CCResult.is_ok) in
     let cancelable m =
       Session.assignments_cancelable session |> CCResult.is_ok
       && Assignment.is_cancellable m |> CCResult.is_ok
@@ -104,11 +104,12 @@ module Partials = struct
     in
     let mark_as_deleted =
       let open Pool_common in
-      (* TODO[timhub]: Add hint, only if this assignment has a follow-up
-         assignment? Or only if this session has follow-up session *)
       button_form
         "mark-as-deleted"
-        I18n.MarkAssignmentAsDeleted
+        I18n.(
+          if session.Session.has_follow_ups
+          then MarkAssignmentWithFollowUpsAsDeleted
+          else MarkAssignmentAsDeleted)
         Message.MarkAsDeleted
         `Trash
     in

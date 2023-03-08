@@ -98,28 +98,27 @@ let cancel req =
   let%lwt _, assignment_id, redirect_path = ids_and_redirect_from_req req in
   let result { Pool_context.database_label; _ } =
     Utils.Lwt_result.map_error (fun err -> err, redirect_path)
-    @@ let* assignment = Assignment.find database_label assignment_id in
-       let* session =
-         Session.find_by_assignment database_label assignment.Assignment.id
-       in
-       let tags = Pool_context.Logger.Tags.req req in
-       let events =
-         Cqrs_command.Assignment_command.Cancel.handle
-           ~tags
-           (assignment, session)
-         |> Lwt.return
-       in
-       let handle events =
-         let%lwt () =
-           Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
-         in
-         Http_utils.redirect_to_with_actions
-           redirect_path
-           [ Message.set
-               ~success:[ Pool_common.Message.(Canceled Field.Assignment) ]
-           ]
-       in
-       events |>> handle
+    @@
+    let tags = Pool_context.Logger.Tags.req req in
+    let* assignment = Assignment.find database_label assignment_id in
+    let* session =
+      Session.find_by_assignment database_label assignment.Assignment.id
+    in
+    let events =
+      Cqrs_command.Assignment_command.Cancel.handle ~tags (assignment, session)
+      |> Lwt.return
+    in
+    let handle events =
+      let%lwt () =
+        Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
+      in
+      Http_utils.redirect_to_with_actions
+        redirect_path
+        [ Message.set
+            ~success:[ Pool_common.Message.(Canceled Field.Assignment) ]
+        ]
+    in
+    events |>> handle
   in
   result |> HttpUtils.extract_happy_path req
 ;;
@@ -129,26 +128,26 @@ let mark_as_deleted req =
   let%lwt _, assignment_id, redirect_path = ids_and_redirect_from_req req in
   let result { Pool_context.database_label; _ } =
     Utils.Lwt_result.map_error (fun err -> err, redirect_path)
-    @@ let* assignments =
-         Assignment.find_with_follow_ups database_label assignment_id
-       in
-       let tags = Pool_context.Logger.Tags.req req in
-       let events =
-         Cqrs_command.Assignment_command.MarkAsDeleted.handle ~tags assignments
-         |> Lwt.return
-       in
-       let handle events =
-         let%lwt () =
-           Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
-         in
-         Http_utils.redirect_to_with_actions
-           redirect_path
-           [ Message.set
-               ~success:
-                 [ Pool_common.Message.(MarkedAsDeleted Field.Assignment) ]
-           ]
-       in
-       events |>> handle
+    @@
+    let tags = Pool_context.Logger.Tags.req req in
+    let* assignments =
+      Assignment.find_with_follow_ups database_label assignment_id
+    in
+    let events =
+      Cqrs_command.Assignment_command.MarkAsDeleted.handle ~tags assignments
+      |> Lwt.return
+    in
+    let handle events =
+      let%lwt () =
+        Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
+      in
+      Http_utils.redirect_to_with_actions
+        redirect_path
+        [ Message.set
+            ~success:[ Pool_common.Message.(MarkedAsDeleted Field.Assignment) ]
+        ]
+    in
+    events |>> handle
   in
   result |> HttpUtils.extract_happy_path req
 ;;

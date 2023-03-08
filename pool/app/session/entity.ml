@@ -107,6 +107,7 @@ end
 type t =
   { id : Pool_common.Id.t
   ; follow_up_to : Pool_common.Id.t option
+  ; has_follow_ups : bool
   ; start : Start.t
   ; duration : Ptime.Span.t
   ; description : Description.t option
@@ -140,6 +141,7 @@ type t =
 let create
   ?id
   ?follow_up_to
+  ?(has_follow_ups = false)
   start
   duration
   description
@@ -151,6 +153,7 @@ let create
   =
   { id = id |> CCOption.value ~default:(Pool_common.Id.create ())
   ; follow_up_to
+  ; has_follow_ups
   ; start
   ; duration
   ; description

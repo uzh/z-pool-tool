@@ -86,6 +86,7 @@ end
 type t =
   { id : Pool_common.Id.t
   ; follow_up_to : Pool_common.Id.t option
+  ; has_follow_ups : bool
   ; start : Start.t
   ; duration : Duration.t
   ; description : Description.t option
