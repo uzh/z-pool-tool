@@ -7,10 +7,16 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 ### Added
 
 - reply-to address to emails, using tenant contact email address (system settings)
+- buttons to reset forms
 
 ### Changed
 
 - when signing up for a session with follow-ups, the contact receives one confirmation message containing all sessions
+### Fixed
+
+- filter by boolean fields
+- custom fields with the option 'admin_view_only' will automatically have 'admin_input_only' set to true
+- partial update of 'admin_view_only' fields
 
 ## [0.1.3](https://github.com/uzh/pool/tree/0.1.3) - 2023-03-01
 
