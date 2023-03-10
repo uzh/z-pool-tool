@@ -1,7 +1,8 @@
 module PoolField = Pool_common.Message.Field
 module HttpUtils = Http_utils
 
-let parse_urlencoded req database_label language urlencoded contact_id =
+let parse_urlencoded ~is_admin req database_label language urlencoded contact_id
+  =
   let open Pool_common.Message in
   let open Utils.Lwt_result.Infix in
   let find_param_list name =
@@ -31,7 +32,7 @@ let parse_urlencoded req database_label language urlencoded contact_id =
       field_id
       |> CCOption.to_result InvalidHtmxRequest
       |> Lwt_result.lift
-      >>= Custom_field.find_by_contact database_label contact_id
+      >>= Custom_field.find_by_contact ~is_admin database_label contact_id
       >|+ fun f -> Custom_field.Public.to_common_field language f
   in
   let* version =
@@ -96,6 +97,7 @@ let update ?contact req =
     in
     let* field, version, value, field_id =
       parse_urlencoded
+        ~is_admin
         req
         database_label
         language
@@ -193,7 +195,7 @@ let update ?contact req =
                field_id
                |> CCOption.to_result InvalidHtmxRequest
                |> Lwt_result.lift
-               >>= find_by_contact database_label (Contact.id contact)
+               >>= find_by_contact ~is_admin database_label (Contact.id contact)
              in
              (match field with
               | Error error ->
