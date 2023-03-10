@@ -259,6 +259,18 @@ let index
   =
   let open Pool_common in
   let experiment_id = experiment.Experiment.id in
+  let follow_up_icon () =
+    span
+      ~a:[ a_class [ "font-bold" ] ]
+      [ abbr
+          ~a:
+            [ a_title
+                (Utils.field_to_string language Message.Field.FollowUpSession)
+            ]
+          [ txt "(F)" ]
+      ]
+  in
+  let chronological_id = "chronological-sessions" in
   let add_session_btn =
     link_as_button
       ~style:`Success
@@ -304,13 +316,25 @@ let index
                 ~submit_type:`Disabled
                 ()
           in
-          let attrs =
-            if CCOption.is_some session.follow_up_to && not chronological
-            then [ a_class [ "inset"; "left" ] ]
-            else []
+          let row_attrs =
+            let id = a_user_data "id" (Pool_common.Id.value session.id) in
+            session.follow_up_to
+            |> CCOption.map (fun parent ->
+                 a_user_data "parent-id" (Pool_common.Id.value parent))
+            |> CCOption.map_or ~default:[ id ] (fun parent -> [ id; parent ])
+          in
+          let title =
+            let date = span [ txt (session |> session_date_to_human) ] in
+            match CCOption.is_some session.follow_up_to, chronological with
+            | false, true | false, false -> date
+            | true, true ->
+              div
+                ~a:[ a_class [ "flexrow"; "flex-gap-sm" ] ]
+                [ date; follow_up_icon () ]
+            | true, false -> div ~a:[ a_class [ "inset"; "left" ] ] [ date ]
           in
           Session.
-            [ div ~a:attrs [ txt (session |> session_date_to_human) ]
+            [ title
             ; txt
                 (CCInt.to_string
                    (session.assignment_count |> AssignmentCount.value))
@@ -344,6 +368,8 @@ let index
                 ; delete_form
                 ]
             ]
+          |> CCList.map CCFun.(CCList.return %> td)
+          |> tr ~a:row_attrs
         in
         session_row parent follow_ups
         :: CCList.map CCFun.(flip session_row []) follow_ups)
@@ -360,6 +386,50 @@ let index
       ]
       |> Table.fields_to_txt language)
     @ [ add_session_btn ]
+    |> Component.Table.table_head
+  in
+  let table =
+    let id = if chronological then [ a_id chronological_id ] else [] in
+    table
+      ~a:([ a_class [ "table"; "striped"; "align-last-end" ] ] @ id)
+      ~thead
+      rows
+  in
+  let hover_script =
+    match chronological with
+    | false -> txt ""
+    | true ->
+      let js =
+        {js|
+          const highlight = "highlighted";
+
+          document.addEventListener("DOMContentLoaded", () => {
+            const table = document.getElementById("chronological-sessions");
+            const toggleClass = (e) => {
+              const { id, parentId } = e.currentTarget.dataset;
+              if (parentId) {
+                table
+                  .querySelector(`[data-id='${parentId}']`)
+                  .classList.toggle(highlight);
+              } else {
+                table.querySelectorAll(`[data-parent-id='${id}']`).forEach((tr) => {
+                  tr.classList.toggle(highlight);
+                });
+              }
+              e.currentTarget.classList.toggle(highlight);
+            };
+            table.querySelectorAll("tbody tr").forEach((row) => {
+              row.addEventListener("mouseenter", (e) => {
+                toggleClass(e);
+              });
+              row.addEventListener("mouseleave", (e) => {
+                toggleClass(e);
+              });
+            });
+          });
+      |js}
+      in
+      script (Unsafe.data js)
   in
   let html =
     div
@@ -374,16 +444,23 @@ let index
                    (if chronological then "" else "?chronological=true")
                  |> Sihl.Web.externalize_path)
             ]
-          [ p
-              [ (if chronological
-                 then I18n.SwitchGrouped
-                 else I18n.SwitchChronological)
-                |> Utils.text_to_string language
-                |> txt
-              ]
+          [ (if chronological
+             then I18n.SwitchGrouped
+             else I18n.SwitchChronological)
+            |> Utils.text_to_string language
+            |> txt
           ]
         (* TODO [aerben] allow tables to be sorted generally? *)
-      ; Table.horizontal_table `Striped ~align_last_end:true ~thead rows
+      ; (if chronological
+         then
+           p
+             [ txt "Sessions marked with "
+             ; follow_up_icon ()
+             ; txt " are follow-up sessions."
+             ]
+         else txt "")
+      ; table
+      ; hover_script
       ]
   in
   Page_admin_experiments.experiment_layout

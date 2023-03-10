@@ -1,3 +1,4 @@
+@use "sass:color";
 $icons-font-path: "../node_modules/@econ/frontend-framework/dist/font";
 @import "../node_modules/@econ/frontend-framework/dist/main.scss";
 
@@ -109,10 +110,6 @@ $icons-font-path: "../node_modules/@econ/frontend-framework/dist/font";
     flex-basis: 100%;
 }
 
-.inline-flex {
-    display: inline-flex;
-}
-
 abbr[title] {
     text-decoration: none;
 }
@@ -129,4 +126,9 @@ abbr[title] {
 // Typography
 .nobr {
     white-space: nowrap;
+}
+
+
+.table>tbody>tr:nth-child(1n).highlighted {
+    background-color: color.adjust($color-primary, $lightness: 65%);
 }
