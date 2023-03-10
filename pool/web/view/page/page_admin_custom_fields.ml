@@ -476,13 +476,17 @@ let field_form
       ]
     |> CCList.map (fun (hint, field_type) ->
          let hidden =
-           field_type_opt
-           |> CCOption.map_or
-                ~default:true
-                CCFun.(FieldType.(equal Text) %> not)
-           |> function
-           | true -> [ "hidden" ]
-           | false -> []
+           let published =
+             custom_field
+             |> CCOption.map_or
+                  ~default:false
+                  (Custom_field.published_at %> CCOption.is_some)
+           in
+           let equal_type =
+             field_type_opt
+             |> CCOption.map_or ~default:false FieldType.(equal field_type)
+           in
+           if published || not equal_type then [ "hidden" ] else []
          in
          div
            ~a:
