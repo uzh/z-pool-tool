@@ -317,16 +317,19 @@ let experiment_form
         ]
     ; div
         ~a:[ a_class [ "flexrow" ] ]
-        [ submit_element
-            ~classnames:[ "push" ]
-            language
-            Message.(
-              let field = Some Field.Experiment in
-              match experiment with
-              | None -> Create field
-              | Some _ -> Update field)
-            ~submit_type:`Primary
-            ()
+        [ div
+            ~a:[ a_class [ "push"; "flexrow"; "flex-gap-lg" ] ]
+            [ reset_form_button language
+            ; submit_element
+                language
+                Message.(
+                  let field = Some Field.Experiment in
+                  match experiment with
+                  | None -> Create field
+                  | Some _ -> Update field)
+                ~submit_type:`Primary
+                ()
+            ]
         ]
     ]
 ;;

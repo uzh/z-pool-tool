@@ -301,10 +301,10 @@
     "@ckeditor/ckeditor5-utils" "^36.0.1"
     lodash-es "^4.17.15"
 
-"@econ/frontend-framework@^1.0.10":
-  version "1.0.10"
-  resolved "https://gitlab.uzh.ch/api/v4/projects/662/packages/npm/@econ/frontend-framework/-/@econ/frontend-framework-1.0.10.tgz#6de5914856cc5ca9e0e4c3f3f28b972531dfaea2"
-  integrity sha1-beWRSFbMXKng5MPz8ouXJTHfrqI=
+"@econ/frontend-framework@^1.0.11":
+  version "1.0.11"
+  resolved "https://gitlab.uzh.ch/api/v4/projects/662/packages/npm/@econ/frontend-framework/-/@econ/frontend-framework-1.0.11.tgz#1312410b275c8217064f8cd6c0d980a064c14194"
+  integrity sha1-ExJBCydcghcGT4zWwNmAoGTBQZQ=
   dependencies:
     fantasticon "^1.2.3"
     minify "^8.0.0"

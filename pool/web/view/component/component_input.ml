@@ -662,3 +662,14 @@ let multi_select
            (div ~a:[ a_class [ "flex-basis-100" ] ])
     ]
 ;;
+
+let reset_form_button language =
+  span
+    ~a:
+      [ a_class [ "has-icon"; "color-red"; "pointer" ]
+      ; a_user_data "reset-form" ""
+      ]
+    [ Component_icon.icon `RefreshOutline
+    ; txt Pool_common.(Utils.control_to_string language Message.Reset)
+    ]
+;;

@@ -608,16 +608,19 @@ let field_form
           ; checkbox_element Message.Field.Disabled (disabled %> Disabled.value)
           ; div
               ~a:[ a_class [ "flexrow" ] ]
-              [ submit_element
-                  ~classnames:[ "push" ]
-                  language
-                  Message.(
-                    let field = Some Field.CustomField in
-                    match custom_field with
-                    | None -> Create field
-                    | Some _ -> Update field)
-                  ~submit_type:`Primary
-                  ()
+              [ div
+                  ~a:[ a_class [ "push"; "flexrow"; "flex-gap-lg" ] ]
+                  [ reset_form_button language
+                  ; submit_element
+                      language
+                      Message.(
+                        let field = Some Field.CustomField in
+                        match custom_field with
+                        | None -> Create field
+                        | Some _ -> Update field)
+                      ~submit_type:`Primary
+                      ()
+                  ]
               ]
           ]
       ; (Format.asprintf

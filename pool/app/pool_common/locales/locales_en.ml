@@ -446,6 +446,7 @@ let control_to_string = function
   | Reschedule field -> format_submit "reschedule" field
   | Resend field -> format_submit "resend" field
   | Reset -> "reset"
+  | ResetForm -> "reset form"
   | ResetPlainText ->
     Format.asprintf
       "Reset %s to rich '%s'"

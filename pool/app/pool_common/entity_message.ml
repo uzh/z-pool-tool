@@ -426,6 +426,7 @@ type control =
   | Resend of Field.t option
   | ResetPlainText
   | Reset
+  | ResetForm
   | Save of Field.t option
   | SelectAll of Field.t option
   | SelectFilePlaceholder
