@@ -43,7 +43,7 @@ let add_value_to_params operator value dyn =
   in
   let add c v = Dynparam.add c v dyn in
   match value with
-  | Bool b -> add Caqti_type.bool b
+  | Bool b -> add Caqti_type.string (Utils.Bool.to_string b)
   | Date d -> add Caqti_type.ptime d
   | Language lang -> add Caqti_type.string (Pool_common.Language.show lang)
   | Nr n -> add Caqti_type.float n
