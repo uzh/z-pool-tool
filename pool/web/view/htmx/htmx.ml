@@ -148,6 +148,7 @@ let create
   | Boolean boolean ->
     Input.checkbox_element
       ~as_switch:true
+      ~switcher_class:input_class
       ~additional_attributes:(additional_attributes ())
       ?append_html
       ~classnames

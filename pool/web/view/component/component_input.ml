@@ -251,6 +251,7 @@ let timespan_picker
 let checkbox_element
   ?(additional_attributes = [])
   ?(as_switch = false)
+  ?(switcher_class = [])
   ?(classnames = [])
   ?error
   ?flash_fetcher
@@ -295,7 +296,7 @@ let checkbox_element
       then
         div
           [ label
-              ~a:[ a_class [ "switch" ] ]
+              ~a:[ a_class ("switch" :: switcher_class) ]
               [ base; span ~a:[ a_class [ "slider" ] ] [] ]
           ]
       else base
