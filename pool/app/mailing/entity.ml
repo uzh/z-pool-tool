@@ -185,31 +185,33 @@ let equal m1 m2 =
      |> CCOption.get_or ~default:false
 ;;
 
-let create ?(id = Id.create ()) start_at start_now end_at rate distribution =
+let validate_start end_at start =
   let open CCResult in
   let* start_at =
-    match start_at with
-    | Some start_at ->
+    match start with
+    | `StartAt start_at ->
       if Ptime.is_earlier ~than:(Ptime_clock.now ()) start_at
       then Error Pool_common.Message.TimeInPast
       else Ok start_at
-    | None ->
-      if start_now
-      then StartAt.create (Ptime_clock.now ())
-      else Error Pool_common.Message.(NotFound Field.Start)
+    | `StartNow -> StartAt.create (Ptime_clock.now ())
   in
   if Ptime.is_later ~than:end_at start_at
   then Error Pool_common.Message.EndBeforeStart
-  else
-    Ok
-      { id
-      ; start_at
-      ; end_at
-      ; rate
-      ; distribution
-      ; created_at = Pool_common.CreatedAt.create ()
-      ; updated_at = Pool_common.UpdatedAt.create ()
-      }
+  else Ok start_at
+;;
+
+let create ?(id = Id.create ()) start end_at rate distribution =
+  let open CCResult in
+  let* start_at = validate_start end_at start in
+  Ok
+    { id
+    ; start_at
+    ; end_at
+    ; rate
+    ; distribution
+    ; created_at = Pool_common.CreatedAt.create ()
+    ; updated_at = Pool_common.UpdatedAt.create ()
+    }
 ;;
 
 let seconds_per_minute = 60

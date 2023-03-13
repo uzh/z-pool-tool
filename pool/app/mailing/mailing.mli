@@ -140,10 +140,14 @@ val equal : t -> t -> bool
 val per_minutes : CCInt.t -> t -> CCFloat.t
 val total : t -> int
 
+val validate_start
+  :  EndAt.t
+  -> [< `StartAt of StartAt.t | `StartNow ]
+  -> (StartAt.t, Pool_common.Message.error) result
+
 val create
   :  ?id:Id.t
-  -> StartAt.t option
-  -> StartNow.t
+  -> [< `StartAt of StartAt.t | `StartNow ]
   -> EndAt.t
   -> Rate.t
   -> Distribution.t option

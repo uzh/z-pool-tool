@@ -13,13 +13,10 @@ type create =
 [@@deriving eq, show]
 
 let define_start start_at start_now =
-  let open CCResult in
-  match start_at with
-  | Some start -> Ok start
-  | None ->
-    if StartNow.value start_now
-    then StartAt.create (Ptime_clock.now ())
-    else Error Pool_common.Message.(NotFound Field.Start)
+  match StartNow.value start_now, start_at with
+  | true, _ -> Ok `StartNow
+  | false, Some start_at -> Ok (`StartAt start_at)
+  | false, None -> Error Pool_common.Message.(NotFound Field.Start)
 ;;
 
 let src = Logs.Src.create "mailing.cqrs"
@@ -74,10 +71,8 @@ end = struct
     =
     Logs.info ~src (fun m -> m "Handle command CreateOperator" ~tags);
     let open CCResult in
-    let* mailing =
-      Mailing.create ~id start_at start_now end_at rate distribution
-    in
-    Logs.info (fun m -> m "MAILING: %s" (Mailing.show mailing));
+    let* start_at = define_start start_at start_now in
+    let* mailing = Mailing.create ~id start_at end_at rate distribution in
     Ok
       [ Mailing.Created (mailing, experiment.Experiment.id)
         |> Pool_event.mailing
@@ -118,14 +113,9 @@ end = struct
     =
     let open CCResult in
     Logs.info ~src (fun m -> m "Handle command Update" ~tags);
-    let* () =
-      match
-        Ptime_clock.now () < Mailing.StartAt.value mailing.Mailing.start_at
-      with
-      | true -> Ok ()
-      | false -> Error Pool_common.Message.AlreadyStarted
+    let* start_at =
+      define_start start_at start_now >>= Mailing.validate_start end_at
     in
-    let* start_at = define_start start_at start_now in
     let update = { start_at; end_at; rate; distribution } in
     match Ptime_clock.now () < Mailing.StartAt.value start_at with
     | true -> Ok [ Mailing.Updated (update, mailing) |> Pool_event.mailing ]
@@ -239,8 +229,7 @@ end = struct
     let open CCResult in
     Mailing.create
       ?id
-      (Some start_at)
-      (StartNow.create false)
+      (`StartAt start_at)
       end_at
       (CCOption.get_or ~default:Mailing.Rate.default rate)
       distribution

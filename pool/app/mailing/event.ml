@@ -1,9 +1,5 @@
 open Entity
 
-(* type create = { start_at : StartAt.t option ; start_now : StartNow.t ; end_at
-   : EndAt.t ; rate : Rate.t ; distribution : Distribution.t option }
-   [@@deriving eq, show] *)
-
 type update =
   { start_at : StartAt.t
   ; end_at : EndAt.t

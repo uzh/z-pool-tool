@@ -259,13 +259,7 @@ module Model = struct
       |> Mailing.EndAt.create
       |> get_or_failwith_pool_error
     in
-    Mailing.create
-      ?id
-      (Some start)
-      (Mailing.StartNow.create false)
-      deadline
-      rate
-      None
+    Mailing.create ?id (`StartAt start) deadline rate None
     |> get_or_failwith_pool_error
   ;;
 
