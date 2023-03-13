@@ -16,7 +16,8 @@ let define_start start_at start_now =
   match StartNow.value start_now, start_at with
   | true, _ -> Ok `StartNow
   | false, Some start_at -> Ok (`StartAt start_at)
-  | false, None -> Error Pool_common.Message.(NotFound Field.Start)
+  | false, None ->
+    Error Pool_common.Message.(Conformist [ Field.Start, NoValue ])
 ;;
 
 let src = Logs.Src.create "mailing.cqrs"
