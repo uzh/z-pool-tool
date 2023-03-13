@@ -161,6 +161,7 @@ let rec field_to_string =
   | SmtpUsername -> "Benutzername"
   | SortOrder -> "Sortierung"
   | Start -> "Start"
+  | StartNow -> "Jetzt starten"
   | Status -> "Status"
   | Street -> "Strasse"
   | Styles -> "Styles"

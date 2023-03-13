@@ -84,13 +84,17 @@ let create_mailing () =
     }
 ;;
 
+let mailing_boolean_fields =
+  Field.([ StartNow; RandomOrder ] |> CCList.map show)
+;;
+
 let create () =
   let open MailingCommand.Create in
   let experiment = Model.create_experiment () in
   let mailing = create_mailing () in
   let events =
     Data.Mailing.create
-    |> Http_utils.format_request_boolean_values Field.[ RandomOrder |> show ]
+    |> Http_utils.format_request_boolean_values mailing_boolean_fields
     |> Http_utils.remove_empty_values
     |> decode
     |> get_or_failwith
@@ -137,10 +141,8 @@ let create_with_distribution () =
     ; show Field.Distribution, distribution
     ]
     |> CCList.map (fun (field, value) -> field, [ value ])
-    |> Http_utils.format_request_boolean_values Field.[ RandomOrder |> show ]
+    |> Http_utils.format_request_boolean_values mailing_boolean_fields
   in
-  (* let () = let encoded = urlencoded () |> Pool_common.Utils.get_or_failwith
-     in raise (Failure ([%show: (string * string list) list] encoded)) in *)
   let events =
     () |> urlencoded >>= decode >>= handle ~id:Data.Mailing.id experiment
   in
@@ -158,7 +160,7 @@ let create_end_before_start () =
   let experiment = Model.create_experiment () in
   let events =
     Data.Mailing.create_end_before_start
-    |> Http_utils.format_request_boolean_values Field.[ RandomOrder |> show ]
+    |> Http_utils.format_request_boolean_values mailing_boolean_fields
     |> Http_utils.remove_empty_values
     |> decode
     |> get_or_failwith

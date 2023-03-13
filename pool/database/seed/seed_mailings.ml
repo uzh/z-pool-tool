@@ -39,7 +39,8 @@ let generate_events (experiments : Experiment.Id.t list) =
     (fun index start ->
       Mailing.Created
         ( Mailing.create
-            start
+            (Some start)
+            (false |> Mailing.StartNow.create)
             (generate_end start (index mod 3))
             (generate_rate (index mod 8))
             None

@@ -12,6 +12,12 @@ module StartAt = struct
   let schema = schema field create
 end
 
+module StartNow = struct
+  include Pool_common.Model.Boolean
+
+  let schema = schema Pool_common.Message.Field.StartNow
+end
+
 module EndAt = struct
   include Pool_common.Model.Ptime
 
@@ -179,11 +185,21 @@ let equal m1 m2 =
      |> CCOption.get_or ~default:false
 ;;
 
-let create ?(id = Id.create ()) start_at end_at rate distribution =
+let create ?(id = Id.create ()) start_at start_now end_at rate distribution =
+  let open CCResult in
+  let* start_at =
+    match start_at with
+    | Some start_at ->
+      if Ptime.is_earlier ~than:(Ptime_clock.now ()) start_at
+      then Error Pool_common.Message.TimeInPast
+      else Ok start_at
+    | None ->
+      if start_now
+      then StartAt.create (Ptime_clock.now ())
+      else Error Pool_common.Message.(NotFound Field.Start)
+  in
   if Ptime.is_later ~than:end_at start_at
   then Error Pool_common.Message.EndBeforeStart
-  else if Ptime.is_earlier ~than:(Ptime_clock.now ()) start_at
-  then Error Pool_common.Message.TimeInPast
   else
     Ok
       { id

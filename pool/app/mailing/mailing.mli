@@ -16,6 +16,10 @@ module StartAt : sig
     -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
 end
 
+module StartNow : sig
+  include Pool_common.Model.BooleanSig
+end
+
 module EndAt : sig
   include Pool_common.Model.BaseSig
 
@@ -138,7 +142,8 @@ val total : t -> int
 
 val create
   :  ?id:Id.t
-  -> StartAt.t
+  -> StartAt.t option
+  -> StartNow.t
   -> EndAt.t
   -> Rate.t
   -> Distribution.t option
