@@ -23,6 +23,10 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 - canceled assignments are not included in assignment count anymore
 - canceled assignments are no longer shown on the contact dashboard
 
+### Fixed
+
+- do not include canceled assignments in session assignment_count
+
 ## [0.1.3](https://github.com/uzh/pool/tree/0.1.3) - 2023-03-01
 
 ### Added

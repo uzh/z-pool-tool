@@ -51,7 +51,8 @@ module Sql = struct
           pool_sessions.updated_at
         FROM pool_sessions
         LEFT JOIN pool_assignments
-          ON pool_assignments.session_uuid = pool_sessions.uuid
+          ON pool_assignments.session_uuid = pool_sessions.id
+          AND pool_assignments.canceled_at IS NULL
           AND pool_assignments.marked_as_deleted = 0
         INNER JOIN pool_locations
           ON pool_locations.id = pool_sessions.location_id
