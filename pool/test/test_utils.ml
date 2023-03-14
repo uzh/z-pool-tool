@@ -175,10 +175,10 @@ module Model = struct
         })
   ;;
 
-  let create_experiment () =
+  let create_experiment ?(id = Experiment.Id.create ()) () =
     let show_error err = Pool_common.(Utils.error_to_string Language.En err) in
     Experiment.
-      { id = Experiment.Id.create ()
+      { id
       ; title =
           Title.create "An Experiment"
           |> CCResult.map_err show_error
@@ -286,12 +286,15 @@ module Model = struct
     |> Session.Start.create
   ;;
 
-  let in_an_hour () =
-    let hour = Ptime.Span.of_int_s @@ (60 * 60) in
-    Ptime.add_span (Ptime_clock.now ()) hour
+  let session_start_in timespan =
+    timespan
+    |> Ptime.add_span (Ptime_clock.now ())
     |> CCOption.get_exn_or "Invalid start"
     |> Session.Start.create
   ;;
+
+  let in_an_hour () = Ptime.Span.of_int_s @@ (60 * 60) |> session_start_in
+  let in_two_hours () = Ptime.Span.of_int_s @@ (60 * 60 * 2) |> session_start_in
 
   let create_session ?(id = Pool_common.Id.create ()) ?follow_up_to ?start () =
     let open Session in
@@ -352,6 +355,30 @@ module Model = struct
       ; overbook
       ; assignment_count
       ; canceled_at
+      }
+  ;;
+
+  let session_to_session_base
+    ({ Session.start
+     ; duration
+     ; description
+     ; max_participants
+     ; min_participants
+     ; overbook
+     ; reminder_lead_time
+     ; _
+     } :
+      Session.t)
+    : Session.base
+    =
+    Session.
+      { start
+      ; duration
+      ; description
+      ; max_participants
+      ; min_participants
+      ; overbook
+      ; reminder_lead_time
       }
   ;;
 
@@ -421,9 +448,9 @@ module Model = struct
 end
 
 module Repo = struct
-  let create_contact pool () =
+  let create_contact ?(with_terms_accepted = false) pool () =
     let open Utils.Lwt_result.Infix in
-    let contact = Model.create_contact ~with_terms_accepted:false () in
+    let contact = Model.create_contact ~with_terms_accepted () in
     let verified =
       if contact.Contact.user.Sihl_user.confirmed
       then Contact.[ Verified contact ]
@@ -448,5 +475,30 @@ module Repo = struct
       |> Lwt_list.iter_s (Contact.handle_event pool)
     in
     contact |> Contact.id |> Contact.find pool ||> get_or_failwith_pool_error
+  ;;
+
+  let all_experiments () =
+    let open Utils.Lwt_result.Infix in
+    Experiment.find_all Data.database_label () ||> fst
+  ;;
+
+  let first_experiment () =
+    let open Utils.Lwt_result.Infix in
+    all_experiments () ||> CCList.hd
+  ;;
+
+  let create_experiment ?(id = Experiment.Id.create ()) () =
+    let experiment = Model.create_experiment ~id () in
+    let%lwt () =
+      Experiment.Created experiment
+      |> Pool_event.experiment
+      |> Pool_event.handle_event Data.database_label
+    in
+    Lwt.return experiment
+  ;;
+
+  let first_location () =
+    let open Utils.Lwt_result.Infix in
+    Pool_location.find_all Data.database_label ||> CCList.hd
   ;;
 end
