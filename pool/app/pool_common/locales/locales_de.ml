@@ -485,6 +485,7 @@ let control_to_string = function
       (field_to_string Field.EmailText)
   | Resend field -> format_submit "erneut senden" field
   | Reset -> "zurücksetzen"
+  | ResetForm -> "Formular zurücksetzen"
   | Save field -> format_submit "speichern" field
   | SelectAll field -> format_submit "alle auswählen" field
   | SelectFilePlaceholder -> format_submit "datei auswählen.." None

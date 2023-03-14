@@ -546,6 +546,7 @@ let create
   =
   let open CCResult in
   let required = if admin_input_only then false else required in
+  let admin_input_only = admin_view_only || admin_input_only in
   match (field_type : FieldType.t) with
   | FieldType.Boolean ->
     Ok

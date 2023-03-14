@@ -476,13 +476,17 @@ let field_form
       ]
     |> CCList.map (fun (hint, field_type) ->
          let hidden =
-           field_type_opt
-           |> CCOption.map_or
-                ~default:true
-                CCFun.(FieldType.(equal Text) %> not)
-           |> function
-           | true -> [ "hidden" ]
-           | false -> []
+           let published =
+             custom_field
+             |> CCOption.map_or
+                  ~default:false
+                  (Custom_field.published_at %> CCOption.is_some)
+           in
+           let equal_type =
+             field_type_opt
+             |> CCOption.map_or ~default:false FieldType.(equal field_type)
+           in
+           if published || not equal_type then [ "hidden" ] else []
          in
          div
            ~a:
@@ -604,16 +608,19 @@ let field_form
           ; checkbox_element Message.Field.Disabled (disabled %> Disabled.value)
           ; div
               ~a:[ a_class [ "flexrow" ] ]
-              [ submit_element
-                  ~classnames:[ "push" ]
-                  language
-                  Message.(
-                    let field = Some Field.CustomField in
-                    match custom_field with
-                    | None -> Create field
-                    | Some _ -> Update field)
-                  ~submit_type:`Primary
-                  ()
+              [ div
+                  ~a:[ a_class [ "push"; "flexrow"; "flex-gap-lg" ] ]
+                  [ reset_form_button language
+                  ; submit_element
+                      language
+                      Message.(
+                        let field = Some Field.CustomField in
+                        match custom_field with
+                        | None -> Create field
+                        | Some _ -> Update field)
+                      ~submit_type:`Primary
+                      ()
+                  ]
               ]
           ]
       ; (Format.asprintf
