@@ -177,6 +177,10 @@ let () =
             "create mailing with end before start"
             `Quick
             Mailing_test.create_end_before_start
+        ; test_case
+            "create mailing with start now"
+            `Quick
+            Mailing_test.create_with_start_now
         ] )
     ; ( "session"
       , [ test_case
