@@ -121,7 +121,6 @@ module Sql = struct
 
   let find_all_for_experiment_request =
     let open Caqti_request.Infix in
-    (* TODO [aerben] order by what here? *)
     {sql|
       WHERE pool_sessions.experiment_uuid = UNHEX(REPLACE(?, '-', ''))
     |sql}
