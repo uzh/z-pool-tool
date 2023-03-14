@@ -19,6 +19,9 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 - filter by boolean fields
 - custom fields with the option 'admin_view_only' will automatically have 'admin_input_only' set to true
 - partial update of 'admin_view_only' fields
+- when cancelling an assignment, assignments of the same contact to follow-up sessions will be canceled as well
+- canceled assignments are not included in assignment count anymore
+- canceled assignments are no longer shown on the contact dashboard
 
 ## [0.1.3](https://github.com/uzh/pool/tree/0.1.3) - 2023-03-01
 

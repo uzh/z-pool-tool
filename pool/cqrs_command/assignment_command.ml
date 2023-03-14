@@ -81,24 +81,42 @@ end = struct
 end
 
 module Cancel : sig
-  include Common.CommandSig with type t = Assignment.t * Session.t
+  include Common.CommandSig with type t = Assignment.t list * Session.t
 
   val effects : Assignment.Id.t -> Guard.Authorizer.effect list
 end = struct
-  type t = Assignment.t * Session.t
+  type t = Assignment.t list * Session.t
 
-  let handle ?(tags = Logs.Tag.empty) (assignment, session)
+  let handle ?(tags = Logs.Tag.empty) (assignments, session)
     : (Pool_event.t list, Pool_common.Message.error) result
     =
     let open CCResult in
     Logs.info ~src (fun m -> m "Handle command Cancel" ~tags);
-    let* () = Session.assignments_cancelable session in
-    let* () = Assignment.is_cancellable assignment in
-    Ok
-      [ Assignment.Canceled assignment |> Pool_event.assignment
-      ; Contact.NumAssignmentsDecreasedBy (assignment.Assignment.contact, 1)
-        |> Pool_event.contact
-      ]
+    let contact =
+      assignments
+      |> CCList.hd
+      |> fun ({ Assignment.contact; _ } : Assignment.t) -> contact
+    in
+    let* (_ : unit list) =
+      CCList.map
+        (fun assignment ->
+          let* () = Session.assignments_cancelable session in
+          let* () = Assignment.is_cancellable assignment in
+          Ok ())
+        assignments
+      |> CCList.all_ok
+    in
+    let cancel_events =
+      CCList.map
+        (fun assignment ->
+          Assignment.Canceled assignment |> Pool_event.assignment)
+        assignments
+    in
+    let decrease_assignment_count =
+      Contact.NumAssignmentsDecreasedBy (contact, CCList.length assignments)
+      |> Pool_event.contact
+    in
+    Ok (cancel_events @ [ decrease_assignment_count ])
   ;;
 
   let effects id =

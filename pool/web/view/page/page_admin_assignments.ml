@@ -98,7 +98,10 @@ module Partials = struct
       let open Pool_common in
       button_form
         "cancel"
-        I18n.CancelAssignment
+        I18n.(
+          if session.Session.has_follow_ups
+          then CancelAssignmentWithFollowUps
+          else CancelAssignment)
         (Message.Cancel None)
         `CloseCircle
     in
