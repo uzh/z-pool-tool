@@ -254,6 +254,19 @@ module Public = struct
     }
   [@@deriving eq, show]
 
+  let get_session_end (session : t) =
+    Ptime.add_span session.start session.duration
+    |> CCOption.get_exn_or "Session end not in range"
+  ;;
+
+  let not_past session =
+    if Ptime.is_later
+         (session |> get_session_end |> Start.value)
+         ~than:Ptime_clock.(now ())
+    then Ok ()
+    else Error Pool_common.Message.SessionInPast
+  ;;
+
   let not_canceled (session : t) =
     match session.canceled_at with
     | None -> Ok ()
@@ -271,6 +284,7 @@ module Public = struct
       |> Utils.bool_to_result_not Pool_common.Message.(SessionFullyBooked)
     in
     let* () = not_canceled session in
+    let* () = not_past session in
     Ok ()
   ;;
 
@@ -410,16 +424,21 @@ let not_closed session =
     |> CCResult.fail
 ;;
 
-(* Cancellable if before session ends *)
-let is_cancellable session =
-  let open CCResult.Infix in
-  let* () = not_canceled session in
-  let* () = not_closed session in
+let not_past session =
   if Ptime.is_later
        (session |> get_session_end |> Start.value)
        ~than:Ptime_clock.(now ())
   then Ok ()
   else Error Pool_common.Message.SessionInPast
+;;
+
+(* Cancellable if before session ends *)
+let is_cancellable session =
+  let open CCResult.Infix in
+  let* () = not_canceled session in
+  let* () = not_closed session in
+  let* () = not_past session in
+  Ok ()
 ;;
 
 let is_deletable session follow_ups =
@@ -460,5 +479,6 @@ let assignment_creatable session =
   in
   let* () = not_canceled session in
   let* () = not_closed session in
+  let* () = not_past session in
   Ok ()
 ;;

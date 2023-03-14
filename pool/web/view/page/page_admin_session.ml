@@ -252,22 +252,25 @@ let reschedule_session
 
 let waiting_list_radio_button language session =
   let open Pool_common in
-  match Session.is_fully_booked session, session.Session.follow_up_to with
-  | false, None ->
-    input
-      ~a:
-        [ a_input_type `Radio
-        ; a_name Message.Field.(show Session)
-        ; a_value Session.(session.id |> Id.value)
-        ]
-      ()
-  | false, Some _ ->
+  if Session.is_fully_booked session
+  then span [ txt (Utils.error_to_string language Message.SessionFullyBooked) ]
+  else if CCOption.is_some session.Session.follow_up_to
+  then
     span
       [ txt
           (Utils.error_to_string language Message.SessionRegistrationViaParent)
       ]
-  | true, _ ->
-    span [ txt (Utils.error_to_string language Message.SessionFullyBooked) ]
+  else (
+    match Session.assignment_creatable session |> CCResult.is_ok with
+    | false -> txt ""
+    | true ->
+      input
+        ~a:
+          [ a_input_type `Radio
+          ; a_name Message.Field.(show Session)
+          ; a_value Session.(session.id |> Id.value)
+          ]
+        ())
 ;;
 
 let session_list
@@ -353,6 +356,18 @@ let session_list
             | true, false -> div ~a:[ a_class [ "inset"; "left" ] ] [ date ]
           in
           let base = [ title ] in
+          let closed_at =
+            session.closed_at
+            |> CCOption.map_or ~default:"" (fun t ->
+                 Utils.Time.formatted_date_time t)
+            |> txt
+          in
+          let canceled_at =
+            session.canceled_at
+            |> CCOption.map_or ~default:"" (fun t ->
+                 Utils.Time.formatted_date_time t)
+            |> txt
+          in
           let cells =
             match layout with
             | `SessionOverview ->
@@ -375,14 +390,8 @@ let session_list
                          |> ParticipantCount.value
                          |> CCInt.to_string
                        else "")
-                  ; session.canceled_at
-                    |> CCOption.map_or ~default:"" (fun t ->
-                         Utils.Time.formatted_date_time t)
-                    |> txt
-                  ; session.closed_at
-                    |> CCOption.map_or ~default:"" (fun t ->
-                         Utils.Time.formatted_date_time t)
-                    |> txt
+                  ; canceled_at
+                  ; closed_at
                   ; div
                       ~a:[ a_class [ "flexrow"; "flex-gap"; "justify-end" ] ]
                       [ Format.asprintf
@@ -402,6 +411,8 @@ let session_list
                     (CCInt.to_string
                        (session.assignment_count |> AssignmentCount.value))
                 ; txt (session |> Session.available_spots |> CCInt.to_string)
+                ; canceled_at
+                ; closed_at
                 ]
               in
               base @ cells
@@ -428,10 +439,13 @@ let session_list
            |> Table.fields_to_txt language)
         @ [ add_session_btn ]
       | `WaitingList ->
+        let to_txt = Table.field_to_txt language in
         base
         @ [ txt ""
-          ; Field.AssignmentCount |> Table.field_to_txt language
+          ; Field.AssignmentCount |> to_txt
           ; txt (Utils.text_to_string language I18n.AvailableSpots)
+          ; Field.CanceledAt |> to_txt
+          ; Field.ClosedAt |> to_txt
           ]
     in
     cells |> Component.Table.table_head
