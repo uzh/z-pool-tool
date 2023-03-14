@@ -7,10 +7,9 @@ module Create : sig
 
   type t =
     { contact : Contact.t
-    ; session : Session.Public.t
+    ; sessions : Session.Public.t list
     ; waiting_list : Waiting_list.t option
     ; experiment : Experiment.Public.t
-    ; follow_ups : Session.Public.t list option
     }
 
   val handle
@@ -22,10 +21,9 @@ module Create : sig
 end = struct
   type t =
     { contact : Contact.t
-    ; session : Session.Public.t
+    ; sessions : Session.Public.t list
     ; waiting_list : Waiting_list.t option
     ; experiment : Experiment.Public.t
-    ; follow_ups : Session.Public.t list option
     }
 
   let handle
@@ -38,32 +36,20 @@ end = struct
     let open CCResult in
     if already_enrolled
     then Error Pool_common.Message.(AlreadySignedUpForExperiment)
-    else (
-      let session_list =
-        command.session :: CCOption.value ~default:[] command.follow_ups
-      in
+    else
       let* () =
-        match
-          command.experiment.Experiment.Public.direct_registration_disabled
-          |> Experiment.DirectRegistrationDisabled.value
-        with
-        | true -> Error Pool_common.Message.(DirectRegistrationIsDisabled)
-        | false -> Ok ()
+        command.experiment.Experiment.Public.direct_registration_disabled
+        |> Experiment.DirectRegistrationDisabled.value
+        |> Utils.bool_to_result_not
+             Pool_common.Message.(DirectRegistrationIsDisabled)
       in
-      let* () =
-        CCList.fold_left
-          (fun res session ->
-            res
-            >>= fun () ->
-            Session.Public.is_fully_booked session
-            |> function
-            | true -> Error Pool_common.Message.(SessionFullyBooked)
-            | false -> Ok ())
-          (CCResult.return ())
-          session_list
+      let* (_ : unit list) =
+        command.sessions
+        |> CCList.map Session.Public.assignment_creatable
+        |> CCList.all_ok
       in
       let create_events =
-        session_list
+        command.sessions
         |> CCList.map (fun session ->
              let create =
                Assignment.
@@ -81,14 +67,14 @@ end = struct
       in
       let increase_num_events =
         Contact.NumAssignmentsIncreasedBy
-          (command.contact, CCList.length session_list)
+          (command.contact, CCList.length command.sessions)
         |> Pool_event.contact
       in
       Ok
         (delete_events
          @ create_events
          @ [ increase_num_events ]
-         @ [ Email.Sent confirmation_email |> Pool_event.email ]))
+         @ [ Email.Sent confirmation_email |> Pool_event.email ])
   ;;
 
   let effects = [ `Create, `TargetEntity `Assignment ]
@@ -188,7 +174,7 @@ end
 
 module CreateFromWaitingList : sig
   type t =
-    { session : Session.t
+    { sessions : Session.t list
     ; waiting_list : Waiting_list.t
     ; already_enrolled : bool
     }
@@ -202,7 +188,7 @@ module CreateFromWaitingList : sig
   val effects : Guard.Authorizer.effect list
 end = struct
   type t =
-    { session : Session.t
+    { sessions : Session.t list
     ; waiting_list : Waiting_list.t
     ; already_enrolled : bool
     }
@@ -214,29 +200,33 @@ end = struct
     then Error Pool_common.Message.(AlreadySignedUpForExperiment)
     else
       let* () =
-        Session.is_fully_booked command.session
-        |> function
-        | true -> Error Pool_common.Message.(SessionFullyBooked)
-        | false -> Ok ()
-      in
-      match
         command.waiting_list.Waiting_list.experiment
         |> Experiment.registration_disabled_value
-      with
-      | true -> Error Pool_common.Message.(RegistrationDisabled)
-      | false ->
-        let create =
-          let open Waiting_list in
-          Assignment.
-            { contact = command.waiting_list.contact
-            ; session_id = command.session.Session.id
-            }
-        in
-        Ok
-          [ Waiting_list.Deleted command.waiting_list |> Pool_event.waiting_list
-          ; Assignment.Created create |> Pool_event.assignment
-          ; Email.Sent confirmation_email |> Pool_event.email
-          ]
+        |> Utils.bool_to_result_not Pool_common.Message.(RegistrationDisabled)
+      in
+      let* (_ : unit list) =
+        command.sessions
+        |> CCList.map Session.assignment_creatable
+        |> CCList.all_ok
+      in
+      let contact = command.waiting_list.Waiting_list.contact in
+      let create_events =
+        command.sessions
+        |> CCList.map (fun session ->
+             let create =
+               Assignment.{ contact; session_id = session.Session.id }
+             in
+             Assignment.Created create |> Pool_event.assignment)
+      in
+      Ok
+        (create_events
+         @ [ Contact.NumAssignmentsIncreasedBy
+               (contact, CCList.length command.sessions)
+             |> Pool_event.contact
+           ; Waiting_list.Deleted command.waiting_list
+             |> Pool_event.waiting_list
+           ; Email.Sent confirmation_email |> Pool_event.email
+           ])
   ;;
 
   let effects =

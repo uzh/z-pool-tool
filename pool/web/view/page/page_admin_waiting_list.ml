@@ -3,11 +3,12 @@ open Component.Input
 module Message = Pool_common.Message
 
 let detail
-  (Waiting_list.{ id; contact; experiment; comment; _ } : Waiting_list.t)
+  (Waiting_list.{ id; contact; experiment; admin_comment; _ } : Waiting_list.t)
   sessions
   experiment_id
-  Pool_context.{ language; csrf; _ }
+  (Pool_context.{ language; csrf; _ } as context)
   flash_fetcher
+  chronological
   =
   let open Pool_common in
   let waiting_list_detail =
@@ -28,16 +29,19 @@ let detail
           [ csrf_element csrf ()
           ; textarea_element
               language
-              Message.Field.Comment
+              Message.Field.AdminComment
               ~value:
-                (CCOption.map_or ~default:"" Waiting_list.Comment.value comment)
+                (CCOption.map_or
+                   ~default:""
+                   Waiting_list.AdminComment.value
+                   admin_comment)
               ~flash_fetcher
           ; div
               ~a:[ a_class [ "flexrow" ] ]
               [ submit_element
                   ~classnames:[ "push" ]
                   language
-                  Message.(Save (Some Field.Comment))
+                  Message.(Save (Some Field.AdminComment))
                   ()
               ]
           ]
@@ -53,58 +57,13 @@ let detail
                  language
                  (I18n.EmtpyList Message.Field.Sessions))
           ]
-      else (
-        let thead =
-          Message.
-            [ Field.Date |> Component.Table.field_to_txt language; txt "" ]
-        in
-        let to_row (session : Session.t) =
-          let attrs =
-            if CCOption.is_some session.Session.follow_up_to
-            then [ a_class [ "inset"; "left" ] ]
-            else []
-          in
-          [ div
-              ~a:attrs
-              [ txt
-                  Session.(
-                    session.Session.start
-                    |> Start.value
-                    |> Utils.Time.formatted_date_time)
-              ]
-          ; (match
-               Session.is_fully_booked session, session.Session.follow_up_to
-             with
-             | false, None ->
-               input
-                 ~a:
-                   [ a_input_type `Radio
-                   ; a_name Message.Field.(show Session)
-                   ; a_value Session.(session.id |> Id.value)
-                   ]
-                 ()
-             | false, Some _ ->
-               span
-                 [ txt
-                     (Utils.error_to_string
-                        language
-                        Message.SessionRegistrationViaParent)
-                 ]
-             | true, _ ->
-               span
-                 [ txt
-                     (Utils.error_to_string language Message.SessionFullyBooked)
-                 ])
-          ]
-        in
-        let to_rows (session, follow_ups) =
-          session :: follow_ups |> CCList.flat_map to_row
-        in
-        Component.Table.horizontal_table
-          ~align_last_end:true
-          `Striped
-          ~thead
-          (sessions |> CCList.map to_rows)
+      else
+        Page_admin_session.session_list
+          `WaitingList
+          context
+          experiment_id
+          sessions
+          chronological
         |> fun content ->
         match experiment |> Experiment.registration_disabled_value with
         | true ->
@@ -150,7 +109,7 @@ let detail
                     (Message.Assign (Some Field.Contact))
                     ()
                 ]
-            ])
+            ]
     in
     div
       [ h2

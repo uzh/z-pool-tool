@@ -49,15 +49,24 @@ let detail req =
     @@ let* waiting_list = Waiting_list.find database_label id in
        let* sessions =
          Session.find_all_for_experiment database_label experiment_id
-         >|+ Session.group_and_sort
+       in
+       let grouped_sessions, chronological =
+         match
+           Sihl.Web.Request.query
+             Pool_common.Message.Field.(show Chronological)
+             req
+         with
+         | Some "true" -> CCList.map (fun s -> s, []) sessions, true
+         | None | Some _ -> Session.group_and_sort sessions, false
        in
        let flash_fetcher key = Sihl.Web.Flash.find key req in
        Page.Admin.WaitingList.detail
          waiting_list
-         sessions
+         grouped_sessions
          experiment_id
          context
          flash_fetcher
+         chronological
        |> create_layout req context
        >|+ Sihl.Web.Response.of_html
   in
@@ -107,6 +116,7 @@ let update req =
 ;;
 
 let assign_contact req =
+  let open Session in
   let open Utils.Lwt_result.Infix in
   let experiment_id, waiting_list_id =
     ( experiment_id req
@@ -129,7 +139,7 @@ let assign_contact req =
       Pool_context.Tenant.find req |> Lwt_result.lift
     in
     let* waiting_list = Waiting_list.find database_label waiting_list_id in
-    let* session =
+    let* sessions =
       let open Pool_common.Message in
       let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
       urlencoded
@@ -138,7 +148,7 @@ let assign_contact req =
       |> CCOption.to_result NoValue
       |> Lwt_result.lift
       >>= fun id ->
-      id |> Pool_common.Id.of_string |> Session.find database_label
+      id |> Pool_common.Id.of_string |> find_open_with_follow_ups database_label
     in
     let%lwt already_enrolled =
       let open Utils.Lwt_result.Infix in
@@ -159,12 +169,12 @@ let assign_contact req =
         database_label
         language
         tenant
-        session
+        sessions
         contact
     in
     let events =
       let open Cqrs_command.Assignment_command.CreateFromWaitingList in
-      (handle ~tags { session; waiting_list; already_enrolled })
+      (handle ~tags { sessions; waiting_list; already_enrolled })
         confirmation_email
       |> Lwt_result.lift
     in

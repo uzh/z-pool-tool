@@ -37,7 +37,11 @@ let list req =
       Session.find_all_for_experiment database_label experiment_id
     in
     let grouped_sessions, chronological =
-      match Sihl.Web.Request.query "chronological" req with
+      match
+        Sihl.Web.Request.query
+          Pool_common.Message.Field.(show Chronological)
+          req
+      with
       | Some "true" -> CCList.map (fun s -> s, []) sessions, true
       | None | Some _ -> Session.group_and_sort sessions, false
     in

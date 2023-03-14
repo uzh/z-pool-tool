@@ -103,6 +103,10 @@ let () =
             `Quick
             Assignment_test.assign_to_fully_booked_session
         ; test_case
+            "assign to canceled session"
+            `Quick
+            Assignment_test.assign_to_canceled_session
+        ; test_case
             "assign to session contact is already assigned"
             `Quick
             Assignment_test.assign_to_session_contact_is_already_assigned
@@ -116,7 +120,11 @@ let () =
             `Quick
             Assignment_test.assign_contact_from_waiting_list
         ; test_case
-            "assign contact from waiting_list to disabled experiment"
+            "assign contact from waiting list with follow-ups"
+            `Quick
+            Assignment_test.assign_contact_from_waiting_list_with_follow_ups
+        ; test_case
+            "assign contact from waiting list to disabled experiment"
             `Quick
             Assignment_test
             .assign_contact_from_waiting_list_to_disabled_experiment

@@ -225,7 +225,7 @@ module Model = struct
       { id = Pool_common.Id.create ()
       ; contact
       ; experiment
-      ; comment = None
+      ; admin_comment = None
       ; created_at = Pool_common.CreatedAt.create ()
       ; updated_at = Pool_common.UpdatedAt.create ()
       }
@@ -236,7 +236,7 @@ module Model = struct
       { id = Pool_common.Id.create ()
       ; contact
       ; experiment
-      ; comment = None
+      ; admin_comment = None
       ; created_at = Pool_common.CreatedAt.create ()
       ; updated_at = Pool_common.UpdatedAt.create ()
       }

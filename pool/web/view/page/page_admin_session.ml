@@ -73,7 +73,6 @@ let session_form
   let value = CCFun.flip (CCOption.map_or ~default:"") default_value_session in
   let amount fnc = value (fnc %> ParticipantAmount.value %> CCInt.to_string) in
   let action, submit =
-    let open Pool_common in
     let base =
       Format.asprintf
         "/admin/experiments/%s/sessions"
@@ -181,7 +180,7 @@ let session_form
                     ?value:
                       (CCOption.bind session (fun (e : t) ->
                          e.reminder_lead_time
-                         |> CCOption.map Pool_common.Reminder.LeadTime.value))
+                         |> CCOption.map Reminder.LeadTime.value))
                     ~flash_fetcher
                 ; (experiment.Experiment.session_reminder_lead_time
                    |> CCOption.value ~default:default_reminder_lead_time
@@ -251,14 +250,37 @@ let reschedule_session
        experiment
 ;;
 
-let index
+let waiting_list_radio_button language session =
+  let open Pool_common in
+  if Session.is_fully_booked session
+  then span [ txt (Utils.error_to_string language Message.SessionFullyBooked) ]
+  else if CCOption.is_some session.Session.follow_up_to
+  then
+    span
+      [ txt
+          (Utils.error_to_string language Message.SessionRegistrationViaParent)
+      ]
+  else (
+    match Session.assignment_creatable session |> CCResult.is_ok with
+    | false -> txt ""
+    | true ->
+      input
+        ~a:
+          [ a_input_type `Radio
+          ; a_name Message.Field.(show Session)
+          ; a_value Session.(session.id |> Id.value)
+          ]
+        ())
+;;
+
+let session_list
+  layout
   Pool_context.{ language; csrf; _ }
-  experiment
+  experiment_id
   grouped_sessions
   chronological
   =
   let open Pool_common in
-  let experiment_id = experiment.Experiment.id in
   let follow_up_icon () =
     span
       ~a:[ a_class [ "font-bold" ] ]
@@ -286,7 +308,7 @@ let index
       (fun (parent, follow_ups) ->
         let open Session in
         let session_row session follow_ups =
-          let delete_form =
+          let delete_form () =
             if Session.is_deletable session follow_ups |> CCResult.is_ok
             then
               form
@@ -333,60 +355,100 @@ let index
                 [ date; follow_up_icon () ]
             | true, false -> div ~a:[ a_class [ "inset"; "left" ] ] [ date ]
           in
-          Session.
-            [ title
-            ; txt
-                (CCInt.to_string
-                   (session.assignment_count |> AssignmentCount.value))
-            ; txt
-                (if CCOption.is_some session.closed_at
-                 then
-                   session.show_up_count |> ShowUpCount.value |> CCInt.to_string
-                 else "")
-            ; txt
-                (if CCOption.is_some session.closed_at
-                 then
-                   session.participant_count
-                   |> ParticipantCount.value
-                   |> CCInt.to_string
-                 else "")
-            ; session.canceled_at
-              |> CCOption.map_or ~default:"" (fun t ->
-                   Utils.Time.formatted_date_time t)
-              |> txt
-            ; session.closed_at
-              |> CCOption.map_or ~default:"" (fun t ->
-                   Utils.Time.formatted_date_time t)
-              |> txt
-            ; div
-                ~a:[ a_class [ "flexrow"; "flex-gap"; "justify-end" ] ]
-                [ Format.asprintf
-                    "/admin/experiments/%s/sessions/%s"
-                    (Experiment.Id.value experiment_id)
-                    (Id.value session.id)
-                  |> edit_link
-                ; delete_form
+          let base = [ title ] in
+          let closed_at =
+            session.closed_at
+            |> CCOption.map_or ~default:"" (fun t ->
+                 Utils.Time.formatted_date_time t)
+            |> txt
+          in
+          let canceled_at =
+            session.canceled_at
+            |> CCOption.map_or ~default:"" (fun t ->
+                 Utils.Time.formatted_date_time t)
+            |> txt
+          in
+          let cells =
+            match layout with
+            | `SessionOverview ->
+              let cells =
+                Session.
+                  [ txt
+                      (CCInt.to_string
+                         (session.assignment_count |> AssignmentCount.value))
+                  ; txt
+                      (if CCOption.is_some session.closed_at
+                       then
+                         session.show_up_count
+                         |> ShowUpCount.value
+                         |> CCInt.to_string
+                       else "")
+                  ; txt
+                      (if CCOption.is_some session.closed_at
+                       then
+                         session.participant_count
+                         |> ParticipantCount.value
+                         |> CCInt.to_string
+                       else "")
+                  ; canceled_at
+                  ; closed_at
+                  ; div
+                      ~a:[ a_class [ "flexrow"; "flex-gap"; "justify-end" ] ]
+                      [ Format.asprintf
+                          "/admin/experiments/%s/sessions/%s"
+                          (Experiment.Id.value experiment_id)
+                          (Id.value session.id)
+                        |> edit_link
+                      ; delete_form ()
+                      ]
+                  ]
+              in
+              base @ cells
+            | `WaitingList ->
+              let cells =
+                [ waiting_list_radio_button language session
+                ; txt
+                    (CCInt.to_string
+                       (session.assignment_count |> AssignmentCount.value))
+                ; txt (session |> Session.available_spots |> CCInt.to_string)
+                ; canceled_at
+                ; closed_at
                 ]
-            ]
-          |> CCList.map CCFun.(CCList.return %> td)
-          |> tr ~a:row_attrs
+              in
+              base @ cells
+          in
+          cells |> CCList.map CCFun.(CCList.return %> td) |> tr ~a:row_attrs
         in
         session_row parent follow_ups
         :: CCList.map CCFun.(flip session_row []) follow_ups)
       grouped_sessions
   in
   let thead =
-    Message.(
-      [ Field.Date
-      ; Field.AssignmentCount
-      ; Field.ShowUpCount
-      ; Field.ParticipantCount
-      ; Field.CanceledAt
-      ; Field.ClosedAt
-      ]
-      |> Table.fields_to_txt language)
-    @ [ add_session_btn ]
-    |> Component.Table.table_head
+    let open Message in
+    let base = [ Field.Date ] |> Table.fields_to_txt language in
+    let cells =
+      match layout with
+      | `SessionOverview ->
+        base
+        @ ([ Field.AssignmentCount
+           ; Field.ShowUpCount
+           ; Field.ParticipantCount
+           ; Field.CanceledAt
+           ; Field.ClosedAt
+           ]
+           |> Table.fields_to_txt language)
+        @ [ add_session_btn ]
+      | `WaitingList ->
+        let to_txt = Table.field_to_txt language in
+        base
+        @ [ txt ""
+          ; Field.AssignmentCount |> to_txt
+          ; txt (Utils.text_to_string language I18n.AvailableSpots)
+          ; Field.CanceledAt |> to_txt
+          ; Field.ClosedAt |> to_txt
+          ]
+    in
+    cells |> Component.Table.table_head
   in
   let table =
     let id = if chronological then [ a_id chronological_id ] else [] in
@@ -431,37 +493,51 @@ let index
       in
       script (Unsafe.data js)
   in
-  let html =
-    div
-      ~a:[ a_class [ "stack" ] ]
-      [ p [ I18n.SessionIndent |> Utils.text_to_string language |> txt ]
-      ; a
-          ~a:
-            [ a_href
-                (Format.asprintf
-                   "/admin/experiments/%s/sessions%s"
-                   (Experiment.Id.value experiment_id)
-                   (if chronological then "" else "?chronological=true")
-                 |> Sihl.Web.externalize_path)
-            ]
-          [ (if chronological
-             then I18n.SwitchGrouped
-             else I18n.SwitchChronological)
-            |> Utils.text_to_string language
-            |> txt
+  div
+    ~a:[ a_class [ "stack" ] ]
+    [ p [ I18n.SessionIndent |> Utils.text_to_string language |> txt ]
+    ; a
+        ~a:
+          [ a_href
+              (if chronological
+               then "?"
+               else
+                 Format.asprintf "?%s=true" Message.Field.(show Chronological))
           ]
-        (* TODO [aerben] allow tables to be sorted generally? *)
-      ; (if chronological
-         then
-           p
-             [ txt "Sessions marked with "
-             ; follow_up_icon ()
-             ; txt " are follow-up sessions."
-             ]
-         else txt "")
-      ; table
-      ; hover_script
-      ]
+        [ (if chronological
+           then I18n.SwitchGrouped
+           else I18n.SwitchChronological)
+          |> Utils.text_to_string language
+          |> txt
+        ]
+      (* TODO [aerben] allow tables to be sorted generally? *)
+    ; (if chronological
+       then
+         p
+           [ txt "Sessions marked with "
+           ; follow_up_icon ()
+           ; txt " are follow-up sessions."
+           ]
+       else txt "")
+    ; table
+    ; hover_script
+    ]
+;;
+
+let index
+  (Pool_context.{ language; _ } as context)
+  experiment
+  grouped_sessions
+  chronological
+  =
+  let open Pool_common in
+  let html =
+    session_list
+      `SessionOverview
+      context
+      experiment.Experiment.id
+      grouped_sessions
+      chronological
   in
   Page_admin_experiments.experiment_layout
     ~hint:I18n.ExperimentSessions

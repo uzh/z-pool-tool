@@ -209,7 +209,7 @@ let message_template_help
   | AssignmentConfirmation ->
     AssignmentConfirmation.email_params
       language
-      (create_session ())
+      [ create_session () ]
       (create_contact ())
   | ContactRegistrationAttempt ->
     let tenant_url = tenant.Pool_tenant.url in

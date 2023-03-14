@@ -5,12 +5,6 @@ module Partials = Component.Partials
 module Table = Component.Table
 module Message = Pool_common.Message
 
-let first_n_characters ?(n = 47) m : string =
-  if CCString.length m > n
-  then CCString.sub m 0 n |> Format.asprintf "%s..."
-  else m
-;;
-
 module List = struct
   open Pool_location
 

@@ -173,10 +173,19 @@ let create
   }
 ;;
 
+let is_canceled_error canceled_at =
+  let open Pool_common.Message in
+  canceled_at
+  |> Pool_common.Utils.Time.formatted_date_time
+  |> sessionalreadycanceled
+  |> CCResult.fail
+;;
+
 let is_fully_booked (m : t) =
   m.assignment_count >= m.max_participants + m.overbook
 ;;
 
+let available_spots m = m.max_participants - m.assignment_count |> CCInt.max 0
 let has_assignments m = AssignmentCount.value m.assignment_count > 0
 
 type assignments =
@@ -245,8 +254,38 @@ module Public = struct
     }
   [@@deriving eq, show]
 
+  let get_session_end (session : t) =
+    Ptime.add_span session.start session.duration
+    |> CCOption.get_exn_or "Session end not in range"
+  ;;
+
+  let not_past session =
+    if Ptime.is_later
+         (session |> get_session_end |> Start.value)
+         ~than:Ptime_clock.(now ())
+    then Ok ()
+    else Error Pool_common.Message.SessionInPast
+  ;;
+
+  let not_canceled (session : t) =
+    match session.canceled_at with
+    | None -> Ok ()
+    | Some canceled_at -> is_canceled_error canceled_at
+  ;;
+
   let is_fully_booked (m : t) =
     m.assignment_count >= m.max_participants + m.overbook
+  ;;
+
+  let assignment_creatable session =
+    let open CCResult.Infix in
+    let* () =
+      is_fully_booked session
+      |> Utils.bool_to_result_not Pool_common.Message.(SessionFullyBooked)
+    in
+    let* () = not_canceled session in
+    let* () = not_past session in
+    Ok ()
   ;;
 
   let compare_start (s1 : t) (s2 : t) = Start.compare s1.start s2.start
@@ -369,14 +408,9 @@ let get_session_end session =
 ;;
 
 let not_canceled session =
-  let open Pool_common.Message in
   match session.canceled_at with
   | None -> Ok ()
-  | Some canceled_at ->
-    canceled_at
-    |> Pool_common.Utils.Time.formatted_date_time
-    |> sessionalreadycanceled
-    |> CCResult.fail
+  | Some canceled_at -> is_canceled_error canceled_at
 ;;
 
 let not_closed session =
@@ -390,16 +424,21 @@ let not_closed session =
     |> CCResult.fail
 ;;
 
-(* Cancellable if before session ends *)
-let is_cancellable session =
-  let open CCResult.Infix in
-  let* () = not_canceled session in
-  let* () = not_closed session in
+let not_past session =
   if Ptime.is_later
        (session |> get_session_end |> Start.value)
        ~than:Ptime_clock.(now ())
   then Ok ()
   else Error Pool_common.Message.SessionInPast
+;;
+
+(* Cancellable if before session ends *)
+let is_cancellable session =
+  let open CCResult.Infix in
+  let* () = not_canceled session in
+  let* () = not_closed session in
+  let* () = not_past session in
+  Ok ()
 ;;
 
 let is_deletable session follow_ups =
@@ -429,5 +468,17 @@ let assignments_cancelable session =
   let open CCResult.Infix in
   let* () = not_canceled session in
   let* () = not_closed session in
+  Ok ()
+;;
+
+let assignment_creatable session =
+  let open CCResult.Infix in
+  let* () =
+    is_fully_booked session
+    |> Utils.bool_to_result_not Pool_common.Message.(SessionFullyBooked)
+  in
+  let* () = not_canceled session in
+  let* () = not_closed session in
+  let* () = not_past session in
   Ok ()
 ;;

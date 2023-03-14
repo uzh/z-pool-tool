@@ -59,7 +59,7 @@ let create_with_direct_registration_enabled () =
 let update () =
   let waiting_list = Model.create_waiting_list () in
   let urlencoded =
-    [ Pool_common.Message.Field.(Comment |> show), [ "Some comment" ] ]
+    [ Pool_common.Message.Field.(AdminComment |> show), [ "Some comment" ] ]
   in
   let events =
     let open CCResult in

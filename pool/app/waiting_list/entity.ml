@@ -1,4 +1,4 @@
-module Comment = struct
+module AdminComment = struct
   type t = string [@@deriving eq, show]
 
   let create m = m
@@ -9,7 +9,7 @@ module Comment = struct
       Utils.schema_decoder
         (fun m -> Ok (m |> create))
         value
-        Message.Field.Comment)
+        Message.Field.AdminComment)
   ;;
 end
 
@@ -17,17 +17,17 @@ type t =
   { id : Pool_common.Id.t
   ; contact : Contact.t
   ; experiment : Experiment.t
-  ; comment : Comment.t option
+  ; admin_comment : AdminComment.t option
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
   }
 [@@deriving eq, show]
 
-let create ?(id = Pool_common.Id.create ()) contact experiment comment =
+let create ?(id = Pool_common.Id.create ()) contact experiment admin_comment =
   { id
   ; contact
   ; experiment
-  ; comment
+  ; admin_comment
   ; created_at = Pool_common.CreatedAt.create ()
   ; updated_at = Pool_common.UpdatedAt.create ()
   }
@@ -37,7 +37,7 @@ module ExperimentList = struct
   type waiting_list_entry =
     { id : Pool_common.Id.t
     ; contact : Contact.Preview.t
-    ; comment : Comment.t option
+    ; admin_comment : AdminComment.t option
     ; created_at : Pool_common.CreatedAt.t
     ; updated_at : Pool_common.UpdatedAt.t
     }

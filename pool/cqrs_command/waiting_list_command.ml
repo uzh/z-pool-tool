@@ -41,12 +41,12 @@ module Update : sig
 end = struct
   type t = Waiting_list.update
 
-  let command comment = Waiting_list.{ comment }
+  let command admin_comment = Waiting_list.{ admin_comment }
 
   let schema =
     Conformist.(
       make
-        Field.[ Conformist.optional @@ Waiting_list.Comment.schema () ]
+        Field.[ Conformist.optional @@ Waiting_list.AdminComment.schema () ]
         command)
   ;;
 

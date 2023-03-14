@@ -121,7 +121,6 @@ module Sql = struct
 
   let find_all_for_experiment_request =
     let open Caqti_request.Infix in
-    (* TODO [aerben] order by what here? *)
     {sql|
       WHERE pool_sessions.experiment_uuid = UNHEX(REPLACE(?, '-', ''))
     |sql}
@@ -355,6 +354,30 @@ module Sql = struct
       (Pool_common.Id.value id)
   ;;
 
+  let find_open_with_follow_ups_request =
+    let open Caqti_request.Infix in
+    {sql|
+        WHERE
+          pool_sessions.closed_at IS NULL
+        AND
+          pool_sessions.canceled_at IS NULL
+        AND (
+          pool_sessions.uuid = UNHEX(REPLACE($1, '-', ''))
+          OR
+          pool_sessions.follow_up_to = UNHEX(REPLACE($1, '-', ''))
+        )
+      |sql}
+    |> find_sql ~order_by:"pool_sessions.start"
+    |> Caqti_type.string ->* RepoEntity.t
+  ;;
+
+  let find_open_with_follow_ups pool id =
+    Utils.Database.collect
+      (Database.Label.value pool)
+      find_open_with_follow_ups_request
+      (Pool_common.Id.value id)
+  ;;
+
   let insert_request =
     let open Caqti_request.Infix in
     {sql|
@@ -508,6 +531,18 @@ let find_follow_ups pool parent_session_id =
   let open Utils.Lwt_result.Infix in
   Sql.find_follow_ups pool parent_session_id
   >|> Lwt_list.map_s (location_to_repo_entity pool)
+  ||> CCResult.flatten_l
+;;
+
+let find_open_with_follow_ups pool session_id =
+  let open Utils.Lwt_result.Infix in
+  Sql.find_open_with_follow_ups pool session_id
+  ||> (function
+        | [] -> Error Pool_common.Message.(NotFound Field.Session)
+        | sessions -> Ok sessions)
+  >>= fun sessions ->
+  sessions
+  |> Lwt_list.map_s (location_to_repo_entity pool)
   ||> CCResult.flatten_l
 ;;
 

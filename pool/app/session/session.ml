@@ -13,6 +13,7 @@ let find_by_assignment = Repo.find_by_assignment
 let find_experiment_id_and_title = Repo.find_experiment_id_and_title
 let find_sessions_to_remind = Repo.find_sessions_to_remind
 let find_follow_ups = Repo.find_follow_ups
+let find_open_with_follow_ups = Repo.find_open_with_follow_ups
 
 let has_bookable_spots_for_experiments tenant experiment =
   let open Utils.Lwt_result.Infix in

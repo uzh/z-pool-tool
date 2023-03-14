@@ -110,6 +110,7 @@ val equal : t -> t -> bool
 val pp : Format.formatter -> t -> unit
 val show : t -> string
 val is_fully_booked : t -> bool
+val available_spots : t -> int
 val has_assignments : t -> bool
 val session_date_to_human : t -> string
 
@@ -149,6 +150,7 @@ module Public : sig
   val pp : Format.formatter -> t -> unit
   val show : t -> string
   val is_fully_booked : t -> bool
+  val assignment_creatable : t -> (unit, Pool_common.Message.error) result
   val group_and_sort : t list -> (t * t list) list
   val get_session_end : t -> Ptime.t
 end
@@ -159,6 +161,7 @@ val is_cancellable : t -> (unit, Pool_common.Message.error) result
 val is_closable : t -> (unit, Pool_common.Message.error) result
 val is_deletable : t -> t list -> (unit, Pool_common.Message.error) result
 val assignments_cancelable : t -> (unit, Pool_common.Message.error) result
+val assignment_creatable : t -> (unit, Pool_common.Message.error) result
 
 (* TODO [aerben] this should be experiment id type *)
 val find
@@ -215,6 +218,11 @@ val find_sessions_to_remind
   -> (t list, Pool_common.Message.error) Lwt_result.t
 
 val find_follow_ups
+  :  Pool_database.Label.t
+  -> Pool_common.Id.t
+  -> (t list, Pool_common.Message.error) Lwt_result.t
+
+val find_open_with_follow_ups
   :  Pool_database.Label.t
   -> Pool_common.Id.t
   -> (t list, Pool_common.Message.error) Lwt_result.t
