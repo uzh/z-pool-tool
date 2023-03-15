@@ -16,7 +16,7 @@ let index req =
            database_label
            (Contact.id contact)
        in
-       let%lwt custom_fields_ansered =
+       let%lwt custom_fields_anwsered =
          Custom_field.all_answered database_label (Contact.id contact)
        in
        let%lwt waiting_list =
@@ -26,7 +26,7 @@ let index req =
          experiment_list
          upcoming_sessions
          waiting_list
-         custom_fields_ansered
+         custom_fields_anwsered
          context
        |> create_layout ~active_navigation:"/experiments" req context
        >|+ Sihl.Web.Response.of_html
