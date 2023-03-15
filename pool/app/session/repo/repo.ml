@@ -51,7 +51,7 @@ module Sql = struct
           pool_sessions.updated_at
         FROM pool_sessions
         LEFT JOIN pool_assignments
-          ON pool_assignments.session_uuid = pool_sessions.id
+          ON pool_assignments.session_uuid = pool_sessions.uuid
           AND pool_assignments.canceled_at IS NULL
           AND pool_assignments.marked_as_deleted = 0
         INNER JOIN pool_locations
@@ -183,14 +183,14 @@ module Sql = struct
     {sql|
       INNER JOIN pool_assignments
         ON pool_assignments.session_uuid = pool_sessions.uuid
+        AND pool_assignments.canceled_at IS NULL
+        AND pool_assignments.marked_as_deleted = 0
       WHERE
         pool_sessions.closed_at IS NULL
       AND
         pool_sessions.start > NOW()
       AND
         pool_assignments.contact_uuid = UNHEX(REPLACE(?, '-', ''))
-      AND
-        pool_assignments.marked_as_deleted = 0
       ORDER BY
         pool_sessions.start ASC
     |sql}
