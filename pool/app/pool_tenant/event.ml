@@ -6,7 +6,7 @@ let get_or_failwith = Pool_common.Utils.get_or_failwith
 
 type update =
   { title : Title.t
-  ; description : Description.t
+  ; description : Description.t option
   ; url : Url.t
   ; disabled : Disabled.t
   ; default_language : Pool_common.Language.t

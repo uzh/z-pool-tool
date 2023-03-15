@@ -214,7 +214,7 @@ end
 type t =
   { id : Id.t
   ; title : Title.t
-  ; description : Description.t
+  ; description : Description.t option
   ; url : Url.t
   ; database_label : Database.Label.t
   ; styles : Styles.t
@@ -237,7 +237,7 @@ module Write : sig
   type t =
     { id : Id.t
     ; title : Title.t
-    ; description : Description.t
+    ; description : Description.t option
     ; url : Url.t
     ; database : Database.t
     ; styles : Styles.Write.t
@@ -251,7 +251,7 @@ module Write : sig
 
   val create
     :  Title.t
-    -> Description.t
+    -> Description.t option
     -> Url.t
     -> Database.t
     -> Styles.Write.t
@@ -264,7 +264,7 @@ end
 
 type update =
   { title : Title.t
-  ; description : Description.t
+  ; description : Description.t option
   ; url : Url.t
   ; disabled : Disabled.t
   ; default_language : Pool_common.Language.t

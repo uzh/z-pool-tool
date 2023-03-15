@@ -279,6 +279,10 @@ let remove_empty_values urlencoded =
     urlencoded
 ;;
 
+let remove_empty_values_multiplart urlencoded =
+  CCList.filter (fun (_, vs) -> vs |> CCString.equal "" |> not) urlencoded
+;;
+
 let placeholder_from_name = CCString.replace ~which:`All ~sub:"_" ~by:" "
 
 let is_req_from_root_host req =

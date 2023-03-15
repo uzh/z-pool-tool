@@ -76,7 +76,9 @@ let create () =
            Pool_tenant.(
              Write.create
                (Title.create title |> get_or_failwith)
-               (Description.create description |> get_or_failwith)
+               (Description.create description
+                |> get_or_failwith
+                |> CCOption.return)
                (Url.create url |> get_or_failwith)
                (Pool_tenant.Database.create database_label database_url
                 |> get_or_failwith)

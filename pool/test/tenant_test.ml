@@ -114,7 +114,7 @@ module Data = struct
     let open Pool_tenant in
     let open CCResult in
     let* title = title |> Title.create in
-    let* description = description |> Description.create in
+    let* description = description |> Description.create >|= CCOption.return in
     let* url = url |> Url.create in
     let* database = Pool_database.create database_label database_url in
     Ok
@@ -138,7 +138,7 @@ module Data = struct
     let open Pool_tenant in
     let open CCResult in
     let* title = title |> Title.create in
-    let* description = description |> Description.create in
+    let* description = description |> Description.create >|= CCOption.return in
     let* url = url |> Url.create in
     let* database_label = database_label |> Pool_database.Label.create in
     let styles =
@@ -256,7 +256,9 @@ let[@warning "-4"] create_tenant () =
   let expected =
     let open CCResult in
     let* title = title |> Pool_tenant.Title.create in
-    let* description = description |> Pool_tenant.Description.create in
+    let* description =
+      description |> Pool_tenant.Description.create >|= CCOption.return
+    in
     let* url = url |> Pool_tenant.Url.create in
     let* (database : Pool_database.t) =
       let* url = database_url |> Pool_tenant.Database.Url.create in
@@ -331,7 +333,9 @@ let[@warning "-4"] update_tenant_details () =
       let open Pool_tenant in
       let open CCResult in
       let* title = title |> Title.create in
-      let* description = description |> Description.create in
+      let* description =
+        description |> Description.create >|= CCOption.return
+      in
       let* url = url |> Pool_tenant.Url.create in
       let* default_language = default_language |> Common.Language.create in
       let disabled = false |> Disabled.create in

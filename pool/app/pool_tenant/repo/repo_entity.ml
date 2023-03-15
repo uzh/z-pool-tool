@@ -139,7 +139,7 @@ let t =
          (tup2
             Title.t
             (tup2
-               Description.t
+               (option Description.t)
                (tup2
                   Url.t
                   (tup2
@@ -213,7 +213,7 @@ module Write = struct
            (tup2
               Title.t
               (tup2
-                 Description.t
+                 (option Description.t)
                  (tup2
                     Url.t
                     (tup2

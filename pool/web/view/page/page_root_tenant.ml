@@ -149,7 +149,8 @@ let detail (tenant : Pool_tenant.t) Pool_context.{ language; csrf; _ } =
   let detail_fields =
     Message.
       [ Field.Title, Title.value tenant.title
-      ; Field.Description, Description.value tenant.description
+      ; ( Field.Description
+        , tenant.description |> CCOption.map_or ~default:"" Description.value )
       ; Field.Url, Url.value tenant.url
       ]
   in

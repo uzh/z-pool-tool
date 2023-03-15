@@ -20,7 +20,7 @@ let create_logo_mappings files tenant logo_type =
 module Create : sig
   type t =
     { title : Pool_tenant.Title.t
-    ; description : Pool_tenant.Description.t
+    ; description : Pool_tenant.Description.t option
     ; url : Pool_tenant.Url.t
     ; database_url : Pool_database.Url.t
     ; database_label : Pool_database.Label.t
@@ -44,7 +44,7 @@ module Create : sig
 end = struct
   type t =
     { title : Pool_tenant.Title.t
-    ; description : Pool_tenant.Description.t
+    ; description : Pool_tenant.Description.t option
     ; url : Pool_tenant.Url.t
     ; database_url : Pool_database.Url.t
     ; database_label : Pool_database.Label.t
@@ -85,7 +85,7 @@ end = struct
       make
         Field.
           [ Pool_tenant.Title.schema ()
-          ; Pool_tenant.Description.schema ()
+          ; Conformist.optional @@ Pool_tenant.Description.schema ()
           ; Pool_tenant.Url.schema ()
           ; Pool_database.Url.schema ()
           ; Pool_database.Label.schema ()
@@ -147,7 +147,7 @@ end
 module EditDetails : sig
   type t =
     { title : Pool_tenant.Title.t
-    ; description : Pool_tenant.Description.t
+    ; description : Pool_tenant.Description.t option
     ; url : Pool_tenant.Url.t
     ; disabled : Pool_tenant.Disabled.t
     ; default_language : Pool_common.Language.t
@@ -169,7 +169,7 @@ module EditDetails : sig
 end = struct
   type t =
     { title : Pool_tenant.Title.t
-    ; description : Pool_tenant.Description.t
+    ; description : Pool_tenant.Description.t option
     ; url : Pool_tenant.Url.t
     ; disabled : Pool_tenant.Disabled.t
     ; default_language : Pool_common.Language.t
@@ -201,7 +201,7 @@ end = struct
       make
         Field.
           [ Pool_tenant.Title.schema ()
-          ; Pool_tenant.Description.schema ()
+          ; Conformist.optional @@ Pool_tenant.Description.schema ()
           ; Pool_tenant.Url.schema ()
           ; Pool_tenant.Disabled.schema ()
           ; Pool_common.Language.schema ()

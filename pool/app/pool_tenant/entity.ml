@@ -118,7 +118,7 @@ end
 type t =
   { id : Id.t
   ; title : Title.t
-  ; description : Description.t
+  ; description : Description.t option
   ; url : Url.t
   ; database_label : Database.Label.t
   ; styles : Styles.t
@@ -139,7 +139,7 @@ module Read = struct
   type t =
     { id : Id.t
     ; title : Title.t
-    ; description : Description.t
+    ; description : Description.t option
     ; url : Url.t
     ; database_label : Database.Label.t
     ; styles : Styles.t
@@ -157,7 +157,7 @@ module Write = struct
   type t =
     { id : Id.t
     ; title : Title.t
-    ; description : Description.t
+    ; description : Description.t option
     ; url : Url.t
     ; database : Database.t
     ; styles : Styles.Write.t

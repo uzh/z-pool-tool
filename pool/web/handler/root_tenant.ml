@@ -27,6 +27,7 @@ let create req =
       let open CCFun in
       let%lwt multipart_encoded =
         Sihl.Web.Request.to_multipart_form_data_exn req
+        ||> HttpUtils.remove_empty_values_multiplart
       in
       let file_fields =
         let open Pool_common.Message.Field in
