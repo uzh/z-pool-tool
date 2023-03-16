@@ -20,6 +20,7 @@ let update req command success_message =
       let open Utils.Lwt_result.Infix in
       let%lwt multipart_encoded =
         Sihl.Web.Request.to_multipart_form_data_exn req
+        ||> HttpUtils.remove_empty_values_multiplart
       in
       let* _ =
         File.update_files

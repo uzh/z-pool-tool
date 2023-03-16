@@ -12,7 +12,8 @@ let active_navigation = tenants_path
 let tenants req =
   let context = Pool_context.find_exn req in
   let%lwt tenant_list = Pool_tenant.find_all () in
-  Page.Root.Tenant.list tenant_list context
+  let flash_fetcher key = Sihl.Web.Flash.find key req in
+  Page.Root.Tenant.list tenant_list context flash_fetcher
   |> General.create_root_layout ~active_navigation context
   |> Sihl.Web.Response.of_html
   |> Lwt.return
@@ -140,7 +141,8 @@ let tenant_detail req =
       |> Pool_tenant.Id.of_string
     in
     let* tenant = Pool_tenant.find id in
-    Page.Root.Tenant.detail tenant context
+    let flash_fetcher key = Sihl.Web.Flash.find key req in
+    Page.Root.Tenant.detail tenant context flash_fetcher
     |> General.create_root_layout context
     |> Sihl.Web.Response.of_html
     |> Lwt.return_ok

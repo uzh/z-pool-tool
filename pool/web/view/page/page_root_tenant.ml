@@ -5,7 +5,110 @@ module File = Pool_common.File
 module Id = Pool_tenant.Id
 module Message = Pool_common.Message
 
-let list tenant_list Pool_context.{ language; csrf; _ } =
+let database_fields tenant language flash_fetcher =
+  let fields =
+    Message.
+      [ Field.DatabaseUrl, ""
+      ; ( Field.DatabaseLabel
+        , tenant
+          |> CCOption.map_or ~default:"" (fun t ->
+               t.Pool_tenant.database_label |> Pool_database.Label.value) )
+      ]
+  in
+  fields
+  |> CCList.map (fun (field, value) ->
+       input_element language `Text field ~value ~flash_fetcher ~required:true)
+  |> div ~a:[ a_class [ "stack" ] ]
+;;
+
+let tenant_form
+  ?(tenant : Pool_tenant.t option)
+  Pool_context.{ language; csrf; _ }
+  flash_fetcher
+  =
+  let open Pool_tenant in
+  let action, control =
+    match tenant with
+    | Some tenant ->
+      ( Format.asprintf "/root/tenants/%s/update-detail" (Id.value tenant.id)
+      , Message.(Update (Some Field.Tenant)) )
+    | None -> "/root/tenants/create", Message.(Create (Some Field.Tenant))
+  in
+  let value = CCFun.flip (CCOption.map_or ~default:"") tenant in
+  let language_select =
+    let open Pool_common.Language in
+    selector language Message.Field.Language show all None ()
+  in
+  let file_uploads =
+    [ ( Field.Styles
+      , tenant |> CCOption.map (fun t -> t.styles |> Styles.value)
+      , false
+      , false )
+    ; ( Field.Icon
+      , tenant |> CCOption.map (fun t -> t.icon |> Icon.value)
+      , true
+      , false )
+    ; Field.TenantLogos, None, true, true
+    ; Field.PartnerLogos, None, false, true
+    ]
+    |> CCList.map (fun (field, file, required, allow_multiple) ->
+         let required = if CCOption.is_some tenant then false else required in
+         let download =
+           match file with
+           | None -> txt ""
+           | Some file ->
+             div
+               ~a:[ a_class [ "gap-xs" ] ]
+               [ a ~a:[ a_href (File.path file) ] [ txt "Download" ] ]
+         in
+         div
+           [ input_element_file language field ~allow_multiple ~required
+           ; download
+           ])
+  in
+  form
+    ~a:
+      [ a_method `Post
+      ; a_action (Sihl.Web.externalize_path action)
+      ; a_class [ "stack" ]
+      ; a_enctype "multipart/form-data"
+      ; a_user_data "detect-unsaved-changes" ""
+      ]
+    [ csrf_element csrf ()
+    ; input_element
+        language
+        `Text
+        Field.Title
+        ~value:(value (fun t -> t.title |> Title.value))
+        ~required:true
+        ~flash_fetcher
+    ; input_element
+        language
+        `Text
+        Field.Description
+        ~value:
+          (value (fun t ->
+             t.description |> CCOption.map_or ~default:"" Description.value))
+        ~flash_fetcher
+    ; input_element
+        language
+        `Text
+        Field.Url
+        ~value:(value (fun t -> t.url |> Url.value))
+        ~flash_fetcher
+        ~required:true
+    ; language_select
+    ; (if CCOption.is_some tenant
+       then txt ""
+       else database_fields tenant language flash_fetcher)
+    ; div ~a:[ a_class [ "stack" ] ] file_uploads
+    ; div
+        ~a:[ a_class [ "flexrow" ] ]
+        [ submit_element ~classnames:[ "push" ] language control () ]
+    ]
+;;
+
+let list tenant_list (Pool_context.{ language; _ } as context) flash_fetcher =
   let build_tenant_rows tenant_list =
     let thead =
       Pool_common.Message.
@@ -30,22 +133,6 @@ let list tenant_list Pool_context.{ language; csrf; _ } =
     Table.horizontal_table `Striped ~thead ~align_last_end:true body
   in
   let tenant_list = build_tenant_rows tenant_list in
-  let text_fields =
-    Message.Field.[ Title; Description; Url; DatabaseUrl; DatabaseLabel ]
-  in
-  let input_fields =
-    let language_select =
-      let open Pool_common.Language in
-      selector language Message.Field.Language show all None ()
-    in
-    let open Message in
-    CCList.map (input_element language `Text) text_fields
-    @ [ language_select ]
-    @ CCList.map (input_element_file language) [ Field.Styles; Field.Icon ]
-    @ CCList.map
-        (input_element_file language ~allow_multiple:true)
-        [ Field.TenantLogos; Field.PartnerLogos ]
-  in
   div
     ~a:[ a_class [ "trim"; "narrow"; "safety-margin" ] ]
     [ h1
@@ -63,23 +150,7 @@ let list tenant_list Pool_context.{ language; csrf; _ } =
                       Message.(Create (Some Field.Tenant)))
                   |> txt
                 ]
-            ; form
-                ~a:
-                  [ a_action (Sihl.Web.externalize_path "/root/tenants/create")
-                  ; a_method `Post
-                  ; a_enctype "multipart/form-data"
-                  ; a_class [ "stack" ]
-                  ]
-                ((csrf_element csrf () :: input_fields)
-                 @ [ div
-                       ~a:[ a_class [ "flexrow" ] ]
-                       [ submit_element
-                           ~classnames:[ "push" ]
-                           language
-                           Message.(Create None)
-                           ()
-                       ]
-                   ])
+            ; tenant_form context flash_fetcher
             ]
         ]
     ]
@@ -143,78 +214,13 @@ let manage_operators { Pool_tenant.id; _ } Pool_context.{ language; csrf; _ } =
     ]
 ;;
 
-let detail (tenant : Pool_tenant.t) Pool_context.{ language; csrf; _ } =
+let detail
+  (tenant : Pool_tenant.t)
+  (Pool_context.{ language; csrf; _ } as context)
+  flash_fetcher
+  =
   let open Pool_tenant in
   let control_to_string = Pool_common.Utils.control_to_string language in
-  let detail_fields =
-    Message.
-      [ Field.Title, Title.value tenant.title
-      ; ( Field.Description
-        , tenant.description |> CCOption.map_or ~default:"" Description.value )
-      ; Field.Url, Url.value tenant.url
-      ]
-  in
-  let database_fields =
-    Message.
-      [ Field.DatabaseUrl, ""
-      ; Field.DatabaseLabel, Pool_database.Label.value tenant.database_label
-      ]
-  in
-  let to_input_element (field, value) =
-    input_element language `Text field ~value
-  in
-  let language_select =
-    let open Pool_common.Language in
-    selector
-      language
-      Message.Field.Language
-      show
-      all
-      (Some tenant.default_language)
-      ()
-  in
-  let detail_input_fields =
-    (CCList.map to_input_element detail_fields @ [ language_select ])
-    @ [ div
-          [ input_element_file language Message.Field.Styles
-          ; div
-              ~a:[ a_class [ "gap-xs" ] ]
-              [ a
-                  ~a:
-                    [ a_href
-                        (File.path (tenant.styles |> Pool_tenant.Styles.value))
-                    ]
-                  [ txt "Download" ]
-              ]
-          ]
-      ; div
-          [ input_element_file language Message.Field.Icon
-          ; div
-              ~a:[ a_class [ "gap-xs" ] ]
-              [ a
-                  ~a:
-                    [ a_href (File.path (tenant.icon |> Pool_tenant.Icon.value))
-                    ]
-                  [ txt "Download" ]
-              ]
-          ]
-      ; input_element_file
-          ~allow_multiple:true
-          language
-          Message.Field.TenantLogos
-      ; input_element_file
-          ~allow_multiple:true
-          language
-          Message.Field.PartnerLogos
-      ]
-  in
-  let database_input_fields = CCList.map to_input_element database_fields in
-  let disabled =
-    checkbox_element
-      language
-      Message.Field.TenantDisabledFlag
-      ~value:(tenant.disabled |> Disabled.value)
-  in
   let delete_img_form files =
     div
       ~a:[ a_class [ "flexrow" ] ]
@@ -285,28 +291,7 @@ let detail (tenant : Pool_tenant.t) Pool_context.{ language; csrf; _ } =
         ]
     ; div
         ~a:[ a_class [ "stack-lg" ] ]
-        [ form
-            ~a:
-              [ a_action
-                  (Sihl.Web.externalize_path
-                     (Format.asprintf
-                        "/root/tenants/%s/update-detail"
-                        (Id.value tenant.id)))
-              ; a_method `Post
-              ; a_enctype "multipart/form-data"
-              ; a_class [ "stack" ]
-              ]
-            ((csrf_element csrf () :: detail_input_fields)
-             @ [ disabled
-               ; div
-                   ~a:[ a_class [ "flexrow" ] ]
-                   [ submit_element
-                       ~classnames:[ "push" ]
-                       language
-                       Message.(Update None)
-                       ()
-                   ]
-               ])
+        [ tenant_form ~tenant context flash_fetcher
         ; delete_file_forms
         ; form
             ~a:
@@ -319,7 +304,9 @@ let detail (tenant : Pool_tenant.t) Pool_context.{ language; csrf; _ } =
               ; a_enctype "multipart/form-data"
               ; a_class [ "stack" ]
               ]
-            ((csrf_element csrf () :: database_input_fields)
+            ([ csrf_element csrf ()
+             ; database_fields (Some tenant) language flash_fetcher
+             ]
              @ [ div
                    ~a:[ a_class [ "flexrow" ] ]
                    [ submit_element
