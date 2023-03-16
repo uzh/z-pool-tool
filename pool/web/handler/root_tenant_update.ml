@@ -5,23 +5,30 @@ module Common = Pool_common
 module Database = Pool_database
 
 let update req command success_message =
+  let open Utils.Lwt_result.Infix in
+  let open Common.Message.Field in
+  let open Pool_tenant in
+  let%lwt multipart_encoded =
+    Sihl.Web.Request.to_multipart_form_data_exn req
+    ||> HttpUtils.remove_empty_values_multiplart
+  in
+  let tags = Pool_context.Logger.Tags.req req in
+  let id =
+    HttpUtils.get_field_router_param req Pool_common.Message.Field.Tenant
+    |> Pool_tenant.Id.of_string
+  in
+  let redirect_path =
+    Format.asprintf "/root/tenants/%s" (Pool_tenant.Id.value id)
+  in
   let result _ =
-    let open Utils.Lwt_result.Infix in
-    let open Common.Message.Field in
-    let tags = Pool_context.Logger.Tags.req req in
-    let id =
-      HttpUtils.get_field_router_param req Pool_common.Message.Field.Tenant
-      |> Pool_tenant.Id.of_string
-    in
-    let redirect_path =
-      Format.asprintf "/root/tenants/%s" (Pool_tenant.Id.value id)
-    in
+    Utils.Lwt_result.map_error (fun err ->
+      let urlencoded =
+        multipart_encoded |> HttpUtils.multipart_to_urlencoded file_fields
+      in
+      err, redirect_path, [ HttpUtils.urlencoded_to_flash urlencoded ])
+    @@
     let events tenant =
       let open Utils.Lwt_result.Infix in
-      let%lwt multipart_encoded =
-        Sihl.Web.Request.to_multipart_form_data_exn req
-        ||> HttpUtils.remove_empty_values_multiplart
-      in
       let* _ =
         File.update_files
           Database.root
@@ -61,14 +68,9 @@ let update req command success_message =
         redirect_path
         [ Message.set ~success:[ success_message ] ]
     in
-    id
-    |> Pool_tenant.find_full
-    >>= events
-    >|- (fun err -> err, redirect_path)
-    |>> handle
-    |>> return_to_overview
+    id |> Pool_tenant.find_full >>= events |>> handle |>> return_to_overview
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path_with_actions req
 ;;
 
 let update_detail req =

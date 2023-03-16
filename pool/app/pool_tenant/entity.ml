@@ -198,3 +198,7 @@ module Selection = struct
   let url ({ url; _ } : t) = url |> Url.value
   let label ({ database_label; _ } : t) = database_label
 end
+
+let file_fields =
+  Pool_common.Message.Field.([ Styles; Icon ] @ LogoMapping.LogoType.all_fields)
+;;

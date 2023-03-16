@@ -21,21 +21,26 @@ let tenants req =
 
 let create req =
   let tags = Pool_context.Logger.Tags.req req in
+  let%lwt multipart_encoded =
+    Sihl.Web.Request.to_multipart_form_data_exn req
+    ||> HttpUtils.remove_empty_values_multiplart
+  in
   let result { Pool_context.database_label; _ } =
+    Utils.Lwt_result.map_error (fun err ->
+      let urlencoded =
+        multipart_encoded
+        |> HttpUtils.multipart_to_urlencoded Pool_tenant.file_fields
+      in
+      err, tenants_path, [ HttpUtils.urlencoded_to_flash urlencoded ])
+    @@
     let events () =
-      Utils.Lwt_result.map_error (fun err -> err, tenants_path)
-      @@
       let open CCFun in
-      let%lwt multipart_encoded =
-        Sihl.Web.Request.to_multipart_form_data_exn req
-        ||> HttpUtils.remove_empty_values_multiplart
+      let* files =
+        File.upload_files
+          Database.root
+          (CCList.map Pool_common.Message.Field.show Pool_tenant.file_fields)
+          req
       in
-      let file_fields =
-        let open Pool_common.Message.Field in
-        [ Styles; Icon ] @ Pool_tenant.LogoMapping.LogoType.all_fields
-        |> CCList.map show
-      in
-      let* files = File.upload_files Database.root file_fields req in
       let finalize = function
         | Ok resp -> Lwt.return_ok resp
         | Error err ->
@@ -66,7 +71,7 @@ let create req =
     in
     () |> events |>> handle |>> return_to_overview
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path_with_actions req
 ;;
 
 let manage_operators req =

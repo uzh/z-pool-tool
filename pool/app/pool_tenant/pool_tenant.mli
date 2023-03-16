@@ -320,6 +320,8 @@ module Selection : sig
   val label : t -> Database.Label.t
 end
 
+val file_fields : Pool_common.Message.Field.t list
+
 module Guard : sig
   module Actor : sig
     val to_authorizable
