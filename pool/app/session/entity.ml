@@ -188,11 +188,6 @@ let is_fully_booked (m : t) =
 let available_spots m = m.max_participants - m.assignment_count |> CCInt.max 0
 let has_assignments m = AssignmentCount.value m.assignment_count > 0
 
-type assignments =
-  { session : t
-  ; assignments : Assignment.t list
-  }
-
 type notification_log =
   | Email of Sihl_email.t * Sihl_queue.instance
   | SMS of string * Sihl_queue.instance
@@ -446,8 +441,7 @@ let is_deletable session follow_ups =
   let* () = not_canceled session in
   let* () = not_closed session in
   let has_follow_ups = CCList.is_empty follow_ups |> not in
-  let has_assignments = session.assignment_count |> AssignmentCount.value > 0 in
-  match has_follow_ups, has_assignments with
+  match has_follow_ups, has_assignments session with
   | true, _ -> Error Pool_common.Message.SessionHasFollowUps
   | _, true -> Error Pool_common.Message.SessionHasAssignments
   | false, false -> Ok ()

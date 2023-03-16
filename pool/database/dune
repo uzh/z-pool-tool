@@ -2,6 +2,7 @@
  (name database)
  (libraries
   admin
+  assignment
   conformist
   contact
   email
