@@ -12,6 +12,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 ### Changed
 
 - when signing up for a session with follow-ups, the contact receives one confirmation message containing all sessions
+- using uuids instead of ids as foreign keys in assignment table
+
 ### Fixed
 
 - filter by boolean fields

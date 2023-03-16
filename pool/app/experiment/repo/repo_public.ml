@@ -52,16 +52,12 @@ let find_all_public_by_contact_request =
         WHERE
           pool_assignments.marked_as_deleted = 0
         AND
-          pool_assignments.contact_id = (
-            SELECT
-              id FROM pool_contacts
-            WHERE
-              user_uuid = UNHEX(REPLACE($1, '-', '')))
-            AND pool_assignments.session_id IN(
-              SELECT
-                id FROM pool_sessions
-              WHERE
-                pool_sessions.experiment_uuid = pool_experiments.uuid))
+          pool_assignments.contact_uuid = UNHEX(REPLACE($1, '-', ''))
+        AND pool_assignments.session_uuid IN(
+          SELECT
+            uuid FROM pool_sessions
+          WHERE
+            pool_sessions.experiment_uuid = pool_experiments.uuid))
       |sql}
   in
   let not_on_waitinglist =

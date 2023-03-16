@@ -1,7 +1,6 @@
 (library
  (name session)
  (libraries
-  assignment
   containers
   experiment
   pool_common
