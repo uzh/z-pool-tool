@@ -65,29 +65,6 @@ let add_marked_as_deleted_column =
     |sql}
 ;;
 
-let replace_ids_with_uuids_as_foreignkeys =
-  Sihl.Database.Migration.create_step
-    ~label:"replace ids with uuids as foreignkeys"
-    {sql|
-      BEGIN NOT ATOMIC
-        ALTER TABLE pool_assignments
-          ADD COLUMN session_uuid binary(16) AFTER session_id,
-          ADD COLUMN contact_uuid binary(16) AFTER contact_id;
-
-        UPDATE pool_assignments SET
-          session_uuid = (SELECT uuid FROM pool_sessions WHERE pool_sessions.id = pool_assignments.session_id),
-          contact_uuid = (SELECT user_uuid FROM pool_contacts WHERE pool_contacts.id = pool_assignments.contact_id);
-
-        ALTER TABLE pool_assignments
-          ADD CONSTRAINT unique_session_contact_combination UNIQUE (session_uuid, contact_uuid);
-
-        ALTER TABLE pool_assignments
-          DROP COLUMN session_id,
-          DROP COLUMN contact_id;
-      END;
-    |sql}
-;;
-
 let migration () =
   Sihl.Database.Migration.(
     empty "participation"
@@ -96,6 +73,5 @@ let migration () =
     |> add_step rename_subject_to_contact
     |> add_step rename_table_to_assignments
     |> add_step make_show_up_participated_nullable
-    |> add_step add_marked_as_deleted_column
-    |> add_step replace_ids_with_uuids_as_foreignkeys)
+    |> add_step add_marked_as_deleted_column)
 ;;

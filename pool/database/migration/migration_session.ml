@@ -80,6 +80,29 @@ let drop_start_default_value =
     |sql}
 ;;
 
+let use_uuids_as_foreign_keys_in_assignment_table =
+  Sihl.Database.Migration.create_step
+    ~label:"replace ids with uuids as foreignkeys"
+    {sql|
+      BEGIN NOT ATOMIC
+        ALTER TABLE pool_assignments
+          ADD COLUMN session_uuid binary(16) AFTER session_id,
+          ADD COLUMN contact_uuid binary(16) AFTER contact_id;
+
+        UPDATE pool_assignments SET
+          session_uuid = (SELECT uuid FROM pool_sessions WHERE pool_sessions.id = pool_assignments.session_id),
+          contact_uuid = (SELECT user_uuid FROM pool_contacts WHERE pool_contacts.id = pool_assignments.contact_id);
+
+        ALTER TABLE pool_assignments
+          ADD CONSTRAINT unique_session_contact_combination UNIQUE (session_uuid, contact_uuid);
+
+        ALTER TABLE pool_assignments
+          DROP COLUMN session_id,
+          DROP COLUMN contact_id;
+      END;
+    |sql}
+;;
+
 let migration () =
   Sihl.Database.Migration.(
     empty "session"
@@ -88,5 +111,6 @@ let migration () =
     |> add_step add_follow_up
     |> add_step add_reminder_columns
     |> add_step add_closed_at_column
-    |> add_step drop_start_default_value)
+    |> add_step drop_start_default_value
+    |> add_step use_uuids_as_foreign_keys_in_assignment_table)
 ;;
