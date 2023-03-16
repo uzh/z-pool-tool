@@ -12,14 +12,6 @@ type create =
   }
 [@@deriving eq, show]
 
-let define_start start_at start_now =
-  match StartNow.value start_now, start_at with
-  | true, _ -> Ok `StartNow
-  | false, Some start_at -> Ok (`StartAt start_at)
-  | false, None ->
-    Error Pool_common.Message.(Conformist [ Field.Start, NoValue ])
-;;
-
 let src = Logs.Src.create "mailing.cqrs"
 
 let default_command start_at start_now end_at rate random distribution : create =
@@ -72,8 +64,8 @@ end = struct
     =
     Logs.info ~src (fun m -> m "Handle command CreateOperator" ~tags);
     let open CCResult in
-    let* start_at = define_start start_at start_now in
-    let* mailing = Mailing.create ~id start_at end_at rate distribution in
+    let* start = Start.create start_at start_now in
+    let* mailing = Mailing.create ~id start end_at rate distribution in
     Ok
       [ Mailing.Created (mailing, experiment.Experiment.id)
         |> Pool_event.mailing
@@ -115,8 +107,8 @@ end = struct
     let open CCResult in
     Logs.info ~src (fun m -> m "Handle command Update" ~tags);
     let* start_at =
-      define_start start_at start_now
-      >>= CCFun.flip Mailing.validate_start end_at
+      Start.create start_at start_now
+      >>= CCFun.flip Mailing.Start.validate end_at
     in
     let update = { start_at; end_at; rate; distribution } in
     match Ptime_clock.now () < Mailing.StartAt.value start_at with
@@ -231,7 +223,7 @@ end = struct
     let open CCResult in
     Mailing.create
       ?id
-      (`StartAt start_at)
+      Start.(StartAt start_at)
       end_at
       (CCOption.get_or ~default:Mailing.Rate.default rate)
       distribution

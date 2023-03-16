@@ -189,7 +189,7 @@ let create_with_start_now () =
     |> urlencoded
     |> Create.decode
     >>= (fun { start_at; start_now; end_at; rate; distribution } ->
-          let* start_at = define_start start_at start_now in
+          let* start_at = Start.create start_at start_now in
           Mailing.create start_at end_at rate distribution)
     |> CCResult.is_ok
   in

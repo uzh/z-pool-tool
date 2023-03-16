@@ -243,12 +243,13 @@ module Model = struct
   ;;
 
   let create_mailing ?id ?(rate = Mailing.Rate.default) () =
+    let open Mailing in
     let start =
       Ptime.add_span
         (Ptime_clock.now ())
         Sihl.Time.(OneSecond |> duration_to_span)
       |> CCOption.get_exn_or "Time calculation failed!"
-      |> Mailing.StartAt.create
+      |> StartAt.create
       |> get_or_failwith_pool_error
     in
     let deadline =
@@ -256,10 +257,10 @@ module Model = struct
         (Ptime_clock.now ())
         Sihl.Time.(OneHour |> duration_to_span)
       |> CCOption.get_exn_or "Time calculation failed!"
-      |> Mailing.EndAt.create
+      |> EndAt.create
       |> get_or_failwith_pool_error
     in
-    Mailing.create ?id (`StartAt start) deadline rate None
+    create ?id Start.(StartAt start) deadline rate None
     |> get_or_failwith_pool_error
   ;;
 

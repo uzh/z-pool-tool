@@ -32,6 +32,19 @@ module EndAt : sig
     -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
 end
 
+module Start : sig
+  type t =
+    | StartNow
+    | StartAt of StartAt.t
+
+  val validate : t -> EndAt.t -> (StartAt.t, Pool_common.Message.error) result
+
+  val create
+    :  StartAt.t option
+    -> StartNow.t
+    -> (t, Pool_common.Message.error) result
+end
+
 module Rate : sig
   include Pool_common.Model.IntegerSig
 
@@ -140,14 +153,9 @@ val equal : t -> t -> bool
 val per_minutes : CCInt.t -> t -> CCFloat.t
 val total : t -> int
 
-val validate_start
-  :  [< `StartAt of StartAt.t | `StartNow ]
-  -> EndAt.t
-  -> (StartAt.t, Pool_common.Message.error) result
-
 val create
   :  ?id:Id.t
-  -> [< `StartAt of StartAt.t | `StartNow ]
+  -> Start.t
   -> EndAt.t
   -> Rate.t
   -> Distribution.t option

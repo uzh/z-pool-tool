@@ -18,6 +18,35 @@ module StartNow = struct
   let schema = schema Pool_common.Message.Field.StartNow
 end
 
+module Start = struct
+  type t =
+    | StartNow
+    | StartAt of StartAt.t
+
+  let validate start end_at =
+    let open CCResult in
+    let* start_at =
+      match start with
+      | StartAt start_at ->
+        if Ptime.is_earlier ~than:(Ptime_clock.now ()) start_at
+        then Error Pool_common.Message.TimeInPast
+        else Ok start_at
+      | StartNow -> Ok (Ptime_clock.now ())
+    in
+    if Ptime.is_later ~than:end_at start_at
+    then Error Pool_common.Message.EndBeforeStart
+    else Ok start_at
+  ;;
+
+  let create start_at start_now =
+    match StartNow.value start_now, start_at with
+    | true, _ -> Ok StartNow
+    | false, Some start_at -> Ok (StartAt start_at)
+    | false, None ->
+      Error Pool_common.Message.(Conformist [ Field.Start, NoValue ])
+  ;;
+end
+
 module EndAt = struct
   include Pool_common.Model.Ptime
 
@@ -185,24 +214,9 @@ let equal m1 m2 =
      |> CCOption.get_or ~default:false
 ;;
 
-let validate_start start end_at =
-  let open CCResult in
-  let* start_at =
-    match start with
-    | `StartAt start_at ->
-      if Ptime.is_earlier ~than:(Ptime_clock.now ()) start_at
-      then Error Pool_common.Message.TimeInPast
-      else Ok start_at
-    | `StartNow -> StartAt.create (Ptime_clock.now ())
-  in
-  if Ptime.is_later ~than:end_at start_at
-  then Error Pool_common.Message.EndBeforeStart
-  else Ok start_at
-;;
-
 let create ?(id = Id.create ()) start end_at rate distribution =
   let open CCResult in
-  let* start_at = validate_start start end_at in
+  let* start_at = Start.validate start end_at in
   Ok
     { id
     ; start_at
