@@ -32,7 +32,7 @@ module SignUp : sig
     :  (string * string list) list
     -> (t, Pool_common.Message.error) result
 
-  val effects : Guard.Authorizer.effect list
+  val effects : Guard.EffectSet.t
 end = struct
   type t =
     { email : User.EmailAddress.t
@@ -97,7 +97,10 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let effects = [ `Create, `TargetEntity `Contact ]
+  let effects =
+    let open Guard in
+    EffectSet.One (Action.Create, TargetSpec.Entity `Contact)
+  ;;
 end
 
 module DeleteUnverified : sig
@@ -108,7 +111,7 @@ module DeleteUnverified : sig
     -> Contact.t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val effects : Contact.t -> Guard.Authorizer.effect list
+  val effects : Contact.t -> Guard.EffectSet.t
 end = struct
   type t
 
@@ -120,10 +123,9 @@ end = struct
   ;;
 
   let effects contact =
-    [ ( `Delete
-      , `Target (Contact.id contact |> Guard.Uuid.target_of Pool_common.Id.value)
-      )
-    ]
+    let open Guard in
+    let target_id = Contact.id contact |> Uuid.target_of Pool_common.Id.value in
+    EffectSet.One (Action.Delete, TargetSpec.Id (`Contact, target_id))
   ;;
 end
 
@@ -139,7 +141,7 @@ module Update : sig
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val effects : Contact.Id.t -> Guard.Authorizer.effect list
+  val effects : Contact.Id.t -> Guard.EffectSet.t
 end = struct
   type t = Custom_field.PartialUpdate.t
 
@@ -152,9 +154,9 @@ end = struct
   ;;
 
   let effects id =
-    [ `Update, `Target (id |> Guard.Uuid.target_of Contact.Id.value)
-    ; `Update, `TargetEntity `Contact
-    ]
+    let open Guard in
+    let target_id = id |> Uuid.target_of Contact.Id.value in
+    EffectSet.One (Action.Update, TargetSpec.Id (`Contact, target_id))
   ;;
 end
 
@@ -169,7 +171,7 @@ module ClearAnswer : sig
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val effects : Contact.Id.t -> Guard.Authorizer.effect list
+  val effects : Contact.Id.t -> Guard.EffectSet.t
 end = struct
   type t = Contact.t
 
@@ -182,9 +184,9 @@ end = struct
   ;;
 
   let effects id =
-    [ `Update, `Target (id |> Guard.Uuid.target_of Contact.Id.value)
-    ; `Update, `TargetEntity `Contact
-    ]
+    let open Guard in
+    let target_id = id |> Uuid.target_of Contact.Id.value in
+    EffectSet.One (Action.Update, TargetSpec.Id (`Contact, target_id))
   ;;
 end
 
@@ -210,7 +212,7 @@ module UpdatePassword : sig
     :  (string * string list) list
     -> (t, Pool_common.Message.error) result
 
-  val effects : Contact.t -> Guard.Authorizer.effect list
+  val effects : Contact.t -> Guard.EffectSet.t
 end = struct
   type t =
     { current_password : User.Password.t
@@ -265,11 +267,10 @@ end = struct
       ]
   ;;
 
-  let effects subject =
-    [ ( `Update
-      , `Target (Contact.id subject |> Guard.Uuid.target_of Pool_common.Id.value)
-      )
-    ]
+  let effects contact =
+    let open Guard in
+    let target_id = Contact.id contact |> Uuid.target_of Pool_common.Id.value in
+    EffectSet.One (Action.Update, TargetSpec.Id (`Contact, target_id))
   ;;
 
   let decode data =
@@ -292,7 +293,7 @@ module RequestEmailValidation : sig
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val effects : Contact.t -> Guard.Authorizer.effect list
+  val effects : Contact.t -> Guard.EffectSet.t
 end = struct
   type t = Pool_user.EmailAddress.t
 
@@ -314,11 +315,10 @@ end = struct
       ]
   ;;
 
-  let effects subject =
-    [ ( `Update
-      , `Target (Contact.id subject |> Guard.Uuid.target_of Pool_common.Id.value)
-      )
-    ]
+  let effects contact =
+    let open Guard in
+    let target_id = Contact.id contact |> Uuid.target_of Pool_common.Id.value in
+    EffectSet.One (Action.Update, TargetSpec.Id (`Contact, target_id))
   ;;
 end
 
@@ -332,7 +332,7 @@ module UpdateEmail : sig
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val effects : Contact.t -> Pool_tenant.t -> Guard.Authorizer.effect list
+  val effects : Contact.t -> Guard.EffectSet.t
 end = struct
   type t = Email.unverified Email.t
 
@@ -349,14 +349,10 @@ end = struct
       ]
   ;;
 
-  let effects contact tenant =
-    [ ( `Update
-      , `Target (Contact.id contact |> Guard.Uuid.target_of Pool_common.Id.value)
-      )
-    ; ( `Update
-      , `Target
-          (tenant.Pool_tenant.id |> Guard.Uuid.target_of Pool_tenant.Id.value) )
-    ]
+  let effects contact =
+    let open Guard in
+    let target_id = Contact.id contact |> Uuid.target_of Pool_common.Id.value in
+    EffectSet.One (Action.Update, TargetSpec.Id (`Contact, target_id))
   ;;
 end
 
@@ -368,7 +364,7 @@ module AcceptTermsAndConditions : sig
     -> Contact.t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val effects : Contact.t -> Guard.Authorizer.effect list
+  val effects : Contact.t -> Guard.EffectSet.t
 end = struct
   type t
 
@@ -378,10 +374,9 @@ end = struct
   ;;
 
   let effects contact =
-    [ ( `Update
-      , `Target
-          (Guard.Uuid.Target.of_string_exn contact.Contact.user.Sihl_user.id) )
-    ]
+    let open Guard in
+    let target_id = Contact.id contact |> Uuid.target_of Pool_common.Id.value in
+    EffectSet.One (Action.Update, TargetSpec.Id (`Contact, target_id))
   ;;
 end
 
@@ -398,7 +393,7 @@ module SendProfileUpdateTrigger : sig
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val effects : Contact.t -> Guard.Authorizer.effect list
+  val effects : Contact.t -> Guard.EffectSet.t
 end = struct
   type t =
     { contacts : Contact.t list
@@ -414,10 +409,9 @@ end = struct
   ;;
 
   let effects contact =
-    [ ( `Update
-      , `Target
-          (Guard.Uuid.Target.of_string_exn contact.Contact.user.Sihl_user.id) )
-    ]
+    let open Guard in
+    let target_id = Contact.id contact |> Uuid.target_of Pool_common.Id.value in
+    EffectSet.One (Action.Update, TargetSpec.Id (`Contact, target_id))
   ;;
 end
 
@@ -430,7 +424,7 @@ module SendRegistrationAttemptNotifitacion : sig
     -> Sihl_email.t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val effects : Guard.Authorizer.effect list
+  val effects : Guard.EffectSet.t
 end = struct
   type t = Contact.t
 
@@ -444,7 +438,10 @@ end = struct
       ]
   ;;
 
-  let effects = []
+  let effects =
+    let open Guard in
+    EffectSet.One (Action.Update, TargetSpec.Entity `Contact)
+  ;;
 end
 
 module Verify = struct

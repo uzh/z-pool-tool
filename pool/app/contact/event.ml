@@ -100,7 +100,7 @@ let handle_event pool : event -> unit Lwt.t =
     let%lwt () = Repo.insert pool contact in
     Entity_guard.Target.to_authorizable ~ctx:(Pool_tenant.to_ctx pool) contact
     ||> Pool_common.Utils.get_or_failwith
-    ||> fun (_ : [> `Contact ] Guard.AuthorizableTarget.t) -> ()
+    ||> fun (_ : [> `Contact ] Guard.Target.t) -> ()
   | EmailUpdated (contact, email) ->
     let%lwt _ =
       Service.User.update

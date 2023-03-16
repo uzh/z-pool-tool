@@ -58,7 +58,10 @@ end = struct
       | Error err -> Error err)
   ;;
 
-  let effects = [ `Create, `TargetEntity `Invitation ]
+  let effects =
+    let open Guard in
+    EffectSet.One (Action.Create, TargetSpec.Entity `Invitation)
+  ;;
 end
 
 module Resend : sig
@@ -75,7 +78,7 @@ module Resend : sig
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val effects : Pool_common.Id.t -> Guard.Authorizer.effect list
+  val effects : Pool_common.Id.t -> Guard.EffectSet.t
 end = struct
   type t =
     { invitation : Invitation.t
@@ -91,8 +94,8 @@ end = struct
   ;;
 
   let effects id =
-    [ `Update, `Target (id |> Guard.Uuid.target_of Pool_common.Id.value)
-    ; `Update, `TargetEntity `Invitation
-    ]
+    let open Guard in
+    let target_id = id |> Uuid.target_of Pool_common.Id.value in
+    EffectSet.One (Action.Update, TargetSpec.Id (`Invitation, target_id))
   ;;
 end

@@ -25,7 +25,10 @@ end = struct
     Ok Custom_field.[ OptionCreated (id field, m) |> Pool_event.custom_field ]
   ;;
 
-  let effects = [ `Create, `TargetEntity `CustomField ]
+  let effects =
+    let open Guard in
+    EffectSet.One (Action.Create, TargetSpec.Entity `CustomField)
+  ;;
 end
 
 module Update : sig
@@ -38,7 +41,7 @@ module Update : sig
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val effects : Custom_field.SelectOption.Id.t -> Guard.Authorizer.effect list
+  val effects : Custom_field.SelectOption.Id.t -> Guard.EffectSet.t
 end = struct
   type t = command
 
@@ -52,11 +55,11 @@ end = struct
   ;;
 
   let effects id =
-    [ ( `Update
-      , `Target (id |> Guard.Uuid.target_of Custom_field.SelectOption.Id.value)
-      )
-    ; `Update, `TargetEntity `CustomField
-    ]
+    let open Guard in
+    let target_id =
+      id |> Guard.Uuid.target_of Custom_field.SelectOption.Id.value
+    in
+    EffectSet.One (Action.Update, TargetSpec.Id (`CustomField, target_id))
   ;;
 end
 
@@ -68,7 +71,7 @@ module Destroy : sig
     -> Custom_field.SelectOption.t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val effects : Custom_field.SelectOption.Id.t -> Guard.Authorizer.effect list
+  val effects : Custom_field.SelectOption.Id.t -> Guard.EffectSet.t
 end = struct
   type t
 
@@ -82,18 +85,18 @@ end = struct
   ;;
 
   let effects id =
-    [ ( `Delete
-      , `Target (id |> Guard.Uuid.target_of Custom_field.SelectOption.Id.value)
-      )
-    ; `Delete, `TargetEntity `CustomField
-    ]
+    let open Guard in
+    let target_id =
+      id |> Guard.Uuid.target_of Custom_field.SelectOption.Id.value
+    in
+    EffectSet.One (Action.Delete, TargetSpec.Id (`CustomField, target_id))
   ;;
 end
 
 module Publish : sig
   include Common.CommandSig with type t = Custom_field.SelectOption.t
 
-  val effects : Custom_field.SelectOption.Id.t -> Guard.Authorizer.effect list
+  val effects : Custom_field.SelectOption.Id.t -> Guard.EffectSet.t
 end = struct
   type t = Custom_field.SelectOption.t
 
@@ -103,18 +106,18 @@ end = struct
   ;;
 
   let effects id =
-    [ ( `Update
-      , `Target (id |> Guard.Uuid.target_of Custom_field.SelectOption.Id.value)
-      )
-    ; `Update, `TargetEntity `CustomField
-    ]
+    let open Guard in
+    let target_id =
+      id |> Guard.Uuid.target_of Custom_field.SelectOption.Id.value
+    in
+    EffectSet.One (Action.Update, TargetSpec.Id (`CustomField, target_id))
   ;;
 end
 
 module Sort : sig
   include Common.CommandSig with type t = Custom_field.SelectOption.t list
 
-  val effects : Custom_field.SelectOption.Id.t -> Guard.Authorizer.effect list
+  val effects : Custom_field.SelectOption.Id.t -> Guard.EffectSet.t
 end = struct
   type t = Custom_field.SelectOption.t list
 
@@ -124,10 +127,10 @@ end = struct
   ;;
 
   let effects id =
-    [ ( `Update
-      , `Target (id |> Guard.Uuid.target_of Custom_field.SelectOption.Id.value)
-      )
-    ; `Update, `TargetEntity `CustomField
-    ]
+    let open Guard in
+    let target_id =
+      id |> Guard.Uuid.target_of Custom_field.SelectOption.Id.value
+    in
+    EffectSet.One (Action.Update, TargetSpec.Id (`CustomField, target_id))
   ;;
 end

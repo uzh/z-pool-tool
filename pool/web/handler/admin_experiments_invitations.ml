@@ -189,43 +189,40 @@ let resend req =
 ;;
 
 module Access : sig
-  include Helpers.AccessSig
+  include module type of Helpers.Access
 
   val resend : Rock.Middleware.t
 end = struct
+  include Helpers.Access
+  open Guard
   module InvitationCommand = Cqrs_command.Invitation_command
   module Field = Pool_common.Message.Field
+  module Guardian = Middleware.Guardian
 
   let invitation_effects =
-    Middleware.Guardian.id_effects Pool_common.Id.of_string Field.Invitation
+    Guardian.id_effects Pool_common.Id.of_string Field.Invitation
   ;;
 
   let index =
-    Middleware.Guardian.validate_admin_entity
-      [ `Read, `TargetEntity `Invitation ]
+    EffectSet.One (Action.Read, TargetSpec.Entity `Invitation)
+    |> Guardian.validate_admin_entity
   ;;
 
   let create =
-    InvitationCommand.Create.effects
-    |> Middleware.Guardian.validate_admin_entity
+    InvitationCommand.Create.effects |> Guardian.validate_admin_entity
   ;;
 
   let read =
-    [ (fun id ->
-        [ `Read, `Target (id |> Guard.Uuid.target_of Pool_common.Id.value)
-        ; `Read, `TargetEntity `Invitation
-        ])
-    ]
+    (fun id ->
+      let target_id = id |> Uuid.target_of Pool_common.Id.value in
+      EffectSet.One (Action.Read, TargetSpec.Id (`Invitation, target_id)))
     |> invitation_effects
-    |> Middleware.Guardian.validate_generic
+    |> Guardian.validate_generic
   ;;
 
-  let update = Middleware.Guardian.denied
-  let delete = Middleware.Guardian.denied
-
   let resend =
-    [ InvitationCommand.Resend.effects ]
+    InvitationCommand.Resend.effects
     |> invitation_effects
-    |> Middleware.Guardian.validate_generic
+    |> Guardian.validate_generic
   ;;
 end

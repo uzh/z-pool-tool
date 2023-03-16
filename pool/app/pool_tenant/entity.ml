@@ -14,10 +14,9 @@ let to_ctx pool = [ "pool", Database.Label.value pool ]
 let of_ctx_exn =
   let open CCFun in
   let open Pool_common in
-  CCList.assoc_opt ~eq:( = ) "pool"
+  Pool_database.of_ctx_opt
   %> CCOption.to_result Message.(Undefined Field.DatabaseLabel)
   %> Utils.get_or_failwith
-  %> Pool_database.Label.of_string
 ;;
 
 module Title = struct

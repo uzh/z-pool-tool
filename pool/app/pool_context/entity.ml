@@ -89,7 +89,7 @@ let find_authenticatable { user; database_label; _ } =
     admin
     |> Admin.user
     |> (fun { Sihl_user.id; _ } -> Guard.Uuid.Actor.of_string_exn id)
-    |> Guard.Persistence.Actor.find_authorizable ~ctx `Admin
+    |> Guard.Persistence.Actor.find ~ctx `Admin
     |> Lwt_result.map_error PoolError.authorization
   | Contact c -> Contact.Guard.Actor.to_authorizable ~ctx c
   | Guest -> Lwt.return_error PoolError.(NotFound Field.User)

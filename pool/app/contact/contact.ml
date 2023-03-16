@@ -37,8 +37,7 @@ module Guard = struct
       Guard.Persistence.Target.decorate
         ?ctx
         (fun t ->
-          Guard.AuthorizableTarget.make
-            (Guard.TargetRoleSet.singleton `Contact)
+          Guard.Target.make
             `Contact
             (Guard.Uuid.Target.of_string_exn (Pool_common.Id.value (id t))))
         t
@@ -54,8 +53,8 @@ module Guard = struct
     let to_authorizable ?ctx t =
       t
       |> Guard.Persistence.Actor.decorate ?ctx (fun t ->
-           Guard.Authorizable.make
-             (Guard.ActorRoleSet.singleton `Contact)
+           Guard.Actor.make
+             (Guard.RoleSet.singleton `Contact)
              `Contact
              (Guard.Uuid.Actor.of_string_exn (Pool_common.Id.value (id t))))
       |> Lwt_result.map_error (fun s ->
@@ -76,8 +75,8 @@ module Guard = struct
       Guard.Persistence.Actor.decorate
         ?ctx
         (fun id ->
-          Guard.Authorizable.make
-            (Guard.ActorRoleSet.singleton `Contact)
+          Guard.Actor.make
+            (Guard.RoleSet.singleton `Contact)
             `Contact
             (Guard.Uuid.Actor.of_string_exn id))
         user_id

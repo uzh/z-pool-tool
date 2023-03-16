@@ -72,7 +72,10 @@ end = struct
     >|= fun smtp -> [ Pool_tenant.SmtpCreated smtp |> Pool_event.pool_tenant ]
   ;;
 
-  let effects = [ `Create, `TargetEntity `Smtp ]
+  let effects =
+    let open Guard in
+    EffectSet.One (Action.Create, TargetSpec.Entity `Smtp)
+  ;;
 
   let decode data =
     Conformist.decode_and_validate schema data
@@ -92,7 +95,7 @@ module Update : sig
     :  (string * string list) list
     -> (t, Pool_common.Message.error) result
 
-  val effects : Pool_tenant.SmtpAuth.Id.t -> Guard.Authorizer.effect list
+  val effects : Pool_tenant.SmtpAuth.Id.t -> Guard.EffectSet.t
 end = struct
   type t = SmtpAuth.t
 
@@ -136,9 +139,9 @@ end = struct
   ;;
 
   let effects id =
-    [ `Update, `Target (id |> Guard.Uuid.target_of Pool_tenant.SmtpAuth.Id.value)
-    ; `Update, `TargetEntity `Tenant
-    ]
+    let open Guard in
+    let target_id = id |> Uuid.target_of Pool_tenant.SmtpAuth.Id.value in
+    EffectSet.One (Action.Update, TargetSpec.Id (`Smtp, target_id))
   ;;
 end
 
@@ -149,7 +152,7 @@ module UpdatePassword : sig
     :  (string * string list) list
     -> (t, Pool_common.Message.error) result
 
-  val effects : Pool_tenant.SmtpAuth.Id.t -> Guard.Authorizer.effect list
+  val effects : Pool_tenant.SmtpAuth.Id.t -> Guard.EffectSet.t
 end = struct
   type t = SmtpAuth.update_password
 
@@ -176,8 +179,8 @@ end = struct
   ;;
 
   let effects id =
-    [ `Update, `Target (id |> Guard.Uuid.target_of Pool_tenant.SmtpAuth.Id.value)
-    ; `Update, `TargetEntity `Smtp
-    ]
+    let open Guard in
+    let target_id = id |> Uuid.target_of Pool_tenant.SmtpAuth.Id.value in
+    EffectSet.One (Action.Update, TargetSpec.Id (`Smtp, target_id))
   ;;
 end

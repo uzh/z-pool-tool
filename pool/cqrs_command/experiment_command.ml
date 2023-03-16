@@ -5,7 +5,7 @@ module Conformist = Pool_common.Utils.PoolConformist
 let src = Logs.Src.create "experiment_command.cqrs"
 let to_actor = CCFun.(Admin.id %> BaseGuard.Uuid.actor_of Admin.Id.value)
 let to_target { id; _ } = BaseGuard.Uuid.target_of Id.value id
-let to_role = BaseGuard.ActorRoleSet.singleton
+let to_role = BaseGuard.RoleSet.singleton
 
 let default_schema command =
   Pool_common.Utils.PoolConformist.(
@@ -80,7 +80,10 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let effects = [ `Create, `TargetEntity `Experiment ]
+  let effects =
+    let open BaseGuard in
+    EffectSet.One (Action.Create, TargetSpec.Entity `Experiment)
+  ;;
 end
 
 module Update : sig
@@ -96,7 +99,7 @@ module Update : sig
     :  (string * string list) list
     -> (t, Pool_common.Message.error) result
 
-  val effects : Id.t -> BaseGuard.Authorizer.effect list
+  val effects : Id.t -> BaseGuard.EffectSet.t
 end = struct
   type t = create
 
@@ -124,9 +127,9 @@ end = struct
   ;;
 
   let effects id =
-    [ `Update, `Target (id |> BaseGuard.Uuid.target_of Experiment.Id.value)
-    ; `Update, `TargetEntity `Experiment
-    ]
+    let open BaseGuard in
+    let target_id = id |> Uuid.target_of Id.value in
+    EffectSet.One (Action.Update, TargetSpec.Id (`Experiment, target_id))
   ;;
 end
 
@@ -147,7 +150,7 @@ module Delete : sig
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val effects : Id.t -> BaseGuard.Authorizer.effect list
+  val effects : Id.t -> BaseGuard.EffectSet.t
 end = struct
   (* Only when no sessions added *)
 
@@ -208,16 +211,16 @@ end = struct
   ;;
 
   let effects id =
-    [ `Delete, `Target (id |> BaseGuard.Uuid.target_of Experiment.Id.value)
-    ; `Delete, `TargetEntity `Experiment
-    ]
+    let open BaseGuard in
+    let target_id = id |> Uuid.target_of Id.value in
+    EffectSet.One (Action.Delete, TargetSpec.Id (`Experiment, target_id))
   ;;
 end
 
 module AssignAssistant : sig
   include Common.CommandSig with type t = update_role
 
-  val effects : Experiment.Id.t -> BaseGuard.Authorizer.effect list
+  val effects : Id.t -> BaseGuard.EffectSet.t
 end = struct
   type t = update_role
 
@@ -230,18 +233,21 @@ end = struct
       ]
   ;;
 
-  (* TODO[timhub]: Make sure both rules are true *)
   let effects id =
-    [ `Update, `Target (id |> BaseGuard.Uuid.target_of Id.value)
-    ; `Update, `TargetEntity (`Admin `Assistant)
-    ]
+    let open BaseGuard in
+    let target_id = id |> Uuid.target_of Id.value in
+    EffectSet.(
+      And
+        [ One (Action.Update, TargetSpec.Id (`Experiment, target_id))
+        ; One (Action.Update, TargetSpec.Entity (`Admin `Assistant))
+        ])
   ;;
 end
 
 module UnassignAssistant : sig
   include Common.CommandSig with type t = update_role
 
-  val effects : Experiment.Id.t -> BaseGuard.Authorizer.effect list
+  val effects : Id.t -> BaseGuard.EffectSet.t
 end = struct
   type t = update_role
 
@@ -254,18 +260,21 @@ end = struct
       ]
   ;;
 
-  (* TODO[timhub]: Make sure both rules are true *)
   let effects id =
-    [ `Update, `Target (id |> BaseGuard.Uuid.target_of Id.value)
-    ; `Update, `TargetEntity (`Admin `Assistant)
-    ]
+    let open BaseGuard in
+    let target_id = id |> Uuid.target_of Id.value in
+    EffectSet.(
+      And
+        [ One (Action.Update, TargetSpec.Id (`Experiment, target_id))
+        ; One (Action.Update, TargetSpec.Entity (`Admin `Assistant))
+        ])
   ;;
 end
 
 module AssignExperimenter : sig
   include Common.CommandSig with type t = update_role
 
-  val effects : Experiment.Id.t -> BaseGuard.Authorizer.effect list
+  val effects : Id.t -> BaseGuard.EffectSet.t
 end = struct
   type t = update_role
 
@@ -278,18 +287,21 @@ end = struct
       ]
   ;;
 
-  (* TODO[timhub]: Make sure both rules are true *)
-  let effects experiment_id =
-    [ `Update, `Target (experiment_id |> BaseGuard.Uuid.target_of Id.value)
-    ; `Update, `TargetEntity (`Admin `Experimenter)
-    ]
+  let effects id =
+    let open BaseGuard in
+    let target_id = id |> Uuid.target_of Id.value in
+    EffectSet.(
+      And
+        [ One (Action.Update, TargetSpec.Id (`Experiment, target_id))
+        ; One (Action.Update, TargetSpec.Entity (`Admin `Experimenter))
+        ])
   ;;
 end
 
 module UnassignExperimenter : sig
   include Common.CommandSig with type t = update_role
 
-  val effects : Experiment.Id.t -> BaseGuard.Authorizer.effect list
+  val effects : Id.t -> BaseGuard.EffectSet.t
 end = struct
   type t = update_role
 
@@ -302,11 +314,14 @@ end = struct
       ]
   ;;
 
-  (* TODO[timhub]: Make sure both rules are true *)
-  let effects experiment_id =
-    [ `Update, `Target (experiment_id |> BaseGuard.Uuid.target_of Id.value)
-    ; `Update, `TargetEntity (`Admin `Experimenter)
-    ]
+  let effects id =
+    let open BaseGuard in
+    let target_id = id |> Uuid.target_of Id.value in
+    EffectSet.(
+      And
+        [ One (Action.Update, TargetSpec.Id (`Experiment, target_id))
+        ; One (Action.Update, TargetSpec.Entity (`Admin `Experimenter))
+        ])
   ;;
 end
 
@@ -321,7 +336,7 @@ module CreateFilter : sig
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val effects : Experiment.Id.t -> BaseGuard.Authorizer.effect list
+  val effects : Id.t -> BaseGuard.EffectSet.t
 end = struct
   type t = Filter.query
 
@@ -338,11 +353,14 @@ end = struct
       ]
   ;;
 
-  (* TODO: Make sure authorization is inherited from experiment *)
   let effects id =
-    [ `Manage, `Target (id |> BaseGuard.Uuid.target_of Experiment.Id.value)
-    ; `Create, `TargetEntity `Filter
-    ]
+    let open BaseGuard in
+    let target_id = id |> Uuid.target_of Id.value in
+    EffectSet.(
+      And
+        [ One (Action.Update, TargetSpec.Id (`Experiment, target_id))
+        ; One (Action.Create, TargetSpec.Entity `Filter)
+        ])
   ;;
 end
 
@@ -357,7 +375,7 @@ module UpdateFilter : sig
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val effects : Filter.Id.t -> BaseGuard.Authorizer.effect list
+  val effects : Filter.Id.t -> BaseGuard.EffectSet.t
 end = struct
   type t = Filter.query
 
@@ -369,11 +387,10 @@ end = struct
     Ok [ Filter.Updated filter |> Pool_event.filter ]
   ;;
 
-  (* TODO: Make sure authorization is inherited from experiment *)
   let effects id =
-    [ `Update, `Target (id |> BaseGuard.Uuid.target_of Filter.Id.value)
-    ; `Update, `TargetEntity `Filter
-    ]
+    let open BaseGuard in
+    let target_id = id |> Uuid.target_of Filter.Id.value in
+    EffectSet.One (Action.Update, TargetSpec.Id (`Filter, target_id))
   ;;
 end
 
@@ -385,7 +402,7 @@ module DeleteFilter : sig
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val effects : Filter.Id.t -> BaseGuard.Authorizer.effect list
+  val effects : Filter.Id.t -> BaseGuard.EffectSet.t
 end = struct
   type t = Experiment.t
 
@@ -403,8 +420,8 @@ end = struct
 
   (* TODO: Make sure authorization is inherited from experiment *)
   let effects id =
-    [ `Delete, `Target (id |> BaseGuard.Uuid.target_of Filter.Id.value)
-    ; `Delete, `TargetEntity `Filter
-    ]
+    let open BaseGuard in
+    let target_id = id |> Uuid.target_of Filter.Id.value in
+    EffectSet.One (Action.Delete, TargetSpec.Id (`Filter, target_id))
   ;;
 end

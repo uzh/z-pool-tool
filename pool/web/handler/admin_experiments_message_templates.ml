@@ -131,32 +131,33 @@ let edit_template req =
 ;;
 
 module Access : sig
+  include module type of Helpers.Access
+
   val invitation : Rock.Middleware.t
   val session_reminder : Rock.Middleware.t
 end = struct
+  include Helpers.Access
+  open Guard
   module Field = Pool_common.Message.Field
+  module Guardian = Middleware.Guardian
 
   let experiment_effects =
-    Middleware.Guardian.id_effects Experiment.Id.of_string Field.Experiment
+    Guardian.id_effects Experiment.Id.of_string Field.Experiment
   ;;
 
   let invitation =
-    [ (fun id ->
-        [ `Update, `Target (id |> Guard.Uuid.target_of Experiment.Id.value)
-        ; `Update, `TargetEntity `Experiment
-        ])
-    ]
+    (fun id ->
+      let target_id = id |> Uuid.target_of Experiment.Id.value in
+      EffectSet.One (Action.Update, TargetSpec.Id (`Experiment, target_id)))
     |> experiment_effects
-    |> Middleware.Guardian.validate_generic
+    |> Guardian.validate_generic
   ;;
 
   let session_reminder =
-    [ (fun id ->
-        [ `Update, `Target (id |> Guard.Uuid.target_of Experiment.Id.value)
-        ; `Update, `TargetEntity `Experiment
-        ])
-    ]
+    (fun id ->
+      let target_id = id |> Uuid.target_of Experiment.Id.value in
+      EffectSet.One (Action.Update, TargetSpec.Id (`Experiment, target_id)))
     |> experiment_effects
-    |> Middleware.Guardian.validate_generic
+    |> Guardian.validate_generic
   ;;
 end

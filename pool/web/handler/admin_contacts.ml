@@ -126,42 +126,39 @@ let delete_answer req =
 ;;
 
 module Access : sig
-  include Helpers.AccessSig
+  include module type of Helpers.Access
 
   val delete_answer : Rock.Middleware.t
 end = struct
+  include Helpers.Access
+  open Guard
   module ContactCommand = Cqrs_command.Contact_command
+  module Guardian = Middleware.Guardian
 
-  let contact_effects =
-    Middleware.Guardian.id_effects Contact.Id.of_string Field.Contact
-  ;;
+  let contact_effects = Guardian.id_effects Contact.Id.of_string Field.Contact
 
   let index =
-    Middleware.Guardian.validate_admin_entity [ `Read, `TargetEntity `Contact ]
+    EffectSet.One (Action.Read, TargetSpec.Entity `Contact)
+    |> Guardian.validate_admin_entity
   ;;
 
-  let create = Middleware.Guardian.denied
-  let delete = Middleware.Guardian.denied
-
   let read =
-    [ (fun id ->
-        [ `Read, `Target (id |> Guard.Uuid.target_of Contact.Id.value)
-        ; `Read, `TargetEntity `Contact
-        ])
-    ]
+    (fun id ->
+      let target_id = id |> Uuid.target_of Contact.Id.value in
+      EffectSet.One (Action.Read, TargetSpec.Id (`Contact, target_id)))
     |> contact_effects
-    |> Middleware.Guardian.validate_generic
+    |> Guardian.validate_generic
   ;;
 
   let update =
-    [ ContactCommand.Update.effects ]
+    ContactCommand.Update.effects
     |> contact_effects
-    |> Middleware.Guardian.validate_generic
+    |> Guardian.validate_generic
   ;;
 
   let delete_answer =
-    [ ContactCommand.ClearAnswer.effects ]
+    ContactCommand.ClearAnswer.effects
     |> contact_effects
-    |> Middleware.Guardian.validate_generic
+    |> Guardian.validate_generic
   ;;
 end

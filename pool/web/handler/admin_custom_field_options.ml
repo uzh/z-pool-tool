@@ -185,10 +185,11 @@ let delete = toggle_action `Delete
 let publish = toggle_action `Publish
 
 module Access : sig
-  include Helpers.AccessSig
+  include module type of Helpers.Access
 
   val publish : Rock.Middleware.t
 end = struct
+  open Guard
   module CustomFieldCommand = Cqrs_command.Custom_field_option_command
   module Field = Pool_common.Message.Field
 
@@ -199,8 +200,8 @@ end = struct
   ;;
 
   let index =
-    Middleware.Guardian.validate_admin_entity
-      [ `Read, `TargetEntity `CustomField ]
+    EffectSet.One (Action.Read, TargetSpec.Entity `CustomField)
+    |> Middleware.Guardian.validate_admin_entity
   ;;
 
   let create =
@@ -209,30 +210,27 @@ end = struct
   ;;
 
   let read =
-    [ (fun id ->
-        let open Custom_field.SelectOption.Id in
-        [ `Read, `Target (id |> Guard.Uuid.target_of value)
-        ; `Read, `TargetEntity `CustomField
-        ])
-    ]
+    (fun id ->
+      let target_id = id |> Uuid.target_of Custom_field.SelectOption.Id.value in
+      EffectSet.One (Action.Read, TargetSpec.Id (`CustomField, target_id)))
     |> custom_field_option_effects
     |> Middleware.Guardian.validate_generic
   ;;
 
   let update =
-    [ CustomFieldCommand.Update.effects ]
+    CustomFieldCommand.Update.effects
     |> custom_field_option_effects
     |> Middleware.Guardian.validate_generic
   ;;
 
   let publish =
-    [ CustomFieldCommand.Publish.effects ]
+    CustomFieldCommand.Publish.effects
     |> custom_field_option_effects
     |> Middleware.Guardian.validate_generic
   ;;
 
   let delete =
-    [ CustomFieldCommand.Destroy.effects ]
+    CustomFieldCommand.Destroy.effects
     |> custom_field_option_effects
     |> Middleware.Guardian.validate_generic
   ;;

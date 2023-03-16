@@ -20,7 +20,7 @@ module Create : sig
     :  (string * string list) list
     -> (t, Pool_common.Message.error) result
 
-  val effects : Pool_tenant.t -> Guard.Authorizer.effect list
+  val effects : Pool_tenant.Id.t -> Guard.EffectSet.t
 end = struct
   type t =
     { key : I18n.Key.t
@@ -58,12 +58,14 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let effects tenant =
-    [ ( `Update
-      , `Target
-          (tenant.Pool_tenant.id |> Guard.Uuid.target_of Pool_tenant.Id.value) )
-    ; `Create, `TargetEntity `I18n
-    ]
+  let effects id =
+    let open Guard in
+    let target_id = id |> Uuid.target_of Pool_tenant.Id.value in
+    EffectSet.(
+      And
+        [ One (Action.Update, TargetSpec.Id (`Tenant, target_id))
+        ; One (Action.Create, TargetSpec.Entity `I18n)
+        ])
   ;;
 end
 
@@ -82,10 +84,7 @@ module Update : sig
     :  (string * string list) list
     -> (t, Pool_common.Message.error) result
 
-  val effects
-    :  Pool_tenant.t
-    -> Pool_common.Id.t
-    -> Guard.Authorizer.effect list
+  val effects : Pool_tenant.Id.t -> Pool_common.Id.t -> Guard.EffectSet.t
 end = struct
   type t = { content : I18n.Content.t }
 
@@ -103,13 +102,16 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let effects tenant id =
-    [ ( `Update
-      , `Target
-          (tenant.Pool_tenant.id |> Guard.Uuid.target_of Pool_tenant.Id.value) )
-    ; `Update, `TargetEntity `Tenant
-    ; `Update, `Target (id |> Guard.Uuid.target_of Pool_common.Id.value)
-    ; `Update, `TargetEntity `I18n
-    ]
+  let effects tenant_id id =
+    let open Guard in
+    let tenant_id = tenant_id |> Uuid.target_of Pool_tenant.Id.value in
+    let i18n_id = id |> Uuid.target_of Pool_common.Id.value in
+    (* TODO: [guardian] check if dependency registration makes tenant check
+       obsolete *)
+    EffectSet.(
+      And
+        [ One (Action.Update, TargetSpec.Id (`Tenant, tenant_id))
+        ; One (Action.Update, TargetSpec.Id (`I18n, i18n_id))
+        ])
   ;;
 end

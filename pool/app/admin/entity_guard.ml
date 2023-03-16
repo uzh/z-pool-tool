@@ -5,8 +5,8 @@ module Actor = struct
     Guard.Persistence.Actor.decorate
       ?ctx
       (fun t ->
-        Guard.Authorizable.make
-          (Guard.ActorRoleSet.singleton `Admin)
+        Guard.Actor.make
+          (Guard.RoleSet.singleton `Admin)
           `Admin
           (t
            |> Entity.user
@@ -23,8 +23,7 @@ module Target = struct
     Guard.Persistence.Target.decorate
       ?ctx
       (fun t ->
-        Guard.AuthorizableTarget.make
-          (Guard.TargetRoleSet.singleton (`Admin role))
+        Guard.Target.make
           (`Admin role)
           (t
            |> Entity.user
@@ -44,38 +43,44 @@ module ActorRole = struct
 end
 
 module RuleSet = struct
+  open Guard
+  open Action
+  module Act = ActorSpec
+  module Tar = TargetSpec
+
   let assistant id =
-    let target_id = Guard.Uuid.target_of Entity.Id.value id in
-    [ `ActorEntity (`Assistant target_id), `Read, `Target target_id
-    ; `ActorEntity (`Assistant target_id), `Read, `TargetEntity `Experiment
-    ; `ActorEntity (`Assistant target_id), `Read, `TargetEntity `Session
-    ; `ActorEntity (`Assistant target_id), `Read, `TargetEntity `Assignment
+    let target_id = Uuid.target_of Entity.Id.value id in
+    let actor = Act.Entity (`Assistant target_id) in
+    [ actor, Read, Tar.Id (`Experiment, target_id)
+    ; actor, Read, Tar.Entity `Experiment
+    ; actor, Read, Tar.Entity `Session
+    ; actor, Read, Tar.Entity `Assignment
     ]
   ;;
 
   let experimenter id =
-    let target_id = Guard.Uuid.target_of Entity.Id.value id in
-    let actor = `ActorEntity (`Experimenter target_id) in
-    [ actor, `Read, `TargetEntity `Experiment
-    ; actor, `Update, `Target target_id
-    ; actor, `Manage, `TargetEntity `Session
-    ; actor, `Manage, `TargetEntity `Assignment
-    ; actor, `Manage, `TargetEntity `WaitingList
-    ; actor, `Read, `TargetEntity `Invitation
-    ; actor, `Update, `TargetEntity `Invitation
-    ; actor, `Read, `TargetEntity `Location
-    ; actor, `Read, `TargetEntity `LocationFile
-    ; actor, `Read, `TargetEntity `Mailing
+    let target_id = Uuid.target_of Entity.Id.value id in
+    let actor = Act.Entity (`Experimenter target_id) in
+    [ actor, Read, Tar.Entity `Experiment
+    ; actor, Update, Tar.Id (`Experiment, target_id)
+    ; actor, Manage, Tar.Entity `Session
+    ; actor, Manage, Tar.Entity `Assignment
+    ; actor, Manage, Tar.Entity `WaitingList
+    ; actor, Read, Tar.Entity `Invitation
+    ; actor, Update, Tar.Entity `Invitation
+    ; actor, Read, Tar.Entity `Location
+    ; actor, Read, Tar.Entity `LocationFile
+    ; actor, Read, Tar.Entity `Mailing
     ]
   ;;
 
   let location_manager id =
-    let target_id = Guard.Uuid.target_of Entity.Id.value id in
-    let actor = `ActorEntity (`LocationManager target_id) in
-    [ actor, `Manage, `Target target_id
-    ; actor, `Create, `TargetEntity `LocationFile
-    ; actor, `Read, `TargetEntity `LocationFile
-    ; actor, `Update, `TargetEntity `LocationFile
+    let target_id = Uuid.target_of Entity.Id.value id in
+    let actor = Act.Entity (`LocationManager target_id) in
+    [ actor, Manage, Tar.Id (`Location, target_id)
+    ; actor, Create, Tar.Entity `LocationFile
+    ; actor, Read, Tar.Entity `LocationFile
+    ; actor, Update, Tar.Entity `LocationFile
     ]
   ;;
 end

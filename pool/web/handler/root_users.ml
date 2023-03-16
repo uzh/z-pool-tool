@@ -73,24 +73,25 @@ let toggle_status req =
 ;;
 
 module Access : sig
-  include Helpers.AccessSig
+  include module type of Helpers.Access
 
   val toggle_status : Rock.Middleware.t
 end = struct
+  include Helpers.Access
   module Command = Cqrs_command.Root_command
   module Guardian = Middleware.Guardian
 
   let root_effects = Guardian.id_effects Pool_common.Id.of_string Field.Root
-  let read_effects = [ `Read, `TargetEntity `System ]
+
+  let read_effects =
+    Guard.(EffectSet.One (Action.Read, TargetSpec.Entity `System))
+  ;;
+
   let index = Guardian.validate_admin_entity read_effects
   let create = Guardian.validate_admin_entity Command.Create.effects
   let read = Guardian.validate_admin_entity read_effects
-  let update = Guardian.denied
-  let delete = Guardian.denied
 
   let toggle_status =
-    [ Command.ToggleStatus.effects ]
-    |> root_effects
-    |> Guardian.validate_generic
+    Command.ToggleStatus.effects |> root_effects |> Guardian.validate_generic
   ;;
 end

@@ -87,7 +87,10 @@ let create_admin req =
   result |> HttpUtils.extract_happy_path req
 ;;
 
-module Access : Helpers.AccessSig = struct
+module Access : module type of Helpers.Access = struct
+  include Helpers.Access
+  open Guard
+
   let admin_effects =
     Middleware.Guardian.id_effects Admin.Id.of_string Field.Admin
   ;;
@@ -98,24 +101,20 @@ module Access : Helpers.AccessSig = struct
   ;;
 
   let read =
-    [ (fun id ->
-        [ `Read, `Target (id |> Guard.Uuid.target_of Admin.Id.value)
-        ; `Read, `TargetEntity (`Admin `Operator)
-        ])
-    ]
+    (fun id ->
+      let target_id = id |> Uuid.target_of Admin.Id.value in
+      EffectSet.One (Action.Read, TargetSpec.Id (`Admin `Operator, target_id)))
     |> admin_effects
     |> Middleware.Guardian.validate_generic
   ;;
 
   let update =
-    [ `Update, `TargetEntity (`Admin `Operator) ]
+    EffectSet.One (Action.Update, TargetSpec.Entity (`Admin `Operator))
     |> Middleware.Guardian.validate_admin_entity
   ;;
 
-  let delete = Middleware.Guardian.denied
-
   let index =
-    [ `Read, `TargetEntity `Filter ]
+    EffectSet.One (Action.Read, TargetSpec.Entity `AdminAny)
     |> Middleware.Guardian.validate_admin_entity
   ;;
 end

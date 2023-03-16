@@ -103,7 +103,14 @@ module Actors = struct
   let select_from_actors where_fragment =
     let select_from =
       {sql|
-        SELECT id
+        SELECT
+          LOWER(CONCAT(
+            SUBSTR(HEX(id), 1, 8), '-',
+            SUBSTR(HEX(id), 9, 4), '-',
+            SUBSTR(HEX(id), 13, 4), '-',
+            SUBSTR(HEX(id), 17, 4), '-',
+            SUBSTR(HEX(id), 21)
+          ))
         FROM guardian_actors
       |sql}
     in

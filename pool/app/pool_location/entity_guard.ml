@@ -5,8 +5,7 @@ module Target = struct
     Guard.Persistence.Target.decorate
       ?ctx
       (fun Entity.{ id; _ } ->
-        Guard.AuthorizableTarget.make
-          (Guard.TargetRoleSet.singleton `Location)
+        Guard.Target.make
           `Location
           (id |> Entity.Id.value |> Guard.Uuid.Target.of_string_exn))
       t
@@ -21,8 +20,7 @@ module FileTarget = struct
     Guard.Persistence.Target.decorate
       ?ctx
       (fun Entity.Mapping.{ id; _ } ->
-        Guard.AuthorizableTarget.make
-          (Guard.TargetRoleSet.singleton `LocationFile)
+        Guard.Target.make
           `LocationFile
           (id |> Entity.Mapping.Id.value |> Guard.Uuid.Target.of_string_exn))
       t
@@ -33,8 +31,7 @@ module FileTarget = struct
     Guard.Persistence.Target.decorate
       ?ctx
       (fun Entity.Mapping.Write.{ id; _ } ->
-        Guard.AuthorizableTarget.make
-          (Guard.TargetRoleSet.singleton `LocationFile)
+        Guard.Target.make
           `LocationFile
           (id |> Entity.Mapping.Id.value |> Guard.Uuid.Target.of_string_exn))
       t

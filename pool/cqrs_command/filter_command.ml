@@ -47,7 +47,10 @@ end = struct
       [ Filter.Created (Filter.create (Some title) query) |> Pool_event.filter ]
   ;;
 
-  let effects = [ `Create, `TargetEntity `Filter ]
+  let effects =
+    let open Guard in
+    EffectSet.One (Action.Create, TargetSpec.Entity `Filter)
+  ;;
 end
 
 module Update : sig
@@ -62,7 +65,7 @@ module Update : sig
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val effects : Filter.Id.t -> Guard.Authorizer.effect list
+  val effects : Filter.Id.t -> Guard.EffectSet.t
 end = struct
   type t = Filter.Title.t
 
@@ -77,8 +80,8 @@ end = struct
   ;;
 
   let effects id =
-    [ `Update, `Target (id |> Guard.Uuid.target_of Filter.Id.value)
-    ; `Update, `TargetEntity `Filter
-    ]
+    let open Guard in
+    let target_id = id |> Uuid.target_of Filter.Id.value in
+    EffectSet.One (Action.Update, TargetSpec.Id (`Filter, target_id))
   ;;
 end

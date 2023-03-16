@@ -20,7 +20,7 @@ module CreateAdmin : sig
     -> ?password_policy:
          (User.Password.t -> (unit, Pool_common.Message.error) result)
     -> ?id:Pool_common.Id.t
-    -> ?roles:Guard.ActorRoleSet.t
+    -> ?roles:Guard.RoleSet.t
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
@@ -85,11 +85,14 @@ end = struct
   ;;
 
   let effects =
-    [ `Create, `TargetEntity (`Admin `Operator)
-    ; `Create, `TargetEntity (`Admin `LocationManager)
-    ; `Create, `TargetEntity (`Admin `Recruiter)
-    ; `Create, `TargetEntity (`Admin `Experimenter)
-    ; `Create, `TargetEntity (`Admin `Assistant)
-    ]
+    let open Guard in
+    EffectSet.(
+      And
+        [ One (Action.Create, TargetSpec.Entity (`Admin `Operator))
+        ; One (Action.Create, TargetSpec.Entity (`Admin `LocationManager))
+        ; One (Action.Create, TargetSpec.Entity (`Admin `Recruiter))
+        ; One (Action.Create, TargetSpec.Entity (`Admin `Experimenter))
+        ; One (Action.Create, TargetSpec.Entity (`Admin `Assistant))
+        ])
   ;;
 end

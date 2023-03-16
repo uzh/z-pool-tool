@@ -289,80 +289,78 @@ let delete =
 ;;
 
 module Access : sig
-  include Helpers.AccessSig
+  include module type of Helpers.Access
 
   val add_condition : Rock.Middleware.t
   val search_info : Rock.Middleware.t
   val stop : Rock.Middleware.t
   val overlaps : Rock.Middleware.t
 end = struct
+  open Guard
   module MailingCommand = Cqrs_command.Mailing_command
+  module Guardian = Middleware.Guardian
 
   let experiment_effects =
-    Middleware.Guardian.id_effects Experiment.Id.of_string Field.Experiment
+    Guardian.id_effects Experiment.Id.of_string Field.Experiment
   ;;
 
-  let mailing_effects =
-    Middleware.Guardian.id_effects Mailing.Id.of_string Field.Mailing
-  ;;
+  let mailing_effects = Guardian.id_effects Mailing.Id.of_string Field.Mailing
 
   let index =
-    Middleware.Guardian.validate_admin_entity [ `Read, `TargetEntity `Mailing ]
+    EffectSet.One (Action.Read, TargetSpec.Entity `Mailing)
+    |> Guardian.validate_admin_entity
   ;;
 
   let create =
-    [ MailingCommand.Create.effects ]
+    MailingCommand.Create.effects
     |> experiment_effects
-    |> Middleware.Guardian.validate_generic
+    |> Guardian.validate_generic
   ;;
 
   let read =
-    [ (fun id ->
-        [ `Read, `Target (id |> Guard.Uuid.target_of Mailing.Id.value)
-        ; `Read, `TargetEntity `Mailing
-        ])
-    ]
+    (fun id ->
+      let target_id = id |> Uuid.target_of Mailing.Id.value in
+      EffectSet.One (Action.Read, TargetSpec.Id (`Mailing, target_id)))
     |> mailing_effects
-    |> Middleware.Guardian.validate_generic
+    |> Guardian.validate_generic
   ;;
 
   let update =
-    [ MailingCommand.Update.effects ]
+    MailingCommand.Update.effects
     |> mailing_effects
-    |> Middleware.Guardian.validate_generic
+    |> Guardian.validate_generic
   ;;
 
   let delete =
-    [ MailingCommand.Delete.effects ]
+    MailingCommand.Delete.effects
     |> mailing_effects
-    |> Middleware.Guardian.validate_generic
+    |> Guardian.validate_generic
   ;;
 
   let add_condition =
-    [ (fun id ->
-        [ `Update, `Target (id |> Guard.Uuid.target_of Experiment.Id.value)
-        ; `Update, `TargetEntity `Experiment
-        ])
-    ]
+    (fun id ->
+      let target_id = id |> Uuid.target_of Experiment.Id.value in
+      EffectSet.One (Action.Update, TargetSpec.Id (`Experiment, target_id)))
     |> experiment_effects
-    |> Middleware.Guardian.validate_generic
+    |> Guardian.validate_generic
   ;;
 
   let search_info =
-    [ MailingCommand.Create.effects
-    ; (fun _ -> [ `Update, `TargetEntity `Mailing ])
-    ]
-    |> experiment_effects
-    |> Middleware.Guardian.validate_generic
+    (fun req ctx ->
+      ( ctx
+      , EffectSet.(
+          Or
+            [ experiment_effects MailingCommand.Create.effects req ctx |> snd
+            ; One (Action.Update, TargetSpec.Entity `Mailing)
+            ]) ))
+    |> Guardian.validate_generic
   ;;
 
   let stop =
-    [ MailingCommand.Stop.effects ]
-    |> mailing_effects
-    |> Middleware.Guardian.validate_generic
+    MailingCommand.Stop.effects |> mailing_effects |> Guardian.validate_generic
   ;;
 
   let overlaps =
-    MailingCommand.Overlaps.effects |> Middleware.Guardian.validate_admin_entity
+    MailingCommand.Overlaps.effects |> Guardian.validate_admin_entity
   ;;
 end

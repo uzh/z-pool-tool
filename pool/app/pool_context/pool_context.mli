@@ -49,9 +49,7 @@ val create
 
 val find_authenticatable
   :  t
-  -> ( [> `Admin | `Contact ] Guard.Persistence.authorizable
-     , Pool_common.Message.error )
-     Lwt_result.t
+  -> (Role.Actor.t Guard.Actor.t, Pool_common.Message.error) Lwt_result.t
 
 module Tenant : sig
   type t =

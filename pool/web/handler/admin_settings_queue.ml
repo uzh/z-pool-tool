@@ -30,12 +30,13 @@ let detail req =
 ;;
 
 module Access : Helpers.AccessSig = struct
+  include Helpers.Access
   module Guardian = Middleware.Guardian
 
-  let read_effects = [ `Read, `TargetEntity `Queue ]
+  let read_effects =
+    Guard.(EffectSet.One (Action.Read, TargetSpec.Entity `Queue))
+  ;;
+
   let index = Guardian.validate_admin_entity read_effects
-  let create = Guardian.denied
   let read = Guardian.validate_admin_entity read_effects
-  let update = Guardian.denied
-  let delete = Guardian.denied
 end

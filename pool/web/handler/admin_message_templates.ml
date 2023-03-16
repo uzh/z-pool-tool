@@ -114,29 +114,23 @@ let update req =
 ;;
 
 module Access : sig
-  include Helpers.AccessSig
+  include module type of Helpers.Access
 end = struct
+  include Helpers.Access
+  open Guard
   module Command = Cqrs_command.Message_template_command
+  module Guardian = Middleware.Guardian
 
   let template_effects =
-    Middleware.Guardian.id_effects
-      Message_template.Id.of_string
-      Field.MessageTemplate
+    Guardian.id_effects Message_template.Id.of_string Field.MessageTemplate
   ;;
 
   let index =
-    Middleware.Guardian.validate_admin_entity
-      [ `Read, `TargetEntity `MessageTemplate ]
+    EffectSet.One (Action.Read, TargetSpec.Entity `MessageTemplate)
+    |> Guardian.validate_admin_entity
   ;;
-
-  let create = Middleware.Guardian.denied
-  let read = Middleware.Guardian.denied
 
   let update =
-    [ Command.Update.effects ]
-    |> template_effects
-    |> Middleware.Guardian.validate_generic
+    Command.Update.effects |> template_effects |> Guardian.validate_generic
   ;;
-
-  let delete = Middleware.Guardian.denied
 end

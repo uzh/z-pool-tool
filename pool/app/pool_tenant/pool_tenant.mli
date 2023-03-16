@@ -323,11 +323,9 @@ val file_fields : Pool_common.Message.Field.t list
 module Guard : sig
   module Actor : sig
     val to_authorizable
-      :  ?ctx:Guardian__Persistence.context
+      :  ?ctx:Guardian__.Persistence.context
       -> t
-      -> ( [> `Tenant ] Guard.Authorizable.t
-         , Pool_common.Message.error )
-         Lwt_result.t
+      -> (Role.Actor.t Guard.Actor.t, Pool_common.Message.error) Lwt_result.t
 
     type t
 
@@ -337,11 +335,9 @@ module Guard : sig
 
   module Target : sig
     val to_authorizable
-      :  ?ctx:Guardian__Persistence.context
+      :  ?ctx:Guardian__.Persistence.context
       -> t
-      -> ( [> `Tenant ] Guard.AuthorizableTarget.t
-         , Pool_common.Message.error )
-         Lwt_result.t
+      -> (Role.Target.t Guard.Target.t, Pool_common.Message.error) Lwt_result.t
 
     type t
   end

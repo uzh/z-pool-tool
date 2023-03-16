@@ -104,6 +104,35 @@ module Sql = struct
       (start_at, end_at, ignore_id)
   ;;
 
+  let find_experiment_id_request =
+    let open Caqti_request.Infix in
+    {sql|
+      SELECT
+        LOWER(CONCAT(
+          SUBSTR(HEX(pool_experiments.uuid), 1, 8), '-',
+          SUBSTR(HEX(pool_experiments.uuid), 9, 4), '-',
+          SUBSTR(HEX(pool_experiments.uuid), 13, 4), '-',
+          SUBSTR(HEX(pool_experiments.uuid), 17, 4), '-',
+          SUBSTR(HEX(pool_experiments.uuid), 21)
+        ))
+      FROM pool_mailing
+        LEFT JOIN pool_experiments
+        ON pool_mailing.experiment_id = pool_experiments.id
+      WHERE
+        pool_mailing.uuid = UNHEX(REPLACE(?, '-', ''))
+    |sql}
+    |> Repo_entity.Id.t ->! Experiment.Repo.Id.t
+  ;;
+
+  let find_experiment_id pool id =
+    let open Utils.Lwt_result.Infix in
+    Utils.Database.find_opt
+      (Pool_database.Label.value pool)
+      find_experiment_id_request
+      id
+    ||> CCOption.to_result Pool_common.Message.(NotFound Field.Experiment)
+  ;;
+
   let insert_request =
     let open Caqti_request.Infix in
     {sql|
@@ -185,6 +214,8 @@ let find_current pool =
   let open Utils.Lwt_result.Infix in
   Sql.find_current pool ||> CCList.map to_entity
 ;;
+
+let find_experiment_id = Sql.find_experiment_id
 
 let insert pool experiment_id model =
   model |> of_entity experiment_id |> Sql.insert pool

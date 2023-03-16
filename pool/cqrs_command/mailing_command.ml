@@ -47,7 +47,7 @@ module Create : sig
     -> (Pool_event.t list, Message.error) result
 
   val decode : Conformist.input -> (create, Message.error) result
-  val effects : Experiment.Id.t -> BaseGuard.Authorizer.effect list
+  val effects : Experiment.Id.t -> BaseGuard.EffectSet.t
 end = struct
   type t = create
 
@@ -73,10 +73,13 @@ end = struct
   ;;
 
   let effects id =
-    let _ = id in
-    (* TODO [mabiede] All of with: [`Update, `Target (id |> Guard.Uuid.target_of
-       Experiment.Id.value) ; `Update, `TargetEntity `Experiment] *)
-    [ `Create, `TargetEntity `Mailing ]
+    let open BaseGuard in
+    let target_id = id |> Uuid.target_of Experiment.Id.value in
+    EffectSet.(
+      And
+        [ One (Action.Update, TargetSpec.Id (`Experiment, target_id))
+        ; One (Action.Create, TargetSpec.Entity `Mailing)
+        ])
   ;;
 end
 
@@ -90,7 +93,7 @@ module Update : sig
     -> (Pool_event.t list, Message.error) result
 
   val decode : Conformist.input -> (create, Message.error) result
-  val effects : Mailing.Id.t -> BaseGuard.Authorizer.effect list
+  val effects : Mailing.Id.t -> BaseGuard.EffectSet.t
 end = struct
   type t = create
 
@@ -117,16 +120,16 @@ end = struct
   ;;
 
   let effects id =
-    [ `Update, `Target (id |> BaseGuard.Uuid.target_of Mailing.Id.value)
-    ; `Update, `TargetEntity `Mailing
-    ]
+    let open BaseGuard in
+    let target_id = id |> Uuid.target_of Mailing.Id.value in
+    EffectSet.One (Action.Update, TargetSpec.Id (`Mailing, target_id))
   ;;
 end
 
 module Delete : sig
   include Common.CommandSig with type t = Mailing.t
 
-  val effects : Mailing.Id.t -> BaseGuard.Authorizer.effect list
+  val effects : Mailing.Id.t -> BaseGuard.EffectSet.t
 end = struct
   type t = Mailing.t
 
@@ -138,16 +141,16 @@ end = struct
   ;;
 
   let effects id =
-    [ `Delete, `Target (id |> BaseGuard.Uuid.target_of Mailing.Id.value)
-    ; `Delete, `TargetEntity `Mailing
-    ]
+    let open BaseGuard in
+    let target_id = id |> Uuid.target_of Mailing.Id.value in
+    EffectSet.One (Action.Delete, TargetSpec.Id (`Mailing, target_id))
   ;;
 end
 
 module Stop : sig
   include Common.CommandSig with type t = Mailing.t
 
-  val effects : Mailing.Id.t -> BaseGuard.Authorizer.effect list
+  val effects : Mailing.Id.t -> BaseGuard.EffectSet.t
 end = struct
   type t = Mailing.t
 
@@ -160,9 +163,9 @@ end = struct
   ;;
 
   let effects id =
-    [ `Update, `Target (id |> BaseGuard.Uuid.target_of Mailing.Id.value)
-    ; `Update, `TargetEntity `Mailing
-    ]
+    let open BaseGuard in
+    let target_id = id |> Uuid.target_of Mailing.Id.value in
+    EffectSet.One (Action.Update, TargetSpec.Id (`Mailing, target_id))
   ;;
 end
 
@@ -230,5 +233,8 @@ end = struct
     >|= fun m -> CCOption.is_none rate, m
   ;;
 
-  let effects = [ `Read, `TargetEntity `Mailing ]
+  let effects =
+    let open BaseGuard in
+    EffectSet.One (Action.Read, TargetSpec.Entity `Mailing)
+  ;;
 end

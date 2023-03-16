@@ -17,7 +17,7 @@ type create =
   ; password : Pool_user.Password.t
   ; firstname : Pool_user.Firstname.t
   ; lastname : Pool_user.Lastname.t
-  ; roles : Guard.ActorRoleSet.t option
+  ; roles : Guard.RoleSet.t option
   }
 
 val equal_create : create -> create -> bool
@@ -76,11 +76,9 @@ end
 module Guard : sig
   module Actor : sig
     val to_authorizable
-      :  ?ctx:Guardian__Persistence.context
+      :  ?ctx:Guardian__.Persistence.context
       -> t
-      -> ( [> `Admin ] Guard.Authorizable.t
-         , Pool_common.Message.error )
-         Lwt_result.t
+      -> (Role.Actor.t Guard.Actor.t, Pool_common.Message.error) Lwt_result.t
 
     type t
 
@@ -91,12 +89,10 @@ module Guard : sig
 
   module Target : sig
     val to_authorizable
-      :  ?ctx:Guardian__Persistence.context
-      -> Role__Entity.Target.admins
+      :  ?ctx:Guardian__.Persistence.context
+      -> Role.Target.admins
       -> t
-      -> ( [> `Admin of Role__Entity.Target.admins ] Guard.AuthorizableTarget.t
-         , Pool_common.Message.error )
-         Lwt_result.t
+      -> (Role.Target.t Guard.Target.t, Pool_common.Message.error) Lwt_result.t
 
     type t
 
@@ -106,8 +102,8 @@ module Guard : sig
   end
 
   module RuleSet : sig
-    val assistant : Pool_common.Id.t -> Guard.Authorizer.auth_rule list
-    val experimenter : Pool_common.Id.t -> Guard.Authorizer.auth_rule list
-    val location_manager : Pool_common.Id.t -> Guard.Authorizer.auth_rule list
+    val assistant : Pool_common.Id.t -> Guard.Rule.t list
+    val experimenter : Pool_common.Id.t -> Guard.Rule.t list
+    val location_manager : Pool_common.Id.t -> Guard.Rule.t list
   end
 end

@@ -6,5 +6,5 @@ module type CommandSig = sig
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val effects : Guard.Authorizer.effect list
+  val effects : Guard.EffectSet.t
 end

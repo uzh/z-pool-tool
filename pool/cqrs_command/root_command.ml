@@ -24,7 +24,7 @@ module Create : sig
     :  (string * string list) list
     -> (t, Pool_common.Message.error) result
 
-  val effects : Guard.Authorizer.effect list
+  val effects : Guard.EffectSet.t
 end = struct
   type t =
     { email : User.EmailAddress.t
@@ -67,7 +67,7 @@ end = struct
       ; password = command.password
       ; firstname = command.firstname
       ; lastname = command.lastname
-      ; roles = Some (Guard.ActorRoleSet.singleton `Root)
+      ; roles = Some (Guard.RoleSet.singleton `Root)
       }
     in
     Ok [ Admin.Created admin |> Pool_event.admin ]
@@ -78,7 +78,10 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let effects = [ `Manage, `TargetEntity `System ]
+  let effects =
+    let open Guard in
+    EffectSet.One (Action.Manage, TargetSpec.Entity `System)
+  ;;
 end
 
 module ToggleStatus : sig
@@ -89,7 +92,7 @@ module ToggleStatus : sig
     -> Admin.t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val effects : Pool_common.Id.t -> Guard.Authorizer.effect list
+  val effects : Pool_common.Id.t -> Guard.EffectSet.t
 end = struct
   type t = Admin.t
 
@@ -103,9 +106,15 @@ end = struct
   ;;
 
   let effects id =
-    [ `Update, `Target (id |> Guard.Uuid.target_of Pool_common.Id.value)
-    ; `Update, `TargetEntity `System
-    ; `Update, `TargetEntity (`Admin `Operator)
-    ]
+    let open Guard in
+    EffectSet.(
+      And
+        [ One
+            ( Action.Update
+            , TargetSpec.Id
+                ( `Admin `Operator
+                , id |> Guard.Uuid.target_of Pool_common.Id.value ) )
+        ; One (Action.Update, TargetSpec.Entity `System)
+        ])
   ;;
 end

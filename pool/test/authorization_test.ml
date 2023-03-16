@@ -10,21 +10,24 @@ let update_language_as actor =
   let effects =
     Cqrs_command.Contact_command.Update.effects (Contact.id subject)
   in
-  let* (_ : [> `Contact ] Guard.AuthorizableTarget.t) =
+  let* (_ : [> `Contact ] Guard.Target.t) =
     Pool_tenant.Guard.Target.to_authorizable ~ctx tenant
   in
-  let* (_ : [> `Contact ] Guard.AuthorizableTarget.t) =
+  let* (_ : [> `Contact ] Guard.Target.t) =
     Contact.Guard.Target.to_authorizable ~ctx subject
   in
-  let* (_ : [> `Contact ] Guard.Authorizable.t) =
+  let* (_ : [> `Contact ] Guard.Actor.t) =
     Pool_tenant.Guard.Actor.to_authorizable ~ctx tenant
   in
-  let* (_ : [> `Contact ] Guard.Authorizable.t) =
+  let* (_ : [> `Contact ] Guard.Actor.t) =
     Contact.Guard.Actor.to_authorizable ~ctx subject
   in
   let* () =
-    (Guard.Persistence.checker_of_effects ~ctx effects) actor
-    >|- Pool_common.Message.authorization
+    Guard.Persistence.validate_effects
+      ~ctx
+      Pool_common.Message.authorization
+      effects
+      actor
   in
   Lwt.return_ok ()
 ;;
@@ -53,6 +56,7 @@ let operator_works _ () =
   let ctx = Pool_tenant.to_ctx Test_utils.Data.database_label in
   let%lwt actual =
     let open Utils.Lwt_result.Infix in
+    let to_error = Pool_common.Message.authorization in
     let target =
       "chris@gmail.com"
       |> Contact_test.contact_info
@@ -69,25 +73,26 @@ let operator_works _ () =
     let* () =
       Guard.Persistence.Actor.grant_roles
         ~ctx
-        actor.Guard.Authorizable.uuid
-        (Guard.ActorRoleSet.singleton
-           (`Operator target'.Guard.AuthorizableTarget.uuid))
-      >|- Pool_common.Message.authorization
+        (actor |> Guard.Actor.id)
+        (Guard.RoleSet.singleton (`Operator (target' |> Guard.Target.id)))
+      >|- to_error
     in
     let* actor = Contact.Guard.Actor.to_authorizable ~ctx subject in
     let* () =
-      Guard.Persistence.Actor.save_rule
+      let open Guard in
+      Persistence.Rule.save
         ~ctx
-        ( `ActorEntity (`Operator target'.Guard.AuthorizableTarget.uuid)
-        , `Manage
-        , `Target target'.Guard.AuthorizableTarget.uuid )
-      >|- Pool_common.Message.authorization
+        ( ActorSpec.Entity (`Operator (target' |> Guard.Target.id))
+        , Action.Manage
+        , TargetSpec.Id (`Contact, target' |> Guard.Target.id) )
+      >|- to_error
     in
-    let effects = [ `Manage, `Target target'.Guard.AuthorizableTarget.uuid ] in
-    let* () =
-      Guard.Persistence.checker_of_effects ~ctx effects actor
-      >|- Pool_common.Message.authorization
+    let effects =
+      Guard.(
+        EffectSet.One
+          (Action.Manage, TargetSpec.Id (`Contact, target' |> Guard.Target.id)))
     in
+    let* () = Guard.Persistence.validate_effects ~ctx to_error effects actor in
     Lwt_result.return ()
   in
   Alcotest.(check (result unit Test_utils.error))

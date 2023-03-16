@@ -99,7 +99,7 @@ let assign_experimenter = toggle_role `AssignExperimenter
 let unassign_experimenter = toggle_role `UnassignExperimenter
 
 module Access : sig
-  include Helpers.AccessSig
+  include module type of Helpers.Access
 
   val index_assistants : Rock.Middleware.t
   val assign_assistant : Rock.Middleware.t
@@ -108,6 +108,8 @@ module Access : sig
   val assign_experimenter : Rock.Middleware.t
   val unassign_experimenter : Rock.Middleware.t
 end = struct
+  include Helpers.Access
+  open Guard
   module Field = Pool_common.Message.Field
   module ExperimentCommand = Cqrs_command.Experiment_command
 
@@ -115,45 +117,50 @@ end = struct
     Middleware.Guardian.id_effects Experiment.Id.of_string Field.Experiment
   ;;
 
-  let index = Middleware.Guardian.denied
-  let create = Middleware.Guardian.denied
-  let read = Middleware.Guardian.denied
-  let update = Middleware.Guardian.denied
-  let delete = Middleware.Guardian.denied
-
   let index_assistants =
-    ExperimentCommand.[ AssignAssistant.effects; UnassignAssistant.effects ]
-    |> experiment_effects
+    (fun req ctx ->
+      let open ExperimentCommand in
+      let open EffectSet in
+      let expand effects = experiment_effects effects req ctx |> snd in
+      ( ctx
+      , Or [ expand AssignAssistant.effects; expand UnassignAssistant.effects ]
+      ))
     |> Middleware.Guardian.validate_generic
   ;;
 
   let assign_assistant =
-    [ ExperimentCommand.AssignAssistant.effects ]
+    ExperimentCommand.AssignAssistant.effects
     |> experiment_effects
     |> Middleware.Guardian.validate_generic
   ;;
 
   let unassign_assistant =
-    [ ExperimentCommand.UnassignAssistant.effects ]
+    ExperimentCommand.UnassignAssistant.effects
     |> experiment_effects
     |> Middleware.Guardian.validate_generic
   ;;
 
   let index_experimenter =
-    ExperimentCommand.
-      [ AssignExperimenter.effects; UnassignExperimenter.effects ]
-    |> experiment_effects
+    (fun req ctx ->
+      let open ExperimentCommand in
+      let open EffectSet in
+      let expand effects = experiment_effects effects req ctx |> snd in
+      ( ctx
+      , Or
+          [ expand AssignExperimenter.effects
+          ; expand UnassignExperimenter.effects
+          ] ))
     |> Middleware.Guardian.validate_generic
   ;;
 
   let assign_experimenter =
-    [ ExperimentCommand.AssignExperimenter.effects ]
+    ExperimentCommand.AssignExperimenter.effects
     |> experiment_effects
     |> Middleware.Guardian.validate_generic
   ;;
 
   let unassign_experimenter =
-    [ ExperimentCommand.UnassignExperimenter.effects ]
+    ExperimentCommand.UnassignExperimenter.effects
     |> experiment_effects
     |> Middleware.Guardian.validate_generic
   ;;

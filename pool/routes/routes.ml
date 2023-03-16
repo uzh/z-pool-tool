@@ -4,7 +4,7 @@ module Field = Pool_common.Message.Field
 
 let validate_entity action entity =
   CustomMiddleware.Guardian.validate_admin_entity
-    [ action, `TargetEntity entity ]
+    Guard.(EffectSet.One (action, TargetSpec.Entity entity))
 ;;
 
 let add_key ?(prefix = "") ?(suffix = "") field =
@@ -177,7 +177,7 @@ module Contact = struct
 end
 
 module Admin = struct
-  let require_read = validate_entity `Read
+  let require_read = validate_entity Guard.Action.Read
 
   let middlewares =
     [ CustomMiddleware.Tenant.valid_tenant ()

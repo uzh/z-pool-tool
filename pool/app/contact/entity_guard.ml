@@ -5,8 +5,7 @@ module Target = struct
     Guard.Persistence.Target.decorate
       ?ctx
       (fun user ->
-        Guard.AuthorizableTarget.make
-          (Guard.TargetRoleSet.singleton `Contact)
+        Guard.Target.make
           `Contact
           (user |> Entity.id |> Guard.Uuid.target_of Pool_common.Id.value))
       t

@@ -21,7 +21,10 @@ end = struct
     else Error Pool_common.Message.NotEligible
   ;;
 
-  let effects = [ `Create, `TargetEntity `WaitingList ]
+  let effects =
+    let open Guard in
+    EffectSet.One (Action.Create, TargetSpec.Entity `WaitingList)
+  ;;
 end
 
 module Update : sig
@@ -37,7 +40,7 @@ module Update : sig
     :  (string * string list) list
     -> (t, Pool_common.Message.error) result
 
-  val effects : Pool_common.Id.t -> Guard.Authorizer.effect list
+  val effects : Pool_common.Id.t -> Guard.EffectSet.t
 end = struct
   type t = Waiting_list.update
 
@@ -63,9 +66,9 @@ end = struct
   ;;
 
   let effects id =
-    [ `Update, `Target (id |> Guard.Uuid.target_of Pool_common.Id.value)
-    ; `Update, `TargetEntity `WaitingList
-    ]
+    let open Guard in
+    let target_id = id |> Uuid.target_of Pool_common.Id.value in
+    EffectSet.One (Action.Update, TargetSpec.Id (`WaitingList, target_id))
   ;;
 end
 
@@ -77,7 +80,7 @@ module Destroy : sig
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val effects : Pool_common.Id.t -> Guard.Authorizer.effect list
+  val effects : Pool_common.Id.t -> Guard.EffectSet.t
 end = struct
   type t = Waiting_list.t
 
@@ -87,8 +90,8 @@ end = struct
   ;;
 
   let effects id =
-    [ `Delete, `TargetEntity `WaitingList
-    ; `Delete, `Target (id |> Guard.Uuid.target_of Pool_common.Id.value)
-    ]
+    let open Guard in
+    let target_id = id |> Uuid.target_of Pool_common.Id.value in
+    EffectSet.One (Action.Delete, TargetSpec.Id (`WaitingList, target_id))
   ;;
 end

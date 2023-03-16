@@ -428,37 +428,32 @@ module Update = struct
 end
 
 module Access : Helpers.AccessSig = struct
+  include Helpers.Access
+  open Guard
   module FilterCommand = Cqrs_command.Filter_command
+  module Guardian = Middleware.Guardian
 
-  let filter_effects =
-    Middleware.Guardian.id_effects Filter.Id.of_string Field.Filter
-  ;;
+  let filter_effects = Guardian.id_effects Filter.Id.of_string Field.Filter
 
   let read =
-    [ (fun id ->
-        [ `Read, `Target (id |> Guard.Uuid.target_of Filter.Id.value)
-        ; `Read, `TargetEntity `Contact
-        ])
-    ]
+    (fun id ->
+      let target_id = id |> Uuid.target_of Filter.Id.value in
+      EffectSet.One (Action.Read, TargetSpec.Id (`Filter, target_id)))
     |> filter_effects
-    |> Middleware.Guardian.validate_generic
+    |> Guardian.validate_generic
   ;;
 
   let update =
-    [ FilterCommand.Update.effects ]
-    |> filter_effects
-    |> Middleware.Guardian.validate_generic
+    FilterCommand.Update.effects |> filter_effects |> Guardian.validate_generic
   ;;
 
   let create =
-    [ `Create, `TargetEntity `Filter ]
-    |> Middleware.Guardian.validate_admin_entity
+    EffectSet.One (Action.Create, TargetSpec.Entity `Filter)
+    |> Guardian.validate_admin_entity
   ;;
 
   let index =
-    [ `Read, `TargetEntity `Filter ]
-    |> Middleware.Guardian.validate_admin_entity
+    EffectSet.One (Action.Read, TargetSpec.Entity `Filter)
+    |> Guardian.validate_admin_entity
   ;;
-
-  let delete = Middleware.Guardian.denied
 end
