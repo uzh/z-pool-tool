@@ -91,7 +91,7 @@ module Sql = struct
           pool_sessions.max_participants,
           pool_sessions.min_participants,
           pool_sessions.overbook,
-          (SELECT count(pool_assignments.id) FROM pool_assignments WHERE session_id=pool_sessions.id AND marked_as_deleted = 0),
+          (SELECT COUNT(pool_assignments.id) FROM pool_assignments WHERE session_uuid = pool_sessions.uuid AND marked_as_deleted = 0),
           pool_sessions.canceled_at
         FROM pool_sessions
         INNER JOIN pool_locations

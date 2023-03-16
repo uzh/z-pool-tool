@@ -52,7 +52,7 @@ let find_all_public_by_contact_request =
         WHERE
           pool_assignments.marked_as_deleted = 0
         AND
-          pool_assignments.contact_id = UNHEX(REPLACE($1, '-', ''))
+          pool_assignments.contact_uuid = UNHEX(REPLACE($1, '-', ''))
         AND pool_assignments.session_uuid IN(
           SELECT
             uuid FROM pool_sessions

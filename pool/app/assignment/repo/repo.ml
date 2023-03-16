@@ -4,65 +4,76 @@ let of_entity = RepoEntity.of_entity
 let to_entity = RepoEntity.to_entity
 
 module Sql = struct
-  let select_sql =
-    {sql|
-      SELECT
-        LOWER(CONCAT(
-          SUBSTR(HEX(pool_assignments.uuid), 1, 8), '-',
-          SUBSTR(HEX(pool_assignments.uuid), 9, 4), '-',
-          SUBSTR(HEX(pool_assignments.uuid), 13, 4), '-',
-          SUBSTR(HEX(pool_assignments.uuid), 17, 4), '-',
-          SUBSTR(HEX(pool_assignments.uuid), 21)
-        )),
-        LOWER(CONCAT(
-          SUBSTR(HEX(pool_assignments.session_uuid), 1, 8), '-',
-          SUBSTR(HEX(pool_assignments.session_uuid), 9, 4), '-',
-          SUBSTR(HEX(pool_assignments.session_uuid), 13, 4), '-',
-          SUBSTR(HEX(pool_assignments.session_uuid), 17, 4), '-',
-          SUBSTR(HEX(pool_assignments.session_uuid), 21)
-        )),
-        LOWER(CONCAT(
-          SUBSTR(HEX(pool_assignments.contact_uuid), 1, 8), '-',
-          SUBSTR(HEX(pool_assignments.contact_uuid), 9, 4), '-',
-          SUBSTR(HEX(pool_assignments.contact_uuid), 13, 4), '-',
-          SUBSTR(HEX(pool_assignments.contact_uuid), 17, 4), '-',
-          SUBSTR(HEX(pool_assignments.contact_uuid), 21)
-        )),
-        pool_assignments.show_up,
-        pool_assignments.participated,
-        pool_assignments.matches_filter,
-        pool_assignments.canceled_at,
-        pool_assignments.marked_as_deleted,
-        pool_assignments.created_at,
-        pool_assignments.updated_at
-      FROM
-        pool_assignments
+  let select_sql ?(joins = "") where =
+    Format.asprintf
+      {sql|
+        SELECT
+          LOWER(CONCAT(
+            SUBSTR(HEX(pool_assignments.uuid), 1, 8), '-',
+            SUBSTR(HEX(pool_assignments.uuid), 9, 4), '-',
+            SUBSTR(HEX(pool_assignments.uuid), 13, 4), '-',
+            SUBSTR(HEX(pool_assignments.uuid), 17, 4), '-',
+            SUBSTR(HEX(pool_assignments.uuid), 21)
+          )),
+          LOWER(CONCAT(
+            SUBSTR(HEX(pool_assignments.session_uuid), 1, 8), '-',
+            SUBSTR(HEX(pool_assignments.session_uuid), 9, 4), '-',
+            SUBSTR(HEX(pool_assignments.session_uuid), 13, 4), '-',
+            SUBSTR(HEX(pool_assignments.session_uuid), 17, 4), '-',
+            SUBSTR(HEX(pool_assignments.session_uuid), 21)
+          )),
+          LOWER(CONCAT(
+            SUBSTR(HEX(pool_assignments.contact_uuid), 1, 8), '-',
+            SUBSTR(HEX(pool_assignments.contact_uuid), 9, 4), '-',
+            SUBSTR(HEX(pool_assignments.contact_uuid), 13, 4), '-',
+            SUBSTR(HEX(pool_assignments.contact_uuid), 17, 4), '-',
+            SUBSTR(HEX(pool_assignments.contact_uuid), 21)
+          )),
+          pool_assignments.show_up,
+          pool_assignments.participated,
+          pool_assignments.matches_filter,
+          pool_assignments.canceled_at,
+          pool_assignments.marked_as_deleted,
+          pool_assignments.created_at,
+          pool_assignments.updated_at
+        FROM
+          pool_assignments
+        %s
+        WHERE
+        %s
     |sql}
+      joins
+      where
   ;;
 
-  let select_public_sql =
-    {sql|
-      SELECT
-        LOWER(CONCAT(
-          SUBSTR(HEX(pool_assignments.uuid), 1, 8), '-',
-          SUBSTR(HEX(pool_assignments.uuid), 9, 4), '-',
-          SUBSTR(HEX(pool_assignments.uuid), 13, 4), '-',
-          SUBSTR(HEX(pool_assignments.uuid), 17, 4), '-',
-          SUBSTR(HEX(pool_assignments.uuid), 21)
-        )),
-        pool_assignments.canceled_at
-      FROM
-        pool_assignments
-    |sql}
+  let select_public_sql ?(joins = "") where =
+    Format.asprintf
+      {sql|
+        SELECT
+          LOWER(CONCAT(
+            SUBSTR(HEX(pool_assignments.uuid), 1, 8), '-',
+            SUBSTR(HEX(pool_assignments.uuid), 9, 4), '-',
+            SUBSTR(HEX(pool_assignments.uuid), 13, 4), '-',
+            SUBSTR(HEX(pool_assignments.uuid), 17, 4), '-',
+            SUBSTR(HEX(pool_assignments.uuid), 21)
+          )),
+          pool_assignments.canceled_at
+        FROM
+          pool_assignments
+        %s
+        WHERE
+        %s
+      |sql}
+      joins
+      where
   ;;
 
   let find_request =
     let open Caqti_request.Infix in
     {sql|
-      WHERE
         pool_assignments.uuid = UNHEX(REPLACE(?, '-', ''))
     |sql}
-    |> Format.asprintf "%s\n%s" select_sql
+    |> select_sql
     |> Caqti_type.string ->! RepoEntity.t
   ;;
 
@@ -79,17 +90,16 @@ module Sql = struct
     let open Caqti_request.Infix in
     let id_fragment =
       {sql|
-        WHERE
-          session_uuid = UNHEX(REPLACE(?, '-', ''))
+        pool_assignments.session_uuid = UNHEX(REPLACE(?, '-', ''))
         AND
-          marked_as_deleted = 0
+        pool_assignments.marked_as_deleted = 0
       |sql}
     in
     where_condition
     |> CCOption.map_or
          ~default:id_fragment
          (Format.asprintf "%s AND %s" id_fragment)
-    |> Format.asprintf "%s\n%s" select_sql
+    |> select_sql
     |> Caqti_type.string ->* RepoEntity.t
   ;;
 
@@ -103,12 +113,11 @@ module Sql = struct
   let find_deleted_by_session_request () =
     let open Caqti_request.Infix in
     {sql|
-        WHERE
-          session_uuid = UNHEX(REPLACE(?, '-', ''))
+        pool_assignments.session_uuid = UNHEX(REPLACE(?, '-', ''))
         AND
-          marked_as_deleted = 1
+        pool_assignments.marked_as_deleted = 1
       |sql}
-    |> Format.asprintf "%s\n%s" select_sql
+    |> select_sql
     |> Caqti_type.string ->* RepoEntity.t
   ;;
 
@@ -122,12 +131,11 @@ module Sql = struct
   let find_by_contact_request =
     let open Caqti_request.Infix in
     {sql|
-      WHERE
-        contact_uuid = UNHEX(REPLACE(?, '-', ''))
+      pool_assignments.contact_uuid = UNHEX(REPLACE(?, '-', ''))
       AND
-        marked_as_deleted = 0
+      pool_assignments.marked_as_deleted = 0
     |sql}
-    |> Format.asprintf "%s\n%s" select_sql
+    |> select_sql
     |> Caqti_type.string ->* RepoEntity.t
   ;;
 
@@ -140,15 +148,20 @@ module Sql = struct
 
   let find_by_experiment_and_contact_opt_request =
     let open Caqti_request.Infix in
+    let joins =
+      {sql|
+        LEFT JOIN pool_sessions
+        ON pool_assignments.session_uuid = pool_sessions.uuid
+      |sql}
+    in
     {sql|
-      WHERE
         pool_sessions.experiment_uuid = UNHEX(REPLACE(?, '-', ''))
       AND
         pool_assignments.contact_uuid = UNHEX(REPLACE(?, '-', ''))
       AND
-        marked_as_deleted = 0
+        pool_assignments.marked_as_deleted = 0
     |sql}
-    |> Format.asprintf "%s\n%s" select_public_sql
+    |> select_public_sql ~joins
     |> Caqti_type.(tup2 string string) ->* RepoEntity.Public.t
   ;;
 
@@ -162,19 +175,23 @@ module Sql = struct
 
   let find_with_follow_ups_request =
     let open Caqti_request.Infix in
+    let joins =
+      {sql|
+        INNER JOIN pool_sessions
+        ON pool_assignments.session_uuid = pool_sessions.uuid
+      |sql}
+    in
     {sql|
-    INNER JOIN pool_sessions
-      ON pool_assignments.session_uuid = pool_sessions.uuid
-    WHERE pool_assignments.marked_as_deleted = 0
+      pool_assignments.marked_as_deleted = 0
       AND(
-        pool_assignments.uuid = UNHEX(REPLACE($1, '-', ''))))
+        pool_assignments.uuid = UNHEX(REPLACE($1, '-', ''))
         OR(
-          pool_sessions.follow_up_to = (SELECT session_uuid FROM pool_assignments WHERE pool_assignments.uuid = UNHEX(REPLACE($1, '-', '')))))
+          pool_sessions.follow_up_to = (SELECT session_uuid FROM pool_assignments WHERE pool_assignments.uuid = UNHEX(REPLACE($1, '-', '')))
         AND
-          pool_assignments.contact_uuid = (SELECT contact_uuid FROM pool_assignments WHERE pool_assignments.uuid = UNHEX(REPLACE($1, '-', '')))))
+          pool_assignments.contact_uuid = (SELECT contact_uuid FROM pool_assignments WHERE pool_assignments.uuid = UNHEX(REPLACE($1, '-', '')))
         ))
     |sql}
-    |> Format.asprintf "%s\n%s" select_sql
+    |> select_sql ~joins
     |> Caqti_type.string ->* RepoEntity.t
   ;;
 
