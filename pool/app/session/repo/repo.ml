@@ -51,7 +51,7 @@ module Sql = struct
           pool_sessions.updated_at
         FROM pool_sessions
         LEFT JOIN pool_assignments
-          ON pool_assignments.session_id = pool_sessions.id
+          ON pool_assignments.session_uuid = pool_sessions.uuid
           AND pool_assignments.marked_as_deleted = 0
         INNER JOIN pool_locations
           ON pool_locations.id = pool_sessions.location_id
@@ -160,7 +160,7 @@ module Sql = struct
     let open Caqti_request.Infix in
     {sql|
       INNER JOIN pool_assignments
-        ON pool_assignments.session_id = pool_sessions.id
+        ON pool_assignments.session_uuid = pool_sessions.uuid
       WHERE pool_assignments.uuid = UNHEX(REPLACE(?, '-', ''))
         AND pool_assignments.marked_as_deleted = 0
     |sql}
@@ -181,13 +181,13 @@ module Sql = struct
     let open Caqti_request.Infix in
     {sql|
       INNER JOIN pool_assignments
-        ON pool_assignments.session_id = pool_sessions.id
+        ON pool_assignments.session_uuid = pool_sessions.uuid
       WHERE
         pool_sessions.closed_at IS NULL
       AND
         pool_sessions.start > NOW()
       AND
-        pool_assignments.contact_id = (SELECT id FROM pool_contacts WHERE pool_contacts.user_uuid = UNHEX(REPLACE(?, '-', '')))
+        pool_assignments.contact_uuid = UNHEX(REPLACE(?, '-', ''))
       AND
         pool_assignments.marked_as_deleted = 0
       ORDER BY

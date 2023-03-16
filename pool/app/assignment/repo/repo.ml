@@ -15,18 +15,18 @@ module Sql = struct
           SUBSTR(HEX(pool_assignments.uuid), 21)
         )),
         LOWER(CONCAT(
-          SUBSTR(HEX(pool_sessions.uuid), 1, 8), '-',
-          SUBSTR(HEX(pool_sessions.uuid), 9, 4), '-',
-          SUBSTR(HEX(pool_sessions.uuid), 13, 4), '-',
-          SUBSTR(HEX(pool_sessions.uuid), 17, 4), '-',
-          SUBSTR(HEX(pool_sessions.uuid), 21)
+          SUBSTR(HEX(pool_assignments.session_uuid), 1, 8), '-',
+          SUBSTR(HEX(pool_assignments.session_uuid), 9, 4), '-',
+          SUBSTR(HEX(pool_assignments.session_uuid), 13, 4), '-',
+          SUBSTR(HEX(pool_assignments.session_uuid), 17, 4), '-',
+          SUBSTR(HEX(pool_assignments.session_uuid), 21)
         )),
         LOWER(CONCAT(
-          SUBSTR(HEX(pool_contacts.user_uuid), 1, 8), '-',
-          SUBSTR(HEX(pool_contacts.user_uuid), 9, 4), '-',
-          SUBSTR(HEX(pool_contacts.user_uuid), 13, 4), '-',
-          SUBSTR(HEX(pool_contacts.user_uuid), 17, 4), '-',
-          SUBSTR(HEX(pool_contacts.user_uuid), 21)
+          SUBSTR(HEX(pool_assignments.contact_uuid), 1, 8), '-',
+          SUBSTR(HEX(pool_assignments.contact_uuid), 9, 4), '-',
+          SUBSTR(HEX(pool_assignments.contact_uuid), 13, 4), '-',
+          SUBSTR(HEX(pool_assignments.contact_uuid), 17, 4), '-',
+          SUBSTR(HEX(pool_assignments.contact_uuid), 21)
         )),
         pool_assignments.show_up,
         pool_assignments.participated,
@@ -37,10 +37,6 @@ module Sql = struct
         pool_assignments.updated_at
       FROM
         pool_assignments
-      LEFT JOIN pool_sessions
-        ON pool_assignments.session_id = pool_sessions.id
-      LEFT JOIN pool_contacts
-        ON pool_assignments.contact_id = pool_contacts.id
     |sql}
   ;;
 
@@ -57,10 +53,6 @@ module Sql = struct
         pool_assignments.canceled_at
       FROM
         pool_assignments
-      LEFT JOIN pool_sessions
-        ON pool_assignments.session_id = pool_sessions.id
-      LEFT JOIN pool_contacts
-        ON pool_assignments.session_id = pool_contacts.id
     |sql}
   ;;
 
@@ -88,7 +80,7 @@ module Sql = struct
     let id_fragment =
       {sql|
         WHERE
-          session_id = (SELECT id FROM pool_sessions WHERE uuid = UNHEX(REPLACE(?, '-', '')))
+          session_uuid = UNHEX(REPLACE(?, '-', ''))
         AND
           marked_as_deleted = 0
       |sql}
@@ -112,7 +104,7 @@ module Sql = struct
     let open Caqti_request.Infix in
     {sql|
         WHERE
-          session_id = (SELECT id FROM pool_sessions WHERE uuid = UNHEX(REPLACE(?, '-', '')))
+          session_uuid = UNHEX(REPLACE(?, '-', ''))
         AND
           marked_as_deleted = 1
       |sql}
@@ -131,7 +123,7 @@ module Sql = struct
     let open Caqti_request.Infix in
     {sql|
       WHERE
-        contact_id = (SELECT id FROM pool_contacts WHERE uuid = UNHEX(REPLACE(?, '-', '')))
+        contact_uuid = UNHEX(REPLACE(?, '-', ''))
       AND
         marked_as_deleted = 0
     |sql}
@@ -152,7 +144,7 @@ module Sql = struct
       WHERE
         pool_sessions.experiment_uuid = UNHEX(REPLACE(?, '-', ''))
       AND
-        pool_assignments.contact_id = (SELECT id FROM pool_contacts WHERE pool_contacts.user_uuid = UNHEX(REPLACE(?, '-', '')))
+        pool_assignments.contact_uuid = UNHEX(REPLACE(?, '-', ''))
       AND
         marked_as_deleted = 0
     |sql}
@@ -171,24 +163,16 @@ module Sql = struct
   let find_with_follow_ups_request =
     let open Caqti_request.Infix in
     {sql|
-      WHERE
-        pool_assignments.marked_as_deleted = 0
-      AND(pool_assignments.uuid = UNHEX(REPLACE($1, '-', ''))
-        OR pool_sessions.follow_up_to = (
-          SELECT
-            pool_sessions.uuid
-          FROM
-            pool_sessions
-            INNER JOIN pool_assignments ON pool_assignments.session_id = pool_sessions.id
-          WHERE
-            pool_assignments.uuid = UNHEX(REPLACE($1, '-', ''))))
-        AND pool_assignments.contact_id = (
-          SELECT
-            pool_assignments.contact_id
-          FROM
-            pool_assignments
-          WHERE
-            pool_assignments.uuid = UNHEX(REPLACE($1, '-', '')))
+    INNER JOIN pool_sessions
+      ON pool_assignments.session_uuid = pool_sessions.uuid
+    WHERE pool_assignments.marked_as_deleted = 0
+      AND(
+        pool_assignments.uuid = UNHEX(REPLACE($1, '-', ''))))
+        OR(
+          pool_sessions.follow_up_to = (SELECT session_uuid FROM pool_assignments WHERE pool_assignments.uuid = UNHEX(REPLACE($1, '-', '')))))
+        AND
+          pool_assignments.contact_uuid = (SELECT contact_uuid FROM pool_assignments WHERE pool_assignments.uuid = UNHEX(REPLACE($1, '-', '')))))
+        ))
     |sql}
     |> Format.asprintf "%s\n%s" select_sql
     |> Caqti_type.string ->* RepoEntity.t
@@ -206,8 +190,8 @@ module Sql = struct
     {sql|
       INSERT INTO pool_assignments (
         uuid,
-        session_id,
-        contact_id,
+        session_uuid,
+        contact_uuid,
         show_up,
         participated,
         matches_filter,
@@ -216,8 +200,8 @@ module Sql = struct
         updated_at
       ) VALUES (
         UNHEX(REPLACE($1, '-', '')),
-        (SELECT id FROM pool_sessions WHERE pool_sessions.uuid = UNHEX(REPLACE($2, '-', ''))),
-        (SELECT id FROM pool_contacts WHERE pool_contacts.user_uuid = UNHEX(REPLACE($3, '-', ''))),
+        UNHEX(REPLACE($2, '-', '')),
+        UNHEX(REPLACE($3, '-', '')),
         $4,
         $5,
         $6,

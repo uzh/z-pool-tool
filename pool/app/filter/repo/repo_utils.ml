@@ -24,10 +24,10 @@ let filtered_base_condition =
       (SELECT 1
       FROM pool_assignments
       WHERE
-          pool_assignments.contact_id = pool_contacts.id
+          pool_assignments.contact_uuid = pool_contacts.user_uuid
         AND
-          pool_assignments.session_id IN (
-            SELECT id FROM pool_sessions WHERE pool_sessions.experiment_uuid = UNHEX(REPLACE(?, '-', ''))
+          pool_assignments.session_uuid IN (
+            SELECT uuid FROM pool_sessions WHERE pool_sessions.experiment_uuid = UNHEX(REPLACE(?, '-', ''))
           )
       )
     |sql}
@@ -83,10 +83,10 @@ let participation_subquery dyn operator ids =
           COUNT(DISTINCT pool_experiments.uuid)
         FROM
           pool_assignments
-          INNER JOIN pool_sessions ON pool_sessions.id = pool_assignments.session_id
+          INNER JOIN pool_sessions ON pool_sessions.uuid = pool_assignments.session_uuid
           INNER JOIN pool_experiments ON pool_sessions.experiment_uuid = pool_experiments.uuid
         WHERE
-          pool_assignments.contact_id = pool_contacts.id
+          pool_assignments.contact_uuid = pool_contacts.user_uuid
           AND pool_assignments.show_up = 1
           AND pool_assignments.canceled_at IS NULL
           AND pool_experiments.uuid IN (%s)
