@@ -141,8 +141,8 @@ val per_minutes : CCInt.t -> t -> CCFloat.t
 val total : t -> int
 
 val validate_start
-  :  EndAt.t
-  -> [< `StartAt of StartAt.t | `StartNow ]
+  :  [< `StartAt of StartAt.t | `StartNow ]
+  -> EndAt.t
   -> (StartAt.t, Pool_common.Message.error) result
 
 val create

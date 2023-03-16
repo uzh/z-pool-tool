@@ -115,7 +115,8 @@ end = struct
     let open CCResult in
     Logs.info ~src (fun m -> m "Handle command Update" ~tags);
     let* start_at =
-      define_start start_at start_now >>= Mailing.validate_start end_at
+      define_start start_at start_now
+      >>= CCFun.flip Mailing.validate_start end_at
     in
     let update = { start_at; end_at; rate; distribution } in
     match Ptime_clock.now () < Mailing.StartAt.value start_at with

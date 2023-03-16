@@ -185,7 +185,7 @@ let equal m1 m2 =
      |> CCOption.get_or ~default:false
 ;;
 
-let validate_start end_at start =
+let validate_start start end_at =
   let open CCResult in
   let* start_at =
     match start with
@@ -202,7 +202,7 @@ let validate_start end_at start =
 
 let create ?(id = Id.create ()) start end_at rate distribution =
   let open CCResult in
-  let* start_at = validate_start end_at start in
+  let* start_at = validate_start start end_at in
   Ok
     { id
     ; start_at
