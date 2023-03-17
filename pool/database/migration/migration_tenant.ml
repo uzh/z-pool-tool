@@ -75,13 +75,24 @@ let remove_smtp_from_tenant_table =
     |sql}
 ;;
 
+let make_styles_and_icon_nullable =
+  Sihl.Database.Migration.create_step
+    ~label:"make styles nullable"
+    {sql|
+      ALTER TABLE pool_tenant
+        MODIFY styles binary(16),
+        MODIFY icon binary(16)
+    |sql}
+;;
+
 let migration_root () =
   Sihl.Database.Migration.(
     empty "tenant"
     |> add_step create_tenant_table
     |> add_step change_description_column_type
     |> add_step remove_smtp_from_tenant_table
-    |> add_step create_smtp_table)
+    |> add_step create_smtp_table
+    |> add_step make_styles_and_icon_nullable)
 ;;
 
 let migration_tenant () =

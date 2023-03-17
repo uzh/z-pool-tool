@@ -317,7 +317,11 @@ module Tenant = struct
       title (txt (Format.asprintf "%s - %s" title_text "Pool Tool"))
     in
     let stylesheets =
-      let global = [ global_stylesheet; "/custom/assets/index.css" ] in
+      let global =
+        if CCOption.is_some tenant.Pool_tenant.styles
+        then [ global_stylesheet; "/custom/assets/index.css" ]
+        else [ global_stylesheet ]
+      in
       let files =
         if user_is_admin user
         then CCList.cons "/assets/admin.css" global
@@ -354,12 +358,19 @@ module Tenant = struct
         tenant.Pool_tenant.title
     in
     let content = main_tag [ message; children ] in
-    let favicon =
-      Pool_tenant.(
-        tenant.icon |> Icon.value |> Pool_common.File.path |> favicon)
+    let head_tags =
+      let favicon =
+        let open Pool_tenant in
+        tenant.icon
+        |> CCOption.map CCFun.(Icon.value %> Pool_common.File.path %> favicon)
+      in
+      let base = [ charset; viewport ] @ stylesheets in
+      match favicon with
+      | None -> base
+      | Some favicon -> base @ [ favicon ]
     in
     html
-      (head page_title ([ charset; viewport; favicon ] @ stylesheets))
+      (head page_title head_tags)
       (body
          ~a:[ a_class body_tag_classnames ]
          ([ website_header ~children:header_content query_language title_text

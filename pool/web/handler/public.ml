@@ -38,10 +38,17 @@ let index_css req =
   let%lwt result =
     let open Utils.Lwt_result.Infix in
     let tags = Pool_context.Logger.Tags.req req in
-    let* { Pool_context.database_label; _ } =
-      Pool_context.find req |> Lwt_result.lift
+    let* _ = Pool_context.find req |> Lwt_result.lift in
+    (* TODO: Can this query be made optional, get tenant context *)
+    let* styles =
+      let open Pool_context.Tenant in
+      find req
+      |> Lwt_result.lift
+      >== fun { tenant; _ } ->
+      tenant.Pool_tenant.styles
+      |> CCOption.to_result Pool_common.Message.(NotFound Field.Styles)
     in
-    let* styles = Pool_tenant.find_styles database_label in
+    (* let* styles = Pool_tenant.find_styles database_label in *)
     let* file =
       Http_utils.File.get_storage_file
         ~tags

@@ -41,12 +41,12 @@ let tenant_form
   in
   let file_uploads =
     [ ( Field.Styles
-      , tenant |> CCOption.map (fun t -> t.styles |> Styles.value)
+      , CCOption.bind tenant (fun t -> t.styles |> CCOption.map Styles.value)
       , false
       , false )
     ; ( Field.Icon
-      , tenant |> CCOption.map (fun t -> t.icon |> Icon.value)
-      , true
+      , CCOption.bind tenant (fun t -> t.icon |> CCOption.map Icon.value)
+      , false
       , false )
     ; Field.TenantLogos, None, true, true
     ; Field.PartnerLogos, None, false, true

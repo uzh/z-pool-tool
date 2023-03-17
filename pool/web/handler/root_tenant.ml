@@ -25,7 +25,7 @@ let create req =
     Sihl.Web.Request.to_multipart_form_data_exn req
     ||> HttpUtils.remove_empty_values_multiplart
   in
-  let result { Pool_context.database_label; _ } =
+  let result _ =
     Utils.Lwt_result.map_error (fun err ->
       let urlencoded =
         multipart_encoded
@@ -41,15 +41,6 @@ let create req =
           (CCList.map Pool_common.Message.Field.show Pool_tenant.file_fields)
           req
       in
-      let finalize = function
-        | Ok resp -> Lwt.return_ok resp
-        | Error err ->
-          let ctx = database_label |> Pool_tenant.to_ctx in
-          let%lwt () =
-            Lwt_list.iter_s (snd %> Service.Storage.delete ~ctx) files
-          in
-          Lwt.return_error err
-      in
       let events =
         let open CCResult.Infix in
         let open Cqrs_command.Pool_tenant_command.Create in
@@ -59,7 +50,7 @@ let create req =
         >>= handle ~tags
         |> Lwt_result.lift
       in
-      events >|> finalize
+      events >|> HttpUtils.File.cleanup_upload Database.root files
     in
     let handle =
       Lwt_list.iter_s (Pool_event.handle_event ~tags Database.root)

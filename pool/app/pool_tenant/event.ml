@@ -10,6 +10,8 @@ type update =
   ; url : Url.t
   ; disabled : Disabled.t
   ; default_language : Pool_common.Language.t
+  ; styles : Styles.Write.t option
+  ; icon : Icon.Write.t option
   }
 [@@deriving eq, show]
 
@@ -56,11 +58,14 @@ let handle_event pool : event -> unit Lwt.t = function
     Lwt.return_unit
   | DetailsEdited (tenant, update_t) ->
     let open Entity.Write in
+    let open CCOption.Infix in
     let%lwt () =
       { tenant with
         title = update_t.title
       ; description = update_t.description
       ; url = update_t.url
+      ; styles = update_t.styles <+> tenant.styles
+      ; icon = update_t.icon <+> tenant.icon
       ; disabled = update_t.disabled
       ; default_language = update_t.default_language
       ; updated_at = Ptime_clock.now ()

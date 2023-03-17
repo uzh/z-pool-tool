@@ -124,8 +124,8 @@ module Data = struct
         ; description
         ; url
         ; database
-        ; styles
-        ; icon
+        ; styles = styles |> CCOption.return
+        ; icon = icon |> CCOption.return
         ; maintenance = Maintenance.create false
         ; disabled = Disabled.create false
         ; default_language = Common.Language.En
@@ -183,8 +183,8 @@ module Data = struct
       ; description
       ; url
       ; database_label
-      ; styles = styles |> CCResult.get_exn
-      ; icon
+      ; styles = styles |> CCResult.get_exn |> CCOption.return
+      ; icon = icon |> CCOption.return
       ; logos
       ; partner_logo
       ; maintenance = Maintenance.create false
@@ -272,8 +272,8 @@ let[@warning "-4"] create_tenant () =
         ; description
         ; url
         ; database
-        ; styles
-        ; icon
+        ; styles = styles |> CCOption.return
+        ; icon = icon |> CCOption.return
         ; maintenance = Pool_tenant.Maintenance.create false
         ; disabled = Pool_tenant.Disabled.create false
         ; default_language
@@ -340,7 +340,14 @@ let[@warning "-4"] update_tenant_details () =
       let* default_language = default_language |> Common.Language.create in
       let disabled = false |> Disabled.create in
       let update : update =
-        { title; description; url; default_language; disabled }
+        { title
+        ; description
+        ; url
+        ; default_language
+        ; styles = Some styles
+        ; icon = Some icon
+        ; disabled
+        }
       in
       let logo_event =
         (* read logo event, as it's not value of update in this test *)

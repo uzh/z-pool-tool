@@ -4,7 +4,7 @@ module File = Pool_common.File
 
 let src = Logs.Src.create "pool_tenant.cqrs"
 
-let create_logo_mappings files tenant logo_type =
+let create_logo_mappings tenant logo_type files =
   let open Pool_tenant in
   CCList.map
     (fun asset_id ->
@@ -17,24 +17,21 @@ let create_logo_mappings files tenant logo_type =
     files
 ;;
 
-module Create : sig
-  type t =
-    { title : Pool_tenant.Title.t
-    ; description : Pool_tenant.Description.t option
-    ; url : Pool_tenant.Url.t
-    ; database_url : Pool_database.Url.t
-    ; database_label : Pool_database.Label.t
-    ; styles : Pool_tenant.Styles.Write.t
-    ; icon : Pool_tenant.Icon.Write.t
-    ; default_language : Pool_common.Language.t
-    ; tenant_logos : Pool_common.Id.t list
-    ; partner_logos : Pool_common.Id.t list
-    }
+type create =
+  { title : Pool_tenant.Title.t
+  ; description : Pool_tenant.Description.t option
+  ; url : Pool_tenant.Url.t
+  ; database_url : Pool_database.Url.t
+  ; database_label : Pool_database.Label.t
+  ; styles : Pool_tenant.Styles.Write.t option
+  ; icon : Pool_tenant.Icon.Write.t option
+  ; default_language : Pool_common.Language.t
+  ; tenant_logos : Pool_common.Id.t list
+  ; partner_logos : Pool_common.Id.t list option
+  }
 
-  val handle
-    :  ?tags:Logs.Tag.set
-    -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+module Create : sig
+  include Common.CommandSig with type t = create
 
   val decode
     :  (string * string list) list
@@ -42,18 +39,7 @@ module Create : sig
 
   val effects : Guard.Authorizer.effect list
 end = struct
-  type t =
-    { title : Pool_tenant.Title.t
-    ; description : Pool_tenant.Description.t option
-    ; url : Pool_tenant.Url.t
-    ; database_url : Pool_database.Url.t
-    ; database_label : Pool_database.Label.t
-    ; styles : Pool_tenant.Styles.Write.t
-    ; icon : Pool_tenant.Icon.Write.t
-    ; default_language : Pool_common.Language.t
-    ; tenant_logos : Pool_common.Id.t list
-    ; partner_logos : Pool_common.Id.t list
-    }
+  type t = create
 
   let command
     title
@@ -89,11 +75,11 @@ end = struct
           ; Pool_tenant.Url.schema ()
           ; Pool_database.Url.schema ()
           ; Pool_database.Label.schema ()
-          ; Pool_tenant.Styles.Write.schema ()
-          ; Pool_tenant.Icon.Write.schema ()
+          ; Conformist.optional @@ Pool_tenant.Styles.Write.schema ()
+          ; Conformist.optional @@ Pool_tenant.Icon.Write.schema ()
           ; Pool_common.Language.schema ()
           ; Pool_tenant.Logos.schema ()
-          ; Pool_tenant.PartnerLogos.schema ()
+          ; Conformist.optional @@ Pool_tenant.PartnerLogos.schema ()
           ]
         command)
   ;;
@@ -115,11 +101,12 @@ end = struct
         command.default_language
     in
     let logo_mappings =
-      CCList.map
+      let open Pool_tenant.LogoMapping in
+      CCList.filter_map
         (fun (id_list, logo_type) ->
-          create_logo_mappings id_list tenant logo_type)
-        [ command.partner_logos, Pool_tenant.LogoMapping.LogoType.PartnerLogo
-        ; command.tenant_logos, Pool_tenant.LogoMapping.LogoType.TenantLogo
+          id_list |> CCOption.map (create_logo_mappings tenant logo_type))
+        [ command.partner_logos, LogoType.PartnerLogo
+        ; Some command.tenant_logos, LogoType.TenantLogo
         ]
       |> CCList.flatten
     in
@@ -151,6 +138,8 @@ module EditDetails : sig
     ; url : Pool_tenant.Url.t
     ; disabled : Pool_tenant.Disabled.t
     ; default_language : Pool_common.Language.t
+    ; styles : Pool_tenant.Styles.Write.t option
+    ; icon : Pool_tenant.Icon.Write.t option
     ; tenant_logos : Pool_common.Id.t list option
     ; partner_logos : Pool_common.Id.t list option
     }
@@ -173,6 +162,8 @@ end = struct
     ; url : Pool_tenant.Url.t
     ; disabled : Pool_tenant.Disabled.t
     ; default_language : Pool_common.Language.t
+    ; styles : Pool_tenant.Styles.Write.t option
+    ; icon : Pool_tenant.Icon.Write.t option
     ; tenant_logos : Pool_common.Id.t list option
     ; partner_logos : Pool_common.Id.t list option
     }
@@ -183,6 +174,8 @@ end = struct
     url
     disabled
     default_language
+    styles
+    icon
     tenant_logos
     partner_logos
     =
@@ -191,6 +184,8 @@ end = struct
     ; url
     ; disabled
     ; default_language
+    ; styles
+    ; icon
     ; tenant_logos
     ; partner_logos
     }
@@ -205,6 +200,8 @@ end = struct
           ; Pool_tenant.Url.schema ()
           ; Pool_tenant.Disabled.schema ()
           ; Pool_common.Language.schema ()
+          ; Conformist.optional @@ Pool_tenant.Styles.Write.schema ()
+          ; Conformist.optional @@ Pool_tenant.Icon.Write.schema ()
           ; Conformist.optional @@ Pool_tenant.Logos.schema ()
           ; Conformist.optional @@ Pool_tenant.PartnerLogos.schema ()
           ]
@@ -223,17 +220,18 @@ end = struct
         ; description = command.description
         ; url = command.url
         ; disabled = command.disabled
+        ; styles = command.styles
+        ; icon = command.icon
         ; default_language = command.default_language
         }
     in
     let logo_mappings =
-      CCList.map
+      let open Pool_tenant.LogoMapping in
+      CCList.filter_map
         (fun (id_list, logo_type) ->
-          id_list
-          |> CCOption.map (fun ids -> create_logo_mappings ids tenant logo_type)
-          |> CCOption.value ~default:[])
-        [ command.partner_logos, Pool_tenant.LogoMapping.LogoType.PartnerLogo
-        ; command.tenant_logos, Pool_tenant.LogoMapping.LogoType.TenantLogo
+          id_list |> CCOption.map (create_logo_mappings tenant logo_type))
+        [ command.partner_logos, LogoType.PartnerLogo
+        ; command.tenant_logos, LogoType.TenantLogo
         ]
       |> CCList.flatten
     in

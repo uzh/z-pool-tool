@@ -82,8 +82,8 @@ let create () =
                (Url.create url |> get_or_failwith)
                (Pool_tenant.Database.create database_label database_url
                 |> get_or_failwith)
-               (Styles.Write.create styles |> get_or_failwith)
-               (Icon.Write.create icon |> get_or_failwith)
+               (Styles.Write.create styles |> get_or_failwith |> CCOption.return)
+               (Icon.Write.create icon |> get_or_failwith |> CCOption.return)
                (Pool_common.Language.create default_language |> get_or_failwith))
          in
          let logo_mappings =

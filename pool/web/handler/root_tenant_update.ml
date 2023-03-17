@@ -12,6 +12,9 @@ let update req command success_message =
     Sihl.Web.Request.to_multipart_form_data_exn req
     ||> HttpUtils.remove_empty_values_multiplart
   in
+  let urlencoded =
+    multipart_encoded |> HttpUtils.multipart_to_urlencoded file_fields
+  in
   let tags = Pool_context.Logger.Tags.req req in
   let id =
     HttpUtils.get_field_router_param req Pool_common.Message.Field.Tenant
@@ -22,23 +25,31 @@ let update req command success_message =
   in
   let result _ =
     Utils.Lwt_result.map_error (fun err ->
-      let urlencoded =
-        multipart_encoded |> HttpUtils.multipart_to_urlencoded file_fields
-      in
       err, redirect_path, [ HttpUtils.urlencoded_to_flash urlencoded ])
     @@
     let events tenant =
       let open Utils.Lwt_result.Infix in
-      let* _ =
-        File.update_files
-          Database.root
-          [ ( Styles |> show
-            , tenant.Pool_tenant.Write.styles |> Pool_tenant.Styles.Write.value
-            )
-          ; ( Icon |> show
-            , tenant.Pool_tenant.Write.icon |> Pool_tenant.Icon.Write.value )
-          ]
-          req
+      let open Pool_tenant in
+      let updates, creations =
+        (CCList.fold_left (fun (updates, creations) (asset_id, field) ->
+           match asset_id with
+           | Some id -> (show field, id) :: updates, creations
+           | None -> updates, field :: creations))
+          ([], [])
+          CCOption.
+            [ tenant.Write.styles >|= Styles.Write.value, Styles
+            ; tenant.Write.icon >|= Icon.Write.value, Icon
+            ]
+      in
+      let* (_ : string list) = File.update_files Database.root updates req in
+      let* uploaded_files =
+        match creations with
+        | [] -> Lwt_result.return []
+        | fields ->
+          File.upload_files
+            Database.root
+            (CCList.map Pool_common.Message.Field.show fields)
+            req
       in
       let* logo_files =
         File.upload_files
@@ -54,11 +65,11 @@ let update req command success_message =
         | `EditDatabase ->
           EditDatabase.(decode urlencoded >>= handle ~tags tenant)
       in
-      logo_files @ multipart_encoded
-      |> File.multipart_form_data_to_urlencoded
+      let files = logo_files @ uploaded_files in
+      (files |> File.multipart_form_data_to_urlencoded) @ urlencoded
       |> HttpUtils.format_request_boolean_values [ TenantDisabledFlag |> show ]
       |> events_list
-      |> Lwt_result.lift
+      |> HttpUtils.File.cleanup_upload Database.root files
     in
     let handle =
       Lwt_list.iter_s (Pool_event.handle_event ~tags Database.root)
