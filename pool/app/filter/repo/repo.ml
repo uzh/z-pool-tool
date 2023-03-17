@@ -284,11 +284,11 @@ module Sql = struct
   let count_filtered_request_sql where_fragment =
     let select =
       {sql|
-      SELECT COUNT(*)
-      FROM pool_contacts
-        LEFT JOIN user_users
-        ON pool_contacts.user_uuid = user_users.uuid
-    |sql}
+        SELECT COUNT(*)
+        FROM pool_contacts
+          LEFT JOIN user_users
+          ON pool_contacts.user_uuid = user_users.uuid
+      |sql}
     in
     Format.asprintf "%s\n%s" select where_fragment
   ;;

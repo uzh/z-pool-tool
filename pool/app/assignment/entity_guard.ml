@@ -4,10 +4,8 @@ module Target = struct
       Guard.Utils.create_simple_dependency_with_pool
         `Assignment
         `Session
-        (fun _pool _id ->
-          (* TODO[mabiede]: find session Id*)
-          Lwt.return_error "Result is hidden")
-        Entity.Id.of_string
+        Repo.find_session_id
+        Pool_common.Id.of_string
         Pool_common.Id.value
     in
     Guard.Persistence.Dependency.register `Assignment `Session find_parent

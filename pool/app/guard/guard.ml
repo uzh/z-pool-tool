@@ -65,7 +65,7 @@ module Utils = struct
       ||> (function
             | Ok id ->
               let id = Uuid.target_of parent_id_decode id in
-              Some (action, TargetSpec.Id (`Experiment, id))
+              Some (action, TargetSpec.Id (parent_kind, id))
             | Error _ -> default)
       |> Lwt_result.ok
     | (_, TargetSpec.Id (typ, _) | _, TargetSpec.Entity typ) when typ = kind ->
