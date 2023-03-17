@@ -16,6 +16,10 @@ module StartAt : sig
     -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
 end
 
+module StartNow : sig
+  include Pool_common.Model.BooleanSig
+end
+
 module EndAt : sig
   include Pool_common.Model.BaseSig
 
@@ -26,6 +30,19 @@ module EndAt : sig
   val schema
     :  unit
     -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
+end
+
+module Start : sig
+  type t =
+    | StartNow
+    | StartAt of StartAt.t
+
+  val validate : t -> EndAt.t -> (StartAt.t, Pool_common.Message.error) result
+
+  val create
+    :  StartAt.t option
+    -> StartNow.t
+    -> (t, Pool_common.Message.error) result
 end
 
 module Rate : sig
@@ -138,7 +155,7 @@ val total : t -> int
 
 val create
   :  ?id:Id.t
-  -> StartAt.t
+  -> Start.t
   -> EndAt.t
   -> Rate.t
   -> Distribution.t option

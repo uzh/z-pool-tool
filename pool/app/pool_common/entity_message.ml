@@ -199,6 +199,7 @@ module Field = struct
     | SmtpUsername [@name "smtp_username"] [@printer go "smtp_username"]
     | SortOrder [@name "sort_order"] [@printer go "sort_order"]
     | Start [@name "start"] [@printer go "start"]
+    | StartNow [@name "start_now"] [@printer go "start_now"]
     | Status [@name "status"] [@printer go "status"]
     | Street [@name "street"] [@printer go "street"]
     | Styles [@name "styles"] [@printer go "styles"]

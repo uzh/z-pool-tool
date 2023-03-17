@@ -56,7 +56,8 @@ let create req =
     let%lwt urlencoded =
       Sihl.Web.Request.to_urlencoded req
       ||> HttpUtils.remove_empty_values
-      ||> HttpUtils.format_request_boolean_values Field.[ RandomOrder |> show ]
+      ||> HttpUtils.format_request_boolean_values
+            Field.([ StartNow; RandomOrder ] |> CCList.map show)
     in
     Utils.Lwt_result.map_error (fun err ->
       ( err
@@ -144,7 +145,8 @@ let update req =
     let%lwt urlencoded =
       Sihl.Web.Request.to_urlencoded req
       ||> HttpUtils.remove_empty_values
-      ||> HttpUtils.format_request_boolean_values Field.[ RandomOrder |> show ]
+      ||> HttpUtils.format_request_boolean_values
+            Field.([ StartNow; RandomOrder ] |> CCList.map show)
     in
     Utils.Lwt_result.map_error (fun err ->
       err, redirect_path, [ HttpUtils.urlencoded_to_flash urlencoded ])
