@@ -158,6 +158,7 @@ type hint =
 
 type confirmable =
   | CancelAssignment
+  | CancelAssignmentWithFollowUps
   | CancelSession
   | DeleteCustomField
   | DeleteCustomFieldOption

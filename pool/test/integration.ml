@@ -128,6 +128,13 @@ let suite =
               `Slow
               get_templates_in_multile_languages
           ] )
+    ; ( "assignment"
+      , Assignment_test.
+          [ test_case
+              "cancel assignment with follow ups"
+              `Slow
+              cancel_assignment_with_follow_ups
+          ] )
     ; "cleanup", [ test_case "clean up test database" `Quick Seed.cleanup ]
     ]
 ;;

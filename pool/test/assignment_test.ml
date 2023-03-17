@@ -1,7 +1,7 @@
+open Test_utils
 module ContactCommand = Cqrs_command.Contact_command
 module AssignmentCommand = Cqrs_command.Assignment_command
 module Field = Pool_common.Message.Field
-module Model = Test_utils.Model
 
 type assignment_data =
   { session : Session.Public.t
@@ -62,13 +62,13 @@ let create () =
       ; Email.(Sent (confirmation_email contact)) |> Pool_event.email
       ]
   in
-  Test_utils.check_result expected events
+  check_result expected events
 ;;
 
 let canceled () =
   let session = Model.create_session () in
   let assignment = Model.create_assignment () in
-  let events = AssignmentCommand.Cancel.handle (assignment, session) in
+  let events = AssignmentCommand.Cancel.handle ([ assignment ], session) in
   let expected =
     Ok
       [ Assignment.Canceled assignment |> Pool_event.assignment
@@ -76,7 +76,7 @@ let canceled () =
         |> Pool_event.contact
       ]
   in
-  Test_utils.check_result expected events
+  check_result expected events
 ;;
 
 let canceled_with_closed_session () =
@@ -94,13 +94,13 @@ let canceled_with_closed_session () =
       }
   in
   let assignment = Model.create_assignment () in
-  let events = AssignmentCommand.Cancel.handle (assignment, session) in
+  let events = AssignmentCommand.Cancel.handle ([ assignment ], session) in
   let expected =
     Error
       (Pool_common.Message.SessionAlreadyClosed
          (Pool_common.Utils.Time.formatted_date_time closed_at))
   in
-  Test_utils.check_result expected events
+  check_result expected events
 ;;
 
 let set_attendance () =
@@ -129,7 +129,7 @@ let set_attendance () =
         |> Pool_event.contact
       ]
   in
-  Test_utils.check_result expected events
+  check_result expected events
 ;;
 
 let set_invalid_attendance () =
@@ -147,7 +147,7 @@ let set_invalid_attendance () =
     Error
       Pool_common.Message.(FieldRequiresCheckbox Field.(Participated, ShowUp))
   in
-  Test_utils.check_result expected events
+  check_result expected events
 ;;
 
 let assign_to_fully_booked_session () =
@@ -169,7 +169,7 @@ let assign_to_fully_booked_session () =
     AssignmentCommand.Create.handle command (confirmation_email contact) false
   in
   let expected = Error Pool_common.Message.(SessionFullyBooked) in
-  Test_utils.check_result expected events
+  check_result expected events
 ;;
 
 let assign_to_experiment_with_direct_registration_disabled () =
@@ -198,7 +198,7 @@ let assign_to_experiment_with_direct_registration_disabled () =
     AssignmentCommand.Create.handle command (confirmation_email contact) false
   in
   let expected = Error Pool_common.Message.(DirectRegistrationIsDisabled) in
-  Test_utils.check_result expected events
+  check_result expected events
 ;;
 
 let assign_to_session_contact_is_already_assigned () =
@@ -223,7 +223,7 @@ let assign_to_session_contact_is_already_assigned () =
       already_assigned
   in
   let expected = Error Pool_common.Message.(AlreadySignedUpForExperiment) in
-  Test_utils.check_result expected events
+  check_result expected events
 ;;
 
 let assign_to_canceled_session () =
@@ -281,7 +281,7 @@ let assign_contact_from_waiting_list () =
       ; Email.(Sent (confirmation_email contact)) |> Pool_event.email
       ]
   in
-  Test_utils.check_result expected events
+  check_result expected events
 ;;
 
 let assign_contact_from_waiting_list_with_follow_ups () =
@@ -344,15 +344,13 @@ let assign_contact_from_waiting_list_to_disabled_experiment () =
       (confirmation_email contact)
   in
   let expected = Error Pool_common.Message.(RegistrationDisabled) in
-  Test_utils.check_result expected events
+  check_result expected events
 ;;
 
 let assign_to_session_with_follow_ups () =
   let { session; experiment; contact } = assignment_data () in
   let follow_up =
-    let base =
-      Test_utils.Model.(create_public_session ~start:(in_an_hour ())) ()
-    in
+    let base = Model.(create_public_session ~start:(in_an_hour ())) () in
     Session.Public.
       { base with
         id = Pool_common.Id.create ()
@@ -386,7 +384,7 @@ let assign_to_session_with_follow_ups () =
     in
     create_events @ [ increase_num_events ] @ email_event |> CCResult.return
   in
-  Test_utils.check_result expected events
+  check_result expected events
 ;;
 
 let marked_uncanceled_as_deleted () =
@@ -400,7 +398,7 @@ let marked_uncanceled_as_deleted () =
       ; Assignment.MarkedAsDeleted assignment |> Pool_event.assignment
       ]
   in
-  Test_utils.check_result expected events
+  check_result expected events
 ;;
 
 let marked_canceled_as_deleted () =
@@ -412,7 +410,7 @@ let marked_canceled_as_deleted () =
   let expected =
     Ok [ Assignment.MarkedAsDeleted assignment |> Pool_event.assignment ]
   in
-  Test_utils.check_result expected events
+  check_result expected events
 ;;
 
 let cancel_deleted_assignment () =
@@ -422,9 +420,88 @@ let cancel_deleted_assignment () =
     Assignment.
       { assignment with marked_as_deleted = MarkedAsDeleted.create true }
   in
-  let events = AssignmentCommand.Cancel.handle (assignment, session) in
+  let events = AssignmentCommand.Cancel.handle ([ assignment ], session) in
   let expected =
     Error Pool_common.Message.(IsMarkedAsDeleted Field.Assignment)
   in
-  Test_utils.check_result expected events
+  check_result expected events
+;;
+
+(* Integration tests *)
+
+let cancel_assignment_with_follow_ups _ () =
+  let open Utils.Lwt_result.Infix in
+  let%lwt experiment = Repo.create_experiment () in
+  let%lwt contact =
+    Repo.create_contact ~with_terms_accepted:true Data.database_label ()
+  in
+  let%lwt location = Repo.first_location () in
+  (* Save sessions in Database *)
+  let create_session ?parent_id start =
+    let base = Model.(create_session ~start () |> session_to_session_base) in
+    Session.Created (base, parent_id, experiment.Experiment.id, location)
+    |> Pool_event.session
+    |> Pool_event.handle_event Data.database_label
+  in
+  let%lwt parent_session =
+    let%lwt () = create_session (Model.in_an_hour ()) in
+    Session.find_all_for_experiment Data.database_label experiment.Experiment.id
+    >|+ CCList.hd
+    ||> get_or_failwith_pool_error
+  in
+  let%lwt () =
+    create_session ~parent_id:parent_session.Session.id (Model.in_two_hours ())
+  in
+  let%lwt sessions =
+    let%lwt session =
+      Session.find Data.database_label parent_session.Session.id
+      ||> get_or_failwith_pool_error
+    in
+    let%lwt follow_ups =
+      Session.find_follow_ups Data.database_label session.Session.id
+      ||> get_or_failwith_pool_error
+    in
+    Lwt.return (session :: follow_ups)
+  in
+  (* Create assignments *)
+  let%lwt () =
+    sessions
+    |> CCList.map Session.to_public
+    |> CCList.map (fun session ->
+         Assignment.(
+           Created { contact; session_id = session.Session.Public.id })
+         |> Pool_event.assignment)
+    |> Pool_event.handle_events Data.database_label
+  in
+  (* Cancel assignments *)
+  let%lwt () =
+    let%lwt assignment_id =
+      Assignment.find_by_experiment_and_contact_opt
+        Data.database_label
+        experiment.Experiment.id
+        contact
+      ||> CCList.hd
+      ||> fun ({ Assignment.Public.id; _ } : Assignment.Public.t) ->
+      id |> Pool_common.Id.value |> Assignment.Id.of_string
+    in
+    let%lwt assignments =
+      Assignment.find_with_follow_ups Data.database_label assignment_id
+      ||> get_or_failwith_pool_error
+    in
+    AssignmentCommand.Cancel.handle (assignments, parent_session)
+    |> get_or_failwith_pool_error
+    |> Pool_event.handle_events Data.database_label
+  in
+  (* Expect all assigments to be canceled *)
+  let%lwt res =
+    Assignment.find_by_experiment_and_contact_opt
+      Data.database_label
+      experiment.Experiment.id
+      contact
+    ||> CCList.filter (fun { Assignment.Public.canceled_at; _ } ->
+          CCOption.is_none canceled_at)
+    ||> CCList.is_empty
+  in
+  let () = Alcotest.(check bool "succeeds" true res) in
+  Lwt.return_unit
 ;;

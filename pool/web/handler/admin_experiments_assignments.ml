@@ -95,17 +95,19 @@ let ids_and_redirect_from_req req =
 
 let cancel req =
   let open Utils.Lwt_result.Infix in
-  let%lwt _, assignment_id, redirect_path = ids_and_redirect_from_req req in
+  let%lwt session_id, assignment_id, redirect_path =
+    ids_and_redirect_from_req req
+  in
   let result { Pool_context.database_label; _ } =
     Utils.Lwt_result.map_error (fun err -> err, redirect_path)
     @@
     let tags = Pool_context.Logger.Tags.req req in
-    let* assignment = Assignment.find database_label assignment_id in
-    let* session =
-      Session.find_by_assignment database_label assignment.Assignment.id
+    let* assignments =
+      Assignment.find_with_follow_ups database_label assignment_id
     in
+    let* session = Session.find database_label session_id in
     let events =
-      Cqrs_command.Assignment_command.Cancel.handle ~tags (assignment, session)
+      Cqrs_command.Assignment_command.Cancel.handle ~tags (assignments, session)
       |> Lwt.return
     in
     let handle events =

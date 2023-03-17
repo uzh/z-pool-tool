@@ -295,6 +295,10 @@ let rec hint_to_string = function
 let confirmable_to_string confirmable =
   (match confirmable with
    | CancelAssignment -> "assignment", "cancel", None
+   | CancelAssignmentWithFollowUps ->
+     ( "assignment"
+     , "cancel"
+     , Some "Assignments to follow-up sessions will be canceled as well." )
    | CancelSession -> "session", "cancel", None
    | DeleteCustomField -> "field", "delete", None
    | DeleteCustomFieldOption -> "option", "delete", None
