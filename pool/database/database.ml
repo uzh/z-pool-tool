@@ -59,9 +59,14 @@ module Root = struct
   end
 
   let setup () =
-    Pool_database.create label (Sihl.Configuration.read schema).url
+    let open CCResult.Infix in
+    let open Pool_database in
+    let label = Label.create label |> Pool_common.Utils.get_or_failwith in
+    (Sihl.Configuration.read schema).url
+    |> Url.create
+    >>= create label
     |> Pool_common.Utils.get_or_failwith
-    |> Pool_database.add_pool
+    |> add_pool
   ;;
 end
 

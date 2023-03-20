@@ -12,3 +12,14 @@ module Logger = struct
     ;;
   end
 end
+
+let test_and_create url label =
+  let%lwt connection =
+    url
+    |> Uri.of_string
+    |> CCFun.flip Caqti_lwt.with_connection (fun _ -> Lwt_result.return ())
+  in
+  match connection with
+  | Ok _ -> create label url |> Lwt_result.lift
+  | Error _ -> Lwt_result.fail Pool_common.Message.(Invalid Field.DatabaseUrl)
+;;

@@ -5,6 +5,8 @@ module HttpUtils = Http_utils
 module Common = Pool_common
 module SmtpAuth = Pool_tenant.SmtpAuth
 
+let fail_with = Test_utils.get_or_failwith_pool_error
+
 module Data = struct
   open Database.SeedAssets
 
@@ -25,6 +27,13 @@ module Data = struct
   ;;
 
   let database_label = "econ-test"
+
+  let database =
+    let open Pool_database in
+    let label = Label.create database_label |> fail_with in
+    let url = Pool_database.Url.create database_url |> fail_with in
+    create label url |> fail_with
+  ;;
 
   let styles =
     Asset.styles
@@ -116,7 +125,6 @@ module Data = struct
     let* title = title |> Title.create in
     let* description = description |> Description.create >|= CCOption.return in
     let* url = url |> Url.create in
-    let* database = Pool_database.create database_label database_url in
     Ok
       Write.
         { id = Id.create ()
@@ -218,7 +226,7 @@ let[@warning "-4"] create_tenant () =
   let open Data in
   let events =
     let open CCResult.Infix in
-    Pool_tenant_command.Create.(Data.urlencoded |> decode >>= handle)
+    Pool_tenant_command.Create.(Data.urlencoded |> decode >>= handle database)
   in
   let ( tenant_id
       , created_at
@@ -373,18 +381,23 @@ let[@warning "-4"] update_tenant_details () =
 
 let update_tenant_database () =
   let open Data in
+  let open CCResult.Infix in
   match Data.tenant with
   | Error _ -> failwith "Failed to create tenant"
   | Ok tenant ->
     let events =
-      let open CCResult.Infix in
-      let open Pool_tenant_command.EditDatabase in
-      Common.Message.Field.
-        [ DatabaseUrl |> show, [ database_url ]
-        ; DatabaseLabel |> show, [ database_label ]
-        ]
-      |> decode
-      >>= handle tenant
+      let open Pool_tenant_command.CreateDatabase in
+      let database =
+        Common.Message.Field.
+          [ DatabaseUrl |> show, [ database_url ]
+          ; DatabaseLabel |> show, [ database_label ]
+          ]
+        |> decode
+        >>= (fun { database_url; database_label } ->
+              Pool_database.create database_label database_url)
+        |> Test_utils.get_or_failwith_pool_error
+      in
+      handle tenant database
     in
     let expected =
       let open Pool_database in

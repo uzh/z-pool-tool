@@ -17,9 +17,14 @@ val root : Label.t
 val is_root : Label.t -> bool
 val equal : t -> t -> bool
 val pp : Format.formatter -> t -> unit
-val create : string -> string -> (t, Pool_common.Message.error) result
+val create : Label.t -> Url.t -> (t, Pool_common.Message.error) result
 val add_pool : t -> unit
 val read_pool : t -> Label.t
+
+val test_and_create
+  :  Url.t
+  -> Label.t
+  -> (t, Pool_common.Message.error) Lwt_result.t
 
 module Repo : sig
   module Url : sig

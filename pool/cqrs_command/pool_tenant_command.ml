@@ -21,8 +21,6 @@ type create =
   { title : Pool_tenant.Title.t
   ; description : Pool_tenant.Description.t option
   ; url : Pool_tenant.Url.t
-  ; database_url : Pool_database.Url.t
-  ; database_label : Pool_database.Label.t
   ; styles : Pool_tenant.Styles.Write.t option
   ; icon : Pool_tenant.Icon.Write.t option
   ; default_language : Pool_common.Language.t
@@ -31,11 +29,17 @@ type create =
   }
 
 module Create : sig
-  include Common.CommandSig with type t = create
+  type t = create
 
   val decode
     :  (string * string list) list
     -> (t, Pool_common.Message.error) result
+
+  val handle
+    :  ?tags:Logs.Tag.set
+    -> Pool_database.t
+    -> t
+    -> (Pool_event.t list, Pool_common.Message.error) result
 
   val effects : Guard.Authorizer.effect list
 end = struct
@@ -45,8 +49,6 @@ end = struct
     title
     description
     url
-    database_url
-    database_label
     styles
     icon
     default_language
@@ -56,8 +58,6 @@ end = struct
     { title
     ; description
     ; url
-    ; database_url
-    ; database_label
     ; styles
     ; icon
     ; default_language
@@ -73,8 +73,6 @@ end = struct
           [ Pool_tenant.Title.schema ()
           ; Conformist.optional @@ Pool_tenant.Description.schema ()
           ; Pool_tenant.Url.schema ()
-          ; Pool_database.Url.schema ()
-          ; Pool_database.Label.schema ()
           ; Conformist.optional @@ Pool_tenant.Styles.Write.schema ()
           ; Conformist.optional @@ Pool_tenant.Icon.Write.schema ()
           ; Pool_common.Language.schema ()
@@ -84,12 +82,8 @@ end = struct
         command)
   ;;
 
-  let handle ?(tags = Logs.Tag.empty) (command : t) =
+  let handle ?(tags = Logs.Tag.empty) database (command : t) =
     Logs.info ~src (fun m -> m "Handle command Create" ~tags);
-    let database =
-      Pool_database.
-        { url = command.database_url; label = command.database_label }
-    in
     let tenant =
       Pool_tenant.Write.create
         command.title
@@ -114,7 +108,7 @@ end = struct
       [ Pool_tenant.Created tenant |> Pool_event.pool_tenant
       ; Pool_tenant.LogosUploaded logo_mappings |> Pool_event.pool_tenant
       ; Database.Added database |> Pool_event.database
-      ; Database.Migrated command.database_label |> Pool_event.database
+      ; Database.Migrated database.Pool_database.label |> Pool_event.database
       ; Settings.(DefaultRestored default_values) |> Pool_event.settings
       ; I18n.(DefaultRestored default_values) |> Pool_event.i18n
       ; Message_template.(
@@ -253,8 +247,10 @@ end = struct
   ;;
 end
 
-module EditDatabase : sig
-  type t =
+module CreateDatabase : sig
+  type t = Pool_database.t
+
+  type decoded =
     { database_url : Pool_database.Url.t
     ; database_label : Pool_database.Label.t
     }
@@ -267,13 +263,15 @@ module EditDatabase : sig
 
   val decode
     :  (string * string list) list
-    -> (t, Pool_common.Message.error) result
+    -> (decoded, Pool_common.Message.error) result
 
   val effects
     :  Pool_database.Label.t
     -> (Guard.Authorizer.effect list, Pool_common.Message.error) Lwt_result.t
 end = struct
-  type t =
+  type t = Pool_database.t
+
+  type decoded =
     { database_url : Pool_database.Url.t
     ; database_label : Pool_database.Label.t
     }
@@ -287,16 +285,8 @@ end = struct
         command)
   ;;
 
-  let handle
-    ?(tags = Logs.Tag.empty)
-    (tenant : Pool_tenant.Write.t)
-    (command : t)
-    =
-    Logs.info ~src (fun m -> m "Handle command EditDatabase" ~tags);
-    let database =
-      Pool_database.
-        { url = command.database_url; label = command.database_label }
-    in
+  let handle ?(tags = Logs.Tag.empty) (tenant : Pool_tenant.Write.t) database =
+    Logs.info ~src (fun m -> m "Handle command CreateDatabase" ~tags);
     Ok
       [ Pool_tenant.DatabaseEdited (tenant, database) |> Pool_event.pool_tenant
       ]

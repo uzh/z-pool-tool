@@ -25,16 +25,23 @@ let create req =
     Sihl.Web.Request.to_multipart_form_data_exn req
     ||> HttpUtils.remove_empty_values_multiplart
   in
+  let urlencoded =
+    multipart_encoded
+    |> HttpUtils.multipart_to_urlencoded Pool_tenant.file_fields
+  in
   let result _ =
     Utils.Lwt_result.map_error (fun err ->
-      let urlencoded =
-        multipart_encoded
-        |> HttpUtils.multipart_to_urlencoded Pool_tenant.file_fields
-      in
       err, tenants_path, [ HttpUtils.urlencoded_to_flash urlencoded ])
     @@
     let events () =
       let open CCFun in
+      let* database =
+        let open Cqrs_command.Pool_tenant_command.CreateDatabase in
+        let* { database_url; database_label } =
+          decode urlencoded |> Lwt_result.lift
+        in
+        Pool_database.test_and_create database_url database_label
+      in
       let* files =
         File.upload_files
           Database.root
@@ -47,7 +54,7 @@ let create req =
         files @ multipart_encoded
         |> File.multipart_form_data_to_urlencoded
         |> decode
-        >>= handle ~tags
+        >>= handle ~tags database
         |> Lwt_result.lift
       in
       events >|> HttpUtils.File.cleanup_upload Database.root files

@@ -58,18 +58,25 @@ let update req command success_message =
           req
       in
       let events_list urlencoded =
-        let open CCResult.Infix in
         let open Cqrs_command.Pool_tenant_command in
+        let lift = Lwt_result.lift in
         match command with
-        | `EditDetail -> EditDetails.(decode urlencoded >>= handle ~tags tenant)
+        | `EditDetail ->
+          let open CCResult.Infix in
+          EditDetails.(decode urlencoded >>= handle ~tags tenant) |> lift
         | `EditDatabase ->
-          EditDatabase.(decode urlencoded >>= handle ~tags tenant)
+          let open CreateDatabase in
+          let* { database_url; database_label } = decode urlencoded |> lift in
+          let* database =
+            Pool_database.test_and_create database_url database_label
+          in
+          handle ~tags tenant database |> lift
       in
       let files = logo_files @ uploaded_files in
       (files |> File.multipart_form_data_to_urlencoded) @ urlencoded
       |> HttpUtils.format_request_boolean_values [ TenantDisabledFlag |> show ]
       |> events_list
-      |> HttpUtils.File.cleanup_upload Database.root files
+      >|> HttpUtils.File.cleanup_upload Database.root files
     in
     let handle =
       Lwt_list.iter_s (Pool_event.handle_event ~tags Database.root)
