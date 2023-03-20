@@ -201,7 +201,13 @@ let detail req page =
          flash_fetcher
        |> Lwt.return_ok
      | `Cancel ->
-       Page.Admin.Session.cancel context experiment session flash_fetcher
+       let* follow_ups = Session.find_follow_ups database_label session_id in
+       Page.Admin.Session.cancel
+         context
+         experiment
+         session
+         follow_ups
+         flash_fetcher
        |> Lwt.return_ok)
     >>= create_layout req context
     >|+ Sihl.Web.Response.of_html

@@ -259,6 +259,10 @@ let rec hint_to_string = function
 
       Note: When the application restarts all active schedules get stopped.
       |}
+  | SessionCancelationWithFollowups ->
+    {|Cancelling this session will also cancel all follow-up sessions.
+
+The following follow-up sessions exist:|}
   | SessionCancelMessage ->
     "This reason will be provided to all contacts assigned to this session."
   | SessionClose ->

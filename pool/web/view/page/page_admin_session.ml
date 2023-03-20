@@ -1006,6 +1006,7 @@ let cancel
   Pool_context.{ language; csrf; _ }
   experiment
   (session : Session.t)
+  follow_ups
   flash_fetcher
   =
   let open Pool_common in
@@ -1015,30 +1016,57 @@ let cancel
       (Experiment.Id.value experiment.Experiment.id)
       (Id.value session.Session.id)
   in
+  let follow_ups_notification () =
+    match follow_ups with
+    | [] -> txt ""
+    | follow_ups ->
+      let follow_ups =
+        follow_ups
+        |> CCList.map (fun session ->
+             session_title session
+             |> Utils.text_to_string language
+             |> txt
+             |> CCList.return
+             |> li)
+        |> ul ~a:[ a_class [ "gap-xs" ] ]
+      in
+      [ Utils.hint_to_string language I18n.SessionCancelationWithFollowups
+        |> HttpUtils.add_line_breaks
+      ; follow_ups
+      ]
+      |> Component.Notification.notification language `Error
+  in
   (match Session.is_cancellable session with
    | Error reason -> p [ reason |> Utils.error_to_string language |> txt ]
    | Ok _ ->
-     form
-       ~a:
-         [ a_class [ "stack" ]
-         ; a_method `Post
-         ; a_action (action |> Sihl.Web.externalize_path)
-         ]
-       [ csrf_element csrf ()
-       ; textarea_element ~flash_fetcher language Message.Field.Reason
-       ; span
-           [ I18n.SessionCancelMessage |> Utils.hint_to_string language |> txt ]
-       ; p [ I18n.NotifyVia |> Utils.text_to_string language |> txt ]
-       ; checkbox_element ~flash_fetcher language Message.Field.Email
-         (* TODO issue #149 re-add this *)
-         (* ; checkbox_element ~flash_fetcher language Message.Field.SMS *)
-       ; div
-           ~a:[ a_class [ "flexrow" ] ]
-           [ submit_element
-               ~classnames:[ "push" ]
-               language
-               Message.(Cancel (Some Field.Session))
-               ()
+     div
+       ~a:[ a_class [ "stack" ] ]
+       [ follow_ups_notification ()
+       ; form
+           ~a:
+             [ a_class [ "stack" ]
+             ; a_method `Post
+             ; a_action (action |> Sihl.Web.externalize_path)
+             ]
+           [ csrf_element csrf ()
+           ; textarea_element ~flash_fetcher language Message.Field.Reason
+           ; span
+               [ I18n.SessionCancelMessage
+                 |> Utils.hint_to_string language
+                 |> txt
+               ]
+           ; p [ I18n.NotifyVia |> Utils.text_to_string language |> txt ]
+           ; checkbox_element ~flash_fetcher language Message.Field.Email
+             (* TODO issue #149 re-add this *)
+             (* ; checkbox_element ~flash_fetcher language Message.Field.SMS *)
+           ; div
+               ~a:[ a_class [ "flexrow" ] ]
+               [ submit_element
+                   ~classnames:[ "push" ]
+                   language
+                   Message.(Cancel (Some Field.Session))
+                   ()
+               ]
            ]
        ])
   |> Page_admin_experiments.experiment_layout
