@@ -19,6 +19,7 @@ let generate_rate delta =
 ;;
 
 let generate_events (experiments : Experiment.Id.t list) =
+  let open Mailing in
   let mailings =
     CCList.range_by ~step:5 0 80
     |> CCList.map (fun delta ->
@@ -37,9 +38,9 @@ let generate_events (experiments : Experiment.Id.t list) =
   let overlaps = CCList.take 2 mailings in
   CCList.mapi
     (fun index start ->
-      Mailing.Created
-        ( Mailing.create
-            start
+      Created
+        ( create
+            Start.(StartAt start)
             (generate_end start (index mod 3))
             (generate_rate (index mod 8))
             None

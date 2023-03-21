@@ -291,11 +291,24 @@ let form
           elm.disabled = e.currentTarget.checked
         })
       })
+
+      const startNow = document.querySelector('[name="%s"]');
+      startNow.addEventListener("change", (e) => {
+        const startSelect = '[name="%s"]';
+        const start = document.querySelector(`${startSelect}`);
+        const startFlatpicker = document.querySelector(`${startSelect} + input.datepicker`);
+        start.required = !startNow.checked;
+        startFlatpicker.required = !startNow.checked;
+        start.disabled = startNow.checked;
+        startFlatpicker.disabled = startNow.checked;
+      })
     |js}
         (show RandomOrder)
         (show DistributionField)
         (show SortOrder)
         (array_key Distribution)
+        (show StartNow)
+        (show Start)
     in
     let field_select =
       let default_option =
@@ -455,19 +468,23 @@ let form
                           experiment.Experiment.id
                         |> Sihl.Web.externalize_path)
                    ]
-                 [ flatpicker_element
-                     language
-                     Field.Start
-                     ~flash_fetcher
-                     ~required:true
-                     ~disable_past:true
-                     ?value:
-                       (CCOption.map
-                          (fun (m : Mailing.t) ->
-                            m.Mailing.start_at
-                            |> Mailing.StartAt.value
-                            |> Ptime.to_rfc3339 ~space:true)
-                          mailing)
+                 [ div
+                     ~a:[ a_class [ "flexcolumn" ] ]
+                     [ flatpicker_element
+                         language
+                         Field.Start
+                         ~flash_fetcher
+                         ~required:true
+                         ~disable_past:true
+                         ?value:
+                           (CCOption.map
+                              (fun (m : Mailing.t) ->
+                                m.Mailing.start_at
+                                |> Mailing.StartAt.value
+                                |> Ptime.to_rfc3339 ~space:true)
+                              mailing)
+                     ; checkbox_element ~flash_fetcher language Field.StartNow
+                     ]
                  ; flatpicker_element
                      language
                      Field.End

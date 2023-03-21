@@ -84,13 +84,17 @@ let create_mailing () =
     }
 ;;
 
+let mailing_boolean_fields =
+  Field.([ StartNow; RandomOrder ] |> CCList.map show)
+;;
+
 let create () =
   let open MailingCommand.Create in
   let experiment = Model.create_experiment () in
   let mailing = create_mailing () in
   let events =
     Data.Mailing.create
-    |> Http_utils.format_request_boolean_values Field.[ RandomOrder |> show ]
+    |> Http_utils.format_request_boolean_values mailing_boolean_fields
     |> Http_utils.remove_empty_values
     |> decode
     |> get_or_failwith
@@ -137,10 +141,8 @@ let create_with_distribution () =
     ; show Field.Distribution, distribution
     ]
     |> CCList.map (fun (field, value) -> field, [ value ])
-    |> Http_utils.format_request_boolean_values Field.[ RandomOrder |> show ]
+    |> Http_utils.format_request_boolean_values mailing_boolean_fields
   in
-  (* let () = let encoded = urlencoded () |> Pool_common.Utils.get_or_failwith
-     in raise (Failure ([%show: (string * string list) list] encoded)) in *)
   let events =
     () |> urlencoded >>= decode >>= handle ~id:Data.Mailing.id experiment
   in
@@ -158,7 +160,7 @@ let create_end_before_start () =
   let experiment = Model.create_experiment () in
   let events =
     Data.Mailing.create_end_before_start
-    |> Http_utils.format_request_boolean_values Field.[ RandomOrder |> show ]
+    |> Http_utils.format_request_boolean_values mailing_boolean_fields
     |> Http_utils.remove_empty_values
     |> decode
     |> get_or_failwith
@@ -166,4 +168,32 @@ let create_end_before_start () =
   in
   let expected = Error Pool_common.Message.EndBeforeStart in
   Test_utils.check_result expected events
+;;
+
+let create_with_start_now () =
+  let open Mailing in
+  let open CCResult in
+  let open MailingCommand in
+  let mailing = create_mailing () in
+  let urlencoded () =
+    let show = Field.show in
+    [ show Field.StartNow, "true"
+    ; show Field.End, mailing.end_at |> EndAt.value |> Ptime.to_rfc3339
+    ; show Field.Rate, mailing.rate |> Rate.value |> CCInt.to_string
+    ]
+    |> CCList.map (fun (field, value) -> field, [ value ])
+    |> Http_utils.format_request_boolean_values mailing_boolean_fields
+  in
+  let res =
+    ()
+    |> urlencoded
+    |> Create.decode
+    >>= (fun { start_at; start_now; end_at; rate; distribution } ->
+          let* start_at = Start.create start_at start_now in
+          Mailing.create start_at end_at rate distribution)
+    |> CCResult.is_ok
+  in
+  (* Only testing if mailing is Ok, as comparison of timestampts with
+     Ptime_clock.now () fails *)
+  Alcotest.(check bool "succeeds" true res)
 ;;
