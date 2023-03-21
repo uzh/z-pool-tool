@@ -136,3 +136,8 @@ abbr[title] {
 .table>tbody>tr:nth-child(1n).highlighted {
     background-color: color.adjust($color-primary, $lightness: 65%);
 }
+
+.table.striped>tr.bg-red-lighter,
+.table.striped tbody>tr.bg-red-lighter {
+    background-color: $red-lighter;
+}
