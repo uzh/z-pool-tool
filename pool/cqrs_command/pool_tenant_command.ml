@@ -4,17 +4,13 @@ module File = Pool_common.File
 
 let src = Logs.Src.create "pool_tenant.cqrs"
 
-<<<<<<< HEAD
-let create_logo_mappings tenant logo_type =
-=======
 let tenant_effect action id =
   let open Guard in
   ValidationSet.One
     (action, TargetSpec.Id (`Tenant, id |> Uuid.target_of Id.value))
 ;;
 
-let create_logo_mappings files tenant logo_type =
->>>>>>> bfc2adf8 (refactor pr discussions)
+let create_logo_mappings tenant logo_type =
   let open Pool_tenant in
   CCList.map (fun asset_id ->
     LogoMapping.Write.
