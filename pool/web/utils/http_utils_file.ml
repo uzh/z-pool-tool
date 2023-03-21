@@ -167,3 +167,13 @@ let get_storage_file ?tags database_label asset_id =
     m ?tags "A user experienced an error: File not found with id %s" asset_id);
   err
 ;;
+
+let cleanup_upload database_label files =
+  let open CCFun in
+  function
+  | Ok resp -> Lwt.return_ok resp
+  | Error err ->
+    let ctx = database_label |> Pool_tenant.to_ctx in
+    let%lwt () = Lwt_list.iter_s (snd %> Service.Storage.delete ~ctx) files in
+    Lwt.return_error err
+;;

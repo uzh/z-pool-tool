@@ -4,63 +4,49 @@ module File = Pool_common.File
 
 let src = Logs.Src.create "pool_tenant.cqrs"
 
-let create_logo_mappings files tenant logo_type =
+let create_logo_mappings tenant logo_type =
   let open Pool_tenant in
-  CCList.map
-    (fun asset_id ->
-      LogoMapping.Write.
-        { id = Pool_common.Id.create ()
-        ; tenant_id = tenant.Write.id
-        ; asset_id
-        ; logo_type
-        })
-    files
+  CCList.map (fun asset_id ->
+    LogoMapping.Write.
+      { id = Pool_common.Id.create ()
+      ; tenant_id = tenant.Write.id
+      ; asset_id
+      ; logo_type
+      })
 ;;
 
-module Create : sig
-  type t =
-    { title : Pool_tenant.Title.t
-    ; description : Pool_tenant.Description.t
-    ; url : Pool_tenant.Url.t
-    ; database_url : Pool_database.Url.t
-    ; database_label : Pool_database.Label.t
-    ; styles : Pool_tenant.Styles.Write.t
-    ; icon : Pool_tenant.Icon.Write.t
-    ; default_language : Pool_common.Language.t
-    ; tenant_logos : Pool_common.Id.t list
-    ; partner_logos : Pool_common.Id.t list
-    }
+type create =
+  { title : Pool_tenant.Title.t
+  ; description : Pool_tenant.Description.t option
+  ; url : Pool_tenant.Url.t
+  ; styles : Pool_tenant.Styles.Write.t option
+  ; icon : Pool_tenant.Icon.Write.t option
+  ; default_language : Pool_common.Language.t
+  ; tenant_logos : Pool_common.Id.t list
+  ; partner_logos : Pool_common.Id.t list option
+  }
 
-  val handle
-    :  ?tags:Logs.Tag.set
-    -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+module Create : sig
+  type t = create
 
   val decode
     :  (string * string list) list
     -> (t, Pool_common.Message.error) result
 
+  val handle
+    :  ?tags:Logs.Tag.set
+    -> Pool_database.t
+    -> t
+    -> (Pool_event.t list, Pool_common.Message.error) result
+
   val effects : Guard.Authorizer.effect list
 end = struct
-  type t =
-    { title : Pool_tenant.Title.t
-    ; description : Pool_tenant.Description.t
-    ; url : Pool_tenant.Url.t
-    ; database_url : Pool_database.Url.t
-    ; database_label : Pool_database.Label.t
-    ; styles : Pool_tenant.Styles.Write.t
-    ; icon : Pool_tenant.Icon.Write.t
-    ; default_language : Pool_common.Language.t
-    ; tenant_logos : Pool_common.Id.t list
-    ; partner_logos : Pool_common.Id.t list
-    }
+  type t = create
 
   let command
     title
     description
     url
-    database_url
-    database_label
     styles
     icon
     default_language
@@ -70,8 +56,6 @@ end = struct
     { title
     ; description
     ; url
-    ; database_url
-    ; database_label
     ; styles
     ; icon
     ; default_language
@@ -85,25 +69,19 @@ end = struct
       make
         Field.
           [ Pool_tenant.Title.schema ()
-          ; Pool_tenant.Description.schema ()
+          ; Conformist.optional @@ Pool_tenant.Description.schema ()
           ; Pool_tenant.Url.schema ()
-          ; Pool_database.Url.schema ()
-          ; Pool_database.Label.schema ()
-          ; Pool_tenant.Styles.Write.schema ()
-          ; Pool_tenant.Icon.Write.schema ()
+          ; Conformist.optional @@ Pool_tenant.Styles.Write.schema ()
+          ; Conformist.optional @@ Pool_tenant.Icon.Write.schema ()
           ; Pool_common.Language.schema ()
           ; Pool_tenant.Logos.schema ()
-          ; Pool_tenant.PartnerLogos.schema ()
+          ; Conformist.optional @@ Pool_tenant.PartnerLogos.schema ()
           ]
         command)
   ;;
 
-  let handle ?(tags = Logs.Tag.empty) (command : t) =
+  let handle ?(tags = Logs.Tag.empty) database (command : t) =
     Logs.info ~src (fun m -> m "Handle command Create" ~tags);
-    let database =
-      Pool_database.
-        { url = command.database_url; label = command.database_label }
-    in
     let tenant =
       Pool_tenant.Write.create
         command.title
@@ -115,11 +93,12 @@ end = struct
         command.default_language
     in
     let logo_mappings =
-      CCList.map
+      let open Pool_tenant.LogoMapping in
+      CCList.filter_map
         (fun (id_list, logo_type) ->
-          create_logo_mappings id_list tenant logo_type)
-        [ command.partner_logos, Pool_tenant.LogoMapping.LogoType.PartnerLogo
-        ; command.tenant_logos, Pool_tenant.LogoMapping.LogoType.TenantLogo
+          id_list |> CCOption.map (create_logo_mappings tenant logo_type))
+        [ command.partner_logos, LogoType.PartnerLogo
+        ; Some command.tenant_logos, LogoType.TenantLogo
         ]
       |> CCList.flatten
     in
@@ -127,7 +106,7 @@ end = struct
       [ Pool_tenant.Created tenant |> Pool_event.pool_tenant
       ; Pool_tenant.LogosUploaded logo_mappings |> Pool_event.pool_tenant
       ; Database.Added database |> Pool_event.database
-      ; Database.Migrated command.database_label |> Pool_event.database
+      ; Database.Migrated database.Pool_database.label |> Pool_event.database
       ; Settings.(DefaultRestored default_values) |> Pool_event.settings
       ; I18n.(DefaultRestored default_values) |> Pool_event.i18n
       ; Message_template.(
@@ -147,10 +126,12 @@ end
 module EditDetails : sig
   type t =
     { title : Pool_tenant.Title.t
-    ; description : Pool_tenant.Description.t
+    ; description : Pool_tenant.Description.t option
     ; url : Pool_tenant.Url.t
     ; disabled : Pool_tenant.Disabled.t
     ; default_language : Pool_common.Language.t
+    ; styles : Pool_tenant.Styles.Write.t option
+    ; icon : Pool_tenant.Icon.Write.t option
     ; tenant_logos : Pool_common.Id.t list option
     ; partner_logos : Pool_common.Id.t list option
     }
@@ -169,10 +150,12 @@ module EditDetails : sig
 end = struct
   type t =
     { title : Pool_tenant.Title.t
-    ; description : Pool_tenant.Description.t
+    ; description : Pool_tenant.Description.t option
     ; url : Pool_tenant.Url.t
     ; disabled : Pool_tenant.Disabled.t
     ; default_language : Pool_common.Language.t
+    ; styles : Pool_tenant.Styles.Write.t option
+    ; icon : Pool_tenant.Icon.Write.t option
     ; tenant_logos : Pool_common.Id.t list option
     ; partner_logos : Pool_common.Id.t list option
     }
@@ -183,6 +166,8 @@ end = struct
     url
     disabled
     default_language
+    styles
+    icon
     tenant_logos
     partner_logos
     =
@@ -191,6 +176,8 @@ end = struct
     ; url
     ; disabled
     ; default_language
+    ; styles
+    ; icon
     ; tenant_logos
     ; partner_logos
     }
@@ -201,10 +188,12 @@ end = struct
       make
         Field.
           [ Pool_tenant.Title.schema ()
-          ; Pool_tenant.Description.schema ()
+          ; Conformist.optional @@ Pool_tenant.Description.schema ()
           ; Pool_tenant.Url.schema ()
           ; Pool_tenant.Disabled.schema ()
           ; Pool_common.Language.schema ()
+          ; Conformist.optional @@ Pool_tenant.Styles.Write.schema ()
+          ; Conformist.optional @@ Pool_tenant.Icon.Write.schema ()
           ; Conformist.optional @@ Pool_tenant.Logos.schema ()
           ; Conformist.optional @@ Pool_tenant.PartnerLogos.schema ()
           ]
@@ -223,17 +212,18 @@ end = struct
         ; description = command.description
         ; url = command.url
         ; disabled = command.disabled
+        ; styles = command.styles
+        ; icon = command.icon
         ; default_language = command.default_language
         }
     in
     let logo_mappings =
-      CCList.map
+      let open Pool_tenant.LogoMapping in
+      CCList.filter_map
         (fun (id_list, logo_type) ->
-          id_list
-          |> CCOption.map (fun ids -> create_logo_mappings ids tenant logo_type)
-          |> CCOption.value ~default:[])
-        [ command.partner_logos, Pool_tenant.LogoMapping.LogoType.PartnerLogo
-        ; command.tenant_logos, Pool_tenant.LogoMapping.LogoType.TenantLogo
+          id_list |> CCOption.map (create_logo_mappings tenant logo_type))
+        [ command.partner_logos, LogoType.PartnerLogo
+        ; command.tenant_logos, LogoType.TenantLogo
         ]
       |> CCList.flatten
     in
@@ -255,8 +245,10 @@ end = struct
   ;;
 end
 
-module EditDatabase : sig
-  type t =
+module CreateDatabase : sig
+  type t = Pool_database.t
+
+  type decoded =
     { database_url : Pool_database.Url.t
     ; database_label : Pool_database.Label.t
     }
@@ -269,13 +261,15 @@ module EditDatabase : sig
 
   val decode
     :  (string * string list) list
-    -> (t, Pool_common.Message.error) result
+    -> (decoded, Pool_common.Message.error) result
 
   val effects
     :  Pool_database.Label.t
     -> (Guard.Authorizer.effect list, Pool_common.Message.error) Lwt_result.t
 end = struct
-  type t =
+  type t = Pool_database.t
+
+  type decoded =
     { database_url : Pool_database.Url.t
     ; database_label : Pool_database.Label.t
     }
@@ -289,16 +283,8 @@ end = struct
         command)
   ;;
 
-  let handle
-    ?(tags = Logs.Tag.empty)
-    (tenant : Pool_tenant.Write.t)
-    (command : t)
-    =
-    Logs.info ~src (fun m -> m "Handle command EditDatabase" ~tags);
-    let database =
-      Pool_database.
-        { url = command.database_url; label = command.database_label }
-    in
+  let handle ?(tags = Logs.Tag.empty) (tenant : Pool_tenant.Write.t) database =
+    Logs.info ~src (fun m -> m "Handle command CreateDatabase" ~tags);
     Ok
       [ Pool_tenant.DatabaseEdited (tenant, database) |> Pool_event.pool_tenant
       ]

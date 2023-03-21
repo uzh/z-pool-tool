@@ -342,12 +342,9 @@ let input_element_file
       ]
   in
   let input_attributes =
+    let attributes = [ a_input_type `File; a_id name; a_name name ] in
     let attributes =
-      [ a_input_type `File
-      ; a_id name
-      ; a_name name
-      ; (if allow_multiple then a_multiple () else a_value "")
-      ]
+      if allow_multiple then a_multiple () :: attributes else attributes
     in
     match required with
     | true -> attributes @ [ a_required () ]

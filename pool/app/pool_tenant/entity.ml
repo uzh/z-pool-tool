@@ -118,11 +118,11 @@ end
 type t =
   { id : Id.t
   ; title : Title.t
-  ; description : Description.t
+  ; description : Description.t option
   ; url : Url.t
   ; database_label : Database.Label.t
-  ; styles : Styles.t
-  ; icon : Icon.t
+  ; styles : Styles.t option
+  ; icon : Icon.t option
   ; logos : Logos.t
   ; partner_logo : PartnerLogos.t
   ; maintenance : Maintenance.t
@@ -139,11 +139,11 @@ module Read = struct
   type t =
     { id : Id.t
     ; title : Title.t
-    ; description : Description.t
+    ; description : Description.t option
     ; url : Url.t
     ; database_label : Database.Label.t
-    ; styles : Styles.t
-    ; icon : Icon.t
+    ; styles : Styles.t option
+    ; icon : Icon.t option
     ; maintenance : Maintenance.t
     ; disabled : Disabled.t
     ; default_language : Common.Language.t
@@ -157,11 +157,11 @@ module Write = struct
   type t =
     { id : Id.t
     ; title : Title.t
-    ; description : Description.t
+    ; description : Description.t option
     ; url : Url.t
     ; database : Database.t
-    ; styles : Styles.Write.t
-    ; icon : Icon.Write.t
+    ; styles : Styles.Write.t option
+    ; icon : Icon.Write.t option
     ; maintenance : Maintenance.t
     ; disabled : Disabled.t
     ; default_language : Common.Language.t
@@ -198,3 +198,7 @@ module Selection = struct
   let url ({ url; _ } : t) = url |> Url.value
   let label ({ database_label; _ } : t) = database_label
 end
+
+let file_fields =
+  Pool_common.Message.Field.([ Styles; Icon ] @ LogoMapping.LogoType.all_fields)
+;;

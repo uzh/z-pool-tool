@@ -12,7 +12,8 @@ let active_navigation = tenants_path
 let tenants req =
   let context = Pool_context.find_exn req in
   let%lwt tenant_list = Pool_tenant.find_all () in
-  Page.Root.Tenant.list tenant_list context
+  let flash_fetcher key = Sihl.Web.Flash.find key req in
+  Page.Root.Tenant.list tenant_list context flash_fetcher
   |> General.create_root_layout ~active_navigation context
   |> Sihl.Web.Response.of_html
   |> Lwt.return
@@ -20,28 +21,32 @@ let tenants req =
 
 let create req =
   let tags = Pool_context.Logger.Tags.req req in
-  let result { Pool_context.database_label; _ } =
+  let%lwt multipart_encoded =
+    Sihl.Web.Request.to_multipart_form_data_exn req
+    ||> HttpUtils.remove_empty_values_multiplart
+  in
+  let urlencoded =
+    multipart_encoded
+    |> HttpUtils.multipart_to_urlencoded Pool_tenant.file_fields
+  in
+  let result _ =
+    Utils.Lwt_result.map_error (fun err ->
+      err, tenants_path, [ HttpUtils.urlencoded_to_flash urlencoded ])
+    @@
     let events () =
-      Utils.Lwt_result.map_error (fun err -> err, tenants_path)
-      @@
       let open CCFun in
-      let%lwt multipart_encoded =
-        Sihl.Web.Request.to_multipart_form_data_exn req
+      let* database =
+        let open Cqrs_command.Pool_tenant_command.CreateDatabase in
+        let* { database_url; database_label } =
+          decode urlencoded |> Lwt_result.lift
+        in
+        Pool_database.test_and_create database_url database_label
       in
-      let file_fields =
-        let open Pool_common.Message.Field in
-        [ Styles; Icon ] @ Pool_tenant.LogoMapping.LogoType.all_fields
-        |> CCList.map show
-      in
-      let* files = File.upload_files Database.root file_fields req in
-      let finalize = function
-        | Ok resp -> Lwt.return_ok resp
-        | Error err ->
-          let ctx = database_label |> Pool_tenant.to_ctx in
-          let%lwt () =
-            Lwt_list.iter_s (snd %> Service.Storage.delete ~ctx) files
-          in
-          Lwt.return_error err
+      let* files =
+        File.upload_files
+          Database.root
+          (CCList.map Pool_common.Message.Field.show Pool_tenant.file_fields)
+          req
       in
       let events =
         let open CCResult.Infix in
@@ -49,10 +54,10 @@ let create req =
         files @ multipart_encoded
         |> File.multipart_form_data_to_urlencoded
         |> decode
-        >>= handle ~tags
+        >>= handle ~tags database
         |> Lwt_result.lift
       in
-      events >|> finalize
+      events >|> HttpUtils.File.cleanup_upload Database.root files
     in
     let handle =
       Lwt_list.iter_s (Pool_event.handle_event ~tags Database.root)
@@ -64,7 +69,7 @@ let create req =
     in
     () |> events |>> handle |>> return_to_overview
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path_with_actions req
 ;;
 
 let manage_operators req =
@@ -139,7 +144,8 @@ let tenant_detail req =
       |> Pool_tenant.Id.of_string
     in
     let* tenant = Pool_tenant.find id in
-    Page.Root.Tenant.detail tenant context
+    let flash_fetcher key = Sihl.Web.Flash.find key req in
+    Page.Root.Tenant.detail tenant context flash_fetcher
     |> General.create_root_layout context
     |> Sihl.Web.Response.of_html
     |> Lwt.return_ok

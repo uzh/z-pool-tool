@@ -139,15 +139,15 @@ let t =
          (tup2
             Title.t
             (tup2
-               Description.t
+               (option Description.t)
                (tup2
                   Url.t
                   (tup2
                      Database.Repo.Label.t
                      (tup2
-                        Styles.t
+                        (option Styles.t)
                         (tup2
-                           Icon.t
+                           (option Icon.t)
                            (tup2
                               Maintenance.t
                               (tup2
@@ -213,15 +213,15 @@ module Write = struct
            (tup2
               Title.t
               (tup2
-                 Description.t
+                 (option Description.t)
                  (tup2
                     Url.t
                     (tup2
                        Database.Repo.t
                        (tup2
-                          Styles.Write.t
+                          (option Styles.Write.t)
                           (tup2
-                             Icon.Write.t
+                             (option Icon.Write.t)
                              (tup2
                                 Maintenance.t
                                 (tup2

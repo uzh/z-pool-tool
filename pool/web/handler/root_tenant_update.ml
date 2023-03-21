@@ -5,32 +5,51 @@ module Common = Pool_common
 module Database = Pool_database
 
 let update req command success_message =
+  let open Utils.Lwt_result.Infix in
+  let open Common.Message.Field in
+  let open Pool_tenant in
+  let%lwt multipart_encoded =
+    Sihl.Web.Request.to_multipart_form_data_exn req
+    ||> HttpUtils.remove_empty_values_multiplart
+  in
+  let urlencoded =
+    multipart_encoded |> HttpUtils.multipart_to_urlencoded file_fields
+  in
+  let tags = Pool_context.Logger.Tags.req req in
+  let id =
+    HttpUtils.get_field_router_param req Pool_common.Message.Field.Tenant
+    |> Pool_tenant.Id.of_string
+  in
+  let redirect_path =
+    Format.asprintf "/root/tenants/%s" (Pool_tenant.Id.value id)
+  in
   let result _ =
-    let open Utils.Lwt_result.Infix in
-    let open Common.Message.Field in
-    let tags = Pool_context.Logger.Tags.req req in
-    let id =
-      HttpUtils.get_field_router_param req Pool_common.Message.Field.Tenant
-      |> Pool_tenant.Id.of_string
-    in
-    let redirect_path =
-      Format.asprintf "/root/tenants/%s" (Pool_tenant.Id.value id)
-    in
+    Utils.Lwt_result.map_error (fun err ->
+      err, redirect_path, [ HttpUtils.urlencoded_to_flash urlencoded ])
+    @@
     let events tenant =
       let open Utils.Lwt_result.Infix in
-      let%lwt multipart_encoded =
-        Sihl.Web.Request.to_multipart_form_data_exn req
+      let open Pool_tenant in
+      let updates, creations =
+        (CCList.fold_left (fun (updates, creations) (asset_id, field) ->
+           match asset_id with
+           | Some id -> (show field, id) :: updates, creations
+           | None -> updates, field :: creations))
+          ([], [])
+          CCOption.
+            [ tenant.Write.styles >|= Styles.Write.value, Styles
+            ; tenant.Write.icon >|= Icon.Write.value, Icon
+            ]
       in
-      let* _ =
-        File.update_files
-          Database.root
-          [ ( Styles |> show
-            , tenant.Pool_tenant.Write.styles |> Pool_tenant.Styles.Write.value
-            )
-          ; ( Icon |> show
-            , tenant.Pool_tenant.Write.icon |> Pool_tenant.Icon.Write.value )
-          ]
-          req
+      let* (_ : string list) = File.update_files Database.root updates req in
+      let* uploaded_files =
+        match creations with
+        | [] -> Lwt_result.return []
+        | fields ->
+          File.upload_files
+            Database.root
+            (CCList.map Pool_common.Message.Field.show fields)
+            req
       in
       let* logo_files =
         File.upload_files
@@ -39,18 +58,25 @@ let update req command success_message =
           req
       in
       let events_list urlencoded =
-        let open CCResult.Infix in
         let open Cqrs_command.Pool_tenant_command in
+        let lift = Lwt_result.lift in
         match command with
-        | `EditDetail -> EditDetails.(decode urlencoded >>= handle ~tags tenant)
+        | `EditDetail ->
+          let open CCResult.Infix in
+          EditDetails.(decode urlencoded >>= handle ~tags tenant) |> lift
         | `EditDatabase ->
-          EditDatabase.(decode urlencoded >>= handle ~tags tenant)
+          let open CreateDatabase in
+          let* { database_url; database_label } = decode urlencoded |> lift in
+          let* database =
+            Pool_database.test_and_create database_url database_label
+          in
+          handle ~tags tenant database |> lift
       in
-      logo_files @ multipart_encoded
-      |> File.multipart_form_data_to_urlencoded
+      let files = logo_files @ uploaded_files in
+      (files |> File.multipart_form_data_to_urlencoded) @ urlencoded
       |> HttpUtils.format_request_boolean_values [ TenantDisabledFlag |> show ]
       |> events_list
-      |> Lwt_result.lift
+      >|> HttpUtils.File.cleanup_upload Database.root files
     in
     let handle =
       Lwt_list.iter_s (Pool_event.handle_event ~tags Database.root)
@@ -60,14 +86,9 @@ let update req command success_message =
         redirect_path
         [ Message.set ~success:[ success_message ] ]
     in
-    id
-    |> Pool_tenant.find_full
-    >>= events
-    >|- (fun err -> err, redirect_path)
-    |>> handle
-    |>> return_to_overview
+    id |> Pool_tenant.find_full >>= events |>> handle |>> return_to_overview
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path_with_actions req
 ;;
 
 let update_detail req =
