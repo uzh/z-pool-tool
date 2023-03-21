@@ -102,14 +102,28 @@ let find_all_public_by_contact pool contact =
   ||> CCList.map Entity.to_public
 ;;
 
-let find_where_contact_is_on_waitinglist_request =
+let find_pending_waitinglists_by_contact_request =
   let open Caqti_request.Infix in
   let join =
     {sql|
     INNER JOIN pool_waiting_list
-      ON pool_waiting_list.experiment_id = pool_experiments.id
+    ON
+      pool_waiting_list.experiment_id = pool_experiments.id
+    AND
+      pool_waiting_list.contact_id = (SELECT id FROM pool_contacts WHERE user_uuid = UNHEX(REPLACE($1, '-', '')))
+    WHERE NOT EXISTS (
+      SELECT 1 FROM pool_assignments
+      INNER JOIN pool_sessions
+      ON
+        pool_sessions.uuid = pool_assignments.session_uuid
       AND
-      pool_waiting_list.contact_id = (SELECT id FROM pool_contacts WHERE user_uuid = UNHEX(REPLACE(?, '-', '')))
+        pool_sessions.canceled_at IS NULL
+      WHERE
+        pool_sessions.experiment_uuid = pool_experiments.uuid
+      AND
+        pool_assignments.contact_uuid = UNHEX(REPLACE($1, '-', ''))
+      AND
+        pool_assignments.marked_as_deleted = 0)
   |sql}
   in
   join
@@ -117,10 +131,17 @@ let find_where_contact_is_on_waitinglist_request =
   |> Pool_common.Repo.Id.t ->* RepoEntity.Public.t
 ;;
 
-let find_where_contact_is_on_waitinglist pool contact =
+let find_pending_waitinglists_by_contact pool contact =
+  let () =
+    Caqti_request.make_pp_with_param
+      ()
+      Format.std_formatter
+      (find_pending_waitinglists_by_contact_request, Contact.id contact)
+  in
+  print_endline "XXXXXXXXXXXXXXXX";
   Utils.Database.collect
     (Pool_database.Label.value pool)
-    find_where_contact_is_on_waitinglist_request
+    find_pending_waitinglists_by_contact_request
     (Contact.id contact)
 ;;
 

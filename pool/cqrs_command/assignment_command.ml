@@ -241,8 +241,6 @@ end = struct
          @ [ Contact.NumAssignmentsIncreasedBy
                (contact, CCList.length command.sessions)
              |> Pool_event.contact
-           ; Waiting_list.Deleted command.waiting_list
-             |> Pool_event.waiting_list
            ; Email.Sent confirmation_email |> Pool_event.email
            ])
   ;;

@@ -277,7 +277,6 @@ let assign_contact_from_waiting_list () =
     Ok
       [ Assignment.Created create |> Pool_event.assignment
       ; Contact.NumAssignmentsIncreasedBy (contact, 1) |> Pool_event.contact
-      ; Waiting_list.Deleted waiting_list |> Pool_event.waiting_list
       ; Email.(Sent (confirmation_email contact)) |> Pool_event.email
       ]
   in
@@ -314,7 +313,6 @@ let assign_contact_from_waiting_list_with_follow_ups () =
     Ok
       (create_events
        @ [ Contact.NumAssignmentsIncreasedBy (contact, 2) |> Pool_event.contact
-         ; Waiting_list.Deleted waiting_list |> Pool_event.waiting_list
          ; Email.(Sent (confirmation_email contact)) |> Pool_event.email
          ])
   in

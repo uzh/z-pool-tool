@@ -19,8 +19,8 @@ let find_all = Repo.find_all
 let find_public = Repo_public.find
 let find_all_public_by_contact = Repo_public.find_all_public_by_contact
 
-let find_where_contact_is_on_waitinglist =
-  Repo_public.find_where_contact_is_on_waitinglist
+let find_pending_waitinglists_by_contact =
+  Repo_public.find_pending_waitinglists_by_contact
 ;;
 
 let find_of_session = Repo.find_of_session

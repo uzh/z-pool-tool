@@ -144,7 +144,7 @@ val find_all_public_by_contact
   -> Contact.t
   -> Public.t list Lwt.t
 
-val find_where_contact_is_on_waitinglist
+val find_pending_waitinglists_by_contact
   :  Pool_database.Label.t
   -> Contact.t
   -> Public.t list Lwt.t
