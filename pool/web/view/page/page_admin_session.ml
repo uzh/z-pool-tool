@@ -1030,7 +1030,7 @@ let cancel
              |> li)
         |> ul ~a:[ a_class [ "gap-xs" ] ]
       in
-      [ Utils.hint_to_string language I18n.SessionCancelationWithFollowups
+      [ Utils.hint_to_string language I18n.SessionCancellationWithFollowups
         |> HttpUtils.add_line_breaks
       ; follow_ups
       ]

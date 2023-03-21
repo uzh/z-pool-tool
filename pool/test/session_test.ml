@@ -512,6 +512,7 @@ let create_cancellation_message reason contact =
   reason
   |> Session.CancellationReason.value
   |> CCFun.flip Sihl_email.set_text email
+  |> CCResult.return
 ;;
 
 let cancel_no_reason () =
@@ -524,8 +525,7 @@ let cancel_no_reason () =
     SessionC.Cancel.(
       [ "reason", [ "" ]; "email", [ "true" ]; "sms", [ "true" ] ]
       |> decode
-      >>= handle session contacts (fun r c ->
-            create_cancellation_message r c |> CCResult.return))
+      >>= handle [ session ] contacts create_cancellation_message)
   in
   check_result
     (Error
@@ -547,8 +547,7 @@ let cancel_no_message_channels () =
       ; "sms", [ "false" ]
       ]
       |> decode
-      >>= handle session contacts (fun r c ->
-            create_cancellation_message r c |> CCResult.return))
+      >>= handle [ session ] contacts create_cancellation_message)
   in
   check_result (Error Pool_common.Message.PickMessageChannel) res
 ;;
@@ -575,8 +574,7 @@ let cancel_in_past () =
       ; "sms", [ "false" ]
       ]
       |> decode
-      >>= handle session contacts (fun r c ->
-            create_cancellation_message r c |> CCResult.return))
+      >>= handle [ session ] contacts create_cancellation_message)
   in
   check_result (Error Pool_common.Message.SessionInPast) res
 ;;
@@ -597,8 +595,7 @@ let cancel_already_canceled () =
       ; "sms", [ "false" ]
       ]
       |> decode
-      >>= handle session contacts (fun r c ->
-            create_cancellation_message r c |> CCResult.return))
+      >>= handle [ session ] contacts create_cancellation_message)
   in
   check_result
     (now
@@ -619,14 +616,15 @@ let cancel_valid () =
     SessionC.Cancel.(
       [ "reason", [ reason ]; "email", [ "true" ]; "sms", [ "true" ] ]
       |> decode
-      >>= handle session1 contacts (fun r c ->
-            create_cancellation_message r c |> CCResult.return))
+      >>= handle [ session1 ] contacts create_cancellation_message)
   in
   let messages =
     contacts
-    |> CCList.map
-         (create_cancellation_message
-            (reason |> Session.CancellationReason.of_string))
+    |> CCList.map (fun contact ->
+         create_cancellation_message
+           (reason |> Session.CancellationReason.of_string)
+           contact
+         |> Test_utils.get_or_failwith_pool_error)
   in
   check_result
     (Ok
@@ -650,8 +648,7 @@ let cancel_valid () =
     SessionC.Cancel.(
       [ "reason", [ reason ]; "email", [ "false" ]; "sms", [ "true" ] ]
       |> decode
-      >>= handle session2 contacts (fun r c ->
-            create_cancellation_message r c |> CCResult.return))
+      >>= handle [ session2 ] contacts create_cancellation_message)
   in
   check_result
     (Ok

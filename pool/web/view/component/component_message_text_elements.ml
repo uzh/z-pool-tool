@@ -235,6 +235,18 @@ let message_template_help
   | ProfileUpdateTrigger ->
     ProfileUpdateTrigger.email_params tenant.Pool_tenant.url (create_contact ())
   | SessionCancellation ->
+    let follow_up_sessions =
+      let open Session in
+      let follow_up = create_session () in
+      let start =
+        Ptime.add_span
+          (follow_up.start |> Start.value)
+          (Ptime.Span.of_int_s 3600)
+        |> CCOption.get_exn_or "Invalid timespan provided"
+        |> Start.create
+      in
+      [ Session.{ follow_up with start } ]
+    in
     let reason =
       "Experiment assistant is sick"
       |> Session.CancellationReason.create
@@ -242,7 +254,10 @@ let message_template_help
     in
     SessionCancellation.email_params
       language
+      tenant
+      (create_experiment ())
       (create_session ())
+      follow_up_sessions
       reason
       (create_contact ())
   | SessionReminder ->

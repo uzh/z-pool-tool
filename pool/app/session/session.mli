@@ -228,6 +228,7 @@ val find_open_with_follow_ups
   -> (t list, Pool_common.Message.error) Lwt_result.t
 
 val to_email_text : Pool_common.Language.t -> t -> string
+val follow_up_sessions_to_email_list : t list -> string
 val public_to_email_text : Pool_common.Language.t -> Public.t -> string
 
 val has_bookable_spots_for_experiments

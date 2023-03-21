@@ -333,14 +333,44 @@ module ProfileUpdateTrigger = struct
 end
 
 module SessionCancellation = struct
-  let email_params lang session reason contact =
+  let email_params
+    lang
+    (tenant : Pool_tenant.t)
+    (experiment : Experiment.t)
+    session
+    follow_up_sessions
+    reason
+    contact
+    =
+    let experiment_url =
+      let open Experiment in
+      experiment.id
+      |> Id.value
+      |> Format.asprintf "/experiments/%s"
+      |> create_public_url tenant.Pool_tenant.url
+    in
+    let main_session = Session.to_email_text lang session in
+    let session_overview =
+      match follow_up_sessions with
+      | [] -> main_session
+      | sessions ->
+        let follow_ups =
+          [ Pool_common.(
+              Utils.hint_to_string lang I18n.SessionCancellationMessageFollowUps)
+          ; Session.follow_up_sessions_to_email_list sessions
+          ]
+          |> CCString.concat "\n"
+        in
+        [ main_session; follow_ups ] |> CCString.concat "\n\n"
+    in
     global_params contact.Contact.user
-    @ [ "sessionOverview", Session.to_email_text lang session
+    @ [ "experimentUrl", experiment_url
       ; "reason", reason |> Session.CancellationReason.value
+      ; "sessionOverview", session_overview
       ]
   ;;
 
-  let prepare pool tenant sys_langs session =
+  let prepare pool tenant experiment sys_langs session follow_up_sessions =
     let open Message_utils in
     let open Utils.Lwt_result.Infix in
     let* templates =
@@ -351,7 +381,16 @@ module SessionCancellation = struct
     let fnc reason (contact : Contact.t) =
       let open CCResult in
       let* lang, template = template_by_contact sys_langs templates contact in
-      let params = email_params lang session reason contact in
+      let params =
+        email_params
+          lang
+          tenant
+          experiment
+          session
+          follow_up_sessions
+          reason
+          contact
+      in
       prepare_email
         lang
         template

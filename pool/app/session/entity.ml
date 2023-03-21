@@ -390,6 +390,15 @@ let to_email_text language { start; duration; location; _ } =
   email_text language start duration location
 ;;
 
+let follow_up_sessions_to_email_list follow_ups =
+  follow_ups
+  |> CCList.map (fun session ->
+       session.start
+       |> Start.value
+       |> Pool_common.Utils.Time.formatted_date_time)
+  |> CCString.concat "\n"
+;;
+
 let public_to_email_text
   language
   (Public.{ start; duration; location; _ } : Public.t)

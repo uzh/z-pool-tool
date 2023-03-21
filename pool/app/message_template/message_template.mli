@@ -259,7 +259,10 @@ end
 module SessionCancellation : sig
   val email_params
     :  Pool_common.Language.t
+    -> Pool_tenant.t
+    -> Experiment.t
     -> Session.t
+    -> Session.t list
     -> Session.CancellationReason.t
     -> Contact.t
     -> (string * string) list
@@ -267,8 +270,10 @@ module SessionCancellation : sig
   val prepare
     :  Pool_database.Label.t
     -> Pool_tenant.t
+    -> Experiment.t
     -> Pool_common.Language.t list
     -> Session.t
+    -> Session.t list
     -> ( Session.CancellationReason.t
          -> Contact.t
          -> (Sihl_email.t, Pool_common.Message.error) result
