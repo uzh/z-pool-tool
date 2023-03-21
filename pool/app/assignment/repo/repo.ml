@@ -229,6 +229,8 @@ module Sql = struct
         $9,
         $10
       )
+      ON DUPLICATE KEY UPDATE
+        marked_as_deleted = 0
     |sql}
     |> RepoEntity.t ->. Caqti_type.unit
   ;;
