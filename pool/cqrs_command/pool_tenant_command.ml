@@ -4,17 +4,15 @@ module File = Pool_common.File
 
 let src = Logs.Src.create "pool_tenant.cqrs"
 
-let create_logo_mappings tenant logo_type files =
+let create_logo_mappings tenant logo_type =
   let open Pool_tenant in
-  CCList.map
-    (fun asset_id ->
-      LogoMapping.Write.
-        { id = Pool_common.Id.create ()
-        ; tenant_id = tenant.Write.id
-        ; asset_id
-        ; logo_type
-        })
-    files
+  CCList.map (fun asset_id ->
+    LogoMapping.Write.
+      { id = Pool_common.Id.create ()
+      ; tenant_id = tenant.Write.id
+      ; asset_id
+      ; logo_type
+      })
 ;;
 
 type create =

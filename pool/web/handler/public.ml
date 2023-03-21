@@ -38,7 +38,6 @@ let index_css req =
   let%lwt result =
     let open Utils.Lwt_result.Infix in
     let tags = Pool_context.Logger.Tags.req req in
-    let* _ = Pool_context.find req |> Lwt_result.lift in
     let* styles =
       let open Pool_context.Tenant in
       find req
