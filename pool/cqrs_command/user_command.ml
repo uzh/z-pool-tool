@@ -16,7 +16,7 @@ module UpdateEmail : sig
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val effects : Role.Target.t -> Sihl_user.t -> Guard.EffectSet.t
+  val effects : Role.Target.t -> Sihl_user.t -> Guard.ValidationSet.t
 end = struct
   type t = Email.unverified Email.t
 
@@ -42,7 +42,7 @@ end = struct
   let effects role user =
     let open Guard in
     let target_id = user.Sihl_user.id |> Guard.Uuid.Target.of_string_exn in
-    EffectSet.One (Action.Update, TargetSpec.Id (role, target_id))
+    ValidationSet.One (Action.Update, TargetSpec.Id (role, target_id))
   ;;
 end
 
@@ -55,7 +55,7 @@ module VerifyEmail : sig
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val effects : Role.Target.t -> Sihl_user.t -> Guard.EffectSet.t
+  val effects : Role.Target.t -> Sihl_user.t -> Guard.ValidationSet.t
 end = struct
   type t = Email.unverified Email.t
 
@@ -74,6 +74,6 @@ end = struct
   let effects role user =
     let open Guard in
     let target_id = user.Sihl_user.id |> Guard.Uuid.Target.of_string_exn in
-    EffectSet.One (Action.Update, TargetSpec.Id (role, target_id))
+    ValidationSet.One (Action.Update, TargetSpec.Id (role, target_id))
   ;;
 end

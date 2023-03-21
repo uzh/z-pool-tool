@@ -14,6 +14,21 @@ module Target = struct
 end
 
 module FileTarget = struct
+  let (_ : (unit, string) result) =
+    let find_parent =
+      Guard.Utils.create_simple_dependency_with_pool
+        `LocationFile
+        `Location
+        Repo.RepoFileMapping.find_location_id
+        Pool_common.Id.of_string
+        Entity.Id.value
+    in
+    Guard.Persistence.Dependency.register
+      ~parent:`Location
+      `LocationFile
+      find_parent
+  ;;
+
   type t = Entity.Mapping.file [@@deriving eq, show]
 
   let to_authorizable ?ctx t =

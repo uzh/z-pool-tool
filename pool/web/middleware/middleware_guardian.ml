@@ -25,7 +25,7 @@ let require_user_type_of (user_type : Pool_context.UserType.t list) =
 
 let validate_access
   ({ Pool_context.user; database_label; _ } as context)
-  (effects : Guard.EffectSet.t)
+  (effects : Guard.ValidationSet.t)
   =
   let open Utils.Lwt_result.Infix in
   let open Pool_common.Message in
@@ -49,9 +49,9 @@ let validate_access
           "Guard admin middleware:\n%s\n%s\nEFFECTS: %s"
           ([%show: Admin.t] admin)
           ([%show: Guard.Actor.t] auth)
-          ([%show: Guard.EffectSet.t] effects))
+          ([%show: Guard.ValidationSet.t] effects))
     in
-    Guard.Persistence.validate_effects ~ctx authorization effects auth
+    Guard.Persistence.validate ~ctx authorization effects auth
 ;;
 
 let validate_admin_entity effects =

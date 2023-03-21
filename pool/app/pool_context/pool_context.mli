@@ -47,10 +47,6 @@ val create
      * user
   -> t
 
-val find_authenticatable
-  :  t
-  -> (Role.Actor.t Guard.Actor.t, Pool_common.Message.error) Lwt_result.t
-
 module Tenant : sig
   type t =
     { tenant : Pool_tenant.t

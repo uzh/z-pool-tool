@@ -353,7 +353,7 @@ end = struct
   ;;
 
   let index =
-    EffectSet.One (Action.Read, TargetSpec.Entity `CustomField)
+    ValidationSet.One (Action.Read, TargetSpec.Entity `CustomField)
     |> Middleware.Guardian.validate_admin_entity
   ;;
 
@@ -365,7 +365,7 @@ end = struct
   let read =
     (fun id ->
       let target_id = id |> Uuid.target_of Custom_field.Id.value in
-      EffectSet.One (Action.Update, TargetSpec.Id (`CustomField, target_id)))
+      ValidationSet.One (Action.Update, TargetSpec.Id (`CustomField, target_id)))
     |> custom_field_effects
     |> Middleware.Guardian.validate_generic
   ;;
@@ -395,7 +395,7 @@ end = struct
   ;;
 
   let sort_ungrouped =
-    EffectSet.One (Action.Update, TargetSpec.Entity `CustomField)
+    ValidationSet.One (Action.Update, TargetSpec.Entity `CustomField)
     |> Middleware.Guardian.validate_admin_entity
   ;;
 end

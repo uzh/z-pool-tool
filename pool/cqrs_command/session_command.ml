@@ -2,6 +2,12 @@ module Conformist = Pool_common.Utils.PoolConformist
 
 let src = Logs.Src.create "session.cqrs"
 
+let session_effect action id =
+  let open Guard in
+  let target_id = id |> Uuid.target_of Pool_common.Id.value in
+  ValidationSet.One (action, TargetSpec.Id (`Session, target_id))
+;;
+
 let create_command
   start
   duration
@@ -123,7 +129,7 @@ module Create : sig
     -> (Pool_event.t list, Conformist.error_msg) result
 
   val decode : Conformist.input -> (t, Conformist.error_msg) result
-  val effects : Guard.EffectSet.t
+  val effects : Guard.ValidationSet.t
 end = struct
   type t = Session.base
 
@@ -185,7 +191,7 @@ end = struct
 
   let effects =
     let open Guard in
-    EffectSet.One (Action.Create, TargetSpec.Entity `Session)
+    ValidationSet.One (Action.Create, TargetSpec.Entity `Session)
   ;;
 end
 
@@ -205,7 +211,7 @@ module Update : sig
     :  (string * string list) list
     -> (t, Pool_common.Message.error) result
 
-  val effects : Pool_common.Id.t -> Guard.EffectSet.t
+  val effects : Pool_common.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = Session.update
 
@@ -271,11 +277,7 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let effects id =
-    let open Guard in
-    let target_id = id |> Uuid.target_of Pool_common.Id.value in
-    EffectSet.One (Action.Update, TargetSpec.Id (`Session, target_id))
-  ;;
+  let effects = session_effect Guard.Action.Update
 end
 
 module Reschedule : sig
@@ -298,7 +300,7 @@ module Reschedule : sig
     :  (string * string list) list
     -> (t, Pool_common.Message.error) result
 
-  val effects : Pool_common.Id.t -> Guard.EffectSet.t
+  val effects : Pool_common.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = Session.reschedule
 
@@ -348,11 +350,7 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let effects id =
-    let open Guard in
-    let target_id = id |> Uuid.target_of Pool_common.Id.value in
-    EffectSet.One (Action.Update, TargetSpec.Id (`Session, target_id))
-  ;;
+  let effects = session_effect Guard.Action.Update
 end
 
 module Delete : sig
@@ -369,7 +367,7 @@ module Delete : sig
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val effects : Pool_common.Id.t -> Guard.EffectSet.t
+  val effects : Pool_common.Id.t -> Guard.ValidationSet.t
 end = struct
   type t =
     { session : Session.t
@@ -393,11 +391,7 @@ end = struct
          :: (templates |> CCList.map delete_template))
   ;;
 
-  let effects id =
-    let open Guard in
-    let target_id = id |> Uuid.target_of Pool_common.Id.value in
-    EffectSet.One (Action.Delete, TargetSpec.Id (`Session, target_id))
-  ;;
+  let effects = session_effect Guard.Action.Delete
 end
 
 module Cancel : sig
@@ -414,7 +408,7 @@ module Cancel : sig
     -> (Pool_event.t list, Pool_common.Message.error) result
 
   val decode : Conformist.input -> (t, Conformist.error_msg) result
-  val effects : Pool_common.Id.t -> Guard.EffectSet.t
+  val effects : Pool_common.Id.t -> Guard.ValidationSet.t
 end = struct
   type t =
     { notify_email : bool
@@ -469,17 +463,13 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let effects id =
-    let open Guard in
-    let target_id = id |> Uuid.target_of Pool_common.Id.value in
-    EffectSet.One (Action.Update, TargetSpec.Id (`Session, target_id))
-  ;;
+  let effects = session_effect Guard.Action.Update
 end
 
 module SendReminder : sig
   include Common.CommandSig with type t = (Session.t * Sihl_email.t list) list
 
-  val effects : Pool_common.Id.t -> Guard.EffectSet.t
+  val effects : Pool_common.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = (Session.t * Sihl_email.t list) list
 
@@ -496,9 +486,5 @@ end = struct
          command)
   ;;
 
-  let effects id =
-    let open Guard in
-    let target_id = id |> Uuid.target_of Pool_common.Id.value in
-    EffectSet.One (Action.Update, TargetSpec.Id (`Session, target_id))
-  ;;
+  let effects = session_effect Guard.Action.Update
 end

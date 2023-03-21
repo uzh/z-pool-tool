@@ -124,6 +124,35 @@ module Sql = struct
       location
   ;;
 
+  let find_location_id_request =
+    let open Caqti_request.Infix in
+    {sql|
+      SELECT
+        LOWER(CONCAT(
+          SUBSTR(HEX(pool_locations.uuid), 1, 8), '-',
+          SUBSTR(HEX(pool_locations.uuid), 9, 4), '-',
+          SUBSTR(HEX(pool_locations.uuid), 13, 4), '-',
+          SUBSTR(HEX(pool_locations.uuid), 17, 4), '-',
+          SUBSTR(HEX(pool_locations.uuid), 21)
+        ))
+      FROM pool_location_file_mappings
+        LEFT JOIN pool_locations
+        ON pool_location_file_mappings.location_id = pool_locations.id
+      WHERE
+        pool_location_file_mappings.uuid = UNHEX(REPLACE(?, '-', ''))
+    |sql}
+    |> Id.t ->! Repo_entity.Id.t
+  ;;
+
+  let find_location_id pool id =
+    let open Utils.Lwt_result.Infix in
+    Utils.Database.find_opt
+      (Pool_database.Label.value pool)
+      find_location_id_request
+      id
+    ||> CCOption.to_result Pool_common.Message.(NotFound Field.Location)
+  ;;
+
   let insert_request =
     let open Caqti_request.Infix in
     {sql|
@@ -173,4 +202,5 @@ end
 let insert = Sql.insert
 let find = Sql.find
 let find_by_location = Sql.find_by_location
+let find_location_id = Sql.find_location_id
 let delete = Sql.delete

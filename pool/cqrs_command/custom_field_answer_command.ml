@@ -10,7 +10,7 @@ module UpdateMultiple : sig
     -> t
     -> (Pool_event.t, Pool_common.Message.error) result
 
-  val effects : Custom_field.Id.t -> Guard.EffectSet.t
+  val effects : Custom_field.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = Custom_field.Public.t
 
@@ -24,6 +24,6 @@ end = struct
   let effects id =
     let open Guard in
     let target_id = id |> Guard.Uuid.target_of Custom_field.Id.value in
-    EffectSet.One (Action.Update, TargetSpec.Id (`CustomField, target_id))
+    ValidationSet.One (Action.Update, TargetSpec.Id (`CustomField, target_id))
   ;;
 end

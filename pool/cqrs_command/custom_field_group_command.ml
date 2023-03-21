@@ -4,6 +4,12 @@ let src = Logs.Src.create "custom_field_group.cqrs"
 
 type name_command = (Pool_common.Language.t * string) list
 
+let custom_field_effect action id =
+  let open Guard in
+  let target_id = id |> Guard.Uuid.target_of Custom_field.Id.value in
+  ValidationSet.One (action, TargetSpec.Id (`CustomField, target_id))
+;;
+
 module Create : sig
   include Common.CommandSig
 
@@ -15,7 +21,7 @@ module Create : sig
     -> Custom_field.Model.t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val effects : Guard.EffectSet.t
+  val effects : Guard.ValidationSet.t
 end = struct
   type t
 
@@ -29,7 +35,7 @@ end = struct
 
   let effects =
     let open Guard in
-    EffectSet.One (Action.Create, TargetSpec.Entity `CustomField)
+    ValidationSet.One (Action.Create, TargetSpec.Entity `CustomField)
   ;;
 end
 
@@ -44,7 +50,7 @@ module Update : sig
     -> Custom_field.Model.t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val effects : Custom_field.Group.Id.t -> Guard.EffectSet.t
+  val effects : Custom_field.Id.t -> Guard.ValidationSet.t
 end = struct
   type t
 
@@ -56,11 +62,7 @@ end = struct
     Ok Custom_field.[ GroupUpdated group |> Pool_event.custom_field ]
   ;;
 
-  let effects id =
-    let open Guard in
-    let target_id = id |> Guard.Uuid.target_of Custom_field.Group.Id.value in
-    EffectSet.One (Action.Update, TargetSpec.Id (`CustomField, target_id))
-  ;;
+  let effects = custom_field_effect Guard.Action.Update
 end
 
 module Destroy : sig
@@ -71,7 +73,7 @@ module Destroy : sig
     -> Custom_field.Group.t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val effects : Custom_field.Group.Id.t -> Guard.EffectSet.t
+  val effects : Custom_field.Id.t -> Guard.ValidationSet.t
 end = struct
   type t
 
@@ -80,17 +82,13 @@ end = struct
     Ok [ Custom_field.GroupDestroyed option |> Pool_event.custom_field ]
   ;;
 
-  let effects id =
-    let open Guard in
-    let target_id = id |> Guard.Uuid.target_of Custom_field.Group.Id.value in
-    EffectSet.One (Action.Delete, TargetSpec.Id (`CustomField, target_id))
-  ;;
+  let effects = custom_field_effect Guard.Action.Delete
 end
 
 module Sort : sig
   include Common.CommandSig with type t = Custom_field.Group.t list
 
-  val effects : Custom_field.Group.Id.t -> Guard.EffectSet.t
+  val effects : Custom_field.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = Custom_field.Group.t list
 
@@ -99,9 +97,5 @@ end = struct
     Ok [ Custom_field.GroupsSorted t |> Pool_event.custom_field ]
   ;;
 
-  let effects id =
-    let open Guard in
-    let target_id = id |> Guard.Uuid.target_of Custom_field.Group.Id.value in
-    EffectSet.One (Action.Update, TargetSpec.Id (`CustomField, target_id))
-  ;;
+  let effects = custom_field_effect Guard.Action.Update
 end

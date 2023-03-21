@@ -191,49 +191,35 @@ module Access : sig
 
   val sort : Rock.Middleware.t
 end = struct
+  include Helpers.Access
   open Guard
-  module CustomFieldCommand = Cqrs_command.Custom_field_group_command
+  module Command = Cqrs_command.Custom_field_group_command
   module Field = Pool_common.Message.Field
+  module Guardian = Middleware.Guardian
 
   let custom_field_effects =
-    Middleware.Guardian.id_effects
-      Custom_field.Group.Id.of_string
-      Field.CustomFieldGroup
+    Guardian.id_effects Custom_field.Id.of_string Field.CustomField
   ;;
 
-  let index =
-    EffectSet.One (Action.Read, TargetSpec.Entity `CustomField)
-    |> Middleware.Guardian.validate_admin_entity
-  ;;
-
-  let create =
-    CustomFieldCommand.Create.effects
-    |> Middleware.Guardian.validate_admin_entity
-  ;;
+  let create = Command.Create.effects |> Guardian.validate_admin_entity
 
   let read =
     (fun id ->
-      let target_id = id |> Uuid.target_of Custom_field.Group.Id.value in
-      EffectSet.One (Action.Read, TargetSpec.Id (`CustomField, target_id)))
+      let target_id = id |> Uuid.target_of Custom_field.Id.value in
+      ValidationSet.One (Action.Read, TargetSpec.Id (`CustomField, target_id)))
     |> custom_field_effects
-    |> Middleware.Guardian.validate_generic
+    |> Guardian.validate_generic
   ;;
 
   let update =
-    CustomFieldCommand.Update.effects
-    |> custom_field_effects
-    |> Middleware.Guardian.validate_generic
+    Command.Update.effects |> custom_field_effects |> Guardian.validate_generic
   ;;
 
   let sort =
-    CustomFieldCommand.Sort.effects
-    |> custom_field_effects
-    |> Middleware.Guardian.validate_generic
+    Command.Sort.effects |> custom_field_effects |> Guardian.validate_generic
   ;;
 
   let delete =
-    CustomFieldCommand.Destroy.effects
-    |> custom_field_effects
-    |> Middleware.Guardian.validate_generic
+    Command.Destroy.effects |> custom_field_effects |> Guardian.validate_generic
   ;;
 end

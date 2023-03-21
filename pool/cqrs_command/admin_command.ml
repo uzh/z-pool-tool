@@ -86,13 +86,6 @@ end = struct
 
   let effects =
     let open Guard in
-    EffectSet.(
-      And
-        [ One (Action.Create, TargetSpec.Entity (`Admin `Operator))
-        ; One (Action.Create, TargetSpec.Entity (`Admin `LocationManager))
-        ; One (Action.Create, TargetSpec.Entity (`Admin `Recruiter))
-        ; One (Action.Create, TargetSpec.Entity (`Admin `Experimenter))
-        ; One (Action.Create, TargetSpec.Entity (`Admin `Assistant))
-        ])
+    ValidationSet.One (Action.Create, TargetSpec.Entity `Admin)
   ;;
 end

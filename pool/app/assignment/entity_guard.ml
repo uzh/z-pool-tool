@@ -8,7 +8,10 @@ module Target = struct
         Pool_common.Id.of_string
         Pool_common.Id.value
     in
-    Guard.Persistence.Dependency.register `Assignment `Session find_parent
+    Guard.Persistence.Dependency.register
+      ~parent:`Session
+      `Assignment
+      find_parent
   ;;
 
   type t = Entity.t [@@deriving eq, show]

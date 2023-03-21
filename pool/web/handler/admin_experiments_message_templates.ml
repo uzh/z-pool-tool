@@ -148,7 +148,7 @@ end = struct
   let invitation =
     (fun id ->
       let target_id = id |> Uuid.target_of Experiment.Id.value in
-      EffectSet.One (Action.Update, TargetSpec.Id (`Experiment, target_id)))
+      ValidationSet.One (Action.Update, TargetSpec.Id (`Experiment, target_id)))
     |> experiment_effects
     |> Guardian.validate_generic
   ;;
@@ -156,7 +156,7 @@ end = struct
   let session_reminder =
     (fun id ->
       let target_id = id |> Uuid.target_of Experiment.Id.value in
-      EffectSet.One (Action.Update, TargetSpec.Id (`Experiment, target_id)))
+      ValidationSet.One (Action.Update, TargetSpec.Id (`Experiment, target_id)))
     |> experiment_effects
     |> Guardian.validate_generic
   ;;

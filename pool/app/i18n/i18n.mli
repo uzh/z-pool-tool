@@ -69,7 +69,7 @@ val find_all : Pool_database.Label.t -> unit -> t list Lwt.t
 module Guard : sig
   module Target : sig
     val to_authorizable
-      :  ?ctx:Guardian__.Persistence.context
+      :  ?ctx:(string * string) list
       -> t
       -> (Role.Target.t Guard.Target.t, Entity.PoolError.error) Lwt_result.t
 

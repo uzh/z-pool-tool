@@ -87,7 +87,7 @@ end = struct
 
   let effects =
     let open Guard in
-    EffectSet.One (Action.Create, TargetSpec.Entity `MessageTemplate)
+    ValidationSet.One (Action.Create, TargetSpec.Entity `MessageTemplate)
   ;;
 end
 
@@ -104,7 +104,7 @@ module Update : sig
     :  Conformist.input
     -> (Message_template.update, Pool_common.Message.error) result
 
-  val effects : Message_template.Id.t -> Guard.EffectSet.t
+  val effects : Message_template.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = Message_template.update
 
@@ -140,7 +140,8 @@ end = struct
   let effects id =
     let open Guard in
     let target_id = id |> Uuid.target_of Message_template.Id.value in
-    EffectSet.One (Action.Update, TargetSpec.Id (`MessageTemplate, target_id))
+    ValidationSet.One
+      (Action.Update, TargetSpec.Id (`MessageTemplate, target_id))
   ;;
 end
 
@@ -152,7 +153,7 @@ module RestoreDefault : sig
     -> unit
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val effects : Pool_tenant.t -> Message_template.t -> Guard.EffectSet.t
+  val effects : Pool_tenant.t -> Message_template.t -> Guard.ValidationSet.t
 end = struct
   type t = Pool_tenant.t
 
@@ -169,7 +170,7 @@ end = struct
       tenant.Pool_tenant.id |> Uuid.target_of Pool_tenant.Id.value
     in
     let message_template_id = id |> Uuid.target_of Message_template.Id.value in
-    EffectSet.(
+    ValidationSet.(
       And
         [ One (Action.Update, TargetSpec.Id (`Tenant, target_id))
         ; One

@@ -19,12 +19,12 @@ end
 module Target = struct
   type t = Entity.t [@@deriving eq, show]
 
-  let to_authorizable ?ctx role t =
+  let to_authorizable ?ctx t =
     Guard.Persistence.Target.decorate
       ?ctx
       (fun t ->
         Guard.Target.make
-          (`Admin role)
+          `Admin
           (t
            |> Entity.user
            |> fun Sihl_user.{ id; _ } -> id |> Guard.Uuid.Target.of_string_exn))
@@ -53,24 +53,16 @@ module RuleSet = struct
     let actor = Act.Entity (`Assistant target_id) in
     [ actor, Read, Tar.Id (`Experiment, target_id)
     ; actor, Read, Tar.Entity `Experiment
-    ; actor, Read, Tar.Entity `Session
-    ; actor, Read, Tar.Entity `Assignment
+    ; actor, Read, Tar.Entity `Location
     ]
   ;;
 
   let experimenter id =
     let target_id = Uuid.target_of Entity.Id.value id in
     let actor = Act.Entity (`Experimenter target_id) in
-    [ actor, Read, Tar.Entity `Experiment
-    ; actor, Update, Tar.Id (`Experiment, target_id)
-    ; actor, Manage, Tar.Entity `Session
-    ; actor, Manage, Tar.Entity `Assignment
-    ; actor, Manage, Tar.Entity `WaitingList
-    ; actor, Read, Tar.Entity `Invitation
-    ; actor, Update, Tar.Entity `Invitation
+    [ actor, Update, Tar.Id (`Experiment, target_id)
+    ; actor, Read, Tar.Entity `Experiment
     ; actor, Read, Tar.Entity `Location
-    ; actor, Read, Tar.Entity `LocationFile
-    ; actor, Read, Tar.Entity `Mailing
     ]
   ;;
 
@@ -78,9 +70,8 @@ module RuleSet = struct
     let target_id = Uuid.target_of Entity.Id.value id in
     let actor = Act.Entity (`LocationManager target_id) in
     [ actor, Manage, Tar.Id (`Location, target_id)
-    ; actor, Create, Tar.Entity `LocationFile
-    ; actor, Read, Tar.Entity `LocationFile
-    ; actor, Update, Tar.Entity `LocationFile
+    ; actor, Read, Tar.Entity `Location
+    ; actor, Manage, Tar.Entity `LocationFile
     ]
   ;;
 end

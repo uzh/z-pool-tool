@@ -307,7 +307,7 @@ end = struct
   let mailing_effects = Guardian.id_effects Mailing.Id.of_string Field.Mailing
 
   let index =
-    EffectSet.One (Action.Read, TargetSpec.Entity `Mailing)
+    ValidationSet.One (Action.Read, TargetSpec.Entity `Mailing)
     |> Guardian.validate_admin_entity
   ;;
 
@@ -320,7 +320,7 @@ end = struct
   let read =
     (fun id ->
       let target_id = id |> Uuid.target_of Mailing.Id.value in
-      EffectSet.One (Action.Read, TargetSpec.Id (`Mailing, target_id)))
+      ValidationSet.One (Action.Read, TargetSpec.Id (`Mailing, target_id)))
     |> mailing_effects
     |> Guardian.validate_generic
   ;;
@@ -340,7 +340,7 @@ end = struct
   let add_condition =
     (fun id ->
       let target_id = id |> Uuid.target_of Experiment.Id.value in
-      EffectSet.One (Action.Update, TargetSpec.Id (`Experiment, target_id)))
+      ValidationSet.One (Action.Update, TargetSpec.Id (`Experiment, target_id)))
     |> experiment_effects
     |> Guardian.validate_generic
   ;;
@@ -348,7 +348,7 @@ end = struct
   let search_info =
     (fun req ctx ->
       ( ctx
-      , EffectSet.(
+      , ValidationSet.(
           Or
             [ experiment_effects MailingCommand.Create.effects req ctx |> snd
             ; One (Action.Update, TargetSpec.Entity `Mailing)

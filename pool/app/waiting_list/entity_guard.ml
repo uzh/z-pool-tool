@@ -8,7 +8,10 @@ module Target = struct
         Pool_common.Id.of_string
         Experiment.Id.value
     in
-    Guard.Persistence.Dependency.register `WaitingList `Experiment find_parent
+    Guard.Persistence.Dependency.register
+      ~parent:`Experiment
+      `WaitingList
+      find_parent
   ;;
 
   type t = Entity.t [@@deriving eq, show]

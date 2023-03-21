@@ -126,7 +126,7 @@ end = struct
   ;;
 
   let index =
-    EffectSet.One (Action.Read, TargetSpec.Entity `MessageTemplate)
+    ValidationSet.One (Action.Read, TargetSpec.Entity `MessageTemplate)
     |> Guardian.validate_admin_entity
   ;;
 

@@ -13,7 +13,7 @@ module AssignOperator : sig
     -> Admin.t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val effects : t -> Guard.EffectSet.t
+  val effects : t -> Guard.ValidationSet.t
 end = struct
   type t =
     { user_id : Id.t
@@ -28,10 +28,10 @@ end = struct
     let open Guard in
     let tenant_id = t.tenant_id |> Uuid.target_of Pool_tenant.Id.value in
     let user_id = t.user_id |> Uuid.target_of Pool_common.Id.value in
-    EffectSet.(
+    ValidationSet.(
       And
         [ One (Action.Manage, TargetSpec.Id (`Tenant, tenant_id))
-        ; One (Action.Manage, TargetSpec.Id (`AdminAny, user_id))
+        ; One (Action.Manage, TargetSpec.Id (`Admin, user_id))
         ])
   ;;
 end
@@ -49,7 +49,7 @@ module UnassignOperator : sig
     -> Admin.t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val effects : t -> Guard.EffectSet.t
+  val effects : t -> Guard.ValidationSet.t
 end = struct
   type t =
     { user_id : Id.t
@@ -64,10 +64,10 @@ end = struct
     let open Guard in
     let tenant_id = t.tenant_id |> Uuid.target_of Pool_tenant.Id.value in
     let user_id = t.user_id |> Uuid.target_of Pool_common.Id.value in
-    EffectSet.(
+    ValidationSet.(
       And
         [ One (Action.Manage, TargetSpec.Id (`Tenant, tenant_id))
-        ; One (Action.Manage, TargetSpec.Id (`AdminAny, user_id))
+        ; One (Action.Manage, TargetSpec.Id (`Admin, user_id))
         ])
   ;;
 end
@@ -82,7 +82,7 @@ module GenerateStatusReport : sig
     -> Pool_tenant.t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val effects : t -> Guard.EffectSet.t
+  val effects : t -> Guard.ValidationSet.t
 end = struct
   type t = { tenant_id : Pool_tenant.Id.t }
 
@@ -91,7 +91,7 @@ end = struct
   let effects t =
     let open Guard in
     let tenant_id = t.tenant_id |> Uuid.target_of Pool_tenant.Id.value in
-    EffectSet.(
+    ValidationSet.(
       And
         [ One (Action.Manage, TargetSpec.Id (`Tenant, tenant_id))
         ; One (Action.Manage, TargetSpec.Entity `System)
@@ -107,7 +107,7 @@ module AddRoot : sig
     -> Sihl_user.t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val effects : Guard.EffectSet.t
+  val effects : Guard.ValidationSet.t
 end = struct
   type t = { user_id : Pool_common.Id.t }
 
@@ -115,6 +115,6 @@ end = struct
 
   let effects =
     let open Guard in
-    EffectSet.One (Action.Manage, TargetSpec.Entity `System)
+    ValidationSet.One (Action.Manage, TargetSpec.Entity `System)
   ;;
 end

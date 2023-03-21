@@ -608,7 +608,6 @@ module Access : sig
 
   val reschedule : Rock.Middleware.t
   val cancel : Rock.Middleware.t
-  val session_reminder : Rock.Middleware.t
   val send_reminder : Rock.Middleware.t
   val close : Rock.Middleware.t
 end = struct
@@ -622,7 +621,7 @@ end = struct
   ;;
 
   let index =
-    EffectSet.One (Action.Read, TargetSpec.Entity `Session)
+    ValidationSet.One (Action.Read, TargetSpec.Entity `Session)
     |> Guardian.validate_admin_entity
   ;;
 
@@ -631,7 +630,7 @@ end = struct
   let read =
     (fun id ->
       let target_id = id |> Uuid.target_of Pool_common.Id.value in
-      EffectSet.One (Action.Read, TargetSpec.Id (`Session, target_id)))
+      ValidationSet.One (Action.Read, TargetSpec.Id (`Session, target_id)))
     |> session_effects
     |> Guardian.validate_generic
   ;;
@@ -656,12 +655,6 @@ end = struct
 
   let cancel =
     SessionCommand.Cancel.effects
-    |> session_effects
-    |> Guardian.validate_generic
-  ;;
-
-  let session_reminder =
-    SessionCommand.SendReminder.effects
     |> session_effects
     |> Guardian.validate_generic
   ;;

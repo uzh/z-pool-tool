@@ -9,7 +9,10 @@ module Target = struct
         Pool_common.Id.of_string
         Experiment.Id.value
     in
-    Guard.Persistence.Dependency.register `Session `Experiment find_parent
+    Guard.Persistence.Dependency.register
+      ~parent:`Experiment
+      `Session
+      find_parent
   ;;
 
   type t = Entity.t [@@deriving eq, show]

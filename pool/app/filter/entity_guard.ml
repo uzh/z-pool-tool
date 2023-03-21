@@ -11,7 +11,10 @@ module Target = struct
         Entity.Id.of_string
         Pool_common.Id.value
     in
-    Guard.Persistence.Dependency.register `Filter `Experiment find_parent
+    Guard.Persistence.Dependency.register
+      ~parent:`Experiment
+      `Filter
+      find_parent
   ;;
 
   type t = Entity.t [@@deriving eq, show]

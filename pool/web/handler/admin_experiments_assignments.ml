@@ -164,14 +164,25 @@ end = struct
   module AssignmentCommand = Cqrs_command.Assignment_command
   module Guardian = Middleware.Guardian
 
-  let read_effect = EffectSet.One (Action.Read, TargetSpec.Entity `Assignment)
+  let read_effect id =
+    let target_id = id |> Uuid.target_of Experiment.Id.value in
+    ValidationSet.(
+      And
+        [ One (Action.Read, TargetSpec.Entity `Assignment)
+        ; One (Action.Read, TargetSpec.Id (`Experiment, target_id))
+        ])
+  ;;
+
+  let experiment_effects =
+    Guardian.id_effects Experiment.Id.of_string Field.Experiment
+  ;;
 
   let assignment_effects =
     Guardian.id_effects Assignment.Id.of_string Field.Assignment
   ;;
 
-  let index = Guardian.validate_admin_entity read_effect
-  let deleted = Guardian.validate_admin_entity read_effect
+  let index = read_effect |> experiment_effects |> Guardian.validate_generic
+  let deleted = read_effect |> experiment_effects |> Guardian.validate_generic
 
   let cancel =
     AssignmentCommand.Cancel.effects

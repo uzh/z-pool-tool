@@ -34,7 +34,7 @@ module Access : Helpers.AccessSig = struct
   module Guardian = Middleware.Guardian
 
   let read_effects =
-    Guard.(EffectSet.One (Action.Read, TargetSpec.Entity `Queue))
+    Guard.(ValidationSet.One (Action.Read, TargetSpec.Entity `Queue))
   ;;
 
   let index = Guardian.validate_admin_entity read_effects

@@ -138,14 +138,14 @@ end = struct
   let contact_effects = Guardian.id_effects Contact.Id.of_string Field.Contact
 
   let index =
-    EffectSet.One (Action.Read, TargetSpec.Entity `Contact)
+    ValidationSet.One (Action.Read, TargetSpec.Entity `Contact)
     |> Guardian.validate_admin_entity
   ;;
 
   let read =
     (fun id ->
       let target_id = id |> Uuid.target_of Contact.Id.value in
-      EffectSet.One (Action.Read, TargetSpec.Id (`Contact, target_id)))
+      ValidationSet.One (Action.Read, TargetSpec.Id (`Contact, target_id)))
     |> contact_effects
     |> Guardian.validate_generic
   ;;

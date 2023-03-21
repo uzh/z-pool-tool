@@ -57,7 +57,6 @@ module Utils = struct
     =
     let open Utils.Lwt_result.Infix in
     let pool = ctx |> CCFun.flip CCOption.bind Pool_database.of_ctx_opt in
-    let default = Some (action, TargetSpec.Entity parent_kind) in
     match[@warning "-4"] pool, spec with
     | Some pool, TargetSpec.Id (typ, id) when typ = kind ->
       let id = id |> Uuid.Target.to_string |> kind_id_encode in
@@ -66,10 +65,10 @@ module Utils = struct
             | Ok id ->
               let id = Uuid.target_of parent_id_decode id in
               Some (action, TargetSpec.Id (parent_kind, id))
-            | Error _ -> default)
+            | Error _ -> None)
       |> Lwt_result.ok
     | (_, TargetSpec.Id (typ, _) | _, TargetSpec.Entity typ) when typ = kind ->
-      Lwt.return_ok default
+      Some (action, TargetSpec.Entity parent_kind) |> Lwt.return_ok
     | _ -> Lwt.return_error "Invalid entity provided"
   ;;
 end

@@ -272,55 +272,54 @@ end = struct
   open Guard
   module Field = Pool_common.Message.Field
   module LocationCommand = Cqrs_command.Location_command
+  module Guardian = Middleware.Guardian
 
   let file_effects =
-    Middleware.Guardian.id_effects Pool_location.Mapping.Id.of_string Field.File
+    Guardian.id_effects Pool_location.Mapping.Id.of_string Field.File
   ;;
 
   let location_effects =
-    Middleware.Guardian.id_effects Pool_location.Id.of_string Field.Location
+    Guardian.id_effects Pool_location.Id.of_string Field.Location
   ;;
 
   let index =
-    Middleware.Guardian.validate_admin_entity
-      EffectSet.(One (Action.Read, TargetSpec.Entity `Location))
+    Guardian.validate_admin_entity
+      ValidationSet.(One (Action.Read, TargetSpec.Entity `Location))
   ;;
 
-  let create =
-    LocationCommand.Create.effects |> Middleware.Guardian.validate_admin_entity
-  ;;
+  let create = LocationCommand.Create.effects |> Guardian.validate_admin_entity
 
   let create_file =
     LocationCommand.AddFile.effects
     |> location_effects
-    |> Middleware.Guardian.validate_generic
+    |> Guardian.validate_generic
   ;;
 
   let read =
     (fun id ->
       let target_id = id |> Uuid.target_of Pool_location.Id.value in
-      EffectSet.One (Action.Read, TargetSpec.Id (`Location, target_id)))
+      ValidationSet.One (Action.Read, TargetSpec.Id (`Location, target_id)))
     |> location_effects
-    |> Middleware.Guardian.validate_generic
+    |> Guardian.validate_generic
   ;;
 
   let read_file =
     (fun id ->
       let target_id = id |> Uuid.target_of Pool_location.Mapping.Id.value in
-      EffectSet.One (Action.Read, TargetSpec.Id (`LocationFile, target_id)))
+      ValidationSet.One (Action.Read, TargetSpec.Id (`LocationFile, target_id)))
     |> file_effects
-    |> Middleware.Guardian.validate_generic
+    |> Guardian.validate_generic
   ;;
 
   let update =
     LocationCommand.Update.effects
     |> location_effects
-    |> Middleware.Guardian.validate_generic
+    |> Guardian.validate_generic
   ;;
 
   let delete_file =
     LocationCommand.DeleteFile.effects
-    |> location_effects
-    |> Middleware.Guardian.validate_generic
+    |> file_effects
+    |> Guardian.validate_generic
   ;;
 end

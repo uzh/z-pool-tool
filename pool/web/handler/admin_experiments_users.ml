@@ -120,7 +120,7 @@ end = struct
   let index_assistants =
     (fun req ctx ->
       let open ExperimentCommand in
-      let open EffectSet in
+      let open ValidationSet in
       let expand effects = experiment_effects effects req ctx |> snd in
       ( ctx
       , Or [ expand AssignAssistant.effects; expand UnassignAssistant.effects ]
@@ -143,7 +143,7 @@ end = struct
   let index_experimenter =
     (fun req ctx ->
       let open ExperimentCommand in
-      let open EffectSet in
+      let open ValidationSet in
       let expand effects = experiment_effects effects req ctx |> snd in
       ( ctx
       , Or

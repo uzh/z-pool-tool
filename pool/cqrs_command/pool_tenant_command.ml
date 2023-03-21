@@ -4,7 +4,17 @@ module File = Pool_common.File
 
 let src = Logs.Src.create "pool_tenant.cqrs"
 
+<<<<<<< HEAD
 let create_logo_mappings tenant logo_type =
+=======
+let tenant_effect action id =
+  let open Guard in
+  ValidationSet.One
+    (action, TargetSpec.Id (`Tenant, id |> Uuid.target_of Id.value))
+;;
+
+let create_logo_mappings files tenant logo_type =
+>>>>>>> bfc2adf8 (refactor pr discussions)
   let open Pool_tenant in
   CCList.map (fun asset_id ->
     LogoMapping.Write.
@@ -39,7 +49,7 @@ module Create : sig
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val effects : Guard.EffectSet.t
+  val effects : Guard.ValidationSet.t
 end = struct
   type t = create
 
@@ -117,7 +127,7 @@ end = struct
 
   let effects =
     let open Guard in
-    EffectSet.(One (Action.Create, TargetSpec.Entity `Tenant))
+    ValidationSet.(One (Action.Create, TargetSpec.Entity `Tenant))
   ;;
 
   let decode data =
@@ -149,7 +159,7 @@ module EditDetails : sig
     :  (string * string list) list
     -> (t, Pool_common.Message.error) result
 
-  val effects : Pool_tenant.Id.t -> Guard.EffectSet.t
+  val effects : Pool_tenant.Id.t -> Guard.ValidationSet.t
 end = struct
   type t =
     { title : Pool_tenant.Title.t
@@ -241,11 +251,7 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let effects id =
-    let open Guard in
-    EffectSet.One
-      (Action.Update, TargetSpec.Id (`Tenant, id |> Uuid.target_of Id.value))
-  ;;
+  let effects = tenant_effect Guard.Action.Update
 end
 
 module CreateDatabase : sig
@@ -266,7 +272,7 @@ module CreateDatabase : sig
     :  (string * string list) list
     -> (decoded, Pool_common.Message.error) result
 
-  val effects : Pool_tenant.Id.t -> Guard.EffectSet.t
+  val effects : Pool_tenant.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = Pool_database.t
 
@@ -296,11 +302,7 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let effects id =
-    let open Guard in
-    let open EffectSet in
-    One (Action.Update, TargetSpec.Id (`Tenant, id |> Uuid.target_of Id.value))
-  ;;
+  let effects = tenant_effect Guard.Action.Update
 end
 
 module DestroyLogo : sig
@@ -310,7 +312,7 @@ module DestroyLogo : sig
     -> Pool_common.Id.t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val effects : Guard.EffectSet.t
+  val effects : Guard.ValidationSet.t
 end = struct
   let handle ?(tags = Logs.Tag.empty) tenant asset_id =
     Logs.info ~src (fun m -> m "Handle command DestroyLogo" ~tags);
@@ -319,7 +321,7 @@ end = struct
 
   let effects =
     let open Guard in
-    EffectSet.One (Action.Update, TargetSpec.Entity `Tenant)
+    ValidationSet.One (Action.Update, TargetSpec.Entity `Tenant)
   ;;
 end
 
@@ -331,7 +333,7 @@ module Destroy : sig
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val effects : t -> Guard.EffectSet.t
+  val effects : Pool_tenant.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = { tenant_id : Pool_tenant.Id.t }
 
@@ -340,10 +342,5 @@ end = struct
     Ok [ Pool_tenant.Destroyed t.tenant_id |> Pool_event.pool_tenant ]
   ;;
 
-  let effects { tenant_id } =
-    let open Guard in
-    EffectSet.One
-      ( Action.Delete
-      , TargetSpec.Id (`Tenant, tenant_id |> Uuid.target_of Id.value) )
-  ;;
+  let effects = tenant_effect Guard.Action.Delete
 end

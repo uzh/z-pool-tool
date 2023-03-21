@@ -2,13 +2,16 @@ module Target = struct
   let (_ : (unit, string) result) =
     let find_parent =
       Guard.Utils.create_simple_dependency_with_pool
-        `Session
+        `Mailing
         `Experiment
         Repo.find_experiment_id
         Pool_common.Id.of_string
         Experiment.Id.value
     in
-    Guard.Persistence.Dependency.register `Session `Experiment find_parent
+    Guard.Persistence.Dependency.register
+      ~parent:`Experiment
+      `Mailing
+      find_parent
   ;;
 
   type t = Entity.t [@@deriving eq, show]

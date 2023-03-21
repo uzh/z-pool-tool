@@ -10,7 +10,7 @@ module Run : sig
     }
 
   val handle : t list -> (Pool_event.t list, Pool_common.Message.error) result
-  val effects : Pool_tenant.t -> Guard.EffectSet.t
+  val effects : Pool_tenant.t -> Guard.ValidationSet.t
 end = struct
   type t =
     { mailing : Mailing.t
@@ -35,7 +35,7 @@ end = struct
   let effects { Pool_tenant.id; _ } =
     let open Guard in
     let target_id = id |> Uuid.target_of Pool_tenant.Id.value in
-    EffectSet.(
+    ValidationSet.(
       And
         [ One (Action.Update, TargetSpec.Id (`Tenant, target_id))
         ; One (Action.Read, TargetSpec.Entity `Mailing)

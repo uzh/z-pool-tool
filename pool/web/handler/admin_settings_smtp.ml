@@ -111,7 +111,7 @@ module Access : Helpers.AccessSig = struct
   ;;
 
   let read_effects =
-    Guard.(EffectSet.One (Action.Read, TargetSpec.Entity `Smtp))
+    Guard.(ValidationSet.One (Action.Read, TargetSpec.Entity `Smtp))
   ;;
 
   let index = Guardian.validate_admin_entity read_effects

@@ -14,6 +14,12 @@ type create =
 
 let src = Logs.Src.create "mailing.cqrs"
 
+let mailing_effect action id =
+  let open BaseGuard in
+  let target_id = id |> Uuid.target_of Mailing.Id.value in
+  ValidationSet.One (action, TargetSpec.Id (`Mailing, target_id))
+;;
+
 let default_command start_at start_now end_at rate random distribution : create =
   let distribution =
     let open Distribution in
@@ -47,7 +53,7 @@ module Create : sig
     -> (Pool_event.t list, Message.error) result
 
   val decode : Conformist.input -> (create, Message.error) result
-  val effects : Experiment.Id.t -> BaseGuard.EffectSet.t
+  val effects : Experiment.Id.t -> BaseGuard.ValidationSet.t
 end = struct
   type t = create
 
@@ -75,7 +81,7 @@ end = struct
   let effects id =
     let open BaseGuard in
     let target_id = id |> Uuid.target_of Experiment.Id.value in
-    EffectSet.(
+    ValidationSet.(
       And
         [ One (Action.Update, TargetSpec.Id (`Experiment, target_id))
         ; One (Action.Create, TargetSpec.Entity `Mailing)
@@ -93,7 +99,7 @@ module Update : sig
     -> (Pool_event.t list, Message.error) result
 
   val decode : Conformist.input -> (create, Message.error) result
-  val effects : Mailing.Id.t -> BaseGuard.EffectSet.t
+  val effects : Mailing.Id.t -> BaseGuard.ValidationSet.t
 end = struct
   type t = create
 
@@ -119,17 +125,13 @@ end = struct
     | false -> Error Pool_common.Message.AlreadyStarted
   ;;
 
-  let effects id =
-    let open BaseGuard in
-    let target_id = id |> Uuid.target_of Mailing.Id.value in
-    EffectSet.One (Action.Update, TargetSpec.Id (`Mailing, target_id))
-  ;;
+  let effects = mailing_effect BaseGuard.Action.Update
 end
 
 module Delete : sig
   include Common.CommandSig with type t = Mailing.t
 
-  val effects : Mailing.Id.t -> BaseGuard.EffectSet.t
+  val effects : Mailing.Id.t -> BaseGuard.ValidationSet.t
 end = struct
   type t = Mailing.t
 
@@ -140,17 +142,13 @@ end = struct
     else Ok [ Deleted mailing |> Pool_event.mailing ]
   ;;
 
-  let effects id =
-    let open BaseGuard in
-    let target_id = id |> Uuid.target_of Mailing.Id.value in
-    EffectSet.One (Action.Delete, TargetSpec.Id (`Mailing, target_id))
-  ;;
+  let effects = mailing_effect BaseGuard.Action.Delete
 end
 
 module Stop : sig
   include Common.CommandSig with type t = Mailing.t
 
-  val effects : Mailing.Id.t -> BaseGuard.EffectSet.t
+  val effects : Mailing.Id.t -> BaseGuard.ValidationSet.t
 end = struct
   type t = Mailing.t
 
@@ -162,11 +160,7 @@ end = struct
     else Error Message.NotInTimeRange
   ;;
 
-  let effects id =
-    let open BaseGuard in
-    let target_id = id |> Uuid.target_of Mailing.Id.value in
-    EffectSet.One (Action.Update, TargetSpec.Id (`Mailing, target_id))
-  ;;
+  let effects = mailing_effect BaseGuard.Action.Update
 end
 
 module Overlaps : sig
@@ -235,6 +229,6 @@ end = struct
 
   let effects =
     let open BaseGuard in
-    EffectSet.One (Action.Read, TargetSpec.Entity `Mailing)
+    ValidationSet.One (Action.Read, TargetSpec.Entity `Mailing)
   ;;
 end

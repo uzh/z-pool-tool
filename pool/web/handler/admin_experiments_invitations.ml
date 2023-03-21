@@ -203,10 +203,20 @@ end = struct
     Guardian.id_effects Pool_common.Id.of_string Field.Invitation
   ;;
 
-  let index =
-    EffectSet.One (Action.Read, TargetSpec.Entity `Invitation)
-    |> Guardian.validate_admin_entity
+  let experiment_effects =
+    Guardian.id_effects Experiment.Id.of_string Field.Experiment
   ;;
+
+  let read_effect id =
+    let target_id = id |> Uuid.target_of Experiment.Id.value in
+    ValidationSet.(
+      And
+        [ One (Action.Read, TargetSpec.Entity `Invitation)
+        ; One (Action.Read, TargetSpec.Id (`Experiment, target_id))
+        ])
+  ;;
+
+  let index = read_effect |> experiment_effects |> Guardian.validate_generic
 
   let create =
     InvitationCommand.Create.effects |> Guardian.validate_admin_entity
@@ -215,7 +225,7 @@ end = struct
   let read =
     (fun id ->
       let target_id = id |> Uuid.target_of Pool_common.Id.value in
-      EffectSet.One (Action.Read, TargetSpec.Id (`Invitation, target_id)))
+      ValidationSet.One (Action.Read, TargetSpec.Id (`Invitation, target_id)))
     |> invitation_effects
     |> Guardian.validate_generic
   ;;

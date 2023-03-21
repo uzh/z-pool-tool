@@ -4,6 +4,12 @@ let src = Logs.Src.create "custom_field_option_command.cqrs"
 
 type command = (Pool_common.Language.t * string) list
 
+let custom_field_effect action id =
+  let open Guard in
+  let target_id = id |> Guard.Uuid.target_of Custom_field.Id.value in
+  ValidationSet.One (action, TargetSpec.Id (`CustomField, target_id))
+;;
+
 module Create : sig
   include Common.CommandSig with type t = command
 
@@ -27,7 +33,7 @@ end = struct
 
   let effects =
     let open Guard in
-    EffectSet.One (Action.Create, TargetSpec.Entity `CustomField)
+    ValidationSet.One (Action.Create, TargetSpec.Entity `CustomField)
   ;;
 end
 
@@ -41,7 +47,7 @@ module Update : sig
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val effects : Custom_field.SelectOption.Id.t -> Guard.EffectSet.t
+  val effects : Custom_field.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = command
 
@@ -54,13 +60,7 @@ end = struct
     Ok [ OptionUpdated m |> Pool_event.custom_field ]
   ;;
 
-  let effects id =
-    let open Guard in
-    let target_id =
-      id |> Guard.Uuid.target_of Custom_field.SelectOption.Id.value
-    in
-    EffectSet.One (Action.Update, TargetSpec.Id (`CustomField, target_id))
-  ;;
+  let effects = custom_field_effect Guard.Action.Update
 end
 
 module Destroy : sig
@@ -71,7 +71,7 @@ module Destroy : sig
     -> Custom_field.SelectOption.t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val effects : Custom_field.SelectOption.Id.t -> Guard.EffectSet.t
+  val effects : Custom_field.Id.t -> Guard.ValidationSet.t
 end = struct
   type t
 
@@ -84,19 +84,13 @@ end = struct
       Error Pool_common.Message.(AlreadyPublished Field.CustomFieldOption)
   ;;
 
-  let effects id =
-    let open Guard in
-    let target_id =
-      id |> Guard.Uuid.target_of Custom_field.SelectOption.Id.value
-    in
-    EffectSet.One (Action.Delete, TargetSpec.Id (`CustomField, target_id))
-  ;;
+  let effects = custom_field_effect Guard.Action.Delete
 end
 
 module Publish : sig
   include Common.CommandSig with type t = Custom_field.SelectOption.t
 
-  val effects : Custom_field.SelectOption.Id.t -> Guard.EffectSet.t
+  val effects : Custom_field.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = Custom_field.SelectOption.t
 
@@ -105,19 +99,13 @@ end = struct
     Ok [ Custom_field.OptionPublished m |> Pool_event.custom_field ]
   ;;
 
-  let effects id =
-    let open Guard in
-    let target_id =
-      id |> Guard.Uuid.target_of Custom_field.SelectOption.Id.value
-    in
-    EffectSet.One (Action.Update, TargetSpec.Id (`CustomField, target_id))
-  ;;
+  let effects = custom_field_effect Guard.Action.Update
 end
 
 module Sort : sig
   include Common.CommandSig with type t = Custom_field.SelectOption.t list
 
-  val effects : Custom_field.SelectOption.Id.t -> Guard.EffectSet.t
+  val effects : Custom_field.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = Custom_field.SelectOption.t list
 
@@ -126,11 +114,5 @@ end = struct
     Ok [ Custom_field.OptionsSorted t |> Pool_event.custom_field ]
   ;;
 
-  let effects id =
-    let open Guard in
-    let target_id =
-      id |> Guard.Uuid.target_of Custom_field.SelectOption.Id.value
-    in
-    EffectSet.One (Action.Update, TargetSpec.Id (`CustomField, target_id))
-  ;;
+  let effects = custom_field_effect Guard.Action.Update
 end

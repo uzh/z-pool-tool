@@ -24,7 +24,7 @@ module Create : sig
     :  (string * string list) list
     -> (t, Pool_common.Message.error) result
 
-  val effects : Guard.EffectSet.t
+  val effects : Guard.ValidationSet.t
 end = struct
   type t =
     { email : User.EmailAddress.t
@@ -80,7 +80,7 @@ end = struct
 
   let effects =
     let open Guard in
-    EffectSet.One (Action.Manage, TargetSpec.Entity `System)
+    ValidationSet.One (Action.Manage, TargetSpec.Entity `System)
   ;;
 end
 
@@ -92,7 +92,7 @@ module ToggleStatus : sig
     -> Admin.t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val effects : Pool_common.Id.t -> Guard.EffectSet.t
+  val effects : Pool_common.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = Admin.t
 
@@ -107,14 +107,15 @@ end = struct
 
   let effects id =
     let open Guard in
-    EffectSet.(
+    ValidationSet.(
       And
-        [ One
-            ( Action.Update
-            , TargetSpec.Id
-                ( `Admin `Operator
-                , id |> Guard.Uuid.target_of Pool_common.Id.value ) )
-        ; One (Action.Update, TargetSpec.Entity `System)
+        [ One (Action.Update, TargetSpec.Entity `System)
+        ; Or
+            [ SpecificRole `ManageOperators
+            ; SpecificRole
+                (`ManageOperator
+                  (id |> Guard.Uuid.target_of Pool_common.Id.value))
+            ]
         ])
   ;;
 end

@@ -23,7 +23,7 @@ let update_language_as actor =
     Contact.Guard.Actor.to_authorizable ~ctx subject
   in
   let* () =
-    Guard.Persistence.validate_effects
+    Guard.Persistence.validate
       ~ctx
       Pool_common.Message.authorization
       effects
@@ -89,10 +89,10 @@ let operator_works _ () =
     in
     let effects =
       Guard.(
-        EffectSet.One
+        ValidationSet.One
           (Action.Manage, TargetSpec.Id (`Contact, target' |> Guard.Target.id)))
     in
-    let* () = Guard.Persistence.validate_effects ~ctx to_error effects actor in
+    let* () = Guard.Persistence.validate ~ctx to_error effects actor in
     Lwt_result.return ()
   in
   Alcotest.(check (result unit Test_utils.error))

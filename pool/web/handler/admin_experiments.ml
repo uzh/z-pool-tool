@@ -328,7 +328,7 @@ end = struct
   ;;
 
   let index =
-    EffectSet.One (Action.Read, TargetSpec.Entity `Experiment)
+    ValidationSet.One (Action.Read, TargetSpec.Entity `Experiment)
     |> Guardian.validate_admin_entity
   ;;
 
@@ -339,7 +339,7 @@ end = struct
   let read =
     (fun id ->
       let target_id = id |> Uuid.target_of Experiment.Id.value in
-      EffectSet.One (Action.Read, TargetSpec.Id (`Experiment, target_id)))
+      ValidationSet.One (Action.Read, TargetSpec.Id (`Experiment, target_id)))
     |> experiment_effects
     |> Guardian.validate_generic
   ;;
@@ -359,8 +359,13 @@ end = struct
   module Filter = struct
     include Helpers.Access
 
-    let filter_effects =
-      Guardian.id_effects FilterEntity.Id.of_string Field.Filter
+    let combined_effects effects req ctx =
+      let open HttpUtils in
+      let filter_id = find_id FilterEntity.Id.of_string Field.Filter req in
+      let experiment_id =
+        find_id Experiment.Id.of_string Field.Experiment req
+      in
+      ctx, effects experiment_id filter_id
     ;;
 
     let create =
@@ -371,13 +376,13 @@ end = struct
 
     let update =
       ExperimentCommand.UpdateFilter.effects
-      |> filter_effects
+      |> combined_effects
       |> Guardian.validate_generic
     ;;
 
     let delete =
       ExperimentCommand.DeleteFilter.effects
-      |> filter_effects
+      |> combined_effects
       |> Guardian.validate_generic
     ;;
   end

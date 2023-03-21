@@ -2,6 +2,12 @@ module Conformist = Pool_common.Utils.PoolConformist
 
 let src = Logs.Src.create "custom_field.cqrs"
 
+let custom_field_effect action id =
+  let open Guard in
+  let target_id = id |> Guard.Uuid.target_of Custom_field.Id.value in
+  ValidationSet.One (action, TargetSpec.Id (`CustomField, target_id))
+;;
+
 type command =
   { field_type : Custom_field.FieldType.t
   ; required : Custom_field.Required.t
@@ -70,7 +76,7 @@ module Create : sig
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val effects : Guard.EffectSet.t
+  val effects : Guard.ValidationSet.t
 end = struct
   type t = command
 
@@ -117,7 +123,7 @@ end = struct
 
   let effects =
     let open Guard in
-    EffectSet.One (Action.Create, TargetSpec.Entity `CustomField)
+    ValidationSet.One (Action.Create, TargetSpec.Entity `CustomField)
   ;;
 end
 
@@ -134,7 +140,7 @@ module Update : sig
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val effects : Custom_field.Id.t -> Guard.EffectSet.t
+  val effects : Custom_field.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = command
 
@@ -187,17 +193,13 @@ end = struct
     Ok [ Custom_field.Updated t |> Pool_event.custom_field ]
   ;;
 
-  let effects id =
-    let open Guard in
-    let target_id = id |> Guard.Uuid.target_of Custom_field.Id.value in
-    EffectSet.One (Action.Update, TargetSpec.Id (`CustomField, target_id))
-  ;;
+  let effects = custom_field_effect Guard.Action.Update
 end
 
 module Sort : sig
   include Common.CommandSig with type t = Custom_field.t list
 
-  val effects : Custom_field.Id.t -> Guard.EffectSet.t
+  val effects : Custom_field.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = Custom_field.t list
 
@@ -206,17 +208,13 @@ end = struct
     Ok [ Custom_field.FieldsSorted t |> Pool_event.custom_field ]
   ;;
 
-  let effects id =
-    let open Guard in
-    let target_id = id |> Guard.Uuid.target_of Custom_field.Id.value in
-    EffectSet.One (Action.Update, TargetSpec.Id (`CustomField, target_id))
-  ;;
+  let effects = custom_field_effect Guard.Action.Update
 end
 
 module Publish : sig
   include Common.CommandSig with type t = Custom_field.t
 
-  val effects : Custom_field.Id.t -> Guard.EffectSet.t
+  val effects : Custom_field.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = Custom_field.t
 
@@ -225,17 +223,13 @@ end = struct
     Ok [ Custom_field.Published m |> Pool_event.custom_field ]
   ;;
 
-  let effects id =
-    let open Guard in
-    let target_id = id |> Guard.Uuid.target_of Custom_field.Id.value in
-    EffectSet.One (Action.Update, TargetSpec.Id (`CustomField, target_id))
-  ;;
+  let effects = custom_field_effect Guard.Action.Update
 end
 
 module Delete : sig
   include Common.CommandSig with type t = Custom_field.t
 
-  val effects : Custom_field.Id.t -> Guard.EffectSet.t
+  val effects : Custom_field.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = Custom_field.t
 
@@ -246,9 +240,5 @@ end = struct
     | Some _ -> Error Pool_common.Message.(AlreadyPublished Field.CustomField)
   ;;
 
-  let effects id =
-    let open Guard in
-    let target_id = id |> Guard.Uuid.target_of Custom_field.Id.value in
-    EffectSet.One (Action.Delete, TargetSpec.Id (`CustomField, target_id))
-  ;;
+  let effects = custom_field_effect Guard.Action.Delete
 end

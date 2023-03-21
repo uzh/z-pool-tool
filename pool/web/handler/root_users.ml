@@ -84,7 +84,7 @@ end = struct
   let root_effects = Guardian.id_effects Pool_common.Id.of_string Field.Root
 
   let read_effects =
-    Guard.(EffectSet.One (Action.Read, TargetSpec.Entity `System))
+    Guard.(ValidationSet.One (Action.Read, TargetSpec.Entity `System))
   ;;
 
   let index = Guardian.validate_admin_entity read_effects

@@ -191,7 +191,7 @@ end
 module Guard : sig
   module Target : sig
     val to_authorizable
-      :  ?ctx:Guardian__.Persistence.context
+      :  ?ctx:(string * string) list
       -> t
       -> (Role.Target.t Guard.Target.t, Pool_common.Message.error) Lwt_result.t
 

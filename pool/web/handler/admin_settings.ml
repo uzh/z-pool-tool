@@ -136,7 +136,8 @@ module Access : Helpers.AccessSig = struct
     let effects =
       Pool_context.Tenant.find req
       |> CCResult.map_or
-           ~default:(EffectSet.One (Action.Manage, TargetSpec.Entity `Tenant))
+           ~default:
+             (ValidationSet.One (Action.Manage, TargetSpec.Entity `Tenant))
            (fun { Pool_context.Tenant.tenant; _ } ->
              effect_set tenant.Pool_tenant.id)
     in
@@ -144,7 +145,7 @@ module Access : Helpers.AccessSig = struct
   ;;
 
   let read_effects =
-    Guard.(EffectSet.One (Action.Read, TargetSpec.Entity `Tenant))
+    Guard.(ValidationSet.One (Action.Read, TargetSpec.Entity `Tenant))
   ;;
 
   let index = Guardian.validate_admin_entity read_effects

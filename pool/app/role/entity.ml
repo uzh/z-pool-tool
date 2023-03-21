@@ -9,7 +9,15 @@ module Actor = struct
     | `Experimenter of TargetId.t
     | `Guest
     | `LocationManagerAll
-    | `LocationManager of TargetId.t
+    | `LocationManager of TargetId.t (* location id*)
+    | `ManageAssistant of TargetId.t (* experiment id*)
+    | `ManageAssistants
+    | `ManageExperimenter of TargetId.t (* experiment id*)
+    | `ManageExperimenters
+    | `ManageLocationManagers
+    | `ManageOperators
+    | `ManageOperator of TargetId.t (* tenant id*)
+    | `ManageRecruiters
     | `OperatorAll
     | `Operator of TargetId.t
     | `RecruiterAll
@@ -25,6 +33,9 @@ module Actor = struct
     | `Assistant uuid
     | `Experimenter uuid
     | `LocationManager uuid
+    | `ManageAssistant uuid
+    | `ManageExperimenter uuid
+    | `ManageOperator uuid
     | `Operator uuid
     | `Recruiter uuid -> Some uuid
     | _ -> None
@@ -37,19 +48,28 @@ module Actor = struct
   ;;
 
   let of_string =
+    let target_of_string = TargetId.of_string_exn in
     Guardian.Utils.decompose_variant_string
     %> function
     | "admin", [] -> `Admin
-    | "assistant", [ id ] -> `Assistant (TargetId.of_string_exn id)
+    | "assistant", [ id ] -> `Assistant (target_of_string id)
     | "contact", [] -> `Contact
-    | "experimenter", [ id ] -> `Experimenter (TargetId.of_string_exn id)
+    | "experimenter", [ id ] -> `Experimenter (target_of_string id)
     | "guest", [] -> `Guest
     | "locationmanagerall", [] -> `LocationManagerAll
-    | "locationmanager", [ id ] -> `LocationManager (TargetId.of_string_exn id)
+    | "locationmanager", [ id ] -> `LocationManager (target_of_string id)
+    | "manageassistant", [ id ] -> `ManageAssistant (target_of_string id)
+    | "manageassistants", [] -> `ManageAssistants
+    | "manageexperimenter", [ id ] -> `ManageExperimenter (target_of_string id)
+    | "manageexperimenters", [] -> `ManageExperimenters
+    | "managelocationmanagers", [] -> `ManageLocationManagers
+    | "manageoperator", [ id ] -> `ManageOperator (target_of_string id)
+    | "manageoperators", [] -> `ManageOperators
+    | "managerecruiters", [] -> `ManageRecruiters
     | "operatorall", [] -> `OperatorAll
-    | "operator", [ id ] -> `Operator (TargetId.of_string_exn id)
+    | "operator", [ id ] -> `Operator (target_of_string id)
     | "recruiterall", [] -> `RecruiterAll
-    | "recruiter", [ id ] -> `Recruiter (TargetId.of_string_exn id)
+    | "recruiter", [ id ] -> `Recruiter (target_of_string id)
     | "root", [] -> `Root
     | "system", [] -> `System
     | role -> Guardian.Utils.failwith_invalid_role role
@@ -62,6 +82,14 @@ module Actor = struct
     ; `Guest
     ; `LocationManagerAll
     ; `LocationManager TargetId.nil
+    ; `ManageAssistant TargetId.nil
+    ; `ManageAssistants
+    ; `ManageExperimenter TargetId.nil
+    ; `ManageExperimenters
+    ; `ManageLocationManagers
+    ; `ManageOperator TargetId.nil
+    ; `ManageOperators
+    ; `ManageRecruiters
     ; `OperatorAll
     ; `Operator TargetId.nil
     ; `RecruiterAll
@@ -72,18 +100,8 @@ module Actor = struct
 end
 
 module Target = struct
-  type admins =
-    [ `Operator
-    | `LocationManager
-    | `Recruiter
-    | `Experimenter
-    | `Assistant
-    ]
-  [@@deriving show, eq, ord, yojson]
-
   type t =
-    [ `Admin of admins
-    | `AdminAny
+    [ `Admin
     | `Assignment
     | `AssignmentId of TargetId.t
     | `Contact
@@ -121,19 +139,7 @@ module Target = struct
   let of_string =
     Guardian.Utils.decompose_variant_string
     %> function
-    | "admin", [ admin ] ->
-      `Admin
-        (match Guardian.Utils.decompose_variant_string admin with
-         | "operator", [] -> `Operator
-         | "locationmanager", [] -> `LocationManager
-         | "recruiter", [] -> `Recruiter
-         | "experimenter", [] -> `Experimenter
-         | "assistant", [] -> `Assistant
-         | role ->
-           Guardian.Utils.failwith_invalid_role
-             ~msg_prefix:"Invalid admin role"
-             role)
-    | "adminany", [] -> `AdminAny
+    | "admin", [] -> `Admin
     | "assignment", [] -> `Assignment
     | "assignmentid", [ id ] -> `AssignmentId (TargetId.of_string_exn id)
     | "contact", [] -> `Contact
@@ -156,58 +162,50 @@ module Target = struct
     | role -> Guardian.Utils.failwith_invalid_role role
   ;;
 
-  let all_admins =
-    CCList.map
-      to_admin
-      [ `Operator; `LocationManager; `Recruiter; `Experimenter; `Assistant ]
-  ;;
-
   let all_entities =
-    all_admins
-    @ [ `Assignment
-      ; `Contact
-      ; `CustomField
-      ; `Experiment
-      ; `Filter
-      ; `I18n
-      ; `Invitation
-      ; `Location
-      ; `LocationFile
-      ; `MessageTemplate
-      ; `Mailing
-      ; `Queue
-      ; `Schedule
-      ; `Session
-      ; `Setting
-      ; `Smtp
-      ; `System
-      ; `Tenant
-      ; `WaitingList
-      ]
+    [ `Assignment
+    ; `Contact
+    ; `CustomField
+    ; `Experiment
+    ; `Filter
+    ; `I18n
+    ; `Invitation
+    ; `Location
+    ; `LocationFile
+    ; `MessageTemplate
+    ; `Mailing
+    ; `Queue
+    ; `Schedule
+    ; `Session
+    ; `Setting
+    ; `Smtp
+    ; `System
+    ; `Tenant
+    ; `WaitingList
+    ]
   ;;
 
   let all =
-    all_admins
-    @ [ `Assignment
-      ; `AssignmentId TargetId.nil
-      ; `Contact
-      ; `CustomField
-      ; `Experiment
-      ; `Filter
-      ; `I18n
-      ; `Invitation
-      ; `Location
-      ; `LocationFile
-      ; `MessageTemplate
-      ; `Mailing
-      ; `Queue
-      ; `Schedule
-      ; `Session
-      ; `Setting
-      ; `Smtp
-      ; `System
-      ; `Tenant
-      ; `WaitingList
-      ]
+    [ `Assignment
+    ; `AssignmentId TargetId.nil
+    ; `Contact
+    ; `CustomField
+    ; `Experiment
+    ; `Filter
+    ; `I18n
+    ; `Invitation
+    ; `Location
+    ; `LocationFile
+    ; `MessageTemplate
+    ; `Mailing
+    ; `Queue
+    ; `Schedule
+    ; `Session
+    ; `Setting
+    ; `Smtp
+    ; `System
+    ; `Tenant
+    ; `WaitingList
+    ]
   ;;
 end

@@ -5,7 +5,7 @@ let src = Logs.Src.create "settings.cqrs"
 let effects action id =
   let open Guard in
   let target_id = id |> Uuid.target_of Pool_tenant.Id.value in
-  EffectSet.(
+  ValidationSet.(
     And
       [ One (action, TargetSpec.Id (`Tenant, target_id))
       ; One (action, TargetSpec.Entity `Setting)
@@ -21,7 +21,7 @@ module UpdateLanguages : sig
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val effects : Pool_tenant.Id.t -> Guard.EffectSet.t
+  val effects : Pool_tenant.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = Pool_common.Language.t list
 
@@ -59,7 +59,7 @@ module CreateEmailSuffix : sig
     :  (string * string list) list
     -> (t, Pool_common.Message.error) result
 
-  val effects : Pool_tenant.Id.t -> Guard.EffectSet.t
+  val effects : Pool_tenant.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = Settings.EmailSuffix.t
 
@@ -86,7 +86,7 @@ end
 module UpdateEmailSuffixes : sig
   include Common.CommandSig with type t = (string * string list) list
 
-  val effects : Pool_tenant.Id.t -> Guard.EffectSet.t
+  val effects : Pool_tenant.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = (string * string list) list
 
@@ -121,7 +121,7 @@ module DeleteEmailSuffix : sig
     :  (string * string list) list
     -> (t, Pool_common.Message.error) result
 
-  val effects : Pool_tenant.Id.t -> Guard.EffectSet.t
+  val effects : Pool_tenant.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = Settings.EmailSuffix.t
 
@@ -146,7 +146,7 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let effects = effects Guard.Action.Delete
+  let effects = effects Guard.Action.Update
 end
 
 module UpdateContactEmail : sig
@@ -156,7 +156,7 @@ module UpdateContactEmail : sig
     :  (string * string list) list
     -> (t, Pool_common.Message.error) result
 
-  val effects : Pool_tenant.Id.t -> Guard.EffectSet.t
+  val effects : Pool_tenant.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = Settings.ContactEmail.t
 
@@ -187,7 +187,7 @@ module InactiveUser = struct
       :  (string * string list) list
       -> (t, Pool_common.Message.error) result
 
-    val effects : Pool_tenant.Id.t -> Guard.EffectSet.t
+    val effects : Pool_tenant.Id.t -> Guard.ValidationSet.t
   end = struct
     type t = Settings.InactiveUser.DisableAfter.t
 
@@ -221,7 +221,7 @@ module InactiveUser = struct
       :  (string * string list) list
       -> (t, Pool_common.Message.error) result
 
-    val effects : Pool_tenant.Id.t -> Guard.EffectSet.t
+    val effects : Pool_tenant.Id.t -> Guard.ValidationSet.t
   end = struct
     type t = Settings.InactiveUser.Warning.t
 
@@ -256,7 +256,7 @@ module UpdateTriggerProfileUpdateAfter : sig
     :  (string * string list) list
     -> (t, Pool_common.Message.error) result
 
-  val effects : Pool_tenant.Id.t -> Guard.EffectSet.t
+  val effects : Pool_tenant.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = Settings.TriggerProfileUpdateAfter.t
 
@@ -293,7 +293,7 @@ module UpdateTermsAndConditions : sig
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val effects : Pool_tenant.Id.t -> Guard.EffectSet.t
+  val effects : Pool_tenant.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = (string * string list) list
 
@@ -350,7 +350,7 @@ module RestoreDefault : sig
     -> unit
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val effects : Pool_tenant.Id.t -> Guard.EffectSet.t
+  val effects : Pool_tenant.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = Pool_tenant.t
 
@@ -369,7 +369,7 @@ module UpdateDefaultLeadTime : sig
     :  (string * string list) list
     -> (t, Pool_common.Message.error) result
 
-  val effects : Pool_tenant.Id.t -> Guard.EffectSet.t
+  val effects : Pool_tenant.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = Pool_common.Reminder.LeadTime.t
 

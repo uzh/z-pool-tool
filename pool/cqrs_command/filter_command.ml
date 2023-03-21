@@ -49,7 +49,7 @@ end = struct
 
   let effects =
     let open Guard in
-    EffectSet.One (Action.Create, TargetSpec.Entity `Filter)
+    ValidationSet.One (Action.Create, TargetSpec.Entity `Filter)
   ;;
 end
 
@@ -65,7 +65,7 @@ module Update : sig
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val effects : Filter.Id.t -> Guard.EffectSet.t
+  val effects : Filter.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = Filter.Title.t
 
@@ -82,6 +82,6 @@ end = struct
   let effects id =
     let open Guard in
     let target_id = id |> Uuid.target_of Filter.Id.value in
-    EffectSet.One (Action.Update, TargetSpec.Id (`Filter, target_id))
+    ValidationSet.One (Action.Update, TargetSpec.Id (`Filter, target_id))
   ;;
 end

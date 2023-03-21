@@ -169,7 +169,7 @@ end = struct
 
   let index =
     Guardian.validate_admin_entity
-      EffectSet.(One (Action.Read, TargetSpec.Entity `Tenant))
+      ValidationSet.(One (Action.Read, TargetSpec.Entity `Tenant))
   ;;
 
   let create = Guardian.validate_admin_entity TenantCommand.Create.effects
@@ -177,7 +177,7 @@ end = struct
   let read =
     (fun id ->
       let target_id = id |> Uuid.target_of Pool_tenant.Id.value in
-      EffectSet.One (Action.Read, TargetSpec.Id (`Tenant, target_id)))
+      ValidationSet.One (Action.Read, TargetSpec.Id (`Tenant, target_id)))
     |> tenant_effects
     |> Guardian.validate_generic
   ;;
@@ -190,11 +190,11 @@ end = struct
 
   let read_operator =
     Guardian.validate_admin_entity
-      EffectSet.(One (Action.Read, TargetSpec.Entity (`Admin `Operator)))
+      ValidationSet.(One (Action.Read, TargetSpec.Entity `Admin))
   ;;
 
   let create_operator =
     Middleware.Guardian.validate_admin_entity
-      EffectSet.(One (Action.Create, TargetSpec.Entity (`Admin `Operator)))
+      ValidationSet.(SpecificRole `ManageOperators)
   ;;
 end

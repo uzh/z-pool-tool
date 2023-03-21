@@ -438,7 +438,7 @@ module Access : Helpers.AccessSig = struct
   let read =
     (fun id ->
       let target_id = id |> Uuid.target_of Filter.Id.value in
-      EffectSet.One (Action.Read, TargetSpec.Id (`Filter, target_id)))
+      ValidationSet.One (Action.Read, TargetSpec.Id (`Filter, target_id)))
     |> filter_effects
     |> Guardian.validate_generic
   ;;
@@ -448,12 +448,12 @@ module Access : Helpers.AccessSig = struct
   ;;
 
   let create =
-    EffectSet.One (Action.Create, TargetSpec.Entity `Filter)
+    ValidationSet.One (Action.Create, TargetSpec.Entity `Filter)
     |> Guardian.validate_admin_entity
   ;;
 
   let index =
-    EffectSet.One (Action.Read, TargetSpec.Entity `Filter)
+    ValidationSet.One (Action.Read, TargetSpec.Entity `Filter)
     |> Guardian.validate_admin_entity
   ;;
 end

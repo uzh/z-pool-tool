@@ -82,19 +82,6 @@ let dashboard_path ?(guest = "/index") = function
   | Guest -> guest
 ;;
 
-let find_authenticatable { user; database_label; _ } =
-  let ctx = Pool_tenant.to_ctx database_label in
-  match user with
-  | Admin admin ->
-    admin
-    |> Admin.user
-    |> (fun { Sihl_user.id; _ } -> Guard.Uuid.Actor.of_string_exn id)
-    |> Guard.Persistence.Actor.find ~ctx `Admin
-    |> Lwt_result.map_error PoolError.authorization
-  | Contact c -> Contact.Guard.Actor.to_authorizable ~ctx c
-  | Guest -> Lwt.return_error PoolError.(NotFound Field.User)
-;;
-
 module Tenant = struct
   type t =
     { tenant : Pool_tenant.t
