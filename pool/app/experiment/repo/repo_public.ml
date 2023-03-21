@@ -132,13 +132,6 @@ let find_pending_waitinglists_by_contact_request =
 ;;
 
 let find_pending_waitinglists_by_contact pool contact =
-  let () =
-    Caqti_request.make_pp_with_param
-      ()
-      Format.std_formatter
-      (find_pending_waitinglists_by_contact_request, Contact.id contact)
-  in
-  print_endline "XXXXXXXXXXXXXXXX";
   Utils.Database.collect
     (Pool_database.Label.value pool)
     find_pending_waitinglists_by_contact_request
