@@ -66,12 +66,9 @@ let find_all_public_by_contact_request =
       SELECT
         1 FROM pool_waiting_list
       WHERE
-        pool_waiting_list.contact_id = (
-          SELECT
-            id FROM pool_contacts
-          WHERE
-            user_uuid = UNHEX(REPLACE($1, '-', '')))
-          AND pool_waiting_list.experiment_id = pool_experiments.id)
+        pool_waiting_list.contact_uuid = UNHEX(REPLACE($1, '-', ''))
+      AND
+        pool_waiting_list.experiment_uuid = pool_experiments.uuid)
       |sql}
   in
   let is_invited =
@@ -108,9 +105,9 @@ let find_pending_waitinglists_by_contact_request =
     {sql|
     INNER JOIN pool_waiting_list
     ON
-      pool_waiting_list.experiment_id = pool_experiments.id
+      pool_waiting_list.experiment_uuid = pool_experiments.uuid
     AND
-      pool_waiting_list.contact_id = (SELECT id FROM pool_contacts WHERE user_uuid = UNHEX(REPLACE($1, '-', '')))
+      pool_waiting_list.contact_uuid = UNHEX(REPLACE($1, '-', ''))
     WHERE NOT EXISTS (
       SELECT 1 FROM pool_assignments
       INNER JOIN pool_sessions
