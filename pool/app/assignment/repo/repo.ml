@@ -151,7 +151,10 @@ module Sql = struct
     let joins =
       {sql|
         LEFT JOIN pool_sessions
-        ON pool_assignments.session_uuid = pool_sessions.uuid
+        ON
+          pool_assignments.session_uuid = pool_sessions.uuid
+        AND
+          pool_sessions.canceled_at IS NULL
       |sql}
     in
     {sql|
