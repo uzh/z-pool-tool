@@ -103,6 +103,7 @@ module Tenant = struct
       ; Migration_custom_field_answer_versions.migration ()
       ; Migration_message_templates.migration ()
       ; Migration_tenant.migration_tenant ()
+      ; Migration_202303211734.migration ()
       ]
   ;;
 
