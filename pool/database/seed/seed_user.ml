@@ -137,9 +137,23 @@ let admins db_label =
   in
   let data =
     [ "The", "One", "admin@example.com", [ `Admin ] @ experimenter_roles
-    ; "engineering", "admin", "engineering@econ.uzh.ch", [ `OperatorAll ]
-    ; "Scooby", "Doo", "assistant@econ.uzh.ch", [ `LocationManagerAll ]
-    ; "Winnie", "Pooh", "experimenter@econ.uzh.ch", [ `RecruiterAll ]
+    ; ( "engineering"
+      , "admin"
+      , "engineering@econ.uzh.ch"
+      , [ `OperatorAll
+        ; `ManageAssistants
+        ; `ManageExperimenters
+        ; `ManageLocationManagers
+        ; `ManageRecruiters
+        ] )
+    ; ( "Scooby"
+      , "Doo"
+      , "assistant@econ.uzh.ch"
+      , [ `LocationManagerAll; `ManageLocationManagers ] )
+    ; ( "Winnie"
+      , "Pooh"
+      , "experimenter@econ.uzh.ch"
+      , [ `RecruiterAll; `ManageAssistants; `ManageExperimenters ] )
     ]
   in
   let ctx = Pool_tenant.to_ctx db_label in
