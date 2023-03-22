@@ -399,8 +399,10 @@ let cancel_assignment_with_follow_ups _ () =
   let%lwt location = Repo.first_location () in
   (* Save sessions in Database *)
   let create_session ?parent_id start =
-    let base = Model.(create_session ~start () |> session_to_session_base) in
-    Session.Created (base, parent_id, experiment.Experiment.id, location)
+    let session =
+      Model.(create_session ?follow_up_to:parent_id ~start ~location ())
+    in
+    Session.Created (session, experiment.Experiment.id)
     |> Pool_event.session
     |> Pool_event.handle_event Data.database_label
   in

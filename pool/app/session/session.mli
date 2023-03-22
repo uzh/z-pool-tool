@@ -106,6 +106,20 @@ type t =
   ; updated_at : Pool_common.UpdatedAt.t
   }
 
+val create
+  :  ?id:Pool_common.Id.t
+  -> ?follow_up_to:Pool_common.Id.t
+  -> ?has_follow_ups:bool
+  -> Start.t
+  -> Duration.t
+  -> Description.t option
+  -> Pool_location.t
+  -> ParticipantAmount.t
+  -> ParticipantAmount.t
+  -> ParticipantAmount.t
+  -> Pool_common.Reminder.LeadTime.t option
+  -> t
+
 val equal : t -> t -> bool
 val pp : Format.formatter -> t -> unit
 val show : t -> string
@@ -117,8 +131,7 @@ val session_date_to_human : t -> string
 (* TODO [aerben] this should be experiment id type *)
 (* TODO [aerben] maybe Experiment.t Pool_common.Id.t *)
 type event =
-  | Created of
-      (base * Pool_common.Id.t option * Experiment.Id.t * Pool_location.t)
+  | Created of (t * Experiment.Id.t)
   | Canceled of t
   | Closed of t
   | Deleted of t

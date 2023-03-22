@@ -222,6 +222,7 @@ let create_min_gt_max () =
 let create_no_optional () =
   let open CCResult.Infix in
   let open Pool_common.Message.Field in
+  let session_id = Pool_common.Id.create () in
   let input =
     let open Data in
     delete_from_input [ Description; LeadTime; SentAt; AssignmentCount ]
@@ -229,57 +230,57 @@ let create_no_optional () =
   let experiment_id = Experiment.Id.create () in
   let location = Location_test.create_location () in
   let res =
-    SessionC.Create.(input |> decode >>= handle experiment_id location)
+    SessionC.Create.(
+      input |> decode >>= handle ~session_id experiment_id location)
+  in
+  let session =
+    let open Data.Validated in
+    Session.create
+      ~id:session_id
+      start1
+      duration
+      None
+      location
+      max_participants
+      min_participants
+      overbook
+      None
   in
   check_result
-    (Ok
-       [ Pool_event.Session
-           (Session.Created
-              (let open Data.Validated in
-               ( { Session.start = start1
-                 ; duration
-                 ; description = None
-                 ; max_participants
-                 ; min_participants
-                 ; overbook
-                 ; reminder_lead_time = None
-                 }
-               , None
-               , experiment_id
-               , location )))
-       ])
+    (Ok [ Pool_event.Session (Session.Created (session, experiment_id)) ])
     res
 ;;
 
 let create_full () =
   let open CCResult.Infix in
   let experiment_id = Experiment.Id.create () in
+  let session_id = Pool_common.Id.create () in
   let location = Location_test.create_location () in
   let res =
-    SessionC.Create.(Data.input |> decode >>= handle experiment_id location)
+    SessionC.Create.(
+      Data.input |> decode >>= handle ~session_id experiment_id location)
+  in
+  let session =
+    let open Data.Validated in
+    Session.create
+      ~id:session_id
+      start1
+      duration
+      (Some description)
+      location
+      max_participants
+      min_participants
+      overbook
+      (Some lead_time)
   in
   check_result
-    (Ok
-       [ Pool_event.Session
-           (Session.Created
-              (let open Data.Validated in
-               ( { Session.start = start1
-                 ; duration
-                 ; description = Some description
-                 ; max_participants
-                 ; min_participants
-                 ; overbook
-                 ; reminder_lead_time = Some lead_time
-                 }
-               , None
-               , experiment_id
-               , location )))
-       ])
+    (Ok [ Pool_event.Session (Session.Created (session, experiment_id)) ])
     res
 ;;
 
 let create_min_eq_max () =
   let open CCResult.Infix in
+  let session_id = Pool_common.Id.create () in
   let input =
     let open Data in
     let open Pool_common.Message.Field in
@@ -288,25 +289,24 @@ let create_min_eq_max () =
   let experiment_id = Experiment.Id.create () in
   let location = Location_test.create_location () in
   let res =
-    SessionC.Create.(input |> decode >>= handle experiment_id location)
+    SessionC.Create.(
+      input |> decode >>= handle ~session_id experiment_id location)
+  in
+  let session =
+    let open Data.Validated in
+    Session.create
+      ~id:session_id
+      start1
+      duration
+      (Some description)
+      location
+      max_participants2
+      min_participants
+      overbook
+      (Some lead_time)
   in
   check_result
-    (Ok
-       [ Pool_event.Session
-           (Session.Created
-              (let open Data.Validated in
-               ( { Session.start = start1
-                 ; duration
-                 ; description = Some description
-                 ; max_participants = max_participants2
-                 ; min_participants
-                 ; overbook
-                 ; reminder_lead_time = Some lead_time
-                 }
-               , None
-               , experiment_id
-               , location )))
-       ])
+    (Ok [ Pool_event.Session (Session.Created (session, experiment_id)) ])
     res
 ;;
 
@@ -795,11 +795,12 @@ let create_follow_up_earlier () =
 
 let create_follow_up_later () =
   let open CCResult.Infix in
-  let session = Test_utils.Model.create_session () in
+  let parent_session = Test_utils.Model.create_session () in
+  let session_id = Pool_common.Id.create () in
   let experiment_id = Experiment.Id.create () in
   let location = Location_test.create_location () in
   let later_start =
-    session.Session.start
+    parent_session.Session.start
     |> Session.Start.value
     |> CCFun.flip Ptime.add_span @@ Ptime.Span.of_int_s (60 * 60)
     |> CCOption.get_exn_or "Invalid new start"
@@ -812,25 +813,26 @@ let create_follow_up_later () =
   in
   let res =
     SessionC.Create.(
-      input |> decode >>= handle ~parent_session:session experiment_id location)
+      input
+      |> decode
+      >>= handle ~session_id ~parent_session experiment_id location)
+  in
+  let session =
+    let open Data.Validated in
+    Session.create
+      ~id:session_id
+      ~follow_up_to:parent_session.Session.id
+      (Session.Start.create later_start)
+      duration
+      (Some description)
+      location
+      max_participants
+      min_participants
+      overbook
+      (Some lead_time)
   in
   check_result
-    (Ok
-       [ Pool_event.Session
-           (Session.Created
-              (let open Data.Validated in
-               ( { Session.start = Session.Start.create later_start
-                 ; duration
-                 ; description = Some description
-                 ; max_participants
-                 ; min_participants
-                 ; overbook
-                 ; reminder_lead_time = Some lead_time
-                 }
-               , Some session.Session.id
-               , experiment_id
-               , location )))
-       ])
+    (Ok [ Pool_event.Session (Session.Created (session, experiment_id)) ])
     res
 ;;
 

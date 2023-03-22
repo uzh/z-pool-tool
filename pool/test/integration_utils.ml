@@ -47,11 +47,18 @@ module ExperimentRepo = struct
 end
 
 module SessionRepo = struct
-  let create ?follow_up_to ~experiment_id ~start ~location () =
+  let create
+    ?(id = Pool_common.Id.create ())
+    ?follow_up_to
+    ?location
+    ~experiment_id
+    ~start
+    ()
+    =
     let session =
-      Model.(create_session ?follow_up_to ~start () |> session_to_session_base)
+      Model.(create_session ~id ?location ?follow_up_to ~start ())
     in
-    Session.Created (session, follow_up_to, experiment_id, location)
+    Session.Created (session, experiment_id)
     |> Pool_event.session
     |> Pool_event.handle_event Data.database_label
   ;;

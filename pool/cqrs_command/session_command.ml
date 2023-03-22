@@ -123,6 +123,7 @@ module Create : sig
   val handle
     :  ?tags:Logs.Tag.set
     -> ?parent_session:Session.t
+    -> ?session_id:Pool_common.Id.t
     -> Experiment.Id.t
     -> Pool_location.t
     -> t
@@ -138,6 +139,7 @@ end = struct
   let handle
     ?(tags = Logs.Tag.empty)
     ?parent_session
+    ?session_id
     experiment_id
     location
     (Session.
@@ -163,25 +165,20 @@ end = struct
       ]
     in
     let* () = run_validations validations in
-    let (session : Session.base) =
-      Session.
-        { start
-        ; duration
-        ; description
-        ; max_participants
-        ; min_participants
-        ; overbook
-        ; reminder_lead_time
-        }
+    let session =
+      Session.create
+        ?id:session_id
+        ?follow_up_to:(parent_session |> CCOption.map (fun s -> s.Session.id))
+        start
+        duration
+        description
+        location
+        max_participants
+        min_participants
+        overbook
+        reminder_lead_time
     in
-    Ok
-      [ Session.Created
-          ( session
-          , CCOption.map (fun s -> s.Session.id) parent_session
-          , experiment_id
-          , location )
-        |> Pool_event.session
-      ]
+    Ok [ Session.Created (session, experiment_id) |> Pool_event.session ]
   ;;
 
   let decode data =

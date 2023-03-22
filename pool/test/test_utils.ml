@@ -299,7 +299,13 @@ module Model = struct
   let in_an_hour () = Ptime.Span.of_int_s @@ (60 * 60) |> session_start_in
   let in_two_hours () = Ptime.Span.of_int_s @@ (60 * 60 * 2) |> session_start_in
 
-  let create_session ?(id = Pool_common.Id.create ()) ?follow_up_to ?start () =
+  let create_session
+    ?(id = Pool_common.Id.create ())
+    ?(location = create_location ())
+    ?follow_up_to
+    ?start
+    ()
+    =
     let open Session in
     let start = start |> CCOption.value ~default:(in_an_hour ()) in
     { id
@@ -308,7 +314,7 @@ module Model = struct
     ; start
     ; duration = Duration.create hour |> get_or_failwith_pool_error
     ; description = None
-    ; location = create_location ()
+    ; location
     ; max_participants =
         ParticipantAmount.create 30 |> get_or_failwith_pool_error
     ; min_participants =
