@@ -4,10 +4,10 @@ let src = Logs.Src.create "custom_field_group.cqrs"
 
 type name_command = (Pool_common.Language.t * string) list
 
-let custom_field_effect action id =
+let custom_field_group_effect action id =
   let open Guard in
-  let target_id = id |> Guard.Uuid.target_of Custom_field.Id.value in
-  ValidationSet.One (action, TargetSpec.Id (`CustomField, target_id))
+  let target_id = id |> Guard.Uuid.target_of Custom_field.Group.Id.value in
+  ValidationSet.One (action, TargetSpec.Id (`CustomFieldGroup, target_id))
 ;;
 
 module Create : sig
@@ -50,7 +50,7 @@ module Update : sig
     -> Custom_field.Model.t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val effects : Custom_field.Id.t -> Guard.ValidationSet.t
+  val effects : Custom_field.Group.Id.t -> Guard.ValidationSet.t
 end = struct
   type t
 
@@ -62,7 +62,7 @@ end = struct
     Ok Custom_field.[ GroupUpdated group |> Pool_event.custom_field ]
   ;;
 
-  let effects = custom_field_effect Guard.Action.Update
+  let effects = custom_field_group_effect Guard.Action.Update
 end
 
 module Destroy : sig
@@ -73,7 +73,7 @@ module Destroy : sig
     -> Custom_field.Group.t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val effects : Custom_field.Id.t -> Guard.ValidationSet.t
+  val effects : Custom_field.Group.Id.t -> Guard.ValidationSet.t
 end = struct
   type t
 
@@ -82,13 +82,13 @@ end = struct
     Ok [ Custom_field.GroupDestroyed option |> Pool_event.custom_field ]
   ;;
 
-  let effects = custom_field_effect Guard.Action.Delete
+  let effects = custom_field_group_effect Guard.Action.Delete
 end
 
 module Sort : sig
   include Common.CommandSig with type t = Custom_field.Group.t list
 
-  val effects : Custom_field.Id.t -> Guard.ValidationSet.t
+  val effects : Custom_field.Group.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = Custom_field.Group.t list
 
@@ -97,5 +97,5 @@ end = struct
     Ok [ Custom_field.GroupsSorted t |> Pool_event.custom_field ]
   ;;
 
-  let effects = custom_field_effect Guard.Action.Update
+  let effects = custom_field_group_effect Guard.Action.Update
 end

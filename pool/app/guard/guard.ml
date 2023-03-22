@@ -28,6 +28,7 @@ let root_permissions : Rule.t list =
   ; Act.Entity `RecruiterAll, Manage, Tar.Entity `Assignment
   ; Act.Entity `RecruiterAll, Manage, Tar.Entity `Contact
   ; Act.Entity `RecruiterAll, Manage, Tar.Entity `CustomField
+  ; Act.Entity `RecruiterAll, Manage, Tar.Entity `CustomFieldGroup
   ; Act.Entity `RecruiterAll, Manage, Tar.Entity `Experiment
   ; Act.Entity `RecruiterAll, Manage, Tar.Entity `Filter
   ; Act.Entity `RecruiterAll, Manage, Tar.Entity `I18n

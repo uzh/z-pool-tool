@@ -192,34 +192,31 @@ module Access : sig
   val sort : Rock.Middleware.t
 end = struct
   include Helpers.Access
-  open Guard
   module Command = Cqrs_command.Custom_field_group_command
   module Field = Pool_common.Message.Field
   module Guardian = Middleware.Guardian
 
-  let custom_field_effects =
-    Guardian.id_effects Custom_field.Id.of_string Field.CustomField
+  let custom_field_group_effects =
+    Guardian.id_effects Custom_field.Group.Id.of_string Field.CustomFieldGroup
   ;;
 
   let create = Command.Create.effects |> Guardian.validate_admin_entity
 
-  let read =
-    (fun id ->
-      let target_id = id |> Uuid.target_of Custom_field.Id.value in
-      ValidationSet.One (Action.Read, TargetSpec.Id (`CustomField, target_id)))
-    |> custom_field_effects
+  let update =
+    Command.Update.effects
+    |> custom_field_group_effects
     |> Guardian.validate_generic
   ;;
 
-  let update =
-    Command.Update.effects |> custom_field_effects |> Guardian.validate_generic
-  ;;
-
   let sort =
-    Command.Sort.effects |> custom_field_effects |> Guardian.validate_generic
+    Command.Sort.effects
+    |> custom_field_group_effects
+    |> Guardian.validate_generic
   ;;
 
   let delete =
-    Command.Destroy.effects |> custom_field_effects |> Guardian.validate_generic
+    Command.Destroy.effects
+    |> custom_field_group_effects
+    |> Guardian.validate_generic
   ;;
 end

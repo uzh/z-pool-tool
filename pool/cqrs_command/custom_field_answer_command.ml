@@ -10,7 +10,7 @@ module UpdateMultiple : sig
     -> t
     -> (Pool_event.t, Pool_common.Message.error) result
 
-  val effects : Custom_field.Id.t -> Guard.ValidationSet.t
+  val effects : unit -> Guard.ValidationSet.t
 end = struct
   type t = Custom_field.Public.t
 
@@ -21,9 +21,5 @@ end = struct
        |> Pool_event.custom_field)
   ;;
 
-  let effects id =
-    let open Guard in
-    let target_id = id |> Guard.Uuid.target_of Custom_field.Id.value in
-    ValidationSet.One (Action.Update, TargetSpec.Id (`CustomField, target_id))
-  ;;
+  let effects () = failwith "Admin pages: unused effect"
 end

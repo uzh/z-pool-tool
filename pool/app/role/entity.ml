@@ -106,6 +106,7 @@ module Target = struct
     | `AssignmentId of TargetId.t
     | `Contact
     | `CustomField
+    | `CustomFieldGroup
     | `Experiment
     | `Filter
     | `I18n
@@ -144,6 +145,7 @@ module Target = struct
     | "assignmentid", [ id ] -> `AssignmentId (TargetId.of_string_exn id)
     | "contact", [] -> `Contact
     | "customfield", [] -> `CustomField
+    | "customfieldgroup", [] -> `CustomFieldGroup
     | "experiment", [] -> `Experiment
     | "filter", [] -> `Filter
     | "i18n", [] -> `I18n
@@ -166,6 +168,7 @@ module Target = struct
     [ `Assignment
     ; `Contact
     ; `CustomField
+    ; `CustomFieldGroup
     ; `Experiment
     ; `Filter
     ; `I18n
@@ -190,6 +193,7 @@ module Target = struct
     ; `AssignmentId TargetId.nil
     ; `Contact
     ; `CustomField
+    ; `CustomFieldGroup
     ; `Experiment
     ; `Filter
     ; `I18n

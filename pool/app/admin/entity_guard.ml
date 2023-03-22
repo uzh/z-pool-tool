@@ -52,7 +52,10 @@ module RuleSet = struct
     let target_id = Uuid.target_of Entity.Id.value id in
     let actor = Act.Entity (`Assistant target_id) in
     [ actor, Read, Tar.Id (`Experiment, target_id)
-    ; actor, Read, Tar.Entity `Experiment
+    ; ( actor
+      , Read
+      , Tar.Entity `Experiment (* TODO: Remove once index pages are filtered *)
+      )
     ; actor, Read, Tar.Entity `Location
     ]
   ;;
@@ -61,7 +64,10 @@ module RuleSet = struct
     let target_id = Uuid.target_of Entity.Id.value id in
     let actor = Act.Entity (`Experimenter target_id) in
     [ actor, Update, Tar.Id (`Experiment, target_id)
-    ; actor, Read, Tar.Entity `Experiment
+    ; ( actor
+      , Read
+      , Tar.Entity `Experiment (* TODO: Remove once index pages are filtered *)
+      )
     ; actor, Read, Tar.Entity `Location
     ]
   ;;

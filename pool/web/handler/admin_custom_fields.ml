@@ -344,6 +344,7 @@ module Access : sig
   val sort : Rock.Middleware.t
   val sort_ungrouped : Rock.Middleware.t
 end = struct
+  include Helpers.Access
   open Guard
   module CustomFieldCommand = Cqrs_command.Custom_field_command
   module Field = Pool_common.Message.Field
@@ -360,14 +361,6 @@ end = struct
   let create =
     CustomFieldCommand.Create.effects
     |> Middleware.Guardian.validate_admin_entity
-  ;;
-
-  let read =
-    (fun id ->
-      let target_id = id |> Uuid.target_of Custom_field.Id.value in
-      ValidationSet.One (Action.Update, TargetSpec.Id (`CustomField, target_id)))
-    |> custom_field_effects
-    |> Middleware.Guardian.validate_generic
   ;;
 
   let update =

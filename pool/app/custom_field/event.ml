@@ -20,7 +20,9 @@ type event =
   | Updated of t
 [@@deriving eq, show, variants]
 
-let handle_event pool : event -> unit Lwt.t = function
+let handle_event pool : event -> unit Lwt.t =
+  let open Utils.Lwt_result.Infix in
+  function
   | AdminAnswerCleared (m, entity_uuid) ->
     Repo_partial_update.clear_answer
       pool
@@ -30,10 +32,18 @@ let handle_event pool : event -> unit Lwt.t = function
       ()
   | AnswerUpserted (m, entity_uuid, user) ->
     Repo_partial_update.upsert_answer pool user entity_uuid m
-  | Created m -> Repo.insert pool m
+  | Created m ->
+    let%lwt () = Repo.insert pool m in
+    Entity_guard.Target.to_authorizable ~ctx:(Pool_tenant.to_ctx pool) m
+    ||> Pool_common.Utils.get_or_failwith
+    ||> fun (_ : Role.Target.t Guard.Target.t) -> ()
   | Deleted m -> Repo.delete pool m
   | FieldsSorted m -> CCList.map (fun m -> id m) m |> Repo.sort_fields pool
-  | GroupCreated m -> Repo_group.insert pool m
+  | GroupCreated m ->
+    let%lwt () = Repo_group.insert pool m in
+    Entity_guard.Group.Target.to_authorizable ~ctx:(Pool_tenant.to_ctx pool) m
+    ||> Pool_common.Utils.get_or_failwith
+    ||> fun (_ : Role.Target.t Guard.Target.t) -> ()
   | GroupDestroyed m -> Repo_group.destroy pool m
   | GroupsSorted m ->
     CCList.map (fun m -> m.Group.id) m |> Repo_group.sort_groups pool
