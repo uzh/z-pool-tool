@@ -48,7 +48,7 @@ end
 
 module SessionRepo = struct
   let create
-    ?(id = Pool_common.Id.create ())
+    ?(id = Session.Id.create ())
     ?follow_up_to
     ?location
     ~experiment_id

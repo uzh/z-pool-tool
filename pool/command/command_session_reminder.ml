@@ -2,7 +2,9 @@ let get_or_failwith = Pool_common.Utils.get_or_failwith
 
 let create_reminders pool tenant sys_languages session =
   let open Utils.Lwt_result.Infix in
-  let* experiment = Experiment.find_of_session pool session.Session.id in
+  let* experiment =
+    Experiment.find_of_session pool (Session.Id.to_common session.Session.id)
+  in
   let* assignments =
     Assignment.find_uncanceled_by_session pool session.Session.id
   in

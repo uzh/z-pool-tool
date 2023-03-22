@@ -81,17 +81,17 @@ val find_by_experiment_and_contact_opt
 
 val find_by_session
   :  Pool_database.Label.t
-  -> Pool_common.Id.t
+  -> Session.Id.t
   -> (t list, Pool_common.Message.error) result Lwt.t
 
 val find_uncanceled_by_session
   :  Pool_database.Label.t
-  -> Pool_common.Id.t
+  -> Session.Id.t
   -> (t list, Pool_common.Message.error) result Lwt.t
 
 val find_deleted_by_session
   :  Pool_database.Label.t
-  -> Pool_common.Id.t
+  -> Session.Id.t
   -> (t list, Pool_common.Message.error) result Lwt.t
 
 val find_with_follow_ups
@@ -101,7 +101,7 @@ val find_with_follow_ups
 
 type create =
   { contact : Contact.t
-  ; session_id : Pool_common.Id.t
+  ; session_id : Session.Id.t
   }
 
 type event =

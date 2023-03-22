@@ -317,7 +317,7 @@ let assign_to_session_with_follow_ups () =
     let base = Model.(create_public_session ~start:(in_an_hour ())) () in
     Session.Public.
       { base with
-        id = Pool_common.Id.create ()
+        id = Session.Id.create ()
       ; follow_up_to = Some session.Session.Public.id
       }
   in

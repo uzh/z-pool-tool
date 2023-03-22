@@ -1,3 +1,9 @@
+module Id : sig
+  include module type of Pool_common.Id
+
+  val to_common : t -> Pool_common.Id.t
+end
+
 module Description : sig
   include Pool_common.Model.StringSig
 end
@@ -84,8 +90,8 @@ module CancellationReason : sig
 end
 
 type t =
-  { id : Pool_common.Id.t
-  ; follow_up_to : Pool_common.Id.t option
+  { id : Id.t
+  ; follow_up_to : Id.t option
   ; has_follow_ups : bool
   ; start : Start.t
   ; duration : Duration.t
@@ -107,8 +113,8 @@ type t =
   }
 
 val create
-  :  ?id:Pool_common.Id.t
-  -> ?follow_up_to:Pool_common.Id.t
+  :  ?id:Id.t
+  -> ?follow_up_to:Id.t
   -> ?has_follow_ups:bool
   -> Start.t
   -> Duration.t
@@ -129,7 +135,7 @@ val has_assignments : t -> bool
 val session_date_to_human : t -> string
 
 (* TODO [aerben] this should be experiment id type *)
-(* TODO [aerben] maybe Experiment.t Pool_common.Id.t *)
+(* TODO [aerben] maybe Experiment.t Id.t *)
 type event =
   | Created of (t * Experiment.Id.t)
   | Canceled of t
@@ -146,8 +152,8 @@ val show_event : event -> string
 
 module Public : sig
   type t =
-    { id : Pool_common.Id.t
-    ; follow_up_to : Pool_common.Id.t option
+    { id : Id.t
+    ; follow_up_to : Id.t option
     ; start : Start.t
     ; duration : Duration.t
     ; description : Description.t option
@@ -179,12 +185,12 @@ val assignment_creatable : t -> (unit, Pool_common.Message.error) result
 (* TODO [aerben] this should be experiment id type *)
 val find
   :  Pool_database.Label.t
-  -> Pool_common.Id.t
+  -> Id.t
   -> (t, Pool_common.Message.error) Lwt_result.t
 
 val find_public
   :  Pool_database.Label.t
-  -> Pool_common.Id.t
+  -> Id.t
   -> (Public.t, Pool_common.Message.error) Lwt_result.t
 
 val find_all_public_by_location
@@ -218,12 +224,12 @@ val find_upcoming_public_by_contact
 
 val find_by_assignment
   :  Pool_database.Label.t
-  -> Pool_common.Id.t
+  -> Id.t
   -> (t, Pool_common.Message.error) Lwt_result.t
 
 val find_experiment_id_and_title
   :  Pool_database.Label.t
-  -> Pool_common.Id.t
+  -> Id.t
   -> (Experiment.Id.t * string, Pool_common.Message.error) Lwt_result.t
 
 val find_sessions_to_remind
@@ -232,12 +238,12 @@ val find_sessions_to_remind
 
 val find_follow_ups
   :  Pool_database.Label.t
-  -> Pool_common.Id.t
+  -> Id.t
   -> (t list, Pool_common.Message.error) Lwt_result.t
 
 val find_open_with_follow_ups
   :  Pool_database.Label.t
-  -> Pool_common.Id.t
+  -> Id.t
   -> (t list, Pool_common.Message.error) Lwt_result.t
 
 val to_email_text : Pool_common.Language.t -> t -> string
@@ -248,6 +254,12 @@ val has_bookable_spots_for_experiments
   :  Pool_database.Label.t
   -> Experiment.Id.t
   -> (bool, Pool_common.Message.error) result Lwt.t
+
+module Repo : sig
+  module Id : sig
+    val t : Id.t Caqti_type.t
+  end
+end
 
 module Guard : sig
   module Target : sig

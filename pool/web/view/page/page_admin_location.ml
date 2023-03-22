@@ -440,7 +440,7 @@ module SessionList = struct
         ; Format.asprintf
             "/admin/experiments/%s/sessions/%s"
             (Experiment.Id.value experiment_id)
-            (Pool_common.Id.value session.id)
+            Session.(session.id |> Id.value)
           |> edit_link
         ])
       sessions

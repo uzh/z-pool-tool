@@ -2,7 +2,7 @@ open Entity
 
 type create =
   { contact : Contact.t
-  ; session_id : Pool_common.Id.t
+  ; session_id : Session.Id.t
   }
 [@@deriving eq, show]
 

@@ -300,7 +300,7 @@ module Model = struct
   let in_two_hours () = Ptime.Span.of_int_s @@ (60 * 60 * 2) |> session_start_in
 
   let create_session
-    ?(id = Pool_common.Id.create ())
+    ?(id = Session.Id.create ())
     ?(location = create_location ())
     ?follow_up_to
     ?start

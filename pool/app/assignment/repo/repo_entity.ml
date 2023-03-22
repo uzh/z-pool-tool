@@ -30,7 +30,7 @@ end
 
 type t =
   { id : Pool_common.Id.t
-  ; session_id : Pool_common.Id.t
+  ; session_id : Session.Id.t
   ; contact_id : Pool_common.Id.t
   ; show_up : ShowUp.t option
   ; participated : Participated.t option
@@ -55,7 +55,7 @@ let to_entity (m : t) (contact : Contact.t) : Entity.t =
     }
 ;;
 
-let of_entity (session_id : Pool_common.Id.t) (m : Entity.t) : t =
+let of_entity (session_id : Session.Id.t) (m : Entity.t) : t =
   { id = m.Entity.id
   ; session_id
   ; contact_id = Contact.id m.Entity.contact
@@ -113,7 +113,7 @@ let t =
       (tup2
          Pool_common.Repo.Id.t
          (tup2
-            Pool_common.Repo.Id.t
+            Session.Repo.Id.t
             (tup2
                Pool_common.Repo.Id.t
                (tup2

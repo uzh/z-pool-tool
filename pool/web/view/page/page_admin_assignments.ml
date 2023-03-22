@@ -12,7 +12,7 @@ let assignment_specific_path experiment_id session assignment =
   Format.asprintf
     "/admin/experiments/%s/sessions/%s/%s/%s/%s"
     (experiment_id |> Experiment.Id.value)
-    (session.Session.id |> Id.value)
+    Session.(session.id |> Id.value)
     Message.Field.(human_url Assignments)
     (assignment.Assignment.id |> Id.value)
 ;;

@@ -1,3 +1,9 @@
+module Id = struct
+  include Pool_common.Id
+
+  let to_common m = m
+end
+
 module Description = struct
   include Pool_common.Model.String
 
@@ -105,8 +111,8 @@ module CancellationReason = struct
 end
 
 type t =
-  { id : Pool_common.Id.t
-  ; follow_up_to : Pool_common.Id.t option
+  { id : Id.t
+  ; follow_up_to : Id.t option
   ; has_follow_ups : bool
   ; start : Start.t
   ; duration : Ptime.Span.t
@@ -151,7 +157,7 @@ let create
   overbook
   reminder_lead_time
   =
-  { id = id |> CCOption.value ~default:(Pool_common.Id.create ())
+  { id = id |> CCOption.value ~default:(Id.create ())
   ; follow_up_to
   ; has_follow_ups
   ; start
@@ -209,7 +215,7 @@ let compare_start s1 s2 = Start.compare s1.start s2.start
 
 let add_follow_ups_to_parents groups (parent, session) =
   CCList.Assoc.update
-    ~eq:Pool_common.Id.equal
+    ~eq:Id.equal
     ~f:(fun s ->
       match s with
       | None -> None
@@ -235,8 +241,8 @@ let group_and_sort sessions =
 
 module Public = struct
   type t =
-    { id : Pool_common.Id.t
-    ; follow_up_to : Pool_common.Id.t option
+    { id : Id.t
+    ; follow_up_to : Id.t option
     ; start : Start.t
     ; duration : Ptime.Span.t
     ; description : Description.t option
@@ -314,7 +320,7 @@ module Public = struct
           | Some id
             when CCOption.is_some
                    (CCList.find_opt
-                      (fun (parent, _) -> Pool_common.Id.equal parent id)
+                      (fun (parent, _) -> Id.equal parent id)
                       parents) -> parents, follow_ups @ [ id, s ]
           | Some _ -> add_parent s)
         ([], [])

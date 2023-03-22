@@ -123,7 +123,7 @@ module Create : sig
   val handle
     :  ?tags:Logs.Tag.set
     -> ?parent_session:Session.t
-    -> ?session_id:Pool_common.Id.t
+    -> ?session_id:Session.Id.t
     -> Experiment.Id.t
     -> Pool_location.t
     -> t

@@ -222,7 +222,7 @@ let create_min_gt_max () =
 let create_no_optional () =
   let open CCResult.Infix in
   let open Pool_common.Message.Field in
-  let session_id = Pool_common.Id.create () in
+  let session_id = Session.Id.create () in
   let input =
     let open Data in
     delete_from_input [ Description; LeadTime; SentAt; AssignmentCount ]
@@ -254,7 +254,7 @@ let create_no_optional () =
 let create_full () =
   let open CCResult.Infix in
   let experiment_id = Experiment.Id.create () in
-  let session_id = Pool_common.Id.create () in
+  let session_id = Session.Id.create () in
   let location = Location_test.create_location () in
   let res =
     SessionC.Create.(
@@ -280,7 +280,7 @@ let create_full () =
 
 let create_min_eq_max () =
   let open CCResult.Infix in
-  let session_id = Pool_common.Id.create () in
+  let session_id = Session.Id.create () in
   let input =
     let open Data in
     let open Pool_common.Message.Field in
@@ -494,7 +494,7 @@ let delete_session_with_assignments () =
 ;;
 
 let delete_session_with_follow_ups () =
-  let id = Pool_common.Id.create () in
+  let id = Session.Id.create () in
   let session = Test_utils.Model.create_session ~id () in
   let follow_up_session = Test_utils.Model.create_session ~follow_up_to:id () in
   let res =
@@ -796,7 +796,7 @@ let create_follow_up_earlier () =
 let create_follow_up_later () =
   let open CCResult.Infix in
   let parent_session = Test_utils.Model.create_session () in
-  let session_id = Pool_common.Id.create () in
+  let session_id = Session.Id.create () in
   let experiment_id = Experiment.Id.create () in
   let location = Location_test.create_location () in
   let later_start =
