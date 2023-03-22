@@ -127,36 +127,39 @@ let update_settings req =
 ;;
 
 module Access : Helpers.AccessSig = struct
-  let tenant_effects effects req context =
-    (* TODO [mabiede] allow validator function to handle results *)
+  open Guard
+  include Helpers.Access
+  module SettingsCommand = Cqrs_command.Settings_command
+  module Guardian = Middleware.Guardian
+
+  let tenant_effects effect_set req context =
     let effects =
-      match Pool_context.Tenant.find req with
-      | Ok { Pool_context.Tenant.tenant; _ } ->
-        effects |> CCList.map (fun effect -> effect tenant) |> CCList.flatten
-      | Error _ -> [ `Manage, `TargetEntity `Tenant ]
+      Pool_context.Tenant.find req
+      |> CCResult.map_or
+           ~default:
+             (ValidationSet.One (Action.Manage, TargetSpec.Entity `Tenant))
+           (fun { Pool_context.Tenant.tenant; _ } ->
+             effect_set tenant.Pool_tenant.id)
     in
     context, effects
   ;;
 
-  let index =
-    Middleware.Guardian.validate_admin_entity [ `Read, `TargetEntity `Tenant ]
+  let read_effects =
+    Guard.(ValidationSet.One (Action.Read, TargetSpec.Entity `Tenant))
   ;;
 
-  let create = Middleware.Guardian.denied
-
-  let read =
-    Middleware.Guardian.validate_admin_entity [ `Read, `TargetEntity `Tenant ]
-  ;;
+  let index = Guardian.validate_admin_entity read_effects
+  let read = Guardian.validate_admin_entity read_effects
 
   let update =
-    [ Cqrs_command.Settings_command.UpdateTermsAndConditions.effects ]
+    SettingsCommand.UpdateTermsAndConditions.effects
     |> tenant_effects
-    |> Middleware.Guardian.validate_generic
+    |> Guardian.validate_generic
   ;;
 
   let delete =
-    [ Cqrs_command.Settings_command.DeleteEmailSuffix.effects ]
+    SettingsCommand.DeleteEmailSuffix.effects
     |> tenant_effects
-    |> Middleware.Guardian.validate_generic
+    |> Guardian.validate_generic
   ;;
 end

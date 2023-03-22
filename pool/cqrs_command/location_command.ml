@@ -99,7 +99,10 @@ end = struct
          }
   ;;
 
-  let effects = [ `Create, `TargetEntity `Location ]
+  let effects =
+    let open BaseGuard in
+    ValidationSet.One (Action.Create, TargetSpec.Entity `Location)
+  ;;
 end
 
 module Update : sig
@@ -121,7 +124,7 @@ module Update : sig
     -> (Pool_event.t list, 'a) result
 
   val decode : Conformist.input -> (update, Message.error) result
-  val effects : Id.t -> BaseGuard.Authorizer.effect list
+  val effects : Id.t -> BaseGuard.ValidationSet.t
 end = struct
   type t =
     { name : Name.t
@@ -180,9 +183,9 @@ end = struct
   ;;
 
   let effects id =
-    [ `Update, `Target (id |> BaseGuard.Uuid.target_of Id.value)
-    ; `Update, `TargetEntity `Location
-    ]
+    let open BaseGuard in
+    let target_id = id |> Uuid.target_of Id.value in
+    ValidationSet.One (Action.Update, TargetSpec.Id (`Location, target_id))
   ;;
 end
 
@@ -196,7 +199,7 @@ module AddFile : sig
     -> (Pool_event.t list, 'a) result
 
   val decode : Conformist.input -> (t, Message.error) result
-  val effects : Pool_location.Id.t -> BaseGuard.Authorizer.effect list
+  val effects : Id.t -> BaseGuard.ValidationSet.t
 end = struct
   open Mapping
 
@@ -244,9 +247,13 @@ end = struct
   ;;
 
   let effects id =
-    [ `Update, `Target (id |> BaseGuard.Uuid.target_of Pool_location.Id.value)
-    ; `Update, `TargetEntity `Location
-    ]
+    let open BaseGuard in
+    let target_id = id |> Uuid.target_of Pool_location.Id.value in
+    ValidationSet.(
+      And
+        [ One (Action.Update, TargetSpec.Id (`Location, target_id))
+        ; One (Action.Create, TargetSpec.Entity `LocationFile)
+        ])
   ;;
 end
 
@@ -254,7 +261,7 @@ module DeleteFile : sig
   include Common.CommandSig with type t = Mapping.Id.t
 
   val decode : Conformist.input -> (t, Message.error) result
-  val effects : Pool_location.Id.t -> BaseGuard.Authorizer.effect list
+  val effects : Mapping.Id.t -> BaseGuard.ValidationSet.t
 end = struct
   open Mapping
 
@@ -274,8 +281,8 @@ end = struct
   ;;
 
   let effects id =
-    [ `Update, `Target (id |> BaseGuard.Uuid.target_of Pool_location.Id.value)
-    ; `Update, `TargetEntity `Location
-    ]
+    let open BaseGuard in
+    let file_id = id |> Uuid.target_of Mapping.Id.value in
+    ValidationSet.One (Action.Delete, TargetSpec.Id (`LocationFile, file_id))
   ;;
 end

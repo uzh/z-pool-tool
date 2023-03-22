@@ -194,51 +194,61 @@ let assign_contact req =
 ;;
 
 module Access : sig
-  include Helpers.AccessSig
+  include module type of Helpers.Access
 
   val assign : Rock.Middleware.t
 end = struct
+  open Guard
   module WaitingListCommand = Cqrs_command.Waiting_list_command
   module Field = Pool_common.Message.Field
+  module Guardian = Middleware.Guardian
 
   let waiting_list_effects =
-    Middleware.Guardian.id_effects Pool_common.Id.of_string Field.WaitingList
+    Guardian.id_effects Pool_common.Id.of_string Field.WaitingList
   ;;
 
-  let index =
-    Middleware.Guardian.validate_admin_entity
-      [ `Read, `TargetEntity `WaitingList ]
+  let experiment_effects =
+    Guardian.id_effects Experiment.Id.of_string Field.Experiment
   ;;
+
+  let read_effect id =
+    let target_id = id |> Uuid.target_of Experiment.Id.value in
+    ValidationSet.(
+      And
+        [ One (Action.Read, TargetSpec.Entity `WaitingList)
+        ; One (Action.Read, TargetSpec.Id (`Experiment, target_id))
+        ])
+  ;;
+
+  let index = read_effect |> experiment_effects |> Guardian.validate_generic
 
   let create =
-    WaitingListCommand.Create.effects
-    |> Middleware.Guardian.validate_admin_entity
+    WaitingListCommand.Create.effects |> Guardian.validate_admin_entity
   ;;
 
   let read =
-    [ (fun id ->
-        [ `Read, `Target (id |> Guard.Uuid.target_of Pool_common.Id.value)
-        ; `Read, `TargetEntity `WaitingList
-        ])
-    ]
+    (fun id ->
+      let target_id = id |> Uuid.target_of Pool_common.Id.value in
+      ValidationSet.One (Action.Read, TargetSpec.Id (`WaitingList, target_id)))
     |> waiting_list_effects
-    |> Middleware.Guardian.validate_generic
+    |> Guardian.validate_generic
   ;;
 
   let update =
-    [ WaitingListCommand.Update.effects ]
+    WaitingListCommand.Update.effects
     |> waiting_list_effects
-    |> Middleware.Guardian.validate_generic
+    |> Guardian.validate_generic
   ;;
 
   let delete =
-    [ WaitingListCommand.Destroy.effects ]
+    WaitingListCommand.Destroy.effects
     |> waiting_list_effects
-    |> Middleware.Guardian.validate_generic
+    |> Guardian.validate_generic
   ;;
 
   let assign =
     Cqrs_command.Assignment_command.CreateFromWaitingList.effects
-    |> Middleware.Guardian.validate_admin_entity
+    |> waiting_list_effects
+    |> Guardian.validate_generic
   ;;
 end

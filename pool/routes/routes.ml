@@ -4,7 +4,7 @@ module Field = Pool_common.Message.Field
 
 let validate_entity action entity =
   CustomMiddleware.Guardian.validate_admin_entity
-    [ action, `TargetEntity entity ]
+    Guard.(ValidationSet.One (action, TargetSpec.Entity entity))
 ;;
 
 let add_key ?(prefix = "") ?(suffix = "") field =
@@ -177,8 +177,6 @@ module Contact = struct
 end
 
 module Admin = struct
-  let require_read = validate_entity `Read
-
   let middlewares =
     [ CustomMiddleware.Tenant.valid_tenant ()
     ; CustomMiddleware.Context.context ()
@@ -329,13 +327,12 @@ module Admin = struct
         let specific =
           let message_templates =
             let open Message_template.Label in
-            let open Handler.Admin.Session in
             let label_specific =
               label_specific_template edit_template update_template
             in
             [ choose
                 ~scope:(add_template_label SessionReminder)
-                ~middlewares:[ Access.session_reminder ]
+                ~middlewares:[ Access.send_reminder ]
                 (label_specific new_session_reminder new_session_reminder_post)
             ]
           in

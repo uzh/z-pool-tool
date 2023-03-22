@@ -2,71 +2,6 @@ module Conformist = Pool_common.Utils.PoolConformist
 
 let src = Logs.Src.create "i18n.cqrs"
 
-module Create : sig
-  include Common.CommandSig
-
-  type t =
-    { key : I18n.Key.t
-    ; language : Pool_common.Language.t
-    ; content : I18n.Content.t
-    }
-
-  val handle
-    :  ?tags:Logs.Tag.set
-    -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
-
-  val decode
-    :  (string * string list) list
-    -> (t, Pool_common.Message.error) result
-
-  val effects : Pool_tenant.t -> Guard.Authorizer.effect list
-end = struct
-  type t =
-    { key : I18n.Key.t
-    ; language : Pool_common.Language.t
-    ; content : I18n.Content.t
-    }
-
-  let command key language content = { key; language; content }
-
-  let schema =
-    Pool_common.Utils.PoolConformist.(
-      make
-        Field.
-          [ I18n.Key.schema ()
-          ; Pool_common.Language.schema ()
-          ; I18n.Content.schema ()
-          ]
-        command)
-  ;;
-
-  let handle ?(tags = Logs.Tag.empty) (command : t) =
-    Logs.info ~src (fun m -> m "Handle command Create" ~tags);
-    let property : I18n.create =
-      I18n.
-        { key = command.key
-        ; language = command.language
-        ; content = command.content
-        }
-    in
-    Ok [ I18n.Created property |> Pool_event.i18n ]
-  ;;
-
-  let decode data =
-    Conformist.decode_and_validate schema data
-    |> CCResult.map_err Pool_common.Message.to_conformist_error
-  ;;
-
-  let effects tenant =
-    [ ( `Update
-      , `Target
-          (tenant.Pool_tenant.id |> Guard.Uuid.target_of Pool_tenant.Id.value) )
-    ; `Create, `TargetEntity `I18n
-    ]
-  ;;
-end
-
 module Update : sig
   include Common.CommandSig
 
@@ -82,10 +17,7 @@ module Update : sig
     :  (string * string list) list
     -> (t, Pool_common.Message.error) result
 
-  val effects
-    :  Pool_tenant.t
-    -> Pool_common.Id.t
-    -> Guard.Authorizer.effect list
+  val effects : Pool_tenant.Id.t -> Pool_common.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = { content : I18n.Content.t }
 
@@ -103,13 +35,14 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let effects tenant id =
-    [ ( `Update
-      , `Target
-          (tenant.Pool_tenant.id |> Guard.Uuid.target_of Pool_tenant.Id.value) )
-    ; `Update, `TargetEntity `Tenant
-    ; `Update, `Target (id |> Guard.Uuid.target_of Pool_common.Id.value)
-    ; `Update, `TargetEntity `I18n
-    ]
+  let effects tenant_id id =
+    let open Guard in
+    let tenant_id = tenant_id |> Uuid.target_of Pool_tenant.Id.value in
+    let i18n_id = id |> Uuid.target_of Pool_common.Id.value in
+    ValidationSet.(
+      And
+        [ One (Action.Update, TargetSpec.Id (`Tenant, tenant_id))
+        ; One (Action.Update, TargetSpec.Id (`I18n, i18n_id))
+        ])
   ;;
 end

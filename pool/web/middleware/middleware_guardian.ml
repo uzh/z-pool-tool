@@ -25,7 +25,7 @@ let require_user_type_of (user_type : Pool_context.UserType.t list) =
 
 let validate_access
   ({ Pool_context.user; database_label; _ } as context)
-  effects
+  (effects : Guard.ValidationSet.t)
   =
   let open Utils.Lwt_result.Infix in
   let open Pool_common.Message in
@@ -48,11 +48,10 @@ let validate_access
           ~tags:(Pool_context.Logger.Tags.context context)
           "Guard admin middleware:\n%s\n%s\nEFFECTS: %s"
           ([%show: Admin.t] admin)
-          ([%show: [> `Admin ] Guard.Authorizable.t] auth)
-          ([%show: Guard.Authorizer.effect list] effects))
+          ([%show: Guard.Actor.t] auth)
+          ([%show: Guard.ValidationSet.t] effects))
     in
-    Guard.Persistence.checker_of_effects ~ctx effects auth
-    |> Lwt_result.map_error authorization
+    Guard.Persistence.validate ~ctx authorization effects auth
 ;;
 
 let validate_admin_entity effects =
@@ -71,12 +70,9 @@ let validate_admin_entity effects =
   Rock.Middleware.create ~name:"guardian.role_entity" ~filter
 ;;
 
-let id_effects encode field effects req context =
+let id_effects encode field effect_set req context =
   let id = Http_utils.find_id encode field req in
-  let effects =
-    effects |> CCList.map (fun effect -> effect id) |> CCList.flatten
-  in
-  context, effects
+  context, effect_set id
 ;;
 
 let validate_generic generic_fcn =

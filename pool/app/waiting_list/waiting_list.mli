@@ -103,11 +103,9 @@ val sortable_by : Query.Column.t list
 module Guard : sig
   module Target : sig
     val to_authorizable
-      :  ?ctx:Guardian__Persistence.context
+      :  ?ctx:(string * string) list
       -> t
-      -> ( [> `WaitingList ] Guard.AuthorizableTarget.t
-         , Pool_common.Message.error )
-         Lwt_result.t
+      -> (Role.Target.t Guard.Target.t, Pool_common.Message.error) Lwt_result.t
 
     type t
 

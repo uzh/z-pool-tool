@@ -5,8 +5,7 @@ module Target = struct
     Guard.Persistence.Target.decorate
       ?ctx
       (fun Entity.{ id; _ } ->
-        Guard.AuthorizableTarget.make
-          (Guard.TargetRoleSet.singleton `Location)
+        Guard.Target.make
           `Location
           (id |> Entity.Id.value |> Guard.Uuid.Target.of_string_exn))
       t
@@ -15,14 +14,28 @@ module Target = struct
 end
 
 module FileTarget = struct
+  let (_ : (unit, string) result) =
+    let find_parent =
+      Guard.Utils.create_simple_dependency_with_pool
+        `LocationFile
+        `Location
+        Repo.RepoFileMapping.find_location_id
+        Pool_common.Id.of_string
+        Entity.Id.value
+    in
+    Guard.Persistence.Dependency.register
+      ~parent:`Location
+      `LocationFile
+      find_parent
+  ;;
+
   type t = Entity.Mapping.file [@@deriving eq, show]
 
   let to_authorizable ?ctx t =
     Guard.Persistence.Target.decorate
       ?ctx
       (fun Entity.Mapping.{ id; _ } ->
-        Guard.AuthorizableTarget.make
-          (Guard.TargetRoleSet.singleton `LocationFile)
+        Guard.Target.make
           `LocationFile
           (id |> Entity.Mapping.Id.value |> Guard.Uuid.Target.of_string_exn))
       t
@@ -33,8 +46,7 @@ module FileTarget = struct
     Guard.Persistence.Target.decorate
       ?ctx
       (fun Entity.Mapping.Write.{ id; _ } ->
-        Guard.AuthorizableTarget.make
-          (Guard.TargetRoleSet.singleton `LocationFile)
+        Guard.Target.make
           `LocationFile
           (id |> Entity.Mapping.Id.value |> Guard.Uuid.Target.of_string_exn))
       t

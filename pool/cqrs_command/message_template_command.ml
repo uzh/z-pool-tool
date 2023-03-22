@@ -23,7 +23,6 @@ module Create : sig
     -> (Pool_event.t list, Pool_common.Message.error) result
 
   val decode : Conformist.input -> (t, Pool_common.Message.error) result
-  val effects : Message_template.Id.t -> Guard.Authorizer.effect list
 end = struct
   type t =
     { language : Pool_common.Language.t
@@ -86,10 +85,9 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let effects id =
-    [ `Update, `Target (id |> Guard.Uuid.target_of Message_template.Id.value)
-    ; `Update, `TargetEntity `MessageTemplate
-    ]
+  let effects =
+    let open Guard in
+    ValidationSet.One (Action.Create, TargetSpec.Entity `MessageTemplate)
   ;;
 end
 
@@ -106,7 +104,7 @@ module Update : sig
     :  Conformist.input
     -> (Message_template.update, Pool_common.Message.error) result
 
-  val effects : Message_template.Id.t -> Guard.Authorizer.effect list
+  val effects : Message_template.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = Message_template.update
 
@@ -140,9 +138,10 @@ end = struct
   ;;
 
   let effects id =
-    [ `Update, `Target (id |> Guard.Uuid.target_of Message_template.Id.value)
-    ; `Update, `TargetEntity `MessageTemplate
-    ]
+    let open Guard in
+    let target_id = id |> Uuid.target_of Message_template.Id.value in
+    ValidationSet.One
+      (Action.Update, TargetSpec.Id (`MessageTemplate, target_id))
   ;;
 end
 
@@ -154,7 +153,7 @@ module RestoreDefault : sig
     -> unit
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val effects : Pool_tenant.t -> Guard.Authorizer.effect list
+  val effects : Pool_tenant.t -> Message_template.t -> Guard.ValidationSet.t
 end = struct
   type t = Pool_tenant.t
 
@@ -165,11 +164,19 @@ end = struct
       ]
   ;;
 
-  let effects tenant =
-    [ ( `Delete
-      , `Target
-          (tenant |> Pool_tenant.id |> Guard.Uuid.target_of Pool_tenant.Id.value)
-      )
-    ]
+  let effects tenant { Message_template.id; _ } =
+    let open Guard in
+    let target_id =
+      tenant.Pool_tenant.id |> Uuid.target_of Pool_tenant.Id.value
+    in
+    let message_template_id = id |> Uuid.target_of Message_template.Id.value in
+    ValidationSet.(
+      And
+        [ One (Action.Update, TargetSpec.Id (`Tenant, target_id))
+        ; One
+            ( Action.Delete
+            , TargetSpec.Id (`MessageTemplate, message_template_id) )
+        ; One (Action.Create, TargetSpec.Entity `MessageTemplate)
+        ])
   ;;
 end

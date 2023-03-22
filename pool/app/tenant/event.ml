@@ -10,17 +10,29 @@ type event =
   | StatusReportGenerated of unit
 [@@deriving variants]
 
-let handle_event _ : event -> unit Lwt.t = function
+let handle_event pool : event -> unit Lwt.t =
+  let open Utils.Lwt_result.Infix in
+  function
   | OperatorAssigned (tenant_id, user) ->
-    Guard.Persistence.save_rule_exn
-      ( `Actor (Guard.Uuid.Actor.of_string_exn (Admin.user user).Sihl_user.id)
-      , `Manage
-      , `Target (tenant_id |> Guard.Uuid.target_of Id.value) )
+    let open Guard in
+    let%lwt () =
+      Persistence.Rule.save
+        ~ctx:(Pool_tenant.to_ctx pool)
+        ( ActorSpec.Id
+            (`Admin, Uuid.Actor.of_string_exn (Admin.user user).Sihl_user.id)
+        , Action.Manage
+        , TargetSpec.Id (`Tenant, tenant_id |> Uuid.target_of Id.value) )
+      ||> CCResult.get_or_failwith
+    in
+    Lwt.return_unit
   | OperatorUnassigned (tenant_id, user) ->
-    Guard.Persistence.delete_rule_exn
-      ( `Actor (Guard.Uuid.Actor.of_string_exn (Admin.user user).Sihl_user.id)
-      , `Manage
-      , `Target (tenant_id |> Guard.Uuid.target_of Id.value) )
+    let open Guard in
+    Persistence.Rule.delete_exn
+      ~ctx:(Pool_tenant.to_ctx pool)
+      ( ActorSpec.Id
+          (`Admin, Uuid.Actor.of_string_exn (Admin.user user).Sihl_user.id)
+      , Action.Manage
+      , TargetSpec.Id (`Tenant, tenant_id |> Uuid.target_of Id.value) )
   | StatusReportGenerated _ -> Utils.todo ()
 ;;
 

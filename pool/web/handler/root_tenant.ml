@@ -119,7 +119,7 @@ let create_operator req =
       let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
       urlencoded
       |> decode
-      >>= handle ~roles:(Guard.ActorRoleSet.singleton `OperatorAll) ~tags
+      >>= handle ~roles:(Guard.RoleSet.singleton `OperatorAll) ~tags
       |> Lwt_result.lift
     in
     let handle =
@@ -154,49 +154,47 @@ let tenant_detail req =
 ;;
 
 module Access : sig
-  include Helpers.AccessSig
+  include module type of Helpers.Access
 
   val create_operator : Rock.Middleware.t
   val read_operator : Rock.Middleware.t
 end = struct
+  include Helpers.Access
+  open Guard
+  module Guardian = Middleware.Guardian
   module Field = Pool_common.Message.Field
   module TenantCommand = Cqrs_command.Pool_tenant_command
 
-  let tenant_effects =
-    Middleware.Guardian.id_effects Pool_location.Id.of_string Field.Tenant
-  ;;
+  let tenant_effects = Guardian.id_effects Pool_tenant.Id.of_string Field.Tenant
 
   let index =
-    Middleware.Guardian.validate_admin_entity [ `Read, `TargetEntity `Location ]
+    Guardian.validate_admin_entity
+      ValidationSet.(One (Action.Read, TargetSpec.Entity `Tenant))
   ;;
 
-  let create =
-    Middleware.Guardian.validate_admin_entity TenantCommand.Create.effects
-  ;;
+  let create = Guardian.validate_admin_entity TenantCommand.Create.effects
 
   let read =
-    [ (fun id ->
-        [ `Read, `Target (id |> Guard.Uuid.target_of Pool_location.Id.value)
-        ; `Read, `TargetEntity `Tenant
-        ])
-    ]
+    (fun id ->
+      let target_id = id |> Uuid.target_of Pool_tenant.Id.value in
+      ValidationSet.One (Action.Read, TargetSpec.Id (`Tenant, target_id)))
     |> tenant_effects
-    |> Middleware.Guardian.validate_generic
+    |> Guardian.validate_generic
   ;;
 
   let update =
-    Middleware.Guardian.validate_admin_entity [ `Update, `TargetEntity `Tenant ]
+    TenantCommand.EditDetails.effects
+    |> tenant_effects
+    |> Guardian.validate_generic
   ;;
 
   let read_operator =
-    Middleware.Guardian.validate_admin_entity
-      [ `Read, `TargetEntity (`Admin `Operator) ]
+    Guardian.validate_admin_entity
+      ValidationSet.(One (Action.Read, TargetSpec.Entity `Admin))
   ;;
 
   let create_operator =
     Middleware.Guardian.validate_admin_entity
-      [ `Create, `TargetEntity (`Admin `Operator) ]
+      ValidationSet.(SpecificRole `ManageOperators)
   ;;
-
-  let delete = Middleware.Guardian.denied
 end

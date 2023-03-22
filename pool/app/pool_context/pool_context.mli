@@ -47,12 +47,6 @@ val create
      * user
   -> t
 
-val find_authenticatable
-  :  t
-  -> ( [> `Admin | `Contact ] Guard.Persistence.authorizable
-     , Pool_common.Message.error )
-     Lwt_result.t
-
 module Tenant : sig
   type t =
     { tenant : Pool_tenant.t

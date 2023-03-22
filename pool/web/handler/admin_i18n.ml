@@ -70,62 +70,50 @@ let update req =
 ;;
 
 module Access : sig
-  include Helpers.AccessSig
+  include module type of Helpers.Access
 end = struct
+  include Helpers.Access
+  open Guard
   module Field = Pool_common.Message.Field
   module I18nCommand = Cqrs_command.I18n_command
+  module Guardian = Middleware.Guardian
 
-  let i18n_effects =
-    Middleware.Guardian.id_effects Pool_common.Id.of_string Field.I18n
-  ;;
+  let i18n_effects = Guardian.id_effects Pool_common.Id.of_string Field.I18n
 
-  let tenant_effects effects req context =
-    (* TODO [mabiede] allow validator function to handle results *)
+  let tenant_i18n_effects effect_set req context =
     let effects =
-      match Pool_context.Tenant.find req with
-      | Ok { Pool_context.Tenant.tenant; _ } ->
-        effects |> CCList.map (fun effect -> effect tenant) |> CCList.flatten
-      | Error _ -> [ `Manage, `TargetEntity `Tenant ]
-    in
-    context, effects
-  ;;
-
-  let tenant_i18n_effects effects req context =
-    let effects =
-      match Pool_context.Tenant.find req with
-      | Ok { Pool_context.Tenant.tenant; _ } ->
-        let id = Http_utils.find_id Pool_common.Id.of_string Field.I18n req in
-        effects |> CCList.map (fun effect -> effect tenant id) |> CCList.flatten
-      | Error _ -> [ `Manage, `TargetEntity `Tenant ]
+      Pool_context.Tenant.find req
+      |> CCResult.map_or
+           ~default:
+             (ValidationSet.One (Action.Manage, TargetSpec.Entity `Tenant))
+           (fun { Pool_context.Tenant.tenant; _ } ->
+             let id =
+               Http_utils.find_id Pool_common.Id.of_string Field.I18n req
+             in
+             effect_set tenant.Pool_tenant.id id)
     in
     context, effects
   ;;
 
   let index =
-    Middleware.Guardian.validate_admin_entity [ `Read, `TargetEntity `I18n ]
+    ValidationSet.One (Action.Read, TargetSpec.Entity `I18n)
+    |> Guardian.validate_admin_entity
   ;;
 
-  let create =
-    [ I18nCommand.Create.effects ]
-    |> tenant_effects
-    |> Middleware.Guardian.validate_generic
-  ;;
+  (* let create = I18nCommand.Create.effects |> tenant_effects |>
+     Guardian.validate_generic ;; *)
 
   let read =
-    [ (fun id ->
-        [ `Read, `Target (id |> Guard.Uuid.target_of Pool_common.Id.value)
-        ; `Read, `TargetEntity `I18n
-        ])
-    ]
+    (fun id ->
+      let target_id = id |> Uuid.target_of Pool_common.Id.value in
+      ValidationSet.One (Action.Read, TargetSpec.Id (`I18n, target_id)))
     |> i18n_effects
-    |> Middleware.Guardian.validate_generic
+    |> Guardian.validate_generic
   ;;
 
   let update =
-    [ I18nCommand.Update.effects ]
+    I18nCommand.Update.effects
     |> tenant_i18n_effects
-    |> Middleware.Guardian.validate_generic
+    |> Guardian.validate_generic
   ;;
-
-  let delete = Middleware.Guardian.denied
 end

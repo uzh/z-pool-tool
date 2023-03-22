@@ -426,7 +426,7 @@ let create_operator () =
     let open Admin_command.CreateAdmin in
     Data.urlencoded
     |> decode
-    >>= handle ~id ~roles:(Guard.ActorRoleSet.singleton `OperatorAll)
+    >>= handle ~id ~roles:(Guard.RoleSet.singleton `OperatorAll)
   in
   let expected =
     let open CCResult in
@@ -440,7 +440,7 @@ let create_operator () =
       ; password
       ; firstname
       ; lastname
-      ; roles = Some (Guard.ActorRoleSet.singleton `OperatorAll)
+      ; roles = Some (Guard.RoleSet.singleton `OperatorAll)
       }
     in
     Ok [ Admin.Created admin |> Pool_event.admin ]

@@ -1,9 +1,11 @@
 module Id = Pool_common.Id
 
 module AssignOperator : sig
+  include Common.CommandSig
+
   type t =
     { user_id : Id.t
-    ; tenant_id : Id.t
+    ; tenant_id : Pool_tenant.Id.t
     }
 
   val handle
@@ -11,29 +13,34 @@ module AssignOperator : sig
     -> Admin.t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val can : t -> Guard.Authorizer.effect list
+  val effects : t -> Guard.ValidationSet.t
 end = struct
   type t =
     { user_id : Id.t
-    ; tenant_id : Id.t
+    ; tenant_id : Pool_tenant.Id.t
     }
 
   let handle tenant_id user =
     Ok [ Tenant.OperatorAssigned (tenant_id, user) |> Pool_event.tenant ]
   ;;
 
-  let can t =
-    [ `Manage, `Target (t.user_id |> Guard.Uuid.target_of Id.value)
-    ; `Manage, `Target (t.tenant_id |> Guard.Uuid.target_of Id.value)
-    ]
+  let effects t =
+    let open Guard in
+    let tenant_id = t.tenant_id |> Uuid.target_of Pool_tenant.Id.value in
+    ValidationSet.(
+      And
+        [ One (Action.Manage, TargetSpec.Id (`Tenant, tenant_id))
+        ; SpecificRole `ManageOperators
+        ])
   ;;
 end
 
 module UnassignOperator : sig
-  (* TODO: Type safety *)
+  include Common.CommandSig
+
   type t =
-    { user_id : string
-    ; tenant_id : string
+    { user_id : Id.t
+    ; tenant_id : Pool_tenant.Id.t
     }
 
   val handle
@@ -41,59 +48,51 @@ module UnassignOperator : sig
     -> Admin.t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val can : t -> Guard.Authorizer.effect list
+  val effects : t -> Guard.ValidationSet.t
 end = struct
   type t =
-    { user_id : string
-    ; tenant_id : string
+    { user_id : Id.t
+    ; tenant_id : Pool_tenant.Id.t
     }
 
   let handle tenant_id user =
     Ok [ Tenant.OperatorUnassigned (tenant_id, user) |> Pool_event.tenant ]
   ;;
 
-  let can t =
-    [ `Manage, `Target (t.user_id |> Guard.Uuid.Target.of_string_exn)
-    ; `Manage, `Target (t.tenant_id |> Guard.Uuid.Target.of_string_exn)
-    ]
+  let effects t =
+    let open Guard in
+    let tenant_id = t.tenant_id |> Uuid.target_of Pool_tenant.Id.value in
+    ValidationSet.(
+      And
+        [ One (Action.Manage, TargetSpec.Id (`Tenant, tenant_id))
+        ; SpecificRole `ManageOperators
+        ])
   ;;
 end
 
 module GenerateStatusReport : sig
-  (* TODO: Type safety *)
-  type t = { tenant_id : string }
+  include Common.CommandSig
+
+  type t = { tenant_id : Pool_tenant.Id.t }
 
   val handle
     :  t
     -> Pool_tenant.t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val can : t -> Guard.Authorizer.effect list
+  val effects : t -> Guard.ValidationSet.t
 end = struct
-  type t = { tenant_id : string }
+  type t = { tenant_id : Pool_tenant.Id.t }
 
   let handle = Utils.todo
 
-  let can t =
-    [ `Manage, `TargetEntity `System
-    ; `Manage, `Target (t.tenant_id |> Guard.Uuid.Target.of_string_exn)
-    ]
+  let effects t =
+    let open Guard in
+    let tenant_id = t.tenant_id |> Uuid.target_of Pool_tenant.Id.value in
+    ValidationSet.(
+      And
+        [ One (Action.Manage, TargetSpec.Id (`Tenant, tenant_id))
+        ; One (Action.Manage, TargetSpec.Entity `System)
+        ])
   ;;
-end
-
-module AddRoot : sig
-  (* TODO: Type safety *)
-  type t = { user_id : string }
-
-  val handle
-    :  t
-    -> Sihl_user.t
-    -> (Pool_event.t list, Pool_common.Message.error) result
-
-  val can : Guard.Authorizer.effect list
-end = struct
-  type t = { user_id : string }
-
-  let handle = Utils.todo
-  let can = [ `Manage, `TargetEntity `System ]
 end

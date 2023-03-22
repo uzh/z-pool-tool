@@ -13,7 +13,7 @@ let role_to_string =
 
 let grant_role ctx admin role =
   let open Utils.Lwt_result.Infix in
-  let%lwt (_ : [> `Admin ] Guard.Authorizable.t) =
+  let%lwt (_ : [> `Admin ] Guard.Actor.t) =
     admin
     |> Admin.create
     |> Admin.Guard.Actor.to_authorizable ~ctx
@@ -23,7 +23,7 @@ let grant_role ctx admin role =
   Persistence.Actor.grant_roles
     ~ctx
     (Uuid.Actor.of_string_exn admin.Sihl_user.id)
-    ActorRoleSet.(CCList.fold_left (CCFun.flip add) empty [ role ])
+    RoleSet.(CCList.fold_left (CCFun.flip add) empty [ role ])
   >|- (fun (_ : string) ->
         "Invalid Role: check possible role patterns (admin.list_roles)")
   ||> CCResult.get_or_failwith

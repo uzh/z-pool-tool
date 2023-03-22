@@ -1,8 +1,7 @@
 open CCFun
 open Entity
 module Common = Pool_common
-module Id = Common.Id
-module RepoId = Common.Repo.Id
+module Id = Common.Repo.Id
 
 module Title = struct
   include Title
@@ -36,7 +35,7 @@ let t =
       ~encode
       ~decode
       (tup2
-         RepoId.t
+         Id.t
          (tup2
             Filter.t
             (tup2
@@ -49,6 +48,6 @@ module Write = struct
     let encode (m : t) = Ok (m.id, (m.query, m.title)) in
     let decode _ = failwith "Write only model" in
     Caqti_type.(
-      custom ~encode ~decode (tup2 RepoId.t (tup2 Filter.t (option Title.t))))
+      custom ~encode ~decode (tup2 Id.t (tup2 Filter.t (option Title.t))))
   ;;
 end

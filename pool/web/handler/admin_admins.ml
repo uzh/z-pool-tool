@@ -80,14 +80,17 @@ let create_admin req =
     let return_to_overview () =
       Http_utils.redirect_to_with_actions
         (Format.asprintf "%s/%s" redirect_path (Pool_common.Id.value admin_id))
-        [ Message.set ~success:[ Created Field.Operator ] ]
+        [ Message.set ~success:[ Created Field.Admin ] ]
     in
     () |> validate_user >> events >>= handle |>> return_to_overview
   in
   result |> HttpUtils.extract_happy_path req
 ;;
 
-module Access : Helpers.AccessSig = struct
+module Access : module type of Helpers.Access = struct
+  include Helpers.Access
+  open Guard
+
   let admin_effects =
     Middleware.Guardian.id_effects Admin.Id.of_string Field.Admin
   ;;
@@ -98,24 +101,23 @@ module Access : Helpers.AccessSig = struct
   ;;
 
   let read =
-    [ (fun id ->
-        [ `Read, `Target (id |> Guard.Uuid.target_of Admin.Id.value)
-        ; `Read, `TargetEntity (`Admin `Operator)
-        ])
-    ]
+    (fun id ->
+      let target_id = id |> Uuid.target_of Admin.Id.value in
+      ValidationSet.One (Action.Read, TargetSpec.Id (`Admin, target_id)))
     |> admin_effects
     |> Middleware.Guardian.validate_generic
   ;;
 
   let update =
-    [ `Update, `TargetEntity (`Admin `Operator) ]
-    |> Middleware.Guardian.validate_admin_entity
+    (fun id ->
+      let target_id = id |> Uuid.target_of Admin.Id.value in
+      ValidationSet.One (Action.Update, TargetSpec.Id (`Admin, target_id)))
+    |> admin_effects
+    |> Middleware.Guardian.validate_generic
   ;;
 
-  let delete = Middleware.Guardian.denied
-
   let index =
-    [ `Read, `TargetEntity `Filter ]
+    ValidationSet.One (Action.Read, TargetSpec.Entity `Admin)
     |> Middleware.Guardian.validate_admin_entity
   ;;
 end

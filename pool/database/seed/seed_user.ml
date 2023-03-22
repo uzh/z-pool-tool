@@ -148,14 +148,14 @@ let admins db_label =
     |> CCOption.value ~default:"admin"
   in
   Lwt_list.iter_s
-    (fun (given_name, name, email, (role : Guard.ActorRoleSet.elt list)) ->
+    (fun (given_name, name, email, (role : Guard.RoleSet.elt list)) ->
       let%lwt user = Service.User.find_by_email_opt ~ctx email in
       match user with
       | None ->
         let%lwt admin =
           Service.User.create_admin ~ctx ~name ~given_name ~password email
         in
-        let%lwt (_ : [> `Admin ] Guard.Authorizable.t) =
+        let%lwt (_ : [> `Admin ] Guard.Actor.t) =
           admin
           |> Admin.create
           |> Admin.Guard.Actor.to_authorizable ~ctx
@@ -165,7 +165,7 @@ let admins db_label =
           Guard.Persistence.Actor.grant_roles
             ~ctx
             (Guard.Uuid.Actor.of_string_exn admin.Sihl_user.id)
-            Guard.ActorRoleSet.(CCList.fold_left (CCFun.flip add) empty role)
+            Guard.RoleSet.(CCList.fold_left (CCFun.flip add) empty role)
           |> Lwt.map CCResult.get_or_failwith
         in
         Lwt.return_unit

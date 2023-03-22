@@ -187,52 +187,36 @@ let sort_fields req =
 ;;
 
 module Access : sig
-  include Helpers.AccessSig
+  include module type of Helpers.Access
 
   val sort : Rock.Middleware.t
 end = struct
-  module CustomFieldCommand = Cqrs_command.Custom_field_group_command
+  include Helpers.Access
+  module Command = Cqrs_command.Custom_field_group_command
   module Field = Pool_common.Message.Field
+  module Guardian = Middleware.Guardian
 
-  let custom_field_effects =
-    Middleware.Guardian.id_effects
-      Custom_field.Group.Id.of_string
-      Field.CustomFieldGroup
+  let custom_field_group_effects =
+    Guardian.id_effects Custom_field.Group.Id.of_string Field.CustomFieldGroup
   ;;
 
-  let index =
-    Middleware.Guardian.validate_admin_entity
-      [ `Read, `TargetEntity `CustomField ]
-  ;;
-
-  let create =
-    CustomFieldCommand.Create.effects
-    |> Middleware.Guardian.validate_admin_entity
-  ;;
-
-  let read =
-    [ (fun id ->
-        [ `Read, `Target (id |> Guard.Uuid.target_of Custom_field.Group.Id.value)
-        ; `Read, `TargetEntity `CustomField
-        ])
-    ]
-    |> custom_field_effects
-    |> Middleware.Guardian.validate_generic
-  ;;
+  let create = Command.Create.effects |> Guardian.validate_admin_entity
 
   let update =
-    [ CustomFieldCommand.Update.effects ]
-    |> custom_field_effects
-    |> Middleware.Guardian.validate_generic
+    Command.Update.effects
+    |> custom_field_group_effects
+    |> Guardian.validate_generic
   ;;
 
   let sort =
-    CustomFieldCommand.Sort.effects |> Middleware.Guardian.validate_admin_entity
+    Command.Sort.effects
+    |> custom_field_group_effects
+    |> Guardian.validate_generic
   ;;
 
   let delete =
-    [ CustomFieldCommand.Destroy.effects ]
-    |> custom_field_effects
-    |> Middleware.Guardian.validate_generic
+    Command.Destroy.effects
+    |> custom_field_group_effects
+    |> Guardian.validate_generic
   ;;
 end

@@ -33,6 +33,6 @@ let handle_event pool : event -> unit Lwt.t = function
       ~ctx:(Pool_tenant.to_ctx pool)
       assignment
     ||> Pool_common.Utils.get_or_failwith
-    ||> fun (_ : [> `Assignment ] Guard.AuthorizableTarget.t) -> ()
+    ||> fun (_ : [> `Assignment ] Guard.Target.t) -> ()
   | MarkedAsDeleted assignment -> assignment.id |> Repo.marked_as_deleted pool
 ;;

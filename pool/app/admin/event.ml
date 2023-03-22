@@ -9,7 +9,7 @@ type create =
   ; password : User.Password.t [@opaque]
   ; firstname : User.Firstname.t
   ; lastname : User.Lastname.t
-  ; roles : Guard.ActorRoleSet.t option
+  ; roles : Guard.RoleSet.t option
   }
 [@@deriving eq, show]
 
@@ -55,7 +55,7 @@ let handle_event ~tags pool : event -> unit Lwt.t =
         ~password:(password |> User.Password.to_sihl)
         (User.EmailAddress.value email)
     in
-    let%lwt (authorizable : [> `Admin ] Guard.Authorizable.t) =
+    let%lwt (authorizable : Role.Actor.t Guard.Actor.t) =
       Entity_guard.Actor.to_authorizable ~ctx user
       >|- Pool_common.Utils.with_log_error ~tags
       ||> Pool_common.Utils.get_or_failwith
@@ -65,7 +65,7 @@ let handle_event ~tags pool : event -> unit Lwt.t =
       | Some roles ->
         Guard.Persistence.Actor.grant_roles
           ~ctx
-          authorizable.Guard.Authorizable.uuid
+          (authorizable |> Guard.Actor.id)
           roles
         ||> CCResult.get_or_failwith
       | None -> Lwt.return_unit

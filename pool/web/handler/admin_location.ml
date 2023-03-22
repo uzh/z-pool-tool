@@ -262,69 +262,64 @@ let delete req =
 ;;
 
 module Access : sig
-  include Helpers.AccessSig
+  include module type of Helpers.Access
 
   val create_file : Rock.Middleware.t
   val read_file : Rock.Middleware.t
   val delete_file : Rock.Middleware.t
 end = struct
+  include Helpers.Access
+  open Guard
   module Field = Pool_common.Message.Field
   module LocationCommand = Cqrs_command.Location_command
+  module Guardian = Middleware.Guardian
 
   let file_effects =
-    Middleware.Guardian.id_effects Pool_location.Mapping.Id.of_string Field.File
+    Guardian.id_effects Pool_location.Mapping.Id.of_string Field.File
   ;;
 
   let location_effects =
-    Middleware.Guardian.id_effects Pool_location.Id.of_string Field.Location
+    Guardian.id_effects Pool_location.Id.of_string Field.Location
   ;;
 
   let index =
-    Middleware.Guardian.validate_admin_entity [ `Read, `TargetEntity `Location ]
+    Guardian.validate_admin_entity
+      ValidationSet.(One (Action.Read, TargetSpec.Entity `Location))
   ;;
 
-  let create =
-    LocationCommand.Create.effects |> Middleware.Guardian.validate_admin_entity
-  ;;
+  let create = LocationCommand.Create.effects |> Guardian.validate_admin_entity
 
   let create_file =
-    [ LocationCommand.AddFile.effects ]
+    LocationCommand.AddFile.effects
     |> location_effects
-    |> Middleware.Guardian.validate_generic
+    |> Guardian.validate_generic
   ;;
 
   let read =
-    [ (fun id ->
-        [ `Read, `Target (id |> Guard.Uuid.target_of Pool_location.Id.value)
-        ; `Read, `TargetEntity `Location
-        ])
-    ]
+    (fun id ->
+      let target_id = id |> Uuid.target_of Pool_location.Id.value in
+      ValidationSet.One (Action.Read, TargetSpec.Id (`Location, target_id)))
     |> location_effects
-    |> Middleware.Guardian.validate_generic
+    |> Guardian.validate_generic
   ;;
 
   let read_file =
-    [ (fun id ->
-        let open Pool_location.Mapping.Id in
-        [ `Read, `Target (id |> Guard.Uuid.target_of value)
-        ; `Read, `TargetEntity `LocationFile
-        ])
-    ]
+    (fun id ->
+      let target_id = id |> Uuid.target_of Pool_location.Mapping.Id.value in
+      ValidationSet.One (Action.Read, TargetSpec.Id (`LocationFile, target_id)))
     |> file_effects
-    |> Middleware.Guardian.validate_generic
+    |> Guardian.validate_generic
   ;;
 
   let update =
-    [ LocationCommand.Update.effects ]
+    LocationCommand.Update.effects
     |> location_effects
-    |> Middleware.Guardian.validate_generic
+    |> Guardian.validate_generic
   ;;
 
-  let delete = Middleware.Guardian.denied
-
   let delete_file =
-    [ LocationCommand.DeleteFile.effects ]
-    |> location_effects
-    |> Middleware.Guardian.validate_generic
+    LocationCommand.DeleteFile.effects
+    |> file_effects
+    |> Guardian.validate_generic
   ;;
 end

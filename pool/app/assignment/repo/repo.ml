@@ -202,6 +202,32 @@ module Sql = struct
       (Entity.Id.value id)
   ;;
 
+  let find_session_id_request =
+    let open Caqti_request.Infix in
+    {sql|
+      SELECT
+        LOWER(CONCAT(
+          SUBSTR(HEX(session_uuid), 1, 8), '-',
+          SUBSTR(HEX(session_uuid), 9, 4), '-',
+          SUBSTR(HEX(session_uuid), 13, 4), '-',
+          SUBSTR(HEX(session_uuid), 17, 4), '-',
+          SUBSTR(HEX(session_uuid), 21)
+        ))
+      FROM pool_assignments
+      WHERE uuid = UNHEX(REPLACE(?, '-', ''))
+    |sql}
+    |> Pool_common.Repo.Id.(t ->! t)
+  ;;
+
+  let find_session_id pool id =
+    let open Utils.Lwt_result.Infix in
+    Utils.Database.find_opt
+      (Pool_database.Label.value pool)
+      find_session_id_request
+      id
+    ||> CCOption.to_result Pool_common.Message.(NotFound Field.Experiment)
+  ;;
+
   let insert_request =
     let open Caqti_request.Infix in
     {sql|
@@ -335,6 +361,8 @@ let find_with_follow_ups pool id =
   >|> Lwt_list.map_s (contact_to_assignment pool)
   ||> CCList.all_ok
 ;;
+
+let find_session_id = Sql.find_session_id
 
 let insert pool session_id model =
   model |> of_entity session_id |> Sql.insert pool

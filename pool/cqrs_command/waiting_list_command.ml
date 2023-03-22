@@ -2,6 +2,12 @@ module Conformist = Pool_common.Utils.PoolConformist
 
 let src = Logs.Src.create "waiting_list.cqrs"
 
+let waiting_list_effect action id =
+  let open Guard in
+  let target_id = id |> Uuid.target_of Pool_common.Id.value in
+  ValidationSet.One (action, TargetSpec.Id (`WaitingList, target_id))
+;;
+
 module Create : sig
   include Common.CommandSig with type t = Waiting_list.create
 
@@ -21,7 +27,10 @@ end = struct
     else Error Pool_common.Message.NotEligible
   ;;
 
-  let effects = [ `Create, `TargetEntity `WaitingList ]
+  let effects =
+    let open Guard in
+    ValidationSet.One (Action.Create, TargetSpec.Entity `WaitingList)
+  ;;
 end
 
 module Update : sig
@@ -37,7 +46,7 @@ module Update : sig
     :  (string * string list) list
     -> (t, Pool_common.Message.error) result
 
-  val effects : Pool_common.Id.t -> Guard.Authorizer.effect list
+  val effects : Pool_common.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = Waiting_list.update
 
@@ -62,11 +71,7 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let effects id =
-    [ `Update, `Target (id |> Guard.Uuid.target_of Pool_common.Id.value)
-    ; `Update, `TargetEntity `WaitingList
-    ]
-  ;;
+  let effects = waiting_list_effect Guard.Action.Update
 end
 
 module Destroy : sig
@@ -77,7 +82,7 @@ module Destroy : sig
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val effects : Pool_common.Id.t -> Guard.Authorizer.effect list
+  val effects : Pool_common.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = Waiting_list.t
 
@@ -86,9 +91,5 @@ end = struct
     Ok [ Waiting_list.Deleted m |> Pool_event.waiting_list ]
   ;;
 
-  let effects id =
-    [ `Delete, `TargetEntity `WaitingList
-    ; `Delete, `Target (id |> Guard.Uuid.target_of Pool_common.Id.value)
-    ]
-  ;;
+  let effects = waiting_list_effect Guard.Action.Delete
 end
