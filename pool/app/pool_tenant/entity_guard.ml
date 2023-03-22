@@ -6,9 +6,9 @@ module Actor = struct
     Persistence.Actor.decorate
       ?ctx
       (fun (t : t) ->
-        Authorizable.make
-          (ActorRoleSet.singleton `System)
-          `Tenant
+        Actor.make
+          (RoleSet.singleton `System)
+          `System
           (Uuid.Actor.of_string_exn (Pool_common.Id.value t.Entity.id)))
       t
     |> Lwt_result.map_error Pool_common.Message.authorization
@@ -22,8 +22,7 @@ module Target = struct
     Guard.Persistence.Target.decorate
       ?ctx
       (fun (t : t) ->
-        Guard.AuthorizableTarget.make
-          (Guard.TargetRoleSet.singleton `Tenant)
+        Guard.Target.make
           `Tenant
           (Guard.Uuid.Target.of_string_exn (Pool_common.Id.value t.Entity.id)))
       t
@@ -38,8 +37,7 @@ module SmtpTarget = struct
     Guard.Persistence.Target.decorate
       ?ctx
       (fun (t : t) ->
-        Guard.AuthorizableTarget.make
-          (Guard.TargetRoleSet.singleton `Smtp)
+        Guard.Target.make
           `Smtp
           (Guard.Uuid.Target.of_string_exn
              (Pool_common.Id.value t.Entity.SmtpAuth.id)))

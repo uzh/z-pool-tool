@@ -1,3 +1,5 @@
+let failwith = Pool_common.Utils.get_or_failwith
+
 let create_tenant_pool =
   let help =
     {|<title> <description> <url> <database_url> <database_label>
@@ -41,12 +43,16 @@ Provide all fields to create a new tenant:
       ] ->
       let%lwt () =
         let open CCResult.Infix in
+        let%lwt database =
+          let open Pool_database in
+          let label = Label.create database_label |> failwith in
+          let url = Url.create database_url |> failwith in
+          test_and_create url label |> Lwt.map failwith
+        in
         Cqrs_command.Pool_tenant_command.Create.decode
           [ "title", [ title ]
           ; "description", [ description ]
           ; "url", [ url ]
-          ; "database_url", [ database_url ]
-          ; "database_label", [ database_label ]
           ; "styles", [ styles ]
           ; "icon", [ icon ]
           ; "logos", [ logos ]
@@ -56,7 +62,7 @@ Provide all fields to create a new tenant:
           ; "firstname", [ firstname ]
           ; "lastname", [ lastname ]
           ]
-        >>= Cqrs_command.Pool_tenant_command.Create.handle
+        >>= Cqrs_command.Pool_tenant_command.Create.handle database
         |> Pool_common.Utils.get_or_failwith
         |> Lwt_list.iter_s (Pool_event.handle_event Pool_database.root)
       in
@@ -86,12 +92,12 @@ Example: %s econ-uzh mariadb://user:pw@localhost:3306/dev_econ
       let open Pool_tenant in
       let%lwt pool = Command_utils.is_available_exn pool in
       let result =
-        let open Cqrs_command.Pool_tenant_command.EditDatabase in
+        let open Cqrs_command.Pool_tenant_command.CreateDatabase in
         let* tenant = find_by_label pool >>= fun { id; _ } -> find_full id in
-        let* url = Database.Url.create database_url |> Lwt_result.lift in
-        let updated_database =
-          Database.
-            { database_url = url; database_label = tenant.Write.database.label }
+        let%lwt updated_database =
+          let open Pool_database in
+          let url = Url.create database_url |> failwith in
+          test_and_create url tenant.Write.database.label |> Lwt.map failwith
         in
         handle tenant updated_database |> Lwt.return
       in

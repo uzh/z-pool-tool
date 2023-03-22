@@ -16,12 +16,13 @@ let show req =
 ;;
 
 module Access : Helpers.AccessSig = struct
+  include Helpers.Access
   module Guardian = Middleware.Guardian
 
-  let read_effects = [ `Read, `TargetEntity `Schedule ]
+  let read_effects =
+    Guard.(ValidationSet.One (Action.Read, TargetSpec.Entity `Schedule))
+  ;;
+
   let index = Guardian.validate_admin_entity read_effects
-  let create = Guardian.denied
   let read = Guardian.validate_admin_entity read_effects
-  let update = Guardian.denied
-  let delete = Guardian.denied
 end

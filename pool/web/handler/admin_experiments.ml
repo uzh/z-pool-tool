@@ -315,79 +315,75 @@ module Filter = struct
 end
 
 module Access : sig
-  include Helpers.AccessSig
-
-  module Filter : sig
-    include Helpers.AccessSig
-  end
+  include module type of Helpers.Access
+  module Filter : module type of Helpers.Access
 end = struct
+  open Guard
   module Field = Pool_common.Message.Field
   module ExperimentCommand = Cqrs_command.Experiment_command
+  module Guardian = Middleware.Guardian
 
   let experiment_effects =
-    Middleware.Guardian.id_effects Experiment.Id.of_string Field.Experiment
+    Guardian.id_effects Experiment.Id.of_string Field.Experiment
   ;;
 
   let index =
-    Middleware.Guardian.validate_admin_entity
-      [ `Read, `TargetEntity `Experiment ]
+    ValidationSet.One (Action.Read, TargetSpec.Entity `Experiment)
+    |> Guardian.validate_admin_entity
   ;;
 
   let create =
-    ExperimentCommand.Create.effects
-    |> Middleware.Guardian.validate_admin_entity
+    ExperimentCommand.Create.effects |> Guardian.validate_admin_entity
   ;;
 
   let read =
-    [ (fun id ->
-        [ `Read, `Target (id |> Guard.Uuid.target_of Experiment.Id.value)
-        ; `Read, `TargetEntity `Experiment
-        ])
-    ]
+    (fun id ->
+      let target_id = id |> Uuid.target_of Experiment.Id.value in
+      ValidationSet.One (Action.Read, TargetSpec.Id (`Experiment, target_id)))
     |> experiment_effects
-    |> Middleware.Guardian.validate_generic
+    |> Guardian.validate_generic
   ;;
 
   let update =
-    [ ExperimentCommand.Update.effects ]
+    ExperimentCommand.Update.effects
     |> experiment_effects
-    |> Middleware.Guardian.validate_generic
+    |> Guardian.validate_generic
   ;;
 
   let delete =
-    [ ExperimentCommand.Delete.effects ]
+    ExperimentCommand.Delete.effects
     |> experiment_effects
-    |> Middleware.Guardian.validate_generic
+    |> Guardian.validate_generic
   ;;
 
   module Filter = struct
-    let index = Middleware.Guardian.denied
-    let read = Middleware.Guardian.denied
+    include Helpers.Access
 
-    let filter_effects =
-      Middleware.Guardian.id_effects FilterEntity.Id.of_string Field.Filter
+    let combined_effects effects req ctx =
+      let open HttpUtils in
+      let filter_id = find_id FilterEntity.Id.of_string Field.Filter req in
+      let experiment_id =
+        find_id Experiment.Id.of_string Field.Experiment req
+      in
+      ctx, effects experiment_id filter_id
     ;;
 
     let create =
-      [ ExperimentCommand.CreateFilter.effects ]
+      ExperimentCommand.CreateFilter.effects
       |> experiment_effects
-      |> Middleware.Guardian.validate_generic
+      |> Guardian.validate_generic
     ;;
 
     let update =
-      [ ExperimentCommand.UpdateFilter.effects ]
-      |> filter_effects
-      |> Middleware.Guardian.validate_generic
+      ExperimentCommand.UpdateFilter.effects
+      |> combined_effects
+      |> Guardian.validate_generic
     ;;
 
     let delete =
-      [ (fun id ->
-          [ `Delete, `Target (id |> Guard.Uuid.target_of FilterEntity.Id.value)
-          ; `Delete, `TargetEntity `Filter
-          ])
-      ]
-      |> filter_effects
-      |> Middleware.Guardian.validate_generic
+      ExperimentCommand.DeleteFilter.effects
+      |> combined_effects
+      |> Guardian.validate_generic
     ;;
   end
 end

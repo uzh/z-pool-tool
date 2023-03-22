@@ -10,10 +10,7 @@ module Run : sig
     }
 
   val handle : t list -> (Pool_event.t list, Pool_common.Message.error) result
-
-  val effects
-    :  Pool_database.Label.t
-    -> (Guard.Authorizer.effect list, Pool_common.Message.error) Lwt_result.t
+  val effects : Pool_tenant.t -> Guard.ValidationSet.t
 end = struct
   type t =
     { mailing : Mailing.t
@@ -35,14 +32,14 @@ end = struct
        %> CCResult.map flatten
   ;;
 
-  let effects db_label =
-    let open Utils.Lwt_result.Infix in
-    let* tenant = Pool_tenant.find_by_label db_label in
-    Lwt.return_ok
-      [ ( `Update
-        , `Target
-            (tenant.Pool_tenant.id |> Guard.Uuid.target_of Pool_tenant.Id.value)
-        )
-      ]
+  let effects { Pool_tenant.id; _ } =
+    let open Guard in
+    let target_id = id |> Uuid.target_of Pool_tenant.Id.value in
+    ValidationSet.(
+      And
+        [ One (Action.Update, TargetSpec.Id (`Tenant, target_id))
+        ; One (Action.Read, TargetSpec.Entity `Mailing)
+        ; One (Action.Create, TargetSpec.Entity `Invitation)
+        ])
   ;;
 end

@@ -6,10 +6,12 @@ let get_or_failwith = Pool_common.Utils.get_or_failwith
 
 type update =
   { title : Title.t
-  ; description : Description.t
+  ; description : Description.t option
   ; url : Url.t
   ; disabled : Disabled.t
   ; default_language : Pool_common.Language.t
+  ; styles : Styles.Write.t option
+  ; icon : Icon.Write.t option
   }
 [@@deriving eq, show]
 
@@ -32,12 +34,15 @@ type event =
 let handle_event pool : event -> unit Lwt.t = function
   | Created ({ Write.id; _ } as tenant) ->
     let open Utils.Lwt_result.Infix in
+    let open Guard in
     let ctx = to_ctx pool in
     let%lwt () = Repo.insert Database.root tenant in
     let%lwt () =
-      let target_id = Guard.Uuid.target_of Entity.Id.value id in
-      (`ActorEntity (`Operator target_id), `Manage, `Target target_id)
-      |> Guard.Persistence.Actor.save_rule ~ctx
+      let target_id = Uuid.target_of Entity.Id.value id in
+      ( ActorSpec.Entity (`Operator target_id)
+      , Action.Manage
+      , TargetSpec.Id (`Tenant, target_id) )
+      |> Persistence.Rule.save ~ctx
       >|- (fun err -> Pool_common.Message.nothandled err)
       ||> get_or_failwith
     in
@@ -45,7 +50,7 @@ let handle_event pool : event -> unit Lwt.t = function
       Repo.find pool id
       >>= Entity_guard.Target.to_authorizable ~ctx
       ||> get_or_failwith
-      ||> fun (_ : [> `Tenant ] Guard.AuthorizableTarget.t) -> ()
+      ||> fun (_ : Role.Target.t Target.t) -> ()
     in
     Lwt.return_unit
   | LogosUploaded logo_mappings ->
@@ -56,11 +61,14 @@ let handle_event pool : event -> unit Lwt.t = function
     Lwt.return_unit
   | DetailsEdited (tenant, update_t) ->
     let open Entity.Write in
+    let open CCOption.Infix in
     let%lwt () =
       { tenant with
         title = update_t.title
       ; description = update_t.description
       ; url = update_t.url
+      ; styles = update_t.styles <+> tenant.styles
+      ; icon = update_t.icon <+> tenant.icon
       ; disabled = update_t.disabled
       ; default_language = update_t.default_language
       ; updated_at = Ptime_clock.now ()
@@ -83,7 +91,7 @@ let handle_event pool : event -> unit Lwt.t = function
       Repo.Smtp.find pool id
       >>= Entity_guard.SmtpTarget.to_authorizable ~ctx
       ||> get_or_failwith
-      ||> fun (_ : [> `Smtp ] Guard.AuthorizableTarget.t) -> ()
+      ||> fun (_ : Role.Target.t Guard.Target.t) -> ()
     in
     let () = Pool_tenant_service.Email.remove_from_cache pool in
     Lwt.return_unit

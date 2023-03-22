@@ -279,6 +279,20 @@ let remove_empty_values urlencoded =
     urlencoded
 ;;
 
+let remove_empty_values_multiplart urlencoded =
+  CCList.filter (fun (_, vs) -> vs |> CCString.equal "" |> not) urlencoded
+;;
+
+let multipart_to_urlencoded ingnore_fields lst =
+  let ingnore_fields =
+    CCList.map Pool_common.Message.Field.show ingnore_fields
+  in
+  CCList.filter_map
+    (fun (key, value) ->
+      if CCList.mem key ingnore_fields then None else Some (key, [ value ]))
+    lst
+;;
+
 let placeholder_from_name = CCString.replace ~which:`All ~sub:"_" ~by:" "
 
 let is_req_from_root_host req =

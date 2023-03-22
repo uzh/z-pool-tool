@@ -616,82 +616,70 @@ let update_template req =
 ;;
 
 module Access : sig
-  include Helpers.AccessSig
+  include module type of Helpers.Access
 
   val reschedule : Rock.Middleware.t
   val cancel : Rock.Middleware.t
-  val session_reminder : Rock.Middleware.t
   val send_reminder : Rock.Middleware.t
   val close : Rock.Middleware.t
 end = struct
+  open Guard
   module Field = Pool_common.Message.Field
   module SessionCommand = Cqrs_command.Session_command
+  module Guardian = Middleware.Guardian
 
   let session_effects =
-    Middleware.Guardian.id_effects Pool_common.Id.of_string Field.Session
+    Guardian.id_effects Pool_common.Id.of_string Field.Session
   ;;
 
   let index =
-    Middleware.Guardian.validate_admin_entity [ `Read, `TargetEntity `Session ]
+    ValidationSet.One (Action.Read, TargetSpec.Entity `Session)
+    |> Guardian.validate_admin_entity
   ;;
 
-  let create =
-    SessionCommand.Create.effects |> Middleware.Guardian.validate_admin_entity
-  ;;
+  let create = SessionCommand.Create.effects |> Guardian.validate_admin_entity
 
   let read =
-    [ (fun id ->
-        [ `Read, `Target (id |> Guard.Uuid.target_of Pool_common.Id.value)
-        ; `Read, `TargetEntity `Session
-        ])
-    ]
+    (fun id ->
+      let target_id = id |> Uuid.target_of Pool_common.Id.value in
+      ValidationSet.One (Action.Read, TargetSpec.Id (`Session, target_id)))
     |> session_effects
-    |> Middleware.Guardian.validate_generic
+    |> Guardian.validate_generic
   ;;
 
   let update =
-    [ SessionCommand.Update.effects ]
+    SessionCommand.Update.effects
     |> session_effects
-    |> Middleware.Guardian.validate_generic
+    |> Guardian.validate_generic
   ;;
 
   let delete =
-    [ SessionCommand.Delete.effects ]
+    SessionCommand.Delete.effects
     |> session_effects
-    |> Middleware.Guardian.validate_generic
+    |> Guardian.validate_generic
   ;;
 
   let reschedule =
-    [ SessionCommand.Reschedule.effects ]
+    SessionCommand.Reschedule.effects
     |> session_effects
-    |> Middleware.Guardian.validate_generic
+    |> Guardian.validate_generic
   ;;
 
   let cancel =
-    [ SessionCommand.Cancel.effects ]
+    SessionCommand.Cancel.effects
     |> session_effects
-    |> Middleware.Guardian.validate_generic
-  ;;
-
-  let session_reminder =
-    [ (fun id ->
-        [ `Update, `Target (id |> Guard.Uuid.target_of Pool_common.Id.value)
-        ; `Update, `TargetEntity `Session
-        ])
-    ]
-    |> session_effects
-    |> Middleware.Guardian.validate_generic
+    |> Guardian.validate_generic
   ;;
 
   let send_reminder =
-    [ SessionCommand.SendReminder.effects ]
+    SessionCommand.SendReminder.effects
     |> session_effects
-    |> Middleware.Guardian.validate_generic
+    |> Guardian.validate_generic
   ;;
 
   let close =
-    [ Cqrs_command.Assignment_command.SetAttendance.effects ]
+    Cqrs_command.Assignment_command.SetAttendance.effects
     |> session_effects
-    |> Middleware.Guardian.validate_generic
+    |> Guardian.validate_generic
   ;;
 end

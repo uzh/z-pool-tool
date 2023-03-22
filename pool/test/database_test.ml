@@ -1,14 +1,20 @@
+open Pool_database
+
+let fail_with = Test_utils.get_or_failwith_pool_error
+
 module Testable = struct
   let database = Pool_database.(Alcotest.testable pp equal)
 end
 
 module Data = struct
-  let database_label = "econ-test"
+  let database_label = "econ-test" |> Label.create |> fail_with
 
   let database =
     let url =
       Sihl.Configuration.read_string "DATABASE_URL_TENANT_TEST"
       |> CCOption.get_exn_or "DATABASE_URL_TENANT_TEST undefined"
+      |> Url.create
+      |> fail_with
     in
     database_label, url
   ;;
@@ -33,9 +39,7 @@ let check_find_tenant_database _ () =
 ;;
 
 let check_tenant_database _ () =
-  let ctx =
-    Data.database_label |> Pool_database.Label.of_string |> Pool_tenant.to_ctx
-  in
+  let ctx = Data.database_label |> Pool_tenant.to_ctx in
   let _ = Sihl.Database.fetch_pool ~ctx () in
   Lwt.return_unit
 ;;

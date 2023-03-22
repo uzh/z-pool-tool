@@ -73,15 +73,23 @@ let create () =
            , default_language )
          ->
          let tenant =
+           let database =
+             let open Pool_tenant.Database in
+             let open CCResult.Infix in
+             let* url = Url.create database_url in
+             let* label = Label.create database_label in
+             create label url
+           in
            Pool_tenant.(
              Write.create
                (Title.create title |> get_or_failwith)
-               (Description.create description |> get_or_failwith)
+               (Description.create description
+                |> get_or_failwith
+                |> CCOption.return)
                (Url.create url |> get_or_failwith)
-               (Pool_tenant.Database.create database_label database_url
-                |> get_or_failwith)
-               (Styles.Write.create styles |> get_or_failwith)
-               (Icon.Write.create icon |> get_or_failwith)
+               (database |> get_or_failwith)
+               (Styles.Write.create styles |> get_or_failwith |> CCOption.return)
+               (Icon.Write.create icon |> get_or_failwith |> CCOption.return)
                (Pool_common.Language.create default_language |> get_or_failwith))
          in
          let logo_mappings =

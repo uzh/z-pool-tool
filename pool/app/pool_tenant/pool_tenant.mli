@@ -214,11 +214,11 @@ end
 type t =
   { id : Id.t
   ; title : Title.t
-  ; description : Description.t
+  ; description : Description.t option
   ; url : Url.t
   ; database_label : Database.Label.t
-  ; styles : Styles.t
-  ; icon : Icon.t
+  ; styles : Styles.t option
+  ; icon : Icon.t option
   ; logos : Logos.t
   ; partner_logo : PartnerLogos.t
   ; maintenance : Maintenance.t
@@ -237,11 +237,11 @@ module Write : sig
   type t =
     { id : Id.t
     ; title : Title.t
-    ; description : Description.t
+    ; description : Description.t option
     ; url : Url.t
     ; database : Database.t
-    ; styles : Styles.Write.t
-    ; icon : Icon.Write.t
+    ; styles : Styles.Write.t option
+    ; icon : Icon.Write.t option
     ; maintenance : Maintenance.t
     ; disabled : Disabled.t
     ; default_language : Pool_common.Language.t
@@ -251,11 +251,11 @@ module Write : sig
 
   val create
     :  Title.t
-    -> Description.t
+    -> Description.t option
     -> Url.t
     -> Database.t
-    -> Styles.Write.t
-    -> Icon.Write.t
+    -> Styles.Write.t option
+    -> Icon.Write.t option
     -> Pool_common.Language.t
     -> t
 
@@ -264,10 +264,12 @@ end
 
 type update =
   { title : Title.t
-  ; description : Description.t
+  ; description : Description.t option
   ; url : Url.t
   ; disabled : Disabled.t
   ; default_language : Pool_common.Language.t
+  ; styles : Styles.Write.t option
+  ; icon : Icon.Write.t option
   }
 
 type logo_mappings = LogoMapping.Write.t list
@@ -301,10 +303,6 @@ val find_by_label
 val find_all : unit -> t list Lwt.t
 val find_databases : unit -> Database.t list Lwt.t
 
-val find_styles
-  :  Database.Label.t
-  -> (Styles.t, Pool_common.Message.error) Lwt_result.t
-
 type handle_list_recruiters = unit -> Sihl_user.t list Lwt.t
 type handle_list_tenants = unit -> t list Lwt.t
 
@@ -320,14 +318,14 @@ module Selection : sig
   val label : t -> Database.Label.t
 end
 
+val file_fields : Pool_common.Message.Field.t list
+
 module Guard : sig
   module Actor : sig
     val to_authorizable
-      :  ?ctx:Guardian__Persistence.context
+      :  ?ctx:(string * string) list
       -> t
-      -> ( [> `Tenant ] Guard.Authorizable.t
-         , Pool_common.Message.error )
-         Lwt_result.t
+      -> (Role.Actor.t Guard.Actor.t, Pool_common.Message.error) Lwt_result.t
 
     type t
 
@@ -337,11 +335,9 @@ module Guard : sig
 
   module Target : sig
     val to_authorizable
-      :  ?ctx:Guardian__Persistence.context
+      :  ?ctx:(string * string) list
       -> t
-      -> ( [> `Tenant ] Guard.AuthorizableTarget.t
-         , Pool_common.Message.error )
-         Lwt_result.t
+      -> (Role.Target.t Guard.Target.t, Pool_common.Message.error) Lwt_result.t
 
     type t
   end

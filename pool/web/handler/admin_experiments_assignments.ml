@@ -160,31 +160,39 @@ module Access : sig
   val cancel : Rock.Middleware.t
   val mark_as_deleted : Rock.Middleware.t
 end = struct
+  open Guard
   module AssignmentCommand = Cqrs_command.Assignment_command
+  module Guardian = Middleware.Guardian
+
+  let read_effect id =
+    let target_id = id |> Uuid.target_of Experiment.Id.value in
+    ValidationSet.(
+      And
+        [ One (Action.Read, TargetSpec.Entity `Assignment)
+        ; One (Action.Read, TargetSpec.Id (`Experiment, target_id))
+        ])
+  ;;
+
+  let experiment_effects =
+    Guardian.id_effects Experiment.Id.of_string Field.Experiment
+  ;;
 
   let assignment_effects =
-    Middleware.Guardian.id_effects Assignment.Id.of_string Field.Assignment
+    Guardian.id_effects Assignment.Id.of_string Field.Assignment
   ;;
 
-  let index =
-    Middleware.Guardian.validate_admin_entity
-      [ `Read, `TargetEntity `Assignment ]
-  ;;
-
-  let deleted =
-    Middleware.Guardian.validate_admin_entity
-      [ `Read, `TargetEntity `Assignment ]
-  ;;
+  let index = read_effect |> experiment_effects |> Guardian.validate_generic
+  let deleted = read_effect |> experiment_effects |> Guardian.validate_generic
 
   let cancel =
-    [ AssignmentCommand.Cancel.effects ]
+    AssignmentCommand.Cancel.effects
     |> assignment_effects
-    |> Middleware.Guardian.validate_generic
+    |> Guardian.validate_generic
   ;;
 
   let mark_as_deleted =
-    [ AssignmentCommand.MarkAsDeleted.effects ]
+    AssignmentCommand.MarkAsDeleted.effects
     |> assignment_effects
-    |> Middleware.Guardian.validate_generic
+    |> Guardian.validate_generic
   ;;
 end

@@ -25,17 +25,17 @@ let handle_event pool : event -> unit Lwt.t =
   function
   | Created ({ id; _ } as t) ->
     let%lwt () = Repo.insert pool t in
-    let%lwt (_ : Guard.Authorizer.auth_rule list) =
+    let%lwt (_ : Guard.Rule.t list) =
       Admin.Guard.RuleSet.experimenter id @ Admin.Guard.RuleSet.assistant id
-      |> Guard.Persistence.Actor.save_rules ~ctx
-      >|- [%show: Guard.Authorizer.auth_rule list]
+      |> Guard.Persistence.Rule.save_all ~ctx
+      >|- [%show: Guard.Rule.t list]
           %> Format.asprintf "Failed to save: %s"
           %> Pool_common.Message.nothandled
       ||> Pool_common.Utils.get_or_failwith
     in
     Entity_guard.Target.to_authorizable ~ctx t
     ||> Pool_common.Utils.get_or_failwith
-    ||> fun (_ : [> `Experiment ] Guard.AuthorizableTarget.t) -> ()
+    ||> fun (_ : [> `Experiment ] Guard.Target.t) -> ()
   | Updated t -> Repo.update pool t
   | Deleted experiment_id -> Repo.delete pool experiment_id
   [@@deriving eq, show]

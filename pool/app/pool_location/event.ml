@@ -26,19 +26,19 @@ let handle_event pool : event -> unit Lwt.t =
       |> CCList.map (Repo.RepoFileMapping.of_entity location)
       |> Repo.insert pool location
     in
-    let%lwt (_ : Guard.Authorizer.auth_rule list) =
+    let%lwt (_ : Guard.Rule.t list) =
       Admin.Guard.RuleSet.location_manager id
-      |> Guard.Persistence.Actor.save_rules ~ctx
+      |> Guard.Persistence.Rule.save_all ~ctx
       >|- (fun err ->
             Pool_common.Message.nothandled
             @@ Format.asprintf
                  "Failed to save: %s"
-                 ([%show: Guard.Authorizer.auth_rule list] err))
+                 ([%show: Guard.Rule.t list] err))
       ||> Pool_common.Utils.get_or_failwith
     in
     Entity_guard.Target.to_authorizable ~ctx location
     ||> Pool_common.Utils.get_or_failwith
-    ||> fun (_ : [> `Mailing ] Guard.AuthorizableTarget.t) -> ()
+    ||> fun (_ : Role.Target.t Guard.Target.t) -> ()
   | FileUploaded file ->
     let open Entity.Mapping.Write in
     let%lwt () =
@@ -51,7 +51,7 @@ let handle_event pool : event -> unit Lwt.t =
       ~ctx:(Pool_tenant.to_ctx pool)
       file
     ||> Pool_common.Utils.get_or_failwith
-    ||> fun (_ : [> `Mailing ] Guard.AuthorizableTarget.t) -> ()
+    ||> fun (_ : Role.Target.t Guard.Target.t) -> ()
   | Updated (location, m) ->
     let%lwt () =
       { location with

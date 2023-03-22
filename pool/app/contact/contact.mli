@@ -184,11 +184,9 @@ end
 module Guard : sig
   module Target : sig
     val to_authorizable
-      :  ?ctx:Guardian__Persistence.context
+      :  ?ctx:(string * string) list
       -> t
-      -> ( [> `Contact ] Guard.AuthorizableTarget.t
-         , Pool_common.Message.error )
-         Lwt_result.t
+      -> (Role.Target.t Guard.Target.t, Pool_common.Message.error) Lwt_result.t
 
     type t
 
@@ -198,18 +196,14 @@ module Guard : sig
 
   module Actor : sig
     val to_authorizable
-      :  ?ctx:Guardian__Persistence.context
+      :  ?ctx:(string * string) list
       -> t
-      -> ( [> `Contact ] Guard.Authorizable.t
-         , Pool_common.Message.error )
-         Lwt_result.t
+      -> (Role.Actor.t Guard.Actor.t, Pool_common.Message.error) Lwt_result.t
 
     val authorizable_of_req
-      :  ?ctx:Guardian__Persistence.context
+      :  ?ctx:(string * string) list
       -> Rock.Request.t
-      -> ( [> `Contact ] Guard.Authorizable.t
-         , Pool_common.Message.error )
-         Lwt_result.t
+      -> (Role.Actor.t Guard.Actor.t, Pool_common.Message.error) Lwt_result.t
 
     type t
 

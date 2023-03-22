@@ -51,3 +51,8 @@ let add_pool model =
 
 let read_pool m = m.label
 let pp formatter m = Label.pp formatter m.label
+
+let of_ctx_opt : (string * string) list -> Label.t option =
+  let open CCFun in
+  CCList.assoc_opt ~eq:( = ) "pool" %> CCOption.map Label.of_string
+;;

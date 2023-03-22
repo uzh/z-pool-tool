@@ -16,7 +16,7 @@ module UpdateEmail : sig
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val effects : user -> Guard.Authorizer.effect list
+  val effects : Role.Target.t -> Sihl_user.t -> Guard.ValidationSet.t
 end = struct
   type t = Email.unverified Email.t
 
@@ -39,13 +39,10 @@ end = struct
       Ok [ Email.EmailVerified email |> Pool_event.email_verification ]
   ;;
 
-  let effects =
-    let open CCFun in
-    (function
-     | Contact { Contact.user; _ } -> user
-     | Admin user -> user |> Admin.user)
-    %> fun user ->
-    [ `Update, `Target (user.Sihl_user.id |> Guard.Uuid.Target.of_string_exn) ]
+  let effects role user =
+    let open Guard in
+    let target_id = user.Sihl_user.id |> Guard.Uuid.Target.of_string_exn in
+    ValidationSet.One (Action.Update, TargetSpec.Id (role, target_id))
   ;;
 end
 
@@ -58,7 +55,7 @@ module VerifyEmail : sig
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val effects : user -> Guard.Authorizer.effect list
+  val effects : Role.Target.t -> Sihl_user.t -> Guard.ValidationSet.t
 end = struct
   type t = Email.unverified Email.t
 
@@ -74,12 +71,9 @@ end = struct
       Ok [ Email.EmailVerified command |> Pool_event.email_verification ]
   ;;
 
-  let effects =
-    let open CCFun in
-    (function
-     | Contact { Contact.user; _ } -> user
-     | Admin user -> user |> Admin.user)
-    %> fun user ->
-    [ `Update, `Target (Guard.Uuid.Target.of_string_exn user.Sihl_user.id) ]
+  let effects role user =
+    let open Guard in
+    let target_id = user.Sihl_user.id |> Guard.Uuid.Target.of_string_exn in
+    ValidationSet.One (Action.Update, TargetSpec.Id (role, target_id))
   ;;
 end

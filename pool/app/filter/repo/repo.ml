@@ -238,14 +238,14 @@ module Sql = struct
     let find_sql where_fragment =
       Format.asprintf
         {sql|
-        SELECT 1
-        FROM pool_contacts
-          LEFT JOIN user_users
-          ON pool_contacts.user_uuid = user_users.uuid
-        WHERE
-        %s
-        AND pool_contacts.user_uuid = UNHEX(REPLACE(?, '-', ''))
-      |sql}
+          SELECT 1
+          FROM pool_contacts
+            LEFT JOIN user_users
+            ON pool_contacts.user_uuid = user_users.uuid
+          WHERE
+          %s
+          AND pool_contacts.user_uuid = UNHEX(REPLACE(?, '-', ''))
+        |sql}
         where_fragment
     in
     let%lwt template_list =
@@ -284,11 +284,11 @@ module Sql = struct
   let count_filtered_request_sql where_fragment =
     let select =
       {sql|
-      SELECT COUNT(*)
-      FROM pool_contacts
-        LEFT JOIN user_users
-        ON pool_contacts.user_uuid = user_users.uuid
-    |sql}
+        SELECT COUNT(*)
+        FROM pool_contacts
+          LEFT JOIN user_users
+          ON pool_contacts.user_uuid = user_users.uuid
+      |sql}
     in
     Format.asprintf "%s\n%s" select where_fragment
   ;;
@@ -313,6 +313,33 @@ module Sql = struct
     in
     Lwt_result.return (count |> CCOption.value ~default:0)
   ;;
+
+  let find_experiment_id_opt_request =
+    let open Caqti_request.Infix in
+    {sql|
+      SELECT
+        LOWER(CONCAT(
+          SUBSTR(HEX(pool_experiments.uuid), 1, 8), '-',
+          SUBSTR(HEX(pool_experiments.uuid), 9, 4), '-',
+          SUBSTR(HEX(pool_experiments.uuid), 13, 4), '-',
+          SUBSTR(HEX(pool_experiments.uuid), 17, 4), '-',
+          SUBSTR(HEX(pool_experiments.uuid), 21)
+        ))
+      FROM pool_experiments
+        LEFT JOIN pool_filter
+        ON pool_experiments.filter_uuid = pool_filter.uuid
+      WHERE
+        pool_filter.uuid = UNHEX(REPLACE(?, '-', ''))
+    |sql}
+    |> Repo_entity.Id.t ->? Pool_common.Repo.Id.t
+  ;;
+
+  let find_experiment_id_opt pool id =
+    Utils.Database.find_opt
+      (Pool_database.Label.value pool)
+      find_experiment_id_opt_request
+      id
+  ;;
 end
 
 let find = Sql.find
@@ -321,6 +348,7 @@ let find_template = Sql.find_template
 let find_multiple_templates = Sql.find_multiple_templates
 let find_templates_of_query = Sql.find_templates_of_query
 let find_filtered_contacts = Sql.find_filtered_contacts
+let find_experiment_id_opt = Sql.find_experiment_id_opt
 let count_filtered_contacts = Sql.count_filtered_contacts
 let contact_matches_filter = Sql.contact_matches_filter
 let insert = Sql.insert
