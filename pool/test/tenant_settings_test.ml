@@ -136,7 +136,7 @@ let update_terms_and_conditions _ () =
 let login_after_terms_update _ () =
   let open Utils.Lwt_result.Infix in
   let open Pool_common.Message in
-  let%lwt user = Test_utils.Repo.create_contact database_label () in
+  let%lwt user = Integration_utils.ContactRepo.create () in
   let accepted =
     let contact =
       Contact.find_by_email database_label (Contact.email_address user)

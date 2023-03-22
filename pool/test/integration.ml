@@ -135,6 +135,13 @@ let suite =
               `Slow
               cancel_assignment_with_follow_ups
           ] )
+    ; ( "waiting lists"
+      , Waiting_list_test.
+          [ test_case
+              "find pending waiting lists entries by contcat"
+              `Slow
+              PendingWaitingLists.find_pending_waitinglists_by_contact
+          ] )
     ; "cleanup", [ test_case "clean up test database" `Quick Seed.cleanup ]
     ]
 ;;

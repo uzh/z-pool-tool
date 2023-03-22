@@ -76,3 +76,36 @@ let update () =
   in
   Test_utils.check_result expected events
 ;;
+
+(* Integration *)
+
+module PendingWaitingLists = struct
+  let contact_id = Pool_common.Id.create ()
+  let experiment_id = Experiment.Id.create ()
+
+  let find_pending_waitinglists_by_contact _ () =
+    let open Utils.Lwt_result.Infix in
+    let open Integration_utils in
+    let%lwt contact =
+      ContactRepo.create ~id:contact_id ~with_terms_accepted:true ()
+    in
+    let%lwt experiment =
+      ExperimentRepo.create ~id:experiment_id ()
+      ||> Model.experiment_to_public_experiment
+    in
+    let%lwt (_ : Waiting_list.t) =
+      WaitingListRepo.create experiment contact ()
+      ||> CCOption.get_exn_or "Waiting list not found"
+    in
+    let%lwt res =
+      let open CCFun in
+      Experiment.find_pending_waitinglists_by_contact
+        Test_utils.Data.database_label
+        contact
+      ||> CCList.find_opt (Experiment.Public.equal experiment)
+          %> CCOption.is_some
+    in
+    let () = Alcotest.(check bool "succeeds" true res) in
+    Lwt.return_unit
+  ;;
+end

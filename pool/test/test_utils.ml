@@ -87,9 +87,9 @@ let dummy_to_file (dummy : Database.SeedAssets.file) =
 ;;
 
 module Model = struct
-  let create_sihl_user () =
+  let create_sihl_user ?(id = Pool_common.Id.create ()) () =
     Sihl_user.
-      { id = Pool_common.Id.(create () |> value)
+      { id = id |> Pool_common.Id.value
       ; email =
           Format.asprintf "test+%s@econ.uzh.ch" (Uuidm.v `V4 |> Uuidm.to_string)
       ; username = None
@@ -105,9 +105,10 @@ module Model = struct
       }
   ;;
 
-  let create_contact ?(with_terms_accepted = true) () =
+  let create_contact ?id ?(with_terms_accepted = true) () =
+    let user = create_sihl_user ?id () in
     Contact.
-      { user = create_sihl_user ()
+      { user
       ; terms_accepted_at =
           (if with_terms_accepted
            then Pool_user.TermsAccepted.create_now () |> CCOption.pure
@@ -450,35 +451,6 @@ module Model = struct
 end
 
 module Repo = struct
-  let create_contact ?(with_terms_accepted = false) pool () =
-    let open Utils.Lwt_result.Infix in
-    let contact = Model.create_contact ~with_terms_accepted () in
-    let verified =
-      if contact.Contact.user.Sihl_user.confirmed
-      then Contact.[ Verified contact ]
-      else []
-    in
-    let%lwt () =
-      [ Contact.(
-          Created
-            { user_id = Contact.id contact
-            ; email = Contact.email_address contact
-            ; password =
-                contact.Contact.user.Sihl_user.password
-                |> Pool_user.Password.create
-                |> get_or_failwith_pool_error
-            ; firstname = Contact.firstname contact
-            ; lastname = Contact.lastname contact
-            ; terms_accepted_at = None
-            ; language = contact.language
-            })
-      ]
-      @ verified
-      |> Lwt_list.iter_s (Contact.handle_event pool)
-    in
-    contact |> Contact.id |> Contact.find pool ||> get_or_failwith_pool_error
-  ;;
-
   let all_experiments () =
     let open Utils.Lwt_result.Infix in
     Experiment.find_all Data.database_label () ||> fst

@@ -394,7 +394,7 @@ let cancel_assignment_with_follow_ups _ () =
   let open Utils.Lwt_result.Infix in
   let%lwt experiment = Repo.create_experiment () in
   let%lwt contact =
-    Repo.create_contact ~with_terms_accepted:true Data.database_label ()
+    Integration_utils.ContactRepo.create ~with_terms_accepted:true ()
   in
   let%lwt location = Repo.first_location () in
   (* Save sessions in Database *)
