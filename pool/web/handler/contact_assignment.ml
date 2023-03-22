@@ -23,12 +23,6 @@ let create req =
          Session.find_open_with_follow_ups database_label id
          >|+ CCList.map Session.to_public
        in
-       let* waiting_list =
-         Waiting_list.find_by_contact_and_experiment
-           database_label
-           contact
-           experiment
-       in
        let* { Pool_context.Tenant.tenant; _ } =
          Pool_context.Tenant.find req |> Lwt_result.lift
        in
@@ -59,7 +53,7 @@ let create req =
          let open Cqrs_command.Assignment_command.Create in
          handle
            ~tags
-           { contact; sessions; waiting_list; experiment }
+           { contact; sessions; experiment }
            confirmation_email
            already_enrolled
          |> Lwt_result.lift

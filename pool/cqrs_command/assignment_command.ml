@@ -8,7 +8,6 @@ module Create : sig
   type t =
     { contact : Contact.t
     ; sessions : Session.Public.t list
-    ; waiting_list : Waiting_list.t option
     ; experiment : Experiment.Public.t
     }
 
@@ -22,7 +21,6 @@ end = struct
   type t =
     { contact : Contact.t
     ; sessions : Session.Public.t list
-    ; waiting_list : Waiting_list.t option
     ; experiment : Experiment.Public.t
     }
 
@@ -59,20 +57,13 @@ end = struct
              in
              Assignment.Created create |> Pool_event.assignment)
       in
-      let delete_events =
-        match command.waiting_list with
-        | None -> []
-        | Some waiting_list ->
-          [ Waiting_list.Deleted waiting_list |> Pool_event.waiting_list ]
-      in
       let increase_num_events =
         Contact.NumAssignmentsIncreasedBy
           (command.contact, CCList.length command.sessions)
         |> Pool_event.contact
       in
       Ok
-        (delete_events
-         @ create_events
+        (create_events
          @ [ increase_num_events ]
          @ [ Email.Sent confirmation_email |> Pool_event.email ])
   ;;
