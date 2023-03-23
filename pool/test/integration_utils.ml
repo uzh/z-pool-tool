@@ -1,5 +1,13 @@
 open Test_utils
 
+module AssignmentRepo = struct
+  let create session contact =
+    Assignment.(Created { contact; session_id = session.Session.id })
+    |> Pool_event.assignment
+    |> Pool_event.handle_event Data.database_label
+  ;;
+end
+
 module ContactRepo = struct
   let create ?id ?(with_terms_accepted = false) () =
     let open Utils.Lwt_result.Infix in
@@ -46,21 +54,15 @@ module ExperimentRepo = struct
   ;;
 end
 
-module SessionRepo = struct
-  let create
-    ?(id = Session.Id.create ())
-    ?follow_up_to
-    ?location
-    ~experiment_id
-    ~start
-    ()
-    =
-    let session =
-      Model.(create_session ~id ?location ?follow_up_to ~start ())
+module LocationRepo = struct
+  let create ?(id = Pool_location.Id.create ()) () =
+    let location = Model.create_location ~id () in
+    let%lwt () =
+      Pool_location.Created location
+      |> Pool_event.pool_location
+      |> Pool_event.handle_event Data.database_label
     in
-    Session.Created (session, experiment_id)
-    |> Pool_event.session
-    |> Pool_event.handle_event Data.database_label
+    location |> Lwt.return
   ;;
 end
 
@@ -77,5 +79,20 @@ module WaitingListRepo = struct
       contact
       experiment
     ||> get_or_failwith_pool_error
+  ;;
+end
+
+module SessionRepo = struct
+  let create ?id ?location ?follow_up_to ?start experiment_id () =
+    let%lwt location =
+      location |> CCOption.map_or ~default:(LocationRepo.create ()) Lwt.return
+    in
+    let session = Model.create_session ?id ~location ?follow_up_to ?start () in
+    let%lwt () =
+      Session.(Created (session, experiment_id))
+      |> Pool_event.session
+      |> Pool_event.handle_event Data.database_label
+    in
+    Lwt.return session
   ;;
 end

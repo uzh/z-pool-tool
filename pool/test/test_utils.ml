@@ -141,9 +141,9 @@ module Model = struct
     () |> create_sihl_user |> Admin.create |> Pool_context.admin
   ;;
 
-  let create_location () =
+  let create_location ?(id = Pool_location.Id.create ()) () =
     Pool_location.
-      { id = Pool_location.Id.create ()
+      { id
       ; name =
           Pool_location.Name.create "Online"
           |> Pool_common.Utils.get_or_failwith

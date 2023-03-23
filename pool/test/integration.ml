@@ -141,6 +141,14 @@ let suite =
               "find pending waiting lists entries by contcat"
               `Slow
               PendingWaitingLists.find_pending_waitinglists_by_contact
+          ; test_case
+              "exclude experiment after signing up for a session"
+              `Slow
+              PendingWaitingLists.exclude_after_assignign_to_session
+          ; test_case
+              "include experiment after session cancellation"
+              `Slow
+              PendingWaitingLists.include_after_session_cancellation
           ] )
     ; "cleanup", [ test_case "clean up test database" `Quick Seed.cleanup ]
     ]
