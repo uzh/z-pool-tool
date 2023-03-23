@@ -110,57 +110,51 @@ module Access : sig
 end = struct
   include Helpers.Access
   open Guard
+  open ValidationSet
+  open Cqrs_command.Experiment_command
   module Field = Pool_common.Message.Field
-  module ExperimentCommand = Cqrs_command.Experiment_command
 
   let experiment_effects =
     Middleware.Guardian.id_effects Experiment.Id.of_string Field.Experiment
   ;;
 
   let index_assistants =
-    (fun req ctx ->
-      let open ExperimentCommand in
-      let open ValidationSet in
-      let expand effects = experiment_effects effects req ctx |> snd in
-      ( ctx
-      , Or [ expand AssignAssistant.effects; expand UnassignAssistant.effects ]
-      ))
+    (fun req ->
+      let expand = CCFun.flip experiment_effects req in
+      Or [ expand AssignAssistant.effects; expand UnassignAssistant.effects ])
     |> Middleware.Guardian.validate_generic
   ;;
 
   let assign_assistant =
-    ExperimentCommand.AssignAssistant.effects
+    AssignAssistant.effects
     |> experiment_effects
     |> Middleware.Guardian.validate_generic
   ;;
 
   let unassign_assistant =
-    ExperimentCommand.UnassignAssistant.effects
+    UnassignAssistant.effects
     |> experiment_effects
     |> Middleware.Guardian.validate_generic
   ;;
 
   let index_experimenter =
-    (fun req ctx ->
-      let open ExperimentCommand in
-      let open ValidationSet in
-      let expand effects = experiment_effects effects req ctx |> snd in
-      ( ctx
-      , Or
-          [ expand AssignExperimenter.effects
-          ; expand UnassignExperimenter.effects
-          ] ))
+    (fun req ->
+      let expand = CCFun.flip experiment_effects req in
+      Or
+        [ expand AssignExperimenter.effects
+        ; expand UnassignExperimenter.effects
+        ])
     |> Middleware.Guardian.validate_generic
   ;;
 
   let assign_experimenter =
-    ExperimentCommand.AssignExperimenter.effects
+    AssignExperimenter.effects
     |> experiment_effects
     |> Middleware.Guardian.validate_generic
   ;;
 
   let unassign_experimenter =
-    ExperimentCommand.UnassignExperimenter.effects
+    UnassignExperimenter.effects
     |> experiment_effects
     |> Middleware.Guardian.validate_generic
   ;;

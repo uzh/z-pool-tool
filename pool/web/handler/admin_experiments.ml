@@ -359,13 +359,13 @@ end = struct
   module Filter = struct
     include Helpers.Access
 
-    let combined_effects effects req ctx =
+    let combined_effects effects req =
       let open HttpUtils in
       let filter_id = find_id FilterEntity.Id.of_string Field.Filter req in
       let experiment_id =
         find_id Experiment.Id.of_string Field.Experiment req
       in
-      ctx, effects experiment_id filter_id
+      effects experiment_id filter_id
     ;;
 
     let create =

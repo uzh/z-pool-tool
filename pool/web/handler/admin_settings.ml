@@ -1,3 +1,4 @@
+open CCFun
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 module Queue = Admin_settings_queue
@@ -111,7 +112,7 @@ let update_settings req =
          Sihl.Web.Router.param req "action"
          |> Settings.action_of_param
          |> lift
-         >>= CCFun.flip command_handler urlencoded
+         >>= flip command_handler urlencoded
        in
        let handle =
          Lwt_list.iter_s (Pool_event.handle_event ~tags database_label)
@@ -129,37 +130,41 @@ let update_settings req =
 module Access : Helpers.AccessSig = struct
   open Guard
   include Helpers.Access
-  module SettingsCommand = Cqrs_command.Settings_command
+  module Command = Cqrs_command.Settings_command
   module Guardian = Middleware.Guardian
 
-  let tenant_effects effect_set req context =
-    let effects =
-      Pool_context.Tenant.find req
-      |> CCResult.map_or
-           ~default:
-             (ValidationSet.One (Action.Manage, TargetSpec.Entity `Tenant))
-           (fun { Pool_context.Tenant.tenant; _ } ->
-             effect_set tenant.Pool_tenant.id)
-    in
-    context, effects
+  let tenant_effects effect_set =
+    Pool_context.Tenant.find
+    %> CCResult.map_or
+         ~default:(ValidationSet.One (Action.Manage, TargetSpec.Entity `Tenant))
+         (fun { Pool_context.Tenant.tenant; _ } ->
+           effect_set tenant.Pool_tenant.id)
   ;;
-
-  let read_effects =
-    Guard.(ValidationSet.One (Action.Read, TargetSpec.Entity `Tenant))
-  ;;
-
-  let index = Guardian.validate_admin_entity read_effects
-  let read = Guardian.validate_admin_entity read_effects
 
   let update =
-    SettingsCommand.UpdateTermsAndConditions.effects
-    |> tenant_effects
-    |> Guardian.validate_generic
+    let find_effects = function
+      | `CreateTenantEmailSuffix -> Command.CreateEmailSuffix.effects
+      | `DeleteTenantEmailSuffix -> Command.DeleteEmailSuffix.effects
+      | `UpdateDefaultLeadTime -> Command.UpdateDefaultLeadTime.effects
+      | `UpdateInactiveUserDisableAfter ->
+        Command.InactiveUser.DisableAfter.effects
+      | `UpdateInactiveUserWarning -> Command.InactiveUser.Warning.effects
+      | `UpdateTenantContactEmail -> Command.UpdateContactEmail.effects
+      | `UpdateTenantEmailSuffixes -> Command.UpdateEmailSuffixes.effects
+      | `UpdateTenantLanguages -> Command.UpdateLanguages.effects
+      | `UpdateTermsAndConditions -> Command.UpdateTermsAndConditions.effects
+      | `UpdateTriggerProfileUpdateAfter ->
+        Command.UpdateTriggerProfileUpdateAfter.effects
+    in
+    (fun req ->
+      Sihl.Web.Router.param req "action"
+      |> Settings.action_of_param
+      |> CCResult.map (find_effects %> flip tenant_effects req))
+    |> Guardian.validate_generic_result
   ;;
 
-  let delete =
-    SettingsCommand.DeleteEmailSuffix.effects
-    |> tenant_effects
-    |> Guardian.validate_generic
+  let index =
+    ValidationSet.One (Action.Read, TargetSpec.Entity `Tenant)
+    |> Guardian.validate_admin_entity
   ;;
 end
