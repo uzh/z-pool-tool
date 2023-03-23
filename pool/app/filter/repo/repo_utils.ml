@@ -10,26 +10,28 @@ let filtered_base_condition =
     AND pool_contacts.paused = 0
     AND pool_contacts.disabled = 0
     AND pool_contacts.terms_accepted_at IS NOT NULL
-    AND NOT EXISTS
-      (SELECT 1
-      FROM pool_invitations
+    AND NOT EXISTS (
+      SELECT
+        1
+      FROM
+        pool_invitations
       WHERE
-          pool_invitations.contact_id = pool_contacts.id
+          pool_invitations.contact_uuid = pool_contacts.user_uuid
         AND
-          pool_invitations.experiment_id IN (
-            SELECT id FROM pool_experiments WHERE pool_experiments.uuid = UNHEX(REPLACE(?, '-', ''))
-            )
-      )
-    AND NOT EXISTS
-      (SELECT 1
-      FROM pool_assignments
+          pool_invitations.experiment_uuid = UNHEX(REPLACE(?, '-', ''))
+      LIMIT 1 )
+    AND NOT EXISTS (
+      SELECT
+        1
+      FROM
+        pool_assignments
+      INNER JOIN pool_sessions
+        ON pool_assignments.session_uuid = pool_sessions.uuid
       WHERE
-          pool_assignments.contact_uuid = pool_contacts.user_uuid
-        AND
-          pool_assignments.session_uuid IN (
-            SELECT uuid FROM pool_sessions WHERE pool_sessions.experiment_uuid = UNHEX(REPLACE(?, '-', ''))
-          )
-      )
+        pool_assignments.contact_uuid = pool_contacts.user_uuid
+      AND
+        pool_sessions.experiment_uuid = UNHEX(REPLACE(?, '-', ''))
+      LIMIT 1 )
     |sql}
 ;;
 

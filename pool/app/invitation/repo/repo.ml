@@ -36,11 +36,11 @@ module Sql = struct
         FROM
           pool_invitations
         LEFT JOIN pool_contacts
-          ON pool_invitations.contact_id = pool_contacts.id
+          ON pool_invitations.contact_uuid = pool_contacts.user_uuid
         LEFT JOIN user_users
           ON pool_contacts.user_uuid = user_users.uuid
         LEFT JOIN pool_experiments
-          ON pool_invitations.experiment_id = pool_experiments.id
+          ON pool_invitations.experiment_uuid = pool_experiments.uuid
         %s
       |sql}
   ;;
@@ -52,11 +52,11 @@ module Sql = struct
         FROM
           pool_invitations
         LEFT JOIN pool_contacts
-          ON pool_invitations.contact_id = pool_contacts.id
+          ON pool_invitations.contact_uuid = pool_contacts.user_uuid
         LEFT JOIN user_users
           ON pool_contacts.user_uuid = user_users.uuid
         LEFT JOIN pool_experiments
-          ON pool_invitations.experiment_id = pool_experiments.id
+          ON pool_invitations.experiment_uuid = pool_experiments.uuid
         %s
       |sql}
   ;;
@@ -80,21 +80,9 @@ module Sql = struct
     ||> CCOption.to_result Pool_common.Message.(NotFound Field.Tenant)
   ;;
 
-  let find_by_experiment_request =
-    let open Caqti_request.Infix in
-    {sql|
-      WHERE
-        experiment_id = (SELECT id FROM pool_experiments WHERE uuid = UNHEX(REPLACE(?, '-', '')))
-    |sql}
-    |> select_sql
-    |> Caqti_type.string ->* RepoEntity.t
-  ;;
-
   let find_by_experiment ?query pool id =
     let where =
-      let sql =
-        {sql| experiment_id = (SELECT id FROM pool_experiments WHERE uuid = UNHEX(REPLACE(?, '-', ''))) |sql}
-      in
+      let sql = {sql| experiment_uuid = UNHEX(REPLACE(?, '-', '')) |sql} in
       let dyn =
         Dynparam.(
           empty |> add Pool_common.Repo.Id.t (Experiment.Id.to_common id))
@@ -114,7 +102,7 @@ module Sql = struct
     let open Caqti_request.Infix in
     {sql|
       WHERE
-        contact_id = (SELECT id FROM pool_contacts WHERE user_uuid = UNHEX(REPLACE(?, '-', ''))),
+        contact_uuid = UNHEX(REPLACE(?, '-', '')),
     |sql}
     |> select_sql
     |> Caqti_type.string ->* RepoEntity.t
@@ -132,16 +120,14 @@ module Sql = struct
     {sql|
       SELECT
         LOWER(CONCAT(
-          SUBSTR(HEX(pool_experiments.uuid), 1, 8), '-',
-          SUBSTR(HEX(pool_experiments.uuid), 9, 4), '-',
-          SUBSTR(HEX(pool_experiments.uuid), 13, 4), '-',
-          SUBSTR(HEX(pool_experiments.uuid), 17, 4), '-',
-          SUBSTR(HEX(pool_experiments.uuid), 21)
+          SUBSTR(HEX(pool_invitations.experiment_uuid), 1, 8), '-',
+          SUBSTR(HEX(pool_invitations.experiment_uuid), 9, 4), '-',
+          SUBSTR(HEX(pool_invitations.experiment_uuid), 13, 4), '-',
+          SUBSTR(HEX(pool_invitations.experiment_uuid), 17, 4), '-',
+          SUBSTR(HEX(pool_invitations.experiment_uuid), 21)
         ))
       FROM
         pool_invitations
-      LEFT JOIN pool_experiments
-        ON pool_invitations.session_id = pool_experiments.id
       WHERE
         pool_invitations.uuid = UNHEX(REPLACE(?, '-', ''))
     |sql}
@@ -180,8 +166,8 @@ module Sql = struct
       FROM
         pool_invitations
       WHERE
-        (SELECT id FROM pool_experiments WHERE pool_experiments.uuid = UNHEX(REPLACE($1, '-', ''))),
-        (SELECT id FROM pool_contacts WHERE pool_contacts.user_uuid = UNHEX(REPLACE($2, '-', '')))
+        pool_invitations.experiment_uuid = UNHEX(REPLACE($1, '-', '')),
+        pool_invitations.contact_uuid = UNHEX(REPLACE($2, '-', ''))
       LIMIT 1
       |sql}
     |> select_sql
@@ -213,11 +199,11 @@ module Sql = struct
       INNER JOIN pool_contacts
         ON pool_contacts.user_uuid = user_users.uuid
       INNER JOIN pool_invitations
-        ON pool_contacts.id = pool_invitations.contact_id
+        ON pool_contacts.user_uuid = pool_invitations.contact_uuid
       WHERE
-      pool_invitations.experiment_id = (SELECT id FROM pool_experiments WHERE pool_experiments.uuid = UNHEX(REPLACE($1, '-', '')))
+      pool_invitations.experiment_uuid = UNHEX(REPLACE($1, '-', ''))
       AND
-        pool_invitations.contact_id IN ((SELECT id FROM pool_contacts WHERE pool_contacts.user_uuid IN ( %s )))
+        pool_invitations.contact_uuid IN ( %s )
     |sql}
       (CCList.mapi
          (fun i _ -> Format.asprintf "UNHEX(REPLACE($%n, '-', ''))" (i + 2))
@@ -294,8 +280,8 @@ let bulk_insert pool contacts experiment_id =
     {sql|
       INSERT INTO pool_invitations (
         uuid,
-        experiment_id,
-        contact_id,
+        experiment_uuid,
+        contact_uuid,
         resent_at,
         created_at,
         updated_at
@@ -308,8 +294,8 @@ let bulk_insert pool contacts experiment_id =
         let sql_line =
           {sql| (
             UNHEX(REPLACE(?, '-', '')),
-            (SELECT id FROM pool_experiments WHERE pool_experiments.uuid = UNHEX(REPLACE(?, '-', ''))),
-            (SELECT id FROM pool_contacts WHERE pool_contacts.user_uuid = UNHEX(REPLACE(?, '-', ''))),
+            UNHEX(REPLACE(?, '-', '')),
+            UNHEX(REPLACE(?, '-', '')),
             ?,
             ?,
             ?

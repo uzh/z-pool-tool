@@ -26,8 +26,8 @@ let select_from_experiments_sql ?(distinct = false) where_fragment =
 let pool_invitations_left_join =
   {sql|
       LEFT OUTER JOIN pool_invitations
-      ON pool_invitations.contact_id = (SELECT id FROM pool_contacts WHERE user_uuid = UNHEX(REPLACE($1, '-', '')))
-      AND pool_experiments.id = pool_invitations.experiment_id
+      ON pool_invitations.contact_uuid = UNHEX(REPLACE($1, '-', ''))
+      AND pool_experiments.uuid = pool_invitations.experiment_uuid
     |sql}
 ;;
 
@@ -63,15 +63,17 @@ let find_all_public_by_contact_request =
     {sql|
     NOT EXISTS (
       SELECT
-        1 FROM pool_waiting_list
+        1
+      FROM pool_waiting_list
       WHERE
         pool_waiting_list.contact_uuid = UNHEX(REPLACE($1, '-', ''))
       AND
-        pool_waiting_list.experiment_uuid = pool_experiments.uuid)
+        pool_waiting_list.experiment_uuid = pool_experiments.uuid
+      )
       |sql}
   in
   let is_invited =
-    {sql| (pool_invitations.contact_id = (SELECT id FROM pool_contacts WHERE user_uuid = UNHEX(REPLACE($1, '-', '')))) |sql}
+    {sql| pool_invitations.contact_uuid = UNHEX(REPLACE($1, '-', '')) |sql}
   in
   Format.asprintf
     "%s WHERE %s AND %s AND %s AND (%s OR %s)"
@@ -137,7 +139,7 @@ let find_pending_waitinglists_by_contact pool contact =
 let find_request =
   let open Caqti_request.Infix in
   let id_fragment = "pool_experiments.uuid = UNHEX(REPLACE($2, '-', ''))" in
-  {sql| (pool_invitations.contact_id = (SELECT id FROM pool_contacts WHERE user_uuid = UNHEX(REPLACE($1, '-', '')))) |sql}
+  {sql| (pool_invitations.contact_uuid = UNHEX(REPLACE($1, '-', '')) |sql}
   |> Format.asprintf
        "%s WHERE %s AND %s AND (%s OR %s)"
        pool_invitations_left_join
