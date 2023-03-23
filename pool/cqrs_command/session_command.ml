@@ -399,7 +399,7 @@ module Cancel : sig
 
   val handle
     :  ?tags:Logs.Tag.set
-    -> Session.t
+    -> Session.t list
     -> Contact.t list
     -> (Session.CancellationReason.t
         -> Contact.t
@@ -418,7 +418,7 @@ end = struct
 
   let handle
     ?(tags = Logs.Tag.empty)
-    session
+    sessions
     (contacts : Contact.t list)
     messages_fn
     command
@@ -430,7 +430,9 @@ end = struct
       then Error Pool_common.Message.PickMessageChannel
       else Ok ()
     in
-    let* () = Session.is_cancellable session in
+    let* (_ : unit list) =
+      sessions |> CCList.map Session.is_cancellable |> CCList.all_ok
+    in
     let* emails =
       contacts |> CCList.map (messages_fn command.reason) |> CCResult.flatten_l
     in
@@ -441,8 +443,12 @@ end = struct
     in
     (* TODO issue #149 implement this and then fix test *)
     let sms_event = if command.notify_sms then [] else [] in
-    let cancel_event = [ Session.Canceled session |> Pool_event.session ] in
-    [ email_event; sms_event; cancel_event ]
+    let cancel_events =
+      sessions
+      |> CCList.map (fun session ->
+           Session.Canceled session |> Pool_event.session)
+    in
+    [ email_event; sms_event; cancel_events ]
     |> CCList.flatten
     |> CCResult.return
   ;;

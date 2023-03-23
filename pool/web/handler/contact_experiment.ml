@@ -20,7 +20,7 @@ let index req =
          Custom_field.all_answered database_label (Contact.id contact)
        in
        let%lwt waiting_list =
-         Experiment.find_where_contact_is_on_waitinglist database_label contact
+         Experiment.find_pending_waitinglists_by_contact database_label contact
        in
        Page.Contact.Experiment.index
          experiment_list

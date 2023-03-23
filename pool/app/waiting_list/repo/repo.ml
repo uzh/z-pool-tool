@@ -33,9 +33,9 @@ module Sql = struct
             pool_waiting_list.updated_at
           FROM pool_waiting_list
           LEFT JOIN pool_contacts
-            ON pool_waiting_list.contact_id = pool_contacts.id
+            ON pool_waiting_list.contact_uuid = pool_contacts.user_uuid
           LEFT JOIN pool_experiments
-            ON pool_waiting_list.experiment_id = pool_experiments.id
+            ON pool_waiting_list.experiment_uuid = pool_experiments.uuid
         |sql}
     in
     Format.asprintf "%s %s" select_from where_fragment
@@ -63,9 +63,9 @@ module Sql = struct
     let open Caqti_request.Infix in
     {sql|
       WHERE
-        contact_id = (SELECT id FROM pool_contacts WHERE user_uuid = UNHEX(REPLACE($1, '-', '')))
+        contact_uuid = UNHEX(REPLACE($1, '-', ''))
       AND
-        experiment_id = (SELECT id FROM pool_experiments WHERE uuid = UNHEX(REPLACE($2, '-', '')))
+        experiment_uuid = UNHEX(REPLACE($2, '-', ''))
     |sql}
     |> select_sql
     |> Caqti_type.(tup2 string string) ->! RepoEntity.t
@@ -118,21 +118,11 @@ module Sql = struct
     FROM
       pool_waiting_list
     LEFT JOIN pool_contacts
-      ON pool_waiting_list.contact_id = pool_contacts.id
+      ON pool_waiting_list.contact_uuid = pool_contacts.user_uuid
     LEFT JOIN user_users
       ON pool_contacts.user_uuid = user_users.uuid
     |sql}
       where_fragment
-  ;;
-
-  let find_by_experiment_request =
-    let open Caqti_request.Infix in
-    {sql|
-      WHERE
-        pool_waiting_list.experiment_id = (SELECT id FROM pool_experiments WHERE uuid = UNHEX(REPLACE(?, '-', '')))
-    |sql}
-    |> find_multiple_sql
-    |> Caqti_type.string ->* RepoEntity.Experiment.t
   ;;
 
   let select_count =
@@ -142,7 +132,7 @@ module Sql = struct
           FROM
           pool_waiting_list
         LEFT JOIN pool_contacts
-          ON pool_waiting_list.contact_id = pool_contacts.id
+          ON pool_waiting_list.contact_uuid = pool_contacts.user_uuid
         LEFT JOIN user_users
           ON pool_contacts.user_uuid = user_users.uuid
         %s
@@ -152,7 +142,9 @@ module Sql = struct
   let find_by_experiment ?query pool id =
     let where =
       let sql =
-        {sql| pool_waiting_list.experiment_id = (SELECT id FROM pool_experiments WHERE uuid = UNHEX(REPLACE(?, '-', ''))) |sql}
+        {sql|
+          pool_waiting_list.experiment_uuid = UNHEX(REPLACE(?, '-', ''))
+        |sql}
       in
       let dyn =
         Dynparam.(
@@ -203,12 +195,12 @@ module Sql = struct
     {sql|
       INSERT INTO pool_waiting_list (
         uuid,
-        contact_id,
-        experiment_id
+        contact_uuid,
+        experiment_uuid
       ) VALUES (
         UNHEX(REPLACE($1, '-', '')),
-        (SELECT id FROM pool_contacts WHERE pool_contacts.user_uuid = UNHEX(REPLACE($2, '-', ''))),
-        (SELECT id FROM pool_experiments WHERE pool_experiments.uuid = UNHEX(REPLACE($3, '-', '')))
+        UNHEX(REPLACE($2, '-', '')),
+        UNHEX(REPLACE($3, '-', ''))
       )
     |sql}
     |> Caqti_type.(tup3 string string string ->. unit)

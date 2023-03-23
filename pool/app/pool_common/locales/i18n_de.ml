@@ -274,6 +274,12 @@ let rec hint_to_string = function
     Format.asprintf
       "Suche nach: %s"
       (fields |> CCList.map Locales_en.field_to_string |> CCString.concat ", ")
+  | SessionCancellationWithFollowups ->
+    {|Wenn Sie diese Sitzung absagen, werden auch alle Folgesessions abgesagt.
+
+Die folgenden Folgesessions existieren:|}
+  | SessionCancellationMessageFollowUps ->
+    "Dazugehörige Folgesessions wurden evenfalls abgesagt:"
   | SessionCancelMessage ->
     "Dieser Grund wird allen angemeldeten Kontakten gezeigt."
   | SessionClose ->

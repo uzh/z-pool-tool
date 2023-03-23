@@ -14,6 +14,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 - when signing up for a session with follow-ups, the contact receives one confirmation message containing all sessions
 - using uuids instead of ids as foreign keys in assignment table
+- allow contacts to resignup after session cancellation
 - tenant description, icon and styles are optional
 - refactor and update guardian integration
 
@@ -25,6 +26,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 - when cancelling an assignment, assignments of the same contact to follow-up sessions will be canceled as well
 - canceled assignments are not included in assignment count anymore
 - canceled assignments are no longer shown on the contact dashboard
+- when cancelling a session, follow-up sessions to the session are canceled as well
 
 ### Fixed
 

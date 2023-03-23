@@ -146,6 +146,8 @@ type hint =
   | ScheduledIntro
   | SearchByFields of Entity_message.Field.t list
   | SelectedDateIsPast
+  | SessionCancellationWithFollowups
+  | SessionCancellationMessageFollowUps
   | SessionCancelMessage
   | SessionClose
   | SessionRegistrationFollowUpHint

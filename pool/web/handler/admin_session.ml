@@ -201,7 +201,13 @@ let detail req page =
          flash_fetcher
        |> Lwt.return_ok
      | `Cancel ->
-       Page.Admin.Session.cancel context experiment session flash_fetcher
+       let* follow_ups = Session.find_follow_ups database_label session_id in
+       Page.Admin.Session.cancel
+         context
+         experiment
+         session
+         follow_ups
+         flash_fetcher
        |> Lwt.return_ok)
     >>= create_layout req context
     >|+ Sihl.Web.Response.of_html
@@ -324,7 +330,11 @@ let cancel req =
       err, error_path, [ HttpUtils.urlencoded_to_flash urlencoded ])
     @@
     let tags = Pool_context.Logger.Tags.req req in
+    let* experiment = Experiment.find database_label experiment_id in
     let* session = Session.find database_label session_id in
+    let* follow_ups =
+      Session.find_follow_ups database_label session.Session.id
+    in
     let* events =
       let* contacts =
         Assignment.find_by_session database_label session.Session.id
@@ -340,14 +350,16 @@ let cancel req =
         Message_template.SessionCancellation.prepare
           database_label
           tenant
+          experiment
           system_languages
           session
+          follow_ups
       in
       let open CCResult.Infix in
       let open Cqrs_command.Session_command.Cancel in
       urlencoded
       |> decode
-      >>= handle ~tags session contacts create_message
+      >>= handle ~tags (session :: follow_ups) contacts create_message
       |> Lwt_result.lift
     in
     let%lwt () = Pool_event.handle_events ~tags database_label events in
