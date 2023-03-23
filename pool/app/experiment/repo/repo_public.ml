@@ -47,17 +47,16 @@ let find_all_public_by_contact_request =
   let not_assigned =
     {sql|
     NOT EXISTS (
-        SELECT
-          1 FROM pool_assignments
-        WHERE
-          pool_assignments.marked_as_deleted = 0
-        AND
-          pool_assignments.contact_uuid = UNHEX(REPLACE($1, '-', ''))
-        AND pool_assignments.session_uuid IN(
-          SELECT
-            uuid FROM pool_sessions
-          WHERE
-            pool_sessions.experiment_uuid = pool_experiments.uuid))
+      SELECT
+        1
+      FROM
+        pool_assignments
+        INNER JOIN pool_sessions ON pool_assignments.session_uuid = pool_sessions.uuid
+      WHERE
+        pool_sessions.experiment_uuid = pool_experiments.uuid
+        AND pool_assignments.contact_uuid = UNHEX(REPLACE($1, '-', ''))
+        AND pool_assignments.marked_as_deleted = 0
+        AND pool_sessions.canceled_at IS NULL)
       |sql}
   in
   let not_on_waitinglist =

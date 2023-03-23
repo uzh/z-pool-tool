@@ -150,6 +150,26 @@ let suite =
               `Slow
               PendingWaitingLists.include_after_session_cancellation
           ] )
+    ; ( "experiment"
+      , Experiment_test.
+          [ test_case
+              "list available experiments"
+              `Slow
+              AvailableExperiments.list_available_experiments
+          ; test_case
+              "exclude experiment after registration for session"
+              `Slow
+              AvailableExperiments
+              .exclude_experiment_after_registration_for_session
+          ; test_case
+              "cancel session contact is assigned to"
+              `Slow
+              AvailableExperiments.cancel_session
+          ; test_case
+              "mark assignments as deleted"
+              `Slow
+              AvailableExperiments.mark_assignment_as_deleted
+          ] )
     ; "cleanup", [ test_case "clean up test database" `Quick Seed.cleanup ]
     ]
 ;;
