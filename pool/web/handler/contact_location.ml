@@ -30,7 +30,7 @@ let asset req =
     Utils.Lwt_result.map_error (fun err -> err, "/not-found")
     @@
     let tags = Pool_context.Logger.Tags.req req in
-    let ctx = Pool_tenant.to_ctx database_label in
+    let ctx = Pool_database.to_ctx database_label in
     let* file =
       find_location_file database_label id
       >>= fun { Mapping.file; _ } ->

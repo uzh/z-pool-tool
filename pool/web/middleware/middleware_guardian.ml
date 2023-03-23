@@ -31,7 +31,7 @@ let validate_access_request_dependent effects req =
   let* ({ Pool_context.user; database_label; _ } as context) =
     req |> Pool_context.find |> Lwt_result.lift
   in
-  let ctx = Pool_tenant.to_ctx database_label in
+  let ctx = Pool_database.to_ctx database_label in
   let* effects = effects req |> Lwt_result.lift in
   Lwt_result.map_error (fun err ->
     let (_ : error) =

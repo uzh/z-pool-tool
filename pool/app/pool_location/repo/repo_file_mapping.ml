@@ -194,7 +194,7 @@ module Sql = struct
       Utils.Database.exec (Pool_database.Label.value pool) delete_request id
     in
     Service.Storage.delete
-      ~ctx:(Pool_tenant.to_ctx pool)
+      ~ctx:(Pool_database.to_ctx pool)
       (Id.value file.File.id)
   ;;
 end

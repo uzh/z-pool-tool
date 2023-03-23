@@ -9,7 +9,7 @@ let delete_unverified_by_user = Repo.delete_unverified_by_user
 let create_token pool address =
   let open Utils.Lwt_result.Infix in
   Service.Token.create
-    ~ctx:(Pool_tenant.to_ctx pool)
+    ~ctx:(Pool_database.to_ctx pool)
     [ "email", User.EmailAddress.value address ]
   ||> Token.create
 ;;

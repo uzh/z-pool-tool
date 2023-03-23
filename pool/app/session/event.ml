@@ -57,7 +57,7 @@ let handle_event pool =
         session.reminder_lead_time
     in
     let%lwt () = Repo.insert pool (Experiment.Id.value experiment_id, sess) in
-    Entity_guard.Target.to_authorizable ~ctx:(Pool_tenant.to_ctx pool) sess
+    Entity_guard.Target.to_authorizable ~ctx:(Pool_database.to_ctx pool) sess
     ||> Pool_common.Utils.get_or_failwith
     ||> fun (_ : Role.Target.t Guard.Target.t) -> ()
   | Canceled session ->

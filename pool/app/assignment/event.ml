@@ -30,7 +30,7 @@ let handle_event pool : event -> unit Lwt.t = function
     let assignment = create contact in
     let%lwt () = Repo.insert pool session_id assignment in
     Entity_guard.Target.to_authorizable
-      ~ctx:(Pool_tenant.to_ctx pool)
+      ~ctx:(Pool_database.to_ctx pool)
       assignment
     ||> Pool_common.Utils.get_or_failwith
     ||> fun (_ : [> `Assignment ] Guard.Target.t) -> ()
