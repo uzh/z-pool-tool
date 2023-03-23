@@ -4,8 +4,8 @@
 
 When using a DevContainer, the `opam` packages and database files are mounted as volumes into the DevContainer.
 
-- `.devcontainer/data/db-root/`: development mariadb data (root)
-- `.devcontainer/data/db-tenant/`: development mariadb data (tenants)
+- Docker volume `db-root`: development mariadb data (root)
+- Docker volume `db-tenant`: development mariadb data (tenants)
 - Docker volume `opam`: opam packages
 - Docker volume `build`: cached build directory to speed up development
 
@@ -23,6 +23,8 @@ Your SSH folder and Git config gets mapped to the container. You should be able 
 container. Please ensure `~/.gitconfig` doesn't contain absolute paths (you may use the `~` profile prefix, i.e.
 `excludesfile = ~/.gitignore_global`). **Please note:** You probably have to update Sourcetree settings. In its
 settings "General" tab uncheck "Allow Sourcetree to modify your global Mercurial and Git configuration files".
+You may add your own docker-compose.override.yml file to override or add additional settings to the DevContainer.
+
 
 ## Start
 
