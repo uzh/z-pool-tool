@@ -427,7 +427,7 @@ module Model = struct
 
   let create_assignment () =
     Assignment.
-      { id = Pool_common.Id.create ()
+      { id = Id.create ()
       ; contact = create_contact ()
       ; show_up = None
       ; participated = None

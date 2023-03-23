@@ -55,7 +55,9 @@ let show req =
     let* session_user_is_assigned =
       Assignment.find_by_experiment_and_contact_opt database_label id contact
       >|> Lwt_list.map_s (fun { Assignment.Public.id; _ } ->
-            Session.find_public_by_assignment database_label id)
+            id
+            |> Assignment.Id.to_common
+            |> Session.find_public_by_assignment database_label)
       ||> CCResult.flatten_l
     in
     let%lwt user_is_on_waiting_list =

@@ -14,7 +14,7 @@ let assignment_specific_path experiment_id session assignment =
     (experiment_id |> Experiment.Id.value)
     Session.(session.id |> Id.value)
     Message.Field.(human_url Assignments)
-    (assignment.Assignment.id |> Id.value)
+    Assignment.(assignment.id |> Id.value)
 ;;
 
 type assignment_redirect =

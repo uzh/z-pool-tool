@@ -33,7 +33,7 @@ module MarkedAsDeleted : sig
 end
 
 type t =
-  { id : Pool_common.Id.t
+  { id : Id.t
   ; contact : Contact.t
   ; show_up : ShowUp.t option
   ; participated : Participated.t option
@@ -49,7 +49,7 @@ val equal : t -> t -> bool
 val show : t -> string
 
 val create
-  :  ?id:Pool_common.Id.t
+  :  ?id:Id.t
   -> ?show_up:ShowUp.t
   -> ?participated:Participated.t
   -> ?matches_filter:MatchesFilter.t
@@ -64,7 +64,7 @@ val attendance_settable : t -> (unit, Pool_common.Message.error) result
 
 module Public : sig
   type t =
-    { id : Pool_common.Id.t
+    { id : Id.t
     ; canceled_at : CanceledAt.t option
     }
 end

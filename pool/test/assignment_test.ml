@@ -438,17 +438,17 @@ let cancel_assignment_with_follow_ups _ () =
   in
   (* Cancel assignments *)
   let%lwt () =
+    let open Assignment in
     let%lwt assignment_id =
-      Assignment.find_by_experiment_and_contact_opt
+      find_by_experiment_and_contact_opt
         Data.database_label
         experiment.Experiment.id
         contact
       ||> CCList.hd
-      ||> fun ({ Assignment.Public.id; _ } : Assignment.Public.t) ->
-      id |> Pool_common.Id.value |> Assignment.Id.of_string
+      ||> fun ({ Public.id; _ } : Public.t) -> id |> Id.value |> Id.of_string
     in
     let%lwt assignments =
-      Assignment.find_with_follow_ups Data.database_label assignment_id
+      find_with_follow_ups Data.database_label assignment_id
       ||> get_or_failwith_pool_error
     in
     AssignmentCommand.Cancel.handle (assignments, parent_session)
