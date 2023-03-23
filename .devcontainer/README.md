@@ -23,10 +23,10 @@ Your SSH folder and Git config gets mapped to the container. You should be able 
 container. Please ensure `~/.gitconfig` doesn't contain absolute paths (you may use the `~` profile prefix, i.e.
 `excludesfile = ~/.gitignore_global`). **Please note:** You probably have to update Sourcetree settings. In its
 settings "General" tab uncheck "Allow Sourcetree to modify your global Mercurial and Git configuration files".
-You may add your own docker-compose.override.yml file to override or add additional settings to the DevContainer.
-
 
 ## Start
+
+If needed, edit `.devcontainer/docker-compose.override.yml` to suit your needs and set the environment variables in `.devcontainer/.env`. You can use the `.env-sample` file as a template.
 
 Click on the icon similar to "><" in the bottom left corner and select `Remote-Containers: Reopen in Container`.
 If any changes were made to files in `.devcontainer` folder the Container should be rebuilt (`Remote-Containers: Rebuild Container`)
