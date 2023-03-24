@@ -14,10 +14,10 @@ let waiting_list pool =
       ; experiment_type = Some Pool_common.ExperimentType.Lab
       }
   in
-  let%lwt events =
+  let%lwt waiting_list_events, invitation_events =
     let open Utils.Lwt_result.Infix in
-    Lwt_list.filter_map_s
-      (fun (experiment : Experiment.t) ->
+    Lwt_list.fold_left_s
+      (fun (waiting_lists, invitations) (experiment : Experiment.t) ->
         let open Experiment in
         match
           experiment.direct_registration_disabled
@@ -32,16 +32,26 @@ let waiting_list pool =
             ||> CCResult.get_exn
           in
           let contacts = take_n 10 filtered_contacts in
-          let experiment = to_public_experiment experiment in
-          contacts
-          |> CCList.map (fun contact ->
-               Waiting_list.Created Waiting_list.{ contact; experiment })
-          |> CCOption.pure
-          |> Lwt.return
-        | false -> Lwt.return None)
+          let waiting_lists =
+            let experiment = to_public_experiment experiment in
+            (contacts
+             |> CCList.map (fun contact ->
+                  Waiting_list.Created Waiting_list.{ contact; experiment }))
+            @ waiting_lists
+          in
+          let invitations =
+            Invitation.Created (contacts, experiment) :: invitations
+          in
+          (waiting_lists, invitations) |> Lwt.return
+        | false -> Lwt.return (waiting_lists, invitations))
+      ([], [])
       experiments
-    ||> CCList.flatten
   in
-  let%lwt () = Lwt_list.iter_s (Waiting_list.handle_event pool) events in
+  let%lwt () =
+    Lwt_list.iter_s (Invitation.handle_event pool) invitation_events
+  in
+  let%lwt () =
+    Lwt_list.iter_s (Waiting_list.handle_event pool) waiting_list_events
+  in
   Lwt.return_unit
 ;;
