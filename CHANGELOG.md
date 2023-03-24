@@ -17,6 +17,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 - allow contacts to resignup after session cancellation
 - tenant description, icon and styles are optional
 - refactor and update guardian integration
+- using uuids instead of ids as foreign keys in invitations and mailings tables
 
 ### Fixed
 
