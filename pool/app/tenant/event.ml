@@ -17,7 +17,7 @@ let handle_event pool : event -> unit Lwt.t =
     let open Guard in
     let%lwt () =
       Persistence.Rule.save
-        ~ctx:(Pool_tenant.to_ctx pool)
+        ~ctx:(Pool_database.to_ctx pool)
         ( ActorSpec.Id
             (`Admin, Uuid.Actor.of_string_exn (Admin.user user).Sihl_user.id)
         , Action.Manage
@@ -28,7 +28,7 @@ let handle_event pool : event -> unit Lwt.t =
   | OperatorUnassigned (tenant_id, user) ->
     let open Guard in
     Persistence.Rule.delete_exn
-      ~ctx:(Pool_tenant.to_ctx pool)
+      ~ctx:(Pool_database.to_ctx pool)
       ( ActorSpec.Id
           (`Admin, Uuid.Actor.of_string_exn (Admin.user user).Sihl_user.id)
       , Action.Manage

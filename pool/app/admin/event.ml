@@ -25,7 +25,7 @@ let set_password
  fun pool user password password_confirmation ->
   let open Lwt_result.Infix in
   Service.User.set_password
-    ~ctx:(Pool_tenant.to_ctx pool)
+    ~ctx:(Pool_database.to_ctx pool)
     user
     ~password
     ~password_confirmation
@@ -45,7 +45,7 @@ let handle_event ~tags pool : event -> unit Lwt.t =
   let open Utils.Lwt_result.Infix in
   function
   | Created { id; lastname; firstname; password; email; roles } ->
-    let ctx = Pool_tenant.to_ctx pool in
+    let ctx = Pool_database.to_ctx pool in
     let%lwt user =
       Service.User.create_admin
         ~ctx

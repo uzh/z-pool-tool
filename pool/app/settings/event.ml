@@ -13,7 +13,9 @@ type event =
   | DefaultRestored of default
 [@@deriving eq, show]
 
-let handle_event pool : event -> unit Lwt.t = function
+let handle_event pool : event -> unit Lwt.t =
+  let open Utils.Lwt_result.Infix in
+  function
   | LanguagesUpdated languages ->
     let%lwt () = Repo.update pool (Value.TenantLanguages languages) in
     Lwt.return_unit
@@ -81,7 +83,14 @@ let handle_event pool : event -> unit Lwt.t = function
         ; TriggerProfileUpdateAfter trigger_profile_update_after
         ; TermsAndConditions terms_and_conditions
         ]
-      |> Lwt_list.iter_s (Repo.insert pool)
+      |> Lwt_list.iter_s (fun value ->
+           let id = Pool_common.Id.create () in
+           let%lwt () = Repo.insert ~id pool value in
+           Entity_guard.Target.to_authorizable
+             ~ctx:(Pool_database.to_ctx pool)
+             id
+           ||> Pool_common.Utils.get_or_failwith
+           ||> fun (_ : Role.Target.t Guard.Target.t) -> ())
     in
     Lwt.return_unit
 ;;

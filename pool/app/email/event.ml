@@ -10,7 +10,7 @@ type confirmation_email =
 [@@deriving eq, show]
 
 let deactivate_token pool token =
-  Service.Token.deactivate ~ctx:(Pool_tenant.to_ctx pool) token
+  Service.Token.deactivate ~ctx:(Pool_database.to_ctx pool) token
 ;;
 
 type verification_event =
@@ -27,7 +27,7 @@ let handle_verification_event pool : verification_event -> unit Lwt.t = function
     let%lwt () = Repo.delete_unverified_by_user pool user_id in
     let%lwt user =
       Service.User.find
-        ~ctx:(Pool_tenant.to_ctx pool)
+        ~ctx:(Pool_database.to_ctx pool)
         (Pool_common.Id.value user_id)
     in
     let unverified_email = create address user token in

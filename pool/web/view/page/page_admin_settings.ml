@@ -85,7 +85,7 @@ let show
                new language."
           ]
       ; form
-          ~a:(form_attrs `UpdateTenantLanguages)
+          ~a:(form_attrs `UpdateLanguages)
           ([ csrf_element csrf (); field_elements ] @ [ submit () ])
       ]
   in
@@ -96,7 +96,7 @@ let show
           ~a:[ a_class [ "stack" ] ]
           (let constant =
              [ form
-                 ~a:(form_attrs `CreateTenantEmailSuffix)
+                 ~a:(form_attrs `CreateEmailSuffix)
                  [ csrf_element csrf ()
                  ; input_element
                      language
@@ -112,7 +112,7 @@ let show
                       ; form
                           ~a:
                             [ a_method `Post
-                            ; a_action (action_path `DeleteTenantEmailSuffix)
+                            ; a_action (action_path `DeleteEmailSuffix)
                             ; a_user_data
                                 "confirmable"
                                 Pool_common.(
@@ -145,7 +145,7 @@ let show
            in
            let update =
              form
-               ~a:(form_attrs `UpdateTenantEmailSuffixes)
+               ~a:(form_attrs `UpdateEmailSuffixes)
                ([ csrf_element csrf () ]
                 @ CCList.map
                     (fun suffix ->
@@ -167,7 +167,7 @@ let show
     div
       [ h2 [ txt "Contact Email" ]
       ; form
-          ~a:(form_attrs `UpdateTenantContactEmail)
+          ~a:(form_attrs `UpdateContactEmail)
           [ csrf_element csrf ()
           ; input_element
               language

@@ -31,7 +31,7 @@ let grant_role ctx admin role =
 
 let create =
   let create_and_grant_role_exn pool email password given_name name role =
-    let ctx = Pool_tenant.to_ctx pool in
+    let ctx = Pool_database.to_ctx pool in
     match%lwt Service.User.find_by_email_opt ~ctx email with
     | None ->
       let%lwt admin =
@@ -79,7 +79,7 @@ Example: admin.create econ-uzh example@mail.com securePassword Max Muster Recrui
 
 let create_root_admin =
   let create_exn email password given_name name =
-    let ctx = Pool_tenant.to_ctx Pool_database.root in
+    let ctx = Pool_database.to_ctx Pool_database.root in
     match%lwt Service.User.find_by_email_opt ~ctx email with
     | None ->
       let%lwt (admin : Sihl_user.t) =
@@ -114,7 +114,7 @@ Example: admin.root.create example@mail.com securePassword Max Muster
 
 let grant_role =
   let grant_if_admin pool email role =
-    let ctx = Pool_tenant.to_ctx pool in
+    let ctx = Pool_database.to_ctx pool in
     match%lwt Service.User.find_by_email_opt ~ctx email with
     | Some admin when Sihl_user.is_admin admin ->
       let%lwt () = grant_role ctx admin role in

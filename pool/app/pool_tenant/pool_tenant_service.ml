@@ -298,7 +298,7 @@ Html:
         "Dispatch email to %s"
         email.Sihl_email.recipient);
     Queue.dispatch
-      ~ctx:(Entity.to_ctx database_label)
+      ~ctx:(Pool_database.to_ctx database_label)
       (email |> intercept_prepare |> CCResult.get_or_failwith)
       Job.send
   ;;
@@ -310,6 +310,9 @@ Html:
         ~tags:(Pool_database.Logger.Tags.create database_label)
         "Dispatch email to %s"
         ([%show: string list] recipients));
-    Queue.dispatch_all ~ctx:(Entity.to_ctx database_label) emails Job.send
+    Queue.dispatch_all
+      ~ctx:(Pool_database.to_ctx database_label)
+      emails
+      Job.send
   ;;
 end

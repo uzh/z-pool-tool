@@ -291,8 +291,6 @@ val handle_event : Database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
-val to_ctx : Database.Label.t -> (string * string) list
-val of_ctx_exn : (string * string) list -> Database.Label.t
 val find : Id.t -> (t, Pool_common.Message.error) Lwt_result.t
 val find_full : Id.t -> (Write.t, Pool_common.Message.error) Lwt_result.t
 
