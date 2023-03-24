@@ -139,7 +139,7 @@ let find_pending_waitinglists_by_contact pool contact =
 let find_request =
   let open Caqti_request.Infix in
   let id_fragment = "pool_experiments.uuid = UNHEX(REPLACE($2, '-', ''))" in
-  {sql| (pool_invitations.contact_uuid = UNHEX(REPLACE($1, '-', '')) |sql}
+  {sql| pool_invitations.contact_uuid = UNHEX(REPLACE($1, '-', '')) |sql}
   |> Format.asprintf
        "%s WHERE %s AND %s AND (%s OR %s)"
        pool_invitations_left_join
