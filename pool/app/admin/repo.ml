@@ -105,11 +105,11 @@ module Actors = struct
       {sql|
         SELECT
           LOWER(CONCAT(
-            SUBSTR(HEX(id), 1, 8), '-',
-            SUBSTR(HEX(id), 9, 4), '-',
-            SUBSTR(HEX(id), 13, 4), '-',
-            SUBSTR(HEX(id), 17, 4), '-',
-            SUBSTR(HEX(id), 21)
+            SUBSTR(HEX(uuid), 1, 8), '-',
+            SUBSTR(HEX(uuid), 9, 4), '-',
+            SUBSTR(HEX(uuid), 13, 4), '-',
+            SUBSTR(HEX(uuid), 17, 4), '-',
+            SUBSTR(HEX(uuid), 21)
           ))
         FROM guardian_actors
       |sql}
