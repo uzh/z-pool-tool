@@ -142,7 +142,7 @@ module Sql = struct
     let open Caqti_request.Infix in
     {sql|
       INNER JOIN pool_mailing
-        ON pool_experiments.id = pool_mailing.experiment_id
+        ON pool_experiments.uuid = pool_mailing.experiment_uuid
       WHERE pool_mailing.uuid = UNHEX(REPLACE(?, '-', ''))
     |sql}
     |> select_from_experiments_sql

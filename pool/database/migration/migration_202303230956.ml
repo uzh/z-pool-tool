@@ -25,8 +25,29 @@ let use_uuids_as_foreign_keys_in_invitations_table =
     |sql}
 ;;
 
+let use_uuids_as_foreign_keys_in_mailings_table =
+  Sihl.Database.Migration.create_step
+    ~label:"replace ids with uuids as foreignkeys in mailings table"
+    {sql|
+      BEGIN NOT ATOMIC
+        ALTER TABLE pool_mailing
+          ADD COLUMN experiment_uuid binary(16) AFTER experiment_id;
+
+        UPDATE pool_mailing SET
+          experiment_uuid = (SELECT uuid FROM pool_experiments WHERE pool_experiments.id = pool_mailing.experiment_id);
+
+        ALTER TABLE pool_mailing
+          MODIFY COLUMN `experiment_uuid` binary(16) NOT NULL;
+
+        ALTER TABLE pool_mailing
+          DROP COLUMN experiment_id;
+      END;
+    |sql}
+;;
+
 let migration () =
   Sihl.Database.Migration.(
     empty "202303230956"
-    |> add_step use_uuids_as_foreign_keys_in_invitations_table)
+    |> add_step use_uuids_as_foreign_keys_in_invitations_table
+    |> add_step use_uuids_as_foreign_keys_in_mailings_table)
 ;;
