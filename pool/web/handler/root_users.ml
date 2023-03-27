@@ -13,8 +13,7 @@ let index req =
   let%lwt root_list = Admin.find_all Pool_database.root () in
   Page.Root.Users.list root_list context
   |> General.create_root_layout ~active_navigation context
-  |> Sihl.Web.Response.of_html
-  |> Lwt.return
+  ||> Sihl.Web.Response.of_html
 ;;
 
 let create req =

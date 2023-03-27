@@ -18,8 +18,8 @@ let login_get req =
       let open Sihl.Web in
       Page.Root.Login.login ?intended:(HttpUtils.find_intended_opt req) context
       |> General.create_root_layout ~active_navigation:"/root/login" context
-      |> Response.of_html
-      |> Lwt_result.return
+      ||> Response.of_html
+      |> Lwt_result.ok
   in
   result |> HttpUtils.extract_happy_path req
 ;;
@@ -63,8 +63,8 @@ let request_reset_password_get req =
       |> General.create_root_layout
            ~active_navigation:"/root/request-reset-password"
            context
-      |> Response.of_html
-      |> Lwt.return_ok
+      ||> Response.of_html
+      |> Lwt_result.ok
   in
   result |> HttpUtils.extract_happy_path req
 ;;
@@ -114,8 +114,8 @@ let reset_password_get req =
        |> General.create_root_layout
             ~active_navigation:"/root/reset-password"
             context
-       |> Response.of_html
-       |> Lwt_result.return
+       ||> Response.of_html
+       |> Lwt_result.ok
   in
   result |> HttpUtils.extract_happy_path req
 ;;

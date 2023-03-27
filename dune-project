@@ -65,6 +65,8 @@
    (>= 0.7.0))
   (containers
    (>= 3.6))
+  (containers-data
+   (>= 3.6))
   (mariadb
    (and
     (>= 1.1.6)

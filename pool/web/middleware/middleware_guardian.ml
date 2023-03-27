@@ -31,7 +31,6 @@ let validate_access_request_dependent effects req =
   let* ({ Pool_context.user; database_label; _ } as context) =
     req |> Pool_context.find |> Lwt_result.lift
   in
-  let ctx = Pool_database.to_ctx database_label in
   let* effects = effects req |> Lwt_result.lift in
   Lwt_result.map_error (fun err ->
     let (_ : error) =
@@ -44,6 +43,7 @@ let validate_access_request_dependent effects req =
   match user with
   | Pool_context.Guest | Pool_context.Contact _ -> Lwt.return_error AccessDenied
   | Pool_context.Admin admin ->
+    let ctx = Pool_database.to_ctx database_label in
     let* auth = Admin.Guard.Actor.to_authorizable ~ctx admin in
     let () =
       Logs.debug ~src (fun m ->
@@ -54,7 +54,7 @@ let validate_access_request_dependent effects req =
           ([%show: Guard.Actor.t] auth)
           ([%show: Guard.ValidationSet.t] effects))
     in
-    Guard.Persistence.validate ~ctx authorization effects auth
+    Guard.Persistence.validate database_label effects auth
 ;;
 
 let validate_admin_entity_base validate =

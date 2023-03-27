@@ -1,6 +1,7 @@
 (library
  (name guard)
  (libraries
+  containers-data
   guardian
   guardian.backend
   lwt

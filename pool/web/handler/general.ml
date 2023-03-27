@@ -14,22 +14,26 @@ let admin_from_session db_pool req =
 let create_tenant_layout
   req
   ?active_navigation
-  Pool_context.{ language; query_language; message; user; _ }
+  Pool_context.{ database_label; language; query_language; message; user; _ }
   children
   =
   let open Utils.Lwt_result.Infix in
   let* tenant_context = Pool_context.Tenant.find req |> Lwt_result.lift in
-  Page.Layout.Tenant.create_layout
+  Layout.create
     children
     tenant_context
-    user
-    message
+    ?active_navigation
+    ?message
+    ?query_language
+    database_label
     language
-    query_language
-    active_navigation
-  |> Lwt_result.return
+    user
+  |> Lwt_result.ok
 ;;
 
-let create_root_layout ?active_navigation Pool_context.{ message; user; _ } =
-  Page.Layout.Root.create_layout ?active_navigation user message
+let create_root_layout
+  ?active_navigation
+  Pool_context.{ database_label; message; user; _ }
+  =
+  Layout.Root.create ?active_navigation ?message database_label user
 ;;

@@ -8,6 +8,7 @@
   email
   http_utils
   htmx
+  layout
   mailing
   message_template
   middleware

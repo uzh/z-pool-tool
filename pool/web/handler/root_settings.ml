@@ -13,7 +13,7 @@ let show_smtp req =
     ||> (function
           | Ok smtp -> show ~settings_path context flash_fetcher smtp
           | Error _ -> smtp_create_form ~settings_path context flash_fetcher)
-    ||> General.create_root_layout ~active_navigation context
+    >|> General.create_root_layout ~active_navigation context
     ||> Sihl.Web.Response.of_html
     >|> Lwt_result.return
   in

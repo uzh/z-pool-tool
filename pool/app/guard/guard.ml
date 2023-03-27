@@ -1,20 +1,68 @@
+Logs.Src.create "guard"
+
 include Core
 include Event
-module Persistence = Repo
 module Act = ActorSpec
 module Tar = TargetSpec
 
-(** [console_authorizable] is an [\[ `System \] Actor.t] for use in
+module Persistence = struct
+  (* TODO: Once the guardian package has a cached version, this implementation
+     can be updated/removed (Issue:
+     https://github.com/uzh/guardian/issues/11) *)
+  include Repo
+
+  let cache =
+    CCCache.(
+      lru
+        ~eq:(fun (l1, s1, a1) (l2, s2, a2) ->
+          Pool_database.Label.equal l1 l2
+          && ValidationSet.equal s1 s2
+          && Core.Actor.(Uuid.Actor.equal (id a1) (id a2)))
+        2048)
+  ;;
+
+  let refresh = CCCache.clear cache
+
+  let validate
+    (database_label : Pool_database.Label.t)
+    (validation_set : ValidationSet.t)
+    (actor : Role.t Core.Actor.t)
+    : (unit, Pool_common.Message.error) monad
+    =
+    let cb ~(in_cache : bool) _key _access_provided : unit =
+      if in_cache
+      then
+        Logs.warn ~src (fun m ->
+          m
+            ~tags:(Pool_database.Logger.Tags.create database_label)
+            "Found in cache: Actor %s\nValidation set %s"
+            (actor |> Core.Actor.id |> Uuid.Actor.to_string)
+            ([%show: ValidationSet.t] validation_set))
+      else ()
+    in
+    let validate' (label, set, actor) =
+      validate
+        ~ctx:(Pool_database.to_ctx label)
+        Pool_common.Message.authorization
+        set
+        actor
+    in
+    (database_label, validation_set, actor)
+    |> CCCache.(with_cache ~cb cache validate')
+  ;;
+end
+
+(** [console_authorizable] is an Persistence.Role.t Actor.t] for use in
     administrative tasks, such as working with the command line or running
     tests. *)
-let console_authorizable : [ `System ] Actor.t =
+let console_authorizable : Persistence.Role.t Actor.t =
   Actor.make (RoleSet.singleton `System) `System (Uuid.Actor.create ())
 ;;
 
-(** [guest_authorizable] is a [\[ `Guest \] Actor.t] to be assigned to entities
-    at the absolute lowest level of trust, such as users browsing the public
-    facing website without logging in. *)
-let guest_authorizable : [ `Guest ] Actor.t =
+(** [guest_authorizable] is a [Persistence.Role.t Actor.t] to be assigned to
+    entities at the absolute lowest level of trust, such as users browsing the
+    public facing website without logging in. *)
+let guest_authorizable : Persistence.Role.t Actor.t =
   Actor.make (RoleSet.singleton `Guest) `Guest (Uuid.Actor.create ())
 ;;
 

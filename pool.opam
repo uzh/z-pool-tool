@@ -26,6 +26,7 @@ depends: [
   "lwt" {>= "5.6.1"}
   "logs" {>= "0.7.0"}
   "containers" {>= "3.6"}
+  "containers-data" {>= "3.6"}
   "mariadb" {>= "1.1.6" & < "2.0.0"}
   "caqti-driver-mariadb" {>= "1.8.0"}
   "caqti" {>= "1.8.0"}

@@ -12,4 +12,6 @@
   service
   session
   sihl
-  tyxml))
+  tyxml)
+ (preprocess
+  (pps lwt_ppx ppx_deriving.eq ppx_deriving.show tyxml-ppx)))

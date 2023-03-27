@@ -7,10 +7,10 @@ module Navigation = Navigation
 let create
   children
   Pool_context.Tenant.{ tenant_languages; tenant }
-  ?actor_targets
   ?active_navigation
   ?message
   ?query_language
+  database_label
   active_language
   user
   =
@@ -40,11 +40,11 @@ let create
     in
     [ charset; viewport ] @ stylesheets @ favicon
   in
-  let children =
+  let%lwt children =
     let title = App.create_title query_language title_text in
     Navigation.create
-      ?actor_targets
       ?active_navigation
+      database_label
       title
       tenant_languages
       query_language
@@ -60,38 +60,62 @@ let create
         ; App.footer title_text
         ]
         @ scripts))
+  |> Lwt.return
 ;;
 
-let create_root ?actor_targets ?active_navigation user message content =
-  let open Layout_utils in
-  let language = Language.En in
-  let title_text = "Pool Tool" in
-  let page_title = title (txt title_text) in
-  let message = Message.create message language () in
-  let children =
-    let title = App.create_title None title_text in
-    Navigation.create_root
-      ?actor_targets
-      ?active_navigation
-      title
-      []
-      None
-      language
-      user
-  in
-  html
-    (head
-       page_title
-       [ charset
-       ; viewport
-       ; favicon (assets `RootFavicon)
-       ; `GlobalStylesheet |> css_link_tag
-       ])
-    (body
-       ~a:[ a_class body_tag_classnames ]
-       [ App.header ~children None title_text
-       ; main_tag [ message; content ]
-       ; App.footer title_text
-       ; `IndexJs |> js_script_tag
-       ])
-;;
+module Root = struct
+  let create ?active_navigation ?message database_label user content =
+    let open Layout_utils in
+    let language = Language.En in
+    let title_text = "Pool Tool" in
+    let page_title = title (txt title_text) in
+    let message = Message.create message language () in
+    let%lwt children =
+      let title = App.create_title None title_text in
+      Navigation.create_root
+        ?active_navigation
+        database_label
+        title
+        []
+        None
+        language
+        user
+    in
+    html
+      (head
+         page_title
+         [ charset
+         ; viewport
+         ; favicon (assets `RootFavicon)
+         ; `GlobalStylesheet |> css_link_tag
+         ])
+      (body
+         ~a:[ a_class body_tag_classnames ]
+         [ App.header ~children None title_text
+         ; main_tag [ message; content ]
+         ; App.footer title_text
+         ; js_script_tag `IndexJs
+         ])
+    |> Lwt.return
+  ;;
+end
+
+module Error = struct
+  let create children =
+    let open Layout_utils in
+    let title_text = "Pool Tool" in
+    let page_title = title (txt title_text) in
+    let content = main_tag [ children ] in
+    html
+      (head
+         page_title
+         ([ charset; viewport ] @ [ `GlobalStylesheet |> css_link_tag ]))
+      (body
+         ~a:[ a_class body_tag_classnames ]
+         [ App.header None title_text
+         ; content
+         ; App.footer title_text
+         ; js_script_tag `IndexJs
+         ])
+  ;;
+end

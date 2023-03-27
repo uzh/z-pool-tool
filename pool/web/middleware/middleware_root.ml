@@ -1,13 +1,13 @@
 let from_root_only () =
+  let open Utils.Lwt_result.Infix in
   let filter handler req =
     Http_utils.is_req_from_root_host req
     |> function
     | true -> handler req
     | false ->
       Page.Utils.error_page_not_found Pool_common.Language.En ()
-      |> Page.Layout.Root.create_layout Pool_context.Guest None
-      |> Sihl.Web.Response.of_html
-      |> Lwt.return
+      |> Layout.Root.create Pool_database.root Pool_context.Guest
+      ||> Sihl.Web.Response.of_html
   in
   Rock.Middleware.create ~name:"root.only" ~filter
 ;;

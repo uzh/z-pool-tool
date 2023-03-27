@@ -96,8 +96,8 @@ let not_found req =
     match Http_utils.is_req_from_root_host req with
     | true ->
       General.create_root_layout context html
-      |> Sihl.Web.Response.of_html
-      |> Lwt_result.return
+      ||> Sihl.Web.Response.of_html
+      |> Lwt_result.ok
     | false ->
       Utils.Lwt_result.map_error (fun err ->
         err, Http_utils.path_with_language query_language "/error")
@@ -116,11 +116,18 @@ let not_found req =
 ;;
 
 let denied req =
+  let open Utils.Lwt_result.Infix in
   let context = req |> Pool_context.find in
   match context with
   | Error (_ : Pool_common.Message.error) -> failwith ""
-  | Ok ({ Pool_context.language; query_language; message; user; _ } as context)
-    ->
+  | Ok
+      ({ Pool_context.database_label
+       ; language
+       ; query_language
+       ; message
+       ; user
+       ; _
+       } as context) ->
     let tenant = Pool_context.Tenant.find req in
     let html =
       Page.Utils.error_page_terminatory
@@ -131,18 +138,17 @@ let denied req =
     in
     (match Pool_context.is_from_root context, tenant with
      | false, Ok tenant ->
-       Page.Layout.Tenant.create_layout
+       Layout.create
          html
          tenant
-         user
-         message
+         ?message
+         ?query_language
+         database_label
          language
-         query_language
-         None
+         user
      | false, Error _ | true, Ok _ | true, Error _ ->
-       Page.Layout.Root.create_layout Pool_context.Guest None html)
-    |> Sihl.Web.Response.of_html
-    |> Lwt.return
+       Layout.Root.create database_label Pool_context.Guest html)
+    ||> Sihl.Web.Response.of_html
 ;;
 
 let asset req =
@@ -182,7 +188,7 @@ let error req =
   in
   (Common.Message.TerminatoryRootErrorTitle, Common.Message.TerminatoryRootError)
   |> error_page
-  |> Page.Layout.create_error_layout
+  |> Layout.Error.create
   |> Sihl.Web.Response.of_html
   |> Lwt.return
 ;;

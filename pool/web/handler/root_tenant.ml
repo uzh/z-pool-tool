@@ -15,8 +15,7 @@ let tenants req =
   let flash_fetcher key = Sihl.Web.Flash.find key req in
   Page.Root.Tenant.list tenant_list context flash_fetcher
   |> General.create_root_layout ~active_navigation context
-  |> Sihl.Web.Response.of_html
-  |> Lwt.return
+  ||> Sihl.Web.Response.of_html
 ;;
 
 let create req =
@@ -84,8 +83,8 @@ let manage_operators req =
     let* tenant = Pool_tenant.find id in
     Page.Root.Tenant.manage_operators tenant context
     |> General.create_root_layout context
-    |> Response.of_html
-    |> Lwt.return_ok
+    ||> Response.of_html
+    |> Lwt_result.ok
   in
   result |> HttpUtils.extract_happy_path req
 ;;
@@ -147,8 +146,8 @@ let tenant_detail req =
     let flash_fetcher key = Sihl.Web.Flash.find key req in
     Page.Root.Tenant.detail tenant context flash_fetcher
     |> General.create_root_layout context
-    |> Sihl.Web.Response.of_html
-    |> Lwt.return_ok
+    ||> Sihl.Web.Response.of_html
+    |> Lwt_result.ok
   in
   result |> HttpUtils.extract_happy_path req
 ;;
