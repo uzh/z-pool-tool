@@ -12,33 +12,28 @@ module ContactRepo = struct
   let create ?id ?(with_terms_accepted = false) () =
     let open Utils.Lwt_result.Infix in
     let contact = Model.create_contact ?id ~with_terms_accepted () in
+    let open Contact in
     let verified =
-      if contact.Contact.user.Sihl_user.confirmed
-      then Contact.[ Verified contact ]
-      else []
+      if contact.user.Sihl_user.confirmed then [ Verified contact ] else []
     in
     let%lwt () =
-      [ Contact.(
-          Created
-            { user_id = Contact.id contact
-            ; email = Contact.email_address contact
-            ; password =
-                contact.Contact.user.Sihl_user.password
-                |> Pool_user.Password.create
-                |> get_or_failwith_pool_error
-            ; firstname = Contact.firstname contact
-            ; lastname = Contact.lastname contact
-            ; terms_accepted_at = None
-            ; language = contact.language
-            })
+      [ Created
+          { user_id = id contact
+          ; email = email_address contact
+          ; password =
+              contact.user.Sihl_user.password
+              |> Pool_user.Password.create
+              |> get_or_failwith_pool_error
+          ; firstname = firstname contact
+          ; lastname = lastname contact
+          ; terms_accepted_at = None
+          ; language = contact.language
+          }
       ]
       @ verified
-      |> Lwt_list.iter_s (Contact.handle_event Data.database_label)
+      |> Lwt_list.iter_s (handle_event Data.database_label)
     in
-    contact
-    |> Contact.id
-    |> Contact.find Data.database_label
-    ||> get_or_failwith_pool_error
+    contact |> id |> find Data.database_label ||> get_or_failwith_pool_error
   ;;
 end
 

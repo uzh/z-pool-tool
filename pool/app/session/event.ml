@@ -28,7 +28,6 @@ type reschedule =
   }
 [@@deriving eq, show]
 
-(* TODO [aerben] experiment ID *)
 type event =
   | Created of (t * Experiment.Id.t)
   | Canceled of t

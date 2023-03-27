@@ -134,8 +134,6 @@ val available_spots : t -> int
 val has_assignments : t -> bool
 val session_date_to_human : t -> string
 
-(* TODO [aerben] this should be experiment id type *)
-(* TODO [aerben] maybe Experiment.t Id.t *)
 type event =
   | Created of (t * Experiment.Id.t)
   | Canceled of t
@@ -182,7 +180,6 @@ val is_deletable : t -> t list -> (unit, Pool_common.Message.error) result
 val assignments_cancelable : t -> (unit, Pool_common.Message.error) result
 val assignment_creatable : t -> (unit, Pool_common.Message.error) result
 
-(* TODO [aerben] this should be experiment id type *)
 val find
   :  Pool_database.Label.t
   -> Id.t

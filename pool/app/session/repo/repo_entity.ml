@@ -3,14 +3,7 @@ module Reminder = Pool_common.Reminder
 module RepoReminder = Pool_common.Repo.Reminder
 
 module Id = struct
-  include Entity.Id
-
-  let t =
-    Pool_common.Repo.make_caqti_type
-      Caqti_type.string
-      CCFun.(of_string %> CCResult.return)
-      value
-  ;;
+  include RepoId
 end
 
 type t =

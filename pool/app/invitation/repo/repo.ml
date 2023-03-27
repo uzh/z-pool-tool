@@ -159,31 +159,6 @@ module Sql = struct
     Utils.Database.exec (Pool_database.Label.value pool) update_request
   ;;
 
-  let contact_was_invited_to_experiment_request =
-    let open Caqti_request.Infix in
-    {sql|
-      SELECT pool_invitations.uuid
-      FROM
-        pool_invitations
-      WHERE
-        pool_invitations.experiment_uuid = UNHEX(REPLACE($1, '-', '')),
-        pool_invitations.contact_uuid = UNHEX(REPLACE($2, '-', ''))
-      LIMIT 1
-      |sql}
-    |> select_sql
-    |> Caqti_type.(tup2 string string) ->! Pool_common.Repo.Id.t
-  ;;
-
-  let contact_was_invited_to_experiment pool experiment contact =
-    let open Utils.Lwt_result.Infix in
-    Utils.Database.find_opt
-      (Pool_database.Label.value pool)
-      contact_was_invited_to_experiment_request
-      ( experiment.Experiment.id |> Experiment.Id.value
-      , Contact.id contact |> Pool_common.Id.value )
-    ||> CCOption.is_some
-  ;;
-
   let find_multiple_by_experiment_and_contacts_request ids =
     Format.asprintf
       {sql|
@@ -273,7 +248,6 @@ let find_multiple_by_experiment_and_contacts =
 ;;
 
 let update = Sql.update
-let contact_was_invited_to_experiment = Sql.contact_was_invited_to_experiment
 
 let bulk_insert pool contacts experiment_id =
   let insert_sql =
