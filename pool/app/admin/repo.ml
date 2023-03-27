@@ -1,7 +1,7 @@
 module Dynparam = Utils.Database.Dynparam
 
 module Sql = struct
-  let select_from_users_sql where_fragment =
+  let select_from_users_sql ?order_by where_fragment =
     let select_from =
       {sql|
         SELECT
@@ -25,7 +25,10 @@ module Sql = struct
         FROM user_users
       |sql}
     in
-    Format.asprintf "%s %s" select_from where_fragment
+    let query = Format.asprintf "%s %s" select_from where_fragment in
+    match order_by with
+    | Some order_by -> Format.asprintf "%s ORDER BY %s" query order_by
+    | None -> query
   ;;
 
   let find_request caqti_type =
@@ -101,6 +104,7 @@ let find_multiple = Sql.find_multiple
 
 module Actors = struct
   let select_from_actors where_fragment =
+    let order_by = "COALESCE( user_users.given_name, user_users.name ) ASC" in
     Format.asprintf
       {sql|
         INNER JOIN guardian_actors
@@ -108,7 +112,7 @@ module Actors = struct
         %s
       |sql}
       where_fragment
-    |> Sql.select_from_users_sql
+    |> Sql.select_from_users_sql ~order_by
   ;;
 
   let find_all_with_role_request include_sql exclude_sql =
