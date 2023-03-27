@@ -188,7 +188,7 @@ let detail req page =
        |> Lwt.return_ok
      | `Close ->
        let* assignments =
-         Assignment.find_by_session database_label session.Session.id
+         Assignment.find_uncanceled_by_session database_label session.Session.id
        in
        Page.Admin.Session.close context experiment session assignments
        |> Lwt.return_ok
@@ -462,7 +462,7 @@ let close_post req =
     Lwt_result.map_error (fun err -> err, Format.asprintf "%s/close" path)
     @@ let* session = Session.find database_label session_id in
        let* assignments =
-         Assignment.find_by_session database_label session.Session.id
+         Assignment.find_uncanceled_by_session database_label session.Session.id
        in
        let* events =
          let urlencoded_list field =
