@@ -208,11 +208,7 @@ end = struct
     |> Guardian.validate_generic
   ;;
 
-  let sort =
-    Command.Sort.effects
-    |> custom_field_group_effects
-    |> Guardian.validate_generic
-  ;;
+  let sort = Command.Sort.effects |> Middleware.Guardian.validate_admin_entity
 
   let delete =
     Command.Destroy.effects
