@@ -101,6 +101,7 @@ let find_multiple = Sql.find_multiple
 
 module Actors = struct
   let select_from_actors where_fragment =
+    (* TODO: Implement order by *)
     let select_from =
       {sql|
         SELECT
