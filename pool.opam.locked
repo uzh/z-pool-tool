@@ -48,6 +48,7 @@ depends: [
   "conf-pkg-config" {= "2"}
   "conformist" {= "0.8.1"}
   "containers" {= "3.11"}
+  "containers-data" {= "3.11"}
   "cppo" {= "1.6.9"}
   "cpuid" {= "0.1.2"}
   "csexp" {= "1.5.1"}
