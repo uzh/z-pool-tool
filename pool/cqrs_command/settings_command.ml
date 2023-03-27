@@ -2,14 +2,9 @@ module Conformist = Pool_common.Utils.PoolConformist
 
 let src = Logs.Src.create "settings.cqrs"
 
-let effects action id =
+let effects action =
   let open Guard in
-  let target_id = id |> Uuid.target_of Pool_tenant.Id.value in
-  ValidationSet.(
-    And
-      [ One (action, TargetSpec.Id (`Tenant, target_id))
-      ; One (action, TargetSpec.Entity `Setting)
-      ])
+  ValidationSet.(One (action, TargetSpec.Entity `SystemSetting))
 ;;
 
 module UpdateLanguages : sig
@@ -20,8 +15,6 @@ module UpdateLanguages : sig
     -> Settings.TermsAndConditions.t list
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
-
-  val effects : Pool_tenant.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = Pool_common.Language.t list
 
@@ -58,8 +51,6 @@ module CreateEmailSuffix : sig
   val decode
     :  (string * string list) list
     -> (t, Pool_common.Message.error) result
-
-  val effects : Pool_tenant.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = Settings.EmailSuffix.t
 
@@ -85,8 +76,6 @@ end
 
 module UpdateEmailSuffixes : sig
   include Common.CommandSig with type t = (string * string list) list
-
-  val effects : Pool_tenant.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = (string * string list) list
 
@@ -120,8 +109,6 @@ module DeleteEmailSuffix : sig
   val decode
     :  (string * string list) list
     -> (t, Pool_common.Message.error) result
-
-  val effects : Pool_tenant.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = Settings.EmailSuffix.t
 
@@ -155,8 +142,6 @@ module UpdateContactEmail : sig
   val decode
     :  (string * string list) list
     -> (t, Pool_common.Message.error) result
-
-  val effects : Pool_tenant.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = Settings.ContactEmail.t
 
@@ -186,8 +171,6 @@ module InactiveUser = struct
     val decode
       :  (string * string list) list
       -> (t, Pool_common.Message.error) result
-
-    val effects : Pool_tenant.Id.t -> Guard.ValidationSet.t
   end = struct
     type t = Settings.InactiveUser.DisableAfter.t
 
@@ -220,8 +203,6 @@ module InactiveUser = struct
     val decode
       :  (string * string list) list
       -> (t, Pool_common.Message.error) result
-
-    val effects : Pool_tenant.Id.t -> Guard.ValidationSet.t
   end = struct
     type t = Settings.InactiveUser.Warning.t
 
@@ -255,8 +236,6 @@ module UpdateTriggerProfileUpdateAfter : sig
   val decode
     :  (string * string list) list
     -> (t, Pool_common.Message.error) result
-
-  val effects : Pool_tenant.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = Settings.TriggerProfileUpdateAfter.t
 
@@ -292,8 +271,6 @@ module UpdateTermsAndConditions : sig
     -> Pool_common.Language.t list
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
-
-  val effects : Pool_tenant.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = (string * string list) list
 
@@ -349,8 +326,6 @@ module RestoreDefault : sig
     :  ?tags:Logs.Tag.set
     -> unit
     -> (Pool_event.t list, Pool_common.Message.error) result
-
-  val effects : Pool_tenant.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = Pool_tenant.t
 
@@ -368,8 +343,6 @@ module UpdateDefaultLeadTime : sig
   val decode
     :  (string * string list) list
     -> (t, Pool_common.Message.error) result
-
-  val effects : Pool_tenant.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = Pool_common.Reminder.LeadTime.t
 

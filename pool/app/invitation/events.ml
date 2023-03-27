@@ -23,7 +23,7 @@ let handle_event pool event =
     Lwt_list.iter_s
       (fun (id, contact) ->
         Entity.create ~id contact
-        |> Entity_guard.Target.to_authorizable ~ctx:(Pool_tenant.to_ctx pool)
+        |> Entity_guard.Target.to_authorizable ~ctx:(Pool_database.to_ctx pool)
         ||> Pool_common.Utils.get_or_failwith
         ||> fun (_ : [> `Invitation ] Guard.Target.t) -> ())
       contacts

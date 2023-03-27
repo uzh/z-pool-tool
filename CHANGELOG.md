@@ -16,7 +16,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 - using uuids instead of ids as foreign keys in assignment table
 - allow contacts to resignup after session cancellation
 - tenant description, icon and styles are optional
-- refactor and update guardian integration
+- refactor and update guardian integration and middleware
 - using uuids instead of ids as foreign keys in invitations and mailings tables
 
 ### Fixed

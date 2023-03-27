@@ -64,7 +64,7 @@ let work_job
   ({ retry_delay; max_tries; _ } as job : job')
   ({ input; tries; ctx; _ } as job_instance : instance)
   =
-  let database_label = Pool_tenant.of_ctx_exn ctx in
+  let database_label = Pool_database.of_ctx_exn ctx in
   let tags = Pool_database.Logger.Tags.create database_label in
   let now = Ptime_clock.now () in
   if should_run job_instance now

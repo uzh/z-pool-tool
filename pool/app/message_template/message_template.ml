@@ -270,7 +270,7 @@ module PasswordReset = struct
     let open Pool_common in
     let* reset_token =
       Service.PasswordReset.create_reset_token
-        ~ctx:(Pool_tenant.to_ctx pool)
+        ~ctx:(Pool_database.to_ctx pool)
         (Pool_user.EmailAddress.value email)
       ||> function
       | None ->

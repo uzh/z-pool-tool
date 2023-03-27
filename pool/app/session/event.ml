@@ -45,7 +45,7 @@ let handle_event pool =
     let%lwt () =
       Repo.insert pool (Experiment.Id.value experiment_id, session)
     in
-    Entity_guard.Target.to_authorizable ~ctx:(Pool_tenant.to_ctx pool) session
+    Entity_guard.Target.to_authorizable ~ctx:(Pool_database.to_ctx pool) session
     ||> Pool_common.Utils.get_or_failwith
     ||> fun (_ : Role.Target.t Guard.Target.t) -> ()
   | Canceled session ->

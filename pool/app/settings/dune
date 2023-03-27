@@ -2,6 +2,7 @@
  (name settings)
  (libraries
   conformist
+  guard
   pool_common
   pool_database
   ppx_deriving_yojson.runtime

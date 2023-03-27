@@ -184,28 +184,28 @@ module Write = struct
 end
 
 let action_of_param = function
-  | "create_tenant_emailsuffix" -> Ok `CreateTenantEmailSuffix
-  | "delete_tenant_emailsuffix" -> Ok `DeleteTenantEmailSuffix
+  | "create_emailsuffix" -> Ok `CreateEmailSuffix
+  | "delete_emailsuffix" -> Ok `DeleteEmailSuffix
   | "update_default_lead_time" -> Ok `UpdateDefaultLeadTime
   | "update_inactive_user_disable_after" -> Ok `UpdateInactiveUserDisableAfter
   | "update_inactive_user_warning" -> Ok `UpdateInactiveUserWarning
-  | "update_tenant_contact_email" -> Ok `UpdateTenantContactEmail
-  | "update_tenant_emailsuffix" -> Ok `UpdateTenantEmailSuffixes
-  | "update_tenant_languages" -> Ok `UpdateTenantLanguages
+  | "update_contact_email" -> Ok `UpdateContactEmail
+  | "update_emailsuffix" -> Ok `UpdateEmailSuffixes
+  | "update_languages" -> Ok `UpdateLanguages
   | "update_terms_and_conditions" -> Ok `UpdateTermsAndConditions
   | "update_trigger_profile_update_after" -> Ok `UpdateTriggerProfileUpdateAfter
   | _ -> Error Pool_common.Message.DecodeAction
 ;;
 
 let stringify_action = function
-  | `CreateTenantEmailSuffix -> "create_tenant_emailsuffix"
-  | `DeleteTenantEmailSuffix -> "delete_tenant_emailsuffix"
+  | `CreateEmailSuffix -> "create_emailsuffix"
+  | `DeleteEmailSuffix -> "delete_emailsuffix"
   | `UpdateDefaultLeadTime -> "update_default_lead_time"
   | `UpdateInactiveUserDisableAfter -> "update_inactive_user_disable_after"
   | `UpdateInactiveUserWarning -> "update_inactive_user_warning"
-  | `UpdateTenantContactEmail -> "update_tenant_contact_email"
-  | `UpdateTenantEmailSuffixes -> "update_tenant_emailsuffix"
-  | `UpdateTenantLanguages -> "update_tenant_languages"
+  | `UpdateContactEmail -> "update_contact_email"
+  | `UpdateEmailSuffixes -> "update_emailsuffix"
+  | `UpdateLanguages -> "update_languages"
   | `UpdateTermsAndConditions -> "update_terms_and_conditions"
   | `UpdateTriggerProfileUpdateAfter -> "update_trigger_profile_update_after"
 ;;

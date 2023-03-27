@@ -4,7 +4,7 @@ module Dynparam = Utils.Database.Dynparam
 
 let update_sihl_user pool ?firstname ?lastname contact =
   let open CCOption in
-  let ctx = Pool_tenant.to_ctx pool in
+  let ctx = Pool_database.to_ctx pool in
   let given_name = firstname <+> contact.Contact.user.Sihl_user.given_name in
   let name = lastname <+> contact.Contact.user.Sihl_user.name in
   Service.User.update ~ctx ?given_name ?name contact.Contact.user
