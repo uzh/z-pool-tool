@@ -38,17 +38,13 @@ module Persistence = struct
   module Actor = struct
     include Actor
 
-    let find database_label (typ : 'kind) (id : Uuid.Actor.t)
-      : ('kind actor, string) monad
-      =
-      let cb ~(in_cache : bool) _ _ : unit =
+    let find database_label typ id =
+      let cb ~in_cache _ _ =
         if in_cache
-        then
-          Logs.warn ~src (fun m ->
-            m
-              ~tags:(Pool_database.Logger.Tags.create database_label)
-              "Found in cache: Actor %s"
-              (id |> Uuid.Actor.to_string))
+        then (
+          let tags = Pool_database.Logger.Tags.create database_label in
+          Logs.debug ~src (fun m ->
+            m ~tags "Found in cache: Actor %s" (id |> Uuid.Actor.to_string)))
         else ()
       in
       let find' (label, typ, id) =
@@ -59,16 +55,11 @@ module Persistence = struct
     ;;
   end
 
-  let validate
-    (database_label : Pool_database.Label.t)
-    (validation_set : ValidationSet.t)
-    (actor : Role.t Core.Actor.t)
-    : (unit, Pool_common.Message.error) monad
-    =
-    let cb ~(in_cache : bool) _ _ : unit =
+  let validate database_label validation_set (actor : Role.t Core.Actor.t) =
+    let cb ~in_cache _ _ =
       if in_cache
       then
-        Logs.warn ~src (fun m ->
+        Logs.debug ~src (fun m ->
           m
             ~tags:(Pool_database.Logger.Tags.create database_label)
             "Found in cache: Actor %s\nValidation set %s"
@@ -108,7 +99,6 @@ let guest_authorizable : Persistence.Role.t Actor.t =
 let root_permissions : Rule.t list =
   let open Core.Action in
   [ Act.Entity `LocationManagerAll, Manage, Tar.Entity `Location
-  ; Act.Entity `LocationManagerAll, Manage, Tar.Entity `LocationFile
   ; Act.Entity `RecruiterAll, Manage, Tar.Entity `Assignment
   ; Act.Entity `RecruiterAll, Manage, Tar.Entity `Contact
   ; Act.Entity `RecruiterAll, Manage, Tar.Entity `CustomField
