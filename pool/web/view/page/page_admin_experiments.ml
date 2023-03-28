@@ -165,7 +165,7 @@ let index experiment_list Pool_context.{ language; _ } =
         ; Field.PublicTitle |> Table.field_to_txt language
         ; link_as_button
             ~style:`Success
-            ~icon:`Add
+            ~icon:Icon.Add
             ~control:(language, Message.(Add (Some Field.Experiment)))
             "/admin/experiments/create"
         ]
@@ -448,7 +448,7 @@ let detail
             Message.(Delete (Some Field.Experiment))
             ~classnames:[ "small" ]
             ~submit_type:`Error
-            ~has_icon:`TrashOutline
+            ~has_icon:Icon.TrashOutline
             ()
         ]
   in
@@ -515,7 +515,7 @@ let detail
   in
   let edit_button =
     link_as_button
-      ~icon:`Create
+      ~icon:Icon.Create
       ~classnames:[ "small" ]
       ~control:(language, Message.(Edit (Some Field.Experiment)))
       (Format.asprintf

@@ -85,7 +85,7 @@ let distribution_form_field language (field, current_order) =
                   "field"
                   (Mailing.Distribution.SortableField.show field)
               ]
-            [ Icon.icon `Trash ]
+            Icon.[ to_html Trash ]
         ]
     ]
 ;;
@@ -148,7 +148,7 @@ module List = struct
       let new_btn () =
         link_as_button
           ~style:`Success
-          ~icon:`Add
+          ~icon:Icon.Add
           ~control:(language, Message.Add (Some Field.Mailing))
           (mailings_path ~suffix:"create" experiment_id)
       in
@@ -205,7 +205,7 @@ let detail Pool_context.{ language; _ } experiment (mailing : Mailing.t) =
     if StartAt.value mailing.start_at > Ptime_clock.now ()
     then
       link_as_button
-        ~icon:`Create
+        ~icon:Icon.Create
         ~classnames:[ "small" ]
         ~control:(language, Message.Edit (Some Field.Mailing))
         (detail_mailing_path ~suffix:"edit" experiment.Experiment.id mailing)
@@ -391,7 +391,7 @@ let form
                     ; a_user_data "hx-target" "#distribution-list"
                     ; a_user_data "hx-swap" "beforeend"
                     ]
-                  [ Icon.icon `Add ]
+                  Icon.[ to_html Add ]
               ]
           ]
       ; div

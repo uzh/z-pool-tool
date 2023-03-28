@@ -165,7 +165,7 @@ let build_help language toggle_id help =
                         Utils.text_to_string language I18n.TextTemplates
                         |> CCString.capitalize_ascii)
                   ]
-              ; Component_icon.icon `HelpOutline
+              ; Component_icon.(to_html HelpOutline)
               ]
           ]
       ; input

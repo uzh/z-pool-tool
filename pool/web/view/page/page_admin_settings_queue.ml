@@ -28,7 +28,7 @@ let queue_overview language queued_jobs =
       ; txt (last_error_at |> CCOption.map_or ~default:"-" formatted_date_time)
       ; txt (next_run_at |> formatted_date_time)
       ; Format.asprintf "/admin/settings/queue/%s" id
-        |> Component.Input.link_as_button ~icon:`Eye
+        |> Component.Input.link_as_button ~icon:Component.Icon.Eye
       ])
     queued_jobs
   |> Component.Table.horizontal_table `Striped ~align_last_end:true ~thead

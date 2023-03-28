@@ -103,7 +103,7 @@ module Partials = struct
           then CancelAssignmentWithFollowUps
           else CancelAssignment)
         (Message.Cancel None)
-        `CloseCircle
+        Component.Icon.CloseCircle
     in
     let mark_as_deleted =
       let open Pool_common in
@@ -114,7 +114,7 @@ module Partials = struct
           then MarkAssignmentWithFollowUpsAsDeleted
           else MarkAssignmentAsDeleted)
         Message.MarkAsDeleted
-        `Trash
+        Component.Icon.Trash
     in
     match CCList.is_empty assignments with
     | true -> p [ language |> empty ]

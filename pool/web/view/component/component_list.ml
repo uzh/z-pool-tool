@@ -1,5 +1,6 @@
 open Tyxml.Html
 open Query
+module Icon = Component_icon
 
 let retain_search_and_sort query =
   let open Pool_common.Message in
@@ -24,19 +25,16 @@ let pagination language query { Pagination.page; page_count; _ } =
   let button_count_threshold = 3 in
   let page_list_classes = [ "btn"; "small" ] in
   let open Pagination in
+  let open Pool_common in
   let add_page_param page =
-    let open Pool_common.Message in
+    let open Message in
     add_field_query_params
       "?"
       ((Field.Page, CCInt.to_string page) :: retain_search_and_sort query)
   in
   let previous =
-    let label =
-      Pool_common.(Utils.control_to_string language Message.PreviousPage)
-    in
-    let icon =
-      Component_icon.icon ~classnames:[ "icon-lg" ] `PrevCircleOutline
-    in
+    let label = Utils.control_to_string language Message.PreviousPage in
+    let icon = Icon.(to_html ~classnames:[ "icon-lg" ] PrevCircleOutline) in
     if Page.(value page > value default)
     then
       a
@@ -49,12 +47,8 @@ let pagination language query { Pagination.page; page_count; _ } =
     else span ~a:[ a_class [ "has-icon" ] ] [ icon ]
   in
   let next =
-    let label =
-      Pool_common.(Utils.control_to_string language Message.NextPage)
-    in
-    let icon =
-      Component_icon.icon ~classnames:[ "icon-lg" ] `NextCircleOutline
-    in
+    let label = Utils.control_to_string language Message.NextPage in
+    let icon = Icon.(to_html ~classnames:[ "icon-lg" ] NextCircleOutline) in
     if PageCount.value page_count > Page.value page
     then
       a

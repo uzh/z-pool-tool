@@ -296,7 +296,7 @@ let session_list
   let add_session_btn =
     link_as_button
       ~style:`Success
-      ~icon:`Add
+      ~icon:Icon.Add
       ~classnames:[ "small" ]
       ~control:(language, Message.(Add (Some Field.Session)))
       (Format.asprintf
@@ -708,7 +708,7 @@ let detail
           ; ( ( session |> is_cancellable |> CCResult.is_ok
               , "cancel"
               , Cancel (Some Field.Session) )
-            , Some (`Error, Some `CloseCircle) )
+            , Some (`Error, Some Icon.CloseCircle) )
           ]
         |> CCList.filter_map (fun (t, style) -> session_link ?style t)
         |> wrap
@@ -738,7 +738,7 @@ let detail
   in
   let edit_button =
     link_as_button
-      ~icon:`Create
+      ~icon:Icon.Create
       ~classnames:[ "small" ]
       ~control:(language, Message.(Edit (Some Field.Session)))
       (Format.asprintf

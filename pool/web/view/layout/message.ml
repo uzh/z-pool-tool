@@ -4,7 +4,7 @@ let concat_messages txts classnames =
   div
     ~a:[ a_class ("notification" :: classnames) ]
     [ txt (txts |> CCString.unlines |> CCString.capitalize_ascii)
-    ; Component.Icon.icon ~classnames:[ "notification-close" ] `Close
+    ; Component.Icon.(to_html ~classnames:[ "notification-close" ] Close)
     ]
 ;;
 
@@ -24,13 +24,8 @@ let create ?(attributes = []) message lang () =
     let warning = match_message (get_warning message lang) [ "warning" ] in
     let error = match_message (get_error message lang) [ "error" ] in
     [ success; info; warning; error ]
-    |> CCList.filter_map (fun notification ->
-         match notification with
-         | None -> None
-         | Some notification ->
-           Some
-             (div
-                ~a:(a_class [ "notification-fixed" ] :: attributes)
-                [ notification ]))
+    |> CCList.filter_map
+         (CCOption.map (fun note ->
+            div ~a:(a_class [ "notification-fixed" ] :: attributes) [ note ]))
     |> div
 ;;

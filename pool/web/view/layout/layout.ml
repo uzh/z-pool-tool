@@ -2,6 +2,7 @@ open CCFun
 open Tyxml.Html
 module File = Pool_common.File
 module Language = Pool_common.Language
+module Message = Message
 module Navigation = Navigation
 
 let create

@@ -336,7 +336,7 @@ let input_element_file
     in
     span
       ~a:[ a_class [ "has-icon" ] ]
-      [ Icon.icon `UploadOutline
+      [ Icon.(to_html UploadOutline)
       ; span ~a:[ a_class [ "file-name" ] ] []
       ; placeholder
       ]
@@ -411,10 +411,7 @@ let submit_element
   =
   let button_type_class =
     submit_type_to_class submit_type
-    ::
-    (match has_icon with
-     | Some _ -> [ "has-icon" ]
-     | None -> [])
+    :: CCOption.map_or ~default:[] (fun _ -> [ "has-icon" ]) has_icon
   in
   let text_content =
     span [ txt Pool_common.Utils.(control_to_string lang control) ]
@@ -422,7 +419,7 @@ let submit_element
   let content =
     CCOption.map_or
       ~default:[ text_content ]
-      (fun i -> [ Component_icon.icon i; text_content ])
+      (fun i -> [ Icon.to_html i; text_content ])
       has_icon
   in
   button
@@ -437,7 +434,7 @@ let submit_icon ?(classnames = []) ?(attributes = []) icon_type =
     ~a:
       ([ a_button_type `Submit; a_class (classnames @ [ "has-icon" ]) ]
        @ attributes)
-    [ Icon.icon icon_type ]
+    [ Icon.to_html icon_type ]
 ;;
 
 let link_as_button
@@ -461,7 +458,7 @@ let link_as_button
     let icon_elm =
       match icon with
       | None -> txt ""
-      | Some i -> Icon.icon i
+      | Some i -> Icon.to_html i
     in
     let control =
       match control with
@@ -478,7 +475,7 @@ let link_as_button
 ;;
 
 let edit_link ?classnames ?attributes href =
-  link_as_button ?classnames ?attributes ~icon:`Create href
+  link_as_button ?classnames ?attributes ~icon:Icon.Create href
 ;;
 
 let selector
@@ -666,7 +663,7 @@ let reset_form_button language =
       [ a_class [ "has-icon"; "color-red"; "pointer" ]
       ; a_user_data "reset-form" ""
       ]
-    [ Component_icon.icon `RefreshOutline
+    [ Icon.(to_html RefreshOutline)
     ; txt Pool_common.(Utils.control_to_string language Message.Reset)
     ]
 ;;

@@ -6,7 +6,7 @@ let index { Pool_context.language; _ } filter_list =
       [ Field.Title |> Component.Table.field_to_txt language
       ; Component.Input.link_as_button
           ~style:`Success
-          ~icon:`Add
+          ~icon:Component.Icon.Add
           ~classnames:[ "small" ]
           ~control:(language, Pool_common.Message.(Add (Some Field.Filter)))
           "/admin/filter/new"

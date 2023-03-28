@@ -10,7 +10,7 @@ module Element = struct
   type t =
     { url : string
     ; label : I18n.nav_link
-    ; icon : Component.Icon.t option
+    ; icon : Icon.t option
     ; validation_set : Guard.ValidationSet.t
     ; children : t list
     }
@@ -50,10 +50,10 @@ module Mobile = struct
   let create app_title navigation =
     let open Utils.Lwt_result.Infix in
     let id = "navigation-overlay" in
-    let label label =
-      Component.Icon.icon label
-      |> CCList.pure
-      |> div ~a:[ a_user_data "modal" id; a_class [ "icon-lg" ] ]
+    let label =
+      Icon.to_html
+      %> CCList.pure
+      %> div ~a:[ a_user_data "modal" id; a_class [ "icon-lg" ] ]
     in
     let overlay navigation =
       div
@@ -65,7 +65,7 @@ module Mobile = struct
             ~a:[ a_class [ "flexcolumn"; "full-height" ] ]
             [ header
                 ~a:[ a_class [ "flexrow"; "justify-between"; "align-center" ] ]
-                [ app_title; label `Close ]
+                [ app_title; label Icon.Close ]
             ; div
                 ~a:[ a_class [ "fade-in"; "inset"; "flexcolumn"; "grow" ] ]
                 navigation
@@ -76,7 +76,7 @@ module Mobile = struct
     ||> fun items ->
     div
       ~a:[ a_class [ "mobile-nav-wrapper" ] ]
-      [ label `MenuOutline; overlay items ]
+      [ label Icon.MenuOutline; overlay items ]
   ;;
 end
 
@@ -106,7 +106,7 @@ module Utils = struct
         (fun icon ->
           [ span
               ~a:[ a_class [ "has-icon" ] ]
-              [ Component.Icon.to_html icon; span [ label_elt ] ]
+              [ Icon.to_html icon; span [ label_elt ] ]
           ])
         icon
     in

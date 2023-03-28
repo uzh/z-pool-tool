@@ -158,7 +158,7 @@ let write action req =
   in
   let open Pool_common.Message in
   let htmx_notification (status, message) =
-    Page.Message.create
+    Layout.Message.create
       ~attributes:
         Tyxml.Html.
           [ a_user_data "hx-swap-oob" "true"

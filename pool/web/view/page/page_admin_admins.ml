@@ -6,7 +6,7 @@ let admin_overview language admins =
     let add_admin =
       Component.Input.link_as_button
         ~style:`Success
-        ~icon:`Add
+        ~icon:Icon.Add
         ~control:(language, Pool_common.Message.(Add (Some Field.Admin)))
         "/admin/admins/new"
     in

@@ -1,5 +1,6 @@
 open Tyxml.Html
 open Component.Input
+module Icon = Component.Icon
 module Table = Component.Table
 module Partials = Component.Partials
 module Message = Pool_common.Message
@@ -424,7 +425,7 @@ let field_form
                ; div
                    [ link_as_button
                        ~style:`Success
-                       ~icon:`Create
+                       ~icon:Icon.Create
                        ~classnames:[ "small" ]
                        ~control:
                          (language, Message.(Add (Some Field.CustomFieldOption)))
@@ -750,7 +751,7 @@ let index field_list group_list current_model Pool_context.{ language; csrf; _ }
      |> Table.fields_to_txt language)
     @ [ link_as_button
           ~style:`Success
-          ~icon:`Add
+          ~icon:Icon.Add
           ~control:(language, Message.(Add (Some Field.CustomField)))
           (Url.Field.new_path current_model)
       ]
@@ -943,7 +944,7 @@ let index field_list group_list current_model Pool_context.{ language; csrf; _ }
                ]
            ; link_as_button
                ~style:`Success
-               ~icon:`Add
+               ~icon:Icon.Add
                ~classnames:[ "small" ]
                ~control:(language, Message.(Add (Some Field.CustomFieldGroup)))
                (Url.Group.new_path current_model)

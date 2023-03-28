@@ -32,7 +32,7 @@ let handle_event pool : event -> unit Lwt.t =
       >|- [%show: Guard.Rule.t list]
           %> Format.asprintf "Failed to save: %s"
           %> Pool_common.Message.nothandled
-      ||> CCFun.tap (fun _ -> Cache.clear ())
+      ||> tap (fun _ -> Cache.clear ())
       ||> Pool_common.Utils.get_or_failwith
     in
     Entity_guard.Target.to_authorizable ~ctx t

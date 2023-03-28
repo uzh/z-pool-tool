@@ -4,7 +4,7 @@ let concat_messages txts classnames =
   div
     ~a:[ a_class ("notification" :: classnames) ]
     [ txt (txts |> CCString.unlines |> CCString.capitalize_ascii)
-    ; Component.Icon.icon ~classnames:[ "notification-close" ] `Close
+    ; Component.Icon.(to_html ~classnames:[ "notification-close" ] Close)
     ]
 ;;
 

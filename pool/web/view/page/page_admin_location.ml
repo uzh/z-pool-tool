@@ -1,8 +1,6 @@
 open Tyxml.Html
 open Component
 open Input
-module Partials = Component.Partials
-module Table = Component.Table
 module Message = Pool_common.Message
 
 module List = struct
@@ -13,7 +11,7 @@ module List = struct
      |> Table.fields_to_txt language)
     @ [ link_as_button
           ~style:`Success
-          ~icon:`Add
+          ~icon:Icon.Add
           ~classnames:[ "small"; "nobr" ]
           ~control:(language, Pool_common.Message.(Add (Some Field.Location)))
           "admin/locations/create"
@@ -335,7 +333,7 @@ module FileList = struct
   let add_file_btn language id =
     link_as_button
       ~style:`Success
-      ~icon:`Create
+      ~icon:Icon.Create
       ~classnames:[ "small" ]
       ~control:(language, Message.(Add (Some Field.File)))
       (id
@@ -504,7 +502,7 @@ let detail
   in
   let edit_button =
     link_as_button
-      ~icon:`Create
+      ~icon:Icon.Create
       ~classnames:[ "small" ]
       ~control:(language, Pool_common.Message.(Edit (Some Field.Location)))
       (Format.asprintf
