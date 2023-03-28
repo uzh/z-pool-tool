@@ -103,7 +103,11 @@ module Access : module type of Helpers.Access = struct
   let read =
     (fun id ->
       let target_id = id |> Uuid.target_of Admin.Id.value in
-      ValidationSet.One (Action.Read, TargetSpec.Id (`Admin, target_id)))
+      ValidationSet.(
+        Or
+          [ One (Action.Read, TargetSpec.Entity `Admin)
+          ; One (Action.Read, TargetSpec.Id (`Admin, target_id))
+          ]))
     |> admin_effects
     |> Middleware.Guardian.validate_generic
   ;;
@@ -111,7 +115,11 @@ module Access : module type of Helpers.Access = struct
   let update =
     (fun id ->
       let target_id = id |> Uuid.target_of Admin.Id.value in
-      ValidationSet.One (Action.Update, TargetSpec.Id (`Admin, target_id)))
+      ValidationSet.(
+        Or
+          [ One (Action.Read, TargetSpec.Entity `Admin)
+          ; One (Action.Read, TargetSpec.Id (`Admin, target_id))
+          ]))
     |> admin_effects
     |> Middleware.Guardian.validate_generic
   ;;
