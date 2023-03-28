@@ -27,13 +27,15 @@ let handle_event pool : event -> unit Lwt.t =
       |> Repo.insert pool location
     in
     let%lwt (_ : Guard.Rule.t list) =
+      let open Guard.Persistence in
       Admin.Guard.RuleSet.location_manager id
-      |> Guard.Persistence.Rule.save_all ~ctx
+      |> Rule.save_all ~ctx
       >|- (fun err ->
             Pool_common.Message.nothandled
             @@ Format.asprintf
                  "Failed to save: %s"
                  ([%show: Guard.Rule.t list] err))
+      ||> CCFun.tap (fun _ -> Cache.clear ())
       ||> Pool_common.Utils.get_or_failwith
     in
     Entity_guard.Target.to_authorizable ~ctx location

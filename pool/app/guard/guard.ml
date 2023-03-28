@@ -11,17 +11,53 @@ module Persistence = struct
      https://github.com/uzh/guardian/issues/11) *)
   include Repo
 
-  let cache =
-    CCCache.(
-      lru
-        ~eq:(fun (l1, s1, a1) (l2, s2, a2) ->
-          Pool_database.Label.equal l1 l2
-          && ValidationSet.equal s1 s2
-          && Core.Actor.(Uuid.Actor.equal (id a1) (id a2)))
-        2048)
-  ;;
+  module Cache = struct
+    open CCCache
 
-  let refresh = CCCache.clear cache
+    let equal_find_actor (l1, r1, a1) (l2, r2, a2) =
+      Pool_database.Label.equal l1 l2
+      && Role.equal r1 r2
+      && Uuid.Actor.equal a1 a2
+    ;;
+
+    let equal_validation (l1, s1, a1) (l2, s2, a2) =
+      Pool_database.Label.equal l1 l2
+      && ValidationSet.equal s1 s2
+      && Core.Actor.(Uuid.Actor.equal (id a1) (id a2))
+    ;;
+
+    let lru_find_actor = lru ~eq:equal_find_actor 2048
+    let lru_validation = lru ~eq:equal_validation 2048
+
+    let clear () =
+      let () = clear lru_validation in
+      clear lru_find_actor
+    ;;
+  end
+
+  module Actor = struct
+    include Actor
+
+    let find database_label (typ : 'kind) (id : Uuid.Actor.t)
+      : ('kind actor, string) monad
+      =
+      let cb ~(in_cache : bool) _ _ : unit =
+        if in_cache
+        then
+          Logs.warn ~src (fun m ->
+            m
+              ~tags:(Pool_database.Logger.Tags.create database_label)
+              "Found in cache: Actor %s"
+              (id |> Uuid.Actor.to_string))
+        else ()
+      in
+      let find' (label, typ, id) =
+        find ~ctx:(Pool_database.to_ctx label) typ id
+      in
+      (database_label, typ, id)
+      |> CCCache.(with_cache ~cb Cache.lru_find_actor find')
+    ;;
+  end
 
   let validate
     (database_label : Pool_database.Label.t)
@@ -29,7 +65,7 @@ module Persistence = struct
     (actor : Role.t Core.Actor.t)
     : (unit, Pool_common.Message.error) monad
     =
-    let cb ~(in_cache : bool) _key _access_provided : unit =
+    let cb ~(in_cache : bool) _ _ : unit =
       if in_cache
       then
         Logs.warn ~src (fun m ->
@@ -48,7 +84,7 @@ module Persistence = struct
         actor
     in
     (database_label, validation_set, actor)
-    |> CCCache.(with_cache ~cb cache validate')
+    |> CCCache.(with_cache ~cb Cache.lru_validation validate')
   ;;
 end
 

@@ -52,6 +52,7 @@ let operator_works _ () =
   let ctx = Pool_database.to_ctx Test_utils.Data.database_label in
   let%lwt actual =
     let open Utils.Lwt_result.Infix in
+    let open Guard in
     let to_error = Pool_common.Message.authorization in
     let target =
       "chris@gmail.com"
@@ -67,29 +68,30 @@ let operator_works _ () =
     in
     let* actor = Contact.Guard.Actor.to_authorizable ~ctx subject in
     let* () =
-      Guard.Persistence.Actor.grant_roles
+      Persistence.Actor.grant_roles
         ~ctx
-        (actor |> Guard.Actor.id)
-        (Guard.RoleSet.singleton (`Operator (target' |> Guard.Target.id)))
+        (actor |> Actor.id)
+        (RoleSet.singleton (`Operator (target' |> Target.id)))
       >|- to_error
+      ||> CCFun.tap (fun _ -> Persistence.Cache.clear ())
     in
     let* actor = Contact.Guard.Actor.to_authorizable ~ctx subject in
     let* () =
       let open Guard in
       Persistence.Rule.save
         ~ctx
-        ( ActorSpec.Entity (`Operator (target' |> Guard.Target.id))
+        ( ActorSpec.Entity (`Operator (target' |> Target.id))
         , Action.Manage
-        , TargetSpec.Id (`Contact, target' |> Guard.Target.id) )
+        , TargetSpec.Id (`Contact, target' |> Target.id) )
       >|- to_error
+      ||> CCFun.tap (fun _ -> Persistence.Cache.clear ())
     in
     let effects =
-      Guard.(
-        ValidationSet.One
-          (Action.Manage, TargetSpec.Id (`Contact, target' |> Guard.Target.id)))
+      ValidationSet.One
+        (Action.Manage, TargetSpec.Id (`Contact, target' |> Target.id))
     in
     let* () =
-      Guard.Persistence.validate Test_utils.Data.database_label effects actor
+      Persistence.validate Test_utils.Data.database_label effects actor
     in
     Lwt_result.return ()
   in

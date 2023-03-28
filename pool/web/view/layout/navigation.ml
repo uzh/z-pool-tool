@@ -370,16 +370,12 @@ let create
     | Pool_context.Contact contact ->
       Contact.id contact
       |> Guard.Uuid.actor_of Pool_common.Id.value
-      |> Guard.Persistence.Actor.find
-           ~ctx:(Pool_database.to_ctx database_label)
-           `Contact
+      |> Guard.Persistence.Actor.find database_label `Contact
       ||> CCOption.of_result
     | Pool_context.Admin admin ->
       Admin.id admin
       |> Guard.Uuid.actor_of Admin.Id.value
-      |> Guard.Persistence.Actor.find
-           ~ctx:(Pool_database.to_ctx database_label)
-           `Admin
+      |> Guard.Persistence.Actor.find database_label `Admin
       ||> CCOption.of_result
   in
   let%lwt actor = find_authorizable user in
