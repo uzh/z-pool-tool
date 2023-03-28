@@ -7,7 +7,7 @@ let detail session follow_ups experiment Pool_context.{ language; csrf; _ } =
     Format.asprintf
       "/experiments/%s/sessions/%s"
       (experiment.Experiment.Public.id |> Experiment.Id.value)
-      (session.Session.Public.id |> Id.value)
+      Session.(Id.value session.Public.id)
     |> Sihl.Web.externalize_path
   in
   div

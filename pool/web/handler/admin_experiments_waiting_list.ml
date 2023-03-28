@@ -148,7 +148,7 @@ let assign_contact req =
       |> CCOption.to_result NoValue
       |> Lwt_result.lift
       >>= fun id ->
-      id |> Pool_common.Id.of_string |> find_open_with_follow_ups database_label
+      id |> Session.Id.of_string |> find_open_with_follow_ups database_label
     in
     let%lwt already_enrolled =
       let open Utils.Lwt_result.Infix in

@@ -24,3 +24,7 @@ let has_bookable_spots_for_experiments tenant experiment =
   >|+ CCList.is_empty
   >|+ not
 ;;
+
+module Repo = struct
+  module Id = Repo_entity.Id
+end

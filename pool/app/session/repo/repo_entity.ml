@@ -1,11 +1,14 @@
-module Id = Pool_common.Id
 module RepoId = Pool_common.Repo.Id
 module Reminder = Pool_common.Reminder
 module RepoReminder = Pool_common.Repo.Reminder
 
+module Id = struct
+  include RepoId
+end
+
 type t =
-  { id : Pool_common.Id.t
-  ; follow_up_to : Pool_common.Id.t option
+  { id : Entity.Id.t
+  ; follow_up_to : Entity.Id.t option
   ; has_follow_ups : bool
   ; start : Entity.Start.t
   ; duration : Ptime.Span.t
@@ -182,8 +185,8 @@ let t =
 
 module Write = struct
   type t =
-    { id : Pool_common.Id.t
-    ; follow_up_to : Pool_common.Id.t option
+    { id : Entity.Id.t
+    ; follow_up_to : Entity.Id.t option
     ; start : Entity.Start.t
     ; duration : Ptime.Span.t
     ; description : Entity.Description.t option
@@ -312,8 +315,8 @@ end
 
 module Public = struct
   type t =
-    { id : Pool_common.Id.t
-    ; follow_up_to : Pool_common.Id.t option
+    { id : Entity.Id.t
+    ; follow_up_to : Entity.Id.t option
     ; start : Entity.Start.t
     ; duration : Ptime.Span.t
     ; description : Entity.Description.t option

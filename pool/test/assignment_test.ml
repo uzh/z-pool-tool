@@ -317,7 +317,7 @@ let assign_to_session_with_follow_ups () =
     let base = Model.(create_public_session ~start:(in_an_hour ())) () in
     Session.Public.
       { base with
-        id = Pool_common.Id.create ()
+        id = Session.Id.create ()
       ; follow_up_to = Some session.Session.Public.id
       }
   in
@@ -394,13 +394,15 @@ let cancel_assignment_with_follow_ups _ () =
   let open Utils.Lwt_result.Infix in
   let%lwt experiment = Repo.create_experiment () in
   let%lwt contact =
-    Repo.create_contact ~with_terms_accepted:true Data.database_label ()
+    Integration_utils.ContactRepo.create ~with_terms_accepted:true ()
   in
   let%lwt location = Repo.first_location () in
   (* Save sessions in Database *)
   let create_session ?parent_id start =
-    let base = Model.(create_session ~start () |> session_to_session_base) in
-    Session.Created (base, parent_id, experiment.Experiment.id, location)
+    let session =
+      Model.(create_session ?follow_up_to:parent_id ~start ~location ())
+    in
+    Session.Created (session, experiment.Experiment.id)
     |> Pool_event.session
     |> Pool_event.handle_event Data.database_label
   in
@@ -436,17 +438,17 @@ let cancel_assignment_with_follow_ups _ () =
   in
   (* Cancel assignments *)
   let%lwt () =
+    let open Assignment in
     let%lwt assignment_id =
-      Assignment.find_by_experiment_and_contact_opt
+      find_by_experiment_and_contact_opt
         Data.database_label
         experiment.Experiment.id
         contact
       ||> CCList.hd
-      ||> fun ({ Assignment.Public.id; _ } : Assignment.Public.t) ->
-      id |> Pool_common.Id.value |> Assignment.Id.of_string
+      ||> fun ({ Public.id; _ } : Public.t) -> id |> Id.value |> Id.of_string
     in
     let%lwt assignments =
-      Assignment.find_with_follow_ups Data.database_label assignment_id
+      find_with_follow_ups Data.database_label assignment_id
       ||> get_or_failwith_pool_error
     in
     AssignmentCommand.Cancel.handle (assignments, parent_session)

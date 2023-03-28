@@ -30,7 +30,7 @@ module Sql = struct
       FROM
         pool_mailing
       LEFT JOIN pool_experiments
-        ON pool_mailing.experiment_id = pool_experiments.id
+        ON pool_mailing.experiment_uuid = pool_experiments.uuid
     |sql}
   ;;
 
@@ -54,7 +54,7 @@ module Sql = struct
     let open Caqti_request.Infix in
     {sql|
       WHERE
-        experiment_id = (SELECT id FROM pool_experiments WHERE uuid = UNHEX(REPLACE(?, '-', '')))
+        experiment_uuid = UNHEX(REPLACE(?, '-', ''))
       ORDER BY pool_mailing.start
     |sql}
     |> Format.asprintf "%s\n%s" select_sql
@@ -117,7 +117,7 @@ module Sql = struct
         ))
       FROM pool_mailing
         LEFT JOIN pool_experiments
-        ON pool_mailing.experiment_id = pool_experiments.id
+        ON pool_mailing.experiment_uuid = pool_experiments.uuid
       WHERE
         pool_mailing.uuid = UNHEX(REPLACE(?, '-', ''))
     |sql}
@@ -138,7 +138,7 @@ module Sql = struct
     {sql|
       INSERT INTO pool_mailing (
         uuid,
-        experiment_id,
+        experiment_uuid,
         start,
         end,
         rate,
@@ -147,7 +147,7 @@ module Sql = struct
         updated_at
       ) VALUES (
         UNHEX(REPLACE($1, '-', '')),
-        (SELECT id FROM pool_experiments WHERE pool_experiments.uuid = UNHEX(REPLACE($2, '-', ''))),
+        UNHEX(REPLACE($2, '-', '')),
         $3,
         $4,
         $5,

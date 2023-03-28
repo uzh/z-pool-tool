@@ -420,8 +420,8 @@ module SessionReminder = struct
     let* template, language =
       find_by_label_to_send
         ~entity_uuids:
-          [ session.Session.id
-          ; Experiment.(Id.to_common experiment.Experiment.id)
+          [ Session.Id.to_common session.Session.id
+          ; Experiment.Id.to_common experiment.Experiment.id
           ]
         pool
         preferred_language
@@ -446,8 +446,8 @@ module SessionReminder = struct
     let* templates =
       find_all_by_label_to_send
         ~entity_uuids:
-          [ session.Session.id
-          ; Experiment.(Id.to_common experiment.Experiment.id)
+          [ Session.Id.to_common session.Session.id
+          ; Experiment.Id.to_common experiment.Experiment.id
           ]
         pool
         sys_langs

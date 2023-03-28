@@ -107,7 +107,7 @@ module Sql = struct
     Utils.Database.collect
       (Pool_database.Label.value pool)
       (find_by_session_request ?where_condition ())
-      (Pool_common.Id.value id)
+      (Session.Id.value id)
   ;;
 
   let find_deleted_by_session_request () =
@@ -125,7 +125,7 @@ module Sql = struct
     Utils.Database.collect
       (Pool_database.Label.value pool)
       (find_deleted_by_session_request ())
-      (Pool_common.Id.value id)
+      (Session.Id.value id)
   ;;
 
   let find_by_contact_request =

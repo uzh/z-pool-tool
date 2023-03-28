@@ -135,6 +135,41 @@ let suite =
               `Slow
               cancel_assignment_with_follow_ups
           ] )
+    ; ( "waiting lists"
+      , Waiting_list_test.
+          [ test_case
+              "find pending waiting lists entries by contcat"
+              `Slow
+              PendingWaitingLists.find_pending_waitinglists_by_contact
+          ; test_case
+              "exclude experiment after signing up for a session"
+              `Slow
+              PendingWaitingLists.exclude_after_assignign_to_session
+          ; test_case
+              "include experiment after session cancellation"
+              `Slow
+              PendingWaitingLists.include_after_session_cancellation
+          ] )
+    ; ( "experiment"
+      , Experiment_test.
+          [ test_case
+              "list available experiments"
+              `Slow
+              AvailableExperiments.list_available_experiments
+          ; test_case
+              "exclude experiment after registration for session"
+              `Slow
+              AvailableExperiments
+              .exclude_experiment_after_registration_for_session
+          ; test_case
+              "cancel session contact is assigned to"
+              `Slow
+              AvailableExperiments.cancel_session
+          ; test_case
+              "mark assignments as deleted"
+              `Slow
+              AvailableExperiments.mark_assignment_as_deleted
+          ] )
     ; "cleanup", [ test_case "clean up test database" `Quick Seed.cleanup ]
     ]
 ;;

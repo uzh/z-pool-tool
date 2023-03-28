@@ -28,10 +28,8 @@ type reschedule =
   }
 [@@deriving eq, show]
 
-(* TODO [aerben] experiment ID *)
 type event =
-  | Created of
-      (base * Pool_common.Id.t option * Experiment.Id.t * Pool_location.t)
+  | Created of (t * Experiment.Id.t)
   | Canceled of t
   | Closed of t
   | Deleted of t
@@ -43,21 +41,11 @@ type event =
 let handle_event pool =
   let open Utils.Lwt_result.Infix in
   function
-  | Created (session, parent_session_id, experiment_id, location) ->
-    let sess =
-      create
-        ?follow_up_to:parent_session_id
-        session.start
-        session.duration
-        session.description
-        location
-        session.max_participants
-        session.min_participants
-        session.overbook
-        session.reminder_lead_time
+  | Created (session, experiment_id) ->
+    let%lwt () =
+      Repo.insert pool (Experiment.Id.value experiment_id, session)
     in
-    let%lwt () = Repo.insert pool (Experiment.Id.value experiment_id, sess) in
-    Entity_guard.Target.to_authorizable ~ctx:(Pool_database.to_ctx pool) sess
+    Entity_guard.Target.to_authorizable ~ctx:(Pool_database.to_ctx pool) session
     ||> Pool_common.Utils.get_or_failwith
     ||> fun (_ : Role.Target.t Guard.Target.t) -> ()
   | Canceled session ->

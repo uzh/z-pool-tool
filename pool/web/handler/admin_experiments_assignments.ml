@@ -64,7 +64,7 @@ let ids_and_redirect_from_req req =
     let open Message.Field in
     HttpUtils.(
       ( find_id Experiment.Id.of_string Experiment req
-      , find_id Pool_common.Id.of_string Session req
+      , find_id Session.Id.of_string Session req
       , find_id Assignment.Id.of_string Assignment req ))
   in
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
@@ -82,7 +82,7 @@ let ids_and_redirect_from_req req =
       | Assignments -> path "assignments"
       | DeletedAssignments -> path "assignments/deleted"
       | Session ->
-        Format.asprintf "sessions/%s" (session_id |> Id.value) |> path
+        Format.asprintf "sessions/%s" (session_id |> Session.Id.value) |> path
     in
     CCList.assoc ~eq:CCString.equal Message.Field.(show Redirect) urlencoded
     |> CCList.head_opt

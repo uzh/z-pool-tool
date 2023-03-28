@@ -41,7 +41,7 @@ module MarkedAsDeleted = struct
 end
 
 type t =
-  { id : Pool_common.Id.t
+  { id : Id.t
   ; contact : Contact.t
   ; show_up : ShowUp.t option
   ; participated : Participated.t option
@@ -54,7 +54,7 @@ type t =
 [@@deriving eq, show]
 
 let create
-  ?(id = Pool_common.Id.create ())
+  ?(id = Id.create ())
   ?show_up
   ?participated
   ?(matches_filter = MatchesFilter.create true)
@@ -108,7 +108,7 @@ let attendance_settable m =
 
 module Public = struct
   type t =
-    { id : Pool_common.Id.t
+    { id : Id.t
     ; canceled_at : CanceledAt.t option
     }
 end
