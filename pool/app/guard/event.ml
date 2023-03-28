@@ -29,7 +29,9 @@ let handle_event pool : event -> unit Lwt.t =
   function
   | DefaultRestored permissions ->
     let%lwt (_ : (Rule.t list, Rule.t list) result) =
-      Repo.Rule.save_all ~ctx permissions |> log_rules ~tags
+      Repo.Rule.save_all ~ctx permissions
+      |> log_rules ~tags
+      ||> tap (fun _ -> Repo.Cache.clear ())
     in
     Lwt.return_unit
   | RolesGranted (actor, roles) ->
@@ -37,6 +39,7 @@ let handle_event pool : event -> unit Lwt.t =
       Repo.Actor.grant_roles ~ctx actor roles
       >|- Pool_common.Message.authorization
           %> Pool_common.Utils.with_log_error ~tags
+      ||> tap (fun _ -> Repo.Cache.clear ())
     in
     Lwt.return_unit
   | RolesRevoked (actor, role) ->
@@ -44,6 +47,7 @@ let handle_event pool : event -> unit Lwt.t =
       Repo.Actor.revoke_roles ~ctx actor role
       >|- Pool_common.Message.authorization
           %> Pool_common.Utils.with_log_error ~tags
+      ||> tap (fun _ -> Repo.Cache.clear ())
     in
     Lwt.return_unit
   | RulesSaved rules ->

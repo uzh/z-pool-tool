@@ -85,7 +85,7 @@
    (= v0.14.2))
   canary
   (guardian
-   (= 0.1.0))
+   (= 0.1.1))
   (tls
    (= 0.15.4))
   ;; Test/Dev dependencies

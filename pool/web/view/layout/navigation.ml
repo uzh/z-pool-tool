@@ -30,7 +30,9 @@ module Element = struct
       create ~children ?icon url label)
   ;;
 
-  let create_all_req =
+  let create_all_req = CCList.map (fun (url, label) -> create url label)
+
+  let create_all_req_with_set =
     CCList.map (fun (url, label, validation_set) ->
       create ~validation_set url label)
   ;;
@@ -257,8 +259,8 @@ module NavElements = struct
     let open I18n in
     let profile_dropdown =
       Element.create_all_req
-        [ "/user/personal-details", PersonalDetails, Guard.ValidationSet.empty
-        ; "/user/login-information", LoginInformation, Guard.ValidationSet.empty
+        [ "/user/personal-details", PersonalDetails
+        ; "/user/login-information", LoginInformation
         ]
     in
     [ "/experiments", Experiments, None, []
@@ -284,30 +286,21 @@ module NavElements = struct
         , read_entity `MessageTemplate )
       ; "/admin/i18n", I18n, read_entity `I18n
       ]
-      |> Element.create_all_req
+      |> Element.create_all_req_with_set
       |> fun children ->
-      Element.create
-        ~validation_set:
-          (Guard.ValidationSet.Or
-             [ read_entity `CustomField
-             ; read_entity `Filter
-             ; read_entity `Location
-             ; read_entity `SystemSetting
-             ; read_entity `Smtp
-             ; read_entity `Schedule
-             ; read_entity `Queue
-             ; read_entity `MessageTemplate
-             ; read_entity `I18n
-             ])
-        ~children
-        "/admin/settings"
-        Settings
+      let validation_set =
+        CCList.map
+          (fun { Element.validation_set; _ } -> validation_set)
+          children
+        |> Guard.ValidationSet.or_
+      in
+      Element.create ~validation_set ~children "/admin/settings" Settings
     in
     let user =
       [ "/admin/contacts", Contacts, read_entity `Contact
       ; "/admin/admins", Admins, read_entity `Admin
       ]
-      |> Element.create_all_req
+      |> Element.create_all_req_with_set
       |> fun children ->
       Element.create
         ~validation_set:
@@ -317,7 +310,12 @@ module NavElements = struct
         Users
     in
     let dashboard = Element.create "/admin/dashboard" Dashboard in
-    let experiments = Element.create "/admin/experiments" Experiments in
+    let experiments =
+      Element.create
+        ~validation_set:(read_entity `Experiment)
+        "/admin/experiments"
+        Experiments
+    in
     [ dashboard; experiments; settings; user; Element.logout ]
     |> Utils.create_main ~validate:true
   ;;
@@ -335,7 +333,7 @@ module NavElements = struct
     in
     let settings =
       [ "/root/settings/smtp", Smtp, read_entity `Smtp ]
-      |> Element.create_all_req
+      |> Element.create_all_req_with_set
       |> fun children -> Element.create ~children "/root/settings" Settings
     in
     [ tenants; users; settings; Element.logout ]

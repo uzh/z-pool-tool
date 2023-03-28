@@ -35,7 +35,7 @@ depends: [
   "ppx_yojson_conv" {>= "0.14.0"}
   "ppx_variants_conv" {= "v0.14.2"}
   "canary"
-  "guardian" {= "0.1.0"}
+  "guardian" {= "0.1.1"}
   "tls" {= "0.15.4"}
   "alcotest-lwt" {with-test}
   "ppx_inline_test" {with-test}

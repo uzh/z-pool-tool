@@ -1,83 +1,8 @@
-Logs.Src.create "guard"
-
 include Core
 include Event
+module Persistence = Repo
 module Act = ActorSpec
 module Tar = TargetSpec
-
-module Persistence = struct
-  (* TODO: Once the guardian package has a cached version, this implementation
-     can be updated/removed (Issue:
-     https://github.com/uzh/guardian/issues/11) *)
-  include Repo
-
-  module Cache = struct
-    open CCCache
-
-    let equal_find_actor (l1, r1, a1) (l2, r2, a2) =
-      Pool_database.Label.equal l1 l2
-      && Role.equal r1 r2
-      && Uuid.Actor.equal a1 a2
-    ;;
-
-    let equal_validation (l1, s1, a1) (l2, s2, a2) =
-      Pool_database.Label.equal l1 l2
-      && ValidationSet.equal s1 s2
-      && Core.Actor.(Uuid.Actor.equal (id a1) (id a2))
-    ;;
-
-    let lru_find_actor = lru ~eq:equal_find_actor 2048
-    let lru_validation = lru ~eq:equal_validation 2048
-
-    let clear () =
-      let () = clear lru_validation in
-      clear lru_find_actor
-    ;;
-  end
-
-  module Actor = struct
-    include Actor
-
-    let find database_label typ id =
-      let cb ~in_cache _ _ =
-        if in_cache
-        then (
-          let tags = Pool_database.Logger.Tags.create database_label in
-          Logs.debug ~src (fun m ->
-            m ~tags "Found in cache: Actor %s" (id |> Uuid.Actor.to_string)))
-        else ()
-      in
-      let find' (label, typ, id) =
-        find ~ctx:(Pool_database.to_ctx label) typ id
-      in
-      (database_label, typ, id)
-      |> CCCache.(with_cache ~cb Cache.lru_find_actor find')
-    ;;
-  end
-
-  let validate database_label validation_set (actor : Role.t Core.Actor.t) =
-    let cb ~in_cache _ _ =
-      if in_cache
-      then
-        Logs.debug ~src (fun m ->
-          m
-            ~tags:(Pool_database.Logger.Tags.create database_label)
-            "Found in cache: Actor %s\nValidation set %s"
-            (actor |> Core.Actor.id |> Uuid.Actor.to_string)
-            ([%show: ValidationSet.t] validation_set))
-      else ()
-    in
-    let validate' (label, set, actor) =
-      validate
-        ~ctx:(Pool_database.to_ctx label)
-        Pool_common.Message.authorization
-        set
-        actor
-    in
-    (database_label, validation_set, actor)
-    |> CCCache.(with_cache ~cb Cache.lru_validation validate')
-  ;;
-end
 
 (** [console_authorizable] is an Persistence.Role.t Actor.t] for use in
     administrative tasks, such as working with the command line or running
