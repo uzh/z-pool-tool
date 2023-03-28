@@ -30,7 +30,8 @@ let create ?(attributes = []) message lang () =
          | Some notification ->
            Some
              (div
-                ~a:([ a_class [ "notification-fixed" ] ] @ attributes)
+                ~a:
+                  ([ a_class [ "notification-fixed"; "fade-out" ] ] @ attributes)
                 [ notification ]))
     |> div
 ;;
