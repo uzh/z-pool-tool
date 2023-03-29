@@ -270,7 +270,7 @@ module PasswordReset = struct
     let open Pool_common in
     let* reset_token =
       Service.PasswordReset.create_reset_token
-        ~ctx:(Pool_tenant.to_ctx pool)
+        ~ctx:(Pool_database.to_ctx pool)
         (Pool_user.EmailAddress.value email)
       ||> function
       | None ->
@@ -420,8 +420,8 @@ module SessionReminder = struct
     let* template, language =
       find_by_label_to_send
         ~entity_uuids:
-          [ session.Session.id
-          ; Experiment.(Id.to_common experiment.Experiment.id)
+          [ Session.Id.to_common session.Session.id
+          ; Experiment.Id.to_common experiment.Experiment.id
           ]
         pool
         preferred_language
@@ -446,8 +446,8 @@ module SessionReminder = struct
     let* templates =
       find_all_by_label_to_send
         ~entity_uuids:
-          [ session.Session.id
-          ; Experiment.(Id.to_common experiment.Experiment.id)
+          [ Session.Id.to_common session.Session.id
+          ; Experiment.Id.to_common experiment.Experiment.id
           ]
         pool
         sys_langs

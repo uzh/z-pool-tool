@@ -35,7 +35,7 @@ let handle_event pool : event -> unit Lwt.t = function
   | Created ({ Write.id; _ } as tenant) ->
     let open Utils.Lwt_result.Infix in
     let open Guard in
-    let ctx = to_ctx pool in
+    let ctx = Pool_database.to_ctx pool in
     let%lwt () = Repo.insert Database.root tenant in
     let%lwt () =
       let target_id = Uuid.target_of Entity.Id.value id in
@@ -85,7 +85,7 @@ let handle_event pool : event -> unit Lwt.t = function
     Lwt.return_unit
   | SmtpCreated ({ SmtpAuth.Write.id; _ } as created) ->
     let open Utils.Lwt_result.Infix in
-    let ctx = to_ctx pool in
+    let ctx = Pool_database.to_ctx pool in
     let%lwt () = Repo.Smtp.insert pool created in
     let%lwt () =
       Repo.Smtp.find pool id

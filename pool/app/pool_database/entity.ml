@@ -51,8 +51,17 @@ let add_pool model =
 
 let read_pool m = m.label
 let pp formatter m = Label.pp formatter m.label
+let to_ctx pool = [ "pool", Label.value pool ]
 
 let of_ctx_opt : (string * string) list -> Label.t option =
   let open CCFun in
   CCList.assoc_opt ~eq:( = ) "pool" %> CCOption.map Label.of_string
+;;
+
+let of_ctx_exn =
+  let open CCFun in
+  let open Pool_common in
+  of_ctx_opt
+  %> CCOption.to_result Message.(Undefined Field.DatabaseLabel)
+  %> Utils.get_or_failwith
 ;;

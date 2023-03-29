@@ -174,7 +174,7 @@ module Sql = struct
         ))
       FROM pool_waiting_list
         LEFT JOIN pool_experiments
-        ON pool_waiting_list.experiment_id = pool_experiments.id
+        ON pool_waiting_list.experiment_uuid = pool_experiments.uuid
       WHERE
         pool_waiting_list.uuid = UNHEX(REPLACE(?, '-', ''))
     |sql}

@@ -34,14 +34,14 @@ let handle_event pool : event -> unit Lwt.t =
     Repo_partial_update.upsert_answer pool user entity_uuid m
   | Created m ->
     let%lwt () = Repo.insert pool m in
-    Entity_guard.Target.to_authorizable ~ctx:(Pool_tenant.to_ctx pool) m
+    Entity_guard.Target.to_authorizable ~ctx:(Pool_database.to_ctx pool) m
     ||> Pool_common.Utils.get_or_failwith
     ||> fun (_ : Role.Target.t Guard.Target.t) -> ()
   | Deleted m -> Repo.delete pool m
   | FieldsSorted m -> CCList.map (fun m -> id m) m |> Repo.sort_fields pool
   | GroupCreated m ->
     let%lwt () = Repo_group.insert pool m in
-    Entity_guard.Group.Target.to_authorizable ~ctx:(Pool_tenant.to_ctx pool) m
+    Entity_guard.Group.Target.to_authorizable ~ctx:(Pool_database.to_ctx pool) m
     ||> Pool_common.Utils.get_or_failwith
     ||> fun (_ : Role.Target.t Guard.Target.t) -> ()
   | GroupDestroyed m -> Repo_group.destroy pool m

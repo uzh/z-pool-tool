@@ -118,7 +118,7 @@ module Target = struct
     | `Queue
     | `Schedule
     | `Session
-    | `Setting
+    | `SystemSetting
     | `Smtp
     | `System
     | `Tenant
@@ -153,10 +153,11 @@ module Target = struct
     | "location", [] -> `Location
     | "locationfile", [] -> `LocationFile
     | "mailing", [] -> `Mailing
+    | "messagetemplate", [] -> `MessageTemplate
     | "queue", [] -> `Queue
     | "schedule", [] -> `Schedule
     | "session", [] -> `Session
-    | "setting", [] -> `Setting
+    | "systemsetting", [] -> `SystemSetting
     | "smtp", [] -> `Smtp
     | "system", [] -> `System
     | "tenant", [] -> `Tenant
@@ -180,7 +181,7 @@ module Target = struct
     ; `Queue
     ; `Schedule
     ; `Session
-    ; `Setting
+    ; `SystemSetting
     ; `Smtp
     ; `System
     ; `Tenant
@@ -205,7 +206,7 @@ module Target = struct
     ; `Queue
     ; `Schedule
     ; `Session
-    ; `Setting
+    ; `SystemSetting
     ; `Smtp
     ; `System
     ; `Tenant

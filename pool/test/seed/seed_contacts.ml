@@ -28,7 +28,7 @@ let contact_ids = CCList.map (fun (id, _, _, _, _, _) -> id) data
 let create ?contact_data db_pool =
   let data = CCOption.value ~default:data contact_data in
   let open Utils.Lwt_result.Infix in
-  let ctx = Pool_tenant.to_ctx db_pool in
+  let ctx = Pool_database.to_ctx db_pool in
   let password =
     Sys.getenv_opt "POOL_USER_DEFAULT_PASSWORD"
     |> CCOption.value ~default:"user"

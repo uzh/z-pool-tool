@@ -4,7 +4,7 @@ module Field = Pool_common.Message.Field
 
 let create_layout req = General.create_tenant_layout req
 let experiment_id = HttpUtils.find_id Experiment.Id.of_string Field.Experiment
-let session_id = HttpUtils.find_id Pool_common.Id.of_string Field.Session
+let session_id = HttpUtils.find_id Session.Id.of_string Field.Session
 
 let template_id =
   HttpUtils.find_id
@@ -54,6 +54,7 @@ let list req =
 
 let new_helper req page =
   let open Utils.Lwt_result.Infix in
+  let open Session in
   let id = experiment_id req in
   let error_path =
     Format.asprintf "/admin/experiments/%s/sessions" (id |> Experiment.Id.value)
@@ -64,10 +65,7 @@ let new_helper req page =
        let%lwt duplicate_session =
          match Sihl.Web.Request.query "duplicate_id" req with
          | Some id ->
-           id
-           |> Pool_common.Id.of_string
-           |> Session.find database_label
-           ||> CCResult.to_opt
+           id |> Id.of_string |> find database_label ||> CCResult.to_opt
          | None -> Lwt.return None
        in
        let%lwt locations = Pool_location.find_all database_label in
@@ -79,7 +77,7 @@ let new_helper req page =
          match page with
          | `FollowUp ->
            let session_id = session_id req in
-           let* parent_session = Session.find database_label session_id in
+           let* parent_session = find database_label session_id in
            Page.Admin.Session.follow_up
              context
              experiment
@@ -167,7 +165,7 @@ let detail req page =
        let%lwt session_reminder_templates =
          Message_template.find_all_of_entity_by_label
            database_label
-           session_id
+           (session_id |> Session.Id.to_common)
            Message_template.Label.SessionReminder
        in
        let%lwt default_reminder_lead_time =
@@ -228,7 +226,7 @@ let update_handler action req =
     Format.asprintf
       "/admin/experiments/%s/sessions/%s"
       (Experiment.Id.value experiment_id)
-      (Pool_common.Id.value session_id)
+      (Session.Id.value session_id)
   in
   let error_path, success_msg =
     let open Pool_common.Message in
@@ -316,7 +314,7 @@ let cancel req =
     Format.asprintf
       "/admin/experiments/%s/sessions/%s"
       (Experiment.Id.value experiment_id)
-      (Pool_common.Id.value session_id)
+      (Session.Id.value session_id)
   in
   let error_path = CCFormat.asprintf "%s/cancel" success_path in
   let%lwt urlencoded =
@@ -390,7 +388,7 @@ let delete req =
       let open Message_template in
       find_all_of_entity_by_label
         database_label
-        session_id
+        (session_id |> Session.Id.to_common)
         Label.SessionReminder
     in
     let* events =
@@ -414,7 +412,7 @@ let create_follow_up req =
     Format.asprintf
       "/admin/experiments/%s/sessions/%s"
       (Experiment.Id.value experiment_id)
-      (Pool_common.Id.value session_id)
+      (Session.Id.value session_id)
   in
   let result { Pool_context.database_label; _ } =
     let open Utils.Lwt_result.Infix in
@@ -455,7 +453,7 @@ let close_post req =
     Format.asprintf
       "/admin/experiments/%s/sessions/%s"
       (Experiment.Id.value experiment_id)
-      (Pool_common.Id.value session_id)
+      (Session.Id.value session_id)
   in
   let result { Pool_context.database_label; _ } =
     let open Utils.Lwt_result.Infix in
@@ -531,7 +529,7 @@ let message_template_form ?template_id label req =
         |> Lwt_result.lift
         |>> Message_template.find_available_languages
               database_label
-              session_id
+              (session_id |> Session.Id.to_common)
               label
         >|+ CCOption.pure
       | Some _ -> Lwt_result.return None
@@ -558,7 +556,7 @@ let new_session_reminder req =
 let new_session_reminder_post req =
   let open Admin_message_templates in
   let experiment_id = experiment_id req in
-  let session_id = session_id req in
+  let session_id = session_id req |> Session.Id.to_common in
   let label = Message_template.Label.SessionReminder in
   let redirect =
     let base =
@@ -593,7 +591,7 @@ let update_template req =
     Format.asprintf
       "/admin/experiments/%s/sessions/%s/%s"
       (Experiment.Id.value experiment_id)
-      (Pool_common.Id.value session_id)
+      (Session.Id.value session_id)
   in
   let%lwt template =
     req

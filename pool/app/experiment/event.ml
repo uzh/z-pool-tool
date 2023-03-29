@@ -21,7 +21,7 @@ type event =
 let handle_event pool : event -> unit Lwt.t =
   let open CCFun in
   let open Utils.Lwt_result.Infix in
-  let ctx = Pool_tenant.to_ctx pool in
+  let ctx = Pool_database.to_ctx pool in
   function
   | Created ({ id; _ } as t) ->
     let%lwt () = Repo.insert pool t in

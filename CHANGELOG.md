@@ -16,7 +16,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 - using uuids instead of ids as foreign keys in assignment table
 - allow contacts to resignup after session cancellation
 - tenant description, icon and styles are optional
-- refactor and update guardian integration
+- refactor and update guardian integration and middleware
+- using uuids instead of ids as foreign keys in invitations and mailings tables
 
 ### Fixed
 
@@ -27,9 +28,6 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 - canceled assignments are not included in assignment count anymore
 - canceled assignments are no longer shown on the contact dashboard
 - when cancelling a session, follow-up sessions to the session are canceled as well
-
-### Fixed
-
 - do not include canceled assignments in session assignment_count
 
 ## [0.1.3](https://github.com/uzh/pool/tree/0.1.3) - 2023-03-01

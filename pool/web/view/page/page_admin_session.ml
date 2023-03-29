@@ -11,7 +11,7 @@ let session_path experiment session =
   Format.asprintf
     "/admin/experiments/%s/sessions/%s"
     Experiment.(Id.value experiment.id)
-    (Pool_common.Id.value session.Session.id)
+    Session.(session.id |> Id.value)
 ;;
 
 let location_select language options selected () =
@@ -59,7 +59,7 @@ let session_form
         Format.asprintf
           "/admin/experiments/%s/sessions/%s/reschedule"
           (Experiment.Id.value experiment.Experiment.id)
-          (Id.value session.Session.id)
+          Session.(session.id |> Id.value)
         |> Sihl.Web.externalize_path
       in
       p
@@ -84,10 +84,10 @@ let session_form
       ( Format.asprintf
           "%s/%s/follow-up"
           base
-          (follow_up_to.Session.id |> Id.value)
+          Session.(follow_up_to.id |> Id.value)
       , Message.(Create (Some Field.FollowUpSession)) )
     | Some session, _ ->
-      ( Format.asprintf "%s/%s" base (session.id |> Id.value)
+      ( Format.asprintf "%s/%s" base Session.(session.id |> Id.value)
       , Message.(Update (Some Field.Session)) )
   in
   form
@@ -212,7 +212,7 @@ let reschedule_session
     Format.asprintf
       "/admin/experiments/%s/sessions/%s/reschedule"
       (Experiment.Id.value experiment.Experiment.id)
-      (Id.value session.Session.id)
+      Session.(Id.value session.id)
   in
   form
     ~a:
@@ -339,10 +339,10 @@ let session_list
                 ()
           in
           let row_attrs =
-            let id = a_user_data "id" (Pool_common.Id.value session.id) in
+            let id = a_user_data "id" Session.(Id.value session.id) in
             session.follow_up_to
             |> CCOption.map (fun parent ->
-                 a_user_data "parent-id" (Pool_common.Id.value parent))
+                 a_user_data "parent-id" (Session.Id.value parent))
             |> CCOption.map_or ~default:[ id ] (fun parent -> [ id; parent ])
           in
           let title =
@@ -576,8 +576,8 @@ let detail
   (session : Session.t)
   assignments
   =
-  let open Session in
   let open Pool_common in
+  let open Session in
   let session_link ?style (show, url, control) =
     let style, icon =
       style |> CCOption.map_or ~default:(`Primary, None) CCFun.id
@@ -664,20 +664,19 @@ let detail
             "/admin/experiments/%s/sessions"
             (Experiment.Id.value experiment.Experiment.id)
         in
-        let id_value = Pool_common.Id.value in
         let link =
           match session.follow_up_to with
           | Some parent_session ->
             Format.asprintf
               "%s/%s/follow-up?duplicate_id=%s"
               base
-              (id_value parent_session)
-              (id_value session.id)
+              (Id.value parent_session)
+              (Id.value session.id)
           | None ->
             Format.asprintf
               "%s/create/?duplicate_id=%s"
               base
-              (id_value session.id)
+              (Id.value session.id)
         in
         link_as_button
           ~control:(language, Message.Duplicate (Some Field.Session))
@@ -913,7 +912,7 @@ let close
               (Format.asprintf
                  "/admin/experiments/%s/sessions/%s/close"
                  (Experiment.Id.value experiment.Experiment.id)
-                 (Id.value session.Session.id)
+                 Session.(Id.value session.id)
                |> Sihl.Web.externalize_path)
           ; a_user_data "detect-unsaved-changes" ""
           ]
@@ -1014,7 +1013,7 @@ let cancel
     Format.asprintf
       "/admin/experiments/%s/sessions/%s/cancel"
       (Experiment.Id.value experiment.Experiment.id)
-      (Id.value session.Session.id)
+      Session.(Id.value session.id)
   in
   let follow_ups_notification () =
     match follow_ups with
@@ -1091,7 +1090,7 @@ let message_template_form
       Format.asprintf
         "/admin/experiments/%s/sessions/%s/%s"
         Experiment.(Id.value experiment.Experiment.id)
-        (Pool_common.Id.value session.Session.id)
+        Session.(Id.value session.Session.id)
     in
     match template with
     | None -> go (Label.prefixed_human_url label)

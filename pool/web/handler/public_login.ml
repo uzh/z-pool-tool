@@ -1,7 +1,7 @@
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 
-let to_ctx = Pool_tenant.to_ctx
+let to_ctx = Pool_database.to_ctx
 let create_layout req = General.create_tenant_layout req
 
 let login_get req =
@@ -143,7 +143,7 @@ let request_reset_password_post req =
     let* { Pool_context.Tenant.tenant; _ } =
       Pool_context.Tenant.find req |> Lwt_result.lift
     in
-    let ctx = Pool_tenant.to_ctx database_label in
+    let ctx = Pool_database.to_ctx database_label in
     let* user =
       Sihl.Web.Request.to_urlencoded req
       ||> decode
@@ -232,7 +232,9 @@ let reset_password_post req =
     match reset with
     | Ok () ->
       let%lwt () =
-        Service.Token.deactivate ~ctx:(Pool_tenant.to_ctx database_label) token
+        Service.Token.deactivate
+          ~ctx:(Pool_database.to_ctx database_label)
+          token
       in
       HttpUtils.(
         redirect_to_with_actions

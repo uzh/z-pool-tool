@@ -80,28 +80,19 @@ end = struct
 
   let i18n_effects = Guardian.id_effects Pool_common.Id.of_string Field.I18n
 
-  let tenant_i18n_effects effect_set req context =
-    let effects =
-      Pool_context.Tenant.find req
-      |> CCResult.map_or
-           ~default:
-             (ValidationSet.One (Action.Manage, TargetSpec.Entity `Tenant))
-           (fun { Pool_context.Tenant.tenant; _ } ->
-             let id =
-               Http_utils.find_id Pool_common.Id.of_string Field.I18n req
-             in
-             effect_set tenant.Pool_tenant.id id)
-    in
-    context, effects
+  let tenant_i18n_effects effect_set req =
+    Pool_context.Tenant.find req
+    |> CCResult.map_or
+         ~default:(ValidationSet.One (Action.Manage, TargetSpec.Entity `Tenant))
+         (fun { Pool_context.Tenant.tenant; _ } ->
+           Http_utils.find_id Pool_common.Id.of_string Field.I18n req
+           |> effect_set tenant.Pool_tenant.id)
   ;;
 
   let index =
     ValidationSet.One (Action.Read, TargetSpec.Entity `I18n)
     |> Guardian.validate_admin_entity
   ;;
-
-  (* let create = I18nCommand.Create.effects |> tenant_effects |>
-     Guardian.validate_generic ;; *)
 
   let read =
     (fun id ->

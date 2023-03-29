@@ -7,7 +7,7 @@ let show req =
   let experiment_id, id =
     let open Pool_common.Message.Field in
     ( HttpUtils.find_id Experiment.Id.of_string Experiment req
-    , HttpUtils.find_id Pool_common.Id.of_string Session req )
+    , HttpUtils.find_id Session.Id.of_string Session req )
   in
   let error_path =
     Format.asprintf "/experiments/%s" (experiment_id |> Experiment.Id.value)

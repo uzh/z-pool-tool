@@ -20,7 +20,9 @@ val pp : Format.formatter -> t -> unit
 val create : Label.t -> Url.t -> (t, Pool_common.Message.error) result
 val add_pool : t -> unit
 val read_pool : t -> Label.t
+val to_ctx : Label.t -> (string * string) list
 val of_ctx_opt : (string * string) list -> Label.t option
+val of_ctx_exn : (string * string) list -> Label.t
 
 val test_and_create
   :  Url.t

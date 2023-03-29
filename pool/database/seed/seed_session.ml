@@ -46,27 +46,40 @@ let create pool =
                  , overbook
                  , reminder_lead_time ) ->
               let open CCOption in
-              let (session : Session.base) =
-                Session.
-                  { start = Start.create start
-                  ; duration = Duration.create duration |> get_or_failwith
-                  ; description =
-                      description >>= Description.create %> of_result
-                  ; max_participants =
-                      ParticipantAmount.create max |> get_or_failwith
-                  ; min_participants =
-                      ParticipantAmount.create min |> get_or_failwith
-                  ; overbook =
-                      ParticipantAmount.create overbook |> get_or_failwith
-                  ; reminder_lead_time =
-                      reminder_lead_time
-                      >|= Ptime.Span.of_int_s
-                          %> Pool_common.Reminder.LeadTime.create
-                          %> get_or_failwith
-                  }
+              let (session : Session.t) =
+                let open Session in
+                let start = Start.create start in
+                let duration = Duration.create duration |> get_or_failwith in
+                let description =
+                  description >>= Description.create %> of_result
+                in
+                let max_participants =
+                  ParticipantAmount.create max |> get_or_failwith
+                in
+                let min_participants =
+                  ParticipantAmount.create min |> get_or_failwith
+                in
+                let overbook =
+                  ParticipantAmount.create overbook |> get_or_failwith
+                in
+                let reminder_lead_time =
+                  reminder_lead_time
+                  >|= Ptime.Span.of_int_s
+                      %> Pool_common.Reminder.LeadTime.create
+                      %> get_or_failwith
+                in
+                let location = CCList.hd locations in
+                create
+                  start
+                  duration
+                  description
+                  location
+                  max_participants
+                  min_participants
+                  overbook
+                  reminder_lead_time
               in
-              let location = CCList.hd locations in
-              Session.Created (session, None, experiment.Experiment.id, location))
+              Session.Created (session, experiment.Experiment.id))
             session_data
         in
         Lwt_list.iter_s (Session.handle_event pool) main_session_events)
@@ -80,27 +93,29 @@ let create pool =
         ||> CCResult.get_exn
       in
       let parent = CCList.hd sessions in
-      let (follow_up : Session.base) =
+      let (follow_up : Session.t) =
         let open CCOption in
-        Session.
-          { start =
-              Start.create
-                (Ptime.add_span (parent.start |> Session.Start.value) hour
-                 |> CCOption.get_exn_or "Invalid time")
-          ; duration = Duration.create halfhour |> get_or_failwith
-          ; description = Some "MRI Study" >>= Description.create %> of_result
-          ; max_participants = parent.max_participants
-          ; min_participants = parent.min_participants
-          ; overbook = parent.overbook
-          ; reminder_lead_time = None
-          }
+        let open Session in
+        let start =
+          Ptime.add_span (parent.start |> Session.Start.value) hour
+          |> CCOption.get_exn_or "Invalid time"
+          |> Start.create
+        in
+        let duration = Duration.create halfhour |> get_or_failwith in
+        let description =
+          Some "MRI Study" >>= Description.create %> of_result
+        in
+        Session.create
+          start
+          duration
+          description
+          parent.location
+          parent.max_participants
+          parent.min_participants
+          parent.overbook
+          None
       in
-      let location = CCList.hd locations in
       Session.handle_event pool
-      @@ Session.Created
-           ( follow_up
-           , Some parent.Session.id
-           , experiment.Experiment.id
-           , location ))
+      @@ Session.Created (follow_up, experiment.Experiment.id))
     experiments
 ;;

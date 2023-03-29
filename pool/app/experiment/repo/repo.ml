@@ -141,9 +141,7 @@ module Sql = struct
   let find_of_mailing =
     let open Caqti_request.Infix in
     {sql|
-      INNER JOIN pool_mailing
-        ON pool_experiments.id = pool_mailing.experiment_id
-      WHERE pool_mailing.uuid = UNHEX(REPLACE(?, '-', ''))
+      WHERE pool_experiments.uuid = (SELECT experiment_uuid FROM pool_mailing WHERE uuid = UNHEX(REPLACE(?, '-', '')) )
     |sql}
     |> select_from_experiments_sql
     |> Caqti_type.string ->! Repo_entity.t

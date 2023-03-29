@@ -156,7 +156,7 @@ let admins db_label =
       , [ `RecruiterAll; `ManageAssistants; `ManageExperimenters ] )
     ]
   in
-  let ctx = Pool_tenant.to_ctx db_label in
+  let ctx = Pool_database.to_ctx db_label in
   let password =
     Sys.getenv_opt "POOL_ADMIN_DEFAULT_PASSWORD"
     |> CCOption.value ~default:"admin"
@@ -197,7 +197,7 @@ let contacts db_label =
   let open Utils.Lwt_result.Infix in
   let tags = Pool_database.Logger.Tags.create db_label in
   let n_contacts = 200 in
-  let ctx = Pool_tenant.to_ctx db_label in
+  let ctx = Pool_database.to_ctx db_label in
   let combinations =
     let open CCList in
     let languages = Pool_common.Language.[ Some En; Some De; None ] in

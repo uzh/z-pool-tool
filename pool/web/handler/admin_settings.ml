@@ -1,3 +1,4 @@
+open CCFun
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 module Queue = Admin_settings_queue
@@ -65,33 +66,33 @@ let update_settings req =
          let command_handler =
            let open CCResult.Infix in
            function
-           | `UpdateTenantLanguages ->
+           | `UpdateLanguages ->
              fun m ->
                let%lwt terms_and_conditions =
                  Settings.find_terms_and_conditions database_label
                in
-               m
-               |> CCList.filter_map (fun (k, _) ->
-                    match CCList.mem k Pool_common.Language.all_codes with
-                    | true -> Some (k |> Pool_common.Language.create)
-                    | false -> None)
+               CCList.filter_map
+                 (fun (k, _) ->
+                   match CCList.mem k Pool_common.Language.all_codes with
+                   | true -> Some (k |> Pool_common.Language.create)
+                   | false -> None)
+                 m
                |> CCResult.flatten_l
                >>= UpdateLanguages.handle ~tags terms_and_conditions
                |> lift
-           | `UpdateTenantEmailSuffixes ->
-             fun m -> m |> UpdateEmailSuffixes.handle ~tags |> lift
-           | `CreateTenantEmailSuffix ->
+           | `UpdateEmailSuffixes -> UpdateEmailSuffixes.handle ~tags %> lift
+           | `CreateEmailSuffix ->
              fun m ->
                let%lwt suffixes = Settings.find_email_suffixes database_label in
                CreateEmailSuffix.(m |> decode >>= handle ~tags suffixes) |> lift
-           | `DeleteTenantEmailSuffix ->
+           | `DeleteEmailSuffix ->
              fun m ->
                let%lwt suffixes = Settings.find_email_suffixes database_label in
                DeleteEmailSuffix.(m |> decode >>= handle ~tags suffixes) |> lift
            | `UpdateDefaultLeadTime ->
              fun m ->
                UpdateDefaultLeadTime.(m |> decode >>= handle ~tags) |> lift
-           | `UpdateTenantContactEmail ->
+           | `UpdateContactEmail ->
              fun m -> UpdateContactEmail.(m |> decode >>= handle ~tags) |> lift
            | `UpdateInactiveUserDisableAfter ->
              fun m ->
@@ -100,9 +101,7 @@ let update_settings req =
              fun m ->
                InactiveUser.Warning.(m |> decode >>= handle ~tags) |> lift
            | `UpdateTermsAndConditions ->
-             fun m ->
-               UpdateTermsAndConditions.(handle ~tags system_languages m)
-               |> lift
+             UpdateTermsAndConditions.(handle ~tags system_languages) %> lift
            | `UpdateTriggerProfileUpdateAfter ->
              fun m ->
                UpdateTriggerProfileUpdateAfter.(m |> decode >>= handle ~tags)
@@ -111,7 +110,7 @@ let update_settings req =
          Sihl.Web.Router.param req "action"
          |> Settings.action_of_param
          |> lift
-         >>= CCFun.flip command_handler urlencoded
+         >>= flip command_handler urlencoded
        in
        let handle =
          Lwt_list.iter_s (Pool_event.handle_event ~tags database_label)
@@ -129,37 +128,32 @@ let update_settings req =
 module Access : Helpers.AccessSig = struct
   open Guard
   include Helpers.Access
-  module SettingsCommand = Cqrs_command.Settings_command
+  module Command = Cqrs_command.Settings_command
   module Guardian = Middleware.Guardian
 
-  let tenant_effects effect_set req context =
-    let effects =
-      Pool_context.Tenant.find req
-      |> CCResult.map_or
-           ~default:
-             (ValidationSet.One (Action.Manage, TargetSpec.Entity `Tenant))
-           (fun { Pool_context.Tenant.tenant; _ } ->
-             effect_set tenant.Pool_tenant.id)
-    in
-    context, effects
-  ;;
-
-  let read_effects =
-    Guard.(ValidationSet.One (Action.Read, TargetSpec.Entity `Tenant))
-  ;;
-
-  let index = Guardian.validate_admin_entity read_effects
-  let read = Guardian.validate_admin_entity read_effects
-
   let update =
-    SettingsCommand.UpdateTermsAndConditions.effects
-    |> tenant_effects
-    |> Guardian.validate_generic
+    let find_effects = function
+      | `CreateEmailSuffix -> Command.CreateEmailSuffix.effects
+      | `DeleteEmailSuffix -> Command.DeleteEmailSuffix.effects
+      | `UpdateDefaultLeadTime -> Command.UpdateDefaultLeadTime.effects
+      | `UpdateInactiveUserDisableAfter ->
+        Command.InactiveUser.DisableAfter.effects
+      | `UpdateInactiveUserWarning -> Command.InactiveUser.Warning.effects
+      | `UpdateContactEmail -> Command.UpdateContactEmail.effects
+      | `UpdateEmailSuffixes -> Command.UpdateEmailSuffixes.effects
+      | `UpdateLanguages -> Command.UpdateLanguages.effects
+      | `UpdateTermsAndConditions -> Command.UpdateTermsAndConditions.effects
+      | `UpdateTriggerProfileUpdateAfter ->
+        Command.UpdateTriggerProfileUpdateAfter.effects
+    in
+    flip Sihl.Web.Router.param "action"
+    %> Settings.action_of_param
+    %> CCResult.map find_effects
+    |> Guardian.validate_generic_result
   ;;
 
-  let delete =
-    SettingsCommand.DeleteEmailSuffix.effects
-    |> tenant_effects
-    |> Guardian.validate_generic
+  let index =
+    ValidationSet.One (Action.Read, TargetSpec.Entity `SystemSetting)
+    |> Guardian.validate_admin_entity
   ;;
 end

@@ -8,7 +8,9 @@ let active_navigation = "/admin/settings/queue"
 
 let show req =
   let result ({ Pool_context.database_label; _ } as context) =
-    Pool_tenant.Service.Queue.search ~ctx:(Pool_tenant.to_ctx database_label) ()
+    Pool_tenant.Service.Queue.search
+      ~ctx:(Pool_database.to_ctx database_label)
+      ()
     ||> fst %> Page.Admin.Settings.Queue.index context
     >|> General.create_tenant_layout req ~active_navigation context
     >|+ Sihl.Web.Response.of_html

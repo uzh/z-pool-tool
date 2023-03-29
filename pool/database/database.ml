@@ -133,7 +133,7 @@ let start () =
       Logs.info ~src (fun m ->
         m ~tags "Start database %s" (Pool_database.Label.value pool));
       Service.Migration.check_migrations_status
-        ~ctx:(Pool_tenant.to_ctx pool)
+        ~ctx:(Pool_database.to_ctx pool)
         ~migrations:(Tenant.Migration.steps ())
         ())
     db_pools

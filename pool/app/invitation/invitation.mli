@@ -77,12 +77,6 @@ val find_multiple_by_experiment_and_contacts
   -> Experiment.t
   -> Pool_common.Id.t list Lwt.t
 
-val contact_was_invited_to_experiment
-  :  Pool_database.Label.t
-  -> Experiment.t
-  -> Contact.t
-  -> bool Lwt.t
-
 val searchable_by : Query.Column.t list
 val sortable_by : Query.Column.t list
 

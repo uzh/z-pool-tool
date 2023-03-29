@@ -98,7 +98,7 @@ module DummyData = struct
 
   let create_session () =
     Session.
-      { id = Pool_common.Id.create ()
+      { id = Session.Id.create ()
       ; follow_up_to = None
       ; has_follow_ups = false
       ; start =

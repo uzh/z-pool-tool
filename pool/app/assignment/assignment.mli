@@ -33,7 +33,7 @@ module MarkedAsDeleted : sig
 end
 
 type t =
-  { id : Pool_common.Id.t
+  { id : Id.t
   ; contact : Contact.t
   ; show_up : ShowUp.t option
   ; participated : Participated.t option
@@ -46,9 +46,10 @@ type t =
 
 val pp : Format.formatter -> t -> unit
 val equal : t -> t -> bool
+val show : t -> string
 
 val create
-  :  ?id:Pool_common.Id.t
+  :  ?id:Id.t
   -> ?show_up:ShowUp.t
   -> ?participated:Participated.t
   -> ?matches_filter:MatchesFilter.t
@@ -63,7 +64,7 @@ val attendance_settable : t -> (unit, Pool_common.Message.error) result
 
 module Public : sig
   type t =
-    { id : Pool_common.Id.t
+    { id : Id.t
     ; canceled_at : CanceledAt.t option
     }
 end
@@ -81,17 +82,17 @@ val find_by_experiment_and_contact_opt
 
 val find_by_session
   :  Pool_database.Label.t
-  -> Pool_common.Id.t
+  -> Session.Id.t
   -> (t list, Pool_common.Message.error) result Lwt.t
 
 val find_uncanceled_by_session
   :  Pool_database.Label.t
-  -> Pool_common.Id.t
+  -> Session.Id.t
   -> (t list, Pool_common.Message.error) result Lwt.t
 
 val find_deleted_by_session
   :  Pool_database.Label.t
-  -> Pool_common.Id.t
+  -> Session.Id.t
   -> (t list, Pool_common.Message.error) result Lwt.t
 
 val find_with_follow_ups
@@ -101,7 +102,7 @@ val find_with_follow_ups
 
 type create =
   { contact : Contact.t
-  ; session_id : Pool_common.Id.t
+  ; session_id : Session.Id.t
   }
 
 type event =
