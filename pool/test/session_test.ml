@@ -681,18 +681,18 @@ let close_valid_with_assignments () =
          |> Test_utils.Model.create_contact
          |> create
          |> fun assignment ->
-         assignment, true |> ShowUp.create, Participated.create participated)
+         assignment, false |> NoShow.create, Participated.create participated)
   in
   let res = handle session assignments in
   let expected =
     CCList.fold_left
       (fun events
-           (((assignment : Assignment.t), showup, participated) as
+           (((assignment : Assignment.t), no_show, participated) as
            participation) ->
         let contact_event =
           let open Contact in
           let update =
-            { show_up = ShowUp.value showup
+            { no_show = NoShow.value no_show
             ; participated = Participated.value participated
             }
           in
@@ -718,9 +718,9 @@ let close_with_deleted_assignment () =
     let assignment =
       { base with marked_as_deleted = MarkedAsDeleted.create true }
     in
-    let show_up = ShowUp.create true in
+    let no_show = NoShow.create false in
     let participated = Participated.create true in
-    assignment, show_up, participated
+    assignment, no_show, participated
   in
   let res =
     Cqrs_command.Assignment_command.SetAttendance.handle session [ command ]
@@ -736,13 +736,12 @@ let validate_invalid_participation () =
   let session = Test_utils.Model.(create_session ~start:(an_hour_ago ())) () in
   let participation =
     ( Test_utils.Model.create_contact () |> create
-    , ShowUp.create false
+    , NoShow.create true
     , Participated.create true )
   in
   let res = handle session [ participation ] in
   let expected =
-    Error
-      Pool_common.Message.(FieldRequiresCheckbox Field.(Participated, ShowUp))
+    Error Pool_common.Message.(MutuallyExclusive Field.(Participated, NoShow))
   in
   check_result expected res
 ;;

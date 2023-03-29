@@ -1,5 +1,5 @@
-module ShowUp = struct
-  include Entity.ShowUp
+module NoShow = struct
+  include Entity.NoShow
 
   let t = Caqti_type.bool
 end
@@ -32,7 +32,7 @@ type t =
   { id : Pool_common.Id.t
   ; session_id : Session.Id.t
   ; contact_id : Pool_common.Id.t
-  ; show_up : ShowUp.t option
+  ; no_show : NoShow.t option
   ; participated : Participated.t option
   ; matches_filter : MatchesFilter.t
   ; canceled_at : CanceledAt.t option
@@ -45,7 +45,7 @@ let to_entity (m : t) (contact : Contact.t) : Entity.t =
   Entity.
     { id = m.id
     ; contact
-    ; show_up = m.show_up
+    ; no_show = m.no_show
     ; participated = m.participated
     ; matches_filter = m.matches_filter
     ; canceled_at = m.canceled_at
@@ -59,7 +59,7 @@ let of_entity (session_id : Session.Id.t) (m : Entity.t) : t =
   { id = m.Entity.id
   ; session_id
   ; contact_id = Contact.id m.Entity.contact
-  ; show_up = m.Entity.show_up
+  ; no_show = m.Entity.no_show
   ; participated = m.Entity.participated
   ; matches_filter = m.Entity.matches_filter
   ; canceled_at = m.Entity.canceled_at
@@ -75,7 +75,7 @@ let t =
       ( m.id
       , ( m.session_id
         , ( m.contact_id
-          , ( m.show_up
+          , ( m.no_show
             , ( m.participated
               , ( m.matches_filter
                 , ( m.canceled_at
@@ -86,7 +86,7 @@ let t =
     ( id
     , ( session_id
       , ( contact_id
-        , ( show_up
+        , ( no_show
           , ( participated
             , ( matches_filter
               , (canceled_at, (marked_as_deleted, (created_at, updated_at))) )
@@ -97,7 +97,7 @@ let t =
       { id
       ; session_id
       ; contact_id
-      ; show_up
+      ; no_show
       ; participated
       ; matches_filter = MatchesFilter.create matches_filter
       ; canceled_at = CCOption.map CanceledAt.value canceled_at
@@ -117,7 +117,7 @@ let t =
             (tup2
                Pool_common.Repo.Id.t
                (tup2
-                  (option ShowUp.t)
+                  (option NoShow.t)
                   (tup2
                      (option Participated.t)
                      (tup2

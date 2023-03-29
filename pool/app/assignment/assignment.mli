@@ -4,7 +4,7 @@ module Id : sig
   val to_common : t -> Pool_common.Id.t
 end
 
-module ShowUp : sig
+module NoShow : sig
   include Pool_common.Model.BooleanSig
 
   val init : t
@@ -35,7 +35,7 @@ end
 type t =
   { id : Id.t
   ; contact : Contact.t
-  ; show_up : ShowUp.t option
+  ; no_show : NoShow.t option
   ; participated : Participated.t option
   ; matches_filter : MatchesFilter.t
   ; canceled_at : CanceledAt.t option
@@ -50,7 +50,7 @@ val show : t -> string
 
 val create
   :  ?id:Id.t
-  -> ?show_up:ShowUp.t
+  -> ?no_show:NoShow.t
   -> ?participated:Participated.t
   -> ?matches_filter:MatchesFilter.t
   -> ?canceled_at:CanceledAt.t
@@ -106,7 +106,7 @@ type create =
   }
 
 type event =
-  | AttendanceSet of (t * ShowUp.t * Participated.t)
+  | AttendanceSet of (t * NoShow.t * Participated.t)
   | Canceled of t
   | Created of create
   | MarkedAsDeleted of t

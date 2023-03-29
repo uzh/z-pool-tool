@@ -126,6 +126,7 @@ module Model = struct
       ; num_invitations = NumberOfInvitations.init
       ; num_assignments = NumberOfAssignments.init
       ; num_show_ups = NumberOfShowUps.init
+      ; num_no_shows = NumberOfNoShows.init
       ; num_participations = NumberOfParticipations.init
       ; firstname_version = Pool_common.Version.create ()
       ; lastname_version = Pool_common.Version.create ()
@@ -324,7 +325,7 @@ module Model = struct
     ; reminder_sent_at = None
     ; assignment_count =
         0 |> AssignmentCount.create |> get_or_failwith_pool_error
-    ; show_up_count = 0 |> ShowUpCount.create |> get_or_failwith_pool_error
+    ; no_show_count = 0 |> NoShowCount.create |> get_or_failwith_pool_error
     ; participant_count =
         0 |> ParticipantCount.create |> get_or_failwith_pool_error
     ; closed_at = None
@@ -429,7 +430,7 @@ module Model = struct
     Assignment.
       { id = Id.create ()
       ; contact = create_contact ()
-      ; show_up = None
+      ; no_show = None
       ; participated = None
       ; matches_filter = MatchesFilter.init
       ; canceled_at = None

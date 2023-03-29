@@ -36,6 +36,15 @@ module NumberOfShowUps = struct
   let increment m = m + 1
 end
 
+module NumberOfNoShows = struct
+  type t = int [@@deriving eq, show]
+
+  let init = 0
+  let value m = m
+  let of_int m = m
+  let increment m = m + 1
+end
+
 module NumberOfParticipations = struct
   type t = int [@@deriving eq, show]
 
@@ -57,6 +66,7 @@ type t =
   ; num_invitations : NumberOfInvitations.t
   ; num_assignments : NumberOfAssignments.t
   ; num_show_ups : NumberOfShowUps.t
+  ; num_no_shows : NumberOfNoShows.t
   ; num_participations : NumberOfParticipations.t
   ; firstname_version : Pool_common.Version.t
   ; lastname_version : Pool_common.Version.t
@@ -81,6 +91,7 @@ module Write = struct
     ; num_invitations : NumberOfInvitations.t
     ; num_assignments : NumberOfAssignments.t
     ; num_show_ups : NumberOfShowUps.t
+    ; num_no_shows : NumberOfNoShows.t
     ; num_participations : NumberOfParticipations.t
     ; firstname_version : Pool_common.Version.t
     ; lastname_version : Pool_common.Version.t
@@ -102,6 +113,7 @@ module Write = struct
     ; num_invitations = m.num_invitations
     ; num_assignments = m.num_assignments
     ; num_show_ups = m.num_show_ups
+    ; num_no_shows = m.num_no_shows
     ; num_participations = m.num_participations
     ; firstname_version = m.firstname_version
     ; lastname_version = m.lastname_version

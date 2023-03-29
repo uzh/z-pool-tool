@@ -20,7 +20,7 @@ type t =
   ; reminder_lead_time : Reminder.LeadTime.t option
   ; reminder_sent_at : Reminder.SentAt.t option
   ; assignment_count : Entity.AssignmentCount.t
-  ; show_up_count : Entity.ShowUpCount.t
+  ; no_show_count : Entity.NoShowCount.t
   ; participant_count : Entity.ParticipantCount.t
   ; closed_at : Ptime.t option
   ; canceled_at : Ptime.t option
@@ -43,7 +43,7 @@ let of_entity (m : Entity.t) =
   ; reminder_lead_time = m.Entity.reminder_lead_time
   ; reminder_sent_at = m.Entity.reminder_sent_at
   ; assignment_count = m.Entity.assignment_count
-  ; show_up_count = m.Entity.show_up_count
+  ; no_show_count = m.Entity.no_show_count
   ; participant_count = m.Entity.participant_count
   ; closed_at = m.Entity.closed_at
   ; canceled_at = m.Entity.canceled_at
@@ -67,7 +67,7 @@ let to_entity (m : t) location : Entity.t =
     ; reminder_lead_time = m.reminder_lead_time
     ; reminder_sent_at = m.reminder_sent_at
     ; assignment_count = m.assignment_count
-    ; show_up_count = m.show_up_count
+    ; no_show_count = m.no_show_count
     ; participant_count = m.participant_count
     ; closed_at = m.closed_at
     ; canceled_at = m.canceled_at
@@ -93,7 +93,7 @@ let t =
                         , ( m.reminder_lead_time
                           , ( m.reminder_sent_at
                             , ( m.assignment_count
-                              , ( m.show_up_count
+                              , ( m.no_show_count
                                 , ( m.participant_count
                                   , ( m.closed_at
                                     , ( m.canceled_at
@@ -114,7 +114,7 @@ let t =
                       , ( reminder_lead_time
                         , ( reminder_sent_at
                           , ( assignment_count
-                            , ( show_up_count
+                            , ( no_show_count
                               , ( participant_count
                                 , ( closed_at
                                   , (canceled_at, (created_at, updated_at)) ) )
@@ -134,7 +134,7 @@ let t =
       ; reminder_lead_time
       ; reminder_sent_at
       ; assignment_count
-      ; show_up_count
+      ; no_show_count
       ; participant_count
       ; closed_at
       ; canceled_at

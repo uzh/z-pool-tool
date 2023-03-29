@@ -123,17 +123,16 @@ end = struct
   let effects = Assignment.Guard.Access.delete
 end
 
-let validate_participation ((_, show_up, participated) as participation) =
+let validate_participation ((_, no_show, participated) as participation) =
   let open Assignment in
-  if Participated.value participated && not (ShowUp.value show_up)
+  if Participated.value participated && NoShow.value no_show
   then
-    Error
-      Pool_common.Message.(FieldRequiresCheckbox Field.(Participated, ShowUp))
+    Error Pool_common.Message.(MutuallyExclusive Field.(Participated, NoShow))
   else Ok participation
 ;;
 
 module SetAttendance : sig
-  type t = (Assignment.t * Assignment.ShowUp.t * Assignment.Participated.t) list
+  type t = (Assignment.t * Assignment.NoShow.t * Assignment.Participated.t) list
 
   val handle
     :  ?tags:Logs.Tag.set
@@ -143,7 +142,7 @@ module SetAttendance : sig
 
   val effects : Experiment.Id.t -> Session.Id.t -> Guard.ValidationSet.t
 end = struct
-  type t = (Assignment.t * Assignment.ShowUp.t * Assignment.Participated.t) list
+  type t = (Assignment.t * Assignment.NoShow.t * Assignment.Participated.t) list
 
   let handle ?(tags = Logs.Tag.empty) (session : Session.t) command =
     Logs.info ~src (fun m -> m "Handle command SetAttendance" ~tags);
@@ -157,12 +156,12 @@ end = struct
         >>= fun events ->
         participation
         |> validate_participation
-        >>= fun ((assignment : Assignment.t), showup, participated) ->
+        >>= fun ((assignment : Assignment.t), no_show, participated) ->
         let* contact_event =
           let open Contact in
           let* () = Assignment.attendance_settable assignment in
           let update =
-            { show_up = ShowUp.value showup
+            { no_show = NoShow.value no_show
             ; participated = Participated.value participated
             }
           in
@@ -171,7 +170,7 @@ end = struct
           |> CCResult.return
         in
         events
-        @ [ Assignment.AttendanceSet (assignment, showup, participated)
+        @ [ Assignment.AttendanceSet (assignment, no_show, participated)
             |> Pool_event.assignment
           ; contact_event
           ]

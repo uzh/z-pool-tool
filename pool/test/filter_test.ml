@@ -751,7 +751,7 @@ let filter_by_experiment_participation _ () =
             Contact.equal assignment.contact contact)
       ||> get_exn_poolerror
     in
-    [ AttendanceSet (assignment, ShowUp.create true, Participated.create true)
+    [ AttendanceSet (assignment, NoShow.create false, Participated.create true)
       |> Pool_event.assignment
     ; Session.Closed session |> Pool_event.session
     ]

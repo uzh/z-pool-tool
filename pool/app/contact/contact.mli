@@ -30,6 +30,13 @@ module NumberOfShowUps : sig
   val of_int : int -> t
 end
 
+module NumberOfNoShows : sig
+  type t
+
+  val init : t
+  val of_int : int -> t
+end
+
 module NumberOfParticipations : sig
   type t
 
@@ -49,6 +56,7 @@ type t =
   ; num_invitations : NumberOfInvitations.t
   ; num_assignments : NumberOfAssignments.t
   ; num_show_ups : NumberOfShowUps.t
+  ; num_no_shows : NumberOfNoShows.t
   ; num_participations : NumberOfParticipations.t
   ; firstname_version : Pool_common.Version.t
   ; lastname_version : Pool_common.Version.t
@@ -116,7 +124,7 @@ type create =
   }
 
 type session_participation =
-  { show_up : bool
+  { no_show : bool
   ; participated : bool
   }
 

@@ -108,6 +108,8 @@ let rec field_to_string =
   | Name -> "name"
   | NewPassword -> "new password"
   | NextRunAt -> "next run"
+  | NoShow -> "no show"
+  | NoShowCount -> "no shows"
   | Offset -> "offset"
   | Operator -> "operator"
   | Operators -> "operators"
@@ -149,7 +151,6 @@ let rec field_to_string =
   | Session -> "session"
   | Sessions -> "sessions"
   | Setting -> "setting"
-  | ShowUp -> "show up"
   | ShowUpCount -> "show ups"
   | SMS -> "SMS"
   | SmsText -> "SMS text"
@@ -297,11 +298,6 @@ let rec error_to_string = function
   | EndBeforeStart -> "End is before start time."
   | ExperimentSessionCountNotZero ->
     "Sessions exist for this experiment. It cannot be deleted."
-  | FieldRequiresCheckbox (field, required) ->
-    Format.asprintf
-      "The option \"%s\" requires \"%s\"."
-      (field_to_string field)
-      (field_to_string required)
   | FilterMustNotContainTemplate -> "Filter must not contain templates."
   | FilterAndOrMustNotBeEmpty -> "'And' and 'Or' predicates must not be empty."
   | FilterListValueMustNotBeEmpty -> "At least one option must be selected."
@@ -326,6 +322,11 @@ let rec error_to_string = function
   | LoginProvideDetails -> "Please provide email and password"
   | MeantimeUpdate field ->
     field_message "" (field_to_string field) "was updated in the meantime!"
+  | MutuallyExclusive (f1, f2) ->
+    Format.asprintf
+      "%s and %s are mutually exclusive."
+      (field_to_string f1)
+      (field_to_string f2)
   | NegativeAmount -> "Has negative amount!"
   | NoOptionSelected field ->
     field_message "Please select at least one" (field_to_string field) "."

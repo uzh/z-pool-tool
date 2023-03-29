@@ -29,7 +29,7 @@ module Sql = struct
             SUBSTR(HEX(pool_assignments.contact_uuid), 17, 4), '-',
             SUBSTR(HEX(pool_assignments.contact_uuid), 21)
           )),
-          pool_assignments.show_up,
+          pool_assignments.no_show,
           pool_assignments.participated,
           pool_assignments.matches_filter,
           pool_assignments.canceled_at,
@@ -238,7 +238,7 @@ module Sql = struct
         uuid,
         session_uuid,
         contact_uuid,
-        show_up,
+        no_show,
         participated,
         matches_filter,
         canceled_at,
@@ -271,7 +271,7 @@ module Sql = struct
         UPDATE
           pool_assignments
         SET
-          show_up = $2,
+          no_show = $2,
           participated = $3,
           matches_filter = $4,
           canceled_at = $5
@@ -288,7 +288,7 @@ module Sql = struct
   let format_update m =
     Entity.(
       ( m.id |> Pool_common.Id.value
-      , ( m.show_up
+      , ( m.no_show
         , ( m.participated
           , ( m.matches_filter |> MatchesFilter.value
             , CCOption.map CanceledAt.value m.canceled_at ) ) ) ))

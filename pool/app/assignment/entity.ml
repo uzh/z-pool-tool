@@ -4,11 +4,11 @@ module Id = struct
   let to_common m = m
 end
 
-module ShowUp = struct
+module NoShow = struct
   include Pool_common.Model.Boolean
 
   let init = false
-  let schema = schema Pool_common.Message.Field.ShowUp
+  let schema = schema Pool_common.Message.Field.NoShow
 end
 
 module Participated = struct
@@ -43,7 +43,7 @@ end
 type t =
   { id : Id.t
   ; contact : Contact.t
-  ; show_up : ShowUp.t option
+  ; no_show : NoShow.t option
   ; participated : Participated.t option
   ; matches_filter : MatchesFilter.t
   ; canceled_at : CanceledAt.t option
@@ -55,7 +55,7 @@ type t =
 
 let create
   ?(id = Id.create ())
-  ?show_up
+  ?no_show
   ?participated
   ?(matches_filter = MatchesFilter.create true)
   ?canceled_at
@@ -64,7 +64,7 @@ let create
   =
   { id
   ; contact
-  ; show_up
+  ; no_show
   ; participated
   ; matches_filter
   ; canceled_at

@@ -36,6 +36,7 @@ module DummyData = struct
       ; num_invitations = NumberOfInvitations.init
       ; num_assignments = NumberOfAssignments.init
       ; num_show_ups = NumberOfShowUps.init
+      ; num_no_shows = NumberOfNoShows.init
       ; num_participations = NumberOfParticipations.init
       ; firstname_version = Version.create ()
       ; lastname_version = Version.create ()
@@ -118,8 +119,8 @@ module DummyData = struct
       ; reminder_sent_at = None
       ; assignment_count =
           0 |> AssignmentCount.create |> Pool_common.Utils.get_or_failwith
-      ; show_up_count =
-          0 |> ShowUpCount.create |> Pool_common.Utils.get_or_failwith
+      ; no_show_count =
+          0 |> NoShowCount.create |> Pool_common.Utils.get_or_failwith
       ; participant_count =
           0 |> ParticipantCount.create |> Pool_common.Utils.get_or_failwith
       ; closed_at = None

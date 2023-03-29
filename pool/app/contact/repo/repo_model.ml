@@ -18,6 +18,12 @@ module NumberOfShowUps = struct
   let t = Caqti_type.int
 end
 
+module NumberOfNoShows = struct
+  include NumberOfNoShows
+
+  let t = Caqti_type.int
+end
+
 module NumberOfParticipations = struct
   include NumberOfParticipations
 
@@ -39,14 +45,15 @@ let t =
                     , ( NumberOfInvitations.value m.num_invitations
                       , ( NumberOfAssignments.value m.num_assignments
                         , ( NumberOfShowUps.value m.num_show_ups
-                          , ( NumberOfParticipations.value m.num_participations
-                            , ( m.firstname_version
-                              , ( m.lastname_version
-                                , ( m.paused_version
-                                  , ( m.language_version
-                                    , ( m.experiment_type_preference_version
-                                      , (m.created_at, m.updated_at) ) ) ) ) )
-                            ) ) ) ) ) ) ) ) ) ) ) )
+                          , ( NumberOfNoShows.value m.num_no_shows
+                            , ( NumberOfParticipations.value m.num_participations
+                              , ( m.firstname_version
+                                , ( m.lastname_version
+                                  , ( m.paused_version
+                                    , ( m.language_version
+                                      , ( m.experiment_type_preference_version
+                                        , (m.created_at, m.updated_at) ) ) ) )
+                                ) ) ) ) ) ) ) ) ) ) ) ) ) )
   in
   let decode
     ( user
@@ -60,14 +67,15 @@ let t =
                   , ( num_invitations
                     , ( num_assignments
                       , ( num_show_ups
-                        , ( num_participations
-                          , ( firstname_version
-                            , ( lastname_version
-                              , ( paused_version
-                                , ( language_version
-                                  , ( experiment_type_preference_version
-                                    , (created_at, updated_at) ) ) ) ) ) ) ) )
-                    ) ) ) ) ) ) ) ) )
+                        , ( num_no_shows
+                          , ( num_participations
+                            , ( firstname_version
+                              , ( lastname_version
+                                , ( paused_version
+                                  , ( language_version
+                                    , ( experiment_type_preference_version
+                                      , (created_at, updated_at) ) ) ) ) ) ) )
+                        ) ) ) ) ) ) ) ) ) ) )
     =
     let open Pool_user in
     let open CCResult in
@@ -83,6 +91,7 @@ let t =
       ; num_invitations = NumberOfInvitations.of_int num_invitations
       ; num_assignments = NumberOfAssignments.of_int num_assignments
       ; num_show_ups = NumberOfShowUps.of_int num_show_ups
+      ; num_no_shows = NumberOfNoShows.of_int num_no_shows
       ; num_participations = NumberOfParticipations.of_int num_participations
       ; firstname_version
       ; lastname_version
@@ -122,9 +131,9 @@ let t =
                                     (tup2
                                        NumberOfShowUps.t
                                        (tup2
-                                          NumberOfParticipations.t
+                                          NumberOfNoShows.t
                                           (tup2
-                                             Pool_common.Repo.Version.t
+                                             NumberOfParticipations.t
                                              (tup2
                                                 Pool_common.Repo.Version.t
                                                 (tup2
@@ -136,8 +145,12 @@ let t =
                                                          .Version
                                                          .t
                                                          (tup2
-                                                            CreatedAt.t
-                                                            UpdatedAt.t)))))))))))))))))))
+                                                            Pool_common.Repo
+                                                            .Version
+                                                            .t
+                                                            (tup2
+                                                               CreatedAt.t
+                                                               UpdatedAt.t))))))))))))))))))))
 ;;
 
 let contact =
@@ -155,14 +168,15 @@ let contact =
                     , ( NumberOfInvitations.value m.num_invitations
                       , ( NumberOfAssignments.value m.num_assignments
                         , ( NumberOfShowUps.value m.num_show_ups
-                          , ( NumberOfParticipations.value m.num_participations
-                            , ( m.firstname_version
-                              , ( m.lastname_version
-                                , ( m.paused_version
-                                  , ( m.language_version
-                                    , ( m.experiment_type_preference_version
-                                      , (m.created_at, m.updated_at) ) ) ) ) )
-                            ) ) ) ) ) ) ) ) ) ) ) )
+                          , ( NumberOfNoShows.value m.num_no_shows
+                            , ( NumberOfParticipations.value m.num_participations
+                              , ( m.firstname_version
+                                , ( m.lastname_version
+                                  , ( m.paused_version
+                                    , ( m.language_version
+                                      , ( m.experiment_type_preference_version
+                                        , (m.created_at, m.updated_at) ) ) ) )
+                                ) ) ) ) ) ) ) ) ) ) ) ) ) )
   in
   let decode _ =
     failwith
@@ -199,7 +213,7 @@ let contact =
                                        (tup2
                                           NumberOfShowUps.t
                                           (tup2
-                                             Pool_common.Repo.Version.t
+                                             NumberOfNoShows.t
                                              (tup2
                                                 Pool_common.Repo.Version.t
                                                 (tup2
@@ -211,8 +225,12 @@ let contact =
                                                          .Version
                                                          .t
                                                          (tup2
-                                                            CreatedAt.t
-                                                            UpdatedAt.t)))))))))))))))))))
+                                                            Pool_common.Repo
+                                                            .Version
+                                                            .t
+                                                            (tup2
+                                                               CreatedAt.t
+                                                               UpdatedAt.t))))))))))))))))))))
 ;;
 
 module Write = struct
@@ -233,13 +251,15 @@ module Write = struct
                       , ( NumberOfInvitations.value m.num_invitations
                         , ( NumberOfAssignments.value m.num_assignments
                           , ( NumberOfShowUps.value m.num_show_ups
-                            , ( NumberOfParticipations.value m.num_participations
-                              , ( m.firstname_version
-                                , ( m.lastname_version
+                            , ( NumberOfNoShows.value m.num_no_shows
+                              , ( NumberOfParticipations.value
+                                    m.num_participations
+                                , ( m.firstname_version
                                   , ( m.lastname_version
-                                    , ( m.paused_version
-                                      , m.experiment_type_preference_version )
-                                    ) ) ) ) ) ) ) ) ) ) ) ) ) ) )
+                                    , ( m.lastname_version
+                                      , ( m.paused_version
+                                        , m.experiment_type_preference_version
+                                        ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) )
     in
     let decode _ =
       failwith
@@ -277,7 +297,7 @@ module Write = struct
                                          (tup2
                                             NumberOfShowUps.t
                                             (tup2
-                                               Pool_common.Repo.Version.t
+                                               NumberOfNoShows.t
                                                (tup2
                                                   Pool_common.Repo.Version.t
                                                   (tup2
@@ -285,8 +305,13 @@ module Write = struct
                                                      (tup2
                                                         Pool_common.Repo.Version
                                                         .t
-                                                        Pool_common.Repo.Version
-                                                        .t)))))))))))))))))
+                                                        (tup2
+                                                           Pool_common.Repo
+                                                           .Version
+                                                           .t
+                                                           Pool_common.Repo
+                                                           .Version
+                                                           .t))))))))))))))))))
   ;;
 end
 

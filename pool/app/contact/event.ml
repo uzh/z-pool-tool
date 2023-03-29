@@ -15,7 +15,7 @@ type create =
 [@@deriving eq, show]
 
 type session_participation =
-  { show_up : bool
+  { no_show : bool
   ; participated : bool
   }
 [@@deriving eq, show]
@@ -87,6 +87,7 @@ let handle_event pool : event -> unit Lwt.t =
       ; num_invitations = NumberOfInvitations.init
       ; num_assignments = NumberOfAssignments.init
       ; num_show_ups = NumberOfShowUps.init
+      ; num_no_shows = NumberOfNoShows.init
       ; num_participations = NumberOfParticipations.init
       ; firstname_version = Pool_common.Version.create ()
       ; lastname_version = Pool_common.Version.create ()
@@ -173,19 +174,20 @@ let handle_event pool : event -> unit Lwt.t =
   | ProfileUpdateTriggeredAtUpdated contacts ->
     contacts |> CCList.map id |> Repo.update_profile_updated_triggered pool
   | SessionParticipationSet
-      ( ({ num_show_ups; num_participations; _ } as contact)
-      , { show_up; participated } ) ->
-    let num_show_ups =
-      if show_up
-      then num_show_ups |> NumberOfShowUps.increment
-      else num_show_ups
+      ( ({ num_show_ups; num_no_shows; num_participations; _ } as contact)
+      , { no_show; participated } ) ->
+    let num_show_ups, num_no_shows =
+      match no_show with
+      | true -> num_no_shows |> NumberOfNoShows.increment, num_show_ups
+      | false -> num_no_shows, num_show_ups |> NumberOfShowUps.increment
     in
     let num_participations =
       if participated
       then num_participations |> NumberOfParticipations.increment
       else num_participations
     in
-    { contact with num_show_ups; num_participations } |> Repo.update pool
+    { contact with num_show_ups; num_no_shows; num_participations }
+    |> Repo.update pool
   | RegistrationAttemptNotificationSent t ->
     Repo.set_registration_attempt_notification_sent_at pool t
 ;;

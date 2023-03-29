@@ -268,7 +268,7 @@ The following follow-up sessions exist:|}
   | SessionCancelMessage ->
     "This reason will be provided to all contacts assigned to this session."
   | SessionClose ->
-    {|S: the contact showed up
+    {|S: the contact did not show up
     P: the contact participated in the experiment
 
     To set 'participated', 'show up' is required.

@@ -283,7 +283,7 @@ Die folgenden Folgesessions existieren:|}
   | SessionCancelMessage ->
     "Dieser Grund wird allen angemeldeten Kontakten gezeigt."
   | SessionClose ->
-    {|S: Der Kontakt ist an der Session erschienen
+    {|NS: Der Kontakt ist nicht an der Session erschienen
     P: Der Kontakt hat am Experiment teilgenommen
 
     Um 'participated' anzuwählen ist 'show up' erforderlich.

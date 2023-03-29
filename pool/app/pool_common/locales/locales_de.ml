@@ -108,6 +108,8 @@ let rec field_to_string =
   | Name -> "Name"
   | NewPassword -> "Neues Passwort"
   | NextRunAt -> "Nächster Versuch um"
+  | NoShow -> "Nicht anwesend"
+  | NoShowCount -> "Abwesende"
   | Offset -> "Offset"
   | Operator -> "Operator"
   | Operators -> "Operatoren"
@@ -148,7 +150,6 @@ let rec field_to_string =
   | Session -> "Session"
   | Sessions -> "Sessions"
   | Setting -> "Einstellung"
-  | ShowUp -> "Anwesend"
   | ShowUpCount -> "Anwesende"
   | SMS -> "SMS"
   | SmsText -> "SMS Text"
@@ -311,11 +312,6 @@ let rec error_to_string = function
   | ExperimentSessionCountNotZero ->
     "Es existieren Sessions zu diesem Experiment. Es kann nicht gelöscht  \
      werden."
-  | FieldRequiresCheckbox (field, required) ->
-    Format.asprintf
-      "Die Option \"%s\" benötigt \"%s\"."
-      (field_to_string field)
-      (field_to_string required)
   | FilterMustNotContainTemplate -> "Filter darf keine Template enthalten."
   | FilterAndOrMustNotBeEmpty ->
     "'And' und 'Or' Prädikate dürfen nicht leer sein."
@@ -345,6 +341,11 @@ let rec error_to_string = function
       ""
       (field_to_string field)
       "wurde in der Zwischenzeit bearbeitet!"
+  | MutuallyExclusive (f1, f2) ->
+    Format.asprintf
+      "%s und %s schliessen sich gegenseitig aus."
+      (field_to_string f1)
+      (field_to_string f2)
   | NegativeAmount -> "Hat negative Anzahl!"
   | NoOptionSelected field ->
     field_message "Bitte mindestens eine" (field_to_string field) "auswählen."

@@ -98,23 +98,23 @@ let set_attendance () =
   let open Assignment in
   let assignment = Model.create_assignment () in
   let session = Model.(create_session ~start:(an_hour_ago ()) ()) in
-  let show_up = true |> ShowUp.create in
+  let no_show = false |> NoShow.create in
   let participated = false |> Participated.create in
   let events =
     AssignmentCommand.SetAttendance.handle
       session
-      [ assignment, show_up, participated ]
+      [ assignment, no_show, participated ]
   in
   let expected =
     let open Contact in
     let update =
-      { show_up = ShowUp.value show_up
+      { no_show = NoShow.value no_show
       ; participated = Participated.value participated
       }
     in
     Ok
       [ Session.Closed session |> Pool_event.session
-      ; Assignment.AttendanceSet (assignment, show_up, participated)
+      ; Assignment.AttendanceSet (assignment, no_show, participated)
         |> Pool_event.assignment
       ; Contact.SessionParticipationSet (assignment.contact, update)
         |> Pool_event.contact
@@ -127,7 +127,7 @@ let set_invalid_attendance () =
   let open Assignment in
   let assignment = Model.create_assignment () in
   let session = Model.(create_session ~start:(an_hour_ago ()) ()) in
-  let show_up = false |> ShowUp.create in
+  let show_up = true |> NoShow.create in
   let participated = true |> Participated.create in
   let events =
     AssignmentCommand.SetAttendance.handle
@@ -135,8 +135,7 @@ let set_invalid_attendance () =
       [ assignment, show_up, participated ]
   in
   let expected =
-    Error
-      Pool_common.Message.(FieldRequiresCheckbox Field.(Participated, ShowUp))
+    Error Pool_common.Message.(MutuallyExclusive Field.(Participated, NoShow))
   in
   check_result expected events
 ;;

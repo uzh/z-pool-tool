@@ -468,7 +468,7 @@ let close_post req =
              Pool_common.Message.Field.(array_key field)
              req
          in
-         let%lwt show_ups = urlencoded_list Pool_common.Message.Field.ShowUp in
+         let%lwt no_shows = urlencoded_list Pool_common.Message.Field.NoShow in
          let%lwt participated =
            urlencoded_list Pool_common.Message.Field.Participated
          in
@@ -481,11 +481,11 @@ let close_post req =
                  |> Pool_common.Id.value
                in
                let find = CCList.mem ~eq:CCString.equal id in
-               let show_up = show_ups |> find |> Assignment.ShowUp.create in
+               let no_show = no_shows |> find |> Assignment.NoShow.create in
                let participated =
                  participated |> find |> Assignment.Participated.create
                in
-               assigment, show_up, participated)
+               assigment, no_show, participated)
              assignments
          in
          let open Cqrs_command.Assignment_command.SetAttendance in
