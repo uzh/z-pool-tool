@@ -16,8 +16,8 @@ services:
       - ${HOME}${USERPROFILE}/.gitignore_global:/home/opam/.gitignore_global
       - /var/run/docker.sock:/var/run/docker.sock
       # Add database folders to dev container
-      - db-root:/dbs/db-root/:ro
-      - db-tenant:/dbs/db-tenant/:ro
+      - db-root:/databases/db-root/:ro
+      - db-tenant:/databases/db-tenant/:ro
 
     environment:
       - DATABASE_URL=mariadb://root@database-root:3306/development
