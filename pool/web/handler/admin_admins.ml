@@ -117,8 +117,8 @@ module Access : module type of Helpers.Access = struct
       let target_id = id |> Uuid.target_of Admin.Id.value in
       ValidationSet.(
         Or
-          [ One (Action.Read, TargetSpec.Entity `Admin)
-          ; One (Action.Read, TargetSpec.Id (`Admin, target_id))
+          [ One (Action.Update, TargetSpec.Entity `Admin)
+          ; One (Action.Update, TargetSpec.Id (`Admin, target_id))
           ]))
     |> admin_effects
     |> Middleware.Guardian.validate_generic
