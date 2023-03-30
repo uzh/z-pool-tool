@@ -8,6 +8,10 @@ let create (user : Sihl_user.t) : t = user
 let id ({ Sihl_user.id; _ } : t) = Id.of_string id
 let email ({ Sihl_user.email; _ } : t) = email
 
+let full_name { Sihl_user.name; given_name; _ } =
+  [ given_name; name ] |> CCList.filter_map CCFun.id |> CCString.concat " "
+;;
+
 module Duplicate = struct
   type t =
     { first : t

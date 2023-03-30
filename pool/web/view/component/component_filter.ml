@@ -707,6 +707,7 @@ let filter_form csrf language param key_list template_list query_experiments =
           ([ a_user_data "action" action
            ; a_id "filter-form"
            ; a_user_data "detect-unsaved-changes" ""
+           ; a_class [ "stack" ]
            ]
            @ filter_id)
         [ div ~a:[ a_id notification_id ] []

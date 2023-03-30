@@ -81,12 +81,7 @@ end = struct
   let i18n_effects = Guardian.id_effects Pool_common.Id.of_string Field.I18n
 
   let tenant_i18n_effects effect_set req =
-    Pool_context.Tenant.find req
-    |> CCResult.map_or
-         ~default:(ValidationSet.One (Action.Manage, TargetSpec.Entity `Tenant))
-         (fun { Pool_context.Tenant.tenant; _ } ->
-           Http_utils.find_id Pool_common.Id.of_string Field.I18n req
-           |> effect_set tenant.Pool_tenant.id)
+    Http_utils.find_id Pool_common.Id.of_string Field.I18n req |> effect_set
   ;;
 
   let index =

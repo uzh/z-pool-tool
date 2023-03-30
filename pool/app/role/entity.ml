@@ -166,7 +166,8 @@ module Target = struct
   ;;
 
   let all_entities =
-    [ `Assignment
+    [ `Admin
+    ; `Assignment
     ; `Contact
     ; `CustomField
     ; `CustomFieldGroup

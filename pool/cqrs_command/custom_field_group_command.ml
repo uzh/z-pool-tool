@@ -87,8 +87,6 @@ end
 
 module Sort : sig
   include Common.CommandSig with type t = Custom_field.Group.t list
-
-  val effects : Custom_field.Group.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = Custom_field.Group.t list
 
@@ -97,5 +95,8 @@ end = struct
     Ok [ Custom_field.GroupsSorted t |> Pool_event.custom_field ]
   ;;
 
-  let effects = custom_field_group_effect Guard.Action.Update
+  let effects =
+    let open Guard in
+    ValidationSet.One (Action.Update, TargetSpec.Entity `CustomFieldGroup)
+  ;;
 end

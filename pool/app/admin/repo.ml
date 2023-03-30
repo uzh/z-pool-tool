@@ -1,31 +1,34 @@
 module Dynparam = Utils.Database.Dynparam
 
 module Sql = struct
-  let select_from_users_sql where_fragment =
+  let select_from_users_sql ?order_by where_fragment =
     let select_from =
       {sql|
         SELECT
           LOWER(CONCAT(
-            SUBSTR(HEX(uuid), 1, 8), '-',
-            SUBSTR(HEX(uuid), 9, 4), '-',
-            SUBSTR(HEX(uuid), 13, 4), '-',
-            SUBSTR(HEX(uuid), 17, 4), '-',
-            SUBSTR(HEX(uuid), 21)
+            SUBSTR(HEX(user_users.uuid), 1, 8), '-',
+            SUBSTR(HEX(user_users.uuid), 9, 4), '-',
+            SUBSTR(HEX(user_users.uuid), 13, 4), '-',
+            SUBSTR(HEX(user_users.uuid), 17, 4), '-',
+            SUBSTR(HEX(user_users.uuid), 21)
           )),
-          email,
-          username,
-          name,
-          given_name,
-          password,
-          status,
-          admin,
-          confirmed,
-          created_at,
-          updated_at
+          user_users.email,
+          user_users.username,
+          user_users.name,
+          user_users.given_name,
+          user_users.password,
+          user_users.status,
+          user_users.admin,
+          user_users.confirmed,
+          user_users.created_at,
+          user_users.updated_at
         FROM user_users
       |sql}
     in
-    Format.asprintf "%s %s" select_from where_fragment
+    let query = Format.asprintf "%s %s" select_from where_fragment in
+    match order_by with
+    | Some order_by -> Format.asprintf "%s ORDER BY %s" query order_by
+    | None -> query
   ;;
 
   let find_request caqti_type =
@@ -51,9 +54,9 @@ module Sql = struct
     let open Caqti_request.Infix in
     {sql|
       WHERE
-        confirmed = 1
+      user_users.confirmed = 1
       AND
-        admin = 1
+      user_users.admin = 1
       |sql}
     |> select_from_users_sql
     |> Caqti_type.unit ->* Pool_user.Repo.user_caqti
@@ -66,7 +69,7 @@ module Sql = struct
   let find_multiple_request ids =
     Format.asprintf
       {sql|
-      WHERE uuid IN ( %s )
+      WHERE user_users.uuid IN ( %s )
      |sql}
       (CCList.mapi
          (fun i _ -> Format.asprintf "UNHEX(REPLACE($%n, '-', ''))" (i + 1))
@@ -101,20 +104,15 @@ let find_multiple = Sql.find_multiple
 
 module Actors = struct
   let select_from_actors where_fragment =
-    let select_from =
+    let order_by = "COALESCE( user_users.given_name, user_users.name ) ASC" in
+    Format.asprintf
       {sql|
-        SELECT
-          LOWER(CONCAT(
-            SUBSTR(HEX(uuid), 1, 8), '-',
-            SUBSTR(HEX(uuid), 9, 4), '-',
-            SUBSTR(HEX(uuid), 13, 4), '-',
-            SUBSTR(HEX(uuid), 17, 4), '-',
-            SUBSTR(HEX(uuid), 21)
-          ))
-        FROM guardian_actors
+        INNER JOIN guardian_actors
+        ON guardian_actors.uuid = user_users.uuid
+        %s
       |sql}
-    in
-    Format.asprintf "%s %s" select_from where_fragment
+      where_fragment
+    |> Sql.select_from_users_sql ~order_by
   ;;
 
   let find_all_with_role_request include_sql exclude_sql =
@@ -132,7 +130,6 @@ module Actors = struct
   ;;
 
   let find_all_with_role pool roles ~exclude =
-    let open Utils.Lwt_result.Infix in
     let add_params init =
       CCList.fold_left
         (fun (dyn, sql) role ->
@@ -143,7 +140,7 @@ module Actors = struct
                   |> Role.Actor.to_yojson
                   |> Yojson.Safe.to_string
                   |> fun like -> "%" ^ like ^ "%")
-          , sql @ [ "roles LIKE ?" ] ))
+          , sql @ [ "guardian_actors.roles LIKE ?" ] ))
         (init, [])
     in
     if CCList.is_empty roles
@@ -159,9 +156,8 @@ module Actors = struct
       let (Dynparam.Pack (pt, pv)) = dyn in
       let request =
         find_all_with_role_request include_sql exclude_sql
-        |> pt ->* Pool_common.Repo.Id.t
+        |> pt ->* Pool_user.Repo.user_caqti
       in
       Utils.Database.collect (pool |> Pool_database.Label.value) request pv
-      >|> find_multiple pool
   ;;
 end

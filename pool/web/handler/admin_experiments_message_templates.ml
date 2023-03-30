@@ -18,9 +18,9 @@ let form_redirects experiment_id error_path =
   let base =
     experiment_id
     |> Pool_common.Id.value
-    |> Format.asprintf "/admin/experiments/%s/%s"
+    |> Format.asprintf "/admin/experiments/%s"
   in
-  { success = base "edit"; error = base error_path }
+  { success = base; error = Format.asprintf "%s/%s" base error_path }
 ;;
 
 let form ?template_id label req =
@@ -31,7 +31,7 @@ let form ?template_id label req =
       ( err
       , experiment_id
         |> Experiment.Id.value
-        |> Format.asprintf "/admin/experiments/%s/edit" ))
+        |> Format.asprintf "/admin/experiments/%s" ))
     @@
     let flash_fetcher key = Sihl.Web.Flash.find key req in
     let* { Pool_context.Tenant.tenant; _ } =
@@ -112,15 +112,13 @@ let update_template req =
   match template with
   | Ok template ->
     let redirect =
-      form_redirects
-        experiment_id
-        (prefixed_template_url ~append:"edit" template)
+      form_redirects experiment_id (prefixed_template_url template)
     in
     (write (Update (template_id, redirect))) req
   | Error err ->
     HttpUtils.redirect_to_with_actions
       (Format.asprintf
-         "/admin/experiments/%s/edit"
+         "/admin/experiments/%s"
          (Pool_common.Id.value experiment_id))
       [ HttpUtils.Message.set ~error:[ err ] ]
 ;;

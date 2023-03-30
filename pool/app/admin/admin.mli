@@ -10,6 +10,7 @@ val user : t -> Sihl_user.t
 val create : Sihl_user.t -> t
 val id : t -> Id.t
 val email : t -> string
+val full_name : t -> string
 
 type create =
   { id : Pool_common.Id.t option

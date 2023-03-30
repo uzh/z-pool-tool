@@ -15,7 +15,7 @@ let role_assignment
       match hint, CCList.is_empty lst with
       | Some hint, true ->
         p [ txt (Pool_common.Utils.text_to_string language hint) ]
-      | _ -> div ~a:[ a_class [ "striped" ] ] lst
+      | _ -> Component.Table.horizontal_table ~align_last_end:true `Striped lst
     in
     div
       [ h3
@@ -32,24 +32,22 @@ let role_assignment
       | `Assign -> assign, Message.(Assign None), `Success
       | `Unassign -> unassign, Message.(Unassign None), `Error
     in
-    div
-      ~a:
-        [ a_class [ "flexrow"; "justify-between"; "align-center"; "inset-sm" ] ]
-      [ div [ admin |> Admin.email |> txt ]
-      ; form
-          ~a:
-            [ a_action (Format.asprintf "%s/%s" (base_url admin) url)
-            ; a_method `Post
-            ]
-          [ csrf_element csrf ()
-          ; submit_element
-              ~submit_type:style
-              ~classnames:[ "small" ]
-              language
-              control
-              ()
+    let delete =
+      form
+        ~a:
+          [ a_action (Format.asprintf "%s/%s" (base_url admin) url)
+          ; a_method `Post
           ]
-      ]
+        [ csrf_element csrf ()
+        ; submit_element
+            ~submit_type:style
+            ~classnames:[ "small" ]
+            language
+            control
+            ()
+        ]
+    in
+    [ admin |> Admin.email |> txt; admin |> Admin.full_name |> txt; delete ]
   in
   let existing =
     existing

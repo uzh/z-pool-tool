@@ -17,7 +17,7 @@ module Update : sig
     :  (string * string list) list
     -> (t, Pool_common.Message.error) result
 
-  val effects : Pool_tenant.Id.t -> Pool_common.Id.t -> Guard.ValidationSet.t
+  val effects : Pool_common.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = { content : I18n.Content.t }
 
@@ -35,14 +35,9 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let effects tenant_id id =
+  let effects id =
     let open Guard in
-    let tenant_id = tenant_id |> Uuid.target_of Pool_tenant.Id.value in
     let i18n_id = id |> Uuid.target_of Pool_common.Id.value in
-    ValidationSet.(
-      And
-        [ One (Action.Update, TargetSpec.Id (`Tenant, tenant_id))
-        ; One (Action.Update, TargetSpec.Id (`I18n, i18n_id))
-        ])
+    ValidationSet.(One (Action.Update, TargetSpec.Id (`I18n, i18n_id)))
   ;;
 end

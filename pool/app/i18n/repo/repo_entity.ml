@@ -5,7 +5,7 @@ module Key = Pool_common.Repo.Model.SelectorType (Key)
 module Content = struct
   include Content
 
-  let t = Pool_common.Repo.make_caqti_type Caqti_type.string create show
+  let t = Pool_common.Repo.make_caqti_type Caqti_type.string create value
 end
 
 let t =
