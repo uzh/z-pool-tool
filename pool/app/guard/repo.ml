@@ -15,9 +15,10 @@ module Cache = struct
     && Uuid.Actor.equal a1 a2
   ;;
 
-  let equal_validation (l1, s1, a1) (l2, s2, a2) =
+  let equal_validation (l1, s1, any1, a1) (l2, s2, any2, a2) =
     Pool_database.Label.equal l1 l2
     && Core.ValidationSet.equal s1 s2
+    && CCBool.equal any1 any2
     && Core.Actor.(Uuid.Actor.equal (id a1) (id a2))
   ;;
 
@@ -28,6 +29,9 @@ module Cache = struct
     let () = clear lru_validation in
     clear lru_find_actor
   ;;
+
+  let _ = CCCache.clear lru_validation
+  let _ = CCCache.clear lru_find_actor
 end
 
 module Actor = struct
@@ -50,7 +54,12 @@ module Actor = struct
   ;;
 end
 
-let validate database_label validation_set (actor : Role.t Core.Actor.t) =
+let validate
+  ?(any_id = false)
+  database_label
+  validation_set
+  (actor : Role.t Core.Actor.t)
+  =
   let cb ~in_cache _ _ =
     if in_cache
     then
@@ -62,13 +71,14 @@ let validate database_label validation_set (actor : Role.t Core.Actor.t) =
           ([%show: Core.ValidationSet.t] validation_set))
     else ()
   in
-  let validate' (label, set, actor) =
+  let validate' (label, set, any_id, actor) =
     validate
       ~ctx:(Pool_database.to_ctx label)
+      ~any_id
       Pool_common.Message.authorization
       set
       actor
   in
-  (database_label, validation_set, actor)
+  (database_label, validation_set, any_id, actor)
   |> CCCache.(with_cache ~cb Cache.lru_validation validate')
 ;;

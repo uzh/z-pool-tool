@@ -159,26 +159,15 @@ module Access : sig
   val read_operator : Rock.Middleware.t
 end = struct
   include Helpers.Access
-  open Guard
   module Guardian = Middleware.Guardian
-  module Field = Pool_common.Message.Field
   module TenantCommand = Cqrs_command.Pool_tenant_command
 
   let tenant_effects = Guardian.id_effects Pool_tenant.Id.of_string Field.Tenant
-
-  let index =
-    Guardian.validate_admin_entity
-      ValidationSet.(One (Action.Read, TargetSpec.Entity `Tenant))
-  ;;
-
+  let index = Pool_tenant.Guard.Access.index |> Guardian.validate_admin_entity
   let create = Guardian.validate_admin_entity TenantCommand.Create.effects
 
   let read =
-    (fun id ->
-      let target_id = id |> Uuid.target_of Pool_tenant.Id.value in
-      ValidationSet.One (Action.Read, TargetSpec.Id (`Tenant, target_id)))
-    |> tenant_effects
-    |> Guardian.validate_generic
+    Pool_tenant.Guard.Access.read |> tenant_effects |> Guardian.validate_generic
   ;;
 
   let update =
@@ -187,13 +176,10 @@ end = struct
     |> Guardian.validate_generic
   ;;
 
-  let read_operator =
-    Guardian.validate_admin_entity
-      ValidationSet.(One (Action.Read, TargetSpec.Entity `Admin))
-  ;;
+  let read_operator = Admin.Guard.Access.index |> Guardian.validate_admin_entity
 
   let create_operator =
-    Middleware.Guardian.validate_admin_entity
-      ValidationSet.(SpecificRole `ManageOperators)
+    Guard.ValidationSet.(SpecificRole `ManageOperators)
+    |> Middleware.Guardian.validate_admin_entity
   ;;
 end

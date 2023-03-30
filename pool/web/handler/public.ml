@@ -138,7 +138,7 @@ let denied req =
     in
     (match Pool_context.is_from_root context, tenant with
      | false, Ok tenant ->
-       Layout.create
+       Layout.Tenant.create
          html
          tenant
          ?message

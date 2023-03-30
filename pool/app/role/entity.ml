@@ -191,7 +191,8 @@ module Target = struct
   ;;
 
   let all =
-    [ `Assignment
+    [ `Admin
+    ; `Assignment
     ; `AssignmentId TargetId.nil
     ; `Contact
     ; `CustomField

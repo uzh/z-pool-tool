@@ -46,7 +46,7 @@ let list req =
       | None | Some _ -> Session.group_and_sort sessions, false
     in
     Page.Admin.Session.index context experiment grouped_sessions chronological
-    |> create_layout req context
+    >|> create_layout req context
     >|+ Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path req
@@ -86,7 +86,7 @@ let new_helper req page =
              parent_session
              locations
              flash_fetcher
-           |> Lwt_result.return
+           |> Lwt_result.ok
          | `Parent ->
            Page.Admin.Session.new_form
              context
@@ -95,7 +95,7 @@ let new_helper req page =
              duplicate_session
              locations
              flash_fetcher
-           |> Lwt_result.return
+           |> Lwt_result.ok
        in
        html >>= create_layout req context >|+ Sihl.Web.Response.of_html
   in
@@ -159,7 +159,7 @@ let detail req page =
          Assignment.find_by_session database_label session.Session.id
        in
        Page.Admin.Session.detail context experiment session assignments
-       |> Lwt.return_ok
+       |> Lwt_result.ok
      | `Edit ->
        let%lwt locations = Pool_location.find_all database_label in
        let%lwt session_reminder_templates =
@@ -183,13 +183,13 @@ let detail req page =
          session_reminder_templates
          sys_languages
          flash_fetcher
-       |> Lwt.return_ok
+       |> Lwt_result.ok
      | `Close ->
        let* assignments =
          Assignment.find_uncanceled_by_session database_label session.Session.id
        in
        Page.Admin.Session.close context experiment session assignments
-       |> Lwt.return_ok
+       |> Lwt_result.ok
      | `Reschedule ->
        let* experiment = Experiment.find database_label experiment_id in
        Page.Admin.Session.reschedule_session
@@ -197,7 +197,7 @@ let detail req page =
          experiment
          session
          flash_fetcher
-       |> Lwt.return_ok
+       |> Lwt_result.ok
      | `Cancel ->
        let* follow_ups = Session.find_follow_ups database_label session_id in
        Page.Admin.Session.cancel
@@ -206,7 +206,7 @@ let detail req page =
          session
          follow_ups
          flash_fetcher
-       |> Lwt.return_ok)
+       |> Lwt_result.ok)
     >>= create_layout req context
     >|+ Sihl.Web.Response.of_html
   in
@@ -543,7 +543,7 @@ let message_template_form ?template_id label req =
       label
       template
       flash_fetcher
-    |> create_layout req context
+    >|> create_layout req context
     >|+ Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path req
@@ -621,8 +621,6 @@ module Access : sig
   val send_reminder : Rock.Middleware.t
   val close : Rock.Middleware.t
 end = struct
-  open Guard
-  module Field = Pool_common.Message.Field
   module SessionCommand = Cqrs_command.Session_command
   module Guardian = Middleware.Guardian
 
@@ -630,19 +628,27 @@ end = struct
     Guardian.id_effects Pool_common.Id.of_string Field.Session
   ;;
 
+  let experiment_effects =
+    Guardian.id_effects Experiment.Id.of_string Field.Experiment
+  ;;
+
+  let combined_effects fcn req =
+    let open HttpUtils in
+    let experiment_id = find_id Experiment.Id.of_string Field.Experiment req in
+    let session_id = find_id Session.Id.of_string Field.Session req in
+    fcn experiment_id session_id
+  ;;
+
   let index =
-    ValidationSet.One (Action.Read, TargetSpec.Entity `Session)
-    |> Guardian.validate_admin_entity
+    Session.Guard.Access.index
+    |> experiment_effects
+    |> Guardian.validate_generic ~any_id:true
   ;;
 
   let create = SessionCommand.Create.effects |> Guardian.validate_admin_entity
 
   let read =
-    (fun id ->
-      let target_id = id |> Uuid.target_of Pool_common.Id.value in
-      ValidationSet.One (Action.Read, TargetSpec.Id (`Session, target_id)))
-    |> session_effects
-    |> Guardian.validate_generic
+    Session.Guard.Access.read |> combined_effects |> Guardian.validate_generic
   ;;
 
   let update =

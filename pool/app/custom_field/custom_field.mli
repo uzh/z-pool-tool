@@ -488,3 +488,47 @@ module Repo : sig
 end
 
 val group_fields : Group.t list -> t list -> (Group.t * t list) list * t list
+
+module Guard : sig
+  module Target : sig
+    val to_authorizable
+      :  ?ctx:(string * string) list
+      -> t
+      -> (Role.Target.t Guard.Target.t, Pool_common.Message.error) Lwt_result.t
+
+    type t
+
+    val equal : t -> t -> bool
+    val pp : Format.formatter -> t -> unit
+    val show : t -> string
+  end
+
+  type group_id = Group.Id.t
+
+  module Group : sig
+    module Target : sig
+      val to_authorizable
+        :  ?ctx:(string * string) list
+        -> Group.t
+        -> ( Role.Target.t Guard.Target.t
+           , Pool_common.Message.error )
+           Lwt_result.t
+
+      type t
+
+      val equal : t -> t -> bool
+      val pp : Format.formatter -> t -> unit
+      val show : t -> string
+    end
+  end
+
+  module Access : sig
+    val read : Id.t -> Guard.ValidationSet.t
+    val index : Guard.ValidationSet.t
+
+    module Group : sig
+      val read : group_id -> Guard.ValidationSet.t
+      val index : Guard.ValidationSet.t
+    end
+  end
+end

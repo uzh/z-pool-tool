@@ -17,13 +17,43 @@ module Target = struct
   type t = Entity.t [@@deriving eq, show]
 
   let to_authorizable ?ctx t =
+    let open Utils.Lwt_result.Infix in
     Guard.Persistence.Target.decorate
       ?ctx
       (fun Entity.{ id; _ } ->
-        Guard.Target.make
-          `Mailing
-          (id |> Entity.Id.value |> Guard.Uuid.Target.of_string_exn))
+        Guard.Target.make `Mailing (id |> Guard.Uuid.target_of Entity.Id.value))
       t
-    |> Lwt_result.map_error Pool_common.Message.authorization
+    >|- Pool_common.Message.authorization
+  ;;
+end
+
+module Access = struct
+  open Guard
+  open ValidationSet
+
+  let read_mailing id =
+    let target_id = id |> Uuid.target_of Entity.Id.value in
+    One (Action.Read, TargetSpec.Id (`Mailing, target_id))
+  ;;
+
+  let recruiter_of_experiment id =
+    let target_id = id |> Uuid.target_of Experiment.Id.value in
+    Or [ SpecificRole (`Recruiter target_id); SpecificRole `RecruiterAll ]
+  ;;
+
+  let index id =
+    And
+      [ One (Action.Read, TargetSpec.Entity `Mailing)
+      ; Experiment.Guard.Access.read id
+      ; recruiter_of_experiment id
+      ]
+  ;;
+
+  let read experiment_id mailing_id =
+    And
+      [ read_mailing mailing_id
+      ; Experiment.Guard.Access.read experiment_id
+      ; recruiter_of_experiment experiment_id
+      ]
   ;;
 end

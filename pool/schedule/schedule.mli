@@ -53,3 +53,10 @@ val stop : unit -> unit Lwt.t
 val lifecycle : Sihl.Container.lifecycle
 val register : ?schedules:t list -> unit -> Sihl.Container.Service.t
 val find_all : unit -> public list Lwt.t
+
+module Guard : sig
+  module Access : sig
+    val index : Guard.ValidationSet.t
+    val read : Guard.ValidationSet.t
+  end
+end

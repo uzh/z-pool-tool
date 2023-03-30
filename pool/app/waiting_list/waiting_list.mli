@@ -113,4 +113,9 @@ module Guard : sig
     val pp : Format.formatter -> t -> unit
     val show : t -> string
   end
+
+  module Access : sig
+    val index : Experiment.Id.t -> Guard.ValidationSet.t
+    val read : Experiment.Id.t -> Pool_common.Id.t -> Guard.ValidationSet.t
+  end
 end

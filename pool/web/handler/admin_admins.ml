@@ -18,7 +18,6 @@ let index req =
 ;;
 
 let admin_detail req is_edit =
-  (* TODO: Impelement authorization *)
   let open Utils.Lwt_result.Infix in
   let result ({ Pool_context.database_label; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, "/admin/admins")
@@ -89,35 +88,24 @@ let create_admin req =
 
 module Access : module type of Helpers.Access = struct
   include Helpers.Access
-  open Guard
+  module Command = Cqrs_command.Admin_command
+  module Guardian = Middleware.Guardian
 
-  let admin_effects =
-    Middleware.Guardian.id_effects Admin.Id.of_string Field.Admin
+  let admin_effects = Guardian.id_effects Admin.Id.of_string Field.Admin
+
+  let index =
+    Admin.Guard.Access.index |> Guardian.validate_admin_entity ~any_id:true
   ;;
 
-  let create =
-    Cqrs_command.Admin_command.CreateAdmin.effects
-    |> Middleware.Guardian.validate_admin_entity
-  ;;
+  let create = Command.CreateAdmin.effects |> Guardian.validate_admin_entity
 
   let read =
-    (fun id ->
-      let target_id = id |> Uuid.target_of Admin.Id.value in
-      ValidationSet.One (Action.Read, TargetSpec.Id (`Admin, target_id)))
-    |> admin_effects
-    |> Middleware.Guardian.validate_generic
+    Admin.Guard.Access.read |> admin_effects |> Guardian.validate_generic
   ;;
 
   let update =
-    (fun id ->
-      let target_id = id |> Uuid.target_of Admin.Id.value in
-      ValidationSet.One (Action.Update, TargetSpec.Id (`Admin, target_id)))
+    Admin.Guard.Access.update
     |> admin_effects
     |> Middleware.Guardian.validate_generic
-  ;;
-
-  let index =
-    ValidationSet.One (Action.Read, TargetSpec.Entity `Admin)
-    |> Middleware.Guardian.validate_admin_entity
   ;;
 end

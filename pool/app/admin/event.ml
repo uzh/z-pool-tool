@@ -45,6 +45,7 @@ let handle_event ~tags pool : event -> unit Lwt.t =
   let open Utils.Lwt_result.Infix in
   function
   | Created { id; lastname; firstname; password; email; roles } ->
+    let open Pool_common.Utils in
     let ctx = Pool_database.to_ctx pool in
     let%lwt user =
       Service.User.create_admin
@@ -55,10 +56,15 @@ let handle_event ~tags pool : event -> unit Lwt.t =
         ~password:(password |> User.Password.to_sihl)
         (User.EmailAddress.value email)
     in
+    let%lwt (_ : Role.Target.t Guard.Target.t) =
+      Entity_guard.Target.to_authorizable ~ctx user
+      >|- with_log_error ~tags
+      ||> get_or_failwith
+    in
     let%lwt (authorizable : Role.Actor.t Guard.Actor.t) =
       Entity_guard.Actor.to_authorizable ~ctx user
-      >|- Pool_common.Utils.with_log_error ~tags
-      ||> Pool_common.Utils.get_or_failwith
+      >|- with_log_error ~tags
+      ||> get_or_failwith
     in
     let%lwt () =
       match roles with

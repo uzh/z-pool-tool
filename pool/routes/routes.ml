@@ -385,7 +385,7 @@ module Admin = struct
       let assignments =
         let open Experiments.Assignment in
         [ get "" ~middlewares:[ Access.index ] index
-        ; get "deleted" ~middlewares:[ Access.deleted ] deleted
+        ; get "deleted" ~middlewares:[ Access.delete ] deleted
         ]
       in
       let mailings =
@@ -555,10 +555,7 @@ module Admin = struct
       in
       let models =
         [ get "" ~middlewares:[ Access.index ] index
-        ; post
-            "sort-fields"
-            ~middlewares:[ Access.sort_ungrouped ]
-            sort_ungrouped_fields
+        ; post "sort-fields" ~middlewares:[ Access.sort ] sort_ungrouped_fields
         ; choose ~scope:"field" fields
         ; choose ~scope:"group" groups
         ]

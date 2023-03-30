@@ -427,33 +427,21 @@ module Update = struct
   let search_experiments = handler search_experiments
 end
 
-module Access : Helpers.AccessSig = struct
+module Access : module type of Helpers.Access = struct
   include Helpers.Access
-  open Guard
-  module FilterCommand = Cqrs_command.Filter_command
+  module Command = Cqrs_command.Filter_command
   module Guardian = Middleware.Guardian
 
   let filter_effects = Guardian.id_effects Filter.Id.of_string Field.Filter
 
   let read =
-    (fun id ->
-      let target_id = id |> Uuid.target_of Filter.Id.value in
-      ValidationSet.One (Action.Read, TargetSpec.Id (`Filter, target_id)))
-    |> filter_effects
-    |> Guardian.validate_generic
+    Filter.Guard.Access.read |> filter_effects |> Guardian.validate_generic
   ;;
 
   let update =
-    FilterCommand.Update.effects |> filter_effects |> Guardian.validate_generic
+    Command.Update.effects |> filter_effects |> Guardian.validate_generic
   ;;
 
-  let create =
-    ValidationSet.One (Action.Create, TargetSpec.Entity `Filter)
-    |> Guardian.validate_admin_entity
-  ;;
-
-  let index =
-    ValidationSet.One (Action.Read, TargetSpec.Entity `Filter)
-    |> Guardian.validate_admin_entity
-  ;;
+  let create = Command.Create.effects |> Guardian.validate_admin_entity
+  let index = Filter.Guard.Access.index |> Guardian.validate_admin_entity
 end

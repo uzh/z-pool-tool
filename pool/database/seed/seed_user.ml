@@ -140,6 +140,7 @@ let admins db_label =
       , "admin"
       , "engineering@econ.uzh.ch"
       , [ `OperatorAll
+        ; `RecruiterAll
         ; `ManageAssistants
         ; `ManageExperimenters
         ; `ManageLocationManagers
@@ -165,11 +166,12 @@ let admins db_label =
         let%lwt admin =
           Service.User.create_admin ~ctx ~name ~given_name ~password email
         in
-        let%lwt (_ : [> `Admin ] Guard.Actor.t) =
-          admin
-          |> Admin.create
-          |> Admin.Guard.Actor.to_authorizable ~ctx
-          ||> get_or_failwith
+        let%lwt (_ : Role.Actor.t Guard.Actor.t) =
+          let admin = admin |> Admin.create in
+          let%lwt (_ : Role.Target.t Guard.Target.t) =
+            admin |> Admin.Guard.Target.to_authorizable ~ctx ||> get_or_failwith
+          in
+          admin |> Admin.Guard.Actor.to_authorizable ~ctx ||> get_or_failwith
         in
         let%lwt () =
           let open Guard in

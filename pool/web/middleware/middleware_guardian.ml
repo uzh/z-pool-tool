@@ -25,7 +25,7 @@ let require_user_type_of (user_type : Pool_context.UserType.t list) =
   Rock.Middleware.create ~name:"guardian.require_type" ~filter
 ;;
 
-let validate_access_request_dependent effects req =
+let validate_access_request_dependent ?any_id effects req =
   let open Utils.Lwt_result.Infix in
   let open Pool_common.Message in
   let* ({ Pool_context.user; database_label; _ } as context) =
@@ -54,7 +54,7 @@ let validate_access_request_dependent effects req =
           ([%show: Guard.Actor.t] auth)
           ([%show: Guard.ValidationSet.t] effects))
     in
-    Guard.Persistence.validate database_label effects auth
+    Guard.Persistence.validate ?any_id database_label effects auth
 ;;
 
 let validate_admin_entity_base validate =
@@ -70,19 +70,20 @@ let validate_admin_entity_base validate =
   Rock.Middleware.create ~name:"guardian.generic" ~filter
 ;;
 
-let validate_admin_entity effects =
-  validate_access_request_dependent (fun (_ : Rock.Request.t) -> Ok effects)
+let validate_admin_entity ?any_id effects =
+  validate_access_request_dependent ?any_id (fun (_ : Rock.Request.t) ->
+    Ok effects)
   |> validate_admin_entity_base
 ;;
 
-let validate_generic generic_fcn =
+let validate_generic ?any_id generic_fcn =
   generic_fcn %> CCResult.return
-  |> validate_access_request_dependent
+  |> validate_access_request_dependent ?any_id
   |> validate_admin_entity_base
 ;;
 
-let validate_generic_result =
-  validate_access_request_dependent %> validate_admin_entity_base
+let validate_generic_result ?any_id =
+  validate_access_request_dependent ?any_id %> validate_admin_entity_base
 ;;
 
 let id_effects encode field effect_set =

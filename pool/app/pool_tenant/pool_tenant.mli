@@ -339,6 +339,16 @@ module Guard : sig
 
     type t
   end
+
+  module Access : sig
+    val index : Guard.ValidationSet.t
+    val read : Id.t -> Guard.ValidationSet.t
+
+    module Smtp : sig
+      val index : Guard.ValidationSet.t
+      val read : SmtpAuth.Id.t -> Guard.ValidationSet.t
+    end
+  end
 end
 
 module Service : sig

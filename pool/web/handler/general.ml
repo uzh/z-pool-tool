@@ -19,7 +19,7 @@ let create_tenant_layout
   =
   let open Utils.Lwt_result.Infix in
   let* tenant_context = Pool_context.Tenant.find req |> Lwt_result.lift in
-  Layout.create
+  Layout.Tenant.create
     children
     tenant_context
     ?active_navigation

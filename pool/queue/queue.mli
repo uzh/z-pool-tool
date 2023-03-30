@@ -10,3 +10,10 @@ val find
   :  Pool_database.Label.t
   -> Pool_common.Id.t
   -> (Sihl_queue.instance, Pool_common.Message.error) Lwt_result.t
+
+module Guard : sig
+  module Access : sig
+    val index : Guard.ValidationSet.t
+    val read : Guard.ValidationSet.t
+  end
+end

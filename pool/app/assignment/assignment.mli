@@ -115,3 +115,24 @@ val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
+
+module Guard : sig
+  module Target : sig
+    val to_authorizable
+      :  ?ctx:(string * string) list
+      -> t
+      -> (Role.Target.t Guard.Target.t, Pool_common.Message.error) Lwt_result.t
+
+    type t
+
+    val equal : t -> t -> bool
+    val pp : Format.formatter -> t -> unit
+    val show : t -> string
+  end
+
+  module Access : sig
+    val index : Experiment.Id.t -> Guard.ValidationSet.t
+    val read : Experiment.Id.t -> Id.t -> Guard.ValidationSet.t
+    val update : Experiment.Id.t -> Id.t -> Guard.ValidationSet.t
+  end
+end

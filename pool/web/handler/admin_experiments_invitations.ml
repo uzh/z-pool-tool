@@ -41,7 +41,7 @@ let index req =
          query_experiments
          filtered_contacts
          context
-       |> create_layout req context
+       >|> create_layout req context
        >|+ Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path req
@@ -67,7 +67,7 @@ let sent_invitations req =
            experiment.Experiment.id
        in
        Page.Admin.Experiments.sent_invitations context experiment invitations
-       |> create_layout req context
+       >|> create_layout req context
        >|+ Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path req
@@ -194,9 +194,7 @@ module Access : sig
   val resend : Rock.Middleware.t
 end = struct
   include Helpers.Access
-  open Guard
   module InvitationCommand = Cqrs_command.Invitation_command
-  module Field = Pool_common.Message.Field
   module Guardian = Middleware.Guardian
 
   let invitation_effects =
@@ -207,26 +205,26 @@ end = struct
     Guardian.id_effects Experiment.Id.of_string Field.Experiment
   ;;
 
-  let read_effect id =
-    let target_id = id |> Uuid.target_of Experiment.Id.value in
-    ValidationSet.(
-      And
-        [ One (Action.Read, TargetSpec.Entity `Invitation)
-        ; One (Action.Read, TargetSpec.Id (`Experiment, target_id))
-        ])
+  let combined_effects fcn req =
+    let open HttpUtils in
+    let experiment_id = find_id Experiment.Id.of_string Field.Experiment req in
+    let invitation_id = find_id Pool_common.Id.of_string Field.Invitation req in
+    fcn experiment_id invitation_id
   ;;
 
-  let index = read_effect |> experiment_effects |> Guardian.validate_generic
+  let index =
+    Invitation.Guard.Access.index
+    |> experiment_effects
+    |> Guardian.validate_generic ~any_id:true
+  ;;
 
   let create =
     InvitationCommand.Create.effects |> Guardian.validate_admin_entity
   ;;
 
   let read =
-    (fun id ->
-      let target_id = id |> Uuid.target_of Pool_common.Id.value in
-      ValidationSet.One (Action.Read, TargetSpec.Id (`Invitation, target_id)))
-    |> invitation_effects
+    Invitation.Guard.Access.read
+    |> combined_effects
     |> Guardian.validate_generic
   ;;
 

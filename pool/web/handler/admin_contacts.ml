@@ -131,23 +131,17 @@ module Access : sig
   val delete_answer : Rock.Middleware.t
 end = struct
   include Helpers.Access
-  open Guard
   module ContactCommand = Cqrs_command.Contact_command
   module Guardian = Middleware.Guardian
 
   let contact_effects = Guardian.id_effects Contact.Id.of_string Field.Contact
 
   let index =
-    ValidationSet.One (Action.Read, TargetSpec.Entity `Contact)
-    |> Guardian.validate_admin_entity
+    Contact.Guard.Access.index |> Guardian.validate_admin_entity ~any_id:true
   ;;
 
   let read =
-    (fun id ->
-      let target_id = id |> Uuid.target_of Contact.Id.value in
-      ValidationSet.One (Action.Read, TargetSpec.Id (`Contact, target_id)))
-    |> contact_effects
-    |> Guardian.validate_generic
+    Contact.Guard.Access.read |> contact_effects |> Guardian.validate_generic
   ;;
 
   let update =

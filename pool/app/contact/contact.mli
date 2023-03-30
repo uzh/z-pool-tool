@@ -210,4 +210,9 @@ module Guard : sig
     val pp : Format.formatter -> t -> unit
     val show : t -> string
   end
+
+  module Access : sig
+    val index : Guard.ValidationSet.t
+    val read : Id.t -> Guard.ValidationSet.t
+  end
 end

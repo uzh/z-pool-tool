@@ -69,37 +69,17 @@ let update req =
   result |> HttpUtils.extract_happy_path req
 ;;
 
-module Access : sig
-  include module type of Helpers.Access
-end = struct
+module Access : module type of Helpers.Access = struct
   include Helpers.Access
-  open Guard
   module Field = Pool_common.Message.Field
   module I18nCommand = Cqrs_command.I18n_command
   module Guardian = Middleware.Guardian
 
   let i18n_effects = Guardian.id_effects Pool_common.Id.of_string Field.I18n
-
-  let tenant_i18n_effects effect_set req =
-    Http_utils.find_id Pool_common.Id.of_string Field.I18n req |> effect_set
-  ;;
-
-  let index =
-    ValidationSet.One (Action.Read, TargetSpec.Entity `I18n)
-    |> Guardian.validate_admin_entity
-  ;;
-
-  let read =
-    (fun id ->
-      let target_id = id |> Uuid.target_of Pool_common.Id.value in
-      ValidationSet.One (Action.Read, TargetSpec.Id (`I18n, target_id)))
-    |> i18n_effects
-    |> Guardian.validate_generic
-  ;;
+  let index = I18n.Guard.Access.index |> Guardian.validate_admin_entity
+  let read = I18n.Guard.Access.read |> i18n_effects |> Guardian.validate_generic
 
   let update =
-    I18nCommand.Update.effects
-    |> tenant_i18n_effects
-    |> Guardian.validate_generic
+    I18nCommand.Update.effects |> i18n_effects |> Guardian.validate_generic
   ;;
 end

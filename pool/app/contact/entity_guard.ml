@@ -1,14 +1,59 @@
+open CCFun.Infix
+open Utils.Lwt_result.Infix
+open Guard
+
 module Target = struct
   type t = Entity.t [@@deriving eq, show]
 
   let to_authorizable ?ctx t =
-    Guard.Persistence.Target.decorate
+    Persistence.Target.decorate
       ?ctx
       (fun user ->
-        Guard.Target.make
+        Target.make
           `Contact
-          (user |> Entity.id |> Guard.Uuid.target_of Pool_common.Id.value))
+          (user |> Entity.id |> Uuid.target_of Pool_common.Id.value))
       t
-    |> Lwt_result.map_error Pool_common.Message.authorization
+    >|- Format.asprintf "Failed to convert Contact to authorizable: %s"
+    >|- Pool_common.Message.authorization
+  ;;
+end
+
+module Actor = struct
+  type t = Entity.t [@@deriving eq, show]
+
+  let decorate ?ctx encode id =
+    Persistence.Actor.decorate
+      ?ctx
+      (encode %> Actor.make (RoleSet.singleton `Contact) `Contact)
+      id
+    >|- Format.asprintf "Failed to convert Contact to authorizable: %s"
+    >|- Pool_common.Message.authorization
+  ;;
+
+  let to_authorizable ?ctx =
+    let encode = Entity.id %> Uuid.actor_of Pool_common.Id.value in
+    decorate ?ctx encode
+  ;;
+
+  (** Many request handlers do not extract a [User.t] at any point. This
+      function is useful in such cases. *)
+  let authorizable_of_req ?ctx req =
+    Sihl.Web.Session.find "user_id" req
+    |> CCResult.of_opt
+    |> Lwt_result.lift
+    >|- Pool_common.Message.authorization
+    >>= decorate ?ctx Uuid.Actor.of_string_exn
+  ;;
+end
+
+module Access = struct
+  open Guard
+  open ValidationSet
+
+  let index = One (Action.Read, TargetSpec.Entity `Assignment)
+
+  let read id =
+    let target_id = id |> Uuid.target_of Pool_common.Id.value in
+    One (Action.Read, TargetSpec.Id (`Contact, target_id))
   ;;
 end

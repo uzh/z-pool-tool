@@ -15,14 +15,10 @@ let show req =
   result |> HttpUtils.extract_happy_path req
 ;;
 
-module Access : Helpers.AccessSig = struct
+module Access : module type of Helpers.Access = struct
   include Helpers.Access
   module Guardian = Middleware.Guardian
 
-  let read_effects =
-    Guard.(ValidationSet.One (Action.Read, TargetSpec.Entity `Schedule))
-  ;;
-
-  let index = Guardian.validate_admin_entity read_effects
-  let read = Guardian.validate_admin_entity read_effects
+  let index = Schedule.Guard.Access.index |> Guardian.validate_admin_entity
+  let read = Schedule.Guard.Access.read |> Guardian.validate_admin_entity
 end

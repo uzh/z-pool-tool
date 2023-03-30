@@ -50,7 +50,7 @@ let list ?(marked_as_deleted = false) req =
              sessions
            >|+ Page.Admin.Assignment.marked_as_deleted experiment context
        in
-       html |> create_layout req context >|+ Sihl.Web.Response.of_html
+       html >|> create_layout req context >|+ Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path req
 ;;
@@ -155,23 +155,14 @@ let mark_as_deleted req =
 ;;
 
 module Access : sig
-  val index : Rock.Middleware.t
-  val deleted : Rock.Middleware.t
+  include module type of Helpers.Access
+
   val cancel : Rock.Middleware.t
   val mark_as_deleted : Rock.Middleware.t
 end = struct
-  open Guard
+  include Helpers.Access
   module AssignmentCommand = Cqrs_command.Assignment_command
   module Guardian = Middleware.Guardian
-
-  let read_effect id =
-    let target_id = id |> Uuid.target_of Experiment.Id.value in
-    ValidationSet.(
-      And
-        [ One (Action.Read, TargetSpec.Entity `Assignment)
-        ; One (Action.Read, TargetSpec.Id (`Experiment, target_id))
-        ])
-  ;;
 
   let experiment_effects =
     Guardian.id_effects Experiment.Id.of_string Field.Experiment
@@ -181,8 +172,24 @@ end = struct
     Guardian.id_effects Assignment.Id.of_string Field.Assignment
   ;;
 
-  let index = read_effect |> experiment_effects |> Guardian.validate_generic
-  let deleted = read_effect |> experiment_effects |> Guardian.validate_generic
+  let combined_effects fcn req =
+    let open HttpUtils in
+    let experiment_id = find_id Experiment.Id.of_string Field.Experiment req in
+    let assignment_id = find_id Assignment.Id.of_string Field.Assignment req in
+    fcn experiment_id assignment_id
+  ;;
+
+  let index =
+    Assignment.Guard.Access.index
+    |> experiment_effects
+    |> Guardian.validate_generic ~any_id:true
+  ;;
+
+  let delete =
+    Assignment.Guard.Access.update
+    |> combined_effects
+    |> Guardian.validate_generic
+  ;;
 
   let cancel =
     AssignmentCommand.Cancel.effects

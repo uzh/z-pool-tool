@@ -191,7 +191,6 @@ module Access : sig
 end = struct
   include Helpers.Access
   module CustomFieldCommand = Cqrs_command.Custom_field_option_command
-  module Field = Pool_common.Message.Field
 
   let custom_field_effects =
     Middleware.Guardian.id_effects Custom_field.Id.of_string Field.CustomField

@@ -1,55 +1,67 @@
+open CCFun.Infix
+open Utils.Lwt_result.Infix
+open Guard
+
 module Target = struct
   type t = Entity.t [@@deriving eq, show]
 
   let to_authorizable ?ctx t =
-    Guard.Persistence.Target.decorate
+    Persistence.Target.decorate
       ?ctx
       (fun Entity.{ id; _ } ->
-        Guard.Target.make
-          `Location
-          (id |> Entity.Id.value |> Guard.Uuid.Target.of_string_exn))
+        Target.make `Location (id |> Uuid.target_of Entity.Id.value))
       t
-    |> Lwt_result.map_error Pool_common.Message.authorization
+    >|- Pool_common.Message.authorization
   ;;
 end
 
 module FileTarget = struct
   let (_ : (unit, string) result) =
     let find_parent =
-      Guard.Utils.create_simple_dependency_with_pool
+      Utils.create_simple_dependency_with_pool
         `LocationFile
         `Location
         Repo.RepoFileMapping.find_location_id
         Pool_common.Id.of_string
         Entity.Id.value
     in
-    Guard.Persistence.Dependency.register
-      ~parent:`Location
-      `LocationFile
-      find_parent
+    Persistence.Dependency.register ~parent:`Location `LocationFile find_parent
   ;;
 
   type t = Entity.Mapping.file [@@deriving eq, show]
 
-  let to_authorizable ?ctx t =
-    Guard.Persistence.Target.decorate
+  let decorate ?ctx id =
+    Persistence.Target.decorate
       ?ctx
-      (fun Entity.Mapping.{ id; _ } ->
-        Guard.Target.make
-          `LocationFile
-          (id |> Entity.Mapping.Id.value |> Guard.Uuid.Target.of_string_exn))
-      t
-    |> Lwt_result.map_error Pool_common.Message.authorization
+      (Uuid.target_of Entity.Mapping.Id.value %> Guard.Target.make `LocationFile)
+      id
+    >|- Pool_common.Message.authorization
   ;;
 
-  let to_authorizable_of_write ?ctx t =
-    Guard.Persistence.Target.decorate
-      ?ctx
-      (fun Entity.Mapping.Write.{ id; _ } ->
-        Guard.Target.make
-          `LocationFile
-          (id |> Entity.Mapping.Id.value |> Guard.Uuid.Target.of_string_exn))
-      t
-    |> Lwt_result.map_error Pool_common.Message.authorization
+  let to_authorizable ?ctx { Entity.Mapping.id; _ } = decorate ?ctx id
+
+  let to_authorizable_of_write ?ctx { Entity.Mapping.Write.id; _ } =
+    decorate ?ctx id
   ;;
+end
+
+module Access = struct
+  open Guard
+  open ValidationSet
+
+  let index = One (Action.Read, TargetSpec.Entity `Location)
+
+  let read id =
+    let target_id = id |> Uuid.target_of Entity.Id.value in
+    One (Action.Read, TargetSpec.Id (`Location, target_id))
+  ;;
+
+  module File = struct
+    let index = One (Action.Read, TargetSpec.Entity `LocationFile)
+
+    let read id =
+      let target_id = id |> Uuid.target_of Entity.Mapping.Id.value in
+      One (Action.Read, TargetSpec.Id (`LocationFile, target_id))
+    ;;
+  end
 end
