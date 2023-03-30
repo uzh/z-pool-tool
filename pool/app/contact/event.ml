@@ -176,7 +176,7 @@ let handle_event pool : event -> unit Lwt.t =
   | SessionParticipationSet
       ( ({ num_show_ups; num_no_shows; num_participations; _ } as contact)
       , { no_show; participated } ) ->
-    let num_show_ups, num_no_shows =
+    let num_no_shows, num_show_ups =
       match no_show with
       | true -> num_no_shows |> NumberOfNoShows.increment, num_show_ups
       | false -> num_no_shows, num_show_ups |> NumberOfShowUps.increment
