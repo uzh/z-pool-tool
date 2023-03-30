@@ -135,6 +135,13 @@ let suite =
               `Slow
               cancel_assignment_with_follow_ups
           ] )
+    ; ( "session"
+      , Session_test.
+          [ test_case
+              "close session and check contact figures"
+              `Slow
+              close_session_check_contact_figures
+          ] )
     ; ( "waiting lists"
       , Waiting_list_test.
           [ test_case

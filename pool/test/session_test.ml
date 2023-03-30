@@ -1042,3 +1042,85 @@ let reschedule_to_past () =
   let expected = Error Pool_common.Message.TimeInPast in
   Test_utils.check_result expected events
 ;;
+
+let close_session_check_contact_figures _ () =
+  let open Utils.Lwt_result.Infix in
+  let open Integration_utils in
+  let open Test_utils in
+  let%lwt experiment = Repo.first_experiment () in
+  let%lwt session =
+    SessionRepo.create ~start:(Model.an_hour_ago ()) experiment.Experiment.id ()
+  in
+  let%lwt participated_c = ContactRepo.create ~with_terms_accepted:true () in
+  let%lwt show_up_c = ContactRepo.create ~with_terms_accepted:true () in
+  let%lwt no_show_c = ContactRepo.create ~with_terms_accepted:true () in
+  let contacts =
+    [ participated_c, `Participated; show_up_c, `ShowUp; no_show_c, `NoShow ]
+  in
+  let%lwt () =
+    contacts |> Lwt_list.iter_s CCFun.(fst %> AssignmentRepo.create session)
+  in
+  let%lwt assignments =
+    Assignment.find_by_session Data.database_label session.Session.id
+    ||> get_or_failwith_pool_error
+  in
+  let find_assignment contact =
+    CCList.find
+      Assignment.(
+        fun (assignment : t) -> Contact.equal assignment.contact contact)
+      assignments
+  in
+  let%lwt () =
+    contacts
+    |> CCList.map (fun (contact, status) ->
+         let open Assignment in
+         let open Contact in
+         let no_show, participated =
+           match status with
+           | `Participated -> NoShow.create false, Participated.create true
+           | `ShowUp -> NoShow.create false, Participated.create false
+           | `NoShow -> NoShow.create true, Participated.create false
+         in
+         let update =
+           { no_show = NoShow.value no_show
+           ; participated = Participated.value participated
+           }
+         in
+         [ AttendanceSet (find_assignment contact, no_show, participated)
+           |> Pool_event.assignment
+         ; SessionParticipationSet (contact, update) |> Pool_event.contact
+         ])
+    |> CCList.flatten
+    |> (fun events -> (Session.Closed session |> Pool_event.session) :: events)
+    |> Pool_event.handle_events Data.database_label
+  in
+  let%lwt res =
+    contacts
+    |> Lwt_list.map_s (fun (contact, status) ->
+         let open Contact in
+         let num_show_ups, num_no_shows, num_participations =
+           (match status with
+            | `Participated -> 1, 0, 1
+            | `ShowUp -> 1, 0, 0
+            | `NoShow -> 0, 1, 0)
+           |> fun (show_up, no_show, participation) ->
+           ( NumberOfShowUps.of_int show_up
+           , NumberOfNoShows.of_int no_show
+           , NumberOfParticipations.of_int participation )
+         in
+         let%lwt contact =
+           find_by_email Data.database_label (Contact.email_address contact)
+           ||> get_or_failwith_pool_error
+         in
+         (NumberOfShowUps.equal contact.num_show_ups num_show_ups
+          && NumberOfNoShows.equal contact.num_no_shows num_no_shows
+          && NumberOfParticipations.equal
+               contact.num_participations
+               num_participations)
+         |> Lwt.return)
+    ||> CCList.filter not
+    ||> CCList.is_empty
+  in
+  let () = Alcotest.(check bool "succeeds" true res) in
+  Lwt.return_unit
+;;

@@ -14,6 +14,7 @@ module NumberOfInvitations : sig
 
   val init : t
   val of_int : int -> t
+  val equal : t -> t -> bool
 end
 
 module NumberOfAssignments : sig
@@ -21,6 +22,7 @@ module NumberOfAssignments : sig
 
   val init : t
   val of_int : int -> t
+  val equal : t -> t -> bool
 end
 
 module NumberOfShowUps : sig
@@ -28,6 +30,7 @@ module NumberOfShowUps : sig
 
   val init : t
   val of_int : int -> t
+  val equal : t -> t -> bool
 end
 
 module NumberOfNoShows : sig
@@ -35,6 +38,7 @@ module NumberOfNoShows : sig
 
   val init : t
   val of_int : int -> t
+  val equal : t -> t -> bool
 end
 
 module NumberOfParticipations : sig
@@ -42,6 +46,7 @@ module NumberOfParticipations : sig
 
   val init : t
   val of_int : int -> t
+  val equal : t -> t -> bool
 end
 
 type t =
