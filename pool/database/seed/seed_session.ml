@@ -106,6 +106,7 @@ let create pool =
           Some "MRI Study" >>= Description.create %> of_result
         in
         Session.create
+          ~follow_up_to:parent.Session.id
           start
           duration
           description
