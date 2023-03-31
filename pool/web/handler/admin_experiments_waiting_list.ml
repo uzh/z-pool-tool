@@ -202,10 +202,6 @@ end = struct
   module WaitingListCommand = Cqrs_command.Waiting_list_command
   module Guardian = Middleware.Guardian
 
-  let waiting_list_effects =
-    Guardian.id_effects Pool_common.Id.of_string Field.WaitingList
-  ;;
-
   let experiment_effects =
     Guardian.id_effects Experiment.Id.of_string Field.Experiment
   ;;
@@ -224,7 +220,9 @@ end = struct
   ;;
 
   let create =
-    WaitingListCommand.Create.effects |> Guardian.validate_admin_entity
+    WaitingListCommand.Create.effects
+    |> experiment_effects
+    |> Guardian.validate_generic
   ;;
 
   let read =
@@ -235,19 +233,19 @@ end = struct
 
   let update =
     WaitingListCommand.Update.effects
-    |> waiting_list_effects
+    |> combined_effects
     |> Guardian.validate_generic
   ;;
 
   let delete =
     WaitingListCommand.Destroy.effects
-    |> waiting_list_effects
+    |> combined_effects
     |> Guardian.validate_generic
   ;;
 
   let assign =
     Cqrs_command.Assignment_command.CreateFromWaitingList.effects
-    |> waiting_list_effects
+    |> combined_effects
     |> Guardian.validate_generic
   ;;
 end

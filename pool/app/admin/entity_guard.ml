@@ -68,6 +68,7 @@ module Access = struct
   open ValidationSet
 
   let index = One (Action.Read, TargetSpec.Entity `Admin)
+  let create = One (Action.Create, TargetSpec.Entity `Admin)
   let read id = One (Action.Read, TargetSpec.Id (`Admin, target_of id))
   let update id = One (Action.Update, TargetSpec.Id (`Admin, target_of id))
 end

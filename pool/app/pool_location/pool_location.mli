@@ -302,11 +302,17 @@ module Guard : sig
 
   module Access : sig
     val index : Guard.ValidationSet.t
+    val create : Guard.ValidationSet.t
     val read : Id.t -> Guard.ValidationSet.t
+    val update : Id.t -> Guard.ValidationSet.t
+    val delete : Id.t -> Guard.ValidationSet.t
 
     module File : sig
       val index : Guard.ValidationSet.t
+      val create : Guard.ValidationSet.t
       val read : Mapping.Id.t -> Guard.ValidationSet.t
+      val update : Mapping.Id.t -> Guard.ValidationSet.t
+      val delete : Mapping.Id.t -> Guard.ValidationSet.t
     end
   end
 end

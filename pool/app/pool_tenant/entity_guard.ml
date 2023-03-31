@@ -49,19 +49,27 @@ module Access = struct
   open Guard
   open ValidationSet
 
-  let index = One (Action.Read, TargetSpec.Entity `Tenant)
-
-  let read id =
+  let tenant action id =
     let target_id = id |> Uuid.target_of Entity.Id.value in
-    One (Action.Read, TargetSpec.Id (`Tenant, target_id))
+    One (action, TargetSpec.Id (`Tenant, target_id))
   ;;
 
-  module Smtp = struct
-    let index = One (Action.Read, TargetSpec.Entity `Smtp)
+  let index = One (Action.Read, TargetSpec.Entity `Tenant)
+  let create = One (Action.Create, TargetSpec.Entity `Tenant)
+  let read = tenant Action.Read
+  let update = tenant Action.Update
+  let delete = tenant Action.Delete
 
-    let read id =
+  module Smtp = struct
+    let smtp action id =
       let target_id = id |> Uuid.target_of Entity.SmtpAuth.Id.value in
-      One (Action.Read, TargetSpec.Id (`Smtp, target_id))
+      One (action, TargetSpec.Id (`Smtp, target_id))
     ;;
+
+    let index = One (Action.Read, TargetSpec.Entity `Smtp)
+    let create = One (Action.Create, TargetSpec.Entity `Smtp)
+    let read = smtp Action.Read
+    let update = smtp Action.Update
+    let delete = smtp Action.Delete
   end
 end

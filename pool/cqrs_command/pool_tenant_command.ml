@@ -4,12 +4,6 @@ module File = Pool_common.File
 
 let src = Logs.Src.create "pool_tenant.cqrs"
 
-let tenant_effect action id =
-  let open Guard in
-  ValidationSet.One
-    (action, TargetSpec.Id (`Tenant, id |> Uuid.target_of Id.value))
-;;
-
 let create_logo_mappings tenant logo_type =
   let open Pool_tenant in
   CCList.map (fun asset_id ->
@@ -121,15 +115,12 @@ end = struct
       ]
   ;;
 
-  let effects =
-    let open Guard in
-    ValidationSet.(One (Action.Create, TargetSpec.Entity `Tenant))
-  ;;
-
   let decode data =
     Conformist.decode_and_validate schema data
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
+
+  let effects = Pool_tenant.Guard.Access.create
 end
 
 module EditDetails : sig
@@ -247,7 +238,7 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let effects = tenant_effect Guard.Action.Update
+  let effects = Pool_tenant.Guard.Access.update
 end
 
 module CreateDatabase : sig
@@ -298,7 +289,7 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let effects = tenant_effect Guard.Action.Update
+  let effects = Pool_tenant.Guard.Access.update
 end
 
 module DestroyLogo : sig
@@ -308,17 +299,14 @@ module DestroyLogo : sig
     -> Pool_common.Id.t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val effects : Guard.ValidationSet.t
+  val effects : Pool_tenant.Id.t -> Guard.ValidationSet.t
 end = struct
   let handle ?(tags = Logs.Tag.empty) tenant asset_id =
     Logs.info ~src (fun m -> m "Handle command DestroyLogo" ~tags);
     Ok [ Pool_tenant.LogoDeleted (tenant, asset_id) |> Pool_event.pool_tenant ]
   ;;
 
-  let effects =
-    let open Guard in
-    ValidationSet.One (Action.Update, TargetSpec.Entity `Tenant)
-  ;;
+  let effects = Pool_tenant.Guard.Access.update
 end
 
 module Destroy : sig
@@ -338,5 +326,5 @@ end = struct
     Ok [ Pool_tenant.Destroyed t.tenant_id |> Pool_event.pool_tenant ]
   ;;
 
-  let effects = tenant_effect Guard.Action.Delete
+  let effects = Pool_tenant.Guard.Access.delete
 end

@@ -624,10 +624,6 @@ end = struct
   module SessionCommand = Cqrs_command.Session_command
   module Guardian = Middleware.Guardian
 
-  let session_effects =
-    Guardian.id_effects Pool_common.Id.of_string Field.Session
-  ;;
-
   let experiment_effects =
     Guardian.id_effects Experiment.Id.of_string Field.Experiment
   ;;
@@ -645,7 +641,11 @@ end = struct
     |> Guardian.validate_generic ~any_id:true
   ;;
 
-  let create = SessionCommand.Create.effects |> Guardian.validate_admin_entity
+  let create =
+    SessionCommand.Create.effects
+    |> experiment_effects
+    |> Guardian.validate_generic
+  ;;
 
   let read =
     Session.Guard.Access.read |> combined_effects |> Guardian.validate_generic
@@ -653,37 +653,37 @@ end = struct
 
   let update =
     SessionCommand.Update.effects
-    |> session_effects
+    |> combined_effects
     |> Guardian.validate_generic
   ;;
 
   let delete =
     SessionCommand.Delete.effects
-    |> session_effects
+    |> combined_effects
     |> Guardian.validate_generic
   ;;
 
   let reschedule =
     SessionCommand.Reschedule.effects
-    |> session_effects
+    |> combined_effects
     |> Guardian.validate_generic
   ;;
 
   let cancel =
     SessionCommand.Cancel.effects
-    |> session_effects
+    |> combined_effects
     |> Guardian.validate_generic
   ;;
 
   let send_reminder =
     SessionCommand.SendReminder.effects
-    |> session_effects
+    |> combined_effects
     |> Guardian.validate_generic
   ;;
 
   let close =
     Cqrs_command.Assignment_command.SetAttendance.effects
-    |> session_effects
+    |> combined_effects
     |> Guardian.validate_generic
   ;;
 end

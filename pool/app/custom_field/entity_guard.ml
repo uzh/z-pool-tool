@@ -39,19 +39,27 @@ module Access = struct
   open Guard
   open ValidationSet
 
-  let index = One (Action.Read, TargetSpec.Entity `CustomField)
-
-  let read id =
+  let custom_field action id =
     let target_id = id |> Uuid.target_of Entity.Id.value in
-    One (Action.Read, TargetSpec.Id (`CustomField, target_id))
+    One (action, TargetSpec.Id (`CustomField, target_id))
   ;;
 
-  module Group = struct
-    let index = One (Action.Read, TargetSpec.Entity `CustomFieldGroup)
+  let index = One (Action.Read, TargetSpec.Entity `CustomField)
+  let create = One (Action.Create, TargetSpec.Entity `CustomField)
+  let read = custom_field Action.Read
+  let update = custom_field Action.Update
+  let delete = custom_field Action.Delete
 
-    let read id =
+  module Group = struct
+    let group action id =
       let target_id = id |> Uuid.target_of Entity.Group.Id.value in
-      One (Action.Read, TargetSpec.Id (`CustomFieldGroup, target_id))
+      One (action, TargetSpec.Id (`CustomFieldGroup, target_id))
     ;;
+
+    let index = One (Action.Read, TargetSpec.Entity `CustomFieldGroup)
+    let create = One (Action.Create, TargetSpec.Entity `CustomFieldGroup)
+    let read = group Action.Read
+    let update = group Action.Update
+    let delete = group Action.Delete
   end
 end

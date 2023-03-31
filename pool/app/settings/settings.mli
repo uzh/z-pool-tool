@@ -184,6 +184,9 @@ module Guard : sig
 
   module Access : sig
     val index : Guard.ValidationSet.t
-    val read : Pool_common.Id.t -> Guard.ValidationSet.t
+    val create : Guard.ValidationSet.t
+    val read : Guard.ValidationSet.t
+    val update : Guard.ValidationSet.t
+    val delete : Guard.ValidationSet.t
   end
 end

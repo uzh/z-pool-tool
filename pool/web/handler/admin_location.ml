@@ -281,6 +281,13 @@ end = struct
     Guardian.id_effects Pool_location.Id.of_string Field.Location
   ;;
 
+  let combined_effects fcn req =
+    let open HttpUtils in
+    let location_id = find_id Pool_location.Id.of_string Field.Location req in
+    let file_id = find_id Pool_location.Mapping.Id.of_string Field.File req in
+    fcn location_id file_id
+  ;;
+
   let index =
     Pool_location.Guard.Access.index
     |> Guardian.validate_admin_entity ~any_id:true
@@ -314,7 +321,7 @@ end = struct
 
   let delete_file =
     LocationCommand.DeleteFile.effects
-    |> file_effects
+    |> combined_effects
     |> Guardian.validate_generic
   ;;
 end

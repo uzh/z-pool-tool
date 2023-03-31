@@ -168,10 +168,6 @@ end = struct
     Guardian.id_effects Experiment.Id.of_string Field.Experiment
   ;;
 
-  let assignment_effects =
-    Guardian.id_effects Assignment.Id.of_string Field.Assignment
-  ;;
-
   let combined_effects fcn req =
     let open HttpUtils in
     let experiment_id = find_id Experiment.Id.of_string Field.Experiment req in
@@ -193,13 +189,13 @@ end = struct
 
   let cancel =
     AssignmentCommand.Cancel.effects
-    |> assignment_effects
+    |> combined_effects
     |> Guardian.validate_generic
   ;;
 
   let mark_as_deleted =
     AssignmentCommand.MarkAsDeleted.effects
-    |> assignment_effects
+    |> combined_effects
     |> Guardian.validate_generic
   ;;
 end

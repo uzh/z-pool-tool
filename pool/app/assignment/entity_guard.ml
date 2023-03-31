@@ -50,6 +50,14 @@ module Access = struct
       ]
   ;;
 
+  let create id =
+    And
+      [ One (Action.Create, TargetSpec.Entity `Assignment)
+      ; Experiment.Guard.Access.read id
+      ; recruiter_of_experiment id
+      ]
+  ;;
+
   let read experiment_id assignment_id =
     And
       [ assignment Action.Read assignment_id
@@ -61,6 +69,14 @@ module Access = struct
   let update experiment_id assignment_id =
     And
       [ assignment Action.Update assignment_id
+      ; Experiment.Guard.Access.update experiment_id
+      ; recruiter_of_experiment experiment_id
+      ]
+  ;;
+
+  let delete experiment_id assignment_id =
+    And
+      [ assignment Action.Delete assignment_id
       ; Experiment.Guard.Access.update experiment_id
       ; recruiter_of_experiment experiment_id
       ]

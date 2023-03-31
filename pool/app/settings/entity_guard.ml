@@ -18,10 +18,10 @@ module Access = struct
   open Guard
   open ValidationSet
 
-  let index = One (Action.Read, TargetSpec.Entity `SystemSetting)
-
-  let read id =
-    let target_id = id |> Uuid.target_of Pool_common.Id.value in
-    One (Action.Read, TargetSpec.Id (`SystemSetting, target_id))
-  ;;
+  let setting action = One (action, TargetSpec.Entity `SystemSetting)
+  let index = setting Action.Read
+  let create = setting Action.Create
+  let read = setting Action.Read
+  let update = setting Action.Update
+  let delete = setting Action.Delete
 end

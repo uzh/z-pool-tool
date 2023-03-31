@@ -2,11 +2,6 @@ module Conformist = Pool_common.Utils.PoolConformist
 
 let src = Logs.Src.create "settings.cqrs"
 
-let effects action =
-  let open Guard in
-  ValidationSet.(One (action, TargetSpec.Entity `SystemSetting))
-;;
-
 module UpdateLanguages : sig
   include Common.CommandSig with type t = Pool_common.Language.t list
 
@@ -36,7 +31,7 @@ end = struct
             (Ok [ Settings.LanguagesUpdated command |> Pool_event.settings ])
   ;;
 
-  let effects = effects Guard.Action.Update
+  let effects = Settings.Guard.Access.update
 end
 
 module CreateEmailSuffix : sig
@@ -71,7 +66,7 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let effects = effects Guard.Action.Update
+  let effects = Settings.Guard.Access.update
 end
 
 module UpdateEmailSuffixes : sig
@@ -94,7 +89,7 @@ end = struct
     Ok [ Settings.EmailSuffixesUpdated suffixes |> Pool_event.settings ]
   ;;
 
-  let effects = effects Guard.Action.Update
+  let effects = Settings.Guard.Access.update
 end
 
 module DeleteEmailSuffix : sig
@@ -133,7 +128,7 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let effects = effects Guard.Action.Update
+  let effects = Settings.Guard.Access.update
 end
 
 module UpdateContactEmail : sig
@@ -161,7 +156,7 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let effects = effects Guard.Action.Update
+  let effects = Settings.Guard.Access.update
 end
 
 module InactiveUser = struct
@@ -194,7 +189,7 @@ module InactiveUser = struct
       |> CCResult.map_err Pool_common.Message.to_conformist_error
     ;;
 
-    let effects = effects Guard.Action.Update
+    let effects = Settings.Guard.Access.update
   end
 
   module Warning : sig
@@ -226,7 +221,7 @@ module InactiveUser = struct
       |> CCResult.map_err Pool_common.Message.to_conformist_error
     ;;
 
-    let effects = effects Guard.Action.Update
+    let effects = Settings.Guard.Access.update
   end
 end
 
@@ -260,7 +255,7 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let effects = effects Guard.Action.Update
+  let effects = Settings.Guard.Access.update
 end
 
 module UpdateTermsAndConditions : sig
@@ -316,7 +311,7 @@ end = struct
       ]
   ;;
 
-  let effects = effects Guard.Action.Update
+  let effects = Settings.Guard.Access.update
 end
 
 module RestoreDefault : sig
@@ -334,7 +329,10 @@ end = struct
     Ok [ Settings.(DefaultRestored default_values) |> Pool_event.settings ]
   ;;
 
-  let effects = effects Guard.Action.Manage
+  let effects =
+    Guard.ValidationSet.And
+      [ Settings.Guard.Access.delete; Settings.Guard.Access.create ]
+  ;;
 end
 
 module UpdateDefaultLeadTime : sig
@@ -365,5 +363,5 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let effects = effects Guard.Action.Update
+  let effects = Settings.Guard.Access.update
 end

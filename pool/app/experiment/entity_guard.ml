@@ -17,8 +17,14 @@ module Access = struct
   open Guard
   open ValidationSet
 
-  let target_of = Uuid.target_of Entity.Id.value
+  let experiment action id =
+    let target_of = Uuid.target_of Entity.Id.value in
+    One (action, TargetSpec.Id (`Experiment, target_of id))
+  ;;
+
   let index = One (Action.Read, TargetSpec.Entity `Experiment)
-  let read id = One (Action.Read, TargetSpec.Id (`Experiment, target_of id))
-  let update id = One (Action.Read, TargetSpec.Id (`Experiment, target_of id))
+  let create = One (Action.Create, TargetSpec.Entity `Experiment)
+  let read = experiment Action.Read
+  let update = experiment Action.Update
+  let delete = experiment Action.Delete
 end

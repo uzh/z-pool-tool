@@ -99,10 +99,7 @@ end = struct
          }
   ;;
 
-  let effects =
-    let open BaseGuard in
-    ValidationSet.One (Action.Create, TargetSpec.Entity `Location)
-  ;;
+  let effects = Pool_location.Guard.Access.create
 end
 
 module Update : sig
@@ -182,11 +179,7 @@ end = struct
          }
   ;;
 
-  let effects id =
-    let open BaseGuard in
-    let target_id = id |> Uuid.target_of Id.value in
-    ValidationSet.One (Action.Update, TargetSpec.Id (`Location, target_id))
-  ;;
+  let effects = Pool_location.Guard.Access.update
 end
 
 module AddFile : sig
@@ -247,13 +240,10 @@ end = struct
   ;;
 
   let effects id =
-    let open BaseGuard in
-    let target_id = id |> Uuid.target_of Pool_location.Id.value in
-    ValidationSet.(
-      And
-        [ One (Action.Update, TargetSpec.Id (`Location, target_id))
-        ; One (Action.Create, TargetSpec.Entity `LocationFile)
-        ])
+    BaseGuard.ValidationSet.And
+      [ Pool_location.Guard.Access.update id
+      ; Pool_location.Guard.Access.File.create
+      ]
   ;;
 end
 
@@ -261,7 +251,7 @@ module DeleteFile : sig
   include Common.CommandSig with type t = Mapping.Id.t
 
   val decode : Conformist.input -> (t, Message.error) result
-  val effects : Mapping.Id.t -> BaseGuard.ValidationSet.t
+  val effects : Id.t -> Mapping.Id.t -> BaseGuard.ValidationSet.t
 end = struct
   open Mapping
 
@@ -280,9 +270,10 @@ end = struct
     |> CCResult.map_err Message.to_conformist_error
   ;;
 
-  let effects id =
-    let open BaseGuard in
-    let file_id = id |> Uuid.target_of Mapping.Id.value in
-    ValidationSet.One (Action.Delete, TargetSpec.Id (`LocationFile, file_id))
+  let effects location_id file_id =
+    BaseGuard.ValidationSet.And
+      [ Pool_location.Guard.Access.update location_id
+      ; Pool_location.Guard.Access.File.delete file_id
+      ]
   ;;
 end

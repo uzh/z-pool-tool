@@ -85,10 +85,7 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let effects =
-    let open Guard in
-    ValidationSet.One (Action.Create, TargetSpec.Entity `MessageTemplate)
-  ;;
+  let effects = Message_template.Guard.Access.create
 end
 
 module Update : sig
@@ -137,12 +134,7 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let effects id =
-    let open Guard in
-    let target_id = id |> Uuid.target_of Message_template.Id.value in
-    ValidationSet.One
-      (Action.Update, TargetSpec.Id (`MessageTemplate, target_id))
-  ;;
+  let effects = Message_template.Guard.Access.update
 end
 
 module RestoreDefault : sig
@@ -153,7 +145,7 @@ module RestoreDefault : sig
     -> unit
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val effects : Pool_tenant.t -> Message_template.t -> Guard.ValidationSet.t
+  val effects : Message_template.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = Pool_tenant.t
 
@@ -164,19 +156,10 @@ end = struct
       ]
   ;;
 
-  let effects tenant { Message_template.id; _ } =
-    let open Guard in
-    let target_id =
-      tenant.Pool_tenant.id |> Uuid.target_of Pool_tenant.Id.value
-    in
-    let message_template_id = id |> Uuid.target_of Message_template.Id.value in
-    ValidationSet.(
-      And
-        [ One (Action.Update, TargetSpec.Id (`Tenant, target_id))
-        ; One
-            ( Action.Delete
-            , TargetSpec.Id (`MessageTemplate, message_template_id) )
-        ; One (Action.Create, TargetSpec.Entity `MessageTemplate)
-        ])
+  let effects id =
+    Guard.ValidationSet.And
+      [ Message_template.Guard.Access.delete id
+      ; Message_template.Guard.Access.create
+      ]
   ;;
 end

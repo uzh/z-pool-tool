@@ -49,19 +49,27 @@ module Access = struct
   open Guard
   open ValidationSet
 
-  let index = One (Action.Read, TargetSpec.Entity `Location)
-
-  let read id =
+  let location action id =
     let target_id = id |> Uuid.target_of Entity.Id.value in
-    One (Action.Read, TargetSpec.Id (`Location, target_id))
+    One (action, TargetSpec.Id (`Location, target_id))
   ;;
 
-  module File = struct
-    let index = One (Action.Read, TargetSpec.Entity `LocationFile)
+  let index = One (Action.Read, TargetSpec.Entity `Location)
+  let create = One (Action.Create, TargetSpec.Entity `Location)
+  let read = location Action.Read
+  let update = location Action.Update
+  let delete = location Action.Delete
 
-    let read id =
+  module File = struct
+    let file action id =
       let target_id = id |> Uuid.target_of Entity.Mapping.Id.value in
-      One (Action.Read, TargetSpec.Id (`LocationFile, target_id))
+      One (action, TargetSpec.Id (`LocationFile, target_id))
     ;;
+
+    let index = One (Action.Read, TargetSpec.Entity `LocationFile)
+    let create = One (Action.Create, TargetSpec.Entity `LocationFile)
+    let read = file Action.Read
+    let update = file Action.Update
+    let delete = file Action.Delete
   end
 end

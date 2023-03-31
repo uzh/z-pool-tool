@@ -80,10 +80,7 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let effects =
-    let open BaseGuard in
-    ValidationSet.One (Action.Create, TargetSpec.Entity `Experiment)
-  ;;
+  let effects = Experiment.Guard.Access.create
 end
 
 module Update : sig
@@ -126,11 +123,7 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let effects id =
-    let open BaseGuard in
-    let target_id = id |> Uuid.target_of Id.value in
-    ValidationSet.One (Action.Update, TargetSpec.Id (`Experiment, target_id))
-  ;;
+  let effects = Experiment.Guard.Access.update
 end
 
 module Delete : sig
@@ -210,11 +203,7 @@ end = struct
        @ (templates |> CCList.map delete_template))
   ;;
 
-  let effects id =
-    let open BaseGuard in
-    let target_id = id |> Uuid.target_of Id.value in
-    ValidationSet.One (Action.Delete, TargetSpec.Id (`Experiment, target_id))
-  ;;
+  let effects = Experiment.Guard.Access.delete
 end
 
 module AssignAssistant : sig
@@ -238,7 +227,7 @@ end = struct
     let target_id = id |> Uuid.target_of Id.value in
     ValidationSet.(
       And
-        [ One (Action.Update, TargetSpec.Id (`Experiment, target_id))
+        [ Experiment.Guard.Access.update id
         ; Or
             [ SpecificRole `ManageAssistants
             ; SpecificRole (`ManageAssistant target_id)
@@ -268,7 +257,7 @@ end = struct
     let target_id = id |> Uuid.target_of Id.value in
     ValidationSet.(
       And
-        [ One (Action.Update, TargetSpec.Id (`Experiment, target_id))
+        [ Experiment.Guard.Access.update id
         ; Or
             [ SpecificRole `ManageAssistants
             ; SpecificRole (`ManageAssistant target_id)
@@ -288,7 +277,11 @@ end = struct
     Logs.info ~src (fun m -> m "Handle command AssignExperimenter" ~tags);
     Ok
       [ BaseGuard.RolesGranted
-          (admin |> to_actor, `Experimenter (experiment |> to_target) |> to_role)
+          ( admin |> to_actor
+          , `Experimenter (experiment |> to_target)
+            |> to_role
+            |> BaseGuard.RoleSet.add
+                 (`ManageAssistant (experiment |> to_target)) )
         |> Pool_event.guard
       ]
   ;;
@@ -298,7 +291,7 @@ end = struct
     let target_id = id |> Uuid.target_of Id.value in
     ValidationSet.(
       And
-        [ One (Action.Update, TargetSpec.Id (`Experiment, target_id))
+        [ Experiment.Guard.Access.update id
         ; Or
             [ SpecificRole `ManageExperimenters
             ; SpecificRole (`ManageExperimenter target_id)
@@ -318,7 +311,11 @@ end = struct
     Logs.info ~src (fun m -> m "Handle command UnassignExperimenter" ~tags);
     Ok
       [ BaseGuard.RolesRevoked
-          (admin |> to_actor, `Experimenter (experiment |> to_target) |> to_role)
+          ( admin |> to_actor
+          , `Experimenter (experiment |> to_target)
+            |> to_role
+            |> BaseGuard.RoleSet.add
+                 (`ManageAssistant (experiment |> to_target)) )
         |> Pool_event.guard
       ]
   ;;
@@ -328,7 +325,7 @@ end = struct
     let target_id = id |> Uuid.target_of Id.value in
     ValidationSet.(
       And
-        [ One (Action.Update, TargetSpec.Id (`Experiment, target_id))
+        [ Experiment.Guard.Access.update id
         ; Or
             [ SpecificRole `ManageExperimenters
             ; SpecificRole (`ManageExperimenter target_id)
@@ -366,13 +363,8 @@ end = struct
   ;;
 
   let effects id =
-    let open BaseGuard in
-    let target_id = id |> Uuid.target_of Id.value in
-    ValidationSet.(
-      And
-        [ One (Action.Update, TargetSpec.Id (`Experiment, target_id))
-        ; One (Action.Create, TargetSpec.Entity `Filter)
-        ])
+    BaseGuard.ValidationSet.And
+      [ Experiment.Guard.Access.update id; Filter.Guard.Access.create ]
   ;;
 end
 
@@ -399,15 +391,11 @@ end = struct
     Ok [ Filter.Updated filter |> Pool_event.filter ]
   ;;
 
-  let effects experiment_id id =
-    let open BaseGuard in
-    let experiment_id = experiment_id |> Uuid.target_of Id.value in
-    let filter_id = id |> Uuid.target_of Filter.Id.value in
-    ValidationSet.(
-      And
-        [ One (Action.Update, TargetSpec.Id (`Experiment, experiment_id))
-        ; One (Action.Update, TargetSpec.Id (`Filter, filter_id))
-        ])
+  let effects experiment_id filter_id =
+    BaseGuard.ValidationSet.And
+      [ Experiment.Guard.Access.update experiment_id
+      ; Filter.Guard.Access.update filter_id
+      ]
   ;;
 end
 
@@ -435,14 +423,10 @@ end = struct
       ([ Experiment.Updated experiment |> Pool_event.experiment ] @ filter_event)
   ;;
 
-  let effects experiment_id id =
-    let open BaseGuard in
-    let experiment_id = experiment_id |> Uuid.target_of Id.value in
-    let filter_id = id |> Uuid.target_of Filter.Id.value in
-    ValidationSet.(
-      And
-        [ One (Action.Update, TargetSpec.Id (`Experiment, experiment_id))
-        ; One (Action.Delete, TargetSpec.Id (`Filter, filter_id))
-        ])
+  let effects experiment_id filter_id =
+    BaseGuard.ValidationSet.And
+      [ Experiment.Guard.Access.update experiment_id
+      ; Filter.Guard.Access.delete filter_id
+      ]
   ;;
 end

@@ -304,8 +304,6 @@ end = struct
     Guardian.id_effects Experiment.Id.of_string Field.Experiment
   ;;
 
-  let mailing_effects = Guardian.id_effects Mailing.Id.of_string Field.Mailing
-
   let combined_effects fcn req =
     let open HttpUtils in
     let experiment_id = find_id Experiment.Id.of_string Field.Experiment req in
@@ -331,13 +329,13 @@ end = struct
 
   let update =
     MailingCommand.Update.effects
-    |> mailing_effects
+    |> combined_effects
     |> Guardian.validate_generic
   ;;
 
   let delete =
     MailingCommand.Delete.effects
-    |> mailing_effects
+    |> combined_effects
     |> Guardian.validate_generic
   ;;
 
@@ -351,16 +349,18 @@ end = struct
     (fun req ->
       Guard.ValidationSet.Or
         [ experiment_effects MailingCommand.Create.effects req
-        ; mailing_effects MailingCommand.Update.effects req
+        ; combined_effects MailingCommand.Update.effects req
         ])
     |> Guardian.validate_generic
   ;;
 
   let stop =
-    MailingCommand.Stop.effects |> mailing_effects |> Guardian.validate_generic
+    MailingCommand.Stop.effects |> combined_effects |> Guardian.validate_generic
   ;;
 
   let overlaps =
-    MailingCommand.Overlaps.effects |> Guardian.validate_admin_entity
+    MailingCommand.Overlaps.effects
+    |> experiment_effects
+    |> Guardian.validate_generic
   ;;
 end

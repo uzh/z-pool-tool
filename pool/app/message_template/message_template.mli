@@ -144,8 +144,11 @@ module Guard : sig
   end
 
   module Access : sig
-    val read : Id.t -> Guard.ValidationSet.t
     val index : Guard.ValidationSet.t
+    val create : Guard.ValidationSet.t
+    val read : Id.t -> Guard.ValidationSet.t
+    val update : Id.t -> Guard.ValidationSet.t
+    val delete : Id.t -> Guard.ValidationSet.t
   end
 end
 

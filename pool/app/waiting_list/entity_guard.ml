@@ -34,9 +34,9 @@ module Access = struct
   open Guard
   open ValidationSet
 
-  let read_waiting_list id =
+  let waiting_list action id =
     let target_id = id |> Uuid.target_of Pool_common.Id.value in
-    One (Action.Read, TargetSpec.Id (`WaitingList, target_id))
+    One (action, TargetSpec.Id (`WaitingList, target_id))
   ;;
 
   let recruiter_of_experiment id =
@@ -52,10 +52,34 @@ module Access = struct
       ]
   ;;
 
+  let create id =
+    And
+      [ One (Action.Create, TargetSpec.Entity `WaitingList)
+      ; Experiment.Guard.Access.update id
+      ; recruiter_of_experiment id
+      ]
+  ;;
+
   let read experiment_id waiting_list_id =
     And
-      [ read_waiting_list waiting_list_id
+      [ waiting_list Action.Read waiting_list_id
       ; Experiment.Guard.Access.read experiment_id
+      ; recruiter_of_experiment experiment_id
+      ]
+  ;;
+
+  let update experiment_id waiting_list_id =
+    And
+      [ waiting_list Action.Update waiting_list_id
+      ; Experiment.Guard.Access.update experiment_id
+      ; recruiter_of_experiment experiment_id
+      ]
+  ;;
+
+  let delete experiment_id waiting_list_id =
+    And
+      [ waiting_list Action.Delete waiting_list_id
+      ; Experiment.Guard.Access.update experiment_id
       ; recruiter_of_experiment experiment_id
       ]
   ;;

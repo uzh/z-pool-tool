@@ -47,10 +47,7 @@ end = struct
       [ Filter.Created (Filter.create (Some title) query) |> Pool_event.filter ]
   ;;
 
-  let effects =
-    let open Guard in
-    ValidationSet.One (Action.Create, TargetSpec.Entity `Filter)
-  ;;
+  let effects = Filter.Guard.Access.create
 end
 
 module Update : sig
@@ -79,9 +76,5 @@ end = struct
         ]
   ;;
 
-  let effects id =
-    let open Guard in
-    let target_id = id |> Uuid.target_of Filter.Id.value in
-    ValidationSet.One (Action.Update, TargetSpec.Id (`Filter, target_id))
-  ;;
+  let effects = Filter.Guard.Access.update
 end

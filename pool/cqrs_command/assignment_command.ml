@@ -25,6 +25,8 @@ module Create : sig
     -> Sihl_email.t
     -> bool
     -> (Pool_event.t list, Pool_common.Message.error) result
+
+  val effects : Experiment.Id.t -> Guard.ValidationSet.t
 end = struct
   type t =
     { contact : Contact.t
@@ -76,16 +78,13 @@ end = struct
          @ [ Email.Sent confirmation_email |> Pool_event.email ])
   ;;
 
-  let effects =
-    let open Guard in
-    ValidationSet.One (Action.Create, TargetSpec.Entity `Assignment)
-  ;;
+  let effects = Assignment.Guard.Access.create
 end
 
 module Cancel : sig
   include Common.CommandSig with type t = Assignment.t list * Session.t
 
-  val effects : Assignment.Id.t -> Guard.ValidationSet.t
+  val effects : Experiment.Id.t -> Assignment.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = Assignment.t list * Session.t
 
@@ -121,7 +120,7 @@ end = struct
     Ok (cancel_events @ [ decrease_assignment_count ])
   ;;
 
-  let effects = assignment_effect Guard.Action.Delete
+  let effects = Assignment.Guard.Access.delete
 end
 
 let validate_participation ((_, show_up, participated) as participation) =
@@ -142,7 +141,7 @@ module SetAttendance : sig
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val effects : Pool_common.Id.t -> Guard.ValidationSet.t
+  val effects : Experiment.Id.t -> Session.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = (Assignment.t * Assignment.ShowUp.t * Assignment.Participated.t) list
 
@@ -181,13 +180,7 @@ end = struct
       command
   ;;
 
-  let effects id =
-    let open Guard in
-    ValidationSet.One
-      ( Action.Update
-      , TargetSpec.Id
-          (`Assignment, id |> Guard.Uuid.target_of Pool_common.Id.value) )
-  ;;
+  let effects = Session.Guard.Access.update
 end
 
 module CreateFromWaitingList : sig
@@ -205,7 +198,7 @@ module CreateFromWaitingList : sig
     -> Sihl_email.t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val effects : Pool_common.Id.t -> Guard.ValidationSet.t
+  val effects : Experiment.Id.t -> Pool_common.Id.t -> Guard.ValidationSet.t
 end = struct
   type t =
     { sessions : Session.t list
@@ -247,16 +240,12 @@ end = struct
            ])
   ;;
 
-  let effects id =
+  let effects experiment_id waiting_list_id =
     let open Guard in
     ValidationSet.(
       And
-        [ One
-            ( Action.Update
-            , TargetSpec.Id
-                (`WaitingList, id |> Guard.Uuid.target_of Pool_common.Id.value)
-            )
-        ; One (Action.Create, TargetSpec.Entity `Assignment)
+        [ Waiting_list.Guard.Access.update experiment_id waiting_list_id
+        ; Assignment.Guard.Access.create experiment_id
         ])
   ;;
 end
@@ -264,7 +253,7 @@ end
 module MarkAsDeleted : sig
   include Common.CommandSig with type t = Assignment.t list
 
-  val effects : Assignment.Id.t -> Guard.ValidationSet.t
+  val effects : Experiment.Id.t -> Assignment.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = Assignment.t list
 
@@ -305,11 +294,5 @@ end = struct
     Ok events
   ;;
 
-  let effects id =
-    let open Guard in
-    ValidationSet.One
-      ( Action.Delete
-      , TargetSpec.Id
-          (`Assignment, id |> Guard.Uuid.target_of Assignment.Id.value) )
-  ;;
+  let effects = Assignment.Guard.Access.delete
 end

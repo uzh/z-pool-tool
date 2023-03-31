@@ -31,9 +31,9 @@ module Access = struct
   open Guard
   open ValidationSet
 
-  let read_mailing id =
+  let mailing action id =
     let target_id = id |> Uuid.target_of Entity.Id.value in
-    One (Action.Read, TargetSpec.Id (`Mailing, target_id))
+    One (action, TargetSpec.Id (`Mailing, target_id))
   ;;
 
   let recruiter_of_experiment id =
@@ -49,10 +49,34 @@ module Access = struct
       ]
   ;;
 
+  let create id =
+    And
+      [ One (Action.Create, TargetSpec.Entity `Mailing)
+      ; Experiment.Guard.Access.update id
+      ; recruiter_of_experiment id
+      ]
+  ;;
+
   let read experiment_id mailing_id =
     And
-      [ read_mailing mailing_id
+      [ mailing Action.Read mailing_id
       ; Experiment.Guard.Access.read experiment_id
+      ; recruiter_of_experiment experiment_id
+      ]
+  ;;
+
+  let update experiment_id mailing_id =
+    And
+      [ mailing Action.Update mailing_id
+      ; Experiment.Guard.Access.read experiment_id
+      ; recruiter_of_experiment experiment_id
+      ]
+  ;;
+
+  let delete experiment_id mailing_id =
+    And
+      [ mailing Action.Delete mailing_id
+      ; Experiment.Guard.Access.delete experiment_id
       ; recruiter_of_experiment experiment_id
       ]
   ;;

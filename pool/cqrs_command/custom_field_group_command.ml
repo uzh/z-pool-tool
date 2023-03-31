@@ -33,10 +33,7 @@ end = struct
     Ok Custom_field.[ GroupCreated group |> Pool_event.custom_field ]
   ;;
 
-  let effects =
-    let open Guard in
-    ValidationSet.One (Action.Create, TargetSpec.Entity `CustomField)
-  ;;
+  let effects = Custom_field.Guard.Access.Group.create
 end
 
 module Update : sig
@@ -62,7 +59,7 @@ end = struct
     Ok Custom_field.[ GroupUpdated group |> Pool_event.custom_field ]
   ;;
 
-  let effects = custom_field_group_effect Guard.Action.Update
+  let effects = Custom_field.Guard.Access.Group.update
 end
 
 module Destroy : sig
@@ -82,7 +79,7 @@ end = struct
     Ok [ Custom_field.GroupDestroyed option |> Pool_event.custom_field ]
   ;;
 
-  let effects = custom_field_group_effect Guard.Action.Delete
+  let effects = Custom_field.Guard.Access.Group.delete
 end
 
 module Sort : sig
@@ -95,8 +92,5 @@ end = struct
     Ok [ Custom_field.GroupsSorted t |> Pool_event.custom_field ]
   ;;
 
-  let effects =
-    let open Guard in
-    ValidationSet.One (Action.Update, TargetSpec.Entity `CustomFieldGroup)
-  ;;
+  let effects = Custom_field.Guard.Access.Group.index
 end

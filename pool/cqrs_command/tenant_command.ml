@@ -13,7 +13,7 @@ module AssignOperator : sig
     -> Admin.t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val effects : t -> Guard.ValidationSet.t
+  val effects : Pool_tenant.Id.t -> Guard.ValidationSet.t
 end = struct
   type t =
     { user_id : Id.t
@@ -24,14 +24,10 @@ end = struct
     Ok [ Tenant.OperatorAssigned (tenant_id, user) |> Pool_event.tenant ]
   ;;
 
-  let effects t =
+  let effects id =
     let open Guard in
-    let tenant_id = t.tenant_id |> Uuid.target_of Pool_tenant.Id.value in
     ValidationSet.(
-      And
-        [ One (Action.Manage, TargetSpec.Id (`Tenant, tenant_id))
-        ; SpecificRole `ManageOperators
-        ])
+      And [ Pool_tenant.Guard.Access.update id; SpecificRole `ManageOperators ])
   ;;
 end
 
@@ -48,7 +44,7 @@ module UnassignOperator : sig
     -> Admin.t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val effects : t -> Guard.ValidationSet.t
+  val effects : Pool_tenant.Id.t -> Guard.ValidationSet.t
 end = struct
   type t =
     { user_id : Id.t
@@ -59,14 +55,10 @@ end = struct
     Ok [ Tenant.OperatorUnassigned (tenant_id, user) |> Pool_event.tenant ]
   ;;
 
-  let effects t =
+  let effects id =
     let open Guard in
-    let tenant_id = t.tenant_id |> Uuid.target_of Pool_tenant.Id.value in
     ValidationSet.(
-      And
-        [ One (Action.Manage, TargetSpec.Id (`Tenant, tenant_id))
-        ; SpecificRole `ManageOperators
-        ])
+      And [ Pool_tenant.Guard.Access.update id; SpecificRole `ManageOperators ])
   ;;
 end
 
@@ -80,18 +72,17 @@ module GenerateStatusReport : sig
     -> Pool_tenant.t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val effects : t -> Guard.ValidationSet.t
+  val effects : Pool_tenant.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = { tenant_id : Pool_tenant.Id.t }
 
   let handle = Utils.todo
 
-  let effects t =
+  let effects id =
     let open Guard in
-    let tenant_id = t.tenant_id |> Uuid.target_of Pool_tenant.Id.value in
     ValidationSet.(
       And
-        [ One (Action.Manage, TargetSpec.Id (`Tenant, tenant_id))
+        [ Pool_tenant.Guard.Access.update id
         ; One (Action.Manage, TargetSpec.Entity `System)
         ])
   ;;

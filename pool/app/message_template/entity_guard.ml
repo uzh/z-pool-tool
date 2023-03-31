@@ -18,10 +18,14 @@ module Access = struct
   open Guard
   open ValidationSet
 
-  let read id =
+  let message_template action id =
     let target_id = id |> Uuid.target_of Entity.Id.value in
-    One (Action.Read, TargetSpec.Id (`MessageTemplate, target_id))
+    One (action, TargetSpec.Id (`MessageTemplate, target_id))
   ;;
 
   let index = One (Action.Read, TargetSpec.Entity `MessageTemplate)
+  let create = One (Action.Create, TargetSpec.Entity `MessageTemplate)
+  let read = message_template Action.Read
+  let update = message_template Action.Update
+  let delete = message_template Action.Delete
 end

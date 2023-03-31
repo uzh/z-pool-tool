@@ -35,9 +35,5 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let effects id =
-    let open Guard in
-    let target_id = id |> Uuid.target_of Pool_common.Id.value in
-    ValidationSet.(One (Action.Update, TargetSpec.Id (`I18n, target_id)))
-  ;;
+  let effects = I18n.Guard.Access.update
 end

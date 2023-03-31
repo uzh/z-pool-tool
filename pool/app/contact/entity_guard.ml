@@ -50,10 +50,13 @@ module Access = struct
   open Guard
   open ValidationSet
 
-  let index = One (Action.Read, TargetSpec.Entity `Assignment)
-
-  let read id =
+  let contact action id =
     let target_id = id |> Uuid.target_of Pool_common.Id.value in
-    One (Action.Read, TargetSpec.Id (`Contact, target_id))
+    One (action, TargetSpec.Id (`Contact, target_id))
   ;;
+
+  let index = One (Action.Read, TargetSpec.Entity `Assignment)
+  let create = One (Action.Create, TargetSpec.Entity `Contact)
+  let read = contact Action.Read
+  let update = contact Action.Update
 end

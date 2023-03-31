@@ -197,10 +197,6 @@ end = struct
   module InvitationCommand = Cqrs_command.Invitation_command
   module Guardian = Middleware.Guardian
 
-  let invitation_effects =
-    Guardian.id_effects Pool_common.Id.of_string Field.Invitation
-  ;;
-
   let experiment_effects =
     Guardian.id_effects Experiment.Id.of_string Field.Experiment
   ;;
@@ -219,7 +215,9 @@ end = struct
   ;;
 
   let create =
-    InvitationCommand.Create.effects |> Guardian.validate_admin_entity
+    InvitationCommand.Create.effects
+    |> experiment_effects
+    |> Guardian.validate_generic
   ;;
 
   let read =
@@ -230,7 +228,7 @@ end = struct
 
   let resend =
     InvitationCommand.Resend.effects
-    |> invitation_effects
+    |> combined_effects
     |> Guardian.validate_generic
   ;;
 end

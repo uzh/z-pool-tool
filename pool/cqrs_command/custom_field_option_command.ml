@@ -31,10 +31,7 @@ end = struct
     Ok Custom_field.[ OptionCreated (id field, m) |> Pool_event.custom_field ]
   ;;
 
-  let effects =
-    let open Guard in
-    ValidationSet.One (Action.Create, TargetSpec.Entity `CustomField)
-  ;;
+  let effects = Custom_field.Guard.Access.create
 end
 
 module Update : sig
@@ -60,7 +57,7 @@ end = struct
     Ok [ OptionUpdated m |> Pool_event.custom_field ]
   ;;
 
-  let effects = custom_field_effect Guard.Action.Update
+  let effects = Custom_field.Guard.Access.update
 end
 
 module Destroy : sig
@@ -84,7 +81,7 @@ end = struct
       Error Pool_common.Message.(AlreadyPublished Field.CustomFieldOption)
   ;;
 
-  let effects = custom_field_effect Guard.Action.Delete
+  let effects = Custom_field.Guard.Access.delete
 end
 
 module Publish : sig
@@ -99,7 +96,7 @@ end = struct
     Ok [ Custom_field.OptionPublished m |> Pool_event.custom_field ]
   ;;
 
-  let effects = custom_field_effect Guard.Action.Update
+  let effects = Custom_field.Guard.Access.update
 end
 
 module Sort : sig
@@ -114,5 +111,5 @@ end = struct
     Ok [ Custom_field.OptionsSorted t |> Pool_event.custom_field ]
   ;;
 
-  let effects = custom_field_effect Guard.Action.Update
+  let effects = Custom_field.Guard.Access.update
 end
