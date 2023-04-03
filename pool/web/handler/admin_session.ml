@@ -458,44 +458,55 @@ let close_post req =
   let result { Pool_context.database_label; _ } =
     let open Utils.Lwt_result.Infix in
     Lwt_result.map_error (fun err -> err, Format.asprintf "%s/close" path)
-    @@ let* session = Session.find database_label session_id in
-       let* assignments =
-         Assignment.find_uncanceled_by_session database_label session.Session.id
-       in
-       let* events =
-         let urlencoded_list field =
-           Sihl.Web.Request.urlencoded_list
-             Pool_common.Message.Field.(array_key field)
-             req
-         in
-         let%lwt no_shows = urlencoded_list Pool_common.Message.Field.NoShow in
-         let%lwt participated =
-           urlencoded_list Pool_common.Message.Field.Participated
-         in
-         let assignments =
-           CCList.map
-             (fun (assigment : Assignment.t) ->
-               let id =
-                 assigment.Assignment.contact
-                 |> Contact.id
-                 |> Pool_common.Id.value
-               in
-               let find = CCList.mem ~eq:CCString.equal id in
-               let no_show = no_shows |> find |> Assignment.NoShow.create in
-               let participated =
-                 participated |> find |> Assignment.Participated.create
-               in
-               assigment, no_show, participated)
-             assignments
-         in
-         let open Cqrs_command.Assignment_command.SetAttendance in
-         assignments |> handle session |> Lwt_result.lift
-       in
-       let%lwt () = Pool_event.handle_events database_label events in
-       Http_utils.redirect_to_with_actions
-         path
-         [ Message.set ~success:[ Pool_common.Message.(Closed Field.Session) ] ]
-       |> Lwt_result.ok
+    @@
+    let open Cqrs_command.Assignment_command in
+    let* session = Session.find database_label session_id in
+    let* assignments =
+      Assignment.find_uncanceled_by_session database_label session.Session.id
+    in
+    let* events =
+      let urlencoded_list field =
+        Sihl.Web.Request.urlencoded_list
+          Pool_common.Message.Field.(array_key field)
+          req
+      in
+      let%lwt no_shows = urlencoded_list Pool_common.Message.Field.NoShow in
+      let%lwt participated =
+        urlencoded_list Pool_common.Message.Field.Participated
+      in
+      let* mark_follow_ups_as_deleted =
+        assignments
+        |> CCList.filter_map (fun { Assignment.id; _ } ->
+             Logs.info (fun m -> m "%s" (Assignment.Id.value id));
+             let open Assignment in
+             (CCList.mem (Id.value id) no_shows
+              || not (CCList.mem (Id.value id) participated))
+             |> function
+             | true -> Some id
+             | false -> None)
+        |> Assignment.find_follow_ups_of_multiple database_label
+        >== MarkAsDeleted.handle
+      in
+      let* set_attendance =
+        assignments
+        |> CCList.map (fun ({ Assignment.id; _ } as assigment) ->
+             let id = Assignment.Id.value id in
+             let find = CCList.mem ~eq:CCString.equal id in
+             let no_show = no_shows |> find |> Assignment.NoShow.create in
+             let participated =
+               participated |> find |> Assignment.Participated.create
+             in
+             assigment, no_show, participated)
+        |> SetAttendance.handle session
+        |> Lwt_result.lift
+      in
+      Lwt_result.return (set_attendance @ mark_follow_ups_as_deleted)
+    in
+    let%lwt () = Pool_event.handle_events database_label events in
+    Http_utils.redirect_to_with_actions
+      path
+      [ Message.set ~success:[ Pool_common.Message.(Closed Field.Session) ] ]
+    |> Lwt_result.ok
   in
   result |> HttpUtils.extract_happy_path req
 ;;

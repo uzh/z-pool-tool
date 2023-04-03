@@ -855,13 +855,13 @@ let close
   let open Pool_common in
   let control = Message.(Close (Some Field.Session)) in
   let form =
-    let checkbox_element contact field =
+    let checkbox_element id field =
       div
         [ input
             ~a:
               [ a_input_type `Checkbox
               ; a_name Message.Field.(array_key field)
-              ; a_value (contact |> Contact.id |> Id.value)
+              ; a_value (id |> Assignment.Id.value)
               ]
             ()
         ]
@@ -885,10 +885,10 @@ let close
         :: ([ "all-no-show", "NS"; "all-participated", "P" ] |> CCList.map link)
       in
       CCList.map
-        (fun ({ Assignment.contact; _ } : Assignment.t) ->
+        (fun ({ Assignment.id; contact; _ } : Assignment.t) ->
           [ div [ strong [ txt (Contact.fullname contact) ] ]
-          ; checkbox_element contact Message.Field.NoShow
-          ; checkbox_element contact Message.Field.Participated
+          ; checkbox_element id Message.Field.NoShow
+          ; checkbox_element id Message.Field.Participated
           ])
         assignments
       |> Table.horizontal_table ~thead `Striped

@@ -1,4 +1,5 @@
 module RepoEntity = Repo_entity
+module Dynparam = Utils.Database.Dynparam
 
 let of_entity = RepoEntity.of_entity
 let to_entity = RepoEntity.to_entity
@@ -205,6 +206,54 @@ module Sql = struct
       (Entity.Id.value id)
   ;;
 
+  let find_follow_ups_of_multiple_request ids =
+    let joins =
+      {sql|
+        INNER JOIN pool_sessions
+        ON pool_assignments.session_uuid = pool_sessions.uuid
+      |sql}
+    in
+    Format.asprintf
+      {sql|
+        pool_assignments.marked_as_deleted = 0
+      AND
+        pool_sessions.follow_up_to IN (SELECT session_uuid FROM pool_assignments WHERE pool_assignments.uuid IN (%s))
+      AND
+        pool_assignments.contact_uuid IN (SELECT contact_uuid FROM pool_assignments WHERE pool_assignments.uuid IN (%s))
+    |sql}
+      ids
+      ids
+    |> select_sql ~joins
+  ;;
+
+  let find_follow_ups_of_multiple pool ids =
+    let open Caqti_request.Infix in
+    if CCList.is_empty ids
+    then Lwt.return []
+    else (
+      let dyn, sql =
+        CCList.foldi
+          (fun (dyn, sql) index id ->
+            let dyn =
+              dyn |> Dynparam.add Caqti_type.string (id |> Entity.Id.value)
+            in
+            let sql =
+              Format.asprintf "UNHEX(REPLACE($%n, '-', ''))" (index + 1) :: sql
+            in
+            dyn, sql)
+          (Dynparam.empty, [])
+          ids
+      in
+      let (Dynparam.Pack (pt, pv)) = dyn in
+      let request =
+        sql
+        |> CCString.concat ","
+        |> find_follow_ups_of_multiple_request
+        |> pt ->* RepoEntity.t
+      in
+      Utils.Database.collect (pool |> Pool_database.Label.value) request pv)
+  ;;
+
   let find_session_id_request =
     let open Caqti_request.Infix in
     {sql|
@@ -363,6 +412,13 @@ let find_by_contact pool contact =
 let find_with_follow_ups pool id =
   let open Utils.Lwt_result.Infix in
   Sql.find_with_follow_ups pool id
+  >|> Lwt_list.map_s (contact_to_assignment pool)
+  ||> CCList.all_ok
+;;
+
+let find_follow_ups_of_multiple pool ids =
+  let open Utils.Lwt_result.Infix in
+  Sql.find_follow_ups_of_multiple pool ids
   >|> Lwt_list.map_s (contact_to_assignment pool)
   ||> CCList.all_ok
 ;;

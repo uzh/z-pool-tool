@@ -8,3 +8,4 @@ let find_by_session = Repo.find_by_session `All
 let find_uncanceled_by_session = Repo.find_by_session `Uncanceled
 let find_deleted_by_session = Repo.find_by_session `Deleted
 let find_with_follow_ups = Repo.find_with_follow_ups
+let find_follow_ups_of_multiple = Repo.find_follow_ups_of_multiple

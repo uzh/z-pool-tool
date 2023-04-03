@@ -100,6 +100,11 @@ val find_with_follow_ups
   -> Id.t
   -> (t list, Pool_common.Message.error) result Lwt.t
 
+val find_follow_ups_of_multiple
+  :  Pool_database.Label.t
+  -> Id.t list
+  -> (t list, Pool_common.Message.error) result Lwt.t
+
 type create =
   { contact : Contact.t
   ; session_id : Session.Id.t
