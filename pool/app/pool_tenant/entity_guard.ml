@@ -56,7 +56,6 @@ module Access = struct
 
   let index = One (Action.Read, TargetSpec.Entity `Tenant)
   let create = One (Action.Create, TargetSpec.Entity `Tenant)
-  let read = tenant Action.Read
   let update = tenant Action.Update
   let delete = tenant Action.Delete
 

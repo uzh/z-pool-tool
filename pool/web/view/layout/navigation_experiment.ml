@@ -49,7 +49,7 @@ let nav_elements { Experiment.id; _ } =
        ( Format.asprintf "/admin/experiments/%s/%s" (Experiment.Id.value id) url
        , label
        , set ))
-  |> Element.create_all_req_with_set
+  |> NavElement.create_all_req_with_set
 ;;
 
 let combine ?buttons ?hint language title children =

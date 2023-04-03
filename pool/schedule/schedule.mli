@@ -57,6 +57,5 @@ val find_all : unit -> public list Lwt.t
 module Guard : sig
   module Access : sig
     val index : Guard.ValidationSet.t
-    val read : Guard.ValidationSet.t
   end
 end

@@ -77,7 +77,6 @@ module Access : module type of Helpers.Access = struct
 
   let i18n_effects = Guardian.id_effects Pool_common.Id.of_string Field.I18n
   let index = I18n.Guard.Access.index |> Guardian.validate_admin_entity
-  let read = I18n.Guard.Access.read |> i18n_effects |> Guardian.validate_generic
 
   let update =
     I18nCommand.Update.effects |> i18n_effects |> Guardian.validate_generic

@@ -8,12 +8,12 @@ module NavElements = struct
     Guard.(ValidationSet.One (Action.Read, TargetSpec.Entity entity))
   ;;
 
-  let guest = [ Element.login ] |> NavUtils.with_language_switch
+  let guest = [ NavElement.login ] |> NavUtils.with_language_switch
 
   let contact =
     let open I18n in
     let profile_dropdown =
-      Element.create_all_req
+      NavElement.create_all_req
         [ "/user/personal-details", PersonalDetails
         ; "/user/login-information", LoginInformation
         ]
@@ -21,8 +21,8 @@ module NavElements = struct
     [ "/experiments", Experiments, None, []
     ; "/user", Profile, Some Icon.Person, profile_dropdown
     ]
-    |> Element.create_all
-    |> CCList.cons Element.logout
+    |> NavElement.create_all
+    |> CCList.cons NavElement.logout
     |> NavUtils.with_language_switch
   ;;
 
@@ -41,23 +41,23 @@ module NavElements = struct
         , Message_template.Guard.Access.index )
       ; "/admin/i18n", I18n, I18nGuard.Access.index
       ]
-      |> Element.create_all_req_with_set
+      |> NavElement.create_all_req_with_set
       |> fun children ->
       let validation_set =
         CCList.map
-          (fun { Element.validation_set; _ } -> validation_set)
+          (fun { NavElement.validation_set; _ } -> validation_set)
           children
         |> Guard.ValidationSet.or_
       in
-      Element.create ~validation_set ~children "/admin/settings" Settings
+      NavElement.create ~validation_set ~children "/admin/settings" Settings
     in
     let user =
       [ "/admin/contacts", Contacts, Contact.Guard.Access.index
       ; "/admin/admins", Admins, Admin.Guard.Access.index
       ]
-      |> Element.create_all_req_with_set
+      |> NavElement.create_all_req_with_set
       |> fun children ->
-      Element.create
+      NavElement.create
         ~validation_set:
           (Guard.ValidationSet.Or
              [ Contact.Guard.Access.index; Admin.Guard.Access.index ])
@@ -65,37 +65,37 @@ module NavElements = struct
         "/admin/users"
         Users
     in
-    let dashboard = Element.create "/admin/dashboard" Dashboard in
+    let dashboard = NavElement.create "/admin/dashboard" Dashboard in
     let experiments =
-      Element.create
+      NavElement.create
         ~validation_set:Experiment.Guard.Access.index
         "/admin/experiments"
         Experiments
     in
-    [ dashboard; experiments; settings; user; Element.logout ]
+    [ dashboard; experiments; settings; user; NavElement.logout ]
     |> NavUtils.create_main ~validate:true
   ;;
 
   let root =
     let open I18n in
     let tenants =
-      Element.create
+      NavElement.create
         ~validation_set:Pool_tenant.Guard.Access.index
         "/root/tenants"
         Tenants
     in
     let users =
-      Element.create
+      NavElement.create
         ~validation_set:Admin.Guard.Access.index
         "/root/users"
         Users
     in
     let settings =
       [ "/root/settings/smtp", Smtp, Pool_tenant.Guard.Access.Smtp.index ]
-      |> Element.create_all_req_with_set
-      |> fun children -> Element.create ~children "/root/settings" Settings
+      |> NavElement.create_all_req_with_set
+      |> fun children -> NavElement.create ~children "/root/settings" Settings
     in
-    [ tenants; users; settings; Element.logout ]
+    [ tenants; users; settings; NavElement.logout ]
     |> NavUtils.create_main ~validate:true
   ;;
 

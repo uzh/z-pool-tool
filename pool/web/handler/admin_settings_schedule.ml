@@ -20,5 +20,4 @@ module Access : module type of Helpers.Access = struct
   module Guardian = Middleware.Guardian
 
   let index = Schedule.Guard.Access.index |> Guardian.validate_admin_entity
-  let read = Schedule.Guard.Access.read |> Guardian.validate_admin_entity
 end

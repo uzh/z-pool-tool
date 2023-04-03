@@ -22,6 +22,5 @@ module Access = struct
   ;;
 
   let index = One (Action.Read, TargetSpec.Entity `I18n)
-  let read = i18n Action.Read
   let update = i18n Action.Update
 end

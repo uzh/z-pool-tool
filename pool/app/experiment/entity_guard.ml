@@ -17,9 +17,14 @@ module Access = struct
   open Guard
   open ValidationSet
 
+  let target_of = Uuid.target_of Entity.Id.value
+
   let experiment action id =
-    let target_of = Uuid.target_of Entity.Id.value in
     One (action, TargetSpec.Id (`Experiment, target_of id))
+  ;;
+
+  let recruiter_of id =
+    Or [ SpecificRole (`Recruiter (target_of id)); SpecificRole `RecruiterAll ]
   ;;
 
   let index = One (Action.Read, TargetSpec.Entity `Experiment)

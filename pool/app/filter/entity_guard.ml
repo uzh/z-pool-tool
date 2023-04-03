@@ -25,7 +25,6 @@ module Access = struct
 
   let index = One (Action.Read, TargetSpec.Entity `Filter)
   let create = One (Action.Read, TargetSpec.Entity `Filter)
-  let read = filter Action.Read
   let update = filter Action.Update
   let delete = filter Action.Delete
 end

@@ -82,7 +82,6 @@ module Guard : sig
 
   module Access : sig
     val index : Guard.ValidationSet.t
-    val read : Pool_common.Id.t -> Guard.ValidationSet.t
     val update : Pool_common.Id.t -> Guard.ValidationSet.t
   end
 end

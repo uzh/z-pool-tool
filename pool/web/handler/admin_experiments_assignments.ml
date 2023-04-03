@@ -158,6 +158,7 @@ module Access : sig
   include module type of Helpers.Access
 
   val cancel : Rock.Middleware.t
+  val deleted : Rock.Middleware.t
   val mark_as_deleted : Rock.Middleware.t
 end = struct
   include Helpers.Access
@@ -182,8 +183,14 @@ end = struct
   ;;
 
   let delete =
-    Assignment.Guard.Access.update
+    Assignment.Guard.Access.delete
     |> combined_effects
+    |> Guardian.validate_generic
+  ;;
+
+  let deleted =
+    Assignment.Guard.Access.deleted
+    |> experiment_effects
     |> Guardian.validate_generic
   ;;
 

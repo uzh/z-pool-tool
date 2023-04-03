@@ -379,9 +379,5 @@ end = struct
     |> Guardian.validate_generic
   ;;
 
-  let sort =
-    CustomFieldCommand.Sort.effects
-    |> custom_field_effects
-    |> Guardian.validate_generic
-  ;;
+  let sort = CustomFieldCommand.Sort.effects |> Guardian.validate_admin_entity
 end

@@ -166,10 +166,6 @@ end = struct
   let index = Pool_tenant.Guard.Access.index |> Guardian.validate_admin_entity
   let create = Guardian.validate_admin_entity TenantCommand.Create.effects
 
-  let read =
-    Pool_tenant.Guard.Access.read |> tenant_effects |> Guardian.validate_generic
-  ;;
-
   let update =
     TenantCommand.EditDetails.effects
     |> tenant_effects

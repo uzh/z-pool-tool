@@ -193,11 +193,7 @@ end = struct
   let effects = Custom_field.Guard.Access.update
 end
 
-module Sort : sig
-  include Common.CommandSig with type t = Custom_field.t list
-
-  val effects : Custom_field.Id.t -> Guard.ValidationSet.t
-end = struct
+module Sort : Common.CommandSig with type t = Custom_field.t list = struct
   type t = Custom_field.t list
 
   let handle ?(tags = Logs.Tag.empty) t =
@@ -205,7 +201,7 @@ end = struct
     Ok [ Custom_field.FieldsSorted t |> Pool_event.custom_field ]
   ;;
 
-  let effects = Custom_field.Guard.Access.update
+  let effects = Custom_field.Guard.Access.create
 end
 
 module Publish : sig

@@ -11,7 +11,7 @@ let filter_items ?validate ?actor database_label items =
   | Some true, Some actor ->
     let rec filter_nav items =
       Lwt_list.filter_map_s
-        (fun ({ Element.validation_set; children; _ } as element) ->
+        (fun ({ NavElement.validation_set; children; _ } as element) ->
           try
             let%lwt self =
               Persistence.validate
@@ -24,7 +24,7 @@ let filter_items ?validate ?actor database_label items =
             | Ok () when CCList.is_empty children -> Lwt.return_some element
             | Ok () ->
               let%lwt children = filter_nav children in
-              Lwt.return_some Element.{ element with children }
+              Lwt.return_some NavElement.{ element with children }
             | Error _ -> Lwt.return_none
           with
           | _ -> Lwt.return_none)
@@ -38,14 +38,14 @@ let rec build_nav_links
   ?active_navigation
   language
   query_language
-  { Element.url; label; icon; children; _ }
+  { NavElement.url; label; icon; children; _ }
   =
-  let rec find_is_active (children : Element.t list_wrap) : bool =
+  let rec find_is_active (children : NavElement.t list_wrap) : bool =
     let is_active url =
       active_navigation |> CCOption.map_or ~default:false (CCString.equal url)
     in
     CCList.fold_left
-      (fun init { Element.url; children; _ } ->
+      (fun init { NavElement.url; children; _ } ->
         init || is_active url || find_is_active children)
       (is_active url)
       children

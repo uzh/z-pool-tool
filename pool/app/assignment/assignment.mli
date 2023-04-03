@@ -136,5 +136,6 @@ module Guard : sig
     val read : Experiment.Id.t -> Id.t -> Guard.ValidationSet.t
     val update : Experiment.Id.t -> Id.t -> Guard.ValidationSet.t
     val delete : Experiment.Id.t -> Id.t -> Guard.ValidationSet.t
+    val deleted : Experiment.Id.t -> Guard.ValidationSet.t
   end
 end

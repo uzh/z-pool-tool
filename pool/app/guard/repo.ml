@@ -29,9 +29,6 @@ module Cache = struct
     let () = clear lru_validation in
     clear lru_find_actor
   ;;
-
-  let _ = CCCache.clear lru_validation
-  let _ = CCCache.clear lru_find_actor
 end
 
 module Actor = struct

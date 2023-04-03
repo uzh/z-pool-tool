@@ -25,7 +25,6 @@ module Access = struct
 
   let index = One (Action.Read, TargetSpec.Entity `MessageTemplate)
   let create = One (Action.Create, TargetSpec.Entity `MessageTemplate)
-  let read = message_template Action.Read
   let update = message_template Action.Update
   let delete = message_template Action.Delete
 end

@@ -3,5 +3,4 @@ module Access = struct
   open ValidationSet
 
   let index = One (Action.Read, TargetSpec.Entity `Schedule)
-  let read = One (Action.Read, TargetSpec.Entity `Schedule)
 end

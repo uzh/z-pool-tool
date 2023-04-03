@@ -34,7 +34,7 @@ let make_tabs html links =
 let create ?active_navigation language links html =
   let open Pool_common in
   CCList.map
-    (fun { Element.label; url; _ } ->
+    (fun { NavElement.label; url; _ } ->
       let is_active =
         active_navigation
         |> CCOption.map_or ~default:false (flip I18n.equal_nav_link label)

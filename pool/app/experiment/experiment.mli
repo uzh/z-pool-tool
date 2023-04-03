@@ -208,6 +208,7 @@ module Guard : sig
     val read : Id.t -> Guard.ValidationSet.t
     val update : Id.t -> Guard.ValidationSet.t
     val delete : Id.t -> Guard.ValidationSet.t
+    val recruiter_of : Id.t -> Guard.ValidationSet.t
   end
 end
 

@@ -82,9 +82,7 @@ end = struct
   let effects = Custom_field.Guard.Access.Group.delete
 end
 
-module Sort : sig
-  include Common.CommandSig with type t = Custom_field.Group.t list
-end = struct
+module Sort : Common.CommandSig with type t = Custom_field.Group.t list = struct
   type t = Custom_field.Group.t list
 
   let handle ?(tags = Logs.Tag.empty) t =
@@ -92,5 +90,5 @@ end = struct
     Ok [ Custom_field.GroupsSorted t |> Pool_event.custom_field ]
   ;;
 
-  let effects = Custom_field.Guard.Access.Group.index
+  let effects = Custom_field.Guard.Access.Group.create
 end

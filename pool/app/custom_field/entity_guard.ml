@@ -46,7 +46,6 @@ module Access = struct
 
   let index = One (Action.Read, TargetSpec.Entity `CustomField)
   let create = One (Action.Create, TargetSpec.Entity `CustomField)
-  let read = custom_field Action.Read
   let update = custom_field Action.Update
   let delete = custom_field Action.Delete
 
@@ -58,7 +57,6 @@ module Access = struct
 
     let index = One (Action.Read, TargetSpec.Entity `CustomFieldGroup)
     let create = One (Action.Create, TargetSpec.Entity `CustomFieldGroup)
-    let read = group Action.Read
     let update = group Action.Update
     let delete = group Action.Delete
   end

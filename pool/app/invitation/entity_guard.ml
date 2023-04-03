@@ -39,16 +39,11 @@ module Access = struct
     One (action, TargetSpec.Id (`Invitation, target_id))
   ;;
 
-  let recruiter_of_experiment id =
-    let target_id = id |> Uuid.target_of Experiment.Id.value in
-    Or [ SpecificRole (`Recruiter target_id); SpecificRole `RecruiterAll ]
-  ;;
-
   let index id =
     And
       [ One (Action.Read, TargetSpec.Entity `Invitation)
       ; Experiment.Guard.Access.read id
-      ; recruiter_of_experiment id
+      ; Experiment.Guard.Access.recruiter_of id
       ]
   ;;
 
@@ -56,7 +51,7 @@ module Access = struct
     And
       [ One (Action.Create, TargetSpec.Entity `Invitation)
       ; Experiment.Guard.Access.update id
-      ; recruiter_of_experiment id
+      ; Experiment.Guard.Access.recruiter_of id
       ]
   ;;
 
@@ -64,7 +59,7 @@ module Access = struct
     And
       [ invitation Action.Read invitation_id
       ; Experiment.Guard.Access.read experiment_id
-      ; recruiter_of_experiment experiment_id
+      ; Experiment.Guard.Access.recruiter_of experiment_id
       ]
   ;;
 
@@ -72,7 +67,7 @@ module Access = struct
     And
       [ invitation Action.Update invitation_id
       ; Experiment.Guard.Access.read experiment_id
-      ; recruiter_of_experiment experiment_id
+      ; Experiment.Guard.Access.recruiter_of experiment_id
       ]
   ;;
 
@@ -80,7 +75,7 @@ module Access = struct
     And
       [ invitation Action.Delete invitation_id
       ; Experiment.Guard.Access.update experiment_id
-      ; recruiter_of_experiment experiment_id
+      ; Experiment.Guard.Access.recruiter_of experiment_id
       ]
   ;;
 end

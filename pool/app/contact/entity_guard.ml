@@ -34,16 +34,6 @@ module Actor = struct
     let encode = Entity.id %> Uuid.actor_of Pool_common.Id.value in
     decorate ?ctx encode
   ;;
-
-  (** Many request handlers do not extract a [User.t] at any point. This
-      function is useful in such cases. *)
-  let authorizable_of_req ?ctx req =
-    Sihl.Web.Session.find "user_id" req
-    |> CCResult.of_opt
-    |> Lwt_result.lift
-    >|- Pool_common.Message.authorization
-    >>= decorate ?ctx Uuid.Actor.of_string_exn
-  ;;
 end
 
 module Access = struct

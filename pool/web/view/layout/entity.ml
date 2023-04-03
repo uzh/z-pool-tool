@@ -2,7 +2,7 @@ module I18n = Pool_common.I18n
 module Icon = Component.Icon
 module Language = Pool_common.Language
 
-module Element = struct
+module NavElement = struct
   type t =
     { url : string
     ; label : I18n.nav_link
