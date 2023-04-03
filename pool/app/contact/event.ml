@@ -57,8 +57,8 @@ type event =
   | NumAssignmentsIncreasedBy of (t * int)
   | NumInvitationsIncreased of t
   | ProfileUpdateTriggeredAtUpdated of t list
-  | SessionParticipationSet of t * session_participation
   | RegistrationAttemptNotificationSent of t
+  | Updated of t
 [@@deriving eq, show, variants]
 
 let handle_event pool : event -> unit Lwt.t =
@@ -173,23 +173,7 @@ let handle_event pool : event -> unit Lwt.t =
       }
   | ProfileUpdateTriggeredAtUpdated contacts ->
     contacts |> CCList.map id |> Repo.update_profile_updated_triggered pool
-  | SessionParticipationSet
-      ( ({ num_show_ups; num_no_shows; num_participations; _ } as contact)
-      , { no_show; participated } ) ->
-    let num_no_shows, num_show_ups =
-      match no_show with
-      | true -> num_no_shows |> NumberOfNoShows.increment, num_show_ups
-      | false -> num_no_shows, num_show_ups |> NumberOfShowUps.increment
-    in
-    let num_participations =
-      if participated
-      then num_participations |> NumberOfParticipations.increment
-      else num_participations
-    in
-    let contact =
-      { contact with num_show_ups; num_no_shows; num_participations }
-    in
-    contact |> Repo.update pool
   | RegistrationAttemptNotificationSent t ->
     Repo.set_registration_attempt_notification_sent_at pool t
+  | Updated contact -> contact |> Repo.update pool
 ;;

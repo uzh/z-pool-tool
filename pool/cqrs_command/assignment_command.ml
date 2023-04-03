@@ -10,6 +10,23 @@ let assignment_effect action id =
     )
 ;;
 
+let update_session_participation_counts contact no_show participated =
+  let open Contact in
+  let open Assignment in
+  let { num_show_ups; num_no_shows; num_participations; _ } = contact in
+  let num_no_shows, num_show_ups =
+    match NoShow.value no_show with
+    | true -> num_no_shows |> NumberOfNoShows.increment, num_show_ups
+    | false -> num_no_shows, num_show_ups |> NumberOfShowUps.increment
+  in
+  let num_participations =
+    if Participated.value participated
+    then num_participations |> NumberOfParticipations.increment
+    else num_participations
+  in
+  { contact with num_no_shows; num_show_ups; num_participations }
+;;
+
 module Create : sig
   include Common.CommandSig
 
@@ -123,7 +140,7 @@ end = struct
   let effects = Assignment.Guard.Access.delete
 end
 
-let validate_participation ((_, no_show, participated) as participation) =
+let validate_participation ((_, no_show, participated, _) as participation) =
   let open Assignment in
   if Participated.value participated && NoShow.value no_show
   then
@@ -132,7 +149,12 @@ let validate_participation ((_, no_show, participated) as participation) =
 ;;
 
 module SetAttendance : sig
-  type t = (Assignment.t * Assignment.NoShow.t * Assignment.Participated.t) list
+  type t =
+    (Assignment.t
+    * Assignment.NoShow.t
+    * Assignment.Participated.t
+    * Assignment.t list option)
+    list
 
   val handle
     :  ?tags:Logs.Tag.set
@@ -142,9 +164,14 @@ module SetAttendance : sig
 
   val effects : Experiment.Id.t -> Session.Id.t -> Guard.ValidationSet.t
 end = struct
-  type t = (Assignment.t * Assignment.NoShow.t * Assignment.Participated.t) list
+  type t =
+    (Assignment.t
+    * Assignment.NoShow.t
+    * Assignment.Participated.t
+    * Assignment.t list option)
+    list
 
-  let handle ?(tags = Logs.Tag.empty) (session : Session.t) command =
+  let handle ?(tags = Logs.Tag.empty) (session : Session.t) (command : t) =
     Logs.info ~src (fun m -> m "Handle command SetAttendance" ~tags);
     let open CCResult in
     let open Assignment in
@@ -156,24 +183,43 @@ end = struct
         >>= fun events ->
         participation
         |> validate_participation
-        >>= fun ((assignment : Assignment.t), no_show, participated) ->
-        let* contact_event =
+        >>= fun ((assignment : Assignment.t), no_show, participated, follow_ups) ->
+        let* contact_events =
           let open Contact in
-          let* () = Assignment.attendance_settable assignment in
-          let update =
-            { no_show = NoShow.value no_show
-            ; participated = Participated.value participated
-            }
+          let* () = attendance_settable assignment in
+          let contact =
+            update_session_participation_counts
+              assignment.contact
+              no_show
+              participated
           in
-          SessionParticipationSet (assignment.contact, update)
-          |> Pool_event.contact
+          let num_assignments =
+            let num_assignments = assignment.contact.num_assignments in
+            follow_ups
+            |> CCOption.map_or
+                 ~default:num_assignments
+                 CCFun.(
+                   CCList.filter (fun assignment ->
+                     CCOption.is_none assignment.Assignment.canceled_at)
+                   %> CCList.length
+                   %> NumberOfAssignments.decrement num_assignments)
+          in
+          let contact = { contact with num_assignments } in
+          let mark_as_deleted =
+            follow_ups
+            |> CCOption.map_or
+                 ~default:[]
+                 (CCList.map (fun assignment ->
+                    Assignment.MarkedAsDeleted assignment
+                    |> Pool_event.assignment))
+          in
+          (Contact.Updated contact |> Pool_event.contact) :: mark_as_deleted
           |> CCResult.return
         in
         events
-        @ [ Assignment.AttendanceSet (assignment, no_show, participated)
-            |> Pool_event.assignment
-          ; contact_event
-          ]
+        @ ((Assignment.AttendanceSet (assignment, no_show, participated)
+            |> Pool_event.assignment)
+           :: contact_events)
         |> CCResult.return)
       (Ok [ Closed session |> Pool_event.session ])
       command

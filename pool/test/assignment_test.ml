@@ -103,21 +103,20 @@ let set_attendance () =
   let events =
     AssignmentCommand.SetAttendance.handle
       session
-      [ assignment, no_show, participated ]
+      [ assignment, no_show, participated, None ]
   in
   let expected =
-    let open Contact in
-    let update =
-      { no_show = NoShow.value no_show
-      ; participated = Participated.value participated
-      }
+    let contact =
+      AssignmentCommand.update_session_participation_counts
+        assignment.contact
+        no_show
+        participated
     in
     Ok
       [ Session.Closed session |> Pool_event.session
       ; Assignment.AttendanceSet (assignment, no_show, participated)
         |> Pool_event.assignment
-      ; Contact.SessionParticipationSet (assignment.contact, update)
-        |> Pool_event.contact
+      ; Contact.Updated contact |> Pool_event.contact
       ]
   in
   check_result expected events
@@ -132,7 +131,7 @@ let set_invalid_attendance () =
   let events =
     AssignmentCommand.SetAttendance.handle
       session
-      [ assignment, show_up, participated ]
+      [ assignment, show_up, participated, None ]
   in
   let expected =
     Error Pool_common.Message.(MutuallyExclusive Field.(Participated, NoShow))

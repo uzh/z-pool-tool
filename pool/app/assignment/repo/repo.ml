@@ -206,52 +206,30 @@ module Sql = struct
       (Entity.Id.value id)
   ;;
 
-  let find_follow_ups_of_multiple_request ids =
+  let find_followups_request =
+    let open Caqti_request.Infix in
     let joins =
       {sql|
         INNER JOIN pool_sessions
         ON pool_assignments.session_uuid = pool_sessions.uuid
       |sql}
     in
-    Format.asprintf
-      {sql|
+    {sql|
+        pool_sessions.follow_up_to = (SELECT session_uuid FROM pool_assignments WHERE pool_assignments.uuid = UNHEX(REPLACE($1, '-', '')))
+      AND
+        pool_assignments.contact_uuid = UNHEX(REPLACE($2, '-', ''))
+      AND
         pool_assignments.marked_as_deleted = 0
-      AND
-        pool_sessions.follow_up_to IN (SELECT session_uuid FROM pool_assignments WHERE pool_assignments.uuid IN (%s))
-      AND
-        pool_assignments.contact_uuid IN (SELECT contact_uuid FROM pool_assignments WHERE pool_assignments.uuid IN (%s))
     |sql}
-      ids
-      ids
     |> select_sql ~joins
+    |> Caqti_type.(tup2 string string) ->* RepoEntity.t
   ;;
 
-  let find_follow_ups_of_multiple pool ids =
-    let open Caqti_request.Infix in
-    if CCList.is_empty ids
-    then Lwt.return []
-    else (
-      let dyn, sql =
-        CCList.foldi
-          (fun (dyn, sql) index id ->
-            let dyn =
-              dyn |> Dynparam.add Caqti_type.string (id |> Entity.Id.value)
-            in
-            let sql =
-              Format.asprintf "UNHEX(REPLACE($%n, '-', ''))" (index + 1) :: sql
-            in
-            dyn, sql)
-          (Dynparam.empty, [])
-          ids
-      in
-      let (Dynparam.Pack (pt, pv)) = dyn in
-      let request =
-        sql
-        |> CCString.concat ","
-        |> find_follow_ups_of_multiple_request
-        |> pt ->* RepoEntity.t
-      in
-      Utils.Database.collect (pool |> Pool_database.Label.value) request pv)
+  let find_follow_ups pool m =
+    Utils.Database.collect
+      (pool |> Pool_database.Label.value)
+      find_followups_request
+      Entity.(Id.value m.id, Contact.id m.contact |> Contact.Id.value)
   ;;
 
   let find_session_id_request =
@@ -416,11 +394,10 @@ let find_with_follow_ups pool id =
   ||> CCList.all_ok
 ;;
 
-let find_follow_ups_of_multiple pool ids =
+let find_follow_ups pool m =
   let open Utils.Lwt_result.Infix in
-  Sql.find_follow_ups_of_multiple pool ids
-  >|> Lwt_list.map_s (contact_to_assignment pool)
-  ||> CCList.all_ok
+  Sql.find_follow_ups pool m
+  ||> CCList.map (CCFun.flip to_entity m.Entity.contact)
 ;;
 
 let find_session_id = Sql.find_session_id

@@ -671,7 +671,7 @@ let close_valid () =
 ;;
 
 let close_valid_with_assignments () =
-  let open Cqrs_command.Assignment_command.SetAttendance in
+  let open Cqrs_command.Assignment_command in
   let open Assignment in
   let session = Test_utils.Model.(create_session ~start:(an_hour_ago ())) () in
   let assignments =
@@ -681,26 +681,32 @@ let close_valid_with_assignments () =
          |> Test_utils.Model.create_contact
          |> create
          |> fun assignment ->
-         assignment, false |> NoShow.create, Participated.create participated)
+         ( assignment
+         , false |> NoShow.create
+         , Participated.create participated
+         , None ))
   in
-  let res = handle session assignments in
+  let res = SetAttendance.handle session assignments in
   let expected =
     CCList.fold_left
       (fun events
-           (((assignment : Assignment.t), no_show, participated) as
-           participation) ->
+           ( (assignment : Assignment.t)
+           , no_show
+           , participated
+           , (_ : t list option) ) ->
         let contact_event =
           let open Contact in
-          let update =
-            { no_show = NoShow.value no_show
-            ; participated = Participated.value participated
-            }
+          let contact =
+            update_session_participation_counts
+              assignment.contact
+              no_show
+              participated
           in
-          SessionParticipationSet (assignment.contact, update)
-          |> Pool_event.contact
+          Updated contact |> Pool_event.contact
         in
         events
-        @ [ AttendanceSet participation |> Pool_event.assignment
+        @ [ AttendanceSet (assignment, no_show, participated)
+            |> Pool_event.assignment
           ; contact_event
           ])
       [ Session.Closed session |> Pool_event.session ]
@@ -720,7 +726,7 @@ let close_with_deleted_assignment () =
     in
     let no_show = NoShow.create false in
     let participated = Participated.create true in
-    assignment, no_show, participated
+    assignment, no_show, participated, None
   in
   let res =
     Cqrs_command.Assignment_command.SetAttendance.handle session [ command ]
@@ -737,7 +743,8 @@ let validate_invalid_participation () =
   let participation =
     ( Test_utils.Model.create_contact () |> create
     , NoShow.create true
-    , Participated.create true )
+    , Participated.create true
+    , None )
   in
   let res = handle session [ participation ] in
   let expected =
@@ -1066,8 +1073,9 @@ let close_session_check_contact_figures _ () =
   in
   let find_assignment contact =
     CCList.find
-      Assignment.(
-        fun (assignment : t) -> Contact.equal assignment.contact contact)
+      Contact.(
+        fun (assignment : Assignment.t) ->
+          Id.equal (id assignment.Assignment.contact) (id contact))
       assignments
   in
   let%lwt () =
@@ -1081,14 +1089,15 @@ let close_session_check_contact_figures _ () =
            | `ShowUp -> NoShow.create false, Participated.create false
            | `NoShow -> NoShow.create true, Participated.create false
          in
-         let update =
-           { no_show = NoShow.value no_show
-           ; participated = Participated.value participated
-           }
+         let contact =
+           Cqrs_command.Assignment_command.update_session_participation_counts
+             contact
+             no_show
+             participated
          in
          [ AttendanceSet (find_assignment contact, no_show, participated)
            |> Pool_event.assignment
-         ; SessionParticipationSet (contact, update) |> Pool_event.contact
+         ; Updated contact |> Pool_event.contact
          ])
     |> CCList.flatten
     |> (fun events -> (Session.Closed session |> Pool_event.session) :: events)
