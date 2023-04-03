@@ -208,6 +208,7 @@ let filter_to_sql template_list dyn query =
              | Name
              | NumAssignments
              | NumInvitations
+             | NumNoShows
              | NumParticipations
              | NumShowUps ->
                Error

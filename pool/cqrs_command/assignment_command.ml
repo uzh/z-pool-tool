@@ -264,6 +264,7 @@ end = struct
     let* (_ : unit list) =
       CCList.map Assignment.is_deletable assignments |> CCList.all_ok
     in
+    (* TODO: Make sure, no shows, showup, participated is updated *)
     let mark_as_deleted =
       CCList.map
         (fun assignment ->

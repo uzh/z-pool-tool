@@ -186,8 +186,10 @@ let handle_event pool : event -> unit Lwt.t =
       then num_participations |> NumberOfParticipations.increment
       else num_participations
     in
-    { contact with num_show_ups; num_no_shows; num_participations }
-    |> Repo.update pool
+    let contact =
+      { contact with num_show_ups; num_no_shows; num_participations }
+    in
+    contact |> Repo.update pool
   | RegistrationAttemptNotificationSent t ->
     Repo.set_registration_attempt_notification_sent_at pool t
 ;;

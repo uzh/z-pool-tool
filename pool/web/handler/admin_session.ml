@@ -477,7 +477,6 @@ let close_post req =
       let* mark_follow_ups_as_deleted =
         assignments
         |> CCList.filter_map (fun { Assignment.id; _ } ->
-             Logs.info (fun m -> m "%s" (Assignment.Id.value id));
              let open Assignment in
              (CCList.mem (Id.value id) no_shows
               || not (CCList.mem (Id.value id) participated))
