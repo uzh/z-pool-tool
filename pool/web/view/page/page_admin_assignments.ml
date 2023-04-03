@@ -116,20 +116,35 @@ module Partials = struct
         Message.MarkAsDeleted
         Component.Icon.Trash
     in
+    (* TODO[timhub]: replace with icon when it is added to framework *)
+    let boolean_value = function
+      | false -> "x" |> txt
+      | true -> "✓" |> txt
+    in
     match CCList.is_empty assignments with
     | true -> p [ language |> empty ]
     | false ->
       let thead =
-        (Pool_common.Message.Field.[ Name; Email; CanceledAt ]
+        (Pool_common.Message.Field.
+           [ Name; Email; Participated; NoShow; CanceledAt ]
          |> Component.Table.fields_to_txt language)
         @ [ txt "" ]
       in
       let rows =
+        let open CCFun in
         CCList.map
           (fun (assignment : Assignment.t) ->
             let base =
               [ assignment |> contact_fullname
               ; assignment |> contact_email
+              ; assignment.participated
+                |> CCOption.map_or
+                     ~default:(txt "")
+                     (Participated.value %> boolean_value)
+              ; assignment.no_show
+                |> CCOption.map_or
+                     ~default:(txt "")
+                     (NoShow.value %> boolean_value)
               ; assignment |> canceled_at
               ]
             in
