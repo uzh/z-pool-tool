@@ -34,6 +34,7 @@ module NumberOfShowUps = struct
   let value m = m
   let of_int m = m
   let increment m = m + 1
+  let decrement m = if m > 1 then m - 1 else 0
 end
 
 module NumberOfNoShows = struct
@@ -43,6 +44,7 @@ module NumberOfNoShows = struct
   let value m = m
   let of_int m = m
   let increment m = m + 1
+  let decrement m = if m > 1 then m - 1 else 0
 end
 
 module NumberOfParticipations = struct
@@ -52,6 +54,7 @@ module NumberOfParticipations = struct
   let value m = m
   let of_int m = m
   let increment m = m + 1
+  let decrement m = if m > 1 then m - 1 else 0
 end
 
 type t =

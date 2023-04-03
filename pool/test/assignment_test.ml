@@ -349,11 +349,18 @@ let assign_to_session_with_follow_ups () =
 let marked_uncanceled_as_deleted () =
   let assignment = Model.create_assignment () in
   let assignment = Assignment.{ assignment with canceled_at = None } in
-  let events = AssignmentCommand.MarkAsDeleted.handle [ assignment ] in
+  let events =
+    AssignmentCommand.MarkAsDeleted.handle
+      (assignment.Assignment.contact, [ assignment ])
+  in
   let expected =
+    let open Contact in
+    let contact = assignment.Assignment.contact in
+    let num_assignments =
+      NumberOfAssignments.decrement contact.num_assignments 1
+    in
     Ok
-      [ Contact.NumAssignmentsDecreasedBy (assignment.Assignment.contact, 1)
-        |> Pool_event.contact
+      [ Contact.Updated { contact with num_assignments } |> Pool_event.contact
       ; Assignment.MarkedAsDeleted assignment |> Pool_event.assignment
       ]
   in
@@ -365,9 +372,15 @@ let marked_canceled_as_deleted () =
   let assignment =
     Assignment.{ assignment with canceled_at = Some (CanceledAt.create_now ()) }
   in
-  let events = AssignmentCommand.MarkAsDeleted.handle [ assignment ] in
+  let events =
+    AssignmentCommand.MarkAsDeleted.handle
+      (assignment.Assignment.contact, [ assignment ])
+  in
   let expected =
-    Ok [ Assignment.MarkedAsDeleted assignment |> Pool_event.assignment ]
+    Ok
+      [ Contact.Updated assignment.Assignment.contact |> Pool_event.contact
+      ; Assignment.MarkedAsDeleted assignment |> Pool_event.assignment
+      ]
   in
   check_result expected events
 ;;

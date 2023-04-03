@@ -35,6 +35,7 @@ module NumberOfShowUps : sig
   val of_int : int -> t
   val equal : t -> t -> bool
   val increment : t -> t
+  val decrement : t -> t
 end
 
 module NumberOfNoShows : sig
@@ -44,6 +45,7 @@ module NumberOfNoShows : sig
   val of_int : int -> t
   val equal : t -> t -> bool
   val increment : t -> t
+  val decrement : t -> t
 end
 
 module NumberOfParticipations : sig
@@ -53,6 +55,7 @@ module NumberOfParticipations : sig
   val of_int : int -> t
   val equal : t -> t -> bool
   val increment : t -> t
+  val decrement : t -> t
 end
 
 type t =

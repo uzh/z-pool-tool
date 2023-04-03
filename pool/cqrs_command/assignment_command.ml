@@ -296,48 +296,65 @@ end = struct
 end
 
 module MarkAsDeleted : sig
-  include Common.CommandSig with type t = Assignment.t list
+  include Common.CommandSig with type t = Contact.t * Assignment.t list
 
   val effects : Experiment.Id.t -> Assignment.Id.t -> Guard.ValidationSet.t
 end = struct
-  type t = Assignment.t list
+  type t = Contact.t * Assignment.t list
 
-  let handle ?(tags = Logs.Tag.empty) assignments
+  let handle ?(tags = Logs.Tag.empty) (contact, assignments)
     : (Pool_event.t list, Pool_common.Message.error) result
     =
+    let open Assignment in
     let open CCResult in
     Logs.info ~src (fun m -> m ~tags "Handle command MarkAsDeleted");
     let* (_ : unit list) =
-      CCList.map Assignment.is_deletable assignments |> CCList.all_ok
+      CCList.map is_deletable assignments |> CCList.all_ok
     in
-    (* TODO: Make sure, no shows, showup, participated is updated *)
     let mark_as_deleted =
       CCList.map
-        (fun assignment ->
-          Assignment.MarkedAsDeleted assignment |> Pool_event.assignment)
+        (fun assignment -> MarkedAsDeleted assignment |> Pool_event.assignment)
         assignments
     in
-    let assignment_count_event =
-      let open CCList in
-      let assignment_list =
-        filter
-          (fun assignment -> CCOption.is_none assignment.Assignment.canceled_at)
-          assignments
+    let num_no_shows, num_show_ups, num_participations, num_assignments =
+      let open Contact in
+      assignments
+      |> CCList.fold_left
+           (fun (no_shows, show_ups, participations, assignment_count)
+                (assignment : Assignment.t) ->
+             let no_shows, show_ups =
+               match assignment.no_show |> CCOption.map NoShow.value with
+               | Some true -> NumberOfNoShows.decrement no_shows, show_ups
+               | Some false -> no_shows, NumberOfShowUps.decrement show_ups
+               | _ -> no_shows, show_ups
+             in
+             let assignment_count =
+               if CCOption.is_some assignment.canceled_at
+               then assignment_count
+               else NumberOfAssignments.decrement assignment_count 1
+             in
+             let participations =
+               NumberOfParticipations.decrement participations
+             in
+             no_shows, show_ups, participations, assignment_count)
+           ( contact.num_no_shows
+           , contact.num_show_ups
+           , contact.num_participations
+           , contact.num_assignments )
+    in
+    let contact_updated =
+      let contact =
+        Contact.
+          { contact with
+            num_no_shows
+          ; num_show_ups
+          ; num_participations
+          ; num_assignments
+          }
       in
-      if length assignment_list > 0
-      then
-        Some
-          (Contact.NumAssignmentsDecreasedBy
-             ((hd assignment_list).Assignment.contact, length assignment_list)
-           |> Pool_event.contact)
-      else None
+      Contact.Updated contact |> Pool_event.contact
     in
-    let events =
-      match assignment_count_event with
-      | Some event -> event :: mark_as_deleted
-      | None -> mark_as_deleted
-    in
-    Ok events
+    Ok (contact_updated :: mark_as_deleted)
   ;;
 
   let effects = Assignment.Guard.Access.delete
