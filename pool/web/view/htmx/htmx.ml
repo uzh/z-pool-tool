@@ -292,7 +292,7 @@ let custom_field_overridden_value ?hx_delete is_admin lang m =
           ; hx_trigger "click"
           ; a_class [ "color-red"; "push"; "pointer" ]
           ]
-        [ abbr ~a:[ a_title "Reset value" ] [ Icon.icon `TrashOutline ] ]
+        [ abbr ~a:[ a_title "Reset value" ] Icon.[ to_html TrashOutline ] ]
     | _, _ -> txt ""
   in
   match is_admin with

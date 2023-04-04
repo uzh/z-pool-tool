@@ -10,7 +10,7 @@ let table language templates create_path to_edit_path =
     | Some path ->
       link_as_button
         ~style:`Success
-        ~icon:`Add
+        ~icon:Component.Icon.Add
         ~control:
           (language, Pool_common.Message.(Add (Some Field.MessageTemplate)))
         path
@@ -117,7 +117,7 @@ let template_form
               [ txt
                   Pool_common.(
                     Utils.control_to_string language Message.ResetPlainText)
-              ; Component.Icon.icon `RefreshOutline
+              ; Component.Icon.(to_html RefreshOutline)
               ]
           ]
       ; textarea

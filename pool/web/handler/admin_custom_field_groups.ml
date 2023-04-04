@@ -190,6 +190,7 @@ module Access : sig
   include module type of Helpers.Access
 
   val sort : Rock.Middleware.t
+  val sort_fields : Rock.Middleware.t
 end = struct
   include Helpers.Access
   module Command = Cqrs_command.Custom_field_group_command
@@ -208,7 +209,16 @@ end = struct
     |> Guardian.validate_generic
   ;;
 
-  let sort = Command.Sort.effects |> Middleware.Guardian.validate_admin_entity
+  let sort = Command.Sort.effects |> Guardian.validate_admin_entity
+
+  let sort_fields =
+    (fun req ->
+      Guard.ValidationSet.And
+        [ Cqrs_command.Custom_field_command.Sort.effects
+        ; custom_field_group_effects Custom_field.Guard.Access.Group.update req
+        ])
+    |> Guardian.validate_generic
+  ;;
 
   let delete =
     Command.Destroy.effects

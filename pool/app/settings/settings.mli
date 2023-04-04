@@ -167,3 +167,26 @@ val find_default_reminder_lead_time
 
 val default_session_reminder_lead_time_key_yojson : Yojson.Safe.t
 val trigger_profile_update_after_key_yojson : Yojson.Safe.t
+
+module Guard : sig
+  module Target : sig
+    val to_authorizable
+      :  ?ctx:(string * string) list
+      -> Pool_common.Id.t
+      -> (Role.Target.t Guard.Target.t, Pool_common.Message.error) result Lwt.t
+
+    type t
+
+    val equal : t -> t -> bool
+    val pp : Format.formatter -> t -> unit
+    val show : t -> string
+  end
+
+  module Access : sig
+    val index : Guard.ValidationSet.t
+    val create : Guard.ValidationSet.t
+    val read : Guard.ValidationSet.t
+    val update : Guard.ValidationSet.t
+    val delete : Guard.ValidationSet.t
+  end
+end

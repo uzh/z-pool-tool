@@ -200,14 +200,16 @@ module Guard : sig
       -> t
       -> (Role.Actor.t Guard.Actor.t, Pool_common.Message.error) Lwt_result.t
 
-    val authorizable_of_req
-      :  ?ctx:(string * string) list
-      -> Rock.Request.t
-      -> (Role.Actor.t Guard.Actor.t, Pool_common.Message.error) Lwt_result.t
-
     type t
 
     val pp : Format.formatter -> t -> unit
     val show : t -> string
+  end
+
+  module Access : sig
+    val index : Guard.ValidationSet.t
+    val create : Guard.ValidationSet.t
+    val read : Id.t -> Guard.ValidationSet.t
+    val update : Id.t -> Guard.ValidationSet.t
   end
 end

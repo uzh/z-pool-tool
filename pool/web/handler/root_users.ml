@@ -13,8 +13,7 @@ let index req =
   let%lwt root_list = Admin.find_all Pool_database.root () in
   Page.Root.Users.list root_list context
   |> General.create_root_layout ~active_navigation context
-  |> Sihl.Web.Response.of_html
-  |> Lwt.return
+  ||> Sihl.Web.Response.of_html
 ;;
 
 let create req =
@@ -81,15 +80,13 @@ end = struct
   module Command = Cqrs_command.Root_command
   module Guardian = Middleware.Guardian
 
-  let root_effects = Guardian.id_effects Pool_common.Id.of_string Field.Root
-
-  let read_effects =
-    Guard.(ValidationSet.One (Action.Read, TargetSpec.Entity `System))
-  ;;
-
-  let index = Guardian.validate_admin_entity read_effects
+  let root_effects = Guardian.id_effects Admin.Id.of_string Field.Root
+  let index = Admin.Guard.Access.index |> Guardian.validate_admin_entity
   let create = Guardian.validate_admin_entity Command.Create.effects
-  let read = Guardian.validate_admin_entity read_effects
+
+  let read =
+    Admin.Guard.Access.read |> root_effects |> Guardian.validate_generic
+  ;;
 
   let toggle_status =
     Command.ToggleStatus.effects |> root_effects |> Guardian.validate_generic

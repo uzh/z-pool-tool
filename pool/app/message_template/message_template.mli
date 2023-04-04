@@ -142,6 +142,13 @@ module Guard : sig
     val pp : Format.formatter -> t -> unit
     val show : t -> string
   end
+
+  module Access : sig
+    val index : Guard.ValidationSet.t
+    val create : Guard.ValidationSet.t
+    val update : Id.t -> Guard.ValidationSet.t
+    val delete : Id.t -> Guard.ValidationSet.t
+  end
 end
 
 val create_public_url_with_params

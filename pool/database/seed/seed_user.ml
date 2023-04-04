@@ -1,3 +1,4 @@
+open CCFun
 module User = Pool_user
 module Id = Pool_common.Id
 
@@ -80,7 +81,6 @@ let create_rand_persons ?tags n_persons =
 ;;
 
 let create_persons db_label n_persons =
-  let open CCFun in
   let open CCList in
   let open Utils.Lwt_result.Infix in
   let tags = Pool_database.Logger.Tags.create db_label in
@@ -128,7 +128,6 @@ let create_persons db_label n_persons =
 
 let admins db_label =
   let open Utils.Lwt_result.Infix in
-  let open CCFun in
   let%lwt experimenter_roles =
     Experiment.find_all db_label ()
     ||> fst
@@ -141,15 +140,13 @@ let admins db_label =
       , "admin"
       , "engineering@econ.uzh.ch"
       , [ `OperatorAll
+        ; `RecruiterAll
         ; `ManageAssistants
         ; `ManageExperimenters
         ; `ManageLocationManagers
         ; `ManageRecruiters
         ] )
-    ; ( "Scooby"
-      , "Doo"
-      , "assistant@econ.uzh.ch"
-      , [ `LocationManagerAll; `ManageLocationManagers ] )
+    ; "Scooby", "Doo", "assistant@econ.uzh.ch", [ `LocationManagerAll ]
     ; ( "Winnie"
       , "Pooh"
       , "experimenter@econ.uzh.ch"
@@ -169,18 +166,21 @@ let admins db_label =
         let%lwt admin =
           Service.User.create_admin ~ctx ~name ~given_name ~password email
         in
-        let%lwt (_ : [> `Admin ] Guard.Actor.t) =
-          admin
-          |> Admin.create
-          |> Admin.Guard.Actor.to_authorizable ~ctx
-          |> Lwt.map Pool_common.Utils.get_or_failwith
+        let%lwt (_ : Role.Actor.t Guard.Actor.t) =
+          let admin = admin |> Admin.create in
+          let%lwt (_ : Role.Target.t Guard.Target.t) =
+            admin |> Admin.Guard.Target.to_authorizable ~ctx ||> get_or_failwith
+          in
+          admin |> Admin.Guard.Actor.to_authorizable ~ctx ||> get_or_failwith
         in
         let%lwt () =
-          Guard.Persistence.Actor.grant_roles
+          let open Guard in
+          Persistence.Actor.grant_roles
             ~ctx
-            (Guard.Uuid.Actor.of_string_exn admin.Sihl_user.id)
-            Guard.RoleSet.(CCList.fold_left (CCFun.flip add) empty role)
-          |> Lwt.map CCResult.get_or_failwith
+            (Uuid.Actor.of_string_exn admin.Sihl_user.id)
+            RoleSet.(CCList.fold_left (flip add) empty role)
+          ||> CCResult.get_or_failwith
+          ||> tap (fun _ -> Persistence.Cache.clear ())
         in
         Lwt.return_unit
       | Some _ ->

@@ -125,8 +125,7 @@ let update_settings req =
   result |> HttpUtils.extract_happy_path_with_actions req
 ;;
 
-module Access : Helpers.AccessSig = struct
-  open Guard
+module Access : module type of Helpers.Access = struct
   include Helpers.Access
   module Command = Cqrs_command.Settings_command
   module Guardian = Middleware.Guardian
@@ -152,8 +151,5 @@ module Access : Helpers.AccessSig = struct
     |> Guardian.validate_generic_result
   ;;
 
-  let index =
-    ValidationSet.One (Action.Read, TargetSpec.Entity `SystemSetting)
-    |> Guardian.validate_admin_entity
-  ;;
+  let index = Settings.Guard.Access.index |> Guardian.validate_admin_entity
 end

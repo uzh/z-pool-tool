@@ -44,6 +44,7 @@ let handle_event pool : event -> unit Lwt.t = function
       , TargetSpec.Id (`Tenant, target_id) )
       |> Persistence.Rule.save ~ctx
       >|- (fun err -> Pool_common.Message.nothandled err)
+      ||> CCFun.tap (fun _ -> Persistence.Cache.clear ())
       ||> get_or_failwith
     in
     let%lwt () =

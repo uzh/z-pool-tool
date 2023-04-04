@@ -15,8 +15,7 @@ let tenants req =
   let flash_fetcher key = Sihl.Web.Flash.find key req in
   Page.Root.Tenant.list tenant_list context flash_fetcher
   |> General.create_root_layout ~active_navigation context
-  |> Sihl.Web.Response.of_html
-  |> Lwt.return
+  ||> Sihl.Web.Response.of_html
 ;;
 
 let create req =
@@ -84,8 +83,8 @@ let manage_operators req =
     let* tenant = Pool_tenant.find id in
     Page.Root.Tenant.manage_operators tenant context
     |> General.create_root_layout context
-    |> Response.of_html
-    |> Lwt.return_ok
+    ||> Response.of_html
+    |> Lwt_result.ok
   in
   result |> HttpUtils.extract_happy_path req
 ;;
@@ -147,8 +146,8 @@ let tenant_detail req =
     let flash_fetcher key = Sihl.Web.Flash.find key req in
     Page.Root.Tenant.detail tenant context flash_fetcher
     |> General.create_root_layout context
-    |> Sihl.Web.Response.of_html
-    |> Lwt.return_ok
+    ||> Sihl.Web.Response.of_html
+    |> Lwt_result.ok
   in
   result |> HttpUtils.extract_happy_path req
 ;;
@@ -160,27 +159,12 @@ module Access : sig
   val read_operator : Rock.Middleware.t
 end = struct
   include Helpers.Access
-  open Guard
   module Guardian = Middleware.Guardian
-  module Field = Pool_common.Message.Field
   module TenantCommand = Cqrs_command.Pool_tenant_command
 
   let tenant_effects = Guardian.id_effects Pool_tenant.Id.of_string Field.Tenant
-
-  let index =
-    Guardian.validate_admin_entity
-      ValidationSet.(One (Action.Read, TargetSpec.Entity `Tenant))
-  ;;
-
+  let index = Pool_tenant.Guard.Access.index |> Guardian.validate_admin_entity
   let create = Guardian.validate_admin_entity TenantCommand.Create.effects
-
-  let read =
-    (fun id ->
-      let target_id = id |> Uuid.target_of Pool_tenant.Id.value in
-      ValidationSet.One (Action.Read, TargetSpec.Id (`Tenant, target_id)))
-    |> tenant_effects
-    |> Guardian.validate_generic
-  ;;
 
   let update =
     TenantCommand.EditDetails.effects
@@ -188,13 +172,10 @@ end = struct
     |> Guardian.validate_generic
   ;;
 
-  let read_operator =
-    Guardian.validate_admin_entity
-      ValidationSet.(One (Action.Read, TargetSpec.Entity `Admin))
-  ;;
+  let read_operator = Admin.Guard.Access.index |> Guardian.validate_admin_entity
 
   let create_operator =
-    Middleware.Guardian.validate_admin_entity
-      ValidationSet.(SpecificRole `ManageOperators)
+    Guard.ValidationSet.(SpecificRole `ManageOperators)
+    |> Middleware.Guardian.validate_admin_entity
   ;;
 end

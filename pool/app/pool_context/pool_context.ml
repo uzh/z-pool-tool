@@ -7,6 +7,25 @@ let user_is_admin = function
   | Admin _ -> true
 ;;
 
+module Utils = struct
+  let find_authorizable_opt database_label user =
+    let open Utils.Lwt_result.Infix in
+    match user with
+    | Guest -> Lwt.return_none
+    | Contact _ when Pool_database.is_root database_label -> Lwt.return_none
+    | Contact contact ->
+      Contact.id contact
+      |> Guard.Uuid.actor_of Pool_common.Id.value
+      |> Guard.Persistence.Actor.find database_label `Contact
+      ||> CCOption.of_result
+    | Admin admin ->
+      Admin.id admin
+      |> Guard.Uuid.actor_of Admin.Id.value
+      |> Guard.Persistence.Actor.find database_label `Admin
+      ||> CCOption.of_result
+  ;;
+end
+
 module Logger = struct
   module Tags = struct
     let req (req : Sihl.Web.Request.t) : Logs.Tag.set =

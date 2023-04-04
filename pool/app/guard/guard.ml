@@ -4,17 +4,17 @@ module Persistence = Repo
 module Act = ActorSpec
 module Tar = TargetSpec
 
-(** [console_authorizable] is an [\[ `System \] Actor.t] for use in
+(** [console_authorizable] is an Persistence.Role.t Actor.t] for use in
     administrative tasks, such as working with the command line or running
     tests. *)
-let console_authorizable : [ `System ] Actor.t =
+let console_authorizable : Persistence.Role.t Actor.t =
   Actor.make (RoleSet.singleton `System) `System (Uuid.Actor.create ())
 ;;
 
-(** [guest_authorizable] is a [\[ `Guest \] Actor.t] to be assigned to entities
-    at the absolute lowest level of trust, such as users browsing the public
-    facing website without logging in. *)
-let guest_authorizable : [ `Guest ] Actor.t =
+(** [guest_authorizable] is a [Persistence.Role.t Actor.t] to be assigned to
+    entities at the absolute lowest level of trust, such as users browsing the
+    public facing website without logging in. *)
+let guest_authorizable : Persistence.Role.t Actor.t =
   Actor.make (RoleSet.singleton `Guest) `Guest (Uuid.Actor.create ())
 ;;
 
@@ -24,7 +24,6 @@ let guest_authorizable : [ `Guest ] Actor.t =
 let root_permissions : Rule.t list =
   let open Core.Action in
   [ Act.Entity `LocationManagerAll, Manage, Tar.Entity `Location
-  ; Act.Entity `LocationManagerAll, Manage, Tar.Entity `LocationFile
   ; Act.Entity `RecruiterAll, Manage, Tar.Entity `Assignment
   ; Act.Entity `RecruiterAll, Manage, Tar.Entity `Contact
   ; Act.Entity `RecruiterAll, Manage, Tar.Entity `CustomField

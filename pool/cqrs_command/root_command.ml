@@ -92,7 +92,7 @@ module ToggleStatus : sig
     -> Admin.t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val effects : Pool_common.Id.t -> Guard.ValidationSet.t
+  val effects : Admin.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = Admin.t
 
@@ -113,8 +113,7 @@ end = struct
         ; Or
             [ SpecificRole `ManageOperators
             ; SpecificRole
-                (`ManageOperator
-                  (id |> Guard.Uuid.target_of Pool_common.Id.value))
+                (`ManageOperator (id |> Guard.Uuid.target_of Admin.Id.value))
             ]
         ])
   ;;

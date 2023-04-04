@@ -77,10 +77,7 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let effects =
-    let open Guard in
-    ValidationSet.One (Action.Create, TargetSpec.Entity `Smtp)
-  ;;
+  let effects = Pool_tenant.Guard.Access.Smtp.create
 end
 
 module Update : sig
@@ -138,11 +135,7 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let effects id =
-    let open Guard in
-    let target_id = id |> Uuid.target_of Pool_tenant.SmtpAuth.Id.value in
-    ValidationSet.One (Action.Update, TargetSpec.Id (`Smtp, target_id))
-  ;;
+  let effects = Pool_tenant.Guard.Access.Smtp.update
 end
 
 module UpdatePassword : sig
@@ -178,9 +171,5 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let effects id =
-    let open Guard in
-    let target_id = id |> Uuid.target_of Pool_tenant.SmtpAuth.Id.value in
-    ValidationSet.One (Action.Update, TargetSpec.Id (`Smtp, target_id))
-  ;;
+  let effects = Pool_tenant.Guard.Access.Smtp.update
 end

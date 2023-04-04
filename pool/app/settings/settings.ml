@@ -1,6 +1,7 @@
 include Entity
 include Event
 include Default
+module Guard = Entity_guard
 
 let[@warning "-4"] find_languages pool =
   let open Utils.Lwt_result.Infix in

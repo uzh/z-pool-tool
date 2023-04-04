@@ -121,10 +121,7 @@ end = struct
     Ok [ Custom_field.Created t |> Pool_event.custom_field ]
   ;;
 
-  let effects =
-    let open Guard in
-    ValidationSet.One (Action.Create, TargetSpec.Entity `CustomField)
-  ;;
+  let effects = Custom_field.Guard.Access.create
 end
 
 module Update : sig
@@ -193,14 +190,10 @@ end = struct
     Ok [ Custom_field.Updated t |> Pool_event.custom_field ]
   ;;
 
-  let effects = custom_field_effect Guard.Action.Update
+  let effects = Custom_field.Guard.Access.update
 end
 
-module Sort : sig
-  include Common.CommandSig with type t = Custom_field.t list
-
-  val effects : Custom_field.Id.t -> Guard.ValidationSet.t
-end = struct
+module Sort : Common.CommandSig with type t = Custom_field.t list = struct
   type t = Custom_field.t list
 
   let handle ?(tags = Logs.Tag.empty) t =
@@ -208,7 +201,7 @@ end = struct
     Ok [ Custom_field.FieldsSorted t |> Pool_event.custom_field ]
   ;;
 
-  let effects = custom_field_effect Guard.Action.Update
+  let effects = Custom_field.Guard.Access.create
 end
 
 module Publish : sig
@@ -223,7 +216,7 @@ end = struct
     Ok [ Custom_field.Published m |> Pool_event.custom_field ]
   ;;
 
-  let effects = custom_field_effect Guard.Action.Update
+  let effects = Custom_field.Guard.Access.update
 end
 
 module Delete : sig
@@ -240,5 +233,5 @@ end = struct
     | Some _ -> Error Pool_common.Message.(AlreadyPublished Field.CustomField)
   ;;
 
-  let effects = custom_field_effect Guard.Action.Delete
+  let effects = Custom_field.Guard.Access.delete
 end

@@ -5,7 +5,7 @@ let create ?subtitle language title id html =
     div
       ~a:[ a_class [ "modal-heading" ] ]
       [ txt (title language)
-      ; span ~a:[ a_class [ "modal-close" ] ] [ Component_icon.icon `Close ]
+      ; span ~a:[ a_class [ "modal-close" ] ] Component_icon.[ to_html Close ]
       ]
   in
   let subtitle =

@@ -1,18 +1,20 @@
+open CCFun.Infix
+open Utils.Lwt_result.Infix
+open Guard
+
+let target_of = Uuid.target_of Entity.Id.value
+
 module Actor = struct
   type t = Entity.t [@@deriving eq, show]
 
   let to_authorizable ?ctx t =
-    Guard.Persistence.Actor.decorate
+    Persistence.Actor.decorate
       ?ctx
-      (fun t ->
-        Guard.Actor.make
-          (Guard.RoleSet.singleton `Admin)
-          `Admin
-          (t
-           |> Entity.user
-           |> fun Sihl_user.{ id; _ } -> id |> Guard.Uuid.Actor.of_string_exn))
+      (Entity.user
+       %> (fun { Sihl_user.id; _ } -> id |> Uuid.Actor.of_string_exn)
+       %> Actor.make (RoleSet.singleton `Admin) `Admin)
       t
-    |> Lwt_result.map_error Pool_common.Message.authorization
+    >|- Pool_common.Message.authorization
   ;;
 end
 
@@ -20,64 +22,53 @@ module Target = struct
   type t = Entity.t [@@deriving eq, show]
 
   let to_authorizable ?ctx t =
-    Guard.Persistence.Target.decorate
+    Persistence.Target.decorate
       ?ctx
-      (fun t ->
-        Guard.Target.make
-          `Admin
-          (t
-           |> Entity.user
-           |> fun Sihl_user.{ id; _ } -> id |> Guard.Uuid.Target.of_string_exn))
+      (Entity.user
+       %> (fun { Sihl_user.id; _ } -> id |> Uuid.Target.of_string_exn)
+       %> Target.make `Admin)
       t
-    |> Lwt_result.map_error Pool_common.Message.authorization
+    >|- Pool_common.Message.authorization
   ;;
 end
 
 module ActorRole = struct
   let location_manager = function
     | None -> `LocationManagerAll
-    | Some id ->
-      let target_id = Guard.Uuid.target_of Pool_common.Id.value id in
-      `LocationManager target_id
+    | Some id -> `LocationManager (target_of id)
   ;;
 end
 
 module RuleSet = struct
-  open Guard
   open Action
   module Act = ActorSpec
   module Tar = TargetSpec
 
   let assistant id =
-    let target_id = Uuid.target_of Entity.Id.value id in
-    let actor = Act.Entity (`Assistant target_id) in
-    [ actor, Read, Tar.Id (`Experiment, target_id)
-    ; ( actor
-      , Read
-      , Tar.Entity `Experiment (* TODO: Remove once index pages are filtered *)
-      )
+    let actor = Act.Entity (`Assistant (target_of id)) in
+    [ actor, Read, Tar.Id (`Experiment, target_of id)
     ; actor, Read, Tar.Entity `Location
     ]
   ;;
 
   let experimenter id =
-    let target_id = Uuid.target_of Entity.Id.value id in
-    let actor = Act.Entity (`Experimenter target_id) in
-    [ actor, Update, Tar.Id (`Experiment, target_id)
-    ; ( actor
-      , Read
-      , Tar.Entity `Experiment (* TODO: Remove once index pages are filtered *)
-      )
+    let actor = Act.Entity (`Experimenter (target_of id)) in
+    [ actor, Update, Tar.Id (`Experiment, target_of id)
     ; actor, Read, Tar.Entity `Location
     ]
   ;;
 
   let location_manager id =
-    let target_id = Uuid.target_of Entity.Id.value id in
-    let actor = Act.Entity (`LocationManager target_id) in
-    [ actor, Manage, Tar.Id (`Location, target_id)
-    ; actor, Read, Tar.Entity `Location
-    ; actor, Manage, Tar.Entity `LocationFile
-    ]
+    let actor = Act.Entity (`LocationManager (target_of id)) in
+    [ actor, Manage, Tar.Id (`Location, target_of id) ]
   ;;
+end
+
+module Access = struct
+  open ValidationSet
+
+  let index = One (Action.Read, TargetSpec.Entity `Admin)
+  let create = One (Action.Create, TargetSpec.Entity `Admin)
+  let read id = One (Action.Read, TargetSpec.Id (`Admin, target_of id))
+  let update id = One (Action.Update, TargetSpec.Id (`Admin, target_of id))
 end

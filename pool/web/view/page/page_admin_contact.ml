@@ -1,4 +1,5 @@
 open Tyxml.Html
+open Component
 
 let personal_detail language contact =
   let open Contact in
@@ -6,14 +7,13 @@ let personal_detail language contact =
     [ Field.Name, fullname contact |> txt
     ; Field.Email, email_address contact |> Pool_user.EmailAddress.value |> txt
     ]
-  |> Component.Table.vertical_table `Striped language
+  |> Table.vertical_table `Striped language
 ;;
 
 let contact_overview language contacts =
   let open Contact in
   let thead =
-    (Pool_common.Message.Field.[ Email; Name ]
-     |> Component.Table.fields_to_txt language)
+    (Pool_common.Message.Field.[ Email; Name ] |> Table.fields_to_txt language)
     @ [ txt "" ]
   in
   let user_table contacts =
@@ -25,14 +25,13 @@ let contact_overview language contacts =
           ; id contact
             |> Pool_common.Id.value
             |> Format.asprintf "/admin/contacts/%s"
-            |> Component.Input.edit_link
+            |> Input.edit_link
           ])
         contacts
     in
-    rows
-    |> Component.Table.horizontal_table `Striped ~align_last_end:true ~thead
+    rows |> Table.horizontal_table `Striped ~align_last_end:true ~thead
   in
-  Component.List.create
+  List.create
     language
     user_table
     Contact.sortable_by
@@ -67,8 +66,8 @@ let detail Pool_context.{ language; _ } contact =
           |> Contact.id
           |> Pool_common.Id.value
           |> Format.asprintf "/admin/contacts/%s/edit"
-          |> Component.Input.link_as_button
-               ~icon:`Create
+          |> Input.link_as_button
+               ~icon:Icon.Create
                ~classnames:[ "small" ]
                ~control:
                  Pool_common.(language, Message.(Edit (Some Field.Contact)))

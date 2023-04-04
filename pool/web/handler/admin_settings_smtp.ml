@@ -102,7 +102,7 @@ let update_password =
 
 let update = update_base `UpdateDetails Pool_common.Message.SmtpDetailsUpdated
 
-module Access : Helpers.AccessSig = struct
+module Access : module type of Helpers.Access = struct
   include Helpers.Access
   module Guardian = Middleware.Guardian
 
@@ -110,13 +110,17 @@ module Access : Helpers.AccessSig = struct
     Guardian.id_effects Pool_tenant.SmtpAuth.Id.of_string Field.Smtp
   ;;
 
-  let read_effects =
-    Guard.(ValidationSet.One (Action.Read, TargetSpec.Entity `Smtp))
+  let index =
+    Pool_tenant.Guard.Access.Smtp.index |> Guardian.validate_admin_entity
   ;;
 
-  let index = Guardian.validate_admin_entity read_effects
   let create = Guardian.validate_admin_entity Command.Create.effects
-  let read = Guardian.validate_admin_entity read_effects
+
+  let read =
+    Pool_tenant.Guard.Access.Smtp.read
+    |> smtp_effects
+    |> Guardian.validate_generic
+  ;;
 
   let update =
     Command.Update.effects |> smtp_effects |> Guardian.validate_generic

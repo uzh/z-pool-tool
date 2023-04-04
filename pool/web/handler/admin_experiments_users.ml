@@ -36,7 +36,7 @@ let index role req =
       applicable_admins
       currently_assigned
       context
-    |> Lwt.return_ok
+    |> Lwt_result.ok
     >>= create_layout req context
     >|+ Sihl.Web.Response.of_html
   in

@@ -1,5 +1,6 @@
 open CCFun
 include Sihl.Contract.Queue
+module Guard = Entity_guard
 
 let src = Logs.Src.create "queue.service"
 let tags = Pool_database.(Logger.Tags.create root)

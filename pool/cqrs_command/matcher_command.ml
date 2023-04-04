@@ -10,7 +10,7 @@ module Run : sig
     }
 
   val handle : t list -> (Pool_event.t list, Pool_common.Message.error) result
-  val effects : Pool_tenant.t -> Guard.ValidationSet.t
+  val effects : unit -> Guard.ValidationSet.t
 end = struct
   type t =
     { mailing : Mailing.t
@@ -32,14 +32,5 @@ end = struct
        %> CCResult.map flatten
   ;;
 
-  let effects { Pool_tenant.id; _ } =
-    let open Guard in
-    let target_id = id |> Uuid.target_of Pool_tenant.Id.value in
-    ValidationSet.(
-      And
-        [ One (Action.Update, TargetSpec.Id (`Tenant, target_id))
-        ; One (Action.Read, TargetSpec.Entity `Mailing)
-        ; One (Action.Create, TargetSpec.Entity `Invitation)
-        ])
-  ;;
+  let effects () = failwith "Background command: unused effect"
 end

@@ -1,40 +1,81 @@
+open CCFun.Infix
+open Utils.Lwt_result.Infix
+
 module Target = struct
   let (_ : (unit, string) result) =
+    let open Guard in
     let find_parent =
-      Guard.Utils.create_simple_dependency_with_pool
+      Utils.create_simple_dependency_with_pool
         `WaitingList
         `Experiment
         Repo.find_experiment_id
         Pool_common.Id.of_string
         Experiment.Id.value
     in
-    Guard.Persistence.Dependency.register
-      ~parent:`Experiment
-      `WaitingList
-      find_parent
+    Persistence.Dependency.register ~parent:`Experiment `WaitingList find_parent
   ;;
 
   type t = Entity.t [@@deriving eq, show]
 
-  let to_authorizable ?ctx t =
-    Guard.Persistence.Target.decorate
+  let decorate ?ctx t =
+    let open Guard in
+    Persistence.Target.decorate
       ?ctx
-      (fun Entity.{ id; _ } ->
-        Guard.Target.make
-          `WaitingList
-          (id |> Pool_common.Id.value |> Guard.Uuid.Target.of_string_exn))
+      (Uuid.target_of Pool_common.Id.value %> Target.make `WaitingList)
       t
-    |> Lwt_result.map_error Pool_common.Message.authorization
+    >|- Pool_common.Message.authorization
   ;;
 
-  let to_authorizable_of_repo ?ctx t =
-    Guard.Persistence.Target.decorate
-      ?ctx
-      (fun Repo_entity.{ id; _ } ->
-        Guard.Target.make
-          `WaitingList
-          (id |> Pool_common.Id.value |> Guard.Uuid.Target.of_string_exn))
-      t
-    |> Lwt_result.map_error Pool_common.Message.authorization
+  let to_authorizable ?ctx { Entity.id; _ } = decorate ?ctx id
+  let to_authorizable_of_repo ?ctx { Repo_entity.id; _ } = decorate ?ctx id
+end
+
+module Access = struct
+  open Guard
+  open ValidationSet
+
+  let waiting_list action id =
+    let target_id = id |> Uuid.target_of Pool_common.Id.value in
+    One (action, TargetSpec.Id (`WaitingList, target_id))
+  ;;
+
+  let index id =
+    And
+      [ One (Action.Read, TargetSpec.Entity `WaitingList)
+      ; Experiment.Guard.Access.read id
+      ; Experiment.Guard.Access.recruiter_of id
+      ]
+  ;;
+
+  let create id =
+    And
+      [ One (Action.Create, TargetSpec.Entity `WaitingList)
+      ; Experiment.Guard.Access.update id
+      ; Experiment.Guard.Access.recruiter_of id
+      ]
+  ;;
+
+  let read experiment_id waiting_list_id =
+    And
+      [ waiting_list Action.Read waiting_list_id
+      ; Experiment.Guard.Access.read experiment_id
+      ; Experiment.Guard.Access.recruiter_of experiment_id
+      ]
+  ;;
+
+  let update experiment_id waiting_list_id =
+    And
+      [ waiting_list Action.Update waiting_list_id
+      ; Experiment.Guard.Access.update experiment_id
+      ; Experiment.Guard.Access.recruiter_of experiment_id
+      ]
+  ;;
+
+  let delete experiment_id waiting_list_id =
+    And
+      [ waiting_list Action.Delete waiting_list_id
+      ; Experiment.Guard.Access.update experiment_id
+      ; Experiment.Guard.Access.recruiter_of experiment_id
+      ]
   ;;
 end

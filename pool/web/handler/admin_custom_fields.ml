@@ -342,53 +342,42 @@ module Access : sig
 
   val publish : Rock.Middleware.t
   val sort : Rock.Middleware.t
-  val sort_ungrouped : Rock.Middleware.t
 end = struct
   include Helpers.Access
-  open Guard
   module CustomFieldCommand = Cqrs_command.Custom_field_command
+  module Guardian = Middleware.Guardian
   module Field = Pool_common.Message.Field
 
   let custom_field_effects =
-    Middleware.Guardian.id_effects Custom_field.Id.of_string Field.CustomField
+    Guardian.id_effects Custom_field.Id.of_string Field.CustomField
   ;;
 
   let index =
-    ValidationSet.One (Action.Read, TargetSpec.Entity `CustomField)
-    |> Middleware.Guardian.validate_admin_entity
+    Custom_field.Guard.Access.index
+    |> Guardian.validate_admin_entity ~any_id:true
   ;;
 
   let create =
-    CustomFieldCommand.Create.effects
-    |> Middleware.Guardian.validate_admin_entity
+    CustomFieldCommand.Create.effects |> Guardian.validate_admin_entity
   ;;
 
   let update =
     CustomFieldCommand.Update.effects
     |> custom_field_effects
-    |> Middleware.Guardian.validate_generic
+    |> Guardian.validate_generic
   ;;
 
   let delete =
     CustomFieldCommand.Delete.effects
     |> custom_field_effects
-    |> Middleware.Guardian.validate_generic
+    |> Guardian.validate_generic
   ;;
 
   let publish =
     CustomFieldCommand.Publish.effects
     |> custom_field_effects
-    |> Middleware.Guardian.validate_generic
+    |> Guardian.validate_generic
   ;;
 
-  let sort =
-    CustomFieldCommand.Sort.effects
-    |> custom_field_effects
-    |> Middleware.Guardian.validate_generic
-  ;;
-
-  let sort_ungrouped =
-    ValidationSet.One (Action.Update, TargetSpec.Entity `CustomField)
-    |> Middleware.Guardian.validate_admin_entity
-  ;;
+  let sort = CustomFieldCommand.Sort.effects |> Guardian.validate_admin_entity
 end

@@ -113,11 +113,8 @@ let update req =
   write (Update (id, redirect)) req
 ;;
 
-module Access : sig
-  include module type of Helpers.Access
-end = struct
+module Access : module type of Helpers.Access = struct
   include Helpers.Access
-  open Guard
   module Command = Cqrs_command.Message_template_command
   module Guardian = Middleware.Guardian
 
@@ -126,8 +123,7 @@ end = struct
   ;;
 
   let index =
-    ValidationSet.One (Action.Read, TargetSpec.Entity `MessageTemplate)
-    |> Guardian.validate_admin_entity
+    Message_template.Guard.Access.index |> Guardian.validate_admin_entity
   ;;
 
   let update =

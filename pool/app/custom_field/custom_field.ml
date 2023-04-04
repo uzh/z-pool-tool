@@ -1,5 +1,6 @@
 include Entity
 include Event
+module Guard = Entity_guard
 
 let find_by_model = Repo.find_by_model
 let find_by_group = Repo.find_by_group

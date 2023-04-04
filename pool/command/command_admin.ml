@@ -26,6 +26,7 @@ let grant_role ctx admin role =
     RoleSet.(CCList.fold_left (CCFun.flip add) empty [ role ])
   >|- (fun (_ : string) ->
         "Invalid Role: check possible role patterns (admin.list_roles)")
+  ||> CCFun.tap (fun _ -> Persistence.Cache.clear ())
   ||> CCResult.get_or_failwith
 ;;
 

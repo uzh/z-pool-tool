@@ -9,6 +9,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 - reply-to address to emails, using tenant contact email address (system settings)
 - buttons to reset forms
 - validation for tenant database urls, when creating or updating a tenant
+- role based navigation bar
+- cached version of guardian validation
 
 ### Changed
 
@@ -28,6 +30,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 - canceled assignments are not included in assignment count anymore
 - canceled assignments are no longer shown on the contact dashboard
 - when cancelling a session, follow-up sessions to the session are canceled as well
+- use specific tenant settings command effects
 - do not include canceled assignments in session assignment_count
 
 ## [0.1.3](https://github.com/uzh/pool/tree/0.1.3) - 2023-03-01

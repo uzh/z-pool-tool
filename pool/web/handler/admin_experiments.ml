@@ -1,3 +1,4 @@
+open CCFun
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 module Invitations = Admin_experiments_invitations
@@ -7,6 +8,12 @@ module Mailings = Admin_experiments_mailing
 module MessageTemplates = Admin_experiments_message_templates
 module Users = Admin_experiments_users
 module FilterEntity = Filter
+
+let read_validation_set id =
+  let open Guard in
+  let target_id = id |> Uuid.target_of Experiment.Id.value in
+  ValidationSet.One (Action.Read, TargetSpec.Id (`Experiment, target_id))
+;;
 
 let create_layout req = General.create_tenant_layout req
 
@@ -25,15 +32,39 @@ let find_all_with_role database_label role =
 let index req =
   let open Utils.Lwt_result.Infix in
   let error_path = "/admin/dashboard" in
-  let result ({ Pool_context.database_label; _ } as context) =
+  let result ({ Pool_context.database_label; user; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, error_path)
     @@
+    let%lwt actor =
+      user
+      |> function
+      | Pool_context.Guest | Pool_context.Contact _ -> Lwt.return_none
+      | Pool_context.Admin admin ->
+        Admin.id admin
+        |> Guard.Uuid.actor_of Admin.Id.value
+        |> Guard.Persistence.Actor.find database_label `Admin
+        ||> CCOption.of_result
+    in
     let query =
       let open Experiment in
       Query.from_request ~searchable_by ~sortable_by req
     in
-    let%lwt expermient_list = Experiment.find_all database_label ~query () in
-    Page.Admin.Experiments.index expermient_list context
+    let%lwt experiments, query = Experiment.find_all database_label ~query () in
+    let%lwt filtered =
+      Lwt_list.filter_s
+        (fun { Experiment.id; _ } ->
+          CCOption.map_or
+            ~default:Lwt.return_false
+            (fun actor ->
+              Guard.Persistence.validate
+                database_label
+                (read_validation_set id)
+                actor
+              ||> CCOption.(of_result %> is_some))
+            actor)
+        experiments
+    in
+    Page.Admin.Experiments.index (filtered, query) context
     |> create_layout ~active_navigation:"/admin/experiments" req context
     >|+ Sihl.Web.Response.of_html
   in
@@ -120,7 +151,7 @@ let detail edit req =
          session_reminder_templates
          sys_languages
          context
-       |> Lwt.return_ok
+       |> Lwt_result.ok
      | true ->
        let flash_fetcher key = Sihl.Web.Flash.find key req in
        let%lwt default_reminder_lead_time =
@@ -134,7 +165,7 @@ let detail edit req =
          invitation_templates
          session_reminder_templates
          flash_fetcher
-       |> Lwt.return_ok)
+       |> Lwt_result.ok)
     >>= create_layout req context
     >|+ Sihl.Web.Response.of_html
   in
@@ -318,7 +349,6 @@ module Access : sig
   include module type of Helpers.Access
   module Filter : module type of Helpers.Access
 end = struct
-  open Guard
   module Field = Pool_common.Message.Field
   module ExperimentCommand = Cqrs_command.Experiment_command
   module Guardian = Middleware.Guardian
@@ -328,8 +358,7 @@ end = struct
   ;;
 
   let index =
-    ValidationSet.One (Action.Read, TargetSpec.Entity `Experiment)
-    |> Guardian.validate_admin_entity
+    Experiment.Guard.Access.index |> Guardian.validate_admin_entity ~any_id:true
   ;;
 
   let create =
@@ -337,9 +366,7 @@ end = struct
   ;;
 
   let read =
-    (fun id ->
-      let target_id = id |> Uuid.target_of Experiment.Id.value in
-      ValidationSet.One (Action.Read, TargetSpec.Id (`Experiment, target_id)))
+    Experiment.Guard.Access.read
     |> experiment_effects
     |> Guardian.validate_generic
   ;;
@@ -362,10 +389,8 @@ end = struct
     let combined_effects effects req =
       let open HttpUtils in
       let filter_id = find_id FilterEntity.Id.of_string Field.Filter req in
-      let experiment_id =
-        find_id Experiment.Id.of_string Field.Experiment req
-      in
-      effects experiment_id filter_id
+      let id = find_id Experiment.Id.of_string Field.Experiment req in
+      effects id filter_id
     ;;
 
     let create =

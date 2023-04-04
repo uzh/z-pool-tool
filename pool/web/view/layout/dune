@@ -1,0 +1,21 @@
+(library
+ (name layout)
+ (libraries
+  assignment
+  contact
+  component
+  cqrs_command
+  email
+  http_utils
+  htmx
+  i18n
+  mailing
+  message_template
+  pool_common
+  queue
+  schedule
+  service
+  sihl
+  waiting_list)
+ (preprocess
+  (pps lwt_ppx ppx_deriving.show)))

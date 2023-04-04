@@ -2,6 +2,7 @@ open Tyxml.Html
 open Filter
 open Http_utils.Filter
 module Input = Component_input
+module Icon = Component_icon
 
 let templates_disabled_key = "templates_disabled"
 let notification_id = "filter-notification"
@@ -90,7 +91,7 @@ let search_experiment_item (id, title) =
   let open Experiment in
   div
     ~a:[ a_user_data "id" (Id.value id); a_class [ "has-icon"; "inset-xs" ] ]
-    [ Component_icon.icon ~classnames:[ "toggle-item" ] `CloseCircle
+    [ Icon.(to_html ~classnames:[ "toggle-item" ] CloseCircle)
     ; span [ txt (Title.value title) ]
     ; input
         ~a:
@@ -472,7 +473,7 @@ let add_predicate_btn experiment identifier templates_disabled =
              ~allow_empty_values:true
              ~templates_disabled
              ())
-        `Add
+        Icon.Add
     ]
 ;;
 
@@ -500,9 +501,7 @@ let rec predicate_form
     | Template _ -> Template
   in
   let delete_button () =
-    div
-      ~a:[ a_user_data "delete-predicate" "" ]
-      [ Component_icon.icon `TrashOutline ]
+    div ~a:[ a_user_data "delete-predicate" "" ] Icon.[ to_html TrashOutline ]
   in
   let predicate_form =
     let to_form =
@@ -657,7 +656,7 @@ let filter_form csrf language param key_list template_list query_experiments =
                Pool_common.Message.(Delete (Some Field.Filter))
                ~classnames:[ "small" ]
                ~submit_type:`Error
-               ~has_icon:`TrashOutline
+               ~has_icon:Icon.TrashOutline
                ()
            ])
   in

@@ -21,7 +21,7 @@ let index req =
          Mailing.find_by_experiment database_label experiment.Experiment.id
        in
        Page.Admin.Mailing.index context experiment mailings
-       |> create_layout req context
+       >|> create_layout req context
        >|+ Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path req
@@ -43,7 +43,7 @@ let new_form req =
          context
          experiment
          (CCFun.flip Sihl.Web.Flash.find req)
-       |> create_layout req context
+       >|> create_layout req context
        >|+ Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path req
@@ -122,7 +122,7 @@ let detail edit req =
             context
             experiment
             (CCFun.flip Sihl.Web.Flash.find req))
-       |> create_layout req context
+       >|> create_layout req context
        >|+ Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path req
@@ -296,8 +296,7 @@ module Access : sig
   val stop : Rock.Middleware.t
   val overlaps : Rock.Middleware.t
 end = struct
-  open Guard
-  open ValidationSet
+  include Helpers.Access
   module MailingCommand = Cqrs_command.Mailing_command
   module Guardian = Middleware.Guardian
 
@@ -305,11 +304,17 @@ end = struct
     Guardian.id_effects Experiment.Id.of_string Field.Experiment
   ;;
 
-  let mailing_effects = Guardian.id_effects Mailing.Id.of_string Field.Mailing
+  let combined_effects fcn req =
+    let open HttpUtils in
+    let experiment_id = find_id Experiment.Id.of_string Field.Experiment req in
+    let mailing_id = find_id Mailing.Id.of_string Field.Mailing req in
+    fcn experiment_id mailing_id
+  ;;
 
   let index =
-    One (Action.Read, TargetSpec.Entity `Mailing)
-    |> Guardian.validate_admin_entity
+    Mailing.Guard.Access.index
+    |> experiment_effects
+    |> Guardian.validate_generic ~any_id:true
   ;;
 
   let create =
@@ -319,47 +324,43 @@ end = struct
   ;;
 
   let read =
-    (fun id ->
-      let target_id = id |> Uuid.target_of Mailing.Id.value in
-      One (Action.Read, TargetSpec.Id (`Mailing, target_id)))
-    |> mailing_effects
-    |> Guardian.validate_generic
+    Mailing.Guard.Access.read |> combined_effects |> Guardian.validate_generic
   ;;
 
   let update =
     MailingCommand.Update.effects
-    |> mailing_effects
+    |> combined_effects
     |> Guardian.validate_generic
   ;;
 
   let delete =
     MailingCommand.Delete.effects
-    |> mailing_effects
+    |> combined_effects
     |> Guardian.validate_generic
   ;;
 
   let add_condition =
-    (fun id ->
-      let target_id = id |> Uuid.target_of Experiment.Id.value in
-      One (Action.Update, TargetSpec.Id (`Experiment, target_id)))
+    Experiment.Guard.Access.update
     |> experiment_effects
     |> Guardian.validate_generic
   ;;
 
   let search_info =
     (fun req ->
-      Or
+      Guard.ValidationSet.Or
         [ experiment_effects MailingCommand.Create.effects req
-        ; One (Action.Update, TargetSpec.Entity `Mailing)
+        ; combined_effects MailingCommand.Update.effects req
         ])
     |> Guardian.validate_generic
   ;;
 
   let stop =
-    MailingCommand.Stop.effects |> mailing_effects |> Guardian.validate_generic
+    MailingCommand.Stop.effects |> combined_effects |> Guardian.validate_generic
   ;;
 
   let overlaps =
-    MailingCommand.Overlaps.effects |> Guardian.validate_admin_entity
+    MailingCommand.Overlaps.effects
+    |> experiment_effects
+    |> Guardian.validate_generic
   ;;
 end

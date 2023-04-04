@@ -41,7 +41,7 @@ let list translation_list Pool_context.{ language; csrf; _ } =
                   ]
                 [ csrf_element csrf ()
                 ; text_input
-                ; submit_icon ~classnames:[ "primary" ] `Save
+                ; submit_icon ~classnames:[ "primary" ] Component.Icon.Save
                 ])
             translations
         in

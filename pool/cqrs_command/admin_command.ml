@@ -84,8 +84,5 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let effects =
-    let open Guard in
-    ValidationSet.One (Action.Create, TargetSpec.Entity `Admin)
-  ;;
+  let effects = Admin.Guard.Access.create
 end

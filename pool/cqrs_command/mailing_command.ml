@@ -78,15 +78,7 @@ end = struct
       ]
   ;;
 
-  let effects id =
-    let open BaseGuard in
-    let target_id = id |> Uuid.target_of Experiment.Id.value in
-    ValidationSet.(
-      And
-        [ One (Action.Update, TargetSpec.Id (`Experiment, target_id))
-        ; One (Action.Create, TargetSpec.Entity `Mailing)
-        ])
-  ;;
+  let effects = Mailing.Guard.Access.create
 end
 
 module Update : sig
@@ -99,7 +91,7 @@ module Update : sig
     -> (Pool_event.t list, Message.error) result
 
   val decode : Conformist.input -> (create, Message.error) result
-  val effects : Mailing.Id.t -> BaseGuard.ValidationSet.t
+  val effects : Experiment.Id.t -> Mailing.Id.t -> BaseGuard.ValidationSet.t
 end = struct
   type t = create
 
@@ -125,13 +117,13 @@ end = struct
     | false -> Error Pool_common.Message.AlreadyStarted
   ;;
 
-  let effects = mailing_effect BaseGuard.Action.Update
+  let effects = Mailing.Guard.Access.update
 end
 
 module Delete : sig
   include Common.CommandSig with type t = Mailing.t
 
-  val effects : Mailing.Id.t -> BaseGuard.ValidationSet.t
+  val effects : Experiment.Id.t -> Mailing.Id.t -> BaseGuard.ValidationSet.t
 end = struct
   type t = Mailing.t
 
@@ -142,13 +134,13 @@ end = struct
     else Ok [ Deleted mailing |> Pool_event.mailing ]
   ;;
 
-  let effects = mailing_effect BaseGuard.Action.Delete
+  let effects = Mailing.Guard.Access.delete
 end
 
 module Stop : sig
   include Common.CommandSig with type t = Mailing.t
 
-  val effects : Mailing.Id.t -> BaseGuard.ValidationSet.t
+  val effects : Experiment.Id.t -> Mailing.Id.t -> BaseGuard.ValidationSet.t
 end = struct
   type t = Mailing.t
 
@@ -160,7 +152,7 @@ end = struct
     else Error Message.NotInTimeRange
   ;;
 
-  let effects = mailing_effect BaseGuard.Action.Update
+  let effects = Mailing.Guard.Access.update
 end
 
 module Overlaps : sig
@@ -178,6 +170,7 @@ module Overlaps : sig
 
   val handle : t -> (with_default_rate * Mailing.t, Message.error) result
   val decode : Conformist.input -> (t, Message.error) result
+  val effects : Experiment.Id.t -> BaseGuard.ValidationSet.t
 end = struct
   type t =
     { id : Id.t option
@@ -227,8 +220,5 @@ end = struct
     >|= fun m -> CCOption.is_none rate, m
   ;;
 
-  let effects =
-    let open BaseGuard in
-    ValidationSet.One (Action.Read, TargetSpec.Entity `Mailing)
-  ;;
+  let effects = Mailing.Guard.Access.index
 end

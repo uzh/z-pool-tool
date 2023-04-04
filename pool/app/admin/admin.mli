@@ -106,4 +106,11 @@ module Guard : sig
     val experimenter : Pool_common.Id.t -> Guard.Rule.t list
     val location_manager : Pool_common.Id.t -> Guard.Rule.t list
   end
+
+  module Access : sig
+    val index : Guard.ValidationSet.t
+    val create : Guard.ValidationSet.t
+    val read : Id.t -> Guard.ValidationSet.t
+    val update : Id.t -> Guard.ValidationSet.t
+  end
 end

@@ -33,6 +33,7 @@ let handle_event pool : event -> unit Lwt.t =
           (`Admin, Uuid.Actor.of_string_exn (Admin.user user).Sihl_user.id)
       , Action.Manage
       , TargetSpec.Id (`Tenant, tenant_id |> Uuid.target_of Id.value) )
+    ||> CCFun.tap (fun _ -> Persistence.Cache.clear ())
   | StatusReportGenerated _ -> Utils.todo ()
 ;;
 

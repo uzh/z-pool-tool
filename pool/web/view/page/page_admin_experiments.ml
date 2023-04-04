@@ -5,79 +5,8 @@ open Pool_common
 module HttpUtils = Http_utils
 module Field = Message.Field
 
-type title =
-  | Control of Message.control
-  | NavLink of I18n.nav_link
-  | I18n of I18n.t
-  | String of string
-
-let title_to_string language text =
-  let open Utils in
-  match text with
-  | Control text -> control_to_string language text
-  | NavLink text -> nav_link_to_string language text
-  | I18n text -> text_to_string language text
-  | String str -> str
-;;
-
 let build_experiment_path experiment =
   Format.asprintf "/admin/experiments/%s/%s" Experiment.(Id.value experiment.id)
-;;
-
-let experiment_layout ?buttons ?hint language title experiment ?active html =
-  let tab_links =
-    I18n.
-      [ Overview, "/"
-      ; Field Field.Assistants, "/assistants"
-      ; Field Field.Experimenter, "/experimenter"
-      ; Invitations, "/invitations"
-      ; WaitingList, "/waiting-list"
-      ; Sessions, "/sessions"
-      ; Assignments, "/assignments"
-      ; Mailings, "/mailings"
-      ]
-    |> CCList.map (fun (label, url) ->
-         ( label
-         , Format.asprintf
-             "/admin/experiments/%s/%s"
-             (Experiment.Id.value experiment.Experiment.id)
-             url ))
-  in
-  let title =
-    let base =
-      h2 ~a:[ a_class [ "heading-2" ] ] [ txt (title_to_string language title) ]
-    in
-    let title =
-      match buttons with
-      | None -> base
-      | Some btns ->
-        div
-          ~a:
-            [ a_class
-                [ "flexrow"
-                ; "justify-between"
-                ; "flex-gap"
-                ; "flexcolumn-mobile"
-                ]
-            ]
-          [ div [ base ]; div [ btns ] ]
-    in
-    match hint with
-    | None -> [ title ]
-    | Some hint ->
-      [ title
-      ; p [ Utils.hint_to_string language hint |> HttpUtils.add_line_breaks ]
-      ]
-  in
-  let html = title @ [ div ~a:[ a_class [ "gap-lg" ] ] [ html ] ] in
-  let open Experiment in
-  div
-    ~a:[ a_class [ "trim"; "safety-margin" ] ]
-    [ h1
-        ~a:[ a_class [ "heading-1" ] ]
-        [ txt (experiment.title |> Title.value) ]
-    ; Navigation.tab_navigation language tab_links active html
-    ]
 ;;
 
 let notifications
@@ -165,7 +94,7 @@ let index experiment_list Pool_context.{ language; _ } =
         ; Field.PublicTitle |> Table.field_to_txt language
         ; link_as_button
             ~style:`Success
-            ~icon:`Add
+            ~icon:Icon.Add
             ~control:(language, Message.(Add (Some Field.Experiment)))
             "/admin/experiments/create"
         ]
@@ -353,7 +282,7 @@ let create
 
 let edit
   experiment
-  (Pool_context.{ language; _ } as context)
+  ({ Pool_context.language; _ } as context)
   sys_languages
   default_reminder_lead_time
   invitation_templates
@@ -379,20 +308,19 @@ let edit
   let message_templates_html =
     message_templates_html language experiment_path sys_languages
   in
-  let html =
-    div
+  [ div
       ~a:[ a_class [ "stack-lg" ] ]
       [ notifications
       ; form
       ; message_templates_html Label.ExperimentInvitation invitation_templates
       ; message_templates_html Label.SessionReminder session_reminder_templates
       ]
-  in
-  experiment_layout
-    language
-    (Control Message.(Edit (Some Field.Experiment)))
-    experiment
-    html
+  ]
+  |> Layout.Experiment.(
+       create
+         context
+         (Control Message.(Edit (Some Field.Experiment)))
+         experiment)
 ;;
 
 let detail
@@ -401,7 +329,7 @@ let detail
   invitation_templates
   session_reminder_templates
   sys_languages
-  Pool_context.{ language; csrf; _ }
+  ({ Pool_context.language; csrf; _ } as context)
   =
   let experiment_path = build_experiment_path experiment in
   let notifications =
@@ -448,7 +376,7 @@ let detail
             Message.(Delete (Some Field.Experiment))
             ~classnames:[ "small" ]
             ~submit_type:`Error
-            ~has_icon:`TrashOutline
+            ~has_icon:Icon.TrashOutline
             ()
         ]
   in
@@ -509,26 +437,28 @@ let detail
             ]
         ]
     in
-    div
-      ~a:[ a_class [ "stack-lg" ] ]
-      [ notifications; experiment_table; message_template; delete_form ]
+    [ div
+        ~a:[ a_class [ "stack-lg" ] ]
+        [ notifications; experiment_table; message_template; delete_form ]
+    ]
   in
   let edit_button =
     link_as_button
-      ~icon:`Create
+      ~icon:Icon.Create
       ~classnames:[ "small" ]
       ~control:(language, Message.(Edit (Some Field.Experiment)))
       (Format.asprintf
          "/admin/experiments/%s/edit"
          (experiment.id |> Experiment.Id.value))
   in
-  experiment_layout
-    ~buttons:edit_button
-    language
-    (NavLink I18n.Overview)
-    experiment
-    ~active:I18n.Overview
-    html
+  Layout.Experiment.(
+    create
+      ~active_navigation:I18n.Overview
+      ~buttons:edit_button
+      context
+      (NavLink I18n.Overview)
+      experiment
+      html)
 ;;
 
 let invitations
@@ -537,10 +467,9 @@ let invitations
   template_list
   query_experiments
   filtered_contacts
-  (Pool_context.{ language; _ } as context)
+  ({ Pool_context.language; _ } as context)
   =
-  let html =
-    div
+  [ div
       ~a:[ a_class [ "stack" ] ]
       [ p
           [ a
@@ -561,13 +490,13 @@ let invitations
           query_experiments
           filtered_contacts
       ]
-  in
-  experiment_layout
-    language
-    (NavLink I18n.Invitations)
-    experiment
-    ~active:I18n.Invitations
-    html
+  ]
+  |> Layout.Experiment.(
+       create
+         ~active_navigation:I18n.Invitations
+         context
+         (NavLink I18n.Invitations)
+         experiment)
 ;;
 
 let sent_invitations
@@ -575,28 +504,27 @@ let sent_invitations
   experiment
   invitations
   =
-  let html =
-    let invitation_table =
-      Page_admin_invitations.Partials.list context experiment
-    in
-    Component.List.create
-      language
-      invitation_table
-      Invitation.sortable_by
-      Invitation.searchable_by
-      invitations
+  let invitation_table =
+    Page_admin_invitations.Partials.list context experiment
   in
-  experiment_layout
+  Component.List.create
     language
-    (I18n I18n.SentInvitations)
-    experiment
-    ~active:I18n.Invitations
-    html
+    invitation_table
+    Invitation.sortable_by
+    Invitation.searchable_by
+    invitations
+  |> CCList.return
+  |> Layout.Experiment.(
+       create
+         ~active_navigation:I18n.Invitations
+         context
+         (I18n I18n.SentInvitations)
+         experiment)
 ;;
 
 let waiting_list
   ({ Waiting_list.ExperimentList.experiment; waiting_list_entries }, query)
-  Pool_context.{ language; _ }
+  ({ Pool_context.language; _ } as context)
   =
   let open Waiting_list.ExperimentList in
   let waiting_list_table waiting_list_entries =
@@ -635,30 +563,23 @@ let waiting_list
       ~thead
       rows
   in
-  let html =
-    Component.List.create
-      language
-      waiting_list_table
-      Waiting_list.sortable_by
-      Waiting_list.searchable_by
-      (waiting_list_entries, query)
-  in
-  experiment_layout
-    ~hint:I18n.ExperimentWaitingList
+  Component.List.create
     language
-    (NavLink I18n.WaitingList)
-    experiment
-    ~active:I18n.WaitingList
-    html
+    waiting_list_table
+    Waiting_list.sortable_by
+    Waiting_list.searchable_by
+    (waiting_list_entries, query)
+  |> CCList.return
+  |> Layout.Experiment.(
+       create
+         ~active_navigation:I18n.WaitingList
+         ~hint:I18n.ExperimentWaitingList
+         context
+         (NavLink I18n.WaitingList)
+         experiment)
 ;;
 
-let users
-  role
-  experiment
-  applicable_admins
-  currently_assigned
-  (Pool_context.{ language; _ } as context)
-  =
+let users role experiment applicable_admins currently_assigned context =
   let base_url field admin =
     Format.asprintf
       "/admin/experiments/%s/%s/%s"
@@ -681,11 +602,13 @@ let users
     ~unassign:"unassign"
     ~applicable:applicable_admins
     ~current:currently_assigned
-  |> experiment_layout
-       language
-       (NavLink (I18n.Field field))
-       experiment
-       ~active:(I18n.Field field)
+  |> CCList.return
+  |> Layout.Experiment.(
+       create
+         ~active_navigation:(I18n.Field field)
+         context
+         (NavLink (I18n.Field field))
+         experiment)
 ;;
 
 let message_template_form
@@ -710,11 +633,12 @@ let message_template_form
   in
   let title =
     let open Pool_common in
+    let open Layout.Experiment in
     (match template with
      | None -> Message.(Create None)
      | Some _ -> Message.(Edit None))
     |> fun control ->
-    String
+    Text
       (Format.asprintf
          "%s %s"
          (control |> Utils.control_to_string language)
@@ -734,5 +658,6 @@ let message_template_form
     template
     action
     flash_fetcher
-  |> experiment_layout language title experiment
+  |> CCList.return
+  |> Layout.Experiment.create context title experiment
 ;;

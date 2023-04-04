@@ -1,5 +1,8 @@
 include Entity
 include Event
+module Guard = Entity_guard
+module Human = Entity_human
+module UtilsF = Filter_utils
 
 let find = Repo.find
 let find_all_templates = Repo.find_all_templates
@@ -9,14 +12,6 @@ let find_multiple_templates = Repo.find_multiple_templates
 let find_filtered_contacts = Repo.find_filtered_contacts
 let count_filtered_contacts = Repo.count_filtered_contacts
 let contact_matches_filter = Repo.contact_matches_filter
-
-module Human = struct
-  include Entity_human
-end
-
-module UtilsF = struct
-  include Filter_utils
-end
 
 module Repo = struct
   let t = Repo_entity.t

@@ -1,5 +1,6 @@
 open CCFun
 include Entity
+module Guard = Entity_guard
 
 let src = Logs.Src.create "schedule.service"
 let tags = Pool_database.(Logger.Tags.create root)

@@ -15,6 +15,8 @@ module Create : sig
     :  ?tags:Logs.Tag.set
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
+
+  val effects : Experiment.Id.t -> Guard.ValidationSet.t
 end = struct
   type t =
     { experiment : Experiment.t
@@ -58,10 +60,7 @@ end = struct
       | Error err -> Error err)
   ;;
 
-  let effects =
-    let open Guard in
-    ValidationSet.One (Action.Create, TargetSpec.Entity `Invitation)
-  ;;
+  let effects = Invitation.Guard.Access.create
 end
 
 module Resend : sig
@@ -78,7 +77,7 @@ module Resend : sig
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val effects : Pool_common.Id.t -> Guard.ValidationSet.t
+  val effects : Experiment.Id.t -> Pool_common.Id.t -> Guard.ValidationSet.t
 end = struct
   type t =
     { invitation : Invitation.t
@@ -93,9 +92,5 @@ end = struct
       ]
   ;;
 
-  let effects id =
-    let open Guard in
-    let target_id = id |> Uuid.target_of Pool_common.Id.value in
-    ValidationSet.One (Action.Update, TargetSpec.Id (`Invitation, target_id))
-  ;;
+  let effects = Invitation.Guard.Access.update
 end

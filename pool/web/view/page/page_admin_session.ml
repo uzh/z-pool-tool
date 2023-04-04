@@ -201,7 +201,7 @@ let session_form
 ;;
 
 let reschedule_session
-  Pool_context.{ csrf; language; _ }
+  ({ Pool_context.language; csrf; _ } as context)
   experiment
   (session : Session.t)
   flash_fetcher
@@ -244,10 +244,12 @@ let reschedule_session
             ()
         ]
     ]
-  |> Page_admin_experiments.experiment_layout
-       language
-       (Page_admin_experiments.Control Message.(Reschedule (Some Field.Session)))
-       experiment
+  |> CCList.return
+  |> Layout.Experiment.(
+       create
+         context
+         (Control Message.(Reschedule (Some Field.Session)))
+         experiment)
 ;;
 
 let waiting_list_radio_button language session =
@@ -296,7 +298,7 @@ let session_list
   let add_session_btn =
     link_as_button
       ~style:`Success
-      ~icon:`Add
+      ~icon:Icon.Add
       ~classnames:[ "small" ]
       ~control:(language, Message.(Add (Some Field.Session)))
       (Format.asprintf
@@ -525,49 +527,42 @@ let session_list
 ;;
 
 let index
-  (Pool_context.{ language; _ } as context)
-  experiment
+  context
+  ({ Experiment.id; _ } as experiment)
   grouped_sessions
   chronological
   =
   let open Pool_common in
-  let html =
-    session_list
-      `SessionOverview
-      context
-      experiment.Experiment.id
-      grouped_sessions
-      chronological
-  in
-  Page_admin_experiments.experiment_layout
-    ~hint:I18n.ExperimentSessions
-    language
-    (Page_admin_experiments.NavLink I18n.Sessions)
-    experiment
-    ~active:I18n.Sessions
-    html
+  session_list `SessionOverview context id grouped_sessions chronological
+  |> CCList.return
+  |> Layout.Experiment.(
+       create
+         ~active_navigation:I18n.Sessions
+         ~hint:I18n.ExperimentSessions
+         context
+         (NavLink I18n.Sessions)
+         experiment)
 ;;
 
 let new_form
-  Pool_context.{ language; csrf; _ }
+  ({ Pool_context.language; csrf; _ } as context)
   experiment
   default_reminder_lead_time
   duplicate_session
   locations
   flash_fetcher
   =
-  Page_admin_experiments.experiment_layout
+  session_form
+    csrf
     language
-    (Page_admin_experiments.Control Message.(Create (Some Field.Session)))
     experiment
-    (session_form
-       csrf
-       language
-       experiment
-       default_reminder_lead_time
-       ?duplicate:duplicate_session
-       locations
-       ~flash_fetcher)
+    default_reminder_lead_time
+    ?duplicate:duplicate_session
+    locations
+    ~flash_fetcher
+  |> CCList.return
+  |> Layout.Experiment.(
+       create context (Control Message.(Create (Some Field.Session))) experiment)
 ;;
 
 let detail
@@ -708,7 +703,7 @@ let detail
           ; ( ( session |> is_cancellable |> CCResult.is_ok
               , "cancel"
               , Cancel (Some Field.Session) )
-            , Some (`Error, Some `CloseCircle) )
+            , Some (`Error, Some Icon.CloseCircle) )
           ]
         |> CCList.filter_map (fun (t, style) -> session_link ?style t)
         |> wrap
@@ -738,7 +733,7 @@ let detail
   in
   let edit_button =
     link_as_button
-      ~icon:`Create
+      ~icon:Icon.Create
       ~classnames:[ "small" ]
       ~control:(language, Message.(Edit (Some Field.Session)))
       (Format.asprintf
@@ -746,19 +741,18 @@ let detail
          (Experiment.Id.value experiment.Experiment.id)
          (Id.value session.id))
   in
-  let html =
-    div ~a:[ a_class [ "stack-lg" ] ] [ session_overview; assignments_html ]
-  in
-  Page_admin_experiments.experiment_layout
-    ~buttons:edit_button
-    language
-    (Page_admin_experiments.I18n (session_title session))
-    experiment
-    html
+  div ~a:[ a_class [ "stack-lg" ] ] [ session_overview; assignments_html ]
+  |> CCList.return
+  |> Layout.Experiment.(
+       create
+         ~buttons:edit_button
+         context
+         (I18n (session_title session))
+         experiment)
 ;;
 
 let edit
-  Pool_context.{ language; csrf; _ }
+  ({ Pool_context.language; csrf; _ } as context)
   experiment
   default_reminder_lead_time
   (session : Session.t)
@@ -803,22 +797,18 @@ let edit
       ; Page_admin_message_template.table language list new_path edit_path
       ]
   in
-  let html =
-    div
-      ~a:[ a_class [ "stack-lg" ] ]
-      [ form
-      ; message_templates_html Label.SessionReminder session_reminder_templates
-      ]
-  in
-  html
-  |> Page_admin_experiments.experiment_layout
-       language
-       (Page_admin_experiments.Control Message.(Edit (Some Field.Session)))
-       experiment
+  div
+    ~a:[ a_class [ "stack-lg" ] ]
+    [ form
+    ; message_templates_html Label.SessionReminder session_reminder_templates
+    ]
+  |> CCList.return
+  |> Layout.Experiment.(
+       create context (Control Message.(Edit (Some Field.Session))) experiment)
 ;;
 
 let follow_up
-  Pool_context.{ language; csrf; _ }
+  ({ Pool_context.language; csrf; _ } as context)
   experiment
   default_reminder_lead_time
   duplicate_session
@@ -848,15 +838,16 @@ let follow_up
         locations
         ~flash_fetcher
     ]
-  |> Page_admin_experiments.experiment_layout
-       language
-       (Page_admin_experiments.Control
-          Message.(Create (Some Field.FollowUpSession)))
-       experiment
+  |> CCList.return
+  |> Layout.Experiment.(
+       create
+         context
+         (Control Message.(Create (Some Field.FollowUpSession)))
+         experiment)
 ;;
 
 let close
-  Pool_context.{ language; csrf; _ }
+  ({ Pool_context.language; csrf; _ } as context)
   experiment
   (session : Session.t)
   assignments
@@ -995,14 +986,12 @@ let close
     [ p [ txt (session |> session_title |> Utils.text_to_string language) ]
     ; form
     ]
-  |> Page_admin_experiments.experiment_layout
-       language
-       (Page_admin_experiments.Control control)
-       experiment
+  |> CCList.return
+  |> Layout.Experiment.(create context (Control control) experiment)
 ;;
 
 let cancel
-  Pool_context.{ language; csrf; _ }
+  ({ Pool_context.language; csrf; _ } as context)
   experiment
   (session : Session.t)
   follow_ups
@@ -1068,10 +1057,9 @@ let cancel
                ]
            ]
        ])
-  |> Page_admin_experiments.experiment_layout
-       language
-       (Page_admin_experiments.Control Message.(Cancel (Some Field.Session)))
-       experiment
+  |> CCList.return
+  |> Layout.Experiment.(
+       create context (Control Message.(Cancel (Some Field.Session))) experiment)
 ;;
 
 let message_template_form
@@ -1102,7 +1090,7 @@ let message_template_form
      | None -> Message.(Create None)
      | Some _ -> Message.(Edit None))
     |> fun control ->
-    Page_admin_experiments.String
+    Layout.Experiment.Text
       (Format.asprintf
          "%s %s"
          (control |> Utils.control_to_string language)
@@ -1123,5 +1111,6 @@ let message_template_form
     template
     action
     flash_fetcher
-  |> Page_admin_experiments.experiment_layout language title experiment
+  |> CCList.return
+  |> Layout.Experiment.create context title experiment
 ;;

@@ -48,6 +48,7 @@ depends: [
   "conf-pkg-config" {= "2"}
   "conformist" {= "0.8.1"}
   "containers" {= "3.11"}
+  "containers-data" {= "3.11"}
   "cppo" {= "1.6.9"}
   "cpuid" {= "0.1.2"}
   "csexp" {= "1.5.1"}
@@ -72,7 +73,7 @@ depends: [
   "fmt" {= "0.9.0"}
   "fpath" {= "0.7.3"}
   "gmap" {= "0.3.0"}
-  "guardian" {= "0.1.0"}
+  "guardian" {= "0.1.1"}
   "hkdf" {= "1.0.4"}
   "hmap" {= "0.8.1"}
   "httpaf" {= "0.7.1"}
@@ -218,7 +219,7 @@ pin-depends: [
     "sihl-cache.4.0.0"
     "git+https://github.com/oxidizing/sihl.git#d0fb1e0bff4964453d22c2b1d28aa8f9eb2969cb"
   ]
-  ["guardian.0.1.0" "git+https://github.com/uzh/guardian.git#0.1.0"]
+  ["guardian.0.1.1" "git+https://github.com/uzh/guardian.git#0.1.1"]
   ["canary.0.0.1" "git+https://github.com/uzh/canary.git"]
   [
     "letters.0.3.2"

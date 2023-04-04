@@ -1,5 +1,6 @@
 open Tyxml.Html
 open Component.Input
+module Icon = Component.Icon
 module Message = Pool_common.Message
 module Field = Message.Field
 module SmtpAuth = Pool_tenant.SmtpAuth
@@ -16,7 +17,7 @@ let show
   in
   let submit
     ?submit_type
-    ?(has_icon = `Save)
+    ?(has_icon = Icon.Save)
     ?(control = Message.(Update None))
     ()
     =
@@ -116,7 +117,7 @@ let show
           ; input_element ~value:"" language `Hidden Field.SmtpPassword
           ; submit
               ~submit_type:`Error
-              ~has_icon:`Trash
+              ~has_icon:Icon.Trash
               ~control:(Message.Delete (Some Field.Password))
               ()
           ]
@@ -145,7 +146,7 @@ let smtp_create_form
     div
       ~a:[ a_class [ "flexrow" ] ]
       [ submit_element
-          ~has_icon:`Save
+          ~has_icon:Icon.Save
           ~classnames:[ "push" ]
           language
           Message.(Create None)

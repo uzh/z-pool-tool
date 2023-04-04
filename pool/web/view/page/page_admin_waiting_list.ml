@@ -123,12 +123,7 @@ let detail
       ; content
       ]
   in
-  let html =
-    div ~a:[ a_class [ "stack-lg" ] ] [ waiting_list_detail; sessions ]
-  in
-  Page_admin_experiments.experiment_layout
-    language
-    (Page_admin_experiments.NavLink I18n.WaitingList)
-    experiment
-    html
+  div ~a:[ a_class [ "stack-lg" ] ] [ waiting_list_detail; sessions ]
+  |> CCList.return
+  |> Layout.Experiment.(create context (NavLink I18n.WaitingList) experiment)
 ;;

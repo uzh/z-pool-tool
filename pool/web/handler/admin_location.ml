@@ -270,8 +270,6 @@ module Access : sig
   val delete_file : Rock.Middleware.t
 end = struct
   include Helpers.Access
-  open Guard
-  module Field = Pool_common.Message.Field
   module LocationCommand = Cqrs_command.Location_command
   module Guardian = Middleware.Guardian
 
@@ -283,9 +281,16 @@ end = struct
     Guardian.id_effects Pool_location.Id.of_string Field.Location
   ;;
 
+  let combined_effects fcn req =
+    let open HttpUtils in
+    let location_id = find_id Pool_location.Id.of_string Field.Location req in
+    let file_id = find_id Pool_location.Mapping.Id.of_string Field.File req in
+    fcn location_id file_id
+  ;;
+
   let index =
-    Guardian.validate_admin_entity
-      ValidationSet.(One (Action.Read, TargetSpec.Entity `Location))
+    Pool_location.Guard.Access.index
+    |> Guardian.validate_admin_entity ~any_id:true
   ;;
 
   let create = LocationCommand.Create.effects |> Guardian.validate_admin_entity
@@ -297,17 +302,13 @@ end = struct
   ;;
 
   let read =
-    (fun id ->
-      let target_id = id |> Uuid.target_of Pool_location.Id.value in
-      ValidationSet.One (Action.Read, TargetSpec.Id (`Location, target_id)))
+    Pool_location.Guard.Access.read
     |> location_effects
     |> Guardian.validate_generic
   ;;
 
   let read_file =
-    (fun id ->
-      let target_id = id |> Uuid.target_of Pool_location.Mapping.Id.value in
-      ValidationSet.One (Action.Read, TargetSpec.Id (`LocationFile, target_id)))
+    Pool_location.Guard.Access.File.read
     |> file_effects
     |> Guardian.validate_generic
   ;;
@@ -320,7 +321,7 @@ end = struct
 
   let delete_file =
     LocationCommand.DeleteFile.effects
-    |> file_effects
+    |> combined_effects
     |> Guardian.validate_generic
   ;;
 end

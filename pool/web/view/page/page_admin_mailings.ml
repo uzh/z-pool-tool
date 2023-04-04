@@ -85,7 +85,7 @@ let distribution_form_field language (field, current_order) =
                   "field"
                   (Mailing.Distribution.SortableField.show field)
               ]
-            [ Icon.icon `Trash ]
+            Icon.[ to_html Trash ]
         ]
     ]
 ;;
@@ -148,7 +148,7 @@ module List = struct
       let new_btn () =
         link_as_button
           ~style:`Success
-          ~icon:`Add
+          ~icon:Icon.Add
           ~control:(language, Message.Add (Some Field.Mailing))
           (mailings_path ~suffix:"create" experiment_id)
       in
@@ -159,20 +159,25 @@ module List = struct
   ;;
 end
 
-let index (Pool_context.{ language; _ } as context) experiment mailings =
+let index context experiment mailings =
   let experiment_id = experiment.Experiment.id in
   let open Pool_common in
-  let html = List.create true context experiment_id mailings in
-  Page_admin_experiments.experiment_layout
-    ~hint:I18n.ExperimentMailings
-    language
-    (Page_admin_experiments.NavLink I18n.Mailings)
-    experiment
-    ~active:I18n.Mailings
-    html
+  List.create true context experiment_id mailings
+  |> CCList.return
+  |> Layout.Experiment.(
+       create
+         ~active_navigation:I18n.Mailings
+         ~hint:I18n.ExperimentMailings
+         context
+         (NavLink I18n.Mailings)
+         experiment)
 ;;
 
-let detail Pool_context.{ language; _ } experiment (mailing : Mailing.t) =
+let detail
+  ({ Pool_context.language; _ } as context)
+  experiment
+  (mailing : Mailing.t)
+  =
   let open Mailing in
   let mailing_overview =
     div
@@ -205,25 +210,26 @@ let detail Pool_context.{ language; _ } experiment (mailing : Mailing.t) =
     if StartAt.value mailing.start_at > Ptime_clock.now ()
     then
       link_as_button
-        ~icon:`Create
+        ~icon:Icon.Create
         ~classnames:[ "small" ]
         ~control:(language, Message.Edit (Some Field.Mailing))
         (detail_mailing_path ~suffix:"edit" experiment.Experiment.id mailing)
     else txt ""
   in
-  let html = div ~a:[ a_class [ "stack" ] ] [ mailing_overview ] in
-  Page_admin_experiments.experiment_layout
-    ~buttons:edit_button
-    language
-    (Page_admin_experiments.I18n (mailing_title mailing))
-    experiment
-    html
+  div ~a:[ a_class [ "stack" ] ] [ mailing_overview ]
+  |> CCList.return
+  |> Layout.Experiment.(
+       create
+         ~buttons:edit_button
+         context
+         (I18n (mailing_title mailing))
+         experiment)
 ;;
 
 let form
   ?(mailing : Mailing.t option)
   ?(fully_booked = false)
-  Pool_context.{ language; csrf; _ }
+  ({ Pool_context.language; csrf; _ } as context)
   experiment
   flash_fetcher
   =
@@ -391,7 +397,7 @@ let form
                     ; a_user_data "hx-target" "#distribution-list"
                     ; a_user_data "hx-swap" "beforeend"
                     ]
-                  [ Icon.icon `Add ]
+                  Icon.[ to_html Add ]
               ]
           ]
       ; div
@@ -526,12 +532,9 @@ let form
          ; div ~a:[ a_id "overlaps" ] []
          ; script (Unsafe.data functions)
          ])
+    |> CCList.return
   in
-  Page_admin_experiments.experiment_layout
-    language
-    (Page_admin_experiments.Control submit)
-    experiment
-    html
+  Layout.Experiment.(create context (Control submit) experiment html)
 ;;
 
 let create context experiment_id flash_fetcher =

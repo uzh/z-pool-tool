@@ -63,7 +63,7 @@ let form ?template_id label req =
       label
       template
       flash_fetcher
-    |> create_layout req context
+    >|> create_layout req context
     >|+ Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path req
@@ -135,7 +135,6 @@ module Access : sig
   val session_reminder : Rock.Middleware.t
 end = struct
   include Helpers.Access
-  open Guard
   module Field = Pool_common.Message.Field
   module Guardian = Middleware.Guardian
 
@@ -144,17 +143,13 @@ end = struct
   ;;
 
   let invitation =
-    (fun id ->
-      let target_id = id |> Uuid.target_of Experiment.Id.value in
-      ValidationSet.One (Action.Update, TargetSpec.Id (`Experiment, target_id)))
+    Experiment.Guard.Access.update
     |> experiment_effects
     |> Guardian.validate_generic
   ;;
 
   let session_reminder =
-    (fun id ->
-      let target_id = id |> Uuid.target_of Experiment.Id.value in
-      ValidationSet.One (Action.Update, TargetSpec.Id (`Experiment, target_id)))
+    Experiment.Guard.Access.update
     |> experiment_effects
     |> Guardian.validate_generic
   ;;

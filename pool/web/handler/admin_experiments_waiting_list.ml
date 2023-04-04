@@ -27,7 +27,7 @@ let index req =
         experiment.Experiment.id
     in
     Page.Admin.Experiments.waiting_list waiting_list context
-    |> create_layout req context
+    >|> create_layout req context
     >|+ Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path req
@@ -67,7 +67,7 @@ let detail req =
          context
          flash_fetcher
          chronological
-       |> create_layout req context
+       >|> create_layout req context
        >|+ Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path req
@@ -198,57 +198,54 @@ module Access : sig
 
   val assign : Rock.Middleware.t
 end = struct
-  open Guard
+  include Helpers.Access
   module WaitingListCommand = Cqrs_command.Waiting_list_command
-  module Field = Pool_common.Message.Field
   module Guardian = Middleware.Guardian
-
-  let waiting_list_effects =
-    Guardian.id_effects Pool_common.Id.of_string Field.WaitingList
-  ;;
 
   let experiment_effects =
     Guardian.id_effects Experiment.Id.of_string Field.Experiment
   ;;
 
-  let read_effect id =
-    let target_id = id |> Uuid.target_of Experiment.Id.value in
-    ValidationSet.(
-      And
-        [ One (Action.Read, TargetSpec.Entity `WaitingList)
-        ; One (Action.Read, TargetSpec.Id (`Experiment, target_id))
-        ])
+  let combined_effects fcn req =
+    let open HttpUtils in
+    let experiment_id = find_id Experiment.Id.of_string Field.Experiment req in
+    let id = find_id Pool_common.Id.of_string Field.WaitingList req in
+    fcn experiment_id id
   ;;
 
-  let index = read_effect |> experiment_effects |> Guardian.validate_generic
+  let index =
+    Waiting_list.Guard.Access.index
+    |> experiment_effects
+    |> Guardian.validate_generic ~any_id:true
+  ;;
 
   let create =
-    WaitingListCommand.Create.effects |> Guardian.validate_admin_entity
+    WaitingListCommand.Create.effects
+    |> experiment_effects
+    |> Guardian.validate_generic
   ;;
 
   let read =
-    (fun id ->
-      let target_id = id |> Uuid.target_of Pool_common.Id.value in
-      ValidationSet.One (Action.Read, TargetSpec.Id (`WaitingList, target_id)))
-    |> waiting_list_effects
+    Waiting_list.Guard.Access.read
+    |> combined_effects
     |> Guardian.validate_generic
   ;;
 
   let update =
     WaitingListCommand.Update.effects
-    |> waiting_list_effects
+    |> combined_effects
     |> Guardian.validate_generic
   ;;
 
   let delete =
     WaitingListCommand.Destroy.effects
-    |> waiting_list_effects
+    |> combined_effects
     |> Guardian.validate_generic
   ;;
 
   let assign =
     Cqrs_command.Assignment_command.CreateFromWaitingList.effects
-    |> waiting_list_effects
+    |> combined_effects
     |> Guardian.validate_generic
   ;;
 end

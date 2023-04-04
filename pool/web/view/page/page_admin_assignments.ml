@@ -103,7 +103,7 @@ module Partials = struct
           then CancelAssignmentWithFollowUps
           else CancelAssignment)
         (Message.Cancel None)
-        `CloseCircle
+        Component.Icon.CloseCircle
     in
     let mark_as_deleted =
       let open Pool_common in
@@ -114,7 +114,7 @@ module Partials = struct
           then MarkAssignmentWithFollowUpsAsDeleted
           else MarkAssignmentAsDeleted)
         Message.MarkAsDeleted
-        `Trash
+        Component.Icon.Trash
     in
     match CCList.is_empty assignments with
     | true -> p [ language |> empty ]
@@ -184,9 +184,8 @@ module Partials = struct
   ;;
 end
 
-let list experiment (Pool_context.{ language; _ } as context) assignments =
-  let html =
-    div
+let list experiment ({ Pool_context.language; _ } as context) assignments =
+  [ div
       [ p
           [ a
               ~a:
@@ -206,14 +205,14 @@ let list experiment (Pool_context.{ language; _ } as context) assignments =
           experiment
           assignments
       ]
-  in
-  Page_admin_experiments.experiment_layout
-    ~hint:Pool_common.I18n.ExperimentAssignment
-    language
-    (Page_admin_experiments.NavLink Pool_common.I18n.Assignments)
-    experiment
-    ~active:Pool_common.I18n.Assignments
-    html
+  ]
+  |> Layout.Experiment.(
+       create
+         ~active_navigation:Pool_common.I18n.Assignments
+         ~hint:Pool_common.I18n.ExperimentAssignment
+         context
+         (NavLink Pool_common.I18n.Assignments)
+         experiment)
 ;;
 
 let marked_as_deleted
@@ -236,12 +235,14 @@ let marked_as_deleted
         experiment
         assignments
     in
-    div ~a:[ a_class [ "stack-lg" ] ] [ notification; list ]
+    div ~a:[ a_class [ "stack-lg" ] ] [ notification; list ] |> CCList.return
   in
-  Page_admin_experiments.experiment_layout
-    ~hint:Pool_common.I18n.ExperimentAssignment
-    language
-    (Page_admin_experiments.I18n Pool_common.I18n.DeletedAssignments)
-    experiment
-    html
+  Layout.Experiment.(
+    create
+      ~active_navigation:Pool_common.I18n.Assignments
+      ~hint:Pool_common.I18n.ExperimentAssignment
+      context
+      (I18n Pool_common.I18n.DeletedAssignments)
+      experiment
+      html)
 ;;

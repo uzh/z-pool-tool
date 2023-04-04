@@ -70,6 +70,13 @@ val sexp_of_t : t -> Sexplib.Sexp.t
 val is_from_root : t -> bool
 val user_is_admin : user -> bool
 
+module Utils : sig
+  val find_authorizable_opt
+    :  Pool_database.Label.t
+    -> user
+    -> Role.Actor.t Guard.Actor.t option Lwt.t
+end
+
 module Logger : sig
   module Tags : sig
     val req : Sihl.Web.Request.t -> Logs.Tag.set

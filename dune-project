@@ -65,6 +65,8 @@
    (>= 0.7.0))
   (containers
    (>= 3.6))
+  (containers-data
+   (>= 3.6))
   (mariadb
    (and
     (>= 1.1.6)
@@ -83,7 +85,7 @@
    (= v0.14.2))
   canary
   (guardian
-   (= 0.1.0))
+   (= 0.1.1))
   (tls
    (= 0.15.4))
   ;; Test/Dev dependencies
