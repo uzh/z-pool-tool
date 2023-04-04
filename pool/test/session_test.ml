@@ -753,6 +753,40 @@ let validate_invalid_participation () =
   check_result expected res
 ;;
 
+let close_unparticipated_with_followup () =
+  let open Cqrs_command.Assignment_command.SetAttendance in
+  let open Test_utils in
+  let open Assignment in
+  let session = Test_utils.Model.(create_session ~start:(an_hour_ago ())) () in
+  let contact = Model.create_contact () in
+  let assignment = Model.create_assignment ~contact () in
+  let follow_up = Model.create_assignment ~contact () in
+  let participation =
+    ( assignment
+    , NoShow.create false
+    , Participated.create false
+    , Some [ follow_up ] )
+  in
+  let res = handle session [ participation ] in
+  let expected =
+    let contact =
+      let open Contact in
+      { contact with
+        num_show_ups = NumberOfShowUps.increment contact.num_show_ups
+      }
+    in
+    Ok
+      [ Session.Closed session |> Pool_event.session
+      ; Assignment.AttendanceSet
+          (assignment, NoShow.create false, Participated.create false)
+        |> Pool_event.assignment
+      ; Contact.Updated contact |> Pool_event.contact
+      ; Assignment.MarkedAsDeleted follow_up |> Pool_event.assignment
+      ]
+  in
+  check_result expected res
+;;
+
 let send_reminder () =
   let session1 = Test_utils.Model.create_session () in
   let session2 =

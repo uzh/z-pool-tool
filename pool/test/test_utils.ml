@@ -426,10 +426,10 @@ module Model = struct
     Session.{ session with follow_up_to = Some main.id }
   ;;
 
-  let create_assignment () =
+  let create_assignment ?(contact = create_contact ()) () =
     Assignment.
       { id = Id.create ()
-      ; contact = create_contact ()
+      ; contact
       ; no_show = None
       ; participated = None
       ; matches_filter = MatchesFilter.init

@@ -385,6 +385,49 @@ let marked_canceled_as_deleted () =
   check_result expected events
 ;;
 
+let marked_closed_with_followups_as_deleted () =
+  let open Assignment in
+  let open Contact in
+  let assignment = Model.create_assignment () in
+  let assignment =
+    Assignment.
+      { assignment with
+        no_show = false |> NoShow.create |> CCOption.pure
+      ; participated = true |> Participated.create |> CCOption.pure
+      }
+  in
+  let follow_up = Model.create_assignment () in
+  let contact =
+    let num_assignments = NumberOfAssignments.of_int 3 in
+    let num_show_ups = NumberOfShowUps.of_int 2 in
+    let num_participations = NumberOfParticipations.of_int 1 in
+    { assignment.contact with
+      num_assignments
+    ; num_show_ups
+    ; num_participations
+    }
+  in
+  let events =
+    AssignmentCommand.MarkAsDeleted.handle (contact, [ assignment; follow_up ])
+  in
+  let expected =
+    let { num_assignments; num_show_ups; num_participations; _ } = contact in
+    let contact =
+      { contact with
+        num_assignments = NumberOfAssignments.decrement num_assignments 2
+      ; num_show_ups = NumberOfShowUps.decrement num_show_ups
+      ; num_participations = NumberOfParticipations.decrement num_participations
+      }
+    in
+    Ok
+      [ Contact.Updated contact |> Pool_event.contact
+      ; Assignment.MarkedAsDeleted assignment |> Pool_event.assignment
+      ; Assignment.MarkedAsDeleted follow_up |> Pool_event.assignment
+      ]
+  in
+  check_result expected events
+;;
+
 let cancel_deleted_assignment () =
   let session = Model.(create_session ~start:(an_hour_ago ()) ()) in
   let assignment = Model.create_assignment () in
