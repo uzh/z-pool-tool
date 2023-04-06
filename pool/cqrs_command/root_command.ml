@@ -77,14 +77,14 @@ end = struct
 end
 
 module ToggleStatus : sig
+  include Common.CommandSig
+
   type t = Admin.t
 
   val handle
     :  ?tags:Logs.Tag.set
     -> Admin.t
     -> (Pool_event.t list, Pool_common.Message.error) result
-
-  val effects : Admin.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = Admin.t
 
@@ -97,16 +97,12 @@ end = struct
     | Inactive -> Ok [ Admin.Enabled admin |> Pool_event.admin ]
   ;;
 
-  let effects id =
+  let effects =
     let open Guard in
     ValidationSet.(
       And
         [ One (Action.Update, TargetSpec.Entity `System)
-        ; Or
-            [ SpecificRole `ManageOperators
-            ; SpecificRole
-                (`ManageOperator (id |> Guard.Uuid.target_of Admin.Id.value))
-            ]
+        ; SpecificRole `ManageOperators
         ])
   ;;
 end

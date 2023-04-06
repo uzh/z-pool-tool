@@ -87,6 +87,7 @@ type nav_link =
   | PersonalDetails
   | Profile
   | Queue
+  | Rules
   | Schedules
   | Sessions
   | Settings
@@ -141,6 +142,7 @@ type hint =
   | RateDependencyWithout
   | RateNumberPerMinutes of int * float
   | RegistrationDisabled
+  | RulesIntro
   | ScheduleEvery of Ptime.Span.t
   | ScheduleAt of Ptime.t
   | ScheduledIntro
@@ -174,4 +176,5 @@ type confirmable =
   | MarkAssignmentWithFollowUpsAsDeleted
   | PublisCustomField
   | PublisCustomFieldOption
+  | RemoveRule
   | StopMailing

@@ -39,8 +39,8 @@ let root_permissions : Rule.t list =
   CCList.fold_product
     (fun acc actor role -> acc @ [ Act.Entity actor, Manage, Tar.Entity role ])
     init
-    [ `OperatorAll; `System; `Root ]
-    Role.Target.all_entities
+    [ `Operator; `System; `Root ]
+    Role.Target.all
 ;;
 
 module Utils = struct
@@ -71,4 +71,8 @@ module Utils = struct
       Some (action, TargetSpec.Entity parent_kind) |> Lwt.return_ok
     | _ -> Lwt.return_error "Invalid entity provided"
   ;;
+end
+
+module Access = struct
+  let manage_rules = ValidationSet.SpecificRole `ManageRules
 end

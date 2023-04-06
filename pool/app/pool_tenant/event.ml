@@ -38,16 +38,6 @@ let handle_event pool : event -> unit Lwt.t = function
     let ctx = Pool_database.to_ctx pool in
     let%lwt () = Repo.insert Database.root tenant in
     let%lwt () =
-      let target_id = Uuid.target_of Entity.Id.value id in
-      ( ActorSpec.Entity (`Operator target_id)
-      , Action.Manage
-      , TargetSpec.Id (`Tenant, target_id) )
-      |> Persistence.Rule.save ~ctx
-      >|- (fun err -> Pool_common.Message.nothandled err)
-      ||> CCFun.tap (fun _ -> Persistence.Cache.clear ())
-      ||> get_or_failwith
-    in
-    let%lwt () =
       Repo.find pool id
       >>= Entity_guard.Target.to_authorizable ~ctx
       ||> get_or_failwith

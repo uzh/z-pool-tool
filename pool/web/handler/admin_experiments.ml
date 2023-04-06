@@ -9,12 +9,6 @@ module MessageTemplates = Admin_experiments_message_templates
 module Users = Admin_experiments_users
 module FilterEntity = Filter
 
-let read_validation_set id =
-  let open Guard in
-  let target_id = id |> Uuid.target_of Experiment.Id.value in
-  ValidationSet.One (Action.Read, TargetSpec.Id (`Experiment, target_id))
-;;
-
 let create_layout req = General.create_tenant_layout req
 
 let experiment_id =
@@ -58,7 +52,7 @@ let index req =
             (fun actor ->
               Guard.Persistence.validate
                 database_label
-                (read_validation_set id)
+                (Experiment.Guard.Access.read id)
                 actor
               ||> CCOption.(of_result %> is_some))
             actor)

@@ -577,6 +577,17 @@ module Admin = struct
     in
     let settings =
       let open Settings in
+      let queue =
+        let open Queue in
+        let specific = [ get "" ~middlewares:[ Access.read ] detail ] in
+        [ get "" ~middlewares:[ Access.index ] show
+        ; choose ~scope:(Queue |> url_key) specific
+        ]
+      in
+      let rules =
+        let open Rules in
+        [ get "" ~middlewares:[ Access.index ] show ]
+      in
       let smtp =
         let open Smtp in
         let specific =
@@ -589,16 +600,10 @@ module Admin = struct
         ; choose ~scope:(Smtp |> url_key) specific
         ]
       in
-      let queue =
-        let open Queue in
-        let specific = [ get "" ~middlewares:[ Access.read ] detail ] in
-        [ get "" ~middlewares:[ Access.index ] show
-        ; choose ~scope:(Queue |> url_key) specific
-        ]
-      in
       [ get "" ~middlewares:[ Access.index ] show
       ; post "/:action" ~middlewares:[ Access.update ] update_settings
       ; choose ~scope:"/queue" queue
+      ; choose ~scope:"/rules" rules
       ; choose ~scope:"/smtp" smtp
       ; get "/schedules" ~middlewares:[ Schedule.Access.index ] Schedule.show
       ]

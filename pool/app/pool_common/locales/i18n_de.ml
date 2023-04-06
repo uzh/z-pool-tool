@@ -121,6 +121,7 @@ let nav_link_to_string = function
   | PersonalDetails -> "Persönliche Angaben"
   | Profile -> "Profil"
   | Queue -> "Hintergrundjobs"
+  | Rules -> "Regeln"
   | Schedules -> "Prozesse"
   | Sessions -> "Sessions"
   | Settings -> "Einstellungen"
@@ -257,6 +258,10 @@ let rec hint_to_string = function
     "Ist diese Option aktiviert, können sich Kontakte weder anmelden noch auf \
      die Warteliste setzen. Das Experiment ist für die Kontakte nicht \
      ersichtlich."
+  | RulesIntro ->
+    {|Alle Regeln, welche für Akteure des Tools existieren.
+    Beispielsweise, bei der Erstellung eines neuen experiments, werden für dieses Standard Regeln definiert.
+    |}
   | ScheduleEvery sec ->
     sec
     |> Pool_common_utils.Time.formatted_timespan
@@ -341,6 +346,7 @@ let confirmable_to_string confirmable =
      ( "die Option"
      , "publizieren"
      , Some "Sie werden die Option nicht mehr löschen können." )
+   | RemoveRule -> "die Regel", "löschen", None
    | StopMailing -> "den Versand", "stoppen", None)
   |> fun (obj, action, additive) ->
   Format.asprintf "Sind Sie sicher, dass Sie %s %s wollen?" obj action

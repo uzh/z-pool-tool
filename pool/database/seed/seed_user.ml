@@ -139,7 +139,7 @@ let admins db_label =
     ; ( "engineering"
       , "admin"
       , "engineering@econ.uzh.ch"
-      , [ `OperatorAll
+      , [ `Operator
         ; `RecruiterAll
         ; `ManageAssistants
         ; `ManageExperimenters

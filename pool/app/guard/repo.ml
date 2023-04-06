@@ -1,3 +1,6 @@
+open CCFun
+module BaseRole = Role
+
 (* TODO: Once the guardian package has a cached version, this implementation can
    be updated/removed (Issue: https://github.com/uzh/guardian/issues/11) *)
 include
@@ -79,3 +82,100 @@ let validate
   (database_label, validation_set, any_id, actor)
   |> CCCache.(with_cache ~cb Cache.lru_validation validate')
 ;;
+
+module Rule = struct
+  include Rule
+
+  let t =
+    let encode =
+      let open Core in
+      function
+      | ActorSpec.Entity arole, act, TargetSpec.Entity trole ->
+        Ok (arole, (None, (act, (trole, None))))
+      | ActorSpec.Id (arole, aid), act, TargetSpec.Entity trole ->
+        Ok (arole, (Some aid, (act, (trole, None))))
+      | ActorSpec.Entity arole, act, TargetSpec.Id (trole, tid) ->
+        Ok (arole, (None, (act, (trole, Some tid))))
+      | ActorSpec.Id (arole, aid), act, TargetSpec.Id (trole, tid) ->
+        Ok (arole, (Some aid, (act, (trole, Some tid))))
+    in
+    let decode (arole, (aid, (act, (trole, tid)))) =
+      let open Core in
+      match aid, tid with
+      | Some aid, Some tid ->
+        Ok (ActorSpec.Id (arole, aid), act, TargetSpec.Id (trole, tid))
+      | None, Some tid ->
+        Ok (ActorSpec.Entity arole, act, TargetSpec.Id (trole, tid))
+      | Some aid, None ->
+        Ok (ActorSpec.Id (arole, aid), act, TargetSpec.Entity trole)
+      | None, None -> Ok (ActorSpec.Entity arole, act, TargetSpec.Entity trole)
+    in
+    Caqti_type.(
+      custom
+        ~encode
+        ~decode
+        (tup2
+           Role.t
+           (tup2
+              (option Uuid.Actor.t)
+              (tup2 Action.t (tup2 Kind.t (option Uuid.Target.t))))))
+  ;;
+
+  let find_all_by_actor database_label actor : Core.Rule.t list Lwt.t =
+    let open Utils.Lwt_result.Infix in
+    let filter_by (actor : 'a Core.Actor.t) (rules : rule list) =
+      let expand_roles =
+        Core.Actor.roles
+        %> fun set ->
+        Core.RoleSet.fold
+          (fun role ini ->
+            role |> BaseRole.Actor.can_assign_roles |> Core.RoleSet.add_list ini)
+          set
+          set
+      in
+      let match_role role =
+        Core.RoleSet.fold
+          (fun role' ini ->
+            ini || BaseRole.Actor.equal_or_nil_target role' role)
+          (actor |> expand_roles)
+          false
+      in
+      CCList.filter
+        (fun (actor', _, _) ->
+          let open Core in
+          match actor' with
+          | ActorSpec.Id (role, id) ->
+            Uuid.Actor.equal id (actor |> Actor.id) && match_role role
+          | ActorSpec.Entity role -> match_role role)
+        rules
+    in
+    let open Caqti_request.Infix in
+    let query =
+      Format.asprintf
+        {sql|
+        SELECT
+          actor_role,
+          LOWER(CONCAT(
+            SUBSTR(HEX(actor_uuid), 1, 8), '-',
+            SUBSTR(HEX(actor_uuid), 9, 4), '-',
+            SUBSTR(HEX(actor_uuid), 13, 4), '-',
+            SUBSTR(HEX(actor_uuid), 17, 4), '-',
+            SUBSTR(HEX(actor_uuid), 21)
+          )),
+          act,
+          target_role,
+          LOWER(CONCAT(
+            SUBSTR(HEX(target_uuid), 1, 8), '-',
+            SUBSTR(HEX(target_uuid), 9, 4), '-',
+            SUBSTR(HEX(target_uuid), 13, 4), '-',
+            SUBSTR(HEX(target_uuid), 17, 4), '-',
+            SUBSTR(HEX(target_uuid), 21)
+          ))
+        FROM guardian_rules
+      |sql}
+      |> Caqti_type.unit ->* t
+    in
+    Utils.Database.collect (Pool_database.Label.value database_label) query ()
+    ||> filter_by actor
+  ;;
+end

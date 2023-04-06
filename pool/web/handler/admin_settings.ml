@@ -2,6 +2,7 @@ open CCFun
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 module Queue = Admin_settings_queue
+module Rules = Admin_settings_rules
 module Schedule = Admin_settings_schedule
 module Smtp = Admin_settings_smtp
 

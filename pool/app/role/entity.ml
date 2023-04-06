@@ -16,10 +16,9 @@ module Actor = struct
     | `ManageExperimenters
     | `ManageLocationManagers
     | `ManageOperators
-    | `ManageOperator of TargetId.t (* tenant id*)
     | `ManageRecruiters
-    | `OperatorAll
-    | `Operator of TargetId.t
+    | `ManageRules
+    | `Operator
     | `RecruiterAll
     | `Recruiter of TargetId.t
     | `Root (* '`Root' not exposed in 'all' *)
@@ -35,8 +34,6 @@ module Actor = struct
     | `LocationManager uuid
     | `ManageAssistant uuid
     | `ManageExperimenter uuid
-    | `ManageOperator uuid
-    | `Operator uuid
     | `Recruiter uuid -> Some uuid
     | _ -> None
   ;;
@@ -63,16 +60,28 @@ module Actor = struct
     | "manageexperimenter", [ id ] -> `ManageExperimenter (target_of_string id)
     | "manageexperimenters", [] -> `ManageExperimenters
     | "managelocationmanagers", [] -> `ManageLocationManagers
-    | "manageoperator", [ id ] -> `ManageOperator (target_of_string id)
     | "manageoperators", [] -> `ManageOperators
     | "managerecruiters", [] -> `ManageRecruiters
-    | "operatorall", [] -> `OperatorAll
-    | "operator", [ id ] -> `Operator (target_of_string id)
+    | "managerules", [] -> `ManageRules
+    | "operator", [] -> `Operator
     | "recruiterall", [] -> `RecruiterAll
     | "recruiter", [ id ] -> `Recruiter (target_of_string id)
     | "root", [] -> `Root
     | "system", [] -> `System
     | role -> Guardian.Utils.failwith_invalid_role role
+  ;;
+
+  let equal_or_nil_target (expected : t) (actual : t) : bool =
+    equal expected actual
+    ||
+    match actual with
+    | `Assistant _ -> equal expected (`Assistant TargetId.nil)
+    | `Experimenter _ -> equal expected (`Experimenter TargetId.nil)
+    | `LocationManager _ -> equal expected (`LocationManager TargetId.nil)
+    | `ManageAssistant _ -> equal expected (`ManageAssistant TargetId.nil)
+    | `ManageExperimenter _ -> equal expected (`ManageExperimenter TargetId.nil)
+    | `Recruiter _ -> equal expected (`Recruiter TargetId.nil)
+    | _ -> false
   ;;
 
   let all =
@@ -87,23 +96,44 @@ module Actor = struct
     ; `ManageExperimenter TargetId.nil
     ; `ManageExperimenters
     ; `ManageLocationManagers
-    ; `ManageOperator TargetId.nil
     ; `ManageOperators
     ; `ManageRecruiters
-    ; `OperatorAll
-    ; `Operator TargetId.nil
+    ; `Operator
     ; `RecruiterAll
     ; `Recruiter TargetId.nil
     ; `System
     ]
   ;;
+
+  let can_assign_roles (role : t) : t list =
+    (* let open CCFun.Infix in *)
+    match role with
+    | `Admin
+    | `Assistant _
+    | `Contact
+    | `Experimenter _
+    | `Guest
+    | `LocationManagerAll
+    | `LocationManager _ -> []
+    | `ManageAssistant uuid -> [ `Assistant uuid ]
+    | `ManageAssistants -> [ `Assistant TargetId.nil ]
+    | `ManageExperimenter uuid -> [ `Experimenter uuid ]
+    | `ManageExperimenters -> [ `Experimenter TargetId.nil ]
+    | `ManageLocationManagers ->
+      [ `LocationManager TargetId.nil; `LocationManagerAll ]
+    | `ManageOperators -> [ `Operator ]
+    | `ManageRecruiters -> [ `Recruiter TargetId.nil; `RecruiterAll ]
+    | `RecruiterAll -> [ `Assistant TargetId.nil; `Experimenter TargetId.nil ]
+    | `Recruiter uuid -> [ `Assistant uuid; `Experimenter uuid ]
+    | `ManageRules | `Operator | `Root | `System -> all
+  ;;
+  (* |> CCList.flat_map can_assign_roles *)
 end
 
 module Target = struct
   type t =
     [ `Admin
     | `Assignment
-    | `AssignmentId of TargetId.t
     | `Contact
     | `CustomField
     | `CustomFieldGroup
@@ -142,7 +172,6 @@ module Target = struct
     %> function
     | "admin", [] -> `Admin
     | "assignment", [] -> `Assignment
-    | "assignmentid", [ id ] -> `AssignmentId (TargetId.of_string_exn id)
     | "contact", [] -> `Contact
     | "customfield", [] -> `CustomField
     | "customfieldgroup", [] -> `CustomFieldGroup
@@ -165,35 +194,9 @@ module Target = struct
     | role -> Guardian.Utils.failwith_invalid_role role
   ;;
 
-  let all_entities =
-    [ `Admin
-    ; `Assignment
-    ; `Contact
-    ; `CustomField
-    ; `CustomFieldGroup
-    ; `Experiment
-    ; `Filter
-    ; `I18n
-    ; `Invitation
-    ; `Location
-    ; `LocationFile
-    ; `MessageTemplate
-    ; `Mailing
-    ; `Queue
-    ; `Schedule
-    ; `Session
-    ; `SystemSetting
-    ; `Smtp
-    ; `System
-    ; `Tenant
-    ; `WaitingList
-    ]
-  ;;
-
   let all =
     [ `Admin
     ; `Assignment
-    ; `AssignmentId TargetId.nil
     ; `Contact
     ; `CustomField
     ; `CustomFieldGroup

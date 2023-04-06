@@ -17,6 +17,8 @@ module Field = struct
   ;;
 
   type t =
+    | Action [@name "action"] [@printer go "action"]
+    | ActorSpec [@name "actor_spec"] [@printer go "actor_spec"]
     | Admin [@name "admin"] [@printer go "admin"]
     | AdminComment [@name "admin_comment"] [@printer go "admin_comment"]
     | AdminHint [@name "admin_hint"] [@printer go "admin_hint"]
@@ -213,6 +215,7 @@ module Field = struct
     | Street [@name "street"] [@printer go "street"]
     | Styles [@name "styles"] [@printer go "styles"]
     | Tag [@name "tag"] [@printer go "tag"]
+    | TargetSpec [@name "target_spec"] [@printer go "target_spec"]
     | Template [@name "template"] [@printer go "template"]
     | Tenant [@name "tenant"] [@printer go "tenant"]
     | TenantDisabledFlag [@name "tenant_disabled_flag"]
@@ -321,6 +324,7 @@ type error =
   | PasswordPolicySpecialChar of char list
   | PasswordResetFailMessage
   | PasswordResetInvalidData
+  | PermissionDeniedCreateRule
   | PickMessageChannel
   | PoolContextNotFound
   | QueryNotCompatible of (Field.t * Field.t)
