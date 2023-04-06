@@ -26,7 +26,7 @@ settings "General" tab uncheck "Allow Sourcetree to modify your global Mercurial
 
 ## Start
 
-If needed, edit `.devcontainer/docker-compose.override.yml` to suit your needs and set the environment variables in `.devcontainer/.env`. You can use the `.env-sample` file as a template.
+If needed, edit `.devcontainer/docker-compose.override.yml` to suit your needs.
 
 Click on the icon similar to "><" in the bottom left corner and select `Remote-Containers: Reopen in Container`.
 If any changes were made to files in `.devcontainer` folder the Container should be rebuilt (`Remote-Containers: Rebuild Container`)
@@ -37,12 +37,12 @@ If any changes were made to files in `.devcontainer` folder the Container should
 
 - The Makefile used in the DevContainer is located in the `.devcontainer` folder
 - Ports from outside (e.g. localhost)
-    - webserver
-        - root `3016`
-        - tenant `3017`
-    - database
-        - root`3316`
-        - tenant `3317`
+  - webserver
+    - root `3016`
+    - tenant `3017`
+  - database
+    - root`3316`
+    - tenant `3317`
 
 ## Running Tests with Dev Container
 
@@ -51,9 +51,11 @@ If any changes were made to files in `.devcontainer` folder the Container should
     - `DATABASE_URL=mariadb://root@database-root:3306/test`
     - `MYSQL_DATABASE=test_econ`
 1. Run migrations and seeds for the test databases
+
     ```
     make test-migrate
     ```
+
 1. Run `make test`
 
 ## Database View
