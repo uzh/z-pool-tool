@@ -15,6 +15,10 @@ services:
       - ${HOME}${USERPROFILE}/.gitconfig:/home/opam/.gitconfig
       - ${HOME}${USERPROFILE}/.gitignore_global:/home/opam/.gitignore_global
       - /var/run/docker.sock:/var/run/docker.sock
+      # Add database folders to dev container
+      - db-root:/databases/db-root/:ro
+      - db-tenant:/databases/db-tenant/:ro
+
     environment:
       - DATABASE_URL=mariadb://root@database-root:3306/development
       - DATABASE_URL_TENANT_TEST=mariadb://root@database-tenant:3306/test_econ
@@ -47,7 +51,7 @@ services:
       - MYSQL_DATABASE=development
       - MYSQL_USER=root
     volumes:
-      - ./data/db-root:/var/lib/mysql
+      - db-root:/var/lib/mysql
       - ./init_root:/docker-entrypoint-initdb.d/:ro
 
   database-tenant:
@@ -61,7 +65,7 @@ services:
       - MYSQL_DATABASE=dev_econ
       - MYSQL_USER=root
     volumes:
-      - ./data/db-tenant:/var/lib/mysql
+      - db-tenant:/var/lib/mysql
       - ./init_tenant:/docker-entrypoint-initdb.d/:ro
 
   adminer:
@@ -76,3 +80,5 @@ volumes:
   opam:
   node_modules:
   build:
+  db-root:
+  db-tenant:
