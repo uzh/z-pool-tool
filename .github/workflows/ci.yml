@@ -74,6 +74,7 @@ jobs:
 
   assets:
     name: Build assets
+    if: github.repository == 'uzh/pool'
     runs-on: ubuntu-latest
     container:
       image: node:lts
