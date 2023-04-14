@@ -186,7 +186,7 @@ end = struct
         >>= fun events ->
         participation
         |> validate_participation
-        >>= fun ( ({ Assignment.contact; _ } as assignment : Assignment.t)
+        >>= fun ( ({ contact; _ } as assignment : Assignment.t)
                 , no_show
                 , participated
                 , follow_ups ) ->
@@ -196,11 +196,10 @@ end = struct
             NoShow.value no_show || not (Participated.value participated)
           in
           let* () = attendance_settable assignment in
-          let contact =
+          let ({ num_assignments; _ } as contact) =
             update_session_participation_counts contact no_show participated
           in
           let num_assignments, mark_as_deleted =
-            let num_assignments = contact.num_assignments in
             match cancel_followups, follow_ups with
             | true, Some follow_ups ->
               let num_assignments =
@@ -213,9 +212,7 @@ end = struct
               in
               let marked_as_deleted =
                 follow_ups
-                |> CCList.map (fun assignment ->
-                     Assignment.MarkedAsDeleted assignment
-                     |> Pool_event.assignment)
+                |> CCList.map CCFun.(markedasdeleted %> Pool_event.assignment)
               in
               num_assignments, marked_as_deleted
             | _, _ -> num_assignments, []
