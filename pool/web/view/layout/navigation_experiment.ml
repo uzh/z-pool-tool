@@ -21,30 +21,47 @@ let title_to_string language text =
   | Text str -> str
 ;;
 
-let nav_elements { Experiment.id; _ } =
+let nav_elements { Experiment.id; direct_registration_disabled; _ } =
   let open Guard in
   let open ValidationSet in
   let open I18n in
   let target_id = id |> Uuid.target_of Experiment.Id.value in
-  [ "", Overview, Experiment.Guard.Access.read id
-  ; ( "assistants"
-    , Field Field.Assistants
-    , Or
-        [ SpecificRole `ManageAssistants
-        ; SpecificRole (`ManageAssistant target_id)
-        ] )
-  ; ( "experimenter"
-    , Field Field.Experimenter
-    , Or
-        [ SpecificRole `ManageExperimenters
-        ; SpecificRole (`ManageExperimenter target_id)
-        ] )
-  ; "invitations", Invitations, Invitation.Guard.Access.index id
-  ; "waiting-list", WaitingList, Waiting_list.Guard.Access.index id
-  ; "sessions", Sessions, Session.Guard.Access.index id
-  ; "assignments", Assignments, Assignment.Guard.Access.index id
-  ; "mailings", Mailings, Mailing.Guard.Access.index id
-  ]
+  let left =
+    [ "", Overview, Experiment.Guard.Access.read id
+    ; ( "assistants"
+      , Field Field.Assistants
+      , Or
+          [ SpecificRole `ManageAssistants
+          ; SpecificRole (`ManageAssistant target_id)
+          ] )
+    ; ( "experimenter"
+      , Field Field.Experimenter
+      , Or
+          [ SpecificRole `ManageExperimenters
+          ; SpecificRole (`ManageExperimenter target_id)
+          ] )
+    ; "invitations", Invitations, Invitation.Guard.Access.index id
+    ]
+  in
+  let right =
+    [ "sessions", Sessions, Session.Guard.Access.index id
+    ; "assignments", Assignments, Assignment.Guard.Access.index id
+    ; "mailings", Mailings, Mailing.Guard.Access.index id
+    ]
+  in
+  let nav_links =
+    match
+      Experiment.(DirectRegistrationDisabled.value direct_registration_disabled)
+    with
+    | true ->
+      CCList.flatten
+        [ left
+        ; [ "waiting-list", WaitingList, Waiting_list.Guard.Access.index id ]
+        ; right
+        ]
+    | false -> CCList.flatten [ left; []; right ]
+  in
+  nav_links
   |> CCList.map (fun (url, label, set) ->
        ( Format.asprintf "/admin/experiments/%s/%s" (Experiment.Id.value id) url
        , label
