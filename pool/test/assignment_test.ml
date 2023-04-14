@@ -392,8 +392,8 @@ let marked_closed_with_followups_as_deleted () =
   let assignment =
     Assignment.
       { assignment with
-        no_show = false |> NoShow.create |> CCOption.pure
-      ; participated = true |> Participated.create |> CCOption.pure
+        no_show = false |> NoShow.create |> CCOption.return
+      ; participated = true |> Participated.create |> CCOption.return
       }
   in
   let follow_up = Model.create_assignment () in

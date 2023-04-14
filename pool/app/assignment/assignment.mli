@@ -113,6 +113,10 @@ type event =
   | Created of create
   | MarkedAsDeleted of t
 
+val attendanceset : t * NoShow.t * Participated.t -> event
+val canceled : t -> event
+val created : create -> event
+val markedasdeleted : t -> event
 val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit

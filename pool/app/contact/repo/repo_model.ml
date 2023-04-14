@@ -1,33 +1,35 @@
 open Entity
 
+let make_caqti_type = Pool_common.Repo.make_caqti_type
+
 module NumberOfInvitations = struct
   include NumberOfInvitations
 
-  let t = Caqti_type.int
+  let t = make_caqti_type Caqti_type.int CCFun.(of_int %> CCResult.return) value
 end
 
 module NumberOfAssignments = struct
   include NumberOfAssignments
 
-  let t = Caqti_type.int
+  let t = make_caqti_type Caqti_type.int CCFun.(of_int %> CCResult.return) value
 end
 
 module NumberOfShowUps = struct
   include NumberOfShowUps
 
-  let t = Caqti_type.int
+  let t = make_caqti_type Caqti_type.int CCFun.(of_int %> CCResult.return) value
 end
 
 module NumberOfNoShows = struct
   include NumberOfNoShows
 
-  let t = Caqti_type.int
+  let t = make_caqti_type Caqti_type.int CCFun.(of_int %> CCResult.return) value
 end
 
 module NumberOfParticipations = struct
   include NumberOfParticipations
 
-  let t = Caqti_type.int
+  let t = make_caqti_type Caqti_type.int CCFun.(of_int %> CCResult.return) value
 end
 
 let t =
@@ -42,11 +44,11 @@ let t =
               , ( Disabled.value m.disabled
                 , ( CCOption.map Verified.value m.verified
                   , ( CCOption.map EmailVerified.value m.email_verified
-                    , ( NumberOfInvitations.value m.num_invitations
-                      , ( NumberOfAssignments.value m.num_assignments
-                        , ( NumberOfShowUps.value m.num_show_ups
-                          , ( NumberOfNoShows.value m.num_no_shows
-                            , ( NumberOfParticipations.value m.num_participations
+                    , ( m.num_invitations
+                      , ( m.num_assignments
+                        , ( m.num_show_ups
+                          , ( m.num_no_shows
+                            , ( m.num_participations
                               , ( m.firstname_version
                                 , ( m.lastname_version
                                   , ( m.paused_version
@@ -165,11 +167,11 @@ let contact =
               , ( Disabled.value m.disabled
                 , ( CCOption.map Verified.value m.verified
                   , ( CCOption.map EmailVerified.value m.email_verified
-                    , ( NumberOfInvitations.value m.num_invitations
-                      , ( NumberOfAssignments.value m.num_assignments
-                        , ( NumberOfShowUps.value m.num_show_ups
-                          , ( NumberOfNoShows.value m.num_no_shows
-                            , ( NumberOfParticipations.value m.num_participations
+                    , ( m.num_invitations
+                      , ( m.num_assignments
+                        , ( m.num_show_ups
+                          , ( m.num_no_shows
+                            , ( m.num_participations
                               , ( m.firstname_version
                                 , ( m.lastname_version
                                   , ( m.paused_version
@@ -248,12 +250,11 @@ module Write = struct
                 , ( Disabled.value m.disabled
                   , ( CCOption.map Verified.value m.verified
                     , ( CCOption.map EmailVerified.value m.email_verified
-                      , ( NumberOfInvitations.value m.num_invitations
-                        , ( NumberOfAssignments.value m.num_assignments
-                          , ( NumberOfShowUps.value m.num_show_ups
-                            , ( NumberOfNoShows.value m.num_no_shows
-                              , ( NumberOfParticipations.value
-                                    m.num_participations
+                      , ( m.num_invitations
+                        , ( m.num_assignments
+                          , ( m.num_show_ups
+                            , ( m.num_no_shows
+                              , ( m.num_participations
                                 , ( m.firstname_version
                                   , ( m.lastname_version
                                     , ( m.lastname_version
@@ -326,8 +327,7 @@ module Preview = struct
         , ( m.language
           , ( Paused.value m.paused
             , ( CCOption.map Verified.value m.verified
-              , ( NumberOfInvitations.value m.num_invitations
-                , NumberOfAssignments.value m.num_assignments ) ) ) ) )
+              , (m.num_invitations, m.num_assignments) ) ) ) )
     in
     let decode
       ( user

@@ -11,7 +11,7 @@ type event =
   | Canceled of t
   | Created of create
   | MarkedAsDeleted of t
-[@@deriving eq, show]
+[@@deriving eq, show, variants]
 
 let handle_event pool : event -> unit Lwt.t = function
   | AttendanceSet (assignment, no_show, participated) ->

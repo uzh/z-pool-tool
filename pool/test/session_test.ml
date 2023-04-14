@@ -1113,8 +1113,9 @@ let close_session_check_contact_figures _ () =
       assignments
   in
   let%lwt () =
+    let open CCList in
     contacts
-    |> CCList.map (fun (contact, status) ->
+    |> map (fun (contact, status) ->
          let open Assignment in
          let open Contact in
          let no_show, participated =
@@ -1133,8 +1134,8 @@ let close_session_check_contact_figures _ () =
            |> Pool_event.assignment
          ; Updated contact |> Pool_event.contact
          ])
-    |> CCList.flatten
-    |> (fun events -> (Session.Closed session |> Pool_event.session) :: events)
+    |> flatten
+    |> cons (Session.Closed session |> Pool_event.session)
     |> Pool_event.handle_events Data.database_label
   in
   let%lwt res =
