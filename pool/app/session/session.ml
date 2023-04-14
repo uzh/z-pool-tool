@@ -3,6 +3,11 @@ include Event
 module Guard = Entity_guard
 
 let find_all_for_experiment = Repo.find_all_for_experiment
+
+let find_all_to_assign_from_waitinglist =
+  Repo.find_all_to_assign_from_waitinglist
+;;
+
 let find_all_public_for_experiment = Repo.find_all_public_for_experiment
 let find_all_public_by_location = Repo.find_all_public_by_location
 let find = Repo.find

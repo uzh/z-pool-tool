@@ -48,7 +48,9 @@ let detail req =
     Utils.Lwt_result.map_error (fun err -> err, error_path)
     @@ let* waiting_list = Waiting_list.find database_label id in
        let* sessions =
-         Session.find_all_for_experiment database_label experiment_id
+         Session.find_all_to_assign_from_waitinglist
+           database_label
+           experiment_id
        in
        let grouped_sessions, chronological =
          match

@@ -136,6 +136,24 @@ module Sql = struct
       (Experiment.Id.value id)
   ;;
 
+  let find_all_to_assign_from_waitinglist_request =
+    let open Caqti_request.Infix in
+    {sql|
+        WHERE pool_sessions.experiment_uuid = UNHEX(REPLACE(?, '-', ''))
+        AND pool_sessions.start > NOW()
+        AND pool_sessions.canceled_at IS NULL
+      |sql}
+    |> find_sql ~order_by:"pool_sessions.start"
+    |> Caqti_type.string ->* RepoEntity.t
+  ;;
+
+  let find_all_to_assign_from_waitinglist pool id =
+    Utils.Database.collect
+      (Database.Label.value pool)
+      find_all_to_assign_from_waitinglist_request
+      (Experiment.Id.value id)
+  ;;
+
   let find_public_request =
     let open Caqti_request.Infix in
     {sql|
@@ -476,6 +494,13 @@ let location_to_repo_entity pool session =
   Pool_location.find pool session.RepoEntity.location_id >|+ to_entity session
 ;;
 
+let add_location_to_multiple pool sessions =
+  let open Utils.Lwt_result.Infix in
+  sessions
+  |> Lwt_list.map_s (location_to_repo_entity pool)
+  ||> CCResult.flatten_l
+;;
+
 let location_to_public_repo_entity pool session =
   let open Utils.Lwt_result.Infix in
   Pool_location.find pool session.RepoEntity.Public.location_id
@@ -503,8 +528,13 @@ let find_public pool id =
 let find_all_for_experiment pool experiment_id =
   let open Utils.Lwt_result.Infix in
   Sql.find_all_for_experiment pool experiment_id
-  >|> Lwt_list.map_s (location_to_repo_entity pool)
-  ||> CCResult.flatten_l
+  >|> add_location_to_multiple pool
+;;
+
+let find_all_to_assign_from_waitinglist pool experiment_id =
+  let open Utils.Lwt_result.Infix in
+  Sql.find_all_to_assign_from_waitinglist pool experiment_id
+  >|> add_location_to_multiple pool
 ;;
 
 let find_all_public_for_experiment pool contact experiment_id =
@@ -530,9 +560,7 @@ let find_by_assignment pool assignment_id =
 
 let find_follow_ups pool parent_session_id =
   let open Utils.Lwt_result.Infix in
-  Sql.find_follow_ups pool parent_session_id
-  >|> Lwt_list.map_s (location_to_repo_entity pool)
-  ||> CCResult.flatten_l
+  Sql.find_follow_ups pool parent_session_id >|> add_location_to_multiple pool
 ;;
 
 let find_open_with_follow_ups pool session_id =
@@ -541,10 +569,7 @@ let find_open_with_follow_ups pool session_id =
   ||> (function
         | [] -> Error Pool_common.Message.(NotFound Field.Session)
         | sessions -> Ok sessions)
-  >>= fun sessions ->
-  sessions
-  |> Lwt_list.map_s (location_to_repo_entity pool)
-  ||> CCResult.flatten_l
+  >>= add_location_to_multiple pool
 ;;
 
 let find_experiment_id_and_title = Sql.find_experiment_id_and_title
@@ -566,9 +591,7 @@ let find_upcoming_public_by_contact pool contact_id =
 
 let find_sessions_to_remind pool =
   let open Utils.Lwt_result.Infix in
-  Sql.find_sessions_to_remind pool
-  >>= fun sessions ->
-  Lwt_list.map_s (location_to_repo_entity pool) sessions ||> CCResult.flatten_l
+  Sql.find_sessions_to_remind pool >>= add_location_to_multiple pool
 ;;
 
 let insert = Sql.insert
