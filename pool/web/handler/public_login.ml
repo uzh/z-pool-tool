@@ -211,7 +211,7 @@ let reset_password_post req =
     let redirect_with_param =
       add_field_query_params redirect [ Field.Token, token ]
     in
-    let* () =
+    let* (_ : Pool_user.Password.t) =
       let open CCResult.Infix in
       let open Pool_user.Password in
       Field.Password

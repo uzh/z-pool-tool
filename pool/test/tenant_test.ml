@@ -51,7 +51,7 @@ module Data = struct
   let partner_logo = Asset.partner_logo
   let default_language = "EN"
   let email = "operator@econ.uzh.ch"
-  let password = "adminadmin"
+  let password = "AdminAdmin!"
   let firstname = "DJ"
   let lastname = "Ötzi"
 
@@ -81,7 +81,7 @@ module Data = struct
     let server = "smtp.uzh.ch"
     let port = 587
     let username = "engineering@econ.uzh.ch"
-    let password = "emailemail"
+    let password = "Password!"
     let mechanism = SmtpAuth.Mechanism.(LOGIN, LOGIN |> show)
     let protocol = SmtpAuth.Protocol.(STARTTLS, STARTTLS |> show)
 

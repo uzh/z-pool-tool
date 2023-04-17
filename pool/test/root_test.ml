@@ -2,7 +2,7 @@ module Root_command = Cqrs_command.Root_command
 
 module Data = struct
   let email = "test@econ.uzh.ch"
-  let password = "sihlsihl"
+  let password = "Sihlsihl?"
   let firstname = "Woofy"
   let lastname = "Woofer"
 end
@@ -60,7 +60,7 @@ let create_root_with_invalid_password () =
            ]
   in
   let events = Root_command.Create.handle command in
-  let expected = Error Pool_common.Message.PasswordPolicy in
+  let expected = Error Pool_common.(Message.PasswordPolicyMinLength 8) in
   Alcotest.(
     check
       (result (list Test_utils.event) Test_utils.error)

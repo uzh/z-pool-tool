@@ -304,7 +304,9 @@ type error =
   | NumberMin of int
   | Or of (error * error)
   | PasswordConfirmationDoesNotMatch
-  | PasswordPolicy
+  | PasswordPolicyMinLength of int
+  | PasswordPolicyCapitalLetter
+  | PasswordPolicySpecialChar of char list
   | PasswordResetFailMessage
   | PasswordResetInvalidData
   | PickMessageChannel

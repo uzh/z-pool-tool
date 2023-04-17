@@ -17,8 +17,7 @@ module SignUp : sig
   val handle
     :  ?tags:Logs.Tag.set
     -> ?allowed_email_suffixes:Settings.EmailSuffix.t list
-    -> ?password_policy:
-         (User.Password.t -> (unit, Pool_common.Message.error) result)
+    -> ?password_policy:User.Password.Policy.t
     -> ?user_id:Id.t
     -> ?terms_accepted_at:User.TermsAccepted.t option
     -> Email.Token.t
@@ -71,13 +70,13 @@ end = struct
     =
     Logs.info ~src (fun m -> m "Handle command SignUp" ~tags);
     let open CCResult in
-    let* () = User.Password.validate ?password_policy command.password in
+    let* password = User.Password.validate ?password_policy command.password in
     let* () = User.EmailAddress.validate allowed_email_suffixes command.email in
     let contact =
       Contact.
         { user_id
         ; email = command.email
-        ; password = command.password
+        ; password
         ; firstname = command.firstname
         ; lastname = command.lastname
         ; terms_accepted_at
@@ -186,8 +185,7 @@ module UpdatePassword : sig
 
   val handle
     :  ?tags:Logs.Tag.set
-    -> ?password_policy:
-         (User.Password.t -> (unit, Pool_common.Message.error) result)
+    -> ?password_policy:User.Password.Policy.t
     -> Contact.t
     -> Sihl_email.t
     -> t
@@ -235,7 +233,9 @@ end = struct
         contact.Contact.user
         command.current_password
     in
-    let* () = User.Password.validate ?password_policy command.new_password in
+    let* new_password =
+      User.Password.validate ?password_policy command.new_password
+    in
     let* () =
       User.Password.validate_password_confirmation
         command.new_password
@@ -245,7 +245,7 @@ end = struct
       [ Contact.PasswordUpdated
           ( contact
           , command.current_password
-          , command.new_password
+          , new_password
           , command.password_confirmation )
         |> Pool_event.contact
       ; Email.Sent notification |> Pool_event.email

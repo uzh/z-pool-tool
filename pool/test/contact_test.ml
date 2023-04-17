@@ -13,7 +13,7 @@ let check_result expected generated =
 ;;
 
 let contact_info email_address =
-  email_address, "password", "Jane", "Doe", Some Language.En
+  email_address, "Password!", "Jane", "Doe", Some Language.En
 ;;
 
 let allowed_email_suffixes =
@@ -245,7 +245,7 @@ let update_password () =
     "john@gmail.com" |> contact_info
   in
   let contact = contact_info |> create_contact true in
-  let new_password = "testing" in
+  let new_password = "NewPassword!" in
   let confirmation_mail = confirmation_mail contact in
   let events =
     Contact_command.UpdatePassword.(
@@ -256,7 +256,7 @@ let update_password () =
       |> decode
       |> Pool_common.Utils.get_or_failwith
       |> handle
-           ~password_policy:(fun (_ : Pool_user.Password.t) -> Ok ())
+           ~password_policy:Pool_user.Password.Policy.default_policy
            contact
            confirmation_mail)
   in
@@ -276,6 +276,44 @@ let update_password () =
       ]
   in
   check_result expected events
+;;
+
+let validate_password_policy password expected =
+  let open CCResult.Infix in
+  let open Pool_user.Password in
+  let res =
+    password |> create >>= validate ~password_policy:Policy.default_policy
+  in
+  Alcotest.(check Test_utils.(result password error) "succeeds" expected res)
+;;
+
+let password_min_length () =
+  validate_password_policy "Pass!" (Error (Message.PasswordPolicyMinLength 8))
+;;
+
+let password_capital_letter () =
+  validate_password_policy
+    "password!"
+    (Error Message.PasswordPolicyCapitalLetter)
+;;
+
+let password_special_char () =
+  validate_password_policy
+    "Password"
+    (Error
+       (Message.PasswordPolicySpecialChar
+          Pool_user.Password.Policy.default_special_char_set))
+;;
+
+let valid_password () =
+  let password = "Password*" in
+  let expected =
+    password
+    |> Pool_user.Password.create
+    |> Test_utils.get_or_failwith_pool_error
+    |> CCResult.return
+  in
+  validate_password_policy password expected
 ;;
 
 let update_password_wrong_current_password () =
@@ -314,7 +352,7 @@ let update_password_wrong_policy () =
       |> Pool_common.Utils.get_or_failwith
       |> handle contact confirmation_mail)
   in
-  let expected = Error Message.PasswordPolicy in
+  let expected = Error (Message.PasswordPolicyMinLength 8) in
   check_result expected events
 ;;
 
@@ -323,8 +361,8 @@ let update_password_wrong_confirmation () =
     "john@gmail.com" |> contact_info
   in
   let contact = contact_info |> create_contact true in
-  let new_password = "testing" in
-  let confirmed_password = "something else" in
+  let new_password = "Password?" in
+  let confirmed_password = "Password*" in
   let confirmation_mail = confirmation_mail contact in
   let events =
     Contact_command.UpdatePassword.(
@@ -335,7 +373,7 @@ let update_password_wrong_confirmation () =
       |> decode
       |> Pool_common.Utils.get_or_failwith
       |> handle
-           ~password_policy:(fun (_ : Pool_user.Password.t) -> Ok ())
+           ~password_policy:Pool_user.Password.Policy.default_policy
            contact
            confirmation_mail)
   in

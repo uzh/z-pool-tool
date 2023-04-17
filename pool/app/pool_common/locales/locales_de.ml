@@ -377,7 +377,14 @@ let rec error_to_string = function
       (err2 |> error_to_string |> CCString.uncapitalize_ascii)
   | PasswordConfirmationDoesNotMatch ->
     "Passwortbestätigung stimmt nicht mit dem neuen Passwort überein."
-  | PasswordPolicy -> "Passwort stimmt nicht mit der benötigten Policy überein!"
+  | PasswordPolicyMinLength n ->
+    Format.asprintf "Das Passwort muss mindestens %i Zeichen lang sein." n
+  | PasswordPolicyCapitalLetter ->
+    "Das Passwort muss einen Grossbuchstaben enthalten."
+  | PasswordPolicySpecialChar chars ->
+    Format.asprintf
+      "Das Passwort muss eines der folgenden Zeichen enthalten: %s"
+      (chars |> CCList.map CCString.of_char |> CCString.concat " ")
   | PasswordResetFailMessage ->
     "Falls ein Account zu der von dir eingegebenen E-Mail Adresse existiert,  \
      wird dir ein E-Mail mit einem Link zur Passwort zurücksetzung gesendet."

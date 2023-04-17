@@ -15,8 +15,7 @@ module Create : sig
   val handle
     :  ?tags:Logs.Tag.set
     -> ?allowed_email_suffixes:Settings.EmailSuffix.t list
-    -> ?password_policy:
-         (User.Password.t -> (unit, Pool_common.Message.error) result)
+    -> ?password_policy:User.Password.Policy.t
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
@@ -57,14 +56,14 @@ end = struct
     =
     Logs.info ~src (fun m -> m "Handle command Create" ~tags);
     let open CCResult in
-    let* () = User.Password.validate ?password_policy command.password in
+    let* password = User.Password.validate ?password_policy command.password in
     let* () =
       Pool_user.EmailAddress.validate allowed_email_suffixes command.email
     in
     let admin : Admin.create =
       { id = None
       ; Admin.email = command.email
-      ; password = command.password
+      ; password
       ; firstname = command.firstname
       ; lastname = command.lastname
       ; roles = Some (Guard.RoleSet.singleton `Root)
