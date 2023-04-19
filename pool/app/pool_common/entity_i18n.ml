@@ -44,6 +44,7 @@ type t =
   | RoleApplicableToAssign
   | RoleCurrentlyAssigned
   | RoleCurrentlyNoneAssigned of Entity_message.Field.t
+  | RolesGranted
   | SentInvitations
   | SessionDetailTitle of Ptime.t
   | SessionIndent

@@ -2,7 +2,45 @@ open CCFun
 module Countries = Countries
 module Database = Database
 module LanguageCodes = Language_codes
-module Lwt_result = Lwt_trace
+
+module Lwt_result : sig
+  module Infix : sig
+    val ( let* )
+      :  ('a, 'b) Lwt_result.t
+      -> ('a -> ('c, 'b) Lwt_result.t)
+      -> ('c, 'b) Lwt_result.t
+
+    val ( >|> ) : 'a Lwt.t -> ('a -> 'b Lwt.t) -> 'b Lwt.t
+    val ( ||> ) : 'a Lwt.t -> ('a -> 'b) -> 'b Lwt.t
+
+    val ( >>= )
+      :  ('a, 'b) Lwt_result.t
+      -> ('a -> ('c, 'b) Lwt_result.t)
+      -> ('c, 'b) Lwt_result.t
+
+    val ( >== )
+      :  ('a, 'b) Lwt_result.t
+      -> ('a -> ('c, 'b) result)
+      -> ('c, 'b) Lwt_result.t
+
+    val ( >> )
+      :  ('a, 'b) Lwt_result.t
+      -> ('c, 'b) Lwt_result.t
+      -> ('c, 'b) Lwt_result.t
+
+    val ( |>> )
+      :  ('a, 'b) Lwt_result.t
+      -> ('a -> 'c Lwt.t)
+      -> ('c, 'b) Lwt_result.t
+
+    val ( >|+ ) : ('a, 'b) Lwt_result.t -> ('a -> 'c) -> ('c, 'b) Lwt_result.t
+    val ( >|- ) : ('a, 'b) Lwt_result.t -> ('b -> 'c) -> ('a, 'c) Lwt_result.t
+  end
+
+  val map_error : ('a -> 'b) -> ('c, 'a) Lwt_result.t -> ('c, 'b) Lwt_result.t
+end =
+  Lwt_trace
+
 module Crypto = Crypto
 module Ptime = Utils_ptime
 

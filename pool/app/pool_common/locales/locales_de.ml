@@ -54,6 +54,8 @@ let rec field_to_string =
   | EmailSuffix -> "E-Mail Endung"
   | EmailText -> "E-Mail Text"
   | End -> "Ende"
+  | Exclude -> "Ausgenommen"
+  | ExcludeRolesOf -> "Ausgenommen (Rollen von jmd)"
   | Experiment -> "Experiment"
   | Experimenter -> "Experimenter"
   | ExperimentReminderLeadTime ->
@@ -170,6 +172,7 @@ let rec field_to_string =
   | Street -> "Strasse"
   | Styles -> "Styles"
   | Tag -> "Tag"
+  | Target -> "Target"
   | TargetSpec -> "Target"
   | Template -> "Template"
   | Tenant -> "Tenant"

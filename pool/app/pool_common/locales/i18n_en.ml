@@ -68,6 +68,7 @@ let to_string = function
     Format.asprintf
       "Currently there are no %s assigned."
       (Locales_en.field_to_string field)
+  | RolesGranted -> "Granted roles"
   | SentInvitations -> "Sent invitations"
   | SessionDetailTitle start ->
     Format.asprintf "Session at %s" (Utils_time.formatted_date_time start)

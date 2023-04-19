@@ -54,6 +54,8 @@ let rec field_to_string =
   | EmailSuffix -> "email suffix"
   | EmailText -> "email text"
   | End -> "end"
+  | Exclude -> "exclude"
+  | ExcludeRolesOf -> "exclude roles of"
   | Experiment -> "experiment"
   | ExperimentReminderLeadTime ->
     Format.asprintf "experiment specific %s" (field_to_string LeadTime)
@@ -171,6 +173,7 @@ let rec field_to_string =
   | Street -> "street"
   | Styles -> "styles"
   | Tag -> "tag"
+  | Target -> "target"
   | TargetSpec -> "target"
   | Template -> "template"
   | Tenant -> "tenant"

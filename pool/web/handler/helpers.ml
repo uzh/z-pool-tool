@@ -1,5 +1,7 @@
 module Login = Helpers_login
 module PartialUpdate = Helpers_partial_update
+module Guard = Helpers_guard
+module Search = Helpers_search
 
 module Access : sig
   val index : Rock.Middleware.t

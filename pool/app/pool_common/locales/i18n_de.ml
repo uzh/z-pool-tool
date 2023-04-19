@@ -70,6 +70,7 @@ Sie kommen für mehr Experimente in Frage, umso kompletter Ihr Profil ist.|}
     Format.asprintf
       "Aktuell sind keine %s zugewiesen."
       (Locales_de.field_to_string field)
+  | RolesGranted -> "Zugewiesene Rollen"
   | SentInvitations -> "Versendete Einladungen"
   | SessionDetailTitle start ->
     Format.asprintf "Session am %s" (Utils_time.formatted_date_time start)

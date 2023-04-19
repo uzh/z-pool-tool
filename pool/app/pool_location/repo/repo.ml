@@ -1,5 +1,6 @@
 include Repo_entity
 module RepoFileMapping = Repo_file_mapping
+module Dynparam = Utils.Database.Dynparam
 
 let to_entity = to_entity
 let of_entity = of_entity
@@ -136,6 +137,93 @@ module Sql = struct
       update_request
       (id, (name, (description, (address, (link, status)))))
   ;;
+
+  let search_request =
+    let base =
+      {sql|
+        SELECT
+          LOWER(CONCAT(
+            SUBSTR(HEX(pool_locations.uuid), 1, 8), '-',
+            SUBSTR(HEX(pool_locations.uuid), 9, 4), '-',
+            SUBSTR(HEX(pool_locations.uuid), 13, 4), '-',
+            SUBSTR(HEX(pool_locations.uuid), 17, 4), '-',
+            SUBSTR(HEX(pool_locations.uuid), 21)
+          )),
+          pool_locations.name
+        FROM pool_locations
+        WHERE pool_locations.name LIKE $1
+      |sql}
+    in
+    function
+    | [] -> base
+    | ids ->
+      ids
+      |> CCList.mapi (fun i _ ->
+           Format.asprintf "UNHEX(REPLACE($%i, '-', ''))" (i + 2))
+      |> CCString.concat ","
+      |> Format.asprintf
+           {sql|
+              %s
+              AND pool_locations.uuid NOT IN (%s)
+           |sql}
+           base
+  ;;
+
+  let search pool exclude query =
+    let open Caqti_request.Infix in
+    let dyn =
+      CCList.fold_left
+        (fun dyn id ->
+          dyn |> Dynparam.add Caqti_type.string (id |> Entity.Id.value))
+        Dynparam.(empty |> add Caqti_type.string ("%" ^ query ^ "%"))
+        exclude
+    in
+    let (Dynparam.Pack (pt, pv)) = dyn in
+    let request =
+      search_request exclude
+      |> pt ->* Caqti_type.(Repo_entity.(tup2 Id.t Name.t))
+    in
+    Utils.Database.collect (pool |> Pool_database.Label.value) request pv
+  ;;
+
+  let search_multiple_by_id_request ids =
+    Format.asprintf
+      {sql|
+        SELECT
+          LOWER(CONCAT(
+            SUBSTR(HEX(pool_locations.uuid), 1, 8), '-',
+            SUBSTR(HEX(pool_locations.uuid), 9, 4), '-',
+            SUBSTR(HEX(pool_locations.uuid), 13, 4), '-',
+            SUBSTR(HEX(pool_locations.uuid), 17, 4), '-',
+            SUBSTR(HEX(pool_locations.uuid), 21)
+          )),
+          pool_locations.name
+        FROM pool_locations
+        WHERE pool_locations.uuid in ( %s )
+      |sql}
+      (CCList.map (fun _ -> Format.asprintf "UNHEX(REPLACE(?, '-', ''))") ids
+       |> CCString.concat ",")
+  ;;
+
+  let search_multiple_by_id pool =
+    let open Caqti_request.Infix in
+    function
+    | [] -> Lwt.return []
+    | ids ->
+      let dyn =
+        CCList.fold_left
+          (fun dyn id ->
+            dyn |> Dynparam.add Caqti_type.string (id |> Pool_common.Id.value))
+          Dynparam.empty
+          ids
+      in
+      let (Dynparam.Pack (pt, pv)) = dyn in
+      let request =
+        search_multiple_by_id_request ids
+        |> pt ->* Caqti_type.(Repo_entity.(tup2 Id.t Name.t))
+      in
+      Utils.Database.collect (pool |> Pool_database.Label.value) request pv
+  ;;
 end
 
 let files_to_location pool ({ id; _ } as location) =
@@ -161,3 +249,5 @@ let insert pool location files =
 ;;
 
 let update = Sql.update
+let search = Sql.search
+let search_multiple_by_id = Sql.search_multiple_by_id

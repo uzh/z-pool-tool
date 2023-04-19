@@ -7,17 +7,22 @@ let user_is_admin = function
   | Admin _ -> true
 ;;
 
+let get_admin_user = function
+  | Guest | Contact _ -> Error Pool_common.Message.(NotFound Field.Admin)
+  | Admin user -> Ok user
+;;
+
 module Utils = struct
-  let find_authorizable_opt database_label user =
+  let find_authorizable_opt ?(admin_only = false) database_label user =
     let open Utils.Lwt_result.Infix in
     match user with
-    | Guest -> Lwt.return_none
     | Contact _ when Pool_database.is_root database_label -> Lwt.return_none
-    | Contact contact ->
+    | Contact contact when not admin_only ->
       Contact.id contact
       |> Guard.Uuid.actor_of Pool_common.Id.value
       |> Guard.Persistence.Actor.find database_label `Contact
       ||> CCOption.of_result
+    | Guest | Contact _ -> Lwt.return_none
     | Admin admin ->
       Admin.id admin
       |> Guard.Uuid.actor_of Admin.Id.value

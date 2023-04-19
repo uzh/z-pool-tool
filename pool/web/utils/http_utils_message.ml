@@ -1,3 +1,4 @@
+open CCFun
 module Message = Pool_common.Message
 module Utils = Pool_common.Utils
 
@@ -33,4 +34,9 @@ let set ?(error = []) ?(warning = []) ?(success = []) ?(info = []) res =
   in
   (* We use alerts for all messages *)
   Sihl.Web.Flash.set_alert message res
+;;
+
+let error_to_html ?(language = Pool_common.Language.En) =
+  let open Tyxml.Html in
+  Pool_common.(Utils.error_to_string language) %> txt %> CCList.return %> div
 ;;

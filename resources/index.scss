@@ -81,7 +81,8 @@ $icons-font-path: "../node_modules/@econ/frontend-framework/dist/font";
     display: none;
 }
 
-#filter-form {
+#filter-form,
+#cascade-form {
     [data-query="input"] {
         [data-id] {
             cursor: pointer;

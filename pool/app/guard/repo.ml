@@ -52,6 +52,23 @@ module Actor = struct
     (database_label, typ, id)
     |> CCCache.(with_cache ~cb Cache.lru_find_actor find')
   ;;
+
+  let expand_roles : roles actor -> role_set =
+    Core.Actor.roles
+    %> fun set ->
+    Core.RoleSet.fold
+      (fun role ini ->
+        role |> BaseRole.Actor.can_assign_roles |> Core.RoleSet.add_list ini)
+      set
+      set
+  ;;
+
+  let match_role (actor : BaseRole.Actor.t Core.Actor.t) role =
+    Core.RoleSet.fold
+      (fun role' ini -> ini || BaseRole.Actor.equal_or_nil_target role' role)
+      (actor |> expand_roles)
+      false
+  ;;
 end
 
 let validate
@@ -123,30 +140,14 @@ module Rule = struct
 
   let find_all_by_actor database_label actor : Core.Rule.t list Lwt.t =
     let open Utils.Lwt_result.Infix in
-    let filter_by (actor : 'a Core.Actor.t) (rules : rule list) =
-      let expand_roles =
-        Core.Actor.roles
-        %> fun set ->
-        Core.RoleSet.fold
-          (fun role ini ->
-            role |> BaseRole.Actor.can_assign_roles |> Core.RoleSet.add_list ini)
-          set
-          set
-      in
-      let match_role role =
-        Core.RoleSet.fold
-          (fun role' ini ->
-            ini || BaseRole.Actor.equal_or_nil_target role' role)
-          (actor |> expand_roles)
-          false
-      in
+    let filter_by (actor : BaseRole.Actor.t Core.Actor.t) (rules : rule list) =
       CCList.filter
         (fun (actor', _, _) ->
-          let open Core in
           match actor' with
-          | ActorSpec.Id (role, id) ->
-            Uuid.Actor.equal id (actor |> Actor.id) && match_role role
-          | ActorSpec.Entity role -> match_role role)
+          | Core.ActorSpec.Id (role, id) ->
+            Uuid.Actor.equal id (actor |> Core.Actor.id)
+            && Actor.match_role actor role
+          | Core.ActorSpec.Entity role -> Actor.match_role actor role)
         rules
     in
     let open Caqti_request.Infix in

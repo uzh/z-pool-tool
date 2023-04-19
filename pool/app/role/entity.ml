@@ -1,12 +1,14 @@
 open CCFun
 module TargetId = Guardian.Contract.Uuid.Target
 
+let src = Logs.Src.create "role.entity"
+
 module Actor = struct
   type t =
     [ `Admin
-    | `Assistant of TargetId.t
+    | `Assistant of TargetId.t (* experiment id*)
     | `Contact
-    | `Experimenter of TargetId.t
+    | `Experimenter of TargetId.t (* experiment id*)
     | `Guest
     | `LocationManagerAll
     | `LocationManager of TargetId.t (* location id*)
@@ -22,27 +24,19 @@ module Actor = struct
     | `RecruiterAll
     | `Recruiter of TargetId.t
     | `Root (* '`Root' not exposed in 'all' *)
-    | `System
+    | `System (* '`System' not exposed in 'all' *)
     ]
   [@@deriving show, eq, ord, yojson]
 
+  let key_to_string =
+    show
+    %> CCString.replace
+         ~which:`Right
+         ~sub:(Format.asprintf " (%s)" TargetId.(nil |> to_string))
+         ~by:""
+  ;;
+
   let name = show %> Guardian.Utils.decompose_variant_string %> fst
-
-  let find_target : t -> TargetId.t option = function
-    | `Assistant uuid
-    | `Experimenter uuid
-    | `LocationManager uuid
-    | `ManageAssistant uuid
-    | `ManageExperimenter uuid
-    | `Recruiter uuid -> Some uuid
-    | _ -> None
-  ;;
-
-  let find_target_exn (t : t) =
-    find_target t
-    |> CCOption.get_exn_or
-       @@ Format.asprintf "Cannot get target from role %a" pp t
-  ;;
 
   let of_string =
     let target_of_string = TargetId.of_string_exn in
@@ -71,17 +65,67 @@ module Actor = struct
     | role -> Guardian.Utils.failwith_invalid_role role
   ;;
 
-  let equal_or_nil_target (expected : t) (actual : t) : bool =
-    equal expected actual
-    ||
-    match actual with
-    | `Assistant _ -> equal expected (`Assistant TargetId.nil)
-    | `Experimenter _ -> equal expected (`Experimenter TargetId.nil)
-    | `LocationManager _ -> equal expected (`LocationManager TargetId.nil)
-    | `ManageAssistant _ -> equal expected (`ManageAssistant TargetId.nil)
-    | `ManageExperimenter _ -> equal expected (`ManageExperimenter TargetId.nil)
-    | `Recruiter _ -> equal expected (`Recruiter TargetId.nil)
+  let of_string_res role =
+    try of_string role |> CCResult.return with
+    | _ -> Error Pool_common.Message.(NotFound Field.Role)
+  ;;
+
+  let find_target : t -> TargetId.t option = function
+    | `Assistant uuid
+    | `Experimenter uuid
+    | `LocationManager uuid
+    | `ManageAssistant uuid
+    | `ManageExperimenter uuid
+    | `Recruiter uuid -> Some uuid
+    | _ -> None
+  ;;
+
+  let find_target_exn (t : t) =
+    find_target t
+    |> CCOption.get_exn_or
+       @@ Format.asprintf "Cannot get target from role %a" pp t
+  ;;
+
+  let has_nil_target =
+    let open TargetId in
+    function
+    | `Assistant uuid
+    | `Experimenter uuid
+    | `LocationManager uuid
+    | `ManageAssistant uuid
+    | `ManageExperimenter uuid
+    | `Recruiter uuid -> equal uuid nil
     | _ -> false
+  ;;
+
+  let update_target role id : t =
+    if find_target role |> CCOption.is_some
+    then (
+      match role with
+      | `Assistant _ -> `Assistant id
+      | `Experimenter _ -> `Experimenter id
+      | `LocationManager _ -> `LocationManager id
+      | `ManageAssistant _ -> `ManageAssistant id
+      | `ManageExperimenter _ -> `ManageExperimenter id
+      | `Recruiter _ -> `Recruiter id
+      | role ->
+        let msg =
+          show
+          %> Format.asprintf "Role 'with_target': Missing role with target '%s'"
+        in
+        Logs.err ~src (fun m -> m "%s" (msg role));
+        failwith (msg role))
+    else role
+  ;;
+
+  let with_nil_target = flip update_target TargetId.nil
+
+  let equal_or_nil_target (expected : t) (actual : t) : bool =
+    equal expected actual || equal expected (with_nil_target actual)
+  ;;
+
+  let find_target_of expected actual : TargetId.t option =
+    if equal_or_nil_target expected actual then find_target actual else None
   ;;
 
   let all =
@@ -101,12 +145,10 @@ module Actor = struct
     ; `Operator
     ; `RecruiterAll
     ; `Recruiter TargetId.nil
-    ; `System
     ]
   ;;
 
   let can_assign_roles (role : t) : t list =
-    (* let open CCFun.Infix in *)
     match role with
     | `Admin
     | `Assistant _
@@ -127,7 +169,25 @@ module Actor = struct
     | `Recruiter uuid -> [ `Assistant uuid; `Experimenter uuid ]
     | `ManageRules | `Operator | `Root | `System -> all
   ;;
-  (* |> CCList.flat_map can_assign_roles *)
+
+  type input_type =
+    | QueryExperiments
+    | QueryLocations
+  [@@deriving show, eq]
+
+  let type_of_key = function
+    | `Assistant _
+    | `Experimenter _
+    | `ManageAssistant _
+    | `ManageExperimenter _
+    | `Recruiter _ -> Ok (Some QueryExperiments)
+    | `LocationManager _ -> Ok (Some QueryLocations)
+    | elem when find_target elem |> CCOption.is_some ->
+      Error
+        Pool_common.(
+          Message.(NotHandled (Utils.field_to_string Language.En Field.Role)))
+    | _ -> Ok None
+  ;;
 end
 
 module Target = struct

@@ -1,4 +1,4 @@
-module Field = Pool_common.Message.Field
+module Cascade = Component_cascade
 module Filter = Component_filter
 module Icon = Component_icon
 module Image = Component_image
@@ -10,5 +10,8 @@ module Modal = Component_modal
 module Navigation = Component_nav
 module Notification = Component_notification
 module Partials = Component_partials
+module Role = Component_role
+module Search = Component_search
 module Sortable = Component_sortable
 module Table = Component_table
+module Utils = Component_utils

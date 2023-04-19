@@ -1,43 +1,10 @@
+import { addCloseListener, addInputListeners, csrfToken, destroySelected, icon, notifyUser } from "./utils.js";
+
 const errorClass = "error-message";
 const globalErrorMsg = "An Error occurred";
-const csrfToken = () => {
-    return document.getElementById("filter-form").querySelector('[name="_csrf"]').value;
-}
+const notificationId = "filter-notification";
+
 const form = document.getElementById("filter-form");
-
-const icon = (classnames) => {
-    const i = document.createElement("i");
-    i.classList.add(...classnames)
-    return i
-}
-
-const fadeOut = (elm) => {
-    elm.classList.add("fade-out", "no-delay");
-}
-
-function addCloseListener() {
-    const notification = document.getElementById("filter-notification");
-    const iconClose = notification ? notification.querySelector(".notification-close") : false;
-    if (iconClose) {
-        iconClose.addEventListener("click", () => fadeOut(notification));
-    }
-}
-
-const notifyUser = (classname, msg) => {
-    const notificationId = "filter-notification";
-    const inner = document.createElement("div")
-    inner.classList.add("notification", classname);
-    inner.innerHTML = msg;
-    const closeIcon = icon(["icon-close", "notification-close"])
-    const wrapper = document.createElement("div");
-    wrapper.classList.add("notification-fixed");
-    wrapper.id = notificationId
-    inner.appendChild(closeIcon);
-    wrapper.appendChild(inner);
-    const notification = document.getElementById(notificationId)
-    notification.parentElement.replaceChild(wrapper, notification)
-    addCloseListener();
-}
 
 const isListOperator = (operator) => {
     return ["contains_all", "contains_some", "contains_none"].includes(operator)
@@ -76,13 +43,13 @@ const updateContactCount = async () => {
                 throw (data.message || response.statusText || globalErrorMsg)
             }
             if (response.status < 200 || response.status > 300) {
-                notifyUser("error", data.message)
+                notifyUser(notificationId, "error", data.message)
             } else {
                 target.innerHTML = data.count
             }
         } catch (error) {
             target.innerHTML = globalErrorMsg;
-            notifyUser("error", error)
+            notifyUser(notificationId, "error", error)
         };
     }
 }
@@ -197,7 +164,7 @@ const predicateToJson = (outerPredicate, allowEmpty = false) => {
                 }
             }
         } else {
-            notifyUser("error", "Please fill out all fields.")
+            notifyUser(notificationId, "error", "Please fill out all fields.")
             throw "Missing values";
         }
     } else {
@@ -213,30 +180,12 @@ function addRemovePredicateListener(element) {
     })
 }
 
-
-function destroySelectedQueryResult(item) {
-    item.remove();
-}
-
-function addQueryPredicateListeners(queryInput) {
-    var wrapper = queryInput.closest("[data-query='wrapper']");
-    var results = wrapper.querySelector("[data-query='results']");
-
-    [...queryInput.querySelectorAll("[data-id]")].forEach(item => {
-        item.addEventListener("click", () => {
-            results.appendChild(item);
-            item.querySelector(".toggle-item").addEventListener("click", () => destroySelectedQueryResult(item));
-        }, { once: true })
-    })
-}
-
 function configRequest(e, form) {
     const isPredicateType = e.detail.parameters.predicate;
     const allowEmpty = e.detail.parameters.allow_empty_values;
     const isSubmit = e.target.type === "submit"
     const isSearchForm = Boolean(e.detail.elt.classList.contains("query-input"));
-
-    e.detail.parameters._csrf = csrfToken();
+    e.detail.parameters._csrf = csrfToken(form);
 
     const filterId = form.dataset.filter;
     if (filterId) {
@@ -266,7 +215,7 @@ function configRequest(e, form) {
         } catch (error) {
             console.error(error)
             e.preventDefault();
-            notifyUser("error", error)
+            notifyUser(notificationId, "error", error)
         }
     }
     var event = new Event('submit');
@@ -283,20 +232,20 @@ export function initFilterForm() {
         })
         addRemovePredicateListener(form);
         // Query event listeners
-        [...form.querySelectorAll("[data-query='input']")].forEach(e => addQueryPredicateListeners(e));
+        [...form.querySelectorAll("[data-query='input']")].forEach(e => addInputListeners(e));
         [...form.querySelectorAll("[data-query='results'] [data-id]")].forEach(e =>
-            e.querySelector(".toggle-item").addEventListener("click", () => destroySelectedQueryResult(e))
+            e.querySelector(".toggle-item").addEventListener("click", () => destroySelected(e))
         );
 
         form.addEventListener('htmx:afterSwap', (e) => {
             addRemovePredicateListener(e.detail.elt)
             if (e.detail.elt.dataset.query) {
-                addQueryPredicateListeners(e.detail.elt)
+                addInputListeners(e.detail.elt)
             }
             if (e.detail.target.type === "submit") {
                 updateContactCount();
             }
-            addCloseListener();
+            addCloseListener(notificationId);
         })
         updateContactCount()
         form.addEventListener('htmx:configRequest', (e) => configRequest(e, form))

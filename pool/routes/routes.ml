@@ -224,16 +224,14 @@ module Admin = struct
       [ get "" ~middlewares:[ Access.index ] index
       ; get "/create" ~middlewares:[ Access.create ] new_form
       ; post "" ~middlewares:[ Access.create ] create
+      ; post "/search" ~middlewares:[ Access.search ] search
       ; choose ~scope:(add_key Location) specific
       ]
     in
-    let filter_form
-      (toggle_key, toggle_predicate_type, add_predicate, search_experiments)
-      =
+    let filter_form (toggle_key, toggle_predicate_type, add_predicate) =
       [ post "/toggle-key" toggle_key
       ; post "/toggle-predicate-type" toggle_predicate_type
       ; post "/add-predicate" add_predicate
-      ; post "/experiments" search_experiments
       ]
     in
     let filter =
@@ -243,11 +241,7 @@ module Admin = struct
           [ get "/edit" edit
           ; post "" update_template
           ; choose
-              (filter_form
-                 ( toggle_key
-                 , toggle_predicate_type
-                 , add_predicate
-                 , search_experiments ))
+              (filter_form (toggle_key, toggle_predicate_type, add_predicate))
           ]
       in
       Create.
@@ -255,11 +249,7 @@ module Admin = struct
         ; post "" ~middlewares:[ Access.create ] create_template
         ; get "/new" ~middlewares:[ Access.create ] new_form
         ; choose
-            (filter_form
-               ( toggle_key
-               , toggle_predicate_type
-               , add_predicate
-               , search_experiments ))
+            (filter_form (toggle_key, toggle_predicate_type, add_predicate))
             ~middlewares:[ Access.create ]
         ; choose
             ~middlewares:[ Access.update ]
@@ -417,10 +407,7 @@ module Admin = struct
           choose
             (filter_form
                Experiments.Filter.(
-                 ( toggle_key
-                 , toggle_predicate_type
-                 , add_predicate
-                 , search_experiments )))
+                 toggle_key, toggle_predicate_type, add_predicate))
             ~middlewares
         in
         let specific =
@@ -475,6 +462,7 @@ module Admin = struct
         [ get "" ~middlewares:[ Access.index ] index
         ; post "" ~middlewares:[ Access.create ] create
         ; get "/create" ~middlewares:[ Access.create ] new_form
+        ; post "/search" ~middlewares:[ Access.search ] search
         ; choose ~scope:(add_key Experiment) specific
         ]
     in
@@ -483,6 +471,8 @@ module Admin = struct
       let specific =
         [ get "" ~middlewares:[ Access.read ] detail
         ; get "/edit" ~middlewares:[ Access.update ] edit
+        ; post "/toggle-role" ~middlewares:[ Access.update ] handle_toggle_role
+        ; post "/grant-role" ~middlewares:[ Access.update ] grant_role
         ]
       in
       [ get "" ~middlewares:[ Access.index ] index

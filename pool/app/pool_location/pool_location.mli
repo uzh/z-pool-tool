@@ -271,6 +271,17 @@ val find_location_file
   -> Pool_common.Repo.Id.t
   -> (Mapping.file, Entity.Message.error) result Lwt.t
 
+val search
+  :  Pool_database.Label.t
+  -> Id.t list
+  -> string
+  -> (Id.t * Name.t) list Lwt.t
+
+val search_multiple_by_id
+  :  Pool_database.Label.t
+  -> Id.t list
+  -> (Id.t * Name.t) list Lwt.t
+
 val default_values : t list
 
 module Guard : sig

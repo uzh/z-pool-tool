@@ -262,12 +262,15 @@ let delete req =
   result |> HttpUtils.extract_happy_path req
 ;;
 
+let search = Helpers.Search.create `Location
+
 module Access : sig
   include module type of Helpers.Access
 
   val create_file : Rock.Middleware.t
   val read_file : Rock.Middleware.t
   val delete_file : Rock.Middleware.t
+  val search : Rock.Middleware.t
 end = struct
   include Helpers.Access
   module LocationCommand = Cqrs_command.Location_command
@@ -324,4 +327,6 @@ end = struct
     |> combined_effects
     |> Guardian.validate_generic
   ;;
+
+  let search = index
 end
