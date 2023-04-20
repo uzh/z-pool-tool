@@ -7,6 +7,11 @@ type grant_role =
   ; roles : Role.Actor.t list
   }
 
+type revoke_role =
+  { target : Admin.t
+  ; role : Role.Actor.t
+  }
+
 module CreateRule : sig
   include Common.CommandSig with type t = Guard.Rule.t
 
@@ -49,6 +54,13 @@ module GrantRoles : sig
     :  ?tags:Logs.Tag.set
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
+
+  val validate_role
+    :  t
+    -> Guard.RoleSet.elt list
+    -> (unit, Pool_common.Message.error) result
+
+  val effects : Admin.Id.t -> Guard.ValidationSet.t
 end = struct
   open Guard
 
@@ -63,5 +75,57 @@ end = struct
       ]
   ;;
 
-  let effects = ValidationSet.(SpecificRole `Operator)
+  let validate_role ({ roles; _ } : t) accessible_roles =
+    match roles with
+    | [] -> Error Pool_common.Message.(NotFound Field.Role)
+    | roles ->
+      let validated =
+        CCList.fold_left
+          (fun ini role -> ini && CCList.mem role accessible_roles)
+          true
+          roles
+      in
+      if validated
+      then Ok ()
+      else Error Pool_common.Message.PermissionDeniedGrantRole
+  ;;
+
+  let effects = Admin.Guard.Access.read
+end
+
+module RevokeRole : sig
+  include Common.CommandSig with type t = revoke_role
+
+  val handle
+    :  ?tags:Logs.Tag.set
+    -> t
+    -> (Pool_event.t list, Pool_common.Message.error) result
+
+  val validate_role
+    :  t
+    -> Guard.RoleSet.elt list
+    -> (unit, Pool_common.Message.error) result
+
+  val effects : Admin.Id.t -> Guard.ValidationSet.t
+end = struct
+  open Guard
+
+  type t = revoke_role
+
+  let handle ?(tags = Logs.Tag.empty) { target; role } =
+    Logs.info ~src (fun m -> m ~tags "Handle command RevokeRole");
+    let to_id = Admin.id %> Guard.Uuid.actor_of Admin.Id.value in
+    Ok
+      [ Guard.RolesRevoked (target |> to_id, Guard.RoleSet.singleton role)
+        |> Pool_event.guard
+      ]
+  ;;
+
+  let validate_role { role; _ } accessible_roles =
+    if CCList.mem role accessible_roles
+    then Ok ()
+    else Error Pool_common.Message.PermissionDeniedRevokeRole
+  ;;
+
+  let effects = Admin.Guard.Access.read
 end

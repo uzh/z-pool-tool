@@ -178,4 +178,5 @@ type confirmable =
   | PublisCustomField
   | PublisCustomFieldOption
   | RemoveRule
+  | RevokeRole
   | StopMailing

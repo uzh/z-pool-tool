@@ -405,6 +405,9 @@ let rec error_to_string = function
   | PasswordResetInvalidData -> "Ungültiges Token oder Passwort."
   | PermissionDeniedCreateRule ->
     "Berechtigung zur Erstellung der Regel verweigert."
+  | PermissionDeniedGrantRole -> "Berechtigung der Rollenzuweisung verweigert."
+  | PermissionDeniedRevokeRole ->
+    "Berechtigung für den Widerruf der Rolle verweigert."
   | PickMessageChannel ->
     "Kein Nachrichtenkanal wurde ausgewählt für die Benachrichtigung der \
      Kontakte."

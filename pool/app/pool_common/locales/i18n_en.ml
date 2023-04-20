@@ -334,6 +334,7 @@ let confirmable_to_string confirmable =
    | PublisCustomFieldOption ->
      "option", "publish", Some "You will not be able to delete the it anymore."
    | RemoveRule -> "rule", "delete", None
+   | RevokeRole -> "role", "revoke", None
    | StopMailing -> "mailing", "stop", None)
   |> fun (obj, action, additive) ->
   Format.asprintf "Are you sure you want to %s the %s?" action obj

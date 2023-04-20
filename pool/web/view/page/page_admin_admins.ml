@@ -40,8 +40,13 @@ let roles_section ?(top_element = []) language children =
   :: (top_element @ children)
 ;;
 
-let roles_list ?is_edit ?top_element ({ Pool_context.language; _ } as context) =
-  Component.Role.List.create ?is_edit context
+let roles_list
+  ?is_edit
+  ?top_element
+  ({ Pool_context.language; _ } as context)
+  admin
+  =
+  Component.Role.List.create ?is_edit context admin
   %> CCList.return
   %> roles_section ?top_element language
 ;;
@@ -116,7 +121,7 @@ let detail ({ Pool_context.language; _ } as context) admin granted_roles =
           [ txt (Utils.control_to_string language Message.(Edit None)) ]
       ]
   ]
-  @ roles_list context granted_roles
+  @ roles_list context admin granted_roles
   |> div ~a:[ a_class [ "trim"; "safety-margin" ] ]
 ;;
 
@@ -134,5 +139,6 @@ let edit context editabe_admin granted_roles top_element =
                 (user.name |> Option.value ~default:""))
          ]
      ]
-     @ roles_list ~is_edit:true ~top_element context granted_roles)
+     @ roles_list ~is_edit:true ~top_element context editabe_admin granted_roles
+    )
 ;;

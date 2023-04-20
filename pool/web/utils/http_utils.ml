@@ -258,15 +258,12 @@ let find_in_urlencoded field =
 
 (* This is required as HTMX sends "undefined" if all checkboxes are unchecked *)
 let htmx_urlencoded_list key req =
-  let%lwt lst = Sihl.Web.Request.urlencoded_list key req in
-  Lwt.return
-  @@
-  match lst with
-  | [ hd ] ->
-    if CCString.equal "undefined" (hd |> CCString.lowercase_ascii)
-    then []
-    else lst
-  | _ -> lst
+  let open Utils.Lwt_result.Infix in
+  Sihl.Web.Request.urlencoded_list key req
+  ||> function
+  | [ hd ] when CCString.equal "undefined" (hd |> CCString.lowercase_ascii) ->
+    []
+  | lst -> lst
 ;;
 
 (* TODO[timhub]: hide information, at least on public site *)

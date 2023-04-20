@@ -377,7 +377,9 @@ let rec error_to_string = function
     "You will receive an email with a link to reset your password if an  \
      account with the provided email is existing."
   | PasswordResetInvalidData -> "Invalid token or password provided"
-  | PermissionDeniedCreateRule -> "Permission denied to create rule"
+  | PermissionDeniedCreateRule -> "Permission denied to create the rule"
+  | PermissionDeniedGrantRole -> "Permission denied to grant the role"
+  | PermissionDeniedRevokeRole -> "Permission denied to revoke the role"
   | PickMessageChannel ->
     "No message channel has been selected for the notification of contacts."
   | PoolContextNotFound -> "Context could not be found."

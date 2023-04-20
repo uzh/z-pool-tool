@@ -79,6 +79,8 @@ type error =
   | PasswordResetFailMessage
   | PasswordResetInvalidData
   | PermissionDeniedCreateRule
+  | PermissionDeniedGrantRole
+  | PermissionDeniedRevokeRole
   | PickMessageChannel
   | PoolContextNotFound
   | QueryNotCompatible of (Field.t * Field.t)

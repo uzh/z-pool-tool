@@ -471,8 +471,9 @@ module Admin = struct
       let specific =
         [ get "" ~middlewares:[ Access.read ] detail
         ; get "/edit" ~middlewares:[ Access.update ] edit
-        ; post "/toggle-role" ~middlewares:[ Access.update ] handle_toggle_role
-        ; post "/grant-role" ~middlewares:[ Access.update ] grant_role
+        ; post "/toggle-role" ~middlewares:[ Access.read ] handle_toggle_role
+        ; post "/grant-role" ~middlewares:[ Access.grant_role ] grant_role
+        ; post "/revoke-role" ~middlewares:[ Access.revoke_role ] revoke_role
         ]
       in
       [ get "" ~middlewares:[ Access.index ] index

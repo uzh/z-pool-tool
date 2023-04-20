@@ -184,7 +184,6 @@ let grant_role ({ Rock.Request.target; _ } as req) =
       >== Role.Actor.of_string_res
     in
     let expand_targets role =
-      let open CCList in
       if Role.Actor.find_target role |> CCOption.is_none
       then Lwt.return_ok [ role ]
       else (
@@ -194,19 +193,19 @@ let grant_role ({ Rock.Request.target; _ } as req) =
         | `ManageAssistant _
         | `ManageExperimenter _
         | `Recruiter _ ->
-          HttpUtils.find_in_urlencoded_filtered_list Field.Target urlencoded
-          >|= Experiment.Id.of_string
-          |> Lwt_list.filter_s (fun id ->
-               Experiment.find database_label id ||> CCResult.is_ok)
+          HttpUtils.htmx_urlencoded_list Field.(Target |> array_key) req
+          ||> CCList.map Experiment.Id.of_string
+          >|> Lwt_list.filter_s (fun id ->
+                Experiment.find database_label id ||> CCResult.is_ok)
           ||> CCList.map
                 (Guard.Uuid.target_of Experiment.Id.value
                  %> Role.Actor.update_target role)
           |> Lwt_result.ok
         | `LocationManager _ ->
-          HttpUtils.find_in_urlencoded_filtered_list Field.Target urlencoded
-          >|= Pool_location.Id.of_string
-          |> Lwt_list.filter_s (fun id ->
-               Pool_location.find database_label id ||> CCResult.is_ok)
+          HttpUtils.htmx_urlencoded_list Field.(Target |> array_key) req
+          ||> CCList.map Pool_location.Id.of_string
+          >|> Lwt_list.filter_s (fun id ->
+                Pool_location.find database_label id ||> CCResult.is_ok)
           ||> CCList.map
                 (Guard.Uuid.target_of Pool_location.Id.value
                  %> Role.Actor.update_target role)
@@ -219,13 +218,10 @@ let grant_role ({ Rock.Request.target; _ } as req) =
     in
     let events roles =
       let open Cqrs_command.Guardian_command in
-      let%lwt accessible_roles =
-        generate_all_accessible_roles database_label actor
-      in
-      let roles = CCList.filter (flip CCList.mem accessible_roles) roles in
-      if CCList.is_empty roles
-      then Lwt.return_ok []
-      else GrantRoles.handle ~tags { target = admin; roles } |> lift
+      let grant = { target = admin; roles } in
+      generate_all_accessible_roles database_label actor
+      ||> GrantRoles.validate_role grant
+      >== fun () -> GrantRoles.handle ~tags grant
     in
     let handle events =
       Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
@@ -263,14 +259,60 @@ let grant_role ({ Rock.Request.target; _ } as req) =
     |> htmx_notification
 ;;
 
+let revoke_role ({ Rock.Request.target; _ } as req) =
+  let open Utils.Lwt_result.Infix in
+  let edit_route =
+    CCString.replace ~which:`Right ~sub:"/revoke-role" ~by:"/edit" target
+  in
+  let result { Pool_context.database_label; user; _ } =
+    (let tags = Pool_context.Logger.Tags.req req in
+     let* admin =
+       HttpUtils.find_id Admin.Id.of_string Field.Admin req
+       |> Admin.find database_label
+     in
+     let* actor =
+       Pool_context.Utils.find_authorizable_opt
+         ~admin_only:true
+         database_label
+         user
+       ||> CCOption.to_result Pool_common.Message.(NotFound Field.Admin)
+     in
+     let role =
+       Sihl.Web.Request.to_urlencoded req
+       ||> HttpUtils.find_in_urlencoded Field.Role
+       >== Role.Actor.of_string_res
+     in
+     let events role =
+       let open Cqrs_command.Guardian_command in
+       let revoke = { target = admin; role } in
+       generate_all_accessible_roles database_label actor
+       ||> RevokeRole.validate_role revoke
+       >== fun () -> RevokeRole.handle ~tags revoke
+     in
+     let handle events =
+       let%lwt () =
+         Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
+       in
+       Http_utils.redirect_to_with_actions
+         edit_route
+         [ Message.set ~success:[ Pool_common.Message.RoleUnassigned ] ]
+     in
+     role >>= events |>> handle)
+    >|- fun err -> err, edit_route
+  in
+  result |> HttpUtils.extract_happy_path req
+;;
+
 module Access : sig
   include module type of Helpers.Access
 
   val grant_role : Rock.Middleware.t
+  val revoke_role : Rock.Middleware.t
 end = struct
   include Helpers.Access
   module Command = Cqrs_command.Admin_command
   module Guardian = Middleware.Guardian
+  module GuardianCommand = Cqrs_command.Guardian_command
 
   let admin_effects = Guardian.id_effects Admin.Id.of_string Field.Admin
 
@@ -290,5 +332,15 @@ end = struct
     |> Middleware.Guardian.validate_generic
   ;;
 
-  let grant_role = update
+  let grant_role =
+    GuardianCommand.GrantRoles.effects
+    |> admin_effects
+    |> Middleware.Guardian.validate_generic
+  ;;
+
+  let revoke_role =
+    GuardianCommand.RevokeRole.effects
+    |> admin_effects
+    |> Middleware.Guardian.validate_generic
+  ;;
 end

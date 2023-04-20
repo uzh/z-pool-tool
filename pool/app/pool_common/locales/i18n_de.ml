@@ -348,6 +348,7 @@ let confirmable_to_string confirmable =
      , "publizieren"
      , Some "Sie werden die Option nicht mehr löschen können." )
    | RemoveRule -> "die Regel", "löschen", None
+   | RevokeRole -> "die Rolle", "entfernen", None
    | StopMailing -> "den Versand", "stoppen", None)
   |> fun (obj, action, additive) ->
   Format.asprintf "Sind Sie sicher, dass Sie %s %s wollen?" obj action
