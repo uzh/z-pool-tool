@@ -191,7 +191,10 @@ let is_fully_booked (m : t) =
   m.assignment_count >= m.max_participants + m.overbook
 ;;
 
-let available_spots m = m.max_participants - m.assignment_count |> CCInt.max 0
+let available_spots m =
+  m.max_participants + m.overbook - m.assignment_count |> CCInt.max 0
+;;
+
 let has_assignments m = AssignmentCount.value m.assignment_count > 0
 
 type notification_log =

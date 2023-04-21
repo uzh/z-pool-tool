@@ -200,6 +200,11 @@ val find_all_for_experiment
   -> Experiment.Id.t
   -> (t list, Pool_common.Message.error) Lwt_result.t
 
+val find_all_to_assign_from_waitinglist
+  :  Pool_database.Label.t
+  -> Experiment.Id.t
+  -> (t list, Pool_common.Message.error) Lwt_result.t
+
 val find_all_public_for_experiment
   :  Pool_database.Label.t
   -> Contact.t

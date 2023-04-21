@@ -143,7 +143,13 @@ module Sql = struct
     let where =
       let sql =
         {sql|
-          pool_waiting_list.experiment_uuid = UNHEX(REPLACE(?, '-', ''))
+          pool_waiting_list.experiment_uuid = UNHEX(REPLACE($1, '-', ''))
+          AND NOT EXISTS (
+            SELECT 1
+            FROM pool_assignments
+            INNER JOIN pool_sessions ON pool_assignments.session_uuid = pool_sessions.uuid
+              AND pool_sessions.experiment_uuid = UNHEX(REPLACE($1, '-', ''))
+            WHERE pool_assignments.contact_uuid = user_users.uuid)
         |sql}
       in
       let dyn =
