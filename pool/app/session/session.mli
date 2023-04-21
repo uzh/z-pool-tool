@@ -67,7 +67,7 @@ module AssignmentCount : sig
   val create : int -> (t, Pool_common.Message.error) result
 end
 
-module ShowUpCount : sig
+module NoShowCount : sig
   type t
 
   val equal : t -> t -> bool
@@ -103,7 +103,7 @@ type t =
   ; reminder_lead_time : Pool_common.Reminder.LeadTime.t option
   ; reminder_sent_at : Pool_common.Reminder.SentAt.t option
   ; assignment_count : AssignmentCount.t
-  ; show_up_count : ShowUpCount.t
+  ; no_show_count : NoShowCount.t
   ; participant_count : ParticipantCount.t
   ; (* TODO [aerben] make type for canceled_at? *)
     closed_at : Ptime.t option

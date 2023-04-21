@@ -43,7 +43,7 @@ module Sql = struct
           pool_sessions.reminder_lead_time,
           pool_sessions.reminder_sent_at,
           COUNT(pool_assignments.id),
-          COALESCE( SUM(pool_assignments.show_up), 0),
+          COALESCE( SUM(pool_assignments.no_show), 0),
           COALESCE( SUM(pool_assignments.participated), 0),
           pool_sessions.closed_at,
           pool_sessions.canceled_at,

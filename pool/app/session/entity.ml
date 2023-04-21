@@ -74,14 +74,14 @@ module AssignmentCount = struct
   ;;
 end
 
-module ShowUpCount = struct
+module NoShowCount = struct
   type t = int [@@deriving eq, show]
 
   let value m = m
 
   let create m =
     if m < 0
-    then Error Pool_common.Message.(Invalid Field.ShowUpCount)
+    then Error Pool_common.Message.(Invalid Field.NoShowCount)
     else Ok m
   ;;
 end
@@ -124,7 +124,7 @@ type t =
   ; reminder_lead_time : Pool_common.Reminder.LeadTime.t option
   ; reminder_sent_at : Pool_common.Reminder.SentAt.t option
   ; assignment_count : AssignmentCount.t
-  ; show_up_count : ShowUpCount.t
+  ; no_show_count : NoShowCount.t
   ; participant_count : ParticipantCount.t
   ; (* TODO [aerben] want multiple follow up session?
      * 1. Ja es gibt immer wieder Sessions mit mehreren Following Sessions
@@ -170,7 +170,7 @@ let create
   ; reminder_lead_time
   ; reminder_sent_at = None
   ; assignment_count = 0
-  ; show_up_count = 0
+  ; no_show_count = 0
   ; participant_count = 0
   ; closed_at = None
   ; canceled_at = None

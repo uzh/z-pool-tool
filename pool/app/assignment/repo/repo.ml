@@ -1,4 +1,5 @@
 module RepoEntity = Repo_entity
+module Dynparam = Utils.Database.Dynparam
 
 let of_entity = RepoEntity.of_entity
 let to_entity = RepoEntity.to_entity
@@ -29,7 +30,7 @@ module Sql = struct
             SUBSTR(HEX(pool_assignments.contact_uuid), 17, 4), '-',
             SUBSTR(HEX(pool_assignments.contact_uuid), 21)
           )),
-          pool_assignments.show_up,
+          pool_assignments.no_show,
           pool_assignments.participated,
           pool_assignments.matches_filter,
           pool_assignments.canceled_at,
@@ -205,6 +206,32 @@ module Sql = struct
       (Entity.Id.value id)
   ;;
 
+  let find_followups_request =
+    let open Caqti_request.Infix in
+    let joins =
+      {sql|
+        INNER JOIN pool_sessions
+        ON pool_assignments.session_uuid = pool_sessions.uuid
+      |sql}
+    in
+    {sql|
+        pool_sessions.follow_up_to = (SELECT session_uuid FROM pool_assignments WHERE pool_assignments.uuid = UNHEX(REPLACE($1, '-', '')))
+      AND
+        pool_assignments.contact_uuid = UNHEX(REPLACE($2, '-', ''))
+      AND
+        pool_assignments.marked_as_deleted = 0
+    |sql}
+    |> select_sql ~joins
+    |> Caqti_type.(tup2 string string) ->* RepoEntity.t
+  ;;
+
+  let find_follow_ups pool m =
+    Utils.Database.collect
+      (pool |> Pool_database.Label.value)
+      find_followups_request
+      Entity.(Id.value m.id, Contact.id m.contact |> Contact.Id.value)
+  ;;
+
   let find_session_id_request =
     let open Caqti_request.Infix in
     {sql|
@@ -238,7 +265,7 @@ module Sql = struct
         uuid,
         session_uuid,
         contact_uuid,
-        show_up,
+        no_show,
         participated,
         matches_filter,
         canceled_at,
@@ -271,7 +298,7 @@ module Sql = struct
         UPDATE
           pool_assignments
         SET
-          show_up = $2,
+          no_show = $2,
           participated = $3,
           matches_filter = $4,
           canceled_at = $5
@@ -288,7 +315,7 @@ module Sql = struct
   let format_update m =
     Entity.(
       ( m.id |> Pool_common.Id.value
-      , ( m.show_up
+      , ( m.no_show
         , ( m.participated
           , ( m.matches_filter |> MatchesFilter.value
             , CCOption.map CanceledAt.value m.canceled_at ) ) ) ))
@@ -365,6 +392,12 @@ let find_with_follow_ups pool id =
   Sql.find_with_follow_ups pool id
   >|> Lwt_list.map_s (contact_to_assignment pool)
   ||> CCList.all_ok
+;;
+
+let find_follow_ups pool m =
+  let open Utils.Lwt_result.Infix in
+  Sql.find_follow_ups pool m
+  ||> CCList.map (CCFun.flip to_entity m.Entity.contact)
 ;;
 
 let find_session_id = Sql.find_session_id

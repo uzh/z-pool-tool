@@ -32,6 +32,7 @@ let select_fields =
       pool_contacts.num_invitations,
       pool_contacts.num_assignments,
       pool_contacts.num_show_ups,
+      pool_contacts.num_no_shows,
       pool_contacts.num_participations,
       pool_contacts.firstname_version,
       pool_contacts.lastname_version,
@@ -182,6 +183,7 @@ let insert_request =
         num_invitations,
         num_assignments,
         num_show_ups,
+        num_no_shows,
         num_participations,
         firstname_version,
         lastname_version,
@@ -209,7 +211,8 @@ let insert_request =
         $16,
         $17,
         $18,
-        $19
+        $19,
+        $20
       )
     |sql}
   |> Repo_model.contact ->. Caqti_type.unit
@@ -233,12 +236,13 @@ let update_request =
         num_invitations = $9,
         num_assignments = $10,
         num_show_ups = $11,
-        num_participations = $12,
-        firstname_version = $13,
-        lastname_version = $14,
-        paused_version = $15,
-        language_version = $16,
-        experiment_type_preference_version = $17
+        num_no_shows = $12,
+        num_participations = $13,
+        firstname_version = $14,
+        lastname_version = $15,
+        paused_version = $16,
+        language_version = $17,
+        experiment_type_preference_version = $18
       WHERE
         user_uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}

@@ -136,8 +136,13 @@ let mark_as_deleted req =
       Assignment.find_with_follow_ups database_label assignment_id
     in
     let events =
-      Cqrs_command.Assignment_command.MarkAsDeleted.handle ~tags assignments
-      |> Lwt.return
+      match assignments with
+      | [] -> Lwt_result.return []
+      | hd :: _ as assignments ->
+        Cqrs_command.Assignment_command.MarkAsDeleted.handle
+          ~tags
+          (hd.Assignment.contact, assignments)
+        |> Lwt.return
     in
     let handle events =
       let%lwt () =

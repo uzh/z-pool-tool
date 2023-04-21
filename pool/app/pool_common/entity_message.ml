@@ -139,6 +139,8 @@ module Field = struct
     | NewPassword [@name "new_password"] [@printer go "new_password"]
         [@printer go "num_invitations"]
     | NextRunAt [@name "next_run_at"] [@printer go "next_run_at"]
+    | NoShow [@name "no_show"] [@printer go "no_show"]
+    | NoShowCount [@name "no_show_count"] [@printer go "no_show_count"]
     | Offset [@name "offset"] [@printer go "offset"]
     | Operator [@name "operator"] [@printer go "operator"]
     | Operators [@name "operators"] [@printer go "operators"]
@@ -185,7 +187,6 @@ module Field = struct
     | Session [@name "session"] [@printer go "session"]
     | Sessions [@name "sessions"] [@printer go "sessions"]
     | Setting [@name "setting"] [@printer go "setting"]
-    | ShowUp [@name "show_up"] [@printer go "show_up"]
     | ShowUpCount [@name "show_up_count"] [@printer go "show_up_count"]
     | SMS [@name "sms"] [@printer go "sms"]
     | SmsText [@name "sms_text"] [@printer go "sms_text"]
@@ -274,7 +275,6 @@ type error =
   | EmailMalformed
   | EndBeforeStart
   | ExperimentSessionCountNotZero
-  | FieldRequiresCheckbox of (Field.t * Field.t)
   | FilterAndOrMustNotBeEmpty
   | FilterListValueMustNotBeEmpty
   | FilterMustNotContainTemplate
@@ -288,6 +288,7 @@ type error =
   | IsMarkedAsDeleted of Field.t
   | LoginProvideDetails
   | MeantimeUpdate of Field.t
+  | MutuallyExclusive of (Field.t * Field.t)
   | NegativeAmount
   | NoOptionSelected of Field.t
   | NotADatetime of (string * string)

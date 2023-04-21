@@ -14,6 +14,8 @@ module NumberOfInvitations : sig
 
   val init : t
   val of_int : int -> t
+  val equal : t -> t -> bool
+  val increment : t -> t
 end
 
 module NumberOfAssignments : sig
@@ -21,6 +23,9 @@ module NumberOfAssignments : sig
 
   val init : t
   val of_int : int -> t
+  val equal : t -> t -> bool
+  val increment : t -> int -> t
+  val decrement : t -> int -> t
 end
 
 module NumberOfShowUps : sig
@@ -28,6 +33,19 @@ module NumberOfShowUps : sig
 
   val init : t
   val of_int : int -> t
+  val equal : t -> t -> bool
+  val increment : t -> t
+  val decrement : t -> t
+end
+
+module NumberOfNoShows : sig
+  type t
+
+  val init : t
+  val of_int : int -> t
+  val equal : t -> t -> bool
+  val increment : t -> t
+  val decrement : t -> t
 end
 
 module NumberOfParticipations : sig
@@ -35,6 +53,9 @@ module NumberOfParticipations : sig
 
   val init : t
   val of_int : int -> t
+  val equal : t -> t -> bool
+  val increment : t -> t
+  val decrement : t -> t
 end
 
 type t =
@@ -49,6 +70,7 @@ type t =
   ; num_invitations : NumberOfInvitations.t
   ; num_assignments : NumberOfAssignments.t
   ; num_show_ups : NumberOfShowUps.t
+  ; num_no_shows : NumberOfNoShows.t
   ; num_participations : NumberOfParticipations.t
   ; firstname_version : Pool_common.Version.t
   ; lastname_version : Pool_common.Version.t
@@ -116,7 +138,7 @@ type create =
   }
 
 type session_participation =
-  { show_up : bool
+  { no_show : bool
   ; participated : bool
   }
 
@@ -137,8 +159,8 @@ type event =
   | NumAssignmentsIncreasedBy of (t * int)
   | NumInvitationsIncreased of t
   | ProfileUpdateTriggeredAtUpdated of t list
-  | SessionParticipationSet of t * session_participation
   | RegistrationAttemptNotificationSent of t
+  | Updated of t
 
 val created : create -> event
 val handle_event : Pool_database.Label.t -> event -> unit Lwt.t

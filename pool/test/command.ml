@@ -140,6 +140,10 @@ let () =
             `Quick
             Assignment_test.marked_canceled_as_deleted
         ; test_case
+            "marked closed assignment with followup as deleted"
+            `Quick
+            Assignment_test.marked_closed_with_followups_as_deleted
+        ; test_case
             "cancel deleted assignment"
             `Quick
             Assignment_test.cancel_deleted_assignment
@@ -288,6 +292,10 @@ let () =
             "close session with invalid participation"
             `Quick
             Session_test.validate_invalid_participation
+        ; test_case
+            "close unparticipated assignment with followup"
+            `Quick
+            Session_test.close_unparticipated_with_followup
         ; test_case
             "send reminders for session succeeds"
             `Quick

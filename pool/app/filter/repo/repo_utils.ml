@@ -89,7 +89,7 @@ let participation_subquery dyn operator ids =
           INNER JOIN pool_experiments ON pool_sessions.experiment_uuid = pool_experiments.uuid
         WHERE
           pool_assignments.contact_uuid = pool_contacts.user_uuid
-          AND pool_assignments.show_up = 1
+          AND pool_assignments.no_show = 0
           AND pool_assignments.canceled_at IS NULL
           AND pool_experiments.uuid IN (%s)
         GROUP BY
@@ -208,6 +208,7 @@ let filter_to_sql template_list dyn query =
              | Name
              | NumAssignments
              | NumInvitations
+             | NumNoShows
              | NumParticipations
              | NumShowUps ->
                Error

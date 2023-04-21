@@ -117,6 +117,7 @@ module Key = struct
         [@name "num_assignments"]
     | NumInvitations [@printer print "num_invitations"]
         [@name "num_invitations"]
+    | NumNoShows [@printer print "num_no_shows"] [@name "num_no_shows"]
     | NumParticipations [@printer print "num_participations"]
         [@name "num_participations"]
     | NumShowUps [@printer print "num_show_ups"] [@name "num_show_ups"]
@@ -196,6 +197,7 @@ module Key = struct
     | Name -> Ok "user_users.name"
     | NumAssignments -> Ok "pool_contacts.num_assignments"
     | NumInvitations -> Ok "pool_contacts.num_invitations"
+    | NumNoShows -> Ok "pool_contacts.num_no_shows"
     | NumParticipations -> Ok "pool_contacts.num_participations"
     | NumShowUps -> Ok "pool_contacts.num_show_ups"
     | Participation ->
@@ -207,7 +209,11 @@ module Key = struct
     | ContactLanguage -> Languages Pool_common.Language.all
     | Firstname -> Str
     | Name -> Str
-    | NumAssignments | NumInvitations | NumParticipations | NumShowUps -> Nr
+    | NumAssignments
+    | NumInvitations
+    | NumNoShows
+    | NumParticipations
+    | NumShowUps -> Nr
     | Participation -> QueryExperiments
   ;;
 

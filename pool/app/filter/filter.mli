@@ -35,6 +35,7 @@ module Key : sig
     | Name
     | NumAssignments
     | NumInvitations
+    | NumNoShows
     | NumParticipations
     | NumShowUps
     | Participation

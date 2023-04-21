@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 - validation for tenant database urls, when creating or updating a tenant
 - role based navigation bar
 - cached version of guardian validation
+- filter by no-show count
 
 ### Changed
 
@@ -20,6 +21,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 - tenant description, icon and styles are optional
 - refactor and update guardian integration and middleware
 - using uuids instead of ids as foreign keys in invitations and mailings tables
+- updated session close view and assignments to store no-shows instead of show-ups
 
 ### Fixed
 

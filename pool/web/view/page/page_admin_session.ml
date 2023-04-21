@@ -381,8 +381,8 @@ let session_list
                   ; txt
                       (if CCOption.is_some session.closed_at
                        then
-                         session.show_up_count
-                         |> ShowUpCount.value
+                         session.no_show_count
+                         |> NoShowCount.value
                          |> CCInt.to_string
                        else "")
                   ; txt
@@ -433,7 +433,7 @@ let session_list
       | `SessionOverview ->
         base
         @ ([ Field.AssignmentCount
-           ; Field.ShowUpCount
+           ; Field.NoShowCount
            ; Field.ParticipantCount
            ; Field.CanceledAt
            ; Field.ClosedAt
@@ -855,16 +855,14 @@ let close
   let open Pool_common in
   let control = Message.(Close (Some Field.Session)) in
   let form =
-    let checkbox_element ?(disabled = false) contact field =
-      let disabled = if disabled then [ a_disabled () ] else [] in
+    let checkbox_element id field =
       div
         [ input
             ~a:
-              ([ a_input_type `Checkbox
-               ; a_name Message.Field.(array_key field)
-               ; a_value (contact |> Contact.id |> Id.value)
-               ]
-               @ disabled)
+              [ a_input_type `Checkbox
+              ; a_name Message.Field.(array_key field)
+              ; a_value (id |> Assignment.Id.value)
+              ]
             ()
         ]
     in
@@ -884,13 +882,13 @@ let close
       in
       let thead =
         txt ""
-        :: ([ "all-showup", "S"; "all-participated", "P" ] |> CCList.map link)
+        :: ([ "all-no-show", "NS"; "all-participated", "P" ] |> CCList.map link)
       in
       CCList.map
-        (fun ({ Assignment.contact; _ } : Assignment.t) ->
+        (fun ({ Assignment.id; contact; _ } : Assignment.t) ->
           [ div [ strong [ txt (Contact.fullname contact) ] ]
-          ; checkbox_element contact Message.Field.ShowUp
-          ; checkbox_element ~disabled:true contact Message.Field.Participated
+          ; checkbox_element id Message.Field.NoShow
+          ; checkbox_element id Message.Field.Participated
           ])
         assignments
       |> Table.horizontal_table ~thead `Striped
@@ -916,54 +914,63 @@ let close
     in
     let scripts =
       {js|
-        const showUp = document.querySelectorAll('[name="show_up[]"]');
+        const noShow = document.querySelectorAll('[name="no_show[]"]');
+        for (let i = 0; i < noShow.length; i++) {
+            let elm = noShow[i];
+            let target = document.querySelector(`[name="participated[]"][value="${elm.value}"]`)
+            elm.addEventListener("change", () => {
+                if (elm.checked) {
+                    target.checked = false;
+                }
+            })
+        }
+
         const participated = document.querySelectorAll('[name="participated[]"]');
-        for(let i = 0; i < showUp.length; i++) {
-          let elm = showUp[i];
-          let target = document.querySelector(`[name="participated[]"][value="${elm.value}"]`)
-          elm.addEventListener("change", () => {
-            target.disabled = !elm.checked;
-          })
+        for (let i = 0; i < participated.length; i++) {
+            let elm = participated[i];
+            let target = document.querySelector(`[name="no_show[]"][value="${elm.value}"]`)
+            elm.addEventListener("change", () => {
+                if (elm.checked) {
+                    target.checked = false;
+                }
+            })
         }
 
         const isActive = (elm) => {
-          return elm.dataset.active;
+            return elm.dataset.active;
         }
 
-        const toggleActive = (elm, state) => {
-          const newState = state == null ? !isActive(elm) : state;
-          if(newState) {
-            elm.dataset.active = true;
-          } else {
-            elm.removeAttribute("data-active");
-          }
+        const setToggleState = (elm, state) => {
+            if (state) {
+                elm.dataset.active = true;
+            } else {
+                elm.removeAttribute("data-active");
+            }
         }
 
-        function setAllShowUp(value) {
-          showUp.forEach((elm) => {
-            var event = new Event('change');
-            elm.checked = value;
-            elm.dispatchEvent(event);
-          });
+        function toggleColumnValues(elements, value) {
+            elements.forEach((elm) => {
+                var event = new Event('change');
+                elm.checked = value;
+                elm.dispatchEvent(event);
+            });
         }
 
-        const toggleShowUp = document.getElementById("all-showup");
-        toggleShowUp.addEventListener("click", () => {
-          setAllShowUp(!isActive(toggleShowUp));
-          toggleActive(toggleShowUp);
+        const toggleNoShow = document.getElementById("all-no-show");
+        const toggleParticipated = document.getElementById("all-participated");
+
+        toggleNoShow.addEventListener("click", () => {
+            const newState = !isActive(toggleNoShow);
+            toggleColumnValues(noShow, newState);
+            setToggleState(toggleNoShow, newState);
+            setToggleState(toggleParticipated, !newState);
         })
 
-        const toggleParticipated = document.getElementById("all-participated");
         toggleParticipated.addEventListener("click", () => {
-          const state = !isActive(toggleParticipated);
-          if(state) {
-            setAllShowUp(true);
-            toggleActive(toggleShowUp, true);
-          }
-          participated.forEach((elm) => {
-            elm.checked = state;
-          });
-          toggleActive(toggleParticipated);
+            const newState = !isActive(toggleParticipated);
+            toggleColumnValues(participated, newState);
+            setToggleState(toggleParticipated, newState);
+            setToggleState(toggleNoShow, !newState);
         })
       |js}
     in

@@ -10,6 +10,26 @@ let assignment_effect action id =
     )
 ;;
 
+let update_session_participation_counts
+  ({ Contact.num_show_ups; num_no_shows; num_participations; _ } as contact)
+  no_show
+  participated
+  =
+  let open Contact in
+  let open Assignment in
+  let num_no_shows, num_show_ups =
+    match NoShow.value no_show with
+    | true -> num_no_shows |> NumberOfNoShows.increment, num_show_ups
+    | false -> num_no_shows, num_show_ups |> NumberOfShowUps.increment
+  in
+  let num_participations =
+    if Participated.value participated
+    then num_participations |> NumberOfParticipations.increment
+    else num_participations
+  in
+  { contact with num_no_shows; num_show_ups; num_participations }
+;;
+
 module Create : sig
   include Common.CommandSig
 
@@ -123,17 +143,21 @@ end = struct
   let effects = Assignment.Guard.Access.delete
 end
 
-let validate_participation ((_, show_up, participated) as participation) =
+let validate_participation ((_, no_show, participated, _) as participation) =
   let open Assignment in
-  if Participated.value participated && not (ShowUp.value show_up)
+  if Participated.value participated && NoShow.value no_show
   then
-    Error
-      Pool_common.Message.(FieldRequiresCheckbox Field.(Participated, ShowUp))
+    Error Pool_common.Message.(MutuallyExclusive Field.(Participated, NoShow))
   else Ok participation
 ;;
 
 module SetAttendance : sig
-  type t = (Assignment.t * Assignment.ShowUp.t * Assignment.Participated.t) list
+  type t =
+    (Assignment.t
+    * Assignment.NoShow.t
+    * Assignment.Participated.t
+    * Assignment.t list option)
+    list
 
   val handle
     :  ?tags:Logs.Tag.set
@@ -143,9 +167,14 @@ module SetAttendance : sig
 
   val effects : Experiment.Id.t -> Session.Id.t -> Guard.ValidationSet.t
 end = struct
-  type t = (Assignment.t * Assignment.ShowUp.t * Assignment.Participated.t) list
+  type t =
+    (Assignment.t
+    * Assignment.NoShow.t
+    * Assignment.Participated.t
+    * Assignment.t list option)
+    list
 
-  let handle ?(tags = Logs.Tag.empty) (session : Session.t) command =
+  let handle ?(tags = Logs.Tag.empty) (session : Session.t) (command : t) =
     Logs.info ~src (fun m -> m "Handle command SetAttendance" ~tags);
     let open CCResult in
     let open Assignment in
@@ -157,24 +186,45 @@ end = struct
         >>= fun events ->
         participation
         |> validate_participation
-        >>= fun ((assignment : Assignment.t), showup, participated) ->
-        let* contact_event =
+        >>= fun ( ({ contact; _ } as assignment : Assignment.t)
+                , no_show
+                , participated
+                , follow_ups ) ->
+        let* contact_events =
           let open Contact in
-          let* () = Assignment.attendance_settable assignment in
-          let update =
-            { show_up = ShowUp.value showup
-            ; participated = Participated.value participated
-            }
+          let cancel_followups =
+            NoShow.value no_show || not (Participated.value participated)
           in
-          SessionParticipationSet (assignment.contact, update)
-          |> Pool_event.contact
+          let* () = attendance_settable assignment in
+          let ({ num_assignments; _ } as contact) =
+            update_session_participation_counts contact no_show participated
+          in
+          let num_assignments, mark_as_deleted =
+            match cancel_followups, follow_ups with
+            | true, Some follow_ups ->
+              let num_assignments =
+                follow_ups
+                |> CCFun.(
+                     CCList.filter (fun assignment ->
+                       CCOption.is_none assignment.Assignment.canceled_at)
+                     %> CCList.length
+                     %> NumberOfAssignments.decrement num_assignments)
+              in
+              let marked_as_deleted =
+                follow_ups
+                |> CCList.map CCFun.(markedasdeleted %> Pool_event.assignment)
+              in
+              num_assignments, marked_as_deleted
+            | _, _ -> num_assignments, []
+          in
+          let contact = { contact with num_assignments } in
+          (Contact.Updated contact |> Pool_event.contact) :: mark_as_deleted
           |> CCResult.return
         in
         events
-        @ [ Assignment.AttendanceSet (assignment, showup, participated)
-            |> Pool_event.assignment
-          ; contact_event
-          ]
+        @ ((Assignment.AttendanceSet (assignment, no_show, participated)
+            |> Pool_event.assignment)
+           :: contact_events)
         |> CCResult.return)
       (Ok [ Closed session |> Pool_event.session ])
       command
@@ -251,47 +301,63 @@ end = struct
 end
 
 module MarkAsDeleted : sig
-  include Common.CommandSig with type t = Assignment.t list
+  include Common.CommandSig with type t = Contact.t * Assignment.t list
 
   val effects : Experiment.Id.t -> Assignment.Id.t -> Guard.ValidationSet.t
 end = struct
-  type t = Assignment.t list
+  type t = Contact.t * Assignment.t list
 
-  let handle ?(tags = Logs.Tag.empty) assignments
+  let handle ?(tags = Logs.Tag.empty) (contact, assignments)
     : (Pool_event.t list, Pool_common.Message.error) result
     =
+    let open Assignment in
     let open CCResult in
     Logs.info ~src (fun m -> m ~tags "Handle command MarkAsDeleted");
     let* (_ : unit list) =
-      CCList.map Assignment.is_deletable assignments |> CCList.all_ok
+      CCList.map is_deletable assignments |> CCList.all_ok
     in
     let mark_as_deleted =
-      CCList.map
-        (fun assignment ->
-          Assignment.MarkedAsDeleted assignment |> Pool_event.assignment)
-        assignments
+      CCList.map CCFun.(markedasdeleted %> Pool_event.assignment) assignments
     in
-    let assignment_count_event =
-      let open CCList in
-      let assignment_list =
-        filter
-          (fun assignment -> CCOption.is_none assignment.Assignment.canceled_at)
-          assignments
+    let num_no_shows, num_show_ups, num_participations, num_assignments =
+      let open Contact in
+      assignments
+      |> CCList.fold_left
+           (fun (no_shows, show_ups, participations, assignment_count)
+                (assignment : Assignment.t) ->
+             let no_shows, show_ups =
+               match assignment.no_show |> CCOption.map NoShow.value with
+               | Some true -> NumberOfNoShows.decrement no_shows, show_ups
+               | Some false -> no_shows, NumberOfShowUps.decrement show_ups
+               | _ -> no_shows, show_ups
+             in
+             let assignment_count =
+               if CCOption.is_some assignment.canceled_at
+               then assignment_count
+               else NumberOfAssignments.decrement assignment_count 1
+             in
+             let participations =
+               NumberOfParticipations.decrement participations
+             in
+             no_shows, show_ups, participations, assignment_count)
+           ( contact.num_no_shows
+           , contact.num_show_ups
+           , contact.num_participations
+           , contact.num_assignments )
+    in
+    let contact_updated =
+      let contact =
+        Contact.
+          { contact with
+            num_no_shows
+          ; num_show_ups
+          ; num_participations
+          ; num_assignments
+          }
       in
-      if length assignment_list > 0
-      then
-        Some
-          (Contact.NumAssignmentsDecreasedBy
-             ((hd assignment_list).Assignment.contact, length assignment_list)
-           |> Pool_event.contact)
-      else None
+      Contact.Updated contact |> Pool_event.contact
     in
-    let events =
-      match assignment_count_event with
-      | Some event -> event :: mark_as_deleted
-      | None -> mark_as_deleted
-    in
-    Ok events
+    Ok (contact_updated :: mark_as_deleted)
   ;;
 
   let effects = Assignment.Guard.Access.delete

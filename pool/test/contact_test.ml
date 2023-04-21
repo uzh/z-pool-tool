@@ -85,6 +85,7 @@ let create_contact verified contact_info =
   ; num_invitations = Contact.NumberOfInvitations.init
   ; num_assignments = Contact.NumberOfAssignments.init
   ; num_show_ups = Contact.NumberOfShowUps.init
+  ; num_no_shows = Contact.NumberOfNoShows.init
   ; num_participations = Contact.NumberOfParticipations.init
   ; firstname_version = Pool_common.Version.create ()
   ; lastname_version = Pool_common.Version.create ()

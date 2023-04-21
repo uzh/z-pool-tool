@@ -671,7 +671,7 @@ let close_valid () =
 ;;
 
 let close_valid_with_assignments () =
-  let open Cqrs_command.Assignment_command.SetAttendance in
+  let open Cqrs_command.Assignment_command in
   let open Assignment in
   let session = Test_utils.Model.(create_session ~start:(an_hour_ago ())) () in
   let assignments =
@@ -681,26 +681,32 @@ let close_valid_with_assignments () =
          |> Test_utils.Model.create_contact
          |> create
          |> fun assignment ->
-         assignment, true |> ShowUp.create, Participated.create participated)
+         ( assignment
+         , false |> NoShow.create
+         , Participated.create participated
+         , None ))
   in
-  let res = handle session assignments in
+  let res = SetAttendance.handle session assignments in
   let expected =
     CCList.fold_left
       (fun events
-           (((assignment : Assignment.t), showup, participated) as
-           participation) ->
+           ( (assignment : Assignment.t)
+           , no_show
+           , participated
+           , (_ : t list option) ) ->
         let contact_event =
           let open Contact in
-          let update =
-            { show_up = ShowUp.value showup
-            ; participated = Participated.value participated
-            }
+          let contact =
+            update_session_participation_counts
+              assignment.contact
+              no_show
+              participated
           in
-          SessionParticipationSet (assignment.contact, update)
-          |> Pool_event.contact
+          Updated contact |> Pool_event.contact
         in
         events
-        @ [ AttendanceSet participation |> Pool_event.assignment
+        @ [ AttendanceSet (assignment, no_show, participated)
+            |> Pool_event.assignment
           ; contact_event
           ])
       [ Session.Closed session |> Pool_event.session ]
@@ -718,9 +724,9 @@ let close_with_deleted_assignment () =
     let assignment =
       { base with marked_as_deleted = MarkedAsDeleted.create true }
     in
-    let show_up = ShowUp.create true in
+    let no_show = NoShow.create false in
     let participated = Participated.create true in
-    assignment, show_up, participated
+    assignment, no_show, participated, None
   in
   let res =
     Cqrs_command.Assignment_command.SetAttendance.handle session [ command ]
@@ -736,13 +742,47 @@ let validate_invalid_participation () =
   let session = Test_utils.Model.(create_session ~start:(an_hour_ago ())) () in
   let participation =
     ( Test_utils.Model.create_contact () |> create
-    , ShowUp.create false
-    , Participated.create true )
+    , NoShow.create true
+    , Participated.create true
+    , None )
   in
   let res = handle session [ participation ] in
   let expected =
-    Error
-      Pool_common.Message.(FieldRequiresCheckbox Field.(Participated, ShowUp))
+    Error Pool_common.Message.(MutuallyExclusive Field.(Participated, NoShow))
+  in
+  check_result expected res
+;;
+
+let close_unparticipated_with_followup () =
+  let open Cqrs_command.Assignment_command.SetAttendance in
+  let open Test_utils in
+  let open Assignment in
+  let session = Test_utils.Model.(create_session ~start:(an_hour_ago ())) () in
+  let contact = Model.create_contact () in
+  let assignment = Model.create_assignment ~contact () in
+  let follow_up = Model.create_assignment ~contact () in
+  let participation =
+    ( assignment
+    , NoShow.create false
+    , Participated.create false
+    , Some [ follow_up ] )
+  in
+  let res = handle session [ participation ] in
+  let expected =
+    let contact =
+      let open Contact in
+      { contact with
+        num_show_ups = NumberOfShowUps.increment contact.num_show_ups
+      }
+    in
+    Ok
+      [ Session.Closed session |> Pool_event.session
+      ; Assignment.AttendanceSet
+          (assignment, NoShow.create false, Participated.create false)
+        |> Pool_event.assignment
+      ; Contact.Updated contact |> Pool_event.contact
+      ; Assignment.MarkedAsDeleted follow_up |> Pool_event.assignment
+      ]
   in
   check_result expected res
 ;;
@@ -1042,4 +1082,89 @@ let reschedule_to_past () =
   in
   let expected = Error Pool_common.Message.TimeInPast in
   Test_utils.check_result expected events
+;;
+
+let close_session_check_contact_figures _ () =
+  let open Utils.Lwt_result.Infix in
+  let open Integration_utils in
+  let open Test_utils in
+  let%lwt experiment = Repo.first_experiment () in
+  let%lwt session =
+    SessionRepo.create ~start:(Model.an_hour_ago ()) experiment.Experiment.id ()
+  in
+  let%lwt participated_c = ContactRepo.create ~with_terms_accepted:true () in
+  let%lwt show_up_c = ContactRepo.create ~with_terms_accepted:true () in
+  let%lwt no_show_c = ContactRepo.create ~with_terms_accepted:true () in
+  let contacts =
+    [ participated_c, `Participated; show_up_c, `ShowUp; no_show_c, `NoShow ]
+  in
+  let%lwt () =
+    contacts |> Lwt_list.iter_s CCFun.(fst %> AssignmentRepo.create session)
+  in
+  let%lwt assignments =
+    Assignment.find_by_session Data.database_label session.Session.id
+    ||> get_or_failwith_pool_error
+  in
+  let find_assignment contact =
+    CCList.find
+      Contact.(
+        fun (assignment : Assignment.t) ->
+          Id.equal (id assignment.Assignment.contact) (id contact))
+      assignments
+  in
+  let%lwt () =
+    let open CCList in
+    contacts
+    |> map (fun (contact, status) ->
+         let open Assignment in
+         let open Contact in
+         let no_show, participated =
+           match status with
+           | `Participated -> NoShow.create false, Participated.create true
+           | `ShowUp -> NoShow.create false, Participated.create false
+           | `NoShow -> NoShow.create true, Participated.create false
+         in
+         let contact =
+           Cqrs_command.Assignment_command.update_session_participation_counts
+             contact
+             no_show
+             participated
+         in
+         [ AttendanceSet (find_assignment contact, no_show, participated)
+           |> Pool_event.assignment
+         ; Updated contact |> Pool_event.contact
+         ])
+    |> flatten
+    |> cons (Session.Closed session |> Pool_event.session)
+    |> Pool_event.handle_events Data.database_label
+  in
+  let%lwt res =
+    contacts
+    |> Lwt_list.map_s (fun (contact, status) ->
+         let open Contact in
+         let num_show_ups, num_no_shows, num_participations =
+           (match status with
+            | `Participated -> 1, 0, 1
+            | `ShowUp -> 1, 0, 0
+            | `NoShow -> 0, 1, 0)
+           |> fun (show_up, no_show, participation) ->
+           ( NumberOfShowUps.of_int show_up
+           , NumberOfNoShows.of_int no_show
+           , NumberOfParticipations.of_int participation )
+         in
+         let%lwt contact =
+           find_by_email Data.database_label (Contact.email_address contact)
+           ||> get_or_failwith_pool_error
+         in
+         (NumberOfShowUps.equal contact.num_show_ups num_show_ups
+          && NumberOfNoShows.equal contact.num_no_shows num_no_shows
+          && NumberOfParticipations.equal
+               contact.num_participations
+               num_participations)
+         |> Lwt.return)
+    ||> CCList.filter not
+    ||> CCList.is_empty
+  in
+  let () = Alcotest.(check bool "succeeds" true res) in
+  Lwt.return_unit
 ;;
