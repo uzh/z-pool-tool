@@ -49,19 +49,13 @@ let nav_elements { Experiment.id; direct_registration_disabled; _ } =
     ; "mailings", Mailings, Mailing.Guard.Access.index id
     ]
   in
-  let nav_links =
-    match
-      Experiment.(DirectRegistrationDisabled.value direct_registration_disabled)
-    with
-    | true ->
-      CCList.flatten
-        [ left
-        ; [ "waiting-list", WaitingList, Waiting_list.Guard.Access.index id ]
-        ; right
-        ]
-    | false -> CCList.flatten [ left; []; right ]
+  let waiting_list_nav =
+    if Experiment.(
+         DirectRegistrationDisabled.value direct_registration_disabled)
+    then [ "waiting-list", WaitingList, Waiting_list.Guard.Access.index id ]
+    else []
   in
-  nav_links
+  left @ waiting_list_nav @ right
   |> CCList.map (fun (url, label, set) ->
        ( Format.asprintf "/admin/experiments/%s/%s" (Experiment.Id.value id) url
        , label
