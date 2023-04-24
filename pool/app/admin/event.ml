@@ -4,7 +4,7 @@ module Database = Pool_database
 open Entity
 
 type create =
-  { id : Pool_common.Id.t option
+  { id : Id.t option
   ; email : User.EmailAddress.t
   ; password : User.Password.t [@opaque]
   ; firstname : User.Firstname.t

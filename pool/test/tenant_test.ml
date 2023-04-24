@@ -420,7 +420,7 @@ let update_tenant_database () =
 
 let create_operator () =
   let open Data in
-  let id = Pool_common.Id.create () in
+  let id = Admin.Id.create () in
   let events =
     let open CCResult.Infix in
     let open Admin_command.CreateAdmin in

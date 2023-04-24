@@ -103,7 +103,7 @@ let create_admin req =
       err, Format.asprintf "%s/new" redirect_path)
     @@
     let tags = Pool_context.Logger.Tags.req req in
-    let admin_id = Pool_common.Id.create () in
+    let id = Admin.Id.create () in
     let validate_user () =
       Sihl.Web.Request.urlencoded Field.(Email |> show) req
       ||> CCOption.to_result EmailAddressMissingAdmin
@@ -111,9 +111,7 @@ let create_admin req =
     in
     let events =
       let open Cqrs_command.Admin_command.CreateAdmin in
-      let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-      CCResult.(urlencoded |> decode >>= handle ~id:admin_id ~tags)
-      |> Lwt_result.lift
+      Sihl.Web.Request.to_urlencoded req ||> decode >== handle ~id ~tags
     in
     let handle events =
       Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
@@ -121,7 +119,7 @@ let create_admin req =
     in
     let return_to_overview () =
       Http_utils.redirect_to_with_actions
-        (Format.asprintf "%s/%s" redirect_path (Pool_common.Id.value admin_id))
+        (Format.asprintf "%s/%s" redirect_path (Admin.Id.value id))
         [ Message.set ~success:[ Created Field.Admin ] ]
     in
     () |> validate_user >> events >>= handle |>> return_to_overview

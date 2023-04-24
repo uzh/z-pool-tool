@@ -13,7 +13,7 @@ val email : t -> string
 val full_name : t -> string
 
 type create =
-  { id : Pool_common.Id.t option
+  { id : Id.t option
   ; email : Pool_user.EmailAddress.t
   ; password : Pool_user.Password.t
   ; firstname : Pool_user.Firstname.t
