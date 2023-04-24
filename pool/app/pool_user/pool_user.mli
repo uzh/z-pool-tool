@@ -34,16 +34,13 @@ module Password : sig
   val show : t -> string
   val to_sihl : t -> string
   val create : string -> (t, Pool_common.Message.error) result
+  val create_unvalidated : string -> (t, Pool_common.Message.error) result
 
   val schema
     :  ?field:Pool_common.Message.Field.t
+    -> (string -> (t, Pool_common.Message.error) result)
     -> unit
     -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
-
-  val validate
-    :  ?password_policy:Policy.t
-    -> t
-    -> (t, Pool_common.Message.error) result
 
   val validate_current_password
     :  ?field:Pool_common.Message.Field.t

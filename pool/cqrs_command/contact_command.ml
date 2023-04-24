@@ -17,7 +17,6 @@ module SignUp : sig
   val handle
     :  ?tags:Logs.Tag.set
     -> ?allowed_email_suffixes:Settings.EmailSuffix.t list
-    -> ?password_policy:User.Password.Policy.t
     -> ?user_id:Id.t
     -> ?terms_accepted_at:User.TermsAccepted.t option
     -> Email.Token.t
@@ -49,7 +48,7 @@ end = struct
       make
         Field.
           [ User.EmailAddress.schema ()
-          ; User.Password.schema ()
+          ; User.Password.(schema create ())
           ; User.Firstname.schema ()
           ; User.Lastname.schema ()
           ]
@@ -59,7 +58,6 @@ end = struct
   let handle
     ?(tags = Logs.Tag.empty)
     ?allowed_email_suffixes
-    ?password_policy
     ?(user_id = Id.create ())
     ?(terms_accepted_at = Some (User.TermsAccepted.create_now ()))
     token
@@ -70,13 +68,12 @@ end = struct
     =
     Logs.info ~src (fun m -> m "Handle command SignUp" ~tags);
     let open CCResult in
-    let* password = User.Password.validate ?password_policy command.password in
     let* () = User.EmailAddress.validate allowed_email_suffixes command.email in
     let contact =
       Contact.
         { user_id
         ; email = command.email
-        ; password
+        ; password = command.password
         ; firstname = command.firstname
         ; lastname = command.lastname
         ; terms_accepted_at
@@ -185,7 +182,6 @@ module UpdatePassword : sig
 
   val handle
     :  ?tags:Logs.Tag.set
-    -> ?password_policy:User.Password.Policy.t
     -> Contact.t
     -> Sihl_email.t
     -> t
@@ -212,29 +208,20 @@ end = struct
     Conformist.(
       make
         Field.
-          [ User.Password.schema ~field:CurrentPassword ()
-          ; User.Password.schema ~field:NewPassword ()
+          [ User.Password.(schema ~field:CurrentPassword create_unvalidated ())
+          ; User.Password.(schema ~field:NewPassword create ())
           ; User.PasswordConfirmed.schema ()
           ]
         command)
   ;;
 
-  let handle
-    ?(tags = Logs.Tag.empty)
-    ?password_policy
-    contact
-    notification
-    command
-    =
+  let handle ?(tags = Logs.Tag.empty) contact notification command =
     Logs.info ~src (fun m -> m "Handle command UpdatePassword" ~tags);
     let open CCResult in
     let* () =
       User.Password.validate_current_password
         contact.Contact.user
         command.current_password
-    in
-    let* new_password =
-      User.Password.validate ?password_policy command.new_password
     in
     let* () =
       User.Password.validate_password_confirmation
@@ -245,7 +232,7 @@ end = struct
       [ Contact.PasswordUpdated
           ( contact
           , command.current_password
-          , new_password
+          , command.new_password
           , command.password_confirmation )
         |> Pool_event.contact
       ; Email.Sent notification |> Pool_event.email

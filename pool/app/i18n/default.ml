@@ -27,8 +27,12 @@ let default_values =
   ; "greetings_text", [ "EN", "Greetings Text "; "DE", "Begrüssungstext" ]
   ; "welcome_text", [ "EN", welcome_text_en; "DE", welcome_text_de ]
   ; ( "password_policy_text"
-    , [ "EN", "Password must be at least 8 characters in length."
-      ; "DE", "Das Passwort muss mindestens 8 Zeichen lang sein."
+    , [ ( "EN"
+        , "The password must be at least 8 characters long, contain a number, \
+           a capital letter and a special character." )
+      ; ( "DE"
+        , "Das Passwort muss mindestens 8 Zeichen lang sein, eine Zahl, ein \
+           Grossbuchstabe und ein Sonderzeichen enthalten." )
       ] )
   ]
   |> CCList.map (fun (key, data) ->

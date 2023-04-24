@@ -115,15 +115,15 @@ module Password = struct
     Format.fprintf formatter "%s" m
   ;;
 
-  let create password = Ok password
-
-  let schema ?(field = PoolError.Field.Password) () =
-    Pool_common.Utils.schema_decoder create show field
+  let create password =
+    (* TODO: Consider checking against old password *)
+    Policy.valdate password Policy.default_policy
   ;;
 
-  let validate ?(password_policy = Policy.default_policy) password =
-    (* TODO: Consider checking against old password *)
-    Policy.valdate password password_policy
+  let create_unvalidated p = Ok p
+
+  let schema ?(field = PoolError.Field.Password) create () =
+    Pool_common.Utils.schema_decoder create show field
   ;;
 
   let validate_current_password

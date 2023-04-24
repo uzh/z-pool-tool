@@ -13,7 +13,7 @@ let check_result expected generated =
 ;;
 
 let contact_info email_address =
-  email_address, "Password40!", "Jane", "Doe", Some Language.En
+  email_address, "Password1!", "Jane", "Doe", Some Language.En
 ;;
 
 let allowed_email_suffixes =
@@ -255,10 +255,7 @@ let update_password () =
       ]
       |> decode
       |> Pool_common.Utils.get_or_failwith
-      |> handle
-           ~password_policy:Pool_user.Password.Policy.default_policy
-           contact
-           confirmation_mail)
+      |> handle contact confirmation_mail)
   in
   let expected =
     Ok
@@ -279,11 +276,7 @@ let update_password () =
 ;;
 
 let validate_password_policy password expected =
-  let open CCResult.Infix in
-  let open Pool_user.Password in
-  let res =
-    password |> create >>= validate ~password_policy:Policy.default_policy
-  in
+  let res = password |> Pool_user.Password.create in
   Alcotest.(check Test_utils.(result password error) "succeeds" expected res)
 ;;
 
@@ -322,8 +315,8 @@ let valid_password () =
 
 let update_password_wrong_current_password () =
   let contact = "john@gmail.com" |> contact_info |> create_contact true in
-  let current_password = "something else" in
-  let new_password = "short" in
+  let current_password = "Password2!" in
+  let new_password = "Password3!" in
   let confirmation_mail = confirmation_mail contact in
   let events =
     Contact_command.UpdatePassword.(
@@ -340,11 +333,12 @@ let update_password_wrong_current_password () =
 ;;
 
 let update_password_wrong_policy () =
+  let open CCResult.Infix in
   let ((_, password, _, _, _) as contact_info) =
     "john@gmail.com" |> contact_info
   in
   let contact = contact_info |> create_contact true in
-  let new_password = "short" in
+  let new_password = "Short1!" in
   let confirmation_mail = confirmation_mail contact in
   let events =
     Contact_command.UpdatePassword.(
@@ -353,10 +347,13 @@ let update_password_wrong_policy () =
       ; Field.(PasswordConfirmation |> show), [ new_password ]
       ]
       |> decode
-      |> Pool_common.Utils.get_or_failwith
-      |> handle contact confirmation_mail)
+      >>= handle contact confirmation_mail)
   in
-  let expected = Error (Message.PasswordPolicyMinLength 8) in
+  let expected =
+    Error
+      (Message.Conformist
+         [ Field.NewPassword, Message.PasswordPolicyMinLength 8 ])
+  in
   check_result expected events
 ;;
 
@@ -376,10 +373,7 @@ let update_password_wrong_confirmation () =
       ]
       |> decode
       |> Pool_common.Utils.get_or_failwith
-      |> handle
-           ~password_policy:Pool_user.Password.Policy.default_policy
-           contact
-           confirmation_mail)
+      |> handle contact confirmation_mail)
   in
   let expected = Error Pool_common.Message.PasswordConfirmationDoesNotMatch in
   check_result expected events

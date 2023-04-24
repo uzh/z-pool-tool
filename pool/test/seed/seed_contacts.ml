@@ -31,7 +31,7 @@ let create ?contact_data db_pool =
   let ctx = Pool_database.to_ctx db_pool in
   let password =
     Sys.getenv_opt "POOL_USER_DEFAULT_PASSWORD"
-    |> CCOption.value ~default:"user"
+    |> CCOption.value ~default:"Password1!"
     |> User.Password.create
     |> Pool_common.Utils.get_or_failwith
   in

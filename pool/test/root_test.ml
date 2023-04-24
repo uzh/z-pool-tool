@@ -47,20 +47,24 @@ let create_root () =
 ;;
 
 let create_root_with_invalid_password () =
+  let open CCResult.Infix in
+  let open Pool_common in
   let open Data in
   let password = "e" in
-  let command =
-    CCResult.get_exn
-    @@ Root_command.Create.decode
-         Pool_common.Message.
-           [ Field.(Email |> show), [ email ]
-           ; Field.(Password |> show), [ password ]
-           ; Field.(Firstname |> show), [ firstname ]
-           ; Field.(Lastname |> show), [ lastname ]
-           ]
+  let events =
+    Root_command.Create.decode
+      Message.
+        [ Field.(Email |> show), [ email ]
+        ; Field.(Password |> show), [ password ]
+        ; Field.(Firstname |> show), [ firstname ]
+        ; Field.(Lastname |> show), [ lastname ]
+        ]
+    >>= Root_command.Create.handle
   in
-  let events = Root_command.Create.handle command in
-  let expected = Error Pool_common.(Message.PasswordPolicyMinLength 8) in
+  let expected =
+    Error
+      (Message.Conformist Message.[ Field.Password, PasswordPolicyMinLength 8 ])
+  in
   Alcotest.(
     check
       (result (list Test_utils.event) Test_utils.error)
