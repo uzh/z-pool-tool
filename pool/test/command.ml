@@ -32,6 +32,10 @@ let () =
             `Quick
             Contact_test.password_capital_letter
         ; test_case
+            "password policy: number"
+            `Quick
+            Contact_test.password_number
+        ; test_case
             "password policy: special character"
             `Quick
             Contact_test.password_special_char

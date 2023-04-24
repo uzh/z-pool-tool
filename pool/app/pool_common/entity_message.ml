@@ -306,6 +306,7 @@ type error =
   | PasswordConfirmationDoesNotMatch
   | PasswordPolicyMinLength of int
   | PasswordPolicyCapitalLetter
+  | PasswordPolicyNumber
   | PasswordPolicySpecialChar of char list
   | PasswordResetFailMessage
   | PasswordResetInvalidData

@@ -51,7 +51,7 @@ module Data = struct
   let partner_logo = Asset.partner_logo
   let default_language = "EN"
   let email = "operator@econ.uzh.ch"
-  let password = "AdminAdmin!"
+  let password = "AdminAdmin99!"
   let firstname = "DJ"
   let lastname = "Ötzi"
 

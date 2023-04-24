@@ -381,6 +381,7 @@ let rec error_to_string = function
     Format.asprintf "Das Passwort muss mindestens %i Zeichen lang sein." n
   | PasswordPolicyCapitalLetter ->
     "Das Passwort muss einen Grossbuchstaben enthalten."
+  | PasswordPolicyNumber -> "Das Passwort muss eine Zahl enthalten."
   | PasswordPolicySpecialChar chars ->
     Format.asprintf
       "Das Passwort muss eines der folgenden Zeichen enthalten: %s"

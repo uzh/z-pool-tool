@@ -355,6 +355,7 @@ let rec error_to_string = function
   | PasswordPolicyMinLength n ->
     Format.asprintf "The password must at least contain %i characters." n
   | PasswordPolicyCapitalLetter -> "The password must contain a capital letter."
+  | PasswordPolicyNumber -> "The password must contain a number."
   | PasswordPolicySpecialChar chars ->
     Format.asprintf
       "The password must contain one of the following characters: %s"

@@ -2,7 +2,7 @@ module Root_command = Cqrs_command.Root_command
 
 module Data = struct
   let email = "test@econ.uzh.ch"
-  let password = "Sihlsihl?"
+  let password = "Sihlsihl9?"
   let firstname = "Woofy"
   let lastname = "Woofer"
 end

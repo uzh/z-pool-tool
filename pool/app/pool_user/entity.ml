@@ -21,6 +21,7 @@ module Password = struct
     type rule =
       | MinLength of int
       | MustContainCapitalLetter
+      | MustContainNumber
       | MustContainSpecialChar of char list
 
     type t = rule list
@@ -41,6 +42,18 @@ module Password = struct
       |> function
       | true -> Ok p
       | false -> Error PoolError.PasswordPolicyCapitalLetter
+    ;;
+
+    let validate_number p =
+      p
+      |> CCString.to_list
+      |> CCList.fold_left
+           (fun is_ok c ->
+             is_ok || (CCChar.to_int c >= 48 && CCChar.to_int c <= 57))
+           false
+      |> function
+      | true -> Ok p
+      | false -> Error PoolError.PasswordPolicyNumber
     ;;
 
     let validate_special_char p chars =
@@ -73,6 +86,7 @@ module Password = struct
     let default_policy =
       [ MinLength 8
       ; MustContainCapitalLetter
+      ; MustContainNumber
       ; MustContainSpecialChar default_special_char_set
       ]
     ;;
@@ -86,6 +100,7 @@ module Password = struct
           match rule with
           | MinLength n -> validate_min_length p n
           | MustContainCapitalLetter -> validate_capital_letter p
+          | MustContainNumber -> validate_number p
           | MustContainSpecialChar chars -> validate_special_char p chars)
         (Ok password)
     ;;

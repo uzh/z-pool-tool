@@ -18,6 +18,7 @@ module Password : sig
     type rule =
       | MinLength of int
       | MustContainCapitalLetter
+      | MustContainNumber
       | MustContainSpecialChar of char list
 
     type t

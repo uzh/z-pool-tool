@@ -13,7 +13,7 @@ let check_result expected generated =
 ;;
 
 let contact_info email_address =
-  email_address, "Password!", "Jane", "Doe", Some Language.En
+  email_address, "Password40!", "Jane", "Doe", Some Language.En
 ;;
 
 let allowed_email_suffixes =
@@ -245,7 +245,7 @@ let update_password () =
     "john@gmail.com" |> contact_info
   in
   let contact = contact_info |> create_contact true in
-  let new_password = "NewPassword!" in
+  let new_password = "NewPassword2!" in
   let confirmation_mail = confirmation_mail contact in
   let events =
     Contact_command.UpdatePassword.(
@@ -288,25 +288,29 @@ let validate_password_policy password expected =
 ;;
 
 let password_min_length () =
-  validate_password_policy "Pass!" (Error (Message.PasswordPolicyMinLength 8))
+  validate_password_policy "Pass9!" (Error (Message.PasswordPolicyMinLength 8))
 ;;
 
 let password_capital_letter () =
   validate_password_policy
-    "password!"
+    "password9!"
     (Error Message.PasswordPolicyCapitalLetter)
+;;
+
+let password_number () =
+  validate_password_policy "Password?" (Error Message.PasswordPolicyNumber)
 ;;
 
 let password_special_char () =
   validate_password_policy
-    "Password"
+    "Password9"
     (Error
        (Message.PasswordPolicySpecialChar
           Pool_user.Password.Policy.default_special_char_set))
 ;;
 
 let valid_password () =
-  let password = "Password*" in
+  let password = "Password9*" in
   let expected =
     password
     |> Pool_user.Password.create
@@ -361,8 +365,8 @@ let update_password_wrong_confirmation () =
     "john@gmail.com" |> contact_info
   in
   let contact = contact_info |> create_contact true in
-  let new_password = "Password?" in
-  let confirmed_password = "Password*" in
+  let new_password = "Password1?" in
+  let confirmed_password = "Password1*" in
   let confirmation_mail = confirmation_mail contact in
   let events =
     Contact_command.UpdatePassword.(
