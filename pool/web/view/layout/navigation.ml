@@ -12,18 +12,19 @@ module NavElements = struct
 
   let contact =
     let open I18n in
-    let profile_dropdown =
-      NavElement.create_all_req
-        [ "/user/personal-details", PersonalDetails
-        ; "/user/login-information", LoginInformation
-        ]
+    let links =
+      let profile_dropdown =
+        NavElement.create_all_req
+          [ "/user/personal-details", PersonalDetails
+          ; "/user/login-information", LoginInformation
+          ]
+      in
+      [ "/experiments", Experiments, None, []
+      ; "/user", Profile, Some Icon.Person, profile_dropdown
+      ]
+      |> NavElement.create_all
     in
-    [ "/experiments", Experiments, None, []
-    ; "/user", Profile, Some Icon.Person, profile_dropdown
-    ]
-    |> NavElement.create_all
-    |> CCList.cons NavElement.logout
-    |> NavUtils.with_language_switch
+    links @ [ NavElement.logout ] |> NavUtils.with_language_switch
   ;;
 
   let admin =
