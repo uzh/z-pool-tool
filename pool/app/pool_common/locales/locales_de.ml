@@ -335,6 +335,7 @@ let rec error_to_string = function
       ""
       (field |> field_to_string |> CCString.trim)
       "wurde als gelöscht markiert."
+  | LoginEmailBlocked -> "Diese Email Adresse ist gesperrt bis: TODO"
   | LoginProvideDetails -> "Bitte Email Adresse und Passwort eintragen."
   | MeantimeUpdate field ->
     field_message

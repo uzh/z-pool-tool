@@ -41,10 +41,7 @@ let login_post req =
        let password =
          CCList.assoc ~eq:String.equal Field.(Password |> show) params
        in
-       let* user =
-         Service.User.login ~ctx:(to_ctx database_label) email ~password
-         >|- handle_sihl_login_error
-       in
+       let* user = Helpers.Login.login database_label email ~password in
        let login ?(set_completion_cookie = false) path actions =
          HttpUtils.(
            redirect_to_with_actions

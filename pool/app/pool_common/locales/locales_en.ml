@@ -319,6 +319,7 @@ let rec error_to_string = function
       ""
       (field |> field_to_string |> CCString.trim)
       "has been marked as deleted."
+  | LoginEmailBlocked -> "This email is blocked until: TODO"
   | LoginProvideDetails -> "Please provide email and password"
   | MeantimeUpdate field ->
     field_message "" (field_to_string field) "was updated in the meantime!"

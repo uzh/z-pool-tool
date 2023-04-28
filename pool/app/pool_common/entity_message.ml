@@ -286,6 +286,7 @@ type error =
   | InvalidHtmxRequest
   | InvalidOptionSelected
   | IsMarkedAsDeleted of Field.t
+  | LoginEmailBlocked
   | LoginProvideDetails
   | MeantimeUpdate of Field.t
   | MutuallyExclusive of (Field.t * Field.t)
