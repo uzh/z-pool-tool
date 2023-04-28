@@ -1,5 +1,13 @@
 open Sexplib.Conv
 
+module Ptime = struct
+  include Ptime
+
+  let t_of_yojson = Utils.Ptime.ptime_of_yojson
+  let yojson_of_t = Utils.Ptime.yojson_of_ptime
+  let sexp_of_t = Utils.Ptime.ptime_to_sexp
+end
+
 module Field = struct
   let go = Utils.ppx_printer
 
@@ -286,7 +294,7 @@ type error =
   | InvalidHtmxRequest
   | InvalidOptionSelected
   | IsMarkedAsDeleted of Field.t
-  | LoginEmailBlocked
+  | LoginEmailBlocked of Ptime.t
   | LoginProvideDetails
   | MeantimeUpdate of Field.t
   | MutuallyExclusive of (Field.t * Field.t)

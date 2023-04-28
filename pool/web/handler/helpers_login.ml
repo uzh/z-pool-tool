@@ -1,4 +1,5 @@
 module Label = Pool_database.Label
+module Message = Pool_common.Message
 
 let src = Logs.Src.create "login helper"
 
@@ -6,12 +7,7 @@ module Cache = struct
   open Hashtbl
 
   let tbl : (Label.t * string, int * Ptime.t option) t = create 100
-
-  let set key value =
-    Logs.info (fun m -> m "%s" "Set value");
-    replace tbl key value
-  ;;
-
+  let set key value = replace tbl key value
   let remove = remove tbl
   let find_opt = find_opt tbl
 end
@@ -35,8 +31,26 @@ let block_until counter =
        |> CCOption.get_exn_or "Invalid time span provided")
 ;;
 
-let login database_label email ~password =
+let login_params urlencoded =
   let open Utils.Lwt_result.Infix in
+  let open Message in
+  let* params =
+    Field.[ Email; Password ]
+    |> CCList.map Field.show
+    |> Http_utils.urlencoded_to_params urlencoded
+    |> CCOption.to_result LoginProvideDetails
+    |> Lwt_result.lift
+  in
+  let email = CCList.assoc ~eq:String.equal Field.(Email |> show) params in
+  let password =
+    CCList.assoc ~eq:String.equal Field.(Password |> show) params
+  in
+  Lwt_result.return (email, password)
+;;
+
+let login _ urlencoded database_label =
+  let open Utils.Lwt_result.Infix in
+  let* email, password = login_params urlencoded in
   let init = 0, None in
   let increment counter =
     let counter = counter + 1 in
@@ -50,7 +64,7 @@ let login database_label email ~password =
         Ok user
       | Error err ->
         let () = counter |> increment |> Cache.set key in
-        err |> Pool_common.Message.handle_sihl_login_error |> CCResult.fail
+        err |> Message.handle_sihl_login_error |> CCResult.fail
     in
     let login () =
       Service.User.login
@@ -61,7 +75,7 @@ let login database_label email ~password =
     in
     match blocked with
     | Some blocked when Ptime.(is_earlier (Ptime_clock.now ()) ~than:blocked) ->
-      Lwt_result.fail Pool_common.Message.LoginEmailBlocked
+      Lwt_result.fail (Message.LoginEmailBlocked blocked)
     | None | _ -> login ()
   in
   key |> Cache.find_opt |> CCOption.value ~default:init |> handle_login

@@ -3,6 +3,9 @@ module Message = HttpUtils.Message
 
 let to_ctx = Pool_database.to_ctx
 let create_layout req = General.create_tenant_layout req
+let prettify str = Format.asprintf "\"%s\"" str
+(* str |> CCString.replace ~which:`All ~sub:"-" ~by:"\\-" |> CCString.replace
+   ~which:`All ~sub:":" ~by:"\\:" *)
 
 let login_get req =
   let open Utils.Lwt_result.Infix in
@@ -25,23 +28,11 @@ let login_post req =
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
   let result { Pool_context.database_label; query_language; _ } =
     let open Utils.Lwt_result.Infix in
-    let open Pool_common.Message in
     Utils.Lwt_result.map_error (fun err ->
       ( err
       , "/login" |> HttpUtils.intended_of_request req
       , [ HttpUtils.urlencoded_to_flash urlencoded ] ))
-    @@ let* params =
-         Field.[ Email; Password ]
-         |> CCList.map Field.show
-         |> HttpUtils.urlencoded_to_params urlencoded
-         |> CCOption.to_result LoginProvideDetails
-         |> Lwt_result.lift
-       in
-       let email = CCList.assoc ~eq:String.equal Field.(Email |> show) params in
-       let password =
-         CCList.assoc ~eq:String.equal Field.(Password |> show) params
-       in
-       let* user = Helpers.Login.login database_label email ~password in
+    @@ let* user = Helpers.Login.login req urlencoded database_label in
        let login ?(set_completion_cookie = false) path actions =
          HttpUtils.(
            redirect_to_with_actions
