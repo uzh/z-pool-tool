@@ -333,11 +333,31 @@ let cancel req =
     let* follow_ups =
       Session.find_follow_ups database_label session.Session.id
     in
+    let* assignments =
+      session :: follow_ups
+      |> Lwt_list.fold_left_s
+           (fun result session ->
+             match result with
+             | Error err -> Lwt_result.fail err
+             | Ok assignments ->
+               Assignment.find_uncanceled_by_session
+                 database_label
+                 session.Session.id
+               >|+ CCList.append assignments)
+           (Ok [])
+      >|+ Assignment.group_by_contact
+    in
+    let* mark_as_deleted =
+      let open Cqrs_command.Assignment_command.MarkAsDeleted in
+      let open CCResult in
+      assignments
+      |> CCList.map (handle ~tags)
+      |> flatten_l
+      >|= CCList.flatten
+      |> Lwt_result.lift
+    in
     let* events =
-      let* contacts =
-        Assignment.find_by_session database_label session.Session.id
-        >|+ CCList.map (fun (a : Assignment.t) -> a.Assignment.contact)
-      in
+      let contacts = assignments |> CCList.map (fun (contact, _) -> contact) in
       let* system_languages =
         Pool_context.Tenant.get_tenant_languages req |> Lwt_result.lift
       in
@@ -360,7 +380,9 @@ let cancel req =
       >>= handle ~tags (session :: follow_ups) contacts create_message
       |> Lwt_result.lift
     in
-    let%lwt () = Pool_event.handle_events ~tags database_label events in
+    let%lwt () =
+      Pool_event.handle_events ~tags database_label (events @ mark_as_deleted)
+    in
     Http_utils.redirect_to_with_actions
       success_path
       [ Message.set ~success:[ Pool_common.Message.(Canceled Field.Session) ] ]

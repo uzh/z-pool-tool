@@ -101,6 +101,8 @@ val find_with_follow_ups
   -> (t list, Pool_common.Message.error) result Lwt.t
 
 val find_follow_ups : Pool_database.Label.t -> t -> t list Lwt.t
+val update_contact_counters_on_cancellation : Contact.t -> t list -> Contact.t
+val group_by_contact : t list -> (Contact.t * t list) list
 
 type create =
   { contact : Contact.t

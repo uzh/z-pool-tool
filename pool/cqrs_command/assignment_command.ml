@@ -319,41 +319,9 @@ end = struct
     let mark_as_deleted =
       CCList.map CCFun.(markedasdeleted %> Pool_event.assignment) assignments
     in
-    let num_no_shows, num_show_ups, num_participations, num_assignments =
-      let open Contact in
-      assignments
-      |> CCList.fold_left
-           (fun (no_shows, show_ups, participations, assignment_count)
-                (assignment : Assignment.t) ->
-             let no_shows, show_ups =
-               match assignment.no_show |> CCOption.map NoShow.value with
-               | Some true -> NumberOfNoShows.decrement no_shows, show_ups
-               | Some false -> no_shows, NumberOfShowUps.decrement show_ups
-               | _ -> no_shows, show_ups
-             in
-             let assignment_count =
-               if CCOption.is_some assignment.canceled_at
-               then assignment_count
-               else NumberOfAssignments.decrement assignment_count 1
-             in
-             let participations =
-               NumberOfParticipations.decrement participations
-             in
-             no_shows, show_ups, participations, assignment_count)
-           ( contact.num_no_shows
-           , contact.num_show_ups
-           , contact.num_participations
-           , contact.num_assignments )
-    in
     let contact_updated =
       let contact =
-        Contact.
-          { contact with
-            num_no_shows
-          ; num_show_ups
-          ; num_participations
-          ; num_assignments
-          }
+        Assignment.update_contact_counters_on_cancellation contact assignments
       in
       Contact.Updated contact |> Pool_event.contact
     in
