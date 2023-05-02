@@ -34,7 +34,7 @@ module SignUp : sig
 end = struct
   type t =
     { email : User.EmailAddress.t
-    ; password : User.Password.t
+    ; password : User.Password.t [@opaque]
     ; firstname : User.Firstname.t
     ; lastname : User.Lastname.t
     }

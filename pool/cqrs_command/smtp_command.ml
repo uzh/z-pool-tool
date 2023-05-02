@@ -31,7 +31,7 @@ end = struct
     ; server : SmtpAuth.Server.t
     ; port : SmtpAuth.Port.t
     ; username : SmtpAuth.Username.t option
-    ; password : SmtpAuth.Password.t option
+    ; password : SmtpAuth.Password.t option [@opaque]
     ; mechanism : SmtpAuth.Mechanism.t
     ; protocol : SmtpAuth.Protocol.t
     }

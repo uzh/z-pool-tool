@@ -87,7 +87,7 @@ type t =
 
 type update_password =
   { id : Id.t
-  ; password : Password.t option
+  ; password : Password.t option [@opaque]
   }
 [@@deriving eq, show]
 
