@@ -26,21 +26,11 @@ let login_get req =
 
 let login_post req =
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-  let result _ =
+  let result { Pool_context.database_label; _ } =
     Utils.Lwt_result.map_error (fun err -> err, root_login_path)
     @@
     let open Utils.Lwt_result.Infix in
-    let* params =
-      HttpUtils.urlencoded_to_params urlencoded [ "email"; "password" ]
-      |> CCOption.to_result Pool_common.Message.LoginProvideDetails
-      |> Lwt_result.lift
-    in
-    let email = CCList.assoc ~eq:CCString.equal "email" params in
-    let password = CCList.assoc ~eq:CCString.equal "password" params in
-    let* user =
-      Service.User.login ~ctx email ~password
-      >|- Pool_common.Message.handle_sihl_login_error
-    in
+    let* user = Helpers.Login.login req urlencoded database_label in
     HttpUtils.redirect_to_with_actions
       root_entrypoint_path
       [ Sihl.Web.Session.set [ "user_id", user.Sihl_user.id ] ]

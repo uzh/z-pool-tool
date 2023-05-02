@@ -13,7 +13,6 @@ module Cache = struct
 end
 
 let notify_user database_label (counter, _) tags email =
-  Logs.info (fun m -> m "Notify user: %i" counter);
   let open Utils.Lwt_result.Infix in
   if not (CCInt.equal counter 5)
   then Lwt.return ()
