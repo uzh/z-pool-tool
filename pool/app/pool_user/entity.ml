@@ -26,37 +26,32 @@ module Password = struct
 
     type t = rule list
 
-    let validate_min_length p num =
+    let validate_min_length num p =
       if CCString.length p < num
       then Error (PoolError.PasswordPolicyMinLength num)
       else Ok p
     ;;
 
-    let validate_capital_letter p =
+    let validate_characters validator error p =
       p
       |> CCString.to_list
-      |> CCList.fold_left
-           (fun is_ok c ->
-             is_ok || (CCChar.to_int c >= 65 && CCChar.to_int c <= 90))
-           false
+      |> CCList.fold_left (fun is_ok c -> is_ok || validator c) false
       |> function
       | true -> Ok p
-      | false -> Error PoolError.PasswordPolicyCapitalLetter
+      | false -> Error error
     ;;
 
-    let validate_number p =
-      p
-      |> CCString.to_list
-      |> CCList.fold_left
-           (fun is_ok c ->
-             is_ok || (CCChar.to_int c >= 48 && CCChar.to_int c <= 57))
-           false
-      |> function
-      | true -> Ok p
-      | false -> Error PoolError.PasswordPolicyNumber
+    let validate_capital_letter =
+      let validate c = CCChar.to_int c >= 65 && CCChar.to_int c <= 90 in
+      validate_characters validate PoolError.PasswordPolicyCapitalLetter
     ;;
 
-    let validate_special_char p chars =
+    let validate_number =
+      let validate c = CCChar.to_int c >= 48 && CCChar.to_int c <= 57 in
+      validate_characters validate PoolError.PasswordPolicyNumber
+    ;;
+
+    let validate_special_char chars p =
       chars
       |> CCList.fold_left (fun is_ok c -> is_ok || CCString.contains p c) false
       |> function
@@ -96,12 +91,12 @@ module Password = struct
       CCList.fold_left
         (fun password rule ->
           password
-          >>= fun p ->
+          >>=
           match rule with
-          | MinLength n -> validate_min_length p n
-          | MustContainCapitalLetter -> validate_capital_letter p
-          | MustContainNumber -> validate_number p
-          | MustContainSpecialChar chars -> validate_special_char p chars)
+          | MinLength n -> validate_min_length n
+          | MustContainCapitalLetter -> validate_capital_letter
+          | MustContainNumber -> validate_number
+          | MustContainSpecialChar chars -> validate_special_char chars)
         (Ok password)
     ;;
   end

@@ -156,7 +156,7 @@ let admins db_label =
   let ctx = Pool_database.to_ctx db_label in
   let password =
     Sys.getenv_opt "POOL_ADMIN_DEFAULT_PASSWORD"
-    |> CCOption.value ~default:"admin"
+    |> CCOption.value ~default:"Password1!"
   in
   Lwt_list.iter_s
     (fun (given_name, name, email, (role : Guard.RoleSet.elt list)) ->
