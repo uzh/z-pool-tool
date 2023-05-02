@@ -1,5 +1,10 @@
 open Pool_common.Language
 
+let account_suspension_notification = function
+  | De -> Default_de.account_suspension_notification
+  | En -> Default_en.account_suspension_notification
+;;
+
 let assignment_confirmation = function
   | De -> Default_de.assignment_confirmation
   | En -> Default_en.assignment_confirmation
@@ -62,7 +67,8 @@ let ( @@@ ) constructors =
 let default_values_root = [ password_reset ] @@@ [ En; De ]
 
 let default_values_tenant =
-  [ assignment_confirmation
+  [ account_suspension_notification
+  ; assignment_confirmation
   ; contact_registration_attempt
   ; email_verification
   ; experiment_invitation

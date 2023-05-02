@@ -257,6 +257,7 @@ end
    pattern is "FIELD_ADJECTIVE", turn FIELD to Field.t and make it ADJECTIVE of
    Field.t *)
 type error =
+  | AccountTemporarilySuspended of Ptime.t
   | AccessDenied
   | AccessDeniedMessage
   | AllLanguagesRequired of Field.t
@@ -294,7 +295,6 @@ type error =
   | InvalidHtmxRequest
   | InvalidOptionSelected
   | IsMarkedAsDeleted of Field.t
-  | LoginEmailBlocked of Ptime.t
   | LoginProvideDetails
   | MeantimeUpdate of Field.t
   | MutuallyExclusive of (Field.t * Field.t)

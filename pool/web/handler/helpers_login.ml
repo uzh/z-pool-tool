@@ -12,6 +12,37 @@ module Cache = struct
   let find_opt = find_opt tbl
 end
 
+let notify_user database_label (counter, _) tags email =
+  Logs.info (fun m -> m "Notify user: %i" counter);
+  let open Utils.Lwt_result.Infix in
+  if not (CCInt.equal counter 5)
+  then Lwt.return ()
+  else (
+    let notify () =
+      email
+      |> Service.User.find_by_email_opt
+           ~ctx:(Pool_database.to_ctx database_label)
+      >|> function
+      | None -> Lwt_result.return ()
+      | Some user ->
+        let* tenant = Pool_tenant.find_by_label database_label in
+        Message_template.AccountSuspensionNotification.create tenant user
+        |>> (fun message ->
+              Email.Sent message
+              |> Pool_event.email
+              |> Pool_event.handle_event ~tags database_label)
+        >|- fun err ->
+        Logs.err (fun m ->
+          m
+            ~tags
+            "Could not send account suspension notification to '%s': %s"
+            email
+            Pool_common.(Utils.error_to_string Language.En err));
+        err
+    in
+    () |> notify ||> CCFun.const ())
+;;
+
 let block_until counter =
   let minutes =
     match counter with
@@ -48,10 +79,9 @@ let login_params urlencoded =
   Lwt_result.return (email, password)
 ;;
 
-let log_request req email =
+let log_request req tags email =
   let open Opium in
   let open Request in
-  let tags = Pool_context.Logger.Tags.req req in
   let ip =
     Headers.get req.headers "X-Real-IP"
     |> CCOption.value ~default:"X-Real-IP not found"
@@ -61,6 +91,7 @@ let log_request req email =
 
 let login req urlencoded database_label =
   let open Utils.Lwt_result.Infix in
+  let tags = Pool_context.Logger.Tags.req req in
   let* email, password = login_params urlencoded in
   let init = 0, None in
   let increment counter =
@@ -69,26 +100,33 @@ let login req urlencoded database_label =
   in
   let key = database_label, email in
   let handle_login (counter, blocked) =
+    let suspension_error handler blocked =
+      match blocked with
+      | Some blocked when Ptime.(is_earlier (Ptime_clock.now ()) ~than:blocked)
+        -> Lwt_result.fail (Message.AccountTemporarilySuspended blocked)
+      | None | _ -> handler ()
+    in
     let handle_result = function
       | Ok user ->
         let () = Cache.remove key in
-        Ok user
+        Lwt_result.return user
       | Error err ->
-        log_request req email;
-        let () = counter |> increment |> Cache.set key in
-        err |> Message.handle_sihl_login_error |> CCResult.fail
+        log_request req tags email;
+        let ((_, blocked) as counter) = counter |> increment in
+        let () = Cache.set key counter in
+        let%lwt () = notify_user database_label counter tags email in
+        suspension_error
+          (fun () -> err |> Message.handle_sihl_login_error |> Lwt_result.fail)
+          blocked
     in
     let login () =
       Service.User.login
         ~ctx:(Pool_database.to_ctx database_label)
         email
         ~password
-      ||> handle_result
+      >|> handle_result
     in
-    match blocked with
-    | Some blocked when Ptime.(is_earlier (Ptime_clock.now ()) ~than:blocked) ->
-      Lwt_result.fail (Message.LoginEmailBlocked blocked)
-    | None | _ -> login ()
+    suspension_error login blocked
   in
   key |> Cache.find_opt |> CCOption.value ~default:init |> handle_login
 ;;

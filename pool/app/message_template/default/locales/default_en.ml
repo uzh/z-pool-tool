@@ -13,6 +13,45 @@ let add_salutation_to_text =
 
 let add_salutation html = div ((salutation :: html) @ [ complimentary_close ])
 
+let account_suspension_notification =
+  let label = Label.AccountSuspensionNotification in
+  let email_text =
+    [ p
+        [ txt
+            "due to too many failed login attempts, your account has been \
+             temporarily suspended."
+        ]
+    ; p
+        [ txt
+            "If these attempts were not made by you, please inform an \
+             administrator."
+        ]
+    ]
+    |> add_salutation
+    |> html_to_string
+    |> EmailText.of_string
+  in
+  let email_subject =
+    "Your account has been temporarily suspended" |> EmailSubject.of_string
+  in
+  let sms_text =
+    {|Due to too many failed login attempts, your account has been temporarily suspended.
+
+If these attempts were not made by you, please inform an administrator.|}
+    |> add_salutation_to_text
+    |> SmsText.of_string
+  in
+  { id = Id.create ()
+  ; label
+  ; language
+  ; entity_uuid
+  ; email_text
+  ; email_subject
+  ; plain_text = sms_text
+  ; sms_text
+  }
+;;
+
 let assignment_confirmation =
   let label = Label.AssignmentConfirmation in
   let email_text =

@@ -53,6 +53,38 @@ let experiment_params experiment =
   ]
 ;;
 
+module AccountSuspensionNotification = struct
+  let email_params = global_params
+
+  let create ({ Pool_tenant.database_label; _ } as tenant) user =
+    let open Message_utils in
+    let open Utils.Lwt_result.Infix in
+    let open Sihl.Contract in
+    let%lwt system_languages = Settings.find_languages database_label in
+    let email = user.User.email |> Pool_user.EmailAddress.of_string in
+    let* preferred_langauge =
+      match user.User.admin with
+      | true -> Lwt_result.return Pool_common.Language.En
+      | false ->
+        user.User.email
+        |> Pool_user.EmailAddress.of_string
+        |> Contact.find_by_email database_label
+        >== preferred_language system_languages
+    in
+    let* template, language =
+      find_by_label_to_send
+        database_label
+        preferred_langauge
+        Label.AccountSuspensionNotification
+    in
+    let%lwt sender = Pool_tenant.Service.Email.sender_of_pool database_label in
+    let layout = layout_from_tenant tenant in
+    let params = email_params user in
+    prepare_email language template sender email layout params
+    |> Lwt_result.return
+  ;;
+end
+
 module AssignmentConfirmation = struct
   let base_params contact = contact.Contact.user |> global_params
 

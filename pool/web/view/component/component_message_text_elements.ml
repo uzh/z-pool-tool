@@ -207,6 +207,9 @@ let message_template_help
   let create_experiment () = value ~default:(create_experiment ()) experiment in
   let create_session () = value ~default:(create_session ()) session in
   match template_label with
+  | AccountSuspensionNotification ->
+    let contact = create_contact () in
+    AccountSuspensionNotification.email_params contact.Contact.user
   | AssignmentConfirmation ->
     AssignmentConfirmation.email_params
       language

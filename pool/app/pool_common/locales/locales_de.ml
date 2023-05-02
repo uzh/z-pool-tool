@@ -250,6 +250,12 @@ let warning_to_string : warning -> string = function
 ;;
 
 let rec error_to_string = function
+  | AccountTemporarilySuspended ptime ->
+    ptime
+    |> Utils.Ptime.formatted_date_time
+    |> Format.asprintf
+         "Zu viele fehlgeschlagene Anmeldeversuche. Diese E-Mail-Adresse ist \
+          gesperrt, bis %s"
   | AccessDenied -> "Zugriff verweigert"
   | AccessDeniedMessage ->
     "Der Zugriff auf die gewünschte Seite ist nicht möglich."
@@ -335,12 +341,6 @@ let rec error_to_string = function
       ""
       (field |> field_to_string |> CCString.trim)
       "wurde als gelöscht markiert."
-  | LoginEmailBlocked ptime ->
-    ptime
-    |> Utils.Ptime.formatted_date_time
-    |> Format.asprintf
-         "Zu viele fehlgeschlagene Anmeldeversuche. Diese E-Mail-Adresse ist \
-          gesperrt, bis %s"
   | LoginProvideDetails -> "Bitte Email Adresse und Passwort eintragen."
   | MeantimeUpdate field ->
     field_message

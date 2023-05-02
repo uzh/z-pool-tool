@@ -8,6 +8,8 @@ module Label = struct
   let print = Utils.ppx_printer
 
   type t =
+    | AccountSuspensionNotification [@name "account_suspension_notification"]
+        [@printer print "account_suspension_notification"]
     | AssignmentConfirmation [@name "assignment_confirmation"]
         [@printer print "assignment_confirmation"]
     | ContactRegistrationAttempt [@name "contact_registration_attempt"]
