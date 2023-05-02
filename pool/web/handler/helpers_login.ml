@@ -48,7 +48,18 @@ let login_params urlencoded =
   Lwt_result.return (email, password)
 ;;
 
-let login _ urlencoded database_label =
+let log_request req email =
+  let open Opium in
+  let open Request in
+  let tags = Pool_context.Logger.Tags.req req in
+  let ip =
+    Headers.get req.headers "X-Real-IP"
+    |> CCOption.value ~default:"X-Real-IP not found"
+  in
+  Logs.info ~src (fun m -> m "Failed login attempt: %s %s" ip email ~tags)
+;;
+
+let login req urlencoded database_label =
   let open Utils.Lwt_result.Infix in
   let* email, password = login_params urlencoded in
   let init = 0, None in
@@ -63,6 +74,7 @@ let login _ urlencoded database_label =
         let () = Cache.remove key in
         Ok user
       | Error err ->
+        log_request req email;
         let () = counter |> increment |> Cache.set key in
         err |> Message.handle_sihl_login_error |> CCResult.fail
     in
