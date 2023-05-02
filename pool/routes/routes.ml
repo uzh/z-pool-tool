@@ -23,7 +23,7 @@ let global_middlewares =
   ; CustomMiddleware.Error.error ()
   ; Middleware.trailing_slash ()
   ; Middleware.static_file ()
-  ; Middleware.csrf ()
+  ; Middleware.csrf ~expires:session_expiration ()
   ; Middleware.flash ()
   ; Opium.Middleware.content_length
   ; Opium.Middleware.etag
