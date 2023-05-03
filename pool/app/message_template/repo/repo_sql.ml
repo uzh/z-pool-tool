@@ -244,7 +244,7 @@ let find_all_of_entity_by_label pool entity_uuid label =
     (Pool_common.Id.value entity_uuid, Label.show label)
 ;;
 
-let find_by_label_and_language_request =
+let find_default_by_label_and_language_request =
   let open Caqti_request.Infix in
   Format.asprintf
     {sql|
@@ -253,15 +253,17 @@ let find_by_label_and_language_request =
       pool_message_templates.label = ?
     AND
       pool_message_templates.language = ?
+    AND
+      pool_message_templates.entity_uuid IS NULL
     |sql}
     select_sql
   |> Caqti_type.(tup2 string string) ->! RepoEntity.t
 ;;
 
-let find_by_label_and_language pool language label =
+let find_default_by_label_and_language pool language label =
   Utils.Database.find_opt
     (Pool_database.Label.value pool)
-    find_by_label_and_language_request
+    find_default_by_label_and_language_request
     (Entity.Label.show label, Pool_common.Language.show language)
 ;;
 
@@ -287,7 +289,7 @@ let find pool id =
 
 let insert_default_if_not_exists pool t =
   let open Utils.Lwt_result.Infix in
-  find_by_label_and_language pool t.Entity.language t.Entity.label
+  find_default_by_label_and_language pool t.Entity.language t.Entity.label
   >|> function
   | None -> insert pool t
   | Some _ -> Lwt.return ()
