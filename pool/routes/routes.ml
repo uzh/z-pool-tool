@@ -2,6 +2,8 @@ module CustomMiddleware = Middleware
 open Sihl.Web
 module Field = Pool_common.Message.Field
 
+let session_expiration = `Max_age (60 * 60 * 4 |> CCInt64.of_int)
+
 let validate_entity action entity =
   CustomMiddleware.Guardian.validate_admin_entity
     Guard.(ValidationSet.One (action, TargetSpec.Entity entity))
@@ -21,7 +23,7 @@ let global_middlewares =
   ; CustomMiddleware.Error.error ()
   ; Middleware.trailing_slash ()
   ; Middleware.static_file ()
-  ; Middleware.csrf ()
+  ; Middleware.csrf ~expires:session_expiration ()
   ; Middleware.flash ()
   ; Opium.Middleware.content_length
   ; Opium.Middleware.etag

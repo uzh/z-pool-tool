@@ -9,7 +9,7 @@ module CreateAdmin : sig
 
   type t =
     { email : User.EmailAddress.t
-    ; password : User.Password.t
+    ; password : User.Password.t [@opaque]
     ; firstname : User.Firstname.t
     ; lastname : User.Lastname.t
     }
@@ -17,8 +17,6 @@ module CreateAdmin : sig
   val handle
     :  ?tags:Logs.Tag.set
     -> ?allowed_email_suffixes:Settings.EmailSuffix.t list
-    -> ?password_policy:
-         (User.Password.t -> (unit, Pool_common.Message.error) result)
     -> ?id:Pool_common.Id.t
     -> ?roles:Guard.RoleSet.t
     -> t
@@ -44,24 +42,17 @@ end = struct
       make
         Field.
           [ User.EmailAddress.schema ()
-          ; User.Password.schema ()
+          ; User.Password.(schema create ())
           ; User.Firstname.schema ()
           ; User.Lastname.schema ()
           ]
         command)
   ;;
 
-  let handle
-    ?(tags = Logs.Tag.empty)
-    ?allowed_email_suffixes
-    ?password_policy
-    ?id
-    ?roles
-    command
+  let handle ?(tags = Logs.Tag.empty) ?allowed_email_suffixes ?id ?roles command
     =
     Logs.info ~src (fun m -> m "Handle command CreateAdmin" ~tags);
     let open CCResult in
-    let* () = User.Password.validate ?password_policy command.password in
     let* () =
       Pool_user.EmailAddress.validate allowed_email_suffixes command.email
     in

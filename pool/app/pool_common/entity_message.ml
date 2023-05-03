@@ -1,5 +1,13 @@
 open Sexplib.Conv
 
+module Ptime = struct
+  include Ptime
+
+  let t_of_yojson = Utils.Ptime.ptime_of_yojson
+  let yojson_of_t = Utils.Ptime.yojson_of_ptime
+  let sexp_of_t = Utils.Ptime.ptime_to_sexp
+end
+
 module Field = struct
   let go = Utils.ppx_printer
 
@@ -249,6 +257,7 @@ end
    pattern is "FIELD_ADJECTIVE", turn FIELD to Field.t and make it ADJECTIVE of
    Field.t *)
 type error =
+  | AccountTemporarilySuspended of Ptime.t
   | AccessDenied
   | AccessDeniedMessage
   | AllLanguagesRequired of Field.t
@@ -304,7 +313,10 @@ type error =
   | NumberMin of int
   | Or of (error * error)
   | PasswordConfirmationDoesNotMatch
-  | PasswordPolicy
+  | PasswordPolicyMinLength of int
+  | PasswordPolicyCapitalLetter
+  | PasswordPolicyNumber
+  | PasswordPolicySpecialChar of char list
   | PasswordResetFailMessage
   | PasswordResetInvalidData
   | PickMessageChannel

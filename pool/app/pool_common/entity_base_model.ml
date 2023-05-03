@@ -189,19 +189,11 @@ module Ptime = struct
   type t = Ptime.t [@@deriving eq, show]
 
   let sexp_of_t = Pool_common_utils.Time.ptime_to_sexp
-
-  let t_of_yojson m =
-    m
-    |> Yojson.Safe.to_string
-    |> Ptime.of_rfc3339
-    |> CCResult.map (fun (m, _, _) -> m)
-    |> CCResult.get_exn
-  ;;
-
-  let yojson_of_t m = m |> Ptime.to_rfc3339 |> Yojson.Safe.from_string
+  let t_of_yojson = Utils.Ptime.ptime_of_yojson
+  let yojson_of_t = Utils.Ptime.yojson_of_ptime
   let value m = m
   let create_now = Ptime_clock.now
-  let to_human = Pool_common_utils.Time.formatted_date_time
+  let to_human = Utils.Ptime.formatted_date_time
 
   let schema field create ()
     : (Entity_message.error, t) Pool_common_utils.PoolConformist.Field.t

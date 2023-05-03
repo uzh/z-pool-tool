@@ -14,23 +14,33 @@ module PasswordConfirmed : sig
 end
 
 module Password : sig
+  module Policy : sig
+    type rule =
+      | MinLength of int
+      | MustContainCapitalLetter
+      | MustContainNumber
+      | MustContainSpecialChar of char list
+
+    type t
+
+    val default_special_char_set : char list
+    val default_policy : t
+  end
+
   type t
 
   val equal : t -> t -> bool
   val pp : Format.formatter -> t -> unit
   val show : t -> string
-  val create : string -> (t, Pool_common.Message.error) result
   val to_sihl : t -> string
+  val create : string -> (t, Pool_common.Message.error) result
+  val create_unvalidated : string -> (t, Pool_common.Message.error) result
 
   val schema
     :  ?field:Pool_common.Message.Field.t
+    -> (string -> (t, Pool_common.Message.error) result)
     -> unit
     -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
-
-  val validate
-    :  ?password_policy:(t -> (unit, Pool_common.Message.error) result)
-    -> t
-    -> (unit, Pool_common.Message.error) result
 
   val validate_current_password
     :  ?field:Pool_common.Message.Field.t

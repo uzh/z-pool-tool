@@ -248,6 +248,12 @@ let warning_to_string : warning -> string = function
 ;;
 
 let rec error_to_string = function
+  | AccountTemporarilySuspended ptime ->
+    ptime
+    |> Utils.Ptime.formatted_date_time
+    |> Format.asprintf
+         "Too many failed login attempts. This email address is blocked until \
+          %s"
   | AccessDenied -> "Access denied"
   | AccessDeniedMessage -> "Access to the requested page is denied"
   | AllLanguagesRequired field ->
@@ -352,7 +358,14 @@ let rec error_to_string = function
       (error_to_string err1)
       (err2 |> error_to_string |> CCString.uncapitalize_ascii)
   | PasswordConfirmationDoesNotMatch -> "The provided passwords don't match."
-  | PasswordPolicy -> "Password doesn't match the required policy!"
+  | PasswordPolicyMinLength n ->
+    Format.asprintf "The password must at least contain %i characters." n
+  | PasswordPolicyCapitalLetter -> "The password must contain a capital letter."
+  | PasswordPolicyNumber -> "The password must contain a number."
+  | PasswordPolicySpecialChar chars ->
+    Format.asprintf
+      "The password must contain one of the following characters: %s"
+      (chars |> CCList.map CCString.of_char |> CCString.concat " ")
   | PasswordResetFailMessage ->
     "You will receive an email with a link to reset your password if an  \
      account with the provided email is existing."

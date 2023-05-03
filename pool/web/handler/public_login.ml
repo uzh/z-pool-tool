@@ -25,26 +25,11 @@ let login_post req =
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
   let result { Pool_context.database_label; query_language; _ } =
     let open Utils.Lwt_result.Infix in
-    let open Pool_common.Message in
     Utils.Lwt_result.map_error (fun err ->
       ( err
       , "/login" |> HttpUtils.intended_of_request req
       , [ HttpUtils.urlencoded_to_flash urlencoded ] ))
-    @@ let* params =
-         Field.[ Email; Password ]
-         |> CCList.map Field.show
-         |> HttpUtils.urlencoded_to_params urlencoded
-         |> CCOption.to_result LoginProvideDetails
-         |> Lwt_result.lift
-       in
-       let email = CCList.assoc ~eq:String.equal Field.(Email |> show) params in
-       let password =
-         CCList.assoc ~eq:String.equal Field.(Password |> show) params
-       in
-       let* user =
-         Service.User.login ~ctx:(to_ctx database_label) email ~password
-         >|- handle_sihl_login_error
-       in
+    @@ let* user = Helpers.Login.login req urlencoded database_label in
        let login ?(set_completion_cookie = false) path actions =
          HttpUtils.(
            redirect_to_with_actions
@@ -211,13 +196,11 @@ let reset_password_post req =
     let redirect_with_param =
       add_field_query_params redirect [ Field.Token, token ]
     in
-    let* () =
-      let open CCResult.Infix in
+    let* (_ : Pool_user.Password.t) =
       let open Pool_user.Password in
       Field.Password
       |> go
       |> create
-      >>= validate
       |> Lwt_result.lift
       >|- fun err -> err, redirect_with_param
     in

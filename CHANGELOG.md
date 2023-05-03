@@ -12,6 +12,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 - role based navigation bar
 - cached version of guardian validation
 - filter by no-show count
+- added session expiration
+- block email addresses after multiple failed login attempts
 
 ### Changed
 
@@ -22,6 +24,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 - refactor and update guardian integration and middleware
 - using uuids instead of ids as foreign keys in invitations and mailings tables
 - updated session close view and assignments to store no-shows instead of show-ups
+- added stronger password policy
 
 ### Fixed
 

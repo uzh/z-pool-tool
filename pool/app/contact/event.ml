@@ -6,7 +6,7 @@ open Entity
 type create =
   { user_id : Id.t
   ; email : User.EmailAddress.t
-  ; password : User.Password.t
+  ; password : User.Password.t [@opaque]
   ; firstname : User.Firstname.t
   ; lastname : User.Lastname.t
   ; terms_accepted_at : User.TermsAccepted.t option

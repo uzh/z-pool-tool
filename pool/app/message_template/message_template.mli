@@ -4,6 +4,7 @@ end
 
 module Label : sig
   type t =
+    | AccountSuspensionNotification
     | AssignmentConfirmation
     | ContactRegistrationAttempt
     | EmailVerification
@@ -156,6 +157,15 @@ val create_public_url_with_params
   -> string
   -> (Pool_common.Message.Field.t * string) list
   -> string
+
+module AccountSuspensionNotification : sig
+  val email_params : Sihl_user.t -> (string * string) list
+
+  val create
+    :  Pool_tenant.t
+    -> Sihl_user.t
+    -> (Sihl_email.t, Pool_common.Message.error) result Lwt.t
+end
 
 module AssignmentConfirmation : sig
   val email_params

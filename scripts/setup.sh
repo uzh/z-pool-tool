@@ -9,7 +9,7 @@ opam remote add default https://opam.ocaml.org
 
 repo_oxi=https://github.com/oxidizing
 repo_uzh=https://github.com/uzh
-repo_sihl=$repo_oxi/sihl.git#d0fb1e0bff4964453d22c2b1d28aa8f9eb2969cb
+repo_sihl=$repo_oxi/sihl.git#f5c800d81bf2153e925af18db761476d5475532a
 
 # pin Sihl repos to ensure edge is available
 opam pin add -yn sihl $repo_sihl

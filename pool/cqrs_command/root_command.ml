@@ -15,8 +15,6 @@ module Create : sig
   val handle
     :  ?tags:Logs.Tag.set
     -> ?allowed_email_suffixes:Settings.EmailSuffix.t list
-    -> ?password_policy:
-         (User.Password.t -> (unit, Pool_common.Message.error) result)
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
@@ -28,7 +26,7 @@ module Create : sig
 end = struct
   type t =
     { email : User.EmailAddress.t
-    ; password : User.Password.t
+    ; password : User.Password.t [@opaque]
     ; firstname : User.Firstname.t
     ; lastname : User.Lastname.t
     }
@@ -42,22 +40,16 @@ end = struct
       make
         Field.
           [ User.EmailAddress.schema ()
-          ; User.Password.schema ()
+          ; User.Password.(schema create ())
           ; User.Firstname.schema ()
           ; User.Lastname.schema ()
           ]
         command)
   ;;
 
-  let handle
-    ?(tags = Logs.Tag.empty)
-    ?allowed_email_suffixes
-    ?password_policy
-    command
-    =
+  let handle ?(tags = Logs.Tag.empty) ?allowed_email_suffixes command =
     Logs.info ~src (fun m -> m "Handle command Create" ~tags);
     let open CCResult in
-    let* () = User.Password.validate ?password_policy command.password in
     let* () =
       Pool_user.EmailAddress.validate allowed_email_suffixes command.email
     in

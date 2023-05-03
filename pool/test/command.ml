@@ -24,6 +24,26 @@ let () =
             Contact_test.update_language
         ; test_case "update password" `Quick Contact_test.update_password
         ; test_case
+            "password policy: min length"
+            `Quick
+            Contact_test.password_min_length
+        ; test_case
+            "password policy: capital letter"
+            `Quick
+            Contact_test.password_capital_letter
+        ; test_case
+            "password policy: number"
+            `Quick
+            Contact_test.password_number
+        ; test_case
+            "password policy: special character"
+            `Quick
+            Contact_test.password_special_char
+        ; test_case
+            "password policy: valid password"
+            `Quick
+            Contact_test.valid_password
+        ; test_case
             "update password with wrong current password"
             `Quick
             Contact_test.update_password_wrong_current_password

@@ -131,7 +131,10 @@ let input_element
   let id = Elements.identifier ?identifier name in
   let attributes =
     let attrs =
-      Elements.attributes input_type name id [ a_value value ]
+      let additional =
+        if input_type == `Password then [ a_autocomplete false ] else []
+      in
+      Elements.attributes input_type name id (a_value value :: additional)
       @ additional_attributes
     in
     let attrs = if required then a_required () :: attrs else attrs in

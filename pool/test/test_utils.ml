@@ -34,6 +34,8 @@ let check_result ?(msg = "succeeds") =
   check (result (list event) error) msg
 ;;
 
+let password = Alcotest.testable Pool_user.Password.pp Pool_user.Password.equal
+
 (* Helper functions *)
 
 let setup_test () =

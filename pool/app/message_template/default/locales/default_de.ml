@@ -21,6 +21,45 @@ let add_salutation_to_text =
 
 let add_salutation html = div ((salutation :: html) @ [ complimentary_close ])
 
+let account_suspension_notification =
+  let label = Label.AccountSuspensionNotification in
+  let email_text =
+    [ p
+        [ txt
+            "aufgrund zu vieler fehlgeschlagener Anmeldeversuche wurde Ihr \
+             Account vorübergehend gesperrt."
+        ]
+    ; p
+        [ txt
+            "Wenn diese Versuche nicht von Ihnen durchgeführt wurden, \
+             informieren Sie bitte einen Administrator."
+        ]
+    ]
+    |> add_salutation
+    |> html_to_string
+    |> EmailText.of_string
+  in
+  let email_subject =
+    "Ihr Account wurde temporär gesperrt" |> EmailSubject.of_string
+  in
+  let sms_text =
+    {|Aufgrund zu vieler fehlgeschlagener Anmeldeversuche wurde Ihr Account vorübergehend gesperrt.
+
+Wenn diese Versuche nicht von Ihnen durchgeführt wurden, informieren Sie bitte einen Administrator.|}
+    |> add_salutation_to_text
+    |> SmsText.of_string
+  in
+  { id = Id.create ()
+  ; label
+  ; language
+  ; entity_uuid
+  ; email_text
+  ; email_subject
+  ; plain_text = sms_text
+  ; sms_text
+  }
+;;
+
 let assignment_confirmation =
   let label = Label.AssignmentConfirmation in
   let email_text =

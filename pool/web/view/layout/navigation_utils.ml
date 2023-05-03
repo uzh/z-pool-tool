@@ -157,18 +157,18 @@ let with_language_switch
   query_language
   mobile
   =
-  let open Utils.Lwt_result.Infix in
   let language_switch = i18n_links available_languages active_language in
-  let create_main items =
+  let%lwt main =
     create_main
-      items
+      elements
       ~validate:false
       ?active_navigation
       database_label
       active_language
       query_language
+      mobile
   in
-  create_main elements mobile ||> CCList.cons (language_switch mobile)
+  main @ [ language_switch mobile ] |> Lwt.return
 ;;
 
 let create_desktop fcn =
