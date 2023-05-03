@@ -3,9 +3,6 @@ module Message = HttpUtils.Message
 
 let to_ctx = Pool_database.to_ctx
 let create_layout req = General.create_tenant_layout req
-let prettify str = Format.asprintf "\"%s\"" str
-(* str |> CCString.replace ~which:`All ~sub:"-" ~by:"\\-" |> CCString.replace
-   ~which:`All ~sub:":" ~by:"\\:" *)
 
 let login_get req =
   let open Utils.Lwt_result.Infix in

@@ -105,7 +105,7 @@ let redirect_to_with_actions path actions =
 
 let redirect_to path = redirect_to_with_actions path []
 
-let set_no_cache_headers enable_cache res =
+let set_no_cache_headers ?(enable_cache = false) res =
   if enable_cache
   then res
   else
@@ -113,12 +113,10 @@ let set_no_cache_headers enable_cache res =
     ; "Cache-Control", "no-cache, no-store, must-revalidate"
     ; "Expires", "0"
     ]
-    |> CCList.fold_left
-         (fun res header -> Opium.Response.add_header header res)
-         res
+    |> CCList.fold_left (CCFun.flip Opium.Response.add_header) res
 ;;
 
-let extract_happy_path_generic enable_cache req result msgf =
+let extract_happy_path_generic ?enable_cache req result msgf =
   let context = Pool_context.find req in
   let tags = Pool_context.Logger.Tags.req req in
   match context with
@@ -126,7 +124,7 @@ let extract_happy_path_generic enable_cache req result msgf =
     let%lwt res = result context in
     res
     |> Pool_common.Utils.with_log_result_error ~tags (fun (err, _) -> err)
-    |> CCResult.map (set_no_cache_headers enable_cache)
+    |> CCResult.map (set_no_cache_headers ?enable_cache)
     |> CCResult.map Lwt.return
     |> CCResult.get_lazy (fun (error_msg, error_path) ->
          redirect_to_with_actions
@@ -138,8 +136,8 @@ let extract_happy_path_generic enable_cache req result msgf =
     redirect_to "/error"
 ;;
 
-let extract_happy_path ?(enable_cache = false) req result =
-  extract_happy_path_generic enable_cache req result (fun err ->
+let extract_happy_path ?enable_cache req result =
+  extract_happy_path_generic ?enable_cache req result (fun err ->
     Logs.warn ~src (fun m ->
       m
         ~tags:(Pool_context.Logger.Tags.req req)
@@ -148,7 +146,7 @@ let extract_happy_path ?(enable_cache = false) req result =
     Message.set ~warning:[] ~success:[] ~info:[] ~error:[ err ])
 ;;
 
-let extract_happy_path_with_actions ?(enable_cache = false) req result =
+let extract_happy_path_with_actions ?enable_cache req result =
   let context = Pool_context.find req in
   let tags = Pool_context.Logger.Tags.req req in
   match context with
@@ -156,7 +154,7 @@ let extract_happy_path_with_actions ?(enable_cache = false) req result =
     let%lwt res = result context in
     res
     |> Pool_common.Utils.with_log_result_error ~tags (fun (err, _, _) -> err)
-    |> CCResult.map (set_no_cache_headers enable_cache)
+    |> CCResult.map (set_no_cache_headers ?enable_cache)
     |> CCResult.map Lwt.return
     |> CCResult.get_lazy (fun (error_key, error_path, error_actions) ->
          redirect_to_with_actions

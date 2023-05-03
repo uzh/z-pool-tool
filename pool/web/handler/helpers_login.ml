@@ -99,8 +99,7 @@ let login req urlencoded database_label =
   in
   let key = database_label, email in
   let handle_login (counter, blocked) =
-    let suspension_error handler blocked =
-      match blocked with
+    let suspension_error handler = function
       | Some blocked when Ptime.(is_earlier (Ptime_clock.now ()) ~than:blocked)
         -> Lwt_result.fail (Message.AccountTemporarilySuspended blocked)
       | None | _ -> handler ()
