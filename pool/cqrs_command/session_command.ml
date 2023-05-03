@@ -388,7 +388,7 @@ module Cancel : sig
   val handle
     :  ?tags:Logs.Tag.set
     -> Session.t list
-    -> Contact.t list
+    -> (Contact.t * Assignment.t list) list
     -> (Session.CancellationReason.t
         -> Contact.t
         -> (Sihl_email.t, Pool_common.Message.error) result)
@@ -407,7 +407,7 @@ end = struct
   let handle
     ?(tags = Logs.Tag.empty)
     sessions
-    (contacts : Contact.t list)
+    (assignments : (Contact.t * Assignment.t list) list)
     messages_fn
     command
     =
@@ -422,7 +422,19 @@ end = struct
       sessions |> CCList.map Session.is_cancellable |> CCList.all_ok
     in
     let* emails =
-      contacts |> CCList.map (messages_fn command.reason) |> CCResult.flatten_l
+      assignments
+      |> CCList.map (fun (contact, _) -> contact |> messages_fn command.reason)
+      |> CCResult.flatten_l
+    in
+    let contact_events =
+      assignments
+      |> CCList.map (fun (contact, assignments) ->
+           let contact =
+             Assignment.update_contact_counters_on_cancellation
+               contact
+               assignments
+           in
+           Contact.Updated contact |> Pool_event.contact)
     in
     let email_event =
       if command.notify_email
@@ -436,7 +448,7 @@ end = struct
       |> CCList.map (fun session ->
            Session.Canceled session |> Pool_event.session)
     in
-    [ email_event; sms_event; cancel_events ]
+    [ email_event; sms_event; cancel_events; contact_events ]
     |> CCList.flatten
     |> CCResult.return
   ;;

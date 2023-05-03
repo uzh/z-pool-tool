@@ -347,17 +347,7 @@ let cancel req =
            (Ok [])
       >|+ Assignment.group_by_contact
     in
-    let* mark_as_deleted =
-      let open Cqrs_command.Assignment_command.MarkAsDeleted in
-      let open CCResult in
-      assignments
-      |> CCList.map (handle ~tags)
-      |> flatten_l
-      >|= CCList.flatten
-      |> Lwt_result.lift
-    in
     let* events =
-      let contacts = assignments |> CCList.map (fun (contact, _) -> contact) in
       let* system_languages =
         Pool_context.Tenant.get_tenant_languages req |> Lwt_result.lift
       in
@@ -377,12 +367,10 @@ let cancel req =
       let open Cqrs_command.Session_command.Cancel in
       urlencoded
       |> decode
-      >>= handle ~tags (session :: follow_ups) contacts create_message
+      >>= handle ~tags (session :: follow_ups) assignments create_message
       |> Lwt_result.lift
     in
-    let%lwt () =
-      Pool_event.handle_events ~tags database_label (events @ mark_as_deleted)
-    in
+    let%lwt () = Pool_event.handle_events ~tags database_label events in
     Http_utils.redirect_to_with_actions
       success_path
       [ Message.set ~success:[ Pool_common.Message.(Canceled Field.Session) ] ]
