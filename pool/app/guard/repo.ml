@@ -1,8 +1,6 @@
 open CCFun
 module BaseRole = Role
 
-(* TODO: Once the guardian package has a cached version, this implementation can
-   be updated/removed (Issue: https://github.com/uzh/guardian/issues/11) *)
 include
   Guardian_backend.MariaDb.Make (Role.Actor) (Role.Target)
     (Pool_database.GuardBackend)
@@ -10,6 +8,9 @@ include
 let src = Logs.Src.create "guard"
 
 module Cache = struct
+  (* TODO: Once the guardian package has a cached version, this implementation
+     can be updated/removed (Issue:
+     https://github.com/uzh/guardian/issues/11) *)
   open CCCache
 
   let equal_find_actor (l1, r1, a1) (l2, r2, a2) =

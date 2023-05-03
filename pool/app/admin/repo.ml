@@ -69,8 +69,8 @@ module Sql = struct
   let find_multiple_request ids =
     Format.asprintf
       {sql|
-      WHERE user_users.uuid IN ( %s )
-     |sql}
+        WHERE user_users.uuid IN ( %s )
+      |sql}
       (CCList.mapi
          (fun i _ -> Format.asprintf "UNHEX(REPLACE($%n, '-', ''))" (i + 1))
          ids

@@ -261,7 +261,7 @@ let rec hint_to_string = function
      ersichtlich."
   | RulesIntro ->
     {|Alle Regeln, welche für Akteure des Tools existieren.
-    Beispielsweise, bei der Erstellung eines neuen experiments, werden für dieses Standard Regeln definiert.
+    Beispielsweise, wenn ein neues Experiment erstellt wird, wird für dieses ein Standard Regelsatz hinzugefügt.
     |}
   | ScheduleEvery sec ->
     sec

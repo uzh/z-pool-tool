@@ -57,7 +57,7 @@ module List = struct
       let target_button =
         CCOption.map_or
           ~default
-          (link_as_button ~icon:Icon.EyeOutline %> CCList.return)
+          (link_as_button ~icon:Icon.Eye %> CCList.return)
           (target_path role)
       in
       let remove_button =
