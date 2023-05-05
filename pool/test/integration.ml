@@ -177,6 +177,33 @@ let suite =
               `Slow
               AvailableExperiments.mark_assignment_as_deleted
           ] )
+    ; ( "contact counter"
+      , Contact_counter_test.
+          [ test_case
+              "attend all: register for session"
+              `Slow
+              AttendAll.register_for_session
+          ; test_case
+              "attend all: close first session"
+              `Slow
+              AttendAll.close_first_session
+          ; test_case
+              "attend all: close follow up session"
+              `Slow
+              AttendAll.close_follow_up_session
+          ; test_case
+              "delete attended: delete follow up"
+              `Slow
+              DeleteAttended.delete_follow_up
+          ; test_case
+              "delete attended: delete main"
+              `Slow
+              DeleteAttended.delete_main
+          ; test_case
+              "cancel session: without follow up"
+              `Slow
+              CancelSession.without_followups
+          ] )
     ; "cleanup", [ test_case "clean up test database" `Quick Seed.cleanup ]
     ]
 ;;

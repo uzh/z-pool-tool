@@ -10,6 +10,7 @@ let assignment_effect action id =
     )
 ;;
 
+(* TODO: Remove or move to entity *)
 module IncrementParticipationCount = struct
   type t = bool
 

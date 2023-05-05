@@ -486,7 +486,7 @@ let close_post req =
         urlencoded_list Pool_common.Message.Field.Participated
       in
       assignments
-      |> Lwt_list.map_s (fun ({ Assignment.id; contact; _ } as assigment) ->
+      |> Lwt_list.map_s (fun ({ Assignment.id; contact; _ } as assignment) ->
            let id = Id.value id in
            let find = CCList.mem ~eq:CCString.equal id in
            let no_show = no_shows |> find |> NoShow.create in
@@ -494,7 +494,7 @@ let close_post req =
            let* increment_num_participations =
              Assignment.contact_participation_in_other_assignments
                database_label
-               [ assigment ]
+               [ assignment ]
                experiment_id
                (Contact.id contact)
              >|+ CCFun.(not %> IncrementParticipationCount.create)
@@ -504,11 +504,11 @@ let close_post req =
                NoShow.value no_show || not (Participated.value participated)
              with
              | true ->
-               find_follow_ups database_label assigment ||> CCOption.return
+               find_follow_ups database_label assignment ||> CCOption.return
              | false -> Lwt.return_none
            in
            Lwt_result.return
-             ( assigment
+             ( assignment
              , no_show
              , participated
              , increment_num_participations

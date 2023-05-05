@@ -372,6 +372,7 @@ module Sql = struct
           AND pool_assignments.contact_uuid = UNHEX(REPLACE($2, '-', ''))
           AND pool_sessions.closed_at IS NOT NULL
           AND pool_assignments.no_show = 0
+          AND pool_assignments.marked_as_deleted = 0
         LIMIT 1)
       |sql}
       ids_sql

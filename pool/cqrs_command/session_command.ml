@@ -383,7 +383,11 @@ end = struct
 end
 
 module Cancel : sig
-  include Common.CommandSig
+  type t =
+    { notify_email : bool
+    ; notify_sms : bool
+    ; reason : Session.CancellationReason.t
+    }
 
   val handle
     :  ?tags:Logs.Tag.set
