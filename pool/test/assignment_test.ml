@@ -100,17 +100,22 @@ let set_attendance () =
   let session = Model.(create_session ~start:(an_hour_ago ()) ()) in
   let no_show = false |> NoShow.create in
   let participated = false |> Participated.create in
+  let increment_num_participaton = false in
   let events =
     AssignmentCommand.SetAttendance.handle
       session
-      [ assignment, no_show, participated, None ]
+      [ assignment, no_show, participated, increment_num_participaton, None ]
   in
   let expected =
+    (* TODO [timhub]: Does that test make sense? maybe hardcode updated
+       contact *)
     let contact =
-      AssignmentCommand.update_session_participation_counts
+      Contact_counter.update_on_session_closing
         assignment.contact
         no_show
         participated
+        increment_num_participaton
+      |> Test_utils.get_or_failwith_pool_error
     in
     Ok
       [ Session.Closed session |> Pool_event.session
@@ -131,7 +136,8 @@ let set_invalid_attendance () =
   let events =
     AssignmentCommand.SetAttendance.handle
       session
-      [ assignment, show_up, participated, None ]
+      [ assignment, show_up, participated, false, None ]
+    (* TODO [timhub] *)
   in
   let expected =
     Error Pool_common.Message.(MutuallyExclusive Field.(Participated, NoShow))
@@ -351,7 +357,8 @@ let marked_uncanceled_as_deleted () =
   let assignment = Assignment.{ assignment with canceled_at = None } in
   let events =
     AssignmentCommand.MarkAsDeleted.handle
-      (assignment.Assignment.contact, [ assignment ])
+      (assignment.Assignment.contact, [ assignment ], false)
+    (* TODO [timhub]*)
   in
   let expected =
     let open Contact in
@@ -374,7 +381,8 @@ let marked_canceled_as_deleted () =
   in
   let events =
     AssignmentCommand.MarkAsDeleted.handle
-      (assignment.Assignment.contact, [ assignment ])
+      (assignment.Assignment.contact, [ assignment ], false)
+    (* TODO [timhub]*)
   in
   let expected =
     Ok
@@ -408,7 +416,9 @@ let marked_closed_with_followups_as_deleted () =
     }
   in
   let events =
-    AssignmentCommand.MarkAsDeleted.handle (contact, [ assignment; follow_up ])
+    AssignmentCommand.MarkAsDeleted.handle
+      (contact, [ assignment; follow_up ], false)
+    (* TODO [timhub]*)
   in
   let expected =
     let { num_assignments; num_show_ups; num_participations; _ } = contact in

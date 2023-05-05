@@ -53,6 +53,7 @@ let show req =
       >|+ Session.Public.group_and_sort
     in
     let* session_user_is_assigned =
+      (* TODO: How to show passed sessions? *)
       Assignment.find_by_experiment_and_contact_opt database_label id contact
       >|> Lwt_list.map_s (fun { Assignment.Public.id; _ } ->
             id

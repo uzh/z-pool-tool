@@ -421,6 +421,13 @@ end = struct
     let* (_ : unit list) =
       sessions |> CCList.map Session.is_cancellable |> CCList.all_ok
     in
+    let* (_ : unit list) =
+      let open CCList in
+      assignments
+      >|= (fun (_, lst) -> lst >|= Assignment.is_not_closed)
+      |> flatten
+      |> all_ok
+    in
     let* emails =
       assignments
       |> CCList.map (fun (contact, _) -> contact |> messages_fn command.reason)
@@ -429,12 +436,10 @@ end = struct
     let contact_events =
       assignments
       |> CCList.map (fun (contact, assignments) ->
-           let contact =
-             Assignment.update_contact_counters_on_cancellation
-               contact
-               assignments
-           in
-           Contact.Updated contact |> Pool_event.contact)
+           contact
+           |> Contact_counter.update_on_session_cancellation assignments
+           |> Contact.updated
+           |> Pool_event.contact)
     in
     let email_event =
       if command.notify_email

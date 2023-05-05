@@ -163,12 +163,21 @@ type event =
   | Updated of t
 
 val created : create -> event
+val updated : t -> event
 val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
 val pp : Format.formatter -> t -> unit
 val equal : t -> t -> bool
+val decrement_num_assignments : t -> t
+val decrement_num_show_ups : t -> t
+val decrement_num_no_shows : t -> t
+val decrement_num_participations : t -> t
+val increment_num_assignments : t -> t
+val increment_num_show_ups : t -> t
+val increment_num_no_shows : t -> t
+val increment_num_participations : t -> t
 
 module Preview : sig
   type t =

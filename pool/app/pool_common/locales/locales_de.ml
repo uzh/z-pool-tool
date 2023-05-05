@@ -268,6 +268,7 @@ let rec error_to_string = function
       (field |> field_to_string |> CCString.trim)
       "wurde bereits veröffentlich."
   | AssignmentIsCanceled -> "Anmeldung wurde abgesagt."
+  | AssignmentIsClosed -> "Anmeldung wurde bereits geschlossen."
   | AlreadyStarted ->
     "Bereits gestarted oder beendet, aktion nicht mehr möglich."
   | AlreadyInvitedToExperiment names ->

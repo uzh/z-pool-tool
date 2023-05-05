@@ -137,6 +137,42 @@ let sexp_of_t t =
   t |> id |> Pool_common.Id.value |> fun s -> Sexplib0.Sexp.Atom s
 ;;
 
+let decrement_num_assignments ({ num_assignments; _ } as m) =
+  { m with num_assignments = NumberOfAssignments.decrement num_assignments 1 }
+;;
+
+let decrement_num_show_ups ({ num_show_ups; _ } as m) =
+  { m with num_show_ups = NumberOfShowUps.decrement num_show_ups }
+;;
+
+let decrement_num_no_shows ({ num_no_shows; _ } as m) =
+  { m with num_no_shows = NumberOfNoShows.decrement num_no_shows }
+;;
+
+let decrement_num_participations ({ num_participations; _ } as m) =
+  { m with
+    num_participations = NumberOfParticipations.decrement num_participations
+  }
+;;
+
+let increment_num_assignments ({ num_assignments; _ } as m) =
+  { m with num_assignments = NumberOfAssignments.increment num_assignments 1 }
+;;
+
+let increment_num_show_ups ({ num_show_ups; _ } as m) =
+  { m with num_show_ups = NumberOfShowUps.increment num_show_ups }
+;;
+
+let increment_num_no_shows ({ num_no_shows; _ } as m) =
+  { m with num_no_shows = NumberOfNoShows.increment num_no_shows }
+;;
+
+let increment_num_participations ({ num_participations; _ } as m) =
+  { m with
+    num_participations = NumberOfParticipations.increment num_participations
+  }
+;;
+
 module Preview = struct
   type t =
     { user : Sihl_user.t

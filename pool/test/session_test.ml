@@ -630,12 +630,9 @@ let cancel_valid () =
   let contact_events =
     assignments
     |> CCList.map (fun (contact, assignments) ->
-         let contact =
-           Assignment.update_contact_counters_on_cancellation
-             contact
-             assignments
-         in
-         Contact.Updated contact |> Pool_event.contact)
+         Contact_counter.update_on_session_cancellation assignments contact
+         |> Contact.updated
+         |> Pool_event.contact)
   in
   let reason = "Experimenter is ill" in
   let res =
@@ -711,6 +708,7 @@ let close_valid_with_assignments () =
          ( assignment
          , false |> NoShow.create
          , Participated.create participated
+         , false (* TODO [timhub] *)
          , None ))
   in
   let res = SetAttendance.handle session assignments in
@@ -720,14 +718,18 @@ let close_valid_with_assignments () =
            ( (assignment : Assignment.t)
            , no_show
            , participated
+           , increment_num_participaton
            , (_ : t list option) ) ->
         let contact_event =
           let open Contact in
           let contact =
-            update_session_participation_counts
+            (* TODO [timhub]: maybe hardcode *)
+            Contact_counter.update_on_session_closing
               assignment.contact
               no_show
               participated
+              increment_num_participaton
+            |> Test_utils.get_or_failwith_pool_error
           in
           Updated contact |> Pool_event.contact
         in
@@ -753,7 +755,7 @@ let close_with_deleted_assignment () =
     in
     let no_show = NoShow.create false in
     let participated = Participated.create true in
-    assignment, no_show, participated, None
+    assignment, no_show, participated, false, None (* TODO [timhub] *)
   in
   let res =
     Cqrs_command.Assignment_command.SetAttendance.handle session [ command ]
@@ -771,6 +773,7 @@ let validate_invalid_participation () =
     ( Test_utils.Model.create_contact () |> create
     , NoShow.create true
     , Participated.create true
+    , false (* TODO [timhub] *)
     , None )
   in
   let res = handle session [ participation ] in
@@ -792,6 +795,7 @@ let close_unparticipated_with_followup () =
     ( assignment
     , NoShow.create false
     , Participated.create false
+    , false (* TODO [timhub] *)
     , Some [ follow_up ] )
   in
   let res = handle session [ participation ] in
@@ -1145,17 +1149,20 @@ let close_session_check_contact_figures _ () =
     |> map (fun (contact, status) ->
          let open Assignment in
          let open Contact in
-         let no_show, participated =
+         let no_show, participated, increment_num_participatons =
            match status with
-           | `Participated -> NoShow.create false, Participated.create true
-           | `ShowUp -> NoShow.create false, Participated.create false
-           | `NoShow -> NoShow.create true, Participated.create false
+           | `Participated ->
+             NoShow.create false, Participated.create true, true
+           | `ShowUp -> NoShow.create false, Participated.create false, false
+           | `NoShow -> NoShow.create true, Participated.create false, false
          in
          let contact =
-           Cqrs_command.Assignment_command.update_session_participation_counts
+           Contact_counter.update_on_session_closing
              contact
              no_show
              participated
+             increment_num_participatons
+           |> Test_utils.get_or_failwith_pool_error
          in
          [ AttendanceSet (find_assignment contact, no_show, participated)
            |> Pool_event.assignment

@@ -55,7 +55,7 @@ type event =
   | UnverifiedDeleted of t
   | NumAssignmentsDecreasedBy of (t * int)
   | NumAssignmentsIncreasedBy of (t * int)
-  | NumInvitationsIncreased of t
+  | NumInvitationsIncreased of t (* TODO[timhub]: remove *)
   | ProfileUpdateTriggeredAtUpdated of t list
   | RegistrationAttemptNotificationSent of t
   | Updated of t

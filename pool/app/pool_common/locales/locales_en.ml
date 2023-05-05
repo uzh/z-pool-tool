@@ -259,6 +259,7 @@ let rec error_to_string = function
   | AlreadySignedUpForExperiment ->
     "You are already signed up for this experiment."
   | AssignmentIsCanceled -> "Assignment was canceled."
+  | AssignmentIsClosed -> "Assignment is already closed."
   | AlreadyStarted -> "Already started or ended, action not possible anymore."
   | AlreadyInvitedToExperiment names ->
     Format.asprintf

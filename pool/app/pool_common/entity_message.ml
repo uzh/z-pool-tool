@@ -258,6 +258,7 @@ type error =
   | AlreadySignedUpForExperiment
   | AlreadyStarted
   | AssignmentIsCanceled
+  | AssignmentIsClosed
   | Authorization of string
   | Conformist of (Field.t * error) list
   | ConformistModuleErrorType

@@ -53,10 +53,12 @@ end = struct
           ([ Invitation.Created (contacts, experiment) |> Pool_event.invitation
            ; Email.BulkSent emails |> Pool_event.email
            ]
-           @ CCList.map
-               (fun contact ->
-                 Contact.NumInvitationsIncreased contact |> Pool_event.contact)
-               contacts)
+           @ (contacts
+              |> CCList.map
+                   CCFun.(
+                     Contact_counter.update_on_invitation_sent
+                     %> Contact.updated
+                     %> Pool_event.contact)))
       | Error err -> Error err)
   ;;
 

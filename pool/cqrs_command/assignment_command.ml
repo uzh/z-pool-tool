@@ -10,25 +10,11 @@ let assignment_effect action id =
     )
 ;;
 
-let update_session_participation_counts
-  ({ Contact.num_show_ups; num_no_shows; num_participations; _ } as contact)
-  no_show
-  participated
-  =
-  let open Contact in
-  let open Assignment in
-  let num_no_shows, num_show_ups =
-    match NoShow.value no_show with
-    | true -> num_no_shows |> NumberOfNoShows.increment, num_show_ups
-    | false -> num_no_shows, num_show_ups |> NumberOfShowUps.increment
-  in
-  let num_participations =
-    if Participated.value participated
-    then num_participations |> NumberOfParticipations.increment
-    else num_participations
-  in
-  { contact with num_no_shows; num_show_ups; num_participations }
-;;
+module IncrementParticipationCount = struct
+  type t = bool
+
+  let create b = b
+end
 
 module Create : sig
   include Common.CommandSig
@@ -87,15 +73,17 @@ end = struct
              in
              Assignment.Created create |> Pool_event.assignment)
       in
-      let increase_num_events =
-        Contact.NumAssignmentsIncreasedBy
-          (command.contact, CCList.length command.sessions)
+      let contact_event =
+        Contact_counter.update_on_session_signup
+          command.contact
+          command.sessions
+        |> Contact.updated
         |> Pool_event.contact
       in
       Ok
         (create_events
-         @ [ increase_num_events ]
-         @ [ Email.Sent confirmation_email |> Pool_event.email ])
+         @ [ contact_event; Email.Sent confirmation_email |> Pool_event.email ]
+        )
   ;;
 
   let effects = Assignment.Guard.Access.create
@@ -119,13 +107,8 @@ end = struct
       |> fun ({ Assignment.contact; _ } : Assignment.t) -> contact
     in
     let* (_ : unit list) =
-      CCList.map
-        (fun assignment ->
-          let* () = Session.assignments_cancelable session in
-          let* () = Assignment.is_cancellable assignment in
-          Ok ())
-        assignments
-      |> CCList.all_ok
+      let* () = Session.assignments_cancelable session in
+      CCList.map Assignment.is_cancellable assignments |> CCList.all_ok
     in
     let cancel_events =
       CCList.map
@@ -134,7 +117,8 @@ end = struct
         assignments
     in
     let decrease_assignment_count =
-      Contact.NumAssignmentsDecreasedBy (contact, CCList.length assignments)
+      Contact_counter.update_on_assignment_cancellation assignments contact
+      |> Contact.updated
       |> Pool_event.contact
     in
     Ok (cancel_events @ [ decrease_assignment_count ])
@@ -143,19 +127,12 @@ end = struct
   let effects = Assignment.Guard.Access.delete
 end
 
-let validate_participation ((_, no_show, participated, _) as participation) =
-  let open Assignment in
-  if Participated.value participated && NoShow.value no_show
-  then
-    Error Pool_common.Message.(MutuallyExclusive Field.(Participated, NoShow))
-  else Ok participation
-;;
-
 module SetAttendance : sig
   type t =
     (Assignment.t
     * Assignment.NoShow.t
     * Assignment.Participated.t
+    * IncrementParticipationCount.t
     * Assignment.t list option)
     list
 
@@ -171,6 +148,7 @@ end = struct
     (Assignment.t
     * Assignment.NoShow.t
     * Assignment.Participated.t
+    * IncrementParticipationCount.t
     * Assignment.t list option)
     list
 
@@ -185,41 +163,50 @@ end = struct
         events
         >>= fun events ->
         participation
-        |> validate_participation
-        >>= fun ( ({ contact; _ } as assignment : Assignment.t)
-                , no_show
-                , participated
-                , follow_ups ) ->
-        let* contact_events =
-          let open Contact in
-          let cancel_followups =
-            NoShow.value no_show || not (Participated.value participated)
-          in
-          let* () = attendance_settable assignment in
-          let ({ num_assignments; _ } as contact) =
-            update_session_participation_counts contact no_show participated
-          in
-          let num_assignments, mark_as_deleted =
-            match cancel_followups, follow_ups with
-            | true, Some follow_ups ->
-              let num_assignments =
-                follow_ups
-                |> CCFun.(
-                     CCList.filter (fun assignment ->
-                       CCOption.is_none assignment.Assignment.canceled_at)
-                     %> CCList.length
-                     %> NumberOfAssignments.decrement num_assignments)
-              in
-              let marked_as_deleted =
-                follow_ups
-                |> CCList.map CCFun.(markedasdeleted %> Pool_event.assignment)
-              in
-              num_assignments, marked_as_deleted
-            | _, _ -> num_assignments, []
-          in
-          let contact = { contact with num_assignments } in
+        |> fun ( ({ contact; _ } as assignment : Assignment.t)
+               , no_show
+               , participated
+               , increment_num_participaton
+               , follow_ups ) ->
+        let open Contact in
+        let cancel_followups =
+          NoShow.value no_show || not (Participated.value participated)
+        in
+        let* () = attendance_settable assignment in
+        let* contact =
+          Contact_counter.update_on_session_closing
+            contact
+            no_show
+            participated
+            increment_num_participaton
+        in
+        let num_assignments_decrement, mark_as_deleted =
+          match cancel_followups, follow_ups with
+          | true, Some follow_ups ->
+            let num_assignments =
+              follow_ups
+              |> CCFun.(
+                   CCList.filter (fun assignment ->
+                     CCOption.is_none assignment.Assignment.canceled_at)
+                   %> CCList.length)
+            in
+            let marked_as_deleted =
+              follow_ups
+              |> CCList.map CCFun.(markedasdeleted %> Pool_event.assignment)
+            in
+            num_assignments, marked_as_deleted
+          | _, _ -> 0, []
+        in
+        let contact =
+          { contact with
+            num_assignments =
+              Contact.NumberOfAssignments.decrement
+                contact.num_assignments
+                num_assignments_decrement
+          }
+        in
+        let contact_events =
           (Contact.Updated contact |> Pool_event.contact) :: mark_as_deleted
-          |> CCResult.return
         in
         events
         @ ((Assignment.AttendanceSet (assignment, no_show, participated)
@@ -283,8 +270,10 @@ end = struct
       in
       Ok
         (create_events
-         @ [ Contact.NumAssignmentsIncreasedBy
-               (contact, CCList.length command.sessions)
+         @ [ Contact_counter.update_on_assignment_from_waiting_list
+               contact
+               command.sessions
+             |> Contact.updated
              |> Pool_event.contact
            ; Email.Sent confirmation_email |> Pool_event.email
            ])
@@ -301,13 +290,15 @@ end = struct
 end
 
 module MarkAsDeleted : sig
-  include Common.CommandSig with type t = Contact.t * Assignment.t list
+  include Common.CommandSig with type t = Contact.t * Assignment.t list * bool
 
   val effects : Experiment.Id.t -> Assignment.Id.t -> Guard.ValidationSet.t
 end = struct
-  type t = Contact.t * Assignment.t list
+  type t = Contact.t * Assignment.t list * bool
 
-  let handle ?(tags = Logs.Tag.empty) (contact, assignments)
+  let handle
+    ?(tags = Logs.Tag.empty)
+    (contact, assignments, decrement_participation_count)
     : (Pool_event.t list, Pool_common.Message.error) result
     =
     let open Assignment in
@@ -320,10 +311,12 @@ end = struct
       CCList.map CCFun.(markedasdeleted %> Pool_event.assignment) assignments
     in
     let contact_updated =
-      let contact =
-        Assignment.update_contact_counters_on_cancellation contact assignments
-      in
-      Contact.Updated contact |> Pool_event.contact
+      Contact_counter.update_on_assignment_deletion
+        assignments
+        contact
+        decrement_participation_count
+      |> Contact.updated
+      |> Pool_event.contact
     in
     Ok (contact_updated :: mark_as_deleted)
   ;;

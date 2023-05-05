@@ -12,7 +12,6 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 - role based navigation bar
 - cached version of guardian validation
 - filter by no-show count
-- mark assignments as deleted when cancelling a session
 
 ### Changed
 

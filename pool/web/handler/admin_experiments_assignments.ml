@@ -90,12 +90,12 @@ let ids_and_redirect_from_req req =
     >|= to_path
     |> value ~default:experiment_path
   in
-  Lwt.return (session_id, assignment_id, redirect)
+  Lwt.return (experiment_id, session_id, assignment_id, redirect)
 ;;
 
 let cancel req =
   let open Utils.Lwt_result.Infix in
-  let%lwt session_id, assignment_id, redirect_path =
+  let%lwt _, session_id, assignment_id, redirect_path =
     ids_and_redirect_from_req req
   in
   let result { Pool_context.database_label; _ } =
@@ -127,7 +127,9 @@ let cancel req =
 
 let mark_as_deleted req =
   let open Utils.Lwt_result.Infix in
-  let%lwt _, assignment_id, redirect_path = ids_and_redirect_from_req req in
+  let%lwt experiment_id, _, assignment_id, redirect_path =
+    ids_and_redirect_from_req req
+  in
   let result { Pool_context.database_label; _ } =
     Utils.Lwt_result.map_error (fun err -> err, redirect_path)
     @@
@@ -139,9 +141,18 @@ let mark_as_deleted req =
       match assignments with
       | [] -> Lwt_result.return []
       | hd :: _ as assignments ->
+        let* decrement_num_participations =
+          Assignment.(
+            contact_participation_in_other_assignments
+              database_label
+              assignments
+              experiment_id
+              (Contact.id hd.contact)
+            >|+ not)
+        in
         Cqrs_command.Assignment_command.MarkAsDeleted.handle
           ~tags
-          (hd.Assignment.contact, assignments)
+          (hd.Assignment.contact, assignments, decrement_num_participations)
         |> Lwt.return
     in
     let handle events =
