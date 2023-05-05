@@ -36,6 +36,27 @@ let confirmation_email contact =
     }
 ;;
 
+let update_contact_event
+  ?increment_assignments_by
+  ?decrement_assignments_by
+  contact
+  =
+  let open Contact in
+  let num_assignments =
+    NumberOfAssignments.(
+      [ increment_assignments_by, increment
+      ; decrement_assignments_by, decrement
+      ]
+      |> CCList.fold_left
+           (fun num_assignments ((by : int option), fnc) ->
+             by
+             |> CCOption.map_or ~default:num_assignments (fun by ->
+                  fnc num_assignments by))
+           contact.num_assignments)
+  in
+  { contact with num_assignments } |> updated |> Pool_event.contact
+;;
+
 let create () =
   let { session; experiment; contact } = assignment_data () in
   let experiment = experiment |> Model.experiment_to_public_experiment in
@@ -49,7 +70,7 @@ let create () =
     Ok
       [ Assignment.(Created { contact; session_id = session.Session.Public.id })
         |> Pool_event.assignment
-      ; Contact.NumAssignmentsIncreasedBy (contact, 1) |> Pool_event.contact
+      ; update_contact_event ~increment_assignments_by:1 contact
       ; Email.(Sent (confirmation_email contact)) |> Pool_event.email
       ]
   in
@@ -63,8 +84,9 @@ let canceled () =
   let expected =
     Ok
       [ Assignment.Canceled assignment |> Pool_event.assignment
-      ; Contact.NumAssignmentsDecreasedBy (assignment.Assignment.contact, 1)
-        |> Pool_event.contact
+      ; update_contact_event
+          ~decrement_assignments_by:1
+          assignment.Assignment.contact
       ]
   in
   check_result expected events
@@ -107,21 +129,18 @@ let set_attendance () =
       [ assignment, no_show, participated, increment_num_participaton, None ]
   in
   let expected =
-    (* TODO [timhub]: Does that test make sense? maybe hardcode updated
-       contact *)
-    let contact =
-      Contact_counter.update_on_session_closing
-        assignment.contact
-        no_show
-        participated
-        increment_num_participaton
-      |> Test_utils.get_or_failwith_pool_error
+    let updated_contact =
+      let open Contact in
+      assignment.contact
+      |> increment_num_show_ups
+      |> updated
+      |> Pool_event.contact
     in
     Ok
       [ Session.Closed session |> Pool_event.session
       ; Assignment.AttendanceSet (assignment, no_show, participated)
         |> Pool_event.assignment
-      ; Contact.Updated contact |> Pool_event.contact
+      ; updated_contact
       ]
   in
   check_result expected events
@@ -137,7 +156,6 @@ let set_invalid_attendance () =
     AssignmentCommand.SetAttendance.handle
       session
       [ assignment, show_up, participated, false, None ]
-    (* TODO [timhub] *)
   in
   let expected =
     Error Pool_common.Message.(MutuallyExclusive Field.(Participated, NoShow))
@@ -246,7 +264,7 @@ let assign_contact_from_waiting_list () =
     in
     Ok
       [ Assignment.Created create |> Pool_event.assignment
-      ; Contact.NumAssignmentsIncreasedBy (contact, 1) |> Pool_event.contact
+      ; update_contact_event ~increment_assignments_by:1 contact
       ; Email.(Sent (confirmation_email contact)) |> Pool_event.email
       ]
   in
@@ -282,7 +300,7 @@ let assign_contact_from_waiting_list_with_follow_ups () =
     in
     Ok
       (create_events
-       @ [ Contact.NumAssignmentsIncreasedBy (contact, 2) |> Pool_event.contact
+       @ [ update_contact_event ~increment_assignments_by:2 contact
          ; Email.(Sent (confirmation_email contact)) |> Pool_event.email
          ])
   in
@@ -341,8 +359,9 @@ let assign_to_session_with_follow_ups () =
            Assignment.Created create |> Pool_event.assignment)
     in
     let increase_num_events =
-      Contact.NumAssignmentsIncreasedBy (contact, CCList.length sessions)
-      |> Pool_event.contact
+      update_contact_event
+        ~increment_assignments_by:(CCList.length sessions)
+        contact
     in
     let email_event =
       [ Email.Sent (confirmation_email contact) |> Pool_event.email ]
@@ -352,13 +371,12 @@ let assign_to_session_with_follow_ups () =
   check_result expected events
 ;;
 
-let marked_uncanceled_as_deleted () =
+let mark_uncanceled_as_deleted () =
   let assignment = Model.create_assignment () in
   let assignment = Assignment.{ assignment with canceled_at = None } in
   let events =
     AssignmentCommand.MarkAsDeleted.handle
       (assignment.Assignment.contact, [ assignment ], false)
-    (* TODO [timhub]*)
   in
   let expected =
     let open Contact in
@@ -382,7 +400,6 @@ let marked_canceled_as_deleted () =
   let events =
     AssignmentCommand.MarkAsDeleted.handle
       (assignment.Assignment.contact, [ assignment ], false)
-    (* TODO [timhub]*)
   in
   let expected =
     Ok
@@ -417,8 +434,7 @@ let marked_closed_with_followups_as_deleted () =
   in
   let events =
     AssignmentCommand.MarkAsDeleted.handle
-      (contact, [ assignment; follow_up ], false)
-    (* TODO [timhub]*)
+      (contact, [ assignment; follow_up ], true)
   in
   let expected =
     let { num_assignments; num_show_ups; num_participations; _ } = contact in

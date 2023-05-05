@@ -706,9 +706,9 @@ let close_valid_with_assignments () =
          |> create
          |> fun assignment ->
          ( assignment
-         , false |> NoShow.create
+         , NoShow.create false
          , Participated.create participated
-         , false (* TODO [timhub] *)
+         , true
          , None ))
   in
   let res = SetAttendance.handle session assignments in
@@ -718,18 +718,14 @@ let close_valid_with_assignments () =
            ( (assignment : Assignment.t)
            , no_show
            , participated
-           , increment_num_participaton
+           , _
            , (_ : t list option) ) ->
         let contact_event =
           let open Contact in
           let contact =
-            (* TODO [timhub]: maybe hardcode *)
-            Contact_counter.update_on_session_closing
-              assignment.contact
-              no_show
-              participated
-              increment_num_participaton
-            |> Test_utils.get_or_failwith_pool_error
+            assignment.contact
+            |> increment_num_show_ups
+            |> increment_num_participations
           in
           Updated contact |> Pool_event.contact
         in
@@ -755,7 +751,7 @@ let close_with_deleted_assignment () =
     in
     let no_show = NoShow.create false in
     let participated = Participated.create true in
-    assignment, no_show, participated, false, None (* TODO [timhub] *)
+    assignment, no_show, participated, false, None
   in
   let res =
     Cqrs_command.Assignment_command.SetAttendance.handle session [ command ]
@@ -773,7 +769,7 @@ let validate_invalid_participation () =
     ( Test_utils.Model.create_contact () |> create
     , NoShow.create true
     , Participated.create true
-    , false (* TODO [timhub] *)
+    , false
     , None )
   in
   let res = handle session [ participation ] in
@@ -795,16 +791,14 @@ let close_unparticipated_with_followup () =
     ( assignment
     , NoShow.create false
     , Participated.create false
-    , false (* TODO [timhub] *)
+    , true
     , Some [ follow_up ] )
   in
   let res = handle session [ participation ] in
   let expected =
     let contact =
       let open Contact in
-      { contact with
-        num_show_ups = NumberOfShowUps.increment contact.num_show_ups
-      }
+      contact |> increment_num_show_ups |> increment_num_participations
     in
     Ok
       [ Session.Closed session |> Pool_event.session

@@ -159,6 +159,10 @@ let increment_num_assignments ({ num_assignments; _ } as m) =
   { m with num_assignments = NumberOfAssignments.increment num_assignments 1 }
 ;;
 
+let increment_num_invitations ({ num_invitations; _ } as m) =
+  { m with num_invitations = NumberOfInvitations.increment num_invitations }
+;;
+
 let increment_num_show_ups ({ num_show_ups; _ } as m) =
   { m with num_show_ups = NumberOfShowUps.increment num_show_ups }
 ;;

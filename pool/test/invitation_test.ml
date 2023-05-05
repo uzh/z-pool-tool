@@ -29,10 +29,19 @@ let create () =
   in
   let expected =
     let email = Matcher_test.create_message contact |> CCResult.get_exn in
+    let contact_update =
+      Contact.
+        { contact with
+          num_invitations =
+            NumberOfInvitations.increment contact.num_invitations
+        }
+      |> Contact.updated
+      |> Pool_event.contact
+    in
     Ok
       [ Invitation.(Created ([ contact ], experiment)) |> Pool_event.invitation
       ; Email.BulkSent [ email ] |> Pool_event.email
-      ; Contact.NumInvitationsIncreased contact |> Pool_event.contact
+      ; contact_update
       ]
   in
   Test_utils.check_result expected events

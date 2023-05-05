@@ -11,8 +11,13 @@ let expected_events experiment contacts create_message =
      ; Email.BulkSent emails |> Pool_event.email
      ]
      @ CCList.map
-         (fun contact ->
-           Contact.NumInvitationsIncreased contact |> Pool_event.contact)
+         Contact.(
+           fun ({ num_invitations; _ } as contact) ->
+             { contact with
+               num_invitations = NumberOfInvitations.increment num_invitations
+             }
+             |> Contact.updated
+             |> Pool_event.contact)
          contacts)
 ;;
 
@@ -78,9 +83,14 @@ let create_invitations_repo _ () =
                ; Email.BulkSent emails |> Pool_event.email
                ]
                @ CCList.map
-                   (fun contact ->
-                     Contact.NumInvitationsIncreased contact
-                     |> Pool_event.contact)
+                   Contact.(
+                     fun ({ num_invitations; _ } as contact) ->
+                       { contact with
+                         num_invitations =
+                           NumberOfInvitations.increment num_invitations
+                       }
+                       |> Contact.updated
+                       |> Pool_event.contact)
                    contacts)
           in
           Test_utils.check_result expected events |> Lwt.return)

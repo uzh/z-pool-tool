@@ -155,9 +155,6 @@ type event =
   | TermsAccepted of t
   | Disabled of t
   | UnverifiedDeleted of t
-  | NumAssignmentsDecreasedBy of (t * int)
-  | NumAssignmentsIncreasedBy of (t * int)
-  | NumInvitationsIncreased of t
   | ProfileUpdateTriggeredAtUpdated of t list
   | RegistrationAttemptNotificationSent of t
   | Updated of t
@@ -174,6 +171,7 @@ val decrement_num_assignments : t -> t
 val decrement_num_show_ups : t -> t
 val decrement_num_no_shows : t -> t
 val decrement_num_participations : t -> t
+val increment_num_invitations : t -> t
 val increment_num_assignments : t -> t
 val increment_num_show_ups : t -> t
 val increment_num_no_shows : t -> t
