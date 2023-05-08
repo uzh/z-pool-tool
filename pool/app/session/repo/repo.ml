@@ -338,7 +338,6 @@ module Sql = struct
          (settings_key |> Yojson.Safe.to_string)
   ;;
 
-  (* TODO: Add argument to include canceld? *)
   let find_follow_ups_request =
     let open Caqti_request.Infix in
     {sql|

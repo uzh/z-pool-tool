@@ -221,6 +221,14 @@ let suite =
               `Slow
               NoShow.register_for_session
           ; test_case "no show: close main" `Slow NoShow.close_main
+          ; test_case
+              "delete unattended: register"
+              `Slow
+              DeleteUnattended.register_for_session
+          ; test_case
+              "delete unattended: delete main session assignment"
+              `Slow
+              DeleteUnattended.delete_main
           ] )
     ; "cleanup", [ test_case "clean up test database" `Quick Seed.cleanup ]
     ]

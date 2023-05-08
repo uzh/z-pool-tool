@@ -177,7 +177,6 @@ module Sql = struct
       , Pool_common.Id.value (Contact.id contact) )
   ;;
 
-  (* TODO [timhub]: Also delete assignments to closed follow up sessions? *)
   let find_with_follow_ups_request =
     let open Caqti_request.Infix in
     let joins =
@@ -385,9 +384,7 @@ module Sql = struct
     contact_uuid
     =
     if CCList.is_empty assignments
-    then
-      Lwt_result.fail Pool_common.Message.InvalidHtmxRequest
-      (* TODO: correct error message *)
+    then Lwt_result.fail Pool_common.Message.InvalidRequest
     else
       let open Caqti_request.Infix in
       let open Dynparam in

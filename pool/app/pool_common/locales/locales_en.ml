@@ -314,7 +314,7 @@ let rec error_to_string = function
       (CCString.concat ", " suffixes)
   | InvalidJson exn -> Format.asprintf "Invalid Json: %s" exn
   | InvalidOptionSelected -> "Invalid option selected."
-  | InvalidHtmxRequest -> "Invalid request."
+  | InvalidRequest | InvalidHtmxRequest -> "Invalid request."
   | IsMarkedAsDeleted field ->
     field_message
       ""

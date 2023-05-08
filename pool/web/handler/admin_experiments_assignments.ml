@@ -148,7 +148,8 @@ let mark_as_deleted req =
               assignments
               experiment_id
               (Contact.id hd.contact)
-            >|+ not)
+            >|+ not
+            >|+ IncrementParticipationCount.create)
         in
         Cqrs_command.Assignment_command.MarkAsDeleted.handle
           ~tags

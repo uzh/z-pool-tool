@@ -10,13 +10,6 @@ let assignment_effect action id =
     )
 ;;
 
-(* TODO: Remove or move to entity *)
-module IncrementParticipationCount = struct
-  type t = bool
-
-  let create b = b
-end
-
 module Create : sig
   include Common.CommandSig
 
@@ -133,7 +126,7 @@ module SetAttendance : sig
     (Assignment.t
     * Assignment.NoShow.t
     * Assignment.Participated.t
-    * IncrementParticipationCount.t
+    * Assignment.IncrementParticipationCount.t
     * Assignment.t list option)
     list
 
@@ -149,7 +142,7 @@ end = struct
     (Assignment.t
     * Assignment.NoShow.t
     * Assignment.Participated.t
-    * IncrementParticipationCount.t
+    * Assignment.IncrementParticipationCount.t
     * Assignment.t list option)
     list
 
@@ -291,11 +284,15 @@ end = struct
 end
 
 module MarkAsDeleted : sig
-  include Common.CommandSig with type t = Contact.t * Assignment.t list * bool
+  include
+    Common.CommandSig
+      with type t =
+        Contact.t * Assignment.t list * Assignment.IncrementParticipationCount.t
 
   val effects : Experiment.Id.t -> Assignment.Id.t -> Guard.ValidationSet.t
 end = struct
-  type t = Contact.t * Assignment.t list * bool
+  type t =
+    Contact.t * Assignment.t list * Assignment.IncrementParticipationCount.t
 
   let handle
     ?(tags = Logs.Tag.empty)

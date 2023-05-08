@@ -70,6 +70,13 @@ module Public : sig
     }
 end
 
+module IncrementParticipationCount : sig
+  type t
+
+  val value : t -> bool
+  val create : bool -> t
+end
+
 val find
   :  Pool_database.Label.t
   -> Id.t

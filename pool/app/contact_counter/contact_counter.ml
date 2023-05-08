@@ -31,7 +31,7 @@ let update_on_session_closing
     contact
     |> increment_num_show_ups
     |> fun contact ->
-    (if increment_num_participaton
+    (if IncrementParticipationCount.value increment_num_participaton
      then increment_num_participations contact
      else contact)
     |> CCResult.return
@@ -49,16 +49,21 @@ let update_on_session_cancellation assignments m =
 
 let update_on_assignment_cancellation = update_on_session_cancellation
 
-(* TODO: Make sure, only closed session decrement participataion_count *)
 let update_on_assignment_deletion
   assignments
   contact
   decrement_participation_count
   =
   CCList.fold_left
-    (fun contact { Assignment.no_show; canceled_at; _ } ->
+    (fun (contact, closed_assignment)
+         { Assignment.no_show; participated; canceled_at; _ } ->
       let open Contact in
       let open Assignment in
+      let closed_assignment =
+        closed_assignment
+        || CCOption.is_some no_show
+        || CCOption.is_some participated
+      in
       let contact =
         match no_show with
         | None -> contact
@@ -68,12 +73,13 @@ let update_on_assignment_deletion
            | false -> decrement_num_show_ups contact)
       in
       match canceled_at with
-      | None -> decrement_num_assignments contact
-      | Some _ -> contact)
-    contact
+      | None -> decrement_num_assignments contact, closed_assignment
+      | Some _ -> contact, closed_assignment)
+    (contact, false)
     assignments
-  |> fun contact ->
-  if decrement_participation_count
+  |> fun (contact, closed_assignment) ->
+  if Assignment.IncrementParticipationCount.value decrement_participation_count
+     && closed_assignment
   then contact |> Contact.decrement_num_participations
   else contact
 ;;

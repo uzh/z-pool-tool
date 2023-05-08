@@ -118,3 +118,10 @@ module Public = struct
     ; canceled_at : CanceledAt.t option
     }
 end
+
+module IncrementParticipationCount = struct
+  type t = bool
+
+  let value m = m
+  let create m = m
+end

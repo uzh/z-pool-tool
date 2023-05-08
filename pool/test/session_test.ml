@@ -708,7 +708,7 @@ let close_valid_with_assignments () =
          ( assignment
          , NoShow.create false
          , Participated.create participated
-         , true
+         , Assignment.IncrementParticipationCount.create true
          , None ))
   in
   let res = SetAttendance.handle session assignments in
@@ -751,7 +751,11 @@ let close_with_deleted_assignment () =
     in
     let no_show = NoShow.create false in
     let participated = Participated.create true in
-    assignment, no_show, participated, false, None
+    ( assignment
+    , no_show
+    , participated
+    , Assignment.IncrementParticipationCount.create false
+    , None )
   in
   let res =
     Cqrs_command.Assignment_command.SetAttendance.handle session [ command ]
@@ -769,7 +773,7 @@ let validate_invalid_participation () =
     ( Test_utils.Model.create_contact () |> create
     , NoShow.create true
     , Participated.create true
-    , false
+    , Assignment.IncrementParticipationCount.create false
     , None )
   in
   let res = handle session [ participation ] in
@@ -791,7 +795,7 @@ let close_unparticipated_with_followup () =
     ( assignment
     , NoShow.create false
     , Participated.create false
-    , true
+    , Assignment.IncrementParticipationCount.create true
     , Some [ follow_up ] )
   in
   let res = handle session [ participation ] in
@@ -1146,9 +1150,17 @@ let close_session_check_contact_figures _ () =
          let no_show, participated, increment_num_participatons =
            match status with
            | `Participated ->
-             NoShow.create false, Participated.create true, true
-           | `ShowUp -> NoShow.create false, Participated.create false, false
-           | `NoShow -> NoShow.create true, Participated.create false, false
+             ( NoShow.create false
+             , Participated.create true
+             , IncrementParticipationCount.create true )
+           | `ShowUp ->
+             ( NoShow.create false
+             , Participated.create false
+             , IncrementParticipationCount.create false )
+           | `NoShow ->
+             ( NoShow.create true
+             , Participated.create false
+             , IncrementParticipationCount.create false )
          in
          let contact =
            Contact_counter.update_on_session_closing
