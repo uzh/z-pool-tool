@@ -203,6 +203,24 @@ let suite =
               "cancel session: without follow up"
               `Slow
               CancelSession.without_followups
+          ; test_case "cancel session: follow up" `Slow CancelSession.follow_up
+          ; test_case
+              "cancel session: main with follow up"
+              `Slow
+              CancelSession.main_with_follow_up
+          ; test_case
+              "Do not attend: register for session"
+              `Slow
+              DoNotAttend.register_for_session
+          ; test_case
+              "Do not attend: close main session"
+              `Slow
+              DoNotAttend.close_main
+          ; test_case
+              "no show: register for session"
+              `Slow
+              NoShow.register_for_session
+          ; test_case "no show: close main" `Slow NoShow.close_main
           ] )
     ; "cleanup", [ test_case "clean up test database" `Quick Seed.cleanup ]
     ]

@@ -409,10 +409,6 @@ module Sql = struct
         contact_participation_in_other_assignments_request assignments
         |> pt ->! bool
       in
-      let () =
-        Caqti_request.make_pp_with_param () Format.std_formatter (request, pv)
-      in
-      print_endline "\n ========== ";
       Utils.Database.find (pool |> Pool_database.Label.value) request pv
       |> Lwt.map CCResult.return
   ;;
