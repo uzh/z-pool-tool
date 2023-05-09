@@ -10,6 +10,8 @@ const isListOperator = (operator) => {
     return ["contains_all", "contains_some", "contains_none"].includes(operator)
 }
 
+const disableValueInput = (o) => ["empty", "not_empty"].includes(o)
+
 const isQueryKey = (key) => {
     return ["participation"].includes(key)
 }
@@ -136,32 +138,39 @@ const predicateToJson = (outerPredicate, allowEmpty = false) => {
                 return input ? input.value : null
             }
         })
-        let value;
-        let isList = isListOperator(operator)
-        if (isList) {
-            var values = []
-            if (isQueryKey(key)) {
-                values = [...outerPredicate.querySelectorAll(`[data-query="results"] [name="value[]"]:checked`)];
+        let value = null;
+        let valueDisabled = disableValueInput(operator);
+        if (!valueDisabled) {
+            let isList = isListOperator(operator)
+            if (isList) {
+                var values = []
+                if (isQueryKey(key)) {
+                    values = [...outerPredicate.querySelectorAll(`[data-query="results"] [name="value[]"]:checked`)];
+                } else {
+                    values = [...outerPredicate.querySelectorAll(`[name="value[]"]:checked`)];
+                }
+                value = values.map(toValue)
             } else {
-                values = [...outerPredicate.querySelectorAll(`[name="value[]"]:checked`)];
-            }
-            value = values.map(toValue)
-        } else {
-            const valueInput = findElm("value");
-            if (!allowEmpty && !(valueInput && valueInput.value)) {
-                error = true;
-                addRequiredError(valueInput);
-            } else {
-                value = toValue(valueInput)
+                const valueInput = findElm("value");
+                if (!allowEmpty && !(valueInput && valueInput.value)) {
+                    error = true;
+                    addRequiredError(valueInput);
+                } else {
+                    value = toValue(valueInput)
+                }
             }
         }
+
         if (!error) {
+            let predicate = {
+                "key": key,
+                "operator": operator
+            }
+            if (value) {
+                predicate.value = value;
+            }
             return {
-                [predicateType]: {
-                    "key": key,
-                    "operator": operator,
-                    value
-                }
+                [predicateType]: predicate
             }
         } else {
             notifyUser(notificationId, "error", "Please fill out all fields.")
@@ -176,6 +185,17 @@ function addRemovePredicateListener(element) {
     [...element.querySelectorAll("[data-delete-predicate]")].forEach(elm => {
         elm.addEventListener("click", (e) => {
             e.currentTarget.closest(".predicate").remove();
+        })
+    })
+}
+
+
+function addOperatorChangeListeners(wrapper) {
+    [...wrapper.querySelectorAll("[name='operator']")].forEach((elm) => {
+        elm.addEventListener("change", (e) => {
+            const predicate = e.target.closest('.predicate');
+            const input = predicate.querySelector("[name='value']");
+            input.disabled = disableValueInput(e.currentTarget.value);
         })
     })
 }
@@ -236,9 +256,11 @@ export function initFilterForm() {
         [...form.querySelectorAll("[data-query='results'] [data-id]")].forEach(e =>
             e.querySelector(".toggle-item").addEventListener("click", () => destroySelected(e))
         );
+        addOperatorChangeListeners(form);
 
         form.addEventListener('htmx:afterSwap', (e) => {
-            addRemovePredicateListener(e.detail.elt)
+            addRemovePredicateListener(e.detail.elt);
+            addOperatorChangeListeners(e.detail.elt);
             if (e.detail.elt.dataset.query) {
                 addInputListeners(e.detail.elt)
             }

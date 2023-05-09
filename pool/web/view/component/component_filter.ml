@@ -60,7 +60,7 @@ let value_input language query_experiments input_type ?value () =
     value
     >>= function
     | Single s -> Some s
-    | Lst _ -> None
+    | NoValue | Lst _ -> None
   in
   let find_in_options options option_id =
     CCList.find_opt
@@ -168,7 +168,7 @@ let value_input language query_experiments input_type ?value () =
            ~default:[]
            (fun value ->
              match value with
-             | Single _ -> []
+             | NoValue | Single _ -> []
              | Lst lst ->
                CCList.filter_map
                  (fun value ->
@@ -197,7 +197,7 @@ let value_input language query_experiments input_type ?value () =
        let current =
          value
          |> CCOption.map_or ~default:[] (function
-              | Single _ -> []
+              | NoValue | Single _ -> []
               | Lst lst ->
                 CCList.filter_map
                   (fun value ->

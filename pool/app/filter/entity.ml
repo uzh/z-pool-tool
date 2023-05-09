@@ -35,6 +35,7 @@ type single_val =
 [@@deriving show { with_path = false }, eq]
 
 type value =
+  | NoValue [@printer print "no_value"] [@name "no_value"]
   | Single of single_val [@printer print "single"] [@name "single"]
   | Lst of single_val list [@printer print "list"] [@name "list"]
 [@@deriving show { with_path = false }, eq, variants]
@@ -65,6 +66,7 @@ let value_of_yojson yojson =
   let open CCResult in
   let error = Pool_common.Message.(Invalid Field.Value) in
   match yojson with
+  | `Null -> Ok NoValue
   | `Assoc _ -> single_value_of_yojson yojson >|= single
   | `List values ->
     (match values with
@@ -91,6 +93,7 @@ let yojson_of_single_val value =
 
 let yojson_of_value m =
   match m with
+  | NoValue -> `Null
   | Single single -> single |> yojson_of_single_val
   | Lst values -> `List (CCList.map yojson_of_single_val values)
 ;;
@@ -261,6 +264,7 @@ module Key = struct
     in
     let validate_value value input_type =
       match value with
+      | NoValue -> Ok () (* TODO[timhub]: test *)
       | Single v -> validate_single_value input_type v
       | Lst lst ->
         lst
@@ -308,19 +312,27 @@ module Operator = struct
     | ContainsSome [@printer print "contains_some"] [@name "contains_some"]
     | ContainsNone [@printer print "contains_none"] [@name "contains_none"]
     | ContainsAll [@printer print "contains_all"] [@name "contains_all"]
+    | Empty [@printer print "empty"] [@name "empty"]
+    | NotEmpty [@printer print "not_empty"] [@name "not_empty"]
   [@@deriving show { with_path = false }, eq, enum, yojson]
 
-  let input_type_to_operator =
+  let list_operators = [ ContainsAll; ContainsSome; ContainsNone ]
+  let is_list_operator m = CCList.mem ~eq:equal m list_operators
+
+  let input_type_to_operator key =
     let open Key in
-    function
-    | Key.Bool -> [ Equal; NotEqual ]
-    | Key.Date | Nr ->
-      [ Equal; NotEqual; Greater; GreaterEqual; Less; LessEqual ]
-    | Key.Languages _ -> [ Equal; NotEqual ]
-    | MultiSelect _ | QueryExperiments ->
-      [ ContainsAll; ContainsSome; ContainsNone ]
-    | Select _ -> [ Equal; NotEqual ]
-    | Str -> [ Equal; NotEqual; Like ]
+    let base = [ Empty; NotEmpty ] in
+    let specific =
+      match key with
+      | Key.Bool -> [ Equal; NotEqual ]
+      | Key.Date | Nr ->
+        [ Equal; NotEqual; Greater; GreaterEqual; Less; LessEqual ]
+      | Key.Languages _ -> [ Equal; NotEqual ]
+      | MultiSelect _ | QueryExperiments -> list_operators
+      | Select _ -> [ Equal; NotEqual ]
+      | Str -> [ Equal; NotEqual; Like ]
+    in
+    specific @ base
   ;;
 
   let of_string m =
@@ -348,6 +360,8 @@ module Operator = struct
          which store json arrays *)
     | ContainsSome | ContainsAll -> "LIKE"
     | ContainsNone -> "NOT LIKE"
+    | Empty -> "IS NULL"
+    | NotEmpty -> "IS NOT NULL"
   ;;
 
   let to_human m =
@@ -361,8 +375,24 @@ module Operator = struct
      | Like -> "contains" (* it is intended to display 'like' as 'contains' *)
      | ContainsSome -> "contains some"
      | ContainsNone -> "contains none"
-     | ContainsAll -> "contains all")
+     | ContainsAll -> "contains all"
+     | Empty -> "empty"
+     | NotEmpty -> "not empty")
     |> CCString.capitalize_ascii
+  ;;
+
+  let allow_no_value = function
+    | Empty | NotEmpty -> true
+    | Less
+    | LessEqual
+    | Greater
+    | GreaterEqual
+    | Equal
+    | NotEqual
+    | Like
+    | ContainsSome
+    | ContainsNone
+    | ContainsAll -> false
   ;;
 
   let validate (key : Key.t) operator =
@@ -421,7 +451,11 @@ module Predicate = struct
       let* operator =
         go operator_string Message.Field.Operator Operator.of_yojson
       in
-      let* value = go value_string Message.Field.Value value_of_yojson in
+      let* value =
+        match Operator.allow_no_value operator with
+        | true -> Ok NoValue
+        | false -> go value_string Message.Field.Value value_of_yojson
+      in
       Ok (create key operator value)
     | _ -> Error Pool_common.Message.(Invalid Field.Predicate)
   ;;

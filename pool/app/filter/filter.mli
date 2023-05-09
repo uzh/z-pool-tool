@@ -13,6 +13,7 @@ type single_val =
   | Str of string
 
 type value =
+  | NoValue
   | Single of single_val
   | Lst of single_val list
 
@@ -75,6 +76,8 @@ module Operator : sig
     | ContainsSome
     | ContainsNone
     | ContainsAll
+    | Empty
+    | NotEmpty
 
   val to_sql : t -> string
   val to_human : t -> string
