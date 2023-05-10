@@ -133,7 +133,7 @@ let search_experiments_input ?(value = "") ?results param =
         ~a:
           ([ a_input_type `Text
            ; a_value value
-           ; a_name Pool_common.Message.Field.(show Title)
+           ; a_name Pool_common.Message.Field.(show Experiment)
            ; a_class [ "query-input" ]
            ; a_placeholder "Search by experiment title"
            ]
