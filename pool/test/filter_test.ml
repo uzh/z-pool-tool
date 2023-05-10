@@ -310,6 +310,35 @@ let firstname firstname =
        (Single (Str firstname)))
 ;;
 
+let find_contact_in_filtered_list contact experiment_id filter =
+  let open Utils.Lwt_result.Infix in
+  let find = Filter.find_filtered_contacts Data.database_label experiment_id in
+  filter
+  |> CCOption.pure
+  |> find
+  ||> get_exn_poolerror
+  ||> CCList.find_opt (Contact.equal contact)
+  ||> CCOption.is_some
+;;
+
+let test_filter expected contact filter experiment =
+  let%lwt res =
+    find_contact_in_filtered_list
+      contact
+      (experiment.Experiment.id |> convert_id)
+      filter
+  in
+  Alcotest.(check bool "succeeds" expected res) |> Lwt.return
+;;
+
+let save_filter filter experiment =
+  [ Filter.Created filter |> Pool_event.filter
+  ; Experiment.(Updated { experiment with filter = Some filter })
+    |> Pool_event.experiment
+  ]
+  |> Lwt_list.iter_s (Pool_event.handle_event Data.database_label)
+;;
+
 let filter_contacts _ () =
   let%lwt () =
     let open Utils.Lwt_result.Infix in
@@ -322,20 +351,13 @@ let filter_contacts _ () =
       |> Lwt_list.iter_s (Pool_event.handle_event Data.database_label)
     in
     let filter = Filter.create None (nr_of_siblings_filter ()) in
-    let experiment = Experiment.{ experiment with filter = Some filter } in
-    let%lwt () =
-      (* Save filter *)
-      [ Filter.Created filter |> Pool_event.filter
-      ; Experiment.Updated experiment |> Pool_event.experiment
-      ]
-      |> Lwt_list.iter_s (Pool_event.handle_event Data.database_label)
-    in
+    let%lwt () = save_filter filter experiment in
     let expected = true in
     let%lwt filtered_contacts =
       Filter.find_filtered_contacts
         Data.database_label
         (experiment.Experiment.id |> convert_id)
-        experiment.Experiment.filter
+        (Some filter)
       ||> get_exn_poolerror
     in
     let res =
@@ -350,39 +372,19 @@ let filter_contacts _ () =
 ;;
 
 let filter_by_email _ () =
-  let%lwt () =
-    let open Utils.Lwt_result.Infix in
-    let%lwt contact = TestContacts.get_contact 0 in
-    let%lwt experiment = Repo.first_experiment () in
-    let filter =
-      Filter.(
-        create
-          None
-          (And
-             [ nr_of_siblings_filter ()
-             ; firstname (Contact.firstname contact |> Pool_user.Firstname.value)
-             ]))
-    in
-    let experiment = Experiment.{ experiment with filter = Some filter } in
-    let%lwt () =
-      (* Save filter *)
-      [ Filter.Created filter |> Pool_event.filter
-      ; Experiment.Updated experiment |> Pool_event.experiment
-      ]
-      |> Lwt_list.iter_s (Pool_event.handle_event Data.database_label)
-    in
-    let expected = true in
-    let%lwt filtered_contacts =
-      Filter.find_filtered_contacts
-        Data.database_label
-        (experiment.Experiment.id |> convert_id)
-        experiment.Experiment.filter
-      ||> get_exn_poolerror
-    in
-    let res = CCList.mem ~eq:Contact.equal contact filtered_contacts in
-    Alcotest.(check bool "succeeds" expected res) |> Lwt.return
+  let%lwt contact = TestContacts.get_contact 0 in
+  let%lwt experiment = Repo.first_experiment () in
+  let filter =
+    Filter.(
+      create
+        None
+        (And
+           [ nr_of_siblings_filter ()
+           ; firstname (Contact.firstname contact |> Pool_user.Firstname.value)
+           ]))
   in
-  Lwt.return_unit
+  let%lwt () = save_filter filter experiment in
+  test_filter true contact filter experiment
 ;;
 
 let validate_filter_with_unknown_field _ () =
@@ -441,7 +443,6 @@ let validate_filter_with_invalid_value _ () =
 
 let test_list_filter answer_index operator contact experiment expected =
   let%lwt () =
-    let open Utils.Lwt_result.Infix in
     let filter =
       let open Filter in
       let value =
@@ -462,23 +463,8 @@ let test_list_filter answer_index operator contact experiment expected =
             ; value
             })
     in
-    let experiment = Experiment.{ experiment with filter = Some filter } in
-    let%lwt () =
-      (* Save filter *)
-      [ Filter.Created filter |> Pool_event.filter
-      ; Experiment.Updated experiment |> Pool_event.experiment
-      ]
-      |> Lwt_list.iter_s (Pool_event.handle_event Data.database_label)
-    in
-    let%lwt filtered_contacts =
-      Filter.find_filtered_contacts
-        Data.database_label
-        (experiment.Experiment.id |> convert_id)
-        experiment.Experiment.filter
-      ||> get_exn_poolerror
-    in
-    let res = CCList.mem ~eq:Contact.equal contact filtered_contacts in
-    Alcotest.(check bool "succeeds" expected res) |> Lwt.return
+    let%lwt () = save_filter filter experiment in
+    test_filter expected contact filter experiment
   in
   Lwt.return_unit
 ;;
@@ -624,27 +610,6 @@ let create_filter_template_with_template _ () =
     |> Lwt.return
   in
   Lwt.return_unit
-;;
-
-let find_contact_in_filtered_list contact experiment_id filter =
-  let open Utils.Lwt_result.Infix in
-  let find = Filter.find_filtered_contacts Data.database_label experiment_id in
-  filter
-  |> CCOption.pure
-  |> find
-  ||> get_exn_poolerror
-  ||> CCList.find_opt (Contact.equal contact)
-  ||> CCOption.is_some
-;;
-
-let test_filter expected contact filter experiment =
-  let%lwt res =
-    find_contact_in_filtered_list
-      contact
-      (experiment.Experiment.id |> convert_id)
-      filter
-  in
-  Alcotest.(check bool "succeeds" expected res) |> Lwt.return
 ;;
 
 let filter_with_admin_value _ () =
