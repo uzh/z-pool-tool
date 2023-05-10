@@ -26,6 +26,14 @@ module TestContacts = struct
     |> Contact.find Data.database_label
     ||> get_exn_poolerror
   ;;
+
+  let persist_contact_update contact =
+    let open Contact in
+    Updated contact
+    |> Pool_event.contact
+    |> Pool_event.handle_event Data.database_label
+    |> Lwt.map (CCFun.const contact)
+  ;;
 end
 
 module CustomFieldData = struct
@@ -629,6 +637,16 @@ let find_contact_in_filtered_list contact experiment_id filter =
   ||> CCOption.is_some
 ;;
 
+let test_filter expected contact filter experiment =
+  let%lwt res =
+    find_contact_in_filtered_list
+      contact
+      (experiment.Experiment.id |> convert_id)
+      filter
+  in
+  Alcotest.(check bool "succeeds" expected res) |> Lwt.return
+;;
+
 let filter_with_admin_value _ () =
   let%lwt () =
     let open Utils.Lwt_result.Infix in
@@ -779,4 +797,94 @@ let filter_by_experiment_participation _ () =
   in
   let res = should_contain && not should_not_contain in
   Alcotest.(check bool "succeeds" true res) |> Lwt.return
+;;
+
+let filter_by_empty_hardcoded_value _ () =
+  let%lwt contact =
+    let open Contact in
+    let%lwt contact =
+      Integration_utils.ContactRepo.create ~with_terms_accepted:true ()
+    in
+    let user = Sihl_user.{ contact.user with confirmed = true } in
+    { contact with language = None; user }
+    |> TestContacts.persist_contact_update
+  in
+  let%lwt experiment = Repo.first_experiment () in
+  let filter operator =
+    let open Filter in
+    let query =
+      Pred (Predicate.create Key.(Hardcoded ContactLanguage) operator NoValue)
+    in
+    create None query
+  in
+  let empty_filter = filter Filter.Operator.Empty in
+  let%lwt () = test_filter true contact empty_filter experiment in
+  let non_empty_filter = filter Filter.Operator.NotEmpty in
+  test_filter false contact non_empty_filter experiment
+;;
+
+let filter_by_non_empty_hardcoded_value _ () =
+  let%lwt contact =
+    Integration_utils.ContactRepo.create ~with_terms_accepted:true ()
+  in
+  let%lwt experiment = Repo.first_experiment () in
+  let filter operator =
+    let open Filter in
+    let query =
+      Pred (Predicate.create Key.(Hardcoded ContactLanguage) operator NoValue)
+    in
+    create None query
+  in
+  let non_empty_filter = filter Filter.Operator.NotEmpty in
+  let%lwt () = test_filter true contact non_empty_filter experiment in
+  let empty_filter = filter Filter.Operator.Empty in
+  test_filter false contact empty_filter experiment
+;;
+
+let filter_by_empty_custom_field _ () =
+  let%lwt contact =
+    Integration_utils.ContactRepo.create ~with_terms_accepted:true ()
+  in
+  let%lwt experiment = Repo.first_experiment () in
+  let filter operator =
+    let open Filter in
+    let query =
+      Pred
+        (Predicate.create
+           Key.(CustomField (CustomFieldData.nr_of_siblings |> Custom_field.id))
+           operator
+           NoValue)
+    in
+    create None query
+  in
+  let empty_filter = filter Filter.Operator.Empty in
+  let%lwt () = test_filter true contact empty_filter experiment in
+  let non_empty_filter = filter Filter.Operator.NotEmpty in
+  test_filter false contact non_empty_filter experiment
+;;
+
+let filter_by_non_empty_custom_field _ () =
+  let%lwt contact =
+    Integration_utils.ContactRepo.create ~with_terms_accepted:true ()
+  in
+  let%lwt () =
+    CustomFieldData.answer_nr_of_siblings [ contact ]
+    |> Lwt_list.iter_s (Pool_event.handle_event Data.database_label)
+  in
+  let%lwt experiment = Repo.first_experiment () in
+  let filter operator =
+    let open Filter in
+    let query =
+      Pred
+        (Predicate.create
+           Key.(CustomField (CustomFieldData.nr_of_siblings |> Custom_field.id))
+           operator
+           NoValue)
+    in
+    create None query
+  in
+  let non_empty_filter = filter Filter.Operator.NotEmpty in
+  let%lwt () = test_filter true contact non_empty_filter experiment in
+  let empty_filter = filter Filter.Operator.Empty in
+  test_filter false contact empty_filter experiment
 ;;

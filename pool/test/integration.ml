@@ -110,6 +110,22 @@ let suite =
               "filter by experiment participation"
               `Slow
               filter_by_experiment_participation
+          ; test_case
+              "filter by empty language"
+              `Slow
+              filter_by_empty_hardcoded_value
+          ; test_case
+              "filter by non-empty language"
+              `Slow
+              filter_by_non_empty_hardcoded_value
+          ; test_case
+              "filter by empty custom field"
+              `Slow
+              filter_by_empty_custom_field
+          ; test_case
+              "filter by nonempty custom field"
+              `Slow
+              filter_by_non_empty_custom_field
           ] )
     ; ( "matcher"
       , Matcher_test.

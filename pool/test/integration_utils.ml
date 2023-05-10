@@ -13,9 +13,7 @@ module ContactRepo = struct
     let open Utils.Lwt_result.Infix in
     let contact = Model.create_contact ?id ~with_terms_accepted () in
     let open Contact in
-    let verified =
-      if contact.user.Sihl_user.confirmed then [ Verified contact ] else []
-    in
+    let confirm = [ Verified contact; EmailVerified contact ] in
     let%lwt () =
       [ Created
           { user_id = id contact
@@ -30,7 +28,7 @@ module ContactRepo = struct
           ; language = contact.language
           }
       ]
-      @ verified
+      @ confirm
       |> Lwt_list.iter_s (handle_event Data.database_label)
     in
     contact |> id |> find Data.database_label ||> get_or_failwith_pool_error
