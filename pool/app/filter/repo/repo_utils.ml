@@ -5,8 +5,8 @@ open Entity
 let where_prefix str = Format.asprintf "WHERE %s" str
 let where_clause = Format.asprintf "%s %s ?"
 
+(* if admin_override is set, use admin_value > value, else value *)
 let coalesce_value =
-  (* if admin_override is set, use admin_value > value, else value *)
   {sql| IF(pool_custom_fields.admin_override,COALESCE(admin_value,value),value) |sql}
 ;;
 
@@ -42,22 +42,6 @@ let filtered_base_condition =
     |sql}
 ;;
 
-let custom_field_sql2 =
-  (* Check existence and value of rows (custom field answers) *)
-  Format.asprintf
-    {sql|
-      SELECT (1) FROM pool_custom_field_answers
-        INNER JOIN pool_custom_fields
-        ON pool_custom_fields.uuid = pool_custom_field_answers.custom_field_uuid
-        WHERE
-          pool_custom_field_answers.custom_field_uuid = UNHEX(REPLACE(?, '-', ''))
-        AND
-          pool_custom_field_answers.entity_uuid = user_users.uuid
-        AND
-          (%s)
-    |sql}
-;;
-
 let custom_field_sql =
   {sql|
     SELECT (1) FROM pool_custom_field_answers
@@ -88,7 +72,6 @@ let add_value_to_params operator value dyn =
   let add c v = Dynparam.add c v dyn in
   match operator with
   | Empty | NotEmpty -> Error Pool_common.Message.(Invalid Field.Predicate)
-  (* | Empty | NotEmpty -> Ok dyn *)
   | ContainsSome
   | ContainsNone
   | ContainsAll
@@ -167,78 +150,37 @@ let add_existence_condition (key : Key.t) operator dyn =
       Ok (dyn, sql))
 ;;
 
+(* let participation_subquery2 dyn operator ids = let open CCResult in let* dyn,
+   subquery = let subquery = let base = {sql| SELECT COUNT(DISTINCT
+   pool_experiments.uuid) FROM pool_assignments INNER JOIN pool_sessions ON
+   pool_sessions.uuid = pool_assignments.session_uuid INNER JOIN
+   pool_experiments ON pool_sessions.experiment_uuid = pool_experiments.uuid
+   WHERE pool_assignments.contact_uuid = pool_contacts.user_uuid AND
+   pool_assignments.no_show = 0 AND pool_assignments.canceled_at IS NULL AND
+   pool_experiments.uuid IN (%s) GROUP BY pool_experiments.uuid |sql} in let
+   group_by = {sql|GROUP BY pool_experiments.uuid|sql} in function | Some ids ->
+   CCString.concat "\n" [ base ; Format.asprintf "AND pool_experiments.uuid IN
+   (%s)" ids ; group_by ] | None -> CCString.concat "\n" [ base; group_by ] in
+   match Operator.allow_no_value operator with | false -> let* dyn, query_params
+   = CCList.fold_left (fun query id -> query >>= fun (dyn, params) -> match id
+   with | Bool _ | Date _ | Language _ | Nr _ | Option _ -> Error
+   Pool_common.Message.( QueryNotCompatible (Field.Value, Field.Key)) | Str id
+   -> add_value_to_params Operator.Equal (Str id) dyn >|= fun dyn -> dyn,
+   "UNHEX(REPLACE(?, '-', ''))" :: params) (Ok (dyn, [])) ids >|= fun (dyn, ids)
+   -> dyn, CCString.concat "," ids in Ok (dyn, subquery (Some query_params)) |
+   true -> Ok (dyn, subquery None) in let* condition, dyn = let format
+   comparison = Format.asprintf "(%s) %s" subquery comparison in let open
+   Operator in match operator with | ContainsAll -> (format " = ? ",
+   Dynparam.add Caqti_type.int (CCList.length ids) dyn) |> CCResult.return |
+   ContainsNone | Empty -> (format " = 0 ", dyn) |> CCResult.return |
+   ContainsSome | NotEmpty -> (format " > 0 ", dyn) |> CCResult.return | Less |
+   LessEqual | Greater | GreaterEqual | Equal | NotEqual | Like -> Error
+   Pool_common.Message.(Invalid Field.Operator) in (dyn, Format.asprintf "(%s)"
+   condition) |> CCResult.return ;; *)
+
 (* The subquery does not return any contacts that have shown up at a session of
    the current experiment. It does not make a difference, if they
    participated. *)
-let participation_subquery2 dyn operator ids =
-  let open CCResult in
-  let* dyn, subquery =
-    let subquery =
-      let base =
-        {sql|
-        SELECT
-          COUNT(DISTINCT pool_experiments.uuid)
-        FROM
-          pool_assignments
-          INNER JOIN pool_sessions ON pool_sessions.uuid = pool_assignments.session_uuid
-          INNER JOIN pool_experiments ON pool_sessions.experiment_uuid = pool_experiments.uuid
-        WHERE
-          pool_assignments.contact_uuid = pool_contacts.user_uuid
-          AND pool_assignments.no_show = 0
-          AND pool_assignments.canceled_at IS NULL
-          AND pool_experiments.uuid IN (%s)
-        GROUP BY
-          pool_experiments.uuid
-      |sql}
-      in
-      let group_by = {sql|GROUP BY pool_experiments.uuid|sql} in
-      function
-      | Some ids ->
-        CCString.concat
-          "\n"
-          [ base
-          ; Format.asprintf "AND pool_experiments.uuid IN (%s)" ids
-          ; group_by
-          ]
-      | None -> CCString.concat "\n" [ base; group_by ]
-    in
-    match Operator.allow_no_value operator with
-    | false ->
-      let* dyn, query_params =
-        CCList.fold_left
-          (fun query id ->
-            query
-            >>= fun (dyn, params) ->
-            match id with
-            | Bool _ | Date _ | Language _ | Nr _ | Option _ ->
-              Error
-                Pool_common.Message.(
-                  QueryNotCompatible (Field.Value, Field.Key))
-            | Str id ->
-              add_value_to_params Operator.Equal (Str id) dyn
-              >|= fun dyn -> dyn, "UNHEX(REPLACE(?, '-', ''))" :: params)
-          (Ok (dyn, []))
-          ids
-        >|= fun (dyn, ids) -> dyn, CCString.concat "," ids
-      in
-      Ok (dyn, subquery (Some query_params))
-    | true -> Ok (dyn, subquery None)
-  in
-  let* condition, dyn =
-    let format comparison = Format.asprintf "(%s) %s" subquery comparison in
-    let open Operator in
-    match operator with
-    | ContainsAll ->
-      (format " = ? ", Dynparam.add Caqti_type.int (CCList.length ids) dyn)
-      |> CCResult.return
-    | ContainsNone | Empty -> (format " = 0 ", dyn) |> CCResult.return
-    | ContainsSome | NotEmpty -> (format " > 0 ", dyn) |> CCResult.return
-    | Less | LessEqual | Greater | GreaterEqual | Equal | NotEqual | Like ->
-      Error Pool_common.Message.(Invalid Field.Operator)
-  in
-  (dyn, Format.asprintf "(%s)" condition) |> CCResult.return
-;;
-
 let participation_subquery dyn operator ids =
   let open CCResult in
   let* dyn, query_params =
