@@ -324,7 +324,7 @@ let search_experiments action req =
     in
     let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
     let query =
-      find_in_params urlencoded Pool_common.Message.Field.Title
+      find_in_params urlencoded Pool_common.Message.Field.Experiment
       |> CCResult.to_opt
     in
     let%lwt exclude =
