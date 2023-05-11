@@ -37,21 +37,16 @@ let confirmation_email contact =
 ;;
 
 let update_contact_event
-  ?increment_assignments_by
-  ?decrement_assignments_by
+  ?(increment_assignments_by = 0)
+  ?(decrement_assignments_by = 0)
   contact
   =
   let open Contact in
   let num_assignments =
     NumberOfAssignments.(
-      [ increment_assignments_by
-      ; CCOption.map CCInt.neg decrement_assignments_by
-      ]
+      [ increment_assignments_by; CCInt.neg decrement_assignments_by ]
       |> CCList.fold_left
-           (fun num_assignments (step : int option) ->
-             step
-             |> CCOption.map_or ~default:num_assignments (fun step ->
-                  update step num_assignments))
+           (fun num_assignments (step : int) -> update step num_assignments)
            contact.num_assignments)
   in
   { contact with num_assignments } |> updated |> Pool_event.contact

@@ -14,7 +14,7 @@ module NumberOfInvitations = struct
   let value m = m
   let of_int m = m
   let increment m = m + 1
-  let update step m = if m + step >= 0 then m + step else 0
+  let update step m = m + step |> max 0
 end
 
 module NumberOfAssignments = struct
@@ -23,7 +23,7 @@ module NumberOfAssignments = struct
   let init = 0
   let value m = m
   let of_int m = m
-  let update step m = if m + step >= 0 then m + step else 0
+  let update step m = m + step |> max 0
 end
 
 module NumberOfShowUps = struct
@@ -32,7 +32,7 @@ module NumberOfShowUps = struct
   let init = 0
   let value m = m
   let of_int m = m
-  let update step m = if m + step >= 0 then m + step else 0
+  let update step m = m + step |> max 0
 end
 
 module NumberOfNoShows = struct
@@ -41,7 +41,7 @@ module NumberOfNoShows = struct
   let init = 0
   let value m = m
   let of_int m = m
-  let update step m = if m + step >= 0 then m + step else 0
+  let update step m = m + step |> max 0
 end
 
 module NumberOfParticipations = struct
@@ -50,7 +50,7 @@ module NumberOfParticipations = struct
   let init = 0
   let value m = m
   let of_int m = m
-  let update step m = if m + step >= 0 then m + step else 0
+  let update step m = m + step |> max 0
 end
 
 type t =

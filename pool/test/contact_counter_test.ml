@@ -1,5 +1,6 @@
 open Test_utils
 open Cqrs_command
+open Utils.Lwt_result.Infix
 
 let database_label = Data.database_label
 let get_exn = get_or_failwith_pool_error
@@ -13,7 +14,6 @@ let get_session session_id =
 ;;
 
 let find_assignment_by_contact_and_session contact_id session_id =
-  let open Utils.Lwt_result.Infix in
   let open Assignment in
   find_uncanceled_by_session database_label session_id
   >|+ CCList.find (fun ({ contact; _ } : Assignment.t) ->
@@ -22,7 +22,6 @@ let find_assignment_by_contact_and_session contact_id session_id =
 ;;
 
 let set_sessions_to_past session_ids =
-  let open Utils.Lwt_result.Infix in
   let open Session in
   session_ids
   |> Lwt_list.map_s (fun id -> find database_label id)
@@ -37,7 +36,6 @@ let set_sessions_to_past session_ids =
 ;;
 
 let sign_up_for_session experiment contact session_id =
-  let open Utils.Lwt_result.Infix in
   let experiment = experiment |> Model.experiment_to_public_experiment in
   let%lwt sessions =
     Session.find_open_with_follow_ups database_label session_id
@@ -59,7 +57,6 @@ let close_session
   contact_id
   experiment_id
   =
-  let open Utils.Lwt_result.Infix in
   let open Assignment in
   let open Assignment_command in
   let%lwt assignment =
@@ -85,7 +82,6 @@ let close_session
 ;;
 
 let delete_assignment experiment_id contact assignments =
-  let open Utils.Lwt_result.Infix in
   let open Assignment_command in
   let%lwt decrement_num_participations =
     Assignment.(
@@ -181,7 +177,6 @@ module CancelSession = struct
   ;;
 
   let test_cancellation contact_id initial_nr_assignments test_cases =
-    let open Utils.Lwt_result.Infix in
     let%lwt contact = get_contact contact_id in
     let test_result expected_nr_assignments =
       let%lwt res = get_contact contact_id in
