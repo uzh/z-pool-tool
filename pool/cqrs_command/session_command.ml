@@ -1,4 +1,5 @@
 module Conformist = Pool_common.Utils.PoolConformist
+open CCFun
 
 let src = Logs.Src.create "session.cqrs"
 
@@ -364,7 +365,6 @@ end = struct
     }
 
   let handle ?(tags = Logs.Tag.empty) { session; follow_ups; templates } =
-    let open CCFun in
     let open CCResult in
     Logs.info ~src (fun m -> m "Handle command Delete" ~tags);
     if CCList.is_empty follow_ups |> not
@@ -427,14 +427,11 @@ end = struct
     in
     let* (_ : unit list) =
       let open CCList in
-      assignments
-      >|= (fun (_, lst) -> lst >|= Assignment.is_not_closed)
-      |> flatten
-      |> all_ok
+      assignments >|= snd |> flatten >|= Assignment.is_not_closed |> all_ok
     in
     let* emails =
       assignments
-      |> CCList.map (fun (contact, _) -> contact |> messages_fn command.reason)
+      |> CCList.map (fst %> messages_fn command.reason)
       |> CCResult.flatten_l
     in
     let contact_events =
