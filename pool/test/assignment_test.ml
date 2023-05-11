@@ -36,20 +36,9 @@ let confirmation_email contact =
     }
 ;;
 
-let update_contact_event
-  ?(increment_assignments_by = 0)
-  ?(decrement_assignments_by = 0)
-  contact
-  =
+let update_assignment_count_event ~step contact =
   let open Contact in
-  let num_assignments =
-    NumberOfAssignments.(
-      [ increment_assignments_by; CCInt.neg decrement_assignments_by ]
-      |> CCList.fold_left
-           (fun num_assignments (step : int) -> update step num_assignments)
-           contact.num_assignments)
-  in
-  { contact with num_assignments } |> updated |> Pool_event.contact
+  contact |> update_num_assignments ~step |> updated |> Pool_event.contact
 ;;
 
 let create () =
@@ -65,7 +54,7 @@ let create () =
     Ok
       [ Assignment.(Created { contact; session_id = session.Session.Public.id })
         |> Pool_event.assignment
-      ; update_contact_event ~increment_assignments_by:1 contact
+      ; update_assignment_count_event ~step:1 contact
       ; Email.(Sent (confirmation_email contact)) |> Pool_event.email
       ]
   in
@@ -79,9 +68,7 @@ let canceled () =
   let expected =
     Ok
       [ Assignment.Canceled assignment |> Pool_event.assignment
-      ; update_contact_event
-          ~decrement_assignments_by:1
-          assignment.Assignment.contact
+      ; update_assignment_count_event ~step:(-1) assignment.Assignment.contact
       ]
   in
   check_result expected events
@@ -264,7 +251,7 @@ let assign_contact_from_waiting_list () =
     in
     Ok
       [ Assignment.Created create |> Pool_event.assignment
-      ; update_contact_event ~increment_assignments_by:1 contact
+      ; update_assignment_count_event ~step:1 contact
       ; Email.(Sent (confirmation_email contact)) |> Pool_event.email
       ]
   in
@@ -300,7 +287,7 @@ let assign_contact_from_waiting_list_with_follow_ups () =
     in
     Ok
       (create_events
-       @ [ update_contact_event ~increment_assignments_by:2 contact
+       @ [ update_assignment_count_event ~step:2 contact
          ; Email.(Sent (confirmation_email contact)) |> Pool_event.email
          ])
   in
@@ -359,9 +346,7 @@ let assign_to_session_with_follow_ups () =
            Assignment.Created create |> Pool_event.assignment)
     in
     let increase_num_events =
-      update_contact_event
-        ~increment_assignments_by:(CCList.length sessions)
-        contact
+      update_assignment_count_event ~step:(CCList.length sessions) contact
     in
     let email_event =
       [ Email.Sent (confirmation_email contact) |> Pool_event.email ]
