@@ -133,23 +133,23 @@ let sexp_of_t t =
   t |> id |> Pool_common.Id.value |> fun s -> Sexplib0.Sexp.Atom s
 ;;
 
-let update_num_invitations ?(step = 1) ({ num_invitations; _ } as m) =
+let update_num_invitations ~step ({ num_invitations; _ } as m) =
   { m with num_assignments = NumberOfInvitations.update step num_invitations }
 ;;
 
-let update_num_assignments ?(step = 1) ({ num_assignments; _ } as m) =
+let update_num_assignments ~step ({ num_assignments; _ } as m) =
   { m with num_assignments = NumberOfAssignments.update step num_assignments }
 ;;
 
-let update_num_show_ups ?(step = 1) ({ num_show_ups; _ } as m) =
+let update_num_show_ups ~step ({ num_show_ups; _ } as m) =
   { m with num_show_ups = NumberOfShowUps.update step num_show_ups }
 ;;
 
-let update_num_no_shows ?(step = 1) ({ num_no_shows; _ } as m) =
+let update_num_no_shows ~step ({ num_no_shows; _ } as m) =
   { m with num_no_shows = NumberOfNoShows.update step num_no_shows }
 ;;
 
-let update_num_participations ?(step = 1) ({ num_participations; _ } as m) =
+let update_num_participations ~step ({ num_participations; _ } as m) =
   { m with
     num_participations = NumberOfParticipations.update step num_participations
   }

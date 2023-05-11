@@ -163,11 +163,11 @@ val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
 val pp : Format.formatter -> t -> unit
 val equal : t -> t -> bool
-val update_num_invitations : ?step:int -> t -> t
-val update_num_assignments : ?step:int -> t -> t
-val update_num_show_ups : ?step:int -> t -> t
-val update_num_no_shows : ?step:int -> t -> t
-val update_num_participations : ?step:int -> t -> t
+val update_num_invitations : step:int -> t -> t
+val update_num_assignments : step:int -> t -> t
+val update_num_show_ups : step:int -> t -> t
+val update_num_no_shows : step:int -> t -> t
+val update_num_participations : step:int -> t -> t
 
 module Preview : sig
   type t =
