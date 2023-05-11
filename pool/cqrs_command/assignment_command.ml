@@ -1,4 +1,5 @@
 module Conformist = Pool_common.Utils.PoolConformist
+open CCFun.Infix
 
 let src = Logs.Src.create "assignment.cqrs"
 
@@ -162,7 +163,6 @@ end = struct
                , participated
                , increment_num_participaton
                , follow_ups ) ->
-        let open Contact in
         let cancel_followups =
           NoShow.value no_show || not (Participated.value participated)
         in
@@ -175,29 +175,25 @@ end = struct
             increment_num_participaton
         in
         let num_assignments_decrement, mark_as_deleted =
+          let open CCList in
           match cancel_followups, follow_ups with
           | true, Some follow_ups ->
             let num_assignments =
               follow_ups
-              |> CCFun.(
-                   CCList.filter (fun assignment ->
-                     CCOption.is_none assignment.Assignment.canceled_at)
-                   %> CCList.length)
+              |> filter (fun assignment ->
+                   CCOption.is_none assignment.Assignment.canceled_at)
+                 %> length
             in
             let marked_as_deleted =
-              follow_ups
-              |> CCList.map CCFun.(markedasdeleted %> Pool_event.assignment)
+              follow_ups >|= markedasdeleted %> Pool_event.assignment
             in
             num_assignments, marked_as_deleted
           | _, _ -> 0, []
         in
         let contact =
-          { contact with
-            num_assignments =
-              Contact.NumberOfAssignments.update
-                (CCInt.neg num_assignments_decrement)
-                contact.num_assignments
-          }
+          Contact.update_num_assignments
+            ~step:(CCInt.neg num_assignments_decrement)
+            contact
         in
         let contact_events =
           (Contact.Updated contact |> Pool_event.contact) :: mark_as_deleted
@@ -306,7 +302,7 @@ end = struct
       CCList.map is_deletable assignments |> CCList.all_ok
     in
     let mark_as_deleted =
-      CCList.map CCFun.(markedasdeleted %> Pool_event.assignment) assignments
+      CCList.map (markedasdeleted %> Pool_event.assignment) assignments
     in
     let contact_updated =
       Contact_counter.update_on_assignment_deletion
