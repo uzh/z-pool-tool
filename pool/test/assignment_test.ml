@@ -44,14 +44,14 @@ let update_contact_event
   let open Contact in
   let num_assignments =
     NumberOfAssignments.(
-      [ increment_assignments_by, increment
-      ; decrement_assignments_by, decrement
+      [ increment_assignments_by
+      ; CCOption.map CCInt.neg decrement_assignments_by
       ]
       |> CCList.fold_left
-           (fun num_assignments ((by : int option), fnc) ->
-             by
-             |> CCOption.map_or ~default:num_assignments (fun by ->
-                  fnc num_assignments by))
+           (fun num_assignments (step : int option) ->
+             step
+             |> CCOption.map_or ~default:num_assignments (fun step ->
+                  update step num_assignments))
            contact.num_assignments)
   in
   { contact with num_assignments } |> updated |> Pool_event.contact
@@ -132,7 +132,7 @@ let set_attendance () =
     let updated_contact =
       let open Contact in
       assignment.contact
-      |> increment_num_show_ups
+      |> update_num_show_ups ~step:1
       |> updated
       |> Pool_event.contact
     in
@@ -390,7 +390,7 @@ let mark_uncanceled_as_deleted () =
     let open Contact in
     let contact = assignment.contact in
     let num_assignments =
-      NumberOfAssignments.decrement contact.num_assignments 1
+      NumberOfAssignments.update (-1) contact.num_assignments
     in
     Ok
       [ Contact.Updated { contact with num_assignments } |> Pool_event.contact
@@ -452,9 +452,10 @@ let marked_closed_with_followups_as_deleted () =
     let { num_assignments; num_show_ups; num_participations; _ } = contact in
     let contact =
       { contact with
-        num_assignments = NumberOfAssignments.decrement num_assignments 2
-      ; num_show_ups = NumberOfShowUps.decrement num_show_ups
-      ; num_participations = NumberOfParticipations.decrement num_participations
+        num_assignments = NumberOfAssignments.update (-2) num_assignments
+      ; num_show_ups = NumberOfShowUps.update (-1) num_show_ups
+      ; num_participations =
+          NumberOfParticipations.update (-1) num_participations
       }
     in
     Ok

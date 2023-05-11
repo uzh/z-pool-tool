@@ -12,11 +12,10 @@ let expected_events experiment contacts create_message =
      ]
      @ CCList.map
          Contact.(
-           fun ({ num_invitations; _ } as contact) ->
-             { contact with
-               num_invitations = NumberOfInvitations.increment num_invitations
-             }
-             |> Contact.updated
+           fun contact ->
+             contact
+             |> update_num_invitations ~step:1
+             |> updated
              |> Pool_event.contact)
          contacts)
 ;;
@@ -84,12 +83,10 @@ let create_invitations_repo _ () =
                ]
                @ CCList.map
                    Contact.(
-                     fun ({ num_invitations; _ } as contact) ->
-                       { contact with
-                         num_invitations =
-                           NumberOfInvitations.increment num_invitations
-                       }
-                       |> Contact.updated
+                     fun contact ->
+                       contact
+                       |> update_num_invitations ~step:1
+                       |> updated
                        |> Pool_event.contact)
                    contacts)
           in

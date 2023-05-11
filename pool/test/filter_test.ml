@@ -554,7 +554,7 @@ let retrieve_fitleterd_and_ordered_contacts _ () =
     let%lwt () =
       Contact.
         [ { contact_one with num_invitations = NumberOfInvitations.of_int 3 }
-          |> increment_num_invitations
+          |> update_num_invitations ~step:1
           |> updated
           |> Pool_event.contact
         ]

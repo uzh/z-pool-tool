@@ -724,8 +724,8 @@ let close_valid_with_assignments () =
           let open Contact in
           let contact =
             assignment.contact
-            |> increment_num_show_ups
-            |> increment_num_participations
+            |> update_num_show_ups ~step:1
+            |> update_num_participations ~step:1
           in
           Updated contact |> Pool_event.contact
         in
@@ -802,7 +802,9 @@ let close_unparticipated_with_followup () =
   let expected =
     let contact =
       let open Contact in
-      contact |> increment_num_show_ups |> increment_num_participations
+      contact
+      |> update_num_show_ups ~step:1
+      |> update_num_participations ~step:1
     in
     Ok
       [ Session.Closed session |> Pool_event.session

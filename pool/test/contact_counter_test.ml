@@ -349,7 +349,10 @@ module DeleteAttended = struct
     let%lwt contact = get_contact contact_id in
     let%lwt () = delete_assignment experiment_id contact [ follow_up ] in
     let contact =
-      Contact.(contact |> decrement_num_assignments |> decrement_num_show_ups)
+      Contact.(
+        contact
+        |> update_num_assignments ~step:(-1)
+        |> update_num_show_ups ~step:(-1))
     in
     let%lwt res = get_contact contact_id in
     let () = Alcotest.(check Test_utils.contact "succeeds" contact res) in
@@ -365,9 +368,9 @@ module DeleteAttended = struct
     let contact =
       Contact.(
         contact
-        |> decrement_num_assignments
-        |> decrement_num_show_ups
-        |> decrement_num_participations)
+        |> update_num_assignments ~step:(-1)
+        |> update_num_show_ups ~step:(-1)
+        |> update_num_participations ~step:(-1))
     in
     let%lwt res = get_contact contact_id in
     let () = Alcotest.(check Test_utils.contact "succeeds" contact res) in

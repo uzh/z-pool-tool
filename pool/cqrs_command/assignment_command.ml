@@ -194,9 +194,9 @@ end = struct
         let contact =
           { contact with
             num_assignments =
-              Contact.NumberOfAssignments.decrement
+              Contact.NumberOfAssignments.update
+                (CCInt.neg num_assignments_decrement)
                 contact.num_assignments
-                num_assignments_decrement
           }
         in
         let contact_events =

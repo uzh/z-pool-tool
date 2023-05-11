@@ -14,7 +14,7 @@ module NumberOfInvitations = struct
   let value m = m
   let of_int m = m
   let increment m = m + 1
-  let decrement m = if m > 0 then m - 1 else 0
+  let update step m = if m + step >= 0 then m + step else 0
 end
 
 module NumberOfAssignments = struct
@@ -23,8 +23,7 @@ module NumberOfAssignments = struct
   let init = 0
   let value m = m
   let of_int m = m
-  let increment m by = m + by
-  let decrement m by = if m - by > 0 then m - by else 0
+  let update step m = if m + step >= 0 then m + step else 0
 end
 
 module NumberOfShowUps = struct
@@ -33,8 +32,7 @@ module NumberOfShowUps = struct
   let init = 0
   let value m = m
   let of_int m = m
-  let increment m = m + 1
-  let decrement m = if m > 1 then m - 1 else 0
+  let update step m = if m + step >= 0 then m + step else 0
 end
 
 module NumberOfNoShows = struct
@@ -43,8 +41,7 @@ module NumberOfNoShows = struct
   let init = 0
   let value m = m
   let of_int m = m
-  let increment m = m + 1
-  let decrement m = if m > 1 then m - 1 else 0
+  let update step m = if m + step >= 0 then m + step else 0
 end
 
 module NumberOfParticipations = struct
@@ -53,8 +50,7 @@ module NumberOfParticipations = struct
   let init = 0
   let value m = m
   let of_int m = m
-  let increment m = m + 1
-  let decrement m = if m > 1 then m - 1 else 0
+  let update step m = if m + step >= 0 then m + step else 0
 end
 
 type t =
@@ -137,43 +133,25 @@ let sexp_of_t t =
   t |> id |> Pool_common.Id.value |> fun s -> Sexplib0.Sexp.Atom s
 ;;
 
-let decrement_num_assignments ({ num_assignments; _ } as m) =
-  { m with num_assignments = NumberOfAssignments.decrement num_assignments 1 }
+let update_num_invitations ?(step = 1) ({ num_invitations; _ } as m) =
+  { m with num_assignments = NumberOfInvitations.update step num_invitations }
 ;;
 
-let decrement_num_show_ups ({ num_show_ups; _ } as m) =
-  { m with num_show_ups = NumberOfShowUps.decrement num_show_ups }
+let update_num_assignments ?(step = 1) ({ num_assignments; _ } as m) =
+  { m with num_assignments = NumberOfAssignments.update step num_assignments }
 ;;
 
-let decrement_num_no_shows ({ num_no_shows; _ } as m) =
-  { m with num_no_shows = NumberOfNoShows.decrement num_no_shows }
+let update_num_show_ups ?(step = 1) ({ num_show_ups; _ } as m) =
+  { m with num_show_ups = NumberOfShowUps.update step num_show_ups }
 ;;
 
-let decrement_num_participations ({ num_participations; _ } as m) =
+let update_num_no_shows ?(step = 1) ({ num_no_shows; _ } as m) =
+  { m with num_no_shows = NumberOfNoShows.update step num_no_shows }
+;;
+
+let update_num_participations ?(step = 1) ({ num_participations; _ } as m) =
   { m with
-    num_participations = NumberOfParticipations.decrement num_participations
-  }
-;;
-
-let increment_num_assignments ({ num_assignments; _ } as m) =
-  { m with num_assignments = NumberOfAssignments.increment num_assignments 1 }
-;;
-
-let increment_num_invitations ({ num_invitations; _ } as m) =
-  { m with num_invitations = NumberOfInvitations.increment num_invitations }
-;;
-
-let increment_num_show_ups ({ num_show_ups; _ } as m) =
-  { m with num_show_ups = NumberOfShowUps.increment num_show_ups }
-;;
-
-let increment_num_no_shows ({ num_no_shows; _ } as m) =
-  { m with num_no_shows = NumberOfNoShows.increment num_no_shows }
-;;
-
-let increment_num_participations ({ num_participations; _ } as m) =
-  { m with
-    num_participations = NumberOfParticipations.increment num_participations
+    num_participations = NumberOfParticipations.update step num_participations
   }
 ;;
 
