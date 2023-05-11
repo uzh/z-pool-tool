@@ -265,6 +265,7 @@ let rec error_to_string = function
   | AlreadySignedUpForExperiment ->
     "You are already signed up for this experiment."
   | AssignmentIsCanceled -> "Assignment was canceled."
+  | AssignmentIsClosed -> "Assignment is already closed."
   | AlreadyStarted -> "Already started or ended, action not possible anymore."
   | AlreadyInvitedToExperiment names ->
     Format.asprintf
@@ -319,7 +320,7 @@ let rec error_to_string = function
       (CCString.concat ", " suffixes)
   | InvalidJson exn -> Format.asprintf "Invalid Json: %s" exn
   | InvalidOptionSelected -> "Invalid option selected."
-  | InvalidHtmxRequest -> "Invalid request."
+  | InvalidRequest | InvalidHtmxRequest -> "Invalid request."
   | IsMarkedAsDeleted field ->
     field_message
       ""

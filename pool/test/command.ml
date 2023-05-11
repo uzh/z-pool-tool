@@ -154,7 +154,7 @@ let () =
         ; test_case
             "mark uncanceled as deleted"
             `Quick
-            Assignment_test.marked_uncanceled_as_deleted
+            Assignment_test.mark_uncanceled_as_deleted
         ; test_case
             "mark canceled as deleted"
             `Quick

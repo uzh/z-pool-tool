@@ -1,0 +1,7 @@
+(library
+ (name contact_counter)
+ (libraries assignment contact session)
+ (preprocess
+  (pps lwt_ppx)))
+
+(include_subdirs unqualified)

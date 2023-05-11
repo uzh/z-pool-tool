@@ -80,6 +80,12 @@ let is_not_deleted { marked_as_deleted; _ } =
   else Error Pool_common.Message.(IsMarkedAsDeleted Field.Assignment)
 ;;
 
+let is_not_closed { no_show; participated; _ } =
+  if CCOption.(is_none no_show && is_none participated)
+  then Ok ()
+  else Error Pool_common.Message.AssignmentIsClosed
+;;
+
 let is_not_canceled { canceled_at; _ } =
   if CCOption.is_none canceled_at
   then Ok ()
@@ -111,4 +117,11 @@ module Public = struct
     { id : Id.t
     ; canceled_at : CanceledAt.t option
     }
+end
+
+module IncrementParticipationCount = struct
+  type t = bool
+
+  let value m = m
+  let create m = m
 end

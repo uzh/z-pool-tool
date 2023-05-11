@@ -177,6 +177,59 @@ let suite =
               `Slow
               AvailableExperiments.mark_assignment_as_deleted
           ] )
+    ; ( "contact counter"
+      , Contact_counter_test.
+          [ test_case
+              "attend all: register for session"
+              `Slow
+              AttendAll.register_for_session
+          ; test_case
+              "attend all: close first session"
+              `Slow
+              AttendAll.close_first_session
+          ; test_case
+              "attend all: close follow up session"
+              `Slow
+              AttendAll.close_follow_up_session
+          ; test_case
+              "delete attended: delete follow up"
+              `Slow
+              DeleteAttended.delete_follow_up
+          ; test_case
+              "delete attended: delete main"
+              `Slow
+              DeleteAttended.delete_main
+          ; test_case
+              "cancel session: without follow up"
+              `Slow
+              CancelSession.without_followups
+          ; test_case "cancel session: follow up" `Slow CancelSession.follow_up
+          ; test_case
+              "cancel session: main with follow up"
+              `Slow
+              CancelSession.main_with_follow_up
+          ; test_case
+              "Do not attend: register for session"
+              `Slow
+              DoNotAttend.register_for_session
+          ; test_case
+              "Do not attend: close main session"
+              `Slow
+              DoNotAttend.close_main
+          ; test_case
+              "no show: register for session"
+              `Slow
+              NoShow.register_for_session
+          ; test_case "no show: close main" `Slow NoShow.close_main
+          ; test_case
+              "delete unattended: register"
+              `Slow
+              DeleteUnattended.register_for_session
+          ; test_case
+              "delete unattended: delete main session assignment"
+              `Slow
+              DeleteUnattended.delete_main
+          ] )
     ; "cleanup", [ test_case "clean up test database" `Quick Seed.cleanup ]
     ]
 ;;

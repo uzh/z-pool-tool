@@ -1,4 +1,5 @@
 module Conformist = Pool_common.Utils.PoolConformist
+open CCFun
 
 let src = Logs.Src.create "session.cqrs"
 
@@ -364,7 +365,6 @@ end = struct
     }
 
   let handle ?(tags = Logs.Tag.empty) { session; follow_ups; templates } =
-    let open CCFun in
     let open CCResult in
     Logs.info ~src (fun m -> m "Handle command Delete" ~tags);
     if CCList.is_empty follow_ups |> not
@@ -383,12 +383,16 @@ end = struct
 end
 
 module Cancel : sig
-  include Common.CommandSig
+  type t =
+    { notify_email : bool
+    ; notify_sms : bool
+    ; reason : Session.CancellationReason.t
+    }
 
   val handle
     :  ?tags:Logs.Tag.set
     -> Session.t list
-    -> Contact.t list
+    -> (Contact.t * Assignment.t list) list
     -> (Session.CancellationReason.t
         -> Contact.t
         -> (Sihl_email.t, Pool_common.Message.error) result)
@@ -407,7 +411,7 @@ end = struct
   let handle
     ?(tags = Logs.Tag.empty)
     sessions
-    (contacts : Contact.t list)
+    (assignments : (Contact.t * Assignment.t list) list)
     messages_fn
     command
     =
@@ -421,8 +425,22 @@ end = struct
     let* (_ : unit list) =
       sessions |> CCList.map Session.is_cancellable |> CCList.all_ok
     in
+    let* (_ : unit list) =
+      let open CCList in
+      assignments >|= snd |> flatten >|= Assignment.is_not_closed |> all_ok
+    in
     let* emails =
-      contacts |> CCList.map (messages_fn command.reason) |> CCResult.flatten_l
+      assignments
+      |> CCList.map (fst %> messages_fn command.reason)
+      |> CCResult.flatten_l
+    in
+    let contact_events =
+      assignments
+      |> CCList.map (fun (contact, assignments) ->
+           contact
+           |> Contact_counter.update_on_session_cancellation assignments
+           |> Contact.updated
+           |> Pool_event.contact)
     in
     let email_event =
       if command.notify_email
@@ -436,7 +454,7 @@ end = struct
       |> CCList.map (fun session ->
            Session.Canceled session |> Pool_event.session)
     in
-    [ email_event; sms_event; cancel_events ]
+    [ email_event; sms_event; cancel_events; contact_events ]
     |> CCList.flatten
     |> CCResult.return
   ;;

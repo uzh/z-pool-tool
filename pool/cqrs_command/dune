@@ -5,6 +5,7 @@
   conformist
   custom_field
   contact
+  contact_counter
   database
   email
   experiment

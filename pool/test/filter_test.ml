@@ -553,8 +553,9 @@ let retrieve_fitleterd_and_ordered_contacts _ () =
     in
     let%lwt () =
       Contact.
-        [ NumInvitationsIncreased
-            { contact_one with num_invitations = NumberOfInvitations.of_int 3 }
+        [ { contact_one with num_invitations = NumberOfInvitations.of_int 3 }
+          |> update_num_invitations ~step:1
+          |> updated
           |> Pool_event.contact
         ]
       |> Lwt_list.iter_s (Pool_event.handle_event Data.database_label)

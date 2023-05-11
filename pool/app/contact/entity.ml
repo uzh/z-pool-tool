@@ -14,7 +14,7 @@ module NumberOfInvitations = struct
   let value m = m
   let of_int m = m
   let increment m = m + 1
-  let decrement m = if m > 0 then m - 1 else 0
+  let update step m = m + step |> max 0
 end
 
 module NumberOfAssignments = struct
@@ -23,8 +23,7 @@ module NumberOfAssignments = struct
   let init = 0
   let value m = m
   let of_int m = m
-  let increment m by = m + by
-  let decrement m by = if m - by > 0 then m - by else 0
+  let update step m = m + step |> max 0
 end
 
 module NumberOfShowUps = struct
@@ -33,8 +32,7 @@ module NumberOfShowUps = struct
   let init = 0
   let value m = m
   let of_int m = m
-  let increment m = m + 1
-  let decrement m = if m > 1 then m - 1 else 0
+  let update step m = m + step |> max 0
 end
 
 module NumberOfNoShows = struct
@@ -43,8 +41,7 @@ module NumberOfNoShows = struct
   let init = 0
   let value m = m
   let of_int m = m
-  let increment m = m + 1
-  let decrement m = if m > 1 then m - 1 else 0
+  let update step m = m + step |> max 0
 end
 
 module NumberOfParticipations = struct
@@ -53,8 +50,7 @@ module NumberOfParticipations = struct
   let init = 0
   let value m = m
   let of_int m = m
-  let increment m = m + 1
-  let decrement m = if m > 1 then m - 1 else 0
+  let update step m = m + step |> max 0
 end
 
 type t =
@@ -135,6 +131,28 @@ let email_address m = m.user.Sihl_user.email |> User.EmailAddress.of_string
 
 let sexp_of_t t =
   t |> id |> Pool_common.Id.value |> fun s -> Sexplib0.Sexp.Atom s
+;;
+
+let update_num_invitations ~step ({ num_invitations; _ } as m) =
+  { m with num_assignments = NumberOfInvitations.update step num_invitations }
+;;
+
+let update_num_assignments ~step ({ num_assignments; _ } as m) =
+  { m with num_assignments = NumberOfAssignments.update step num_assignments }
+;;
+
+let update_num_show_ups ~step ({ num_show_ups; _ } as m) =
+  { m with num_show_ups = NumberOfShowUps.update step num_show_ups }
+;;
+
+let update_num_no_shows ~step ({ num_no_shows; _ } as m) =
+  { m with num_no_shows = NumberOfNoShows.update step num_no_shows }
+;;
+
+let update_num_participations ~step ({ num_participations; _ } as m) =
+  { m with
+    num_participations = NumberOfParticipations.update step num_participations
+  }
 ;;
 
 module Preview = struct

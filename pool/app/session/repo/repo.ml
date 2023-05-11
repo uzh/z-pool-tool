@@ -358,9 +358,9 @@ module Sql = struct
 
   let find_follow_ups_request =
     let open Caqti_request.Infix in
-    (* TODO [aerben] order by what here? *)
     {sql|
         WHERE pool_sessions.follow_up_to = UNHEX(REPLACE(?, '-', ''))
+        AND pool_sessions.canceled_at IS NULL
       |sql}
     |> find_sql ~order_by:"pool_sessions.start"
     |> Caqti_type.string ->* RepoEntity.t

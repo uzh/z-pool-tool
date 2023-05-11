@@ -32,6 +32,7 @@ end = struct
     =
     Logs.info ~src (fun m -> m "Handle command Create" ~tags);
     let open CCResult in
+    let open CCFun in
     let errors, contacts =
       CCList.partition
         (fun contact ->
@@ -41,7 +42,7 @@ end = struct
             invited_contacts)
         contacts
     in
-    let errors = CCList.map CCFun.(Contact.id %> Pool_common.Id.value) errors in
+    let errors = CCList.map (Contact.id %> Pool_common.Id.value) errors in
     let emails = CCList.map create_message contacts in
     if CCList.is_empty errors |> not
     then Error Pool_common.Message.(AlreadyInvitedToExperiment errors)
@@ -53,10 +54,11 @@ end = struct
           ([ Invitation.Created (contacts, experiment) |> Pool_event.invitation
            ; Email.BulkSent emails |> Pool_event.email
            ]
-           @ CCList.map
-               (fun contact ->
-                 Contact.NumInvitationsIncreased contact |> Pool_event.contact)
-               contacts)
+           @ CCList.(
+               contacts
+               >|= Contact_counter.update_on_invitation_sent
+                   %> Contact.updated
+                   %> Pool_event.contact))
       | Error err -> Error err)
   ;;
 

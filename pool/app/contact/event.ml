@@ -53,9 +53,6 @@ type event =
   | TermsAccepted of t
   | Disabled of t
   | UnverifiedDeleted of t
-  | NumAssignmentsDecreasedBy of (t * int)
-  | NumAssignmentsIncreasedBy of (t * int)
-  | NumInvitationsIncreased of t
   | ProfileUpdateTriggeredAtUpdated of t list
   | RegistrationAttemptNotificationSent of t
   | Updated of t
@@ -149,28 +146,6 @@ let handle_event pool : event -> unit Lwt.t =
     Repo.update pool { contact with disabled = User.Disabled.create true }
   | UnverifiedDeleted contact ->
     contact |> Entity.id |> Repo.delete_unverified pool
-  | NumAssignmentsDecreasedBy (({ num_assignments; _ } as contact), decrease_by)
-    ->
-    Repo.update
-      pool
-      { contact with
-        num_assignments =
-          NumberOfAssignments.decrement num_assignments decrease_by
-      }
-  | NumAssignmentsIncreasedBy (({ num_assignments; _ } as contact), increase_by)
-    ->
-    Repo.update
-      pool
-      { contact with
-        num_assignments =
-          NumberOfAssignments.increment num_assignments increase_by
-      }
-  | NumInvitationsIncreased ({ num_invitations; _ } as contact) ->
-    Repo.update
-      pool
-      { contact with
-        num_invitations = num_invitations |> NumberOfInvitations.increment
-      }
   | ProfileUpdateTriggeredAtUpdated contacts ->
     contacts |> CCList.map id |> Repo.update_profile_updated_triggered pool
   | RegistrationAttemptNotificationSent t ->

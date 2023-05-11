@@ -347,6 +347,68 @@ module Sql = struct
       marked_as_deleted_request
       (id |> Entity.Id.value)
   ;;
+
+  let contact_participation_in_other_assignments_request assignments =
+    let ids_sql =
+      assignments
+      |> CCList.mapi (fun i _ ->
+           Format.asprintf "UNHEX(REPLACE($%n, '-', ''))" (i + 3))
+      |> CCString.concat ","
+    in
+    Format.asprintf
+      {sql|
+      SELECT
+        EXISTS (
+          SELECT
+            1
+          FROM
+            pool_assignments
+          LEFT JOIN pool_sessions ON pool_assignments.session_uuid = pool_sessions.uuid
+          LEFT JOIN pool_experiments ON pool_sessions.experiment_uuid = pool_experiments.uuid
+        WHERE
+          pool_assignments.uuid NOT IN( %s )
+          AND pool_experiments.uuid = UNHEX(REPLACE($1, '-', ''))
+          AND pool_assignments.contact_uuid = UNHEX(REPLACE($2, '-', ''))
+          AND pool_sessions.closed_at IS NOT NULL
+          AND pool_assignments.no_show = 0
+          AND pool_assignments.marked_as_deleted = 0
+        LIMIT 1)
+      |sql}
+      ids_sql
+  ;;
+
+  let contact_participation_in_other_assignments
+    pool
+    assignments
+    experiment_uuid
+    contact_uuid
+    =
+    if CCList.is_empty assignments
+    then Lwt_result.fail Pool_common.Message.InvalidRequest
+    else
+      let open Caqti_request.Infix in
+      let open Dynparam in
+      let open Caqti_type in
+      let dyn =
+        let init =
+          empty
+          |> add string (experiment_uuid |> Experiment.Id.value)
+          |> add string (contact_uuid |> Contact.Id.value)
+        in
+        CCList.fold_left
+          (fun dyn { Entity.id; _ } ->
+            dyn |> add string (id |> Entity.Id.value))
+          init
+          assignments
+      in
+      let (Pack (pt, pv)) = dyn in
+      let request =
+        contact_participation_in_other_assignments_request assignments
+        |> pt ->! bool
+      in
+      Utils.Database.find (pool |> Pool_database.Label.value) request pv
+      |> Lwt.map CCResult.return
+  ;;
 end
 
 let contact_to_assignment pool assignment =
@@ -409,3 +471,7 @@ let insert pool session_id model =
 let update = Sql.update
 let find_by_experiment_and_contact_opt = Sql.find_by_experiment_and_contact_opt
 let marked_as_deleted = Sql.marked_as_deleted
+
+let contact_participation_in_other_assignments =
+  Sql.contact_participation_in_other_assignments
+;;

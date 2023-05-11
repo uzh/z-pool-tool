@@ -267,6 +267,7 @@ type error =
   | AlreadySignedUpForExperiment
   | AlreadyStarted
   | AssignmentIsCanceled
+  | AssignmentIsClosed
   | Authorization of string
   | Conformist of (Field.t * error) list
   | ConformistModuleErrorType
@@ -292,6 +293,7 @@ type error =
   | Invalid of Field.t
   | InvalidEmailSuffix of string list
   | InvalidJson of string
+  | InvalidRequest
   | InvalidHtmxRequest
   | InvalidOptionSelected
   | IsMarkedAsDeleted of Field.t

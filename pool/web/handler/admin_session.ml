@@ -333,11 +333,21 @@ let cancel req =
     let* follow_ups =
       Session.find_follow_ups database_label session.Session.id
     in
+    let* assignments =
+      session :: follow_ups
+      |> Lwt_list.fold_left_s
+           (fun result session ->
+             match result with
+             | Error err -> Lwt_result.fail err
+             | Ok assignments ->
+               Assignment.find_uncanceled_by_session
+                 database_label
+                 session.Session.id
+               >|+ CCList.append assignments)
+           (Ok [])
+      >|+ Assignment.group_by_contact
+    in
     let* events =
-      let* contacts =
-        Assignment.find_by_session database_label session.Session.id
-        >|+ CCList.map (fun (a : Assignment.t) -> a.Assignment.contact)
-      in
       let* system_languages =
         Pool_context.Tenant.get_tenant_languages req |> Lwt_result.lift
       in
@@ -357,7 +367,7 @@ let cancel req =
       let open Cqrs_command.Session_command.Cancel in
       urlencoded
       |> decode
-      >>= handle ~tags (session :: follow_ups) contacts create_message
+      >>= handle ~tags (session :: follow_ups) assignments create_message
       |> Lwt_result.lift
     in
     let%lwt () = Pool_event.handle_events ~tags database_label events in
@@ -476,21 +486,35 @@ let close_post req =
         urlencoded_list Pool_common.Message.Field.Participated
       in
       assignments
-      |> Lwt_list.map_s (fun ({ Assignment.id; _ } as assigment) ->
+      |> Lwt_list.map_s (fun ({ Assignment.id; contact; _ } as assignment) ->
            let id = Id.value id in
            let find = CCList.mem ~eq:CCString.equal id in
            let no_show = no_shows |> find |> NoShow.create in
            let participated = participated |> find |> Participated.create in
+           let* increment_num_participations =
+             Assignment.contact_participation_in_other_assignments
+               database_label
+               [ assignment ]
+               experiment_id
+               (Contact.id contact)
+             >|+ CCFun.(not %> IncrementParticipationCount.create)
+           in
            let%lwt follow_ups =
              match
                NoShow.value no_show || not (Participated.value participated)
              with
              | true ->
-               find_follow_ups database_label assigment ||> CCOption.return
+               find_follow_ups database_label assignment ||> CCOption.return
              | false -> Lwt.return_none
            in
-           Lwt.return (assigment, no_show, participated, follow_ups))
-      ||> SetAttendance.handle session
+           Lwt_result.return
+             ( assignment
+             , no_show
+             , participated
+             , increment_num_participations
+             , follow_ups ))
+      ||> CCResult.flatten_l
+      >== SetAttendance.handle session
     in
     let%lwt () = Pool_event.handle_events database_label events in
     Http_utils.redirect_to_with_actions

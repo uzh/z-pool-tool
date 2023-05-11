@@ -36,6 +36,11 @@ let confirmation_email contact =
     }
 ;;
 
+let update_assignment_count_event ~step contact =
+  let open Contact in
+  contact |> update_num_assignments ~step |> updated |> Pool_event.contact
+;;
+
 let create () =
   let { session; experiment; contact } = assignment_data () in
   let experiment = experiment |> Model.experiment_to_public_experiment in
@@ -49,7 +54,7 @@ let create () =
     Ok
       [ Assignment.(Created { contact; session_id = session.Session.Public.id })
         |> Pool_event.assignment
-      ; Contact.NumAssignmentsIncreasedBy (contact, 1) |> Pool_event.contact
+      ; update_assignment_count_event ~step:1 contact
       ; Email.(Sent (confirmation_email contact)) |> Pool_event.email
       ]
   in
@@ -63,8 +68,7 @@ let canceled () =
   let expected =
     Ok
       [ Assignment.Canceled assignment |> Pool_event.assignment
-      ; Contact.NumAssignmentsDecreasedBy (assignment.Assignment.contact, 1)
-        |> Pool_event.contact
+      ; update_assignment_count_event ~step:(-1) assignment.Assignment.contact
       ]
   in
   check_result expected events
@@ -100,23 +104,25 @@ let set_attendance () =
   let session = Model.(create_session ~start:(an_hour_ago ()) ()) in
   let no_show = false |> NoShow.create in
   let participated = false |> Participated.create in
+  let increment_num_participaton = IncrementParticipationCount.create false in
   let events =
     AssignmentCommand.SetAttendance.handle
       session
-      [ assignment, no_show, participated, None ]
+      [ assignment, no_show, participated, increment_num_participaton, None ]
   in
   let expected =
-    let contact =
-      AssignmentCommand.update_session_participation_counts
-        assignment.contact
-        no_show
-        participated
+    let updated_contact =
+      let open Contact in
+      assignment.contact
+      |> update_num_show_ups ~step:1
+      |> updated
+      |> Pool_event.contact
     in
     Ok
       [ Session.Closed session |> Pool_event.session
       ; Assignment.AttendanceSet (assignment, no_show, participated)
         |> Pool_event.assignment
-      ; Contact.Updated contact |> Pool_event.contact
+      ; updated_contact
       ]
   in
   check_result expected events
@@ -131,7 +137,12 @@ let set_invalid_attendance () =
   let events =
     AssignmentCommand.SetAttendance.handle
       session
-      [ assignment, show_up, participated, None ]
+      [ ( assignment
+        , show_up
+        , participated
+        , IncrementParticipationCount.create false
+        , None )
+      ]
   in
   let expected =
     Error Pool_common.Message.(MutuallyExclusive Field.(Participated, NoShow))
@@ -240,7 +251,7 @@ let assign_contact_from_waiting_list () =
     in
     Ok
       [ Assignment.Created create |> Pool_event.assignment
-      ; Contact.NumAssignmentsIncreasedBy (contact, 1) |> Pool_event.contact
+      ; update_assignment_count_event ~step:1 contact
       ; Email.(Sent (confirmation_email contact)) |> Pool_event.email
       ]
   in
@@ -276,7 +287,7 @@ let assign_contact_from_waiting_list_with_follow_ups () =
     in
     Ok
       (create_events
-       @ [ Contact.NumAssignmentsIncreasedBy (contact, 2) |> Pool_event.contact
+       @ [ update_assignment_count_event ~step:2 contact
          ; Email.(Sent (confirmation_email contact)) |> Pool_event.email
          ])
   in
@@ -335,8 +346,7 @@ let assign_to_session_with_follow_ups () =
            Assignment.Created create |> Pool_event.assignment)
     in
     let increase_num_events =
-      Contact.NumAssignmentsIncreasedBy (contact, CCList.length sessions)
-      |> Pool_event.contact
+      update_assignment_count_event ~step:(CCList.length sessions) contact
     in
     let email_event =
       [ Email.Sent (confirmation_email contact) |> Pool_event.email ]
@@ -346,40 +356,46 @@ let assign_to_session_with_follow_ups () =
   check_result expected events
 ;;
 
-let marked_uncanceled_as_deleted () =
+let mark_uncanceled_as_deleted () =
+  let open Assignment in
   let assignment = Model.create_assignment () in
-  let assignment = Assignment.{ assignment with canceled_at = None } in
+  let assignment = { assignment with canceled_at = None } in
   let events =
     AssignmentCommand.MarkAsDeleted.handle
-      (assignment.Assignment.contact, [ assignment ])
+      ( assignment.contact
+      , [ assignment ]
+      , IncrementParticipationCount.create false )
   in
   let expected =
     let open Contact in
-    let contact = assignment.Assignment.contact in
+    let contact = assignment.contact in
     let num_assignments =
-      NumberOfAssignments.decrement contact.num_assignments 1
+      NumberOfAssignments.update (-1) contact.num_assignments
     in
     Ok
       [ Contact.Updated { contact with num_assignments } |> Pool_event.contact
-      ; Assignment.MarkedAsDeleted assignment |> Pool_event.assignment
+      ; MarkedAsDeleted assignment |> Pool_event.assignment
       ]
   in
   check_result expected events
 ;;
 
 let marked_canceled_as_deleted () =
+  let open Assignment in
   let assignment = Model.create_assignment () in
   let assignment =
-    Assignment.{ assignment with canceled_at = Some (CanceledAt.create_now ()) }
+    { assignment with canceled_at = Some (CanceledAt.create_now ()) }
   in
   let events =
     AssignmentCommand.MarkAsDeleted.handle
-      (assignment.Assignment.contact, [ assignment ])
+      ( assignment.contact
+      , [ assignment ]
+      , IncrementParticipationCount.create false )
   in
   let expected =
     Ok
-      [ Contact.Updated assignment.Assignment.contact |> Pool_event.contact
-      ; Assignment.MarkedAsDeleted assignment |> Pool_event.assignment
+      [ Contact.Updated assignment.contact |> Pool_event.contact
+      ; MarkedAsDeleted assignment |> Pool_event.assignment
       ]
   in
   check_result expected events
@@ -390,11 +406,10 @@ let marked_closed_with_followups_as_deleted () =
   let open Contact in
   let assignment = Model.create_assignment () in
   let assignment =
-    Assignment.
-      { assignment with
-        no_show = false |> NoShow.create |> CCOption.return
-      ; participated = true |> Participated.create |> CCOption.return
-      }
+    { assignment with
+      no_show = false |> NoShow.create |> CCOption.return
+    ; participated = true |> Participated.create |> CCOption.return
+    }
   in
   let follow_up = Model.create_assignment () in
   let contact =
@@ -408,21 +423,25 @@ let marked_closed_with_followups_as_deleted () =
     }
   in
   let events =
-    AssignmentCommand.MarkAsDeleted.handle (contact, [ assignment; follow_up ])
+    AssignmentCommand.MarkAsDeleted.handle
+      ( contact
+      , [ assignment; follow_up ]
+      , IncrementParticipationCount.create true )
   in
   let expected =
     let { num_assignments; num_show_ups; num_participations; _ } = contact in
     let contact =
       { contact with
-        num_assignments = NumberOfAssignments.decrement num_assignments 2
-      ; num_show_ups = NumberOfShowUps.decrement num_show_ups
-      ; num_participations = NumberOfParticipations.decrement num_participations
+        num_assignments = NumberOfAssignments.update (-2) num_assignments
+      ; num_show_ups = NumberOfShowUps.update (-1) num_show_ups
+      ; num_participations =
+          NumberOfParticipations.update (-1) num_participations
       }
     in
     Ok
       [ Contact.Updated contact |> Pool_event.contact
-      ; Assignment.MarkedAsDeleted assignment |> Pool_event.assignment
-      ; Assignment.MarkedAsDeleted follow_up |> Pool_event.assignment
+      ; MarkedAsDeleted assignment |> Pool_event.assignment
+      ; MarkedAsDeleted follow_up |> Pool_event.assignment
       ]
   in
   check_result expected events

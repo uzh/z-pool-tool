@@ -274,6 +274,7 @@ let rec error_to_string = function
       (field |> field_to_string |> CCString.trim)
       "wurde bereits veröffentlich."
   | AssignmentIsCanceled -> "Anmeldung wurde abgesagt."
+  | AssignmentIsClosed -> "Anmeldung wurde bereits geschlossen."
   | AlreadyStarted ->
     "Bereits gestarted oder beendet, aktion nicht mehr möglich."
   | AlreadyInvitedToExperiment names ->
@@ -335,7 +336,7 @@ let rec error_to_string = function
       (CCString.concat ", " suffixes)
   | InvalidJson exn -> Format.asprintf "Ungültiges Json: %s" exn
   | InvalidOptionSelected -> "Ungültige Option ausgewählt."
-  | InvalidHtmxRequest -> "Ungültige Anfrage."
+  | InvalidRequest | InvalidHtmxRequest -> "Ungültige Anfrage."
   | IsMarkedAsDeleted field ->
     field_message
       ""

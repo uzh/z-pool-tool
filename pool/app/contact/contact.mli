@@ -15,7 +15,7 @@ module NumberOfInvitations : sig
   val init : t
   val of_int : int -> t
   val equal : t -> t -> bool
-  val increment : t -> t
+  val update : int -> t -> t
 end
 
 module NumberOfAssignments : sig
@@ -24,8 +24,7 @@ module NumberOfAssignments : sig
   val init : t
   val of_int : int -> t
   val equal : t -> t -> bool
-  val increment : t -> int -> t
-  val decrement : t -> int -> t
+  val update : int -> t -> t
 end
 
 module NumberOfShowUps : sig
@@ -34,8 +33,7 @@ module NumberOfShowUps : sig
   val init : t
   val of_int : int -> t
   val equal : t -> t -> bool
-  val increment : t -> t
-  val decrement : t -> t
+  val update : int -> t -> t
 end
 
 module NumberOfNoShows : sig
@@ -44,8 +42,7 @@ module NumberOfNoShows : sig
   val init : t
   val of_int : int -> t
   val equal : t -> t -> bool
-  val increment : t -> t
-  val decrement : t -> t
+  val update : int -> t -> t
 end
 
 module NumberOfParticipations : sig
@@ -54,8 +51,7 @@ module NumberOfParticipations : sig
   val init : t
   val of_int : int -> t
   val equal : t -> t -> bool
-  val increment : t -> t
-  val decrement : t -> t
+  val update : int -> t -> t
 end
 
 type t =
@@ -155,20 +151,23 @@ type event =
   | TermsAccepted of t
   | Disabled of t
   | UnverifiedDeleted of t
-  | NumAssignmentsDecreasedBy of (t * int)
-  | NumAssignmentsIncreasedBy of (t * int)
-  | NumInvitationsIncreased of t
   | ProfileUpdateTriggeredAtUpdated of t list
   | RegistrationAttemptNotificationSent of t
   | Updated of t
 
 val created : create -> event
+val updated : t -> event
 val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
 val pp : Format.formatter -> t -> unit
 val equal : t -> t -> bool
+val update_num_invitations : step:int -> t -> t
+val update_num_assignments : step:int -> t -> t
+val update_num_show_ups : step:int -> t -> t
+val update_num_no_shows : step:int -> t -> t
+val update_num_participations : step:int -> t -> t
 
 module Preview : sig
   type t =

@@ -1,12 +1,8 @@
 module SessionC = Cqrs_command.Session_command
+open Test_utils
 
 let check_result expected generated =
-  Alcotest.(
-    check
-      (result (list Test_utils.event) Test_utils.error)
-      "succeeds"
-      expected
-      generated)
+  Alcotest.(check (result (list event) error) "succeeds" expected generated)
 ;;
 
 module Data = struct
@@ -313,7 +309,7 @@ let create_min_eq_max () =
 let update_empty_data () =
   let open CCResult.Infix in
   let location = Location_test.create_location () in
-  let session = Test_utils.Model.create_session () in
+  let session = Model.create_session () in
   let input = [] in
   let res = SessionC.Update.(input |> decode >>= handle [] session location) in
   check_result
@@ -336,7 +332,7 @@ let update_invalid_data () =
   let open Field in
   let open Data.Invalid in
   let location = Location_test.create_location () in
-  let session = Test_utils.Model.create_session () in
+  let session = Model.create_session () in
   let res =
     SessionC.Update.(
       Data.invalid_input |> decode >>= handle [] session location)
@@ -364,7 +360,7 @@ let update_min_gt_max () =
     let open Pool_common.Message.Field in
     update_input [ MaxParticipants, "5"; MinParticipants, "6" ]
   in
-  let session = Test_utils.Model.create_session () in
+  let session = Model.create_session () in
   let location = Location_test.create_location () in
   let res = SessionC.Update.(input |> decode >>= handle [] session location) in
   check_result (Error (Smaller (MaxParticipants, MinParticipants))) res
@@ -377,7 +373,7 @@ let update_no_optional () =
     let open Data in
     delete_from_input [ Description; LeadTime; SentAt; AssignmentCount ]
   in
-  let session = Test_utils.Model.create_session () in
+  let session = Model.create_session () in
   let location = Location_test.create_location () in
   let res = SessionC.Update.(input |> decode >>= handle [] session location) in
   check_result
@@ -401,7 +397,7 @@ let update_no_optional () =
 
 let update_full () =
   let open CCResult.Infix in
-  let session = Test_utils.Model.create_session () in
+  let session = Model.create_session () in
   let location = Location_test.create_location () in
   let input =
     let open Data in
@@ -434,7 +430,7 @@ let update_min_eq_max () =
     let open Pool_common.Message.Field in
     update_input [ MaxParticipants, "5"; MinParticipants, "5" ]
   in
-  let session = Test_utils.Model.create_session () in
+  let session = Model.create_session () in
   let location = Location_test.create_location () in
   let res = SessionC.Update.(input |> decode >>= handle [] session location) in
   check_result
@@ -457,7 +453,7 @@ let update_min_eq_max () =
 ;;
 
 let delete () =
-  let session = Test_utils.Model.create_session () in
+  let session = Model.create_session () in
   let res =
     SessionC.Delete.(handle { session; follow_ups = []; templates = [] })
   in
@@ -466,7 +462,7 @@ let delete () =
 
 let delete_closed_session () =
   let closed_at = Ptime_clock.now () in
-  let session = Test_utils.Model.create_session () in
+  let session = Model.create_session () in
   let session = Session.{ session with closed_at = Some closed_at } in
   let res =
     SessionC.Delete.(handle { session; follow_ups = []; templates = [] })
@@ -480,7 +476,7 @@ let delete_closed_session () =
 ;;
 
 let delete_session_with_assignments () =
-  let session = Test_utils.Model.create_session () in
+  let session = Model.create_session () in
   let session =
     Session.
       { session with
@@ -495,8 +491,8 @@ let delete_session_with_assignments () =
 
 let delete_session_with_follow_ups () =
   let id = Session.Id.create () in
-  let session = Test_utils.Model.create_session ~id () in
-  let follow_up_session = Test_utils.Model.create_session ~follow_up_to:id () in
+  let session = Model.create_session ~id () in
+  let follow_up_session = Model.create_session ~follow_up_to:id () in
   let res =
     SessionC.Delete.(
       handle { session; follow_ups = [ follow_up_session ]; templates = [] })
@@ -508,7 +504,7 @@ let create_cancellation_message reason contact =
   let recipient =
     contact |> Contact.email_address |> Pool_user.EmailAddress.value
   in
-  let email = Test_utils.Model.create_email ~recipient () in
+  let email = Model.create_email ~recipient () in
   reason
   |> Session.CancellationReason.value
   |> CCFun.flip Sihl_email.set_text email
@@ -517,15 +513,19 @@ let create_cancellation_message reason contact =
 
 let cancel_no_reason () =
   let open CCResult.Infix in
-  let session = Test_utils.Model.create_session () in
-  let contact1 = Test_utils.Model.create_contact () in
-  let contact2 = Test_utils.Model.create_contact () in
+  let session = Model.create_session () in
+  let contact1 = Model.create_contact () in
+  let contact2 = Model.create_contact () in
   let contacts = [ contact1; contact2 ] in
+  let assignments =
+    CCList.map (fun contact -> Model.create_assignment ~contact ()) contacts
+    |> Assignment.group_by_contact
+  in
   let res =
     SessionC.Cancel.(
       [ "reason", [ "" ]; "email", [ "true" ]; "sms", [ "true" ] ]
       |> decode
-      >>= handle [ session ] contacts create_cancellation_message)
+      >>= handle [ session ] assignments create_cancellation_message)
   in
   check_result
     (Error
@@ -536,10 +536,14 @@ let cancel_no_reason () =
 
 let cancel_no_message_channels () =
   let open CCResult.Infix in
-  let session = Test_utils.Model.create_session () in
-  let contact1 = Test_utils.Model.create_contact () in
-  let contact2 = Test_utils.Model.create_contact () in
+  let session = Model.create_session () in
+  let contact1 = Model.create_contact () in
+  let contact2 = Model.create_contact () in
   let contacts = [ contact1; contact2 ] in
+  let assignments =
+    CCList.map (fun contact -> Model.create_assignment ~contact ()) contacts
+    |> Assignment.group_by_contact
+  in
   let res =
     SessionC.Cancel.(
       [ "reason", [ "Experimenter is ill" ]
@@ -547,7 +551,7 @@ let cancel_no_message_channels () =
       ; "sms", [ "false" ]
       ]
       |> decode
-      >>= handle [ session ] contacts create_cancellation_message)
+      >>= handle [ session ] assignments create_cancellation_message)
   in
   check_result (Error Pool_common.Message.PickMessageChannel) res
 ;;
@@ -557,16 +561,20 @@ let cancel_in_past () =
   let twohours = Ptime.Span.of_int_s @@ (120 * 60) in
   let session =
     Session.
-      { (Test_utils.Model.create_session ()) with
+      { (Model.create_session ()) with
         start =
           Ptime.sub_span (Ptime_clock.now ()) twohours
           |> CCOption.get_exn_or "Invalid start"
           |> Start.create
       }
   in
-  let contact1 = Test_utils.Model.create_contact () in
-  let contact2 = Test_utils.Model.create_contact () in
+  let contact1 = Model.create_contact () in
+  let contact2 = Model.create_contact () in
   let contacts = [ contact1; contact2 ] in
+  let assignments =
+    CCList.map (fun contact -> Model.create_assignment ~contact ()) contacts
+    |> Assignment.group_by_contact
+  in
   let res =
     SessionC.Cancel.(
       [ "reason", [ "Experimenter is ill" ]
@@ -574,7 +582,7 @@ let cancel_in_past () =
       ; "sms", [ "false" ]
       ]
       |> decode
-      >>= handle [ session ] contacts create_cancellation_message)
+      >>= handle [ session ] assignments create_cancellation_message)
   in
   check_result (Error Pool_common.Message.SessionInPast) res
 ;;
@@ -583,11 +591,15 @@ let cancel_already_canceled () =
   let open CCResult.Infix in
   let now = Ptime_clock.now () in
   let session =
-    Session.{ (Test_utils.Model.create_session ()) with canceled_at = Some now }
+    Session.{ (Model.create_session ()) with canceled_at = Some now }
   in
-  let contact1 = Test_utils.Model.create_contact () in
-  let contact2 = Test_utils.Model.create_contact () in
+  let contact1 = Model.create_contact () in
+  let contact2 = Model.create_contact () in
   let contacts = [ contact1; contact2 ] in
+  let assignments =
+    CCList.map (fun contact -> Model.create_assignment ~contact ()) contacts
+    |> Assignment.group_by_contact
+  in
   let res =
     SessionC.Cancel.(
       [ "reason", [ "Experimenter is ill" ]
@@ -595,7 +607,7 @@ let cancel_already_canceled () =
       ; "sms", [ "false" ]
       ]
       |> decode
-      >>= handle [ session ] contacts create_cancellation_message)
+      >>= handle [ session ] assignments create_cancellation_message)
   in
   check_result
     (now
@@ -607,20 +619,31 @@ let cancel_already_canceled () =
 
 let cancel_valid () =
   let open CCResult.Infix in
-  let session1 = Test_utils.Model.create_session () in
-  let contact1 = Test_utils.Model.create_contact () in
-  let contact2 = Test_utils.Model.create_contact () in
+  let session1 = Model.create_session () in
+  let contact1 = Model.create_contact () in
+  let contact2 = Model.create_contact () in
   let contacts = [ contact1; contact2 ] in
+  let assignments =
+    CCList.map (fun contact -> Model.create_assignment ~contact ()) contacts
+    |> Assignment.group_by_contact
+  in
+  let contact_events =
+    assignments
+    |> CCList.map (fun (contact, assignments) ->
+         Contact_counter.update_on_session_cancellation assignments contact
+         |> Contact.updated
+         |> Pool_event.contact)
+  in
   let reason = "Experimenter is ill" in
   let res =
     SessionC.Cancel.(
       [ "reason", [ reason ]; "email", [ "true" ]; "sms", [ "true" ] ]
       |> decode
-      >>= handle [ session1 ] contacts create_cancellation_message)
+      >>= handle [ session1 ] assignments create_cancellation_message)
   in
   let messages =
-    contacts
-    |> CCList.map (fun contact ->
+    assignments
+    |> CCList.map (fun (contact, _) ->
          create_cancellation_message
            (reason |> Session.CancellationReason.of_string)
            contact
@@ -629,9 +652,10 @@ let cancel_valid () =
   check_result
     (Ok
        (* TODO issue #149 extend test with sms events *)
-       [ Pool_event.Email (Email.BulkSent messages)
-       ; Pool_event.Session (Session.Canceled session1)
-       ])
+       ([ Pool_event.Email (Email.BulkSent messages)
+        ; Pool_event.Session (Session.Canceled session1)
+        ]
+        @ contact_events))
     res;
   let halfhour = Ptime.Span.of_int_s @@ (30 * 60) in
   let session2 =
@@ -648,12 +672,12 @@ let cancel_valid () =
     SessionC.Cancel.(
       [ "reason", [ reason ]; "email", [ "false" ]; "sms", [ "true" ] ]
       |> decode
-      >>= handle [ session2 ] contacts create_cancellation_message)
+      >>= handle [ session2 ] assignments create_cancellation_message)
   in
   check_result
     (Ok
        (* TODO issue #149 extend test with sms events *)
-       [ Pool_event.Session (Session.Canceled session2) ])
+       (Pool_event.Session (Session.Canceled session2) :: contact_events))
     res
 ;;
 
@@ -682,8 +706,9 @@ let close_valid_with_assignments () =
          |> create
          |> fun assignment ->
          ( assignment
-         , false |> NoShow.create
+         , NoShow.create false
          , Participated.create participated
+         , Assignment.IncrementParticipationCount.create true
          , None ))
   in
   let res = SetAttendance.handle session assignments in
@@ -693,14 +718,14 @@ let close_valid_with_assignments () =
            ( (assignment : Assignment.t)
            , no_show
            , participated
+           , _
            , (_ : t list option) ) ->
         let contact_event =
           let open Contact in
           let contact =
-            update_session_participation_counts
-              assignment.contact
-              no_show
-              participated
+            assignment.contact
+            |> update_num_show_ups ~step:1
+            |> update_num_participations ~step:1
           in
           Updated contact |> Pool_event.contact
         in
@@ -726,7 +751,11 @@ let close_with_deleted_assignment () =
     in
     let no_show = NoShow.create false in
     let participated = Participated.create true in
-    assignment, no_show, participated, None
+    ( assignment
+    , no_show
+    , participated
+    , Assignment.IncrementParticipationCount.create false
+    , None )
   in
   let res =
     Cqrs_command.Assignment_command.SetAttendance.handle session [ command ]
@@ -744,6 +773,7 @@ let validate_invalid_participation () =
     ( Test_utils.Model.create_contact () |> create
     , NoShow.create true
     , Participated.create true
+    , Assignment.IncrementParticipationCount.create false
     , None )
   in
   let res = handle session [ participation ] in
@@ -765,15 +795,16 @@ let close_unparticipated_with_followup () =
     ( assignment
     , NoShow.create false
     , Participated.create false
+    , Assignment.IncrementParticipationCount.create true
     , Some [ follow_up ] )
   in
   let res = handle session [ participation ] in
   let expected =
     let contact =
       let open Contact in
-      { contact with
-        num_show_ups = NumberOfShowUps.increment contact.num_show_ups
-      }
+      contact
+      |> update_num_show_ups ~step:1
+      |> update_num_participations ~step:1
     in
     Ok
       [ Session.Closed session |> Pool_event.session
@@ -1118,17 +1149,28 @@ let close_session_check_contact_figures _ () =
     |> map (fun (contact, status) ->
          let open Assignment in
          let open Contact in
-         let no_show, participated =
+         let no_show, participated, increment_num_participatons =
            match status with
-           | `Participated -> NoShow.create false, Participated.create true
-           | `ShowUp -> NoShow.create false, Participated.create false
-           | `NoShow -> NoShow.create true, Participated.create false
+           | `Participated ->
+             ( NoShow.create false
+             , Participated.create true
+             , IncrementParticipationCount.create true )
+           | `ShowUp ->
+             ( NoShow.create false
+             , Participated.create false
+             , IncrementParticipationCount.create false )
+           | `NoShow ->
+             ( NoShow.create true
+             , Participated.create false
+             , IncrementParticipationCount.create false )
          in
          let contact =
-           Cqrs_command.Assignment_command.update_session_participation_counts
+           Contact_counter.update_on_session_closing
              contact
              no_show
              participated
+             increment_num_participatons
+           |> Test_utils.get_or_failwith_pool_error
          in
          [ AttendanceSet (find_assignment contact, no_show, participated)
            |> Pool_event.assignment

@@ -58,6 +58,7 @@ val create
   -> Contact.t
   -> t
 
+val is_not_closed : t -> (unit, Pool_common.Message.error) result
 val is_deletable : t -> (unit, Pool_common.Message.error) result
 val is_cancellable : t -> (unit, Pool_common.Message.error) result
 val attendance_settable : t -> (unit, Pool_common.Message.error) result
@@ -67,6 +68,13 @@ module Public : sig
     { id : Id.t
     ; canceled_at : CanceledAt.t option
     }
+end
+
+module IncrementParticipationCount : sig
+  type t
+
+  val value : t -> bool
+  val create : bool -> t
 end
 
 val find
@@ -101,6 +109,15 @@ val find_with_follow_ups
   -> (t list, Pool_common.Message.error) result Lwt.t
 
 val find_follow_ups : Pool_database.Label.t -> t -> t list Lwt.t
+
+val contact_participation_in_other_assignments
+  :  Pool_database.Label.t
+  -> t list
+  -> Experiment.Id.t
+  -> Contact.Id.t
+  -> (bool, Pool_common.Message.error) Lwt_result.t
+
+val group_by_contact : t list -> (Contact.t * t list) list
 
 type create =
   { contact : Contact.t
