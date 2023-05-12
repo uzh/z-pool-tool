@@ -263,7 +263,9 @@ let predicate_to_sql
 let filter_to_sql template_list dyn query =
   let open Entity in
   let open CCResult in
-  let rec query_sql (dyn, sql) query : (Dynparam.t * 'a, 'b) result =
+  let rec query_sql (dyn, sql) query
+    : (Dynparam.t * string, Pool_common.Message.error) result
+    =
     let of_list (dyn, sql) queries operator =
       let query =
         CCList.fold_left

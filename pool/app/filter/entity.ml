@@ -267,7 +267,7 @@ module Key = struct
     in
     let validate_value value input_type =
       match value with
-      | NoValue -> Ok () (* TODO[timhub]: test *)
+      | NoValue -> Ok () (* TODO[timhub]: pass operator here as well? *)
       | Single v -> validate_single_value input_type v
       | Lst lst ->
         lst
@@ -475,7 +475,7 @@ module Operator = struct
     @ all_existence_operators
   ;;
 
-  let checks =
+  let encode_operators =
     let open CCOption.Infix in
     [ Equality.(all |> CCList.map show, fun y -> y |> read >|= equality)
     ; StringM.(all |> CCList.map show, fun y -> y |> read >|= string)
@@ -497,7 +497,7 @@ module Operator = struct
         else find_operator tl item
     in
     (match yojson with
-     | `String str -> find_operator checks str
+     | `String str -> find_operator encode_operators str
      | _ -> None)
     |> CCOption.to_result Pool_common.Message.(Invalid Field.Operator)
   ;;
