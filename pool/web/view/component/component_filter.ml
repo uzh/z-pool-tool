@@ -219,7 +219,7 @@ let value_input language query_experiments input_type ?value () =
 let predicate_value_form language query_experiments ?key ?value ?operator () =
   let open CCOption.Infix in
   let input_type = key >|= Filter.Key.type_of_key in
-  let operators = input_type >|= Filter.Operator.input_type_to_operator in
+  let operators = key >|= Filter.Operator.operators_of_key in
   let operator_select =
     operators_select language ?operators ?selected:operator ()
   in

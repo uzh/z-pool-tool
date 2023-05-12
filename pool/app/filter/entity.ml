@@ -127,6 +127,9 @@ module Key = struct
     | Participation [@printer print "participation"] [@name "participation"]
   [@@deriving show { with_path = false }, eq, yojson, variants, enum]
 
+  (** TODO: Try to remove human (make t using Custom_field.t instead of id)
+
+      - Some Entity Type would be required to map from id to custom field *)
   type human =
     | CustomField of Custom_field.t
     | Hardcoded of hardcoded
@@ -531,18 +534,22 @@ module Operator = struct
   ;;
 
   let input_type_to_operator (key : Key.input_type) =
-    (* TODO: Can existence only be returned for custom_field? If so, do not add
-       here *)
     let open Key in
     match key with
-    | Bool | Languages _ | Select _ ->
-      all_equality_operators @ all_existence_operators
-    | Date | Nr ->
-      all_equality_operators @ all_size_operators @ all_existence_operators
-    | MultiSelect _ | QueryExperiments ->
-      all_list_operators @ all_existence_operators
-    | Str ->
-      all_equality_operators @ all_string_operators @ all_existence_operators
+    | Bool | Languages _ | Select _ -> all_equality_operators
+    | Date | Nr -> all_equality_operators @ all_size_operators
+    | MultiSelect _ | QueryExperiments -> all_list_operators
+    | Str -> all_equality_operators @ all_string_operators
+  ;;
+
+  let operators_of_key (key : Key.human) =
+    let open Key in
+    match key with
+    | CustomField field ->
+      (field |> type_of_custom_field |> input_type_to_operator)
+      @ all_existence_operators
+    | Hardcoded hardcoded ->
+      hardcoded |> type_of_hardcoded |> input_type_to_operator
   ;;
 
   let to_human m =

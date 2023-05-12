@@ -112,7 +112,7 @@ module Operator : sig
   val to_human : t -> string
   val equal : t -> t -> bool
   val show : t -> string
-  val input_type_to_operator : Key.input_type -> t list
+  val operators_of_key : Key.human -> t list
 end
 
 module Predicate : sig
