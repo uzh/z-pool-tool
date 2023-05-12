@@ -301,7 +301,6 @@ module Key = struct
 end
 
 module Operator = struct
-  (* TODO: Wrap different types in modules? *)
   open CCList.Infix
 
   let generate_all min max of_enum =
@@ -600,24 +599,36 @@ module Predicate = struct
   let t_of_yojson (yojson : Yojson.Safe.t) =
     let open Pool_common in
     let open Helper in
-    let to_result field = CCOption.to_result Message.(Invalid field) in
+    let to_result field res =
+      match res with
+      | None -> Error (Message.Invalid field)
+      | Some res -> res
+    in
     match yojson with
     | `Assoc assoc ->
       let open CCResult in
-      let go key field of_yojson =
+      let go key of_yojson =
         assoc
         |> CCList.assoc_opt ~eq:CCString.equal key
-        |> to_result field
-        >>= of_yojson
+        |> CCOption.map of_yojson
       in
-      let* key = go key_string Message.Field.Key Key.of_yojson in
+      let* key = go key_string Key.of_yojson |> to_result Message.Field.Key in
       let* operator =
-        go operator_string Message.Field.Operator Operator.of_yojson
+        go operator_string Operator.of_yojson
+        |> to_result Message.Field.Operator
       in
-      (* TODO: deal with no value *)
-      let* value = go value_string Message.Field.Value value_of_yojson in
-      (* let* value = match operator with | Exis -> Ok NoValue | false -> go
-         value_string Message.Field.Value value_of_yojson in *)
+      let* value =
+        go value_string value_of_yojson
+        |> fun opt ->
+        let open Operator in
+        let error = Error Message.(Invalid Field.Value) in
+        match operator with
+        | Existence _ -> opt |> CCOption.value ~default:(Ok NoValue)
+        | Equality _ | String _ | Size _ | List _ ->
+          (match opt with
+           | None -> error
+           | Some value -> value)
+      in
       Ok (create key operator value)
     | _ -> Error Pool_common.Message.(Invalid Field.Predicate)
   ;;
