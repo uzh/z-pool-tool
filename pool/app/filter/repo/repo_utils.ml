@@ -62,26 +62,14 @@ let add_value_to_params operator value dyn =
   let open Operator in
   let wrap_in_percentage operator value =
     let wrap s = CCString.concat "" [ "%"; s; "%" ] in
-    if CCList.mem
-         ~eq:Operator.equal
-         operator
-         [ ContainsSome; ContainsNone; ContainsAll; Like ]
-    then wrap value
-    else value
+    match operator with
+    | List _ -> wrap value
+    | Equality _ | String _ | Size _ | Existence _ -> value
   in
   let add c v = Dynparam.add c v dyn in
   match operator with
-  | Empty | NotEmpty -> Error Pool_common.Message.(Invalid Field.Predicate)
-  | ContainsSome
-  | ContainsNone
-  | ContainsAll
-  | Like
-  | Less
-  | LessEqual
-  | Greater
-  | GreaterEqual
-  | Equal
-  | NotEqual ->
+  | Existence _ -> Error Pool_common.Message.(Invalid Field.Predicate)
+  | Equality _ | List _ | String _ | Size _ ->
     Ok
       (match value with
        | Bool b -> add Caqti_type.string (Utils.Bool.to_string b)
@@ -123,60 +111,25 @@ let add_single_value (key : Key.t) operator dyn value =
 
 let add_existence_condition (key : Key.t) operator dyn =
   let open CCResult in
-  let compatibility_error =
-    Error Pool_common.Message.(QueryNotCompatible (Field.Value, Field.Operator))
-  in
-  if Operator.allow_no_value operator |> Bool.not
-  then compatibility_error
-  else (
-    match key with
-    | Key.Hardcoded key ->
-      let* sql =
-        Key.hardcoded_to_single_value_sql key
-        >|= fun column ->
-        Format.asprintf "%s %s" column (Operator.to_sql operator)
-      in
-      Ok (dyn, sql)
-    | Key.CustomField id ->
-      let dyn = Dynparam.(dyn |> add Custom_field.Repo.Id.t id) in
-      let* sql =
-        let open Operator in
-        (* TODO[timhub]: check for null values? *)
-        match[@warning "-4"] operator with
-        | Empty -> Ok (Format.asprintf "NOT EXISTS (%s)" custom_field_sql)
-        | NotEmpty -> Ok (Format.asprintf "EXISTS (%s)" custom_field_sql)
-        | _ -> compatibility_error
-      in
-      Ok (dyn, sql))
+  let open Operator.Existence in
+  match key with
+  | Key.Hardcoded key ->
+    let* sql =
+      Key.hardcoded_to_single_value_sql key
+      >|= fun column -> Format.asprintf "%s %s" column (to_sql operator)
+    in
+    Ok (dyn, sql)
+  | Key.CustomField id ->
+    let dyn = Dynparam.(dyn |> add Custom_field.Repo.Id.t id) in
+    let* sql =
+      (* TODO[timhub]: check for null values, as contacts can clear certain
+         answers ? *)
+      match[@warning "-4"] operator with
+      | Empty -> Ok (Format.asprintf "NOT EXISTS (%s)" custom_field_sql)
+      | NotEmpty -> Ok (Format.asprintf "EXISTS (%s)" custom_field_sql)
+    in
+    Ok (dyn, sql)
 ;;
-
-(* let participation_subquery2 dyn operator ids = let open CCResult in let* dyn,
-   subquery = let subquery = let base = {sql| SELECT COUNT(DISTINCT
-   pool_experiments.uuid) FROM pool_assignments INNER JOIN pool_sessions ON
-   pool_sessions.uuid = pool_assignments.session_uuid INNER JOIN
-   pool_experiments ON pool_sessions.experiment_uuid = pool_experiments.uuid
-   WHERE pool_assignments.contact_uuid = pool_contacts.user_uuid AND
-   pool_assignments.no_show = 0 AND pool_assignments.canceled_at IS NULL AND
-   pool_experiments.uuid IN (%s) GROUP BY pool_experiments.uuid |sql} in let
-   group_by = {sql|GROUP BY pool_experiments.uuid|sql} in function | Some ids ->
-   CCString.concat "\n" [ base ; Format.asprintf "AND pool_experiments.uuid IN
-   (%s)" ids ; group_by ] | None -> CCString.concat "\n" [ base; group_by ] in
-   match Operator.allow_no_value operator with | false -> let* dyn, query_params
-   = CCList.fold_left (fun query id -> query >>= fun (dyn, params) -> match id
-   with | Bool _ | Date _ | Language _ | Nr _ | Option _ -> Error
-   Pool_common.Message.( QueryNotCompatible (Field.Value, Field.Key)) | Str id
-   -> add_value_to_params Operator.Equal (Str id) dyn >|= fun dyn -> dyn,
-   "UNHEX(REPLACE(?, '-', ''))" :: params) (Ok (dyn, [])) ids >|= fun (dyn, ids)
-   -> dyn, CCString.concat "," ids in Ok (dyn, subquery (Some query_params)) |
-   true -> Ok (dyn, subquery None) in let* condition, dyn = let format
-   comparison = Format.asprintf "(%s) %s" subquery comparison in let open
-   Operator in match operator with | ContainsAll -> (format " = ? ",
-   Dynparam.add Caqti_type.int (CCList.length ids) dyn) |> CCResult.return |
-   ContainsNone | Empty -> (format " = 0 ", dyn) |> CCResult.return |
-   ContainsSome | NotEmpty -> (format " > 0 ", dyn) |> CCResult.return | Less |
-   LessEqual | Greater | GreaterEqual | Equal | NotEqual | Like -> Error
-   Pool_common.Message.(Invalid Field.Operator) in (dyn, Format.asprintf "(%s)"
-   condition) |> CCResult.return ;; *)
 
 (* The subquery does not return any contacts that have shown up at a session of
    the current experiment. It does not make a difference, if they
@@ -193,7 +146,7 @@ let participation_subquery dyn operator ids =
           Error
             Pool_common.Message.(QueryNotCompatible (Field.Value, Field.Key))
         | Str id ->
-          add_value_to_params Operator.Equal (Str id) dyn
+          add_value_to_params Operator.(Equality.Equal |> equality) (Str id) dyn
           >|= fun dyn -> dyn, "UNHEX(REPLACE(?, '-', ''))" :: params)
       (Ok (dyn, []))
       ids
@@ -218,25 +171,20 @@ let participation_subquery dyn operator ids =
       |sql}
       query_params
   in
-  (* TODO [timhub]: Consider supressing warning 4 *)
   let* condition, dyn =
     let format comparison = Format.asprintf "(%s) %s" subquery comparison in
     let open Operator in
     match operator with
-    | ContainsAll ->
-      (format " = ? ", Dynparam.add Caqti_type.int (CCList.length ids) dyn)
-      |> CCResult.return
-    | ContainsNone -> (format " = 0 ", dyn) |> CCResult.return
-    | ContainsSome -> (format " > 0 ", dyn) |> CCResult.return
-    | Less
-    | LessEqual
-    | Greater
-    | GreaterEqual
-    | Equal
-    | NotEqual
-    | Like
-    | Empty
-    | NotEmpty -> Error Pool_common.Message.(Invalid Field.Operator)
+    | List o ->
+      let open ListM in
+      (match o with
+       | ContainsAll ->
+         (format " = ? ", Dynparam.add Caqti_type.int (CCList.length ids) dyn)
+         |> CCResult.return
+       | ContainsNone -> (format " = 0 ", dyn) |> CCResult.return
+       | ContainsSome -> (format " > 0 ", dyn) |> CCResult.return)
+    | Equality _ | String _ | Size _ | Existence _ ->
+      Error Pool_common.Message.(Invalid Field.Operator)
   in
   (dyn, Format.asprintf "(%s)" condition) |> CCResult.return
 ;;
@@ -249,9 +197,9 @@ let predicate_to_sql
   let open Operator in
   match value with
   | NoValue ->
-    (match[@warning "-4"] operator with
-     | Empty | NotEmpty -> add_existence_condition key operator dyn
-     | _ ->
+    (match operator with
+     | Existence operator -> add_existence_condition key operator dyn
+     | Equality _ | String _ | Size _ | List _ ->
        Error Pool_common.Message.(QueryNotCompatible (Field.Value, Field.Key)))
   | Single value ->
     let add_value = add_single_value key operator in
@@ -302,18 +250,14 @@ let predicate_to_sql
          |> CCResult.return
        in
        (match operator with
-        | ContainsAll -> build_query "AND"
-        | ContainsNone -> build_query "AND"
-        | ContainsSome -> build_query "OR"
-        | Less
-        | LessEqual
-        | Greater
-        | GreaterEqual
-        | Equal
-        | NotEqual
-        | Like
-        | Empty
-        | NotEmpty -> Error Pool_common.Message.(Invalid Field.Operator)))
+        | List o ->
+          let open ListM in
+          (match o with
+           | ContainsAll -> build_query "AND"
+           | ContainsNone -> build_query "AND"
+           | ContainsSome -> build_query "OR")
+        | Equality _ | String _ | Size _ | Existence _ ->
+          Error Pool_common.Message.(Invalid Field.Operator)))
 ;;
 
 let filter_to_sql template_list dyn query =

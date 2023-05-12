@@ -1,5 +1,7 @@
 open Test_utils
+module Operator = Filter.Operator
 
+let equal_operator = FilterHelper.equal
 let get_exn_poolerror = get_or_failwith_pool_error
 let contact_email_address = "jane.doe@email.com"
 let lang = Pool_common.Language.En
@@ -278,7 +280,7 @@ let nr_of_siblings_filter ?nr () =
   Pred
     (Predicate.create
        Key.(CustomField (CustomFieldData.nr_of_siblings |> Custom_field.id))
-       Operator.Equal
+       equal_operator
        (Single (Nr (value |> CCFloat.of_int))))
 ;;
 
@@ -288,7 +290,7 @@ let admin_override_nr_field_filter ~nr () =
     (Predicate.create
        Key.(
          CustomField (CustomFieldData.admin_override_nr_field |> Custom_field.id))
-       Operator.Equal
+       equal_operator
        (Single (Nr (nr |> CCFloat.of_int))))
 ;;
 
@@ -306,7 +308,7 @@ let firstname firstname =
   Pred
     (Predicate.create
        Key.(Hardcoded Firstname)
-       Operator.Equal
+       equal_operator
        (Single (Str firstname)))
 ;;
 
@@ -396,7 +398,7 @@ let validate_filter_with_unknown_field _ () =
       Pred
         (Predicate.create
            Key.(CustomField ("Unknown field id" |> Custom_field.Id.of_string))
-           Operator.Equal
+           equal_operator
            (Single (Nr 1.2)))
     in
     let filter = Filter.create None query in
@@ -422,7 +424,7 @@ let validate_filter_with_invalid_value _ () =
       Pred
         (Predicate.create
            Key.(CustomField (CustomFieldData.nr_of_siblings |> Custom_field.id))
-           Operator.Equal
+           equal_operator
            (Single (Str "Not a number")))
     in
     let filter = Filter.create None query in
@@ -484,7 +486,7 @@ let filter_by_list_contains_all _ () =
     let%lwt experiment = Repo.first_experiment () in
     test_list_filter
       answer_index
-      Filter.Operator.ContainsAll
+      Operator.(ListM.ContainsAll |> list)
       contact
       experiment
       true
@@ -499,7 +501,7 @@ let filter_by_list_contains_none _ () =
     let%lwt experiment = Repo.first_experiment () in
     test_list_filter
       answer_index
-      Filter.Operator.ContainsNone
+      Operator.(ListM.ContainsNone |> list)
       contact
       experiment
       false
@@ -514,7 +516,7 @@ let filter_by_list_contains_some _ () =
     let%lwt experiment = Repo.first_experiment () in
     test_list_filter
       answer_index
-      Filter.Operator.ContainsSome
+      Operator.(ListM.ContainsSome |> list)
       contact
       experiment
       true
@@ -541,7 +543,7 @@ let retrieve_fitleterd_and_ordered_contacts _ () =
       Pred
         (Predicate.create
            Key.(Hardcoded ContactLanguage)
-           Operator.Equal
+           equal_operator
            (Single (Language Pool_common.Language.En)))
       |> create None
     in
@@ -593,7 +595,7 @@ let create_filter_template_with_template _ () =
       Pred
         Predicate.
           { key = Key.(Hardcoded Name)
-          ; operator = Operator.Equal
+          ; operator = equal_operator
           ; value = Single (Str "Foo")
           }
       |> create ~id:template_id None
@@ -750,14 +752,20 @@ let filter_by_experiment_participation _ () =
     Filter.(
       create
         None
-        (participation_filter participated_experiment Operator.ContainsNone ()))
+        (participation_filter
+           participated_experiment
+           Operator.(ListM.ContainsNone |> list)
+           ()))
     |> search
   in
   let%lwt should_contain =
     Filter.(
       create
         None
-        (participation_filter participated_experiment Operator.ContainsAll ()))
+        (participation_filter
+           participated_experiment
+           Operator.(ListM.ContainsAll |> list)
+           ()))
     |> search
   in
   let res = should_contain && not should_not_contain in
@@ -782,9 +790,9 @@ let filter_by_empty_hardcoded_value _ () =
     in
     create None query
   in
-  let empty_filter = filter Filter.Operator.Empty in
+  let empty_filter = filter Operator.(Existence.Empty |> existence) in
   let%lwt () = test_filter true contact empty_filter experiment in
-  let non_empty_filter = filter Filter.Operator.NotEmpty in
+  let non_empty_filter = filter Operator.(Existence.NotEmpty |> existence) in
   test_filter false contact non_empty_filter experiment
 ;;
 
@@ -800,9 +808,9 @@ let filter_by_non_empty_hardcoded_value _ () =
     in
     create None query
   in
-  let non_empty_filter = filter Filter.Operator.NotEmpty in
+  let non_empty_filter = filter Operator.(Existence.NotEmpty |> existence) in
   let%lwt () = test_filter true contact non_empty_filter experiment in
-  let empty_filter = filter Filter.Operator.Empty in
+  let empty_filter = filter Operator.(Existence.Empty |> existence) in
   test_filter false contact empty_filter experiment
 ;;
 
@@ -822,9 +830,9 @@ let filter_by_empty_custom_field _ () =
     in
     create None query
   in
-  let empty_filter = filter Filter.Operator.Empty in
+  let empty_filter = filter Operator.(Existence.Empty |> existence) in
   let%lwt () = test_filter true contact empty_filter experiment in
-  let non_empty_filter = filter Filter.Operator.NotEmpty in
+  let non_empty_filter = filter Operator.(Existence.NotEmpty |> existence) in
   test_filter false contact non_empty_filter experiment
 ;;
 
@@ -848,8 +856,8 @@ let filter_by_non_empty_custom_field _ () =
     in
     create None query
   in
-  let non_empty_filter = filter Filter.Operator.NotEmpty in
+  let non_empty_filter = filter Operator.(Existence.NotEmpty |> existence) in
   let%lwt () = test_filter true contact non_empty_filter experiment in
-  let empty_filter = filter Filter.Operator.Empty in
+  let empty_filter = filter Operator.(Existence.Empty |> existence) in
   test_filter false contact empty_filter experiment
 ;;

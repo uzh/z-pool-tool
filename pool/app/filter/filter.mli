@@ -65,20 +65,49 @@ module Key : sig
 end
 
 module Operator : sig
-  type t =
-    | Less
-    | LessEqual
-    | Greater
-    | GreaterEqual
-    | Equal
-    | NotEqual
-    | Like
-    | ContainsSome
-    | ContainsNone
-    | ContainsAll
-    | Empty
-    | NotEmpty
+  module Equality : sig
+    type t =
+      | Equal
+      | NotEqual
+  end
 
+  module Existence : sig
+    type t =
+      | Empty
+      | NotEmpty
+  end
+
+  module ListM : sig
+    type t =
+      | ContainsSome
+      | ContainsNone
+      | ContainsAll
+  end
+
+  module Size : sig
+    type t =
+      | Less
+      | LessEqual
+      | Greater
+      | GreaterEqual
+  end
+
+  module StringM : sig
+    type t = Like
+  end
+
+  type t =
+    | Equality of Equality.t
+    | Existence of Existence.t
+    | List of ListM.t
+    | Size of Size.t
+    | String of StringM.t
+
+  val equality : Equality.t -> t
+  val existence : Existence.t -> t
+  val list : ListM.t -> t
+  val size : Size.t -> t
+  val string : StringM.t -> t
   val to_sql : t -> string
   val to_human : t -> string
   val equal : t -> t -> bool

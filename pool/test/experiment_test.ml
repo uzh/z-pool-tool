@@ -21,7 +21,7 @@ module Data = struct
       Pred
         (Predicate.create
            Key.(Hardcoded Firstname)
-           Operator.Equal
+           Test_utils.FilterHelper.equal
            (Single (Str "Foo")))
     ;;
 
@@ -30,7 +30,7 @@ module Data = struct
         [ Pred
             (Predicate.create
                Key.(Hardcoded Name)
-               Operator.Equal
+               Test_utils.FilterHelper.equal
                (Single (Str "Bar")))
         ; single_query
         ]
@@ -40,7 +40,7 @@ module Data = struct
       Pred
         (Predicate.create
            Key.(Hardcoded Name)
-           Operator.ContainsNone
+           Filter.Operator.(ListM.ContainsNone |> list)
            (Lst [ Str "foo"; Str "bar" ]))
     ;;
 
