@@ -117,6 +117,7 @@ let input_element
   ?help
   ?identifier
   ?(required = false)
+  ?(disabled = false)
   ?flash_fetcher
   ?value
   ?error
@@ -138,6 +139,7 @@ let input_element
       @ additional_attributes
     in
     let attrs = if required then a_required () :: attrs else attrs in
+    let attrs = if disabled then a_disabled () :: attrs else attrs in
     if CCOption.is_some error then a_class [ "has-error" ] :: attrs else attrs
   in
   match input_type with
@@ -263,6 +265,7 @@ let checkbox_element
   ?label_field
   ?(orientation = `Vertical)
   ?(required = false)
+  ?(disabled = false)
   ?(value = false)
   ?(append_html = [])
   language
@@ -287,6 +290,9 @@ let checkbox_element
     if required && not as_switch
     then CCList.cons (a_required ()) attrs
     else attrs
+  in
+  let attributes =
+    if disabled then a_disabled () :: attributes else attributes
   in
   let attributes = attributes @ additional_attributes in
   let group_class = Elements.group_class classnames orientation in
@@ -490,6 +496,7 @@ let selector
   ?(add_empty = false)
   ?(attributes = [])
   ?(classnames = [])
+  ?(disabled = false)
   ?(hide_label = false)
   ?(required = false)
   ?(read_only = false)
@@ -512,6 +519,8 @@ let selector
     let checks =
       [ CCOption.is_some error, a_class [ "has-error" ]
       ; read_only, a_disabled ()
+      ; required, a_required ()
+      ; disabled, a_disabled ()
       ]
     in
     CCList.fold_left
@@ -577,13 +586,7 @@ let selector
     ([ (if hide_label then txt "" else label [ input_label |> txt ])
      ; div
          ~a:[ a_class [ "select" ] ]
-         [ select
-             ~a:
-               ((a_name name :: attributes)
-                @ if required then [ a_required () ] else [])
-             options
-         ; hidden_field
-         ]
+         [ select ~a:(a_name name :: attributes) options; hidden_field ]
      ]
      @ help
      @ error
@@ -638,12 +641,7 @@ let multi_select
       let label = label ~a:[ a_label_for value ] [ txt (option |> to_label) ] in
       div [ input_elm; label ])
     options
-  |> fun options_html ->
-  let inputs =
-    let group_name = Pool_common.(Message.Field.show group_field) in
-    input ~a:[ a_input_type `Hidden; a_name group_name; a_value group_name ] ()
-    :: options_html
-  in
+  |> fun inputs ->
   let classnames =
     if CCOption.is_some append_html
     then classnames @ [ "flexrow"; "wrap" ]

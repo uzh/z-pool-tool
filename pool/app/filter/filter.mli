@@ -113,6 +113,7 @@ module Operator : sig
   val equal : t -> t -> bool
   val show : t -> string
   val operators_of_key : Key.human -> t list
+  val value_disabled : t -> bool
 end
 
 module Predicate : sig

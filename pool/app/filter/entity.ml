@@ -575,6 +575,11 @@ module Operator = struct
       (* TODO: Can this be improved? *)
     | Key.CustomField _ -> Ok ()
   ;;
+
+  let value_disabled = function
+    | Existence _ -> true
+    | Equality _ | String _ | Size _ | List _ -> false
+  ;;
 end
 
 module Predicate = struct
