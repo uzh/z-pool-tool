@@ -58,15 +58,22 @@ module Root = struct
     include Seed.Root
   end
 
-  let setup () =
-    let open CCResult.Infix in
+  let add () =
+    let open CCResult in
     let open Pool_database in
-    let label = Label.create label |> Pool_common.Utils.get_or_failwith in
+    let open Pool_common.Utils in
+    let label = Label.of_string label in
     (Sihl.Configuration.read schema).url
     |> Url.create
     >>= create label
-    |> Pool_common.Utils.get_or_failwith
+    |> get_or_failwith
     |> add_pool
+  ;;
+
+  let setup () =
+    let open Pool_database in
+    let () = add () in
+    Guard.Persistence.start ~ctx:(Label.of_string label |> to_ctx) ()
   ;;
 end
 
@@ -81,21 +88,37 @@ module Tenant = struct
     include Seed.Tenant
   end
 
-  let setup () =
-    let%lwt tenants = Pool_tenant.find_databases () in
-    match tenants with
+  let setup_core ?(run_functions = []) () =
+    match%lwt Pool_tenant.find_databases () with
     | [] ->
-      failwith
-        Pool_common.(
-          Message.NoTenantsRegistered |> Utils.error_to_string Language.En)
+      let open Pool_common in
+      failwith (Message.NoTenantsRegistered |> Utils.error_to_string Language.En)
     | tenants ->
-      CCList.map
+      Lwt_list.map_s
         (fun pool ->
           let open Pool_database in
           add_pool pool;
-          pool.label)
+          let%lwt () =
+            Lwt_list.iter_s
+              (fun (fcn : ?ctx:(string * string) list -> unit -> unit Lwt.t) ->
+                fcn ~ctx:(to_ctx pool.label) ())
+              run_functions
+          in
+          Lwt.return pool.label)
         tenants
-      |> Lwt.return
+  ;;
+
+  let setup =
+    setup_core
+      ~run_functions:
+        [ Assignment.Guard.relation
+        ; Invitation.Guard.relation
+        ; Mailing.Guard.relation
+        ; Pool_location.Guard.relation
+        ; Session.Guard.relation
+        ; Waiting_list.Guard.relation
+        ; Guard.Persistence.start
+        ]
   ;;
 end
 
@@ -106,7 +129,9 @@ type event =
 
 let handle_event _ : event -> unit Lwt.t = function
   | Added pool ->
-    Pool_database.add_pool pool;
+    let open Pool_database in
+    add_pool pool;
+    let%lwt () = Guard.Persistence.start ~ctx:(to_ctx pool.label) () in
     Lwt.return_unit
   | Migrated label ->
     let%lwt () =
@@ -120,20 +145,24 @@ let handle_event _ : event -> unit Lwt.t = function
 let start () =
   let tags = Pool_database.Logger.Tags.create Pool_database.root in
   Logs.info ~src (fun m -> m ~tags "Start database %s" Root.label);
-  Root.setup ();
+  let ctx = [ "pool", Root.label ] in
+  let%lwt () = Root.setup () in
   let%lwt () =
     Service.Migration.check_migrations_status
-      ~ctx:[ "pool", Root.label ]
+      ~ctx
       ~migrations:(Root.Migration.steps ())
       ()
   in
+  let%lwt () = Guard.Persistence.start ~ctx () in
   let%lwt db_pools = Tenant.setup () in
   Lwt_list.iter_s
     (fun pool ->
       Logs.info ~src (fun m ->
         m ~tags "Start database %s" (Pool_database.Label.value pool));
+      let ctx = Pool_database.to_ctx pool in
+      let%lwt () = Guard.Persistence.start ~ctx () in
       Service.Migration.check_migrations_status
-        ~ctx:(Pool_database.to_ctx pool)
+        ~ctx
         ~migrations:(Tenant.Migration.steps ())
         ())
     db_pools

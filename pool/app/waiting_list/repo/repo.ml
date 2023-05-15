@@ -167,22 +167,28 @@ module Sql = struct
       RepoEntity.Experiment.t
   ;;
 
+  let find_binary_experiment_id_sql =
+    {sql|
+      SELECT pool_experiments.uuid
+      FROM pool_waiting_list AS wl
+      LEFT JOIN pool_experiments AS exp ON wl.experiment_uuid = exp.uuid
+      WHERE wl.uuid = ?
+    |sql}
+  ;;
+
   let find_experiment_id_request =
     let open Caqti_request.Infix in
     {sql|
       SELECT
         LOWER(CONCAT(
-          SUBSTR(HEX(pool_experiments.uuid), 1, 8), '-',
-          SUBSTR(HEX(pool_experiments.uuid), 9, 4), '-',
-          SUBSTR(HEX(pool_experiments.uuid), 13, 4), '-',
-          SUBSTR(HEX(pool_experiments.uuid), 17, 4), '-',
-          SUBSTR(HEX(pool_experiments.uuid), 21)
+          SUBSTR(HEX(pool_waiting_list.experiment_uuid), 1, 8), '-',
+          SUBSTR(HEX(pool_waiting_list.experiment_uuid), 9, 4), '-',
+          SUBSTR(HEX(pool_waiting_list.experiment_uuid), 13, 4), '-',
+          SUBSTR(HEX(pool_waiting_list.experiment_uuid), 17, 4), '-',
+          SUBSTR(HEX(pool_waiting_list.experiment_uuid), 21)
         ))
       FROM pool_waiting_list
-        LEFT JOIN pool_experiments
-        ON pool_waiting_list.experiment_uuid = pool_experiments.uuid
-      WHERE
-        pool_waiting_list.uuid = UNHEX(REPLACE(?, '-', ''))
+      WHERE pool_waiting_list.uuid = UNHEX(REPLACE(?, '-', ''))
     |sql}
     |> Pool_common.Repo.Id.t ->! Experiment.Repo.Id.t
   ;;

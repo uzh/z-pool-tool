@@ -2,6 +2,13 @@ open CCFun.Infix
 open Utils.Lwt_result.Infix
 open Guard
 
+let relation ?ctx () =
+  let to_target =
+    Relation.Query.create Repo.RepoFileMapping.Sql.find_binary_location_id_sql
+  in
+  Persistence.Relation.add ?ctx ~to_target ~target:`Location `LocationFile
+;;
+
 module Target = struct
   type t = Entity.t [@@deriving eq, show]
 
@@ -16,18 +23,6 @@ module Target = struct
 end
 
 module FileTarget = struct
-  let (_ : (unit, string) result) =
-    let find_parent =
-      Utils.create_simple_dependency_with_pool
-        `LocationFile
-        `Location
-        Repo.RepoFileMapping.find_location_id
-        Pool_common.Id.of_string
-        Entity.Id.value
-    in
-    Persistence.Dependency.register ~parent:`Location `LocationFile find_parent
-  ;;
-
   type t = Entity.Mapping.file [@@deriving eq, show]
 
   let decorate ?ctx id =

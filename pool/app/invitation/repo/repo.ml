@@ -115,6 +115,14 @@ module Sql = struct
       (Pool_common.Id.value id)
   ;;
 
+  let find_binary_experiment_id_sql =
+    {sql|
+      SELECT inv.experiment_uuid
+      FROM pool_invitations AS inv
+      WHERE inv.uuid = ?
+    |sql}
+  ;;
+
   let find_experiment_id_of_invitation_request =
     let open Caqti_request.Infix in
     {sql|

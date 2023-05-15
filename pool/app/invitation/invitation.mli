@@ -81,6 +81,8 @@ val searchable_by : Query.Column.t list
 val sortable_by : Query.Column.t list
 
 module Guard : sig
+  val relation : ?ctx:(string * string) list -> unit -> unit Lwt.t
+
   module Target : sig
     val to_authorizable
       :  ?ctx:(string * string) list

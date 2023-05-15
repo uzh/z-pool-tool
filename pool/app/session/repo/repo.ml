@@ -244,11 +244,11 @@ module Sql = struct
   let find_all_public_for_experiment_request =
     let open Caqti_request.Infix in
     {sql|
-        WHERE experiment_uuid = UNHEX(REPLACE(?, '-', ''))
-        AND start > NOW()
-        AND canceled_at IS NULL
-        ORDER BY start
-      |sql}
+      WHERE experiment_uuid = UNHEX(REPLACE(?, '-', ''))
+      AND start > NOW()
+      AND canceled_at IS NULL
+      ORDER BY start
+    |sql}
     |> find_public_sql
     |> Caqti_type.string ->* RepoEntity.Public.t
   ;;
@@ -395,6 +395,14 @@ module Sql = struct
       (Database.Label.value pool)
       find_open_with_follow_ups_request
       (Pool_common.Id.value id)
+  ;;
+
+  let find_binary_experiment_id_sql =
+    {sql|
+      SELECT sessions.experiment_uuid
+      FROM pool_sessions AS sessions
+      WHERE sessions.uuid = ?
+    |sql}
   ;;
 
   let insert_request =

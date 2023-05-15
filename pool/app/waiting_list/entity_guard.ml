@@ -1,20 +1,15 @@
 open CCFun.Infix
 open Utils.Lwt_result.Infix
 
-module Target = struct
-  let (_ : (unit, string) result) =
-    let open Guard in
-    let find_parent =
-      Utils.create_simple_dependency_with_pool
-        `WaitingList
-        `Experiment
-        Repo.find_experiment_id
-        Pool_common.Id.of_string
-        Experiment.Id.value
-    in
-    Persistence.Dependency.register ~parent:`Experiment `WaitingList find_parent
-  ;;
+let relation ?ctx () =
+  let open Guard in
+  let to_target =
+    Relation.Query.create Repo.Sql.find_binary_experiment_id_sql
+  in
+  Persistence.Relation.add ?ctx ~to_target ~target:`Experiment `WaitingList
+;;
 
+module Target = struct
   type t = Entity.t [@@deriving eq, show]
 
   let decorate ?ctx t =

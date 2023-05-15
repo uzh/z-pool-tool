@@ -124,6 +124,15 @@ module Sql = struct
       location
   ;;
 
+  let find_binary_location_id_sql =
+    {sql|
+      SELECT pool_locations.uuid
+      FROM pool_location_file_mappings AS files
+      LEFT JOIN pool_locations ON files.location_id = pool_locations.id
+      WHERE files.uuid = ?
+    |sql}
+  ;;
+
   let find_location_id_request =
     let open Caqti_request.Infix in
     {sql|

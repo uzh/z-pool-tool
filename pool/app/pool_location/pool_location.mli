@@ -285,6 +285,8 @@ val search_multiple_by_id
 val default_values : t list
 
 module Guard : sig
+  val relation : ?ctx:(string * string) list -> unit -> unit Lwt.t
+
   module Target : sig
     val to_authorizable
       :  ?ctx:(string * string) list

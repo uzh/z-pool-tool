@@ -7,6 +7,20 @@ include
 
 let src = Logs.Src.create "guard"
 
+module Relation = struct
+  include Relation
+
+  let add ?ctx ?to_target ~target kind =
+    let open Utils.Lwt_result.Infix in
+    let tags =
+      let open Pool_database in
+      CCOption.(bind ctx of_ctx_opt |> map Logger.Tags.create)
+    in
+    add ?ctx ?tags ~ignore_duplicates:true ?to_target ~target kind
+    ||> CCResult.get_or_failwith
+  ;;
+end
+
 module Cache = struct
   (* TODO: Once the guardian package has a cached version, this implementation
      can be updated/removed (Issue:
