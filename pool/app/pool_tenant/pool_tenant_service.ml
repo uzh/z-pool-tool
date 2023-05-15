@@ -1,5 +1,6 @@
 module SmtpAuth = Entity.SmtpAuth
 module AccountMap = CCMap.Make (Pool_database.Label)
+module TextMessage = Entity_text_message
 module Queue = Sihl_queue.MariaDb
 
 let src = Logs.Src.create "pool_tenant.service"

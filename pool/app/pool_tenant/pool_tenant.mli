@@ -388,4 +388,12 @@ module Service : sig
     val lifecycle : Sihl.Container.lifecycle
     val register : unit -> Sihl.Container.Service.t
   end
+
+  module TextMessage : sig
+    val send
+      :  Pool_database.Label.t
+      -> text:string
+      -> recipient:string
+      -> unit Lwt.t
+  end
 end
