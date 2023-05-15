@@ -129,7 +129,7 @@ let create_persons db_label n_persons =
 let admins db_label =
   let open Utils.Lwt_result.Infix in
   let%lwt experimenter_roles =
-    Experiment.find_all db_label ()
+    Experiment.find_all db_label
     ||> fst
         %> CCList.map (fun { Experiment.id; _ } ->
              `Experimenter (Guard.Uuid.target_of Experiment.Id.value id))

@@ -86,7 +86,7 @@ let message_templates_html
     ]
 ;;
 
-let index experiment_list Pool_context.{ language; _ } =
+let index Pool_context.{ language; _ } experiment_list =
   let experiment_table experiments =
     let thead =
       Message.

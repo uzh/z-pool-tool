@@ -83,14 +83,13 @@ module Sql = struct
     then Lwt.return []
     else
       let open Caqti_request.Infix in
-      let dyn =
+      let (Dynparam.Pack (pt, pv)) =
         CCList.fold_left
           (fun dyn id ->
             dyn |> Dynparam.add Caqti_type.string (id |> Pool_common.Id.value))
           Dynparam.empty
           ids
       in
-      let (Dynparam.Pack (pt, pv)) = dyn in
       let request =
         find_multiple_request ids |> pt ->* Pool_user.Repo.user_caqti
       in
@@ -101,63 +100,3 @@ end
 let find = Sql.find
 let find_all = Sql.find_all
 let find_multiple = Sql.find_multiple
-
-module Actors = struct
-  let select_from_actors where_fragment =
-    let order_by = "COALESCE( user_users.given_name, user_users.name ) ASC" in
-    Format.asprintf
-      {sql|
-        INNER JOIN guardian_actors
-        ON guardian_actors.uuid = user_users.uuid
-        %s
-      |sql}
-      where_fragment
-    |> Sql.select_from_users_sql ~order_by
-  ;;
-
-  let find_all_with_role_request include_sql exclude_sql =
-    let concat = CCString.concat " OR " in
-    let base =
-      Format.asprintf {sql|
-      WHERE (%s)
-     |sql} (include_sql |> concat)
-    in
-    (match exclude_sql with
-     | None -> base
-     | Some exclude_sql ->
-       Format.asprintf {sql| %s AND NOT (%s) |sql} base (exclude_sql |> concat))
-    |> select_from_actors
-  ;;
-
-  let find_all_with_role pool roles ~exclude =
-    let add_params init =
-      CCList.fold_left
-        (fun (dyn, sql) role ->
-          ( dyn
-            |> Dynparam.add
-                 Caqti_type.string
-                 (role
-                  |> Role.Actor.to_yojson
-                  |> Yojson.Safe.to_string
-                  |> fun like -> "%" ^ like ^ "%")
-          , sql @ [ "guardian_actors.roles LIKE ?" ] ))
-        (init, [])
-    in
-    if CCList.is_empty roles
-    then Lwt.return []
-    else
-      let open Caqti_request.Infix in
-      let dyn, include_sql = add_params Dynparam.empty roles in
-      let dyn, exclude_sql =
-        if CCList.is_empty exclude
-        then dyn, None
-        else add_params dyn exclude |> fun (dyn, exclude) -> dyn, Some exclude
-      in
-      let (Dynparam.Pack (pt, pv)) = dyn in
-      let request =
-        find_all_with_role_request include_sql exclude_sql
-        |> pt ->* Pool_user.Repo.user_caqti
-      in
-      Utils.Database.collect (pool |> Pool_database.Label.value) request pv
-  ;;
-end

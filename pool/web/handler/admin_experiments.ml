@@ -17,21 +17,22 @@ let experiment_boolean_fields =
   Experiment.boolean_fields |> CCList.map Field.show
 ;;
 
-let find_all_with_role database_label role =
-  Admin.find_all_with_role database_label [ role ] ~exclude:[]
-;;
-
 let index req =
   let open Utils.Lwt_result.Infix in
   let error_path = "/admin/dashboard" in
-  let result ({ Pool_context.database_label; _ } as context) =
-    let query =
-      Experiment.(Query.from_request ~searchable_by ~sortable_by req)
+  let result ({ Pool_context.database_label; user; _ } as context) =
+    let find_actor =
+      Pool_context.Utils.find_authorizable ~admin_only:true database_label user
     in
-    let%lwt experiments, query = Experiment.find_all database_label ~query () in
-    let%lwt filtered = Helpers.Guard.Filter.experiments context experiments in
-    Page.Admin.Experiments.index (filtered, query) context
-    |> create_layout ~active_navigation:"/admin/experiments" req context
+    let find_experiments actor =
+      let open Experiment in
+      let query = Query.from_request ~searchable_by ~sortable_by req in
+      find_all ~query ~actor ~action:Guard.Access.index_action database_label
+    in
+    find_actor
+    |>> find_experiments
+    >|+ Page.Admin.Experiments.index context
+    >>= create_layout ~active_navigation:"/admin/experiments" req context
     >|+ Sihl.Web.Response.of_html
     >|- fun err -> err, error_path
   in
@@ -202,12 +203,12 @@ let delete req =
       Mailing.find_by_experiment database_label experiment_id
     in
     let%lwt assistants =
-      find_all_with_role
+      Admin.find_all_with_role
         database_label
         (`Assistant (Guard.Uuid.target_of Experiment.Id.value experiment_id))
     in
     let%lwt experimenters =
-      find_all_with_role
+      Admin.find_all_with_role
         database_label
         (`Experimenter (Guard.Uuid.target_of Experiment.Id.value experiment_id))
     in

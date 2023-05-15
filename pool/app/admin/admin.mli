@@ -61,9 +61,15 @@ val find
 val find_all : Pool_database.Label.t -> unit -> t list Lwt.t
 
 val find_all_with_role
-  :  Pool_database.Label.t
+  :  ?exclude:Role.Actor.t list
+  -> Pool_database.Label.t
+  -> Role.Actor.t
+  -> t list Lwt.t
+
+val find_all_with_roles
+  :  ?exclude:Role.Actor.t list
+  -> Pool_database.Label.t
   -> Role.Actor.t list
-  -> exclude:Role.Actor.t list
   -> t list Lwt.t
 
 module Duplicate : sig

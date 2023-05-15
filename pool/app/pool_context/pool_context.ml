@@ -29,6 +29,12 @@ module Utils = struct
       |> Guard.Persistence.Actor.find database_label `Admin
       ||> CCOption.of_result
   ;;
+
+  let find_authorizable ?admin_only database_label =
+    let open CCFun in
+    find_authorizable_opt ?admin_only database_label
+    %> Lwt.map (CCOption.to_result Pool_common.Message.(NotFound Field.Admin))
+  ;;
 end
 
 module Logger = struct

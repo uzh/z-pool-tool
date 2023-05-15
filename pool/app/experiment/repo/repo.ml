@@ -1,3 +1,4 @@
+open CCFun.Infix
 module Database = Pool_database
 module Dynparam = Utils.Database.Dynparam
 
@@ -91,11 +92,27 @@ module Sql = struct
     Format.asprintf "%s %s" select_from where_fragment
   ;;
 
-  let find_all pool ?query () =
+  let find_all ?query ?actor ?action pool =
+    let select, having_dynparam =
+      match actor, action with
+      | Some actor, Some action ->
+        ( select_from_experiments_sql
+          %> Format.asprintf
+               {sql|%s
+                  GROUP BY pool_experiments.uuid
+                  HAVING guardianValidateExperimentUuid(guardianEncodeUuid(?), ?, pool_experiments.uuid)
+                |sql}
+        , Some
+            (let open Guard.Persistence in
+             Dynparam.add Uuid.Actor.t (actor |> Guard.Actor.id)
+             %> Dynparam.add Action.t action) )
+      | None, _ | _, None -> select_from_experiments_sql, None
+    in
     Query.collect_and_count
       pool
       query
-      ~select:select_from_experiments_sql
+      ?having_dynparam
+      ~select
       ~count:select_count
       Repo_entity.t
   ;;

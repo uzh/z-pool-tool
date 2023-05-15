@@ -118,9 +118,10 @@ val find
   -> (t, Pool_common.Message.error) result Lwt.t
 
 val find_all
-  :  Pool_database.Label.t
-  -> ?query:Query.t
-  -> unit
+  :  ?query:Query.t
+  -> ?actor:'a Guard.Actor.t
+  -> ?action:Guard.Action.t
+  -> Pool_database.Label.t
   -> (t list * Query.t) Lwt.t
 
 val find_public
@@ -203,6 +204,7 @@ module Guard : sig
   end
 
   module Access : sig
+    val index_action : Guard.Action.t
     val index : Guard.ValidationSet.t
     val create : Guard.ValidationSet.t
     val read : Id.t -> Guard.ValidationSet.t

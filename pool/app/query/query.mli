@@ -88,6 +88,7 @@ val append_query_to_sql
 val collect_and_count
   :  Pool_database.Label.t
   -> t option
+  -> ?having_dynparam:(Utils.Database.Dynparam.t -> Utils.Database.Dynparam.t)
   -> select:(string -> string)
   -> count:(string -> string)
   -> ?where:string * Utils.Database.Dynparam.t

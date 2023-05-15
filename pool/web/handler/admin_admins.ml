@@ -11,7 +11,7 @@ let complete_roles database_label (role : Role.Actor.t) ini =
   let replace_nil_targets =
     let open CCList in
     let experiments () =
-      Experiment.find_all database_label ()
+      Experiment.find_all database_label
       ||> fst
           %> map (fun { Experiment.id; _ } ->
                id |> Uuid.target_of Experiment.Id.value)
@@ -169,11 +169,7 @@ let grant_role ({ Rock.Request.target; _ } as req) =
       |> Admin.find database_label
     in
     let* actor =
-      Pool_context.Utils.find_authorizable_opt
-        ~admin_only:true
-        database_label
-        user
-      ||> CCOption.to_result Pool_common.Message.(NotFound Field.Admin)
+      Pool_context.Utils.find_authorizable ~admin_only:true database_label user
     in
     let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
     let role =
