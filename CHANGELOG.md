@@ -14,8 +14,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 - filter by no-show count
 - added session expiration
 - block email addresses after multiple failed login attempts
+<<<<<<< HEAD
 - rules page in settings
 - admin roles to the detail page and grant/revoke role to edit page
+=======
+- filter by empty / non-empty fields
+>>>>>>> update changelog
 
 ### Changed
 
