@@ -126,6 +126,10 @@ let suite =
               "filter by nonempty custom field"
               `Slow
               filter_by_non_empty_custom_field
+          ; test_case
+              "filter by empty custom field with deleted answer"
+              `Slow
+              filter_by_empty_custom_field_with_deleted_value
           ] )
     ; ( "matcher"
       , Matcher_test.

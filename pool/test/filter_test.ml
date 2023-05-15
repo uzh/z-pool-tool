@@ -89,18 +89,14 @@ module CustomFieldData = struct
     Custom_field.Created nr_of_siblings |> Pool_event.custom_field
   ;;
 
-  let answer_nr_of_siblings
-    ?(answer_value = nr_of_siblings_answer)
-    ?admin
-    contacts
-    =
+  let answer_nr_of_siblings ~answer_value ?admin contacts =
     CCList.map
       (fun contact ->
         let user =
           admin |> CCOption.value ~default:(Pool_context.Contact contact)
         in
         Custom_field.AnswerUpserted
-          ( nr_of_siblings_public (CCOption.is_some admin) (Some answer_value)
+          ( nr_of_siblings_public (CCOption.is_some admin) answer_value
           , Contact.id contact
           , user )
         |> Pool_event.custom_field)
@@ -349,7 +345,10 @@ let filter_contacts _ () =
     let%lwt () =
       (* Save field and answer with 3 *)
       CustomFieldData.(
-        create_nr_of_siblings () :: answer_nr_of_siblings contacts)
+        create_nr_of_siblings ()
+        :: answer_nr_of_siblings
+             ~answer_value:(Some nr_of_siblings_answer)
+             contacts)
       |> Lwt_list.iter_s (Pool_event.handle_event Data.database_label)
     in
     let filter = Filter.create None (nr_of_siblings_filter ()) in
@@ -841,7 +840,10 @@ let filter_by_non_empty_custom_field _ () =
     Integration_utils.ContactRepo.create ~with_terms_accepted:true ()
   in
   let%lwt () =
-    CustomFieldData.answer_nr_of_siblings [ contact ]
+    CustomFieldData.(
+      answer_nr_of_siblings
+        ~answer_value:(Some nr_of_siblings_answer)
+        [ contact ])
     |> Lwt_list.iter_s (Pool_event.handle_event Data.database_label)
   in
   let%lwt experiment = Repo.first_experiment () in
@@ -860,4 +862,30 @@ let filter_by_non_empty_custom_field _ () =
   let%lwt () = test_filter true contact non_empty_filter experiment in
   let empty_filter = filter Operator.(Existence.Empty |> existence) in
   test_filter false contact empty_filter experiment
+;;
+
+let filter_by_empty_custom_field_with_deleted_value _ () =
+  let%lwt contact =
+    Integration_utils.ContactRepo.create ~with_terms_accepted:true ()
+  in
+  let%lwt experiment = Repo.first_experiment () in
+  let%lwt () =
+    CustomFieldData.(answer_nr_of_siblings ~answer_value:None [ contact ])
+    |> Lwt_list.iter_s (Pool_event.handle_event Data.database_label)
+  in
+  let filter operator =
+    let open Filter in
+    let query =
+      Pred
+        (Predicate.create
+           Key.(CustomField (CustomFieldData.nr_of_siblings |> Custom_field.id))
+           operator
+           NoValue)
+    in
+    create None query
+  in
+  let empty_filter = filter Operator.(Existence.Empty |> existence) in
+  let%lwt () = test_filter true contact empty_filter experiment in
+  let non_empty_filter = filter Operator.(Existence.NotEmpty |> existence) in
+  test_filter false contact non_empty_filter experiment
 ;;

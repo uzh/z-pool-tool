@@ -63,8 +63,8 @@ let add_value_to_params operator value dyn =
   let wrap_in_percentage operator value =
     let wrap s = CCString.concat "" [ "%"; s; "%" ] in
     match operator with
-    | List _ -> wrap value
-    | Equality _ | String _ | Size _ | Existence _ -> value
+    | List _ | String _ -> wrap value
+    | Equality _ | Size _ | Existence _ -> value
   in
   let add c v = Dynparam.add c v dyn in
   match operator with
@@ -112,21 +112,23 @@ let add_single_value (key : Key.t) operator dyn value =
 let add_existence_condition (key : Key.t) operator dyn =
   let open CCResult in
   let open Operator.Existence in
+  let format = Format.asprintf in
   match key with
   | Key.Hardcoded key ->
     let* sql =
       Key.hardcoded_to_single_value_sql key
-      >|= fun column -> Format.asprintf "%s %s" column (to_sql operator)
+      >|= fun column -> format "%s %s" column (to_sql operator)
     in
     Ok (dyn, sql)
   | Key.CustomField id ->
     let dyn = Dynparam.(dyn |> add Custom_field.Repo.Id.t id) in
     let* sql =
-      (* TODO[timhub]: check for null values, as contacts can clear certain
-         answers ? *)
-      match[@warning "-4"] operator with
-      | Empty -> Ok (Format.asprintf "NOT EXISTS (%s)" custom_field_sql)
-      | NotEmpty -> Ok (Format.asprintf "EXISTS (%s)" custom_field_sql)
+      let not_null_value = "pool_custom_field_answers.value IS NOT NULL" in
+      match operator with
+      | Empty ->
+        Ok (format "NOT EXISTS (%s AND %s)" custom_field_sql not_null_value)
+      | NotEmpty ->
+        Ok (format "EXISTS (%s AND %s)" custom_field_sql not_null_value)
     in
     Ok (dyn, sql)
 ;;

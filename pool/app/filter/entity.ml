@@ -239,7 +239,7 @@ module Key = struct
     | Hardcoded h -> type_of_hardcoded h
   ;;
 
-  let validate_value (key_list : human list) (m : t) value =
+  let validate_value (key_list : human list) (key : t) value =
     let error =
       Pool_common.Message.(QueryNotCompatible (Field.Value, Field.Key))
     in
@@ -265,9 +265,9 @@ module Key = struct
       | Str _, QueryExperiments -> Ok ()
       | _ -> Error error
     in
-    let validate_value value input_type =
+    let validate value input_type =
       match value with
-      | NoValue -> Ok () (* TODO[timhub]: pass operator here as well? *)
+      | NoValue -> Ok ()
       | Single v -> validate_single_value input_type v
       | Lst lst ->
         lst
@@ -275,8 +275,8 @@ module Key = struct
         |> CCList.all_ok
         >|= CCFun.const ()
     in
-    match m with
-    | Hardcoded v -> v |> type_of_hardcoded |> validate_value value
+    match key with
+    | Hardcoded v -> v |> type_of_hardcoded |> validate value
     | CustomField field_id ->
       let* custom_field =
         CCList.find_map
@@ -290,8 +290,7 @@ module Key = struct
           key_list
         |> CCOption.to_result Pool_common.Message.(Invalid Field.Key)
       in
-      let input_type = type_of_custom_field custom_field in
-      validate_value value input_type
+      custom_field |> type_of_custom_field |> validate value
   ;;
 
   let all_hardcoded : hardcoded list =
