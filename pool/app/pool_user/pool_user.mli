@@ -102,6 +102,14 @@ module Verified : sig
   val value : t -> Ptime.t
 end
 
+module PhoneNumber : sig
+  type t
+
+  val create : string -> (t, Pool_common.Message.error) result
+  val of_string : string -> t
+  val value : t -> string
+end
+
 module EmailAddress : sig
   type t
 

@@ -29,6 +29,7 @@ let send database_label ~text ~recipient =
   match Config.auth_key () with
   | None -> failwith "Undefined 'GTX_AUTH_KEY'"
   | Some auth_key ->
+    let recipient = Pool_user.PhoneNumber.value recipient in
     let body = request_body recipient text |> Cohttp_lwt.Body.of_form in
     let%lwt resp, body =
       Client.post ~body (Uri.of_string (Config.gateway_url auth_key))

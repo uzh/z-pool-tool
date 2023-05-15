@@ -138,13 +138,13 @@ module Password = struct
   ;;
 end
 
+let remove_whitespaces =
+  let open Re in
+  replace_string (space |> compile) ~by:""
+;;
+
 module EmailAddress = struct
   type t = string [@@deriving eq, show]
-
-  let remove_whitespaces =
-    let open Re in
-    replace_string (space |> compile) ~by:""
-  ;;
 
   let validate_characters email =
     let open Re in
@@ -200,6 +200,19 @@ module EmailAddress = struct
   let schema () =
     Pool_common.Utils.schema_decoder create show PoolError.Field.Email
   ;;
+end
+
+module PhoneNumber = struct
+  type t = string [@@deriving eq, show]
+
+  (** TODO: Implement validation using regex
+
+      - international format required (+41791234567) *)
+  let validate str = Ok str
+
+  let create = CCFun.(remove_whitespaces %> validate)
+  let of_string m = m
+  let value m = m
 end
 
 module Firstname = struct

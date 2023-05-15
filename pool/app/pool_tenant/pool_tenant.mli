@@ -393,7 +393,7 @@ module Service : sig
     val send
       :  Pool_database.Label.t
       -> text:string
-      -> recipient:string
+      -> recipient:Pool_user.PhoneNumber.t
       -> unit Lwt.t
   end
 end
