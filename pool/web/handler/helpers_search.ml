@@ -44,7 +44,7 @@ let create search_type ?path req =
                search_role)
     in
     let exclude =
-      HttpUtils.find_in_urlencoded_filtered_list Field.Exclude urlencoded
+      HttpUtils.find_in_urlencoded_list_opt Field.Exclude urlencoded
     in
     let open Guard.Persistence in
     match search_type with

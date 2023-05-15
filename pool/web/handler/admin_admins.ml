@@ -72,7 +72,7 @@ let admin_detail req is_edit =
     in
     (match is_edit with
      | true ->
-       Component.Cascade.Roles.input_form csrf language admin available_roles ()
+       Component.Role.Search.input_form csrf language admin available_roles ()
        |> CCList.return
        |> Page.Admin.Admins.edit context admin roles
      | false -> Page.Admin.Admins.detail context admin roles)
@@ -139,7 +139,7 @@ let handle_toggle_role req =
           with
           | _ -> None
         in
-        Component.Cascade.Roles.value_form
+        Component.Role.Search.value_form
           Pool_common.Language.En
           ?exclude_roles_of
           ~key
@@ -227,7 +227,7 @@ let grant_role ({ Rock.Request.target; _ } as req) =
       ~attributes:
         Tyxml.Html.
           [ a_user_data "hx-swap-oob" "true"
-          ; a_id Component.Cascade.notification_id
+          ; a_id Component.Role.Search.notification_id
           ]
       (CCOption.pure message)
       language

@@ -1,7 +1,7 @@
 import { addCloseListener, addInputListeners, csrfToken, destroySelected, notifyUser } from "./utils.js";
 
-const form = document.getElementById("cascade-form");
-const notificationId = "cascade-notification";
+const form = document.getElementById("role-search-form");
+const notificationId = "role-search-notification";
 
 function configRequest(e, form) {
     const isSubmit = e.target.type === "submit"
@@ -32,9 +32,9 @@ function configRequest(e, form) {
     form.dispatchEvent(event);
 }
 
-export function initCascadeForm() {
+export function initRoleSearchForm() {
     if (form) {
-        const submitButton = document.getElementById("submit-cascade-form");
+        const submitButton = document.getElementById("submit-role-search-form");
         submitButton.addEventListener('htmx:beforeSwap', (e) => {
             if (e.detail.xhr.status > 200 && e.detail.xhr.status < 300) {
                 e.detail.shouldSwap = true;

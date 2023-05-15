@@ -227,22 +227,16 @@ let urlencoded_to_flash urlencoded =
           m, k |> CCList.head_opt |> CCOption.get_or ~default:""))
 ;;
 
-let find_in_urlencoded_base_opt = CCList.assoc_opt ~eq:CCString.equal
-
-let find_in_urlencoded_list_opt field
-  : (string * string list) list -> string list option
+let find_in_urlencoded_base_opt
+  : string -> (string * string list) list -> string list option
   =
+  CCList.assoc_opt ~eq:CCString.equal
+;;
+
+let find_in_urlencoded_list_opt field =
   let open Pool_common.Message in
   find_in_urlencoded_base_opt Field.(array_key field)
-;;
-
-let find_in_urlencoded_filtered_list field =
-  find_in_urlencoded_list_opt field %> CCOption.value ~default:[]
-;;
-
-let find_in_urlencoded_list field =
-  let open Pool_common.Message in
-  find_in_urlencoded_list_opt field %> CCOption.to_result (Invalid field)
+  %> CCOption.value ~default:[]
 ;;
 
 let find_in_urlencoded_opt field =
@@ -253,7 +247,7 @@ let find_in_urlencoded_opt field =
 
 let find_in_urlencoded field =
   let open Pool_common.Message in
-  find_in_urlencoded_opt field %> CCOption.to_result (Invalid field)
+  find_in_urlencoded_opt field %> CCOption.to_result (NotFound field)
 ;;
 
 (* This is required as HTMX sends "undefined" if all checkboxes are unchecked *)

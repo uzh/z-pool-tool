@@ -53,17 +53,10 @@ module List = struct
 
   let create ({ Pool_context.language; _ } as context) rules =
     let open Pool_common in
-    let new_btn () =
-      Input.link_as_button
-        ~style:`Success
-        ~icon:Component.Icon.Add
-        ~control:(language, Pool_common.Message.(Add (Some Field.Mailing)))
-        (rules_path ~suffix:"create" ())
-    in
     let thead =
       (Message.Field.[ ActorSpec; Action; TargetSpec ]
        |> Component.Table.fields_to_txt language)
-      @ [ new_btn () ]
+      @ [ txt "" ]
     in
     CCList.map (row context) rules
     |> Component.Table.horizontal_table `Striped ~thead

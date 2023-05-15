@@ -32,8 +32,14 @@ module Utils = struct
 
   let find_authorizable ?admin_only database_label =
     let open CCFun in
+    let open Pool_common.Message in
+    let field =
+      if CCOption.value ~default:false admin_only
+      then Field.Admin
+      else Field.User
+    in
     find_authorizable_opt ?admin_only database_label
-    %> Lwt.map (CCOption.to_result Pool_common.Message.(NotFound Field.Admin))
+    %> Lwt.map (CCOption.to_result (NotFound field))
   ;;
 end
 
