@@ -18,6 +18,11 @@ let request_body recipient text =
   [ "from", [ Config.default_sender ]; "to", [ recipient ]; "text", [ text ] ]
 ;;
 
+let response_to_string res =
+  Cohttp_lwt.Response.pp_hum Format.str_formatter res;
+  Format.flush_str_formatter ()
+;;
+
 let send database_label ~text ~recipient =
   let open Cohttp in
   let open Cohttp_lwt_unix in
@@ -37,8 +42,9 @@ let send database_label ~text ~recipient =
        Logs.err ~src (fun m ->
          m
            ~tags:(tags database_label)
-           "Could not send text message:\n%s"
-           body_string);
+           "Could not send text message: %s\nresponse: %s"
+           body_string
+           (response_to_string resp));
        Lwt.return_unit
      | true ->
        Logs.info ~src (fun m ->
@@ -50,7 +56,3 @@ let send database_label ~text ~recipient =
            body_string);
        Lwt.return_unit)
 ;;
-
-(* RESPONSE PRINT *)
-(* let () = resp |> Cohttp_lwt.Response.pp_hum Format.std_formatter in
-   print_endline "\n response "; *)
