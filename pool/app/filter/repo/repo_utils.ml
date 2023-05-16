@@ -1,5 +1,6 @@
 module Dynparam = Utils.Database.Dynparam
-module Field = Pool_common.Message.Field
+module Message = Pool_common.Message
+module Field = Message.Field
 open Entity
 
 let where_prefix str = Format.asprintf "WHERE %s" str
@@ -68,7 +69,7 @@ let add_value_to_params operator value dyn =
   in
   let add c v = Dynparam.add c v dyn in
   match operator with
-  | Existence _ -> Error Pool_common.Message.(Invalid Field.Predicate)
+  | Existence _ -> Error Message.(Invalid Field.Predicate)
   | Equality _ | List _ | String _ | Size _ ->
     Ok
       (match value with
@@ -117,18 +118,17 @@ let add_existence_condition (key : Key.t) operator dyn =
   | Key.Hardcoded key ->
     let* sql =
       Key.hardcoded_to_single_value_sql key
-      >|= fun column -> format "%s %s" column (to_sql operator)
+      >|= CCFun.flip (format "%s %s") (to_sql operator)
     in
     Ok (dyn, sql)
   | Key.CustomField id ->
     let dyn = Dynparam.(dyn |> add Custom_field.Repo.Id.t id) in
     let* sql =
       let not_null_value = "pool_custom_field_answers.value IS NOT NULL" in
+      let query = format "EXISTS (%s AND %s)" custom_field_sql not_null_value in
       match operator with
-      | Empty ->
-        Ok (format "NOT EXISTS (%s AND %s)" custom_field_sql not_null_value)
-      | NotEmpty ->
-        Ok (format "EXISTS (%s AND %s)" custom_field_sql not_null_value)
+      | Empty -> Ok (format "NOT %s" query)
+      | NotEmpty -> Ok query
     in
     Ok (dyn, sql)
 ;;
@@ -145,8 +145,7 @@ let participation_subquery dyn operator ids =
         >>= fun (dyn, params) ->
         match id with
         | Bool _ | Date _ | Language _ | Nr _ | Option _ ->
-          Error
-            Pool_common.Message.(QueryNotCompatible (Field.Value, Field.Key))
+          Error Message.(QueryNotCompatible (Field.Value, Field.Key))
         | Str id ->
           add_value_to_params Operator.(Equality.Equal |> equality) (Str id) dyn
           >|= fun dyn -> dyn, "UNHEX(REPLACE(?, '-', ''))" :: params)
@@ -186,7 +185,7 @@ let participation_subquery dyn operator ids =
        | ContainsNone -> (format " = 0 ", dyn) |> CCResult.return
        | ContainsSome -> (format " > 0 ", dyn) |> CCResult.return)
     | Equality _ | String _ | Size _ | Existence _ ->
-      Error Pool_common.Message.(Invalid Field.Operator)
+      Error Message.(Invalid Field.Operator)
   in
   (dyn, Format.asprintf "(%s)" condition) |> CCResult.return
 ;;
@@ -202,7 +201,7 @@ let predicate_to_sql
     (match operator with
      | Existence operator -> add_existence_condition key operator dyn
      | Equality _ | String _ | Size _ | List _ ->
-       Error Pool_common.Message.(QueryNotCompatible (Field.Value, Field.Key)))
+       Error Message.(QueryNotCompatible (Field.Value, Field.Key)))
   | Single value ->
     let add_value = add_single_value key operator in
     (match key with
@@ -225,8 +224,7 @@ let predicate_to_sql
         | NumNoShows
         | NumParticipations
         | NumShowUps ->
-          Error
-            Pool_common.Message.(QueryNotCompatible (Field.Value, Field.Key)))
+          Error Message.(QueryNotCompatible (Field.Value, Field.Key)))
      | CustomField id ->
        let* dyn, subqueries =
          CCList.fold_left
@@ -259,14 +257,14 @@ let predicate_to_sql
            | ContainsNone -> build_query "AND"
            | ContainsSome -> build_query "OR")
         | Equality _ | String _ | Size _ | Existence _ ->
-          Error Pool_common.Message.(Invalid Field.Operator)))
+          Error Message.(Invalid Field.Operator)))
 ;;
 
 let filter_to_sql template_list dyn query =
   let open Entity in
   let open CCResult in
   let rec query_sql (dyn, sql) query
-    : (Dynparam.t * string, Pool_common.Message.error) result
+    : (Dynparam.t * string, Message.error) result
     =
     let of_list (dyn, sql) queries operator =
       let query =
@@ -296,7 +294,7 @@ let filter_to_sql template_list dyn query =
     | Template id ->
       template_list
       |> CCList.find_opt (fun template -> Pool_common.Id.equal template.id id)
-      |> CCOption.to_result Pool_common.Message.(NotFound Field.Template)
+      |> CCOption.to_result Message.(NotFound Field.Template)
       >>= fun filter -> query_sql (dyn, sql) filter.query
     | Pred predicate -> predicate_to_sql (dyn, sql) predicate
   in

@@ -127,9 +127,6 @@ module Key = struct
     | Participation [@printer print "participation"] [@name "participation"]
   [@@deriving show { with_path = false }, eq, yojson, variants, enum]
 
-  (** TODO: Try to remove human (make t using Custom_field.t instead of id)
-
-      - Some Entity Type would be required to map from id to custom field *)
   type human =
     | CustomField of Custom_field.t
     | Hardcoded of hardcoded
@@ -459,6 +456,24 @@ module Operator = struct
     | Existence o -> Existence.show o
   ;;
 
+  let to_sql = function
+    | Equality o -> Equality.to_sql o
+    | String o -> StringM.to_sql o
+    | Size o -> Size.to_sql o
+    | List o -> ListM.to_sql o
+    | Existence o -> Existence.to_sql o
+  ;;
+
+  let to_human m =
+    (match m with
+     | Equality o -> Equality.to_human o
+     | String o -> StringM.to_human o
+     | Size o -> Size.to_human o
+     | List o -> ListM.to_human o
+     | Existence o -> Existence.to_human o)
+    |> CCString.capitalize_ascii
+  ;;
+
   let all_equality_operators = Equality.all >|= equality
   let all_string_operators = StringM.all >|= string
   let all_size_operators = Size.all >|= size
@@ -511,14 +526,6 @@ module Operator = struct
     |> fun str -> `String str
   ;;
 
-  let to_sql = function
-    | Equality o -> Equality.to_sql o
-    | String o -> StringM.to_sql o
-    | Size o -> Size.to_sql o
-    | List o -> ListM.to_sql o
-    | Existence o -> Existence.to_sql o
-  ;;
-
   let operator_of_hardcoded =
     let open Key in
     function
@@ -551,16 +558,6 @@ module Operator = struct
       hardcoded |> type_of_hardcoded |> input_type_to_operator
   ;;
 
-  let to_human m =
-    (match m with
-     | Equality o -> Equality.to_human o
-     | String o -> StringM.to_human o
-     | Size o -> Size.to_human o
-     | List o -> ListM.to_human o
-     | Existence o -> Existence.to_human o)
-    |> CCString.capitalize_ascii
-  ;;
-
   let validate (key : Key.t) operator =
     let msg = Pool_common.Message.(QueryNotCompatible Field.(Operator, Key)) in
     match key with
@@ -568,10 +565,7 @@ module Operator = struct
       key
       |> operator_of_hardcoded
       |> CCList.mem ~eq:equal operator
-      |> (function
-      | true -> Ok ()
-      | false -> Error msg)
-      (* TODO: Can this be improved? *)
+      |> Utils.Bool.to_result msg
     | Key.CustomField _ -> Ok ()
   ;;
 
@@ -610,10 +604,8 @@ module Predicate = struct
   let t_of_yojson (yojson : Yojson.Safe.t) =
     let open Pool_common in
     let open Helper in
-    let to_result field res =
-      match res with
-      | None -> Error (Message.Invalid field)
-      | Some res -> res
+    let to_result field =
+      CCOption.value ~default:(Error (Message.Invalid field))
     in
     match yojson with
     | `Assoc assoc ->
@@ -635,10 +627,7 @@ module Predicate = struct
         let error = Error Message.(Invalid Field.Value) in
         match operator with
         | Existence _ -> opt |> CCOption.value ~default:(Ok NoValue)
-        | Equality _ | String _ | Size _ | List _ ->
-          (match opt with
-           | None -> error
-           | Some value -> value)
+        | Equality _ | String _ | Size _ | List _ -> CCOption.value ~default:error opt
       in
       Ok (create key operator value)
     | _ -> Error Pool_common.Message.(Invalid Field.Predicate)
