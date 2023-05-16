@@ -1,8 +1,13 @@
 (** TODO
 
-    - handle gtx errors (eg. not delivered)
+    - handle gtx errors (eg. not delivered) *)
+module PhoneNumber = Pool_user.PhoneNumber
 
-    - add interceptor *)
+let bypass () =
+  CCOption.get_or
+    ~default:false
+    (Sihl.Configuration.read_bool "TEXT_MESSAGE_BYPASS_INTERCEPT")
+;;
 
 module Config = struct
   let gateway_server = "https://rest.gtx-messaging.net"
@@ -26,7 +31,7 @@ module TextMessageContent = struct
 end
 
 type t =
-  { recipient : Pool_user.PhoneNumber.t
+  { recipient : PhoneNumber.t
   ; sender : Entity.Title.t
   ; text : TextMessageContent.t
   }
@@ -34,9 +39,9 @@ type t =
 let src = Logs.Src.create "pool_tenant.service.text_message"
 let tags database_label = Pool_database.(Logger.Tags.create database_label)
 
-let request_body { recipient; sender; text } =
+let request_body recipient text sender =
   [ "from", [ Entity.Title.value sender ]
-  ; "to", [ Pool_user.PhoneNumber.value recipient ]
+  ; "to", [ PhoneNumber.value recipient ]
   ; "text", [ text ]
   ]
 ;;
@@ -46,37 +51,81 @@ let response_to_string res =
   Format.flush_str_formatter ()
 ;;
 
-let send database_label ({ recipient; text; _ } as m) =
-  let open Cohttp in
-  let open Cohttp_lwt_unix in
-  match Config.auth_key () with
-  | None -> failwith "Undefined 'GTX_AUTH_KEY'"
-  | Some auth_key ->
-    let recipient = Pool_user.PhoneNumber.value recipient in
-    let body = request_body m |> Cohttp_lwt.Body.of_form in
-    let%lwt resp, body =
-      Client.post ~body (Uri.of_string (Config.gateway_url auth_key))
-    in
-    let%lwt body_string = Cohttp_lwt.Body.to_string body in
-    let%lwt () = Cohttp_lwt.Body.drain_body body in
-    (match
-       resp |> Response.status |> Code.code_of_status |> CCInt.equal 200
-     with
-     | false ->
-       Logs.err ~src (fun m ->
-         m
-           ~tags:(tags database_label)
-           "Could not send text message: %s\nresponse: %s"
-           body_string
-           (response_to_string resp));
-       Lwt.return_unit
-     | true ->
-       Logs.info ~src (fun m ->
-         m
-           ~tags:(Pool_database.Logger.Tags.create database_label)
-           "Send text message to %s: %s\n%s"
-           recipient
-           text
-           body_string);
-       Lwt.return_unit)
+let intercept_message
+  ~tags
+  ?(log_level = Logs.Debug)
+  { recipient; text; sender }
+  =
+  Logs.msg ~src log_level (fun m ->
+    m
+      ~tags
+      {|
+-----------------------
+Message sent by: %s
+Recipient: %s
+-----------------------
+Text:
+%s
+-----------------------
+|}
+      sender
+      (PhoneNumber.value recipient)
+      text);
+  Lwt.return_unit
+;;
+
+let intercept_phone_number ~tags recipient =
+  Sihl.Configuration.read_string "TEST_PHONE_NUMBER"
+  |> CCOption.map PhoneNumber.of_string
+  |> function
+  | None -> recipient
+  | Some intercept_recipient ->
+    Logs.info ~src (fun m ->
+      m
+        ~tags
+        "Sending text message intercepted. Sending message to new recipient \
+         ('%s')"
+        (PhoneNumber.value intercept_recipient));
+    intercept_recipient
+;;
+
+let send database_label ({ recipient; text; sender } as m) =
+  let tags = tags database_label in
+  match Sihl.Configuration.is_production () || bypass () with
+  | false -> intercept_message ~tags m
+  | true ->
+    let open Cohttp in
+    let open Cohttp_lwt_unix in
+    (match Config.auth_key () with
+     | None -> failwith "Undefined 'GTX_AUTH_KEY'"
+     | Some auth_key ->
+       let recipient = intercept_phone_number ~tags recipient in
+       let body =
+         request_body recipient text sender |> Cohttp_lwt.Body.of_form
+       in
+       let%lwt resp, body =
+         Client.post ~body (Uri.of_string (Config.gateway_url auth_key))
+       in
+       let%lwt body_string = Cohttp_lwt.Body.to_string body in
+       let%lwt () = Cohttp_lwt.Body.drain_body body in
+       (match
+          resp |> Response.status |> Code.code_of_status |> CCInt.equal 200
+        with
+        | false ->
+          Logs.err ~src (fun m ->
+            m
+              ~tags
+              "Could not send text message: %s\nresponse: %s"
+              body_string
+              (response_to_string resp));
+          Lwt.return_unit
+        | true ->
+          Logs.info ~src (fun m ->
+            m
+              ~tags
+              "Send text message to %s: %s\n%s"
+              (PhoneNumber.value recipient)
+              text
+              body_string);
+          Lwt.return_unit))
 ;;
