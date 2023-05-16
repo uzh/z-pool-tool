@@ -145,6 +145,7 @@ let admins db_label =
         ; `ManageExperimenters
         ; `ManageLocationManagers
         ; `ManageRecruiters
+        ; `ManageRules
         ] )
     ; "Scooby", "Doo", "assistant@econ.uzh.ch", [ `LocationManagerAll ]
     ; ( "Winnie"

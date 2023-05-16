@@ -319,10 +319,7 @@ module Access : sig
 end = struct
   module Field = Pool_common.Message.Field
   module ExperimentCommand = Cqrs_command.Experiment_command
-  module FilterCommand = Cqrs_command.Filter_command
   module Guardian = Middleware.Guardian
-
-  let admin_effects = Guardian.id_effects Admin.Id.of_string Field.Admin
 
   let experiment_effects =
     Guardian.id_effects Experiment.Id.of_string Field.Experiment
@@ -357,10 +354,6 @@ end = struct
   module Filter = struct
     include Helpers.Access
 
-    let filter_effects =
-      Guardian.id_effects FilterEntity.Id.of_string Field.Filter
-    ;;
-
     let combined_effects effects req =
       let open HttpUtils in
       let filter_id = find_id FilterEntity.Id.of_string Field.Filter req in
@@ -387,21 +380,5 @@ end = struct
     ;;
   end
 
-  let search =
-    (fun req ->
-      let id_in_url = HttpUtils.id_in_url req in
-      Guard.ValidationSet.or_
-      @@
-      match Field.(id_in_url Experiment, id_in_url Filter, id_in_url Admin) with
-      | false, false, false ->
-        [ ExperimentCommand.Create.effects; FilterCommand.Create.effects ]
-      | false, false, true -> [ admin_effects Admin.Guard.Access.update req ]
-      | true, false, _ ->
-        [ experiment_effects ExperimentCommand.CreateFilter.effects req ]
-      | false, true, _ ->
-        [ Filter.filter_effects FilterCommand.Update.effects req ]
-      | true, true, _ ->
-        [ Filter.combined_effects ExperimentCommand.UpdateFilter.effects req ])
-    |> Guardian.validate_generic
-  ;;
+  let search = index
 end

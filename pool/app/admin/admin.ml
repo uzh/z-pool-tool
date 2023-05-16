@@ -1,3 +1,5 @@
+open CCFun.Infix
+open Utils.Lwt_result.Infix
 include Event
 include Entity
 module Repo = Repo
@@ -7,7 +9,6 @@ let find_all = Repo.find_all
 
 let find_all_with_role ?exclude pool role =
   let open CCList in
-  let open Utils.Lwt_result.Infix in
   Guard.Persistence.Actor.find_by_role
     ~ctx:(Pool_database.to_ctx pool)
     ?exclude
@@ -18,15 +19,16 @@ let find_all_with_role ?exclude pool role =
 
 let find_all_with_roles ?exclude pool roles =
   let open CCList in
-  let open Utils.Lwt_result.Infix in
-  Guard.Persistence.Actor.find_by_roles
+  let open Guard in
+  Persistence.Actor.find_by_roles
     ~ctx:(Pool_database.to_ctx pool)
     ?exclude
     roles
-  ||> map snd
-  ||> flatten
-  ||> uniq ~eq:Guard.Uuid.Actor.equal
-  ||> map CCFun.(Guard.Uuid.Actor.to_string %> Pool_common.Id.of_string)
+  ||> fold_left
+        (fun acc (_, actors) ->
+          acc @ (map (Uuid.Actor.to_string %> Id.of_string)) actors)
+        []
+  ||> uniq ~eq:Id.equal
   >|> Repo.find_multiple pool
 ;;
 

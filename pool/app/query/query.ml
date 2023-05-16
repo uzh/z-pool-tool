@@ -74,15 +74,7 @@ let append_query_to_sql dyn where t =
   dyn, sql, paginate_and_sort
 ;;
 
-let collect_and_count
-  database_label
-  query
-  ?having_dynparam
-  ~select
-  ~count
-  ?where
-  caqti_type
-  =
+let collect_and_count database_label query ~select ~count ?where caqti_type =
   let open Utils.Database in
   let open Caqti_request.Infix in
   let where, dyn =
@@ -92,11 +84,8 @@ let collect_and_count
       where
   in
   let database_label = Pool_database.Label.value database_label in
-  let (Dynparam.Pack (pt_count, pv_count) as dyn), where, paginate_and_sort =
+  let Dynparam.Pack (pt, pv), where, paginate_and_sort =
     append_query_to_sql dyn where query
-  in
-  let (Dynparam.Pack (pt, pv)) =
-    CCOption.map_or ~default:dyn (fun add -> add dyn) having_dynparam
   in
   let request =
     let base = select where in
@@ -104,9 +93,9 @@ let collect_and_count
     |> CCOption.map_or ~default:base (Format.asprintf "%s %s" base)
     |> pt ->* caqti_type
   in
-  let count_request = count where |> pt_count ->! Caqti_type.int in
+  let count_request = count where |> pt ->! Caqti_type.int in
   let%lwt rows = collect database_label request pv in
-  let%lwt count = find database_label count_request pv_count in
+  let%lwt count = find database_label count_request pv in
   let query = CCOption.value ~default:(empty ()) query in
   Lwt.return (rows, set_page_count query count)
 ;;
