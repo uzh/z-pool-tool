@@ -102,6 +102,7 @@ let to_string = function
 let nav_link_to_string = function
   | Admins -> "Admins"
   | Assignments -> "Assignments"
+  | ContactInformation -> "Contact information"
   | Contacts -> "Contacts"
   | CustomFields -> "Fields"
   | Dashboard -> "Dashboard"
@@ -140,6 +141,12 @@ let rec hint_to_string = function
   | AssignmentsMarkedAsClosed ->
     "These assignments have been marked as deleted. Provided that the contacts \
      still meet the experiment criteria, they can register for sessions again."
+  | ContactCurrentPhoneNumber phone_number ->
+    Format.asprintf "Your current phone number is %s." phone_number
+  | ContactEnterPhoneNumberToken phone_number ->
+    Format.asprintf
+      "Please enter the verification code we sent yout to %s."
+      phone_number
   | ContactOnWaitingList ->
     "You are on the waiting list. The recruitment team will assign you to a \
      session."

@@ -14,6 +14,14 @@ module Verified = struct
   include Repo_model.Verified
 end
 
+module PhoneNumber = struct
+  include Repo_model.PhoneNumber
+end
+
+module UnverifiedPhoneNumber = struct
+  include Repo_model.UnverifiedPhoneNumber
+end
+
 module EmailAddress = struct
   include Repo_model.EmailAddress
 end

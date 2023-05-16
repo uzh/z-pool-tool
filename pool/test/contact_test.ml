@@ -75,6 +75,7 @@ let create_contact verified contact_info =
   ; terms_accepted_at = Pool_user.TermsAccepted.create_now () |> CCOption.pure
   ; language
   ; experiment_type_preference = None
+  ; phone_number = None
   ; paused = Pool_user.Paused.create false
   ; disabled = Pool_user.Disabled.create false
   ; verified = None

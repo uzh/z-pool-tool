@@ -131,6 +131,7 @@ let rec field_to_string =
   | Password -> "Passwort"
   | PasswordConfirmation -> "Passwort wiederholen"
   | Paused -> "Pausiert"
+  | PhoneNumber -> "Telefonnummer"
   | PlainText -> "Klartext"
   | Predicate -> "Prädikat"
   | Profile -> "Profil"
@@ -229,6 +230,10 @@ let success_to_string : success -> string = function
   | PasswordResetSuccessMessage ->
     "Falls ein Account zu der von dir eingegebenen E-Mail Adresse existiert,  \
      wird dir ein E-Mail mit einem Link zur Passwort zurücksetzung gesendet."
+  | PhoneNumberTokenSent ->
+    "Es wurde eine Textnachricht zur Überprüfung an Ihr Telefon gesendet. \
+     Bitte geben Sie den angegebenen Code ein."
+  | PhoneNumberVerified -> "Ihre Telefonnummer wurde erfolgreich geprüft."
   | Published field ->
     field_message "" (field_to_string field) "wurde erfolgreich veröffentlicht."
   | RemovedFromWaitingList -> "Sie wurden von der Warteliste entfernt."
@@ -528,6 +533,7 @@ let control_to_string = function
   | Unassign field -> format_submit "entfernen" field
   | Update field -> format_submit "aktualisieren" field
   | UpdateOrder -> "Reihenfolge anpassen"
+  | Verify field -> format_submit "verifizieren" field
 ;;
 
 let to_string = function

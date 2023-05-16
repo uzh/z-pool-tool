@@ -242,3 +242,100 @@ let login_information
     ]
   |> contact_profile_layout language Pool_common.I18n.LoginInformation
 ;;
+
+let[@warning "-27"] contact_information
+  (contact : Contact.t)
+  Pool_context.{ language; query_language; csrf; _ }
+  verification
+  =
+  let open Contact in
+  let open Pool_common in
+  let externalize = HttpUtils.externalize_path_with_lang query_language in
+  let form_attrs action =
+    [ a_method `Post; a_action (externalize action); a_class [ "stack" ] ]
+  in
+  let current_hint =
+    match contact.phone_number with
+    | None -> txt ""
+    | Some phone_number ->
+      div
+        [ I18n.ContactCurrentPhoneNumber
+            (Pool_user.PhoneNumber.value phone_number)
+          |> Utils.hint_to_string language
+          |> txt
+        ]
+  in
+  let new_form () =
+    (* TODO: Add / Update depending on current user phone nr *)
+    div
+      [ h2
+          ~a:[ a_class [ "heading-3" ] ]
+          Pool_common.
+            [ Utils.control_to_string
+                language
+                Message.(Add (Some Field.PhoneNumber))
+              |> txt
+            ]
+      ; current_hint
+      ; form
+          ~a:(form_attrs "/user/update-phone")
+          [ csrf_element csrf ()
+          ; input_element (* TODO: Add 2 part input (pre and nr) *)
+              language
+              `Text
+              Message.Field.PhoneNumber
+          ; div
+              ~a:[ a_class [ "flexrow" ] ]
+              [ submit_element
+                  ~classnames:[ "push" ]
+                  language
+                  Message.(Update (Some Field.PhoneNumber))
+                  ()
+              ]
+          ]
+      ]
+  in
+  let verify_form phone_number =
+    div
+      [ h2
+          ~a:[ a_class [ "heading-3" ] ]
+          Pool_common.
+            [ Utils.control_to_string
+                language
+                Message.(Add (Some Field.PhoneNumber))
+              |> txt
+            ]
+      ; div
+          [ I18n.ContactEnterPhoneNumberToken
+              (Pool_user.PhoneNumber.value phone_number)
+            |> Utils.hint_to_string language
+            |> txt
+          ]
+      ; form
+          ~a:(form_attrs "/user/verify-phone")
+          [ csrf_element csrf ()
+          ; input_element (* TODO: Add 2 part input (pre and nr) *)
+              language
+              `Text
+              Message.Field.Token
+            (* ~value:contact.user.Sihl_user.email *)
+          ; div
+              ~a:[ a_class [ "flexrow" ] ]
+              [ submit_element
+                  ~classnames:[ "push" ]
+                  language
+                  Message.(Verify (Some Field.PhoneNumber))
+                  ()
+              ]
+          ]
+      ]
+  in
+  let form =
+    match verification with
+    | None -> new_form ()
+    | Some { Pool_user.UnverifiedPhoneNumber.phone_number; _ } ->
+      verify_form phone_number
+  in
+  div [ div ~a:[ a_class [ "grid-col-2"; "gap-lg" ] ] [ form ] ]
+  |> contact_profile_layout language Pool_common.I18n.ContactInformation
+;;

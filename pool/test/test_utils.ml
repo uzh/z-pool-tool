@@ -117,6 +117,7 @@ module Model = struct
            else None)
       ; language = Some Pool_common.Language.En
       ; experiment_type_preference = None
+      ; phone_number = None
       ; paused = Pool_user.Paused.create false
       ; disabled = Pool_user.Disabled.create false
       ; verified = None

@@ -155,6 +155,7 @@ type t =
   | Password [@name "password"] [@printer go "password"]
   | PasswordConfirmation [@name "password_confirmation"]
       [@printer go "password_confirmation"]
+  | PhoneNumber [@name "phone_number"] [@printer go "phone_number"]
   | Paused [@name "paused"] [@printer go "paused"]
   | PlainText [@name "plain_text"] [@printer go "plain_text"]
   | Predicate [@name "predicate"] [@printer go "predicate"]

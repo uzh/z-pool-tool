@@ -24,10 +24,27 @@ module Verified = struct
   let t = Caqti_type.ptime
 end
 
+module PhoneNumber = struct
+  include PhoneNumber
+
+  let t = Caqti_type.string
+end
+
+module UnverifiedPhoneNumber = struct
+  include UnverifiedPhoneNumber
+
+  let t =
+    let encode m = Ok (m.phone_number, m.created_at) in
+    let decode (phone_number, created_at) = Ok { phone_number; created_at } in
+    Caqti_type.(
+      custom ~encode ~decode (tup2 PhoneNumber.t Pool_common.Repo.CreatedAt.t))
+  ;;
+end
+
 module EmailAddress = struct
   include EmailAddress
 
-  let t = Caqti_type.(string)
+  let t = Caqti_type.string
 end
 
 module EmailVerified = struct

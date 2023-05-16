@@ -104,6 +104,7 @@ Sie kommen für mehr Experimente in Frage, umso kompletter Ihr Profil ist.|}
 let nav_link_to_string = function
   | Admins -> "Administratoren"
   | Assignments -> "Anmeldungen"
+  | ContactInformation -> "Kontaktangaben"
   | Contacts -> "Kontakte"
   | CustomFields -> "Felder"
   | Dashboard -> "Dashboard"
@@ -143,6 +144,13 @@ let rec hint_to_string = function
     "Diese Anmeldungen wurden als gelöscht markiert. Insofern die Kontakte den \
      Experimentkriterien noch entsprechen, können Sie sich erneut an Sessions \
      anmelden."
+  | ContactCurrentPhoneNumber phone_number ->
+    Format.asprintf "Ihre aktuelle Telefonnummer lautet %s." phone_number
+  | ContactEnterPhoneNumberToken phone_number ->
+    Format.asprintf
+      "PBitte geben Sie den Verifizierungscode ein, den wir Ihnen an %s \
+       geschickt haben."
+      phone_number
   | ContactOnWaitingList ->
     "Sie stehen auf der Warteliste. Das Rekrutierungsteam wird Sie einer \
      Session zuweisen."

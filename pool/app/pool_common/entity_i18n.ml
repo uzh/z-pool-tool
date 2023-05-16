@@ -70,6 +70,7 @@ type t =
 type nav_link =
   | Admins
   | Assignments
+  | ContactInformation
   | Contacts
   | CustomFields
   | Dashboard
@@ -103,6 +104,8 @@ type hint =
   | AllowUninvitedSignup
   | AssignContactFromWaitingList
   | AssignmentsMarkedAsClosed
+  | ContactCurrentPhoneNumber of string
+  | ContactEnterPhoneNumberToken of string
   | ContactOnWaitingList
   | ContactProfileVisibleOverride
   | CustomFieldAdminInputOnly

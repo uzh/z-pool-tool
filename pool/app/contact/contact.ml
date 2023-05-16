@@ -16,6 +16,14 @@ let find_by_user pool (user : Sihl_user.t) =
   user.Sihl_user.id |> Pool_common.Id.of_string |> Repo.find pool
 ;;
 
+let find_phone_number_verification_by_contact =
+  Repo.find_phone_number_verification_by_contact
+;;
+
+let find_phone_number_verification_by_contact_and_token =
+  Repo.find_phone_number_verification_by_contact_and_token
+;;
+
 let has_terms_accepted = Event.has_terms_accepted
 
 let message_language database_label ({ language; _ } : t) =

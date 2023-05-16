@@ -31,7 +31,10 @@ module Language = struct
   include Entity_base_model.SelectorType (Core)
   include Core
 
-  let label country_code = country_code |> show |> Utils.Countries.find
+  let label country_code =
+    country_code |> show |> Utils.Countries.find_country_name
+  ;;
+
   let all_codes = all |> CCList.map show
 
   let field_of_t =
@@ -217,4 +220,23 @@ module ExperimentType = struct
 
   include Entity_base_model.SelectorType (Core)
   include Core
+end
+
+module Token = struct
+  type t = string [@@deriving eq, show]
+
+  let value m = m
+  let of_string m = m
+
+  let create ?(length = 6) () =
+    let rec go n acc =
+      if n = 0
+      then acc
+      else
+        go
+          (n - 1)
+          (Format.asprintf "%s%s" acc (Random.int 10 |> CCInt.to_string))
+    in
+    go length ""
+  ;;
 end

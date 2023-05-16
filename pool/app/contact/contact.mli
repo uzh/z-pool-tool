@@ -59,6 +59,7 @@ type t =
   ; terms_accepted_at : Pool_user.TermsAccepted.t option
   ; language : Pool_common.Language.t option
   ; experiment_type_preference : Pool_common.ExperimentType.t option
+  ; phone_number : Pool_user.PhoneNumber.t option
   ; paused : Pool_user.Paused.t
   ; disabled : Pool_user.Disabled.t
   ; verified : Pool_user.Verified.t option
@@ -121,6 +122,17 @@ val should_send_registration_attempt_notification
   -> t
   -> bool Lwt.t
 
+val find_phone_number_verification_by_contact
+  :  Pool_database.Label.t
+  -> t
+  -> Pool_user.UnverifiedPhoneNumber.t option Lwt.t
+
+val find_phone_number_verification_by_contact_and_token
+  :  Pool_database.Label.t
+  -> t
+  -> Pool_common.Token.t
+  -> (Pool_user.UnverifiedPhoneNumber.t, Pool_common.Message.error) result Lwt.t
+
 val has_terms_accepted : Pool_database.Label.t -> t -> bool Lwt.t
 
 val message_language
@@ -156,6 +168,8 @@ type event =
   | TermsAccepted of t
   | Disabled of t
   | UnverifiedDeleted of t
+  | PhoneNumberAdded of t * Pool_user.PhoneNumber.t * Pool_common.Token.t
+  | PhoneNumberVerified of t * Pool_user.PhoneNumber.t
   | ProfileUpdateTriggeredAtUpdated of t list
   | RegistrationAttemptNotificationSent of t
   | Updated of t

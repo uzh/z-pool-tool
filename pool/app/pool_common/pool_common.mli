@@ -197,6 +197,16 @@ module ExperimentType : sig
   val all : t list
 end
 
+module Token : sig
+  type t
+
+  val value : t -> string
+  val equal : t -> t -> bool
+  val pp : Format.formatter -> t -> unit
+  val of_string : string -> t
+  val create : ?length:int -> unit -> t
+end
+
 module Repo : sig
   val make_caqti_type
     :  'a Caqti_type.t

@@ -215,6 +215,13 @@ module PhoneNumber = struct
   let value m = m
 end
 
+module UnverifiedPhoneNumber = struct
+  type t =
+    { phone_number : PhoneNumber.t
+    ; created_at : Pool_common.CreatedAt.t
+    }
+end
+
 module Firstname = struct
   include Pool_common.Model.String
 

@@ -393,6 +393,54 @@ end = struct
   let effects = Contact.Guard.Access.update
 end
 
+module AddPhoneNumber : sig
+  include
+    Common.CommandSig
+      with type t = Contact.t * User.PhoneNumber.t * Pool_common.Token.t
+
+  val handle
+    :  ?tags:Logs.Tag.set
+    -> t
+    -> (Pool_event.t list, Pool_common.Message.error) result
+
+  val effects : Contact.Id.t -> Guard.ValidationSet.t
+end = struct
+  type t = Contact.t * User.PhoneNumber.t * Pool_common.Token.t
+
+  let handle ?(tags = Logs.Tag.empty) (contact, phone_number, token) =
+    Logs.info ~src (fun m -> m "Handle command AddPhoneNumber" ~tags);
+    Ok
+      [ Contact.PhoneNumberAdded (contact, phone_number, token)
+        |> Pool_event.contact
+      ]
+  ;;
+
+  let effects = Contact.Guard.Access.update
+end
+
+module VerifyPhoneNumber : sig
+  include Common.CommandSig with type t = Contact.t * User.PhoneNumber.t
+
+  val handle
+    :  ?tags:Logs.Tag.set
+    -> t
+    -> (Pool_event.t list, Pool_common.Message.error) result
+
+  val effects : Contact.Id.t -> Guard.ValidationSet.t
+end = struct
+  type t = Contact.t * User.PhoneNumber.t
+
+  let handle ?(tags = Logs.Tag.empty) (contact, phone_number) =
+    Logs.info ~src (fun m -> m "Handle command VerifyPhoneNumber" ~tags);
+    Ok
+      [ Contact.PhoneNumberVerified (contact, phone_number)
+        |> Pool_event.contact
+      ]
+  ;;
+
+  let effects = Contact.Guard.Access.update
+end
+
 module Verify = struct
   (* TODO issue #90 step 2 *)
   (* TODO Verify the contact itself with ID/Pass *)

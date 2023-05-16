@@ -108,6 +108,15 @@ module PhoneNumber : sig
   val create : string -> (t, Pool_common.Message.error) result
   val of_string : string -> t
   val value : t -> string
+  val equal : t -> t -> bool
+  val pp : Format.formatter -> t -> unit
+end
+
+module UnverifiedPhoneNumber : sig
+  type t =
+    { phone_number : PhoneNumber.t
+    ; created_at : Pool_common.CreatedAt.t
+    }
 end
 
 module EmailAddress : sig
@@ -162,6 +171,14 @@ module Repo : sig
 
   module EmailVerified : sig
     val t : Ptime.t Caqti_type.t
+  end
+
+  module PhoneNumber : sig
+    val t : string Caqti_type.t
+  end
+
+  module UnverifiedPhoneNumber : sig
+    val t : UnverifiedPhoneNumber.t Caqti_type.t
   end
 
   module EmailAddress : sig
