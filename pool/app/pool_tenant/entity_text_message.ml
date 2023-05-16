@@ -51,10 +51,7 @@ let response_to_string res =
   Format.flush_str_formatter ()
 ;;
 
-let intercept_message
-  ~tags
-  ?(log_level = Logs.Debug)
-  { recipient; text; sender }
+let intercept_message ~tags ?(log_level = Logs.Info) { recipient; text; sender }
   =
   Logs.msg ~src log_level (fun m ->
     m
