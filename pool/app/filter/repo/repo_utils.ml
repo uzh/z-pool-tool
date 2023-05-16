@@ -180,10 +180,10 @@ let participation_subquery dyn operator ids =
       let open ListM in
       (match o with
        | ContainsAll ->
-         (format " = ? ", Dynparam.add Caqti_type.int (CCList.length ids) dyn)
-         |> CCResult.return
-       | ContainsNone -> (format " = 0 ", dyn) |> CCResult.return
-       | ContainsSome -> (format " > 0 ", dyn) |> CCResult.return)
+         format " = ? ", Dynparam.add Caqti_type.int (CCList.length ids) dyn
+       | ContainsNone -> format " = 0 ", dyn
+       | ContainsSome -> format " > 0 ", dyn)
+      |> CCResult.return
     | Equality _ | String _ | Size _ | Existence _ ->
       Error Message.(Invalid Field.Operator)
   in
