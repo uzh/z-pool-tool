@@ -140,6 +140,8 @@ val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
 
 module Guard : sig
+  val relation : ?ctx:(string * string) list -> unit -> unit Lwt.t
+
   module Target : sig
     val to_authorizable
       :  ?ctx:(string * string) list

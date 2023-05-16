@@ -3,22 +3,11 @@ module Message = HttpUtils.Message
 module Field = Pool_common.Message.Field
 open HttpUtils.Filter
 
-let templates_disabled_key = Component.Filter.templates_disabled_key
-
-let template_id =
-  HttpUtils.find_id Filter.Id.of_string Pool_common.Message.Field.Filter
-;;
-
-let error_to_html ?(language = Pool_common.Language.En) err =
-  err
-  |> Pool_common.(Utils.error_to_string language)
-  |> Tyxml.Html.txt
-  |> CCList.pure
-  |> Tyxml.Html.div
-;;
+let template_id = HttpUtils.find_id Filter.Id.of_string Field.Filter
 
 let templates_disabled urlencoded =
   let open CCOption in
+  let open Component.Utils in
   CCList.assoc_opt ~eq:CCString.equal templates_disabled_key urlencoded
   >>= CCList.head_opt
   |> map_or ~default:false (CCString.equal "true")
@@ -32,18 +21,9 @@ let find_all_templates database_label templates_disabled =
 
 let create_layout req = General.create_tenant_layout req
 
-let find_in_params urlencoded field =
-  CCList.assoc_opt
-    ~eq:CCString.equal
-    Pool_common.Message.Field.(show field)
-    urlencoded
-  |> CCFun.flip CCOption.bind CCList.head_opt
-  |> CCOption.to_result Pool_common.Message.(Invalid field)
-;;
-
 let find_identifier urlencoded =
   let open CCResult in
-  find_in_params urlencoded Field.Id
+  HttpUtils.find_in_urlencoded Field.Id urlencoded
   >>= fun str ->
   str
   |> CCString.split ~by:"-"
@@ -120,7 +100,7 @@ let write action req =
     let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
     let* query =
       let open CCResult in
-      find_in_params urlencoded Pool_common.Message.Field.Query
+      HttpUtils.find_in_urlencoded Field.Query urlencoded
       >>= Filter.query_of_string
       |> Lwt_result.lift
     in
@@ -210,12 +190,12 @@ let handle_toggle_predicate_type action req =
       let open CCResult in
       Lwt_result.lift
       @@ let* current =
-           find_in_params urlencoded Pool_common.Message.Field.Query
+           HttpUtils.find_in_urlencoded Field.Query urlencoded
            >|= Yojson.Safe.from_string
            >>= Filter.Human.of_yojson key_list
          in
          let* predicate_type =
-           find_in_params urlencoded Pool_common.Message.Field.Predicate
+           HttpUtils.find_in_urlencoded Field.Predicate urlencoded
          in
          Filter.toggle_predicate_type current predicate_type
     in
@@ -240,13 +220,13 @@ let handle_toggle_predicate_type action req =
   in
   (match result with
    | Ok html -> html
-   | Error err -> error_to_html err)
+   | Error err -> HttpUtils.Message.error_to_html err)
   |> CCList.pure
   |> HttpUtils.multi_html_to_plain_text_response
   |> Lwt.return
 ;;
 
-let handle_toggle_key action req =
+let handle_toggle_key _ req =
   let open Utils.Lwt_result.Infix in
   let%lwt result =
     let* { Pool_context.language; database_label; _ } =
@@ -254,16 +234,15 @@ let handle_toggle_key action req =
     in
     let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
     let* key =
-      find_in_params urlencoded Pool_common.Message.Field.Key
+      HttpUtils.find_in_urlencoded Field.Key urlencoded
       |> Lwt_result.lift
       >>= Filter.key_of_string database_label
     in
-    Component.Filter.predicate_value_form language action [] ~key ()
-    |> Lwt.return_ok
+    Component.Filter.predicate_value_form language [] ~key () |> Lwt.return_ok
   in
   (match result with
    | Ok html -> html
-   | Error err -> err |> error_to_html)
+   | Error err -> err |> HttpUtils.Message.error_to_html)
   |> CCList.pure
   |> HttpUtils.multi_html_to_plain_text_response
   |> Lwt.return
@@ -311,45 +290,7 @@ let handle_add_predicate action req =
   in
   (match result with
    | Ok html -> html
-   | Error err -> error_to_html err |> CCList.pure)
-  |> HttpUtils.multi_html_to_plain_text_response
-  |> Lwt.return
-;;
-
-let search_experiments action req =
-  let open Utils.Lwt_result.Infix in
-  let%lwt result =
-    let* { Pool_context.database_label; _ } =
-      Pool_context.find req |> Lwt_result.lift
-    in
-    let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-    let query =
-      find_in_params urlencoded Pool_common.Message.Field.Experiment
-      |> CCResult.to_opt
-    in
-    let%lwt exclude =
-      let current_experiment =
-        match action with
-        | Template _ -> None
-        | Experiment experiment -> Some experiment.Experiment.id
-      in
-      Sihl.Web.Request.urlencoded_list "exclude[]" req
-      ||> CCList.map Experiment.Id.of_string
-      ||> CCList.cons_maybe current_experiment
-    in
-    let%lwt results =
-      query
-      |> CCOption.map_or
-           ~default:(Lwt.return [])
-           (Experiment.search database_label exclude)
-    in
-    Component.Filter.search_experiments_input ?value:query ~results action
-    |> Lwt.return_ok
-  in
-  (match result with
-   | Ok html -> html
-   | Error err -> error_to_html err)
-  |> CCList.pure
+   | Error err -> HttpUtils.Message.error_to_html err |> CCList.pure)
   |> HttpUtils.multi_html_to_plain_text_response
   |> Lwt.return
 ;;
@@ -371,7 +312,7 @@ let count_contacts req =
        let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
        let* query =
          let open CCResult in
-         find_in_params urlencoded Pool_common.Message.Field.Query
+         HttpUtils.find_in_urlencoded Field.Query urlencoded
          |> CCOption.of_result
          |> CCOption.map_or
               ~default:
@@ -400,8 +341,7 @@ module Create = struct
   let create_template = write action
   let add_predicate = handle_add_predicate action
   let toggle_predicate_type = handle_toggle_predicate_type action
-  let toggle_key = handle_toggle_key action
-  let search_experiments = search_experiments action
+  let toggle_key = handle_toggle_key ()
 end
 
 module Update = struct
@@ -424,7 +364,6 @@ module Update = struct
   let add_predicate = handler handle_add_predicate
   let toggle_predicate_type = handler handle_toggle_predicate_type
   let toggle_key = handler handle_toggle_key
-  let search_experiments = handler search_experiments
 end
 
 module Access : module type of Helpers.Access = struct

@@ -462,7 +462,7 @@ end
 module Repo = struct
   let all_experiments () =
     let open Utils.Lwt_result.Infix in
-    Experiment.find_all Data.database_label () ||> fst
+    Experiment.find_all Data.database_label ||> fst
   ;;
 
   let first_experiment () =

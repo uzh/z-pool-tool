@@ -1,3 +1,4 @@
+open CCFun
 open Tyxml.Html
 open Component
 
@@ -29,6 +30,25 @@ let admin_overview language admins =
       ])
     admins
   |> Table.horizontal_table ~align_last_end:true `Striped ~thead
+;;
+
+let roles_section ?(top_element = []) language children =
+  let open Pool_common in
+  h2
+    ~a:[ a_class [ "heading-2" ] ]
+    [ Utils.text_to_string language I18n.RolesGranted |> txt ]
+  :: (top_element @ children)
+;;
+
+let roles_list
+  ?is_edit
+  ?top_element
+  ({ Pool_context.language; _ } as context)
+  admin
+  =
+  Component.Role.List.create ?is_edit context admin
+  %> CCList.return
+  %> roles_section ?top_element language
 ;;
 
 let new_form { Pool_context.language; csrf; _ } =
@@ -79,46 +99,46 @@ let index Pool_context.{ language; _ } admins =
     ]
 ;;
 
-let detail Pool_context.{ language; _ } admin =
+let detail ({ Pool_context.language; _ } as context) admin granted_roles =
   let open Sihl.Contract.User in
+  let open Pool_common in
   let user = Admin.user admin in
-  div
-    ~a:[ a_class [ "trim"; "safety-margin" ] ]
-    [ h1
-        ~a:[ a_class [ "heading-1" ] ]
-        [ txt
-            (Format.asprintf
-               "%s %s"
-               (user.given_name |> Option.value ~default:"")
-               (user.name |> Option.value ~default:""))
-        ]
-    ; p
-        [ a
-            ~a:
-              [ a_href
-                  (Format.asprintf "/admin/admins/%s/edit" user.id
-                   |> Sihl.Web.externalize_path)
-              ]
-            [ txt
-                Pool_common.(
-                  Utils.control_to_string language Message.(Edit None))
+  [ h1
+      ~a:[ a_class [ "heading-1" ] ]
+      [ txt
+          (Format.asprintf
+             "%s %s"
+             (user.given_name |> Option.value ~default:"")
+             (user.name |> Option.value ~default:""))
+      ]
+  ; p
+      [ a
+          ~a:
+            [ a_href
+                (Format.asprintf "/admin/admins/%s/edit" user.id
+                 |> Sihl.Web.externalize_path)
             ]
-        ]
-    ]
+          [ txt (Utils.control_to_string language Message.(Edit None)) ]
+      ]
+  ]
+  @ roles_list context admin granted_roles
+  |> div ~a:[ a_class [ "trim"; "safety-margin" ] ]
 ;;
 
-let edit _ editabe_admin =
+let edit context editabe_admin granted_roles top_element =
   let open Sihl.Contract.User in
   let user = Admin.user editabe_admin in
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
-    [ h1
-        ~a:[ a_class [ "heading-1" ] ]
-        [ txt
-            (Format.asprintf
-               "%s %s"
-               (user.given_name |> Option.value ~default:"")
-               (user.name |> Option.value ~default:""))
-        ]
-    ]
+    ([ h1
+         ~a:[ a_class [ "heading-1" ] ]
+         [ txt
+             (Format.asprintf
+                "%s %s"
+                (user.given_name |> Option.value ~default:"")
+                (user.name |> Option.value ~default:""))
+         ]
+     ]
+     @ roles_list ~is_edit:true ~top_element context editabe_admin granted_roles
+    )
 ;;

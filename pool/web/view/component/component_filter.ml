@@ -3,26 +3,11 @@ open Filter
 open Http_utils.Filter
 module Input = Component_input
 module Icon = Component_icon
+module Utils = Component_utils
 
-let templates_disabled_key = "templates_disabled"
 let notification_id = "filter-notification"
-let as_target_id = Format.asprintf "#%s"
 let stack = "stack-sm"
 let inset = "inset-sm"
-
-let format_identifiers ?prefix identifiers =
-  let ids =
-    (CCList.fold_left (fun str n ->
-       if CCString.is_empty str
-       then CCInt.to_string n
-       else Format.asprintf "%s-%s" str (CCInt.to_string n)))
-      ""
-      identifiers
-  in
-  match prefix with
-  | None -> ids
-  | Some prefix -> Format.asprintf "%s-%s" prefix ids
-;;
 
 let form_action = function
   | Experiment exp ->
@@ -41,122 +26,6 @@ let form_action = function
      | None -> Format.asprintf "%s/%s" base
      | Some filter ->
        Format.asprintf "%s/%s/%s" base Filter.(Id.value filter.id))
-;;
-
-let htmx_attribs
-  ~action
-  ~trigger
-  ?target
-  ?(swap = "outerHTML")
-  ?(allow_empty_values = false)
-  ?templates_disabled
-  ?identifier
-  ()
-  =
-  let target = target |> CCOption.map (a_user_data "hx-target") in
-  let hx_vals =
-    let identifier =
-      identifier
-      |> CCOption.map (fun identifier -> "id", format_identifiers identifier)
-    in
-    let allow_empty_values =
-      if allow_empty_values then Some ("allow_empty_values", "true") else None
-    in
-    let templates_disabled =
-      templates_disabled
-      |> CCOption.map (fun disabled ->
-           templates_disabled_key, Bool.to_string disabled)
-    in
-    [ identifier; allow_empty_values; templates_disabled ]
-    |> CCList.filter_map CCFun.id
-    |> fun values ->
-    if CCList.is_empty values
-    then []
-    else
-      values
-      |> CCList.map (fun (key, value) ->
-           Format.asprintf "\"%s\": \"%s\"" key value)
-      |> CCString.concat ","
-      |> fun values -> [ a_user_data "hx-vals" (Format.asprintf "{%s}" values) ]
-  in
-  [ a_user_data "hx-post" (action |> Sihl.Web.externalize_path)
-  ; a_user_data "hx-trigger" trigger
-  ; a_user_data "hx-swap" swap
-  ]
-  @ hx_vals
-  @ CCList.filter_map CCFun.id [ target ]
-;;
-
-let search_experiment_item (id, title) =
-  let open Experiment in
-  div
-    ~a:[ a_user_data "id" (Id.value id); a_class [ "has-icon"; "inset-xs" ] ]
-    [ Icon.(to_html ~classnames:[ "toggle-item" ] CloseCircle)
-    ; span [ txt (Title.value title) ]
-    ; input
-        ~a:
-          [ a_input_type `Checkbox
-          ; a_class [ "hidden" ]
-          ; a_name Pool_common.Message.Field.(array_key Value)
-          ; a_value (Id.value id)
-          ; a_checked ()
-          ]
-        ()
-    ]
-;;
-
-let search_experiments_input ?(value = "") ?results param =
-  let result_list =
-    let wrap =
-      div
-        ~a:
-          [ a_class
-              [ "flexcolumn"
-              ; "gap-sm"
-              ; "striped"
-              ; "bg-white"
-              ; "inset-sm"
-              ; "border"
-              ; "border-radius"
-              ; "hide-empty"
-              ]
-          ]
-    in
-    match results with
-    | None -> txt ""
-    | Some [] -> txt "No results found" |> CCList.pure |> wrap
-    | Some results -> results |> CCList.map search_experiment_item |> wrap
-  in
-  div
-    ~a:[ a_class [ "flexcolumn" ]; a_user_data "query" "input" ]
-    [ input
-        ~a:
-          ([ a_input_type `Text
-           ; a_value value
-           ; a_name Pool_common.Message.Field.(show Experiment)
-           ; a_class [ "query-input" ]
-           ; a_placeholder "Search by experiment title"
-           ]
-           @ htmx_attribs
-               ~action:(form_action param "experiments")
-               ~trigger:"keyup changed delay:1s"
-               ~target:"closest [data-query='input']"
-               ())
-        ()
-    ; result_list
-    ]
-;;
-
-let search_experiments ?value language param ~current ?results () =
-  div
-    ~a:[ a_class [ "form-group" ]; a_user_data "query" "wrapper" ]
-    [ label
-        [ txt Pool_common.(Utils.nav_link_to_string language I18n.Experiments) ]
-    ; search_experiments_input ?value ?results param
-    ; div
-        ~a:[ a_user_data "query" "results"; a_class [ "hide-empty" ] ]
-        (CCList.map search_experiment_item current)
-    ]
 ;;
 
 let select_default_option language selected =
@@ -183,7 +52,7 @@ let operators_select language ?operators ?selected () =
       ()
 ;;
 
-let value_input language param query_experiments input_type ?value () =
+let value_input language query_experiments input_type ?value () =
   let open Filter in
   let open CCOption.Infix in
   let field_name = Pool_common.Message.Field.Value in
@@ -341,18 +210,13 @@ let value_input language param query_experiments input_type ?value () =
                     | _ -> None)
                   lst)
        in
-       search_experiments language param ~current ())
+       Component_search.Experiment.create
+         ~current
+         language
+         "/admin/experiments/search")
 ;;
 
-let predicate_value_form
-  language
-  param
-  query_experiments
-  ?key
-  ?value
-  ?operator
-  ()
-  =
+let predicate_value_form language query_experiments ?key ?value ?operator () =
   let open CCOption.Infix in
   let input_type = key >|= Filter.Key.type_of_key in
   let operators = input_type >|= Filter.Operator.input_type_to_operator in
@@ -360,7 +224,7 @@ let predicate_value_form
     operators_select language ?operators ?selected:operator ()
   in
   let input_field =
-    value_input language param query_experiments input_type ?value ()
+    value_input language query_experiments input_type ?value ()
   in
   div
     ~a:[ a_class [ "switcher-sm"; "flex-gap" ] ]
@@ -379,24 +243,17 @@ let single_predicate_form
   ?value
   ()
   =
-  let toggle_id = format_identifiers ~prefix:"pred-s" identifier in
+  let toggle_id = Utils.format_identifiers ~prefix:"pred-s" identifier in
   let toggled_content =
-    predicate_value_form
-      language
-      param
-      query_experiments
-      ?key
-      ?value
-      ?operator
-      ()
+    predicate_value_form language query_experiments ?key ?value ?operator ()
   in
   let key_selector =
     let attributes =
-      htmx_attribs
+      Utils.htmx_attribs
         ~action:(form_action param "toggle-key")
         ~trigger:"change"
         ~swap:"innerHTML"
-        ~target:(as_target_id toggle_id)
+        ~target:(Utils.as_target_id toggle_id)
         ~allow_empty_values:true
         ~templates_disabled
         ()
@@ -431,10 +288,10 @@ let predicate_type_select
   ()
   =
   let attributes =
-    htmx_attribs
+    Utils.htmx_attribs
       ~action:(form_action experiment "toggle-predicate-type")
       ~trigger:"change"
-      ~target:(as_target_id target)
+      ~target:(Utils.as_target_id target)
       ~identifier
       ~allow_empty_values:true
       ~templates_disabled
@@ -459,16 +316,16 @@ let predicate_type_select
 ;;
 
 let add_predicate_btn experiment identifier templates_disabled =
-  let id = format_identifiers ~prefix:"new" identifier in
+  let id = Utils.format_identifiers ~prefix:"new" identifier in
   div
     ~a:[ a_id id; a_user_data "new-predicate" "" ]
     [ Input.submit_icon
         ~classnames:[ "success" ]
         ~attributes:
-          (htmx_attribs
+          (Utils.htmx_attribs
              ~action:(form_action experiment "add-predicate")
              ~trigger:"click"
-             ~target:(as_target_id id)
+             ~target:(Utils.as_target_id id)
              ~identifier
              ~allow_empty_values:true
              ~templates_disabled
@@ -489,7 +346,9 @@ let rec predicate_form
   ()
   =
   let query = CCOption.value ~default:(Filter.Human.init ()) query in
-  let predicate_identifier = format_identifiers ~prefix:"filter" identifier in
+  let predicate_identifier =
+    Utils.format_identifiers ~prefix:"filter" identifier
+  in
   let selected =
     let open Human in
     let open UtilsF in
@@ -721,7 +580,7 @@ let filter_form csrf language param key_list template_list query_experiments =
                 ~classnames:[ "push" ]
                 ~attributes:
                   (a_id "submit-filter-form"
-                   :: htmx_attribs
+                   :: Utils.htmx_attribs
                         ~action
                         ~swap:"none"
                         ~trigger:"click"

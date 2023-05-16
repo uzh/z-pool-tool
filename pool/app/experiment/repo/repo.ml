@@ -1,3 +1,4 @@
+open CCFun
 module Database = Pool_database
 module Dynparam = Utils.Database.Dynparam
 
@@ -81,22 +82,35 @@ module Sql = struct
     Format.asprintf "%s %s" select_from where_fragment
   ;;
 
+  let validate_experiment_sql actor action =
+    let open Guard.Persistence in
+    let open Dynparam in
+    ( {sql| guardianValidateExperimentUuid(guardianEncodeUuid(?), ?, pool_experiments.uuid) |sql}
+    , empty |> add Uuid.Actor.t (actor |> Guard.Actor.id) |> add Action.t action
+    )
+  ;;
+
   let select_count where_fragment =
-    let select_from =
+    Format.asprintf
       {sql|
         SELECT COUNT(*)
         FROM pool_experiments
+        %s
       |sql}
-    in
-    Format.asprintf "%s %s" select_from where_fragment
+      where_fragment
   ;;
 
-  let find_all pool ?query () =
+  let find_all ?query ?actor ?action pool =
+    let where =
+      let open CCOption in
+      ( and* ) actor action |> map (CCFun.uncurry validate_experiment_sql)
+    in
     Query.collect_and_count
       pool
       query
       ~select:select_from_experiments_sql
       ~count:select_count
+      ?where
       Repo_entity.t
   ;;
 

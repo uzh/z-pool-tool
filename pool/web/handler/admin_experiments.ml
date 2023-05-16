@@ -1,72 +1,40 @@
 open CCFun
-module HttpUtils = Http_utils
-module Message = HttpUtils.Message
-module Invitations = Admin_experiments_invitations
-module WaitingList = Admin_experiments_waiting_list
 module Assignment = Admin_experiments_assignments
+module Field = Pool_common.Message.Field
+module FilterEntity = Filter
+module HttpUtils = Http_utils
+module Invitations = Admin_experiments_invitations
 module Mailings = Admin_experiments_mailing
+module Message = HttpUtils.Message
 module MessageTemplates = Admin_experiments_message_templates
 module Users = Admin_experiments_users
-module FilterEntity = Filter
-
-let read_validation_set id =
-  let open Guard in
-  let target_id = id |> Uuid.target_of Experiment.Id.value in
-  ValidationSet.One (Action.Read, TargetSpec.Id (`Experiment, target_id))
-;;
+module WaitingList = Admin_experiments_waiting_list
 
 let create_layout req = General.create_tenant_layout req
-
-let experiment_id =
-  HttpUtils.find_id Experiment.Id.of_string Pool_common.Message.Field.Experiment
-;;
+let experiment_id = HttpUtils.find_id Experiment.Id.of_string Field.Experiment
 
 let experiment_boolean_fields =
-  Experiment.boolean_fields |> CCList.map Pool_common.Message.Field.show
-;;
-
-let find_all_with_role database_label role =
-  Admin.find_all_with_role database_label [ role ] ~exclude:[]
+  Experiment.boolean_fields |> CCList.map Field.show
 ;;
 
 let index req =
   let open Utils.Lwt_result.Infix in
   let error_path = "/admin/dashboard" in
   let result ({ Pool_context.database_label; user; _ } as context) =
-    Utils.Lwt_result.map_error (fun err -> err, error_path)
-    @@
-    let%lwt actor =
-      user
-      |> function
-      | Pool_context.Guest | Pool_context.Contact _ -> Lwt.return_none
-      | Pool_context.Admin admin ->
-        Admin.id admin
-        |> Guard.Uuid.actor_of Admin.Id.value
-        |> Guard.Persistence.Actor.find database_label `Admin
-        ||> CCOption.of_result
+    let find_actor =
+      Pool_context.Utils.find_authorizable ~admin_only:true database_label user
     in
-    let query =
+    let find_experiments actor =
       let open Experiment in
-      Query.from_request ~searchable_by ~sortable_by req
+      let query = Query.from_request ~searchable_by ~sortable_by req in
+      find_all ~query ~actor ~action:Guard.Access.index_action database_label
     in
-    let%lwt experiments, query = Experiment.find_all database_label ~query () in
-    let%lwt filtered =
-      Lwt_list.filter_s
-        (fun { Experiment.id; _ } ->
-          CCOption.map_or
-            ~default:Lwt.return_false
-            (fun actor ->
-              Guard.Persistence.validate
-                database_label
-                (read_validation_set id)
-                actor
-              ||> CCOption.(of_result %> is_some))
-            actor)
-        experiments
-    in
-    Page.Admin.Experiments.index (filtered, query) context
-    |> create_layout ~active_navigation:"/admin/experiments" req context
+    find_actor
+    |>> find_experiments
+    >|+ Page.Admin.Experiments.index context
+    >>= create_layout ~active_navigation:"/admin/experiments" req context
     >|+ Sihl.Web.Response.of_html
+    >|- fun err -> err, error_path
   in
   result |> HttpUtils.extract_happy_path req
 ;;
@@ -235,12 +203,12 @@ let delete req =
       Mailing.find_by_experiment database_label experiment_id
     in
     let%lwt assistants =
-      find_all_with_role
+      Admin.find_all_with_role
         database_label
         (`Assistant (Guard.Uuid.target_of Experiment.Id.value experiment_id))
     in
     let%lwt experimenters =
-      find_all_with_role
+      Admin.find_all_with_role
         database_label
         (`Experimenter (Guard.Uuid.target_of Experiment.Id.value experiment_id))
     in
@@ -281,6 +249,8 @@ let delete req =
   result |> HttpUtils.extract_happy_path req
 ;;
 
+let search = Helpers.Search.create `Experiment
+
 module Filter = struct
   open HttpUtils.Filter
   open Utils.Lwt_result.Infix
@@ -305,17 +275,13 @@ module Filter = struct
   let toggle_predicate_type = handler Admin_filter.handle_toggle_predicate_type
   let add_predicate = handler Admin_filter.handle_add_predicate
   let toggle_key = handler Admin_filter.handle_toggle_key
-  let search_experiments = handler Admin_filter.search_experiments
   let create = handler Admin_filter.write
   let update = handler Admin_filter.write
 
   let delete req =
     let result { Pool_context.database_label; _ } =
       let experiment_id =
-        HttpUtils.find_id
-          Experiment.Id.of_string
-          Pool_common.Message.Field.Experiment
-          req
+        HttpUtils.find_id Experiment.Id.of_string Field.Experiment req
       in
       let redirect_path =
         Format.asprintf
@@ -348,6 +314,8 @@ end
 module Access : sig
   include module type of Helpers.Access
   module Filter : module type of Helpers.Access
+
+  val search : Rock.Middleware.t
 end = struct
   module Field = Pool_common.Message.Field
   module ExperimentCommand = Cqrs_command.Experiment_command
@@ -411,4 +379,6 @@ end = struct
       |> Guardian.validate_generic
     ;;
   end
+
+  let search = index
 end

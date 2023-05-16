@@ -70,6 +70,7 @@ Sie kommen für mehr Experimente in Frage, umso kompletter Ihr Profil ist.|}
     Format.asprintf
       "Aktuell sind keine %s zugewiesen."
       (Locales_de.field_to_string field)
+  | RolesGranted -> "Zugewiesene Rollen"
   | SentInvitations -> "Versendete Einladungen"
   | SessionDetailTitle start ->
     Format.asprintf "Session am %s" (Utils_time.formatted_date_time start)
@@ -121,6 +122,7 @@ let nav_link_to_string = function
   | PersonalDetails -> "Persönliche Angaben"
   | Profile -> "Profil"
   | Queue -> "Hintergrundjobs"
+  | Rules -> "Regeln"
   | Schedules -> "Prozesse"
   | Sessions -> "Sessions"
   | Settings -> "Einstellungen"
@@ -257,6 +259,10 @@ let rec hint_to_string = function
     "Ist diese Option aktiviert, können sich Kontakte weder anmelden noch auf \
      die Warteliste setzen. Das Experiment ist für die Kontakte nicht \
      ersichtlich."
+  | RulesIntro ->
+    {|Alle Regeln, welche für Akteure des Tools existieren.
+    Beispielsweise, wenn ein neues Experiment erstellt wird, wird für dieses ein Standard Regelsatz hinzugefügt.
+    |}
   | ScheduleEvery sec ->
     sec
     |> Pool_common_utils.Time.formatted_timespan
@@ -341,6 +347,8 @@ let confirmable_to_string confirmable =
      ( "die Option"
      , "publizieren"
      , Some "Sie werden die Option nicht mehr löschen können." )
+   | RemoveRule -> "die Regel", "löschen", None
+   | RevokeRole -> "die Rolle", "entfernen", None
    | StopMailing -> "den Versand", "stoppen", None)
   |> fun (obj, action, additive) ->
   Format.asprintf "Sind Sie sicher, dass Sie %s %s wollen?" obj action

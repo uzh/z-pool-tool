@@ -68,6 +68,7 @@ let to_string = function
     Format.asprintf
       "Currently there are no %s assigned."
       (Locales_en.field_to_string field)
+  | RolesGranted -> "Granted roles"
   | SentInvitations -> "Sent invitations"
   | SessionDetailTitle start ->
     Format.asprintf "Session at %s" (Utils_time.formatted_date_time start)
@@ -119,6 +120,7 @@ let nav_link_to_string = function
   | PersonalDetails -> "Personal details"
   | Profile -> "Profile"
   | Queue -> "Queued jobs"
+  | Rules -> "Rules"
   | Schedules -> "Schedules"
   | Sessions -> "Sessions"
   | Settings -> "Settings"
@@ -246,6 +248,10 @@ let rec hint_to_string = function
   | RegistrationDisabled ->
     "If this option is activated, contacts can neither register nor join the \
      waiting list. The experiment is not visible to the contacts."
+  | RulesIntro ->
+    {|All existing rules which are defined for actors of the tenant.
+      When a new experiment is created, a default set of rules gets added.
+      |}
   | ScheduleEvery sec ->
     sec
     |> Pool_common_utils.Time.formatted_timespan
@@ -327,6 +333,8 @@ let confirmable_to_string confirmable =
      )
    | PublisCustomFieldOption ->
      "option", "publish", Some "You will not be able to delete the it anymore."
+   | RemoveRule -> "rule", "delete", None
+   | RevokeRole -> "role", "revoke", None
    | StopMailing -> "mailing", "stop", None)
   |> fun (obj, action, additive) ->
   Format.asprintf "Are you sure you want to %s the %s?" action obj

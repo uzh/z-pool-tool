@@ -1,3 +1,4 @@
+open CCFun
 module File = Http_utils_file
 module Filter = Http_utils_filter
 module Message = Http_utils_message
@@ -26,7 +27,6 @@ let find_intended_opt req =
 ;;
 
 let intended_to_url url intended =
-  let open CCFun in
   let open Uri in
   let key = Pool_common.Message.Field.(location |> show) in
   let equal_path a b = CCString.equal (path a) (path b) in
@@ -56,8 +56,8 @@ let intended_or ?default url =
 
 let intended_of_request ({ Sihl.Web.Request.target; _ } as req) =
   match find_intended_opt req with
-  | Some intended -> CCFun.flip intended_to_url intended
-  | None -> CCFun.flip intended_to_url target
+  | Some intended -> flip intended_to_url intended
+  | None -> flip intended_to_url target
 ;;
 
 let user_from_session db_pool req : Sihl_user.t option Lwt.t =
@@ -75,7 +75,6 @@ let find_field_router_param_opt req field =
 ;;
 
 let find_query_lang req =
-  let open CCFun in
   let open CCOption.Infix in
   Sihl.Web.Request.query Pool_common.Message.Field.(Language |> show) req
   >>= CCString.uppercase_ascii
@@ -99,7 +98,7 @@ let redirect_to_with_actions path actions =
   path
   |> Sihl.Web.externalize_path
   |> Sihl.Web.Response.redirect_to
-  |> CCList.fold_left CCFun.( % ) CCFun.id actions
+  |> CCList.fold_left ( % ) id actions
   |> Lwt.return
 ;;
 
@@ -178,7 +177,7 @@ let htmx_redirect path ?query_language ?(actions = []) () =
   |> Sihl.Web.Response.add_header
        ( "HX-Redirect"
        , path_with_language query_language path |> Sihl.Web.externalize_path )
-  |> CCList.fold_left CCFun.( % ) CCFun.id actions
+  |> CCList.fold_left ( % ) id actions
   |> Lwt.return
 ;;
 
@@ -228,17 +227,37 @@ let urlencoded_to_flash urlencoded =
           m, k |> CCList.head_opt |> CCOption.get_or ~default:""))
 ;;
 
+let find_in_urlencoded_base_opt
+  : string -> (string * string list) list -> string list option
+  =
+  CCList.assoc_opt ~eq:CCString.equal
+;;
+
+let find_in_urlencoded_list_opt field =
+  let open Pool_common.Message in
+  find_in_urlencoded_base_opt Field.(array_key field)
+  %> CCOption.value ~default:[]
+;;
+
+let find_in_urlencoded_opt field =
+  let open Pool_common.Message in
+  find_in_urlencoded_base_opt Field.(show field)
+  %> flip CCOption.bind CCList.head_opt
+;;
+
+let find_in_urlencoded field =
+  let open Pool_common.Message in
+  find_in_urlencoded_opt field %> CCOption.to_result (NotFound field)
+;;
+
 (* This is required as HTMX sends "undefined" if all checkboxes are unchecked *)
 let htmx_urlencoded_list key req =
-  let%lwt lst = Sihl.Web.Request.urlencoded_list key req in
-  Lwt.return
-  @@
-  match lst with
-  | [ hd ] ->
-    if CCString.equal "undefined" (hd |> CCString.lowercase_ascii)
-    then []
-    else lst
-  | _ -> lst
+  let open Utils.Lwt_result.Infix in
+  Sihl.Web.Request.urlencoded_list key req
+  ||> function
+  | [ hd ] when CCString.equal "undefined" (hd |> CCString.lowercase_ascii) ->
+    []
+  | lst -> lst
 ;;
 
 (* TODO[timhub]: hide information, at least on public site *)
@@ -360,6 +379,11 @@ let invalid_session_redirect
 
 let find_id encode field req =
   Sihl.Web.Router.param req @@ Pool_common.Message.Field.show field |> encode
+;;
+
+let id_in_url req field =
+  try find_id Pool_common.Id.of_string field req |> const true with
+  | Not_found -> false
 ;;
 
 let default_value_style elms =

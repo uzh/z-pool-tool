@@ -3,6 +3,8 @@ open Entity_message
 let rec field_to_string =
   let open Field in
   function
+  | Action -> "Aktion"
+  | ActorSpec -> "Akteur"
   | Admin -> "Administrator"
   | AdminComment -> "Adminkommentar"
   | AdminHint -> "Hint für Administratoren"
@@ -52,6 +54,8 @@ let rec field_to_string =
   | EmailSuffix -> "E-Mail Endung"
   | EmailText -> "E-Mail Text"
   | End -> "Ende"
+  | Exclude -> "Ausgenommen"
+  | ExcludeRolesOf -> "Ausgenommen (Rollen von jmd)"
   | Experiment -> "Experiment"
   | Experimenter -> "Experimenter"
   | ExperimentReminderLeadTime ->
@@ -168,6 +172,8 @@ let rec field_to_string =
   | Street -> "Strasse"
   | Styles -> "Styles"
   | Tag -> "Tag"
+  | Target -> "Target"
+  | TargetSpec -> "Target"
   | Template -> "Template"
   | Tenant -> "Tenant"
   | TenantDisabledFlag -> "Deaktiviert"
@@ -397,10 +403,15 @@ let rec error_to_string = function
     "Falls ein Account zu der von dir eingegebenen E-Mail Adresse existiert,  \
      wird dir ein E-Mail mit einem Link zur Passwort zurücksetzung gesendet."
   | PasswordResetInvalidData -> "Ungültiges Token oder Passwort."
-  | PoolContextNotFound -> "Kontext konnte nicht gefunden werden."
+  | PermissionDeniedCreateRule ->
+    "Berechtigung zur Erstellung der Regel verweigert."
+  | PermissionDeniedGrantRole -> "Berechtigung der Rollenzuweisung verweigert."
+  | PermissionDeniedRevokeRole ->
+    "Berechtigung für den Widerruf der Rolle verweigert."
   | PickMessageChannel ->
     "Kein Nachrichtenkanal wurde ausgewählt für die Benachrichtigung der \
      Kontakte."
+  | PoolContextNotFound -> "Kontext konnte nicht gefunden werden."
   | QueryNotCompatible (f1, f2) ->
     Format.asprintf
       "%s ist nicht kompatibel mit %s."

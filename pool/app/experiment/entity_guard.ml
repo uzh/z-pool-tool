@@ -27,7 +27,8 @@ module Access = struct
     Or [ SpecificRole (`Recruiter (target_of id)); SpecificRole `RecruiterAll ]
   ;;
 
-  let index = One (Action.Read, TargetSpec.Entity `Experiment)
+  let index_action = Action.Read
+  let index = One (index_action, TargetSpec.Entity `Experiment)
   let create = One (Action.Create, TargetSpec.Entity `Experiment)
   let read = experiment Action.Read
   let update = experiment Action.Update

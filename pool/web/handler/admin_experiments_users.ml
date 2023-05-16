@@ -24,10 +24,10 @@ let index role req =
       | `Experimenter -> [ `Experimenter id ]
     in
     let%lwt applicable_admins =
-      Admin.find_all_with_role database_label [ `Admin ] ~exclude:current_roles
+      Admin.find_all_with_role database_label `Admin ~exclude:current_roles
     in
     let%lwt currently_assigned =
-      Admin.find_all_with_role database_label current_roles ~exclude:[]
+      Admin.find_all_with_roles database_label current_roles ~exclude:[]
     in
     let* experiment = Experiment.find database_label id in
     Page.Admin.Experiments.users

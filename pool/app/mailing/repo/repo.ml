@@ -104,20 +104,25 @@ module Sql = struct
       (start_at, end_at, ignore_id)
   ;;
 
+  let find_binary_experiment_id_sql =
+    {sql|
+      SELECT pool_mailing.experiment_uuid
+      FROM pool_mailing
+      WHERE pool_mailing.uuid = ?
+    |sql}
+  ;;
+
   let find_experiment_id_request =
     let open Caqti_request.Infix in
     {sql|
       SELECT
         LOWER(CONCAT(
-          SUBSTR(HEX(pool_experiments.uuid), 1, 8), '-',
-          SUBSTR(HEX(pool_experiments.uuid), 9, 4), '-',
-          SUBSTR(HEX(pool_experiments.uuid), 13, 4), '-',
-          SUBSTR(HEX(pool_experiments.uuid), 17, 4), '-',
-          SUBSTR(HEX(pool_experiments.uuid), 21)
+          SUBSTR(HEX(pool_mailing.experiment_uuid), 1, 8), '-',
+          SUBSTR(HEX(pool_mailing.experiment_uuid), 9, 4), '-',
+          SUBSTR(HEX(pool_mailing.experiment_uuid), 13, 4), '-',
+          SUBSTR(HEX(pool_mailing.experiment_uuid), 17, 4), '-',
+          SUBSTR(HEX(pool_mailing.experiment_uuid), 21)
         ))
-      FROM pool_mailing
-        LEFT JOIN pool_experiments
-        ON pool_mailing.experiment_uuid = pool_experiments.uuid
       WHERE
         pool_mailing.uuid = UNHEX(REPLACE(?, '-', ''))
     |sql}

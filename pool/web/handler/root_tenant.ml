@@ -118,7 +118,7 @@ let create_operator req =
       let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
       urlencoded
       |> decode
-      >>= handle ~roles:(Guard.RoleSet.singleton `OperatorAll) ~tags
+      >>= handle ~roles:(Guard.RoleSet.singleton `Operator) ~tags
       |> Lwt_result.lift
     in
     let handle =

@@ -53,7 +53,8 @@ module RuleSet = struct
 
   let experimenter id =
     let actor = Act.Entity (`Experimenter (target_of id)) in
-    [ actor, Update, Tar.Id (`Experiment, target_of id)
+    [ actor, Read, Tar.Id (`Experiment, target_of id)
+    ; actor, Update, Tar.Id (`Experiment, target_of id)
     ; actor, Read, Tar.Entity `Location
     ]
   ;;

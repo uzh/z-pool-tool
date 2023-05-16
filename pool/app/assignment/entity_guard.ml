@@ -1,21 +1,12 @@
 let target_of = Guard.Uuid.target_of Entity.Id.value
 
-module Target = struct
-  let (_ : (unit, string) result) =
-    let find_parent =
-      Guard.Utils.create_simple_dependency_with_pool
-        `Assignment
-        `Session
-        Repo.find_session_id
-        Pool_common.Id.of_string
-        Pool_common.Id.value
-    in
-    Guard.Persistence.Dependency.register
-      ~parent:`Session
-      `Assignment
-      find_parent
-  ;;
+let relation ?ctx () =
+  let open Guard in
+  let to_target = Relation.Query.create Repo.Sql.find_binary_session_id_sql in
+  Persistence.Relation.add ?ctx ~to_target ~target:`Session `Assignment
+;;
 
+module Target = struct
   type t = Entity.t [@@deriving eq, show]
 
   let to_authorizable ?ctx t =

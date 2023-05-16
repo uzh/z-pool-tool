@@ -1,6 +1,6 @@
 let root =
   Command_utils.make_no_args "migrate.root" "Migrate root database" (fun () ->
-    Database.Root.setup ();
+    let () = Database.Root.add () in
     let%lwt () = Database.Root.Migration.run () in
     Lwt.return_some ())
 ;;
@@ -10,8 +10,8 @@ let tenants =
     "migrate.tenant"
     "Migrate tenant databases"
     (fun () ->
-    Database.Root.setup ();
-    let%lwt db_pools = Database.Tenant.setup () in
+    let () = Database.Root.add () in
+    let%lwt db_pools = Database.Tenant.setup_core () in
     let%lwt () = Database.Tenant.Migration.run db_pools () in
     Lwt.return_some ())
 ;;

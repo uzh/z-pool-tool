@@ -14,6 +14,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 - filter by no-show count
 - added session expiration
 - block email addresses after multiple failed login attempts
+- rules page in settings
+- admin roles to the detail page and grant/revoke role to edit page
 
 ### Changed
 
@@ -25,6 +27,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 - using uuids instead of ids as foreign keys in invitations and mailings tables
 - updated session close view and assignments to store no-shows instead of show-ups
 - added stronger password policy
+- migrate search endpoints (experiment/location)
 
 ### Fixed
 

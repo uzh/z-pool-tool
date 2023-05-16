@@ -69,12 +69,20 @@ end
 val sexp_of_t : t -> Sexplib.Sexp.t
 val is_from_root : t -> bool
 val user_is_admin : user -> bool
+val get_admin_user : user -> (Admin.t, Pool_common.Message.error) result
 
 module Utils : sig
   val find_authorizable_opt
-    :  Pool_database.Label.t
+    :  ?admin_only:bool
+    -> Pool_database.Label.t
     -> user
     -> Role.Actor.t Guard.Actor.t option Lwt.t
+
+  val find_authorizable
+    :  ?admin_only:bool
+    -> Pool_database.Label.t
+    -> user
+    -> (Role.Actor.t Guard.Actor.t, Pool_common.Message.error) result Lwt.t
 end
 
 module Logger : sig

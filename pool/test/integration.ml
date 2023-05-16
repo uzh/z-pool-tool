@@ -41,6 +41,10 @@ let suite =
               `Slow
               guest_cannot_update_language
           ; test_case "use parametric roles" `Slow operator_works
+          ; test_case
+              "grant valid and invalid roles"
+              `Slow
+              Admin_role_assignment.grant_roles
           ] )
     ; ( "partial_update"
       , Partial_update.

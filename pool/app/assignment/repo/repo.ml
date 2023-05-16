@@ -232,6 +232,14 @@ module Sql = struct
       Entity.(Id.value m.id, Contact.id m.contact |> Contact.Id.value)
   ;;
 
+  let find_binary_session_id_sql =
+    {sql|
+      SELECT pool_assignments.session_uuid
+      FROM pool_assignments
+      WHERE pool_assignments.uuid = ?
+    |sql}
+  ;;
+
   let find_session_id_request =
     let open Caqti_request.Infix in
     {sql|

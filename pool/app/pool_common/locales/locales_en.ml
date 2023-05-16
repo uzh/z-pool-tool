@@ -3,6 +3,8 @@ open Entity_message
 let rec field_to_string =
   let open Field in
   function
+  | Action -> "action"
+  | ActorSpec -> "actor"
   | Admin -> "admin"
   | AdminComment -> "admin comment"
   | AdminHint -> "hint for admins"
@@ -52,6 +54,8 @@ let rec field_to_string =
   | EmailSuffix -> "email suffix"
   | EmailText -> "email text"
   | End -> "end"
+  | Exclude -> "exclude"
+  | ExcludeRolesOf -> "exclude roles of"
   | Experiment -> "experiment"
   | ExperimentReminderLeadTime ->
     Format.asprintf "experiment specific %s" (field_to_string LeadTime)
@@ -169,6 +173,8 @@ let rec field_to_string =
   | Street -> "street"
   | Styles -> "styles"
   | Tag -> "tag"
+  | Target -> "target"
+  | TargetSpec -> "target"
   | Template -> "template"
   | Tenant -> "tenant"
   | TenantDisabledFlag -> "disabled"
@@ -371,9 +377,12 @@ let rec error_to_string = function
     "You will receive an email with a link to reset your password if an  \
      account with the provided email is existing."
   | PasswordResetInvalidData -> "Invalid token or password provided"
-  | PoolContextNotFound -> "Context could not be found."
+  | PermissionDeniedCreateRule -> "Permission denied to create the rule"
+  | PermissionDeniedGrantRole -> "Permission denied to grant the role"
+  | PermissionDeniedRevokeRole -> "Permission denied to revoke the role"
   | PickMessageChannel ->
     "No message channel has been selected for the notification of contacts."
+  | PoolContextNotFound -> "Context could not be found."
   | QueryNotCompatible (f1, f2) ->
     Format.asprintf
       "%s is not compatible with %s."

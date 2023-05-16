@@ -33,10 +33,11 @@ module NavElements = struct
       [ "/admin/custom-fields", CustomFields, Custom_field.Guard.Access.index
       ; "/admin/filter", Filter, Filter.Guard.Access.index
       ; "/admin/locations", Locations, Pool_location.Guard.Access.index
-      ; "/admin/settings", SystemSettings, Settings.Guard.Access.index
-      ; "/admin/settings/smtp", Smtp, Pool_tenant.Guard.Access.Smtp.index
-      ; "/admin/settings/schedules", Schedules, Schedule.Guard.Access.index
       ; "/admin/settings/queue", Queue, Queue.Guard.Access.index
+      ; "/admin/settings", SystemSettings, Settings.Guard.Access.index
+      ; "/admin/settings/schedules", Schedules, Schedule.Guard.Access.index
+      ; "/admin/settings/smtp", Smtp, Pool_tenant.Guard.Access.Smtp.index
+      ; "/admin/settings/rules", Rules, Guard.Access.manage_rules
       ; ( "/admin/message-template"
         , MessageTemplates
         , Message_template.Guard.Access.index )

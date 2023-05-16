@@ -45,7 +45,7 @@ module Access = struct
     One (action, TargetSpec.Id (`Contact, target_id))
   ;;
 
-  let index = One (Action.Read, TargetSpec.Entity `Assignment)
+  let index = One (Action.Read, TargetSpec.Entity `Contact)
   let create = One (Action.Create, TargetSpec.Entity `Contact)
   let read = contact Action.Read
   let update = contact Action.Update

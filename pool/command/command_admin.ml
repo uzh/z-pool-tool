@@ -86,7 +86,7 @@ let create_root_admin =
       let%lwt (admin : Sihl_user.t) =
         Service.User.create_admin ~ctx ~name ~given_name ~password email
       in
-      let%lwt () = grant_role ctx admin `OperatorAll in
+      let%lwt () = grant_role ctx admin `Operator in
       Lwt.return_some ()
     | Some _ -> failwith "The user already exists."
   in
@@ -108,7 +108,7 @@ Example: admin.root.create example@mail.com securePassword Max Muster
     ~help
     (function
     | [ email; password; given_name; name ] ->
-      let () = Database.Root.setup () in
+      let%lwt () = Database.Root.setup () in
       create_exn email password given_name name
     | _ -> Command_utils.failwith_missmatch help)
 ;;

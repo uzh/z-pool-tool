@@ -51,7 +51,7 @@ let generate_events (experiments : Experiment.Id.t list) =
 
 let create pool =
   let open Utils.Lwt_result.Infix in
-  Experiment.find_all pool ()
+  Experiment.find_all pool
   ||> fst
   ||> CCList.map (fun m -> m.Experiment.id)
   ||> generate_events

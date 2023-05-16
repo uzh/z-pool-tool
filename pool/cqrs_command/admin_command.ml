@@ -1,6 +1,5 @@
 module Conformist = Pool_common.Utils.PoolConformist
 module User = Pool_user
-module Id = Pool_common.Id
 
 let src = Logs.Src.create "admin.cqrs"
 
@@ -17,7 +16,7 @@ module CreateAdmin : sig
   val handle
     :  ?tags:Logs.Tag.set
     -> ?allowed_email_suffixes:Settings.EmailSuffix.t list
-    -> ?id:Pool_common.Id.t
+    -> ?id:Admin.Id.t
     -> ?roles:Guard.RoleSet.t
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result

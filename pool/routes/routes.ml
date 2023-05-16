@@ -224,16 +224,14 @@ module Admin = struct
       [ get "" ~middlewares:[ Access.index ] index
       ; get "/create" ~middlewares:[ Access.create ] new_form
       ; post "" ~middlewares:[ Access.create ] create
+      ; post "/search" ~middlewares:[ Access.search ] search
       ; choose ~scope:(add_key Location) specific
       ]
     in
-    let filter_form
-      (toggle_key, toggle_predicate_type, add_predicate, search_experiments)
-      =
+    let filter_form (toggle_key, toggle_predicate_type, add_predicate) =
       [ post "/toggle-key" toggle_key
       ; post "/toggle-predicate-type" toggle_predicate_type
       ; post "/add-predicate" add_predicate
-      ; post "/experiments" search_experiments
       ]
     in
     let filter =
@@ -243,11 +241,7 @@ module Admin = struct
           [ get "/edit" edit
           ; post "" update_template
           ; choose
-              (filter_form
-                 ( toggle_key
-                 , toggle_predicate_type
-                 , add_predicate
-                 , search_experiments ))
+              (filter_form (toggle_key, toggle_predicate_type, add_predicate))
           ]
       in
       Create.
@@ -255,11 +249,7 @@ module Admin = struct
         ; post "" ~middlewares:[ Access.create ] create_template
         ; get "/new" ~middlewares:[ Access.create ] new_form
         ; choose
-            (filter_form
-               ( toggle_key
-               , toggle_predicate_type
-               , add_predicate
-               , search_experiments ))
+            (filter_form (toggle_key, toggle_predicate_type, add_predicate))
             ~middlewares:[ Access.create ]
         ; choose
             ~middlewares:[ Access.update ]
@@ -417,10 +407,7 @@ module Admin = struct
           choose
             (filter_form
                Experiments.Filter.(
-                 ( toggle_key
-                 , toggle_predicate_type
-                 , add_predicate
-                 , search_experiments )))
+                 toggle_key, toggle_predicate_type, add_predicate))
             ~middlewares
         in
         let specific =
@@ -475,6 +462,7 @@ module Admin = struct
         [ get "" ~middlewares:[ Access.index ] index
         ; post "" ~middlewares:[ Access.create ] create
         ; get "/create" ~middlewares:[ Access.create ] new_form
+        ; post "/search" ~middlewares:[ Access.search ] search
         ; choose ~scope:(add_key Experiment) specific
         ]
     in
@@ -483,6 +471,9 @@ module Admin = struct
       let specific =
         [ get "" ~middlewares:[ Access.read ] detail
         ; get "/edit" ~middlewares:[ Access.update ] edit
+        ; post "/toggle-role" ~middlewares:[ Access.read ] handle_toggle_role
+        ; post "/grant-role" ~middlewares:[ Access.grant_role ] grant_role
+        ; post "/revoke-role" ~middlewares:[ Access.revoke_role ] revoke_role
         ]
       in
       [ get "" ~middlewares:[ Access.index ] index
@@ -577,6 +568,17 @@ module Admin = struct
     in
     let settings =
       let open Settings in
+      let queue =
+        let open Queue in
+        let specific = [ get "" ~middlewares:[ Access.read ] detail ] in
+        [ get "" ~middlewares:[ Access.index ] show
+        ; choose ~scope:(Queue |> url_key) specific
+        ]
+      in
+      let rules =
+        let open Rules in
+        [ get "" ~middlewares:[ Access.index ] show ]
+      in
       let smtp =
         let open Smtp in
         let specific =
@@ -589,16 +591,10 @@ module Admin = struct
         ; choose ~scope:(Smtp |> url_key) specific
         ]
       in
-      let queue =
-        let open Queue in
-        let specific = [ get "" ~middlewares:[ Access.read ] detail ] in
-        [ get "" ~middlewares:[ Access.index ] show
-        ; choose ~scope:(Queue |> url_key) specific
-        ]
-      in
       [ get "" ~middlewares:[ Access.index ] show
       ; post "/:action" ~middlewares:[ Access.update ] update_settings
       ; choose ~scope:"/queue" queue
+      ; choose ~scope:"/rules" rules
       ; choose ~scope:"/smtp" smtp
       ; get "/schedules" ~middlewares:[ Schedule.Access.index ] Schedule.show
       ]

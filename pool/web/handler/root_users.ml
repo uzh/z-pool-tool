@@ -89,6 +89,6 @@ end = struct
   ;;
 
   let toggle_status =
-    Command.ToggleStatus.effects |> root_effects |> Guardian.validate_generic
+    Command.ToggleStatus.effects |> Guardian.validate_admin_entity
   ;;
 end

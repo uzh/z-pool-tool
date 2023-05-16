@@ -201,6 +201,8 @@ val find_overlaps : Pool_database.Label.t -> t -> t list Lwt.t
 val find_current : Pool_database.Label.t -> t list Lwt.t
 
 module Guard : sig
+  val relation : ?ctx:(string * string) list -> unit -> unit Lwt.t
+
   module Target : sig
     val to_authorizable
       :  ?ctx:(string * string) list

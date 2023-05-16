@@ -71,7 +71,7 @@ let operator_works _ () =
       Persistence.Actor.grant_roles
         ~ctx
         (actor |> Actor.id)
-        (RoleSet.singleton (`Operator (target' |> Target.id)))
+        (RoleSet.singleton `Operator)
       >|- to_error
       ||> CCFun.tap (fun _ -> Persistence.Cache.clear ())
     in
@@ -80,7 +80,7 @@ let operator_works _ () =
       let open Guard in
       Persistence.Rule.save
         ~ctx
-        ( ActorSpec.Entity (`Operator (target' |> Target.id))
+        ( ActorSpec.Entity `Operator
         , Action.Manage
         , TargetSpec.Id (`Contact, target' |> Target.id) )
       >|- to_error

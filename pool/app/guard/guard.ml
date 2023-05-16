@@ -39,36 +39,10 @@ let root_permissions : Rule.t list =
   CCList.fold_product
     (fun acc actor role -> acc @ [ Act.Entity actor, Manage, Tar.Entity role ])
     init
-    [ `OperatorAll; `System; `Root ]
-    Role.Target.all_entities
+    [ `Operator; `System; `Root ]
+    Role.Target.all
 ;;
 
-module Utils = struct
-  include Guardian.Utils
-
-  let create_simple_dependency_with_pool
-    kind
-    parent_kind
-    fcn_res
-    kind_id_encode
-    parent_id_decode
-    ?ctx
-    (action, spec)
-    =
-    let open Utils.Lwt_result.Infix in
-    let pool = ctx |> CCFun.flip CCOption.bind Pool_database.of_ctx_opt in
-    match[@warning "-4"] pool, spec with
-    | Some pool, TargetSpec.Id (typ, id) when typ = kind ->
-      let id = id |> Uuid.Target.to_string |> kind_id_encode in
-      fcn_res pool id
-      ||> (function
-            | Ok id ->
-              let id = Uuid.target_of parent_id_decode id in
-              Some (action, TargetSpec.Id (parent_kind, id))
-            | Error _ -> None)
-      |> Lwt_result.ok
-    | (_, TargetSpec.Id (typ, _) | _, TargetSpec.Entity typ) when typ = kind ->
-      Some (action, TargetSpec.Entity parent_kind) |> Lwt.return_ok
-    | _ -> Lwt.return_error "Invalid entity provided"
-  ;;
+module Access = struct
+  let manage_rules = ValidationSet.SpecificRole `ManageRules
 end
