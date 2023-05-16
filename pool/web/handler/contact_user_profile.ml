@@ -156,7 +156,9 @@ let update_password req =
 
 let update_phone_number req =
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-  let result ({ Pool_context.database_label; query_language; _ } as context) =
+  let result
+    ({ Pool_context.database_label; language; query_language; _ } as context)
+    =
     let open Utils.Lwt_result.Infix in
     let tags = tags req in
     Utils.Lwt_result.map_error (fun msg ->
@@ -170,16 +172,17 @@ let update_phone_number req =
          |> Lwt_result.lift
        in
        let token = Pool_common.Token.create () in
-       let message =
-         Format.asprintf
-           {|Enter the following code to verify your phone number: %s|}
-           (Pool_common.Token.value token)
-       in
-       let%lwt () =
-         Pool_tenant.Service.TextMessage.send
+       let* () =
+         let* { Pool_context.Tenant.tenant; _ } =
+           Pool_context.Tenant.find req |> Lwt_result.lift
+         in
+         Message_template.PhoneVerification.create_text_message
            database_label
-           ~text:message
-           ~recipient:phone_number
+           language
+           tenant
+           phone_number
+           token
+         |>> Pool_tenant.Service.TextMessage.send database_label
        in
        let* events =
          Command.AddPhoneNumber.handle ~tags (contact, phone_number, token)

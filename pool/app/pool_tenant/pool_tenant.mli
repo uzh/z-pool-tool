@@ -390,10 +390,18 @@ module Service : sig
   end
 
   module TextMessage : sig
-    val send
-      :  Pool_database.Label.t
-      -> text:string
-      -> recipient:Pool_user.PhoneNumber.t
-      -> unit Lwt.t
+    module TextMessageContent : sig
+      type t
+
+      val render : string -> (string * string) list -> t
+    end
+
+    type t =
+      { recipient : Pool_user.PhoneNumber.t
+      ; sender : Title.t
+      ; text : TextMessageContent.t
+      }
+
+    val send : Pool_database.Label.t -> t -> unit Lwt.t
   end
 end

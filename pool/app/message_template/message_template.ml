@@ -327,6 +327,30 @@ module PasswordReset = struct
   ;;
 end
 
+module PhoneVerification = struct
+  let message_params token = [ "token", Pool_common.Token.value token ]
+
+  let create_text_message
+    pool
+    preferred_language
+    (tenant : Pool_tenant.t)
+    phone_number
+    token
+    =
+    let open Pool_tenant.Service.TextMessage in
+    let open Utils.Lwt_result.Infix in
+    let* { sms_text; _ }, _ =
+      find_by_label_to_send pool preferred_language Label.PhoneVerification
+    in
+    let content = TextMessageContent.render sms_text (message_params token) in
+    Lwt_result.return
+      { recipient = phone_number
+      ; sender = tenant.Pool_tenant.title
+      ; text = content
+      }
+  ;;
+end
+
 module ProfileUpdateTrigger = struct
   let email_params tenant_url contact =
     let profile_url = create_public_url tenant_url "/user/personal-details" in

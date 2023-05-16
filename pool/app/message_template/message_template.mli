@@ -11,6 +11,7 @@ module Label : sig
     | ExperimentInvitation
     | PasswordChange
     | PasswordReset
+    | PhoneVerification
     | ProfileUpdateTrigger
     | SignUpVerification
     | SessionCancellation
@@ -257,6 +258,19 @@ module PasswordReset : sig
     -> layout
     -> Sihl_user.t
     -> (Sihl_email.t, Pool_common.Message.error) result Lwt.t
+end
+
+module PhoneVerification : sig
+  val message_params : Pool_common.Token.t -> (string * string) list
+
+  val create_text_message
+    :  Pool_database.Label.t
+    -> Pool_common.Language.t
+    -> Pool_tenant.t
+    -> Pool_user.PhoneNumber.t
+    -> Pool_common.Token.t
+    -> (Pool_tenant.Service.TextMessage.t, Pool_common.Message.error) result
+       Lwt.t
 end
 
 module ProfileUpdateTrigger : sig

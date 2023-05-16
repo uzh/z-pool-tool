@@ -237,6 +237,9 @@ let message_template_help
       |> create_public_url_with_params tenant.Pool_tenant.url "/reset-password/"
     in
     PasswordReset.email_params reset_url (create_sihl_user ())
+  | PhoneVerification ->
+    let token = Pool_common.Token.create () in
+    PhoneVerification.message_params token
   | ProfileUpdateTrigger ->
     ProfileUpdateTrigger.email_params tenant.Pool_tenant.url (create_contact ())
   | SessionCancellation ->

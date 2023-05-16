@@ -35,6 +35,11 @@ let password_reset = function
   | En -> Default_en.password_reset
 ;;
 
+let phone_verification = function
+  | De -> Default_de.phone_verification
+  | En -> Default_en.phone_verification
+;;
+
 let profile_update_trigger = function
   | De -> Default_de.profile_update_trigger
   | En -> Default_en.profile_update_trigger
@@ -74,6 +79,7 @@ let default_values_tenant =
   ; experiment_invitation
   ; password_change
   ; password_reset
+  ; phone_verification
   ; profile_update_trigger
   ; session_cancellation
   ; session_reminder
