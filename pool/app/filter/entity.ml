@@ -502,29 +502,18 @@ module Operator = struct
   ;;
 
   let of_yojson yojson =
-    let rec find_operator lst item =
-      match lst with
+    let rec find_operator item = function
       | [] -> None
-      | (operator, fnc) :: tl ->
-        if CCString.equal operator item
-        then fnc yojson
-        else find_operator tl item
+      | (operator, fnc) :: _ when CCString.equal operator item -> fnc yojson
+      | _ :: tl -> find_operator item tl
     in
     (match yojson with
-     | `String str -> find_operator encode_operators str
+     | `String str -> find_operator str encode_operators
      | _ -> None)
     |> CCOption.to_result Pool_common.Message.(Invalid Field.Operator)
   ;;
 
-  let yojson_of_t m : Yojson.Safe.t =
-    (match m with
-     | Equality o -> Equality.show o
-     | String o -> StringM.show o
-     | Size o -> Size.show o
-     | List o -> ListM.show o
-     | Existence o -> Existence.show o)
-    |> fun str -> `String str
-  ;;
+  let yojson_of_t : t -> Yojson.Safe.t = CCFun.(show %> fun str -> `String str)
 
   let operator_of_hardcoded =
     let open Key in
@@ -548,9 +537,9 @@ module Operator = struct
     | Str -> all_equality_operators @ all_string_operators
   ;;
 
-  let operators_of_key (key : Key.human) =
+  let operators_of_key : Key.human -> t list =
     let open Key in
-    match key with
+    function
     | CustomField field ->
       (field |> type_of_custom_field |> input_type_to_operator)
       @ all_existence_operators
@@ -627,7 +616,8 @@ module Predicate = struct
         let error = Error Message.(Invalid Field.Value) in
         match operator with
         | Existence _ -> opt |> CCOption.value ~default:(Ok NoValue)
-        | Equality _ | String _ | Size _ | List _ -> CCOption.value ~default:error opt
+        | Equality _ | String _ | Size _ | List _ ->
+          CCOption.value ~default:error opt
       in
       Ok (create key operator value)
     | _ -> Error Pool_common.Message.(Invalid Field.Predicate)
