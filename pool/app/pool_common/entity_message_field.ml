@@ -18,6 +18,7 @@ type t =
   | AllowUninvitedSignup [@name "allow_uninvited_signup"]
       [@printer go "allow_uninvited_signup"]
   | Answer [@name "answer"] [@printer go "answer"]
+  | AreaCode [@name "area_code"] [@printer go "area_code"]
   | AssetId [@name "asset_id"] [@printer go "asset_id"]
   | Assignment [@name "assignment"] [@printer go "assignment"]
   | AssignmentCount [@name "assignment_count"] [@printer go "assignment_count"]

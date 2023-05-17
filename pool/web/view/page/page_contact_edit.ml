@@ -288,10 +288,7 @@ let contact_information
           ; form
               ~a:(form_attrs "/user/phone/update")
               [ csrf_element csrf ()
-              ; input_element (* TODO: Add 2 part input (pre and nr) *)
-                  language
-                  `Text
-                  Message.Field.PhoneNumber
+              ; phone_number_input ~required:true ()
               ; div
                   ~a:[ a_class [ "flexrow" ] ]
                   [ submit_element

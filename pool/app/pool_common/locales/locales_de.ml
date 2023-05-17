@@ -12,6 +12,7 @@ let rec field_to_string =
   | AdminViewOnly -> "Nur für Admins ersichtlich"
   | AllowUninvitedSignup -> "Einschreiben nicht eingeladener Kontakte erlauben"
   | Answer -> "Antwort"
+  | AreaCode -> "Vorwahl"
   | AssetId -> "Anlagen Identifier"
   | Assignment -> "Anmeldung"
   | AssignmentCount -> "Anmeldungen"

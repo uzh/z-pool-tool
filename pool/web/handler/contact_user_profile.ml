@@ -173,9 +173,20 @@ let update_phone_number req =
         msg, "/user/contact-information", [ urlencoded_to_flash urlencoded ]))
     @@ let* contact = Pool_context.find_contact context |> Lwt_result.lift in
        let* phone_number =
-         let open CCResult.Infix in
-         HttpUtils.find_in_urlencoded PoolField.PhoneNumber urlencoded
-         >>= Pool_user.PhoneNumber.create
+         let find field =
+           HttpUtils.find_in_urlencoded field urlencoded |> Lwt_result.lift
+         in
+         let* phone_number = find PoolField.PhoneNumber in
+         let* area_code = find PoolField.AreaCode in
+         area_code
+         |> CCInt.of_string
+         |> (fun code ->
+              CCOption.bind code Utils.PhoneCodes.find_code
+              |> function
+              | None -> Error Pool_common.Message.(Invalid Field.AreaCode)
+              | Some (code, _) ->
+                Format.asprintf "+%i%s" code phone_number
+                |> Pool_user.PhoneNumber.create)
          |> Lwt_result.lift
        in
        let token = Pool_common.Token.create () in

@@ -256,7 +256,3 @@ let countries =
 ;;
 
 let find_country_name = CCFun.flip (CCList.assoc ~eq:( = )) countries
-
-(* TODO: Add missing codes *)
-let phone_codes = [ "CH", "+41"; "DE", "+49" ]
-let find_phone_code code = CCList.assoc_opt ~eq:( = ) code phone_codes

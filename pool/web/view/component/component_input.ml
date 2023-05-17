@@ -668,3 +668,32 @@ let reset_form_button language =
     ; txt Pool_common.(Utils.control_to_string language Message.Reset)
     ]
 ;;
+
+let phone_number_input ?(required = false) () =
+  let attrs = if required then [ a_required () ] else [] in
+  let to_option =
+    CCList.map (fun (code, label) ->
+      option ~a:[ a_value (CCInt.to_string code) ] (txt label))
+  in
+  let options = Utils.PhoneCodes.all_human |> to_option in
+  div
+    ~a:[ a_class [ "flexrow"; "flex-gap" ] ]
+    [ div
+        ~a:[ a_class [ "select" ] ]
+        [ select
+            ~a:([ a_name Pool_common.Message.Field.(show AreaCode) ] @ attrs)
+            options
+        ]
+    ; div
+        ~a:[ a_class [ "form-group" ] ]
+        [ input
+            ~a:
+              ([ a_name Pool_common.Message.Field.(show PhoneNumber)
+               ; a_class [ "input" ]
+               ; a_input_type `Number
+               ]
+               @ attrs)
+            ()
+        ]
+    ]
+;;
