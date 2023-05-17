@@ -9,20 +9,23 @@ let mailing_title (s : Mailing.t) =
   I18n.MailingDetailTitle (s.Mailing.start_at |> Mailing.StartAt.value)
 ;;
 
+let append_suffied suffix path =
+  match suffix with
+  | None -> path
+  | Some suffix -> Format.asprintf "%s/%s" path suffix
+;;
+
 let mailings_path ?suffix experiment_id =
-  [ Format.asprintf
-      "/admin/experiments/%s/mailings"
-      (Experiment.Id.value experiment_id)
-  ]
-  @ CCOption.map_or ~default:[] CCList.pure suffix
-  |> CCString.concat "/"
+  Format.asprintf
+    "/admin/experiments/%s/mailings"
+    (Experiment.Id.value experiment_id)
+  |> append_suffied suffix
 ;;
 
 let detail_mailing_path ?suffix experiment_id mailing =
   let open Mailing in
-  [ mailings_path ~suffix:(Id.value mailing.id) experiment_id ]
-  @ CCOption.map_or ~default:[] CCList.pure suffix
-  |> CCString.concat "/"
+  mailings_path ~suffix:(Id.value mailing.id) experiment_id
+  |> append_suffied suffix
 ;;
 
 let distribution_sort_select language ?field current_order =
@@ -103,7 +106,9 @@ module List = struct
       form
         ~a:
           [ a_method `Post
-          ; a_action (detail_mailing_path ~suffix:target experiment_id mailing)
+          ; a_action
+              (detail_mailing_path ~suffix:target experiment_id mailing
+               |> Sihl.Web.externalize_path)
           ; a_user_data
               "confirmable"
               (Pool_common.Utils.confirmable_to_string language confirm_text)
@@ -431,7 +436,7 @@ let form
   let action, submit =
     match mailing with
     | None ->
-      ( mailings_path experiment.Experiment.id |> Sihl.Web.externalize_path
+      ( mailings_path experiment.Experiment.id
       , Message.Create (Some Field.Mailing) )
     | Some m ->
       ( m |> detail_mailing_path experiment.Experiment.id
@@ -446,7 +451,7 @@ let form
              ~a:
                [ a_class [ "stack" ]
                ; a_method `Post
-               ; a_action action
+               ; a_action (action |> Sihl.Web.externalize_path)
                ; a_user_data "detect-unsaved-changes" ""
                ]
              [ csrf_element csrf ()
