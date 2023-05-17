@@ -251,7 +251,7 @@ val filedeleted : Mapping.Id.t -> event
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
-val handle_event : Pool_tenant.Database.Label.t -> event -> unit Lwt.t
+val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
 
 module Repo : sig
   module Id : sig

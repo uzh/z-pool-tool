@@ -1,4 +1,3 @@
-module Database = Pool_database
 module Id : module type of Pool_common.Id
 
 module SmtpAuth : sig
@@ -90,16 +89,16 @@ module SmtpAuth : sig
   end
 
   val find
-    :  Database.Label.t
+    :  Pool_database.Label.t
     -> Id.t
     -> (t, Pool_common.Message.error) Lwt_result.t
 
   val find_by_label
-    :  Database.Label.t
+    :  Pool_database.Label.t
     -> (t, Pool_common.Message.error) Lwt_result.t
 
   val find_full_by_label
-    :  Database.Label.t
+    :  Pool_database.Label.t
     -> (Write.t, Pool_common.Message.error) Lwt_result.t
 end
 
@@ -109,7 +108,7 @@ module Description : Pool_common.Model.StringSig
 module Url : sig
   include Pool_common.Model.StringSig
 
-  val of_pool : Database.Label.t -> t Lwt.t
+  val of_pool : Pool_database.Label.t -> t Lwt.t
 end
 
 module Styles : sig
@@ -216,7 +215,7 @@ type t =
   ; title : Title.t
   ; description : Description.t option
   ; url : Url.t
-  ; database_label : Database.Label.t
+  ; database_label : Pool_database.Label.t
   ; styles : Styles.t option
   ; icon : Icon.t option
   ; logos : Logos.t
@@ -239,7 +238,7 @@ module Write : sig
     ; title : Title.t
     ; description : Description.t option
     ; url : Url.t
-    ; database : Database.t
+    ; database : Pool_database.t
     ; styles : Styles.Write.t option
     ; icon : Icon.Write.t option
     ; maintenance : Maintenance.t
@@ -253,7 +252,7 @@ module Write : sig
     :  Title.t
     -> Description.t option
     -> Url.t
-    -> Database.t
+    -> Pool_database.t
     -> Styles.Write.t option
     -> Icon.Write.t option
     -> Pool_common.Language.t
@@ -279,7 +278,7 @@ type event =
   | LogosUploaded of logo_mappings
   | LogoDeleted of t * Pool_common.Id.t
   | DetailsEdited of Write.t * update
-  | DatabaseEdited of Write.t * Database.t
+  | DatabaseEdited of Write.t * Pool_database.t
   | SmtpCreated of SmtpAuth.Write.t
   | SmtpEdited of SmtpAuth.t
   | SmtpPasswordEdited of SmtpAuth.update_password
@@ -287,7 +286,7 @@ type event =
   | ActivateMaintenance of Write.t
   | DeactivateMaintenance of Write.t
 
-val handle_event : Database.Label.t -> event -> unit Lwt.t
+val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
@@ -295,11 +294,11 @@ val find : Id.t -> (t, Pool_common.Message.error) Lwt_result.t
 val find_full : Id.t -> (Write.t, Pool_common.Message.error) Lwt_result.t
 
 val find_by_label
-  :  Database.Label.t
+  :  Pool_database.Label.t
   -> (t, Pool_common.Message.error) Lwt_result.t
 
 val find_all : unit -> t list Lwt.t
-val find_databases : unit -> Database.t list Lwt.t
+val find_databases : unit -> Pool_database.t list Lwt.t
 
 type handle_list_recruiters = unit -> Sihl_user.t list Lwt.t
 type handle_list_tenants = unit -> t list Lwt.t
@@ -310,10 +309,10 @@ module Selection : sig
   val equal : t -> t -> bool
   val pp : Format.formatter -> t -> unit
   val show : t -> string
-  val create : Url.t -> Database.Label.t -> t
+  val create : Url.t -> Pool_database.Label.t -> t
   val find_all : unit -> t list Lwt.t
   val url : t -> string
-  val label : t -> Database.Label.t
+  val label : t -> Pool_database.Label.t
 end
 
 val file_fields : Pool_common.Message.Field.t list
@@ -372,18 +371,18 @@ module Service : sig
 
       val inbox : unit -> Sihl_email.t list
       val clear_inbox : unit -> unit
-      val prepare : Database.Label.t -> Sihl_email.t -> prepared Lwt.t
+      val prepare : Pool_database.Label.t -> Sihl_email.t -> prepared Lwt.t
     end
 
     module Job : sig
       val send : Sihl_email.t Sihl_queue.job
     end
 
-    val sender_of_pool : Database.Label.t -> Settings.ContactEmail.t Lwt.t
+    val sender_of_pool : Pool_database.Label.t -> Settings.ContactEmail.t Lwt.t
     val remove_from_cache : Pool_database.Label.t -> unit
     val intercept_prepare : Sihl_email.t -> (Sihl_email.t, string) result
-    val dispatch : Database.Label.t -> Sihl_email.t -> unit Lwt.t
-    val dispatch_all : Database.Label.t -> Sihl_email.t list -> unit Lwt.t
+    val dispatch : Pool_database.Label.t -> Sihl_email.t -> unit Lwt.t
+    val dispatch_all : Pool_database.Label.t -> Sihl_email.t list -> unit Lwt.t
     val lifecycle : Sihl.Container.lifecycle
     val register : unit -> Sihl.Container.Service.t
   end

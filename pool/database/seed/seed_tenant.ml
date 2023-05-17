@@ -74,7 +74,7 @@ let create () =
          ->
          let tenant =
            let database =
-             let open Pool_tenant.Database in
+             let open Pool_database in
              let open CCResult.Infix in
              let* url = Url.create database_url in
              let* label = Label.create database_label in

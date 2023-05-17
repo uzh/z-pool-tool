@@ -44,7 +44,7 @@ type event =
 
 val handle_event
   :  tags:Logs.Tag.set
-  -> Pool_tenant.Database.Label.t
+  -> Pool_database.Label.t
   -> event
   -> unit Lwt.t
 

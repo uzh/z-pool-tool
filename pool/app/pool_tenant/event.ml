@@ -1,6 +1,5 @@
 open Entity
 module Id = Pool_common.Id
-module Database = Pool_database
 
 let get_or_failwith = Pool_common.Utils.get_or_failwith
 
@@ -22,7 +21,7 @@ type event =
   | LogosUploaded of logo_mappings
   | LogoDeleted of t * Id.t
   | DetailsEdited of Write.t * update
-  | DatabaseEdited of Write.t * Database.t
+  | DatabaseEdited of Write.t * Pool_database.t
   | SmtpCreated of SmtpAuth.Write.t
   | SmtpEdited of SmtpAuth.t
   | SmtpPasswordEdited of SmtpAuth.update_password
@@ -36,7 +35,7 @@ let handle_event pool : event -> unit Lwt.t = function
     let open Utils.Lwt_result.Infix in
     let open Guard in
     let ctx = Pool_database.to_ctx pool in
-    let%lwt () = Repo.insert Database.root tenant in
+    let%lwt () = Repo.insert Pool_database.root tenant in
     let%lwt () =
       Repo.find pool id
       >>= Entity_guard.Target.to_authorizable ~ctx
@@ -64,14 +63,14 @@ let handle_event pool : event -> unit Lwt.t = function
       ; default_language = update_t.default_language
       ; updated_at = Ptime_clock.now ()
       }
-      |> Repo.update Database.root
+      |> Repo.update Pool_database.root
     in
     Lwt.return_unit
   | DatabaseEdited (tenant, database) ->
     let open Entity.Write in
     let%lwt () =
       { tenant with database; updated_at = Ptime_clock.now () }
-      |> Repo.update Database.root
+      |> Repo.update Pool_database.root
     in
     Lwt.return_unit
   | SmtpCreated ({ SmtpAuth.Write.id; _ } as created) ->
@@ -98,11 +97,15 @@ let handle_event pool : event -> unit Lwt.t = function
   | ActivateMaintenance tenant ->
     let open Entity.Write in
     let maintenance = true |> Maintenance.create in
-    let%lwt () = { tenant with maintenance } |> Repo.update Database.root in
+    let%lwt () =
+      { tenant with maintenance } |> Repo.update Pool_database.root
+    in
     Lwt.return_unit
   | DeactivateMaintenance tenant ->
     let open Entity.Write in
     let maintenance = false |> Maintenance.create in
-    let%lwt () = { tenant with maintenance } |> Repo.update Database.root in
+    let%lwt () =
+      { tenant with maintenance } |> Repo.update Pool_database.root
+    in
     Lwt.return_unit
 ;;

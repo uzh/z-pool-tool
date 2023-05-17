@@ -1,6 +1,5 @@
 open Sexplib.Conv
 module Common = Pool_common
-module Database = Pool_database
 module Id = Common.Id
 module CreatedAt = Common.CreatedAt
 module UpdatedAt = Common.UpdatedAt
@@ -109,7 +108,7 @@ type t =
   ; title : Title.t
   ; description : Description.t option
   ; url : Url.t
-  ; database_label : Database.Label.t
+  ; database_label : Pool_database.Label.t
   ; styles : Styles.t option
   ; icon : Icon.t option
   ; logos : Logos.t
@@ -130,7 +129,7 @@ module Read = struct
     ; title : Title.t
     ; description : Description.t option
     ; url : Url.t
-    ; database_label : Database.Label.t
+    ; database_label : Pool_database.Label.t
     ; styles : Styles.t option
     ; icon : Icon.t option
     ; maintenance : Maintenance.t
@@ -148,7 +147,7 @@ module Write = struct
     ; title : Title.t
     ; description : Description.t option
     ; url : Url.t
-    ; database : Database.t
+    ; database : Pool_database.t
     ; styles : Styles.Write.t option
     ; icon : Icon.Write.t option
     ; maintenance : Maintenance.t
@@ -179,7 +178,7 @@ end
 module Selection = struct
   type t =
     { url : Url.t
-    ; database_label : Database.Label.t
+    ; database_label : Pool_database.Label.t
     }
   [@@deriving eq, show]
 

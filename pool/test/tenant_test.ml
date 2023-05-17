@@ -269,7 +269,7 @@ let[@warning "-4"] create_tenant () =
     in
     let* url = url |> Pool_tenant.Url.create in
     let* (database : Pool_database.t) =
-      let* url = database_url |> Pool_tenant.Database.Url.create in
+      let* url = database_url |> Pool_database.Url.create in
       Ok Pool_database.{ url; label = database_label }
     in
     let* default_language = default_language |> Common.Language.create in

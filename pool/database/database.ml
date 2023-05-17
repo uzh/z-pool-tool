@@ -88,38 +88,38 @@ module Tenant = struct
     include Seed.Tenant
   end
 
-  let setup_core ?(run_functions = []) () =
+  let setup_functions =
+    [ Assignment.Guard.relation
+    ; Invitation.Guard.relation
+    ; Mailing.Guard.relation
+    ; Pool_location.Guard.relation
+    ; Session.Guard.relation
+    ; Waiting_list.Guard.relation
+    ; Guard.Persistence.start
+    ]
+  ;;
+
+  let setup_tenant ?(run_functions = []) database =
+    let open Pool_database in
+    add_pool database;
+    let%lwt () =
+      Lwt_list.iter_s
+        (fun (fcn : ?ctx:(string * string) list -> unit -> unit Lwt.t) ->
+          fcn ~ctx:(to_ctx database.label) ())
+        run_functions
+    in
+    Lwt.return database.label
+  ;;
+
+  let setup_core ?run_functions () =
     match%lwt Pool_tenant.find_databases () with
     | [] ->
       let open Pool_common in
       failwith (Message.NoTenantsRegistered |> Utils.error_to_string Language.En)
-    | tenants ->
-      Lwt_list.map_s
-        (fun pool ->
-          let open Pool_database in
-          add_pool pool;
-          let%lwt () =
-            Lwt_list.iter_s
-              (fun (fcn : ?ctx:(string * string) list -> unit -> unit Lwt.t) ->
-                fcn ~ctx:(to_ctx pool.label) ())
-              run_functions
-          in
-          Lwt.return pool.label)
-        tenants
+    | tenants -> Lwt_list.map_s (setup_tenant ?run_functions) tenants
   ;;
 
-  let setup =
-    setup_core
-      ~run_functions:
-        [ Assignment.Guard.relation
-        ; Invitation.Guard.relation
-        ; Mailing.Guard.relation
-        ; Pool_location.Guard.relation
-        ; Session.Guard.relation
-        ; Waiting_list.Guard.relation
-        ; Guard.Persistence.start
-        ]
-  ;;
+  let setup = setup_core ~run_functions:setup_functions
 end
 
 type event =
@@ -129,11 +129,13 @@ type event =
 
 let handle_event _ : event -> unit Lwt.t = function
   | Added pool ->
-    let open Pool_database in
-    add_pool pool;
-    let%lwt () = Guard.Persistence.start ~ctx:(to_ctx pool.label) () in
+    let () = Guard.Persistence.Cache.clear () in
+    let%lwt (_ : Pool_database.Label.t) =
+      Tenant.(setup_tenant ~run_functions:setup_functions pool)
+    in
     Lwt.return_unit
   | Migrated label ->
+    let () = Guard.Persistence.Cache.clear () in
     let%lwt () =
       match Pool_database.is_root label with
       | true -> Migration.Root.run ()
