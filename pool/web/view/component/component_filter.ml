@@ -52,7 +52,14 @@ let operators_select language ?operators ?selected () =
       ()
 ;;
 
-let value_input language query_experiments input_type ?value () =
+let value_input
+  language
+  query_experiments
+  input_type
+  ?(disabled = false)
+  ?value
+  ()
+  =
   let open Filter in
   let open CCOption.Infix in
   let field_name = Pool_common.Message.Field.Value in
@@ -60,7 +67,7 @@ let value_input language query_experiments input_type ?value () =
     value
     >>= function
     | Single s -> Some s
-    | Lst _ -> None
+    | NoValue | Lst _ -> None
   in
   let find_in_options options option_id =
     CCList.find_opt
@@ -84,6 +91,7 @@ let value_input language query_experiments input_type ?value () =
        in
        Component_input.input_element
          ~additional_attributes
+         ~disabled
          ?value
          language
          `Text
@@ -98,6 +106,7 @@ let value_input language query_experiments input_type ?value () =
        in
        Component_input.input_element
          ~additional_attributes
+         ~disabled
          language
          `Number
          ?value
@@ -112,9 +121,11 @@ let value_input language query_experiments input_type ?value () =
              | _ -> false)
            single_value
        in
+       (* TODO: Add option to disable *)
        Component_input.checkbox_element
          ~additional_attributes
          ~as_switch:true
+         ~disabled
          ~value
          language
          field_name
@@ -125,6 +136,7 @@ let value_input language query_experiments input_type ?value () =
          | Date d -> Some (d |> Ptime.to_rfc3339)
          | _ -> None
        in
+       (* TODO: Add option to disable *)
        Component_input.flatpicker_element
          ~additional_attributes
          ?value
@@ -140,6 +152,7 @@ let value_input language query_experiments input_type ?value () =
        Component_input.selector
          ~attributes:additional_attributes
          ~option_formatter:(Custom_field.SelectOption.name language)
+         ~disabled
          language
          field_name
          Custom_field.SelectOption.show_id
@@ -156,6 +169,7 @@ let value_input language query_experiments input_type ?value () =
        in
        Component_input.selector
          ~attributes:additional_attributes
+         ~disabled
          language
          field_name
          Pool_common.Language.show
@@ -168,7 +182,7 @@ let value_input language query_experiments input_type ?value () =
            ~default:[]
            (fun value ->
              match value with
-             | Single _ -> []
+             | NoValue | Single _ -> []
              | Lst lst ->
                CCList.filter_map
                  (fun value ->
@@ -189,6 +203,7 @@ let value_input language query_experiments input_type ?value () =
        Component_input.multi_select
          ~additional_attributes
          ~orientation:`Vertical
+         ~disabled
          language
          multi_select
          field_name
@@ -197,7 +212,7 @@ let value_input language query_experiments input_type ?value () =
        let current =
          value
          |> CCOption.map_or ~default:[] (function
-              | Single _ -> []
+              | NoValue | Single _ -> []
               | Lst lst ->
                 CCList.filter_map
                   (fun value ->
@@ -212,6 +227,7 @@ let value_input language query_experiments input_type ?value () =
        in
        Component_search.Experiment.create
          ~current
+         ~disabled
          language
          "/admin/experiments/search")
 ;;
@@ -219,12 +235,21 @@ let value_input language query_experiments input_type ?value () =
 let predicate_value_form language query_experiments ?key ?value ?operator () =
   let open CCOption.Infix in
   let input_type = key >|= Filter.Key.type_of_key in
-  let operators = input_type >|= Filter.Operator.input_type_to_operator in
+  let operators = key >|= Filter.Operator.operators_of_key in
   let operator_select =
     operators_select language ?operators ?selected:operator ()
   in
+  let value_disabled =
+    operator >|= Filter.Operator.value_disabled |> CCOption.value ~default:false
+  in
   let input_field =
-    value_input language query_experiments input_type ?value ()
+    value_input
+      language
+      query_experiments
+      input_type
+      ~disabled:value_disabled
+      ?value
+      ()
   in
   div
     ~a:[ a_class [ "switcher-sm"; "flex-gap" ] ]

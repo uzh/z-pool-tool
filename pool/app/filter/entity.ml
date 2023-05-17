@@ -35,6 +35,7 @@ type single_val =
 [@@deriving show { with_path = false }, eq]
 
 type value =
+  | NoValue [@printer print "no_value"] [@name "no_value"]
   | Single of single_val [@printer print "single"] [@name "single"]
   | Lst of single_val list [@printer print "list"] [@name "list"]
 [@@deriving show { with_path = false }, eq, variants]
@@ -65,6 +66,7 @@ let value_of_yojson yojson =
   let open CCResult in
   let error = Pool_common.Message.(Invalid Field.Value) in
   match yojson with
+  | `Null -> Ok NoValue
   | `Assoc _ -> single_value_of_yojson yojson >|= single
   | `List values ->
     (match values with
@@ -91,6 +93,7 @@ let yojson_of_single_val value =
 
 let yojson_of_value m =
   match m with
+  | NoValue -> `Null
   | Single single -> single |> yojson_of_single_val
   | Lst values -> `List (CCList.map yojson_of_single_val values)
 ;;
@@ -233,7 +236,7 @@ module Key = struct
     | Hardcoded h -> type_of_hardcoded h
   ;;
 
-  let validate_value (key_list : human list) (m : t) value =
+  let validate_value (key_list : human list) (key : t) value =
     let error =
       Pool_common.Message.(QueryNotCompatible (Field.Value, Field.Key))
     in
@@ -259,8 +262,9 @@ module Key = struct
       | Str _, QueryExperiments -> Ok ()
       | _ -> Error error
     in
-    let validate_value value input_type =
+    let validate value input_type =
       match value with
+      | NoValue -> Ok ()
       | Single v -> validate_single_value input_type v
       | Lst lst ->
         lst
@@ -268,8 +272,8 @@ module Key = struct
         |> CCList.all_ok
         >|= CCFun.const ()
     in
-    match m with
-    | Hardcoded v -> v |> type_of_hardcoded |> validate_value value
+    match key with
+    | Hardcoded v -> v |> type_of_hardcoded |> validate value
     | CustomField field_id ->
       let* custom_field =
         CCList.find_map
@@ -283,8 +287,7 @@ module Key = struct
           key_list
         |> CCOption.to_result Pool_common.Message.(Invalid Field.Key)
       in
-      let input_type = type_of_custom_field custom_field in
-      validate_value value input_type
+      custom_field |> type_of_custom_field |> validate value
   ;;
 
   let all_hardcoded : hardcoded list =
@@ -297,84 +300,267 @@ module Key = struct
 end
 
 module Operator = struct
-  type t =
-    | Less [@printer print "less"] [@name "less"]
-    | LessEqual [@printer print "less_equal"] [@name "less_equal"]
-    | Greater [@printer print "greater"] [@name "greater"]
-    | GreaterEqual [@printer print "greater_equal"] [@name "greater_equal"]
-    | Equal [@printer print "equal"] [@name "equal"]
-    | NotEqual [@printer print "not_equal"] [@name "not_equal"]
-    | Like [@printer print "like"] [@name "like"]
-    | ContainsSome [@printer print "contains_some"] [@name "contains_some"]
-    | ContainsNone [@printer print "contains_none"] [@name "contains_none"]
-    | ContainsAll [@printer print "contains_all"] [@name "contains_all"]
-  [@@deriving show { with_path = false }, eq, enum, yojson]
+  open CCList.Infix
 
-  let input_type_to_operator =
-    let open Key in
-    function
-    | Key.Bool -> [ Equal; NotEqual ]
-    | Key.Date | Nr ->
-      [ Equal; NotEqual; Greater; GreaterEqual; Less; LessEqual ]
-    | Key.Languages _ -> [ Equal; NotEqual ]
-    | MultiSelect _ | QueryExperiments ->
-      [ ContainsAll; ContainsSome; ContainsNone ]
-    | Select _ -> [ Equal; NotEqual ]
-    | Str -> [ Equal; NotEqual; Like ]
+  let generate_all min max of_enum =
+    CCList.range min max
+    |> CCList.map of_enum
+    |> CCList.all_some
+    |> CCOption.get_exn_or "Could not create list of all operators!"
   ;;
 
-  let of_string m =
-    try Ok (`String m |> t_of_yojson) with
-    | _ -> Error Pool_common.Message.(Invalid Field.Operator)
-  ;;
+  module Equality = struct
+    type t =
+      | Equal [@printer print "equal"] [@name "equal"]
+      | NotEqual [@printer print "not_equal"] [@name "not_equal"]
+    [@@deriving show { with_path = false }, eq, enum, yojson]
 
-  let of_yojson yojson =
-    try Ok (yojson |> read t_of_yojson) with
-    | _ -> Error Pool_common.Message.(Invalid Field.Operator)
-  ;;
+    let all = generate_all min max of_enum
+    let json_key = "Equality"
 
-  let to_yojson m = `String (m |> show)
+    let read yojson =
+      try Some (yojson |> read t_of_yojson) with
+      | _ -> None
+    ;;
 
-  let to_sql = function
-    | Less -> "<"
-    | LessEqual -> "<="
-    | Greater -> ">"
-    | GreaterEqual -> ">="
-    | Equal -> "="
-    | NotEqual -> "<>"
-    | Like ->
-      "LIKE"
+    let to_sql = function
+      | Equal -> "="
+      | NotEqual -> "<>"
+    ;;
+
+    let to_human = function
+      | Equal -> "equal"
+      | NotEqual -> "not equal"
+    ;;
+  end
+
+  module Existence = struct
+    type t =
+      | Empty [@printer print "empty"] [@name "empty"]
+      | NotEmpty [@printer print "not_empty"] [@name "not_empty"]
+    [@@deriving show { with_path = false }, eq, enum, yojson]
+
+    let all = generate_all min max of_enum
+    let json_key = "Existence"
+
+    let read yojson =
+      try Some (yojson |> read t_of_yojson) with
+      | _ -> None
+    ;;
+
+    let to_sql = function
+      | Empty -> "IS NULL"
+      | NotEmpty -> "IS NOT NULL"
+    ;;
+
+    let to_human = function
+      | Empty -> "empty"
+      | NotEmpty -> "not empty"
+    ;;
+  end
+
+  module ListM = struct
+    type t =
+      | ContainsSome [@printer print "contains_some"] [@name "contains_some"]
+      | ContainsNone [@printer print "contains_none"] [@name "contains_none"]
+      | ContainsAll [@printer print "contains_all"] [@name "contains_all"]
+    [@@deriving show { with_path = false }, eq, enum, yojson]
+
+    let all = generate_all min max of_enum
+    let json_key = "List"
+
+    let read yojson =
+      try Some (yojson |> read t_of_yojson) with
+      | _ -> None
+    ;;
+
+    let to_sql = function
       (* List operators are used to query custom field answers by their value
          which store json arrays *)
-    | ContainsSome | ContainsAll -> "LIKE"
-    | ContainsNone -> "NOT LIKE"
+      | ContainsSome | ContainsAll -> "LIKE"
+      | ContainsNone -> "NOT LIKE"
+    ;;
+
+    let to_human = function
+      | ContainsSome -> "contains some"
+      | ContainsNone -> "contains none"
+      | ContainsAll -> "contains all"
+    ;;
+  end
+
+  module Size = struct
+    type t =
+      | Less [@printer print "less"] [@name "less"]
+      | LessEqual [@printer print "less_equal"] [@name "less_equal"]
+      | Greater [@printer print "greater"] [@name "greater"]
+      | GreaterEqual [@printer print "greater_equal"] [@name "greater_equal"]
+    [@@deriving show { with_path = false }, eq, enum, yojson]
+
+    let all = generate_all min max of_enum
+    let json_key = "Size"
+
+    let read yojson =
+      try Some (yojson |> read t_of_yojson) with
+      | _ -> None
+    ;;
+
+    let to_sql = function
+      | Less -> "<"
+      | LessEqual -> "<="
+      | Greater -> ">"
+      | GreaterEqual -> ">="
+    ;;
+
+    let to_human = function
+      | Less -> "less"
+      | LessEqual -> "less or equal"
+      | Greater -> "greater"
+      | GreaterEqual -> "greater or equal"
+    ;;
+  end
+
+  module StringM = struct
+    type t = Like [@printer print "like"] [@name "like"]
+    [@@deriving show { with_path = false }, eq, enum, yojson]
+
+    let all = generate_all min max of_enum
+    let json_key = "String"
+
+    let read yojson =
+      try Some (yojson |> read t_of_yojson) with
+      | _ -> None
+    ;;
+
+    let to_sql = function
+      | Like -> "LIKE"
+    ;;
+
+    let to_human = function
+      | Like -> "like"
+    ;;
+  end
+
+  type t =
+    | Equality of Equality.t
+    | Existence of Existence.t
+    | List of ListM.t
+    | Size of Size.t
+    | String of StringM.t
+  [@@deriving show { with_path = false }, eq, yojson, variants]
+
+  let show = function
+    | Equality o -> Equality.show o
+    | String o -> StringM.show o
+    | Size o -> Size.show o
+    | List o -> ListM.show o
+    | Existence o -> Existence.show o
+  ;;
+
+  let to_sql = function
+    | Equality o -> Equality.to_sql o
+    | String o -> StringM.to_sql o
+    | Size o -> Size.to_sql o
+    | List o -> ListM.to_sql o
+    | Existence o -> Existence.to_sql o
   ;;
 
   let to_human m =
     (match m with
-     | Less -> "less"
-     | LessEqual -> "less or equal"
-     | Greater -> "greater"
-     | GreaterEqual -> "greater or equal"
-     | Equal -> "equal"
-     | NotEqual -> "not equal"
-     | Like -> "contains" (* it is intended to display 'like' as 'contains' *)
-     | ContainsSome -> "contains some"
-     | ContainsNone -> "contains none"
-     | ContainsAll -> "contains all")
+     | Equality o -> Equality.to_human o
+     | String o -> StringM.to_human o
+     | Size o -> Size.to_human o
+     | List o -> ListM.to_human o
+     | Existence o -> Existence.to_human o)
     |> CCString.capitalize_ascii
   ;;
 
-  let validate (key : Key.t) operator =
+  let all_equality_operators = Equality.all >|= equality
+  let all_string_operators = StringM.all >|= string
+  let all_size_operators = Size.all >|= size
+  let all_list_operators = ListM.all >|= list
+  let all_existence_operators = Existence.all >|= existence
+
+  let all =
+    let open CCList in
+    all_equality_operators
+    @ all_string_operators
+    @ all_size_operators
+    @ all_list_operators
+    @ all_existence_operators
+  ;;
+
+  let encode_operators =
+    let open CCOption.Infix in
+    [ Equality.(all |> CCList.map show, fun y -> y |> read >|= equality)
+    ; StringM.(all |> CCList.map show, fun y -> y |> read >|= string)
+    ; Size.(all |> CCList.map show, fun y -> y |> read >|= size)
+    ; ListM.(all |> CCList.map show, fun y -> y |> read >|= list)
+    ; Existence.(all |> CCList.map show, fun y -> y |> read >|= existence)
+    ]
+    |> CCList.flat_map (fun (operators, fnc) ->
+         CCList.map (fun operator -> operator, fnc) operators)
+  ;;
+
+  let of_yojson yojson =
+    let rec find_operator item = function
+      | [] -> None
+      | (operator, fnc) :: _ when CCString.equal operator item -> fnc yojson
+      | _ :: tl -> find_operator item tl
+    in
+    (match yojson with
+     | `String str -> find_operator str encode_operators
+     | _ -> None)
+    |> CCOption.to_result Pool_common.Message.(Invalid Field.Operator)
+  ;;
+
+  let yojson_of_t : t -> Yojson.Safe.t = CCFun.(show %> fun str -> `String str)
+
+  let operator_of_hardcoded =
+    let open Key in
+    function
+    | ContactLanguage -> all_equality_operators @ all_existence_operators
+    | Firstname | Name -> all_equality_operators @ all_string_operators
+    | NumAssignments
+    | NumInvitations
+    | NumNoShows
+    | NumParticipations
+    | NumShowUps -> all_equality_operators @ all_size_operators
+    | Participation -> all_list_operators
+  ;;
+
+  let input_type_to_operator (key : Key.input_type) =
+    let open Key in
     match key with
-    | Key.Hardcoded k ->
-      let available_operators =
-        k |> Key.type_of_hardcoded |> input_type_to_operator
-      in
-      if CCList.mem ~eq:equal operator available_operators
-      then Ok ()
-      else Error Pool_common.Message.(QueryNotCompatible Field.(Operator, Key))
+    | Bool | Languages _ | Select _ -> all_equality_operators
+    | Date | Nr -> all_equality_operators @ all_size_operators
+    | MultiSelect _ | QueryExperiments -> all_list_operators
+    | Str -> all_equality_operators @ all_string_operators
+  ;;
+
+  let operators_of_key : Key.human -> t list =
+    let open Key in
+    function
+    | CustomField field ->
+      (field |> type_of_custom_field |> input_type_to_operator)
+      @ all_existence_operators
+    | Hardcoded hardcoded ->
+      hardcoded |> type_of_hardcoded |> input_type_to_operator
+  ;;
+
+  let validate (key : Key.t) operator =
+    let msg = Pool_common.Message.(QueryNotCompatible Field.(Operator, Key)) in
+    match key with
+    | Key.Hardcoded key ->
+      key
+      |> operator_of_hardcoded
+      |> CCList.mem ~eq:equal operator
+      |> Utils.Bool.to_result msg
     | Key.CustomField _ -> Ok ()
+  ;;
+
+  let value_disabled = function
+    | Existence _ -> true
+    | Equality _ | String _ | Size _ | List _ -> false
   ;;
 end
 
@@ -407,28 +593,39 @@ module Predicate = struct
   let t_of_yojson (yojson : Yojson.Safe.t) =
     let open Pool_common in
     let open Helper in
-    let to_result field = CCOption.to_result Message.(Invalid field) in
+    let to_result field =
+      CCOption.value ~default:(Error (Message.Invalid field))
+    in
     match yojson with
     | `Assoc assoc ->
       let open CCResult in
-      let go key field of_yojson =
+      let go key of_yojson =
         assoc
         |> CCList.assoc_opt ~eq:CCString.equal key
-        |> to_result field
-        >>= of_yojson
+        |> CCOption.map of_yojson
       in
-      let* key = go key_string Message.Field.Key Key.of_yojson in
+      let* key = go key_string Key.of_yojson |> to_result Message.Field.Key in
       let* operator =
-        go operator_string Message.Field.Operator Operator.of_yojson
+        go operator_string Operator.of_yojson
+        |> to_result Message.Field.Operator
       in
-      let* value = go value_string Message.Field.Value value_of_yojson in
+      let* value =
+        go value_string value_of_yojson
+        |> fun opt ->
+        let open Operator in
+        let error = Error Message.(Invalid Field.Value) in
+        match operator with
+        | Existence _ -> opt |> CCOption.value ~default:(Ok NoValue)
+        | Equality _ | String _ | Size _ | List _ ->
+          CCOption.value ~default:error opt
+      in
       Ok (create key operator value)
     | _ -> Error Pool_common.Message.(Invalid Field.Predicate)
   ;;
 
   let yojson_of_t ({ key; operator; value } : t) =
     let key = Key.to_yojson key in
-    let operator = Operator.to_yojson operator in
+    let operator = Operator.yojson_of_t operator in
     let value = yojson_of_value value in
     `Assoc
       Helper.[ key_string, key; operator_string, operator; value_string, value ]

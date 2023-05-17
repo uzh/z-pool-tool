@@ -459,6 +459,10 @@ module Model = struct
   ;;
 end
 
+module FilterHelper = struct
+  let equal = Filter.Operator.(Equality.Equal |> equality)
+end
+
 module Repo = struct
   let all_experiments () =
     let open Utils.Lwt_result.Infix in

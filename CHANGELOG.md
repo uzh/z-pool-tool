@@ -16,6 +16,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 - block email addresses after multiple failed login attempts
 - rules page in settings
 - admin roles to the detail page and grant/revoke role to edit page
+- filter by empty / non-empty fields
 
 ### Changed
 

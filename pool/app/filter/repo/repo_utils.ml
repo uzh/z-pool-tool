@@ -1,7 +1,15 @@
 module Dynparam = Utils.Database.Dynparam
+module Message = Pool_common.Message
+module Field = Message.Field
 open Entity
 
 let where_prefix str = Format.asprintf "WHERE %s" str
+let where_clause = Format.asprintf "%s %s ?"
+
+(* if admin_override is set, use admin_value > value, else value *)
+let coalesce_value =
+  {sql| IF(pool_custom_fields.admin_override,COALESCE(admin_value,value),value) |sql}
+;;
 
 let filtered_base_condition =
   {sql|
@@ -35,25 +43,94 @@ let filtered_base_condition =
     |sql}
 ;;
 
+let custom_field_sql =
+  {sql|
+    SELECT (1) FROM pool_custom_field_answers
+      INNER JOIN pool_custom_fields
+      ON pool_custom_fields.uuid = pool_custom_field_answers.custom_field_uuid
+      WHERE
+        pool_custom_field_answers.custom_field_uuid = UNHEX(REPLACE(?, '-', ''))
+      AND
+        pool_custom_field_answers.entity_uuid = user_users.uuid
+  |sql}
+;;
+
+let filter_custom_fields =
+  Format.asprintf {sql| %s AND (%s) |sql} custom_field_sql
+;;
+
 let add_value_to_params operator value dyn =
+  let open Operator in
   let wrap_in_percentage operator value =
     let wrap s = CCString.concat "" [ "%"; s; "%" ] in
-    let open Operator in
     match operator with
-    | ContainsSome | ContainsNone | ContainsAll | Like -> wrap value
-    | Less | LessEqual | Greater | GreaterEqual | Equal | NotEqual -> value
+    | List _ | String _ -> wrap value
+    | Equality _ | Size _ | Existence _ -> value
   in
   let add c v = Dynparam.add c v dyn in
-  match value with
-  | Bool b -> add Caqti_type.string (Utils.Bool.to_string b)
-  | Date d -> add Caqti_type.ptime d
-  | Language lang -> add Caqti_type.string (Pool_common.Language.show lang)
-  | Nr n -> add Caqti_type.float n
-  | Option id ->
-    add
-      Caqti_type.string
-      (id |> Custom_field.SelectOption.Id.value |> wrap_in_percentage operator)
-  | Str s -> add Caqti_type.string (wrap_in_percentage operator s)
+  match operator with
+  | Existence _ -> Error Message.(Invalid Field.Predicate)
+  | Equality _ | List _ | String _ | Size _ ->
+    Ok
+      (match value with
+       | Bool b -> add Caqti_type.string (Utils.Bool.to_string b)
+       | Date d -> add Caqti_type.ptime d
+       | Language lang -> add Caqti_type.string (Pool_common.Language.show lang)
+       | Nr n -> add Caqti_type.float n
+       | Option id ->
+         add
+           Caqti_type.string
+           (id
+            |> Custom_field.SelectOption.Id.value
+            |> wrap_in_percentage operator)
+       | Str s -> add Caqti_type.string (wrap_in_percentage operator s))
+;;
+
+let add_single_value (key : Key.t) operator dyn value =
+  let open CCResult in
+  match key with
+  | Key.Hardcoded h ->
+    let* dyn = add_value_to_params operator value dyn in
+    let* sql =
+      Key.hardcoded_to_single_value_sql h
+      >|= fun key -> where_clause key (Operator.to_sql operator)
+    in
+    Ok (dyn, sql)
+  | Key.CustomField id ->
+    let* dyn =
+      Dynparam.(
+        dyn
+        |> add Custom_field.Repo.Id.t id
+        |> add_value_to_params operator value)
+    in
+    let sql =
+      where_clause coalesce_value (Operator.to_sql operator)
+      |> filter_custom_fields
+    in
+    Ok (dyn, sql)
+;;
+
+let add_existence_condition (key : Key.t) operator dyn =
+  let open CCResult in
+  let open Operator.Existence in
+  let format = Format.asprintf in
+  match key with
+  | Key.Hardcoded key ->
+    let* sql =
+      Key.hardcoded_to_single_value_sql key
+      >|= CCFun.flip (format "%s %s") (to_sql operator)
+    in
+    Ok (dyn, sql)
+  | Key.CustomField id ->
+    let dyn = Dynparam.(dyn |> add Custom_field.Repo.Id.t id) in
+    let* sql =
+      let not_null_value = "pool_custom_field_answers.value IS NOT NULL" in
+      let query = format "EXISTS (%s AND %s)" custom_field_sql not_null_value in
+      match operator with
+      | Empty -> Ok (format "NOT %s" query)
+      | NotEmpty -> Ok query
+    in
+    Ok (dyn, sql)
 ;;
 
 (* The subquery does not return any contacts that have shown up at a session of
@@ -68,12 +145,10 @@ let participation_subquery dyn operator ids =
         >>= fun (dyn, params) ->
         match id with
         | Bool _ | Date _ | Language _ | Nr _ | Option _ ->
-          Error
-            Pool_common.Message.(QueryNotCompatible (Field.Value, Field.Key))
+          Error Message.(QueryNotCompatible (Field.Value, Field.Key))
         | Str id ->
-          Ok
-            ( add_value_to_params Operator.Equal (Str id) dyn
-            , "UNHEX(REPLACE(?, '-', ''))" :: params ))
+          add_value_to_params Operator.(Equality.Equal |> equality) (Str id) dyn
+          >|= fun dyn -> dyn, "UNHEX(REPLACE(?, '-', ''))" :: params)
       (Ok (dyn, []))
       ids
     >|= fun (dyn, ids) -> dyn, CCString.concat "," ids
@@ -101,21 +176,96 @@ let participation_subquery dyn operator ids =
     let format comparison = Format.asprintf "(%s) %s" subquery comparison in
     let open Operator in
     match operator with
-    | ContainsAll ->
-      (format " = ? ", Dynparam.add Caqti_type.int (CCList.length ids) dyn)
+    | List o ->
+      let open ListM in
+      (match o with
+       | ContainsAll ->
+         format " = ? ", Dynparam.add Caqti_type.int (CCList.length ids) dyn
+       | ContainsNone -> format " = 0 ", dyn
+       | ContainsSome -> format " > 0 ", dyn)
       |> CCResult.return
-    | ContainsNone -> (format " = 0 ", dyn) |> CCResult.return
-    | ContainsSome -> (format " > 0 ", dyn) |> CCResult.return
-    | Less | LessEqual | Greater | GreaterEqual | Equal | NotEqual | Like ->
-      Error Pool_common.Message.(Invalid Field.Operator)
+    | Equality _ | String _ | Size _ | Existence _ ->
+      Error Message.(Invalid Field.Operator)
   in
   (dyn, Format.asprintf "(%s)" condition) |> CCResult.return
+;;
+
+let predicate_to_sql
+  (dyn, sql)
+  ({ Predicate.key; operator; value } : Predicate.t)
+  =
+  let open CCResult in
+  let open Operator in
+  match value with
+  | NoValue ->
+    (match operator with
+     | Existence operator -> add_existence_condition key operator dyn
+     | Equality _ | String _ | Size _ | List _ ->
+       Error Message.(QueryNotCompatible (Field.Value, Field.Key)))
+  | Single value ->
+    let add_value = add_single_value key operator in
+    (match key with
+     | Key.Hardcoded _ -> add_value dyn value
+     | Key.CustomField _ ->
+       add_value dyn value
+       >|= fun (dyn, sql) -> dyn, Format.asprintf "EXISTS (%s)" sql)
+  | Lst [] -> Ok (dyn, sql)
+  | Lst values ->
+    let open Key in
+    (match key with
+     | Hardcoded hardcoded ->
+       (match hardcoded with
+        | Participation -> participation_subquery dyn operator values
+        | ContactLanguage
+        | Firstname
+        | Name
+        | NumAssignments
+        | NumInvitations
+        | NumNoShows
+        | NumParticipations
+        | NumShowUps ->
+          Error Message.(QueryNotCompatible (Field.Value, Field.Key)))
+     | CustomField id ->
+       let* dyn, subqueries =
+         CCList.fold_left
+           (fun res value ->
+             match res with
+             | Error err -> Error err
+             | Ok (dyn, lst_sql) ->
+               let* dyn = add_value_to_params operator value dyn in
+               let new_sql =
+                 where_clause coalesce_value (Operator.to_sql operator)
+               in
+               Ok (dyn, lst_sql @ [ new_sql ]))
+           (Ok (Dynparam.(dyn |> add Custom_field.Repo.Id.t id), []))
+           values
+       in
+       let build_query operator =
+         ( dyn
+         , subqueries
+           |> CCList.map (Format.asprintf "(%s)")
+           |> CCString.concat (Format.asprintf " %s " operator)
+           |> filter_custom_fields
+           |> Format.asprintf "EXISTS (%s)" )
+         |> CCResult.return
+       in
+       (match operator with
+        | List o ->
+          let open ListM in
+          (match o with
+           | ContainsAll -> build_query "AND"
+           | ContainsNone -> build_query "AND"
+           | ContainsSome -> build_query "OR")
+        | Equality _ | String _ | Size _ | Existence _ ->
+          Error Message.(Invalid Field.Operator)))
 ;;
 
 let filter_to_sql template_list dyn query =
   let open Entity in
   let open CCResult in
-  let rec query_sql (dyn, sql) query : (Dynparam.t * 'a, 'b) result =
+  let rec query_sql (dyn, sql) query
+    : (Dynparam.t * string, Message.error) result
+    =
     let of_list (dyn, sql) queries operator =
       let query =
         CCList.fold_left
@@ -144,109 +294,9 @@ let filter_to_sql template_list dyn query =
     | Template id ->
       template_list
       |> CCList.find_opt (fun template -> Pool_common.Id.equal template.id id)
-      |> CCOption.to_result Pool_common.Message.(NotFound Field.Template)
+      |> CCOption.to_result Message.(NotFound Field.Template)
       >>= fun filter -> query_sql (dyn, sql) filter.query
-    | Pred { Predicate.key; operator; value } ->
-      let custom_field_sql =
-        (* Check existence and value of rows (custom field answers) *)
-        Format.asprintf
-          {sql|
-                SELECT (1) FROM pool_custom_field_answers
-                  INNER JOIN pool_custom_fields
-                  ON pool_custom_fields.uuid = pool_custom_field_answers.custom_field_uuid
-                  WHERE
-                    pool_custom_field_answers.custom_field_uuid = UNHEX(REPLACE(?, '-', ''))
-                  AND
-                    pool_custom_field_answers.entity_uuid = user_users.uuid
-                  AND
-                    (%s)
-              |sql}
-      in
-      (* if admin_override is set, use admin_value > value, else value *)
-      let coalesce_value =
-        {sql| IF(pool_custom_fields.admin_override,COALESCE(admin_value,value),value) |sql}
-      in
-      let where_clause = Format.asprintf "%s %s ?" in
-      let add_single_value dyn value =
-        match key with
-        | Key.Hardcoded h ->
-          let dyn = add_value_to_params operator value dyn in
-          let* sql =
-            Key.hardcoded_to_single_value_sql h
-            >|= fun key -> where_clause key (Operator.to_sql operator)
-          in
-          Ok (dyn, sql)
-        | Key.CustomField id ->
-          let dyn =
-            Dynparam.(
-              dyn
-              |> add Custom_field.Repo.Id.t id
-              |> add_value_to_params operator value)
-          in
-          let sql =
-            where_clause coalesce_value (Operator.to_sql operator)
-            |> custom_field_sql
-          in
-          Ok (dyn, sql)
-      in
-      (match value with
-       | Single value ->
-         (match key with
-          | Key.Hardcoded _ -> add_single_value dyn value
-          | Key.CustomField _ ->
-            add_single_value dyn value
-            >|= fun (dyn, sql) -> dyn, Format.asprintf "EXISTS (%s)" sql)
-       | Lst [] -> Ok (dyn, sql)
-       | Lst values ->
-         let open Key in
-         (match key with
-          | Hardcoded hardcoded ->
-            (match hardcoded with
-             | Participation -> participation_subquery dyn operator values
-             | ContactLanguage
-             | Firstname
-             | Name
-             | NumAssignments
-             | NumInvitations
-             | NumNoShows
-             | NumParticipations
-             | NumShowUps ->
-               Error
-                 Pool_common.Message.(
-                   QueryNotCompatible (Field.Value, Field.Key)))
-          | CustomField id ->
-            let dyn, subqueries =
-              CCList.fold_left
-                (fun (dyn, lst_sql) value ->
-                  let dyn = add_value_to_params operator value dyn in
-                  let new_sql =
-                    where_clause coalesce_value (Operator.to_sql operator)
-                  in
-                  dyn, lst_sql @ [ new_sql ])
-                (Dynparam.(dyn |> add Custom_field.Repo.Id.t id), [])
-                values
-            in
-            let open Operator in
-            let build_query operator =
-              ( dyn
-              , subqueries
-                |> CCList.map (Format.asprintf "(%s)")
-                |> CCString.concat (Format.asprintf " %s " operator)
-                |> custom_field_sql
-                |> Format.asprintf "EXISTS (%s)" )
-              |> CCResult.return
-            in
-            (match operator with
-             | ContainsAll -> build_query "AND"
-             | ContainsNone -> build_query "AND"
-             | ContainsSome -> build_query "OR"
-             | Less
-             | LessEqual
-             | Greater
-             | GreaterEqual
-             | Equal
-             | NotEqual
-             | Like -> Error Pool_common.Message.(Invalid Field.Operator))))
+    | Pred predicate -> predicate_to_sql (dyn, sql) predicate
   in
   query_sql (dyn, "") query
 ;;

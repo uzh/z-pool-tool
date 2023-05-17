@@ -15,6 +15,7 @@ let input_element
   item_to_html
   placeholder
   input_field
+  ?(disabled = false)
   ?(value = "")
   ?results
   action
@@ -41,14 +42,18 @@ let input_element
     | Some [] -> [ txt "No results found" ] |> wrap
     | Some results -> results |> CCList.map item_to_html |> wrap
   in
+  let attrs =
+    [ a_input_type `Text
+    ; a_value value
+    ; a_name Field.(show input_field)
+    ; a_class [ "query-input" ]
+    ; a_placeholder placeholder
+    ]
+  in
+  let attrs = if disabled then a_disabled () :: attrs else attrs in
   input
     ~a:
-      ([ a_input_type `Text
-       ; a_value value
-       ; a_name Field.(show input_field)
-       ; a_class [ "query-input" ]
-       ; a_placeholder placeholder
-       ]
+      (attrs
        @ Component_utils.htmx_attribs
            ~action
            ~trigger:"keyup changed delay:1s"
@@ -65,6 +70,7 @@ let create
   input_field
   field_label
   ?(current = [])
+  ?disabled
   ?role
   ?exclude_roles_of
   ?value
@@ -79,7 +85,14 @@ let create
   div
     ~a:[ a_class [ "form-group" ]; a_user_data "query" "wrapper" ]
     ([ label [ txt Pool_common.(Utils.nav_link_to_string language field_label) ]
-     ; input_element item_to_html placeholder input_field ?value ?results path
+     ; input_element
+         item_to_html
+         placeholder
+         input_field
+         ?disabled
+         ?value
+         ?results
+         path
      ; div
          ~a:[ a_user_data "query" "results"; a_class [ "hide-empty" ] ]
          (CCList.map item_to_html current)
