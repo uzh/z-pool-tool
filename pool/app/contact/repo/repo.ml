@@ -26,4 +26,8 @@ let find_phone_number_verification_by_contact_and_token =
   Repo_sql.find_phone_number_verification_by_contact_and_token
 ;;
 
+let find_full_phone_number_verification_by_contact =
+  Repo_sql.find_full_phone_number_verification_by_contact
+;;
+
 let delete_unverified_phone_number = Repo_sql.delete_unverified_phone_number

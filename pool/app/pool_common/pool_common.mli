@@ -268,6 +268,12 @@ module Repo : sig
     end
   end
 
+  module Token : sig
+    type t = Token.t
+
+    val t : t Caqti_type.t
+  end
+
   module ExperimentType : sig
     type t = ExperimentType.t
 

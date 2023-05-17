@@ -7,7 +7,6 @@ let create_phone_number_verifications_table =
         `phone_number` varchar(128) NOT NULL,
         `user_uuid` binary(16) NOT NULL,
         `token` varchar(128) NOT NULL,
-        `verified` timestamp NULL,
         `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
         `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
       PRIMARY KEY (id),

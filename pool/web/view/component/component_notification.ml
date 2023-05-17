@@ -7,6 +7,7 @@ let style_to_class = function
   | `Warning -> "warning"
 ;;
 
+(* TODO[timhub]: Why is the link content hardcoded? *)
 let notification ?link language style html =
   let link =
     match link with

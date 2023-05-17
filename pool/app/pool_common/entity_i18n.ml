@@ -105,7 +105,9 @@ type hint =
   | AssignContactFromWaitingList
   | AssignmentsMarkedAsClosed
   | ContactCurrentPhoneNumber of string
+  | ContactNoPhoneNumber
   | ContactEnterPhoneNumberToken of string
+  | ContactPhoneNumberVerificationWasReset
   | ContactOnWaitingList
   | ContactProfileVisibleOverride
   | CustomFieldAdminInputOnly

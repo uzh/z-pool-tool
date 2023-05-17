@@ -243,10 +243,11 @@ let login_information
   |> contact_profile_layout language Pool_common.I18n.LoginInformation
 ;;
 
-let[@warning "-27"] contact_information
-  (contact : Contact.t)
+let contact_information
+  contact
   Pool_context.{ language; query_language; csrf; _ }
-  verification
+  (verification : Pool_user.UnverifiedPhoneNumber.t option)
+  was_reset
   =
   let open Contact in
   let open Pool_common in
@@ -254,78 +255,95 @@ let[@warning "-27"] contact_information
   let form_attrs action =
     [ a_method `Post; a_action (externalize action); a_class [ "stack" ] ]
   in
-  let current_hint =
-    match contact.phone_number with
-    | None -> txt ""
-    | Some phone_number ->
-      div
-        [ I18n.ContactCurrentPhoneNumber
-            (Pool_user.PhoneNumber.value phone_number)
-          |> Utils.hint_to_string language
-          |> txt
-        ]
+  let hint_to_html =
+    CCFun.(Utils.hint_to_string language %> fun hint -> div [ txt hint ])
+  in
+  let form_title i18n =
+    h2
+      ~a:[ a_class [ "heading-3" ] ]
+      Pool_common.[ Utils.control_to_string language i18n |> txt ]
   in
   let new_form () =
-    (* TODO: Add / Update depending on current user phone nr *)
+    let current_hint =
+      (match contact.phone_number with
+       | None -> I18n.ContactNoPhoneNumber
+       | Some phone_number ->
+         I18n.ContactCurrentPhoneNumber
+           (Pool_user.PhoneNumber.value phone_number))
+      |> hint_to_html
+    in
+    let reset_hint =
+      match was_reset with
+      | false -> txt ""
+      | true ->
+        [ I18n.ContactPhoneNumberVerificationWasReset |> hint_to_html ]
+        |> Component.Notification.notification language `Success
+    in
     div
-      [ h2
-          ~a:[ a_class [ "heading-3" ] ]
-          Pool_common.
-            [ Utils.control_to_string
-                language
-                Message.(Add (Some Field.PhoneNumber))
-              |> txt
-            ]
-      ; current_hint
-      ; form
-          ~a:(form_attrs "/user/update-phone")
-          [ csrf_element csrf ()
-          ; input_element (* TODO: Add 2 part input (pre and nr) *)
-              language
-              `Text
-              Message.Field.PhoneNumber
-          ; div
-              ~a:[ a_class [ "flexrow" ] ]
-              [ submit_element
-                  ~classnames:[ "push" ]
+      [ form_title Message.(Add (Some Field.PhoneNumber))
+      ; div
+          ~a:[ a_class [ "stack" ] ]
+          [ current_hint
+          ; reset_hint
+          ; form
+              ~a:(form_attrs "/user/phone/update")
+              [ csrf_element csrf ()
+              ; input_element (* TODO: Add 2 part input (pre and nr) *)
                   language
-                  Message.(Update (Some Field.PhoneNumber))
-                  ()
+                  `Text
+                  Message.Field.PhoneNumber
+              ; div
+                  ~a:[ a_class [ "flexrow" ] ]
+                  [ submit_element
+                      ~classnames:[ "push" ]
+                      language
+                      Message.(Update (Some Field.PhoneNumber))
+                      ()
+                  ]
               ]
           ]
       ]
   in
+  let form_as_link url i18n =
+    form
+      ~a:[ a_method `Post; a_action (Sihl.Web.externalize_path url) ]
+      [ csrf_element csrf ()
+      ; submit_element ~classnames:[ "as-link" ] language i18n ()
+      ]
+  in
   let verify_form phone_number =
     div
-      [ h2
-          ~a:[ a_class [ "heading-3" ] ]
-          Pool_common.
-            [ Utils.control_to_string
-                language
-                Message.(Add (Some Field.PhoneNumber))
+      [ form_title Message.(Verify (Some Field.PhoneNumber))
+      ; div
+          ~a:[ a_class [ "stack" ] ]
+          [ [ I18n.ContactEnterPhoneNumberToken
+                (Pool_user.PhoneNumber.value phone_number)
+              |> Utils.hint_to_string language
               |> txt
             ]
-      ; div
-          [ I18n.ContactEnterPhoneNumberToken
-              (Pool_user.PhoneNumber.value phone_number)
-            |> Utils.hint_to_string language
-            |> txt
-          ]
-      ; form
-          ~a:(form_attrs "/user/verify-phone")
-          [ csrf_element csrf ()
-          ; input_element (* TODO: Add 2 part input (pre and nr) *)
-              language
-              `Text
-              Message.Field.Token
-            (* ~value:contact.user.Sihl_user.email *)
-          ; div
-              ~a:[ a_class [ "flexrow" ] ]
-              [ submit_element
-                  ~classnames:[ "push" ]
+            |> Component.Notification.notification language `Warning
+          ; form
+              ~a:(form_attrs "/user/phone/verify")
+              [ csrf_element csrf ()
+              ; input_element (* TODO: Add 2 part input (pre and nr) *)
                   language
-                  Message.(Verify (Some Field.PhoneNumber))
-                  ()
+                  `Text
+                  Message.Field.Token
+              ; div
+                  ~a:[ a_class [ "flexrow" ] ]
+                  [ submit_element
+                      ~classnames:[ "push" ]
+                      language
+                      Message.(Verify (Some Field.PhoneNumber))
+                      ()
+                  ]
+              ]
+          ; div
+              ~a:[ a_class [ "flexrow"; "flex-gap"; "gap"; "justify-end" ] ]
+              [ form_as_link
+                  "/user/phone/resend-token"
+                  Message.(Resend (Some Field.Token))
+              ; form_as_link "/user/phone/reset" Message.EnterNewPhoneNumber
               ]
           ]
       ]

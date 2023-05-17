@@ -133,8 +133,10 @@ module Contact = struct
       ; post "/user/update" UserProfile.update
       ; post "/user/update-email" UserProfile.update_email
       ; post "/user/update-password" UserProfile.update_password
-      ; post "/user/update-phone" UserProfile.update_phone_number
-      ; post "/user/verify-phone" UserProfile.verify_phone_number
+      ; post "/user/phone/update" UserProfile.update_phone_number
+      ; post "/user/phone/verify" UserProfile.verify_phone_number
+      ; post "/user/phone/reset" UserProfile.reset_phone_verification
+      ; post "/user/phone/resend-token" UserProfile.resend_token
       ; choose ~scope:"/experiments" experiments
       ; choose ~scope:Field.(Location |> human_url) locations
       ]

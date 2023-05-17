@@ -220,6 +220,12 @@ module UnverifiedPhoneNumber = struct
     { phone_number : PhoneNumber.t
     ; created_at : Pool_common.CreatedAt.t
     }
+
+  type full =
+    { phone_number : PhoneNumber.t
+    ; token : Pool_common.Token.t
+    ; created_at : Pool_common.CreatedAt.t
+    }
 end
 
 module Firstname = struct

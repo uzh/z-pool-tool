@@ -254,6 +254,7 @@ let success_to_string : success -> string = function
   | TenantUpdateDetails -> "Tenant was successfully updated."
   | Updated field ->
     field_message "" (field_to_string field) "was successfully updated."
+  | VerificationMessageResent -> "The verification message has been resent."
 ;;
 
 let warning_to_string : warning -> string = function
@@ -465,6 +466,7 @@ let control_to_string = function
   | Edit field -> format_submit "edit" field
   | Enable -> format_submit "enable" None
   | Enroll -> format_submit "enroll" None
+  | EnterNewPhoneNumber -> "Enter a different number"
   | Filter field -> format_submit "filter" field
   | Login -> format_submit "login" None
   | Manage field -> format_submit "manage" (Some field)

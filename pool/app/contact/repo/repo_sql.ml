@@ -443,8 +443,6 @@ let phone_number_verifiaction_sql ?(where = "") () =
     where
 ;;
 
-(* TODO: Testen*)
-
 let find_phone_number_verification_by_contact_request =
   let open Caqti_request.Infix in
   phone_number_verifiaction_sql ()
@@ -471,6 +469,29 @@ let find_phone_number_verification_by_contact_and_token pool contact token =
     find_phone_number_verification_by_contact_and_token_request
     (Entity.(id contact |> Id.value), Pool_common.Token.value token)
   ||> CCOption.to_result Pool_common.Message.(Invalid Field.Token)
+;;
+
+let find_full_phone_number_verification_by_contact_request =
+  let open Caqti_request.Infix in
+  {sql|
+    SELECT
+      phone_number,
+      token,
+      created_at
+    FROM pool_phone_number_verifications
+    WHERE user_uuid = UNHEX(REPLACE(?, '-', ''))
+    LIMIT 1
+    |sql}
+  |> Caqti_type.(string ->? Pool_user.Repo.UnverifiedPhoneNumber.full)
+;;
+
+let find_full_phone_number_verification_by_contact pool contact =
+  let open Utils.Lwt_result.Infix in
+  Utils.Database.find_opt
+    (Pool_database.Label.value pool)
+    find_full_phone_number_verification_by_contact_request
+    Entity.(id contact |> Id.value)
+  ||> CCOption.to_result Pool_common.Message.(NotFound Field.Token)
 ;;
 
 let delete_unverified_phone_number_requeset =

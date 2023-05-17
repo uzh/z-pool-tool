@@ -20,12 +20,19 @@ let show usage req =
        in
        match usage with
        | `ContactInformation ->
+         let was_reset =
+           let open CCOption in
+           Sihl.Web.Request.query_list req
+           |> CCList.assoc_opt ~eq:CCString.equal "reset"
+           >>= CCList.head_opt
+           |> CCOption.is_some
+         in
          let%lwt verification =
            Contact.find_phone_number_verification_by_contact
              database_label
              contact
          in
-         Page.Contact.contact_information contact context verification
+         Page.Contact.contact_information contact context verification was_reset
          |> create_layout "/user/contact-information"
        | `LoginInformation ->
          let%lwt password_policy =
@@ -228,6 +235,62 @@ let verify_phone_number req =
          redirect_to_with_actions
            (path_with_language query_language "/user/contact-information")
            [ Message.set ~success:[ Pool_common.Message.PhoneNumberVerified ] ])
+       |> Lwt_result.ok
+  in
+  result |> HttpUtils.extract_happy_path_with_actions req
+;;
+
+let reset_phone_verification req =
+  let result ({ Pool_context.database_label; query_language; _ } as context) =
+    let open Utils.Lwt_result.Infix in
+    let tags = tags req in
+    Utils.Lwt_result.map_error (fun msg -> msg, "/user/contact-information", [])
+    @@ let* contact = Pool_context.find_contact context |> Lwt_result.lift in
+       let* events =
+         Command.ResetPhoneNumberVerification.handle ~tags contact
+         |> Lwt_result.lift
+       in
+       let%lwt () = Pool_event.handle_events ~tags database_label events in
+       HttpUtils.(
+         redirect_to
+           (path_with_language
+              query_language
+              "/user/contact-information?reset=true"))
+       |> Lwt_result.ok
+  in
+  result |> HttpUtils.extract_happy_path_with_actions req
+;;
+
+let resend_token req =
+  let result
+    ({ Pool_context.database_label; language; query_language; _ } as context)
+    =
+    let open Utils.Lwt_result.Infix in
+    Utils.Lwt_result.map_error (fun msg -> msg, "/user/contact-information", [])
+    @@ let* contact = Pool_context.find_contact context |> Lwt_result.lift in
+       let* { Pool_context.Tenant.tenant; _ } =
+         Pool_context.Tenant.find req |> Lwt_result.lift
+       in
+       let* { Pool_user.UnverifiedPhoneNumber.phone_number; token; _ } =
+         Contact.find_full_phone_number_verification_by_contact
+           database_label
+           contact
+       in
+       let* () =
+         Message_template.PhoneVerification.create_text_message
+           database_label
+           language
+           tenant
+           phone_number
+           token
+         |>> Pool_tenant.Service.TextMessage.send database_label
+       in
+       HttpUtils.(
+         redirect_to_with_actions
+           (path_with_language query_language "/user/contact-information")
+           [ Message.set
+               ~success:[ Pool_common.Message.VerificationMessageResent ]
+           ])
        |> Lwt_result.ok
   in
   result |> HttpUtils.extract_happy_path_with_actions req

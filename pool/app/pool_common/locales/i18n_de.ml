@@ -146,11 +146,14 @@ let rec hint_to_string = function
      anmelden."
   | ContactCurrentPhoneNumber phone_number ->
     Format.asprintf "Ihre aktuelle Telefonnummer lautet %s." phone_number
+  | ContactNoPhoneNumber -> "Sie haben noch keine Telefonnummer verifiziert."
   | ContactEnterPhoneNumberToken phone_number ->
     Format.asprintf
       "PBitte geben Sie den Verifizierungscode ein, den wir Ihnen an %s \
        geschickt haben."
       phone_number
+  | ContactPhoneNumberVerificationWasReset ->
+    "Sie können nun eine neue Telefonnummer eingeben."
   | ContactOnWaitingList ->
     "Sie stehen auf der Warteliste. Das Rekrutierungsteam wird Sie einer \
      Session zuweisen."

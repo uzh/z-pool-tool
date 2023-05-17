@@ -34,10 +34,25 @@ module UnverifiedPhoneNumber = struct
   include UnverifiedPhoneNumber
 
   let t =
-    let encode m = Ok (m.phone_number, m.created_at) in
+    let encode (m : t) = Ok (m.phone_number, m.created_at) in
     let decode (phone_number, created_at) = Ok { phone_number; created_at } in
     Caqti_type.(
       custom ~encode ~decode (tup2 PhoneNumber.t Pool_common.Repo.CreatedAt.t))
+  ;;
+
+  let full =
+    let encode _ = failwith "Decode model only." in
+    let decode (phone_number, token, created_at) =
+      Ok { phone_number; token; created_at }
+    in
+    Caqti_type.(
+      custom
+        ~encode
+        ~decode
+        (tup3
+           PhoneNumber.t
+           Pool_common.Repo.Token.t
+           Pool_common.Repo.CreatedAt.t))
   ;;
 end
 

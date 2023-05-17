@@ -55,6 +55,7 @@ type event =
   | UnverifiedDeleted of t
   | PhoneNumberAdded of t * User.PhoneNumber.t * Pool_common.Token.t
   | PhoneNumberVerified of t * User.PhoneNumber.t
+  | PhoneNumberVerificationReset of t
   | ProfileUpdateTriggeredAtUpdated of t list
   | RegistrationAttemptNotificationSent of t
   | Updated of t
@@ -155,6 +156,8 @@ let handle_event pool : event -> unit Lwt.t =
     let%lwt () =
       { contact with phone_number = Some phone_number } |> Repo.update pool
     in
+    Repo.delete_unverified_phone_number pool contact
+  | PhoneNumberVerificationReset contact ->
     Repo.delete_unverified_phone_number pool contact
   | ProfileUpdateTriggeredAtUpdated contacts ->
     contacts |> CCList.map id |> Repo.update_profile_updated_triggered pool

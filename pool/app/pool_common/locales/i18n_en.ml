@@ -143,10 +143,13 @@ let rec hint_to_string = function
      still meet the experiment criteria, they can register for sessions again."
   | ContactCurrentPhoneNumber phone_number ->
     Format.asprintf "Your current phone number is %s." phone_number
+  | ContactNoPhoneNumber -> "You have not yet verified a phone number."
   | ContactEnterPhoneNumberToken phone_number ->
     Format.asprintf
       "Please enter the verification code we sent yout to %s."
       phone_number
+  | ContactPhoneNumberVerificationWasReset ->
+    "You can enter a different phone number now."
   | ContactOnWaitingList ->
     "You are on the waiting list. The recruitment team will assign you to a \
      session."

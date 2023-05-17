@@ -117,6 +117,12 @@ module UnverifiedPhoneNumber : sig
     { phone_number : PhoneNumber.t
     ; created_at : Pool_common.CreatedAt.t
     }
+
+  type full =
+    { phone_number : PhoneNumber.t
+    ; token : Pool_common.Token.t
+    ; created_at : Pool_common.CreatedAt.t
+    }
 end
 
 module EmailAddress : sig
@@ -179,6 +185,7 @@ module Repo : sig
 
   module UnverifiedPhoneNumber : sig
     val t : UnverifiedPhoneNumber.t Caqti_type.t
+    val full : UnverifiedPhoneNumber.full Caqti_type.t
   end
 
   module EmailAddress : sig

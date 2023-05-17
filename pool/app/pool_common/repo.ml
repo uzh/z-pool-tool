@@ -94,3 +94,11 @@ module Reminder = struct
 end
 
 module ExperimentType = Model.SelectorType (ExperimentType)
+
+module Token = struct
+  include Token
+
+  let t =
+    make_caqti_type Caqti_type.string CCFun.(of_string %> CCResult.return) value
+  ;;
+end

@@ -151,6 +151,7 @@ type success =
   | TenantUpdateDatabase
   | TenantUpdateDetails
   | Updated of Field.t
+  | VerificationMessageResent
 [@@deriving eq, show, yojson, variants, sexp_of]
 
 type info = Info of string [@@deriving eq, show, yojson, variants, sexp_of]
@@ -190,6 +191,7 @@ type control =
   | Edit of Field.t option
   | Enable
   | Enroll
+  | EnterNewPhoneNumber
   | Filter of Field.t option
   | Login
   | Manage of Field.t
