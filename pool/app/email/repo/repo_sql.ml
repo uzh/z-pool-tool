@@ -173,16 +173,3 @@ let delete_unverified_by_user pool id =
     delete_unverified_by_user_request
   @@ Pool_common.Id.value id
 ;;
-
-let delete_email_template_request =
-  let open Caqti_request.Infix in
-  {sql| DELETE FROM email_templates WHERE label = $1 AND language = $2 |sql}
-  |> Caqti_type.(tup2 string string ->. unit)
-;;
-
-let delete_email_template pool label language =
-  Utils.Database.exec
-    (Pool_database.Label.value pool)
-    delete_email_template_request
-  @@ (TemplateLabel.show label, Pool_common.Language.show language)
-;;

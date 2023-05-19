@@ -1,49 +1,3 @@
-type email_layout =
-  { link : string
-  ; logo_src : string
-  ; logo_alt : string
-  }
-
-val equal_email_layout : email_layout -> email_layout -> bool
-
-module CustomTemplate : sig
-  module Subject : sig
-    type t =
-      | I18n of I18n.t
-      | String of string
-
-    val equal : t -> t -> bool
-    val pp : Format.formatter -> t -> unit
-    val show : t -> string
-    val value : t -> string
-    val i18n : I18n.t -> t
-    val string : string -> t
-  end
-
-  module Content : sig
-    type t =
-      | I18n of I18n.t
-      | String of string
-
-    val equal : t -> t -> bool
-    val pp : Format.formatter -> t -> unit
-    val show : t -> string
-    val value : t -> string
-    val i18n : I18n.t -> t
-    val string : string -> t
-  end
-
-  type t =
-    { subject : Subject.t
-    ; content : Content.t
-    ; layout : email_layout
-    }
-
-  val equal : t -> t -> bool
-  val pp : Format.formatter -> t -> unit
-  val show : t -> string
-end
-
 module Token : sig
   type t
 
@@ -130,24 +84,6 @@ val create_token
   -> Pool_user.EmailAddress.t
   -> Token.t Lwt.t
 
-module TemplateLabel : sig
-  type t =
-    | Boilerplate
-    | EmailVerification
-    | Invitation
-    | PasswordChange
-    | PasswordReset
-    | SignUpVerification
-    | SessionCancellation
-
-  val equal : t -> t -> bool
-  val pp : Format.formatter -> t -> unit
-  val show : t -> string
-  val read : string -> t
-end
-
-type text_component = (string, string) CCPair.t
-
 type verification_event =
   | Created of Pool_user.EmailAddress.t * Token.t * Pool_common.Id.t
   | EmailVerified of unverified t
@@ -159,13 +95,6 @@ val handle_verification_event
 
 val equal_verification_event : verification_event -> verification_event -> bool
 val pp_verification_event : Format.formatter -> verification_event -> unit
-
-type confirmation_email =
-  { subject : I18n.Content.t
-  ; text : I18n.Content.t
-  ; language : Pool_common.Language.t
-  ; session_text : string
-  }
 
 type event =
   | Sent of Sihl_email.t

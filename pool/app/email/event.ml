@@ -1,14 +1,6 @@
 open Entity
 module User = Pool_user
 
-type confirmation_email =
-  { subject : I18n.Content.t
-  ; text : I18n.Content.t
-  ; language : Pool_common.Language.t
-  ; session_text : string
-  }
-[@@deriving eq, show]
-
 let deactivate_token pool token =
   Service.Token.deactivate ~ctx:(Pool_database.to_ctx pool) token
 ;;
