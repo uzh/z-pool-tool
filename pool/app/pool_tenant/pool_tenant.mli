@@ -388,20 +388,4 @@ module Service : sig
     val lifecycle : Sihl.Container.lifecycle
     val register : unit -> Sihl.Container.Service.t
   end
-
-  module TextMessage : sig
-    module TextMessageContent : sig
-      type t
-
-      val render : string -> (string * string) list -> t
-    end
-
-    type t =
-      { recipient : Pool_user.PhoneNumber.t
-      ; sender : Title.t
-      ; text : TextMessageContent.t
-      }
-
-    val send : Pool_database.Label.t -> t -> unit Lwt.t
-  end
 end

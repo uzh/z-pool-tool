@@ -337,12 +337,12 @@ module PhoneVerification = struct
     phone_number
     token
     =
-    let open Pool_tenant.Service.TextMessage in
+    let open Text_message in
     let open Utils.Lwt_result.Infix in
     let* { sms_text; _ }, _ =
       find_by_label_to_send pool preferred_language Label.PhoneVerification
     in
-    let content = TextMessageContent.render sms_text (message_params token) in
+    let content = Content.render sms_text (message_params token) in
     Lwt_result.return
       { recipient = phone_number
       ; sender = tenant.Pool_tenant.title

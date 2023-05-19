@@ -9,6 +9,7 @@
   service
   session
   settings
+  text_message
   utils)
  (preprocess
   (pps

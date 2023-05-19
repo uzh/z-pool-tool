@@ -1,6 +1,4 @@
-(** TODO
-
-    - handle gtx errors (eg. not delivered) *)
+include Entity
 module PhoneNumber = Pool_user.PhoneNumber
 
 let bypass () =
@@ -17,30 +15,14 @@ module Config = struct
     Format.asprintf "%s/%s/%s" gateway_server gateway_api_path auth_key
   ;;
 
-  let gateway_port = 443
   let auth_key () = Sihl.Configuration.read_string "GTX_AUTH_KEY"
-  let default_sender = "UAST"
 end
-
-module TextMessageContent = struct
-  type t = string
-
-  let render text params =
-    Sihl.Contract.Email_template.render params text None |> fst
-  ;;
-end
-
-type t =
-  { recipient : PhoneNumber.t
-  ; sender : Entity.Title.t
-  ; text : TextMessageContent.t
-  }
 
 let src = Logs.Src.create "pool_tenant.service.text_message"
 let tags database_label = Pool_database.(Logger.Tags.create database_label)
 
 let request_body recipient text sender =
-  [ "from", [ Entity.Title.value sender ]
+  [ "from", [ Pool_tenant.Title.value sender ]
   ; "to", [ PhoneNumber.value recipient ]
   ; "text", [ text ]
   ]
@@ -65,7 +47,7 @@ Text:
 %s
 -----------------------
 |}
-      sender
+      (Pool_tenant.Title.value sender)
       (PhoneNumber.value recipient)
       text);
   Lwt.return_unit
@@ -125,4 +107,14 @@ let send database_label ({ recipient; text; sender } as m) =
               text
               body_string);
           Lwt.return_unit))
+;;
+
+type event =
+  | Sent of Entity.t
+  | BulkSent of t list
+[@@deriving eq, show]
+
+let handle_event pool : event -> unit Lwt.t = function
+  | Sent message -> send pool message
+  | BulkSent messages -> Lwt_list.iter_s (fun msg -> send pool msg) messages
 ;;

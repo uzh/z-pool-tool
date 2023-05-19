@@ -269,8 +269,7 @@ module PhoneVerification : sig
     -> Pool_tenant.t
     -> Pool_user.PhoneNumber.t
     -> Pool_common.Token.t
-    -> (Pool_tenant.Service.TextMessage.t, Pool_common.Message.error) result
-       Lwt.t
+    -> (Text_message.t, Pool_common.Message.error) result Lwt.t
 end
 
 module ProfileUpdateTrigger : sig

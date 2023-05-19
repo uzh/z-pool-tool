@@ -200,7 +200,7 @@ let update_phone_number req =
            tenant
            phone_number
            token
-         |>> Pool_tenant.Service.TextMessage.send database_label
+         |>> Text_message.send database_label
        in
        let* events =
          Command.AddPhoneNumber.handle ~tags (contact, phone_number, token)
@@ -294,7 +294,7 @@ let resend_token req =
            tenant
            phone_number
            token
-         |>> Pool_tenant.Service.TextMessage.send database_label
+         |>> Text_message.send database_label
        in
        HttpUtils.(
          redirect_to_with_actions
