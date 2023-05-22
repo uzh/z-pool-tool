@@ -172,8 +172,8 @@ let extract_happy_path_with_actions ?enable_cache req result =
     redirect_to "/error"
 ;;
 
-let htmx_redirect path ?query_language ?(actions = []) () =
-  Sihl.Web.Response.of_plain_text ""
+let htmx_redirect path ?query_language ?status ?(actions = []) () =
+  Sihl.Web.Response.of_plain_text "" ?status
   |> Sihl.Web.Response.add_header
        ( "HX-Redirect"
        , path_with_language query_language path |> Sihl.Web.externalize_path )
