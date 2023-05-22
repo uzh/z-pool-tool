@@ -169,7 +169,7 @@ module Sql = struct
 
   let find_binary_experiment_id_sql =
     {sql|
-      SELECT pool_experiments.uuid
+      SELECT exp.uuid
       FROM pool_waiting_list AS wl
       LEFT JOIN pool_experiments AS exp ON wl.experiment_uuid = exp.uuid
       WHERE wl.uuid = ?
