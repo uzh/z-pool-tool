@@ -13,7 +13,7 @@ let show usage req =
     @@ let* contact = Pool_context.find_contact context |> Lwt_result.lift in
        match usage with
        | `LoginInformation ->
-         let* password_policy =
+         let%lwt password_policy =
            I18n.find_by_key database_label I18n.Key.PasswordPolicyText language
          in
          Page.Contact.login_information contact context password_policy

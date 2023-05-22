@@ -27,12 +27,7 @@ let create req =
          Pool_context.Tenant.find req |> Lwt_result.lift
        in
        let* confirmation_email =
-         let* language =
-           let* default = Settings.default_language database_label in
-           contact.Contact.language
-           |> CCOption.value ~default
-           |> Lwt_result.return
-         in
+         let%lwt language = Contact.message_language database_label contact in
          Message_template.AssignmentConfirmation.create_from_public_session
            database_label
            language

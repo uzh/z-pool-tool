@@ -163,10 +163,7 @@ let assign_contact req =
     in
     let* confirmation_email =
       let contact = waiting_list.Waiting_list.contact in
-      let* language =
-        let* default = Settings.default_language database_label in
-        contact.Contact.language |> CCOption.value ~default |> Lwt_result.return
-      in
+      let%lwt language = Contact.message_language database_label contact in
       Message_template.AssignmentConfirmation.create
         database_label
         language

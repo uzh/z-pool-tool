@@ -142,9 +142,8 @@ let find_by_label_to_send pool ?entity_uuids language label =
     Format.asprintf "%s WHERE %s ORDER BY %s LIMIT 1" select_sql where order_by
     |> pt ->! RepoEntity.t
   in
-  Utils.Database.find_opt (pool |> Database.Label.value) request pv
-  ||> CCOption.to_result Pool_common.Message.(NotFound Field.Template)
-  >|+ fun ({ language; _ } as t) -> t, language
+  Utils.Database.find (pool |> Database.Label.value) request pv
+  ||> fun ({ language; _ } as t) -> t, language
 ;;
 
 let find_all_by_entity_uuid_and_label_request dyn languages entity_uuid =
@@ -192,12 +191,12 @@ let find_all_by_entity_uuid_and_label_request dyn languages entity_uuid =
 
 let find_all_by_label_to_send pool ?entity_uuids languages label =
   if CCList.is_empty languages
-  then Lwt_result.return []
+  then Lwt.return []
   else
     let open Utils.Lwt_result.Infix in
     let open Caqti_request.Infix in
     find_by_label_to_send pool ?entity_uuids Pool_common.Language.En label
-    |>> fun ({ entity_uuid; _ }, _) ->
+    >|> fun ({ entity_uuid; _ }, _) ->
     let dyn = Dynparam.(empty |> add Caqti_type.string (Label.show label)) in
     let dyn, sql =
       find_all_by_entity_uuid_and_label_request dyn languages entity_uuid

@@ -123,6 +123,11 @@ val should_send_registration_attempt_notification
 
 val has_terms_accepted : Pool_database.Label.t -> t -> bool Lwt.t
 
+val message_language
+  :  Pool_database.Label.t
+  -> t
+  -> Pool_common.Language.t Lwt.t
+
 type create =
   { user_id : Pool_common.Id.t
   ; email : Pool_user.EmailAddress.t

@@ -10,7 +10,7 @@ let sign_up req =
     Utils.Lwt_result.map_error (fun err -> err, "/index")
     @@
     let flash_fetcher key = Sihl.Web.Flash.find key req in
-    let* terms = Settings.terms_and_conditions database_label language in
+    let%lwt terms = Settings.terms_and_conditions database_label language in
     Page.Contact.sign_up terms context flash_fetcher
     |> create_layout req ~active_navigation:"/signup" context
     >|+ Sihl.Web.Response.of_html
@@ -213,7 +213,7 @@ let terms req =
   let result ({ Pool_context.database_label; language; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, "/login")
     @@ let* contact = Pool_context.find_contact context |> Lwt_result.lift in
-       let* terms = Settings.terms_and_conditions database_label language in
+       let%lwt terms = Settings.terms_and_conditions database_label language in
        Page.Contact.terms
          Contact.(contact |> id |> Pool_common.Id.value)
          terms

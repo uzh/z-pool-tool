@@ -118,14 +118,10 @@ let terms_and_conditions_last_updated pool =
 
 let default_language pool =
   let open Utils.Lwt_result.Infix in
-  find_languages pool
-  ||> CCList.head_opt
-  ||> CCOption.to_result Pool_common.Message.(Retrieve Field.Language)
+  find_languages pool ||> CCList.hd
 ;;
 
 let terms_and_conditions pool language =
   let%lwt terms = find_terms_and_conditions pool in
-  CCList.assoc_opt ~eq:Pool_common.Language.equal language terms
-  |> CCOption.to_result Pool_common.Message.(Retrieve Field.TermsAndConditions)
-  |> Lwt_result.lift
+  CCList.assoc ~eq:Pool_common.Language.equal language terms |> Lwt.return
 ;;

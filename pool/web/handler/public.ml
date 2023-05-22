@@ -24,7 +24,7 @@ let index req =
       let error_path = Http_utils.path_with_language query_language "/error" in
       Utils.Lwt_result.map_error (fun err -> err, error_path)
       @@ let* tenant = Pool_tenant.find_by_label database_label in
-         let* welcome_text =
+         let%lwt welcome_text =
            I18n.find_by_key database_label I18n.Key.WelcomeText language
          in
          Page.Public.index tenant context welcome_text

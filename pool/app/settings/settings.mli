@@ -151,15 +151,12 @@ val find_terms_and_conditions
   -> TermsAndConditions.t list Lwt.t
 
 val terms_and_conditions_last_updated : Pool_database.Label.t -> Ptime.t Lwt.t
-
-val default_language
-  :  Pool_database.Label.t
-  -> (Pool_common.Language.t, Pool_common.Message.error) result Lwt.t
+val default_language : Pool_database.Label.t -> Pool_common.Language.t Lwt.t
 
 val terms_and_conditions
   :  Pool_database.Label.t
   -> Pool_common.Language.t
-  -> (TermsAndConditions.Terms.t, Pool_common.Message.error) result Lwt.t
+  -> TermsAndConditions.Terms.t Lwt.t
 
 val find_default_reminder_lead_time
   :  Pool_database.Label.t

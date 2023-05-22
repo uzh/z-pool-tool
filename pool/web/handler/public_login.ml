@@ -161,7 +161,7 @@ let reset_password_get req =
     let token =
       Sihl.Web.Request.query Pool_common.Message.Field.(Token |> show) req
     in
-    let* password_policy =
+    let%lwt password_policy =
       I18n.find_by_key database_label I18n.Key.PasswordPolicyText language
     in
     match token with

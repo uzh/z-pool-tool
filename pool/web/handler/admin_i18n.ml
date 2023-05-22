@@ -50,11 +50,11 @@ let update req =
     @@
     let tags = Pool_context.Logger.Tags.req req in
     let property () = I18n.find database_label id in
+    let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
     let events property =
       let open CCResult.Infix in
       let open Cqrs_command.I18n_command.Update in
-      let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-      urlencoded |> decode >>= handle ~tags property |> Lwt_result.lift
+      urlencoded |> decode >>= handle ~tags property
     in
     let handle events =
       let%lwt () =
@@ -64,7 +64,7 @@ let update req =
         redirect_path
         [ Message.set ~success:[ Pool_common.Message.(Updated Field.I18n) ] ]
     in
-    () |> property >>= events |>> handle
+    () |> property ||> events |>> handle
   in
   result |> HttpUtils.extract_happy_path req
 ;;
