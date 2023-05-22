@@ -137,6 +137,7 @@ let extract_happy_path_generic ?enable_cache req result msgf =
 
 let extract_happy_path ?enable_cache req result =
   extract_happy_path_generic ?enable_cache req result (fun err ->
+    (* TODO: Use utils fnc *)
     Logs.warn ~src (fun m ->
       m
         ~tags:(Pool_context.Logger.Tags.req req)
@@ -202,13 +203,6 @@ let extract_happy_path_htmx req result =
     Logs.warn ~src (fun m ->
       m ~tags "Context not found: %s" (Message.Message.show_error err));
     htmx_redirect "/error" ()
-;;
-
-(* Read urlencoded values in any order *)
-let urlencoded_to_params_opt urlencoded keys =
-  keys
-  |> CCList.map
-     @@ fun key -> key, CCList.assoc_opt ~eq:CCString.equal key urlencoded
 ;;
 
 let urlencoded_to_params urlencoded keys =
