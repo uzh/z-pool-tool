@@ -383,10 +383,10 @@ let update_tenant_database () =
   let open Data in
   let open CCResult.Infix in
   match Data.tenant with
-  | Error _ -> failwith "Failed to create tenant"
+  | Error _ -> failwith "Failed to update tenant"
   | Ok tenant ->
     let events =
-      let open Pool_tenant_command.CreateDatabase in
+      let open Pool_tenant_command.UpdateDatabase in
       let database =
         Common.Message.Field.
           [ DatabaseUrl |> show, [ database_url ]
@@ -408,6 +408,8 @@ let update_tenant_database () =
       Ok
         [ Pool_tenant.DatabaseEdited (tenant, database)
           |> Pool_event.pool_tenant
+        ; Database.Updated database |> Pool_event.database
+        ; Database.Migrated database.Pool_database.label |> Pool_event.database
         ]
     in
     Alcotest.(

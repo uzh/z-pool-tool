@@ -1,3 +1,4 @@
+open CCFun.Infix
 open Sexplib.Conv
 module Common = Pool_common
 module Id = Common.Id
@@ -174,6 +175,46 @@ module Write = struct
     }
   ;;
 end
+
+let to_write
+  ({ id
+   ; title
+   ; description
+   ; url
+   ; database_label
+   ; styles
+   ; icon
+   ; maintenance
+   ; disabled
+   ; default_language
+   ; created_at
+   ; updated_at
+   ; _
+   } :
+    t)
+  database
+  =
+  let open CCResult in
+  let* (database : Pool_database.t) =
+    if Pool_database.Label.equal database_label database.Pool_database.label
+    then Ok database
+    else Error Pool_common.Message.(Invalid Field.Database)
+  in
+  Ok
+    { Write.id
+    ; title
+    ; description
+    ; url
+    ; database
+    ; styles = CCOption.map File.(id %> Id.value) styles
+    ; icon = CCOption.map File.(id %> Id.value) icon
+    ; maintenance
+    ; disabled
+    ; default_language
+    ; created_at
+    ; updated_at
+    }
+;;
 
 module Selection = struct
   type t =

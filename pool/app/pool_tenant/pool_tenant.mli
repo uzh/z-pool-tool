@@ -261,6 +261,11 @@ module Write : sig
   val show : t -> string
 end
 
+val to_write
+  :  t
+  -> Pool_database.t
+  -> (Write.t, Pool_common.Message.error) result
+
 type update =
   { title : Title.t
   ; description : Description.t option

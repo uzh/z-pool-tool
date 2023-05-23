@@ -19,6 +19,7 @@ val equal : t -> t -> bool
 val pp : Format.formatter -> t -> unit
 val create : Label.t -> Url.t -> (t, Pool_common.Message.error) result
 val add_pool : t -> unit
+val drop_pool : Label.t -> unit Lwt.t
 val read_pool : t -> Label.t
 val to_ctx : Label.t -> (string * string) list
 val of_ctx_opt : (string * string) list -> Label.t option

@@ -43,3 +43,32 @@ let check_tenant_database _ () =
   let _ = Sihl.Database.fetch_pool ~ctx () in
   Lwt.return_unit
 ;;
+
+let update_database _ () =
+  let open Utils.Lwt_result.Infix in
+  let open Cqrs_command.Pool_tenant_command.UpdateDatabase in
+  let label, url = Data.database in
+  let database =
+    Pool_database.create label url |> Test_utils.get_or_failwith_pool_error
+  in
+  let%lwt tenant =
+    Pool_tenant.find_by_label label
+    >== CCFun.flip Pool_tenant.to_write database
+    ||> Test_utils.get_or_failwith_pool_error
+  in
+  let%lwt () =
+    handle tenant database
+    |> Test_utils.get_or_failwith_pool_error
+    |> Pool_event.handle_events Test_utils.Data.database_label
+  in
+  let%lwt tenants = Pool_tenant.find_databases () in
+  let () =
+    Alcotest.(
+      check
+        (list Testable.database)
+        "updated database found"
+        [ database ]
+        tenants)
+  in
+  Lwt.return_unit
+;;

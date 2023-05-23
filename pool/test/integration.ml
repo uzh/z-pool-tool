@@ -7,6 +7,7 @@ let suite =
           [ test_case "access root" `Slow check_root_database
           ; test_case "find tenants" `Slow check_find_tenant_database
           ; test_case "access tenant" `Slow check_tenant_database
+          ; test_case "update tenant" `Slow update_database
           ] )
     ; ( "settings"
       , Tenant_settings_test.

@@ -146,8 +146,8 @@ let handle_event _ : event -> unit Lwt.t = function
   | Updated pool ->
     let open Pool_database in
     let () = Guard.Persistence.Cache.clear () in
-    let%lwt () = Sihl.Database.drop_pool (Label.value pool.label) in
-    let%lwt (_ : Pool_database.Label.t) =
+    let%lwt () = drop_pool pool.label in
+    let%lwt (_ : Label.t) =
       Tenant.(setup_tenant ~run_functions:setup_functions pool)
     in
     Lwt.return_unit
