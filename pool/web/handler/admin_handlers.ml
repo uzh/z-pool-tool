@@ -12,6 +12,7 @@ module MessageTemplate = Admin_message_templates
 module Session = Admin_session
 module Settings = Admin_settings
 
+let src = Logs.Src.create "handler.admin"
 let create_layout req = General.create_tenant_layout req
 
 let dashboard req =
@@ -22,5 +23,5 @@ let dashboard req =
         |> create_layout req ~active_navigation:"/admin/dashboard" context
         >|+ Sihl.Web.Response.of_html)
   in
-  result |> Http_utils.extract_happy_path req
+  result |> Http_utils.extract_happy_path ~src req
 ;;

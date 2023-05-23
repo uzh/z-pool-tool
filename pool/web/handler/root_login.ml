@@ -1,6 +1,7 @@
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 
+let src = Logs.Src.create "handler.root.login"
 let ctx = Pool_database.(to_ctx root)
 let root_login_path = "/root/login"
 let root_entrypoint_path = "/root/tenants"
@@ -21,7 +22,7 @@ let login_get req =
       ||> Response.of_html
       |> Lwt_result.ok
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path ~src req
 ;;
 
 let login_post req =
@@ -36,7 +37,7 @@ let login_post req =
       [ Sihl.Web.Session.set [ "user_id", user.Sihl_user.id ] ]
     |> Lwt_result.ok
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path ~src req
 ;;
 
 let request_reset_password_get req =
@@ -56,7 +57,7 @@ let request_reset_password_get req =
       ||> Response.of_html
       |> Lwt_result.ok
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path ~src req
 ;;
 
 let request_reset_password_post req =
@@ -86,7 +87,7 @@ let request_reset_password_post req =
         ]
       >|> Lwt.return_ok
   in
-  result |> extract_happy_path_with_actions req
+  result |> extract_happy_path_with_actions ~src req
 ;;
 
 let reset_password_get req =
@@ -107,7 +108,7 @@ let reset_password_get req =
        ||> Response.of_html
        |> Lwt_result.ok
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path ~src req
 ;;
 
 let reset_password_post req =
@@ -139,7 +140,7 @@ let reset_password_post req =
       [ Message.set ~success:[ PasswordReset ] ]
     |> Lwt_result.ok
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path ~src req
 ;;
 
 let logout _ =

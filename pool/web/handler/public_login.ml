@@ -1,6 +1,7 @@
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 
+let src = Logs.Src.create "handler.public.login"
 let to_ctx = Pool_database.to_ctx
 let create_layout req = General.create_tenant_layout req
 
@@ -18,7 +19,7 @@ let login_get req =
     |> create_layout req ~active_navigation:"/login" context
     >|+ Response.of_html
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path ~src req
 ;;
 
 let login_post req =
@@ -96,7 +97,7 @@ let login_post req =
                      ~error:[ Pool_common.Message.(RequiredFieldsMissing) ]
                  ]))
   in
-  result |> HttpUtils.extract_happy_path_with_actions req
+  result |> HttpUtils.extract_happy_path_with_actions ~src req
 ;;
 
 let request_reset_password_get req =
@@ -109,7 +110,7 @@ let request_reset_password_get req =
     |> create_layout req ~active_navigation:"/request-reset-password" context
     >|+ Response.of_html
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path ~src req
 ;;
 
 let request_reset_password_post req =
@@ -147,7 +148,7 @@ let request_reset_password_post req =
       ]
     >|> Lwt_result.return
   in
-  result |> extract_happy_path_with_actions req
+  result |> extract_happy_path_with_actions ~src req
 ;;
 
 let reset_password_get req =
@@ -173,7 +174,7 @@ let reset_password_get req =
       |> create_layout req ~active_navigation:"/reset-password" context
       >|+ Sihl.Web.Response.of_html
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path ~src req
 ;;
 
 let reset_password_post req =
@@ -224,7 +225,7 @@ let reset_password_post req =
       |> Lwt_result.ok
     | Error err -> err |> Lwt_result.fail
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path ~src req
 ;;
 
 let logout req =

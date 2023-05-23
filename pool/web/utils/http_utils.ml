@@ -115,7 +115,7 @@ let set_no_cache_headers ?(enable_cache = false) res =
     |> CCList.fold_left (CCFun.flip Opium.Response.add_header) res
 ;;
 
-let extract_happy_path_generic ?enable_cache req result msgf =
+let extract_happy_path_generic ?(src = src) ?enable_cache req result msgf =
   let context = Pool_context.find req in
   let tags = Pool_context.Logger.Tags.req req in
   match context with
@@ -135,8 +135,8 @@ let extract_happy_path_generic ?enable_cache req result msgf =
     redirect_to "/error"
 ;;
 
-let extract_happy_path ?enable_cache req result =
-  extract_happy_path_generic ?enable_cache req result (fun err ->
+let extract_happy_path ?(src = src) ?enable_cache req result =
+  extract_happy_path_generic ~src ?enable_cache req result (fun err ->
     let err =
       Pool_common.Utils.with_log_error
         ~src
@@ -146,7 +146,7 @@ let extract_happy_path ?enable_cache req result =
     Message.set ~warning:[] ~success:[] ~info:[] ~error:[ err ])
 ;;
 
-let extract_happy_path_with_actions ?enable_cache req result =
+let extract_happy_path_with_actions ?(src = src) ?enable_cache req result =
   let context = Pool_context.find req in
   let tags = Pool_context.Logger.Tags.req req in
   match context with
@@ -183,7 +183,7 @@ let htmx_redirect path ?query_language ?(actions = []) () =
   |> Lwt.return
 ;;
 
-let extract_happy_path_htmx req result =
+let extract_happy_path_htmx ?(src = src) req result =
   let context = Pool_context.find req in
   let tags = Pool_context.Logger.Tags.req req in
   match context with

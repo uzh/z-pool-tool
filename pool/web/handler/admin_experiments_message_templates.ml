@@ -1,6 +1,7 @@
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 
+let src = Logs.Src.create "handler.admin.experiments_mailing"
 let create_layout req = General.create_tenant_layout req
 
 let experiment_id =
@@ -63,7 +64,7 @@ let form ?template_id label req =
     >|> create_layout req context
     >|+ Sihl.Web.Response.of_html
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path ~src req
 ;;
 
 let new_invitation = form Message_template.Label.ExperimentInvitation

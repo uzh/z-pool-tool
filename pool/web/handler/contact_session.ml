@@ -1,5 +1,6 @@
 module HttpUtils = Http_utils
 
+let src = Logs.Src.create "handler.contact.session"
 let create_layout = Contact_general.create_layout
 
 let show req =
@@ -42,5 +43,5 @@ let show req =
        >>= create_layout req context
        >|+ Sihl.Web.Response.of_html
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path ~src req
 ;;

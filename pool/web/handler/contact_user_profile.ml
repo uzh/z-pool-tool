@@ -4,6 +4,7 @@ module Conformist = Pool_common.Utils.PoolConformist
 module User = Pool_user
 module PoolField = Pool_common.Message.Field
 
+let src = Logs.Src.create "handler.contact.user_profile"
 let create_layout = Contact_general.create_layout
 
 let show usage req =
@@ -45,7 +46,7 @@ let show usage req =
               context
          >|+ Sihl.Web.Response.of_html
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path ~src req
 ;;
 
 let personal_details = show `PersonalDetails
@@ -107,7 +108,7 @@ let update_email req =
              [ Message.set ~success:[ EmailConfirmationMessage ] ]))
        |> Lwt_result.ok
   in
-  result |> HttpUtils.extract_happy_path_with_actions req
+  result |> HttpUtils.extract_happy_path_with_actions ~src req
 ;;
 
 let update_password req =
@@ -143,7 +144,7 @@ let update_password req =
              [ Message.set ~success:[ Pool_common.Message.PasswordChanged ] ]))
        |> Lwt_result.ok
   in
-  result |> HttpUtils.extract_happy_path_with_actions req
+  result |> HttpUtils.extract_happy_path_with_actions ~src req
 ;;
 
 let completion req =
@@ -163,7 +164,7 @@ let completion req =
     |> create_layout req ~active_navigation:"/user" context
     >|+ Sihl.Web.Response.of_html
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path ~src req
 ;;
 
 let completion_post req =
@@ -249,5 +250,5 @@ let completion_post req =
     in
     events |>> handle
   in
-  result |> HttpUtils.extract_happy_path_with_actions req
+  result |> HttpUtils.extract_happy_path_with_actions ~src req
 ;;

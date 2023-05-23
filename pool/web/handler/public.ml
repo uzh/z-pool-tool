@@ -3,6 +3,7 @@ module Login = Public_login
 module Common = Pool_common
 module Database = Pool_database
 
+let src = Logs.Src.create "handler.public"
 let create_layout req = General.create_tenant_layout req
 
 let root_redirect req =
@@ -31,7 +32,7 @@ let index req =
          |> create_layout req context
          >|+ Sihl.Web.Response.of_html
     in
-    result |> Http_utils.extract_happy_path req)
+    result |> Http_utils.extract_happy_path ~src req)
 ;;
 
 let index_css req =
@@ -84,7 +85,7 @@ let email_confirmation_note req =
     |> create_layout req context
     >|+ Sihl.Web.Response.of_html
   in
-  result |> Http_utils.extract_happy_path req
+  result |> Http_utils.extract_happy_path ~src req
 ;;
 
 let not_found req =
@@ -111,7 +112,7 @@ let not_found req =
          html |> create_layout req context >|+ Sihl.Web.Response.of_html
   in
   result
-  |> Http_utils.extract_happy_path req
+  |> Http_utils.extract_happy_path ~src req
   |> Lwt.map @@ Opium.Response.set_status `Not_found
 ;;
 

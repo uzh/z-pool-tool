@@ -1,6 +1,7 @@
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 
+let src = Logs.Src.create "handler.admin.i18n"
 let create_layout req = General.create_tenant_layout req
 
 module I18nMap = CCMap.Make (struct
@@ -35,7 +36,7 @@ let index req =
     |> create_layout req ~active_navigation:"/admin/i18n" context
     >|+ Sihl.Web.Response.of_html
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path ~src req
 ;;
 
 let update req =
@@ -66,7 +67,7 @@ let update req =
     in
     () |> property ||> events |>> handle
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path ~src req
 ;;
 
 module Access : module type of Helpers.Access = struct

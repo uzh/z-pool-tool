@@ -6,6 +6,7 @@ module Rules = Admin_settings_rules
 module Schedule = Admin_settings_schedule
 module Smtp = Admin_settings_smtp
 
+let src = Logs.Src.create "handler.admin.settings"
 let create_layout req = General.create_tenant_layout req
 
 let show req =
@@ -46,7 +47,7 @@ let show req =
     |> create_layout req ~active_navigation:"/admin/settings" context
     >|+ Sihl.Web.Response.of_html
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path ~src req
 ;;
 
 let update_settings req =
@@ -119,7 +120,7 @@ let update_settings req =
     in
     () |> events |>> handle |>> return_to_settings
   in
-  result |> HttpUtils.extract_happy_path_with_actions req
+  result |> HttpUtils.extract_happy_path_with_actions ~src req
 ;;
 
 module Access : module type of Helpers.Access = struct

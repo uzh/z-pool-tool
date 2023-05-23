@@ -1,5 +1,6 @@
 module HttpUtils = Http_utils
 
+let src = Logs.Src.create "handler.contact.assignment"
 let create_layout = Contact_general.create_layout
 
 let create req =
@@ -63,5 +64,5 @@ let create req =
        in
        events |>> handle
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path ~src req
 ;;

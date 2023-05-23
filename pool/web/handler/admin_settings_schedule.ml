@@ -2,6 +2,7 @@ open Utils.Lwt_result.Infix
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 
+let src = Logs.Src.create "handler.admin.settings_schedule"
 let active_navigation = "/admin/settings/schedules"
 
 let show req =
@@ -12,7 +13,7 @@ let show req =
     >|+ Sihl.Web.Response.of_html
     >|- fun err -> err, "/"
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path ~src req
 ;;
 
 module Access : module type of Helpers.Access = struct

@@ -2,6 +2,7 @@ module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 module Field = Pool_common.Message.Field
 
+let src = Logs.Src.create "handler.admin.experiments_assignments"
 let create_layout req = General.create_tenant_layout req
 
 let list ?(marked_as_deleted = false) req =
@@ -52,7 +53,7 @@ let list ?(marked_as_deleted = false) req =
        in
        html >|> create_layout req context >|+ Sihl.Web.Response.of_html
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path ~src req
 ;;
 
 let index req = list req
@@ -122,7 +123,7 @@ let cancel req =
     in
     events |>> handle
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path ~src req
 ;;
 
 let mark_as_deleted req =
@@ -168,7 +169,7 @@ let mark_as_deleted req =
     in
     events |>> handle
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path ~src req
 ;;
 
 module Access : sig

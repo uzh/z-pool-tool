@@ -2,6 +2,8 @@ module HttpUtils = Http_utils
 module HttpMessage = HttpUtils.Message
 module Field = Pool_common.Message.Field
 
+let src = Logs.Src.create "handler.admin.experiments_invitations"
+let extract_happy_path = HttpUtils.extract_happy_path ~src
 let create_layout req = General.create_tenant_layout req
 let experiment_id = HttpUtils.find_id Experiment.Id.of_string Field.Experiment
 
@@ -44,7 +46,7 @@ let index req =
        >|> create_layout req context
        >|+ Sihl.Web.Response.of_html
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> extract_happy_path req
 ;;
 
 let sent_invitations req =
@@ -70,7 +72,7 @@ let sent_invitations req =
        >|> create_layout req context
        >|+ Sihl.Web.Response.of_html
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> extract_happy_path req
 ;;
 
 let create req =
@@ -139,7 +141,7 @@ let create req =
     in
     events |> Lwt_result.lift |>> handle
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> extract_happy_path req
 ;;
 
 let resend req =
@@ -182,7 +184,7 @@ let resend req =
     in
     events |>> handle
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> extract_happy_path req
 ;;
 
 module Access : sig

@@ -1,6 +1,7 @@
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 
+let src = Logs.Src.create "handler.admin.experiments_users"
 let create_layout req = General.create_tenant_layout req
 
 let experiment_id =
@@ -40,7 +41,7 @@ let index role req =
     >>= create_layout req context
     >|+ Sihl.Web.Response.of_html
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path ~src req
 ;;
 
 let index_assistants = index `Assistants
@@ -90,7 +91,7 @@ let toggle_role action req =
       [ Message.set ~success:[ message ] ]
     |> Lwt_result.ok
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path ~src req
 ;;
 
 let assign_assistant = toggle_role `AssignAssistant

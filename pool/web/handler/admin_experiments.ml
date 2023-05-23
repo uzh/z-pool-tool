@@ -10,6 +10,7 @@ module MessageTemplates = Admin_experiments_message_templates
 module Users = Admin_experiments_users
 module WaitingList = Admin_experiments_waiting_list
 
+let src = Logs.Src.create "handler.admin.experiments"
 let create_layout req = General.create_tenant_layout req
 let experiment_id = HttpUtils.find_id Experiment.Id.of_string Field.Experiment
 
@@ -36,7 +37,7 @@ let index req =
     >|+ Sihl.Web.Response.of_html
     >|- fun err -> err, error_path
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path ~src req
 ;;
 
 let new_form req =
@@ -56,7 +57,7 @@ let new_form req =
     |> create_layout req context
     >|+ Sihl.Web.Response.of_html
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path ~src req
 ;;
 
 let create req =
@@ -90,7 +91,7 @@ let create req =
     in
     events |>> handle
   in
-  result |> HttpUtils.extract_happy_path_with_actions req
+  result |> HttpUtils.extract_happy_path_with_actions ~src req
 ;;
 
 let detail edit req =
@@ -135,7 +136,7 @@ let detail edit req =
     >>= create_layout req context
     >|+ Sihl.Web.Response.of_html
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path ~src req
 ;;
 
 let show = detail false
@@ -177,7 +178,7 @@ let update req =
     in
     events |>> handle
   in
-  result |> HttpUtils.extract_happy_path_with_actions req
+  result |> HttpUtils.extract_happy_path_with_actions ~src req
 ;;
 
 let delete req =
@@ -244,7 +245,7 @@ let delete req =
     in
     events |>> handle
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path ~src req
 ;;
 
 let search = Helpers.Search.create `Experiment
@@ -305,7 +306,7 @@ module Filter = struct
       in
       events |>> handle
     in
-    result |> HttpUtils.extract_happy_path req
+    result |> HttpUtils.extract_happy_path ~src req
   ;;
 end
 

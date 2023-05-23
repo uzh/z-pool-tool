@@ -1,3 +1,4 @@
+let src = Logs.Src.create "handler.root.settings"
 let active_navigation = "/root/settings/smtp"
 
 let show_smtp req =
@@ -17,7 +18,7 @@ let show_smtp req =
     ||> Sihl.Web.Response.of_html
     >|> Lwt_result.return
   in
-  result |> Http_utils.extract_happy_path req
+  result |> Http_utils.extract_happy_path ~src req
 ;;
 
 let create_smtp = Admin_settings.Smtp.create ~redirect_path:active_navigation

@@ -2,6 +2,7 @@ module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 module Field = Pool_common.Message.Field
 
+let src = Logs.Src.create "handler.admin.session"
 let create_layout req = General.create_tenant_layout req
 let experiment_id = HttpUtils.find_id Experiment.Id.of_string Field.Experiment
 let session_id = HttpUtils.find_id Session.Id.of_string Field.Session
@@ -49,7 +50,7 @@ let list req =
     >|> create_layout req context
     >|+ Sihl.Web.Response.of_html
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path ~src req
 ;;
 
 let new_helper req page =
@@ -99,7 +100,7 @@ let new_helper req page =
        in
        html >>= create_layout req context >|+ Sihl.Web.Response.of_html
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path ~src req
 ;;
 
 let new_form req = new_helper req `Parent
@@ -134,7 +135,7 @@ let create req =
       [ Message.set ~success:[ Pool_common.Message.(Created Field.Session) ] ]
     |> Lwt_result.ok
   in
-  result |> HttpUtils.extract_happy_path_with_actions req
+  result |> HttpUtils.extract_happy_path_with_actions ~src req
 ;;
 
 let detail req page =
@@ -208,7 +209,7 @@ let detail req page =
     >>= create_layout req context
     >|+ Sihl.Web.Response.of_html
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path ~src req
 ;;
 
 let show req = detail req `Detail
@@ -296,7 +297,7 @@ let update_handler action req =
       [ Message.set ~success:[ success_msg ] ]
     |> Lwt_result.ok
   in
-  result |> HttpUtils.extract_happy_path_with_actions req
+  result |> HttpUtils.extract_happy_path_with_actions ~src req
 ;;
 
 let update = update_handler `Update
@@ -368,7 +369,7 @@ let cancel req =
       [ Message.set ~success:[ Pool_common.Message.(Canceled Field.Session) ] ]
     |> Lwt_result.ok
   in
-  result |> HttpUtils.extract_happy_path_with_actions req
+  result |> HttpUtils.extract_happy_path_with_actions ~src req
 ;;
 
 let delete req =
@@ -403,7 +404,7 @@ let delete req =
       [ Message.set ~success:[ Pool_common.Message.(Deleted Field.Session) ] ]
     |> Lwt_result.ok
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path ~src req
 ;;
 
 (* TODO [aerben] make possible to create multiple follow ups? *)
@@ -445,7 +446,7 @@ let create_follow_up req =
       [ Message.set ~success:[ Pool_common.Message.(Created Field.Session) ] ]
     |> Lwt_result.ok
   in
-  result |> HttpUtils.extract_happy_path_with_actions req
+  result |> HttpUtils.extract_happy_path_with_actions ~src req
 ;;
 
 let close_post req =
@@ -514,7 +515,7 @@ let close_post req =
       [ Message.set ~success:[ Pool_common.Message.(Closed Field.Session) ] ]
     |> Lwt_result.ok
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path ~src req
 ;;
 
 let message_template_form ?template_id label req =
@@ -560,7 +561,7 @@ let message_template_form ?template_id label req =
     >|> create_layout req context
     >|+ Sihl.Web.Response.of_html
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path ~src req
 ;;
 
 let new_session_reminder req =

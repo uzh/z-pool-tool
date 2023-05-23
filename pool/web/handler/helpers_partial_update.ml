@@ -1,6 +1,8 @@
 module PoolField = Pool_common.Message.Field
 module HttpUtils = Http_utils
 
+let src = Logs.Src.create "handler.helper.partial_update"
+
 let parse_urlencoded ~is_admin req database_label language urlencoded contact_id
   =
   let open Pool_common.Message in
@@ -229,5 +231,5 @@ let update ?contact req =
     in
     response |> Lwt_result.return
   in
-  HttpUtils.extract_happy_path_htmx req result
+  HttpUtils.extract_happy_path_htmx ~src req result
 ;;

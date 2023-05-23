@@ -2,6 +2,7 @@ module HttpUtils = Http_utils
 module Message = Pool_common.Message
 module Url = Page.Admin.CustomFields.Url
 
+let src = Logs.Src.create "handler.admin.custom_fields"
 let create_layout req = General.create_tenant_layout req
 
 let boolean_fields =
@@ -59,7 +60,7 @@ let index req =
        |> create_layout ~active_navigation:Url.fallback_path req context
        >|+ Sihl.Web.Response.of_html
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path ~src req
 ;;
 
 let redirect _ =
@@ -93,7 +94,7 @@ let form ?id req model =
     |> create_layout req context
     >|+ Sihl.Web.Response.of_html
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path ~src req
 ;;
 
 let new_form req = get_model form req
@@ -173,7 +174,7 @@ let write ?id req model =
     in
     events |>> handle
   in
-  result |> HttpUtils.extract_happy_path_with_actions req
+  result |> HttpUtils.extract_happy_path_with_actions ~src req
 ;;
 
 let create req = get_model write req
@@ -221,7 +222,7 @@ let toggle_action action req =
     in
     events |>> handle
   in
-  result |> HttpUtils.extract_happy_path_with_actions req
+  result |> HttpUtils.extract_happy_path_with_actions ~src req
 ;;
 
 let publish = toggle_action `Publish
@@ -274,7 +275,7 @@ let sort_options req =
       in
       events |>> handle
     in
-    result |> HttpUtils.extract_happy_path_with_actions req
+    result |> HttpUtils.extract_happy_path_with_actions ~src req
   in
   get_model handler req
 ;;
@@ -326,7 +327,7 @@ let sort_fields req ?group () =
       in
       events |>> handle
     in
-    result |> HttpUtils.extract_happy_path_with_actions req
+    result |> HttpUtils.extract_happy_path_with_actions ~src req
   in
   get_model handler req
 ;;

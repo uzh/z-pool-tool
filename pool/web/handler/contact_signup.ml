@@ -2,6 +2,7 @@ module Command = Cqrs_command.Contact_command
 module UserCommand = Cqrs_command.User_command
 module HttpUtils = Http_utils
 
+let src = Logs.Src.create "handler.contact.signup"
 let create_layout = Contact_general.create_layout
 
 let sign_up req =
@@ -15,7 +16,7 @@ let sign_up req =
     |> create_layout req ~active_navigation:"/signup" context
     >|+ Sihl.Web.Response.of_html
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path ~src req
 ;;
 
 let sign_up_create req =
@@ -130,7 +131,7 @@ let sign_up_create req =
              ]))
        |> Lwt_result.ok
   in
-  result |> HttpUtils.extract_happy_path_with_actions req
+  result |> HttpUtils.extract_happy_path_with_actions ~src req
 ;;
 
 let email_verification req =
@@ -203,7 +204,7 @@ let email_verification req =
      |> Lwt_result.ok)
     >|- fun msg -> msg, redirect_path
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path ~src req
 ;;
 
 let terms req =
@@ -219,7 +220,7 @@ let terms req =
        |> create_layout req context
        >|+ Sihl.Web.Response.of_html
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path ~src req
 ;;
 
 let terms_accept req =
@@ -240,5 +241,5 @@ let terms_accept req =
     HttpUtils.(redirect_to (path_with_language query_language "/experiments"))
     |> Lwt_result.ok
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path ~src req
 ;;
