@@ -243,9 +243,7 @@ let update_handler action req =
       , [ HttpUtils.urlencoded_to_flash urlencoded ] ))
     @@
     let tags = Pool_context.Logger.Tags.req req in
-    let* { Pool_context.Tenant.tenant; _ } =
-      Pool_context.Tenant.find req |> Lwt_result.lift
-    in
+    let tenant = Pool_context.Tenant.get_tenant_exn req in
     let* session = Session.find database_label session_id in
     let* follow_ups =
       Session.find_follow_ups database_label session.Session.id
@@ -347,9 +345,7 @@ let cancel req =
     in
     let* events =
       let system_languages = Pool_context.Tenant.get_tenant_languages_exn req in
-      let* { Pool_context.Tenant.tenant; _ } =
-        Pool_context.Tenant.find req |> Lwt_result.lift
-      in
+      let tenant = Pool_context.Tenant.get_tenant_exn req in
       let* create_message =
         Message_template.SessionCancellation.prepare
           database_label
@@ -533,9 +529,7 @@ let message_template_form ?template_id label req =
         |> Format.asprintf "/admin/experiments/%s/edit" ))
     @@
     let flash_fetcher key = Sihl.Web.Flash.find key req in
-    let* { Pool_context.Tenant.tenant; _ } =
-      Pool_context.Tenant.find req |> Lwt_result.lift
-    in
+    let tenant = Pool_context.Tenant.get_tenant_exn req in
     let* experiment = Experiment.find database_label experiment_id in
     let* session = Session.find database_label session_id in
     let* template =

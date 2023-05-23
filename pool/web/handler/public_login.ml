@@ -125,9 +125,7 @@ let request_reset_password_post req =
     @@
     let tags = Pool_context.Logger.Tags.req req in
     let open Utils.Lwt_result.Infix in
-    let* { Pool_context.Tenant.tenant; _ } =
-      Pool_context.Tenant.find req |> Lwt_result.lift
-    in
+    let tenant = Pool_context.Tenant.get_tenant_exn req in
     let ctx = Pool_database.to_ctx database_label in
     let* user =
       Sihl.Web.Request.to_urlencoded req

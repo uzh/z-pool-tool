@@ -137,9 +137,7 @@ let assign_contact req =
           (Pool_common.Id.value waiting_list_id) ))
     @@
     let tags = Pool_context.Logger.Tags.req req in
-    let* { Pool_context.Tenant.tenant; _ } =
-      Pool_context.Tenant.find req |> Lwt_result.lift
-    in
+    let tenant = Pool_context.Tenant.get_tenant_exn req in
     let* waiting_list = Waiting_list.find database_label waiting_list_id in
     let* sessions =
       let open Pool_common.Message in

@@ -98,13 +98,13 @@ module Tenant = struct
   let find = find_context key
   let set = set_context key
 
-  let get_tenant_languages_exn req =
+  let find_key_exn fnc req =
     let open CCResult in
-    req
-    |> find
-    >|= (fun c -> c.tenant_languages)
-    |> Pool_common.Utils.get_or_failwith
+    req |> find >|= fnc |> Pool_common.Utils.get_or_failwith
   ;;
+
+  let get_tenant_languages_exn = find_key_exn (fun c -> c.tenant_languages)
+  let get_tenant_exn = find_key_exn (fun c -> c.tenant)
 end
 
 (* Logging *)

@@ -77,9 +77,7 @@ let update_email req =
          |> Lwt_result.lift
        in
        let%lwt token = Email.create_token database_label new_email in
-       let* { Pool_context.Tenant.tenant; _ } =
-         Pool_context.Tenant.find req |> Lwt_result.lift
-       in
+       let tenant = Pool_context.Tenant.get_tenant_exn req in
        let* verification_mail =
          let open Message_template in
          EmailVerification.create
@@ -123,9 +121,7 @@ let update_password req =
       HttpUtils.(
         msg, "/user/login-information", [ urlencoded_to_flash urlencoded ]))
     @@ let* contact = Pool_context.find_contact context |> Lwt_result.lift in
-       let* { Pool_context.Tenant.tenant; _ } =
-         Pool_context.Tenant.find req |> Lwt_result.lift
-       in
+       let tenant = Pool_context.Tenant.get_tenant_exn req in
        let* notification =
          Message_template.PasswordChange.create
            database_label

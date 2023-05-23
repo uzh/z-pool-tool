@@ -31,14 +31,13 @@ let edit req =
   let id = id req Field.MessageTemplate Message_template.Id.of_string in
   let result ({ Pool_context.database_label; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, "/admin/dashboard")
-    @@ let* { Pool_context.Tenant.tenant; _ } =
-         Pool_context.Tenant.find req |> Lwt_result.lift
-       in
-       let* template = Message_template.find database_label id in
-       let flash_fetcher key = Sihl.Web.Flash.find key req in
-       Page.Admin.MessageTemplate.edit context template tenant flash_fetcher
-       |> create_layout req context
-       >|+ Sihl.Web.Response.of_html
+    @@
+    let tenant = Pool_context.Tenant.get_tenant_exn req in
+    let* template = Message_template.find database_label id in
+    let flash_fetcher key = Sihl.Web.Flash.find key req in
+    Page.Admin.MessageTemplate.edit context template tenant flash_fetcher
+    |> create_layout req context
+    >|+ Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path req
 ;;

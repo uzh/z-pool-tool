@@ -34,9 +34,7 @@ let form ?template_id label req =
         |> Format.asprintf "/admin/experiments/%s" ))
     @@
     let flash_fetcher key = Sihl.Web.Flash.find key req in
-    let* { Pool_context.Tenant.tenant; _ } =
-      Pool_context.Tenant.find req |> Lwt_result.lift
-    in
+    let tenant = Pool_context.Tenant.get_tenant_exn req in
     let* experiment = Experiment.find database_label experiment_id in
     let* template =
       template_id

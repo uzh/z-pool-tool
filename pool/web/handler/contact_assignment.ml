@@ -23,9 +23,7 @@ let create req =
          Session.find_open_with_follow_ups database_label id
          >|+ CCList.map Session.to_public
        in
-       let* { Pool_context.Tenant.tenant; _ } =
-         Pool_context.Tenant.find req |> Lwt_result.lift
-       in
+       let tenant = Pool_context.Tenant.get_tenant_exn req in
        let* confirmation_email =
          let%lwt language = Contact.message_language database_label contact in
          Message_template.AssignmentConfirmation.create_from_public_session

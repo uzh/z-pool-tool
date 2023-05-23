@@ -46,9 +46,7 @@ let sign_up_create req =
          ||> fun suffixes ->
          if CCList.is_empty suffixes then None else Some suffixes
        in
-       let* { Pool_context.Tenant.tenant; _ } =
-         Pool_context.Tenant.find req |> Lwt_result.lift
-       in
+       let tenant = Pool_context.Tenant.get_tenant_exn req in
        let* email_address =
          Sihl.Web.Request.urlencoded Field.(Email |> show) req
          ||> CCOption.to_result ContactSignupInvalidEmail

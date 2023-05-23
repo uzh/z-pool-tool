@@ -92,9 +92,7 @@ let create req =
       then Error Message.(NoOptionSelected Field.Contact)
       else Ok list
     in
-    let* { Pool_context.Tenant.tenant; _ } =
-      Pool_context.Tenant.find req |> Lwt_result.lift
-    in
+    let tenant = Pool_context.Tenant.get_tenant_exn req in
     let* experiment = Experiment.find database_label id in
     let* contacts =
       let find_missing contacts =
@@ -158,32 +156,31 @@ let resend req =
   in
   let result { Pool_context.database_label; _ } =
     Utils.Lwt_result.map_error (fun err -> err, redirect_path)
-    @@ let* { Pool_context.Tenant.tenant; _ } =
-         Pool_context.Tenant.find req |> Lwt_result.lift
-       in
-       let* invitation = Invitation.find database_label id in
-       let* experiment = Experiment.find database_label experiment_id in
-       let* invitation_mail =
-         Message_template.ExperimentInvitation.create
-           tenant
-           experiment
-           invitation.Invitation.contact
-       in
-       let events =
-         let open Cqrs_command.Invitation_command.Resend in
-         handle ~tags invitation_mail { invitation; experiment } |> Lwt.return
-       in
-       let handle events =
-         let%lwt () =
-           Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
-         in
-         Http_utils.redirect_to_with_actions
-           redirect_path
-           [ HttpMessage.set
-               ~success:[ Pool_common.Message.(SentList Field.Invitations) ]
-           ]
-       in
-       events |>> handle
+    @@
+    let tenant = Pool_context.Tenant.get_tenant_exn req in
+    let* invitation = Invitation.find database_label id in
+    let* experiment = Experiment.find database_label experiment_id in
+    let* invitation_mail =
+      Message_template.ExperimentInvitation.create
+        tenant
+        experiment
+        invitation.Invitation.contact
+    in
+    let events =
+      let open Cqrs_command.Invitation_command.Resend in
+      handle ~tags invitation_mail { invitation; experiment } |> Lwt.return
+    in
+    let handle events =
+      let%lwt () =
+        Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
+      in
+      Http_utils.redirect_to_with_actions
+        redirect_path
+        [ HttpMessage.set
+            ~success:[ Pool_common.Message.(SentList Field.Invitations) ]
+        ]
+    in
+    events |>> handle
   in
   result |> HttpUtils.extract_happy_path req
 ;;
