@@ -72,13 +72,12 @@ let write action req =
       let open Cqrs_command.Message_template_command in
       match action with
       | Create (entity_id, label, _) ->
-        let* available_languages =
-          Pool_context.Tenant.get_tenant_languages req
-          |> Lwt_result.lift
-          |>> Message_template.find_available_languages
-                database_label
-                entity_id
-                label
+        let%lwt available_languages =
+          Pool_context.Tenant.get_tenant_languages_exn req
+          |> Message_template.find_available_languages
+               database_label
+               entity_id
+               label
         in
         Create.(
           urlencoded

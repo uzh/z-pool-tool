@@ -171,9 +171,7 @@ let detail req page =
        let%lwt default_reminder_lead_time =
          Settings.find_default_reminder_lead_time database_label
        in
-       let* sys_languages =
-         Pool_context.Tenant.get_tenant_languages req |> Lwt_result.lift
-       in
+       let sys_languages = Pool_context.Tenant.get_tenant_languages_exn req in
        Page.Admin.Session.edit
          context
          experiment
@@ -273,8 +271,8 @@ let update_handler action req =
         let* assignments =
           Assignment.find_by_session database_label session.Session.id
         in
-        let* system_languages =
-          Pool_context.Tenant.get_tenant_languages req |> Lwt_result.lift
+        let system_languages =
+          Pool_context.Tenant.get_tenant_languages_exn req
         in
         let* create_message =
           Message_template.SessionReschedule.prepare
@@ -348,9 +346,7 @@ let cancel req =
       >|+ Assignment.group_by_contact
     in
     let* events =
-      let* system_languages =
-        Pool_context.Tenant.get_tenant_languages req |> Lwt_result.lift
-      in
+      let system_languages = Pool_context.Tenant.get_tenant_languages_exn req in
       let* { Pool_context.Tenant.tenant; _ } =
         Pool_context.Tenant.find req |> Lwt_result.lift
       in
@@ -547,17 +543,16 @@ let message_template_form ?template_id label req =
       |> CCOption.map_or ~default:(Lwt_result.return None) (fun id ->
            Message_template.find database_label id >|+ CCOption.pure)
     in
-    let* available_languages =
+    let%lwt available_languages =
       match template_id with
       | None ->
-        Pool_context.Tenant.get_tenant_languages req
-        |> Lwt_result.lift
-        |>> Message_template.find_available_languages
-              database_label
-              (session_id |> Session.Id.to_common)
-              label
-        >|+ CCOption.pure
-      | Some _ -> Lwt_result.return None
+        Pool_context.Tenant.get_tenant_languages_exn req
+        |> Message_template.find_available_languages
+             database_label
+             (session_id |> Session.Id.to_common)
+             label
+        ||> CCOption.pure
+      | Some _ -> Lwt.return_none
     in
     Page.Admin.Session.message_template_form
       context

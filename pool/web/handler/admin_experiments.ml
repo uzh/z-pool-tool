@@ -101,9 +101,7 @@ let detail edit req =
     let open Message_template in
     let id = experiment_id req in
     let* experiment = Experiment.find database_label id in
-    let* sys_languages =
-      Pool_context.Tenant.get_tenant_languages req |> Lwt_result.lift
-    in
+    let sys_languages = Pool_context.Tenant.get_tenant_languages_exn req in
     let find_templates =
       find_all_of_entity_by_label database_label (id |> Experiment.Id.to_common)
     in

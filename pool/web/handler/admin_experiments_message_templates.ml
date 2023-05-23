@@ -43,17 +43,16 @@ let form ?template_id label req =
       |> CCOption.map_or ~default:(Lwt_result.return None) (fun id ->
            Message_template.find database_label id >|+ CCOption.pure)
     in
-    let* available_languages =
+    let%lwt available_languages =
       match template_id with
       | None ->
-        Pool_context.Tenant.get_tenant_languages req
-        |> Lwt_result.lift
-        |>> Message_template.find_available_languages
-              database_label
-              (experiment_id |> Experiment.Id.to_common)
-              label
-        >|+ CCOption.pure
-      | Some _ -> Lwt_result.return None
+        Pool_context.Tenant.get_tenant_languages_exn req
+        |> Message_template.find_available_languages
+             database_label
+             (experiment_id |> Experiment.Id.to_common)
+             label
+        ||> CCOption.pure
+      | Some _ -> Lwt.return_none
     in
     Page.Admin.Experiments.message_template_form
       context

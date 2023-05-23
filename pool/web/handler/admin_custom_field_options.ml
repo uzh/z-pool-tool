@@ -47,9 +47,7 @@ let form ?id req custom_field =
        let* custom_field =
          req |> get_field_id |> Custom_field.find database_label
        in
-       let* sys_languages =
-         Pool_context.Tenant.get_tenant_languages req |> Lwt_result.lift
-       in
+       let sys_languages = Pool_context.Tenant.get_tenant_languages_exn req in
        let flash_fetcher key = Sihl.Web.Flash.find key req in
        Page.Admin.CustomFieldOptions.detail
          ?custom_field_option
@@ -96,9 +94,7 @@ let write ?id req custom_field =
       err, error_path, [ HttpUtils.urlencoded_to_flash urlencoded ])
     @@
     let events =
-      let* sys_languages =
-        Pool_context.Tenant.get_tenant_languages req |> Lwt_result.lift
-      in
+      let sys_languages = Pool_context.Tenant.get_tenant_languages_exn req in
       match id with
       | None ->
         Cqrs_command.Custom_field_option_command.Create.handle

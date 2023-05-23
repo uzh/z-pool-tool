@@ -82,9 +82,7 @@ let form ?id req model =
            Custom_field.find database_label id >|+ CCOption.pure)
     in
     let%lwt groups = Custom_field.find_groups_by_model database_label model in
-    let* sys_languages =
-      Pool_context.Tenant.get_tenant_languages req |> Lwt_result.lift
-    in
+    let sys_languages = Pool_context.Tenant.get_tenant_languages_exn req in
     Page.Admin.CustomFields.detail
       ?custom_field
       model
@@ -136,9 +134,7 @@ let write ?id req model =
     let tags = Pool_context.Logger.Tags.req req in
     let events =
       let open Utils.Lwt_result.Infix in
-      let* sys_languages =
-        Pool_context.Tenant.get_tenant_languages req |> Lwt_result.lift
-      in
+      let sys_languages = Pool_context.Tenant.get_tenant_languages_exn req in
       let* decoded =
         urlencoded
         |> Cqrs_command.Custom_field_command.base_decode

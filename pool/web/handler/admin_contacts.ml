@@ -37,8 +37,8 @@ let detail_view action req =
          |> create_layout req context
          >|+ Sihl.Web.Response.of_html
        | `Edit ->
-         let* tenant_languages =
-           Pool_context.Tenant.get_tenant_languages req |> Lwt_result.lift
+         let tenant_languages =
+           Pool_context.Tenant.get_tenant_languages_exn req
          in
          let%lwt custom_fields =
            Custom_field.find_all_by_contact
