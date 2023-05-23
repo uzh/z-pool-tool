@@ -56,7 +56,7 @@ let schema =
 
 let get_or_failwith element =
   element
-  |> CCResult.map_err (Pool_common.Utils.with_log_error ~tags)
+  |> CCResult.map_err (Pool_common.Utils.with_log_error ~src ~tags)
   |> Pool_common.Utils.get_or_failwith
 ;;
 

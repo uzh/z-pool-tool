@@ -35,6 +35,7 @@ let validate_access_request_dependent ?any_id effects req =
   Lwt_result.map_error (fun err ->
     let (_ : error) =
       Pool_common.Utils.with_log_error
+        ~src
         ~tags:(Pool_database.Logger.Tags.create database_label)
         err
     in

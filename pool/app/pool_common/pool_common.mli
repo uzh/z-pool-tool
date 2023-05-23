@@ -309,31 +309,36 @@ module Utils : sig
   val bool_to_string : Language.t -> bool -> string
 
   val with_log_info
-    :  ?tags:Logs.Tag.set
+    :  ?src:Logs.Src.t
+    -> ?tags:Logs.Tag.set
     -> ?level:Logs.level
     -> Message.info
     -> Message.info
 
   val with_log_success
-    :  ?tags:Logs.Tag.set
+    :  ?src:Logs.Src.t
+    -> ?tags:Logs.Tag.set
     -> ?level:Logs.level
     -> Message.success
     -> Message.success
 
   val with_log_warning
-    :  ?tags:Logs.Tag.set
+    :  ?src:Logs.Src.t
+    -> ?tags:Logs.Tag.set
     -> ?level:Logs.level
     -> Message.warning
     -> Message.warning
 
   val with_log_error
-    :  ?tags:Logs.Tag.set
+    :  ?src:Logs.Src.t
+    -> ?tags:Logs.Tag.set
     -> ?level:Logs.level
     -> Message.error
     -> Message.error
 
   val with_log_result_error
-    :  ?tags:Logs.Tag.set
+    :  ?src:Logs.Src.t
+    -> ?tags:Logs.Tag.set
     -> ('a -> Message.error)
     -> ('b, 'a) result
     -> ('b, 'a) result

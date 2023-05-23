@@ -1,3 +1,5 @@
+let src = Logs.Src.create "middleware.tenant"
+
 let tenant_of_request req =
   let open Utils.Lwt_result.Infix in
   (* TODO handle PREFIX_PATH of Tenant URLs, multiple tenants behind the same
@@ -34,6 +36,7 @@ let valid_tenant () =
        | Error err ->
          let (_ : Pool_common.Message.error) =
            Pool_common.Utils.with_log_error
+             ~src
              ~tags:(Pool_context.Logger.Tags.req req)
              err
          in

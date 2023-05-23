@@ -1,4 +1,5 @@
 let get_or_failwith = Pool_common.Utils.get_or_failwith
+let src = Logs.Src.create "command.session_reminder"
 
 let create_reminders pool tenant sys_languages session =
   let open Utils.Lwt_result.Infix in
@@ -29,6 +30,7 @@ let create_reminders pool tenant sys_languages session =
 let send_tenant_reminder pool =
   Utils.Lwt_result.map_error
     (Pool_common.Utils.with_log_error
+       ~src
        ~tags:(Pool_database.Logger.Tags.create pool))
   @@
   let open CCFun in

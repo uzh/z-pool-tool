@@ -4,6 +4,7 @@ module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 module Field = Pool_common.Message.Field
 
+let src = Logs.Src.create "handler.admin.admins"
 let create_layout req = General.create_tenant_layout req
 
 let complete_roles database_label (role : Role.Actor.t) ini =
@@ -208,7 +209,7 @@ let grant_role ({ Rock.Request.target; _ } as req) =
           Logs.err (fun m ->
             m "Admin handler: Missing role %s" ([%show: Role.Actor.t] role));
           Lwt.return_error Pool_common.Message.(NotFound Field.Role)
-          ||> Pool_common.Utils.with_log_result_error ~tags CCFun.id)
+          ||> Pool_common.Utils.with_log_result_error ~src ~tags CCFun.id)
     in
     let events roles =
       let open Cqrs_command.Guardian_command in

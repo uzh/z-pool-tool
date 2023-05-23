@@ -122,7 +122,7 @@ let extract_happy_path_generic ?enable_cache req result msgf =
   | Ok ({ Pool_context.query_language; _ } as context) ->
     let%lwt res = result context in
     res
-    |> Pool_common.Utils.with_log_result_error ~tags (fun (err, _) -> err)
+    |> Pool_common.Utils.with_log_result_error ~src ~tags (fun (err, _) -> err)
     |> CCResult.map (set_no_cache_headers ?enable_cache)
     |> CCResult.map Lwt.return
     |> CCResult.get_lazy (fun (error_msg, error_path) ->
@@ -137,12 +137,12 @@ let extract_happy_path_generic ?enable_cache req result msgf =
 
 let extract_happy_path ?enable_cache req result =
   extract_happy_path_generic ?enable_cache req result (fun err ->
-    (* TODO: Use utils fnc *)
-    Logs.warn ~src (fun m ->
-      m
+    let err =
+      Pool_common.Utils.with_log_error
+        ~src
         ~tags:(Pool_context.Logger.Tags.req req)
-        "A user experienced an error: %s"
-        (Message.Message.show_error err));
+        err
+    in
     Message.set ~warning:[] ~success:[] ~info:[] ~error:[ err ])
 ;;
 
@@ -153,7 +153,8 @@ let extract_happy_path_with_actions ?enable_cache req result =
   | Ok ({ Pool_context.query_language; _ } as context) ->
     let%lwt res = result context in
     res
-    |> Pool_common.Utils.with_log_result_error ~tags (fun (err, _, _) -> err)
+    |> Pool_common.Utils.with_log_result_error ~src ~tags (fun (err, _, _) ->
+         err)
     |> CCResult.map (set_no_cache_headers ?enable_cache)
     |> CCResult.map Lwt.return
     |> CCResult.get_lazy (fun (error_key, error_path, error_actions) ->
@@ -168,7 +169,7 @@ let extract_happy_path_with_actions ?enable_cache req result =
               ]
               error_actions))
   | Error err ->
-    Logs.warn ~src (fun m ->
+    Logs.err ~src (fun m ->
       m ~tags "Context not found: %s" (Message.Message.show_error err));
     redirect_to "/error"
 ;;
@@ -189,7 +190,7 @@ let extract_happy_path_htmx req result =
   | Ok ({ Pool_context.query_language; _ } as context) ->
     let%lwt res = result context in
     res
-    |> Pool_common.Utils.with_log_result_error ~tags (fun (err, _) -> err)
+    |> Pool_common.Utils.with_log_result_error ~src ~tags (fun (err, _) -> err)
     |> CCResult.map Lwt.return
     |> CCResult.get_lazy (fun (error_msg, error_path) ->
          htmx_redirect
@@ -200,7 +201,7 @@ let extract_happy_path_htmx req result =
   | Error err ->
     Logs.err ~src (fun m ->
       m ~tags "%s" Pool_common.(Utils.error_to_string Language.En err));
-    Logs.warn ~src (fun m ->
+    Logs.err ~src (fun m ->
       m ~tags "Context not found: %s" (Message.Message.show_error err));
     htmx_redirect "/error" ()
 ;;

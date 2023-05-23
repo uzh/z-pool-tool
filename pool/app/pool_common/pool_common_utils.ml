@@ -85,32 +85,42 @@ let handle_json_parse_err str =
   Error Entity_message.(InvalidJson msg)
 ;;
 
-let with_log_info ?(tags = Logs.Tag.empty) ?(level = info) info =
+let with_log_info ?(src = src) ?(tags = Logs.Tag.empty) ?(level = info) info =
   Logs.msg ~src level (fun m -> m ~tags "%s" (Locales_en.info_to_string info));
   info
 ;;
 
-let with_log_success ?(tags = Logs.Tag.empty) ?(level = info) success =
+let with_log_success
+  ?(src = src)
+  ?(tags = Logs.Tag.empty)
+  ?(level = info)
+  success
+  =
   Logs.msg ~src level (fun m ->
     m ~tags "%s" (Locales_en.success_to_string success));
   success
 ;;
 
-let with_log_warning ?(tags = Logs.Tag.empty) ?(level = warning) warn =
+let with_log_warning
+  ?(src = src)
+  ?(tags = Logs.Tag.empty)
+  ?(level = warning)
+  warn
+  =
   Logs.msg ~src level (fun m ->
     m ~tags "%s" (Locales_en.warning_to_string warn));
   warn
 ;;
 
-let with_log_error ?(tags = Logs.Tag.empty) ?(level = error) err =
+let with_log_error ?(src = src) ?(tags = Logs.Tag.empty) ?(level = error) err =
   Logs.msg ~src level (fun m ->
     m ~tags "A user experienced an error: %s" (Locales_en.error_to_string err));
   err
 ;;
 
-let with_log_result_error ?tags fcn =
+let with_log_result_error ?src ?tags fcn =
   CCResult.map_err (fun err ->
-    let (_ : Entity_message.error) = err |> fcn |> with_log_error ?tags in
+    let (_ : Entity_message.error) = err |> fcn |> with_log_error ?src ?tags in
     err)
 ;;
 
