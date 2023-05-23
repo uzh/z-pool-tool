@@ -125,6 +125,7 @@ end
 type event =
   | Added of Pool_database.t
   | Migrated of Pool_database.Label.t
+  | Updated of Pool_database.t
 [@@deriving eq, show]
 
 let handle_event _ : event -> unit Lwt.t = function
@@ -140,6 +141,14 @@ let handle_event _ : event -> unit Lwt.t = function
       match Pool_database.is_root label with
       | true -> Migration.Root.run ()
       | false -> Migration.Tenant.run [ label ] ()
+    in
+    Lwt.return_unit
+  | Updated pool ->
+    let open Pool_database in
+    let () = Guard.Persistence.Cache.clear () in
+    let%lwt () = Sihl.Database.drop_pool (Label.value pool.label) in
+    let%lwt (_ : Pool_database.Label.t) =
+      Tenant.(setup_tenant ~run_functions:setup_functions pool)
     in
     Lwt.return_unit
 ;;
