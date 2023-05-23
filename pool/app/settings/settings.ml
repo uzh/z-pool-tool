@@ -12,8 +12,7 @@ let[@warning "-4"] find_languages pool =
   | _ ->
     (* Due to Repo function, this state cannot be reached. *)
     Pool_common.(
-      Message.(Retrieve Field.Language) |> Utils.error_to_string Language.En)
-    |> failwith
+      Error Message.(Retrieve Field.Language) |> Utils.get_or_failwith)
 ;;
 
 let[@warning "-4"] find_email_suffixes pool =
@@ -25,8 +24,7 @@ let[@warning "-4"] find_email_suffixes pool =
   | _ ->
     (* Due to Repo function, this state cannot be reached. *)
     Pool_common.(
-      Message.(Retrieve Field.EmailSuffix) |> Utils.error_to_string Language.En)
-    |> failwith
+      Error Message.(Retrieve Field.EmailSuffix) |> Utils.get_or_failwith)
 ;;
 
 let[@warning "-4"] find_contact_email pool =
@@ -38,8 +36,7 @@ let[@warning "-4"] find_contact_email pool =
   | _ ->
     (* Due to Repo function, this state cannot be reached. *)
     Pool_common.(
-      Message.(Retrieve Field.ContactEmail) |> Utils.error_to_string Language.En)
-    |> failwith
+      Error Message.(Retrieve Field.ContactEmail) |> Utils.get_or_failwith)
 ;;
 
 let[@warning "-4"] find_inactive_user_disable_after pool =
@@ -51,9 +48,8 @@ let[@warning "-4"] find_inactive_user_disable_after pool =
   | _ ->
     (* Due to Repo function, this state cannot be reached. *)
     Pool_common.(
-      Message.(Retrieve Field.InactiveUserDisableAfter)
-      |> Utils.error_to_string Language.En)
-    |> failwith
+      Error Message.(Retrieve Field.InactiveUserDisableAfter)
+      |> Utils.get_or_failwith)
 ;;
 
 let[@warning "-4"] find_inactive_user_warning pool =
@@ -65,9 +61,8 @@ let[@warning "-4"] find_inactive_user_warning pool =
   | _ ->
     (* Due to Repo function, this state cannot be reached. *)
     Pool_common.(
-      Message.(Retrieve Field.InactiveUserWarning)
-      |> Utils.error_to_string Language.En)
-    |> failwith
+      Error Message.(Retrieve Field.InactiveUserWarning)
+      |> Utils.get_or_failwith)
 ;;
 
 let[@warning "-4"] find_trigger_profile_update_after pool =
@@ -79,9 +74,8 @@ let[@warning "-4"] find_trigger_profile_update_after pool =
   | _ ->
     (* Due to Repo function, this state cannot be reached. *)
     Pool_common.(
-      Message.(Retrieve Field.TriggerProfileUpdateAfter)
-      |> Utils.error_to_string Language.En)
-    |> failwith
+      Error Message.(Retrieve Field.TriggerProfileUpdateAfter)
+      |> Utils.get_or_failwith)
 ;;
 
 let[@warning "-4"] find_terms_and_conditions pool =
@@ -93,9 +87,7 @@ let[@warning "-4"] find_terms_and_conditions pool =
   | _ ->
     (* Due to Repo function, this state cannot be reached. *)
     Pool_common.(
-      Message.(Retrieve Field.TermsAndConditions)
-      |> Utils.error_to_string Language.En)
-    |> failwith
+      Error Message.(Retrieve Field.TermsAndConditions) |> Utils.get_or_failwith)
 ;;
 
 let[@warning "-4"] find_default_reminder_lead_time pool =
@@ -107,8 +99,7 @@ let[@warning "-4"] find_default_reminder_lead_time pool =
   | _ ->
     (* Due to Repo function, this state cannot be reached. *)
     Pool_common.(
-      Message.(Retrieve Field.LeadTime) |> Utils.error_to_string Language.En)
-    |> failwith
+      Error Message.(Retrieve Field.LeadTime) |> Utils.get_or_failwith)
 ;;
 
 let terms_and_conditions_last_updated pool =
@@ -118,7 +109,10 @@ let terms_and_conditions_last_updated pool =
 
 let default_language pool =
   let open Utils.Lwt_result.Infix in
-  find_languages pool ||> CCList.hd
+  find_languages pool
+  ||> CCList.head_opt
+  ||> CCOption.to_result Pool_common.Message.(NotFound Field.DefaultLanguage)
+  ||> Pool_common.Utils.get_or_failwith
 ;;
 
 let terms_and_conditions pool language =
