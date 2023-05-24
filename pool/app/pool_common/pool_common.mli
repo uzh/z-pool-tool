@@ -344,6 +344,7 @@ module Utils : sig
     -> ('b, 'a) result
 
   val get_or_failwith : ('a, Message.error) result -> 'a
+  val failwith : Message.error -> 'a
 
   val handle_ppx_yojson_err
     :  exn * Yojson.Safe.t

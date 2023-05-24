@@ -50,7 +50,7 @@ let form ?template_id label req =
              database_label
              (experiment_id |> Experiment.Id.to_common)
              label
-        ||> CCOption.pure
+        ||> CCOption.return
       | Some _ -> Lwt.return_none
     in
     Page.Admin.Experiments.message_template_form

@@ -11,8 +11,7 @@ let[@warning "-4"] find_languages pool =
   | Value.TenantLanguages value -> value
   | _ ->
     (* Due to Repo function, this state cannot be reached. *)
-    Pool_common.(
-      Error Message.(Retrieve Field.Language) |> Utils.get_or_failwith)
+    Pool_common.(Message.(Retrieve Field.Language) |> Utils.failwith)
 ;;
 
 let[@warning "-4"] find_email_suffixes pool =
@@ -23,8 +22,7 @@ let[@warning "-4"] find_email_suffixes pool =
   | Value.TenantEmailSuffixes value -> value
   | _ ->
     (* Due to Repo function, this state cannot be reached. *)
-    Pool_common.(
-      Error Message.(Retrieve Field.EmailSuffix) |> Utils.get_or_failwith)
+    Pool_common.(Message.(Retrieve Field.EmailSuffix) |> Utils.failwith)
 ;;
 
 let[@warning "-4"] find_contact_email pool =
@@ -35,8 +33,7 @@ let[@warning "-4"] find_contact_email pool =
   | Value.TenantContactEmail value -> value
   | _ ->
     (* Due to Repo function, this state cannot be reached. *)
-    Pool_common.(
-      Error Message.(Retrieve Field.ContactEmail) |> Utils.get_or_failwith)
+    Pool_common.(Message.(Retrieve Field.ContactEmail) |> Utils.failwith)
 ;;
 
 let[@warning "-4"] find_inactive_user_disable_after pool =
@@ -60,9 +57,7 @@ let[@warning "-4"] find_inactive_user_warning pool =
   | Value.InactiveUserWarning value -> value
   | _ ->
     (* Due to Repo function, this state cannot be reached. *)
-    Pool_common.(
-      Error Message.(Retrieve Field.InactiveUserWarning)
-      |> Utils.get_or_failwith)
+    Pool_common.(Message.(Retrieve Field.InactiveUserWarning) |> Utils.failwith)
 ;;
 
 let[@warning "-4"] find_trigger_profile_update_after pool =
@@ -74,8 +69,7 @@ let[@warning "-4"] find_trigger_profile_update_after pool =
   | _ ->
     (* Due to Repo function, this state cannot be reached. *)
     Pool_common.(
-      Error Message.(Retrieve Field.TriggerProfileUpdateAfter)
-      |> Utils.get_or_failwith)
+      Message.(Retrieve Field.TriggerProfileUpdateAfter) |> Utils.failwith)
 ;;
 
 let[@warning "-4"] find_terms_and_conditions pool =
@@ -86,8 +80,7 @@ let[@warning "-4"] find_terms_and_conditions pool =
   | Value.TermsAndConditions value -> value
   | _ ->
     (* Due to Repo function, this state cannot be reached. *)
-    Pool_common.(
-      Error Message.(Retrieve Field.TermsAndConditions) |> Utils.get_or_failwith)
+    Pool_common.(Message.(Retrieve Field.TermsAndConditions) |> Utils.failwith)
 ;;
 
 let[@warning "-4"] find_default_reminder_lead_time pool =
@@ -98,8 +91,7 @@ let[@warning "-4"] find_default_reminder_lead_time pool =
   | Value.DefaultReminderLeadTime value -> value
   | _ ->
     (* Due to Repo function, this state cannot be reached. *)
-    Pool_common.(
-      Error Message.(Retrieve Field.LeadTime) |> Utils.get_or_failwith)
+    Pool_common.(Message.(Retrieve Field.LeadTime) |> Utils.failwith)
 ;;
 
 let terms_and_conditions_last_updated pool =

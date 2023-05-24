@@ -19,10 +19,10 @@ let find_by_user pool (user : Sihl_user.t) =
 let has_terms_accepted = Event.has_terms_accepted
 
 let message_language database_label ({ language; _ } : t) =
-  let open CCOption in
   language
-  >|= Lwt.return
-  |> value ~default:(Settings.default_language database_label)
+  |> CCOption.map_or
+       ~default:(Settings.default_language database_label)
+       Lwt.return
 ;;
 
 module Repo = struct
