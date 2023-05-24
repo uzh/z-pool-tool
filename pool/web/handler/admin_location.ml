@@ -2,6 +2,7 @@ module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 module Field = Pool_common.Message.Field
 
+let src = Logs.Src.create "handler.admin.location"
 let create_layout req = General.create_tenant_layout req
 
 let id req field encode =
@@ -18,7 +19,7 @@ let index req =
     |> create_layout ~active_navigation:"/admin/locations" req context
     >|+ Sihl.Web.Response.of_html
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path ~src req
 ;;
 
 let new_form req =
@@ -31,7 +32,7 @@ let new_form req =
     |> create_layout req context
     >|+ Sihl.Web.Response.of_html
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path ~src req
 ;;
 
 let create req =
@@ -65,7 +66,7 @@ let create req =
     in
     events |>> handle
   in
-  result |> HttpUtils.extract_happy_path_with_actions req
+  result |> HttpUtils.extract_happy_path_with_actions ~src req
 ;;
 
 let new_file req =
@@ -82,7 +83,7 @@ let new_file req =
        |> create_layout req context
        >|+ Sihl.Web.Response.of_html
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path ~src req
 ;;
 
 let add_file req =
@@ -145,7 +146,7 @@ let add_file req =
     in
     events >|> finalize |>> handle
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path ~src req
 ;;
 
 let asset = Contact_location.asset
@@ -188,7 +189,7 @@ let detail edit req =
     >>= create_layout req context
     >|+ Sihl.Web.Response.of_html
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path ~src req
 ;;
 
 let show = detail false
@@ -230,7 +231,7 @@ let update req =
        in
        events |>> handle
   in
-  result |> HttpUtils.extract_happy_path_with_actions req
+  result |> HttpUtils.extract_happy_path_with_actions ~src req
 ;;
 
 let delete req =
@@ -259,7 +260,7 @@ let delete req =
       [ Message.set ~success:[ Pool_common.Message.(Deleted Field.File) ] ]
     |> Lwt_result.ok
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path ~src req
 ;;
 
 let search = Helpers.Search.create `Location

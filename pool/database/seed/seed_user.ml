@@ -323,7 +323,7 @@ let contacts db_label =
           (contacts @ contact_events, fields @ field_events) |> Lwt.return
         | Error err ->
           let _ =
-            Pool_common.Utils.with_log_error ~tags ~level:Logs.Debug err
+            Pool_common.Utils.with_log_error ~src ~tags ~level:Logs.Debug err
           in
           (contacts, fields) |> Lwt.return)
       ([], [])

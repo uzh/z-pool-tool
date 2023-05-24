@@ -1,6 +1,7 @@
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 
+let src = Logs.Src.create "handler.contact.waiting_list"
 let create_layout = Contact_general.create_layout
 
 let handle req action =
@@ -56,7 +57,7 @@ let handle req action =
     in
     events |>> handle
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path ~src req
 ;;
 
 let create req = handle req `Create

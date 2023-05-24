@@ -3,6 +3,7 @@ module Message = HttpUtils.Message
 module Field = Pool_common.Message.Field
 open HttpUtils.Filter
 
+let src = Logs.Src.create "handler.admin.filter"
 let template_id = HttpUtils.find_id Filter.Id.of_string Field.Filter
 
 let templates_disabled urlencoded =
@@ -50,7 +51,7 @@ let index req =
     |> create_layout ~active_navigation:"/admin/filter" req context
     >|+ Sihl.Web.Response.of_html
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path ~src req
 ;;
 
 let form is_edit req =
@@ -78,7 +79,7 @@ let form is_edit req =
        |> create_layout req context
        >|+ Sihl.Web.Response.of_html
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path ~src req
 ;;
 
 let edit = form true

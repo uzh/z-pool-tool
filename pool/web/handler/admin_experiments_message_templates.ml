@@ -1,6 +1,7 @@
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 
+let src = Logs.Src.create "handler.admin.experiments_mailing"
 let create_layout req = General.create_tenant_layout req
 
 let experiment_id =
@@ -34,26 +35,23 @@ let form ?template_id label req =
         |> Format.asprintf "/admin/experiments/%s" ))
     @@
     let flash_fetcher key = Sihl.Web.Flash.find key req in
-    let* { Pool_context.Tenant.tenant; _ } =
-      Pool_context.Tenant.find req |> Lwt_result.lift
-    in
+    let tenant = Pool_context.Tenant.get_tenant_exn req in
     let* experiment = Experiment.find database_label experiment_id in
     let* template =
       template_id
       |> CCOption.map_or ~default:(Lwt_result.return None) (fun id ->
            Message_template.find database_label id >|+ CCOption.pure)
     in
-    let* available_languages =
+    let%lwt available_languages =
       match template_id with
       | None ->
-        Pool_context.Tenant.get_tenant_languages req
-        |> Lwt_result.lift
-        |>> Message_template.find_available_languages
-              database_label
-              (experiment_id |> Experiment.Id.to_common)
-              label
-        >|+ CCOption.pure
-      | Some _ -> Lwt_result.return None
+        Pool_context.Tenant.get_tenant_languages_exn req
+        |> Message_template.find_available_languages
+             database_label
+             (experiment_id |> Experiment.Id.to_common)
+             label
+        ||> CCOption.return
+      | Some _ -> Lwt.return_none
     in
     Page.Admin.Experiments.message_template_form
       context
@@ -66,7 +64,7 @@ let form ?template_id label req =
     >|> create_layout req context
     >|+ Sihl.Web.Response.of_html
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path ~src req
 ;;
 
 let new_invitation = form Message_template.Label.ExperimentInvitation

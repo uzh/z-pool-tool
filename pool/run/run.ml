@@ -1,3 +1,4 @@
+let src = Logs.Src.create "run"
 let () = Printexc.record_backtrace true
 
 let worker_services =
@@ -61,7 +62,7 @@ let () =
          (Lwt.async_exception_hook
             := fun exn ->
                  Pool_common.Message.NotHandled (Printexc.to_string exn)
-                 |> Pool_common.Utils.with_log_error
+                 |> Pool_common.Utils.with_log_error ~src
                  |> ignore);
          Logger.create_logs_dir ();
          Lwt.return @@ Middleware.Error.before_start ())

@@ -2,6 +2,7 @@ module Command = Cqrs_command.Contact_command
 module UserCommand = Cqrs_command.User_command
 module HttpUtils = Http_utils
 
+let src = Logs.Src.create "handler.contact.signup"
 let create_layout = Contact_general.create_layout
 
 let sign_up req =
@@ -10,12 +11,12 @@ let sign_up req =
     Utils.Lwt_result.map_error (fun err -> err, "/index")
     @@
     let flash_fetcher key = Sihl.Web.Flash.find key req in
-    let* terms = Settings.terms_and_conditions database_label language in
+    let%lwt terms = Settings.terms_and_conditions database_label language in
     Page.Contact.sign_up terms context flash_fetcher
     |> create_layout req ~active_navigation:"/signup" context
     >|+ Sihl.Web.Response.of_html
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path ~src req
 ;;
 
 let sign_up_create req =
@@ -46,9 +47,7 @@ let sign_up_create req =
          ||> fun suffixes ->
          if CCList.is_empty suffixes then None else Some suffixes
        in
-       let* { Pool_context.Tenant.tenant; _ } =
-         Pool_context.Tenant.find req |> Lwt_result.lift
-       in
+       let tenant = Pool_context.Tenant.get_tenant_exn req in
        let* email_address =
          Sihl.Web.Request.urlencoded Field.(Email |> show) req
          ||> CCOption.to_result ContactSignupInvalidEmail
@@ -132,7 +131,7 @@ let sign_up_create req =
              ]))
        |> Lwt_result.ok
   in
-  result |> HttpUtils.extract_happy_path_with_actions req
+  result |> HttpUtils.extract_happy_path_with_actions ~src req
 ;;
 
 let email_verification req =
@@ -205,7 +204,7 @@ let email_verification req =
      |> Lwt_result.ok)
     >|- fun msg -> msg, redirect_path
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path ~src req
 ;;
 
 let terms req =
@@ -213,7 +212,7 @@ let terms req =
   let result ({ Pool_context.database_label; language; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, "/login")
     @@ let* contact = Pool_context.find_contact context |> Lwt_result.lift in
-       let* terms = Settings.terms_and_conditions database_label language in
+       let%lwt terms = Settings.terms_and_conditions database_label language in
        Page.Contact.terms
          Contact.(contact |> id |> Pool_common.Id.value)
          terms
@@ -221,7 +220,7 @@ let terms req =
        |> create_layout req context
        >|+ Sihl.Web.Response.of_html
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path ~src req
 ;;
 
 let terms_accept req =
@@ -242,5 +241,5 @@ let terms_accept req =
     HttpUtils.(redirect_to (path_with_language query_language "/experiments"))
     |> Lwt_result.ok
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path ~src req
 ;;

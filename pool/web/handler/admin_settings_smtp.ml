@@ -5,6 +5,7 @@ module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 module SmtpAuth = Pool_tenant.SmtpAuth
 
+let src = Logs.Src.create "handler.admin.settings_schedule"
 let active_navigation = "/admin/settings/smtp"
 
 let show req =
@@ -20,7 +21,7 @@ let show req =
     >|> General.create_tenant_layout req ~active_navigation context
     >|+ Sihl.Web.Response.of_html
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path ~src req
 ;;
 
 let create ?(redirect_path = active_navigation) req =
@@ -56,7 +57,7 @@ let create ?(redirect_path = active_navigation) req =
     |>> handle
     |>> return_to_overview
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path ~src req
 ;;
 
 let update_base ?(redirect_path = active_navigation) command success_message req
@@ -93,7 +94,7 @@ let update_base ?(redirect_path = active_navigation) command success_message req
     |>> handle
     |>> return_to_overview
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path ~src req
 ;;
 
 let update_password =

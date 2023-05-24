@@ -2,6 +2,7 @@ module HttpUtils = Http_utils
 module Message = Pool_common.Message
 module Url = Page.Admin.CustomFields.Url
 
+let src = Logs.Src.create "handler.admin.custom_field_groups"
 let create_layout req = General.create_tenant_layout req
 
 let get_group_id req =
@@ -33,7 +34,7 @@ let form ?id req model =
        |> create_layout req context
        >|+ Sihl.Web.Response.of_html
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path ~src req
 ;;
 
 let new_form req = get_model form req
@@ -96,7 +97,7 @@ let write ?id req model =
     in
     events |>> handle
   in
-  result |> HttpUtils.extract_happy_path_with_actions req
+  result |> HttpUtils.extract_happy_path_with_actions ~src req
 ;;
 
 let create req = get_model write req
@@ -130,7 +131,7 @@ let delete req =
         ]
       |> Lwt_result.ok
     in
-    result |> HttpUtils.extract_happy_path req
+    result |> HttpUtils.extract_happy_path ~src req
   in
   get_model handler req
 ;;
@@ -176,7 +177,7 @@ let sort req =
       in
       events |>> handle
     in
-    result |> HttpUtils.extract_happy_path_with_actions req
+    result |> HttpUtils.extract_happy_path_with_actions ~src req
   in
   get_model handler req
 ;;

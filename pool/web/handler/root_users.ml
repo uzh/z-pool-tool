@@ -5,6 +5,7 @@ module Database = Pool_database
 module Field = Pool_common.Message.Field
 module RootCommand = Cqrs_command.Root_command
 
+let src = Logs.Src.create "handler.root.users"
 let tenants_path = "/root/tenants"
 let active_navigation = "/root/users"
 
@@ -44,7 +45,7 @@ let create req =
     |>> handle
     |>> return_to_overview
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path ~src req
 ;;
 
 let toggle_status req =
@@ -68,7 +69,7 @@ let toggle_status req =
     |>> handle
     |>> return_to_overview
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path ~src req
 ;;
 
 module Access : sig

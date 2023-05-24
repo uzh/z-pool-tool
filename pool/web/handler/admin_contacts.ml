@@ -2,6 +2,8 @@ module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 module Field = Pool_common.Message.Field
 
+let src = Logs.Src.create "handler.admin.contacts"
+let extract_happy_path = HttpUtils.extract_happy_path ~src
 let create_layout req = General.create_tenant_layout req
 let contact_id = HttpUtils.find_id Contact.Id.of_string Field.Contact
 
@@ -19,7 +21,7 @@ let index req =
     |> create_layout req ~active_navigation:"/admin/contacts" context
     >|+ Sihl.Web.Response.of_html
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> extract_happy_path req
 ;;
 
 let detail_view action req =
@@ -37,8 +39,8 @@ let detail_view action req =
          |> create_layout req context
          >|+ Sihl.Web.Response.of_html
        | `Edit ->
-         let* tenant_languages =
-           Pool_context.Tenant.get_tenant_languages req |> Lwt_result.lift
+         let tenant_languages =
+           Pool_context.Tenant.get_tenant_languages_exn req
          in
          let%lwt custom_fields =
            Custom_field.find_all_by_contact
@@ -50,7 +52,7 @@ let detail_view action req =
          |> create_layout req context
          >|+ Sihl.Web.Response.of_html
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> extract_happy_path req
 ;;
 
 let detail = detail_view `Show
@@ -122,7 +124,7 @@ let delete_answer req =
     |> HttpUtils.multi_html_to_plain_text_response ~status:200
     |> Lwt_result.return
   in
-  result |> HttpUtils.extract_happy_path_htmx req
+  result |> HttpUtils.extract_happy_path_htmx ~src req
 ;;
 
 module Access : sig

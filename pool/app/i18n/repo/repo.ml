@@ -30,10 +30,8 @@ module Sql = struct
     |> Pool_common.Repo.Id.t ->! RepoEntity.t
   ;;
 
-  let find pool id =
-    let open Utils.Lwt_result.Infix in
-    Utils.Database.find_opt (Pool_database.Label.value pool) find_request id
-    ||> CCOption.to_result Pool_common.Message.(NotFound Field.I18n)
+  let find pool =
+    Utils.Database.find (Pool_database.Label.value pool) find_request
   ;;
 
   let find_by_key_request =
@@ -47,12 +45,10 @@ module Sql = struct
   ;;
 
   let find_by_key pool key language =
-    let open Utils.Lwt_result.Infix in
-    Utils.Database.find_opt
+    Utils.Database.find
       (Pool_database.Label.value pool)
       find_by_key_request
       (key, language)
-    ||> CCOption.to_result Pool_common.Message.(NotFound Field.I18n)
   ;;
 
   let find_all_request =

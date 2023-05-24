@@ -6,6 +6,7 @@ module File = HttpUtils.File
 module Update = Root_tenant_update
 module Database = Pool_database
 
+let src = Logs.Src.create "handler.root.tenant"
 let tenants_path = "/root/tenants"
 let active_navigation = tenants_path
 
@@ -68,7 +69,7 @@ let create req =
     in
     () |> events |>> handle |>> return_to_overview
   in
-  result |> HttpUtils.extract_happy_path_with_actions req
+  result |> HttpUtils.extract_happy_path_with_actions ~src req
 ;;
 
 let manage_operators req =
@@ -86,7 +87,7 @@ let manage_operators req =
     ||> Response.of_html
     |> Lwt_result.ok
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path ~src req
 ;;
 
 let create_operator req =
@@ -131,7 +132,7 @@ let create_operator req =
     in
     validate_user () >> events >>= handle |>> return_to_overview
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path ~src req
 ;;
 
 let tenant_detail req =
@@ -149,7 +150,7 @@ let tenant_detail req =
     ||> Sihl.Web.Response.of_html
     |> Lwt_result.ok
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path ~src req
 ;;
 
 module Access : sig

@@ -38,7 +38,7 @@ let handle_event pool : event -> unit Lwt.t =
     let%lwt (_ : (unit, Pool_common.Message.error) result) =
       Repo.Actor.grant_roles ~ctx actor roles
       >|- Pool_common.Message.authorization
-          %> Pool_common.Utils.with_log_error ~tags
+          %> Pool_common.Utils.with_log_error ~src ~tags
       ||> tap (fun _ -> Repo.Cache.clear ())
     in
     Lwt.return_unit
@@ -46,7 +46,7 @@ let handle_event pool : event -> unit Lwt.t =
     let%lwt (_ : (unit, Pool_common.Message.error) result) =
       Repo.Actor.revoke_roles ~ctx actor role
       >|- Pool_common.Message.authorization
-          %> Pool_common.Utils.with_log_error ~tags
+          %> Pool_common.Utils.with_log_error ~src ~tags
       ||> tap (fun _ -> Repo.Cache.clear ())
     in
     Lwt.return_unit

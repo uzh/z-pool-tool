@@ -52,17 +52,13 @@ val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
 val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
-
-val find
-  :  Pool_database.Label.t
-  -> Pool_common.Id.t
-  -> (t, Pool_common.Message.error) result Lwt.t
+val find : Pool_database.Label.t -> Pool_common.Id.t -> t Lwt.t
 
 val find_by_key
   :  Pool_database.Label.t
   -> Key.t
   -> Pool_common.Language.t
-  -> (t, Pool_common.Message.error) result Lwt.t
+  -> t Lwt.t
 
 val find_all : Pool_database.Label.t -> unit -> t list Lwt.t
 

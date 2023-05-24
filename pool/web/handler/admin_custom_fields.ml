@@ -2,6 +2,7 @@ module HttpUtils = Http_utils
 module Message = Pool_common.Message
 module Url = Page.Admin.CustomFields.Url
 
+let src = Logs.Src.create "handler.admin.custom_fields"
 let create_layout req = General.create_tenant_layout req
 
 let boolean_fields =
@@ -59,7 +60,7 @@ let index req =
        |> create_layout ~active_navigation:Url.fallback_path req context
        >|+ Sihl.Web.Response.of_html
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path ~src req
 ;;
 
 let redirect _ =
@@ -82,9 +83,7 @@ let form ?id req model =
            Custom_field.find database_label id >|+ CCOption.pure)
     in
     let%lwt groups = Custom_field.find_groups_by_model database_label model in
-    let* sys_languages =
-      Pool_context.Tenant.get_tenant_languages req |> Lwt_result.lift
-    in
+    let sys_languages = Pool_context.Tenant.get_tenant_languages_exn req in
     Page.Admin.CustomFields.detail
       ?custom_field
       model
@@ -95,7 +94,7 @@ let form ?id req model =
     |> create_layout req context
     >|+ Sihl.Web.Response.of_html
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path ~src req
 ;;
 
 let new_form req = get_model form req
@@ -136,9 +135,7 @@ let write ?id req model =
     let tags = Pool_context.Logger.Tags.req req in
     let events =
       let open Utils.Lwt_result.Infix in
-      let* sys_languages =
-        Pool_context.Tenant.get_tenant_languages req |> Lwt_result.lift
-      in
+      let sys_languages = Pool_context.Tenant.get_tenant_languages_exn req in
       let* decoded =
         urlencoded
         |> Cqrs_command.Custom_field_command.base_decode
@@ -177,7 +174,7 @@ let write ?id req model =
     in
     events |>> handle
   in
-  result |> HttpUtils.extract_happy_path_with_actions req
+  result |> HttpUtils.extract_happy_path_with_actions ~src req
 ;;
 
 let create req = get_model write req
@@ -225,7 +222,7 @@ let toggle_action action req =
     in
     events |>> handle
   in
-  result |> HttpUtils.extract_happy_path_with_actions req
+  result |> HttpUtils.extract_happy_path_with_actions ~src req
 ;;
 
 let publish = toggle_action `Publish
@@ -278,7 +275,7 @@ let sort_options req =
       in
       events |>> handle
     in
-    result |> HttpUtils.extract_happy_path_with_actions req
+    result |> HttpUtils.extract_happy_path_with_actions ~src req
   in
   get_model handler req
 ;;
@@ -330,7 +327,7 @@ let sort_fields req ?group () =
       in
       events |>> handle
     in
-    result |> HttpUtils.extract_happy_path_with_actions req
+    result |> HttpUtils.extract_happy_path_with_actions ~src req
   in
   get_model handler req
 ;;

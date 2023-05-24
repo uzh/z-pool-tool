@@ -102,14 +102,14 @@ val find_by_label_to_send
   -> ?entity_uuids:Pool_common.Id.t list
   -> Pool_common.Language.t
   -> Label.t
-  -> (t * Pool_common.Language.t, Pool_common.Message.error) Lwt_result.t
+  -> (t * Pool_common.Language.t) Lwt.t
 
 val find_all_by_label_to_send
   :  Pool_database.Label.t
   -> ?entity_uuids:Pool_common.Id.t list
   -> Pool_common.Language.t list
   -> Label.t
-  -> (t list, Pool_common.Message.error) Lwt_result.t
+  -> t list Lwt.t
 
 val filter_languages
   :  Pool_common.Language.t list

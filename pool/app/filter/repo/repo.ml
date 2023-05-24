@@ -263,7 +263,7 @@ module Sql = struct
                ([%show: Contact.t] contact)
                ([%show: Pool_common.Id.t] experiment_id))
          in
-         Pool_common.Utils.with_log_error ~level:Logs.Warning ~tags err)
+         Pool_common.Utils.with_log_error ~src ~level:Logs.Warning ~tags err)
     |> CCResult.get_or
          ~default:(Dynparam.empty, if default then "TRUE" else "FALSE")
     |> fun (dyn, sql) ->

@@ -1,6 +1,7 @@
 module HttpUtils = Http_utils
 module Field = Pool_common.Message.Field
 
+let src = Logs.Src.create "handler.contact.location"
 let create_layout = Contact_general.create_layout
 
 let id req field encode =
@@ -18,7 +19,7 @@ let show req =
     |> create_layout req context
     >|+ Sihl.Web.Response.of_html
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path ~src req
 ;;
 
 let asset req =
@@ -45,5 +46,5 @@ let asset req =
     |> Sihl.Web.Response.set_content_type mime
     |> Lwt.return_ok
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path ~src req
 ;;

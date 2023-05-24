@@ -4,6 +4,7 @@ module Conformist = Pool_common.Utils.PoolConformist
 module User = Pool_user
 module PoolField = Pool_common.Message.Field
 
+let src = Logs.Src.create "handler.contact.user_profile"
 let create_layout = Contact_general.create_layout
 
 let show usage req =
@@ -13,7 +14,7 @@ let show usage req =
     @@ let* contact = Pool_context.find_contact context |> Lwt_result.lift in
        match usage with
        | `LoginInformation ->
-         let* password_policy =
+         let%lwt password_policy =
            I18n.find_by_key database_label I18n.Key.PasswordPolicyText language
          in
          Page.Contact.login_information contact context password_policy
@@ -45,7 +46,7 @@ let show usage req =
               context
          >|+ Sihl.Web.Response.of_html
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path ~src req
 ;;
 
 let personal_details = show `PersonalDetails
@@ -77,9 +78,7 @@ let update_email req =
          |> Lwt_result.lift
        in
        let%lwt token = Email.create_token database_label new_email in
-       let* { Pool_context.Tenant.tenant; _ } =
-         Pool_context.Tenant.find req |> Lwt_result.lift
-       in
+       let tenant = Pool_context.Tenant.get_tenant_exn req in
        let* verification_mail =
          let open Message_template in
          EmailVerification.create
@@ -109,7 +108,7 @@ let update_email req =
              [ Message.set ~success:[ EmailConfirmationMessage ] ]))
        |> Lwt_result.ok
   in
-  result |> HttpUtils.extract_happy_path_with_actions req
+  result |> HttpUtils.extract_happy_path_with_actions ~src req
 ;;
 
 let update_password req =
@@ -123,9 +122,7 @@ let update_password req =
       HttpUtils.(
         msg, "/user/login-information", [ urlencoded_to_flash urlencoded ]))
     @@ let* contact = Pool_context.find_contact context |> Lwt_result.lift in
-       let* { Pool_context.Tenant.tenant; _ } =
-         Pool_context.Tenant.find req |> Lwt_result.lift
-       in
+       let tenant = Pool_context.Tenant.get_tenant_exn req in
        let* notification =
          Message_template.PasswordChange.create
            database_label
@@ -147,7 +144,7 @@ let update_password req =
              [ Message.set ~success:[ Pool_common.Message.PasswordChanged ] ]))
        |> Lwt_result.ok
   in
-  result |> HttpUtils.extract_happy_path_with_actions req
+  result |> HttpUtils.extract_happy_path_with_actions ~src req
 ;;
 
 let completion req =
@@ -167,7 +164,7 @@ let completion req =
     |> create_layout req ~active_navigation:"/user" context
     >|+ Sihl.Web.Response.of_html
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path ~src req
 ;;
 
 let completion_post req =
@@ -253,5 +250,5 @@ let completion_post req =
     in
     events |>> handle
   in
-  result |> HttpUtils.extract_happy_path_with_actions req
+  result |> HttpUtils.extract_happy_path_with_actions ~src req
 ;;

@@ -3,6 +3,8 @@ module Common = Pool_common
 module Database = Pool_database
 open Entity
 
+let src = Logs.Src.create "admin.event"
+
 type create =
   { id : Id.t option
   ; email : User.EmailAddress.t
@@ -58,12 +60,12 @@ let handle_event ~tags pool : event -> unit Lwt.t =
     in
     let%lwt (_ : Role.Target.t Guard.Target.t) =
       Entity_guard.Target.to_authorizable ~ctx user
-      >|- with_log_error ~tags
+      >|- with_log_error ~src ~tags
       ||> get_or_failwith
     in
     let%lwt (authorizable : Role.Actor.t Guard.Actor.t) =
       Entity_guard.Actor.to_authorizable ~ctx user
-      >|- with_log_error ~tags
+      >|- with_log_error ~src ~tags
       ||> get_or_failwith
     in
     let%lwt () =
@@ -85,7 +87,8 @@ let handle_event ~tags pool : event -> unit Lwt.t =
         person
         (password |> User.Password.to_sihl)
         (confirmed |> User.PasswordConfirmed.to_sihl)
-      ||> Pool_common.(Utils.with_log_result_error ~tags Message.nothandled)
+      ||> Pool_common.(
+            Utils.with_log_result_error ~src ~tags Message.nothandled)
     in
     Lwt.return_unit
   | Disabled _ -> Utils.todo ()

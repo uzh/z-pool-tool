@@ -110,7 +110,6 @@ let get_template_with_language_missing _ () =
              ~entity_uuids:Experiment.[ experiment.id |> Id.to_common ]
              lang
              label
-           ||> CCResult.get_exn
            ||> fst)
     in
     (* When one entity specific template exists, expect this to be returned
@@ -145,7 +144,6 @@ let get_templates_in_multile_languages _ () =
              ~entity_uuids:Experiment.[ experiment.id |> Id.to_common ]
              lang
              label
-           ||> CCResult.get_exn
            ||> fst)
     in
     (* Expect all created templates to be returned *)

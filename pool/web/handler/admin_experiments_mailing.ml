@@ -2,6 +2,7 @@ module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 module Field = Pool_common.Message.Field
 
+let src = Logs.Src.create "handler.admin.experiments_mailing"
 let create_layout req = General.create_tenant_layout req
 let experiment_id = HttpUtils.find_id Experiment.Id.of_string Field.Experiment
 
@@ -24,7 +25,7 @@ let index req =
        >|> create_layout req context
        >|+ Sihl.Web.Response.of_html
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path ~src req
 ;;
 
 let new_form req =
@@ -46,7 +47,7 @@ let new_form req =
        >|> create_layout req context
        >|+ Sihl.Web.Response.of_html
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path ~src req
 ;;
 
 let create req =
@@ -95,7 +96,7 @@ let create req =
     in
     events |> Lwt_result.lift |>> handle
   in
-  result |> HttpUtils.extract_happy_path_with_actions req
+  result |> HttpUtils.extract_happy_path_with_actions ~src req
 ;;
 
 let detail edit req =
@@ -125,7 +126,7 @@ let detail edit req =
        >|> create_layout req context
        >|+ Sihl.Web.Response.of_html
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path ~src req
 ;;
 
 let show = detail false
@@ -179,7 +180,7 @@ let update req =
     in
     events |> Lwt_result.lift |>> handle
   in
-  result |> HttpUtils.extract_happy_path_with_actions req
+  result |> HttpUtils.extract_happy_path_with_actions ~src req
 ;;
 
 let search_info req =
@@ -275,7 +276,7 @@ let disabler command success_handler req =
       ]
     |> Lwt_result.ok
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path ~src req
 ;;
 
 let stop =

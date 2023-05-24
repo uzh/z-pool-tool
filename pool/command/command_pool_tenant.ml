@@ -1,4 +1,5 @@
 let failwith = Pool_common.Utils.get_or_failwith
+let src = Logs.Src.create "command.pool_tenant"
 
 let create_tenant_pool =
   let help =
@@ -109,6 +110,7 @@ Example: %s econ-uzh mariadb://user:pw@localhost:3306/dev_econ
          let open Pool_common in
          let (_ : Message.error) =
            Utils.with_log_error
+             ~src
              ~tags:(Pool_database.Logger.Tags.create pool)
              err
          in

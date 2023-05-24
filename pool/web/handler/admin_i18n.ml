@@ -1,6 +1,7 @@
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 
+let src = Logs.Src.create "handler.admin.i18n"
 let create_layout req = General.create_tenant_layout req
 
 module I18nMap = CCMap.Make (struct
@@ -35,7 +36,7 @@ let index req =
     |> create_layout req ~active_navigation:"/admin/i18n" context
     >|+ Sihl.Web.Response.of_html
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path ~src req
 ;;
 
 let update req =
@@ -50,11 +51,11 @@ let update req =
     @@
     let tags = Pool_context.Logger.Tags.req req in
     let property () = I18n.find database_label id in
+    let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
     let events property =
       let open CCResult.Infix in
       let open Cqrs_command.I18n_command.Update in
-      let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-      urlencoded |> decode >>= handle ~tags property |> Lwt_result.lift
+      urlencoded |> decode >>= handle ~tags property
     in
     let handle events =
       let%lwt () =
@@ -64,9 +65,9 @@ let update req =
         redirect_path
         [ Message.set ~success:[ Pool_common.Message.(Updated Field.I18n) ] ]
     in
-    () |> property >>= events |>> handle
+    () |> property ||> events |>> handle
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path ~src req
 ;;
 
 module Access : module type of Helpers.Access = struct

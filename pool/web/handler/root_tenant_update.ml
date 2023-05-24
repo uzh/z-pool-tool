@@ -4,6 +4,8 @@ module File = HttpUtils.File
 module Common = Pool_common
 module Database = Pool_database
 
+let src = Logs.Src.create "handler.root.tenant_update"
+
 let update req command success_message =
   let open Utils.Lwt_result.Infix in
   let open Common.Message.Field in
@@ -88,7 +90,7 @@ let update req command success_message =
     in
     id |> Pool_tenant.find_full >>= events |>> handle |>> return_to_overview
   in
-  result |> HttpUtils.extract_happy_path_with_actions req
+  result |> HttpUtils.extract_happy_path_with_actions ~src req
 ;;
 
 let update_detail req =
@@ -133,5 +135,5 @@ let delete_asset req =
     |>> destroy_file
     |>> return_to_tenant
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path ~src req
 ;;

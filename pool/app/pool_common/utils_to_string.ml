@@ -66,6 +66,8 @@ let get_or_failwith m =
   |> CCResult.get_or_failwith
 ;;
 
+let failwith = CCFun.(error_to_string Language.En %> failwith)
+
 let bool_to_string lang m =
   match lang with
   | Language.De -> if m then "Ja" else "Nein"

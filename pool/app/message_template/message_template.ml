@@ -71,7 +71,7 @@ module AccountSuspensionNotification = struct
         |> Contact.find_by_email database_label
         >== preferred_language system_languages
     in
-    let* template, language =
+    let%lwt template, language =
       find_by_label_to_send
         database_label
         preferred_langauge
@@ -111,8 +111,7 @@ module AssignmentConfirmation = struct
   ;;
 
   let create pool preferred_language tenant sessions contact =
-    let open Utils.Lwt_result.Infix in
-    let* template, language = template pool preferred_language in
+    let%lwt template, language = template pool preferred_language in
     let params = email_params language sessions contact in
     let layout = layout_from_tenant tenant in
     let email = contact |> Contact.email_address in
@@ -123,8 +122,7 @@ module AssignmentConfirmation = struct
 
   let create_from_public_session pool preferred_language tenant sessions contact
     =
-    let open Utils.Lwt_result.Infix in
-    let* template, language = template pool preferred_language in
+    let%lwt template, language = template pool preferred_language in
     let params = email_params_public_session language sessions contact in
     let layout = layout_from_tenant tenant in
     let email = contact |> Contact.email_address in
@@ -146,8 +144,7 @@ module ContactRegistrationAttempt = struct
   ;;
 
   let create pool preferred_language tenant contact =
-    let open Utils.Lwt_result.Infix in
-    let* template, language =
+    let%lwt template, language =
       find_by_label_to_send
         pool
         preferred_language
@@ -173,8 +170,7 @@ module EmailVerification = struct
   ;;
 
   let create pool preferred_language layout contact email_address token =
-    let open Utils.Lwt_result.Infix in
-    let* template, language =
+    let%lwt template, language =
       find_by_label_to_send pool preferred_language Label.EmailVerification
     in
     let%lwt url = Pool_tenant.Url.of_pool pool in
@@ -211,10 +207,9 @@ module ExperimentInvitation = struct
 
   let prepare tenant experiment =
     let open Message_utils in
-    let open Utils.Lwt_result.Infix in
     let pool = tenant.Pool_tenant.database_label in
     let%lwt sys_langs = Settings.find_languages pool in
-    let* templates =
+    let%lwt templates =
       find_all_by_label_to_send
         pool
         ~entity_uuids:[ Experiment.(Id.to_common experiment.Experiment.id) ]
@@ -249,7 +244,7 @@ module ExperimentInvitation = struct
     let* preferred_langauge =
       preferred_language system_languages contact |> Lwt_result.lift
     in
-    let* template, language =
+    let%lwt template, language =
       find_by_label_to_send
         database_label
         preferred_langauge
@@ -274,8 +269,7 @@ module PasswordChange = struct
   let email_params user = global_params user
 
   let create pool preferred_langauge tenant user =
-    let open Utils.Lwt_result.Infix in
-    let* template, language =
+    let%lwt template, language =
       find_by_label_to_send pool preferred_langauge Label.PasswordChange
     in
     let layout = layout_from_tenant tenant in
@@ -294,7 +288,7 @@ module PasswordReset = struct
   let create pool preferred_language layout user =
     let open Utils.Lwt_result.Infix in
     let email = Pool_user.user_email_address user in
-    let* template, language =
+    let%lwt template, language =
       find_by_label_to_send pool preferred_language Label.PasswordReset
     in
     let%lwt url = Pool_tenant.Url.of_pool pool in
@@ -341,9 +335,8 @@ module ProfileUpdateTrigger = struct
 
   let prepare pool tenant =
     let open Message_utils in
-    let open Utils.Lwt_result.Infix in
     let%lwt sys_langs = Settings.find_languages pool in
-    let* templates =
+    let%lwt templates =
       find_all_by_label_to_send pool sys_langs Label.SessionReschedule
     in
     let%lwt url = Pool_tenant.Url.of_pool pool in
@@ -404,8 +397,7 @@ module SessionCancellation = struct
 
   let prepare pool tenant experiment sys_langs session follow_up_sessions =
     let open Message_utils in
-    let open Utils.Lwt_result.Infix in
-    let* templates =
+    let%lwt templates =
       find_all_by_label_to_send pool sys_langs Label.SessionCancellation
     in
     let%lwt sender = Pool_tenant.Service.Email.sender_of_pool pool in
@@ -449,7 +441,7 @@ module SessionReminder = struct
     let* preferred_language =
       preferred_language system_languages contact |> Lwt_result.lift
     in
-    let* template, language =
+    let%lwt template, language =
       find_by_label_to_send
         ~entity_uuids:
           [ Session.Id.to_common session.Session.id
@@ -474,8 +466,7 @@ module SessionReminder = struct
 
   let prepare pool tenant sys_langs experiment session =
     let open Message_utils in
-    let open Utils.Lwt_result.Infix in
-    let* templates =
+    let%lwt templates =
       find_all_by_label_to_send
         ~entity_uuids:
           [ Session.Id.to_common session.Session.id
@@ -517,8 +508,7 @@ module SessionReschedule = struct
 
   let prepare pool tenant sys_langs session =
     let open Message_utils in
-    let open Utils.Lwt_result.Infix in
-    let* templates =
+    let%lwt templates =
       find_all_by_label_to_send pool sys_langs Label.SessionReschedule
     in
     let%lwt sender = Pool_tenant.Service.Email.sender_of_pool pool in
@@ -561,8 +551,7 @@ module SignUpVerification = struct
     firstname
     lastname
     =
-    let open Utils.Lwt_result.Infix in
-    let* template, language =
+    let%lwt template, language =
       find_by_label_to_send pool preferred_language Label.SignUpVerification
     in
     let%lwt url = Pool_tenant.Url.of_pool pool in

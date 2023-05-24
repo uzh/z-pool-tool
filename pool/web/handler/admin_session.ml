@@ -2,6 +2,7 @@ module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 module Field = Pool_common.Message.Field
 
+let src = Logs.Src.create "handler.admin.session"
 let create_layout req = General.create_tenant_layout req
 let experiment_id = HttpUtils.find_id Experiment.Id.of_string Field.Experiment
 let session_id = HttpUtils.find_id Session.Id.of_string Field.Session
@@ -49,7 +50,7 @@ let list req =
     >|> create_layout req context
     >|+ Sihl.Web.Response.of_html
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path ~src req
 ;;
 
 let new_helper req page =
@@ -99,7 +100,7 @@ let new_helper req page =
        in
        html >>= create_layout req context >|+ Sihl.Web.Response.of_html
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path ~src req
 ;;
 
 let new_form req = new_helper req `Parent
@@ -134,7 +135,7 @@ let create req =
       [ Message.set ~success:[ Pool_common.Message.(Created Field.Session) ] ]
     |> Lwt_result.ok
   in
-  result |> HttpUtils.extract_happy_path_with_actions req
+  result |> HttpUtils.extract_happy_path_with_actions ~src req
 ;;
 
 let detail req page =
@@ -171,9 +172,7 @@ let detail req page =
        let%lwt default_reminder_lead_time =
          Settings.find_default_reminder_lead_time database_label
        in
-       let* sys_languages =
-         Pool_context.Tenant.get_tenant_languages req |> Lwt_result.lift
-       in
+       let sys_languages = Pool_context.Tenant.get_tenant_languages_exn req in
        Page.Admin.Session.edit
          context
          experiment
@@ -210,7 +209,7 @@ let detail req page =
     >>= create_layout req context
     >|+ Sihl.Web.Response.of_html
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path ~src req
 ;;
 
 let show req = detail req `Detail
@@ -245,9 +244,7 @@ let update_handler action req =
       , [ HttpUtils.urlencoded_to_flash urlencoded ] ))
     @@
     let tags = Pool_context.Logger.Tags.req req in
-    let* { Pool_context.Tenant.tenant; _ } =
-      Pool_context.Tenant.find req |> Lwt_result.lift
-    in
+    let tenant = Pool_context.Tenant.get_tenant_exn req in
     let* session = Session.find database_label session_id in
     let* follow_ups =
       Session.find_follow_ups database_label session.Session.id
@@ -273,8 +270,8 @@ let update_handler action req =
         let* assignments =
           Assignment.find_by_session database_label session.Session.id
         in
-        let* system_languages =
-          Pool_context.Tenant.get_tenant_languages req |> Lwt_result.lift
+        let system_languages =
+          Pool_context.Tenant.get_tenant_languages_exn req
         in
         let* create_message =
           Message_template.SessionReschedule.prepare
@@ -300,7 +297,7 @@ let update_handler action req =
       [ Message.set ~success:[ success_msg ] ]
     |> Lwt_result.ok
   in
-  result |> HttpUtils.extract_happy_path_with_actions req
+  result |> HttpUtils.extract_happy_path_with_actions ~src req
 ;;
 
 let update = update_handler `Update
@@ -348,12 +345,8 @@ let cancel req =
       >|+ Assignment.group_by_contact
     in
     let* events =
-      let* system_languages =
-        Pool_context.Tenant.get_tenant_languages req |> Lwt_result.lift
-      in
-      let* { Pool_context.Tenant.tenant; _ } =
-        Pool_context.Tenant.find req |> Lwt_result.lift
-      in
+      let system_languages = Pool_context.Tenant.get_tenant_languages_exn req in
+      let tenant = Pool_context.Tenant.get_tenant_exn req in
       let* create_message =
         Message_template.SessionCancellation.prepare
           database_label
@@ -376,7 +369,7 @@ let cancel req =
       [ Message.set ~success:[ Pool_common.Message.(Canceled Field.Session) ] ]
     |> Lwt_result.ok
   in
-  result |> HttpUtils.extract_happy_path_with_actions req
+  result |> HttpUtils.extract_happy_path_with_actions ~src req
 ;;
 
 let delete req =
@@ -411,7 +404,7 @@ let delete req =
       [ Message.set ~success:[ Pool_common.Message.(Deleted Field.Session) ] ]
     |> Lwt_result.ok
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path ~src req
 ;;
 
 (* TODO [aerben] make possible to create multiple follow ups? *)
@@ -453,7 +446,7 @@ let create_follow_up req =
       [ Message.set ~success:[ Pool_common.Message.(Created Field.Session) ] ]
     |> Lwt_result.ok
   in
-  result |> HttpUtils.extract_happy_path_with_actions req
+  result |> HttpUtils.extract_happy_path_with_actions ~src req
 ;;
 
 let close_post req =
@@ -522,7 +515,7 @@ let close_post req =
       [ Message.set ~success:[ Pool_common.Message.(Closed Field.Session) ] ]
     |> Lwt_result.ok
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path ~src req
 ;;
 
 let message_template_form ?template_id label req =
@@ -537,9 +530,7 @@ let message_template_form ?template_id label req =
         |> Format.asprintf "/admin/experiments/%s/edit" ))
     @@
     let flash_fetcher key = Sihl.Web.Flash.find key req in
-    let* { Pool_context.Tenant.tenant; _ } =
-      Pool_context.Tenant.find req |> Lwt_result.lift
-    in
+    let tenant = Pool_context.Tenant.get_tenant_exn req in
     let* experiment = Experiment.find database_label experiment_id in
     let* session = Session.find database_label session_id in
     let* template =
@@ -547,17 +538,16 @@ let message_template_form ?template_id label req =
       |> CCOption.map_or ~default:(Lwt_result.return None) (fun id ->
            Message_template.find database_label id >|+ CCOption.pure)
     in
-    let* available_languages =
+    let%lwt available_languages =
       match template_id with
       | None ->
-        Pool_context.Tenant.get_tenant_languages req
-        |> Lwt_result.lift
-        |>> Message_template.find_available_languages
-              database_label
-              (session_id |> Session.Id.to_common)
-              label
-        >|+ CCOption.pure
-      | Some _ -> Lwt_result.return None
+        Pool_context.Tenant.get_tenant_languages_exn req
+        |> Message_template.find_available_languages
+             database_label
+             (session_id |> Session.Id.to_common)
+             label
+        ||> CCOption.return
+      | Some _ -> Lwt.return_none
     in
     Page.Admin.Session.message_template_form
       context
@@ -571,7 +561,7 @@ let message_template_form ?template_id label req =
     >|> create_layout req context
     >|+ Sihl.Web.Response.of_html
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path ~src req
 ;;
 
 let new_session_reminder req =

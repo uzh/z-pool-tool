@@ -4,6 +4,7 @@ module Field = Pool_common.Message.Field
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 
+let src = Logs.Src.create "handler.admin.settings_queue"
 let active_navigation = "/admin/settings/queue"
 
 let show req =
@@ -16,7 +17,7 @@ let show req =
     >|+ Sihl.Web.Response.of_html
     >|- fun err -> err, "/"
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path ~src req
 ;;
 
 let detail req =
@@ -28,7 +29,7 @@ let detail req =
     >|+ Sihl.Web.Response.of_html
     >|- fun err -> err, "/admin/settings/queue"
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path ~src req
 ;;
 
 module Access : module type of Helpers.Access = struct

@@ -4,6 +4,8 @@ module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 module Field = Pool_common.Message.Field
 
+let src = Logs.Src.create "handler.admin.admins"
+let extract_happy_path = HttpUtils.extract_happy_path ~src
 let create_layout req = General.create_tenant_layout req
 
 let complete_roles database_label (role : Role.Actor.t) ini =
@@ -55,7 +57,7 @@ let index req =
     |> create_layout req ~active_navigation:"/admin/admins" context
     >|+ Sihl.Web.Response.of_html
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> extract_happy_path req
 ;;
 
 let admin_detail req is_edit =
@@ -79,7 +81,7 @@ let admin_detail req is_edit =
     |> create_layout req context
     >|+ Sihl.Web.Response.of_html
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> extract_happy_path req
 ;;
 
 let detail req = admin_detail req false
@@ -92,7 +94,7 @@ let new_form req =
         |> create_layout req context
         >|+ Sihl.Web.Response.of_html)
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> extract_happy_path req
 ;;
 
 let create_admin req =
@@ -124,7 +126,7 @@ let create_admin req =
     in
     () |> validate_user >> events >>= handle |>> return_to_overview
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> extract_happy_path req
 ;;
 
 let handle_toggle_role req =
@@ -208,7 +210,7 @@ let grant_role ({ Rock.Request.target; _ } as req) =
           Logs.err (fun m ->
             m "Admin handler: Missing role %s" ([%show: Role.Actor.t] role));
           Lwt.return_error Pool_common.Message.(NotFound Field.Role)
-          ||> Pool_common.Utils.with_log_result_error ~tags CCFun.id)
+          ||> Pool_common.Utils.with_log_result_error ~src ~tags CCFun.id)
     in
     let events roles =
       let open Cqrs_command.Guardian_command in
@@ -294,7 +296,7 @@ let revoke_role ({ Rock.Request.target; _ } as req) =
      role >>= events |>> handle)
     >|- fun err -> err, edit_route
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> extract_happy_path req
 ;;
 
 module Access : sig

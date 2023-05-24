@@ -3,6 +3,7 @@ module Login = Public_login
 module Common = Pool_common
 module Database = Pool_database
 
+let src = Logs.Src.create "handler.public"
 let create_layout req = General.create_tenant_layout req
 
 let root_redirect req =
@@ -24,14 +25,14 @@ let index req =
       let error_path = Http_utils.path_with_language query_language "/error" in
       Utils.Lwt_result.map_error (fun err -> err, error_path)
       @@ let* tenant = Pool_tenant.find_by_label database_label in
-         let* welcome_text =
+         let%lwt welcome_text =
            I18n.find_by_key database_label I18n.Key.WelcomeText language
          in
          Page.Public.index tenant context welcome_text
          |> create_layout req context
          >|+ Sihl.Web.Response.of_html
     in
-    result |> Http_utils.extract_happy_path req)
+    result |> Http_utils.extract_happy_path ~src req)
 ;;
 
 let index_css req =
@@ -84,7 +85,7 @@ let email_confirmation_note req =
     |> create_layout req context
     >|+ Sihl.Web.Response.of_html
   in
-  result |> Http_utils.extract_happy_path req
+  result |> Http_utils.extract_happy_path ~src req
 ;;
 
 let not_found req =
@@ -111,7 +112,7 @@ let not_found req =
          html |> create_layout req context >|+ Sihl.Web.Response.of_html
   in
   result
-  |> Http_utils.extract_happy_path req
+  |> Http_utils.extract_happy_path ~src req
   |> Lwt.map @@ Opium.Response.set_status `Not_found
 ;;
 

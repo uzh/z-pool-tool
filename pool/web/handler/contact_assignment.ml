@@ -1,5 +1,6 @@
 module HttpUtils = Http_utils
 
+let src = Logs.Src.create "handler.contact.assignment"
 let create_layout = Contact_general.create_layout
 
 let create req =
@@ -23,16 +24,9 @@ let create req =
          Session.find_open_with_follow_ups database_label id
          >|+ CCList.map Session.to_public
        in
-       let* { Pool_context.Tenant.tenant; _ } =
-         Pool_context.Tenant.find req |> Lwt_result.lift
-       in
+       let tenant = Pool_context.Tenant.get_tenant_exn req in
        let* confirmation_email =
-         let* language =
-           let* default = Settings.default_language database_label in
-           contact.Contact.language
-           |> CCOption.value ~default
-           |> Lwt_result.return
-         in
+         let%lwt language = Contact.message_language database_label contact in
          Message_template.AssignmentConfirmation.create_from_public_session
            database_label
            language
@@ -70,5 +64,5 @@ let create req =
        in
        events |>> handle
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path ~src req
 ;;

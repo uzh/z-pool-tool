@@ -3,6 +3,7 @@ module Message = HttpUtils.Message
 module Url = Page.Admin.CustomFields.Url
 module Field = Pool_common.Message.Field
 
+let src = Logs.Src.create "handler.admin.custom_field_options"
 let create_layout req = General.create_tenant_layout req
 
 let get_option_id req =
@@ -47,9 +48,7 @@ let form ?id req custom_field =
        let* custom_field =
          req |> get_field_id |> Custom_field.find database_label
        in
-       let* sys_languages =
-         Pool_context.Tenant.get_tenant_languages req |> Lwt_result.lift
-       in
+       let sys_languages = Pool_context.Tenant.get_tenant_languages_exn req in
        let flash_fetcher key = Sihl.Web.Flash.find key req in
        Page.Admin.CustomFieldOptions.detail
          ?custom_field_option
@@ -60,7 +59,7 @@ let form ?id req custom_field =
        |> create_layout req context
        >|+ Sihl.Web.Response.of_html
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path ~src req
 ;;
 
 let new_form req = get_custom_field form req
@@ -96,9 +95,7 @@ let write ?id req custom_field =
       err, error_path, [ HttpUtils.urlencoded_to_flash urlencoded ])
     @@
     let events =
-      let* sys_languages =
-        Pool_context.Tenant.get_tenant_languages req |> Lwt_result.lift
-      in
+      let sys_languages = Pool_context.Tenant.get_tenant_languages_exn req in
       match id with
       | None ->
         Cqrs_command.Custom_field_option_command.Create.handle
@@ -132,7 +129,7 @@ let write ?id req custom_field =
     in
     events |>> handle
   in
-  result |> HttpUtils.extract_happy_path_with_actions req
+  result |> HttpUtils.extract_happy_path_with_actions ~src req
 ;;
 
 let create req = get_custom_field write req
@@ -176,7 +173,7 @@ let toggle_action action req =
       in
       events |>> handle
     in
-    result |> HttpUtils.extract_happy_path req
+    result |> HttpUtils.extract_happy_path ~src req
   in
   get_custom_field handler req
 ;;

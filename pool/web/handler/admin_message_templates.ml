@@ -2,6 +2,7 @@ module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 module Field = Pool_common.Message.Field
 
+let src = Logs.Src.create "handler.admin.message_templates"
 let create_layout req = General.create_tenant_layout req
 
 let id req field encode =
@@ -23,7 +24,7 @@ let index req =
     |> create_layout ~active_navigation:"/admin/message-template" req context
     >|+ Sihl.Web.Response.of_html
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path ~src req
 ;;
 
 let edit req =
@@ -31,16 +32,15 @@ let edit req =
   let id = id req Field.MessageTemplate Message_template.Id.of_string in
   let result ({ Pool_context.database_label; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, "/admin/dashboard")
-    @@ let* { Pool_context.Tenant.tenant; _ } =
-         Pool_context.Tenant.find req |> Lwt_result.lift
-       in
-       let* template = Message_template.find database_label id in
-       let flash_fetcher key = Sihl.Web.Flash.find key req in
-       Page.Admin.MessageTemplate.edit context template tenant flash_fetcher
-       |> create_layout req context
-       >|+ Sihl.Web.Response.of_html
+    @@
+    let tenant = Pool_context.Tenant.get_tenant_exn req in
+    let* template = Message_template.find database_label id in
+    let flash_fetcher key = Sihl.Web.Flash.find key req in
+    Page.Admin.MessageTemplate.edit context template tenant flash_fetcher
+    |> create_layout req context
+    >|+ Sihl.Web.Response.of_html
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path ~src req
 ;;
 
 type redirect =
@@ -72,13 +72,12 @@ let write action req =
       let open Cqrs_command.Message_template_command in
       match action with
       | Create (entity_id, label, _) ->
-        let* available_languages =
-          Pool_context.Tenant.get_tenant_languages req
-          |> Lwt_result.lift
-          |>> Message_template.find_available_languages
-                database_label
-                entity_id
-                label
+        let%lwt available_languages =
+          Pool_context.Tenant.get_tenant_languages_exn req
+          |> Message_template.find_available_languages
+               database_label
+               entity_id
+               label
         in
         Create.(
           urlencoded
@@ -99,7 +98,7 @@ let write action req =
     in
     events |>> handle
   in
-  result |> HttpUtils.extract_happy_path_with_actions req
+  result |> HttpUtils.extract_happy_path_with_actions ~src req
 ;;
 
 let update req =
