@@ -212,6 +212,7 @@ end = struct
   let handle ({ id; start_at; end_at; rate; distribution } : t) =
     let open CCResult in
     Mailing.create
+      ~allow_start_in_past:true
       ?id
       Start.(StartAt start_at)
       end_at

@@ -23,10 +23,11 @@ module Start = struct
     | StartNow
     | StartAt of StartAt.t
 
-  let validate start end_at =
+  let validate ?(allow_start_in_past = false) start end_at =
     let open CCResult in
     let* start_at =
       match start with
+      | StartAt start_at when allow_start_in_past -> Ok start_at
       | StartAt start_at ->
         if Ptime.is_earlier ~than:(Ptime_clock.now ()) start_at
         then Error Pool_common.Message.TimeInPast
@@ -214,9 +215,16 @@ let equal m1 m2 =
      |> CCOption.get_or ~default:false
 ;;
 
-let create ?(id = Id.create ()) start end_at rate distribution =
+let create
+  ?allow_start_in_past
+  ?(id = Id.create ())
+  start
+  end_at
+  rate
+  distribution
+  =
   let open CCResult in
-  let* start_at = Start.validate start end_at in
+  let* start_at = Start.validate ?allow_start_in_past start end_at in
   Ok
     { id
     ; start_at

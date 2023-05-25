@@ -348,10 +348,12 @@ end = struct
 
   let search_info =
     (fun req ->
-      Guard.ValidationSet.Or
-        [ experiment_effects MailingCommand.Create.effects req
-        ; combined_effects MailingCommand.Update.effects req
-        ])
+      let open Guard.ValidationSet in
+      let open MailingCommand in
+      let create_effect = experiment_effects Create.effects req in
+      if HttpUtils.id_in_url req Field.Mailing
+      then Or [ create_effect; combined_effects Update.effects req ]
+      else create_effect)
     |> Guardian.validate_generic
   ;;
 
