@@ -206,7 +206,8 @@ let search_info req =
     |> HttpUtils.Htmx.html_to_plain_text_response
     |> Lwt.return_ok
   in
-  result |> HttpUtils.Htmx.handle_error_message ~src req
+  result
+  |> HttpUtils.Htmx.handle_error_message ~error_as_notification:true ~src req
 ;;
 
 let add_condition req =

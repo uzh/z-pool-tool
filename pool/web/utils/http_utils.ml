@@ -392,9 +392,11 @@ module Htmx = struct
     notification lang (fnc, "error")
   ;;
 
-  let success_notification lang msg =
-    let fnc lang = Pool_common.(Utils.success_to_string lang msg) in
-    notification lang (fnc, "success")
+  let inline_error lang err =
+    let open Tyxml_html in
+    div
+      ~a:[ a_class [ "color-red" ] ]
+      [ txt Pool_common.(Utils.error_to_string lang err) ]
   ;;
 
   let context_error ~src ~tags err =
@@ -405,9 +407,12 @@ module Htmx = struct
     htmx_redirect "/error" ()
   ;;
 
-  (* TODO: Is it possible to only replace notification on error and keep source
-     html? *)
-  let handle_error_message ?(src = src) req result =
+  let handle_error_message
+    ?(src = src)
+    ?(error_as_notification = false)
+    req
+    result
+    =
     let context = Pool_context.find req in
     let tags = Pool_context.Logger.Tags.req req in
     match context with
@@ -415,10 +420,9 @@ module Htmx = struct
       let%lwt res = result context in
       res
       |> CCResult.get_lazy (fun error_msg ->
-           error_msg
-           |> Pool_common.Utils.with_log_error
-           |> error_notification language
-           |> html_to_plain_text_response)
+           let err = error_msg |> Pool_common.Utils.with_log_error in
+           (fun fnc -> html_to_plain_text_response (fnc language err))
+           @@ if error_as_notification then error_notification else inline_error)
       |> Lwt.return
     | Error err -> context_error ~src ~tags err
   ;;
