@@ -265,42 +265,29 @@ let count_contacts req =
   let experiment_id =
     HttpUtils.find_id Experiment.Id.of_string Field.Experiment req
   in
-  let%lwt result =
+  let result { Pool_context.database_label; _ } =
     let open Utils.Lwt_result.Infix in
-    let* { Pool_context.language; database_label; _ } =
-      req
-      |> Pool_context.find
-      |> CCResult.map_err Pool_common.(Utils.error_to_string Language.En)
+    let* experiment = Experiment.find database_label experiment_id in
+    let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+    let* query =
+      let open CCResult in
+      HttpUtils.find_in_urlencoded Field.Query urlencoded
+      |> CCOption.of_result
+      |> CCOption.map_or
+           ~default:
+             (Ok
+                (experiment.Experiment.filter
+                 |> CCOption.map (fun filter -> filter.Filter.query)))
+           (fun str -> str |> Filter.query_of_string >|= CCOption.pure)
       |> Lwt_result.lift
     in
-    Utils.Lwt_result.map_error Pool_common.(Utils.error_to_string language)
-    @@ let* experiment = Experiment.find database_label experiment_id in
-       let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-       let* query =
-         let open CCResult in
-         HttpUtils.find_in_urlencoded Field.Query urlencoded
-         |> CCOption.of_result
-         |> CCOption.map_or
-              ~default:
-                (Ok
-                   (experiment.Experiment.filter
-                    |> CCOption.map (fun filter -> filter.Filter.query)))
-              (fun str -> str |> Filter.query_of_string >|= CCOption.pure)
-         |> Lwt_result.lift
-       in
-       Filter.count_filtered_contacts
-         database_label
-         (experiment.Experiment.id |> Experiment.Id.to_common)
-         query
+    Filter.count_filtered_contacts
+      database_label
+      (experiment.Experiment.id |> Experiment.Id.to_common)
+      query
+    >|+ fun count -> `Assoc [ "count", `Int count ]
   in
-  let status, (json : Yojson.Safe.t) =
-    match result with
-    | Error str -> 400, `Assoc [ "message", `String str ]
-    | Ok int -> 200, `Assoc [ "count", `Int int ]
-  in
-  (* TODO: YOJSON error handling *)
-  HttpUtils.yojson_response ~status:(status |> Opium.Status.of_code) json
-  |> Lwt.return
+  result |> HttpUtils.Json.handle_yojson_response ~src req
 ;;
 
 module Create = struct

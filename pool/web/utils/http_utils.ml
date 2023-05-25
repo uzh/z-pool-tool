@@ -340,11 +340,6 @@ let first_n_characters ?(n = 47) m =
   else m
 ;;
 
-let yojson_response ?status json =
-  let headers = Opium.Headers.of_list [ "Content-Type", "application/json" ] in
-  json |> Sihl.Web.Response.of_json ?status ~headers
-;;
-
 module Htmx = struct
   let headers =
     Opium.Headers.of_list [ "Content-Type", "text/html; charset=utf-8" ]
@@ -445,5 +440,40 @@ module Htmx = struct
              ~actions:[ Message.set ~error:[ error_msg ] ]
              ())
     | Error err -> context_error ~src ~tags err
+  ;;
+end
+
+module Json = struct
+  let yojson_response ?status json =
+    let headers =
+      Opium.Headers.of_list [ "Content-Type", "application/json" ]
+    in
+    json |> Sihl.Web.Response.of_json ?status ~headers |> Lwt.return
+  ;;
+
+  let handle_yojson_response ?(src = src) req result =
+    let context = Pool_context.find req in
+    let tags = Pool_context.Logger.Tags.req req in
+    let return_error language err =
+      yojson_response
+        ~status:(Opium.Status.of_code 400)
+        (`Assoc
+          [ "message", `String Pool_common.(Utils.error_to_string language err)
+          ])
+    in
+    match context with
+    | Ok ({ Pool_context.language; _ } as context) ->
+      let%lwt res = result context in
+      res
+      |> Pool_common.Utils.with_log_result_error ~src ~tags id
+      |> (function
+      | Ok json -> yojson_response json
+      | Error error_msg -> return_error language error_msg)
+    | Error err ->
+      Logs.err ~src (fun m ->
+        m ~tags "%s" Pool_common.(Utils.error_to_string Language.En err));
+      Logs.err ~src (fun m ->
+        m ~tags "Context not found: %s" (Message.Message.show_error err));
+      return_error Pool_common.Language.En err
   ;;
 end
