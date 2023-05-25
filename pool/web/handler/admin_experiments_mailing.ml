@@ -277,7 +277,6 @@ module Access : sig
   val add_condition : Rock.Middleware.t
   val search_info : Rock.Middleware.t
   val stop : Rock.Middleware.t
-  val overlaps : Rock.Middleware.t
 end = struct
   include Helpers.Access
   module MailingCommand = Cqrs_command.Mailing_command
@@ -328,20 +327,11 @@ end = struct
     |> Guardian.validate_generic
   ;;
 
-  let search_info =
-    (fun req ->
-      Guard.ValidationSet.Or
-        [ experiment_effects MailingCommand.Create.effects req
-        ; combined_effects MailingCommand.Update.effects req
-        ])
-    |> Guardian.validate_generic
-  ;;
-
   let stop =
     MailingCommand.Stop.effects |> combined_effects |> Guardian.validate_generic
   ;;
 
-  let overlaps =
+  let search_info =
     MailingCommand.Overlaps.effects
     |> experiment_effects
     |> Guardian.validate_generic

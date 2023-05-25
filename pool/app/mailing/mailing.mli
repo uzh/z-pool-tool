@@ -37,7 +37,11 @@ module Start : sig
     | StartNow
     | StartAt of StartAt.t
 
-  val validate : t -> EndAt.t -> (StartAt.t, Pool_common.Message.error) result
+  val validate
+    :  ?allow_start_in_past:bool
+    -> t
+    -> EndAt.t
+    -> (StartAt.t, Pool_common.Message.error) result
 
   val create
     :  StartAt.t option
@@ -154,7 +158,8 @@ val per_minutes : CCInt.t -> t -> CCFloat.t
 val total : t -> int
 
 val create
-  :  ?id:Id.t
+  :  ?allow_start_in_past:bool
+  -> ?id:Id.t
   -> Start.t
   -> EndAt.t
   -> Rate.t
