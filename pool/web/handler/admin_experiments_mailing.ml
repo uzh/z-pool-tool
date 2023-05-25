@@ -185,11 +185,8 @@ let update req =
 
 let search_info req =
   let id = experiment_id req in
-  let%lwt result =
+  let result ({ Pool_context.database_label; _ } as context) =
     let open Utils.Lwt_result.Infix in
-    let* ({ Pool_context.database_label; _ } as context) =
-      Pool_context.find req |> Lwt_result.lift
-    in
     let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
     let* with_default_rate, mailing =
       Lwt_result.lift
@@ -206,21 +203,16 @@ let search_info req =
     in
     let%lwt mailings = Mailing.find_overlaps database_label mailing in
     Page.Admin.Mailing.overlaps ?average_send ?total context id mailings
+    |> HttpUtils.html_to_plain_text_response
     |> Lwt.return_ok
   in
-  Lwt.return
-  @@
-  match result with
-  | Ok mailings -> mailings |> HttpUtils.html_to_plain_text_response
-  | Error _ -> Rock.Response.make ()
+  result |> HttpUtils.htmx_handle_error_message ~src req
 ;;
 
 let add_condition req =
-  let%lwt result =
-    let open Utils.Lwt_result.Infix in
-    let* { Pool_context.language; _ } =
-      Pool_context.find req |> Lwt_result.lift
-    in
+  let result { Pool_context.language; _ } =
+    let open Mailing.Distribution in
+    let open CCResult in
     let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
     let invalid field = Pool_common.Message.(Invalid field) in
     let find_in_urlencoded read field =
@@ -233,29 +225,18 @@ let add_condition req =
       |> CCOption.to_result (invalid field)
     in
     let distribution =
-      let open Mailing.Distribution in
-      let open CCResult in
       let* field =
         Field.DistributionField |> find_in_urlencoded SortableField.read
       in
       let* order = Field.SortOrder |> find_in_urlencoded SortOrder.read in
       Ok (field, order)
     in
-    Lwt.return_ok
-    @@
-    match distribution with
-    | Ok field -> Page.Admin.Mailing.distribution_form_field language field
-    | Error error ->
-      Tyxml.Html.(
-        div
-          ~a:[ a_class [ "error" ] ]
-          [ txt Pool_common.Utils.(error_to_string language error) ])
+    distribution
+    >|= Page.Admin.Mailing.distribution_form_field language
+    >|= HttpUtils.html_to_plain_text_response
+    |> Lwt.return
   in
-  Lwt.return
-  @@
-  match result with
-  | Ok html -> html |> HttpUtils.html_to_plain_text_response
-  | Error _ -> Rock.Response.make ()
+  result |> HttpUtils.htmx_handle_error_message ~src req
 ;;
 
 let disabler command success_handler req =

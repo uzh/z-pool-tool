@@ -87,17 +87,8 @@ let new_form = form false
 
 let write action req =
   let open Utils.Lwt_result.Infix in
-  let language =
-    let open CCResult in
-    Pool_context.find req
-    >|= (fun { Pool_context.language; _ } -> language)
-    |> get_or ~default:Pool_common.Language.En
-  in
-  let%lwt result =
+  let result { Pool_context.database_label; _ } =
     let tags = Pool_context.Logger.Tags.req req in
-    let { Pool_context.database_label; _ } =
-      Pool_context.find req |> CCResult.get_exn
-    in
     let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
     let* query =
       let open CCResult in
@@ -135,52 +126,41 @@ let write action req =
     let handle events =
       Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
     in
-    events |>> handle
-  in
-  let open Pool_common.Message in
-  let htmx_notification (status, message) =
-    Layout.Message.create
-      ~attributes:
-        Tyxml.Html.
-          [ a_user_data "hx-swap-oob" "true"
-          ; a_id Component.Filter.notification_id
-          ]
-      (CCOption.pure message)
-      language
-      ()
-    |> CCList.pure
-    |> HttpUtils.multi_html_to_plain_text_response ~status
-    |> Lwt.return
-  in
-  match result with
-  | Ok () ->
-    let created path =
-      HttpUtils.htmx_redirect
-        path
-        ~actions:[ Message.set ~success:[ Created Field.Filter ] ]
-        ()
+    let success () =
+      let open Pool_common.Message in
+      let field = Field.Filter in
+      let redirect path msg =
+        HttpUtils.htmx_redirect
+          path
+          ~actions:[ Message.set ~success:[ msg ] ]
+          ()
+      in
+      match action with
+      | Template None -> redirect "/admin/filter" (Created field)
+      | Template (Some filter) ->
+        redirect
+          (Format.asprintf "/admin/filter/%s/edit" Filter.(Id.value filter.id))
+          (Updated field)
+      | Experiment exp ->
+        let msg =
+          if CCOption.is_some exp.Experiment.filter
+          then Updated field
+          else Created field
+        in
+        redirect
+          (Format.asprintf
+             "/admin/experiments/%s/invitations"
+             Experiment.(Id.value exp.id))
+          msg
     in
-    (match action with
-     | Template None -> created "/admin/filter"
-     | Experiment exp when CCOption.is_none exp.Experiment.filter ->
-       created
-         (Format.asprintf
-            "/admin/experiments/%s/invitations"
-            Experiment.(Id.value exp.id))
-     | Experiment _ | Template _ ->
-       (200, Collection.(set_success [ Updated Field.Filter ] empty))
-       |> htmx_notification)
-  | Error err ->
-    (* HTMX will only swap the content if respose is 200 *)
-    (200, Collection.(set_error [ err ] empty)) |> htmx_notification
+    events |>> handle |>> success
+  in
+  result |> HttpUtils.htmx_handle_error_message ~src req
 ;;
 
 let handle_toggle_predicate_type action req =
   let open Utils.Lwt_result.Infix in
-  let%lwt result =
-    let* { Pool_context.language; database_label; _ } =
-      Pool_context.find req |> Lwt_result.lift
-    in
+  let result { Pool_context.language; database_label; _ } =
     let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
     let templates_disabled = templates_disabled urlencoded in
     let%lwt key_list = Filter.all_keys database_label in
@@ -217,44 +197,31 @@ let handle_toggle_predicate_type action req =
         (Some query)
         ~identifier
         ())
+    |> HttpUtils.html_to_plain_text_response
     |> Lwt_result.return
   in
-  (match result with
-   | Ok html -> html
-   | Error err -> HttpUtils.Message.error_to_html err)
-  |> CCList.pure
-  |> HttpUtils.multi_html_to_plain_text_response
-  |> Lwt.return
+  result |> HttpUtils.htmx_handle_error_message ~src req
 ;;
 
 let handle_toggle_key _ req =
   let open Utils.Lwt_result.Infix in
-  let%lwt result =
-    let* { Pool_context.language; database_label; _ } =
-      Pool_context.find req |> Lwt_result.lift
-    in
+  let result { Pool_context.language; database_label; _ } =
     let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
     let* key =
       HttpUtils.find_in_urlencoded Field.Key urlencoded
       |> Lwt_result.lift
       >>= Filter.key_of_string database_label
     in
-    Component.Filter.predicate_value_form language [] ~key () |> Lwt.return_ok
+    Component.Filter.predicate_value_form language [] ~key ()
+    |> HttpUtils.html_to_plain_text_response
+    |> Lwt.return_ok
   in
-  (match result with
-   | Ok html -> html
-   | Error err -> err |> HttpUtils.Message.error_to_html)
-  |> CCList.pure
-  |> HttpUtils.multi_html_to_plain_text_response
-  |> Lwt.return
+  result |> HttpUtils.htmx_handle_error_message ~src req
 ;;
 
 let handle_add_predicate action req =
   let open Utils.Lwt_result.Infix in
-  let%lwt result =
-    let* { Pool_context.language; database_label; _ } =
-      Pool_context.find req |> Lwt_result.lift
-    in
+  let result { Pool_context.language; database_label; _ } =
     let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
     let templates_disabled = templates_disabled urlencoded in
     let%lwt key_list = Filter.all_keys database_label in
@@ -287,13 +254,11 @@ let handle_add_predicate action req =
         (increment_identifier identifier)
         templates_disabled
     in
-    Lwt_result.return [ filter_form; add_button ]
+    [ filter_form; add_button ]
+    |> HttpUtils.multi_html_to_plain_text_response
+    |> Lwt_result.return
   in
-  (match result with
-   | Ok html -> html
-   | Error err -> HttpUtils.Message.error_to_html err |> CCList.pure)
-  |> HttpUtils.multi_html_to_plain_text_response
-  |> Lwt.return
+  result |> HttpUtils.htmx_handle_error_message ~src req
 ;;
 
 let count_contacts req =
@@ -333,6 +298,7 @@ let count_contacts req =
     | Error str -> 400, `Assoc [ "message", `String str ]
     | Ok int -> 200, `Assoc [ "count", `Int int ]
   in
+  (* TODO: YOJSON error handling *)
   HttpUtils.yojson_response ~status:(status |> Opium.Status.of_code) json
   |> Lwt.return
 ;;

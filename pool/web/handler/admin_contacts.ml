@@ -120,8 +120,7 @@ let delete_answer req =
         is_admin
         custom_field
         ())
-    |> CCList.pure
-    |> HttpUtils.multi_html_to_plain_text_response ~status:200
+    |> HttpUtils.html_to_plain_text_response ~status:200
     |> Lwt_result.return
   in
   result |> HttpUtils.extract_happy_path_htmx ~src req

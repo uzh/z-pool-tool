@@ -92,8 +92,6 @@ module List = struct
 end
 
 module Search = struct
-  let notification_id = "role-search-notification"
-
   let action_path admin =
     Format.asprintf "/admin/admins/%s/%s" Admin.(admin |> id |> Id.value)
   ;;
@@ -181,8 +179,7 @@ module Search = struct
       [ div
           ~a:
             [ a_id "role-search-form"; a_user_data "detect-unsaved-changes" "" ]
-          [ div ~a:[ a_id notification_id ] []
-          ; Component_input.csrf_element csrf ()
+          [ Component_input.csrf_element csrf ()
           ; div
               ~a:[ a_class [ stack; "grow"; "role-search-wrapper" ] ]
               [ role_form ]

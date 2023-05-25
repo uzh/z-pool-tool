@@ -122,7 +122,7 @@ let update ?contact req =
       let open CCResult in
       let tags = Pool_context.Logger.Tags.req req in
       let html_response html =
-        [ html ] |> HttpUtils.multi_html_to_plain_text_response |> Lwt.return
+        html |> HttpUtils.html_to_plain_text_response |> Lwt.return
       in
       let%lwt partial_update =
         Custom_field.validate_partial_update
@@ -163,6 +163,7 @@ let update ?contact req =
             ()
           |> html_response
         | Error error ->
+          let error = Pool_common.Utils.with_log_error ~src ~tags error in
           let create_htmx ?htmx_attributes ?(field = field) value =
             Htmx.create
               (Htmx.create_entity ?htmx_attributes version field value)

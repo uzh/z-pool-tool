@@ -3,6 +3,8 @@ open Utils.Lwt_result.Infix
 module Field = Pool_common.Message.Field
 module HttpUtils = Http_utils
 
+let src = Logs.Src.create "handler.helper.search"
+
 let create search_type ?path req =
   let query_field, path =
     match search_type with
@@ -11,10 +13,7 @@ let create search_type ?path req =
     | `Location ->
       Field.Name, CCOption.value ~default:"/admin/locations/search" path
   in
-  let%lwt result =
-    let* { Pool_context.database_label; user; _ } =
-      Pool_context.find req |> Lwt_result.lift
-    in
+  let result { Pool_context.database_label; user; _ } =
     let open CCList in
     let%lwt actor =
       Pool_context.Utils.find_authorizable_opt
@@ -65,7 +64,10 @@ let create search_type ?path req =
        | None, _ | Some _, None -> Lwt.return []
        | Some value, Some actor ->
          search_experiment (exclude @ exclude_roles_of) value actor)
-      ||> fun results -> Ok [ input_element ?value:query ~results path ]
+      ||> fun results ->
+      input_element ?value:query ~results path
+      |> HttpUtils.html_to_plain_text_response
+      |> CCResult.return
     | `Location ->
       let open Component.Search.Location in
       let open Pool_location.Guard.Access in
@@ -80,14 +82,17 @@ let create search_type ?path req =
               validate database_label (read id) actor ||> CCResult.is_ok)
       in
       (match query, actor with
-       | None, _ | Some _, None -> Lwt.return []
+       | None, _ | Some _, None ->
+         Tyxml.Html.txt ""
+         |> HttpUtils.html_to_plain_text_response
+         |> Lwt_result.return
        | Some value, Some actor ->
-         search_location (exclude @ exclude_roles_of) value actor)
-      ||> fun results -> Ok [ input_element ?value:query ~results path ]
+         let%lwt results =
+           search_location (exclude @ exclude_roles_of) value actor
+         in
+         input_element ?value:query ~results path
+         |> HttpUtils.html_to_plain_text_response
+         |> Lwt_result.return)
   in
-  (match result with
-   | Ok html -> html
-   | Error err -> [ HttpUtils.Message.error_to_html err ])
-  |> HttpUtils.multi_html_to_plain_text_response
-  |> Lwt.return
+  result |> HttpUtils.htmx_handle_error_message ~src req
 ;;
