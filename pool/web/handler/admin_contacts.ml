@@ -60,7 +60,7 @@ let edit = detail_view `Edit
 
 let update req =
   let redirect err =
-    HttpUtils.htmx_redirect
+    HttpUtils.Htmx.htmx_redirect
       "/admin/contacts"
       ~actions:[ Message.set ~error:[ err ] ]
       ()
@@ -120,10 +120,10 @@ let delete_answer req =
         is_admin
         custom_field
         ())
-    |> HttpUtils.html_to_plain_text_response ~status:200
+    |> HttpUtils.Htmx.html_to_plain_text_response ~status:200
     |> Lwt_result.return
   in
-  result |> HttpUtils.extract_happy_path_htmx ~src req
+  result |> HttpUtils.Htmx.extract_happy_path ~src req
 ;;
 
 module Access : sig

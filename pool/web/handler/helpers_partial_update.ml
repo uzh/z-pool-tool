@@ -122,7 +122,7 @@ let update ?contact req =
       let open CCResult in
       let tags = Pool_context.Logger.Tags.req req in
       let html_response html =
-        html |> HttpUtils.html_to_plain_text_response |> Lwt.return
+        html |> HttpUtils.Htmx.html_to_plain_text_response |> Lwt.return
       in
       let%lwt partial_update =
         Custom_field.validate_partial_update
@@ -203,7 +203,7 @@ let update ?contact req =
              (match field with
               | Error error ->
                 HttpUtils.(
-                  htmx_redirect
+                  Htmx.htmx_redirect
                     back_path
                     ?query_language
                     ~actions:[ Message.set ~error:[ error ] ]
@@ -232,5 +232,5 @@ let update ?contact req =
     in
     response |> Lwt_result.return
   in
-  HttpUtils.extract_happy_path_htmx ~src req result
+  HttpUtils.Htmx.extract_happy_path ~src req result
 ;;

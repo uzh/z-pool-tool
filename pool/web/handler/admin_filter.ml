@@ -130,7 +130,7 @@ let write action req =
       let open Pool_common.Message in
       let field = Field.Filter in
       let redirect path msg =
-        HttpUtils.htmx_redirect
+        HttpUtils.Htmx.htmx_redirect
           path
           ~actions:[ Message.set ~success:[ msg ] ]
           ()
@@ -155,7 +155,7 @@ let write action req =
     in
     events |>> handle |>> success
   in
-  result |> HttpUtils.htmx_handle_error_message ~src req
+  result |> HttpUtils.Htmx.handle_error_message ~src req
 ;;
 
 let handle_toggle_predicate_type action req =
@@ -197,10 +197,10 @@ let handle_toggle_predicate_type action req =
         (Some query)
         ~identifier
         ())
-    |> HttpUtils.html_to_plain_text_response
+    |> HttpUtils.Htmx.html_to_plain_text_response
     |> Lwt_result.return
   in
-  result |> HttpUtils.htmx_handle_error_message ~src req
+  result |> HttpUtils.Htmx.handle_error_message ~src req
 ;;
 
 let handle_toggle_key _ req =
@@ -213,10 +213,10 @@ let handle_toggle_key _ req =
       >>= Filter.key_of_string database_label
     in
     Component.Filter.predicate_value_form language [] ~key ()
-    |> HttpUtils.html_to_plain_text_response
+    |> HttpUtils.Htmx.html_to_plain_text_response
     |> Lwt.return_ok
   in
-  result |> HttpUtils.htmx_handle_error_message ~src req
+  result |> HttpUtils.Htmx.handle_error_message ~src req
 ;;
 
 let handle_add_predicate action req =
@@ -255,10 +255,10 @@ let handle_add_predicate action req =
         templates_disabled
     in
     [ filter_form; add_button ]
-    |> HttpUtils.multi_html_to_plain_text_response
+    |> HttpUtils.Htmx.multi_html_to_plain_text_response
     |> Lwt_result.return
   in
-  result |> HttpUtils.htmx_handle_error_message ~src req
+  result |> HttpUtils.Htmx.handle_error_message ~src req
 ;;
 
 let count_contacts req =

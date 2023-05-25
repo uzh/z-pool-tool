@@ -146,9 +146,9 @@ let handle_toggle_role req =
       ?exclude_roles_of
       ~key
       ()
-    |> HttpUtils.html_to_plain_text_response
+    |> HttpUtils.Htmx.html_to_plain_text_response
   in
-  result |> HttpUtils.htmx_handle_error_message ~src req
+  result |> HttpUtils.Htmx.handle_error_message ~src req
 ;;
 
 let grant_role ({ Rock.Request.target; _ } as req) =
@@ -216,12 +216,12 @@ let grant_role ({ Rock.Request.target; _ } as req) =
     >>= expand_targets
     >>= events
     |>> handle
-    |>> HttpUtils.htmx_redirect
+    |>> HttpUtils.Htmx.htmx_redirect
           (CCString.replace ~which:`Right ~sub:"/grant-role" ~by:"/edit" target)
           ~actions:
             [ Message.set ~success:[ Pool_common.Message.Created Field.Role ] ]
   in
-  result |> HttpUtils.htmx_handle_error_message ~src req
+  result |> HttpUtils.Htmx.handle_error_message ~src req
 ;;
 
 let revoke_role ({ Rock.Request.target; _ } as req) =

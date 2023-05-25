@@ -66,7 +66,7 @@ let create search_type ?path req =
          search_experiment (exclude @ exclude_roles_of) value actor)
       ||> fun results ->
       input_element ?value:query ~results path
-      |> HttpUtils.html_to_plain_text_response
+      |> HttpUtils.Htmx.html_to_plain_text_response
       |> CCResult.return
     | `Location ->
       let open Component.Search.Location in
@@ -84,15 +84,15 @@ let create search_type ?path req =
       (match query, actor with
        | None, _ | Some _, None ->
          Tyxml.Html.txt ""
-         |> HttpUtils.html_to_plain_text_response
+         |> HttpUtils.Htmx.html_to_plain_text_response
          |> Lwt_result.return
        | Some value, Some actor ->
          let%lwt results =
            search_location (exclude @ exclude_roles_of) value actor
          in
          input_element ?value:query ~results path
-         |> HttpUtils.html_to_plain_text_response
+         |> HttpUtils.Htmx.html_to_plain_text_response
          |> Lwt_result.return)
   in
-  result |> HttpUtils.htmx_handle_error_message ~src req
+  result |> HttpUtils.Htmx.handle_error_message ~src req
 ;;
