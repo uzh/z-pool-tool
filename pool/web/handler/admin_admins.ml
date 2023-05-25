@@ -130,42 +130,32 @@ let create_admin req =
 ;;
 
 let handle_toggle_role req =
-  Sihl.Web.Request.to_urlencoded req
-  ||> HttpUtils.find_in_urlencoded Field.Role
-  >== Role.Actor.of_string_res
-  >|+ (fun key ->
-        let exclude_roles_of =
-          try
-            HttpUtils.find_id Admin.Id.of_string Field.Admin req
-            |> CCOption.return
-          with
-          | _ -> None
-        in
-        Component.Role.Search.value_form
-          Pool_common.Language.En
-          ?exclude_roles_of
-          ~key
-          ())
-  ||> (function
-        | Ok html -> html
-        | Error err -> err |> HttpUtils.Message.error_to_html)
-  ||> CCList.pure %> HttpUtils.multi_html_to_plain_text_response
+  let result (_ : Pool_context.t) =
+    Sihl.Web.Request.to_urlencoded req
+    ||> HttpUtils.find_in_urlencoded Field.Role
+    >== Role.Actor.of_string_res
+    >|+ fun key ->
+    let exclude_roles_of =
+      try
+        HttpUtils.find_id Admin.Id.of_string Field.Admin req |> CCOption.return
+      with
+      | _ -> None
+    in
+    Component.Role.Search.value_form
+      Pool_common.Language.En
+      ?exclude_roles_of
+      ~key
+      ()
+    |> HttpUtils.Htmx.html_to_plain_text_response
+  in
+  result |> HttpUtils.Htmx.handle_error_message ~src req
 ;;
 
 let grant_role ({ Rock.Request.target; _ } as req) =
   let open Utils.Lwt_result.Infix in
   let lift = Lwt_result.lift in
-  let language =
-    let open CCResult in
-    Pool_context.find req
-    >|= (fun { Pool_context.language; _ } -> language)
-    |> get_or ~default:Pool_common.Language.En
-  in
-  let%lwt result =
+  let result { Pool_context.database_label; user; _ } =
     let tags = Pool_context.Logger.Tags.req req in
-    let* { Pool_context.database_label; user; _ } =
-      Pool_context.find req |> lift
-    in
     let* admin =
       HttpUtils.find_id Admin.Id.of_string Field.Admin req
       |> Admin.find database_label
@@ -222,37 +212,16 @@ let grant_role ({ Rock.Request.target; _ } as req) =
     let handle events =
       Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
     in
-    role >>= expand_targets >>= events |>> handle
+    role
+    >>= expand_targets
+    >>= events
+    |>> handle
+    |>> HttpUtils.Htmx.htmx_redirect
+          (CCString.replace ~which:`Right ~sub:"/grant-role" ~by:"/edit" target)
+          ~actions:
+            [ Message.set ~success:[ Pool_common.Message.Created Field.Role ] ]
   in
-  let htmx_notification (status, message) =
-    Layout.Message.create
-      ~attributes:
-        Tyxml.Html.
-          [ a_user_data "hx-swap-oob" "true"
-          ; a_id Component.Role.Search.notification_id
-          ]
-      (CCOption.pure message)
-      language
-      ()
-    |> CCList.pure
-    |> HttpUtils.multi_html_to_plain_text_response ~status
-    |> Lwt.return
-  in
-  match result with
-  | Ok () ->
-    let created path =
-      HttpUtils.htmx_redirect
-        path
-        ~actions:
-          [ Message.set ~success:[ Pool_common.Message.Created Field.Role ] ]
-        ()
-    in
-    created
-      (CCString.replace ~which:`Right ~sub:"/grant-role" ~by:"/edit" target)
-  | Error err ->
-    (* HTMX will only swap the content if respose is 200 *)
-    (200, Pool_common.Message.Collection.(set_error [ err ] empty))
-    |> htmx_notification
+  result |> HttpUtils.Htmx.handle_error_message ~src req
 ;;
 
 let revoke_role ({ Rock.Request.target; _ } as req) =

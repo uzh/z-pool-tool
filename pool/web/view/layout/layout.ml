@@ -37,7 +37,10 @@ module Tenant = struct
       |> CCList.map js_script_tag
     in
     let message = Message.create message active_language () in
-    let content = main_tag [ message; children ] in
+    let htmx_notification =
+      div ~a:[ a_id Http_utils.Htmx.notification_id ] []
+    in
+    let content = main_tag [ message; htmx_notification; children ] in
     let head_tags =
       let favicon =
         tenant.icon

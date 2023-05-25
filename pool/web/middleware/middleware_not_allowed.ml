@@ -12,7 +12,7 @@ let handle req =
   | true ->
     let query_language = Http_utils.find_query_lang req in
     Http_utils.(
-      htmx_redirect
+      Htmx.htmx_redirect
         "/login"
         ~status:`Forbidden
         ?query_language

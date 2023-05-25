@@ -5,7 +5,6 @@ module Input = Component_input
 module Icon = Component_icon
 module Utils = Component_utils
 
-let notification_id = "filter-notification"
 let stack = "stack-sm"
 let inset = "inset-sm"
 
@@ -593,8 +592,7 @@ let filter_form csrf language param key_list template_list query_experiments =
            ; a_class [ "stack" ]
            ]
            @ filter_id)
-        [ div ~a:[ a_id notification_id ] []
-        ; Component_input.csrf_element csrf ()
+        [ Component_input.csrf_element csrf ()
         ; title_input
         ; predicates
         ; div

@@ -174,38 +174,6 @@ let extract_happy_path_with_actions ?(src = src) ?enable_cache req result =
     redirect_to "/error"
 ;;
 
-let htmx_redirect path ?query_language ?status ?(actions = []) () =
-  Sihl.Web.Response.of_plain_text "" ?status
-  |> Sihl.Web.Response.add_header
-       ( "HX-Redirect"
-       , path_with_language query_language path |> Sihl.Web.externalize_path )
-  |> CCList.fold_left ( % ) id actions
-  |> Lwt.return
-;;
-
-let extract_happy_path_htmx ?(src = src) req result =
-  let context = Pool_context.find req in
-  let tags = Pool_context.Logger.Tags.req req in
-  match context with
-  | Ok ({ Pool_context.query_language; _ } as context) ->
-    let%lwt res = result context in
-    res
-    |> Pool_common.Utils.with_log_result_error ~src ~tags (fun (err, _) -> err)
-    |> CCResult.map Lwt.return
-    |> CCResult.get_lazy (fun (error_msg, error_path) ->
-         htmx_redirect
-           error_path
-           ?query_language
-           ~actions:[ Message.set ~error:[ error_msg ] ]
-           ())
-  | Error err ->
-    Logs.err ~src (fun m ->
-      m ~tags "%s" Pool_common.(Utils.error_to_string Language.En err));
-    Logs.err ~src (fun m ->
-      m ~tags "Context not found: %s" (Message.Message.show_error err));
-    htmx_redirect "/error" ()
-;;
-
 let urlencoded_to_params urlencoded keys =
   keys
   |> (CCList.map
@@ -329,33 +297,6 @@ let is_req_from_root_host req =
   |> CCOption.value ~default:false
 ;;
 
-let html_to_plain_text_response html =
-  let headers =
-    Opium.Headers.of_list [ "Content-Type", "text/html; charset=utf-8" ]
-  in
-  html
-  |> Format.asprintf "%a" (Tyxml.Html.pp_elt ())
-  |> Sihl.Web.Response.of_plain_text ~headers
-;;
-
-let yojson_response ?status json =
-  let headers = Opium.Headers.of_list [ "Content-Type", "application/json" ] in
-  json |> Sihl.Web.Response.of_json ?status ~headers
-;;
-
-let multi_html_to_plain_text_response ?(status = 200) html_els =
-  let headers =
-    Opium.Headers.of_list [ "Content-Type", "text/html; charset=utf-8" ]
-  in
-  html_els
-  |> CCList.fold_left
-       (fun acc cur -> Format.asprintf "%s\n%a" acc (Tyxml.Html.pp_elt ()) cur)
-       ""
-  |> Sihl.Web.Response.of_plain_text
-       ~status:(status |> Opium.Status.of_code)
-       ~headers
-;;
-
 let externalize_path_with_lang lang path =
   path_with_language lang path |> Sihl.Web.externalize_path
 ;;
@@ -398,3 +339,145 @@ let first_n_characters ?(n = 47) m =
   then CCString.sub m 0 n |> Format.asprintf "%s..."
   else m
 ;;
+
+module Htmx = struct
+  let headers =
+    Opium.Headers.of_list [ "Content-Type", "text/html; charset=utf-8" ]
+  ;;
+
+  let htmx_redirect path ?query_language ?status ?(actions = []) () =
+    Sihl.Web.Response.of_plain_text "" ?status
+    |> Sihl.Web.Response.add_header
+         ( "HX-Redirect"
+         , path_with_language query_language path |> Sihl.Web.externalize_path
+         )
+    |> CCList.fold_left ( % ) id actions
+    |> Lwt.return
+  ;;
+
+  let html_to_plain_text_response ?(status = 200) html =
+    html
+    |> Format.asprintf "%a" (Tyxml.Html.pp_elt ())
+    |> Sihl.Web.Response.of_plain_text
+         ~status:(status |> Opium.Status.of_code)
+         ~headers
+  ;;
+
+  let multi_html_to_plain_text_response ?(status = 200) html_els =
+    html_els
+    |> CCList.fold_left
+         (fun acc cur ->
+           Format.asprintf "%s\n%a" acc (Tyxml.Html.pp_elt ()) cur)
+         ""
+    |> Sihl.Web.Response.of_plain_text
+         ~status:(status |> Opium.Status.of_code)
+         ~headers
+  ;;
+
+  let notification_id = "hx-notification"
+
+  let notification lang ((fnc : Pool_common.Language.t -> string), classname) =
+    let open Tyxml_html in
+    div
+      ~a:
+        [ a_class [ "notification-fixed"; "fade-out" ]
+        ; a_user_data "hx-swap-oob" "true"
+        ; a_id notification_id
+        ]
+      [ div ~a:[ a_class [ "notification"; classname ] ] [ txt (fnc lang) ] ]
+  ;;
+
+  let error_notification lang err =
+    let fnc lang = Pool_common.(Utils.error_to_string lang err) in
+    notification lang (fnc, "error")
+  ;;
+
+  let inline_error lang err =
+    let open Tyxml_html in
+    div
+      ~a:[ a_class [ "color-red" ] ]
+      [ txt Pool_common.(Utils.error_to_string lang err) ]
+  ;;
+
+  let context_error ~src ~tags err =
+    Logs.err ~src (fun m ->
+      m ~tags "%s" Pool_common.(Utils.error_to_string Language.En err));
+    Logs.err ~src (fun m ->
+      m ~tags "Context not found: %s" (Message.Message.show_error err));
+    htmx_redirect "/error" ()
+  ;;
+
+  let handle_error_message
+    ?(src = src)
+    ?(error_as_notification = false)
+    req
+    result
+    =
+    let context = Pool_context.find req in
+    let tags = Pool_context.Logger.Tags.req req in
+    match context with
+    | Ok ({ Pool_context.language; _ } as context) ->
+      let%lwt res = result context in
+      res
+      |> CCResult.get_lazy (fun error_msg ->
+           let err = error_msg |> Pool_common.Utils.with_log_error in
+           (fun fnc -> html_to_plain_text_response (fnc language err))
+           @@ if error_as_notification then error_notification else inline_error)
+      |> Lwt.return
+    | Error err -> context_error ~src ~tags err
+  ;;
+
+  let extract_happy_path ?(src = src) req result =
+    let context = Pool_context.find req in
+    let tags = Pool_context.Logger.Tags.req req in
+    match context with
+    | Ok ({ Pool_context.query_language; _ } as context) ->
+      let%lwt res = result context in
+      res
+      |> Pool_common.Utils.with_log_result_error ~src ~tags (fun (err, _) ->
+           err)
+      |> CCResult.map Lwt.return
+      |> CCResult.get_lazy (fun (error_msg, error_path) ->
+           htmx_redirect
+             error_path
+             ?query_language
+             ~actions:[ Message.set ~error:[ error_msg ] ]
+             ())
+    | Error err -> context_error ~src ~tags err
+  ;;
+end
+
+module Json = struct
+  let yojson_response ?status json =
+    let headers =
+      Opium.Headers.of_list [ "Content-Type", "application/json" ]
+    in
+    json |> Sihl.Web.Response.of_json ?status ~headers |> Lwt.return
+  ;;
+
+  let handle_yojson_response ?(src = src) req result =
+    let context = Pool_context.find req in
+    let tags = Pool_context.Logger.Tags.req req in
+    let return_error language err =
+      yojson_response
+        ~status:(Opium.Status.of_code 400)
+        (`Assoc
+          [ "message", `String Pool_common.(Utils.error_to_string language err)
+          ])
+    in
+    match context with
+    | Ok ({ Pool_context.language; _ } as context) ->
+      let%lwt res = result context in
+      res
+      |> Pool_common.Utils.with_log_result_error ~src ~tags id
+      |> (function
+      | Ok json -> yojson_response json
+      | Error error_msg -> return_error language error_msg)
+    | Error err ->
+      Logs.err ~src (fun m ->
+        m ~tags "%s" Pool_common.(Utils.error_to_string Language.En err));
+      Logs.err ~src (fun m ->
+        m ~tags "Context not found: %s" (Message.Message.show_error err));
+      return_error Pool_common.Language.En err
+  ;;
+end
