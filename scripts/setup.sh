@@ -9,7 +9,7 @@ opam remote add default https://opam.ocaml.org
 
 repo_oxi=https://github.com/oxidizing
 repo_uzh=https://github.com/uzh
-repo_sihl=$repo_oxi/sihl.git#f5c800d81bf2153e925af18db761476d5475532a
+repo_sihl=$repo_oxi/sihl.git#e0b304a4ebd3cb2ac0d21e0f6d151b9db301f9eb
 
 # pin Sihl repos to ensure edge is available
 opam pin add -yn sihl $repo_sihl
@@ -19,12 +19,12 @@ opam pin add -yn sihl-queue $repo_sihl
 opam pin add -yn sihl-storage $repo_sihl
 opam pin add -yn sihl-token $repo_sihl
 opam pin add -yn sihl-user $repo_sihl
-opam pin add -yn conformist $repo_oxi/conformist.git
+opam pin add -yn conformist $repo_oxi/conformist.git#aa7b95d1f39215cdaab8cf96d765d63e41d5f8a6
 opam pin add -yn letters $repo_oxi/letters.git#35f7594d15e3e670a5b99c8f6f75248bad9f7f85
 
 # pin custom libraries
-opam pin add -yn canary $repo_uzh/canary.git
-opam pin add -yn guardian $repo_uzh/guardian.git
+opam pin add -yn canary $repo_uzh/canary.git#02cf40e029268560e160ca032850426e387aa598
+opam pin add -yn guardian $repo_uzh/guardian.git#ea9f919f266f8351b8ca8ca731b2027db97e8638
 
 opam pin add -yn pool .
 OPAMSOLVERTIMEOUT=180 opam depext -y pool

@@ -7,28 +7,37 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 ### Added
 
 - reply-to address to emails, using tenant contact email address (system settings)
+- block email addresses after multiple failed login attempts
 - buttons to reset forms
 - validation for tenant database urls, when creating or updating a tenant
 - role based navigation bar
 - cached version of guardian validation
-- filter by no-show count
-- added session expiration
-- block email addresses after multiple failed login attempts
-- rules page in settings
 - admin roles to the detail page and grant/revoke role to edit page
+- added session expiration
+- rules page in settings
+- filter by no-show count
 - filter by empty / non-empty fields
+- WYSIWYG editor for location description
+- allow mailing to start now with checkbox
 
 ### Changed
 
-- when signing up for a session with follow-ups, the contact receives one confirmation message containing all sessions
-- using uuids instead of ids as foreign keys in assignment table
-- allow contacts to resignup after session cancellation
+- added stronger password policy
 - tenant description, icon and styles are optional
 - refactor and update guardian integration and middleware
 - using uuids instead of ids as foreign keys in invitations and mailings tables
+- using uuids instead of ids as foreign keys in assignment table
+- when signing up for a session with follow-ups, the contact receives one confirmation message containing all sessions
+- allow contacts to resignup after session cancellation
 - updated session close view and assignments to store no-shows instead of show-ups
-- added stronger password policy
+- switch dependency between assignment and session
+- allow assignments to be marked as deleted
 - migrate search endpoints (experiment/location)
+- improved cookie settings
+- improve experiment waiting list for already assigned contacts
+- contact specific counters for number of invitations, show-ups, no-shows and participated experiments
+- allow reminders to be sent more than 24h in advance
+- improve error log and exceptions
 
 ### Fixed
 
@@ -38,9 +47,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 - when cancelling an assignment, assignments of the same contact to follow-up sessions will be canceled as well
 - canceled assignments are not included in assignment count anymore
 - canceled assignments are no longer shown on the contact dashboard
+- do not include canceled assignments in session assignment_count
 - when cancelling a session, follow-up sessions to the session are canceled as well
 - use specific tenant settings command effects
-- do not include canceled assignments in session assignment_count
+- access middleware for mailing search info and system settings
+- wrong location on session duplication
+- several small UI adjustments
 
 ## [0.1.3](https://github.com/uzh/pool/tree/0.1.3) - 2023-03-01
 
