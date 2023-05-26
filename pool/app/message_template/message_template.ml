@@ -338,8 +338,7 @@ module PhoneVerification = struct
     token
     =
     let open Text_message in
-    let open Utils.Lwt_result.Infix in
-    let* { sms_text; _ }, _ =
+    let%lwt { sms_text; _ }, _ =
       find_by_label_to_send pool preferred_language Label.PhoneVerification
     in
     let content = Content.render sms_text (message_params token) in
