@@ -154,8 +154,8 @@ type hint =
   | ScheduledIntro
   | SearchByFields of Entity_message.Field.t list
   | SelectedDateIsPast
-  | SessionCancellationWithFollowups
   | SessionCancellationMessageFollowUps
+  | SessionCancellationWithFollowups
   | SessionCancelMessage
   | SessionClose
   | SessionRegistrationFollowUpHint
@@ -165,6 +165,7 @@ type hint =
   | SmtpSettingsIntro
   | TemplateTextElementsHint
   | TimeSpanPickerHint
+  | WaitingListPhoneMissingContact
 
 type confirmable =
   | CancelAssignment

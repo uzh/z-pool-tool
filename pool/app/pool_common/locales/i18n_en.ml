@@ -312,6 +312,9 @@ The following follow-up sessions exist:|}
   | TimeSpanPickerHint ->
     "Time duration in hours. '1.5' corresponds to 1h 30m. '0.75' corresponds \
      to 45min."
+  | WaitingListPhoneMissingContact ->
+    "You have not entered a phone number in your profile yet. Please provide a \
+     phone number so that the recruitment team can contact you."
 ;;
 
 let confirmable_to_string confirmable =

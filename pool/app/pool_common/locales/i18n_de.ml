@@ -326,6 +326,10 @@ Die folgenden Folgesessions existieren:|}
     "Die folgenden Textbausteine können in den Templates verwendet werden:"
   | TimeSpanPickerHint ->
     "Zeitdauer in Stunden. '1.5' entspricht 1h 30m. '0.75' entspricht 45min."
+  | WaitingListPhoneMissingContact ->
+    "Sie haben in Ihrem Profil noch keine Telefonnummer angegenen. Wir bitten \
+     Sie, eine Telefonnummer anzugeben, damit das Rekrutierungsteam Sie \
+     kontaktieren kann."
 ;;
 
 let confirmable_to_string confirmable =
