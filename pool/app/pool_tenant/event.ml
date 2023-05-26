@@ -8,6 +8,7 @@ type update =
   { title : Title.t
   ; description : Description.t option
   ; url : Url.t
+  ; gtx_api_key : GtxApiKey.t option
   ; disabled : Disabled.t
   ; default_language : Pool_common.Language.t
   ; styles : Styles.Write.t option
@@ -55,6 +56,7 @@ let handle_event pool : event -> unit Lwt.t = function
         title = update_t.title
       ; description = update_t.description
       ; url = update_t.url
+      ; gtx_api_key = update_t.gtx_api_key
       ; styles = update_t.styles <+> tenant.styles
       ; icon = update_t.icon <+> tenant.icon
       ; disabled = update_t.disabled

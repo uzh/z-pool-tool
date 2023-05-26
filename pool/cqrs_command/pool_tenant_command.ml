@@ -19,6 +19,7 @@ type create =
   { title : Pool_tenant.Title.t
   ; description : Pool_tenant.Description.t option
   ; url : Pool_tenant.Url.t
+  ; gtx_api_key : Pool_tenant.GtxApiKey.t option
   ; styles : Pool_tenant.Styles.Write.t option
   ; icon : Pool_tenant.Icon.Write.t option
   ; default_language : Pool_common.Language.t
@@ -47,6 +48,7 @@ end = struct
     title
     description
     url
+    gtx_api_key
     styles
     icon
     default_language
@@ -56,6 +58,7 @@ end = struct
     { title
     ; description
     ; url
+    ; gtx_api_key
     ; styles
     ; icon
     ; default_language
@@ -71,6 +74,7 @@ end = struct
           [ Pool_tenant.Title.schema ()
           ; Conformist.optional @@ Pool_tenant.Description.schema ()
           ; Pool_tenant.Url.schema ()
+          ; Conformist.optional @@ Pool_tenant.GtxApiKey.schema ()
           ; Conformist.optional @@ Pool_tenant.Styles.Write.schema ()
           ; Conformist.optional @@ Pool_tenant.Icon.Write.schema ()
           ; Pool_common.Language.schema ()
@@ -88,6 +92,7 @@ end = struct
         command.description
         command.url
         database
+        command.gtx_api_key
         command.styles
         command.icon
         command.default_language
@@ -128,6 +133,7 @@ module EditDetails : sig
     { title : Pool_tenant.Title.t
     ; description : Pool_tenant.Description.t option
     ; url : Pool_tenant.Url.t
+    ; gtx_api_key : Pool_tenant.GtxApiKey.t option
     ; disabled : Pool_tenant.Disabled.t
     ; default_language : Pool_common.Language.t
     ; styles : Pool_tenant.Styles.Write.t option
@@ -152,6 +158,7 @@ end = struct
     { title : Pool_tenant.Title.t
     ; description : Pool_tenant.Description.t option
     ; url : Pool_tenant.Url.t
+    ; gtx_api_key : Pool_tenant.GtxApiKey.t option
     ; disabled : Pool_tenant.Disabled.t
     ; default_language : Pool_common.Language.t
     ; styles : Pool_tenant.Styles.Write.t option
@@ -164,6 +171,7 @@ end = struct
     title
     description
     url
+    gtx_api_key
     disabled
     default_language
     styles
@@ -174,6 +182,7 @@ end = struct
     { title
     ; description
     ; url
+    ; gtx_api_key
     ; disabled
     ; default_language
     ; styles
@@ -190,6 +199,7 @@ end = struct
           [ Pool_tenant.Title.schema ()
           ; Conformist.optional @@ Pool_tenant.Description.schema ()
           ; Pool_tenant.Url.schema ()
+          ; Conformist.optional @@ Pool_tenant.GtxApiKey.schema ()
           ; Pool_tenant.Disabled.schema ()
           ; Pool_common.Language.schema ()
           ; Conformist.optional @@ Pool_tenant.Styles.Write.schema ()
@@ -211,6 +221,7 @@ end = struct
         { title = command.title
         ; description = command.description
         ; url = command.url
+        ; gtx_api_key = command.gtx_api_key
         ; disabled = command.disabled
         ; styles = command.styles
         ; icon = command.icon

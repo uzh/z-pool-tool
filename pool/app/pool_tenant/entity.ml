@@ -29,6 +29,13 @@ module Url = struct
   let schema () = schema field ()
 end
 
+module GtxApiKey = struct
+  include Common.Model.String
+
+  let field = Common.Message.Field.GtxApiKey
+  let schema () = schema field ()
+end
+
 module Styles = struct
   type t = File.t [@@deriving eq, show, sexp_of]
 
@@ -109,6 +116,7 @@ type t =
   ; description : Description.t option
   ; url : Url.t
   ; database_label : Database.Label.t
+  ; gtx_api_key : GtxApiKey.t option
   ; styles : Styles.t option
   ; icon : Icon.t option
   ; logos : Logos.t
@@ -130,6 +138,7 @@ module Read = struct
     ; description : Description.t option
     ; url : Url.t
     ; database_label : Database.Label.t
+    ; gtx_api_key : GtxApiKey.t option
     ; styles : Styles.t option
     ; icon : Icon.t option
     ; maintenance : Maintenance.t
@@ -148,6 +157,7 @@ module Write = struct
     ; description : Description.t option
     ; url : Url.t
     ; database : Database.t
+    ; gtx_api_key : GtxApiKey.t option
     ; styles : Styles.Write.t option
     ; icon : Icon.Write.t option
     ; maintenance : Maintenance.t
@@ -158,12 +168,22 @@ module Write = struct
     }
   [@@deriving eq, show]
 
-  let create title description url database styles icon default_language =
+  let create
+    title
+    description
+    url
+    database
+    gtx_api_key
+    styles
+    icon
+    default_language
+    =
     { id = Id.create ()
     ; title
     ; description
     ; url
     ; database
+    ; gtx_api_key
     ; styles
     ; icon
     ; maintenance = Maintenance.create false

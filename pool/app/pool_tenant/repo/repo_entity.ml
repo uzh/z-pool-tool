@@ -40,6 +40,19 @@ module Url = struct
   ;;
 end
 
+module GtxApiKey = struct
+  include GtxApiKey
+
+  let t =
+    let open Utils.Crypto.String in
+    Common.Repo.make_caqti_type
+      Caqti_type.string
+      (decrypt_from_string
+       %> CCResult.map_err (fun _ -> Common.Message.(Decode Field.GtxApiKey)))
+      encrypt_to_string
+  ;;
+end
+
 module Styles = struct
   include Styles
 
@@ -95,12 +108,13 @@ let t =
         , ( m.description
           , ( Url.value m.url
             , ( m.database_label
-              , ( m.styles
-                , ( m.icon
-                  , ( m.maintenance
-                    , ( m.disabled
-                      , (m.default_language, (m.created_at, m.updated_at)) ) )
-                  ) ) ) ) ) ) )
+              , ( m.gtx_api_key
+                , ( m.styles
+                  , ( m.icon
+                    , ( m.maintenance
+                      , ( m.disabled
+                        , (m.default_language, (m.created_at, m.updated_at)) )
+                      ) ) ) ) ) ) ) ) )
   in
   let decode
     ( id
@@ -108,11 +122,12 @@ let t =
       , ( description
         , ( url
           , ( database_label
-            , ( styles
-              , ( icon
-                , ( maintenance
-                  , (disabled, (default_language, (created_at, updated_at))) )
-                ) ) ) ) ) ) )
+            , ( gtx_api_key
+              , ( styles
+                , ( icon
+                  , ( maintenance
+                    , (disabled, (default_language, (created_at, updated_at)))
+                    ) ) ) ) ) ) ) ) )
     =
     Ok
       { id
@@ -120,6 +135,7 @@ let t =
       ; description
       ; url
       ; database_label
+      ; gtx_api_key
       ; styles
       ; icon
       ; maintenance
@@ -144,18 +160,20 @@ let t =
                   (tup2
                      Database.Repo.Label.t
                      (tup2
-                        (option Styles.t)
+                        (option GtxApiKey.t)
                         (tup2
-                           (option Icon.t)
+                           (option Styles.t)
                            (tup2
-                              Maintenance.t
+                              (option Icon.t)
                               (tup2
-                                 Disabled.t
+                                 Maintenance.t
                                  (tup2
-                                    Pool_common.Repo.Language.t
+                                    Disabled.t
                                     (tup2
-                                       Common.Repo.CreatedAt.t
-                                       Common.Repo.UpdatedAt.t))))))))))))
+                                       Pool_common.Repo.Language.t
+                                       (tup2
+                                          Common.Repo.CreatedAt.t
+                                          Common.Repo.UpdatedAt.t)))))))))))))
 ;;
 
 module Write = struct
@@ -169,12 +187,13 @@ module Write = struct
           , ( m.description
             , ( Url.value m.url
               , ( m.database
-                , ( m.styles
-                  , ( m.icon
-                    , ( m.maintenance
-                      , ( m.disabled
-                        , (m.default_language, (m.created_at, m.updated_at)) )
-                      ) ) ) ) ) ) ) )
+                , ( m.gtx_api_key
+                  , ( m.styles
+                    , ( m.icon
+                      , ( m.maintenance
+                        , ( m.disabled
+                          , (m.default_language, (m.created_at, m.updated_at))
+                          ) ) ) ) ) ) ) ) ) )
     in
     let decode
       ( id
@@ -182,11 +201,12 @@ module Write = struct
         , ( description
           , ( url
             , ( database
-              , ( styles
-                , ( icon
-                  , ( maintenance
-                    , (disabled, (default_language, (created_at, updated_at)))
-                    ) ) ) ) ) ) ) )
+              , ( gtx_api_key
+                , ( styles
+                  , ( icon
+                    , ( maintenance
+                      , (disabled, (default_language, (created_at, updated_at)))
+                      ) ) ) ) ) ) ) ) )
       =
       Ok
         { id
@@ -194,6 +214,7 @@ module Write = struct
         ; description
         ; url
         ; database
+        ; gtx_api_key
         ; styles
         ; icon
         ; maintenance
@@ -218,18 +239,20 @@ module Write = struct
                     (tup2
                        Database.Repo.t
                        (tup2
-                          (option Styles.Write.t)
+                          (option GtxApiKey.t)
                           (tup2
-                             (option Icon.Write.t)
+                             (option Styles.Write.t)
                              (tup2
-                                Maintenance.t
+                                (option Icon.Write.t)
                                 (tup2
-                                   Disabled.t
+                                   Maintenance.t
                                    (tup2
-                                      Pool_common.Repo.Language.t
+                                      Disabled.t
                                       (tup2
-                                         Common.Repo.CreatedAt.t
-                                         Common.Repo.UpdatedAt.t))))))))))))
+                                         Pool_common.Repo.Language.t
+                                         (tup2
+                                            Common.Repo.CreatedAt.t
+                                            Common.Repo.UpdatedAt.t)))))))))))))
   ;;
 end
 

@@ -72,6 +72,7 @@ let rec field_to_string =
   | Filter -> "Filter"
   | Firstname -> "Vorname"
   | FollowUpSession -> "Folgesession"
+  | GtxApiKey -> "GTX Api Key"
   | Hint -> "Hint"
   | Host -> "Host"
   | I18n -> "Übersetzung"

@@ -15,13 +15,14 @@ module Sql = struct
         url = $4,
         database_url = $5,
         database_label = $6,
-        styles = UNHEX(REPLACE($7, '-', '')),
-        icon = UNHEX(REPLACE($8, '-', '')),
-        mainenance = $9,
-        disabled = $10,
-        default_language = $11,
-        created_at = $12,
-        updated_at = $13
+        gtx_api_key = $7,
+        styles = UNHEX(REPLACE($8, '-', '')),
+        icon = UNHEX(REPLACE($9, '-', '')),
+        mainenance = $10,
+        disabled = $11,
+        default_language = $12,
+        created_at = $13,
+        updated_at = $14
       WHERE
       pool_tenant.uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}
@@ -115,6 +116,7 @@ module Sql = struct
             pool_tenant.description,
             pool_tenant.url,
             %s
+            pool_tenant.gtx_api_key,
             %s
             %s
             pool_tenant.mainenance,
@@ -223,6 +225,7 @@ module Sql = struct
         url,
         database_url,
         database_label,
+        gtx_api_key,
         styles,
         icon,
         mainenance,
@@ -232,6 +235,7 @@ module Sql = struct
         updated_at
       ) VALUES (
         UNHEX(REPLACE(?, '-', '')),
+        ?,
         ?,
         ?,
         ?,
@@ -287,6 +291,7 @@ let set_logos tenant logos =
     ; description = tenant.description
     ; url = tenant.url
     ; database_label = tenant.database_label
+    ; gtx_api_key = tenant.gtx_api_key
     ; styles = tenant.styles
     ; icon = tenant.icon
     ; logos = tenant_logos

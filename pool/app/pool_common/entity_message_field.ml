@@ -88,6 +88,7 @@ type t =
   | Firstname [@name "firstname"] [@printer go "firstname"]
   | FollowUpSession [@name "follow_up_session"]
       [@printer go "follow_up_session"]
+  | GtxApiKey [@name "gtx_api_key"] [@printer go "gtx_api_key"]
   | Hint [@name "hint"] [@printer go "hint"]
   | Host [@name "host"] [@printer go "host"]
   | I18n [@name "i18n"] [@printer go "i18n"]

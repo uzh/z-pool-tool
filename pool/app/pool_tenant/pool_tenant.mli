@@ -2,6 +2,7 @@ module Database = Pool_database
 module Id : module type of Pool_common.Id
 module Title : Pool_common.Model.StringSig
 module Description : Pool_common.Model.StringSig
+module GtxApiKey : Pool_common.Model.StringSig
 
 module Url : sig
   include Pool_common.Model.StringSig
@@ -114,6 +115,7 @@ type t =
   ; description : Description.t option
   ; url : Url.t
   ; database_label : Database.Label.t
+  ; gtx_api_key : GtxApiKey.t option
   ; styles : Styles.t option
   ; icon : Icon.t option
   ; logos : Logos.t
@@ -137,6 +139,7 @@ module Write : sig
     ; description : Description.t option
     ; url : Url.t
     ; database : Database.t
+    ; gtx_api_key : GtxApiKey.t option
     ; styles : Styles.Write.t option
     ; icon : Icon.Write.t option
     ; maintenance : Maintenance.t
@@ -151,6 +154,7 @@ module Write : sig
     -> Description.t option
     -> Url.t
     -> Database.t
+    -> GtxApiKey.t option
     -> Styles.Write.t option
     -> Icon.Write.t option
     -> Pool_common.Language.t
@@ -163,6 +167,7 @@ type update =
   { title : Title.t
   ; description : Description.t option
   ; url : Url.t
+  ; gtx_api_key : GtxApiKey.t option
   ; disabled : Disabled.t
   ; default_language : Pool_common.Language.t
   ; styles : Styles.Write.t option

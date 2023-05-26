@@ -88,6 +88,7 @@ let create () =
                 |> CCOption.return)
                (Url.create url |> get_or_failwith)
                (database |> get_or_failwith)
+               None
                (Styles.Write.create styles |> get_or_failwith |> CCOption.return)
                (Icon.Write.create icon |> get_or_failwith |> CCOption.return)
                (Pool_common.Language.create default_language |> get_or_failwith))

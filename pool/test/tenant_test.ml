@@ -132,6 +132,7 @@ module Data = struct
         ; description
         ; url
         ; database
+        ; gtx_api_key = None
         ; styles = styles |> CCOption.return
         ; icon = icon |> CCOption.return
         ; maintenance = Maintenance.create false
@@ -191,6 +192,7 @@ module Data = struct
       ; description
       ; url
       ; database_label
+      ; gtx_api_key = None
       ; styles = styles |> CCResult.get_exn |> CCOption.return
       ; icon = icon |> CCOption.return
       ; logos
@@ -278,6 +280,7 @@ let[@warning "-4"] create_tenant () =
         ; description
         ; url
         ; database
+        ; gtx_api_key = None
         ; styles = styles |> CCOption.return
         ; icon = icon |> CCOption.return
         ; maintenance = Pool_tenant.Maintenance.create false
@@ -349,6 +352,7 @@ let[@warning "-4"] update_tenant_details () =
         { title
         ; description
         ; url
+        ; gtx_api_key = None
         ; default_language
         ; styles = Some styles
         ; icon = Some icon
