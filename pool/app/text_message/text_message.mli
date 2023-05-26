@@ -19,7 +19,9 @@ val render_and_create
   -> string * (string * string) list
   -> t
 
-val send : Pool_database.Label.t -> t -> unit Lwt.t
+module Service : sig
+  val send : Pool_database.Label.t -> t -> unit Lwt.t
+end
 
 type event =
   | Sent of t
