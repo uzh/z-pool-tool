@@ -3,7 +3,7 @@ module Pool_tenant_command = Cqrs_command.Pool_tenant_command
 module Admin_command = Cqrs_command.Admin_command
 module HttpUtils = Http_utils
 module Common = Pool_common
-module SmtpAuth = Pool_tenant.SmtpAuth
+module SmtpAuth = Email.SmtpAuth
 
 let fail_with = Test_utils.get_or_failwith_pool_error
 
@@ -100,7 +100,7 @@ module Data = struct
 
     let create () =
       let open CCResult in
-      let open Pool_tenant.SmtpAuth in
+      let open Email.SmtpAuth in
       let auth =
         let* label = label |> Label.create in
         let* server = server |> Server.create in
@@ -205,15 +205,13 @@ module Data = struct
 end
 
 let create_smtp_auth () =
-  let open Pool_tenant in
+  let open Email in
   let events =
     let open CCResult in
     let open Cqrs_command.Smtp_command.Create in
     decode Data.Smtp.urlencoded >>= handle ~id:Data.Smtp.id
   in
-  let expected =
-    Ok [ SmtpCreated (Data.Smtp.create ()) |> Pool_event.pool_tenant ]
-  in
+  let expected = Ok [ SmtpCreated (Data.Smtp.create ()) |> Pool_event.email ] in
   Alcotest.(
     check
       (result (list Test_utils.event) Test_utils.error)

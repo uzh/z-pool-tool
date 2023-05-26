@@ -1,8 +1,8 @@
 let get_or_failwith = Pool_common.Utils.get_or_failwith
 
 let create label =
-  let open Pool_tenant in
-  let open SmtpAuth in
+  let open Email in
+  let open Email.SmtpAuth in
   let server, port, username, password, mechanism, protocol =
     "smtp.uzh.ch", 25, None, None, Mechanism.PLAIN, Protocol.STARTTLS
   in

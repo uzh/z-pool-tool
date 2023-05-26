@@ -5,7 +5,7 @@ let worker_services =
   [ Database.register ()
   ; Service.Storage.register ()
   ; Schedule.register ()
-  ; Queue.register ~jobs:[ Queue.hide Pool_tenant.Service.Email.Job.send ] ()
+  ; Queue.register ~jobs:[ Queue.hide Email.Service.Job.send ] ()
   ; Matcher.register ()
   ]
 ;;
@@ -14,8 +14,8 @@ let services =
   [ Database.register ()
   ; Service.User.register ~commands:[] ()
   ; Service.Token.register ()
-  ; Pool_tenant.Service.Email.register ()
-  ; Pool_tenant.Service.Queue.register ()
+  ; Email.Service.register ()
+  ; Email.Service.Queue.register ()
   ; Service.Storage.register ()
   ; Sihl.Web.Http.register ~middlewares:Routes.global_middlewares Routes.router
   ]

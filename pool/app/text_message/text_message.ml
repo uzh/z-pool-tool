@@ -77,7 +77,7 @@ let intercept_message ~tags database_label message recipient =
     ; cc = []
     ; bcc = []
     }
-  |> Pool_tenant.Service.Email.dispatch database_label
+  |> Email.Service.dispatch database_label
 ;;
 
 let send database_label ({ recipient; text; sender } as m) =

@@ -262,8 +262,8 @@ let services =
   [ Database.register ()
   ; Service.User.register ()
   ; Service.Token.register ()
-  ; Pool_tenant.Service.Email.register ()
-  ; Pool_tenant.Service.Queue.register ()
+  ; Email.Service.register ()
+  ; Email.Service.Queue.register ()
   ; Service.Storage.register ()
   ]
 ;;

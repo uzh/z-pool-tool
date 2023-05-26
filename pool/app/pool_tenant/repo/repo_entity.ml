@@ -2,7 +2,6 @@ open CCFun
 open Entity
 module Common = Pool_common
 module Database = Pool_database
-module SmtpAuth = Repo_entity_smtp_auth
 
 module Title = struct
   include Title

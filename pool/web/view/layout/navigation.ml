@@ -65,7 +65,7 @@ module NavElements = struct
       ; "/admin/settings/queue", Queue, Queue.Guard.Access.index
       ; "/admin/settings", SystemSettings, Settings.Guard.Access.index
       ; "/admin/settings/schedules", Schedules, Schedule.Guard.Access.index
-      ; "/admin/settings/smtp", Smtp, Pool_tenant.Guard.Access.Smtp.index
+      ; "/admin/settings/smtp", Smtp, Email.Guard.Access.Smtp.index
       ; "/admin/settings/rules", Rules, Guard.Access.manage_rules
       ; ( "/admin/message-template"
         , MessageTemplates
@@ -128,7 +128,7 @@ module NavElements = struct
         Users
     in
     let settings =
-      [ "/root/settings/smtp", Smtp, Pool_tenant.Guard.Access.Smtp.index ]
+      [ "/root/settings/smtp", Smtp, Email.Guard.Access.Smtp.index ]
       |> NavElement.create_all_req_with_set
       |> fun children -> NavElement.create ~children "/root/settings" Settings
     in

@@ -5,7 +5,6 @@ module Id = Common.Id
 module CreatedAt = Common.CreatedAt
 module UpdatedAt = Common.UpdatedAt
 module File = Common.File
-module SmtpAuth = Entity_smtp
 module LogoMapping = Entity_logo_mapping
 module PoolError = Common.Message
 

@@ -1,11 +1,5 @@
 include Entity
 include Event
-module Service = Pool_tenant_service
-
-module SmtpAuth = struct
-  include Entity.SmtpAuth
-  include Repo.Smtp
-end
 
 module Url = struct
   include Entity.Url

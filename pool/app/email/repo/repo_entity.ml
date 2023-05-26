@@ -1,4 +1,5 @@
 open Entity
+module SmtpAuth = Repo_entity_smtp_auth
 module User = Pool_user
 
 module Token = struct

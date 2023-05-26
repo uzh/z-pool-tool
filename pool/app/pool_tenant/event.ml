@@ -23,9 +23,6 @@ type event =
   | LogoDeleted of t * Id.t
   | DetailsEdited of Write.t * update
   | DatabaseEdited of Write.t * Database.t
-  | SmtpCreated of SmtpAuth.Write.t
-  | SmtpEdited of SmtpAuth.t
-  | SmtpPasswordEdited of SmtpAuth.update_password
   | Destroyed of Id.t
   | ActivateMaintenance of Write.t
   | DeactivateMaintenance of Write.t
@@ -73,26 +70,6 @@ let handle_event pool : event -> unit Lwt.t = function
       { tenant with database; updated_at = Ptime_clock.now () }
       |> Repo.update Database.root
     in
-    Lwt.return_unit
-  | SmtpCreated ({ SmtpAuth.Write.id; _ } as created) ->
-    let open Utils.Lwt_result.Infix in
-    let ctx = Pool_database.to_ctx pool in
-    let%lwt () = Repo.Smtp.insert pool created in
-    let%lwt () =
-      Repo.Smtp.find pool id
-      >>= Entity_guard.SmtpTarget.to_authorizable ~ctx
-      ||> get_or_failwith
-      ||> fun (_ : Role.Target.t Guard.Target.t) -> ()
-    in
-    let () = Pool_tenant_service.Email.remove_from_cache pool in
-    Lwt.return_unit
-  | SmtpEdited updated ->
-    let%lwt () = Repo.Smtp.update pool updated in
-    let () = Pool_tenant_service.Email.remove_from_cache pool in
-    Lwt.return_unit
-  | SmtpPasswordEdited updated_password ->
-    let%lwt () = Repo.Smtp.update_password pool updated_password in
-    let () = Pool_tenant_service.Email.remove_from_cache pool in
     Lwt.return_unit
   | Destroyed tenant_id -> Repo.destroy tenant_id
   | ActivateMaintenance tenant ->

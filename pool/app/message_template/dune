@@ -2,6 +2,7 @@
  (name message_template)
  (libraries
   contact
+  email
   pool_common
   pool_database
   pool_tenant

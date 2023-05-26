@@ -84,6 +84,151 @@ val create_token
   -> Pool_user.EmailAddress.t
   -> Token.t Lwt.t
 
+module SmtpAuth : sig
+  module Id : module type of Pool_common.Id
+  module Label : Pool_common.Model.StringSig
+  module Server : Pool_common.Model.StringSig
+  module Port : Pool_common.Model.IntegerSig
+  module Username : Pool_common.Model.StringSig
+  module Password : Pool_common.Model.StringSig
+
+  module Mechanism : sig
+    type t =
+      | PLAIN
+      | LOGIN
+
+    val equal : t -> t -> bool
+    val pp : Format.formatter -> t -> unit
+    val show : t -> string
+    val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+    val t_of_yojson : Yojson.Safe.t -> t
+    val yojson_of_t : t -> Yojson.Safe.t
+    val read : string -> t
+    val all : t list
+
+    val schema
+      :  unit
+      -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
+  end
+
+  module Protocol : sig
+    type t =
+      | STARTTLS
+      | SSL_TLS
+
+    val equal : t -> t -> bool
+    val pp : Format.formatter -> t -> unit
+    val show : t -> string
+    val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+    val t_of_yojson : Yojson.Safe.t -> t
+    val yojson_of_t : t -> Yojson.Safe.t
+    val read : string -> t
+    val all : t list
+
+    val schema
+      :  unit
+      -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
+  end
+
+  type t =
+    { id : Id.t
+    ; label : Label.t
+    ; server : Server.t
+    ; port : Port.t
+    ; username : Username.t option
+    ; mechanism : Mechanism.t
+    ; protocol : Protocol.t
+    }
+
+  type update_password =
+    { id : Id.t
+    ; password : Password.t option
+    }
+
+  val pp : Format.formatter -> t -> unit
+  val equal : t -> t -> bool
+
+  module Write : sig
+    type t =
+      { id : Id.t
+      ; label : Label.t
+      ; server : Server.t
+      ; port : Port.t
+      ; username : Username.t option
+      ; password : Password.t option
+      ; mechanism : Mechanism.t
+      ; protocol : Protocol.t
+      }
+
+    val create
+      :  ?id:Id.t
+      -> Label.t
+      -> Server.t
+      -> Port.t
+      -> Username.t option
+      -> Password.t option
+      -> Mechanism.t
+      -> Protocol.t
+      -> (t, Pool_common.Message.error) result
+  end
+
+  val find
+    :  Pool_database.Label.t
+    -> Id.t
+    -> (t, Pool_common.Message.error) Lwt_result.t
+
+  val find_by_label
+    :  Pool_database.Label.t
+    -> (t, Pool_common.Message.error) Lwt_result.t
+
+  val find_full_by_label
+    :  Pool_database.Label.t
+    -> (Write.t, Pool_common.Message.error) Lwt_result.t
+end
+
+module Service : sig
+  module Queue : Sihl.Contract.Queue.Sig
+
+  module Smtp : sig
+    type prepared =
+      { sender : string
+      ; reply_to : string
+      ; recipients : Letters.recipient list
+      ; subject : string
+      ; body : Letters.body
+      ; config : Letters.Config.t
+      }
+
+    val inbox : unit -> Sihl_email.t list
+    val clear_inbox : unit -> unit
+    val prepare : Pool_database.Label.t -> Sihl_email.t -> prepared Lwt.t
+  end
+
+  module Job : sig
+    val send : Sihl_email.t Sihl_queue.job
+  end
+
+  val sender_of_pool : Pool_database.Label.t -> Settings.ContactEmail.t Lwt.t
+  val remove_from_cache : Pool_database.Label.t -> unit
+  val intercept_prepare : Sihl_email.t -> (Sihl_email.t, string) result
+  val dispatch : Pool_database.Label.t -> Sihl_email.t -> unit Lwt.t
+  val dispatch_all : Pool_database.Label.t -> Sihl_email.t list -> unit Lwt.t
+  val lifecycle : Sihl.Container.lifecycle
+  val register : unit -> Sihl.Container.Service.t
+end
+
+module Guard : sig
+  module Access : sig
+    module Smtp : sig
+      val index : Guard.ValidationSet.t
+      val create : Guard.ValidationSet.t
+      val read : SmtpAuth.Id.t -> Guard.ValidationSet.t
+      val update : SmtpAuth.Id.t -> Guard.ValidationSet.t
+      val delete : SmtpAuth.Id.t -> Guard.ValidationSet.t
+    end
+  end
+end
+
 type verification_event =
   | Created of Pool_user.EmailAddress.t * Token.t * Pool_common.Id.t
   | EmailVerified of unverified t
@@ -99,6 +244,9 @@ val pp_verification_event : Format.formatter -> verification_event -> unit
 type event =
   | Sent of Sihl_email.t
   | BulkSent of Sihl_email.t list
+  | SmtpCreated of SmtpAuth.Write.t
+  | SmtpEdited of SmtpAuth.t
+  | SmtpPasswordEdited of SmtpAuth.update_password
 
 val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool

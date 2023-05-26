@@ -3,7 +3,7 @@ module Command = Cqrs_command.Smtp_command
 module Field = Pool_common.Message.Field
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
-module SmtpAuth = Pool_tenant.SmtpAuth
+module SmtpAuth = Email.SmtpAuth
 
 let src = Logs.Src.create "handler.admin.settings_schedule"
 let active_navigation = "/admin/settings/smtp"
@@ -107,20 +107,12 @@ module Access : module type of Helpers.Access = struct
   include Helpers.Access
   module Guardian = Middleware.Guardian
 
-  let smtp_effects =
-    Guardian.id_effects Pool_tenant.SmtpAuth.Id.of_string Field.Smtp
-  ;;
-
-  let index =
-    Pool_tenant.Guard.Access.Smtp.index |> Guardian.validate_admin_entity
-  ;;
-
+  let smtp_effects = Guardian.id_effects Email.SmtpAuth.Id.of_string Field.Smtp
+  let index = Email.Guard.Access.Smtp.index |> Guardian.validate_admin_entity
   let create = Guardian.validate_admin_entity Command.Create.effects
 
   let read =
-    Pool_tenant.Guard.Access.Smtp.read
-    |> smtp_effects
-    |> Guardian.validate_generic
+    Email.Guard.Access.Smtp.read |> smtp_effects |> Guardian.validate_generic
   ;;
 
   let update =

@@ -10,6 +10,7 @@ let all_default = Repo.all_default
 let find_all_of_entity_by_label = Repo.find_all_of_entity_by_label
 let find_by_label_to_send = Repo.find_by_label_to_send
 let find_all_by_label_to_send = Repo.find_all_by_label_to_send
+let sender_of_pool = Email.Service.sender_of_pool
 
 let filter_languages languages templates =
   languages
@@ -76,7 +77,7 @@ module AccountSuspensionNotification = struct
         preferred_langauge
         Label.AccountSuspensionNotification
     in
-    let%lwt sender = Pool_tenant.Service.Email.sender_of_pool database_label in
+    let%lwt sender = sender_of_pool database_label in
     let layout = layout_from_tenant tenant in
     let params = email_params user in
     prepare_email language template sender email layout params
@@ -114,7 +115,7 @@ module AssignmentConfirmation = struct
     let params = email_params language sessions contact in
     let layout = layout_from_tenant tenant in
     let email = contact |> Contact.email_address in
-    let%lwt sender = Pool_tenant.Service.Email.sender_of_pool pool in
+    let%lwt sender = sender_of_pool pool in
     prepare_email language template sender email layout params |> Lwt.return
   ;;
 
@@ -124,7 +125,7 @@ module AssignmentConfirmation = struct
     let params = email_params_public_session language sessions contact in
     let layout = layout_from_tenant tenant in
     let email = contact |> Contact.email_address in
-    let%lwt sender = Pool_tenant.Service.Email.sender_of_pool pool in
+    let%lwt sender = sender_of_pool pool in
     prepare_email language template sender email layout params |> Lwt.return
   ;;
 end
@@ -149,7 +150,7 @@ module ContactRegistrationAttempt = struct
     in
     let layout = layout_from_tenant tenant in
     let tenant_url = tenant.Pool_tenant.url in
-    let%lwt sender = Pool_tenant.Service.Email.sender_of_pool pool in
+    let%lwt sender = sender_of_pool pool in
     prepare_email
       language
       template
@@ -179,7 +180,7 @@ module EmailVerification = struct
         ]
       |> create_public_url_with_params url "/email-verified"
     in
-    let%lwt sender = Pool_tenant.Service.Email.sender_of_pool pool in
+    let%lwt sender = sender_of_pool pool in
     prepare_email
       language
       template
@@ -214,9 +215,7 @@ module ExperimentInvitation = struct
         Label.ExperimentInvitation
     in
     let%lwt tenant_url = Pool_tenant.Url.of_pool pool in
-    let%lwt sender =
-      Pool_tenant.Service.Email.sender_of_pool tenant.Pool_tenant.database_label
-    in
+    let%lwt sender = sender_of_pool tenant.Pool_tenant.database_label in
     let layout = layout_from_tenant tenant in
     let fnc (contact : Contact.t) =
       let open CCResult in
@@ -245,7 +244,7 @@ module ExperimentInvitation = struct
         Label.ExperimentInvitation
     in
     let%lwt tenant_url = Pool_tenant.Url.of_pool database_label in
-    let%lwt sender = Pool_tenant.Service.Email.sender_of_pool database_label in
+    let%lwt sender = sender_of_pool database_label in
     let layout = layout_from_tenant tenant in
     let params = email_params experiment tenant_url contact in
     prepare_email
@@ -268,7 +267,7 @@ module PasswordChange = struct
     in
     let layout = layout_from_tenant tenant in
     let email = Pool_user.user_email_address user in
-    let%lwt sender = Pool_tenant.Service.Email.sender_of_pool pool in
+    let%lwt sender = sender_of_pool pool in
     prepare_email language template sender email layout (email_params user)
     |> Lwt.return
   ;;
@@ -286,7 +285,7 @@ module PasswordReset = struct
       find_by_label_to_send pool preferred_language Label.PasswordReset
     in
     let%lwt url = Pool_tenant.Url.of_pool pool in
-    let%lwt sender = Pool_tenant.Service.Email.sender_of_pool pool in
+    let%lwt sender = sender_of_pool pool in
     let open Pool_common in
     let* reset_token =
       Service.PasswordReset.create_reset_token
@@ -357,7 +356,7 @@ module ProfileUpdateTrigger = struct
       find_all_by_label_to_send pool sys_langs Label.SessionReschedule
     in
     let%lwt url = Pool_tenant.Url.of_pool pool in
-    let%lwt sender = Pool_tenant.Service.Email.sender_of_pool pool in
+    let%lwt sender = sender_of_pool pool in
     let fnc contact =
       let open CCResult in
       let* lang, template = template_by_contact sys_langs templates contact in
@@ -417,7 +416,7 @@ module SessionCancellation = struct
     let%lwt templates =
       find_all_by_label_to_send pool sys_langs Label.SessionCancellation
     in
-    let%lwt sender = Pool_tenant.Service.Email.sender_of_pool pool in
+    let%lwt sender = sender_of_pool pool in
     let layout = layout_from_tenant tenant in
     let fnc reason (contact : Contact.t) =
       let open CCResult in
@@ -465,7 +464,7 @@ module SessionReminder = struct
         preferred_language
         Label.SessionReminder
     in
-    let%lwt sender = Pool_tenant.Service.Email.sender_of_pool pool in
+    let%lwt sender = sender_of_pool pool in
     let layout = layout_from_tenant tenant in
     let params = email_params language experiment session contact in
     prepare_email
@@ -490,7 +489,7 @@ module SessionReminder = struct
         sys_langs
         Label.SessionReminder
     in
-    let%lwt sender = Pool_tenant.Service.Email.sender_of_pool pool in
+    let%lwt sender = sender_of_pool pool in
     let layout = layout_from_tenant tenant in
     let fnc contact =
       let open CCResult in
@@ -525,7 +524,7 @@ module SessionReschedule = struct
     let%lwt templates =
       find_all_by_label_to_send pool sys_langs Label.SessionReschedule
     in
-    let%lwt sender = Pool_tenant.Service.Email.sender_of_pool pool in
+    let%lwt sender = sender_of_pool pool in
     let layout = layout_from_tenant tenant in
     let fnc (contact : Contact.t) new_start new_duration =
       let open CCResult in
@@ -569,7 +568,7 @@ module SignUpVerification = struct
       find_by_label_to_send pool preferred_language Label.SignUpVerification
     in
     let%lwt url = Pool_tenant.Url.of_pool pool in
-    let%lwt sender = Pool_tenant.Service.Email.sender_of_pool pool in
+    let%lwt sender = sender_of_pool pool in
     let verification_url =
       Pool_common.
         [ ( Message.Field.Language

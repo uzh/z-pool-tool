@@ -10,7 +10,7 @@ let show_smtp req =
     @@
     let open Page.Admin.Settings.Smtp in
     let flash_fetcher = CCFun.flip Sihl.Web.Flash.find req in
-    Pool_tenant.SmtpAuth.find_by_label database_label
+    Email.SmtpAuth.find_by_label database_label
     ||> (function
           | Ok smtp -> show ~settings_path context flash_fetcher smtp
           | Error _ -> smtp_create_form ~settings_path context flash_fetcher)

@@ -1,5 +1,6 @@
 module PoolError = Pool_common.Message
 module Database = Pool_database
+module SmtpAuth = Entity_smtp
 module User = Pool_user
 
 module Sihl_email = struct
