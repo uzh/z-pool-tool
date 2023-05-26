@@ -123,7 +123,7 @@ let create req =
         (CCList.map Contact.id contacts)
         experiment
     in
-    let* create_message =
+    let%lwt create_message =
       Message_template.ExperimentInvitation.prepare tenant experiment
     in
     let%lwt events =
@@ -162,7 +162,7 @@ let resend req =
     let tenant = Pool_context.Tenant.get_tenant_exn req in
     let* invitation = Invitation.find database_label id in
     let* experiment = Experiment.find database_label experiment_id in
-    let* invitation_mail =
+    let%lwt invitation_mail =
       Message_template.ExperimentInvitation.create
         tenant
         experiment

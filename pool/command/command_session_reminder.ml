@@ -9,7 +9,7 @@ let create_reminders pool tenant sys_languages session =
   let* assignments =
     Assignment.find_uncanceled_by_session pool session.Session.id
   in
-  let* create_message =
+  let%lwt create_message =
     Message_template.SessionReminder.prepare
       pool
       tenant

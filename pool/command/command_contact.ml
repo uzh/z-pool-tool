@@ -60,7 +60,6 @@ Example: contact.signup econ-uzh example@mail.com securePassword Max Muster onli
              token
              firstname
              lastname
-           ||> get_or_failwith
          in
          decoded
          |> handle token email verification_mail language
@@ -79,7 +78,7 @@ let trigger_profile_update_by_tenant pool =
   match contacts with
   | [] -> Lwt_result.return ()
   | contacts ->
-    let* create_message =
+    let%lwt create_message =
       Message_template.ProfileUpdateTrigger.prepare pool tenant
     in
     let* emails =

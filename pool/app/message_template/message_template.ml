@@ -66,10 +66,9 @@ module AccountSuspensionNotification = struct
       match user.User.admin with
       | true -> Lwt_result.return Pool_common.Language.En
       | false ->
-        user.User.email
-        |> Pool_user.EmailAddress.of_string
+        email
         |> Contact.find_by_email database_label
-        >== preferred_language system_languages
+        >|+ preferred_language system_languages
     in
     let%lwt template, language =
       find_by_label_to_send
@@ -116,8 +115,7 @@ module AssignmentConfirmation = struct
     let layout = layout_from_tenant tenant in
     let email = contact |> Contact.email_address in
     let%lwt sender = Pool_tenant.Service.Email.sender_of_pool pool in
-    prepare_email language template sender email layout params
-    |> Lwt_result.return
+    prepare_email language template sender email layout params |> Lwt.return
   ;;
 
   let create_from_public_session pool preferred_language tenant sessions contact
@@ -127,8 +125,7 @@ module AssignmentConfirmation = struct
     let layout = layout_from_tenant tenant in
     let email = contact |> Contact.email_address in
     let%lwt sender = Pool_tenant.Service.Email.sender_of_pool pool in
-    prepare_email language template sender email layout params
-    |> Lwt_result.return
+    prepare_email language template sender email layout params |> Lwt.return
   ;;
 end
 
@@ -160,7 +157,7 @@ module ContactRegistrationAttempt = struct
       (contact |> Contact.email_address)
       layout
       (email_params tenant_url contact)
-    |> Lwt_result.return
+    |> Lwt.return
   ;;
 end
 
@@ -190,7 +187,7 @@ module EmailVerification = struct
       email_address
       (create_layout layout)
       (email_params validation_url contact)
-    |> Lwt_result.return
+    |> Lwt.return
   ;;
 end
 
@@ -234,16 +231,13 @@ module ExperimentInvitation = struct
         params
       |> CCResult.return
     in
-    Lwt_result.return fnc
+    Lwt.return fnc
   ;;
 
   let create ({ Pool_tenant.database_label; _ } as tenant) experiment contact =
     let open Message_utils in
-    let open Utils.Lwt_result.Infix in
     let%lwt system_languages = Settings.find_languages database_label in
-    let* preferred_langauge =
-      preferred_language system_languages contact |> Lwt_result.lift
-    in
+    let preferred_langauge = preferred_language system_languages contact in
     let%lwt template, language =
       find_by_label_to_send
         database_label
@@ -261,7 +255,7 @@ module ExperimentInvitation = struct
       (Contact.email_address contact)
       layout
       params
-    |> Lwt_result.return
+    |> Lwt.return
   ;;
 end
 
@@ -276,7 +270,7 @@ module PasswordChange = struct
     let email = Pool_user.user_email_address user in
     let%lwt sender = Pool_tenant.Service.Email.sender_of_pool pool in
     prepare_email language template sender email layout (email_params user)
-    |> Lwt_result.return
+    |> Lwt.return
   ;;
 end
 
@@ -376,7 +370,7 @@ module ProfileUpdateTrigger = struct
         (email_params url contact)
       |> CCResult.return
     in
-    Lwt_result.return fnc
+    Lwt.return fnc
   ;;
 end
 
@@ -447,7 +441,7 @@ module SessionCancellation = struct
         params
       |> CCResult.return
     in
-    Lwt_result.return fnc
+    Lwt.return fnc
   ;;
 end
 
@@ -460,10 +454,7 @@ module SessionReminder = struct
 
   let create pool tenant system_languages experiment session contact =
     let open Message_utils in
-    let open Utils.Lwt_result.Infix in
-    let* preferred_language =
-      preferred_language system_languages contact |> Lwt_result.lift
-    in
+    let preferred_language = preferred_language system_languages contact in
     let%lwt template, language =
       find_by_label_to_send
         ~entity_uuids:
@@ -484,7 +475,7 @@ module SessionReminder = struct
       (Contact.email_address contact)
       layout
       params
-    |> Lwt_result.return
+    |> Lwt.return
   ;;
 
   let prepare pool tenant sys_langs experiment session =
@@ -514,7 +505,7 @@ module SessionReminder = struct
         params
       |> CCResult.return
     in
-    Lwt_result.return fnc
+    Lwt.return fnc
   ;;
 end
 
@@ -549,7 +540,7 @@ module SessionReschedule = struct
         params
       |> CCResult.return
     in
-    Lwt_result.return fnc
+    Lwt.return fnc
   ;;
 end
 
@@ -594,6 +585,6 @@ module SignUpVerification = struct
       email_address
       (layout_from_tenant tenant)
       (email_params verification_url firstname lastname)
-    |> Lwt_result.return
+    |> Lwt.return
   ;;
 end

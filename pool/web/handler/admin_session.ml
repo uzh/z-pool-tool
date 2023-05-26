@@ -273,7 +273,7 @@ let update_handler action req =
         let system_languages =
           Pool_context.Tenant.get_tenant_languages_exn req
         in
-        let* create_message =
+        let%lwt create_message =
           Message_template.SessionReschedule.prepare
             database_label
             tenant
@@ -347,7 +347,7 @@ let cancel req =
     let* events =
       let system_languages = Pool_context.Tenant.get_tenant_languages_exn req in
       let tenant = Pool_context.Tenant.get_tenant_exn req in
-      let* create_message =
+      let%lwt create_message =
         Message_template.SessionCancellation.prepare
           database_label
           tenant
