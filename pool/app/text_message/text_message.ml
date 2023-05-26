@@ -33,12 +33,9 @@ let response_to_string res =
   Format.flush_str_formatter ()
 ;;
 
-let intercept_message ~tags ?(log_level = Logs.Info) { recipient; text; sender }
-  =
-  Logs.msg ~src log_level (fun m ->
-    m
-      ~tags
-      {|
+let format_message { recipient; text; sender } =
+  Format.asprintf
+    {|
 -----------------------
 Message sent by: %s
 Recipient: %s
@@ -46,39 +43,59 @@ Recipient: %s
 Text:
 %s
 -----------------------
-|}
-      (Pool_tenant.Title.value sender)
-      (PhoneNumber.value recipient)
-      text);
+    |}
+    (Pool_tenant.Title.value sender)
+    (PhoneNumber.value recipient)
+    text
+;;
+
+let print_message ~tags ?(log_level = Logs.Info) msg =
+  let text_message = format_message msg in
+  Logs.msg ~src log_level (fun m -> m ~tags "%s" text_message);
   Lwt.return_unit
 ;;
 
-let intercept_phone_number ~tags recipient =
-  Sihl.Configuration.read_string "TEST_PHONE_NUMBER"
-  |> CCOption.map PhoneNumber.of_string
-  |> function
-  | None -> recipient
-  | Some intercept_recipient ->
-    Logs.info ~src (fun m ->
-      m
-        ~tags
-        "Sending text message intercepted. Sending message to new recipient \
-         ('%s')"
-        (PhoneNumber.value intercept_recipient));
-    intercept_recipient
+let intercept_message ~tags database_label message recipient =
+  Logs.info ~src (fun m ->
+    m
+      ~tags
+      "Sending text message intercepted. Sending message as email to ('%s')"
+      (Pool_user.EmailAddress.value recipient));
+  let sender =
+    Sihl.Configuration.read_string "SMTP_SENDER"
+    |> CCOption.get_exn_or "Undefined 'SMTP_SENDER'"
+  in
+  let body = format_message message in
+  let subject = "Text message intercept" in
+  (* TODO: formatting, where to place this module??? *)
+  Sihl_email.
+    { sender
+    ; recipient = Pool_user.EmailAddress.value recipient
+    ; subject
+    ; text = body
+    ; html = Some body
+    ; cc = []
+    ; bcc = []
+    }
+  |> Pool_tenant.Service.Email.dispatch database_label
 ;;
 
 let send database_label ({ recipient; text; sender } as m) =
   let tags = tags database_label in
   match Sihl.Configuration.is_production () || bypass () with
-  | false -> intercept_message ~tags m
+  | false -> print_message ~tags m
   | true ->
-    let open Cohttp in
-    let open Cohttp_lwt_unix in
-    (match Config.auth_key () with
-     | None -> failwith "Undefined 'GTX_AUTH_KEY'"
-     | Some auth_key ->
-       let recipient = intercept_phone_number ~tags recipient in
+    (match Sihl.Configuration.read_string "TEXT_MESSAGE_INTERCEPT_ADDRESS" with
+     | Some email ->
+       email
+       |> Pool_user.EmailAddress.of_string
+       |> intercept_message database_label ~tags m
+     | None ->
+       let open Cohttp in
+       let open Cohttp_lwt_unix in
+       let auth_key =
+         Config.auth_key () |> CCOption.get_exn_or "Undefined 'GTX_AUTH_KEY'"
+       in
        let body =
          request_body recipient text sender |> Cohttp_lwt.Body.of_form
        in
