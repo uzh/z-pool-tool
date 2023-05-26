@@ -150,7 +150,7 @@ let rec hint_to_string = function
   | ContactEnterPhoneNumberToken phone_number ->
     Format.asprintf
       "PBitte geben Sie den Verifizierungscode ein, den wir Ihnen an %s \
-       geschickt haben."
+       geschickt haben. Der Code ist eine Stunde lang gültig."
       phone_number
   | ContactPhoneNumberVerificationWasReset ->
     "Sie können nun eine neue Telefonnummer eingeben."

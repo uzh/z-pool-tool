@@ -436,7 +436,7 @@ let phone_number_verifiaction_sql ?(where = "") () =
       created_at
     FROM pool_phone_number_verifications
     WHERE user_uuid = UNHEX(REPLACE(?, '-', ''))
-    AND created_at >= (DATE(NOW()) - INTERVAL 1 DAY)
+    AND created_at >= (NOW() - INTERVAL 1 HOUR)
     %s
     LIMIT 1
     |sql}

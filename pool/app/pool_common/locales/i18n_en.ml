@@ -146,7 +146,8 @@ let rec hint_to_string = function
   | ContactNoPhoneNumber -> "You have not yet verified a phone number."
   | ContactEnterPhoneNumberToken phone_number ->
     Format.asprintf
-      "Please enter the verification code we sent yout to %s."
+      "Please enter the verification code we sent yout to %s. The code is \
+       valid for one hour."
       phone_number
   | ContactPhoneNumberVerificationWasReset ->
     "You can enter a different phone number now."
