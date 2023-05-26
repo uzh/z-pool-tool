@@ -162,6 +162,7 @@ module Preview = struct
   type t =
     { user : Sihl_user.t
     ; language : Pool_common.Language.t option
+    ; phone_number : User.PhoneNumber.t option
     ; paused : User.Paused.t
     ; verified : User.Verified.t option
     ; num_invitations : NumberOfInvitations.t

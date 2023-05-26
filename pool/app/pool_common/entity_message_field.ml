@@ -186,6 +186,7 @@ type t =
   | Sessions [@name "sessions"] [@printer go "sessions"]
   | Setting [@name "setting"] [@printer go "setting"]
   | ShowUpCount [@name "show_up_count"] [@printer go "show_up_count"]
+  | SignedUpAt [@name "signed_up_at"] [@printer go "signed_up_at"]
   | SMS [@name "sms"] [@printer go "sms"]
   | SmsText [@name "sms_text"] [@printer go "sms_text"]
   | Smtp [@name "smtp"] [@printer go "smtp"]

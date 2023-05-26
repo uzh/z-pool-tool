@@ -529,31 +529,34 @@ let waiting_list
   let open Waiting_list.ExperimentList in
   let waiting_list_table waiting_list_entries =
     let thead =
-      (Field.[ Name; Email; CreatedAt; AdminComment ]
+      (Field.[ Name; Email; PhoneNumber; SignedUpAt; AdminComment ]
        |> Table.fields_to_txt language)
       @ [ txt "" ]
     in
     let rows =
+      let open CCOption in
       CCList.map
-        (fun entry ->
-          [ txt (Contact.Preview.fullname entry.contact)
-          ; txt
-              (Contact.Preview.email_address entry.contact
-               |> Pool_user.EmailAddress.value)
-          ; txt
-              (entry.created_at
-               |> CreatedAt.value
-               |> Utils.Time.formatted_date_time)
-          ; entry.admin_comment
-            |> CCOption.map_or ~default:"" Waiting_list.AdminComment.value
-            |> HttpUtils.first_n_characters
-            |> HttpUtils.add_line_breaks
-          ; Format.asprintf
-              "/admin/experiments/%s/waiting-list/%s"
-              (experiment.Experiment.id |> Experiment.Id.value)
-              (entry.id |> Id.value)
-            |> edit_link
-          ])
+        Contact.Preview.(
+          fun entry ->
+            [ txt (fullname entry.contact)
+            ; txt (email_address entry.contact |> Pool_user.EmailAddress.value)
+            ; txt
+                (entry.contact.phone_number
+                 |> map_or ~default:"" Pool_user.PhoneNumber.value)
+            ; txt
+                (entry.created_at
+                 |> CreatedAt.value
+                 |> Utils.Time.formatted_date_time)
+            ; entry.admin_comment
+              |> map_or ~default:"" Waiting_list.AdminComment.value
+              |> HttpUtils.first_n_characters
+              |> HttpUtils.add_line_breaks
+            ; Format.asprintf
+                "/admin/experiments/%s/waiting-list/%s"
+                (experiment.Experiment.id |> Experiment.Id.value)
+                (entry.id |> Id.value)
+              |> edit_link
+            ])
         waiting_list_entries
     in
     Table.horizontal_table

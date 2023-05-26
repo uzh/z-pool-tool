@@ -337,13 +337,16 @@ module Preview = struct
       Ok
         ( m.user
         , ( m.language
-          , ( Paused.value m.paused
-            , ( CCOption.map Verified.value m.verified
-              , (m.num_invitations, m.num_assignments) ) ) ) )
+          , ( CCOption.map User.PhoneNumber.value m.phone_number
+            , ( Paused.value m.paused
+              , ( CCOption.map Verified.value m.verified
+                , (m.num_invitations, m.num_assignments) ) ) ) ) )
     in
     let decode
       ( user
-      , (language, (paused, (verified, (num_invitations, num_assignments)))) )
+      , ( language
+        , ( phone_number
+          , (paused, (verified, (num_invitations, num_assignments))) ) ) )
       =
       let open Pool_user in
       let open CCResult in
@@ -351,6 +354,7 @@ module Preview = struct
         Entity.Preview.
           { user
           ; language
+          ; phone_number = CCOption.map User.PhoneNumber.of_string phone_number
           ; paused = Paused.create paused
           ; verified = CCOption.map Verified.create verified
           ; num_invitations = NumberOfInvitations.of_int num_invitations
@@ -367,9 +371,11 @@ module Preview = struct
            (tup2
               (option Pool_common.Repo.Language.t)
               (tup2
-                 Paused.t
+                 (option User.Repo.PhoneNumber.t)
                  (tup2
-                    (option Verified.t)
-                    (tup2 NumberOfInvitations.t NumberOfAssignments.t))))))
+                    Paused.t
+                    (tup2
+                       (option Verified.t)
+                       (tup2 NumberOfInvitations.t NumberOfAssignments.t)))))))
   ;;
 end

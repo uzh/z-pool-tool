@@ -160,6 +160,7 @@ let rec field_to_string =
   | Sessions -> "sessions"
   | Setting -> "setting"
   | ShowUpCount -> "show ups"
+  | SignedUpAt -> "signed up at"
   | SMS -> "SMS"
   | SmsText -> "SMS text"
   | Smtp -> "smtp"

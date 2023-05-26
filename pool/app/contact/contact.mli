@@ -199,6 +199,7 @@ module Preview : sig
   type t =
     { user : Sihl_user.t
     ; language : Pool_common.Language.t option
+    ; phone_number : Pool_user.PhoneNumber.t option
     ; paused : Pool_user.Paused.t
     ; verified : Pool_user.Verified.t option
     ; num_invitations : NumberOfInvitations.t
