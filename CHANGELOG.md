@@ -4,6 +4,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/pool/tree/HEAD)
 
+## [0.2.0](https://github.com/uzh/pool/tree/0.2.0) - 2023-05-26
+
 ### Added
 
 - reply-to address to emails, using tenant contact email address (system settings)
