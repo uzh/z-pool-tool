@@ -1,7 +1,10 @@
-(* TODO: Use queue *)
-
+module Queue = Sihl_queue.MariaDb
 open Entity
+open CCFun
 module PhoneNumber = Pool_user.PhoneNumber
+
+let src = Logs.Src.create "pool_tenant.service.text_message"
+let tags database_label = Pool_database.(Logger.Tags.create database_label)
 
 let bypass () =
   CCOption.get_or
@@ -20,10 +23,13 @@ module Config = struct
   let auth_key () = Sihl.Configuration.read_string "GTX_AUTH_KEY"
 end
 
-let src = Logs.Src.create "pool_tenant.service.text_message"
-let tags database_label = Pool_database.(Logger.Tags.create database_label)
+let get_api_key database_label =
+  let open Utils.Lwt_result.Infix in
+  Pool_tenant.find_gtx_api_key_by_label database_label
+  ||> Pool_common.Utils.get_or_failwith
+;;
 
-let request_body recipient text sender =
+let request_body { recipient; text; sender } =
   [ "from", [ Pool_tenant.Title.value sender ]
   ; "to", [ PhoneNumber.value recipient ]
   ; "text", [ text ]
@@ -69,7 +75,6 @@ let intercept_message ~tags database_label message recipient =
   in
   let body = format_message message in
   let subject = "Text message intercept" in
-  (* TODO: formatting, where to place this module??? *)
   Sihl_email.
     { sender
     ; recipient = Pool_user.EmailAddress.value recipient
@@ -82,28 +87,35 @@ let intercept_message ~tags database_label message recipient =
   |> Email.Service.dispatch database_label
 ;;
 
-let send database_label api_key ({ recipient; text; sender } as m) =
+let handle ?ctx msg =
+  let database_label =
+    let open CCOption in
+    ctx
+    >>= CCList.assoc_opt ~eq:( = ) "pool"
+    >|= Pool_database.Label.create %> Pool_common.Utils.get_or_failwith
+    |> get_exn_or "Invalid context passed!"
+  in
+  let%lwt api_key = get_api_key database_label in
   let tags = tags database_label in
   match Sihl.Configuration.is_production () || bypass () with
-  | false -> print_message ~tags m
+  | false -> print_message ~tags msg |> Lwt.map CCResult.return
   | true ->
     (match Sihl.Configuration.read_string "TEXT_MESSAGE_INTERCEPT_ADDRESS" with
      | Some email ->
        email
        |> Pool_user.EmailAddress.of_string
-       |> intercept_message database_label ~tags m
+       |> intercept_message database_label ~tags msg
+       |> Lwt.map CCResult.return
      | None ->
        let open Cohttp in
        let open Cohttp_lwt_unix in
-       let body =
-         request_body recipient text sender |> Cohttp_lwt.Body.of_form
-       in
+       let body = request_body msg |> Cohttp_lwt.Body.of_form in
        let%lwt resp, body =
-         let url =
-           api_key |> Pool_tenant.GtxApiKey.value |> Config.gateway_url
-         in
-         Logs.info (fun m -> m "%s" url);
-         url |> Uri.of_string |> Client.post ~body
+         api_key
+         |> Pool_tenant.GtxApiKey.value
+         |> Config.gateway_url
+         |> Uri.of_string
+         |> Client.post ~body
        in
        let%lwt body_string = Cohttp_lwt.Body.to_string body in
        let%lwt () = Cohttp_lwt.Body.drain_body body in
@@ -111,20 +123,55 @@ let send database_label api_key ({ recipient; text; sender } as m) =
           resp |> Response.status |> Code.code_of_status |> CCInt.equal 200
         with
         | false ->
-          Logs.err ~src (fun m ->
-            m
-              ~tags
+          let error =
+            Format.asprintf
               "Could not send text message: %s\nresponse: %s"
               body_string
-              (response_to_string resp));
-          Lwt.return_unit
+              (response_to_string resp)
+          in
+          Logs.err ~src (fun m -> m ~tags "%s" error);
+          Lwt.return_error error
         | true ->
           Logs.info ~src (fun m ->
             m
               ~tags
               "Send text message to %s: %s\n%s"
-              (PhoneNumber.value recipient)
-              text
+              (PhoneNumber.value msg.recipient)
+              msg.text
               body_string);
-          Lwt.return_unit))
+          Lwt.return_ok ()))
+;;
+
+module Job = struct
+  let send =
+    let encode = Entity.yojson_of_t %> Yojson.Safe.to_string in
+    let decode msg =
+      try Ok (t_of_yojson (Yojson.Safe.from_string msg)) with
+      | Yojson.Json_error msg ->
+        Logs.err ~src (fun m ->
+          m
+            ~tags:Pool_database.(Logger.Tags.create root)
+            "Serialized message string was NULL, can not deserialize message. \
+             Please fix the string manually and reset the job instance. Error: \
+             %s"
+            msg);
+        Error "Invalid serialized message string received"
+    in
+    Sihl.Contract.Queue.create_job
+      handle
+      ~max_tries:10
+      ~retry_delay:(Sihl.Time.Span.hours 1)
+      encode
+      decode
+      "send_text_message"
+  ;;
+end
+
+let send database_label msg =
+  Logs.debug ~src (fun m ->
+    m
+      ~tags:(Pool_database.Logger.Tags.create database_label)
+      "Dispatch text message to %s"
+      (Pool_user.PhoneNumber.value msg.recipient));
+  Queue.dispatch ~ctx:(Pool_database.to_ctx database_label) msg Job.send
 ;;

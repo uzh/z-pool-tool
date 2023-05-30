@@ -199,8 +199,8 @@ val find_by_label
 val find_all : unit -> t list Lwt.t
 val find_databases : unit -> Database.t list Lwt.t
 
-val find_gtx_api_key
-  :  t
+val find_gtx_api_key_by_label
+  :  Pool_database.Label.t
   -> (GtxApiKey.t, Pool_common.Message.error) result Lwt.t
 
 type handle_list_recruiters = unit -> Sihl_user.t list Lwt.t

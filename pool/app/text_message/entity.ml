@@ -1,5 +1,5 @@
 module Content = struct
-  type t = string [@@deriving eq, show]
+  type t = string [@@deriving eq, show, yojson]
 
   let render text params =
     Sihl.Contract.Email_template.render params text None |> fst
@@ -13,7 +13,7 @@ type t =
   ; sender : Pool_tenant.Title.t
   ; text : Content.t
   }
-[@@deriving eq, show]
+[@@deriving eq, show, yojson]
 
 let create recipient sender text = { recipient; sender; text }
 

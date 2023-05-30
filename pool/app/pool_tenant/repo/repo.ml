@@ -341,7 +341,7 @@ let insert = Sql.insert
 let update = Sql.update
 let destroy = Utils.todo
 
-let find_gtx_api_key_request =
+let find_gtx_api_key_by_label_request =
   let open Caqti_request.Infix in
   {sql|
     SELECT
@@ -349,17 +349,17 @@ let find_gtx_api_key_request =
     FROM
       pool_tenant
     WHERE
-    pool_tenant.uuid = UNHEX(REPLACE(?, '-', ''))
+    pool_tenant.database_label = ?
   |sql}
   |> Caqti_type.(string ->! RepoEntity.GtxApiKey.t)
 ;;
 
-let find_gtx_api_key pool tenant =
+let find_gtx_api_key_by_label pool database_label =
   let open Utils.Lwt_result.Infix in
   Utils.Database.find_opt
     (Pool_database.Label.value pool)
-    find_gtx_api_key_request
-    (Pool_common.Id.value tenant.Entity.id)
+    find_gtx_api_key_by_label_request
+    (Pool_database.Label.value database_label)
   ||> CCOption.to_result Pool_common.Message.(NotFound Field.GtxApiKey)
 ;;
 

@@ -203,7 +203,7 @@ module EmailAddress = struct
 end
 
 module PhoneNumber = struct
-  type t = string [@@deriving eq, show]
+  type t = string [@@deriving eq, show, yojson]
 
   (** TODO: Implement validation using regex
 

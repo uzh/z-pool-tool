@@ -20,12 +20,16 @@ val render_and_create
   -> t
 
 module Service : sig
-  val send : Pool_database.Label.t -> Pool_tenant.GtxApiKey.t -> t -> unit Lwt.t
+  module Job : sig
+    val send : t Sihl_queue.job
+  end
+
+  val send : Pool_database.Label.t -> t -> unit Lwt.t
 end
 
 type event =
-  | Sent of (t * Pool_tenant.t)
-  | BulkSent of (t list * Pool_tenant.t)
+  | Sent of t
+  | BulkSent of t list
 
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit

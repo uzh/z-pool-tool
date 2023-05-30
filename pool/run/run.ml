@@ -5,7 +5,12 @@ let worker_services =
   [ Database.register ()
   ; Service.Storage.register ()
   ; Schedule.register ()
-  ; Queue.register ~jobs:[ Queue.hide Email.Service.Job.send ] ()
+  ; Queue.register
+      ~jobs:
+        [ Queue.hide Email.Service.Job.send
+        ; Queue.hide Text_message.Service.Job.send
+        ]
+      ()
   ; Matcher.register ()
   ]
 ;;
