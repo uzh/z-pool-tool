@@ -116,7 +116,6 @@ type t =
   ; description : Description.t option
   ; url : Url.t
   ; database_label : Database.Label.t
-  ; gtx_api_key : GtxApiKey.t option
   ; styles : Styles.t option
   ; icon : Icon.t option
   ; logos : Logos.t
@@ -138,7 +137,6 @@ module Read = struct
     ; description : Description.t option
     ; url : Url.t
     ; database_label : Database.Label.t
-    ; gtx_api_key : GtxApiKey.t option
     ; styles : Styles.t option
     ; icon : Icon.t option
     ; maintenance : Maintenance.t
@@ -157,7 +155,7 @@ module Write = struct
     ; description : Description.t option
     ; url : Url.t
     ; database : Database.t
-    ; gtx_api_key : GtxApiKey.t option
+    ; gtx_api_key : GtxApiKey.t
     ; styles : Styles.Write.t option
     ; icon : Icon.Write.t option
     ; maintenance : Maintenance.t

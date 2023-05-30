@@ -8,7 +8,7 @@ type update =
   { title : Title.t
   ; description : Description.t option
   ; url : Url.t
-  ; gtx_api_key : GtxApiKey.t option
+  ; gtx_api_key : GtxApiKey.t
   ; disabled : Disabled.t
   ; default_language : Pool_common.Language.t
   ; styles : Styles.Write.t option

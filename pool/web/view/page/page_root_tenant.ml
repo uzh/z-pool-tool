@@ -103,8 +103,9 @@ let tenant_form
         language
         `Text
         Field.GtxApiKey
-        ~value:(value (fun t -> t.gtx_api_key |> map_or GtxApiKey.value))
+        (* ~value:(value (fun t -> t.gtx_api_key |> map_or GtxApiKey.value)) *)
         ~flash_fetcher
+        ~required:true
     ; language_select
     ; (if CCOption.is_some tenant
        then txt ""

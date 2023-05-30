@@ -50,6 +50,7 @@ module Data = struct
   let tenant_logo = Asset.tenant_logo
   let partner_logo = Asset.partner_logo
   let default_language = "EN"
+  let gtx_api_key = "GTX API KEY"
   let email = "operator@econ.uzh.ch"
   let password = "AdminAdmin99!"
   let firstname = "DJ"
@@ -62,6 +63,7 @@ module Data = struct
     ; Field.Url, [ url ]
     ; Field.DatabaseUrl, [ database_url ]
     ; Field.DatabaseLabel, [ database_label ]
+    ; Field.GtxApiKey, [ gtx_api_key ]
     ; Field.Styles, [ Asset.styles ]
     ; Field.Icon, [ Asset.icon ]
     ; Field.TenantLogos, [ tenant_logo ]
@@ -125,6 +127,7 @@ module Data = struct
     let* title = title |> Title.create in
     let* description = description |> Description.create >|= CCOption.return in
     let* url = url |> Url.create in
+    let gtx_api_key = gtx_api_key |> GtxApiKey.of_string in
     Ok
       Write.
         { id = Id.create ()
@@ -132,7 +135,7 @@ module Data = struct
         ; description
         ; url
         ; database
-        ; gtx_api_key = None
+        ; gtx_api_key
         ; styles = styles |> CCOption.return
         ; icon = icon |> CCOption.return
         ; maintenance = Maintenance.create false
@@ -192,7 +195,6 @@ module Data = struct
       ; description
       ; url
       ; database_label
-      ; gtx_api_key = None
       ; styles = styles |> CCResult.get_exn |> CCOption.return
       ; icon = icon |> CCOption.return
       ; logos
@@ -272,6 +274,7 @@ let[@warning "-4"] create_tenant () =
       let* url = database_url |> Pool_tenant.Database.Url.create in
       Ok Pool_database.{ url; label = database_label }
     in
+    let gtx_api_key = Data.gtx_api_key |> Pool_tenant.GtxApiKey.of_string in
     let* default_language = default_language |> Common.Language.create in
     let create : Pool_tenant.Write.t =
       Pool_tenant.Write.
@@ -280,7 +283,7 @@ let[@warning "-4"] create_tenant () =
         ; description
         ; url
         ; database
-        ; gtx_api_key = None
+        ; gtx_api_key
         ; styles = styles |> CCOption.return
         ; icon = icon |> CCOption.return
         ; maintenance = Pool_tenant.Maintenance.create false
@@ -347,12 +350,13 @@ let[@warning "-4"] update_tenant_details () =
       in
       let* url = url |> Pool_tenant.Url.create in
       let* default_language = default_language |> Common.Language.create in
+      let gtx_api_key = Data.gtx_api_key |> GtxApiKey.of_string in
       let disabled = false |> Disabled.create in
       let update : update =
         { title
         ; description
         ; url
-        ; gtx_api_key = None
+        ; gtx_api_key
         ; default_language
         ; styles = Some styles
         ; icon = Some icon

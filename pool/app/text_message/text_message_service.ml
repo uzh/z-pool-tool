@@ -82,7 +82,7 @@ let intercept_message ~tags database_label message recipient =
   |> Email.Service.dispatch database_label
 ;;
 
-let send database_label ({ recipient; text; sender } as m) =
+let send database_label api_key ({ recipient; text; sender } as m) =
   let tags = tags database_label in
   match Sihl.Configuration.is_production () || bypass () with
   | false -> print_message ~tags m
@@ -95,14 +95,15 @@ let send database_label ({ recipient; text; sender } as m) =
      | None ->
        let open Cohttp in
        let open Cohttp_lwt_unix in
-       let auth_key =
-         Config.auth_key () |> CCOption.get_exn_or "Undefined 'GTX_AUTH_KEY'"
-       in
        let body =
          request_body recipient text sender |> Cohttp_lwt.Body.of_form
        in
        let%lwt resp, body =
-         Client.post ~body (Uri.of_string (Config.gateway_url auth_key))
+         let url =
+           api_key |> Pool_tenant.GtxApiKey.value |> Config.gateway_url
+         in
+         Logs.info (fun m -> m "%s" url);
+         url |> Uri.of_string |> Client.post ~body
        in
        let%lwt body_string = Cohttp_lwt.Body.to_string body in
        let%lwt () = Cohttp_lwt.Body.drain_body body in
@@ -126,14 +127,4 @@ let send database_label ({ recipient; text; sender } as m) =
               text
               body_string);
           Lwt.return_unit))
-;;
-
-type event =
-  | Sent of Entity.t
-  | BulkSent of t list
-[@@deriving eq, show]
-
-let handle_event pool : event -> unit Lwt.t = function
-  | Sent message -> send pool message
-  | BulkSent messages -> Lwt_list.iter_s (fun msg -> send pool msg) messages
 ;;

@@ -102,6 +102,11 @@ module Sql = struct
         |sql}
     in
     let select_from =
+      let api_key =
+        match full with
+        | true -> "pool_tenant.gtx_api_key,"
+        | false -> ""
+      in
       Format.asprintf
         {sql|
           SELECT
@@ -116,7 +121,7 @@ module Sql = struct
             pool_tenant.description,
             pool_tenant.url,
             %s
-            pool_tenant.gtx_api_key,
+            %s
             %s
             %s
             pool_tenant.mainenance,
@@ -131,6 +136,7 @@ module Sql = struct
             ON pool_tenant.icon = icon.uuid
         |sql}
         database_fragment
+        api_key
         styles_fragment
         icon_fragment
     in
@@ -291,7 +297,6 @@ let set_logos tenant logos =
     ; description = tenant.description
     ; url = tenant.url
     ; database_label = tenant.database_label
-    ; gtx_api_key = tenant.gtx_api_key
     ; styles = tenant.styles
     ; icon = tenant.icon
     ; logos = tenant_logos
@@ -335,6 +340,28 @@ let find_selectable = Sql.find_selectable
 let insert = Sql.insert
 let update = Sql.update
 let destroy = Utils.todo
+
+let find_gtx_api_key_request =
+  let open Caqti_request.Infix in
+  {sql|
+    SELECT
+      gtx_api_key
+    FROM
+      pool_tenant
+    WHERE
+    pool_tenant.uuid = UNHEX(REPLACE(?, '-', ''))
+  |sql}
+  |> Caqti_type.(string ->! RepoEntity.GtxApiKey.t)
+;;
+
+let find_gtx_api_key pool tenant =
+  let open Utils.Lwt_result.Infix in
+  Utils.Database.find_opt
+    (Pool_database.Label.value pool)
+    find_gtx_api_key_request
+    (Pool_common.Id.value tenant.Entity.id)
+  ||> CCOption.to_result Pool_common.Message.(NotFound Field.GtxApiKey)
+;;
 
 module Url = struct
   let of_pool = RepoEntity.Url.of_pool

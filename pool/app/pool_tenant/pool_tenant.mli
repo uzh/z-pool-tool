@@ -115,7 +115,6 @@ type t =
   ; description : Description.t option
   ; url : Url.t
   ; database_label : Database.Label.t
-  ; gtx_api_key : GtxApiKey.t option
   ; styles : Styles.t option
   ; icon : Icon.t option
   ; logos : Logos.t
@@ -139,7 +138,7 @@ module Write : sig
     ; description : Description.t option
     ; url : Url.t
     ; database : Database.t
-    ; gtx_api_key : GtxApiKey.t option
+    ; gtx_api_key : GtxApiKey.t
     ; styles : Styles.Write.t option
     ; icon : Icon.Write.t option
     ; maintenance : Maintenance.t
@@ -154,7 +153,7 @@ module Write : sig
     -> Description.t option
     -> Url.t
     -> Database.t
-    -> GtxApiKey.t option
+    -> GtxApiKey.t
     -> Styles.Write.t option
     -> Icon.Write.t option
     -> Pool_common.Language.t
@@ -167,7 +166,7 @@ type update =
   { title : Title.t
   ; description : Description.t option
   ; url : Url.t
-  ; gtx_api_key : GtxApiKey.t option
+  ; gtx_api_key : GtxApiKey.t
   ; disabled : Disabled.t
   ; default_language : Pool_common.Language.t
   ; styles : Styles.Write.t option
@@ -199,6 +198,10 @@ val find_by_label
 
 val find_all : unit -> t list Lwt.t
 val find_databases : unit -> Database.t list Lwt.t
+
+val find_gtx_api_key
+  :  t
+  -> (GtxApiKey.t, Pool_common.Message.error) result Lwt.t
 
 type handle_list_recruiters = unit -> Sihl_user.t list Lwt.t
 type handle_list_tenants = unit -> t list Lwt.t

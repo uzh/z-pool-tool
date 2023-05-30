@@ -194,13 +194,14 @@ let update_phone_number req =
          let* { Pool_context.Tenant.tenant; _ } =
            Pool_context.Tenant.find req |> Lwt_result.lift
          in
+         let* api_key = Pool_tenant.find_gtx_api_key tenant in
          Message_template.PhoneVerification.create_text_message
            database_label
            language
            tenant
            phone_number
            token
-         |>> Text_message.Service.send database_label
+         |>> Text_message.Service.send database_label api_key
        in
        let* events =
          Command.AddPhoneNumber.handle ~tags (contact, phone_number, token)
@@ -288,13 +289,14 @@ let resend_token req =
            contact
        in
        let* () =
+         let* api_key = Pool_tenant.find_gtx_api_key tenant in
          Message_template.PhoneVerification.create_text_message
            database_label
            language
            tenant
            phone_number
            token
-         |>> Text_message.Service.send database_label
+         |>> Text_message.Service.send database_label api_key
        in
        HttpUtils.(
          redirect_to_with_actions

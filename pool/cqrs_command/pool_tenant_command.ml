@@ -19,7 +19,7 @@ type create =
   { title : Pool_tenant.Title.t
   ; description : Pool_tenant.Description.t option
   ; url : Pool_tenant.Url.t
-  ; gtx_api_key : Pool_tenant.GtxApiKey.t option
+  ; gtx_api_key : Pool_tenant.GtxApiKey.t
   ; styles : Pool_tenant.Styles.Write.t option
   ; icon : Pool_tenant.Icon.Write.t option
   ; default_language : Pool_common.Language.t
@@ -74,7 +74,7 @@ end = struct
           [ Pool_tenant.Title.schema ()
           ; Conformist.optional @@ Pool_tenant.Description.schema ()
           ; Pool_tenant.Url.schema ()
-          ; Conformist.optional @@ Pool_tenant.GtxApiKey.schema ()
+          ; Pool_tenant.GtxApiKey.schema ()
           ; Conformist.optional @@ Pool_tenant.Styles.Write.schema ()
           ; Conformist.optional @@ Pool_tenant.Icon.Write.schema ()
           ; Pool_common.Language.schema ()
@@ -133,7 +133,7 @@ module EditDetails : sig
     { title : Pool_tenant.Title.t
     ; description : Pool_tenant.Description.t option
     ; url : Pool_tenant.Url.t
-    ; gtx_api_key : Pool_tenant.GtxApiKey.t option
+    ; gtx_api_key : Pool_tenant.GtxApiKey.t
     ; disabled : Pool_tenant.Disabled.t
     ; default_language : Pool_common.Language.t
     ; styles : Pool_tenant.Styles.Write.t option
@@ -158,7 +158,7 @@ end = struct
     { title : Pool_tenant.Title.t
     ; description : Pool_tenant.Description.t option
     ; url : Pool_tenant.Url.t
-    ; gtx_api_key : Pool_tenant.GtxApiKey.t option
+    ; gtx_api_key : Pool_tenant.GtxApiKey.t
     ; disabled : Pool_tenant.Disabled.t
     ; default_language : Pool_common.Language.t
     ; styles : Pool_tenant.Styles.Write.t option
@@ -199,7 +199,7 @@ end = struct
           [ Pool_tenant.Title.schema ()
           ; Conformist.optional @@ Pool_tenant.Description.schema ()
           ; Pool_tenant.Url.schema ()
-          ; Conformist.optional @@ Pool_tenant.GtxApiKey.schema ()
+          ; Pool_tenant.GtxApiKey.schema ()
           ; Pool_tenant.Disabled.schema ()
           ; Pool_common.Language.schema ()
           ; Conformist.optional @@ Pool_tenant.Styles.Write.schema ()
