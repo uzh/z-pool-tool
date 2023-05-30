@@ -24,28 +24,14 @@ let answer_custom_fields fields contact =
     Random.int (List.length options) |> CCList.nth options
   in
   CCList.filter_map
-    (fun field ->
-      match (field : Public.t) with
-      | Select (public, options, _) ->
-        Public.Select
-          ( public
-          , options
-          , select_random options
-            |> CCOption.pure
-            |> Answer.create
-            |> CCOption.pure )
-        |> CCOption.pure
-      | MultiSelect (public, options, _) ->
-        Public.MultiSelect
-          ( public
-          , options
-          , select_random options
-            |> CCList.pure
-            |> CCOption.pure
-            |> Answer.create
-            |> CCOption.pure )
-        |> CCOption.pure
-      | Boolean _ | Number _ | Text _ -> None)
+    (function
+     | (Select (public, options, _) : Public.t) ->
+       let answer = Some (select_random options) |> Answer.create in
+       Public.Select (public, options, Some answer) |> CCOption.pure
+     | MultiSelect (public, options, _) ->
+       let answer = Some [ select_random options ] |> Answer.create in
+       Public.MultiSelect (public, options, Some answer) |> CCOption.pure
+     | Boolean _ | Number _ | Text _ -> None)
     fields
   |> CCList.map (fun field ->
        let open Custom_field in
@@ -138,7 +124,7 @@ let admins db_label =
     [ "The", "One", "admin@example.com", [ `Admin ] @ experimenter_roles
     ; ( "engineering"
       , "admin"
-      , "engineering@econ.uzh.ch"
+      , "it@econ.uzh.ch"
       , [ `Operator
         ; `RecruiterAll
         ; `ManageAssistants

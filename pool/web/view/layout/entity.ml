@@ -33,6 +33,11 @@ module NavElement = struct
       create ~validation_set url label)
   ;;
 
-  let login = create "/login" I18n.Login
-  let logout = create "/logout" I18n.Logout
+  let login ?(prefix = "") () =
+    create Format.(asprintf "%s/login" prefix) I18n.Login
+  ;;
+
+  let logout ?(prefix = "") () =
+    create Format.(asprintf "%s/logout" prefix) I18n.Logout
+  ;;
 end

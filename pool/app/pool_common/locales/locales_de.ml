@@ -25,6 +25,7 @@ let rec field_to_string =
   | Contact -> "Kontakt"
   | ContactEmail -> "Kontakt E-Mail Adresse"
   | Contacts -> "Kontakte"
+  | Context -> "Kontext"
   | CreatedAt -> "Erstellt am"
   | CurrentPassword -> "Aktuelles Passwort"
   | CustomField -> "Feld"

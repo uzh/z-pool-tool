@@ -45,7 +45,7 @@ Example commands to add an administrator for a specific role.
 run.exe admin.list_roles
 
 # Create an Operator
-run.exe admin.create tenant1 operator@mail.com password Firstname Lastname OperatorAll
+run.exe admin.create tenant1 operator@mail.com password Firstname Lastname Operator
 
 # Create an Experimenter with UUID
 run.exe admin.create tenant1 experimenter@mail.com password Firstname Lastname Experimenter 00000000-0000-0000-0000-000000000000

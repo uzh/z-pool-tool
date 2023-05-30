@@ -208,9 +208,10 @@ let find_in_urlencoded_opt field =
   %> flip CCOption.bind CCList.head_opt
 ;;
 
-let find_in_urlencoded field =
+let find_in_urlencoded ?error field =
   let open Pool_common.Message in
-  find_in_urlencoded_opt field %> CCOption.to_result (NotFound field)
+  let err = CCOption.value ~default:(NotFound field) error in
+  find_in_urlencoded_opt field %> CCOption.to_result err
 ;;
 
 (* This is required as HTMX sends "undefined" if all checkboxes are unchecked *)

@@ -8,7 +8,7 @@ module NavElements = struct
     Guard.(ValidationSet.One (Action.Read, TargetSpec.Entity entity))
   ;;
 
-  let guest = [ NavElement.login ] |> NavUtils.with_language_switch
+  let guest = [ NavElement.login () ] |> NavUtils.with_language_switch
 
   let contact =
     let open I18n in
@@ -24,7 +24,7 @@ module NavElements = struct
       ]
       |> NavElement.create_all
     in
-    links @ [ NavElement.logout ] |> NavUtils.with_language_switch
+    links @ [ NavElement.logout () ] |> NavUtils.with_language_switch
   ;;
 
   let admin =
@@ -74,7 +74,7 @@ module NavElements = struct
         "/admin/experiments"
         Experiments
     in
-    [ dashboard; experiments; settings; user; NavElement.logout ]
+    [ dashboard; experiments; settings; user; NavElement.logout () ]
     |> NavUtils.create_main ~validate:true
   ;;
 
@@ -97,7 +97,7 @@ module NavElements = struct
       |> NavElement.create_all_req_with_set
       |> fun children -> NavElement.create ~children "/root/settings" Settings
     in
-    [ tenants; users; settings; NavElement.logout ]
+    [ tenants; users; settings; NavElement.logout ~prefix:"/root" () ]
     |> NavUtils.create_main ~validate:true
   ;;
 
