@@ -39,7 +39,6 @@ let to_string = function
   | I18nTitle -> "Translations"
   | NoEntries field ->
     Format.asprintf "There are no %s yet." (Locales_en.field_to_string field)
-  | NotifyVia -> "Notify via"
   | OurPartners -> "Our partners"
   | ProfileCompletionText ->
     {|The following information is required to be invited to experiments. Further information can be entered in your profile afterwards.

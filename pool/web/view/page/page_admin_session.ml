@@ -1011,6 +1011,9 @@ let cancel
       (Experiment.Id.value experiment.Experiment.id)
       Session.(Id.value session.id)
   in
+  let field_to_string f =
+    f |> Utils.field_to_string language |> CCString.capitalize_ascii |> txt
+  in
   let follow_ups_notification () =
     match follow_ups with
     | [] -> txt ""
@@ -1044,16 +1047,31 @@ let cancel
              ; a_action (action |> Sihl.Web.externalize_path)
              ]
            [ csrf_element csrf ()
-           ; textarea_element ~flash_fetcher language Message.Field.Reason
-           ; span
-               [ I18n.SessionCancelMessage
-                 |> Utils.hint_to_string language
-                 |> txt
-               ]
-           ; p [ I18n.NotifyVia |> Utils.text_to_string language |> txt ]
-           ; checkbox_element ~flash_fetcher language Message.Field.Email
-             (* TODO issue #149 re-add this *)
-             (* ; checkbox_element ~flash_fetcher language Message.Field.SMS *)
+           ; textarea_element
+               ~help:I18n.SessionCancelMessage
+               ~flash_fetcher
+               ~required:true
+               language
+               Message.Field.Reason
+           ; div
+               ~a:[ a_class [ "form-group" ] ]
+               (label [ Message.Field.NotifyVia |> field_to_string ]
+                :: (Field.[ Email; TextMessage ]
+                    |> CCList.map (fun field ->
+                         div
+                           [ input
+                               ~a:
+                                 [ a_input_type `Radio
+                                 ; a_value (Field.show field)
+                                 ; a_id (Field.show field)
+                                 ; a_name (Field.show Field.NotifyVia)
+                                 ; a_required ()
+                                 ]
+                               ()
+                           ; label
+                               ~a:[ a_label_for (Field.show field) ]
+                               [ field |> field_to_string ]
+                           ])))
            ; div
                ~a:[ a_class [ "flexrow" ] ]
                [ submit_element

@@ -442,6 +442,41 @@ module SessionCancellation = struct
     in
     Lwt.return fnc
   ;;
+
+  let prepare_text_message
+    pool
+    (tenant : Pool_tenant.t)
+    experiment
+    sys_langs
+    session
+    follow_up_sessions
+    =
+    let open Message_utils in
+    let%lwt templates =
+      find_all_by_label_to_send pool sys_langs Label.SessionCancellation
+    in
+    let title = tenant.Pool_tenant.title in
+    let fnc reason (contact : Contact.t) phone_number =
+      let open CCResult in
+      let* lang, template = template_by_contact sys_langs templates contact in
+      let params =
+        email_params
+          lang
+          tenant
+          experiment
+          session
+          follow_up_sessions
+          reason
+          contact
+      in
+      Text_message.render_and_create
+        phone_number
+        title
+        (template.sms_text, params)
+      |> CCResult.return
+    in
+    Lwt.return fnc
+  ;;
 end
 
 module SessionReminder = struct

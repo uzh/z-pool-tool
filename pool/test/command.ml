@@ -296,6 +296,10 @@ let () =
             Session_test.cancel_already_canceled
         ; test_case "cancel session succeeds" `Quick Session_test.cancel_valid
         ; test_case
+            "cancel valid with missing phone number"
+            `Quick
+            Session_test.cancel_valid_with_missing_phone_number
+        ; test_case
             "close session before start"
             `Quick
             Session_test.close_before_start

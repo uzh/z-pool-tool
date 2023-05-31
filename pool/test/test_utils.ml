@@ -115,7 +115,7 @@ module Model = struct
            else None)
       ; language = Some Pool_common.Language.En
       ; experiment_type_preference = None
-      ; phone_number = None
+      ; phone_number = Some ("+41791234567" |> Pool_user.PhoneNumber.of_string)
       ; paused = Pool_user.Paused.create false
       ; disabled = Pool_user.Disabled.create false
       ; verified = None
@@ -280,6 +280,13 @@ module Model = struct
       ~recipient
       ~subject:"Subject"
       "Hello"
+  ;;
+
+  let create_text_message
+    ?(sender = Pool_tenant.Title.of_string "UAST")
+    phone_number
+    =
+    Text_message.render_and_create phone_number sender ("Hello world", [])
   ;;
 
   let hour = Ptime.Span.of_int_s @@ (60 * 60)

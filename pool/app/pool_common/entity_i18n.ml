@@ -34,7 +34,6 @@ type t =
   | MailingExperimentSessionFullyBooked
   | MailingNewTitle
   | NoEntries of Entity_message.Field.t
-  | NotifyVia
   | OurPartners
   | ProfileCompletionText
   | RateTotalSent of int

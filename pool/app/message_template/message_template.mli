@@ -296,6 +296,19 @@ module SessionCancellation : sig
         -> Contact.t
         -> (Sihl_email.t, Pool_common.Message.error) result)
        Lwt.t
+
+  val prepare_text_message
+    :  Pool_database.Label.t
+    -> Pool_tenant.t
+    -> Experiment.t
+    -> Pool_common.Language.t list
+    -> Session.t
+    -> Session.t list
+    -> (Session.CancellationReason.t
+        -> Contact.t
+        -> Pool_user.PhoneNumber.t
+        -> (Text_message.t, Pool_common.Message.error) result)
+       Lwt.t
 end
 
 module SessionReminder : sig
