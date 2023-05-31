@@ -34,4 +34,5 @@ let update_password req =
            [ Message.set ~success:[ Pool_common.Message.PasswordChanged ] ])
        |> Lwt_result.ok
   in
-  result |> extract_happy_path_with_actions ~src req;;
+  result |> extract_happy_path_with_actions ~src req
+;;
