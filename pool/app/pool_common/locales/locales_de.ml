@@ -148,6 +148,7 @@ let rec field_to_string =
   | Role -> "Rolle"
   | Room -> "Raum"
   | Root -> "Root"
+  | Rule -> "Regel"
   | ScheduledTime -> "Geplante Zeit"
   | ScheduledTimeSpan -> "Wiederholungs Interval"
   | Search -> "Suche"

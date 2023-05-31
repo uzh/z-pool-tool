@@ -580,7 +580,9 @@ module Admin = struct
       in
       let rules =
         let open Rules in
-        [ get "" ~middlewares:[ Access.index ] show ]
+        [ get "" ~middlewares:[ Access.index ] show
+        ; post "remove" ~middlewares:[ Access.delete ] delete
+        ]
       in
       let smtp =
         let open Smtp in

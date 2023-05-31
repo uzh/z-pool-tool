@@ -6,12 +6,13 @@ module Input = Component.Input
 let rules_path ?suffix () =
   let default = "/admin/settings/rules/" in
   CCOption.map_or ~default (Format.asprintf "%s%s" default) suffix
+  |> Sihl.Web.externalize_path
 ;;
 
 module List = struct
   let row
     Pool_context.{ csrf; language; _ }
-    ((actor_spec, action, target_spec) : Guard.Rule.t)
+    ((actor_spec, action, target_spec) as rule : Guard.Rule.t)
     =
     let actor_spec_to_string = function
       | Guard.ActorSpec.Id (role, uuid) ->
@@ -27,7 +28,7 @@ module List = struct
           [ [%show: Role.Target.t] role; [%show: Guard.Uuid.Target.t] uuid ]
       | Guard.TargetSpec.Entity role -> [%show: Role.Target.t] role
     in
-    let button_form target name submit_type confirm_text =
+    let button_form target name submit_type confirm_text rule =
       form
         ~a:
           [ a_method `Post
@@ -37,17 +38,23 @@ module List = struct
               (Pool_common.Utils.confirmable_to_string language confirm_text)
           ]
         [ Input.csrf_element csrf ()
+        ; Input.input_element
+            ~value:(rule |> Guard.Rule.to_yojson |> Yojson.Safe.to_string)
+            language
+            `Hidden
+            Input.Field.Rule
         ; Input.submit_element ~submit_type language (name None) ()
         ]
     in
-    let buttons =
-      Pool_common.[ button_form "remove" Message.delete `Error I18n.RemoveRule ]
+    let buttons rule =
+      Pool_common.
+        [ button_form "remove" Message.delete `Error I18n.RemoveRule rule ]
       |> div ~a:[ a_class [ "flexrow"; "flex-gap"; "justify-end" ] ]
     in
     [ txt (actor_spec_to_string actor_spec)
     ; txt ([%show: Guard.Action.t] action)
     ; txt (target_spec_to_string target_spec)
-    ; buttons
+    ; buttons rule
     ]
   ;;
 

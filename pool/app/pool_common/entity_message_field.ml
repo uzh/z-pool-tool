@@ -174,6 +174,7 @@ type t =
   | Role [@name "role"] [@printer go "role"]
   | Room [@name "room"] [@printer go "room"]
   | Root [@name "root"] [@printer go "root"]
+  | Rule [@name "rule"] [@printer go "rule"]
   | ScheduledTime [@name "scheduled_time"] [@printer go "scheduled_time"]
   | ScheduledTimeSpan [@name "scheduled_time_span"]
       [@printer go "scheduled_time_span"]
