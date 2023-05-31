@@ -660,9 +660,8 @@ module Root = struct
     let tenants =
       let open Tenant in
       let specific =
-        (* TODO: Fix middleware *)
-        [ get "" ~middlewares:[] tenant_detail
-        ; get ~middlewares:[] "operator" manage_operators
+        [ get "" ~middlewares:[ Access.read ] tenant_detail
+        ; get ~middlewares:[ Access.read_operator ] "operator" manage_operators
         ; post
             "/create-operator"
             ~middlewares:[ Access.create_operator ]
