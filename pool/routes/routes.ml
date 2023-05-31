@@ -604,10 +604,18 @@ module Admin = struct
       ; get "/schedules" ~middlewares:[ Schedule.Access.index ] Schedule.show
       ]
     in
+    let profile =
+      let open Profile in
+      [ get "/login-information" show
+      ; post "/update-details" update_name
+      ; post "/update-password" update_password
+      ]
+    in
     choose
       ~middlewares
       [ get "/dashboard" dashboard
       ; choose ~scope:"/settings" settings
+      ; choose ~scope:"/user" profile
       ; choose ~scope:"/i18n" i18n
       ; choose ~scope:"/experiments" experiments
       ; choose ~scope:"/filter" filter
@@ -700,9 +708,17 @@ module Root = struct
       in
       [ choose ~scope:"/smtp" smtp ]
     in
+    let profile =
+      let open Profile in
+      [ get "/login-information" show
+      ; post "/update-details" update_name
+      ; post "/update-password" update_password
+      ]
+    in
     [ choose
         [ get "/logout" Login.logout
         ; choose ~scope:"/settings" settings
+        ; choose ~scope:"/user" profile
         ; choose ~scope:"/tenants" tenants
         ; choose ~scope:"/users" users
         ]

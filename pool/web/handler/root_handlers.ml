@@ -1,4 +1,5 @@
 module Login = Root_login
+module Profile = Root_user_profile
 module Settings = Root_settings
 module Tenant = Root_tenant
 module Users = Root_users

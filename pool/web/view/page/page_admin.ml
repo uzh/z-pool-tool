@@ -14,6 +14,7 @@ module MessageTemplate = Page_admin_message_template
 module Session = Page_admin_session
 module Settings = Page_admin_settings
 module WaitingList = Page_admin_waiting_list
+include Page_admin_edit
 
 let dashboard Pool_context.{ language; _ } =
   div
