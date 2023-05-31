@@ -25,10 +25,7 @@ let create () =
       [ styles; icon; tenant_logo ]
   in
   let data =
-    let gtx_api_key =
-      Sihl.Configuration.read_string "GTX_API_KEY"
-      |> CCOption.get_exn_or "GTX_API_KEY undefined"
-    in
+    let gtx_api_key = "Gtx api key" in
     if Sihl.Configuration.is_test ()
     then (
       let database_url =

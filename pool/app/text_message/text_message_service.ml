@@ -5,6 +5,21 @@ module PhoneNumber = Pool_user.PhoneNumber
 
 let src = Logs.Src.create "pool_tenant.service.text_message"
 let tags database_label = Pool_database.(Logger.Tags.create database_label)
+let start () = Lwt.return_unit
+let stop () = Lwt.return_unit
+
+let lifecycle =
+  Sihl.Container.create_lifecycle
+    "text_messages"
+    ~dependencies:(fun () -> [ Sihl.Database.lifecycle ])
+    ~start
+    ~stop
+;;
+
+let register () =
+  let configuration = Sihl.Configuration.make () in
+  Sihl.Container.Service.create ~configuration lifecycle
+;;
 
 let bypass () =
   CCOption.get_or

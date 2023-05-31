@@ -20,6 +20,8 @@ val render_and_create
   -> t
 
 module Service : sig
+  val register : unit -> Sihl.Container.Service.t
+
   module Job : sig
     val send : t Sihl_queue.job
   end

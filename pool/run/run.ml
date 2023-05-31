@@ -20,6 +20,7 @@ let services =
   ; Service.User.register ~commands:[] ()
   ; Service.Token.register ()
   ; Email.Service.register ()
+  ; Text_message.Service.register ()
   ; Email.Service.Queue.register ()
   ; Service.Storage.register ()
   ; Sihl.Web.Http.register ~middlewares:Routes.global_middlewares Routes.router
