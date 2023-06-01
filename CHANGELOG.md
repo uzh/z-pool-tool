@@ -4,6 +4,19 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/pool/tree/HEAD)
 
+## [0.2.1](https://github.com/uzh/pool/tree/0.2.1) - 2023-06-01
+
+### Fixed
+
+- detailed view of tenants
+- users in the root overview
+- common root routes which are targeting denied/not-found via redirects
+- missing delete functionality for rules
+
+### Added
+
+- profile pages for admins in root and tenants
+
 ## [0.2.0](https://github.com/uzh/pool/tree/0.2.0) - 2023-05-26
 
 ### Added
