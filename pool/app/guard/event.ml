@@ -19,6 +19,7 @@ type event =
   | RolesGranted of Repo.Uuid.Actor.t * RoleSet.t
   | RolesRevoked of Repo.Uuid.Actor.t * RoleSet.t
   | RulesSaved of Rule.t list
+  | RuleDeleted of Rule.t
 [@@deriving eq, show]
 
 let handle_event pool : event -> unit Lwt.t =
@@ -37,22 +38,27 @@ let handle_event pool : event -> unit Lwt.t =
   | RolesGranted (actor, roles) ->
     let%lwt (_ : (unit, Pool_common.Message.error) result) =
       Repo.Actor.grant_roles ~ctx actor roles
-      >|- Pool_common.Message.authorization
-          %> Pool_common.Utils.with_log_error ~src ~tags
+      >|- Pool_common.(Message.authorization %> Utils.with_log_error ~src ~tags)
       ||> tap (fun _ -> Repo.Cache.clear ())
     in
     Lwt.return_unit
   | RolesRevoked (actor, role) ->
     let%lwt (_ : (unit, Pool_common.Message.error) result) =
       Repo.Actor.revoke_roles ~ctx actor role
-      >|- Pool_common.Message.authorization
-          %> Pool_common.Utils.with_log_error ~src ~tags
+      >|- Pool_common.(Message.authorization %> Utils.with_log_error ~src ~tags)
       ||> tap (fun _ -> Repo.Cache.clear ())
     in
     Lwt.return_unit
   | RulesSaved rules ->
     let%lwt (_ : (Rule.t list, Rule.t list) result) =
       Repo.Rule.save_all ~ctx rules |> log_rules ~tags
+    in
+    Lwt.return_unit
+  | RuleDeleted rule ->
+    let%lwt (_ : (unit, string) result) =
+      Repo.Rule.delete ~ctx rule
+      ||> Pool_common.(
+            Utils.with_log_result_error ~src ~tags Message.authorization)
     in
     Lwt.return_unit
 ;;

@@ -1,9 +1,9 @@
 open Tyxml.Html
 open Component.Input
+open Pool_common
 module Table = Component.Table
-module Message = Pool_common.Message
 
-let list root_list Pool_context.{ language; csrf; _ } =
+let list root_list Pool_context.{ language; csrf; _ } flash_fetcher =
   let build_root_rows root_list =
     let open Sihl.Contract.User in
     let status_toggle (status : Sihl.Contract.User.status) id =
@@ -23,7 +23,7 @@ let list root_list Pool_context.{ language; csrf; _ } =
         [ submit_element language text ~classnames:[ style ] () ]
     in
     let thead =
-      Pool_common.Message.[ Field.Email |> Table.field_to_txt language; txt "" ]
+      Message.[ Field.Email |> Table.field_to_txt language; txt "" ]
     in
     let rows =
       CCList.map
@@ -40,26 +40,34 @@ let list root_list Pool_context.{ language; csrf; _ } =
     ~a:[ a_class [ "trim"; "narrow"; "safety-margin" ] ]
     [ h1
         ~a:[ a_class [ "heading-1" ] ]
-        [ txt Pool_common.(Utils.nav_link_to_string language I18n.Users) ]
+        [ txt (Utils.nav_link_to_string language I18n.Users) ]
     ; root_list
+    ; h2
+        ~a:[ a_class [ "heading-2" ] ]
+        [ txt
+            (Utils.control_to_string
+               language
+               Message.(Create (Some Field.Root)))
+        ]
     ; form
         ~a:
           [ a_action (Sihl.Web.externalize_path "/root/users/create")
           ; a_method `Post
           ; a_class [ "stack" ]
           ]
-        (CCList.map
-           (input_element language `Text)
-           Message.Field.[ Email; Password; Firstname; Lastname ]
-         @ [ csrf_element csrf ()
-           ; div
-               ~a:[ a_class [ "flexrow" ] ]
-               [ submit_element
-                   ~classnames:[ "push" ]
-                   language
-                   Message.(Create (Some Field.root))
-                   ()
-               ]
-           ])
+        [ csrf_element csrf ()
+        ; input_element ~flash_fetcher language `Text Message.Field.Email
+        ; input_element language `Password Message.Field.Password
+        ; input_element ~flash_fetcher language `Text Message.Field.Firstname
+        ; input_element ~flash_fetcher language `Text Message.Field.Lastname
+        ; div
+            ~a:[ a_class [ "flexrow" ] ]
+            [ submit_element
+                ~classnames:[ "push" ]
+                language
+                Message.(Create None)
+                ()
+            ]
+        ]
     ]
 ;;

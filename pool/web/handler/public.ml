@@ -45,22 +45,20 @@ let index_css req =
       |> Lwt_result.lift
       >== fun { tenant; _ } ->
       tenant.Pool_tenant.styles
-      |> CCOption.to_result Pool_common.Message.(NotFound Field.Styles)
+      |> CCOption.to_result Common.Message.(NotFound Field.Styles)
     in
     let* file =
       Http_utils.File.get_storage_file
         ~tags
         Database.root
-        (styles |> Pool_tenant.Styles.id |> Pool_common.Id.value)
+        (styles |> Pool_tenant.Styles.id |> Common.Id.value)
     in
     let%lwt content =
       Service.Storage.download_data_base64 file ||> Base64.decode_exn
     in
     Sihl.Web.Response.of_plain_text content
     |> Sihl.Web.Response.set_content_type
-         (styles
-          |> Pool_tenant.Styles.mime_type
-          |> Pool_common.File.Mime.to_string)
+         (styles |> Pool_tenant.Styles.mime_type |> Common.File.Mime.to_string)
     |> Lwt.return_ok
   in
   match result with
@@ -118,9 +116,9 @@ let not_found req =
 
 let denied req =
   let open Utils.Lwt_result.Infix in
-  let context = req |> Pool_context.find in
-  match context with
-  | Error (_ : Pool_common.Message.error) -> failwith ""
+  let open Common in
+  match req |> Pool_context.find with
+  | Error (_ : Message.error) -> Utils.failwith Message.(NotFound Field.Context)
   | Ok
       ({ Pool_context.database_label
        ; language
@@ -133,8 +131,8 @@ let denied req =
     let html =
       Page.Utils.error_page_terminatory
         ~lang:language
-        Pool_common.Message.AccessDenied
-        Pool_common.Message.AccessDeniedMessage
+        Message.AccessDenied
+        Message.AccessDeniedMessage
         ()
     in
     (match Pool_context.is_from_root context, tenant with

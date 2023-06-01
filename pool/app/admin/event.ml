@@ -37,7 +37,8 @@ let set_password
 type event =
   | Created of create
   | DetailsUpdated of t * update
-  | PasswordUpdated of t * User.Password.t * User.PasswordConfirmed.t
+  | PasswordUpdated of
+      t * User.Password.t * User.Password.t * User.PasswordConfirmed.t
   | Disabled of t
   | Enabled of t
   | Verified of t
@@ -79,16 +80,33 @@ let handle_event ~tags pool : event -> unit Lwt.t =
       | None -> Lwt.return_unit
     in
     Lwt.return_unit
-  | DetailsUpdated (_, _) -> Lwt.return_unit
-  | PasswordUpdated (person, password, confirmed) ->
-    let%lwt (_ : (unit, string) result) =
-      set_password
-        pool
-        person
-        (password |> User.Password.to_sihl)
-        (confirmed |> User.PasswordConfirmed.to_sihl)
-      ||> Pool_common.(
-            Utils.with_log_result_error ~src ~tags Message.nothandled)
+  | DetailsUpdated (admin, { firstname; lastname }) ->
+    let name = User.Lastname.value lastname in
+    let given_name = User.Firstname.value firstname in
+    let%lwt (_ : t) =
+      Service.User.update
+        ~ctx:(Pool_database.to_ctx pool)
+        ~name
+        ~given_name
+        (user admin)
+    in
+    Lwt.return_unit
+  | PasswordUpdated (admin, old_password, new_password, confirmed) ->
+    let old_password = old_password |> User.Password.to_sihl in
+    let new_password = new_password |> User.Password.to_sihl in
+    let new_password_confirmation =
+      confirmed |> User.PasswordConfirmed.to_sihl
+    in
+    let%lwt (_ : (t, string) result) =
+      let open Pool_common in
+      Service.User.update_password
+        ~ctx:(Pool_database.to_ctx pool)
+        ~password_policy:(CCFun.const (CCResult.return ()))
+        ~old_password
+        ~new_password
+        ~new_password_confirmation
+        (user admin)
+      ||> Utils.with_log_result_error ~src ~tags Message.nothandled
     in
     Lwt.return_unit
   | Disabled _ -> Utils.todo ()

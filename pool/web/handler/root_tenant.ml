@@ -160,12 +160,14 @@ module Access : sig
   val read_operator : Rock.Middleware.t
 end = struct
   include Helpers.Access
+  module Access = Pool_tenant.Guard.Access
   module Guardian = Middleware.Guardian
   module TenantCommand = Cqrs_command.Pool_tenant_command
 
   let tenant_effects = Guardian.id_effects Pool_tenant.Id.of_string Field.Tenant
-  let index = Pool_tenant.Guard.Access.index |> Guardian.validate_admin_entity
+  let index = Access.index |> Guardian.validate_admin_entity
   let create = Guardian.validate_admin_entity TenantCommand.Create.effects
+  let read = Access.read |> tenant_effects |> Guardian.validate_generic
 
   let update =
     TenantCommand.EditDetails.effects

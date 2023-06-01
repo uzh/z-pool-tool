@@ -8,23 +8,47 @@ module NavElements = struct
     Guard.(ValidationSet.One (Action.Read, TargetSpec.Entity entity))
   ;;
 
-  let guest = [ NavElement.login ] |> NavUtils.with_language_switch
+  module Profile = struct
+    open I18n
+
+    let prefixed ?(prefix = "") = Format.asprintf "%s%s" prefix
+    let nav_link = Profile
+    let icon = Icon.Person
+
+    let dropdown ?(details = false) ?prefix () =
+      (if details then [ "/user/personal-details", PersonalDetails ] else [])
+      @ [ "/user/login-information", LoginInformation ]
+      |> CCList.map (fun (url, field) -> prefixed ?prefix url, field)
+      |> NavElement.create_all_req
+    ;;
+
+    let element ?details ?prefix () =
+      ( prefixed ?prefix "/user"
+      , nav_link
+      , Some icon
+      , dropdown ?details ?prefix () )
+    ;;
+
+    let nav ?details ?prefix () =
+      NavElement.create
+        ~icon
+        ~children:(dropdown ?details ?prefix ())
+        (prefixed ?prefix "/user")
+        nav_link
+    ;;
+  end
+
+  let guest = [ NavElement.login () ] |> NavUtils.with_language_switch
 
   let contact =
     let open I18n in
     let links =
-      let profile_dropdown =
-        NavElement.create_all_req
-          [ "/user/personal-details", PersonalDetails
-          ; "/user/login-information", LoginInformation
-          ]
-      in
       [ "/experiments", Experiments, None, []
-      ; "/user", Profile, Some Icon.Person, profile_dropdown
+      ; Profile.element ~details:true ()
       ]
       |> NavElement.create_all
     in
-    links @ [ NavElement.logout ] |> NavUtils.with_language_switch
+    links @ [ NavElement.logout () ] |> NavUtils.with_language_switch
   ;;
 
   let admin =
@@ -74,7 +98,13 @@ module NavElements = struct
         "/admin/experiments"
         Experiments
     in
-    [ dashboard; experiments; settings; user; NavElement.logout ]
+    [ dashboard
+    ; experiments
+    ; settings
+    ; user
+    ; Profile.nav ~prefix:"/admin" ()
+    ; NavElement.logout ()
+    ]
     |> NavUtils.create_main ~validate:true
   ;;
 
@@ -97,7 +127,12 @@ module NavElements = struct
       |> NavElement.create_all_req_with_set
       |> fun children -> NavElement.create ~children "/root/settings" Settings
     in
-    [ tenants; users; settings; NavElement.logout ]
+    [ tenants
+    ; users
+    ; settings
+    ; Profile.nav ~prefix:"/root" ()
+    ; NavElement.logout ~prefix:"/root" ()
+    ]
     |> NavUtils.create_main ~validate:true
   ;;
 

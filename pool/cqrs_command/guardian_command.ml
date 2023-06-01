@@ -47,6 +47,24 @@ end = struct
   let effects = Guard.Access.manage_rules
 end
 
+module DeleteRule : sig
+  include Common.CommandSig with type t = Guard.Rule.t
+
+  val handle
+    :  ?tags:Logs.Tag.set
+    -> Guard.Rule.t
+    -> (Pool_event.t list, Pool_common.Message.error) result
+end = struct
+  type t = Guard.Rule.t
+
+  let handle ?(tags = Logs.Tag.empty) rule =
+    Logs.info ~src (fun m -> m "Handle command Create" ~tags);
+    Ok [ Guard.RuleDeleted rule |> Pool_event.guard ]
+  ;;
+
+  let effects = Guard.Access.manage_rules
+end
+
 module GrantRoles : sig
   include Common.CommandSig with type t = grant_role
 

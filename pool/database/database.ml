@@ -50,13 +50,8 @@ let schema =
 module Root = struct
   let label = Pool_database.(Label.value root)
 
-  module Migration = struct
-    include Migration.Root
-  end
-
-  module Seed = struct
-    include Seed.Root
-  end
+  module Migration = Migration.Root
+  module Seed = Seed.Root
 
   let add () =
     let open CCResult in
@@ -80,13 +75,8 @@ end
 module Tenant = struct
   let label = "tenant"
 
-  module Migration = struct
-    include Migration.Tenant
-  end
-
-  module Seed = struct
-    include Seed.Tenant
-  end
+  module Migration = Migration.Tenant
+  module Seed = Seed.Tenant
 
   let setup_core ?(run_functions = []) () =
     match%lwt Pool_tenant.find_databases () with

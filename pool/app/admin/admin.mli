@@ -37,7 +37,11 @@ val show_update : update -> string
 type event =
   | Created of create
   | DetailsUpdated of t * update
-  | PasswordUpdated of t * Pool_user.Password.t * Pool_user.PasswordConfirmed.t
+  | PasswordUpdated of
+      t
+      * Pool_user.Password.t
+      * Pool_user.Password.t
+      * Pool_user.PasswordConfirmed.t
   | Disabled of t
   | Enabled of t
   | Verified of t

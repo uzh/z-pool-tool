@@ -42,5 +42,15 @@ Example: default_data.insert message_templates
         >|> Lwt_list.iter_s CCFun.(flip Pool_event.handle_events events)
       in
       Lwt.return_some ()
+    | [ "i18n" ] ->
+      let events =
+        [ I18n.(DefaultRestored default_values) |> Pool_event.i18n ]
+      in
+      let%lwt () =
+        Command_utils.setup_databases ()
+        ||> CCList.cons Pool_database.root
+        >|> Lwt_list.iter_s CCFun.(flip Pool_event.handle_events events)
+      in
+      Lwt.return_some ()
     | _ -> Command_utils.failwith_missmatch help)
 ;;

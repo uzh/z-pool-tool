@@ -580,7 +580,9 @@ module Admin = struct
       in
       let rules =
         let open Rules in
-        [ get "" ~middlewares:[ Access.index ] show ]
+        [ get "" ~middlewares:[ Access.index ] show
+        ; post "remove" ~middlewares:[ Access.delete ] delete
+        ]
       in
       let smtp =
         let open Smtp in
@@ -602,10 +604,18 @@ module Admin = struct
       ; get "/schedules" ~middlewares:[ Schedule.Access.index ] Schedule.show
       ]
     in
+    let profile =
+      let open Profile in
+      [ get "/login-information" show
+      ; post "/update-details" update_name
+      ; post "/update-password" update_password
+      ]
+    in
     choose
       ~middlewares
       [ get "/dashboard" dashboard
       ; choose ~scope:"/settings" settings
+      ; choose ~scope:"/user" profile
       ; choose ~scope:"/i18n" i18n
       ; choose ~scope:"/experiments" experiments
       ; choose ~scope:"/filter" filter
@@ -628,14 +638,12 @@ module Root = struct
 
   let public_routes =
     let open Handler.Root in
-    [ get "" (forward_to_entrypoint "/root/login")
-    ; get "/login" Login.login_get
+    [ get "/login" Login.login_get
     ; post "/login" Login.login_post
     ; get "/request-reset-password" Login.request_reset_password_get
     ; post "/request-reset-password" Login.request_reset_password_post
     ; get "/reset-password" Login.reset_password_get
     ; post "/reset-password" Login.reset_password_post
-    ; get "/denied" Handler.Public.denied
     ]
   ;;
 
@@ -681,7 +689,7 @@ module Root = struct
             toggle_status
         ]
       in
-      [ get "" ~middlewares:[ Access.read ] index
+      [ get "" ~middlewares:[ Access.index ] index
       ; post "/create" ~middlewares:[ Access.create ] create
       ; choose ~scope:(Root |> url_key) specific
       ]
@@ -700,9 +708,17 @@ module Root = struct
       in
       [ choose ~scope:"/smtp" smtp ]
     in
+    let profile =
+      let open Profile in
+      [ get "/login-information" show
+      ; post "/update-details" update_name
+      ; post "/update-password" update_password
+      ]
+    in
     [ choose
         [ get "/logout" Login.logout
         ; choose ~scope:"/settings" settings
+        ; choose ~scope:"/user" profile
         ; choose ~scope:"/tenants" tenants
         ; choose ~scope:"/users" users
         ]
@@ -712,12 +728,14 @@ module Root = struct
   let routes =
     choose
       ~middlewares
-      [ choose
+      [ get "" Handler.Root.forward_to_entrypoint
+      ; choose
           ~middlewares:
             [ CustomMiddleware.Guardian.require_user_type_of
                 Pool_context.UserType.[ Guest ]
             ]
           public_routes
+      ; get "/denied" Handler.Public.denied
       ; choose ~middlewares:locked_middlewares locked_routes
       ]
   ;;
