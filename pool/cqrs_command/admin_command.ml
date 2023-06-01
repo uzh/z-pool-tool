@@ -100,9 +100,9 @@ module UpdatePassword : sig
   val effects : Admin.Id.t -> Guard.ValidationSet.t
 end = struct
   type t =
-    { current_password : User.Password.t
-    ; new_password : User.Password.t
-    ; password_confirmation : User.PasswordConfirmed.t
+    { current_password : User.Password.t [@opaque]
+    ; new_password : User.Password.t [@opaque]
+    ; password_confirmation : User.PasswordConfirmed.t [@opaque]
     }
 
   let command current_password new_password password_confirmation =

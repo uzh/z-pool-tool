@@ -87,6 +87,7 @@ let create_root_admin =
         Service.User.create_admin ~ctx ~name ~given_name ~password email
       in
       let%lwt () = grant_role ctx admin `Operator in
+      let%lwt () = grant_role ctx admin `ManageOperators in
       Lwt.return_some ()
     | Some _ -> failwith "The user already exists."
   in
