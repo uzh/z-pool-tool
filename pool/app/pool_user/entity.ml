@@ -138,13 +138,13 @@ module Password = struct
   ;;
 end
 
+let remove_whitespaces =
+  let open Re in
+  replace_string (space |> compile) ~by:""
+;;
+
 module EmailAddress = struct
   type t = string [@@deriving eq, show]
-
-  let remove_whitespaces =
-    let open Re in
-    replace_string (space |> compile) ~by:""
-  ;;
 
   let validate_characters email =
     let open Re in
@@ -200,6 +200,39 @@ module EmailAddress = struct
   let schema () =
     Pool_common.Utils.schema_decoder create show PoolError.Field.Email
   ;;
+end
+
+module PhoneNumber = struct
+  type t = string [@@deriving eq, show, yojson]
+
+  let validate str =
+    let regex =
+      Re.(
+        seq [ alt [ char '+'; char '0' ]; repn digit 7 (Some 16) ]
+        |> whole_string
+        |> compile)
+    in
+    if Re.execp regex str
+    then Ok str
+    else Error Pool_common.Message.(Invalid Field.PhoneNumber)
+  ;;
+
+  let create = CCFun.(remove_whitespaces %> validate)
+  let of_string m = m
+  let value m = m
+end
+
+module UnverifiedPhoneNumber = struct
+  type t =
+    { phone_number : PhoneNumber.t
+    ; created_at : Pool_common.CreatedAt.t
+    }
+
+  type full =
+    { phone_number : PhoneNumber.t
+    ; verification_code : Pool_common.VerificationCode.t
+    ; created_at : Pool_common.CreatedAt.t
+    }
 end
 
 module Firstname = struct

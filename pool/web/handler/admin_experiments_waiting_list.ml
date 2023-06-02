@@ -160,7 +160,7 @@ let assign_contact req =
       ||> CCList.is_empty
       ||> not
     in
-    let* confirmation_email =
+    let%lwt confirmation_email =
       let contact = waiting_list.Waiting_list.contact in
       let%lwt language = Contact.message_language database_label contact in
       Message_template.AssignmentConfirmation.create

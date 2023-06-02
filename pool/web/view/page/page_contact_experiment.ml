@@ -38,7 +38,7 @@ let index
         in
         Some
           (Component.Notification.notification
-             ~link:"/user/personal-details"
+             ~link:("/user/personal-details", Pool_common.I18n.PersonalDetails)
              language
              `Warning
              text))
@@ -160,18 +160,12 @@ let show
   sessions
   session_user_is_assigned
   user_is_enlisted
+  contact
   Pool_context.{ language; csrf; _ }
   =
   let open Experiment in
   let open Pool_common in
-  let form_action =
-    Format.asprintf
-      "/experiments/%s/waiting-list/"
-      (experiment.Public.id |> Experiment.Id.value)
-    |> (fun url ->
-         if user_is_enlisted then Format.asprintf "%s/remove" url else url)
-    |> Sihl.Web.externalize_path
-  in
+  let hint_to_string = Utils.hint_to_string language in
   let form_control, submit_class =
     match user_is_enlisted with
     | true -> Message.RemoveFromWaitingList, "error"
@@ -189,24 +183,46 @@ let show
         [ h2
             ~a:[ a_class [ "heading-2" ] ]
             [ txt (Utils.nav_link_to_string language I18n.Sessions) ]
-        ; p
-            [ txt (Utils.hint_to_string language I18n.ExperimentSessionsPublic)
-            ]
+        ; p [ txt (hint_to_string I18n.ExperimentSessionsPublic) ]
         ; div [ PageSession.public_overview sessions experiment language ]
         ]
   in
   let waiting_list_form () =
+    let form_action =
+      Format.asprintf
+        "/experiments/%s/waiting-list/"
+        (experiment.Public.id |> Experiment.Id.value)
+      |> (fun url ->
+           if user_is_enlisted then Format.asprintf "%s/remove" url else url)
+      |> Sihl.Web.externalize_path
+    in
+    let text_blocks =
+      let base =
+        (if user_is_enlisted
+         then I18n.ContactOnWaitingList
+         else I18n.SignUpForWaitingList)
+        |> fun msg -> p [ txt (hint_to_string msg) ]
+      in
+      let missing_phone =
+        if CCOption.is_none contact.Contact.phone_number
+        then
+          [ Component.Notification.notification
+              ~link:("/user/contact-information", I18n.PersonalDetails)
+              language
+              `Warning
+              [ txt (hint_to_string I18n.WaitingListPhoneMissingContact) ]
+          ]
+        else []
+      in
+      div (missing_phone @ [ base ])
+    in
     div
       ~a:[ a_class [ "stack" ] ]
       [ h2
           ~a:[ a_class [ "heading-2" ] ]
           [ txt (Utils.text_to_string language I18n.ExperimentWaitingListTitle)
           ]
-      ; (if user_is_enlisted
-         then
-           p [ txt (Utils.hint_to_string language I18n.ContactOnWaitingList) ]
-         else
-           p [ txt (Utils.hint_to_string language I18n.SignUpForWaitingList) ])
+      ; text_blocks
       ; form
           ~a:[ a_method `Post; a_action form_action ]
           [ csrf_element csrf ()

@@ -511,6 +511,14 @@ let create_cancellation_message reason contact =
   |> CCResult.return
 ;;
 
+let create_cancellation_text_message
+  (_ : Session.CancellationReason.t)
+  (_ : Contact.t)
+  phone_number
+  =
+  Model.create_text_message phone_number |> CCResult.return
+;;
+
 let cancel_no_reason () =
   let open CCResult.Infix in
   let session = Model.create_session () in
@@ -523,9 +531,13 @@ let cancel_no_reason () =
   in
   let res =
     SessionC.Cancel.(
-      [ "reason", [ "" ]; "email", [ "true" ]; "sms", [ "true" ] ]
+      [ "reason", [ "" ]; "notify_via", [ "email" ] ]
       |> decode
-      >>= handle [ session ] assignments create_cancellation_message)
+      >>= handle
+            [ session ]
+            assignments
+            create_cancellation_message
+            create_cancellation_text_message)
   in
   check_result
     (Error
@@ -546,14 +558,19 @@ let cancel_no_message_channels () =
   in
   let res =
     SessionC.Cancel.(
-      [ "reason", [ "Experimenter is ill" ]
-      ; "email", [ "false" ]
-      ; "sms", [ "false" ]
-      ]
+      [ "reason", [ "Experimenter is ill" ] ]
       |> decode
-      >>= handle [ session ] assignments create_cancellation_message)
+      >>= handle
+            [ session ]
+            assignments
+            create_cancellation_message
+            create_cancellation_text_message)
   in
-  check_result (Error Pool_common.Message.PickMessageChannel) res
+  check_result
+    (Error
+       (let open Pool_common.Message in
+        Conformist [ Field.NotifyVia, NoValue ]))
+    res
 ;;
 
 let cancel_in_past () =
@@ -577,12 +594,13 @@ let cancel_in_past () =
   in
   let res =
     SessionC.Cancel.(
-      [ "reason", [ "Experimenter is ill" ]
-      ; "email", [ "true" ]
-      ; "sms", [ "false" ]
-      ]
+      [ "reason", [ "Experimenter is ill" ]; "notify_via", [ "email" ] ]
       |> decode
-      >>= handle [ session ] assignments create_cancellation_message)
+      >>= handle
+            [ session ]
+            assignments
+            create_cancellation_message
+            create_cancellation_text_message)
   in
   check_result (Error Pool_common.Message.SessionInPast) res
 ;;
@@ -602,12 +620,13 @@ let cancel_already_canceled () =
   in
   let res =
     SessionC.Cancel.(
-      [ "reason", [ "Experimenter is ill" ]
-      ; "email", [ "true" ]
-      ; "sms", [ "false" ]
-      ]
+      [ "reason", [ "Experimenter is ill" ]; "notify_via", [ "email" ] ]
       |> decode
-      >>= handle [ session ] assignments create_cancellation_message)
+      >>= handle
+            [ session ]
+            assignments
+            create_cancellation_message
+            create_cancellation_text_message)
   in
   check_result
     (now
@@ -637,9 +656,13 @@ let cancel_valid () =
   let reason = "Experimenter is ill" in
   let res =
     SessionC.Cancel.(
-      [ "reason", [ reason ]; "email", [ "true" ]; "sms", [ "true" ] ]
+      [ "reason", [ reason ]; "notify_via", [ "email" ] ]
       |> decode
-      >>= handle [ session1 ] assignments create_cancellation_message)
+      >>= handle
+            [ session1 ]
+            assignments
+            create_cancellation_message
+            create_cancellation_text_message)
   in
   let messages =
     assignments
@@ -651,7 +674,6 @@ let cancel_valid () =
   in
   check_result
     (Ok
-       (* TODO issue #149 extend test with sms events *)
        ([ Pool_event.Email (Email.BulkSent messages)
         ; Pool_event.Session (Session.Canceled session1)
         ]
@@ -670,14 +692,87 @@ let cancel_valid () =
   in
   let res =
     SessionC.Cancel.(
-      [ "reason", [ reason ]; "email", [ "false" ]; "sms", [ "true" ] ]
+      [ "reason", [ reason ]; "notify_via", [ "text_message" ] ]
       |> decode
-      >>= handle [ session2 ] assignments create_cancellation_message)
+      >>= handle
+            [ session2 ]
+            assignments
+            create_cancellation_message
+            create_cancellation_text_message)
+  in
+  let text_messags =
+    assignments
+    |> CCList.map (fun (contact, _) ->
+         contact.Contact.phone_number
+         |> CCOption.to_result Pool_common.Message.(Invalid Field.PhoneNumber)
+         |> Test_utils.get_or_failwith_pool_error
+         |> create_cancellation_text_message
+              (Session.CancellationReason.of_string "reason")
+              contact
+         |> Test_utils.get_or_failwith_pool_error)
   in
   check_result
     (Ok
-       (* TODO issue #149 extend test with sms events *)
-       (Pool_event.Session (Session.Canceled session2) :: contact_events))
+       ([ Text_message.BulkSent text_messags |> Pool_event.text_message ]
+        @ [ Email.BulkSent [] |> Pool_event.email ]
+        @ (Pool_event.Session (Session.Canceled session2) :: contact_events)))
+    res
+;;
+
+let cancel_valid_with_missing_phone_number () =
+  let open CCResult.Infix in
+  let session = Model.create_session () in
+  let contact1 = Model.create_contact () in
+  let contact2 =
+    Contact.{ (Model.create_contact ()) with phone_number = None }
+  in
+  let contacts = [ contact1; contact2 ] in
+  let assignments =
+    CCList.map (fun contact -> Model.create_assignment ~contact ()) contacts
+    |> Assignment.group_by_contact
+  in
+  let contact_events =
+    assignments
+    |> CCList.map (fun (contact, assignments) ->
+         Contact_counter.update_on_session_cancellation assignments contact
+         |> Contact.updated
+         |> Pool_event.contact)
+  in
+  let reason = "Experimenter is ill" in
+  let messages =
+    let email =
+      create_cancellation_message
+        (reason |> Session.CancellationReason.of_string)
+        contact2
+      |> Test_utils.get_or_failwith_pool_error
+    in
+    let text_msg =
+      contact1.Contact.phone_number
+      |> CCOption.to_result Pool_common.Message.(Invalid Field.PhoneNumber)
+      |> Test_utils.get_or_failwith_pool_error
+      |> create_cancellation_text_message
+           (Session.CancellationReason.of_string reason)
+           contact1
+      |> Test_utils.get_or_failwith_pool_error
+    in
+    [ Text_message.BulkSent [ text_msg ] |> Pool_event.text_message ]
+    @ [ Email.BulkSent [ email ] |> Pool_event.email ]
+  in
+  let res =
+    SessionC.Cancel.(
+      [ "reason", [ reason ]; "notify_via", [ "text_message" ] ]
+      |> decode
+      >>= handle
+            [ session ]
+            assignments
+            create_cancellation_message
+            create_cancellation_text_message)
+  in
+  check_result
+    (Ok
+       (messages
+        @ [ Session.Canceled session |> Pool_event.session ]
+        @ contact_events))
     res
 ;;
 

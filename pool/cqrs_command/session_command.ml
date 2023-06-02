@@ -384,8 +384,7 @@ end
 
 module Cancel : sig
   type t =
-    { notify_email : bool
-    ; notify_sms : bool
+    { notify_via : Pool_common.NotifyVia.t
     ; reason : Session.CancellationReason.t
     }
 
@@ -396,6 +395,10 @@ module Cancel : sig
     -> (Session.CancellationReason.t
         -> Contact.t
         -> (Sihl_email.t, Pool_common.Message.error) result)
+    -> (Session.CancellationReason.t
+        -> Contact.t
+        -> Pool_user.PhoneNumber.t
+        -> (Text_message.t, Pool_common.Message.error) result)
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
@@ -403,8 +406,7 @@ module Cancel : sig
   val effects : Experiment.Id.t -> Session.Id.t -> Guard.ValidationSet.t
 end = struct
   type t =
-    { notify_email : bool
-    ; notify_sms : bool
+    { notify_via : Pool_common.NotifyVia.t
     ; reason : Session.CancellationReason.t
     }
 
@@ -412,27 +414,18 @@ end = struct
     ?(tags = Logs.Tag.empty)
     sessions
     (assignments : (Contact.t * Assignment.t list) list)
-    messages_fn
+    email_fn
+    text_message_fn
     command
     =
     Logs.info ~src (fun m -> m "Handle command Cancel" ~tags);
     let open CCResult in
-    let* () =
-      if not (command.notify_email || command.notify_sms)
-      then Error Pool_common.Message.PickMessageChannel
-      else Ok ()
-    in
     let* (_ : unit list) =
       sessions |> CCList.map Session.is_cancellable |> CCList.all_ok
     in
     let* (_ : unit list) =
       let open CCList in
       assignments >|= snd |> flatten >|= Assignment.is_not_closed |> all_ok
-    in
-    let* emails =
-      assignments
-      |> CCList.map (fst %> messages_fn command.reason)
-      |> CCResult.flatten_l
     in
     let contact_events =
       assignments
@@ -442,31 +435,51 @@ end = struct
            |> Contact.updated
            |> Pool_event.contact)
     in
-    let email_event =
-      if command.notify_email
-      then [ Email.BulkSent emails |> Pool_event.email ]
-      else []
+    let* notification_events =
+      match command.notify_via with
+      | Pool_common.NotifyVia.Email ->
+        let* emails =
+          assignments
+          |> CCList.map (fst %> email_fn command.reason)
+          |> CCResult.flatten_l
+        in
+        Ok [ Email.BulkSent emails |> Pool_event.email ]
+      | Pool_common.NotifyVia.TextMessage ->
+        let* text_messags, emails =
+          assignments
+          |> CCList.partition_filter_map (fun (contact, _) ->
+               match contact.Contact.phone_number with
+               | Some phone ->
+                 `Left (text_message_fn command.reason contact phone)
+               | None -> `Right (email_fn command.reason contact))
+          |> fun (texts, emails) ->
+          match CCList.all_ok texts, CCList.all_ok emails with
+          | Ok texts, Ok emails -> Ok (texts, emails)
+          | Error err, _ | _, Error err -> Error err
+        in
+        Ok
+          ([ Text_message.BulkSent text_messags |> Pool_event.text_message ]
+           @ [ Email.BulkSent emails |> Pool_event.email ])
     in
-    (* TODO issue #149 implement this and then fix test *)
-    let sms_event = if command.notify_sms then [] else [] in
     let cancel_events =
       sessions
       |> CCList.map (fun session ->
            Session.Canceled session |> Pool_event.session)
     in
-    [ email_event; sms_event; cancel_events; contact_events ]
+    [ notification_events; cancel_events; contact_events ]
     |> CCList.flatten
     |> CCResult.return
   ;;
 
-  let command notify_email notify_sms reason =
-    { notify_email; notify_sms; reason }
-  ;;
+  let command notify_via reason = { notify_via; reason }
 
   let schema =
     Conformist.(
       make
-        Field.[ bool "email"; bool "sms"; Session.CancellationReason.schema () ]
+        Field.
+          [ Pool_common.NotifyVia.schema ()
+          ; Session.CancellationReason.schema ()
+          ]
         command)
   ;;
 

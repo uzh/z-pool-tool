@@ -21,6 +21,8 @@ let database_fields tenant language flash_fetcher =
   |> div ~a:[ a_class [ "stack" ] ]
 ;;
 
+let map_or = CCOption.map_or ~default:""
+
 let tenant_form
   ?(tenant : Pool_tenant.t option)
   Pool_context.{ language; csrf; _ }
@@ -86,9 +88,7 @@ let tenant_form
         language
         `Text
         Field.Description
-        ~value:
-          (value (fun t ->
-             t.description |> CCOption.map_or ~default:"" Description.value))
+        ~value:(value (fun t -> t.description |> map_or Description.value))
         ~flash_fetcher
     ; input_element
         language
@@ -97,6 +97,7 @@ let tenant_form
         ~value:(value (fun t -> t.url |> Url.value))
         ~flash_fetcher
         ~required:true
+    ; input_element language `Text Field.GtxApiKey ~flash_fetcher ~required:true
     ; language_select
     ; (if CCOption.is_some tenant
        then txt ""

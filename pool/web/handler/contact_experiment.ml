@@ -69,6 +69,7 @@ let show req =
       grouped_sessions
       session_user_is_assigned
       user_is_on_waiting_list
+      contact
       context
     |> Lwt.return_ok
     >>= create_layout req context

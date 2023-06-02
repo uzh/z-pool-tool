@@ -197,6 +197,33 @@ module ExperimentType : sig
   val all : t list
 end
 
+module VerificationCode : sig
+  type t
+
+  val value : t -> string
+  val equal : t -> t -> bool
+  val pp : Format.formatter -> t -> unit
+  val of_string : string -> t
+  val create : ?length:int -> unit -> t
+end
+
+module NotifyVia : sig
+  type t =
+    | Email
+    | TextMessage
+
+  val schema
+    :  unit
+    -> (Message.error, t) Pool_common_utils.PoolConformist.Field.t
+
+  val pp : Format.formatter -> t -> unit
+  val show : t -> string
+  val equal : t -> t -> bool
+  val read : string -> t
+  val all : t list
+  val to_human : Language.t -> t -> string
+end
+
 module Repo : sig
   val make_caqti_type
     :  'a Caqti_type.t
@@ -256,6 +283,12 @@ module Repo : sig
 
       val t : t Caqti_type.t
     end
+  end
+
+  module VerificationCode : sig
+    type t = VerificationCode.t
+
+    val t : t Caqti_type.t
   end
 
   module ExperimentType : sig

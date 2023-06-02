@@ -223,6 +223,28 @@ Wenn du dein Passwort nicht geändert hast, dann kontaktiere uns bitte umgehend.
   }
 ;;
 
+let phone_verification =
+  let label = Label.PhoneVerification in
+  let email_text =
+    "Ihr Code zur Verifizierung Ihrer Telefonnummer: {token}"
+    |> EmailText.of_string
+  in
+  let email_subject = "Verifizierung Telefonnummer" |> EmailSubject.of_string in
+  let sms_text =
+    {|Ihr Code zur Verifizierung Ihrer Telefonnummer: {token}|}
+    |> SmsText.of_string
+  in
+  { id = Id.create ()
+  ; label
+  ; language
+  ; entity_uuid
+  ; email_text
+  ; email_subject
+  ; plain_text = sms_text
+  ; sms_text
+  }
+;;
+
 let profile_update_trigger =
   let label = Label.ProfileUpdateTrigger in
   let email_text =

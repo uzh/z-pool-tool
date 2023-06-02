@@ -142,3 +142,15 @@ abbr[title] {
 .table.striped tbody>tr.bg-red-lighter {
     background-color: $red-lighter;
 }
+
+button.as-link {
+    padding: 0;
+    border: none;
+    color: $color-primary;
+    background-color: transparent;
+
+    &:hover {
+        color: $color-primary;
+        background-color: transparent;
+    }
+}

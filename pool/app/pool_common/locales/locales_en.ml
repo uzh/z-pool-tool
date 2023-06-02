@@ -12,6 +12,7 @@ let rec field_to_string =
   | AdminViewOnly -> "only visible for admins"
   | AllowUninvitedSignup -> "Allow registration of uninvited contacts"
   | Answer -> "answer"
+  | AreaCode -> "area code"
   | AssetId -> "asset identifier"
   | Assignment -> "assignment"
   | AssignmentCount -> "assignments"
@@ -71,6 +72,7 @@ let rec field_to_string =
   | Filter -> "filter"
   | Firstname -> "firstname"
   | FollowUpSession -> "follow-up session"
+  | GtxApiKey -> "GTX Api Key"
   | Hint -> "hint"
   | Host -> "host"
   | I18n -> "translation"
@@ -115,6 +117,7 @@ let rec field_to_string =
   | NextRunAt -> "next run"
   | NoShow -> "no show"
   | NoShowCount -> "no shows"
+  | NotifyVia -> "notify via"
   | Offset -> "offset"
   | Operator -> "operator"
   | Operators -> "operators"
@@ -132,6 +135,7 @@ let rec field_to_string =
   | Password -> "password"
   | PasswordConfirmation -> "password confirmation"
   | Paused -> "paused"
+  | PhoneNumber -> "phone number"
   | PlainText -> "plaintext"
   | Predicate -> "predicate"
   | Profile -> "profile"
@@ -158,6 +162,7 @@ let rec field_to_string =
   | Sessions -> "sessions"
   | Setting -> "setting"
   | ShowUpCount -> "show ups"
+  | SignedUpAt -> "signed up at"
   | SMS -> "SMS"
   | SmsText -> "SMS text"
   | Smtp -> "smtp"
@@ -186,6 +191,7 @@ let rec field_to_string =
   | TenantPool -> "tenant pool"
   | TermsAccepted -> "accept"
   | TermsAndConditions -> "terms and conditions"
+  | TextMessage -> "text message"
   | Time -> "time"
   | TimeSpan -> "time span"
   | Title -> "title"
@@ -230,6 +236,10 @@ let success_to_string : success -> string = function
   | PasswordResetSuccessMessage ->
     "You will receive an email with a link to reset your password if an  \
      account with the provided email is existing."
+  | PhoneNumberTokenSent ->
+    "A text message has been sent to your phone for verification. Please enter \
+     the provided code."
+  | PhoneNumberVerified -> "Your phone number has successfully been verified."
   | Published field ->
     field_message "" (field_to_string field) "was successfully published."
   | RemovedFromWaitingList -> "You were removed from the waiting list."
@@ -249,6 +259,7 @@ let success_to_string : success -> string = function
   | TenantUpdateDetails -> "Tenant was successfully updated."
   | Updated field ->
     field_message "" (field_to_string field) "was successfully updated."
+  | VerificationMessageResent -> "The verification message has been resent."
 ;;
 
 let warning_to_string : warning -> string = function
@@ -460,6 +471,7 @@ let control_to_string = function
   | Edit field -> format_submit "edit" field
   | Enable -> format_submit "enable" None
   | Enroll -> format_submit "enroll" None
+  | EnterNewPhoneNumber -> "Enter a different number"
   | Filter field -> format_submit "filter" field
   | Login -> format_submit "login" None
   | Manage field -> format_submit "manage" (Some field)
@@ -492,6 +504,7 @@ let control_to_string = function
   | Unassign field -> format_submit "unassign" field
   | Update field -> format_submit "update" field
   | UpdateOrder -> format_submit "update order" None
+  | Verify field -> format_submit "verify" field
 ;;
 
 let to_string = function

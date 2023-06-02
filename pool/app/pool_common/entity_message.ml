@@ -135,6 +135,8 @@ type success =
   | PasswordChanged
   | PasswordReset
   | PasswordResetSuccessMessage
+  | PhoneNumberTokenSent
+  | PhoneNumberVerified
   | Published of Field.t
   | RemovedFromWaitingList
   | Rescheduled of Field.t
@@ -149,6 +151,7 @@ type success =
   | TenantUpdateDatabase
   | TenantUpdateDetails
   | Updated of Field.t
+  | VerificationMessageResent
 [@@deriving eq, show, yojson, variants, sexp_of]
 
 type info = Info of string [@@deriving eq, show, yojson, variants, sexp_of]
@@ -188,6 +191,7 @@ type control =
   | Edit of Field.t option
   | Enable
   | Enroll
+  | EnterNewPhoneNumber
   | Filter of Field.t option
   | Login
   | Manage of Field.t
@@ -201,9 +205,9 @@ type control =
   | RemoveFromWaitingList
   | Reschedule of Field.t option
   | Resend of Field.t option
-  | ResetPlainText
   | Reset
   | ResetForm
+  | ResetPlainText
   | Save of Field.t option
   | SelectAll of Field.t option
   | SelectFilePlaceholder
@@ -216,6 +220,7 @@ type control =
   | Unassign of Field.t option
   | Update of Field.t option
   | UpdateOrder
+  | Verify of Field.t option
 [@@deriving eq, show, yojson, variants, sexp_of]
 
 let to_conformist_error error_list =

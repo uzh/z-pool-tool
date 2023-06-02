@@ -375,6 +375,7 @@ let textarea_element
   ?(orientation = `Vertical)
   ?label_field
   ?identifier
+  ?help
   ?(required = false)
   ?(rich_text = false)
   ?value
@@ -389,6 +390,7 @@ let textarea_element
       name |> Field.show |> flash_fetcher)
   in
   let value = old_value <+> value |> CCOption.get_or ~default:"" in
+  let help = Elements.help language help in
   let textarea_attributes =
     let base = [ a_name (name |> Field.show); a_id id ] in
     let base = if rich_text then a_class [ "rich-text" ] :: base else base in
@@ -406,7 +408,7 @@ let textarea_element
   in
   div
     ~a:[ a_class (Elements.group_class [] orientation @ classnames) ]
-    [ label ~a:[ a_label_for id ] [ txt input_label ]; textarea ]
+    ([ label ~a:[ a_label_for id ] [ txt input_label ]; textarea ] @ help)
 ;;
 
 let submit_element
@@ -666,5 +668,34 @@ let reset_form_button language =
       ]
     [ Icon.(to_html RefreshOutline)
     ; txt Pool_common.(Utils.control_to_string language Message.Reset)
+    ]
+;;
+
+let phone_number_input ?(required = false) () =
+  let attrs = if required then [ a_required () ] else [] in
+  let to_option =
+    CCList.map (fun (code, label) ->
+      option ~a:[ a_value (CCInt.to_string code) ] (txt label))
+  in
+  let options = Utils.PhoneCodes.all_human |> to_option in
+  div
+    ~a:[ a_class [ "flexrow"; "flex-gap" ] ]
+    [ div
+        ~a:[ a_class [ "select" ] ]
+        [ select
+            ~a:([ a_name Pool_common.Message.Field.(show AreaCode) ] @ attrs)
+            options
+        ]
+    ; div
+        ~a:[ a_class [ "form-group" ] ]
+        [ input
+            ~a:
+              ([ a_name Pool_common.Message.Field.(show PhoneNumber)
+               ; a_class [ "input" ]
+               ; a_input_type `Number
+               ]
+               @ attrs)
+            ()
+        ]
     ]
 ;;

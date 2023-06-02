@@ -41,7 +41,6 @@ let to_string = function
     Format.asprintf
       "Es existiert noch keine %s."
       (Locales_de.field_to_string field)
-  | NotifyVia -> "Benachrichtigen via"
   | OurPartners -> "Unsere Partner"
   | ProfileCompletionText ->
     {|Die folgenden Angaben werden benötigt, um an Experimente eingeladen werden zu können. Weitere Angaben können anschliessend in Ihrem Profil gemacht werden.
@@ -104,6 +103,7 @@ Sie kommen für mehr Experimente in Frage, umso kompletter Ihr Profil ist.|}
 let nav_link_to_string = function
   | Admins -> "Administratoren"
   | Assignments -> "Anmeldungen"
+  | ContactInformation -> "Kontaktangaben"
   | Contacts -> "Kontakte"
   | CustomFields -> "Felder"
   | Dashboard -> "Dashboard"
@@ -143,6 +143,16 @@ let rec hint_to_string = function
     "Diese Anmeldungen wurden als gelöscht markiert. Insofern die Kontakte den \
      Experimentkriterien noch entsprechen, können Sie sich erneut an Sessions \
      anmelden."
+  | ContactCurrentPhoneNumber phone_number ->
+    Format.asprintf "Ihre aktuelle Telefonnummer lautet %s." phone_number
+  | ContactNoPhoneNumber -> "Sie haben noch keine Telefonnummer verifiziert."
+  | ContactEnterPhoneNumberToken phone_number ->
+    Format.asprintf
+      "PBitte geben Sie den Verifizierungscode ein, den wir Ihnen an %s \
+       geschickt haben. Der Code ist eine Stunde lang gültig."
+      phone_number
+  | ContactPhoneNumberVerificationWasReset ->
+    "Sie können nun eine neue Telefonnummer eingeben."
   | ContactOnWaitingList ->
     "Sie stehen auf der Warteliste. Das Rekrutierungsteam wird Sie einer \
      Session zuweisen."
@@ -315,6 +325,10 @@ Die folgenden Folgesessions existieren:|}
     "Die folgenden Textbausteine können in den Templates verwendet werden:"
   | TimeSpanPickerHint ->
     "Zeitdauer in Stunden. '1.5' entspricht 1h 30m. '0.75' entspricht 45min."
+  | WaitingListPhoneMissingContact ->
+    "Sie haben in Ihrem Profil noch keine Telefonnummer angegenen. Wir bitten \
+     Sie, eine Telefonnummer anzugeben, damit das Rekrutierungsteam Sie \
+     kontaktieren kann."
 ;;
 
 let confirmable_to_string confirmable =

@@ -12,6 +12,7 @@ let rec field_to_string =
   | AdminViewOnly -> "Nur für Admins ersichtlich"
   | AllowUninvitedSignup -> "Einschreiben nicht eingeladener Kontakte erlauben"
   | Answer -> "Antwort"
+  | AreaCode -> "Vorwahl"
   | AssetId -> "Anlagen Identifier"
   | Assignment -> "Anmeldung"
   | AssignmentCount -> "Anmeldungen"
@@ -71,6 +72,7 @@ let rec field_to_string =
   | Filter -> "Filter"
   | Firstname -> "Vorname"
   | FollowUpSession -> "Folgesession"
+  | GtxApiKey -> "GTX Api Key"
   | Hint -> "Hint"
   | Host -> "Host"
   | I18n -> "Übersetzung"
@@ -115,6 +117,7 @@ let rec field_to_string =
   | NextRunAt -> "Nächster Versuch um"
   | NoShow -> "Nicht anwesend"
   | NoShowCount -> "Abwesende"
+  | NotifyVia -> "Benachrichtigen via"
   | Offset -> "Offset"
   | Operator -> "Operator"
   | Operators -> "Operatoren"
@@ -131,6 +134,7 @@ let rec field_to_string =
   | Password -> "Passwort"
   | PasswordConfirmation -> "Passwort wiederholen"
   | Paused -> "Pausiert"
+  | PhoneNumber -> "Telefonnummer"
   | PlainText -> "Klartext"
   | Predicate -> "Prädikat"
   | Profile -> "Profil"
@@ -157,6 +161,7 @@ let rec field_to_string =
   | Sessions -> "Sessions"
   | Setting -> "Einstellung"
   | ShowUpCount -> "Anwesende"
+  | SignedUpAt -> "Eingeschrieben am"
   | SMS -> "SMS"
   | SmsText -> "SMS Text"
   | Smtp -> "SMTP"
@@ -185,6 +190,7 @@ let rec field_to_string =
   | TenantPool -> "Tenant Pool"
   | TermsAccepted -> "Akzeptieren"
   | TermsAndConditions -> "Teilnahmebedingungen"
+  | TextMessage -> "SMS"
   | Time -> "Uhrzeit"
   | TimeSpan -> "Zeitspanne"
   | Title -> "Titel"
@@ -229,6 +235,10 @@ let success_to_string : success -> string = function
   | PasswordResetSuccessMessage ->
     "Falls ein Account zu der von dir eingegebenen E-Mail Adresse existiert,  \
      wird dir ein E-Mail mit einem Link zur Passwort zurücksetzung gesendet."
+  | PhoneNumberTokenSent ->
+    "Es wurde eine Textnachricht zur Überprüfung an Ihr Telefon gesendet. \
+     Bitte geben Sie den angegebenen Code ein."
+  | PhoneNumberVerified -> "Ihre Telefonnummer wurde erfolgreich geprüft."
   | Published field ->
     field_message "" (field_to_string field) "wurde erfolgreich veröffentlicht."
   | RemovedFromWaitingList -> "Sie wurden von der Warteliste entfernt."
@@ -251,6 +261,8 @@ let success_to_string : success -> string = function
   | TenantUpdateDetails -> "Tenant wurde erfolgreich upgedated."
   | Updated field ->
     field_message "" (field_to_string field) "wurde erfolgreich upgedated."
+  | VerificationMessageResent ->
+    "Die Verifizierungsnachricht wurde erneut verschickt."
 ;;
 
 let warning_to_string : warning -> string = function
@@ -496,6 +508,7 @@ let control_to_string = function
   | Edit field -> format_submit "bearbeiten" field
   | Enable -> format_submit "aktivieren" None
   | Enroll -> format_submit "einschreiben" None
+  | EnterNewPhoneNumber -> "eine andere Nummer eingeben"
   | Filter field -> format_submit "filtern" field
   | Login -> format_submit "login" None
   | Manage field -> format_submit "manage" (Some field)
@@ -528,6 +541,7 @@ let control_to_string = function
   | Unassign field -> format_submit "entfernen" field
   | Update field -> format_submit "aktualisieren" field
   | UpdateOrder -> "Reihenfolge anpassen"
+  | Verify field -> format_submit "verifizieren" field
 ;;
 
 let to_string = function

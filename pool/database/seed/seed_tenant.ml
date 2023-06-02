@@ -25,6 +25,7 @@ let create () =
       [ styles; icon; tenant_logo ]
   in
   let data =
+    let gtx_api_key = "Gtx api key" in
     if Sihl.Configuration.is_test ()
     then (
       let database_url =
@@ -36,6 +37,7 @@ let create () =
         , "test.pool.econ.uzh.ch"
         , database_url
         , "econ-test"
+        , gtx_api_key
         , styles.Assets.id
         , icon.Assets.id
         , "EN" )
@@ -46,6 +48,7 @@ let create () =
         , "localhost:3017"
         , "mariadb://root@database-tenant:3306/dev_econ"
         , "econ-uzh"
+        , gtx_api_key
         , styles.Assets.id
         , icon.Assets.id
         , "EN" )
@@ -54,6 +57,7 @@ let create () =
         , "pool.zhaw.ch"
         , "mariadb://root@database-tenant:3306/dev_zhaw"
         , "zhaw"
+        , gtx_api_key
         , styles.Assets.id
         , icon.Assets.id
         , "DE" )
@@ -68,6 +72,7 @@ let create () =
            , url
            , database_url
            , database_label
+           , gtx_api_key
            , styles
            , icon
            , default_language )
@@ -88,6 +93,7 @@ let create () =
                 |> CCOption.return)
                (Url.create url |> get_or_failwith)
                (database |> get_or_failwith)
+               (GtxApiKey.of_string gtx_api_key)
                (Styles.Write.create styles |> get_or_failwith |> CCOption.return)
                (Icon.Write.create icon |> get_or_failwith |> CCOption.return)
                (Pool_common.Language.create default_language |> get_or_failwith))

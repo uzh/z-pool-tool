@@ -11,4 +11,5 @@
   routes
   service
   sihl
-  tenant))
+  tenant
+  text_message))

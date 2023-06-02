@@ -1,39 +1,97 @@
 open Entity
+open CCFun
 
 module Paused = struct
   include Paused
 
-  let t = Caqti_type.bool
+  let t =
+    Pool_common.Repo.make_caqti_type
+      Caqti_type.bool
+      (create %> CCResult.return)
+      value
+  ;;
 end
 
 module Disabled = struct
   include Disabled
 
-  let t = Caqti_type.bool
+  let t =
+    Pool_common.Repo.make_caqti_type
+      Caqti_type.bool
+      (create %> CCResult.return)
+      value
+  ;;
 end
 
 module TermsAccepted = struct
   include TermsAccepted
 
-  let t = Caqti_type.ptime
+  let t =
+    Pool_common.Repo.make_caqti_type
+      Caqti_type.ptime
+      (create %> CCResult.return)
+      value
+  ;;
 end
 
 module Verified = struct
   include Verified
 
-  let t = Caqti_type.ptime
+  let t =
+    Pool_common.Repo.make_caqti_type
+      Caqti_type.ptime
+      (create %> CCResult.return)
+      value
+  ;;
+end
+
+module PhoneNumber = struct
+  include PhoneNumber
+
+  let t = Pool_common.Repo.make_caqti_type Caqti_type.string create value
+end
+
+module UnverifiedPhoneNumber = struct
+  include UnverifiedPhoneNumber
+
+  let t =
+    let encode (m : t) = Ok (m.phone_number, m.created_at) in
+    let decode (phone_number, created_at) = Ok { phone_number; created_at } in
+    Caqti_type.(
+      custom ~encode ~decode (tup2 PhoneNumber.t Pool_common.Repo.CreatedAt.t))
+  ;;
+
+  let full =
+    let encode _ = failwith "Decode model only." in
+    let decode (phone_number, verification_code, created_at) =
+      Ok { phone_number; verification_code; created_at }
+    in
+    Caqti_type.(
+      custom
+        ~encode
+        ~decode
+        (tup3
+           PhoneNumber.t
+           Pool_common.Repo.VerificationCode.t
+           Pool_common.Repo.CreatedAt.t))
+  ;;
 end
 
 module EmailAddress = struct
   include EmailAddress
 
-  let t = Caqti_type.(string)
+  let t = Pool_common.Repo.make_caqti_type Caqti_type.string create value
 end
 
 module EmailVerified = struct
   include EmailVerified
 
-  let t = Caqti_type.ptime
+  let t =
+    Pool_common.Repo.make_caqti_type
+      Caqti_type.ptime
+      (create %> CCResult.return)
+      value
+  ;;
 end
 
 module User = struct

@@ -102,6 +102,31 @@ module Verified : sig
   val value : t -> Ptime.t
 end
 
+module PhoneNumber : sig
+  type t
+
+  val create : string -> (t, Pool_common.Message.error) result
+  val of_string : string -> t
+  val value : t -> string
+  val equal : t -> t -> bool
+  val t_of_yojson : Yojson.Safe.t -> t
+  val yojson_of_t : t -> Yojson.Safe.t
+  val pp : Format.formatter -> t -> unit
+end
+
+module UnverifiedPhoneNumber : sig
+  type t =
+    { phone_number : PhoneNumber.t
+    ; created_at : Pool_common.CreatedAt.t
+    }
+
+  type full =
+    { phone_number : PhoneNumber.t
+    ; verification_code : Pool_common.VerificationCode.t
+    ; created_at : Pool_common.CreatedAt.t
+    }
+end
+
 module EmailAddress : sig
   type t
 
@@ -137,27 +162,36 @@ end
 
 module Repo : sig
   module Paused : sig
-    val t : bool Caqti_type.t
+    val t : Paused.t Caqti_type.t
   end
 
   module Disabled : sig
-    val t : bool Caqti_type.t
+    val t : Disabled.t Caqti_type.t
   end
 
   module TermsAccepted : sig
-    val t : Ptime.t Caqti_type.t
+    val t : TermsAccepted.t Caqti_type.t
   end
 
   module Verified : sig
-    val t : Ptime.t Caqti_type.t
+    val t : Verified.t Caqti_type.t
   end
 
   module EmailVerified : sig
-    val t : Ptime.t Caqti_type.t
+    val t : EmailVerified.t Caqti_type.t
+  end
+
+  module PhoneNumber : sig
+    val t : PhoneNumber.t Caqti_type.t
+  end
+
+  module UnverifiedPhoneNumber : sig
+    val t : UnverifiedPhoneNumber.t Caqti_type.t
+    val full : UnverifiedPhoneNumber.full Caqti_type.t
   end
 
   module EmailAddress : sig
-    val t : string Caqti_type.t
+    val t : EmailAddress.t Caqti_type.t
   end
 
   val user_caqti : Sihl_user.t Caqti_type.t

@@ -28,6 +28,7 @@ module DummyData = struct
       ; terms_accepted_at = TermsAccepted.create_now () |> CCOption.pure
       ; language = Some Language.En
       ; experiment_type_preference = None
+      ; phone_number = Some (Pool_user.PhoneNumber.of_string "+41791234567")
       ; paused = Paused.create false
       ; disabled = Disabled.create false
       ; verified = None
@@ -236,6 +237,9 @@ let message_template_help
       |> create_public_url_with_params tenant.Pool_tenant.url "/reset-password/"
     in
     PasswordReset.email_params reset_url (create_sihl_user ())
+  | PhoneVerification ->
+    let code = Pool_common.VerificationCode.create () in
+    PhoneVerification.message_params code
   | ProfileUpdateTrigger ->
     ProfileUpdateTrigger.email_params tenant.Pool_tenant.url (create_contact ())
   | SessionCancellation ->

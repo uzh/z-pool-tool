@@ -273,7 +273,7 @@ let update_handler action req =
         let system_languages =
           Pool_context.Tenant.get_tenant_languages_exn req
         in
-        let* create_message =
+        let%lwt create_message =
           Message_template.SessionReschedule.prepare
             database_label
             tenant
@@ -347,8 +347,17 @@ let cancel req =
     let* events =
       let system_languages = Pool_context.Tenant.get_tenant_languages_exn req in
       let tenant = Pool_context.Tenant.get_tenant_exn req in
-      let* create_message =
+      let%lwt create_email =
         Message_template.SessionCancellation.prepare
+          database_label
+          tenant
+          experiment
+          system_languages
+          session
+          follow_ups
+      in
+      let%lwt create_text_message =
+        Message_template.SessionCancellation.prepare_text_message
           database_label
           tenant
           experiment
@@ -360,7 +369,12 @@ let cancel req =
       let open Cqrs_command.Session_command.Cancel in
       urlencoded
       |> decode
-      >>= handle ~tags (session :: follow_ups) assignments create_message
+      >>= handle
+            ~tags
+            (session :: follow_ups)
+            assignments
+            create_email
+            create_text_message
       |> Lwt_result.lift
     in
     let%lwt () = Pool_event.handle_events ~tags database_label events in

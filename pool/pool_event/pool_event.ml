@@ -20,6 +20,7 @@ type t =
   | Session of Session.event
   | Settings of Settings.event
   | Tenant of Tenant.event
+  | TextMessage of Text_message.event
   | WaitingList of Waiting_list.event
 [@@deriving eq, show, variants]
 
@@ -42,6 +43,7 @@ let pool_tenant events = PoolTenant events
 let session events = Session events
 let settings events = Settings events
 let tenant events = Tenant events
+let text_message events = TextMessage events
 let waiting_list events = WaitingList events
 
 let handle_event ?(tags = Logs.Tag.empty) pool event =
@@ -140,6 +142,11 @@ let handle_event ?(tags = Logs.Tag.empty) pool event =
     Logs.info ~src (fun m ->
       m "Handle event %s" (Tenant.show_event event) ~tags);
     Tenant.handle_event pool event
+  | TextMessage event ->
+    let src = Logs.Src.create "text_message.events" in
+    Logs.info ~src (fun m ->
+      m "Handle event %s" (Text_message.show_event event) ~tags);
+    Text_message.handle_event pool event
   | WaitingList event ->
     let src = Logs.Src.create "waiting_list.events" in
     Logs.info ~src (fun m ->

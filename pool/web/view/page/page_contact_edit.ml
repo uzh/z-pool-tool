@@ -242,3 +242,115 @@ let login_information
     ]
   |> contact_profile_layout language Pool_common.I18n.LoginInformation
 ;;
+
+let contact_information
+  contact
+  Pool_context.{ language; query_language; csrf; _ }
+  (verification : Pool_user.UnverifiedPhoneNumber.t option)
+  was_reset
+  =
+  let open Contact in
+  let open Pool_common in
+  let externalize = HttpUtils.externalize_path_with_lang query_language in
+  let form_attrs action =
+    [ a_method `Post; a_action (externalize action); a_class [ "stack" ] ]
+  in
+  let hint_to_html =
+    CCFun.(Utils.hint_to_string language %> fun hint -> div [ txt hint ])
+  in
+  let form_title i18n =
+    h2
+      ~a:[ a_class [ "heading-3" ] ]
+      Pool_common.[ Utils.control_to_string language i18n |> txt ]
+  in
+  let new_form () =
+    let current_hint =
+      (match contact.phone_number with
+       | None -> I18n.ContactNoPhoneNumber
+       | Some phone_number ->
+         I18n.ContactCurrentPhoneNumber
+           (Pool_user.PhoneNumber.value phone_number))
+      |> hint_to_html
+    in
+    let reset_hint =
+      match was_reset with
+      | false -> txt ""
+      | true ->
+        [ I18n.ContactPhoneNumberVerificationWasReset |> hint_to_html ]
+        |> Component.Notification.notification language `Success
+    in
+    div
+      [ form_title Message.(Add (Some Field.PhoneNumber))
+      ; div
+          ~a:[ a_class [ "stack" ] ]
+          [ current_hint
+          ; reset_hint
+          ; form
+              ~a:(form_attrs "/user/phone/update")
+              [ csrf_element csrf ()
+              ; phone_number_input ~required:true ()
+              ; div
+                  ~a:[ a_class [ "flexrow" ] ]
+                  [ submit_element
+                      ~classnames:[ "push" ]
+                      language
+                      Message.(Update (Some Field.PhoneNumber))
+                      ()
+                  ]
+              ]
+          ]
+      ]
+  in
+  let form_as_link url i18n =
+    form
+      ~a:[ a_method `Post; a_action (Sihl.Web.externalize_path url) ]
+      [ csrf_element csrf ()
+      ; submit_element ~classnames:[ "as-link" ] language i18n ()
+      ]
+  in
+  let verify_form phone_number =
+    div
+      [ form_title Message.(Verify (Some Field.PhoneNumber))
+      ; div
+          ~a:[ a_class [ "stack" ] ]
+          [ [ I18n.ContactEnterPhoneNumberToken
+                (Pool_user.PhoneNumber.value phone_number)
+              |> Utils.hint_to_string language
+              |> txt
+            ]
+            |> Component.Notification.notification language `Warning
+          ; form
+              ~a:(form_attrs "/user/phone/verify")
+              [ csrf_element csrf ()
+              ; input_element (* TODO: Add 2 part input (pre and nr) *)
+                  language
+                  `Text
+                  Message.Field.Token
+              ; div
+                  ~a:[ a_class [ "flexrow" ] ]
+                  [ submit_element
+                      ~classnames:[ "push" ]
+                      language
+                      Message.(Verify (Some Field.PhoneNumber))
+                      ()
+                  ]
+              ]
+          ; div
+              ~a:[ a_class [ "flexrow"; "flex-gap"; "gap"; "justify-end" ] ]
+              [ form_as_link
+                  "/user/phone/resend-token"
+                  Message.(Resend (Some Field.Token))
+              ; form_as_link "/user/phone/reset" Message.EnterNewPhoneNumber
+              ]
+          ]
+      ]
+  in
+  let form =
+    match verification with
+    | None -> new_form ()
+    | Some { Pool_user.UnverifiedPhoneNumber.phone_number; _ } ->
+      verify_form phone_number
+  in
+  div [ div ~a:[ a_class [ "grid-col-2"; "gap-lg" ] ] [ form ] ]
+  |> contact_profile_layout language Pool_common.I18n.ContactInformation
+;;

@@ -34,7 +34,6 @@ type t =
   | MailingExperimentSessionFullyBooked
   | MailingNewTitle
   | NoEntries of Entity_message.Field.t
-  | NotifyVia
   | OurPartners
   | ProfileCompletionText
   | RateTotalSent of int
@@ -70,6 +69,7 @@ type t =
 type nav_link =
   | Admins
   | Assignments
+  | ContactInformation
   | Contacts
   | CustomFields
   | Dashboard
@@ -103,6 +103,10 @@ type hint =
   | AllowUninvitedSignup
   | AssignContactFromWaitingList
   | AssignmentsMarkedAsClosed
+  | ContactCurrentPhoneNumber of string
+  | ContactNoPhoneNumber
+  | ContactEnterPhoneNumberToken of string
+  | ContactPhoneNumberVerificationWasReset
   | ContactOnWaitingList
   | ContactProfileVisibleOverride
   | CustomFieldAdminInputOnly
@@ -149,8 +153,8 @@ type hint =
   | ScheduledIntro
   | SearchByFields of Entity_message.Field.t list
   | SelectedDateIsPast
-  | SessionCancellationWithFollowups
   | SessionCancellationMessageFollowUps
+  | SessionCancellationWithFollowups
   | SessionCancelMessage
   | SessionClose
   | SessionRegistrationFollowUpHint
@@ -160,6 +164,7 @@ type hint =
   | SmtpSettingsIntro
   | TemplateTextElementsHint
   | TimeSpanPickerHint
+  | WaitingListPhoneMissingContact
 
 type confirmable =
   | CancelAssignment

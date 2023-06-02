@@ -39,7 +39,6 @@ let to_string = function
   | I18nTitle -> "Translations"
   | NoEntries field ->
     Format.asprintf "There are no %s yet." (Locales_en.field_to_string field)
-  | NotifyVia -> "Notify via"
   | OurPartners -> "Our partners"
   | ProfileCompletionText ->
     {|The following information is required to be invited to experiments. Further information can be entered in your profile afterwards.
@@ -102,6 +101,7 @@ let to_string = function
 let nav_link_to_string = function
   | Admins -> "Admins"
   | Assignments -> "Assignments"
+  | ContactInformation -> "Contact information"
   | Contacts -> "Contacts"
   | CustomFields -> "Fields"
   | Dashboard -> "Dashboard"
@@ -140,6 +140,16 @@ let rec hint_to_string = function
   | AssignmentsMarkedAsClosed ->
     "These assignments have been marked as deleted. Provided that the contacts \
      still meet the experiment criteria, they can register for sessions again."
+  | ContactCurrentPhoneNumber phone_number ->
+    Format.asprintf "Your current phone number is %s." phone_number
+  | ContactNoPhoneNumber -> "You have not yet verified a phone number."
+  | ContactEnterPhoneNumberToken phone_number ->
+    Format.asprintf
+      "Please enter the verification code we sent yout to %s. The code is \
+       valid for one hour."
+      phone_number
+  | ContactPhoneNumberVerificationWasReset ->
+    "You can enter a different phone number now."
   | ContactOnWaitingList ->
     "You are on the waiting list. The recruitment team will assign you to a \
      session."
@@ -302,6 +312,9 @@ The following follow-up sessions exist:|}
   | TimeSpanPickerHint ->
     "Time duration in hours. '1.5' corresponds to 1h 30m. '0.75' corresponds \
      to 45min."
+  | WaitingListPhoneMissingContact ->
+    "You have not entered a phone number in your profile yet. Please provide a \
+     phone number so that the recruitment team can contact you."
 ;;
 
 let confirmable_to_string confirmable =

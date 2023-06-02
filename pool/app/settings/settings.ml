@@ -99,12 +99,16 @@ let terms_and_conditions_last_updated pool =
   Repo.find_terms_and_conditions pool ||> fun { updated_at; _ } -> updated_at
 ;;
 
+let default_language_of_list languages =
+  languages
+  |> CCList.head_opt
+  |> CCOption.to_result Pool_common.Message.(NotFound Field.DefaultLanguage)
+  |> Pool_common.Utils.get_or_failwith
+;;
+
 let default_language pool =
   let open Utils.Lwt_result.Infix in
-  find_languages pool
-  ||> CCList.head_opt
-  ||> CCOption.to_result Pool_common.Message.(NotFound Field.DefaultLanguage)
-  ||> Pool_common.Utils.get_or_failwith
+  find_languages pool ||> default_language_of_list
 ;;
 
 let terms_and_conditions pool language =

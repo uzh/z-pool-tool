@@ -53,6 +53,9 @@ type event =
   | TermsAccepted of t
   | Disabled of t
   | UnverifiedDeleted of t
+  | PhoneNumberAdded of t * User.PhoneNumber.t * Pool_common.VerificationCode.t
+  | PhoneNumberVerified of t * User.PhoneNumber.t
+  | PhoneNumberVerificationReset of t
   | ProfileUpdateTriggeredAtUpdated of t list
   | RegistrationAttemptNotificationSent of t
   | Updated of t
@@ -77,6 +80,7 @@ let handle_event pool : event -> unit Lwt.t =
       ; terms_accepted_at = contact.terms_accepted_at
       ; language = contact.language
       ; experiment_type_preference = None
+      ; phone_number = None
       ; paused = User.Paused.create false
       ; disabled = User.Disabled.create false
       ; verified = None
@@ -146,6 +150,15 @@ let handle_event pool : event -> unit Lwt.t =
     Repo.update pool { contact with disabled = User.Disabled.create true }
   | UnverifiedDeleted contact ->
     contact |> Entity.id |> Repo.delete_unverified pool
+  | PhoneNumberAdded (contact, phone_number, token) ->
+    Repo.add_phone_number pool contact phone_number token
+  | PhoneNumberVerified (contact, phone_number) ->
+    let%lwt () =
+      { contact with phone_number = Some phone_number } |> Repo.update pool
+    in
+    Repo.delete_unverified_phone_number pool contact
+  | PhoneNumberVerificationReset contact ->
+    Repo.delete_unverified_phone_number pool contact
   | ProfileUpdateTriggeredAtUpdated contacts ->
     contacts |> CCList.map id |> Repo.update_profile_updated_triggered pool
   | RegistrationAttemptNotificationSent t ->
