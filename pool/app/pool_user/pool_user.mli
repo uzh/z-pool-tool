@@ -182,7 +182,7 @@ module Repo : sig
   end
 
   module PhoneNumber : sig
-    val t : string Caqti_type.t
+    val t : PhoneNumber.t Caqti_type.t
   end
 
   module UnverifiedPhoneNumber : sig

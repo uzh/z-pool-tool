@@ -40,7 +40,7 @@ let t =
       , ( CCOption.map TermsAccepted.value m.terms_accepted_at
         , ( m.language
           , ( m.experiment_type_preference
-            , ( CCOption.map PhoneNumber.value m.phone_number
+            , ( m.phone_number
               , ( Paused.value m.paused
                 , ( Disabled.value m.disabled
                   , ( CCOption.map Verified.value m.verified
@@ -88,7 +88,7 @@ let t =
       ; terms_accepted_at = CCOption.map TermsAccepted.create terms_accepted_at
       ; language
       ; experiment_type_preference
-      ; phone_number = CCOption.map PhoneNumber.of_string phone_number
+      ; phone_number
       ; paused = Paused.create paused
       ; disabled = Disabled.create disabled
       ; verified = CCOption.map Verified.create verified
@@ -253,7 +253,7 @@ module Write = struct
         , ( CCOption.map TermsAccepted.value m.terms_accepted_at
           , ( m.language
             , ( m.experiment_type_preference
-              , ( CCOption.map PhoneNumber.value m.phone_number
+              , ( m.phone_number
                 , ( Paused.value m.paused
                   , ( Disabled.value m.disabled
                     , ( CCOption.map Verified.value m.verified
@@ -337,7 +337,7 @@ module Preview = struct
       Ok
         ( m.user
         , ( m.language
-          , ( CCOption.map User.PhoneNumber.value m.phone_number
+          , ( m.phone_number
             , ( Paused.value m.paused
               , ( CCOption.map Verified.value m.verified
                 , (m.num_invitations, m.num_assignments) ) ) ) ) )
@@ -354,7 +354,7 @@ module Preview = struct
         Entity.Preview.
           { user
           ; language
-          ; phone_number = CCOption.map User.PhoneNumber.of_string phone_number
+          ; phone_number
           ; paused = Paused.create paused
           ; verified = CCOption.map Verified.create verified
           ; num_invitations = NumberOfInvitations.of_int num_invitations
