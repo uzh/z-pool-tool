@@ -18,7 +18,7 @@ let unverified_t =
   let open CCResult in
   let encode (Unverified m) =
     Ok
-      ( m.address |> User.EmailAddress.value
+      ( m.address
       , ( m.user
         , ( m.token |> Token.value
           , ( m.created_at |> Pool_common.CreatedAt.value
@@ -30,9 +30,9 @@ let unverified_t =
       Utils.error_to_string
         Language.En
         Message.(Decode Field.EmailAddressUnverified))
-    @@ let* address = address |> User.EmailAddress.create in
-       let token = token |> Token.create in
-       Ok (Unverified { address; user; token; created_at; updated_at })
+    @@
+    let token = token |> Token.create in
+    Ok (Unverified { address; user; token; created_at; updated_at })
   in
   Caqti_type.(
     custom
@@ -50,12 +50,7 @@ let unverified_t =
 let verified_t =
   let open CCResult in
   let encode (Verified m) =
-    Ok
-      ( m.address |> User.EmailAddress.value
-      , ( m.user
-        , ( m.verified_at |> VerifiedAt.value
-          , ( m.created_at |> Pool_common.CreatedAt.value
-            , m.updated_at |> Pool_common.UpdatedAt.value ) ) ) )
+    Ok (m.address, (m.user, (m.verified_at, (m.created_at, m.updated_at))))
   in
   let decode (address, (user, (verified_at, (created_at, updated_at)))) =
     map_err (fun _ ->
@@ -63,9 +58,9 @@ let verified_t =
       Utils.error_to_string
         Language.En
         Message.(Decode Field.EmailAddressVerified))
-    @@ let* address = address |> User.EmailAddress.create in
-       let verified_at = verified_at |> VerifiedAt.create in
-       Ok (Verified { address; user; verified_at; created_at; updated_at })
+    @@
+    let verified_at = verified_at |> VerifiedAt.create in
+    Ok (Verified { address; user; verified_at; created_at; updated_at })
   in
   Caqti_type.(
     custom

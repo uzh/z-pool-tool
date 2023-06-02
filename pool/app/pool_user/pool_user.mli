@@ -162,23 +162,23 @@ end
 
 module Repo : sig
   module Paused : sig
-    val t : bool Caqti_type.t
+    val t : Paused.t Caqti_type.t
   end
 
   module Disabled : sig
-    val t : bool Caqti_type.t
+    val t : Disabled.t Caqti_type.t
   end
 
   module TermsAccepted : sig
-    val t : Ptime.t Caqti_type.t
+    val t : TermsAccepted.t Caqti_type.t
   end
 
   module Verified : sig
-    val t : Ptime.t Caqti_type.t
+    val t : Verified.t Caqti_type.t
   end
 
   module EmailVerified : sig
-    val t : Ptime.t Caqti_type.t
+    val t : EmailVerified.t Caqti_type.t
   end
 
   module PhoneNumber : sig
@@ -191,7 +191,7 @@ module Repo : sig
   end
 
   module EmailAddress : sig
-    val t : string Caqti_type.t
+    val t : EmailAddress.t Caqti_type.t
   end
 
   val user_caqti : Sihl_user.t Caqti_type.t

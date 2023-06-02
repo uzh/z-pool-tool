@@ -128,9 +128,7 @@ let insert pool t =
   Utils.Database.exec
     (Database.Label.value pool)
     insert_request
-    ( address t |> Pool_user.EmailAddress.value
-    , user_id t
-    , token t |> Token.value )
+    (address t, user_id t, token t |> Token.value)
 ;;
 
 let verify_request =
@@ -153,9 +151,7 @@ let verify pool t =
   Utils.Database.exec
     (Database.Label.value pool)
     verify_request
-    ( user_id t
-    , address t |> Pool_user.EmailAddress.value
-    , VerifiedAt.create_now () )
+    (user_id t, address t, VerifiedAt.create_now ())
 ;;
 
 let delete_unverified_by_user_request =

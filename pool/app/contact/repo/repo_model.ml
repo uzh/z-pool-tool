@@ -34,17 +34,16 @@ end
 
 let t =
   let encode m =
-    let open Pool_user in
     Ok
       ( m.user
-      , ( CCOption.map TermsAccepted.value m.terms_accepted_at
+      , ( m.terms_accepted_at
         , ( m.language
           , ( m.experiment_type_preference
             , ( m.phone_number
-              , ( Paused.value m.paused
-                , ( Disabled.value m.disabled
-                  , ( CCOption.map Verified.value m.verified
-                    , ( CCOption.map EmailVerified.value m.email_verified
+              , ( m.paused
+                , ( m.disabled
+                  , ( m.verified
+                    , ( m.email_verified
                       , ( m.num_invitations
                         , ( m.num_assignments
                           , ( m.num_show_ups
@@ -81,18 +80,17 @@ let t =
                                         , (created_at, updated_at) ) ) ) ) ) )
                             ) ) ) ) ) ) ) ) ) ) ) ) )
     =
-    let open Pool_user in
     let open CCResult in
     Ok
       { user
-      ; terms_accepted_at = CCOption.map TermsAccepted.create terms_accepted_at
+      ; terms_accepted_at
       ; language
       ; experiment_type_preference
       ; phone_number
-      ; paused = Paused.create paused
-      ; disabled = Disabled.create disabled
-      ; verified = CCOption.map Verified.create verified
-      ; email_verified = CCOption.map EmailVerified.create email_verified
+      ; paused
+      ; disabled
+      ; verified
+      ; email_verified
       ; num_invitations = NumberOfInvitations.of_int num_invitations
       ; num_assignments = NumberOfAssignments.of_int num_assignments
       ; num_show_ups = NumberOfShowUps.of_int num_show_ups
@@ -164,16 +162,15 @@ let t =
 
 let contact =
   let encode m =
-    let open Pool_user in
     Ok
       ( m.user.Sihl_user.id
-      , ( CCOption.map TermsAccepted.value m.terms_accepted_at
+      , ( m.terms_accepted_at
         , ( m.language
           , ( m.experiment_type_preference
-            , ( Paused.value m.paused
-              , ( Disabled.value m.disabled
-                , ( CCOption.map Verified.value m.verified
-                  , ( CCOption.map EmailVerified.value m.email_verified
+            , ( m.paused
+              , ( m.disabled
+                , ( m.verified
+                  , ( m.email_verified
                     , ( m.num_invitations
                       , ( m.num_assignments
                         , ( m.num_show_ups
@@ -247,17 +244,16 @@ module Write = struct
 
   let t =
     let encode m =
-      let open Pool_user in
       Ok
         ( m.user_id
-        , ( CCOption.map TermsAccepted.value m.terms_accepted_at
+        , ( m.terms_accepted_at
           , ( m.language
             , ( m.experiment_type_preference
               , ( m.phone_number
-                , ( Paused.value m.paused
-                  , ( Disabled.value m.disabled
-                    , ( CCOption.map Verified.value m.verified
-                      , ( CCOption.map EmailVerified.value m.email_verified
+                , ( m.paused
+                  , ( m.disabled
+                    , ( m.verified
+                      , ( m.email_verified
                         , ( m.num_invitations
                           , ( m.num_assignments
                             , ( m.num_show_ups
@@ -333,14 +329,12 @@ module Preview = struct
 
   let t =
     let encode (m : t) =
-      let open Pool_user in
       Ok
         ( m.user
         , ( m.language
           , ( m.phone_number
-            , ( Paused.value m.paused
-              , ( CCOption.map Verified.value m.verified
-                , (m.num_invitations, m.num_assignments) ) ) ) ) )
+            , (m.paused, (m.verified, (m.num_invitations, m.num_assignments)))
+            ) ) )
     in
     let decode
       ( user
@@ -348,15 +342,14 @@ module Preview = struct
         , ( phone_number
           , (paused, (verified, (num_invitations, num_assignments))) ) ) )
       =
-      let open Pool_user in
       let open CCResult in
       Ok
         Entity.Preview.
           { user
           ; language
           ; phone_number
-          ; paused = Paused.create paused
-          ; verified = CCOption.map Verified.create verified
+          ; paused
+          ; verified
           ; num_invitations = NumberOfInvitations.of_int num_invitations
           ; num_assignments = NumberOfAssignments.of_int num_assignments
           }
