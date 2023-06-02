@@ -7,7 +7,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 ## Added
 
 - text message service
-- option to send session cancellation messages as text message
+- option to send session cancellation messages as text messages
 
 ## [0.2.1](https://github.com/uzh/pool/tree/0.2.1) - 2023-06-01
 
