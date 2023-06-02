@@ -5,7 +5,12 @@ let worker_services =
   [ Database.register ()
   ; Service.Storage.register ()
   ; Schedule.register ()
-  ; Queue.register ~jobs:[ Queue.hide Pool_tenant.Service.Email.Job.send ] ()
+  ; Queue.register
+      ~jobs:
+        [ Queue.hide Pool_tenant.Service.Email.Job.send
+          (* ; Queue.hide System_event.Host.Job.handle *)
+        ]
+      ()
   ; Matcher.register ()
   ]
 ;;
@@ -15,7 +20,9 @@ let services =
   ; Service.User.register ~commands:[] ()
   ; Service.Token.register ()
   ; Pool_tenant.Service.Email.register ()
-  ; Pool_tenant.Service.Queue.register ()
+  ; Pool_tenant.Service.Queue.register
+      (* ~jobs:[ hide System_event.Host.Job.handle ] *)
+      ()
   ; Service.Storage.register ()
   ; Sihl.Web.Http.register ~middlewares:Routes.global_middlewares Routes.router
   ]

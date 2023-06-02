@@ -70,6 +70,7 @@ module Root = struct
       ; Migration_i18n.migration ()
       ; Migration_message_templates.migration ()
       ; Migration_schedule.migration ()
+      ; Migration_202306021033.migration ()
       ]
   ;;
 
