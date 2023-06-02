@@ -1005,14 +1005,15 @@ let cancel
   flash_fetcher
   =
   let open Pool_common in
+  let open CCFun in
   let action =
     Format.asprintf
       "/admin/experiments/%s/sessions/%s/cancel"
       (Experiment.Id.value experiment.Experiment.id)
       Session.(Id.value session.id)
   in
-  let field_to_string f =
-    f |> Utils.field_to_string language |> CCString.capitalize_ascii |> txt
+  let field_to_string =
+    Utils.field_to_string language %> CCString.capitalize_ascii %> txt
   in
   let follow_ups_notification () =
     match follow_ups with
@@ -1056,22 +1057,23 @@ let cancel
            ; div
                ~a:[ a_class [ "form-group" ] ]
                (label [ Message.Field.NotifyVia |> field_to_string ]
-                :: (Field.[ Email; TextMessage ]
-                    |> CCList.map (fun field ->
-                         div
-                           [ input
-                               ~a:
-                                 [ a_input_type `Radio
-                                 ; a_value (Field.show field)
-                                 ; a_id (Field.show field)
-                                 ; a_name (Field.show Field.NotifyVia)
-                                 ; a_required ()
-                                 ]
-                               ()
-                           ; label
-                               ~a:[ a_label_for (Field.show field) ]
-                               [ field |> field_to_string ]
-                           ])))
+                :: Pool_common.(
+                     NotifyVia.all
+                     |> CCList.map (fun option ->
+                          div
+                            [ input
+                                ~a:
+                                  [ a_input_type `Radio
+                                  ; a_value (NotifyVia.show option)
+                                  ; a_id (NotifyVia.show option)
+                                  ; a_name (Field.show Field.NotifyVia)
+                                  ; a_required ()
+                                  ]
+                                ()
+                            ; label
+                                ~a:[ a_label_for (NotifyVia.show option) ]
+                                [ NotifyVia.to_human language option |> txt ]
+                            ])))
            ; div
                ~a:[ a_class [ "flexrow" ] ]
                [ submit_element

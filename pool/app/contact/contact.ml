@@ -20,8 +20,8 @@ let find_phone_number_verification_by_contact =
   Repo.find_phone_number_verification_by_contact
 ;;
 
-let find_phone_number_verification_by_contact_and_token =
-  Repo.find_phone_number_verification_by_contact_and_token
+let find_phone_number_verification_by_contact_and_code =
+  Repo.find_phone_number_verification_by_contact_and_code
 ;;
 
 let find_full_phone_number_verification_by_contact =

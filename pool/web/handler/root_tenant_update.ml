@@ -30,7 +30,6 @@ let update req command success_message =
       err, redirect_path, [ HttpUtils.urlencoded_to_flash urlencoded ])
     @@
     let events tenant =
-      Logs.info (fun m -> m "%s" "============ evebts ==========");
       let open Utils.Lwt_result.Infix in
       let open Pool_tenant in
       let updates, creations =

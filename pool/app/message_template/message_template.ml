@@ -321,7 +321,9 @@ module PasswordReset = struct
 end
 
 module PhoneVerification = struct
-  let message_params token = [ "token", Pool_common.Token.value token ]
+  let message_params token =
+    [ "token", Pool_common.VerificationCode.value token ]
+  ;;
 
   let create_text_message
     pool

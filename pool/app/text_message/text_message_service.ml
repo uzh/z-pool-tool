@@ -74,8 +74,7 @@ Text:
 
 let print_message ~tags ?(log_level = Logs.Info) msg =
   let text_message = format_message msg in
-  Logs.msg ~src log_level (fun m -> m ~tags "%s" text_message);
-  Lwt.return_unit
+  Logs.msg ~src log_level (fun m -> m ~tags "%s" text_message)
 ;;
 
 let intercept_message ~tags database_label message recipient =
@@ -113,9 +112,17 @@ let handle ?ctx msg =
   let%lwt api_key = get_api_key database_label in
   let tags = tags database_label in
   match Sihl.Configuration.is_production () || bypass () with
-  | false -> print_message ~tags msg |> Lwt.map CCResult.return
+  | false -> print_message ~tags msg |> Lwt_result.return
   | true ->
-    (match Sihl.Configuration.read_string "TEXT_MESSAGE_INTERCEPT_ADDRESS" with
+    let intercept_address =
+      match
+        Sihl.Configuration.(
+          is_production (), read_string "TEXT_MESSAGE_INTERCEPT_ADDRESS")
+      with
+      | true, _ | _, None -> None
+      | false, Some address -> Some address
+    in
+    (match intercept_address with
      | Some email ->
        email
        |> Pool_user.EmailAddress.of_string

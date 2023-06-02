@@ -122,7 +122,7 @@ module UnverifiedPhoneNumber : sig
 
   type full =
     { phone_number : PhoneNumber.t
-    ; token : Pool_common.Token.t
+    ; verification_code : Pool_common.VerificationCode.t
     ; created_at : Pool_common.CreatedAt.t
     }
 end

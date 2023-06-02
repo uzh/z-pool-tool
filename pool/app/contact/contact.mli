@@ -127,10 +127,10 @@ val find_phone_number_verification_by_contact
   -> t
   -> Pool_user.UnverifiedPhoneNumber.t option Lwt.t
 
-val find_phone_number_verification_by_contact_and_token
+val find_phone_number_verification_by_contact_and_code
   :  Pool_database.Label.t
   -> t
-  -> Pool_common.Token.t
+  -> Pool_common.VerificationCode.t
   -> (Pool_user.UnverifiedPhoneNumber.t, Pool_common.Message.error) result Lwt.t
 
 val find_full_phone_number_verification_by_contact
@@ -174,7 +174,8 @@ type event =
   | TermsAccepted of t
   | Disabled of t
   | UnverifiedDeleted of t
-  | PhoneNumberAdded of t * Pool_user.PhoneNumber.t * Pool_common.Token.t
+  | PhoneNumberAdded of
+      t * Pool_user.PhoneNumber.t * Pool_common.VerificationCode.t
   | PhoneNumberVerified of t * Pool_user.PhoneNumber.t
   | PhoneNumberVerificationReset of t
   | ProfileUpdateTriggeredAtUpdated of t list

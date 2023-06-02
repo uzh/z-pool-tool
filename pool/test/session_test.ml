@@ -511,7 +511,11 @@ let create_cancellation_message reason contact =
   |> CCResult.return
 ;;
 
-let create_cancellation_text_message _ _ phone_number =
+let create_cancellation_text_message
+  (_ : Session.CancellationReason.t)
+  (_ : Contact.t)
+  phone_number
+  =
   Model.create_text_message phone_number |> CCResult.return
 ;;
 
@@ -702,7 +706,9 @@ let cancel_valid () =
          contact.Contact.phone_number
          |> CCOption.to_result Pool_common.Message.(Invalid Field.PhoneNumber)
          |> Test_utils.get_or_failwith_pool_error
-         |> create_cancellation_text_message () ()
+         |> create_cancellation_text_message
+              (Session.CancellationReason.of_string "reason")
+              contact
          |> Test_utils.get_or_failwith_pool_error)
   in
   check_result
@@ -744,7 +750,9 @@ let cancel_valid_with_missing_phone_number () =
       contact1.Contact.phone_number
       |> CCOption.to_result Pool_common.Message.(Invalid Field.PhoneNumber)
       |> Test_utils.get_or_failwith_pool_error
-      |> create_cancellation_text_message () ()
+      |> create_cancellation_text_message
+           (Session.CancellationReason.of_string reason)
+           contact1
       |> Test_utils.get_or_failwith_pool_error
     in
     [ Text_message.BulkSent [ text_msg ] |> Pool_event.text_message ]

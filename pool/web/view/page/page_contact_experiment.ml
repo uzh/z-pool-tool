@@ -38,7 +38,7 @@ let index
         in
         Some
           (Component.Notification.notification
-             ~link:"/user/personal-details"
+             ~link:("/user/personal-details", Pool_common.I18n.PersonalDetails)
              language
              `Warning
              text))
@@ -198,21 +198,23 @@ let show
     in
     let text_blocks =
       let base =
-        if user_is_enlisted
-        then p [ txt (hint_to_string I18n.ContactOnWaitingList) ]
-        else p [ txt (hint_to_string I18n.SignUpForWaitingList) ]
+        (if user_is_enlisted
+         then I18n.ContactOnWaitingList
+         else I18n.SignUpForWaitingList)
+        |> fun msg -> p [ txt (hint_to_string msg) ]
       in
       let missing_phone =
         if CCOption.is_none contact.Contact.phone_number
         then
-          Component.Notification.notification
-            ~link:"/user/contact-information"
-            language
-            `Warning
-            [ txt (hint_to_string I18n.WaitingListPhoneMissingContact) ]
-        else txt ""
+          [ Component.Notification.notification
+              ~link:("/user/contact-information", I18n.PersonalDetails)
+              language
+              `Warning
+              [ txt (hint_to_string I18n.WaitingListPhoneMissingContact) ]
+          ]
+        else []
       in
-      div [ missing_phone; base ]
+      div (missing_phone @ [ base ])
     in
     div
       ~a:[ a_class [ "stack" ] ]

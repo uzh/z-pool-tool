@@ -205,10 +205,17 @@ end
 module PhoneNumber = struct
   type t = string [@@deriving eq, show, yojson]
 
-  (** TODO: Implement validation using regex
-
-      - international format required (+41791234567) *)
-  let validate str = Ok str
+  let validate str =
+    let regex =
+      Re.(
+        seq [ alt [ char '+'; char '0' ]; repn digit 7 (Some 16) ]
+        |> whole_string
+        |> compile)
+    in
+    if Re.execp regex str
+    then Ok str
+    else Error Pool_common.Message.(Invalid Field.PhoneNumber)
+  ;;
 
   let create = CCFun.(remove_whitespaces %> validate)
   let of_string m = m
@@ -223,7 +230,7 @@ module UnverifiedPhoneNumber = struct
 
   type full =
     { phone_number : PhoneNumber.t
-    ; token : Pool_common.Token.t
+    ; verification_code : Pool_common.VerificationCode.t
     ; created_at : Pool_common.CreatedAt.t
     }
 end

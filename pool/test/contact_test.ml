@@ -303,6 +303,33 @@ let password_special_char () =
           Pool_user.Password.Policy.default_special_char_set))
 ;;
 
+let validate_phone_number nr expected =
+  let res = nr |> Pool_user.PhoneNumber.create in
+  Alcotest.(check Test_utils.(result phone_nr error) "succeeds" expected res)
+;;
+
+let valid_swiss_number () =
+  let nr = "+41791234567" in
+  let expected =
+    nr
+    |> Pool_user.PhoneNumber.create
+    |> Test_utils.get_or_failwith_pool_error
+    |> CCResult.return
+  in
+  validate_phone_number nr expected
+;;
+
+let valid_german_number () =
+  let nr = "+491512345678" in
+  let expected =
+    nr
+    |> Pool_user.PhoneNumber.create
+    |> Test_utils.get_or_failwith_pool_error
+    |> CCResult.return
+  in
+  validate_phone_number nr expected
+;;
+
 let valid_password () =
   let password = "Password9*" in
   let expected =

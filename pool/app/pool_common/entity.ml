@@ -222,7 +222,7 @@ module ExperimentType = struct
   include Core
 end
 
-module Token = struct
+module VerificationCode = struct
   type t = string [@@deriving eq, show]
 
   let value m = m
@@ -238,5 +238,33 @@ module Token = struct
           (Format.asprintf "%s%s" acc (Random.int 10 |> CCInt.to_string))
     in
     go length ""
+  ;;
+end
+
+module NotifyVia = struct
+  module Core = struct
+    let field = PoolError.Field.NotifyVia
+
+    type t =
+      | Email [@name "email"] [@printer print "email"]
+      | TextMessage [@name "text_message"] [@printer print "text_message"]
+    [@@deriving enum, eq, ord, sexp_of, show { with_path = false }, yojson]
+  end
+
+  include Entity_base_model.SelectorType (Core)
+  include Core
+
+  let to_human language m =
+    let open Entity_message in
+    let show field =
+      CCString.capitalize_ascii
+      @@
+      match language with
+      | Language.De -> Locales_de.field_to_string field
+      | Language.En -> Locales_en.field_to_string field
+    in
+    match m with
+    | Email -> Field.Email |> show
+    | TextMessage -> Field.TextMessage |> show
   ;;
 end

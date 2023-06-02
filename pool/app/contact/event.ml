@@ -53,7 +53,7 @@ type event =
   | TermsAccepted of t
   | Disabled of t
   | UnverifiedDeleted of t
-  | PhoneNumberAdded of t * User.PhoneNumber.t * Pool_common.Token.t
+  | PhoneNumberAdded of t * User.PhoneNumber.t * Pool_common.VerificationCode.t
   | PhoneNumberVerified of t * User.PhoneNumber.t
   | PhoneNumberVerificationReset of t
   | ProfileUpdateTriggeredAtUpdated of t list

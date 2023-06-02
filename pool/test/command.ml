@@ -40,6 +40,14 @@ let () =
             `Quick
             Contact_test.password_special_char
         ; test_case
+            "phone number: valid swiss number"
+            `Quick
+            Contact_test.valid_swiss_number
+        ; test_case
+            "phone number: valid german number"
+            `Quick
+            Contact_test.valid_german_number
+        ; test_case
             "password policy: valid password"
             `Quick
             Contact_test.valid_password

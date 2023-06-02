@@ -1,14 +1,6 @@
 module Conformist = Pool_common.Utils.PoolConformist
 open CCFun
 
-let notify_via_from_string str =
-  let open Pool_common.Message in
-  match str with
-  | _ when CCString.equal str Field.(show Email) -> Ok `Email
-  | _ when CCString.equal str Field.(show TextMessage) -> Ok `TextMessage
-  | _ -> Error (Invalid Field.NotifyVia)
-;;
-
 let src = Logs.Src.create "session.cqrs"
 
 let create_command
@@ -392,7 +384,7 @@ end
 
 module Cancel : sig
   type t =
-    { notfiy_via : string
+    { notify_via : Pool_common.NotifyVia.t
     ; reason : Session.CancellationReason.t
     }
 
@@ -414,7 +406,7 @@ module Cancel : sig
   val effects : Experiment.Id.t -> Session.Id.t -> Guard.ValidationSet.t
 end = struct
   type t =
-    { notfiy_via : string
+    { notify_via : Pool_common.NotifyVia.t
     ; reason : Session.CancellationReason.t
     }
 
@@ -444,16 +436,15 @@ end = struct
            |> Pool_event.contact)
     in
     let* notification_events =
-      notify_via_from_string command.notfiy_via
-      >>= function
-      | `Email ->
+      match command.notify_via with
+      | Pool_common.NotifyVia.Email ->
         let* emails =
           assignments
           |> CCList.map (fst %> email_fn command.reason)
           |> CCResult.flatten_l
         in
         Ok [ Email.BulkSent emails |> Pool_event.email ]
-      | `TextMessage ->
+      | Pool_common.NotifyVia.TextMessage ->
         let* text_messags, emails =
           assignments
           |> CCList.partition_filter_map (fun (contact, _) ->
@@ -480,13 +471,13 @@ end = struct
     |> CCResult.return
   ;;
 
-  let command notfiy_via reason = { notfiy_via; reason }
+  let command notify_via reason = { notify_via; reason }
 
   let schema =
     Conformist.(
       make
         Field.
-          [ string Pool_common.Message.Field.(show NotifyVia)
+          [ Pool_common.NotifyVia.schema ()
           ; Session.CancellationReason.schema ()
           ]
         command)

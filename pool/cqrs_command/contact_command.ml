@@ -396,7 +396,8 @@ end
 module AddPhoneNumber : sig
   include
     Common.CommandSig
-      with type t = Contact.t * User.PhoneNumber.t * Pool_common.Token.t
+      with type t =
+        Contact.t * User.PhoneNumber.t * Pool_common.VerificationCode.t
 
   val handle
     :  ?tags:Logs.Tag.set
@@ -405,7 +406,7 @@ module AddPhoneNumber : sig
 
   val effects : Contact.Id.t -> Guard.ValidationSet.t
 end = struct
-  type t = Contact.t * User.PhoneNumber.t * Pool_common.Token.t
+  type t = Contact.t * User.PhoneNumber.t * Pool_common.VerificationCode.t
 
   let handle ?(tags = Logs.Tag.empty) (contact, phone_number, token) =
     Logs.info ~src (fun m -> m "Handle command AddPhoneNumber" ~tags);

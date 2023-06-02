@@ -254,14 +254,14 @@ module PasswordReset : sig
 end
 
 module PhoneVerification : sig
-  val message_params : Pool_common.Token.t -> (string * string) list
+  val message_params : Pool_common.VerificationCode.t -> (string * string) list
 
   val create_text_message
     :  Pool_database.Label.t
     -> Pool_common.Language.t
     -> Pool_tenant.t
     -> Pool_user.PhoneNumber.t
-    -> Pool_common.Token.t
+    -> Pool_common.VerificationCode.t
     -> (Text_message.t, Pool_common.Message.error) result Lwt.t
 end
 

@@ -419,13 +419,13 @@ let add_phone_number_request =
   |> Caqti_type.(tup3 string string string ->. unit)
 ;;
 
-let add_phone_number pool contact phone_number token =
+let add_phone_number pool contact phone_number code =
   Utils.Database.exec
     (Pool_database.Label.value pool)
     add_phone_number_request
     ( Pool_user.PhoneNumber.value phone_number
     , Entity.(id contact |> Id.value)
-    , Pool_common.Token.value token )
+    , Pool_common.VerificationCode.value code )
 ;;
 
 let phone_number_verifiaction_sql ?(where = "") () =
@@ -456,18 +456,18 @@ let find_phone_number_verification_by_contact pool contact =
     Entity.(id contact |> Id.value)
 ;;
 
-let find_phone_number_verification_by_contact_and_token_request =
+let find_phone_number_verification_by_contact_and_code_request =
   let open Caqti_request.Infix in
   phone_number_verifiaction_sql ~where:"AND token = ?" ()
   |> Caqti_type.(tup2 string string ->? Pool_user.Repo.UnverifiedPhoneNumber.t)
 ;;
 
-let find_phone_number_verification_by_contact_and_token pool contact token =
+let find_phone_number_verification_by_contact_and_code pool contact code =
   let open Utils.Lwt_result.Infix in
   Utils.Database.find_opt
     (Pool_database.Label.value pool)
-    find_phone_number_verification_by_contact_and_token_request
-    (Entity.(id contact |> Id.value), Pool_common.Token.value token)
+    find_phone_number_verification_by_contact_and_code_request
+    (Entity.(id contact |> Id.value), Pool_common.VerificationCode.value code)
   ||> CCOption.to_result Pool_common.Message.(Invalid Field.Token)
 ;;
 

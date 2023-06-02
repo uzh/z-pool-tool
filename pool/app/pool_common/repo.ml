@@ -95,8 +95,8 @@ end
 
 module ExperimentType = Model.SelectorType (ExperimentType)
 
-module Token = struct
-  include Token
+module VerificationCode = struct
+  include VerificationCode
 
   let t =
     make_caqti_type Caqti_type.string CCFun.(of_string %> CCResult.return) value

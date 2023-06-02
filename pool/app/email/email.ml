@@ -19,10 +19,5 @@ let create_token pool address =
   ||> Token.create
 ;;
 
-module Service = struct
-  include Email_service
-end
-
-module Guard = struct
-  include Entity_guard
-end
+module Service = Email_service
+module Guard = Entity_guard

@@ -34,6 +34,10 @@ let check_result ?(msg = "succeeds") =
 
 let password = Alcotest.testable Pool_user.Password.pp Pool_user.Password.equal
 
+let phone_nr =
+  Alcotest.testable Pool_user.PhoneNumber.pp Pool_user.PhoneNumber.equal
+;;
+
 (* Helper functions *)
 
 let setup_test () =
