@@ -23,6 +23,20 @@ let database_fields tenant language flash_fetcher =
 
 let map_or = CCOption.map_or ~default:""
 
+let gtx_api_inputs ~flash_fetcher language =
+  div
+    ~a:[ a_class [ "stack" ] ]
+    [ input_element language `Text Field.GtxApiKey ~flash_fetcher ~required:true
+    ; input_element
+        language
+        `Text
+        Field.TestPhoneNumber
+        ~flash_fetcher
+        ~required:true
+        ~help:Pool_common.I18n.GtxTestPhoneNumber
+    ]
+;;
+
 let tenant_form
   ?(tenant : Pool_tenant.t option)
   Pool_context.{ language; csrf; _ }
@@ -70,8 +84,7 @@ let tenant_form
   in
   let gtx_api_key_input =
     if CCOption.is_none tenant
-    then
-      input_element language `Text Field.GtxApiKey ~flash_fetcher ~required:true
+    then gtx_api_inputs ~flash_fetcher language
     else txt ""
   in
   form
@@ -251,7 +264,7 @@ let update_gtx_api_key_form
       ; a_class [ "stack" ]
       ]
     [ csrf_element csrf ()
-    ; input_element language `Text Field.GtxApiKey ~flash_fetcher ~required:true
+    ; gtx_api_inputs ~flash_fetcher language
     ; submit_element language Message.(Update (Some Field.GtxApiKey)) ()
     ]
   |> tenant_detail_sub_form language Message.Field.GtxApiKey

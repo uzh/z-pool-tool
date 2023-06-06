@@ -191,6 +191,7 @@ let rec field_to_string =
   | TenantPool -> "tenant pool"
   | TermsAccepted -> "accept"
   | TermsAndConditions -> "terms and conditions"
+  | TestPhoneNumber -> "test phone number"
   | TextMessage -> "text message"
   | Time -> "time"
   | TimeSpan -> "time span"

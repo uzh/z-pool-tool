@@ -29,12 +29,13 @@ let create req =
     multipart_encoded
     |> HttpUtils.multipart_to_urlencoded Pool_tenant.file_fields
   in
-  let result _ =
+  let result { Pool_context.database_label; _ } =
     Utils.Lwt_result.map_error (fun err ->
       err, tenants_path, [ HttpUtils.urlencoded_to_flash urlencoded ])
     @@
     let events () =
       let open CCFun in
+      let open Cqrs_command.Pool_tenant_command in
       let* database =
         let open Cqrs_command.Pool_tenant_command.CreateDatabase in
         let* { database_url; database_label } =
@@ -43,19 +44,26 @@ let create req =
         Pool_database.test_and_create database_url database_label
       in
       let* files =
-        File.upload_files
+        HttpUtils.File.upload_files
           Database.root
           (CCList.map Pool_common.Message.Field.show Pool_tenant.file_fields)
           req
       in
-      let events =
-        let open CCResult.Infix in
-        let open Cqrs_command.Pool_tenant_command.Create in
+      let* (decoded : create) =
         files @ multipart_encoded
-        |> File.multipart_form_data_to_urlencoded
-        |> decode
-        >>= handle ~tags database
+        |> HttpUtils.File.multipart_form_data_to_urlencoded
+        |> Create.decode
         |> Lwt_result.lift
+      in
+      let* gtx_api_key =
+        Update.validated_gtx_api_key
+          ~tags
+          database_label
+          decoded.title
+          urlencoded
+      in
+      let events =
+        Create.handle ~tags database gtx_api_key decoded |> Lwt_result.lift
       in
       events >|> HttpUtils.File.cleanup_upload Database.root files
     in

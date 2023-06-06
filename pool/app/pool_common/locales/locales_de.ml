@@ -190,6 +190,7 @@ let rec field_to_string =
   | TenantPool -> "Tenant Pool"
   | TermsAccepted -> "Akzeptieren"
   | TermsAndConditions -> "Teilnahmebedingungen"
+  | TestPhoneNumber -> "Testtelefonnummer"
   | TextMessage -> "SMS"
   | Time -> "Uhrzeit"
   | TimeSpan -> "Zeitspanne"

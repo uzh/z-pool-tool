@@ -228,7 +228,9 @@ let[@warning "-4"] create_tenant () =
   let open Data in
   let events =
     let open CCResult.Infix in
-    Pool_tenant_command.Create.(Data.urlencoded |> decode >>= handle database)
+    let api_key = gtx_api_key |> Pool_tenant.GtxApiKey.of_string in
+    Pool_tenant_command.Create.(
+      Data.urlencoded |> decode >>= handle database api_key)
   in
   let ( tenant_id
       , created_at

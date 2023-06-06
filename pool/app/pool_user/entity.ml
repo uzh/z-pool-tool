@@ -220,6 +220,10 @@ module PhoneNumber = struct
   let create = CCFun.(remove_whitespaces %> validate)
   let of_string m = m
   let value m = m
+
+  let schema_test_phone_number () =
+    Pool_common.Utils.schema_decoder create show PoolError.Field.TestPhoneNumber
+  ;;
 end
 
 module UnverifiedPhoneNumber = struct

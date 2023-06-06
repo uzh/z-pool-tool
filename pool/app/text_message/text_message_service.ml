@@ -77,28 +77,63 @@ let print_message ~tags ?(log_level = Logs.Info) msg =
   Logs.msg ~src log_level (fun m -> m ~tags "%s" text_message)
 ;;
 
-let intercept_message ~tags database_label message recipient =
-  Logs.info ~src (fun m ->
-    m
-      ~tags
-      "Sending text message intercepted. Sending message as email to ('%s')"
-      (Pool_user.EmailAddress.value recipient));
-  let sender =
-    Sihl.Configuration.read_string "SMTP_SENDER"
-    |> CCOption.get_exn_or "Undefined 'SMTP_SENDER'"
+let intercept_message ~tags database_label msg =
+  let send_intercept_message recipient =
+    Logs.info ~src (fun m ->
+      m
+        ~tags
+        "Sending text message intercepted. Sending message as email to ('%s')"
+        (Pool_user.EmailAddress.value recipient));
+    let sender =
+      Sihl.Configuration.read_string "SMTP_SENDER"
+      |> CCOption.get_exn_or "Undefined 'SMTP_SENDER'"
+    in
+    let body = format_message msg in
+    let subject = "Text message intercept" in
+    Sihl_email.
+      { sender
+      ; recipient = Pool_user.EmailAddress.value recipient
+      ; subject
+      ; text = body
+      ; html = Some body
+      ; cc = []
+      ; bcc = []
+      }
+    |> Email.Service.dispatch database_label
   in
-  let body = format_message message in
-  let subject = "Text message intercept" in
-  Sihl_email.
-    { sender
-    ; recipient = Pool_user.EmailAddress.value recipient
-    ; subject
-    ; text = body
-    ; html = Some body
-    ; cc = []
-    ; bcc = []
-    }
-  |> Email.Service.dispatch database_label
+  match Sihl.Configuration.is_production () || bypass () with
+  | false -> print_message ~tags msg |> Lwt.return_some
+  | true ->
+    let intercept_address =
+      match
+        Sihl.Configuration.(
+          is_production (), read_string "TEXT_MESSAGE_INTERCEPT_ADDRESS")
+      with
+      | true, _ | _, None -> None
+      | false, Some address -> Some address
+    in
+    intercept_address
+    |> CCOption.map_or
+         ~default:(() |> Lwt.return_some)
+         CCFun.(
+           Pool_user.EmailAddress.of_string
+           %> send_intercept_message
+           %> Lwt.map CCOption.return)
+;;
+
+let send_message api_key msg =
+  let open Cohttp_lwt_unix in
+  let body = request_body msg |> Cohttp_lwt.Body.of_form in
+  let%lwt resp, body =
+    api_key
+    |> Pool_tenant.GtxApiKey.value
+    |> Config.gateway_url
+    |> Uri.of_string
+    |> Client.post ~body
+  in
+  let%lwt body_string = Cohttp_lwt.Body.to_string body in
+  let%lwt () = Cohttp_lwt.Body.drain_body body in
+  Lwt.return (resp, body_string)
 ;;
 
 let handle ?ctx msg =
@@ -111,57 +146,62 @@ let handle ?ctx msg =
   in
   let%lwt api_key = get_api_key database_label in
   let tags = tags database_label in
-  match Sihl.Configuration.is_production () || bypass () with
-  | false -> print_message ~tags msg |> Lwt_result.return
-  | true ->
-    let intercept_address =
-      match
-        Sihl.Configuration.(
-          is_production (), read_string "TEXT_MESSAGE_INTERCEPT_ADDRESS")
-      with
-      | true, _ | _, None -> None
-      | false, Some address -> Some address
-    in
-    (match intercept_address with
-     | Some email ->
-       email
-       |> Pool_user.EmailAddress.of_string
-       |> intercept_message database_label ~tags msg
-       |> Lwt.map CCResult.return
-     | None ->
-       let open Cohttp in
-       let open Cohttp_lwt_unix in
-       let body = request_body msg |> Cohttp_lwt.Body.of_form in
-       let%lwt resp, body =
-         api_key
-         |> Pool_tenant.GtxApiKey.value
-         |> Config.gateway_url
-         |> Uri.of_string
-         |> Client.post ~body
+  match%lwt intercept_message ~tags database_label msg with
+  | Some () -> Lwt_result.return ()
+  | None ->
+    let open Cohttp in
+    let%lwt resp, body_string = send_message api_key msg in
+    (match
+       resp |> Response.status |> Code.code_of_status |> CCInt.equal 200
+     with
+     | false ->
+       let error =
+         Format.asprintf
+           "Could not send text message: %s\nresponse: %s"
+           body_string
+           (response_to_string resp)
        in
-       let%lwt body_string = Cohttp_lwt.Body.to_string body in
-       let%lwt () = Cohttp_lwt.Body.drain_body body in
-       (match
-          resp |> Response.status |> Code.code_of_status |> CCInt.equal 200
-        with
-        | false ->
-          let error =
-            Format.asprintf
-              "Could not send text message: %s\nresponse: %s"
-              body_string
-              (response_to_string resp)
-          in
-          Logs.err ~src (fun m -> m ~tags "%s" error);
-          Lwt.return_error error
-        | true ->
-          Logs.info ~src (fun m ->
-            m
-              ~tags
-              "Send text message to %s: %s\n%s"
-              (PhoneNumber.value msg.recipient)
-              msg.text
-              body_string);
-          Lwt.return_ok ()))
+       Logs.err ~src (fun m -> m ~tags "%s" error);
+       Lwt.return_error error
+     | true ->
+       Logs.info ~src (fun m ->
+         m
+           ~tags
+           "Send text message to %s: %s\n%s"
+           (PhoneNumber.value msg.recipient)
+           msg.text
+           body_string);
+       Lwt.return_ok ())
+;;
+
+let test_api_key ~tags database_label api_key phone_number tenant_title =
+  let open Cohttp in
+  let msg = create phone_number tenant_title "Your API Key is valid." in
+  match%lwt intercept_message ~tags database_label msg with
+  | Some () -> Lwt_result.return api_key
+  | None ->
+    let%lwt resp, body_string = send_message api_key msg in
+    (match
+       resp |> Response.status |> Code.code_of_status |> CCInt.equal 200
+     with
+     | false ->
+       let error =
+         Format.asprintf
+           "Verifying API Key: Could not send text message: %s\nresponse: %s"
+           body_string
+           (response_to_string resp)
+       in
+       Logs.err ~src (fun m -> m ~tags "%s" error);
+       Lwt.return_error Pool_common.Message.(Invalid Field.GtxApiKey)
+     | true ->
+       Logs.info ~src (fun m ->
+         m
+           ~tags
+           "Verifying API Key: Send text message to %s: %s\n%s"
+           (PhoneNumber.value msg.recipient)
+           msg.text
+           body_string);
+       Lwt.return_ok api_key)
 ;;
 
 module Job = struct

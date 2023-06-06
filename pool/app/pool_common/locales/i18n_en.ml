@@ -222,6 +222,9 @@ let rec hint_to_string = function
      assigned a session, it is no longer displayed."
   | FilterContacts ->
     "Define the criteria by which contacts will be invited to this experiment."
+  | GtxTestPhoneNumber ->
+    "Please provide a phone number where we can send a single test message to \
+     verify the api key. The number must have the format +41791234567."
   | LocationFiles ->
     "Additional information about the location, such as directions. Contacts \
      who are participating in a session at this location can access access \
