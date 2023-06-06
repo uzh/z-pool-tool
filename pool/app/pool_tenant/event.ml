@@ -8,7 +8,6 @@ type update =
   { title : Title.t
   ; description : Description.t option
   ; url : Url.t
-  ; gtx_api_key : GtxApiKey.t
   ; disabled : Disabled.t
   ; default_language : Pool_common.Language.t
   ; styles : Styles.Write.t option
@@ -27,6 +26,7 @@ type event =
   | Destroyed of Id.t
   | ActivateMaintenance of Write.t
   | DeactivateMaintenance of Write.t
+  | GtxApiKeyUpdated of Write.t * GtxApiKey.t
 [@@deriving eq, show]
 
 let handle_event pool : event -> unit Lwt.t = function
@@ -51,21 +51,17 @@ let handle_event pool : event -> unit Lwt.t = function
   | DetailsEdited (tenant, update_t) ->
     let open Entity.Write in
     let open CCOption.Infix in
-    let%lwt () =
-      { tenant with
-        title = update_t.title
-      ; description = update_t.description
-      ; url = update_t.url
-      ; gtx_api_key = update_t.gtx_api_key
-      ; styles = update_t.styles <+> tenant.styles
-      ; icon = update_t.icon <+> tenant.icon
-      ; disabled = update_t.disabled
-      ; default_language = update_t.default_language
-      ; updated_at = Ptime_clock.now ()
-      }
-      |> Repo.update Database.root
-    in
-    Lwt.return_unit
+    { tenant with
+      title = update_t.title
+    ; description = update_t.description
+    ; url = update_t.url
+    ; styles = update_t.styles <+> tenant.styles
+    ; icon = update_t.icon <+> tenant.icon
+    ; disabled = update_t.disabled
+    ; default_language = update_t.default_language
+    ; updated_at = Ptime_clock.now ()
+    }
+    |> Repo.update Database.root
   | DatabaseEdited (tenant, database) ->
     let open Entity.Write in
     let%lwt () =
@@ -84,4 +80,7 @@ let handle_event pool : event -> unit Lwt.t = function
     let maintenance = false |> Maintenance.create in
     let%lwt () = { tenant with maintenance } |> Repo.update Database.root in
     Lwt.return_unit
+  | GtxApiKeyUpdated (tenant, gtx_api_key) ->
+    let open Entity.Write in
+    { tenant with gtx_api_key } |> Repo.update Database.root
 ;;

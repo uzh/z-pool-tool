@@ -350,13 +350,11 @@ let[@warning "-4"] update_tenant_details () =
       in
       let* url = url |> Pool_tenant.Url.create in
       let* default_language = default_language |> Common.Language.create in
-      let gtx_api_key = Data.gtx_api_key |> GtxApiKey.of_string in
       let disabled = false |> Disabled.create in
       let update : update =
         { title
         ; description
         ; url
-        ; gtx_api_key
         ; default_language
         ; styles = Some styles
         ; icon = Some icon

@@ -133,7 +133,6 @@ module EditDetails : sig
     { title : Pool_tenant.Title.t
     ; description : Pool_tenant.Description.t option
     ; url : Pool_tenant.Url.t
-    ; gtx_api_key : Pool_tenant.GtxApiKey.t
     ; disabled : Pool_tenant.Disabled.t
     ; default_language : Pool_common.Language.t
     ; styles : Pool_tenant.Styles.Write.t option
@@ -158,7 +157,6 @@ end = struct
     { title : Pool_tenant.Title.t
     ; description : Pool_tenant.Description.t option
     ; url : Pool_tenant.Url.t
-    ; gtx_api_key : Pool_tenant.GtxApiKey.t
     ; disabled : Pool_tenant.Disabled.t
     ; default_language : Pool_common.Language.t
     ; styles : Pool_tenant.Styles.Write.t option
@@ -171,7 +169,6 @@ end = struct
     title
     description
     url
-    gtx_api_key
     disabled
     default_language
     styles
@@ -182,7 +179,6 @@ end = struct
     { title
     ; description
     ; url
-    ; gtx_api_key
     ; disabled
     ; default_language
     ; styles
@@ -199,7 +195,6 @@ end = struct
           [ Pool_tenant.Title.schema ()
           ; Conformist.optional @@ Pool_tenant.Description.schema ()
           ; Pool_tenant.Url.schema ()
-          ; Pool_tenant.GtxApiKey.schema ()
           ; Pool_tenant.Disabled.schema ()
           ; Pool_common.Language.schema ()
           ; Conformist.optional @@ Pool_tenant.Styles.Write.schema ()
@@ -221,7 +216,6 @@ end = struct
         { title = command.title
         ; description = command.description
         ; url = command.url
-        ; gtx_api_key = command.gtx_api_key
         ; disabled = command.disabled
         ; styles = command.styles
         ; icon = command.icon
@@ -292,6 +286,42 @@ end = struct
     Logs.info ~src (fun m -> m "Handle command CreateDatabase" ~tags);
     Ok
       [ Pool_tenant.DatabaseEdited (tenant, database) |> Pool_event.pool_tenant
+      ]
+  ;;
+
+  let decode data =
+    Conformist.decode_and_validate schema data
+    |> CCResult.map_err Pool_common.Message.to_conformist_error
+  ;;
+
+  let effects = Pool_tenant.Guard.Access.update
+end
+
+module UpdateGtxApiKey : sig
+  type t = Pool_tenant.GtxApiKey.t
+
+  val handle
+    :  ?tags:Logs.Tag.set
+    -> Pool_tenant.Write.t
+    -> t
+    -> (Pool_event.t list, Pool_common.Message.error) result
+
+  val decode
+    :  (string * string list) list
+    -> (t, Pool_common.Message.error) result
+
+  val effects : Pool_tenant.Id.t -> Guard.ValidationSet.t
+end = struct
+  type t = Pool_tenant.GtxApiKey.t
+
+  let schema =
+    Conformist.(make Field.[ Pool_tenant.GtxApiKey.schema () ] CCFun.id)
+  ;;
+
+  let handle ?(tags = Logs.Tag.empty) (tenant : Pool_tenant.Write.t) api_key =
+    Logs.info ~src (fun m -> m "Handle command UpdateGtxApiKey" ~tags);
+    Ok
+      [ Pool_tenant.GtxApiKeyUpdated (tenant, api_key) |> Pool_event.pool_tenant
       ]
   ;;
 

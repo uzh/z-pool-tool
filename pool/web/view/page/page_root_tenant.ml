@@ -68,6 +68,12 @@ let tenant_form
            ; download
            ])
   in
+  let gtx_api_key_input =
+    if CCOption.is_none tenant
+    then
+      input_element language `Text Field.GtxApiKey ~flash_fetcher ~required:true
+    else txt ""
+  in
   form
     ~a:
       [ a_method `Post
@@ -97,7 +103,7 @@ let tenant_form
         ~value:(value (fun t -> t.url |> Url.value))
         ~flash_fetcher
         ~required:true
-    ; input_element language `Text Field.GtxApiKey ~flash_fetcher ~required:true
+    ; gtx_api_key_input
     ; language_select
     ; (if CCOption.is_some tenant
        then txt ""
@@ -215,6 +221,42 @@ let manage_operators { Pool_tenant.id; _ } Pool_context.{ language; csrf; _ } =
     ]
 ;;
 
+let tenant_detail_sub_form language field form_html =
+  div
+    [ h3
+        ~a:[ a_class [ "heading-3" ] ]
+        [ Pool_common.(Utils.field_to_string language field)
+          |> CCString.capitalize_ascii
+          |> txt
+        ]
+    ; form_html
+    ]
+;;
+
+let update_gtx_api_key_form
+  (tenant : Pool_tenant.t)
+  Pool_context.{ language; csrf; _ }
+  flash_fetcher
+  =
+  let action =
+    Format.asprintf
+      "/root/tenants/%s/update-gtx-api-key"
+      (Id.value tenant.Pool_tenant.id)
+  in
+  form
+    ~a:
+      [ a_action action
+      ; a_method `Post
+      ; a_enctype "multipart/form-data"
+      ; a_class [ "stack" ]
+      ]
+    [ csrf_element csrf ()
+    ; input_element language `Text Field.GtxApiKey ~flash_fetcher ~required:true
+    ; submit_element language Message.(Update (Some Field.GtxApiKey)) ()
+    ]
+  |> tenant_detail_sub_form language Message.Field.GtxApiKey
+;;
+
 let detail
   (tenant : Pool_tenant.t)
   (Pool_context.{ language; csrf; _ } as context)
@@ -256,21 +298,38 @@ let detail
          files)
   in
   let delete_file_forms =
-    let label_text m =
-      m
-      |> Pool_common.Utils.field_to_string language
-      |> CCString.capitalize_ascii
-    in
     div
-      [ h3
-          ~a:[ a_class [ "heading-3" ] ]
-          [ Message.Field.TenantLogos |> label_text |> txt ]
-      ; delete_img_form (tenant.logos |> Pool_tenant.Logos.value)
-      ; h3
-          ~a:[ a_class [ "heading-3" ] ]
-          [ Message.Field.PartnerLogos |> label_text |> txt ]
+      [ delete_img_form (tenant.logos |> Pool_tenant.Logos.value)
+        |> tenant_detail_sub_form language Message.Field.TenantLogos
       ; delete_img_form (tenant.partner_logo |> Pool_tenant.PartnerLogos.value)
+        |> tenant_detail_sub_form language Message.Field.PartnerLogos
       ]
+  in
+  let database_form =
+    form
+      ~a:
+        [ a_action
+            (Sihl.Web.externalize_path
+               (Format.asprintf
+                  "/root/tenants/%s/update-database"
+                  (Id.value tenant.id)))
+        ; a_method `Post
+        ; a_enctype "multipart/form-data"
+        ; a_class [ "stack" ]
+        ]
+      ([ csrf_element csrf ()
+       ; database_fields (Some tenant) language flash_fetcher
+       ]
+       @ [ div
+             ~a:[ a_class [ "flexrow" ] ]
+             [ submit_element
+                 ~classnames:[ "push" ]
+                 language
+                 Message.(Update None)
+                 ()
+             ]
+         ])
+    |> tenant_detail_sub_form language Message.Field.Database
   in
   div
     ~a:[ a_class [ "trim"; "narrow"; "safety-margin" ] ]
@@ -294,29 +353,8 @@ let detail
         ~a:[ a_class [ "stack-lg" ] ]
         [ tenant_form ~tenant context flash_fetcher
         ; delete_file_forms
-        ; form
-            ~a:
-              [ a_action
-                  (Sihl.Web.externalize_path
-                     (Format.asprintf
-                        "/root/tenants/%s/update-database"
-                        (Id.value tenant.id)))
-              ; a_method `Post
-              ; a_enctype "multipart/form-data"
-              ; a_class [ "stack" ]
-              ]
-            ([ csrf_element csrf ()
-             ; database_fields (Some tenant) language flash_fetcher
-             ]
-             @ [ div
-                   ~a:[ a_class [ "flexrow" ] ]
-                   [ submit_element
-                       ~classnames:[ "push" ]
-                       language
-                       Message.(Update None)
-                       ()
-                   ]
-               ])
+        ; database_form
+        ; update_gtx_api_key_form tenant context flash_fetcher
         ; p
             [ a
                 ~a:[ a_href (Sihl.Web.externalize_path "/root/tenants") ]

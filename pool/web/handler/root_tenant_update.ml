@@ -73,6 +73,11 @@ let update req command success_message =
             Pool_database.test_and_create database_url database_label
           in
           handle ~tags tenant database |> lift
+        | `ExitGtxApiKey ->
+          let open UpdateGtxApiKey in
+          let* api_key = decode urlencoded |> lift in
+          (* TODO: Send test message *)
+          handle ~tags tenant api_key |> lift
       in
       let files = logo_files @ uploaded_files in
       (files |> File.multipart_form_data_to_urlencoded) @ urlencoded
@@ -99,6 +104,10 @@ let update_detail req =
 
 let update_database req =
   update req `EditDatabase Common.Message.TenantUpdateDatabase
+;;
+
+let update_gtx_api_key req =
+  update req `ExitGtxApiKey Common.Message.TenantUpdateDatabase
 ;;
 
 let delete_asset req =
