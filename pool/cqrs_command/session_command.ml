@@ -383,32 +383,25 @@ end = struct
 end
 
 module Cancel : sig
-  type t =
-    { notify_via : Pool_common.NotifyVia.t
-    ; reason : Session.CancellationReason.t
-    }
+  type t = Session.CancellationReason.t
 
   val handle
     :  ?tags:Logs.Tag.set
     -> Session.t list
     -> (Contact.t * Assignment.t list) list
-    -> (Session.CancellationReason.t
-        -> Contact.t
-        -> (Sihl_email.t, Pool_common.Message.error) result)
-    -> (Session.CancellationReason.t
+    -> (t -> Contact.t -> (Sihl_email.t, Pool_common.Message.error) result)
+    -> (t
         -> Contact.t
         -> Pool_user.PhoneNumber.t
         -> (Text_message.t, Pool_common.Message.error) result)
+    -> Pool_common.NotifyVia.t list
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
   val decode : Conformist.input -> (t, Conformist.error_msg) result
   val effects : Experiment.Id.t -> Session.Id.t -> Guard.ValidationSet.t
 end = struct
-  type t =
-    { notify_via : Pool_common.NotifyVia.t
-    ; reason : Session.CancellationReason.t
-    }
+  type t = Session.CancellationReason.t
 
   let handle
     ?(tags = Logs.Tag.empty)
@@ -416,7 +409,8 @@ end = struct
     (assignments : (Contact.t * Assignment.t list) list)
     email_fn
     text_message_fn
-    command
+    notify_via
+    (reason : t)
     =
     Logs.info ~src (fun m -> m "Handle command Cancel" ~tags);
     let open CCResult in
@@ -436,30 +430,65 @@ end = struct
            |> Pool_event.contact)
     in
     let* notification_events =
-      match command.notify_via with
-      | Pool_common.NotifyVia.Email ->
-        let* emails =
+      let open Pool_common.NotifyVia in
+      let* emails, text_messages =
+        CCList.fold_left
+          (fun events (contact, _) ->
+            let text_message_fn = text_message_fn reason contact in
+            let email_fn = email_fn reason in
+            events
+            >>= fun (emails, text_messages) ->
+            match notify_via with
+            | [] -> Error Pool_common.Message.(NoOptionSelected Field.NotifyVia)
+            | [ hd ] ->
+              (match[@warning "-21"] hd, contact.Contact.phone_number with
+               | TextMessage, Some phone_number ->
+                 let* text_message = text_message_fn phone_number in
+                 Ok (emails, text_messages @ [ text_message ])
+               | TextMessage, None | Email, _ ->
+                 let* email = email_fn contact in
+                 Ok (emails @ [ email ], text_messages))
+            | notify_via ->
+              let* email =
+                match CCList.mem ~eq:equal Email notify_via with
+                | true -> email_fn contact >|= CCOption.return
+                | false -> Ok None
+              in
+              let* text_message =
+                match
+                  ( CCList.mem ~eq:equal TextMessage notify_via
+                  , contact.Contact.phone_number )
+                with
+                | true, Some phone_number ->
+                  text_message_fn phone_number >|= CCOption.return
+                | true, None | false, _ -> Ok None
+              in
+              let emails =
+                email
+                |> CCOption.map_or ~default:emails (fun email ->
+                     emails @ [ email ])
+              in
+              let text_messages =
+                text_message
+                |> CCOption.map_or ~default:text_messages (fun msg ->
+                     text_messages @ [ msg ])
+              in
+              Ok (emails, text_messages))
+          (Ok ([], []))
           assignments
-          |> CCList.map (fst %> email_fn command.reason)
-          |> CCResult.flatten_l
-        in
-        Ok [ Email.BulkSent emails |> Pool_event.email ]
-      | Pool_common.NotifyVia.TextMessage ->
-        let* text_messags, emails =
-          assignments
-          |> CCList.partition_filter_map (fun (contact, _) ->
-               match contact.Contact.phone_number with
-               | Some phone ->
-                 `Left (text_message_fn command.reason contact phone)
-               | None -> `Right (email_fn command.reason contact))
-          |> fun (texts, emails) ->
-          match CCList.all_ok texts, CCList.all_ok emails with
-          | Ok texts, Ok emails -> Ok (texts, emails)
-          | Error err, _ | _, Error err -> Error err
-        in
-        Ok
-          ([ Text_message.BulkSent text_messags |> Pool_event.text_message ]
-           @ [ Email.BulkSent emails |> Pool_event.email ])
+      in
+      let emails =
+        if CCList.is_empty emails
+        then None
+        else Some (Email.BulkSent emails |> Pool_event.email)
+      in
+      let text_messages =
+        if CCList.is_empty text_messages
+        then None
+        else
+          Some (Text_message.BulkSent text_messages |> Pool_event.text_message)
+      in
+      Ok ([ emails; text_messages ] |> CCList.filter_map CCFun.id)
     in
     let cancel_events =
       sessions
@@ -471,16 +500,8 @@ end = struct
     |> CCResult.return
   ;;
 
-  let command notify_via reason = { notify_via; reason }
-
   let schema =
-    Conformist.(
-      make
-        Field.
-          [ Pool_common.NotifyVia.schema ()
-          ; Session.CancellationReason.schema ()
-          ]
-        command)
+    Conformist.(make Field.[ Session.CancellationReason.schema () ] CCFun.id)
   ;;
 
   let decode data =

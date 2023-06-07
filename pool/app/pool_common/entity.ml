@@ -267,4 +267,9 @@ module NotifyVia = struct
     | Email -> Field.Email |> show
     | TextMessage -> Field.TextMessage |> show
   ;;
+
+  let checked_by_default = function
+    | Email -> true
+    | TextMessage -> false
+  ;;
 end

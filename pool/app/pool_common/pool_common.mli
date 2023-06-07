@@ -220,8 +220,10 @@ module NotifyVia : sig
   val show : t -> string
   val equal : t -> t -> bool
   val read : string -> t
+  val create : string -> (t, Message.error) Result.t
   val all : t list
   val to_human : Language.t -> t -> string
+  val checked_by_default : t -> bool
 end
 
 module Repo : sig

@@ -344,6 +344,19 @@ let cancel req =
            (Ok [])
       >|+ Assignment.group_by_contact
     in
+    let* notify_via =
+      let open Pool_common in
+      Sihl.Web.Request.urlencoded_list
+        Message.Field.(NotifyVia |> array_key)
+        req
+      ||> CCList.map NotifyVia.create
+      ||> CCList.all_ok
+      >|+ CCList.uniq ~eq:NotifyVia.equal
+      >>= function
+      | [] ->
+        Lwt_result.fail Pool_common.Message.(NoOptionSelected Field.NotifyVia)
+      | notify_via -> Lwt_result.return notify_via
+    in
     let* events =
       let system_languages = Pool_context.Tenant.get_tenant_languages_exn req in
       let tenant = Pool_context.Tenant.get_tenant_exn req in
@@ -375,6 +388,7 @@ let cancel req =
             assignments
             create_email
             create_text_message
+            notify_via
       |> Lwt_result.lift
     in
     let%lwt () = Pool_event.handle_events ~tags database_label events in

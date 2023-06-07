@@ -699,3 +699,39 @@ let phone_number_input ?(required = false) () =
         ]
     ]
 ;;
+
+let notify_via_selection language =
+  div
+    ~a:[ a_class [ "form-group" ] ]
+    (label
+       [ Elements.input_label
+           language
+           Pool_common.Message.Field.NotifyVia
+           None
+           true
+         |> txt
+       ]
+     :: Pool_common.(
+          NotifyVia.all
+          |> CCList.map (fun option ->
+               let checked =
+                 NotifyVia.checked_by_default option
+                 |> function
+                 | false -> []
+                 | true -> [ a_checked () ]
+               in
+               div
+                 [ input
+                     ~a:
+                       ([ a_input_type `Checkbox
+                        ; a_value (NotifyVia.show option)
+                        ; a_id (NotifyVia.show option)
+                        ; a_name (Field.array_key Field.NotifyVia)
+                        ]
+                        @ checked)
+                     ()
+                 ; label
+                     ~a:[ a_label_for (NotifyVia.show option) ]
+                     [ NotifyVia.to_human language option |> txt ]
+                 ])))
+;;

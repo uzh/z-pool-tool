@@ -1012,9 +1012,6 @@ let cancel
       (Experiment.Id.value experiment.Experiment.id)
       Session.(Id.value session.id)
   in
-  let field_to_string =
-    Utils.field_to_string language %> CCString.capitalize_ascii %> txt
-  in
   let follow_ups_notification () =
     match follow_ups with
     | [] -> txt ""
@@ -1054,26 +1051,7 @@ let cancel
                ~required:true
                language
                Message.Field.Reason
-           ; div
-               ~a:[ a_class [ "form-group" ] ]
-               (label [ Message.Field.NotifyVia |> field_to_string ]
-                :: Pool_common.(
-                     NotifyVia.all
-                     |> CCList.map (fun option ->
-                          div
-                            [ input
-                                ~a:
-                                  [ a_input_type `Radio
-                                  ; a_value (NotifyVia.show option)
-                                  ; a_id (NotifyVia.show option)
-                                  ; a_name (Field.show Field.NotifyVia)
-                                  ; a_required ()
-                                  ]
-                                ()
-                            ; label
-                                ~a:[ a_label_for (NotifyVia.show option) ]
-                                [ NotifyVia.to_human language option |> txt ]
-                            ])))
+           ; notify_via_selection language
            ; div
                ~a:[ a_class [ "flexrow" ] ]
                [ submit_element
