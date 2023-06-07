@@ -796,6 +796,66 @@ let cancel_valid_with_missing_phone_number () =
     res
 ;;
 
+let cancel_with_email_and_text_notification () =
+  let open CCResult.Infix in
+  let session = Model.create_session () in
+  let contact1 = Model.create_contact () in
+  let contact2 =
+    Contact.{ (Model.create_contact ()) with phone_number = None }
+  in
+  let contacts = [ contact1; contact2 ] in
+  let assignments =
+    CCList.map (fun contact -> Model.create_assignment ~contact ()) contacts
+    |> Assignment.group_by_contact
+  in
+  let contact_events =
+    assignments
+    |> CCList.map (fun (contact, assignments) ->
+         Contact_counter.update_on_session_cancellation assignments contact
+         |> Contact.updated
+         |> Pool_event.contact)
+  in
+  let reason = "Experimenter is ill" in
+  let messages =
+    let open CCFun in
+    let email =
+      create_cancellation_message
+        (reason |> Session.CancellationReason.of_string)
+      %> Test_utils.get_or_failwith_pool_error
+    in
+    let text_msg contact =
+      contact.Contact.phone_number
+      |> CCOption.to_result Pool_common.Message.(Invalid Field.PhoneNumber)
+      |> Test_utils.get_or_failwith_pool_error
+      |> create_cancellation_text_message
+           (Session.CancellationReason.of_string reason)
+           contact
+      |> Test_utils.get_or_failwith_pool_error
+    in
+    [ Email.BulkSent ([ contact1; contact2 ] |> CCList.map email)
+      |> Pool_event.email
+    ]
+    @ [ Text_message.BulkSent [ text_msg contact1 ] |> Pool_event.text_message ]
+  in
+  let res =
+    SessionC.Cancel.(
+      [ "reason", [ reason ] ]
+      |> decode
+      >>= handle
+            [ session ]
+            assignments
+            create_cancellation_message
+            create_cancellation_text_message
+            Pool_common.NotifyVia.[ TextMessage; Email ])
+  in
+  check_result
+    (Ok
+       (messages
+        @ [ Session.Canceled session |> Pool_event.session ]
+        @ contact_events))
+    res
+;;
+
 let close_before_start () =
   let session = Test_utils.Model.(create_session ~start:(in_an_hour ())) () in
   let res = Cqrs_command.Assignment_command.SetAttendance.handle session [] in
