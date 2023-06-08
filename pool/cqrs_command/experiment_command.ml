@@ -14,6 +14,7 @@ let default_schema command =
         [ Title.schema ()
         ; PublicTitle.schema ()
         ; Description.schema ()
+        ; Conformist.optional @@ CostCenter.schema ()
         ; DirectRegistrationDisabled.schema ()
         ; RegistrationDisabled.schema ()
         ; AllowUninvitedSignup.schema ()
@@ -27,6 +28,7 @@ let default_command
   title
   public_title
   description
+  cost_center
   direct_registration_disabled
   registration_disabled
   allow_uninvited_signup
@@ -36,6 +38,7 @@ let default_command
   { title
   ; public_title
   ; description
+  ; cost_center
   ; direct_registration_disabled
   ; registration_disabled
   ; allow_uninvited_signup
@@ -72,6 +75,7 @@ end = struct
         command.title
         command.public_title
         command.description
+        command.cost_center
         organisational_unit
         command.direct_registration_disabled
         command.registration_disabled
@@ -122,6 +126,7 @@ end = struct
         command.title
         command.public_title
         command.description
+        command.cost_center
         organisational_unit
         command.direct_registration_disabled
         command.registration_disabled

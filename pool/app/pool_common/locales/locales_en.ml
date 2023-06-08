@@ -28,6 +28,7 @@ let rec field_to_string =
   | ContactEmail -> "contact email address"
   | Contacts -> "contacts"
   | Context -> "Context"
+  | CostCenter -> "Cost center"
   | CreatedAt -> "created at"
   | CurrentPassword -> "current password"
   | CustomField -> "field"
@@ -126,7 +127,6 @@ let rec field_to_string =
   | Operators -> "operators"
   | Order -> "order"
   | OrganisationalUnit -> "organisational unit"
-
   | Overbook -> "overbook"
   | OverriddenValue -> "overriden contact answer"
   | Override -> "override"
