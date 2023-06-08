@@ -198,6 +198,7 @@ module Model = struct
           Description.create "A description for everyone"
           |> CCResult.map_err show_error
           |> CCResult.get_or_failwith
+      ; cost_center = Some ("F-00000-11-22" |> CostCenter.of_string)
       ; organisational_unit = None
       ; filter = None
       ; session_reminder_lead_time =

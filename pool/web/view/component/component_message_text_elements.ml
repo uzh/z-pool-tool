@@ -139,6 +139,7 @@ module DummyData = struct
       ; public_title = PublicTitle.create "public_title" |> get_exn
       ; description = Description.create "A description for everyone" |> get_exn
       ; organisational_unit = None
+      ; cost_center = Some ("A-11111-22-33" |> CostCenter.of_string)
       ; filter = None
       ; session_reminder_lead_time = None
       ; direct_registration_disabled =

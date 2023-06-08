@@ -16,6 +16,10 @@ module Description : sig
   include Pool_common.Model.StringSig
 end
 
+module CostCenter : sig
+  include Pool_common.Model.StringSig
+end
+
 module DirectRegistrationDisabled : sig
   include Pool_common.Model.BooleanSig
 end
@@ -43,6 +47,7 @@ type t =
   ; title : Title.t
   ; public_title : PublicTitle.t
   ; description : Description.t
+  ; cost_center : CostCenter.t option
   ; organisational_unit : Organisational_unit.t option
   ; filter : Filter.t option
   ; direct_registration_disabled : DirectRegistrationDisabled.t
@@ -63,6 +68,7 @@ val create
   -> Title.t
   -> PublicTitle.t
   -> Description.t
+  -> CostCenter.t option
   -> Organisational_unit.t option
   -> DirectRegistrationDisabled.t
   -> RegistrationDisabled.t
@@ -75,6 +81,7 @@ type create =
   { title : Title.t
   ; public_title : PublicTitle.t
   ; description : Description.t
+  ; cost_center : CostCenter.t option
   ; direct_registration_disabled : DirectRegistrationDisabled.t
   ; registration_disabled : RegistrationDisabled.t
   ; allow_uninvited_signup : AllowUninvitedSignup.t

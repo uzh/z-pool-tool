@@ -196,6 +196,15 @@ let experiment_form
             ~required:true
             ~flash_fetcher
         ; experiment_type_select
+        ; input_element
+            language
+            `Text
+            Field.CostCenter
+            ?value:
+              (CCOption.bind experiment (fun e ->
+                 e.cost_center |> CCOption.map CostCenter.value))
+            ~required:true
+            ~flash_fetcher
         ; organisational_units_selector
             language
             organisational_units
@@ -418,6 +427,10 @@ let detail
           , experiment.description
             |> Description.value
             |> HttpUtils.add_line_breaks )
+        ; ( Field.CostCenter
+          , experiment.cost_center
+            |> CCOption.map_or ~default:"" CostCenter.value
+            |> txt )
         ; ( Field.OrganisationalUnit
           , experiment.organisational_unit
             |> CCOption.map_or

@@ -61,6 +61,7 @@ module Data = struct
       ; title
       ; public_title
       ; description
+      ; cost_center = Some ("F-00000-11-22" |> CostCenter.of_string)
       ; organisational_unit = None
       ; filter
       ; direct_registration_disabled =
