@@ -25,7 +25,7 @@ let select_fields =
       pool_contacts.terms_accepted_at,
       pool_contacts.language,
       pool_contacts.experiment_type_preference,
-      pool_contacts.phone_number,
+      pool_contacts.cell_phone,
       pool_contacts.paused,
       pool_contacts.disabled,
       pool_contacts.verified,
@@ -230,7 +230,7 @@ let update_request =
         terms_accepted_at = $2,
         language = $3,
         experiment_type_preference = $4,
-        phone_number = $5,
+        cell_phone = $5,
         paused = $6,
         disabled = $7,
         verified = $8,
@@ -398,11 +398,11 @@ let set_registration_attempt_notification_sent_at pool t =
     Entity.(id t |> Id.value)
 ;;
 
-let add_phone_number_request =
+let add_cell_phone_request =
   let open Caqti_request.Infix in
   {sql|
-    INSERT INTO pool_phone_number_verifications (
-      phone_number,
+    INSERT INTO pool_cell_phone_verifications (
+      cell_phone,
       user_uuid,
       token
     ) VALUES (
@@ -411,7 +411,7 @@ let add_phone_number_request =
       $3
     )
     ON DUPLICATE KEY UPDATE
-      phone_number = VALUES(phone_number),
+      cell_phone = VALUES(cell_phone),
       token = VALUES(token),
       updated_at = NOW(),
       created_at = NOW()
@@ -419,22 +419,22 @@ let add_phone_number_request =
   |> Caqti_type.(tup3 string string string ->. unit)
 ;;
 
-let add_phone_number pool contact phone_number code =
+let add_cell_phone pool contact cell_phone code =
   Utils.Database.exec
     (Pool_database.Label.value pool)
-    add_phone_number_request
-    ( Pool_user.PhoneNumber.value phone_number
+    add_cell_phone_request
+    ( Pool_user.CellPhone.value cell_phone
     , Entity.(id contact |> Id.value)
     , Pool_common.VerificationCode.value code )
 ;;
 
-let phone_number_verifiaction_sql ?(where = "") () =
+let cell_phone_verifiaction_sql ?(where = "") () =
   Format.asprintf
     {sql|
     SELECT
-      phone_number,
+      cell_phone,
       created_at
-    FROM pool_phone_number_verifications
+    FROM pool_cell_phone_verifications
     WHERE user_uuid = UNHEX(REPLACE(?, '-', ''))
     AND created_at >= (NOW() - INTERVAL 1 HOUR)
     %s
@@ -443,69 +443,69 @@ let phone_number_verifiaction_sql ?(where = "") () =
     where
 ;;
 
-let find_phone_number_verification_by_contact_request =
+let find_cell_phone_verification_by_contact_request =
   let open Caqti_request.Infix in
-  phone_number_verifiaction_sql ()
-  |> Caqti_type.(string ->? Pool_user.Repo.UnverifiedPhoneNumber.t)
+  cell_phone_verifiaction_sql ()
+  |> Caqti_type.(string ->? Pool_user.Repo.UnverifiedCellPhone.t)
 ;;
 
-let find_phone_number_verification_by_contact pool contact =
+let find_cell_phone_verification_by_contact pool contact =
   Utils.Database.find_opt
     (Pool_database.Label.value pool)
-    find_phone_number_verification_by_contact_request
+    find_cell_phone_verification_by_contact_request
     Entity.(id contact |> Id.value)
 ;;
 
-let find_phone_number_verification_by_contact_and_code_request =
+let find_cell_phone_verification_by_contact_and_code_request =
   let open Caqti_request.Infix in
-  phone_number_verifiaction_sql ~where:"AND token = ?" ()
-  |> Caqti_type.(tup2 string string ->? Pool_user.Repo.UnverifiedPhoneNumber.t)
+  cell_phone_verifiaction_sql ~where:"AND token = ?" ()
+  |> Caqti_type.(tup2 string string ->? Pool_user.Repo.UnverifiedCellPhone.t)
 ;;
 
-let find_phone_number_verification_by_contact_and_code pool contact code =
+let find_cell_phone_verification_by_contact_and_code pool contact code =
   let open Utils.Lwt_result.Infix in
   Utils.Database.find_opt
     (Pool_database.Label.value pool)
-    find_phone_number_verification_by_contact_and_code_request
+    find_cell_phone_verification_by_contact_and_code_request
     (Entity.(id contact |> Id.value), Pool_common.VerificationCode.value code)
   ||> CCOption.to_result Pool_common.Message.(Invalid Field.Token)
 ;;
 
-let find_full_phone_number_verification_by_contact_request =
+let find_full_cell_phone_verification_by_contact_request =
   let open Caqti_request.Infix in
   {sql|
     SELECT
-      phone_number,
+      cell_phone,
       token,
       created_at
-    FROM pool_phone_number_verifications
+    FROM pool_cell_phone_verifications
     WHERE user_uuid = UNHEX(REPLACE(?, '-', ''))
     LIMIT 1
     |sql}
-  |> Caqti_type.(string ->? Pool_user.Repo.UnverifiedPhoneNumber.full)
+  |> Caqti_type.(string ->? Pool_user.Repo.UnverifiedCellPhone.full)
 ;;
 
-let find_full_phone_number_verification_by_contact pool contact =
+let find_full_cell_phone_verification_by_contact pool contact =
   let open Utils.Lwt_result.Infix in
   Utils.Database.find_opt
     (Pool_database.Label.value pool)
-    find_full_phone_number_verification_by_contact_request
+    find_full_cell_phone_verification_by_contact_request
     Entity.(id contact |> Id.value)
   ||> CCOption.to_result Pool_common.Message.(NotFound Field.Token)
 ;;
 
-let delete_unverified_phone_number_requeset =
+let delete_unverified_cell_phone_requeset =
   let open Caqti_request.Infix in
   {sql|
-    DELETE FROM pool_phone_number_verifications
+    DELETE FROM pool_cell_phone_verifications
     WHERE user_uuid = UNHEX(REPLACE(?, '-', ''))
   |sql}
   |> Caqti_type.(string ->. unit)
 ;;
 
-let delete_unverified_phone_number pool contact =
+let delete_unverified_cell_phone pool contact =
   Utils.Database.exec
     (Pool_database.Label.value pool)
-    delete_unverified_phone_number_requeset
+    delete_unverified_cell_phone_requeset
     Entity.(id contact |> Id.value)
 ;;

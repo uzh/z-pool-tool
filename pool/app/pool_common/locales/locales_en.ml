@@ -20,6 +20,7 @@ let rec field_to_string =
   | Assistants -> "assistants"
   | Building -> "building"
   | CanceledAt -> "canceled at"
+  | CellPhone -> "cell phone"
   | Chronological -> "chronological"
   | City -> "city"
   | ClosedAt -> "Closed at"
@@ -137,7 +138,6 @@ let rec field_to_string =
   | Password -> "password"
   | PasswordConfirmation -> "password confirmation"
   | Paused -> "paused"
-  | PhoneNumber -> "phone number"
   | PlainText -> "plaintext"
   | Predicate -> "predicate"
   | Profile -> "profile"
@@ -238,10 +238,10 @@ let success_to_string : success -> string = function
   | PasswordResetSuccessMessage ->
     "You will receive an email with a link to reset your password if an  \
      account with the provided email is existing."
-  | PhoneNumberTokenSent ->
+  | CellPhoneTokenSent ->
     "A text message has been sent to your phone for verification. Please enter \
      the provided code."
-  | PhoneNumberVerified -> "Your phone number has successfully been verified."
+  | CellPhoneVerified -> "Your phone number has successfully been verified."
   | Published field ->
     field_message "" (field_to_string field) "was successfully published."
   | RemovedFromWaitingList -> "You were removed from the waiting list."
@@ -473,7 +473,7 @@ let control_to_string = function
   | Edit field -> format_submit "edit" field
   | Enable -> format_submit "enable" None
   | Enroll -> format_submit "enroll" None
-  | EnterNewPhoneNumber -> "Enter a different number"
+  | EnterNewCellPhone -> "Enter a different number"
   | Filter field -> format_submit "filter" field
   | Login -> format_submit "login" None
   | Manage field -> format_submit "manage" (Some field)

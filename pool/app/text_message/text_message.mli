@@ -6,15 +6,15 @@ module Content : sig
 end
 
 type t =
-  { recipient : Pool_user.PhoneNumber.t
+  { recipient : Pool_user.CellPhone.t
   ; sender : Pool_tenant.Title.t
   ; text : Content.t
   }
 
-val create : Pool_user.PhoneNumber.t -> Pool_tenant.Title.t -> Content.t -> t
+val create : Pool_user.CellPhone.t -> Pool_tenant.Title.t -> Content.t -> t
 
 val render_and_create
-  :  Pool_user.PhoneNumber.t
+  :  Pool_user.CellPhone.t
   -> Pool_tenant.Title.t
   -> string * (string * string) list
   -> t

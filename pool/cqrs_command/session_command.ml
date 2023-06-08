@@ -397,7 +397,7 @@ module Cancel : sig
         -> (Sihl_email.t, Pool_common.Message.error) result)
     -> (Session.CancellationReason.t
         -> Contact.t
-        -> Pool_user.PhoneNumber.t
+        -> Pool_user.CellPhone.t
         -> (Text_message.t, Pool_common.Message.error) result)
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
@@ -448,7 +448,7 @@ end = struct
         let* text_messags, emails =
           assignments
           |> CCList.partition_filter_map (fun (contact, _) ->
-               match contact.Contact.phone_number with
+               match contact.Contact.cell_phone with
                | Some phone ->
                  `Left (text_message_fn command.reason contact phone)
                | None -> `Right (email_fn command.reason contact))

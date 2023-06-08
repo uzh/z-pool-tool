@@ -246,7 +246,7 @@ let login_information
 let contact_information
   contact
   Pool_context.{ language; query_language; csrf; _ }
-  (verification : Pool_user.UnverifiedPhoneNumber.t option)
+  (verification : Pool_user.UnverifiedCellPhone.t option)
   was_reset
   =
   let open Contact in
@@ -265,11 +265,10 @@ let contact_information
   in
   let new_form () =
     let current_hint =
-      (match contact.phone_number with
-       | None -> I18n.ContactNoPhoneNumber
-       | Some phone_number ->
-         I18n.ContactCurrentPhoneNumber
-           (Pool_user.PhoneNumber.value phone_number))
+      (match contact.cell_phone with
+       | None -> I18n.ContactNoCellPhone
+       | Some cell_phone ->
+         I18n.ContactCurrentCellPhone (Pool_user.CellPhone.value cell_phone))
       |> hint_to_html
     in
     let reset_hint =
@@ -280,7 +279,7 @@ let contact_information
         |> Component.Notification.notification language `Success
     in
     div
-      [ form_title Message.(Add (Some Field.PhoneNumber))
+      [ form_title Message.(Add (Some Field.CellPhone))
       ; div
           ~a:[ a_class [ "stack" ] ]
           [ current_hint
@@ -288,13 +287,13 @@ let contact_information
           ; form
               ~a:(form_attrs "/user/phone/update")
               [ csrf_element csrf ()
-              ; phone_number_input ~required:true ()
+              ; cell_phone_input ~required:true ()
               ; div
                   ~a:[ a_class [ "flexrow" ] ]
                   [ submit_element
                       ~classnames:[ "push" ]
                       language
-                      Message.(Update (Some Field.PhoneNumber))
+                      Message.(Update (Some Field.CellPhone))
                       ()
                   ]
               ]
@@ -308,13 +307,13 @@ let contact_information
       ; submit_element ~classnames:[ "as-link" ] language i18n ()
       ]
   in
-  let verify_form phone_number =
+  let verify_form cell_phone =
     div
-      [ form_title Message.(Verify (Some Field.PhoneNumber))
+      [ form_title Message.(Verify (Some Field.CellPhone))
       ; div
           ~a:[ a_class [ "stack" ] ]
-          [ [ I18n.ContactEnterPhoneNumberToken
-                (Pool_user.PhoneNumber.value phone_number)
+          [ [ I18n.ContactEnterCellPhoneToken
+                (Pool_user.CellPhone.value cell_phone)
               |> Utils.hint_to_string language
               |> txt
             ]
@@ -331,7 +330,7 @@ let contact_information
                   [ submit_element
                       ~classnames:[ "push" ]
                       language
-                      Message.(Verify (Some Field.PhoneNumber))
+                      Message.(Verify (Some Field.CellPhone))
                       ()
                   ]
               ]
@@ -340,7 +339,7 @@ let contact_information
               [ form_as_link
                   "/user/phone/resend-token"
                   Message.(Resend (Some Field.Token))
-              ; form_as_link "/user/phone/reset" Message.EnterNewPhoneNumber
+              ; form_as_link "/user/phone/reset" Message.EnterNewCellPhone
               ]
           ]
       ]
@@ -348,8 +347,8 @@ let contact_information
   let form =
     match verification with
     | None -> new_form ()
-    | Some { Pool_user.UnverifiedPhoneNumber.phone_number; _ } ->
-      verify_form phone_number
+    | Some { Pool_user.UnverifiedCellPhone.cell_phone; _ } ->
+      verify_form cell_phone
   in
   div [ div ~a:[ a_class [ "grid-col-2"; "gap-lg" ] ] [ form ] ]
   |> contact_profile_layout language Pool_common.I18n.ContactInformation

@@ -306,7 +306,7 @@ let () =
         ; test_case
             "cancel valid with missing phone number"
             `Quick
-            Session_test.cancel_valid_with_missing_phone_number
+            Session_test.cancel_valid_with_missing_cell_phone
         ; test_case
             "close session before start"
             `Quick

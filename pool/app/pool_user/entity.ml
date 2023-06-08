@@ -202,7 +202,7 @@ module EmailAddress = struct
   ;;
 end
 
-module PhoneNumber = struct
+module CellPhone = struct
   type t = string [@@deriving eq, show, yojson]
 
   let validate str =
@@ -214,7 +214,7 @@ module PhoneNumber = struct
     in
     if Re.execp regex str
     then Ok str
-    else Error Pool_common.Message.(Invalid Field.PhoneNumber)
+    else Error Pool_common.Message.(Invalid Field.CellPhone)
   ;;
 
   let create = CCFun.(remove_whitespaces %> validate)
@@ -222,14 +222,14 @@ module PhoneNumber = struct
   let value m = m
 end
 
-module UnverifiedPhoneNumber = struct
+module UnverifiedCellPhone = struct
   type t =
-    { phone_number : PhoneNumber.t
+    { cell_phone : CellPhone.t
     ; created_at : Pool_common.CreatedAt.t
     }
 
   type full =
-    { phone_number : PhoneNumber.t
+    { cell_phone : CellPhone.t
     ; verification_code : Pool_common.VerificationCode.t
     ; created_at : Pool_common.CreatedAt.t
     }

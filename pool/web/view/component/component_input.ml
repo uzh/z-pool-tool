@@ -684,7 +684,7 @@ let reset_form_button language =
     ]
 ;;
 
-let phone_number_input ?(required = false) () =
+let cell_phone_input ?(required = false) () =
   let attrs = if required then [ a_required () ] else [] in
   let to_option =
     CCList.map (fun (code, label) ->
@@ -703,7 +703,7 @@ let phone_number_input ?(required = false) () =
         ~a:[ a_class [ "form-group" ] ]
         [ input
             ~a:
-              ([ a_name Pool_common.Message.Field.(show PhoneNumber)
+              ([ a_name Pool_common.Message.Field.(show CellPhone)
                ; a_class [ "input" ]
                ; a_input_type `Number
                ]

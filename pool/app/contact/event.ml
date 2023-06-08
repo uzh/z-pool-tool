@@ -53,9 +53,9 @@ type event =
   | TermsAccepted of t
   | Disabled of t
   | UnverifiedDeleted of t
-  | PhoneNumberAdded of t * User.PhoneNumber.t * Pool_common.VerificationCode.t
-  | PhoneNumberVerified of t * User.PhoneNumber.t
-  | PhoneNumberVerificationReset of t
+  | CellPhoneAdded of t * User.CellPhone.t * Pool_common.VerificationCode.t
+  | CellPhoneVerified of t * User.CellPhone.t
+  | CellPhoneVerificationReset of t
   | ProfileUpdateTriggeredAtUpdated of t list
   | RegistrationAttemptNotificationSent of t
   | Updated of t
@@ -80,7 +80,7 @@ let handle_event pool : event -> unit Lwt.t =
       ; terms_accepted_at = contact.terms_accepted_at
       ; language = contact.language
       ; experiment_type_preference = None
-      ; phone_number = None
+      ; cell_phone = None
       ; paused = User.Paused.create false
       ; disabled = User.Disabled.create false
       ; verified = None
@@ -150,15 +150,15 @@ let handle_event pool : event -> unit Lwt.t =
     Repo.update pool { contact with disabled = User.Disabled.create true }
   | UnverifiedDeleted contact ->
     contact |> Entity.id |> Repo.delete_unverified pool
-  | PhoneNumberAdded (contact, phone_number, token) ->
-    Repo.add_phone_number pool contact phone_number token
-  | PhoneNumberVerified (contact, phone_number) ->
+  | CellPhoneAdded (contact, cell_phone, token) ->
+    Repo.add_cell_phone pool contact cell_phone token
+  | CellPhoneVerified (contact, cell_phone) ->
     let%lwt () =
-      { contact with phone_number = Some phone_number } |> Repo.update pool
+      { contact with cell_phone = Some cell_phone } |> Repo.update pool
     in
-    Repo.delete_unverified_phone_number pool contact
-  | PhoneNumberVerificationReset contact ->
-    Repo.delete_unverified_phone_number pool contact
+    Repo.delete_unverified_cell_phone pool contact
+  | CellPhoneVerificationReset contact ->
+    Repo.delete_unverified_cell_phone pool contact
   | ProfileUpdateTriggeredAtUpdated contacts ->
     contacts |> CCList.map id |> Repo.update_profile_updated_triggered pool
   | RegistrationAttemptNotificationSent t ->

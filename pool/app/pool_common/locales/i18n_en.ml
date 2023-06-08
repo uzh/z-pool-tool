@@ -141,14 +141,14 @@ let rec hint_to_string = function
   | AssignmentsMarkedAsClosed ->
     "These assignments have been marked as deleted. Provided that the contacts \
      still meet the experiment criteria, they can register for sessions again."
-  | ContactCurrentPhoneNumber phone_number ->
-    Format.asprintf "Your current phone number is %s." phone_number
-  | ContactNoPhoneNumber -> "You have not yet verified a phone number."
-  | ContactEnterPhoneNumberToken phone_number ->
+  | ContactCurrentCellPhone cell_phone ->
+    Format.asprintf "Your current phone number is %s." cell_phone
+  | ContactNoCellPhone -> "You have not yet verified a phone number."
+  | ContactEnterCellPhoneToken cell_phone ->
     Format.asprintf
       "Please enter the verification code we sent yout to %s. The code is \
        valid for one hour."
-      phone_number
+      cell_phone
   | ContactPhoneNumberVerificationWasReset ->
     "You can enter a different phone number now."
   | ContactOnWaitingList ->

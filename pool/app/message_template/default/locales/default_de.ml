@@ -226,12 +226,14 @@ Wenn du dein Passwort nicht geändert hast, dann kontaktiere uns bitte umgehend.
 let phone_verification =
   let label = Label.PhoneVerification in
   let email_text =
-    "Ihr Code zur Verifizierung Ihrer Telefonnummer: {token}"
+    "Ihr Code zur Verifizierung Ihrer Mobiltelefonnummer: {token}"
     |> EmailText.of_string
   in
-  let email_subject = "Verifizierung Telefonnummer" |> EmailSubject.of_string in
+  let email_subject =
+    "Verifizierung Mobiltelefonnummer" |> EmailSubject.of_string
+  in
   let sms_text =
-    {|Ihr Code zur Verifizierung Ihrer Telefonnummer: {token}|}
+    {|Ihr Code zur Verifizierung Ihrer Mobiltelefonnummer: {token}|}
     |> SmsText.of_string
   in
   { id = Id.create ()

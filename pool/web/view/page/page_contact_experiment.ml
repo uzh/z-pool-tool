@@ -204,7 +204,7 @@ let show
         |> fun msg -> p [ txt (hint_to_string msg) ]
       in
       let missing_phone =
-        if CCOption.is_none contact.Contact.phone_number
+        if CCOption.is_none contact.Contact.cell_phone
         then
           [ Component.Notification.notification
               ~link:("/user/contact-information", I18n.PersonalDetails)

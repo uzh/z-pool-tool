@@ -102,7 +102,7 @@ module Verified : sig
   val value : t -> Ptime.t
 end
 
-module PhoneNumber : sig
+module CellPhone : sig
   type t
 
   val create : string -> (t, Pool_common.Message.error) result
@@ -114,14 +114,14 @@ module PhoneNumber : sig
   val pp : Format.formatter -> t -> unit
 end
 
-module UnverifiedPhoneNumber : sig
+module UnverifiedCellPhone : sig
   type t =
-    { phone_number : PhoneNumber.t
+    { cell_phone : CellPhone.t
     ; created_at : Pool_common.CreatedAt.t
     }
 
   type full =
-    { phone_number : PhoneNumber.t
+    { cell_phone : CellPhone.t
     ; verification_code : Pool_common.VerificationCode.t
     ; created_at : Pool_common.CreatedAt.t
     }
@@ -181,13 +181,13 @@ module Repo : sig
     val t : EmailVerified.t Caqti_type.t
   end
 
-  module PhoneNumber : sig
-    val t : PhoneNumber.t Caqti_type.t
+  module CellPhone : sig
+    val t : CellPhone.t Caqti_type.t
   end
 
-  module UnverifiedPhoneNumber : sig
-    val t : UnverifiedPhoneNumber.t Caqti_type.t
-    val full : UnverifiedPhoneNumber.full Caqti_type.t
+  module UnverifiedCellPhone : sig
+    val t : UnverifiedCellPhone.t Caqti_type.t
+    val full : UnverifiedCellPhone.full Caqti_type.t
   end
 
   module EmailAddress : sig
