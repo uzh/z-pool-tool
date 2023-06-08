@@ -75,7 +75,7 @@ let create_contact verified contact_info =
   ; terms_accepted_at = Pool_user.TermsAccepted.create_now () |> CCOption.pure
   ; language
   ; experiment_type_preference = None
-  ; phone_number = None
+  ; cell_phone = None
   ; paused = Pool_user.Paused.create false
   ; disabled = Pool_user.Disabled.create false
   ; verified = None
@@ -303,8 +303,8 @@ let password_special_char () =
           Pool_user.Password.Policy.default_special_char_set))
 ;;
 
-let validate_phone_number nr expected =
-  let res = nr |> Pool_user.PhoneNumber.create in
+let validate_cell_phone nr expected =
+  let res = nr |> Pool_user.CellPhone.create in
   Alcotest.(check Test_utils.(result phone_nr error) "succeeds" expected res)
 ;;
 
@@ -312,22 +312,22 @@ let valid_swiss_number () =
   let nr = "+41791234567" in
   let expected =
     nr
-    |> Pool_user.PhoneNumber.create
+    |> Pool_user.CellPhone.create
     |> Test_utils.get_or_failwith_pool_error
     |> CCResult.return
   in
-  validate_phone_number nr expected
+  validate_cell_phone nr expected
 ;;
 
 let valid_german_number () =
   let nr = "+491512345678" in
   let expected =
     nr
-    |> Pool_user.PhoneNumber.create
+    |> Pool_user.CellPhone.create
     |> Test_utils.get_or_failwith_pool_error
     |> CCResult.return
   in
-  validate_phone_number nr expected
+  validate_cell_phone nr expected
 ;;
 
 let valid_password () =

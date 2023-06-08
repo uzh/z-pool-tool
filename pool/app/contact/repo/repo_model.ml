@@ -39,7 +39,7 @@ let t =
       , ( m.terms_accepted_at
         , ( m.language
           , ( m.experiment_type_preference
-            , ( m.phone_number
+            , ( m.cell_phone
               , ( m.paused
                 , ( m.disabled
                   , ( m.verified
@@ -62,7 +62,7 @@ let t =
     , ( terms_accepted_at
       , ( language
         , ( experiment_type_preference
-          , ( phone_number
+          , ( cell_phone
             , ( paused
               , ( disabled
                 , ( verified
@@ -86,7 +86,7 @@ let t =
       ; terms_accepted_at
       ; language
       ; experiment_type_preference
-      ; phone_number
+      ; cell_phone
       ; paused
       ; disabled
       ; verified
@@ -120,7 +120,7 @@ let t =
                (tup2
                   (option Pool_common.Repo.ExperimentType.t)
                   (tup2
-                     (option PhoneNumber.t)
+                     (option CellPhone.t)
                      (tup2
                         Paused.t
                         (tup2
@@ -249,7 +249,7 @@ module Write = struct
         , ( m.terms_accepted_at
           , ( m.language
             , ( m.experiment_type_preference
-              , ( m.phone_number
+              , ( m.cell_phone
                 , ( m.paused
                   , ( m.disabled
                     , ( m.verified
@@ -286,7 +286,7 @@ module Write = struct
                  (tup2
                     (option Pool_common.Repo.ExperimentType.t)
                     (tup2
-                       (option User.Repo.PhoneNumber.t)
+                       (option User.Repo.CellPhone.t)
                        (tup2
                           Paused.t
                           (tup2
@@ -332,22 +332,22 @@ module Preview = struct
       Ok
         ( m.user
         , ( m.language
-          , ( m.phone_number
+          , ( m.cell_phone
             , (m.paused, (m.verified, (m.num_invitations, m.num_assignments)))
             ) ) )
     in
     let decode
       ( user
       , ( language
-        , ( phone_number
-          , (paused, (verified, (num_invitations, num_assignments))) ) ) )
+        , (cell_phone, (paused, (verified, (num_invitations, num_assignments))))
+        ) )
       =
       let open CCResult in
       Ok
         Entity.Preview.
           { user
           ; language
-          ; phone_number
+          ; cell_phone
           ; paused
           ; verified
           ; num_invitations = NumberOfInvitations.of_int num_invitations
@@ -364,7 +364,7 @@ module Preview = struct
            (tup2
               (option Pool_common.Repo.Language.t)
               (tup2
-                 (option User.Repo.PhoneNumber.t)
+                 (option User.Repo.CellPhone.t)
                  (tup2
                     Paused.t
                     (tup2

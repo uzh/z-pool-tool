@@ -260,7 +260,7 @@ module PhoneVerification : sig
     :  Pool_database.Label.t
     -> Pool_common.Language.t
     -> Pool_tenant.t
-    -> Pool_user.PhoneNumber.t
+    -> Pool_user.CellPhone.t
     -> Pool_common.VerificationCode.t
     -> (Text_message.t, Pool_common.Message.error) result Lwt.t
 end
@@ -306,7 +306,7 @@ module SessionCancellation : sig
     -> Session.t list
     -> (Session.CancellationReason.t
         -> Contact.t
-        -> Pool_user.PhoneNumber.t
+        -> Pool_user.CellPhone.t
         -> (Text_message.t, Pool_common.Message.error) result)
        Lwt.t
 end

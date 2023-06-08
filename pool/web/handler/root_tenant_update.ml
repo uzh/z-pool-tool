@@ -14,7 +14,7 @@ let validated_gtx_api_key ~tags database_label title urlencoded =
       make
         Field.
           [ Pool_tenant.GtxApiKey.schema ()
-          ; Pool_user.PhoneNumber.schema_test_phone_number ()
+          ; Pool_user.CellPhone.schema_test_cell_phone ()
           ]
         CCPair.make)
   in

@@ -564,7 +564,7 @@ let waiting_list
   let open Waiting_list.ExperimentList in
   let waiting_list_table waiting_list_entries =
     let thead =
-      (Field.[ Name; Email; PhoneNumber; SignedUpAt; AdminComment ]
+      (Field.[ Name; Email; CellPhone; SignedUpAt; AdminComment ]
        |> Table.fields_to_txt language)
       @ [ txt "" ]
     in
@@ -576,8 +576,8 @@ let waiting_list
             [ txt (fullname entry.contact)
             ; txt (email_address entry.contact |> Pool_user.EmailAddress.value)
             ; txt
-                (entry.contact.phone_number
-                 |> map_or ~default:"" Pool_user.PhoneNumber.value)
+                (entry.contact.cell_phone
+                 |> map_or ~default:"" Pool_user.CellPhone.value)
             ; txt
                 (entry.created_at
                  |> CreatedAt.value

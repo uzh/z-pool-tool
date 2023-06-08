@@ -39,7 +39,7 @@ let check_result ?(msg = "succeeds") =
 let password = Alcotest.testable Pool_user.Password.pp Pool_user.Password.equal
 
 let phone_nr =
-  Alcotest.testable Pool_user.PhoneNumber.pp Pool_user.PhoneNumber.equal
+  Alcotest.testable Pool_user.CellPhone.pp Pool_user.CellPhone.equal
 ;;
 
 (* Helper functions *)
@@ -123,7 +123,7 @@ module Model = struct
            else None)
       ; language = Some Pool_common.Language.En
       ; experiment_type_preference = None
-      ; phone_number = Some ("+41791234567" |> Pool_user.PhoneNumber.of_string)
+      ; cell_phone = Some ("+41791234567" |> Pool_user.CellPhone.of_string)
       ; paused = Pool_user.Paused.create false
       ; disabled = Pool_user.Disabled.create false
       ; verified = None
@@ -294,9 +294,9 @@ module Model = struct
 
   let create_text_message
     ?(sender = Pool_tenant.Title.of_string "UAST")
-    phone_number
+    cell_phone
     =
-    Text_message.render_and_create phone_number sender ("Hello world", [])
+    Text_message.render_and_create cell_phone sender ("Hello world", [])
   ;;
 
   let hour = Ptime.Span.of_int_s @@ (60 * 60)

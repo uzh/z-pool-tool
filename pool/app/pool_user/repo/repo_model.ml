@@ -45,33 +45,33 @@ module Verified = struct
   ;;
 end
 
-module PhoneNumber = struct
-  include PhoneNumber
+module CellPhone = struct
+  include CellPhone
 
   let t = Pool_common.Repo.make_caqti_type Caqti_type.string create value
 end
 
-module UnverifiedPhoneNumber = struct
-  include UnverifiedPhoneNumber
+module UnverifiedCellPhone = struct
+  include UnverifiedCellPhone
 
   let t =
-    let encode (m : t) = Ok (m.phone_number, m.created_at) in
-    let decode (phone_number, created_at) = Ok { phone_number; created_at } in
+    let encode (m : t) = Ok (m.cell_phone, m.created_at) in
+    let decode (cell_phone, created_at) = Ok { cell_phone; created_at } in
     Caqti_type.(
-      custom ~encode ~decode (tup2 PhoneNumber.t Pool_common.Repo.CreatedAt.t))
+      custom ~encode ~decode (tup2 CellPhone.t Pool_common.Repo.CreatedAt.t))
   ;;
 
   let full =
     let encode _ = failwith "Decode model only." in
-    let decode (phone_number, verification_code, created_at) =
-      Ok { phone_number; verification_code; created_at }
+    let decode (cell_phone, verification_code, created_at) =
+      Ok { cell_phone; verification_code; created_at }
     in
     Caqti_type.(
       custom
         ~encode
         ~decode
         (tup3
-           PhoneNumber.t
+           CellPhone.t
            Pool_common.Repo.VerificationCode.t
            Pool_common.Repo.CreatedAt.t))
   ;;

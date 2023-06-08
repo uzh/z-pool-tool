@@ -105,9 +105,9 @@ type hint =
   | AllowUninvitedSignup
   | AssignContactFromWaitingList
   | AssignmentsMarkedAsClosed
-  | ContactCurrentPhoneNumber of string
-  | ContactNoPhoneNumber
-  | ContactEnterPhoneNumberToken of string
+  | ContactCurrentCellPhone of string
+  | ContactNoCellPhone
+  | ContactEnterCellPhoneToken of string
   | ContactPhoneNumberVerificationWasReset
   | ContactOnWaitingList
   | ContactProfileVisibleOverride

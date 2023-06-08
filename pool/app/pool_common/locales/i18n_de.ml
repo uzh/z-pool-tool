@@ -144,14 +144,14 @@ let rec hint_to_string = function
     "Diese Anmeldungen wurden als gelöscht markiert. Insofern die Kontakte den \
      Experimentkriterien noch entsprechen, können Sie sich erneut an Sessions \
      anmelden."
-  | ContactCurrentPhoneNumber phone_number ->
-    Format.asprintf "Ihre aktuelle Telefonnummer lautet %s." phone_number
-  | ContactNoPhoneNumber -> "Sie haben noch keine Telefonnummer verifiziert."
-  | ContactEnterPhoneNumberToken phone_number ->
+  | ContactCurrentCellPhone cell_phone ->
+    Format.asprintf "Ihre aktuelle Mobiltelefonnummer lautet %s." cell_phone
+  | ContactNoCellPhone -> "Sie haben noch keine Mobiltelefonnummer verifiziert."
+  | ContactEnterCellPhoneToken cell_phone ->
     Format.asprintf
       "PBitte geben Sie den Verifizierungscode ein, den wir Ihnen an %s \
        geschickt haben. Der Code ist eine Stunde lang gültig."
-      phone_number
+      cell_phone
   | ContactPhoneNumberVerificationWasReset ->
     "Sie können nun eine neue Telefonnummer eingeben."
   | ContactOnWaitingList ->

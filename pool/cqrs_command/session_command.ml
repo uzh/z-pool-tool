@@ -392,7 +392,7 @@ module Cancel : sig
     -> (t -> Contact.t -> (Sihl_email.t, Pool_common.Message.error) result)
     -> (t
         -> Contact.t
-        -> Pool_user.PhoneNumber.t
+        -> Pool_user.CellPhone.t
         -> (Text_message.t, Pool_common.Message.error) result)
     -> Pool_common.NotifyVia.t list
     -> t
@@ -451,7 +451,7 @@ end = struct
              | TextMessage ->
                assignments
                |> CCList.filter_map (fun (contact, _) ->
-                    match contact.Contact.phone_number, fallback_to_email with
+                    match contact.Contact.cell_phone, fallback_to_email with
                     | Some phone_number, (true | false) ->
                       text_msg_event contact phone_number |> CCOption.return
                     | None, true -> email_event contact |> CCOption.return

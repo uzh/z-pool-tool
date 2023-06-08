@@ -514,9 +514,9 @@ let create_cancellation_message reason contact =
 let create_cancellation_text_message
   (_ : Session.CancellationReason.t)
   (_ : Contact.t)
-  phone_number
+  cell_phone
   =
-  Model.create_text_message phone_number |> CCResult.return
+  Model.create_text_message cell_phone |> CCResult.return
 ;;
 
 let cancel_no_reason () =
@@ -709,7 +709,7 @@ let cancel_valid () =
     let reason = Session.CancellationReason.of_string "reason" in
     assignments
     |> CCList.map (fun (contact, _) ->
-         contact.Contact.phone_number
+         contact.Contact.cell_phone
          |> CCOption.get_exn_or "No phone number provided"
          |> create_cancellation_text_message reason contact
          |> get_or_failwith_pool_error
@@ -723,13 +723,11 @@ let cancel_valid () =
     res
 ;;
 
-let cancel_valid_with_missing_phone_number () =
+let cancel_valid_with_missing_cell_phone () =
   let open CCResult.Infix in
   let session = Model.create_session () in
   let contact1 = Model.create_contact () in
-  let contact2 =
-    Contact.{ (Model.create_contact ()) with phone_number = None }
-  in
+  let contact2 = Contact.{ (Model.create_contact ()) with cell_phone = None } in
   let contacts = [ contact1; contact2 ] in
   let assignments =
     CCList.map (fun contact -> Model.create_assignment ~contact ()) contacts
@@ -745,8 +743,8 @@ let cancel_valid_with_missing_phone_number () =
   let reason = "Experimenter is ill" in
   let messages =
     let text_msg =
-      contact1.Contact.phone_number
-      |> CCOption.to_result Pool_common.Message.(Invalid Field.PhoneNumber)
+      contact1.Contact.cell_phone
+      |> CCOption.to_result Pool_common.Message.(Invalid Field.CellPhone)
       |> Test_utils.get_or_failwith_pool_error
       |> create_cancellation_text_message
            (Session.CancellationReason.of_string reason)
@@ -788,9 +786,7 @@ let cancel_with_email_and_text_notification () =
   let open CCResult.Infix in
   let session = Model.create_session () in
   let contact1 = Model.create_contact () in
-  let contact2 =
-    Contact.{ (Model.create_contact ()) with phone_number = None }
-  in
+  let contact2 = Contact.{ (Model.create_contact ()) with cell_phone = None } in
   let contacts = [ contact1; contact2 ] in
   let assignments =
     CCList.map (fun contact -> Model.create_assignment ~contact ()) contacts
@@ -814,8 +810,8 @@ let cancel_with_email_and_text_notification () =
       |> Pool_event.email
     in
     let text_msg contact =
-      contact.Contact.phone_number
-      |> CCOption.to_result Pool_common.Message.(Invalid Field.PhoneNumber)
+      contact.Contact.cell_phone
+      |> CCOption.to_result Pool_common.Message.(Invalid Field.CellPhone)
       |> Test_utils.get_or_failwith_pool_error
       |> create_cancellation_text_message
            (Session.CancellationReason.of_string reason)

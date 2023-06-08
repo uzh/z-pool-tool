@@ -9,7 +9,7 @@ module Content = struct
 end
 
 type t =
-  { recipient : Pool_user.PhoneNumber.t
+  { recipient : Pool_user.CellPhone.t
   ; sender : Pool_tenant.Title.t
   ; text : Content.t
   }
