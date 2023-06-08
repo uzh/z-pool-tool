@@ -56,6 +56,7 @@ let experiments pool =
             title
             public_title
             description
+            None
             direct_registration_disabled
             registration_disabled
             allow_uninvited_signup

@@ -50,6 +50,7 @@ type t =
   ; title : Title.t
   ; public_title : PublicTitle.t
   ; description : Description.t
+  ; organisational_unit : Organisational_unit.t option
   ; filter : Filter.t option
   ; direct_registration_disabled : DirectRegistrationDisabled.t
   ; registration_disabled : RegistrationDisabled.t
@@ -66,6 +67,7 @@ let create
   title
   public_title
   description
+  organisational_unit
   direct_registration_disabled
   registration_disabled
   allow_uninvited_signup
@@ -78,6 +80,7 @@ let create
     ; title
     ; public_title
     ; description
+    ; organisational_unit
     ; filter = None
     ; direct_registration_disabled
     ; registration_disabled

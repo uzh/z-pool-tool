@@ -198,6 +198,7 @@ module Model = struct
           Description.create "A description for everyone"
           |> CCResult.map_err show_error
           |> CCResult.get_or_failwith
+      ; organisational_unit = None
       ; filter = None
       ; session_reminder_lead_time =
           Ptime.Span.of_int_s @@ (60 * 60)

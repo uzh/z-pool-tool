@@ -595,6 +595,19 @@ let selector
      @ append_html)
 ;;
 
+let organisational_units_selector langauge units selected =
+  let open Organisational_unit in
+  selector
+    ~add_empty:true
+    ~option_formatter:(fun ou -> ou.name |> Name.value)
+    langauge
+    Field.OrganisationalUnit
+    (fun ou -> ou.id |> Id.value)
+    units
+    selected
+    ()
+;;
+
 type 'a multi_select =
   { options : 'a list
   ; selected : 'a list

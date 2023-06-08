@@ -43,6 +43,7 @@ type t =
   ; title : Title.t
   ; public_title : PublicTitle.t
   ; description : Description.t
+  ; organisational_unit : Organisational_unit.t option
   ; filter : Filter.t option
   ; direct_registration_disabled : DirectRegistrationDisabled.t
   ; registration_disabled : RegistrationDisabled.t
@@ -62,6 +63,7 @@ val create
   -> Title.t
   -> PublicTitle.t
   -> Description.t
+  -> Organisational_unit.t option
   -> DirectRegistrationDisabled.t
   -> RegistrationDisabled.t
   -> AllowUninvitedSignup.t

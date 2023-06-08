@@ -14,6 +14,18 @@ let src = Logs.Src.create "handler.admin.experiments"
 let create_layout req = General.create_tenant_layout req
 let experiment_id = HttpUtils.find_id Experiment.Id.of_string Field.Experiment
 
+let organisational_unit urlencoded database_label =
+  let open Utils.Lwt_result.Infix in
+  let open Pool_common.Message in
+  urlencoded
+  |> CCList.assoc_opt ~eq:CCString.equal Field.(OrganisationalUnit |> show)
+  |> function
+  | Some [ id ] ->
+    let open Organisational_unit in
+    id |> Id.of_string |> find database_label >|+ CCOption.return
+  | None | Some _ -> Lwt_result.return None
+;;
+
 let experiment_boolean_fields =
   Experiment.boolean_fields |> CCList.map Field.show
 ;;
@@ -50,8 +62,10 @@ let new_form req =
     let%lwt default_reminder_lead_time =
       Settings.find_default_reminder_lead_time database_label
     in
+    let%lwt organisational_units = Organisational_unit.all database_label () in
     Page.Admin.Experiments.create
       context
+      organisational_units
       default_reminder_lead_time
       flash_fetcher
     |> create_layout req context
@@ -74,10 +88,14 @@ let create req =
       , [ HttpUtils.urlencoded_to_flash urlencoded ] ))
     @@
     let tags = Pool_context.Logger.Tags.req req in
+    let* organisational_unit = organisational_unit urlencoded database_label in
     let events =
       let open CCResult.Infix in
       let open Cqrs_command.Experiment_command.Create in
-      urlencoded |> decode >>= handle ~tags |> Lwt_result.lift
+      urlencoded
+      |> decode
+      >>= handle ~tags organisational_unit
+      |> Lwt_result.lift
     in
     let handle events =
       let%lwt () =
@@ -124,12 +142,16 @@ let detail edit req =
        let%lwt default_reminder_lead_time =
          Settings.find_default_reminder_lead_time database_label
        in
+       let%lwt organisational_units =
+         Organisational_unit.all database_label ()
+       in
        Page.Admin.Experiments.edit
          experiment
          context
          sys_languages
          default_reminder_lead_time
          invitation_templates
+         organisational_units
          session_reminder_templates
          flash_fetcher
        |> Lwt_result.ok)
@@ -161,10 +183,14 @@ let update req =
     @@
     let tags = Pool_context.Logger.Tags.req req in
     let* experiment = Experiment.find database_label id in
+    let* organisational_unit = organisational_unit urlencoded database_label in
     let events =
       let open CCResult.Infix in
       let open Cqrs_command.Experiment_command.Update in
-      urlencoded |> decode >>= handle ~tags experiment |> Lwt_result.lift
+      urlencoded
+      |> decode
+      >>= handle ~tags experiment organisational_unit
+      |> Lwt_result.lift
     in
     let handle events =
       let%lwt () =
