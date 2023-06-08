@@ -574,6 +574,19 @@ module Admin = struct
           update
       ]
     in
+    let organisational_units =
+      let open OrganisationalUnit in
+      let specific =
+        [ get "/edit" ~middlewares:[ Access.update ] edit
+        ; post "" ~middlewares:[ Access.update ] update
+        ]
+      in
+      [ get "" ~middlewares:[ Access.index ] index
+      ; get "create" ~middlewares:[ Access.create ] new_form
+      ; post "" ~middlewares:[ Access.create ] create
+      ; choose ~scope:(OrganisationalUnit |> url_key) specific
+      ]
+    in
     let settings =
       let open Settings in
       let queue =
@@ -628,6 +641,7 @@ module Admin = struct
       ; choose ~scope:"/contacts" contacts
       ; choose ~scope:"/admins" admins
       ; choose ~scope:"/custom-fields" custom_fields
+      ; choose ~scope:(add_human_field OrganisationalUnit) organisational_units
       ; choose ~scope:(add_human_field MessageTemplate) message_templates
       ]
   ;;

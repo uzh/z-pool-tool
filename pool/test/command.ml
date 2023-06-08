@@ -401,5 +401,15 @@ let () =
             `Quick
             Message_template_test.create_with_unavailable_language
         ] )
+    ; ( "organisational unit"
+      , [ test_case
+            "create orgnisatinal unit succeeds"
+            `Quick
+            Organisational_unit_test.create_succeeds
+        ; test_case
+            "create orgnisatinal unit fails"
+            `Quick
+            Organisational_unit_test.create_fails
+        ] )
     ]
 ;;

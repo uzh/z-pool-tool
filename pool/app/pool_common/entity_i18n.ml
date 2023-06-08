@@ -84,6 +84,7 @@ type nav_link =
   | Logout
   | Mailings
   | MessageTemplates
+  | OrganisationalUnits
   | Overview
   | PersonalDetails
   | Profile
