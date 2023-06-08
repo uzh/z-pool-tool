@@ -12,6 +12,7 @@ module Sql = struct
         title,
         public_title,
         description,
+        organisational_unit_uuid,
         filter_uuid,
         direct_registration_disabled,
         registration_disabled,
@@ -23,6 +24,7 @@ module Sql = struct
         ?,
         ?,
         ?,
+        UNHEX(REPLACE(?, '-', '')),
         UNHEX(REPLACE(?, '-', '')),
         ?,
         ?,
@@ -57,6 +59,14 @@ module Sql = struct
           pool_experiments.public_title,
           pool_experiments.description,
           LOWER(CONCAT(
+            SUBSTR(HEX(pool_organisational_units.uuid), 1, 8), '-',
+            SUBSTR(HEX(pool_organisational_units.uuid), 9, 4), '-',
+            SUBSTR(HEX(pool_organisational_units.uuid), 13, 4), '-',
+            SUBSTR(HEX(pool_organisational_units.uuid), 17, 4), '-',
+            SUBSTR(HEX(pool_organisational_units.uuid), 21)
+          )),
+          pool_organisational_units.name,
+          LOWER(CONCAT(
             SUBSTR(HEX(pool_filter.uuid), 1, 8), '-',
             SUBSTR(HEX(pool_filter.uuid), 9, 4), '-',
             SUBSTR(HEX(pool_filter.uuid), 13, 4), '-',
@@ -77,6 +87,8 @@ module Sql = struct
         FROM pool_experiments
         LEFT JOIN pool_filter
           ON pool_filter.uuid = pool_experiments.filter_uuid
+        LEFT JOIN pool_organisational_units
+          ON pool_organisational_units.uuid = pool_experiments.organisational_unit_uuid
       |sql}
     in
     Format.asprintf "%s %s" select_from where_fragment
@@ -193,12 +205,13 @@ module Sql = struct
         title = $2,
         public_title = $3,
         description = $4,
-        filter_uuid = UNHEX(REPLACE($5, '-', '')),
-        direct_registration_disabled = $6,
-        registration_disabled = $7,
-        allow_uninvited_signup = $8,
-        experiment_type = $9,
-        session_reminder_lead_time = $10
+        organisational_unit_uuid = UNHEX(REPLACE($5, '-', '')),
+        filter_uuid = UNHEX(REPLACE($6, '-', '')),
+        direct_registration_disabled = $7,
+        registration_disabled = $8,
+        allow_uninvited_signup = $9,
+        experiment_type = $10,
+        session_reminder_lead_time = $11
       WHERE
         uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}

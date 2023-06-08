@@ -61,6 +61,7 @@ module Data = struct
       ; title
       ; public_title
       ; description
+      ; organisational_unit = None
       ; filter
       ; direct_registration_disabled =
           false |> DirectRegistrationDisabled.create
@@ -93,7 +94,7 @@ let create_without_title () =
       ]
     |> Http_utils.format_request_boolean_values experiment_boolean_fields
     |> ExperimentCommand.Create.decode
-    >>= ExperimentCommand.Create.handle
+    >>= ExperimentCommand.Create.handle None
   in
   let expected = Error Common.Message.(Conformist [ Field.Title, NoValue ]) in
   Test_utils.check_result expected events
@@ -108,7 +109,7 @@ let update () =
       ; Description |> show, [ Data.description ]
       ]
     |> ExperimentCommand.Update.decode
-    >>= ExperimentCommand.Update.handle experiment
+    >>= ExperimentCommand.Update.handle experiment None
   in
   let expected =
     Pool_common.Message.Field.
@@ -116,7 +117,7 @@ let update () =
       ; Description |> show, [ Data.description ]
       ]
     |> ExperimentCommand.Update.decode
-    >>= ExperimentCommand.Update.handle experiment
+    >>= ExperimentCommand.Update.handle experiment None
   in
   Test_utils.check_result expected events
 ;;

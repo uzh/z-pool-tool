@@ -52,13 +52,19 @@ type update_role =
 module Create : sig
   include Common.CommandSig with type t = create
 
+  val handle
+    :  ?tags:Logs.Tag.set
+    -> Organisational_unit.t option
+    -> t
+    -> (Pool_event.t list, Pool_common.Message.error) result
+
   val decode
     :  (string * string list) list
     -> (t, Pool_common.Message.error) result
 end = struct
   type t = create
 
-  let handle ?(tags = Logs.Tag.empty) (command : t) =
+  let handle ?(tags = Logs.Tag.empty) organisational_unit (command : t) =
     Logs.info ~src (fun m -> m "Handle command Create" ~tags);
     let open CCResult in
     let* experiment =
@@ -66,6 +72,7 @@ end = struct
         command.title
         command.public_title
         command.description
+        organisational_unit
         command.direct_registration_disabled
         command.registration_disabled
         command.allow_uninvited_signup
@@ -89,6 +96,7 @@ module Update : sig
   val handle
     :  ?tags:Logs.Tag.set
     -> Experiment.t
+    -> Organisational_unit.t option
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
@@ -100,7 +108,12 @@ module Update : sig
 end = struct
   type t = create
 
-  let handle ?(tags = Logs.Tag.empty) experiment (command : t) =
+  let handle
+    ?(tags = Logs.Tag.empty)
+    experiment
+    organisational_unit
+    (command : t)
+    =
     Logs.info ~src (fun m -> m "Handle command Update" ~tags);
     let open CCResult in
     let* experiment =
@@ -109,6 +122,7 @@ end = struct
         command.title
         command.public_title
         command.description
+        organisational_unit
         command.direct_registration_disabled
         command.registration_disabled
         command.allow_uninvited_signup

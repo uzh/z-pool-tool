@@ -53,3 +53,11 @@ val find
   -> (t, Pool_common.Message.error) result Lwt.t
 
 val all : Pool_database.Label.t -> unit -> t list Lwt.t
+
+module Repo : sig
+  module Id : sig
+    val t : Id.t Caqti_type.t
+  end
+
+  val t : t Caqti_type.t
+end

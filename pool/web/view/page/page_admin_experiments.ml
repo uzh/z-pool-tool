@@ -131,6 +131,7 @@ let index Pool_context.{ language; _ } experiment_list =
 let experiment_form
   ?experiment
   Pool_context.{ language; csrf; _ }
+  organisational_units
   default_reminder_lead_time
   flash_fetcher
   =
@@ -195,6 +196,10 @@ let experiment_form
             ~required:true
             ~flash_fetcher
         ; experiment_type_select
+        ; organisational_units_selector
+            language
+            organisational_units
+            (CCOption.bind experiment (fun ex -> ex.organisational_unit))
         ]
     ; checkbox_element
         ~help:I18n.DirectRegistrationDisbled
@@ -265,6 +270,7 @@ let experiment_form
 
 let create
   (Pool_context.{ language; _ } as context)
+  organisational_units
   default_reminder_lead_time
   flash_fetcher
   =
@@ -276,7 +282,11 @@ let create
                language
                Message.(Create (Some Field.Experiment)))
         ]
-    ; experiment_form context default_reminder_lead_time flash_fetcher
+    ; experiment_form
+        context
+        organisational_units
+        default_reminder_lead_time
+        flash_fetcher
     ]
 ;;
 
@@ -286,6 +296,7 @@ let edit
   sys_languages
   default_reminder_lead_time
   invitation_templates
+  organisational_units
   session_reminder_templates
   flash_fetcher
   =
@@ -298,7 +309,12 @@ let edit
       session_reminder_templates
   in
   let form =
-    experiment_form ~experiment context default_reminder_lead_time flash_fetcher
+    experiment_form
+      ~experiment
+      context
+      organisational_units
+      default_reminder_lead_time
+      flash_fetcher
   in
   let experiment_path =
     Format.asprintf
@@ -402,6 +418,12 @@ let detail
           , experiment.description
             |> Description.value
             |> HttpUtils.add_line_breaks )
+        ; ( Field.OrganisationalUnit
+          , experiment.organisational_unit
+            |> CCOption.map_or
+                 ~default:""
+                 Organisational_unit.(fun ou -> ou.name |> Name.value)
+            |> txt )
         ; ( Field.DirectRegistrationDisabled
           , direct_registration_disabled_value |> boolean_value )
         ; ( Field.RegistrationDisabled

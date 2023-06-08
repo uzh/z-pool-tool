@@ -138,6 +138,7 @@ module DummyData = struct
       ; title = Title.create "The Wallet Game\t" |> get_exn
       ; public_title = PublicTitle.create "public_title" |> get_exn
       ; description = Description.create "A description for everyone" |> get_exn
+      ; organisational_unit = None
       ; filter = None
       ; session_reminder_lead_time = None
       ; direct_registration_disabled =
