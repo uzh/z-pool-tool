@@ -71,6 +71,9 @@ module NavElements = struct
         , MessageTemplates
         , Message_template.Guard.Access.index )
       ; "/admin/i18n", I18n, I18nGuard.Access.index
+      ; ( "/admin/organisational-unit"
+        , OrganisationalUnits
+        , Organisational_unit.Guard.Access.index )
       ]
       |> NavElement.create_all_req_with_set
       |> fun children ->

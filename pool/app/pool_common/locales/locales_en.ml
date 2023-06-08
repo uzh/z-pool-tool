@@ -125,6 +125,8 @@ let rec field_to_string =
   | Operator -> "operator"
   | Operators -> "operators"
   | Order -> "order"
+  | OrganisationalUnit -> "organisational unit"
+
   | Overbook -> "overbook"
   | OverriddenValue -> "overriden contact answer"
   | Override -> "override"

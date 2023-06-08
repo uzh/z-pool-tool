@@ -147,6 +147,8 @@ type t =
   | Operator [@name "operator"] [@printer go "operator"]
   | Operators [@name "operators"] [@printer go "operators"]
   | Order [@name "order"] [@printer go "order"]
+  | OrganisationalUnit [@name "organisational_unit"]
+      [@printer go "organisational_unit"]
   | Overbook [@name "overbook"] [@printer go "overbook"]
   | OverriddenValue [@name "overridden_value"] [@printer go "overridden_value"]
   | Override [@name "override"] [@printer go "override"]
