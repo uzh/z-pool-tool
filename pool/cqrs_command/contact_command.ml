@@ -96,6 +96,22 @@ end = struct
   let effects = Contact.Guard.Access.create
 end
 
+module UpdateSignInCount : sig
+  type t = Contact.t
+
+  val handle
+    :  ?tags:Logs.Tag.set
+    -> t
+    -> (Pool_event.t list, Pool_common.Message.error) result
+end = struct
+  type t = Contact.t
+
+  let handle ?(tags = Logs.Tag.empty) contact =
+    Logs.info ~src (fun m -> m "Handle command UpdateSignInCount" ~tags);
+    Ok [ Contact.SignInCounterUpdated contact |> Pool_event.contact ]
+  ;;
+end
+
 module DeleteUnverified : sig
   include Common.CommandSig
 

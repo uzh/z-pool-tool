@@ -59,6 +59,7 @@ type event =
   | ProfileUpdateTriggeredAtUpdated of t list
   | RegistrationAttemptNotificationSent of t
   | Updated of t
+  | SignInCounterUpdated of t
 [@@deriving eq, show, variants]
 
 let handle_event pool : event -> unit Lwt.t =
@@ -164,4 +165,5 @@ let handle_event pool : event -> unit Lwt.t =
   | RegistrationAttemptNotificationSent t ->
     Repo.set_registration_attempt_notification_sent_at pool t
   | Updated contact -> contact |> Repo.update pool
+  | SignInCounterUpdated contact -> Repo.update_sign_in_count pool contact
 ;;

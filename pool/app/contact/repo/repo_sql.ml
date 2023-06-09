@@ -509,3 +509,24 @@ let delete_unverified_cell_phone pool contact =
     delete_unverified_cell_phone_requeset
     Entity.(id contact |> Id.value)
 ;;
+
+let add_cell_phone_request =
+  let open Caqti_request.Infix in
+  {sql|
+    UPDATE
+      pool_contacts
+    SET
+      sign_in_count = sign_in_count + 1,
+      last_sign_in_at = NOW()
+    WHERE
+      user_uuid = UNHEX(REPLACE($1, '-', ''))
+  |sql}
+  |> Caqti_type.(string ->. unit)
+;;
+
+let update_sign_in_count pool contact =
+  Utils.Database.exec
+    (Pool_database.Label.value pool)
+    add_cell_phone_request
+    Entity.(id contact |> Id.value)
+;;

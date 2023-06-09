@@ -180,6 +180,7 @@ type event =
   | ProfileUpdateTriggeredAtUpdated of t list
   | RegistrationAttemptNotificationSent of t
   | Updated of t
+  | SignInCounterUpdated of t
 
 val created : create -> event
 val updated : t -> event
