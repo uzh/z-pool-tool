@@ -31,3 +31,4 @@ let find_full_cell_phone_verification_by_contact =
 ;;
 
 let delete_unverified_cell_phone = Repo_sql.delete_unverified_cell_phone
+let update_sign_in_count = Repo_sql.update_sign_in_count
