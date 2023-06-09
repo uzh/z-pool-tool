@@ -20,11 +20,11 @@ let add_missing_columns_to_experiments =
     {sql|
     ALTER TABLE pool_experiments
       ADD COLUMN organisational_unit_uuid binary(16) AFTER filter_uuid,
-      ADD COLUMN allow_blank_mri_key tinyint DEFAULT 0 AFTER organisational_unit_uuid,
+      ADD COLUMN allow_blank_mri_key boolean DEFAULT 0 AFTER organisational_unit_uuid,
       ADD COLUMN cost_center varchar(255) AFTER session_reminder_lead_time,
-      ADD COLUMN closed tinyint DEFAULT 0 AFTER direct_registration_disabled,
-      ADD COLUMN hide_in_calendar tinyint DEFAULT 0 AFTER experiment_type,
-      ADD COLUMN hide_in_stats tinyint DEFAULT 0 AFTER hide_in_calendar
+      ADD COLUMN closed boolean DEFAULT 0 AFTER direct_registration_disabled,
+      ADD COLUMN hide_in_calendar boolean DEFAULT 0 AFTER experiment_type,
+      ADD COLUMN hide_in_stats boolean DEFAULT 0 AFTER hide_in_calendar
     |sql}
 ;;
 
