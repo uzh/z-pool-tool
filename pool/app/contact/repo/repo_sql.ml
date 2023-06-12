@@ -510,7 +510,7 @@ let delete_unverified_cell_phone pool contact =
     Entity.(id contact |> Id.value)
 ;;
 
-let add_cell_phone_request =
+let update_sign_in_count_request =
   let open Caqti_request.Infix in
   {sql|
     UPDATE
@@ -527,6 +527,6 @@ let add_cell_phone_request =
 let update_sign_in_count pool contact =
   Utils.Database.exec
     (Pool_database.Label.value pool)
-    add_cell_phone_request
+    update_sign_in_count_request
     Entity.(id contact |> Id.value)
 ;;
