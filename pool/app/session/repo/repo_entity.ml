@@ -13,6 +13,7 @@ type t =
   ; start : Entity.Start.t
   ; duration : Ptime.Span.t
   ; description : Entity.Description.t option
+  ; limitations : Entity.Limitations.t option
   ; location_id : Pool_location.Id.t
   ; max_participants : Entity.ParticipantAmount.t
   ; min_participants : Entity.ParticipantAmount.t
@@ -36,6 +37,7 @@ let of_entity (m : Entity.t) =
   ; start = m.Entity.start
   ; duration = m.Entity.duration
   ; description = m.Entity.description
+  ; limitations = m.Entity.limitations
   ; location_id = m.Entity.location.Pool_location.id
   ; max_participants = m.Entity.max_participants
   ; min_participants = m.Entity.min_participants
@@ -60,6 +62,7 @@ let to_entity (m : t) location : Entity.t =
     ; start = m.start
     ; duration = m.duration
     ; description = m.description
+    ; limitations = m.limitations
     ; location
     ; max_participants = m.max_participants
     ; min_participants = m.min_participants
@@ -86,19 +89,20 @@ let t =
           , ( m.start
             , ( m.duration
               , ( m.description
-                , ( m.location_id
-                  , ( m.max_participants
-                    , ( m.min_participants
-                      , ( m.overbook
-                        , ( m.reminder_lead_time
-                          , ( m.reminder_sent_at
-                            , ( m.assignment_count
-                              , ( m.no_show_count
-                                , ( m.participant_count
-                                  , ( m.closed_at
-                                    , ( m.canceled_at
-                                      , (m.created_at, m.updated_at) ) ) ) ) )
-                            ) ) ) ) ) ) ) ) ) ) ) )
+                , ( m.limitations
+                  , ( m.location_id
+                    , ( m.max_participants
+                      , ( m.min_participants
+                        , ( m.overbook
+                          , ( m.reminder_lead_time
+                            , ( m.reminder_sent_at
+                              , ( m.assignment_count
+                                , ( m.no_show_count
+                                  , ( m.participant_count
+                                    , ( m.closed_at
+                                      , ( m.canceled_at
+                                        , (m.created_at, m.updated_at) ) ) ) )
+                                ) ) ) ) ) ) ) ) ) ) ) ) ) )
   in
   let decode
     ( id
@@ -107,18 +111,19 @@ let t =
         , ( start
           , ( duration
             , ( description
-              , ( location_id
-                , ( max_participants
-                  , ( min_participants
-                    , ( overbook
-                      , ( reminder_lead_time
-                        , ( reminder_sent_at
-                          , ( assignment_count
-                            , ( no_show_count
-                              , ( participant_count
-                                , ( closed_at
-                                  , (canceled_at, (created_at, updated_at)) ) )
-                              ) ) ) ) ) ) ) ) ) ) ) ) ) )
+              , ( limitations
+                , ( location_id
+                  , ( max_participants
+                    , ( min_participants
+                      , ( overbook
+                        , ( reminder_lead_time
+                          , ( reminder_sent_at
+                            , ( assignment_count
+                              , ( no_show_count
+                                , ( participant_count
+                                  , ( closed_at
+                                    , (canceled_at, (created_at, updated_at)) )
+                                  ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) )
     =
     Ok
       { id
@@ -127,6 +132,7 @@ let t =
       ; start
       ; duration
       ; description
+      ; limitations
       ; location_id
       ; max_participants
       ; min_participants
@@ -159,28 +165,30 @@ let t =
                      (tup2
                         (option string)
                         (tup2
-                           Pool_location.Repo.Id.t
+                           (option string)
                            (tup2
-                              int
+                              Pool_location.Repo.Id.t
                               (tup2
                                  int
                                  (tup2
                                     int
                                     (tup2
-                                       (option RepoReminder.LeadTime.t)
+                                       int
                                        (tup2
-                                          (option RepoReminder.SentAt.t)
+                                          (option RepoReminder.LeadTime.t)
                                           (tup2
-                                             int
+                                             (option RepoReminder.SentAt.t)
                                              (tup2
                                                 int
                                                 (tup2
                                                    int
                                                    (tup2
-                                                      (option ptime)
+                                                      int
                                                       (tup2
                                                          (option ptime)
-                                                         (tup2 ptime ptime)))))))))))))))))))
+                                                         (tup2
+                                                            (option ptime)
+                                                            (tup2 ptime ptime))))))))))))))))))))
 ;;
 
 module Write = struct
@@ -190,6 +198,7 @@ module Write = struct
     ; start : Entity.Start.t
     ; duration : Ptime.Span.t
     ; description : Entity.Description.t option
+    ; limitations : Entity.Limitations.t option
     ; location_id : Pool_location.Id.t
     ; max_participants : Entity.ParticipantAmount.t
     ; min_participants : Entity.ParticipantAmount.t
@@ -207,6 +216,7 @@ module Write = struct
        ; start
        ; duration
        ; description
+       ; limitations
        ; location
        ; max_participants
        ; min_participants
@@ -224,6 +234,7 @@ module Write = struct
     ; start
     ; duration
     ; description
+    ; limitations
     ; location_id = location.Pool_location.id
     ; max_participants
     ; min_participants
@@ -243,13 +254,14 @@ module Write = struct
           , ( m.start
             , ( m.duration
               , ( m.description
-                , ( m.location_id
-                  , ( m.max_participants
-                    , ( m.min_participants
-                      , ( m.overbook
-                        , ( m.reminder_lead_time
-                          , (m.reminder_sent_at, (m.closed_at, m.canceled_at))
-                          ) ) ) ) ) ) ) ) ) )
+                , ( m.limitations
+                  , ( m.location_id
+                    , ( m.max_participants
+                      , ( m.min_participants
+                        , ( m.overbook
+                          , ( m.reminder_lead_time
+                            , (m.reminder_sent_at, (m.closed_at, m.canceled_at))
+                            ) ) ) ) ) ) ) ) ) ) )
     in
     let decode
       ( id
@@ -257,13 +269,14 @@ module Write = struct
         , ( start
           , ( duration
             , ( description
-              , ( location_id
-                , ( max_participants
-                  , ( min_participants
-                    , ( overbook
-                      , ( reminder_lead_time
-                        , (reminder_sent_at, (closed_at, canceled_at)) ) ) ) )
-                ) ) ) ) ) )
+              , ( limitations
+                , ( location_id
+                  , ( max_participants
+                    , ( min_participants
+                      , ( overbook
+                        , ( reminder_lead_time
+                          , (reminder_sent_at, (closed_at, canceled_at)) ) ) )
+                    ) ) ) ) ) ) ) )
       =
       Ok
         { id
@@ -271,6 +284,7 @@ module Write = struct
         ; start
         ; duration
         ; description
+        ; limitations
         ; location_id
         ; max_participants
         ; min_participants
@@ -296,20 +310,23 @@ module Write = struct
                     (tup2
                        (option string)
                        (tup2
-                          Pool_location.Repo.Id.t
+                          (option string)
                           (tup2
-                             int
+                             Pool_location.Repo.Id.t
                              (tup2
                                 int
                                 (tup2
                                    int
                                    (tup2
-                                      (option
-                                         Pool_common.Repo.Reminder.LeadTime.t)
+                                      int
                                       (tup2
                                          (option
-                                            Pool_common.Repo.Reminder.SentAt.t)
-                                         (tup2 (option ptime) (option ptime))))))))))))))
+                                            Pool_common.Repo.Reminder.LeadTime.t)
+                                         (tup2
+                                            (option
+                                               Pool_common.Repo.Reminder.SentAt
+                                               .t)
+                                            (tup2 (option ptime) (option ptime)))))))))))))))
   ;;
 end
 

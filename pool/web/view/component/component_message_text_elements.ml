@@ -109,6 +109,7 @@ module DummyData = struct
           |> Start.create
       ; duration = Duration.create hour |> Pool_common.Utils.get_or_failwith
       ; description = None
+      ; limitations = None
       ; location
       ; max_participants =
           ParticipantAmount.create 30 |> Pool_common.Utils.get_or_failwith

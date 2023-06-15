@@ -4,6 +4,7 @@ type base =
   { start : Start.t
   ; duration : Duration.t
   ; description : Description.t option
+  ; limitations : Limitations.t option
   ; max_participants : ParticipantAmount.t
   ; min_participants : ParticipantAmount.t
   ; overbook : ParticipantAmount.t
@@ -15,6 +16,7 @@ type update =
   { start : Start.t option
   ; duration : Duration.t option
   ; description : Description.t option
+  ; limitations : Limitations.t option
   ; max_participants : ParticipantAmount.t
   ; min_participants : ParticipantAmount.t
   ; overbook : ParticipantAmount.t
@@ -59,6 +61,7 @@ let handle_event pool =
       ( { start
         ; duration
         ; description
+        ; limitations
         ; max_participants
         ; min_participants
         ; overbook
@@ -71,6 +74,7 @@ let handle_event pool =
       { session with
         start
       ; duration
+      ; limitations
       ; location
       ; description
       ; max_participants

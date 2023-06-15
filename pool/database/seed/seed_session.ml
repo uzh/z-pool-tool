@@ -5,6 +5,7 @@ let session_data =
       |> CCOption.get_exn_or "Invalid time"
     , hour
     , None
+    , Some "Must be healthy"
     , 30
     , 4
     , 4
@@ -13,6 +14,7 @@ let session_data =
       |> CCOption.get_exn_or "Invalid time"
     , halfhour
     , Some "No metal allowed!"
+    , None
     , 28
     , 20
     , 0
@@ -21,6 +23,7 @@ let session_data =
       |> CCOption.get_exn_or "Invalid time"
     , halfhour
     , Some "No metal allowed!"
+    , None
     , 30
     , 2
     , 5
@@ -41,6 +44,7 @@ let create pool =
             (fun ( start
                  , duration
                  , description
+                 , limitations
                  , max
                  , min
                  , overbook
@@ -52,6 +56,9 @@ let create pool =
                 let duration = Duration.create duration |> get_or_failwith in
                 let description =
                   description >>= Description.create %> of_result
+                in
+                let limitations =
+                  limitations >>= Limitations.create %> of_result
                 in
                 let max_participants =
                   ParticipantAmount.create max |> get_or_failwith
@@ -73,6 +80,7 @@ let create pool =
                   start
                   duration
                   description
+                  limitations
                   location
                   max_participants
                   min_participants
@@ -110,6 +118,7 @@ let create pool =
           start
           duration
           description
+          None
           parent.location
           parent.max_participants
           parent.min_participants

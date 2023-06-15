@@ -62,8 +62,9 @@ let session_form
           Session.(session.id |> Id.value)
         |> Sihl.Web.externalize_path
       in
-      p
-        [ txt "There are assignments for this session. Please use the "
+      div
+        ~a:[ a_class [ "full-width" ] ]
+        [ p [ txt "There are assignments for this session. Please use the " ]
         ; a
             ~a:[ a_href action ]
             [ txt "form provided to reschedule a session." ]
@@ -137,6 +138,13 @@ let session_form
             ~value:
               (value (fun s ->
                  s.description |> CCOption.map_or ~default:"" Description.value))
+            ~flash_fetcher
+        ; textarea_element
+            language
+            Message.Field.Limitations
+            ~value:
+              (value (fun s ->
+                 s.limitations |> CCOption.map_or ~default:"" Limitations.value))
             ~flash_fetcher
         ; location_select
             language
@@ -629,6 +637,9 @@ let detail
             |> txt )
         ; ( Field.Description
           , CCOption.map_or ~default:"" Description.value session.description
+            |> Http_utils.add_line_breaks )
+        ; ( Field.Limitations
+          , CCOption.map_or ~default:"" Limitations.value session.limitations
             |> Http_utils.add_line_breaks )
         ; ( Field.Location
           , Partials.location_to_html language session.Session.location )

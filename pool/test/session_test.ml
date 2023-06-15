@@ -24,6 +24,7 @@ module Data = struct
 
     let duration = Ptime.Span.of_int_s 3600
     let description = "Description"
+    let limitations = "Limitations"
     let max_participants = 24
     let min_participants = 5
     let overbook = 0
@@ -43,6 +44,7 @@ module Data = struct
     let start3 = Raw.start3 |> Ptime.to_rfc3339 ~frac_s:12
     let duration = Raw.duration |> Pool_common.Utils.Time.timespan_to_hours
     let description = Raw.description
+    let limitations = Raw.limitations
     let max_participants = Raw.max_participants |> string_of_int
     let min_participants = Raw.min_participants |> string_of_int
     let overbook = Raw.overbook |> string_of_int
@@ -59,6 +61,10 @@ module Data = struct
 
     let description =
       Session.Description.create Raw.description |> CCResult.get_exn
+    ;;
+
+    let limitations =
+      Session.Limitations.create Raw.limitations |> CCResult.get_exn
     ;;
 
     let max_participants =
@@ -108,6 +114,7 @@ module Data = struct
     [ show Start, [ String.start1 ]
     ; show Duration, [ String.duration ]
     ; show Description, [ String.description ]
+    ; show Limitations, [ String.limitations ]
     ; show MaxParticipants, [ String.max_participants ]
     ; show MinParticipants, [ String.min_participants ]
     ; show Overbook, [ String.overbook ]
@@ -221,7 +228,8 @@ let create_no_optional () =
   let session_id = Session.Id.create () in
   let input =
     let open Data in
-    delete_from_input [ Description; LeadTime; SentAt; AssignmentCount ]
+    delete_from_input
+      [ Description; Limitations; LeadTime; SentAt; AssignmentCount ]
   in
   let experiment_id = Experiment.Id.create () in
   let location = Location_test.create_location () in
@@ -235,6 +243,7 @@ let create_no_optional () =
       ~id:session_id
       start1
       duration
+      None
       None
       location
       max_participants
@@ -263,6 +272,7 @@ let create_full () =
       start1
       duration
       (Some description)
+      (Some limitations)
       location
       max_participants
       min_participants
@@ -295,6 +305,7 @@ let create_min_eq_max () =
       start1
       duration
       (Some description)
+      (Some limitations)
       location
       max_participants2
       min_participants
@@ -371,7 +382,8 @@ let update_no_optional () =
   let open Pool_common.Message.Field in
   let input =
     let open Data in
-    delete_from_input [ Description; LeadTime; SentAt; AssignmentCount ]
+    delete_from_input
+      [ Description; Limitations; LeadTime; SentAt; AssignmentCount ]
   in
   let session = Model.create_session () in
   let location = Location_test.create_location () in
@@ -384,6 +396,7 @@ let update_no_optional () =
                ( { Session.start = start1
                  ; duration
                  ; description = None
+                 ; limitations = None
                  ; max_participants
                  ; min_participants
                  ; overbook
@@ -412,6 +425,7 @@ let update_full () =
                ( { Session.start = start2
                  ; duration
                  ; description = Some description
+                 ; limitations = Some limitations
                  ; max_participants
                  ; min_participants
                  ; overbook
@@ -441,6 +455,7 @@ let update_min_eq_max () =
                ( { Session.start = start1
                  ; duration
                  ; description = Some description
+                 ; limitations = Some limitations
                  ; max_participants = max_participants2
                  ; min_participants
                  ; overbook
@@ -1058,6 +1073,7 @@ let create_follow_up_later () =
       (Session.Start.create later_start)
       duration
       (Some description)
+      (Some limitations)
       location
       max_participants
       min_participants
@@ -1111,6 +1127,7 @@ let update_follow_up_later () =
                ( { Session.start = Session.Start.create later_start
                  ; duration
                  ; description = Some description
+                 ; limitations = Some limitations
                  ; max_participants
                  ; min_participants
                  ; overbook
@@ -1211,6 +1228,7 @@ let update_follow_ups_later () =
                ( { Session.start = start1
                  ; duration
                  ; description = Some description
+                 ; limitations = Some limitations
                  ; max_participants
                  ; min_participants
                  ; overbook
@@ -1245,6 +1263,7 @@ let update_follow_ups_later () =
                ( { Session.start = Session.Start.create later_start
                  ; duration
                  ; description = Some description
+                 ; limitations = Some limitations
                  ; max_participants
                  ; min_participants
                  ; overbook

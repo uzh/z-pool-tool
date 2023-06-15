@@ -103,6 +103,7 @@ let rec field_to_string =
   | LastRunAt -> "Letzter Durchlauf"
   | LeadTime -> "Vorlaufzeit"
   | Limit -> "Limit"
+  | Limitations -> "Einschränkungen"
   | Link -> "Link"
   | Location -> "Lokalität"
   | LogoType -> "Logo Typ"

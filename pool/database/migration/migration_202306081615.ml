@@ -38,10 +38,20 @@ let add_fk_contraint_to_organisational_units =
     |sql}
 ;;
 
+let add_missing_columns_to_sessions =
+  Sihl.Database.Migration.create_step
+    ~label:"add missing columns to sessions"
+    {sql|
+    ALTER TABLE pool_sessions
+      ADD COLUMN limitations text AFTER description
+    |sql}
+;;
+
 let migration () =
   Sihl.Database.Migration.(
-    empty "202306071615"
+    empty "202306081615"
     |> add_step create_organisational_units_table
     |> add_step add_missing_columns_to_experiments
-    |> add_step add_fk_contraint_to_organisational_units)
+    |> add_step add_fk_contraint_to_organisational_units
+    |> add_step add_missing_columns_to_sessions)
 ;;

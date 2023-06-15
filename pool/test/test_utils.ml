@@ -333,6 +333,7 @@ module Model = struct
     ; start
     ; duration = Duration.create hour |> get_or_failwith_pool_error
     ; description = None
+    ; limitations = None
     ; location
     ; max_participants =
         ParticipantAmount.create 30 |> get_or_failwith_pool_error
@@ -390,6 +391,7 @@ module Model = struct
     ({ Session.start
      ; duration
      ; description
+     ; limitations
      ; max_participants
      ; min_participants
      ; overbook
@@ -403,6 +405,7 @@ module Model = struct
       { start
       ; duration
       ; description
+      ; limitations
       ; max_participants
       ; min_participants
       ; overbook

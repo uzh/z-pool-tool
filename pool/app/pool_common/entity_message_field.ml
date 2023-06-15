@@ -122,6 +122,7 @@ type t =
   | LastRunAt [@name "last_run_at"] [@printer go "last_run_at"]
   | LeadTime [@name "lead_time"] [@printer go "lead_time"]
   | Limit [@name "limit"] [@printer go "limit"]
+  | Limitations [@name "limitations"] [@printer go "limitations"]
   | Link [@name "link"] [@printer go "link"]
   | Location [@name "location"] [@printer go "location"]
   | LogoType [@name "logo_type"] [@printer go "logo_type"]

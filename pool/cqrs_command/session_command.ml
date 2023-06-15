@@ -7,6 +7,7 @@ let create_command
   start
   duration
   description
+  limitations
   max_participants
   min_participants
   overbook
@@ -17,6 +18,7 @@ let create_command
     { start
     ; duration
     ; description
+    ; limitations
     ; max_participants
     ; min_participants
     ; overbook
@@ -31,6 +33,7 @@ let create_schema =
         [ Session.Start.schema ()
         ; Session.Duration.schema ()
         ; Conformist.optional @@ Session.Description.schema ()
+        ; Conformist.optional @@ Session.Limitations.schema ()
         ; Session.ParticipantAmount.schema
             Pool_common.Message.Field.MaxParticipants
         ; Session.ParticipantAmount.schema
@@ -45,6 +48,7 @@ let update_command
   start
   duration
   description
+  limitations
   max_participants
   min_participants
   overbook
@@ -55,6 +59,7 @@ let update_command
     { start
     ; duration
     ; description
+    ; limitations
     ; max_participants
     ; min_participants
     ; overbook
@@ -69,6 +74,7 @@ let update_schema =
         [ Conformist.optional @@ Session.Start.schema ()
         ; Conformist.optional @@ Session.Duration.schema ()
         ; Conformist.optional @@ Session.Description.schema ()
+        ; Conformist.optional @@ Session.Limitations.schema ()
         ; Session.ParticipantAmount.schema
             Pool_common.Message.Field.MaxParticipants
         ; Session.ParticipantAmount.schema
@@ -141,6 +147,7 @@ end = struct
        { start
        ; duration
        ; description
+       ; limitations
        ; max_participants
        ; min_participants
        ; (* TODO [aerben] find a better name *)
@@ -167,6 +174,7 @@ end = struct
         start
         duration
         description
+        limitations
         location
         max_participants
         min_participants
@@ -214,6 +222,7 @@ end = struct
        { start
        ; duration
        ; description
+       ; limitations
        ; max_participants
        ; min_participants
        ; overbook
@@ -251,6 +260,7 @@ end = struct
         { start
         ; duration
         ; description
+        ; limitations
         ; max_participants
         ; min_participants
         ; overbook
