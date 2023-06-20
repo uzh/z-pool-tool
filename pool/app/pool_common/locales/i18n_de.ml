@@ -232,7 +232,7 @@ let rec hint_to_string = function
   | FilterContacts ->
     "Definieren Sie die Kriterien, anhand welchen Kontakte an dieses \
      Experiment eingeladen werden."
-  | GtxTestPhoneNumber ->
+  | TestPhoneNumber ->
     "Bitte geben Sie eine Telefonnummer an, an die wir eine einzige \
      Testnachricht schicken können, um den API Key zu verifizieren. Die Nummer \
      muss im Format +41791234567 sein."

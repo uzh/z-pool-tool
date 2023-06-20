@@ -431,64 +431,32 @@ end = struct
     in
     let* notification_events =
       let open Pool_common.NotifyVia in
-      let* emails, text_messages =
-        CCList.fold_left
-          (fun events (contact, _) ->
-            let text_message_fn = text_message_fn reason contact in
-            let email_fn = email_fn reason in
-            events
-            >>= fun (emails, text_messages) ->
-            match notify_via with
-            | [] -> Error Pool_common.Message.(NoOptionSelected Field.NotifyVia)
-            | [ hd ] ->
-              (match[@warning "-21"] hd, contact.Contact.phone_number with
-               | TextMessage, Some phone_number ->
-                 let* text_message = text_message_fn phone_number in
-                 Ok (emails, text_messages @ [ text_message ])
-               | TextMessage, None | Email, _ ->
-                 let* email = email_fn contact in
-                 Ok (emails @ [ email ], text_messages))
-            | notify_via ->
-              let* email =
-                match CCList.mem ~eq:equal Email notify_via with
-                | true -> email_fn contact >|= CCOption.return
-                | false -> Ok None
-              in
-              let* text_message =
-                match
-                  ( CCList.mem ~eq:equal TextMessage notify_via
-                  , contact.Contact.phone_number )
-                with
-                | true, Some phone_number ->
-                  text_message_fn phone_number >|= CCOption.return
-                | true, None | false, _ -> Ok None
-              in
-              let emails =
-                email
-                |> CCOption.map_or ~default:emails (fun email ->
-                     emails @ [ email ])
-              in
-              let text_messages =
-                text_message
-                |> CCOption.map_or ~default:text_messages (fun msg ->
-                     text_messages @ [ msg ])
-              in
-              Ok (emails, text_messages))
-          (Ok ([], []))
-          assignments
+      let email_event contact =
+        email_fn reason contact >|= Email.sent >|= Pool_event.email
       in
-      let emails =
-        if CCList.is_empty emails
-        then None
-        else Some (Email.BulkSent emails |> Pool_event.email)
+      let text_msg_event contact phone_number =
+        text_message_fn reason contact phone_number
+        >|= Text_message.sent
+        >|= Pool_event.text_message
       in
-      let text_messages =
-        if CCList.is_empty text_messages
-        then None
-        else
-          Some (Text_message.BulkSent text_messages |> Pool_event.text_message)
-      in
-      Ok ([ emails; text_messages ] |> CCList.filter_map CCFun.id)
+      let fallback_to_email = CCList.mem ~eq:equal Email notify_via |> not in
+      match notify_via with
+      | [] -> Error Pool_common.Message.(NoOptionSelected Field.NotifyVia)
+      | notify_via ->
+        notify_via
+        |> CCList.flat_map (function
+             | Email ->
+               assignments
+               |> CCList.map (fun (contact, _) -> email_event contact)
+             | TextMessage ->
+               assignments
+               |> CCList.filter_map (fun (contact, _) ->
+                    match contact.Contact.phone_number, fallback_to_email with
+                    | Some phone_number, (true | false) ->
+                      text_msg_event contact phone_number |> CCOption.return
+                    | None, true -> email_event contact |> CCOption.return
+                    | _, _ -> None))
+        |> CCList.all_ok
     in
     let cancel_events =
       sessions

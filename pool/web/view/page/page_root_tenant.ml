@@ -33,7 +33,7 @@ let gtx_api_inputs ~flash_fetcher language =
         Field.TestPhoneNumber
         ~flash_fetcher
         ~required:true
-        ~help:Pool_common.I18n.GtxTestPhoneNumber
+        ~help:Pool_common.I18n.TestPhoneNumber
     ]
 ;;
 
