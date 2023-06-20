@@ -663,6 +663,7 @@ let no_admin_values_shown_to_contacts _ () =
       custom_fields
       |> CCList.filter (function
            | Public.Boolean (_, answer) -> answer >>= admin_value |> is_some
+           | Public.Date (_, answer) -> answer >>= admin_value |> is_some
            | Public.MultiSelect (_, _, answer) ->
              answer >>= admin_value |> is_some
            | Public.Number (_, answer) -> answer >>= admin_value |> is_some

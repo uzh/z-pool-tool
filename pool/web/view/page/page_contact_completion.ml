@@ -26,6 +26,13 @@ let custom_field_to_input ?flash_fetcher language custom_field =
       ?value:(answer >>= Answer.value)
       language
       field
+  | Public.Date (_, answer) ->
+    Input.date_picker_element
+      ~orientation:`Horizontal
+      ~disable_future:true
+      ?value:(answer >>= Answer.value)
+      language
+      field
   | Public.MultiSelect (_, options, answer) ->
     let selected = answer >>= Answer.value |> CCOption.value ~default:[] in
     let t =

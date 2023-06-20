@@ -132,11 +132,10 @@ let value_input
        let value =
          single_value
          >>= function[@warning "-4"]
-         | Date d -> Some (d |> Ptime.to_rfc3339)
+         | Date d -> Some d
          | _ -> None
        in
-       (* TODO: Add option to disable *)
-       Component_input.flatpicker_element
+       Component_input.date_picker_element
          ~additional_attributes
          ?value
          language

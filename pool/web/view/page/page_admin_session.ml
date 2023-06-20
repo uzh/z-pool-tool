@@ -107,10 +107,9 @@ let session_form
              if CCOption.is_some duplicate || CCOption.is_some follow_up_to
              then None
              else
-               Some
-                 (value (fun s -> s.start |> Start.value |> Ptime.to_rfc3339))
+               session |> CCOption.map (fun (s : t) -> s.start |> Start.value)
            in
-           flatpicker_element
+           date_time_picker_element
              language
              Message.Field.Start
              ~required:true
@@ -229,12 +228,12 @@ let reschedule_session
       ; a_action (action |> Sihl.Web.externalize_path)
       ]
     [ csrf_element csrf ()
-    ; flatpicker_element
+    ; date_time_picker_element
         language
         Message.Field.Start
         ~required:true
         ~flash_fetcher
-        ~value:(session.start |> Start.value |> Ptime.to_rfc3339)
+        ~value:(session.start |> Start.value)
         ~disable_past:true
     ; timespan_picker
         language

@@ -25,6 +25,12 @@ end
 
 module Language = Model.SelectorType (Language)
 
+module Ptime = struct
+  include Entity_base_model.Ptime
+
+  let date = make_caqti_type Caqti_type.string date_of_string date_to_string
+end
+
 module Version = struct
   include Version
 
