@@ -372,7 +372,7 @@ let completion_post req =
                   (field
                    |> Public.to_common_field language
                    |> Pool_common.Message.Field.array_key)
-           | Boolean _ | Number _ | Select _ | Text _ ->
+           | Boolean _ | Date _ | Number _ | Select _ | Text _ ->
              CCList.assoc_opt ~eq:CCString.equal id urlencoded
              |> CCOption.value ~default:[]
              |> Lwt.return)

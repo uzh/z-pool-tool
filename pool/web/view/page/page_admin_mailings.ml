@@ -481,7 +481,7 @@ let form
                    ]
                  [ div
                      ~a:[ a_class [ "flexcolumn" ] ]
-                     [ flatpicker_element
+                     [ date_time_picker_element
                          language
                          Field.Start
                          ~flash_fetcher
@@ -490,13 +490,11 @@ let form
                          ?value:
                            (CCOption.map
                               (fun (m : Mailing.t) ->
-                                m.Mailing.start_at
-                                |> Mailing.StartAt.value
-                                |> Ptime.to_rfc3339 ~space:true)
+                                m.Mailing.start_at |> Mailing.StartAt.value)
                               mailing)
                      ; checkbox_element ~flash_fetcher language Field.StartNow
                      ]
-                 ; flatpicker_element
+                 ; date_time_picker_element
                      language
                      Field.End
                      ~flash_fetcher
@@ -505,9 +503,7 @@ let form
                      ?value:
                        (CCOption.map
                           (fun (m : Mailing.t) ->
-                            m.Mailing.end_at
-                            |> Mailing.EndAt.value
-                            |> Ptime.to_rfc3339 ~space:true)
+                            m.Mailing.end_at |> Mailing.EndAt.value)
                           mailing)
                  ; input_element
                      language

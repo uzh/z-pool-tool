@@ -441,7 +441,7 @@ let field_form
                ]
            ; div ~a:[ a_class [ "gap" ] ] list
            ]
-       | Boolean _ | Number _ | Text _ -> empty)
+       | Boolean _ | Date _ | Number _ | Text _ -> empty)
   in
   let field_type_selector =
     match custom_field with

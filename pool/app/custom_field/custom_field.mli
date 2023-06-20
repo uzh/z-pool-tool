@@ -91,6 +91,7 @@ end
 module FieldType : sig
   type t =
     | Boolean
+    | Date
     | MultiSelect
     | Number
     | Select
@@ -224,6 +225,7 @@ module Public : sig
 
   type t =
     | Boolean of bool public * bool Answer.t option
+    | Date of Ptime.date public * Ptime.date Answer.t option
     | MultiSelect of
         SelectOption.Public.t list public
         * SelectOption.Public.t list
@@ -313,6 +315,7 @@ type 'a custom_field =
 
 type t =
   | Boolean of bool custom_field
+  | Date of Ptime.date custom_field
   | Number of int custom_field
   | MultiSelect of SelectOption.t list custom_field * SelectOption.t list
   | Select of SelectOption.t custom_field * SelectOption.t list

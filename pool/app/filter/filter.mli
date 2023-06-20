@@ -6,7 +6,7 @@ end
 
 type single_val =
   | Bool of bool
-  | Date of Ptime.t
+  | Date of Pool_common.Model.Ptime.date
   | Language of Pool_common.Language.t
   | Nr of float
   | Option of Custom_field.SelectOption.Id.t

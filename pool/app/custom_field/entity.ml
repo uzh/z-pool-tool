@@ -3,6 +3,10 @@ module Language = Pool_common.Language
 module Answer = Entity_answer
 module User = Pool_user
 
+module Ptime = struct
+  include Pool_common.Model.Ptime
+end
+
 let printer = Utils.ppx_printer
 
 module Id = struct
@@ -60,6 +64,7 @@ module FieldType = struct
 
     type t =
       | Boolean [@name "boolean"] [@printer printer "boolean"]
+      | Date [@name "date"] [@printer printer "date"]
       | MultiSelect [@name "multi_select"] [@printer printer "multi_select"]
       | Number [@name "number"] [@printer printer "number"]
       | Select [@name "select"] [@printer printer "select"]
@@ -126,10 +131,6 @@ module Validation = struct
     (('a -> ('a, Message.error) result) * raw
     [@equal fun (_, raw1) (_, raw2) -> equal_raw raw1 raw2])
   [@@deriving show, eq]
-
-  module Ptime = struct
-    include Pool_common.Model.Ptime
-  end
 
   module Text = struct
     type key =
@@ -344,6 +345,7 @@ module Public = struct
 
   type t =
     | Boolean of bool public * bool Answer.t option
+    | Date of Ptime.date public * Ptime.date Answer.t option
     | MultiSelect of
         SelectOption.Public.t list public
         * SelectOption.Public.t list
@@ -359,6 +361,7 @@ module Public = struct
   let id (t : t) =
     match t with
     | Boolean ({ id; _ }, _)
+    | Date ({ id; _ }, _)
     | MultiSelect ({ id; _ }, _, _)
     | Number ({ id; _ }, _)
     | Select ({ id; _ }, _, _)
@@ -368,6 +371,7 @@ module Public = struct
   let name_value lang (t : t) =
     match t with
     | Boolean ({ name; _ }, _)
+    | Date ({ name; _ }, _)
     | MultiSelect ({ name; _ }, _, _)
     | Number ({ name; _ }, _)
     | Select ({ name; _ }, _, _)
@@ -380,6 +384,7 @@ module Public = struct
   let hint lang (t : t) =
     match t with
     | Boolean ({ hint; _ }, _)
+    | Date ({ hint; _ }, _)
     | MultiSelect ({ hint; _ }, _, _)
     | Number ({ hint; _ }, _)
     | Select ({ hint; _ }, _, _)
@@ -389,6 +394,7 @@ module Public = struct
   let required (t : t) =
     match t with
     | Boolean ({ required; _ }, _)
+    | Date ({ required; _ }, _)
     | MultiSelect ({ required; _ }, _, _)
     | Number ({ required; _ }, _)
     | Select ({ required; _ }, _, _)
@@ -398,6 +404,7 @@ module Public = struct
   let admin_override (t : t) =
     match t with
     | Boolean ({ admin_override; _ }, _)
+    | Date ({ admin_override; _ }, _)
     | MultiSelect ({ admin_override; _ }, _, _)
     | Number ({ admin_override; _ }, _)
     | Select ({ admin_override; _ }, _, _)
@@ -407,6 +414,7 @@ module Public = struct
   let admin_input_only (t : t) =
     match t with
     | Boolean ({ admin_input_only; _ }, _)
+    | Date ({ admin_input_only; _ }, _)
     | MultiSelect ({ admin_input_only; _ }, _, _)
     | Number ({ admin_input_only; _ }, _)
     | Select ({ admin_input_only; _ }, _, _)
@@ -424,6 +432,7 @@ module Public = struct
 
   let version = function
     | Boolean (public, _) -> public.version
+    | Date (public, _) -> public.version
     | MultiSelect (public, _, _) -> public.version
     | Number (public, _) -> public.version
     | Select (public, _, _) -> public.version
@@ -432,6 +441,7 @@ module Public = struct
 
   let field_type = function
     | Boolean _ -> FieldType.Boolean
+    | Date _ -> FieldType.Date
     | Number _ -> FieldType.Number
     | MultiSelect _ -> FieldType.MultiSelect
     | Select _ -> FieldType.Select
@@ -442,6 +452,7 @@ module Public = struct
     let version = t |> version |> Pool_common.Version.increment in
     match t with
     | Boolean (public, answer) -> boolean { public with version } answer
+    | Date (public, answer) -> date { public with version } answer
     | MultiSelect (public, options, answer) ->
       multiselect { public with version } options answer
     | Number (public, answer) -> number { public with version } answer
@@ -521,6 +532,7 @@ type 'a custom_field =
 
 type t =
   | Boolean of bool custom_field
+  | Date of Ptime.date custom_field
   | Number of int custom_field
   | MultiSelect of SelectOption.t list custom_field * SelectOption.t list
   | Select of SelectOption.t custom_field * SelectOption.t list
@@ -551,6 +563,23 @@ let create
   | FieldType.Boolean ->
     Ok
       (Boolean
+         { id
+         ; model
+         ; name
+         ; hint
+         ; validation = Validation.pure
+         ; required
+         ; disabled
+         ; custom_field_group_id
+         ; admin_hint
+         ; admin_override
+         ; admin_view_only
+         ; admin_input_only
+         ; published_at
+         })
+  | FieldType.Date ->
+    Ok
+      (Date
          { id
          ; model
          ; name
@@ -644,6 +673,7 @@ let create
 
 let id = function
   | Boolean { id; _ }
+  | Date { id; _ }
   | Number { id; _ }
   | MultiSelect ({ id; _ }, _)
   | Select ({ id; _ }, _)
@@ -652,6 +682,7 @@ let id = function
 
 let model = function
   | Boolean { model; _ }
+  | Date { model; _ }
   | Number { model; _ }
   | MultiSelect ({ model; _ }, _)
   | Select ({ model; _ }, _)
@@ -660,6 +691,7 @@ let model = function
 
 let name = function
   | Boolean { name; _ }
+  | Date { name; _ }
   | Number { name; _ }
   | MultiSelect ({ name; _ }, _)
   | Select ({ name; _ }, _)
@@ -676,6 +708,7 @@ let name_value lang (t : t) =
 
 let hint = function
   | Boolean { hint; _ }
+  | Date { hint; _ }
   | Number { hint; _ }
   | MultiSelect ({ hint; _ }, _)
   | Select ({ hint; _ }, _)
@@ -684,6 +717,7 @@ let hint = function
 
 let required = function
   | Boolean { required; _ }
+  | Date { required; _ }
   | Number { required; _ }
   | MultiSelect ({ required; _ }, _)
   | Select ({ required; _ }, _)
@@ -692,6 +726,7 @@ let required = function
 
 let disabled = function
   | Boolean { disabled; _ }
+  | Date { disabled; _ }
   | Number { disabled; _ }
   | MultiSelect ({ disabled; _ }, _)
   | Select ({ disabled; _ }, _)
@@ -700,6 +735,7 @@ let disabled = function
 
 let published_at = function
   | Boolean { published_at; _ }
+  | Date { published_at; _ }
   | Number { published_at; _ }
   | MultiSelect ({ published_at; _ }, _)
   | Select ({ published_at; _ }, _)
@@ -708,6 +744,7 @@ let published_at = function
 
 let group_id = function
   | Boolean { custom_field_group_id; _ }
+  | Date { custom_field_group_id; _ }
   | Number { custom_field_group_id; _ }
   | MultiSelect ({ custom_field_group_id; _ }, _)
   | Select ({ custom_field_group_id; _ }, _)
@@ -716,6 +753,7 @@ let group_id = function
 
 let admin_hint = function
   | Boolean { admin_hint; _ }
+  | Date { admin_hint; _ }
   | Number { admin_hint; _ }
   | MultiSelect ({ admin_hint; _ }, _)
   | Select ({ admin_hint; _ }, _)
@@ -724,6 +762,7 @@ let admin_hint = function
 
 let admin_override = function
   | Boolean { admin_override; _ }
+  | Date { admin_override; _ }
   | Number { admin_override; _ }
   | MultiSelect ({ admin_override; _ }, _)
   | Select ({ admin_override; _ }, _)
@@ -732,6 +771,7 @@ let admin_override = function
 
 let admin_view_only = function
   | Boolean { admin_view_only; _ }
+  | Date { admin_view_only; _ }
   | Number { admin_view_only; _ }
   | MultiSelect ({ admin_view_only; _ }, _)
   | Select ({ admin_view_only; _ }, _)
@@ -740,6 +780,7 @@ let admin_view_only = function
 
 let admin_input_only = function
   | Boolean { admin_input_only; _ }
+  | Date { admin_input_only; _ }
   | Number { admin_input_only; _ }
   | MultiSelect ({ admin_input_only; _ }, _)
   | Select ({ admin_input_only; _ }, _)
@@ -748,6 +789,7 @@ let admin_input_only = function
 
 let field_type = function
   | Boolean _ -> FieldType.Boolean
+  | Date _ -> FieldType.Date
   | Number _ -> FieldType.Number
   | MultiSelect _ -> FieldType.MultiSelect
   | Select _ -> FieldType.Select
@@ -757,13 +799,14 @@ let field_type = function
 let validation_strings =
   let open Validation in
   function
-  | Boolean _ | Select _ | MultiSelect _ -> []
+  | Boolean _ | Date _ | Select _ | MultiSelect _ -> []
   | Number { validation; _ } -> validation |> snd |> to_strings Number.all
   | Text { validation; _ } -> validation |> snd |> to_strings Text.all
 ;;
 
 let validation_to_yojson = function
-  | Boolean _ | Select _ | MultiSelect _ -> "[]" |> Yojson.Safe.from_string
+  | Boolean _ | Date _ | Select _ | MultiSelect _ ->
+    "[]" |> Yojson.Safe.from_string
   | Number { validation; _ } -> Validation.encode_to_yojson validation
   | Text { validation; _ } -> Validation.encode_to_yojson validation
 ;;

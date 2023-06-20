@@ -119,6 +119,22 @@ module Data = struct
           ; version
           }
         , answer )
+    | FieldType.Date ->
+      let answer =
+        { Answer.id = answer_id; value = Some (1970, 1, 1); admin_value }
+        |> CCOption.pure
+      in
+      Public.Date
+        ( { Public.id
+          ; name
+          ; hint
+          ; validation = Validation.pure
+          ; required
+          ; admin_override
+          ; admin_input_only
+          ; version
+          }
+        , answer )
     | FieldType.MultiSelect ->
       let answer =
         field_options

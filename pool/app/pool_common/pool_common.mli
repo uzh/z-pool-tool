@@ -241,6 +241,12 @@ module Repo : sig
     val t : t Caqti_type.t
   end
 
+  module Ptime : sig
+    type date = Ptime.date
+
+    val date : date Caqti_type.t
+  end
+
   module Language : sig
     type t = Language.t
 

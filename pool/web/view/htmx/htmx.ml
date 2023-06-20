@@ -91,6 +91,7 @@ type 'a selector =
 
 type 'a value =
   | Boolean of bool option
+  | Date of Ptime.date option
   | MultiSelect of 'a Input.multi_select
   | Number of int option
   | Select of 'a selector
@@ -156,6 +157,19 @@ let create
       ?help
       ?error
       ?required
+      language
+      field
+  | Date date ->
+    Input.date_picker_element
+      ~additional_attributes:(additional_attributes ())
+      ?append_html
+      ~classnames
+      ~disable_future:true
+      ?error
+      ?value:date
+      ?help
+      ?required
+      ?success
       language
       field
   | MultiSelect t ->
@@ -263,6 +277,7 @@ let custom_field_to_htmx_value language is_admin =
   let open Custom_field in
   function
   | Public.Boolean (_, answer) -> answer >>= field_value is_admin |> boolean
+  | Public.Date (_, answer) -> answer >>= field_value is_admin |> date
   | Public.MultiSelect (_, options, answer) ->
     answer >>= field_value is_admin |> multi_select_value language options
   | Public.Number (_, answer) -> answer >>= field_value is_admin |> number
@@ -329,6 +344,10 @@ let custom_field_overridden_value ?hx_delete is_admin lang m =
        answer
        >>= field_overridden_value
        >|= build_html (Pool_common.Utils.bool_to_string lang %> txt)
+     | Public.Date (_, answer) ->
+       answer
+       >>= field_overridden_value
+       >|= build_html (Utils.Ptime.date_to_human %> txt)
      | Public.MultiSelect (_, _, answer) ->
        answer
        >>= field_overridden_value

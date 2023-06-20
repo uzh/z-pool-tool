@@ -25,7 +25,7 @@ let print = Utils.ppx_printer
 
 type single_val =
   | Bool of bool [@name "bool"] [@printer print "bool"]
-  | Date of Ptime.t [@name "date"] [@printer print "date"]
+  | Date of Pool_common.Model.Ptime.date [@name "date"] [@printer print "date"]
   | Language of Pool_common.Language.t [@name "language"]
       [@printer print "language"]
   | Nr of float [@name "nr"] [@printer print "nr"]
@@ -49,8 +49,8 @@ let single_value_of_yojson (yojson : Yojson.Safe.t) =
      | "bool", `Bool b -> Ok (Bool b)
      | "date", `String str ->
        str
-       |> Ptime.of_rfc3339
-       |> CCResult.map2 (fun (date, _, _) -> Date date) (fun _ -> error)
+       |> Pool_common.Model.Ptime.date_of_string
+       |> CCResult.map2 (fun date -> Date date) (fun _ -> error)
      | "language", `String str ->
        str |> Pool_common.Language.create >|= fun l -> Language l
      | "nr", `Float n -> Ok (Nr n)
@@ -84,7 +84,7 @@ let yojson_of_single_val value =
   @@
   match value with
   | Bool b -> `Bool b
-  | Date ptime -> `String (Ptime.to_rfc3339 ptime)
+  | Date date -> `String (Pool_common.Model.Ptime.date_to_string date)
   | Language lang -> `String (Pool_common.Language.show lang)
   | Nr n -> `Float n
   | Option id -> `String (Custom_field.SelectOption.Id.value id)
@@ -224,6 +224,7 @@ module Key = struct
     let open Custom_field in
     match m with
     | Boolean _ -> Bool
+    | Date _ -> Date
     | Number _ -> Nr
     | MultiSelect (_, options) -> MultiSelect options
     | Select (_, options) -> Select options

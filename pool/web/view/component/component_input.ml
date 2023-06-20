@@ -158,8 +158,11 @@ let input_element
 ;;
 
 let flatpicker_element
+  input_type
+  ?(append_html = [])
   ?(orientation = `Vertical)
   ?(classnames = [])
+  ?error
   ?label_field
   ?help
   ?identifier
@@ -168,7 +171,9 @@ let flatpicker_element
   ?value
   ?(warn_past = false)
   ?(disable_past = false)
+  ?(disable_future = false)
   ?(additional_attributes = [])
+  ?(success = false)
   language
   name
   =
@@ -178,8 +183,14 @@ let flatpicker_element
     span ~a:[ a_class [ "help"; "datepicker-msg"; "error-message" ] ] []
     |> CCList.pure
   in
+  let disable_hours =
+    match input_type with
+    | `Date -> true
+    | `DateTime -> false
+  in
   let flatpicker_attributes =
-    [ a_class [ "datepicker" ]
+    let input_class = "datepicker" :: (if success then [ "success" ] else []) in
+    [ a_class input_class
     ; a_user_data "language" (Pool_common.Language.show language)
     ]
     @ additional_attributes
@@ -191,6 +202,8 @@ let flatpicker_element
           , Pool_common.(Utils.hint_to_string language I18n.SelectedDateIsPast)
           )
         ; disable_past, "disable-past", "true"
+        ; disable_hours, "disable-time", "true"
+        ; disable_future, "disable-future", "true"
         ]
   in
   let id = Elements.identifier ?identifier name in
@@ -204,12 +217,30 @@ let flatpicker_element
   in
   let group_class = Elements.group_class classnames orientation in
   let help = Elements.help language help in
+  let error = Elements.error language error in
   let input_element = Elements.apply_orientation attributes orientation in
   div
     ~a:[ a_class group_class ]
     ([ label ~a:[ a_label_for id ] [ txt input_label ]; input_element ]
      @ help
-     @ flat_picker_help)
+     @ error
+     @ flat_picker_help
+     @ append_html)
+;;
+
+let date_picker_element ?value =
+  let value =
+    value
+    |> CCOption.map (fun date -> Pool_common.Model.Ptime.date_to_flatpickr date)
+  in
+  flatpicker_element `Date ?value
+;;
+
+let date_time_picker_element ?value =
+  let value =
+    value |> CCOption.map Pool_common.Model.Ptime.date_time_to_flatpickr
+  in
+  flatpicker_element `DateTime ?value
 ;;
 
 let timespan_picker
