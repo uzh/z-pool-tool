@@ -130,6 +130,10 @@ let suite =
               "filter by empty custom field with deleted answer"
               `Slow
               filter_by_empty_custom_field_with_deleted_value
+          ; test_case
+              "filter by date type custom field"
+              `Slow
+              filter_by_date_custom_field
           ] )
     ; ( "matcher"
       , Matcher_test.
