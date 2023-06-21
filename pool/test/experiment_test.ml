@@ -143,10 +143,12 @@ let delete_with_filter () =
   let experiment = Model.create_experiment () in
   let filter = Filter.create None (Filter_test.nr_of_siblings_filter ()) in
   let experiment = Experiment.{ experiment with filter = Some filter } in
+  let system_event_id = System_event.Id.create () in
   let events =
     let session_count = 0 in
     ExperimentCommand.Delete.(
       handle
+        ~system_event_id
         { experiment
         ; session_count
         ; mailings = []
@@ -156,9 +158,14 @@ let delete_with_filter () =
         })
   in
   let expected =
+    let system_event =
+      System_event.(
+        Job.GuardianCacheCleared |> create ~id:system_event_id |> created)
+    in
     Ok
       [ Experiment.Deleted experiment.Experiment.id |> Pool_event.experiment
       ; Filter.Deleted filter |> Pool_event.filter
+      ; system_event |> Pool_event.system_event
       ]
   in
   Test_utils.check_result expected events

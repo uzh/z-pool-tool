@@ -239,7 +239,8 @@ let[@warning "-4"] create_tenant () =
       , (logo_id, logo_asset_id)
       , (partner_logo_id, partner_logo_asset_id)
       , database_label
-      , sys_event_id )
+      , db_added_event
+      , guardian_cache_cleared_event )
     =
     (* Read Ids and timestamps to create an equal event list *)
     events
@@ -252,7 +253,8 @@ let[@warning "-4"] create_tenant () =
         ; Pool_event.Database (Database.Added _)
         ; Pool_event.Database (Database.Migrated _)
         ; Pool_event.Database (Database.InitializedGuard _)
-        ; Pool_event.SystemEvent System_event.(Created sys_event)
+        ; Pool_event.SystemEvent System_event.(Created db_added_event)
+        ; Pool_event.SystemEvent System_event.(Created guardian_cache_cleared)
         ]
       , ( database_label
         , [ Pool_event.Settings (Settings.DefaultRestored _)
@@ -269,7 +271,8 @@ let[@warning "-4"] create_tenant () =
       , tenant_logo |> read_ids
       , partner_logo |> read_ids
       , database_label
-      , sys_event.System_event.id )
+      , db_added_event.System_event.id
+      , guardian_cache_cleared.System_event.id )
     | _ -> failwith "Tenant create events don't match in test."
   in
   let expected_root_events, (expected_database_label, expected_tenant_events) =
@@ -324,7 +327,12 @@ let[@warning "-4"] create_tenant () =
         |> Pool_event.database
       ; System_event.(
           Job.TenantDatabaseAdded database_label
-          |> create ~id:sys_event_id
+          |> create ~id:db_added_event
+          |> created)
+        |> Pool_event.system_event
+      ; System_event.(
+          Job.GuardianCacheCleared
+          |> create ~id:guardian_cache_cleared_event
           |> created)
         |> Pool_event.system_event
       ]

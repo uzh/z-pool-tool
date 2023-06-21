@@ -118,6 +118,7 @@ end = struct
         |> Pool_event.database
       ; System_event.Job.TenantDatabaseAdded database.Pool_database.label
         |> system_event_from_job
+      ; Common.guardian_cache_cleared_event ()
       ]
     in
     let tenant_events =
