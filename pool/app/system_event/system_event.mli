@@ -65,3 +65,8 @@ val show_event : event -> string
 val find_pending : EventLog.ServiceIdentifier.t -> t list Lwt.t
 val handle_event : event -> unit Lwt.t
 val handle_system_event : t -> unit Lwt.t
+
+module Service : sig
+  val run : unit -> unit Lwt.t
+  val register : unit -> Sihl.Container.Service.t
+end

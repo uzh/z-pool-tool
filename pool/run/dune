@@ -11,4 +11,5 @@
   routes
   service
   sihl
+  system_event
   tenant))
