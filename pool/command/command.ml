@@ -6,6 +6,7 @@ module Matcher = Command_matcher
 module Migrate = Command_migrate
 module Seed = Command_seed
 module SessionReminder = Command_session_reminder
+module SystemEvent = Command_system_events
 module Tenant_pool = Command_pool_tenant
 module Utils = Command_utils
 module Worker = Command_worker

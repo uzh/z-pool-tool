@@ -78,24 +78,35 @@ module Tenant = struct
   module Migration = Migration.Tenant
   module Seed = Seed.Tenant
 
-  let setup_core ?(run_functions = []) () =
+  let setup_functions =
+    [ Assignment.Guard.relation
+    ; Invitation.Guard.relation
+    ; Mailing.Guard.relation
+    ; Pool_location.Guard.relation
+    ; Session.Guard.relation
+    ; Waiting_list.Guard.relation
+    ; Guard.Persistence.start
+    ]
+  ;;
+
+  let setup_tenant ?(run_functions = []) database =
+    let open Pool_database in
+    add_pool database;
+    let%lwt () =
+      Lwt_list.iter_s
+        (fun (fcn : ?ctx:(string * string) list -> unit -> unit Lwt.t) ->
+          fcn ~ctx:(to_ctx database.label) ())
+        run_functions
+    in
+    Lwt.return database.label
+  ;;
+
+  let setup_core ?run_functions () =
     match%lwt Pool_tenant.find_databases () with
     | [] ->
       let open Pool_common in
       failwith (Message.NoTenantsRegistered |> Utils.error_to_string Language.En)
-    | tenants ->
-      Lwt_list.map_s
-        (fun pool ->
-          let open Pool_database in
-          add_pool pool;
-          let%lwt () =
-            Lwt_list.iter_s
-              (fun (fcn : ?ctx:(string * string) list -> unit -> unit Lwt.t) ->
-                fcn ~ctx:(to_ctx pool.label) ())
-              run_functions
-          in
-          Lwt.return pool.label)
-        tenants
+    | tenants -> Lwt_list.map_s (setup_tenant ?run_functions) tenants
   ;;
 
   let setup =
@@ -115,21 +126,26 @@ end
 type event =
   | Added of Pool_database.t
   | Migrated of Pool_database.Label.t
+  | InitializedGuard of Pool_database.Label.t
 [@@deriving eq, show]
 
 let handle_event _ : event -> unit Lwt.t = function
-  | Added pool ->
-    let open Pool_database in
-    add_pool pool;
-    let%lwt () = Guard.Persistence.start ~ctx:(to_ctx pool.label) () in
-    Lwt.return_unit
+  (* Is this event still needed? *)
+  | Added pool -> Pool_database.add_pool pool |> Lwt.return
   | Migrated label ->
+    let () =
+      Logs.info (fun m -> m "Migrating: %s" Pool_database.(Label.show label))
+    in
     let%lwt () =
       match Pool_database.is_root label with
       | true -> Migration.Root.run ()
       | false -> Migration.Tenant.run [ label ] ()
     in
     Lwt.return_unit
+    (* Added: This has to run after the migrations, Should it be a separate
+       event? *)
+  | InitializedGuard database_label ->
+    Guard.Persistence.start ~ctx:(Pool_database.to_ctx database_label) ()
 ;;
 
 let start () =

@@ -6,25 +6,17 @@ module Id = struct
   include Pool_common.Repo.Id
 end
 
-module Key = struct
-  include Key
+module Job = struct
+  include Job
 
-  let t = Pool_common.Repo.make_caqti_type Caqti_type.string create value
-end
-
-module Argument = struct
-  include Argument
-
-  let t = Pool_common.Repo.make_caqti_type Caqti_type.string create value
+  let t = Pool_common.Repo.make_caqti_type Caqti_type.string of_string to_string
 end
 
 let t =
-  let encode m =
-    Ok (m.id, (m.key, (m.argument, (m.created_at, m.updated_at))))
-  in
-  let decode (id, (key, (argument, (created_at, updated_at)))) =
+  let encode m = Ok (m.id, (m.job, (m.created_at, m.updated_at))) in
+  let decode (id, (job, (created_at, updated_at))) =
     let open CCResult in
-    Ok { id; key; argument; created_at; updated_at }
+    Ok { id; job; created_at; updated_at }
   in
   Caqti_type.(
     custom
@@ -33,17 +25,15 @@ let t =
       (tup2
          Id.t
          (tup2
-            Key.t
-            (tup2
-               (option Argument.t)
-               (tup2 Pool_common.Repo.CreatedAt.t Pool_common.Repo.UpdatedAt.t)))))
+            Job.t
+            (tup2 Pool_common.Repo.CreatedAt.t Pool_common.Repo.UpdatedAt.t))))
 ;;
 
 module EventLog = struct
   include Entity.EventLog
 
-  module Hostname = struct
-    include Hostname
+  module ServiceIdentifier = struct
+    include ServiceIdentifier
 
     let t = Pool_common.Repo.make_caqti_type Caqti_type.string create value
   end
@@ -54,8 +44,11 @@ module EventLog = struct
     let t =
       Caqti_type.(
         custom
-          ~encode:(yojson_of_t %> Yojson.Safe.to_string %> CCResult.return)
-          ~decode:(Yojson.Safe.from_string %> t_of_yojson %> CCResult.return)
+          ~encode:(Status.show %> CCResult.return)
+          ~decode:
+            (of_string
+             %> CCResult.map_err Pool_common.(Utils.error_to_string Language.En)
+            )
           string)
     ;;
   end
@@ -70,13 +63,22 @@ module EventLog = struct
     let encode m =
       Ok
         ( m.event_id
-        , (m.hostname, (m.status, (m.message, (m.created_at, m.updated_at)))) )
+        , ( m.service_identifier
+          , (m.status, (m.message, (m.created_at, m.updated_at))) ) )
     in
     let decode
-      (event_id, (hostname, (status, (message, (created_at, updated_at)))))
+      ( event_id
+      , (service_identifier, (status, (message, (created_at, updated_at)))) )
       =
       let open CCResult in
-      Ok { event_id; hostname; status; message; created_at; updated_at }
+      Ok
+        { event_id
+        ; service_identifier
+        ; status
+        ; message
+        ; created_at
+        ; updated_at
+        }
     in
     Caqti_type.(
       custom
@@ -85,7 +87,7 @@ module EventLog = struct
         (tup2
            Id.t
            (tup2
-              Hostname.t
+              ServiceIdentifier.t
               (tup2
                  Status.t
                  (tup2

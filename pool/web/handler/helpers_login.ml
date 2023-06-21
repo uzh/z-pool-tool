@@ -101,7 +101,10 @@ let login req urlencoded database_label =
   let handle_login (counter, blocked) =
     let suspension_error handler = function
       | Some blocked when Ptime.(is_earlier (Ptime_clock.now ()) ~than:blocked)
-        -> Lwt_result.fail (Message.AccountTemporarilySuspended blocked)
+        ->
+        (* TODO: Create system event *)
+        (* let%lwt system_event = System_event.create  *)
+        Lwt_result.fail (Message.AccountTemporarilySuspended blocked)
       | None | _ -> handler ()
     in
     let handle_result = function

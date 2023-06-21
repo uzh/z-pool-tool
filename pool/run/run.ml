@@ -44,6 +44,7 @@ let commands =
   ; Contact.sign_up
   ; SessionReminder.all_tenants_session_reminder
   ; SessionReminder.tenant_specific_session_reminder
+  ; SystemEvent.handle_system_events_command
   ; Contact.all_profile_update_triggers
   ; Contact.tenant_specific_profile_update_trigger
   ; Matcher.run_tenant

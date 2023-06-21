@@ -6,6 +6,8 @@ let src = Logs.Src.create "database.migration"
 let execute db_pools steps =
   Lwt_list.iter_s
     (fun pool ->
+      Logs.info (fun m ->
+        m "Executing Migrations for: %s" (Pool_database.Label.show pool));
       Service.Migration.execute ~ctx:(Pool_database.to_ctx pool) steps)
     db_pools
 ;;

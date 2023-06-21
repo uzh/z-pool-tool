@@ -4,69 +4,48 @@ module Id = struct
   let to_common m = m
 end
 
-module Key = struct
-  include Pool_common.Model.String
+module Job = struct
+  type t =
+    | GuardianCacheCleared [@name "guardiancachecleared"]
+        [@printer Utils.ppx_printer "guardiancachecleared"]
+    | TenantDatabaseAdded of Pool_database.Label.t [@name "tenantdatabaseadded"]
+        [@printer Utils.ppx_printer "tenantdatabaseadded"]
+    | TenantDatabaseUpdated of Pool_database.Label.t
+        [@name "tenantdatabaseupdated"]
+        [@printer Utils.ppx_printer "tenantdatabaseupdated"]
+    | TenantDatabaseDeleted of Pool_database.Label.t
+        [@name "tenantdatabasedeleted"]
+        [@printer Utils.ppx_printer "tenantdatabasedeleted"]
+  [@@deriving eq, show, yojson]
 
-  let field = Pool_common.Message.Field.Key
-  let schema () = schema field ()
-end
+  let read m = m |> Yojson.Safe.from_string |> t_of_yojson
 
-module Argument = struct
-  include Pool_common.Model.String
-
-  module Ptime = struct
-    include Ptime
-
-    let t_of_yojson = Utils.Ptime.ptime_of_yojson
-    let yojson_of_t = Utils.Ptime.yojson_of_ptime
-  end
-
-  let field = Pool_common.Message.Field.Argument
-  let schema () = schema field ()
-
-  let tenant_opt m =
-    try m |> Pool_database.Label.create |> CCResult.to_opt with
-    | _ -> None
+  let of_string str =
+    try Ok (read str) with
+    | _ -> Error Pool_common.Message.(Invalid Field.SystemEvent)
   ;;
 
-  type user_login_ban = Pool_database.Label.t * string * int * Ptime.t option
-  [@@deriving eq, show { with_path = false }, yojson]
-
-  let user_login_ban_opt m =
-    try
-      m
-      |> Yojson.Safe.from_string
-      |> user_login_ban_of_yojson
-      |> CCOption.return
-    with
-    | _ -> None
-  ;;
+  let to_string m = m |> yojson_of_t |> Yojson.Safe.to_string
 end
 
 type t =
   { id : Id.t
-  ; key : Key.t
-  ; argument : Argument.t option
+  ; job : Job.t
   ; created_at : Pool_common.CreatedAt.t [@equal fun _ _ -> true]
   ; updated_at : Pool_common.UpdatedAt.t [@equal fun _ _ -> true]
   }
 [@@deriving eq, show]
 
-let create ?(id = Id.create ()) ?argument key =
-  let open CCResult in
-  Ok
-    { id
-    ; key
-    ; argument
-    ; created_at = Pool_common.CreatedAt.create ()
-    ; updated_at = Pool_common.UpdatedAt.create ()
-    }
+let create ?(id = Id.create ()) job =
+  { id
+  ; job
+  ; created_at = Pool_common.CreatedAt.create ()
+  ; updated_at = Pool_common.UpdatedAt.create ()
+  }
 ;;
 
 module EventLog = struct
-  module Hostname = struct
-    (* TODO: rename hostname to service identifier, as the worker also needs so
-       run these events *)
+  module ServiceIdentifier = struct
     include Pool_common.Model.String
 
     let field = Pool_common.Message.Field.Host
@@ -96,6 +75,15 @@ module EventLog = struct
       | Failed -> Field.Failed |> go
       | Successful -> Field.Successful |> go
     ;;
+
+    let read m =
+      m |> Format.asprintf "[\"%s\"]" |> Yojson.Safe.from_string |> t_of_yojson
+    ;;
+
+    let of_string str =
+      try Ok (read str) with
+      | _ -> Error Pool_common.Message.(Invalid Field.Status)
+    ;;
   end
 
   module Message = struct
@@ -107,7 +95,7 @@ module EventLog = struct
 
   type t =
     { event_id : Id.t
-    ; hostname : Hostname.t (* TODO: rename hostname to service identifier *)
+    ; service_identifier : ServiceIdentifier.t
     ; status : Status.t
     ; message : Message.t option
     ; created_at : Pool_common.CreatedAt.t [@equal fun _ _ -> true]
@@ -115,11 +103,11 @@ module EventLog = struct
     }
   [@@deriving eq, show]
 
-  let create ?message event_id hostname status =
+  let create ?message event_id service_identifier status =
     let open CCResult in
     Ok
       { event_id
-      ; hostname
+      ; service_identifier
       ; status
       ; message
       ; created_at = Pool_common.CreatedAt.create ()

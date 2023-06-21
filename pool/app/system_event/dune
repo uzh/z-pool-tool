@@ -2,6 +2,7 @@
  (name system_event)
  (libraries
   conformist
+  database
   guard
   pool_common
   pool_database

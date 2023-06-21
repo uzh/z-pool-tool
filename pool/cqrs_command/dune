@@ -21,6 +21,7 @@
   session
   settings
   sihl
+  system_event
   tenant)
  (preprocess
   (pps

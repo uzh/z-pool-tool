@@ -301,6 +301,10 @@ val find_by_label
 val find_all : unit -> t list Lwt.t
 val find_databases : unit -> Database.t list Lwt.t
 
+val find_database_by_label
+  :  Pool_database.Label.t
+  -> (Database.t, Pool_common.Message.error) Lwt_result.t
+
 type handle_list_recruiters = unit -> Sihl_user.t list Lwt.t
 type handle_list_tenants = unit -> t list Lwt.t
 

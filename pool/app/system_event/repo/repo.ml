@@ -14,7 +14,7 @@ module Sql = struct
           SUBSTR(HEX(pool_system_events.uuid), 17, 4), '-',
           SUBSTR(HEX(pool_system_events.uuid), 21)
         )),
-        pool_system_events.key,
+        pool_system_events.job,
         pool_system_events.created_at,
         pool_system_events.updated_at
       FROM
@@ -43,7 +43,7 @@ module Sql = struct
     {sql|
       INSERT INTO pool_system_events (
         uuid,
-        key,
+        job,
         created_at,
         updated_at
       ) VALUES (
@@ -69,7 +69,7 @@ module Sql = struct
             SUBSTR(HEX(logs.event_uuid), 17, 4), '-',
             SUBSTR(HEX(logs.event_uuid), 21)
           )),
-          logs.hostname,
+          logs.service_identifier,
           logs.status,
           logs.message,
           logs.created_at,
@@ -79,17 +79,19 @@ module Sql = struct
       |sql}
     ;;
 
+    (* Required? *)
     let find_by_event_and_host_request =
       let open Caqti_request.Infix in
       {sql|
         JOIN pool_system_events AS events ON logs.event_uuid = events.uuid
         WHERE
           events.uuid = UNHEX(REPLACE(?, '-', ''))
-          AND logs.hostname = ?
+          AND logs.service_identifier = ?
         ORDER BY events.created_at DESC
       |sql}
       |> Format.asprintf "%s\n%s" select_sql
-      |> Caqti_type.(tup2 RepoEntity.Id.t RepoEntity.EventLog.Hostname.t)
+      |> Caqti_type.(
+           tup2 RepoEntity.Id.t RepoEntity.EventLog.ServiceIdentifier.t)
          ->* RepoEntity.t
     ;;
 
@@ -106,7 +108,7 @@ module Sql = struct
       {sql|
         INSERT INTO pool_system_event_logs (
           event_uuid,
-          hostname,
+          service_identifier,
           status,
           message,
           created_at,
@@ -125,10 +127,29 @@ module Sql = struct
 
     let insert = Label.value %> flip Utils.Database.exec insert_request
   end
+
+  let find_pending_request =
+    let open Caqti_request.Infix in
+    {sql|
+    LEFT JOIN pool_system_event_logs
+      ON pool_system_event_logs.event_uuid = pool_system_events.uuid
+        AND pool_system_event_logs.service_identifier = $1
+    WHERE
+      pool_system_event_logs.status IS NULL
+      OR pool_system_event_logs.status != "successful"
+    |sql}
+    |> Format.asprintf "%s\n%s" select_sql
+    |> RepoEntity.EventLog.ServiceIdentifier.t ->! RepoEntity.t
+  ;;
+
+  let find_pending =
+    Utils.Database.collect (Label.value root) find_pending_request
+  ;;
 end
 
 let find = Sql.find
 let insert = Sql.insert
+let find_pending = Sql.find_pending
 
 module EventLog = struct
   let find_by_event_and_host_request = Sql.EventLog.find_by_event_and_host

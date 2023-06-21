@@ -213,6 +213,28 @@ module Sql = struct
     Utils.Database.collect (Database.Label.value pool) find_databases_request
   ;;
 
+  let find_database_by_label_request =
+    let open Caqti_request.Infix in
+    {sql|
+        SELECT
+          database_url,
+          database_label
+        FROM pool_tenant
+        WHERE database_label = $1
+        AND NOT disabled
+      |sql}
+    |> Caqti_type.(string) ->! Database.Repo.t
+  ;;
+
+  let find_database_by_label pool label =
+    let open Utils.Lwt_result.Infix in
+    Utils.Database.find_opt
+      (Database.Label.value pool)
+      find_database_by_label_request
+      (Database.Label.value label)
+    ||> CCOption.to_result Pool_common.Message.(NotFound Field.Database)
+  ;;
+
   let insert_request =
     let open Caqti_request.Infix in
     {sql|
@@ -472,6 +494,7 @@ let find_all pool () =
 ;;
 
 let find_databases = Sql.find_databases
+let find_database_by_label = Sql.find_database_by_label
 let find_selectable = Sql.find_selectable
 let insert = Sql.insert
 let update = Sql.update

@@ -141,7 +141,8 @@ let handle_event ?(tags = Logs.Tag.empty) pool event =
     let src = Logs.Src.create "system_event.events" in
     Logs.info ~src (fun m ->
       m "Handle event %s" (System_event.show_event event) ~tags);
-    System_event.handle_event pool event
+    (* Not passing pool, so the event can be handled with tenant events *)
+    System_event.handle_event event
   | Tenant event ->
     let src = Logs.Src.create "tenants.events" in
     Logs.info ~src (fun m ->

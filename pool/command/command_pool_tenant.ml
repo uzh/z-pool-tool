@@ -65,7 +65,13 @@ Provide all fields to create a new tenant:
           ]
         >>= Cqrs_command.Pool_tenant_command.Create.handle database
         |> Pool_common.Utils.get_or_failwith
-        |> Lwt_list.iter_s (Pool_event.handle_event Pool_database.root)
+        |> fun (root_events, (databas_label, tenant_events)) ->
+        let%lwt () =
+          Lwt_list.iter_s
+            (Pool_event.handle_event Pool_database.root)
+            root_events
+        in
+        Lwt_list.iter_s (Pool_event.handle_event databas_label) tenant_events
       in
       Lwt.return_some ()
     | _ -> Command_utils.failwith_missmatch help)
@@ -93,7 +99,7 @@ Example: %s econ-uzh mariadb://user:pw@localhost:3306/dev_econ
       let open Pool_tenant in
       let%lwt pool = Command_utils.is_available_exn pool in
       let result =
-        let open Cqrs_command.Pool_tenant_command.CreateDatabase in
+        let open Cqrs_command.Pool_tenant_command.UpdateDatabase in
         let* tenant = find_by_label pool >>= fun { id; _ } -> find_full id in
         let%lwt updated_database =
           let open Pool_database in
