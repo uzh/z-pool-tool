@@ -166,7 +166,6 @@ type update =
   { title : Title.t
   ; description : Description.t option
   ; url : Url.t
-  ; gtx_api_key : GtxApiKey.t
   ; disabled : Disabled.t
   ; default_language : Pool_common.Language.t
   ; styles : Styles.Write.t option
@@ -184,6 +183,7 @@ type event =
   | Destroyed of Id.t
   | ActivateMaintenance of Write.t
   | DeactivateMaintenance of Write.t
+  | GtxApiKeyUpdated of Write.t * GtxApiKey.t
 
 val handle_event : Database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool

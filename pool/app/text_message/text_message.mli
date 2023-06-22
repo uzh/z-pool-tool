@@ -22,6 +22,14 @@ val render_and_create
 module Service : sig
   val register : unit -> Sihl.Container.Service.t
 
+  val test_api_key
+    :  tags:Logs.Tag.set
+    -> Pool_database.Label.t
+    -> Pool_tenant.GtxApiKey.t
+    -> Pool_user.PhoneNumber.t
+    -> Pool_tenant.Title.t
+    -> (Pool_tenant.GtxApiKey.t, Pool_common.Message.error) result Lwt.t
+
   module Job : sig
     val send : t Sihl_queue.job
   end
@@ -37,3 +45,5 @@ val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
 val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
+val sent : t -> event
+val bulksent : t list -> event

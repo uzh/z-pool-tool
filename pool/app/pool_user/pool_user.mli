@@ -112,6 +112,10 @@ module PhoneNumber : sig
   val t_of_yojson : Yojson.Safe.t -> t
   val yojson_of_t : t -> Yojson.Safe.t
   val pp : Format.formatter -> t -> unit
+
+  val schema_test_phone_number
+    :  unit
+    -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
 end
 
 module UnverifiedPhoneNumber : sig

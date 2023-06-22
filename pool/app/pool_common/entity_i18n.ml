@@ -133,6 +133,7 @@ type hint =
   | ExperimentSessionsPublic
   | ExperimentWaitingList
   | FilterContacts
+  | TestPhoneNumber
   | I18nText of string
   | LocationFiles
   | Locations

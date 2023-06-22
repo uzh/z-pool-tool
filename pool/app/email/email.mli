@@ -253,3 +253,5 @@ val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
 val verification_event_name : verification_event -> string
+val sent : Sihl_email.t -> event
+val bulksent : Sihl_email.t list -> event

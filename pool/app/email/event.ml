@@ -62,7 +62,7 @@ type event =
   | SmtpCreated of SmtpAuth.Write.t
   | SmtpEdited of SmtpAuth.t
   | SmtpPasswordEdited of SmtpAuth.update_password
-[@@deriving eq, show]
+[@@deriving eq, show, variants]
 
 let handle_event pool : event -> unit Lwt.t = function
   | Sent email -> Email_service.dispatch pool email

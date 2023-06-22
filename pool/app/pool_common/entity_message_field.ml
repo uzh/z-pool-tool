@@ -220,6 +220,8 @@ type t =
   | TermsAccepted [@name "terms_accepted"] [@printer go "terms_accepted"]
   | TermsAndConditions [@name "terms_and_conditions"]
       [@printer go "terms_and_conditions"]
+  | TestPhoneNumber [@name "test_phone_number"]
+      [@printer go "test_phone_number"]
   | TextMessage [@name "text_message"] [@printer go "text_message"]
   | Time [@name "time"] [@printer go "time"]
   | TimeSpan [@name "timespan"] [@printer go "timespan"]

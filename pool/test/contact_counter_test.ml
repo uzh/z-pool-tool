@@ -217,7 +217,8 @@ module CancelSession = struct
              assignments
              (fun _ _ -> Ok email)
              Session_test.create_cancellation_text_message
-             { reason; notify_via = Pool_common.NotifyVia.Email }
+             [ Pool_common.NotifyVia.Email ]
+             reason
            |> get_exn
            |> Pool_event.handle_events database_label
          in
