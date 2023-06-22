@@ -50,7 +50,7 @@ module EventLog = struct
 
     let field = Pool_common.Message.Field.Host
     let schema () = schema field ()
-    let get = Unix.gethostname
+    let get () = () |> Unix.getpid |> CCInt.to_string
   end
 
   let print = Utils.ppx_printer
