@@ -21,6 +21,8 @@ module Label = struct
     | PasswordChange [@name "password_change"]
         [@printer print "password_change"]
     | PasswordReset [@name "password_reset"] [@printer print "password_reset"]
+    | PhoneVerification [@name "phone_verification"]
+        [@printer print "phone_verification"]
     | ProfileUpdateTrigger [@name "profile_update_trigger"]
         [@printer print "profile_update_trigger"]
     | SignUpVerification [@name "signup_verification"]

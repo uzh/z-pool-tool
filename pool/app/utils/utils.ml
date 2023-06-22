@@ -2,6 +2,7 @@ open CCFun
 module Countries = Countries
 module Database = Database
 module LanguageCodes = Language_codes
+module PhoneCodes = Phone_codes
 
 module Lwt_result : sig
   module Infix : sig

@@ -383,56 +383,43 @@ end = struct
 end
 
 module Cancel : sig
-  type t =
-    { notify_email : bool
-    ; notify_sms : bool
-    ; reason : Session.CancellationReason.t
-    }
+  type t = Session.CancellationReason.t
 
   val handle
     :  ?tags:Logs.Tag.set
     -> Session.t list
     -> (Contact.t * Assignment.t list) list
-    -> (Session.CancellationReason.t
+    -> (t -> Contact.t -> (Sihl_email.t, Pool_common.Message.error) result)
+    -> (t
         -> Contact.t
-        -> (Sihl_email.t, Pool_common.Message.error) result)
+        -> Pool_user.PhoneNumber.t
+        -> (Text_message.t, Pool_common.Message.error) result)
+    -> Pool_common.NotifyVia.t list
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
   val decode : Conformist.input -> (t, Conformist.error_msg) result
   val effects : Experiment.Id.t -> Session.Id.t -> Guard.ValidationSet.t
 end = struct
-  type t =
-    { notify_email : bool
-    ; notify_sms : bool
-    ; reason : Session.CancellationReason.t
-    }
+  type t = Session.CancellationReason.t
 
   let handle
     ?(tags = Logs.Tag.empty)
     sessions
     (assignments : (Contact.t * Assignment.t list) list)
-    messages_fn
-    command
+    email_fn
+    text_message_fn
+    notify_via
+    (reason : t)
     =
     Logs.info ~src (fun m -> m "Handle command Cancel" ~tags);
     let open CCResult in
-    let* () =
-      if not (command.notify_email || command.notify_sms)
-      then Error Pool_common.Message.PickMessageChannel
-      else Ok ()
-    in
     let* (_ : unit list) =
       sessions |> CCList.map Session.is_cancellable |> CCList.all_ok
     in
     let* (_ : unit list) =
       let open CCList in
       assignments >|= snd |> flatten >|= Assignment.is_not_closed |> all_ok
-    in
-    let* emails =
-      assignments
-      |> CCList.map (fst %> messages_fn command.reason)
-      |> CCResult.flatten_l
     in
     let contact_events =
       assignments
@@ -442,32 +429,47 @@ end = struct
            |> Contact.updated
            |> Pool_event.contact)
     in
-    let email_event =
-      if command.notify_email
-      then [ Email.BulkSent emails |> Pool_event.email ]
-      else []
+    let* notification_events =
+      let open Pool_common.NotifyVia in
+      let email_event contact =
+        email_fn reason contact >|= Email.sent >|= Pool_event.email
+      in
+      let text_msg_event contact phone_number =
+        text_message_fn reason contact phone_number
+        >|= Text_message.sent
+        >|= Pool_event.text_message
+      in
+      let fallback_to_email = CCList.mem ~eq:equal Email notify_via |> not in
+      match notify_via with
+      | [] -> Error Pool_common.Message.(NoOptionSelected Field.NotifyVia)
+      | notify_via ->
+        notify_via
+        |> CCList.flat_map (function
+             | Email ->
+               assignments
+               |> CCList.map (fun (contact, _) -> email_event contact)
+             | TextMessage ->
+               assignments
+               |> CCList.filter_map (fun (contact, _) ->
+                    match contact.Contact.phone_number, fallback_to_email with
+                    | Some phone_number, (true | false) ->
+                      text_msg_event contact phone_number |> CCOption.return
+                    | None, true -> email_event contact |> CCOption.return
+                    | _, _ -> None))
+        |> CCList.all_ok
     in
-    (* TODO issue #149 implement this and then fix test *)
-    let sms_event = if command.notify_sms then [] else [] in
     let cancel_events =
       sessions
       |> CCList.map (fun session ->
            Session.Canceled session |> Pool_event.session)
     in
-    [ email_event; sms_event; cancel_events; contact_events ]
+    [ notification_events; cancel_events; contact_events ]
     |> CCList.flatten
     |> CCResult.return
   ;;
 
-  let command notify_email notify_sms reason =
-    { notify_email; notify_sms; reason }
-  ;;
-
   let schema =
-    Conformist.(
-      make
-        Field.[ bool "email"; bool "sms"; Session.CancellationReason.schema () ]
-        command)
+    Conformist.(make Field.[ Session.CancellationReason.schema () ] CCFun.id)
   ;;
 
   let decode data =

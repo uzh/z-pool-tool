@@ -3,8 +3,27 @@ module Message = HttpUtils.Message
 module File = HttpUtils.File
 module Common = Pool_common
 module Database = Pool_database
+module Conformist = Pool_common.Utils.PoolConformist
 
 let src = Logs.Src.create "handler.root.tenant_update"
+
+let validated_gtx_api_key ~tags database_label title urlencoded =
+  let open Utils.Lwt_result.Infix in
+  let schema =
+    Conformist.(
+      make
+        Field.
+          [ Pool_tenant.GtxApiKey.schema ()
+          ; Pool_user.PhoneNumber.schema_test_phone_number ()
+          ]
+        CCPair.make)
+  in
+  Conformist.decode_and_validate schema urlencoded
+  |> Lwt_result.lift
+  >|- Pool_common.Message.to_conformist_error
+  >>= fun (api_key, phone_nr) ->
+  Text_message.Service.test_api_key ~tags database_label api_key phone_nr title
+;;
 
 let update req command success_message =
   let open Utils.Lwt_result.Infix in
@@ -25,7 +44,7 @@ let update req command success_message =
   let redirect_path =
     Format.asprintf "/root/tenants/%s" (Pool_tenant.Id.value id)
   in
-  let result _ =
+  let result { Pool_context.database_label; _ } =
     Utils.Lwt_result.map_error (fun err ->
       err, redirect_path, [ HttpUtils.urlencoded_to_flash urlencoded ])
     @@
@@ -73,6 +92,16 @@ let update req command success_message =
             Pool_database.test_and_create database_url database_label
           in
           handle ~tags tenant database |> lift
+        | `ExitGtxApiKey ->
+          let open UpdateGtxApiKey in
+          let* gtx_api_key =
+            validated_gtx_api_key
+              ~tags
+              database_label
+              tenant.Write.title
+              urlencoded
+          in
+          handle ~tags tenant gtx_api_key |> lift
       in
       let files = logo_files @ uploaded_files in
       (files |> File.multipart_form_data_to_urlencoded) @ urlencoded
@@ -99,6 +128,10 @@ let update_detail req =
 
 let update_database req =
   update req `EditDatabase Common.Message.TenantUpdateDatabase
+;;
+
+let update_gtx_api_key req =
+  update req `ExitGtxApiKey Common.Message.(Updated Field.GtxApiKey)
 ;;
 
 let delete_asset req =

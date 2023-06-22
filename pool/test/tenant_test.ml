@@ -3,7 +3,7 @@ module Pool_tenant_command = Cqrs_command.Pool_tenant_command
 module Admin_command = Cqrs_command.Admin_command
 module HttpUtils = Http_utils
 module Common = Pool_common
-module SmtpAuth = Pool_tenant.SmtpAuth
+module SmtpAuth = Email.SmtpAuth
 
 let fail_with = Test_utils.get_or_failwith_pool_error
 
@@ -50,6 +50,7 @@ module Data = struct
   let tenant_logo = Asset.tenant_logo
   let partner_logo = Asset.partner_logo
   let default_language = "EN"
+  let gtx_api_key = "GTX API KEY"
   let email = "operator@econ.uzh.ch"
   let password = "AdminAdmin99!"
   let firstname = "DJ"
@@ -62,6 +63,7 @@ module Data = struct
     ; Field.Url, [ url ]
     ; Field.DatabaseUrl, [ database_url ]
     ; Field.DatabaseLabel, [ database_label ]
+    ; Field.GtxApiKey, [ gtx_api_key ]
     ; Field.Styles, [ Asset.styles ]
     ; Field.Icon, [ Asset.icon ]
     ; Field.TenantLogos, [ tenant_logo ]
@@ -100,7 +102,7 @@ module Data = struct
 
     let create () =
       let open CCResult in
-      let open Pool_tenant.SmtpAuth in
+      let open Email.SmtpAuth in
       let auth =
         let* label = label |> Label.create in
         let* server = server |> Server.create in
@@ -125,6 +127,7 @@ module Data = struct
     let* title = title |> Title.create in
     let* description = description |> Description.create >|= CCOption.return in
     let* url = url |> Url.create in
+    let gtx_api_key = gtx_api_key |> GtxApiKey.of_string in
     Ok
       Write.
         { id = Id.create ()
@@ -132,6 +135,7 @@ module Data = struct
         ; description
         ; url
         ; database
+        ; gtx_api_key
         ; styles = styles |> CCOption.return
         ; icon = icon |> CCOption.return
         ; maintenance = Maintenance.create false
@@ -205,15 +209,13 @@ module Data = struct
 end
 
 let create_smtp_auth () =
-  let open Pool_tenant in
+  let open Email in
   let events =
     let open CCResult in
     let open Cqrs_command.Smtp_command.Create in
     decode Data.Smtp.urlencoded >>= handle ~id:Data.Smtp.id
   in
-  let expected =
-    Ok [ SmtpCreated (Data.Smtp.create ()) |> Pool_event.pool_tenant ]
-  in
+  let expected = Ok [ SmtpCreated (Data.Smtp.create ()) |> Pool_event.email ] in
   Alcotest.(
     check
       (result (list Test_utils.event) Test_utils.error)
@@ -226,7 +228,9 @@ let[@warning "-4"] create_tenant () =
   let open Data in
   let events =
     let open CCResult.Infix in
-    Pool_tenant_command.Create.(Data.urlencoded |> decode >>= handle database)
+    let api_key = gtx_api_key |> Pool_tenant.GtxApiKey.of_string in
+    Pool_tenant_command.Create.(
+      Data.urlencoded |> decode >>= handle database api_key)
   in
   let root_events, tenant_events =
     events
@@ -288,6 +292,7 @@ let[@warning "-4"] create_tenant () =
       in
       let* url = url |> Pool_tenant.Url.create in
       let* default_language = default_language |> Common.Language.create in
+      let gtx_api_key = Data.gtx_api_key |> Pool_tenant.GtxApiKey.of_string in
       Ok
         Pool_tenant.Write.
           { id = tenant_id
@@ -295,6 +300,7 @@ let[@warning "-4"] create_tenant () =
           ; description
           ; url
           ; database
+          ; gtx_api_key
           ; styles = styles |> CCOption.return
           ; icon = icon |> CCOption.return
           ; maintenance = Pool_tenant.Maintenance.create false

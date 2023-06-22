@@ -108,6 +108,7 @@ module Sql = struct
       user_users.created_at,
       user_users.updated_at,
       pool_contacts.language,
+      pool_contacts.phone_number,
       pool_contacts.paused,
       pool_contacts.verified,
       pool_contacts.num_invitations,

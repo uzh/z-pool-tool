@@ -23,12 +23,10 @@ type event =
   | LogoDeleted of t * Id.t
   | DetailsEdited of Write.t * update
   | DatabaseEdited of Write.t * Database.t
-  | SmtpCreated of SmtpAuth.Write.t
-  | SmtpEdited of SmtpAuth.t
-  | SmtpPasswordEdited of SmtpAuth.update_password
   | Destroyed of Id.t
   | ActivateMaintenance of Write.t
   | DeactivateMaintenance of Write.t
+  | GtxApiKeyUpdated of Write.t * GtxApiKey.t
 [@@deriving eq, show]
 
 let handle_event pool : event -> unit Lwt.t = function
@@ -53,46 +51,23 @@ let handle_event pool : event -> unit Lwt.t = function
   | DetailsEdited (tenant, update_t) ->
     let open Entity.Write in
     let open CCOption.Infix in
-    let%lwt () =
-      { tenant with
-        title = update_t.title
-      ; description = update_t.description
-      ; url = update_t.url
-      ; styles = update_t.styles <+> tenant.styles
-      ; icon = update_t.icon <+> tenant.icon
-      ; disabled = update_t.disabled
-      ; default_language = update_t.default_language
-      ; updated_at = Ptime_clock.now ()
-      }
-      |> Repo.update Database.root
-    in
-    Lwt.return_unit
+    { tenant with
+      title = update_t.title
+    ; description = update_t.description
+    ; url = update_t.url
+    ; styles = update_t.styles <+> tenant.styles
+    ; icon = update_t.icon <+> tenant.icon
+    ; disabled = update_t.disabled
+    ; default_language = update_t.default_language
+    ; updated_at = Ptime_clock.now ()
+    }
+    |> Repo.update Database.root
   | DatabaseEdited (tenant, database) ->
     let open Entity.Write in
     let%lwt () =
       { tenant with database; updated_at = Ptime_clock.now () }
       |> Repo.update Database.root
     in
-    Lwt.return_unit
-  | SmtpCreated ({ SmtpAuth.Write.id; _ } as created) ->
-    let open Utils.Lwt_result.Infix in
-    let ctx = Pool_database.to_ctx pool in
-    let%lwt () = Repo.Smtp.insert pool created in
-    let%lwt () =
-      Repo.Smtp.find pool id
-      >>= Entity_guard.SmtpTarget.to_authorizable ~ctx
-      ||> get_or_failwith
-      ||> fun (_ : Role.Target.t Guard.Target.t) -> ()
-    in
-    let () = Pool_tenant_service.Email.remove_from_cache pool in
-    Lwt.return_unit
-  | SmtpEdited updated ->
-    let%lwt () = Repo.Smtp.update pool updated in
-    let () = Pool_tenant_service.Email.remove_from_cache pool in
-    Lwt.return_unit
-  | SmtpPasswordEdited updated_password ->
-    let%lwt () = Repo.Smtp.update_password pool updated_password in
-    let () = Pool_tenant_service.Email.remove_from_cache pool in
     Lwt.return_unit
   | Destroyed tenant_id -> Repo.destroy tenant_id
   | ActivateMaintenance tenant ->
@@ -105,4 +80,7 @@ let handle_event pool : event -> unit Lwt.t = function
     let maintenance = false |> Maintenance.create in
     let%lwt () = { tenant with maintenance } |> Repo.update Database.root in
     Lwt.return_unit
+  | GtxApiKeyUpdated (tenant, gtx_api_key) ->
+    let open Entity.Write in
+    { tenant with gtx_api_key } |> Repo.update Database.root
 ;;

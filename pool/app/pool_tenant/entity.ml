@@ -5,7 +5,6 @@ module Id = Common.Id
 module CreatedAt = Common.CreatedAt
 module UpdatedAt = Common.UpdatedAt
 module File = Common.File
-module SmtpAuth = Entity_smtp
 module LogoMapping = Entity_logo_mapping
 module PoolError = Common.Message
 
@@ -27,6 +26,13 @@ module Url = struct
   include Pool_common.Model.String
 
   let field = Common.Message.Field.Url
+  let schema () = schema field ()
+end
+
+module GtxApiKey = struct
+  include Common.Model.String
+
+  let field = Common.Message.Field.GtxApiKey
   let schema () = schema field ()
 end
 
@@ -149,6 +155,7 @@ module Write = struct
     ; description : Description.t option
     ; url : Url.t
     ; database : Database.t
+    ; gtx_api_key : GtxApiKey.t
     ; styles : Styles.Write.t option
     ; icon : Icon.Write.t option
     ; maintenance : Maintenance.t
@@ -159,12 +166,22 @@ module Write = struct
     }
   [@@deriving eq, show]
 
-  let create title description url database styles icon default_language =
+  let create
+    title
+    description
+    url
+    database
+    gtx_api_key
+    styles
+    icon
+    default_language
+    =
     { id = Id.create ()
     ; title
     ; description
     ; url
     ; database
+    ; gtx_api_key
     ; styles
     ; icon
     ; maintenance = Maintenance.create false

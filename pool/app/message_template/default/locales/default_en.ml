@@ -210,6 +210,26 @@ If you did not change your password, please get in contact with us.|}
   }
 ;;
 
+let phone_verification =
+  let label = Label.PhoneVerification in
+  let email_text =
+    "Your phone number verification code: {token}" |> EmailText.of_string
+  in
+  let email_subject = "Phone verification" |> EmailSubject.of_string in
+  let sms_text =
+    {|Your phone number verification code: {token}|} |> SmsText.of_string
+  in
+  { id = Id.create ()
+  ; label
+  ; language
+  ; entity_uuid
+  ; email_text
+  ; email_subject
+  ; plain_text = sms_text
+  ; sms_text
+  }
+;;
+
 let profile_update_trigger =
   let label = Label.ProfileUpdateTrigger in
   let email_text =

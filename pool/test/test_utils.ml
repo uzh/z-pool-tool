@@ -19,9 +19,7 @@ let message_template =
   Alcotest.testable Message_template.pp Message_template.equal
 ;;
 
-let tenant_smtp_auth =
-  Alcotest.testable Pool_tenant.SmtpAuth.pp Pool_tenant.SmtpAuth.equal
-;;
+let tenant_smtp_auth = Alcotest.testable Email.SmtpAuth.pp Email.SmtpAuth.equal
 
 let database_label =
   Alcotest.testable Pool_database.Label.pp Pool_database.Label.equal
@@ -39,6 +37,10 @@ let check_result ?(msg = "succeeds") =
 ;;
 
 let password = Alcotest.testable Pool_user.Password.pp Pool_user.Password.equal
+
+let phone_nr =
+  Alcotest.testable Pool_user.PhoneNumber.pp Pool_user.PhoneNumber.equal
+;;
 
 (* Helper functions *)
 
@@ -121,6 +123,7 @@ module Model = struct
            else None)
       ; language = Some Pool_common.Language.En
       ; experiment_type_preference = None
+      ; phone_number = Some ("+41791234567" |> Pool_user.PhoneNumber.of_string)
       ; paused = Pool_user.Paused.create false
       ; disabled = Pool_user.Disabled.create false
       ; verified = None
@@ -285,6 +288,13 @@ module Model = struct
       ~recipient
       ~subject:"Subject"
       "Hello"
+  ;;
+
+  let create_text_message
+    ?(sender = Pool_tenant.Title.of_string "UAST")
+    phone_number
+    =
+    Text_message.render_and_create phone_number sender ("Hello world", [])
   ;;
 
   let hour = Ptime.Span.of_int_s @@ (60 * 60)

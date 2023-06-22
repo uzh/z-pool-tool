@@ -14,7 +14,7 @@ module Data = struct
 end
 
 let validate_email _ () =
-  let open Pool_tenant.Service.Email in
+  let open Email.Service in
   let open Smtp in
   let email =
     Data.create_email () |> intercept_prepare |> CCResult.get_or_failwith

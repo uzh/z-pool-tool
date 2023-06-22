@@ -41,6 +41,7 @@ module Create : sig
   val handle
     :  ?tags:Logs.Tag.set
     -> Pool_database.t
+    -> Pool_tenant.GtxApiKey.t
     -> t
     -> ( Pool_event.t list * (Pool_database.Label.t * Pool_event.t list)
        , Pool_common.Message.error )
@@ -87,7 +88,7 @@ end = struct
         command)
   ;;
 
-  let handle ?(tags = Logs.Tag.empty) database (command : t) =
+  let handle ?(tags = Logs.Tag.empty) database gtx_api_key (command : t) =
     Logs.info ~src (fun m -> m "Handle command Create" ~tags);
     let tenant =
       Pool_tenant.Write.create
@@ -95,6 +96,7 @@ end = struct
         command.description
         command.url
         database
+        gtx_api_key
         command.styles
         command.icon
         command.default_language
@@ -312,6 +314,25 @@ end = struct
   ;;
 
   let decode = decode_database
+  let effects = Pool_tenant.Guard.Access.update
+end
+
+module UpdateGtxApiKey : sig
+  val handle
+    :  ?tags:Logs.Tag.set
+    -> Pool_tenant.Write.t
+    -> Pool_tenant.GtxApiKey.t
+    -> (Pool_event.t list, Pool_common.Message.error) result
+
+  val effects : Pool_tenant.Id.t -> Guard.ValidationSet.t
+end = struct
+  let handle ?(tags = Logs.Tag.empty) (tenant : Pool_tenant.Write.t) api_key =
+    Logs.info ~src (fun m -> m "Handle command UpdateGtxApiKey" ~tags);
+    Ok
+      [ Pool_tenant.GtxApiKeyUpdated (tenant, api_key) |> Pool_event.pool_tenant
+      ]
+  ;;
+
   let effects = Pool_tenant.Guard.Access.update
 end
 

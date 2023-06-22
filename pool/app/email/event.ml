@@ -1,13 +1,7 @@
 open Entity
 module User = Pool_user
 
-type confirmation_email =
-  { subject : I18n.Content.t
-  ; text : I18n.Content.t
-  ; language : Pool_common.Language.t
-  ; session_text : string
-  }
-[@@deriving eq, show]
+let get_or_failwith = Pool_common.Utils.get_or_failwith
 
 let deactivate_token pool token =
   Service.Token.deactivate ~ctx:(Pool_database.to_ctx pool) token
@@ -65,9 +59,32 @@ let pp_verification_event formatter (event : verification_event) : unit =
 type event =
   | Sent of Sihl_email.t
   | BulkSent of Sihl_email.t list
-[@@deriving eq, show]
+  | SmtpCreated of SmtpAuth.Write.t
+  | SmtpEdited of SmtpAuth.t
+  | SmtpPasswordEdited of SmtpAuth.update_password
+[@@deriving eq, show, variants]
 
 let handle_event pool : event -> unit Lwt.t = function
-  | Sent email -> Pool_tenant.Service.Email.dispatch pool email
-  | BulkSent emails -> Pool_tenant.Service.Email.dispatch_all pool emails
+  | Sent email -> Email_service.dispatch pool email
+  | BulkSent emails -> Email_service.dispatch_all pool emails
+  | SmtpCreated ({ SmtpAuth.Write.id; _ } as created) ->
+    let open Utils.Lwt_result.Infix in
+    let ctx = Pool_database.to_ctx pool in
+    let%lwt () = Repo.Smtp.insert pool created in
+    let%lwt () =
+      Repo.Smtp.find pool id
+      >>= Entity_guard.SmtpTarget.to_authorizable ~ctx
+      ||> get_or_failwith
+      ||> fun (_ : Role.Target.t Guard.Target.t) -> ()
+    in
+    let () = Email_service.remove_from_cache pool in
+    Lwt.return_unit
+  | SmtpEdited updated ->
+    let%lwt () = Repo.Smtp.update pool updated in
+    let () = Email_service.remove_from_cache pool in
+    Lwt.return_unit
+  | SmtpPasswordEdited updated_password ->
+    let%lwt () = Repo.Smtp.update_password pool updated_password in
+    let () = Email_service.remove_from_cache pool in
+    Lwt.return_unit
 ;;

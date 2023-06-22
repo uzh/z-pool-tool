@@ -25,7 +25,7 @@ let create req =
          >|+ CCList.map Session.to_public
        in
        let tenant = Pool_context.Tenant.get_tenant_exn req in
-       let* confirmation_email =
+       let%lwt confirmation_email =
          let%lwt language = Contact.message_language database_label contact in
          Message_template.AssignmentConfirmation.create_from_public_session
            database_label

@@ -1,5 +1,5 @@
 module Conformist = Pool_common.Utils.PoolConformist
-module SmtpAuth = Pool_tenant.SmtpAuth
+module SmtpAuth = Email.SmtpAuth
 
 let src = Logs.Src.create "smtp.cqrs"
 
@@ -69,7 +69,7 @@ end = struct
       command.password
       command.mechanism
       command.protocol
-    >|= fun smtp -> [ Pool_tenant.SmtpCreated smtp |> Pool_event.pool_tenant ]
+    >|= fun smtp -> [ Email.SmtpCreated smtp |> Pool_event.email ]
   ;;
 
   let decode data =
@@ -77,7 +77,7 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let effects = Pool_tenant.Guard.Access.Smtp.create
+  let effects = Email.Guard.Access.Smtp.create
 end
 
 module Update : sig
@@ -92,7 +92,7 @@ module Update : sig
     :  (string * string list) list
     -> (t, Pool_common.Message.error) result
 
-  val effects : Pool_tenant.SmtpAuth.Id.t -> Guard.ValidationSet.t
+  val effects : SmtpAuth.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = SmtpAuth.t
 
@@ -127,7 +127,7 @@ end = struct
       ; protocol = command.SmtpAuth.protocol
       }
     in
-    Ok [ Pool_tenant.SmtpEdited update |> Pool_event.pool_tenant ]
+    Ok [ Email.SmtpEdited update |> Pool_event.email ]
   ;;
 
   let decode data =
@@ -135,7 +135,7 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let effects = Pool_tenant.Guard.Access.Smtp.update
+  let effects = Email.Guard.Access.Smtp.update
 end
 
 module UpdatePassword : sig
@@ -145,7 +145,7 @@ module UpdatePassword : sig
     :  (string * string list) list
     -> (t, Pool_common.Message.error) result
 
-  val effects : Pool_tenant.SmtpAuth.Id.t -> Guard.ValidationSet.t
+  val effects : SmtpAuth.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = SmtpAuth.update_password
 
@@ -163,7 +163,7 @@ end = struct
 
   let handle ?(tags = Logs.Tag.empty) (command : t) =
     Logs.info ~src (fun m -> m "Handle command Edit" ~tags);
-    Ok [ Pool_tenant.SmtpPasswordEdited command |> Pool_event.pool_tenant ]
+    Ok [ Email.SmtpPasswordEdited command |> Pool_event.email ]
   ;;
 
   let decode data =
@@ -171,5 +171,5 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let effects = Pool_tenant.Guard.Access.Smtp.update
+  let effects = Email.Guard.Access.Smtp.update
 end

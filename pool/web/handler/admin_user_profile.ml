@@ -41,7 +41,7 @@ module MakeUserProfile (Config : module type of Config) = struct
         msg, active_navigation, [ urlencoded_to_flash urlencoded ])
       @@ let* admin = Pool_context.get_admin_user user |> Lwt_result.lift in
          let tenant = Pool_context.Tenant.get_tenant_exn req in
-         let* notification =
+         let%lwt notification =
            Message_template.PasswordChange.create
              database_label
              language

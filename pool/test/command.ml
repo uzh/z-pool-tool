@@ -40,6 +40,14 @@ let () =
             `Quick
             Contact_test.password_special_char
         ; test_case
+            "phone number: valid swiss number"
+            `Quick
+            Contact_test.valid_swiss_number
+        ; test_case
+            "phone number: valid german number"
+            `Quick
+            Contact_test.valid_german_number
+        ; test_case
             "password policy: valid password"
             `Quick
             Contact_test.valid_password
@@ -295,6 +303,14 @@ let () =
             `Quick
             Session_test.cancel_already_canceled
         ; test_case "cancel session succeeds" `Quick Session_test.cancel_valid
+        ; test_case
+            "cancel valid with missing phone number"
+            `Quick
+            Session_test.cancel_valid_with_missing_phone_number
+        ; test_case
+            "cancel with email and text notification"
+            `Quick
+            Session_test.cancel_with_email_and_text_notification
         ; test_case
             "close session before start"
             `Quick

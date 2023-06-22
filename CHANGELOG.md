@@ -4,6 +4,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/pool/tree/HEAD)
 
+## Added
+
+- text message service
+- option to send session cancellation messages as text messages
+- validation of gtx api keys when adding or updating tenants
+
 ## [0.2.1](https://github.com/uzh/pool/tree/0.2.1) - 2023-06-01
 
 ### Fixed

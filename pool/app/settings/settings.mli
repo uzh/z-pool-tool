@@ -151,6 +151,11 @@ val find_terms_and_conditions
   -> TermsAndConditions.t list Lwt.t
 
 val terms_and_conditions_last_updated : Pool_database.Label.t -> Ptime.t Lwt.t
+
+val default_language_of_list
+  :  Pool_common.Language.t list
+  -> Pool_common.Language.t
+
 val default_language : Pool_database.Label.t -> Pool_common.Language.t Lwt.t
 
 val terms_and_conditions

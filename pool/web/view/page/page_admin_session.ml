@@ -1005,6 +1005,7 @@ let cancel
   flash_fetcher
   =
   let open Pool_common in
+  let open CCFun in
   let action =
     Format.asprintf
       "/admin/experiments/%s/sessions/%s/cancel"
@@ -1044,16 +1045,13 @@ let cancel
              ; a_action (action |> Sihl.Web.externalize_path)
              ]
            [ csrf_element csrf ()
-           ; textarea_element ~flash_fetcher language Message.Field.Reason
-           ; span
-               [ I18n.SessionCancelMessage
-                 |> Utils.hint_to_string language
-                 |> txt
-               ]
-           ; p [ I18n.NotifyVia |> Utils.text_to_string language |> txt ]
-           ; checkbox_element ~flash_fetcher language Message.Field.Email
-             (* TODO issue #149 re-add this *)
-             (* ; checkbox_element ~flash_fetcher language Message.Field.SMS *)
+           ; textarea_element
+               ~help:I18n.SessionCancelMessage
+               ~flash_fetcher
+               ~required:true
+               language
+               Message.Field.Reason
+           ; notify_via_selection language
            ; div
                ~a:[ a_class [ "flexrow" ] ]
                [ submit_element

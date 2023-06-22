@@ -55,7 +55,7 @@ module Sql = struct
           AND pool_assignments.canceled_at IS NULL
           AND pool_assignments.marked_as_deleted = 0
         INNER JOIN pool_locations
-          ON pool_locations.id = pool_sessions.location_id
+          ON pool_locations.uuid = pool_sessions.location_uuid
       |sql}
     in
     Format.asprintf "%s %s GROUP BY pool_sessions.uuid %s" select where order_by
@@ -96,7 +96,7 @@ module Sql = struct
           pool_sessions.canceled_at
         FROM pool_sessions
         INNER JOIN pool_locations
-          ON pool_locations.id = pool_sessions.location_id
+          ON pool_locations.uuid = pool_sessions.location_uuid
       |sql}
     in
     Format.asprintf "%s %s" select where
@@ -415,7 +415,7 @@ module Sql = struct
         start,
         duration,
         description,
-        location_id,
+        location_uuid,
         max_participants,
         min_participants,
         overbook,
@@ -430,7 +430,7 @@ module Sql = struct
         $4,
         $5,
         $6,
-        (SELECT id FROM pool_locations WHERE uuid = UNHEX(REPLACE($7, '-', ''))),
+        UNHEX(REPLACE($7, '-', '')),
         $8,
         $9,
         $10,
@@ -459,7 +459,7 @@ module Sql = struct
         start = $3,
         duration = $4,
         description = $5,
-        location_id = (SELECT pool_locations.id FROM pool_locations WHERE pool_locations.uuid = UNHEX(REPLACE($6, '-', ''))),
+        location_uuid = UNHEX(REPLACE($6, '-', '')),
         max_participants = $7,
         min_participants = $8,
         overbook = $9,

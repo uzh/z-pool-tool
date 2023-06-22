@@ -15,24 +15,29 @@ module NavElements = struct
     let nav_link = Profile
     let icon = Icon.Person
 
-    let dropdown ?(details = false) ?prefix () =
-      (if details then [ "/user/personal-details", PersonalDetails ] else [])
+    let dropdown ?(contact = false) ?prefix () =
+      (if contact
+       then
+         [ "/user/personal-details", PersonalDetails
+         ; "/user/contact-information", ContactInformation
+         ]
+       else [])
       @ [ "/user/login-information", LoginInformation ]
       |> CCList.map (fun (url, field) -> prefixed ?prefix url, field)
       |> NavElement.create_all_req
     ;;
 
-    let element ?details ?prefix () =
+    let element ?contact ?prefix () =
       ( prefixed ?prefix "/user"
       , nav_link
       , Some icon
-      , dropdown ?details ?prefix () )
+      , dropdown ?contact ?prefix () )
     ;;
 
-    let nav ?details ?prefix () =
+    let nav ?contact ?prefix () =
       NavElement.create
         ~icon
-        ~children:(dropdown ?details ?prefix ())
+        ~children:(dropdown ?contact ?prefix ())
         (prefixed ?prefix "/user")
         nav_link
     ;;
@@ -44,7 +49,7 @@ module NavElements = struct
     let open I18n in
     let links =
       [ "/experiments", Experiments, None, []
-      ; Profile.element ~details:true ()
+      ; Profile.element ~contact:true ()
       ]
       |> NavElement.create_all
     in
@@ -60,7 +65,7 @@ module NavElements = struct
       ; "/admin/settings/queue", Queue, Queue.Guard.Access.index
       ; "/admin/settings", SystemSettings, Settings.Guard.Access.index
       ; "/admin/settings/schedules", Schedules, Schedule.Guard.Access.index
-      ; "/admin/settings/smtp", Smtp, Pool_tenant.Guard.Access.Smtp.index
+      ; "/admin/settings/smtp", Smtp, Email.Guard.Access.Smtp.index
       ; "/admin/settings/rules", Rules, Guard.Access.manage_rules
       ; ( "/admin/message-template"
         , MessageTemplates
@@ -123,7 +128,7 @@ module NavElements = struct
         Users
     in
     let settings =
-      [ "/root/settings/smtp", Smtp, Pool_tenant.Guard.Access.Smtp.index ]
+      [ "/root/settings/smtp", Smtp, Email.Guard.Access.Smtp.index ]
       |> NavElement.create_all_req_with_set
       |> fun children -> NavElement.create ~children "/root/settings" Settings
     in

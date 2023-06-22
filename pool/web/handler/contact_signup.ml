@@ -59,7 +59,7 @@ let sign_up_create req =
            decode urlencoded |> Lwt_result.lift
          in
          let%lwt token = Email.create_token database_label email_address in
-         let* verification_mail =
+         let%lwt verification_mail =
            Message_template.SignUpVerification.create
              database_label
              (CCOption.value ~default:language query_language)
@@ -109,7 +109,7 @@ let sign_up_create req =
                     database_label
                     (CCOption.value ~default:language contact.Contact.language)
                     tenant
-               >== Command.SendRegistrationAttemptNotifitacion.handle
+               ||> Command.SendRegistrationAttemptNotifitacion.handle
                      ~tags
                      contact
            | Ok contact ->

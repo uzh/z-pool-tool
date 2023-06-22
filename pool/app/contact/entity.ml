@@ -58,6 +58,7 @@ type t =
   ; terms_accepted_at : User.TermsAccepted.t option
   ; language : Pool_common.Language.t option
   ; experiment_type_preference : Pool_common.ExperimentType.t option
+  ; phone_number : User.PhoneNumber.t option
   ; paused : User.Paused.t
   ; disabled : User.Disabled.t
   ; verified : User.Verified.t option
@@ -83,6 +84,7 @@ module Write = struct
     ; terms_accepted_at : User.TermsAccepted.t option
     ; language : Pool_common.Language.t option
     ; experiment_type_preference : Pool_common.ExperimentType.t option
+    ; phone_number : User.PhoneNumber.t option
     ; paused : User.Paused.t
     ; disabled : User.Disabled.t
     ; verified : User.Verified.t option
@@ -105,6 +107,7 @@ module Write = struct
     ; terms_accepted_at = m.terms_accepted_at
     ; language = m.language
     ; experiment_type_preference = m.experiment_type_preference
+    ; phone_number = m.phone_number
     ; paused = m.paused
     ; disabled = m.disabled
     ; verified = m.verified
@@ -159,6 +162,7 @@ module Preview = struct
   type t =
     { user : Sihl_user.t
     ; language : Pool_common.Language.t option
+    ; phone_number : User.PhoneNumber.t option
     ; paused : User.Paused.t
     ; verified : User.Verified.t option
     ; num_invitations : NumberOfInvitations.t

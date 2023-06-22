@@ -3,7 +3,7 @@ open Component.Input
 module Icon = Component.Icon
 module Message = Pool_common.Message
 module Field = Message.Field
-module SmtpAuth = Pool_tenant.SmtpAuth
+module SmtpAuth = Email.SmtpAuth
 
 let show
   ?(settings_path = "/admin/settings")

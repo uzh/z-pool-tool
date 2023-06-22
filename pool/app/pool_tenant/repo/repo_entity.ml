@@ -2,7 +2,6 @@ open CCFun
 open Entity
 module Common = Pool_common
 module Database = Pool_database
-module SmtpAuth = Repo_entity_smtp_auth
 
 module Title = struct
   include Title
@@ -38,6 +37,19 @@ module Url = struct
       Sihl.Configuration.read_string "PUBLIC_URL"
       |> CCOption.get_exn_or "PUBLIC_URL not found in configuration"
     | Some url -> url
+  ;;
+end
+
+module GtxApiKey = struct
+  include GtxApiKey
+
+  let t =
+    let open Utils.Crypto.String in
+    Common.Repo.make_caqti_type
+      Caqti_type.string
+      (decrypt_from_string
+       %> CCResult.map_err (fun _ -> Common.Message.(Decode Field.GtxApiKey)))
+      encrypt_to_string
   ;;
 end
 
@@ -170,12 +182,13 @@ module Write = struct
           , ( m.description
             , ( Url.value m.url
               , ( m.database
-                , ( m.styles
-                  , ( m.icon
-                    , ( m.maintenance
-                      , ( m.disabled
-                        , (m.default_language, (m.created_at, m.updated_at)) )
-                      ) ) ) ) ) ) ) )
+                , ( m.gtx_api_key
+                  , ( m.styles
+                    , ( m.icon
+                      , ( m.maintenance
+                        , ( m.disabled
+                          , (m.default_language, (m.created_at, m.updated_at))
+                          ) ) ) ) ) ) ) ) ) )
     in
     let decode
       ( id
@@ -183,11 +196,12 @@ module Write = struct
         , ( description
           , ( url
             , ( database
-              , ( styles
-                , ( icon
-                  , ( maintenance
-                    , (disabled, (default_language, (created_at, updated_at)))
-                    ) ) ) ) ) ) ) )
+              , ( gtx_api_key
+                , ( styles
+                  , ( icon
+                    , ( maintenance
+                      , (disabled, (default_language, (created_at, updated_at)))
+                      ) ) ) ) ) ) ) ) )
       =
       Ok
         { id
@@ -195,6 +209,7 @@ module Write = struct
         ; description
         ; url
         ; database
+        ; gtx_api_key
         ; styles
         ; icon
         ; maintenance
@@ -219,18 +234,20 @@ module Write = struct
                     (tup2
                        Database.Repo.t
                        (tup2
-                          (option Styles.Write.t)
+                          GtxApiKey.t
                           (tup2
-                             (option Icon.Write.t)
+                             (option Styles.Write.t)
                              (tup2
-                                Maintenance.t
+                                (option Icon.Write.t)
                                 (tup2
-                                   Disabled.t
+                                   Maintenance.t
                                    (tup2
-                                      Pool_common.Repo.Language.t
+                                      Disabled.t
                                       (tup2
-                                         Common.Repo.CreatedAt.t
-                                         Common.Repo.UpdatedAt.t))))))))))))
+                                         Pool_common.Repo.Language.t
+                                         (tup2
+                                            Common.Repo.CreatedAt.t
+                                            Common.Repo.UpdatedAt.t)))))))))))))
   ;;
 end
 
