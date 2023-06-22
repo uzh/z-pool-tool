@@ -273,7 +273,7 @@ val contact_matches_filter
   :  ?default:bool
   -> Pool_database.Label.t
   -> Pool_common.Id.t
-  -> t option
+  -> query
   -> Contact.t
   -> bool Lwt.t
 

@@ -229,12 +229,11 @@ module Sql = struct
     ?(default = false)
     pool
     experiment_id
-    filter
+    query
     (contact : Contact.t)
     =
     let open Utils.Lwt_result.Infix in
     let tags = Pool_database.Logger.Tags.create pool in
-    let query = filter |> CCOption.map (fun f -> f.query) in
     let find_sql where_fragment =
       Format.asprintf
         {sql|
@@ -248,12 +247,8 @@ module Sql = struct
         |sql}
         where_fragment
     in
-    let%lwt template_list =
-      match query with
-      | None -> Lwt.return []
-      | Some query -> find_templates_of_query pool query
-    in
-    filtered_params template_list experiment_id query
+    let%lwt template_list = find_templates_of_query pool query in
+    filtered_params template_list experiment_id (Some query)
     |> CCResult.map_err (fun err ->
          let () =
            Logs.info ~src (fun m ->
