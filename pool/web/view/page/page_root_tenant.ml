@@ -176,7 +176,69 @@ let list tenant_list (Pool_context.{ language; _ } as context) flash_fetcher =
     ]
 ;;
 
-let manage_operators { Pool_tenant.id; _ } Pool_context.{ language; csrf; _ } =
+let manage_operators
+  { Pool_tenant.id; _ }
+  operators
+  Pool_context.{ language; csrf; _ }
+  =
+  let operator_list =
+    Page_admin_admins.admin_overview ~disable_edit:true language operators
+  in
+  let create_operator_form =
+    div
+      [ h2
+          ~a:[ a_class [ "heading-2" ] ]
+          [ txt
+              Pool_common.(
+                Utils.control_to_string
+                  language
+                  Message.(Create (Some Field.Operator)))
+          ]
+      ; form
+          ~a:
+            [ a_action
+                (Sihl.Web.externalize_path
+                   (Format.asprintf
+                      "/root/tenants/%s/create-operator"
+                      (Pool_tenant.Id.value id)))
+            ; a_method `Post
+            ; a_class [ "stack" ]
+            ]
+          ((csrf_element csrf ()
+            :: CCList.map
+                 (fun (field, input) ->
+                   input_element ~required:true language input field)
+                 Message.Field.
+                   [ Email, `Email
+                   ; Password, `Password
+                   ; Firstname, `Text
+                   ; Lastname, `Text
+                   ])
+           @ [ div
+                 ~a:[ a_class [ "flexrow"; "align-center"; "flex-gap" ] ]
+                 [ div
+                     [ a
+                         ~a:
+                           [ a_href
+                               (Sihl.Web.externalize_path
+                                  (Format.asprintf
+                                     "/root/tenants/%s"
+                                     (Id.value id)))
+                           ]
+                         [ txt
+                             Pool_common.(
+                               Utils.control_to_string language Message.back)
+                         ]
+                     ]
+                 ; submit_element
+                     ~classnames:[ "push" ]
+                     language
+                     Message.(Create (Some Field.operator))
+                     ()
+                 ]
+             ])
+      ]
+  in
   div
     ~a:[ a_class [ "trim"; "narrow"; "safety-margin" ] ]
     [ h1
@@ -186,51 +248,7 @@ let manage_operators { Pool_tenant.id; _ } Pool_context.{ language; csrf; _ } =
               Utils.field_to_string language Message.Field.Operators
               |> CCString.capitalize_ascii)
         ]
-    ; div
-        [ form
-            ~a:
-              [ a_action
-                  (Sihl.Web.externalize_path
-                     (Format.asprintf
-                        "/root/tenants/%s/create-operator"
-                        (Pool_tenant.Id.value id)))
-              ; a_method `Post
-              ; a_class [ "stack" ]
-              ]
-            ((csrf_element csrf ()
-              :: CCList.map
-                   (fun (field, input) ->
-                     input_element ~required:true language input field)
-                   Message.Field.
-                     [ Email, `Email
-                     ; Password, `Password
-                     ; Firstname, `Text
-                     ; Lastname, `Text
-                     ])
-             @ [ div
-                   ~a:[ a_class [ "flexrow"; "align-center"; "flex-gap" ] ]
-                   [ div
-                       [ a
-                           ~a:
-                             [ a_href
-                                 (Sihl.Web.externalize_path
-                                    (Format.asprintf
-                                       "/root/tenants/%s"
-                                       (Id.value id)))
-                             ]
-                           [ txt
-                               Pool_common.(
-                                 Utils.control_to_string language Message.back)
-                           ]
-                       ]
-                   ; submit_element
-                       ~classnames:[ "push" ]
-                       language
-                       Message.(Create (Some Field.operator))
-                       ()
-                   ]
-               ])
-        ]
+    ; div ~a:[ a_class [ "stack-lg" ] ] [ operator_list; create_operator_form ]
     ]
 ;;
 

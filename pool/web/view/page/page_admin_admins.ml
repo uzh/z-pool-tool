@@ -2,7 +2,7 @@ open CCFun
 open Tyxml.Html
 open Component
 
-let admin_overview language admins =
+let admin_overview ?(disable_edit = false) language admins =
   let thead =
     let add_admin =
       Component.Input.link_as_button
@@ -12,22 +12,30 @@ let admin_overview language admins =
         "/admin/admins/new"
     in
     let to_txt = Component.Table.field_to_txt language in
-    Pool_common.Message.Field.[ Email |> to_txt; Name |> to_txt; add_admin ]
+    let base = Pool_common.Message.Field.[ Email |> to_txt; Name |> to_txt ] in
+    match disable_edit with
+    | false -> base @ [ add_admin ]
+    | true -> base
   in
   CCList.map
     (fun admin ->
       let open Sihl_user in
       let default_empty o = CCOption.value ~default:"" o in
       let user = Admin.user admin in
-      [ txt user.email
-      ; txt
-          (Format.asprintf
-             "%s %s"
-             (user.given_name |> default_empty)
-             (user.name |> default_empty)
-           |> CCString.trim)
-      ; Format.asprintf "/admin/admins/%s" user.id |> Input.edit_link
-      ])
+      let base =
+        [ txt user.email
+        ; txt
+            (Format.asprintf
+               "%s %s"
+               (user.given_name |> default_empty)
+               (user.name |> default_empty)
+             |> CCString.trim)
+        ]
+      in
+      match disable_edit with
+      | false ->
+        base @ [ Format.asprintf "/admin/admins/%s" user.id |> Input.edit_link ]
+      | true -> base)
     admins
   |> Table.horizontal_table ~align_last_end:true `Striped ~thead
 ;;

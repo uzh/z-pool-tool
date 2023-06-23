@@ -90,7 +90,10 @@ let manage_operators req =
       |> Pool_tenant.Id.of_string
     in
     let* tenant = Pool_tenant.find id in
-    Page.Root.Tenant.manage_operators tenant context
+    let%lwt operators =
+      Admin.find_all_with_role tenant.Pool_tenant.database_label `Operator
+    in
+    Page.Root.Tenant.manage_operators tenant operators context
     |> General.create_root_layout context
     ||> Response.of_html
     |> Lwt_result.ok
