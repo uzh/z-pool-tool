@@ -86,7 +86,7 @@ let to_string = function
   | TextTemplates -> "text templates"
   | UpcomingSessionsListEmpty ->
     "You are not currently enrolled in any upcoming sessions."
-  | PastExperimentListPublicTitle -> "Your past experiments"
+  | PastExperimentListPublicTitle -> "Experiments participated"
   | PastSessionsTitle -> "Your past sessions"
   | UpcomingSessionsTitle -> "Your upcoming sessions"
   | UserProfileDetailsSubtitle -> "Personal details"

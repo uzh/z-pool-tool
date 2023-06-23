@@ -248,7 +248,7 @@ module Sql = struct
         where_fragment
     in
     let%lwt template_list = find_templates_of_query pool query in
-    filtered_params template_list experiment_id (Some query)
+    filtered_params ~allow_invited:true template_list experiment_id (Some query)
     |> CCResult.map_err (fun err ->
          let () =
            Logs.info ~src (fun m ->

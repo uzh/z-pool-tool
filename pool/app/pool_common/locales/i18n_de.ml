@@ -88,7 +88,7 @@ Sie kommen für mehr Experimente in Frage, umso kompletter Ihr Profil ist.|}
   | TextTemplates -> "Textelemente"
   | UpcomingSessionsListEmpty ->
     "Sie sind aktuell an keine kommenden Sessions angemeldet."
-  | PastExperimentListPublicTitle -> "Ihre vergangenen Experimente"
+  | PastExperimentListPublicTitle -> "Teilgenommene Experimente"
   | PastSessionsTitle -> "Ihre vergangenen Sessions"
   | UpcomingSessionsTitle -> "Ihre nächsten Sessions"
   | UserProfileDetailsSubtitle -> "Persönliche Angaben"
