@@ -12,11 +12,6 @@ let index req =
        let%lwt experiment_list =
          Experiment.find_all_public_by_contact database_label contact
        in
-       let _ =
-         CCList.map
-           (fun e -> Logs.info (fun m -> m "%s" (Experiment.Public.show e)))
-           experiment_list
-       in
        let* upcoming_sessions =
          Session.find_upcoming_public_by_contact
            database_label
