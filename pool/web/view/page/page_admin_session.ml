@@ -982,8 +982,11 @@ let close
                |> CCString.capitalize_ascii)
           ]
       ; p
-          [ Utils.hint_to_string language I18n.SessionClose
+          [ Utils.hint_to_string language I18n.SessionCloseLegend
             |> HttpUtils.add_line_breaks
+          ]
+      ; p
+          [ Utils.hint_to_string language I18n.SessionCloseHints |> Unsafe.data
           ]
       ; table
       ; script (Unsafe.data scripts)

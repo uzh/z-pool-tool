@@ -20,8 +20,6 @@ let to_string = function
     Format.asprintf
       "Currently, there are no %s available."
       (Locales_en.field_to_string field)
-  | ExperimentContactEnrolledNote ->
-    "You signed up for the following session(s):"
   | ExperimentNewTitle -> "Create new experiment"
   | ExperimentListTitle -> "Experiments"
   | ExperimentListEmpty ->
@@ -88,6 +86,8 @@ let to_string = function
   | TextTemplates -> "text templates"
   | UpcomingSessionsListEmpty ->
     "You are not currently enrolled in any upcoming sessions."
+  | PastExperimentListPublicTitle -> "Your past experiments"
+  | PastSessionsTitle -> "Your past sessions"
   | UpcomingSessionsTitle -> "Your upcoming sessions"
   | UserProfileDetailsSubtitle -> "Personal details"
   | UserProfileLoginSubtitle -> "Login information"
@@ -286,11 +286,12 @@ The following follow-up sessions exist:|}
     "Associated follow-up sessions were canceled as well:"
   | SessionCancelMessage ->
     "This reason will be provided to all contacts assigned to this session."
-  | SessionClose ->
+  | SessionCloseHints ->
+    {|<strong>NS</strong> and <strong>P</strong> are mutually exclusive.<br>
+If a contact showed up but did not participate in the experiment, do not select any of the options.|}
+  | SessionCloseLegend ->
     {|NS: the contact did not show up
     P: the contact participated in the experiment
-
-    To set 'participated', 'show up' is required.
     |}
   | SearchByFields fields ->
     Format.asprintf

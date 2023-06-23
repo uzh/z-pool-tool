@@ -24,8 +24,6 @@ let to_string = function
     Format.asprintf
       "Es sind keine %s vorhanden."
       (Locales_de.field_to_string field)
-  | ExperimentContactEnrolledNote ->
-    "Sie sind an der/den folgenden Session(s) angemeldet:"
   | Files -> "Dateien"
   | FilterNrOfContacts ->
     "Anzahl der Kontakte, die den Kriterien dieses Filters entsprechen:"
@@ -90,6 +88,8 @@ Sie kommen für mehr Experimente in Frage, umso kompletter Ihr Profil ist.|}
   | TextTemplates -> "Textelemente"
   | UpcomingSessionsListEmpty ->
     "Sie sind aktuell an keine kommenden Sessions angemeldet."
+  | PastExperimentListPublicTitle -> "Ihre vergangenen Experimente"
+  | PastSessionsTitle -> "Ihre vergangenen Sessions"
   | UpcomingSessionsTitle -> "Ihre nächsten Sessions"
   | UserProfileDetailsSubtitle -> "Persönliche Angaben"
   | UserProfileLoginSubtitle -> "Anmeldeinformationen"
@@ -302,12 +302,12 @@ Die folgenden Folgesessions existieren:|}
     "Dazugehörige Folgesessions wurden evenfalls abgesagt:"
   | SessionCancelMessage ->
     "Dieser Grund wird allen angemeldeten Kontakten gezeigt."
-  | SessionClose ->
+  | SessionCloseHints ->
+    {|<strong>NS</strong> und <strong>P</strong> schliessen sich gegenseitig aus.<br>
+Wenn ein Kontakt zwar erschienen ist, aber nicht an dem Experiment teilgenommen hat, wählen Sie keine der Optionen aus.|}
+  | SessionCloseLegend ->
     {|NS: Der Kontakt ist nicht an der Session erschienen
-    P: Der Kontakt hat am Experiment teilgenommen
-
-    Um 'participated' anzuwählen ist 'show up' erforderlich.
-    |}
+    P: Der Kontakt hat am Experiment teilgenommen|}
   | SessionReminderLanguageHint ->
     "Falls sie einen eigenen Erinnerungstext angeben, wählen Sie dessen \
      Sprache hier."

@@ -147,32 +147,40 @@ module Sql = struct
       (Pool_common.Id.value id)
   ;;
 
-  let find_by_experiment_and_contact_opt_request =
+  let find_by_experiment_and_contact_opt_request time =
     let open Caqti_request.Infix in
-    let joins =
+    let query joins =
       {sql|
-        LEFT JOIN pool_sessions
-        ON
-          pool_assignments.session_uuid = pool_sessions.uuid
-        AND
-          pool_sessions.canceled_at IS NULL
-      |sql}
-    in
-    {sql|
         pool_sessions.experiment_uuid = UNHEX(REPLACE(?, '-', ''))
       AND
         pool_assignments.contact_uuid = UNHEX(REPLACE(?, '-', ''))
       AND
         pool_assignments.marked_as_deleted = 0
     |sql}
-    |> select_public_sql ~joins
-    |> Caqti_type.(tup2 string string) ->* RepoEntity.Public.t
+      |> select_public_sql ~joins
+      |> Caqti_type.(tup2 string string) ->* RepoEntity.Public.t
+    in
+    let joins =
+      Format.asprintf
+        {sql|
+        LEFT JOIN pool_sessions
+        ON
+          pool_assignments.session_uuid = pool_sessions.uuid
+        AND
+          pool_sessions.canceled_at IS NULL
+        %s
+      |sql}
+    in
+    match time with
+    | `Upcoming -> "AND pool_sessions.closed_at IS NULL" |> joins |> query
+    | `Past -> "AND pool_sessions.closed_at IS NOT NULL" |> joins |> query
+    | `All -> "" |> joins |> query
   ;;
 
-  let find_by_experiment_and_contact_opt pool experiment_id contact =
+  let find_by_experiment_and_contact_opt time pool experiment_id contact =
     Utils.Database.collect
       (Pool_database.Label.value pool)
-      find_by_experiment_and_contact_opt_request
+      (find_by_experiment_and_contact_opt_request time)
       ( Experiment.Id.value experiment_id
       , Pool_common.Id.value (Contact.id contact) )
   ;;

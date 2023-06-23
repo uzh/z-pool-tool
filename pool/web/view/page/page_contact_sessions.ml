@@ -97,8 +97,8 @@ let public_detail language =
     ]
   in
   CCList.flat_map (fun session ->
-    [ h2
-        ~a:[ a_class [ "heading-2" ] ]
+    [ h3
+        ~a:[ a_class [ "heading-3" ] ]
         [ session |> session_title language |> txt ]
     ; Table.vertical_table `Striped language ~align_top:true (rows session)
     ])

@@ -36,7 +36,7 @@ let create req =
        in
        let%lwt already_enrolled =
          let open Utils.Lwt_result.Infix in
-         Assignment.find_by_experiment_and_contact_opt
+         Assignment.find_all_by_experiment_and_contact_opt
            database_label
            experiment.Experiment.Public.id
            contact

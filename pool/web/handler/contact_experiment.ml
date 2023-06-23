@@ -12,10 +12,18 @@ let index req =
        let%lwt experiment_list =
          Experiment.find_all_public_by_contact database_label contact
        in
+       let _ =
+         CCList.map
+           (fun e -> Logs.info (fun m -> m "%s" (Experiment.Public.show e)))
+           experiment_list
+       in
        let* upcoming_sessions =
          Session.find_upcoming_public_by_contact
            database_label
            (Contact.id contact)
+       in
+       let%lwt past_experiments =
+         Experiment.find_past_experiments_by_contact database_label contact
        in
        let%lwt custom_fields_anwsered =
          Custom_field.all_answered database_label (Contact.id contact)
@@ -27,6 +35,7 @@ let index req =
          experiment_list
          upcoming_sessions
          waiting_list
+         past_experiments
          custom_fields_anwsered
          context
        |> create_layout ~active_navigation:"/experiments" req context
@@ -53,13 +62,20 @@ let show req =
       Session.find_all_public_for_experiment database_label contact id
       >|+ Session.Public.group_and_sort
     in
-    let* session_user_is_assigned =
-      Assignment.find_by_experiment_and_contact_opt database_label id contact
-      >|> Lwt_list.map_s (fun { Assignment.Public.id; _ } ->
+    let find_sessions fnc =
+      let open Assignment in
+      fnc database_label id contact
+      >|> Lwt_list.map_s (fun { Public.id; _ } ->
             id
-            |> Assignment.Id.to_common
+            |> Id.to_common
             |> Session.find_public_by_assignment database_label)
       ||> CCResult.flatten_l
+    in
+    let* upcoming_sessions =
+      find_sessions Assignment.find_upcoming_by_experiment_and_contact_opt
+    in
+    let* past_sessions =
+      find_sessions Assignment.find_past_by_experiment_and_contact_opt
     in
     let%lwt user_is_on_waiting_list =
       Waiting_list.user_is_enlisted database_label contact experiment
@@ -67,7 +83,8 @@ let show req =
     Page.Contact.Experiment.show
       experiment
       grouped_sessions
-      session_user_is_assigned
+      upcoming_sessions
+      past_sessions
       user_is_on_waiting_list
       contact
       context

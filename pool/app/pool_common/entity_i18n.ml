@@ -12,7 +12,6 @@ type t =
   | EmailConfirmationNote
   | EmailConfirmationTitle
   | EmtpyList of Entity_message.Field.t
-  | ExperimentContactEnrolledNote
   | ExperimentListTitle
   | ExperimentListEmpty
   | ExperimentListPublicTitle
@@ -59,6 +58,8 @@ type t =
   | TermsAndConditionsTitle
   | TextTemplates
   | UpcomingSessionsListEmpty
+  | PastExperimentListPublicTitle
+  | PastSessionsTitle
   | UpcomingSessionsTitle
   | UserProfileDetailsSubtitle
   | UserProfileLoginSubtitle
@@ -157,7 +158,8 @@ type hint =
   | SessionCancellationMessageFollowUps
   | SessionCancellationWithFollowups
   | SessionCancelMessage
-  | SessionClose
+  | SessionCloseHints
+  | SessionCloseLegend
   | SessionRegistrationFollowUpHint
   | SessionRegistrationHint
   | SessionReminderLanguageHint

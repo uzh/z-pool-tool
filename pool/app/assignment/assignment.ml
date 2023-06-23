@@ -3,7 +3,19 @@ include Event
 module Guard = Entity_guard
 
 let find = Repo.find
-let find_by_experiment_and_contact_opt = Repo.find_by_experiment_and_contact_opt
+
+let find_upcoming_by_experiment_and_contact_opt =
+  Repo.find_by_experiment_and_contact_opt `Upcoming
+;;
+
+let find_past_by_experiment_and_contact_opt =
+  Repo.find_by_experiment_and_contact_opt `Past
+;;
+
+let find_all_by_experiment_and_contact_opt =
+  Repo.find_by_experiment_and_contact_opt `All
+;;
+
 let find_by_session = Repo.find_by_session `All
 let find_uncanceled_by_session = Repo.find_by_session `Uncanceled
 let find_deleted_by_session = Repo.find_by_session `Deleted
