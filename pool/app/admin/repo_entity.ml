@@ -1,4 +1,5 @@
 open Entity
+module Id = Pool_common.Repo.Id
 
 let t =
   let encode (m : t) = Ok (m.user, m.import_pending) in

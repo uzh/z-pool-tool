@@ -59,11 +59,13 @@ let experiments pool =
           in
           let allow_uninvited_signup = AllowUninvitedSignup.create false in
           let registration_disabled = RegistrationDisabled.create false in
+          let contact_person_id = None in
           create
             title
             public_title
             description
             cost_center
+            contact_person_id
             None
             direct_registration_disabled
             registration_disabled

@@ -10,6 +10,7 @@ let experiment_boolean_fields =
 ;;
 
 module Data = struct
+  let contact_person = Test_utils.Model.create_admin ()
   let title = "New experiment"
   let public_title = "public_experiment_title"
   let description = "Description"
@@ -64,6 +65,7 @@ module Data = struct
       ; cost_center = Some ("F-00000-11-22" |> CostCenter.of_string)
       ; organisational_unit = None
       ; filter
+      ; contact_person_id = None
       ; direct_registration_disabled =
           false |> DirectRegistrationDisabled.create
       ; registration_disabled = false |> RegistrationDisabled.create
@@ -95,7 +97,7 @@ let create_without_title () =
       ]
     |> Http_utils.format_request_boolean_values experiment_boolean_fields
     |> ExperimentCommand.Create.decode
-    >>= ExperimentCommand.Create.handle None
+    >>= ExperimentCommand.Create.handle None None
   in
   let expected = Error Common.Message.(Conformist [ Field.Title, NoValue ]) in
   Test_utils.check_result expected events
@@ -110,7 +112,7 @@ let update () =
       ; Description |> show, [ Data.description ]
       ]
     |> ExperimentCommand.Update.decode
-    >>= ExperimentCommand.Update.handle experiment None
+    >>= ExperimentCommand.Update.handle experiment None None
   in
   let expected =
     Pool_common.Message.Field.
@@ -118,7 +120,7 @@ let update () =
       ; Description |> show, [ Data.description ]
       ]
     |> ExperimentCommand.Update.decode
-    >>= ExperimentCommand.Update.handle experiment None
+    >>= ExperimentCommand.Update.handle experiment None None
   in
   Test_utils.check_result expected events
 ;;

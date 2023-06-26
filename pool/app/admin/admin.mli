@@ -132,6 +132,10 @@ end
 
 module Repo : sig
   module Entity : sig
+    module Id : sig
+      val t : Id.t Caqti_type.t
+    end
+
     val t : t Caqti_type.t
   end
 

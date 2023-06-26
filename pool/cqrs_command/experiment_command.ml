@@ -57,6 +57,7 @@ module Create : sig
 
   val handle
     :  ?tags:Logs.Tag.set
+    -> Admin.t option
     -> Organisational_unit.t option
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
@@ -67,7 +68,12 @@ module Create : sig
 end = struct
   type t = create
 
-  let handle ?(tags = Logs.Tag.empty) organisational_unit (command : t) =
+  let handle
+    ?(tags = Logs.Tag.empty)
+    contact_person
+    organisational_unit
+    (command : t)
+    =
     Logs.info ~src (fun m -> m "Handle command Create" ~tags);
     let open CCResult in
     let* experiment =
@@ -76,6 +82,7 @@ end = struct
         command.public_title
         command.description
         command.cost_center
+        (contact_person |> CCOption.map Admin.id)
         organisational_unit
         command.direct_registration_disabled
         command.registration_disabled
@@ -100,6 +107,7 @@ module Update : sig
   val handle
     :  ?tags:Logs.Tag.set
     -> Experiment.t
+    -> Admin.t option
     -> Organisational_unit.t option
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
@@ -115,6 +123,7 @@ end = struct
   let handle
     ?(tags = Logs.Tag.empty)
     experiment
+    contact_person
     organisational_unit
     (command : t)
     =
@@ -127,6 +136,7 @@ end = struct
         command.public_title
         command.description
         command.cost_center
+        (contact_person |> CCOption.map Admin.id)
         organisational_unit
         command.direct_registration_disabled
         command.registration_disabled

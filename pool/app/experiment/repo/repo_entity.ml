@@ -71,13 +71,14 @@ let t =
             , ( m.cost_center
               , ( m.organisational_unit
                 , ( m.filter
-                  , ( m.direct_registration_disabled
-                    , ( m.registration_disabled
-                      , ( m.allow_uninvited_signup
-                        , ( m.experiment_type
-                          , ( m.session_reminder_lead_time
-                            , (m.created_at, m.updated_at) ) ) ) ) ) ) ) ) ) )
-        ) )
+                  , ( m.contact_person_id
+                    , ( m.direct_registration_disabled
+                      , ( m.registration_disabled
+                        , ( m.allow_uninvited_signup
+                          , ( m.experiment_type
+                            , ( m.session_reminder_lead_time
+                              , (m.created_at, m.updated_at) ) ) ) ) ) ) ) ) )
+            ) ) ) )
   in
   let decode
     ( id
@@ -87,12 +88,14 @@ let t =
           , ( cost_center
             , ( organisational_unit
               , ( filter
-                , ( direct_registration_disabled
-                  , ( registration_disabled
-                    , ( allow_uninvited_signup
-                      , ( experiment_type
-                        , (session_reminder_lead_time, (created_at, updated_at))
-                        ) ) ) ) ) ) ) ) ) ) )
+                , ( contact_person_id
+                  , ( direct_registration_disabled
+                    , ( registration_disabled
+                      , ( allow_uninvited_signup
+                        , ( experiment_type
+                          , ( session_reminder_lead_time
+                            , (created_at, updated_at) ) ) ) ) ) ) ) ) ) ) ) )
+    )
     =
     let open CCResult in
     Ok
@@ -101,6 +104,7 @@ let t =
       ; public_title
       ; description
       ; cost_center
+      ; contact_person_id
       ; organisational_unit
       ; filter
       ; direct_registration_disabled
@@ -131,21 +135,24 @@ let t =
                         (tup2
                            (option Filter.Repo.t)
                            (tup2
-                              DirectRegistrationDisabled.t
+                              (option Admin.Repo.Entity.Id.t)
                               (tup2
-                                 RegistrationDisabled.t
+                                 DirectRegistrationDisabled.t
                                  (tup2
-                                    AllowUninvitedSignup.t
+                                    RegistrationDisabled.t
                                     (tup2
-                                       (option
-                                          Pool_common.Repo.ExperimentType.t)
+                                       AllowUninvitedSignup.t
                                        (tup2
                                           (option
-                                             Pool_common.Repo.Reminder.LeadTime
-                                             .t)
+                                             Pool_common.Repo.ExperimentType.t)
                                           (tup2
-                                             Common.Repo.CreatedAt.t
-                                             Common.Repo.UpdatedAt.t))))))))))))))
+                                             (option
+                                                Pool_common.Repo.Reminder
+                                                .LeadTime
+                                                .t)
+                                             (tup2
+                                                Common.Repo.CreatedAt.t
+                                                Common.Repo.UpdatedAt.t)))))))))))))))
 ;;
 
 module Write = struct
@@ -164,11 +171,12 @@ module Write = struct
               , ( m.cost_center
                 , ( organisational_unit
                   , ( filter
-                    , ( m.direct_registration_disabled
-                      , ( m.registration_disabled
-                        , ( m.allow_uninvited_signup
-                          , (m.experiment_type, m.session_reminder_lead_time) )
-                        ) ) ) ) ) ) ) ) )
+                    , ( m.contact_person_id
+                      , ( m.direct_registration_disabled
+                        , ( m.registration_disabled
+                          , ( m.allow_uninvited_signup
+                            , (m.experiment_type, m.session_reminder_lead_time)
+                            ) ) ) ) ) ) ) ) ) ) )
     in
     let decode _ = failwith "Write only model" in
     Caqti_type.(
@@ -190,16 +198,20 @@ module Write = struct
                           (tup2
                              (option RepoId.t)
                              (tup2
-                                DirectRegistrationDisabled.t
+                                (option Admin.Repo.Entity.Id.t)
                                 (tup2
-                                   RegistrationDisabled.t
+                                   DirectRegistrationDisabled.t
                                    (tup2
-                                      AllowUninvitedSignup.t
+                                      RegistrationDisabled.t
                                       (tup2
-                                         (option
-                                            Pool_common.Repo.ExperimentType.t)
-                                         (option
-                                            Pool_common.Repo.Reminder.LeadTime.t)))))))))))))
+                                         AllowUninvitedSignup.t
+                                         (tup2
+                                            (option
+                                               Pool_common.Repo.ExperimentType.t)
+                                            (option
+                                               Pool_common.Repo.Reminder
+                                               .LeadTime
+                                               .t))))))))))))))
   ;;
 end
 

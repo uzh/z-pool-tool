@@ -35,6 +35,7 @@ type t =
   | ConfirmedAt [@name "confirmed_at"] [@printer go "confirmed_at"]
   | Contact [@name "contact"] [@printer go "contact"]
   | ContactEmail [@name "contact_email"] [@printer go "contact_email"]
+  | ContactPerson [@name "contact_person"] [@printer go "contact_person"]
   | Contacts [@name "contacts"] [@printer go "contacts"]
   | Context [@name "context"] [@printer go "context"]
   | CostCenter [@name "cost_center"] [@printer go "cost_center"]

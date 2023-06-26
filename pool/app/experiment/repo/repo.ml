@@ -15,6 +15,7 @@ module Sql = struct
         cost_center,
         organisational_unit_uuid,
         filter_uuid,
+        contact_person_uuid,
         direct_registration_disabled,
         registration_disabled,
         allow_uninvited_signup,
@@ -26,6 +27,7 @@ module Sql = struct
         ?,
         ?,
         ?,
+        UNHEX(REPLACE(?, '-', '')),
         UNHEX(REPLACE(?, '-', '')),
         UNHEX(REPLACE(?, '-', '')),
         ?,
@@ -80,6 +82,13 @@ module Sql = struct
           pool_filter.title,
           pool_filter.created_at,
           pool_filter.updated_at,
+          LOWER(CONCAT(
+            SUBSTR(HEX(pool_experiments.contact_person_uuid), 1, 8), '-',
+            SUBSTR(HEX(pool_experiments.contact_person_uuid), 9, 4), '-',
+            SUBSTR(HEX(pool_experiments.contact_person_uuid), 13, 4), '-',
+            SUBSTR(HEX(pool_experiments.contact_person_uuid), 17, 4), '-',
+            SUBSTR(HEX(pool_experiments.contact_person_uuid), 21)
+          )),
           pool_experiments.direct_registration_disabled,
           pool_experiments.registration_disabled,
           pool_experiments.allow_uninvited_signup,
@@ -208,6 +217,7 @@ module Sql = struct
         title = $2,
         public_title = $3,
         description = $4,
+<<<<<<< HEAD
         cost_center = $5,
         organisational_unit_uuid = UNHEX(REPLACE($6, '-', '')),
         filter_uuid = UNHEX(REPLACE($7, '-', '')),
@@ -216,6 +226,15 @@ module Sql = struct
         allow_uninvited_signup = $10,
         experiment_type = $11,
         session_reminder_lead_time = $12
+=======
+        filter_uuid = UNHEX(REPLACE($5, '-', '')),
+        contact_person_uuid = UNHEX(REPLACE($6, '-', '')),
+        direct_registration_disabled = $7,
+        registration_disabled = $8,
+        allow_uninvited_signup = $9,
+        experiment_type = $10,
+        session_reminder_lead_time = $11
+>>>>>>> 2fff3584 (add contact person fk to experiments)
       WHERE
         uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}

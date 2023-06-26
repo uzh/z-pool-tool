@@ -30,6 +30,24 @@ let experiment_boolean_fields =
   Experiment.boolean_fields |> CCList.map Field.show
 ;;
 
+let contact_person_roles experiment_id =
+  experiment_id
+  |> Guard.Uuid.target_of Experiment.Id.value
+  |> fun target_id ->
+  [ `Experimenter target_id; `Recruiter target_id; `RecruiterAll ]
+;;
+
+(* TODO: Check for correct role *)
+let contact_person_from_urlencoded database_label urlencoded =
+  let open Utils.Lwt_result.Infix in
+  urlencoded
+  |> HttpUtils.find_in_urlencoded_opt Field.ContactPerson
+  |> function
+  | None -> Lwt_result.return None
+  | Some id ->
+    id |> Admin.Id.of_string |> Admin.find database_label >|+ CCOption.return
+;;
+
 let index req =
   let open Utils.Lwt_result.Infix in
   let error_path = "/admin/dashboard" in
@@ -67,6 +85,7 @@ let new_form req =
       context
       organisational_units
       default_reminder_lead_time
+      []
       flash_fetcher
     |> create_layout req context
     >|+ Sihl.Web.Response.of_html
@@ -88,13 +107,16 @@ let create req =
       , [ HttpUtils.urlencoded_to_flash urlencoded ] ))
     @@
     let tags = Pool_context.Logger.Tags.req req in
+    let* contact_person =
+      contact_person_from_urlencoded database_label urlencoded
+    in
     let* organisational_unit = organisational_unit urlencoded database_label in
     let events =
       let open CCResult.Infix in
       let open Cqrs_command.Experiment_command.Create in
       urlencoded
       |> decode
-      >>= handle ~tags organisational_unit
+      >>= handle ~tags contact_person organisational_unit
       |> Lwt_result.lift
     in
     let handle events =
@@ -145,13 +167,17 @@ let detail edit req =
        let%lwt organisational_units =
          Organisational_unit.all database_label ()
        in
+       let%lwt contact_persons =
+         id |> contact_person_roles |> Admin.find_all_with_roles database_label
+       in
        Page.Admin.Experiments.edit
          experiment
          context
          sys_languages
          default_reminder_lead_time
-         invitation_templates
+         contact_persons
          organisational_units
+         invitation_templates
          session_reminder_templates
          flash_fetcher
        |> Lwt_result.ok)
@@ -184,12 +210,15 @@ let update req =
     let tags = Pool_context.Logger.Tags.req req in
     let* experiment = Experiment.find database_label id in
     let* organisational_unit = organisational_unit urlencoded database_label in
+    let* contact_person =
+      contact_person_from_urlencoded database_label urlencoded
+    in
     let events =
       let open CCResult.Infix in
       let open Cqrs_command.Experiment_command.Update in
       urlencoded
       |> decode
-      >>= handle ~tags experiment organisational_unit
+      >>= handle ~tags experiment contact_person organisational_unit
       |> Lwt_result.lift
     in
     let handle events =

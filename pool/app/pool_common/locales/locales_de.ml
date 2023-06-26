@@ -28,6 +28,7 @@ let rec field_to_string =
   | ConfirmedAt -> "Bestätigt am"
   | Contact -> "Kontakt"
   | ContactEmail -> "Kontakt E-Mail Adresse"
+  | ContactPerson -> "Kontaktperson"
   | Contacts -> "Kontakte"
   | CostCenter -> "Kostenstelle"
   | Context -> "Kontext"

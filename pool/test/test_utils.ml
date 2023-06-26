@@ -207,6 +207,7 @@ module Model = struct
       ; cost_center = Some ("F-00000-11-22" |> CostCenter.of_string)
       ; organisational_unit = None
       ; filter = None
+      ; contact_person_id = None
       ; session_reminder_lead_time =
           Ptime.Span.of_int_s @@ (60 * 60)
           |> Pool_common.Reminder.LeadTime.create

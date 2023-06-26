@@ -131,6 +131,7 @@ let index Pool_context.{ language; _ } experiment_list =
 let experiment_form
   ?experiment
   Pool_context.{ language; csrf; _ }
+  contact_persons
   organisational_units
   default_reminder_lead_time
   flash_fetcher
@@ -210,6 +211,12 @@ let experiment_form
             language
             organisational_units
             (CCOption.bind experiment (fun ex -> ex.organisational_unit))
+        ; admin_select
+            language
+            contact_persons
+            (CCOption.bind experiment (fun exp -> exp.contact_person_id))
+            Field.ContactPerson
+            ()
         ]
     ; checkbox_element
         ~help:I18n.DirectRegistrationDisbled
@@ -282,6 +289,7 @@ let create
   (Pool_context.{ language; _ } as context)
   organisational_units
   default_reminder_lead_time
+  contact_persons
   flash_fetcher
   =
   div
@@ -294,6 +302,7 @@ let create
         ]
     ; experiment_form
         context
+        contact_persons
         organisational_units
         default_reminder_lead_time
         flash_fetcher
@@ -305,8 +314,9 @@ let edit
   ({ Pool_context.language; _ } as context)
   sys_languages
   default_reminder_lead_time
-  invitation_templates
+  contact_persons
   organisational_units
+  invitation_templates
   session_reminder_templates
   flash_fetcher
   =
@@ -322,6 +332,7 @@ let edit
     experiment_form
       ~experiment
       context
+      contact_persons
       organisational_units
       default_reminder_lead_time
       flash_fetcher

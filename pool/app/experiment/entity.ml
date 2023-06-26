@@ -60,6 +60,7 @@ type t =
   ; cost_center : CostCenter.t option
   ; organisational_unit : Organisational_unit.t option
   ; filter : Filter.t option
+  ; contact_person_id : Admin.Id.t option
   ; direct_registration_disabled : DirectRegistrationDisabled.t
   ; registration_disabled : RegistrationDisabled.t
   ; allow_uninvited_signup : AllowUninvitedSignup.t
@@ -76,6 +77,7 @@ let create
   public_title
   description
   cost_center
+  contact_person_id
   organisational_unit
   direct_registration_disabled
   registration_disabled
@@ -92,6 +94,7 @@ let create
     ; cost_center
     ; organisational_unit
     ; filter = None
+    ; contact_person_id
     ; direct_registration_disabled
     ; registration_disabled
     ; allow_uninvited_signup

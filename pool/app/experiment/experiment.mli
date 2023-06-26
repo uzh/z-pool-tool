@@ -50,6 +50,7 @@ type t =
   ; cost_center : CostCenter.t option
   ; organisational_unit : Organisational_unit.t option
   ; filter : Filter.t option
+  ; contact_person_id : Admin.Id.t option
   ; direct_registration_disabled : DirectRegistrationDisabled.t
   ; registration_disabled : RegistrationDisabled.t
   ; allow_uninvited_signup : AllowUninvitedSignup.t
@@ -69,6 +70,7 @@ val create
   -> PublicTitle.t
   -> Description.t option
   -> CostCenter.t option
+  -> Admin.Id.t option
   -> Organisational_unit.t option
   -> DirectRegistrationDisabled.t
   -> RegistrationDisabled.t
