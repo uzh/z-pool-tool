@@ -115,7 +115,17 @@ module Data = struct
         in
         let mechanism = fst mechanism in
         let protocol = fst protocol in
-        Write.create ~id label server port username password mechanism protocol
+        let default = Default.create true in
+        Write.create
+          ~id
+          label
+          server
+          port
+          username
+          password
+          mechanism
+          protocol
+          default
       in
       auth |> CCResult.get_exn
     ;;

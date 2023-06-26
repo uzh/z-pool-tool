@@ -58,6 +58,7 @@ type t =
   | Date [@name "date"] [@printer go "date"]
   | DateTime [@name "date_time"] [@printer go "date_time"]
   | DefaultLanguage [@name "default_language"] [@printer go "default_language"]
+  | DefaultSmtpServer [@name "default"] [@printer go "default"]
   | Description [@name "description"] [@printer go "description"]
   | DirectRegistrationDisabled [@name "direct_registration_disabled"]
       [@printer go "direct_registration_disabled"]

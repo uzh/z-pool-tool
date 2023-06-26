@@ -170,6 +170,7 @@ type hint =
   | SessionReminderLanguageHint
   | SignUpForWaitingList
   | SmtpSettingsIntro
+  | SmtpSettingsDefaultFlag
   | TemplateTextElementsHint
   | TimeSpanPickerHint
   | WaitingListPhoneMissingContact

@@ -9,7 +9,7 @@ let show
   ?(settings_path = "/admin/settings")
   Pool_context.{ language; csrf; _ }
   flash_fetcher
-  { SmtpAuth.id; label; server; port; username; mechanism; protocol }
+  { SmtpAuth.id; label; server; port; username; mechanism; protocol; default }
   =
   let action_path sub =
     Sihl.Web.externalize_path
@@ -92,6 +92,11 @@ let show
               Protocol.all
               (Some protocol)
               ()
+          ; checkbox_element
+              ~value:(Default.value default)
+              ~help:Pool_common.I18n.SmtpSettingsDefaultFlag
+              language
+              Field.DefaultSmtpServer
           ; submit ()
           ]
       ]

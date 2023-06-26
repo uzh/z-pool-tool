@@ -320,6 +320,10 @@ If a contact showed up but did not participate in the experiment, do not select 
 
     Note: When using the mechanism "LOGIN" a username and password are required.
     |}
+  | SmtpSettingsDefaultFlag ->
+    "Attention: If another SMTP configuration is marked as default, this \
+     setting will be adjusted. Only one configuration can be marked as \
+     default."
   | TemplateTextElementsHint ->
     "The following text elements can be used inside the templates:"
   | TimeSpanPickerHint ->

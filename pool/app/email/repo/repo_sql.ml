@@ -194,7 +194,8 @@ module Smtp = struct
             username,
             %s
             mechanism,
-            protocol
+            protocol,
+            default_account
           FROM pool_smtp
         |sql}
         with_password_fragment
@@ -247,6 +248,18 @@ module Smtp = struct
     ||> CCOption.to_result Pool_common.Message.(NotFound Field.Smtp)
   ;;
 
+  let unset_default_flags pool =
+    let open Caqti_request.Infix in
+    let request =
+      {sql|
+        UPDATE pool_smtp
+          SET default_account = 0
+      |sql}
+      |> Caqti_type.(unit ->. unit)
+    in
+    Utils.Database.exec (Database.Label.value pool) request
+  ;;
+
   let insert_request =
     let open Caqti_request.Infix in
     {sql|
@@ -258,9 +271,11 @@ module Smtp = struct
         username,
         password,
         mechanism,
-        protocol
+        protocol,
+        default_account
       ) VALUES (
         UNHEX(REPLACE(?, '-', '')),
+        ?,
         ?,
         ?,
         ?,
@@ -273,8 +288,13 @@ module Smtp = struct
     |> RepoEntity.SmtpAuth.Write.t ->. Caqti_type.unit
   ;;
 
-  let insert pool =
-    Utils.Database.exec (Database.Label.value pool) insert_request
+  let insert pool t =
+    let%lwt () =
+      match t.SmtpAuth.Write.default with
+      | true -> unset_default_flags pool ()
+      | false -> Lwt.return ()
+    in
+    Utils.Database.exec (Database.Label.value pool) insert_request t
   ;;
 
   let update_request =
@@ -287,15 +307,21 @@ module Smtp = struct
         port = $4,
         username = $5,
         mechanism = $6,
-        protocol = $7
+        protocol = $7,
+        default_account = $8
       WHERE
         uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}
     |> RepoEntity.SmtpAuth.t ->. Caqti_type.unit
   ;;
 
-  let update pool =
-    Utils.Database.exec (Database.Label.value pool) update_request
+  let update pool t =
+    let%lwt () =
+      match t.SmtpAuth.default with
+      | true -> unset_default_flags pool ()
+      | false -> Lwt.return ()
+    in
+    Utils.Database.exec (Database.Label.value pool) update_request t
   ;;
 
   let update_password_request =

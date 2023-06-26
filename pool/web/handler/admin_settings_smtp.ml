@@ -8,6 +8,7 @@ module SmtpAuth = Email.SmtpAuth
 let src = Logs.Src.create "handler.admin.settings_schedule"
 let active_navigation = "/admin/settings/smtp"
 
+(* Add check to make sure there is always one default setting *)
 let show req =
   let result ({ Pool_context.database_label; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, "/")
@@ -24,6 +25,8 @@ let show req =
   result |> HttpUtils.extract_happy_path ~src req
 ;;
 
+let boolean_fields = Field.([ DefaultSmtpServer ] |> CCList.map show)
+
 let create ?(redirect_path = active_navigation) req =
   let tags = Pool_context.Logger.Tags.req req in
   let result { Pool_context.database_label; _ } =
@@ -35,6 +38,7 @@ let create ?(redirect_path = active_navigation) req =
     in
     let%lwt urlencoded =
       Sihl.Web.Request.to_urlencoded req
+      ||> HttpUtils.format_request_boolean_values boolean_fields
       ||> HttpUtils.remove_empty_values
       ||> CCList.cons
             ("smtp_label", [ Pool_database.Label.value database_label ])
@@ -70,6 +74,7 @@ let update_base ?(redirect_path = active_navigation) command success_message req
     let validate = SmtpAuth.find database_label in
     let%lwt urlencoded =
       Sihl.Web.Request.to_urlencoded req
+      ||> HttpUtils.format_request_boolean_values boolean_fields
       ||> HttpUtils.remove_empty_values
       ||> CCList.cons ("id", [ SmtpAuth.Id.value id ])
     in

@@ -130,6 +130,10 @@ module SmtpAuth : sig
       -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
   end
 
+  module Default : sig
+    include Pool_common.Model.BooleanSig
+  end
+
   type t =
     { id : Id.t
     ; label : Label.t
@@ -138,6 +142,7 @@ module SmtpAuth : sig
     ; username : Username.t option
     ; mechanism : Mechanism.t
     ; protocol : Protocol.t
+    ; default : Default.t
     }
 
   type update_password =
@@ -158,6 +163,7 @@ module SmtpAuth : sig
       ; password : Password.t option
       ; mechanism : Mechanism.t
       ; protocol : Protocol.t
+      ; default : Default.t
       }
 
     val create
@@ -169,6 +175,7 @@ module SmtpAuth : sig
       -> Password.t option
       -> Mechanism.t
       -> Protocol.t
+      -> Default.t
       -> (t, Pool_common.Message.error) result
   end
 

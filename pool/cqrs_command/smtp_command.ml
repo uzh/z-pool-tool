@@ -3,17 +3,18 @@ module SmtpAuth = Email.SmtpAuth
 
 let src = Logs.Src.create "smtp.cqrs"
 
-module Create : sig
-  type create =
-    { label : SmtpAuth.Label.t
-    ; server : SmtpAuth.Server.t
-    ; port : SmtpAuth.Port.t
-    ; username : SmtpAuth.Username.t option
-    ; password : SmtpAuth.Password.t option
-    ; mechanism : SmtpAuth.Mechanism.t
-    ; protocol : SmtpAuth.Protocol.t
-    }
+type create =
+  { label : SmtpAuth.Label.t
+  ; server : SmtpAuth.Server.t
+  ; port : SmtpAuth.Port.t
+  ; username : SmtpAuth.Username.t option
+  ; password : SmtpAuth.Password.t option
+  ; mechanism : SmtpAuth.Mechanism.t
+  ; protocol : SmtpAuth.Protocol.t
+  ; default : SmtpAuth.Default.t
+  }
 
+module Create : sig
   include Common.CommandSig with type t = create
 
   val decode
@@ -26,20 +27,10 @@ module Create : sig
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 end = struct
-  type create =
-    { label : SmtpAuth.Label.t
-    ; server : SmtpAuth.Server.t
-    ; port : SmtpAuth.Port.t
-    ; username : SmtpAuth.Username.t option
-    ; password : SmtpAuth.Password.t option [@opaque]
-    ; mechanism : SmtpAuth.Mechanism.t
-    ; protocol : SmtpAuth.Protocol.t
-    }
-
   type t = create
 
-  let command label server port username password mechanism protocol =
-    { label; server; port; username; password; mechanism; protocol }
+  let command label server port username password mechanism protocol default =
+    { label; server; port; username; password; mechanism; protocol; default }
   ;;
 
   let schema =
@@ -53,6 +44,7 @@ end = struct
           ; Conformist.optional @@ SmtpAuth.Password.schema ()
           ; SmtpAuth.Mechanism.schema ()
           ; SmtpAuth.Protocol.schema ()
+          ; SmtpAuth.Default.schema ()
           ]
         command)
   ;;
@@ -69,6 +61,7 @@ end = struct
       command.password
       command.mechanism
       command.protocol
+      command.default
     >|= fun smtp -> [ Email.SmtpCreated smtp |> Pool_event.email ]
   ;;
 
@@ -96,8 +89,8 @@ module Update : sig
 end = struct
   type t = SmtpAuth.t
 
-  let command id label server port username mechanism protocol =
-    { SmtpAuth.id; label; server; port; username; mechanism; protocol }
+  let command id label server port username mechanism protocol default =
+    { SmtpAuth.id; label; server; port; username; mechanism; protocol; default }
   ;;
 
   let schema =
@@ -111,6 +104,7 @@ end = struct
           ; Conformist.optional @@ SmtpAuth.Username.schema ()
           ; SmtpAuth.Mechanism.schema ()
           ; SmtpAuth.Protocol.schema ()
+          ; SmtpAuth.Default.schema ()
           ]
         command)
   ;;
@@ -125,6 +119,7 @@ end = struct
       ; username = command.SmtpAuth.username
       ; mechanism = command.SmtpAuth.mechanism
       ; protocol = command.SmtpAuth.protocol
+      ; default = command.SmtpAuth.default
       }
     in
     Ok [ Email.SmtpEdited update |> Pool_event.email ]

@@ -334,6 +334,10 @@ Wenn ein Kontakt zwar erschienen ist, aber nicht an dem Experiment teilgenommen 
 
     Beachte: Bei Verwendung des Mechanismus für "LOGIN" muss ein Benutzername und Passwort angegeben werden.
     |}
+  | SmtpSettingsDefaultFlag ->
+    "Achtung: Ist eine andere SMTP Konfiguration als Standard markiert, wird \
+     diese Einstellung angepasst. Nur eine Konfiguration kann als Standard \
+     markiert sein."
   | TemplateTextElementsHint ->
     "Die folgenden Textbausteine können in den Templates verwendet werden:"
   | TimeSpanPickerHint ->

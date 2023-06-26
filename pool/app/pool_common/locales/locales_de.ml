@@ -47,6 +47,7 @@ let rec field_to_string =
   | Date -> "Datum"
   | DateTime -> "Datum und Uhrzeit"
   | DefaultLanguage -> "Standard Sprache"
+  | DefaultSmtpServer -> "Standardserver"
   | Description -> "Beschreibung"
   | DirectRegistrationDisabled -> "Direkte Registrierung deaktiviert"
   | Disabled -> "Gesperrt"
