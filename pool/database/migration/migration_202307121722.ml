@@ -35,3 +35,8 @@ let migration () =
     |> add_step add_fk_contraint_to_contact_person_uuid
     |> add_step add_default_flag_to_smtp_accounts)
 ;;
+
+let migration_root () =
+  Sihl.Database.Migration.(
+    empty "202306231722" |> add_step add_default_flag_to_smtp_accounts)
+;;

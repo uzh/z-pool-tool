@@ -14,6 +14,35 @@ type create =
   ; default : SmtpAuth.Default.t
   }
 
+type update =
+  { label : SmtpAuth.Label.t
+  ; server : SmtpAuth.Server.t
+  ; port : SmtpAuth.Port.t
+  ; username : SmtpAuth.Username.t option
+  ; mechanism : SmtpAuth.Mechanism.t
+  ; protocol : SmtpAuth.Protocol.t
+  ; default : SmtpAuth.Default.t
+  }
+
+let update_command label server port username mechanism protocol default =
+  { label; server; port; username; mechanism; protocol; default }
+;;
+
+let update_schema =
+  Conformist.(
+    make
+      Field.
+        [ SmtpAuth.Label.schema ()
+        ; SmtpAuth.Server.schema ()
+        ; SmtpAuth.Port.schema ()
+        ; Conformist.optional @@ SmtpAuth.Username.schema ()
+        ; SmtpAuth.Mechanism.schema ()
+        ; SmtpAuth.Protocol.schema ()
+        ; SmtpAuth.Default.schema ()
+        ]
+      update_command)
+;;
+
 module Create : sig
   include Common.CommandSig with type t = create
 
@@ -74,10 +103,11 @@ end = struct
 end
 
 module Update : sig
-  include Common.CommandSig with type t = SmtpAuth.t
+  include Common.CommandSig with type t = update
 
   val handle
     :  ?tags:Logs.Tag.set
+    -> SmtpAuth.t
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
@@ -87,46 +117,26 @@ module Update : sig
 
   val effects : SmtpAuth.Id.t -> Guard.ValidationSet.t
 end = struct
-  type t = SmtpAuth.t
+  type t = update
 
-  let command id label server port username mechanism protocol default =
-    { SmtpAuth.id; label; server; port; username; mechanism; protocol; default }
-  ;;
-
-  let schema =
-    Conformist.(
-      make
-        Field.
-          [ SmtpAuth.Id.schema ()
-          ; SmtpAuth.Label.schema ()
-          ; SmtpAuth.Server.schema ()
-          ; SmtpAuth.Port.schema ()
-          ; Conformist.optional @@ SmtpAuth.Username.schema ()
-          ; SmtpAuth.Mechanism.schema ()
-          ; SmtpAuth.Protocol.schema ()
-          ; SmtpAuth.Default.schema ()
-          ]
-        command)
-  ;;
-
-  let handle ?(tags = Logs.Tag.empty) (command : t) =
+  let handle ?(tags = Logs.Tag.empty) (smtp_auth : SmtpAuth.t) (command : t) =
     Logs.info ~src (fun m -> m "Handle command Edit" ~tags);
     let update =
-      { SmtpAuth.id = command.SmtpAuth.id
-      ; label = command.SmtpAuth.label
-      ; server = command.SmtpAuth.server
-      ; port = command.SmtpAuth.port
-      ; username = command.SmtpAuth.username
-      ; mechanism = command.SmtpAuth.mechanism
-      ; protocol = command.SmtpAuth.protocol
-      ; default = command.SmtpAuth.default
+      { SmtpAuth.id = smtp_auth.SmtpAuth.id
+      ; label = command.label
+      ; server = command.server
+      ; port = command.port
+      ; username = command.username
+      ; mechanism = command.mechanism
+      ; protocol = command.protocol
+      ; default = command.default
       }
     in
     Ok [ Email.SmtpEdited update |> Pool_event.email ]
   ;;
 
   let decode data =
-    Conformist.decode_and_validate schema data
+    Conformist.decode_and_validate update_schema data
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 

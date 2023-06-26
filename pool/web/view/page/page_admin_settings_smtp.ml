@@ -5,15 +5,61 @@ module Message = Pool_common.Message
 module Field = Message.Field
 module SmtpAuth = Email.SmtpAuth
 
+let base_path = function
+  | `Tenant -> "/admin/settings/smtp"
+  | `Root -> "/root/settings/smtp"
+;;
+
+let index Pool_context.{ language; _ } location smtp_auth_list =
+  let thead =
+    let add_btn =
+      Component.Input.link_as_button
+        ~style:`Success
+        ~icon:Icon.Add
+        ~control:(language, Pool_common.Message.(Add (Some Field.Smtp)))
+        (Format.asprintf "%s/new" (base_path location))
+    in
+    (Pool_common.Message.Field.
+       [ Label; SmtpServer; SmtpUsername; SmtpMechanism; SmtpProtocol ]
+     |> Component.Table.fields_to_txt language)
+    @ [ add_btn ]
+  in
+  let rows =
+    let open SmtpAuth in
+    smtp_auth_list
+    |> CCList.map (fun auth ->
+         [ auth.label |> Label.value |> txt
+         ; auth.server |> Server.value |> txt
+         ; auth.username |> CCOption.map_or ~default:"" Username.value |> txt
+         ; auth.mechanism |> Mechanism.show |> txt
+         ; auth.protocol |> Protocol.show |> txt
+         ; edit_link
+             (Format.asprintf
+                "%s/%s"
+                (base_path location)
+                (auth.id |> Id.value))
+         ])
+  in
+  div
+    ~a:[ a_class [ "trim"; "safety-margin" ] ]
+    [ h1 ~a:[ a_class [ "heading-1" ] ] [ txt "Email Server Settings (SMTP)" ]
+    ; Component.Table.horizontal_table `Striped ~align_last_end:true ~thead rows
+    ]
+;;
+
 let show
-  ?(settings_path = "/admin/settings")
   Pool_context.{ language; csrf; _ }
+  location
   flash_fetcher
   { SmtpAuth.id; label; server; port; username; mechanism; protocol; default }
   =
   let action_path sub =
     Sihl.Web.externalize_path
-      (Format.asprintf "%s/smtp/%s%s" settings_path (SmtpAuth.Id.value id) sub)
+      (Format.asprintf
+         "%s/%s%s"
+         (base_path location)
+         (SmtpAuth.Id.value id)
+         sub)
   in
   let submit
     ?submit_type
@@ -60,11 +106,7 @@ let show
       [ form
           ~a:(action_path "" |> form_attrs)
           [ csrf_element csrf ()
-          ; input_element
-              ~value:(Label.value label)
-              language
-              `Hidden
-              Field.SmtpLabel
+          ; input_element_root Field.SmtpLabel Label.value label
           ; input_element_root Field.SmtpServer Server.value server
           ; input_element_root
               ~field_type:`Number
@@ -139,13 +181,13 @@ let show
     ]
 ;;
 
-let smtp_create_form
-  ?(settings_path = "/admin/settings")
-  Pool_context.{ language; csrf; _ }
-  flash_fetcher
-  =
+(* TODO: Add option to force default *)
+let smtp_create_form Pool_context.{ language; csrf; _ } location flash_fetcher =
   let action_path =
-    Sihl.Web.externalize_path (Format.asprintf "%s/smtp/create" settings_path)
+    location
+    |> base_path
+    |> Format.asprintf "%s/create"
+    |> Sihl.Web.externalize_path
   in
   let submit () =
     div
@@ -169,12 +211,14 @@ let smtp_create_form
         ; a_user_data "detect-unsaved-changes" ""
         ]
       [ csrf_element csrf ()
+      ; input_element ~required ~flash_fetcher language `Text Field.SmtpLabel
       ; input_element ~required ~flash_fetcher language `Text Field.SmtpServer
       ; input_element ~required ~flash_fetcher language `Number Field.SmtpPort
       ; input_element ~flash_fetcher language `Text Field.SmtpUsername
       ; input_element language `Password Field.SmtpPassword
       ; selector
           ~required
+          ~flash_fetcher
           language
           Field.SmtpMechanism
           Mechanism.show
@@ -183,12 +227,18 @@ let smtp_create_form
           ()
       ; selector
           ~required
+          ~flash_fetcher
           language
           Field.SmtpProtocol
           Protocol.show
           Protocol.all
           None
           ()
+      ; checkbox_element
+          ~flash_fetcher
+          ~help:Pool_common.I18n.SmtpSettingsDefaultFlag
+          language
+          Field.DefaultSmtpServer
       ; submit ()
       ]
   in

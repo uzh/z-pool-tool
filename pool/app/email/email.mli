@@ -184,13 +184,18 @@ module SmtpAuth : sig
     -> Id.t
     -> (t, Pool_common.Message.error) Lwt_result.t
 
-  val find_by_label
-    :  Pool_database.Label.t
-    -> (t, Pool_common.Message.error) Lwt_result.t
+  val find_by_label : Pool_database.Label.t -> Label.t -> t option Lwt.t
 
+  (* TODO: Can probably be removed *)
   val find_full_by_label
     :  Pool_database.Label.t
     -> (Write.t, Pool_common.Message.error) Lwt_result.t
+
+  val find_default
+    :  Pool_database.Label.t
+    -> (t, Pool_common.Message.error) Lwt_result.t
+
+  val find_all : Pool_database.Label.t -> t list Lwt.t
 end
 
 module Service : sig

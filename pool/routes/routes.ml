@@ -608,11 +608,13 @@ module Admin = struct
       let smtp =
         let open Smtp in
         let specific =
-          [ post "" ~middlewares:[ Access.update ] update
+          [ get "" ~middlewares:[ Access.update ] show
+          ; post "" ~middlewares:[ Access.update ] update
           ; post "/password" ~middlewares:[ Access.update ] update_password
           ]
         in
-        [ get "" ~middlewares:[ Access.index ] show
+        [ get "" ~middlewares:[ Access.index ] index
+        ; get "/new" ~middlewares:[ Access.create ] new_form
         ; post "/create" ~middlewares:[ Access.create ] create
         ; choose ~scope:(Smtp |> url_key) specific
         ]

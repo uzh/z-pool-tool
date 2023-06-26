@@ -462,6 +462,8 @@ let rec error_to_string = function
   | TokenAlreadyUsed -> "The token was already used."
   | TokenInvalidFormat -> "Invalid Token Format!"
   | Undefined field -> field_message "Undefined" (field_to_string field) ""
+  | Uniqueness field ->
+    field_message "" (field_to_string field) "must be unique."
   | WriteOnlyModel -> "Write only model!"
 ;;
 

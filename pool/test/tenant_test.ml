@@ -96,6 +96,7 @@ module Data = struct
       ; Field.SmtpPassword, [ password ]
       ; Field.SmtpMechanism, [ snd mechanism ]
       ; Field.SmtpProtocol, [ snd protocol ]
+      ; Field.DefaultSmtpServer, [ "true" ]
       ]
       |> CCList.map (CCPair.map_fst Field.show)
     ;;
