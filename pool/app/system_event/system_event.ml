@@ -1,8 +1,5 @@
 include Entity
 include Event
-
-module Service = struct
-  include Service
-end
+module Service = Service
 
 let find_pending = Repo.find_pending

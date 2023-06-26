@@ -123,15 +123,9 @@ module Tenant = struct
   ;;
 end
 
-type event =
-  | Added of Pool_database.t
-  | Migrated of Pool_database.Label.t
-  | InitializedGuard of Pool_database.Label.t
-[@@deriving eq, show]
+type event = Migrated of Pool_database.Label.t [@@deriving eq, show]
 
 let handle_event _ : event -> unit Lwt.t = function
-  (* Is this event still needed? *)
-  | Added pool -> Pool_database.add_pool pool |> Lwt.return
   | Migrated label ->
     let () =
       Logs.info (fun m -> m "Migrating: %s" Pool_database.(Label.show label))
@@ -141,11 +135,7 @@ let handle_event _ : event -> unit Lwt.t = function
       | true -> Migration.Root.run ()
       | false -> Migration.Tenant.run [ label ] ()
     in
-    Lwt.return_unit
-    (* Added: This has to run after the migrations, Should it be a separate
-       event? *)
-  | InitializedGuard database_label ->
-    Guard.Persistence.start ~ctx:(Pool_database.to_ctx database_label) ()
+    Guard.Persistence.start ~ctx:(Pool_database.to_ctx label) ()
 ;;
 
 let start () =

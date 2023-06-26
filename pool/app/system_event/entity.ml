@@ -50,7 +50,13 @@ module EventLog = struct
 
     let field = Pool_common.Message.Field.Host
     let schema () = schema field ()
-    let get () = () |> Unix.getpid |> CCInt.to_string
+
+    let get () =
+      Format.asprintf
+        "%s-%s"
+        (Unix.gethostname ())
+        (() |> Unix.getpid |> CCInt.to_string)
+    ;;
   end
 
   let print = Utils.ppx_printer
@@ -104,14 +110,12 @@ module EventLog = struct
   [@@deriving eq, show]
 
   let create ?message event_id service_identifier status =
-    let open CCResult in
-    Ok
-      { event_id
-      ; service_identifier
-      ; status
-      ; message
-      ; created_at = Pool_common.CreatedAt.create ()
-      ; updated_at = Pool_common.UpdatedAt.create ()
-      }
+    { event_id
+    ; service_identifier
+    ; status
+    ; message
+    ; created_at = Pool_common.CreatedAt.create ()
+    ; updated_at = Pool_common.UpdatedAt.create ()
+    }
   ;;
 end

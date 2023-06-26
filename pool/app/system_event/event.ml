@@ -9,38 +9,18 @@ let handle_event : event -> unit Lwt.t = function
 
 let handle_system_event system_event =
   let open Utils.Lwt_result.Infix in
+  let open EventLog in
   let pool = Pool_database.root in
-  let created_at = Pool_common.CreatedAt.create () in
-  let updated_at = Pool_common.UpdatedAt.create () in
-  let success identifier =
-    EventLog.
-      { event_id = system_event.id
-      ; service_identifier = identifier
-      ; status = Status.Successful
-      ; message = None
-      ; created_at
-      ; updated_at
-      }
+  let create_event_log ?message status =
+    create ?message system_event.id (ServiceIdentifier.get ()) status
+    |> Repo.EventLog.insert pool
   in
-  let failed identifier message =
-    EventLog.
-      { event_id = system_event.id
-      ; service_identifier = identifier
-      ; status = Status.Failed
-      ; message = Some message
-      ; created_at
-      ; updated_at
-      }
-  in
-  let handle_result =
-    let identifier = EventLog.ServiceIdentifier.get () in
-    let insert = Repo.EventLog.insert pool in
-    function
-    | Ok _ -> success identifier |> insert
+  let success_log () = create_event_log Status.Successful in
+  let error_log message = create_event_log ~message Status.Successful in
+  let handle_result = function
+    | Ok _ -> success_log ()
     | Error err ->
-      Pool_common.(Utils.error_to_string Language.En) err
-      |> failed identifier
-      |> insert
+      err |> Pool_common.(Utils.error_to_string Language.En) |> error_log
   in
   let add_pool database_label =
     Pool_tenant.find_database_by_label database_label
@@ -50,10 +30,7 @@ let handle_system_event system_event =
   match system_event.job with
   | GuardianCacheCleared ->
     let () = Guard.Persistence.Cache.clear () in
-    let%lwt () =
-      EventLog.ServiceIdentifier.get () |> success |> Repo.EventLog.insert pool
-    in
-    Lwt.return_unit
+    success_log ()
   | TenantDatabaseAdded database_label ->
     add_pool database_label >|> handle_result
   | TenantDatabaseUpdated database_label ->
@@ -61,5 +38,5 @@ let handle_system_event system_event =
     add_pool database_label >|> handle_result
   | TenantDatabaseDeleted database_label ->
     let%lwt () = Pool_database.drop_pool database_label in
-    EventLog.ServiceIdentifier.get () |> success |> Repo.EventLog.insert pool
+    success_log ()
 ;;
