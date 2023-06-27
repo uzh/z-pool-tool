@@ -3,20 +3,17 @@ module Message = Pool_common.Message
 
 let src = Logs.Src.create "login helper"
 
-module Cache = struct
-  open Hashtbl
+let get_or_failwith_pool_error res =
+  res
+  |> CCResult.map_err Pool_common.(Utils.error_to_string Language.En)
+  |> CCResult.get_or_failwith
+;;
 
-  let tbl : (Label.t * string, int * Ptime.t option) t = create 100
-  let set key value = replace tbl key value
-  let remove = remove tbl
-  let find_opt = find_opt tbl
-end
-
-let notify_user database_label (counter, _) tags email =
+let notify_user database_label tags email =
   let open Utils.Lwt_result.Infix in
-  if not (CCInt.equal counter 5)
-  then Lwt.return ()
-  else (
+  function
+  | None -> Lwt.return ()
+  | Some (_ : Pool_user.FailedLoginAttempt.BlockedUntil.t) ->
     let notify () =
       email
       |> Service.User.find_by_email_opt
@@ -39,11 +36,13 @@ let notify_user database_label (counter, _) tags email =
             Pool_common.(Utils.error_to_string Language.En err));
         err
     in
-    () |> notify ||> CCFun.const ())
+    () |> notify ||> CCFun.const ()
 ;;
 
 let block_until counter =
+  let open Pool_user.FailedLoginAttempt in
   let minutes =
+    let counter = counter |> Counter.value in
     match counter with
     | _ when counter < 5 -> None
     | _ when counter < 6 -> Some 1
@@ -54,11 +53,14 @@ let block_until counter =
     | _ -> Some (60 * 24)
   in
   minutes
-  |> CCOption.map (fun min ->
-       min * 60
-       |> Ptime.Span.of_int_s
-       |> Ptime.add_span (Ptime_clock.now ())
-       |> CCOption.get_exn_or "Invalid time span provided")
+  |> CCOption.map (fun minutes ->
+       let open Ptime in
+       minutes * 60
+       |> Span.of_int_s
+       |> add_span (Ptime_clock.now ())
+       |> CCOption.get_exn_or "Invalid time span provided"
+       |> BlockedUntil.create
+       |> get_or_failwith_pool_error)
 ;;
 
 let login_params urlencoded =
@@ -90,35 +92,50 @@ let log_request req tags email =
 
 let login req urlencoded database_label =
   let open Utils.Lwt_result.Infix in
+  let open Pool_user.FailedLoginAttempt in
   let tags = Pool_context.Logger.Tags.req req in
   let* email, password = login_params urlencoded in
-  let init = 0, None in
-  let increment counter =
-    let counter = counter + 1 in
-    counter, block_until counter
-  in
-  let key = database_label, email in
-  let handle_login (counter, blocked) =
-    let suspension_error handler = function
+  let handle_login login_attempts =
+    let increment counter =
+      let counter = Counter.increment counter in
+      let blocked_until = block_until counter in
+      let m =
+        match login_attempts with
+        | None -> create email counter blocked_until
+        | Some login_attempts -> { login_attempts with counter; blocked_until }
+      in
+      let%lwt () = Repo.insert database_label m in
+      Lwt.return m
+    in
+    let counter, blocked_until =
+      match login_attempts with
+      | Some { counter; blocked_until; _ } -> counter, blocked_until
+      | None -> Counter.init, None
+    in
+    let suspension_error handler blocked_until =
+      blocked_until
+      |> CCOption.map BlockedUntil.value
+      |> function
       | Some blocked when Ptime.(is_earlier (Ptime_clock.now ()) ~than:blocked)
-        ->
-        (* TODO: Create system event *)
-        (* let%lwt system_event = System_event.create  *)
-        Lwt_result.fail (Message.AccountTemporarilySuspended blocked)
+        -> Lwt_result.fail (Message.AccountTemporarilySuspended blocked)
       | None | _ -> handler ()
     in
     let handle_result = function
       | Ok user ->
-        let () = Cache.remove key in
+        let%lwt () =
+          login_attempts
+          |> CCOption.map_or
+               ~default:(Lwt.return ())
+               (Repo.delete database_label)
+        in
         Lwt_result.return user
       | Error err ->
         log_request req tags email;
-        let ((_, blocked) as counter) = counter |> increment in
-        let () = Cache.set key counter in
-        let%lwt () = notify_user database_label counter tags email in
+        let%lwt { blocked_until; _ } = counter |> increment in
+        let%lwt () = notify_user database_label tags email blocked_until in
         suspension_error
           (fun () -> err |> Message.handle_sihl_login_error |> Lwt_result.fail)
-          blocked
+          blocked_until
     in
     let login () =
       Service.User.login
@@ -127,7 +144,9 @@ let login req urlencoded database_label =
         ~password
       >|> handle_result
     in
-    suspension_error login blocked
+    suspension_error login blocked_until
   in
-  key |> Cache.find_opt |> CCOption.value ~default:init |> handle_login
+  email
+  |> Pool_user.FailedLoginAttempt.Repo.find_opt database_label
+  >|> handle_login
 ;;

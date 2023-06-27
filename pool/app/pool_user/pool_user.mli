@@ -205,3 +205,55 @@ val user_firstname : Sihl_user.t -> Firstname.t
 val user_lastname : Sihl_user.t -> Lastname.t
 val user_fullname : Sihl_user.t -> string
 val user_email_address : Sihl_user.t -> EmailAddress.t
+
+module FailedLoginAttempt : sig
+  module Id : sig
+    include Pool_common.Model.IdSig
+  end
+
+  module Counter : sig
+    type t
+
+    val equal : t -> t -> bool
+    val pp : Format.formatter -> t -> unit
+    val show : t -> string
+    val create : int -> t
+    val init : t
+    val value : t -> int
+    val increment : t -> t
+  end
+
+  module BlockedUntil : sig
+    type t
+
+    val equal : t -> t -> bool
+    val show : t -> string
+    val pp : Format.formatter -> t -> unit
+    val value : t -> Ptime.t
+    val create : Ptime.t -> (t, Pool_common.Message.error) result
+  end
+
+  type t =
+    { id : Id.t
+    ; email : Entity.EmailAddress.t
+    ; counter : Counter.t
+    ; blocked_until : BlockedUntil.t option
+    }
+
+  val create
+    :  ?id:Id.t
+    -> Entity.EmailAddress.t
+    -> Counter.t
+    -> BlockedUntil.t option
+    -> t
+
+  module Repo : sig
+    val find_opt
+      :  Pool_database.Label.t
+      -> Entity.EmailAddress.t
+      -> t option Lwt.t
+
+    val insert : Pool_database.Label.t -> t -> unit Lwt.t
+    val delete : Pool_database.Label.t -> t -> unit Lwt.t
+  end
+end
