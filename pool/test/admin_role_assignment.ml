@@ -72,6 +72,7 @@ let grant_roles _ () =
     |> Lwt_result.lift
     >== (fun () -> GrantRoles.handle role)
     |>> Pool_event.handle_events db
+    >|+ Guard.Persistence.Cache.clear
   in
   let%lwt () =
     let role = `Experimenter Experiment.(exp1.id |> Uuid.target_of Id.value) in

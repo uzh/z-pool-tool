@@ -12,6 +12,7 @@
   sihl
   tenant
   utils
+  system_event
   version)
  (preprocess
   (pps lwt_ppx ppx_deriving.show)))

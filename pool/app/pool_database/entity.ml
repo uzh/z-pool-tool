@@ -49,6 +49,12 @@ let add_pool model =
   Sihl.Database.add_pool ~pool_size model.label model.url
 ;;
 
+let drop_pool label =
+  let label = Label.value label in
+  let%lwt () = GuardBackend.drop_pool label in
+  Sihl.Database.drop_pool label
+;;
+
 let read_pool m = m.label
 let pp formatter m = Label.pp formatter m.label
 let to_ctx pool = [ "pool", Label.value pool ]

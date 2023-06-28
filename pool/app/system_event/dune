@@ -1,35 +1,25 @@
 (library
- (name cqrs_command)
+ (name system_event)
  (libraries
-  admin
   conformist
-  custom_field
-  contact
-  contact_counter
   database
-  email
-  experiment
-  filter
   guard
-  i18n
   pool_common
-  pool_event
-  pool_location
+  pool_database
   pool_tenant
-  pool_user
-  role
-  session
-  settings
+  ppx_deriving_yojson.runtime
+  schedule
   sihl
-  system_event
-  tenant)
+  utils)
  (preprocess
   (pps
-   ppx_here
    lwt_ppx
    ppx_deriving.enum
    ppx_deriving.eq
+   ppx_deriving.ord
    ppx_deriving.show
    ppx_sexp_conv
    ppx_variants_conv
    ppx_yojson_conv)))
+
+(include_subdirs unqualified)

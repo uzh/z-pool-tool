@@ -199,6 +199,10 @@ val find_by_label
 val find_all : unit -> t list Lwt.t
 val find_databases : unit -> Database.t list Lwt.t
 
+val find_database_by_label
+  :  Pool_database.Label.t
+  -> (Database.t, Pool_common.Message.error) Lwt_result.t
+
 val find_gtx_api_key_by_label
   :  Pool_database.Label.t
   -> (GtxApiKey.t, Pool_common.Message.error) result Lwt.t

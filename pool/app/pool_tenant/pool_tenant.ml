@@ -12,6 +12,7 @@ let find_full = Repo.find_full Database.root
 let find_by_label = Repo.find_by_label Database.root
 let find_all = Repo.find_all Database.root
 let find_databases = Repo.find_databases Database.root
+let find_database_by_label = Repo.find_database_by_label Database.root
 let find_gtx_api_key_by_label = Repo.find_gtx_api_key_by_label Database.root
 
 type handle_list_recruiters = unit -> Sihl_user.t list Lwt.t

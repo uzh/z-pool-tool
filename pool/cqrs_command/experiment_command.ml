@@ -140,6 +140,7 @@ module Delete : sig
 
   val handle
     :  ?tags:Logs.Tag.set
+    -> ?system_event_id:System_event.Id.t
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
@@ -158,6 +159,7 @@ end = struct
 
   let handle
     ?(tags = Logs.Tag.empty)
+    ?system_event_id
     { experiment
     ; session_count
     ; mailings
@@ -200,7 +202,8 @@ end = struct
        @ (mailings |> CCList.map delete_mailing)
        @ (experimenters |> CCList.map revoke_experimenter)
        @ (assistants |> CCList.map revoke_assistant)
-       @ (templates |> CCList.map delete_template))
+       @ (templates |> CCList.map delete_template)
+       @ [ Common.guardian_cache_cleared_event ?id:system_event_id () ])
   ;;
 
   let effects = Experiment.Guard.Access.delete
@@ -219,6 +222,7 @@ end = struct
       [ BaseGuard.RolesGranted
           (admin |> to_actor, `Assistant (experiment |> to_target) |> to_role)
         |> Pool_event.guard
+      ; Common.guardian_cache_cleared_event ()
       ]
   ;;
 
@@ -249,6 +253,7 @@ end = struct
       [ BaseGuard.RolesRevoked
           (admin |> to_actor, `Assistant (experiment |> to_target) |> to_role)
         |> Pool_event.guard
+      ; Common.guardian_cache_cleared_event ()
       ]
   ;;
 
@@ -283,6 +288,7 @@ end = struct
             |> BaseGuard.RoleSet.add
                  (`ManageAssistant (experiment |> to_target)) )
         |> Pool_event.guard
+      ; Common.guardian_cache_cleared_event ()
       ]
   ;;
 
@@ -317,6 +323,7 @@ end = struct
             |> BaseGuard.RoleSet.add
                  (`ManageAssistant (experiment |> to_target)) )
         |> Pool_event.guard
+      ; Common.guardian_cache_cleared_event ()
       ]
   ;;
 

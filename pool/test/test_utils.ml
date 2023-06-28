@@ -21,6 +21,10 @@ let message_template =
 
 let tenant_smtp_auth = Alcotest.testable Email.SmtpAuth.pp Email.SmtpAuth.equal
 
+let database_label =
+  Alcotest.testable Pool_database.Label.pp Pool_database.Label.equal
+;;
+
 let error =
   Alcotest.testable Pool_common.Message.pp_error Pool_common.Message.equal_error
 ;;

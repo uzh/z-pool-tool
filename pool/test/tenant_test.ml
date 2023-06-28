@@ -232,28 +232,38 @@ let[@warning "-4"] create_tenant () =
     Pool_tenant_command.Create.(
       Data.urlencoded |> decode >>= handle database api_key)
   in
+  let root_events, tenant_events =
+    events
+    |> fail_with
+    |> fun (root_events, (_, tenant_events)) -> Ok root_events, Ok tenant_events
+  in
   let ( tenant_id
       , created_at
       , updated_at
       , (logo_id, logo_asset_id)
       , (partner_logo_id, partner_logo_asset_id)
-      , database_label )
+      , database_label
+      , db_added_event
+      , guardian_cache_cleared_event )
     =
     (* Read Ids and timestamps to create an equal event list *)
     events
     |> Test_utils.get_or_failwith_pool_error
     |> function
-    | [ Pool_event.PoolTenant
-          Pool_tenant.(Created Write.{ id; created_at; updated_at; _ })
-      ; Pool_event.PoolTenant
-          (Pool_tenant.LogosUploaded [ partner_logo; tenant_logo ])
-      ; Pool_event.Database (Database.Added _)
-      ; Pool_event.Database (Database.Migrated database_label)
-      ; Pool_event.Settings (Settings.DefaultRestored _)
-      ; Pool_event.I18n (I18n.DefaultRestored _)
-      ; Pool_event.MessageTemplate (Message_template.DefaultRestored _)
-      ; Pool_event.Guard (Guard.DefaultRestored _)
-      ] ->
+    | ( [ Pool_event.PoolTenant
+            Pool_tenant.(Created Write.{ id; created_at; updated_at; _ })
+        ; Pool_event.PoolTenant
+            (Pool_tenant.LogosUploaded [ partner_logo; tenant_logo ])
+        ; Pool_event.Database (Database.Migrated _)
+        ; Pool_event.SystemEvent System_event.(Created db_added_event)
+        ; Pool_event.SystemEvent System_event.(Created guardian_cache_cleared)
+        ]
+      , ( database_label
+        , [ Pool_event.Settings (Settings.DefaultRestored _)
+          ; Pool_event.I18n (I18n.DefaultRestored _)
+          ; Pool_event.MessageTemplate (Message_template.DefaultRestored _)
+          ; Pool_event.Guard (Guard.DefaultRestored _)
+          ] ) ) ->
       let read_ids Pool_tenant.LogoMapping.Write.{ id; asset_id; _ } =
         id, asset_id
       in
@@ -262,38 +272,41 @@ let[@warning "-4"] create_tenant () =
       , updated_at
       , tenant_logo |> read_ids
       , partner_logo |> read_ids
-      , database_label )
+      , database_label
+      , db_added_event.System_event.id
+      , guardian_cache_cleared.System_event.id )
     | _ -> failwith "Tenant create events don't match in test."
   in
-  let expected =
+  let expected_root_events, (expected_database_label, expected_tenant_events) =
     let open CCResult in
-    let* title = title |> Pool_tenant.Title.create in
-    let* description =
-      description |> Pool_tenant.Description.create >|= CCOption.return
+    let database =
+      let url = database_url |> Pool_tenant.Database.Url.create |> fail_with in
+      Pool_database.{ url; label = database_label }
     in
-    let* url = url |> Pool_tenant.Url.create in
-    let* (database : Pool_database.t) =
-      let* url = database_url |> Pool_tenant.Database.Url.create in
-      Ok Pool_database.{ url; label = database_label }
-    in
-    let gtx_api_key = Data.gtx_api_key |> Pool_tenant.GtxApiKey.of_string in
-    let* default_language = default_language |> Common.Language.create in
-    let create : Pool_tenant.Write.t =
-      Pool_tenant.Write.
-        { id = tenant_id
-        ; title
-        ; description
-        ; url
-        ; database
-        ; gtx_api_key
-        ; styles = styles |> CCOption.return
-        ; icon = icon |> CCOption.return
-        ; maintenance = Pool_tenant.Maintenance.create false
-        ; disabled = Pool_tenant.Disabled.create false
-        ; default_language
-        ; created_at
-        ; updated_at
-        }
+    let create =
+      let* title = title |> Pool_tenant.Title.create in
+      let* description =
+        description |> Pool_tenant.Description.create >|= CCOption.return
+      in
+      let* url = url |> Pool_tenant.Url.create in
+      let* default_language = default_language |> Common.Language.create in
+      let gtx_api_key = Data.gtx_api_key |> Pool_tenant.GtxApiKey.of_string in
+      Ok
+        Pool_tenant.Write.
+          { id = tenant_id
+          ; title
+          ; description
+          ; url
+          ; database
+          ; gtx_api_key
+          ; styles = styles |> CCOption.return
+          ; icon = icon |> CCOption.return
+          ; maintenance = Pool_tenant.Maintenance.create false
+          ; disabled = Pool_tenant.Disabled.create false
+          ; default_language
+          ; created_at
+          ; updated_at
+          }
     in
     let logos : Pool_tenant.LogoMapping.Write.t list =
       Pool_tenant.LogoMapping.Write.
@@ -309,24 +322,55 @@ let[@warning "-4"] create_tenant () =
           }
         ]
     in
-    Ok
-      [ Pool_tenant.Created create |> Pool_event.pool_tenant
+    let expected_root_events =
+      [ Pool_tenant.Created (create |> fail_with) |> Pool_event.pool_tenant
       ; Pool_tenant.LogosUploaded logos |> Pool_event.pool_tenant
-      ; Database.Added database |> Pool_event.database
-      ; Database.Migrated database_label |> Pool_event.database
-      ; Settings.(DefaultRestored default_values) |> Pool_event.settings
+      ; Database.Migrated database.Pool_database.label |> Pool_event.database
+      ; System_event.(
+          Job.TenantDatabaseAdded database_label
+          |> create ~id:db_added_event
+          |> created)
+        |> Pool_event.system_event
+      ; System_event.(
+          Job.GuardianCacheCleared
+          |> create ~id:guardian_cache_cleared_event
+          |> created)
+        |> Pool_event.system_event
+      ]
+    in
+    let expected_tenant_events =
+      [ Settings.(DefaultRestored default_values) |> Pool_event.settings
       ; I18n.(DefaultRestored default_values) |> Pool_event.i18n
-      ; Message_template.(DefaultRestored default_values_tenant)
-        |> Pool_event.message_template
+      ; Message_template.(
+          DefaultRestored default_values_tenant |> Pool_event.message_template)
       ; Guard.(DefaultRestored root_permissions) |> Pool_event.guard
       ]
+    in
+    ( Ok expected_root_events
+    , (database.Pool_database.label, Ok expected_tenant_events) )
+  in
+  let () =
+    Alcotest.(
+      check
+        (result (list Test_utils.event) Test_utils.error)
+        "succeeds"
+        expected_root_events
+        root_events)
+  in
+  let () =
+    Alcotest.(
+      check
+        (result (list Test_utils.event) Test_utils.error)
+        "succeeds"
+        expected_tenant_events
+        tenant_events)
   in
   Alcotest.(
     check
-      (result (list Test_utils.event) Test_utils.error)
+      Test_utils.database_label
       "succeeds"
-      expected
-      events)
+      expected_database_label
+      database_label)
 ;;
 
 let[@warning "-4"] update_tenant_details () =
@@ -391,19 +435,20 @@ let update_tenant_database () =
   match Data.tenant with
   | Error _ -> failwith "Failed to create tenant"
   | Ok tenant ->
+    let system_event_id = System_event.Id.create () in
     let events =
-      let open Pool_tenant_command.CreateDatabase in
+      let open Pool_tenant_command in
       let database =
         Common.Message.Field.
           [ DatabaseUrl |> show, [ database_url ]
           ; DatabaseLabel |> show, [ database_label ]
           ]
-        |> decode
+        |> decode_database
         >>= (fun { database_url; database_label } ->
               Pool_database.create database_label database_url)
         |> Test_utils.get_or_failwith_pool_error
       in
-      handle tenant database
+      UpdateDatabase.handle ~system_event_id tenant database
     in
     let expected =
       let open Pool_database in
@@ -414,6 +459,11 @@ let update_tenant_database () =
       Ok
         [ Pool_tenant.DatabaseEdited (tenant, database)
           |> Pool_event.pool_tenant
+        ; System_event.(
+            Job.TenantDatabaseUpdated database.Pool_database.label
+            |> create ~id:system_event_id
+            |> created)
+          |> Pool_event.system_event
         ]
     in
     Alcotest.(

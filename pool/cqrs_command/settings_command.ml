@@ -326,7 +326,10 @@ end = struct
 
   let handle ?(tags = Logs.Tag.empty) () =
     Logs.info ~src (fun m -> m "Handle command RestoreDefault" ~tags);
-    Ok [ Settings.(DefaultRestored default_values) |> Pool_event.settings ]
+    Ok
+      [ Settings.(DefaultRestored default_values) |> Pool_event.settings
+      ; Common.guardian_cache_cleared_event ()
+      ]
   ;;
 
   let effects =

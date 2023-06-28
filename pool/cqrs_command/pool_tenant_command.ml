@@ -26,6 +26,11 @@ type create =
   ; partner_logos : Pool_common.Id.t list option
   }
 
+let system_event_from_job ?id job =
+  let open System_event in
+  job |> create ?id |> created |> Pool_event.system_event
+;;
+
 module Create : sig
   type t = create
 
@@ -38,7 +43,9 @@ module Create : sig
     -> Pool_database.t
     -> Pool_tenant.GtxApiKey.t
     -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> ( Pool_event.t list * (Pool_database.Label.t * Pool_event.t list)
+       , Pool_common.Message.error )
+       result
 
   val effects : Guard.ValidationSet.t
 end = struct
@@ -104,17 +111,24 @@ end = struct
         ]
       |> CCList.flatten
     in
-    Ok
+    let root_events =
       [ Pool_tenant.Created tenant |> Pool_event.pool_tenant
       ; Pool_tenant.LogosUploaded logo_mappings |> Pool_event.pool_tenant
-      ; Database.Added database |> Pool_event.database
       ; Database.Migrated database.Pool_database.label |> Pool_event.database
-      ; Settings.(DefaultRestored default_values) |> Pool_event.settings
+      ; System_event.Job.TenantDatabaseAdded database.Pool_database.label
+        |> system_event_from_job
+      ; Common.guardian_cache_cleared_event ()
+      ]
+    in
+    let tenant_events =
+      [ Settings.(DefaultRestored default_values) |> Pool_event.settings
       ; I18n.(DefaultRestored default_values) |> Pool_event.i18n
       ; Message_template.(
           DefaultRestored default_values_tenant |> Pool_event.message_template)
       ; Guard.(DefaultRestored root_permissions) |> Pool_event.guard
       ]
+    in
+    Ok (root_events, (database.Pool_database.label, tenant_events))
   ;;
 
   let decode data =
@@ -243,54 +257,60 @@ end = struct
   let effects = Pool_tenant.Guard.Access.update
 end
 
-module CreateDatabase : sig
-  type t = Pool_database.t
+type database_command =
+  { database_url : Pool_database.Url.t
+  ; database_label : Pool_database.Label.t
+  }
 
-  type decoded =
-    { database_url : Pool_database.Url.t
-    ; database_label : Pool_database.Label.t
-    }
+let database_command database_url database_label =
+  { database_url; database_label }
+;;
+
+let database_schema =
+  Conformist.(
+    make
+      Field.[ Pool_database.Url.schema (); Pool_database.Label.schema () ]
+      database_command)
+;;
+
+let decode_database data =
+  Conformist.decode_and_validate database_schema data
+  |> CCResult.map_err Pool_common.Message.to_conformist_error
+;;
+
+module UpdateDatabase : sig
+  type t = Pool_database.t
 
   val handle
     :  ?tags:Logs.Tag.set
+    -> ?system_event_id:System_event.Id.t
     -> Pool_tenant.Write.t
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
   val decode
     :  (string * string list) list
-    -> (decoded, Pool_common.Message.error) result
+    -> (database_command, Pool_common.Message.error) result
 
   val effects : Pool_tenant.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = Pool_database.t
 
-  type decoded =
-    { database_url : Pool_database.Url.t
-    ; database_label : Pool_database.Label.t
-    }
-
-  let command database_url database_label = { database_url; database_label }
-
-  let schema =
-    Conformist.(
-      make
-        Field.[ Pool_database.Url.schema (); Pool_database.Label.schema () ]
-        command)
-  ;;
-
-  let handle ?(tags = Logs.Tag.empty) (tenant : Pool_tenant.Write.t) database =
-    Logs.info ~src (fun m -> m "Handle command CreateDatabase" ~tags);
+  let handle
+    ?(tags = Logs.Tag.empty)
+    ?system_event_id
+    (tenant : Pool_tenant.Write.t)
+    database
+    =
+    Logs.info ~src (fun m -> m "Handle command UpdateDatabase" ~tags);
     Ok
       [ Pool_tenant.DatabaseEdited (tenant, database) |> Pool_event.pool_tenant
+      ; System_event.Job.TenantDatabaseUpdated database.Pool_database.label
+        |> system_event_from_job ?id:system_event_id
       ]
   ;;
 
-  let decode data =
-    Conformist.decode_and_validate schema data
-    |> CCResult.map_err Pool_common.Message.to_conformist_error
-  ;;
-
+  let decode = decode_database
   let effects = Pool_tenant.Guard.Access.update
 end
 
@@ -331,7 +351,7 @@ end = struct
 end
 
 module Destroy : sig
-  type t = { tenant_id : Pool_tenant.Id.t }
+  type t = Pool_tenant.t
 
   val handle
     :  ?tags:Logs.Tag.set
@@ -340,11 +360,15 @@ module Destroy : sig
 
   val effects : Pool_tenant.Id.t -> Guard.ValidationSet.t
 end = struct
-  type t = { tenant_id : Pool_tenant.Id.t }
+  type t = Pool_tenant.t
 
   let handle ?(tags = Logs.Tag.empty) t =
     Logs.info ~src (fun m -> m "Handle command Destroy" ~tags);
-    Ok [ Pool_tenant.Destroyed t.tenant_id |> Pool_event.pool_tenant ]
+    Ok
+      [ Pool_tenant.Destroyed t.Pool_tenant.id |> Pool_event.pool_tenant
+      ; System_event.Job.TenantDatabaseDeleted t.Pool_tenant.database_label
+        |> system_event_from_job
+      ]
   ;;
 
   let effects = Pool_tenant.Guard.Access.delete

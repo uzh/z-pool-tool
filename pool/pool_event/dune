@@ -19,6 +19,7 @@
   pool_user
   settings
   sihl
+  system_event
   tenant
   waiting_list
   logger)

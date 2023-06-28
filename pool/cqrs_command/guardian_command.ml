@@ -90,6 +90,7 @@ end = struct
     Ok
       [ Guard.RolesGranted (target |> to_id, Guard.RoleSet.of_list roles)
         |> Pool_event.guard
+      ; Common.guardian_cache_cleared_event ()
       ]
   ;;
 
@@ -136,6 +137,7 @@ end = struct
     Ok
       [ Guard.RolesRevoked (target |> to_id, Guard.RoleSet.singleton role)
         |> Pool_event.guard
+      ; Common.guardian_cache_cleared_event ()
       ]
   ;;
 

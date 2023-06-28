@@ -13,6 +13,7 @@ let rec field_to_string =
   | AllowUninvitedSignup -> "Einschreiben nicht eingeladener Kontakte erlauben"
   | Answer -> "Antwort"
   | AreaCode -> "Vorwahl"
+  | Argument -> "Argument"
   | AssetId -> "Anlagen Identifier"
   | Assignment -> "Anmeldung"
   | AssignmentCount -> "Anmeldungen"
@@ -63,6 +64,7 @@ let rec field_to_string =
   | ExperimentReminderLeadTime ->
     Format.asprintf "Experimentspezifische %s" (field_to_string LeadTime)
   | ExperimentType -> "Experimenttyp"
+  | Failed -> "Fehlgeschlagen"
   | FieldType -> "Feldtyp"
   | File -> "Datei"
   | FileMapping -> "Datei zuweisung"
@@ -107,6 +109,7 @@ let rec field_to_string =
   | MarkedAsDeleted -> "Als gelöscht markiert"
   | MaxParticipants -> "Maximum an Teilnehmern"
   | MaxTries -> "Maximum an Versuchen"
+  | Message -> "Nachricht"
   | MessageChannel -> "Nachrichtenkanal"
   | MessageTemplate -> "Nachrichtentemplate"
   | MessageTemplates -> "Nachrichtentemplates"
@@ -178,6 +181,8 @@ let rec field_to_string =
   | Status -> "Status"
   | Street -> "Strasse"
   | Styles -> "Styles"
+  | Successful -> "Erfolgreich"
+  | SystemEvent -> "System Event"
   | Tag -> "Tag"
   | Target -> "Target"
   | TargetSpec -> "Target"

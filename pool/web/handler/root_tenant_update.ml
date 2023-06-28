@@ -86,7 +86,7 @@ let update req command success_message =
           let open CCResult.Infix in
           EditDetails.(decode urlencoded >>= handle ~tags tenant) |> lift
         | `EditDatabase ->
-          let open CreateDatabase in
+          let open UpdateDatabase in
           let* { database_url; database_label } = decode urlencoded |> lift in
           let* database =
             Pool_database.test_and_create database_url database_label
