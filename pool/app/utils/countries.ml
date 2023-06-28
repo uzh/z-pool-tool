@@ -61,7 +61,7 @@ let countries =
   ; "CU", "Cuba"
   ; "CW", "Curaçao"
   ; "CY", "Cyprus"
-  ; "CZ", "Czechia"
+  ; "CZ", "Czech Republic"
   ; "DK", "Denmark"
   ; "DG", "Diego Garcia"
   ; "DJ", "Djibouti"

@@ -11,13 +11,18 @@ let coalesce_value =
   {sql| IF(pool_custom_fields.admin_override,COALESCE(admin_value,value),value) |sql}
 ;;
 
-let filtered_base_condition =
-  {sql|
+let filtered_base_condition ~allow_invited () =
+  let base =
+    {sql|
     user_users.admin = 0
     AND user_users.confirmed = 1
     AND pool_contacts.paused = 0
     AND pool_contacts.disabled = 0
     AND pool_contacts.terms_accepted_at IS NOT NULL
+    |sql}
+  in
+  let exclude_invited =
+    {sql|
     AND NOT EXISTS (
       SELECT
         1
@@ -41,6 +46,10 @@ let filtered_base_condition =
         pool_sessions.experiment_uuid = UNHEX(REPLACE(?, '-', ''))
       LIMIT 1 )
     |sql}
+  in
+  match allow_invited with
+  | true -> base
+  | false -> Format.asprintf "%s\n%s" base exclude_invited
 ;;
 
 let custom_field_sql =
@@ -301,19 +310,33 @@ let filter_to_sql template_list dyn query =
   query_sql (dyn, "") query
 ;;
 
-let filtered_params ?group_by ?order_by template_list experiment_id filter =
+let filtered_params
+  ?group_by
+  ?order_by
+  ?(allow_invited = false)
+  template_list
+  experiment_id
+  filter
+  =
   let open CCResult.Infix in
   let id_param =
-    let id = experiment_id |> Pool_common.Id.value in
-    Dynparam.(empty |> add Caqti_type.string id |> add Caqti_type.string id)
+    match allow_invited with
+    | true -> Dynparam.empty
+    | false ->
+      let id = experiment_id |> Pool_common.Id.value in
+      Dynparam.(empty |> add Caqti_type.string id |> add Caqti_type.string id)
   in
   let query =
     match filter with
-    | None -> Ok (id_param, filtered_base_condition)
+    | None -> Ok (id_param, filtered_base_condition ~allow_invited ())
     | Some filter ->
       filter_to_sql template_list id_param filter
       >|= fun (dyn, sql) ->
-      dyn, Format.asprintf "%s\n AND %s" filtered_base_condition sql
+      ( dyn
+      , Format.asprintf
+          "%s\n AND %s"
+          (filtered_base_condition ~allow_invited ())
+          sql )
   in
   query
   >|= fun (dyn, sql) ->

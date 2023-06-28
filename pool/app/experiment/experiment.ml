@@ -23,6 +23,10 @@ let find_pending_waitinglists_by_contact =
   Repo_public.find_pending_waitinglists_by_contact
 ;;
 
+let find_past_experiments_by_contact =
+  Repo_public.find_past_experiments_by_contact
+;;
+
 let find_of_session = Repo.find_of_session
 let find_of_mailing = Repo.find_of_mailing
 let session_count = Repo.session_count

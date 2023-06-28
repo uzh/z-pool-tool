@@ -8,17 +8,20 @@ let index
   experiment_list
   upcoming_sessions
   waiting_list
+  past_experiments
   custom_fields_ansered
   Pool_context.{ language; _ }
   =
-  let list_html title empty classnames list =
+  let list_html ?empty_msg title classnames list =
     div
       [ h2
           ~a:[ a_class [ "heading-2" ] ]
           [ txt Pool_common.(Utils.text_to_string language title) ]
-      ; (if CCList.is_empty list
-         then p Pool_common.[ Utils.text_to_string language empty |> txt ]
-         else div ~a:[ a_class classnames ] list)
+      ; (match list, empty_msg with
+         | [], Some empty_msg ->
+           p Pool_common.[ Utils.text_to_string language empty_msg |> txt ]
+         | [], None -> txt ""
+         | list, _ -> div ~a:[ a_class classnames ] list)
       ]
   in
   let notification =
@@ -86,7 +89,19 @@ let index
     let open Pool_common.I18n in
     experiment_list
     |> CCList.map experiment_item
-    |> list_html ExperimentListPublicTitle ExperimentListEmpty [ "striped" ]
+    |> list_html
+         ExperimentListPublicTitle
+         ~empty_msg:ExperimentListEmpty
+         [ "striped" ]
+  in
+  let past_experiments_html =
+    let open Pool_common.I18n in
+    match past_experiments with
+    | [] -> txt ""
+    | past_experiments ->
+      past_experiments
+      |> CCList.map experiment_item
+      |> list_html PastExperimentListPublicTitle [ "striped" ]
   in
   let session_html =
     let experiment_overview ((exp : Experiment.Public.t), parent, follow_ups) =
@@ -125,7 +140,10 @@ let index
     let open Pool_common.I18n in
     upcoming_sessions
     |> CCList.map experiment_overview
-    |> list_html UpcomingSessionsTitle UpcomingSessionsListEmpty [ "stack-lg" ]
+    |> list_html
+         UpcomingSessionsTitle
+         ~empty_msg:UpcomingSessionsListEmpty
+         [ "stack-lg" ]
   in
   let waiting_list_html =
     match waiting_list with
@@ -134,7 +152,10 @@ let index
       let open Pool_common.I18n in
       list
       |> CCList.map experiment_item
-      |> list_html ContactWaitingListTitle ContactWaitingListEmpty [ "striped" ]
+      |> list_html
+           ContactWaitingListTitle
+           ~empty_msg:ContactWaitingListEmpty
+           [ "striped" ]
   in
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
@@ -145,11 +166,12 @@ let index
         ~a:[ a_class [ "stack-lg" ] ]
         [ notification
         ; div
-            ~a:[ a_class [ "switcher"; "flex-gap-lg" ] ]
+            ~a:[ a_class [ "grid-col-2"; "gap-lg" ] ]
             [ div
                 ~a:[ a_class [ "stack-lg" ] ]
                 [ session_html; waiting_list_html ]
             ; experiment_html
+            ; past_experiments_html
             ]
         ]
     ]
@@ -157,8 +179,9 @@ let index
 
 let show
   (experiment : Experiment.Public.t)
-  sessions
-  session_user_is_assigned
+  grouped_sessions
+  upcoming_sessions
+  past_sessions
   user_is_enlisted
   contact
   Pool_context.{ language; csrf; _ }
@@ -237,24 +260,31 @@ let show
           ]
       ]
   in
-  let enrolled_html sessions =
-    div
-      (p
-         [ txt
-             (Utils.text_to_string language I18n.ExperimentContactEnrolledNote)
-         ]
-       :: Page_contact_sessions.public_detail language sessions)
+  let sessions_html title = function
+    | [] -> txt ""
+    | sessions ->
+      div
+        (h2
+           ~a:[ a_class [ "heading-2" ] ]
+           [ txt (Utils.text_to_string language title) ]
+         :: Page_contact_sessions.public_detail language sessions)
   in
   let html =
-    match session_user_is_assigned with
-    | [] ->
+    match upcoming_sessions, past_sessions with
+    | [], [] ->
       (match
          DirectRegistrationDisabled.value
            experiment.Public.direct_registration_disabled
        with
-       | false -> session_list sessions
+       | false -> session_list grouped_sessions
        | true -> div [ waiting_list_form () ])
-    | sessions -> enrolled_html sessions
+    | upcoming_sessions, past_sessions ->
+      let open Pool_common.I18n in
+      div
+        ~a:[ a_class [ "stack-lg" ] ]
+        [ sessions_html UpcomingSessionsTitle upcoming_sessions
+        ; sessions_html PastSessionsTitle past_sessions
+        ]
   in
   div
     ~a:[ a_class [ "trim"; "measure"; "safety-margin" ] ]

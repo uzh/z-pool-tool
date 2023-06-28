@@ -20,7 +20,7 @@ let show req =
          Experiment.find_public database_label experiment_id contact
        in
        let* () =
-         Assignment.find_by_experiment_and_contact_opt
+         Assignment.find_all_by_experiment_and_contact_opt
            database_label
            experiment.Experiment.Public.id
            contact

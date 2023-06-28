@@ -82,7 +82,19 @@ val find
   -> Id.t
   -> (t, Pool_common.Message.error) result Lwt.t
 
-val find_by_experiment_and_contact_opt
+val find_upcoming_by_experiment_and_contact_opt
+  :  Pool_database.Label.t
+  -> Experiment.Id.t
+  -> Contact.t
+  -> Public.t list Lwt.t
+
+val find_past_by_experiment_and_contact_opt
+  :  Pool_database.Label.t
+  -> Experiment.Id.t
+  -> Contact.t
+  -> Public.t list Lwt.t
+
+val find_all_by_experiment_and_contact_opt
   :  Pool_database.Label.t
   -> Experiment.Id.t
   -> Contact.t
