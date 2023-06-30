@@ -138,7 +138,10 @@ module DummyData = struct
       { id = Id.create ()
       ; title = Title.create "The Wallet Game\t" |> get_exn
       ; public_title = PublicTitle.create "public_title" |> get_exn
-      ; description = Description.create "A description for everyone" |> get_exn
+      ; description =
+          Description.create "A description for everyone"
+          |> get_exn
+          |> CCOption.return
       ; organisational_unit = None
       ; cost_center = Some ("A-11111-22-33" |> CostCenter.of_string)
       ; filter = None

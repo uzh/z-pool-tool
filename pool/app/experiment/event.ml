@@ -3,7 +3,7 @@ open Entity
 type create =
   { title : Title.t
   ; public_title : PublicTitle.t
-  ; description : Description.t
+  ; description : Description.t option
   ; cost_center : CostCenter.t option
   ; direct_registration_disabled : DirectRegistrationDisabled.t
   ; registration_disabled : RegistrationDisabled.t

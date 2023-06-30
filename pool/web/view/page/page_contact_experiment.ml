@@ -54,9 +54,11 @@ let index
     let open Experiment.Public in
     div
       ~a:[ a_class [ "flexrow"; "flex-gap"; "flexcolumn-mobile" ] ]
-      [ div
-          ~a:[ a_class [ "grow" ] ]
-          [ txt (Experiment.Description.value experiment.description) ]
+      [ experiment.description
+        |> CCOption.map_or ~default:(txt "") (fun desc ->
+             div
+               ~a:[ a_class [ "grow" ] ]
+               [ txt (Experiment.Description.value desc) ])
       ; div
           ~a:[ a_class [ "flexrow"; "align-end"; "justify-end" ] ]
           [ a
@@ -293,10 +295,9 @@ let show
         [ txt (PublicTitle.value experiment.Public.public_title) ]
     ; div
         ~a:[ a_class [ "stack" ] ]
-        [ p
-            [ Description.value experiment.Public.description
-              |> HttpUtils.add_line_breaks
-            ]
+        [ experiment.Public.description
+          |> CCOption.map_or ~default:(txt "") (fun desc ->
+               p [ desc |> Description.value |> HttpUtils.add_line_breaks ])
         ; html
         ]
     ]

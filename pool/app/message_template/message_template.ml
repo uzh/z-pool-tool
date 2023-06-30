@@ -50,7 +50,8 @@ let global_params user = [ "name", user |> Pool_user.user_fullname ]
 let experiment_params experiment =
   let open Experiment in
   [ "experimentPublicTitle", public_title_value experiment
-  ; "experimentDescription", description_value experiment
+  ; ( "experimentDescription"
+    , experiment.description |> CCOption.map_or ~default:"" Description.value )
   ]
 ;;
 

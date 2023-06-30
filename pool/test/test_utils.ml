@@ -180,6 +180,7 @@ module Model = struct
             Description.create "A description for everyone"
             |> CCResult.map_err show_error
             |> CCResult.get_or_failwith
+            |> CCOption.return
         ; direct_registration_disabled =
             false |> DirectRegistrationDisabled.create
         ; experiment_type = Some Pool_common.ExperimentType.Lab
@@ -188,28 +189,28 @@ module Model = struct
 
   let create_experiment ?(id = Experiment.Id.create ()) () =
     let show_error err = Pool_common.(Utils.error_to_string Language.En err) in
+    let open CCResult in
     Experiment.
       { id
       ; title =
-          Title.create "An Experiment"
-          |> CCResult.map_err show_error
-          |> CCResult.get_or_failwith
+          Title.create "An Experiment" |> map_err show_error |> get_or_failwith
       ; public_title =
           PublicTitle.create "public_title"
-          |> CCResult.map_err show_error
-          |> CCResult.get_or_failwith
+          |> map_err show_error
+          |> get_or_failwith
       ; description =
           Description.create "A description for everyone"
-          |> CCResult.map_err show_error
-          |> CCResult.get_or_failwith
+          |> map_err show_error
+          |> get_or_failwith
+          |> CCOption.return
       ; cost_center = Some ("F-00000-11-22" |> CostCenter.of_string)
       ; organisational_unit = None
       ; filter = None
       ; session_reminder_lead_time =
           Ptime.Span.of_int_s @@ (60 * 60)
           |> Pool_common.Reminder.LeadTime.create
-          |> CCResult.map_err show_error
-          |> CCResult.to_opt
+          |> map_err show_error
+          |> to_opt
       ; direct_registration_disabled =
           false |> DirectRegistrationDisabled.create
       ; registration_disabled = false |> RegistrationDisabled.create

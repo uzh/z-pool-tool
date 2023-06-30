@@ -44,7 +44,9 @@ let experiments pool =
           let public_title =
             PublicTitle.create public_title |> get_or_failwith
           in
-          let description = Description.create description |> get_or_failwith in
+          let description =
+            Description.create description |> get_or_failwith |> CCOption.return
+          in
           let cost_center = cost_center |> CCOption.map CostCenter.of_string in
           let session_reminder_lead_time =
             session_reminder_lead_time

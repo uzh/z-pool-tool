@@ -192,8 +192,9 @@ let experiment_form
         ; textarea_element
             language
             Field.Description
-            ~value:(value description_value)
-            ~required:true
+            ?value:
+              (CCOption.bind experiment (fun { description; _ } ->
+                 description |> CCOption.map Description.value))
             ~flash_fetcher
         ; experiment_type_select
         ; input_element
@@ -425,8 +426,8 @@ let detail
             |> txt )
         ; ( Field.Description
           , experiment.description
-            |> Description.value
-            |> HttpUtils.add_line_breaks )
+            |> CCOption.map_or ~default:(txt "") (fun desc ->
+                 desc |> Description.value |> HttpUtils.add_line_breaks) )
         ; ( Field.CostCenter
           , experiment.cost_center
             |> CCOption.map_or ~default:"" CostCenter.value

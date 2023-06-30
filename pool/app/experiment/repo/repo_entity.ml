@@ -123,7 +123,7 @@ let t =
             (tup2
                PublicTitle.t
                (tup2
-                  Description.t
+                  (option Description.t)
                   (tup2
                      (option CostCenter.t)
                      (tup2
@@ -182,7 +182,7 @@ module Write = struct
               (tup2
                  PublicTitle.t
                  (tup2
-                    Description.t
+                    (option Description.t)
                     (tup2
                        (option CostCenter.t)
                        (tup2
@@ -236,7 +236,7 @@ module Public = struct
            (tup2
               PublicTitle.t
               (tup2
-                 Description.t
+                 (option Description.t)
                  (tup2
                     DirectRegistrationDisabled.t
                     (option Pool_common.Repo.ExperimentType.t))))))

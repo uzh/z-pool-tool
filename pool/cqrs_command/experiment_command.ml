@@ -13,7 +13,7 @@ let default_schema command =
       Field.
         [ Title.schema ()
         ; PublicTitle.schema ()
-        ; Description.schema ()
+        ; Conformist.optional @@ Description.schema ()
         ; Conformist.optional @@ CostCenter.schema ()
         ; DirectRegistrationDisabled.schema ()
         ; RegistrationDisabled.schema ()
