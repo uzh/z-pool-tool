@@ -31,6 +31,7 @@ let index req =
          then Lwt_result.return None
          else
            Filter.find_filtered_contacts
+             ~limit:50
              database_label
              (experiment.Experiment.id |> Experiment.Id.to_common)
              experiment.Experiment.filter
