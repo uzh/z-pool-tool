@@ -32,8 +32,7 @@ let parse_date str =
   in
   split_date_string str
   >>= (function
-  | [ y; m; d ] ->
-    (y, m, d) |> Ptime.of_date >|= Ptime.to_date
-  | _ -> None)
+        | [ y; m; d ] -> (y, m, d) |> Ptime.of_date >|= Ptime.to_date
+        | _ -> None)
   |> CCOption.to_result error
 ;;
