@@ -22,19 +22,18 @@ let parse_time_span str =
 ;;
 
 let parse_date str =
-  let open CCResult in
+  let open CCOption in
   let error = Entity_message.(Invalid Field.Date) in
   let split_date_string date =
     date
     |> CCString.split_on_char '-'
     |> CCList.map CCInt.of_string
-    |> CCOption.sequence_l
-    |> CCOption.to_result error
+    |> sequence_l
   in
-  str
-  |> split_date_string
-  >>= function
+  split_date_string str
+  >>= (function
   | [ y; m; d ] ->
-    (y, m, d) |> Ptime.of_date |> CCOption.to_result error >|= Ptime.to_date
-  | _ -> Error error
+    (y, m, d) |> Ptime.of_date >|= Ptime.to_date
+  | _ -> None)
+  |> CCOption.to_result error
 ;;
