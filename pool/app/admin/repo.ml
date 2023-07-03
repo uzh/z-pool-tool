@@ -1,6 +1,28 @@
 module Dynparam = Utils.Database.Dynparam
 
 module Sql = struct
+  let insert_request =
+    let open Caqti_request.Infix in
+    {sql|
+      INSERT INTO pool_admins (
+        user_uuid,
+        created_at,
+        updated_at
+      ) VALUES (
+        UNHEX(REPLACE($1, '-', '')),
+        NOW(),
+        NOW()
+      )
+    |sql}
+    |> Pool_common.Repo.Id.t ->. Caqti_type.unit
+  ;;
+
+  let insert pool t =
+    t
+    |> Entity.id
+    |> Utils.Database.exec (Pool_database.Label.value pool) insert_request
+  ;;
+
   let select_from_users_sql ?order_by where_fragment =
     let select_from =
       {sql|
@@ -23,6 +45,8 @@ module Sql = struct
           user_users.created_at,
           user_users.updated_at
         FROM user_users
+        INNER JOIN pool_admins
+        ON pool_admins.user_uuid = user_users.uuid
       |sql}
     in
     let query = Format.asprintf "%s %s" select_from where_fragment in
@@ -45,7 +69,7 @@ module Sql = struct
     let open Lwt.Infix in
     Utils.Database.find_opt
       (Pool_database.Label.value pool)
-      (find_request Pool_user.Repo.user_caqti)
+      (find_request Repo_entity.t)
       id
     >|= CCOption.to_result Pool_common.Message.(NotFound Field.Admin)
   ;;
@@ -59,7 +83,7 @@ module Sql = struct
       user_users.admin = 1
       |sql}
     |> select_from_users_sql
-    |> Caqti_type.unit ->* Pool_user.Repo.user_caqti
+    |> Caqti_type.unit ->* Repo_entity.t
   ;;
 
   let find_all pool =
@@ -90,13 +114,12 @@ module Sql = struct
           Dynparam.empty
           ids
       in
-      let request =
-        find_multiple_request ids |> pt ->* Pool_user.Repo.user_caqti
-      in
+      let request = find_multiple_request ids |> pt ->* Repo_entity.t in
       Utils.Database.collect (pool |> Pool_database.Label.value) request pv
   ;;
 end
 
+let insert = Sql.insert
 let find = Sql.find
 let find_all = Sql.find_all
 let find_multiple = Sql.find_multiple
