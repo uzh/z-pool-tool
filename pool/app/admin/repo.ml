@@ -117,9 +117,34 @@ module Sql = struct
       let request = find_multiple_request ids |> pt ->* Repo_entity.t in
       Utils.Database.collect (pool |> Pool_database.Label.value) request pv
   ;;
+
+  let update_sign_in_count_request =
+    let open Caqti_request.Infix in
+    {sql|
+      UPDATE
+        pool_admins
+      SET
+        sign_in_count = sign_in_count + 1,
+        last_sign_in_at = NOW()
+      WHERE
+        user_uuid = UNHEX(REPLACE($1, '-', ''))
+    |sql}
+    |> Caqti_type.(string ->. unit)
+  ;;
+
+  let update_sign_in_count pool t =
+    Utils.Database.exec
+      (Pool_database.Label.value pool)
+      update_sign_in_count_request
+      Entity.(id t |> Id.value)
+  ;;
 end
 
 let insert = Sql.insert
 let find = Sql.find
 let find_all = Sql.find_all
 let find_multiple = Sql.find_multiple
+
+(* TODO: Call this on admin login. Depending on
+   https://github.com/uzh/pool/pull/147 *)
+let update_sign_in_count = Sql.update_sign_in_count
