@@ -33,6 +33,7 @@ module Label = struct
         [@printer print "session_reminder"]
     | SessionReschedule [@name "session_reschedule"]
         [@printer print "session_reschedule"]
+    | UserImport [@name "user_import"] [@printer print "user_import"]
   [@@deriving eq, show { with_path = false }, yojson, variants]
 
   let read m =

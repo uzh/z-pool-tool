@@ -35,6 +35,9 @@ let to_string = function
   | FollowUpSessionFor -> "Follow-up for:"
   | HomeTitle -> "University Registration Center for Study Participants"
   | I18nTitle -> "Translations"
+  | ImportPendingNote ->
+    "Please check your emails and set your new password first."
+  | ImportPendingTitle -> "Pending import"
   | NoEntries field ->
     Format.asprintf "There are no %s yet." (Locales_en.field_to_string field)
   | OurPartners -> "Our partners"

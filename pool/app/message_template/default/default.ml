@@ -65,6 +65,11 @@ let signup_verification = function
   | En -> Default_en.signup_verification
 ;;
 
+let user_import = function
+  | De -> Default_de.user_import
+  | En -> Default_en.user_import
+;;
+
 let ( @@@ ) constructors =
   CCList.flat_map (fun lang -> CCList.map (fun fcn -> fcn lang) constructors)
 ;;
@@ -85,6 +90,7 @@ let default_values_tenant =
   ; session_reminder
   ; session_reschedule
   ; signup_verification
+  ; user_import
   ]
   @@@ [ En; De ]
 ;;

@@ -35,6 +35,10 @@ let to_string = function
   | ExperimentWaitingListTitle -> "Warteliste"
   | HomeTitle -> "Universitäre Anmeldestelle für Studienteilnehmende"
   | I18nTitle -> "Übersetzungen"
+  | ImportPendingNote ->
+    "Bitte überprüfen Sie Ihre E-Mails und setzen Sie zuerst Ihr neues \
+     Passwort."
+  | ImportPendingTitle -> "Pendenter Import"
   | NoEntries field ->
     Format.asprintf
       "Es existiert noch keine %s."

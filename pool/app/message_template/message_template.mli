@@ -17,6 +17,7 @@ module Label : sig
     | SessionCancellation
     | SessionReminder
     | SessionReschedule
+    | UserImport
 
   val equal : t -> t -> bool
   val pp : Format.formatter -> t -> unit
@@ -374,4 +375,13 @@ module SignUpVerification : sig
     -> Pool_user.Firstname.t
     -> Pool_user.Lastname.t
     -> Sihl_email.t Lwt.t
+end
+
+module UserImport : sig
+  val email_params : string -> Contact.t -> (string * string) list
+
+  val prepare
+    :  Pool_database.Label.t
+    -> Pool_tenant.t
+    -> (Contact.t -> Email.Token.t -> Sihl_email.t) Lwt.t
 end

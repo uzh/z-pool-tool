@@ -622,3 +622,45 @@ module SignUpVerification = struct
     |> Lwt.return
   ;;
 end
+
+module UserImport = struct
+  let email_params confirmation_url contact =
+    global_params contact.Contact.user @ [ "confirmationUrl", confirmation_url ]
+  ;;
+
+  let prepare pool tenant =
+    let languages = Pool_common.Language.all in
+    let templates = Hashtbl.create (CCList.length languages) in
+    let%lwt () =
+      find_all_by_label_to_send pool Pool_common.Language.all Label.UserImport
+      |> Lwt.map
+           (CCList.iter (fun ({ Entity.language; _ } as t) ->
+              Hashtbl.add templates language t))
+    in
+    let%lwt url = Pool_tenant.Url.of_pool pool in
+    let%lwt default_language = Settings.default_language pool in
+    let%lwt sender = sender_of_pool pool in
+    let layout = layout_from_tenant tenant in
+    Lwt.return
+    @@ fun (contact : Contact.t) token ->
+    let language =
+      contact.Contact.language |> CCOption.value ~default:default_language
+    in
+    let confirmation_url =
+      Pool_common.
+        [ ( Message.Field.Language
+          , language |> Language.show |> CCString.lowercase_ascii )
+        ; Message.Field.Token, Email.Token.value token
+        ]
+      |> create_public_url_with_params url "/import-confirmation"
+    in
+    let template = Hashtbl.find templates language in
+    prepare_email
+      language
+      template
+      sender
+      (Contact.email_address contact)
+      layout
+      (email_params confirmation_url contact)
+  ;;
+end

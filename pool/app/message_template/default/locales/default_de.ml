@@ -547,3 +547,44 @@ let contact_registration_attempt =
   ; sms_text
   }
 ;;
+
+let user_import =
+  let label = Label.UserImport in
+  let email_text =
+    [ p
+        [ txt "Ihr Account wurde kürzlich importiert."
+        ; br ()
+        ; txt "Nutzen Sie diesen"
+        ; a ~a:[ a_href "{verificationUrl}" ] [ txt " Link " ]
+        ; txt "um Ihren Account wieder zu aktivieren."
+        ]
+    ; p
+        [ txt
+            "Falls der obige Link nicht funktioniert, kopiere bitte den \
+             folgenden manuell in deinen Browser: {verificationUrl}"
+        ]
+    ]
+    |> add_salutation
+    |> html_to_string
+    |> EmailText.of_string
+  in
+  let email_subject =
+    "Reaktivierung Ihres Accounts" |> EmailSubject.of_string
+  in
+  let sms_text =
+    {|Ihr Account wurde kürzlich importiert. Nutzen Sie den folgenden Link um Ihren Account wieder zu aktivieren:
+
+{verificationUrl}|}
+    |> add_salutation_to_text
+    |> SmsText.of_string
+  in
+  { id = Id.create ()
+  ; label
+  ; language
+  ; entity_uuid
+  ; email_text
+  ; email_subject
+  ; plain_text = sms_text
+  ; sms_text
+  }
+;;

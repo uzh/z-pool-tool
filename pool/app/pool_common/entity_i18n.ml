@@ -23,6 +23,8 @@ type t =
   | FollowUpSessionFor
   | HomeTitle
   | I18nTitle
+  | ImportPendingNote
+  | ImportPendingTitle
   | LocationFileNew
   | LocationListTitle
   | LocationNewTitle
