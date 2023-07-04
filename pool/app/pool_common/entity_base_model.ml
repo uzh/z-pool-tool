@@ -187,6 +187,7 @@ end
 
 module Ptime = struct
   type t = Ptime.t [@@deriving eq, show]
+  type date = Ptime.date
 
   let sexp_of_t = Pool_common_utils.Time.ptime_to_sexp
   let t_of_yojson = Utils.Ptime.ptime_of_yojson
@@ -194,6 +195,34 @@ module Ptime = struct
   let value m = m
   let create_now = Ptime_clock.now
   let to_human = Utils.Ptime.formatted_date_time
+
+  let date_time_to_flatpickr t =
+    t
+    |> Ptime.to_rfc3339
+    |> CCString.split_on_char '-'
+    |> fun lst -> CCList.take (CCList.length lst - 1) lst |> CCString.concat "-"
+  ;;
+
+  (* Date *)
+  let equal_date (y1, m1, d1) (y2, m2, d2) =
+    CCInt.(equal y1 y2 && equal m1 m2 && equal d1 d2)
+  ;;
+
+  let date_of_string = Utils_time.parse_date
+
+  let date_to_string (y, m, d) =
+    let decimal = Utils.Ptime.decimal in
+    Format.asprintf "%s-%s-%s" (decimal y) (decimal m) (decimal d)
+  ;;
+
+  let date_to_flatpickr date =
+    date
+    |> Ptime.of_date
+    |> CCOption.get_exn_or "Invalid date provided"
+    |> date_time_to_flatpickr
+  ;;
+
+  let pp_date formatter t = CCString.pp formatter (date_to_string t)
 
   let schema field create ()
     : (Entity_message.error, t) Pool_common_utils.PoolConformist.Field.t

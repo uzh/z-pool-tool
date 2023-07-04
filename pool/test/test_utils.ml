@@ -39,7 +39,7 @@ let check_result ?(msg = "succeeds") =
 let password = Alcotest.testable Pool_user.Password.pp Pool_user.Password.equal
 
 let phone_nr =
-  Alcotest.testable Pool_user.PhoneNumber.pp Pool_user.PhoneNumber.equal
+  Alcotest.testable Pool_user.CellPhone.pp Pool_user.CellPhone.equal
 ;;
 
 (* Helper functions *)
@@ -123,7 +123,7 @@ module Model = struct
            else None)
       ; language = Some Pool_common.Language.En
       ; experiment_type_preference = None
-      ; phone_number = Some ("+41791234567" |> Pool_user.PhoneNumber.of_string)
+      ; cell_phone = Some ("+41791234567" |> Pool_user.CellPhone.of_string)
       ; paused = Pool_user.Paused.create false
       ; disabled = Pool_user.Disabled.create false
       ; verified = None
@@ -180,6 +180,7 @@ module Model = struct
             Description.create "A description for everyone"
             |> CCResult.map_err show_error
             |> CCResult.get_or_failwith
+            |> CCOption.return
         ; direct_registration_disabled =
             false |> DirectRegistrationDisabled.create
         ; experiment_type = Some Pool_common.ExperimentType.Lab
@@ -188,26 +189,28 @@ module Model = struct
 
   let create_experiment ?(id = Experiment.Id.create ()) () =
     let show_error err = Pool_common.(Utils.error_to_string Language.En err) in
+    let open CCResult in
     Experiment.
       { id
       ; title =
-          Title.create "An Experiment"
-          |> CCResult.map_err show_error
-          |> CCResult.get_or_failwith
+          Title.create "An Experiment" |> map_err show_error |> get_or_failwith
       ; public_title =
           PublicTitle.create "public_title"
-          |> CCResult.map_err show_error
-          |> CCResult.get_or_failwith
+          |> map_err show_error
+          |> get_or_failwith
       ; description =
           Description.create "A description for everyone"
-          |> CCResult.map_err show_error
-          |> CCResult.get_or_failwith
+          |> map_err show_error
+          |> get_or_failwith
+          |> CCOption.return
+      ; cost_center = Some ("F-00000-11-22" |> CostCenter.of_string)
+      ; organisational_unit = None
       ; filter = None
       ; session_reminder_lead_time =
           Ptime.Span.of_int_s @@ (60 * 60)
           |> Pool_common.Reminder.LeadTime.create
-          |> CCResult.map_err show_error
-          |> CCResult.to_opt
+          |> map_err show_error
+          |> to_opt
       ; direct_registration_disabled =
           false |> DirectRegistrationDisabled.create
       ; registration_disabled = false |> RegistrationDisabled.create
@@ -292,9 +295,9 @@ module Model = struct
 
   let create_text_message
     ?(sender = Pool_tenant.Title.of_string "UAST")
-    phone_number
+    cell_phone
     =
-    Text_message.render_and_create phone_number sender ("Hello world", [])
+    Text_message.render_and_create cell_phone sender ("Hello world", [])
   ;;
 
   let hour = Ptime.Span.of_int_s @@ (60 * 60)
@@ -331,6 +334,7 @@ module Model = struct
     ; start
     ; duration = Duration.create hour |> get_or_failwith_pool_error
     ; description = None
+    ; limitations = None
     ; location
     ; max_participants =
         ParticipantAmount.create 30 |> get_or_failwith_pool_error
@@ -388,6 +392,7 @@ module Model = struct
     ({ Session.start
      ; duration
      ; description
+     ; limitations
      ; max_participants
      ; min_participants
      ; overbook
@@ -401,6 +406,7 @@ module Model = struct
       { start
       ; duration
       ; description
+      ; limitations
       ; max_participants
       ; min_participants
       ; overbook

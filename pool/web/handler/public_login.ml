@@ -5,6 +5,16 @@ let src = Logs.Src.create "handler.public.login"
 let to_ctx = Pool_database.to_ctx
 let create_layout req = General.create_tenant_layout req
 
+let increase_sign_in_count ~tags database_label =
+  let open Utils.Lwt_result.Infix in
+  function
+  | `Admin _ -> Lwt_result.return ()
+  | `Contact contact ->
+    Cqrs_command.Contact_command.UpdateSignInCount.handle ~tags contact
+    |> Lwt_result.lift
+    |>> Pool_event.handle_events database_label
+;;
+
 let login_get req =
   let open Utils.Lwt_result.Infix in
   let flash_fetcher = CCFun.flip Sihl.Web.Flash.find req in
@@ -24,6 +34,10 @@ let login_get req =
 
 let login_post req =
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+  let to_sihl_user = function
+    | `Admin user -> user
+    | `Contact contact -> contact.Contact.user
+  in
   let result { Pool_context.database_label; query_language; _ } =
     let open Utils.Lwt_result.Infix in
     Utils.Lwt_result.map_error (fun err ->
@@ -31,11 +45,14 @@ let login_post req =
       , "/login" |> HttpUtils.intended_of_request req
       , [ HttpUtils.urlencoded_to_flash urlencoded ] ))
     @@ let* user = Helpers.Login.login req urlencoded database_label in
-       let login ?(set_completion_cookie = false) path actions =
+       let login user ?(set_completion_cookie = false) path actions =
+         let sihl_user = to_sihl_user user in
+         let tags = Pool_context.Logger.Tags.req req in
+         let* () = increase_sign_in_count ~tags database_label user in
          HttpUtils.(
            redirect_to_with_actions
              (path_with_language query_language path)
-             ([ Sihl.Web.Session.set [ "user_id", user.Sihl_user.id ] ]
+             ([ Sihl.Web.Session.set [ "user_id", sihl_user.Sihl_user.id ] ]
               @ actions))
          ||> (fun res ->
                if set_completion_cookie
@@ -52,17 +69,18 @@ let login_post req =
          HttpUtils.(redirect_to (path_with_language query_language path))
          |> Lwt_result.ok
        in
-       let success () =
+       let success user () =
          let open Pool_context in
          let%lwt path =
            match HttpUtils.find_intended_opt req with
            | Some intended -> Lwt.return intended
            | None ->
              user
+             |> to_sihl_user
              |> user_of_sihl_user database_label
              ||> Pool_context.dashboard_path
          in
-         login path []
+         login user path []
        in
        let contact user =
          Contact.find
@@ -72,7 +90,7 @@ let login_post req =
        user
        |> Admin.user_is_admin database_label
        >|> function
-       | true -> success ()
+       | true -> success (`Admin user) ()
        | false ->
          (match user.Sihl_user.confirmed with
           | false ->
@@ -88,9 +106,10 @@ let login_post req =
                 (Contact.id contact)
             in
             (match required_answers_given with
-             | true -> success ()
+             | true -> success (`Contact contact) ()
              | false ->
                login
+                 (`Contact contact)
                  ~set_completion_cookie:true
                  "/user/completion"
                  [ Message.set

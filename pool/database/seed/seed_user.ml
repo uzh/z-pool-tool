@@ -31,7 +31,7 @@ let answer_custom_fields fields contact =
      | MultiSelect (public, options, _) ->
        let answer = Some [ select_random options ] |> Answer.create in
        Public.MultiSelect (public, options, Some answer) |> CCOption.pure
-     | Boolean _ | Number _ | Text _ -> None)
+     | Boolean _ | Date _ | Number _ | Text _ -> None)
     fields
   |> CCList.map (fun field ->
        let open Custom_field in

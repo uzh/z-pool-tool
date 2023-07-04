@@ -96,6 +96,22 @@ end = struct
   let effects = Contact.Guard.Access.create
 end
 
+module UpdateSignInCount : sig
+  type t = Contact.t
+
+  val handle
+    :  ?tags:Logs.Tag.set
+    -> t
+    -> (Pool_event.t list, Pool_common.Message.error) result
+end = struct
+  type t = Contact.t
+
+  let handle ?(tags = Logs.Tag.empty) contact =
+    Logs.info ~src (fun m -> m "Handle command UpdateSignInCount" ~tags);
+    Ok [ Contact.SignInCounterUpdated contact |> Pool_event.contact ]
+  ;;
+end
+
 module DeleteUnverified : sig
   include Common.CommandSig
 
@@ -393,11 +409,11 @@ end = struct
   let effects = Contact.Guard.Access.update
 end
 
-module AddPhoneNumber : sig
+module AddCellPhone : sig
   include
     Common.CommandSig
       with type t =
-        Contact.t * User.PhoneNumber.t * Pool_common.VerificationCode.t
+        Contact.t * User.CellPhone.t * Pool_common.VerificationCode.t
 
   val handle
     :  ?tags:Logs.Tag.set
@@ -406,12 +422,12 @@ module AddPhoneNumber : sig
 
   val effects : Contact.Id.t -> Guard.ValidationSet.t
 end = struct
-  type t = Contact.t * User.PhoneNumber.t * Pool_common.VerificationCode.t
+  type t = Contact.t * User.CellPhone.t * Pool_common.VerificationCode.t
 
-  let handle ?(tags = Logs.Tag.empty) (contact, phone_number, token) =
-    Logs.info ~src (fun m -> m "Handle command AddPhoneNumber" ~tags);
+  let handle ?(tags = Logs.Tag.empty) (contact, cell_phone, token) =
+    Logs.info ~src (fun m -> m "Handle command AddCellPhone" ~tags);
     Ok
-      [ Contact.PhoneNumberAdded (contact, phone_number, token)
+      [ Contact.CellPhoneAdded (contact, cell_phone, token)
         |> Pool_event.contact
       ]
   ;;
@@ -419,8 +435,8 @@ end = struct
   let effects = Contact.Guard.Access.update
 end
 
-module VerifyPhoneNumber : sig
-  include Common.CommandSig with type t = Contact.t * User.PhoneNumber.t
+module VerifyCellPhone : sig
+  include Common.CommandSig with type t = Contact.t * User.CellPhone.t
 
   val handle
     :  ?tags:Logs.Tag.set
@@ -429,20 +445,17 @@ module VerifyPhoneNumber : sig
 
   val effects : Contact.Id.t -> Guard.ValidationSet.t
 end = struct
-  type t = Contact.t * User.PhoneNumber.t
+  type t = Contact.t * User.CellPhone.t
 
-  let handle ?(tags = Logs.Tag.empty) (contact, phone_number) =
-    Logs.info ~src (fun m -> m "Handle command VerifyPhoneNumber" ~tags);
-    Ok
-      [ Contact.PhoneNumberVerified (contact, phone_number)
-        |> Pool_event.contact
-      ]
+  let handle ?(tags = Logs.Tag.empty) (contact, cell_phone) =
+    Logs.info ~src (fun m -> m "Handle command VerifyCellPhone" ~tags);
+    Ok [ Contact.CellPhoneVerified (contact, cell_phone) |> Pool_event.contact ]
   ;;
 
   let effects = Contact.Guard.Access.update
 end
 
-module ResetPhoneNumberVerification : sig
+module ResetCellPhoneVerification : sig
   include Common.CommandSig with type t = Contact.t
 
   val handle
@@ -456,8 +469,8 @@ end = struct
 
   let handle ?(tags = Logs.Tag.empty) contact =
     Logs.info ~src (fun m ->
-      m "Handle command ResetPhoneNumberVerification" ~tags);
-    Ok [ Contact.PhoneNumberVerificationReset contact |> Pool_event.contact ]
+      m "Handle command ResetCellPhoneVerification" ~tags);
+    Ok [ Contact.CellPhoneVerificationReset contact |> Pool_event.contact ]
   ;;
 
   let effects = Contact.Guard.Access.update

@@ -364,6 +364,27 @@ module Public = struct
           ; version
           }
         , answer )
+    | FieldType.Date ->
+      let answer =
+        create_answer
+          answer_id
+          ~is_admin
+          ~admin_override
+          ~answer_value
+          ~answer_admin_value
+          CCFun.(Entity.Ptime.date_of_string %> CCResult.to_opt)
+      in
+      Public.Date
+        ( { Public.id
+          ; name
+          ; hint
+          ; validation = Validation.pure
+          ; required
+          ; admin_override
+          ; admin_input_only
+          ; version
+          }
+        , answer )
     | FieldType.Number ->
       let answer =
         create_answer
@@ -709,6 +730,22 @@ let to_entity
   match field_type with
   | FieldType.Boolean ->
     Boolean
+      { id
+      ; model
+      ; name
+      ; hint
+      ; validation = Validation.pure
+      ; required
+      ; disabled
+      ; custom_field_group_id
+      ; admin_hint
+      ; admin_override
+      ; admin_view_only
+      ; admin_input_only
+      ; published_at
+      }
+  | FieldType.Date ->
+    Date
       { id
       ; model
       ; name

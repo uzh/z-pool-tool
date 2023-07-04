@@ -50,7 +50,8 @@ let global_params user = [ "name", user |> Pool_user.user_fullname ]
 let experiment_params experiment =
   let open Experiment in
   [ "experimentPublicTitle", public_title_value experiment
-  ; "experimentDescription", description_value experiment
+  ; ( "experimentDescription"
+    , experiment.description |> CCOption.map_or ~default:"" Description.value )
   ]
 ;;
 
@@ -329,7 +330,7 @@ module PhoneVerification = struct
     pool
     preferred_language
     (tenant : Pool_tenant.t)
-    phone_number
+    cell_phone
     token
     =
     let open Text_message in
@@ -338,7 +339,7 @@ module PhoneVerification = struct
     in
     let content = Content.render sms_text (message_params token) in
     Lwt_result.return
-      { recipient = phone_number
+      { recipient = cell_phone
       ; sender = tenant.Pool_tenant.title
       ; text = content
       }
@@ -458,7 +459,7 @@ module SessionCancellation = struct
       find_all_by_label_to_send pool sys_langs Label.SessionCancellation
     in
     let title = tenant.Pool_tenant.title in
-    let fnc reason (contact : Contact.t) phone_number =
+    let fnc reason (contact : Contact.t) cell_phone =
       let open CCResult in
       let* lang, template = template_by_contact sys_langs templates contact in
       let params =
@@ -471,10 +472,7 @@ module SessionCancellation = struct
           reason
           contact
       in
-      Text_message.render_and_create
-        phone_number
-        title
-        (template.sms_text, params)
+      Text_message.render_and_create cell_phone title (template.sms_text, params)
       |> CCResult.return
     in
     Lwt.return fnc

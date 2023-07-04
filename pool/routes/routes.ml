@@ -133,8 +133,8 @@ module Contact = struct
       ; post "/user/update" UserProfile.update
       ; post "/user/update-email" UserProfile.update_email
       ; post "/user/update-password" UserProfile.update_password
-      ; post "/user/phone/update" UserProfile.update_phone_number
-      ; post "/user/phone/verify" UserProfile.verify_phone_number
+      ; post "/user/phone/update" UserProfile.update_cell_phone
+      ; post "/user/phone/verify" UserProfile.verify_cell_phone
       ; post "/user/phone/reset" UserProfile.reset_phone_verification
       ; post "/user/phone/resend-token" UserProfile.resend_token
       ; choose ~scope:"/experiments" experiments
@@ -574,6 +574,19 @@ module Admin = struct
           update
       ]
     in
+    let organisational_units =
+      let open OrganisationalUnit in
+      let specific =
+        [ get "/edit" ~middlewares:[ Access.update ] edit
+        ; post "" ~middlewares:[ Access.update ] update
+        ]
+      in
+      [ get "" ~middlewares:[ Access.index ] index
+      ; get "create" ~middlewares:[ Access.create ] new_form
+      ; post "" ~middlewares:[ Access.create ] create
+      ; choose ~scope:(OrganisationalUnit |> url_key) specific
+      ]
+    in
     let settings =
       let open Settings in
       let queue =
@@ -628,6 +641,7 @@ module Admin = struct
       ; choose ~scope:"/contacts" contacts
       ; choose ~scope:"/admins" admins
       ; choose ~scope:"/custom-fields" custom_fields
+      ; choose ~scope:(add_human_field OrganisationalUnit) organisational_units
       ; choose ~scope:(add_human_field MessageTemplate) message_templates
       ]
   ;;

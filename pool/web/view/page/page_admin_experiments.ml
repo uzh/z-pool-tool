@@ -131,6 +131,7 @@ let index Pool_context.{ language; _ } experiment_list =
 let experiment_form
   ?experiment
   Pool_context.{ language; csrf; _ }
+  organisational_units
   default_reminder_lead_time
   flash_fetcher
   =
@@ -191,10 +192,24 @@ let experiment_form
         ; textarea_element
             language
             Field.Description
-            ~value:(value description_value)
-            ~required:true
+            ?value:
+              (CCOption.bind experiment (fun { description; _ } ->
+                 description |> CCOption.map Description.value))
             ~flash_fetcher
         ; experiment_type_select
+        ; input_element
+            language
+            `Text
+            Field.CostCenter
+            ?value:
+              (CCOption.bind experiment (fun e ->
+                 e.cost_center |> CCOption.map CostCenter.value))
+            ~required:true
+            ~flash_fetcher
+        ; organisational_units_selector
+            language
+            organisational_units
+            (CCOption.bind experiment (fun ex -> ex.organisational_unit))
         ]
     ; checkbox_element
         ~help:I18n.DirectRegistrationDisbled
@@ -265,6 +280,7 @@ let experiment_form
 
 let create
   (Pool_context.{ language; _ } as context)
+  organisational_units
   default_reminder_lead_time
   flash_fetcher
   =
@@ -276,7 +292,11 @@ let create
                language
                Message.(Create (Some Field.Experiment)))
         ]
-    ; experiment_form context default_reminder_lead_time flash_fetcher
+    ; experiment_form
+        context
+        organisational_units
+        default_reminder_lead_time
+        flash_fetcher
     ]
 ;;
 
@@ -286,6 +306,7 @@ let edit
   sys_languages
   default_reminder_lead_time
   invitation_templates
+  organisational_units
   session_reminder_templates
   flash_fetcher
   =
@@ -298,7 +319,12 @@ let edit
       session_reminder_templates
   in
   let form =
-    experiment_form ~experiment context default_reminder_lead_time flash_fetcher
+    experiment_form
+      ~experiment
+      context
+      organisational_units
+      default_reminder_lead_time
+      flash_fetcher
   in
   let experiment_path =
     Format.asprintf
@@ -400,8 +426,18 @@ let detail
             |> txt )
         ; ( Field.Description
           , experiment.description
-            |> Description.value
-            |> HttpUtils.add_line_breaks )
+            |> CCOption.map_or ~default:(txt "") (fun desc ->
+                 desc |> Description.value |> HttpUtils.add_line_breaks) )
+        ; ( Field.CostCenter
+          , experiment.cost_center
+            |> CCOption.map_or ~default:"" CostCenter.value
+            |> txt )
+        ; ( Field.OrganisationalUnit
+          , experiment.organisational_unit
+            |> CCOption.map_or
+                 ~default:""
+                 Organisational_unit.(fun ou -> ou.name |> Name.value)
+            |> txt )
         ; ( Field.DirectRegistrationDisabled
           , direct_registration_disabled_value |> boolean_value )
         ; ( Field.RegistrationDisabled
@@ -529,7 +565,7 @@ let waiting_list
   let open Waiting_list.ExperimentList in
   let waiting_list_table waiting_list_entries =
     let thead =
-      (Field.[ Name; Email; PhoneNumber; SignedUpAt; AdminComment ]
+      (Field.[ Name; Email; CellPhone; SignedUpAt; AdminComment ]
        |> Table.fields_to_txt language)
       @ [ txt "" ]
     in
@@ -541,8 +577,8 @@ let waiting_list
             [ txt (fullname entry.contact)
             ; txt (email_address entry.contact |> Pool_user.EmailAddress.value)
             ; txt
-                (entry.contact.phone_number
-                 |> map_or ~default:"" Pool_user.PhoneNumber.value)
+                (entry.contact.cell_phone
+                 |> map_or ~default:"" Pool_user.CellPhone.value)
             ; txt
                 (entry.created_at
                  |> CreatedAt.value

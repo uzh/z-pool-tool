@@ -135,8 +135,8 @@ type success =
   | PasswordChanged
   | PasswordReset
   | PasswordResetSuccessMessage
-  | PhoneNumberTokenSent
-  | PhoneNumberVerified
+  | CellPhoneTokenSent
+  | CellPhoneVerified
   | Published of Field.t
   | RemovedFromWaitingList
   | Rescheduled of Field.t
@@ -191,7 +191,7 @@ type control =
   | Edit of Field.t option
   | Enable
   | Enroll
-  | EnterNewPhoneNumber
+  | EnterNewCellPhone
   | Filter of Field.t option
   | Login
   | Manage of Field.t

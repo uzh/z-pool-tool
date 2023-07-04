@@ -16,6 +16,10 @@ module Description : sig
   include Pool_common.Model.StringSig
 end
 
+module CostCenter : sig
+  include Pool_common.Model.StringSig
+end
+
 module DirectRegistrationDisabled : sig
   include Pool_common.Model.BooleanSig
 end
@@ -42,7 +46,9 @@ type t =
   { id : Id.t
   ; title : Title.t
   ; public_title : PublicTitle.t
-  ; description : Description.t
+  ; description : Description.t option
+  ; cost_center : CostCenter.t option
+  ; organisational_unit : Organisational_unit.t option
   ; filter : Filter.t option
   ; direct_registration_disabled : DirectRegistrationDisabled.t
   ; registration_disabled : RegistrationDisabled.t
@@ -61,7 +67,9 @@ val create
   :  ?id:Id.t
   -> Title.t
   -> PublicTitle.t
-  -> Description.t
+  -> Description.t option
+  -> CostCenter.t option
+  -> Organisational_unit.t option
   -> DirectRegistrationDisabled.t
   -> RegistrationDisabled.t
   -> AllowUninvitedSignup.t
@@ -72,7 +80,8 @@ val create
 type create =
   { title : Title.t
   ; public_title : PublicTitle.t
-  ; description : Description.t
+  ; description : Description.t option
+  ; cost_center : CostCenter.t option
   ; direct_registration_disabled : DirectRegistrationDisabled.t
   ; registration_disabled : RegistrationDisabled.t
   ; allow_uninvited_signup : AllowUninvitedSignup.t
@@ -88,7 +97,7 @@ module Public : sig
   type t =
     { id : Id.t
     ; public_title : PublicTitle.t
-    ; description : Description.t
+    ; description : Description.t option
     ; direct_registration_disabled : DirectRegistrationDisabled.t
     ; experiment_type : Pool_common.ExperimentType.t option
     }
@@ -172,7 +181,6 @@ val possible_participant_count : t -> int Lwt.t
 val possible_participants : t -> Contact.t list Lwt.t
 val title_value : t -> string
 val public_title_value : t -> string
-val description_value : t -> string
 val session_reminder_lead_time_value : t -> Ptime.span option
 val direct_registration_disabled_value : t -> bool
 val registration_disabled_value : t -> bool

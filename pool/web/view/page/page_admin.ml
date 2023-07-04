@@ -11,6 +11,7 @@ module I18n = Page_admin_i18n
 module Location = Page_admin_location
 module Mailing = Page_admin_mailings
 module MessageTemplate = Page_admin_message_template
+module OrganisationalUnit = Page_admin_organisational_units
 module Session = Page_admin_session
 module Settings = Page_admin_settings
 module WaitingList = Page_admin_waiting_list

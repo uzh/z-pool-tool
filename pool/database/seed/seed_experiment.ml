@@ -9,6 +9,7 @@ let experiments pool =
     [ ( "The Twenty pound auction"
       , "Trading experiment"
       , "It was great fun."
+      , Some "F-00000-11-22"
       , false
       , Some (60 * 60) )
     ; ( "The Wallet Game"
@@ -16,6 +17,7 @@ let experiments pool =
       , "Students bid for an object in a first-price auction. Each receives an \
          independently drawn signal of the value of the object. The actual \
          value is the sum of the signal."
+      , Some "F-00000-11-22"
       , false
       , None )
     ; ( "The Ultimatum and the Dictator Bargaining Games"
@@ -23,6 +25,7 @@ let experiments pool =
       , "The experiment illustrates the problem of public good provision as \
          discussed in most microeconomics lectures or lectures on public \
          economics."
+      , None
       , true
       , Some (60 * 60) )
     ]
@@ -32,6 +35,7 @@ let experiments pool =
       (fun ( title
            , public_title
            , description
+           , cost_center
            , direct_registration_disabled
            , session_reminder_lead_time ) ->
         let experiment =
@@ -40,7 +44,10 @@ let experiments pool =
           let public_title =
             PublicTitle.create public_title |> get_or_failwith
           in
-          let description = Description.create description |> get_or_failwith in
+          let description =
+            Description.create description |> get_or_failwith |> CCOption.return
+          in
+          let cost_center = cost_center |> CCOption.map CostCenter.of_string in
           let session_reminder_lead_time =
             session_reminder_lead_time
             >|= Ptime.Span.of_int_s
@@ -56,6 +63,8 @@ let experiments pool =
             title
             public_title
             description
+            cost_center
+            None
             direct_registration_disabled
             registration_disabled
             allow_uninvited_signup

@@ -11,6 +11,13 @@ module Description = struct
   let schema () = schema field ()
 end
 
+module Limitations = struct
+  include Pool_common.Model.String
+
+  let field = Pool_common.Message.Field.Limitations
+  let schema () = schema field ()
+end
+
 (* TODO [aerben] rename to contact *)
 module ParticipantAmount = struct
   type t = int [@@deriving eq, show]
@@ -117,6 +124,7 @@ type t =
   ; start : Start.t
   ; duration : Ptime.Span.t
   ; description : Description.t option
+  ; limitations : Limitations.t option
   ; location : Pool_location.t
   ; max_participants : ParticipantAmount.t
   ; min_participants : ParticipantAmount.t
@@ -151,6 +159,7 @@ let create
   start
   duration
   description
+  limitations
   location
   max_participants
   min_participants
@@ -163,6 +172,7 @@ let create
   ; start
   ; duration
   ; description
+  ; limitations
   ; location
   ; max_participants
   ; min_participants

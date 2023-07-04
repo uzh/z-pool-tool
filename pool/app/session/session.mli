@@ -8,6 +8,10 @@ module Description : sig
   include Pool_common.Model.StringSig
 end
 
+module Limitations : sig
+  include Pool_common.Model.StringSig
+end
+
 module ParticipantAmount : sig
   include Pool_common.Model.BaseSig
 
@@ -37,6 +41,7 @@ type base =
   { start : Start.t
   ; duration : Duration.t
   ; description : Description.t option
+  ; limitations : Limitations.t option
   ; max_participants : ParticipantAmount.t
   ; min_participants : ParticipantAmount.t
   ; overbook : ParticipantAmount.t
@@ -47,6 +52,7 @@ type update =
   { start : Start.t option
   ; duration : Duration.t option
   ; description : Description.t option
+  ; limitations : Limitations.t option
   ; max_participants : ParticipantAmount.t
   ; min_participants : ParticipantAmount.t
   ; overbook : ParticipantAmount.t
@@ -96,6 +102,7 @@ type t =
   ; start : Start.t
   ; duration : Duration.t
   ; description : Description.t option
+  ; limitations : Limitations.t option
   ; location : Pool_location.t
   ; max_participants : ParticipantAmount.t
   ; min_participants : ParticipantAmount.t
@@ -119,6 +126,7 @@ val create
   -> Start.t
   -> Duration.t
   -> Description.t option
+  -> Limitations.t option
   -> Pool_location.t
   -> ParticipantAmount.t
   -> ParticipantAmount.t

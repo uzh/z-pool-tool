@@ -22,6 +22,12 @@ module Description = struct
   let t = Pool_common.Repo.make_caqti_type Caqti_type.string create value
 end
 
+module CostCenter = struct
+  include CostCenter
+
+  let t = Pool_common.Repo.make_caqti_type Caqti_type.string create value
+end
+
 module DirectRegistrationDisabled = struct
   include DirectRegistrationDisabled
 
@@ -62,26 +68,31 @@ let t =
       , ( m.title
         , ( m.public_title
           , ( m.description
-            , ( m.filter
-              , ( m.direct_registration_disabled
-                , ( m.registration_disabled
-                  , ( m.allow_uninvited_signup
-                    , ( m.experiment_type
-                      , ( m.session_reminder_lead_time
-                        , (m.created_at, m.updated_at) ) ) ) ) ) ) ) ) ) )
+            , ( m.cost_center
+              , ( m.organisational_unit
+                , ( m.filter
+                  , ( m.direct_registration_disabled
+                    , ( m.registration_disabled
+                      , ( m.allow_uninvited_signup
+                        , ( m.experiment_type
+                          , ( m.session_reminder_lead_time
+                            , (m.created_at, m.updated_at) ) ) ) ) ) ) ) ) ) )
+        ) )
   in
   let decode
     ( id
     , ( title
       , ( public_title
         , ( description
-          , ( filter
-            , ( direct_registration_disabled
-              , ( registration_disabled
-                , ( allow_uninvited_signup
-                  , ( experiment_type
-                    , (session_reminder_lead_time, (created_at, updated_at)) )
-                  ) ) ) ) ) ) ) )
+          , ( cost_center
+            , ( organisational_unit
+              , ( filter
+                , ( direct_registration_disabled
+                  , ( registration_disabled
+                    , ( allow_uninvited_signup
+                      , ( experiment_type
+                        , (session_reminder_lead_time, (created_at, updated_at))
+                        ) ) ) ) ) ) ) ) ) ) )
     =
     let open CCResult in
     Ok
@@ -89,6 +100,8 @@ let t =
       ; title
       ; public_title
       ; description
+      ; cost_center
+      ; organisational_unit
       ; filter
       ; direct_registration_disabled
       ; registration_disabled
@@ -110,40 +123,52 @@ let t =
             (tup2
                PublicTitle.t
                (tup2
-                  Description.t
+                  (option Description.t)
                   (tup2
-                     (option Filter.Repo.t)
+                     (option CostCenter.t)
                      (tup2
-                        DirectRegistrationDisabled.t
+                        (option Organisational_unit.Repo.t)
                         (tup2
-                           RegistrationDisabled.t
+                           (option Filter.Repo.t)
                            (tup2
-                              AllowUninvitedSignup.t
+                              DirectRegistrationDisabled.t
                               (tup2
-                                 (option Pool_common.Repo.ExperimentType.t)
+                                 RegistrationDisabled.t
                                  (tup2
-                                    (option
-                                       Pool_common.Repo.Reminder.LeadTime.t)
+                                    AllowUninvitedSignup.t
                                     (tup2
-                                       Common.Repo.CreatedAt.t
-                                       Common.Repo.UpdatedAt.t))))))))))))
+                                       (option
+                                          Pool_common.Repo.ExperimentType.t)
+                                       (tup2
+                                          (option
+                                             Pool_common.Repo.Reminder.LeadTime
+                                             .t)
+                                          (tup2
+                                             Common.Repo.CreatedAt.t
+                                             Common.Repo.UpdatedAt.t))))))))))))))
 ;;
 
 module Write = struct
   let t =
     let encode (m : t) =
       let filter = m.filter |> CCOption.map (fun filter -> filter.Filter.id) in
+      let organisational_unit =
+        m.organisational_unit
+        |> CCOption.map (fun ou -> ou.Organisational_unit.id)
+      in
       Ok
         ( m.id
         , ( m.title
           , ( m.public_title
             , ( m.description
-              , ( filter
-                , ( m.direct_registration_disabled
-                  , ( m.registration_disabled
-                    , ( m.allow_uninvited_signup
-                      , (m.experiment_type, m.session_reminder_lead_time) ) ) )
-                ) ) ) ) )
+              , ( m.cost_center
+                , ( organisational_unit
+                  , ( filter
+                    , ( m.direct_registration_disabled
+                      , ( m.registration_disabled
+                        , ( m.allow_uninvited_signup
+                          , (m.experiment_type, m.session_reminder_lead_time) )
+                        ) ) ) ) ) ) ) ) )
     in
     let decode _ = failwith "Write only model" in
     Caqti_type.(
@@ -157,18 +182,24 @@ module Write = struct
               (tup2
                  PublicTitle.t
                  (tup2
-                    Description.t
+                    (option Description.t)
                     (tup2
-                       (option RepoId.t)
+                       (option CostCenter.t)
                        (tup2
-                          DirectRegistrationDisabled.t
+                          (option Organisational_unit.Repo.Id.t)
                           (tup2
-                             RegistrationDisabled.t
+                             (option RepoId.t)
                              (tup2
-                                AllowUninvitedSignup.t
+                                DirectRegistrationDisabled.t
                                 (tup2
-                                   (option Pool_common.Repo.ExperimentType.t)
-                                   (option Pool_common.Repo.Reminder.LeadTime.t)))))))))))
+                                   RegistrationDisabled.t
+                                   (tup2
+                                      AllowUninvitedSignup.t
+                                      (tup2
+                                         (option
+                                            Pool_common.Repo.ExperimentType.t)
+                                         (option
+                                            Pool_common.Repo.Reminder.LeadTime.t)))))))))))))
   ;;
 end
 
@@ -205,7 +236,7 @@ module Public = struct
            (tup2
               PublicTitle.t
               (tup2
-                 Description.t
+                 (option Description.t)
                  (tup2
                     DirectRegistrationDisabled.t
                     (option Pool_common.Repo.ExperimentType.t))))))

@@ -21,12 +21,14 @@ let rec field_to_string =
   | Assistants -> "Assistenten"
   | Building -> "Gebäude"
   | CanceledAt -> "Abgesagt am"
+  | CellPhone -> "Mobiltelefon"
   | Chronological -> "chronologisch"
   | City -> "Ort"
   | ClosedAt -> "Geschlossen am"
   | Contact -> "Kontakt"
   | ContactEmail -> "Kontakt E-Mail Adresse"
   | Contacts -> "Kontakte"
+  | CostCenter -> "Kostenstelle"
   | Context -> "Kontext"
   | CreatedAt -> "Erstellt am"
   | CurrentPassword -> "Aktuelles Passwort"
@@ -101,6 +103,7 @@ let rec field_to_string =
   | LastRunAt -> "Letzter Durchlauf"
   | LeadTime -> "Vorlaufzeit"
   | Limit -> "Limit"
+  | Limitations -> "Einschränkungen"
   | Link -> "Link"
   | Location -> "Lokalität"
   | LogoType -> "Logo Typ"
@@ -125,6 +128,7 @@ let rec field_to_string =
   | Operator -> "Operator"
   | Operators -> "Operatoren"
   | Order -> "Reihenfolge"
+  | OrganisationalUnit -> "Organisationseinheit"
   | Overbook -> "Überbuchen"
   | OverriddenValue -> "Überschriebene Kontakt-Antwort"
   | Override -> "Überschreiben"
@@ -137,7 +141,6 @@ let rec field_to_string =
   | Password -> "Passwort"
   | PasswordConfirmation -> "Passwort wiederholen"
   | Paused -> "Pausiert"
-  | PhoneNumber -> "Telefonnummer"
   | PlainText -> "Klartext"
   | Predicate -> "Prädikat"
   | Profile -> "Profil"
@@ -241,10 +244,10 @@ let success_to_string : success -> string = function
   | PasswordResetSuccessMessage ->
     "Falls ein Account zu der von dir eingegebenen E-Mail Adresse existiert,  \
      wird dir ein E-Mail mit einem Link zur Passwort zurücksetzung gesendet."
-  | PhoneNumberTokenSent ->
+  | CellPhoneTokenSent ->
     "Es wurde eine Textnachricht zur Überprüfung an Ihr Telefon gesendet. \
      Bitte geben Sie den angegebenen Code ein."
-  | PhoneNumberVerified -> "Ihre Telefonnummer wurde erfolgreich geprüft."
+  | CellPhoneVerified -> "Ihre Telefonnummer wurde erfolgreich geprüft."
   | Published field ->
     field_message "" (field_to_string field) "wurde erfolgreich veröffentlicht."
   | RemovedFromWaitingList -> "Sie wurden von der Warteliste entfernt."
@@ -514,7 +517,7 @@ let control_to_string = function
   | Edit field -> format_submit "bearbeiten" field
   | Enable -> format_submit "aktivieren" None
   | Enroll -> format_submit "einschreiben" None
-  | EnterNewPhoneNumber -> "eine andere Nummer eingeben"
+  | EnterNewCellPhone -> "eine andere Nummer eingeben"
   | Filter field -> format_submit "filtern" field
   | Login -> format_submit "login" None
   | Manage field -> format_submit "manage" (Some field)

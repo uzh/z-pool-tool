@@ -306,7 +306,7 @@ let () =
         ; test_case
             "cancel valid with missing phone number"
             `Quick
-            Session_test.cancel_valid_with_missing_phone_number
+            Session_test.cancel_valid_with_missing_cell_phone
         ; test_case
             "cancel with email and text notification"
             `Quick
@@ -404,6 +404,16 @@ let () =
             "create message template with invalid language"
             `Quick
             Message_template_test.create_with_unavailable_language
+        ] )
+    ; ( "organisational unit"
+      , [ test_case
+            "create orgnisatinal unit succeeds"
+            `Quick
+            Organisational_unit_test.create_succeeds
+        ; test_case
+            "create orgnisatinal unit fails"
+            `Quick
+            Organisational_unit_test.create_fails
         ] )
     ]
 ;;

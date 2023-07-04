@@ -30,6 +30,7 @@ module Sql = struct
           pool_sessions.start,
           pool_sessions.duration,
           pool_sessions.description,
+          pool_sessions.limitations,
           LOWER(CONCAT(
             SUBSTR(HEX(pool_locations.uuid), 1, 8), '-',
             SUBSTR(HEX(pool_locations.uuid), 9, 4), '-',
@@ -415,6 +416,7 @@ module Sql = struct
         start,
         duration,
         description,
+        limitations,
         location_uuid,
         max_participants,
         min_participants,
@@ -430,14 +432,15 @@ module Sql = struct
         $4,
         $5,
         $6,
-        UNHEX(REPLACE($7, '-', '')),
-        $8,
+        $7,
+        UNHEX(REPLACE($8, '-', '')),
         $9,
         $10,
         $11,
         $12,
         $13,
-        $14
+        $14,
+        $15
       )
     |sql}
     |> Caqti_type.(tup2 string RepoEntity.Write.t ->. unit)
@@ -459,14 +462,15 @@ module Sql = struct
         start = $3,
         duration = $4,
         description = $5,
-        location_uuid = UNHEX(REPLACE($6, '-', '')),
-        max_participants = $7,
-        min_participants = $8,
-        overbook = $9,
-        reminder_lead_time = $10,
-        reminder_sent_at = $11,
-        closed_at = $12,
-        canceled_at = $13
+        limitations = $6,
+        location_uuid = UNHEX(REPLACE($7, '-', '')),
+        max_participants = $8,
+        min_participants = $9,
+        overbook = $10,
+        reminder_lead_time = $11,
+        reminder_sent_at = $12,
+        closed_at = $13,
+        canceled_at = $14
       WHERE
         uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}

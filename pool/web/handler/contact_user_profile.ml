@@ -29,7 +29,7 @@ let show usage req =
            |> CCOption.is_some
          in
          let%lwt verification =
-           Contact.find_phone_number_verification_by_contact
+           Contact.find_cell_phone_verification_by_contact
              database_label
              contact
          in
@@ -162,7 +162,7 @@ let update_password req =
   result |> HttpUtils.extract_happy_path_with_actions ~src req
 ;;
 
-let update_phone_number req =
+let update_cell_phone req =
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
   let result
     ({ Pool_context.database_label; language; query_language; _ } as context)
@@ -172,11 +172,11 @@ let update_phone_number req =
     Utils.Lwt_result.map_error (fun msg ->
       HttpUtils.(msg, contact_info_path, [ urlencoded_to_flash urlencoded ]))
     @@ let* contact = Pool_context.find_contact context |> Lwt_result.lift in
-       let* phone_number =
+       let* cell_phone =
          let find field =
            HttpUtils.find_in_urlencoded field urlencoded |> Lwt_result.lift
          in
-         let* phone_number = find PoolField.PhoneNumber in
+         let* cell_phone = find PoolField.CellPhone in
          let* area_code = find PoolField.AreaCode in
          area_code
          |> CCInt.of_string
@@ -185,8 +185,8 @@ let update_phone_number req =
               |> function
               | None -> Error Pool_common.Message.(Invalid Field.AreaCode)
               | Some (code, _) ->
-                Format.asprintf "+%i%s" code phone_number
-                |> Pool_user.PhoneNumber.create)
+                Format.asprintf "+%i%s" code cell_phone
+                |> Pool_user.CellPhone.create)
          |> Lwt_result.lift
        in
        let token = Pool_common.VerificationCode.create () in
@@ -198,25 +198,25 @@ let update_phone_number req =
            database_label
            language
            tenant
-           phone_number
+           cell_phone
            token
          |>> Text_message.Service.send database_label
        in
        let* events =
-         Command.AddPhoneNumber.handle ~tags (contact, phone_number, token)
+         Command.AddCellPhone.handle ~tags (contact, cell_phone, token)
          |> Lwt_result.lift
        in
        let%lwt () = Pool_event.handle_events ~tags database_label events in
        HttpUtils.(
          redirect_to_with_actions
            (path_with_language query_language contact_info_path)
-           [ Message.set ~success:[ Pool_common.Message.PhoneNumberTokenSent ] ])
+           [ Message.set ~success:[ Pool_common.Message.CellPhoneTokenSent ] ])
        |> Lwt_result.ok
   in
   result |> HttpUtils.extract_happy_path_with_actions req
 ;;
 
-let verify_phone_number req =
+let verify_cell_phone req =
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
   let result ({ Pool_context.database_label; query_language; _ } as context) =
     let open Utils.Lwt_result.Infix in
@@ -230,21 +230,21 @@ let verify_phone_number req =
          >|= Pool_common.VerificationCode.of_string
          |> Lwt_result.lift
        in
-       let* { User.UnverifiedPhoneNumber.phone_number; _ } =
-         Contact.find_phone_number_verification_by_contact_and_code
+       let* { User.UnverifiedCellPhone.cell_phone; _ } =
+         Contact.find_cell_phone_verification_by_contact_and_code
            database_label
            contact
            token
        in
        let* events =
-         Command.VerifyPhoneNumber.handle ~tags (contact, phone_number)
+         Command.VerifyCellPhone.handle ~tags (contact, cell_phone)
          |> Lwt_result.lift
        in
        let%lwt () = Pool_event.handle_events ~tags database_label events in
        HttpUtils.(
          redirect_to_with_actions
            (path_with_language query_language contact_info_path)
-           [ Message.set ~success:[ Pool_common.Message.PhoneNumberVerified ] ])
+           [ Message.set ~success:[ Pool_common.Message.CellPhoneVerified ] ])
        |> Lwt_result.ok
   in
   result |> HttpUtils.extract_happy_path_with_actions req
@@ -257,7 +257,7 @@ let reset_phone_verification req =
     Utils.Lwt_result.map_error (fun msg -> msg, contact_info_path, [])
     @@ let* contact = Pool_context.find_contact context |> Lwt_result.lift in
        let* events =
-         Command.ResetPhoneNumberVerification.handle ~tags contact
+         Command.ResetCellPhoneVerification.handle ~tags contact
          |> Lwt_result.lift
        in
        let%lwt () = Pool_event.handle_events ~tags database_label events in
@@ -281,12 +281,8 @@ let resend_token req =
        let* { Pool_context.Tenant.tenant; _ } =
          Pool_context.Tenant.find req |> Lwt_result.lift
        in
-       let* { Pool_user.UnverifiedPhoneNumber.phone_number
-            ; verification_code
-            ; _
-            }
-         =
-         Contact.find_full_phone_number_verification_by_contact
+       let* { Pool_user.UnverifiedCellPhone.cell_phone; verification_code; _ } =
+         Contact.find_full_cell_phone_verification_by_contact
            database_label
            contact
        in
@@ -295,7 +291,7 @@ let resend_token req =
            database_label
            language
            tenant
-           phone_number
+           cell_phone
            verification_code
          |>> Text_message.Service.send database_label
        in
@@ -376,7 +372,7 @@ let completion_post req =
                   (field
                    |> Public.to_common_field language
                    |> Pool_common.Message.Field.array_key)
-           | Boolean _ | Number _ | Select _ | Text _ ->
+           | Boolean _ | Date _ | Number _ | Select _ | Text _ ->
              CCList.assoc_opt ~eq:CCString.equal id urlencoded
              |> CCOption.value ~default:[]
              |> Lwt.return)

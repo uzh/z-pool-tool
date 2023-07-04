@@ -6,9 +6,9 @@ let personal_detail language contact =
   Pool_common.Message.
     [ Field.Name, fullname contact |> txt
     ; Field.Email, email_address contact |> Pool_user.EmailAddress.value |> txt
-    ; ( Field.PhoneNumber
-      , contact.phone_number
-        |> CCOption.map_or ~default:"" Pool_user.PhoneNumber.value
+    ; ( Field.CellPhone
+      , contact.cell_phone
+        |> CCOption.map_or ~default:"" Pool_user.CellPhone.value
         |> txt )
     ]
   |> Table.vertical_table `Striped language

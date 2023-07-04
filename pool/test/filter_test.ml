@@ -39,69 +39,147 @@ module TestContacts = struct
 end
 
 module CustomFieldData = struct
-  let nr_of_siblings_answer = 3
   let published = () |> Custom_field.PublishedAt.create_now |> CCOption.pure
 
-  let nr_of_siblings =
+  let create_custom_field field_name encoder =
     let open Custom_field_test in
-    Custom_field.(
-      Number
-        { id = Id.create ()
-        ; model = Model.Contact
-        ; name =
-            Name.create [ lang ] [ lang, "Nr of siblings" ] |> get_exn_poolerror
-        ; hint = [] |> Hint.create |> get_exn_poolerror
-        ; validation = Validation.pure
-        ; required = false |> Required.create
-        ; disabled = false |> Disabled.create
-        ; custom_field_group_id = None
-        ; admin_hint = Data.admin_hint
-        ; admin_override = Data.admin_override
-        ; admin_view_only = Data.admin_view_only
-        ; admin_input_only = Data.admin_input_only
-        ; published_at = published
-        })
+    Custom_field.
+      { id = Id.create ()
+      ; model = Model.Contact
+      ; name = Name.create [ lang ] [ lang, field_name ] |> get_exn_poolerror
+      ; hint = [] |> Hint.create |> get_exn_poolerror
+      ; validation = Validation.pure
+      ; required = false |> Required.create
+      ; disabled = false |> Disabled.create
+      ; custom_field_group_id = None
+      ; admin_hint = Data.admin_hint
+      ; admin_override = Data.admin_override
+      ; admin_view_only = Data.admin_view_only
+      ; admin_input_only = Data.admin_input_only
+      ; published_at = published
+      }
+    |> encoder
   ;;
 
-  let nr_of_siblings_public is_admin answer_value =
-    let open Custom_field in
-    let open Custom_field_test in
-    let answer =
-      match is_admin with
-      | true -> Answer.create ?admin_value:answer_value None
-      | false -> Answer.create answer_value
-    in
-    let version = 0 |> Pool_common.Version.of_int in
-    Public.Number
-      ( { Public.id = id nr_of_siblings
-        ; name = name nr_of_siblings
-        ; hint = hint nr_of_siblings
-        ; validation = Validation.pure
-        ; required = required nr_of_siblings
-        ; admin_override = Data.admin_override
-        ; admin_input_only = Data.admin_input_only
-        ; version
-        }
-      , Some answer )
-  ;;
-
-  let create_nr_of_siblings () =
-    Custom_field.Created nr_of_siblings |> Pool_event.custom_field
-  ;;
-
-  let answer_nr_of_siblings ~answer_value ?admin contacts =
+  let save_answers public ?admin contacts =
     CCList.map
       (fun contact ->
         let user =
           admin |> CCOption.value ~default:(Pool_context.Contact contact)
         in
-        Custom_field.AnswerUpserted
-          ( nr_of_siblings_public (CCOption.is_some admin) answer_value
-          , Contact.id contact
-          , user )
+        Custom_field.AnswerUpserted (public, Contact.id contact, user)
         |> Pool_event.custom_field)
       contacts
   ;;
+
+  let save_custom_field t = Custom_field.Created t |> Pool_event.custom_field
+
+  module NrOfSiblings = struct
+    let answer_value = 3
+
+    let field =
+      create_custom_field "Nr of siblings" (fun a -> Custom_field.Number a)
+    ;;
+
+    let public is_admin answer_value =
+      let open Custom_field in
+      let open Custom_field_test in
+      let answer =
+        match is_admin with
+        | true -> Answer.create ?admin_value:answer_value None
+        | false -> Answer.create answer_value
+      in
+      let version = 0 |> Pool_common.Version.of_int in
+      Public.Number
+        ( { Public.id = id field
+          ; name = name field
+          ; hint = hint field
+          ; validation = Validation.pure
+          ; required = required field
+          ; admin_override = Data.admin_override
+          ; admin_input_only = Data.admin_input_only
+          ; version
+          }
+        , Some answer )
+    ;;
+
+    let save () = save_custom_field field
+
+    let save_answers ~answer_value ?admin contacts =
+      CCList.map
+        (fun contact ->
+          let user =
+            admin |> CCOption.value ~default:(Pool_context.Contact contact)
+          in
+          Custom_field.AnswerUpserted
+            ( public (CCOption.is_some admin) answer_value
+            , Contact.id contact
+            , user )
+          |> Pool_event.custom_field)
+        contacts
+    ;;
+  end
+
+  module Birthday = struct
+    let answer_value =
+      "1990-01-01"
+      |> Pool_common.Model.Ptime.date_of_string
+      |> get_or_failwith_pool_error
+    ;;
+
+    let field = create_custom_field "Birthday" (fun a -> Custom_field.Date a)
+
+    let public is_admin answer_value =
+      let open Custom_field in
+      let open Custom_field_test in
+      let answer =
+        match is_admin with
+        | true -> Answer.create ?admin_value:answer_value None
+        | false -> Answer.create answer_value
+      in
+      let version = 0 |> Pool_common.Version.of_int in
+      Public.Date
+        ( { Public.id = id field
+          ; name = name field
+          ; hint = hint field
+          ; validation = Validation.pure
+          ; required = required field
+          ; admin_override = Data.admin_override
+          ; admin_input_only = Data.admin_input_only
+          ; version
+          }
+        , Some answer )
+    ;;
+
+    let save () = save_custom_field field
+
+    let save_answers ~answer_value ?admin contacts =
+      CCList.map
+        (fun contact ->
+          let user =
+            admin |> CCOption.value ~default:(Pool_context.Contact contact)
+          in
+          Custom_field.AnswerUpserted
+            ( public (CCOption.is_some admin) answer_value
+            , Contact.id contact
+            , user )
+          |> Pool_event.custom_field)
+        contacts
+    ;;
+
+    let filter ?date operator () =
+      let open Filter in
+      let value = date |> CCOption.value ~default:answer_value in
+      let query =
+        Pred
+          (Predicate.create
+             Key.(CustomField (field |> Custom_field.id))
+             operator
+             (Single (Date value)))
+      in
+      create None query
+    ;;
+  end
 
   let admin_override_nr_field =
     let open Custom_field_test in
@@ -262,7 +340,7 @@ module CustomFieldData = struct
   ;;
 
   let publish_fields () =
-    [ multi_select_custom_field; nr_of_siblings ]
+    [ multi_select_custom_field; NrOfSiblings.field ]
     |> CCList.map (fun field ->
          Custom_field.Published field |> Pool_event.custom_field)
   ;;
@@ -271,11 +349,11 @@ end
 let nr_of_siblings_filter ?nr () =
   let open Filter in
   let value =
-    nr |> CCOption.value ~default:CustomFieldData.nr_of_siblings_answer
+    nr |> CCOption.value ~default:CustomFieldData.NrOfSiblings.answer_value
   in
   Pred
     (Predicate.create
-       Key.(CustomField (CustomFieldData.nr_of_siblings |> Custom_field.id))
+       Key.(CustomField (CustomFieldData.NrOfSiblings.field |> Custom_field.id))
        equal_operator
        (Single (Nr (value |> CCFloat.of_int))))
 ;;
@@ -343,12 +421,10 @@ let filter_contacts _ () =
     let%lwt contacts = TestContacts.all () in
     let%lwt experiment = Repo.first_experiment () in
     let%lwt () =
+      let open CustomFieldData in
       (* Save field and answer with 3 *)
-      CustomFieldData.(
-        create_nr_of_siblings ()
-        :: answer_nr_of_siblings
-             ~answer_value:(Some nr_of_siblings_answer)
-             contacts)
+      NrOfSiblings.(
+        save () :: save_answers ~answer_value:(Some answer_value) contacts)
       |> Lwt_list.iter_s (Pool_event.handle_event Data.database_label)
     in
     let filter = Filter.create None (nr_of_siblings_filter ()) in
@@ -422,7 +498,8 @@ let validate_filter_with_invalid_value _ () =
       let open Filter in
       Pred
         (Predicate.create
-           Key.(CustomField (CustomFieldData.nr_of_siblings |> Custom_field.id))
+           Key.(
+             CustomField (CustomFieldData.NrOfSiblings.field |> Custom_field.id))
            equal_operator
            (Single (Str "Not a number")))
     in
@@ -663,6 +740,7 @@ let no_admin_values_shown_to_contacts _ () =
       custom_fields
       |> CCList.filter (function
            | Public.Boolean (_, answer) -> answer >>= admin_value |> is_some
+           | Public.Date (_, answer) -> answer >>= admin_value |> is_some
            | Public.MultiSelect (_, _, answer) ->
              answer >>= admin_value |> is_some
            | Public.Number (_, answer) -> answer >>= admin_value |> is_some
@@ -823,7 +901,8 @@ let filter_by_empty_custom_field _ () =
     let query =
       Pred
         (Predicate.create
-           Key.(CustomField (CustomFieldData.nr_of_siblings |> Custom_field.id))
+           Key.(
+             CustomField (CustomFieldData.NrOfSiblings.field |> Custom_field.id))
            operator
            NoValue)
     in
@@ -840,10 +919,8 @@ let filter_by_non_empty_custom_field _ () =
     Integration_utils.ContactRepo.create ~with_terms_accepted:true ()
   in
   let%lwt () =
-    CustomFieldData.(
-      answer_nr_of_siblings
-        ~answer_value:(Some nr_of_siblings_answer)
-        [ contact ])
+    let open CustomFieldData in
+    NrOfSiblings.(save_answers ~answer_value:(Some answer_value) [ contact ])
     |> Lwt_list.iter_s (Pool_event.handle_event Data.database_label)
   in
   let%lwt experiment = Repo.first_experiment () in
@@ -852,7 +929,8 @@ let filter_by_non_empty_custom_field _ () =
     let query =
       Pred
         (Predicate.create
-           Key.(CustomField (CustomFieldData.nr_of_siblings |> Custom_field.id))
+           Key.(
+             CustomField (CustomFieldData.NrOfSiblings.field |> Custom_field.id))
            operator
            NoValue)
     in
@@ -870,7 +948,7 @@ let filter_by_empty_custom_field_with_deleted_value _ () =
   in
   let%lwt experiment = Repo.first_experiment () in
   let%lwt () =
-    CustomFieldData.(answer_nr_of_siblings ~answer_value:None [ contact ])
+    CustomFieldData.NrOfSiblings.(save_answers ~answer_value:None [ contact ])
     |> Lwt_list.iter_s (Pool_event.handle_event Data.database_label)
   in
   let filter operator =
@@ -878,7 +956,8 @@ let filter_by_empty_custom_field_with_deleted_value _ () =
     let query =
       Pred
         (Predicate.create
-           Key.(CustomField (CustomFieldData.nr_of_siblings |> Custom_field.id))
+           Key.(
+             CustomField (CustomFieldData.NrOfSiblings.field |> Custom_field.id))
            operator
            NoValue)
     in
@@ -888,4 +967,35 @@ let filter_by_empty_custom_field_with_deleted_value _ () =
   let%lwt () = test_filter true contact empty_filter experiment in
   let non_empty_filter = filter Operator.(Existence.NotEmpty |> existence) in
   test_filter false contact non_empty_filter experiment
+;;
+
+let filter_by_date_custom_field _ () =
+  let open CustomFieldData in
+  let%lwt contact =
+    Integration_utils.ContactRepo.create ~with_terms_accepted:true ()
+  in
+  let%lwt experiment = Repo.first_experiment () in
+  let%lwt () =
+    Birthday.(
+      save () :: save_answers ~answer_value:(Some answer_value) [ contact ])
+    |> Lwt_list.iter_s (Pool_event.handle_event Data.database_label)
+  in
+  let date =
+    "1985-01-01"
+    |> Pool_common.Model.Ptime.date_of_string
+    |> get_or_failwith_pool_error
+  in
+  let greater_filter =
+    Birthday.filter ~date Operator.(Size.Greater |> size) ()
+  in
+  let%lwt () = test_filter true contact greater_filter experiment in
+  let less_filter = Birthday.filter ~date Operator.(Size.Less |> size) () in
+  let%lwt () = test_filter false contact less_filter experiment in
+  let equal_filter =
+    Birthday.filter
+      ~date:Birthday.answer_value
+      Operator.(Equality.Equal |> equality)
+      ()
+  in
+  test_filter true contact equal_filter experiment
 ;;

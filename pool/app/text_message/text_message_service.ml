@@ -1,7 +1,7 @@
 module Queue = Sihl_queue.MariaDb
 open Entity
 open CCFun
-module PhoneNumber = Pool_user.PhoneNumber
+module CellPhone = Pool_user.CellPhone
 
 let src = Logs.Src.create "pool_tenant.service.text_message"
 let tags database_label = Pool_database.(Logger.Tags.create database_label)
@@ -46,7 +46,7 @@ let get_api_key database_label =
 
 let request_body { recipient; text; sender } =
   [ "from", [ Pool_tenant.Title.value sender ]
-  ; "to", [ PhoneNumber.value recipient ]
+  ; "to", [ CellPhone.value recipient ]
   ; "text", [ text ]
   ]
 ;;
@@ -68,7 +68,7 @@ Text:
 -----------------------
     |}
     (Pool_tenant.Title.value sender)
-    (PhoneNumber.value recipient)
+    (CellPhone.value recipient)
     text
 ;;
 
@@ -165,15 +165,15 @@ let handle ?ctx msg =
          m
            ~tags
            "Send text message to %s: %s\n%s"
-           (PhoneNumber.value msg.recipient)
+           (CellPhone.value msg.recipient)
            msg.text
            body_string);
        Lwt.return_ok ())
 ;;
 
-let test_api_key ~tags database_label api_key phone_number tenant_title =
+let test_api_key ~tags database_label api_key cell_phone tenant_title =
   let open Cohttp in
-  let msg = create phone_number tenant_title "Your API Key is valid." in
+  let msg = create cell_phone tenant_title "Your API Key is valid." in
   match%lwt intercept_message ~tags database_label msg with
   | Some () -> Lwt_result.return api_key
   | None ->
@@ -195,7 +195,7 @@ let test_api_key ~tags database_label api_key phone_number tenant_title =
          m
            ~tags
            "Verifying API Key: Send text message to %s: %s\n%s"
-           (PhoneNumber.value msg.recipient)
+           (CellPhone.value msg.recipient)
            msg.text
            body_string);
        Lwt.return_ok api_key)
@@ -231,6 +231,6 @@ let send database_label msg =
     m
       ~tags:(Pool_database.Logger.Tags.create database_label)
       "Dispatch text message to %s"
-      (Pool_user.PhoneNumber.value msg.recipient));
+      (Pool_user.CellPhone.value msg.recipient));
   Queue.dispatch ~ctx:(Pool_database.to_ctx database_label) msg Job.send
 ;;

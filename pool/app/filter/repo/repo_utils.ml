@@ -83,7 +83,7 @@ let add_value_to_params operator value dyn =
     Ok
       (match value with
        | Bool b -> add Caqti_type.string (Utils.Bool.to_string b)
-       | Date d -> add Caqti_type.ptime d
+       | Date d -> add Pool_common.Repo.Ptime.date d
        | Language lang -> add Caqti_type.string (Pool_common.Language.show lang)
        | Nr n -> add Caqti_type.float n
        | Option id ->

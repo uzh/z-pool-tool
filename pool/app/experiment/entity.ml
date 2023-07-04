@@ -27,6 +27,13 @@ module Description = struct
   let schema () = schema field ()
 end
 
+module CostCenter = struct
+  include Pool_common.Model.String
+
+  let field = Common.Message.Field.CostCenter
+  let schema () = schema field ()
+end
+
 module DirectRegistrationDisabled = struct
   include Pool_common.Model.Boolean
 
@@ -49,7 +56,9 @@ type t =
   { id : Id.t
   ; title : Title.t
   ; public_title : PublicTitle.t
-  ; description : Description.t
+  ; description : Description.t option
+  ; cost_center : CostCenter.t option
+  ; organisational_unit : Organisational_unit.t option
   ; filter : Filter.t option
   ; direct_registration_disabled : DirectRegistrationDisabled.t
   ; registration_disabled : RegistrationDisabled.t
@@ -66,6 +75,8 @@ let create
   title
   public_title
   description
+  cost_center
+  organisational_unit
   direct_registration_disabled
   registration_disabled
   allow_uninvited_signup
@@ -78,6 +89,8 @@ let create
     ; title
     ; public_title
     ; description
+    ; cost_center
+    ; organisational_unit
     ; filter = None
     ; direct_registration_disabled
     ; registration_disabled
@@ -91,13 +104,12 @@ let create
 
 let title_value (m : t) = Title.value m.title
 let public_title_value (m : t) = PublicTitle.value m.public_title
-let description_value (m : t) = Description.value m.description
 
 module Public = struct
   type t =
     { id : Id.t
     ; public_title : PublicTitle.t
-    ; description : Description.t
+    ; description : Description.t option
     ; direct_registration_disabled : DirectRegistrationDisabled.t
     ; experiment_type : Pool_common.ExperimentType.t option
     }

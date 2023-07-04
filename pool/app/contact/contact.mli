@@ -59,7 +59,7 @@ type t =
   ; terms_accepted_at : Pool_user.TermsAccepted.t option
   ; language : Pool_common.Language.t option
   ; experiment_type_preference : Pool_common.ExperimentType.t option
-  ; phone_number : Pool_user.PhoneNumber.t option
+  ; cell_phone : Pool_user.CellPhone.t option
   ; paused : Pool_user.Paused.t
   ; disabled : Pool_user.Disabled.t
   ; verified : Pool_user.Verified.t option
@@ -122,21 +122,21 @@ val should_send_registration_attempt_notification
   -> t
   -> bool Lwt.t
 
-val find_phone_number_verification_by_contact
+val find_cell_phone_verification_by_contact
   :  Pool_database.Label.t
   -> t
-  -> Pool_user.UnverifiedPhoneNumber.t option Lwt.t
+  -> Pool_user.UnverifiedCellPhone.t option Lwt.t
 
-val find_phone_number_verification_by_contact_and_code
+val find_cell_phone_verification_by_contact_and_code
   :  Pool_database.Label.t
   -> t
   -> Pool_common.VerificationCode.t
-  -> (Pool_user.UnverifiedPhoneNumber.t, Pool_common.Message.error) result Lwt.t
+  -> (Pool_user.UnverifiedCellPhone.t, Pool_common.Message.error) result Lwt.t
 
-val find_full_phone_number_verification_by_contact
+val find_full_cell_phone_verification_by_contact
   :  Pool_database.Label.t
   -> t
-  -> (Pool_user.UnverifiedPhoneNumber.full, Pool_common.Message.error) result
+  -> (Pool_user.UnverifiedCellPhone.full, Pool_common.Message.error) result
      Lwt.t
 
 val has_terms_accepted : Pool_database.Label.t -> t -> bool Lwt.t
@@ -174,13 +174,13 @@ type event =
   | TermsAccepted of t
   | Disabled of t
   | UnverifiedDeleted of t
-  | PhoneNumberAdded of
-      t * Pool_user.PhoneNumber.t * Pool_common.VerificationCode.t
-  | PhoneNumberVerified of t * Pool_user.PhoneNumber.t
-  | PhoneNumberVerificationReset of t
+  | CellPhoneAdded of t * Pool_user.CellPhone.t * Pool_common.VerificationCode.t
+  | CellPhoneVerified of t * Pool_user.CellPhone.t
+  | CellPhoneVerificationReset of t
   | ProfileUpdateTriggeredAtUpdated of t list
   | RegistrationAttemptNotificationSent of t
   | Updated of t
+  | SignInCounterUpdated of t
 
 val created : create -> event
 val updated : t -> event
@@ -200,7 +200,7 @@ module Preview : sig
   type t =
     { user : Sihl_user.t
     ; language : Pool_common.Language.t option
-    ; phone_number : Pool_user.PhoneNumber.t option
+    ; cell_phone : Pool_user.CellPhone.t option
     ; paused : Pool_user.Paused.t
     ; verified : Pool_user.Verified.t option
     ; num_invitations : NumberOfInvitations.t

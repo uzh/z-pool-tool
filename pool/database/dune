@@ -12,6 +12,7 @@
   logger
   mailing
   message_template
+  organisational_unit
   pool_location
   pool_user
   service

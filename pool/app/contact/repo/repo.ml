@@ -16,18 +16,19 @@ let set_registration_attempt_notification_sent_at =
   Repo_sql.set_registration_attempt_notification_sent_at
 ;;
 
-let add_phone_number = Repo_sql.add_phone_number
+let add_cell_phone = Repo_sql.add_cell_phone
 
-let find_phone_number_verification_by_contact =
-  Repo_sql.find_phone_number_verification_by_contact
+let find_cell_phone_verification_by_contact =
+  Repo_sql.find_cell_phone_verification_by_contact
 ;;
 
-let find_phone_number_verification_by_contact_and_code =
-  Repo_sql.find_phone_number_verification_by_contact_and_code
+let find_cell_phone_verification_by_contact_and_code =
+  Repo_sql.find_cell_phone_verification_by_contact_and_code
 ;;
 
-let find_full_phone_number_verification_by_contact =
-  Repo_sql.find_full_phone_number_verification_by_contact
+let find_full_cell_phone_verification_by_contact =
+  Repo_sql.find_full_cell_phone_verification_by_contact
 ;;
 
-let delete_unverified_phone_number = Repo_sql.delete_unverified_phone_number
+let delete_unverified_cell_phone = Repo_sql.delete_unverified_cell_phone
+let update_sign_in_count = Repo_sql.update_sign_in_count

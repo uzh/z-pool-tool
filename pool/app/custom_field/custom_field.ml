@@ -80,6 +80,16 @@ let validate_htmx ~is_admin value (m : Public.t) =
        |> to_field
      | None, false -> to_field None
      | None, true -> no_value)
+  | Date (public, answer) ->
+    let to_field a = Public.Date (public, a) in
+    (match single_value, required with
+     | Some value, _ ->
+       value
+       |> Ptime.date_of_string
+       >|= create_answer is_admin answer
+       >|= to_field
+     | None, false -> to_field None |> CCResult.return
+     | None, true -> no_value)
   | MultiSelect (public, options, answer) ->
     let to_field a = Public.MultiSelect (public, options, a) in
     (match value, required with
