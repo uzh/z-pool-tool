@@ -24,7 +24,7 @@ type update =
 let set_password
   : Database.Label.t -> t -> string -> string -> (unit, string) result Lwt.t
   =
- fun pool { user } password password_confirmation ->
+ fun pool { user; _ } password password_confirmation ->
   let open Lwt_result.Infix in
   Service.User.set_password
     ~ctx:(Pool_database.to_ctx pool)
@@ -37,10 +37,12 @@ let set_password
 type event =
   | Created of create
   | DetailsUpdated of t * update
-  | PasswordUpdated of
-      t * User.Password.t * User.Password.t * User.PasswordConfirmed.t
   | Disabled of t
   | Enabled of t
+  | ImportConfirmed of t * User.Password.t
+  | PasswordUpdated of
+      t * User.Password.t * User.Password.t * User.PasswordConfirmed.t
+  | SignInCounterUpdated of t
   | Verified of t
 [@@deriving eq, show]
 
@@ -93,6 +95,16 @@ let handle_event ~tags pool : event -> unit Lwt.t =
         (user admin)
     in
     Lwt.return_unit
+  | ImportConfirmed (admin, password) ->
+    let (_ : (Sihl_user.t Lwt.t, string) result) =
+      let open Pool_common in
+      Service.User.set_user_password admin.user (User.Password.to_sihl password)
+      |> CCResult.map (Service.User.update ~ctx:(Pool_database.to_ctx pool))
+      |> Utils.with_log_result_error ~src ~tags Message.nothandled
+    in
+    Repo.update
+      pool
+      { admin with import_pending = Pool_user.ImportPending.create false }
   | PasswordUpdated (admin, old_password, new_password, confirmed) ->
     let old_password = old_password |> User.Password.to_sihl in
     let new_password = new_password |> User.Password.to_sihl in
@@ -111,6 +123,7 @@ let handle_event ~tags pool : event -> unit Lwt.t =
       ||> Utils.with_log_result_error ~src ~tags Message.nothandled
     in
     Lwt.return_unit
+  | SignInCounterUpdated m -> Repo.update_sign_in_count pool m
   | Disabled _ -> Utils.todo ()
   | Enabled _ -> Utils.todo ()
   | Verified _ -> Utils.todo ()

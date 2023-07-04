@@ -6,21 +6,25 @@ module Sql = struct
     {sql|
       INSERT INTO pool_admins (
         user_uuid,
+        import_pending,
         created_at,
         updated_at
       ) VALUES (
         UNHEX(REPLACE($1, '-', '')),
+        $2,
         NOW(),
         NOW()
       )
     |sql}
-    |> Pool_common.Repo.Id.t ->. Caqti_type.unit
+    |> Caqti_type.(
+         tup2 Pool_common.Repo.Id.t Pool_user.Repo.ImportPending.t ->. unit)
   ;;
 
   let insert pool t =
-    t
-    |> Entity.id
-    |> Utils.Database.exec (Pool_database.Label.value pool) insert_request
+    Utils.Database.exec
+      (Pool_database.Label.value pool)
+      insert_request
+      (Entity.id t, t.Entity.import_pending)
   ;;
 
   let select_from_users_sql ?order_by where_fragment =
@@ -43,7 +47,8 @@ module Sql = struct
           user_users.admin,
           user_users.confirmed,
           user_users.created_at,
-          user_users.updated_at
+          user_users.updated_at,
+          pool_admins.import_pending
         FROM user_users
         INNER JOIN pool_admins
         ON pool_admins.user_uuid = user_users.uuid
@@ -118,6 +123,26 @@ module Sql = struct
       Utils.Database.collect (pool |> Pool_database.Label.value) request pv
   ;;
 
+  let update_request =
+    let open Caqti_request.Infix in
+    {sql|
+      UPDATE
+        pool_admins
+      SET
+        import_pending = $2
+      WHERE
+        user_uuid = UNHEX(REPLACE($1, '-', ''))
+    |sql}
+    |> Repo_entity.Write.t ->. Caqti_type.unit
+  ;;
+
+  let update pool t =
+    Utils.Database.exec
+      (Pool_database.Label.value pool)
+      update_request
+      (Repo_entity.Write.of_entity t)
+  ;;
+
   let update_sign_in_count_request =
     let open Caqti_request.Infix in
     {sql|
@@ -144,6 +169,7 @@ let insert = Sql.insert
 let find = Sql.find
 let find_all = Sql.find_all
 let find_multiple = Sql.find_multiple
+let update = Sql.update
 
 (* TODO: Call this on admin login. Depending on
    https://github.com/uzh/pool/pull/147 *)

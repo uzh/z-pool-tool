@@ -74,6 +74,7 @@ type t =
   ; paused_version : Pool_common.Version.t
   ; language_version : Pool_common.Version.t
   ; experiment_type_preference_version : Pool_common.Version.t
+  ; import_pending : Pool_user.ImportPending.t
   ; created_at : Ptime.t
   ; updated_at : Ptime.t
   }
@@ -177,6 +178,7 @@ type event =
   | CellPhoneAdded of t * Pool_user.CellPhone.t * Pool_common.VerificationCode.t
   | CellPhoneVerified of t * Pool_user.CellPhone.t
   | CellPhoneVerificationReset of t
+  | ImportConfirmed of t * Pool_user.Password.t
   | ProfileUpdateTriggeredAtUpdated of t list
   | RegistrationAttemptNotificationSent of t
   | Updated of t
@@ -184,7 +186,13 @@ type event =
 
 val created : create -> event
 val updated : t -> event
-val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
+
+val handle_event
+  :  ?tags:Logs.Tag.set
+  -> Pool_database.Label.t
+  -> event
+  -> unit Lwt.t
+
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string

@@ -118,6 +118,10 @@ module CellPhone : sig
     -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
 end
 
+module ImportPending : sig
+  include Pool_common.Model.BooleanSig
+end
+
 module UnverifiedCellPhone : sig
   type t =
     { cell_phone : CellPhone.t
@@ -187,6 +191,10 @@ module Repo : sig
 
   module CellPhone : sig
     val t : CellPhone.t Caqti_type.t
+  end
+
+  module ImportPending : sig
+    val t : ImportPending.t Caqti_type.t
   end
 
   module UnverifiedCellPhone : sig

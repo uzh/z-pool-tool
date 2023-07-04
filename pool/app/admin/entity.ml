@@ -1,14 +1,22 @@
 module Id = Pool_common.Id
 
-type t = { user : Sihl_user.t } [@@deriving eq, show]
+type t =
+  { user : Sihl_user.t
+  ; import_pending : Pool_user.ImportPending.t
+  }
+[@@deriving eq, show]
 
-let user { user } = user
-let create (user : Sihl_user.t) : t = { user }
+let user { user; _ } = user
+
+let create (user : Sihl_user.t) : t =
+  { user; import_pending = Pool_user.ImportPending.create false }
+;;
+
 let id ({ user; _ } : t) = Id.of_string user.Sihl_user.id
 let email ({ user; _ } : t) = user.Sihl_user.email
 let sexp_of_t t = t |> id |> Id.value |> fun s -> Sexplib0.Sexp.Atom s
 
-let full_name { user } =
+let full_name { user; _ } =
   Sihl_user.[ user.given_name; user.name ]
   |> CCList.filter_map CCFun.id
   |> CCString.concat " "

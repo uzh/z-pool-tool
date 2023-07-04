@@ -25,6 +25,7 @@ let rec field_to_string =
   | Chronological -> "chronological"
   | City -> "city"
   | ClosedAt -> "Closed at"
+  | ConfirmedAt -> "Confirmed at"
   | Contact -> "contact"
   | ContactEmail -> "contact email address"
   | Contacts -> "contacts"
@@ -82,6 +83,7 @@ let rec field_to_string =
   | I18n -> "translation"
   | Icon -> "icon"
   | Id -> "identifier"
+  | ImportPending -> "import pending"
   | InactiveUserDisableAfter -> "disable inactive user after"
   | InactiveUserWarning -> "warn inactive user"
   | Input -> "input"
@@ -123,6 +125,7 @@ let rec field_to_string =
   | NextRunAt -> "next run"
   | NoShow -> "no show"
   | NoShowCount -> "no shows"
+  | NotifiedAt -> "notified at"
   | NotifyVia -> "notify via"
   | Offset -> "offset"
   | Operator -> "operator"
@@ -154,6 +157,7 @@ let rec field_to_string =
   | Reason -> "reason"
   | Redirect -> "redirect"
   | RegistrationDisabled -> "registration disabled"
+  | RemindedAt -> "reminded at"
   | Required -> "required"
   | ResentAt -> "resent at"
   | Role -> "role"
@@ -238,6 +242,8 @@ let success_to_string : success -> string = function
      given email address is still available."
   | EmailVerified -> "Email successfully verified."
   | FileDeleted -> "File was successfully deleted."
+  | ImportCompleted ->
+    "The import of your account has successfully been completed."
   | MarkedAsDeleted field ->
     field_message "" (field_to_string field) "was marked as deleted."
   | PasswordChanged -> "Password successfully changed."
@@ -340,6 +346,9 @@ let rec error_to_string = function
     "Follow-up session can't start before main session."
   | HtmxVersionNotFound field ->
     Format.asprintf "No version found for field '%s'" field
+  | ImportPending ->
+    "The import of your user is not completed yet. Please check your inbox or \
+     contact an administrator."
   | Invalid field -> field_message "Invalid" (field_to_string field) "provided!"
   | InvalidEmailSuffix suffixes ->
     Format.asprintf

@@ -73,6 +73,7 @@ type t =
   ; paused_version : Pool_common.Version.t
   ; language_version : Pool_common.Version.t
   ; experiment_type_preference_version : Pool_common.Version.t
+  ; import_pending : Pool_user.ImportPending.t
   ; created_at : Pool_common.Model.Ptime.t
   ; updated_at : Pool_common.Model.Ptime.t
   }
@@ -99,6 +100,7 @@ module Write = struct
     ; paused_version : Pool_common.Version.t
     ; language_version : Pool_common.Version.t
     ; experiment_type_preference_version : Pool_common.Version.t
+    ; import_pending : Pool_user.ImportPending.t
     }
   [@@deriving eq, show]
 
@@ -122,6 +124,7 @@ module Write = struct
     ; paused_version = m.paused_version
     ; language_version = m.paused_version
     ; experiment_type_preference_version = m.experiment_type_preference_version
+    ; import_pending = m.import_pending
     }
   ;;
 end

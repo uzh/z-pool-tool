@@ -34,13 +34,7 @@ let sign_up_create req =
     let tags = Pool_context.Logger.Tags.req req in
     Utils.Lwt_result.map_error (fun msg ->
       msg, "/signup", [ HttpUtils.urlencoded_to_flash urlencoded ])
-    @@ let* () =
-         CCList.assoc ~eq:( = ) terms_key urlencoded
-         |> CCList.hd
-         |> CCString.equal "true"
-         |> Utils.Bool.to_result TermsAndConditionsNotAccepted
-         |> Lwt_result.lift
-       in
+    @@ let* () = Helpers.terms_and_conditions_accepted urlencoded in
        let%lwt allowed_email_suffixes =
          let open Utils.Lwt_result.Infix in
          Settings.find_email_suffixes database_label

@@ -44,6 +44,7 @@ module DummyData = struct
       ; paused_version = Version.create ()
       ; language_version = Version.create ()
       ; experiment_type_preference_version = Version.create ()
+      ; import_pending = Pool_user.ImportPending.create false
       ; created_at = CreatedAt.create ()
       ; updated_at = UpdatedAt.create ()
       }
@@ -304,4 +305,11 @@ let message_template_help
       verification_url
       (Contact.firstname contact)
       (Contact.lastname contact)
+  | UserImport ->
+    let confirmation_url =
+      Pool_common.[ Message.Field.Token, Email.Token.value token ]
+      |> create_public_url_with_params tenant.Pool_tenant.url "/email-verified"
+    in
+    let contact = create_contact () in
+    UserImport.email_params confirmation_url contact
 ;;

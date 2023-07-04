@@ -1,6 +1,9 @@
 module Id : module type of Pool_common.Id
 
-type t
+type t =
+  { user : Sihl_user.t
+  ; import_pending : Pool_user.ImportPending.t
+  }
 
 val equal : t -> t -> bool
 val pp : Format.formatter -> t -> unit
@@ -37,13 +40,15 @@ val show_update : update -> string
 type event =
   | Created of create
   | DetailsUpdated of t * update
+  | Disabled of t
+  | Enabled of t
+  | ImportConfirmed of t * Pool_user.Password.t
   | PasswordUpdated of
       t
       * Pool_user.Password.t
       * Pool_user.Password.t
       * Pool_user.PasswordConfirmed.t
-  | Disabled of t
-  | Enabled of t
+  | SignInCounterUpdated of t
   | Verified of t
 
 val handle_event

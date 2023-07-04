@@ -1,5 +1,6 @@
 module Message = Http_utils.Message
 module Login = Public_login
+module Import = Public_import
 module Common = Pool_common
 module Database = Pool_database
 
@@ -71,19 +72,8 @@ let index_css req =
 ;;
 
 let email_confirmation_note req =
-  let result ({ Pool_context.language; _ } as context) =
-    let open Utils.Lwt_result.Infix in
-    Utils.Lwt_result.map_error (fun err -> err, "/")
-    @@
-    let txt_to_string m = Common.Utils.text_to_string language m in
-    Common.I18n.(
-      Page.Utils.note
-        (txt_to_string EmailConfirmationTitle)
-        (txt_to_string EmailConfirmationNote))
-    |> create_layout req context
-    >|+ Sihl.Web.Response.of_html
-  in
-  result |> Http_utils.extract_happy_path ~src req
+  let open Common.I18n in
+  General.note ~title:EmailConfirmationTitle ~body:EmailConfirmationNote req
 ;;
 
 let not_found req =

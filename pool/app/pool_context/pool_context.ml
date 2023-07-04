@@ -9,7 +9,7 @@ let user_is_admin = function
 
 let get_admin_user = function
   | Guest | Contact _ -> Error Pool_common.Message.(NotFound Field.Admin)
-  | Admin user -> Ok user
+  | Admin admin -> Ok admin
 ;;
 
 module Utils = struct

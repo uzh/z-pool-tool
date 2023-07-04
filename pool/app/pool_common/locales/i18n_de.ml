@@ -35,9 +35,13 @@ let to_string = function
   | ExperimentWaitingListTitle -> "Warteliste"
   | HomeTitle -> "Universitäre Anmeldestelle für Studienteilnehmende"
   | I18nTitle -> "Übersetzungen"
+  | ImportConfirmationNote ->
+    "Bitte geben Sie ein neues Paswort an. Ihre restlichen Angaben wurden \
+     automatisch übernommen."
+  | ImportConfirmationTitle -> "Neues Passwort"
   | ImportPendingNote ->
-    "Bitte überprüfen Sie Ihre E-Mails und setzen Sie zuerst Ihr neues \
-     Passwort."
+    "Der Import Ihres Users ist noch nicht abgeschlossen. Bitte kontrollieren \
+     Sie Ihren Posteingang oder kontaktieren Sie einen Administrator."
   | ImportPendingTitle -> "Pendenter Import"
   | NoEntries field ->
     Format.asprintf

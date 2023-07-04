@@ -51,6 +51,17 @@ module CellPhone = struct
   let t = Pool_common.Repo.make_caqti_type Caqti_type.string create value
 end
 
+module ImportPending = struct
+  include ImportPending
+
+  let t =
+    Pool_common.Repo.make_caqti_type
+      Caqti_type.bool
+      (create %> CCResult.return)
+      value
+  ;;
+end
+
 module UnverifiedCellPhone = struct
   include UnverifiedCellPhone
 

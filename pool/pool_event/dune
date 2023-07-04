@@ -22,6 +22,7 @@
   sihl
   system_event
   tenant
+  user_import
   waiting_list
   logger)
  (preprocess

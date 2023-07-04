@@ -35,8 +35,13 @@ let to_string = function
   | FollowUpSessionFor -> "Follow-up for:"
   | HomeTitle -> "University Registration Center for Study Participants"
   | I18nTitle -> "Translations"
+  | ImportConfirmationNote ->
+    "Please enter a new password. The rest of your data has been automatically \
+     taken over."
+  | ImportConfirmationTitle -> "New password"
   | ImportPendingNote ->
-    "Please check your emails and set your new password first."
+    "The import of your user is not completed yet. Please check your inbox or \
+     contact an administrator."
   | ImportPendingTitle -> "Pending import"
   | NoEntries field ->
     Format.asprintf "There are no %s yet." (Locales_en.field_to_string field)

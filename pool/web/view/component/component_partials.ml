@@ -118,3 +118,37 @@ let terms_and_conditions_label language id =
     ; txt " gelesen und bin damit einverstanden. *"
     ]
 ;;
+
+let terms_and_conditions_checkbox ?(modal_id = "terms-modal") language terms =
+  let open Pool_common in
+  let terms_accepted_name = Message.Field.(show TermsAccepted) in
+  div
+    [ Settings.TermsAndConditions.Terms.value terms
+      |> Http_utils.add_line_breaks
+         (* TODO: When T&C are formatted using richt text editor, use
+            Unsafe.data *)
+      |> Component_modal.create
+           language
+           CCFun.(
+             flip Utils.field_to_string Message.Field.TermsAndConditions
+             %> CCString.capitalize_ascii)
+           modal_id
+    ; div
+        ~a:[ a_class [ "form-group" ] ]
+        [ div
+            [ input
+                ~a:
+                  [ a_required ()
+                  ; a_value "true"
+                  ; a_input_type `Checkbox
+                  ; a_id terms_accepted_name
+                  ; a_name terms_accepted_name
+                  ]
+                ()
+            ; label
+                ~a:[ a_label_for terms_accepted_name ]
+                (terms_and_conditions_label language modal_id)
+            ]
+        ]
+    ]
+;;

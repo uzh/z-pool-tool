@@ -48,6 +48,7 @@ type error =
   | FilterMustNotContainTemplate
   | FollowUpIsEarlierThanMain
   | HtmxVersionNotFound of string
+  | ImportPending
   | Invalid of Field.t
   | InvalidEmailSuffix of string list
   | InvalidJson of string
@@ -132,6 +133,7 @@ type success =
   | EmailConfirmationMessage
   | EmailVerified
   | FileDeleted
+  | ImportCompleted
   | MarkedAsDeleted of Field.t
   | PasswordChanged
   | PasswordReset

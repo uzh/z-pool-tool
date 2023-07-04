@@ -40,6 +40,7 @@ let select_fields =
       pool_contacts.paused_version,
       pool_contacts.language_version,
       pool_contacts.experiment_type_preference_version,
+      pool_contacts.import_pending,
       pool_contacts.created_at,
       pool_contacts.updated_at
     FROM pool_contacts
@@ -191,6 +192,7 @@ let insert_request =
         paused_version,
         language_version,
         experiment_type_preference_version,
+        import_pending,
         created_at,
         updated_at
       ) VALUES (
@@ -213,7 +215,8 @@ let insert_request =
         $17,
         $18,
         $19,
-        $20
+        $20,
+        $21
       )
     |sql}
   |> Repo_model.contact ->. Caqti_type.unit
@@ -244,7 +247,8 @@ let update_request =
         lastname_version = $16,
         paused_version = $17,
         language_version = $18,
-        experiment_type_preference_version = $19
+        experiment_type_preference_version = $19,
+        import_pending = $20
       WHERE
         user_uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}

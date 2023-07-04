@@ -142,6 +142,7 @@ module Model = struct
       ; paused_version = Pool_common.Version.create ()
       ; language_version = Pool_common.Version.create ()
       ; experiment_type_preference_version = Pool_common.Version.create ()
+      ; import_pending = Pool_user.ImportPending.create false
       ; created_at = Pool_common.CreatedAt.create ()
       ; updated_at = Pool_common.UpdatedAt.create ()
       }
