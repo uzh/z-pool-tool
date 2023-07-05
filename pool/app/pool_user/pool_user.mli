@@ -207,6 +207,7 @@ module Repo : sig
   end
 
   val user_caqti : Sihl_user.t Caqti_type.t
+  val select_from_sihl_user_columns : string
 end
 
 val user_firstname : Sihl_user.t -> Firstname.t

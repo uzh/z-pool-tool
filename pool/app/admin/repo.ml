@@ -27,37 +27,54 @@ module Sql = struct
       (Entity.id t, t.Entity.import_pending)
   ;;
 
+  let select_from_admin_columns =
+    Format.asprintf
+      {sql|
+        %s
+        pool_admins.import_pending
+      |sql}
+      Pool_user.Repo.select_from_sihl_user_columns
+  ;;
+
   let select_from_users_sql ?order_by where_fragment =
     let select_from =
-      {sql|
-        SELECT
-          LOWER(CONCAT(
-            SUBSTR(HEX(user_users.uuid), 1, 8), '-',
-            SUBSTR(HEX(user_users.uuid), 9, 4), '-',
-            SUBSTR(HEX(user_users.uuid), 13, 4), '-',
-            SUBSTR(HEX(user_users.uuid), 17, 4), '-',
-            SUBSTR(HEX(user_users.uuid), 21)
-          )),
-          user_users.email,
-          user_users.username,
-          user_users.name,
-          user_users.given_name,
-          user_users.password,
-          user_users.status,
-          user_users.admin,
-          user_users.confirmed,
-          user_users.created_at,
-          user_users.updated_at,
-          pool_admins.import_pending
-        FROM user_users
-        INNER JOIN pool_admins
-        ON pool_admins.user_uuid = user_users.uuid
-      |sql}
+      Format.asprintf
+        {sql|
+          SELECT
+          %s
+          FROM user_users
+          INNER JOIN pool_admins
+          ON pool_admins.user_uuid = user_users.uuid
+        |sql}
+        select_from_admin_columns
     in
     let query = Format.asprintf "%s %s" select_from where_fragment in
     match order_by with
     | Some order_by -> Format.asprintf "%s ORDER BY %s" query order_by
     | None -> query
+  ;;
+
+  (* TODO: Reuse function above *)
+  let select_admins_to_notify_about_import_sql import_columns ~limit =
+    Format.asprintf
+      {sql|
+        SELECT
+        %s,
+        %s
+        FROM user_users
+        INNER JOIN pool_admins
+          ON pool_admins.user_uuid = user_users.uuid
+        INNER JOIN pool_user_imports
+          ON user_users.uuid = pool_user_imports.user_uuid
+        WHERE
+          pool_admins.import_pending = 1
+        ORDER BY
+          pool_admins.created_at ASC
+        LIMIT %i
+      |sql}
+      select_from_admin_columns
+      import_columns
+      limit
   ;;
 
   let find_request caqti_type =

@@ -32,9 +32,20 @@ val find_pending_by_user_opt
   -> Sihl_user.t
   -> t option Lwt.t
 
-type event = Confirmed of t
+type event =
+  | Confirmed of t
+  | Notified of t
 
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
 val handle_event : Pool_tenant.Database.Label.t -> event -> unit Lwt.t
+
+module Repo : sig
+  val select_user_import_columns : string
+  val t : t Caqti_type.t
+end
+
+module Service : sig
+  val run : Pool_database.Label.t -> unit Lwt.t
+end

@@ -1,6 +1,14 @@
 (library
  (name user_import)
- (libraries pool_common pool_database pool_tenant utils)
+ (libraries
+  admin
+  database
+  email
+  message_template
+  pool_common
+  pool_database
+  pool_tenant
+  utils)
  (preprocess
   (pps
    lwt_ppx

@@ -106,24 +106,32 @@ module RepoEntity = struct
   end
 end
 
-let select =
+let select_user_import_columns =
   {sql|
+    LOWER(CONCAT(
+      SUBSTR(HEX(pool_user_imports.user_uuid), 1, 8), '-',
+      SUBSTR(HEX(pool_user_imports.user_uuid), 9, 4), '-',
+      SUBSTR(HEX(pool_user_imports.user_uuid), 13, 4), '-',
+      SUBSTR(HEX(pool_user_imports.user_uuid), 17, 4), '-',
+      SUBSTR(HEX(pool_user_imports.user_uuid), 21)
+    )),
+    pool_user_imports.token,
+    pool_user_imports.confirmed_at,
+    pool_user_imports.notification_sent_at,
+    pool_user_imports.reminder_sent_at,
+    pool_user_imports.created_at,
+    pool_user_imports.updated_at
+  |sql}
+;;
+
+let select =
+  Format.asprintf
+    {sql|
     SELECT
-      LOWER(CONCAT(
-        SUBSTR(HEX(user_uuid), 1, 8), '-',
-        SUBSTR(HEX(user_uuid), 9, 4), '-',
-        SUBSTR(HEX(user_uuid), 13, 4), '-',
-        SUBSTR(HEX(user_uuid), 17, 4), '-',
-        SUBSTR(HEX(user_uuid), 21)
-      )),
-      token,
-      confirmed_at,
-      notification_sent_at,
-      reminder_sent_at,
-      created_at,
-      updated_at
+      %s
     FROM pool_user_imports
     |sql}
+    select_user_import_columns
 ;;
 
 let find_pending_by_token_request =
@@ -186,4 +194,32 @@ let update pool t =
     (Pool_database.Label.value pool)
     update_request
     (RepoEntity.Write.from_entity t)
+;;
+
+let find_admins_to_notify_request limit =
+  let open Caqti_request.Infix in
+  Admin.Repo.select_admins_to_notify_about_import_sql
+    select_user_import_columns
+    ~limit
+  |> Caqti_type.(unit ->* tup2 Admin.Repo.t RepoEntity.t)
+;;
+
+let find_admins_to_notify pool limit =
+  Utils.Database.collect
+    (Pool_database.Label.value pool)
+    (find_admins_to_notify_request limit)
+;;
+
+let find_contacts_to_notify_request limit =
+  let open Caqti_request.Infix in
+  Contact.Repo.Sql.select_contacts_to_notify_about_import_sql
+    select_user_import_columns
+    ~limit
+  |> Caqti_type.(unit ->* tup2 Contact.Repo.Model.t RepoEntity.t)
+;;
+
+let find_contacts_to_notify pool limit =
+  Utils.Database.collect
+    (Pool_database.Label.value pool)
+    (find_contacts_to_notify_request limit)
 ;;

@@ -2,7 +2,6 @@ open CCFun.Infix
 open Utils.Lwt_result.Infix
 include Event
 include Entity
-module Repo = Repo
 
 let find = Repo.find
 let find_all = Repo.find_all
@@ -41,3 +40,11 @@ let user_is_admin pool (user : Sihl_user.t) =
 ;;
 
 module Guard = Entity_guard
+
+module Repo = struct
+  let t = Repo_entity.t
+
+  let select_admins_to_notify_about_import_sql =
+    Repo.Sql.select_admins_to_notify_about_import_sql
+  ;;
+end

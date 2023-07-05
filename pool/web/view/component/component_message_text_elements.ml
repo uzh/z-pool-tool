@@ -311,5 +311,5 @@ let message_template_help
       |> create_public_url_with_params tenant.Pool_tenant.url "/email-verified"
     in
     let contact = create_contact () in
-    UserImport.email_params confirmation_url contact
+    UserImport.email_params confirmation_url (`Contact contact)
 ;;

@@ -624,8 +624,25 @@ module SignUpVerification = struct
 end
 
 module UserImport = struct
-  let email_params confirmation_url contact =
-    global_params contact.Contact.user @ [ "confirmationUrl", confirmation_url ]
+  let email_address = function
+    | `Admin admin ->
+      Admin.email admin
+      |> Pool_user.EmailAddress.of_string (* TODO: update admin email fnc *)
+    | `Contact contact -> Contact.email_address contact
+  ;;
+
+  let language default_language = function
+    | `Admin _ -> Pool_common.Language.En
+    | `Contact (contact : Contact.t) ->
+      contact.Contact.language |> CCOption.value ~default:default_language
+  ;;
+
+  let email_params confirmation_url user =
+    let fullname = function
+      | `Admin admin -> Admin.full_name admin
+      | `Contact contact -> Contact.fullname contact
+    in
+    [ "name", user |> fullname; "confirmationUrl", confirmation_url ]
   ;;
 
   let prepare pool tenant =
@@ -642,15 +659,13 @@ module UserImport = struct
     let%lwt sender = sender_of_pool pool in
     let layout = layout_from_tenant tenant in
     Lwt.return
-    @@ fun (contact : Contact.t) token ->
-    let language =
-      contact.Contact.language |> CCOption.value ~default:default_language
-    in
+    @@ fun (user : [< `Admin of Admin.t | `Contact of Contact.t ]) token ->
+    let language = language default_language user in
     let confirmation_url =
       Pool_common.
         [ ( Message.Field.Language
           , language |> Language.show |> CCString.lowercase_ascii )
-        ; Message.Field.Token, Email.Token.value token
+        ; Message.Field.Token, token
         ]
       |> create_public_url_with_params url "/import-confirmation"
     in
@@ -659,8 +674,8 @@ module UserImport = struct
       language
       template
       sender
-      (Contact.email_address contact)
+      (email_address user)
       layout
-      (email_params confirmation_url contact)
+      (email_params confirmation_url user)
   ;;
 end

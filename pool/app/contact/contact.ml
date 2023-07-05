@@ -46,5 +46,9 @@ module Repo = struct
 
   module Sql = struct
     let find_request_sql = Repo_sql.find_request_sql
+
+    let select_contacts_to_notify_about_import_sql =
+      Repo_sql.select_contacts_to_notify_about_import_sql
+    ;;
   end
 end

@@ -12,6 +12,7 @@
   sihl
   tenant
   utils
+  user_import
   system_event
   version)
  (preprocess

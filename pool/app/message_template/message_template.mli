@@ -378,10 +378,16 @@ module SignUpVerification : sig
 end
 
 module UserImport : sig
-  val email_params : string -> Contact.t -> (string * string) list
+  val email_params
+    :  string
+    -> [< `Admin of Admin.t | `Contact of Contact.t ]
+    -> (string * string) list
 
   val prepare
     :  Pool_database.Label.t
     -> Pool_tenant.t
-    -> (Contact.t -> Email.Token.t -> Sihl_email.t) Lwt.t
+    -> ([< `Admin of Admin.t | `Contact of Contact.t ]
+        -> string
+        -> Sihl_email.t)
+       Lwt.t
 end

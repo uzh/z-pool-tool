@@ -9,11 +9,10 @@ let import_pending req =
 ;;
 
 let user_and_import_from_token database_label token =
-  let open User_import in
   let open Pool_context in
   token
-  |> find_pending_by_token database_label
-  >>= fun ({ user_uuid; _ } as import) ->
+  |> User_import.find_pending_by_token database_label
+  >>= fun ({ User_import.user_uuid; _ } as import) ->
   user_uuid
   |> Pool_common.Id.value
   |> Service.User.find ~ctx:(Pool_database.to_ctx database_label)

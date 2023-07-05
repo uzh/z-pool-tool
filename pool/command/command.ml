@@ -9,6 +9,7 @@ module SessionReminder = Command_session_reminder
 module SystemEvent = Command_system_events
 module Tenant_pool = Command_pool_tenant
 module Utils = Command_utils
+module UserImport = Command_import
 module Worker = Command_worker
 
 let version =

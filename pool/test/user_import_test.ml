@@ -111,3 +111,38 @@ let confirm_as_admin () =
   in
   Test_utils.check_result expected result
 ;;
+
+let confirm_as_contact_integration _ () =
+  let contact = Test_utils.Model.create_contact ~with_terms_accepted:false () in
+  let user = contact |> Pool_context.contact in
+  let user_import = create_user_import user in
+  let urlencoded =
+    let open Field in
+    [ Token |> show, [ Data.token ]
+    ; Password |> show, [ Data.password ]
+    ; PasswordConfirmation |> show, [ Data.password ]
+    ]
+  in
+  let%lwt () =
+    let open CCResult in
+    let open Cqrs_command.User_import_command.ConfirmImport in
+    urlencoded
+    |> decode
+    >>= handle (user_import, user)
+    |> get_or_failwith_pool_error
+    |> Pool_event.handle_events Test_utils.Data.database_label
+  in
+  let%lwt contact =
+    Contact.find Test_utils.Data.database_label (Contact.id contact)
+    |> Lwt.map get_or_failwith_pool_error
+  in
+  let expected =
+    Contact.
+      { contact with
+        import_pending = Pool_user.ImportPending.create false
+      ; terms_accepted_at = Some (Pool_user.TermsAccepted.create_now ())
+      }
+  in
+  let () = Alcotest.(check Test_utils.contact "succeeds" expected contact) in
+  Lwt.return_unit
+;;

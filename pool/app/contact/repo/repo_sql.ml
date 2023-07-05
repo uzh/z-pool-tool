@@ -2,51 +2,67 @@ module Id = Pool_common.Id
 module Database = Pool_database
 module Dynparam = Utils.Database.Dynparam
 
+let select_from_contacts_columns =
+  Format.asprintf
+    {sql|
+    %s
+    pool_contacts.terms_accepted_at,
+    pool_contacts.language,
+    pool_contacts.experiment_type_preference,
+    pool_contacts.cell_phone,
+    pool_contacts.paused,
+    pool_contacts.disabled,
+    pool_contacts.verified,
+    pool_contacts.email_verified,
+    pool_contacts.num_invitations,
+    pool_contacts.num_assignments,
+    pool_contacts.num_show_ups,
+    pool_contacts.num_no_shows,
+    pool_contacts.num_participations,
+    pool_contacts.firstname_version,
+    pool_contacts.lastname_version,
+    pool_contacts.paused_version,
+    pool_contacts.language_version,
+    pool_contacts.experiment_type_preference_version,
+    pool_contacts.import_pending,
+    pool_contacts.created_at,
+    pool_contacts.updated_at
+  |sql}
+    Pool_user.Repo.select_from_sihl_user_columns
+;;
+
 let select_fields =
-  {sql|
-    SELECT
-      LOWER(CONCAT(
-        SUBSTR(HEX(user_users.uuid), 1, 8), '-',
-        SUBSTR(HEX(user_users.uuid), 9, 4), '-',
-        SUBSTR(HEX(user_users.uuid), 13, 4), '-',
-        SUBSTR(HEX(user_users.uuid), 17, 4), '-',
-        SUBSTR(HEX(user_users.uuid), 21)
-      )),
-      user_users.email,
-      user_users.username,
-      user_users.name,
-      user_users.given_name,
-      user_users.password,
-      user_users.status,
-      user_users.admin,
-      user_users.confirmed,
-      user_users.created_at,
-      user_users.updated_at,
-      pool_contacts.terms_accepted_at,
-      pool_contacts.language,
-      pool_contacts.experiment_type_preference,
-      pool_contacts.cell_phone,
-      pool_contacts.paused,
-      pool_contacts.disabled,
-      pool_contacts.verified,
-      pool_contacts.email_verified,
-      pool_contacts.num_invitations,
-      pool_contacts.num_assignments,
-      pool_contacts.num_show_ups,
-      pool_contacts.num_no_shows,
-      pool_contacts.num_participations,
-      pool_contacts.firstname_version,
-      pool_contacts.lastname_version,
-      pool_contacts.paused_version,
-      pool_contacts.language_version,
-      pool_contacts.experiment_type_preference_version,
-      pool_contacts.import_pending,
-      pool_contacts.created_at,
-      pool_contacts.updated_at
-    FROM pool_contacts
+  Format.asprintf
+    {sql|
+      SELECT
+        %s
+      FROM pool_contacts
       LEFT JOIN user_users
       ON pool_contacts.user_uuid = user_users.uuid
     |sql}
+    select_from_contacts_columns
+;;
+
+let select_contacts_to_notify_about_import_sql import_columns ~limit =
+  Format.asprintf
+    {sql|
+      SELECT
+      %s,
+      %s
+      FROM pool_contacts
+      LEFT JOIN user_users
+        ON pool_contacts.user_uuid = user_users.uuid
+      INNER JOIN pool_user_imports
+        ON user_users.uuid = pool_user_imports.user_uuid
+      WHERE
+        pool_contacts.import_pending = 1
+      ORDER BY
+        pool_contacts.created_at ASC
+      LIMIT %i
+    |sql}
+    select_from_contacts_columns
+    import_columns
+    limit
 ;;
 
 let find_request_sql where_fragment =

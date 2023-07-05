@@ -129,3 +129,8 @@ module Guard : sig
     val update : Id.t -> Guard.ValidationSet.t
   end
 end
+
+module Repo : sig
+  val t : t Caqti_type.t
+  val select_admins_to_notify_about_import_sql : string -> limit:int -> string
+end
