@@ -561,4 +561,5 @@ let user_import =
   ; email_subject
   ; plain_text = sms_text
   ; sms_text
-  };;
+  }
+;;
