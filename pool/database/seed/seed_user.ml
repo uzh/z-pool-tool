@@ -142,6 +142,7 @@ let admins db_label =
     ]
   in
   let ctx = Pool_database.to_ctx db_label in
+  let tags = Pool_database.Logger.Tags.create db_label in
   let password =
     Sys.getenv_opt "POOL_ADMIN_DEFAULT_PASSWORD"
     |> CCOption.value ~default:"Password1!"
@@ -152,10 +153,23 @@ let admins db_label =
       match user with
       | None ->
         let%lwt admin =
-          Service.User.create_admin ~ctx ~name ~given_name ~password email
+          let open Pool_user in
+          let id = Admin.Id.create () in
+          let create =
+            { Admin.id = id |> CCOption.return
+            ; email = EmailAddress.of_string email
+            ; password = Password.create password |> CCResult.get_exn
+            ; firstname = Firstname.of_string given_name
+            ; lastname = Lastname.of_string name
+            ; roles = None
+            }
+          in
+          let%lwt () =
+            Admin.Created create |> Admin.handle_event ~tags db_label
+          in
+          Admin.find db_label id |> Lwt.map CCResult.get_exn
         in
         let%lwt (_ : Role.Actor.t Guard.Actor.t) =
-          let admin = admin |> Admin.create in
           let%lwt (_ : Role.Target.t Guard.Target.t) =
             admin |> Admin.Guard.Target.to_authorizable ~ctx ||> get_or_failwith
           in
@@ -165,7 +179,7 @@ let admins db_label =
           let open Guard in
           Persistence.Actor.grant_roles
             ~ctx
-            (Uuid.Actor.of_string_exn admin.Sihl_user.id)
+            (Uuid.Actor.of_string_exn Admin.(id admin |> Id.value))
             RoleSet.(CCList.fold_left (flip add) empty role)
           ||> CCResult.get_or_failwith
           ||> tap (fun _ -> Persistence.Cache.clear ())
