@@ -21,7 +21,8 @@ let create_user_import ?(token = Data.token) user =
   ; token = Token.create token |> get_or_failwith_pool_error
   ; confirmed_at = None
   ; notified_at = None
-  ; reminded_at = None
+  ; reminder_count = ReminderCount.init
+  ; last_reminded_at = None
   ; created_at = Pool_common.CreatedAt.create ()
   ; updated_at = Pool_common.UpdatedAt.create ()
   }

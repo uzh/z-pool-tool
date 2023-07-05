@@ -22,8 +22,14 @@ module RepoEntity = struct
     let t = make_caqti_type Caqti_type.ptime create value
   end
 
-  module RemindedAt = struct
-    include RemindedAt
+  module ReminderCount = struct
+    include ReminderCount
+
+    let t = make_caqti_type Caqti_type.int create value
+  end
+
+  module LastRemindedAt = struct
+    include LastRemindedAt
 
     let t = make_caqti_type Caqti_type.ptime create value
   end
@@ -34,21 +40,25 @@ module RepoEntity = struct
         ( m.user_uuid
         , ( m.token
           , ( m.confirmed_at
-            , (m.notified_at, (m.reminded_at, (m.created_at, m.updated_at))) )
-          ) )
+            , ( m.notified_at
+              , ( m.reminder_count
+                , (m.last_reminded_at, (m.created_at, m.updated_at)) ) ) ) ) )
     in
     let decode
       ( user_uuid
       , ( token
-        , (confirmed_at, (notified_at, (reminded_at, (created_at, updated_at))))
-        ) )
+        , ( confirmed_at
+          , ( notified_at
+            , (reminder_count, (last_reminded_at, (created_at, updated_at))) )
+          ) ) )
       =
       Ok
         { user_uuid
         ; token
         ; confirmed_at
         ; notified_at
-        ; reminded_at
+        ; reminder_count
+        ; last_reminded_at
         ; created_at
         ; updated_at
         }
@@ -66,8 +76,10 @@ module RepoEntity = struct
                  (tup2
                     (option NotifiedAt.t)
                     (tup2
-                       (option RemindedAt.t)
-                       (tup2 Common.CreatedAt.t Common.UpdatedAt.t)))))))
+                       ReminderCount.t
+                       (tup2
+                          (option LastRemindedAt.t)
+                          (tup2 Common.CreatedAt.t Common.UpdatedAt.t))))))))
   ;;
 
   module Write = struct
@@ -75,18 +87,18 @@ module RepoEntity = struct
       { user_uuid : Pool_common.Id.t
       ; confirmed_at : ConfirmedAt.t option
       ; notified_at : NotifiedAt.t option
-      ; reminded_at : RemindedAt.t option
+      ; last_reminded_at : LastRemindedAt.t option
       }
 
     let from_entity
-      { Entity.user_uuid; confirmed_at; notified_at; reminded_at; _ }
+      { Entity.user_uuid; confirmed_at; notified_at; last_reminded_at; _ }
       =
-      { user_uuid; confirmed_at; notified_at; reminded_at }
+      { user_uuid; confirmed_at; notified_at; last_reminded_at }
     ;;
 
     let t =
       let encode (m : t) =
-        Ok (m.user_uuid, (m.confirmed_at, (m.notified_at, m.reminded_at)))
+        Ok (m.user_uuid, (m.confirmed_at, (m.notified_at, m.last_reminded_at)))
       in
       let decode _ =
         failwith
@@ -101,7 +113,7 @@ module RepoEntity = struct
              Common.Id.t
              (tup2
                 (option ConfirmedAt.t)
-                (tup2 (option NotifiedAt.t) (option RemindedAt.t)))))
+                (tup2 (option NotifiedAt.t) (option LastRemindedAt.t)))))
     ;;
   end
 end
@@ -118,7 +130,8 @@ let select_user_import_columns =
     pool_user_imports.token,
     pool_user_imports.confirmed_at,
     pool_user_imports.notification_sent_at,
-    pool_user_imports.reminder_sent_at,
+    pool_user_imports.reminder_count,
+    pool_user_imports.last_reminder_sent_at,
     pool_user_imports.created_at,
     pool_user_imports.updated_at
   |sql}
@@ -182,7 +195,8 @@ let update_request =
       SET
         confirmed_at = $2,
         notification_sent_at = $3,
-        reminder_sent_at = $4
+        reminder_count = $4,
+        last_reminder_sent_at = $5
       WHERE
         user_uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}

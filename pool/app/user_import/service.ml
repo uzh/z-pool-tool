@@ -1,6 +1,7 @@
 let src = Logs.Src.create "user_import.service"
 let get_or_failwith = Pool_common.Utils.get_or_failwith
-let limit = 50
+let interval_s = 15 * 60
+let limit = 50 (* equals 4'800 emails a day *)
 
 let run database_label =
   let open Utils.Lwt_result.Infix in
@@ -41,7 +42,33 @@ let run database_label =
 
 let run_all () =
   let open Utils.Lwt_result.Infix in
-  (* TODO: Do I need to setup dbs? *)
   Pool_tenant.find_databases ()
   >|> Lwt_list.iter_s (fun { Pool_database.label; _ } -> run label)
 ;;
+
+let start () =
+  let open Schedule in
+  let interval = Ptime.Span.of_int_s interval_s in
+  let periodic_fcn () =
+    Logs.debug ~src (fun m ->
+      m ~tags:Pool_database.(Logger.Tags.create root) "Run");
+    run_all ()
+  in
+  create
+    "import_notifications"
+    (Every (interval |> ScheduledTimeSpan.of_span))
+    periodic_fcn
+  |> Schedule.add_and_start
+;;
+
+let stop () = Lwt.return_unit
+
+let lifecycle =
+  Sihl.Container.create_lifecycle
+    "System events"
+    ~dependencies:(fun () -> [ Database.lifecycle ])
+    ~start
+    ~stop
+;;
+
+let register () = Sihl.Container.Service.create lifecycle

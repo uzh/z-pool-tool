@@ -8,7 +8,13 @@ module NotifiedAt : sig
   include Pool_common.Model.PtimeSig
 end
 
-module RemindedAt : sig
+module ReminderCount : sig
+  include Pool_common.Model.IntegerSig
+
+  val init : t
+end
+
+module LastRemindedAt : sig
   include Pool_common.Model.PtimeSig
 end
 
@@ -17,7 +23,8 @@ type t =
   ; token : Token.t
   ; confirmed_at : ConfirmedAt.t option
   ; notified_at : NotifiedAt.t option
-  ; reminded_at : RemindedAt.t option
+  ; reminder_count : ReminderCount.t
+  ; last_reminded_at : LastRemindedAt.t option
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
   }
