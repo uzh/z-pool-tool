@@ -74,13 +74,13 @@ let create_persons db_label n_persons =
   let chunk_size = 100 in
   let sum = fold_left ( + ) 0 in
   let%lwt contacts =
-    Contact.find_all db_label ()
-    ||> fst %> map (Contact.email_address %> User.EmailAddress.value)
+    Contact.find_all db_label () ||> fst %> map Contact.email_address
   in
   let%lwt admins = Admin.find_all db_label () ||> map Admin.email in
   let flatten_filter_combine a b =
     let filter_existing =
-      filter (fun { email; _ } -> mem email (admins @ contacts) |> not)
+      filter (fun { email; _ } ->
+        mem (Pool_user.EmailAddress.of_string email) (admins @ contacts) |> not)
     in
     (flatten b |> filter_existing) @ a
     |> uniq ~eq:(fun p1 p2 -> CCString.equal p1.email p2.email)

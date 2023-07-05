@@ -625,9 +625,7 @@ end
 
 module UserImport = struct
   let email_address = function
-    | `Admin admin ->
-      Admin.email admin
-      |> Pool_user.EmailAddress.of_string (* TODO: update admin email fnc *)
+    | `Admin admin -> Admin.email admin
     | `Contact contact -> Contact.email_address contact
   ;;
 

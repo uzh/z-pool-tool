@@ -12,7 +12,7 @@ val sexp_of_t : t -> Sexplib0.Sexp.t
 val user : t -> Sihl_user.t
 val create : Sihl_user.t -> t
 val id : t -> Id.t
-val email : t -> string
+val email : t -> Pool_user.EmailAddress.t
 val full_name : t -> string
 
 type create =

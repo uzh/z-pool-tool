@@ -124,9 +124,7 @@ let terms_and_conditions_checkbox ?(modal_id = "terms-modal") language terms =
   let terms_accepted_name = Message.Field.(show TermsAccepted) in
   div
     [ Settings.TermsAndConditions.Terms.value terms
-      |> Http_utils.add_line_breaks
-         (* TODO: When T&C are formatted using richt text editor, use
-            Unsafe.data *)
+      |> Unsafe.data
       |> Component_modal.create
            language
            CCFun.(

@@ -54,7 +54,6 @@ module Sql = struct
     | None -> query
   ;;
 
-  (* TODO: Reuse function above *)
   let select_admins_to_notify_about_import_sql import_columns ~limit =
     Format.asprintf
       {sql|
@@ -187,7 +186,4 @@ let find = Sql.find
 let find_all = Sql.find_all
 let find_multiple = Sql.find_multiple
 let update = Sql.update
-
-(* TODO: Call this on admin login. Depending on
-   https://github.com/uzh/pool/pull/147 *)
 let update_sign_in_count = Sql.update_sign_in_count

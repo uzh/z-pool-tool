@@ -13,7 +13,11 @@ let create (user : Sihl_user.t) : t =
 ;;
 
 let id ({ user; _ } : t) = Id.of_string user.Sihl_user.id
-let email ({ user; _ } : t) = user.Sihl_user.email
+
+let email ({ user; _ } : t) =
+  user.Sihl_user.email |> Pool_user.EmailAddress.of_string
+;;
+
 let sexp_of_t t = t |> id |> Id.value |> fun s -> Sexplib0.Sexp.Atom s
 
 let full_name { user; _ } =
