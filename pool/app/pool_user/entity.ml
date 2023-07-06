@@ -1,3 +1,4 @@
+open Ppx_yojson_conv_lib.Yojson_conv
 module PoolError = Pool_common.Message
 
 module PasswordConfirmed = struct

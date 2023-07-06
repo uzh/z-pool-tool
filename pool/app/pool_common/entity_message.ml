@@ -1,4 +1,5 @@
 open Sexplib.Conv
+open Ppx_yojson_conv_lib.Yojson_conv
 
 module Ptime = struct
   include Ptime

@@ -28,7 +28,7 @@
  (depends
   dune
   (ocaml
-   (>= 4.12.0))
+   (>= 4.14.0))
   (conformist
    (>= 0.8.1))
   (sihl
@@ -85,7 +85,7 @@
    (= v0.14.2))
   canary
   (guardian
-   (= 0.1.1))
+   (= 0.2.0))
   (tls
    (= 0.15.4))
   ;; Test/Dev dependencies

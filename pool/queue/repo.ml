@@ -1,4 +1,5 @@
 open CCFun
+open Ppx_yojson_conv_lib.Yojson_conv
 
 let status =
   let open Sihl.Contract.Queue in

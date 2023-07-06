@@ -1,3 +1,5 @@
+open Ppx_yojson_conv_lib.Yojson_conv
+
 module Content = struct
   type t = string [@@deriving eq, show, yojson]
 

@@ -83,8 +83,10 @@ module List = struct
     roles
     =
     let open CCList in
-    let open Pool_common.Message in
-    let thead = (Field.[ Role ] |> Table.fields_to_txt language) @ [ txt "" ] in
+    let thead =
+      let open Pool_common.Message in
+      (Field.[ Role ] |> Table.fields_to_txt language) @ [ txt "" ]
+    in
     roles
     >|= row ?is_edit context target_admin
     |> Table.horizontal_table `Striped ~thead

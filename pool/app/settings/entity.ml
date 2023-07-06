@@ -1,3 +1,4 @@
+open Ppx_yojson_conv_lib.Yojson_conv
 module Message = Pool_common.Message
 
 (* TODO [aerben] maybe move to pool common *)

@@ -1,5 +1,6 @@
 open CCFun
 open Entity
+open Ppx_yojson_conv_lib.Yojson_conv
 module Common = Pool_common
 module Answer = Repo_entity_answer
 
