@@ -61,6 +61,7 @@ type t =
   ; organisational_unit : Organisational_unit.t option
   ; filter : Filter.t option
   ; contact_person_id : Admin.Id.t option
+  ; smtp_auth_id : Email.SmtpAuth.Id.t option
   ; direct_registration_disabled : DirectRegistrationDisabled.t
   ; registration_disabled : RegistrationDisabled.t
   ; allow_uninvited_signup : AllowUninvitedSignup.t
@@ -79,6 +80,7 @@ let create
   cost_center
   organisational_unit
   contact_person_id
+  smtp_auth_id
   direct_registration_disabled
   registration_disabled
   allow_uninvited_signup
@@ -95,6 +97,7 @@ let create
     ; organisational_unit
     ; filter = None
     ; contact_person_id
+    ; smtp_auth_id
     ; direct_registration_disabled
     ; registration_disabled
     ; allow_uninvited_signup

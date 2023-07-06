@@ -59,6 +59,7 @@ module Create : sig
     :  ?tags:Logs.Tag.set
     -> Admin.t option
     -> Organisational_unit.t option
+    -> Email.SmtpAuth.t option
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
@@ -72,6 +73,7 @@ end = struct
     ?(tags = Logs.Tag.empty)
     contact_person
     organisational_unit
+    smtp_auth
     (command : t)
     =
     Logs.info ~src (fun m -> m "Handle command Create" ~tags);
@@ -84,6 +86,7 @@ end = struct
         command.cost_center
         organisational_unit
         (contact_person |> CCOption.map Admin.id)
+        (smtp_auth |> CCOption.map Email.SmtpAuth.(fun ({ id; _ } : t) -> id))
         command.direct_registration_disabled
         command.registration_disabled
         command.allow_uninvited_signup
@@ -109,6 +112,7 @@ module Update : sig
     -> Experiment.t
     -> Admin.t option
     -> Organisational_unit.t option
+    -> Email.SmtpAuth.t option
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
@@ -125,6 +129,7 @@ end = struct
     experiment
     contact_person
     organisational_unit
+    smtp_auth
     (command : t)
     =
     Logs.info ~src (fun m -> m "Handle command Update" ~tags);
@@ -138,6 +143,7 @@ end = struct
         command.cost_center
         organisational_unit
         (contact_person |> CCOption.map Admin.id)
+        (smtp_auth |> CCOption.map Email.SmtpAuth.(fun ({ id; _ } : t) -> id))
         command.direct_registration_disabled
         command.registration_disabled
         command.allow_uninvited_signup

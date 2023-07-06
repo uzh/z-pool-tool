@@ -133,6 +133,7 @@ let experiment_form
   Pool_context.{ language; csrf; _ }
   contact_persons
   organisational_units
+  smtp_auth_list
   default_reminder_lead_time
   flash_fetcher
   =
@@ -217,6 +218,25 @@ let experiment_form
             (CCOption.bind experiment (fun exp -> exp.contact_person_id))
             Field.ContactPerson
             ()
+        ; selector
+            language
+            Field.Smtp
+            Email.SmtpAuth.(fun ({ id; _ } : t) -> Id.value id)
+            smtp_auth_list
+            CCOption.(
+              experiment
+              >>= fun { smtp_auth_id; _ } ->
+              smtp_auth_id
+              >>= Email.SmtpAuth.(
+                    fun smtp_auth_id ->
+                      CCList.find_opt
+                        (fun ({ id; _ } : t) -> Id.equal id smtp_auth_id)
+                        smtp_auth_list))
+            ~option_formatter:
+              Email.SmtpAuth.(fun { label; _ } -> Label.value label)
+            ~flash_fetcher
+            ~add_empty:true
+            ()
         ]
     ; checkbox_element
         ~help:I18n.DirectRegistrationDisbled
@@ -290,6 +310,7 @@ let create
   organisational_units
   default_reminder_lead_time
   contact_persons
+  smtp_auth_list
   flash_fetcher
   =
   div
@@ -304,6 +325,7 @@ let create
         context
         contact_persons
         organisational_units
+        smtp_auth_list
         default_reminder_lead_time
         flash_fetcher
     ]
@@ -316,6 +338,7 @@ let edit
   default_reminder_lead_time
   contact_persons
   organisational_units
+  smtp_auth_list
   invitation_templates
   session_reminder_templates
   flash_fetcher
@@ -334,6 +357,7 @@ let edit
       context
       contact_persons
       organisational_units
+      smtp_auth_list
       default_reminder_lead_time
       flash_fetcher
   in

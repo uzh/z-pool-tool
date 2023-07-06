@@ -26,4 +26,6 @@ module Smtp = struct
   let update_password label Entity.SmtpAuth.{ id; password } =
     Sql.Smtp.update_password label (id, password)
   ;;
+
+  module RepoEntity = Repo_entity_smtp_auth
 end

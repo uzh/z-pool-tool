@@ -34,3 +34,10 @@ let search = Repo.search
 let search_multiple_by_id = Repo.search_multiple_by_id
 let possible_participant_count _ = Lwt.return 0
 let possible_participants _ = Lwt.return []
+
+let smtp_auth database_label ({ smtp_auth_id; _ } : t) =
+  let open Utils.Lwt_result.Infix in
+  match smtp_auth_id with
+  | None -> Lwt_result.return None
+  | Some id -> Email.SmtpAuth.find database_label id >|+ CCOption.return
+;;

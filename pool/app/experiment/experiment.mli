@@ -51,6 +51,7 @@ type t =
   ; organisational_unit : Organisational_unit.t option
   ; filter : Filter.t option
   ; contact_person_id : Admin.Id.t option
+  ; smtp_auth_id : Email.SmtpAuth.Id.t option
   ; direct_registration_disabled : DirectRegistrationDisabled.t
   ; registration_disabled : RegistrationDisabled.t
   ; allow_uninvited_signup : AllowUninvitedSignup.t
@@ -72,6 +73,7 @@ val create
   -> CostCenter.t option
   -> Organisational_unit.t option
   -> Admin.Id.t option
+  -> Email.SmtpAuth.Id.t option
   -> DirectRegistrationDisabled.t
   -> RegistrationDisabled.t
   -> AllowUninvitedSignup.t
@@ -187,6 +189,11 @@ val session_reminder_lead_time_value : t -> Ptime.span option
 val direct_registration_disabled_value : t -> bool
 val registration_disabled_value : t -> bool
 val allow_uninvited_signup_value : t -> bool
+
+val smtp_auth
+  :  Pool_database.Label.t
+  -> t
+  -> (Email.SmtpAuth.t option, Pool_common.Message.error) Lwt_result.t
 
 module Repo : sig
   module Public : sig

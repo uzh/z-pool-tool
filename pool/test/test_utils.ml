@@ -208,6 +208,7 @@ module Model = struct
       ; organisational_unit = None
       ; filter = None
       ; contact_person_id = None
+      ; smtp_auth_id = None
       ; session_reminder_lead_time =
           Ptime.Span.of_int_s @@ (60 * 60)
           |> Pool_common.Reminder.LeadTime.create

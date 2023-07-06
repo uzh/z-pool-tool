@@ -28,12 +28,33 @@ let add_default_flag_to_smtp_accounts =
     |sql}
 ;;
 
+let add_smpt_fk_to_experiments =
+  Sihl.Database.Migration.create_step
+    ~label:"add contact smtp fk to experiments"
+    {sql|
+      ALTER TABLE pool_experiments
+        ADD COLUMN smtp_auth_uuid binary(16) AFTER contact_person_uuid
+    |sql}
+;;
+
+let add_fk_contraint_to_smtp_auth_uuid =
+  Sihl.Database.Migration.create_step
+    ~label:"add contraint to smtp_auth_uuid"
+    {sql|
+      ALTER TABLE pool_experiments
+        ADD CONSTRAINT fk_pool_experiments_smtp_auth
+        FOREIGN KEY (smtp_auth_uuid) REFERENCES pool_smtp(uuid)
+    |sql}
+;;
+
 let migration () =
   Sihl.Database.Migration.(
     empty "202307121722"
     |> add_step add_contact_person_fk_to_experiments
     |> add_step add_fk_contraint_to_contact_person_uuid
-    |> add_step add_default_flag_to_smtp_accounts)
+    |> add_step add_default_flag_to_smtp_accounts
+    |> add_step add_smpt_fk_to_experiments
+    |> add_step add_fk_contraint_to_smtp_auth_uuid)
 ;;
 
 let migration_root () =

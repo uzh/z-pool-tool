@@ -66,6 +66,7 @@ module Data = struct
       ; organisational_unit = None
       ; filter
       ; contact_person_id = None
+      ; smtp_auth_id = None
       ; direct_registration_disabled =
           false |> DirectRegistrationDisabled.create
       ; registration_disabled = false |> RegistrationDisabled.create
@@ -77,6 +78,18 @@ module Data = struct
       }
   ;;
 end
+
+let handle_create ?organisational_unit ?contact_person ?smtp_auth =
+  ExperimentCommand.Create.handle organisational_unit contact_person smtp_auth
+;;
+
+let handle_update ?organisational_unit ?contact_person ?smtp_auth experiment =
+  ExperimentCommand.Update.handle
+    experiment
+    organisational_unit
+    contact_person
+    smtp_auth
+;;
 
 let create () =
   let experiment = Model.create_experiment () in
@@ -97,7 +110,7 @@ let create_without_title () =
       ]
     |> Http_utils.format_request_boolean_values experiment_boolean_fields
     |> ExperimentCommand.Create.decode
-    >>= ExperimentCommand.Create.handle None None
+    >>= handle_create
   in
   let expected = Error Common.Message.(Conformist [ Field.Title, NoValue ]) in
   Test_utils.check_result expected events
@@ -112,7 +125,7 @@ let update () =
       ; Description |> show, [ Data.description ]
       ]
     |> ExperimentCommand.Update.decode
-    >>= ExperimentCommand.Update.handle experiment None None
+    >>= handle_update experiment
   in
   let expected =
     Pool_common.Message.Field.
@@ -120,7 +133,7 @@ let update () =
       ; Description |> show, [ Data.description ]
       ]
     |> ExperimentCommand.Update.decode
-    >>= ExperimentCommand.Update.handle experiment None None
+    >>= handle_update experiment
   in
   Test_utils.check_result expected events
 ;;

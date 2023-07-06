@@ -92,6 +92,12 @@ module SmtpAuth : sig
   module Username : Pool_common.Model.StringSig
   module Password : Pool_common.Model.StringSig
 
+  module RepoEntity : sig
+    module Id : sig
+      val t : Id.t Caqti_type.t
+    end
+  end
+
   module Mechanism : sig
     type t =
       | PLAIN

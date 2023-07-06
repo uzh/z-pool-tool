@@ -16,6 +16,7 @@ module Sql = struct
         organisational_unit_uuid,
         filter_uuid,
         contact_person_uuid,
+        smtp_auth_uuid,
         direct_registration_disabled,
         registration_disabled,
         allow_uninvited_signup,
@@ -27,6 +28,7 @@ module Sql = struct
         ?,
         ?,
         ?,
+        UNHEX(REPLACE(?, '-', '')),
         UNHEX(REPLACE(?, '-', '')),
         UNHEX(REPLACE(?, '-', '')),
         UNHEX(REPLACE(?, '-', '')),
@@ -88,6 +90,13 @@ module Sql = struct
             SUBSTR(HEX(pool_experiments.contact_person_uuid), 13, 4), '-',
             SUBSTR(HEX(pool_experiments.contact_person_uuid), 17, 4), '-',
             SUBSTR(HEX(pool_experiments.contact_person_uuid), 21)
+          )),
+          LOWER(CONCAT(
+            SUBSTR(HEX(pool_experiments.smtp_auth_uuid), 1, 8), '-',
+            SUBSTR(HEX(pool_experiments.smtp_auth_uuid), 9, 4), '-',
+            SUBSTR(HEX(pool_experiments.smtp_auth_uuid), 13, 4), '-',
+            SUBSTR(HEX(pool_experiments.smtp_auth_uuid), 17, 4), '-',
+            SUBSTR(HEX(pool_experiments.smtp_auth_uuid), 21)
           )),
           pool_experiments.direct_registration_disabled,
           pool_experiments.registration_disabled,
@@ -221,12 +230,12 @@ module Sql = struct
         organisational_unit_uuid = UNHEX(REPLACE($6, '-', '')),
         filter_uuid = UNHEX(REPLACE($7, '-', '')),
         contact_person_uuid = UNHEX(REPLACE($8, '-', '')),
-        direct_registration_disabled = $9,
-        registration_disabled = $10,
-        allow_uninvited_signup = $11,
-        experiment_type = $12,
-        session_reminder_lead_time = $13
-
+        smtp_auth_uuid = UNHEX(REPLACE($9, '-', '')),
+        direct_registration_disabled = $10,
+        registration_disabled = $11,
+        allow_uninvited_signup = $12,
+        experiment_type = $13,
+        session_reminder_lead_time = $14
       WHERE
         uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}
