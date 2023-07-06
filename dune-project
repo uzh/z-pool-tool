@@ -82,7 +82,7 @@
   (ppx_yojson_conv
    (>= 0.14.0))
   (ppx_variants_conv
-   (= v0.14.2))
+   (= v0.16.0))
   canary
   (guardian
    (= 0.2.0))
