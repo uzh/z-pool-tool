@@ -70,8 +70,8 @@ val create
   -> PublicTitle.t
   -> Description.t option
   -> CostCenter.t option
-  -> Admin.Id.t option
   -> Organisational_unit.t option
+  -> Admin.Id.t option
   -> DirectRegistrationDisabled.t
   -> RegistrationDisabled.t
   -> AllowUninvitedSignup.t

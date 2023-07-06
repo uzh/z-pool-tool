@@ -82,8 +82,8 @@ end = struct
         command.public_title
         command.description
         command.cost_center
-        (contact_person |> CCOption.map Admin.id)
         organisational_unit
+        (contact_person |> CCOption.map Admin.id)
         command.direct_registration_disabled
         command.registration_disabled
         command.allow_uninvited_signup
@@ -136,8 +136,8 @@ end = struct
         command.public_title
         command.description
         command.cost_center
-        (contact_person |> CCOption.map Admin.id)
         organisational_unit
+        (contact_person |> CCOption.map Admin.id)
         command.direct_registration_disabled
         command.registration_disabled
         command.allow_uninvited_signup

@@ -217,24 +217,16 @@ module Sql = struct
         title = $2,
         public_title = $3,
         description = $4,
-<<<<<<< HEAD
         cost_center = $5,
         organisational_unit_uuid = UNHEX(REPLACE($6, '-', '')),
         filter_uuid = UNHEX(REPLACE($7, '-', '')),
-        direct_registration_disabled = $8,
-        registration_disabled = $9,
-        allow_uninvited_signup = $10,
-        experiment_type = $11,
-        session_reminder_lead_time = $12
-=======
-        filter_uuid = UNHEX(REPLACE($5, '-', '')),
-        contact_person_uuid = UNHEX(REPLACE($6, '-', '')),
-        direct_registration_disabled = $7,
-        registration_disabled = $8,
-        allow_uninvited_signup = $9,
-        experiment_type = $10,
-        session_reminder_lead_time = $11
->>>>>>> 2fff3584 (add contact person fk to experiments)
+        contact_person_uuid = UNHEX(REPLACE($8, '-', '')),
+        direct_registration_disabled = $9,
+        registration_disabled = $10,
+        allow_uninvited_signup = $11,
+        experiment_type = $12,
+        session_reminder_lead_time = $13
+
       WHERE
         uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}

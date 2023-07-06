@@ -77,8 +77,8 @@ let create
   public_title
   description
   cost_center
-  contact_person_id
   organisational_unit
+  contact_person_id
   direct_registration_disabled
   registration_disabled
   allow_uninvited_signup
