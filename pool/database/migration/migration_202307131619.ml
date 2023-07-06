@@ -43,7 +43,8 @@ let create_user_imports_table =
         `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
       PRIMARY KEY (id),
       UNIQUE KEY `unique_user_uuid` (`user_uuid`),
-      FOREIGN KEY (user_uuid) REFERENCES user_users (`uuid`)
+      FOREIGN KEY (user_uuid) REFERENCES user_users (`uuid`),
+      UNIQUE KEY `unique_token` (`token`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     |sql}
 ;;

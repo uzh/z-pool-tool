@@ -43,8 +43,5 @@ module Guard = Entity_guard
 
 module Repo = struct
   let t = Repo_entity.t
-
-  let select_admins_to_notify_about_import_sql =
-    Repo.Sql.select_admins_to_notify_about_import_sql
-  ;;
+  let select_admins_joins_import_sql = Repo.Sql.select_admins_joins_import_sql
 end

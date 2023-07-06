@@ -43,7 +43,7 @@ let select_fields =
     select_from_contacts_columns
 ;;
 
-let select_contacts_to_notify_about_import_sql import_columns ~limit =
+let select_contacts_joins_import_sql ~import_columns ~where ~limit =
   Format.asprintf
     {sql|
       SELECT
@@ -55,13 +55,14 @@ let select_contacts_to_notify_about_import_sql import_columns ~limit =
       INNER JOIN pool_user_imports
         ON user_users.uuid = pool_user_imports.user_uuid
       WHERE
-        pool_contacts.import_pending = 1
+        %s
       ORDER BY
         pool_contacts.created_at ASC
       LIMIT %i
     |sql}
     select_from_contacts_columns
     import_columns
+    where
     limit
 ;;
 

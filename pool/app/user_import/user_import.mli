@@ -42,6 +42,7 @@ val find_pending_by_user_opt
 type event =
   | Confirmed of t
   | Notified of t
+  | Reminded of t
 
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
@@ -55,4 +56,5 @@ end
 
 module Service : sig
   val run : Pool_database.Label.t -> unit Lwt.t
+  val register : unit -> Sihl.Container.Service.t
 end

@@ -114,7 +114,9 @@ let confirm_as_admin () =
 ;;
 
 let confirm_as_contact_integration _ () =
-  let contact = Test_utils.Model.create_contact ~with_terms_accepted:false () in
+  let%lwt contact =
+    Integration_utils.ContactRepo.create ~with_terms_accepted:false ()
+  in
   let user = contact |> Pool_context.contact in
   let user_import = create_user_import user in
   let urlencoded =
@@ -137,13 +139,21 @@ let confirm_as_contact_integration _ () =
     Contact.find Test_utils.Data.database_label (Contact.id contact)
     |> Lwt.map get_or_failwith_pool_error
   in
-  let expected =
-    Contact.
-      { contact with
-        import_pending = Pool_user.ImportPending.create false
-      ; terms_accepted_at = Some (Pool_user.TermsAccepted.create_now ())
-      }
+  let () =
+    Alcotest.(
+      check
+        bool
+        "succeeds"
+        false
+        (Pool_user.ImportPending.value contact.Contact.import_pending))
   in
-  let () = Alcotest.(check Test_utils.contact "succeeds" expected contact) in
+  let () =
+    Alcotest.(
+      check
+        bool
+        "succeeds"
+        true
+        (contact.Contact.terms_accepted_at |> CCOption.is_some))
+  in
   Lwt.return_unit
 ;;

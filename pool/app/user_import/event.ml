@@ -6,7 +6,8 @@ let src = Logs.Src.create "user_import.event"
 type event =
   | Confirmed of t
   | Notified of t
-[@@deriving eq, show]
+  | Reminded of t
+[@@deriving eq, show, variants]
 
 let handle_event pool : event -> unit Lwt.t = function
   | Confirmed m ->
@@ -14,6 +15,12 @@ let handle_event pool : event -> unit Lwt.t = function
     |> Repo.update pool
   | Notified m ->
     { m with notified_at = Some (NotifiedAt.create_now ()) } |> Repo.update pool
+  | Reminded m ->
+    { m with
+      reminder_count = ReminderCount.increment m.reminder_count
+    ; last_reminded_at = Some (LastRemindedAt.create_now ())
+    }
+    |> Repo.update pool
   [@@deriving eq, show]
 ;;
 

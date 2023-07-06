@@ -54,7 +54,7 @@ module Sql = struct
     | None -> query
   ;;
 
-  let select_admins_to_notify_about_import_sql import_columns ~limit =
+  let select_admins_joins_import_sql ~import_columns ~where ~limit =
     Format.asprintf
       {sql|
         SELECT
@@ -66,13 +66,14 @@ module Sql = struct
         INNER JOIN pool_user_imports
           ON user_users.uuid = pool_user_imports.user_uuid
         WHERE
-          pool_admins.import_pending = 1
+          %s
         ORDER BY
           pool_admins.created_at ASC
         LIMIT %i
       |sql}
       select_from_admin_columns
       import_columns
+      where
       limit
   ;;
 

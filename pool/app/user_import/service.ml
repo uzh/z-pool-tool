@@ -11,33 +11,48 @@ let run database_label =
     in
     Message_template.UserImport.prepare database_label tenant
   in
-  let%lwt admins = Repo.find_admins_to_notify database_label limit () in
-  let new_limit = limit - CCList.length admins in
-  let%lwt contacts =
-    if new_limit > 0
-    then Repo.find_contacts_to_notify database_label new_limit ()
-    else Lwt.return []
+  let to_admin = CCList.map (fun (admin, import) -> `Admin admin, import) in
+  let to_contact =
+    CCList.map (fun (contact, import) -> `Contact contact, import)
   in
-  let make_events (messages, events) contact import =
+  let tasks =
+    [ ( (fun limit ->
+          Repo.find_admins_to_notify database_label limit () ||> to_admin)
+      , Event.notified )
+    ; ( (fun limit ->
+          Repo.find_contacts_to_notify database_label limit () ||> to_contact)
+      , Event.notified )
+    ; ( (fun limit ->
+          Repo.find_admins_to_remind database_label limit () ||> to_admin)
+      , Event.reminded )
+    ; ( (fun limit ->
+          Repo.find_contacts_to_remind database_label limit () ||> to_contact)
+      , Event.reminded )
+    ]
+  in
+  let make_events (messages, events) (contact, import) event_fnc =
     let message = import_message contact import.Entity.token in
-    let event = Event.Notified import in
+    let event = event_fnc import in
     message :: messages, event :: events
   in
-  let events =
-    admins
-    |> CCList.fold_left
-         (fun acc (admin, import) -> make_events acc (`Admin admin) import)
-         ([], [])
+  let rec folder limit tasks events =
+    if limit <= 0
+    then Lwt.return events
+    else (
+      match tasks with
+      | [] -> Lwt.return events
+      | (repo_fnc, event_fnc) :: tl ->
+        let%lwt users = repo_fnc limit in
+        let new_limit = limit - CCList.length users in
+        CCList.fold_left
+          (fun events data -> make_events events data event_fnc)
+          events
+          users
+        |> folder new_limit tl)
   in
-  let messages, events =
-    contacts
-    |> CCList.fold_left
-         (fun acc (contact, import) ->
-           make_events acc (`Contact contact) import)
-         events
-  in
-  let%lwt () = Email.BulkSent messages |> Email.handle_event database_label in
-  events |> Lwt_list.iter_s (Event.handle_event database_label)
+  let%lwt emails, import_events = folder limit tasks ([], []) in
+  let%lwt () = Email.(BulkSent emails |> handle_event database_label) in
+  import_events |> Lwt_list.iter_s (Event.handle_event database_label)
 ;;
 
 let run_all () =

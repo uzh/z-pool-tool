@@ -28,6 +28,7 @@ module ReminderCount = struct
   let field = Field.ReminderCount
   let create count = if count >= 0 then Ok count else Error NegativeAmount
   let schema = schema field create
+  let increment m = m + 1
 end
 
 module LastRemindedAt = struct
@@ -44,7 +45,7 @@ type t =
   ; notified_at : NotifiedAt.t option
   ; reminder_count : ReminderCount.t
   ; last_reminded_at : LastRemindedAt.t option
-  ; created_at : Pool_common.CreatedAt.t
-  ; updated_at : Pool_common.UpdatedAt.t
+  ; created_at : Pool_common.CreatedAt.t [@equal fun _ _ -> true]
+  ; updated_at : Pool_common.UpdatedAt.t [@equal fun _ _ -> true]
   }
 [@@deriving eq, show]

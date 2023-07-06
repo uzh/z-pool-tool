@@ -87,18 +87,28 @@ module RepoEntity = struct
       { user_uuid : Pool_common.Id.t
       ; confirmed_at : ConfirmedAt.t option
       ; notified_at : NotifiedAt.t option
+      ; reminder_count : ReminderCount.t
       ; last_reminded_at : LastRemindedAt.t option
       }
 
     let from_entity
-      { Entity.user_uuid; confirmed_at; notified_at; last_reminded_at; _ }
+      { Entity.user_uuid
+      ; confirmed_at
+      ; notified_at
+      ; reminder_count
+      ; last_reminded_at
+      ; _
+      }
       =
-      { user_uuid; confirmed_at; notified_at; last_reminded_at }
+      { user_uuid; confirmed_at; notified_at; reminder_count; last_reminded_at }
     ;;
 
     let t =
       let encode (m : t) =
-        Ok (m.user_uuid, (m.confirmed_at, (m.notified_at, m.last_reminded_at)))
+        Ok
+          ( m.user_uuid
+          , ( m.confirmed_at
+            , (m.notified_at, (m.reminder_count, m.last_reminded_at)) ) )
       in
       let decode _ =
         failwith
@@ -113,7 +123,9 @@ module RepoEntity = struct
              Common.Id.t
              (tup2
                 (option ConfirmedAt.t)
-                (tup2 (option NotifiedAt.t) (option LastRemindedAt.t)))))
+                (tup2
+                   (option NotifiedAt.t)
+                   (tup2 ReminderCount.t (option LastRemindedAt.t))))))
     ;;
   end
 end
@@ -210,24 +222,52 @@ let update pool t =
     (RepoEntity.Write.from_entity t)
 ;;
 
-let find_admins_to_notify_request limit =
+let find_admins_request ~where limit =
   let open Caqti_request.Infix in
-  Admin.Repo.select_admins_to_notify_about_import_sql
-    select_user_import_columns
+  Admin.Repo.select_admins_joins_import_sql
+    ~import_columns:select_user_import_columns
+    ~where
     ~limit
   |> Caqti_type.(unit ->* tup2 Admin.Repo.t RepoEntity.t)
+;;
+
+let reminder_where_clause =
+  {sql|
+    pool_user_imports.notification_sent_at IS NOT NULL
+    AND pool_user_imports.notification_sent_at < NOW() - INTERVAL 1 WEEK
+    AND pool_user_imports.reminder_count < 2
+    AND (
+      pool_user_imports.last_reminder_sent_at IS NULL
+      OR pool_user_imports.last_reminder_sent_at < NOW() - INTERVAL 1 WEEK)
+  |sql}
 ;;
 
 let find_admins_to_notify pool limit =
   Utils.Database.collect
     (Pool_database.Label.value pool)
-    (find_admins_to_notify_request limit)
+    (find_admins_request
+       ~where:
+         {|pool_admins.import_pending = 1
+          AND pool_user_imports.notification_sent_at IS NULL|}
+       limit)
 ;;
 
-let find_contacts_to_notify_request limit =
+let find_admins_to_remind pool limit =
+  Utils.Database.collect
+    (Pool_database.Label.value pool)
+    (find_admins_request
+       ~where:
+         (Format.asprintf
+            "pool_admins.import_pending = 1 AND %s"
+            reminder_where_clause)
+       limit)
+;;
+
+let find_contacts_request ~where limit =
   let open Caqti_request.Infix in
-  Contact.Repo.Sql.select_contacts_to_notify_about_import_sql
-    select_user_import_columns
+  Contact.Repo.Sql.select_contacts_joins_import_sql
+    ~import_columns:select_user_import_columns
+    ~where
     ~limit
   |> Caqti_type.(unit ->* tup2 Contact.Repo.Model.t RepoEntity.t)
 ;;
@@ -235,5 +275,20 @@ let find_contacts_to_notify_request limit =
 let find_contacts_to_notify pool limit =
   Utils.Database.collect
     (Pool_database.Label.value pool)
-    (find_contacts_to_notify_request limit)
+    (find_contacts_request
+       ~where:
+         {|pool_contacts.import_pending = 1
+          AND pool_user_imports.notification_sent_at IS NULL|}
+       limit)
+;;
+
+let find_contacts_to_remind pool limit =
+  Utils.Database.collect
+    (Pool_database.Label.value pool)
+    (find_contacts_request
+       ~where:
+         (Format.asprintf
+            "pool_contacts.import_pending = 1 AND %s"
+            reminder_where_clause)
+       limit)
 ;;

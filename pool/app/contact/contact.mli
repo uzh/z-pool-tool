@@ -236,8 +236,9 @@ module Repo : sig
   module Sql : sig
     val find_request_sql : string -> string
 
-    val select_contacts_to_notify_about_import_sql
-      :  string
+    val select_contacts_joins_import_sql
+      :  import_columns:string
+      -> where:string
       -> limit:int
       -> string
   end

@@ -132,5 +132,10 @@ end
 
 module Repo : sig
   val t : t Caqti_type.t
-  val select_admins_to_notify_about_import_sql : string -> limit:int -> string
+
+  val select_admins_joins_import_sql
+    :  import_columns:string
+    -> where:string
+    -> limit:int
+    -> string
 end
