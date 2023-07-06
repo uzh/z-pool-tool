@@ -28,8 +28,17 @@ let update_language_as actor =
   Lwt.return_ok ()
 ;;
 
-let admin_can_update_language _ () =
-  let%lwt actual = update_language_as Guard.console_authorizable in
+let recruiter_can_update_contact_language _ () =
+  let open Utils.Lwt_result.Infix in
+  let ctx = Pool_database.to_ctx Test_utils.Data.database_label in
+  let%lwt actor =
+    let open Guard.Persistence.Actor in
+    find_by_role ~ctx `RecruiterAll
+    ||> CCList.hd
+    >|> find Test_utils.Data.database_label `RecruiterAll
+    ||> CCResult.get_or_failwith
+  in
+  let%lwt actual = update_language_as actor in
   Alcotest.(check (result unit Test_utils.error))
     "Admin can update a contact."
     (Ok ())

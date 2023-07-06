@@ -6,6 +6,7 @@ type config =
   ; rate_limit : int
   ; max_capacity : int
   }
+[@@warning "-69"]
 
 let config start rate_limit max_capacity = { start; rate_limit; max_capacity }
 

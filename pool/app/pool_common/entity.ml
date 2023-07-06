@@ -1,5 +1,6 @@
 open CCFun
 open Sexplib.Conv
+open Ppx_yojson_conv_lib.Yojson_conv
 module PoolError = Entity_message
 module Model = Entity_base_model
 

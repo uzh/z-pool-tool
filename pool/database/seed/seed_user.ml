@@ -1,4 +1,5 @@
 open CCFun
+open Ppx_yojson_conv_lib.Yojson_conv
 module User = Pool_user
 module Id = Pool_common.Id
 

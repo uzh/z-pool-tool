@@ -1,3 +1,5 @@
+open Ppx_yojson_conv_lib.Yojson_conv
+
 module Id = struct
   include Pool_common.Id
 

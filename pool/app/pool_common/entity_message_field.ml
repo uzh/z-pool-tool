@@ -1,4 +1,5 @@
 open Sexplib.Conv
+open Ppx_yojson_conv_lib.Yojson_conv
 
 let go = Utils.ppx_printer
 
@@ -248,7 +249,6 @@ type t =
   | Virtual [@name "virtual"] [@printer go "virtual"]
   | WaitingList [@name "waiting_list"] [@printer go "waiting_list"]
   | Zip [@name "zip"] [@printer go "zip"]
-      [@printer field_name "terms_and_conditions"]
 [@@deriving eq, show { with_path = false }, yojson, variants, sexp_of]
 
 let read m =

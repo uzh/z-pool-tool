@@ -35,7 +35,10 @@ let suite =
       , [ test_case "intercept email" `Slow Common_test.validate_email ] )
     ; ( "authorization"
       , Authorization_test.
-          [ test_case "permit valid operation" `Slow admin_can_update_language
+          [ test_case
+              "permit valid operation"
+              `Slow
+              recruiter_can_update_contact_language
           ; test_case
               "deny invalid operation"
               `Slow

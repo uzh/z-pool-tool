@@ -1,3 +1,4 @@
+open Ppx_yojson_conv_lib.Yojson_conv
 module Message = Pool_common.Message
 module Language = Pool_common.Language
 module Answer = Entity_answer
