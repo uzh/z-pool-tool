@@ -97,6 +97,7 @@ Update/upgrade all package versions for ocaml and yarn packages.
 1. `make test-clean` -> clean prepare for tests and run then (on failiures: debug)
 1. `make lock`
 1. commit all changes
+1. release a new version depending on updates
 
 ## 🚀 Release new version
 
