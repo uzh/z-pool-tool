@@ -20,7 +20,7 @@ dev:: ## Run the Sihl app, watch files and restart on change
 		SIHL_ENV=development ./_build/default/pool/run/run.exe server &
 	fi
 	echo
-	inotifywait -e modify -e move -e create -e delete -e attrib -r `pwd` --exclude "(_build|logs|Makefile|.vscode|.devcontainer|.git|.DS_Store|node_modules|resources)" -qq
+	inotifywait -e modify -e move -e create -e delete -e attrib -r `pwd` --exclude "(_build|public|logs|Makefile|.vscode|.devcontainer|.git|.DS_Store|node_modules|resources)" -qq
 	kill -9 $$(lsof -ti tcp:3000)
 	echo
 	done

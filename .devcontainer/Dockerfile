@@ -22,6 +22,7 @@ ENV DEBIAN_FRONTEND noninteractive
 ENV SIHL_ENV development
 
 # install packages
+# hadolint ignore=DL3008
 RUN apt-get update -q && apt-get install -yqq --no-install-recommends \
   # development dependencies
   inotify-tools \
@@ -41,7 +42,8 @@ RUN apt-get update -q && apt-get install -yqq --no-install-recommends \
   #
   # cleanup installations
   && apt-get autoremove -y \
-  && apt-get clean all
+  && apt-get clean all \
+  && rm -rf /var/lib/apt/lists/*
 
 # add timezone
 RUN ln -fs /usr/share/zoneinfo/Europe/Zurich /etc/localtime
@@ -53,6 +55,7 @@ RUN bash -c 'echo "http		80/tcp	www		# WorldWideWeb HTTP" >> /etc/services' \
 USER opam
 
 # install oh-my-zsh
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 RUN wget https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh -q -O - | zsh \
   && cp ~/.oh-my-zsh/templates/zshrc.zsh-template ~/.zshrc \
   && sed -i "/^plugins=/c\plugins=(git dotenv)" ~/.zshrc \
