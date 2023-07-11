@@ -1,4 +1,5 @@
 module Dynparam = Utils.Database.Dynparam
+module RepoEntity = Repo_entity
 
 module Sql = struct
   let insert_request =
@@ -6,14 +7,10 @@ module Sql = struct
     {sql|
       INSERT INTO pool_admins (
         user_uuid,
-        import_pending,
-        created_at,
-        updated_at
+        import_pending
       ) VALUES (
         UNHEX(REPLACE($1, '-', '')),
-        $2,
-        NOW(),
-        NOW()
+        $2
       )
     |sql}
     |> Caqti_type.(
@@ -54,7 +51,7 @@ module Sql = struct
     | None -> query
   ;;
 
-  let select_admins_joins_import_sql ~import_columns ~where ~limit =
+  let select_imported_admins_sql ~import_columns ~where ~limit =
     Format.asprintf
       {sql|
         SELECT
@@ -91,7 +88,7 @@ module Sql = struct
     let open Lwt.Infix in
     Utils.Database.find_opt
       (Pool_database.Label.value pool)
-      (find_request Repo_entity.t)
+      (find_request RepoEntity.t)
       id
     >|= CCOption.to_result Pool_common.Message.(NotFound Field.Admin)
   ;;
@@ -105,7 +102,7 @@ module Sql = struct
       user_users.admin = 1
       |sql}
     |> select_from_users_sql
-    |> Caqti_type.unit ->* Repo_entity.t
+    |> Caqti_type.unit ->* RepoEntity.t
   ;;
 
   let find_all pool =
@@ -136,7 +133,7 @@ module Sql = struct
           Dynparam.empty
           ids
       in
-      let request = find_multiple_request ids |> pt ->* Repo_entity.t in
+      let request = find_multiple_request ids |> pt ->* RepoEntity.t in
       Utils.Database.collect (pool |> Pool_database.Label.value) request pv
   ;;
 
@@ -150,14 +147,14 @@ module Sql = struct
       WHERE
         user_uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}
-    |> Repo_entity.Write.t ->. Caqti_type.unit
+    |> RepoEntity.Write.t ->. Caqti_type.unit
   ;;
 
   let update pool t =
     Utils.Database.exec
       (Pool_database.Label.value pool)
       update_request
-      (Repo_entity.Write.of_entity t)
+      (RepoEntity.Write.of_entity t)
   ;;
 
   let update_sign_in_count_request =

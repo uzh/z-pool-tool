@@ -527,7 +527,7 @@ let user_import =
   let label = Label.UserImport in
   let email_text =
     [ p
-        [ txt "Your account was recently imported."
+        [ txt "Your account was recently migrated."
         ; br ()
         ; txt "Follow this "
         ; a ~a:[ a_href "{verificationUrl}" ] [ txt "link" ]
@@ -547,7 +547,7 @@ let user_import =
     "Reactivation of your account" |> EmailSubject.of_string
   in
   let sms_text =
-    {|Your account was recently imported. Follow this link to reactivate your account:
+    {|Your account was recently migrated. Follow this link to reactivate your account:
 
 {verificationUrl}|}
     |> add_salutation_to_text

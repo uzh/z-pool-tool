@@ -224,11 +224,11 @@ let update pool t =
 
 let find_admins_request ~where limit =
   let open Caqti_request.Infix in
-  Admin.Repo.select_admins_joins_import_sql
+  Admin.Repo.select_imported_admins_sql
     ~import_columns:select_user_import_columns
     ~where
     ~limit
-  |> Caqti_type.(unit ->* tup2 Admin.Repo.t RepoEntity.t)
+  |> Caqti_type.(unit ->* tup2 Admin.Repo.Entity.t RepoEntity.t)
 ;;
 
 let reminder_where_clause =
@@ -265,11 +265,11 @@ let find_admins_to_remind pool limit =
 
 let find_contacts_request ~where limit =
   let open Caqti_request.Infix in
-  Contact.Repo.Sql.select_contacts_joins_import_sql
+  Contact.Repo.Sql.select_imported_contacts_sql
     ~import_columns:select_user_import_columns
     ~where
     ~limit
-  |> Caqti_type.(unit ->* tup2 Contact.Repo.Model.t RepoEntity.t)
+  |> Caqti_type.(unit ->* tup2 Contact.Repo.Entity.t RepoEntity.t)
 ;;
 
 let find_contacts_to_notify pool limit =

@@ -40,15 +40,12 @@ let message_language database_label ({ language; _ } : t) =
 module Repo = struct
   module Preview = Repo_model.Preview
 
-  module Model = struct
-    let t = Repo_model.t
+  module Entity = struct
+    include Repo_model
   end
 
   module Sql = struct
     let find_request_sql = Repo_sql.find_request_sql
-
-    let select_contacts_joins_import_sql =
-      Repo_sql.select_contacts_joins_import_sql
-    ;;
+    let select_imported_contacts_sql = Repo_sql.select_imported_contacts_sql
   end
 end

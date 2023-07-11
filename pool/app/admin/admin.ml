@@ -42,6 +42,9 @@ let user_is_admin pool (user : Sihl_user.t) =
 module Guard = Entity_guard
 
 module Repo = struct
-  let t = Repo_entity.t
-  let select_admins_joins_import_sql = Repo.Sql.select_admins_joins_import_sql
+  module Entity = struct
+    include Repo_entity
+  end
+
+  let select_imported_admins_sql = Repo.Sql.select_imported_admins_sql
 end

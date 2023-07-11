@@ -131,9 +131,11 @@ module Guard : sig
 end
 
 module Repo : sig
-  val t : t Caqti_type.t
+  module Entity : sig
+    val t : t Caqti_type.t
+  end
 
-  val select_admins_joins_import_sql
+  val select_imported_admins_sql
     :  import_columns:string
     -> where:string
     -> limit:int

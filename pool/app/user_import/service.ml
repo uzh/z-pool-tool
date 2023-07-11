@@ -15,19 +15,12 @@ let run database_label =
   let to_contact =
     CCList.map (fun (contact, import) -> `Contact contact, import)
   in
+  let run_limit fcn decode limit = fcn database_label limit () ||> decode in
   let tasks =
-    [ ( (fun limit ->
-          Repo.find_admins_to_notify database_label limit () ||> to_admin)
-      , Event.notified )
-    ; ( (fun limit ->
-          Repo.find_contacts_to_notify database_label limit () ||> to_contact)
-      , Event.notified )
-    ; ( (fun limit ->
-          Repo.find_admins_to_remind database_label limit () ||> to_admin)
-      , Event.reminded )
-    ; ( (fun limit ->
-          Repo.find_contacts_to_remind database_label limit () ||> to_contact)
-      , Event.reminded )
+    [ run_limit Repo.find_admins_to_notify to_admin, Event.notified
+    ; run_limit Repo.find_contacts_to_notify to_contact, Event.notified
+    ; run_limit Repo.find_admins_to_remind to_admin, Event.reminded
+    ; run_limit Repo.find_contacts_to_remind to_contact, Event.reminded
     ]
   in
   let make_events (messages, events) (contact, import) event_fnc =
@@ -81,7 +74,8 @@ let stop () = Lwt.return_unit
 let lifecycle =
   Sihl.Container.create_lifecycle
     "System events"
-    ~dependencies:(fun () -> [ Database.lifecycle ])
+    ~dependencies:(fun () ->
+      [ Database.lifecycle; Email.Service.Queue.lifecycle ])
     ~start
     ~stop
 ;;

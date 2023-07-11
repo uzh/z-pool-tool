@@ -43,7 +43,7 @@ let select_fields =
     select_from_contacts_columns
 ;;
 
-let select_contacts_joins_import_sql ~import_columns ~where ~limit =
+let select_imported_contacts_sql ~import_columns ~where ~limit =
   Format.asprintf
     {sql|
       SELECT

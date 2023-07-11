@@ -229,14 +229,14 @@ module Repo : sig
     val t : Preview.t Caqti_type.t
   end
 
-  module Model : sig
+  module Entity : sig
     val t : t Caqti_type.t
   end
 
   module Sql : sig
     val find_request_sql : string -> string
 
-    val select_contacts_joins_import_sql
+    val select_imported_contacts_sql
       :  import_columns:string
       -> where:string
       -> limit:int
