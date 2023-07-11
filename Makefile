@@ -30,8 +30,12 @@ build-watch:
 
 .PHONY: install
 install: all ## Install the packages on the system
-	yarn install
 	opam exec -- dune install --root .
+
+.PHONY: update
+update:
+	yarn upgrade
+	opam update
 
 .PHONY: sihl
 sihl: all ## Run the produced executable
@@ -47,6 +51,9 @@ test-migrate: ## Run the all tests
 	SIHL_ENV=test opam exec -- dune exec --root . pool/run/run.exe seed.root.clean
 	SIHL_ENV=test opam exec -- dune exec --root . pool/run/run.exe migrate.tenant
 	SIHL_ENV=test opam exec -- dune exec --root . pool/run/run.exe seed.tenant.clean
+
+.PHONY: test-clean
+test-clean: | test-migrate test
 
 .PHONY: clean
 clean: ## Clean build artifacts and other generated files

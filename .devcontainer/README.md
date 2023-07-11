@@ -50,13 +50,8 @@ If any changes were made to files in `.devcontainer` folder the Container should
 1. Add the following variables to it
     - `DATABASE_URL=mariadb://root@database-root:3306/test`
     - `MYSQL_DATABASE=test_econ`
-1. Run migrations and seeds for the test databases
-
-    ```
-    make test-migrate
-    ```
-
-1. Run `make test`
+1. Prepare test database (migration/seeds) and run the tests
+    - `make test-clean`
 
 ## Database View
 

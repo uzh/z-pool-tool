@@ -45,7 +45,7 @@ depends: [
   "conf-libev" {= "4-12"}
   "conf-libssl" {= "4"}
   "conf-mariadb" {= "2"}
-  "conf-pkg-config" {= "2"}
+  "conf-pkg-config" {= "3"}
   "conformist" {= "0.8.1"}
   "containers" {= "3.12"}
   "containers-data" {= "3.12"}
@@ -58,9 +58,9 @@ depends: [
   "ctypes" {= "0.20.2"}
   "digestif" {= "1.1.4"}
   "domain-name" {= "0.4.0"}
-  "dune" {= "3.9.0"}
-  "dune-build-info" {= "3.9.0"}
-  "dune-configurator" {= "3.9.0"}
+  "dune" {= "3.9.1"}
+  "dune-build-info" {= "3.9.1"}
+  "dune-configurator" {= "3.9.1"}
   "duration" {= "0.2.1"}
   "either" {= "1.0.0"}
   "emile" {= "1.1"}
@@ -130,6 +130,7 @@ depends: [
   "ppx_fields_conv" {= "v0.16.0"}
   "ppx_js_style" {= "v0.16.0"}
   "ppx_sexp_conv" {= "v0.16.0"}
+  "ppx_variants_conv" {= "v0.16.0"}
   "ppx_yojson_conv" {= "v0.16.0"}
   "ppx_yojson_conv_lib" {= "v0.16.0"}
   "ppxlib" {= "0.30.0"}
@@ -171,6 +172,7 @@ depends: [
   "uuseg" {= "15.0.0"}
   "uutf" {= "1.0.3"}
   "uuuu" {= "0.3.0"}
+  "variantslib" {= "v0.16.0"}
   "x509" {= "0.16.5"}
   "yojson" {= "2.1.0"}
   "yuscii" {= "0.3.0"}

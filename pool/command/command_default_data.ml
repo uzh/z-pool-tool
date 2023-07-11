@@ -6,13 +6,16 @@ let insert =
 Provide table to insert default data:
         <table>              : string
 
-Available tables: message_templates
+Available tables:
+    - guardian_rules
+    - i18n
+    - message_templates
 
-Example: default_data.insert message_templates
+Example: seed.default message_templates
     |}
   in
   Sihl.Command.make
-    ~name:"default_data.insert"
+    ~name:"seed.default"
     ~description:"Insert required default data into tenant database."
     ~help
     (function
@@ -27,8 +30,7 @@ Example: default_data.insert message_templates
       in
       let%lwt () =
         Command_utils.setup_databases ()
-        >|> Lwt_list.iter_s (fun pool ->
-              (Pool_event.handle_event pool) tenant_event)
+        >|> Lwt_list.iter_s CCFun.(flip Pool_event.handle_event tenant_event)
       in
       let%lwt () = Pool_event.handle_event Pool_database.root root_event in
       Lwt.return_some ()

@@ -6,11 +6,11 @@ Provide all fields to send a test email:
         <sender>              : string
         <recipient>           : string
 
-Example: mail admin@mail.com contact@mail.com
+Example: test.mail admin@mail.com contact@mail.com
     |}
   in
   Sihl.Command.make
-    ~name:"mail"
+    ~name:"test.mail"
     ~description:"Dispatch pre-defined test email to the provided recipient"
     ~help
     (function
