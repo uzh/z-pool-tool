@@ -114,3 +114,25 @@ let verify (Unverified email) =
     ; updated_at = Ptime_clock.now ()
     }
 ;;
+
+type email = Sihl.Contract.Email.t
+
+let email_of_yojson =
+  CCFun.(
+    Sihl.Contract.Email.of_yojson
+    %> function
+    | Some email -> email
+    | None -> Yojson.json_error "Invalid serialized email string received")
+;;
+
+let yojson_of_email = Sihl.Contract.Email.to_yojson
+let equal_email = Sihl.Contract.Email.equal
+let pp_email = Sihl.Contract.Email.pp
+
+type job =
+  { email : email
+  ; smtp_auth_id : SmtpAuth.Id.t option [@yojson.option]
+  }
+[@@deriving eq, show, yojson]
+
+let create_job email smtp_auth_id = { email; smtp_auth_id }

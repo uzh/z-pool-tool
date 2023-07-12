@@ -83,6 +83,10 @@ let () =
             "create tenant smtp auth"
             `Quick
             Tenant_test.create_smtp_auth
+        ; test_case
+            "create tenant smtp auth and force default"
+            `Quick
+            Tenant_test.create_smtp_force_defaut
         ; test_case "create tenant" `Quick Tenant_test.create_tenant
         ; test_case
             "update tenant details"

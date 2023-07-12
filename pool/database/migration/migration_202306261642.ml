@@ -21,3 +21,8 @@ let migration () =
   Sihl.Database.Migration.(
     empty "202306261642" |> add_step create_failed_login_attempts_table)
 ;;
+
+let migration_root () =
+  Sihl.Database.Migration.(
+    empty "202306261642" |> add_step create_failed_login_attempts_table)
+;;

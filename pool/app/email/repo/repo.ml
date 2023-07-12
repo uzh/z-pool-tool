@@ -11,6 +11,8 @@ let delete_unverified_by_user = Repo_sql.delete_unverified_by_user
 module Smtp = struct
   let find = Sql.Smtp.find
   let find_by_label = Sql.Smtp.find_by_label
+  let find_full = Sql.Smtp.find_full
+  let find_full_default = Sql.Smtp.find_full_default
 
   let find_full_by_label label =
     Sql.Smtp.find_full_by_label
@@ -19,6 +21,7 @@ module Smtp = struct
   ;;
 
   let find_default = Sql.Smtp.find_default
+  let find_default_opt = Sql.Smtp.find_default_opt
   let find_all = Sql.Smtp.find_all
   let insert = Sql.Smtp.insert
   let update = Sql.Smtp.update

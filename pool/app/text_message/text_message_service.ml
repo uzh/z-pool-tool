@@ -85,7 +85,7 @@ let intercept_message ~tags database_label msg =
         "Sending text message intercepted. Sending message as email to ('%s')"
         (Pool_user.EmailAddress.value recipient));
     let%lwt sender =
-      Email.Service.sender_of_pool database_label
+      Email.Service.default_sender_of_pool database_label
       |> Lwt.map Settings.ContactEmail.value
     in
     let body = format_message msg in

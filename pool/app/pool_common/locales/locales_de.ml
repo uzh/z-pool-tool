@@ -343,6 +343,7 @@ let rec error_to_string = function
       (field_to_string field)
       "konnte nicht entschlüsselt werden."
   | DecodeAction -> "Die Aktion konnte nicht gefunden werden."
+  | DefaultMustNotBeUnchecked -> "'Standard' kann nicht deaktiviert werden."
   | DirectRegistrationIsDisabled ->
     "Sie können sich nicht selbst für dieses Experiment anmelden."
   | Disabled field ->

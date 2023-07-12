@@ -31,6 +31,9 @@ let handle_system_event system_event =
   | GuardianCacheCleared ->
     let () = Guard.Persistence.Cache.clear () in
     success_log ()
+  | SmtpAccountUpdated smtp_id ->
+    let () = Email.Service.Cache.remove smtp_id in
+    success_log ()
   | TenantDatabaseAdded database_label ->
     add_pool database_label >|> handle_result
   | TenantDatabaseUpdated database_label ->

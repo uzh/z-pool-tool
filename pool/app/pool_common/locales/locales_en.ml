@@ -332,6 +332,7 @@ let rec error_to_string = function
   | DirectRegistrationIsDisabled ->
     "You cannot assign yourself to this experiment."
   | DecodeAction -> "Cannot decode action."
+  | DefaultMustNotBeUnchecked -> "'Default' must not be unchecked."
   | Disabled field -> field_message "" (field_to_string field) "is disabled."
   | EmailAddressMissingAdmin -> "Please provide admin email address."
   | EmailAddressMissingRoot -> "Please provide root email address."

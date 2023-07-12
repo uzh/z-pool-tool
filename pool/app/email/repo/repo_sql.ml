@@ -230,6 +230,35 @@ module Smtp = struct
       (Entity.SmtpAuth.Label.value label)
   ;;
 
+  let find_full_request =
+    let open Caqti_request.Infix in
+    {sql|WHERE uuid = UNHEX(REPLACE(?, '-', ''))|sql}
+    |> select_smtp_sql ~with_password:true
+    |> RepoEntity.SmtpAuth.(Id.t ->! Write.t)
+  ;;
+
+  let find_full pool id =
+    let open Utils.Lwt_result.Infix in
+    Utils.Database.find_opt (Database.Label.value pool) find_full_request id
+    ||> CCOption.to_result Pool_common.Message.(NotFound Field.Smtp)
+  ;;
+
+  let find_full_default_request =
+    let open Caqti_request.Infix in
+    {sql|WHERE default_account = 1|sql}
+    |> select_smtp_sql ~with_password:true
+    |> Caqti_type.unit ->! RepoEntity.SmtpAuth.Write.t
+  ;;
+
+  let find_full_default pool =
+    let open Utils.Lwt_result.Infix in
+    Utils.Database.find_opt
+      (Database.Label.value pool)
+      find_full_default_request
+      ()
+    ||> CCOption.to_result Pool_common.Message.(NotFound Field.Smtp)
+  ;;
+
   let find_full_by_label_request =
     let open Caqti_request.Infix in
     {sql|WHERE label = ?|sql}
@@ -256,9 +285,14 @@ module Smtp = struct
     |> Caqti_type.unit ->! RepoEntity.SmtpAuth.t
   ;;
 
+  let find_default_opt pool =
+    Utils.Database.find_opt (Database.Label.value pool) find_default_request ()
+  ;;
+
   let find_default pool =
     let open Utils.Lwt_result.Infix in
-    Utils.Database.find_opt (Database.Label.value pool) find_default_request ()
+    pool
+    |> find_default_opt
     ||> CCOption.to_result Pool_common.Message.(NotFound Field.Smtp)
   ;;
 

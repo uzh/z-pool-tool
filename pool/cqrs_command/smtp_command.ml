@@ -3,6 +3,15 @@ module SmtpAuth = Email.SmtpAuth
 
 let src = Logs.Src.create "smtp.cqrs"
 
+let clear_cache_event id =
+  let open System_event in
+  Job.SmtpAccountUpdated id |> create |> created |> Pool_event.system_event
+;;
+
+let clear_cache_event_of_entity ({ SmtpAuth.id; _ } : SmtpAuth.t) =
+  id |> clear_cache_event
+;;
+
 type create =
   { label : SmtpAuth.Label.t
   ; server : SmtpAuth.Server.t
@@ -53,6 +62,7 @@ module Create : sig
   val handle
     :  ?id:SmtpAuth.Id.t
     -> ?tags:Logs.Tag.set
+    -> SmtpAuth.t option
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 end = struct
@@ -78,9 +88,18 @@ end = struct
         command)
   ;;
 
-  let handle ?id ?(tags = Logs.Tag.empty) (command : t) =
+  let handle ?id ?(tags = Logs.Tag.empty) current_default (command : t) =
     let open CCResult in
     Logs.info ~src (fun m -> m "Handle command Create" ~tags);
+    let is_default, system_events =
+      (match command.default |> SmtpAuth.Default.value, current_default with
+       | (false | true), None -> true, []
+       | true, Some default -> true, [ default ]
+       | false, Some _ -> false, [])
+      |> fun (default, events) ->
+      ( SmtpAuth.Default.create default
+      , events |> CCList.map clear_cache_event_of_entity )
+    in
     SmtpAuth.Write.create
       ?id
       command.label
@@ -90,8 +109,9 @@ end = struct
       command.password
       command.mechanism
       command.protocol
-      command.default
-    >|= fun smtp -> [ Email.SmtpCreated smtp |> Pool_event.email ]
+      is_default
+    >|= fun smtp ->
+    (Email.SmtpCreated smtp |> Pool_event.email) :: system_events
   ;;
 
   let decode data =
@@ -107,6 +127,7 @@ module Update : sig
 
   val handle
     :  ?tags:Logs.Tag.set
+    -> SmtpAuth.t option
     -> SmtpAuth.t
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
@@ -119,8 +140,27 @@ module Update : sig
 end = struct
   type t = update
 
-  let handle ?(tags = Logs.Tag.empty) (smtp_auth : SmtpAuth.t) (command : t) =
+  let handle
+    ?(tags = Logs.Tag.empty)
+    (default_smtp : SmtpAuth.t option)
+    (smtp_auth : SmtpAuth.t)
+    (command : t)
+    =
+    let open CCResult in
+    let open SmtpAuth in
     Logs.info ~src (fun m -> m "Handle command Edit" ~tags);
+    let default_smtp =
+      CCOption.bind default_smtp (fun { id; _ } ->
+        if Id.equal id smtp_auth.id then None else default_smtp)
+    in
+    let* system_event =
+      let cache_event = clear_cache_event_of_entity in
+      match command.default |> SmtpAuth.Default.value, default_smtp with
+      | false, None -> Error Pool_common.Message.DefaultMustNotBeUnchecked
+      | true, Some default_smtp ->
+        Ok [ cache_event default_smtp; cache_event smtp_auth ]
+      | _, _ -> Ok [ cache_event smtp_auth ]
+    in
     let update =
       { SmtpAuth.id = smtp_auth.SmtpAuth.id
       ; label = command.label
@@ -132,7 +172,7 @@ end = struct
       ; default = command.default
       }
     in
-    Ok [ Email.SmtpEdited update |> Pool_event.email ]
+    Ok ((Email.SmtpEdited update |> Pool_event.email) :: system_event)
   ;;
 
   let decode data =
@@ -168,7 +208,10 @@ end = struct
 
   let handle ?(tags = Logs.Tag.empty) (command : t) =
     Logs.info ~src (fun m -> m "Handle command Edit" ~tags);
-    Ok [ Email.SmtpPasswordEdited command |> Pool_event.email ]
+    Ok
+      [ Email.SmtpPasswordEdited command |> Pool_event.email
+      ; clear_cache_event command.SmtpAuth.id
+      ]
   ;;
 
   let decode data =

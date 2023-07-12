@@ -34,6 +34,7 @@ type error =
   | CustomFieldTypeChangeNotAllowed
   | Decode of Field.t
   | DecodeAction
+  | DefaultMustNotBeUnchecked
   | DirectRegistrationIsDisabled
   | Disabled of Field.t
   | EmailAddressMissingAdmin

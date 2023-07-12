@@ -201,11 +201,22 @@ module SmtpAuth : sig
     :  Pool_database.Label.t
     -> (t, Pool_common.Message.error) Lwt_result.t
 
+  val find_default_opt : Pool_database.Label.t -> t option Lwt.t
   val find_all : Pool_database.Label.t -> t list Lwt.t
 end
 
+type job
+
+val equal_job : job -> job -> bool
+val pp_job : Format.formatter -> job -> unit
+val create_job : Sihl_email.t -> SmtpAuth.Id.t option -> job
+
 module Service : sig
   module Queue : Sihl.Contract.Queue.Sig
+
+  module Cache : sig
+    val remove : SmtpAuth.Id.t -> unit
+  end
 
   module Smtp : sig
     type prepared =
@@ -219,15 +230,22 @@ module Service : sig
 
     val inbox : unit -> Sihl_email.t list
     val clear_inbox : unit -> unit
-    val prepare : Pool_database.Label.t -> Sihl_email.t -> prepared Lwt.t
+
+    val prepare
+      :  Pool_database.Label.t
+      -> ?smtp_auth_id:SmtpAuth.Id.t
+      -> Sihl_email.t
+      -> prepared Lwt.t
   end
 
   module Job : sig
     val send : Sihl_email.t Sihl_queue.job
   end
 
-  val sender_of_pool : Pool_database.Label.t -> Settings.ContactEmail.t Lwt.t
-  val remove_from_cache : Pool_database.Label.t -> unit
+  val default_sender_of_pool
+    :  Pool_database.Label.t
+    -> Settings.ContactEmail.t Lwt.t
+
   val intercept_prepare : Sihl_email.t -> (Sihl_email.t, string) result
   val dispatch : Pool_database.Label.t -> Sihl_email.t -> unit Lwt.t
   val dispatch_all : Pool_database.Label.t -> Sihl_email.t list -> unit Lwt.t
@@ -260,8 +278,8 @@ val equal_verification_event : verification_event -> verification_event -> bool
 val pp_verification_event : Format.formatter -> verification_event -> unit
 
 type event =
-  | Sent of Sihl_email.t
-  | BulkSent of Sihl_email.t list
+  | Sent of (Sihl_email.t * SmtpAuth.Id.t option)
+  | BulkSent of (Sihl_email.t * SmtpAuth.Id.t option) list
   | SmtpCreated of SmtpAuth.Write.t
   | SmtpEdited of SmtpAuth.t
   | SmtpPasswordEdited of SmtpAuth.update_password

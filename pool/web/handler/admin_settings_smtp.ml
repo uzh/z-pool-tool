@@ -63,8 +63,6 @@ let smtp_form location req =
 
 let show = smtp_form `Tenant
 
-(* Add check to make sure there is always one default setting *)
-
 let create_post location req =
   let open Command.Create in
   let tags = Pool_context.Logger.Tags.req req in
@@ -81,7 +79,8 @@ let create_post location req =
       ||> HttpUtils.format_request_boolean_values boolean_fields
       ||> HttpUtils.remove_empty_values
     in
-    let events decoded = handle ~tags decoded in
+    let%lwt default_smtp = SmtpAuth.find_default_opt database_label in
+    let events = handle ~tags default_smtp in
     let handle =
       Lwt_list.iter_s (Pool_event.handle_event ~tags database_label)
     in
@@ -127,9 +126,13 @@ let update_base location command success_message req =
       let open CCResult.Infix in
       match command with
       | `UpdateDetails ->
-        Command.Update.(decode urlencoded >>= handle ~tags smtp_auth)
+        let%lwt default_smtp = SmtpAuth.find_default_opt database_label in
+        Command.Update.(
+          decode urlencoded >>= handle ~tags default_smtp smtp_auth)
+        |> Lwt_result.lift
       | `UpdatePassword ->
         Command.UpdatePassword.(decode urlencoded >>= handle ~tags)
+        |> Lwt_result.lift
     in
     let handle =
       Lwt_list.iter_s (Pool_event.handle_event ~tags database_label)
@@ -142,7 +145,7 @@ let update_base location command success_message req =
     req
     |> smtp_auth_id
     |> SmtpAuth.find database_label
-    >== events
+    >>= events
     |>> handle
     |>> return_to_overview
   in
