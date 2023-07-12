@@ -65,6 +65,7 @@ Sie kommen für mehr Experimente in Frage, umso kompletter Ihr Profil ist.|}
      (unabhängig ob z.Z. Mailings aktiv sind).\n\n\
      Füge zusätzliche Sessions zum Experiment hinzu."
   | MailingNewTitle -> "Neuen Versand erstellen"
+  | ExperimentMessagingSubtitle -> "Nachrichtenversand"
   | RateTotalSent number ->
     Format.asprintf "Total generierter Einladungen: %d" number
   | ResetPasswordLink | ResetPasswordTitle -> "Passwort zurücksetzen"

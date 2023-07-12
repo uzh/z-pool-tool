@@ -176,112 +176,131 @@ let experiment_form
       ]
     [ csrf_element csrf ()
     ; div
-        ~a:[ a_class [ "grid-col-2" ] ]
-        [ input_element
-            language
-            `Text
-            Field.Title
-            ~value:(value title_value)
-            ~required:true
-            ~flash_fetcher
-        ; input_element
-            language
-            `Text
-            Field.PublicTitle
-            ~value:(value public_title_value)
-            ~required:true
-            ~flash_fetcher
-        ; textarea_element
-            language
-            Field.Description
-            ?value:
-              (CCOption.bind experiment (fun { description; _ } ->
-                 description |> CCOption.map Description.value))
-            ~flash_fetcher
-        ; experiment_type_select
-        ; input_element
-            language
-            `Text
-            Field.CostCenter
-            ?value:
-              (CCOption.bind experiment (fun e ->
-                 e.cost_center |> CCOption.map CostCenter.value))
-            ~required:true
-            ~flash_fetcher
-        ; organisational_units_selector
-            language
-            organisational_units
-            (CCOption.bind experiment (fun ex -> ex.organisational_unit))
-        ; admin_select
-            language
-            contact_persons
-            (CCOption.bind experiment (fun exp -> exp.contact_person_id))
-            Field.ContactPerson
-            ()
-        ; selector
-            language
-            Field.Smtp
-            Email.SmtpAuth.(fun ({ id; _ } : t) -> Id.value id)
-            smtp_auth_list
-            CCOption.(
-              experiment
-              >>= fun { smtp_auth_id; _ } ->
-              smtp_auth_id
-              >>= Email.SmtpAuth.(
-                    fun smtp_auth_id ->
-                      CCList.find_opt
-                        (fun ({ id; _ } : t) -> Id.equal id smtp_auth_id)
-                        smtp_auth_list))
-            ~option_formatter:
-              Email.SmtpAuth.(fun { label; _ } -> Label.value label)
-            ~flash_fetcher
-            ~add_empty:true
-            ()
-        ]
-    ; checkbox_element
-        ~help:I18n.DirectRegistrationDisbled
-        Field.DirectRegistrationDisabled
-        direct_registration_disabled_value
-    ; checkbox_element
-        ~help:I18n.RegistrationDisabled
-        Field.RegistrationDisabled
-        registration_disabled_value
-    ; checkbox_element
-        ~help:I18n.AllowUninvitedSignup
-        Field.AllowUninvitedSignup
-        allow_uninvited_signup_value
-    ; div
-        ~a:[ a_class [ "gap-lg" ] ]
-        [ h3
-            ~a:[ a_class [ "heading-3" ] ]
-            [ txt (Utils.text_to_string language I18n.SessionReminder) ]
+        ~a:[ a_class [ "stack-lg" ] ]
+        [ div
+            ~a:[ a_class [ "grid-col-2" ] ]
+            [ input_element
+                language
+                `Text
+                Field.Title
+                ~value:(value title_value)
+                ~required:true
+                ~flash_fetcher
+            ; input_element
+                language
+                `Text
+                Field.PublicTitle
+                ~value:(value public_title_value)
+                ~required:true
+                ~flash_fetcher
+            ; textarea_element
+                language
+                Field.Description
+                ?value:
+                  (CCOption.bind experiment (fun { description; _ } ->
+                     description |> CCOption.map Description.value))
+                ~flash_fetcher
+            ; experiment_type_select
+            ; input_element
+                language
+                `Text
+                Field.CostCenter
+                ?value:
+                  (CCOption.bind experiment (fun e ->
+                     e.cost_center |> CCOption.map CostCenter.value))
+                ~required:true
+                ~flash_fetcher
+            ; organisational_units_selector
+                language
+                organisational_units
+                (CCOption.bind experiment (fun ex -> ex.organisational_unit))
+            ]
         ; div
-            ~a:[ a_class [ "stack" ] ]
-            [ p
+            [ h3
+                ~a:[ a_class [ "heading-3" ] ]
                 [ txt
                     (Utils.text_to_string
                        language
-                       I18n.ExperimentSessionReminderHint)
+                       I18n.ExperimentMessagingSubtitle)
                 ]
             ; div
                 ~a:[ a_class [ "grid-col-2" ] ]
-                [ div
-                    [ timespan_picker
-                        language
-                        Field.LeadTime
-                        ~help:I18n.TimeSpanPickerHint
-                        ?value:
-                          (CCOption.bind experiment (fun (e : t) ->
-                             e.session_reminder_lead_time
-                             |> CCOption.map Pool_common.Reminder.LeadTime.value))
-                        ~flash_fetcher
-                    ; Utils.text_to_string
-                        language
-                        (I18n.SessionReminderDefaultLeadTime
-                           (default_reminder_lead_time
-                            |> Reminder.LeadTime.value))
-                      |> txt
-                      |> HttpUtils.default_value_style
+                [ admin_select
+                    language
+                    contact_persons
+                    (CCOption.bind experiment (fun exp -> exp.contact_person_id))
+                    Field.ContactPerson
+                    ()
+                ; selector
+                    language
+                    Field.Smtp
+                    Email.SmtpAuth.(fun ({ id; _ } : t) -> Id.value id)
+                    smtp_auth_list
+                    CCOption.(
+                      experiment
+                      >>= fun { smtp_auth_id; _ } ->
+                      smtp_auth_id
+                      >>= Email.SmtpAuth.(
+                            fun smtp_auth_id ->
+                              CCList.find_opt
+                                (fun ({ id; _ } : t) ->
+                                  Id.equal id smtp_auth_id)
+                                smtp_auth_list))
+                    ~option_formatter:
+                      Email.SmtpAuth.(fun { label; _ } -> Label.value label)
+                    ~flash_fetcher
+                    ~add_empty:true
+                    ()
+                ]
+            ]
+        ; div
+            ~a:[ a_class [ "stack" ] ]
+            [ checkbox_element
+                ~help:I18n.DirectRegistrationDisbled
+                Field.DirectRegistrationDisabled
+                direct_registration_disabled_value
+            ; checkbox_element
+                ~help:I18n.RegistrationDisabled
+                Field.RegistrationDisabled
+                registration_disabled_value
+            ; checkbox_element
+                ~help:I18n.AllowUninvitedSignup
+                Field.AllowUninvitedSignup
+                allow_uninvited_signup_value
+            ]
+        ; div
+            [ h3
+                ~a:[ a_class [ "heading-3" ] ]
+                [ txt (Utils.text_to_string language I18n.SessionReminder) ]
+            ; div
+                ~a:[ a_class [ "stack" ] ]
+                [ p
+                    [ txt
+                        (Utils.text_to_string
+                           language
+                           I18n.ExperimentSessionReminderHint)
+                    ]
+                ; div
+                    ~a:[ a_class [ "grid-col-2" ] ]
+                    [ div
+                        [ timespan_picker
+                            language
+                            Field.LeadTime
+                            ~help:I18n.TimeSpanPickerHint
+                            ?value:
+                              (CCOption.bind experiment (fun (e : t) ->
+                                 e.session_reminder_lead_time
+                                 |> CCOption.map
+                                      Pool_common.Reminder.LeadTime.value))
+                            ~flash_fetcher
+                        ; Utils.text_to_string
+                            language
+                            (I18n.SessionReminderDefaultLeadTime
+                               (default_reminder_lead_time
+                                |> Reminder.LeadTime.value))
+                          |> txt
+                          |> HttpUtils.default_value_style
+                        ]
                     ]
                 ]
             ]
@@ -390,6 +409,8 @@ let detail
   invitation_templates
   session_reminder_templates
   sys_languages
+  contact_person
+  smtp_account
   ({ Pool_context.language; csrf; _ } as context)
   =
   let experiment_path = build_experiment_path experiment in
@@ -472,6 +493,15 @@ let detail
             |> CCOption.map_or
                  ~default:""
                  Organisational_unit.(fun ou -> ou.name |> Name.value)
+            |> txt )
+        ; ( Field.ContactPerson
+          , contact_person |> CCOption.map_or ~default:"" Admin.full_name |> txt
+          )
+        ; ( Field.Smtp
+          , smtp_account
+            |> CCOption.map_or
+                 ~default:""
+                 Email.SmtpAuth.(fun auth -> auth.label |> Label.value)
             |> txt )
         ; ( Field.DirectRegistrationDisabled
           , direct_registration_disabled_value |> boolean_value )

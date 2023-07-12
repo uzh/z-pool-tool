@@ -36,6 +36,7 @@ type t =
   | MailingDetailTitle of Ptime.t
   | MailingExperimentSessionFullyBooked
   | MailingNewTitle
+  | ExperimentMessagingSubtitle
   | NoEntries of Entity_message.Field.t
   | OurPartners
   | ProfileCompletionText
