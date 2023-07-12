@@ -143,6 +143,12 @@ val find_public
   -> Contact.t
   -> (Public.t, Pool_common.Message.error) result Lwt.t
 
+val find_full_by_contact
+  :  Pool_database.Label.t
+  -> Id.t
+  -> Contact.t
+  -> (t, Pool_common.Message.error) result Lwt.t
+
 val find_of_session
   :  Pool_database.Label.t
   -> Pool_common.Id.t

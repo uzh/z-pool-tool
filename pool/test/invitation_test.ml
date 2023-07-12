@@ -35,7 +35,8 @@ let create () =
     in
     Ok
       [ Invitation.(Created ([ contact ], experiment)) |> Pool_event.invitation
-      ; Email.BulkSent [ email ] |> Pool_event.email
+      ; Email.BulkSent [ email, experiment.Experiment.smtp_auth_id ]
+        |> Pool_event.email
       ; contact_update
       ]
   in
@@ -52,7 +53,8 @@ let resend () =
     let open CCResult in
     Ok
       [ Invitation.(Resent invitation) |> Pool_event.invitation
-      ; Email.Sent email |> Pool_event.email
+      ; Email.Sent (email, experiment.Experiment.smtp_auth_id)
+        |> Pool_event.email
       ]
   in
   Test_utils.check_result expected events

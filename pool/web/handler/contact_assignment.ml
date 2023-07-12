@@ -18,7 +18,7 @@ let create req =
     Utils.Lwt_result.map_error (fun err -> err, redirect_path)
     @@ let* contact = Pool_context.find_contact context |> Lwt_result.lift in
        let* experiment =
-         Experiment.find_public database_label experiment_id contact
+         Experiment.find_full_by_contact database_label experiment_id contact
        in
        let* sessions =
          Session.find_open_with_follow_ups database_label id
@@ -38,7 +38,7 @@ let create req =
          let open Utils.Lwt_result.Infix in
          Assignment.find_all_by_experiment_and_contact_opt
            database_label
-           experiment.Experiment.Public.id
+           experiment.Experiment.id
            contact
          ||> CCList.is_empty
          ||> not

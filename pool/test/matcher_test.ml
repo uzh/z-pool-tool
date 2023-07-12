@@ -2,9 +2,16 @@ module MatcherCommand = Cqrs_command.Matcher_command
 module Field = Pool_common.Message.Field
 module Model = Test_utils.Model
 
-let expected_events experiment contacts create_message =
+let expected_events
+  ({ Experiment.smtp_auth_id; _ } as experiment)
+  contacts
+  create_message
+  =
   let emails =
-    CCList.map create_message contacts |> CCResult.flatten_l |> CCResult.get_exn
+    CCList.map create_message contacts
+    |> CCResult.flatten_l
+    |> CCResult.get_exn
+    |> CCList.map (fun msg -> msg, smtp_auth_id)
   in
   Ok
     ([ Invitation.Created (contacts, experiment) |> Pool_event.invitation
@@ -74,6 +81,7 @@ let create_invitations_repo _ () =
               CCList.map create_message contacts
               |> CCList.all_ok
               |> CCResult.get_exn
+              |> CCList.map (fun msg -> msg, experiment.Experiment.smtp_auth_id)
             in
             Ok
               ([ Invitation.Created (contacts, experiment)

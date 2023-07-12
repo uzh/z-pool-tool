@@ -84,7 +84,7 @@ end = struct
       [ Contact.Created contact |> Pool_event.contact
       ; Email.Created (unverified_email, token, user_id)
         |> Pool_event.email_verification
-      ; Email.Sent verification_email |> Pool_event.email
+      ; Email.Sent (verification_email, None) |> Pool_event.email
       ]
   ;;
 
@@ -251,7 +251,7 @@ end = struct
           , command.new_password
           , command.password_confirmation )
         |> Pool_event.contact
-      ; Email.Sent notification |> Pool_event.email
+      ; Email.Sent (notification, None) |> Pool_event.email
       ]
   ;;
 
@@ -295,7 +295,7 @@ end = struct
     Ok
       [ Email.Created (email, token, Contact.id contact)
         |> Pool_event.email_verification
-      ; Email.Sent verification_email |> Pool_event.email
+      ; Email.Sent (verification_email, None) |> Pool_event.email
       ]
   ;;
 
@@ -374,6 +374,7 @@ end = struct
 
   let handle ?(tags = Logs.Tag.empty) ({ contacts; emails } : t) =
     Logs.info ~src (fun m -> m "Handle command SendProfileUpdateTrigger" ~tags);
+    let emails = emails |> CCList.map (fun msg -> msg, None) in
     Ok
       [ Contact.ProfileUpdateTriggeredAtUpdated contacts |> Pool_event.contact
       ; Email.BulkSent emails |> Pool_event.email
@@ -400,7 +401,7 @@ end = struct
     Logs.info ~src (fun m ->
       m "Handle command SendRegistrationAttemptNotifitacion" ~tags);
     Ok
-      [ Email.Sent email |> Pool_event.email
+      [ Email.Sent (email, None) |> Pool_event.email
       ; Contact.RegistrationAttemptNotificationSent contact
         |> Pool_event.contact
       ]

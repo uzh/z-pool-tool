@@ -314,7 +314,7 @@ module Job = struct
   ;;
 end
 
-let dispatch database_label ({ Entity.email; _ } as job) =
+let dispatch database_label (email, smtp_auth_id) =
   Logs.debug ~src (fun m ->
     m
       ~tags:(Pool_database.Logger.Tags.create database_label)
@@ -322,22 +322,25 @@ let dispatch database_label ({ Entity.email; _ } as job) =
       email.Sihl_email.recipient);
   Queue.dispatch
     ~ctx:(Pool_database.to_ctx database_label)
-    (job |> intercept_prepare |> CCResult.get_or_failwith)
+    (Entity.create_job email smtp_auth_id
+     |> intercept_prepare
+     |> CCResult.get_or_failwith)
     Job.send
 ;;
 
-let dispatch_all database_label emails =
-  let emails =
-    CCList.map intercept_prepare emails
-    |> CCResult.(flatten_l %> get_or_failwith)
-  in
-  let recipients =
-    CCList.map (fun job -> job.Entity.email.Sihl_email.recipient) emails
+let dispatch_all database_label jobs =
+  let recipients, jobs =
+    jobs
+    |> CCList.fold_left
+         (fun (recipients, jobs) (email, smtp_auth_id) ->
+           ( email.Sihl_email.recipient :: recipients
+           , Entity.create_job email smtp_auth_id :: jobs ))
+         ([], [])
   in
   Logs.debug ~src (fun m ->
     m
       ~tags:(Pool_database.Logger.Tags.create database_label)
       "Dispatch email to %s"
       ([%show: string list] recipients));
-  Queue.dispatch_all ~ctx:(Pool_database.to_ctx database_label) emails Job.send
+  Queue.dispatch_all ~ctx:(Pool_database.to_ctx database_label) jobs Job.send
 ;;

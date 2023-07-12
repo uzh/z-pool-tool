@@ -661,7 +661,7 @@ module UserImport = struct
     in
     let%lwt url = Pool_tenant.Url.of_pool pool in
     let%lwt default_language = Settings.default_language pool in
-    let%lwt sender = sender_of_pool pool in
+    let%lwt sender = default_sender_of_pool pool in
     let layout = layout_from_tenant tenant in
     Lwt.return
     @@ fun (user : [< `Admin of Admin.t | `Contact of Contact.t ]) token ->

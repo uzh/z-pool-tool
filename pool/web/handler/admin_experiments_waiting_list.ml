@@ -139,6 +139,7 @@ let assign_contact req =
     @@
     let tags = Pool_context.Logger.Tags.req req in
     let tenant = Pool_context.Tenant.get_tenant_exn req in
+    let* experiment = Experiment.find database_label experiment_id in
     let* waiting_list = Waiting_list.find database_label waiting_list_id in
     let* sessions =
       let open Pool_common.Message in
@@ -172,7 +173,7 @@ let assign_contact req =
     in
     let events =
       let open Cqrs_command.Assignment_command.CreateFromWaitingList in
-      (handle ~tags { sessions; waiting_list; already_enrolled })
+      (handle ~tags { experiment; sessions; waiting_list; already_enrolled })
         confirmation_email
       |> Lwt_result.lift
     in

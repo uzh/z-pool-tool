@@ -24,7 +24,7 @@ let notify_user database_label tags email =
         let* tenant = Pool_tenant.find_by_label database_label in
         Message_template.AccountSuspensionNotification.create tenant user
         |>> (fun message ->
-              Email.Sent message
+              Email.Sent (message, None)
               |> Pool_event.email
               |> Pool_event.handle_event ~tags database_label)
         >|- fun err ->

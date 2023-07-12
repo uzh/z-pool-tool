@@ -90,12 +90,13 @@ let intercept_message ~tags database_label msg =
     in
     let body = format_message msg in
     let subject = "Text message intercept" in
-    Sihl_email.create
-      ~sender
-      ~recipient:(Pool_user.EmailAddress.value recipient)
-      ~subject
-      ~html:body
-      body
+    ( Sihl_email.create
+        ~sender
+        ~recipient:(Pool_user.EmailAddress.value recipient)
+        ~subject
+        ~html:body
+        body
+    , None )
     |> Email.Service.dispatch database_label
   in
   match Sihl.Configuration.is_production () || bypass () with

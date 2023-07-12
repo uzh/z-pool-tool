@@ -43,7 +43,14 @@ end = struct
         contacts
     in
     let errors = CCList.map (Contact.id %> Pool_common.Id.value) errors in
-    let emails = CCList.map create_message contacts in
+    let emails =
+      CCList.map
+        (fun contact ->
+          contact
+          |> create_message
+          >|= fun msg -> msg, experiment.Experiment.smtp_auth_id)
+        contacts
+    in
     if CCList.is_empty errors |> not
     then Error Pool_common.Message.(AlreadyInvitedToExperiment errors)
     else (
@@ -86,11 +93,16 @@ end = struct
     ; experiment : Experiment.t
     }
 
-  let handle ?(tags = Logs.Tag.empty) invitation_email (command : t) =
+  let handle
+    ?(tags = Logs.Tag.empty)
+    invitation_email
+    ({ invitation; experiment } : t)
+    =
     Logs.info ~src (fun m -> m "Handle command Resend" ~tags);
     Ok
-      [ Invitation.Resent command.invitation |> Pool_event.invitation
-      ; Email.Sent invitation_email |> Pool_event.email
+      [ Invitation.Resent invitation |> Pool_event.invitation
+      ; Email.Sent (invitation_email, experiment.Experiment.smtp_auth_id)
+        |> Pool_event.email
       ]
   ;;
 

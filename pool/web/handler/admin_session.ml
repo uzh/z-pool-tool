@@ -246,6 +246,7 @@ let update_handler action req =
     let tags = Pool_context.Logger.Tags.req req in
     let tenant = Pool_context.Tenant.get_tenant_exn req in
     let* session = Session.find database_label session_id in
+    let* experiment = Experiment.find database_label experiment_id in
     let* follow_ups =
       Session.find_follow_ups database_label session.Session.id
     in
@@ -289,6 +290,7 @@ let update_handler action req =
               follow_ups
               session
               assignments
+              experiment
               create_message
     in
     let%lwt () = Pool_event.handle_events ~tags database_label events in
@@ -385,6 +387,7 @@ let cancel req =
       >>= handle
             ~tags
             (session :: follow_ups)
+            experiment
             assignments
             create_email
             create_text_message

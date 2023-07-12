@@ -1,11 +1,8 @@
 let get_or_failwith = Pool_common.Utils.get_or_failwith
 let src = Logs.Src.create "command.session_reminder"
 
-let create_reminders pool tenant sys_languages session =
+let create_reminders pool tenant sys_languages session experiment =
   let open Utils.Lwt_result.Infix in
-  let* experiment =
-    Experiment.find_of_session pool (Session.Id.to_common session.Session.id)
-  in
   let* assignments =
     Assignment.find_uncanceled_by_session pool session.Session.id
   in
@@ -41,8 +38,12 @@ let send_tenant_reminder pool =
     let%lwt sys_languages = Settings.find_languages pool in
     Lwt_list.map_s
       (fun session ->
-        create_reminders pool tenant sys_languages session
-        >|+ fun emails -> session, emails)
+        Experiment.find_of_session
+          pool
+          (Session.Id.to_common session.Session.id)
+        >>= fun experiment ->
+        create_reminders pool tenant sys_languages session experiment
+        >|+ fun emails -> session, experiment, emails)
       sessions
     ||> CCResult.flatten_l
   in

@@ -57,8 +57,8 @@ let pp_verification_event formatter (event : verification_event) : unit =
 ;;
 
 type event =
-  | Sent of job
-  | BulkSent of job list
+  | Sent of (Sihl_email.t * SmtpAuth.Id.t option)
+  | BulkSent of (Sihl_email.t * SmtpAuth.Id.t option) list
   | SmtpCreated of SmtpAuth.Write.t
   | SmtpEdited of SmtpAuth.t
   | SmtpPasswordEdited of SmtpAuth.update_password

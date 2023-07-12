@@ -36,7 +36,6 @@ let set_sessions_to_past session_ids =
 ;;
 
 let sign_up_for_session experiment contact session_id =
-  let experiment = experiment |> Model.experiment_to_public_experiment in
   let%lwt sessions =
     Session.find_open_with_follow_ups database_label session_id
     >|+ CCList.map Session.to_public
@@ -176,7 +175,7 @@ module CancelSession = struct
       ()
   ;;
 
-  let test_cancellation contact_id initial_nr_assignments test_cases =
+  let test_cancellation experiment contact_id initial_nr_assignments test_cases =
     let%lwt contact = get_contact contact_id in
     let test_result expected_nr_assignments =
       let%lwt res = get_contact contact_id in
@@ -214,6 +213,7 @@ module CancelSession = struct
            let reason = "Some reason" |> Session.CancellationReason.of_string in
            handle
              (session :: follow_ups)
+             experiment
              assignments
              (fun _ _ -> Ok email)
              Session_test.create_cancellation_text_message
@@ -228,7 +228,7 @@ module CancelSession = struct
   let without_followups _ () =
     let%lwt contact, experiment, session, _ = initialize () in
     let%lwt () = sign_up_for_session experiment contact session.Session.id in
-    test_cancellation (Contact.id contact) 1 [ session, 0 ]
+    test_cancellation experiment (Contact.id contact) 1 [ session, 0 ]
   ;;
 
   let follow_up _ () =
@@ -239,7 +239,11 @@ module CancelSession = struct
       followup_session |> CCOption.get_exn_or "Follow up session is required"
     in
     let%lwt () = sign_up_for_session experiment contact session.Session.id in
-    test_cancellation (Contact.id contact) 2 [ followup_session, 1; session, 0 ]
+    test_cancellation
+      experiment
+      (Contact.id contact)
+      2
+      [ followup_session, 1; session, 0 ]
   ;;
 
   let main_with_follow_up _ () =
@@ -247,7 +251,7 @@ module CancelSession = struct
       initialize ~followup_session_id:(Session.Id.create ()) ()
     in
     let%lwt () = sign_up_for_session experiment contact session.Session.id in
-    test_cancellation (Contact.id contact) 2 [ session, 0 ]
+    test_cancellation experiment (Contact.id contact) 2 [ session, 0 ]
   ;;
 end
 

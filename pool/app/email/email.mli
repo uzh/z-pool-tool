@@ -205,11 +205,10 @@ module SmtpAuth : sig
   val find_all : Pool_database.Label.t -> t list Lwt.t
 end
 
-type job
-
-val equal_job : job -> job -> bool
-val pp_job : Format.formatter -> job -> unit
-val create_job : Sihl_email.t -> SmtpAuth.Id.t option -> job
+type job =
+  { email : Sihl.Contract.Email.t
+  ; smtp_auth_id : SmtpAuth.Id.t option
+  }
 
 module Service : sig
   module Queue : Sihl.Contract.Queue.Sig
@@ -239,16 +238,25 @@ module Service : sig
   end
 
   module Job : sig
-    val send : Sihl_email.t Sihl_queue.job
+    val send : job Sihl_queue.job
   end
 
   val default_sender_of_pool
     :  Pool_database.Label.t
     -> Settings.ContactEmail.t Lwt.t
 
-  val intercept_prepare : Sihl_email.t -> (Sihl_email.t, string) result
-  val dispatch : Pool_database.Label.t -> Sihl_email.t -> unit Lwt.t
-  val dispatch_all : Pool_database.Label.t -> Sihl_email.t list -> unit Lwt.t
+  val intercept_prepare : job -> (job, string) result
+
+  val dispatch
+    :  Pool_database.Label.t
+    -> Entity.email * SmtpAuth.Id.t option
+    -> unit Lwt.t
+
+  val dispatch_all
+    :  Pool_database.Label.t
+    -> (Entity.email * SmtpAuth.Id.t option) list
+    -> unit Lwt.t
+
   val lifecycle : Sihl.Container.lifecycle
   val register : unit -> Sihl.Container.Service.t
 end
@@ -289,5 +297,5 @@ val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
 val verification_event_name : verification_event -> string
-val sent : Sihl_email.t -> event
-val bulksent : Sihl_email.t list -> event
+val sent : Sihl_email.t * SmtpAuth.Id.t option -> event
+val bulksent : (Sihl_email.t * SmtpAuth.Id.t option) list -> event
