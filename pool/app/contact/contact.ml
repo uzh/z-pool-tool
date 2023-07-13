@@ -39,10 +39,7 @@ let message_language database_label ({ language; _ } : t) =
 
 module Repo = struct
   module Preview = Repo_model.Preview
-
-  module Entity = struct
-    include Repo_model
-  end
+  module Entity = Repo_model
 
   module Sql = struct
     let find_request_sql = Repo_sql.find_request_sql

@@ -80,6 +80,7 @@ type t =
   }
 
 val profile_completion_cookie : string
+val user : t -> Sihl_user.t
 val id : t -> Pool_common.Id.t
 val firstname : t -> Pool_user.Firstname.t
 val lastname : t -> Pool_user.Lastname.t

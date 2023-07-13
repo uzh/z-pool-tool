@@ -45,7 +45,13 @@ let prepare_email language template sender email layout params =
   Sihl_email.Template.render_email_with_data params mail
 ;;
 
-let global_params user = [ "name", user |> Pool_user.user_fullname ]
+let global_params user =
+  Pool_user.
+    [ "name", user |> user_fullname
+    ; "firstname", user |> user_firstname |> Firstname.value
+    ; "lastname", user |> user_lastname |> Lastname.value
+    ]
+;;
 
 let experiment_params experiment =
   let open Experiment in
@@ -636,11 +642,12 @@ module UserImport = struct
   ;;
 
   let email_params confirmation_url user =
-    let fullname = function
-      | `Admin admin -> Admin.full_name admin
-      | `Contact contact -> Contact.fullname contact
+    let user =
+      match user with
+      | `Admin admin -> Admin.user admin
+      | `Contact contact -> Contact.user contact
     in
-    [ "name", user |> fullname; "confirmationUrl", confirmation_url ]
+    global_params user @ [ "confirmationUrl", confirmation_url ]
   ;;
 
   let prepare pool tenant =

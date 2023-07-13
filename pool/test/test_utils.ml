@@ -114,9 +114,9 @@ module Model = struct
   ;;
 
   let create_contact ?id ?(with_terms_accepted = true) () =
-    let user = create_sihl_user ?id () in
+    let sihl_user = create_sihl_user ?id () in
     Contact.
-      { user
+      { user = sihl_user
       ; terms_accepted_at =
           (if with_terms_accepted
            then Pool_user.TermsAccepted.create_now () |> CCOption.pure
