@@ -6,6 +6,7 @@ let src = Logs.Src.create "role.entity"
 module Actor = struct
   type t =
     [ `Admin
+    | `AssignTags
     | `Assistant of TargetId.t (* experiment id*)
     | `Contact
     | `Experimenter of TargetId.t (* experiment id*)
@@ -23,6 +24,7 @@ module Actor = struct
     | `Operator
     | `RecruiterAll
     | `Recruiter of TargetId.t
+    | `RemoveTags
     | `Root (* '`Root' not exposed in 'all' *)
     | `System (* '`System' not exposed in 'all' *)
     ]
@@ -43,6 +45,7 @@ module Actor = struct
     Guardian.Utils.decompose_variant_string
     %> function
     | "admin", [] -> `Admin
+    | "assigntags", [] -> `AssignTags
     | "assistant", [ id ] -> `Assistant (target_of_string id)
     | "contact", [] -> `Contact
     | "experimenter", [ id ] -> `Experimenter (target_of_string id)
@@ -60,6 +63,7 @@ module Actor = struct
     | "operator", [] -> `Operator
     | "recruiterall", [] -> `RecruiterAll
     | "recruiter", [ id ] -> `Recruiter (target_of_string id)
+    | "removetags", [] -> `RemoveTags
     | "root", [] -> `Root
     | "system", [] -> `System
     | role -> Guardian.Utils.failwith_invalid_role role
@@ -129,7 +133,8 @@ module Actor = struct
   ;;
 
   let all =
-    [ `Assistant TargetId.nil
+    [ `AssignTags
+    ; `Assistant TargetId.nil
     ; `Contact
     ; `Experimenter TargetId.nil
     ; `Guest
@@ -145,18 +150,21 @@ module Actor = struct
     ; `Operator
     ; `RecruiterAll
     ; `Recruiter TargetId.nil
+    ; `RemoveTags
     ]
   ;;
 
   let can_assign_roles (role : t) : t list =
     match role with
     | `Admin
+    | `AssignTags
     | `Assistant _
     | `Contact
     | `Experimenter _
     | `Guest
     | `LocationManagerAll
-    | `LocationManager _ -> []
+    | `LocationManager _
+    | `RemoveTags -> []
     | `ManageAssistant uuid -> [ `Assistant uuid ]
     | `ManageAssistants -> [ `Assistant TargetId.nil ]
     | `ManageExperimenter uuid -> [ `Experimenter uuid ]
@@ -212,6 +220,7 @@ module Target = struct
     | `SystemSetting
     | `Smtp
     | `System
+    | `Tag
     | `Tenant
     | `WaitingList
     ]
@@ -251,6 +260,7 @@ module Target = struct
     | "systemsetting", [] -> `SystemSetting
     | "smtp", [] -> `Smtp
     | "system", [] -> `System
+    | "tag", [] -> `Tag
     | "tenant", [] -> `Tenant
     | "waitinglist", [] -> `WaitingList
     | role -> Guardian.Utils.failwith_invalid_role role
@@ -277,6 +287,7 @@ module Target = struct
     ; `SystemSetting
     ; `Smtp
     ; `System
+    ; `Tag
     ; `Tenant
     ; `WaitingList
     ]

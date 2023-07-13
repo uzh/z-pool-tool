@@ -1,3 +1,15 @@
 (library
  (name tags)
- (libraries admin ptime sihl))
+ (libraries pool_database guard pool_common ptime service sihl utils)
+ (preprocess
+  (pps
+   lwt_ppx
+   ppx_deriving.enum
+   ppx_deriving.eq
+   ppx_deriving.ord
+   ppx_deriving.show
+   ppx_sexp_conv
+   ppx_variants_conv
+   ppx_yojson_conv)))
+
+(include_subdirs unqualified)

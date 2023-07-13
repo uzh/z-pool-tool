@@ -18,6 +18,7 @@
   schedule
   service
   sihl
+  tags
   user_import
   waiting_list)
  (preprocess

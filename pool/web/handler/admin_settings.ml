@@ -5,6 +5,7 @@ module Queue = Admin_settings_queue
 module Rules = Admin_settings_rules
 module Schedule = Admin_settings_schedule
 module Smtp = Admin_settings_smtp
+module Tags = Admin_settings_tags
 
 let src = Logs.Src.create "handler.admin.settings"
 let create_layout req = General.create_tenant_layout req

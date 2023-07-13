@@ -223,6 +223,7 @@ type t =
   | Successful [@name "successful"] [@printer go "successful"]
   | SystemEvent [@name "system_event"] [@printer go "system_event"]
   | Tag [@name "tag"] [@printer go "tag"]
+  | Tagging [@name "tagging"] [@printer go "tagging"]
   | TargetSpec [@name "target_spec"] [@printer go "target_spec"]
   | Target [@name "target"] [@printer go "target"]
   | Template [@name "template"] [@printer go "template"]

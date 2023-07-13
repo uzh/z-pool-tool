@@ -629,11 +629,25 @@ module Admin = struct
         ; choose ~scope:(Smtp |> url_key) specific
         ]
       in
+      let tags =
+        let open Tags in
+        let specific =
+          [ get "" ~middlewares:[ Access.update ] edit
+          ; post "" ~middlewares:[ Access.update ] update
+          ]
+        in
+        [ get "" ~middlewares:[ Access.index ] show
+        ; get "/create" ~middlewares:[ Access.create ] new_form
+        ; post "/" ~middlewares:[ Access.create ] create
+        ; choose ~scope:(Tag |> url_key) specific
+        ]
+      in
       [ get "" ~middlewares:[ Access.index ] show
       ; post "/:action" ~middlewares:[ Access.update ] update_settings
       ; choose ~scope:"/queue" queue
       ; choose ~scope:"/rules" rules
       ; choose ~scope:"/smtp" smtp
+      ; choose ~scope:"/tags" tags
       ; get "/schedules" ~middlewares:[ Schedule.Access.index ] Schedule.show
       ]
     in

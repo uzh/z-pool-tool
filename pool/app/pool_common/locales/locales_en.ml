@@ -195,6 +195,7 @@ let rec field_to_string =
   | Successful -> "successful"
   | SystemEvent -> "system event"
   | Tag -> "tag"
+  | Tagging -> "tagging"
   | Target -> "target"
   | TargetSpec -> "target"
   | Template -> "template"

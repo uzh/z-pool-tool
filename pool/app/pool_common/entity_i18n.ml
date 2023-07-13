@@ -101,6 +101,7 @@ type nav_link =
   | Settings
   | Smtp
   | SystemSettings
+  | Tags
   | Tenants
   | Users
   | WaitingList
@@ -171,8 +172,9 @@ type hint =
   | SessionRegistrationHint
   | SessionReminderLanguageHint
   | SignUpForWaitingList
-  | SmtpSettingsIntro
   | SmtpSettingsDefaultFlag
+  | SmtpSettingsIntro
+  | TagsIntro
   | TemplateTextElementsHint
   | TimeSpanPickerHint
   | WaitingListPhoneMissingContact
