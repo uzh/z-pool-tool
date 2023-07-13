@@ -42,3 +42,10 @@ let smtp_auth database_label ({ smtp_auth_id; _ } : t) =
   | None -> Lwt_result.return None
   | Some id -> Email.SmtpAuth.find database_label id >|+ CCOption.return
 ;;
+
+let find_contact_person database_label { contact_person_id; _ } =
+  let open Utils.Lwt_result.Infix in
+  contact_person_id
+  |> CCOption.map_or ~default:Lwt.return_none (fun id ->
+       id |> Admin.find database_label ||> CCResult.to_opt)
+;;

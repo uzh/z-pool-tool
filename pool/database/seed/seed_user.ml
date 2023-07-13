@@ -76,7 +76,10 @@ let create_persons db_label n_persons =
   let%lwt contacts =
     Contact.find_all db_label () ||> fst %> map Contact.email_address
   in
-  let%lwt admins = Admin.find_all db_label () ||> map Admin.email in
+  let%lwt admins =
+    Admin.find_all db_label ()
+    ||> map (fun admin -> admin |> Admin.email_address)
+  in
   let flatten_filter_combine a b =
     let filter_existing =
       filter (fun { email; _ } ->

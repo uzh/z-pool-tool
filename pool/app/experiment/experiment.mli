@@ -201,6 +201,8 @@ val smtp_auth
   -> t
   -> (Email.SmtpAuth.t option, Pool_common.Message.error) Lwt_result.t
 
+val find_contact_person : Pool_database.Label.t -> t -> Admin.t option Lwt.t
+
 module Repo : sig
   module Public : sig
     val select_from_experiments_sql : ?distinct:bool -> string -> string

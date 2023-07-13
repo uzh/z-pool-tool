@@ -130,13 +130,17 @@ let intercept_send sender email =
 
 let default_sender_of_pool database_label =
   let open Settings in
+  let open Utils.Lwt_result.Infix in
   if Pool_database.is_root database_label
   then
     Sihl.Configuration.read_string "SMTP_SENDER"
     |> CCOption.get_exn_or "Undefined 'SMTP_SENDER'"
-    |> ContactEmail.of_string
+    |> Pool_user.EmailAddress.of_string
     |> Lwt.return
-  else find_contact_email database_label
+  else
+    find_contact_email database_label
+    ||> fun sender ->
+    sender |> ContactEmail.value |> Pool_user.EmailAddress.of_string
 ;;
 
 module Smtp = struct
@@ -227,7 +231,7 @@ module Smtp = struct
         of_string %> validate_characters %> CCResult.is_ok
       in
       let%lwt default_sender_of_pool =
-        default_sender_of_pool database_label ||> Settings.ContactEmail.value
+        default_sender_of_pool database_label ||> Pool_user.EmailAddress.value
       in
       [ username; Some default_sender_of_pool ]
       |> CCList.filter (CCOption.map_or ~default:false valid_email)

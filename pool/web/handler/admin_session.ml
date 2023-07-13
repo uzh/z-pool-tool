@@ -274,12 +274,16 @@ let update_handler action req =
         let system_languages =
           Pool_context.Tenant.get_tenant_languages_exn req
         in
+        let%lwt admin_contact =
+          Experiment.find_contact_person database_label experiment
+        in
         let%lwt create_message =
           Message_template.SessionReschedule.prepare
             database_label
             tenant
             system_languages
             session
+            admin_contact
         in
         urlencoded
         |> decode

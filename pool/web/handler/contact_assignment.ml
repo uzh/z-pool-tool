@@ -20,6 +20,9 @@ let create req =
        let* experiment =
          Experiment.find_full_by_contact database_label experiment_id contact
        in
+       let%lwt contact_person =
+         Experiment.find_contact_person database_label experiment
+       in
        let* sessions =
          Session.find_open_with_follow_ups database_label id
          >|+ CCList.map Session.to_public
@@ -33,6 +36,7 @@ let create req =
            tenant
            sessions
            contact
+           contact_person
        in
        let%lwt already_enrolled =
          let open Utils.Lwt_result.Infix in

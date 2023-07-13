@@ -3,6 +3,7 @@ include Event
 include Default
 include Message_utils
 module Guard = Entity_guard
+open CCFun.Infix
 
 let src = Logs.Src.create "message_template"
 let find = Repo.find
@@ -11,6 +12,20 @@ let find_all_of_entity_by_label = Repo.find_all_of_entity_by_label
 let find_by_label_to_send = Repo.find_by_label_to_send
 let find_all_by_label_to_send = Repo.find_all_by_label_to_send
 let default_sender_of_pool = Email.Service.default_sender_of_pool
+
+let sender_of_contact_person pool admin =
+  match admin with
+  | None -> default_sender_of_pool pool
+  | Some admin -> admin |> Admin.email_address |> Lwt.return
+;;
+
+let sender_of_experiment pool experiment =
+  let open Utils.Lwt_result.Infix in
+  Experiment.find_contact_person pool experiment
+  >|> CCOption.map_or
+        ~default:(default_sender_of_pool pool)
+        (Admin.email_address %> Lwt.return)
+;;
 
 let filter_languages languages templates =
   languages
@@ -32,7 +47,7 @@ let prepare_email language template sender email layout params =
   let { Entity.email_subject; email_text; plain_text; _ } = template in
   let mail =
     Sihl_email.
-      { sender = Settings.ContactEmail.value sender
+      { sender = Pool_user.EmailAddress.value sender
       ; recipient = Pool_user.EmailAddress.value email
       ; subject = email_subject
       ; text = PlainText.value plain_text
@@ -117,22 +132,28 @@ module AssignmentConfirmation = struct
     find_by_label_to_send pool language Label.AssignmentConfirmation
   ;;
 
-  let create pool preferred_language tenant sessions contact =
+  let create pool preferred_language tenant sessions contact admin_contact =
     let%lwt template, language = template pool preferred_language in
     let params = email_params language sessions contact in
     let layout = layout_from_tenant tenant in
     let email = contact |> Contact.email_address in
-    let%lwt sender = default_sender_of_pool pool in
+    let%lwt sender = sender_of_contact_person pool admin_contact in
     prepare_email language template sender email layout params |> Lwt.return
   ;;
 
-  let create_from_public_session pool preferred_language tenant sessions contact
+  let create_from_public_session
+    pool
+    preferred_language
+    tenant
+    sessions
+    contact
+    admin_contact
     =
     let%lwt template, language = template pool preferred_language in
     let params = email_params_public_session language sessions contact in
     let layout = layout_from_tenant tenant in
     let email = contact |> Contact.email_address in
-    let%lwt sender = default_sender_of_pool pool in
+    let%lwt sender = sender_of_contact_person pool admin_contact in
     prepare_email language template sender email layout params |> Lwt.return
   ;;
 end
@@ -222,7 +243,7 @@ module ExperimentInvitation = struct
         Label.ExperimentInvitation
     in
     let%lwt tenant_url = Pool_tenant.Url.of_pool pool in
-    let%lwt sender = default_sender_of_pool tenant.Pool_tenant.database_label in
+    let%lwt sender = sender_of_experiment pool experiment in
     let layout = layout_from_tenant tenant in
     let fnc (contact : Contact.t) =
       let open CCResult in
@@ -251,7 +272,7 @@ module ExperimentInvitation = struct
         Label.ExperimentInvitation
     in
     let%lwt tenant_url = Pool_tenant.Url.of_pool database_label in
-    let%lwt sender = default_sender_of_pool database_label in
+    let%lwt sender = sender_of_experiment database_label experiment in
     let layout = layout_from_tenant tenant in
     let params = email_params experiment tenant_url contact in
     prepare_email
@@ -425,7 +446,7 @@ module SessionCancellation = struct
     let%lwt templates =
       find_all_by_label_to_send pool sys_langs Label.SessionCancellation
     in
-    let%lwt sender = default_sender_of_pool pool in
+    let%lwt sender = sender_of_experiment pool experiment in
     let layout = layout_from_tenant tenant in
     let fnc reason (contact : Contact.t) =
       let open CCResult in
@@ -505,7 +526,7 @@ module SessionReminder = struct
         preferred_language
         Label.SessionReminder
     in
-    let%lwt sender = default_sender_of_pool pool in
+    let%lwt sender = sender_of_experiment pool experiment in
     let layout = layout_from_tenant tenant in
     let params = email_params language experiment session contact in
     prepare_email
@@ -530,7 +551,7 @@ module SessionReminder = struct
         sys_langs
         Label.SessionReminder
     in
-    let%lwt sender = default_sender_of_pool pool in
+    let%lwt sender = sender_of_experiment pool experiment in
     let layout = layout_from_tenant tenant in
     let fnc contact =
       let open CCResult in
@@ -560,12 +581,12 @@ module SessionReschedule = struct
       ]
   ;;
 
-  let prepare pool tenant sys_langs session =
+  let prepare pool tenant sys_langs session admin_contact =
     let open Message_utils in
     let%lwt templates =
       find_all_by_label_to_send pool sys_langs Label.SessionReschedule
     in
-    let%lwt sender = default_sender_of_pool pool in
+    let%lwt sender = sender_of_contact_person pool admin_contact in
     let layout = layout_from_tenant tenant in
     let fnc (contact : Contact.t) new_start new_duration =
       let open CCResult in
@@ -631,7 +652,7 @@ end
 
 module UserImport = struct
   let email_address = function
-    | `Admin admin -> Admin.email admin
+    | `Admin admin -> Admin.email_address admin
     | `Contact contact -> Contact.email_address contact
   ;;
 

@@ -243,7 +243,7 @@ module Service : sig
 
   val default_sender_of_pool
     :  Pool_database.Label.t
-    -> Settings.ContactEmail.t Lwt.t
+    -> Pool_user.EmailAddress.t Lwt.t
 
   val intercept_prepare : job -> (job, Pool_common.Message.error) result
 

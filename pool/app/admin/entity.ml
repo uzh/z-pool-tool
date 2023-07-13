@@ -14,7 +14,7 @@ let create (user : Sihl_user.t) : t =
 
 let id ({ user; _ } : t) = Id.of_string user.Sihl_user.id
 
-let email ({ user; _ } : t) =
+let email_address ({ user; _ } : t) =
   user.Sihl_user.email |> Pool_user.EmailAddress.of_string
 ;;
 

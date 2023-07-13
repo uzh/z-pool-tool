@@ -208,7 +208,6 @@ let experiment_form
                 ?value:
                   (CCOption.bind experiment (fun e ->
                      e.cost_center |> CCOption.map CostCenter.value))
-                ~required:true
                 ~flash_fetcher
             ; organisational_units_selector
                 language

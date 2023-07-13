@@ -163,6 +163,9 @@ let assign_contact req =
     in
     let%lwt confirmation_email =
       let contact = waiting_list.Waiting_list.contact in
+      let%lwt contact_person =
+        Experiment.find_contact_person database_label experiment
+      in
       let%lwt language = Contact.message_language database_label contact in
       Message_template.AssignmentConfirmation.create
         database_label
@@ -170,6 +173,7 @@ let assign_contact req =
         tenant
         sessions
         contact
+        contact_person
     in
     let events =
       let open Cqrs_command.Assignment_command.CreateFromWaitingList in

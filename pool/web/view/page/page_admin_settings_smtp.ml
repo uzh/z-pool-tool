@@ -20,7 +20,13 @@ let index Pool_context.{ language; _ } location smtp_auth_list =
         (Format.asprintf "%s/new" (base_path location))
     in
     (Pool_common.Message.Field.
-       [ Label; SmtpServer; SmtpUsername; SmtpMechanism; SmtpProtocol ]
+       [ Label
+       ; SmtpServer
+       ; SmtpUsername
+       ; SmtpMechanism
+       ; SmtpProtocol
+       ; DefaultSmtpServer
+       ]
      |> Component.Table.fields_to_txt language)
     @ [ add_btn ]
   in
@@ -33,6 +39,7 @@ let index Pool_context.{ language; _ } location smtp_auth_list =
          ; auth.username |> CCOption.map_or ~default:"" Username.value |> txt
          ; auth.mechanism |> Mechanism.show |> txt
          ; auth.protocol |> Protocol.show |> txt
+         ; auth.default |> Default.value |> Utils.Bool.to_string |> txt
          ; edit_link
              (Format.asprintf
                 "%s/%s"
