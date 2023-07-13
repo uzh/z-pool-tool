@@ -114,6 +114,10 @@ let () =
     ; ( "assignment"
       , [ test_case "create assignment" `Quick Assignment_test.create
         ; test_case
+            "create assignment with experiment smtp auth"
+            `Quick
+            Assignment_test.create_with_experiment_smtp
+        ; test_case
             "mark assignment as canceled"
             `Quick
             Assignment_test.canceled
@@ -182,6 +186,10 @@ let () =
         ] )
     ; ( "invitation"
       , [ test_case "create invitation" `Quick Invitation_test.create
+        ; test_case
+            "create invitation with experiment smtp"
+            `Quick
+            Invitation_test.create_with_experiment_smtp
         ; test_case "resend invitation" `Quick Invitation_test.resend
         ] )
     ; ( "experiment"
@@ -368,6 +376,10 @@ let () =
             "reschedule session to past"
             `Quick
             Session_test.reschedule_to_past
+        ; test_case
+            "reschedule with experiment smtp auth"
+            `Quick
+            Session_test.reschedule_with_experiment_smtp
         ] )
     ; ( "custom_field"
       , [ test_case "create custom field" `Quick Custom_field_test.create

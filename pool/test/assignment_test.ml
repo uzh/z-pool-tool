@@ -62,6 +62,30 @@ let create () =
   check_result expected events
 ;;
 
+let create_with_experiment_smtp () =
+  let { session; experiment; contact } = assignment_data () in
+  let smtp_auth_id = Email.SmtpAuth.Id.create () in
+  let experiment =
+    Experiment.{ experiment with smtp_auth_id = Some smtp_auth_id }
+  in
+  let events =
+    let command =
+      AssignmentCommand.Create.{ contact; sessions = [ session ]; experiment }
+    in
+    AssignmentCommand.Create.handle command (confirmation_email contact) false
+  in
+  let expected =
+    Ok
+      [ Assignment.(Created { contact; session_id = session.Session.Public.id })
+        |> Pool_event.assignment
+      ; update_assignment_count_event ~step:1 contact
+      ; Email.(Sent (confirmation_email contact, Some smtp_auth_id))
+        |> Pool_event.email
+      ]
+  in
+  check_result expected events
+;;
+
 let canceled () =
   let session = Model.create_session () in
   let assignment = Model.create_assignment () in

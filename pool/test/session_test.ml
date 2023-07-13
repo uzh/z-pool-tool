@@ -1323,6 +1323,42 @@ let reschedule_to_past () =
   Test_utils.check_result expected events
 ;;
 
+let reschedule_with_experiment_smtp () =
+  let session = Test_utils.Model.create_session () in
+  let experiment = Model.create_experiment () in
+  let smtp_auth_id = Email.SmtpAuth.Id.create () in
+  let experiment =
+    Experiment.{ experiment with smtp_auth_id = Some smtp_auth_id }
+  in
+  let assignment = Test_utils.Model.create_assignment () in
+  let create_message _ _ _ =
+    Test_utils.Model.create_email () |> CCResult.return
+  in
+  let command =
+    Session.
+      { start = Test_utils.Model.in_two_hours ()
+      ; duration = session.Session.duration
+      }
+  in
+  let events =
+    SessionC.Reschedule.handle
+      []
+      session
+      [ assignment ]
+      experiment
+      create_message
+      command
+  in
+  let expected =
+    Ok
+      [ Session.Rescheduled (session, command) |> Pool_event.session
+      ; Email.BulkSent [ Test_utils.Model.create_email (), Some smtp_auth_id ]
+        |> Pool_event.email
+      ]
+  in
+  Test_utils.check_result expected events
+;;
+
 let close_session_check_contact_figures _ () =
   let open Utils.Lwt_result.Infix in
   let open Integration_utils in

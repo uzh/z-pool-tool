@@ -13,9 +13,7 @@ let create_invitation () =
     }
 ;;
 
-let create () =
-  let experiment = Model.create_experiment () in
-  let contact = Model.create_contact () in
+let test_creation experiment contact expected =
   let events =
     let command =
       InvitationCommand.Create.
@@ -27,6 +25,12 @@ let create () =
     in
     InvitationCommand.Create.handle command
   in
+  Test_utils.check_result expected events
+;;
+
+let create () =
+  let experiment = Model.create_experiment () in
+  let contact = Model.create_contact () in
   let expected =
     let email = Matcher_test.create_message contact |> CCResult.get_exn in
     let contact_update =
@@ -40,7 +44,29 @@ let create () =
       ; contact_update
       ]
   in
-  Test_utils.check_result expected events
+  test_creation experiment contact expected
+;;
+
+let create_with_experiment_smtp () =
+  let experiment = Model.create_experiment () in
+  let contact = Model.create_contact () in
+  let smtp_auth_id = Email.SmtpAuth.Id.create () in
+  let experiment =
+    Experiment.{ experiment with smtp_auth_id = Some smtp_auth_id }
+  in
+  let expected =
+    let email = Matcher_test.create_message contact |> CCResult.get_exn in
+    let contact_update =
+      let open Contact in
+      contact |> update_num_invitations ~step:1 |> updated |> Pool_event.contact
+    in
+    Ok
+      [ Invitation.(Created ([ contact ], experiment)) |> Pool_event.invitation
+      ; Email.BulkSent [ email, Some smtp_auth_id ] |> Pool_event.email
+      ; contact_update
+      ]
+  in
+  test_creation experiment contact expected
 ;;
 
 let resend () =
