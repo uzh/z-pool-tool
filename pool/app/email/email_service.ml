@@ -1,3 +1,4 @@
+open CCFun.Infix
 module SmtpAuth = Entity.SmtpAuth
 module AccountMap = CCMap.Make (Pool_database.Label)
 module Queue = Sihl_queue.MariaDb
@@ -303,6 +304,10 @@ let dispatch database_label email =
 ;;
 
 let dispatch_all database_label emails =
+  let emails =
+    CCList.map intercept_prepare emails
+    |> CCResult.(flatten_l %> get_or_failwith)
+  in
   let recipients = CCList.map (fun m -> m.Sihl_email.recipient) emails in
   Logs.debug ~src (fun m ->
     m
