@@ -111,8 +111,9 @@ let intercept_prepare ({ Entity.email; _ } as job) =
     Ok Entity.{ job with email }
   | false, None ->
     Error
-      "Sending email intercepted! As no redirect email is specified it/they \
-       wont be sent. Please define environment variable 'TEST_EMAIL'."
+      (Pool_common.Message.EmailInterceptionError
+         "Sending email intercepted! As no redirect email is specified it/they \
+          wont be sent. Please define environment variable 'TEST_EMAIL'.")
 ;;
 
 let intercept_send sender email =
@@ -324,7 +325,7 @@ let dispatch database_label (email, smtp_auth_id) =
     ~ctx:(Pool_database.to_ctx database_label)
     (Entity.create_job email smtp_auth_id
      |> intercept_prepare
-     |> CCResult.get_or_failwith)
+     |> Pool_common.Utils.get_or_failwith)
     Job.send
 ;;
 
@@ -333,8 +334,12 @@ let dispatch_all database_label jobs =
     jobs
     |> CCList.fold_left
          (fun (recipients, jobs) (email, smtp_auth_id) ->
-           ( email.Sihl_email.recipient :: recipients
-           , Entity.create_job email smtp_auth_id :: jobs ))
+           let job =
+             Entity.create_job email smtp_auth_id
+             |> intercept_prepare
+             |> Pool_common.Utils.get_or_failwith
+           in
+           email.Sihl_email.recipient :: recipients, job :: jobs)
          ([], [])
   in
   Logs.debug ~src (fun m ->

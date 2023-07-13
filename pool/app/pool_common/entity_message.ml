@@ -41,6 +41,7 @@ type error =
   | EmailAddressMissingRoot
   | EmailAlreadyInUse
   | EmailDeleteAlreadyVerified
+  | EmailInterceptionError of string
   | EmailMalformed
   | EndBeforeStart
   | ExperimentSessionCountNotZero

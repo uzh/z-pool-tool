@@ -354,6 +354,8 @@ let rec error_to_string = function
   | EmailDeleteAlreadyVerified ->
     "E-Mail Adresse ist bereits verifiziert, kann nicht gelöscht werden."
   | EmailMalformed -> "Fehlerhafte E-Mail Adresse"
+  | EmailInterceptionError error ->
+    Format.asprintf "Email interception error: %s" error
   | EndBeforeStart -> "Das Ende liegt vor oder dem Start."
   | ExperimentSessionCountNotZero ->
     "Es existieren Sessions zu diesem Experiment. Es kann nicht gelöscht  \

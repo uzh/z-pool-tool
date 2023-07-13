@@ -245,7 +245,7 @@ module Service : sig
     :  Pool_database.Label.t
     -> Settings.ContactEmail.t Lwt.t
 
-  val intercept_prepare : job -> (job, string) result
+  val intercept_prepare : job -> (job, Pool_common.Message.error) result
 
   val dispatch
     :  Pool_database.Label.t
