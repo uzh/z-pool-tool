@@ -10,11 +10,16 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 - option to send session cancellation messages as text messages
 - validation of gtx api keys when adding or updating tenants
 - notification and confirmation service for user imports
+- allow smtp account and reply-to address to be specified for each experiment
 
 ### Changed
 
 - development environment
 - CLI commands
+
+### Fixed
+
+- added failed_login_attempts seed to root DB
 
 ## [0.2.1](https://github.com/uzh/pool/tree/0.2.1) - 2023-06-01
 
