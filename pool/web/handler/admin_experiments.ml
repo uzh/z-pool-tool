@@ -37,9 +37,37 @@ let contact_person_roles experiment_id =
     |> fun target_id -> [ `Experimenter target_id; `Recruiter target_id ] @ base
 ;;
 
-(* TODO: Check for correct role *)
-let contact_person_from_urlencoded database_label urlencoded =
-  let query id = id |> Admin.Id.of_string |> Admin.find database_label in
+let validation_set =
+  let open Guard in
+  let open ValidationSet in
+  let base = [ SpecificRole `RecruiterAll ] in
+  CCOption.map_or ~default:base (fun exp_id ->
+    let id = Uuid.target_of Experiment.Id.value exp_id in
+    base
+    @ [ SpecificRole (`Recruiter id)
+      ; SpecificRole (`Experimenter id)
+      ; SpecificRole (`Recruiter id)
+      ])
+  %> or_
+;;
+
+let contact_person_from_urlencoded database_label urlencoded experiment_id =
+  let open Utils.Lwt_result.Infix in
+  let query id =
+    let* () =
+      id
+      |> Guard.Uuid.Actor.of_string
+      |> CCOption.to_result Pool_common.Message.(NotFound Field.ContactPerson)
+      |> Lwt_result.lift
+      >>= (fun id ->
+            Guard.Persistence.Actor.find database_label `Admin id
+            >|- Pool_common.Message.authorization)
+      >>= Guard.Persistence.validate
+            database_label
+            (validation_set experiment_id)
+    in
+    id |> Admin.Id.of_string |> Admin.find database_label
+  in
   find_entity_in_urlencoded urlencoded Field.ContactPerson query
 ;;
 
@@ -122,7 +150,7 @@ let create req =
     @@
     let tags = Pool_context.Logger.Tags.req req in
     let* contact_person =
-      contact_person_from_urlencoded database_label urlencoded
+      contact_person_from_urlencoded database_label urlencoded None
     in
     let* organisational_unit =
       organisational_unit_from_urlencoded urlencoded database_label
@@ -246,7 +274,7 @@ let update req =
       organisational_unit_from_urlencoded urlencoded database_label
     in
     let* contact_person =
-      contact_person_from_urlencoded database_label urlencoded
+      contact_person_from_urlencoded database_label urlencoded (Some id)
     in
     let* smtp_auth = smtp_auth_from_urlencoded urlencoded database_label in
     let events =
