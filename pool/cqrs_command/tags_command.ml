@@ -92,7 +92,13 @@ end = struct
 end
 
 module AssignTagToContact : sig
-  include Common.CommandSig with type t = Tags.Tagged.t
+  include Common.CommandSig with type t = Tags.Id.t
+
+  val handle
+    :  ?tags:Logs.Tag.set
+    -> Contact.t
+    -> t
+    -> (Pool_event.t list, Conformist.error_msg) result
 
   val decode
     :  (string * string list) list
@@ -100,20 +106,21 @@ module AssignTagToContact : sig
 
   val effects : Contact.Id.t -> Guard.ValidationSet.t
 end = struct
-  type t = Tags.Tagged.t
+  type t = Tags.Id.t
 
-  let command model_uuid tag_uuid =
-    Tags.{ Tagged.model = Model.Contact; model_uuid; tag_uuid }
-  ;;
+  let schema = Conformist.(make Field.[ Tags.Id.schema () ] CCFun.id)
 
-  let schema =
-    Conformist.(
-      make Field.[ Pool_common.Id.schema (); Tags.Id.schema () ] command)
-  ;;
-
-  let handle ?(tags = Logs.Tag.empty) (command : t) =
+  let handle ?(tags = Logs.Tag.empty) contact (tag_uuid : t) =
     Logs.info ~src (fun m -> m "Handle command AssignTagToContact" ~tags);
-    Ok [ Tags.Tagged command |> Pool_event.tags ]
+    Ok
+      [ Tags.Tagged
+          Tags.
+            { Tagged.model = Model.Contact
+            ; model_uuid = Contact.id contact
+            ; tag_uuid
+            }
+        |> Pool_event.tags
+      ]
   ;;
 
   let decode data =
@@ -125,7 +132,13 @@ end = struct
 end
 
 module RemoveTagFromContact : sig
-  include Common.CommandSig with type t = Tags.Tagged.t
+  include Common.CommandSig with type t = Tags.Id.t
+
+  val handle
+    :  ?tags:Logs.Tag.set
+    -> Contact.t
+    -> t
+    -> (Pool_event.t list, Conformist.error_msg) result
 
   val decode
     :  (string * string list) list
@@ -133,20 +146,21 @@ module RemoveTagFromContact : sig
 
   val effects : Contact.Id.t -> Guard.ValidationSet.t
 end = struct
-  type t = Tags.Tagged.t
+  type t = Tags.Id.t
 
-  let command model_uuid tag_uuid =
-    Tags.{ Tagged.model = Model.Contact; model_uuid; tag_uuid }
-  ;;
+  let schema = Conformist.(make Field.[ Tags.Id.schema () ] CCFun.id)
 
-  let schema =
-    Conformist.(
-      make Field.[ Pool_common.Id.schema (); Tags.Id.schema () ] command)
-  ;;
-
-  let handle ?(tags = Logs.Tag.empty) (command : t) =
+  let handle ?(tags = Logs.Tag.empty) contact (tag_uuid : t) =
+    let open Tags in
     Logs.info ~src (fun m -> m "Handle command RemoveTagFromContact" ~tags);
-    Ok [ Tags.Untagged command |> Pool_event.tags ]
+    Ok
+      [ Untagged
+          { Tagged.model = Model.Contact
+          ; model_uuid = Contact.id contact
+          ; tag_uuid
+          }
+        |> Pool_event.tags
+      ]
   ;;
 
   let decode data =

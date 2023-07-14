@@ -154,6 +154,8 @@ type success =
   | SmtpDetailsUpdated
   | SmtpPasswordUpdated
   | Stopped of Field.t
+  | TagAssigned
+  | TagRemoved
   | TenantUpdateDatabase
   | TenantUpdateDetails
   | Updated of Field.t

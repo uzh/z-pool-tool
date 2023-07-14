@@ -47,7 +47,7 @@ module Sql = struct
   open Caqti_request.Infix
   module Dynparam = Utils.Database.Dynparam
 
-  let select_sql =
+  let select_tag_sql =
     {sql|
       SELECT
         LOWER(CONCAT(
@@ -69,7 +69,7 @@ module Sql = struct
       WHERE
         pool_tags.uuid = UNHEX(REPLACE(?, '-', ''))
     |sql}
-    |> Format.asprintf "%s\n%s" select_sql
+    |> Format.asprintf "%s\n%s" select_tag_sql
     |> Entity.Id.t ->! t
   ;;
 
@@ -78,10 +78,28 @@ module Sql = struct
     ||> CCOption.to_result Pool_common.Message.(NotFound Field.Tag)
   ;;
 
-  let find_all_request = select_sql |> Caqti_type.unit ->* t
+  let find_all_request = select_tag_sql |> Caqti_type.unit ->* t
 
   let find_all pool =
     Utils.Database.collect (Label.value pool) find_all_request ()
+  ;;
+
+  let find_all_validated_request =
+    let open Guard.Persistence in
+    Format.asprintf
+      {sql|
+        %s
+        WHERE guardianValidateTagUuid(guardianEncodeUuid(?), ?, pool_tags.uuid)
+      |sql}
+      select_tag_sql
+    |> Caqti_type.(tup2 Uuid.Actor.t Action.t) ->* t
+  ;;
+
+  let find_all_validated ?(action = Guard.Action.Read) pool actor =
+    Utils.Database.collect
+      (Label.value pool)
+      find_all_validated_request
+      (Guard.Actor.id actor, action)
   ;;
 
   let insert_request =
@@ -165,7 +183,7 @@ module Sql = struct
       Utils.Database.exec (Label.value pool) delete_request tagging
     ;;
 
-    let select_sql =
+    let select_tagging_sql =
       {sql|
         SELECT
           pool_tagging.model
@@ -216,7 +234,7 @@ module Sql = struct
           WHERE
             pool_tagging.model = ? AND pool_tags.title = ?
         |sql}
-        select_sql
+        select_tagging_sql
         join_tags
       |> Caqti_type.(tup2 Model.t Title.t) ->* Tagged.t
     ;;
@@ -227,11 +245,31 @@ module Sql = struct
         find_all_by_model_and_tag_request
         (model, tag.title)
     ;;
+
+    let find_all_of_entity_request =
+      let open Entity in
+      Format.asprintf
+        {sql|
+          %s
+          JOIN pool_tagging ON pool_tags.uuid = pool_tagging.tag_uuid
+          WHERE pool_tagging.model = ?
+            AND pool_tagging.model_uuid = UNHEX(REPLACE(?, '-', ''))
+        |sql}
+        select_tag_sql
+      |> Caqti_type.(tup2 Model.t Pool_common.Repo.Id.t ->* t)
+    ;;
+
+    let find_all_of_entity pool =
+      Utils.Database.collect (Label.value pool) find_all_of_entity_request
+    ;;
   end
 end
 
 let find = Sql.find
 let find_all = Sql.find_all
+let find_all_validated = Sql.find_all_validated
+let find_all_of_entity = Sql.Tagged.find_all_of_entity
+let find_all_by_model_and_tag = Sql.Tagged.find_all_by_model_and_tag
 let find_all_models_by_tag_sql = Sql.Tagged.find_all_models_by_tag_sql
 let insert = Sql.insert
 let insert_tagged = Sql.Tagged.insert

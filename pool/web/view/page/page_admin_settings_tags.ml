@@ -90,7 +90,6 @@ let tag_form ?flash_fetcher ?tag Pool_context.{ language; csrf; _ } =
             ?value:
               CCOption.(bind tag (fun m -> m.description) >|= Description.value)
             ?flash_fetcher
-            ~required:true
         ]
     ; div
         ~a:[ a_class [ "flexrow" ] ]

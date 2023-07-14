@@ -75,6 +75,18 @@ val find
   -> (t, Pool_common.Message.error) result Lwt.t
 
 val find_all : Pool_database.Label.t -> t list Lwt.t
+
+val find_all_validated
+  :  ?action:Guard.Action.t
+  -> Pool_database.Label.t
+  -> 'a Guard.Actor.t
+  -> t list Lwt.t
+
+val find_all_of_contact
+  :  Pool_database.Label.t
+  -> Pool_common.Id.t
+  -> t list Lwt.t
+
 val find_all_models_by_tag_sql : Model.t -> string -> string -> string
 
 val insert

@@ -1,5 +1,10 @@
+open CCFun
 open Tyxml.Html
 open Component
+
+let path =
+  Contact.id %> Pool_common.Id.value %> Format.asprintf "/admin/contacts/%s"
+;;
 
 let personal_detail language contact =
   let open Contact in
@@ -26,10 +31,7 @@ let contact_overview language contacts =
         (fun contact ->
           [ txt (email_address contact |> Pool_user.EmailAddress.value)
           ; txt (fullname contact)
-          ; id contact
-            |> Pool_common.Id.value
-            |> Format.asprintf "/admin/contacts/%s"
-            |> Input.edit_link
+          ; contact |> path |> Input.edit_link
           ])
         contacts
     in
@@ -53,7 +55,7 @@ let index Pool_context.{ language; _ } contacts =
     ]
 ;;
 
-let detail Pool_context.{ language; _ } contact =
+let detail Pool_context.{ language; _ } contact tags =
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
     [ div
@@ -61,30 +63,73 @@ let detail Pool_context.{ language; _ } contact =
           [ a_class
               [ "flexrow"; "justify-between"; "flex-gap"; "flexcolumn-mobile" ]
           ]
-        [ div
+        ((div
             [ h1
                 ~a:[ a_class [ "heading-1" ] ]
                 [ txt (Contact.fullname contact) ]
             ]
-        ; contact
-          |> Contact.id
-          |> Pool_common.Id.value
-          |> Format.asprintf "/admin/contacts/%s/edit"
-          |> Input.link_as_button
-               ~icon:Icon.Create
-               ~classnames:[ "small" ]
-               ~control:
-                 Pool_common.(language, Message.(Edit (Some Field.Contact)))
-        ]
+          :: CCList.map
+               (fun tag ->
+                 div
+                   ~a:[ a_class [ "tag" ] ]
+                   Tags.[ tag.title |> Title.show |> txt ])
+               tags)
+         @ [ contact
+             |> path
+             |> Format.asprintf "%s/edit"
+             |> Input.link_as_button
+                  ~icon:Icon.Create
+                  ~classnames:[ "small" ]
+                  ~control:
+                    Pool_common.(language, Message.(Edit (Some Field.Contact)))
+           ])
     ; div ~a:[ a_class [ "gap-lg" ] ] [ personal_detail language contact ]
     ]
 ;;
 
+let tag_form
+  Pool_context.{ language; csrf; query_language; _ }
+  ?(existing = [])
+  available
+  contact
+  =
+  let action =
+    Http_utils.externalize_path_with_lang
+      query_language
+      (contact |> path |> Format.asprintf "%s/assign-tag")
+  in
+  let available =
+    CCList.(filter (flip (mem ~eq:Tags.equal) existing) available)
+  in
+  form
+    ~a:[ a_method `Post; a_action action; a_class [ "stack" ] ]
+    Input.
+      [ csrf_element csrf ()
+      ; selector
+          language
+          Pool_common.Message.Field.Tag
+          Tags.(fun tag -> Title.show tag.title)
+          available
+          None
+          ()
+      ; div
+          ~a:[ a_class [ "flexrow" ] ]
+          [ submit_element
+              ~classnames:[ "push" ]
+              language
+              Pool_common.Message.(Add (Some Field.Tag))
+              ()
+          ]
+      ]
+;;
+
 let edit
-  Pool_context.{ language; csrf; query_language; user; _ }
+  (Pool_context.{ language; csrf; query_language; user; _ } as context)
   tenant_languages
   contact
   custom_fields
+  tags
+  available_tags
   =
   let is_admin = Pool_context.user_is_admin user in
   div
@@ -99,6 +144,7 @@ let edit
         contact
         custom_fields
         is_admin
+    ; tag_form context ~existing:tags available_tags contact
     ; p
         [ a
             ~a:

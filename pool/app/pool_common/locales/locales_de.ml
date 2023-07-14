@@ -275,6 +275,8 @@ let success_to_string : success -> string = function
   | SmtpPasswordUpdated -> "Das SMTP Passwort wurde erfolgreich gespeichert."
   | Stopped field ->
     field_message "" (field_to_string field) "wurde erfolgreich gestoppt."
+  | TagAssigned -> "Der Tag wurde hinzugefügt."
+  | TagRemoved -> "Der Tag wurde entfernt."
   | TenantUpdateDatabase ->
     "Datenbank Informationen wurden erfolgreich upgedated."
   | TenantUpdateDetails -> "Tenant wurde erfolgreich upgedated."

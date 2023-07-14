@@ -512,6 +512,16 @@ module Admin = struct
         [ get "" ~middlewares:[ Access.read ] detail
         ; post "" ~middlewares:[ Access.update ] update
         ; get "/edit" ~middlewares:[ Access.update ] edit
+        ; post
+            "/assign-tag"
+            ~middlewares:
+              [ Handler.Admin.Settings.Tags.Access.assign_tag_to_contact ]
+            Tags.assign_tag
+        ; post
+            "/remove-tag"
+            ~middlewares:
+              [ Handler.Admin.Settings.Tags.Access.remove_tag_from_contact ]
+            Tags.remove_tag
         ; choose
             ~scope:(Format.asprintf "field/%s" (CustomField |> url_key))
             field_specific
@@ -638,7 +648,7 @@ module Admin = struct
         in
         [ get "" ~middlewares:[ Access.index ] show
         ; get "/create" ~middlewares:[ Access.create ] new_form
-        ; post "/" ~middlewares:[ Access.create ] create
+        ; post "" ~middlewares:[ Access.create ] create
         ; choose ~scope:(Tag |> url_key) specific
         ]
       in
