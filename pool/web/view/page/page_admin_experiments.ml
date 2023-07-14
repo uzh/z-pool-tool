@@ -229,6 +229,7 @@ let experiment_form
                     contact_persons
                     (CCOption.bind experiment (fun exp -> exp.contact_person_id))
                     Field.ContactPerson
+                    ~help:Pool_common.I18n.ExperimentContactPerson
                     ()
                 ; selector
                     language

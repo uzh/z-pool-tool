@@ -787,6 +787,7 @@ let admin_select
   field
   ?(attributes = [])
   ?(required = false)
+  ?help
   ()
   =
   let open Pool_common in
@@ -801,6 +802,7 @@ let admin_select
     in
     attrs @ attributes
   in
+  let help = Elements.help language help in
   let options =
     let default_option =
       let attrs = [ a_value "" ] in
@@ -836,12 +838,13 @@ let admin_select
   in
   div
     ~a:[ a_class [ "form-group" ] ]
-    [ label
-        [ field
-          |> Utils.(field_to_string language)
-          |> CCString.capitalize_ascii
-          |> txt
-        ]
-    ; div ~a:[ a_class [ "select" ] ] [ select ~a:select_attrs options ]
-    ]
+    ([ label
+         [ field
+           |> Utils.(field_to_string language)
+           |> CCString.capitalize_ascii
+           |> txt
+         ]
+     ; div ~a:[ a_class [ "select" ] ] [ select ~a:select_attrs options ]
+     ]
+     @ help)
 ;;

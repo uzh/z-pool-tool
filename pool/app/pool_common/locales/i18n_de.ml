@@ -222,6 +222,9 @@ let rec hint_to_string = function
   | ExperimentAssignment ->
     "Alle Anmeldungen von Kontakten an Sessions dieses Experiments, sortiert \
      nach Session."
+  | ExperimentContactPerson ->
+    "Die E-Mail-Adresse des ausgewählten Nutzers wird als 'reply-to' Adresse \
+     für alle experimentbezogenen E-Mails verwendet."
   | ExperimentMailings ->
     {|Einladungsversand dieses Experiments. Die 'Rate' definiert die maximal generierten Einladungen pro Stunde.
 

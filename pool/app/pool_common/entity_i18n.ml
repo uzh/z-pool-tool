@@ -12,9 +12,9 @@ type t =
   | EmailConfirmationNote
   | EmailConfirmationTitle
   | EmtpyList of Entity_message.Field.t
-  | ExperimentListTitle
   | ExperimentListEmpty
   | ExperimentListPublicTitle
+  | ExperimentListTitle
   | ExperimentNewTitle
   | ExperimentSessionReminderHint
   | ExperimentWaitingListTitle
@@ -135,6 +135,7 @@ type hint =
   | Distribution
   | EmailPlainText
   | ExperimentAssignment
+  | ExperimentContactPerson
   | ExperimentMailings
   | ExperimentSessions
   | ExperimentSessionsPublic
