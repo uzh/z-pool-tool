@@ -27,7 +27,7 @@ let new_form req =
     Page.Admin.Settings.Tags.new_form ~flash_fetcher context
     |> General.create_tenant_layout req ~active_navigation context
     >|+ Sihl.Web.Response.of_html
-    >|- fun err -> err, "/admin/settings/tags"
+    >|- fun err -> err, base_path
   in
   result |> HttpUtils.extract_happy_path ~src req
 ;;
@@ -40,7 +40,7 @@ let edit req =
     >|+ Page.Admin.Settings.Tags.edit ~flash_fetcher context
     >>= General.create_tenant_layout req ~active_navigation context
     >|+ Sihl.Web.Response.of_html
-    >|- fun err -> err, "/admin/settings/tags"
+    >|- fun err -> err, base_path
   in
   result |> HttpUtils.extract_happy_path ~src req
 ;;

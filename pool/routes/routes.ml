@@ -653,11 +653,11 @@ module Admin = struct
         ]
       in
       [ get "" ~middlewares:[ Access.index ] show
-      ; post "/:action" ~middlewares:[ Access.update ] update_settings
       ; choose ~scope:"/queue" queue
       ; choose ~scope:"/rules" rules
       ; choose ~scope:"/smtp" smtp
       ; choose ~scope:"/tags" tags
+      ; post "/:action" ~middlewares:[ Access.update ] update_settings
       ; get "/schedules" ~middlewares:[ Schedule.Access.index ] Schedule.show
       ]
     in
