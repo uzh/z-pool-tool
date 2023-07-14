@@ -95,11 +95,15 @@ let dummy_to_file (dummy : Database.SeedAssets.file) =
 ;;
 
 module Model = struct
-  let create_sihl_user ?(id = Pool_common.Id.create ()) () =
+  let create_sihl_user
+    ?(id = Pool_common.Id.create ())
+    ?(email =
+      Format.asprintf "test+%s@econ.uzh.ch" (Uuidm.v `V4 |> Uuidm.to_string))
+    ()
+    =
     Sihl_user.
       { id = id |> Pool_common.Id.value
-      ; email =
-          Format.asprintf "test+%s@econ.uzh.ch" (Uuidm.v `V4 |> Uuidm.to_string)
+      ; email
       ; username = None
       ; name = Some "Doe"
       ; given_name = Some "Jane"
@@ -148,8 +152,8 @@ module Model = struct
       }
   ;;
 
-  let create_admin () =
-    () |> create_sihl_user |> Admin.create |> Pool_context.admin
+  let create_admin ?id ?email () =
+    () |> create_sihl_user ?id ?email |> Admin.create |> Pool_context.admin
   ;;
 
   let create_location ?(id = Pool_location.Id.create ()) () =
@@ -376,6 +380,36 @@ module Model = struct
       =
       create_session ?start ()
     in
+    Session.Public.
+      { id
+      ; follow_up_to
+      ; start
+      ; duration
+      ; description
+      ; location
+      ; max_participants
+      ; min_participants
+      ; overbook
+      ; assignment_count
+      ; canceled_at
+      }
+  ;;
+
+  let session_to_public_session
+    { Session.id
+    ; follow_up_to
+    ; start
+    ; duration
+    ; description
+    ; location
+    ; max_participants
+    ; min_participants
+    ; overbook
+    ; assignment_count
+    ; canceled_at
+    ; _
+    }
+    =
     Session.Public.
       { id
       ; follow_up_to

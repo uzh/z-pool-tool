@@ -27,9 +27,13 @@ let expected_events
          contacts)
 ;;
 
-let create_message (_ : Contact.t) =
+let create_message ?sender (_ : Contact.t) =
+  let sender =
+    sender
+    |> CCOption.map_or ~default:"it@econ.uzh.ch" Pool_user.EmailAddress.value
+  in
   Sihl_email.
-    { sender = "it@econ.uzh.ch"
+    { sender
     ; recipient = "contact@econ.uzh.ch"
     ; subject = "Invitation"
     ; text = ""

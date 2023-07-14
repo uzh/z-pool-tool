@@ -158,6 +158,14 @@ let suite =
               "get templates in multiple languages"
               `Slow
               get_templates_in_multile_languages
+          ; test_case
+              "experiment invitation with sender"
+              `Slow
+              experiment_invitation_with_sender
+          ; test_case
+              "assignment creation with sender"
+              `Slow
+              assignment_creation_with_sender
           ] )
     ; ( "assignment"
       , Assignment_test.
