@@ -3,6 +3,8 @@ module Id = Pool_common.Id
 module Database = Pool_database
 open Entity
 
+let src = Logs.Src.create "contact.event"
+
 type create =
   { user_id : Id.t
   ; email : User.EmailAddress.t
@@ -56,13 +58,14 @@ type event =
   | CellPhoneAdded of t * User.CellPhone.t * Pool_common.VerificationCode.t
   | CellPhoneVerified of t * User.CellPhone.t
   | CellPhoneVerificationReset of t
+  | ImportConfirmed of t * User.Password.t
   | ProfileUpdateTriggeredAtUpdated of t list
   | RegistrationAttemptNotificationSent of t
   | Updated of t
   | SignInCounterUpdated of t
 [@@deriving eq, show, variants]
 
-let handle_event pool : event -> unit Lwt.t =
+let handle_event ?tags pool : event -> unit Lwt.t =
   let open Utils.Lwt_result.Infix in
   let ctx = Pool_database.to_ctx pool in
   function
@@ -96,6 +99,7 @@ let handle_event pool : event -> unit Lwt.t =
       ; paused_version = Pool_common.Version.create ()
       ; language_version = Pool_common.Version.create ()
       ; experiment_type_preference_version = Pool_common.Version.create ()
+      ; import_pending = Pool_user.ImportPending.create false
       ; created_at = Ptime_clock.now ()
       ; updated_at = Ptime_clock.now ()
       }
@@ -160,6 +164,21 @@ let handle_event pool : event -> unit Lwt.t =
     Repo.delete_unverified_cell_phone pool contact
   | CellPhoneVerificationReset contact ->
     Repo.delete_unverified_cell_phone pool contact
+  | ImportConfirmed (contact, password) ->
+    let (_ : (Sihl_user.t Lwt.t, string) result) =
+      let open Pool_common in
+      Service.User.set_user_password
+        contact.user
+        (User.Password.to_sihl password)
+      |> CCResult.map (Service.User.update ~ctx:(Pool_database.to_ctx pool))
+      |> Utils.with_log_result_error ~src ?tags Message.nothandled
+    in
+    Repo.update
+      pool
+      { contact with
+        import_pending = Pool_user.ImportPending.create false
+      ; terms_accepted_at = Some (User.TermsAccepted.create_now ())
+      }
   | ProfileUpdateTriggeredAtUpdated contacts ->
     contacts |> CCList.map id |> Repo.update_profile_updated_triggered pool
   | RegistrationAttemptNotificationSent t ->

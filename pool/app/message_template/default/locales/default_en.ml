@@ -522,3 +522,44 @@ If this action was not performed by you, you can ignore this message or inform t
   ; sms_text
   }
 ;;
+
+let user_import =
+  let label = Label.UserImport in
+  let email_text =
+    [ p
+        [ txt "Your account was recently migrated."
+        ; br ()
+        ; txt "Follow this "
+        ; a ~a:[ a_href "{verificationUrl}" ] [ txt "link" ]
+        ; txt " to reactivate your account."
+        ]
+    ; p
+        [ txt
+            "If the above link does not work, please copy the manually into \
+             your browser: {verificationUrl}"
+        ]
+    ]
+    |> add_salutation
+    |> html_to_string
+    |> EmailText.of_string
+  in
+  let email_subject =
+    "Reactivation of your account" |> EmailSubject.of_string
+  in
+  let sms_text =
+    {|Your account was recently migrated. Follow this link to reactivate your account:
+
+{verificationUrl}|}
+    |> add_salutation_to_text
+    |> SmsText.of_string
+  in
+  { id = Id.create ()
+  ; label
+  ; language
+  ; entity_uuid
+  ; email_text
+  ; email_subject
+  ; plain_text = sms_text
+  ; sms_text
+  }
+;;

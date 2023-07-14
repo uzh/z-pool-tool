@@ -45,7 +45,13 @@ let prepare_email language template sender email layout params =
   Sihl_email.Template.render_email_with_data params mail
 ;;
 
-let global_params user = [ "name", user |> Pool_user.user_fullname ]
+let global_params user =
+  Pool_user.
+    [ "name", user |> user_fullname
+    ; "firstname", user |> user_firstname |> Firstname.value
+    ; "lastname", user |> user_lastname |> Lastname.value
+    ]
+;;
 
 let experiment_params experiment =
   let open Experiment in
@@ -620,5 +626,61 @@ module SignUpVerification = struct
       (layout_from_tenant tenant)
       (email_params verification_url firstname lastname)
     |> Lwt.return
+  ;;
+end
+
+module UserImport = struct
+  let email_address = function
+    | `Admin admin -> Admin.email admin
+    | `Contact contact -> Contact.email_address contact
+  ;;
+
+  let language default_language = function
+    | `Admin _ -> Pool_common.Language.En
+    | `Contact (contact : Contact.t) ->
+      contact.Contact.language |> CCOption.value ~default:default_language
+  ;;
+
+  let email_params confirmation_url user =
+    let user =
+      match user with
+      | `Admin admin -> Admin.user admin
+      | `Contact contact -> Contact.user contact
+    in
+    global_params user @ [ "confirmationUrl", confirmation_url ]
+  ;;
+
+  let prepare pool tenant =
+    let languages = Pool_common.Language.all in
+    let templates = Hashtbl.create (CCList.length languages) in
+    let%lwt () =
+      find_all_by_label_to_send pool Pool_common.Language.all Label.UserImport
+      |> Lwt.map
+           (CCList.iter (fun ({ Entity.language; _ } as t) ->
+              Hashtbl.add templates language t))
+    in
+    let%lwt url = Pool_tenant.Url.of_pool pool in
+    let%lwt default_language = Settings.default_language pool in
+    let%lwt sender = sender_of_pool pool in
+    let layout = layout_from_tenant tenant in
+    Lwt.return
+    @@ fun (user : [< `Admin of Admin.t | `Contact of Contact.t ]) token ->
+    let language = language default_language user in
+    let confirmation_url =
+      Pool_common.
+        [ ( Message.Field.Language
+          , language |> Language.show |> CCString.lowercase_ascii )
+        ; Message.Field.Token, token
+        ]
+      |> create_public_url_with_params url "/import-confirmation"
+    in
+    let template = Hashtbl.find templates language in
+    prepare_email
+      language
+      template
+      sender
+      (email_address user)
+      layout
+      (email_params confirmation_url user)
   ;;
 end

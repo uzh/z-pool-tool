@@ -25,6 +25,7 @@ let rec field_to_string =
   | Chronological -> "chronologisch"
   | City -> "Ort"
   | ClosedAt -> "Geschlossen am"
+  | ConfirmedAt -> "Bestätigt am"
   | Contact -> "Kontakt"
   | ContactEmail -> "Kontakt E-Mail Adresse"
   | Contacts -> "Kontakte"
@@ -82,6 +83,7 @@ let rec field_to_string =
   | I18n -> "Übersetzung"
   | Icon -> "Icon"
   | Id -> "ID"
+  | ImportPending -> "Import pendent"
   | InactiveUserDisableAfter -> "Deaktiviere inaktiven Benutzer nach"
   | InactiveUserWarning -> "Warnung an inaktiven Benutzer"
   | Input -> "Input"
@@ -123,6 +125,7 @@ let rec field_to_string =
   | NextRunAt -> "Nächster Versuch um"
   | NoShow -> "Nicht anwesend"
   | NoShowCount -> "Abwesende"
+  | NotifiedAt -> "Benachrichtigt am"
   | NotifyVia -> "Benachrichtigen via"
   | Offset -> "Offset"
   | Operator -> "Operator"
@@ -153,6 +156,8 @@ let rec field_to_string =
   | Reason -> "Grund"
   | Redirect -> "Weiterleitung"
   | RegistrationDisabled -> "Registrierung deaktiviert"
+  | LastRemindedAt -> "Erinnert am"
+  | ReminderCount -> "Anzahl Reminder"
   | Required -> "Benötigt"
   | ResentAt -> "Erneut verschickt"
   | Role -> "Rolle"
@@ -237,6 +242,8 @@ let success_to_string : success -> string = function
      falls die angegebene E-Mail Adresse noch verfügbar ist."
   | EmailVerified -> "E-Mail erfolgreich verifiziert."
   | FileDeleted -> "File wurde erfolgreich gelöscht."
+  | ImportCompleted ->
+    "Der Import Ihres Kontos wurde erfolgreich abgeschlossen."
   | MarkedAsDeleted field ->
     field_message "" (field_to_string field) "wurde als gelöscht markiert."
   | PasswordChanged -> "Passwort wurde geändert."
@@ -357,6 +364,9 @@ let rec error_to_string = function
     "Folgesession kann nicht vor Hauptsession starten."
   | HtmxVersionNotFound field ->
     Format.asprintf "Version von '%s' konnte nicht gefunden werden." field
+  | ImportPending ->
+    "Der Import Ihres Users ist noch nicht abgeschlossen. Bitte kontrollieren \
+     Sie Ihren Posteingang oder kontaktieren Sie einen Administrator."
   | Invalid field -> field_message "" (field_to_string field) "ist ungültig!"
   | InvalidEmailSuffix suffixes ->
     Format.asprintf

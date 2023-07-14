@@ -1,3 +1,4 @@
+module Import = Page_public_import
 open Tyxml.Html
 open Component.Input
 module HttpUtils = Http_utils

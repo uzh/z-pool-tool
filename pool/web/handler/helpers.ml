@@ -18,3 +18,12 @@ end = struct
   let update = Guardian.denied
   let delete = Guardian.denied
 end
+
+let terms_and_conditions_accepted urlencoded =
+  let open Pool_common.Message in
+  CCList.assoc ~eq:( = ) Field.(show TermsAccepted) urlencoded
+  |> CCList.hd
+  |> CCString.equal "true"
+  |> Utils.Bool.to_result TermsAndConditionsNotAccepted
+  |> Lwt_result.lift
+;;

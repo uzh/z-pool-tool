@@ -287,6 +287,12 @@ module EmailVerified = struct
   let create m = m
 end
 
+module ImportPending = struct
+  include Pool_common.Model.Boolean
+
+  let schema = schema PoolError.Field.ImportPending
+end
+
 let user_firstname { Sihl_user.id; given_name; _ } =
   given_name
   |> CCOption.get_exn_or (Format.asprintf "User '%s' has no firstname" id)

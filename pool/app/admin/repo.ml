@@ -1,34 +1,77 @@
 module Dynparam = Utils.Database.Dynparam
+module RepoEntity = Repo_entity
 
 module Sql = struct
+  let insert_request =
+    let open Caqti_request.Infix in
+    {sql|
+      INSERT INTO pool_admins (
+        user_uuid,
+        import_pending
+      ) VALUES (
+        UNHEX(REPLACE($1, '-', '')),
+        $2
+      )
+    |sql}
+    |> Caqti_type.(
+         tup2 Pool_common.Repo.Id.t Pool_user.Repo.ImportPending.t ->. unit)
+  ;;
+
+  let insert pool t =
+    Utils.Database.exec
+      (Pool_database.Label.value pool)
+      insert_request
+      (Entity.id t, t.Entity.import_pending)
+  ;;
+
+  let select_from_admin_columns =
+    Format.asprintf
+      {sql|
+        %s
+        pool_admins.import_pending
+      |sql}
+      Pool_user.Repo.select_from_sihl_user_columns
+  ;;
+
   let select_from_users_sql ?order_by where_fragment =
     let select_from =
-      {sql|
-        SELECT
-          LOWER(CONCAT(
-            SUBSTR(HEX(user_users.uuid), 1, 8), '-',
-            SUBSTR(HEX(user_users.uuid), 9, 4), '-',
-            SUBSTR(HEX(user_users.uuid), 13, 4), '-',
-            SUBSTR(HEX(user_users.uuid), 17, 4), '-',
-            SUBSTR(HEX(user_users.uuid), 21)
-          )),
-          user_users.email,
-          user_users.username,
-          user_users.name,
-          user_users.given_name,
-          user_users.password,
-          user_users.status,
-          user_users.admin,
-          user_users.confirmed,
-          user_users.created_at,
-          user_users.updated_at
-        FROM user_users
-      |sql}
+      Format.asprintf
+        {sql|
+          SELECT
+          %s
+          FROM user_users
+          INNER JOIN pool_admins
+          ON pool_admins.user_uuid = user_users.uuid
+        |sql}
+        select_from_admin_columns
     in
     let query = Format.asprintf "%s %s" select_from where_fragment in
     match order_by with
     | Some order_by -> Format.asprintf "%s ORDER BY %s" query order_by
     | None -> query
+  ;;
+
+  let select_imported_admins_sql ~import_columns ~where ~limit =
+    Format.asprintf
+      {sql|
+        SELECT
+        %s,
+        %s
+        FROM user_users
+        INNER JOIN pool_admins
+          ON pool_admins.user_uuid = user_users.uuid
+        INNER JOIN pool_user_imports
+          ON user_users.uuid = pool_user_imports.user_uuid
+        WHERE
+          %s
+        ORDER BY
+          pool_admins.created_at ASC
+        LIMIT %i
+      |sql}
+      select_from_admin_columns
+      import_columns
+      where
+      limit
   ;;
 
   let find_request caqti_type =
@@ -45,7 +88,7 @@ module Sql = struct
     let open Lwt.Infix in
     Utils.Database.find_opt
       (Pool_database.Label.value pool)
-      (find_request Pool_user.Repo.user_caqti)
+      (find_request RepoEntity.t)
       id
     >|= CCOption.to_result Pool_common.Message.(NotFound Field.Admin)
   ;;
@@ -59,7 +102,7 @@ module Sql = struct
       user_users.admin = 1
       |sql}
     |> select_from_users_sql
-    |> Caqti_type.unit ->* Pool_user.Repo.user_caqti
+    |> Caqti_type.unit ->* RepoEntity.t
   ;;
 
   let find_all pool =
@@ -90,13 +133,55 @@ module Sql = struct
           Dynparam.empty
           ids
       in
-      let request =
-        find_multiple_request ids |> pt ->* Pool_user.Repo.user_caqti
-      in
+      let request = find_multiple_request ids |> pt ->* RepoEntity.t in
       Utils.Database.collect (pool |> Pool_database.Label.value) request pv
+  ;;
+
+  let update_request =
+    let open Caqti_request.Infix in
+    {sql|
+      UPDATE
+        pool_admins
+      SET
+        import_pending = $2
+      WHERE
+        user_uuid = UNHEX(REPLACE($1, '-', ''))
+    |sql}
+    |> RepoEntity.Write.t ->. Caqti_type.unit
+  ;;
+
+  let update pool t =
+    Utils.Database.exec
+      (Pool_database.Label.value pool)
+      update_request
+      (RepoEntity.Write.of_entity t)
+  ;;
+
+  let update_sign_in_count_request =
+    let open Caqti_request.Infix in
+    {sql|
+      UPDATE
+        pool_admins
+      SET
+        sign_in_count = sign_in_count + 1,
+        last_sign_in_at = NOW()
+      WHERE
+        user_uuid = UNHEX(REPLACE($1, '-', ''))
+    |sql}
+    |> Caqti_type.(string ->. unit)
+  ;;
+
+  let update_sign_in_count pool t =
+    Utils.Database.exec
+      (Pool_database.Label.value pool)
+      update_sign_in_count_request
+      Entity.(id t |> Id.value)
   ;;
 end
 
+let insert = Sql.insert
 let find = Sql.find
 let find_all = Sql.find_all
 let find_multiple = Sql.find_multiple
+let update = Sql.update
+let update_sign_in_count = Sql.update_sign_in_count

@@ -191,3 +191,19 @@ end = struct
 
   let effects = Admin.Guard.Access.create
 end
+
+module UpdateSignInCount : sig
+  type t = Admin.t
+
+  val handle
+    :  ?tags:Logs.Tag.set
+    -> t
+    -> (Pool_event.t list, Pool_common.Message.error) result
+end = struct
+  type t = Admin.t
+
+  let handle ?(tags = Logs.Tag.empty) admin =
+    Logs.info ~src (fun m -> m "Handle command UpdateSignInCount" ~tags);
+    Ok [ Admin.SignInCounterUpdated admin |> Pool_event.admin ]
+  ;;
+end

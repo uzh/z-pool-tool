@@ -74,11 +74,13 @@ type t =
   ; paused_version : Pool_common.Version.t
   ; language_version : Pool_common.Version.t
   ; experiment_type_preference_version : Pool_common.Version.t
+  ; import_pending : Pool_user.ImportPending.t
   ; created_at : Ptime.t
   ; updated_at : Ptime.t
   }
 
 val profile_completion_cookie : string
+val user : t -> Sihl_user.t
 val id : t -> Pool_common.Id.t
 val firstname : t -> Pool_user.Firstname.t
 val lastname : t -> Pool_user.Lastname.t
@@ -177,6 +179,7 @@ type event =
   | CellPhoneAdded of t * Pool_user.CellPhone.t * Pool_common.VerificationCode.t
   | CellPhoneVerified of t * Pool_user.CellPhone.t
   | CellPhoneVerificationReset of t
+  | ImportConfirmed of t * Pool_user.Password.t
   | ProfileUpdateTriggeredAtUpdated of t list
   | RegistrationAttemptNotificationSent of t
   | Updated of t
@@ -184,7 +187,13 @@ type event =
 
 val created : create -> event
 val updated : t -> event
-val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
+
+val handle_event
+  :  ?tags:Logs.Tag.set
+  -> Pool_database.Label.t
+  -> event
+  -> unit Lwt.t
+
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
@@ -221,12 +230,18 @@ module Repo : sig
     val t : Preview.t Caqti_type.t
   end
 
-  module Model : sig
+  module Entity : sig
     val t : t Caqti_type.t
   end
 
   module Sql : sig
     val find_request_sql : string -> string
+
+    val select_imported_contacts_sql
+      :  import_columns:string
+      -> where:string
+      -> limit:int
+      -> string
   end
 end
 

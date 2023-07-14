@@ -13,6 +13,7 @@ let worker_services =
       ()
   ; Matcher.register ()
   ; System_event.Service.register ()
+  ; User_import.Service.register ()
   ]
 ;;
 
@@ -26,6 +27,7 @@ let services =
   ; Service.Storage.register ()
   ; Sihl.Web.Http.register ~middlewares:Routes.global_middlewares Routes.router
   ; System_event.Service.register ()
+  ; User_import.Service.register ()
   ]
 ;;
 
@@ -56,6 +58,7 @@ let commands =
   ; Admin.list_roles
   ; Admin.create_root_admin
   ; Utils.encrypt_string
+  ; UserImport.handle_user_import_notifications
   ; DefaultData.insert
   ; Worker.run ~services:worker_services ()
   ; version

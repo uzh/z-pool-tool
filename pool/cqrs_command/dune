@@ -23,7 +23,8 @@
   settings
   sihl
   system_event
-  tenant)
+  tenant
+  user_import)
  (preprocess
   (pps
    ppx_here

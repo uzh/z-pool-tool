@@ -5,14 +5,17 @@ let src = Logs.Src.create "handler.public.login"
 let to_ctx = Pool_database.to_ctx
 let create_layout req = General.create_tenant_layout req
 
-let increase_sign_in_count ~tags database_label =
+let increase_sign_in_count ~tags database_label user =
   let open Utils.Lwt_result.Infix in
-  function
-  | `Admin _ -> Lwt_result.return ()
-  | `Contact contact ->
-    Cqrs_command.Contact_command.UpdateSignInCount.handle ~tags contact
-    |> Lwt_result.lift
-    |>> Pool_event.handle_events database_label
+  let open Pool_context in
+  let open Cqrs_command in
+  let events =
+    match user with
+    | Admin admin -> Admin_command.UpdateSignInCount.handle ~tags admin
+    | Contact contact -> Contact_command.UpdateSignInCount.handle ~tags contact
+    | Guest -> Ok []
+  in
+  events |> Lwt_result.lift |>> Pool_event.handle_events database_label
 ;;
 
 let login_get req =
@@ -34,9 +37,12 @@ let login_get req =
 
 let login_post req =
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-  let to_sihl_user = function
-    | `Admin user -> user
-    | `Contact contact -> contact.Contact.user
+  let to_sihl_user =
+    let open Pool_context in
+    function
+    | Admin { Admin.user; _ } -> Ok user
+    | Contact { Contact.user; _ } -> Ok user
+    | Guest -> Error Pool_common.Message.(NotFound Field.User)
   in
   let result { Pool_context.database_label; query_language; _ } =
     let open Utils.Lwt_result.Infix in
@@ -46,7 +52,7 @@ let login_post req =
       , [ HttpUtils.urlencoded_to_flash urlencoded ] ))
     @@ let* user = Helpers.Login.login req urlencoded database_label in
        let login user ?(set_completion_cookie = false) path actions =
-         let sihl_user = to_sihl_user user in
+         let* sihl_user = to_sihl_user user |> Lwt_result.lift in
          let tags = Pool_context.Logger.Tags.req req in
          let* () = increase_sign_in_count ~tags database_label user in
          HttpUtils.(
@@ -70,51 +76,64 @@ let login_post req =
          |> Lwt_result.ok
        in
        let success user () =
-         let open Pool_context in
-         let%lwt path =
+         let path =
            match HttpUtils.find_intended_opt req with
-           | Some intended -> Lwt.return intended
-           | None ->
-             user
-             |> to_sihl_user
-             |> user_of_sihl_user database_label
-             ||> Pool_context.dashboard_path
+           | Some intended -> intended
+           | None -> user |> Pool_context.dashboard_path
          in
          login user path []
        in
-       let contact user =
+       let find_contact user =
          Contact.find
            database_label
            (user.Sihl_user.id |> Pool_common.Id.of_string)
        in
-       user
-       |> Admin.user_is_admin database_label
-       >|> function
-       | true -> success (`Admin user) ()
+       let find_admin user =
+         user.Sihl_user.id
+         |> Admin.Id.of_string
+         |> Admin.find database_label
+         >|+ Pool_context.admin
+       in
+       let%lwt user_import =
+         User_import.find_pending_by_user_opt database_label user
+         ||> CCOption.is_some
+       in
+       match user_import with
+       | true ->
+         redirect
+           (Http_utils.path_with_language query_language "/import-pending")
        | false ->
-         (match user.Sihl_user.confirmed with
-          | false ->
-            redirect
-              (Http_utils.path_with_language
-                 query_language
-                 "/email-confirmation")
-          | true ->
-            let* contact = user |> contact in
-            let%lwt required_answers_given =
-              Custom_field.all_required_answered
-                database_label
-                (Contact.id contact)
-            in
-            (match required_answers_given with
-             | true -> success (`Contact contact) ()
-             | false ->
-               login
-                 (`Contact contact)
-                 ~set_completion_cookie:true
-                 "/user/completion"
-                 [ Message.set
-                     ~error:[ Pool_common.Message.(RequiredFieldsMissing) ]
-                 ]))
+         user
+         |> Admin.user_is_admin database_label
+         >|> (function
+         | true ->
+           let* admin = find_admin user in
+           success admin ()
+         | false ->
+           (match user.Sihl_user.confirmed with
+            | false ->
+              redirect
+                (Http_utils.path_with_language
+                   query_language
+                   "/email-confirmation")
+            | true ->
+              let* contact = user |> find_contact in
+              let%lwt required_answers_given =
+                Custom_field.all_required_answered
+                  database_label
+                  (Contact.id contact)
+              in
+              let contact = contact |> Pool_context.contact in
+              (match required_answers_given with
+               | true -> success contact ()
+               | false ->
+                 login
+                   contact
+                   ~set_completion_cookie:true
+                   "/user/completion"
+                   [ Message.set
+                       ~error:[ Pool_common.Message.(RequiredFieldsMissing) ]
+                   ])))
   in
   result |> HttpUtils.extract_happy_path_with_actions ~src req
 ;;

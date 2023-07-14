@@ -54,8 +54,9 @@ let t =
                                     , ( m.paused_version
                                       , ( m.language_version
                                         , ( m.experiment_type_preference_version
-                                          , (m.created_at, m.updated_at) ) ) )
-                                    ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) )
+                                          , ( m.import_pending
+                                            , (m.created_at, m.updated_at) ) )
+                                        ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) )
   in
   let decode
     ( user
@@ -77,8 +78,9 @@ let t =
                                   , ( paused_version
                                     , ( language_version
                                       , ( experiment_type_preference_version
-                                        , (created_at, updated_at) ) ) ) ) ) )
-                            ) ) ) ) ) ) ) ) ) ) ) ) )
+                                        , ( import_pending
+                                          , (created_at, updated_at) ) ) ) ) )
+                                ) ) ) ) ) ) ) ) ) ) ) ) ) ) )
     =
     let open CCResult in
     Ok
@@ -101,6 +103,7 @@ let t =
       ; paused_version
       ; language_version
       ; experiment_type_preference_version
+      ; import_pending
       ; created_at
       ; updated_at
       }
@@ -156,8 +159,12 @@ let t =
                                                                .Version
                                                                .t
                                                                (tup2
-                                                                  CreatedAt.t
-                                                                  UpdatedAt.t)))))))))))))))))))))
+                                                                  Pool_user.Repo
+                                                                  .ImportPending
+                                                                  .t
+                                                                  (tup2
+                                                                     CreatedAt.t
+                                                                     UpdatedAt.t))))))))))))))))))))))
 ;;
 
 let contact =
@@ -181,8 +188,9 @@ let contact =
                                   , ( m.paused_version
                                     , ( m.language_version
                                       , ( m.experiment_type_preference_version
-                                        , (m.created_at, m.updated_at) ) ) ) )
-                                ) ) ) ) ) ) ) ) ) ) ) ) ) )
+                                        , ( m.import_pending
+                                          , (m.created_at, m.updated_at) ) ) )
+                                    ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) )
   in
   let decode _ =
     failwith
@@ -235,8 +243,12 @@ let contact =
                                                             .Version
                                                             .t
                                                             (tup2
-                                                               CreatedAt.t
-                                                               UpdatedAt.t))))))))))))))))))))
+                                                               Pool_user.Repo
+                                                               .ImportPending
+                                                               .t
+                                                               (tup2
+                                                                  CreatedAt.t
+                                                                  UpdatedAt.t)))))))))))))))))))))
 ;;
 
 module Write = struct
@@ -263,8 +275,10 @@ module Write = struct
                                     , ( m.lastname_version
                                       , ( m.lastname_version
                                         , ( m.paused_version
-                                          , m.experiment_type_preference_version
-                                          ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) )
+                                          , ( m
+                                                .experiment_type_preference_version
+                                            , m.import_pending ) ) ) ) ) ) ) )
+                            ) ) ) ) ) ) ) ) ) ) )
     in
     let decode _ =
       failwith
@@ -318,9 +332,14 @@ module Write = struct
                                                               Pool_common.Repo
                                                               .Version
                                                               .t
-                                                              Pool_common.Repo
-                                                              .Version
-                                                              .t)))))))))))))))))))
+                                                              (tup2
+                                                                 Pool_common
+                                                                 .Repo
+                                                                 .Version
+                                                                 .t
+                                                                 Pool_user.Repo
+                                                                 .ImportPending
+                                                                 .t))))))))))))))))))))
   ;;
 end
 

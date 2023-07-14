@@ -217,7 +217,7 @@ module Sql = struct
       sql
       |> where_prefix
       |> find_filtered_request_sql ?limit
-      |> pt ->* Contact.Repo.Model.t
+      |> pt ->* Contact.Repo.Entity.t
     in
     let%lwt contacts =
       Utils.Database.collect (pool |> Pool_database.Label.value) request pv

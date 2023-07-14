@@ -24,7 +24,7 @@ type update =
 let set_password
   : Database.Label.t -> t -> string -> string -> (unit, string) result Lwt.t
   =
- fun pool user password password_confirmation ->
+ fun pool { user; _ } password password_confirmation ->
   let open Lwt_result.Infix in
   Service.User.set_password
     ~ctx:(Pool_database.to_ctx pool)
@@ -37,10 +37,12 @@ let set_password
 type event =
   | Created of create
   | DetailsUpdated of t * update
-  | PasswordUpdated of
-      t * User.Password.t * User.Password.t * User.PasswordConfirmed.t
   | Disabled of t
   | Enabled of t
+  | ImportConfirmed of t * User.Password.t
+  | PasswordUpdated of
+      t * User.Password.t * User.Password.t * User.PasswordConfirmed.t
+  | SignInCounterUpdated of t
   | Verified of t
 [@@deriving eq, show]
 
@@ -50,7 +52,7 @@ let handle_event ~tags pool : event -> unit Lwt.t =
   | Created { id; lastname; firstname; password; email; roles } ->
     let open Pool_common.Utils in
     let ctx = Pool_database.to_ctx pool in
-    let%lwt user =
+    let%lwt admin =
       Service.User.create_admin
         ~ctx
         ?id:(id |> CCOption.map Pool_common.Id.value)
@@ -58,14 +60,16 @@ let handle_event ~tags pool : event -> unit Lwt.t =
         ~given_name:(firstname |> User.Firstname.value)
         ~password:(password |> User.Password.to_sihl)
         (User.EmailAddress.value email)
+      ||> create
     in
+    let%lwt () = Repo.insert pool admin in
     let%lwt (_ : Role.Target.t Guard.Target.t) =
-      Entity_guard.Target.to_authorizable ~ctx user
+      Entity_guard.Target.to_authorizable ~ctx admin
       >|- with_log_error ~src ~tags
       ||> get_or_failwith
     in
     let%lwt (authorizable : Role.Actor.t Guard.Actor.t) =
-      Entity_guard.Actor.to_authorizable ~ctx user
+      Entity_guard.Actor.to_authorizable ~ctx admin
       >|- with_log_error ~src ~tags
       ||> get_or_failwith
     in
@@ -83,7 +87,7 @@ let handle_event ~tags pool : event -> unit Lwt.t =
   | DetailsUpdated (admin, { firstname; lastname }) ->
     let name = User.Lastname.value lastname in
     let given_name = User.Firstname.value firstname in
-    let%lwt (_ : t) =
+    let%lwt (_ : Sihl_user.t) =
       Service.User.update
         ~ctx:(Pool_database.to_ctx pool)
         ~name
@@ -91,13 +95,23 @@ let handle_event ~tags pool : event -> unit Lwt.t =
         (user admin)
     in
     Lwt.return_unit
+  | ImportConfirmed (admin, password) ->
+    let (_ : (Sihl_user.t Lwt.t, string) result) =
+      let open Pool_common in
+      Service.User.set_user_password admin.user (User.Password.to_sihl password)
+      |> CCResult.map (Service.User.update ~ctx:(Pool_database.to_ctx pool))
+      |> Utils.with_log_result_error ~src ~tags Message.nothandled
+    in
+    Repo.update
+      pool
+      { admin with import_pending = Pool_user.ImportPending.create false }
   | PasswordUpdated (admin, old_password, new_password, confirmed) ->
     let old_password = old_password |> User.Password.to_sihl in
     let new_password = new_password |> User.Password.to_sihl in
     let new_password_confirmation =
       confirmed |> User.PasswordConfirmed.to_sihl
     in
-    let%lwt (_ : (t, string) result) =
+    let%lwt (_ : (Sihl_user.t, string) result) =
       let open Pool_common in
       Service.User.update_password
         ~ctx:(Pool_database.to_ctx pool)
@@ -109,6 +123,7 @@ let handle_event ~tags pool : event -> unit Lwt.t =
       ||> Utils.with_log_result_error ~src ~tags Message.nothandled
     in
     Lwt.return_unit
+  | SignInCounterUpdated m -> Repo.update_sign_in_count pool m
   | Disabled _ -> Utils.todo ()
   | Enabled _ -> Utils.todo ()
   | Verified _ -> Utils.todo ()

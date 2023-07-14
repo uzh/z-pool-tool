@@ -118,6 +118,10 @@ module CellPhone : sig
     -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
 end
 
+module ImportPending : sig
+  include Pool_common.Model.BooleanSig
+end
+
 module UnverifiedCellPhone : sig
   type t =
     { cell_phone : CellPhone.t
@@ -189,6 +193,10 @@ module Repo : sig
     val t : CellPhone.t Caqti_type.t
   end
 
+  module ImportPending : sig
+    val t : ImportPending.t Caqti_type.t
+  end
+
   module UnverifiedCellPhone : sig
     val t : UnverifiedCellPhone.t Caqti_type.t
     val full : UnverifiedCellPhone.full Caqti_type.t
@@ -199,6 +207,7 @@ module Repo : sig
   end
 
   val user_caqti : Sihl_user.t Caqti_type.t
+  val select_from_sihl_user_columns : string
 end
 
 val user_firstname : Sihl_user.t -> Firstname.t

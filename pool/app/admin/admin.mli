@@ -1,6 +1,9 @@
 module Id : module type of Pool_common.Id
 
-type t
+type t =
+  { user : Sihl_user.t
+  ; import_pending : Pool_user.ImportPending.t
+  }
 
 val equal : t -> t -> bool
 val pp : Format.formatter -> t -> unit
@@ -9,7 +12,7 @@ val sexp_of_t : t -> Sexplib0.Sexp.t
 val user : t -> Sihl_user.t
 val create : Sihl_user.t -> t
 val id : t -> Id.t
-val email : t -> string
+val email : t -> Pool_user.EmailAddress.t
 val full_name : t -> string
 
 type create =
@@ -37,13 +40,15 @@ val show_update : update -> string
 type event =
   | Created of create
   | DetailsUpdated of t * update
+  | Disabled of t
+  | Enabled of t
+  | ImportConfirmed of t * Pool_user.Password.t
   | PasswordUpdated of
       t
       * Pool_user.Password.t
       * Pool_user.Password.t
       * Pool_user.PasswordConfirmed.t
-  | Disabled of t
-  | Enabled of t
+  | SignInCounterUpdated of t
   | Verified of t
 
 val handle_event
@@ -123,4 +128,16 @@ module Guard : sig
     val read : Id.t -> Guard.ValidationSet.t
     val update : Id.t -> Guard.ValidationSet.t
   end
+end
+
+module Repo : sig
+  module Entity : sig
+    val t : t Caqti_type.t
+  end
+
+  val select_imported_admins_sql
+    :  import_columns:string
+    -> where:string
+    -> limit:int
+    -> string
 end

@@ -1,15 +1,29 @@
 module Id = Pool_common.Id
 
-type t = Sihl_user.t [@@deriving eq, show]
+type t =
+  { user : Sihl_user.t
+  ; import_pending : Pool_user.ImportPending.t
+  }
+[@@deriving eq, show]
 
-let sexp_of_t t = t.Sihl_user.id |> fun s -> Sexplib0.Sexp.Atom s
-let user m = m
-let create (user : Sihl_user.t) : t = user
-let id ({ Sihl_user.id; _ } : t) = Id.of_string id
-let email ({ Sihl_user.email; _ } : t) = email
+let user { user; _ } = user
 
-let full_name { Sihl_user.name; given_name; _ } =
-  [ given_name; name ] |> CCList.filter_map CCFun.id |> CCString.concat " "
+let create (user : Sihl_user.t) : t =
+  { user; import_pending = Pool_user.ImportPending.create false }
+;;
+
+let id ({ user; _ } : t) = Id.of_string user.Sihl_user.id
+
+let email ({ user; _ } : t) =
+  user.Sihl_user.email |> Pool_user.EmailAddress.of_string
+;;
+
+let sexp_of_t t = t |> id |> Id.value |> fun s -> Sexplib0.Sexp.Atom s
+
+let full_name { user; _ } =
+  Sihl_user.[ user.given_name; user.name ]
+  |> CCList.filter_map CCFun.id
+  |> CCString.concat " "
 ;;
 
 module Duplicate = struct

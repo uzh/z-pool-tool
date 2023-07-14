@@ -114,9 +114,9 @@ module Model = struct
   ;;
 
   let create_contact ?id ?(with_terms_accepted = true) () =
-    let user = create_sihl_user ?id () in
+    let sihl_user = create_sihl_user ?id () in
     Contact.
-      { user
+      { user = sihl_user
       ; terms_accepted_at =
           (if with_terms_accepted
            then Pool_user.TermsAccepted.create_now () |> CCOption.pure
@@ -142,6 +142,7 @@ module Model = struct
       ; paused_version = Pool_common.Version.create ()
       ; language_version = Pool_common.Version.create ()
       ; experiment_type_preference_version = Pool_common.Version.create ()
+      ; import_pending = Pool_user.ImportPending.create false
       ; created_at = Pool_common.CreatedAt.create ()
       ; updated_at = Pool_common.UpdatedAt.create ()
       }

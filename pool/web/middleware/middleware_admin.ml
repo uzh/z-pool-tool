@@ -10,7 +10,13 @@ let require_admin () =
     | Error _ -> fail_action req
     | Ok { user; _ } ->
       (match user with
-       | Admin _ -> handler req
+       | Admin { Admin.import_pending; _ } ->
+         (match Pool_user.ImportPending.value import_pending with
+          | true ->
+            HttpUtils.redirect_to_with_actions
+              "/import-pending"
+              [ Sihl.Web.Session.set [ "user_id", "" ] ]
+          | false -> handler req)
        | Contact _ | Guest -> fail_action req)
   in
   Rock.Middleware.create ~name:"user.require.admin" ~filter

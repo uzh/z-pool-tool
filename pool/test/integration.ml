@@ -262,6 +262,10 @@ let suite =
               DeleteUnattended.delete_main
           ] )
     ; "cleanup", [ test_case "clean up test database" `Quick Seed.cleanup ]
+    ; ( "user import"
+      , User_import_test.
+          [ test_case "confirm as contact" `Slow confirm_as_contact_integration
+          ] )
     ]
 ;;
 

@@ -69,7 +69,13 @@ let find_contact { user; _ } =
 let user_of_sihl_user database_label user =
   let open Utils.Lwt_result.Infix in
   if Sihl_user.is_admin user
-  then user |> Admin.create |> admin |> Lwt.return
+  then
+    user.Sihl_user.id
+    |> Admin.Id.of_string
+    |> Admin.find database_label
+    ||> function
+    | Ok user -> user |> admin
+    | Error _ -> Guest
   else
     Contact.find_by_user database_label user
     ||> CCResult.to_opt

@@ -68,6 +68,9 @@ module Public = struct
             ; post "/request-reset-password" Login.request_reset_password_post
             ; get "/reset-password" Login.reset_password_get
             ; post "/reset-password" Login.reset_password_post
+            ; get "/import-pending" Import.import_pending
+            ; get "/import-confirmation" Import.import_confirmation
+            ; post "/import-confirmation" Import.import_confirmation_post
             ]
         ; choose
             ~middlewares:

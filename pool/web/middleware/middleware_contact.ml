@@ -1,6 +1,7 @@
 module Message = Http_utils.Message
 
 let[@warning "-4"] confirmed_and_terms_agreed () =
+  let open Http_utils in
   let filter handler req =
     let%lwt confirmed_and_terms_agreed =
       let open Utils.Lwt_result.Infix in
@@ -16,6 +17,12 @@ let[@warning "-4"] confirmed_and_terms_agreed () =
              | Admin _ | Guest -> Error error)
         |> Lwt_result.lift
       in
+      let import_closed contact =
+        let open Contact in
+        if contact.import_pending |> Pool_user.ImportPending.value
+        then Lwt_result.fail Pool_common.Message.ImportPending
+        else Lwt_result.return contact
+      in
       let is_confirmed contact =
         Lwt_result.lift
           (match contact.Contact.user.Sihl_user.confirmed with
@@ -29,7 +36,7 @@ let[@warning "-4"] confirmed_and_terms_agreed () =
         | false ->
           Lwt.return_error Pool_common.Message.(TermsAndConditionsNotAccepted)
       in
-      contact |> is_confirmed >>= terms_agreed
+      contact |> import_closed >>= is_confirmed >>= terms_agreed
     in
     let query_lang =
       Pool_context.find req
@@ -41,17 +48,20 @@ let[@warning "-4"] confirmed_and_terms_agreed () =
     | Ok _ -> handler req
     | Error Pool_common.Message.(NotFound Field.User)
     | Error Pool_common.Message.(NotFound Field.Contact) ->
-      Http_utils.invalid_session_redirect req query_lang
+      invalid_session_redirect req query_lang
     | Error Pool_common.Message.(TermsAndConditionsNotAccepted) ->
-      Http_utils.redirect_to_with_actions
-        (Http_utils.path_with_language query_lang "/termsandconditions")
+      redirect_to_with_actions
+        (path_with_language query_lang "/termsandconditions")
         [ Message.set
             ~error:[ Pool_common.Message.(TermsAndConditionsNotAccepted) ]
         ]
     | Error Pool_common.Message.ContactUnconfirmed ->
-      Http_utils.redirect_to
-        (Http_utils.path_with_language query_lang "/email-confirmation")
-    | _ -> Http_utils.invalid_session_redirect req query_lang
+      redirect_to (path_with_language query_lang "/email-confirmation")
+    | Error Pool_common.Message.ImportPending ->
+      redirect_to_with_actions
+        (path_with_language query_lang "/import-pending")
+        [ Sihl.Web.Session.set [ "user_id", "" ] ]
+    | _ -> invalid_session_redirect req query_lang
   in
   Rock.Middleware.create ~name:"contact.confirmed" ~filter
 ;;

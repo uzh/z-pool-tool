@@ -74,13 +74,13 @@ let create_persons db_label n_persons =
   let chunk_size = 100 in
   let sum = fold_left ( + ) 0 in
   let%lwt contacts =
-    Contact.find_all db_label ()
-    ||> fst %> map (Contact.email_address %> User.EmailAddress.value)
+    Contact.find_all db_label () ||> fst %> map Contact.email_address
   in
   let%lwt admins = Admin.find_all db_label () ||> map Admin.email in
   let flatten_filter_combine a b =
     let filter_existing =
-      filter (fun { email; _ } -> mem email (admins @ contacts) |> not)
+      filter (fun { email; _ } ->
+        mem (Pool_user.EmailAddress.of_string email) (admins @ contacts) |> not)
     in
     (flatten b |> filter_existing) @ a
     |> uniq ~eq:(fun p1 p2 -> CCString.equal p1.email p2.email)
@@ -142,6 +142,7 @@ let admins db_label =
     ]
   in
   let ctx = Pool_database.to_ctx db_label in
+  let tags = Pool_database.Logger.Tags.create db_label in
   let password =
     Sys.getenv_opt "POOL_ADMIN_DEFAULT_PASSWORD"
     |> CCOption.value ~default:"Password1!"
@@ -152,10 +153,23 @@ let admins db_label =
       match user with
       | None ->
         let%lwt admin =
-          Service.User.create_admin ~ctx ~name ~given_name ~password email
+          let open Pool_user in
+          let id = Admin.Id.create () in
+          let create =
+            { Admin.id = id |> CCOption.return
+            ; email = EmailAddress.of_string email
+            ; password = Password.create password |> CCResult.get_exn
+            ; firstname = Firstname.of_string given_name
+            ; lastname = Lastname.of_string name
+            ; roles = None
+            }
+          in
+          let%lwt () =
+            Admin.Created create |> Admin.handle_event ~tags db_label
+          in
+          Admin.find db_label id |> Lwt.map CCResult.get_exn
         in
         let%lwt (_ : Role.Actor.t Guard.Actor.t) =
-          let admin = admin |> Admin.create in
           let%lwt (_ : Role.Target.t Guard.Target.t) =
             admin |> Admin.Guard.Target.to_authorizable ~ctx ||> get_or_failwith
           in
@@ -165,7 +179,7 @@ let admins db_label =
           let open Guard in
           Persistence.Actor.grant_roles
             ~ctx
-            (Uuid.Actor.of_string_exn admin.Sihl_user.id)
+            (Uuid.Actor.of_string_exn Admin.(id admin |> Id.value))
             RoleSet.(CCList.fold_left (flip add) empty role)
           ||> CCResult.get_or_failwith
           ||> tap (fun _ -> Persistence.Cache.clear ())
