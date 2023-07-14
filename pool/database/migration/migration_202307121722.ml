@@ -17,8 +17,6 @@ let add_fk_contraint_to_contact_person_uuid =
     |sql}
 ;;
 
-(* Should I add a constraint?
-   https://stackoverflow.com/questions/3228161/could-i-make-a-column-in-a-table-only-allows-one-true-value-and-all-other-rows *)
 let add_default_flag_to_smtp_accounts =
   Sihl.Database.Migration.create_step
     ~label:"add default flag to smtp accounts"
