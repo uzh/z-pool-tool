@@ -8,19 +8,16 @@ let contact_id = HttpUtils.find_id Contact.Id.of_string Field.Contact
 
 let handle_tag action req =
   let tags = Pool_context.Logger.Tags.req req in
+  let contact_id = contact_id req in
   let path =
-    contact_id req |> Contact.Id.value |> Format.asprintf "/admin/contacts/%s"
+    contact_id |> Contact.Id.value |> Format.asprintf "/admin/contacts/%s"
   in
   let%lwt urlencoded =
     Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
   in
   let result { Pool_context.database_label; _ } =
     Lwt_result.map_error (fun err -> err, path)
-    @@ let* contact =
-         HttpUtils.get_field_router_param req Field.Contact
-         |> Pool_common.Id.of_string
-         |> Contact.find database_label
-       in
+    @@ let* contact = Contact.find database_label contact_id in
        let decode, handle, message =
          match action with
          | `Assign ->

@@ -108,7 +108,12 @@ module AssignTagToContact : sig
 end = struct
   type t = Tags.Id.t
 
-  let schema = Conformist.(make Field.[ Tags.Id.schema () ] CCFun.id)
+  let schema =
+    Conformist.(
+      make
+        Field.[ Tags.Id.schema ~field:Pool_common.Message.Field.Tag () ]
+        CCFun.id)
+  ;;
 
   let handle ?(tags = Logs.Tag.empty) contact (tag_uuid : t) =
     Logs.info ~src (fun m -> m "Handle command AssignTagToContact" ~tags);
@@ -148,7 +153,12 @@ module RemoveTagFromContact : sig
 end = struct
   type t = Tags.Id.t
 
-  let schema = Conformist.(make Field.[ Tags.Id.schema () ] CCFun.id)
+  let schema =
+    Conformist.(
+      make
+        Field.[ Tags.Id.schema ~field:Pool_common.Message.Field.Tag () ]
+        CCFun.id)
+  ;;
 
   let handle ?(tags = Logs.Tag.empty) contact (tag_uuid : t) =
     let open Tags in

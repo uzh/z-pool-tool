@@ -89,7 +89,8 @@ module Sql = struct
     Format.asprintf
       {sql|
         %s
-        WHERE guardianValidateTagUuid(guardianEncodeUuid(?), ?, pool_tags.uuid)
+        GROUP BY pool_tags.uuid
+        HAVING guardianValidateTagUuid(guardianEncodeUuid(?), ?, pool_tags.uuid)
       |sql}
       select_tag_sql
     |> Caqti_type.(tup2 Uuid.Actor.t Action.t) ->* t

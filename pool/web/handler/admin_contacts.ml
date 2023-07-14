@@ -43,6 +43,14 @@ let detail_view action req =
          |> create_layout req context
          >|+ Sihl.Web.Response.of_html
        | `Edit ->
+         let%lwt allowed_to_assign =
+           Guard.Persistence.validate
+             database_label
+             (Contact.id contact
+              |> Cqrs_command.Tags_command.AssignTagToContact.effects)
+             actor
+           ||> CCResult.is_ok
+         in
          let%lwt all_tags = Tags.find_all_validated database_label actor in
          let tenant_languages =
            Pool_context.Tenant.get_tenant_languages_exn req
@@ -54,6 +62,7 @@ let detail_view action req =
              (Contact.id contact)
          in
          Page.Admin.Contact.edit
+           ~allowed_to_assign
            context
            tenant_languages
            contact

@@ -71,8 +71,8 @@ let detail Pool_context.{ language; _ } contact tags =
           :: CCList.map
                (fun tag ->
                  div
-                   ~a:[ a_class [ "tag" ] ]
-                   Tags.[ tag.title |> Title.show |> txt ])
+                   ~a:[ a_class [ "tag"; "primary" ] ]
+                   Tags.[ tag.title |> Title.value |> txt ])
                tags)
          @ [ contact
              |> path
@@ -99,16 +99,18 @@ let tag_form
       (contact |> path |> Format.asprintf "%s/assign-tag")
   in
   let available =
-    CCList.(filter (flip (mem ~eq:Tags.equal) existing) available)
+    CCList.(filter (flip (mem ~eq:Tags.equal) existing %> not) available)
   in
   form
     ~a:[ a_method `Post; a_action action; a_class [ "stack" ] ]
     Input.
       [ csrf_element csrf ()
       ; selector
+          ~add_empty:true
+          ~option_formatter:Tags.(fun tag -> Title.value tag.title)
           language
           Pool_common.Message.Field.Tag
-          Tags.(fun tag -> Title.show tag.title)
+          Tags.(fun tag -> Id.value tag.id)
           available
           None
           ()
@@ -124,6 +126,7 @@ let tag_form
 ;;
 
 let edit
+  ?(allowed_to_assign = false)
   (Pool_context.{ language; csrf; query_language; user; _ } as context)
   tenant_languages
   contact
@@ -132,30 +135,38 @@ let edit
   available_tags
   =
   let is_admin = Pool_context.user_is_admin user in
+  let assign_tags =
+    if allowed_to_assign
+    then [ tag_form context ~existing:tags available_tags contact ]
+    else []
+  in
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
-    [ h1 ~a:[ a_class [ "heading-1" ] ] [ txt (Contact.fullname contact) ]
-    ; Page_contact_edit.personal_details_form
-        csrf
-        language
-        query_language
-        (Htmx.admin_profile_hx_post (Contact.id contact))
-        tenant_languages
-        contact
-        custom_fields
-        is_admin
-    ; tag_form context ~existing:tags available_tags contact
-    ; p
-        [ a
-            ~a:
-              [ a_href
-                  (Sihl.Web.externalize_path
-                     (Format.asprintf
-                        "/admin/contacts/%s"
-                        (contact |> Contact.id |> Pool_common.Id.value)))
-              ]
-            [ txt Pool_common.(Message.Back |> Utils.control_to_string language)
-            ]
-        ]
-    ]
+    ([ h1 ~a:[ a_class [ "heading-1" ] ] [ txt (Contact.fullname contact) ]
+     ; Page_contact_edit.personal_details_form
+         csrf
+         language
+         query_language
+         (Htmx.admin_profile_hx_post (Contact.id contact))
+         tenant_languages
+         contact
+         custom_fields
+         is_admin
+     ]
+     @ assign_tags
+     @ [ p
+           [ a
+               ~a:
+                 [ a_href
+                     (Sihl.Web.externalize_path
+                        (Format.asprintf
+                           "/admin/contacts/%s"
+                           (contact |> Contact.id |> Pool_common.Id.value)))
+                 ]
+               [ txt
+                   Pool_common.(
+                     Message.Back |> Utils.control_to_string language)
+               ]
+           ]
+       ])
 ;;
