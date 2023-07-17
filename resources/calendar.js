@@ -3,7 +3,7 @@ import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import listPlugin from '@fullcalendar/list';
 
-import { notifyUser, globalErrorMsg } from "./admin/utils"
+import { notifyUser } from "./admin/utils"
 const notificationId = "calendar-notification";
 
 const parseDate = (str) => new Date(Date.parse(str))
@@ -28,7 +28,8 @@ export const initCalendar = () => {
             },
             eventSources: [{
                 url: `/admin/locations/${location}/sessions`,
-                success: e => e.map(e => normalizeSession(e))
+                success: e => e.map(e => normalizeSession(e)),
+                failure: e => { notifyUser(notificationId, "error", e) }
             }]
         }).render();
     })
