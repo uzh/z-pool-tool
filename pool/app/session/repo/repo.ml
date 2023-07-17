@@ -533,18 +533,20 @@ module Sql = struct
   let find_for_calendar_by_location_request =
     let open Caqti_request.Infix in
     {sql|
-        pool_sessions.location_uuid = UNHEX(REPLACE(?, '-', ''))
+        pool_sessions.location_uuid = UNHEX(REPLACE($1, '-', ''))
         AND pool_sessions.canceled_at IS NULL
+        AND pool_sessions.start > $2
+        AND pool_sessions.start < $3
       |sql}
     |> select_for_calendar ~order_by:"pool_sessions.start"
-    |> Caqti_type.string ->* RepoEntity.Calendar.t
+    |> Caqti_type.(tup3 string ptime ptime ->* RepoEntity.Calendar.t)
   ;;
 
-  let find_for_calendar_by_location pool location_id =
+  let find_for_calendar_by_location ~start_time ~end_time pool location_id =
     Utils.Database.collect
       (Database.Label.value pool)
       find_for_calendar_by_location_request
-      (Pool_location.Id.value location_id)
+      (Pool_location.Id.value location_id, start_time, end_time)
   ;;
 end
 

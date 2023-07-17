@@ -278,7 +278,9 @@ val find_open_with_follow_ups
   -> (t list, Pool_common.Message.error) Lwt_result.t
 
 val find_for_calendar_by_location
-  :  Pool_database.Label.t
+  :  start_time:Ptime.t
+  -> end_time:Ptime.t
+  -> Pool_database.Label.t
   -> Pool_location.Id.t
   -> Calendar.t list Lwt.t
 
