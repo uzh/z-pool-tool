@@ -447,21 +447,8 @@ module Calendar = struct
       failwith
         Pool_common.(Message.ReadOnlyModel |> Utils.error_to_string Language.En)
     in
-    let decode
-      ( id
-      , ( title
-        , (start, (duration, (description, (assignment_count, canceled_at)))) )
-      )
-      =
-      Ok
-        { id
-        ; title
-        ; start
-        ; duration
-        ; description
-        ; assignment_count
-        ; canceled_at
-        }
+    let decode (id, (title, (start, (duration, (description, canceled_at))))) =
+      Ok { id; title; start; duration; description; canceled_at }
     in
     Caqti_type.(
       custom
@@ -473,8 +460,6 @@ module Calendar = struct
               Experiment.Repo.Entity.Title.t
               (tup2
                  ptime
-                 (tup2
-                    ptime_span
-                    (tup2 (option string) (tup2 int (option ptime))))))))
+                 (tup2 ptime_span (tup2 (option string) (option ptime)))))))
   ;;
 end

@@ -193,7 +193,6 @@ module Calendar : sig
     ; start : Start.t
     ; duration : Duration.t
     ; description : Description.t option
-    ; assignment_count : AssignmentCount.t
     ; canceled_at : CanceledAt.t option
     }
 

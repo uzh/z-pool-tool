@@ -23,15 +23,10 @@ module Sql = struct
         pool_sessions.start,
         pool_sessions.duration,
         pool_sessions.description,
-        COUNT(pool_assignments.id),
         pool_sessions.canceled_at
       FROM pool_sessions
       INNER JOIN pool_experiments
         ON pool_sessions.experiment_uuid = pool_experiments.uuid
-      LEFT JOIN pool_assignments
-        ON pool_assignments.session_uuid = pool_sessions.uuid
-        AND pool_assignments.canceled_at IS NULL
-        AND pool_assignments.marked_as_deleted = 0
       WHERE
         %s
         %s

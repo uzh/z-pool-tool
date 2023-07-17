@@ -395,7 +395,6 @@ module Calendar = struct
     ; start : Start.t
     ; duration : Duration.t
     ; description : Description.t option [@option]
-    ; assignment_count : AssignmentCount.t
     ; canceled_at : CanceledAt.t option [@option]
     }
   [@@deriving eq, show, yojson]
