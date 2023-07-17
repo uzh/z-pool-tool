@@ -20,6 +20,7 @@ export const initCalendar = () => {
         new Calendar(el, {
             plugins: [dayGridPlugin, timeGridPlugin, listPlugin],
             initialView: 'dayGridMonth',
+            firstDay: 1,
             headerToolbar: {
                 left: 'prev,next today',
                 center: 'title',
