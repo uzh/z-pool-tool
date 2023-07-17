@@ -11,7 +11,6 @@ const parseDate = (str) => new Date(Date.parse(str))
 const normalizeSession = (session) => {
     const start = parseDate(session.start);
     session.start = start;
-    session.end = start.setSeconds(start.getSeconds() + session.duration)
     return session
 }
 
@@ -26,11 +25,17 @@ export const initCalendar = () => {
                 center: 'title',
                 right: 'dayGridMonth,timeGridWeek,listWeek'
             },
+            eventTimeFormat: {
+                hour: "numeric",
+                minute: "2-digit",
+                meridiem: false,
+                hour12: false,
+            },
             eventSources: [{
                 url: `/admin/locations/${location}/sessions`,
                 success: e => e.map(e => normalizeSession(e)),
                 failure: e => { notifyUser(notificationId, "error", e) }
-            }]
+            }],
         }).render();
     })
 }
