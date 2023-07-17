@@ -525,6 +525,10 @@ let detail
                 ]
             ; location_details
             ]
+        ; Component.Calendar.create
+            [ a_user_data "calendar" "location"
+            ; a_user_data "location" (Id.value location.id)
+            ]
         ; FileList.create csrf language location
         ; SessionList.create language sessions
         ]

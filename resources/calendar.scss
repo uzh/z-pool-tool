@@ -1,0 +1,41 @@
+.fc {
+    [class*=grid-] {
+        gap: 0;
+    }
+
+    .fc-scrollgrid-liquid,
+    .fc-scrollgrid-section,
+    .fc-scrollgrid-section-header {
+        display: inherit;
+    }
+
+    table[class*=grid-],
+    .fc-daygrid-event-harness {
+        display: table;
+    }
+
+    tr[class*=grid-] {
+        display: table-row;
+    }
+
+    td[class*=grid-] {
+        display: table-cell;
+    }
+
+    .fc-daygrid-event {
+        display: block;
+    }
+
+    .fc-daygrid-dot-event {
+        display: flex;
+    }
+
+    .fc-daygrid-day-frame {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .fc-daygrid-day-events {
+        overflow-x: hidden;
+    }
+}

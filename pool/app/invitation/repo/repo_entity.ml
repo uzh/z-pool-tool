@@ -53,7 +53,7 @@ let t =
       (tup2
          Pool_common.Repo.Id.t
          (tup2
-            Experiment.Repo.Id.t
+            Experiment.Repo.Entity.Id.t
             (tup2
                Pool_common.Repo.Id.t
                (tup2

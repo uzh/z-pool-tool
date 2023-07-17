@@ -265,6 +265,21 @@ let delete req =
 
 let search = Helpers.Search.create `Location
 
+let sessions_api req =
+  let location_id =
+    HttpUtils.find_id Pool_location.Id.of_string Field.Location req
+  in
+  let result { Pool_context.database_label; _ } =
+    let open Utils.Lwt_result.Infix in
+    let%lwt sessions =
+      Session.find_for_calendar_by_location database_label location_id
+      ||> CCList.map Session.Calendar.yojson_of_t
+    in
+    `List sessions |> Lwt.return_ok
+  in
+  result |> HttpUtils.Json.handle_yojson_response ~src req
+;;
+
 module Access : sig
   include module type of Helpers.Access
 

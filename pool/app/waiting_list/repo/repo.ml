@@ -191,7 +191,7 @@ module Sql = struct
       FROM pool_waiting_list
       WHERE pool_waiting_list.uuid = UNHEX(REPLACE(?, '-', ''))
     |sql}
-    |> Pool_common.Repo.Id.t ->! Experiment.Repo.Id.t
+    |> Pool_common.Repo.Id.t ->! Experiment.Repo.Entity.Id.t
   ;;
 
   let find_experiment_id pool id =

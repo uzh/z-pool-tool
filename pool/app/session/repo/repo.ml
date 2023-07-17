@@ -5,6 +5,41 @@ let of_entity = RepoEntity.of_entity
 let to_entity = RepoEntity.to_entity
 
 module Sql = struct
+  let select_for_calendar ?order_by where =
+    let order_by =
+      order_by |> CCOption.map_or ~default:"" (Format.asprintf "ORDER BY %s")
+    in
+    Format.asprintf
+      {sql|
+      SELECT
+        LOWER(CONCAT(
+          SUBSTR(HEX(pool_sessions.uuid), 1, 8), '-',
+          SUBSTR(HEX(pool_sessions.uuid), 9, 4), '-',
+          SUBSTR(HEX(pool_sessions.uuid), 13, 4), '-',
+          SUBSTR(HEX(pool_sessions.uuid), 17, 4), '-',
+          SUBSTR(HEX(pool_sessions.uuid), 21)
+        )),
+        pool_experiments.title,
+        pool_sessions.start,
+        pool_sessions.duration,
+        pool_sessions.description,
+        COUNT(pool_assignments.id),
+        pool_sessions.canceled_at
+      FROM pool_sessions
+      INNER JOIN pool_experiments
+        ON pool_sessions.experiment_uuid = pool_experiments.uuid
+      LEFT JOIN pool_assignments
+        ON pool_assignments.session_uuid = pool_sessions.uuid
+        AND pool_assignments.canceled_at IS NULL
+        AND pool_assignments.marked_as_deleted = 0
+      WHERE
+        %s
+        %s
+    |sql}
+      where
+      order_by
+  ;;
+
   let find_sql ?order_by where =
     let order_by =
       order_by |> CCOption.map_or ~default:"" (Format.asprintf "ORDER BY %s")
@@ -295,7 +330,7 @@ module Sql = struct
         ON pool_experiments.uuid = pool_sessions.experiment_uuid
       WHERE pool_sessions.uuid = UNHEX(REPLACE(?, '-', ''))
     |sql}
-    |> Caqti_type.(string ->! tup2 Experiment.Repo.Id.t string)
+    |> Caqti_type.(string ->! tup2 Experiment.Repo.Entity.Id.t string)
   ;;
 
   let find_experiment_id_and_title pool id =
@@ -499,6 +534,23 @@ module Sql = struct
       delete_request
       (Pool_common.Id.value id)
   ;;
+
+  let find_for_calendar_by_location_request =
+    let open Caqti_request.Infix in
+    {sql|
+        pool_sessions.location_uuid = UNHEX(REPLACE(?, '-', ''))
+        AND pool_sessions.canceled_at IS NULL
+      |sql}
+    |> select_for_calendar ~order_by:"pool_sessions.start"
+    |> Caqti_type.string ->* RepoEntity.Calendar.t
+  ;;
+
+  let find_for_calendar_by_location pool location_id =
+    Utils.Database.collect
+      (Database.Label.value pool)
+      find_for_calendar_by_location_request
+      (Pool_location.Id.value location_id)
+  ;;
 end
 
 let location_to_repo_entity pool session =
@@ -609,3 +661,4 @@ let find_sessions_to_remind pool =
 let insert = Sql.insert
 let update = Sql.update
 let delete = Sql.delete
+let find_for_calendar_by_location = Sql.find_for_calendar_by_location

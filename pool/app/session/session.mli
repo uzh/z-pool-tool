@@ -95,6 +95,10 @@ module CancellationReason : sig
   include Pool_common.Model.StringSig
 end
 
+module CanceledAt : sig
+  include Pool_common.Model.PtimeSig
+end
+
 type t =
   { id : Id.t
   ; follow_up_to : Id.t option
@@ -181,6 +185,24 @@ module Public : sig
 end
 
 val to_public : t -> Public.t
+
+module Calendar : sig
+  type t =
+    { id : Id.t
+    ; title : Experiment.Title.t
+    ; start : Start.t
+    ; duration : Duration.t
+    ; description : Description.t option
+    ; assignment_count : AssignmentCount.t
+    ; canceled_at : CanceledAt.t option
+    }
+
+  val equal : t -> t -> bool
+  val pp : Format.formatter -> t -> unit
+  val show : t -> string
+  val yojson_of_t : t -> Yojson.Safe.t
+end
+
 val group_and_sort : t list -> (t * t list) list
 val is_cancellable : t -> (unit, Pool_common.Message.error) result
 val is_closable : t -> (unit, Pool_common.Message.error) result
@@ -255,6 +277,11 @@ val find_open_with_follow_ups
   :  Pool_database.Label.t
   -> Id.t
   -> (t list, Pool_common.Message.error) Lwt_result.t
+
+val find_for_calendar_by_location
+  :  Pool_database.Label.t
+  -> Pool_location.Id.t
+  -> Calendar.t list Lwt.t
 
 val to_email_text : Pool_common.Language.t -> t -> string
 val follow_up_sessions_to_email_list : t list -> string

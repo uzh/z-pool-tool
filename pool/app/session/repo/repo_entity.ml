@@ -438,3 +438,43 @@ module Public = struct
                              (tup2 int (tup2 int (tup2 int (option ptime))))))))))))
   ;;
 end
+
+module Calendar = struct
+  include Entity.Calendar
+
+  let t =
+    let encode (_ : t) =
+      failwith
+        Pool_common.(Message.ReadOnlyModel |> Utils.error_to_string Language.En)
+    in
+    let decode
+      ( id
+      , ( title
+        , (start, (duration, (description, (assignment_count, canceled_at)))) )
+      )
+      =
+      Ok
+        { id
+        ; title
+        ; start
+        ; duration
+        ; description
+        ; assignment_count
+        ; canceled_at
+        }
+    in
+    Caqti_type.(
+      custom
+        ~encode
+        ~decode
+        (tup2
+           RepoId.t
+           (tup2
+              Experiment.Repo.Entity.Title.t
+              (tup2
+                 ptime
+                 (tup2
+                    ptime_span
+                    (tup2 (option string) (tup2 int (option ptime))))))))
+  ;;
+end

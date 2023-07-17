@@ -40,7 +40,7 @@ module ParticipantAmount = struct
 end
 
 module Start = struct
-  type t = Ptime.t [@@deriving eq, show]
+  include Pool_common.Model.Ptime
 
   let create m = m
   let value m = m
@@ -70,7 +70,9 @@ module Duration = struct
 end
 
 module AssignmentCount = struct
-  type t = int [@@deriving eq, show]
+  open Ppx_yojson_conv_lib.Yojson_conv
+
+  type t = int [@@deriving eq, show, yojson]
 
   let value m = m
 
@@ -115,6 +117,13 @@ module CancellationReason = struct
   ;;
 
   let schema = schema ?validation:(Some validate) field
+end
+
+module CanceledAt = struct
+  include Pool_common.Model.Ptime
+
+  let create m = Ok m
+  let schema = schema Pool_common.Message.Field.CanceledAt create
 end
 
 type t =
@@ -378,6 +387,19 @@ let to_public
     ; canceled_at
     }
 ;;
+
+module Calendar = struct
+  type t =
+    { id : Id.t
+    ; title : Experiment.Title.t
+    ; start : Start.t
+    ; duration : Duration.t
+    ; description : Description.t option [@option]
+    ; assignment_count : AssignmentCount.t
+    ; canceled_at : CanceledAt.t option [@option]
+    }
+  [@@deriving eq, show, yojson]
+end
 
 let email_text language start duration location =
   let format label text =
