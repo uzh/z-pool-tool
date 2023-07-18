@@ -56,6 +56,18 @@ module Start = struct
   ;;
 end
 
+module End = struct
+  include Pool_common.Model.Ptime
+
+  let create start duration =
+    duration
+    |> Ptime.add_span start
+    |> CCOption.to_result Pool_common.Message.(Invalid Field.Duration)
+  ;;
+
+  let value m = m
+end
+
 module Duration = struct
   include Pool_common.Model.PtimeSpan
 
@@ -393,7 +405,7 @@ module Calendar = struct
     { id : Id.t
     ; title : Experiment.Title.t
     ; start : Start.t
-    ; duration : Duration.t
+    ; end_ : End.t
     ; description : Description.t option [@option]
     ; canceled_at : CanceledAt.t option [@option]
     }

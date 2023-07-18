@@ -30,6 +30,10 @@ module Start : sig
   val create : Ptime.t -> t
 end
 
+module End : sig
+  type t
+end
+
 module Duration : sig
   include Pool_common.Model.BaseSig
 
@@ -191,7 +195,7 @@ module Calendar : sig
     { id : Id.t
     ; title : Experiment.Title.t
     ; start : Start.t
-    ; duration : Duration.t
+    ; end_ : End.t
     ; description : Description.t option
     ; canceled_at : CanceledAt.t option
     }

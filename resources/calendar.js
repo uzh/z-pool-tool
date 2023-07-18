@@ -2,17 +2,20 @@ import { Calendar } from '@fullcalendar/core';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import listPlugin from '@fullcalendar/list';
-
 import { notifyUser } from "./admin/utils"
+
 const notificationId = "calendar-notification";
 
-const parseDate = (str) => new Date(Date.parse(str))
+const viewBreakpoint = 765
+const maxHeight = 800
 
 const normalizeSession = (session) => {
-    const start = parseDate(session.start);
-    session.start = start;
+    session.end = session.end_
+    delete session.end_
     return session
 }
+
+const determineView = () => window.innerWidth >= viewBreakpoint ? "dayGridMonth" : "listWeek";
 
 export const initCalendar = () => {
     document.querySelectorAll("[data-calendar]").forEach(el => {
@@ -21,6 +24,7 @@ export const initCalendar = () => {
             plugins: [dayGridPlugin, timeGridPlugin, listPlugin],
             initialView: 'dayGridMonth',
             firstDay: 1,
+            height: maxHeight,
             headerToolbar: {
                 left: 'prev,next today',
                 center: 'title',
@@ -37,6 +41,10 @@ export const initCalendar = () => {
                 success: e => e.map(e => normalizeSession(e)),
                 failure: e => { notifyUser(notificationId, "error", e) }
             }],
+            initialView: determineView(),
+            windowResize: function () {
+                this.changeView(determineView())
+            },
         }).render();
     })
 }

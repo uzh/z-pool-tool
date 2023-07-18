@@ -441,6 +441,7 @@ end
 
 module Calendar = struct
   include Entity.Calendar
+  open CCResult.Infix
 
   let t =
     let encode (_ : t) =
@@ -448,7 +449,11 @@ module Calendar = struct
         Pool_common.(Message.ReadOnlyModel |> Utils.error_to_string Language.En)
     in
     let decode (id, (title, (start, (duration, (description, canceled_at))))) =
-      Ok { id; title; start; duration; description; canceled_at }
+      let* end_ =
+        Entity.End.create start duration
+        |> CCResult.map_err Pool_common.(Utils.error_to_string Language.En)
+      in
+      Ok { id; title; start; end_; description; canceled_at }
     in
     Caqti_type.(
       custom

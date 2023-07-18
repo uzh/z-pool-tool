@@ -38,4 +38,17 @@
     .fc-daygrid-day-events {
         overflow-x: hidden;
     }
+
+    .fc-toolbar-title {
+        @extend .heading-3
+    }
+}
+
+:root {
+    --fc-button-bg-color: #{$color-primary};
+    --fc-button-border-color: #{$color-primary-dark};
+    --fc-button-hover-bg-color: #{$color-primary-light};
+    --fc-button-hover-border-color: #{$color-primary-dark};
+    --fc-button-active-bg-color: #{$color-primary-light};
+    --fc-button-active-border-color: #{$color-primary-dark};
 }
