@@ -230,7 +230,6 @@ module Admin = struct
         ; choose
             ~scope:(add_key ~prefix:"mapping" FileMapping)
             [ post "/delete" ~middlewares:[ Access.delete_file ] delete ]
-          (* TODO: API Namespace? *)
         ; get "/sessions" ~middlewares:[ Access.index ] sessions_api
         ]
       in
