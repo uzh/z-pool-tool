@@ -197,13 +197,7 @@ module Ptime = struct
   let value m = m
   let create_now = Ptime_clock.now
   let to_human = Utils.Ptime.formatted_date_time
-
-  let date_time_to_flatpickr t =
-    t
-    |> Ptime.to_rfc3339
-    |> CCString.split_on_char '-'
-    |> fun lst -> CCList.take (CCList.length lst - 1) lst |> CCString.concat "-"
-  ;;
+  let date_time_to_flatpickr = Ptime.to_rfc3339
 
   (* Date *)
   let equal_date (y1, m1, d1) (y2, m2, d2) =
