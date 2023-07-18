@@ -21,6 +21,7 @@
   pool_event
   pool_location
   pool_tenant
+  tags
   tenant
   utils
   waiting_list)

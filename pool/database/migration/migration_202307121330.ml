@@ -20,7 +20,16 @@ let create_tagging_table =
   Sihl.Database.Migration.create_step
     ~label:"create tagging table"
     {sql|
-`)
+      CREATE TABLE IF NOT EXISTS pool_tagging (
+        `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+        `model` varchar(255) NOT NULL,
+        `model_uuid` binary(16) NOT NULL,
+        `tag_uuid` binary(16) NOT NULL,
+        `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      PRIMARY KEY (id),
+      UNIQUE KEY `unique_model_uuid_tag` (`model`, `model_uuid`, `tag_uuid`),
+      FOREIGN KEY (tag_uuid) REFERENCES pool_tags(uuid)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     |sql}
 ;;

@@ -269,6 +269,14 @@ let suite =
               `Slow
               DeleteUnattended.delete_main
           ] )
+    ; ( "tagging"
+      , Tag_test.
+          [ test_case "create tag" `Slow create_persistent
+          ; test_case "create duplicate tag" `Slow create_persistent_fail
+          ; test_case "update tag" `Slow update_persistent
+          ; test_case "assign tag to contact" `Slow assign_tag_to_contact
+          ; test_case "remove tag from contact" `Slow remove_tag_from_contact
+          ] )
     ; "cleanup", [ test_case "clean up test database" `Quick Seed.cleanup ]
     ; ( "user import"
       , User_import_test.
