@@ -152,3 +152,92 @@ let get_templates_in_multile_languages _ () =
   in
   Lwt.return_unit
 ;;
+
+module MessageTemplateData = struct
+  let experiment_id = Experiment.Id.create ()
+  let admin_id = Admin.Id.create ()
+  let contact_id = Contact.Id.create ()
+  let session_id = Session.Id.create ()
+  let database_label = Test_utils.Data.database_label
+
+  let admin_email =
+    Format.asprintf "admin+%s@econ.uzh.ch" (Uuidm.v `V4 |> Uuidm.to_string)
+  ;;
+
+  let get_exn = Test_utils.get_or_failwith_pool_error
+
+  let initialize () =
+    let open Integration_utils in
+    let%lwt admin = AdminRepo.create ~id:admin_id ~email:admin_email () in
+    let%lwt experiment = ExperimentRepo.create ~id:experiment_id () in
+    let%lwt (_ : Contact.t) = ContactRepo.create ~id:contact_id () in
+    let open Experiment in
+    Updated { experiment with contact_person_id = Some (Admin.id admin) }
+    |> handle_event database_label
+  ;;
+end
+
+let experiment_invitation_with_sender _ () =
+  let open Utils.Lwt_result.Infix in
+  let open MessageTemplateData in
+  let%lwt () =
+    let%lwt () = initialize () in
+    let%lwt tenant = Pool_tenant.find_by_label database_label ||> get_exn in
+    let%lwt experiment =
+      Experiment.find database_label experiment_id ||> get_exn
+    in
+    let%lwt contact = Contact.find database_label contact_id ||> get_exn in
+    let%lwt create_message =
+      Message_template.ExperimentInvitation.prepare tenant experiment
+    in
+    let events =
+      let open Cqrs_command.Invitation_command.Create in
+      { experiment
+      ; contacts = [ contact ]
+      ; invited_contacts = []
+      ; create_message
+      }
+      |> handle
+      |> get_exn
+    in
+    let[@warning "-4"] res =
+      match events with
+      | [ Pool_event.Invitation _
+        ; Pool_event.Email (Email.BulkSent [ (email, _) ])
+        ; Pool_event.Contact _
+        ] -> email.Sihl_email.sender
+      | _ -> failwith "Event missmatch"
+    in
+    Alcotest.(check string "succeeds" admin_email res);
+    events |> Pool_event.handle_events database_label
+  in
+  Lwt.return_unit
+;;
+
+let assignment_creation_with_sender _ () =
+  let open Utils.Lwt_result.Infix in
+  let open MessageTemplateData in
+  let%lwt () =
+    let%lwt tenant = Pool_tenant.find_by_label database_label ||> get_exn in
+    let%lwt contact = Contact.find database_label contact_id ||> get_exn in
+    let%lwt session =
+      Integration_utils.SessionRepo.create ~id:session_id experiment_id ()
+      ||> Test_utils.Model.session_to_public_session
+    in
+    let%lwt admin = Admin.find database_label admin_id ||> get_exn in
+    let%lwt confirmation_email =
+      let%lwt language = Contact.message_language database_label contact in
+      Message_template.AssignmentConfirmation.create_from_public_session
+        database_label
+        language
+        tenant
+        [ session ]
+        contact
+        (Some admin)
+    in
+    Alcotest.(
+      check string "succeeds" admin_email confirmation_email.Sihl_email.sender)
+    |> Lwt.return
+  in
+  Lwt.return_unit
+;;

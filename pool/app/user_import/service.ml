@@ -26,7 +26,7 @@ let run database_label =
   let make_events (messages, events) (contact, import) event_fnc =
     let message = import_message contact import.Entity.token in
     let event = event_fnc import in
-    message :: messages, event :: events
+    (message, None) :: messages, event :: events
   in
   let rec folder limit tasks events =
     if limit <= 0

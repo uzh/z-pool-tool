@@ -12,7 +12,7 @@ val sexp_of_t : t -> Sexplib0.Sexp.t
 val user : t -> Sihl_user.t
 val create : Sihl_user.t -> t
 val id : t -> Id.t
-val email : t -> Pool_user.EmailAddress.t
+val email_address : t -> Pool_user.EmailAddress.t
 val full_name : t -> string
 
 type create =
@@ -132,6 +132,10 @@ end
 
 module Repo : sig
   module Entity : sig
+    module Id : sig
+      val t : Id.t Caqti_type.t
+    end
+
     val t : t Caqti_type.t
   end
 

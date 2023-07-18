@@ -57,8 +57,8 @@ let pp_verification_event formatter (event : verification_event) : unit =
 ;;
 
 type event =
-  | Sent of Sihl_email.t
-  | BulkSent of Sihl_email.t list
+  | Sent of (Sihl_email.t * SmtpAuth.Id.t option)
+  | BulkSent of (Sihl_email.t * SmtpAuth.Id.t option) list
   | SmtpCreated of SmtpAuth.Write.t
   | SmtpEdited of SmtpAuth.t
   | SmtpPasswordEdited of SmtpAuth.update_password
@@ -77,14 +77,11 @@ let handle_event pool : event -> unit Lwt.t = function
       ||> get_or_failwith
       ||> fun (_ : Role.Target.t Guard.Target.t) -> ()
     in
-    let () = Email_service.remove_from_cache pool in
     Lwt.return_unit
   | SmtpEdited updated ->
     let%lwt () = Repo.Smtp.update pool updated in
-    let () = Email_service.remove_from_cache pool in
     Lwt.return_unit
   | SmtpPasswordEdited updated_password ->
     let%lwt () = Repo.Smtp.update_password pool updated_password in
-    let () = Email_service.remove_from_cache pool in
     Lwt.return_unit
 ;;

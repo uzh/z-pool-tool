@@ -16,11 +16,17 @@ end
 let validate_email _ () =
   let open Email.Service in
   let open Smtp in
-  let email =
-    Data.create_email () |> intercept_prepare |> CCResult.get_or_failwith
+  let email = Data.create_email () in
+  let smtp_auth_id = None in
+  let { Email.email; _ } =
+    Email.{ email; smtp_auth_id }
+    |> intercept_prepare
+    |> Test_utils.get_or_failwith_pool_error
   in
   let msg = "Missing 'TEST_EMAIL' env variable." in
-  let%lwt { subject; _ } = prepare Test_utils.Data.database_label email in
+  let%lwt { subject; _ } =
+    prepare ?smtp_auth_id Test_utils.Data.database_label email
+  in
   Alcotest.(
     check
       string

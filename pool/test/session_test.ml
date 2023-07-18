@@ -537,6 +537,7 @@ let create_cancellation_text_message
 let cancel_no_reason () =
   let open CCResult.Infix in
   let session = Model.create_session () in
+  let experiment = Model.create_experiment () in
   let contact1 = Model.create_contact () in
   let contact2 = Model.create_contact () in
   let contacts = [ contact1; contact2 ] in
@@ -550,6 +551,7 @@ let cancel_no_reason () =
       |> decode
       >>= handle
             [ session ]
+            experiment
             assignments
             create_cancellation_message
             create_cancellation_text_message
@@ -565,6 +567,7 @@ let cancel_no_reason () =
 let cancel_no_message_channels () =
   let open CCResult.Infix in
   let session = Model.create_session () in
+  let experiment = Model.create_experiment () in
   let contact1 = Model.create_contact () in
   let contact2 = Model.create_contact () in
   let contacts = [ contact1; contact2 ] in
@@ -578,6 +581,7 @@ let cancel_no_message_channels () =
       |> decode
       >>= handle
             [ session ]
+            experiment
             assignments
             create_cancellation_message
             create_cancellation_text_message
@@ -600,6 +604,7 @@ let cancel_in_past () =
           |> Start.create
       }
   in
+  let experiment = Model.create_experiment () in
   let contact1 = Model.create_contact () in
   let contact2 = Model.create_contact () in
   let contacts = [ contact1; contact2 ] in
@@ -613,6 +618,7 @@ let cancel_in_past () =
       |> decode
       >>= handle
             [ session ]
+            experiment
             assignments
             create_cancellation_message
             create_cancellation_text_message
@@ -627,6 +633,7 @@ let cancel_already_canceled () =
   let session =
     Session.{ (Model.create_session ()) with canceled_at = Some now }
   in
+  let experiment = Model.create_experiment () in
   let contact1 = Model.create_contact () in
   let contact2 = Model.create_contact () in
   let contacts = [ contact1; contact2 ] in
@@ -640,6 +647,7 @@ let cancel_already_canceled () =
       |> decode
       >>= handle
             [ session ]
+            experiment
             assignments
             create_cancellation_message
             create_cancellation_text_message
@@ -656,6 +664,7 @@ let cancel_already_canceled () =
 let cancel_valid () =
   let open CCResult.Infix in
   let session1 = Model.create_session () in
+  let experiment = Model.create_experiment () in
   let contact1 = Model.create_contact () in
   let contact2 = Model.create_contact () in
   let contacts = [ contact1; contact2 ] in
@@ -677,6 +686,7 @@ let cancel_valid () =
       |> decode
       >>= handle
             [ session1 ]
+            experiment
             assignments
             create_cancellation_message
             create_cancellation_text_message
@@ -689,6 +699,8 @@ let cancel_valid () =
            (reason |> Session.CancellationReason.of_string)
            contact
          |> Test_utils.get_or_failwith_pool_error
+         |> fun msg ->
+         (msg, experiment.Experiment.smtp_auth_id)
          |> Email.sent
          |> Pool_event.email)
   in
@@ -715,6 +727,7 @@ let cancel_valid () =
       |> decode
       >>= handle
             [ session2 ]
+            experiment
             assignments
             create_cancellation_message
             create_cancellation_text_message
@@ -741,6 +754,7 @@ let cancel_valid () =
 let cancel_valid_with_missing_cell_phone () =
   let open CCResult.Infix in
   let session = Model.create_session () in
+  let experiment = Model.create_experiment () in
   let contact1 = Model.create_contact () in
   let contact2 = Contact.{ (Model.create_contact ()) with cell_phone = None } in
   let contacts = [ contact1; contact2 ] in
@@ -773,6 +787,8 @@ let cancel_valid_with_missing_cell_phone () =
         (reason |> Session.CancellationReason.of_string)
         contact2
       |> Test_utils.get_or_failwith_pool_error
+      |> fun msg ->
+      (msg, experiment.Experiment.smtp_auth_id)
       |> Email.sent
       |> Pool_event.email
     in
@@ -784,6 +800,7 @@ let cancel_valid_with_missing_cell_phone () =
       |> decode
       >>= handle
             [ session ]
+            experiment
             assignments
             create_cancellation_message
             create_cancellation_text_message
@@ -801,6 +818,7 @@ let cancel_with_email_and_text_notification () =
   let open CCResult.Infix in
   let session = Model.create_session () in
   let contact1 = Model.create_contact () in
+  let experiment = Model.create_experiment () in
   let contact2 = Contact.{ (Model.create_contact ()) with cell_phone = None } in
   let contacts = [ contact1; contact2 ] in
   let assignments =
@@ -821,6 +839,8 @@ let cancel_with_email_and_text_notification () =
         (reason |> Session.CancellationReason.of_string)
         contact
       |> Test_utils.get_or_failwith_pool_error
+      |> fun msg ->
+      (msg, experiment.Experiment.smtp_auth_id)
       |> Email.sent
       |> Pool_event.email
     in
@@ -845,6 +865,7 @@ let cancel_with_email_and_text_notification () =
       |> decode
       >>= handle
             [ session ]
+            experiment
             assignments
             create_cancellation_message
             create_cancellation_text_message
@@ -1002,6 +1023,7 @@ let send_reminder () =
       Session.start = Data.Validated.start1
     }
   in
+  let experiment = Model.create_experiment () in
   let users =
     CCList.range 1 4
     |> CCList.map (fun i ->
@@ -1013,12 +1035,16 @@ let send_reminder () =
   in
   let res =
     SessionC.SendReminder.handle
-      [ session1, CCList.take 2 users; session2, CCList.drop 2 users ]
+      [ session1, experiment, CCList.take 2 users
+      ; session2, experiment, CCList.drop 2 users
+      ]
   in
+  let smtp_auth_id = experiment.Experiment.smtp_auth_id in
   check_result
     (Ok
        (CCList.flat_map
           (fun (s, es) ->
+            let es = es |> CCList.map (fun email -> email, smtp_auth_id) in
             [ Pool_event.session (Session.ReminderSent s)
             ; Pool_event.email (Email.BulkSent es)
             ])
@@ -1277,6 +1303,7 @@ let update_follow_ups_later () =
 
 let reschedule_to_past () =
   let session = Test_utils.Model.create_session () in
+  let experiment = Model.create_experiment () in
   let create_message _ _ _ =
     Test_utils.Model.create_email () |> CCResult.return
   in
@@ -1290,9 +1317,45 @@ let reschedule_to_past () =
       }
   in
   let events =
-    SessionC.Reschedule.handle [] session [] create_message command
+    SessionC.Reschedule.handle [] session [] experiment create_message command
   in
   let expected = Error Pool_common.Message.TimeInPast in
+  Test_utils.check_result expected events
+;;
+
+let reschedule_with_experiment_smtp () =
+  let session = Test_utils.Model.create_session () in
+  let experiment = Model.create_experiment () in
+  let smtp_auth_id = Email.SmtpAuth.Id.create () in
+  let experiment =
+    Experiment.{ experiment with smtp_auth_id = Some smtp_auth_id }
+  in
+  let assignment = Test_utils.Model.create_assignment () in
+  let create_message _ _ _ =
+    Test_utils.Model.create_email () |> CCResult.return
+  in
+  let command =
+    Session.
+      { start = Test_utils.Model.in_two_hours ()
+      ; duration = session.Session.duration
+      }
+  in
+  let events =
+    SessionC.Reschedule.handle
+      []
+      session
+      [ assignment ]
+      experiment
+      create_message
+      command
+  in
+  let expected =
+    Ok
+      [ Session.Rescheduled (session, command) |> Pool_event.session
+      ; Email.BulkSent [ Test_utils.Model.create_email (), Some smtp_auth_id ]
+        |> Pool_event.email
+      ]
+  in
   Test_utils.check_result expected events
 ;;
 

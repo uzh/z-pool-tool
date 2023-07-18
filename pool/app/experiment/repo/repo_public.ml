@@ -160,8 +160,7 @@ let find_past_experiments_by_contact pool contact =
     (Contact.id contact)
 ;;
 
-let find_request =
-  let open Caqti_request.Infix in
+let where_contact_can_access =
   let id_fragment = "pool_experiments.uuid = UNHEX(REPLACE($2, '-', ''))" in
   {sql| pool_invitations.contact_uuid = UNHEX(REPLACE($1, '-', '')) |sql}
   |> Format.asprintf
@@ -170,6 +169,11 @@ let find_request =
        id_fragment
        condition_registration_not_disabled
        condition_allow_uninvited_signup
+;;
+
+let find_request =
+  let open Caqti_request.Infix in
+  where_contact_can_access
   |> select_from_experiments_sql
   |> Caqti_type.(tup2 string string) ->! RepoEntity.Public.t
 ;;
@@ -179,6 +183,22 @@ let find pool id contact =
   Utils.Database.find_opt
     (Pool_database.Label.value pool)
     find_request
+    Pool_common.Id.(Contact.id contact |> value, id |> value)
+  ||> CCOption.to_result Pool_common.Message.(NotFound Field.Experiment)
+;;
+
+let find_full_by_contact_request =
+  let open Caqti_request.Infix in
+  where_contact_can_access
+  |> Repo.Sql.select_from_experiments_sql
+  |> Caqti_type.(tup2 string string) ->! RepoEntity.t
+;;
+
+let find_full_by_contact pool id contact =
+  let open Utils.Lwt_result.Infix in
+  Utils.Database.find_opt
+    (Pool_database.Label.value pool)
+    find_full_by_contact_request
     Pool_common.Id.(Contact.id contact |> value, id |> value)
   ||> CCOption.to_result Pool_common.Message.(NotFound Field.Experiment)
 ;;

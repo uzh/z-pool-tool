@@ -194,7 +194,8 @@ module Smtp = struct
             username,
             %s
             mechanism,
-            protocol
+            protocol,
+            default_account
           FROM pool_smtp
         |sql}
         with_password_fragment
@@ -222,20 +223,47 @@ module Smtp = struct
     |> Caqti_type.string ->! RepoEntity.SmtpAuth.t
   ;;
 
+  let find_by_label pool label =
+    Utils.Database.find_opt
+      (Database.Label.value pool)
+      find_by_label_request
+      (Entity.SmtpAuth.Label.value label)
+  ;;
+
+  let find_full_request =
+    let open Caqti_request.Infix in
+    {sql|WHERE uuid = UNHEX(REPLACE(?, '-', ''))|sql}
+    |> select_smtp_sql ~with_password:true
+    |> RepoEntity.SmtpAuth.(Id.t ->! Write.t)
+  ;;
+
+  let find_full pool id =
+    let open Utils.Lwt_result.Infix in
+    Utils.Database.find_opt (Database.Label.value pool) find_full_request id
+    ||> CCOption.to_result Pool_common.Message.(NotFound Field.Smtp)
+  ;;
+
+  let find_full_default_request =
+    let open Caqti_request.Infix in
+    {sql|WHERE default_account = 1|sql}
+    |> select_smtp_sql ~with_password:true
+    |> Caqti_type.unit ->! RepoEntity.SmtpAuth.Write.t
+  ;;
+
+  let find_full_default pool =
+    let open Utils.Lwt_result.Infix in
+    Utils.Database.find_opt
+      (Database.Label.value pool)
+      find_full_default_request
+      ()
+    ||> CCOption.to_result Pool_common.Message.(NotFound Field.Smtp)
+  ;;
+
   let find_full_by_label_request =
     let open Caqti_request.Infix in
     {sql|WHERE label = ?|sql}
     |> select_smtp_sql ~with_password:true
     |> Caqti_type.string ->! RepoEntity.SmtpAuth.Write.t
-  ;;
-
-  let find_by_label pool label =
-    let open Utils.Lwt_result.Infix in
-    Utils.Database.find_opt
-      (Database.Label.value pool)
-      find_by_label_request
-      (Entity.SmtpAuth.Label.value label)
-    ||> CCOption.to_result Pool_common.Message.(NotFound Field.Smtp)
   ;;
 
   let find_full_by_label pool label =
@@ -245,6 +273,48 @@ module Smtp = struct
       find_full_by_label_request
       (Entity.SmtpAuth.Label.value label)
     ||> CCOption.to_result Pool_common.Message.(NotFound Field.Smtp)
+  ;;
+
+  let find_default_request =
+    let open Caqti_request.Infix in
+    {sql|
+      WHERE default_account = 1
+      LIMIT 1
+    |sql}
+    |> select_smtp_sql
+    |> Caqti_type.unit ->! RepoEntity.SmtpAuth.t
+  ;;
+
+  let find_default_opt pool =
+    Utils.Database.find_opt (Database.Label.value pool) find_default_request ()
+  ;;
+
+  let find_default pool =
+    let open Utils.Lwt_result.Infix in
+    pool
+    |> find_default_opt
+    ||> CCOption.to_result Pool_common.Message.(NotFound Field.Smtp)
+  ;;
+
+  let find_all_request =
+    let open Caqti_request.Infix in
+    "" |> select_smtp_sql |> Caqti_type.unit ->* RepoEntity.SmtpAuth.t
+  ;;
+
+  let find_all pool =
+    Utils.Database.collect (Pool_database.Label.value pool) find_all_request ()
+  ;;
+
+  let unset_default_flags pool =
+    let open Caqti_request.Infix in
+    let request =
+      {sql|
+        UPDATE pool_smtp
+          SET default_account = 0
+      |sql}
+      |> Caqti_type.(unit ->. unit)
+    in
+    Utils.Database.exec (Database.Label.value pool) request
   ;;
 
   let insert_request =
@@ -258,9 +328,11 @@ module Smtp = struct
         username,
         password,
         mechanism,
-        protocol
+        protocol,
+        default_account
       ) VALUES (
         UNHEX(REPLACE(?, '-', '')),
+        ?,
         ?,
         ?,
         ?,
@@ -273,8 +345,13 @@ module Smtp = struct
     |> RepoEntity.SmtpAuth.Write.t ->. Caqti_type.unit
   ;;
 
-  let insert pool =
-    Utils.Database.exec (Database.Label.value pool) insert_request
+  let insert pool t =
+    let%lwt () =
+      match t.SmtpAuth.Write.default with
+      | true -> unset_default_flags pool ()
+      | false -> Lwt.return ()
+    in
+    Utils.Database.exec (Database.Label.value pool) insert_request t
   ;;
 
   let update_request =
@@ -287,15 +364,21 @@ module Smtp = struct
         port = $4,
         username = $5,
         mechanism = $6,
-        protocol = $7
+        protocol = $7,
+        default_account = $8
       WHERE
         uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}
     |> RepoEntity.SmtpAuth.t ->. Caqti_type.unit
   ;;
 
-  let update pool =
-    Utils.Database.exec (Database.Label.value pool) update_request
+  let update pool t =
+    let%lwt () =
+      match t.SmtpAuth.default with
+      | true -> unset_default_flags pool ()
+      | false -> Lwt.return ()
+    in
+    Utils.Database.exec (Database.Label.value pool) update_request t
   ;;
 
   let update_password_request =

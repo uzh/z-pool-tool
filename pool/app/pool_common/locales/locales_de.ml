@@ -28,6 +28,7 @@ let rec field_to_string =
   | ConfirmedAt -> "Bestätigt am"
   | Contact -> "Kontakt"
   | ContactEmail -> "Kontakt E-Mail Adresse"
+  | ContactPerson -> "Kontaktperson"
   | Contacts -> "Kontakte"
   | CostCenter -> "Kostenstelle"
   | Context -> "Kontext"
@@ -46,6 +47,7 @@ let rec field_to_string =
   | Date -> "Datum"
   | DateTime -> "Datum und Uhrzeit"
   | DefaultLanguage -> "Standard Sprache"
+  | DefaultSmtpServer -> "Standardserver"
   | Description -> "Beschreibung"
   | DirectRegistrationDisabled -> "Direkte Registrierung deaktiviert"
   | Disabled -> "Gesperrt"
@@ -341,6 +343,7 @@ let rec error_to_string = function
       (field_to_string field)
       "konnte nicht entschlüsselt werden."
   | DecodeAction -> "Die Aktion konnte nicht gefunden werden."
+  | DefaultMustNotBeUnchecked -> "'Standard' kann nicht deaktiviert werden."
   | DirectRegistrationIsDisabled ->
     "Sie können sich nicht selbst für dieses Experiment anmelden."
   | Disabled field ->
@@ -351,6 +354,8 @@ let rec error_to_string = function
   | EmailDeleteAlreadyVerified ->
     "E-Mail Adresse ist bereits verifiziert, kann nicht gelöscht werden."
   | EmailMalformed -> "Fehlerhafte E-Mail Adresse"
+  | EmailInterceptionError error ->
+    Format.asprintf "Email interception error: %s" error
   | EndBeforeStart -> "Das Ende liegt vor oder dem Start."
   | ExperimentSessionCountNotZero ->
     "Es existieren Sessions zu diesem Experiment. Es kann nicht gelöscht  \
@@ -497,6 +502,8 @@ let rec error_to_string = function
   | TokenInvalidFormat -> "Ungültiges Token Format!"
   | Undefined field ->
     field_message "" (field_to_string field) "ist undefiniert."
+  | Uniqueness field ->
+    field_message "" (field_to_string field) "muss einzigartig sein."
   | WriteOnlyModel -> "Model ausschliesslich zum auf die Datenbank schreiben!"
 ;;
 

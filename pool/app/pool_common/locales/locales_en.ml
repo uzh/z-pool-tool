@@ -28,6 +28,7 @@ let rec field_to_string =
   | ConfirmedAt -> "Confirmed at"
   | Contact -> "contact"
   | ContactEmail -> "contact email address"
+  | ContactPerson -> "contact person"
   | Contacts -> "contacts"
   | Context -> "Context"
   | CostCenter -> "Cost center"
@@ -46,6 +47,7 @@ let rec field_to_string =
   | Date -> "date"
   | DateTime -> "date and time"
   | DefaultLanguage -> "default language"
+  | DefaultSmtpServer -> "default server"
   | Description -> "description"
   | DirectRegistrationDisabled -> "direct registration disabled"
   | Disabled -> "disabled"
@@ -330,6 +332,7 @@ let rec error_to_string = function
   | DirectRegistrationIsDisabled ->
     "You cannot assign yourself to this experiment."
   | DecodeAction -> "Cannot decode action."
+  | DefaultMustNotBeUnchecked -> "'Default' must not be unchecked."
   | Disabled field -> field_message "" (field_to_string field) "is disabled."
   | EmailAddressMissingAdmin -> "Please provide admin email address."
   | EmailAddressMissingRoot -> "Please provide root email address."
@@ -337,6 +340,8 @@ let rec error_to_string = function
   | EmailDeleteAlreadyVerified ->
     "Email address is already verified cannot be deleted."
   | EmailMalformed -> "Malformed email"
+  | EmailInterceptionError error ->
+    Format.asprintf "Email interception error: %s" error
   | EndBeforeStart -> "End is before start time."
   | ExperimentSessionCountNotZero ->
     "Sessions exist for this experiment. It cannot be deleted."
@@ -460,6 +465,8 @@ let rec error_to_string = function
   | TokenAlreadyUsed -> "The token was already used."
   | TokenInvalidFormat -> "Invalid Token Format!"
   | Undefined field -> field_message "Undefined" (field_to_string field) ""
+  | Uniqueness field ->
+    field_message "" (field_to_string field) "must be unique."
   | WriteOnlyModel -> "Write only model!"
 ;;
 

@@ -12,9 +12,9 @@ type t =
   | EmailConfirmationNote
   | EmailConfirmationTitle
   | EmtpyList of Entity_message.Field.t
-  | ExperimentListTitle
   | ExperimentListEmpty
   | ExperimentListPublicTitle
+  | ExperimentListTitle
   | ExperimentNewTitle
   | ExperimentSessionReminderHint
   | ExperimentWaitingListTitle
@@ -36,6 +36,7 @@ type t =
   | MailingDetailTitle of Ptime.t
   | MailingExperimentSessionFullyBooked
   | MailingNewTitle
+  | ExperimentMessagingSubtitle
   | NoEntries of Entity_message.Field.t
   | OurPartners
   | ProfileCompletionText
@@ -134,6 +135,7 @@ type hint =
   | Distribution
   | EmailPlainText
   | ExperimentAssignment
+  | ExperimentContactPerson
   | ExperimentMailings
   | ExperimentSessions
   | ExperimentSessionsPublic
@@ -170,6 +172,7 @@ type hint =
   | SessionReminderLanguageHint
   | SignUpForWaitingList
   | SmtpSettingsIntro
+  | SmtpSettingsDefaultFlag
   | TemplateTextElementsHint
   | TimeSpanPickerHint
   | WaitingListPhoneMissingContact

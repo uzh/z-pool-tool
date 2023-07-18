@@ -34,12 +34,14 @@ type error =
   | CustomFieldTypeChangeNotAllowed
   | Decode of Field.t
   | DecodeAction
+  | DefaultMustNotBeUnchecked
   | DirectRegistrationIsDisabled
   | Disabled of Field.t
   | EmailAddressMissingAdmin
   | EmailAddressMissingRoot
   | EmailAlreadyInUse
   | EmailDeleteAlreadyVerified
+  | EmailInterceptionError of string
   | EmailMalformed
   | EndBeforeStart
   | ExperimentSessionCountNotZero
@@ -115,6 +117,7 @@ type error =
   | TokenAlreadyUsed
   | TokenInvalidFormat
   | Undefined of Field.t
+  | Uniqueness of Field.t
   | WriteOnlyModel
 [@@deriving eq, show, yojson, variants, sexp_of]
 

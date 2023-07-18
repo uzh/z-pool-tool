@@ -47,7 +47,7 @@ let role_assignment
             ()
         ]
     in
-    [ admin |> Admin.email |> Pool_user.EmailAddress.value |> txt
+    [ admin |> Admin.email_address |> Pool_user.EmailAddress.value |> txt
     ; admin |> Admin.full_name |> txt
     ; delete
     ]

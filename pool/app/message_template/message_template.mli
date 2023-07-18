@@ -182,6 +182,7 @@ module AssignmentConfirmation : sig
     -> Pool_tenant.t
     -> Session.t list
     -> Contact.t
+    -> Admin.t option
     -> Sihl_email.t Lwt.t
 
   val create_from_public_session
@@ -190,6 +191,7 @@ module AssignmentConfirmation : sig
     -> Pool_tenant.t
     -> Session.Public.t list
     -> Contact.t
+    -> Admin.t option
     -> Sihl_email.t Lwt.t
 end
 
@@ -352,6 +354,7 @@ module SessionReschedule : sig
     -> Pool_tenant.t
     -> Pool_common.Language.t list
     -> Session.t
+    -> Admin.t option
     -> (Contact.t
         -> Session.Start.t
         -> Session.Duration.t

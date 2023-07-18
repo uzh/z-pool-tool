@@ -87,7 +87,7 @@ module Data = struct
     let mechanism = SmtpAuth.Mechanism.(LOGIN, LOGIN |> show)
     let protocol = SmtpAuth.Protocol.(STARTTLS, STARTTLS |> show)
 
-    let urlencoded =
+    let urlencoded ?(default = true) () =
       let open Common.Message in
       [ Field.SmtpLabel, [ label ]
       ; Field.SmtpServer, [ server ]
@@ -96,6 +96,7 @@ module Data = struct
       ; Field.SmtpPassword, [ password ]
       ; Field.SmtpMechanism, [ snd mechanism ]
       ; Field.SmtpProtocol, [ snd protocol ]
+      ; Field.DefaultSmtpServer, [ Utils.Bool.to_string default ]
       ]
       |> CCList.map (CCPair.map_fst Field.show)
     ;;
@@ -115,9 +116,35 @@ module Data = struct
         in
         let mechanism = fst mechanism in
         let protocol = fst protocol in
-        Write.create ~id label server port username password mechanism protocol
+        let default = Default.create true in
+        Write.create
+          ~id
+          label
+          server
+          port
+          username
+          password
+          mechanism
+          protocol
+          default
       in
       auth |> CCResult.get_exn
+    ;;
+
+    let from_write
+      { SmtpAuth.Write.id
+      ; label
+      ; server
+      ; port
+      ; username
+      ; mechanism
+      ; protocol
+      ; default
+      ; _
+      }
+      =
+      SmtpAuth.
+        { id; label; server; port; username; mechanism; protocol; default }
     ;;
   end
 
@@ -213,9 +240,58 @@ let create_smtp_auth () =
   let events =
     let open CCResult in
     let open Cqrs_command.Smtp_command.Create in
-    decode Data.Smtp.urlencoded >>= handle ~id:Data.Smtp.id
+    decode (Data.Smtp.urlencoded ()) >>= handle ~id:Data.Smtp.id None
   in
   let expected = Ok [ SmtpCreated (Data.Smtp.create ()) |> Pool_event.email ] in
+  Alcotest.(
+    check
+      (result (list Test_utils.event) Test_utils.error)
+      "succeeds"
+      expected
+      events)
+;;
+
+let create_smtp_force_defaut () =
+  let open Email in
+  let events =
+    let open CCResult in
+    let open Cqrs_command.Smtp_command.Create in
+    decode (Data.Smtp.urlencoded ~default:false ())
+    >>= handle ~id:Data.Smtp.id None
+  in
+  let expected =
+    let smtp =
+      let open Email.SmtpAuth in
+      Write.{ (Data.Smtp.create ()) with default = Default.create true }
+    in
+    Ok [ SmtpCreated smtp |> Pool_event.email ]
+  in
+  Alcotest.(
+    check
+      (result (list Test_utils.event) Test_utils.error)
+      "succeeds"
+      expected
+      events)
+;;
+
+let update_smtp_auth () =
+  let open Email in
+  let smtp_auth = Data.Smtp.(create () |> from_write) in
+  let events =
+    let open CCResult in
+    let open Cqrs_command.Smtp_command.Update in
+    decode (Data.Smtp.urlencoded ()) >>= handle None smtp_auth
+  in
+  let expected =
+    let sys_event =
+      let open System_event in
+      Job.SmtpAccountUpdated smtp_auth.SmtpAuth.id
+      |> create
+      |> created
+      |> Pool_event.system_event
+    in
+    Ok [ SmtpEdited smtp_auth |> Pool_event.email; sys_event ]
+  in
   Alcotest.(
     check
       (result (list Test_utils.event) Test_utils.error)

@@ -14,20 +14,75 @@ let src = Logs.Src.create "handler.admin.experiments"
 let create_layout req = General.create_tenant_layout req
 let experiment_id = HttpUtils.find_id Experiment.Id.of_string Field.Experiment
 
-let organisational_unit urlencoded database_label =
+let find_entity_in_urlencoded urlencoded field fnc =
   let open Utils.Lwt_result.Infix in
-  let open Pool_common.Message in
   urlencoded
-  |> CCList.assoc_opt ~eq:CCString.equal Field.(OrganisationalUnit |> show)
+  |> HttpUtils.find_in_urlencoded_opt field
   |> function
-  | Some [ id ] ->
-    let open Organisational_unit in
-    id |> Id.of_string |> find database_label >|+ CCOption.return
-  | None | Some _ -> Lwt_result.return None
+  | None -> Lwt_result.return None
+  | Some id -> id |> fnc >|+ CCOption.return
 ;;
 
 let experiment_boolean_fields =
   Experiment.boolean_fields |> CCList.map Field.show
+;;
+
+let contact_person_roles experiment_id =
+  let base = [ `RecruiterAll ] in
+  match experiment_id with
+  | None -> base
+  | Some id ->
+    id
+    |> Guard.Uuid.target_of Experiment.Id.value
+    |> fun target_id -> [ `Experimenter target_id; `Recruiter target_id ] @ base
+;;
+
+let validation_set =
+  let open Guard in
+  let open ValidationSet in
+  let base = [ SpecificRole `RecruiterAll ] in
+  CCOption.map_or ~default:base (fun exp_id ->
+    let id = Uuid.target_of Experiment.Id.value exp_id in
+    base
+    @ [ SpecificRole (`Recruiter id)
+      ; SpecificRole (`Experimenter id)
+      ; SpecificRole (`Recruiter id)
+      ])
+  %> or_
+;;
+
+let contact_person_from_urlencoded database_label urlencoded experiment_id =
+  let open Utils.Lwt_result.Infix in
+  let query id =
+    let* () =
+      id
+      |> Guard.Uuid.Actor.of_string
+      |> CCOption.to_result Pool_common.Message.(NotFound Field.ContactPerson)
+      |> Lwt_result.lift
+      >>= (fun id ->
+            Guard.Persistence.Actor.find database_label `Admin id
+            >|- Pool_common.Message.authorization)
+      >>= Guard.Persistence.validate
+            database_label
+            (validation_set experiment_id)
+    in
+    id |> Admin.Id.of_string |> Admin.find database_label
+  in
+  find_entity_in_urlencoded urlencoded Field.ContactPerson query
+;;
+
+let organisational_unit_from_urlencoded urlencoded database_label =
+  let query id =
+    Organisational_unit.(id |> Id.of_string |> find database_label)
+  in
+  find_entity_in_urlencoded urlencoded Field.OrganisationalUnit query
+;;
+
+let smtp_auth_from_urlencoded urlencoded database_label =
+  let query auth_id =
+    Email.SmtpAuth.(auth_id |> Id.of_string |> find database_label)
+  in
+  find_entity_in_urlencoded urlencoded Field.Smtp query
 ;;
 
 let index req =
@@ -63,10 +118,16 @@ let new_form req =
       Settings.find_default_reminder_lead_time database_label
     in
     let%lwt organisational_units = Organisational_unit.all database_label () in
+    let%lwt contact_persons =
+      contact_person_roles None |> Admin.find_all_with_roles database_label
+    in
+    let%lwt smtp_auth_list = Email.SmtpAuth.find_all database_label in
     Page.Admin.Experiments.create
       context
       organisational_units
       default_reminder_lead_time
+      contact_persons
+      smtp_auth_list
       flash_fetcher
     |> create_layout req context
     >|+ Sihl.Web.Response.of_html
@@ -88,13 +149,19 @@ let create req =
       , [ HttpUtils.urlencoded_to_flash urlencoded ] ))
     @@
     let tags = Pool_context.Logger.Tags.req req in
-    let* organisational_unit = organisational_unit urlencoded database_label in
+    let* contact_person =
+      contact_person_from_urlencoded database_label urlencoded None
+    in
+    let* organisational_unit =
+      organisational_unit_from_urlencoded urlencoded database_label
+    in
+    let* smtp_auth = smtp_auth_from_urlencoded urlencoded database_label in
     let events =
       let open CCResult.Infix in
       let open Cqrs_command.Experiment_command.Create in
       urlencoded
       |> decode
-      >>= handle ~tags organisational_unit
+      >>= handle ~tags contact_person organisational_unit smtp_auth
       |> Lwt_result.lift
     in
     let handle events =
@@ -129,12 +196,24 @@ let detail edit req =
     (match edit with
      | false ->
        let%lwt session_count = Experiment.session_count database_label id in
+       let* contact_person =
+         experiment.Experiment.contact_person_id
+         |> CCOption.map_or ~default:(Lwt_result.return None) (fun id ->
+              Admin.find database_label id >|+ CCOption.return)
+       in
+       let* smtp_auth =
+         experiment.Experiment.smtp_auth_id
+         |> CCOption.map_or ~default:(Lwt_result.return None) (fun id ->
+              Email.SmtpAuth.find database_label id >|+ CCOption.return)
+       in
        Page.Admin.Experiments.detail
          experiment
          session_count
          invitation_templates
          session_reminder_templates
          sys_languages
+         contact_person
+         smtp_auth
          context
        |> Lwt_result.ok
      | true ->
@@ -145,13 +224,21 @@ let detail edit req =
        let%lwt organisational_units =
          Organisational_unit.all database_label ()
        in
+       let%lwt smtp_auth_list = Email.SmtpAuth.find_all database_label in
+       let%lwt contact_persons =
+         Some id
+         |> contact_person_roles
+         |> Admin.find_all_with_roles database_label
+       in
        Page.Admin.Experiments.edit
          experiment
          context
          sys_languages
          default_reminder_lead_time
-         invitation_templates
+         contact_persons
          organisational_units
+         smtp_auth_list
+         invitation_templates
          session_reminder_templates
          flash_fetcher
        |> Lwt_result.ok)
@@ -183,13 +270,19 @@ let update req =
     @@
     let tags = Pool_context.Logger.Tags.req req in
     let* experiment = Experiment.find database_label id in
-    let* organisational_unit = organisational_unit urlencoded database_label in
+    let* organisational_unit =
+      organisational_unit_from_urlencoded urlencoded database_label
+    in
+    let* contact_person =
+      contact_person_from_urlencoded database_label urlencoded (Some id)
+    in
+    let* smtp_auth = smtp_auth_from_urlencoded urlencoded database_label in
     let events =
       let open CCResult.Infix in
       let open Cqrs_command.Experiment_command.Update in
       urlencoded
       |> decode
-      >>= handle ~tags experiment organisational_unit
+      >>= handle ~tags experiment contact_person organisational_unit smtp_auth
       |> Lwt_result.lift
     in
     let handle events =

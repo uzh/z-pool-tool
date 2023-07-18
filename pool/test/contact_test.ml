@@ -198,7 +198,7 @@ let sign_up () =
     Ok
       [ Contact.Created contact |> Pool_event.contact
       ; Email.Created (email, token, user_id) |> Pool_event.email_verification
-      ; Email.Sent verification_email |> Pool_event.email
+      ; Email.Sent (verification_email, None) |> Pool_event.email
       ]
   in
   check_result expected events
@@ -271,7 +271,7 @@ let update_password () =
             |> Pool_common.Utils.get_or_failwith
           , new_password |> Pool_user.PasswordConfirmed.create )
         |> Pool_event.contact
-      ; Email.Sent confirmation_mail |> Pool_event.email
+      ; Email.Sent (confirmation_mail, None) |> Pool_event.email
       ]
   in
   check_result expected events
@@ -432,7 +432,7 @@ let request_email_validation () =
     Ok
       [ Email.Created (new_email, token, Contact.id contact)
         |> Pool_event.email_verification
-      ; Email.Sent verification_email |> Pool_event.email
+      ; Email.Sent (verification_email, None) |> Pool_event.email
       ]
   in
   check_result expected events

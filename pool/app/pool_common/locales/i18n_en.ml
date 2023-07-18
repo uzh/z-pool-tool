@@ -63,6 +63,7 @@ let to_string = function
      if mailings are active at the moment).\n\n\
      Add additional sessions to the experiment."
   | MailingNewTitle -> "Create new mailing"
+  | ExperimentMessagingSubtitle -> "Messaging"
   | RateTotalSent number ->
     Format.asprintf "Totally generated invitations: %d" number
   | ResetPasswordLink | ResetPasswordTitle -> "Reset password"
@@ -213,6 +214,9 @@ let rec hint_to_string = function
   | ExperimentAssignment ->
     "All assignments of contacts to sessions of this experiment, sorted by \
      session."
+  | ExperimentContactPerson ->
+    "The selected user's email address will be used as 'reply-to' address for \
+     all experiment-related emails."
   | ExperimentMailings ->
     {|Invitation mailings of this experiment. 'Rate' defines the maximum generated invitations per hour.
 
@@ -320,6 +324,9 @@ If a contact showed up but did not participate in the experiment, do not select 
 
     Note: When using the mechanism "LOGIN" a username and password are required.
     |}
+  | SmtpSettingsDefaultFlag ->
+    "Attention: If another SMTP configuration is marked as default, it will be \
+     overwritten. Only one configuration can be marked as default."
   | TemplateTextElementsHint ->
     "The following text elements can be used inside the templates:"
   | TimeSpanPickerHint ->

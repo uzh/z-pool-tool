@@ -35,6 +35,40 @@ module ContactRepo = struct
   ;;
 end
 
+module AdminRepo = struct
+  let create ?id ?email () =
+    let open Pool_user in
+    let admin_id = id |> CCOption.value ~default:(Admin.Id.create ()) in
+    let open Admin in
+    let open Utils.Lwt_result.Infix in
+    let tags = Pool_database.Logger.Tags.create Data.database_label in
+    let email =
+      email
+      |> CCOption.value
+           ~default:
+             (Format.asprintf
+                "test+%s@econ.uzh.ch"
+                (Uuidm.v `V4 |> Uuidm.to_string))
+      |> Pool_user.EmailAddress.of_string
+    in
+    let admin =
+      Admin.
+        { id = Some admin_id
+        ; lastname = Lastname.of_string "Bar"
+        ; firstname = Firstname.of_string "Foo"
+        ; password = Password.create "Password1!" |> CCResult.get_exn
+        ; email
+        ; roles = None
+        }
+    in
+    let%lwt () =
+      [ Created admin ]
+      |> Lwt_list.iter_s (handle_event ~tags Data.database_label)
+    in
+    admin_id |> find Data.database_label ||> get_or_failwith_pool_error
+  ;;
+end
+
 module ExperimentRepo = struct
   let create ?(id = Experiment.Id.create ()) () =
     let experiment = Model.create_experiment ~id () in

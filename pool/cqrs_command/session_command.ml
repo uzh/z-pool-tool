@@ -288,6 +288,7 @@ module Reschedule : sig
     -> Session.t list
     -> Session.t
     -> Assignment.t list
+    -> Experiment.t
     -> (Contact.t
         -> Session.Start.t
         -> Session.Duration.t
@@ -316,6 +317,7 @@ end = struct
     follow_up_sessions
     session
     assignments
+    experiment
     create_message
     (Session.{ start; duration } as reschedule : Session.reschedule)
     =
@@ -333,7 +335,8 @@ end = struct
       let open Assignment in
       assignments
       |> CCList.map (fun ({ contact; _ } : t) ->
-           create_message contact start duration)
+           create_message contact start duration
+           >|= fun msg -> msg, experiment.Experiment.smtp_auth_id)
       |> CCResult.flatten_l
     in
     Ok
@@ -398,6 +401,7 @@ module Cancel : sig
   val handle
     :  ?tags:Logs.Tag.set
     -> Session.t list
+    -> Experiment.t
     -> (Contact.t * Assignment.t list) list
     -> (t -> Contact.t -> (Sihl_email.t, Pool_common.Message.error) result)
     -> (t
@@ -416,6 +420,7 @@ end = struct
   let handle
     ?(tags = Logs.Tag.empty)
     sessions
+    experiment
     (assignments : (Contact.t * Assignment.t list) list)
     email_fn
     text_message_fn
@@ -442,7 +447,9 @@ end = struct
     let* notification_events =
       let open Pool_common.NotifyVia in
       let email_event contact =
-        email_fn reason contact >|= Email.sent >|= Pool_event.email
+        email_fn reason contact
+        >|= fun msg ->
+        Email.sent (msg, experiment.Experiment.smtp_auth_id) |> Pool_event.email
       in
       let text_msg_event contact phone_number =
         text_message_fn reason contact phone_number
@@ -491,17 +498,22 @@ end = struct
 end
 
 module SendReminder : sig
-  include Common.CommandSig with type t = (Session.t * Sihl_email.t list) list
+  include
+    Common.CommandSig
+      with type t = (Session.t * Experiment.t * Sihl_email.t list) list
 
   val effects : Experiment.Id.t -> Session.Id.t -> Guard.ValidationSet.t
 end = struct
-  type t = (Session.t * Sihl_email.t list) list
+  type t = (Session.t * Experiment.t * Sihl_email.t list) list
 
   let handle ?(tags = Logs.Tag.empty) command =
     Logs.info ~src (fun m -> m "Handle command SendReminder" ~tags);
     Ok
       (CCList.flat_map
-         (fun (session, emails) ->
+         (fun (session, { Experiment.smtp_auth_id; _ }, emails) ->
+           let emails =
+             emails |> CCList.map (fun email -> email, smtp_auth_id)
+           in
            (Session.ReminderSent session |> Pool_event.session)
            ::
            (if emails |> CCList.is_empty |> not

@@ -144,8 +144,10 @@ module DummyData = struct
           |> get_exn
           |> CCOption.return
       ; organisational_unit = None
+      ; smtp_auth_id = None
       ; cost_center = Some ("A-11111-22-33" |> CostCenter.of_string)
       ; filter = None
+      ; contact_person_id = None
       ; session_reminder_lead_time = None
       ; direct_registration_disabled =
           false |> DirectRegistrationDisabled.create

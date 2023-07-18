@@ -65,6 +65,7 @@ Sie kommen für mehr Experimente in Frage, umso kompletter Ihr Profil ist.|}
      (unabhängig ob z.Z. Mailings aktiv sind).\n\n\
      Füge zusätzliche Sessions zum Experiment hinzu."
   | MailingNewTitle -> "Neuen Versand erstellen"
+  | ExperimentMessagingSubtitle -> "Nachrichtenversand"
   | RateTotalSent number ->
     Format.asprintf "Total generierter Einladungen: %d" number
   | ResetPasswordLink | ResetPasswordTitle -> "Passwort zurücksetzen"
@@ -221,6 +222,9 @@ let rec hint_to_string = function
   | ExperimentAssignment ->
     "Alle Anmeldungen von Kontakten an Sessions dieses Experiments, sortiert \
      nach Session."
+  | ExperimentContactPerson ->
+    "Die E-Mail-Adresse des ausgewählten Nutzers wird als 'reply-to' Adresse \
+     für alle experimentbezogenen E-Mails verwendet."
   | ExperimentMailings ->
     {|Einladungsversand dieses Experiments. Die 'Rate' definiert die maximal generierten Einladungen pro Stunde.
 
@@ -334,6 +338,10 @@ Wenn ein Kontakt zwar erschienen ist, aber nicht an dem Experiment teilgenommen 
 
     Beachte: Bei Verwendung des Mechanismus für "LOGIN" muss ein Benutzername und Passwort angegeben werden.
     |}
+  | SmtpSettingsDefaultFlag ->
+    "Achtung: Ist eine andere SMTP Konfiguration als Standard markiert, wird \
+     diese Einstellung angepasst. Nur eine Konfiguration kann als Standard \
+     markiert sein."
   | TemplateTextElementsHint ->
     "Die folgenden Textbausteine können in den Templates verwendet werden:"
   | TimeSpanPickerHint ->

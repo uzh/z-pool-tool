@@ -779,3 +779,72 @@ let notify_via_selection language =
                      [ NotifyVia.to_human language option |> txt ]
                  ])))
 ;;
+
+let admin_select
+  language
+  options
+  selected
+  field
+  ?(attributes = [])
+  ?(required = false)
+  ?help
+  ()
+  =
+  let open Pool_common in
+  let open Admin in
+  let name = Message.Field.show field in
+  let select_attrs =
+    let name = [ a_name name ] in
+    let attrs =
+      match required with
+      | true -> a_required () :: name
+      | false -> name
+    in
+    attrs @ attributes
+  in
+  let help = Elements.help language help in
+  let options =
+    let default_option =
+      let attrs = [ a_value "" ] in
+      let attrs =
+        match selected with
+        | Some _ -> attrs
+        | None -> a_selected () :: attrs
+      in
+      let attrs =
+        match required with
+        | true -> a_disabled () :: attrs
+        | false -> attrs
+      in
+      option
+        ~a:attrs
+        (Pool_common.(Utils.control_to_string language Message.PleaseSelect)
+         |> CCString.capitalize_ascii
+         |> txt)
+    in
+    CCList.map
+      (fun (admin : Admin.t) ->
+        let is_selected =
+          selected
+          |> CCOption.map (fun selected ->
+               if Id.equal (id admin) selected then [ a_selected () ] else [])
+          |> CCOption.value ~default:[]
+        in
+        option
+          ~a:([ a_value (admin |> id |> Id.value) ] @ is_selected)
+          (txt (full_name admin)))
+      options
+    |> CCList.cons default_option
+  in
+  div
+    ~a:[ a_class [ "form-group" ] ]
+    ([ label
+         [ field
+           |> Utils.(field_to_string language)
+           |> CCString.capitalize_ascii
+           |> txt
+         ]
+     ; div ~a:[ a_class [ "select" ] ] [ select ~a:select_attrs options ]
+     ]
+     @ help)
+;;

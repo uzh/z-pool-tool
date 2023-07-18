@@ -85,17 +85,18 @@ let intercept_message ~tags database_label msg =
         "Sending text message intercepted. Sending message as email to ('%s')"
         (Pool_user.EmailAddress.value recipient));
     let%lwt sender =
-      Email.Service.sender_of_pool database_label
-      |> Lwt.map Settings.ContactEmail.value
+      Email.Service.default_sender_of_pool database_label
+      |> Lwt.map Pool_user.EmailAddress.value
     in
     let body = format_message msg in
     let subject = "Text message intercept" in
-    Sihl_email.create
-      ~sender
-      ~recipient:(Pool_user.EmailAddress.value recipient)
-      ~subject
-      ~html:body
-      body
+    ( Sihl_email.create
+        ~sender
+        ~recipient:(Pool_user.EmailAddress.value recipient)
+        ~subject
+        ~html:body
+        body
+    , None )
     |> Email.Service.dispatch database_label
   in
   match Sihl.Configuration.is_production () || bypass () with

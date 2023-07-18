@@ -74,6 +74,13 @@ module Protocol = struct
   include Core
 end
 
+module Default = struct
+  include Pool_common.Model.Boolean
+
+  let init = false
+  let schema = schema Pool_common.Message.Field.DefaultSmtpServer
+end
+
 type t =
   { id : Id.t
   ; label : Label.t
@@ -82,6 +89,7 @@ type t =
   ; username : Username.t option [@sexp.option]
   ; mechanism : Mechanism.t
   ; protocol : Protocol.t
+  ; default : Default.t
   }
 [@@deriving eq, show, sexp_of]
 
@@ -101,10 +109,11 @@ module Write = struct
     ; password : Password.t option [@opaque]
     ; mechanism : Mechanism.t
     ; protocol : Protocol.t
+    ; default : Default.t
     }
   [@@deriving eq, show]
 
-  let create ?id label server port username password mechanism protocol =
+  let create ?id label server port username password mechanism protocol default =
     Ok
       { id = id |> CCOption.value ~default:(Id.create ())
       ; label
@@ -114,6 +123,7 @@ module Write = struct
       ; password
       ; mechanism
       ; protocol
+      ; default
       }
   ;;
 end
