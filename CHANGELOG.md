@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 - validation of gtx api keys when adding or updating tenants
 - notification and confirmation service for user imports
 - allow smtp account and reply-to address to be specified for each experiment
+- calendar that shows all sessions of a location
 
 ### Changed
 
