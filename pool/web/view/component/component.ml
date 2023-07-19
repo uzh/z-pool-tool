@@ -14,4 +14,5 @@ module Role = Component_role
 module Search = Component_search
 module Sortable = Component_sortable
 module Table = Component_table
+module Tag = Component_tag
 module Utils = Component_utils

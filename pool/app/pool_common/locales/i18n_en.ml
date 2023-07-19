@@ -370,6 +370,7 @@ let confirmable_to_string confirmable =
      )
    | PublisCustomFieldOption ->
      "option", "publish", Some "You will not be able to delete the it anymore."
+   | RemoveTag -> "tag", "remove", None
    | RemoveRule -> "rule", "delete", None
    | RevokeRole -> "role", "revoke", None
    | StopMailing -> "mailing", "stop", None)

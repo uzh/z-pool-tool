@@ -10,7 +10,7 @@ let handle_tag action req =
   let tags = Pool_context.Logger.Tags.req req in
   let contact_id = contact_id req in
   let path =
-    contact_id |> Contact.Id.value |> Format.asprintf "/admin/contacts/%s"
+    contact_id |> Contact.Id.value |> Format.asprintf "/admin/contacts/%s/edit"
   in
   let%lwt urlencoded =
     Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
@@ -18,19 +18,21 @@ let handle_tag action req =
   let result { Pool_context.database_label; _ } =
     Lwt_result.map_error (fun err -> err, path)
     @@ let* contact = Contact.find database_label contact_id in
-       let decode, handle, message =
+       let* message, events =
          match action with
          | `Assign ->
            let open Cqrs_command.Tags_command.AssignTagToContact in
-           decode, handle, Pool_common.Message.TagAssigned
+           urlencoded
+           |> decode
+           |> Lwt_result.lift
+           >== handle ~tags contact
+           >|+ CCPair.make Pool_common.Message.TagAssigned
          | `Remove ->
            let open Cqrs_command.Tags_command.RemoveTagFromContact in
-           decode, handle, Pool_common.Message.TagRemoved
-       in
-       let* events =
-         let* tag_uuid = decode urlencoded |> Lwt_result.lift in
-         let* (_ : Tags.t) = Tags.(find database_label tag_uuid) in
-         handle ~tags contact tag_uuid |> Lwt_result.lift
+           HttpUtils.find_id Tags.Id.of_string Field.Tag req
+           |> Tags.find database_label
+           >== handle contact
+           >|+ CCPair.make Pool_common.Message.TagRemoved
        in
        let handle =
          Lwt_list.iter_s (Pool_event.handle_event ~tags database_label)

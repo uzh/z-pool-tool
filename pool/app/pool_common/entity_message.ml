@@ -211,6 +211,7 @@ type control =
   | Publish of Field.t option
   | Register
   | RemoveFromWaitingList
+  | Remove of Field.t option
   | Reschedule of Field.t option
   | Resend of Field.t option
   | Reset

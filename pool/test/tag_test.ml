@@ -31,8 +31,7 @@ module Data = struct
     ;;
 
     let update =
-      [ Field.(Id |> show), [ id |> Tags.Id.value ]
-      ; Field.(Title |> show), [ title_updated |> Tags.Title.value ]
+      [ Field.(Title |> show), [ title_updated |> Tags.Title.value ]
       ; ( Field.(Description |> show)
         , [ description_updated |> Tags.Description.value ] )
       ]
@@ -72,15 +71,16 @@ let create_event () =
 
 let update_event () =
   let open Command.Update in
-  let tag = Data.Tag.updated_tag () in
+  let tag = Data.Tag.create_with_description () in
   let events =
     Data.Tag.update
     |> Http_utils.remove_empty_values
     |> decode
     |> get_or_failwith
-    |> handle
+    |> handle tag
   in
-  let expected = Ok [ Tags.Updated tag |> Pool_event.tags ] in
+  let updated_tag = Data.Tag.updated_tag () in
+  let expected = Ok [ Tags.Updated updated_tag |> Pool_event.tags ] in
   Test_utils.check_result expected events
 ;;
 
@@ -159,13 +159,7 @@ let remove_tag_from_contact _ () =
   let open Command.RemoveTagFromContact in
   let%lwt contact = Test_utils.Repo.first_contact () in
   let%lwt tag = Test_utils.Repo.first_tag () in
-  let events =
-    [ Field.(Tag |> show), [ Tags.(tag.id |> Id.value) ] ]
-    |> decode
-    |> get_or_failwith
-    |> handle contact
-    |> get_or_failwith
-  in
+  let events = tag |> handle contact |> get_or_failwith in
   let%lwt () = Pool_event.handle_events Test_utils.Data.database_label events in
   let%lwt found_tagged =
     Tags.find_all_of_contact

@@ -549,6 +549,7 @@ let control_to_string = function
   | Publish field -> format_submit "veröffentlichen" field
   | Register -> format_submit "einschreiben" None
   | RemoveFromWaitingList -> "Ich möchte mich von der Warteliste austragen"
+  | Remove field -> format_submit "entfernen" field
   | Reschedule field -> format_submit "verschieben" field
   | ResetPlainText ->
     Format.asprintf

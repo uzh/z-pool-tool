@@ -509,22 +509,29 @@ module Admin = struct
         let field_specific =
           [ post "/delete" ~middlewares:[ Access.delete_answer ] delete_answer ]
         in
+        let tags =
+          let open Handler.Admin.Settings.Tags in
+          let specific =
+            [ post
+                "/remove"
+                ~middlewares:[ Access.remove_tag_from_contact ]
+                Tags.remove_tag
+            ]
+          in
+          [ post
+              "/assign"
+              ~middlewares:[ Access.assign_tag_to_contact ]
+              Tags.assign_tag
+          ; choose ~scope:(Tag |> url_key) specific
+          ]
+        in
         [ get "" ~middlewares:[ Access.read ] detail
         ; post "" ~middlewares:[ Access.update ] update
         ; get "/edit" ~middlewares:[ Access.update ] edit
-        ; post
-            "/assign-tag"
-            ~middlewares:
-              [ Handler.Admin.Settings.Tags.Access.assign_tag_to_contact ]
-            Tags.assign_tag
-        ; post
-            "/remove-tag"
-            ~middlewares:
-              [ Handler.Admin.Settings.Tags.Access.remove_tag_from_contact ]
-            Tags.remove_tag
         ; choose
             ~scope:(Format.asprintf "field/%s" (CustomField |> url_key))
             field_specific
+        ; choose ~scope:(Tag |> human_url) tags
         ]
       in
       [ get "" ~middlewares:[ Access.index ] index

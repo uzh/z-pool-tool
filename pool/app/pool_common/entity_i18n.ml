@@ -196,5 +196,6 @@ type confirmable =
   | PublisCustomField
   | PublisCustomFieldOption
   | RemoveRule
+  | RemoveTag
   | RevokeRole
   | StopMailing

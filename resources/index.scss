@@ -116,6 +116,16 @@ $icons-font-path: "../node_modules/@econ/frontend-framework/dist/font";
     display: inline-flex;
 }
 
+.flexcolumn-reversed-tablet {
+    &>* {
+        flex-basis: 50%;
+    }
+
+    @include until($tablet-breakpoint) {
+        flex-direction: column-reverse;
+    }
+}
+
 abbr[title] {
     text-decoration: none;
 }
@@ -152,6 +162,21 @@ button.as-link {
 
     &:hover {
         color: $color-primary;
+        background-color: transparent;
+    }
+}
+
+// Tags
+
+.tag button {
+    color: inherit;
+    background-color: transparent;
+    border: none;
+    border-radius: 0;
+    padding: 0;
+    display: flex;
+
+    &:hover {
         background-color: transparent;
     }
 }

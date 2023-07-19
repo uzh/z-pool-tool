@@ -55,7 +55,7 @@ let write action req =
     match action with
     | `Create -> base_path, Message.Created field
     | `Update id ->
-      ( Format.asprintf "%s/%s/edit" base_path (Tags.Id.value id)
+      ( Format.asprintf "%s/%s" base_path (Tags.Id.value id)
       , Message.Updated field )
   in
   let result { Pool_context.database_label; _ } =
@@ -69,8 +69,8 @@ let write action req =
       | `Create ->
         Create.(urlencoded |> decode |> Lwt_result.lift >== handle ~tags)
       | `Update id ->
-        let* (_ : Tags.t) = Tags.find database_label id in
-        Update.(urlencoded |> decode |> Lwt_result.lift >== handle ~tags)
+        let* tag = Tags.find database_label id in
+        Update.(urlencoded |> decode |> Lwt_result.lift >== handle ~tags tag)
     in
     let handle events =
       let%lwt () =

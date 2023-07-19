@@ -28,7 +28,7 @@ module List = struct
       |> div ~a:[ a_class [ "flexrow"; "flex-gap"; "justify-end" ] ]
     in
     [ txt (Tags.Title.value title)
-    ; txt ([%show: Tags.Description.t option] description)
+    ; txt (CCOption.map_or ~default:"" Tags.Description.value description)
     ; buttons tag
     ]
   ;;
@@ -44,7 +44,8 @@ module List = struct
             (tags_path ~suffix:"create" ())
         ]
     in
-    CCList.map row tags |> Component.Table.horizontal_table `Striped ~thead
+    CCList.map row tags
+    |> Component.Table.horizontal_table `Striped ~thead ~align_last_end:true
   ;;
 end
 

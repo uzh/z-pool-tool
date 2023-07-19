@@ -512,6 +512,7 @@ let control_to_string = function
   | Publish field -> format_submit "publish" field
   | Register -> format_submit "register" None
   | RemoveFromWaitingList -> "Remove from waiting list"
+  | Remove field -> format_submit "remove" field
   | Reschedule field -> format_submit "reschedule" field
   | Resend field -> format_submit "resend" field
   | Reset -> "reset"
