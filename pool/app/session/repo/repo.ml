@@ -35,12 +35,22 @@ module Sql = struct
           pool_assignments.session_uuid = pool_sessions.uuid
           AND pool_assignments.canceled_at IS NULL
           AND pool_assignments.marked_as_deleted = 0),
+        LOWER(CONCAT(
+          SUBSTR(HEX(pool_locations.uuid), 1, 8), '-',
+          SUBSTR(HEX(pool_locations.uuid), 9, 4), '-',
+          SUBSTR(HEX(pool_locations.uuid), 13, 4), '-',
+          SUBSTR(HEX(pool_locations.uuid), 17, 4), '-',
+          SUBSTR(HEX(pool_locations.uuid), 21)
+        )),
+        pool_locations.name,
         user_users.given_name,
         user_users.name,
         user_users.email
       FROM pool_sessions
       INNER JOIN pool_experiments
         ON pool_sessions.experiment_uuid = pool_experiments.uuid
+      INNER JOIN pool_locations
+        ON pool_sessions.location_uuid = pool_locations.uuid
       LEFT JOIN user_users
         ON pool_experiments.contact_person_uuid = user_users.uuid
       WHERE

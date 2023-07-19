@@ -20,7 +20,8 @@ const normalizeSession = (session) => {
 
 const determineView = () => window.innerWidth >= viewBreakpoint ? "dayGridMonth" : "listWeek";
 
-const tooltipContent = ({ _instance, _def }) => {
+const tooltipContent = ({ _instance, _def }, calendarType) => {
+    const showLocation = calendarType != "location";
     const { start, end } = _instance.range;
     const toLocalTime = date => date.toLocaleTimeString('en',
         { timeStyle: 'short', hour12: false, timeZone: 'Europe/Zurich' })
@@ -33,7 +34,9 @@ const tooltipContent = ({ _instance, _def }) => {
     const contactPersonHtml = contactPerson ? `<a href="mailto:${contactPerson.email}">${contactPerson.name}</a><br>` : ''
     const header = `<div class="card-header">${title}</div>`
     const body = `<div class="card-body">
-        <p>${toLocalTime(start)} - ${toLocalTime(end)}</p><br>
+        <p>${showLocation ? `${extendedProps.location.name}<br>` : ""}
+            ${toLocalTime(start)} - ${toLocalTime(end)}
+        </p><br>
         ${extendedProps.description ? `${extendedProps.description}<br>` : ""}
         ${contactPersonHtml}
         ${counterHtml}
@@ -80,7 +83,7 @@ export const initCalendar = () => {
                 },
                 eventDidMount: function (info) {
                     tippy(info.el, {
-                        content: tooltipContent(info.event),
+                        content: tooltipContent(info.event, calendarType),
                         allowHTML: true,
                         placement: 'right',
                     });

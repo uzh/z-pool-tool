@@ -411,6 +411,12 @@ module Calendar = struct
     }
   [@@deriving eq, show, yojson]
 
+  type location =
+    { id : Pool_location.Id.t
+    ; name : Pool_location.Name.t
+    }
+  [@@deriving eq, show, yojson]
+
   type t =
     { id : Id.t
     ; title : Experiment.Title.t
@@ -421,6 +427,7 @@ module Calendar = struct
     ; overbook : ParticipantAmount.t
     ; assignment_count : AssignmentCount.t
     ; description : Description.t option [@option]
+    ; location : location
     ; contact_person : contact_person option [@option]
     }
   [@@deriving eq, show, yojson]

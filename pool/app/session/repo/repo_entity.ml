@@ -443,13 +443,13 @@ module Calendar = struct
   include Entity.Calendar
   open CCResult.Infix
 
+  let read_only =
+    Pool_common.(Message.ReadOnlyModel |> Utils.error_to_string Language.En)
+  ;;
+
   module ContactPerson = struct
     let t =
-      let encode (_ : contact_person) =
-        failwith
-          Pool_common.(
-            Message.ReadOnlyModel |> Utils.error_to_string Language.En)
-      in
+      let encode (_ : contact_person) = failwith read_only in
       let decode (firstname, lastname, email) =
         let fullname =
           Format.asprintf "%s %s" firstname lastname |> CCString.trim
@@ -464,11 +464,20 @@ module Calendar = struct
     ;;
   end
 
+  module Location = struct
+    let t =
+      let encode (_ : location) = failwith read_only in
+      let decode (id, name) = Ok { id; name } in
+      Caqti_type.(
+        custom
+          ~encode
+          ~decode
+          (tup2 Pool_location.Repo.Id.t Pool_location.Repo.Name.t))
+    ;;
+  end
+
   let t =
-    let encode (_ : t) =
-      failwith
-        Pool_common.(Message.ReadOnlyModel |> Utils.error_to_string Language.En)
-    in
+    let encode (_ : t) = failwith read_only in
     let decode
       ( id
       , ( title
@@ -477,8 +486,8 @@ module Calendar = struct
             , ( description
               , ( max_participants
                 , ( min_participants
-                  , (overbook, (assignment_count, contact_person)) ) ) ) ) ) )
-      )
+                  , (overbook, (assignment_count, (location, contact_person)))
+                  ) ) ) ) ) ) )
       =
       (* Logs.info (fun m -> m "%s" ([%show: Ptime.t] start)); *)
       let* end_ =
@@ -495,6 +504,7 @@ module Calendar = struct
         ; min_participants
         ; overbook
         ; assignment_count
+        ; location
         ; contact_person
         }
     in
@@ -516,6 +526,10 @@ module Calendar = struct
                           int
                           (tup2
                              int
-                             (tup2 int (tup2 int (option ContactPerson.t)))))))))))
+                             (tup2
+                                int
+                                (tup2
+                                   int
+                                   (tup2 Location.t (option ContactPerson.t))))))))))))
   ;;
 end
