@@ -23,7 +23,7 @@ const determineView = () => window.innerWidth >= viewBreakpoint ? "dayGridMonth"
 const tooltipContent = ({ _instance, _def }) => {
     const { start, end } = _instance.range;
     const toLocalTime = date => date.toLocaleTimeString('en',
-        { timeStyle: 'short', hour12: false, timeZone: 'UTC' })
+        { timeStyle: 'short', hour12: false, timeZone: 'Europe/Zurich' })
 
     console.log(start)
     console.log(toLocalTime(start))
@@ -49,6 +49,7 @@ export const initCalendar = () => {
         const { location } = el.dataset
         new Calendar(el, {
             plugins: [dayGridPlugin, timeGridPlugin, listPlugin],
+            timeZone: 'Europe/Zurich',
             initialView: 'dayGridMonth',
             firstDay: 1,
             height: maxHeight,
@@ -71,7 +72,7 @@ export const initCalendar = () => {
                 });
             },
             eventSources: [{
-                url: `/admin/locations/${location}/sessions`,
+                url: `/admin/sessions/location/${location}`,
                 success: e => e.map(e => normalizeSession(e)),
                 failure: e => { notifyUser(notificationId, "error", e) }
             }],

@@ -265,34 +265,6 @@ let delete req =
 
 let search = Helpers.Search.create `Location
 
-let sessions_api req =
-  let location_id =
-    HttpUtils.find_id Pool_location.Id.of_string Field.Location req
-  in
-  let result { Pool_context.database_label; _ } =
-    let open Utils.Lwt_result.Infix in
-    let query_params = Sihl.Web.Request.query_list req in
-    let find_param field =
-      let open CCResult.Infix in
-      HttpUtils.find_in_urlencoded field query_params
-      >>= Pool_common.Utils.Time.parse_time
-      |> Lwt_result.lift
-    in
-    let* start_time = find_param Field.Start in
-    let* end_time = find_param Field.End in
-    let%lwt sessions =
-      Session.find_for_calendar_by_location
-        database_label
-        ~start_time
-        ~end_time
-        location_id
-      ||> CCList.map Session.Calendar.yojson_of_t
-    in
-    `List sessions |> Lwt.return_ok
-  in
-  result |> HttpUtils.Json.handle_yojson_response ~src req
-;;
-
 module Access : sig
   include module type of Helpers.Access
 

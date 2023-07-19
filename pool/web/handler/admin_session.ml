@@ -663,6 +663,45 @@ let update_template req =
       [ HttpUtils.Message.set ~error:[ err ] ]
 ;;
 
+module Api = struct
+  let calendar_api req query =
+    let result { Pool_context.database_label; _ } =
+      let open Utils.Lwt_result.Infix in
+      let query_params = Sihl.Web.Request.query_list req in
+      let find_param field =
+        let open CCResult.Infix in
+        let open CCFun.Infix in
+        HttpUtils.find_in_urlencoded field query_params
+        >>= Pool_common.Utils.Time.parse_date_from_calendar
+        |> Lwt_result.lift
+      in
+      let* start_time = find_param Field.Start in
+      (* Logs.info (fun m -> m "%s" ([%show: Ptime.t] start_time)); *)
+      let* end_time = find_param Field.End in
+      let%lwt sessions =
+        query database_label ~start_time ~end_time
+        ||> CCList.map Session.Calendar.yojson_of_t
+      in
+      `List sessions |> Lwt.return_ok
+    in
+    result |> HttpUtils.Json.handle_yojson_response ~src req
+  ;;
+
+  let location req =
+    let location_id =
+      HttpUtils.find_id Pool_location.Id.of_string Field.Location req
+    in
+    let query = Session.find_for_calendar_by_location location_id in
+    calendar_api req query
+  ;;
+
+  module Access : sig
+    val location : Rock.Middleware.t
+  end = struct
+    let location = Admin_location.Access.read
+  end
+end
+
 module Access : sig
   include module type of Helpers.Access
 

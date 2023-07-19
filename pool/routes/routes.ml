@@ -230,7 +230,6 @@ module Admin = struct
         ; choose
             ~scope:(add_key ~prefix:"mapping" FileMapping)
             [ post "/delete" ~middlewares:[ Access.delete_file ] delete ]
-        ; get "/sessions" ~middlewares:[ Access.index ] sessions_api
         ]
       in
       [ get "" ~middlewares:[ Access.index ] index
@@ -478,6 +477,15 @@ module Admin = struct
         ; choose ~scope:(add_key Experiment) specific
         ]
     in
+    let sessions =
+      let open Session in
+      [ get
+          Field.(
+            Format.asprintf "%s/%s" (human_url Location) (url_key Location))
+          ~middlewares:[ Api.Access.location ]
+          Api.location
+      ]
+    in
     let admins =
       let open Handler.Admin.Admin in
       let specific =
@@ -647,6 +655,7 @@ module Admin = struct
       ; choose ~scope:"/contacts" contacts
       ; choose ~scope:"/admins" admins
       ; choose ~scope:"/custom-fields" custom_fields
+      ; choose ~scope:(add_human_field Field.Sessions) sessions
       ; choose ~scope:(add_human_field OrganisationalUnit) organisational_units
       ; choose ~scope:(add_human_field MessageTemplate) message_templates
       ]

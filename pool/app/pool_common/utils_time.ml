@@ -36,3 +36,13 @@ let parse_date str =
         | _ -> None)
   |> CCOption.to_result error
 ;;
+
+let parse_date_from_calendar str =
+  let open CCFun.Infix in
+  let open CCResult.Infix in
+  str
+  |> CCString.split ~by:"T"
+  |> CCList.hd
+  |> parse_date
+  >>= Ptime.of_date %> CCOption.to_result Entity_message.(Invalid Field.Date)
+;;

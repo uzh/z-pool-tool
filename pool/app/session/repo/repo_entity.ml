@@ -480,7 +480,7 @@ module Calendar = struct
                   , (overbook, (assignment_count, contact_person)) ) ) ) ) ) )
       )
       =
-      Logs.info (fun m -> m "%s" ([%show: Ptime.t] start));
+      (* Logs.info (fun m -> m "%s" ([%show: Ptime.t] start)); *)
       let* end_ =
         Entity.End.create start duration
         |> CCResult.map_err Pool_common.(Utils.error_to_string Language.En)

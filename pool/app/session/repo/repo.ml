@@ -557,7 +557,7 @@ module Sql = struct
     |> Caqti_type.(tup3 string ptime ptime ->* RepoEntity.Calendar.t)
   ;;
 
-  let find_for_calendar_by_location ~start_time ~end_time pool location_id =
+  let find_for_calendar_by_location location_id pool ~start_time ~end_time =
     Utils.Database.collect
       (Database.Label.value pool)
       find_for_calendar_by_location_request
