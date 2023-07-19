@@ -695,6 +695,21 @@ module Api = struct
     calendar_api req query
   ;;
 
+  let current_user req =
+    let { Pool_context.database_label; user; language; _ } =
+      Pool_context.find_exn req
+    in
+    let%lwt actor =
+      Pool_context.Utils.find_authorizable ~admin_only:true database_label user
+    in
+    match actor with
+    | Ok actor -> calendar_api req (Session.find_for_calendar_by_user actor)
+    | Error err ->
+      `Assoc
+        [ "message", `String Pool_common.(Utils.error_to_string language err) ]
+      |> HttpUtils.Json.yojson_response ~status:(Opium.Status.of_code 400)
+  ;;
+
   module Access : sig
     val location : Rock.Middleware.t
   end = struct

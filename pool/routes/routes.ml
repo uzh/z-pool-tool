@@ -479,7 +479,8 @@ module Admin = struct
     in
     let sessions =
       let open Session in
-      [ get
+      [ get "" Api.current_user
+      ; get
           Field.(
             Format.asprintf "%s/%s" (human_url Location) (url_key Location))
           ~middlewares:[ Api.Access.location ]

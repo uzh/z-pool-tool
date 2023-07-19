@@ -26,6 +26,8 @@ module Access = struct
   open Guard
   open ValidationSet
 
+  let index_action = Action.Read
+
   let session action id =
     let target_id = id |> Uuid.target_of Entity.Id.value in
     One (action, TargetSpec.Id (`Session, target_id))
@@ -33,7 +35,7 @@ module Access = struct
 
   let index id =
     And
-      [ One (Action.Read, TargetSpec.Entity `Session)
+      [ One (index_action, TargetSpec.Entity `Session)
       ; Experiment.Guard.Access.read id
       ]
   ;;

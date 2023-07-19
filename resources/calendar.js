@@ -24,9 +24,6 @@ const tooltipContent = ({ _instance, _def }) => {
     const { start, end } = _instance.range;
     const toLocalTime = date => date.toLocaleTimeString('en',
         { timeStyle: 'short', hour12: false, timeZone: 'Europe/Zurich' })
-
-    console.log(start)
-    console.log(toLocalTime(start))
     const { title, extendedProps } = _def;
     const contactPerson = extendedProps.contact_person
 
@@ -46,40 +43,60 @@ const tooltipContent = ({ _instance, _def }) => {
 
 export const initCalendar = () => {
     document.querySelectorAll("[data-calendar]").forEach(el => {
-        const { location } = el.dataset
-        new Calendar(el, {
-            plugins: [dayGridPlugin, timeGridPlugin, listPlugin],
-            timeZone: 'Europe/Zurich',
-            initialView: 'dayGridMonth',
-            firstDay: 1,
-            height: maxHeight,
-            headerToolbar: {
-                left: 'prev,next today',
-                center: 'title',
-                right: 'dayGridMonth,timeGridWeek,listWeek'
-            },
-            eventTimeFormat: {
-                hour: "numeric",
-                minute: "2-digit",
-                meridiem: false,
-                hour12: false,
-            },
-            eventDidMount: function (info) {
-                tippy(info.el, {
-                    content: tooltipContent(info.event),
-                    allowHTML: true,
-                    placement: 'right',
-                });
-            },
-            eventSources: [{
-                url: `/admin/sessions/location/${location}`,
-                success: e => e.map(e => normalizeSession(e)),
-                failure: e => { notifyUser(notificationId, "error", e) }
-            }],
-            initialView: determineView(),
-            windowResize: function () {
-                this.changeView(determineView())
-            },
-        }).render();
+        try {
+            const { calendar: calendarType, location } = el.dataset
+            let url;
+            switch (calendarType) {
+                case "location":
+                    if (location) {
+                        url = `/admin/sessions/location/${location}`
+                    } else {
+                        throw "Location id missing."
+                    }
+                    break;
+                case "user":
+                    url = "/admin/sessions"
+                    break;
+                default:
+                    throw "Calendar type missing."
+            }
+
+            new Calendar(el, {
+                plugins: [dayGridPlugin, timeGridPlugin, listPlugin],
+                timeZone: 'Europe/Zurich',
+                initialView: 'dayGridMonth',
+                firstDay: 1,
+                height: maxHeight,
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'dayGridMonth,timeGridWeek,listWeek'
+                },
+                eventTimeFormat: {
+                    hour: "numeric",
+                    minute: "2-digit",
+                    meridiem: false,
+                    hour12: false,
+                },
+                eventDidMount: function (info) {
+                    tippy(info.el, {
+                        content: tooltipContent(info.event),
+                        allowHTML: true,
+                        placement: 'right',
+                    });
+                },
+                eventSources: [{
+                    url: url,
+                    success: e => e.map(e => normalizeSession(e)),
+                    failure: e => { notifyUser(notificationId, "error", e) }
+                }],
+                initialView: determineView(),
+                windowResize: function () {
+                    this.changeView(determineView())
+                },
+            }).render();
+        } catch (error) {
+            console.error(error)
+        }
     })
 }

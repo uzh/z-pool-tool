@@ -1,5 +1,6 @@
 module Database = Pool_database
 module RepoEntity = Repo_entity
+module Dynparam = Utils.Database.Dynparam
 
 let of_entity = RepoEntity.of_entity
 let to_entity = RepoEntity.to_entity
@@ -563,6 +564,44 @@ module Sql = struct
       find_for_calendar_by_location_request
       (Pool_location.Id.value location_id, start_time, end_time)
   ;;
+
+  let validate_session_sql actor =
+    let open Guard.Persistence in
+    let open Dynparam in
+    ( {sql| guardianValidateSessionUuid(guardianEncodeUuid(?), ?, pool_sessions.uuid) |sql}
+    , empty
+      |> add Uuid.Actor.t (actor |> Guard.Actor.id)
+      |> add Action.t Guard.Action.Read )
+  ;;
+
+  let find_for_calendar_by_user_request =
+    select_for_calendar ~order_by:"pool_sessions.start"
+  ;;
+
+  let find_for_calendar_by_user actor pool ~start_time ~end_time =
+    let open Caqti_request.Infix in
+    let sql, dyn = validate_session_sql actor in
+    let sql =
+      Format.asprintf
+        "%s AND %s AND %s AND %s"
+        sql
+        "pool_sessions.start > ?"
+        "pool_sessions.start < ?"
+        "pool_sessions.canceled_at IS NULL"
+    in
+    let dyn =
+      CCList.fold_left
+        (fun dyn p -> dyn |> Dynparam.add Caqti_type.ptime p)
+        dyn
+        [ start_time; end_time ]
+    in
+    let (Dynparam.Pack (pt, pv)) = dyn in
+    let request =
+      find_for_calendar_by_user_request sql
+      |> (pt ->* RepoEntity.Calendar.t) ~oneshot:true
+    in
+    Utils.Database.collect (pool |> Pool_database.Label.value) request pv
+  ;;
 end
 
 let location_to_repo_entity pool session =
@@ -674,3 +713,4 @@ let insert = Sql.insert
 let update = Sql.update
 let delete = Sql.delete
 let find_for_calendar_by_location = Sql.find_for_calendar_by_location
+let find_for_calendar_by_user = Sql.find_for_calendar_by_user

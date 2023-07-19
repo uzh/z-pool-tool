@@ -297,6 +297,13 @@ val find_for_calendar_by_location
   -> end_time:Ptime.t
   -> Calendar.t list Lwt.t
 
+val find_for_calendar_by_user
+  :  'a Guard.Persistence.actor
+  -> Pool_database.Label.t
+  -> start_time:Ptime.t
+  -> end_time:Ptime.t
+  -> Calendar.t list Lwt.t
+
 val to_email_text : Pool_common.Language.t -> t -> string
 val follow_up_sessions_to_email_list : t list -> string
 val public_to_email_text : Pool_common.Language.t -> Public.t -> string
@@ -329,6 +336,7 @@ module Guard : sig
   end
 
   module Access : sig
+    val index_action : Guard.Action.t
     val index : Experiment.Id.t -> Guard.ValidationSet.t
     val create : Experiment.Id.t -> Guard.ValidationSet.t
     val read : Experiment.Id.t -> Id.t -> Guard.ValidationSet.t
