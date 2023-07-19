@@ -191,13 +191,22 @@ end
 val to_public : t -> Public.t
 
 module Calendar : sig
+  type contact_person =
+    { name : string
+    ; email : Pool_user.EmailAddress.t
+    }
+
   type t =
     { id : Id.t
     ; title : Experiment.Title.t
     ; start : Start.t
     ; end_ : End.t
+    ; max_participants : ParticipantAmount.t
+    ; min_participants : ParticipantAmount.t
+    ; overbook : ParticipantAmount.t
+    ; assignment_count : AssignmentCount.t
     ; description : Description.t option
-    ; canceled_at : CanceledAt.t option
+    ; contact_person : contact_person option
     }
 
   val equal : t -> t -> bool

@@ -23,10 +23,25 @@ module Sql = struct
         pool_sessions.start,
         pool_sessions.duration,
         pool_sessions.description,
-        pool_sessions.canceled_at
+        pool_sessions.max_participants,
+        pool_sessions.min_participants,
+        pool_sessions.overbook,
+        (SELECT
+          COUNT(uuid)
+        FROM
+          pool_assignments
+        WHERE
+          pool_assignments.session_uuid = pool_sessions.uuid
+          AND pool_assignments.canceled_at IS NULL
+          AND pool_assignments.marked_as_deleted = 0),
+        user_users.given_name,
+        user_users.name,
+        user_users.email
       FROM pool_sessions
       INNER JOIN pool_experiments
         ON pool_sessions.experiment_uuid = pool_experiments.uuid
+      LEFT JOIN user_users
+        ON pool_experiments.contact_person_uuid = user_users.uuid
       WHERE
         %s
         %s

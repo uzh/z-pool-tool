@@ -443,17 +443,60 @@ module Calendar = struct
   include Entity.Calendar
   open CCResult.Infix
 
+  module ContactPerson = struct
+    let t =
+      let encode (_ : contact_person) =
+        failwith
+          Pool_common.(
+            Message.ReadOnlyModel |> Utils.error_to_string Language.En)
+      in
+      let decode (firstname, lastname, email) =
+        let fullname =
+          Format.asprintf "%s %s" firstname lastname |> CCString.trim
+        in
+        Ok { name = fullname; email }
+      in
+      Caqti_type.(
+        custom
+          ~encode
+          ~decode
+          (tup3 string string Pool_user.Repo.EmailAddress.t))
+    ;;
+  end
+
   let t =
     let encode (_ : t) =
       failwith
         Pool_common.(Message.ReadOnlyModel |> Utils.error_to_string Language.En)
     in
-    let decode (id, (title, (start, (duration, (description, canceled_at))))) =
+    let decode
+      ( id
+      , ( title
+        , ( start
+          , ( duration
+            , ( description
+              , ( max_participants
+                , ( min_participants
+                  , (overbook, (assignment_count, contact_person)) ) ) ) ) ) )
+      )
+      =
+      Logs.info (fun m -> m "%s" ([%show: Ptime.t] start));
       let* end_ =
         Entity.End.create start duration
         |> CCResult.map_err Pool_common.(Utils.error_to_string Language.En)
       in
-      Ok { id; title; start; end_; description; canceled_at }
+      Ok
+        { id
+        ; title
+        ; start
+        ; end_
+        ; description
+        ; max_participants
+        ; min_participants
+        ; overbook
+        ; assignment_count
+        ; contact_person
+        }
     in
     Caqti_type.(
       custom
@@ -465,6 +508,14 @@ module Calendar = struct
               Experiment.Repo.Entity.Title.t
               (tup2
                  ptime
-                 (tup2 ptime_span (tup2 (option string) (option ptime)))))))
+                 (tup2
+                    ptime_span
+                    (tup2
+                       (option string)
+                       (tup2
+                          int
+                          (tup2
+                             int
+                             (tup2 int (tup2 int (option ContactPerson.t)))))))))))
   ;;
 end

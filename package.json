@@ -17,12 +17,13 @@
   },
   "dependencies": {
     "@ckeditor/ckeditor5-build-classic": "^36.0.0",
-    "@econ/frontend-framework": "^2.0.0",
+    "@econ/frontend-framework": "^2.0.3",
     "@fullcalendar/core": "^6.1.8",
     "@fullcalendar/daygrid": "^6.1.8",
     "@fullcalendar/list": "^6.1.8",
     "@fullcalendar/timegrid": "^6.1.8",
     "flatpickr": "^4.6.13",
-    "htmx.org": "^1.6.0"
+    "htmx.org": "^1.6.0",
+    "tippy.js": "^6.3.7"
   }
 }

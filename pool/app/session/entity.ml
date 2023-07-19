@@ -20,7 +20,9 @@ end
 
 (* TODO [aerben] rename to contact *)
 module ParticipantAmount = struct
-  type t = int [@@deriving eq, show]
+  open Ppx_yojson_conv_lib.Yojson_conv
+
+  type t = int [@@deriving eq, show, yojson]
 
   let value m = m
 
@@ -401,13 +403,25 @@ let to_public
 ;;
 
 module Calendar = struct
+  open Ppx_yojson_conv_lib.Yojson_conv
+
+  type contact_person =
+    { name : string
+    ; email : Pool_user.EmailAddress.t
+    }
+  [@@deriving eq, show, yojson]
+
   type t =
     { id : Id.t
     ; title : Experiment.Title.t
     ; start : Start.t
     ; end_ : End.t
+    ; max_participants : ParticipantAmount.t
+    ; min_participants : ParticipantAmount.t
+    ; overbook : ParticipantAmount.t
+    ; assignment_count : AssignmentCount.t
     ; description : Description.t option [@option]
-    ; canceled_at : CanceledAt.t option [@option]
+    ; contact_person : contact_person option [@option]
     }
   [@@deriving eq, show, yojson]
 end

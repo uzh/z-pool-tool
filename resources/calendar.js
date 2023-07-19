@@ -2,6 +2,9 @@ import { Calendar } from '@fullcalendar/core';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import listPlugin from '@fullcalendar/list';
+import tippy from 'tippy.js';
+import 'tippy.js/dist/tippy.css'; // optional for styling
+
 import { notifyUser } from "./admin/utils"
 
 const notificationId = "calendar-notification";
@@ -16,6 +19,30 @@ const normalizeSession = (session) => {
 }
 
 const determineView = () => window.innerWidth >= viewBreakpoint ? "dayGridMonth" : "listWeek";
+
+const tooltipContent = ({ _instance, _def }) => {
+    const { start, end } = _instance.range;
+    const toLocalTime = date => date.toLocaleTimeString('en',
+        { timeStyle: 'short', hour12: false, timeZone: 'UTC' })
+
+    console.log(start)
+    console.log(toLocalTime(start))
+    const { title, extendedProps } = _def;
+    const contactPerson = extendedProps.contact_person
+
+    const { assignment_count, max_participants, min_participants, overbook } = extendedProps;
+    const counterHtml = `<p><strong>Participants: ${assignment_count} / ${max_participants}</strong><br>Overbook: ${overbook}<br>Min. participants: ${min_participants}</p>`
+
+    const contactPersonHtml = contactPerson ? `<a href="mailto:${contactPerson.email}">${contactPerson.name}</a><br>` : ''
+    const header = `<div class="card-header">${title}</div>`
+    const body = `<div class="card-body">
+        <p>${toLocalTime(start)} - ${toLocalTime(end)}</p><br>
+        ${extendedProps.description ? `${extendedProps.description}<br>` : ""}
+        ${contactPersonHtml}
+        ${counterHtml}
+        </div>`
+    return `<div class="card fc-tooltip">${header}${body}</div>`
+}
 
 export const initCalendar = () => {
     document.querySelectorAll("[data-calendar]").forEach(el => {
@@ -35,6 +62,13 @@ export const initCalendar = () => {
                 minute: "2-digit",
                 meridiem: false,
                 hour12: false,
+            },
+            eventDidMount: function (info) {
+                tippy(info.el, {
+                    content: tooltipContent(info.event),
+                    allowHTML: true,
+                    placement: 'right',
+                });
             },
             eventSources: [{
                 url: `/admin/locations/${location}/sessions`,

@@ -9,8 +9,7 @@
         display: inherit;
     }
 
-    table[class*=grid-],
-    .fc-daygrid-event-harness {
+    table[class*=grid-] {
         display: table;
     }
 
@@ -22,7 +21,8 @@
         display: table-cell;
     }
 
-    .fc-daygrid-event {
+    .fc-daygrid-event,
+    .fc-daygrid-event-harness {
         display: block;
     }
 
@@ -42,6 +42,16 @@
     .fc-toolbar-title {
         @extend .heading-3
     }
+
+    a.fc-event.active .modal-body {
+        display: block;
+    }
+}
+
+[data-tippy-root] .tippy-box {
+    background-color: transparent;
+    color: $color-text-dark;
+    padding: 0;
 }
 
 :root {
