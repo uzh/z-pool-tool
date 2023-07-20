@@ -15,11 +15,17 @@ let time_to_human time =
 
 (* Public functions *)
 let to_local_date date =
-  let open CCOption in
-  let open CCFun in
-  Ptime_clock.current_tz_offset_s ()
-  >>= Ptime.Span.of_int_s %> Ptime.add_span date
-  |> value ~default:date
+  let open Ptime in
+  date
+  |> to_float_s
+  |> Unix.localtime
+  |> fun { Unix.tm_isdst; _ } ->
+  (if tm_isdst then 2 else 1)
+  |> fun rate ->
+  rate * 60 * 60
+  |> Span.of_int_s
+  |> add_span date
+  |> CCOption.get_exn_or "Invalid ptime provided"
 ;;
 
 let formatted_date_time (date : Ptime.t) =
