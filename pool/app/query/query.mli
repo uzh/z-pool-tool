@@ -5,6 +5,7 @@ module Column : sig
   val pp : Format.formatter -> t -> unit
   val show : t -> string
   val field : t -> Pool_common.Message.Field.t
+  val create : Pool_common.Message.Field.t * string -> t
   val create_list : (Pool_common.Message.Field.t * string) list -> t list
 end
 
@@ -71,9 +72,17 @@ type t =
 
 val show : t -> string
 
+val create
+  :  ?pagination:Pagination.t
+  -> ?search:Search.t
+  -> ?sort:Sort.t
+  -> unit
+  -> t
+
 val from_request
   :  ?searchable_by:Column.t list
   -> ?sortable_by:Column.t list
+  -> ?default:t
   -> Rock.Request.t
   -> t
 

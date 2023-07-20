@@ -3,6 +3,7 @@ include Entity
 let from_request
   ?(searchable_by : Column.t list option)
   ?(sortable_by : Column.t list option)
+  ?(default : t option)
   req
   =
   let query_params = Sihl.Web.Request.query_list req in
@@ -43,7 +44,7 @@ let from_request
     >>= fun columns ->
     find Field.Order >|= Field.read >>= Sort.create ?order columns
   in
-  create ~pagination ?search ?sort ()
+  create ~pagination ?search ?sort () |> apply_default ~default
 ;;
 
 let empty () = { pagination = None; search = None; sort = None }

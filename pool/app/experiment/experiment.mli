@@ -252,5 +252,6 @@ module Guard : sig
   end
 end
 
+val default_query : Query.t
 val searchable_by : Query.Column.t list
 val sortable_by : Query.Column.t list
