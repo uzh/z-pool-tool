@@ -3,14 +3,19 @@ import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import listPlugin from '@fullcalendar/list';
 import tippy from 'tippy.js';
-import 'tippy.js/dist/tippy.css'; // optional for styling
-
 import { notifyUser } from "./admin/utils"
 
 const notificationId = "calendar-notification";
 
 const viewBreakpoint = 765
 const maxHeight = 800
+
+const toLocalTime = date => date.toLocaleTimeString('en',
+    {
+        timeStyle: 'short',
+        hour12: false,
+        timeZone: 'UTC'
+    })
 
 const normalizeSession = (session) => {
     session.end = session.end_
@@ -23,8 +28,6 @@ const determineView = () => window.innerWidth >= viewBreakpoint ? "dayGridMonth"
 const tooltipContent = ({ _instance, _def }, calendarType) => {
     const showLocation = calendarType != "location";
     const { start, end } = _instance.range;
-    const toLocalTime = date => date.toLocaleTimeString('en',
-        { timeStyle: 'short', hour12: false, timeZone: 'Europe/Zurich' })
     const { title, extendedProps } = _def;
     const contactPerson = extendedProps.contact_person
 
@@ -36,8 +39,8 @@ const tooltipContent = ({ _instance, _def }, calendarType) => {
     const body = `<div class="card-body">
         <p>${showLocation ? `${extendedProps.location.name}<br>` : ""}
             ${toLocalTime(start)} - ${toLocalTime(end)}
-        </p><br>
-        ${extendedProps.description ? `${extendedProps.description}<br>` : ""}
+        </p>
+        ${extendedProps.description ? `<br>${extendedProps.description}` : ""}
         ${contactPersonHtml}
         ${counterHtml}
         </div>`
@@ -66,7 +69,6 @@ export const initCalendar = () => {
 
             new Calendar(el, {
                 plugins: [dayGridPlugin, timeGridPlugin, listPlugin],
-                timeZone: 'Europe/Zurich',
                 initialView: 'dayGridMonth',
                 firstDay: 1,
                 height: maxHeight,
