@@ -6,7 +6,6 @@ module Model : sig
   type t =
     | Contact
     | Experiment
-    | Session
 
   val field : Pool_common.Message.Field.t
   val min : int
@@ -20,6 +19,8 @@ module Model : sig
   val t_of_yojson : Yojson.Safe.t -> t
   val yojson_of_t : t -> Yojson.Safe.t
   val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+  val schema : unit -> ('a, t) Pool_common.Utils.PoolConformist.Field.t
+  val all : t list
 end
 
 module Title : Pool_common.Model.StringSig
@@ -27,21 +28,21 @@ module Description : Pool_common.Model.StringSig
 
 module Tagged : sig
   type t =
-    { model : Model.t
-    ; model_uuid : Pool_common.Id.t
+    { model_uuid : Pool_common.Id.t
     ; tag_uuid : Id.t
     }
 
   val equal : t -> t -> bool
   val pp : Format.formatter -> t -> unit
   val show : t -> string
-  val create : Model.t -> Id.t -> Id.t -> (t, 'a) result
+  val create : Pool_common.Id.t -> Id.t -> (t, 'a) result
 end
 
 type t =
   { id : Id.t
   ; title : Title.t
   ; description : Description.t option
+  ; model : Model.t
   }
 
 val equal : t -> t -> bool
@@ -52,6 +53,7 @@ val create
   :  ?id:Id.t
   -> ?description:Description.t
   -> Title.t
+  -> Model.t
   -> (t, Pool_common.Message.error) result
 
 type event =
@@ -75,6 +77,13 @@ val find
   -> (t, Pool_common.Message.error) result Lwt.t
 
 val find_all : Pool_database.Label.t -> t list Lwt.t
+val find_all_with_model : Pool_database.Label.t -> Model.t -> t list Lwt.t
+
+val find_all_of_entity
+  :  Pool_database.Label.t
+  -> Model.t
+  -> Pool_common.Id.t
+  -> t list Lwt.t
 
 val find_all_validated
   :  ?action:Guard.Action.t
@@ -82,12 +91,14 @@ val find_all_validated
   -> 'a Guard.Actor.t
   -> t list Lwt.t
 
-val find_all_of_contact
-  :  Pool_database.Label.t
-  -> Pool_common.Id.t
+val find_all_validated_with_model
+  :  ?action:Guard.Action.t
+  -> Pool_database.Label.t
+  -> Model.t
+  -> 'a Guard.Actor.t
   -> t list Lwt.t
 
-val find_all_models_by_tag_sql : Model.t -> string -> string -> string
+val create_find_all_tag_sql : string -> string -> string
 
 val insert
   :  Pool_database.Label.t

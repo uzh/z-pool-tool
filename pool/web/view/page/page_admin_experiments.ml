@@ -86,6 +86,48 @@ let message_templates_html
     ]
 ;;
 
+let tag_form
+  Pool_context.{ language; csrf; query_language; _ }
+  ?(existing = [])
+  available
+  experiment
+  =
+  let action =
+    Http_utils.externalize_path_with_lang
+      query_language
+      (Format.asprintf "%s/assign" Pool_common.Message.Field.(Tag |> human_url)
+       |> build_experiment_path experiment)
+  in
+  let available =
+    CCList.(filter CCFun.(flip (mem ~eq:Tags.equal) existing %> not) available)
+  in
+  form
+    ~a:[ a_method `Post; a_action action ]
+    Input.
+      [ csrf_element csrf ()
+      ; div
+          ~a:[ a_class [ "stack" ] ]
+          [ selector
+              ~add_empty:true
+              ~option_formatter:Tags.(fun tag -> Title.value tag.title)
+              language
+              Pool_common.Message.Field.Tag
+              Tags.(fun tag -> Id.value tag.id)
+              available
+              None
+              ()
+          ; div
+              ~a:[ a_class [ "flexrow" ] ]
+              [ submit_element
+                  ~classnames:[ "push" ]
+                  language
+                  Pool_common.Message.(Add (Some Field.Tag))
+                  ()
+              ]
+          ]
+      ]
+;;
+
 let index Pool_context.{ language; _ } experiment_list =
   let experiment_table experiments =
     let thead =
@@ -351,8 +393,9 @@ let create
 ;;
 
 let edit
+  ?(allowed_to_assign = false)
   experiment
-  ({ Pool_context.language; _ } as context)
+  ({ Pool_context.language; csrf; _ } as context)
   sys_languages
   default_reminder_lead_time
   contact_persons
@@ -360,6 +403,8 @@ let edit
   smtp_auth_list
   invitation_templates
   session_reminder_templates
+  tags
+  available_tags
   flash_fetcher
   =
   let open Message_template in
@@ -385,16 +430,48 @@ let edit
       "/admin/experiments/%s/%s"
       Experiment.(Id.value experiment.id)
   in
-  let message_templates_html =
+  let message_templates =
     message_templates_html language experiment_path sys_languages
+  in
+  let assign_tags =
+    if allowed_to_assign
+    then (
+      let remove_action tag =
+        Format.asprintf
+          "%s/%s/remove"
+          Field.(Tag |> human_url)
+          Tags.(Id.value tag.Tags.id)
+        |> build_experiment_path experiment
+      in
+      [ h2
+          ~a:[ a_class [ "heading-2" ] ]
+          [ Utils.nav_link_to_string language I18n.Tags |> txt ]
+      ; div
+          ~a:[ a_class [ "switcher-lg"; "flex-gap" ] ]
+          [ tag_form context ~existing:tags available_tags experiment
+          ; div
+              ~a:[ a_class [ "form-group" ] ]
+              [ label
+                  [ Utils.control_to_string
+                      language
+                      Message.(Remove (Some Field.Tag))
+                    |> txt
+                  ]
+              ; Component.Tag.tag_list
+                  ~remove_action:(remove_action, csrf, language)
+                  tags
+              ]
+          ]
+      ])
+    else []
   in
   [ div
       ~a:[ a_class [ "stack-lg" ] ]
-      [ notifications
-      ; form
-      ; message_templates_html Label.ExperimentInvitation invitation_templates
-      ; message_templates_html Label.SessionReminder session_reminder_templates
-      ]
+      ([ notifications; form ]
+       @ assign_tags
+       @ [ message_templates Label.ExperimentInvitation invitation_templates
+         ; message_templates Label.SessionReminder session_reminder_templates
+         ])
   ]
   |> Layout.Experiment.(
        create
@@ -411,6 +488,7 @@ let detail
   sys_languages
   contact_person
   smtp_account
+  tags
   ({ Pool_context.language; csrf; _ } as context)
   =
   let experiment_path = build_experiment_path experiment in
@@ -538,9 +616,22 @@ let detail
             ]
         ]
     in
+    let tag_overview =
+      div
+        [ h3
+            ~a:[ a_class [ "heading-3" ] ]
+            Pool_common.[ Utils.nav_link_to_string language I18n.Tags |> txt ]
+        ; Component.Tag.tag_list tags
+        ]
+    in
     [ div
         ~a:[ a_class [ "stack-lg" ] ]
-        [ notifications; experiment_table; message_template; delete_form ]
+        [ notifications
+        ; experiment_table
+        ; tag_overview
+        ; message_template
+        ; delete_form
+        ]
     ]
   in
   let edit_button =

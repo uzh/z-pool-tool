@@ -1,3 +1,4 @@
+open Utils.Lwt_result.Infix
 module Command = Cqrs_command.Tags_command
 module Conformist = Pool_common.Utils.PoolConformist
 module Field = Pool_common.Message.Field
@@ -23,10 +24,12 @@ module Data = struct
     ;;
 
     let description_updated = Tags.Description.of_string "Cleanup description"
+    let model = Tags.Model.Contact
 
     let create =
       [ Field.(Title |> show), [ title |> Tags.Title.value ]
       ; Field.(Description |> show), [ description |> Tags.Description.value ]
+      ; Field.(Model |> show), [ model |> Tags.Model.show ]
       ]
     ;;
 
@@ -34,14 +37,17 @@ module Data = struct
       [ Field.(Title |> show), [ title_updated |> Tags.Title.value ]
       ; ( Field.(Description |> show)
         , [ description_updated |> Tags.Description.value ] )
+      ; Field.(Model |> show), [ model |> Tags.Model.show ]
       ]
     ;;
 
     let create_with_description () =
-      Tags.create ~id ~description title |> get_or_failwith
+      Tags.create ~id ~description title model |> get_or_failwith
     ;;
 
-    let create_without_description () = Tags.create ~id title |> get_or_failwith
+    let create_without_description () =
+      Tags.create ~id title model |> get_or_failwith
+    ;;
 
     let updated_tag () =
       create_with_description ()
@@ -99,7 +105,7 @@ let create_persistent _ () =
 
 let create_persistent_fail _ () =
   let tag = Data.Tag.create_with_description () in
-  let%lwt _ =
+  let%lwt () =
     Lwt.catch
       (fun () ->
         Pool_event.handle_events
@@ -133,18 +139,19 @@ let assign_tag_to_contact _ () =
   let open Command.AssignTagToContact in
   let%lwt contact = Test_utils.Repo.first_contact () in
   let%lwt tag = Test_utils.Repo.first_tag () in
-  let events =
+  let%lwt events =
     [ Field.(Tag |> show), [ Tags.(tag.id |> Id.value) ] ]
     |> Http_utils.remove_empty_values
     |> decode
-    |> get_or_failwith
-    |> handle contact
-    |> get_or_failwith
+    |> Lwt_result.lift
+    >>= Tags.find Test_utils.Data.database_label
+    >== validate
+    >== handle contact
+    ||> get_or_failwith
   in
   let%lwt () = Pool_event.handle_events Test_utils.Data.database_label events in
   let%lwt found_tagged =
-    Tags.find_all_of_contact
-      Test_utils.Data.database_label
+    Tags.(find_all_of_entity Test_utils.Data.database_label Model.Contact)
       (contact |> Contact.id)
   in
   let expected = [ tag ] in
@@ -162,14 +169,42 @@ let remove_tag_from_contact _ () =
   let events = tag |> handle contact |> get_or_failwith in
   let%lwt () = Pool_event.handle_events Test_utils.Data.database_label events in
   let%lwt found_tagged =
-    Tags.find_all_of_contact
-      Test_utils.Data.database_label
+    Tags.(find_all_of_entity Test_utils.Data.database_label Model.Contact)
       (contact |> Contact.id)
   in
   let expected = [] in
   let () =
     Alcotest.(
       check (list testable_tag) "all needed tags assigned" expected found_tagged)
+  in
+  Lwt.return_unit
+;;
+
+let try_assign_experiment_tag_to_contact _ () =
+  let open Command.AssignTagToContact in
+  let%lwt contact = Test_utils.Repo.first_contact () in
+  let tag = Tags.(create Data.Tag.title Model.Experiment) |> get_or_failwith in
+  let%lwt () =
+    Pool_event.handle_events
+      Test_utils.Data.database_label
+      [ Tags.Created tag |> Pool_event.tags ]
+  in
+  let%lwt events =
+    [ Field.(Tag |> show), [ Tags.(tag.id |> Id.value) ] ]
+    |> Http_utils.remove_empty_values
+    |> decode
+    |> Lwt_result.lift
+    >>= Tags.find Test_utils.Data.database_label
+    >== validate
+    >== handle contact
+  in
+  let () =
+    Alcotest.(
+      check
+        (result (list Test_utils.event) Test_utils.error)
+        "invalid error"
+        (Error Pool_common.Message.(Invalid Field.Tag))
+        events)
   in
   Lwt.return_unit
 ;;

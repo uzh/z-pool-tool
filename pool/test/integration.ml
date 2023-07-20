@@ -276,6 +276,10 @@ let suite =
           ; test_case "update tag" `Slow update_persistent
           ; test_case "assign tag to contact" `Slow assign_tag_to_contact
           ; test_case "remove tag from contact" `Slow remove_tag_from_contact
+          ; test_case
+              "try to assign experiment tag to contact"
+              `Slow
+              try_assign_experiment_tag_to_contact
           ] )
     ; "cleanup", [ test_case "clean up test database" `Quick Seed.cleanup ]
     ; ( "user import"

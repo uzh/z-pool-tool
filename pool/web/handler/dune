@@ -6,6 +6,7 @@
   component
   cqrs_command
   email
+  guard
   htmx
   http_utils
   layout

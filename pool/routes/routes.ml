@@ -448,6 +448,23 @@ module Admin = struct
             (label_specific new_session_reminder new_session_reminder_post)
         ]
       in
+      let tags =
+        let open Handler.Admin.Settings.Tags in
+        let open Handler.Admin.Experiments.Tags in
+        let specific =
+          [ post
+              "/remove"
+              ~middlewares:[ Access.remove_tag_from_experiment ]
+              remove_tag
+          ]
+        in
+        [ post
+            "/assign"
+            ~middlewares:[ Access.assign_tag_to_experiment ]
+            assign_tag
+        ; choose ~scope:(Tag |> url_key) specific
+        ]
+      in
       let specific =
         Experiments.
           [ get "" ~middlewares:[ Access.read ] show
@@ -466,6 +483,7 @@ module Admin = struct
           ; choose ~scope:"/assignments" assignments
           ; choose ~scope:"/mailings" mailings
           ; choose ~scope:"/filter" filter
+          ; choose ~scope:(Tag |> human_url) tags
           ; choose ~scope:(add_human_field MessageTemplate) message_templates
           ]
       in

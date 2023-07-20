@@ -20,7 +20,7 @@ let layout language children =
 ;;
 
 module List = struct
-  let row ({ Tags.title; description; _ } as tag) =
+  let row ({ Tags.title; description; model; _ } as tag) =
     let buttons tag =
       tags_path ~suffix:(tag.Tags.id |> Tags.Id.value) ()
       |> Input.edit_link
@@ -29,6 +29,7 @@ module List = struct
     in
     [ txt (Tags.Title.value title)
     ; txt (CCOption.map_or ~default:"" Tags.Description.value description)
+    ; txt (Tags.Model.show model |> CCString.capitalize_ascii)
     ; buttons tag
     ]
   ;;
@@ -36,7 +37,8 @@ module List = struct
   let create { Pool_context.language; _ } tags =
     let thead =
       let open Input in
-      (Field.[ Title; Description ] |> Component.Table.fields_to_txt language)
+      (Field.[ Title; Description; Model ]
+       |> Component.Table.fields_to_txt language)
       @ [ link_as_button
             ~style:`Success
             ~icon:Icon.Add
@@ -76,7 +78,7 @@ let tag_form ?flash_fetcher ?tag Pool_context.{ language; csrf; _ } =
       ]
     [ Input.csrf_element csrf ()
     ; div
-        ~a:[ a_class [ "grid-col-2" ] ]
+        ~a:[ a_class [ "stack-md" ] ]
         [ Input.input_element
             language
             `Text
@@ -91,6 +93,16 @@ let tag_form ?flash_fetcher ?tag Pool_context.{ language; csrf; _ } =
             ?value:
               CCOption.(bind tag (fun m -> m.description) >|= Description.value)
             ?flash_fetcher
+        ; Input.selector
+            ~add_empty:true
+            ~required:true
+            ?flash_fetcher
+            language
+            Field.Model
+            Tags.Model.show
+            Tags.Model.all
+            None
+            ()
         ]
     ; div
         ~a:[ a_class [ "flexrow" ] ]

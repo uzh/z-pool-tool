@@ -35,7 +35,8 @@ let detail_view action req =
          |> Contact.find database_label
        in
        let%lwt contact_tags =
-         Tags.find_all_of_contact database_label (Contact.id contact)
+         Tags.(find_all_of_entity database_label Model.Contact)
+           (Contact.id contact)
        in
        match action with
        | `Show ->
@@ -51,7 +52,12 @@ let detail_view action req =
              actor
            ||> CCResult.is_ok
          in
-         let%lwt all_tags = Tags.find_all_validated database_label actor in
+         let%lwt all_tags =
+           let open Tags in
+           if allowed_to_assign
+           then find_all_validated_with_model database_label Model.Contact actor
+           else Lwt.return []
+         in
          let tenant_languages =
            Pool_context.Tenant.get_tenant_languages_exn req
          in

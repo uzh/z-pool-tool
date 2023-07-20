@@ -181,69 +181,101 @@ let create req =
 
 let detail edit req =
   let open Utils.Lwt_result.Infix in
-  let result ({ Pool_context.database_label; _ } as context) =
+  let result ({ Pool_context.database_label; user; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, "/admin/experiments")
-    @@
-    let open Message_template in
-    let id = experiment_id req in
-    let* experiment = Experiment.find database_label id in
-    let sys_languages = Pool_context.Tenant.get_tenant_languages_exn req in
-    let find_templates =
-      find_all_of_entity_by_label database_label (id |> Experiment.Id.to_common)
-    in
-    let%lwt invitation_templates = find_templates Label.ExperimentInvitation in
-    let%lwt session_reminder_templates = find_templates Label.SessionReminder in
-    (match edit with
-     | false ->
-       let%lwt session_count = Experiment.session_count database_label id in
-       let* contact_person =
-         experiment.Experiment.contact_person_id
-         |> CCOption.map_or ~default:(Lwt_result.return None) (fun id ->
-           Admin.find database_label id >|+ CCOption.return)
+    @@ let* actor = Pool_context.Utils.find_authorizable database_label user in
+       let id = experiment_id req in
+       let* experiment = Experiment.find database_label id in
+       let sys_languages = Pool_context.Tenant.get_tenant_languages_exn req in
+       let find_templates =
+         Message_template.find_all_of_entity_by_label
+           database_label
+           (id |> Experiment.Id.to_common)
        in
-       let* smtp_auth =
-         experiment.Experiment.smtp_auth_id
-         |> CCOption.map_or ~default:(Lwt_result.return None) (fun id ->
-           Email.SmtpAuth.find database_label id >|+ CCOption.return)
+       let%lwt invitation_templates =
+         find_templates Message_template.Label.ExperimentInvitation
        in
-       Page.Admin.Experiments.detail
-         experiment
-         session_count
-         invitation_templates
-         session_reminder_templates
-         sys_languages
-         contact_person
-         smtp_auth
-         context
-       |> Lwt_result.ok
-     | true ->
-       let flash_fetcher key = Sihl.Web.Flash.find key req in
-       let%lwt default_reminder_lead_time =
-         Settings.find_default_reminder_lead_time database_label
+       let%lwt session_reminder_templates =
+         find_templates Message_template.Label.SessionReminder
        in
-       let%lwt organisational_units =
-         Organisational_unit.all database_label ()
+       let%lwt current_tags =
+         Tags.(find_all_of_entity database_label Model.Experiment)
+           (id |> Experiment.Id.to_common)
        in
-       let%lwt smtp_auth_list = Email.SmtpAuth.find_all database_label in
-       let%lwt contact_persons =
-         Some id
-         |> contact_person_roles
-         |> Admin.find_all_with_roles database_label
-       in
-       Page.Admin.Experiments.edit
-         experiment
-         context
-         sys_languages
-         default_reminder_lead_time
-         contact_persons
-         organisational_units
-         smtp_auth_list
-         invitation_templates
-         session_reminder_templates
-         flash_fetcher
-       |> Lwt_result.ok)
-    >>= create_layout req context
-    >|+ Sihl.Web.Response.of_html
+       (match edit with
+        | false ->
+          let%lwt session_count = Experiment.session_count database_label id in
+          let* contact_person =
+            experiment.Experiment.contact_person_id
+            |> CCOption.map_or ~default:(Lwt_result.return None) (fun id ->
+              Admin.find database_label id >|+ CCOption.return)
+          in
+          let* smtp_auth =
+            experiment.Experiment.smtp_auth_id
+            |> CCOption.map_or ~default:(Lwt_result.return None) (fun id ->
+              Email.SmtpAuth.find database_label id >|+ CCOption.return)
+          in
+          Page.Admin.Experiments.detail
+            experiment
+            session_count
+            invitation_templates
+            session_reminder_templates
+            sys_languages
+            contact_person
+            smtp_auth
+            current_tags
+            context
+          |> Lwt_result.ok
+        | true ->
+          let flash_fetcher key = Sihl.Web.Flash.find key req in
+          let%lwt default_reminder_lead_time =
+            Settings.find_default_reminder_lead_time database_label
+          in
+          let%lwt organisational_units =
+            Organisational_unit.all database_label ()
+          in
+          let%lwt smtp_auth_list = Email.SmtpAuth.find_all database_label in
+          let%lwt contact_persons =
+            Some id
+            |> contact_person_roles
+            |> Admin.find_all_with_roles database_label
+          in
+          let%lwt allowed_to_assign =
+            Guard.Persistence.validate
+              database_label
+              (id
+               |> Experiment.Id.to_common
+               |> Cqrs_command.Tags_command.AssignTagToContact.effects)
+              actor
+            ||> CCResult.is_ok
+          in
+          let%lwt all_tags =
+            let open Tags in
+            if allowed_to_assign
+            then
+              find_all_validated_with_model
+                database_label
+                Model.Experiment
+                actor
+            else Lwt.return []
+          in
+          Page.Admin.Experiments.edit
+            ~allowed_to_assign
+            experiment
+            context
+            sys_languages
+            default_reminder_lead_time
+            contact_persons
+            organisational_units
+            smtp_auth_list
+            invitation_templates
+            session_reminder_templates
+            current_tags
+            all_tags
+            flash_fetcher
+          |> Lwt_result.ok)
+       >>= create_layout req context
+       >|+ Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path ~src req
 ;;
@@ -428,6 +460,8 @@ module Filter = struct
     result |> HttpUtils.extract_happy_path ~src req
   ;;
 end
+
+module Tags = Admin_experiments_tags
 
 module Access : sig
   include module type of Helpers.Access

@@ -27,7 +27,7 @@ let new_form req =
     Page.Admin.Settings.Tags.new_form ~flash_fetcher context
     |> General.create_tenant_layout req ~active_navigation context
     >|+ Sihl.Web.Response.of_html
-    >|- fun err -> err, base_path
+    >|- fun err -> err, Format.asprintf "%s/create" base_path
   in
   result |> HttpUtils.extract_happy_path ~src req
 ;;
@@ -40,7 +40,7 @@ let edit req =
     >|+ Page.Admin.Settings.Tags.edit ~flash_fetcher context
     >>= General.create_tenant_layout req ~active_navigation context
     >|+ Sihl.Web.Response.of_html
-    >|- fun err -> err, base_path
+    >|- fun err -> err, Format.asprintf "%s/edit" base_path
   in
   result |> HttpUtils.extract_happy_path ~src req
 ;;
@@ -93,12 +93,19 @@ module Access : sig
 
   val assign_tag_to_contact : Rock.Middleware.t
   val remove_tag_from_contact : Rock.Middleware.t
+  val assign_tag_to_experiment : Rock.Middleware.t
+  val remove_tag_from_experiment : Rock.Middleware.t
 end = struct
   include Helpers.Access
   module Guardian = Middleware.Guardian
   module Command = Cqrs_command.Tags_command
 
   let contact_effects = Guardian.id_effects Contact.Id.of_string Field.Contact
+
+  let experiment_effects =
+    Guardian.id_effects Experiment.Id.of_string Field.Experiment
+  ;;
+
   let tag_effects = Guardian.id_effects Tags.Id.of_string Field.Tag
   let index = Tags.Guard.Access.index |> Guardian.validate_admin_entity
   let create = Command.Create.effects |> Guardian.validate_admin_entity
@@ -117,6 +124,18 @@ end = struct
   let remove_tag_from_contact =
     Command.RemoveTagFromContact.effects
     |> contact_effects
+    |> Guardian.validate_generic
+  ;;
+
+  let assign_tag_to_experiment =
+    Command.AssignTagToExperiment.effects
+    |> experiment_effects
+    |> Guardian.validate_generic
+  ;;
+
+  let remove_tag_from_experiment =
+    Command.RemoveTagFromExperiment.effects
+    |> experiment_effects
     |> Guardian.validate_generic
   ;;
 end
