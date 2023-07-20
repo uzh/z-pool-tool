@@ -12,6 +12,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 - notification and confirmation service for user imports
 - allow smtp account and reply-to address to be specified for each experiment
 - calendar that shows all sessions of a location and all sessions of the current admin user
+- tags for experiments and contacts (admin sites)
 
 ### Changed
 
