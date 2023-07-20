@@ -120,6 +120,10 @@ abbr[title] {
     text-decoration: none;
 }
 
+.flexrow.even>* {
+    flex-basis: 50%;
+}
+
 // CK Editor
 .form-group:not(.horizontal)>*~.ck {
     margin-top: $space-xs;
