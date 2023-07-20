@@ -54,6 +54,14 @@
     padding: 0;
 }
 
+.main-nav .dropdown {
+    z-index: 5;
+}
+
+.notification-fixed {
+    z-index: 10;
+}
+
 :root {
     --fc-button-bg-color: #{$color-primary};
     --fc-button-border-color: #{$color-primary-dark};
