@@ -25,7 +25,7 @@ type session_participation =
 let set_password
   : Database.Label.t -> t -> string -> string -> (unit, string) Lwt_result.t
   =
- fun pool { user; _ } password password_confirmation ->
+  fun pool { user; _ } password password_confirmation ->
   let open Utils.Lwt_result.Infix in
   Service.User.set_password
     ~ctx:(Pool_database.to_ctx pool)

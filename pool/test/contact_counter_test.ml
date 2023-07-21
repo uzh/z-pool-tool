@@ -17,7 +17,7 @@ let find_assignment_by_contact_and_session contact_id session_id =
   let open Assignment in
   find_uncanceled_by_session database_label session_id
   >|+ CCList.find (fun ({ contact; _ } : Assignment.t) ->
-        Contact.(Id.equal (id contact) contact_id))
+    Contact.(Id.equal (id contact) contact_id))
   ||> get_exn
 ;;
 
@@ -27,10 +27,9 @@ let set_sessions_to_past session_ids =
   |> Lwt_list.map_s (fun id -> find database_label id)
   ||> CCResult.flatten_l
   >|+ CCList.map (fun (session : t) ->
-        let session = { session with start = Model.an_hour_ago () } in
-        Updated
-          (Model.session_to_session_base session, session.location, session)
-        |> Pool_event.session)
+    let session = { session with start = Model.an_hour_ago () } in
+    Updated (Model.session_to_session_base session, session.location, session)
+    |> Pool_event.session)
   |>> Pool_event.handle_events database_label
   ||> get_exn
 ;;
@@ -109,8 +108,8 @@ let initialize contact_id experiment_id session_id ?followup_session_id () =
   let%lwt follow_up_session =
     followup_session_id
     |> CCOption.map_or ~default:Lwt.return_none (fun id ->
-         SessionRepo.create ~id ~follow_up_to:session_id experiment_id ()
-         |> Lwt.map CCOption.return)
+      SessionRepo.create ~id ~follow_up_to:session_id experiment_id ()
+      |> Lwt.map CCOption.return)
   in
   Lwt.return (contact, experiment, session, follow_up_session)
 ;;
@@ -191,38 +190,37 @@ module CancelSession = struct
     let%lwt () = test_result initial_nr_assignments in
     test_cases
     |> Lwt_list.iter_s (fun (session, expected_nr_assignments) ->
-         let%lwt () =
-           let open Cqrs_command.Session_command.Cancel in
-           let%lwt follow_ups =
-             Session.find_follow_ups database_label session.Session.id
-             ||> get_exn
-           in
-           let%lwt assignments =
-             session :: follow_ups
-             |> Lwt_list.fold_left_s
-                  (fun assignments session ->
-                    Assignment.find_uncanceled_by_session
-                      database_label
-                      session.Session.id
-                    ||> get_exn
-                    ||> CCList.append assignments)
-                  []
-             ||> Assignment.group_by_contact
-           in
-           let email = Model.create_email () in
-           let reason = "Some reason" |> Session.CancellationReason.of_string in
-           handle
-             (session :: follow_ups)
-             experiment
-             assignments
-             (fun _ _ -> Ok email)
-             Session_test.create_cancellation_text_message
-             [ Pool_common.NotifyVia.Email ]
-             reason
-           |> get_exn
-           |> Pool_event.handle_events database_label
-         in
-         test_result expected_nr_assignments)
+      let%lwt () =
+        let open Cqrs_command.Session_command.Cancel in
+        let%lwt follow_ups =
+          Session.find_follow_ups database_label session.Session.id ||> get_exn
+        in
+        let%lwt assignments =
+          session :: follow_ups
+          |> Lwt_list.fold_left_s
+               (fun assignments session ->
+                 Assignment.find_uncanceled_by_session
+                   database_label
+                   session.Session.id
+                 ||> get_exn
+                 ||> CCList.append assignments)
+               []
+          ||> Assignment.group_by_contact
+        in
+        let email = Model.create_email () in
+        let reason = "Some reason" |> Session.CancellationReason.of_string in
+        handle
+          (session :: follow_ups)
+          experiment
+          assignments
+          (fun _ _ -> Ok email)
+          Session_test.create_cancellation_text_message
+          [ Pool_common.NotifyVia.Email ]
+          reason
+        |> get_exn
+        |> Pool_event.handle_events database_label
+      in
+      test_result expected_nr_assignments)
   ;;
 
   let without_followups _ () =

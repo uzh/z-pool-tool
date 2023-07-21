@@ -44,6 +44,6 @@ module String = struct
     let open Nocrypto.Cipher_block.AES.CTR in
     Base64.decode value
     |> CCResult.map (fun value ->
-         decrypt ~key ~ctr (of_string value) |> to_string)
+      decrypt ~key ~ctr (of_string value) |> to_string)
   ;;
 end

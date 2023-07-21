@@ -121,8 +121,8 @@ let upload_files pool allow_list req =
   let open Utils.Lwt_result.Infix in
   save_files allow_list req
   >|> Lwt_list.map_s (fun (k, v) ->
-        let* id = file_to_storage_add pool v in
-        Lwt.return_ok (k, id))
+    let* id = file_to_storage_add pool v in
+    Lwt.return_ok (k, id))
   ||> CCResult.flatten_l
 ;;
 

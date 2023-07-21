@@ -25,10 +25,10 @@ let assignment pool =
         invitations
         |> CCList.take (CCList.length invitations / 2)
         |> CCList.flat_map (fun ({ Invitation.contact; _ } : Invitation.t) ->
-             let assign { Session.id; _ } =
-               Assignment.Created { Assignment.contact; session_id = id }
-             in
-             assign session :: CCList.map assign follow_ups))
+          let assign { Session.id; _ } =
+            Assignment.Created { Assignment.contact; session_id = id }
+          in
+          assign session :: CCList.map assign follow_ups))
       session_invitations
   in
   let%lwt () = Lwt_list.iter_s (Assignment.handle_event pool) events in

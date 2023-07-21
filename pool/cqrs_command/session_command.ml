@@ -335,8 +335,8 @@ end = struct
       let open Assignment in
       assignments
       |> CCList.map (fun ({ contact; _ } : t) ->
-           create_message contact start duration
-           >|= fun msg -> msg, experiment.Experiment.smtp_auth_id)
+        create_message contact start duration
+        >|= fun msg -> msg, experiment.Experiment.smtp_auth_id)
       |> CCResult.flatten_l
     in
     Ok
@@ -439,10 +439,10 @@ end = struct
     let contact_events =
       assignments
       |> CCList.map (fun (contact, assignments) ->
-           contact
-           |> Contact_counter.update_on_session_cancellation assignments
-           |> Contact.updated
-           |> Pool_event.contact)
+        contact
+        |> Contact_counter.update_on_session_cancellation assignments
+        |> Contact.updated
+        |> Pool_event.contact)
     in
     let* notification_events =
       let open Pool_common.NotifyVia in
@@ -462,23 +462,22 @@ end = struct
       | notify_via ->
         notify_via
         |> CCList.flat_map (function
-             | Email ->
-               assignments
-               |> CCList.map (fun (contact, _) -> email_event contact)
-             | TextMessage ->
-               assignments
-               |> CCList.filter_map (fun (contact, _) ->
-                    match contact.Contact.cell_phone, fallback_to_email with
-                    | Some phone_number, (true | false) ->
-                      text_msg_event contact phone_number |> CCOption.return
-                    | None, true -> email_event contact |> CCOption.return
-                    | _, _ -> None))
+          | Email ->
+            assignments |> CCList.map (fun (contact, _) -> email_event contact)
+          | TextMessage ->
+            assignments
+            |> CCList.filter_map (fun (contact, _) ->
+              match contact.Contact.cell_phone, fallback_to_email with
+              | Some phone_number, (true | false) ->
+                text_msg_event contact phone_number |> CCOption.return
+              | None, true -> email_event contact |> CCOption.return
+              | _, _ -> None))
         |> CCList.all_ok
     in
     let cancel_events =
       sessions
       |> CCList.map (fun session ->
-           Session.Canceled session |> Pool_event.session)
+        Session.Canceled session |> Pool_event.session)
     in
     [ notification_events; cancel_events; contact_events ]
     |> CCList.flatten

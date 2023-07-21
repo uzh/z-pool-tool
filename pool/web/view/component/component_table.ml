@@ -62,7 +62,7 @@ let responsive_horizontal_table
   let thead =
     header
     |> CCList.map (fun h ->
-         h |> CCOption.value ~default:"" |> txt |> CCList.pure |> th)
+      h |> CCOption.value ~default:"" |> txt |> CCList.pure |> th)
     |> tr
     |> CCList.pure
     |> thead

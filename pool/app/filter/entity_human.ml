@@ -92,9 +92,9 @@ let[@warning "-4"] all_query_experiments (query : t) =
        | Some (Hardcoded Participation), Some (Entity.Lst lst) ->
          lst
          |> CCList.filter_map (fun (value : Entity.single_val) ->
-              match value with
-              | Entity.Str id -> Some (Pool_common.Id.of_string id)
-              | _ -> None)
+           match value with
+           | Entity.Str id -> Some (Pool_common.Id.of_string id)
+           | _ -> None)
        | _, _ -> [])
     | Template _ -> []
   in

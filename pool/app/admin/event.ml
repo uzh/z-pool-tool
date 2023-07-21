@@ -24,7 +24,7 @@ type update =
 let set_password
   : Database.Label.t -> t -> string -> string -> (unit, string) result Lwt.t
   =
- fun pool { user; _ } password password_confirmation ->
+  fun pool { user; _ } password password_confirmation ->
   let open Lwt_result.Infix in
   Service.User.set_password
     ~ctx:(Pool_database.to_ctx pool)
@@ -127,7 +127,7 @@ let handle_event ~tags pool : event -> unit Lwt.t =
   | Disabled _ -> Utils.todo ()
   | Enabled _ -> Utils.todo ()
   | Verified _ -> Utils.todo ()
-  [@@deriving eq, show]
+[@@deriving eq, show]
 ;;
 
 let show_event = Format.asprintf "%a" pp_event

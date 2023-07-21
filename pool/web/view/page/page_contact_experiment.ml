@@ -56,9 +56,9 @@ let index
       ~a:[ a_class [ "flexrow"; "flex-gap"; "flexcolumn-mobile" ] ]
       [ experiment.description
         |> CCOption.map_or ~default:(txt "") (fun desc ->
-             div
-               ~a:[ a_class [ "grow" ] ]
-               [ txt (Experiment.Description.value desc) ])
+          div
+            ~a:[ a_class [ "grow" ] ]
+            [ txt (Experiment.Description.value desc) ])
       ; div
           ~a:[ a_class [ "flexrow"; "align-end"; "justify-end" ] ]
           [ a
@@ -297,7 +297,7 @@ let show
         ~a:[ a_class [ "stack" ] ]
         [ experiment.Public.description
           |> CCOption.map_or ~default:(txt "") (fun desc ->
-               p [ desc |> Description.value |> HttpUtils.add_line_breaks ])
+            p [ desc |> Description.value |> HttpUtils.add_line_breaks ])
         ; html
         ]
     ]

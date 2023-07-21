@@ -515,32 +515,32 @@ let close_post req =
       in
       assignments
       |> Lwt_list.map_s (fun ({ Assignment.id; contact; _ } as assignment) ->
-           let id = Id.value id in
-           let find = CCList.mem ~eq:CCString.equal id in
-           let no_show = no_shows |> find |> NoShow.create in
-           let participated = participated |> find |> Participated.create in
-           let* increment_num_participations =
-             Assignment.contact_participation_in_other_assignments
-               database_label
-               [ assignment ]
-               experiment_id
-               (Contact.id contact)
-             >|+ CCFun.(not %> IncrementParticipationCount.create)
-           in
-           let%lwt follow_ups =
-             match
-               NoShow.value no_show || not (Participated.value participated)
-             with
-             | true ->
-               find_follow_ups database_label assignment ||> CCOption.return
-             | false -> Lwt.return_none
-           in
-           Lwt_result.return
-             ( assignment
-             , no_show
-             , participated
-             , increment_num_participations
-             , follow_ups ))
+        let id = Id.value id in
+        let find = CCList.mem ~eq:CCString.equal id in
+        let no_show = no_shows |> find |> NoShow.create in
+        let participated = participated |> find |> Participated.create in
+        let* increment_num_participations =
+          Assignment.contact_participation_in_other_assignments
+            database_label
+            [ assignment ]
+            experiment_id
+            (Contact.id contact)
+          >|+ CCFun.(not %> IncrementParticipationCount.create)
+        in
+        let%lwt follow_ups =
+          match
+            NoShow.value no_show || not (Participated.value participated)
+          with
+          | true ->
+            find_follow_ups database_label assignment ||> CCOption.return
+          | false -> Lwt.return_none
+        in
+        Lwt_result.return
+          ( assignment
+          , no_show
+          , participated
+          , increment_num_participations
+          , follow_ups ))
       ||> CCResult.flatten_l
       >== SetAttendance.handle session
     in
@@ -571,7 +571,7 @@ let message_template_form ?template_id label req =
     let* template =
       template_id
       |> CCOption.map_or ~default:(Lwt_result.return None) (fun id ->
-           Message_template.find database_label id >|+ CCOption.pure)
+        Message_template.find database_label id >|+ CCOption.pure)
     in
     let%lwt available_languages =
       match template_id with

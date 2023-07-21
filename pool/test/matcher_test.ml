@@ -66,42 +66,38 @@ let create_invitations_repo _ () =
     in
     Mailing.find_current pool
     >|> Lwt_list.iter_s (fun ({ Mailing.rate; _ } as mailing : Mailing.t) ->
-          let open Cqrs_command.Matcher_command.Run in
-          let%lwt experiment, contacts =
-            Matcher.find_contacts_by_mailing
-              pool
-              mailing
-              (Mailing.Rate.value rate)
-            ||> CCResult.get_exn
-          in
-          let%lwt create_message = create_message experiment in
-          let events =
-            { mailing; experiment; contacts; create_message }
-            |> CCList.pure
-            |> handle
-          in
-          let expected =
-            let emails =
-              CCList.map create_message contacts
-              |> CCList.all_ok
-              |> CCResult.get_exn
-              |> CCList.map (fun msg -> msg, experiment.Experiment.smtp_auth_id)
-            in
-            Ok
-              ([ Invitation.Created (contacts, experiment)
-                 |> Pool_event.invitation
-               ; Email.BulkSent emails |> Pool_event.email
-               ]
-               @ CCList.map
-                   Contact.(
-                     fun contact ->
-                       contact
-                       |> update_num_invitations ~step:1
-                       |> updated
-                       |> Pool_event.contact)
-                   contacts)
-          in
-          Test_utils.check_result expected events |> Lwt.return)
+      let open Cqrs_command.Matcher_command.Run in
+      let%lwt experiment, contacts =
+        Matcher.find_contacts_by_mailing pool mailing (Mailing.Rate.value rate)
+        ||> CCResult.get_exn
+      in
+      let%lwt create_message = create_message experiment in
+      let events =
+        { mailing; experiment; contacts; create_message }
+        |> CCList.pure
+        |> handle
+      in
+      let expected =
+        let emails =
+          CCList.map create_message contacts
+          |> CCList.all_ok
+          |> CCResult.get_exn
+          |> CCList.map (fun msg -> msg, experiment.Experiment.smtp_auth_id)
+        in
+        Ok
+          ([ Invitation.Created (contacts, experiment) |> Pool_event.invitation
+           ; Email.BulkSent emails |> Pool_event.email
+           ]
+           @ CCList.map
+               Contact.(
+                 fun contact ->
+                   contact
+                   |> update_num_invitations ~step:1
+                   |> updated
+                   |> Pool_event.contact)
+               contacts)
+      in
+      Test_utils.check_result expected events |> Lwt.return)
   in
   Lwt.return_unit
 ;;

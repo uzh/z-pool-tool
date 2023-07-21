@@ -47,16 +47,16 @@ let locations =
     , Status.Active )
   ]
   |> CCList.map (fun (label, description, address, link, status) ->
-       let address =
-         match address with
-         | Some (institution, room, building, street, zip, city) ->
-           Address.Mail.create institution room building street zip city
-           |> Pool_common.Utils.get_or_failwith
-           |> Address.physical
-         | None -> Address.Virtual
-       in
-       create label description address link status []
-       |> Pool_common.Utils.get_or_failwith)
+    let address =
+      match address with
+      | Some (institution, room, building, street, zip, city) ->
+        Address.Mail.create institution room building street zip city
+        |> Pool_common.Utils.get_or_failwith
+        |> Address.physical
+      | None -> Address.Virtual
+    in
+    create label description address link status []
+    |> Pool_common.Utils.get_or_failwith)
 ;;
 
 let create pool =

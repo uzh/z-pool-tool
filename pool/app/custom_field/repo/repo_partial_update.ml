@@ -136,26 +136,26 @@ let upsert_answer pool user entity_uuid t =
     answer
     |> value_to_store is_admin
     |> map_or ~clear (fun (id, value) ->
-         update_answer id (Utils.Bool.to_string value))
+      update_answer id (Utils.Bool.to_string value))
   | Date (_, answer) ->
     answer
     |> value_to_store is_admin
     |> map_or ~clear (fun (id, value) ->
-         update_answer id (Ptime.date_to_string value))
+      update_answer id (Ptime.date_to_string value))
   | MultiSelect (_, _, answer) ->
     answer
     |> value_to_store is_admin
     |> map_or ~clear (fun (id, value) ->
-         value
-         |> CCList.map (fun { Entity.SelectOption.Public.id; _ } -> id)
-         |> Repo_entity.yojson_of_multi_select_answer
-         |> Yojson.Safe.to_string
-         |> update_answer id)
+      value
+      |> CCList.map (fun { Entity.SelectOption.Public.id; _ } -> id)
+      |> Repo_entity.yojson_of_multi_select_answer
+      |> Yojson.Safe.to_string
+      |> update_answer id)
   | Number (_, answer) ->
     answer
     |> value_to_store is_admin
     |> map_or ~clear (fun (id, value) ->
-         update_answer id (CCInt.to_string value))
+      update_answer id (CCInt.to_string value))
   | Select (_, _, answer) ->
     answer
     |> value_to_store is_admin

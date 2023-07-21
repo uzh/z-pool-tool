@@ -489,8 +489,7 @@ let[@warning "-4"] update_tenant_details () =
         |> Test_utils.get_or_failwith_pool_error
         |> function
         | [ _
-          ; (Pool_event.PoolTenant (Pool_tenant.LogosUploaded [ _; _ ]) as
-            logos)
+          ; (Pool_event.PoolTenant (Pool_tenant.LogosUploaded [ _; _ ]) as logos)
           ] -> logos
         | _ -> failwith "Tenant create events don't match in test."
       in

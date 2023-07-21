@@ -62,14 +62,14 @@ type _ carrier =
   | VerifiedC : verified carrier
 
 let equal : type state. state t -> state t -> bool =
- fun m k ->
+  fun m k ->
   match m, k with
   | Unverified one, Unverified two -> equal_email_unverified one two
   | Verified one, Verified two -> equal_email_verified one two
 ;;
 
 let pp : type state. Format.formatter -> state t -> unit =
- fun formatter email ->
+  fun formatter email ->
   match email with
   | Unverified m -> pp_email_unverified formatter m
   | Verified m -> pp_email_verified formatter m

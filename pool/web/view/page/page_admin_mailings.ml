@@ -198,15 +198,15 @@ let detail
                |> CCOption.map_or ~default:"" Mailing.Distribution.show )
            ]
            |> CCList.map (fun (field, value) ->
-                tr
-                  [ th
-                      [ txt
-                          (field
-                           |> Pool_common.Utils.field_to_string language
-                           |> CCString.capitalize_ascii)
-                      ]
-                  ; td [ txt value ]
-                  ])
+             tr
+               [ th
+                   [ txt
+                       (field
+                        |> Pool_common.Utils.field_to_string language
+                        |> CCString.capitalize_ascii)
+                   ]
+               ; td [ txt value ]
+               ])
          in
          table ~a:[ a_class [ "striped"; "table" ] ] rows)
       ]

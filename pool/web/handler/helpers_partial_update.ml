@@ -67,7 +67,7 @@ let update ?contact req =
   in
   let result
     ({ Pool_context.database_label; language; query_language; user; _ } as
-    context)
+     context)
     =
     let is_admin = Pool_context.user_is_admin user in
     let path_with_lang = HttpUtils.path_with_language query_language in
@@ -110,13 +110,13 @@ let update ?contact req =
     let* custom_field =
       field_id
       |> CCOption.map_or ~default:(Lwt_result.return None) (fun id ->
-           Custom_field.find_by_contact
-             ~is_admin
-             database_label
-             (Contact.id contact)
-             id
-           ||> with_redirect back_path
-           >|+ CCOption.pure)
+        Custom_field.find_by_contact
+          ~is_admin
+          database_label
+          (Contact.id contact)
+          id
+        ||> with_redirect back_path
+        >|+ CCOption.pure)
     in
     let%lwt response =
       let open CCResult in

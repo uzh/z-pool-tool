@@ -98,11 +98,11 @@ let tenant_specific_profile_update_trigger =
     "trigger_profile_update.send"
     "Send profile update triggers of all tenants"
     (fun pool ->
-    let open Utils.Lwt_result.Infix in
-    pool
-    |> trigger_profile_update_by_tenant
-    ||> get_or_failwith
-    ||> CCOption.some)
+      let open Utils.Lwt_result.Infix in
+      pool
+      |> trigger_profile_update_by_tenant
+      ||> get_or_failwith
+      ||> CCOption.some)
 ;;
 
 let all_profile_update_triggers =
@@ -110,10 +110,10 @@ let all_profile_update_triggers =
     "trigger_profile_update.send_all"
     "Send profile update triggers of all tenants"
     (fun () ->
-    let open Utils.Lwt_result.Infix in
-    Command_utils.setup_databases ()
-    >|> Lwt_list.map_s trigger_profile_update_by_tenant
-    ||> CCList.all_ok
-    ||> get_or_failwith
-    ||> fun (_ : unit list) -> Some ())
+      let open Utils.Lwt_result.Infix in
+      Command_utils.setup_databases ()
+      >|> Lwt_list.map_s trigger_profile_update_by_tenant
+      ||> CCList.all_ok
+      ||> get_or_failwith
+      ||> fun (_ : unit list) -> Some ())
 ;;

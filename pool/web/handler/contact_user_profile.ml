@@ -335,7 +335,7 @@ let completion_post req =
   in
   let result
     ({ Pool_context.database_label; query_language; language; user; _ } as
-    context)
+     context)
     =
     Utils.Lwt_result.map_error (fun err ->
       HttpUtils.(

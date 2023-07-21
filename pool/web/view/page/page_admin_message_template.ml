@@ -87,9 +87,9 @@ let template_form
             ]
         ; elements
           |> CCList.map (fun (label, text) ->
-               [ txt (Format.asprintf "{%s}" label)
-               ; text |> Http_utils.add_line_breaks
-               ])
+            [ txt (Format.asprintf "{%s}" label)
+            ; text |> Http_utils.add_line_breaks
+            ])
           |> Component.Table.horizontal_table `Simple ~align_top:true
         ]
   in

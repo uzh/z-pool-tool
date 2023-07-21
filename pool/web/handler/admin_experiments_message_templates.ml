@@ -40,7 +40,7 @@ let form ?template_id label req =
     let* template =
       template_id
       |> CCOption.map_or ~default:(Lwt_result.return None) (fun id ->
-           Message_template.find database_label id >|+ CCOption.pure)
+        Message_template.find database_label id >|+ CCOption.pure)
     in
     let%lwt available_languages =
       match template_id with

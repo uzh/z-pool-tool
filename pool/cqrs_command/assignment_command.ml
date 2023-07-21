@@ -60,13 +60,13 @@ end = struct
       let create_events =
         command.sessions
         |> CCList.map (fun session ->
-             let create =
-               Assignment.
-                 { contact = command.contact
-                 ; session_id = session.Session.Public.id
-                 }
-             in
-             Assignment.Created create |> Pool_event.assignment)
+          let create =
+            Assignment.
+              { contact = command.contact
+              ; session_id = session.Session.Public.id
+              }
+          in
+          Assignment.Created create |> Pool_event.assignment)
       in
       let contact_event =
         Contact_counter.update_on_session_signup
@@ -260,10 +260,10 @@ end = struct
       let create_events =
         sessions
         |> CCList.map (fun session ->
-             let create =
-               Assignment.{ contact; session_id = session.Session.id }
-             in
-             Assignment.Created create |> Pool_event.assignment)
+          let create =
+            Assignment.{ contact; session_id = session.Session.id }
+          in
+          Assignment.Created create |> Pool_event.assignment)
       in
       Ok
         (create_events

@@ -35,9 +35,9 @@ let answer_custom_fields fields contact =
      | Boolean _ | Date _ | Number _ | Text _ -> None)
     fields
   |> CCList.map (fun field ->
-       let open Custom_field in
-       PartialUpdate
-         (PartialUpdate.Custom field, contact, Pool_context.Contact contact))
+    let open Custom_field in
+    PartialUpdate
+      (PartialUpdate.Custom field, contact, Pool_context.Contact contact))
 ;;
 
 let create_rand_persons ?tags n_persons =
@@ -122,7 +122,7 @@ let admins db_label =
     Experiment.find_all db_label
     ||> fst
         %> CCList.map (fun { Experiment.id; _ } ->
-             `Experimenter (Guard.Uuid.target_of Experiment.Id.value id))
+          `Experimenter (Guard.Uuid.target_of Experiment.Id.value id))
   in
   let data =
     [ "The", "One", "admin@example.com", [ `Admin ] @ experimenter_roles
@@ -231,20 +231,18 @@ let contacts db_label =
   let users =
     persons
     |> CCList.mapi (fun idx person ->
-         let language, terms_accepted_at, paused, disabled, verified =
-           CCList.get_at_idx_exn
-             (idx mod CCList.length combinations)
-             combinations
-         in
-         ( person.uid |> Id.of_string
-         , person.first_name |> User.Firstname.of_string
-         , person.last_name |> User.Lastname.of_string
-         , person.email |> User.EmailAddress.of_string
-         , language
-         , terms_accepted_at |> CCOption.map User.TermsAccepted.create
-         , paused
-         , disabled
-         , verified ))
+      let language, terms_accepted_at, paused, disabled, verified =
+        CCList.get_at_idx_exn (idx mod CCList.length combinations) combinations
+      in
+      ( person.uid |> Id.of_string
+      , person.first_name |> User.Firstname.of_string
+      , person.last_name |> User.Lastname.of_string
+      , person.email |> User.EmailAddress.of_string
+      , language
+      , terms_accepted_at |> CCOption.map User.TermsAccepted.create
+      , paused
+      , disabled
+      , verified ))
   in
   let password =
     Sys.getenv_opt "POOL_USER_DEFAULT_PASSWORD"
@@ -256,39 +254,39 @@ let contacts db_label =
     users
     |> Lwt_list.filter_map_s
          (fun
-           ( user_id
-           , firstname
-           , lastname
-           , email
-           , language
-           , terms_accepted_at
-           , _
-           , _
-           , _ )
-         ->
-         match%lwt
-           Service.User.find_by_email_opt ~ctx (User.EmailAddress.value email)
-         with
-         | None ->
-           Lwt.return_some
-             [ Contact.Created
-                 { Contact.user_id
-                 ; email
-                 ; password
-                 ; firstname
-                 ; lastname
-                 ; terms_accepted_at
-                 ; language
-                 }
-             ]
-         | Some { Sihl_user.id; _ } ->
-           Logs.debug ~src (fun m ->
-             m
-               ~tags
-               "Contact already exists (%s): %s"
-               (db_label |> Pool_database.Label.value)
-               id);
-           Lwt.return_none)
+             ( user_id
+             , firstname
+             , lastname
+             , email
+             , language
+             , terms_accepted_at
+             , _
+             , _
+             , _ )
+           ->
+           match%lwt
+             Service.User.find_by_email_opt ~ctx (User.EmailAddress.value email)
+           with
+           | None ->
+             Lwt.return_some
+               [ Contact.Created
+                   { Contact.user_id
+                   ; email
+                   ; password
+                   ; firstname
+                   ; lastname
+                   ; terms_accepted_at
+                   ; language
+                   }
+               ]
+           | Some { Sihl_user.id; _ } ->
+             Logs.debug ~src (fun m ->
+               m
+                 ~tags
+                 "Contact already exists (%s): %s"
+                 (db_label |> Pool_database.Label.value)
+                 id);
+             Lwt.return_none)
     ||> CCList.flatten
     >|> Lwt_list.iter_s (Contact.handle_event db_label)
   in

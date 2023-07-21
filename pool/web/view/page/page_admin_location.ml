@@ -135,7 +135,7 @@ let form
   let action =
     location
     |> CCOption.map_or ~default:path (fun { id; _ } ->
-         id |> Id.value |> Format.asprintf "%s/%s" path)
+      id |> Id.value |> Format.asprintf "%s/%s" path)
   in
   let value field_fcn decode_fcn =
     let open CCOption.Infix in
@@ -154,17 +154,17 @@ let form
   let address_value fcn =
     location
     |> CCOption.map_or ~default (fun ({ address; _ } : t) ->
-         match address with
-         | Address.Virtual -> default
-         | Address.Physical m -> m |> fcn)
+      match address with
+      | Address.Virtual -> default
+      | Address.Physical m -> m |> fcn)
   in
   let is_virtual_checkbox =
     let selected =
       location
       |> CCOption.map_or ~default:[] (fun ({ address; _ } : t) ->
-           match address with
-           | Address.Virtual -> [ a_checked () ]
-           | Address.Physical _ -> [])
+        match address with
+        | Address.Virtual -> [ a_checked () ]
+        | Address.Physical _ -> [])
     in
     input
       ~a:
@@ -433,7 +433,7 @@ module SessionList = struct
           |> txt
         ; session.canceled_at
           |> CCOption.map_or ~default:"" (fun t ->
-               Pool_common.Utils.Time.formatted_date_time t)
+            Pool_common.Utils.Time.formatted_date_time t)
           |> txt
         ; Format.asprintf
             "/admin/experiments/%s/sessions/%s"

@@ -458,7 +458,7 @@ end = struct
     let filter_event =
       experiment.Experiment.filter
       |> CCOption.map_or ~default:[] (fun f ->
-           [ Filter.Deleted f |> Pool_event.filter ])
+        [ Filter.Deleted f |> Pool_event.filter ])
     in
     let experiment = Experiment.{ experiment with filter = None } in
     Ok

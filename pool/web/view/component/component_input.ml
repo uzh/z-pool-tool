@@ -25,7 +25,7 @@ let language_select
         let is_selected =
           selected
           |> CCOption.map (fun selected ->
-               if Language.equal selected l then [ a_selected () ] else [])
+            if Language.equal selected l then [ a_selected () ] else [])
           |> CCOption.value ~default:[]
         in
         option
@@ -758,26 +758,26 @@ let notify_via_selection language =
      :: Pool_common.(
           NotifyVia.all
           |> CCList.map (fun option ->
-               let checked =
-                 NotifyVia.checked_by_default option
-                 |> function
-                 | false -> []
-                 | true -> [ a_checked () ]
-               in
-               div
-                 [ input
-                     ~a:
-                       ([ a_input_type `Checkbox
-                        ; a_value (NotifyVia.show option)
-                        ; a_id (NotifyVia.show option)
-                        ; a_name (Field.array_key Field.NotifyVia)
-                        ]
-                        @ checked)
-                     ()
-                 ; label
-                     ~a:[ a_label_for (NotifyVia.show option) ]
-                     [ NotifyVia.to_human language option |> txt ]
-                 ])))
+            let checked =
+              NotifyVia.checked_by_default option
+              |> function
+              | false -> []
+              | true -> [ a_checked () ]
+            in
+            div
+              [ input
+                  ~a:
+                    ([ a_input_type `Checkbox
+                     ; a_value (NotifyVia.show option)
+                     ; a_id (NotifyVia.show option)
+                     ; a_name (Field.array_key Field.NotifyVia)
+                     ]
+                     @ checked)
+                  ()
+              ; label
+                  ~a:[ a_label_for (NotifyVia.show option) ]
+                  [ NotifyVia.to_human language option |> txt ]
+              ])))
 ;;
 
 let admin_select
@@ -827,7 +827,7 @@ let admin_select
         let is_selected =
           selected
           |> CCOption.map (fun selected ->
-               if Id.equal (id admin) selected then [ a_selected () ] else [])
+            if Id.equal (id admin) selected then [ a_selected () ] else [])
           |> CCOption.value ~default:[]
         in
         option

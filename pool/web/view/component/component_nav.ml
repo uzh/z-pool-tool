@@ -36,7 +36,7 @@ let tab_navigation language links active html =
       let is_active =
         active
         |> CCOption.map_or ~default:false (fun active ->
-             I18n.equal_nav_link active label)
+          I18n.equal_nav_link active label)
       in
       let label = Utils.nav_link_to_string language label in
       label, url, is_active)

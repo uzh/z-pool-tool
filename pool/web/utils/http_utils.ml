@@ -20,11 +20,11 @@ let find_intended_opt req =
   req
   |> Sihl.Web.Request.query key
   |> CCOption.map (fun intended ->
-       Sihl.Web.Request.query_list req
-       |> CCList.uniq ~eq:Utils.equal_key
-       |> remove_key
-       |> with_query (of_string intended)
-       |> to_string)
+    Sihl.Web.Request.query_list req
+    |> CCList.uniq ~eq:Utils.equal_key
+    |> remove_key
+    |> with_query (of_string intended)
+    |> to_string)
 ;;
 
 let intended_to_url url intended =
@@ -86,12 +86,12 @@ let find_query_lang req =
 let path_with_language lang path =
   lang
   |> CCOption.map (fun lang ->
-       let open Pool_common in
-       Message.add_field_query_params
-         path
-         [ ( Message.Field.Language
-           , lang |> Language.show |> CCString.lowercase_ascii )
-         ])
+    let open Pool_common in
+    Message.add_field_query_params
+      path
+      [ ( Message.Field.Language
+        , lang |> Language.show |> CCString.lowercase_ascii )
+      ])
   |> CCOption.value ~default:path
 ;;
 
@@ -127,9 +127,9 @@ let extract_happy_path_generic ?(src = src) ?enable_cache req result msgf =
     |> CCResult.map (set_no_cache_headers ?enable_cache)
     |> CCResult.map Lwt.return
     |> CCResult.get_lazy (fun (error_msg, error_path) ->
-         redirect_to_with_actions
-           (path_with_language query_language error_path)
-           [ msgf error_msg ])
+      redirect_to_with_actions
+        (path_with_language query_language error_path)
+        [ msgf error_msg ])
   | Error err ->
     Logs.warn ~src (fun m ->
       m ~tags "Context not found: %s" (Message.Message.show_error err));
@@ -155,20 +155,15 @@ let extract_happy_path_with_actions ?(src = src) ?enable_cache req result =
     let%lwt res = result context in
     res
     |> Pool_common.Utils.with_log_result_error ~src ~tags (fun (err, _, _) ->
-         err)
+      err)
     |> CCResult.map (set_no_cache_headers ?enable_cache)
     |> CCResult.map Lwt.return
     |> CCResult.get_lazy (fun (error_key, error_path, error_actions) ->
-         redirect_to_with_actions
-           (path_with_language query_language error_path)
-           (CCList.append
-              [ Message.set
-                  ~warning:[]
-                  ~success:[]
-                  ~info:[]
-                  ~error:[ error_key ]
-              ]
-              error_actions))
+      redirect_to_with_actions
+        (path_with_language query_language error_path)
+        (CCList.append
+           [ Message.set ~warning:[] ~success:[] ~info:[] ~error:[ error_key ] ]
+           error_actions))
   | Error err ->
     Logs.err ~src (fun m ->
       m ~tags "Context not found: %s" (Message.Message.show_error err));
@@ -188,7 +183,7 @@ let urlencoded_to_flash urlencoded =
   Sihl.Web.Flash.set
     (urlencoded
      |> CCList.map (fun (m, k) ->
-          m, k |> CCList.head_opt |> CCOption.get_or ~default:""))
+       m, k |> CCList.head_opt |> CCOption.get_or ~default:""))
 ;;
 
 let find_in_urlencoded_base_opt
@@ -422,9 +417,9 @@ module Htmx = struct
       let%lwt res = result context in
       res
       |> CCResult.get_lazy (fun error_msg ->
-           let err = error_msg |> Pool_common.Utils.with_log_error in
-           (fun fnc -> html_to_plain_text_response (fnc language err))
-           @@ if error_as_notification then error_notification else inline_error)
+        let err = error_msg |> Pool_common.Utils.with_log_error in
+        (fun fnc -> html_to_plain_text_response (fnc language err))
+        @@ if error_as_notification then error_notification else inline_error)
       |> Lwt.return
     | Error err -> context_error ~src ~tags err
   ;;
@@ -437,14 +432,14 @@ module Htmx = struct
       let%lwt res = result context in
       res
       |> Pool_common.Utils.with_log_result_error ~src ~tags (fun (err, _) ->
-           err)
+        err)
       |> CCResult.map Lwt.return
       |> CCResult.get_lazy (fun (error_msg, error_path) ->
-           htmx_redirect
-             error_path
-             ?query_language
-             ~actions:[ Message.set ~error:[ error_msg ] ]
-             ())
+        htmx_redirect
+          error_path
+          ?query_language
+          ~actions:[ Message.set ~error:[ error_msg ] ]
+          ())
     | Error err -> context_error ~src ~tags err
   ;;
 end

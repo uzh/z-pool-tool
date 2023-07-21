@@ -34,7 +34,7 @@ module PoolConformist = struct
     let input =
       input
       |> CCList.map (fun (k, v) ->
-           CCFormat.sprintf "(%s: %s)" k (CCString.concat ", " v))
+        CCFormat.sprintf "(%s: %s)" k (CCString.concat ", " v))
       |> CCString.concat ", "
       |> CCFormat.sprintf "(%s)"
     in

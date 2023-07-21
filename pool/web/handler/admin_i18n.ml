@@ -5,10 +5,10 @@ let src = Logs.Src.create "handler.admin.i18n"
 let create_layout req = General.create_tenant_layout req
 
 module I18nMap = CCMap.Make (struct
-  type t = I18n.Key.t
+    type t = I18n.Key.t
 
-  let compare = compare
-end)
+    let compare = compare
+  end)
 
 let index req =
   let open Utils.Lwt_result.Infix in

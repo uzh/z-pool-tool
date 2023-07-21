@@ -99,7 +99,7 @@ let find_all_public_by_contact pool contact =
           fun { Entity.id; filter; _ } ->
             filter
             |> CCOption.map_or ~default:Lwt.return_true (fun { query; _ } ->
-                 contact_matches_filter pool id query contact))
+              contact_matches_filter pool id query contact))
   ||> CCList.map Entity.to_public
 ;;
 

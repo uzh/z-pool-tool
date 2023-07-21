@@ -128,10 +128,7 @@ let create_with_distribution () =
   let urlencoded () =
     distribution
     |> CCList.map (fun (field, sort) ->
-         Format.asprintf
-           "%s,%s"
-           (SortableField.show field)
-           (SortOrder.show sort))
+      Format.asprintf "%s,%s" (SortableField.show field) (SortOrder.show sort))
     |> of_urlencoded_list
     >|= fun distribution ->
     let show = Field.show in

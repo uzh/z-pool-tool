@@ -709,8 +709,8 @@ let find_upcoming_public_by_contact pool contact_id =
   >>= fun lst ->
   lst
   |> Lwt_list.map_s (fun (parent, follow_ups) ->
-       Sql.find_public_experiment pool parent.id
-       >|+ fun exp -> exp, parent, follow_ups)
+    Sql.find_public_experiment pool parent.id
+    >|+ fun exp -> exp, parent, follow_ups)
   ||> CCResult.flatten_l
 ;;
 

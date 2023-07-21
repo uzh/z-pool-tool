@@ -12,12 +12,12 @@ let database_fields tenant language flash_fetcher =
       ; ( Field.DatabaseLabel
         , tenant
           |> CCOption.map_or ~default:"" (fun t ->
-               t.Pool_tenant.database_label |> Pool_database.Label.value) )
+            t.Pool_tenant.database_label |> Pool_database.Label.value) )
       ]
   in
   fields
   |> CCList.map (fun (field, value) ->
-       input_element language `Text field ~value ~flash_fetcher ~required:true)
+    input_element language `Text field ~value ~flash_fetcher ~required:true)
   |> div ~a:[ a_class [ "stack" ] ]
 ;;
 
@@ -68,19 +68,19 @@ let tenant_form
     ; Field.PartnerLogos, None, false, true
     ]
     |> CCList.map (fun (field, file, required, allow_multiple) ->
-         let required = if CCOption.is_some tenant then false else required in
-         let download =
-           match file with
-           | None -> txt ""
-           | Some file ->
-             div
-               ~a:[ a_class [ "gap-xs" ] ]
-               [ a ~a:[ a_href (File.path file) ] [ txt "Download" ] ]
-         in
-         div
-           [ input_element_file language field ~allow_multiple ~required
-           ; download
-           ])
+      let required = if CCOption.is_some tenant then false else required in
+      let download =
+        match file with
+        | None -> txt ""
+        | Some file ->
+          div
+            ~a:[ a_class [ "gap-xs" ] ]
+            [ a ~a:[ a_href (File.path file) ] [ txt "Download" ] ]
+      in
+      div
+        [ input_element_file language field ~allow_multiple ~required
+        ; download
+        ])
   in
   let gtx_api_key_input =
     if CCOption.is_none tenant

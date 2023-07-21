@@ -23,26 +23,26 @@ let notifications
     ; session_reminder_templates, SessionReminder
     ]
   |> filter_map (fun (templates, label) ->
-       if is_empty templates
-       then None
-       else
-         filter
-           (fun lang ->
-             find_opt
-               (fun { language; _ } -> Language.equal language lang)
-               templates
-             |> CCOption.is_none)
-           sys_languages
-         |> function
-         | [] -> None
-         | langs ->
-           I18n.MissingMessageTemplates
-             (Label.to_human label, CCList.map Language.show langs)
-           |> Utils.hint_to_string language
-           |> txt
-           |> pure
-           |> Notification.notification language `Warning
-           |> CCOption.return)
+    if is_empty templates
+    then None
+    else
+      filter
+        (fun lang ->
+          find_opt
+            (fun { language; _ } -> Language.equal language lang)
+            templates
+          |> CCOption.is_none)
+        sys_languages
+      |> function
+      | [] -> None
+      | langs ->
+        I18n.MissingMessageTemplates
+          (Label.to_human label, CCList.map Language.show langs)
+        |> Utils.hint_to_string language
+        |> txt
+        |> pure
+        |> Notification.notification language `Warning
+        |> CCOption.return)
   |> function
   | [] -> txt ""
   | notifications -> div ~a:[ a_class [ "stack" ] ] notifications
@@ -483,7 +483,7 @@ let detail
         ; ( Field.Description
           , experiment.description
             |> CCOption.map_or ~default:(txt "") (fun desc ->
-                 desc |> Description.value |> HttpUtils.add_line_breaks) )
+              desc |> Description.value |> HttpUtils.add_line_breaks) )
         ; ( Field.CostCenter
           , experiment.cost_center
             |> CCOption.map_or ~default:"" CostCenter.value

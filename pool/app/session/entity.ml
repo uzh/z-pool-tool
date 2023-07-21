@@ -265,9 +265,9 @@ let group_and_sort sessions =
   let parents, follow_ups =
     sessions
     |> CCList.partition_filter_map (fun session ->
-         match session.follow_up_to with
-         | None -> `Left (session.id, (session, []))
-         | Some parent -> `Right (parent, session))
+      match session.follow_up_to with
+      | None -> `Left (session.id, (session, []))
+      | Some parent -> `Right (parent, session))
   in
   follow_ups
   |> CCList.fold_left add_follow_ups_to_parents parents
@@ -339,9 +339,9 @@ module Public = struct
     let parents, follow_ups =
       sessions
       |> CCList.partition_filter_map (fun (session : t) ->
-           match session.follow_up_to with
-           | None -> `Left (session.id, (session, []))
-           | Some parent -> `Right (parent, session))
+        match session.follow_up_to with
+        | None -> `Left (session.id, (session, []))
+        | Some parent -> `Right (parent, session))
     in
     add_follow_ups_and_sort parents follow_ups
   ;;
@@ -466,9 +466,7 @@ let to_email_text language { start; duration; location; _ } =
 let follow_up_sessions_to_email_list follow_ups =
   follow_ups
   |> CCList.map (fun session ->
-       session.start
-       |> Start.value
-       |> Pool_common.Utils.Time.formatted_date_time)
+    session.start |> Start.value |> Pool_common.Utils.Time.formatted_date_time)
   |> CCString.concat "\n"
 ;;
 

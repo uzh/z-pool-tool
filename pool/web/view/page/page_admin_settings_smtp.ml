@@ -34,18 +34,15 @@ let index Pool_context.{ language; _ } location smtp_auth_list =
     let open SmtpAuth in
     smtp_auth_list
     |> CCList.map (fun auth ->
-         [ auth.label |> Label.value |> txt
-         ; auth.server |> Server.value |> txt
-         ; auth.username |> CCOption.map_or ~default:"" Username.value |> txt
-         ; auth.mechanism |> Mechanism.show |> txt
-         ; auth.protocol |> Protocol.show |> txt
-         ; auth.default |> Default.value |> Utils.Bool.to_string |> txt
-         ; edit_link
-             (Format.asprintf
-                "%s/%s"
-                (base_path location)
-                (auth.id |> Id.value))
-         ])
+      [ auth.label |> Label.value |> txt
+      ; auth.server |> Server.value |> txt
+      ; auth.username |> CCOption.map_or ~default:"" Username.value |> txt
+      ; auth.mechanism |> Mechanism.show |> txt
+      ; auth.protocol |> Protocol.show |> txt
+      ; auth.default |> Default.value |> Utils.Bool.to_string |> txt
+      ; edit_link
+          (Format.asprintf "%s/%s" (base_path location) (auth.id |> Id.value))
+      ])
   in
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]

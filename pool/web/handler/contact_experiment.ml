@@ -61,9 +61,7 @@ let show req =
       let open Assignment in
       fnc database_label id contact
       >|> Lwt_list.map_s (fun { Public.id; _ } ->
-            id
-            |> Id.to_common
-            |> Session.find_public_by_assignment database_label)
+        id |> Id.to_common |> Session.find_public_by_assignment database_label)
       ||> CCResult.flatten_l
     in
     let* upcoming_sessions =

@@ -250,15 +250,15 @@ module Sql = struct
     let%lwt template_list = find_templates_of_query pool query in
     filtered_params ~allow_invited:true template_list experiment_id (Some query)
     |> CCResult.map_err (fun err ->
-         let () =
-           Logs.info ~src (fun m ->
-             m
-               ~tags
-               "%s\n%s"
-               ([%show: Contact.t] contact)
-               ([%show: Pool_common.Id.t] experiment_id))
-         in
-         Pool_common.Utils.with_log_error ~src ~level:Logs.Warning ~tags err)
+      let () =
+        Logs.info ~src (fun m ->
+          m
+            ~tags
+            "%s\n%s"
+            ([%show: Contact.t] contact)
+            ([%show: Pool_common.Id.t] experiment_id))
+      in
+      Pool_common.Utils.with_log_error ~src ~level:Logs.Warning ~tags err)
     |> CCResult.get_or
          ~default:(Dynparam.empty, if default then "TRUE" else "FALSE")
     |> fun (dyn, sql) ->

@@ -9,9 +9,9 @@ let log_rules ~tags =
       m ~tags "Save rules successful: %s" ([%show: Rule.t list] success));
     success)
   %> Lwt_result.map_error (fun err ->
-       Logs.err ~src (fun m ->
-         m ~tags "Save rules failed: %s" ([%show: Rule.t list] err));
-       err)
+    Logs.err ~src (fun m ->
+      m ~tags "Save rules failed: %s" ([%show: Rule.t list] err));
+    err)
 ;;
 
 type event =

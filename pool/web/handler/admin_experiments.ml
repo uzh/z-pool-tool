@@ -199,12 +199,12 @@ let detail edit req =
        let* contact_person =
          experiment.Experiment.contact_person_id
          |> CCOption.map_or ~default:(Lwt_result.return None) (fun id ->
-              Admin.find database_label id >|+ CCOption.return)
+           Admin.find database_label id >|+ CCOption.return)
        in
        let* smtp_auth =
          experiment.Experiment.smtp_auth_id
          |> CCOption.map_or ~default:(Lwt_result.return None) (fun id ->
-              Email.SmtpAuth.find database_label id >|+ CCOption.return)
+           Email.SmtpAuth.find database_label id >|+ CCOption.return)
        in
        Page.Admin.Experiments.detail
          experiment

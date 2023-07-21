@@ -53,7 +53,7 @@ let timespan_to_hours timespan =
   timespan
   |> Ptime.Span.to_int_s
   |> CCOption.map_or ~default:"" (fun timespan ->
-       (timespan |> CCFloat.of_int) /. 3600. |> Format.asprintf "%.2f")
+    (timespan |> CCFloat.of_int) /. 3600. |> Format.asprintf "%.2f")
 ;;
 
 (* Utilities *)

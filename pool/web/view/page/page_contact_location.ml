@@ -41,24 +41,24 @@ let show { Pool_context.language; _ } (location : Pool_location.t) =
             ; formatted_address language location.address |> div
             ; location.link
               |> CCOption.map_or ~default:(txt "") (fun link ->
-                   p
-                     ~a:[ a_class [ "gap-sm" ] ]
-                     [ a
-                         ~a:[ a_href (Link.value link); a_target "_blank" ]
-                         [ txt
-                             Pool_common.(
-                               Utils.control_to_string language Message.More)
-                         ]
-                     ])
+                p
+                  ~a:[ a_class [ "gap-sm" ] ]
+                  [ a
+                      ~a:[ a_href (Link.value link); a_target "_blank" ]
+                      [ txt
+                          Pool_common.(
+                            Utils.control_to_string language Message.More)
+                      ]
+                  ])
             ]
         ; files_html
         ]
     ; location.description
       |> CCOption.map_or ~default:(txt "") (fun description ->
-           description
-           |> Description.value
-           |> Unsafe.data
-           |> CCList.return
-           |> div ~a:[ a_class [ "gap-lg" ] ])
+        description
+        |> Description.value
+        |> Unsafe.data
+        |> CCList.return
+        |> div ~a:[ a_class [ "gap-lg" ] ])
     ]
 ;;

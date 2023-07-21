@@ -266,8 +266,8 @@ module Validation = struct
   let to_strings all m =
     m
     |> CCList.filter_map (fun (key, value) ->
-         CCList.find_opt (fun (k, _) -> CCString.equal k key) all
-         |> CCOption.map (CCFun.const (key, value)))
+      CCList.find_opt (fun (k, _) -> CCString.equal k key) all
+      |> CCOption.map (CCFun.const (key, value)))
   ;;
 
   let all =

@@ -39,9 +39,9 @@ let show
       [ tenant_languages |> CCList.map (fun k -> k, true)
       ; Pool_common.Language.all
         |> CCList.filter_map (fun k ->
-             match CCList.mem k tenant_languages with
-             | true -> None
-             | false -> Some (k, false))
+          match CCList.mem k tenant_languages with
+          | true -> None
+          | false -> Some (k, false))
       ]
       |> CCList.flatten
     in

@@ -26,8 +26,8 @@ let has_bookable_spots_for_experiments tenant experiment =
   let open Utils.Lwt_result.Infix in
   find_all_for_experiment tenant experiment
   >|+ CCList.filter (fun session ->
-        CCOption.is_none session.Entity.follow_up_to
-        && not (Entity.is_fully_booked session))
+    CCOption.is_none session.Entity.follow_up_to
+    && not (Entity.is_fully_booked session))
   >|+ CCList.is_empty
   >|+ not
 ;;

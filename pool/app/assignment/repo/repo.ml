@@ -368,7 +368,7 @@ module Sql = struct
     let ids_sql =
       assignments
       |> CCList.mapi (fun i _ ->
-           Format.asprintf "UNHEX(REPLACE($%n, '-', ''))" (i + 3))
+        Format.asprintf "UNHEX(REPLACE($%n, '-', ''))" (i + 3))
       |> CCString.concat ","
     in
     Format.asprintf

@@ -152,9 +152,9 @@ module Distribution = struct
      | Sorted distribution ->
        distribution
        |> CCList.map (fun (field, order) ->
-            CCString.concat
-              " "
-              [ field |> SortableField.to_sql; order |> SortOrder.show ])
+         CCString.concat
+           " "
+           [ field |> SortableField.to_sql; order |> SortOrder.show ])
        |> CCString.concat ", "
        |> CCOption.pure)
     %> CCOption.map_or ~default:"" (Format.asprintf "ORDER BY %s")
@@ -187,10 +187,10 @@ module Distribution = struct
     let open CCResult in
     data
     |> CCList.map (fun distribution_field ->
-         match CCString.split ~by:"," distribution_field with
-         | [ field; order ] ->
-           Ok (Format.asprintf "[[\"%s\"],[\"%s\"]]" field order)
-         | _ -> Error Pool_common.Message.(Invalid Field.Distribution))
+      match CCString.split ~by:"," distribution_field with
+      | [ field; order ] ->
+        Ok (Format.asprintf "[[\"%s\"],[\"%s\"]]" field order)
+      | _ -> Error Pool_common.Message.(Invalid Field.Distribution))
     |> CCResult.flatten_l
     >|= CCString.concat ","
     >|= Format.asprintf "[%s]"

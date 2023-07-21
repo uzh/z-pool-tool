@@ -115,7 +115,7 @@ let trigger_profile_update_after =
 let terms_and_conditions =
   [ "EN", terms_en; "DE", terms_de ]
   |> CCList.map (fun (language, text) ->
-       TermsAndConditions.create language text |> get_or_failwith)
+    TermsAndConditions.create language text |> get_or_failwith)
 ;;
 
 let default_values =

@@ -390,5 +390,5 @@ let confirmable_to_string confirmable =
   |> fun msg ->
   additive
   |> CCOption.map_or ~default:msg (fun additive ->
-       Format.asprintf "%s %s" msg additive)
+    Format.asprintf "%s %s" msg additive)
 ;;

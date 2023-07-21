@@ -19,9 +19,9 @@ let form ?id req model =
     @@ let* custom_field_group =
          id
          |> CCOption.map_or ~default:(Lwt_result.return None) (fun id ->
-              let* group = Custom_field.find_group database_label id in
-              let%lwt fields = Custom_field.find_by_group database_label id in
-              (group, fields) |> CCOption.pure |> Lwt_result.return)
+           let* group = Custom_field.find_group database_label id in
+           let%lwt fields = Custom_field.find_by_group database_label id in
+           (group, fields) |> CCOption.pure |> Lwt_result.return)
        in
        let flash_fetcher key = Sihl.Web.Flash.find key req in
        let%lwt sys_languages = Settings.find_languages database_label in

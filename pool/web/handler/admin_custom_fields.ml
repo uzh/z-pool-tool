@@ -80,7 +80,7 @@ let form ?id req model =
     let* custom_field =
       id
       |> CCOption.map_or ~default:(Lwt_result.return None) (fun id ->
-           Custom_field.find database_label id >|+ CCOption.pure)
+        Custom_field.find database_label id >|+ CCOption.pure)
     in
     let%lwt groups = Custom_field.find_groups_by_model database_label model in
     let sys_languages = Pool_context.Tenant.get_tenant_languages_exn req in

@@ -39,7 +39,7 @@ let htmx_attribs
     let templates_disabled =
       templates_disabled
       |> CCOption.map (fun disabled ->
-           templates_disabled_key, Bool.to_string disabled)
+        templates_disabled_key, Bool.to_string disabled)
     in
     [ identifier; allow_empty_values; templates_disabled ]
     |> CCList.filter_map CCFun.id
@@ -49,7 +49,7 @@ let htmx_attribs
     else
       values
       |> CCList.map (fun (key, value) ->
-           Format.asprintf "\"%s\": \"%s\"" key value)
+        Format.asprintf "\"%s\": \"%s\"" key value)
       |> CCString.concat ","
       |> fun values -> [ a_user_data "hx-vals" (Format.asprintf "{%s}" values) ]
   in

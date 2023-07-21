@@ -675,9 +675,9 @@ let cancel_valid () =
   let contact_events =
     assignments
     |> CCList.map (fun (contact, assignments) ->
-         Contact_counter.update_on_session_cancellation assignments contact
-         |> Contact.updated
-         |> Pool_event.contact)
+      Contact_counter.update_on_session_cancellation assignments contact
+      |> Contact.updated
+      |> Pool_event.contact)
   in
   let reason = "Experimenter is ill" in
   let res =
@@ -695,14 +695,14 @@ let cancel_valid () =
   let messages =
     assignments
     |> CCList.map (fun (contact, _) ->
-         create_cancellation_message
-           (reason |> Session.CancellationReason.of_string)
-           contact
-         |> Test_utils.get_or_failwith_pool_error
-         |> fun msg ->
-         (msg, experiment.Experiment.smtp_auth_id)
-         |> Email.sent
-         |> Pool_event.email)
+      create_cancellation_message
+        (reason |> Session.CancellationReason.of_string)
+        contact
+      |> Test_utils.get_or_failwith_pool_error
+      |> fun msg ->
+      (msg, experiment.Experiment.smtp_auth_id)
+      |> Email.sent
+      |> Pool_event.email)
   in
   check_result
     (Ok
@@ -737,12 +737,12 @@ let cancel_valid () =
     let reason = Session.CancellationReason.of_string "reason" in
     assignments
     |> CCList.map (fun (contact, _) ->
-         contact.Contact.cell_phone
-         |> CCOption.get_exn_or "No phone number provided"
-         |> create_cancellation_text_message reason contact
-         |> get_or_failwith_pool_error
-         |> Text_message.sent
-         |> Pool_event.text_message)
+      contact.Contact.cell_phone
+      |> CCOption.get_exn_or "No phone number provided"
+      |> create_cancellation_text_message reason contact
+      |> get_or_failwith_pool_error
+      |> Text_message.sent
+      |> Pool_event.text_message)
   in
   check_result
     (Ok
@@ -765,9 +765,9 @@ let cancel_valid_with_missing_cell_phone () =
   let contact_events =
     assignments
     |> CCList.map (fun (contact, assignments) ->
-         Contact_counter.update_on_session_cancellation assignments contact
-         |> Contact.updated
-         |> Pool_event.contact)
+      Contact_counter.update_on_session_cancellation assignments contact
+      |> Contact.updated
+      |> Pool_event.contact)
   in
   let reason = "Experimenter is ill" in
   let messages =
@@ -828,9 +828,9 @@ let cancel_with_email_and_text_notification () =
   let contact_events =
     assignments
     |> CCList.map (fun (contact, assignments) ->
-         Contact_counter.update_on_session_cancellation assignments contact
-         |> Contact.updated
-         |> Pool_event.contact)
+      Contact_counter.update_on_session_cancellation assignments contact
+      |> Contact.updated
+      |> Pool_event.contact)
   in
   let reason = "Experimenter is ill" in
   let messages =
@@ -899,15 +899,15 @@ let close_valid_with_assignments () =
   let assignments =
     [ true ]
     |> CCList.map (fun participated ->
-         ()
-         |> Test_utils.Model.create_contact
-         |> create
-         |> fun assignment ->
-         ( assignment
-         , NoShow.create false
-         , Participated.create participated
-         , Assignment.IncrementParticipationCount.create true
-         , None ))
+      ()
+      |> Test_utils.Model.create_contact
+      |> create
+      |> fun assignment ->
+      ( assignment
+      , NoShow.create false
+      , Participated.create participated
+      , Assignment.IncrementParticipationCount.create true
+      , None ))
   in
   let res = SetAttendance.handle session assignments in
   let expected =
@@ -1027,11 +1027,11 @@ let send_reminder () =
   let users =
     CCList.range 1 4
     |> CCList.map (fun i ->
-         Sihl_email.create
-           ~sender:"admin@mail.com"
-           ~recipient:(CCFormat.asprintf "user%i@mail.com" i)
-           ~subject:"Reminder"
-           "Hello, this is a reminder for the session")
+      Sihl_email.create
+        ~sender:"admin@mail.com"
+        ~recipient:(CCFormat.asprintf "user%i@mail.com" i)
+        ~subject:"Reminder"
+        "Hello, this is a reminder for the session")
   in
   let res =
     SessionC.SendReminder.handle
@@ -1391,35 +1391,35 @@ let close_session_check_contact_figures _ () =
     let open CCList in
     contacts
     |> map (fun (contact, status) ->
-         let open Assignment in
-         let open Contact in
-         let no_show, participated, increment_num_participatons =
-           match status with
-           | `Participated ->
-             ( NoShow.create false
-             , Participated.create true
-             , IncrementParticipationCount.create true )
-           | `ShowUp ->
-             ( NoShow.create false
-             , Participated.create false
-             , IncrementParticipationCount.create false )
-           | `NoShow ->
-             ( NoShow.create true
-             , Participated.create false
-             , IncrementParticipationCount.create false )
-         in
-         let contact =
-           Contact_counter.update_on_session_closing
-             contact
-             no_show
-             participated
-             increment_num_participatons
-           |> Test_utils.get_or_failwith_pool_error
-         in
-         [ AttendanceSet (find_assignment contact, no_show, participated)
-           |> Pool_event.assignment
-         ; Updated contact |> Pool_event.contact
-         ])
+      let open Assignment in
+      let open Contact in
+      let no_show, participated, increment_num_participatons =
+        match status with
+        | `Participated ->
+          ( NoShow.create false
+          , Participated.create true
+          , IncrementParticipationCount.create true )
+        | `ShowUp ->
+          ( NoShow.create false
+          , Participated.create false
+          , IncrementParticipationCount.create false )
+        | `NoShow ->
+          ( NoShow.create true
+          , Participated.create false
+          , IncrementParticipationCount.create false )
+      in
+      let contact =
+        Contact_counter.update_on_session_closing
+          contact
+          no_show
+          participated
+          increment_num_participatons
+        |> Test_utils.get_or_failwith_pool_error
+      in
+      [ AttendanceSet (find_assignment contact, no_show, participated)
+        |> Pool_event.assignment
+      ; Updated contact |> Pool_event.contact
+      ])
     |> flatten
     |> cons (Session.Closed session |> Pool_event.session)
     |> Pool_event.handle_events Data.database_label
@@ -1427,27 +1427,27 @@ let close_session_check_contact_figures _ () =
   let%lwt res =
     contacts
     |> Lwt_list.map_s (fun (contact, status) ->
-         let open Contact in
-         let num_show_ups, num_no_shows, num_participations =
-           (match status with
-            | `Participated -> 1, 0, 1
-            | `ShowUp -> 1, 0, 0
-            | `NoShow -> 0, 1, 0)
-           |> fun (show_up, no_show, participation) ->
-           ( NumberOfShowUps.of_int show_up
-           , NumberOfNoShows.of_int no_show
-           , NumberOfParticipations.of_int participation )
-         in
-         let%lwt contact =
-           find_by_email Data.database_label (Contact.email_address contact)
-           ||> get_or_failwith_pool_error
-         in
-         (NumberOfShowUps.equal contact.num_show_ups num_show_ups
-          && NumberOfNoShows.equal contact.num_no_shows num_no_shows
-          && NumberOfParticipations.equal
-               contact.num_participations
-               num_participations)
-         |> Lwt.return)
+      let open Contact in
+      let num_show_ups, num_no_shows, num_participations =
+        (match status with
+         | `Participated -> 1, 0, 1
+         | `ShowUp -> 1, 0, 0
+         | `NoShow -> 0, 1, 0)
+        |> fun (show_up, no_show, participation) ->
+        ( NumberOfShowUps.of_int show_up
+        , NumberOfNoShows.of_int no_show
+        , NumberOfParticipations.of_int participation )
+      in
+      let%lwt contact =
+        find_by_email Data.database_label (Contact.email_address contact)
+        ||> get_or_failwith_pool_error
+      in
+      (NumberOfShowUps.equal contact.num_show_ups num_show_ups
+       && NumberOfNoShows.equal contact.num_no_shows num_no_shows
+       && NumberOfParticipations.equal
+            contact.num_participations
+            num_participations)
+      |> Lwt.return)
     ||> CCList.filter not
     ||> CCList.is_empty
   in
