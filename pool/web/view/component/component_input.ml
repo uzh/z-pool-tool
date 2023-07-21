@@ -723,7 +723,7 @@ let cell_phone_input ?(required = false) () =
   in
   let options = Utils.PhoneCodes.all_human |> to_option in
   div
-    ~a:[ a_class [ "flexrow"; "flex-gap" ] ]
+    ~a:[ a_class [ "flexrow"; "even"; "flex-gap" ] ]
     [ div
         ~a:[ a_class [ "select" ] ]
         [ select
@@ -737,6 +737,7 @@ let cell_phone_input ?(required = false) () =
               ([ a_name Pool_common.Message.Field.(show CellPhone)
                ; a_class [ "input" ]
                ; a_input_type `Number
+               ; a_placeholder "791234567"
                ]
                @ attrs)
             ()

@@ -8,6 +8,7 @@ module Column = struct
   let field m = fst m
   let to_sql m = snd m
   let create_list lst = lst
+  let create m = m
 end
 
 module Pagination = struct
@@ -157,4 +158,11 @@ let set_page_count ({ pagination; _ } as t) row_count =
     pagination |> CCOption.map (Pagination.set_page_count row_count)
   in
   { t with pagination }
+;;
+
+let apply_default ~default t =
+  let open CCOption.Infix in
+  let search = t.search <+> (default >>= search) in
+  let sort = t.sort <+> (default >>= sort) in
+  { t with sort; search }
 ;;

@@ -170,8 +170,17 @@ let searchable_by =
   |> Query.Column.create_list
 ;;
 
-let sortable_by =
-  searchable_by
-  @ (Pool_common.Message.[ Field.CreatedAt, "pool_experiments.created_at" ]
-     |> Query.Column.create_list)
+let default_sort_column =
+  Pool_common.Message.(Field.CreatedAt, "pool_experiments.created_at")
+  |> Query.Column.create
+;;
+
+let sortable_by = default_sort_column :: searchable_by
+
+let default_query =
+  let open Query in
+  let sort =
+    Sort.{ column = default_sort_column; order = SortOrder.Descending }
+  in
+  create ~sort ()
 ;;

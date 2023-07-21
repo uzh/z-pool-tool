@@ -94,7 +94,13 @@ let index req =
     in
     let find_experiments actor =
       let open Experiment in
-      let query = Query.from_request ~searchable_by ~sortable_by req in
+      let query =
+        Query.from_request
+          ~searchable_by
+          ~sortable_by
+          ~default:Experiment.default_query
+          req
+      in
       find_all ~query ~actor ~action:Guard.Access.index_action database_label
     in
     find_actor
