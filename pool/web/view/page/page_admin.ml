@@ -23,6 +23,12 @@ let dashboard Pool_context.{ language; _ } =
     [ h1
         ~a:[ a_class [ "heading-1" ] ]
         [ txt Pool_common.(Utils.text_to_string language I18n.DashboardTitle) ]
+    ; h2
+        ~a:[ a_class [ "heading-2" ] ]
+        [ txt
+            Pool_common.(
+              Utils.text_to_string language I18n.UpcomingSessionsTitle)
+        ]
     ; Component.Calendar.create [ a_user_data "calendar" "user" ]
     ]
 ;;

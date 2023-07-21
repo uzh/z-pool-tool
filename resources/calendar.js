@@ -44,7 +44,8 @@ const tooltipContent = ({ _instance, _def }, calendarType) => {
         ${contactPersonHtml}
         ${counterHtml}
         </div>`
-    return `<div class="card fc-tooltip">${header}${body}</div>`
+    const arrow = `<svg class="arrow" viewBox="0 0 460.5 531.74"><polygon points="460,530.874 1,265.87 460,0.866 "/></svg>`
+    return `<div class="fc-tooltip">${arrow}<div class="card">${header}${body}</div></div>`
 }
 
 export const initCalendar = () => {
@@ -85,9 +86,11 @@ export const initCalendar = () => {
                 },
                 eventDidMount: function (info) {
                     tippy(info.el, {
+                        arrow: false,
                         content: tooltipContent(info.event, calendarType),
                         allowHTML: true,
                         placement: 'right',
+                        delay: [200, 0],
                     });
                 },
                 eventSources: [{

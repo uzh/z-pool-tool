@@ -37,21 +37,22 @@
 
     .fc-daygrid-day-events {
         overflow-x: hidden;
+        display: block;
     }
 
     .fc-toolbar-title {
         @extend .heading-3
     }
-
-    a.fc-event.active .modal-body {
-        display: block;
-    }
 }
 
-[data-tippy-root] .tippy-box {
-    background-color: transparent;
-    color: $color-text-dark;
-    padding: 0;
+.fc-tooltip {
+    display: flex;
+    gap: 0;
+
+    .arrow {
+        width: 1rem;
+        fill: $grey-dark;
+    }
 }
 
 .main-nav .dropdown {
