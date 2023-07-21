@@ -676,7 +676,6 @@ module Api = struct
         |> Lwt_result.lift
       in
       let* start_time = find_param Field.Start in
-      (* Logs.info (fun m -> m "%s" ([%show: Ptime.t] start_time)); *)
       let* end_time = find_param Field.End in
       let%lwt sessions =
         query database_label ~start_time ~end_time
