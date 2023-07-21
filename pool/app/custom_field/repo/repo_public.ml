@@ -18,7 +18,7 @@ let get_options pool m =
 let get_options_of_multiple pool fields =
   fields
   |> CCList.filter_map (fun m ->
-       if has_options m then Some m.Repo_entity.Public.id else None)
+    if has_options m then Some m.Repo_entity.Public.id else None)
   |> Repo_option.Public.find_by_multiple_fields pool
 ;;
 

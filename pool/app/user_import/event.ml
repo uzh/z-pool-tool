@@ -21,7 +21,7 @@ let handle_event pool : event -> unit Lwt.t = function
     ; last_reminded_at = Some (LastRemindedAt.create_now ())
     }
     |> Repo.update pool
-  [@@deriving eq, show]
+[@@deriving eq, show]
 ;;
 
 let show_event = Format.asprintf "%a" pp_event

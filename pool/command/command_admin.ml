@@ -158,11 +158,11 @@ let list_roles =
     "admin.list_roles"
     "Shows a list of possible administrator roles."
     (fun () ->
-    Role.Actor.all
-    |> CCList.map [%show: Role.Actor.t]
-    |> CCList.map role_to_string
-    |> CCString.concat "\n  "
-    |> Format.asprintf "Possible roles:\n  %s"
-    |> print_endline;
-    Lwt.return_some ())
+      Role.Actor.all
+      |> CCList.map [%show: Role.Actor.t]
+      |> CCList.map role_to_string
+      |> CCString.concat "\n  "
+      |> Format.asprintf "Possible roles:\n  %s"
+      |> print_endline;
+      Lwt.return_some ())
 ;;

@@ -210,18 +210,18 @@ let value_input
        let current =
          value
          |> CCOption.map_or ~default:[] (function
-              | NoValue | Single _ -> []
-              | Lst lst ->
-                CCList.filter_map
-                  (fun value ->
-                    match[@warning "-4"] value with
-                    | Str id ->
-                      let experiment_id = id |> Experiment.Id.of_string in
-                      CCList.find_opt
-                        (fun (id, _) -> Experiment.Id.equal id experiment_id)
-                        query_experiments
-                    | _ -> None)
-                  lst)
+           | NoValue | Single _ -> []
+           | Lst lst ->
+             CCList.filter_map
+               (fun value ->
+                 match[@warning "-4"] value with
+                 | Str id ->
+                   let experiment_id = id |> Experiment.Id.of_string in
+                   CCList.find_opt
+                     (fun (id, _) -> Experiment.Id.equal id experiment_id)
+                     query_experiments
+                 | _ -> None)
+               lst)
        in
        Component_search.Experiment.create
          ~current
@@ -578,7 +578,7 @@ let filter_form csrf language param key_list template_list query_experiments =
        experiment.Experiment.filter |> CCOption.map (fun f -> f.id)
      | Template f -> f |> CCOption.map (fun f -> f.Filter.id))
     |> CCOption.map_or ~default:[] (fun id ->
-         Pool_common.[ a_user_data Message.Field.(show filter) (Id.value id) ])
+      Pool_common.[ a_user_data Message.Field.(show filter) (Id.value id) ])
   in
   div
     ~a:[ a_class [ stack ] ]

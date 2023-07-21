@@ -257,6 +257,10 @@ module Repo : sig
   module Id : sig
     val t : Id.t Caqti_type.t
   end
+
+  module Name : sig
+    val t : Name.t Caqti_type.t
+  end
 end
 
 val find

@@ -1,8 +1,7 @@
 open CCFun
 open Entity
 module Common = Pool_common
-module Id = Common.Id
-module RepoId = Common.Repo.Id
+module Id = Common.Repo.Id
 
 module Title = struct
   include Title
@@ -124,7 +123,7 @@ let t =
       ~encode
       ~decode
       (tup2
-         RepoId.t
+         Id.t
          (tup2
             Title.t
             (tup2
@@ -191,7 +190,7 @@ module Write = struct
         ~encode
         ~decode
         (tup2
-           RepoId.t
+           Id.t
            (tup2
               Title.t
               (tup2
@@ -203,7 +202,7 @@ module Write = struct
                        (tup2
                           (option Organisational_unit.Repo.Id.t)
                           (tup2
-                             (option RepoId.t)
+                             (option Id.t)
                              (tup2
                                 (option Admin.Repo.Entity.Id.t)
                                 (tup2
@@ -255,7 +254,7 @@ module Public = struct
         ~encode
         ~decode
         (tup2
-           RepoId.t
+           Id.t
            (tup2
               PublicTitle.t
               (tup2

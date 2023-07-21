@@ -30,10 +30,10 @@ let sender_of_experiment pool experiment =
 let filter_languages languages templates =
   languages
   |> CCList.filter (fun lang ->
-       CCList.find_opt
-         (fun template -> Pool_common.Language.equal template.language lang)
-         templates
-       |> CCOption.is_none)
+    CCList.find_opt
+      (fun template -> Pool_common.Language.equal template.language lang)
+      templates
+    |> CCOption.is_none)
 ;;
 
 let find_available_languages database_label entity_id label languages =

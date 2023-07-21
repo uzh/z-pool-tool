@@ -305,7 +305,7 @@ module Sql = struct
     let (Dynparam.Pack (pt, pv)) = dyn in
     let request =
       search_request exclude
-      |> pt ->* Caqti_type.(Repo_entity.(tup2 RepoId.t Title.t))
+      |> pt ->* Caqti_type.(Repo_entity.(tup2 Repo_entity.Id.t Title.t))
     in
     Utils.Database.collect (pool |> Database.Label.value) request pv
   ;;
@@ -344,7 +344,7 @@ module Sql = struct
       let (Dynparam.Pack (pt, pv)) = dyn in
       let request =
         search_multiple_by_id_request ids
-        |> pt ->* Caqti_type.(Repo_entity.(tup2 RepoId.t Title.t))
+        |> pt ->* Caqti_type.(Repo_entity.(tup2 Repo_entity.Id.t Title.t))
       in
       Utils.Database.collect (pool |> Database.Label.value) request pv
   ;;
@@ -360,5 +360,3 @@ let update = Sql.update
 let delete = Sql.delete
 let search = Sql.search
 let search_multiple_by_id = Sql.search_multiple_by_id
-
-module Id = Pool_common.Repo.Id

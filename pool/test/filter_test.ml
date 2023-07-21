@@ -261,7 +261,7 @@ module CustomFieldData = struct
   let multi_select_options_public =
     multi_select_option_data
     |> CCList.map (fun (id, name) ->
-         Custom_field.SelectOption.Public.create ~id name)
+      Custom_field.SelectOption.Public.create ~id name)
   ;;
 
   let multi_select_options_by_index =
@@ -342,7 +342,7 @@ module CustomFieldData = struct
   let publish_fields () =
     [ multi_select_custom_field; NrOfSiblings.field ]
     |> CCList.map (fun field ->
-         Custom_field.Published field |> Pool_event.custom_field)
+      Custom_field.Published field |> Pool_event.custom_field)
   ;;
 end
 
@@ -528,7 +528,7 @@ let test_list_filter answer_index operator contact experiment expected =
           (answer_index
            |> CustomFieldData.multi_select_options_by_index
            |> CCList.map (fun option ->
-                Option option.Custom_field.SelectOption.id))
+             Option option.Custom_field.SelectOption.id))
       in
       create
         None
@@ -739,13 +739,12 @@ let no_admin_values_shown_to_contacts _ () =
       let open CCOption in
       custom_fields
       |> CCList.filter (function
-           | Public.Boolean (_, answer) -> answer >>= admin_value |> is_some
-           | Public.Date (_, answer) -> answer >>= admin_value |> is_some
-           | Public.MultiSelect (_, _, answer) ->
-             answer >>= admin_value |> is_some
-           | Public.Number (_, answer) -> answer >>= admin_value |> is_some
-           | Public.Select (_, _, answer) -> answer >>= admin_value |> is_some
-           | Public.Text (_, answer) -> answer >>= admin_value |> is_some)
+        | Public.Boolean (_, answer) -> answer >>= admin_value |> is_some
+        | Public.Date (_, answer) -> answer >>= admin_value |> is_some
+        | Public.MultiSelect (_, _, answer) -> answer >>= admin_value |> is_some
+        | Public.Number (_, answer) -> answer >>= admin_value |> is_some
+        | Public.Select (_, _, answer) -> answer >>= admin_value |> is_some
+        | Public.Text (_, answer) -> answer >>= admin_value |> is_some)
       |> CCList.is_empty
     in
     Alcotest.(check bool "succeeds" true res) |> Lwt.return
@@ -811,7 +810,7 @@ let filter_by_experiment_participation _ () =
     let%lwt assignment =
       Assignment.find_by_session database_label session.Session.id
       >|+ CCList.find (fun (assignment : t) ->
-            Contact.equal assignment.contact contact)
+        Contact.equal assignment.contact contact)
       ||> get_exn_poolerror
     in
     [ AttendanceSet (assignment, NoShow.create false, Participated.create true)

@@ -35,7 +35,7 @@ module Password = struct
       Caqti_type.string
       (decrypt_from_string
        %> CCResult.map_err (fun _ ->
-            Pool_common.Message.(Decode Field.DatabaseUrl)))
+         Pool_common.Message.(Decode Field.DatabaseUrl)))
       encrypt_to_string
   ;;
 end

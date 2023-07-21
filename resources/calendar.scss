@@ -1,0 +1,73 @@
+.fc {
+    [class*=grid-] {
+        gap: 0;
+    }
+
+    .fc-scrollgrid-liquid,
+    .fc-scrollgrid-section,
+    .fc-scrollgrid-section-header {
+        display: inherit;
+    }
+
+    table[class*=grid-] {
+        display: table;
+    }
+
+    tr[class*=grid-] {
+        display: table-row;
+    }
+
+    td[class*=grid-] {
+        display: table-cell;
+    }
+
+    .fc-daygrid-event,
+    .fc-daygrid-event-harness {
+        display: block;
+    }
+
+    .fc-daygrid-dot-event {
+        display: flex;
+    }
+
+    .fc-daygrid-day-frame {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .fc-daygrid-day-events {
+        overflow-x: hidden;
+        display: block;
+    }
+
+    .fc-toolbar-title {
+        @extend .heading-3
+    }
+}
+
+.fc-tooltip {
+    display: flex;
+    gap: 0;
+
+    .arrow {
+        width: 1rem;
+        fill: $grey-dark;
+    }
+}
+
+.main-nav .dropdown {
+    z-index: 5;
+}
+
+.notification-fixed {
+    z-index: 10;
+}
+
+:root {
+    --fc-button-bg-color: #{$color-primary};
+    --fc-button-border-color: #{$color-primary-dark};
+    --fc-button-hover-bg-color: #{$color-primary-light};
+    --fc-button-hover-border-color: #{$color-primary-dark};
+    --fc-button-active-bg-color: #{$color-primary-light};
+    --fc-button-active-border-color: #{$color-primary-dark};
+}

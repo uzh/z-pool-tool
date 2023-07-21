@@ -105,28 +105,28 @@ let calculate_mailing_limits ?interval pool_based_mailings =
            init
            :: (mailings
                |> CCList.map (fun ({ Mailing.rate; _ } : Mailing.t) ->
-                    rate |> Mailing.Rate.value |> count_of_rate ?interval))
+                 rate |> Mailing.Rate.value |> count_of_rate ?interval))
            |> sum)
          0
   in
   let reduce_factor = CCFloat.(of_int max_total_invitations / of_int total) in
   pool_based_mailings
   |> CCList.map (fun (pool, mailings) ->
-       let limit_to_mailing =
-         mailings
-         |> CCList.map (fun ({ Mailing.rate; _ } as mailing : Mailing.t) ->
-              let limit_per_mailing =
-                (rate
-                 |> Mailing.Rate.value
-                 |> count_of_rate ?interval
-                 |> CCFloat.of_int)
-                *. max reduce_factor 1.
-                |> floor
-                |> CCFloat.to_int
-              in
-              mailing, limit_per_mailing)
-       in
-       pool, limit_to_mailing)
+    let limit_to_mailing =
+      mailings
+      |> CCList.map (fun ({ Mailing.rate; _ } as mailing : Mailing.t) ->
+        let limit_per_mailing =
+          (rate
+           |> Mailing.Rate.value
+           |> count_of_rate ?interval
+           |> CCFloat.of_int)
+          *. max reduce_factor 1.
+          |> floor
+          |> CCFloat.to_int
+        in
+        mailing, limit_per_mailing)
+    in
+    pool, limit_to_mailing)
 ;;
 
 let match_invitations ?interval pools =
@@ -147,21 +147,21 @@ let match_invitations ?interval pools =
       (fun pool ->
         Mailing.find_current pool
         >|> Lwt_list.filter_map_s (fun mailing ->
-              let find_experiment { Mailing.id; _ } =
-                Experiment.find_of_mailing pool (id |> Mailing.Id.to_common)
-              in
-              let has_spots { Experiment.id; _ } =
-                Session.has_bookable_spots_for_experiments pool id
-              in
-              let validate = function
-                | true -> Ok mailing
-                | false -> Error Pool_common.Message.SessionFullyBooked
-              in
-              mailing
-              |> find_experiment
-              >>= has_spots
-              >== validate
-              ||> CCResult.to_opt)
+          let find_experiment { Mailing.id; _ } =
+            Experiment.find_of_mailing pool (id |> Mailing.Id.to_common)
+          in
+          let has_spots { Experiment.id; _ } =
+            Session.has_bookable_spots_for_experiments pool id
+          in
+          let validate = function
+            | true -> Ok mailing
+            | false -> Error Pool_common.Message.SessionFullyBooked
+          in
+          mailing
+          |> find_experiment
+          >>= has_spots
+          >== validate
+          ||> CCResult.to_opt)
         ||> fun m -> pool, m)
       pools
   in
@@ -184,13 +184,12 @@ let match_invitations ?interval pools =
         let* tenant = Pool_tenant.find_by_label pool in
         limited_mailings
         |> Lwt_list.map_s (fun (mailing, limit) ->
-             find_contacts_by_mailing pool mailing limit
-             >>= fun (experiment, contacts) ->
-             let%lwt create_message =
-               Message_template.ExperimentInvitation.prepare tenant experiment
-             in
-             { mailing; experiment; contacts; create_message }
-             |> Lwt_result.return)
+          find_contacts_by_mailing pool mailing limit
+          >>= fun (experiment, contacts) ->
+          let%lwt create_message =
+            Message_template.ExperimentInvitation.prepare tenant experiment
+          in
+          { mailing; experiment; contacts; create_message } |> Lwt_result.return)
         ||> CCList.all_ok
       in
       let open CCResult in

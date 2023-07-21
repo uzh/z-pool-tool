@@ -466,9 +466,9 @@ module Public = struct
           | options ->
             options
             |> CCList.filter_map (fun option_id ->
-                 CCList.find_opt
-                   (fun { SelectOption.Public.id; _ } -> Id.equal id option_id)
-                   select_options)
+              CCList.find_opt
+                (fun { SelectOption.Public.id; _ } -> Id.equal id option_id)
+                select_options)
             |> CCOption.pure
         in
         create_answer

@@ -294,13 +294,36 @@
     "@ckeditor/ckeditor5-utils" "^36.0.1"
     lodash-es "^4.17.15"
 
-"@econ/frontend-framework@^2.0.0":
-  version "2.0.0"
-  resolved "https://gitlab.uzh.ch/api/v4/projects/662/packages/npm/@econ/frontend-framework/-/@econ/frontend-framework-2.0.0.tgz#0835deb410638d9bc7457971c34e0fd200914b21"
-  integrity sha1-CDXetBBjjZvHRXlxw04P0gCRSyE=
+"@econ/frontend-framework@^2.0.3":
+  version "2.0.3"
+  resolved "https://gitlab.uzh.ch/api/v4/projects/662/packages/npm/@econ/frontend-framework/-/@econ/frontend-framework-2.0.3.tgz#5ea48c91a3a4db6d1bb54e93646e0ef1616e8ce3"
+  integrity sha1-XqSMkaOk220btU6TZG4O8WFujOM=
   dependencies:
     flatpickr "^4.6.13"
-    parcel "^2.9.1"
+
+"@fullcalendar/core@^6.1.8":
+  version "6.1.8"
+  resolved "https://registry.yarnpkg.com/@fullcalendar/core/-/core-6.1.8.tgz#62008f7b2785dc01f0bf8c2f0c853925eab1c03a"
+  integrity sha512-i8JBIvZCWGO9dsMEDcx9bnsQZ9PtGSJdOXGgWbhLaGq2iq41OBdp9g9gM4b/Otv2oK8bL5Gl6CsMmb/HkDtA6Q==
+  dependencies:
+    preact "~10.12.1"
+
+"@fullcalendar/daygrid@^6.1.8", "@fullcalendar/daygrid@~6.1.8":
+  version "6.1.8"
+  resolved "https://registry.yarnpkg.com/@fullcalendar/daygrid/-/daygrid-6.1.8.tgz#2ca4a10892f5e2abeac0f8a8ecc8f07c002a4bf4"
+  integrity sha512-kCZxQFKb9Vqa3CZRX0v7rMSJ2mlTt4gDpyLfiNJKxUAq7W51uKurPaFZWicaXy1ESHVBxKNlbx5uNjBpyu50JQ==
+
+"@fullcalendar/list@^6.1.8":
+  version "6.1.8"
+  resolved "https://registry.yarnpkg.com/@fullcalendar/list/-/list-6.1.8.tgz#69e5efba0cb8416955a3ad1cd7d550345ffaa16d"
+  integrity sha512-10N0T/vCtId1cE3JGLpnbAivWVnaWCCkVO7wmbsyr5Y+I939kr/zq4BUNwBoP/xSFVVxx59FETh3iyA+MkV8Fw==
+
+"@fullcalendar/timegrid@^6.1.8":
+  version "6.1.8"
+  resolved "https://registry.yarnpkg.com/@fullcalendar/timegrid/-/timegrid-6.1.8.tgz#30b9860eb900c5dc9b72ceaab98c0728018a0ff1"
+  integrity sha512-3+3KHHCoNcaLs/gQt004hAqICbY5+WAffrZ0ePv+80HFB1OVh8BQ5XXLHSOUbTvXdgtUTcfBHuw9fhO31kt5gA==
+  dependencies:
+    "@fullcalendar/daygrid" "~6.1.8"
 
 "@lezer/common@^0.15.0", "@lezer/common@^0.15.7":
   version "0.15.12"
@@ -1036,6 +1059,11 @@
     "@parcel/utils" "2.9.3"
     nullthrows "^1.1.1"
 
+"@popperjs/core@^2.9.0":
+  version "2.11.8"
+  resolved "https://registry.yarnpkg.com/@popperjs/core/-/core-2.11.8.tgz#6b79032e760a0899cd4204710beede972a3a185f"
+  integrity sha512-P1st0aksCrn9sGZhp8GMYwBnQsbvAWsZAX44oXNNvLHGqAOcoVxmjZiohstwQ7SqKnbR47akdNi+uleWD8+g6A==
+
 "@swc/core-darwin-arm64@1.3.68":
   version "1.3.68"
   resolved "https://registry.yarnpkg.com/@swc/core-darwin-arm64/-/core-darwin-arm64-1.3.68.tgz#cf7fe9550a09eb18e6ceb30362da39886dbaf9d6"
@@ -1715,7 +1743,7 @@ ordered-binary@^1.4.0:
   resolved "https://registry.yarnpkg.com/ordered-binary/-/ordered-binary-1.4.1.tgz#205cb6efd6c27fa0ef4eced994a023e081cdc911"
   integrity sha512-9LtiGlPy982CsgxZvJGNNp2/NnrgEr6EAyN3iIEP3/8vd3YLgAZQHbQ75ZrkfBRGrNg37Dk3U6tuVb+B4Xfslg==
 
-parcel@^2.0.0, parcel@^2.9.1:
+parcel@^2.0.0:
   version "2.9.3"
   resolved "https://registry.yarnpkg.com/parcel/-/parcel-2.9.3.tgz#315660ccbaa5a830cf71280ab0cfbd3079247cc5"
   integrity sha512-2GTVocFkwblV/TIg9AmT7TI2fO4xdWkyN8aFUEVtiVNWt96GTR3FgQyHFValfCbcj1k9Xf962Ws2hYXYUr9k1Q==
@@ -1800,6 +1828,11 @@ posthtml@^0.16.4, posthtml@^0.16.5:
   dependencies:
     posthtml-parser "^0.11.0"
     posthtml-render "^3.0.0"
+
+preact@~10.12.1:
+  version "10.12.1"
+  resolved "https://registry.yarnpkg.com/preact/-/preact-10.12.1.tgz#8f9cb5442f560e532729b7d23d42fd1161354a21"
+  integrity sha512-l8386ixSsBdbreOAkqtrwqHwdvR35ID8c3rKPa8lCWuO86dBi32QWHV4vfsZK1utLLFMvw+Z5Ad4XLkZzchscg==
 
 react-error-overlay@6.0.9:
   version "6.0.9"
@@ -1905,6 +1938,13 @@ timsort@^0.3.0:
   version "0.3.0"
   resolved "https://registry.yarnpkg.com/timsort/-/timsort-0.3.0.tgz#405411a8e7e6339fe64db9a234de11dc31e02bd4"
   integrity sha512-qsdtZH+vMoCARQtyod4imc2nIJwg9Cc7lPRrw9CzF8ZKR0khdr8+2nX80PBhET3tcyTtJDxAffGh2rXH4tyU8A==
+
+tippy.js@^6.3.7:
+  version "6.3.7"
+  resolved "https://registry.yarnpkg.com/tippy.js/-/tippy.js-6.3.7.tgz#8ccfb651d642010ed9a32ff29b0e9e19c5b8c61c"
+  integrity sha512-E1d3oP2emgJ9dRQZdf3Kkn0qJgI6ZLpyS5z6ZkY1DF3kaQaBsGZsndEpHwx+eC+tYM41HaSNvNtLx8tU57FzTQ==
+  dependencies:
+    "@popperjs/core" "^2.9.0"
 
 to-regex-range@^5.0.1:
   version "5.0.1"

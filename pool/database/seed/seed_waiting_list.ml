@@ -36,7 +36,7 @@ let waiting_list pool =
             let experiment = to_public_experiment experiment in
             (contacts
              |> CCList.map (fun contact ->
-                  Waiting_list.Created Waiting_list.{ contact; experiment }))
+               Waiting_list.Created Waiting_list.{ contact; experiment }))
             @ waiting_lists
           in
           let invitations =

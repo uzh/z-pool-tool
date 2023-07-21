@@ -13,9 +13,9 @@ let retain_search_and_sort query =
     let open Sort in
     query.sort
     |> CCOption.map (fun { column; order } ->
-         [ Field.Order, column |> Column.field |> Field.show
-         ; Field.SortOrder, order |> SortOrder.show
-         ])
+      [ Field.Order, column |> Column.field |> Field.show
+      ; Field.SortOrder, order |> SortOrder.show
+      ])
   in
   [ search; sort ] |> CCList.filter_map CCFun.id |> CCList.flatten
 ;;
@@ -64,15 +64,15 @@ let pagination language query { Pagination.page; page_count; _ } =
     let create buttons =
       buttons
       |> CCList.map (fun i ->
-           if CCInt.equal i (Page.value page)
-           then
-             span
-               ~a:[ a_class ("primary" :: page_list_classes) ]
-               [ txt (CCInt.to_string i) ]
-           else
-             a
-               ~a:[ a_href (add_page_param i); a_class page_list_classes ]
-               [ txt (CCInt.to_string i) ])
+        if CCInt.equal i (Page.value page)
+        then
+          span
+            ~a:[ a_class ("primary" :: page_list_classes) ]
+            [ txt (CCInt.to_string i) ]
+        else
+          a
+            ~a:[ a_href (add_page_param i); a_class page_list_classes ]
+            [ txt (CCInt.to_string i) ])
     in
     let wrap = div ~a:[ a_class [ "flexrow"; "flex-gap-xs" ] ] in
     let create_grouped (buttons : int list list) =

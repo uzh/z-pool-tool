@@ -319,6 +319,7 @@ module Utils : sig
     val parse_time : string -> (Ptime.t, Message.error) result
     val parse_time_span : string -> (Ptime.Span.t, Message.error) result
     val print_time_span : Ptime.Span.t -> string
+    val parse_date_from_calendar : string -> (Ptime.t, Message.error) result
   end
 
   val schema_decoder

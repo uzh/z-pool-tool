@@ -54,13 +54,13 @@ let block_until counter =
   in
   minutes
   |> CCOption.map (fun minutes ->
-       let open Ptime in
-       minutes * 60
-       |> Span.of_int_s
-       |> add_span (Ptime_clock.now ())
-       |> CCOption.get_exn_or "Invalid time span provided"
-       |> BlockedUntil.create
-       |> get_or_failwith_pool_error)
+    let open Ptime in
+    minutes * 60
+    |> Span.of_int_s
+    |> add_span (Ptime_clock.now ())
+    |> CCOption.get_exn_or "Invalid time span provided"
+    |> BlockedUntil.create
+    |> get_or_failwith_pool_error)
 ;;
 
 let login_params urlencoded =

@@ -16,7 +16,7 @@ let to_entity pool to_entity field_type id m =
 let get_options_of_multiple pool field_type id fields =
   fields
   |> CCList.filter_map (fun m ->
-       if has_options field_type m then Some (id m) else None)
+    if has_options field_type m then Some (id m) else None)
   |> Repo_option.find_by_multiple_fields pool
 ;;
 

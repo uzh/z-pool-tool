@@ -1,3 +1,4 @@
+module Calendar = Component_calendar
 module Filter = Component_filter
 module Icon = Component_icon
 module Image = Component_image

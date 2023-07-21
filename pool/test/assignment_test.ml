@@ -306,13 +306,13 @@ let assign_contact_from_waiting_list_with_follow_ups () =
     let create_events =
       [ session; follow_up ]
       |> CCList.map (fun session ->
-           let create =
-             Assignment.
-               { contact = waiting_list.Waiting_list.contact
-               ; session_id = session.Session.id
-               }
-           in
-           Assignment.Created create |> Pool_event.assignment)
+        let create =
+          Assignment.
+            { contact = waiting_list.Waiting_list.contact
+            ; session_id = session.Session.id
+            }
+        in
+        Assignment.Created create |> Pool_event.assignment)
     in
     Ok
       (create_events
@@ -371,10 +371,10 @@ let assign_to_session_with_follow_ups () =
     let create_events =
       sessions
       |> CCList.map (fun session ->
-           let create =
-             Assignment.{ contact; session_id = session.Session.Public.id }
-           in
-           Assignment.Created create |> Pool_event.assignment)
+        let create =
+          Assignment.{ contact; session_id = session.Session.Public.id }
+        in
+        Assignment.Created create |> Pool_event.assignment)
     in
     let increase_num_events =
       update_assignment_count_event ~step:(CCList.length sessions) contact
@@ -538,9 +538,8 @@ let cancel_assignment_with_follow_ups _ () =
     sessions
     |> CCList.map Session.to_public
     |> CCList.map (fun session ->
-         Assignment.(
-           Created { contact; session_id = session.Session.Public.id })
-         |> Pool_event.assignment)
+      Assignment.(Created { contact; session_id = session.Session.Public.id })
+      |> Pool_event.assignment)
     |> Pool_event.handle_events Data.database_label
   in
   (* Cancel assignments *)
@@ -569,7 +568,7 @@ let cancel_assignment_with_follow_ups _ () =
       experiment.Experiment.id
       contact
     ||> CCList.filter (fun { Assignment.Public.canceled_at; _ } ->
-          CCOption.is_none canceled_at)
+      CCOption.is_none canceled_at)
     ||> CCList.is_empty
   in
   let () = Alcotest.(check bool "succeeds" true res) in

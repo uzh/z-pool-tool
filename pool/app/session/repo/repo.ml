@@ -1,10 +1,66 @@
 module Database = Pool_database
 module RepoEntity = Repo_entity
+module Dynparam = Utils.Database.Dynparam
 
 let of_entity = RepoEntity.of_entity
 let to_entity = RepoEntity.to_entity
 
 module Sql = struct
+  let select_for_calendar ?order_by where =
+    let order_by =
+      order_by |> CCOption.map_or ~default:"" (Format.asprintf "ORDER BY %s")
+    in
+    Format.asprintf
+      {sql|
+      SELECT
+        LOWER(CONCAT(
+          SUBSTR(HEX(pool_sessions.uuid), 1, 8), '-',
+          SUBSTR(HEX(pool_sessions.uuid), 9, 4), '-',
+          SUBSTR(HEX(pool_sessions.uuid), 13, 4), '-',
+          SUBSTR(HEX(pool_sessions.uuid), 17, 4), '-',
+          SUBSTR(HEX(pool_sessions.uuid), 21)
+        )),
+        pool_experiments.title,
+        pool_sessions.start,
+        pool_sessions.duration,
+        pool_sessions.description,
+        pool_sessions.max_participants,
+        pool_sessions.min_participants,
+        pool_sessions.overbook,
+        (SELECT
+          COUNT(uuid)
+        FROM
+          pool_assignments
+        WHERE
+          pool_assignments.session_uuid = pool_sessions.uuid
+          AND pool_assignments.canceled_at IS NULL
+          AND pool_assignments.marked_as_deleted = 0),
+        LOWER(CONCAT(
+          SUBSTR(HEX(pool_locations.uuid), 1, 8), '-',
+          SUBSTR(HEX(pool_locations.uuid), 9, 4), '-',
+          SUBSTR(HEX(pool_locations.uuid), 13, 4), '-',
+          SUBSTR(HEX(pool_locations.uuid), 17, 4), '-',
+          SUBSTR(HEX(pool_locations.uuid), 21)
+        )),
+        pool_locations.name,
+        user_users.given_name,
+        user_users.name,
+        user_users.email
+      FROM pool_sessions
+      INNER JOIN pool_experiments
+        ON pool_sessions.experiment_uuid = pool_experiments.uuid
+      INNER JOIN pool_locations
+        ON pool_sessions.location_uuid = pool_locations.uuid
+      LEFT JOIN user_users
+        ON pool_experiments.contact_person_uuid = user_users.uuid
+      WHERE
+        %s
+        %s
+    |sql}
+      where
+      order_by
+  ;;
+
   let find_sql ?order_by where =
     let order_by =
       order_by |> CCOption.map_or ~default:"" (Format.asprintf "ORDER BY %s")
@@ -295,7 +351,7 @@ module Sql = struct
         ON pool_experiments.uuid = pool_sessions.experiment_uuid
       WHERE pool_sessions.uuid = UNHEX(REPLACE(?, '-', ''))
     |sql}
-    |> Caqti_type.(string ->! tup2 Experiment.Repo.Id.t string)
+    |> Caqti_type.(string ->! tup2 Experiment.Repo.Entity.Id.t string)
   ;;
 
   let find_experiment_id_and_title pool id =
@@ -499,6 +555,63 @@ module Sql = struct
       delete_request
       (Pool_common.Id.value id)
   ;;
+
+  let find_for_calendar_by_location_request =
+    let open Caqti_request.Infix in
+    {sql|
+        pool_sessions.location_uuid = UNHEX(REPLACE($1, '-', ''))
+        AND pool_sessions.canceled_at IS NULL
+        AND pool_sessions.start > $2
+        AND pool_sessions.start < $3
+      |sql}
+    |> select_for_calendar ~order_by:"pool_sessions.start"
+    |> Caqti_type.(tup3 string ptime ptime ->* RepoEntity.Calendar.t)
+  ;;
+
+  let find_for_calendar_by_location location_id pool ~start_time ~end_time =
+    Utils.Database.collect
+      (Database.Label.value pool)
+      find_for_calendar_by_location_request
+      (Pool_location.Id.value location_id, start_time, end_time)
+  ;;
+
+  let validate_session_sql actor =
+    let open Guard.Persistence in
+    let open Dynparam in
+    ( {sql| guardianValidateSessionUuid(guardianEncodeUuid(?), ?, pool_sessions.uuid) |sql}
+    , empty
+      |> add Uuid.Actor.t (actor |> Guard.Actor.id)
+      |> add Action.t Guard.Action.Read )
+  ;;
+
+  let find_for_calendar_by_user_request =
+    select_for_calendar ~order_by:"pool_sessions.start"
+  ;;
+
+  let find_for_calendar_by_user actor pool ~start_time ~end_time =
+    let open Caqti_request.Infix in
+    let sql, dyn = validate_session_sql actor in
+    let sql =
+      Format.asprintf
+        "%s AND %s AND %s AND %s"
+        sql
+        "pool_sessions.start > ?"
+        "pool_sessions.start < ?"
+        "pool_sessions.canceled_at IS NULL"
+    in
+    let dyn =
+      CCList.fold_left
+        (fun dyn p -> dyn |> Dynparam.add Caqti_type.ptime p)
+        dyn
+        [ start_time; end_time ]
+    in
+    let (Dynparam.Pack (pt, pv)) = dyn in
+    let request =
+      find_for_calendar_by_user_request sql
+      |> (pt ->* RepoEntity.Calendar.t) ~oneshot:true
+    in
+    Utils.Database.collect (pool |> Pool_database.Label.value) request pv
+  ;;
 end
 
 let location_to_repo_entity pool session =
@@ -596,8 +709,8 @@ let find_upcoming_public_by_contact pool contact_id =
   >>= fun lst ->
   lst
   |> Lwt_list.map_s (fun (parent, follow_ups) ->
-       Sql.find_public_experiment pool parent.id
-       >|+ fun exp -> exp, parent, follow_ups)
+    Sql.find_public_experiment pool parent.id
+    >|+ fun exp -> exp, parent, follow_ups)
   ||> CCResult.flatten_l
 ;;
 
@@ -609,3 +722,5 @@ let find_sessions_to_remind pool =
 let insert = Sql.insert
 let update = Sql.update
 let delete = Sql.delete
+let find_for_calendar_by_location = Sql.find_for_calendar_by_location
+let find_for_calendar_by_user = Sql.find_for_calendar_by_user

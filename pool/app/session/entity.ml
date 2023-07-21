@@ -20,7 +20,9 @@ end
 
 (* TODO [aerben] rename to contact *)
 module ParticipantAmount = struct
-  type t = int [@@deriving eq, show]
+  open Ppx_yojson_conv_lib.Yojson_conv
+
+  type t = int [@@deriving eq, show, yojson]
 
   let value m = m
 
@@ -40,7 +42,7 @@ module ParticipantAmount = struct
 end
 
 module Start = struct
-  type t = Ptime.t [@@deriving eq, show]
+  include Pool_common.Model.Ptime
 
   let create m = m
   let value m = m
@@ -54,6 +56,18 @@ module Start = struct
     Pool_common.(
       Utils.schema_decoder decode Ptime.to_rfc3339 Message.Field.Start)
   ;;
+end
+
+module End = struct
+  include Pool_common.Model.Ptime
+
+  let create start duration =
+    duration
+    |> Ptime.add_span start
+    |> CCOption.to_result Pool_common.Message.(Invalid Field.Duration)
+  ;;
+
+  let value m = m
 end
 
 module Duration = struct
@@ -70,7 +84,9 @@ module Duration = struct
 end
 
 module AssignmentCount = struct
-  type t = int [@@deriving eq, show]
+  open Ppx_yojson_conv_lib.Yojson_conv
+
+  type t = int [@@deriving eq, show, yojson]
 
   let value m = m
 
@@ -115,6 +131,13 @@ module CancellationReason = struct
   ;;
 
   let schema = schema ?validation:(Some validate) field
+end
+
+module CanceledAt = struct
+  include Pool_common.Model.Ptime
+
+  let create m = Ok m
+  let schema = schema Pool_common.Message.Field.CanceledAt create
 end
 
 type t =
@@ -242,9 +265,9 @@ let group_and_sort sessions =
   let parents, follow_ups =
     sessions
     |> CCList.partition_filter_map (fun session ->
-         match session.follow_up_to with
-         | None -> `Left (session.id, (session, []))
-         | Some parent -> `Right (parent, session))
+      match session.follow_up_to with
+      | None -> `Left (session.id, (session, []))
+      | Some parent -> `Right (parent, session))
   in
   follow_ups
   |> CCList.fold_left add_follow_ups_to_parents parents
@@ -316,9 +339,9 @@ module Public = struct
     let parents, follow_ups =
       sessions
       |> CCList.partition_filter_map (fun (session : t) ->
-           match session.follow_up_to with
-           | None -> `Left (session.id, (session, []))
-           | Some parent -> `Right (parent, session))
+        match session.follow_up_to with
+        | None -> `Left (session.id, (session, []))
+        | Some parent -> `Right (parent, session))
     in
     add_follow_ups_and_sort parents follow_ups
   ;;
@@ -379,6 +402,37 @@ let to_public
     }
 ;;
 
+module Calendar = struct
+  open Ppx_yojson_conv_lib.Yojson_conv
+
+  type contact_person =
+    { name : string
+    ; email : Pool_user.EmailAddress.t
+    }
+  [@@deriving eq, show, yojson]
+
+  type location =
+    { id : Pool_location.Id.t
+    ; name : Pool_location.Name.t
+    }
+  [@@deriving eq, show, yojson]
+
+  type t =
+    { id : Id.t
+    ; title : Experiment.Title.t
+    ; start : Start.t
+    ; end_ : End.t
+    ; max_participants : ParticipantAmount.t
+    ; min_participants : ParticipantAmount.t
+    ; overbook : ParticipantAmount.t
+    ; assignment_count : AssignmentCount.t
+    ; description : Description.t option [@option]
+    ; location : location
+    ; contact_person : contact_person option [@option]
+    }
+  [@@deriving eq, show, yojson]
+end
+
 let email_text language start duration location =
   let format label text =
     Format.asprintf
@@ -412,9 +466,7 @@ let to_email_text language { start; duration; location; _ } =
 let follow_up_sessions_to_email_list follow_ups =
   follow_ups
   |> CCList.map (fun session ->
-       session.start
-       |> Start.value
-       |> Pool_common.Utils.Time.formatted_date_time)
+    session.start |> Start.value |> Pool_common.Utils.Time.formatted_date_time)
   |> CCString.concat "\n"
 ;;
 

@@ -105,12 +105,12 @@ let get_template_with_language_missing _ () =
     let%lwt res =
       Pool_common.Language.[ De; En ]
       |> Lwt_list.map_s (fun lang ->
-           Message_template.find_by_label_to_send
-             database_label
-             ~entity_uuids:Experiment.[ experiment.id |> Id.to_common ]
-             lang
-             label
-           ||> fst)
+        Message_template.find_by_label_to_send
+          database_label
+          ~entity_uuids:Experiment.[ experiment.id |> Id.to_common ]
+          lang
+          label
+        ||> fst)
     in
     (* When one entity specific template exists, expect this to be returned
        every time *)
@@ -131,20 +131,20 @@ let get_templates_in_multile_languages _ () =
     let%lwt templates =
       languages
       |> Lwt_list.map_s (fun lang ->
-           create_invitation
-             lang
-             ~entity_uuid:Experiment.(experiment.id |> Id.to_common)
-             ())
+        create_invitation
+          lang
+          ~entity_uuid:Experiment.(experiment.id |> Id.to_common)
+          ())
     in
     let%lwt res =
       languages
       |> Lwt_list.map_s (fun lang ->
-           Message_template.find_by_label_to_send
-             database_label
-             ~entity_uuids:Experiment.[ experiment.id |> Id.to_common ]
-             lang
-             label
-           ||> fst)
+        Message_template.find_by_label_to_send
+          database_label
+          ~entity_uuids:Experiment.[ experiment.id |> Id.to_common ]
+          lang
+          label
+        ||> fst)
     in
     (* Expect all created templates to be returned *)
     Alcotest.(check (list Test_utils.message_template) "succeeds" templates res)

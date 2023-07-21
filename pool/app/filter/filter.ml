@@ -32,10 +32,10 @@ let key_of_string tenant_db str =
   match Key.read str with
   | Some hardcoded -> (Hardcoded hardcoded : human) |> Lwt_result.return
   | None ->
-    str
-    |> Custom_field.Id.of_string
-    |> Custom_field.find tenant_db
-    >|+ fun field : human -> CustomField field
+    (str
+     |> Custom_field.Id.of_string
+     |> Custom_field.find tenant_db
+     >|+ fun field : human -> CustomField field)
 ;;
 
 let rec t_to_human key_list subquery_list (t : query) =
@@ -98,9 +98,9 @@ let[@warning "-4"] all_query_experiments { query; _ } =
        | Hardcoded Participation, Lst lst ->
          lst
          |> CCList.filter_map (fun (value : single_val) ->
-              match value with
-              | Str id -> Some (Pool_common.Id.of_string id)
-              | _ -> None)
+           match value with
+           | Str id -> Some (Pool_common.Id.of_string id)
+           | _ -> None)
        | _, _ -> [])
     | Template _ -> []
   in

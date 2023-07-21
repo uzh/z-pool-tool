@@ -135,7 +135,7 @@ let form
   let action =
     location
     |> CCOption.map_or ~default:path (fun { id; _ } ->
-         id |> Id.value |> Format.asprintf "%s/%s" path)
+      id |> Id.value |> Format.asprintf "%s/%s" path)
   in
   let value field_fcn decode_fcn =
     let open CCOption.Infix in
@@ -154,17 +154,17 @@ let form
   let address_value fcn =
     location
     |> CCOption.map_or ~default (fun ({ address; _ } : t) ->
-         match address with
-         | Address.Virtual -> default
-         | Address.Physical m -> m |> fcn)
+      match address with
+      | Address.Virtual -> default
+      | Address.Physical m -> m |> fcn)
   in
   let is_virtual_checkbox =
     let selected =
       location
       |> CCOption.map_or ~default:[] (fun ({ address; _ } : t) ->
-           match address with
-           | Address.Virtual -> [ a_checked () ]
-           | Address.Physical _ -> [])
+        match address with
+        | Address.Virtual -> [ a_checked () ]
+        | Address.Physical _ -> [])
     in
     input
       ~a:
@@ -401,7 +401,7 @@ module FileList = struct
     in
     div
       [ h2
-          ~a:[ a_class [ "heading-2" ] ]
+          ~a:[ a_class [ "heading-3" ] ]
           [ txt Pool_common.(Utils.text_to_string language I18n.Files) ]
       ; p
           Pool_common.
@@ -433,7 +433,7 @@ module SessionList = struct
           |> txt
         ; session.canceled_at
           |> CCOption.map_or ~default:"" (fun t ->
-               Pool_common.Utils.Time.formatted_date_time t)
+            Pool_common.Utils.Time.formatted_date_time t)
           |> txt
         ; Format.asprintf
             "/admin/experiments/%s/sessions/%s"
@@ -514,19 +514,28 @@ let detail
     [ div
         ~a:[ a_class [ "stack-lg" ] ]
         [ div
+            ~a:[ a_class [ "stack" ] ]
             [ div
-                ~a:[ a_class [ "flexrow"; "justify-between"; "align-center" ] ]
                 [ div
-                    [ h1
-                        ~a:[ a_class [ "heading-1" ] ]
-                        [ txt (location.name |> Name.value) ]
+                    ~a:
+                      [ a_class [ "flexrow"; "justify-between"; "align-center" ]
+                      ]
+                    [ div
+                        [ h1
+                            ~a:[ a_class [ "heading-1" ] ]
+                            [ txt (location.name |> Name.value) ]
+                        ]
+                    ; div [ edit_button ]
                     ]
-                ; div [ edit_button ]
+                ; location_details
                 ]
-            ; location_details
+            ; FileList.create csrf language location
             ]
-        ; FileList.create csrf language location
         ; SessionList.create language sessions
+        ; Component.Calendar.create
+            [ a_user_data "calendar" "location"
+            ; a_user_data "location" (Id.value location.id)
+            ]
         ]
     ]
 ;;

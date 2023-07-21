@@ -58,7 +58,7 @@ module Sql = struct
       ORDER BY pool_mailing.start
     |sql}
     |> Format.asprintf "%s\n%s" select_sql
-    |> Experiment.Repo.Id.t ->* RepoEntity.t
+    |> Experiment.Repo.Entity.Id.t ->* RepoEntity.t
   ;;
 
   let find_by_experiment pool =
@@ -126,7 +126,7 @@ module Sql = struct
       WHERE
         pool_mailing.uuid = UNHEX(REPLACE(?, '-', ''))
     |sql}
-    |> Repo_entity.Id.t ->! Experiment.Repo.Id.t
+    |> Repo_entity.Id.t ->! Experiment.Repo.Entity.Id.t
   ;;
 
   let find_experiment_id pool id =

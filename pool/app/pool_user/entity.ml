@@ -145,7 +145,7 @@ let remove_whitespaces =
 ;;
 
 module EmailAddress = struct
-  type t = string [@@deriving eq, show]
+  type t = string [@@deriving eq, show, yojson]
 
   let validate_characters email =
     let open Re in

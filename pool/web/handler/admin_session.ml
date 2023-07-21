@@ -515,32 +515,32 @@ let close_post req =
       in
       assignments
       |> Lwt_list.map_s (fun ({ Assignment.id; contact; _ } as assignment) ->
-           let id = Id.value id in
-           let find = CCList.mem ~eq:CCString.equal id in
-           let no_show = no_shows |> find |> NoShow.create in
-           let participated = participated |> find |> Participated.create in
-           let* increment_num_participations =
-             Assignment.contact_participation_in_other_assignments
-               database_label
-               [ assignment ]
-               experiment_id
-               (Contact.id contact)
-             >|+ CCFun.(not %> IncrementParticipationCount.create)
-           in
-           let%lwt follow_ups =
-             match
-               NoShow.value no_show || not (Participated.value participated)
-             with
-             | true ->
-               find_follow_ups database_label assignment ||> CCOption.return
-             | false -> Lwt.return_none
-           in
-           Lwt_result.return
-             ( assignment
-             , no_show
-             , participated
-             , increment_num_participations
-             , follow_ups ))
+        let id = Id.value id in
+        let find = CCList.mem ~eq:CCString.equal id in
+        let no_show = no_shows |> find |> NoShow.create in
+        let participated = participated |> find |> Participated.create in
+        let* increment_num_participations =
+          Assignment.contact_participation_in_other_assignments
+            database_label
+            [ assignment ]
+            experiment_id
+            (Contact.id contact)
+          >|+ CCFun.(not %> IncrementParticipationCount.create)
+        in
+        let%lwt follow_ups =
+          match
+            NoShow.value no_show || not (Participated.value participated)
+          with
+          | true ->
+            find_follow_ups database_label assignment ||> CCOption.return
+          | false -> Lwt.return_none
+        in
+        Lwt_result.return
+          ( assignment
+          , no_show
+          , participated
+          , increment_num_participations
+          , follow_ups ))
       ||> CCResult.flatten_l
       >== SetAttendance.handle session
     in
@@ -571,7 +571,7 @@ let message_template_form ?template_id label req =
     let* template =
       template_id
       |> CCOption.map_or ~default:(Lwt_result.return None) (fun id ->
-           Message_template.find database_label id >|+ CCOption.pure)
+        Message_template.find database_label id >|+ CCOption.pure)
     in
     let%lwt available_languages =
       match template_id with
@@ -662,6 +662,59 @@ let update_template req =
       (session_path "edit")
       [ HttpUtils.Message.set ~error:[ err ] ]
 ;;
+
+module Api = struct
+  let calendar_api req query =
+    let result { Pool_context.database_label; _ } =
+      let open Utils.Lwt_result.Infix in
+      let query_params = Sihl.Web.Request.query_list req in
+      let find_param field =
+        let open CCResult.Infix in
+        let open CCFun.Infix in
+        HttpUtils.find_in_urlencoded field query_params
+        >>= Pool_common.Utils.Time.parse_date_from_calendar
+        |> Lwt_result.lift
+      in
+      let* start_time = find_param Field.Start in
+      let* end_time = find_param Field.End in
+      let%lwt sessions =
+        query database_label ~start_time ~end_time
+        ||> CCList.map Session.Calendar.yojson_of_t
+      in
+      `List sessions |> Lwt.return_ok
+    in
+    result |> HttpUtils.Json.handle_yojson_response ~src req
+  ;;
+
+  let location req =
+    let location_id =
+      HttpUtils.find_id Pool_location.Id.of_string Field.Location req
+    in
+    let query = Session.find_for_calendar_by_location location_id in
+    calendar_api req query
+  ;;
+
+  let current_user req =
+    let { Pool_context.database_label; user; language; _ } =
+      Pool_context.find_exn req
+    in
+    let%lwt actor =
+      Pool_context.Utils.find_authorizable ~admin_only:true database_label user
+    in
+    match actor with
+    | Ok actor -> calendar_api req (Session.find_for_calendar_by_user actor)
+    | Error err ->
+      `Assoc
+        [ "message", `String Pool_common.(Utils.error_to_string language err) ]
+      |> HttpUtils.Json.yojson_response ~status:(Opium.Status.of_code 400)
+  ;;
+
+  module Access : sig
+    val location : Rock.Middleware.t
+  end = struct
+    let location = Admin_location.Access.read
+  end
+end
 
 module Access : sig
   include module type of Helpers.Access

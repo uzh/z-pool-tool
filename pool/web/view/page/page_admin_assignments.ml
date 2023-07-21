@@ -50,9 +50,9 @@ module Partials = struct
   let canceled_at (a : Assignment.t) =
     a.canceled_at
     |> CCOption.map_or ~default:"" (fun c ->
-         c
-         |> Assignment.CanceledAt.value
-         |> Pool_common.Utils.Time.formatted_date_time)
+      c
+      |> Assignment.CanceledAt.value
+      |> Pool_common.Utils.Time.formatted_date_time)
     |> txt
   ;;
 
@@ -153,7 +153,7 @@ module Partials = struct
               ; deletable assignment, mark_as_deleted
               ]
               |> CCList.filter_map (fun (active, form) ->
-                   if not active then None else Some (form assignment))
+                if not active then None else Some (form assignment))
               |> div ~a:[ a_class [ "flexrow"; "flex-gap"; "inline-flex" ] ]
               |> CCList.pure
             in

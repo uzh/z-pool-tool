@@ -58,7 +58,7 @@ let create search_type ?path req =
       let search_experiment exclude value actor =
         Experiment.search database_label exclude value
         >|> Lwt_list.filter_s (fun (id, _) ->
-              validate database_label (read id) actor ||> CCResult.is_ok)
+          validate database_label (read id) actor ||> CCResult.is_ok)
       in
       (match query, actor with
        | None, _ | Some _, None -> Lwt.return []
@@ -79,7 +79,7 @@ let create search_type ?path req =
       let search_location exclude value actor =
         Pool_location.search database_label exclude value
         >|> Lwt_list.filter_s (fun (id, _) ->
-              validate database_label (read id) actor ||> CCResult.is_ok)
+          validate database_label (read id) actor ||> CCResult.is_ok)
       in
       (match query, actor with
        | None, _ | Some _, None ->

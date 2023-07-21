@@ -16,7 +16,7 @@ let complete_roles database_label (role : Role.Actor.t) ini =
       Experiment.find_all database_label
       ||> fst
           %> map (fun { Experiment.id; _ } ->
-               id |> Uuid.target_of Experiment.Id.value)
+            id |> Uuid.target_of Experiment.Id.value)
     in
     function
     | `Assistant _ ->
@@ -32,7 +32,7 @@ let complete_roles database_label (role : Role.Actor.t) ini =
     | `LocationManager _ ->
       Pool_location.find_all database_label
       ||> map (fun { Pool_location.id; _ } ->
-            `LocationManager (id |> Uuid.target_of Pool_location.Id.value))
+        `LocationManager (id |> Uuid.target_of Pool_location.Id.value))
       ||> ( @ ) ini
     | role -> Lwt.return (role :: ini)
   in
@@ -182,7 +182,7 @@ let grant_role ({ Rock.Request.target; _ } as req) =
           HttpUtils.htmx_urlencoded_list Field.(Target |> array_key) req
           ||> CCList.map Experiment.Id.of_string
           >|> Lwt_list.filter_s (fun id ->
-                Experiment.find database_label id ||> CCResult.is_ok)
+            Experiment.find database_label id ||> CCResult.is_ok)
           ||> CCList.map
                 (Guard.Uuid.target_of Experiment.Id.value
                  %> Role.Actor.update_target role)
@@ -191,7 +191,7 @@ let grant_role ({ Rock.Request.target; _ } as req) =
           HttpUtils.htmx_urlencoded_list Field.(Target |> array_key) req
           ||> CCList.map Pool_location.Id.of_string
           >|> Lwt_list.filter_s (fun id ->
-                Pool_location.find database_label id ||> CCResult.is_ok)
+            Pool_location.find database_label id ||> CCResult.is_ok)
           ||> CCList.map
                 (Guard.Uuid.target_of Pool_location.Id.value
                  %> Role.Actor.update_target role)

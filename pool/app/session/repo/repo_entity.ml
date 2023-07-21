@@ -438,3 +438,97 @@ module Public = struct
                              (tup2 int (tup2 int (tup2 int (option ptime))))))))))))
   ;;
 end
+
+module Calendar = struct
+  include Entity.Calendar
+  open CCResult.Infix
+
+  let read_only =
+    Pool_common.(Message.ReadOnlyModel |> Utils.error_to_string Language.En)
+  ;;
+
+  module ContactPerson = struct
+    let t =
+      let encode (_ : contact_person) = failwith read_only in
+      let decode (firstname, lastname, email) =
+        let fullname =
+          Format.asprintf "%s %s" firstname lastname |> CCString.trim
+        in
+        Ok { name = fullname; email }
+      in
+      Caqti_type.(
+        custom
+          ~encode
+          ~decode
+          (tup3 string string Pool_user.Repo.EmailAddress.t))
+    ;;
+  end
+
+  module Location = struct
+    let t =
+      let encode (_ : location) = failwith read_only in
+      let decode (id, name) = Ok { id; name } in
+      Caqti_type.(
+        custom
+          ~encode
+          ~decode
+          (tup2 Pool_location.Repo.Id.t Pool_location.Repo.Name.t))
+    ;;
+  end
+
+  let t =
+    let encode (_ : t) = failwith read_only in
+    let decode
+      ( id
+      , ( title
+        , ( start
+          , ( duration
+            , ( description
+              , ( max_participants
+                , ( min_participants
+                  , (overbook, (assignment_count, (location, contact_person)))
+                  ) ) ) ) ) ) )
+      =
+      let* end_ =
+        Entity.End.create start duration
+        |> CCResult.map_err Pool_common.(Utils.error_to_string Language.En)
+      in
+      Ok
+        { id
+        ; title
+        ; start
+        ; end_
+        ; description
+        ; max_participants
+        ; min_participants
+        ; overbook
+        ; assignment_count
+        ; location
+        ; contact_person
+        }
+    in
+    Caqti_type.(
+      custom
+        ~encode
+        ~decode
+        (tup2
+           RepoId.t
+           (tup2
+              Experiment.Repo.Entity.Title.t
+              (tup2
+                 ptime
+                 (tup2
+                    ptime_span
+                    (tup2
+                       (option string)
+                       (tup2
+                          int
+                          (tup2
+                             int
+                             (tup2
+                                int
+                                (tup2
+                                   int
+                                   (tup2 Location.t (option ContactPerson.t))))))))))))
+  ;;
+end

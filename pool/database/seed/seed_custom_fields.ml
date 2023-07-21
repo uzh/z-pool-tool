@@ -26,7 +26,7 @@ let create pool =
   let education_options =
     [ "Bachelor"; "Master"; "Phd" ]
     |> CCList.map (fun value ->
-         CCList.map (fun lang -> lang, value) system_languages)
+      CCList.map (fun lang -> lang, value) system_languages)
   in
   let recruitment_channel_options =
     [ [ En, "Friend"; De, "Freund" ]
@@ -157,7 +157,7 @@ let create pool =
           let hint =
             system_languages
             |> CCList.filter_map (fun lang ->
-                 hint |> CCOption.map (fun h -> lang, h))
+              hint |> CCOption.map (fun h -> lang, h))
             |> Hint.create
             |> get_or_failwith
           in

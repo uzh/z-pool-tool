@@ -1,7 +1,6 @@
-import { addCloseListener, addInputListeners, csrfToken, destroySelected, icon, notifyUser } from "./utils.js";
+import { addCloseListener, addInputListeners, csrfToken, destroySelected, icon, notifyUser, globalErrorMsg } from "./utils.js";
 
 const errorClass = "error-message";
-const globalErrorMsg = "An Error occurred";
 const notificationId = "filter-notification";
 
 const form = document.getElementById("filter-form");

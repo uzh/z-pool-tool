@@ -244,7 +244,7 @@ module AvailableExperiments = struct
         (Contact.id contact)
       ||> get_exn
       ||> CCList.find_opt (fun (_, upcoming, _) ->
-            Session.(Id.equal upcoming.Public.id session.id))
+        Session.(Id.equal upcoming.Public.id session.id))
       ||> CCOption.is_some
     in
     let res = experiment_not_available && upcomming_session_found in
@@ -266,7 +266,7 @@ module AvailableExperiments = struct
          enable reregistration of contact *)
       Experiment.find_all_public_by_contact database_label contact
       ||> CCList.find_opt (fun experiment ->
-            Experiment.(Id.equal experiment.Public.id experiment_id))
+        Experiment.(Id.equal experiment.Public.id experiment_id))
       ||> CCOption.is_some
     in
     let%lwt upcomming_session_found =
@@ -277,9 +277,9 @@ module AvailableExperiments = struct
         (Contact.id contact)
       ||> get_exn
       ||> CCList.find_opt (fun (_, upcoming, _) ->
-            Session.(
-              Id.equal upcoming.Public.id session.id
-              && CCOption.is_some upcoming.Public.canceled_at))
+        Session.(
+          Id.equal upcoming.Public.id session.id
+          && CCOption.is_some upcoming.Public.canceled_at))
       ||> CCOption.is_some
     in
     let res = experiment_available && upcomming_session_found in
@@ -296,7 +296,7 @@ module AvailableExperiments = struct
       find_by_session database_label session_id
       ||> get_exn
       ||> CCList.map (fun assignment ->
-            Assignment.MarkedAsDeleted assignment |> Pool_event.assignment)
+        Assignment.MarkedAsDeleted assignment |> Pool_event.assignment)
       >|> Pool_event.handle_events database_label
     in
     let%lwt experiment_available =
@@ -304,7 +304,7 @@ module AvailableExperiments = struct
          enable reregistration of contact *)
       Experiment.find_all_public_by_contact database_label contact
       ||> CCList.find_opt (fun experiment ->
-            Experiment.(Id.equal experiment.Public.id experiment_id))
+        Experiment.(Id.equal experiment.Public.id experiment_id))
       ||> CCOption.is_some
     in
     let%lwt upcomming_session_not_found =
@@ -315,7 +315,7 @@ module AvailableExperiments = struct
         (Contact.id contact)
       ||> get_exn
       ||> CCList.find_opt (fun (_, upcoming, _) ->
-            Session.(Id.equal upcoming.Public.id session.id))
+        Session.(Id.equal upcoming.Public.id session.id))
       ||> CCOption.is_none
     in
     let res = experiment_available && upcomming_session_not_found in

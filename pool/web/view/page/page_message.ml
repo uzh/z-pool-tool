@@ -25,13 +25,12 @@ let create ?(attributes = []) message lang () =
     let error = match_message (get_error message lang) [ "error" ] in
     [ success; info; warning; error ]
     |> CCList.filter_map (fun notification ->
-         match notification with
-         | None -> None
-         | Some notification ->
-           Some
-             (div
-                ~a:
-                  ([ a_class [ "notification-fixed"; "fade-out" ] ] @ attributes)
-                [ notification ]))
+      match notification with
+      | None -> None
+      | Some notification ->
+        Some
+          (div
+             ~a:([ a_class [ "notification-fixed"; "fade-out" ] ] @ attributes)
+             [ notification ]))
     |> div
 ;;

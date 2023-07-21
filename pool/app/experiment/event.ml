@@ -41,5 +41,5 @@ let handle_event pool : event -> unit Lwt.t =
     ||> fun (_ : [> `Experiment ] Guard.Target.t) -> ()
   | Updated t -> Repo.update pool t
   | Deleted experiment_id -> Repo.delete pool experiment_id
-  [@@deriving eq, show]
+[@@deriving eq, show]
 ;;

@@ -3,7 +3,7 @@ module RepoEntity = Repo_entity
 module User = Pool_user
 
 let find_request_sql : type a. a carrier -> string -> string =
- fun carrier where_fragment ->
+  fun carrier where_fragment ->
   let basic_select = {sql| SELECT |sql} in
   let basic_fields =
     {sql|

@@ -351,7 +351,7 @@ let session_list
             let id = a_user_data "id" Session.(Id.value session.id) in
             session.follow_up_to
             |> CCOption.map (fun parent ->
-                 a_user_data "parent-id" (Session.Id.value parent))
+              a_user_data "parent-id" (Session.Id.value parent))
             |> CCOption.map_or ~default:[ id ] (fun parent -> [ id; parent ])
           in
           let title =
@@ -368,13 +368,13 @@ let session_list
           let closed_at =
             session.closed_at
             |> CCOption.map_or ~default:"" (fun t ->
-                 Utils.Time.formatted_date_time t)
+              Utils.Time.formatted_date_time t)
             |> txt
           in
           let canceled_at =
             session.canceled_at
             |> CCOption.map_or ~default:"" (fun t ->
-                 Utils.Time.formatted_date_time t)
+              Utils.Time.formatted_date_time t)
             |> txt
           in
           let cells =
@@ -650,12 +650,12 @@ let detail
         let canceled =
           session.canceled_at
           |> CCOption.map (fun c ->
-               Field.CanceledAt, Utils.Time.formatted_date_time c |> txt)
+            Field.CanceledAt, Utils.Time.formatted_date_time c |> txt)
         in
         let closed =
           session.closed_at
           |> CCOption.map (fun c ->
-               Field.ClosedAt, Utils.Time.formatted_date_time c |> txt)
+            Field.ClosedAt, Utils.Time.formatted_date_time c |> txt)
         in
         rows @ ([ canceled; closed ] |> CCList.filter_map CCFun.id)
       in
@@ -1032,11 +1032,11 @@ let cancel
       let follow_ups =
         follow_ups
         |> CCList.map (fun session ->
-             session_title session
-             |> Utils.text_to_string language
-             |> txt
-             |> CCList.return
-             |> li)
+          session_title session
+          |> Utils.text_to_string language
+          |> txt
+          |> CCList.return
+          |> li)
         |> ul ~a:[ a_class [ "gap-xs" ] ]
       in
       [ Utils.hint_to_string language I18n.SessionCancellationWithFollowups

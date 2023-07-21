@@ -141,6 +141,8 @@ module EmailAddress : sig
   val equal : t -> t -> bool
   val pp : Format.formatter -> t -> unit
   val show : t -> string
+  val t_of_yojson : Yojson.Safe.t -> t
+  val yojson_of_t : t -> Yojson.Safe.t
   val validate_characters : t -> (t, Pool_common.Message.error) result
 
   val validate

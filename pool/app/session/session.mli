@@ -30,6 +30,10 @@ module Start : sig
   val create : Ptime.t -> t
 end
 
+module End : sig
+  type t
+end
+
 module Duration : sig
   include Pool_common.Model.BaseSig
 
@@ -93,6 +97,10 @@ end
 
 module CancellationReason : sig
   include Pool_common.Model.StringSig
+end
+
+module CanceledAt : sig
+  include Pool_common.Model.PtimeSig
 end
 
 type t =
@@ -181,6 +189,38 @@ module Public : sig
 end
 
 val to_public : t -> Public.t
+
+module Calendar : sig
+  type contact_person =
+    { name : string
+    ; email : Pool_user.EmailAddress.t
+    }
+
+  type location =
+    { id : Pool_location.Id.t
+    ; name : Pool_location.Name.t
+    }
+
+  type t =
+    { id : Id.t
+    ; title : Experiment.Title.t
+    ; start : Start.t
+    ; end_ : End.t
+    ; max_participants : ParticipantAmount.t
+    ; min_participants : ParticipantAmount.t
+    ; overbook : ParticipantAmount.t
+    ; assignment_count : AssignmentCount.t
+    ; description : Description.t option
+    ; location : location
+    ; contact_person : contact_person option
+    }
+
+  val equal : t -> t -> bool
+  val pp : Format.formatter -> t -> unit
+  val show : t -> string
+  val yojson_of_t : t -> Yojson.Safe.t
+end
+
 val group_and_sort : t list -> (t * t list) list
 val is_cancellable : t -> (unit, Pool_common.Message.error) result
 val is_closable : t -> (unit, Pool_common.Message.error) result
@@ -256,6 +296,20 @@ val find_open_with_follow_ups
   -> Id.t
   -> (t list, Pool_common.Message.error) Lwt_result.t
 
+val find_for_calendar_by_location
+  :  Pool_location.Id.t
+  -> Pool_database.Label.t
+  -> start_time:Ptime.t
+  -> end_time:Ptime.t
+  -> Calendar.t list Lwt.t
+
+val find_for_calendar_by_user
+  :  'a Guard.Persistence.actor
+  -> Pool_database.Label.t
+  -> start_time:Ptime.t
+  -> end_time:Ptime.t
+  -> Calendar.t list Lwt.t
+
 val to_email_text : Pool_common.Language.t -> t -> string
 val follow_up_sessions_to_email_list : t list -> string
 val public_to_email_text : Pool_common.Language.t -> Public.t -> string
@@ -288,6 +342,7 @@ module Guard : sig
   end
 
   module Access : sig
+    val index_action : Guard.Action.t
     val index : Experiment.Id.t -> Guard.ValidationSet.t
     val create : Experiment.Id.t -> Guard.ValidationSet.t
     val read : Experiment.Id.t -> Id.t -> Guard.ValidationSet.t

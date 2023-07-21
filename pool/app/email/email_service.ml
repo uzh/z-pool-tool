@@ -12,7 +12,7 @@ module Cache = struct
     tbl
     |> to_seq_values
     |> Seq.find (fun { SmtpAuth.Write.default; _ } ->
-         SmtpAuth.Default.value default)
+      SmtpAuth.Default.value default)
   ;;
 
   let add ({ SmtpAuth.Write.id; _ } as m) = replace tbl id m

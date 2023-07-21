@@ -21,7 +21,7 @@ let list ?(marked_as_deleted = false) req =
          Session.find_all_for_experiment database_label experiment.Experiment.id
          >|+ Session.group_and_sort
          >|+ CCList.flat_map (fun (session, follow_ups) ->
-               session :: follow_ups)
+           session :: follow_ups)
        in
        let* html =
          match marked_as_deleted with

@@ -102,7 +102,7 @@ let t =
       (tup2
          Id.t
          (tup2
-            Experiment.Repo.Id.t
+            Experiment.Repo.Entity.Id.t
             (tup2
                StartAt.t
                (tup2

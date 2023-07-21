@@ -77,9 +77,9 @@ let custom_fields_layout ?hint language current_model html =
     Custom_field.Model.(
       all
       |> CCList.map (fun f ->
-           ( f |> show |> CCString.capitalize_ascii
-           , f |> Url.index_path
-           , equal current_model f )))
+        ( f |> show |> CCString.capitalize_ascii
+        , f |> Url.index_path
+        , equal current_model f )))
   in
   let html =
     let open CCFun in
@@ -308,7 +308,7 @@ let field_form
                let disabled =
                  field_type_opt
                  |> CCOption.map_or ~default:false (fun t ->
-                      FieldType.equal validation_type t |> not)
+                   FieldType.equal validation_type t |> not)
                in
                rule_input validation_type key input_type value disabled)
              Validation.all)
@@ -476,25 +476,25 @@ let field_form
       ; CustomFieldTypeMultiSelect, FieldType.MultiSelect
       ]
     |> CCList.map (fun (hint, field_type) ->
-         let hidden =
-           let published =
-             custom_field
-             |> CCOption.map_or
-                  ~default:false
-                  (Custom_field.published_at %> CCOption.is_some)
-           in
-           let equal_type =
-             field_type_opt
-             |> CCOption.map_or ~default:false FieldType.(equal field_type)
-           in
-           if published || not equal_type then [ "hidden" ] else []
-         in
-         div
-           ~a:
-             [ a_class ("help" :: hidden)
-             ; a_user_data "field-type" (FieldType.show field_type)
-             ]
-           [ txt (Utils.hint_to_string language hint) ])
+      let hidden =
+        let published =
+          custom_field
+          |> CCOption.map_or
+               ~default:false
+               (Custom_field.published_at %> CCOption.is_some)
+        in
+        let equal_type =
+          field_type_opt
+          |> CCOption.map_or ~default:false FieldType.(equal field_type)
+        in
+        if published || not equal_type then [ "hidden" ] else []
+      in
+      div
+        ~a:
+          [ a_class ("help" :: hidden)
+          ; a_user_data "field-type" (FieldType.show field_type)
+          ]
+        [ txt (Utils.hint_to_string language hint) ])
   in
   [ form
       ~a:
@@ -602,8 +602,8 @@ let field_form
               ~disabled:
                 (custom_field
                  |> CCOption.map_or ~default:false (fun f ->
-                      f |> admin_input_only |> AdminInputOnly.value
-                      || FieldType.(equal (f |> field_type) MultiSelect)))
+                   f |> admin_input_only |> AdminInputOnly.value
+                   || FieldType.(equal (f |> field_type) MultiSelect)))
               Message.Field.Required
               (required %> Required.value)
           ; checkbox_element Message.Field.Disabled (disabled %> Disabled.value)

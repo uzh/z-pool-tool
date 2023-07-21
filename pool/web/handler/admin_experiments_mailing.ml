@@ -221,8 +221,8 @@ let add_condition req =
       |> CCList.assoc_opt ~eq:CCString.equal Field.(show field)
       |> CCFun.flip CCOption.bind CCList.head_opt
       |> CCFun.flip CCOption.bind (fun str ->
-           try Some (read str) with
-           | _ -> None)
+        try Some (read str) with
+        | _ -> None)
       |> CCOption.to_result (invalid field)
     in
     let distribution =

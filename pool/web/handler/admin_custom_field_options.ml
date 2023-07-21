@@ -43,7 +43,7 @@ let form ?id req custom_field =
     @@ let* custom_field_option =
          id
          |> CCOption.map_or ~default:(Lwt_result.return None) (fun id ->
-              Custom_field.find_option database_label id >|+ CCOption.pure)
+           Custom_field.find_option database_label id >|+ CCOption.pure)
        in
        let* custom_field =
          req |> get_field_id |> Custom_field.find database_label

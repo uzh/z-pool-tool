@@ -11,7 +11,7 @@ let create ?subtitle language title id html =
   let subtitle =
     subtitle
     |> CCOption.map_or ~default:(txt "") (fun sub ->
-         sub language |> txt |> CCList.pure |> p ~a:[ a_class [ "gap-xs" ] ])
+      sub language |> txt |> CCList.pure |> p ~a:[ a_class [ "gap-xs" ] ])
   in
   div
     ~a:

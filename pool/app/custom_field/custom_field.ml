@@ -65,7 +65,7 @@ let validate_htmx ~is_admin value (m : Public.t) =
     value
     |> CCList.head_opt
     |> CCFun.flip CCOption.bind (fun v ->
-         if CCString.is_empty v then None else Some v)
+      if CCString.is_empty v then None else Some v)
   in
   let go validation value = validation |> fst |> fun rule -> rule value in
   match m with
@@ -98,11 +98,11 @@ let validate_htmx ~is_admin value (m : Public.t) =
        let open SelectOption in
        vals
        |> CCList.map (fun value ->
-            CCList.find_opt
-              (fun { Public.id; _ } -> Id.equal id (value |> Id.of_string))
-              options
-            |> CCOption.to_result
-                 Pool_common.Message.(Invalid Field.CustomFieldOption))
+         CCList.find_opt
+           (fun { Public.id; _ } -> Id.equal id (value |> Id.of_string))
+           options
+         |> CCOption.to_result
+              Pool_common.Message.(Invalid Field.CustomFieldOption))
        |> CCList.all_ok
        >|= create_answer is_admin answer
        >|= to_field)

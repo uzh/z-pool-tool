@@ -12,6 +12,7 @@ module Repo = struct
   end
 
   include Repo
+  module Entity = Repo_entity
 end
 
 let find = Repo.find
@@ -47,5 +48,5 @@ let find_contact_person database_label { contact_person_id; _ } =
   let open Utils.Lwt_result.Infix in
   contact_person_id
   |> CCOption.map_or ~default:Lwt.return_none (fun id ->
-       id |> Admin.find database_label ||> CCResult.to_opt)
+    id |> Admin.find database_label ||> CCResult.to_opt)
 ;;

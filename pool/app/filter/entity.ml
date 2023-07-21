@@ -157,7 +157,7 @@ module Key = struct
   ;;
 
   let of_yojson : Yojson.Safe.t -> (t, Pool_common.Message.error) result =
-   fun yojson ->
+    fun yojson ->
     match read_hardcoded yojson with
     | Some h -> Ok (Hardcoded h)
     | None ->
@@ -166,7 +166,7 @@ module Key = struct
       (match yojson with
        | `String id -> Ok (CustomField (id |> Custom_field.Id.of_string))
        | _ -> Error Pool_common.Message.(Invalid Field.Key))
- ;;
+  ;;
 
   let to_yojson (m : t) =
     (match m with
@@ -499,7 +499,7 @@ module Operator = struct
     ; Existence.(all |> CCList.map show, fun y -> y |> read >|= existence)
     ]
     |> CCList.flat_map (fun (operators, fnc) ->
-         CCList.map (fun operator -> operator, fnc) operators)
+      CCList.map (fun operator -> operator, fnc) operators)
   ;;
 
   let of_yojson yojson =
@@ -584,12 +584,12 @@ module Predicate = struct
   let create_human ?key ?operator ?value () : human = { key; operator; value }
 
   let validate : t -> Key.human list -> (t, Pool_common.Message.error) result =
-   fun ({ key; operator; value } as m) key_list ->
+    fun ({ key; operator; value } as m) key_list ->
     let open CCResult in
     let* () = Key.validate_value key_list key value in
     let* () = Operator.validate key operator in
     Ok m
- ;;
+  ;;
 
   let t_of_yojson (yojson : Yojson.Safe.t) =
     let open Pool_common in
