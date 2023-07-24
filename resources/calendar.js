@@ -4,6 +4,7 @@ import timeGridPlugin from '@fullcalendar/timegrid';
 import listPlugin from '@fullcalendar/list';
 import tippy from 'tippy.js';
 import { notifyUser } from "./admin/utils"
+import { generateColor } from "./utils/color"
 
 const notificationId = "calendar-notification";
 
@@ -20,6 +21,7 @@ const toLocalTime = date => date.toLocaleTimeString('en',
 const normalizeSession = (session) => {
     session.end = session.end_
     delete session.end_
+    session.backgroundColor = generateColor(session.title, 1)
     return session
 }
 
