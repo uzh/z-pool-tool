@@ -154,34 +154,15 @@ let asset = Contact_location.asset
 let detail edit req =
   let open Utils.Lwt_result.Infix in
   let error_path = "/admin/locations" in
-  let result ({ Pool_context.database_label; language; _ } as context) =
+  let result ({ Pool_context.database_label; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, error_path)
     @@
     let id = id req Field.Location Pool_location.Id.of_string in
     let* location = Pool_location.find database_label id in
-    let* sessions = Session.find_all_public_by_location database_label id in
-    let add_experiment_title session =
-      let open Pool_common in
-      let%lwt title =
-        Session.find_experiment_id_and_title
-          database_label
-          session.Session.Public.id
-      in
-      ( session
-      , title
-        |> CCResult.get_or
-             ~default:
-               ( Experiment.Id.create ()
-               , Utils.error_to_string
-                   language
-                   Message.(NotFound Field.Experiment) ) )
-      |> Lwt.return
-    in
-    let%lwt session_list = Lwt_list.map_s add_experiment_title sessions in
     let states = Pool_location.Status.all in
     Page.Admin.Location.(
       match edit with
-      | false -> detail location context session_list
+      | false -> detail location context
       | true ->
         let flash_fetcher key = Sihl.Web.Flash.find key req in
         form ~location ~states context flash_fetcher)
