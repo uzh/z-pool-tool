@@ -250,6 +250,11 @@ module Sql = struct
       (Database.Label.value pool)
       find_public_by_assignment_request
       (Pool_common.Id.value id)
+    ||> (function
+          | None ->
+            Logs.info (fun m -> m "%s" "HERE IS THE ERROR");
+            None
+          | Some s -> Some s)
     ||> CCOption.to_result Pool_common.Message.(NotFound Field.Session)
   ;;
 
@@ -604,10 +609,6 @@ module Sql = struct
       find_for_calendar_by_user_request sql
       |> (pt ->* RepoEntity.Calendar.t) ~oneshot:true
     in
-    let () =
-      Caqti_request.make_pp_with_param () Format.std_formatter (request, pv)
-    in
-    print_endline "XXX";
     Utils.Database.collect (pool |> Pool_database.Label.value) request pv
   ;;
 end
