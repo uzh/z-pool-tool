@@ -41,7 +41,7 @@ function globalConfig(e) {
 export function initDatepicker(container = document) {
     flatpickr.localize({ firstDayOfWeek: 1 })
     const renderDatepickers = (container) => {
-        Array.from(container.getElementsByClassName(datePickerClass)).forEach(e => {
+        [...container.getElementsByClassName(datePickerClass)].forEach(e => {
             var { disablePast, disableFuture, disableTime } = e.dataset;
             var classlist = Array.from(e.classList);
             var dateFormat = disableTime ? "Y-m-d" : "Z";
@@ -71,26 +71,9 @@ export function initDatepicker(container = document) {
             f._input.onkeydown = () => false
         });
     }
-
-    const renderSpanPickers = (container) => {
-        container.querySelectorAll('.spanpicker').forEach(e => {
-            var f = flatpickr(e, {
-                ...globalConfig(e),
-                noCalendar: true,
-                altFormat: "H:i",
-                dateFormat: "H:i:S"
-            })
-            f._input.onkeydown = () => false
-        });
-    }
-
     renderDatepickers(container)
-    renderSpanPickers(container)
 
-    document.addEventListener('htmx:afterSwap', (e) => {
+    document.addEventListener('htmx:afterSettle', (e) => {
         renderDatepickers(e.detail.elt)
-        renderSpanPickers(e.detail.elt)
     })
 }
-
-
