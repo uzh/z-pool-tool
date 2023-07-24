@@ -42,8 +42,22 @@ let condition_allow_uninvited_signup =
     |sql}
 ;;
 
-let find_all_public_by_contact_request =
+let find_all_public_by_contact_request ?(has_session = false) () =
   let open Caqti_request.Infix in
+  let session_exists =
+    match has_session with
+    | false -> ""
+    | true ->
+      {sql|
+      AND EXISTS (SELECT
+        1
+      FROM
+        pool_sessions
+      WHERE
+        pool_sessions.experiment_uuid = pool_experiments.uuid
+      AND pool_sessions.start > NOW())
+    |sql}
+  in
   let not_assigned =
     {sql|
     NOT EXISTS (
@@ -76,22 +90,23 @@ let find_all_public_by_contact_request =
     {sql| pool_invitations.contact_uuid = UNHEX(REPLACE($1, '-', '')) |sql}
   in
   Format.asprintf
-    "%s WHERE %s AND %s AND %s AND (%s OR %s)"
+    "%s WHERE %s AND %s AND %s AND (%s OR %s) %s"
     pool_invitations_left_join
     not_assigned
     not_on_waitinglist
     condition_registration_not_disabled
     condition_allow_uninvited_signup
     is_invited
+    session_exists
   |> Repo.Sql.select_from_experiments_sql
   |> Pool_common.Repo.Id.t ->* RepoEntity.t
 ;;
 
-let find_all_public_by_contact pool contact =
+let find_all_public_by_contact ?has_session pool contact =
   let open Utils.Lwt_result.Infix in
   Utils.Database.collect
     (Pool_database.Label.value pool)
-    find_all_public_by_contact_request
+    (find_all_public_by_contact_request ?has_session ())
     (Contact.id contact)
   (* TODO: This has to be made superfluous by a background job (#164) *)
   >|> Lwt_list.filter_s
