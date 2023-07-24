@@ -564,10 +564,10 @@ module Sql = struct
   let find_for_calendar_by_location_request =
     let open Caqti_request.Infix in
     {sql|
-        pool_sessions.location_uuid = UNHEX(REPLACE($1, '-', ''))
-        AND pool_sessions.canceled_at IS NULL
+        pool_sessions.canceled_at IS NULL
         AND pool_sessions.start > $2
         AND pool_sessions.start < $3
+        AND pool_sessions.location_uuid = UNHEX(REPLACE($1, '-', ''))
       |sql}
     |> select_for_calendar ~order_by:"pool_sessions.start"
     |> Caqti_type.(tup3 string ptime ptime ->* RepoEntity.Calendar.t)
@@ -590,7 +590,7 @@ module Sql = struct
       [ "pool_sessions.start > ?"
       ; "pool_sessions.start < ?"
       ; "pool_sessions.canceled_at IS NULL"
-      ; {sql|guardianValidateSessionUuid(guardianEncodeUuid(?), ?, pool_sessions.uuid)|sql}
+      ; {sql|guardianValidateExperimentUuid(guardianEncodeUuid(?), ?, pool_experiments.uuid)|sql}
       ]
       |> CCString.concat " AND "
     in
