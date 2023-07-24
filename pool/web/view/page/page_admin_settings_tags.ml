@@ -78,7 +78,7 @@ let tag_form ?flash_fetcher ?tag Pool_context.{ language; csrf; _ } =
       ]
     [ Input.csrf_element csrf ()
     ; div
-        ~a:[ a_class [ "stack-md" ] ]
+        ~a:[ a_class [ "grid-col-2" ] ]
         [ Input.input_element
             language
             `Text
@@ -94,14 +94,15 @@ let tag_form ?flash_fetcher ?tag Pool_context.{ language; csrf; _ } =
               CCOption.(bind tag (fun m -> m.description) >|= Description.value)
             ?flash_fetcher
         ; Input.selector
-            ~add_empty:true
-            ~required:true
+            ~add_empty:(CCOption.is_none tag)
+            ~required:(CCOption.is_none tag)
+            ~read_only:(CCOption.is_some tag)
             ?flash_fetcher
             language
             Field.Model
             Tags.Model.show
             Tags.Model.all
-            None
+            (CCOption.map (fun m -> m.Tags.model) tag)
             ()
         ]
     ; div

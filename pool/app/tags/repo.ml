@@ -3,7 +3,10 @@ open Entity
 module Label = Pool_database.Label
 
 module Entity = struct
-  module Id = Pool_common.Repo.Id
+  module Id = struct
+    include Entity.Id
+    include Pool_common.Repo.Id
+  end
 
   module Title = struct
     include Title
@@ -109,6 +112,37 @@ module Sql = struct
     Utils.Database.collect (Label.value pool) find_all_with_model_request model
   ;;
 
+  let already_exists_request ?exclude_id () =
+    let open Entity in
+    let open CCFun.Infix in
+    let without_uuid =
+      CCOption.map_or
+        ~default:""
+        (Id.value
+         %> Format.asprintf
+              {|AND pool_tags.uuid != UNHEX(REPLACE('%s', '-', ''))|})
+        exclude_id
+    in
+    Format.asprintf
+      {sql|
+        SELECT TRUE
+        FROM pool_tags
+        WHERE pool_tags.title = ?
+          AND pool_tags.model = ?
+          %s
+      |sql}
+      without_uuid
+    |> Caqti_type.(tup2 Title.t Model.t ->! bool)
+  ;;
+
+  let already_exists pool ?exclude_id title model =
+    Utils.Database.find_opt
+      (Label.value pool)
+      (already_exists_request ?exclude_id ())
+      (title, model)
+    ||> CCOption.value ~default:false
+  ;;
+
   let find_all_validated_request =
     let open Guard.Persistence in
     Format.asprintf
@@ -195,6 +229,18 @@ module Sql = struct
 
   let update pool = Utils.Database.exec (Label.value pool) update_request
 
+  let delete_request =
+    {sql|
+      DELETE FROM pool_tags
+      WHERE uuid = UNHEX(REPLACE(?, '-', ''))
+    |sql}
+    |> Entity.Id.t ->. Caqti_type.unit
+  ;;
+
+  let delete pool ({ id; _ } : t) =
+    Utils.Database.exec (Label.value pool) delete_request id
+  ;;
+
   module Tagged = struct
     let insert_request =
       {sql|
@@ -270,27 +316,6 @@ module Sql = struct
         join_tags
     ;;
 
-    let find_all_by_tag_request =
-      let open Entity in
-      Format.asprintf
-        {sql|
-          %s
-          %s
-          WHERE
-            pool_tags.model = ? AND pool_tags.title = ?
-        |sql}
-        select_tagging_sql
-        join_tags
-      |> Caqti_type.(tup2 Model.t Title.t) ->* Tagged.t
-    ;;
-
-    let find_all_by_tag pool (tag : t) =
-      Utils.Database.collect
-        (Label.value pool)
-        find_all_by_tag_request
-        (tag.model, tag.title)
-    ;;
-
     let find_all_of_entity_request =
       let open Entity in
       Format.asprintf
@@ -319,9 +344,10 @@ let find_all_with_model = Sql.find_all_with_model
 let find_all_validated = Sql.find_all_validated
 let find_all_validated_with_model = Sql.find_all_validated_with_model
 let find_all_of_entity = Sql.Tagged.find_all_of_entity
-let find_all_by_tag = Sql.Tagged.find_all_by_tag
 let create_find_all_tag_sql = Sql.Tagged.create_find_all_tag_sql
+let already_exists = Sql.already_exists
 let insert = Sql.insert
+let delete = Sql.delete
 let insert_tagged = Sql.Tagged.insert
 let delete_tagged = Sql.Tagged.delete
 let update = Sql.update

@@ -19,6 +19,7 @@ type error =
   | AccessDenied
   | AccessDeniedMessage
   | AllLanguagesRequired of Field.t
+  | AlreadyExisting of Field.t
   | AlreadyInPast
   | AlreadyInvitedToExperiment of string list
   | AlreadyPublished of Field.t

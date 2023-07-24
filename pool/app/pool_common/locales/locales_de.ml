@@ -305,6 +305,11 @@ let rec error_to_string = function
       "Bitte geben Sie '"
       (field |> field_to_string |> CCString.trim)
       "' in allen Sprachen an."
+  | AlreadyExisting field ->
+    field_message
+      "Die Daten zum Feld '"
+      (field |> field_to_string |> CCString.trim)
+      "' existieren bereits."
   | AlreadyInPast ->
     "Mindestens der Startzeitpunkt liegt bereits in der Vergangenheit."
   | AlreadySignedUpForExperiment ->

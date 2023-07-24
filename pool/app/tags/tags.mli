@@ -100,6 +100,13 @@ val find_all_validated_with_model
 
 val create_find_all_tag_sql : string -> string -> string
 
+val already_exists
+  :  Pool_database.Label.t
+  -> ?exclude_id:Id.t
+  -> Title.t
+  -> Model.t
+  -> bool Lwt.t
+
 val insert
   :  Pool_database.Label.t
   -> t

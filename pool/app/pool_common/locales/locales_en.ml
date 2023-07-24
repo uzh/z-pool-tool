@@ -299,8 +299,13 @@ let rec error_to_string = function
   | AllLanguagesRequired field ->
     field_message
       "Please provide '"
-      (field |> field_to_string)
+      (field |> field_to_string |> CCString.trim)
       "' in all languages."
+  | AlreadyExisting field ->
+    field_message
+      "The field data for the '"
+      (field |> field_to_string |> CCString.trim)
+      "' already exists."
   | AlreadyInPast -> "In minimum the starting point is in the past."
   | AlreadySignedUpForExperiment ->
     "You are already signed up for this experiment."

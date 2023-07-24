@@ -53,7 +53,7 @@ let write action req =
   let redirect, success =
     let open Pool_common in
     match action with
-    | `Create -> base_path, Message.Created field
+    | `Create -> Format.asprintf "%s/create" base_path, Message.Created field
     | `Update id ->
       ( Format.asprintf "%s/%s" base_path (Tags.Id.value id)
       , Message.Updated field )
@@ -65,12 +65,27 @@ let write action req =
     let tags = Pool_context.Logger.Tags.req req in
     let events =
       let open Cqrs_command.Tags_command in
+      let is_existing ?exclude_id ({ title; model; _ } as data : decoded) =
+        if%lwt Tags.already_exists ?exclude_id database_label title model
+        then Lwt.return_error (Pool_common.Message.AlreadyExisting Field.Tag)
+        else Lwt.return_ok data
+      in
       match action with
       | `Create ->
-        Create.(urlencoded |> decode |> Lwt_result.lift >== handle ~tags)
+        Create.(
+          urlencoded
+          |> decode
+          |> Lwt_result.lift
+          >>= is_existing
+          >== handle ~tags)
       | `Update id ->
-        let* tag = Tags.find database_label id in
-        Update.(urlencoded |> decode |> Lwt_result.lift >== handle ~tags tag)
+        let* ({ Tags.id; _ } as tag) = Tags.find database_label id in
+        Update.(
+          urlencoded
+          |> decode
+          |> Lwt_result.lift
+          >>= is_existing ~exclude_id:id
+          >== handle ~tags tag)
     in
     let handle events =
       let%lwt () =

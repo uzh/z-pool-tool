@@ -73,15 +73,14 @@ end = struct
 
   let handle ?(tags = Logs.Tag.empty) tag (command : t) =
     let open Tags in
-    let tag : t =
-      { tag with
-        title = command.title
-      ; description = command.description
-      ; model = command.model
-      }
-    in
-    Logs.info ~src (fun m -> m "Handle command edit" ~tags);
-    Ok [ Updated tag |> Pool_event.tags ]
+    if Model.equal tag.Tags.model command.model
+    then (
+      let tag : t =
+        { tag with title = command.title; description = command.description }
+      in
+      Logs.info ~src (fun m -> m "Handle command edit" ~tags);
+      Ok [ Updated tag |> Pool_event.tags ])
+    else Error Pool_common.Message.(Invalid Field.Model)
   ;;
 
   let decode data =
