@@ -314,7 +314,7 @@ let completion req =
     let flash_fetcher key = Sihl.Web.Flash.find key req in
     let* contact = Pool_context.find_contact context |> Lwt_result.lift in
     let%lwt custom_fields =
-      Custom_field.find_all_required_by_contact
+      Custom_field.find_unanswered_required_by_contact
         database_label
         user
         (Contact.id contact)

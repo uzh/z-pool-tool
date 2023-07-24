@@ -20,6 +20,18 @@ let find_of_contact ?(required = false) pool user id =
 
 let find_all_by_contact = find_of_contact ~required:false
 let find_all_required_by_contact = find_of_contact ~required:true
+
+let find_unanswered_required_by_contact database_label user id =
+  let open Pool_context in
+  let find is_admin =
+    Repo_public.find_unanswered_required_by_contact ~is_admin database_label id
+  in
+  match user with
+  | Guest -> Lwt.return ([], [])
+  | Contact _ -> find false
+  | Admin _ -> find true
+;;
+
 let find_multiple_by_contact = Repo_public.find_multiple_by_contact
 let find_by_contact = Repo_public.find_by_contact
 let all_required_answered = Repo_public.all_required_answered
