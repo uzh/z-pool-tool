@@ -349,8 +349,7 @@ Wenn ein Kontakt zwar erschienen ist, aber nicht an dem Experiment teilgenommen 
      um sie ein- oder auszuschliessen."
   | TemplateTextElementsHint ->
     "Die folgenden Textbausteine können in den Templates verwendet werden:"
-  | TimeSpanPickerHint ->
-    "Zeitdauer in Stunden. '1.5' entspricht 1h 30m. '0.75' entspricht 45min."
+  | TimeSpanPickerHint -> "Zeitdauer in Minuten."
   | WaitingListPhoneMissingContact ->
     "Sie haben in Ihrem Profil noch keine Telefonnummer angegenen. Wir bitten \
      Sie, eine Telefonnummer anzugeben, damit das Rekrutierungsteam Sie \

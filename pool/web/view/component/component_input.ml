@@ -260,7 +260,7 @@ let timespan_picker
   let value =
     flash_fetched_value
       flash_fetcher
-      (value |> CCOption.map Pool_common.Utils.Time.timespan_to_hours)
+      (value |> CCOption.map Pool_common.Utils.Time.timespan_to_minutes)
       name
   in
   let id = Elements.identifier ?identifier name in
@@ -268,7 +268,7 @@ let timespan_picker
     let attrs =
       Elements.attributes `Number name id [ a_value value ]
       @ additional_attributes
-      @ [ a_input_min (`Number 0); a_step (Some 0.01) ]
+      @ [ a_input_min (`Number 0); a_step (Some 1.) ]
     in
     let attrs = if required then a_required () :: attrs else attrs in
     if CCOption.is_some error then a_class [ "has-error" ] :: attrs else attrs

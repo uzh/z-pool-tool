@@ -315,7 +315,7 @@ module Utils : sig
     val formatted_date : Ptime.t -> string
     val formatted_time : Ptime.t -> string
     val formatted_timespan : Ptime.span -> string
-    val timespan_to_hours : Ptime.span -> string
+    val timespan_to_minutes : Ptime.span -> string
     val parse_time : string -> (Ptime.t, Message.error) result
     val parse_time_span : string -> (Ptime.Span.t, Message.error) result
     val print_time_span : Ptime.Span.t -> string

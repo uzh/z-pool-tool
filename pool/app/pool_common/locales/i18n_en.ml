@@ -333,9 +333,7 @@ If a contact showed up but did not participate in the experiment, do not select 
      can be used by the experiment filter to eighter include or exclude them."
   | TemplateTextElementsHint ->
     "The following text elements can be used inside the templates:"
-  | TimeSpanPickerHint ->
-    "Time duration in hours. '1.5' corresponds to 1h 30m. '0.75' corresponds \
-     to 45min."
+  | TimeSpanPickerHint -> "Time duration in minutes"
   | WaitingListPhoneMissingContact ->
     "You have not entered a phone number in your profile yet. Please provide a \
      phone number so that the recruitment team can contact you."

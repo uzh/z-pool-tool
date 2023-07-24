@@ -49,11 +49,11 @@ let formatted_timespan timespan =
   Format.flush_str_formatter ()
 ;;
 
-let timespan_to_hours timespan =
+let timespan_to_minutes timespan =
   timespan
   |> Ptime.Span.to_int_s
   |> CCOption.map_or ~default:"" (fun timespan ->
-    (timespan |> CCFloat.of_int) /. 3600. |> Format.asprintf "%.2f")
+    timespan / 60 |> CCInt.to_string)
 ;;
 
 (* Utilities *)
