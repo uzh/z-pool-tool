@@ -126,7 +126,7 @@ end = struct
     |> CCResult.map_err Message.to_conformist_error
   ;;
 
-  let effects = Tags.Guard.Access.assign Contact.Guard.Access.read
+  let effects = Tags.Guard.Access.assign Contact.Guard.Access.update
 end
 
 module RemoveTagFromContact : sig
@@ -150,7 +150,7 @@ end = struct
     Ok [ Tags.(Untagged { Tagged.model_uuid; tag_uuid }) |> Pool_event.tags ]
   ;;
 
-  let effects = Tags.Guard.Access.remove Contact.Guard.Access.read
+  let effects = Tags.Guard.Access.remove Contact.Guard.Access.update
 end
 
 module AssignTagToExperiment : sig
@@ -186,7 +186,7 @@ end = struct
     |> CCResult.map_err Message.to_conformist_error
   ;;
 
-  let effects = Tags.Guard.Access.assign Experiment.Guard.Access.read
+  let effects = Tags.Guard.Access.assign Experiment.Guard.Access.update
 end
 
 module RemoveTagFromExperiment : sig
@@ -210,5 +210,5 @@ end = struct
     Ok [ Tags.(Untagged { Tagged.model_uuid; tag_uuid }) |> Pool_event.tags ]
   ;;
 
-  let effects = Tags.Guard.Access.remove Experiment.Guard.Access.read
+  let effects = Tags.Guard.Access.remove Experiment.Guard.Access.update
 end

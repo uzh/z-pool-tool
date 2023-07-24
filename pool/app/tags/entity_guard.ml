@@ -24,17 +24,12 @@ module Access = struct
     One (action, TargetSpec.Id (`Tag, target_id))
   ;;
 
-  let index = One (Action.Read, TargetSpec.Entity `Tag)
+  let index = One (Action.Update, TargetSpec.Entity `Tag)
   let create = One (Action.Create, TargetSpec.Entity `Tag)
+  let read_entity = One (Action.Read, TargetSpec.Entity `Tag)
   let read = tag Action.Read
   let update = tag Action.Update
   let delete = tag Action.Delete
-
-  let assign read_model model_uuid =
-    And [ index; SpecificRole `AssignTags; read_model model_uuid ]
-  ;;
-
-  let remove read_model model_uuid =
-    And [ index; SpecificRole `RemoveTags; read_model model_uuid ]
-  ;;
+  let assign access_fcn model_uuid = And [ read_entity; access_fcn model_uuid ]
+  let remove access_fcn model_uuid = And [ read_entity; access_fcn model_uuid ]
 end
