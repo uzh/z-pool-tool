@@ -575,41 +575,39 @@ module Sql = struct
       (Pool_location.Id.value location_id, start_time, end_time)
   ;;
 
-  let validate_session_sql actor =
-    let open Guard.Persistence in
-    let open Dynparam in
-    ( {sql| guardianValidateSessionUuid(guardianEncodeUuid(?), ?, pool_sessions.uuid) |sql}
-    , empty
-      |> add Uuid.Actor.t (actor |> Guard.Actor.id)
-      |> add Action.t Guard.Action.Read )
-  ;;
-
   let find_for_calendar_by_user_request =
     select_for_calendar ~order_by:"pool_sessions.start"
   ;;
 
   let find_for_calendar_by_user actor pool ~start_time ~end_time =
     let open Caqti_request.Infix in
-    let sql, dyn = validate_session_sql actor in
     let sql =
-      Format.asprintf
-        "%s AND %s AND %s AND %s"
-        sql
-        "pool_sessions.start > ?"
-        "pool_sessions.start < ?"
-        "pool_sessions.canceled_at IS NULL"
+      [ "pool_sessions.start > ?"
+      ; "pool_sessions.start < ?"
+      ; "pool_sessions.canceled_at IS NULL"
+      ; {sql|guardianValidateSessionUuid(guardianEncodeUuid(?), ?, pool_sessions.uuid)|sql}
+      ]
+      |> CCString.concat " AND "
     in
     let dyn =
+      let open Guard.Persistence in
+      let open Dynparam in
       CCList.fold_left
         (fun dyn p -> dyn |> Dynparam.add Caqti_type.ptime p)
-        dyn
+        empty
         [ start_time; end_time ]
+      |> add Uuid.Actor.t (actor |> Guard.Actor.id)
+      |> add Action.t Guard.Action.Read
     in
     let (Dynparam.Pack (pt, pv)) = dyn in
     let request =
       find_for_calendar_by_user_request sql
       |> (pt ->* RepoEntity.Calendar.t) ~oneshot:true
     in
+    let () =
+      Caqti_request.make_pp_with_param () Format.std_formatter (request, pv)
+    in
+    print_endline "XXX";
     Utils.Database.collect (pool |> Pool_database.Label.value) request pv
   ;;
 end

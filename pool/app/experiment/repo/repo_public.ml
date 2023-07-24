@@ -177,13 +177,30 @@ let find_past_experiments_by_contact pool contact =
 
 let where_contact_can_access =
   let id_fragment = "pool_experiments.uuid = UNHEX(REPLACE($2, '-', ''))" in
-  {sql| pool_invitations.contact_uuid = UNHEX(REPLACE($1, '-', '')) |sql}
-  |> Format.asprintf
-       "%s WHERE %s AND %s AND (%s OR %s)"
-       pool_invitations_left_join
-       id_fragment
-       condition_registration_not_disabled
-       condition_allow_uninvited_signup
+  let assignment_exists =
+    {sql|
+    EXISTS (
+      SELECT
+        1
+      FROM
+        pool_assignments
+        INNER JOIN pool_sessions ON pool_assignments.session_uuid = pool_sessions.uuid
+          AND pool_sessions.experiment_uuid = UNHEX(REPLACE($2, '-', ''))
+      WHERE
+        pool_assignments.contact_uuid = UNHEX(REPLACE($1, '-', ''))
+        AND pool_assignments.canceled_at IS NULL)
+  |sql}
+  in
+  let invitation_uuid =
+    {sql| pool_invitations.contact_uuid = UNHEX(REPLACE($1, '-', '')) |sql}
+  in
+  Format.asprintf
+    "%s WHERE %s AND (%s OR %s OR %s)"
+    pool_invitations_left_join
+    id_fragment
+    condition_allow_uninvited_signup
+    assignment_exists
+    invitation_uuid
 ;;
 
 let find_request =

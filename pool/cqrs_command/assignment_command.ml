@@ -47,8 +47,11 @@ end = struct
     then Error Pool_common.Message.(AlreadySignedUpForExperiment)
     else
       let* () =
-        command.experiment.Experiment.direct_registration_disabled
-        |> Experiment.DirectRegistrationDisabled.value
+        let open Experiment in
+        (command.experiment.direct_registration_disabled
+         |> DirectRegistrationDisabled.value
+         || command.experiment.registration_disabled
+            |> RegistrationDisabled.value)
         |> Utils.bool_to_result_not
              Pool_common.Message.(DirectRegistrationIsDisabled)
       in
