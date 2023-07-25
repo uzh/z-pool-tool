@@ -40,7 +40,7 @@ let contact_overview language contacts =
         (fun contact ->
           [ txt (email_address contact |> Pool_user.EmailAddress.value)
           ; txt (fullname contact)
-          ; contact |> path |> Input.edit_link
+          ; contact |> path |> Input.link_as_button ~icon:Icon.Eye
           ])
         contacts
     in

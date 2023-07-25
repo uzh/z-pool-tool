@@ -62,7 +62,10 @@ module List = struct
       let target_button =
         CCOption.map_or
           ~default
-          (Input.link_as_button ~icon:Icon.Eye %> CCList.return)
+          (Input.link_as_button
+             ~control:(language, Pool_common.Message.show)
+             ~icon:Icon.Eye
+           %> CCList.return)
           (target_path role)
       in
       let remove_button =

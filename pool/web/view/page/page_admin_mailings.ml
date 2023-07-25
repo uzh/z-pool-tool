@@ -130,7 +130,9 @@ module List = struct
            [ button_form "delete" Message.delete `Error I18n.DeleteMailing ]
          | _ -> [ txt "" ])
        else [])
-      @ [ detail_mailing_path experiment_id mailing |> edit_link ]
+      @ [ detail_mailing_path experiment_id mailing
+          |> link_as_button ~icon:Icon.Eye
+        ]
       |> div ~a:[ a_class [ "flexrow"; "flex-gap"; "justify-end" ] ]
     in
     [ mailing.start_at |> StartAt.to_human |> txt

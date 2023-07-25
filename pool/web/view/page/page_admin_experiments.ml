@@ -108,7 +108,7 @@ let index Pool_context.{ language; _ } experiment_list =
           ; Format.asprintf
               "/admin/experiments/%s"
               (experiment.id |> Experiment.Id.value)
-            |> edit_link
+            |> link_as_button ~icon:Icon.Eye
           ])
         experiments
     in

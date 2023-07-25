@@ -407,7 +407,7 @@ let session_list
                           "/admin/experiments/%s/sessions/%s"
                           (Experiment.Id.value experiment_id)
                           (Id.value session.id)
-                        |> edit_link
+                        |> link_as_button ~icon:Icon.Eye
                       ; delete_form ()
                       ]
                   ]
