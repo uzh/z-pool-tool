@@ -164,6 +164,11 @@ val find_all_public_by_contact
   -> Contact.t
   -> Public.t list Lwt.t
 
+val find_upcoming_to_register
+  :  Pool_database.Label.t
+  -> Contact.t
+  -> Public.t list Lwt.t
+
 val find_pending_waitinglists_by_contact
   :  Pool_database.Label.t
   -> Contact.t

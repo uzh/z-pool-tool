@@ -43,6 +43,10 @@
     .fc-toolbar-title {
         @extend .heading-3
     }
+
+    .fc-event-time {
+        overflow: visible;
+    }
 }
 
 .fc-tooltip {

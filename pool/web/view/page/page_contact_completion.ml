@@ -28,7 +28,6 @@ let custom_field_to_input ?flash_fetcher language custom_field =
       field
   | Public.Date (_, answer) ->
     Input.date_picker_element
-      ~orientation:`Horizontal
       ~disable_future:true
       ?value:(answer >>= Answer.value)
       language

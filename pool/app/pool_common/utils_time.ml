@@ -18,7 +18,7 @@ let parse_time_span str =
     str
     |> CCFloat.of_string_opt
     |> CCOption.to_result error
-    >|= fun h -> h *. 3600. |> CCInt.of_float |> Ptime.Span.of_int_s
+    >|= fun h -> h *. 60. |> CCInt.of_float |> Ptime.Span.of_int_s
 ;;
 
 let parse_date str =

@@ -13,15 +13,23 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 - allow smtp account and reply-to address to be specified for each experiment
 - calendar that shows all sessions of a location and all sessions of the current admin user
 - tags for experiments and contacts (admin sites)
+- colorize calendar
+- email plain text hint
 
 ### Changed
 
 - development environment
 - CLI commands
+- remove session list from location detail
+- time span picker using minutes
+- only validate experiment when loading sessions for calendar
 
 ### Fixed
 
 - added failed_login_attempts seed to root DB
+- only show future events on contact dashboard to sign up
+- allow contacts to access experiment when assignment exists
+- initialize flatpickr correctly after htmx swap
 
 ## [0.2.1](https://github.com/uzh/pool/tree/0.2.1) - 2023-06-01
 

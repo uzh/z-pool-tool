@@ -97,10 +97,7 @@ let template_form
     let id = Field.(show PlainText) in
     div
       ~a:[ a_class [ "form-group" ] ]
-      [ p
-          [ txt Pool_common.(Utils.hint_to_string language I18n.EmailPlainText)
-          ]
-      ; div
+      [ div
           ~a:[ a_class [ "flexrow"; "flex-gap"; "justify-between" ] ]
           [ label
               ~a:[ a_label_for id ]
@@ -128,6 +125,11 @@ let template_form
             ; a_user_data "plain-text-for" Field.(show EmailText)
             ]
           (txt (value (fun t -> t.plain_text |> PlainText.value)))
+      ; span
+          ~a:[ a_class [ "help" ] ]
+          [ Pool_common.(Utils.hint_to_string language I18n.EmailPlainText)
+            |> HttpUtils.add_line_breaks
+          ]
       ]
   in
   let form =

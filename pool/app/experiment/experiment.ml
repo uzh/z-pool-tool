@@ -19,7 +19,14 @@ let find = Repo.find
 let find_all = Repo.find_all
 let find_public = Repo_public.find
 let find_full_by_contact = Repo_public.find_full_by_contact
-let find_all_public_by_contact = Repo_public.find_all_public_by_contact
+
+let find_all_public_by_contact =
+  Repo_public.find_all_public_by_contact ~has_session:false
+;;
+
+let find_upcoming_to_register =
+  Repo_public.find_all_public_by_contact ~has_session:true
+;;
 
 let find_pending_waitinglists_by_contact =
   Repo_public.find_pending_waitinglists_by_contact

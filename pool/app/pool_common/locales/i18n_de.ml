@@ -219,7 +219,8 @@ let rec hint_to_string = function
     "Mit der Verteilung kann beeinflusst werden, welche Einladungen als erstes \
      versendet werden."
   | EmailPlainText ->
-    "Stellen Sie sicher, dass Links als reiner Text angezeigt werden."
+    {|Die Verwendung von E-Mails im Klartext als Ausweichlösung gewährleistet eine universelle Lesbarkeit und Barrierefreiheit. Sie können den Rich-Text von oben kopieren, indem Sie die Schaltfläche in der oberen rechten Ecke dieses Textfeldes verwenden.
+  Achten Sie darauf, Links und URLs als reinen Text anzuzeigen.|}
   | ExperimentAssignment ->
     "Alle Anmeldungen von Kontakten an Sessions dieses Experiments, sortiert \
      nach Session."
@@ -349,8 +350,7 @@ Wenn ein Kontakt zwar erschienen ist, aber nicht an dem Experiment teilgenommen 
      um sie ein- oder auszuschliessen."
   | TemplateTextElementsHint ->
     "Die folgenden Textbausteine können in den Templates verwendet werden:"
-  | TimeSpanPickerHint ->
-    "Zeitdauer in Stunden. '1.5' entspricht 1h 30m. '0.75' entspricht 45min."
+  | TimeSpanPickerHint -> "Zeitdauer in Minuten."
   | WaitingListPhoneMissingContact ->
     "Sie haben in Ihrem Profil noch keine Telefonnummer angegenen. Wir bitten \
      Sie, eine Telefonnummer anzugeben, damit das Rekrutierungsteam Sie \

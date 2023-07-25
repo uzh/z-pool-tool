@@ -477,11 +477,7 @@ module SessionList = struct
   ;;
 end
 
-let detail
-  (location : Pool_location.t)
-  Pool_context.{ csrf; language; _ }
-  sessions
-  =
+let detail (location : Pool_location.t) Pool_context.{ csrf; language; _ } =
   let open Pool_location in
   let location_details =
     let open Pool_common.Message in
@@ -531,7 +527,6 @@ let detail
                 ]
             ; FileList.create csrf language location
             ]
-        ; SessionList.create language sessions
         ; Component.Calendar.create
             [ a_user_data "calendar" "location"
             ; a_user_data "location" (Id.value location.id)

@@ -118,6 +118,32 @@ module Sql = struct
     >|> to_grouped_public is_admin pool model
   ;;
 
+  let find_unanswered_required_by_model_request is_admin =
+    let open Caqti_request.Infix in
+    let where =
+      Format.asprintf
+        {sql|
+          WHERE pool_custom_fields.model = $2
+          %s
+          AND pool_custom_fields.required = 1
+          AND pool_custom_field_answers.value IS NULL
+        |sql}
+        (base_filter_conditions is_admin)
+    in
+    let order = {sql| ORDER BY pool_custom_fields.position ASC |sql} in
+    Format.asprintf "%s \n %s \n %s" select_sql where order
+    |> Caqti_type.(tup2 string string ->* Repo_entity.Public.t)
+  ;;
+
+  let find_unanswered_required_by_model model ~is_admin pool id =
+    let open Utils.Lwt_result.Infix in
+    Utils.Database.collect
+      (Database.Label.value pool)
+      (find_unanswered_required_by_model_request is_admin)
+      (Pool_common.Id.value id, Entity.Model.show model)
+    >|> to_grouped_public is_admin pool model
+  ;;
+
   let find_multiple_by_contact_request is_admin ids =
     let where =
       Format.asprintf
@@ -231,6 +257,11 @@ module Sql = struct
 end
 
 let find_all_by_contact = Sql.find_all_by_model Entity.Model.Contact
+
+let find_unanswered_required_by_contact =
+  Sql.find_unanswered_required_by_model Entity.Model.Contact
+;;
+
 let find_multiple_by_contact = Sql.find_multiple_by_contact
 let find_by_contact = Sql.find_by_contact
 let all_required_answered = Sql.all_answered true

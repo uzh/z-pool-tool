@@ -211,7 +211,10 @@ let rec hint_to_string = function
   | Distribution ->
     "The distribution can be used to influence which invitations are sent \
      first."
-  | EmailPlainText -> "Make sure to show links as plain text."
+  | EmailPlainText ->
+    {|Using plain text email as a fallback ensures universal readability and accessibility. You can copy the rich text from above by using the button on the top right corner of this textarea.
+Make sure to show links and URLs as plain text.
+  |}
   | ExperimentAssignment ->
     "All assignments of contacts to sessions of this experiment, sorted by \
      session."
@@ -333,9 +336,7 @@ If a contact showed up but did not participate in the experiment, do not select 
      can be used by the experiment filter to eighter include or exclude them."
   | TemplateTextElementsHint ->
     "The following text elements can be used inside the templates:"
-  | TimeSpanPickerHint ->
-    "Time duration in hours. '1.5' corresponds to 1h 30m. '0.75' corresponds \
-     to 45min."
+  | TimeSpanPickerHint -> "Time duration in minutes"
   | WaitingListPhoneMissingContact ->
     "You have not entered a phone number in your profile yet. Please provide a \
      phone number so that the recruitment team can contact you."
