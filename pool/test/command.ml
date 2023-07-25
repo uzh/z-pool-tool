@@ -445,6 +445,14 @@ let () =
     ; ( "tags"
       , [ test_case "create tag succeeds" `Quick Tag_test.create_event
         ; test_case "update tag succeeds" `Quick Tag_test.update_event
+        ; test_case
+            "assign auto tag to experiment"
+            `Quick
+            Tag_test.assign_auto_tag_to_experiment
+        ; test_case
+            "remove auto tag from experiment"
+            `Quick
+            Tag_test.remove_auto_tag_from_experiment
         ] )
     ]
 ;;

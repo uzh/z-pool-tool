@@ -208,3 +208,39 @@ let try_assign_experiment_tag_to_contact _ () =
   in
   Lwt.return_unit
 ;;
+
+let assign_auto_tag_to_experiment () =
+  let open CCResult in
+  let open Tags in
+  let experiment = Test_utils.Model.create_experiment () in
+  let tag = Data.Tag.create_with_description () in
+  let events =
+    let open Cqrs_command.Tags_command.AssignAutoTagToExperiment in
+    Pool_common.Message.[ Field.(show Tag), [ Tags.(Id.value tag.id) ] ]
+    |> decode
+    >>= handle experiment
+  in
+  let expected =
+    Ok
+      [ Experiment.AutoTagAssigned (experiment, tag.id) |> Pool_event.experiment
+      ]
+  in
+  Test_utils.check_result expected events
+;;
+
+let remove_auto_tag_from_experiment () =
+  let open CCResult in
+  let open Tags in
+  let experiment = Test_utils.Model.create_experiment () in
+  let tag = Data.Tag.create_with_description () in
+  let events =
+    let open Cqrs_command.Tags_command.RemoveAutoTagFromExperiment in
+    handle experiment tag
+  in
+  let expected =
+    Ok
+      [ Experiment.AutoTagRemoved (experiment, tag.id) |> Pool_event.experiment
+      ]
+  in
+  Test_utils.check_result expected events
+;;
