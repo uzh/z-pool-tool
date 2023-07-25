@@ -20,21 +20,33 @@ let handle_tag action req =
   let result { Pool_context.database_label; _ } =
     Lwt_result.map_error (fun err -> err, path)
     @@ let* experiment = Experiment.find database_label experiment_id in
+       let handle_assign decode handle =
+         urlencoded
+         |> decode
+         |> Lwt_result.lift
+         >== handle ?tags:(Some tags) experiment
+         >|+ CCPair.make Pool_common.Message.TagAssigned
+       in
+       let handle_remove handle =
+         HttpUtils.find_id Tags.Id.of_string Field.Tag req
+         |> Tags.find database_label
+         >== handle experiment
+         >|+ CCPair.make Pool_common.Message.TagRemoved
+       in
        let* message, events =
          match action with
          | `Assign ->
            let open Cqrs_command.Tags_command.AssignTagToExperiment in
-           urlencoded
-           |> decode
-           |> Lwt_result.lift
-           >== handle ~tags experiment
-           >|+ CCPair.make Pool_common.Message.TagAssigned
+           handle_assign decode handle
+         | `AssignAutoTag ->
+           let open Cqrs_command.Tags_command.AssignAutoTagToExperiment in
+           handle_assign decode handle
          | `Remove ->
            let open Cqrs_command.Tags_command.RemoveTagFromExperiment in
-           HttpUtils.find_id Tags.Id.of_string Field.Tag req
-           |> Tags.find database_label
-           >== handle experiment
-           >|+ CCPair.make Pool_common.Message.TagRemoved
+           handle_remove handle
+         | `RemoveParticipationTag ->
+           let open Cqrs_command.Tags_command.RemoveAutoTagFromExperiment in
+           handle_remove handle
        in
        let handle =
          Lwt_list.iter_s (Pool_event.handle_event ~tags database_label)
@@ -51,3 +63,5 @@ let handle_tag action req =
 
 let assign_tag = handle_tag `Assign
 let remove_tag = handle_tag `Remove
+let assign_participation_tag = handle_tag `AssignAutoTag
+let remove_participation_tag = handle_tag `RemoveParticipationTag

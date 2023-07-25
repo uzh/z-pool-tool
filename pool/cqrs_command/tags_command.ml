@@ -11,6 +11,11 @@ type decoded =
 
 let default_command title description model = { title; description; model }
 
+let assignment_schema =
+  let open Conformist in
+  make Field.[ Tags.Id.schema ~field:Message.Field.Tag () ] CCFun.id
+;;
+
 let default_schema =
   Conformist.(
     make
@@ -106,11 +111,6 @@ module AssignTagToContact : sig
 end = struct
   type t = Tags.Id.t
 
-  let schema =
-    let open Conformist in
-    make Field.[ Tags.Id.schema ~field:Message.Field.Tag () ] CCFun.id
-  ;;
-
   let handle ?(tags = Logs.Tag.empty) contact (tag_uuid : t) =
     Logs.info ~src (fun m -> m "Handle command AssignTagToContact" ~tags);
     Ok
@@ -122,7 +122,7 @@ end = struct
   let validate = validate Tags.Model.Contact
 
   let decode data =
-    Conformist.decode_and_validate schema data
+    Conformist.decode_and_validate assignment_schema data
     |> CCResult.map_err Message.to_conformist_error
   ;;
 
@@ -168,11 +168,6 @@ module AssignTagToExperiment : sig
 end = struct
   type t = Tags.Id.t
 
-  let schema =
-    let open Conformist in
-    make Field.[ Tags.Id.schema ~field:Message.Field.Tag () ] CCFun.id
-  ;;
-
   let handle ?(tags = Logs.Tag.empty) { Experiment.id; _ } (tag_uuid : t) =
     Logs.info ~src (fun m -> m "Handle command AssignTagToExperiment" ~tags);
     let model_uuid = Experiment.Id.to_common id in
@@ -182,7 +177,7 @@ end = struct
   let validate = validate Tags.Model.Experiment
 
   let decode data =
-    Conformist.decode_and_validate schema data
+    Conformist.decode_and_validate assignment_schema data
     |> CCResult.map_err Message.to_conformist_error
   ;;
 
@@ -211,4 +206,62 @@ end = struct
   ;;
 
   let effects = Tags.Guard.Access.remove Experiment.Guard.Access.update
+end
+
+module AssignAutoTagToExperiment : sig
+  include Common.CommandSig with type t = Tags.Id.t
+
+  val handle
+    :  ?tags:Logs.Tag.set
+    -> Experiment.t
+    -> t
+    -> (Pool_event.t list, Conformist.error_msg) result
+
+  val validate : Tags.t -> (t, Conformist.error_msg) result
+  val decode : (string * string list) list -> (t, Message.error) result
+  val effects : Experiment.Id.t -> Guard.ValidationSet.t
+end = struct
+  type t = Tags.Id.t
+
+  let handle ?(tags = Logs.Tag.empty) experiment (tag_uuid : t) =
+    Logs.info ~src (fun m -> m "Handle command AssignAutoTagToExperiment" ~tags);
+    Ok
+      [ Experiment.AutoTagAssigned (experiment, tag_uuid)
+        |> Pool_event.experiment
+      ]
+  ;;
+
+  let validate = validate Tags.Model.Experiment
+
+  let decode data =
+    Conformist.decode_and_validate assignment_schema data
+    |> CCResult.map_err Message.to_conformist_error
+  ;;
+
+  let effects = Experiment.Guard.Access.update
+end
+
+module RemoveAutoTagFromExperiment : sig
+  include Common.CommandSig with type t = Tags.t
+
+  val handle
+    :  ?tags:Logs.Tag.set
+    -> Experiment.t
+    -> t
+    -> (Pool_event.t list, Conformist.error_msg) result
+
+  val effects : Experiment.Id.t -> Guard.ValidationSet.t
+end = struct
+  type t = Tags.t
+
+  let handle ?(tags = Logs.Tag.empty) experiment tag =
+    Logs.info ~src (fun m ->
+      m "Handle command RemoveAutoTagFromExperiment" ~tags);
+    Ok
+      [ Experiment.AutoTagRemoved (experiment, tag.Tags.id)
+        |> Pool_event.experiment
+      ]
+  ;;
+
+  let effects = Experiment.Guard.Access.update
 end

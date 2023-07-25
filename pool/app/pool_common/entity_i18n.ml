@@ -152,6 +152,7 @@ type hint =
   | NumberIsSecondsHint
   | NumberIsWeeksHint
   | Overbook
+  | ParticipationTags
   | Rate
   | RateDependencyWith
   | RateDependencyWithout

@@ -161,3 +161,15 @@ module Guard : sig
     val remove : ('a -> Guard.ValidationSet.t) -> 'a -> Guard.ValidationSet.t
   end
 end
+
+module RepoEntity : sig
+  module Id : sig
+    val t : Id.t Caqti_type.t
+  end
+
+  val t : t Caqti_type.t
+end
+
+module Sql : sig
+  val select_tag_sql : string
+end

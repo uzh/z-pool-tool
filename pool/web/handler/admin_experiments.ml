@@ -208,6 +208,9 @@ let detail edit req =
          Tags.(find_all_of_entity database_label Model.Experiment)
            (id |> Experiment.Id.to_common)
        in
+       let%lwt current_auto_tags =
+         Experiment.AutoTags.find_all database_label id
+       in
        (match edit with
         | false ->
           let%lwt session_count = Experiment.session_count database_label id in
@@ -255,16 +258,14 @@ let detail edit req =
               actor
             ||> CCResult.is_ok
           in
-          let%lwt all_tags =
+          let find_tags model =
             let open Tags in
             if allowed_to_assign
-            then
-              find_all_validated_with_model
-                database_label
-                Model.Experiment
-                actor
+            then find_all_validated_with_model database_label model actor
             else Lwt.return []
           in
+          let%lwt experiment_tags = find_tags Tags.Model.Experiment in
+          let%lwt auto_tags = find_tags Tags.Model.Contact in
           Page.Admin.Experiments.edit
             ~allowed_to_assign
             experiment
@@ -276,8 +277,8 @@ let detail edit req =
             smtp_auth_list
             invitation_templates
             session_reminder_templates
-            current_tags
-            all_tags
+            (experiment_tags, current_tags)
+            (auto_tags, current_auto_tags)
             flash_fetcher
           |> Lwt_result.ok)
        >>= create_layout req context

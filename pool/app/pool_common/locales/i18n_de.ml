@@ -272,6 +272,9 @@ let rec hint_to_string = function
   | Overbook ->
     "Anzahl Kontakte, die sich zusätzlich zur maximalen Anzahl Teilnehmer, an \
      einer Session einschreiben können."
+  | ParticipationTags ->
+    "Tags, welche den Teilnehmern nach einer Teilnahme an einer Session dieses \
+     Experiments automatisch zugewiesen werden."
   | Rate -> "Generierte Einladungen pro Stunde"
   | RateDependencyWith ->
     "Zur selben Zeit finden weitere Versande statt, details werden unten \

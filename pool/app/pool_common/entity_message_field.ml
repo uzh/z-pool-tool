@@ -168,6 +168,8 @@ type t =
       [@printer go "participant_count"]
   | Participants [@name "participants"] [@printer go "participants"]
   | Participated [@name "participated"] [@printer go "participated"]
+  | ParticipationTag [@name "participation_tag"]
+      [@printer go "participation_tag"]
   | PartnerLogos [@name "partner_logos"] [@printer go "partner_logos"]
   | Password [@name "password"] [@printer go "password"]
   | PasswordConfirmation [@name "password_confirmation"]

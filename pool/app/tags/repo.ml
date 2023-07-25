@@ -3,7 +3,7 @@ open Utils.Lwt_result.Infix
 open Entity
 module Label = Pool_database.Label
 
-module Entity = struct
+module RepoEntity = struct
   module Id = struct
     include Entity.Id
     include Pool_common.Repo.Id
@@ -22,20 +22,19 @@ module Entity = struct
   end
 
   module Model = Pool_common.Repo.Model.SelectorType (Model)
-end
 
-let t =
-  let encode (m : t) = Ok (m.id, (m.title, (m.description, m.model))) in
-  let decode (id, (title, (description, model))) : (t, string) result =
-    Ok { id; title; description; model }
-  in
-  let open Entity in
-  Caqti_type.(
-    custom
-      ~encode
-      ~decode
-      (tup2 Id.t (tup2 Title.t (tup2 (option Description.t) Model.t))))
-;;
+  let t =
+    let encode (m : t) = Ok (m.id, (m.title, (m.description, m.model))) in
+    let decode (id, (title, (description, model))) : (t, string) result =
+      Ok { id; title; description; model }
+    in
+    Caqti_type.(
+      custom
+        ~encode
+        ~decode
+        (tup2 Id.t (tup2 Title.t (tup2 (option Description.t) Model.t))))
+  ;;
+end
 
 module Tagged = struct
   include Tagged
@@ -43,7 +42,7 @@ module Tagged = struct
   let t =
     let encode m = Ok (m.model_uuid, m.tag_uuid) in
     let decode (model_uuid, tag_uuid) = Ok { model_uuid; tag_uuid } in
-    let open Entity in
+    let open RepoEntity in
     Caqti_type.(custom ~encode ~decode (tup2 Pool_common.Repo.Id.t Id.t))
   ;;
 end
@@ -76,7 +75,7 @@ module Sql = struct
         pool_tags.uuid = UNHEX(REPLACE(?, '-', ''))
     |sql}
     |> Format.asprintf "%s\n%s" select_tag_sql
-    |> Entity.Id.t ->! t
+    |> RepoEntity.Id.t ->! RepoEntity.t
   ;;
 
   let find pool id =
@@ -170,7 +169,7 @@ module Sql = struct
         ORDER BY pool_tags.title, pool_tags.model
       |sql}
       select_tag_sql
-    |> Caqti_type.unit ->* t
+    |> Caqti_type.unit ->* RepoEntity.t
   ;;
 
   let find_all pool =
@@ -185,7 +184,7 @@ module Sql = struct
         ORDER BY pool_tags.title, pool_tags.model
       |sql}
       select_tag_sql
-    |> Entity.Model.t ->* t
+    |> RepoEntity.Model.t ->* RepoEntity.t
   ;;
 
   let find_all_with_model pool model =
@@ -193,7 +192,7 @@ module Sql = struct
   ;;
 
   let already_exists_request ?exclude_id () =
-    let open Entity in
+    let open RepoEntity in
     let open CCFun.Infix in
     let without_uuid =
       CCOption.map_or
@@ -233,7 +232,7 @@ module Sql = struct
         ORDER BY pool_tags.title, pool_tags.model
       |sql}
       select_tag_sql
-    |> Caqti_type.(tup2 Uuid.Actor.t Action.t) ->* t
+    |> Caqti_type.(tup2 Uuid.Actor.t Action.t) ->* RepoEntity.t
   ;;
 
   let find_all_validated ?(action = Guard.Action.Read) pool actor =
@@ -254,7 +253,8 @@ module Sql = struct
         ORDER BY pool_tags.title, pool_tags.model
       |sql}
       select_tag_sql
-    |> Caqti_type.(tup3 Entity.Model.t Uuid.Actor.t Action.t) ->* t
+    |> Caqti_type.(tup3 RepoEntity.Model.t Uuid.Actor.t Action.t)
+       ->* RepoEntity.t
   ;;
 
   let find_all_validated_with_model
@@ -283,7 +283,7 @@ module Sql = struct
         $4
       )
     |sql}
-    |> t ->. Caqti_type.unit
+    |> RepoEntity.t ->. Caqti_type.unit
   ;;
 
   let insert pool tag =
@@ -304,7 +304,7 @@ module Sql = struct
       WHERE
         pool_tags.uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}
-    |> Caqti_type.(t ->. unit)
+    |> Caqti_type.(RepoEntity.t ->. unit)
   ;;
 
   let update pool = Utils.Database.exec (Label.value pool) update_request
@@ -314,7 +314,7 @@ module Sql = struct
       DELETE FROM pool_tags
       WHERE uuid = UNHEX(REPLACE(?, '-', ''))
     |sql}
-    |> Entity.Id.t ->. Caqti_type.unit
+    |> RepoEntity.Id.t ->. Caqti_type.unit
   ;;
 
   let delete pool ({ id; _ } : t) =
@@ -397,7 +397,7 @@ module Sql = struct
     ;;
 
     let find_all_of_entity_request =
-      let open Entity in
+      let open RepoEntity in
       Format.asprintf
         {sql|
           %s

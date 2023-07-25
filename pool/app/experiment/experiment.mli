@@ -115,6 +115,8 @@ type event =
   | Created of t
   | Updated of t
   | Deleted of Id.t
+  | AutoTagAssigned of t * Tags.Id.t
+  | AutoTagRemoved of t * Tags.Id.t
 
 val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
@@ -230,6 +232,10 @@ module Repo : sig
       val t : t Caqti_type.t
     end
   end
+end
+
+module AutoTags : sig
+  val find_all : Pool_database.Label.t -> Id.t -> Tags.t list Lwt.t
 end
 
 module Guard : sig

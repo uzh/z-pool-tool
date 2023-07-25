@@ -465,6 +465,22 @@ module Admin = struct
         ; choose ~scope:(Tag |> url_key) specific
         ]
       in
+      let participation_tags =
+        let open Handler.Admin.Experiments in
+        let specific =
+          [ post
+              "/remove"
+              ~middlewares:[ Access.update ]
+              Tags.remove_participation_tag
+          ]
+        in
+        [ post
+            "/assign"
+            ~middlewares:[ Access.update ]
+            Tags.assign_participation_tag
+        ; choose ~scope:(Tag |> url_key) specific
+        ]
+      in
       let specific =
         Experiments.
           [ get "" ~middlewares:[ Access.read ] show
@@ -484,6 +500,7 @@ module Admin = struct
           ; choose ~scope:"/mailings" mailings
           ; choose ~scope:"/filter" filter
           ; choose ~scope:(Tag |> human_url) tags
+          ; choose ~scope:(ParticipationTag |> human_url) participation_tags
           ; choose ~scope:(add_human_field MessageTemplate) message_templates
           ]
       in

@@ -263,6 +263,9 @@ Make sure to show links and URLs as plain text.
   | Overbook ->
     "Number of subjects that can enroll in a session in addition to the \
      maximum number of contacts."
+  | ParticipationTags ->
+    "Tags, which are automatically assigned to participants after they have \
+     participated in a session of this experiment."
   | Rate -> "Max. generated Invitations per hour"
   | RateDependencyWith ->
     "There are other mailings running at the same time, see its details \
