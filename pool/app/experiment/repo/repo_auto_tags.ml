@@ -48,3 +48,28 @@ let find_all_request =
 let find_all pool =
   Utils.Database.collect (Pool_database.Label.value pool) find_all_request
 ;;
+
+let find_available_request =
+  let open Caqti_request.Infix in
+  Format.asprintf
+    {sql|
+    %s
+    WHERE
+    pool_tags.model = $1
+    AND pool_tags.uuid NOT IN(
+      SELECT
+        tag_uuid FROM pool_experiments_auto_tags
+      WHERE
+        experiment_uuid = UNHEX(REPLACE($2, '-', '')));
+    |sql}
+    Tags.Sql.select_tag_sql
+  |> Caqti_type.(tup2 Tags.RepoEntity.Model.t Repo_entity.Id.t)
+     ->* Tags.RepoEntity.t
+;;
+
+let find_available pool id =
+  Utils.Database.collect
+    (Pool_database.Label.value pool)
+    find_available_request
+    (Tags.Model.Experiment, id)
+;;

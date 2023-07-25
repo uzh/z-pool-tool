@@ -167,6 +167,8 @@ type hint =
   | SessionCancellationMessageFollowUps
   | SessionCancellationWithFollowups
   | SessionCancelMessage
+  | SessionCloseAutoTagsSelected
+  | SessionCloseNoAutoTagsSelected
   | SessionCloseHints
   | SessionCloseLegend
   | SessionRegistrationFollowUpHint

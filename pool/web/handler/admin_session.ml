@@ -187,7 +187,18 @@ let detail req page =
        let* assignments =
          Assignment.find_uncanceled_by_session database_label session.Session.id
        in
-       Page.Admin.Session.close context experiment session assignments
+       let%lwt auto_tags =
+         Experiment.AutoTags.find_all database_label experiment_id
+       in
+       let%lwt available_tags =
+         Experiment.AutoTags.find_available database_label experiment_id
+       in
+       Page.Admin.Session.close
+         context
+         experiment
+         session
+         assignments
+         (auto_tags, available_tags)
        |> Lwt_result.ok
      | `Reschedule ->
        let* experiment = Experiment.find database_label experiment_id in
@@ -503,6 +514,9 @@ let close_post req =
     let* assignments =
       Assignment.find_uncanceled_by_session database_label session.Session.id
     in
+    let%lwt participation_tags =
+      Experiment.AutoTags.find_all database_label experiment_id
+    in
     let* events =
       let urlencoded_list field =
         Sihl.Web.Request.urlencoded_list
@@ -542,7 +556,7 @@ let close_post req =
           , increment_num_participations
           , follow_ups ))
       ||> CCResult.flatten_l
-      >== SetAttendance.handle session
+      >== SetAttendance.handle session participation_tags
     in
     let%lwt () = Pool_event.handle_events database_label events in
     Http_utils.redirect_to_with_actions

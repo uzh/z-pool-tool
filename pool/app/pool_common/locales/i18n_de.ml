@@ -320,6 +320,12 @@ Die folgenden Folgesessions existieren:|}
     "Dazugehörige Folgesessions wurden evenfalls abgesagt:"
   | SessionCancelMessage ->
     "Dieser Grund wird allen angemeldeten Kontakten gezeigt."
+  | SessionCloseAutoTagsSelected ->
+    "Die folgenden Tags werden allen Teilnehmer/innen zugewiesen, die an \
+     diesem Experiment teilgenommen haben:"
+  | SessionCloseNoAutoTagsSelected ->
+    "Es wurden keine Tags ausgewählt, die den Teilnehmer/innen zugewiesen \
+     werden, die an diesem Experiment teilgenommen haben."
   | SessionCloseHints ->
     {|<strong>NS</strong> und <strong>P</strong> schliessen sich gegenseitig aus.<br>
 Wenn ein Kontakt zwar erschienen ist, aber nicht an dem Experiment teilgenommen hat, wählen Sie keine der Optionen aus.|}

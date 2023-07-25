@@ -236,6 +236,7 @@ end
 
 module AutoTags : sig
   val find_all : Pool_database.Label.t -> Id.t -> Tags.t list Lwt.t
+  val find_available : Pool_database.Label.t -> Id.t -> Tags.t list Lwt.t
 end
 
 module Guard : sig

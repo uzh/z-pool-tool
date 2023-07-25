@@ -167,6 +167,10 @@ module RepoEntity : sig
     val t : Id.t Caqti_type.t
   end
 
+  module Model : sig
+    val t : Model.t Caqti_type.t
+  end
+
   val t : t Caqti_type.t
 end
 

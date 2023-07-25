@@ -306,6 +306,12 @@ The following follow-up sessions exist:|}
     "Associated follow-up sessions were canceled as well:"
   | SessionCancelMessage ->
     "This reason will be provided to all contacts assigned to this session."
+  | SessionCloseAutoTagsSelected ->
+    "The following tags are assigned to all participants who took part in this \
+     experiment:"
+  | SessionCloseNoAutoTagsSelected ->
+    "No tags were selected to be assigned to the participants who participated \
+     in this experiment."
   | SessionCloseHints ->
     {|<strong>NS</strong> and <strong>P</strong> are mutually exclusive.<br>
 If a contact showed up but did not participate in the experiment, do not select any of the options.|}

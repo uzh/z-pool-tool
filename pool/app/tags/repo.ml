@@ -330,7 +330,8 @@ module Sql = struct
         ) VALUES (
           UNHEX(REPLACE($1, '-', '')),
           UNHEX(REPLACE($2, '-', ''))
-        )
+        ) ON DUPLICATE KEY UPDATE
+          updated_at = NOW()
       |sql}
       |> Tagged.t ->. Caqti_type.unit
     ;;

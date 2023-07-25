@@ -140,6 +140,7 @@ module SetAttendance : sig
   val handle
     :  ?tags:Logs.Tag.set
     -> Session.t
+    -> Tags.t list
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
@@ -153,7 +154,12 @@ end = struct
     * Assignment.t list option)
     list
 
-  let handle ?(tags = Logs.Tag.empty) (session : Session.t) (command : t) =
+  let handle
+    ?(tags = Logs.Tag.empty)
+    (session : Session.t)
+    (participation_tags : Tags.t list)
+    (command : t)
+    =
     Logs.info ~src (fun m -> m "Handle command SetAttendance" ~tags);
     let open CCResult in
     let open Assignment in
@@ -201,6 +207,17 @@ end = struct
             ~step:(CCInt.neg num_assignments_decrement)
             contact
         in
+        let tag_events =
+          let open Tags in
+          match participated |> Participated.value with
+          | false -> []
+          | true ->
+            participation_tags
+            |> CCList.map (fun (tag : t) ->
+              Tagged
+                Tagged.{ model_uuid = Contact.id contact; tag_uuid = tag.id }
+              |> Pool_event.tags)
+        in
         let contact_events =
           (Contact.Updated contact |> Pool_event.contact) :: mark_as_deleted
         in
@@ -208,6 +225,7 @@ end = struct
         @ ((Assignment.AttendanceSet (assignment, no_show, participated)
             |> Pool_event.assignment)
            :: contact_events)
+        @ tag_events
         |> CCResult.return)
       (Ok [ Closed session |> Pool_event.session ])
       command

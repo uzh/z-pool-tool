@@ -856,11 +856,12 @@ let follow_up
          experiment)
 ;;
 
-let close
+let[@warning "-27"] close
   ({ Pool_context.language; csrf; _ } as context)
   experiment
   (session : Session.t)
   assignments
+  (auto_tags, available_tags)
   =
   let open Pool_common in
   let control = Message.(Close (Some Field.Session)) in
@@ -874,6 +875,31 @@ let close
               ; a_value (id |> Assignment.Id.value)
               ]
             ()
+        ]
+    in
+    let tags_html =
+      let auto_tags_list =
+        match auto_tags with
+        | [] ->
+          Utils.hint_to_string language I18n.SessionCloseNoAutoTagsSelected
+          |> txt
+        | tags ->
+          let tags = Component.Tag.tag_list tags in
+          div
+            [ p
+                [ Utils.hint_to_string
+                    language
+                    I18n.SessionCloseAutoTagsSelected
+                  |> txt
+                ]
+            ; tags
+            ]
+      in
+      div
+        [ h4
+            ~a:[ a_class [ "heading-4" ] ]
+            [ txt (Utils.nav_link_to_string language I18n.Tags) ]
+        ; auto_tags_list
         ]
     in
     let table =
@@ -915,7 +941,8 @@ let close
                |> Sihl.Web.externalize_path)
           ; a_user_data "detect-unsaved-changes" ""
           ]
-        [ Input.csrf_element csrf ()
+        [ tags_html
+        ; Input.csrf_element csrf ()
         ; table
         ; div
             ~a:[ a_class [ "flexrow"; "justify-end" ] ]

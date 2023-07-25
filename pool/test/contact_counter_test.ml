@@ -74,7 +74,7 @@ let close_session
   in
   (assignment, no_show, participated, increment_num_participations, None)
   |> CCList.pure
-  |> SetAttendance.handle session
+  |> SetAttendance.handle session []
   |> get_exn
   |> Pool_event.handle_events database_label
 ;;

@@ -133,6 +133,7 @@ let set_attendance () =
   let events =
     AssignmentCommand.SetAttendance.handle
       session
+      []
       [ assignment, no_show, participated, increment_num_participaton, None ]
   in
   let expected =
@@ -162,6 +163,7 @@ let set_invalid_attendance () =
   let events =
     AssignmentCommand.SetAttendance.handle
       session
+      []
       [ ( assignment
         , show_up
         , participated

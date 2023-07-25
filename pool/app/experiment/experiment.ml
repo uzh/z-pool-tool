@@ -60,4 +60,5 @@ let find_contact_person database_label { contact_person_id; _ } =
 
 module AutoTags = struct
   let find_all = Repo_auto_tags.find_all
+  let find_available = Repo_auto_tags.find_available
 end
