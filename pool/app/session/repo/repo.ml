@@ -250,11 +250,6 @@ module Sql = struct
       (Database.Label.value pool)
       find_public_by_assignment_request
       (Pool_common.Id.value id)
-    ||> (function
-          | None ->
-            Logs.info (fun m -> m "%s" "HERE IS THE ERROR");
-            None
-          | Some s -> Some s)
     ||> CCOption.to_result Pool_common.Message.(NotFound Field.Session)
   ;;
 
