@@ -911,7 +911,8 @@ let close_valid_with_assignments () =
       , Assignment.IncrementParticipationCount.create true
       , None ))
   in
-  let res = SetAttendance.handle session [] assignments in
+  let tags = Tag_test.Data.Tag.create_with_description () |> CCList.return in
+  let res = SetAttendance.handle session tags assignments in
   let expected =
     CCList.fold_left
       (fun events
@@ -929,11 +930,22 @@ let close_valid_with_assignments () =
           in
           Updated contact |> Pool_event.contact
         in
+        let tag_events =
+          let open Tags in
+          tags
+          |> CCList.map (fun (tag : t) ->
+            Tagged
+              { Tagged.model_uuid = Contact.id assignment.contact
+              ; tag_uuid = tag.id
+              }
+            |> Pool_event.tags)
+        in
         events
         @ [ AttendanceSet (assignment, no_show, participated)
             |> Pool_event.assignment
           ; contact_event
-          ])
+          ]
+        @ tag_events)
       [ Session.Closed session |> Pool_event.session ]
       assignments
     |> CCResult.return
