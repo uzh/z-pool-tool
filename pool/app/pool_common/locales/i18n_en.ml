@@ -127,6 +127,7 @@ let nav_link_to_string = function
   | MessageTemplates -> "Message templates"
   | OrganisationalUnits -> "Organisational units"
   | Overview -> "Overview"
+  | ParticipationTags -> "Participation tags"
   | PersonalDetails -> "Personal details"
   | Profile -> "Profile"
   | Queue -> "Queued jobs"
@@ -306,10 +307,10 @@ The following follow-up sessions exist:|}
     "Associated follow-up sessions were canceled as well:"
   | SessionCancelMessage ->
     "This reason will be provided to all contacts assigned to this session."
-  | SessionCloseAutoTagsSelected ->
+  | SessionCloseParticipationTagsSelected ->
     "The following tags are assigned to all participants who took part in this \
      experiment:"
-  | SessionCloseNoAutoTagsSelected ->
+  | SessionCloseNoParticipationTagsSelected ->
     "No tags were selected to be assigned to the participants who participated \
      in this experiment."
   | SessionCloseHints ->

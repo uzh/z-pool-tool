@@ -1,7 +1,7 @@
 let insert_request =
   let open Caqti_request.Infix in
   {sql|
-    INSERT INTO pool_experiments_auto_tags (
+    INSERT INTO pool_experiments_participation_tags (
       experiment_uuid,
       tag_uuid
     ) VALUES (
@@ -21,7 +21,7 @@ let insert pool =
 let delete_request =
   let open Caqti_request.Infix in
   {sql|
-    DELETE FROM pool_experiments_auto_tags
+    DELETE FROM pool_experiments_participation_tags
     WHERE experiment_uuid = UNHEX(REPLACE($1, '-', ''))
     AND tag_uuid = UNHEX(REPLACE($2, '-', ''))
   |sql}
@@ -37,9 +37,9 @@ let find_all_request =
   Format.asprintf
     {sql|
     %s
-    INNER JOIN pool_experiments_auto_tags
-     	ON pool_tags.uuid = pool_experiments_auto_tags.tag_uuid
-    WHERE pool_experiments_auto_tags.experiment_uuid = UNHEX(REPLACE($1, '-', ''))
+    INNER JOIN pool_experiments_participation_tags
+     	ON pool_tags.uuid = pool_experiments_participation_tags.tag_uuid
+    WHERE pool_experiments_participation_tags.experiment_uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}
     Tags.Sql.select_tag_sql
   |> Repo_entity.Id.t ->* Tags.RepoEntity.t
@@ -58,7 +58,7 @@ let find_available_request =
     pool_tags.model = $1
     AND pool_tags.uuid NOT IN(
       SELECT
-        tag_uuid FROM pool_experiments_auto_tags
+        tag_uuid FROM pool_experiments_participation_tags
       WHERE
         experiment_uuid = UNHEX(REPLACE($2, '-', '')));
     |sql}

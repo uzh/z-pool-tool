@@ -208,8 +208,8 @@ let detail edit req =
          Tags.(find_all_of_entity database_label Model.Experiment)
            (id |> Experiment.Id.to_common)
        in
-       let%lwt current_auto_tags =
-         Experiment.AutoTags.find_all database_label id
+       let%lwt current_participation_tags =
+         Experiment.ParticipationTags.find_all database_label id
        in
        (match edit with
         | false ->
@@ -233,6 +233,7 @@ let detail edit req =
             contact_person
             smtp_auth
             current_tags
+            current_participation_tags
             context
           |> Lwt_result.ok
         | true ->
@@ -265,7 +266,7 @@ let detail edit req =
             else Lwt.return []
           in
           let%lwt experiment_tags = find_tags Tags.Model.Experiment in
-          let%lwt auto_tags = find_tags Tags.Model.Contact in
+          let%lwt participation_tags = find_tags Tags.Model.Contact in
           Page.Admin.Experiments.edit
             ~allowed_to_assign
             experiment
@@ -278,7 +279,7 @@ let detail edit req =
             invitation_templates
             session_reminder_templates
             (experiment_tags, current_tags)
-            (auto_tags, current_auto_tags)
+            (participation_tags, current_participation_tags)
             flash_fetcher
           |> Lwt_result.ok)
        >>= create_layout req context

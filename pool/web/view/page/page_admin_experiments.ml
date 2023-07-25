@@ -398,7 +398,7 @@ let edit
   invitation_templates
   session_reminder_templates
   (available_tags, current_tags)
-  (available_auto_tags, current_auto_tags)
+  (available_participation_tags, current_participation_tags)
   flash_fetcher
   =
   let open Message_template in
@@ -475,7 +475,7 @@ let edit
               ]
           ; p [ Utils.hint_to_string language I18n.ParticipationTags |> txt ]
           ; tags_html
-              (available_auto_tags, current_auto_tags)
+              (available_participation_tags, current_participation_tags)
               Field.ParticipationTag
           ]
       ]
@@ -505,6 +505,7 @@ let detail
   contact_person
   smtp_account
   tags
+  participation_tags
   ({ Pool_context.language; csrf; _ } as context)
   =
   let experiment_path = build_experiment_path experiment in
@@ -633,12 +634,17 @@ let detail
         ]
     in
     let tag_overview =
-      div
-        [ h3
-            ~a:[ a_class [ "heading-3" ] ]
-            Pool_common.[ Utils.nav_link_to_string language I18n.Tags |> txt ]
-        ; Component.Tag.tag_list tags
-        ]
+      let build (title, tags) =
+        div
+          [ h3
+              ~a:[ a_class [ "heading-3" ] ]
+              Pool_common.[ Utils.nav_link_to_string language title |> txt ]
+          ; Component.Tag.tag_list tags
+          ]
+      in
+      Pool_common.I18n.[ Tags, tags; ParticipationTags, participation_tags ]
+      |> CCList.map build
+      |> div ~a:[ a_class [ "switcher"; "flex-gap" ] ]
     in
     [ div
         ~a:[ a_class [ "stack-lg" ] ]

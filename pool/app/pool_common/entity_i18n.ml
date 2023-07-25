@@ -92,6 +92,7 @@ type nav_link =
   | MessageTemplates
   | OrganisationalUnits
   | Overview
+  | ParticipationTags
   | PersonalDetails
   | Profile
   | Queue
@@ -167,8 +168,8 @@ type hint =
   | SessionCancellationMessageFollowUps
   | SessionCancellationWithFollowups
   | SessionCancelMessage
-  | SessionCloseAutoTagsSelected
-  | SessionCloseNoAutoTagsSelected
+  | SessionCloseParticipationTagsSelected
+  | SessionCloseNoParticipationTagsSelected
   | SessionCloseHints
   | SessionCloseLegend
   | SessionRegistrationFollowUpHint

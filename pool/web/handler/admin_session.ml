@@ -187,18 +187,20 @@ let detail req page =
        let* assignments =
          Assignment.find_uncanceled_by_session database_label session.Session.id
        in
-       let%lwt auto_tags =
-         Experiment.AutoTags.find_all database_label experiment_id
+       let%lwt participation_tags =
+         Experiment.ParticipationTags.find_all database_label experiment_id
        in
        let%lwt available_tags =
-         Experiment.AutoTags.find_available database_label experiment_id
+         Experiment.ParticipationTags.find_available
+           database_label
+           experiment_id
        in
        Page.Admin.Session.close
          context
          experiment
          session
          assignments
-         (auto_tags, available_tags)
+         (participation_tags, available_tags)
        |> Lwt_result.ok
      | `Reschedule ->
        let* experiment = Experiment.find database_label experiment_id in
@@ -515,7 +517,7 @@ let close_post req =
       Assignment.find_uncanceled_by_session database_label session.Session.id
     in
     let%lwt participation_tags =
-      Experiment.AutoTags.find_all database_label experiment_id
+      Experiment.ParticipationTags.find_all database_label experiment_id
     in
     let* events =
       let urlencoded_list field =

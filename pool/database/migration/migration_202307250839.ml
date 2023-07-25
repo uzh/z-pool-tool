@@ -1,8 +1,8 @@
-let create_pool_experiments_auto_tags =
+let create_pool_experiments_participation_tags =
   Sihl.Database.Migration.create_step
     ~label:"create pool admins table"
     {sql|
-      CREATE TABLE IF NOT EXISTS pool_experiments_auto_tags (
+      CREATE TABLE IF NOT EXISTS pool_experiments_participation_tags (
         `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
         `experiment_uuid` binary(16) NOT NULL,
         `tag_uuid` binary(16) NOT NULL,
@@ -16,5 +16,5 @@ let create_pool_experiments_auto_tags =
 
 let migration () =
   Sihl.Database.Migration.(
-    empty "202307250839" |> add_step create_pool_experiments_auto_tags)
+    empty "202307250839" |> add_step create_pool_experiments_participation_tags)
 ;;

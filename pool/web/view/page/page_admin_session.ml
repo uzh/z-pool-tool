@@ -861,7 +861,7 @@ let[@warning "-27"] close
   experiment
   (session : Session.t)
   assignments
-  (auto_tags, available_tags)
+  (participation_tags, available_tags)
   =
   let open Pool_common in
   let control = Message.(Close (Some Field.Session)) in
@@ -878,10 +878,12 @@ let[@warning "-27"] close
         ]
     in
     let tags_html =
-      let auto_tags_list =
-        match auto_tags with
+      let participation_tags_list =
+        match participation_tags with
         | [] ->
-          Utils.hint_to_string language I18n.SessionCloseNoAutoTagsSelected
+          Utils.hint_to_string
+            language
+            I18n.SessionCloseNoParticipationTagsSelected
           |> txt
         | tags ->
           let tags = Component.Tag.tag_list tags in
@@ -889,7 +891,7 @@ let[@warning "-27"] close
             [ p
                 [ Utils.hint_to_string
                     language
-                    I18n.SessionCloseAutoTagsSelected
+                    I18n.SessionCloseParticipationTagsSelected
                   |> txt
                 ]
             ; tags
@@ -899,7 +901,7 @@ let[@warning "-27"] close
         [ h4
             ~a:[ a_class [ "heading-4" ] ]
             [ txt (Utils.nav_link_to_string language I18n.Tags) ]
-        ; auto_tags_list
+        ; participation_tags_list
         ]
     in
     let table =

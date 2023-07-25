@@ -129,6 +129,7 @@ let nav_link_to_string = function
   | MessageTemplates -> "Nachrichtentemplates"
   | OrganisationalUnits -> "Organisationseinheiten"
   | Overview -> "Übersicht"
+  | ParticipationTags -> "Teilnahmetags"
   | PersonalDetails -> "Persönliche Angaben"
   | Profile -> "Profil"
   | Queue -> "Hintergrundjobs"
@@ -320,10 +321,10 @@ Die folgenden Folgesessions existieren:|}
     "Dazugehörige Folgesessions wurden evenfalls abgesagt:"
   | SessionCancelMessage ->
     "Dieser Grund wird allen angemeldeten Kontakten gezeigt."
-  | SessionCloseAutoTagsSelected ->
+  | SessionCloseParticipationTagsSelected ->
     "Die folgenden Tags werden allen Teilnehmer/innen zugewiesen, die an \
      diesem Experiment teilgenommen haben:"
-  | SessionCloseNoAutoTagsSelected ->
+  | SessionCloseNoParticipationTagsSelected ->
     "Es wurden keine Tags ausgewählt, die den Teilnehmer/innen zugewiesen \
      werden, die an diesem Experiment teilgenommen haben."
   | SessionCloseHints ->

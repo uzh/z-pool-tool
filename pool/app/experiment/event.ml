@@ -44,7 +44,8 @@ let handle_event pool : event -> unit Lwt.t =
   | Updated t -> Repo.update pool t
   | Deleted experiment_id -> Repo.delete pool experiment_id
   | AutoTagAssigned ({ id; _ }, tag_id) ->
-    Repo_auto_tags.insert pool (id, tag_id)
-  | AutoTagRemoved ({ id; _ }, tag_id) -> Repo_auto_tags.delete pool (id, tag_id)
+    Repo_participation_tags.insert pool (id, tag_id)
+  | AutoTagRemoved ({ id; _ }, tag_id) ->
+    Repo_participation_tags.delete pool (id, tag_id)
 [@@deriving eq, show]
 ;;
