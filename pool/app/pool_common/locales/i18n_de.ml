@@ -219,7 +219,8 @@ let rec hint_to_string = function
     "Mit der Verteilung kann beeinflusst werden, welche Einladungen als erstes \
      versendet werden."
   | EmailPlainText ->
-    "Stellen Sie sicher, dass Links als reiner Text angezeigt werden."
+    {|Die Verwendung von E-Mails im Klartext als Ausweichlösung gewährleistet eine universelle Lesbarkeit und Barrierefreiheit. Sie können den Rich-Text von oben kopieren, indem Sie die Schaltfläche in der oberen rechten Ecke dieses Textfeldes verwenden.
+  Achten Sie darauf, Links und URLs als reinen Text anzuzeigen.|}
   | ExperimentAssignment ->
     "Alle Anmeldungen von Kontakten an Sessions dieses Experiments, sortiert \
      nach Session."
