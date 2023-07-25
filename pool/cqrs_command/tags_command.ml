@@ -208,7 +208,7 @@ end = struct
   let effects = Tags.Guard.Access.remove Experiment.Guard.Access.update
 end
 
-module AssignAutoTagToExperiment : sig
+module AssignParticipationTagToExperiment : sig
   include Common.CommandSig with type t = Tags.Id.t
 
   val handle
@@ -224,10 +224,12 @@ end = struct
   type t = Tags.Id.t
 
   let handle ?(tags = Logs.Tag.empty) experiment (tag_uuid : t) =
-    Logs.info ~src (fun m -> m "Handle command AssignAutoTagToExperiment" ~tags);
+    Logs.info ~src (fun m ->
+      m "Handle command AssignParticipationTagToExperiment" ~tags);
     Ok
-      [ Experiment.AutoTagAssigned (experiment, tag_uuid)
-        |> Pool_event.experiment
+      [ Tags.ParticipationTagAssigned
+          (experiment.Experiment.id |> Experiment.Id.to_common, tag_uuid)
+        |> Pool_event.tags
       ]
   ;;
 
@@ -241,7 +243,7 @@ end = struct
   let effects = Experiment.Guard.Access.update
 end
 
-module RemoveAutoTagFromExperiment : sig
+module RemoveParticipationTagFromExperiment : sig
   include Common.CommandSig with type t = Tags.t
 
   val handle
@@ -256,10 +258,11 @@ end = struct
 
   let handle ?(tags = Logs.Tag.empty) experiment tag =
     Logs.info ~src (fun m ->
-      m "Handle command RemoveAutoTagFromExperiment" ~tags);
+      m "Handle command RemoveParticipationTagFromExperiment" ~tags);
     Ok
-      [ Experiment.AutoTagRemoved (experiment, tag.Tags.id)
-        |> Pool_event.experiment
+      [ Tags.ParticipationTagRemoved
+          (experiment.Experiment.id |> Experiment.Id.to_common, tag.Tags.id)
+        |> Pool_event.tags
       ]
   ;;
 

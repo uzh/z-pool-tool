@@ -209,7 +209,10 @@ let detail edit req =
            (id |> Experiment.Id.to_common)
        in
        let%lwt current_participation_tags =
-         Experiment.ParticipationTags.find_all database_label id
+         Tags.(
+           ParticipationTags.find_all
+             database_label
+             (ParticipationTags.Experiment id))
        in
        (match edit with
         | false ->

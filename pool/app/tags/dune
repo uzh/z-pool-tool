@@ -1,6 +1,15 @@
 (library
  (name tags)
- (libraries pool_database guard pool_common ptime service sihl utils)
+ (libraries
+  experiment
+  guard
+  pool_common
+  pool_database
+  ptime
+  service
+  session
+  sihl
+  utils)
  (preprocess
   (pps
    lwt_ppx

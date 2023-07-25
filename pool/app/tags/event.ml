@@ -6,6 +6,8 @@ type event =
   | Updated of t
   | Tagged of Tagged.t
   | Untagged of Tagged.t
+  | ParticipationTagAssigned of Pool_common.Id.t * Id.t
+  | ParticipationTagRemoved of Pool_common.Id.t * Id.t
 [@@deriving eq, show, variants]
 
 let handle_event pool : event -> unit Lwt.t =
@@ -29,4 +31,8 @@ let handle_event pool : event -> unit Lwt.t =
   | Untagged tagged ->
     let%lwt () = Repo.delete_tagged pool tagged in
     Lwt.return_unit
+  | ParticipationTagAssigned (id, tag_id) ->
+    Repo_participation_tags.insert pool (id, tag_id)
+  | ParticipationTagRemoved (id, tag_id) ->
+    Repo_participation_tags.delete pool (id, tag_id)
 ;;

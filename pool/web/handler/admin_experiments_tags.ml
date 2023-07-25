@@ -39,24 +39,25 @@ let handle_tag action req =
            let open Cqrs_command.Tags_command.AssignTagToExperiment in
            handle_assign decode handle
          | `AssignAutoTag ->
-           let open Cqrs_command.Tags_command.AssignAutoTagToExperiment in
+           let open Cqrs_command.Tags_command.AssignParticipationTagToExperiment in
            handle_assign decode handle
          | `Remove ->
            let open Cqrs_command.Tags_command.RemoveTagFromExperiment in
            handle_remove handle
          | `RemoveParticipationTag ->
-           let open Cqrs_command.Tags_command.RemoveAutoTagFromExperiment in
+           let open
+             Cqrs_command.Tags_command.RemoveParticipationTagFromExperiment in
            handle_remove handle
        in
        let handle =
          Lwt_list.iter_s (Pool_event.handle_event ~tags database_label)
        in
-       let return_to_overview () =
+       let return_to_edit () =
          HttpUtils.redirect_to_with_actions
            path
            [ Message.set ~success:[ message ] ]
        in
-       events |> handle >|> return_to_overview |> Lwt_result.ok
+       events |> handle >|> return_to_edit |> Lwt_result.ok
   in
   result |> HttpUtils.extract_happy_path ~src req
 ;;

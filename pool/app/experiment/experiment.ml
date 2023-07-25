@@ -57,8 +57,3 @@ let find_contact_person database_label { contact_person_id; _ } =
   |> CCOption.map_or ~default:Lwt.return_none (fun id ->
     id |> Admin.find database_label ||> CCResult.to_opt)
 ;;
-
-module ParticipationTags = struct
-  let find_all = Repo_participation_tags.find_all
-  let find_available = Repo_participation_tags.find_available
-end

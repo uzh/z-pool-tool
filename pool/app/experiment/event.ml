@@ -17,8 +17,6 @@ type event =
   | Created of t
   | Updated of t
   | Deleted of Common.Id.t
-  | AutoTagAssigned of t * Tags.Id.t
-  | AutoTagRemoved of t * Tags.Id.t
 [@@deriving eq, show, variants]
 
 let handle_event pool : event -> unit Lwt.t =
@@ -43,9 +41,5 @@ let handle_event pool : event -> unit Lwt.t =
     ||> fun (_ : [> `Experiment ] Guard.Target.t) -> ()
   | Updated t -> Repo.update pool t
   | Deleted experiment_id -> Repo.delete pool experiment_id
-  | AutoTagAssigned ({ id; _ }, tag_id) ->
-    Repo_participation_tags.insert pool (id, tag_id)
-  | AutoTagRemoved ({ id; _ }, tag_id) ->
-    Repo_participation_tags.delete pool (id, tag_id)
 [@@deriving eq, show]
 ;;

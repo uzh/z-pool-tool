@@ -188,12 +188,12 @@ let detail req page =
          Assignment.find_uncanceled_by_session database_label session.Session.id
        in
        let%lwt participation_tags =
-         Experiment.ParticipationTags.find_all database_label experiment_id
+         Tags.ParticipationTags.(
+           find_all database_label (Experiment experiment_id))
        in
        let%lwt available_tags =
-         Experiment.ParticipationTags.find_available
-           database_label
-           experiment_id
+         Tags.ParticipationTags.(
+           find_available database_label (Experiment experiment_id))
        in
        Page.Admin.Session.close
          context
@@ -517,7 +517,8 @@ let close_post req =
       Assignment.find_uncanceled_by_session database_label session.Session.id
     in
     let%lwt participation_tags =
-      Experiment.ParticipationTags.find_all database_label experiment_id
+      Tags.ParticipationTags.(
+        find_all database_label (Experiment experiment_id))
     in
     let* events =
       let urlencoded_list field =
