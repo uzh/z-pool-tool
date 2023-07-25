@@ -62,7 +62,9 @@ let validate_admin_entity_base validate =
   let filter handler req =
     match%lwt validate req with
     | Ok _ -> handler req
-    | Error _ ->
+    | Error err ->
+      let open Pool_common in
+      let (_ : Message.error) = Utils.with_log_error ~level:Logs.Info err in
       (match Http_utils.is_req_from_root_host req with
        | false -> "/denied"
        | true -> "/root/denied")

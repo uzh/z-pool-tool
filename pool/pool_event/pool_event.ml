@@ -21,6 +21,7 @@ type t =
   | Session of Session.event
   | Settings of Settings.event
   | SystemEvent of System_event.event
+  | Tags of Tags.event
   | Tenant of Tenant.event
   | TextMessage of Text_message.event
   | UserImport of User_import.event
@@ -47,6 +48,7 @@ let pool_tenant events = PoolTenant events
 let session events = Session events
 let settings events = Settings events
 let system_event events = SystemEvent events
+let tags events = Tags events
 let tenant events = Tenant events
 let text_message events = TextMessage events
 let user_import events = UserImport events
@@ -154,6 +156,10 @@ let handle_event ?(tags = Logs.Tag.empty) pool event =
       m "Handle event %s" (System_event.show_event event) ~tags);
     (* Not passing pool, so the event can be handled with tenant events *)
     System_event.handle_event event
+  | Tags event ->
+    let src = Logs.Src.create "tags.events" in
+    Logs.info ~src (fun m -> m "Handle event %s" (Tags.show_event event) ~tags);
+    Tags.handle_event pool event
   | Tenant event ->
     let src = Logs.Src.create "tenants.events" in
     Logs.info ~src (fun m ->

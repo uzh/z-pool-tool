@@ -1,4 +1,4 @@
 include Entity
-
-let find _ = Utils.todo
-let find_by_group _ = Utils.todo
+include Event
+include Repo
+module Guard = Entity_guard

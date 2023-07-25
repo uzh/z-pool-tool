@@ -19,6 +19,7 @@ type error =
   | AccessDenied
   | AccessDeniedMessage
   | AllLanguagesRequired of Field.t
+  | AlreadyExisting of Field.t
   | AlreadyInPast
   | AlreadyInvitedToExperiment of string list
   | AlreadyPublished of Field.t
@@ -154,6 +155,8 @@ type success =
   | SmtpDetailsUpdated
   | SmtpPasswordUpdated
   | Stopped of Field.t
+  | TagAssigned
+  | TagRemoved
   | TenantUpdateDatabase
   | TenantUpdateDetails
   | Updated of Field.t
@@ -209,6 +212,7 @@ type control =
   | Publish of Field.t option
   | Register
   | RemoveFromWaitingList
+  | Remove of Field.t option
   | Reschedule of Field.t option
   | Resend of Field.t option
   | Reset

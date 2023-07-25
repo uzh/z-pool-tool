@@ -136,6 +136,7 @@ let nav_link_to_string = function
   | Settings -> "Settings"
   | Smtp -> "Email Server"
   | SystemSettings -> "System settings"
+  | Tags -> "Tags"
   | Tenants -> "Tenants"
   | Users -> "Users"
   | WaitingList -> "Waiting list"
@@ -319,14 +320,17 @@ If a contact showed up but did not participate in the experiment, do not select 
   | SignUpForWaitingList ->
     "The recruitment team will contact you, to assign you to a session, if \
      there is a free place."
+  | SmtpSettingsDefaultFlag ->
+    "Attention: If another SMTP configuration is marked as default, it will be \
+     overwritten. Only one configuration can be marked as default."
   | SmtpSettingsIntro ->
     {|The following configuration is used by the email service.
 
     Note: When using the mechanism "LOGIN" a username and password are required.
     |}
-  | SmtpSettingsDefaultFlag ->
-    "Attention: If another SMTP configuration is marked as default, it will be \
-     overwritten. Only one configuration can be marked as default."
+  | TagsIntro ->
+    "The defined tags can be added to several types (e.g. contacts). The tags \
+     can be used by the experiment filter to eighter include or exclude them."
   | TemplateTextElementsHint ->
     "The following text elements can be used inside the templates:"
   | TimeSpanPickerHint ->
@@ -366,6 +370,7 @@ let confirmable_to_string confirmable =
      )
    | PublisCustomFieldOption ->
      "option", "publish", Some "You will not be able to delete the it anymore."
+   | RemoveTag -> "tag", "remove", None
    | RemoveRule -> "rule", "delete", None
    | RevokeRole -> "role", "revoke", None
    | StopMailing -> "mailing", "stop", None)

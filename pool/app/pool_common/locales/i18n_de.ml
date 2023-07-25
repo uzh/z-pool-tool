@@ -138,6 +138,7 @@ let nav_link_to_string = function
   | Settings -> "Einstellungen"
   | Smtp -> "E-Mail Server"
   | SystemSettings -> "Systemeinstellungen"
+  | Tags -> "Tags"
   | Tenants -> "Tenants"
   | Users -> "Benutzer"
   | WaitingList -> "Warteliste"
@@ -333,15 +334,19 @@ Wenn ein Kontakt zwar erschienen ist, aber nicht an dem Experiment teilgenommen 
   | SignUpForWaitingList ->
     "Das Rekrutierungsteam wird sich mit Ihnen in Verbindung setzen, um Ihnen \
      einen Termin zuzuweisen, wenn ein freier Platz vorhanden ist."
+  | SmtpSettingsDefaultFlag ->
+    "Achtung: Ist eine andere SMTP Konfiguration als Standard markiert, wird \
+     diese Einstellung angepasst. Nur eine Konfiguration kann als Standard \
+     markiert sein."
   | SmtpSettingsIntro ->
     {|Die folgende Konfiguration wird vom E-Mail Service verwendet.
 
     Beachte: Bei Verwendung des Mechanismus für "LOGIN" muss ein Benutzername und Passwort angegeben werden.
     |}
-  | SmtpSettingsDefaultFlag ->
-    "Achtung: Ist eine andere SMTP Konfiguration als Standard markiert, wird \
-     diese Einstellung angepasst. Nur eine Konfiguration kann als Standard \
-     markiert sein."
+  | TagsIntro ->
+    "Die definierten Tags können an die verschiedenen Objekte (z.B. Kontakte) \
+     angehängt werden. Diese Tags können im Experiment-Filter verwendet werden \
+     um sie ein- oder auszuschliessen."
   | TemplateTextElementsHint ->
     "Die folgenden Textbausteine können in den Templates verwendet werden:"
   | TimeSpanPickerHint ->
@@ -383,6 +388,7 @@ let confirmable_to_string confirmable =
      , "publizieren"
      , Some "Sie werden die Option nicht mehr löschen können." )
    | RemoveRule -> "die Regel", "löschen", None
+   | RemoveTag -> "den Tag", "entfernen", None
    | RevokeRole -> "die Rolle", "entfernen", None
    | StopMailing -> "den Versand", "stoppen", None)
   |> fun (obj, action, additive) ->

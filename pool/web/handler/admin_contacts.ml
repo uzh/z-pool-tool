@@ -28,17 +28,36 @@ let detail_view action req =
   let open Utils.Lwt_result.Infix in
   let result ({ Pool_context.database_label; user; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, "/admin/contacts")
-    @@ let* contact =
+    @@ let* actor = Pool_context.Utils.find_authorizable database_label user in
+       let* contact =
          HttpUtils.get_field_router_param req Field.Contact
          |> Pool_common.Id.of_string
          |> Contact.find database_label
        in
+       let%lwt contact_tags =
+         Tags.(find_all_of_entity database_label Model.Contact)
+           (Contact.id contact)
+       in
        match action with
        | `Show ->
-         Page.Admin.Contact.detail context contact
+         Page.Admin.Contact.detail context contact contact_tags
          |> create_layout req context
          >|+ Sihl.Web.Response.of_html
        | `Edit ->
+         let%lwt allowed_to_assign =
+           Guard.Persistence.validate
+             database_label
+             (Contact.id contact
+              |> Cqrs_command.Tags_command.AssignTagToContact.effects)
+             actor
+           ||> CCResult.is_ok
+         in
+         let%lwt all_tags =
+           let open Tags in
+           if allowed_to_assign
+           then find_all_validated_with_model database_label Model.Contact actor
+           else Lwt.return []
+         in
          let tenant_languages =
            Pool_context.Tenant.get_tenant_languages_exn req
          in
@@ -48,7 +67,14 @@ let detail_view action req =
              user
              (Contact.id contact)
          in
-         Page.Admin.Contact.edit context tenant_languages contact custom_fields
+         Page.Admin.Contact.edit
+           ~allowed_to_assign
+           context
+           tenant_languages
+           contact
+           custom_fields
+           contact_tags
+           all_tags
          |> create_layout req context
          >|+ Sihl.Web.Response.of_html
   in
@@ -125,6 +151,8 @@ let delete_answer req =
   in
   result |> HttpUtils.Htmx.extract_happy_path ~src req
 ;;
+
+module Tags = Admin_contacts_tags
 
 module Access : sig
   include module type of Helpers.Access

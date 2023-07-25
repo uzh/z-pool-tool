@@ -212,6 +212,7 @@ module Target = struct
     | `SystemSetting
     | `Smtp
     | `System
+    | `Tag
     | `Tenant
     | `WaitingList
     ]
@@ -251,6 +252,7 @@ module Target = struct
     | "systemsetting", [] -> `SystemSetting
     | "smtp", [] -> `Smtp
     | "system", [] -> `System
+    | "tag", [] -> `Tag
     | "tenant", [] -> `Tenant
     | "waitinglist", [] -> `WaitingList
     | role -> Guardian.Utils.failwith_invalid_role role
@@ -277,6 +279,7 @@ module Target = struct
     ; `SystemSetting
     ; `Smtp
     ; `System
+    ; `Tag
     ; `Tenant
     ; `WaitingList
     ]

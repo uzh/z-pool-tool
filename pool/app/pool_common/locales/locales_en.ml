@@ -195,6 +195,7 @@ let rec field_to_string =
   | Successful -> "successful"
   | SystemEvent -> "system event"
   | Tag -> "tag"
+  | Tagging -> "tagging"
   | Target -> "target"
   | TargetSpec -> "target"
   | Template -> "template"
@@ -273,6 +274,8 @@ let success_to_string : success -> string = function
   | SmtpPasswordUpdated -> "SMTP password successfully updated."
   | Stopped field ->
     field_message "" (field_to_string field) "was successfully stopped."
+  | TagAssigned -> "The tag was successfully assigned."
+  | TagRemoved -> "The tag is removed."
   | TenantUpdateDatabase -> "Database information was successfully updated."
   | TenantUpdateDetails -> "Tenant was successfully updated."
   | Updated field ->
@@ -296,8 +299,13 @@ let rec error_to_string = function
   | AllLanguagesRequired field ->
     field_message
       "Please provide '"
-      (field |> field_to_string)
+      (field |> field_to_string |> CCString.trim)
       "' in all languages."
+  | AlreadyExisting field ->
+    field_message
+      "The field data for the '"
+      (field |> field_to_string |> CCString.trim)
+      "' already exists."
   | AlreadyInPast -> "In minimum the starting point is in the past."
   | AlreadySignedUpForExperiment ->
     "You are already signed up for this experiment."
@@ -509,6 +517,7 @@ let control_to_string = function
   | Publish field -> format_submit "publish" field
   | Register -> format_submit "register" None
   | RemoveFromWaitingList -> "Remove from waiting list"
+  | Remove field -> format_submit "remove" field
   | Reschedule field -> format_submit "reschedule" field
   | Resend field -> format_submit "resend" field
   | Reset -> "reset"

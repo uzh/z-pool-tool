@@ -5,6 +5,7 @@ module Queue = Page_admin_settings_queue
 module Rules = Page_admin_settings_rules
 module Schedule = Page_admin_settings_schedule
 module Smtp = Page_admin_settings_smtp
+module Tags = Page_admin_settings_tags
 
 let show
   tenant_languages

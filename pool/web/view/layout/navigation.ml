@@ -43,7 +43,10 @@ module NavElements = struct
     ;;
   end
 
-  let guest = [ NavElement.login () ] |> NavUtils.with_language_switch
+  let guest ?(root = false) =
+    let prefix = if root then Some "root" else None in
+    [ NavElement.login ?prefix () ] |> NavUtils.with_language_switch
+  ;;
 
   let contact =
     let open I18n in
@@ -67,6 +70,7 @@ module NavElements = struct
       ; "/admin/settings/schedules", Schedules, Schedule.Guard.Access.index
       ; "/admin/settings/smtp", Smtp, Email.Guard.Access.Smtp.index
       ; "/admin/settings/rules", Rules, Guard.Access.manage_rules
+      ; "/admin/settings/tags", Tags, Tags.Guard.Access.index
       ; ( "/admin/message-template"
         , MessageTemplates
         , Message_template.Guard.Access.index )
@@ -151,7 +155,7 @@ module NavElements = struct
   ;;
 
   let find_root_nav_links languages = function
-    | Pool_context.Guest | Pool_context.Contact _ -> guest languages
+    | Pool_context.Guest | Pool_context.Contact _ -> guest ~root:true languages
     | Pool_context.Admin _ -> root
   ;;
 end

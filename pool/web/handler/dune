@@ -6,6 +6,7 @@
   component
   cqrs_command
   email
+  guard
   htmx
   http_utils
   layout
@@ -18,6 +19,7 @@
   schedule
   service
   sihl
+  tags
   user_import
   waiting_list)
  (preprocess

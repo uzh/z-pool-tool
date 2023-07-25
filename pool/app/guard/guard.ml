@@ -34,6 +34,7 @@ let root_permissions : Rule.t list =
   ; Act.Entity `RecruiterAll, Manage, Tar.Entity `Invitation
   ; Act.Entity `RecruiterAll, Manage, Tar.Entity `Mailing
   ; Act.Entity `RecruiterAll, Manage, Tar.Entity `Session
+  ; Act.Entity `RecruiterAll, Manage, Tar.Entity `Tag
   ]
   |> fun (init : Rule.t list) ->
   CCList.fold_product

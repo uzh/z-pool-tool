@@ -448,6 +448,23 @@ module Admin = struct
             (label_specific new_session_reminder new_session_reminder_post)
         ]
       in
+      let tags =
+        let open Handler.Admin.Settings.Tags in
+        let open Handler.Admin.Experiments.Tags in
+        let specific =
+          [ post
+              "/remove"
+              ~middlewares:[ Access.remove_tag_from_experiment ]
+              remove_tag
+          ]
+        in
+        [ post
+            "/assign"
+            ~middlewares:[ Access.assign_tag_to_experiment ]
+            assign_tag
+        ; choose ~scope:(Tag |> url_key) specific
+        ]
+      in
       let specific =
         Experiments.
           [ get "" ~middlewares:[ Access.read ] show
@@ -466,6 +483,7 @@ module Admin = struct
           ; choose ~scope:"/assignments" assignments
           ; choose ~scope:"/mailings" mailings
           ; choose ~scope:"/filter" filter
+          ; choose ~scope:(Tag |> human_url) tags
           ; choose ~scope:(add_human_field MessageTemplate) message_templates
           ]
       in
@@ -509,12 +527,29 @@ module Admin = struct
         let field_specific =
           [ post "/delete" ~middlewares:[ Access.delete_answer ] delete_answer ]
         in
+        let tags =
+          let open Handler.Admin.Settings.Tags in
+          let specific =
+            [ post
+                "/remove"
+                ~middlewares:[ Access.remove_tag_from_contact ]
+                Tags.remove_tag
+            ]
+          in
+          [ post
+              "/assign"
+              ~middlewares:[ Access.assign_tag_to_contact ]
+              Tags.assign_tag
+          ; choose ~scope:(Tag |> url_key) specific
+          ]
+        in
         [ get "" ~middlewares:[ Access.read ] detail
         ; post "" ~middlewares:[ Access.update ] update
         ; get "/edit" ~middlewares:[ Access.update ] edit
         ; choose
             ~scope:(Format.asprintf "field/%s" (CustomField |> url_key))
             field_specific
+        ; choose ~scope:(Tag |> human_url) tags
         ]
       in
       [ get "" ~middlewares:[ Access.index ] index
@@ -629,11 +664,25 @@ module Admin = struct
         ; choose ~scope:(Smtp |> url_key) specific
         ]
       in
+      let tags =
+        let open Tags in
+        let specific =
+          [ get "" ~middlewares:[ Access.update ] edit
+          ; post "" ~middlewares:[ Access.update ] update
+          ]
+        in
+        [ get "" ~middlewares:[ Access.index ] show
+        ; get "/create" ~middlewares:[ Access.create ] new_form
+        ; post "" ~middlewares:[ Access.create ] create
+        ; choose ~scope:(Tag |> url_key) specific
+        ]
+      in
       [ get "" ~middlewares:[ Access.index ] show
-      ; post "/:action" ~middlewares:[ Access.update ] update_settings
       ; choose ~scope:"/queue" queue
       ; choose ~scope:"/rules" rules
       ; choose ~scope:"/smtp" smtp
+      ; choose ~scope:"/tags" tags
+      ; post "/:action" ~middlewares:[ Access.update ] update_settings
       ; get "/schedules" ~middlewares:[ Schedule.Access.index ] Schedule.show
       ]
     in
