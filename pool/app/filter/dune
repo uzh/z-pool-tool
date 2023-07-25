@@ -6,6 +6,7 @@
   pool_database
   pool_common
   pool_tenant
+  tags
   utils
   ppx_deriving_yojson.runtime
   guard)

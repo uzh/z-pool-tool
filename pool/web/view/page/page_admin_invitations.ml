@@ -66,6 +66,7 @@ module Partials = struct
     key_list
     template_list
     query_experiments
+    query_tags
     filtered_contacts
     =
     let filtered_contacts_form =
@@ -135,7 +136,8 @@ module Partials = struct
             (Http_utils.Filter.Experiment experiment)
             key_list
             template_list
-            query_experiments)
+            query_experiments
+            query_tags)
       ; div ~a:[ a_class [ "gap-lg" ] ] [ filtered_contacts_form ]
       ]
   ;;

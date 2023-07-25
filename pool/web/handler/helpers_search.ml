@@ -12,6 +12,8 @@ let create search_type ?path req =
       Field.Title, CCOption.value ~default:"/admin/experiments/search" path
     | `Location ->
       Field.Name, CCOption.value ~default:"/admin/locations/search" path
+    | `ContactTag ->
+      Field.Title, CCOption.value ~default:"/admin/settings/tags/search" path
   in
   let result { Pool_context.database_label; user; _ } =
     let open CCList in
@@ -93,6 +95,31 @@ let create search_type ?path req =
          input_element ?value:query ~results path
          |> HttpUtils.Htmx.html_to_plain_text_response
          |> Lwt_result.return)
+    | `ContactTag ->
+      let open Component.Search.Tag in
+      let open Tags.Guard.Access in
+      let exclude = exclude >|= Tags.Id.of_string in
+      let exclude_roles_of =
+        exclude_roles_of >|= Guard.Uuid.Target.to_string %> Tags.Id.of_string
+      in
+      let search_tags exclude value actor =
+        Tags.search_by_title
+          database_label
+          ~model:Tags.Model.Contact
+          ~exclude
+          value
+        >|> Lwt_list.filter_s (fun ((id, _) as tag) ->
+          Logs.warn (fun m -> m "%s" ([%show: Tags.Id.t * Tags.Title.t] tag));
+          validate database_label (read id) actor ||> CCResult.is_ok)
+      in
+      (match query, actor with
+       | None, _ | Some _, None -> Lwt.return []
+       | Some value, Some actor ->
+         search_tags (exclude @ exclude_roles_of) value actor)
+      ||> fun results ->
+      input_element ?value:query ~results path
+      |> HttpUtils.Htmx.html_to_plain_text_response
+      |> CCResult.return
   in
   result |> HttpUtils.Htmx.handle_error_message ~src req
 ;;

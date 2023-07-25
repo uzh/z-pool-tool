@@ -102,6 +102,7 @@ let write action req =
 
 let create = write `Create
 let update req = write (`Update (id req)) req
+let search = Helpers.Search.create `ContactTag
 
 module Access : sig
   include module type of Helpers.Access
@@ -110,6 +111,7 @@ module Access : sig
   val remove_tag_from_contact : Rock.Middleware.t
   val assign_tag_to_experiment : Rock.Middleware.t
   val remove_tag_from_experiment : Rock.Middleware.t
+  val search : Rock.Middleware.t
 end = struct
   include Helpers.Access
   module Guardian = Middleware.Guardian
@@ -153,4 +155,6 @@ end = struct
     |> experiment_effects
     |> Guardian.validate_generic
   ;;
+
+  let search = Tags.Guard.Access.read_entity |> Guardian.validate_admin_entity
 end

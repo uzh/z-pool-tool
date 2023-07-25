@@ -148,3 +148,27 @@ module Location = struct
   let input_element = input_element item placeholder Field.Name
   let create = create item placeholder Field.Name I18n.Locations
 end
+
+module Tag = struct
+  let item (id, title) =
+    let open Tags in
+    div
+      ~a:[ a_user_data "id" (Id.value id); a_class [ "has-icon"; "inset-xs" ] ]
+      [ Component_icon.(to_html ~classnames:[ "toggle-item" ] CloseCircle)
+      ; span [ txt (Title.value title) ]
+      ; input
+          ~a:
+            [ a_input_type `Checkbox
+            ; a_class [ "hidden" ]
+            ; a_name Field.(array_key Value)
+            ; a_value (Id.value id)
+            ; a_checked ()
+            ]
+          ()
+      ]
+  ;;
+
+  let placeholder = "Search by tag title"
+  let input_element = input_element item placeholder Field.Title
+  let create = create item placeholder Field.Title I18n.Tags
+end

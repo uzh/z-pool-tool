@@ -674,6 +674,7 @@ module Admin = struct
         [ get "" ~middlewares:[ Access.index ] show
         ; get "/create" ~middlewares:[ Access.create ] new_form
         ; post "" ~middlewares:[ Access.create ] create
+        ; post "/search" ~middlewares:[ Access.search ] search
         ; choose ~scope:(Tag |> url_key) specific
         ]
       in

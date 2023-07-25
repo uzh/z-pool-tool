@@ -1,5 +1,8 @@
 module Id : sig
   include Pool_common.Model.IdSig
+
+  val to_common : t -> Pool_common.Id.t
+  val of_common : Pool_common.Id.t -> t
 end
 
 module Model : sig
@@ -76,6 +79,18 @@ val find
   -> Id.t
   -> (t, Pool_common.Message.error) result Lwt.t
 
+val find_multiple
+  :  Pool_database.Label.t
+  -> Id.t list
+  -> (Id.t * Title.t) list Lwt.t
+
+val search_by_title
+  :  Pool_database.Label.t
+  -> ?model:Model.t
+  -> ?exclude:Id.t list
+  -> string
+  -> (Id.t * Title.t) list Lwt.t
+
 val find_all : Pool_database.Label.t -> t list Lwt.t
 val find_all_with_model : Pool_database.Label.t -> Model.t -> t list Lwt.t
 
@@ -138,6 +153,7 @@ module Guard : sig
   module Access : sig
     val index : Guard.ValidationSet.t
     val create : Guard.ValidationSet.t
+    val read_entity : Guard.ValidationSet.t
     val read : Id.t -> Guard.ValidationSet.t
     val update : Id.t -> Guard.ValidationSet.t
     val delete : Id.t -> Guard.ValidationSet.t

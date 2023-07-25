@@ -1,3 +1,4 @@
+open CCFun.Infix
 open Utils.Lwt_result.Infix
 open Entity
 module Label = Pool_database.Label
@@ -81,6 +82,85 @@ module Sql = struct
   let find pool id =
     Utils.Database.find_opt (Label.value pool) find_request id
     ||> CCOption.to_result Pool_common.Message.(NotFound Field.Tag)
+  ;;
+
+  let find_multiple_request ids =
+    Format.asprintf
+      {sql|%s WHERE pool_tags.uuid IN (%s)|sql}
+      select_tag_sql
+      (CCList.map (fun _ -> Format.asprintf "UNHEX(REPLACE(?, '-', ''))") ids
+       |> CCString.concat ",")
+  ;;
+
+  let find_multiple pool ids =
+    let open Caqti_request.Infix in
+    match ids with
+    | [] -> Lwt.return []
+    | ids ->
+      let (Dynparam.Pack (pt, pv)) =
+        CCList.fold_left
+          (fun dyn id -> dyn |> Dynparam.add Caqti_type.string (id |> Id.value))
+          Dynparam.empty
+          ids
+      in
+      let request =
+        find_multiple_request ids
+        |> pt ->* Caqti_type.(tup2 Entity.Id.t Entity.Title.t)
+      in
+      Utils.Database.collect (pool |> Pool_database.Label.value) request pv
+  ;;
+
+  let search_by_title_request ?model =
+    let base =
+      CCOption.map_or
+        ~default:""
+        (Model.show %> Format.asprintf "AND pool_tags.model = '%s'")
+        model
+      |> Format.asprintf
+           {sql|
+              SELECT
+                LOWER(CONCAT(
+                  SUBSTR(HEX(pool_tags.uuid), 1, 8), '-',
+                  SUBSTR(HEX(pool_tags.uuid), 9, 4), '-',
+                  SUBSTR(HEX(pool_tags.uuid), 13, 4), '-',
+                  SUBSTR(HEX(pool_tags.uuid), 17, 4), '-',
+                  SUBSTR(HEX(pool_tags.uuid), 21)
+                )),
+                pool_tags.title
+              FROM pool_tags
+              WHERE pool_tags.title LIKE $1
+              %s
+           |sql}
+    in
+    function
+    | [] -> base
+    | ids ->
+      CCList.mapi
+        (fun i _ -> Format.asprintf "UNHEX(REPLACE($%i, '-', ''))" (i + 2))
+        ids
+      |> CCString.concat ","
+      |> Format.asprintf
+           {sql|
+            %s
+            AND pool_tags.uuid NOT IN (%s)
+           |sql}
+           base
+  ;;
+
+  let search_by_title pool ?model ?(exclude = []) query =
+    let open Caqti_type in
+    let open Dynparam in
+    let (Pack (pt, pv)) =
+      CCList.fold_left
+        (fun dyn id -> dyn |> add string (id |> Entity.Id.value))
+        (empty |> add string ("%" ^ query ^ "%"))
+        exclude
+    in
+    let request =
+      search_by_title_request ?model exclude
+      |> pt ->* Entity.(tup2 Id.t Title.t)
+    in
+    Utils.Database.collect (Label.value pool) request pv
   ;;
 
   let find_all_request =
@@ -339,6 +419,8 @@ module Sql = struct
 end
 
 let find = Sql.find
+let find_multiple = Sql.find_multiple
+let search_by_title = Sql.search_by_title
 let find_all = Sql.find_all
 let find_all_with_model = Sql.find_all_with_model
 let find_all_validated = Sql.find_all_validated

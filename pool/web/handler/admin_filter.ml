@@ -1,3 +1,4 @@
+open CCFun
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 module Field = Pool_common.Message.Field
@@ -66,16 +67,25 @@ let form is_edit req =
            >|+ CCOption.pure
          else Lwt.return_none |> Lwt_result.ok
        in
-       let%lwt query_experiments =
+       let%lwt query_experiments, query_tags =
          match filter with
-         | None -> Lwt.return []
+         | None -> Lwt.return ([], [])
          | Some filter ->
-           filter
-           |> Filter.all_query_experiments
-           |> Experiment.search_multiple_by_id database_label
+           Lwt.both
+             (filter
+              |> Filter.all_query_experiments
+              |> Experiment.search_multiple_by_id database_label)
+             (filter
+              |> Filter.all_query_tags
+              |> Tags.find_multiple database_label)
        in
        let%lwt key_list = Filter.all_keys database_label in
-       Page.Admin.Filter.edit context filter key_list query_experiments
+       Page.Admin.Filter.edit
+         context
+         filter
+         key_list
+         query_experiments
+         query_tags
        |> create_layout req context
        >|+ Sihl.Web.Response.of_html
   in
@@ -102,17 +112,14 @@ let write action req =
     in
     let events =
       let lift = Lwt_result.lift in
-      let open CCFun.Infix in
       match action with
       | Experiment exp ->
         let open Cqrs_command.Experiment_command in
         (match exp.Experiment.filter with
          | None ->
-           CreateFilter.handle ~tags exp key_list template_list query
-           |> Lwt_result.lift
+           CreateFilter.handle ~tags exp key_list template_list query |> lift
          | Some filter ->
-           UpdateFilter.handle ~tags key_list template_list filter query
-           |> Lwt_result.lift)
+           UpdateFilter.handle ~tags key_list template_list filter query |> lift)
       | Template filter ->
         let open Cqrs_command.Filter_command in
         let* decoded = urlencoded |> default_decode |> lift in
@@ -181,10 +188,14 @@ let handle_toggle_predicate_type action req =
          Filter.toggle_predicate_type current predicate_type
     in
     let* identifier = find_identifier urlencoded |> Lwt_result.lift in
-    let%lwt quey_experiments =
-      query
-      |> Filter.Human.all_query_experiments
-      |> Experiment.search_multiple_by_id database_label
+    let%lwt quey_experiments, query_tags =
+      Lwt.both
+        (query
+         |> Filter.Human.all_query_experiments
+         |> Experiment.search_multiple_by_id database_label)
+        (query
+         |> Filter.Human.all_query_tags
+         |> Tags.find_multiple database_label)
     in
     Component.Filter.(
       predicate_form
@@ -194,6 +205,7 @@ let handle_toggle_predicate_type action req =
         template_list
         templates_disabled
         quey_experiments
+        query_tags
         (Some query)
         ~identifier
         ())
@@ -212,7 +224,7 @@ let handle_toggle_key _ req =
       |> Lwt_result.lift
       >>= Filter.key_of_string database_label
     in
-    Component.Filter.predicate_value_form language [] ~key ()
+    Component.Filter.predicate_value_form language [] [] ~key ()
     |> HttpUtils.Htmx.html_to_plain_text_response
     |> Lwt.return_ok
   in
@@ -243,6 +255,7 @@ let handle_add_predicate action req =
         key_list
         template_list
         templates_disabled
+        []
         []
         query
         ~identifier
@@ -304,7 +317,7 @@ module Update = struct
     let id = template_id req in
     req
     |> database_label_from_req
-    >>= CCFun.flip Filter.find id
+    >>= flip Filter.find id
     |>> (fun e -> fnc (Template (Some e)) req)
     >|> function
     | Ok res -> Lwt.return res

@@ -18,13 +18,17 @@ let index req =
     @@ let* experiment = Experiment.find database_label id in
        let%lwt key_list = Filter.all_keys database_label in
        let%lwt template_list = Filter.find_all_templates database_label () in
-       let%lwt query_experiments =
+       let%lwt query_experiments, query_tags =
          match experiment.Experiment.filter with
-         | None -> Lwt.return []
+         | None -> Lwt.return ([], [])
          | Some filter ->
-           filter
-           |> Filter.all_query_experiments
-           |> Experiment.search_multiple_by_id database_label
+           Lwt.both
+             (filter
+              |> Filter.all_query_experiments
+              |> Experiment.search_multiple_by_id database_label)
+             (filter
+              |> Filter.all_query_tags
+              |> Tags.find_multiple database_label)
        in
        let* filtered_contacts =
          if Sihl.Configuration.is_production ()
@@ -42,6 +46,7 @@ let index req =
          key_list
          template_list
          query_experiments
+         query_tags
          filtered_contacts
          context
        >|> create_layout req context

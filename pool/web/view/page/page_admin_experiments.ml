@@ -658,6 +658,7 @@ let invitations
   key_list
   template_list
   query_experiments
+  query_tags
   filtered_contacts
   ({ Pool_context.language; _ } as context)
   =
@@ -680,6 +681,7 @@ let invitations
           key_list
           template_list
           query_experiments
+          query_tags
           filtered_contacts
       ]
   ]
