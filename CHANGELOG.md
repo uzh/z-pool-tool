@@ -15,6 +15,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 - tags for experiments and contacts (admin sites)
 - colorize calendar
 - email plain text hint
+- tag predicate for filters, allows to filter contact tags
 
 ### Changed
 

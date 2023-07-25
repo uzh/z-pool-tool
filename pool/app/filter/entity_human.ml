@@ -81,22 +81,29 @@ let rec of_yojson (key_list : Entity.Key.human list) json
   | _ -> Error error
 ;;
 
-let[@warning "-4"] all_query_experiments (query : t) =
+let all_in_query_fcn fcn (query : t) =
   let open Entity.Predicate in
   let rec find = function
     | And queries | Or queries -> CCList.flat_map find queries
     | Not p -> find p
-    | Pred { key; value; _ } ->
-      let open Entity.Key in
-      (match key, value with
-       | Some (Hardcoded Participation), Some (Entity.Lst lst) ->
-         lst
-         |> CCList.filter_map (fun (value : Entity.single_val) ->
-           match value with
-           | Entity.Str id -> Some (Pool_common.Id.of_string id)
-           | _ -> None)
-       | _, _ -> [])
+    | Pred { key; value; _ } -> fcn (key, value)
     | Template _ -> []
   in
   query |> find
+;;
+
+let[@warning "-4"] all_query_experiments =
+  let open Entity.Key in
+  all_in_query_fcn (function
+    | Some (Hardcoded Participation), Some (Entity.Lst lst) ->
+      lst |> Filter_utils.single_val_to_id
+    | _, _ -> [])
+;;
+
+let[@warning "-4"] all_query_tags =
+  let open Entity.Key in
+  all_in_query_fcn (function
+    | Some (Hardcoded Tag), Some (Entity.Lst lst) ->
+      lst |> Filter_utils.single_val_to_id |> CCList.map Tags.Id.of_common
+    | _, _ -> [])
 ;;

@@ -1,3 +1,4 @@
+open CCFun.Infix
 module Dynparam = Utils.Database.Dynparam
 module Message = Pool_common.Message
 module Field = Message.Field
@@ -143,26 +144,45 @@ let add_existence_condition (key : Key.t) operator dyn =
     Ok (dyn, sql)
 ;;
 
+let add_uuid_param dyn ids =
+  let open CCResult in
+  CCList.fold_left
+    (fun query id ->
+      query
+      >>= fun (dyn, params) ->
+      match id with
+      | Bool _ | Date _ | Language _ | Nr _ | Option _ ->
+        Error Message.(QueryNotCompatible (Field.Value, Field.Key))
+      | Str id ->
+        add_value_to_params Operator.(Equality.Equal |> equality) (Str id) dyn
+        >|= fun dyn -> dyn, "UNHEX(REPLACE(?, '-', ''))" :: params)
+    (Ok (dyn, []))
+    ids
+  >|= fun (dyn, ids) -> dyn, CCString.concat "," ids
+;;
+
+let add_list_condition subquery dyn ids =
+  let open Operator in
+  function
+  | List o ->
+    let open ListM in
+    (match o with
+     | ContainsAll ->
+       Dynparam.add Caqti_type.int (CCList.length ids) dyn, " = ? "
+     | ContainsNone -> dyn, " = 0 "
+     | ContainsSome -> dyn, " > 0 ")
+    |> fun (dyn, condition) ->
+    (dyn, Format.asprintf "(%s) %s" subquery condition) |> CCResult.return
+  | Equality _ | String _ | Size _ | Existence _ ->
+    Error Message.(Invalid Field.Operator)
+;;
+
 (* The subquery does not return any contacts that have shown up at a session of
    the current experiment. It does not make a difference, if they
    participated. *)
 let participation_subquery dyn operator ids =
   let open CCResult in
-  let* dyn, query_params =
-    CCList.fold_left
-      (fun query id ->
-        query
-        >>= fun (dyn, params) ->
-        match id with
-        | Bool _ | Date _ | Language _ | Nr _ | Option _ ->
-          Error Message.(QueryNotCompatible (Field.Value, Field.Key))
-        | Str id ->
-          add_value_to_params Operator.(Equality.Equal |> equality) (Str id) dyn
-          >|= fun dyn -> dyn, "UNHEX(REPLACE(?, '-', ''))" :: params)
-      (Ok (dyn, []))
-      ids
-    >|= fun (dyn, ids) -> dyn, CCString.concat "," ids
-  in
+  let* dyn, query_params = add_uuid_param dyn ids in
   let subquery =
     Format.asprintf
       {sql|
@@ -182,22 +202,25 @@ let participation_subquery dyn operator ids =
       |sql}
       query_params
   in
-  let* condition, dyn =
-    let format comparison = Format.asprintf "(%s) %s" subquery comparison in
-    let open Operator in
-    match operator with
-    | List o ->
-      let open ListM in
-      (match o with
-       | ContainsAll ->
-         format " = ? ", Dynparam.add Caqti_type.int (CCList.length ids) dyn
-       | ContainsNone -> format " = 0 ", dyn
-       | ContainsSome -> format " > 0 ", dyn)
-      |> CCResult.return
-    | Equality _ | String _ | Size _ | Existence _ ->
-      Error Message.(Invalid Field.Operator)
+  add_list_condition subquery dyn ids operator
+;;
+
+let tag_subquery dyn operator ids =
+  let open CCResult in
+  let* dyn, query_params = add_uuid_param dyn ids in
+  let subquery =
+    Format.asprintf
+      {sql|
+        SELECT COUNT(DISTINCT pool_tags.uuid)
+        FROM
+          pool_tagging
+          INNER JOIN pool_tags ON pool_tagging.tag_uuid = pool_tags.uuid
+        WHERE pool_tagging.model_uuid = pool_contacts.user_uuid
+          AND pool_tags.uuid IN (%s)
+        |sql}
+      query_params
   in
-  (dyn, Format.asprintf "(%s)" condition) |> CCResult.return
+  add_list_condition subquery dyn ids operator
 ;;
 
 let predicate_to_sql
@@ -226,6 +249,7 @@ let predicate_to_sql
      | Hardcoded hardcoded ->
        (match hardcoded with
         | Participation -> participation_subquery dyn operator values
+        | Tag -> tag_subquery dyn operator values
         | ContactLanguage
         | Firstname
         | Name

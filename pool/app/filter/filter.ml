@@ -88,21 +88,28 @@ let toggle_predicate_type (filter : Human.t) predicate_type =
   | _ -> Error Pool_common.Message.(Invalid Field.Filter)
 ;;
 
-let[@warning "-4"] all_query_experiments { query; _ } =
+let all_in_query_fcn fcn { query; _ } =
   let rec find = function
     | And queries | Or queries -> CCList.flat_map find queries
     | Not p -> find p
-    | Pred { Predicate.key; value; _ } ->
-      let open Key in
-      (match key, value with
-       | Hardcoded Participation, Lst lst ->
-         lst
-         |> CCList.filter_map (fun (value : single_val) ->
-           match value with
-           | Str id -> Some (Pool_common.Id.of_string id)
-           | _ -> None)
-       | _, _ -> [])
+    | Pred { Predicate.key; value; _ } -> fcn (key, value)
     | Template _ -> []
   in
   query |> find
+;;
+
+let[@warning "-4"] all_query_experiments =
+  let open Entity.Key in
+  all_in_query_fcn (function
+    | Hardcoded Participation, Entity.Lst lst ->
+      lst |> Filter_utils.single_val_to_id
+    | _, _ -> [])
+;;
+
+let[@warning "-4"] all_query_tags =
+  let open Entity.Key in
+  all_in_query_fcn (function
+    | Hardcoded Tag, Entity.Lst lst ->
+      lst |> Filter_utils.single_val_to_id |> CCList.map Tags.Id.of_common
+    | _, _ -> [])
 ;;

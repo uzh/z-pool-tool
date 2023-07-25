@@ -54,6 +54,7 @@ let operators_select language ?operators ?selected () =
 let value_input
   language
   query_experiments
+  query_tags
   input_type
   ?(disabled = false)
   ?value
@@ -183,10 +184,9 @@ let value_input
              | NoValue | Single _ -> []
              | Lst lst ->
                CCList.filter_map
-                 (fun value ->
-                   match[@warning "-4"] value with
-                   | Option id -> find_in_options options id
-                   | _ -> None)
+                 (function[@warning "-4"]
+                  | Option id -> find_in_options options id
+                  | _ -> None)
                  lst)
            value
        in
@@ -213,24 +213,52 @@ let value_input
            | NoValue | Single _ -> []
            | Lst lst ->
              CCList.filter_map
-               (fun value ->
-                 match[@warning "-4"] value with
-                 | Str id ->
-                   let experiment_id = id |> Experiment.Id.of_string in
-                   CCList.find_opt
-                     (fun (id, _) -> Experiment.Id.equal id experiment_id)
-                     query_experiments
-                 | _ -> None)
+               (function[@warning "-4"]
+                | Str id ->
+                  let experiment_id = id |> Experiment.Id.of_string in
+                  CCList.find_opt
+                    (fun (id, _) -> Experiment.Id.equal id experiment_id)
+                    query_experiments
+                | _ -> None)
                lst)
        in
        Component_search.Experiment.create
          ~current
          ~disabled
          language
-         "/admin/experiments/search")
+         "/admin/experiments/search"
+     | Key.QueryTags ->
+       let current =
+         value
+         |> CCOption.map_or ~default:[] (function
+           | NoValue | Single _ -> []
+           | Lst lst ->
+             CCList.filter_map
+               (function[@warning "-4"]
+                | Str id ->
+                  let tag_id = id |> Tags.Id.of_string in
+                  CCList.find_opt
+                    (fun (id, _) -> Tags.Id.equal id tag_id)
+                    query_tags
+                | _ -> None)
+               lst)
+       in
+       Component_search.Tag.create
+         ~current
+         ~disabled
+         language
+         "/admin/settings/tags/search")
 ;;
 
-let predicate_value_form language query_experiments ?key ?value ?operator () =
+let predicate_value_form
+  language
+  query_experiments
+  query_tags
+  ?key
+  ?value
+  ?operator
+  ()
+  =
   let open CCOption.Infix in
   let input_type = key >|= Filter.Key.type_of_key in
   let operators = key >|= Filter.Operator.operators_of_key in
@@ -244,6 +272,7 @@ let predicate_value_form language query_experiments ?key ?value ?operator () =
     value_input
       language
       query_experiments
+      query_tags
       input_type
       ~disabled:value_disabled
       ?value
@@ -261,6 +290,7 @@ let single_predicate_form
   key_list
   templates_disabled
   query_experiments
+  query_tags
   ?key
   ?operator
   ?value
@@ -268,7 +298,14 @@ let single_predicate_form
   =
   let toggle_id = Utils.format_identifiers ~prefix:"pred-s" identifier in
   let toggled_content =
-    predicate_value_form language query_experiments ?key ?value ?operator ()
+    predicate_value_form
+      language
+      query_experiments
+      query_tags
+      ?key
+      ?value
+      ?operator
+      ()
   in
   let key_selector =
     let attributes =
@@ -364,6 +401,7 @@ let rec predicate_form
   template_list
   templates_disabled
   query_experiments
+  query_tags
   query
   ?(identifier = [ 0 ])
   ()
@@ -394,6 +432,7 @@ let rec predicate_form
         template_list
         templates_disabled
         query_experiments
+        query_tags
     in
     let open Human in
     match query with
@@ -419,6 +458,7 @@ let rec predicate_form
         key_list
         templates_disabled
         query_experiments
+        query_tags
         ?key
         ?operator
         ?value
@@ -469,7 +509,15 @@ let rec predicate_form
     ]
 ;;
 
-let filter_form csrf language param key_list template_list query_experiments =
+let filter_form
+  csrf
+  language
+  param
+  key_list
+  template_list
+  query_experiments
+  query_tags
+  =
   let filter, action =
     let open Experiment in
     match param with
@@ -555,6 +603,7 @@ let filter_form csrf language param key_list template_list query_experiments =
       template_list
       templates_disabled
       query_experiments
+      query_tags
       filter_query
       ()
   in

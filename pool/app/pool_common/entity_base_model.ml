@@ -11,6 +11,8 @@ module type IdSig = sig
   val create : unit -> t
   val of_string : string -> t
   val value : t -> string
+  val to_common : t -> t
+  val of_common : t -> t
   val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
   val t_of_sexp : Sexplib0.Sexp.t -> t
 

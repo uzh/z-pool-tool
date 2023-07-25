@@ -27,6 +27,7 @@ module Key : sig
     | Select of Custom_field.SelectOption.t list
     | MultiSelect of Custom_field.SelectOption.t list
     | QueryExperiments
+    | QueryTags
 
   val show_input_type : input_type -> string
 
@@ -40,6 +41,7 @@ module Key : sig
     | NumParticipations
     | NumShowUps
     | Participation
+    | Tag
 
   type t =
     | CustomField of Custom_field.Id.t
@@ -166,6 +168,7 @@ module Human : sig
     -> (t, Pool_common.Message.error) result
 
   val all_query_experiments : t -> Pool_common.Id.t list
+  val all_query_tags : t -> Tags.Id.t list
 end
 
 val equal : t -> t -> bool
@@ -254,6 +257,7 @@ val toggle_predicate_type
   -> (Human.t, Pool_common.Message.error) result
 
 val all_query_experiments : t -> Pool_common.Id.t list
+val all_query_tags : t -> Tags.Id.t list
 
 val find_filtered_contacts
   :  Pool_database.Label.t

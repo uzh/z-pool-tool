@@ -32,3 +32,9 @@ let all_filter_labels : filter_label list =
   |> CCList.all_some
   |> CCOption.get_exn_or "I18n Keys: Could not create list of all keys!"
 ;;
+
+let[@warning "-4"] single_val_to_id =
+  CCList.filter_map (function
+    | Entity.Str id -> Some (Pool_common.Id.of_string id)
+    | _ -> None)
+;;
