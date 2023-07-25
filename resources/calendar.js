@@ -31,8 +31,7 @@ const normalizeSession = (session) => {
 
 const determineView = () => window.innerWidth >= viewBreakpoint ? "dayGridMonth" : "listWeek";
 
-const tooltipContent = ({ _instance, _def }, calendarType) => {
-    const showLocation = calendarType != "location";
+const tooltipContent = ({ _instance, _def }, hideLocation) => {
     const { start, end } = _instance.range;
     const { title, extendedProps } = _def;
     const contactPerson = extendedProps.contact_person
@@ -43,7 +42,7 @@ const tooltipContent = ({ _instance, _def }, calendarType) => {
     const contactPersonHtml = contactPerson ? `<a href="mailto:${contactPerson.email}">${contactPerson.name}</a><br>` : ''
     const header = `<div class="card-header">${title}</div>`
     const body = `<div class="card-body">
-        <p>${showLocation ? `${extendedProps.location.name}<br>` : ""}
+        <p>${hideLocation ? "" : `${extendedProps.location.name}<br>`}
             ${toLocalTime(start)} - ${toLocalTime(end)}
         </p>
         ${extendedProps.description ? `<br>${extendedProps.description}` : ""}
@@ -57,22 +56,8 @@ const tooltipContent = ({ _instance, _def }, calendarType) => {
 export const initCalendar = () => {
     document.querySelectorAll("[data-calendar]").forEach(el => {
         try {
-            const { calendar: calendarType, location } = el.dataset
-            let url;
-            switch (calendarType) {
-                case "location":
-                    if (location) {
-                        url = `/admin/sessions/location/${location}`
-                    } else {
-                        throw "Location id missing."
-                    }
-                    break;
-                case "user":
-                    url = "/admin/sessions"
-                    break;
-                default:
-                    throw "Calendar type missing."
-            }
+            const { calendar: url, hideLocation } = el.dataset
+
 
             new Calendar(el, {
                 plugins: [dayGridPlugin, timeGridPlugin, listPlugin],
@@ -93,7 +78,7 @@ export const initCalendar = () => {
                 eventDidMount: function (info) {
                     tippy(info.el, {
                         arrow: false,
-                        content: tooltipContent(info.event, calendarType),
+                        content: tooltipContent(info.event, hideLocation),
                         allowHTML: true,
                         placement: 'right',
                         delay: [200, 0],

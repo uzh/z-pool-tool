@@ -29,6 +29,6 @@ let dashboard Pool_context.{ language; _ } =
             Pool_common.(
               Utils.text_to_string language I18n.UpcomingSessionsTitle)
         ]
-    ; Component.Calendar.create [ a_user_data "calendar" "user" ]
+    ; Component.Calendar.(create User)
     ]
 ;;

@@ -527,10 +527,7 @@ let detail (location : Pool_location.t) Pool_context.{ csrf; language; _ } =
                 ]
             ; FileList.create csrf language location
             ]
-        ; Component.Calendar.create
-            [ a_user_data "calendar" "location"
-            ; a_user_data "location" (Id.value location.id)
-            ]
+        ; Component.Calendar.(create (Location location.Pool_location.id))
         ]
     ]
 ;;
