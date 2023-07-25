@@ -19,9 +19,13 @@ const toLocalTime = date => date.toLocaleTimeString('en',
     })
 
 const normalizeSession = (session) => {
+    const color = generateColor(session.title)
     session.end = session.end_
     delete session.end_
-    session.backgroundColor = generateColor(session.title, 1)
+    session.textColor = "#363636"
+    session.backgroundColor = `${color}${Math.floor(0.2 * 255).toString(16)}`
+    session.borderColor = color
+    session.display = "block"
     return session
 }
 
