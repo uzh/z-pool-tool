@@ -10,6 +10,7 @@ import {
     initSortable,
     initDetectFormChanges,
 } from '../node_modules/@econ/frontend-framework/dist/main'
+import { initFormSubmitInterferer } from "./formSubmitInterferer.js"
 
 initDatepicker();
 initConfirmable();
@@ -19,3 +20,4 @@ initNotification();
 initSortable();
 initDetectFormChanges();
 initCalendar();
+initFormSubmitInterferer();
