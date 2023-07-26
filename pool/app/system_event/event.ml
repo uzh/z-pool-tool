@@ -35,6 +35,7 @@ let handle_system_event system_event =
     let () = Email.Service.Cache.remove smtp_id in
     success_log ()
   | TenantDatabaseAdded database_label ->
+    let%lwt () = Pool_database.drop_pool database_label in
     add_pool database_label >|> handle_result
   | TenantDatabaseUpdated database_label ->
     let%lwt () = Pool_database.drop_pool database_label in

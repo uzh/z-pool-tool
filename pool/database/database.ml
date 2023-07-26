@@ -123,19 +123,19 @@ module Tenant = struct
   ;;
 end
 
-type event = Migrated of Pool_database.Label.t [@@deriving eq, show]
+type event = Migrated of Pool_database.t [@@deriving eq, show]
 
 let handle_event _ : event -> unit Lwt.t = function
-  | Migrated label ->
-    let () =
-      Logs.info (fun m -> m "Migrating: %s" Pool_database.(Label.show label))
-    in
+  | Migrated database ->
+    let open Pool_database in
+    Logs.info (fun m -> m "Migrating: %s" (Label.show database.label));
+    add_pool database;
     let%lwt () =
-      match Pool_database.is_root label with
+      match is_root database.label with
       | true -> Migration.Root.run ()
-      | false -> Migration.Tenant.run [ label ] ()
+      | false -> Migration.Tenant.run [ database.label ] ()
     in
-    Guard.Persistence.start ~ctx:(Pool_database.to_ctx label) ()
+    Guard.Persistence.start ~ctx:(to_ctx database.label) ()
 ;;
 
 let start () =
