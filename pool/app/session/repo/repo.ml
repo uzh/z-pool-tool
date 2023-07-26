@@ -21,6 +21,13 @@ module Sql = struct
           SUBSTR(HEX(pool_sessions.uuid), 21)
         )),
         pool_experiments.title,
+        LOWER(CONCAT(
+          SUBSTR(HEX(pool_experiments.uuid), 1, 8), '-',
+          SUBSTR(HEX(pool_experiments.uuid), 9, 4), '-',
+          SUBSTR(HEX(pool_experiments.uuid), 13, 4), '-',
+          SUBSTR(HEX(pool_experiments.uuid), 17, 4), '-',
+          SUBSTR(HEX(pool_experiments.uuid), 21)
+        )),
         pool_sessions.start,
         pool_sessions.duration,
         pool_sessions.description,
