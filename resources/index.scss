@@ -1,7 +1,7 @@
 @use "sass:color";
 $icons-font-path: "../node_modules/@econ/frontend-framework/dist/font";
 @import "../node_modules/@econ/frontend-framework/dist/main.scss";
-@import "./calendar";
+@import "./admin/calendar";
 
 // Index page
 .index-page>*:nth-child(2) {

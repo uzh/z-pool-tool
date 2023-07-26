@@ -3,8 +3,8 @@ import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import listPlugin from '@fullcalendar/list';
 import tippy from 'tippy.js';
-import { notifyUser } from "./admin/utils"
-import { generateColor } from "./utils/color"
+import { notifyUser } from "./utils"
+import { generateColor } from "../utils/color"
 
 const notificationId = "calendar-notification";
 
