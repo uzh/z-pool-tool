@@ -82,6 +82,8 @@ export const initCalendar = () => {
                         allowHTML: true,
                         placement: 'right',
                         delay: [200, 0],
+                        interactive: true,
+                        trigger: 'click',
                     });
                 },
                 eventSources: [{
