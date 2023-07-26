@@ -913,12 +913,12 @@ let follow_up
          experiment)
 ;;
 
-let[@warning "-27"] close
+let close
   ({ Pool_context.language; csrf; _ } as context)
   experiment
   (session : Session.t)
   assignments
-  (participation_tags, available_tags)
+  participation_tags
   =
   let open Pool_common in
   let control = Message.(Close (Some Field.Session)) in

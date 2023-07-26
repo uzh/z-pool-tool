@@ -215,18 +215,12 @@ let detail req page =
              database_label
              (Experiment (Experiment.Id.to_common experiment_id)))
        in
-       let%lwt available_tags =
-         Tags.ParticipationTags.(
-           find_available
-             database_label
-             (Experiment (Experiment.Id.to_common experiment_id)))
-       in
        Page.Admin.Session.close
          context
          experiment
          session
          assignments
-         (participation_tags, available_tags)
+         participation_tags
        |> Lwt_result.ok
      | `Reschedule ->
        let* experiment = Experiment.find database_label experiment_id in
