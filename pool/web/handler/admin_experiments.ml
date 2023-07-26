@@ -227,7 +227,25 @@ let detail edit req =
             |> CCOption.map_or ~default:(Lwt_result.return None) (fun id ->
               Email.SmtpAuth.find database_label id >|+ CCOption.return)
           in
+          let%lwt allowed_to_assign_tags =
+            Guard.Persistence.validate
+              database_label
+              (id
+               |> Experiment.Id.to_common
+               |> Cqrs_command.Tags_command.AssignTagToContact.effects)
+              actor
+            ||> CCResult.is_ok
+          in
+          let find_tags model =
+            let open Tags in
+            if allowed_to_assign_tags
+            then find_all_validated_with_model database_label model actor
+            else Lwt.return []
+          in
+          let%lwt experiment_tags = find_tags Tags.Model.Experiment in
+          let%lwt participation_tags = find_tags Tags.Model.Contact in
           Page.Admin.Experiments.detail
+            ~allowed_to_assign_tags
             experiment
             session_count
             invitation_templates
@@ -235,8 +253,8 @@ let detail edit req =
             sys_languages
             contact_person
             smtp_auth
-            current_tags
-            current_participation_tags
+            (experiment_tags, current_tags)
+            (participation_tags, current_participation_tags)
             context
           |> Lwt_result.ok
         | true ->
@@ -253,33 +271,13 @@ let detail edit req =
             |> contact_person_roles
             |> Admin.find_all_with_roles database_label
           in
-          let%lwt allowed_to_assign =
-            Guard.Persistence.validate
-              database_label
-              (id
-               |> Experiment.Id.to_common
-               |> Cqrs_command.Tags_command.AssignTagToContact.effects)
-              actor
-            ||> CCResult.is_ok
-          in
-          let find_tags model =
-            let open Tags in
-            if allowed_to_assign
-            then find_all_validated_with_model database_label model actor
-            else Lwt.return []
-          in
-          let%lwt experiment_tags = find_tags Tags.Model.Experiment in
-          let%lwt participation_tags = find_tags Tags.Model.Contact in
           Page.Admin.Experiments.edit
-            ~allowed_to_assign
             experiment
             context
             default_reminder_lead_time
             contact_persons
             organisational_units
             smtp_auth_list
-            (experiment_tags, current_tags)
-            (participation_tags, current_participation_tags)
             flash_fetcher
           |> Lwt_result.ok)
        >>= create_layout req context

@@ -351,15 +351,12 @@ let create
 ;;
 
 let edit
-  ?(allowed_to_assign = false)
   experiment
-  ({ Pool_context.language; query_language; csrf; _ } as context)
+  context
   default_reminder_lead_time
   contact_persons
   organisational_units
   smtp_auth_list
-  (available_tags, current_tags)
-  (available_participation_tags, current_participation_tags)
   flash_fetcher
   =
   let form =
@@ -372,55 +369,7 @@ let edit
       default_reminder_lead_time
       flash_fetcher
   in
-  let tags_html (available, current) field =
-    if allowed_to_assign
-    then (
-      let remove_action tag =
-        Format.asprintf
-          "%s/%s/remove"
-          Field.(field |> human_url)
-          Tags.(Id.value tag.Tags.id)
-        |> build_experiment_path experiment
-      in
-      let assign_action =
-        Http_utils.externalize_path_with_lang
-          query_language
-          (Format.asprintf "%s/assign" Field.(field |> human_url)
-           |> build_experiment_path experiment)
-      in
-      div
-        ~a:[ a_class [ "switcher-lg"; "flex-gap" ] ]
-        [ Tag.add_tags_form context ~existing:current available assign_action
-        ; Component.Tag.tag_list
-            language
-            ~remove_action:(remove_action, csrf)
-            ~title:Pool_common.I18n.SelectedTags
-            current
-        ])
-    else txt ""
-  in
-  let tags =
-    div
-      ~a:[ a_class [ "stack" ] ]
-      [ h2
-          ~a:[ a_class [ "heading-2" ] ]
-          [ Utils.nav_link_to_string language I18n.Tags |> txt ]
-      ; tags_html (available_tags, current_tags) Field.Tag
-      ; div
-          [ h3
-              ~a:[ a_class [ "heading-3" ] ]
-              [ Utils.field_to_string language Field.ParticipationTag
-                |> String.capitalize_ascii
-                |> txt
-              ]
-          ; p [ Utils.hint_to_string language I18n.ParticipationTags |> txt ]
-          ; tags_html
-              (available_participation_tags, current_participation_tags)
-              Field.ParticipationTag
-          ]
-      ]
-  in
-  [ div ~a:[ a_class [ "stack-lg" ] ] [ form; tags ] ]
+  [ div [ form ] ]
   |> Layout.Experiment.(
        create
          context
@@ -429,6 +378,7 @@ let edit
 ;;
 
 let detail
+  ?(allowed_to_assign_tags = false)
   experiment
   session_count
   invitation_templates
@@ -436,9 +386,9 @@ let detail
   sys_languages
   contact_person
   smtp_account
-  tags
-  participation_tags
-  ({ Pool_context.language; csrf; _ } as context)
+  (available_tags, current_tags)
+  (available_participation_tags, current_participation_tags)
+  ({ Pool_context.language; csrf; query_language; _ } as context)
   =
   let experiment_path = build_experiment_path experiment in
   let notifications =
@@ -488,6 +438,54 @@ let detail
             ~has_icon:Icon.TrashOutline
             ()
         ]
+  in
+  let tags =
+    let tags_html (available, current) field =
+      if allowed_to_assign_tags
+      then (
+        let remove_action tag =
+          Format.asprintf
+            "%s/%s/remove"
+            Field.(field |> human_url)
+            Tags.(Id.value tag.Tags.id)
+          |> build_experiment_path experiment
+        in
+        let assign_action =
+          Http_utils.externalize_path_with_lang
+            query_language
+            (Format.asprintf "%s/assign" Field.(field |> human_url)
+             |> build_experiment_path experiment)
+        in
+        div
+          ~a:[ a_class [ "switcher-lg"; "flex-gap" ] ]
+          [ Tag.add_tags_form context ~existing:current available assign_action
+          ; Component.Tag.tag_list
+              language
+              ~remove_action:(remove_action, csrf)
+              ~title:Pool_common.I18n.SelectedTags
+              current
+          ])
+      else txt ""
+    in
+    div
+      ~a:[ a_class [ "stack" ] ]
+      [ h2
+          ~a:[ a_class [ "heading-2" ] ]
+          [ Utils.nav_link_to_string language I18n.Tags |> txt ]
+      ; tags_html (available_tags, current_tags) Field.Tag
+      ; div
+          [ h2
+              ~a:[ a_class [ "heading-2" ] ]
+              [ Utils.field_to_string language Field.ParticipationTag
+                |> String.capitalize_ascii
+                |> txt
+              ]
+          ; p [ Utils.hint_to_string language I18n.ParticipationTags |> txt ]
+          ; tags_html
+              (available_participation_tags, current_participation_tags)
+              Field.ParticipationTag
+          ]
+      ]
   in
   let bool_to_string = Utils.bool_to_string language in
   let open Experiment in
@@ -565,27 +563,9 @@ let detail
             ]
         ]
     in
-    let tag_overview =
-      let build (title, tags) =
-        div
-          [ h3
-              ~a:[ a_class [ "heading-3" ] ]
-              Pool_common.[ Utils.nav_link_to_string language title |> txt ]
-          ; Component.Tag.tag_list language tags
-          ]
-      in
-      Pool_common.I18n.[ Tags, tags; ParticipationTags, participation_tags ]
-      |> CCList.map build
-      |> div ~a:[ a_class [ "switcher"; "flex-gap" ] ]
-    in
     [ div
         ~a:[ a_class [ "stack-lg" ] ]
-        [ notifications
-        ; experiment_table
-        ; tag_overview
-        ; message_template
-        ; delete_form
-        ]
+        [ notifications; experiment_table; tags; message_template; delete_form ]
     ]
   in
   let edit_button =
