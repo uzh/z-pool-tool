@@ -237,7 +237,7 @@ let form
   ?(mailing : Mailing.t option)
   ?(fully_booked = false)
   ({ Pool_context.language; csrf; _ } as context)
-  experiment
+  (experiment : Experiment.t)
   flash_fetcher
   =
   let functions =
@@ -252,6 +252,21 @@ let form
           };
       });
   |js}
+  in
+  let notification =
+    match
+      Experiment.(
+        experiment.registration_disabled |> RegistrationDisabled.value)
+    with
+    | true ->
+      txt
+        Pool_common.(
+          Utils.hint_to_string
+            language
+            I18n.ExperimentMailingsRegistrationDisabled)
+      |> fun text ->
+      [ p [ text ] ] |> Component.Notification.notification language `Warning
+    | false -> txt ""
   in
   let distribution_select (distribution : Mailing.Distribution.t option) =
     let open Mailing.Distribution in
@@ -448,7 +463,7 @@ let form
     let open Htmx in
     div
       ~a:[ a_class [ "stack" ] ]
-      (fully_booked_note
+      ((notification :: fully_booked_note)
        @ [ form
              ~a:
                [ a_class [ "stack" ]

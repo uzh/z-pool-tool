@@ -142,6 +142,7 @@ type hint =
   | ExperimentAssignment
   | ExperimentContactPerson
   | ExperimentMailings
+  | ExperimentMailingsRegistrationDisabled
   | ExperimentSessions
   | ExperimentSessionsPublic
   | ExperimentWaitingList

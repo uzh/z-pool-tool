@@ -235,6 +235,8 @@ let rec hint_to_string = function
     {|Einladungsversand dieses Experiments. Die 'Rate' definiert die maximal generierten Einladungen pro Stunde.
 
     Gestartete Mailings können nicht mehr gelöscht werden.|}
+  | ExperimentMailingsRegistrationDisabled ->
+    {|Die Registrierung für dieses Experiment ist derzeit deaktiviert. Einladungen werden weiterhin verschickt, wenn ein Mailing erstellt wird, aber die Kontakte können sich nicht für eine Session anmelden.|}
   | ExperimentWaitingList ->
     "Kontakte, die zu diesem Experiment eingeladen wurden, und sich auf die \
      Warteliste gesetzt haben. Sie müssen manuell einer Session zugewiesen \
