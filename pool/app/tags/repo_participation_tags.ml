@@ -1,12 +1,14 @@
 module RepoEntity = Repo.RepoEntity
+module Id = Pool_common.Repo.Id
 
 type entity =
-  | Experiment of Experiment.Id.t
-  | Session of Session.Id.t
+  | Experiment of Pool_common.Id.t
+  | Session of Pool_common.Id.t
+[@@deriving eq, show]
 
-let to_common_id = function
-  | Experiment id -> id |> Experiment.Id.to_common
-  | Session id -> id |> Session.Id.to_common
+let get_id = function
+  | Experiment id -> id
+  | Session id -> id
 ;;
 
 let insert_request =
@@ -22,7 +24,7 @@ let insert_request =
     ON DUPLICATE KEY UPDATE
       updated_at = NOW()
   |sql}
-  |> Caqti_type.(tup2 Pool_common.Repo.Id.t RepoEntity.Id.t ->. unit)
+  |> Caqti_type.(tup2 Id.t Id.t ->. unit)
 ;;
 
 let insert pool =
@@ -36,7 +38,7 @@ let delete_request =
     WHERE entity_uuid = UNHEX(REPLACE($1, '-', ''))
     AND tag_uuid = UNHEX(REPLACE($2, '-', ''))
   |sql}
-  |> Caqti_type.(tup2 Pool_common.Repo.Id.t RepoEntity.Id.t ->. unit)
+  |> Caqti_type.(tup2 Id.t Id.t ->. unit)
 ;;
 
 let delete pool =
@@ -60,7 +62,7 @@ let find_all pool entity =
   Utils.Database.collect
     (Pool_database.Label.value pool)
     find_all_request
-    (to_common_id entity)
+    (get_id entity)
 ;;
 
 let find_available_for_experiment_request =
@@ -77,8 +79,7 @@ let find_available_for_experiment_request =
         entity_uuid = UNHEX(REPLACE($2, '-', '')));
     |sql}
     Repo.Sql.select_tag_sql
-  |> Caqti_type.(tup2 RepoEntity.Model.t Experiment.Repo.Entity.Id.t)
-     ->* RepoEntity.t
+  |> Caqti_type.(tup2 RepoEntity.Model.t Id.t) ->* RepoEntity.t
 ;;
 
 let find_available_for_session_request =
@@ -104,7 +105,7 @@ let find_available_for_session_request =
             uuid = UNHEX(REPLACE($2, '-', ''))))
     |sql}
     Repo.Sql.select_tag_sql
-  |> Caqti_type.(tup2 RepoEntity.Model.t Session.Repo.Id.t) ->* RepoEntity.t
+  |> Caqti_type.(tup2 RepoEntity.Model.t Id.t) ->* RepoEntity.t
 ;;
 
 let find_available pool entity =

@@ -226,12 +226,7 @@ end = struct
   let handle ?(tags = Logs.Tag.empty) entity (tag_uuid : t) =
     Logs.info ~src (fun m ->
       m "Handle command AssignParticipationTagToEntity" ~tags);
-    Ok
-      Tags.
-        [ ParticipationTagAssigned
-            (ParticipationTags.to_common_id entity, tag_uuid)
-          |> Pool_event.tags
-        ]
+    Ok Tags.[ ParticipationTagAssigned (entity, tag_uuid) |> Pool_event.tags ]
   ;;
 
   let validate = validate Tags.Model.Experiment
@@ -260,12 +255,7 @@ end = struct
   let handle ?(tags = Logs.Tag.empty) entity tag =
     Logs.info ~src (fun m ->
       m "Handle command RemoveParticipationTagFromEntity" ~tags);
-    Ok
-      Tags.
-        [ ParticipationTagRemoved
-            (ParticipationTags.to_common_id entity, tag.Tags.id)
-          |> Pool_event.tags
-        ]
+    Ok Tags.[ ParticipationTagRemoved (entity, tag.Tags.id) |> Pool_event.tags ]
   ;;
 
   let effects = Experiment.Guard.Access.update

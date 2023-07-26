@@ -56,12 +56,14 @@ let handle_tag action req =
            handle_assign decode fnc
          | `AssignExperimentParticipationTag ->
            let open Cqrs_command.Tags_command.AssignParticipationTagToEntity in
-           let fnc = handle ~tags (Experiment experiment_id) in
+           let fnc =
+             handle ~tags (Experiment (Experiment.Id.to_common experiment_id))
+           in
            handle_assign decode fnc
          | `AssignSessionParticipationTag ->
            let open Cqrs_command.Tags_command.AssignParticipationTagToEntity in
            let session_id = session_id req in
-           let fnc = handle ~tags (Session session_id) in
+           let fnc = handle ~tags (Session (Session.Id.to_common session_id)) in
            handle_assign decode fnc
          | `Remove ->
            let open Cqrs_command.Tags_command.RemoveTagFromExperiment in
@@ -69,12 +71,14 @@ let handle_tag action req =
            handle_remove fnc
          | `RemoveExperimentParticipationTag ->
            let open Cqrs_command.Tags_command.RemoveParticipationTagFromEntity in
-           let fnc = handle ~tags (Experiment experiment_id) in
+           let fnc =
+             handle ~tags (Experiment (Experiment.Id.to_common experiment_id))
+           in
            handle_remove fnc
          | `RemoveSessionParticipationTag ->
            let open Cqrs_command.Tags_command.RemoveParticipationTagFromEntity in
            let session_id = session_id req in
-           let fnc = handle ~tags (Session session_id) in
+           let fnc = handle ~tags (Session (Session.Id.to_common session_id)) in
            handle_remove fnc
        in
        let handle =

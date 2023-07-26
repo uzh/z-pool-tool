@@ -212,7 +212,7 @@ let detail edit req =
          Tags.(
            ParticipationTags.find_all
              database_label
-             (ParticipationTags.Experiment id))
+             (ParticipationTags.Experiment (Experiment.Id.to_common id)))
        in
        (match edit with
         | false ->

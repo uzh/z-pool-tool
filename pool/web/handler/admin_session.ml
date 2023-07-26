@@ -155,7 +155,8 @@ let detail req page =
     let* experiment = Experiment.find database_label experiment_id in
     let flash_fetcher = CCFun.flip Sihl.Web.Flash.find req in
     let%lwt current_tags =
-      Tags.ParticipationTags.(find_all database_label (Session session_id))
+      Tags.ParticipationTags.(
+        find_all database_label (Session (Session.Id.to_common session_id)))
     in
     (match page with
      | `Detail ->
@@ -182,11 +183,15 @@ let detail req page =
        in
        let%lwt available_tags =
          Tags.ParticipationTags.(
-           find_available database_label (Session session_id))
+           find_available
+             database_label
+             (Session (Session.Id.to_common session_id)))
        in
        let%lwt experiment_participation_tags =
          Tags.ParticipationTags.(
-           find_all database_label (Experiment experiment_id))
+           find_all
+             database_label
+             (Experiment (Experiment.Id.to_common experiment_id)))
        in
        let sys_languages = Pool_context.Tenant.get_tenant_languages_exn req in
        Page.Admin.Session.edit
@@ -206,11 +211,15 @@ let detail req page =
        in
        let%lwt participation_tags =
          Tags.ParticipationTags.(
-           find_all database_label (Experiment experiment_id))
+           find_all
+             database_label
+             (Experiment (Experiment.Id.to_common experiment_id)))
        in
        let%lwt available_tags =
          Tags.ParticipationTags.(
-           find_available database_label (Experiment experiment_id))
+           find_available
+             database_label
+             (Experiment (Experiment.Id.to_common experiment_id)))
        in
        Page.Admin.Session.close
          context
@@ -535,7 +544,9 @@ let close_post req =
     in
     let%lwt participation_tags =
       let open Tags.ParticipationTags in
-      [ Experiment experiment_id; Session session_id ]
+      [ Experiment (Experiment.Id.to_common experiment_id)
+      ; Session (Session.Id.to_common session_id)
+      ]
       |> Lwt_list.fold_left_s
            (fun tags entity ->
              find_all database_label entity ||> CCList.append tags)

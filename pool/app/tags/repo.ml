@@ -104,7 +104,7 @@ module Sql = struct
       in
       let request =
         find_multiple_request ids
-        |> pt ->* Caqti_type.(tup2 Entity.Id.t Entity.Title.t)
+        |> pt ->* Caqti_type.(tup2 RepoEntity.Id.t RepoEntity.Title.t)
       in
       Utils.Database.collect (pool |> Pool_database.Label.value) request pv
   ;;
@@ -157,7 +157,7 @@ module Sql = struct
     in
     let request =
       search_by_title_request ?model exclude
-      |> pt ->* Entity.(tup2 Id.t Title.t)
+      |> pt ->* tup2 RepoEntity.Id.t RepoEntity.Title.t
     in
     Utils.Database.collect (Label.value pool) request pv
   ;;

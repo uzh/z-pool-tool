@@ -59,13 +59,23 @@ val create
   -> Model.t
   -> (t, Pool_common.Message.error) result
 
+module ParticipationTags : sig
+  type entity =
+    | Experiment of Pool_common.Id.t
+    | Session of Pool_common.Id.t
+
+  val get_id : entity -> Pool_common.Id.t
+  val find_all : Pool_database.Label.t -> entity -> t list Lwt.t
+  val find_available : Pool_database.Label.t -> entity -> t list Lwt.t
+end
+
 type event =
   | Created of t
   | Updated of t
   | Tagged of Tagged.t
   | Untagged of Tagged.t
-  | ParticipationTagAssigned of Pool_common.Id.t * Id.t
-  | ParticipationTagRemoved of Pool_common.Id.t * Id.t
+  | ParticipationTagAssigned of ParticipationTags.entity * Id.t
+  | ParticipationTagRemoved of ParticipationTags.entity * Id.t
 
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
@@ -137,16 +147,6 @@ val insert_tagged
   -> (unit, Pool_common.Message.error) result Lwt.t
 
 val delete_tagged : Pool_database.Label.t -> Tagged.t -> unit Lwt.t
-
-module ParticipationTags : sig
-  type entity =
-    | Experiment of Experiment.Id.t
-    | Session of Session.Id.t
-
-  val to_common_id : entity -> Pool_common.Id.t
-  val find_all : Pool_database.Label.t -> entity -> t list Lwt.t
-  val find_available : Pool_database.Label.t -> entity -> t list Lwt.t
-end
 
 module Guard : sig
   module Target : sig
