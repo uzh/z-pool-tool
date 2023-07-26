@@ -440,7 +440,7 @@ let detail
         ]
   in
   let tags =
-    let tags_html (available, current) field =
+    let tags_html ~title ?hint (available, current) field =
       if allowed_to_assign_tags
       then (
         let remove_action tag =
@@ -457,34 +457,37 @@ let detail
              |> build_experiment_path experiment)
         in
         div
-          ~a:[ a_class [ "switcher-lg"; "flex-gap" ] ]
-          [ Tag.add_tags_form context ~existing:current available assign_action
-          ; Component.Tag.tag_list
-              language
-              ~remove_action:(remove_action, csrf)
-              ~title:Pool_common.I18n.SelectedTags
-              current
+          [ h2
+              ~a:[ a_class [ "heading-2" ] ]
+              [ Utils.nav_link_to_string language title |> txt ]
+          ; hint
+            |> CCOption.map_or ~default:(txt "") (fun hint ->
+              p [ Utils.hint_to_string language hint |> txt ])
+          ; p []
+          ; div
+              ~a:[ a_class [ "switcher-lg"; "flex-gap" ] ]
+              [ Tag.add_tags_form
+                  context
+                  ~existing:current
+                  available
+                  assign_action
+              ; Component.Tag.tag_list
+                  language
+                  ~remove_action:(remove_action, csrf)
+                  ~title:Pool_common.I18n.SelectedTags
+                  current
+              ]
           ])
       else txt ""
     in
     div
       ~a:[ a_class [ "stack" ] ]
-      [ h2
-          ~a:[ a_class [ "heading-2" ] ]
-          [ Utils.nav_link_to_string language I18n.Tags |> txt ]
-      ; tags_html (available_tags, current_tags) Field.Tag
-      ; div
-          [ h2
-              ~a:[ a_class [ "heading-2" ] ]
-              [ Utils.field_to_string language Field.ParticipationTag
-                |> String.capitalize_ascii
-                |> txt
-              ]
-          ; p [ Utils.hint_to_string language I18n.ParticipationTags |> txt ]
-          ; tags_html
-              (available_participation_tags, current_participation_tags)
-              Field.ParticipationTag
-          ]
+      [ tags_html ~title:I18n.Tags (available_tags, current_tags) Field.Tag
+      ; tags_html
+          ~title:I18n.ParticipationTags
+          ~hint:I18n.ParticipationTags
+          (available_participation_tags, current_participation_tags)
+          Field.ParticipationTag
       ]
   in
   let bool_to_string = Utils.bool_to_string language in

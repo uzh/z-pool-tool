@@ -20,7 +20,7 @@ let handle_tag action req =
     | `Assign
     | `AssignExperimentParticipationTag
     | `Remove
-    | `RemoveExperimentParticipationTag -> Format.asprintf "%s/edit" base_path
+    | `RemoveExperimentParticipationTag -> Format.asprintf "%s" base_path
     | `AssignSessionParticipationTag | `RemoveSessionParticipationTag ->
       let session_id = session_id req in
       Format.asprintf
