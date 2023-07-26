@@ -198,12 +198,6 @@ let detail edit req =
            database_label
            (id |> Experiment.Id.to_common)
        in
-       let%lwt invitation_templates =
-         find_templates Message_template.Label.ExperimentInvitation
-       in
-       let%lwt session_reminder_templates =
-         find_templates Message_template.Label.SessionReminder
-       in
        let%lwt current_tags =
          Tags.(find_all_of_entity database_label Model.Experiment)
            (id |> Experiment.Id.to_common)
@@ -216,6 +210,12 @@ let detail edit req =
        in
        (match edit with
         | false ->
+          let%lwt invitation_templates =
+            find_templates Message_template.Label.ExperimentInvitation
+          in
+          let%lwt session_reminder_templates =
+            find_templates Message_template.Label.SessionReminder
+          in
           let%lwt session_count = Experiment.session_count database_label id in
           let* contact_person =
             experiment.Experiment.contact_person_id
@@ -274,13 +274,10 @@ let detail edit req =
             ~allowed_to_assign
             experiment
             context
-            sys_languages
             default_reminder_lead_time
             contact_persons
             organisational_units
             smtp_auth_list
-            invitation_templates
-            session_reminder_templates
             (experiment_tags, current_tags)
             (participation_tags, current_participation_tags)
             flash_fetcher

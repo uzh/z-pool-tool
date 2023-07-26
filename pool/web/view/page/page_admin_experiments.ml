@@ -353,26 +353,15 @@ let create
 let edit
   ?(allowed_to_assign = false)
   experiment
-  ({ Pool_context.language; csrf; query_language; _ } as context)
-  sys_languages
+  ({ Pool_context.language; query_language; csrf; _ } as context)
   default_reminder_lead_time
   contact_persons
   organisational_units
   smtp_auth_list
-  invitation_templates
-  session_reminder_templates
   (available_tags, current_tags)
   (available_participation_tags, current_participation_tags)
   flash_fetcher
   =
-  let open Message_template in
-  let notifications =
-    notifications
-      language
-      sys_languages
-      invitation_templates
-      session_reminder_templates
-  in
   let form =
     experiment_form
       ~experiment
@@ -382,14 +371,6 @@ let edit
       smtp_auth_list
       default_reminder_lead_time
       flash_fetcher
-  in
-  let experiment_path =
-    Format.asprintf
-      "/admin/experiments/%s/%s"
-      Experiment.(Id.value experiment.id)
-  in
-  let message_templates =
-    message_templates_html language experiment_path sys_languages
   in
   let tags_html (available, current) field =
     if allowed_to_assign
@@ -439,15 +420,7 @@ let edit
           ]
       ]
   in
-  [ div
-      ~a:[ a_class [ "stack-lg" ] ]
-      [ notifications
-      ; form
-      ; tags
-      ; message_templates Label.ExperimentInvitation invitation_templates
-      ; message_templates Label.SessionReminder session_reminder_templates
-      ]
-  ]
+  [ div ~a:[ a_class [ "stack-lg" ] ] [ form; tags ] ]
   |> Layout.Experiment.(
        create
          context
