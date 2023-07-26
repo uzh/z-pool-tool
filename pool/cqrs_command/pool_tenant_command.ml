@@ -114,7 +114,7 @@ end = struct
     let root_events =
       [ Pool_tenant.Created tenant |> Pool_event.pool_tenant
       ; Pool_tenant.LogosUploaded logo_mappings |> Pool_event.pool_tenant
-      ; Database.Migrated database.Pool_database.label |> Pool_event.database
+      ; Database.Migrated database |> Pool_event.database
       ; System_event.Job.TenantDatabaseAdded database.Pool_database.label
         |> system_event_from_job
       ; Common.guardian_cache_cleared_event ()

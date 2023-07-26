@@ -401,7 +401,7 @@ let[@warning "-4"] create_tenant () =
     let expected_root_events =
       [ Pool_tenant.Created (create |> fail_with) |> Pool_event.pool_tenant
       ; Pool_tenant.LogosUploaded logos |> Pool_event.pool_tenant
-      ; Database.Migrated database.Pool_database.label |> Pool_event.database
+      ; Database.Migrated database |> Pool_event.database
       ; System_event.(
           Job.TenantDatabaseAdded database_label
           |> create ~id:db_added_event
