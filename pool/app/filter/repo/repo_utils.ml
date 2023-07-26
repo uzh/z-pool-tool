@@ -19,7 +19,6 @@ let filtered_base_condition ~allow_invited () =
     AND user_users.confirmed = 1
     AND pool_contacts.paused = 0
     AND pool_contacts.disabled = 0
-    AND pool_contacts.terms_accepted_at IS NOT NULL
     AND pool_contacts.import_pending = 0
     |sql}
   in
