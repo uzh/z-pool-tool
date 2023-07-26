@@ -16,6 +16,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 - colorize calendar
 - email plain text hint
 - tag predicate for filters, allows to filter contact tags
+- option to define experiment and session specific tags that are assigned to all participants
 
 ### Changed
 

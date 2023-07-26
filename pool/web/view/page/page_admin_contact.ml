@@ -99,15 +99,15 @@ let detail Pool_context.{ language; _ } contact tags =
                 ~a:[ a_class [ "heading-3" ] ]
                 Pool_common.
                   [ Utils.nav_link_to_string language I18n.Tags |> txt ]
-            ; Component.Tag.tag_list tags
+            ; Component.Tag.tag_list language tags
             ]
         ]
     ]
 ;;
 
 let tag_form
-  Pool_context.{ language; csrf; query_language; _ }
-  ?(existing = [])
+  (Pool_context.{ query_language; _ } as context)
+  ?existing
   available
   contact
   =
@@ -119,34 +119,7 @@ let tag_form
          (contact |> path)
          Pool_common.Message.Field.(Tag |> human_url))
   in
-  let available =
-    CCList.(filter (flip (mem ~eq:Tags.equal) existing %> not) available)
-  in
-  form
-    ~a:[ a_method `Post; a_action action ]
-    Input.
-      [ csrf_element csrf ()
-      ; div
-          ~a:[ a_class [ "stack" ] ]
-          [ selector
-              ~add_empty:true
-              ~option_formatter:Tags.(fun tag -> Title.value tag.title)
-              language
-              Pool_common.Message.Field.Tag
-              Tags.(fun tag -> Id.value tag.id)
-              available
-              None
-              ()
-          ; div
-              ~a:[ a_class [ "flexrow" ] ]
-              [ submit_element
-                  ~classnames:[ "push" ]
-                  language
-                  Pool_common.Message.(Add (Some Field.Tag))
-                  ()
-              ]
-          ]
-      ]
+  Component.Tag.add_tags_form ?existing context available action
 ;;
 
 let edit
@@ -176,19 +149,11 @@ let edit
       ; div
           ~a:[ a_class [ "switcher-lg"; "flex-gap" ] ]
           [ tag_form context ~existing:tags available_tags contact
-          ; div
-              ~a:[ a_class [ "form-group" ] ]
-              [ label
-                  Pool_common.
-                    [ Utils.control_to_string
-                        language
-                        Message.(Remove (Some Field.Tag))
-                      |> txt
-                    ]
-              ; Component.Tag.tag_list
-                  ~remove_action:(remove_action, csrf, language)
-                  tags
-              ]
+          ; Component.Tag.tag_list
+              language
+              ~remove_action:(remove_action, csrf)
+              ~title:Pool_common.I18n.SelectedTags
+              tags
           ]
       ])
     else []

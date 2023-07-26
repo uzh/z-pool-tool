@@ -78,6 +78,8 @@ Sie kommen für mehr Experimente in Frage, umso kompletter Ihr Profil ist.|}
       (Locales_de.field_to_string field)
   | RolesGranted -> "Zugewiesene Rollen"
   | SentInvitations -> "Versendete Einladungen"
+  | SelectedTags -> "Aktuell zugewiesene Tags"
+  | SelectedTagsEmpty -> "Keine Tags zugewiesen"
   | SessionDetailTitle start ->
     Format.asprintf "Session am %s" (Utils_time.formatted_date_time start)
   | SessionIndent -> "Einrückungen groupieren Folgesessions."
@@ -129,6 +131,7 @@ let nav_link_to_string = function
   | MessageTemplates -> "Nachrichtentemplates"
   | OrganisationalUnits -> "Organisationseinheiten"
   | Overview -> "Übersicht"
+  | ParticipationTags -> "Teilnahmetags"
   | PersonalDetails -> "Persönliche Angaben"
   | Profile -> "Profil"
   | Queue -> "Hintergrundjobs"
@@ -272,6 +275,9 @@ let rec hint_to_string = function
   | Overbook ->
     "Anzahl Kontakte, die sich zusätzlich zur maximalen Anzahl Teilnehmer, an \
      einer Session einschreiben können."
+  | ParticipationTags ->
+    "Tags, welche den Teilnehmern nach einer Teilnahme an einer Session dieses \
+     Experiments automatisch zugewiesen werden."
   | Rate -> "Generierte Einladungen pro Stunde"
   | RateDependencyWith ->
     "Zur selben Zeit finden weitere Versande statt, details werden unten \
@@ -317,6 +323,12 @@ Die folgenden Folgesessions existieren:|}
     "Dazugehörige Folgesessions wurden evenfalls abgesagt:"
   | SessionCancelMessage ->
     "Dieser Grund wird allen angemeldeten Kontakten gezeigt."
+  | SessionCloseParticipationTagsSelected ->
+    "Die folgenden Tags werden allen Teilnehmer/innen zugewiesen, die an \
+     diesem Experiment teilgenommen haben:"
+  | SessionCloseNoParticipationTagsSelected ->
+    "Es wurden keine Tags ausgewählt, die den Teilnehmer/innen zugewiesen \
+     werden, die an diesem Experiment teilgenommen haben."
   | SessionCloseHints ->
     {|<strong>NS</strong> und <strong>P</strong> schliessen sich gegenseitig aus.<br>
 Wenn ein Kontakt zwar erschienen ist, aber nicht an dem Experiment teilgenommen hat, wählen Sie keine der Optionen aus.|}

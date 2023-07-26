@@ -154,12 +154,21 @@ let detail req page =
     let* session = Session.find database_label session_id in
     let* experiment = Experiment.find database_label experiment_id in
     let flash_fetcher = CCFun.flip Sihl.Web.Flash.find req in
+    let%lwt current_tags =
+      Tags.ParticipationTags.(
+        find_all database_label (Session (Session.Id.to_common session_id)))
+    in
     (match page with
      | `Detail ->
        let* assignments =
          Assignment.find_by_session database_label session.Session.id
        in
-       Page.Admin.Session.detail context experiment session assignments
+       Page.Admin.Session.detail
+         context
+         experiment
+         session
+         current_tags
+         assignments
        |> Lwt_result.ok
      | `Edit ->
        let%lwt locations = Pool_location.find_all database_label in
@@ -172,6 +181,18 @@ let detail req page =
        let%lwt default_reminder_lead_time =
          Settings.find_default_reminder_lead_time database_label
        in
+       let%lwt available_tags =
+         Tags.ParticipationTags.(
+           find_available
+             database_label
+             (Session (Session.Id.to_common session_id)))
+       in
+       let%lwt experiment_participation_tags =
+         Tags.ParticipationTags.(
+           find_all
+             database_label
+             (Experiment (Experiment.Id.to_common experiment_id)))
+       in
        let sys_languages = Pool_context.Tenant.get_tenant_languages_exn req in
        Page.Admin.Session.edit
          context
@@ -181,13 +202,25 @@ let detail req page =
          locations
          session_reminder_templates
          sys_languages
+         (current_tags, available_tags, experiment_participation_tags)
          flash_fetcher
        |> Lwt_result.ok
      | `Close ->
        let* assignments =
          Assignment.find_uncanceled_by_session database_label session.Session.id
        in
-       Page.Admin.Session.close context experiment session assignments
+       let%lwt participation_tags =
+         Tags.ParticipationTags.(
+           find_all
+             database_label
+             (Experiment (Experiment.Id.to_common experiment_id)))
+       in
+       Page.Admin.Session.close
+         context
+         experiment
+         session
+         assignments
+         participation_tags
        |> Lwt_result.ok
      | `Reschedule ->
        let* experiment = Experiment.find database_label experiment_id in
@@ -503,6 +536,16 @@ let close_post req =
     let* assignments =
       Assignment.find_uncanceled_by_session database_label session.Session.id
     in
+    let%lwt participation_tags =
+      let open Tags.ParticipationTags in
+      [ Experiment (Experiment.Id.to_common experiment_id)
+      ; Session (Session.Id.to_common session_id)
+      ]
+      |> Lwt_list.fold_left_s
+           (fun tags entity ->
+             find_all database_label entity ||> CCList.append tags)
+           []
+    in
     let* events =
       let urlencoded_list field =
         Sihl.Web.Request.urlencoded_list
@@ -542,7 +585,7 @@ let close_post req =
           , increment_num_participations
           , follow_ups ))
       ||> CCResult.flatten_l
-      >== SetAttendance.handle session
+      >== SetAttendance.handle session participation_tags
     in
     let%lwt () = Pool_event.handle_events database_label events in
     Http_utils.redirect_to_with_actions

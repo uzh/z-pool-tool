@@ -49,6 +49,8 @@ type t =
   | RoleCurrentlyNoneAssigned of Entity_message.Field.t
   | RolesGranted
   | SentInvitations
+  | SelectedTags
+  | SelectedTagsEmpty
   | SessionDetailTitle of Ptime.t
   | SessionIndent
   | SessionReminder
@@ -92,6 +94,7 @@ type nav_link =
   | MessageTemplates
   | OrganisationalUnits
   | Overview
+  | ParticipationTags
   | PersonalDetails
   | Profile
   | Queue
@@ -152,6 +155,7 @@ type hint =
   | NumberIsSecondsHint
   | NumberIsWeeksHint
   | Overbook
+  | ParticipationTags
   | Rate
   | RateDependencyWith
   | RateDependencyWithout
@@ -166,6 +170,8 @@ type hint =
   | SessionCancellationMessageFollowUps
   | SessionCancellationWithFollowups
   | SessionCancelMessage
+  | SessionCloseParticipationTagsSelected
+  | SessionCloseNoParticipationTagsSelected
   | SessionCloseHints
   | SessionCloseLegend
   | SessionRegistrationFollowUpHint

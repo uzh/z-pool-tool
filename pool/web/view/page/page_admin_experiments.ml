@@ -86,48 +86,6 @@ let message_templates_html
     ]
 ;;
 
-let tag_form
-  Pool_context.{ language; csrf; query_language; _ }
-  ?(existing = [])
-  available
-  experiment
-  =
-  let action =
-    Http_utils.externalize_path_with_lang
-      query_language
-      (Format.asprintf "%s/assign" Pool_common.Message.Field.(Tag |> human_url)
-       |> build_experiment_path experiment)
-  in
-  let available =
-    CCList.(filter CCFun.(flip (mem ~eq:Tags.equal) existing %> not) available)
-  in
-  form
-    ~a:[ a_method `Post; a_action action ]
-    Input.
-      [ csrf_element csrf ()
-      ; div
-          ~a:[ a_class [ "stack" ] ]
-          [ selector
-              ~add_empty:true
-              ~option_formatter:Tags.(fun tag -> Title.value tag.title)
-              language
-              Pool_common.Message.Field.Tag
-              Tags.(fun tag -> Id.value tag.id)
-              available
-              None
-              ()
-          ; div
-              ~a:[ a_class [ "flexrow" ] ]
-              [ submit_element
-                  ~classnames:[ "push" ]
-                  language
-                  Pool_common.Message.(Add (Some Field.Tag))
-                  ()
-              ]
-          ]
-      ]
-;;
-
 let index Pool_context.{ language; _ } experiment_list =
   let experiment_table experiments =
     let thead =
@@ -395,7 +353,7 @@ let create
 let edit
   ?(allowed_to_assign = false)
   experiment
-  ({ Pool_context.language; csrf; _ } as context)
+  ({ Pool_context.language; csrf; query_language; _ } as context)
   sys_languages
   default_reminder_lead_time
   contact_persons
@@ -403,8 +361,8 @@ let edit
   smtp_auth_list
   invitation_templates
   session_reminder_templates
-  tags
-  available_tags
+  (available_tags, current_tags)
+  (available_participation_tags, current_participation_tags)
   flash_fetcher
   =
   let open Message_template in
@@ -433,45 +391,62 @@ let edit
   let message_templates =
     message_templates_html language experiment_path sys_languages
   in
-  let assign_tags =
+  let tags_html (available, current) field =
     if allowed_to_assign
     then (
       let remove_action tag =
         Format.asprintf
           "%s/%s/remove"
-          Field.(Tag |> human_url)
+          Field.(field |> human_url)
           Tags.(Id.value tag.Tags.id)
         |> build_experiment_path experiment
       in
+      let assign_action =
+        Http_utils.externalize_path_with_lang
+          query_language
+          (Format.asprintf "%s/assign" Field.(field |> human_url)
+           |> build_experiment_path experiment)
+      in
+      div
+        ~a:[ a_class [ "switcher-lg"; "flex-gap" ] ]
+        [ Tag.add_tags_form context ~existing:current available assign_action
+        ; Component.Tag.tag_list
+            language
+            ~remove_action:(remove_action, csrf)
+            ~title:Pool_common.I18n.SelectedTags
+            current
+        ])
+    else txt ""
+  in
+  let tags =
+    div
+      ~a:[ a_class [ "stack" ] ]
       [ h2
           ~a:[ a_class [ "heading-2" ] ]
           [ Utils.nav_link_to_string language I18n.Tags |> txt ]
+      ; tags_html (available_tags, current_tags) Field.Tag
       ; div
-          ~a:[ a_class [ "switcher-lg"; "flex-gap" ] ]
-          [ tag_form context ~existing:tags available_tags experiment
-          ; div
-              ~a:[ a_class [ "form-group" ] ]
-              [ label
-                  [ Utils.control_to_string
-                      language
-                      Message.(Remove (Some Field.Tag))
-                    |> txt
-                  ]
-              ; Component.Tag.tag_list
-                  ~remove_action:(remove_action, csrf, language)
-                  tags
+          [ h3
+              ~a:[ a_class [ "heading-3" ] ]
+              [ Utils.field_to_string language Field.ParticipationTag
+                |> String.capitalize_ascii
+                |> txt
               ]
+          ; p [ Utils.hint_to_string language I18n.ParticipationTags |> txt ]
+          ; tags_html
+              (available_participation_tags, current_participation_tags)
+              Field.ParticipationTag
           ]
-      ])
-    else []
+      ]
   in
   [ div
       ~a:[ a_class [ "stack-lg" ] ]
-      ([ notifications; form ]
-       @ assign_tags
-       @ [ message_templates Label.ExperimentInvitation invitation_templates
-         ; message_templates Label.SessionReminder session_reminder_templates
-         ])
+      [ notifications
+      ; form
+      ; tags
+      ; message_templates Label.ExperimentInvitation invitation_templates
+      ; message_templates Label.SessionReminder session_reminder_templates
+      ]
   ]
   |> Layout.Experiment.(
        create
@@ -489,6 +464,7 @@ let detail
   contact_person
   smtp_account
   tags
+  participation_tags
   ({ Pool_context.language; csrf; _ } as context)
   =
   let experiment_path = build_experiment_path experiment in
@@ -617,12 +593,17 @@ let detail
         ]
     in
     let tag_overview =
-      div
-        [ h3
-            ~a:[ a_class [ "heading-3" ] ]
-            Pool_common.[ Utils.nav_link_to_string language I18n.Tags |> txt ]
-        ; Component.Tag.tag_list tags
-        ]
+      let build (title, tags) =
+        div
+          [ h3
+              ~a:[ a_class [ "heading-3" ] ]
+              Pool_common.[ Utils.nav_link_to_string language title |> txt ]
+          ; Component.Tag.tag_list language tags
+          ]
+      in
+      Pool_common.I18n.[ Tags, tags; ParticipationTags, participation_tags ]
+      |> CCList.map build
+      |> div ~a:[ a_class [ "switcher"; "flex-gap" ] ]
     in
     [ div
         ~a:[ a_class [ "stack-lg" ] ]

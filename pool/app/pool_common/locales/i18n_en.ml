@@ -76,6 +76,8 @@ let to_string = function
       (Locales_en.field_to_string field)
   | RolesGranted -> "Granted roles"
   | SentInvitations -> "Sent invitations"
+  | SelectedTags -> "Currently assigned tags"
+  | SelectedTagsEmpty -> "No tags assigned"
   | SessionDetailTitle start ->
     Format.asprintf "Session at %s" (Utils_time.formatted_date_time start)
   | SessionIndent -> "Indentations group follow-up sessions."
@@ -127,6 +129,7 @@ let nav_link_to_string = function
   | MessageTemplates -> "Message templates"
   | OrganisationalUnits -> "Organisational units"
   | Overview -> "Overview"
+  | ParticipationTags -> "Participation tags"
   | PersonalDetails -> "Personal details"
   | Profile -> "Profile"
   | Queue -> "Queued jobs"
@@ -263,6 +266,9 @@ Make sure to show links and URLs as plain text.
   | Overbook ->
     "Number of subjects that can enroll in a session in addition to the \
      maximum number of contacts."
+  | ParticipationTags ->
+    "Tags, which are automatically assigned to participants after they have \
+     participated in a session of this experiment."
   | Rate -> "Max. generated Invitations per hour"
   | RateDependencyWith ->
     "There are other mailings running at the same time, see its details \
@@ -303,6 +309,12 @@ The following follow-up sessions exist:|}
     "Associated follow-up sessions were canceled as well:"
   | SessionCancelMessage ->
     "This reason will be provided to all contacts assigned to this session."
+  | SessionCloseParticipationTagsSelected ->
+    "The following tags are assigned to all participants who took part in this \
+     experiment:"
+  | SessionCloseNoParticipationTagsSelected ->
+    "No tags were selected to be assigned to the participants who participated \
+     in this experiment."
   | SessionCloseHints ->
     {|<strong>NS</strong> and <strong>P</strong> are mutually exclusive.<br>
 If a contact showed up but did not participate in the experiment, do not select any of the options.|}

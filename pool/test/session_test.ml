@@ -881,14 +881,16 @@ let cancel_with_email_and_text_notification () =
 
 let close_before_start () =
   let session = Test_utils.Model.(create_session ~start:(in_an_hour ())) () in
-  let res = Cqrs_command.Assignment_command.SetAttendance.handle session [] in
+  let res =
+    Cqrs_command.Assignment_command.SetAttendance.handle session [] []
+  in
   check_result (Error Pool_common.Message.SessionNotStarted) res
 ;;
 
 let close_valid () =
   let open Cqrs_command.Assignment_command.SetAttendance in
   let session = Test_utils.Model.(create_session ~start:(an_hour_ago ())) () in
-  let res = handle session [] in
+  let res = handle session [] [] in
   check_result (Ok [ Session.Closed session |> Pool_event.session ]) res
 ;;
 
@@ -909,7 +911,8 @@ let close_valid_with_assignments () =
       , Assignment.IncrementParticipationCount.create true
       , None ))
   in
-  let res = SetAttendance.handle session assignments in
+  let tags = Tag_test.Data.Tag.create_with_description () |> CCList.return in
+  let res = SetAttendance.handle session tags assignments in
   let expected =
     CCList.fold_left
       (fun events
@@ -927,11 +930,22 @@ let close_valid_with_assignments () =
           in
           Updated contact |> Pool_event.contact
         in
+        let tag_events =
+          let open Tags in
+          tags
+          |> CCList.map (fun (tag : t) ->
+            Tagged
+              { Tagged.model_uuid = Contact.id assignment.contact
+              ; tag_uuid = tag.id
+              }
+            |> Pool_event.tags)
+        in
         events
         @ [ AttendanceSet (assignment, no_show, participated)
             |> Pool_event.assignment
           ; contact_event
-          ])
+          ]
+        @ tag_events)
       [ Session.Closed session |> Pool_event.session ]
       assignments
     |> CCResult.return
@@ -956,7 +970,7 @@ let close_with_deleted_assignment () =
     , None )
   in
   let res =
-    Cqrs_command.Assignment_command.SetAttendance.handle session [ command ]
+    Cqrs_command.Assignment_command.SetAttendance.handle session [] [ command ]
   in
   check_result
     (Error Pool_common.Message.(IsMarkedAsDeleted Field.Assignment))
@@ -974,7 +988,7 @@ let validate_invalid_participation () =
     , Assignment.IncrementParticipationCount.create false
     , None )
   in
-  let res = handle session [ participation ] in
+  let res = handle session [] [ participation ] in
   let expected =
     Error Pool_common.Message.(MutuallyExclusive Field.(Participated, NoShow))
   in
@@ -996,7 +1010,7 @@ let close_unparticipated_with_followup () =
     , Assignment.IncrementParticipationCount.create true
     , Some [ follow_up ] )
   in
-  let res = handle session [ participation ] in
+  let res = handle session [] [ participation ] in
   let expected =
     let contact =
       let open Contact in
