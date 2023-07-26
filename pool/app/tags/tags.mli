@@ -143,6 +143,7 @@ module ParticipationTags : sig
     | Experiment of Experiment.Id.t
     | Session of Session.Id.t
 
+  val to_common_id : entity -> Pool_common.Id.t
   val find_all : Pool_database.Label.t -> entity -> t list Lwt.t
   val find_available : Pool_database.Label.t -> entity -> t list Lwt.t
 end

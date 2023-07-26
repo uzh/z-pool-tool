@@ -86,42 +86,6 @@ let message_templates_html
     ]
 ;;
 
-let tag_form
-  Pool_context.{ language; csrf; _ }
-  ?(existing = [])
-  available
-  action
-  =
-  let available =
-    CCList.(filter CCFun.(flip (mem ~eq:Tags.equal) existing %> not) available)
-  in
-  form
-    ~a:[ a_method `Post; a_action action ]
-    Input.
-      [ csrf_element csrf ()
-      ; div
-          ~a:[ a_class [ "stack" ] ]
-          [ selector
-              ~add_empty:true
-              ~option_formatter:Tags.(fun tag -> Title.value tag.title)
-              language
-              Pool_common.Message.Field.Tag
-              Tags.(fun tag -> Id.value tag.id)
-              available
-              None
-              ()
-          ; div
-              ~a:[ a_class [ "flexrow" ] ]
-              [ submit_element
-                  ~classnames:[ "push" ]
-                  language
-                  Pool_common.Message.(Add (Some Field.Tag))
-                  ()
-              ]
-          ]
-      ]
-;;
-
 let index Pool_context.{ language; _ } experiment_list =
   let experiment_table experiments =
     let thead =
@@ -445,17 +409,12 @@ let edit
       in
       div
         ~a:[ a_class [ "switcher-lg"; "flex-gap" ] ]
-        [ tag_form context ~existing:current available assign_action
-        ; div
-            ~a:[ a_class [ "form-group" ] ]
-            [ label
-                [ Utils.control_to_string language Message.(Remove (Some field))
-                  |> txt
-                ]
-            ; Component.Tag.tag_list
-                ~remove_action:(remove_action, csrf, language)
-                current
-            ]
+        [ Tag.add_tags_form context ~existing:current available assign_action
+        ; Component.Tag.tag_list
+            language
+            ~remove_action:(remove_action, csrf)
+            ~title:Pool_common.I18n.SelectedTags
+            current
         ])
     else txt ""
   in
@@ -639,7 +598,7 @@ let detail
           [ h3
               ~a:[ a_class [ "heading-3" ] ]
               Pool_common.[ Utils.nav_link_to_string language title |> txt ]
-          ; Component.Tag.tag_list tags
+          ; Component.Tag.tag_list language tags
           ]
       in
       Pool_common.I18n.[ Tags, tags; ParticipationTags, participation_tags ]

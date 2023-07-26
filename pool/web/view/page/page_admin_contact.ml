@@ -99,12 +99,13 @@ let detail Pool_context.{ language; _ } contact tags =
                 ~a:[ a_class [ "heading-3" ] ]
                 Pool_common.
                   [ Utils.nav_link_to_string language I18n.Tags |> txt ]
-            ; Component.Tag.tag_list tags
+            ; Component.Tag.tag_list language tags
             ]
         ]
     ]
 ;;
 
+(* TODO: Reuse component *)
 let tag_form
   Pool_context.{ language; csrf; query_language; _ }
   ?(existing = [])
@@ -176,19 +177,11 @@ let edit
       ; div
           ~a:[ a_class [ "switcher-lg"; "flex-gap" ] ]
           [ tag_form context ~existing:tags available_tags contact
-          ; div
-              ~a:[ a_class [ "form-group" ] ]
-              [ label
-                  Pool_common.
-                    [ Utils.control_to_string
-                        language
-                        Message.(Remove (Some Field.Tag))
-                      |> txt
-                    ]
-              ; Component.Tag.tag_list
-                  ~remove_action:(remove_action, csrf, language)
-                  tags
-              ]
+          ; Component.Tag.tag_list
+              language
+              ~remove_action:(remove_action, csrf)
+              ~title:Pool_common.I18n.SelectedTags
+              tags
           ]
       ])
     else []

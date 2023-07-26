@@ -208,6 +208,17 @@ module Admin = struct
       ; choose ~scope:(MessageTemplate |> url_key) specific
       ]
     in
+    let tag_routes_helper
+      (assign_handler, assign_access)
+      (remove_handler, remove_access)
+      =
+      let specific =
+        [ post "/remove" ~middlewares:[ remove_access ] remove_handler ]
+      in
+      [ post "/assign" ~middlewares:[ assign_access ] assign_handler
+      ; choose ~scope:(Tag |> url_key) specific
+      ]
+    in
     let add_template_label label =
       let open Message_template.Label in
       label |> human_url |> Format.asprintf "/%s"
@@ -351,6 +362,12 @@ module Admin = struct
             in
             [ choose ~scope:(Assignment |> url_key) specific ]
           in
+          let participation_tags =
+            let open Handler.Admin.Experiments.Tags in
+            tag_routes_helper
+              (assign_session_participation_tag, Access.update)
+              (remove_session_participation_tag, Access.update)
+          in
           [ get "" ~middlewares:[ Access.read ] show
           ; post "" ~middlewares:[ Access.update ] update
           ; get "/edit" ~middlewares:[ Access.update ] edit
@@ -365,6 +382,7 @@ module Admin = struct
           ; post "/close" ~middlewares:[ Access.close ] close_post
           ; choose ~scope:(add_human_field Assignments) assignments
           ; choose ~scope:(add_human_field MessageTemplate) message_templates
+          ; choose ~scope:(ParticipationTag |> human_url) participation_tags
           ]
         in
         [ get "" ~middlewares:[ Access.index ] list
@@ -451,35 +469,15 @@ module Admin = struct
       let tags =
         let open Handler.Admin.Settings.Tags in
         let open Handler.Admin.Experiments.Tags in
-        let specific =
-          [ post
-              "/remove"
-              ~middlewares:[ Access.remove_tag_from_experiment ]
-              remove_tag
-          ]
-        in
-        [ post
-            "/assign"
-            ~middlewares:[ Access.assign_tag_to_experiment ]
-            assign_tag
-        ; choose ~scope:(Tag |> url_key) specific
-        ]
+        tag_routes_helper
+          (assign_tag, Access.assign_tag_to_experiment)
+          (remove_tag, Access.remove_tag_from_experiment)
       in
       let participation_tags =
         let open Handler.Admin.Experiments in
-        let specific =
-          [ post
-              "/remove"
-              ~middlewares:[ Access.update ]
-              Tags.remove_participation_tag
-          ]
-        in
-        [ post
-            "/assign"
-            ~middlewares:[ Access.update ]
-            Tags.assign_participation_tag
-        ; choose ~scope:(Tag |> url_key) specific
-        ]
+        tag_routes_helper
+          (Tags.assign_experiment_participation_tag, Access.update)
+          (Tags.remove_experiment_participation_tag, Access.update)
       in
       let specific =
         Experiments.
@@ -546,19 +544,9 @@ module Admin = struct
         in
         let tags =
           let open Handler.Admin.Settings.Tags in
-          let specific =
-            [ post
-                "/remove"
-                ~middlewares:[ Access.remove_tag_from_contact ]
-                Tags.remove_tag
-            ]
-          in
-          [ post
-              "/assign"
-              ~middlewares:[ Access.assign_tag_to_contact ]
-              Tags.assign_tag
-          ; choose ~scope:(Tag |> url_key) specific
-          ]
+          tag_routes_helper
+            (Tags.assign_tag, Access.assign_tag_to_contact)
+            (Tags.remove_tag, Access.remove_tag_from_contact)
         in
         [ get "" ~middlewares:[ Access.read ] detail
         ; post "" ~middlewares:[ Access.update ] update

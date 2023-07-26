@@ -215,10 +215,10 @@ let assign_auto_tag_to_experiment () =
   let experiment = Test_utils.Model.create_experiment () in
   let tag = Data.Tag.create_with_description () in
   let events =
-    let open Cqrs_command.Tags_command.AssignParticipationTagToExperiment in
+    let open Cqrs_command.Tags_command.AssignParticipationTagToEntity in
     Pool_common.Message.[ Field.(show Tag), [ Tags.(Id.value tag.id) ] ]
     |> decode
-    >>= handle experiment
+    >>= handle (ParticipationTags.Experiment experiment.Experiment.id)
   in
   let expected =
     Ok
@@ -236,8 +236,8 @@ let remove_auto_tag_from_experiment () =
   let experiment = Test_utils.Model.create_experiment () in
   let tag = Data.Tag.create_with_description () in
   let events =
-    let open Cqrs_command.Tags_command.RemoveParticipationTagFromExperiment in
-    handle experiment tag
+    let open Cqrs_command.Tags_command.RemoveParticipationTagFromEntity in
+    handle (ParticipationTags.Experiment experiment.Experiment.id) tag
   in
   let expected =
     Ok

@@ -576,6 +576,7 @@ let detail
   (Pool_context.{ language; _ } as context)
   experiment
   (session : Session.t)
+  participation_tags
   assignments
   =
   let open Pool_common in
@@ -724,6 +725,14 @@ let detail
     in
     div ~a:[ a_class [ "stack" ] ] [ table; links ]
   in
+  let tags_html =
+    div
+      [ h2
+          ~a:[ a_class [ "heading-2" ] ]
+          Pool_common.[ Utils.nav_link_to_string language I18n.Tags |> txt ]
+      ; Component.Tag.tag_list language participation_tags
+      ]
+  in
   let assignments_html =
     let assignment_list =
       Page_admin_assignments.(
@@ -751,7 +760,9 @@ let detail
          (Experiment.Id.value experiment.Experiment.id)
          (Id.value session.id))
   in
-  div ~a:[ a_class [ "stack-lg" ] ] [ session_overview; assignments_html ]
+  div
+    ~a:[ a_class [ "stack-lg" ] ]
+    [ session_overview; tags_html; assignments_html ]
   |> CCList.return
   |> Layout.Experiment.(
        create
@@ -769,6 +780,7 @@ let edit
   locations
   session_reminder_templates
   sys_languages
+  (current_tags, available_tags, experiment_tags)
   flash_fetcher
   =
   let open Message_template in
@@ -803,14 +815,59 @@ let edit
       else session_path Label.(prefixed_human_url label) |> CCOption.pure
     in
     div
-      [ h3 ~a:[ a_class [ "heading-2" ] ] [ txt (Label.to_human label) ]
+      [ h2 ~a:[ a_class [ "heading-2" ] ] [ txt (Label.to_human label) ]
       ; Page_admin_message_template.table language list new_path edit_path
+      ]
+  in
+  let tags_html =
+    let tags_action =
+      Format.asprintf
+        "%s/%s"
+        (session_path Message.Field.(human_url ParticipationTag))
+    in
+    let remove_action (tag : Tags.t) =
+      Format.asprintf "%s/%s" Tags.(tag.id |> Id.value) "remove" |> tags_action
+    in
+    div
+      [ h3
+          ~a:[ a_class [ "heading-3" ] ]
+          [ txt Pool_common.(Utils.nav_link_to_string language I18n.Tags) ]
+      ; p
+          Pool_common.
+            [ Utils.hint_to_string language I18n.ParticipationTags |> txt ]
+      ; div
+          ~a:[ a_class [ "switcher-lg"; "flex-gap" ] ]
+          [ Tag.add_tags_form
+              context
+              ~existing:current_tags
+              available_tags
+              (tags_action "assign")
+          ; div
+              ~a:[ a_class [ "flexcolumn"; "flex-gap" ] ]
+              [ Component.Tag.tag_list
+                  language
+                  ~remove_action:(remove_action, csrf)
+                  ~title:Pool_common.I18n.SelectedTags
+                  current_tags
+              ; div
+                  ~a:
+                    [ a_class [ "border-top"; "inset"; "vertical"; "n-shape" ] ]
+                  [ p
+                      [ txt
+                          "Every participant of a session of this experiment \
+                           will be tagged with the following tags by default."
+                      ]
+                  ; Component.Tag.tag_list language experiment_tags
+                  ]
+              ]
+          ]
       ]
   in
   div
     ~a:[ a_class [ "stack-lg" ] ]
     [ form
     ; message_templates_html Label.SessionReminder session_reminder_templates
+    ; tags_html
     ]
   |> CCList.return
   |> Layout.Experiment.(
@@ -886,7 +943,7 @@ let[@warning "-27"] close
             I18n.SessionCloseNoParticipationTagsSelected
           |> txt
         | tags ->
-          let tags = Component.Tag.tag_list tags in
+          let tags = Component.Tag.tag_list language tags in
           div
             [ p
                 [ Utils.hint_to_string

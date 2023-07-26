@@ -78,6 +78,8 @@ Sie kommen für mehr Experimente in Frage, umso kompletter Ihr Profil ist.|}
       (Locales_de.field_to_string field)
   | RolesGranted -> "Zugewiesene Rollen"
   | SentInvitations -> "Versendete Einladungen"
+  | SelectedTags -> "Aktuell zugewiesene Tags"
+  | SelectedTagsEmpty -> "Keine Tags zugewiesen"
   | SessionDetailTitle start ->
     Format.asprintf "Session am %s" (Utils_time.formatted_date_time start)
   | SessionIndent -> "Einrückungen groupieren Folgesessions."

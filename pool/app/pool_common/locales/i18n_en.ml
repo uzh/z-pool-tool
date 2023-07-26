@@ -76,6 +76,8 @@ let to_string = function
       (Locales_en.field_to_string field)
   | RolesGranted -> "Granted roles"
   | SentInvitations -> "Sent invitations"
+  | SelectedTags -> "Currently assigned tags"
+  | SelectedTagsEmpty -> "No tags assigned"
   | SessionDetailTitle start ->
     Format.asprintf "Session at %s" (Utils_time.formatted_date_time start)
   | SessionIndent -> "Indentations group follow-up sessions."

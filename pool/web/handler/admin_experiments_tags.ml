@@ -5,14 +5,28 @@ module Field = Pool_common.Message.Field
 
 let src = Logs.Src.create "handler.admin.experiments.tags"
 let experiment_id = HttpUtils.find_id Experiment.Id.of_string Field.Experiment
+let session_id = HttpUtils.find_id Session.Id.of_string Field.Session
 
 let handle_tag action req =
   let tags = Pool_context.Logger.Tags.req req in
   let experiment_id = experiment_id req in
-  let path =
+  let base_path =
     experiment_id
     |> Experiment.Id.value
-    |> Format.asprintf "/admin/experiments/%s/edit"
+    |> Format.asprintf "/admin/experiments/%s"
+  in
+  let path =
+    match action with
+    | `Assign
+    | `AssignExperimentParticipationTag
+    | `Remove
+    | `RemoveExperimentParticipationTag -> Format.asprintf "%s/edit" base_path
+    | `AssignSessionParticipationTag | `RemoveSessionParticipationTag ->
+      let session_id = session_id req in
+      Format.asprintf
+        "%s/sessions/%s/edit"
+        base_path
+        (Session.Id.value session_id)
   in
   let%lwt urlencoded =
     Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
@@ -24,30 +38,44 @@ let handle_tag action req =
          urlencoded
          |> decode
          |> Lwt_result.lift
-         >== handle ?tags:(Some tags) experiment
+         >== handle
          >|+ CCPair.make Pool_common.Message.TagAssigned
        in
        let handle_remove handle =
          HttpUtils.find_id Tags.Id.of_string Field.Tag req
          |> Tags.find database_label
-         >== handle experiment
+         >== handle
          >|+ CCPair.make Pool_common.Message.TagRemoved
        in
        let* message, events =
+         let open Tags.ParticipationTags in
          match action with
          | `Assign ->
            let open Cqrs_command.Tags_command.AssignTagToExperiment in
-           handle_assign decode handle
-         | `AssignAutoTag ->
-           let open Cqrs_command.Tags_command.AssignParticipationTagToExperiment in
-           handle_assign decode handle
+           let fnc = handle ~tags experiment in
+           handle_assign decode fnc
+         | `AssignExperimentParticipationTag ->
+           let open Cqrs_command.Tags_command.AssignParticipationTagToEntity in
+           let fnc = handle ~tags (Experiment experiment_id) in
+           handle_assign decode fnc
+         | `AssignSessionParticipationTag ->
+           let open Cqrs_command.Tags_command.AssignParticipationTagToEntity in
+           let session_id = session_id req in
+           let fnc = handle ~tags (Session session_id) in
+           handle_assign decode fnc
          | `Remove ->
            let open Cqrs_command.Tags_command.RemoveTagFromExperiment in
-           handle_remove handle
-         | `RemoveParticipationTag ->
-           let open
-             Cqrs_command.Tags_command.RemoveParticipationTagFromExperiment in
-           handle_remove handle
+           let fnc = handle ~tags experiment in
+           handle_remove fnc
+         | `RemoveExperimentParticipationTag ->
+           let open Cqrs_command.Tags_command.RemoveParticipationTagFromEntity in
+           let fnc = handle ~tags (Experiment experiment_id) in
+           handle_remove fnc
+         | `RemoveSessionParticipationTag ->
+           let open Cqrs_command.Tags_command.RemoveParticipationTagFromEntity in
+           let session_id = session_id req in
+           let fnc = handle ~tags (Session session_id) in
+           handle_remove fnc
        in
        let handle =
          Lwt_list.iter_s (Pool_event.handle_event ~tags database_label)
@@ -64,5 +92,14 @@ let handle_tag action req =
 
 let assign_tag = handle_tag `Assign
 let remove_tag = handle_tag `Remove
-let assign_participation_tag = handle_tag `AssignAutoTag
-let remove_participation_tag = handle_tag `RemoveParticipationTag
+
+let assign_experiment_participation_tag =
+  handle_tag `AssignExperimentParticipationTag
+;;
+
+let remove_experiment_participation_tag =
+  handle_tag `RemoveExperimentParticipationTag
+;;
+
+let assign_session_participation_tag = handle_tag `AssignSessionParticipationTag
+let remove_session_participation_tag = handle_tag `RemoveSessionParticipationTag

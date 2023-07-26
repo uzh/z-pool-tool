@@ -208,12 +208,12 @@ end = struct
   let effects = Tags.Guard.Access.remove Experiment.Guard.Access.update
 end
 
-module AssignParticipationTagToExperiment : sig
+module AssignParticipationTagToEntity : sig
   include Common.CommandSig with type t = Tags.Id.t
 
   val handle
     :  ?tags:Logs.Tag.set
-    -> Experiment.t
+    -> Tags.ParticipationTags.entity
     -> t
     -> (Pool_event.t list, Conformist.error_msg) result
 
@@ -223,14 +223,15 @@ module AssignParticipationTagToExperiment : sig
 end = struct
   type t = Tags.Id.t
 
-  let handle ?(tags = Logs.Tag.empty) experiment (tag_uuid : t) =
+  let handle ?(tags = Logs.Tag.empty) entity (tag_uuid : t) =
     Logs.info ~src (fun m ->
-      m "Handle command AssignParticipationTagToExperiment" ~tags);
+      m "Handle command AssignParticipationTagToEntity" ~tags);
     Ok
-      [ Tags.ParticipationTagAssigned
-          (experiment.Experiment.id |> Experiment.Id.to_common, tag_uuid)
-        |> Pool_event.tags
-      ]
+      Tags.
+        [ ParticipationTagAssigned
+            (ParticipationTags.to_common_id entity, tag_uuid)
+          |> Pool_event.tags
+        ]
   ;;
 
   let validate = validate Tags.Model.Experiment
@@ -243,12 +244,12 @@ end = struct
   let effects = Experiment.Guard.Access.update
 end
 
-module RemoveParticipationTagFromExperiment : sig
+module RemoveParticipationTagFromEntity : sig
   include Common.CommandSig with type t = Tags.t
 
   val handle
     :  ?tags:Logs.Tag.set
-    -> Experiment.t
+    -> Tags.ParticipationTags.entity
     -> t
     -> (Pool_event.t list, Conformist.error_msg) result
 
@@ -256,14 +257,15 @@ module RemoveParticipationTagFromExperiment : sig
 end = struct
   type t = Tags.t
 
-  let handle ?(tags = Logs.Tag.empty) experiment tag =
+  let handle ?(tags = Logs.Tag.empty) entity tag =
     Logs.info ~src (fun m ->
-      m "Handle command RemoveParticipationTagFromExperiment" ~tags);
+      m "Handle command RemoveParticipationTagFromEntity" ~tags);
     Ok
-      [ Tags.ParticipationTagRemoved
-          (experiment.Experiment.id |> Experiment.Id.to_common, tag.Tags.id)
-        |> Pool_event.tags
-      ]
+      Tags.
+        [ ParticipationTagRemoved
+            (ParticipationTags.to_common_id entity, tag.Tags.id)
+          |> Pool_event.tags
+        ]
   ;;
 
   let effects = Experiment.Guard.Access.update

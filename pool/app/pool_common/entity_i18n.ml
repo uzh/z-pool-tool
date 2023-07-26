@@ -49,6 +49,8 @@ type t =
   | RoleCurrentlyNoneAssigned of Entity_message.Field.t
   | RolesGranted
   | SentInvitations
+  | SelectedTags
+  | SelectedTagsEmpty
   | SessionDetailTitle of Ptime.t
   | SessionIndent
   | SessionReminder
