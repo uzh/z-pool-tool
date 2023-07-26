@@ -74,6 +74,7 @@ module Root = struct
       ; Migration_202306021033.migration ()
       ; Migration_202306261642.migration_root ()
       ; Migration_202307121722.migration_root ()
+      ; Migration_202307131619.migration_root ()
       ]
   ;;
 
