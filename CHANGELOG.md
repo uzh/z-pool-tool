@@ -4,6 +4,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/pool/tree/HEAD)
 
+## [0.3.0](https://github.com/uzh/pool/tree/0.3.0) - 2023-07-26
+
 ## Added
 
 - text message service
