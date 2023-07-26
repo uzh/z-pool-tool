@@ -7,7 +7,6 @@ module Field = Pool_common.Message.Field
 let tags_path ?suffix () =
   let default = "/admin/settings/tags/" in
   CCOption.map_or ~default (Format.asprintf "%s%s" default) suffix
-  |> Sihl.Web.externalize_path
 ;;
 
 let layout language children =

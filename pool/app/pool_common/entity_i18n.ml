@@ -2,6 +2,7 @@ type t =
   | Address
   | AvailableSpots
   | Canceled
+  | Closed
   | ContactWaitingListEmpty
   | ContactWaitingListTitle
   | DashboardProfileCompletionText

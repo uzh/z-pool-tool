@@ -349,10 +349,20 @@ let session_list
           in
           let row_attrs =
             let id = a_user_data "id" Session.(Id.value session.id) in
+            let classnames =
+              let check opt classname =
+                if CCOption.is_some opt then Some classname else None
+              in
+              [ check session.canceled_at "bg-red-lighter"
+              ; check session.closed_at "bg-green-lighter"
+              ]
+              |> CCList.filter_map CCFun.id
+            in
             session.follow_up_to
             |> CCOption.map (fun parent ->
               a_user_data "parent-id" (Session.Id.value parent))
             |> CCOption.map_or ~default:[ id ] (fun parent -> [ id; parent ])
+            |> fun attrs -> a_class classnames :: attrs
           in
           let title =
             let date = span [ txt (session |> session_date_to_human) ] in
@@ -466,6 +476,12 @@ let session_list
       ~thead
       rows
   in
+  let table_legend =
+    Component.Table.table_color_legend
+      language
+      Pool_common.I18n.
+        [ Closed, "bg-green-lighter"; Canceled, "bg-red-lighter" ]
+  in
   let hover_script =
     match chronological with
     | false -> txt ""
@@ -528,6 +544,7 @@ let session_list
            ; txt " are follow-up sessions."
            ]
        else txt "")
+    ; table_legend
     ; table
     ; hover_script
     ]

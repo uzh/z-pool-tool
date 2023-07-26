@@ -3,6 +3,12 @@ $icons-font-path: "../node_modules/@econ/frontend-framework/dist/font";
 @import "../node_modules/@econ/frontend-framework/dist/main.scss";
 @import "./admin/calendar";
 
+$green-lighter: color.adjust($green, $lightness: $color-shades-ratio * 3);
+$red-lighter: color.adjust($red, $lightness: $color-shades-ratio * 3);
+
+$green-light: color.adjust($green, $lightness: $color-shades-ratio * 2);
+$red-light: color.adjust($red, $lightness: $color-shades-ratio * 2);
+
 // Index page
 .index-page>*:nth-child(2) {
     flex-basis: 25%;
@@ -101,12 +107,6 @@ $icons-font-path: "../node_modules/@econ/frontend-framework/dist/font";
     }
 }
 
-// Color
-.bg-red-lighter,
-[class*="-on-red-lighter"] {
-    background-color: $red-lighter;
-}
-
 // Flex
 .flex-basis-100 {
     flex-basis: 100%;
@@ -148,14 +148,33 @@ abbr[title] {
     white-space: nowrap;
 }
 
-
-.table>tbody>tr:nth-child(1n).highlighted {
-    background-color: color.adjust($color-primary, $lightness: 65%);
+// Color
+.table.striped tr:nth-child(1n).bg-green-lighter {
+    background-color: $green-lighter;
 }
 
-.table.striped>tr.bg-red-lighter,
-.table.striped tbody>tr.bg-red-lighter {
+.table.striped tr:nth-child(1n).bg-red-lighter {
     background-color: $red-lighter;
+}
+
+.table tr.highlighted {
+    position: relative;
+
+    &:after {
+        content: '';
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 0;
+        bottom: 0;
+        background-color: $black;
+        opacity: 0.05;
+    }
+}
+
+.legend-color {
+    width: $space-base;
+    border: 1px solid $grey-border;
 }
 
 button.as-link {
@@ -171,7 +190,6 @@ button.as-link {
 }
 
 // Tags
-
 .tag button {
     color: inherit;
     background-color: transparent;

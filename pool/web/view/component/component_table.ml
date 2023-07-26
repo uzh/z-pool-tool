@@ -18,22 +18,37 @@ let layout_class = function
   | `Simple -> "simple"
 ;;
 
-let table_classes layout align_top align_last_end =
+let table_classes layout ?(align_top = false) ?(align_last_end = false) () =
   let base = [ "table"; layout_class layout ] in
   [ align_top, "align-top"; align_last_end, "align-last-end" ]
   |> CCList.filter_map (fun (add, str) -> if add then Some str else None)
   |> CCList.append base
 ;;
 
+let table_color_legend language items =
+  items
+  |> CCList.map (fun (i18n, classname) ->
+    div
+      ~a:[ a_class [ "flexrow"; "flex-gap"; "align-center" ] ]
+      [ div
+          ~a:[ a_class [ classname; "aspect-ratio"; "square"; "legend-color" ] ]
+          []
+      ; span Pool_common.[ Utils.text_to_string language i18n |> txt ]
+      ])
+  |> div ~a:[ a_class [ "flexcolumn"; "stack-sm" ] ]
+;;
+
 let horizontal_table
   layout
   ?(classnames = [])
   ?thead
-  ?(align_top = false)
-  ?(align_last_end = false)
+  ?align_top
+  ?align_last_end
   rows
   =
-  let classes = table_classes layout align_top align_last_end @ classnames in
+  let classes =
+    table_classes layout ?align_top ?align_last_end () @ classnames
+  in
   let thead = CCOption.map table_head thead in
   table
     ?thead
@@ -45,12 +60,12 @@ let responsive_horizontal_table
   layout
   language
   header
-  ?(align_top = false)
-  ?(align_last_end = false)
+  ?align_top
+  ?align_last_end
   ?row_formatter
   rows
   =
-  let classes = table_classes layout align_top align_last_end in
+  let classes = table_classes layout ?align_top ?align_last_end () in
   let header =
     header
     |> CCList.map
@@ -92,8 +107,8 @@ let responsive_horizontal_table
        rows)
 ;;
 
-let vertical_table layout language ?(align_top = false) ?(classnames = []) rows =
-  let classes = table_classes layout align_top false in
+let vertical_table layout language ?align_top ?(classnames = []) rows =
+  let classes = table_classes layout ?align_top ~align_last_end:false () in
   table
     ~a:[ a_class (classes @ classnames) ]
     (CCList.map
