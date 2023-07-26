@@ -170,6 +170,11 @@ abbr[title] {
         background-color: $black;
         opacity: 0.05;
     }
+
+    a,
+    form {
+        z-index: 5;
+    }
 }
 
 .legend-color {
