@@ -188,12 +188,6 @@ let validate_partial_update
     >|= (fun m -> Lastname (current_version, m))
     >>= check_version contact.Contact.lastname_version
     |> Lwt.return
-  | PoolField.Paused ->
-    User.Paused.schema
-    |> validate
-    >|= (fun m -> Paused (current_version, m))
-    >>= check_version contact.Contact.paused_version
-    |> Lwt.return
   | PoolField.Language ->
     (fun () -> Conformist.optional @@ Pool_common.Language.schema ())
     |> validate

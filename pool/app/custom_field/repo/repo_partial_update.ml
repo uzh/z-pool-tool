@@ -206,15 +206,6 @@ let update pool user (field : PartialUpdate.t) (contact : Contact.t) =
         lastname_version = $3
       |sql} )
     |> update_user_table
-  | Paused (version, value) ->
-    ( dyn
-      |> Dynparam.add Caqti_type.bool (value |> Pool_user.Paused.value)
-      |> Dynparam.add Pool_common.Repo.Version.t version
-    , {sql|
-        paused = $3,
-        paused_version = $4
-      |sql} )
-    |> update_user_table
   | Language (version, value) ->
     ( dyn
       |> Dynparam.add Caqti_type.(option Pool_common.Repo.Language.t) value

@@ -114,12 +114,6 @@ let personal_details_form
                       ; option_formatter = None
                       ; selected = contact.language
                       } )
-                ; ( contact.paused_version
-                  , Field.Paused
-                  , contact.paused
-                    |> User.Paused.value
-                    |> CCOption.pure
-                    |> boolean )
                 ])
     in
     match is_admin with

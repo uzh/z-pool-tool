@@ -307,19 +307,16 @@ let contacts db_label =
         | Ok contact ->
           let%lwt custom_fields = custom_fields contact in
           let field_events =
-            [ Custom_field.PartialUpdate
-                ( Custom_field.PartialUpdate.Paused
-                    ( Pool_common.Version.create ()
-                    , paused |> Pool_user.Paused.create )
-                , contact
-                , Pool_context.Contact contact )
-            ]
-            @
             if verified then answer_custom_fields custom_fields contact else []
           in
           let contact_events =
             if disabled
-            then [ Contact.Disabled contact ]
+            then
+              [ Contact.(
+                  Updated
+                    { contact with paused = Pool_user.Paused.create paused })
+              ; Contact.Disabled contact
+              ]
             else [] @ if verified then [ Contact.EmailVerified contact ] else []
           in
           (contacts @ contact_events, fields @ field_events) |> Lwt.return

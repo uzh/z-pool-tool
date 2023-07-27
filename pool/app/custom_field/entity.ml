@@ -856,13 +856,12 @@ module PartialUpdate = struct
   type t =
     | Firstname of Pool_common.Version.t * User.Firstname.t
     | Lastname of Pool_common.Version.t * User.Lastname.t
-    | Paused of Pool_common.Version.t * User.Paused.t
     | Language of Pool_common.Version.t * Pool_common.Language.t option
     | Custom of Public.t
   [@@deriving eq, show, variants]
 
   let is_required = function
-    | Firstname _ | Lastname _ | Paused _ | Language _ -> true
+    | Firstname _ | Lastname _ | Language _ -> true
     | Custom field -> Public.required field |> Required.value
   ;;
 
@@ -871,7 +870,6 @@ module PartialUpdate = struct
     function
     | Firstname (version, value) -> firstname (version |> increment) value
     | Lastname (version, value) -> lastname (version |> increment) value
-    | Paused (version, value) -> paused (version |> increment) value
     | Language (version, value) -> language (version |> increment) value
     | Custom custom_field -> Custom (Public.increment_version custom_field)
   ;;
