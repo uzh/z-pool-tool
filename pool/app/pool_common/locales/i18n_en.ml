@@ -387,8 +387,10 @@ let confirmable_to_string confirmable =
      , Some
          "Assignments to follow-up sessions will be marked as deleted as well."
      )
+   | PauseAccount -> "account", "pause", None
    | PublisCustomFieldOption ->
      "option", "publish", Some "You will not be able to delete the it anymore."
+   | ReactivateAccount -> "account", "reactivate", None
    | RemoveTag -> "tag", "remove", None
    | RemoveRule -> "rule", "delete", None
    | RevokeRole -> "role", "revoke", None

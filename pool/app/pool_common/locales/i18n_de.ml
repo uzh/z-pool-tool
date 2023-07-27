@@ -397,6 +397,7 @@ let confirmable_to_string confirmable =
      , "als gelöscht markieren"
      , Some
          "Anmeldungen an Folgesession werden ebenfalls als gelöscht markiert." )
+   | PauseAccount -> "den Account", "pausieren", None
    | PublisCustomField ->
      ( "das Feld und alle dazugehörigen Optionen"
      , "publizieren"
@@ -405,6 +406,7 @@ let confirmable_to_string confirmable =
      ( "die Option"
      , "publizieren"
      , Some "Sie werden die Option nicht mehr löschen können." )
+   | ReactivateAccount -> "den Account", "reaktivieren", None
    | RemoveRule -> "die Regel", "löschen", None
    | RemoveTag -> "den Tag", "entfernen", None
    | RevokeRole -> "die Rolle", "entfernen", None

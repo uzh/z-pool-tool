@@ -131,6 +131,8 @@ type success =
   | AddedToWaitingList
   | AssignmentCreated
   | Canceled of Field.t
+  | CellPhoneTokenSent
+  | CellPhoneVerified
   | Closed of Field.t
   | Created of Field.t
   | Deleted of Field.t
@@ -139,11 +141,10 @@ type success =
   | FileDeleted
   | ImportCompleted
   | MarkedAsDeleted of Field.t
+  | PausedToggled of bool
   | PasswordChanged
   | PasswordReset
   | PasswordResetSuccessMessage
-  | CellPhoneTokenSent
-  | CellPhoneVerified
   | Published of Field.t
   | RemovedFromWaitingList
   | Rescheduled of Field.t
@@ -207,9 +208,11 @@ type control =
   | MarkAsDeleted
   | More
   | NextPage
+  | PauseAccount
   | PleaseSelect
   | PreviousPage
   | Publish of Field.t option
+  | ReactivateAccount
   | Register
   | RemoveFromWaitingList
   | Remove of Field.t option

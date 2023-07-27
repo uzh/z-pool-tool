@@ -202,8 +202,10 @@ type confirmable =
   | DeleteSession
   | MarkAssignmentAsDeleted
   | MarkAssignmentWithFollowUpsAsDeleted
+  | PauseAccount
   | PublisCustomField
   | PublisCustomFieldOption
+  | ReactivateAccount
   | RemoveRule
   | RemoveTag
   | RevokeRole

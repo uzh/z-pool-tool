@@ -134,6 +134,7 @@ module Contact = struct
       ; get "/user/login-information" UserProfile.login_information
       ; get "/user/contact-information" UserProfile.contact_information
       ; post "/user/update" UserProfile.update
+      ; post "/user/update/pause" UserProfile.toggle_paused
       ; post "/user/update-email" UserProfile.update_email
       ; post "/user/update-password" UserProfile.update_password
       ; post "/user/phone/update" UserProfile.update_cell_phone
@@ -550,6 +551,7 @@ module Admin = struct
         in
         [ get "" ~middlewares:[ Access.read ] detail
         ; post "" ~middlewares:[ Access.update ] update
+        ; post "pause" ~middlewares:[ Access.update ] toggle_paused
         ; get "/edit" ~middlewares:[ Access.update ] edit
         ; choose
             ~scope:(Format.asprintf "field/%s" (CustomField |> url_key))

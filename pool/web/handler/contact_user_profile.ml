@@ -411,3 +411,18 @@ let completion_post req =
   in
   result |> HttpUtils.extract_happy_path_with_actions ~src req
 ;;
+
+let toggle_paused req =
+  let open Utils.Lwt_result.Infix in
+  let redirect_path = "/user/personal-details" in
+  let tags = tags req in
+  let result context =
+    let* contact =
+      Pool_context.find_contact context
+      |> Lwt_result.lift
+      >|- fun err -> err, redirect_path
+    in
+    Helpers.ContactUpdate.toggle_paused context redirect_path contact tags
+  in
+  result |> HttpUtils.extract_happy_path ~src req
+;;

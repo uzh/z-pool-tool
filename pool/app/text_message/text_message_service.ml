@@ -34,8 +34,6 @@ module Config = struct
   let gateway_url auth_key =
     Format.asprintf "%s/%s/%s" gateway_server gateway_api_path auth_key
   ;;
-
-  let auth_key () = Sihl.Configuration.read_string "GTX_AUTH_KEY"
 end
 
 let get_api_key database_label =

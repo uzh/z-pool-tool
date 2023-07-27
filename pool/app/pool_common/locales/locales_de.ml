@@ -250,6 +250,10 @@ let success_to_string : success -> string = function
     "Der Import Ihres Kontos wurde erfolgreich abgeschlossen."
   | MarkedAsDeleted field ->
     field_message "" (field_to_string field) "wurde als gelöscht markiert."
+  | PausedToggled paused ->
+    Format.asprintf
+      "Der Account wurde erfolgreich %s."
+      (if paused then "pausiert" else "reaktiviert")
   | PasswordChanged -> "Passwort wurde geändert."
   | PasswordReset -> "Passwort ist zurückgesetzt, du kannst dich nun einloggen."
   | PasswordResetSuccessMessage ->
@@ -550,9 +554,11 @@ let control_to_string = function
   | MarkAsDeleted -> format_submit "als gelöscht markieren" None
   | More -> "mehr"
   | NextPage -> "weiter"
+  | PauseAccount -> "Account pausieren"
   | PleaseSelect -> "bitte wählen"
   | PreviousPage -> "zurück"
   | Publish field -> format_submit "veröffentlichen" field
+  | ReactivateAccount -> "Account reaktivieren"
   | Register -> format_submit "einschreiben" None
   | RemoveFromWaitingList -> "Ich möchte mich von der Warteliste austragen"
   | Remove field -> format_submit "entfernen" field

@@ -185,3 +185,19 @@ end = struct
     |> Guardian.validate_generic
   ;;
 end
+
+let toggle_paused req =
+  let open Utils.Lwt_result.Infix in
+  let id = contact_id req in
+  let redirect_path =
+    Format.asprintf "/admin/contacts/%s/edit" (Contact.Id.value id)
+  in
+  let tags = Pool_context.Logger.Tags.req req in
+  let result ({ Pool_context.database_label; _ } as context) =
+    let* contact =
+      Contact.find database_label id >|- fun err -> err, redirect_path
+    in
+    Helpers.ContactUpdate.toggle_paused context redirect_path contact tags
+  in
+  result |> HttpUtils.extract_happy_path ~src req
+;;

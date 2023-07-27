@@ -251,6 +251,10 @@ let success_to_string : success -> string = function
     "The import of your account has successfully been completed."
   | MarkedAsDeleted field ->
     field_message "" (field_to_string field) "was marked as deleted."
+  | PausedToggled paused ->
+    Format.asprintf
+      "The account was successfully %s."
+      (if paused then "paused" else "reactivated")
   | PasswordChanged -> "Password successfully changed."
   | PasswordReset -> "Password reset, you can now log in."
   | PasswordResetSuccessMessage ->
@@ -513,9 +517,11 @@ let control_to_string = function
   | MarkAsDeleted -> format_submit "mark as deleted" None
   | More -> format_submit "more" None
   | NextPage -> "next"
+  | PauseAccount -> "pause account"
   | PleaseSelect -> "please select"
   | PreviousPage -> "previous"
   | Publish field -> format_submit "publish" field
+  | ReactivateAccount -> "reactivate account"
   | Register -> format_submit "register" None
   | RemoveFromWaitingList -> "Remove from waiting list"
   | Remove field -> format_submit "remove" field

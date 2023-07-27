@@ -42,10 +42,31 @@ let personal_details_form
   =
   let open Contact in
   let externalize = HttpUtils.externalize_path_with_lang query_language in
-  let action = externalize action in
-  let form_attrs = [ a_method `Post; a_action action; a_class [ "stack" ] ] in
+  let pause_button =
+    let control, confirmable, submit_type =
+      let open Message in
+      let open Pool_common in
+      let confirmable_str = Utils.confirmable_to_string language in
+      match contact.Contact.paused |> Pool_user.Paused.value with
+      | true ->
+        ReactivateAccount, confirmable_str I18n.ReactivateAccount, `Success
+      | false -> PauseAccount, confirmable_str I18n.PauseAccount, `Error
+    in
+    form
+      ~a:
+        [ a_method `Post
+        ; a_action (externalize (Format.asprintf "%s/pause" action))
+        ; a_class [ "align-self-end" ]
+        ; a_user_data "confirmable" confirmable
+        ]
+      [ csrf_element csrf (); submit_element ~submit_type language control () ]
+  in
+  let htmx_action = externalize action in
+  let form_attrs =
+    [ a_method `Post; a_action htmx_action; a_class [ "stack" ] ]
+  in
   let htmx_create field =
-    Htmx.create ~required:true field language ~hx_post:action ()
+    Htmx.create ~required:true field language ~hx_post:htmx_action ()
   in
   let custom_field_to_html field =
     let hx_delete =
@@ -56,7 +77,7 @@ let personal_details_form
     Htmx.custom_field_to_htmx
       language
       is_admin
-      ~hx_post:action
+      ~hx_post:htmx_action
       ~hx_delete
       field
       ()
@@ -116,12 +137,19 @@ let personal_details_form
         ]
     | false -> fields
   in
-  form
-    ~a:form_attrs
-    [ static_fields
-    ; div
-        ~a:[ a_class [ "gap-lg" ] ]
-        (grouped_custom_fields_form language custom_fields custom_field_to_html)
+  div
+    ~a:[ a_class [ "flexcolumn"; "stack" ] ]
+    [ pause_button
+    ; form
+        ~a:form_attrs
+        [ static_fields
+        ; div
+            ~a:[ a_class [ "gap-lg" ] ]
+            (grouped_custom_fields_form
+               language
+               custom_fields
+               custom_field_to_html)
+        ]
     ]
 ;;
 
