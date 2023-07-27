@@ -158,6 +158,7 @@ type hint =
   | NumberIsSecondsHint
   | NumberIsWeeksHint
   | Overbook
+  | PartialUpdate
   | ParticipationTags
   | Rate
   | RateDependencyWith

@@ -272,6 +272,9 @@ Make sure to show links and URLs as plain text.
   | Overbook ->
     "Number of subjects that can enroll in a session in addition to the \
      maximum number of contacts."
+  | PartialUpdate ->
+    "The following form will save the changed values instantly. You do not \
+     need to submit the form."
   | ParticipationTags ->
     "Tags, which are automatically assigned to participants after they have \
      participated in a session of this experiment."

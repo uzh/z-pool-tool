@@ -134,6 +134,13 @@ let personal_details_form
   div
     ~a:[ a_class [ "flexcolumn"; "stack" ] ]
     [ pause_button
+    ; Notification.notification
+        language
+        `Default
+        [ p
+            [ txt Pool_common.(Utils.hint_to_string language I18n.PartialUpdate)
+            ]
+        ]
     ; form
         ~a:form_attrs
         [ static_fields

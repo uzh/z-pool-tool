@@ -281,6 +281,9 @@ let rec hint_to_string = function
   | Overbook ->
     "Anzahl Kontakte, die sich zusätzlich zur maximalen Anzahl Teilnehmer, an \
      einer Session einschreiben können."
+  | PartialUpdate ->
+    "Das folgende Formular wird die geänderten Werte sofort speichern. Sie \
+     brauchen das Formular nicht abzuschicken."
   | ParticipationTags ->
     "Tags, welche den Teilnehmern nach einer Teilnahme an einer Session dieses \
      Experiments automatisch zugewiesen werden."
