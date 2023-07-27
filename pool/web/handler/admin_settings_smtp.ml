@@ -131,7 +131,7 @@ let update_base location command success_message req =
           decode urlencoded >>= handle ~tags default_smtp smtp_auth)
         |> Lwt_result.lift
       | `UpdatePassword ->
-        Command.UpdatePassword.(decode urlencoded >>= handle ~tags)
+        Command.UpdatePassword.(decode urlencoded >>= handle ~tags smtp_auth)
         |> Lwt_result.lift
     in
     let handle =

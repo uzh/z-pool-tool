@@ -184,7 +184,13 @@ end = struct
 end
 
 module UpdatePassword : sig
-  include Common.CommandSig with type t = SmtpAuth.update_password
+  type t = SmtpAuth.Password.t option
+
+  val handle
+    :  ?tags:Logs.Tag.set
+    -> SmtpAuth.t
+    -> t
+    -> (Pool_event.t list, Pool_common.Message.error) result
 
   val decode
     :  (string * string list) list
@@ -192,22 +198,16 @@ module UpdatePassword : sig
 
   val effects : SmtpAuth.Id.t -> Guard.ValidationSet.t
 end = struct
-  type t = SmtpAuth.update_password
-
-  let command id password = { SmtpAuth.id; password }
+  type t = SmtpAuth.Password.t option
 
   let schema =
     Conformist.(
-      make
-        Field.
-          [ SmtpAuth.Id.schema ()
-          ; Conformist.optional @@ SmtpAuth.Password.schema ()
-          ]
-        command)
+      make Field.[ Conformist.optional @@ SmtpAuth.Password.schema () ] CCFun.id)
   ;;
 
-  let handle ?(tags = Logs.Tag.empty) (command : t) =
+  let handle ?(tags = Logs.Tag.empty) (smtp : SmtpAuth.t) (password : t) =
     Logs.info ~src (fun m -> m "Handle command Edit" ~tags);
+    let command = SmtpAuth.{ id = smtp.SmtpAuth.id; password } in
     Ok
       [ Email.SmtpPasswordEdited command |> Pool_event.email
       ; clear_cache_event command.SmtpAuth.id
