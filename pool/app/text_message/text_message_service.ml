@@ -112,7 +112,7 @@ let intercept_message ~tags database_label msg =
     in
     intercept_address
     |> CCOption.map_or
-         ~default:(() |> Lwt.return_some)
+         ~default:Lwt.return_none
          CCFun.(
            Pool_user.EmailAddress.of_string
            %> send_intercept_message
