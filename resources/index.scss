@@ -207,3 +207,14 @@ button.as-link {
         background-color: transparent;
     }
 }
+
+// Logo
+.app-title {
+    font-weight: $font-weight-bold;
+    font-size: ms-font-size(2);
+
+    a {
+        color: $color-text-dark;
+        text-decoration: none;
+    }
+}
