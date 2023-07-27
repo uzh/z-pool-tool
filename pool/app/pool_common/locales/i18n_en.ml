@@ -273,11 +273,17 @@ Make sure to show links and URLs as plain text.
     "Number of subjects that can enroll in a session in addition to the \
      maximum number of contacts."
   | PartialUpdate ->
-    "The following form will save the changed values instantly. You do not \
+    "The following form will save the changed values immediately. You do not \
      need to submit the form."
   | ParticipationTags ->
     "Tags, which are automatically assigned to participants after they have \
      participated in a session of this experiment."
+  | PauseAccountAdmin ->
+    "As long the account is paused, the contact will not be invited to any \
+     further experiments."
+  | PauseAccountContact ->
+    "As long as your account is paused, you will not be invited to any further \
+     experiments."
   | Rate -> "Max. generated Invitations per hour"
   | RateDependencyWith ->
     "There are other mailings running at the same time, see its details \

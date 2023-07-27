@@ -287,6 +287,12 @@ let rec hint_to_string = function
   | ParticipationTags ->
     "Tags, welche den Teilnehmern nach einer Teilnahme an einer Session dieses \
      Experiments automatisch zugewiesen werden."
+  | PauseAccountAdmin ->
+    "Solange das Konto pausiert ist, wird der Kontakt zu keinen weiteren \
+     Experimenten eingeladen."
+  | PauseAccountContact ->
+    "Solange Ihr Konto pausiert ist, werden Sie nicht zu weiteren Experimenten \
+     eingeladen."
   | Rate -> "Generierte Einladungen pro Stunde"
   | RateDependencyWith ->
     "Zur selben Zeit finden weitere Versande statt, details werden unten \

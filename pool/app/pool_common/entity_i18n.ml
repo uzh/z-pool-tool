@@ -160,6 +160,8 @@ type hint =
   | Overbook
   | PartialUpdate
   | ParticipationTags
+  | PauseAccountAdmin
+  | PauseAccountContact
   | Rate
   | RateDependencyWith
   | RateDependencyWithout
