@@ -97,6 +97,9 @@ Sie kommen für mehr Experimente in Frage, umso kompletter Ihr Profil ist.|}
   | SwitchChronological -> "Zu chronologische Ansicht wechseln"
   | SwitchGrouped -> "Zu gruppierter Ansicht wechseln"
   | TermsAndConditionsTitle -> "Nutzungsbedingungen"
+  | TermsAndConditionsUpdated ->
+    "Wir haben kürzlich unsere Allgemeinen Geschäftsbedingungen geändert. \
+     Bitte lesen und akzeptieren Sie diese, um fortzufahren."
   | TextTemplates -> "Textelemente"
   | UpcomingSessionsListEmpty ->
     "Sie sind aktuell an keine kommenden Sessions angemeldet."

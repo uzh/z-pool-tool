@@ -64,6 +64,7 @@ type t =
   | SwitchChronological
   | SwitchGrouped
   | TermsAndConditionsTitle
+  | TermsAndConditionsUpdated
   | TextTemplates
   | UpcomingSessionsListEmpty
   | PastExperimentListPublicTitle

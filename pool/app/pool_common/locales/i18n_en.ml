@@ -95,6 +95,9 @@ let to_string = function
   | SwitchChronological -> "Switch to chronological view"
   | SwitchGrouped -> "Switch to grouped view"
   | TermsAndConditionsTitle -> "Terms and Conditions"
+  | TermsAndConditionsUpdated ->
+    "We have recently changed our terms and conditions. Please read and accept \
+     them to continue."
   | TextTemplates -> "text templates"
   | UpcomingSessionsListEmpty ->
     "You are not currently enrolled in any upcoming sessions."
