@@ -3,13 +3,9 @@ module SmtpAuth = Email.SmtpAuth
 
 let src = Logs.Src.create "smtp.cqrs"
 
-let clear_cache_event id =
+let clear_cache_event () =
   let open System_event in
-  Job.SmtpAccountUpdated id |> create |> created |> Pool_event.system_event
-;;
-
-let clear_cache_event_of_entity ({ SmtpAuth.id; _ } : SmtpAuth.t) =
-  id |> clear_cache_event
+  Job.SmtpAccountUpdated |> create |> created |> Pool_event.system_event
 ;;
 
 type create =
@@ -91,14 +87,12 @@ end = struct
   let handle ?id ?(tags = Logs.Tag.empty) current_default (command : t) =
     let open CCResult in
     Logs.info ~src (fun m -> m "Handle command Create" ~tags);
-    let is_default, system_events =
+    let is_default =
       (match command.default |> SmtpAuth.Default.value, current_default with
-       | (false | true), None -> true, []
-       | true, Some default -> true, [ default ]
-       | false, Some _ -> false, [])
-      |> fun (default, events) ->
-      ( SmtpAuth.Default.create default
-      , events |> CCList.map clear_cache_event_of_entity )
+       | (false | true), None -> true
+       | true, Some _ -> true
+       | false, Some _ -> false)
+      |> SmtpAuth.Default.create
     in
     SmtpAuth.Write.create
       ?id
@@ -111,7 +105,7 @@ end = struct
       command.protocol
       is_default
     >|= fun smtp ->
-    (Email.SmtpCreated smtp |> Pool_event.email) :: system_events
+    [ Email.SmtpCreated smtp |> Pool_event.email; clear_cache_event () ]
   ;;
 
   let decode data =
@@ -149,17 +143,13 @@ end = struct
     let open CCResult in
     let open SmtpAuth in
     Logs.info ~src (fun m -> m "Handle command Edit" ~tags);
-    let default_smtp =
-      CCOption.bind default_smtp (fun { id; _ } ->
-        if Id.equal id smtp_auth.id then None else default_smtp)
-    in
-    let* system_event =
-      let cache_event = clear_cache_event_of_entity in
-      match command.default |> SmtpAuth.Default.value, default_smtp with
-      | false, None -> Error Pool_common.Message.DefaultMustNotBeUnchecked
-      | true, Some default_smtp ->
-        Ok [ cache_event default_smtp; cache_event smtp_auth ]
-      | _, _ -> Ok [ cache_event smtp_auth ]
+    let default =
+      let force_default =
+        default_smtp
+        |> CCOption.map_or ~default:true (fun ({ id; _ } : t) ->
+          Id.equal id smtp_auth.id)
+      in
+      (force_default || Default.value command.default) |> Default.create
     in
     let update =
       { SmtpAuth.id = smtp_auth.SmtpAuth.id
@@ -169,10 +159,10 @@ end = struct
       ; username = command.username
       ; mechanism = command.mechanism
       ; protocol = command.protocol
-      ; default = command.default
+      ; default
       }
     in
-    Ok ((Email.SmtpEdited update |> Pool_event.email) :: system_event)
+    Ok [ Email.SmtpEdited update |> Pool_event.email; clear_cache_event () ]
   ;;
 
   let decode data =
@@ -210,7 +200,7 @@ end = struct
     let command = SmtpAuth.{ id = smtp.SmtpAuth.id; password } in
     Ok
       [ Email.SmtpPasswordEdited command |> Pool_event.email
-      ; clear_cache_event command.SmtpAuth.id
+      ; clear_cache_event ()
       ]
   ;;
 

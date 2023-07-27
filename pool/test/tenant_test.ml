@@ -285,10 +285,7 @@ let update_smtp_auth () =
   let expected =
     let sys_event =
       let open System_event in
-      Job.SmtpAccountUpdated smtp_auth.SmtpAuth.id
-      |> create
-      |> created
-      |> Pool_event.system_event
+      Job.SmtpAccountUpdated |> create |> created |> Pool_event.system_event
     in
     Ok [ SmtpEdited smtp_auth |> Pool_event.email; sys_event ]
   in
