@@ -28,6 +28,8 @@ let nav_elements { Experiment.id; direct_registration_disabled; _ } =
   let target_id = id |> Uuid.target_of Experiment.Id.value in
   let left =
     [ "", Overview, Experiment.Guard.Access.read id
+    ; "sessions", Sessions, Session.Guard.Access.index id
+    ; "invitations", Invitations, Invitation.Guard.Access.index id
     ; ( "assistants"
       , Field Field.Assistants
       , Or
@@ -40,12 +42,10 @@ let nav_elements { Experiment.id; direct_registration_disabled; _ } =
           [ SpecificRole `ManageExperimenters
           ; SpecificRole (`ManageExperimenter target_id)
           ] )
-    ; "invitations", Invitations, Invitation.Guard.Access.index id
     ]
   in
   let right =
-    [ "sessions", Sessions, Session.Guard.Access.index id
-    ; "assignments", Assignments, Assignment.Guard.Access.index id
+    [ "assignments", Assignments, Assignment.Guard.Access.index id
     ; "mailings", Mailings, Mailing.Guard.Access.index id
     ]
   in

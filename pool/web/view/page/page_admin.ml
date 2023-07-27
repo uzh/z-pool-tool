@@ -8,6 +8,7 @@ module CustomFieldGroups = Page_admin_custom_field_groups
 module Experiments = Page_admin_experiments
 module Filter = Page_admin_filter
 module I18n = Page_admin_i18n
+module Invitations = Page_admin_invitations
 module Location = Page_admin_location
 module Mailing = Page_admin_mailings
 module MessageTemplate = Page_admin_message_template

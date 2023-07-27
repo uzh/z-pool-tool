@@ -218,3 +218,51 @@ button.as-link {
         text-decoration: none;
     }
 }
+
+// Collapsible
+// TODO: Extend card
+
+.collapsible {
+    @extend .flexcolumn;
+    border: 1px solid $card-border-color;
+
+    &.active {
+        .collapsible-header .icon-close {
+            transform: rotate(0deg);
+        }
+
+        .collapsible-body {
+            display: flex;
+        }
+    }
+}
+
+.collapsible+.collapsible {
+    border-top-width: 0;
+}
+
+.collapsible-header {
+    background-color: $card-header-background;
+    color: $card-header-color;
+    padding: $space-sm;
+    cursor: pointer;
+
+    .icon-close {
+        transform: rotate(-45deg);
+        transition: $transition-duration;
+    }
+}
+
+.collapsible-title {
+    @extend .has-icon;
+    @extend .heading-4;
+}
+
+.collapsible-body {
+    border-top: 1px solid $card-border-color;
+    padding: $space-md;
+    background-color: $card-body-background;
+    color: $card-body-color;
+    flex-direction: column;
+    display: none;
+}

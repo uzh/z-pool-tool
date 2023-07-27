@@ -590,46 +590,6 @@ let detail
       html)
 ;;
 
-let invitations
-  experiment
-  key_list
-  template_list
-  query_experiments
-  query_tags
-  filtered_contacts
-  ({ Pool_context.language; _ } as context)
-  =
-  [ div
-      ~a:[ a_class [ "stack" ] ]
-      [ p
-          [ a
-              ~a:
-                [ a_href
-                    (experiment.Experiment.id
-                     |> Experiment.Id.value
-                     |> Format.asprintf "admin/experiments/%s/invitations/sent"
-                     |> Sihl.Web.externalize_path)
-                ]
-              [ txt (Utils.text_to_string language I18n.SentInvitations) ]
-          ]
-      ; Page_admin_invitations.Partials.send_invitation
-          context
-          experiment
-          key_list
-          template_list
-          query_experiments
-          query_tags
-          filtered_contacts
-      ]
-  ]
-  |> Layout.Experiment.(
-       create
-         ~active_navigation:I18n.Invitations
-         context
-         (NavLink I18n.Invitations)
-         experiment)
-;;
-
 let sent_invitations
   (Pool_context.{ language; _ } as context)
   experiment
@@ -649,7 +609,7 @@ let sent_invitations
        create
          ~active_navigation:I18n.Invitations
          context
-         (I18n I18n.SentInvitations)
+         (NavLink I18n.SentInvitations)
          experiment)
 ;;
 

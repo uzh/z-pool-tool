@@ -76,7 +76,6 @@ let to_string = function
       "Currently there are no %s assigned."
       (Locales_en.field_to_string field)
   | RolesGranted -> "Granted roles"
-  | SentInvitations -> "Sent invitations"
   | SelectedTags -> "Currently assigned tags"
   | SelectedTagsEmpty -> "No tags assigned"
   | SessionDetailTitle start ->
@@ -140,6 +139,7 @@ let nav_link_to_string = function
   | Rules -> "Rules"
   | Schedules -> "Schedules"
   | Sessions -> "Sessions"
+  | SentInvitations -> "Sent invitations"
   | Settings -> "Settings"
   | Smtp -> "Email Server"
   | SystemSettings -> "System settings"

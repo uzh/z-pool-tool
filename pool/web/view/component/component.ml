@@ -1,4 +1,5 @@
 module Calendar = Component_calendar
+module Collabsible = Component_collapsible
 module Filter = Component_filter
 module Icon = Component_icon
 module Image = Component_image

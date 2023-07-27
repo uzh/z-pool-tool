@@ -78,7 +78,6 @@ Sie kommen für mehr Experimente in Frage, umso kompletter Ihr Profil ist.|}
       "Aktuell sind keine %s zugewiesen."
       (Locales_de.field_to_string field)
   | RolesGranted -> "Zugewiesene Rollen"
-  | SentInvitations -> "Versendete Einladungen"
   | SelectedTags -> "Aktuell zugewiesene Tags"
   | SelectedTagsEmpty -> "Keine Tags zugewiesen"
   | SessionDetailTitle start ->
@@ -141,6 +140,7 @@ let nav_link_to_string = function
   | Queue -> "Hintergrundjobs"
   | Rules -> "Regeln"
   | Schedules -> "Prozesse"
+  | SentInvitations -> "Versendete Einladungen"
   | Sessions -> "Sessions"
   | Settings -> "Einstellungen"
   | Smtp -> "E-Mail Server"

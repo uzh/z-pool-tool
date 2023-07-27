@@ -1,5 +1,6 @@
 open Tyxml.Html
 open Component
+open Pool_common
 
 let form_action ?path id =
   let base =
@@ -17,7 +18,7 @@ let form_action ?path id =
 module Partials = struct
   let list Pool_context.{ csrf; language; _ } experiment invitation_list =
     let thead =
-      (Pool_common.Message.Field.[ Contact; ResentAt; CreatedAt ]
+      (Message.Field.[ Contact; ResentAt; CreatedAt ]
        |> Table.fields_to_txt language)
       @ [ txt "" ]
     in
@@ -28,13 +29,11 @@ module Partials = struct
           [ invitation.contact |> Contact.fullname |> txt
           ; invitation.resent_at
             |> CCOption.map_or ~default:"" (fun reset_at ->
-              reset_at
-              |> ResentAt.value
-              |> Pool_common.Utils.Time.formatted_date_time)
+              reset_at |> ResentAt.value |> Utils.Time.formatted_date_time)
             |> txt
           ; invitation.created_at
-            |> Pool_common.CreatedAt.value
-            |> Pool_common.Utils.Time.formatted_date_time
+            |> CreatedAt.value
+            |> Utils.Time.formatted_date_time
             |> txt
           ; form
               ~a:
@@ -44,14 +43,14 @@ module Partials = struct
                        ~path:
                          (Format.asprintf
                             "%s/resend"
-                            (invitation.Invitation.id |> Pool_common.Id.value))
+                            (invitation.Invitation.id |> Id.value))
                        experiment.Experiment.id)
                 ; a_class [ "flexrow"; "justify-end" ]
                 ]
               [ Input.csrf_element csrf ()
               ; Input.submit_element
                   language
-                  Pool_common.Message.(Resend (Some Field.Invitation))
+                  Message.(Resend (Some Field.Invitation))
                   ()
               ]
           ])
@@ -142,3 +141,63 @@ module Partials = struct
       ]
   ;;
 end
+
+let index
+  experiment
+  key_list
+  template_list
+  query_experiments
+  query_tags
+  filtered_contacts
+  mailings
+  ({ Pool_context.language; _ } as context)
+  =
+  let filter =
+    let html =
+      Partials.send_invitation
+        context
+        experiment
+        key_list
+        template_list
+        query_experiments
+        query_tags
+        filtered_contacts
+    in
+    I18n.Filter, [ html ]
+  in
+  let mailings =
+    let html =
+      Page_admin_mailings.List.create
+        true
+        context
+        experiment.Experiment.id
+        mailings
+    in
+    I18n.Mailings, [ html ]
+  in
+  let sent_invitations =
+    let html =
+      p
+        [ a
+            ~a:
+              [ a_href
+                  (experiment.Experiment.id
+                   |> Experiment.Id.value
+                   |> Format.asprintf "admin/experiments/%s/invitations/sent"
+                   |> Sihl.Web.externalize_path)
+              ]
+            [ txt (Utils.nav_link_to_string language I18n.SentInvitations) ]
+        ]
+    in
+    I18n.SentInvitations, [ html ]
+  in
+  [ filter; mailings; sent_invitations ]
+  |> Component.Collabsible.list language
+  |> CCList.return
+  |> Layout.Experiment.(
+       create
+         ~active_navigation:I18n.Invitations
+         context
+         (NavLink I18n.Invitations)
+         experiment)
+;;

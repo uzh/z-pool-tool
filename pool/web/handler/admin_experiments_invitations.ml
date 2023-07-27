@@ -41,13 +41,17 @@ let index req =
              experiment.Experiment.filter
            >|+ CCOption.pure
        in
-       Page.Admin.Experiments.invitations
+       let%lwt mailings =
+         Mailing.find_by_experiment database_label experiment.Experiment.id
+       in
+       Page.Admin.Invitations.index
          experiment
          key_list
          template_list
          query_experiments
          query_tags
          filtered_contacts
+         mailings
          context
        >|> create_layout req context
        >|+ Sihl.Web.Response.of_html

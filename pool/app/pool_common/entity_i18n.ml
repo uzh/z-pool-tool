@@ -49,7 +49,6 @@ type t =
   | RoleCurrentlyAssigned
   | RoleCurrentlyNoneAssigned of Entity_message.Field.t
   | RolesGranted
-  | SentInvitations
   | SelectedTags
   | SelectedTagsEmpty
   | SessionDetailTitle of Ptime.t
@@ -102,6 +101,7 @@ type nav_link =
   | Queue
   | Rules
   | Schedules
+  | SentInvitations
   | Sessions
   | Settings
   | Smtp
