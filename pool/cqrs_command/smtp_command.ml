@@ -3,9 +3,9 @@ module SmtpAuth = Email.SmtpAuth
 
 let src = Logs.Src.create "smtp.cqrs"
 
-let clear_cache_event () =
+let clear_cache_event ?id () =
   let open System_event in
-  Job.SmtpAccountUpdated |> create |> created |> Pool_event.system_event
+  Job.SmtpAccountUpdated |> create ?id |> created |> Pool_event.system_event
 ;;
 
 type create =
@@ -57,6 +57,7 @@ module Create : sig
 
   val handle
     :  ?id:SmtpAuth.Id.t
+    -> ?event_id:System_event.Id.t
     -> ?tags:Logs.Tag.set
     -> SmtpAuth.t option
     -> t
@@ -84,7 +85,13 @@ end = struct
         command)
   ;;
 
-  let handle ?id ?(tags = Logs.Tag.empty) current_default (command : t) =
+  let handle
+    ?id
+    ?event_id
+    ?(tags = Logs.Tag.empty)
+    current_default
+    (command : t)
+    =
     let open CCResult in
     Logs.info ~src (fun m -> m "Handle command Create" ~tags);
     let is_default =
@@ -105,7 +112,9 @@ end = struct
       command.protocol
       is_default
     >|= fun smtp ->
-    [ Email.SmtpCreated smtp |> Pool_event.email; clear_cache_event () ]
+    [ Email.SmtpCreated smtp |> Pool_event.email
+    ; clear_cache_event ?id:event_id ()
+    ]
   ;;
 
   let decode data =
