@@ -20,6 +20,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 - tag predicate for filters, allows to filter contact tags
 - option to define experiment and session specific tags that are assigned to all participants
 - link to session and experiment details in calender popup
+- remove paused from partial update and create separate handlers
 
 ### Changed
 
