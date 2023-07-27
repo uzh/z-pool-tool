@@ -17,7 +17,7 @@ end
 module ContactEmail = struct
   include Pool_common.Model.String
 
-  let field = Message.Field.EmailAddress
+  let field = Message.Field.ContactEmail
   (* TODO: email address validation *)
 
   let schema () = schema field ()
