@@ -4,9 +4,21 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/pool/tree/HEAD)
 
+## [0.3.1](https://github.com/uzh/pool/tree/0.3.1) - 2023-07-28
+
+### Added
+
+- link to session and experiment details in calender popup
+- remove paused from partial update and create separate handlers
+
+### Changed
+
+- allow sending invitations to contacts without terms and conditions accepted
+- many small UI/UX adjustments
+
 ## [0.3.0](https://github.com/uzh/pool/tree/0.3.0) - 2023-07-26
 
-## Added
+### Added
 
 - text message service
 - option to send session cancellation messages as text messages
@@ -19,8 +31,6 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 - email plain text hint
 - tag predicate for filters, allows to filter contact tags
 - option to define experiment and session specific tags that are assigned to all participants
-- link to session and experiment details in calender popup
-- remove paused from partial update and create separate handlers
 
 ### Changed
 
@@ -29,7 +39,6 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 - remove session list from location detail
 - time span picker using minutes
 - only validate experiment when loading sessions for calendar
-- allow sending invitations to contacts without terms and conditions accepted
 
 ### Fixed
 
