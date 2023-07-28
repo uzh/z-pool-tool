@@ -54,5 +54,14 @@ Example: seed.default message_templates
         >|> Lwt_list.iter_s CCFun.(flip Pool_event.handle_events events)
       in
       Lwt.return_some ()
+    | [ "system_settings" ] ->
+      let events =
+        [ Settings.(DefaultRestored default_values) |> Pool_event.settings ]
+      in
+      let%lwt () =
+        Command_utils.setup_databases ()
+        >|> Lwt_list.iter_s CCFun.(flip Pool_event.handle_events events)
+      in
+      Lwt.return_some ()
     | _ -> Command_utils.failwith_missmatch help)
 ;;

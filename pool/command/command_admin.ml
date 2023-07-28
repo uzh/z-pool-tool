@@ -1,3 +1,6 @@
+open CCFun.Infix
+
+let get_or_failwith = Pool_common.Utils.get_or_failwith
 let role_of_string = CCFun.(Format.asprintf "`%s" %> Role.Actor.of_string)
 
 let role_uuid_of_string role uuid =
@@ -35,10 +38,23 @@ let create =
     let ctx = Pool_database.to_ctx pool in
     match%lwt Service.User.find_by_email_opt ~ctx email with
     | None ->
-      let%lwt admin =
-        Service.User.create_admin ~ctx ~name ~given_name ~password email
+      let open Pool_user in
+      let email = EmailAddress.create email |> get_or_failwith in
+      let firstname = Firstname.create given_name |> get_or_failwith in
+      let lastname = Lastname.create name |> get_or_failwith in
+      let password = Password.create password |> get_or_failwith in
+      let admin : Admin.create =
+        { id = None
+        ; Admin.email
+        ; password
+        ; firstname
+        ; lastname
+        ; roles = Some (Guard.RoleSet.singleton role)
+        }
       in
-      let%lwt () = grant_role ctx admin role in
+      let%lwt () =
+        Admin.Created admin |> Pool_event.(admin %> handle_event pool)
+      in
       Lwt.return_some ()
     | Some user when Sihl_user.is_admin user ->
       failwith "The user already exists as admin, use the 'grant_role' command."
