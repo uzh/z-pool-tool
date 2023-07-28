@@ -87,6 +87,7 @@ let work_job
         }
       | Ok () -> { job_instance with status = Succeeded }
     in
+    let%lwt () = Notifier.job_reporter job_instance in
     update database_label job_instance)
   else (
     Logs.debug ~src (fun m ->
