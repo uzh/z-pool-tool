@@ -133,6 +133,7 @@ module DeleteUnverified : sig
 end = struct
   type t
 
+  (* TODO: Also delete all custom_fields answers of this user *)
   let handle ?(tags = Logs.Tag.empty) contact =
     Logs.info ~src (fun m -> m "Handle command DeleteUnverified" ~tags);
     if contact.Contact.email_verified |> CCOption.is_some
