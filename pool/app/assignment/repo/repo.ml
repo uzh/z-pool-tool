@@ -491,3 +491,7 @@ let marked_as_deleted = Sql.marked_as_deleted
 let contact_participation_in_other_assignments =
   Sql.contact_participation_in_other_assignments
 ;;
+
+let find_uncanceled_by_session = find_by_session `Uncanceled
+let find_deleted_by_session = find_by_session `Deleted
+let find_by_session = find_by_session `All

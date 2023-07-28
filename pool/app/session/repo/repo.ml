@@ -400,6 +400,8 @@ module Sql = struct
     AND
       pool_sessions.closed_at IS NULL
     AND
+      pool_sessions.start >= NOW()
+    AND
       pool_sessions.start <= DATE_ADD(NOW(), INTERVAL
         COALESCE(
           pool_sessions.reminder_lead_time,
