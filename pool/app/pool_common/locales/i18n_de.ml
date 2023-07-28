@@ -4,6 +4,7 @@ let to_string = function
   | Address -> "Addresse"
   | AvailableSpots -> "Freie Plätze"
   | Canceled -> "Abgesagt"
+  | Closed -> "Geschlossen"
   | ContactWaitingListEmpty -> "Sie sind aktuell auf keiner Warteliste."
   | ContactWaitingListTitle -> "Auf der Warteliste"
   | DashboardProfileCompletionText ->
@@ -96,6 +97,9 @@ Sie kommen für mehr Experimente in Frage, umso kompletter Ihr Profil ist.|}
   | SwitchChronological -> "Zu chronologische Ansicht wechseln"
   | SwitchGrouped -> "Zu gruppierter Ansicht wechseln"
   | TermsAndConditionsTitle -> "Nutzungsbedingungen"
+  | TermsAndConditionsUpdated ->
+    "Wir haben kürzlich unsere Allgemeinen Geschäftsbedingungen geändert. \
+     Bitte lesen und akzeptieren Sie diese, um fortzufahren."
   | TextTemplates -> "Textelemente"
   | UpcomingSessionsListEmpty ->
     "Sie sind aktuell an keine kommenden Sessions angemeldet."
@@ -148,6 +152,11 @@ let nav_link_to_string = function
 ;;
 
 let rec hint_to_string = function
+  | AdminOverwriteContactValues ->
+    {|Wenn Sie einen der folgenden Werte anpassen, ist dies für den Kontakt nicht ersichtlich.
+
+Wird nach diesem Feld gefiltert, wird der überschreibende Wert bevorzugt.
+|}
   | AllowUninvitedSignup ->
     "Kontakte, die nicht eingeladen wurden, können sich für das Experiment \
      anmelden."
@@ -234,6 +243,8 @@ let rec hint_to_string = function
     {|Einladungsversand dieses Experiments. Die 'Rate' definiert die maximal generierten Einladungen pro Stunde.
 
     Gestartete Mailings können nicht mehr gelöscht werden.|}
+  | ExperimentMailingsRegistrationDisabled ->
+    {|Die Registrierung für dieses Experiment ist derzeit deaktiviert. Einladungen werden weiterhin verschickt, wenn ein Mailing erstellt wird, aber die Kontakte können sich nicht für eine Session anmelden.|}
   | ExperimentWaitingList ->
     "Kontakte, die zu diesem Experiment eingeladen wurden, und sich auf die \
      Warteliste gesetzt haben. Sie müssen manuell einer Session zugewiesen \
@@ -275,9 +286,18 @@ let rec hint_to_string = function
   | Overbook ->
     "Anzahl Kontakte, die sich zusätzlich zur maximalen Anzahl Teilnehmer, an \
      einer Session einschreiben können."
+  | PartialUpdate ->
+    "Das folgende Formular wird die geänderten Werte sofort speichern. Sie \
+     brauchen das Formular nicht abzuschicken."
   | ParticipationTags ->
     "Tags, welche den Teilnehmern nach einer Teilnahme an einer Session dieses \
      Experiments automatisch zugewiesen werden."
+  | PauseAccountAdmin ->
+    "Solange das Konto pausiert ist, wird der Kontakt zu keinen weiteren \
+     Experimenten eingeladen."
+  | PauseAccountContact ->
+    "Solange Ihr Konto pausiert ist, werden Sie nicht zu weiteren Experimenten \
+     eingeladen."
   | Rate -> "Generierte Einladungen pro Stunde"
   | RateDependencyWith ->
     "Zur selben Zeit finden weitere Versande statt, details werden unten \
@@ -391,6 +411,7 @@ let confirmable_to_string confirmable =
      , "als gelöscht markieren"
      , Some
          "Anmeldungen an Folgesession werden ebenfalls als gelöscht markiert." )
+   | PauseAccount -> "den Account", "pausieren", None
    | PublisCustomField ->
      ( "das Feld und alle dazugehörigen Optionen"
      , "publizieren"
@@ -399,6 +420,7 @@ let confirmable_to_string confirmable =
      ( "die Option"
      , "publizieren"
      , Some "Sie werden die Option nicht mehr löschen können." )
+   | ReactivateAccount -> "den Account", "reaktivieren", None
    | RemoveRule -> "die Regel", "löschen", None
    | RemoveTag -> "den Tag", "entfernen", None
    | RevokeRole -> "die Rolle", "entfernen", None

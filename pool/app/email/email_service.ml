@@ -17,7 +17,7 @@ module Cache = struct
 
   let add ({ SmtpAuth.Write.id; _ } as m) = replace tbl id m
   let update = add
-  let remove = remove tbl
+  let clear () = clear tbl
 end
 
 let src = Logs.Src.create "pool_tenant.service"

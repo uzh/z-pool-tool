@@ -31,10 +31,7 @@ let select_default_option language selected =
   let attrs = if selected then [ a_selected () ] else [] in
   option
     ~a:attrs
-    (txt
-       Pool_common.(
-         Utils.control_to_string language Message.PleaseSelect
-         |> CCString.capitalize_ascii))
+    (txt Pool_common.(Utils.control_to_string language Message.PleaseSelect))
 ;;
 
 let operators_select language ?operators ?selected () =

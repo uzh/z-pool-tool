@@ -15,7 +15,6 @@ let ou_path ?suffix ?id () =
     | Some id -> Format.asprintf "%s/%s" base_path (Id.value id)
   in
   CCOption.map_or ~default (Format.asprintf "%s/%s" default) suffix
-  |> Sihl.Web.externalize_path
 ;;
 
 module List = struct

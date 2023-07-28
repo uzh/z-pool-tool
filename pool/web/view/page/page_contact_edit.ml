@@ -34,18 +34,24 @@ let personal_details_form
   csrf
   language
   query_language
-  action
+  form_context
   tenant_languages
   contact
   custom_fields
-  is_admin
   =
   let open Contact in
+  let action, is_admin =
+    match form_context with
+    | `Contact -> Htmx.contact_profile_hx_post, false
+    | `Admin -> Htmx.admin_profile_hx_post (Contact.id contact), true
+  in
   let externalize = HttpUtils.externalize_path_with_lang query_language in
-  let action = externalize action in
-  let form_attrs = [ a_method `Post; a_action action; a_class [ "stack" ] ] in
+  let htmx_action = externalize action in
+  let form_attrs =
+    [ a_method `Post; a_action htmx_action; a_class [ "stack" ] ]
+  in
   let htmx_create field =
-    Htmx.create ~required:true field language ~hx_post:action ()
+    Htmx.create ~required:true field language ~hx_post:htmx_action ()
   in
   let custom_field_to_html field =
     let hx_delete =
@@ -56,12 +62,22 @@ let personal_details_form
     Htmx.custom_field_to_htmx
       language
       is_admin
-      ~hx_post:action
+      ~hx_post:htmx_action
       ~hx_delete
       field
       ()
   in
   let open Message in
+  let admin_hint =
+    match is_admin with
+    | true ->
+      [ txt
+          Pool_common.(
+            Utils.hint_to_string language I18n.AdminOverwriteContactValues)
+      ]
+      |> Component.Notification.notification language `Warning
+    | false -> txt ""
+  in
   let static_fields =
     let fields =
       div
@@ -93,12 +109,6 @@ let personal_details_form
                       ; option_formatter = None
                       ; selected = contact.language
                       } )
-                ; ( contact.paused_version
-                  , Field.Paused
-                  , contact.paused
-                    |> User.Paused.value
-                    |> CCOption.pure
-                    |> boolean )
                 ])
     in
     match is_admin with
@@ -116,12 +126,71 @@ let personal_details_form
         ]
     | false -> fields
   in
-  form
-    ~a:form_attrs
-    [ static_fields
+  div
+    ~a:[ a_class [ "flexcolumn"; "stack-lg" ] ]
+    [ Notification.notification
+        language
+        `Default
+        [ p
+            [ txt Pool_common.(Utils.hint_to_string language I18n.PartialUpdate)
+            ]
+        ]
+    ; form
+        ~a:form_attrs
+        [ static_fields
+        ; div
+            ~a:[ a_class [ "gap-lg" ] ]
+            [ div
+                ~a:[ a_class [ "stack-lg" ] ]
+                (admin_hint
+                 :: grouped_custom_fields_form
+                      language
+                      custom_fields
+                      custom_field_to_html)
+            ]
+        ]
+    ]
+;;
+
+let status_form csrf language query_language contact form_context =
+  let open Pool_common in
+  let action, hint =
+    match form_context with
+    | `Contact -> Htmx.contact_profile_hx_post, I18n.PauseAccountContact
+    | `Admin ->
+      Htmx.admin_profile_hx_post (Contact.id contact), I18n.PauseAccountAdmin
+  in
+  let externalize = HttpUtils.externalize_path_with_lang query_language in
+  let control, confirmable, submit_type =
+    let open Message in
+    let open Pool_common in
+    let confirmable_str = Utils.confirmable_to_string language in
+    match contact.Contact.paused |> Pool_user.Paused.value with
+    | true ->
+      ReactivateAccount, confirmable_str I18n.ReactivateAccount, `Success
+    | false -> PauseAccount, confirmable_str I18n.PauseAccount, `Error
+  in
+  div
+    [ h2
+        ~a:[ a_class [ "heading-2" ] ]
+        [ txt
+            Pool_common.(
+              Utils.field_to_string language Message.Field.Status
+              |> CCString.capitalize_ascii)
+        ]
     ; div
-        ~a:[ a_class [ "gap-lg" ] ]
-        (grouped_custom_fields_form language custom_fields custom_field_to_html)
+        ~a:[ a_class [ "flexrow"; "wrap"; "flex-gap"; "align-center" ] ]
+        [ form
+            ~a:
+              [ a_method `Post
+              ; a_action (externalize (Format.asprintf "%s/pause" action))
+              ; a_user_data "confirmable" confirmable
+              ]
+            [ csrf_element csrf ()
+            ; submit_element ~submit_type language control ()
+            ]
+        ; div [ txt Pool_common.(Utils.hint_to_string language hint) ]
+        ]
     ]
 ;;
 
@@ -131,8 +200,7 @@ let personal_details
   tenant_languages
   Pool_context.{ language; query_language; csrf; _ }
   =
-  let action = Htmx.contact_profile_hx_post in
-  let is_admin = false in
+  let form_context = `Contact in
   div
     [ div
         ~a:[ a_class [ "stack-lg" ] ]
@@ -140,11 +208,11 @@ let personal_details
             csrf
             language
             query_language
-            action
+            form_context
             tenant_languages
             contact
             custom_fields
-            is_admin
+        ; status_form csrf language query_language contact form_context
         ]
     ]
   |> contact_profile_layout language Pool_common.I18n.PersonalDetails

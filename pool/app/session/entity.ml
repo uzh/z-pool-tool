@@ -422,6 +422,8 @@ module Calendar = struct
     ; title : Experiment.Title.t
     ; start : Start.t
     ; end_ : End.t
+    ; session_url : string
+    ; experiment_url : string
     ; max_participants : ParticipantAmount.t
     ; min_participants : ParticipantAmount.t
     ; overbook : ParticipantAmount.t

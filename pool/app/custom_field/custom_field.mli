@@ -365,7 +365,6 @@ module PartialUpdate : sig
   type t =
     | Firstname of Pool_common.Version.t * Pool_user.Firstname.t
     | Lastname of Pool_common.Version.t * Pool_user.Lastname.t
-    | Paused of Pool_common.Version.t * Pool_user.Paused.t
     | Language of Pool_common.Version.t * Pool_common.Language.t option
     | Custom of Public.t
 

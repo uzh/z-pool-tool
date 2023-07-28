@@ -1,7 +1,7 @@
 import 'htmx.org'
 import './index.scss'
 import { initDatepicker } from "./flatpickr.js"
-import { initCalendar } from './calendar'
+import { initCalendar } from './admin/calendar'
 import {
     initConfirmable,
     initFileInput,
@@ -10,6 +10,7 @@ import {
     initSortable,
     initDetectFormChanges,
 } from '../node_modules/@econ/frontend-framework/dist/main'
+import { initFormSubmitInterferer } from "./formSubmitInterferer.js"
 
 initDatepicker();
 initConfirmable();
@@ -19,3 +20,4 @@ initNotification();
 initSortable();
 initDetectFormChanges();
 initCalendar();
+initFormSubmitInterferer();

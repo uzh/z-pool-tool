@@ -1,7 +1,8 @@
 open Entity
 
 type email_layout =
-  { link : string
+  { copyright : string
+  ; link : string
   ; logo_src : string
   ; logo_alt : string
   }
@@ -37,7 +38,8 @@ let layout_from_tenant (tenant : Pool_tenant.t) =
   in
   let logo_alt = tenant.title |> Title.value |> Format.asprintf "Logo %s" in
   let link = tenant.url |> Url.value |> Format.asprintf "http://%s" in
-  { link; logo_src; logo_alt }
+  let copyright = tenant.title |> Title.value in
+  { copyright; link; logo_src; logo_alt }
 ;;
 
 let root_layout () =
@@ -53,7 +55,8 @@ let root_layout () =
   in
   let logo_alt = "Logo Pool Tool" in
   let link = root_url >|= Pool_tenant.Url.value |> value ~default:"" in
-  { link; logo_alt; logo_src }
+  let copyright = "Pool Tool" in
+  { copyright; link; logo_alt; logo_src }
 ;;
 
 let create_layout = function
@@ -62,7 +65,8 @@ let create_layout = function
 ;;
 
 let layout_params layout =
-  [ "logoSrc", layout.logo_src
+  [ "copyright", layout.copyright
+  ; "logoSrc", layout.logo_src
   ; "logoAlt", layout.logo_alt
   ; "logoHref", layout.link
   ]
@@ -74,6 +78,7 @@ let html_to_string html =
 
 let combine_html language html_title =
   let open Tyxml.Html in
+  let current_year = () |> Ptime_clock.now |> Ptime.to_year in
   let email_header =
     let pool_title = "Pool Tool" in
     head
@@ -128,7 +133,15 @@ let combine_html language html_title =
               [ txt "{emailText}" ]
           ; footer
               ~a:[ a_style "margin-top: 4em;" ]
-              [ div ~a:[ a_style "text-align:center" ] [ p [ txt "Copyright" ] ]
+              [ div
+                  ~a:[ a_style "text-align:center" ]
+                  [ p
+                      [ txt
+                          (Format.asprintf
+                             "Copyright © %i {copyright}"
+                             current_year)
+                      ]
+                  ]
               ]
           ]
       ]

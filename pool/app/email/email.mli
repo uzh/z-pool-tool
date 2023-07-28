@@ -214,7 +214,7 @@ module Service : sig
   module Queue : Sihl.Contract.Queue.Sig
 
   module Cache : sig
-    val remove : SmtpAuth.Id.t -> unit
+    val clear : unit -> unit
   end
 
   module Smtp : sig

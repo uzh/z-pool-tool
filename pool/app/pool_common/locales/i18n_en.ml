@@ -4,6 +4,7 @@ let to_string = function
   | Address -> "address"
   | AvailableSpots -> "Available spots"
   | Canceled -> "Canceled"
+  | Closed -> "Closed"
   | ContactWaitingListEmpty -> "You are currently not on any waiting list."
   | ContactWaitingListTitle -> "On the waiting list"
   | DashboardProfileCompletionText ->
@@ -94,6 +95,9 @@ let to_string = function
   | SwitchChronological -> "Switch to chronological view"
   | SwitchGrouped -> "Switch to grouped view"
   | TermsAndConditionsTitle -> "Terms and Conditions"
+  | TermsAndConditionsUpdated ->
+    "We have recently changed our terms and conditions. Please read and accept \
+     them to continue."
   | TextTemplates -> "text templates"
   | UpcomingSessionsListEmpty ->
     "You are not currently enrolled in any upcoming sessions."
@@ -146,6 +150,10 @@ let nav_link_to_string = function
 ;;
 
 let rec hint_to_string = function
+  | AdminOverwriteContactValues ->
+    {|If you overwrite one of the following values, this is not apparent to the contact.
+
+  If you filter for this field, the overriding value is preferred.|}
   | AllowUninvitedSignup ->
     "Contacts who have not been invited will be able to sign up for the \
      experiment."
@@ -228,6 +236,8 @@ Make sure to show links and URLs as plain text.
     {|Invitation mailings of this experiment. 'Rate' defines the maximum generated invitations per hour.
 
     Started mailings can no longer be deleted.|}
+  | ExperimentMailingsRegistrationDisabled ->
+    {|Registration to this experiment is currently disabled. Invitations will still be sent out if a mailing is created, but contacts won't be able to sign up for a session.|}
   | ExperimentWaitingList ->
     "Contacts that have been invited to this experiment and have placed \
      themselves on the waiting list. They have to be manually assigned to a \
@@ -266,9 +276,18 @@ Make sure to show links and URLs as plain text.
   | Overbook ->
     "Number of subjects that can enroll in a session in addition to the \
      maximum number of contacts."
+  | PartialUpdate ->
+    "The following form will save the changed values immediately. You do not \
+     need to submit the form."
   | ParticipationTags ->
     "Tags, which are automatically assigned to participants after they have \
      participated in a session of this experiment."
+  | PauseAccountAdmin ->
+    "As long the account is paused, the contact will not be invited to any \
+     further experiments."
+  | PauseAccountContact ->
+    "As long as your account is paused, you will not be invited to any further \
+     experiments."
   | Rate -> "Max. generated Invitations per hour"
   | RateDependencyWith ->
     "There are other mailings running at the same time, see its details \
@@ -381,8 +400,10 @@ let confirmable_to_string confirmable =
      , Some
          "Assignments to follow-up sessions will be marked as deleted as well."
      )
+   | PauseAccount -> "account", "pause", None
    | PublisCustomFieldOption ->
      "option", "publish", Some "You will not be able to delete the it anymore."
+   | ReactivateAccount -> "account", "reactivate", None
    | RemoveTag -> "tag", "remove", None
    | RemoveRule -> "rule", "delete", None
    | RevokeRole -> "role", "revoke", None

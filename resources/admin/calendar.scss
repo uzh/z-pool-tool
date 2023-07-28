@@ -36,7 +36,6 @@
     }
 
     .fc-daygrid-day-events {
-        overflow-x: hidden;
         display: block;
     }
 
@@ -46,6 +45,18 @@
 
     .fc-event-time {
         overflow: visible;
+    }
+
+    .fc-event-main {
+        cursor: pointer;
+    }
+}
+
+.tippy-content {
+    min-width: 19rem;
+
+    .card {
+        flex-grow: 1;
     }
 }
 

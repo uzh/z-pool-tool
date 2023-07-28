@@ -8,7 +8,7 @@ module Job = struct
   type t =
     | GuardianCacheCleared [@name "guardiancachecleared"]
         [@printer Utils.ppx_printer "guardiancachecleared"]
-    | SmtpAccountUpdated of Email.SmtpAuth.Id.t [@name "smtpaccountupdated"]
+    | SmtpAccountUpdated [@name "smtpaccountupdated"]
         [@printer Utils.ppx_printer "smtpaccountupdated"]
     | TenantDatabaseAdded of Pool_database.Label.t [@name "tenantdatabaseadded"]
         [@printer Utils.ppx_printer "tenantdatabaseadded"]

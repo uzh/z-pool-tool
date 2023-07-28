@@ -50,7 +50,7 @@ let address_to_html
 let location_to_html ?(public = false) language (location : Pool_location.t) =
   let open Pool_location in
   let title =
-    [ strong [ txt (location.name |> Name.show) ] ] |> p |> CCOption.pure
+    [ strong [ txt (location.name |> Name.value) ] ] |> p |> CCOption.pure
   in
   let address =
     [ address_to_html ~highlight_first_line:false language location.address ]

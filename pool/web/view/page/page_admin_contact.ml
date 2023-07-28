@@ -40,7 +40,7 @@ let contact_overview language contacts =
         (fun contact ->
           [ txt (email_address contact |> Pool_user.EmailAddress.value)
           ; txt (fullname contact)
-          ; contact |> path |> Input.edit_link
+          ; contact |> path |> Input.link_as_button ~icon:Icon.Eye
           ])
         contacts
     in
@@ -124,14 +124,13 @@ let tag_form
 
 let edit
   ?(allowed_to_assign = false)
-  (Pool_context.{ language; csrf; query_language; user; _ } as context)
+  (Pool_context.{ language; csrf; query_language; _ } as context)
   tenant_languages
   contact
   custom_fields
   tags
   available_tags
   =
-  let is_admin = Pool_context.user_is_admin user in
   let base_action = Htmx.admin_profile_hx_post (Contact.id contact) in
   let assign_tags =
     if allowed_to_assign
@@ -143,48 +142,57 @@ let edit
           Pool_common.Message.Field.(Tag |> human_url)
           Tags.(Id.value tag.id)
       in
-      [ h2
-          ~a:[ a_class [ "heading-2" ] ]
-          Pool_common.[ Utils.nav_link_to_string language I18n.Tags |> txt ]
-      ; div
-          ~a:[ a_class [ "switcher-lg"; "flex-gap" ] ]
-          [ tag_form context ~existing:tags available_tags contact
-          ; Component.Tag.tag_list
-              language
-              ~remove_action:(remove_action, csrf)
-              ~title:Pool_common.I18n.SelectedTags
-              tags
-          ]
-      ])
-    else []
+      div
+        [ h2
+            ~a:[ a_class [ "heading-2" ] ]
+            Pool_common.[ Utils.nav_link_to_string language I18n.Tags |> txt ]
+        ; div
+            ~a:[ a_class [ "switcher-lg"; "flex-gap" ] ]
+            [ tag_form context ~existing:tags available_tags contact
+            ; Component.Tag.tag_list
+                language
+                ~remove_action:(remove_action, csrf)
+                ~title:Pool_common.I18n.SelectedTags
+                tags
+            ]
+        ])
+    else txt ""
   in
+  let form_context = `Admin in
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
-    ([ h1 ~a:[ a_class [ "heading-1" ] ] [ txt (Contact.fullname contact) ]
-     ; Page_contact_edit.personal_details_form
-         csrf
-         language
-         query_language
-         base_action
-         tenant_languages
-         contact
-         custom_fields
-         is_admin
-     ]
-     @ assign_tags
-     @ [ p
-           [ a
-               ~a:
-                 [ a_href
-                     (Sihl.Web.externalize_path
-                        (Format.asprintf
-                           "/admin/contacts/%s"
-                           (contact |> Contact.id |> Pool_common.Id.value)))
-                 ]
-               [ txt
-                   Pool_common.(
-                     Message.Back |> Utils.control_to_string language)
-               ]
-           ]
-       ])
+    [ h1 ~a:[ a_class [ "heading-1" ] ] [ txt (Contact.fullname contact) ]
+    ; div
+        ~a:[ a_class [ "stack-lg" ] ]
+        [ Page_contact_edit.personal_details_form
+            csrf
+            language
+            query_language
+            form_context
+            tenant_languages
+            contact
+            custom_fields
+        ; assign_tags
+        ; Page_contact_edit.status_form
+            csrf
+            language
+            query_language
+            contact
+            form_context
+        ; p
+            [ a
+                ~a:
+                  [ a_href
+                      (Sihl.Web.externalize_path
+                         (Format.asprintf
+                            "/admin/contacts/%s"
+                            (contact |> Contact.id |> Pool_common.Id.value)))
+                  ]
+                [ txt
+                    Pool_common.(
+                      Message.Back |> Utils.control_to_string language)
+                ]
+            ]
+        ]
+    ]
 ;;

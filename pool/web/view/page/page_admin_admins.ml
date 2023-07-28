@@ -34,7 +34,10 @@ let admin_overview ?(disable_edit = false) language admins =
       in
       match disable_edit with
       | false ->
-        base @ [ Format.asprintf "/admin/admins/%s" user.id |> Input.edit_link ]
+        base
+        @ [ Format.asprintf "/admin/admins/%s" user.id
+            |> Input.link_as_button ~icon:Icon.Eye
+          ]
       | true -> base)
     admins
   |> Table.horizontal_table ~align_last_end:true `Striped ~thead
@@ -119,15 +122,10 @@ let detail ({ Pool_context.language; _ } as context) admin granted_roles =
              (user.given_name |> Option.value ~default:"")
              (user.name |> Option.value ~default:""))
       ]
-  ; p
-      [ a
-          ~a:
-            [ a_href
-                (Format.asprintf "/admin/admins/%s/edit" user.id
-                 |> Sihl.Web.externalize_path)
-            ]
-          [ txt (Utils.control_to_string language Message.(Edit None)) ]
-      ]
+  ; Input.link_as_button
+      ~icon:Icon.Create
+      ~control:(language, Message.(Edit None))
+      (Format.asprintf "/admin/admins/%s/edit" user.id)
   ]
   @ roles_list context admin granted_roles
   |> div ~a:[ a_class [ "trim"; "safety-margin" ] ]

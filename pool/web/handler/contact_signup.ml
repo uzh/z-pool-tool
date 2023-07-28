@@ -207,7 +207,14 @@ let terms req =
     Utils.Lwt_result.map_error (fun err -> err, "/login")
     @@ let* contact = Pool_context.find_contact context |> Lwt_result.lift in
        let%lwt terms = Settings.terms_and_conditions database_label language in
+       let notification =
+         req
+         |> Sihl.Web.Request.query "redirected"
+         |> CCOption.map
+              (CCFun.const Pool_common.I18n.TermsAndConditionsUpdated)
+       in
        Page.Contact.terms
+         ?notification
          Contact.(contact |> id |> Pool_common.Id.value)
          terms
          context

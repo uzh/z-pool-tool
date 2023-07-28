@@ -51,10 +51,8 @@ let[@warning "-4"] confirmed_and_terms_agreed () =
       invalid_session_redirect req query_lang
     | Error Pool_common.Message.(TermsAndConditionsNotAccepted) ->
       redirect_to_with_actions
-        (path_with_language query_lang "/termsandconditions")
-        [ Message.set
-            ~error:[ Pool_common.Message.(TermsAndConditionsNotAccepted) ]
-        ]
+        (path_with_language query_lang "/termsandconditions?redirected=true")
+        []
     | Error Pool_common.Message.ContactUnconfirmed ->
       redirect_to (path_with_language query_lang "/email-confirmation")
     | Error Pool_common.Message.ImportPending ->

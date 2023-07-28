@@ -3,7 +3,7 @@ module Id : module type of Pool_common.Id
 module Job : sig
   type t =
     | GuardianCacheCleared
-    | SmtpAccountUpdated of Email.SmtpAuth.Id.t
+    | SmtpAccountUpdated
     | TenantDatabaseAdded of Pool_database.Label.t
     | TenantDatabaseUpdated of Pool_database.Label.t
     | TenantDatabaseDeleted of Pool_database.Label.t

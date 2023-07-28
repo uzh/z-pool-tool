@@ -237,12 +237,21 @@ end
 
 let create_smtp_auth () =
   let open Email in
+  let sys_event_id = System_event.Id.create () in
   let events =
     let open CCResult in
     let open Cqrs_command.Smtp_command.Create in
-    decode (Data.Smtp.urlencoded ()) >>= handle ~id:Data.Smtp.id None
+    decode (Data.Smtp.urlencoded ())
+    >>= handle ~id:Data.Smtp.id ~event_id:sys_event_id None
   in
-  let expected = Ok [ SmtpCreated (Data.Smtp.create ()) |> Pool_event.email ] in
+  let expected =
+    Ok
+      [ SmtpCreated (Data.Smtp.create ()) |> Pool_event.email
+      ; System_event.(
+          Job.SmtpAccountUpdated |> create ~id:sys_event_id |> created)
+        |> Pool_event.system_event
+      ]
+  in
   Alcotest.(
     check
       (result (list Test_utils.event) Test_utils.error)
@@ -253,18 +262,24 @@ let create_smtp_auth () =
 
 let create_smtp_force_defaut () =
   let open Email in
+  let sys_event_id = System_event.Id.create () in
   let events =
     let open CCResult in
     let open Cqrs_command.Smtp_command.Create in
     decode (Data.Smtp.urlencoded ~default:false ())
-    >>= handle ~id:Data.Smtp.id None
+    >>= handle ~id:Data.Smtp.id ~event_id:sys_event_id None
   in
   let expected =
     let smtp =
       let open Email.SmtpAuth in
       Write.{ (Data.Smtp.create ()) with default = Default.create true }
     in
-    Ok [ SmtpCreated smtp |> Pool_event.email ]
+    Ok
+      [ SmtpCreated smtp |> Pool_event.email
+      ; System_event.(
+          Job.SmtpAccountUpdated |> create ~id:sys_event_id |> created)
+        |> Pool_event.system_event
+      ]
   in
   Alcotest.(
     check
@@ -285,10 +300,7 @@ let update_smtp_auth () =
   let expected =
     let sys_event =
       let open System_event in
-      Job.SmtpAccountUpdated smtp_auth.SmtpAuth.id
-      |> create
-      |> created
-      |> Pool_event.system_event
+      Job.SmtpAccountUpdated |> create |> created |> Pool_event.system_event
     in
     Ok [ SmtpEdited smtp_auth |> Pool_event.email; sys_event ]
   in

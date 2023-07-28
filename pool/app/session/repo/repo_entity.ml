@@ -481,17 +481,27 @@ module Calendar = struct
     let decode
       ( id
       , ( title
-        , ( start
-          , ( duration
-            , ( description
-              , ( max_participants
-                , ( min_participants
-                  , (overbook, (assignment_count, (location, contact_person)))
-                  ) ) ) ) ) ) )
+        , ( experiment_id
+          , ( start
+            , ( duration
+              , ( description
+                , ( max_participants
+                  , ( min_participants
+                    , (overbook, (assignment_count, (location, contact_person)))
+                    ) ) ) ) ) ) ) )
       =
       let* end_ =
         Entity.End.create start duration
         |> CCResult.map_err Pool_common.(Utils.error_to_string Language.En)
+      in
+      let experiment_url =
+        Format.asprintf
+          "admin/experiments/%s"
+          (Pool_common.Id.value experiment_id)
+        |> Sihl.Web.externalize_path
+      in
+      let session_url =
+        Format.asprintf "%s/sessions/%s" experiment_url (Entity.Id.value id)
       in
       Ok
         { id
@@ -499,6 +509,8 @@ module Calendar = struct
         ; start
         ; end_
         ; description
+        ; experiment_url
+        ; session_url
         ; max_participants
         ; min_participants
         ; overbook
@@ -516,19 +528,21 @@ module Calendar = struct
            (tup2
               Experiment.Repo.Entity.Title.t
               (tup2
-                 ptime
+                 RepoId.t
                  (tup2
-                    ptime_span
+                    ptime
                     (tup2
-                       (option string)
+                       ptime_span
                        (tup2
-                          int
+                          (option string)
                           (tup2
                              int
                              (tup2
                                 int
                                 (tup2
                                    int
-                                   (tup2 Location.t (option ContactPerson.t))))))))))))
+                                   (tup2
+                                      int
+                                      (tup2 Location.t (option ContactPerson.t)))))))))))))
   ;;
 end

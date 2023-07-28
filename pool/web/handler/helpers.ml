@@ -1,3 +1,4 @@
+module ContactUpdate = Helpers_contact_update
 module Login = Helpers_login
 module PartialUpdate = Helpers_partial_update
 module Guard = Helpers_guard

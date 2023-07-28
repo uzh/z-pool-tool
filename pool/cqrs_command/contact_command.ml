@@ -477,6 +477,36 @@ end = struct
   let effects = Contact.Guard.Access.update
 end
 
+module TogglePaused : sig
+  type t = Pool_user.Paused.t
+
+  val handle
+    :  ?tags:Logs.Tag.set
+    -> Contact.t
+    -> t
+    -> (Pool_event.t list, Pool_common.Message.error) result
+
+  val effects : Contact.Id.t -> Guard.ValidationSet.t
+end = struct
+  type t = Pool_user.Paused.t
+
+  let handle ?(tags = Logs.Tag.empty) contact paused =
+    Logs.info ~src (fun m -> m "Handle command TogglePaused" ~tags);
+    let increment = Pool_common.Version.increment in
+    Ok
+      [ Contact.Updated
+          Contact.
+            { contact with
+              paused
+            ; paused_version = contact.paused_version |> increment
+            }
+        |> Pool_event.contact
+      ]
+  ;;
+
+  let effects = Contact.Guard.Access.update
+end
+
 module Verify = struct
   (* TODO issue #90 step 2 *)
   (* TODO Verify the contact itself with ID/Pass *)

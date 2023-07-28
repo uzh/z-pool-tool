@@ -23,18 +23,10 @@ let index { Pool_context.language; _ } filter_list =
     ; CCList.map
         (fun filter ->
           [ txt Filter.(filter.title |> CCOption.map_or ~default:"" Title.value)
-          ; a
-              ~a:
-                [ a_href
-                    (filter.Filter.id
-                     |> Pool_common.Id.value
-                     |> Format.asprintf "/admin/filter/%s/edit"
-                     |> Sihl.Web.externalize_path)
-                ]
-              [ txt
-                  Pool_common.(
-                    Utils.control_to_string language (Message.edit None))
-              ]
+          ; filter.Filter.id
+            |> Pool_common.Id.value
+            |> Format.asprintf "/admin/filter/%s/edit"
+            |> Component.Input.edit_link
           ])
         filter_list
       |> Component.Table.horizontal_table `Striped ~align_last_end:true ~thead

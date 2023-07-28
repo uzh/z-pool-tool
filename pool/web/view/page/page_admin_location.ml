@@ -35,7 +35,7 @@ module List = struct
         ; Format.asprintf
             "/admin/locations/%s"
             (location.Pool_location.id |> Id.value)
-          |> edit_link
+          |> link_as_button ~icon:Icon.Eye
         ])
       locations
   ;;

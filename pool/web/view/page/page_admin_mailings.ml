@@ -130,7 +130,9 @@ module List = struct
            [ button_form "delete" Message.delete `Error I18n.DeleteMailing ]
          | _ -> [ txt "" ])
        else [])
-      @ [ detail_mailing_path experiment_id mailing |> edit_link ]
+      @ [ detail_mailing_path experiment_id mailing
+          |> link_as_button ~icon:Icon.Eye
+        ]
       |> div ~a:[ a_class [ "flexrow"; "flex-gap"; "justify-end" ] ]
     in
     [ mailing.start_at |> StartAt.to_human |> txt
@@ -235,7 +237,7 @@ let form
   ?(mailing : Mailing.t option)
   ?(fully_booked = false)
   ({ Pool_context.language; csrf; _ } as context)
-  experiment
+  (experiment : Experiment.t)
   flash_fetcher
   =
   let functions =
@@ -250,6 +252,21 @@ let form
           };
       });
   |js}
+  in
+  let notification =
+    match
+      Experiment.(
+        experiment.registration_disabled |> RegistrationDisabled.value)
+    with
+    | true ->
+      txt
+        Pool_common.(
+          Utils.hint_to_string
+            language
+            I18n.ExperimentMailingsRegistrationDisabled)
+      |> fun text ->
+      [ p [ text ] ] |> Component.Notification.notification language `Warning
+    | false -> txt ""
   in
   let distribution_select (distribution : Mailing.Distribution.t option) =
     let open Mailing.Distribution in
@@ -326,7 +343,6 @@ let form
         option
           ~a:[ a_value ""; a_disabled (); a_selected () ]
           (Pool_common.(Utils.control_to_string language Message.PleaseSelect)
-           |> CCString.capitalize_ascii
            |> txt)
       in
       CCList.map
@@ -446,7 +462,7 @@ let form
     let open Htmx in
     div
       ~a:[ a_class [ "stack" ] ]
-      (fully_booked_note
+      ((notification :: fully_booked_note)
        @ [ form
              ~a:
                [ a_class [ "stack" ]

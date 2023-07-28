@@ -347,12 +347,31 @@ let session_list
                 ~submit_type:`Disabled
                 ()
           in
+          let key_figures =
+            let open Session in
+            let value = ParticipantAmount.value in
+            Format.asprintf
+              "%i / %i (%i)"
+              (session.min_participants |> value)
+              (session.max_participants |> value)
+              (session.overbook |> value)
+          in
           let row_attrs =
             let id = a_user_data "id" Session.(Id.value session.id) in
+            let classnames =
+              let check opt classname =
+                if CCOption.is_some opt then Some classname else None
+              in
+              [ check session.canceled_at "bg-red-lighter"
+              ; check session.closed_at "bg-green-lighter"
+              ]
+              |> CCList.filter_map CCFun.id
+            in
             session.follow_up_to
             |> CCOption.map (fun parent ->
               a_user_data "parent-id" (Session.Id.value parent))
             |> CCOption.map_or ~default:[ id ] (fun parent -> [ id; parent ])
+            |> fun attrs -> a_class classnames :: attrs
           in
           let title =
             let date = span [ txt (session |> session_date_to_human) ] in
@@ -365,18 +384,6 @@ let session_list
             | true, false -> div ~a:[ a_class [ "inset"; "left" ] ] [ date ]
           in
           let base = [ title ] in
-          let closed_at =
-            session.closed_at
-            |> CCOption.map_or ~default:"" (fun t ->
-              Utils.Time.formatted_date_time t)
-            |> txt
-          in
-          let canceled_at =
-            session.canceled_at
-            |> CCOption.map_or ~default:"" (fun t ->
-              Utils.Time.formatted_date_time t)
-            |> txt
-          in
           let cells =
             match layout with
             | `SessionOverview ->
@@ -399,15 +406,14 @@ let session_list
                          |> ParticipantCount.value
                          |> CCInt.to_string
                        else "")
-                  ; canceled_at
-                  ; closed_at
+                  ; txt key_figures
                   ; div
                       ~a:[ a_class [ "flexrow"; "flex-gap"; "justify-end" ] ]
                       [ Format.asprintf
                           "/admin/experiments/%s/sessions/%s"
                           (Experiment.Id.value experiment_id)
                           (Id.value session.id)
-                        |> edit_link
+                        |> link_as_button ~icon:Icon.Eye
                       ; delete_form ()
                       ]
                   ]
@@ -419,9 +425,7 @@ let session_list
                 ; txt
                     (CCInt.to_string
                        (session.assignment_count |> AssignmentCount.value))
-                ; txt (session |> Session.available_spots |> CCInt.to_string)
-                ; canceled_at
-                ; closed_at
+                ; txt key_figures
                 ]
               in
               base @ cells
@@ -433,29 +437,19 @@ let session_list
       grouped_sessions
   in
   let thead =
+    let key_figures_head = "Min / Max (Overbook)" in
     let open Message in
     let base = [ Field.Date ] |> Table.fields_to_txt language in
     let cells =
       match layout with
       | `SessionOverview ->
         base
-        @ ([ Field.AssignmentCount
-           ; Field.NoShowCount
-           ; Field.ParticipantCount
-           ; Field.CanceledAt
-           ; Field.ClosedAt
-           ]
+        @ ([ Field.AssignmentCount; Field.NoShowCount; Field.ParticipantCount ]
            |> Table.fields_to_txt language)
-        @ [ add_session_btn ]
+        @ [ txt key_figures_head; add_session_btn ]
       | `WaitingList ->
         let to_txt = Table.field_to_txt language in
-        base
-        @ [ txt ""
-          ; Field.AssignmentCount |> to_txt
-          ; txt (Utils.text_to_string language I18n.AvailableSpots)
-          ; Field.CanceledAt |> to_txt
-          ; Field.ClosedAt |> to_txt
-          ]
+        base @ [ txt ""; Field.AssignmentCount |> to_txt; txt key_figures_head ]
     in
     cells |> Component.Table.table_head
   in
@@ -465,6 +459,12 @@ let session_list
       ~a:([ a_class [ "table"; "striped"; "align-last-end" ] ] @ id)
       ~thead
       rows
+  in
+  let table_legend =
+    Component.Table.table_color_legend
+      language
+      Pool_common.I18n.
+        [ Closed, "bg-green-lighter"; Canceled, "bg-red-lighter" ]
   in
   let hover_script =
     match chronological with
@@ -528,6 +528,7 @@ let session_list
            ; txt " are follow-up sessions."
            ]
        else txt "")
+    ; table_legend
     ; table
     ; hover_script
     ]

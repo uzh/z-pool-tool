@@ -2,6 +2,7 @@ type t =
   | Address
   | AvailableSpots
   | Canceled
+  | Closed
   | ContactWaitingListEmpty
   | ContactWaitingListTitle
   | DashboardProfileCompletionText
@@ -63,6 +64,7 @@ type t =
   | SwitchChronological
   | SwitchGrouped
   | TermsAndConditionsTitle
+  | TermsAndConditionsUpdated
   | TextTemplates
   | UpcomingSessionsListEmpty
   | PastExperimentListPublicTitle
@@ -111,6 +113,7 @@ type nav_link =
 [@@deriving eq]
 
 type hint =
+  | AdminOverwriteContactValues
   | AllowUninvitedSignup
   | AssignContactFromWaitingList
   | AssignmentsMarkedAsClosed
@@ -141,6 +144,7 @@ type hint =
   | ExperimentAssignment
   | ExperimentContactPerson
   | ExperimentMailings
+  | ExperimentMailingsRegistrationDisabled
   | ExperimentSessions
   | ExperimentSessionsPublic
   | ExperimentWaitingList
@@ -155,7 +159,10 @@ type hint =
   | NumberIsSecondsHint
   | NumberIsWeeksHint
   | Overbook
+  | PartialUpdate
   | ParticipationTags
+  | PauseAccountAdmin
+  | PauseAccountContact
   | Rate
   | RateDependencyWith
   | RateDependencyWithout
@@ -199,8 +206,10 @@ type confirmable =
   | DeleteSession
   | MarkAssignmentAsDeleted
   | MarkAssignmentWithFollowUpsAsDeleted
+  | PauseAccount
   | PublisCustomField
   | PublisCustomFieldOption
+  | ReactivateAccount
   | RemoveRule
   | RemoveTag
   | RevokeRole

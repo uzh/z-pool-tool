@@ -442,12 +442,6 @@ let partial_update_to_htmx
       Field.Lastname
       (Text (lastname |> User.Lastname.value |> CCOption.pure))
     |> to_html
-  | Paused (v, paused) ->
-    create_entity
-      v
-      Field.Paused
-      (paused |> User.Paused.value |> CCOption.pure |> boolean)
-    |> to_html
   | Language (v, lang) ->
     create_entity
       v
