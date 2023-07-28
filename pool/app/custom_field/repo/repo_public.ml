@@ -281,6 +281,7 @@ module Sql = struct
       Format.asprintf
         {sql|
           WHERE pool_custom_fields.prompt_on_registration = 1
+          AND pool_custom_fields.published_at IS NOT NULL
         |sql}
     in
     let order = {sql| ORDER BY pool_custom_fields.position ASC |sql} in
