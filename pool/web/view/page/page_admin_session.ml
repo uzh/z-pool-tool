@@ -351,7 +351,7 @@ let session_list
             let open Session in
             let value = ParticipantAmount.value in
             Format.asprintf
-              "Min: %i / Max: %i (%i)"
+              "%i / %i (%i)"
               (session.min_participants |> value)
               (session.max_participants |> value)
               (session.overbook |> value)

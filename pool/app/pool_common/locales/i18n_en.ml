@@ -150,6 +150,10 @@ let nav_link_to_string = function
 ;;
 
 let rec hint_to_string = function
+  | AdminOverwriteContactValues ->
+    {|If you overwrite one of the following values, this is not apparent to the contact.
+
+  If you filter for this field, the overriding value is preferred.|}
   | AllowUninvitedSignup ->
     "Contacts who have not been invited will be able to sign up for the \
      experiment."

@@ -46,21 +46,6 @@ let personal_details_form
     | `Admin -> Htmx.admin_profile_hx_post (Contact.id contact), true
   in
   let externalize = HttpUtils.externalize_path_with_lang query_language in
-  (* let pause_button = let open Pool_common in let hint = match form_context
-     with | `Contact -> I18n.PauseAccountContact | `Admin ->
-     I18n.PauseAccountAdmin in let control, confirmable, submit_type = let open
-     Message in let open Pool_common in let confirmable_str =
-     Utils.confirmable_to_string language in match contact.Contact.paused |>
-     Pool_user.Paused.value with | true -> ReactivateAccount, confirmable_str
-     I18n.ReactivateAccount, `Success | false -> PauseAccount, confirmable_str
-     I18n.PauseAccount, `Error in div [ h2 ~a:[ a_class [ "heading-2" ] ] [ txt
-     Pool_common.( Utils.field_to_string language Message.Field.Status |>
-     CCString.capitalize_ascii) ] ; div ~a:[ a_class [ "flexrow"; "wrap";
-     "flex-gap"; "align-center" ] ] [ form ~a: [ a_method `Post ; a_action
-     (externalize (Format.asprintf "%s/pause" action)) ; a_user_data
-     "confirmable" confirmable ] [ csrf_element csrf () ; submit_element
-     ~submit_type language control () ] ; div [ txt
-     Pool_common.(Utils.hint_to_string language hint) ] ] ] in *)
   let htmx_action = externalize action in
   let form_attrs =
     [ a_method `Post; a_action htmx_action; a_class [ "stack" ] ]
@@ -83,6 +68,16 @@ let personal_details_form
       ()
   in
   let open Message in
+  let admin_hint =
+    match is_admin with
+    | true ->
+      [ txt
+          Pool_common.(
+            Utils.hint_to_string language I18n.AdminOverwriteContactValues)
+      ]
+      |> Component.Notification.notification language `Warning
+    | false -> txt ""
+  in
   let static_fields =
     let fields =
       div
@@ -145,10 +140,14 @@ let personal_details_form
         [ static_fields
         ; div
             ~a:[ a_class [ "gap-lg" ] ]
-            (grouped_custom_fields_form
-               language
-               custom_fields
-               custom_field_to_html)
+            [ div
+                ~a:[ a_class [ "stack-lg" ] ]
+                (admin_hint
+                 :: grouped_custom_fields_form
+                      language
+                      custom_fields
+                      custom_field_to_html)
+            ]
         ]
     ]
 ;;

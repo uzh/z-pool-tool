@@ -593,9 +593,7 @@ let selector
         option
           ~a:attrs
           (txt
-             (Pool_common.(
-                Utils.control_to_string language Message.PleaseSelect)
-              |> CCString.capitalize_ascii))
+             Pool_common.(Utils.control_to_string language Message.PleaseSelect))
       in
       [ default ] @ options
     | false -> options
@@ -820,7 +818,6 @@ let admin_select
       option
         ~a:attrs
         (Pool_common.(Utils.control_to_string language Message.PleaseSelect)
-         |> CCString.capitalize_ascii
          |> txt)
     in
     CCList.map

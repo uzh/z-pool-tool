@@ -113,6 +113,7 @@ type nav_link =
 [@@deriving eq]
 
 type hint =
+  | AdminOverwriteContactValues
   | AllowUninvitedSignup
   | AssignContactFromWaitingList
   | AssignmentsMarkedAsClosed

@@ -517,11 +517,11 @@ let control_to_string = function
   | MarkAsDeleted -> format_submit "mark as deleted" None
   | More -> format_submit "more" None
   | NextPage -> "next"
-  | PauseAccount -> "pause account"
-  | PleaseSelect -> "please select"
+  | PauseAccount -> format_submit "pause account" None
+  | PleaseSelect -> format_submit "please select" None
   | PreviousPage -> "previous"
   | Publish field -> format_submit "publish" field
-  | ReactivateAccount -> "reactivate account"
+  | ReactivateAccount -> format_submit "reactivate account" None
   | Register -> format_submit "register" None
   | RemoveFromWaitingList -> "Remove from waiting list"
   | Remove field -> format_submit "remove" field

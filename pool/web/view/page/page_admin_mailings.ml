@@ -343,7 +343,6 @@ let form
         option
           ~a:[ a_value ""; a_disabled (); a_selected () ]
           (Pool_common.(Utils.control_to_string language Message.PleaseSelect)
-           |> CCString.capitalize_ascii
            |> txt)
       in
       CCList.map

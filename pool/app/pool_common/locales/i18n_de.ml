@@ -152,6 +152,11 @@ let nav_link_to_string = function
 ;;
 
 let rec hint_to_string = function
+  | AdminOverwriteContactValues ->
+    {|Wenn Sie einen der folgenden Werte anpassen, ist dies für den Kontakt nicht ersichtlich.
+
+Wird nach diesem Feld gefiltert, wird der überschreibende Wert bevorzugt.
+|}
   | AllowUninvitedSignup ->
     "Kontakte, die nicht eingeladen wurden, können sich für das Experiment \
      anmelden."

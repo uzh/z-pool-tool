@@ -35,7 +35,6 @@ const tooltipContent = ({ _instance, _def }, hideLocation) => {
     const { start, end } = _instance.range;
     const { title, extendedProps } = _def;
     const contactPerson = extendedProps.contact_person
-    console.log(extendedProps)
     const { assignment_count, experiment_url, session_url, max_participants, min_participants, overbook } = extendedProps;
     const counterHtml = `<p><strong>Participants: ${assignment_count} / ${max_participants}</strong><br>Overbook: ${overbook}<br>Min. participants: ${min_participants}</p>`
     const linksHtml = `<p>
