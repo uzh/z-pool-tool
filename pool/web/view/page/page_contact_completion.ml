@@ -30,6 +30,7 @@ let custom_field_to_input ?flash_fetcher language custom_field =
     Input.date_picker_element
       ~disable_future:true
       ?value:(answer >>= Answer.value)
+      ~required
       language
       field
   | Public.MultiSelect (_, options, answer) ->
