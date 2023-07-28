@@ -132,7 +132,7 @@ let sign_up_not_allowed_suffix () =
   let verification_email = verification_email contact_info in
   let events =
     decoded
-    |> handle ~allowed_email_suffixes token email verification_email None
+    |> handle ~allowed_email_suffixes [] token email verification_email None
   in
   let expected =
     Error
@@ -173,6 +173,7 @@ let sign_up () =
          ~allowed_email_suffixes
          ~user_id
          ~terms_accepted_at
+         []
          token
          email
          verification_email

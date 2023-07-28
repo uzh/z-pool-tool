@@ -32,6 +32,7 @@ module Data = struct
   let admin_override = AdminOverride.create false
   let admin_view_only = AdminViewOnly.create false
   let admin_input_only = AdminInputOnly.create false
+  let prompt_on_registration = PromptOnRegistration.create false
 
   let custom_field
     ?published_at
@@ -39,6 +40,7 @@ module Data = struct
     ?(required = required)
     ?(admin_override = AdminOverride.create false)
     ?(admin_input_only = AdminInputOnly.create false)
+    ?(prompt_on_registration = PromptOnRegistration.create false)
     field_type
     =
     let name = Name.create sys_languages name |> get in
@@ -59,6 +61,7 @@ module Data = struct
       admin_override
       admin_view_only
       admin_input_only
+      prompt_on_registration
     |> CCResult.get_exn
   ;;
 
@@ -100,6 +103,7 @@ module Data = struct
     let required = required m in
     let admin_override = admin_override m in
     let admin_input_only = admin_input_only m in
+    let prompt_on_registration = prompt_on_registration m in
     let version = 0 |> Pool_common.Version.of_int in
     let admin_value = None in
     match field_type with
@@ -116,6 +120,7 @@ module Data = struct
           ; required
           ; admin_override
           ; admin_input_only
+          ; prompt_on_registration
           ; version
           }
         , answer )
@@ -132,6 +137,7 @@ module Data = struct
           ; required
           ; admin_override
           ; admin_input_only
+          ; prompt_on_registration
           ; version
           }
         , answer )
@@ -150,6 +156,7 @@ module Data = struct
           ; required
           ; admin_override
           ; admin_input_only
+          ; prompt_on_registration
           ; version
           }
         , field_options
@@ -167,6 +174,7 @@ module Data = struct
           ; required
           ; admin_override
           ; admin_input_only
+          ; prompt_on_registration
           ; version
           }
         , answer )
@@ -184,6 +192,7 @@ module Data = struct
           ; required
           ; admin_override
           ; admin_input_only
+          ; prompt_on_registration
           ; version
           }
         , field_options
@@ -202,6 +211,7 @@ module Data = struct
           ; required
           ; admin_override
           ; admin_input_only
+          ; prompt_on_registration
           ; version
           }
         , answer )

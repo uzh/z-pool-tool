@@ -3,6 +3,7 @@ open Entity
 type event =
   | AdminAnswerCleared of Public.t * Pool_common.Id.t
   | AnswerUpserted of Public.t * Pool_common.Id.t * Pool_context.user
+  | AnsweredOnSignup of Public.t * Pool_common.Id.t
   | Created of t
   | Deleted of t
   | FieldsSorted of t list
@@ -31,7 +32,10 @@ let handle_event pool : event -> unit Lwt.t =
       ~entity_uuid
       ()
   | AnswerUpserted (m, entity_uuid, user) ->
-    Repo_partial_update.upsert_answer pool user entity_uuid m
+    let is_admin = Pool_context.user_is_admin user in
+    Repo_partial_update.upsert_answer pool is_admin entity_uuid m
+  | AnsweredOnSignup (m, entity_uuid) ->
+    Repo_partial_update.upsert_answer pool false entity_uuid m
   | Created m ->
     let%lwt () = Repo.insert pool m in
     Entity_guard.Target.to_authorizable ~ctx:(Pool_database.to_ctx pool) m

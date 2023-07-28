@@ -19,6 +19,7 @@ module SignUp : sig
     -> ?allowed_email_suffixes:Settings.EmailSuffix.t list
     -> ?user_id:Id.t
     -> ?terms_accepted_at:User.TermsAccepted.t option
+    -> Custom_field.Public.t list
     -> Email.Token.t
     -> User.EmailAddress.t
     -> Sihl_email.t
@@ -60,6 +61,7 @@ end = struct
     ?allowed_email_suffixes
     ?(user_id = Id.create ())
     ?(terms_accepted_at = Some (User.TermsAccepted.create_now ()))
+    custom_fields
     token
     unverified_email
     verification_email
@@ -80,12 +82,19 @@ end = struct
         ; language = default_language
         }
     in
+    let custom_field_events =
+      custom_fields
+      |> CCList.map (fun field ->
+        Custom_field.AnsweredOnSignup (field, user_id)
+        |> Pool_event.custom_field)
+    in
     Ok
-      [ Contact.Created contact |> Pool_event.contact
-      ; Email.Created (unverified_email, token, user_id)
-        |> Pool_event.email_verification
-      ; Email.Sent (verification_email, None) |> Pool_event.email
-      ]
+      ([ Contact.Created contact |> Pool_event.contact
+       ; Email.Created (unverified_email, token, user_id)
+         |> Pool_event.email_verification
+       ; Email.Sent (verification_email, None) |> Pool_event.email
+       ]
+       @ custom_field_events)
   ;;
 
   let decode data =

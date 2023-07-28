@@ -89,7 +89,8 @@ let create pool =
       , false
       , FieldType.Select
       , recruitment_channel_options
-      , None )
+      , None
+      , true )
     ; ( [ En, "Research interests"; De, "Forschungsinteressen" ]
       , Model.Contact
       , None
@@ -98,7 +99,8 @@ let create pool =
       , false
       , FieldType.MultiSelect
       , research_interest_options
-      , None )
+      , None
+      , false )
     ; ( [ En, "Level of english"; De, "Englischkenntnisse" ]
       , Model.Contact
       , None
@@ -107,7 +109,8 @@ let create pool =
       , false
       , FieldType.Select
       , languge_level_options
-      , Some language_group )
+      , Some language_group
+      , false )
     ; ( [ En, "Level of german"; De, "Deutschkenntnisse" ]
       , Model.Contact
       , None
@@ -116,7 +119,8 @@ let create pool =
       , false
       , FieldType.Select
       , languge_level_options
-      , Some language_group )
+      , Some language_group
+      , false )
     ; ( [ En, "Highest degree"; De, "Höchster Abschluss" ]
       , Model.Contact
       , None
@@ -125,7 +129,8 @@ let create pool =
       , false
       , FieldType.Select
       , education_options
-      , Some education_group )
+      , Some education_group
+      , false )
     ; ( [ En, "Profession"; De, "Beruf" ]
       , Model.Contact
       , None
@@ -134,7 +139,8 @@ let create pool =
       , false
       , FieldType.Select
       , profession_options
-      , None )
+      , None
+      , false )
     ]
   in
   let group_events =
@@ -150,7 +156,8 @@ let create pool =
            , disabled
            , field_type
            , options
-           , group ) ->
+           , group
+           , prompt_on_registration ) ->
         let field_id = Custom_field.Id.create () in
         let field =
           let name = make_names name in
@@ -163,6 +170,9 @@ let create pool =
           in
           let required = required |> Required.create in
           let disabled = disabled |> Disabled.create in
+          let prompt_on_registration =
+            prompt_on_registration |> PromptOnRegistration.create
+          in
           Custom_field.create
             ~id:field_id
             field_type
@@ -177,6 +187,7 @@ let create pool =
             admin_override
             admin_view_only
             admin_input_only
+            prompt_on_registration
           |> get_or_failwith
         in
         let create_field_event = Custom_field.Created field in

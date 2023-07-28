@@ -177,6 +177,8 @@ type t =
   | Paused [@name "paused"] [@printer go "paused"]
   | PlainText [@name "plain_text"] [@printer go "plain_text"]
   | Predicate [@name "predicate"] [@printer go "predicate"]
+  | PromptOnRegistration [@name "prompt_on_registration"]
+      [@printer go "prompt_on_registration"]
   | Profile [@name "profile"] [@printer go "profile"]
   | PublicTitle [@name "public_title"] [@printer go "public_title"]
   | PublishedAt [@name "published_at"] [@printer go "published_at"]

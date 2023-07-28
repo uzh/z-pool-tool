@@ -75,6 +75,7 @@ module Sql = struct
         )),
         pool_custom_fields.admin_override,
         pool_custom_fields.admin_input_only,
+        pool_custom_fields.prompt_on_registration,
         LOWER(CONCAT(
           SUBSTR(HEX(pool_custom_field_answers.uuid), 1, 8), '-',
           SUBSTR(HEX(pool_custom_field_answers.uuid), 9, 4), '-',
@@ -94,15 +95,20 @@ module Sql = struct
 
   let find_all_by_model_request required is_admin =
     let open Caqti_request.Infix in
+    let include_promted_on_registration = is_admin || required in
     let where =
       Format.asprintf
         {sql|
         WHERE pool_custom_fields.model = $2
         %s
         %s
+        %s
       |sql}
         (base_filter_conditions is_admin)
         (if required then "AND pool_custom_fields.required = 1" else "")
+        (if include_promted_on_registration
+         then ""
+         else "AND pool_custom_fields.prompt_on_registration = 0")
     in
     let order = {sql| ORDER BY pool_custom_fields.position ASC |sql} in
     Format.asprintf "%s \n %s \n %s" select_sql where order
@@ -254,6 +260,32 @@ module Sql = struct
       (Pool_common.Id.value contact_id, Entity.Model.(show Contact))
     ||> CCInt.equal 0
   ;;
+
+  let all_prompted_on_registration_request =
+    let open Caqti_request.Infix in
+    let where =
+      Format.asprintf
+        {sql|
+          WHERE pool_custom_fields.prompt_on_registration = 1
+        |sql}
+    in
+    let order = {sql| ORDER BY pool_custom_fields.position ASC |sql} in
+    Format.asprintf "%s \n %s \n %s" select_sql where order
+    |> Caqti_type.(string ->* Repo_entity.Public.t)
+  ;;
+
+  let all_prompted_on_registration pool =
+    let open Utils.Lwt_result.Infix in
+    Utils.Database.collect
+      (Database.Label.value pool)
+      all_prompted_on_registration_request
+      Entity.Model.(show Contact)
+    >|> fun fields ->
+    let%lwt options = get_options_of_multiple pool fields in
+    fields
+    |> Repo_entity.Public.to_ungrouped_entities false options
+    |> Lwt.return
+  ;;
 end
 
 let find_all_by_contact = Sql.find_all_by_model Entity.Model.Contact
@@ -266,3 +298,4 @@ let find_multiple_by_contact = Sql.find_multiple_by_contact
 let find_by_contact = Sql.find_by_contact
 let all_required_answered = Sql.all_answered true
 let all_answered = Sql.all_answered false
+let all_prompted_on_registration = Sql.all_prompted_on_registration

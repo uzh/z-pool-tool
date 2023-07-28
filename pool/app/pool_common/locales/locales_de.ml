@@ -149,6 +149,7 @@ let rec field_to_string =
   | Paused -> "Pausiert"
   | PlainText -> "Klartext"
   | Predicate -> "Prädikat"
+  | PromptOnRegistration -> "Eingabeaufforderung bei der Registrierung"
   | Profile -> "Profil"
   | PublicTitle -> "Öffentlicher Titel"
   | PublishedAt -> "Veröffentlicht"

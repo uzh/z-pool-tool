@@ -114,6 +114,7 @@ let create
   ({ version; field; value; help; htmx_attributes } : 'a t)
   language
   ?overridden_value
+  ?promt_in_registration_hint
   ?(classnames = [])
   ?disabled
   ?error
@@ -145,6 +146,8 @@ let create
     CCOption.bind flash_fetcher (fun flash_fetcher ->
       field |> Pool_common.Message.Field.show |> flash_fetcher)
   in
+  (* TODO: Allow multiple hints *)
+  let help = CCOption.(help <+> promt_in_registration_hint) in
   match value with
   | Boolean boolean ->
     Input.checkbox_element
@@ -375,11 +378,15 @@ let custom_field_overridden_value ?hx_delete is_admin lang m =
 
 let custom_field_to_htmx
   ?version
+  ?hx_post
+  ?hx_delete
+  ?classnames
+  ?error
+  ?flash_fetcher
+  ?success
   language
   is_admin
   custom_field
-  ?hx_post
-  ?hx_delete
   =
   let required =
     Custom_field.(Public.required custom_field |> Required.value)
@@ -387,8 +394,22 @@ let custom_field_to_htmx
   let overridden_value =
     custom_field_overridden_value ?hx_delete is_admin language custom_field
   in
+  let promt_in_registration_hint =
+    if is_admin
+       && Custom_field.(
+            Public.prompt_on_registration custom_field
+            |> PromptOnRegistration.value)
+    then Some Pool_common.I18n.CustomFieldAnsweredOnRegistration
+    else None
+  in
   let to_html disabled m =
-    create ~required ~disabled ?overridden_value m language
+    create
+      ~required
+      ~disabled
+      ?promt_in_registration_hint
+      ?overridden_value
+      m
+      language
   in
   let open Custom_field in
   let field_id = Public.id custom_field in
@@ -399,7 +420,7 @@ let custom_field_to_htmx
   let value = custom_field_to_htmx_value language is_admin custom_field in
   let help = Public.to_common_hint language custom_field in
   { version; field; value; htmx_attributes = Some htmx_attributes; help }
-  |> to_html disabled ?hx_post
+  |> to_html disabled ?hx_post ?classnames ?error ?flash_fetcher ?success
 ;;
 
 let partial_update_to_htmx
@@ -415,7 +436,7 @@ let partial_update_to_htmx
   ?success
   =
   let open Custom_field.PartialUpdate in
-  let to_html m =
+  let to_html m () =
     create
       ~overridden_value:[]
       ~disabled:false
@@ -427,6 +448,7 @@ let partial_update_to_htmx
       ?success
       m
       language
+      ()
   in
   let open Pool_common.Message in
   match partial_update with
@@ -458,8 +480,8 @@ let partial_update_to_htmx
       ?classnames
       ?error
       ?flash_fetcher
-      ?hx_post
       ?hx_delete
+      ?hx_post
       ?success
       language
       is_admin

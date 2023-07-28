@@ -127,11 +127,13 @@ type hint =
   | CustomFieldAdminOverride
   | CustomFieldAdminOverrideUpdate
   | CustomFieldAdminViewOnly
+  | CustomFieldAnsweredOnRegistration
   | CustomFieldContactModel
   | CustomFieldExperimentModel
   | CustomFieldGroups
   | CustomFieldNoContactValue
   | CustomFieldOptionsCompleteness
+  | CustomFieldPromptOnRegistration
   | CustomFieldSessionModel
   | CustomFieldSort of Entity_message.Field.t
   | CustomFieldTypeText

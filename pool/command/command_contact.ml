@@ -62,7 +62,7 @@ Example: contact.signup econ-uzh example@mail.com securePassword Max Muster onli
              lastname
          in
          decoded
-         |> handle token email verification_mail language
+         |> handle [] token email verification_mail language
          |> get_or_failwith
          |> Lwt.return
        in

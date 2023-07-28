@@ -193,6 +193,9 @@ let rec hint_to_string = function
       "This option implies \"%s\"."
       (Locales_en.field_to_string Entity_message.Field.AdminInputOnly
        |> CCString.capitalize_ascii)
+  | CustomFieldAnsweredOnRegistration ->
+    "This field has already been answered by the contact during registration \
+     and can no longer be changed by the contact him- or herself."
   | CustomFieldContactModel ->
     "Questions that contacts can, or must, answer. Based on this information, \
      contacts are invited to take part in experiments."
@@ -204,6 +207,10 @@ let rec hint_to_string = function
   | CustomFieldOptionsCompleteness ->
     "Make sure this list is complete or add an option to select if none of the \
      others are applicable."
+  | CustomFieldPromptOnRegistration ->
+    "If this option is enabled, this field is already prompted during \
+     registration, but is no longer displayed to the contact in the user \
+     profile."
   | CustomFieldSort field ->
     Format.asprintf
       "The %s will be displayed to the contacts in this order."
