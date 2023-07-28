@@ -28,6 +28,7 @@ let services =
   ; Sihl.Web.Http.register ~middlewares:Routes.global_middlewares Routes.router
   ; System_event.Service.register ()
   ; User_import.Service.register ()
+  ; Assignment.Service.register ()
   ]
 ;;
 
