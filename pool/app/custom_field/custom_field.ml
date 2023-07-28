@@ -32,6 +32,20 @@ let find_unanswered_required_by_contact database_label user id =
   | Admin _ -> find true
 ;;
 
+let find_unanswered_ungrouped_required_by_contact database_label user id =
+  let open Pool_context in
+  let find is_admin =
+    Repo_public.find_unanswered_ungrouped_required_by_contact
+      ~is_admin
+      database_label
+      id
+  in
+  match user with
+  | Guest -> Lwt.return []
+  | Contact _ -> find false
+  | Admin _ -> find true
+;;
+
 let find_multiple_by_contact = Repo_public.find_multiple_by_contact
 let find_by_contact = Repo_public.find_by_contact
 let all_required_answered = Repo_public.all_required_answered
@@ -83,16 +97,14 @@ let validate_htmx ~is_admin value (m : Public.t) =
   let go validation value = validation |> fst |> fun rule -> rule value in
   match m with
   | Boolean (public, answer) ->
-    (* TODO: Find UI way to do this *)
+    (* Ignoring required, as false is default *)
     let to_field a = Public.Boolean (public, a) |> CCResult.return in
-    (match single_value, required with
-     | Some value, _ ->
-       value
-       |> Utils.Bool.of_string
-       |> create_answer is_admin answer
-       |> to_field
-     | None, false -> to_field None
-     | None, true -> no_value)
+    let open CCOption.Infix in
+    single_value
+    >|= Utils.Bool.of_string
+    |> CCOption.value ~default:false
+    |> create_answer is_admin answer
+    |> to_field
   | Date (public, answer) ->
     let to_field a = Public.Date (public, a) in
     (match single_value, required with

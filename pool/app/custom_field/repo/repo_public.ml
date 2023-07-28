@@ -150,6 +150,20 @@ module Sql = struct
     >|> to_grouped_public is_admin pool model
   ;;
 
+  let find_unanswered_ungrouped_required_by_model model ~is_admin pool id =
+    let open Utils.Lwt_result.Infix in
+    Utils.Database.collect
+      (Database.Label.value pool)
+      (find_unanswered_required_by_model_request is_admin)
+      (Pool_common.Id.value id, Entity.Model.show model)
+    (* TODO: DRY *)
+    >|> fun fields ->
+    let%lwt options = get_options_of_multiple pool fields in
+    fields
+    |> Repo_entity.Public.to_ungrouped_entities is_admin options
+    |> Lwt.return
+  ;;
+
   let find_multiple_by_contact_request is_admin ids =
     let where =
       Format.asprintf
@@ -292,6 +306,10 @@ let find_all_by_contact = Sql.find_all_by_model Entity.Model.Contact
 
 let find_unanswered_required_by_contact =
   Sql.find_unanswered_required_by_model Entity.Model.Contact
+;;
+
+let find_unanswered_ungrouped_required_by_contact =
+  Sql.find_unanswered_ungrouped_required_by_model Entity.Model.Contact
 ;;
 
 let find_multiple_by_contact = Sql.find_multiple_by_contact
