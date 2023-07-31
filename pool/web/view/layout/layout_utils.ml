@@ -60,7 +60,7 @@ module App = struct
   ;;
 
   let footer title =
-    let version = Version.to_string in
+    let version = Format.asprintf "Z-Pool-Tool %s" Version.to_string in
     let title = span [ txt title ] in
     let content = [ title; span [ txt "|" ]; txt version ] in
     footer
