@@ -11,7 +11,7 @@ type email_layout =
 let create_public_url pool_url path =
   path
   |> Sihl.Web.externalize_path
-  |> Format.asprintf "http://%s%s" (Pool_tenant.Url.value pool_url)
+  |> Format.asprintf "https://%s%s" (Pool_tenant.Url.value pool_url)
 ;;
 
 let create_public_url_with_params pool_url path params =
@@ -37,7 +37,7 @@ let layout_from_tenant (tenant : Pool_tenant.t) =
          CCFun.(Pool_common.File.path %> create_public_url tenant.url)
   in
   let logo_alt = tenant.title |> Title.value |> Format.asprintf "Logo %s" in
-  let link = tenant.url |> Url.value |> Format.asprintf "http://%s" in
+  let link = tenant.url |> Url.value |> Format.asprintf "https://%s" in
   let site_title = tenant.title |> Title.value in
   { link; logo_src; logo_alt; site_title }
 ;;
