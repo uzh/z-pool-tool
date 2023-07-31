@@ -110,7 +110,18 @@ type nav_link =
   | Tenants
   | Users
   | WaitingList
-[@@deriving eq]
+[@@deriving eq, show { with_path = false }, yojson]
+
+let read_nav_link m =
+  try
+    Some
+      (m
+       |> Format.asprintf "[\"%s\"]"
+       |> Yojson.Safe.from_string
+       |> nav_link_of_yojson)
+  with
+  | _ -> None
+;;
 
 type hint =
   | AdminOverwriteContactValues

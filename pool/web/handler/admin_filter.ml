@@ -157,7 +157,8 @@ let write action req =
         redirect
           (Format.asprintf
              "/admin/experiments/%s/invitations"
-             Experiment.(Id.value exp.id))
+             Experiment.(Id.value exp.id)
+           |> HttpUtils.Collapsible.setActive Pool_common.I18n.Filter)
           msg
     in
     events |>> handle |>> success

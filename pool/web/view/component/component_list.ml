@@ -165,9 +165,21 @@ let sort language sortable_by query =
   [ field; order ]
 ;;
 
-let search_and_sort language query sortable_by searchable_by =
+let search_and_sort ?hx_target language query sortable_by searchable_by =
+  let hx_attributes =
+    let classes = a_class [ "flexcolumn"; "flex-gap" ] in
+    match hx_target with
+    | Some (action, target) ->
+      classes
+      :: [ a_user_data "hx-target" (Format.asprintf "#%s" target)
+         ; a_user_data "hx-trigger" "submit"
+         ; a_user_data "hx-swap" "outerHTML"
+         ; a_user_data "hx-get" action
+         ]
+    | None -> classes :: [ a_method `Get; a_action "?" ]
+  in
   form
-    ~a:[ a_method `Get; a_action "?"; a_class [ "flexcolumn"; "flex-gap" ] ]
+    ~a:hx_attributes
     [ div
         ~a:[ a_class [ "flexrow"; "flex-gap"; "flexcolumn-mobile" ] ]
         [ div ~a:[ a_class [ "grow-3" ] ] (search language query searchable_by)
@@ -194,10 +206,17 @@ let search_and_sort language query sortable_by searchable_by =
     ]
 ;;
 
-let create language to_table sortable_by searchable_by (items, query) =
+let create ?hx_target language to_table sortable_by searchable_by (items, query)
+  =
+  let attrs =
+    let base = [ a_class [ "stack" ] ] in
+    match hx_target with
+    | None -> base
+    | Some (_, target) -> a_id target :: base
+  in
   div
-    ~a:[ a_class [ "stack" ] ]
-    [ search_and_sort language query sortable_by searchable_by
+    ~a:attrs
+    [ search_and_sort ?hx_target language query sortable_by searchable_by
     ; to_table items
     ; query.pagination
       |> CCOption.map_or ~default:(txt "") (pagination language query)

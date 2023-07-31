@@ -15,6 +15,10 @@ let form_action ?path id =
   |> Sihl.Web.externalize_path
 ;;
 
+let send_invitations_htmx experiment_id =
+  form_action ~path:"sent" experiment_id, "hx-sent-invitations"
+;;
+
 module Partials = struct
   let list Pool_context.{ csrf; language; _ } experiment invitation_list =
     let thead =
@@ -140,6 +144,21 @@ module Partials = struct
       ; div ~a:[ a_class [ "gap-lg" ] ] [ filtered_contacts_form ]
       ]
   ;;
+
+  let invitation_list
+    (Pool_context.{ language; _ } as context)
+    experiment
+    invitations
+    =
+    let invitation_table = list context experiment in
+    Component.List.create
+      ~hx_target:(send_invitations_htmx experiment.Experiment.id)
+      language
+      invitation_table
+      Invitation.sortable_by
+      Invitation.searchable_by
+      invitations
+  ;;
 end
 
 let index
@@ -150,6 +169,8 @@ let index
   query_tags
   filtered_contacts
   mailings
+  invitations
+  active_collapsible
   ({ Pool_context.language; _ } as context)
   =
   let filter =
@@ -176,23 +197,11 @@ let index
     I18n.Mailings, [ html ]
   in
   let sent_invitations =
-    let html =
-      p
-        [ a
-            ~a:
-              [ a_href
-                  (experiment.Experiment.id
-                   |> Experiment.Id.value
-                   |> Format.asprintf "admin/experiments/%s/invitations/sent"
-                   |> Sihl.Web.externalize_path)
-              ]
-            [ txt (Utils.nav_link_to_string language I18n.SentInvitations) ]
-        ]
-    in
+    let html = Partials.invitation_list context experiment invitations in
     I18n.SentInvitations, [ html ]
   in
   [ filter; mailings; sent_invitations ]
-  |> Component.Collabsible.list language
+  |> Component.Collabsible.list ?active:active_collapsible language
   |> CCList.return
   |> Layout.Experiment.(
        create

@@ -12,6 +12,8 @@ let experiment_path ?suffix id =
   |> CCString.concat "/"
 ;;
 
+let add_collapsible = HttpUtils.Collapsible.setActive Pool_common.I18n.Mailings
+
 let index req =
   let open Utils.Lwt_result.Infix in
   let id = experiment_id req in
@@ -90,8 +92,11 @@ let create req =
       let%lwt () =
         Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
       in
+      let redirect_path =
+        experiment_path ~suffix:"invitations" experiment_id |> add_collapsible
+      in
       Http_utils.redirect_to_with_actions
-        (experiment_path ~suffix:"mailings" experiment_id)
+        redirect_path
         [ Message.set ~success:[ Pool_common.Message.(Created Field.Mailing) ] ]
     in
     events |> Lwt_result.lift |>> handle
@@ -105,7 +110,8 @@ let detail edit req =
   let id = HttpUtils.find_id Mailing.Id.of_string Field.Mailing req in
   let result ({ Pool_context.database_label; _ } as context) =
     Utils.Lwt_result.map_error (fun err ->
-      err, experiment_path ~suffix:"mailings" experiment_id)
+      ( err
+      , experiment_path ~suffix:"invitations" experiment_id |> add_collapsible ))
     @@ let* mailing =
          Mailing.find database_label id
          >== fun m ->
@@ -241,7 +247,9 @@ let add_condition req =
 ;;
 
 let disabler command success_handler req =
-  let redirect_path = experiment_path ~suffix:"mailings" (experiment_id req) in
+  let redirect_path =
+    experiment_path ~suffix:"invitations" (experiment_id req) |> add_collapsible
+  in
   let mailing_id = HttpUtils.find_id Mailing.Id.of_string Field.Mailing req in
   let result { Pool_context.database_label; _ } =
     let open Utils.Lwt_result.Infix in

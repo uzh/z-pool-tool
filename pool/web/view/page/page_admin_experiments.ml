@@ -590,29 +590,6 @@ let detail
       html)
 ;;
 
-let sent_invitations
-  (Pool_context.{ language; _ } as context)
-  experiment
-  invitations
-  =
-  let invitation_table =
-    Page_admin_invitations.Partials.list context experiment
-  in
-  Component.List.create
-    language
-    invitation_table
-    Invitation.sortable_by
-    Invitation.searchable_by
-    invitations
-  |> CCList.return
-  |> Layout.Experiment.(
-       create
-         ~active_navigation:I18n.Invitations
-         context
-         (NavLink I18n.SentInvitations)
-         experiment)
-;;
-
 let waiting_list
   ({ Waiting_list.ExperimentList.experiment; waiting_list_entries }, query)
   ({ Pool_context.language; _ } as context)

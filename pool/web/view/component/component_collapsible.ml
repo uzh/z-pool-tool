@@ -1,9 +1,18 @@
 open Tyxml.Html
 open Pool_common
 
-let create language (title, html) =
+let create ?active language (title, html) =
+  let active =
+    CCOption.map_or
+      ~default:false
+      (fun active -> Pool_common.I18n.equal_nav_link title active)
+      active
+    |> function
+    | false -> []
+    | true -> [ "active" ]
+  in
   div
-    ~a:[ a_class [ "collapsible" ] ]
+    ~a:[ a_class ("collapsible" :: active) ]
     [ div
         ~a:[ a_class [ "collapsible-header" ] ]
         [ span
@@ -16,8 +25,8 @@ let create language (title, html) =
     ]
 ;;
 
-let list language elements =
+let list ?active language elements =
   div
     ~a:[ a_class [ "collapsible-list" ] ]
-    (CCList.map (create language) elements)
+    (CCList.map (create ?active language) elements)
 ;;

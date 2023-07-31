@@ -44,6 +44,17 @@ let index req =
        let%lwt mailings =
          Mailing.find_by_experiment database_label experiment.Experiment.id
        in
+       let* sent_invitations =
+         let query =
+           let open Invitation in
+           Query.from_request ~searchable_by ~sortable_by req
+         in
+         Invitation.find_by_experiment
+           ~query
+           database_label
+           experiment.Experiment.id
+       in
+       let active_collapsible = HttpUtils.Collapsible.getActive req in
        Page.Admin.Invitations.index
          experiment
          key_list
@@ -52,6 +63,8 @@ let index req =
          query_tags
          filtered_contacts
          mailings
+         sent_invitations
+         active_collapsible
          context
        >|> create_layout req context
        >|+ Sihl.Web.Response.of_html
@@ -61,28 +74,27 @@ let index req =
 
 let sent_invitations req =
   let open Utils.Lwt_result.Infix in
-  let id = experiment_id req in
-  let error_path =
-    Format.asprintf "/admin/experiments/%s/invitations" (Experiment.Id.value id)
-  in
   let result ({ Pool_context.database_label; _ } as context) =
-    Utils.Lwt_result.map_error (fun err -> err, error_path)
-    @@ let* experiment = Experiment.find database_label id in
-       let query =
-         let open Invitation in
-         Query.from_request ~searchable_by ~sortable_by req
-       in
-       let* invitations =
-         Invitation.find_by_experiment
-           ~query
-           database_label
-           experiment.Experiment.id
-       in
-       Page.Admin.Experiments.sent_invitations context experiment invitations
-       >|> create_layout req context
-       >|+ Sihl.Web.Response.of_html
+    let id = experiment_id req in
+    let* experiment = Experiment.find database_label id in
+    let query =
+      let open Invitation in
+      Query.from_request ~searchable_by ~sortable_by req
+    in
+    let* invitations =
+      Invitation.find_by_experiment
+        ~query
+        database_label
+        experiment.Experiment.id
+    in
+    Page.Admin.Invitations.Partials.invitation_list
+      context
+      experiment
+      invitations
+    |> HttpUtils.Htmx.html_to_plain_text_response
+    |> Lwt.return_ok
   in
-  result |> extract_happy_path req
+  result |> HttpUtils.Htmx.handle_error_message ~src req
 ;;
 
 let create req =
@@ -165,6 +177,7 @@ let resend req =
     Format.asprintf
       "/admin/experiments/%s/invitations"
       (Experiment.Id.value experiment_id)
+    |> HttpUtils.Collapsible.setActive Pool_common.I18n.SentInvitations
   in
   let result { Pool_context.database_label; _ } =
     Utils.Lwt_result.map_error (fun err -> err, redirect_path)

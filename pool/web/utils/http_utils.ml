@@ -444,6 +444,28 @@ module Htmx = struct
   ;;
 end
 
+module Collapsible = struct
+  let key = "collapsible"
+
+  open Uri
+
+  let setActive nav url =
+    add_query_params
+      (of_string url)
+      [ key, [ Pool_common.I18n.(show_nav_link nav) ] ]
+    |> to_string
+  ;;
+
+  let getActive req =
+    let open CCOption.Infix in
+    req
+    |> Sihl.Web.Request.query_list
+    |> CCList.assoc_opt ~eq:CCString.equal key
+    >>= CCList.head_opt
+    >>= Pool_common.I18n.read_nav_link
+  ;;
+end
+
 module Json = struct
   let yojson_response ?status json =
     let headers =
