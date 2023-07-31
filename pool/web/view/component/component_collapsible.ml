@@ -21,7 +21,9 @@ let create ?active language (title, html) =
             ; txt (Utils.nav_link_to_string language title)
             ]
         ]
-    ; div ~a:[ a_class [ "collapsible-body" ] ] html
+    ; div
+        ~a:[ a_class [ "collapsible-body" ] ]
+        [ div ~a:[ a_class [ "collapsible-content" ] ] html ]
     ]
 ;;
 
