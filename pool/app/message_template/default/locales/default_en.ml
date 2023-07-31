@@ -5,10 +5,10 @@ open Tyxml.Html
 let language = Pool_common.Language.En
 let entity_uuid = None
 let salutation = h4 [ txt "Dear {name}," ]
-let complimentary_close = p [ txt "Yours sincerely,"; br (); txt "Pool Tool" ]
+let complimentary_close = p [ txt "Yours sincerely,"; br (); txt "{siteTitle}" ]
 
 let add_salutation_to_text =
-  Format.asprintf "Dear {name},\n\n%s\n\nYours sincerely,\nPool Tool"
+  Format.asprintf "Dear {name},\n\n%s\n\nYours sincerely,\n{siteTitle}"
 ;;
 
 let add_salutation html = div ((salutation :: html) @ [ complimentary_close ])

@@ -12,11 +12,11 @@ let salutation =
 
 let complimentary_close =
   let open Tyxml.Html in
-  p [ txt "Freundliche Grüsse"; br (); txt "Pool Tool" ]
+  p [ txt "Freundliche Grüsse"; br (); txt "{siteTitle}" ]
 ;;
 
 let add_salutation_to_text =
-  Format.asprintf "Liebe*r {name},\n\n%s\n\nFreundliche Grüsse\nPool Tool"
+  Format.asprintf "Liebe*r {name},\n\n%s\n\nFreundliche Grüsse\n{siteTitle}"
 ;;
 
 let add_salutation html = div ((salutation :: html) @ [ complimentary_close ])
