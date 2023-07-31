@@ -1,4 +1,3 @@
-import { off } from "htmx.org";
 
 const activeClass = "active"
 
