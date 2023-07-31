@@ -29,6 +29,13 @@ let to_grouped_public is_admin pool model fields =
   |> Lwt.return
 ;;
 
+let to_ungrouped_entities pool is_admin fields =
+  let%lwt options = get_options_of_multiple pool fields in
+  fields
+  |> Repo_entity.Public.to_ungrouped_entities is_admin options
+  |> Lwt.return
+;;
+
 let base_filter_conditions is_admin =
   let base =
     {sql|
@@ -156,12 +163,7 @@ module Sql = struct
       (Database.Label.value pool)
       (find_unanswered_required_by_model_request is_admin)
       (Pool_common.Id.value id, Entity.Model.show model)
-    (* TODO: DRY *)
-    >|> fun fields ->
-    let%lwt options = get_options_of_multiple pool fields in
-    fields
-    |> Repo_entity.Public.to_ungrouped_entities is_admin options
-    |> Lwt.return
+    >|> to_ungrouped_entities pool is_admin
   ;;
 
   let find_multiple_by_contact_request is_admin ids =
@@ -299,11 +301,7 @@ module Sql = struct
       (Database.Label.value pool)
       all_prompted_on_registration_request
       Entity.Model.(show Contact)
-    >|> fun fields ->
-    let%lwt options = get_options_of_multiple pool fields in
-    fields
-    |> Repo_entity.Public.to_ungrouped_entities false options
-    |> Lwt.return
+    >|> to_ungrouped_entities pool false
   ;;
 end
 
