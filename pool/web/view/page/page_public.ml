@@ -111,7 +111,7 @@ let index
              @ sign_up_cta
              @ partner_html)
         ; div
-            ~a:[ a_class [ "flexcolumn"; "justify-center"; "stack" ] ]
+            ~a:[ a_class [ "flexcolumn"; "stack" ] ]
             (CCList.map
                (fun logo ->
                  img
