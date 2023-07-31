@@ -160,8 +160,17 @@ val create_public_url_with_params
   -> (Pool_common.Message.Field.t * string) list
   -> string
 
+type email_layout =
+  { link : string
+  ; logo_alt : string
+  ; logo_src : string
+  ; site_title : string
+  }
+
+val layout_from_tenant : Pool_tenant.t -> email_layout
+
 module AccountSuspensionNotification : sig
-  val email_params : Sihl_user.t -> (string * string) list
+  val email_params : email_layout -> Sihl_user.t -> (string * string) list
 
   val create
     :  Pool_tenant.t
@@ -172,6 +181,7 @@ end
 module AssignmentConfirmation : sig
   val email_params
     :  Pool_common.Language.t
+    -> email_layout
     -> Session.t list
     -> Contact.t
     -> (string * string) list
@@ -196,7 +206,11 @@ module AssignmentConfirmation : sig
 end
 
 module ContactRegistrationAttempt : sig
-  val email_params : Pool_tenant.Url.t -> Contact.t -> (string * string) list
+  val email_params
+    :  email_layout
+    -> Pool_tenant.Url.t
+    -> Contact.t
+    -> (string * string) list
 
   val create
     :  Pool_database.Label.t
@@ -207,7 +221,11 @@ module ContactRegistrationAttempt : sig
 end
 
 module EmailVerification : sig
-  val email_params : string -> Contact.t -> (string * string) list
+  val email_params
+    :  email_layout
+    -> string
+    -> Contact.t
+    -> (string * string) list
 
   val create
     :  Pool_database.Label.t
@@ -221,7 +239,8 @@ end
 
 module ExperimentInvitation : sig
   val email_params
-    :  Experiment.t
+    :  email_layout
+    -> Experiment.t
     -> Pool_tenant.Url.t
     -> Contact.t
     -> (string * string) list
@@ -235,7 +254,7 @@ module ExperimentInvitation : sig
 end
 
 module PasswordChange : sig
-  val email_params : Sihl_user.t -> (string * string) list
+  val email_params : email_layout -> Sihl_user.t -> (string * string) list
 
   val create
     :  Pool_database.Label.t
@@ -246,7 +265,11 @@ module PasswordChange : sig
 end
 
 module PasswordReset : sig
-  val email_params : string -> Sihl_user.t -> (string * string) list
+  val email_params
+    :  email_layout
+    -> string
+    -> Sihl_user.t
+    -> (string * string) list
 
   val create
     :  Pool_database.Label.t
@@ -269,7 +292,11 @@ module PhoneVerification : sig
 end
 
 module ProfileUpdateTrigger : sig
-  val email_params : Pool_tenant.Url.t -> Contact.t -> (string * string) list
+  val email_params
+    :  email_layout
+    -> Pool_tenant.Url.t
+    -> Contact.t
+    -> (string * string) list
 
   val prepare
     :  Pool_database.Label.t
@@ -280,6 +307,7 @@ end
 module SessionCancellation : sig
   val email_params
     :  Pool_common.Language.t
+    -> email_layout
     -> Pool_tenant.t
     -> Experiment.t
     -> Session.t
@@ -317,6 +345,7 @@ end
 module SessionReminder : sig
   val email_params
     :  Pool_common.Language.t
+    -> email_layout
     -> Experiment.t
     -> Session.t
     -> Contact.t
@@ -343,6 +372,7 @@ end
 module SessionReschedule : sig
   val email_params
     :  Pool_common.Language.t
+    -> email_layout
     -> Session.t
     -> Session.Start.t
     -> Session.Duration.t
@@ -364,7 +394,8 @@ end
 
 module SignUpVerification : sig
   val email_params
-    :  string
+    :  Pool_tenant.t
+    -> string
     -> Pool_user.Firstname.t
     -> Pool_user.Lastname.t
     -> (string * string) list
@@ -382,7 +413,8 @@ end
 
 module UserImport : sig
   val email_params
-    :  string
+    :  email_layout
+    -> string
     -> [< `Admin of Admin.t | `Contact of Contact.t ]
     -> (string * string) list
 

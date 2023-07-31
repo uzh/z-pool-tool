@@ -216,41 +216,50 @@ let message_template_help
   let create_contact () = value ~default:(create_contact ()) contact in
   let create_experiment () = value ~default:(create_experiment ()) experiment in
   let create_session () = value ~default:(create_session ()) session in
+  let layout = layout_from_tenant tenant in
   match template_label with
   | AccountSuspensionNotification ->
     let contact = create_contact () in
-    AccountSuspensionNotification.email_params contact.Contact.user
+    AccountSuspensionNotification.email_params layout contact.Contact.user
   | AssignmentConfirmation ->
     AssignmentConfirmation.email_params
       language
+      layout
       [ create_session () ]
       (create_contact ())
   | ContactRegistrationAttempt ->
     let tenant_url = tenant.Pool_tenant.url in
-    ContactRegistrationAttempt.email_params tenant_url (create_contact ())
+    ContactRegistrationAttempt.email_params
+      layout
+      tenant_url
+      (create_contact ())
   | EmailVerification ->
     let validation_url =
       Pool_common.[ Message.Field.Token, Email.Token.value token ]
       |> create_public_url_with_params tenant.Pool_tenant.url "/email-verified"
     in
-    EmailVerification.email_params validation_url (create_contact ())
+    EmailVerification.email_params layout validation_url (create_contact ())
   | ExperimentInvitation ->
     ExperimentInvitation.email_params
+      layout
       (create_experiment ())
       tenant.Pool_tenant.url
       (create_contact ())
-  | PasswordChange -> PasswordChange.email_params (create_sihl_user ())
+  | PasswordChange -> PasswordChange.email_params layout (create_sihl_user ())
   | PasswordReset ->
     let reset_url =
       Pool_common.[ Message.Field.Token, Email.Token.value token ]
       |> create_public_url_with_params tenant.Pool_tenant.url "/reset-password/"
     in
-    PasswordReset.email_params reset_url (create_sihl_user ())
+    PasswordReset.email_params layout reset_url (create_sihl_user ())
   | PhoneVerification ->
     let code = Pool_common.VerificationCode.create () in
     PhoneVerification.message_params code
   | ProfileUpdateTrigger ->
-    ProfileUpdateTrigger.email_params tenant.Pool_tenant.url (create_contact ())
+    ProfileUpdateTrigger.email_params
+      layout
+      tenant.Pool_tenant.url
+      (create_contact ())
   | SessionCancellation ->
     let follow_up_sessions =
       let open Session in
@@ -271,6 +280,7 @@ let message_template_help
     in
     SessionCancellation.email_params
       language
+      layout
       tenant
       (create_experiment ())
       (create_session ())
@@ -280,6 +290,7 @@ let message_template_help
   | SessionReminder ->
     SessionReminder.email_params
       language
+      layout
       (create_experiment ())
       (create_session ())
       (create_contact ())
@@ -293,6 +304,7 @@ let message_template_help
     let duration = hour |> Duration.create |> CCResult.get_exn in
     SessionReschedule.email_params
       language
+      layout
       (create_session ())
       start
       duration
@@ -304,6 +316,7 @@ let message_template_help
     in
     let contact = create_contact () in
     SignUpVerification.email_params
+      tenant
       verification_url
       (Contact.firstname contact)
       (Contact.lastname contact)
@@ -313,5 +326,5 @@ let message_template_help
       |> create_public_url_with_params tenant.Pool_tenant.url "/email-verified"
     in
     let contact = create_contact () in
-    UserImport.email_params confirmation_url (`Contact contact)
+    UserImport.email_params layout confirmation_url (`Contact contact)
 ;;

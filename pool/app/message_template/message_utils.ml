@@ -1,10 +1,10 @@
 open Entity
 
 type email_layout =
-  { copyright : string
-  ; link : string
-  ; logo_src : string
+  { link : string
   ; logo_alt : string
+  ; logo_src : string
+  ; site_title : string
   }
 [@@deriving eq, show { with_path = false }]
 
@@ -38,8 +38,8 @@ let layout_from_tenant (tenant : Pool_tenant.t) =
   in
   let logo_alt = tenant.title |> Title.value |> Format.asprintf "Logo %s" in
   let link = tenant.url |> Url.value |> Format.asprintf "http://%s" in
-  let copyright = tenant.title |> Title.value in
-  { copyright; link; logo_src; logo_alt }
+  let site_title = tenant.title |> Title.value in
+  { link; logo_src; logo_alt; site_title }
 ;;
 
 let root_layout () =
@@ -53,10 +53,10 @@ let root_layout () =
     >|= (fun url -> create_public_url url "assets/images/root_logo.svg")
     |> value ~default:""
   in
-  let logo_alt = "Logo Pool Tool" in
+  let logo_alt = "Logo Z-Pool-Tool" in
   let link = root_url >|= Pool_tenant.Url.value |> value ~default:"" in
-  let copyright = "Pool Tool" in
-  { copyright; link; logo_alt; logo_src }
+  let site_title = "Z-Pool-Tool" in
+  { link; logo_alt; logo_src; site_title }
 ;;
 
 let create_layout = function
@@ -65,10 +65,10 @@ let create_layout = function
 ;;
 
 let layout_params layout =
-  [ "copyright", layout.copyright
-  ; "logoSrc", layout.logo_src
+  [ "logoSrc", layout.logo_src
   ; "logoAlt", layout.logo_alt
   ; "logoHref", layout.link
+  ; "siteTitle", layout.site_title
   ]
 ;;
 
@@ -133,7 +133,7 @@ let combine_html language html_title =
                   [ p
                       [ txt
                           (Format.asprintf
-                             "Copyright © %i {copyright}"
+                             "Copyright © %i {siteTitle}"
                              current_year)
                       ]
                   ]
