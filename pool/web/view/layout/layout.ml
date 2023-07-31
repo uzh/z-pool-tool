@@ -26,8 +26,6 @@ module Tenant = struct
       (match tenant.styles with
        | Some _ -> [ `GlobalStylesheet; `TenantStylesheet ]
        | None -> [ `GlobalStylesheet ])
-      |> (fun global ->
-           if user_is_admin user then global @ [ `AdminStylesheet ] else global)
       |> CCList.map css_link_tag
     in
     let scripts =

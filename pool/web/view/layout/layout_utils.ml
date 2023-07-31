@@ -3,7 +3,6 @@ open Tyxml.Html
 let assets = function
   | `GlobalStylesheet -> "/assets/index.css"
   | `TenantStylesheet -> "/custom/assets/index.css"
-  | `AdminStylesheet -> "/assets/admin.css"
   | `IndexJs -> "/assets/index.js"
   | `AdminJs -> "/assets/admin.js"
   | `RootFavicon -> "/assets/images/favicon.png"
@@ -29,9 +28,7 @@ let js_script_tag (file : [ `IndexJs | `AdminJs ]) =
   script ~a:[ a_src source_path; a_defer () ] (txt "")
 ;;
 
-let css_link_tag
-  (file : [ `AdminStylesheet | `GlobalStylesheet | `TenantStylesheet ])
-  =
+let css_link_tag (file : [ `GlobalStylesheet | `TenantStylesheet ]) =
   link
     ~rel:[ `Stylesheet ]
     ~href:(Http_utils.externalized_path_with_version (assets file))
