@@ -4,6 +4,16 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/pool/tree/HEAD)
 
+## [0.3.2](https://github.com/uzh/pool/tree/0.3.2) - 2023-07-31
+
+### Added
+
+- option to prompt custom fields when signing up
+
+### Changed
+
+- ignore boolean custom fields when checking profile completeness
+
 ## [0.3.1](https://github.com/uzh/pool/tree/0.3.1) - 2023-07-28
 
 ### Added
