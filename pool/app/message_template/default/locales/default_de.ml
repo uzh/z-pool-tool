@@ -555,13 +555,13 @@ let user_import =
         [ txt "Ihr Account wurde kürzlich migriert."
         ; br ()
         ; txt "Nutzen Sie diesen"
-        ; a ~a:[ a_href "{verificationUrl}" ] [ txt " Link " ]
+        ; a ~a:[ a_href "{confirmationUrl}" ] [ txt " Link " ]
         ; txt "um Ihren Account wieder zu aktivieren."
         ]
     ; p
         [ txt
             "Falls der obige Link nicht funktioniert, kopiere bitte den \
-             folgenden manuell in deinen Browser: {verificationUrl}"
+             folgenden manuell in deinen Browser: {confirmationUrl}"
         ]
     ]
     |> add_salutation
@@ -574,7 +574,7 @@ let user_import =
   let sms_text =
     {|Ihr Account wurde kürzlich migriert. Nutzen Sie den folgenden Link um Ihren Account wieder zu aktivieren:
 
-{verificationUrl}|}
+{confirmationUrl}|}
     |> add_salutation_to_text
     |> SmsText.of_string
   in

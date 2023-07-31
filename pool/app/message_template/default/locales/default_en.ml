@@ -530,13 +530,13 @@ let user_import =
         [ txt "Your account was recently migrated."
         ; br ()
         ; txt "Follow this "
-        ; a ~a:[ a_href "{verificationUrl}" ] [ txt "link" ]
+        ; a ~a:[ a_href "{confirmationUrl}" ] [ txt "link" ]
         ; txt " to reactivate your account."
         ]
     ; p
         [ txt
             "If the above link does not work, please copy the manually into \
-             your browser: {verificationUrl}"
+             your browser: {confirmationUrl}"
         ]
     ]
     |> add_salutation
@@ -549,7 +549,7 @@ let user_import =
   let sms_text =
     {|Your account was recently migrated. Follow this link to reactivate your account:
 
-{verificationUrl}|}
+{confirmationUrl}|}
     |> add_salutation_to_text
     |> SmsText.of_string
   in
