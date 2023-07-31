@@ -29,6 +29,13 @@ let to_grouped_public is_admin pool model fields =
   |> Lwt.return
 ;;
 
+let to_ungrouped_entities pool is_admin fields =
+  let%lwt options = get_options_of_multiple pool fields in
+  fields
+  |> Repo_entity.Public.to_ungrouped_entities is_admin options
+  |> Lwt.return
+;;
+
 let base_filter_conditions is_admin =
   let base =
     {sql|
@@ -150,6 +157,15 @@ module Sql = struct
     >|> to_grouped_public is_admin pool model
   ;;
 
+  let find_unanswered_ungrouped_required_by_model model ~is_admin pool id =
+    let open Utils.Lwt_result.Infix in
+    Utils.Database.collect
+      (Database.Label.value pool)
+      (find_unanswered_required_by_model_request is_admin)
+      (Pool_common.Id.value id, Entity.Model.show model)
+    >|> to_ungrouped_entities pool is_admin
+  ;;
+
   let find_multiple_by_contact_request is_admin ids =
     let where =
       Format.asprintf
@@ -241,6 +257,8 @@ module Sql = struct
       %s
       WHERE pool_custom_fields.model = $2
       %s
+      AND pool_custom_fields.prompt_on_registration = 0
+      AND pool_custom_fields.field_type != $3
       AND pool_custom_field_answers.value IS NULL
       |sql}
         answers_left_join
@@ -249,7 +267,8 @@ module Sql = struct
     (match required with
      | false -> base
      | true -> Format.asprintf "%s AND pool_custom_fields.required = 1" base)
-    |> Caqti_type.(tup2 string string ->! int)
+    |> Caqti_type.(
+         tup3 string Repo_entity.Model.t Repo_entity.FieldType.t ->! int)
   ;;
 
   let all_answered required pool contact_id =
@@ -257,7 +276,7 @@ module Sql = struct
     Utils.Database.find
       (Database.Label.value pool)
       (all_answered_request required)
-      (Pool_common.Id.value contact_id, Entity.Model.(show Contact))
+      Entity.(Pool_common.Id.value contact_id, Model.Contact, FieldType.Boolean)
     ||> CCInt.equal 0
   ;;
 
@@ -267,7 +286,9 @@ module Sql = struct
       Format.asprintf
         {sql|
           WHERE pool_custom_fields.prompt_on_registration = 1
+          %s
         |sql}
+        (base_filter_conditions false)
     in
     let order = {sql| ORDER BY pool_custom_fields.position ASC |sql} in
     Format.asprintf "%s \n %s \n %s" select_sql where order
@@ -280,11 +301,7 @@ module Sql = struct
       (Database.Label.value pool)
       all_prompted_on_registration_request
       Entity.Model.(show Contact)
-    >|> fun fields ->
-    let%lwt options = get_options_of_multiple pool fields in
-    fields
-    |> Repo_entity.Public.to_ungrouped_entities false options
-    |> Lwt.return
+    >|> to_ungrouped_entities pool false
   ;;
 end
 
@@ -292,6 +309,10 @@ let find_all_by_contact = Sql.find_all_by_model Entity.Model.Contact
 
 let find_unanswered_required_by_contact =
   Sql.find_unanswered_required_by_model Entity.Model.Contact
+;;
+
+let find_unanswered_ungrouped_required_by_contact =
+  Sql.find_unanswered_ungrouped_required_by_model Entity.Model.Contact
 ;;
 
 let find_multiple_by_contact = Sql.find_multiple_by_contact

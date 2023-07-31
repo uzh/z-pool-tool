@@ -448,6 +448,12 @@ val find_unanswered_required_by_contact
   -> Pool_common.Id.t
   -> (Group.Public.t list * Public.t list) Lwt.t
 
+val find_unanswered_ungrouped_required_by_contact
+  :  Pool_database.Label.t
+  -> Pool_context.user
+  -> Pool_common.Id.t
+  -> Public.t list Lwt.t
+
 val find_multiple_by_contact
   :  ?is_admin:bool
   -> Pool_database.Label.t

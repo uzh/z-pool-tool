@@ -346,11 +346,10 @@ let completion_post req =
     let tags = tags req in
     let* contact = Pool_context.find_contact context |> Lwt_result.lift in
     let%lwt custom_fields =
-      urlencoded
-      |> CCList.map (fun pair -> pair |> fst |> Pool_common.Id.of_string)
-      |> Custom_field.find_multiple_by_contact
-           database_label
-           (Contact.id contact)
+      Custom_field.find_unanswered_ungrouped_required_by_contact
+        database_label
+        user
+        (Contact.id contact)
     in
     let events =
       let open Utils.Lwt_result.Infix in
