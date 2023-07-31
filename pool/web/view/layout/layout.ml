@@ -21,9 +21,7 @@ module Tenant = struct
     let open Pool_tenant in
     let open Layout_utils in
     let title_text = Title.value tenant.title in
-    let page_title =
-      title (Format.asprintf "%s - Pool Tool" title_text |> txt)
-    in
+    let page_title = title (title_text |> txt) in
     let stylesheets =
       (match tenant.styles with
        | Some _ -> [ `GlobalStylesheet; `TenantStylesheet ]
@@ -76,7 +74,7 @@ module Root = struct
   let create ?active_navigation ?message database_label user content =
     let open Layout_utils in
     let language = Language.En in
-    let title_text = "Pool Tool" in
+    let title_text = "Z-Pool-Tool" in
     let page_title = title (txt title_text) in
     let message = Message.create message language () in
     let%lwt children =
@@ -112,7 +110,7 @@ end
 module Error = struct
   let create children =
     let open Layout_utils in
-    let title_text = "Pool Tool" in
+    let title_text = "Z-Pool-Tool" in
     let page_title = title (txt title_text) in
     let content = main_tag [ children ] in
     html

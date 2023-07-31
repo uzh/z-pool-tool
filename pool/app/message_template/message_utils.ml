@@ -80,13 +80,8 @@ let combine_html language html_title =
   let open Tyxml.Html in
   let current_year = () |> Ptime_clock.now |> Ptime.to_year in
   let email_header =
-    let pool_title = "Pool Tool" in
     head
-      (title
-         (txt
-            ((CCOption.map_or ~default:pool_title (fun title ->
-                CCString.concat " - " [ title; pool_title ]))
-               html_title)))
+      (title (txt (CCOption.value ~default:"" html_title)))
       [ meta
           ~a:
             [ a_http_equiv "Content-Type"
