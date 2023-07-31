@@ -117,8 +117,7 @@ let value_to_store is_admin answer =
   | false -> value >|= pair
 ;;
 
-let upsert_answer pool user entity_uuid t =
-  let is_admin = Pool_context.user_is_admin user in
+let upsert_answer pool is_admin entity_uuid t =
   let option_id = Entity.SelectOption.Public.show_id in
   let open Entity.Public in
   let field_id = id t in
@@ -168,6 +167,7 @@ let upsert_answer pool user entity_uuid t =
 
 let update pool user (field : PartialUpdate.t) (contact : Contact.t) =
   let open Entity in
+  let is_admin = Pool_context.user_is_admin user in
   let base_caqti = Pool_common.Repo.Id.t in
   let dyn =
     Dynparam.empty
@@ -215,5 +215,5 @@ let update pool user (field : PartialUpdate.t) (contact : Contact.t) =
         language_version = $4
       |sql} )
     |> update_user_table
-  | Custom field -> (upsert_answer pool user (Contact.id contact)) field
+  | Custom field -> (upsert_answer pool is_admin (Contact.id contact)) field
 ;;

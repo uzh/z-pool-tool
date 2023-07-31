@@ -343,7 +343,6 @@ let completion_post req =
         , path_with_language query_language "/user/completion"
         , [ urlencoded_to_flash urlencoded ] )))
     @@
-    let open Custom_field in
     let tags = tags req in
     let* contact = Pool_context.find_contact context |> Lwt_result.lift in
     let%lwt custom_fields =
@@ -355,31 +354,18 @@ let completion_post req =
     in
     let events =
       let open Utils.Lwt_result.Infix in
-      let open Public in
       let handle =
         Cqrs_command.Custom_field_answer_command.UpdateMultiple.handle
           ~tags
           user
           (Contact.id contact)
       in
-      Lwt_list.map_s
-        (fun field ->
-          let id = field |> Public.id |> Id.value in
-          (match field with
-           | MultiSelect _ ->
-             req
-             |> HttpUtils.htmx_urlencoded_list
-                  (field
-                   |> Public.to_common_field language
-                   |> Pool_common.Message.Field.array_key)
-           | Boolean _ | Date _ | Number _ | Select _ | Text _ ->
-             CCList.assoc_opt ~eq:CCString.equal id urlencoded
-             |> CCOption.value ~default:[]
-             |> Lwt.return)
-          ||> CCFun.flip (Custom_field.validate_htmx ~is_admin:false) field
-          >>= fun field -> handle field |> Lwt_result.lift)
+      Helpers_custom_field.answer_and_validate_multiple
+        req
+        urlencoded
+        language
         custom_fields
-      ||> CCList.all_ok
+      >== fun fields -> fields |> CCList.map handle |> CCList.all_ok
     in
     let handle events =
       let%lwt (_ : unit list) =

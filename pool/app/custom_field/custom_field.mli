@@ -136,6 +136,10 @@ module AdminInputOnly : sig
   include Pool_common.Model.BooleanSig
 end
 
+module PromptOnRegistration : sig
+  include Pool_common.Model.BooleanSig
+end
+
 module Validation : sig
   type raw = (string * string) list
   type 'a t = ('a -> ('a, Pool_common.Message.error) result) * raw
@@ -210,6 +214,7 @@ module Public : sig
     ; required : Required.t
     ; admin_override : AdminOverride.t
     ; admin_input_only : AdminInputOnly.t
+    ; prompt_on_registration : PromptOnRegistration.t
     ; version : Pool_common.Version.t
     }
 
@@ -246,6 +251,7 @@ module Public : sig
   val required : t -> Required.t
   val admin_override : t -> AdminOverride.t
   val admin_input_only : t -> AdminInputOnly.t
+  val prompt_on_registration : t -> PromptOnRegistration.t
   val is_disabled : bool -> t -> bool
   val version : t -> Pool_common.Version.t
   val field_type : t -> FieldType.t
@@ -310,6 +316,7 @@ type 'a custom_field =
   ; admin_override : AdminOverride.t
   ; admin_view_only : AdminViewOnly.t
   ; admin_input_only : AdminInputOnly.t
+  ; prompt_on_registration : PromptOnRegistration.t
   ; published_at : PublishedAt.t option
   }
 
@@ -341,6 +348,7 @@ val create
   -> AdminOverride.t
   -> AdminViewOnly.t
   -> AdminInputOnly.t
+  -> PromptOnRegistration.t
   -> (t, Pool_common.Message.error) result
 
 val boolean_fields : Pool_common.Message.Field.t list
@@ -357,6 +365,7 @@ val admin_hint : t -> AdminHint.t option
 val admin_override : t -> AdminOverride.t
 val admin_view_only : t -> AdminViewOnly.t
 val admin_input_only : t -> AdminInputOnly.t
+val prompt_on_registration : t -> PromptOnRegistration.t
 val field_type : t -> FieldType.t
 val validation_strings : t -> (string * string) list
 val validation_to_yojson : t -> Yojson.Safe.t
@@ -391,6 +400,7 @@ val validate_partial_update
 type event =
   | AdminAnswerCleared of Public.t * Pool_common.Id.t
   | AnswerUpserted of Public.t * Pool_common.Id.t * Pool_context.user
+  | AnsweredOnSignup of Public.t * Pool_common.Id.t
   | Created of t
   | Deleted of t
   | FieldsSorted of t list
@@ -458,6 +468,7 @@ val all_required_answered
   -> bool Lwt.t
 
 val all_answered : Pool_database.Label.t -> Pool_common.Id.t -> bool Lwt.t
+val all_prompted_on_registration : Pool_database.Label.t -> Public.t list Lwt.t
 
 val find_option
   :  Pool_database.Label.t

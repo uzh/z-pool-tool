@@ -150,6 +150,7 @@ let rec field_to_string =
   | Paused -> "paused"
   | PlainText -> "plaintext"
   | Predicate -> "predicate"
+  | PromptOnRegistration -> "promt during registration"
   | Profile -> "profile"
   | PublicTitle -> "public title"
   | PublishedAt -> "published"

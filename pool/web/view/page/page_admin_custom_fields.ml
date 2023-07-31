@@ -595,6 +595,10 @@ let field_form
               ~help:I18n.CustomFieldAdminViewOnly
               Message.Field.AdminViewOnly
               (admin_view_only %> AdminViewOnly.value)
+          ; checkbox_element
+              ~help:I18n.CustomFieldPromptOnRegistration
+              Message.Field.PromptOnRegistration
+              (prompt_on_registration %> PromptOnRegistration.value)
           ]
       ; div
           ~a:[ a_class [ "stack" ] ]

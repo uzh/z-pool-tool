@@ -199,6 +199,9 @@ Wird nach diesem Feld gefiltert, wird der überschreibende Wert bevorzugt.
       "Diese Option impliziert \"%s\"."
       (Locales_de.field_to_string Entity_message.Field.AdminInputOnly
        |> CCString.capitalize_ascii)
+  | CustomFieldAnsweredOnRegistration ->
+    "Dieses Feld wurde vom Kontakt bereits bei der Registrierung beantwortet \
+     und kann vom Kontakt selbst nicht mehr verändert werden."
   | CustomFieldContactModel ->
     "Fragen, die Kontakte beantworten können, bzw. müssen. Anhand dieser \
      Informationen werden die Kontakte zu Experimenten eingeladen."
@@ -211,6 +214,10 @@ Wird nach diesem Feld gefiltert, wird der überschreibende Wert bevorzugt.
     "Vergewissern Sie sich, dass diese Liste vollständig ist, oder fügen Sie \
      eine Option hinzu, die Sie gewählt werden kann, wenn keine der anderen \
      Optionen zutreffend ist."
+  | CustomFieldPromptOnRegistration ->
+    "Ist diese Option aktiviert, wird dieses Feld bereits bei der \
+     Registrierung abgefragt, jedoch dem Kontakt nicht mehr im Benutzerprofil \
+     angezeigt."
   | CustomFieldSort field ->
     Format.asprintf
       "In dieser Reihenfolge werden die %s den Kontakten angezeigt."

@@ -125,6 +125,12 @@ module AdminInputOnly = struct
   let schema = schema Message.Field.AdminInputOnly
 end
 
+module PromptOnRegistration = struct
+  include Pool_common.Model.Boolean
+
+  let schema = schema Message.Field.PromptOnRegistration
+end
+
 module Validation = struct
   type raw = (string * string) list [@@deriving show, eq, yojson]
 
@@ -340,6 +346,7 @@ module Public = struct
     ; required : Required.t
     ; admin_override : AdminOverride.t
     ; admin_input_only : AdminInputOnly.t
+    ; prompt_on_registration : PromptOnRegistration.t
     ; version : Pool_common.Version.t
     }
   [@@deriving eq, show]
@@ -420,6 +427,16 @@ module Public = struct
     | Number ({ admin_input_only; _ }, _)
     | Select ({ admin_input_only; _ }, _, _)
     | Text ({ admin_input_only; _ }, _) -> admin_input_only
+  ;;
+
+  let prompt_on_registration (t : t) =
+    match t with
+    | Boolean ({ prompt_on_registration; _ }, _)
+    | Date ({ prompt_on_registration; _ }, _)
+    | MultiSelect ({ prompt_on_registration; _ }, _, _)
+    | Number ({ prompt_on_registration; _ }, _)
+    | Select ({ prompt_on_registration; _ }, _, _)
+    | Text ({ prompt_on_registration; _ }, _) -> prompt_on_registration
   ;;
 
   let is_disabled is_admin m =
@@ -527,6 +544,7 @@ type 'a custom_field =
   ; admin_override : AdminOverride.t
   ; admin_view_only : AdminViewOnly.t
   ; admin_input_only : AdminInputOnly.t
+  ; prompt_on_registration : PromptOnRegistration.t
   ; published_at : PublishedAt.t option
   }
 [@@deriving eq, show]
@@ -556,6 +574,7 @@ let create
   admin_override
   admin_view_only
   admin_input_only
+  prompt_on_registration
   =
   let open CCResult in
   let required = if admin_input_only then false else required in
@@ -577,6 +596,7 @@ let create
          ; admin_view_only
          ; admin_input_only
          ; published_at
+         ; prompt_on_registration
          })
   | FieldType.Date ->
     Ok
@@ -594,6 +614,7 @@ let create
          ; admin_view_only
          ; admin_input_only
          ; published_at
+         ; prompt_on_registration
          })
   | FieldType.Number ->
     let validation = Validation.Number.schema validation in
@@ -612,6 +633,7 @@ let create
          ; admin_view_only
          ; admin_input_only
          ; published_at
+         ; prompt_on_registration
          })
   | FieldType.Text ->
     let validation = Validation.Text.schema validation in
@@ -630,6 +652,7 @@ let create
          ; admin_view_only
          ; admin_input_only
          ; published_at
+         ; prompt_on_registration
          })
   | FieldType.MultiSelect ->
     Ok
@@ -650,6 +673,7 @@ let create
            ; admin_view_only
            ; admin_input_only
            ; published_at
+           ; prompt_on_registration
            }
          , select_options ))
   | FieldType.Select ->
@@ -668,6 +692,7 @@ let create
            ; admin_view_only
            ; admin_input_only
            ; published_at
+           ; prompt_on_registration
            }
          , select_options ))
 ;;
@@ -788,6 +813,15 @@ let admin_input_only = function
   | Text { admin_input_only; _ } -> admin_input_only
 ;;
 
+let prompt_on_registration = function
+  | Boolean { prompt_on_registration; _ }
+  | Date { prompt_on_registration; _ }
+  | Number { prompt_on_registration; _ }
+  | MultiSelect ({ prompt_on_registration; _ }, _)
+  | Select ({ prompt_on_registration; _ }, _)
+  | Text { prompt_on_registration; _ } -> prompt_on_registration
+;;
+
 let field_type = function
   | Boolean _ -> FieldType.Boolean
   | Date _ -> FieldType.Date
@@ -813,7 +847,14 @@ let validation_to_yojson = function
 ;;
 
 let boolean_fields =
-  Message.Field.[ Required; Disabled; Override; AdminInputOnly; AdminViewOnly ]
+  Message.Field.
+    [ Required
+    ; Disabled
+    ; Override
+    ; AdminInputOnly
+    ; AdminViewOnly
+    ; PromptOnRegistration
+    ]
 ;;
 
 module Write = struct
@@ -831,6 +872,7 @@ module Write = struct
     ; admin_override : AdminOverride.t
     ; admin_view_only : AdminViewOnly.t
     ; admin_input_only : AdminInputOnly.t
+    ; prompt_on_registration : PromptOnRegistration.t
     }
   [@@deriving eq, show]
 end

@@ -120,6 +120,17 @@ module AdminInputOnly = struct
   ;;
 end
 
+module PromptOnRegistration = struct
+  include PromptOnRegistration
+
+  let t =
+    Pool_common.Repo.make_caqti_type
+      Caqti_type.bool
+      (create %> CCResult.return)
+      value
+  ;;
+end
+
 module Option = struct
   open Entity.SelectOption
 
@@ -220,6 +231,7 @@ module Write = struct
       ; admin_override = admin_override t
       ; admin_view_only = admin_view_only t
       ; admin_input_only = admin_input_only t
+      ; prompt_on_registration = prompt_on_registration t
       }
   ;;
 
@@ -238,8 +250,9 @@ module Write = struct
                       , ( m.custom_field_group_id
                         , ( m.admin_hint
                           , ( m.admin_override
-                            , (m.admin_view_only, m.admin_input_only) ) ) ) ) )
-                  ) ) ) ) ) )
+                            , ( m.admin_view_only
+                              , (m.admin_input_only, m.prompt_on_registration)
+                              ) ) ) ) ) ) ) ) ) ) ) )
     in
     let decode _ =
       failwith
@@ -272,7 +285,11 @@ module Write = struct
                                       (option AdminHint.t)
                                       (tup2
                                          AdminOverride.t
-                                         (tup2 AdminViewOnly.t AdminInputOnly.t)))))))))))))
+                                         (tup2
+                                            AdminViewOnly.t
+                                            (tup2
+                                               AdminInputOnly.t
+                                               PromptOnRegistration.t))))))))))))))
   ;;
 end
 
@@ -287,6 +304,7 @@ module Public = struct
     ; custom_field_group_id : Group.Id.t option
     ; admin_override : AdminOverride.t
     ; admin_input_only : AdminInputOnly.t
+    ; prompt_on_registration : PromptOnRegistration.t
     ; answer_id : Pool_common.Id.t option
     ; answer_value : string option
     ; answer_admin_value : string option
@@ -327,6 +345,7 @@ module Public = struct
     ; required
     ; admin_override
     ; admin_input_only
+    ; prompt_on_registration
     ; answer_id
     ; answer_value
     ; answer_admin_value
@@ -362,6 +381,7 @@ module Public = struct
           ; required
           ; admin_override
           ; admin_input_only
+          ; prompt_on_registration
           ; version
           }
         , answer )
@@ -383,6 +403,7 @@ module Public = struct
           ; required
           ; admin_override
           ; admin_input_only
+          ; prompt_on_registration
           ; version
           }
         , answer )
@@ -405,6 +426,7 @@ module Public = struct
           ; required
           ; admin_override
           ; admin_input_only
+          ; prompt_on_registration
           ; version
           }
         , answer )
@@ -441,6 +463,7 @@ module Public = struct
           ; required
           ; admin_override
           ; admin_input_only
+          ; prompt_on_registration
           ; version
           }
         , options
@@ -487,6 +510,7 @@ module Public = struct
           ; required
           ; admin_override
           ; admin_input_only
+          ; prompt_on_registration
           ; version
           }
         , select_options
@@ -510,6 +534,7 @@ module Public = struct
           ; required
           ; admin_override
           ; admin_input_only
+          ; prompt_on_registration
           ; version
           }
         , answer )
@@ -563,10 +588,11 @@ module Public = struct
                 , ( custom_field_group_id
                   , ( admin_override
                     , ( admin_input_only
-                      , ( answer_id
-                        , ( answer_value
-                          , (answer_admin_value, (version, admin_version)) ) )
-                      ) ) ) ) ) ) ) ) )
+                      , ( prompt_on_registration
+                        , ( answer_id
+                          , ( answer_value
+                            , (answer_admin_value, (version, admin_version)) )
+                          ) ) ) ) ) ) ) ) ) ) )
       =
       Ok
         { id
@@ -577,6 +603,7 @@ module Public = struct
         ; required
         ; admin_override
         ; admin_input_only
+        ; prompt_on_registration
         ; custom_field_group_id
         ; answer_id
         ; answer_value
@@ -608,14 +635,16 @@ module Public = struct
                                 (tup2
                                    AdminInputOnly.t
                                    (tup2
-                                      (option Common.Repo.Id.t)
+                                      PromptOnRegistration.t
                                       (tup2
-                                         (option Caqti_type.string)
+                                         (option Common.Repo.Id.t)
                                          (tup2
                                             (option Caqti_type.string)
                                             (tup2
-                                               (option Common.Repo.Version.t)
-                                               (option Common.Repo.Version.t)))))))))))))))
+                                               (option Caqti_type.string)
+                                               (tup2
+                                                  (option Common.Repo.Version.t)
+                                                  (option Common.Repo.Version.t))))))))))))))))
   ;;
 end
 
@@ -633,6 +662,7 @@ type repo =
   ; admin_override : AdminOverride.t
   ; admin_view_only : AdminViewOnly.t
   ; admin_input_only : AdminInputOnly.t
+  ; prompt_on_registration : PromptOnRegistration.t
   ; published_at : PublishedAt.t option
   }
 
@@ -653,8 +683,10 @@ let t =
                   , ( custom_field_group_id
                     , ( admin_hint
                       , ( admin_override
-                        , (admin_view_only, (admin_input_only, published_at)) )
-                      ) ) ) ) ) ) ) ) ) )
+                        , ( admin_view_only
+                          , ( admin_input_only
+                            , (prompt_on_registration, published_at) ) ) ) ) )
+                  ) ) ) ) ) ) ) )
     =
     let open CCResult in
     Ok
@@ -671,6 +703,7 @@ let t =
       ; admin_override
       ; admin_view_only
       ; admin_input_only
+      ; prompt_on_registration
       ; published_at
       }
   in
@@ -704,7 +737,9 @@ let t =
                                           AdminViewOnly.t
                                           (tup2
                                              AdminInputOnly.t
-                                             (option PublishedAt.t)))))))))))))))
+                                             (tup2
+                                                PromptOnRegistration.t
+                                                (option PublishedAt.t))))))))))))))))
 ;;
 
 let to_entity
@@ -722,6 +757,7 @@ let to_entity
   ; admin_override
   ; admin_view_only
   ; admin_input_only
+  ; prompt_on_registration
   ; published_at
   }
   =
@@ -743,6 +779,7 @@ let to_entity
       ; admin_override
       ; admin_view_only
       ; admin_input_only
+      ; prompt_on_registration
       ; published_at
       }
   | FieldType.Date ->
@@ -759,6 +796,7 @@ let to_entity
       ; admin_override
       ; admin_view_only
       ; admin_input_only
+      ; prompt_on_registration
       ; published_at
       }
   | FieldType.Number ->
@@ -776,6 +814,7 @@ let to_entity
       ; admin_override
       ; admin_view_only
       ; admin_input_only
+      ; prompt_on_registration
       ; published_at
       }
   | FieldType.Select ->
@@ -798,6 +837,7 @@ let to_entity
         ; admin_override
         ; admin_view_only
         ; admin_input_only
+        ; prompt_on_registration
         ; published_at
         }
       , options )
@@ -821,6 +861,7 @@ let to_entity
         ; admin_override
         ; admin_view_only
         ; admin_input_only
+        ; prompt_on_registration
         ; published_at
         }
       , options )
@@ -839,6 +880,7 @@ let to_entity
       ; admin_override
       ; admin_view_only
       ; admin_input_only
+      ; prompt_on_registration
       ; published_at
       }
 ;;

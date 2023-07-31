@@ -17,6 +17,7 @@ type command =
   ; admin_override : Custom_field.AdminOverride.t
   ; admin_view_only : Custom_field.AdminViewOnly.t
   ; admin_input_only : Custom_field.AdminInputOnly.t
+  ; prompt_on_registration : Custom_field.PromptOnRegistration.t
   }
 
 let base_command
@@ -28,6 +29,7 @@ let base_command
   admin_override
   admin_view_only
   admin_input_only
+  prompt_on_registration
   =
   { field_type
   ; required
@@ -37,6 +39,7 @@ let base_command
   ; admin_override
   ; admin_view_only
   ; admin_input_only
+  ; prompt_on_registration
   }
 ;;
 
@@ -53,6 +56,7 @@ let base_schema =
         ; AdminOverride.schema ()
         ; AdminViewOnly.schema ()
         ; AdminInputOnly.schema ()
+        ; PromptOnRegistration.schema ()
         ]
       base_command)
 ;;
@@ -96,6 +100,7 @@ end = struct
     ; admin_override
     ; admin_view_only
     ; admin_input_only
+    ; prompt_on_registration
     }
     =
     Logs.info ~src (fun m -> m "Handle command Create" ~tags);
@@ -117,6 +122,7 @@ end = struct
         admin_override
         admin_view_only
         admin_input_only
+        prompt_on_registration
     in
     Ok [ Custom_field.Created t |> Pool_event.custom_field ]
   ;;
@@ -156,6 +162,7 @@ end = struct
     ; admin_override
     ; admin_view_only
     ; admin_input_only
+    ; prompt_on_registration
     }
     =
     Logs.info ~src (fun m -> m "Handle command Update" ~tags);
@@ -186,6 +193,7 @@ end = struct
         admin_override
         admin_view_only
         admin_input_only
+        prompt_on_registration
     in
     Ok [ Custom_field.Updated t |> Pool_event.custom_field ]
   ;;

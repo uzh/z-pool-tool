@@ -57,6 +57,7 @@ module CustomFieldData = struct
       ; admin_view_only = Data.admin_view_only
       ; admin_input_only = Data.admin_input_only
       ; published_at = published
+      ; prompt_on_registration = false |> PromptOnRegistration.create
       }
     |> encoder
   ;;
@@ -98,6 +99,7 @@ module CustomFieldData = struct
           ; required = required field
           ; admin_override = Data.admin_override
           ; admin_input_only = Data.admin_input_only
+          ; prompt_on_registration = Data.prompt_on_registration
           ; version
           }
         , Some answer )
@@ -146,6 +148,7 @@ module CustomFieldData = struct
           ; required = required field
           ; admin_override = Data.admin_override
           ; admin_input_only = Data.admin_input_only
+          ; prompt_on_registration = Data.prompt_on_registration
           ; version
           }
         , Some answer )
@@ -200,6 +203,7 @@ module CustomFieldData = struct
         ; admin_view_only = Data.admin_view_only
         ; admin_input_only = Data.admin_input_only
         ; published_at = published
+        ; prompt_on_registration = false |> PromptOnRegistration.create
         })
   ;;
 
@@ -219,6 +223,8 @@ module CustomFieldData = struct
         ; required = required admin_override_nr_field
         ; admin_override = admin_override admin_override_nr_field
         ; admin_input_only = admin_input_only admin_override_nr_field
+        ; prompt_on_registration =
+            prompt_on_registration admin_override_nr_field
         ; version
         }
       , Some answer )
@@ -290,6 +296,7 @@ module CustomFieldData = struct
         ; admin_view_only = Data.admin_view_only
         ; admin_input_only = Data.admin_input_only
         ; published_at = published
+        ; prompt_on_registration = false |> PromptOnRegistration.create
         }
       , multi_select_options )
   ;;
@@ -312,6 +319,7 @@ module CustomFieldData = struct
         ; required = required multi_select_custom_field
         ; admin_override = Data.admin_override
         ; admin_input_only = Data.admin_input_only
+        ; prompt_on_registration = Data.prompt_on_registration
         ; version
         }
       , multi_select_options_public

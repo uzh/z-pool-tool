@@ -11,8 +11,11 @@ let sign_up req =
     Utils.Lwt_result.map_error (fun err -> err, "/index")
     @@
     let flash_fetcher key = Sihl.Web.Flash.find key req in
+    let%lwt custom_fields =
+      Custom_field.all_prompted_on_registration database_label
+    in
     let%lwt terms = Settings.terms_and_conditions database_label language in
-    Page.Contact.sign_up terms context flash_fetcher
+    Page.Contact.sign_up terms custom_fields context flash_fetcher
     |> create_layout req ~active_navigation:"/signup" context
     >|+ Sihl.Web.Response.of_html
   in
@@ -41,6 +44,13 @@ let sign_up_create req =
          ||> fun suffixes ->
          if CCList.is_empty suffixes then None else Some suffixes
        in
+       let* answered_custom_fields =
+         Custom_field.all_prompted_on_registration database_label
+         >|> Helpers_custom_field.answer_and_validate_multiple
+               req
+               urlencoded
+               language
+       in
        let tenant = Pool_context.Tenant.get_tenant_exn req in
        let* email_address =
          Sihl.Web.Request.urlencoded Field.(Email |> show) req
@@ -68,6 +78,7 @@ let sign_up_create req =
               ~tags
               ?allowed_email_suffixes
               ~user_id
+              answered_custom_fields
               token
               email_address
               verification_mail
