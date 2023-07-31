@@ -6,7 +6,7 @@ export const initCollapsible = () => {
     lists.forEach(wrapper => {
         const collapsibles = wrapper.querySelectorAll(".collapsible");
         collapsibles.forEach(el => {
-            el.addEventListener("click", () => {
+            el.querySelector(".collapsible-header").addEventListener("click", () => {
                 const isActive = el.classList.contains(activeClass)
                 collapsibles.forEach(el => el.classList.remove(activeClass))
                 if (!isActive) {
