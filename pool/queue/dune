@@ -1,6 +1,7 @@
 (library
  (name queue)
  (libraries
+  canary
   containers
   database
   pool_database
