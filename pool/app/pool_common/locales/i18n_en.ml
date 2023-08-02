@@ -2,6 +2,7 @@ open Entity_i18n
 
 let to_string = function
   | Address -> "address"
+  | AdminComment -> "admin comment"
   | AvailableSpots -> "Available spots"
   | Canceled -> "Canceled"
   | Closed -> "Closed"

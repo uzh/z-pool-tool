@@ -6,9 +6,18 @@ let path =
   Contact.id %> Pool_common.Id.value %> Format.asprintf "/admin/contacts/%s"
 ;;
 
-let personal_detail language contact =
+let personal_detail ?(admin_comment = None) language contact =
   let open Contact in
-  Pool_common.Message.
+  let open Pool_common.Message in
+  let with_comment =
+    match admin_comment with
+    | None -> []
+    | Some comment ->
+      [ ( Field.AdminComment
+        , comment |> AdminComment.value |> Http_utils.add_line_breaks )
+      ]
+  in
+  Pool_common.Message.(
     [ Field.Name, fullname contact |> txt
     ; Field.Email, email_address contact |> Pool_user.EmailAddress.value |> txt
     ; ( Field.CellPhone
@@ -16,6 +25,7 @@ let personal_detail language contact =
         |> CCOption.map_or ~default:"" Pool_user.CellPhone.value
         |> txt )
     ]
+    @ with_comment)
   |> Table.vertical_table `Striped language
   |> fun html ->
   div
@@ -64,7 +74,7 @@ let index Pool_context.{ language; _ } contacts =
     ]
 ;;
 
-let detail Pool_context.{ language; _ } contact tags =
+let detail ?admin_comment Pool_context.{ language; _ } contact tags =
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
     [ div
@@ -93,7 +103,7 @@ let detail Pool_context.{ language; _ } contact tags =
               ; "reverse"
               ]
           ]
-        [ personal_detail language contact
+        [ personal_detail ?admin_comment language contact
         ; div
             [ h3
                 ~a:[ a_class [ "heading-3" ] ]

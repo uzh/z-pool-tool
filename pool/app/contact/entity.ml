@@ -53,6 +53,14 @@ module NumberOfParticipations = struct
   let update step m = m + step |> max 0
 end
 
+module AdminComment = struct
+  include Pool_common.Model.String
+
+  let field = Pool_common.Message.Field.AdminComment
+  let schema () = schema field ()
+  let of_string m = m
+end
+
 type t =
   { user : Sihl_user.t
   ; terms_accepted_at : User.TermsAccepted.t option

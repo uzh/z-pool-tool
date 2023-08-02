@@ -32,6 +32,12 @@ module NumberOfParticipations = struct
   let t = make_caqti_type Caqti_type.int CCFun.(of_int %> CCResult.return) value
 end
 
+module AdminComment = struct
+  include AdminComment
+
+  let t = make_caqti_type Caqti_type.string create value
+end
+
 let t =
   let encode m =
     Ok

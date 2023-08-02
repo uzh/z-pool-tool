@@ -95,6 +95,20 @@ let find pool id =
   ||> CCOption.to_result Pool_common.Message.(NotFound Field.Contact)
 ;;
 
+let find_admin_comment_request =
+  let open Caqti_request.Infix in
+  {sql|
+    SELECT admin_notes
+    FROM pool_contacts
+    WHERE pool_contacts.user_uuid = UNHEX(REPLACE(?, '-', ''))
+  |sql}
+  |> Pool_common.Repo.Id.t ->! Repo_model.AdminComment.t
+;;
+
+let find_admin_comment pool =
+  Utils.Database.find_opt (Database.Label.value pool) find_admin_comment_request
+;;
+
 let find_by_email_request =
   let open Caqti_request.Infix in
   find_request_sql

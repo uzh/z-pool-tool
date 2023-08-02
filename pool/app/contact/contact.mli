@@ -54,6 +54,14 @@ module NumberOfParticipations : sig
   val update : int -> t -> t
 end
 
+module AdminComment : sig
+  type t
+
+  val of_string : string -> t
+  val equal : t -> t -> bool
+  val value : t -> string
+end
+
 type t =
   { user : Service.User.t
   ; terms_accepted_at : Pool_user.TermsAccepted.t option
@@ -93,6 +101,11 @@ val find
   :  Pool_database.Label.t
   -> Pool_common.Id.t
   -> (t, Pool_common.Message.error) result Lwt.t
+
+val find_admin_comment
+  :  Pool_database.Label.t
+  -> Pool_common.Id.t
+  -> AdminComment.t option Lwt.t
 
 val find_multiple
   :  Pool_database.Label.t
