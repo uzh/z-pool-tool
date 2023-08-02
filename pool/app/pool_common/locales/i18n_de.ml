@@ -106,6 +106,7 @@ Sie kommen für mehr Experimente in Frage, umso kompletter Ihr Profil ist.|}
     "Sie sind aktuell an keine kommenden Sessions angemeldet."
   | PastExperimentListPublicTitle -> "Teilgenommene Experimente"
   | PastSessionsTitle -> "Ihre vergangenen Sessions"
+  | PoolStatistics -> "Pool-Statistik"
   | UpcomingSessionsTitle -> "Ihre nächsten Sessions"
   | UserProfileDetailsSubtitle -> "Persönliche Angaben"
   | UserProfileLoginSubtitle -> "Anmeldeinformationen"

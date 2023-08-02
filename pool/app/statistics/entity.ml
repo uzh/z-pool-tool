@@ -50,8 +50,49 @@ type period =
   | Hour1
   | Day1
   | Month1
+[@@deriving eq, show { with_path = false }, enum, yojson]
 
 let default_period = Min15
+
+let all_periods =
+  let open CCList in
+  range min_period max_period
+  >|= period_of_enum
+  |> all_some
+  |> CCOption.get_exn_or "Could not create list of all periods!"
+;;
+
+let read_period m =
+  try
+    Some
+      (m
+       |> Format.asprintf "[\"%s\"]"
+       |> Yojson.Safe.from_string
+       |> period_of_yojson)
+  with
+  | _ -> None
+;;
+
+let period_to_human_de = function
+  | Min15 -> "15 Minuten"
+  | Hour1 -> "1 Stunde"
+  | Day1 -> "1 Tag"
+  | Month1 -> "1 Monat"
+;;
+
+let period_to_human_en = function
+  | Min15 -> "15 minutes"
+  | Hour1 -> "1 hour"
+  | Day1 -> "1 day"
+  | Month1 -> "1 month"
+;;
+
+let period_to_human language t =
+  let open Pool_common.Language in
+  match language with
+  | De -> period_to_human_de t
+  | En -> period_to_human_en t
+;;
 
 let period_to_sql = function
   | Min15 -> "15 MINUTE"

@@ -17,27 +17,37 @@ module Settings = Admin_settings
 let src = Logs.Src.create "handler.admin"
 let create_layout req = General.create_tenant_layout req
 
+let statistics_from_request req database_label =
+  let open CCOption.Infix in
+  let period =
+    Sihl.Web.Request.query Pool_common.Message.Field.(show Period) req
+    >>= Statistics.read_period
+  in
+  let%lwt statistics = Statistics.create ?period database_label () in
+  Lwt.return (period, statistics)
+;;
+
 let dashboard req =
-  let result context =
+  let result ({ Pool_context.database_label; _ } as context) =
     let open Utils.Lwt_result.Infix in
     Utils.Lwt_result.map_error (fun err -> err, "/error")
-    @@ (Page.Admin.dashboard context
-        |> create_layout req ~active_navigation:"/admin/dashboard" context
-        >|+ Sihl.Web.Response.of_html)
+    @@
+    let%lwt statistics = statistics_from_request req database_label in
+    Page.Admin.dashboard statistics context
+    |> create_layout req ~active_navigation:"/admin/dashboard" context
+    >|+ Sihl.Web.Response.of_html
   in
   result |> Http_utils.extract_happy_path ~src req
 ;;
 
-(* let statistics req = let experiment_id = HttpUtils.find_id
-   Experiment.Id.of_string Field.Experiment req in let result {
-   Pool_context.database_label; _ } = let open Utils.Lwt_result.Infix in let*
-   experiment = Experiment.find database_label experiment_id in let%lwt
-   urlencoded = Sihl.Web.Request.to_urlencoded req in let* query = let open
-   CCResult in HttpUtils.find_in_urlencoded Field.Query urlencoded |>
-   CCOption.of_result |> CCOption.map_or ~default: (Ok
-   (experiment.Experiment.filter |> CCOption.map (fun filter ->
-   filter.Filter.query))) (fun str -> str |> Filter.query_of_string >|=
-   CCOption.pure) |> Lwt_result.lift in Filter.count_filtered_contacts
-   database_label (experiment.Experiment.id |> Experiment.Id.to_common) query
-   >|+ fun count -> `Assoc [ "count", `Int count ] in result |>
-   HttpUtils.Json.handle_yojson_response ~src req ;; *)
+(* TODO: Access *)
+let statistics req =
+  let result { Pool_context.database_label; language; _ } =
+    let%lwt statistics = statistics_from_request req database_label in
+    Component.Statistics.create language statistics
+    |> Http_utils.Htmx.html_to_plain_text_response
+    |> Lwt.return_ok
+  in
+  result
+  |> Http_utils.Htmx.handle_error_message ~error_as_notification:true ~src req
+;;

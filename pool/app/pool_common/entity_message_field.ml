@@ -178,6 +178,7 @@ type t =
   | PartnerLogos [@name "partner_logos"] [@printer go "partner_logos"]
   | PendingContactImports [@name "pending_contact_imports"]
       [@printer go "pending_contact_imports"]
+  | Period [@name "period"] [@printer go "period"]
   | Password [@name "password"] [@printer go "password"]
   | PasswordConfirmation [@name "password_confirmation"]
       [@printer go "password_confirmation"]

@@ -24,7 +24,11 @@ type period =
   | Day1
   | Month1
 
+val show_period : period -> string
 val default_period : period
+val all_periods : period list
+val read_period : string -> period option
+val period_to_human : Pool_common.Language.t -> period -> string
 
 type t =
   { active_contacts : ActiveContacts.t

@@ -12,6 +12,7 @@
   service
   session
   sihl
+  statistics
   tags
   tyxml)
  (preprocess

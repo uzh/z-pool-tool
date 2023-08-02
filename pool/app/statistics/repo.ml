@@ -50,6 +50,7 @@ let active_contacts_request =
       AND pool_contacts.email_verified IS NOT NULL
       AND pool_contacts.disabled = 0
       AND pool_contacts.paused = 0
+      AND pool_contacts.import_pending = 0
   |sql}
   |> Caqti_type.(unit ->! RepoEntity.ActiveContacts.t)
 ;;
@@ -83,59 +84,65 @@ let pending_contact_imports pool =
     ()
 ;;
 
-let assignments_created_request =
+let assignments_created_request period =
   let open Caqti_request.Infix in
-  {sql|
-    SELECT
-      COUNT(*)
-    FROM
-      pool_assignments
-    WHERE
-      created_at >= (NOW() - INTERVAL $1)
-      AND pool_assignments.canceled_at IS NULL
-      AND pool_assignments.marked_as_deleted = 0
-  |sql}
-  |> Caqti_type.(string ->! RepoEntity.AssignmentsCreated.t)
+  Format.asprintf
+    {sql|
+      SELECT
+        COUNT(*)
+      FROM
+        pool_assignments
+      WHERE
+        created_at >= (NOW() - INTERVAL %s)
+        AND pool_assignments.canceled_at IS NULL
+        AND pool_assignments.marked_as_deleted = 0
+    |sql}
+    (Entity.period_to_sql period)
+  |> Caqti_type.(unit ->! RepoEntity.AssignmentsCreated.t)
 ;;
 
 let assignments_created pool period =
   Utils.Database.find
     (Pool_database.Label.value pool)
-    assignments_created_request
-    (Entity.period_to_sql period)
+    (assignments_created_request period)
+    ()
 ;;
 
-let invitations_sent_request =
+let invitations_sent_request period =
   let open Caqti_request.Infix in
-  {sql|
-    SELECT COUNT(*) FROM pool_invitations WHERE created_at >= (NOW() - INTERVAL $1);
+  Format.asprintf
+    {sql|
+      SELECT COUNT(*) FROM pool_invitations WHERE created_at >= (NOW() - INTERVAL %s);
     |sql}
-  |> Caqti_type.(string ->! RepoEntity.InvitationsSent.t)
+    (Entity.period_to_sql period)
+  |> Caqti_type.(unit ->! RepoEntity.InvitationsSent.t)
 ;;
 
 let invitations_sent pool period =
   Utils.Database.find
     (Pool_database.Label.value pool)
-    invitations_sent_request
-    (Entity.period_to_sql period)
+    (invitations_sent_request period)
+    ()
 ;;
 
-let sign_up_count_request =
+let sign_up_count_request period =
   let open Caqti_request.Infix in
-  {sql|
-    SELECT
-      COUNT(*)
-    FROM
-      pool_contacts
-    WHERE
-      last_sign_in_at >= (NOW() - INTERVAL $1)
-  |sql}
-  |> Caqti_type.(string ->! RepoEntity.SignUpCount.t)
+  Format.asprintf
+    {sql|
+      SELECT
+        COUNT(*)
+      FROM
+        pool_contacts
+      WHERE
+        last_sign_in_at >= (NOW() - INTERVAL %s)
+    |sql}
+    (Entity.period_to_sql period)
+  |> Caqti_type.(unit ->! RepoEntity.SignUpCount.t)
 ;;
 
 let sign_up_count pool period =
   Utils.Database.find
     (Pool_database.Label.value pool)
-    sign_up_count_request
-    (Entity.period_to_sql period)
+    (sign_up_count_request period)
+    ()
 ;;

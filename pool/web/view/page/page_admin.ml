@@ -17,18 +17,28 @@ module Settings = Page_admin_settings
 module WaitingList = Page_admin_waiting_list
 include Page_admin_edit
 
-let dashboard Pool_context.{ language; _ } =
+let dashboard statistics Pool_context.{ language; _ } =
+  let open Pool_common in
+  let heading_2 title =
+    h2
+      ~a:[ a_class [ "heading-2" ] ]
+      [ txt (Utils.text_to_string language title) ]
+  in
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
     [ h1
         ~a:[ a_class [ "heading-1" ] ]
-        [ txt Pool_common.(Utils.text_to_string language I18n.DashboardTitle) ]
-    ; h2
-        ~a:[ a_class [ "heading-2" ] ]
-        [ txt
-            Pool_common.(
-              Utils.text_to_string language I18n.UpcomingSessionsTitle)
+        [ txt (Utils.text_to_string language I18n.DashboardTitle) ]
+    ; div
+        ~a:[ a_class [ "stack-lg" ] ]
+        [ div
+            [ heading_2 I18n.UpcomingSessionsTitle
+            ; Component.Calendar.(create User)
+            ]
+        ; div
+            [ heading_2 I18n.PoolStatistics
+            ; Component.Statistics.create language statistics
+            ]
         ]
-    ; Component.Calendar.(create User)
     ]
 ;;
