@@ -4,6 +4,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/pool/tree/HEAD)
 
+## [0.3.3](https://github.com/uzh/pool/tree/0.3.3) - 2023-08-02
+
 ### Added
 
 - canary notifier for job worker
