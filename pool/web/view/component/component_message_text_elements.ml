@@ -323,7 +323,9 @@ let message_template_help
   | UserImport ->
     let confirmation_url =
       Pool_common.[ Message.Field.Token, Email.Token.value token ]
-      |> create_public_url_with_params tenant.Pool_tenant.url "/email-verified"
+      |> create_public_url_with_params
+           tenant.Pool_tenant.url
+           "/import-confirmation"
     in
     let contact = create_contact () in
     UserImport.email_params layout confirmation_url (`Contact contact)
