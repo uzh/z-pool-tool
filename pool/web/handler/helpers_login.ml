@@ -1,5 +1,6 @@
 module Label = Pool_database.Label
 module Message = Pool_common.Message
+module EmailAddress = Pool_user.EmailAddress
 
 let src = Logs.Src.create "login helper"
 
@@ -16,6 +17,7 @@ let notify_user database_label tags email =
   | Some (_ : Pool_user.FailedLoginAttempt.BlockedUntil.t) ->
     let notify () =
       email
+      |> EmailAddress.value
       |> Service.User.find_by_email_opt
            ~ctx:(Pool_database.to_ctx database_label)
       >|> function
@@ -32,7 +34,7 @@ let notify_user database_label tags email =
           m
             ~tags
             "Could not send account suspension notification to '%s': %s"
-            email
+            (email |> EmailAddress.value)
             Pool_common.(Utils.error_to_string Language.En err));
         err
     in
@@ -73,7 +75,11 @@ let login_params urlencoded =
     |> CCOption.to_result LoginProvideDetails
     |> Lwt_result.lift
   in
-  let email = CCList.assoc ~eq:String.equal Field.(Email |> show) params in
+  let* email =
+    CCList.assoc ~eq:String.equal Field.(Email |> show) params
+    |> EmailAddress.create
+    |> Lwt_result.lift
+  in
   let password =
     CCList.assoc ~eq:String.equal Field.(Password |> show) params
   in
@@ -87,7 +93,8 @@ let log_request req tags email =
     Headers.get req.headers "X-Real-IP"
     |> CCOption.value ~default:"X-Real-IP not found"
   in
-  Logs.warn ~src (fun m -> m "Failed login attempt: %s %s" ip email ~tags)
+  Logs.warn ~src (fun m ->
+    m "Failed login attempt: %s %s" ip (EmailAddress.value email) ~tags)
 ;;
 
 let login req urlencoded database_label =
@@ -140,7 +147,7 @@ let login req urlencoded database_label =
     let login () =
       Service.User.login
         ~ctx:(Pool_database.to_ctx database_label)
-        email
+        (EmailAddress.value email)
         ~password
       >|> handle_result
     in

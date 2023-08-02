@@ -33,7 +33,7 @@ let login_form
     [ form
         ~a:[ a_action action; a_method `Post; a_class [ "stack" ] ]
         [ csrf_element csrf ()
-        ; input_element ?flash_fetcher language `Text Message.Field.Email
+        ; input_element ?flash_fetcher language `Email Message.Field.Email
         ; input_element language `Password Message.Field.Password
         ; div
             ~a:[ a_class [ "flexrow"; "align-center"; "flex-gap" ] ]
