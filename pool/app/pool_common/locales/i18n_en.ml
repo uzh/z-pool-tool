@@ -119,6 +119,7 @@ let nav_link_to_string = function
   | Assignments -> "Assignments"
   | ContactInformation -> "Contact information"
   | Contacts -> "Contacts"
+  | Credits -> "Credits"
   | CustomFields -> "Fields"
   | Dashboard -> "Dashboard"
   | Experiments -> "Experiments"

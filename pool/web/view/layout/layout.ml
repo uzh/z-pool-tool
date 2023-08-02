@@ -55,14 +55,36 @@ module Tenant = struct
         active_language
         user
     in
+    let footer =
+      let html =
+        [ txt title_text
+        ; txt App.version
+        ; a
+            ~a:[ a_href (Sihl.Web.externalize_path "/credits") ]
+            Pool_common.
+              [ txt (Utils.nav_link_to_string active_language I18n.Credits) ]
+        ]
+        |> App.combine_footer_fragments
+      in
+      footer
+        ~a:
+          [ a_class
+              [ "inset"
+              ; "flexrow"
+              ; "flex-gap"
+              ; "justify-center"
+              ; "bg-grey-light"
+              ; "border-top"
+              ; "push"
+              ]
+          ]
+        html
+    in
     html
       (head page_title head_tags)
       (body
          ~a:[ a_class body_tag_classnames ]
-         ([ App.header ~children query_language title_text
-          ; content
-          ; App.footer title_text
-          ]
+         ([ App.header ~children query_language title_text; content; footer ]
           @ scripts))
     |> Lwt.return
   ;;
@@ -72,7 +94,7 @@ module Root = struct
   let create ?active_navigation ?message database_label user content =
     let open Layout_utils in
     let language = Language.En in
-    let title_text = "Z-Pool-Tool" in
+    let title_text = App.app_name in
     let page_title = title (txt title_text) in
     let message = Message.create message language () in
     let%lwt children =
@@ -98,7 +120,7 @@ module Root = struct
          ~a:[ a_class body_tag_classnames ]
          [ App.header ~children None title_text
          ; main_tag [ message; content ]
-         ; App.footer title_text
+         ; App.root_footer
          ; js_script_tag `IndexJs
          ])
     |> Lwt.return
@@ -108,7 +130,7 @@ end
 module Error = struct
   let create children =
     let open Layout_utils in
-    let title_text = "Z-Pool-Tool" in
+    let title_text = App.app_name in
     let page_title = title (txt title_text) in
     let content = main_tag [ children ] in
     html
@@ -119,7 +141,7 @@ module Error = struct
          ~a:[ a_class body_tag_classnames ]
          [ App.header None title_text
          ; content
-         ; App.footer title_text
+         ; App.root_footer
          ; js_script_tag `IndexJs
          ])
   ;;

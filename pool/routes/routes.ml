@@ -56,7 +56,10 @@ module Public = struct
               [ CustomMiddleware.Guardian.require_user_type_of
                   Pool_context.UserType.[ Guest; Contact; Admin ]
               ]
-            [ get "/index" index; get "/custom/assets/index.css" index_css ]
+            [ get "/index" index
+            ; get "/custom/assets/index.css" index_css
+            ; get "/credits" credits
+            ]
         ; choose
             ~middlewares:
               [ CustomMiddleware.Guardian.require_user_type_of

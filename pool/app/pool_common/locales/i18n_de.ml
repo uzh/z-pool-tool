@@ -121,6 +121,7 @@ let nav_link_to_string = function
   | Assignments -> "Anmeldungen"
   | ContactInformation -> "Kontaktangaben"
   | Contacts -> "Kontakte"
+  | Credits -> "Impressum"
   | CustomFields -> "Felder"
   | Dashboard -> "Dashboard"
   | Experiments -> "Experimente"

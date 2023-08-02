@@ -246,24 +246,20 @@ module FailedLoginAttempt : sig
 
   type t =
     { id : Id.t
-    ; email : Entity.EmailAddress.t
+    ; email : EmailAddress.t
     ; counter : Counter.t
     ; blocked_until : BlockedUntil.t option
     }
 
   val create
     :  ?id:Id.t
-    -> Entity.EmailAddress.t
+    -> EmailAddress.t
     -> Counter.t
     -> BlockedUntil.t option
     -> t
 
   module Repo : sig
-    val find_opt
-      :  Pool_database.Label.t
-      -> Entity.EmailAddress.t
-      -> t option Lwt.t
-
+    val find_opt : Pool_database.Label.t -> EmailAddress.t -> t option Lwt.t
     val insert : Pool_database.Label.t -> t -> unit Lwt.t
     val delete : Pool_database.Label.t -> t -> unit Lwt.t
   end

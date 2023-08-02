@@ -82,6 +82,7 @@ type nav_link =
   | Assignments
   | ContactInformation
   | Contacts
+  | Credits
   | CustomFields
   | Dashboard
   | Experiments

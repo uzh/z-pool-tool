@@ -181,3 +181,21 @@ let error req =
   |> Sihl.Web.Response.of_html
   |> Lwt.return
 ;;
+
+let credits req =
+  let result
+    ({ Pool_context.language; query_language; database_label; _ } as context)
+    =
+    let error_path = Http_utils.path_with_language query_language "/error" in
+    let open Utils.Lwt_result.Infix in
+    let%lwt html =
+      I18n.find_by_key database_label I18n.Key.CreditsText language
+      ||> Page.Public.credits
+    in
+    html
+    |> create_layout req context
+    >|+ Sihl.Web.Response.of_html
+    >|- fun err -> err, error_path
+  in
+  result |> Http_utils.extract_happy_path ~src req
+;;
