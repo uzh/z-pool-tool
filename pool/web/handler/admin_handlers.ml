@@ -27,3 +27,17 @@ let dashboard req =
   in
   result |> Http_utils.extract_happy_path ~src req
 ;;
+
+(* let statistics req = let experiment_id = HttpUtils.find_id
+   Experiment.Id.of_string Field.Experiment req in let result {
+   Pool_context.database_label; _ } = let open Utils.Lwt_result.Infix in let*
+   experiment = Experiment.find database_label experiment_id in let%lwt
+   urlencoded = Sihl.Web.Request.to_urlencoded req in let* query = let open
+   CCResult in HttpUtils.find_in_urlencoded Field.Query urlencoded |>
+   CCOption.of_result |> CCOption.map_or ~default: (Ok
+   (experiment.Experiment.filter |> CCOption.map (fun filter ->
+   filter.Filter.query))) (fun str -> str |> Filter.query_of_string >|=
+   CCOption.pure) |> Lwt_result.lift in Filter.count_filtered_contacts
+   database_label (experiment.Experiment.id |> Experiment.Id.to_common) query
+   >|+ fun count -> `Assoc [ "count", `Int count ] in result |>
+   HttpUtils.Json.handle_yojson_response ~src req ;; *)
