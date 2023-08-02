@@ -72,12 +72,15 @@ let send_tenant_reminder ({ Pool_tenant.database_label; _ } as tenant) =
          Please fix the string manually and reset the job instance. Error: %s"
         Pool_common.(Utils.error_to_string Language.En err))
   | Ok sessions ->
-    Logs.info ~src (fun m ->
-      m
-        "Reminder send for the following sessions: %s"
-        (sessions
-         |> CCList.map (fun { Session.id; _ } -> Session.Id.value id)
-         |> CCString.concat ", "))
+    (match sessions with
+     | [] -> ()
+     | sessions ->
+       Logs.info ~src (fun m ->
+         m
+           "Reminder sent for the following sessions: %s"
+           (sessions
+            |> CCList.map (fun { Session.id; _ } -> Session.Id.value id)
+            |> CCString.concat ", ")))
 ;;
 
 let run () =
