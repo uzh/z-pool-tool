@@ -87,7 +87,7 @@ let log_request req tags email =
     Headers.get req.headers "X-Real-IP"
     |> CCOption.value ~default:"X-Real-IP not found"
   in
-  Logs.info ~src (fun m -> m "Failed login attempt: %s %s" ip email ~tags)
+  Logs.warn ~src (fun m -> m "Failed login attempt: %s %s" ip email ~tags)
 ;;
 
 let login req urlencoded database_label =

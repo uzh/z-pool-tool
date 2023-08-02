@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 - readonly admin comment on contacts
 
+### Changed
+
+- log failed login attempt as warning
+
 ## [0.3.3](https://github.com/uzh/pool/tree/0.3.3) - 2023-08-02
 
 ### Added
