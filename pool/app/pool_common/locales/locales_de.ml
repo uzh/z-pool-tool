@@ -168,6 +168,7 @@ let rec field_to_string =
   | RegistrationDisabled -> "Registrierung deaktiviert"
   | LastRemindedAt -> "Erinnert am"
   | ReminderCount -> "Anzahl Reminder"
+  | RemindersSent -> "Gesendete reminders"
   | Required -> "Benötigt"
   | ResentAt -> "Erneut verschickt"
   | Role -> "Rolle"

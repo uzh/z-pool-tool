@@ -6,6 +6,14 @@ module PendingContactImports : sig
   include Pool_common.Model.IntegerSig
 end
 
+module LoginCount : sig
+  include Pool_common.Model.IntegerSig
+end
+
+module SignUpCount : sig
+  include Pool_common.Model.IntegerSig
+end
+
 module AssignmentsCreated : sig
   include Pool_common.Model.IntegerSig
 end
@@ -14,11 +22,7 @@ module InvitationsSent : sig
   include Pool_common.Model.IntegerSig
 end
 
-module LoginCount : sig
-  include Pool_common.Model.IntegerSig
-end
-
-module SignUpCount : sig
+module RemindersSent : sig
   include Pool_common.Model.IntegerSig
 end
 
@@ -37,10 +41,11 @@ val period_to_human : Pool_common.Language.t -> period -> string
 type t =
   { active_contacts : ActiveContacts.t
   ; pending_contact_imports : PendingContactImports.t
-  ; assignments_created : AssignmentsCreated.t
-  ; invitations_sent : InvitationsSent.t
   ; login_count : LoginCount.t
   ; sign_up_count : SignUpCount.t
+  ; assignments_created : AssignmentsCreated.t
+  ; invitations_sent : InvitationsSent.t
+  ; reminders_sent : RemindersSent.t
   }
 
 val create : Pool_database.Label.t -> ?period:period -> unit -> t Lwt.t

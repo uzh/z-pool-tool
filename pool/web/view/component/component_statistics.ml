@@ -7,10 +7,11 @@ let create
   ( period
   , { active_contacts
     ; pending_contact_imports
-    ; assignments_created
-    ; invitations_sent
     ; login_count
     ; sign_up_count
+    ; assignments_created
+    ; invitations_sent
+    ; reminders_sent
     } )
   =
   let open Pool_common in
@@ -57,6 +58,7 @@ let create
       [ ( AssignmentsCreated
         , to_txt (AssignmentsCreated.value assignments_created) )
       ; InvitationsSent, to_txt (InvitationsSent.value invitations_sent)
+      ; RemindersSent, to_txt (RemindersSent.value reminders_sent)
       ]
   in
   div

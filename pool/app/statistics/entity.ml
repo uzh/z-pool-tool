@@ -18,6 +18,24 @@ module PendingContactImports = struct
   let of_int = CCFun.id
 end
 
+module LoginCount = struct
+  include Pool_common.Model.Integer
+
+  let field = Field.LoginCount
+  let create = CCResult.return
+  let schema = schema field create
+  let of_int = CCFun.id
+end
+
+module SignUpCount = struct
+  include Pool_common.Model.Integer
+
+  let field = Field.SignUpCount
+  let create = CCResult.return
+  let schema = schema field create
+  let of_int = CCFun.id
+end
+
 module AssignmentsCreated = struct
   include Pool_common.Model.Integer
 
@@ -36,19 +54,10 @@ module InvitationsSent = struct
   let of_int = CCFun.id
 end
 
-module LoginCount = struct
+module RemindersSent = struct
   include Pool_common.Model.Integer
 
-  let field = Field.LoginCount
-  let create = CCResult.return
-  let schema = schema field create
-  let of_int = CCFun.id
-end
-
-module SignUpCount = struct
-  include Pool_common.Model.Integer
-
-  let field = Field.SignUpCount
+  let field = Field.RemindersSent
   let create = CCResult.return
   let schema = schema field create
   let of_int = CCFun.id
@@ -113,9 +122,10 @@ let period_to_sql = function
 type t =
   { active_contacts : ActiveContacts.t
   ; pending_contact_imports : PendingContactImports.t
-  ; assignments_created : AssignmentsCreated.t
-  ; invitations_sent : InvitationsSent.t
   ; login_count : LoginCount.t
   ; sign_up_count : SignUpCount.t
+  ; assignments_created : AssignmentsCreated.t
+  ; invitations_sent : InvitationsSent.t
+  ; reminders_sent : RemindersSent.t
   }
 [@@deriving eq, show, yojson]
