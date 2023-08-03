@@ -211,6 +211,7 @@ module Target = struct
     | `Session
     | `SystemSetting
     | `Smtp
+    | `Statistics
     | `System
     | `Tag
     | `Tenant
@@ -251,6 +252,7 @@ module Target = struct
     | "session", [] -> `Session
     | "systemsetting", [] -> `SystemSetting
     | "smtp", [] -> `Smtp
+    | "statistics", [] -> `Statistics
     | "system", [] -> `System
     | "tag", [] -> `Tag
     | "tenant", [] -> `Tenant
@@ -278,6 +280,7 @@ module Target = struct
     ; `Session
     ; `SystemSetting
     ; `Smtp
+    ; `Statistics
     ; `System
     ; `Tag
     ; `Tenant

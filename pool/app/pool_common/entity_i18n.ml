@@ -70,6 +70,7 @@ type t =
   | UpcomingSessionsListEmpty
   | PastExperimentListPublicTitle
   | PastSessionsTitle
+  | PoolStatistics
   | UpcomingSessionsTitle
   | UserProfileDetailsSubtitle
   | UserProfileLoginSubtitle

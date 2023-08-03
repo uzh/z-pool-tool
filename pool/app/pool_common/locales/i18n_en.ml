@@ -104,6 +104,7 @@ let to_string = function
     "You are not currently enrolled in any upcoming sessions."
   | PastExperimentListPublicTitle -> "Experiments participated"
   | PastSessionsTitle -> "Your past sessions"
+  | PoolStatistics -> "Pool statistics"
   | UpcomingSessionsTitle -> "Your upcoming sessions"
   | UserProfileDetailsSubtitle -> "Personal details"
   | UserProfileLoginSubtitle -> "Login information"
