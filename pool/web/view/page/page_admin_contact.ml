@@ -141,7 +141,7 @@ let promote_form csrf language query_language contact =
     |> Http_utils.externalize_path_with_lang query_language
   in
   [ div
-      ~a:[ a_class [ "flexrow"; "wrap"; "flex-gap"; "align-center" ] ]
+      ~a:[ a_class [ "flexrow"; "flex-gap"; "flexcolumn-mobile" ] ]
       [ form
           ~a:
             [ a_method `Post
@@ -152,12 +152,14 @@ let promote_form csrf language query_language contact =
             ]
           [ Input.csrf_element csrf ()
           ; Input.submit_element
-              ~submit_type:`Error
+              ~submit_type:`Success
+              ~classnames:[ "nobr" ]
               language
               Message.PromoteContact
               ()
           ]
       ; div
+          ~a:[ a_class [ "grow" ] ]
           [ txt Pool_common.(Utils.hint_to_string language I18n.PromoteContact)
           ]
       ]

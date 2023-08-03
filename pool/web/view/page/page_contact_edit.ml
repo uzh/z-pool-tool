@@ -187,7 +187,7 @@ let status_form
                |> CCString.capitalize_ascii)
          ]
      ; div
-         ~a:[ a_class [ "flexrow"; "wrap"; "flex-gap"; "align-center" ] ]
+         ~a:[ a_class [ "flexrow"; "flex-gap"; "flexcolumn-mobile" ] ]
          [ form
              ~a:
                [ a_method `Post
@@ -195,9 +195,16 @@ let status_form
                ; a_user_data "confirmable" confirmable
                ]
              [ csrf_element csrf ()
-             ; submit_element ~submit_type language control ()
+             ; submit_element
+                 ~classnames:[ "nobr" ]
+                 ~submit_type
+                 language
+                 control
+                 ()
              ]
-         ; div [ txt Pool_common.(Utils.hint_to_string language hint) ]
+         ; div
+             ~a:[ a_class [ "grow" ] ]
+             [ txt Pool_common.(Utils.hint_to_string language hint) ]
          ]
      ]
      @ additional)
