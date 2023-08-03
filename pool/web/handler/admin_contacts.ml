@@ -40,7 +40,10 @@ let detail_view action req =
        in
        match action with
        | `Show ->
-         Page.Admin.Contact.detail context contact contact_tags
+         let%lwt admin_comment =
+           Contact.find_admin_comment database_label (Contact.id contact)
+         in
+         Page.Admin.Contact.detail ~admin_comment context contact contact_tags
          |> create_layout req context
          >|+ Sihl.Web.Response.of_html
        | `Edit ->

@@ -3,6 +3,7 @@ include Event
 module Guard = Entity_guard
 
 let find = Repo.find
+let find_admin_comment = Repo.find_admin_comment
 let find_multiple = Repo.find_multiple
 let find_by_email = Repo.find_by_email
 let find_all = Repo.find_all

@@ -1,4 +1,5 @@
 let find = Repo_sql.find
+let find_admin_comment = Repo_sql.find_admin_comment
 let find_multiple = Repo_sql.find_multiple
 let find_by_email = Repo_sql.find_by_email
 let find_all = Repo_sql.find_all
