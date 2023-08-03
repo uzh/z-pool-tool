@@ -1,4 +1,5 @@
 open CCFun.Infix
+module BaseGuard = Guard
 
 let get_or_failwith = Pool_common.Utils.get_or_failwith
 let role_of_string = CCFun.(Format.asprintf "`%s" %> Role.Actor.of_string)
@@ -99,11 +100,23 @@ let create_root_admin =
     let ctx = Pool_database.to_ctx Pool_database.root in
     match%lwt Service.User.find_by_email_opt ~ctx email with
     | None ->
-      let%lwt (admin : Sihl_user.t) =
-        Service.User.create_admin ~ctx ~name ~given_name ~password email
+      let%lwt () =
+        let open Admin in
+        let open Pool_user in
+        let admin_id = Id.create () in
+        Created
+          { id = Some admin_id
+          ; email = email |> EmailAddress.of_string
+          ; password = password |> Password.create |> CCResult.get_exn
+          ; firstname = given_name |> Firstname.of_string
+          ; lastname = name |> Lastname.of_string
+          ; roles =
+              Some (BaseGuard.RoleSet.of_list [ `Operator; `ManageOperators ])
+          }
+        |> handle_event
+             ~tags:Pool_database.(Logger.Tags.create root)
+             Pool_database.root
       in
-      let%lwt () = grant_role ctx admin `Operator in
-      let%lwt () = grant_role ctx admin `ManageOperators in
       Lwt.return_some ()
     | Some _ -> failwith "The user already exists."
   in
