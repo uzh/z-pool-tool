@@ -3,7 +3,7 @@ module Id : module type of Pool_common.Id
 module Job : sig
   type t =
     | GuardianCacheCleared
-    | PrivacyPolicyUpdated
+    | I18nPageUpdated
     | SmtpAccountUpdated
     | TenantDatabaseAdded of Pool_database.Label.t
     | TenantDatabaseUpdated of Pool_database.Label.t
@@ -35,7 +35,7 @@ module EventLog : sig
   module ServiceIdentifier : sig
     include Pool_common.Model.StringSig
 
-    val get : unit -> t
+    val get : ?identifier:string -> unit -> t
   end
 
   module Status : sig
@@ -69,6 +69,7 @@ val handle_event : event -> unit Lwt.t
 val handle_system_event : t -> unit Lwt.t
 
 module Service : sig
-  val run : unit -> unit Lwt.t
-  val register : unit -> Sihl.Container.Service.t
+  val run : ?identifier:string -> unit -> unit Lwt.t
+  val register : ?identifier:string -> unit -> Sihl.Container.Service.t
+  val register_worker : unit -> Sihl.Container.Service.t
 end

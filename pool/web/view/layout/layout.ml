@@ -57,7 +57,7 @@ module Tenant = struct
     in
     let%lwt footer =
       let%lwt privacy_policy_is_set =
-        I18n.privacy_policy_is_set database_label active_language
+        I18n.(i18n_is_set database_label active_language Key.PrivacyPolicy)
       in
       let open Pool_common in
       let fragments =

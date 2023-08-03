@@ -74,13 +74,14 @@ val find_by_key_opt
 
 val find_all : Pool_database.Label.t -> unit -> t list Lwt.t
 
-module PrivacyPolicyCache : sig
+module I18nPageCache : sig
   val clear : unit -> unit
 end
 
-val privacy_policy_is_set
+val i18n_is_set
   :  Pool_database.Label.t
   -> Pool_common.Language.t
+  -> Key.t
   -> bool Lwt.t
 
 module Guard : sig

@@ -9,32 +9,34 @@ let find_by_key = Repo.find_by_key
 let find_by_key_opt = Repo.find_by_key_opt
 let find_all = Repo.find_all
 
-module PrivacyPolicyCache = struct
+module I18nPageCache = struct
   open Hashtbl
 
-  let tbl : (Pool_tenant.Database.Label.t * Pool_common.Language.t, bool) t =
+  let tbl
+    : ( Pool_tenant.Database.Label.t * Entity.Key.t * Pool_common.Language.t
+    , bool ) t
+    =
     create 5
   ;;
 
   let find = find_opt tbl
 
-  let add database_label language value =
-    replace tbl (database_label, language) value
+  let add database_label key language value =
+    replace tbl (database_label, key, language) value
   ;;
 
   let clear () = clear tbl
 end
 
-let privacy_policy_is_set database_label language =
+let i18n_is_set database_label language key =
   let open Utils.Lwt_result.Infix in
-  PrivacyPolicyCache.find (database_label, language)
+  I18nPageCache.find (database_label, key, language)
   |> function
   | Some bool -> Lwt.return bool
   | None ->
     let%lwt existing =
-      find_by_key_opt database_label Entity.Key.PrivacyPolicy language
-      ||> CCOption.is_some
+      find_by_key_opt database_label key language ||> CCOption.is_some
     in
-    let () = PrivacyPolicyCache.add database_label language existing in
+    let () = I18nPageCache.add database_label key language existing in
     Lwt.return existing
 ;;

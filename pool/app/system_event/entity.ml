@@ -8,8 +8,8 @@ module Job = struct
   type t =
     | GuardianCacheCleared [@name "guardiancachecleared"]
         [@printer Utils.ppx_printer "guardiancachecleared"]
-    | PrivacyPolicyUpdated [@name "privacypolicyupdated"]
-        [@printer Utils.ppx_printer "privacypolicyupdated"]
+    | I18nPageUpdated [@name "i18npageupdated"]
+        [@printer Utils.ppx_printer "i18npageupdated"]
     | SmtpAccountUpdated [@name "smtpaccountupdated"]
         [@printer Utils.ppx_printer "smtpaccountupdated"]
     | TenantDatabaseAdded of Pool_database.Label.t [@name "tenantdatabaseadded"]
@@ -55,11 +55,11 @@ module EventLog = struct
     let field = Pool_common.Message.Field.Host
     let schema () = schema field ()
 
-    let get () =
-      Format.asprintf
-        "%s-%s"
-        (Unix.gethostname ())
-        (() |> Unix.getpid |> CCInt.to_string)
+    let get ?identifier () =
+      let hostname = Unix.gethostname () in
+      match identifier with
+      | None -> hostname
+      | Some id -> Format.asprintf "%s-%s" hostname id
     ;;
   end
 

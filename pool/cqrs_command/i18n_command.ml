@@ -34,10 +34,7 @@ end = struct
       | CreditsText | GreetingsText | PasswordPolicyText | WelcomeText -> []
       | PrivacyPolicy ->
         System_event.
-          [ Job.PrivacyPolicyUpdated
-            |> create
-            |> created
-            |> Pool_event.system_event
+          [ Job.I18nPageUpdated |> create |> created |> Pool_event.system_event
           ]
     in
     Ok ((I18n.Updated (property, edit) |> Pool_event.i18n) :: system_events)
