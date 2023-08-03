@@ -60,27 +60,40 @@ module Tenant = struct
         I18n.(i18n_is_set database_label active_language Key.PrivacyPolicy)
       in
       let open Pool_common in
-      let fragments =
-        [ txt title_text
-        ; txt App.version
-        ; a
-            ~a:[ a_href (Sihl.Web.externalize_path "/credits") ]
-            [ txt (Utils.nav_link_to_string active_language I18n.Credits) ]
-        ]
+      let externalize path =
+        path
+        |> Http_utils.path_with_language query_language
+        |> Sihl.Web.externalize_path
       in
-      let fragments =
-        if privacy_policy_is_set
-        then
-          fragments
-          @ [ a
-                ~a:[ a_href (Sihl.Web.externalize_path "/privacy-policy") ]
-                [ txt
-                    (Utils.nav_link_to_string
-                       active_language
-                       I18n.PrivacyPolicy)
-                ]
-            ]
-        else fragments
+      let text_fragments =
+        [ txt title_text; txt App.version ]
+        |> App.combine_footer_fragments ~classnames:[ "footer-static" ]
+      in
+      let footer_nav =
+        let base =
+          [ a
+              ~a:[ a_href (externalize "/credits") ]
+              [ txt (Utils.nav_link_to_string active_language I18n.Credits) ]
+          ]
+        in
+        let nav_links =
+          if privacy_policy_is_set
+          then
+            base
+            @ [ a
+                  ~a:[ a_href (externalize "/privacy-policy") ]
+                  [ txt
+                      (Utils.nav_link_to_string
+                         active_language
+                         I18n.PrivacyPolicy)
+                  ]
+              ]
+          else base
+        in
+        nav_links
+        |> App.combine_footer_fragments
+             ~column_mobile:true
+             ~classnames:[ "footer-nav" ]
       in
       footer
         ~a:
@@ -88,13 +101,17 @@ module Tenant = struct
               [ "inset"
               ; "flexrow"
               ; "flex-gap"
+              ; "flexcolumn-mobile"
               ; "justify-center"
               ; "bg-grey-light"
               ; "border-top"
               ; "push"
               ]
           ]
-        (App.combine_footer_fragments fragments)
+        [ text_fragments
+        ; span ~a:[ a_class [ "hidden-mobile" ] ] [ txt "|" ]
+        ; footer_nav
+        ]
       |> Lwt.return
     in
     html
