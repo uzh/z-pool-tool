@@ -3,6 +3,7 @@
  (libraries
   cqrs_command
   database
+  guard
   matcher
   pool_event
   pool_user
