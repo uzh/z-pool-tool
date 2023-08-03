@@ -28,8 +28,11 @@ let dashboard statistics Pool_context.{ language; _ } =
     statistics
     |> CCOption.map_or ~default:(txt "") (fun statistics ->
       div
-        [ heading_2 I18n.PoolStatistics
-        ; Component.Statistics.create language statistics
+        ~a:[ a_class [ "grid-col-2" ] ]
+        [ div
+            [ heading_2 I18n.PoolStatistics
+            ; Component.Statistics.create language statistics
+            ]
         ])
   in
   div

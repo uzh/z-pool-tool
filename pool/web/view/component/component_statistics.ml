@@ -13,6 +13,7 @@ let create
     ; sign_up_count
     } )
   =
+  let open Pool_common in
   let to_txt value = txt (CCInt.to_string value) in
   let period_select =
     let attributes =
@@ -31,16 +32,37 @@ let create
       period
       ()
   in
-  Field.
-    [ ActiveContactsCount, to_txt (ActiveContacts.value active_contacts)
-    ; ( PendingContactImports
-      , to_txt (PendingContactImports.value pending_contact_imports) )
-    ; AssignmentsCreated, to_txt (AssignmentsCreated.value assignments_created)
-    ; InvitationsSent, to_txt (InvitationsSent.value invitations_sent)
-    ; LoginCount, to_txt (LoginCount.value login_count)
-    ; SignUpCount, to_txt (SignUpCount.value sign_up_count)
+  let create_table title figures =
+    [ h3
+        ~a:[ a_class [ "heading-3" ] ]
+        [ txt (Utils.nav_link_to_string language title) ]
+    ; Component_table.vertical_table
+        ~classnames:[ "fixed" ]
+        `Striped
+        language
+        figures
     ]
-  |> Component_table.vertical_table `Striped language
+  in
+  let user_figures =
+    Field.
+      [ ActiveContactsCount, to_txt (ActiveContacts.value active_contacts)
+      ; ( PendingContactImports
+        , to_txt (PendingContactImports.value pending_contact_imports) )
+      ; LoginCount, to_txt (LoginCount.value login_count)
+      ; SignUpCount, to_txt (SignUpCount.value sign_up_count)
+      ]
+  in
+  let experiment_figures =
+    Field.
+      [ ( AssignmentsCreated
+        , to_txt (AssignmentsCreated.value assignments_created) )
+      ; InvitationsSent, to_txt (InvitationsSent.value invitations_sent)
+      ]
+  in
+  div
+    Pool_common.I18n.(
+      create_table Contacts user_figures
+      @ create_table Experiments experiment_figures)
   |> fun table ->
   div
     ~a:[ a_class [ "flexcolumn"; "stack" ]; a_user_data "statistics" "" ]
