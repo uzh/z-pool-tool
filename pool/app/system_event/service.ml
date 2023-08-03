@@ -8,7 +8,7 @@ let run ?identifier () =
   ()
   |> EventLog.ServiceIdentifier.get ?identifier
   |> Repo.find_pending
-  >|> Lwt_list.iter_s Event.handle_system_event
+  >|> Lwt_list.iter_s (Event.handle_system_event ?identifier)
 ;;
 
 let start_handler ?identifier () =
