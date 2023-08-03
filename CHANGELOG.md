@@ -7,11 +7,11 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 ### Added
 
 - readonly admin comment on contacts
+- credits and privacy policy pages
 
 ### Changed
 
 - log failed login attempt as warning
-- credits and privacy policy pages
 
 ### Fixed
 
