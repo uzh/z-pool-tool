@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 - readonly admin comment on contacts
 - credits and privacy policy pages
 - basic admin statistics
+- ability to promote a contact to an admin
 
 ### Changed
 

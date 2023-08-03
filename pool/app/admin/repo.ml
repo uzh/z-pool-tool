@@ -187,7 +187,6 @@ module Sql = struct
   let promote_contact_insert_contact_to_promoted_request =
     {sql|
       INSERT INTO pool_contacts_promoted (
-        id,
         user_uuid,
         terms_accepted_at,
         language,
@@ -222,7 +221,6 @@ module Sql = struct
         updated_at
       )
       SELECT
-        id,
         user_uuid,
         terms_accepted_at,
         language,
