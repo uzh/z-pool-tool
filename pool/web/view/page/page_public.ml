@@ -213,9 +213,3 @@ let reset_password
         ]
     ]
 ;;
-
-let credits credits_text =
-  div
-    ~a:[ a_class [ "trim"; "narrow"; "safety-margin" ] ]
-    I18n.[ credits_text |> content |> Content.value |> Unsafe.data ]
-;;

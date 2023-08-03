@@ -8,6 +8,8 @@ module Job = struct
   type t =
     | GuardianCacheCleared [@name "guardiancachecleared"]
         [@printer Utils.ppx_printer "guardiancachecleared"]
+    | PrivacyPolicyUpdated [@name "privacypolicyupdated"]
+        [@printer Utils.ppx_printer "privacypolicyupdated"]
     | SmtpAccountUpdated [@name "smtpaccountupdated"]
         [@printer Utils.ppx_printer "smtpaccountupdated"]
     | TenantDatabaseAdded of Pool_database.Label.t [@name "tenantdatabaseadded"]

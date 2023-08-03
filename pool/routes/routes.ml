@@ -59,6 +59,7 @@ module Public = struct
             [ get "/index" index
             ; get "/custom/assets/index.css" index_css
             ; get "/credits" credits
+            ; get "/privacy-policy" privacy_policy
             ]
         ; choose
             ~middlewares:

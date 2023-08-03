@@ -55,16 +55,32 @@ module Tenant = struct
         active_language
         user
     in
-    let footer =
-      let html =
+    let%lwt footer =
+      let%lwt privacy_policy_is_set =
+        I18n.privacy_policy_is_set database_label active_language
+      in
+      let open Pool_common in
+      let fragments =
         [ txt title_text
         ; txt App.version
         ; a
             ~a:[ a_href (Sihl.Web.externalize_path "/credits") ]
-            Pool_common.
-              [ txt (Utils.nav_link_to_string active_language I18n.Credits) ]
+            [ txt (Utils.nav_link_to_string active_language I18n.Credits) ]
         ]
-        |> App.combine_footer_fragments
+      in
+      let fragments =
+        if privacy_policy_is_set
+        then
+          fragments
+          @ [ a
+                ~a:[ a_href (Sihl.Web.externalize_path "/privacy-policy") ]
+                [ txt
+                    (Utils.nav_link_to_string
+                       active_language
+                       I18n.PrivacyPolicy)
+                ]
+            ]
+        else fragments
       in
       footer
         ~a:
@@ -78,7 +94,8 @@ module Tenant = struct
               ; "push"
               ]
           ]
-        html
+        (App.combine_footer_fragments fragments)
+      |> Lwt.return
     in
     html
       (head page_title head_tags)

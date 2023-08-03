@@ -100,6 +100,7 @@ type nav_link =
   | Overview
   | ParticipationTags
   | PersonalDetails
+  | PrivacyPolicy
   | Profile
   | Queue
   | Rules

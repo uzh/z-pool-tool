@@ -3,6 +3,7 @@ module Id : module type of Pool_common.Id
 module Job : sig
   type t =
     | GuardianCacheCleared
+    | PrivacyPolicyUpdated
     | SmtpAccountUpdated
     | TenantDatabaseAdded of Pool_database.Label.t
     | TenantDatabaseUpdated of Pool_database.Label.t

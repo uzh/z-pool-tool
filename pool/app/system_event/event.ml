@@ -31,6 +31,9 @@ let handle_system_event system_event =
   | GuardianCacheCleared ->
     let () = Guard.Persistence.Cache.clear () in
     success_log ()
+  | PrivacyPolicyUpdated ->
+    let () = I18n.PrivacyPolicyCache.clear () in
+    success_log ()
   | SmtpAccountUpdated ->
     let () = Email.Service.Cache.clear () in
     success_log ()

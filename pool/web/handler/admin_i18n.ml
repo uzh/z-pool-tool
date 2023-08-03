@@ -50,9 +50,10 @@ let update req =
     Utils.Lwt_result.map_error (fun err -> err, redirect_path)
     @@
     let tags = Pool_context.Logger.Tags.req req in
-    let property () = I18n.find database_label id in
+    let property () = I18n.find_with_default_content database_label id in
     let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
     let events property =
+      Logs.info (fun m -> m "%s" I18n.(show property));
       let open CCResult.Infix in
       let open Cqrs_command.I18n_command.Update in
       urlencoded |> decode >>= handle ~tags property

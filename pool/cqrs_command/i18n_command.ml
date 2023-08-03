@@ -26,8 +26,21 @@ end = struct
 
   let handle ?(tags = Logs.Tag.empty) property (command : t) =
     Logs.info ~src (fun m -> m "Handle command Update" ~tags);
-    let edit : I18n.edit = I18n.{ content = command.content } in
-    Ok [ I18n.Updated (property, edit) |> Pool_event.i18n ]
+    let open I18n in
+    let edit : edit = { content = command.content } in
+    let system_events =
+      let open Key in
+      match property |> key with
+      | CreditsText | GreetingsText | PasswordPolicyText | WelcomeText -> []
+      | PrivacyPolicy ->
+        System_event.
+          [ Job.PrivacyPolicyUpdated
+            |> create
+            |> created
+            |> Pool_event.system_event
+          ]
+    in
+    Ok ((I18n.Updated (property, edit) |> Pool_event.i18n) :: system_events)
   ;;
 
   let decode data =

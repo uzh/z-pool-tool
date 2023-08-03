@@ -139,6 +139,7 @@ let nav_link_to_string = function
   | Overview -> "Übersicht"
   | ParticipationTags -> "Teilnahmetags"
   | PersonalDetails -> "Persönliche Angaben"
+  | PrivacyPolicy -> "Datenschutzerklärung"
   | Profile -> "Profil"
   | Queue -> "Hintergrundjobs"
   | Rules -> "Regeln"
