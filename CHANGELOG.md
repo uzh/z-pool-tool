@@ -7,10 +7,15 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 ### Added
 
 - readonly admin comment on contacts
+- credits and privacy policy pages
 
 ### Changed
 
 - log failed login attempt as warning
+
+### Fixed
+
+- blocking of email addresses after too many failed login attempts
 
 ## [0.3.3](https://github.com/uzh/pool/tree/0.3.3) - 2023-08-02
 

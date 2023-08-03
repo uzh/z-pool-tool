@@ -36,6 +36,8 @@ let css_link_tag (file : [ `GlobalStylesheet | `TenantStylesheet ]) =
 ;;
 
 module App = struct
+  let app_name = "Z-Pool-Tool"
+
   let create_title query_language title =
     let path =
       Http_utils.path_with_language query_language "/index"
@@ -59,10 +61,25 @@ module App = struct
       [ create_title query_language title; div children ]
   ;;
 
-  let footer title =
-    let version = Format.asprintf "Z-Pool-Tool %s" Version.to_string in
-    let title = span [ txt title ] in
-    let content = [ title; span [ txt "|" ]; txt version ] in
+  let version = Format.asprintf "Z-Pool-Tool %s" Version.to_string
+
+  let combine_footer_fragments fragments =
+    let separator = span [ txt "|" ] in
+    let rec combine html = function
+      | [] -> html
+      | hd :: tl ->
+        (html
+         @
+         if CCList.length tl > 0
+         then [ span [ hd ]; separator ]
+         else [ span [ hd ] ])
+        |> fun html -> combine html tl
+    in
+    combine [] fragments
+  ;;
+
+  let root_footer =
+    let html = [ txt app_name; txt version ] |> combine_footer_fragments in
     footer
       ~a:
         [ a_class
@@ -75,6 +92,6 @@ module App = struct
             ; "push"
             ]
         ]
-      content
+      html
   ;;
 end

@@ -181,3 +181,42 @@ let error req =
   |> Sihl.Web.Response.of_html
   |> Lwt.return
 ;;
+
+let credits req =
+  let result
+    ({ Pool_context.language; query_language; database_label; _ } as context)
+    =
+    let error_path = Http_utils.path_with_language query_language "/error" in
+    let open Utils.Lwt_result.Infix in
+    let%lwt html =
+      I18n.find_by_key database_label I18n.Key.CreditsText language
+      ||> Page.Utils.i18n_page
+    in
+    html
+    |> create_layout req context
+    >|+ Sihl.Web.Response.of_html
+    >|- fun err -> err, error_path
+  in
+  result |> Http_utils.extract_happy_path ~src req
+;;
+
+let privacy_policy req =
+  let result
+    ({ Pool_context.language; query_language; database_label; _ } as context)
+    =
+    let redirect_path = Http_utils.path_with_language query_language "/" in
+    let open Utils.Lwt_result.Infix in
+    let%lwt policy =
+      I18n.find_by_key_opt database_label I18n.Key.PrivacyPolicy language
+    in
+    match policy with
+    | None -> Http_utils.redirect_to redirect_path ||> CCResult.return
+    | Some policy ->
+      policy
+      |> Page.Utils.i18n_page
+      |> create_layout req context
+      >|+ Sihl.Web.Response.of_html
+      >|- fun err -> err, redirect_path
+  in
+  result |> Http_utils.extract_happy_path ~src req
+;;

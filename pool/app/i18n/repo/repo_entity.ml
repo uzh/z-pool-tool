@@ -21,3 +21,19 @@ let t =
          Common.Repo.Id.t
          (tup2 Key.t (tup2 Common.Repo.Language.t Content.t))))
 ;;
+
+let t_with_default_content =
+  let encode _ = failwith "Decode model only." in
+  let decode (id, (key, (language, content))) =
+    let open CCResult in
+    let content = CCOption.value ~default:"" content |> Content.of_string in
+    Ok { id; key; language; content }
+  in
+  Caqti_type.(
+    custom
+      ~encode
+      ~decode
+      (tup2
+         Common.Repo.Id.t
+         (tup2 Key.t (tup2 Common.Repo.Language.t (option string)))))
+;;

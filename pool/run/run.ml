@@ -12,7 +12,7 @@ let worker_services =
         ]
       ()
   ; Matcher.register ()
-  ; System_event.Service.register ()
+  ; System_event.Service.register_worker ()
   ; User_import.Service.register ()
   ; Assignment.Service.register ()
   ]

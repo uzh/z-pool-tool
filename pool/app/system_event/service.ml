@@ -3,21 +3,21 @@ open Entity
 let src = Logs.Src.create "system_event.service"
 let get_or_failwith = Pool_common.Utils.get_or_failwith
 
-let run () =
+let run ?identifier () =
   let open Utils.Lwt_result.Infix in
   ()
-  |> EventLog.ServiceIdentifier.get
+  |> EventLog.ServiceIdentifier.get ?identifier
   |> Repo.find_pending
-  >|> Lwt_list.iter_s Event.handle_system_event
+  >|> Lwt_list.iter_s (Event.handle_system_event ?identifier)
 ;;
 
-let start_handler () =
+let start_handler ?identifier () =
   let open Schedule in
   let interval = Ptime.Span.of_int_s 10 in
   let periodic_fcn () =
     Logs.debug ~src (fun m ->
       m ~tags:Pool_database.(Logger.Tags.create root) "Run");
-    run ()
+    run ?identifier ()
   in
   create
     "system_events"
@@ -57,22 +57,24 @@ let schema =
     config
 ;;
 
-let start () =
+let start ?identifier () =
   Sihl.Configuration.require schema;
-  if read_bool Run then start_handler () else Lwt.return_unit
+  if read_bool Run then start_handler ?identifier () else Lwt.return_unit
 ;;
 
 let stop () = Lwt.return_unit
 
-let lifecycle =
+let lifecycle ?identifier () =
   Sihl.Container.create_lifecycle
     "System events"
     ~dependencies:(fun () -> [ Schedule.lifecycle ])
-    ~start
+    ~start:(start ?identifier)
     ~stop
 ;;
 
-let register () =
+let register ?identifier () =
   let configuration = Sihl.Configuration.make ~schema () in
-  Sihl.Container.Service.create ~configuration lifecycle
+  Sihl.Container.Service.create ~configuration (lifecycle ?identifier ())
 ;;
+
+let register_worker = register ~identifier:"worker"

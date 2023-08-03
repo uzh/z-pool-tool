@@ -7,12 +7,16 @@ let handle_event : event -> unit Lwt.t = function
   | Created t -> Repo.insert Pool_database.root t
 ;;
 
-let handle_system_event system_event =
+let handle_system_event ?identifier system_event =
   let open Utils.Lwt_result.Infix in
   let open EventLog in
   let pool = Pool_database.root in
   let create_event_log ?message status =
-    create ?message system_event.id (ServiceIdentifier.get ()) status
+    create
+      ?message
+      system_event.id
+      (ServiceIdentifier.get ?identifier ())
+      status
     |> Repo.EventLog.insert pool
   in
   let success_log () = create_event_log Status.Successful in
@@ -30,6 +34,9 @@ let handle_system_event system_event =
   match system_event.job with
   | GuardianCacheCleared ->
     let () = Guard.Persistence.Cache.clear () in
+    success_log ()
+  | I18nPageUpdated ->
+    let () = I18n.I18nPageCache.clear () in
     success_log ()
   | SmtpAccountUpdated ->
     let () = Email.Service.Cache.clear () in

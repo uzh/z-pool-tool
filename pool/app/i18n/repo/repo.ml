@@ -34,10 +34,25 @@ module Sql = struct
     Utils.Database.find (Pool_database.Label.value pool) find_request
   ;;
 
+  let find_with_default_content_request =
+    let open Caqti_request.Infix in
+    {sql|
+      WHERE uuid = UNHEX(REPLACE(?, '-', ''))
+    |sql}
+    |> select_from_i18n_sql
+    |> Pool_common.Repo.Id.t ->! RepoEntity.t_with_default_content
+  ;;
+
+  let find_with_default_content pool =
+    Utils.Database.find
+      (Pool_database.Label.value pool)
+      find_with_default_content_request
+  ;;
+
   let find_by_key_request =
     let open Caqti_request.Infix in
     {sql|
-      WHERE i18n_key = ? AND language = ?
+      WHERE i18n_key = ? AND language = ? AND content IS NOT NULL AND content != ''
     |sql}
     |> select_from_i18n_sql
     |> Caqti_type.(tup2 RepoEntity.Key.t Pool_common.Repo.Language.t)
@@ -51,9 +66,18 @@ module Sql = struct
       (key, language)
   ;;
 
+  let find_by_key_opt pool key language =
+    Utils.Database.find_opt
+      (Pool_database.Label.value pool)
+      find_by_key_request
+      (key, language)
+  ;;
+
   let find_all_request =
     let open Caqti_request.Infix in
-    "" |> select_from_i18n_sql |> Caqti_type.unit ->* RepoEntity.t
+    ""
+    |> select_from_i18n_sql
+    |> Caqti_type.unit ->* RepoEntity.t_with_default_content
   ;;
 
   let find_all pool =
@@ -118,7 +142,9 @@ module Sql = struct
 end
 
 let find = Sql.find
+let find_with_default_content = Sql.find_with_default_content
 let find_by_key = Sql.find_by_key
+let find_by_key_opt = Sql.find_by_key_opt
 let find_all = Sql.find_all
 let insert = Sql.insert
 let update = Sql.update

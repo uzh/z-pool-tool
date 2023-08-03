@@ -82,6 +82,7 @@ type nav_link =
   | Assignments
   | ContactInformation
   | Contacts
+  | Credits
   | CustomFields
   | Dashboard
   | Experiments
@@ -99,6 +100,7 @@ type nav_link =
   | Overview
   | ParticipationTags
   | PersonalDetails
+  | PrivacyPolicy
   | Profile
   | Queue
   | Rules

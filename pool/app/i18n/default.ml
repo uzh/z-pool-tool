@@ -34,6 +34,9 @@ let default_values =
         , "Das Passwort muss mindestens 8 Zeichen lang sein, eine Zahl, ein \
            Grossbuchstabe und ein Sonderzeichen enthalten." )
       ] )
+  ; ( "privacy_policy"
+    , [ "EN", "<h1>Privacy policy</h1>"; "DE", "<h1>Datenschutzerklärung</h1>" ]
+    )
   ]
   |> CCList.map (fun (key, data) ->
     let key = key |> Key.create |> get_or_failwith in
