@@ -169,6 +169,7 @@ type hint =
   | ParticipationTags
   | PauseAccountAdmin
   | PauseAccountContact
+  | PromoteContact
   | Rate
   | RateDependencyWith
   | RateDependencyWithout
@@ -213,6 +214,7 @@ type confirmable =
   | MarkAssignmentAsDeleted
   | MarkAssignmentWithFollowUpsAsDeleted
   | PauseAccount
+  | PromoteContact
   | PublisCustomField
   | PublisCustomFieldOption
   | ReactivateAccount

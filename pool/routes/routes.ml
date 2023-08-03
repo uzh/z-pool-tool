@@ -557,6 +557,7 @@ module Admin = struct
         ; post "" ~middlewares:[ Access.update ] update
         ; post "pause" ~middlewares:[ Access.update ] toggle_paused
         ; get "/edit" ~middlewares:[ Access.update ] edit
+        ; post "/promote" ~middlewares:[ Access.promote ] promote
         ; choose
             ~scope:(Format.asprintf "field/%s" (CustomField |> url_key))
             field_specific

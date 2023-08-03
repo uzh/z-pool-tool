@@ -195,3 +195,24 @@ module Rule = struct
     ||> filter_by actor
   ;;
 end
+
+module Target = struct
+  include Target
+
+  let promote database_label (target : kind target) (new_role : Kind.t) =
+    let uuid = Core.Target.id target in
+    let query =
+      let open Caqti_request.Infix in
+      {sql|
+        UPDATE guardian_targets
+        SET kind = $2
+        WHERE uuid = guardianEncodeUuid($1)
+      |sql}
+      |> Caqti_type.(tup2 Uuid.Target.t Kind.t ->. unit)
+    in
+    Utils.Database.exec
+      (Pool_database.Label.value database_label)
+      query
+      (uuid, new_role)
+  ;;
+end

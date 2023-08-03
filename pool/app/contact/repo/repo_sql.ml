@@ -102,11 +102,16 @@ let find_admin_comment_request =
     FROM pool_contacts
     WHERE pool_contacts.user_uuid = UNHEX(REPLACE(?, '-', ''))
   |sql}
-  |> Pool_common.Repo.Id.t ->! Repo_model.AdminComment.t
+  |> Pool_common.Repo.Id.t ->! Caqti_type.option Repo_model.AdminComment.t
 ;;
 
-let find_admin_comment pool =
-  Utils.Database.find_opt (Database.Label.value pool) find_admin_comment_request
+let find_admin_comment pool id =
+  let open Utils.Lwt_result.Infix in
+  Utils.Database.find_opt
+    (Database.Label.value pool)
+    find_admin_comment_request
+    id
+  ||> CCOption.flatten
 ;;
 
 let find_by_email_request =

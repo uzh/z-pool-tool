@@ -48,6 +48,7 @@ type event =
       * Pool_user.Password.t
       * Pool_user.Password.t
       * Pool_user.PasswordConfirmed.t
+  | PromotedContact of Pool_common.Id.t
   | SignInCounterUpdated of t
   | Verified of t
 

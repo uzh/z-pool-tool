@@ -132,8 +132,43 @@ let tag_form
   Component.Tag.add_tags_form ?existing context available action
 ;;
 
+let promote_form csrf language query_language contact =
+  let open Pool_common in
+  let action =
+    Format.asprintf
+      "/admin/contacts/%s/promote"
+      (contact |> Contact.id |> Pool_common.Id.value)
+    |> Http_utils.externalize_path_with_lang query_language
+  in
+  [ div
+      ~a:[ a_class [ "flexrow"; "flex-gap"; "flexcolumn-mobile" ] ]
+      [ form
+          ~a:
+            [ a_method `Post
+            ; a_action action
+            ; a_user_data
+                "confirmable"
+                (Utils.confirmable_to_string language I18n.PromoteContact)
+            ]
+          [ Input.csrf_element csrf ()
+          ; Input.submit_element
+              ~submit_type:`Success
+              ~classnames:[ "nobr" ]
+              language
+              Message.PromoteContact
+              ()
+          ]
+      ; div
+          ~a:[ a_class [ "grow" ] ]
+          [ txt Pool_common.(Utils.hint_to_string language I18n.PromoteContact)
+          ]
+      ]
+  ]
+;;
+
 let edit
   ?(allowed_to_assign = false)
+  ?(allowed_to_promote = false)
   (Pool_context.{ language; csrf; query_language; _ } as context)
   tenant_languages
   contact
@@ -168,6 +203,11 @@ let edit
         ])
     else txt ""
   in
+  let promote_form =
+    if allowed_to_promote
+    then promote_form csrf language query_language contact
+    else []
+  in
   let form_context = `Admin in
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
@@ -184,6 +224,7 @@ let edit
             custom_fields
         ; assign_tags
         ; Page_contact_edit.status_form
+            ~additional:promote_form
             csrf
             language
             query_language

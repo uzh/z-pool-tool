@@ -55,6 +55,13 @@ let detail_view action req =
              actor
            ||> CCResult.is_ok
          in
+         let%lwt allowed_to_promote =
+           Guard.Persistence.validate
+             database_label
+             Cqrs_command.Admin_command.PromoteContact.effects
+             actor
+           ||> CCResult.is_ok
+         in
          let%lwt all_tags =
            let open Tags in
            if allowed_to_assign
@@ -72,6 +79,7 @@ let detail_view action req =
          in
          Page.Admin.Contact.edit
            ~allowed_to_assign
+           ~allowed_to_promote
            context
            tenant_languages
            contact
@@ -108,6 +116,29 @@ let update req =
   match context with
   | Ok context -> result context
   | Error err -> redirect err
+;;
+
+let promote req =
+  let open Utils.Lwt_result.Infix in
+  let tags = Pool_context.Logger.Tags.req req in
+  let contact_id = contact_id req in
+  let error_path =
+    Format.asprintf "/admin/contacts/%s/edit" (Pool_common.Id.value contact_id)
+  in
+  let result { Pool_context.database_label; _ } =
+    Utils.Lwt_result.map_error (fun err -> err, error_path)
+    @@
+    let open Cqrs_command.Admin_command.PromoteContact in
+    let* contact = contact_id |> Contact.find database_label in
+    handle ~tags (Contact.id contact)
+    |> Lwt_result.lift
+    |>> Pool_event.handle_events ~tags database_label
+    |>> fun () ->
+    Http_utils.redirect_to_with_actions
+      (Format.asprintf "/admin/admins/%s" (Pool_common.Id.value contact_id))
+      [ Message.set ~success:[ Pool_common.Message.ContactPromoted ] ]
+  in
+  result |> HttpUtils.Htmx.extract_happy_path ~src req
 ;;
 
 let delete_answer req =
@@ -161,6 +192,7 @@ module Access : sig
   include module type of Helpers.Access
 
   val delete_answer : Rock.Middleware.t
+  val promote : Rock.Middleware.t
 end = struct
   include Helpers.Access
   module ContactCommand = Cqrs_command.Contact_command
@@ -187,6 +219,8 @@ end = struct
     |> contact_effects
     |> Guardian.validate_generic
   ;;
+
+  let promote = Admin.Guard.Access.create |> Guardian.validate_admin_entity
 end
 
 let toggle_paused req =

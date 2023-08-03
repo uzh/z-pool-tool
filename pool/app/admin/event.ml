@@ -42,20 +42,47 @@ type event =
   | ImportConfirmed of t * User.Password.t
   | PasswordUpdated of
       t * User.Password.t * User.Password.t * User.PasswordConfirmed.t
+  | PromotedContact of Common.Id.t
   | SignInCounterUpdated of t
   | Verified of t
 [@@deriving eq, show]
 
+let map_or ~tags ~default fcn =
+  let open Common in
+  function
+  | Error err ->
+    let (_ : Message.error) = Utils.with_log_error ~src ~tags err in
+    default
+  | Ok value -> fcn value
+;;
+
 let handle_event ~tags pool : event -> unit Lwt.t =
   let open Utils.Lwt_result.Infix in
+  let admin_authorizable ?roles pool admin =
+    let open Common.Utils in
+    let ctx = Pool_database.to_ctx pool in
+    let%lwt (authorizable : Role.Actor.t Guard.Actor.t) =
+      Entity_guard.Actor.to_authorizable ~ctx admin
+      >|- with_log_error ~src ~tags
+      ||> get_or_failwith
+    in
+    match roles with
+    | Some roles ->
+      Guard.Persistence.Actor.grant_roles
+        ~ctx
+        (authorizable |> Guard.Actor.id)
+        roles
+      ||> CCResult.get_or_failwith
+    | None -> Lwt.return_unit
+  in
   function
   | Created { id; lastname; firstname; password; email; roles } ->
-    let open Pool_common.Utils in
+    let open Common.Utils in
     let ctx = Pool_database.to_ctx pool in
     let%lwt admin =
       Service.User.create_admin
         ~ctx
-        ?id:(id |> CCOption.map Pool_common.Id.value)
+        ?id:(id |> CCOption.map Common.Id.value)
         ~name:(lastname |> User.Lastname.value)
         ~given_name:(firstname |> User.Firstname.value)
         ~password:(password |> User.Password.to_sihl)
@@ -68,22 +95,7 @@ let handle_event ~tags pool : event -> unit Lwt.t =
       >|- with_log_error ~src ~tags
       ||> get_or_failwith
     in
-    let%lwt (authorizable : Role.Actor.t Guard.Actor.t) =
-      Entity_guard.Actor.to_authorizable ~ctx admin
-      >|- with_log_error ~src ~tags
-      ||> get_or_failwith
-    in
-    let%lwt () =
-      match roles with
-      | Some roles ->
-        Guard.Persistence.Actor.grant_roles
-          ~ctx
-          (authorizable |> Guard.Actor.id)
-          roles
-        ||> CCResult.get_or_failwith
-      | None -> Lwt.return_unit
-    in
-    Lwt.return_unit
+    admin_authorizable ?roles pool admin
   | DetailsUpdated (admin, { firstname; lastname }) ->
     let name = User.Lastname.value lastname in
     let given_name = User.Firstname.value firstname in
@@ -97,7 +109,7 @@ let handle_event ~tags pool : event -> unit Lwt.t =
     Lwt.return_unit
   | ImportConfirmed (admin, password) ->
     let (_ : (Sihl_user.t Lwt.t, string) result) =
-      let open Pool_common in
+      let open Common in
       Service.User.set_user_password admin.user (User.Password.to_sihl password)
       |> CCResult.map (Service.User.update ~ctx:(Pool_database.to_ctx pool))
       |> Utils.with_log_result_error ~src ~tags Message.nothandled
@@ -112,7 +124,7 @@ let handle_event ~tags pool : event -> unit Lwt.t =
       confirmed |> User.PasswordConfirmed.to_sihl
     in
     let%lwt (_ : (Sihl_user.t, string) result) =
-      let open Pool_common in
+      let open Common in
       Service.User.update_password
         ~ctx:(Pool_database.to_ctx pool)
         ~password_policy:(CCFun.const (CCResult.return ()))
@@ -123,6 +135,23 @@ let handle_event ~tags pool : event -> unit Lwt.t =
       ||> Utils.with_log_result_error ~src ~tags Message.nothandled
     in
     Lwt.return_unit
+  | PromotedContact contact_id ->
+    let target =
+      Guard.Persistence.Target.find
+        ~ctx:(Pool_database.to_ctx pool)
+        `Contact
+        (Guard.Uuid.target_of Id.value contact_id)
+    in
+    target
+    >|- Common.Message.nothandled
+    >|> map_or ~tags ~default:Lwt.return_unit (fun target ->
+      let%lwt () = Repo.promote_contact pool contact_id in
+      let%lwt () = Guard.Persistence.Target.promote pool target `Admin in
+      let%lwt () =
+        Repo.find pool contact_id
+        >|> map_or ~tags ~default:Lwt.return_unit (admin_authorizable pool)
+      in
+      Lwt.return_unit)
   | SignInCounterUpdated m -> Repo.update_sign_in_count pool m
   | Disabled _ -> Utils.todo ()
   | Enabled _ -> Utils.todo ()

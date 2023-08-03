@@ -246,6 +246,7 @@ let success_to_string : success -> string = function
     field_message "" (field_to_string field) "wurde erfolgreich abgesagt."
   | Closed field ->
     field_message "" (field_to_string field) "wurde erfolgreich geschlossen."
+  | ContactPromoted -> "Der Kontakt wurde erfolgreich zum Admin befördert."
   | Created field ->
     field_message "" (field_to_string field) "wurde erfolgreich erstellt."
   | Deleted field ->
@@ -566,6 +567,7 @@ let control_to_string = function
   | PauseAccount -> "Account pausieren"
   | PleaseSelect -> "bitte wählen"
   | PreviousPage -> "zurück"
+  | PromoteContact -> "Kontakt befördern"
   | Publish field -> format_submit "veröffentlichen" field
   | ReactivateAccount -> "Account reaktivieren"
   | Register -> format_submit "einschreiben" None

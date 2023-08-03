@@ -134,6 +134,7 @@ type success =
   | CellPhoneTokenSent
   | CellPhoneVerified
   | Closed of Field.t
+  | ContactPromoted
   | Created of Field.t
   | Deleted of Field.t
   | EmailConfirmationMessage
@@ -211,6 +212,7 @@ type control =
   | PauseAccount
   | PleaseSelect
   | PreviousPage
+  | PromoteContact
   | Publish of Field.t option
   | ReactivateAccount
   | Register

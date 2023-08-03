@@ -152,7 +152,14 @@ let personal_details_form
     ]
 ;;
 
-let status_form csrf language query_language contact form_context =
+let status_form
+  ?(additional = [])
+  csrf
+  language
+  query_language
+  contact
+  form_context
+  =
   let open Pool_common in
   let action, hint =
     match form_context with
@@ -171,27 +178,36 @@ let status_form csrf language query_language contact form_context =
     | false -> PauseAccount, confirmable_str I18n.PauseAccount, `Error
   in
   div
-    [ h2
-        ~a:[ a_class [ "heading-2" ] ]
-        [ txt
-            Pool_common.(
-              Utils.field_to_string language Message.Field.Status
-              |> CCString.capitalize_ascii)
-        ]
-    ; div
-        ~a:[ a_class [ "flexrow"; "wrap"; "flex-gap"; "align-center" ] ]
-        [ form
-            ~a:
-              [ a_method `Post
-              ; a_action (externalize (Format.asprintf "%s/pause" action))
-              ; a_user_data "confirmable" confirmable
-              ]
-            [ csrf_element csrf ()
-            ; submit_element ~submit_type language control ()
-            ]
-        ; div [ txt Pool_common.(Utils.hint_to_string language hint) ]
-        ]
-    ]
+    ~a:[ a_class [ "stack-md" ] ]
+    ([ h2
+         ~a:[ a_class [ "heading-2" ] ]
+         [ txt
+             Pool_common.(
+               Utils.field_to_string language Message.Field.Status
+               |> CCString.capitalize_ascii)
+         ]
+     ; div
+         ~a:[ a_class [ "flexrow"; "flex-gap"; "flexcolumn-mobile" ] ]
+         [ form
+             ~a:
+               [ a_method `Post
+               ; a_action (externalize (Format.asprintf "%s/pause" action))
+               ; a_user_data "confirmable" confirmable
+               ]
+             [ csrf_element csrf ()
+             ; submit_element
+                 ~classnames:[ "nobr" ]
+                 ~submit_type
+                 language
+                 control
+                 ()
+             ]
+         ; div
+             ~a:[ a_class [ "grow" ] ]
+             [ txt Pool_common.(Utils.hint_to_string language hint) ]
+         ]
+     ]
+     @ additional)
 ;;
 
 let personal_details

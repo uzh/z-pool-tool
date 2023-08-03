@@ -309,6 +309,10 @@ Wird nach diesem Feld gefiltert, wird der überschreibende Wert bevorzugt.
   | PauseAccountContact ->
     "Solange Ihr Konto pausiert ist, werden Sie nicht zu weiteren Experimenten \
      eingeladen."
+  | PromoteContact ->
+    "Achtung: einmalige Aktion. Der Kontakt wird zu einem Admin befördert, \
+     dieser wird anschliessend nicht mehr für Experimente eingeladen und kann \
+     sich nicht mehr für solche registrieren."
   | Rate -> "Generierte Einladungen pro Stunde"
   | RateDependencyWith ->
     "Zur selben Zeit finden weitere Versande statt, details werden unten \
@@ -423,6 +427,12 @@ let confirmable_to_string confirmable =
      , Some
          "Anmeldungen an Folgesession werden ebenfalls als gelöscht markiert." )
    | PauseAccount -> "den Account", "pausieren", None
+   | PromoteContact ->
+     ( "den Kontakt"
+     , "befördern"
+     , Some
+         "Dieser wird nicht mehr für Experimente eingeladen und kann sich \
+          nicht mehr für solche registrieren." )
    | PublisCustomField ->
      ( "das Feld und alle dazugehörigen Optionen"
      , "publizieren"
