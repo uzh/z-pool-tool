@@ -7,7 +7,7 @@ let retain_search_and_sort query =
   let search =
     let open Search in
     query.search
-    |> CCOption.map (fun { query; _ } -> [ Field.Query, query |> Query.value ])
+    |> CCOption.map (fun { query; _ } -> [ Field.Search, query |> Query.value ])
   in
   let sort =
     let open Sort in
