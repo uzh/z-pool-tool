@@ -22,6 +22,9 @@ let to_string = function
   | DashboardProfileCompletionTitle -> "Profile completion"
   | DashboardTitle -> "Dashboard"
   | DeletedAssignments -> "Deleted assignments"
+  | Disabled ->
+    Locales_en.field_to_string Entity_message_field.Disabled
+    |> CCString.capitalize_ascii
   | DontHaveAnAccount -> "Don't have an account?"
   | EmailConfirmationNote ->
     "Please check your emails and confirm your address first."

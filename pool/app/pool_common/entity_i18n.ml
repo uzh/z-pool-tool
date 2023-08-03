@@ -12,6 +12,7 @@ type t =
   | DashboardProfileCompletionTitle
   | DashboardTitle
   | DeletedAssignments
+  | Disabled
   | DontHaveAnAccount
   | EmailConfirmationNote
   | EmailConfirmationTitle

@@ -40,23 +40,60 @@ let personal_detail ?(admin_comment = None) language contact =
 
 let contact_overview language contacts =
   let open Contact in
+  let open Pool_user in
   let thead =
-    (Pool_common.Message.Field.[ Email; Name ] |> Table.fields_to_txt language)
+    (Pool_common.Message.Field.[ Email; Name; Status ]
+     |> Table.fields_to_txt language)
     @ [ txt "" ]
+  in
+  let status_icons { paused; terms_accepted_at; import_pending; _ } =
+    let open Icon in
+    let success = to_html ~classnames:[ "color-green" ] in
+    let error = to_html ~classnames:[ "color-red" ] in
+    let paused =
+      match paused |> Paused.value with
+      | true -> error NotificationsOff
+      | false -> success Notifications
+    in
+    [ terms_accepted_at |> CCOption.is_some, Checkmark
+    ; import_pending |> ImportPending.value, ChevronForwardCircle
+    ]
+    |> CCList.map (fun (status, icon) ->
+      if status then success icon else error icon)
+    |> CCList.cons paused
+    |> div ~a:[ a_class [ "flexrow"; "flex-gap-sm" ] ]
   in
   let user_table contacts =
     let rows =
       CCList.map
         (fun contact ->
-          [ txt (email_address contact |> Pool_user.EmailAddress.value)
+          let row =
+            match contact.disabled |> Disabled.value with
+            | true -> tr ~a:[ a_class [ "bg-red-lighter" ] ]
+            | false -> tr ~a:[]
+          in
+          [ txt (email_address contact |> EmailAddress.value)
           ; txt (fullname contact)
+          ; status_icons contact
           ; contact |> path |> Input.link_as_button ~icon:Icon.Eye
-          ])
+          ]
+          |> CCList.map (fun cell -> td [ cell ])
+          |> row)
         contacts
     in
-    rows |> Table.horizontal_table `Striped ~align_last_end:true ~thead
+    let thead = Table.table_head thead in
+    table
+      ~thead
+      ~a:[ a_class (Table.table_classes `Striped ~align_last_end:true ()) ]
+      rows
+  in
+  let table_legend =
+    Component.Table.table_color_legend
+      language
+      Pool_common.I18n.[ Disabled, "bg-red-lighter" ]
   in
   List.create
+    ~legend:table_legend
     language
     user_table
     Contact.sortable_by
