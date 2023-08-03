@@ -1,4 +1,5 @@
 include Entity
+module Guard = Entity_guard
 
 let create database_label ?(period = default_period) () =
   let open Repo in

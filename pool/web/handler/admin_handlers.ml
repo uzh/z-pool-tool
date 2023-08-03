@@ -28,11 +28,21 @@ let statistics_from_request req database_label =
 ;;
 
 let dashboard req =
-  let result ({ Pool_context.database_label; _ } as context) =
+  let result ({ Pool_context.database_label; user; _ } as context) =
     let open Utils.Lwt_result.Infix in
     Utils.Lwt_result.map_error (fun err -> err, "/error")
     @@
-    let%lwt statistics = statistics_from_request req database_label in
+    let* actor = Pool_context.Utils.find_authorizable database_label user in
+    let%lwt statistics =
+      Guard.Persistence.validate
+        database_label
+        Statistics.Guard.Access.read
+        actor
+      ||> CCResult.is_ok
+      >|> function
+      | true -> statistics_from_request req database_label ||> CCOption.pure
+      | false -> Lwt.return_none
+    in
     Page.Admin.dashboard statistics context
     |> create_layout req ~active_navigation:"/admin/dashboard" context
     >|+ Sihl.Web.Response.of_html
@@ -40,7 +50,6 @@ let dashboard req =
   result |> Http_utils.extract_happy_path ~src req
 ;;
 
-(* TODO: Access *)
 let statistics req =
   let result { Pool_context.database_label; language; _ } =
     let%lwt statistics = statistics_from_request req database_label in
@@ -51,3 +60,15 @@ let statistics req =
   result
   |> Http_utils.Htmx.handle_error_message ~error_as_notification:true ~src req
 ;;
+
+module Access : sig
+  module Statistics : sig
+    val read : Rock.Middleware.t
+  end
+end = struct
+  module Guardian = Middleware.Guardian
+
+  module Statistics = struct
+    let read = Statistics.Guard.Access.read |> Guardian.validate_admin_entity
+  end
+end

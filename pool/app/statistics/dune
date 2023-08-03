@@ -1,6 +1,14 @@
 (library
  (name statistics)
- (libraries containers pool_common pool_database ptime service sihl utils)
+ (libraries
+  containers
+  guard
+  pool_common
+  pool_database
+  ptime
+  service
+  sihl
+  utils)
  (preprocess
   (pps
    lwt_ppx

@@ -24,6 +24,14 @@ let dashboard statistics Pool_context.{ language; _ } =
       ~a:[ a_class [ "heading-2" ] ]
       [ txt (Utils.text_to_string language title) ]
   in
+  let statistics_html =
+    statistics
+    |> CCOption.map_or ~default:(txt "") (fun statistics ->
+      div
+        [ heading_2 I18n.PoolStatistics
+        ; Component.Statistics.create language statistics
+        ])
+  in
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
     [ h1
@@ -35,10 +43,7 @@ let dashboard statistics Pool_context.{ language; _ } =
             [ heading_2 I18n.UpcomingSessionsTitle
             ; Component.Calendar.(create User)
             ]
-        ; div
-            [ heading_2 I18n.PoolStatistics
-            ; Component.Statistics.create language statistics
-            ]
+        ; statistics_html
         ]
     ]
 ;;

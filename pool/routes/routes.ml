@@ -707,8 +707,8 @@ module Admin = struct
     in
     choose
       ~middlewares
-      [ get "/dashboard" dashboard (* TODO: Access *)
-      ; get "/statistics" statistics
+      [ get "/dashboard" dashboard
+      ; get "/statistics" ~middlewares:[ Access.Statistics.read ] statistics
       ; choose ~scope:"/settings" settings
       ; choose ~scope:"/user" profile
       ; choose ~scope:"/i18n" i18n

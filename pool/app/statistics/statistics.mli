@@ -45,3 +45,9 @@ type t =
 
 val create : Pool_database.Label.t -> ?period:period -> unit -> t Lwt.t
 val yojson_of_t : t -> Yojson.Safe.t
+
+module Guard : sig
+  module Access : sig
+    val read : Guard.ValidationSet.t
+  end
+end
