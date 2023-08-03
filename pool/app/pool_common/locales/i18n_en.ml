@@ -299,6 +299,10 @@ Make sure to show links and URLs as plain text.
   | PauseAccountContact ->
     "As long as your account is paused, you will not be invited to any further \
      experiments."
+  | PromoteContact ->
+    "Attention: one-time action. The contact is promoted to an admin, who is \
+     subsequently no longer invited for experiments and can no longer register \
+     for such."
   | Rate -> "Max. generated Invitations per hour"
   | RateDependencyWith ->
     "There are other mailings running at the same time, see its details \
@@ -412,6 +416,12 @@ let confirmable_to_string confirmable =
          "Assignments to follow-up sessions will be marked as deleted as well."
      )
    | PauseAccount -> "account", "pause", None
+   | PromoteContact ->
+     ( "contact"
+     , "promote"
+     , Some
+         "The contact will no longer be invited for experiments and can no \
+          longer register for them." )
    | PublisCustomFieldOption ->
      "option", "publish", Some "You will not be able to delete the it anymore."
    | ReactivateAccount -> "account", "reactivate", None

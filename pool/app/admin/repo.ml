@@ -2,8 +2,9 @@ module Dynparam = Utils.Database.Dynparam
 module RepoEntity = Repo_entity
 
 module Sql = struct
+  open Caqti_request.Infix
+
   let insert_request =
-    let open Caqti_request.Infix in
     {sql|
       INSERT INTO pool_admins (
         user_uuid,
@@ -75,7 +76,6 @@ module Sql = struct
   ;;
 
   let find_request caqti_type =
-    let open Caqti_request.Infix in
     {sql|
       WHERE user_users.uuid = UNHEX(REPLACE(?, '-', ''))
       AND user_users.confirmed = 1
@@ -94,7 +94,6 @@ module Sql = struct
   ;;
 
   let find_all_request =
-    let open Caqti_request.Infix in
     {sql|
       WHERE
       user_users.confirmed = 1
@@ -124,8 +123,7 @@ module Sql = struct
   let find_multiple pool ids =
     if CCList.is_empty ids
     then Lwt.return []
-    else
-      let open Caqti_request.Infix in
+    else (
       let (Dynparam.Pack (pt, pv)) =
         CCList.fold_left
           (fun dyn id ->
@@ -134,11 +132,10 @@ module Sql = struct
           ids
       in
       let request = find_multiple_request ids |> pt ->* RepoEntity.t in
-      Utils.Database.collect (pool |> Pool_database.Label.value) request pv
+      Utils.Database.collect (pool |> Pool_database.Label.value) request pv)
   ;;
 
   let update_request =
-    let open Caqti_request.Infix in
     {sql|
       UPDATE
         pool_admins
@@ -158,7 +155,6 @@ module Sql = struct
   ;;
 
   let update_sign_in_count_request =
-    let open Caqti_request.Infix in
     {sql|
       UPDATE
         pool_admins
@@ -177,6 +173,120 @@ module Sql = struct
       update_sign_in_count_request
       Entity.(id t |> Id.value)
   ;;
+
+  let promote_contact_insert_admin_request =
+    {sql|
+      INSERT INTO pool_admins (user_uuid, sign_in_count, last_sign_in_at)
+      SELECT user_uuid, sign_in_count, last_sign_in_at
+      FROM pool_contacts
+      WHERE user_uuid = UNHEX(REPLACE($1, '-', ''))
+    |sql}
+    |> Pool_common.Repo.Id.t ->. Caqti_type.unit
+  ;;
+
+  let promote_contact_insert_contact_to_promoted_request =
+    {sql|
+      INSERT INTO pool_contacts_promoted (
+        id,
+        user_uuid,
+        terms_accepted_at,
+        language,
+        cell_phone,
+        sms_deactivated,
+        experiment_type_preference,
+        paused,
+        disabled,
+        verified,
+        email_verified,
+        secondary_email,
+        secondary_email_verified,
+        num_invitations,
+        num_assignments,
+        num_show_ups,
+        num_no_shows,
+        num_participations,
+        firstname_version,
+        lastname_version,
+        paused_version,
+        language_version,
+        experiment_type_preference_version,
+        sign_in_count,
+        last_sign_in_at,
+        admin_notes,
+        profile_updated_at,
+        registration_attempt_notification_sent_at,
+        profile_update_triggered_at,
+        import_pending,
+        smtp_bounces_count,
+        created_at,
+        updated_at
+      )
+      SELECT
+        id,
+        user_uuid,
+        terms_accepted_at,
+        language,
+        cell_phone,
+        sms_deactivated,
+        experiment_type_preference,
+        paused,
+        disabled,
+        verified,
+        email_verified,
+        secondary_email,
+        secondary_email_verified,
+        num_invitations,
+        num_assignments,
+        num_show_ups,
+        num_no_shows,
+        num_participations,
+        firstname_version,
+        lastname_version,
+        paused_version,
+        language_version,
+        experiment_type_preference_version,
+        sign_in_count,
+        last_sign_in_at,
+        admin_notes,
+        profile_updated_at,
+        registration_attempt_notification_sent_at,
+        profile_update_triggered_at,
+        import_pending,
+        smtp_bounces_count,
+        created_at,
+        updated_at
+      FROM pool_contacts
+      WHERE user_uuid = UNHEX(REPLACE($1, '-', ''))
+    |sql}
+    |> Pool_common.Repo.Id.t ->. Caqti_type.unit
+  ;;
+
+  let promote_contact_set_admin_request =
+    {sql|
+      UPDATE user_users
+      SET admin = 1
+      WHERE uuid = UNHEX(REPLACE($1, '-', ''))
+    |sql}
+    |> Pool_common.Repo.Id.t ->. Caqti_type.unit
+  ;;
+
+  let promote_contact_delete_contact_request =
+    {sql|
+      DELETE FROM pool_contacts
+      WHERE user_uuid = UNHEX(REPLACE($1, '-', ''))
+    |sql}
+    |> Pool_common.Repo.Id.t ->. Caqti_type.unit
+  ;;
+
+  let promote_contact pool id =
+    Utils.Database.transaction
+      (Pool_database.Label.value pool)
+      [ promote_contact_insert_contact_to_promoted_request, id
+      ; promote_contact_insert_admin_request, id
+      ; promote_contact_set_admin_request, id
+      ; promote_contact_delete_contact_request, id
+      ]
+  ;;
 end
 
 let insert = Sql.insert
@@ -185,3 +295,4 @@ let find_all = Sql.find_all
 let find_multiple = Sql.find_multiple
 let update = Sql.update
 let update_sign_in_count = Sql.update_sign_in_count
+let promote_contact = Sql.promote_contact

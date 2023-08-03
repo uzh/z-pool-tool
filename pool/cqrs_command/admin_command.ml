@@ -208,3 +208,37 @@ end = struct
     Ok [ Admin.SignInCounterUpdated admin |> Pool_event.admin ]
   ;;
 end
+
+module PromoteContact : sig
+  include Common.CommandSig
+
+  type t = Pool_common.Id.t
+
+  val handle
+    :  ?tags:Logs.Tag.set
+    -> t
+    -> (Pool_event.t list, Pool_common.Message.error) result
+
+  val decode
+    :  (string * string list) list
+    -> (t, Pool_common.Message.error) result
+end = struct
+  type t = Pool_common.Id.t
+
+  let schema =
+    let open Pool_common.Utils.PoolConformist in
+    make Field.[ Pool_common.Id.schema () ] CCFun.id
+  ;;
+
+  let handle ?(tags = Logs.Tag.empty) id =
+    Logs.info ~src (fun m -> m "Handle command PromoteContact" ~tags);
+    Ok [ Admin.PromotedContact id |> Pool_event.admin ]
+  ;;
+
+  let decode data =
+    Conformist.decode_and_validate schema data
+    |> CCResult.map_err Pool_common.Message.to_conformist_error
+  ;;
+
+  let effects = Admin.Guard.Access.create
+end
