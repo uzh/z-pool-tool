@@ -173,9 +173,14 @@ abbr[title] {
     }
 }
 
-.legend-color {
+.legend-item {
     width: $space-base;
-    border: 1px solid $grey-border;
+    display: flex;
+    justify-content: center;
+}
+
+.legend-color {
+    @extend .border
 }
 
 button.as-link {
@@ -323,4 +328,14 @@ input[type="submit"].is-text {
             }
         }
     }
+}
+table.simple {
+    tbody tr:not(:last-child) th {
+        border-bottom: $border-width solid $grey-border;
+    }
+}
+
+[data-statistics] .table.simple th {
+    font-weight: $font-weight-normal;
+    padding-left: 0;
 }

@@ -1,6 +1,7 @@
 open Entity_i18n
 
 let to_string = function
+  | Activity -> "Aktivität"
   | Address -> "Addresse"
   | AdminComment -> "Administrator Kommentar"
   | AssignmentEditTagsWarning ->

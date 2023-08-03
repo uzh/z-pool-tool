@@ -88,9 +88,20 @@ let contact_overview language contacts =
       rows
   in
   let table_legend =
-    Component.Table.table_color_legend
-      language
-      Pool_common.I18n.[ Disabled, "bg-red-lighter" ]
+    let open Pool_common in
+    let open Component.Table in
+    let open Icon in
+    let field_to_string m =
+      m |> Utils.field_to_string language |> CCString.capitalize_ascii
+    in
+    let text_to_string m = m |> Utils.text_to_string language in
+    table_legend
+      [ text_to_string I18n.Disabled, legend_color_item "bg-red-lighter"
+      ; field_to_string Message.Field.Paused, legend_icon_item Notifications
+      ; field_to_string Message.Field.TermsAccepted, legend_icon_item Checkmark
+      ; ( field_to_string Message.Field.ImportPending
+        , legend_icon_item ChevronForwardCircle )
+      ]
   in
   List.create
     ~legend:table_legend

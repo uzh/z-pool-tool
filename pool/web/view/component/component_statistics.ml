@@ -34,21 +34,30 @@ let create
       period
       ()
   in
-  let create_table title figures =
-    [ h3
-        ~a:[ a_class [ "heading-3" ] ]
-        [ txt (Utils.nav_link_to_string language title) ]
-    ; Component_table.vertical_table
-        ~classnames:[ "fixed" ]
-        `Striped
-        language
-        figures
+  let create_table ?title figures =
+    let title =
+      title
+      |> CCOption.map_or ~default:(txt "") (fun title ->
+        h4
+          ~a:[ a_class [ "heading-4" ] ]
+          [ txt (Utils.nav_link_to_string language title) ])
+    in
+    div
+      [ title
+      ; Component_table.vertical_table
+          ~classnames:[ "fixed" ]
+          `Simple
+          language
+          figures
+      ]
+  in
+  let contact_counters =
+    [ ActiveContacts.(field, to_txt (value active_contacts))
+    ; PendingContactImports.(field, to_txt (value pending_contact_imports))
     ]
   in
   let user_figures =
-    [ ActiveContacts.(field, to_txt (value active_contacts))
-    ; PendingContactImports.(field, to_txt (value pending_contact_imports))
-    ; LoginCount.(field, to_txt (value login_count))
+    [ LoginCount.(field, to_txt (value login_count))
     ; SignUpCount.(field, to_txt (value sign_up_count))
     ]
   in
@@ -59,11 +68,24 @@ let create
     ]
   in
   div
-    Pool_common.I18n.(
-      create_table Contacts user_figures
-      @ create_table Experiments experiment_figures)
-  |> fun table ->
-  div
     ~a:[ a_class [ "flexcolumn"; "stack" ]; a_user_data "statistics" "" ]
-    [ period_select; table ]
+    Pool_common.I18n.
+      [ create_table contact_counters
+      ; div
+          ~a:[ a_class [ "border"; "inset"; "bg-grey-light" ] ]
+          [ h3
+              ~a:[ a_class [ "heading-3" ] ]
+              Pool_common.
+                [ txt
+                    (Utils.text_to_string language I18n.Activity
+                     |> CCString.capitalize_ascii)
+                ]
+          ; div
+              ~a:[ a_class [ "stack" ] ]
+              [ period_select
+              ; create_table ~title:Contacts user_figures
+              ; create_table ~title:Experiments experiment_figures
+              ]
+          ]
+      ]
 ;;

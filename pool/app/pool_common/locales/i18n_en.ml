@@ -3,6 +3,7 @@ open Entity_i18n
 let capitalize = CCString.capitalize_ascii
 
 let to_string = function
+  | Activity -> "activity"
   | Address -> "address"
   | AdminComment -> "admin comment"
   | AssignmentEditTagsWarning ->

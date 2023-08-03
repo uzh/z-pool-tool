@@ -1,4 +1,5 @@
 type t =
+  | Activity
   | Address
   | AdminComment
   | AssignmentEditTagsWarning
