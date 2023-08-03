@@ -1,29 +1,43 @@
 module ActiveContacts : sig
   include Pool_common.Model.IntegerSig
+
+  val field : Pool_common.Message.Field.t
 end
 
 module PendingContactImports : sig
   include Pool_common.Model.IntegerSig
+
+  val field : Pool_common.Message.Field.t
 end
 
 module LoginCount : sig
   include Pool_common.Model.IntegerSig
+
+  val field : Pool_common.Message.Field.t
 end
 
 module SignUpCount : sig
   include Pool_common.Model.IntegerSig
+
+  val field : Pool_common.Message.Field.t
 end
 
 module AssignmentsCreated : sig
   include Pool_common.Model.IntegerSig
+
+  val field : Pool_common.Message.Field.t
 end
 
 module InvitationsSent : sig
   include Pool_common.Model.IntegerSig
+
+  val field : Pool_common.Message.Field.t
 end
 
 module RemindersSent : sig
   include Pool_common.Model.IntegerSig
+
+  val field : Pool_common.Message.Field.t
 end
 
 type period =

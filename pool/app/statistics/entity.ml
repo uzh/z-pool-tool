@@ -1,66 +1,60 @@
 module Field = Pool_common.Message.Field
 
-module ActiveContacts = struct
+module KeyFigure = struct
   include Pool_common.Model.Integer
 
-  let field = Field.ActiveContactsCount
   let create = CCResult.return
-  let schema = schema field create
+  let schema field = schema field create
   let of_int = CCFun.id
+end
+
+module ActiveContacts = struct
+  include KeyFigure
+
+  let field = Field.ActiveContactsCount
+  let schema = schema field
 end
 
 module PendingContactImports = struct
-  include Pool_common.Model.Integer
+  include KeyFigure
 
   let field = Field.PendingContactImports
-  let create = CCResult.return
-  let schema = schema field create
-  let of_int = CCFun.id
+  let schema = schema field
 end
 
 module LoginCount = struct
-  include Pool_common.Model.Integer
+  include KeyFigure
 
   let field = Field.LoginCount
-  let create = CCResult.return
-  let schema = schema field create
-  let of_int = CCFun.id
+  let schema = schema field
 end
 
 module SignUpCount = struct
-  include Pool_common.Model.Integer
+  include KeyFigure
 
   let field = Field.SignUpCount
-  let create = CCResult.return
-  let schema = schema field create
-  let of_int = CCFun.id
+  let schema = schema field
 end
 
 module AssignmentsCreated = struct
-  include Pool_common.Model.Integer
+  include KeyFigure
 
   let field = Field.AssignmentsCreated
-  let create = CCResult.return
-  let schema = schema field create
-  let of_int = CCFun.id
+  let schema = schema field
 end
 
 module InvitationsSent = struct
-  include Pool_common.Model.Integer
+  include KeyFigure
 
   let field = Field.InvitationsSent
-  let create = CCResult.return
-  let schema = schema field create
-  let of_int = CCFun.id
+  let schema = schema field
 end
 
 module RemindersSent = struct
-  include Pool_common.Model.Integer
+  include KeyFigure
 
   let field = Field.RemindersSent
-  let create = CCResult.return
-  let schema = schema field create
-  let of_int = CCFun.id
+  let schema = schema field
 end
 
 type period =

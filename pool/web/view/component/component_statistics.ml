@@ -15,6 +15,7 @@ let create
     } )
   =
   let open Pool_common in
+  let open Statistics in
   let to_txt value = txt (CCInt.to_string value) in
   let period_select =
     let attributes =
@@ -45,21 +46,17 @@ let create
     ]
   in
   let user_figures =
-    Field.
-      [ ActiveContactsCount, to_txt (ActiveContacts.value active_contacts)
-      ; ( PendingContactImports
-        , to_txt (PendingContactImports.value pending_contact_imports) )
-      ; LoginCount, to_txt (LoginCount.value login_count)
-      ; SignUpCount, to_txt (SignUpCount.value sign_up_count)
-      ]
+    [ ActiveContacts.(field, to_txt (value active_contacts))
+    ; PendingContactImports.(field, to_txt (value pending_contact_imports))
+    ; LoginCount.(field, to_txt (value login_count))
+    ; SignUpCount.(field, to_txt (value sign_up_count))
+    ]
   in
   let experiment_figures =
-    Field.
-      [ ( AssignmentsCreated
-        , to_txt (AssignmentsCreated.value assignments_created) )
-      ; InvitationsSent, to_txt (InvitationsSent.value invitations_sent)
-      ; RemindersSent, to_txt (RemindersSent.value reminders_sent)
-      ]
+    [ AssignmentsCreated.(field, to_txt (value assignments_created))
+    ; InvitationsSent.(field, to_txt (value invitations_sent))
+    ; RemindersSent.(field, to_txt (value reminders_sent))
+    ]
   in
   div
     Pool_common.I18n.(
