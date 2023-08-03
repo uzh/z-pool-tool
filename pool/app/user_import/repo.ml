@@ -277,7 +277,8 @@ let find_contacts_to_notify pool limit =
     (Pool_database.Label.value pool)
     (find_contacts_request
        ~where:
-         {|pool_contacts.import_pending = 1
+         {| pool_contacts.import_pending = 1
+          AND pool_contacts.disabled = 0
           AND pool_user_imports.notification_sent_at IS NULL|}
        limit)
 ;;
@@ -288,7 +289,9 @@ let find_contacts_to_remind pool limit =
     (find_contacts_request
        ~where:
          (Format.asprintf
-            "pool_contacts.import_pending = 1 AND %s"
+            {sql| pool_contacts.import_pending = 1
+            AND pool_contacts.disabled = 0
+            AND %s |sql}
             reminder_where_clause)
        limit)
 ;;
