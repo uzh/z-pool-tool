@@ -14,6 +14,10 @@ module InvitationsSent : sig
   include Pool_common.Model.IntegerSig
 end
 
+module LoginCount : sig
+  include Pool_common.Model.IntegerSig
+end
+
 module SignUpCount : sig
   include Pool_common.Model.IntegerSig
 end
@@ -35,6 +39,7 @@ type t =
   ; pending_contact_imports : PendingContactImports.t
   ; assignments_created : AssignmentsCreated.t
   ; invitations_sent : InvitationsSent.t
+  ; login_count : LoginCount.t
   ; sign_up_count : SignUpCount.t
   }
 

@@ -125,7 +125,7 @@ let invitations_sent pool period =
     ()
 ;;
 
-let sign_up_count_request period =
+let login_count_request period =
   let open Caqti_request.Infix in
   Format.asprintf
     {sql|
@@ -135,6 +135,34 @@ let sign_up_count_request period =
         pool_contacts
       WHERE
         last_sign_in_at >= (NOW() - INTERVAL %s)
+    |sql}
+    (Entity.period_to_sql period)
+  |> Caqti_type.(unit ->! RepoEntity.SignUpCount.t)
+;;
+
+let login_count pool period =
+  Utils.Database.find
+    (Pool_database.Label.value pool)
+    (login_count_request period)
+    ()
+;;
+
+let sign_up_count_request period =
+  let open Caqti_request.Infix in
+  Format.asprintf
+    {sql|
+      SELECT
+        COUNT(*)
+      FROM
+        pool_contacts
+      INNER JOIN user_users
+        ON pool_contacts.user_uuid = user_users.uuid
+      WHERE
+        user_users.created_at >= (NOW() - INTERVAL %s)
+      AND
+        pool_contacts.email_verified IS NOT NULL
+      AND
+        pool_contacts.terms_accepted_at IS NOT NULL
     |sql}
     (Entity.period_to_sql period)
   |> Caqti_type.(unit ->! RepoEntity.SignUpCount.t)

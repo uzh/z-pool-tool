@@ -113,6 +113,7 @@ let rec field_to_string =
   | Limitations -> "Limitations"
   | Link -> "link"
   | Location -> "location"
+  | LoginCount -> "contact logins"
   | LogoType -> "logo type"
   | Mailing -> "mailing"
   | MainSession -> "main session"

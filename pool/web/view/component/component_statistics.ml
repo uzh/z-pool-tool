@@ -9,6 +9,7 @@ let create
     ; pending_contact_imports
     ; assignments_created
     ; invitations_sent
+    ; login_count
     ; sign_up_count
     } )
   =
@@ -36,6 +37,7 @@ let create
       , to_txt (PendingContactImports.value pending_contact_imports) )
     ; AssignmentsCreated, to_txt (AssignmentsCreated.value assignments_created)
     ; InvitationsSent, to_txt (InvitationsSent.value invitations_sent)
+    ; LoginCount, to_txt (LoginCount.value login_count)
     ; SignUpCount, to_txt (SignUpCount.value sign_up_count)
     ]
   |> Component_table.vertical_table `Striped language

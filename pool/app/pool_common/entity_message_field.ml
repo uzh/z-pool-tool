@@ -135,6 +135,7 @@ type t =
   | Limitations [@name "limitations"] [@printer go "limitations"]
   | Link [@name "link"] [@printer go "link"]
   | Location [@name "location"] [@printer go "location"]
+  | LoginCount [@name "login_count"] [@printer go "login_count"]
   | LogoType [@name "logo_type"] [@printer go "logo_type"]
   | Mailing [@name "mailing"] [@printer go "mailing"]
   | MainSession [@name "main_session"] [@printer go "main_session"]
