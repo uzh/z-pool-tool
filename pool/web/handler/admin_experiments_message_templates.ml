@@ -67,12 +67,9 @@ let form ?template_id label req =
   result |> HttpUtils.extract_happy_path ~src req
 ;;
 
-let new_invitation = form Message_template.Label.ExperimentInvitation
-
-let new_invitation_post req =
+let new_post label req =
   let open Admin_message_templates in
   let experiment_id = experiment_id req |> Experiment.Id.to_common in
-  let label = Message_template.Label.ExperimentInvitation in
   let redirect =
     form_redirects
       experiment_id
@@ -81,18 +78,17 @@ let new_invitation_post req =
   (write (Create (experiment_id, label, redirect))) req
 ;;
 
+let new_invitation = form Message_template.Label.ExperimentInvitation
+let new_invitation_post = new_post Message_template.Label.ExperimentInvitation
 let new_session_reminder = form Message_template.Label.SessionReminder
+let new_session_reminder_post = new_post Message_template.Label.SessionReminder
 
-let new_session_reminder_post req =
-  let open Admin_message_templates in
-  let experiment_id = experiment_id req |> Experiment.Id.to_common in
-  let label = Message_template.Label.SessionReminder in
-  let redirect =
-    form_redirects
-      experiment_id
-      (Message_template.Label.prefixed_human_url label)
-  in
-  (write (Create (experiment_id, label, redirect))) req
+let new_assignment_confirmation =
+  form Message_template.Label.AssignmentConfirmation
+;;
+
+let new_assignment_confirmation_post =
+  new_post Message_template.Label.AssignmentConfirmation
 ;;
 
 let update_template req =
@@ -131,6 +127,7 @@ module Access : sig
 
   val invitation : Rock.Middleware.t
   val session_reminder : Rock.Middleware.t
+  val assignment_confirmation : Rock.Middleware.t
 end = struct
   include Helpers.Access
   module Field = Pool_common.Message.Field
@@ -140,15 +137,13 @@ end = struct
     Guardian.id_effects Experiment.Id.of_string Field.Experiment
   ;;
 
-  let invitation =
+  let message_template =
     Experiment.Guard.Access.update
     |> experiment_effects
     |> Guardian.validate_generic
   ;;
 
-  let session_reminder =
-    Experiment.Guard.Access.update
-    |> experiment_effects
-    |> Guardian.validate_generic
-  ;;
+  let invitation = message_template
+  let session_reminder = message_template
+  let assignment_confirmation = message_template
 end

@@ -9,20 +9,12 @@ let build_experiment_path experiment =
   Format.asprintf "/admin/experiments/%s/%s" Experiment.(Id.value experiment.id)
 ;;
 
-let notifications
-  language
-  sys_languages
-  invitation_templates
-  session_reminder_templates
-  =
+let notifications language sys_languages message_templates =
   let open CCList in
   let open Pool_common in
   let open Message_template in
-  Label.
-    [ invitation_templates, ExperimentInvitation
-    ; session_reminder_templates, SessionReminder
-    ]
-  |> filter_map (fun (templates, label) ->
+  message_templates
+  |> filter_map (fun (label, templates) ->
     if is_empty templates
     then None
     else
@@ -49,41 +41,32 @@ let notifications
 ;;
 
 let message_templates_html
-  ?(title =
-    fun label ->
-      h2
-        ~a:[ a_class [ "heading-2" ] ]
-        [ txt (Message_template.Label.to_human label) ])
   language
   experiment_path
   sys_languages
-  label
-  list
+  message_templates
   =
   let open Message_template in
+  let buttons =
+    let build_button label =
+      experiment_path Label.(prefixed_human_url label)
+      |> Page_admin_message_template.build_add_button label
+    in
+    message_templates
+    |> CCList.filter_map (fun (label, templates) ->
+      if CCList.is_empty (filter_languages sys_languages templates)
+      then None
+      else label |> build_button |> CCOption.pure)
+    |> div ~a:[ a_class [ "flexrow"; "flex-gap"; "justify-end" ] ]
+  in
   let edit_path =
     CCFun.(prefixed_template_url ~append:"edit" %> experiment_path)
   in
-  let new_path =
-    if CCList.is_empty (filter_languages sys_languages list)
-    then None
-    else experiment_path Label.(prefixed_human_url label) |> CCOption.pure
-  in
-  div
-    [ title label
-    ; Page_admin_message_template.table language list new_path edit_path
-    ; p
-        ~a:[ a_class [ "gap-sm" ] ]
-        [ txt
-            (if CCList.is_empty list
-             then
-               Pool_common.(
-                 Utils.text_to_string
-                   language
-                   (I18n.NoEntries Field.MessageTemplates))
-             else "")
-        ]
-    ]
+  Page_admin_message_template.table
+    ~buttons
+    language
+    (CCList.flat_map (fun (_, templates) -> templates) message_templates)
+    edit_path
 ;;
 
 let index Pool_context.{ language; _ } experiment_list =
@@ -363,20 +346,12 @@ let edit
   contact_persons
   organisational_units
   smtp_auth_list
-  invitation_templates
-  session_reminder_templates
+  message_templates
   (available_tags, current_tags)
   (available_participation_tags, current_participation_tags)
   flash_fetcher
   =
-  let open Message_template in
-  let notifications =
-    notifications
-      language
-      sys_languages
-      invitation_templates
-      session_reminder_templates
-  in
+  let notifications = notifications language sys_languages message_templates in
   let form =
     experiment_form
       ~experiment
@@ -393,7 +368,19 @@ let edit
       Experiment.(Id.value experiment.id)
   in
   let message_templates =
-    message_templates_html language experiment_path sys_languages
+    div
+      [ h3
+          ~a:[ a_class [ "heading-3" ] ]
+          [ txt
+              Pool_common.(
+                Utils.nav_link_to_string language I18n.MessageTemplates)
+          ]
+      ; message_templates_html
+          language
+          experiment_path
+          sys_languages
+          message_templates
+      ]
   in
   let tags_html (available, current) field =
     if allowed_to_assign
@@ -445,12 +432,7 @@ let edit
   in
   [ div
       ~a:[ a_class [ "stack-lg" ] ]
-      [ notifications
-      ; form
-      ; tags
-      ; message_templates Label.ExperimentInvitation invitation_templates
-      ; message_templates Label.SessionReminder session_reminder_templates
-      ]
+      [ notifications; form; tags; message_templates ]
   ]
   |> Layout.Experiment.(
        create
@@ -462,8 +444,7 @@ let edit
 let detail
   experiment
   session_count
-  invitation_templates
-  session_reminder_templates
+  message_templates
   sys_languages
   contact_person
   smtp_account
@@ -472,13 +453,7 @@ let detail
   ({ Pool_context.language; csrf; _ } as context)
   =
   let experiment_path = build_experiment_path experiment in
-  let notifications =
-    notifications
-      language
-      sys_languages
-      invitation_templates
-      session_reminder_templates
-  in
+  let notifications = notifications language sys_languages message_templates in
   let delete_form =
     match session_count > 0 with
     | true ->
@@ -579,11 +554,6 @@ let detail
       |> vertical_table
     in
     let message_template =
-      let open Message_template in
-      let list =
-        let title label = h4 [ txt (Label.to_human label) ] in
-        message_templates_html ~title language experiment_path sys_languages
-      in
       div
         [ h3
             ~a:[ a_class [ "heading-3" ] ]
@@ -591,11 +561,11 @@ let detail
                 Pool_common.(
                   Utils.nav_link_to_string language I18n.MessageTemplates)
             ]
-        ; div
-            ~a:[ a_class [ "stack" ] ]
-            [ list Label.ExperimentInvitation invitation_templates
-            ; list Label.SessionReminder session_reminder_templates
-            ]
+        ; message_templates_html
+            language
+            experiment_path
+            sys_languages
+            message_templates
         ]
     in
     let tag_overview =

@@ -85,6 +85,20 @@ let smtp_auth_from_urlencoded urlencoded database_label =
   find_entity_in_urlencoded urlencoded Field.Smtp query
 ;;
 
+let experiment_message_templates database_label experiment_id =
+  let open Message_template in
+  let open Utils.Lwt_result.Infix in
+  let find_templates label =
+    find_all_of_entity_by_label
+      database_label
+      (experiment_id |> Experiment.Id.to_common)
+      label
+    ||> CCPair.make label
+  in
+  Label.[ ExperimentInvitation; SessionReminder; AssignmentConfirmation ]
+  |> Lwt_list.map_s find_templates
+;;
+
 let index req =
   let open Utils.Lwt_result.Infix in
   let error_path = "/admin/dashboard" in
@@ -189,104 +203,95 @@ let detail edit req =
   let open Utils.Lwt_result.Infix in
   let result ({ Pool_context.database_label; user; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, "/admin/experiments")
-    @@ let* actor = Pool_context.Utils.find_authorizable database_label user in
-       let id = experiment_id req in
-       let* experiment = Experiment.find database_label id in
-       let sys_languages = Pool_context.Tenant.get_tenant_languages_exn req in
-       let find_templates =
-         Message_template.find_all_of_entity_by_label
+    @@
+    let* actor = Pool_context.Utils.find_authorizable database_label user in
+    let id = experiment_id req in
+    let* experiment = Experiment.find database_label id in
+    let sys_languages = Pool_context.Tenant.get_tenant_languages_exn req in
+    let%lwt message_templates =
+      experiment_message_templates database_label id
+    in
+    let%lwt current_tags =
+      Tags.(find_all_of_entity database_label Model.Experiment)
+        (id |> Experiment.Id.to_common)
+    in
+    let%lwt current_participation_tags =
+      Tags.(
+        ParticipationTags.find_all
+          database_label
+          (ParticipationTags.Experiment (Experiment.Id.to_common id)))
+    in
+    (match edit with
+     | false ->
+       let%lwt session_count = Experiment.session_count database_label id in
+       let* contact_person =
+         experiment.Experiment.contact_person_id
+         |> CCOption.map_or ~default:(Lwt_result.return None) (fun id ->
+           Admin.find database_label id >|+ CCOption.return)
+       in
+       let* smtp_auth =
+         experiment.Experiment.smtp_auth_id
+         |> CCOption.map_or ~default:(Lwt_result.return None) (fun id ->
+           Email.SmtpAuth.find database_label id >|+ CCOption.return)
+       in
+       Page.Admin.Experiments.detail
+         experiment
+         session_count
+         message_templates
+         sys_languages
+         contact_person
+         smtp_auth
+         current_tags
+         current_participation_tags
+         context
+       |> Lwt_result.ok
+     | true ->
+       let flash_fetcher key = Sihl.Web.Flash.find key req in
+       let%lwt default_reminder_lead_time =
+         Settings.find_default_reminder_lead_time database_label
+       in
+       let%lwt organisational_units =
+         Organisational_unit.all database_label ()
+       in
+       let%lwt smtp_auth_list = Email.SmtpAuth.find_all database_label in
+       let%lwt contact_persons =
+         Some id
+         |> contact_person_roles
+         |> Admin.find_all_with_roles database_label
+       in
+       let%lwt allowed_to_assign =
+         Guard.Persistence.validate
            database_label
-           (id |> Experiment.Id.to_common)
+           (id
+            |> Experiment.Id.to_common
+            |> Cqrs_command.Tags_command.AssignTagToContact.effects)
+           actor
+         ||> CCResult.is_ok
        in
-       let%lwt invitation_templates =
-         find_templates Message_template.Label.ExperimentInvitation
+       let find_tags model =
+         let open Tags in
+         if allowed_to_assign
+         then find_all_validated_with_model database_label model actor
+         else Lwt.return []
        in
-       let%lwt session_reminder_templates =
-         find_templates Message_template.Label.SessionReminder
-       in
-       let%lwt current_tags =
-         Tags.(find_all_of_entity database_label Model.Experiment)
-           (id |> Experiment.Id.to_common)
-       in
-       let%lwt current_participation_tags =
-         Tags.(
-           ParticipationTags.find_all
-             database_label
-             (ParticipationTags.Experiment (Experiment.Id.to_common id)))
-       in
-       (match edit with
-        | false ->
-          let%lwt session_count = Experiment.session_count database_label id in
-          let* contact_person =
-            experiment.Experiment.contact_person_id
-            |> CCOption.map_or ~default:(Lwt_result.return None) (fun id ->
-              Admin.find database_label id >|+ CCOption.return)
-          in
-          let* smtp_auth =
-            experiment.Experiment.smtp_auth_id
-            |> CCOption.map_or ~default:(Lwt_result.return None) (fun id ->
-              Email.SmtpAuth.find database_label id >|+ CCOption.return)
-          in
-          Page.Admin.Experiments.detail
-            experiment
-            session_count
-            invitation_templates
-            session_reminder_templates
-            sys_languages
-            contact_person
-            smtp_auth
-            current_tags
-            current_participation_tags
-            context
-          |> Lwt_result.ok
-        | true ->
-          let flash_fetcher key = Sihl.Web.Flash.find key req in
-          let%lwt default_reminder_lead_time =
-            Settings.find_default_reminder_lead_time database_label
-          in
-          let%lwt organisational_units =
-            Organisational_unit.all database_label ()
-          in
-          let%lwt smtp_auth_list = Email.SmtpAuth.find_all database_label in
-          let%lwt contact_persons =
-            Some id
-            |> contact_person_roles
-            |> Admin.find_all_with_roles database_label
-          in
-          let%lwt allowed_to_assign =
-            Guard.Persistence.validate
-              database_label
-              (id
-               |> Experiment.Id.to_common
-               |> Cqrs_command.Tags_command.AssignTagToContact.effects)
-              actor
-            ||> CCResult.is_ok
-          in
-          let find_tags model =
-            let open Tags in
-            if allowed_to_assign
-            then find_all_validated_with_model database_label model actor
-            else Lwt.return []
-          in
-          let%lwt experiment_tags = find_tags Tags.Model.Experiment in
-          let%lwt participation_tags = find_tags Tags.Model.Contact in
-          Page.Admin.Experiments.edit
-            ~allowed_to_assign
-            experiment
-            context
-            sys_languages
-            default_reminder_lead_time
-            contact_persons
-            organisational_units
-            smtp_auth_list
-            invitation_templates
-            session_reminder_templates
-            (experiment_tags, current_tags)
-            (participation_tags, current_participation_tags)
-            flash_fetcher
-          |> Lwt_result.ok)
-       >>= create_layout req context
-       >|+ Sihl.Web.Response.of_html
+       let%lwt experiment_tags = find_tags Tags.Model.Experiment in
+       let%lwt participation_tags = find_tags Tags.Model.Contact in
+       Page.Admin.Experiments.edit
+         ~allowed_to_assign
+         experiment
+         context
+         sys_languages
+         default_reminder_lead_time
+         contact_persons
+         organisational_units
+         smtp_auth_list
+         message_templates
+         (experiment_tags, current_tags)
+         (participation_tags, current_participation_tags)
+         flash_fetcher
+       |> Lwt_result.ok)
+    >>= create_layout req context
+    >|+ Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path ~src req
 ;;
@@ -375,7 +380,7 @@ let delete req =
     in
     let%lwt templates =
       let open Message_template in
-      Label.[ ExperimentInvitation; SessionReminder ]
+      Label.[ ExperimentInvitation; SessionReminder; AssignmentConfirmation ]
       |> Lwt_list.map_s
            (find_all_of_entity_by_label
               database_label

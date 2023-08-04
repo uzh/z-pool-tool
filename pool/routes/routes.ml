@@ -469,6 +469,12 @@ module Admin = struct
             ~scope:(add_template_label SessionReminder)
             ~middlewares:[ Access.session_reminder ]
             (label_specific new_session_reminder new_session_reminder_post)
+        ; choose
+            ~scope:(add_template_label AssignmentConfirmation)
+            ~middlewares:[ Access.session_reminder ]
+            (label_specific
+               new_assignment_confirmation
+               new_assignment_confirmation_post)
         ]
       in
       let tags =

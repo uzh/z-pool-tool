@@ -2,22 +2,30 @@ open Tyxml.Html
 open Component.Input
 module Field = Pool_common.Message.Field
 
-let table language templates create_path to_edit_path =
+let build_add_button label path =
   let open Message_template in
-  let create_button =
-    match create_path with
-    | None -> txt ""
-    | Some path ->
-      link_as_button
-        ~style:`Success
-        ~icon:Component.Icon.Add
-        ~control:
-          (language, Pool_common.Message.(Add (Some Field.MessageTemplate)))
-        path
+  a
+    ~a:[ a_class [ "btn"; "primary" ]; a_href (Sihl.Web.externalize_path path) ]
+    [ txt (Format.asprintf "Add %s" (Label.to_human label)) ]
+;;
+
+let table ?(buttons = txt "") language templates to_edit_path =
+  let open Message_template in
+  let empty_hint =
+    match templates with
+    | [] ->
+      p
+        [ txt
+            Pool_common.(
+              Utils.text_to_string
+                language
+                (I18n.NoEntries Field.MessageTemplates))
+        ]
+    | _ -> txt ""
   in
   let thead =
     ([ Field.Label; Field.Language ] |> Component.Table.fields_to_txt language)
-    @ [ create_button ]
+    @ [ buttons ]
   in
   CCList.map
     (fun template ->
@@ -27,6 +35,7 @@ let table language templates create_path to_edit_path =
       ])
     templates
   |> Component.Table.horizontal_table `Striped ~align_last_end:true ~thead
+  |> fun table -> div ~a:[ a_class [ "stack" ] ] [ table; empty_hint ]
 ;;
 
 let index { Pool_context.language; _ } templates =
@@ -42,7 +51,7 @@ let index { Pool_context.language; _ } templates =
             (Pool_common.(Utils.field_to_string language Field.MessageTemplate)
              |> CCString.capitalize_ascii)
         ]
-    ; table language templates None edit_path
+    ; table language templates edit_path
     ]
 ;;
 
