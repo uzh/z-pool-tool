@@ -387,6 +387,18 @@ let session_list
           let cells =
             match layout with
             | `SessionOverview ->
+              let close_btn =
+                if Session.is_closable session |> CCResult.is_ok
+                then
+                  [ Format.asprintf
+                      "/admin/experiments/%s/sessions/%s/close"
+                      (Experiment.Id.value experiment_id)
+                      (Id.value session.id)
+                    |> link_as_button
+                         ~control:(language, Pool_common.Message.Close None)
+                  ]
+                else []
+              in
               let cells =
                 Session.
                   [ txt
@@ -409,13 +421,14 @@ let session_list
                   ; txt key_figures
                   ; div
                       ~a:[ a_class [ "flexrow"; "flex-gap"; "justify-end" ] ]
-                      [ Format.asprintf
-                          "/admin/experiments/%s/sessions/%s"
-                          (Experiment.Id.value experiment_id)
-                          (Id.value session.id)
-                        |> link_as_button ~icon:Icon.Eye
-                      ; delete_form ()
-                      ]
+                      (close_btn
+                       @ [ Format.asprintf
+                             "/admin/experiments/%s/sessions/%s"
+                             (Experiment.Id.value experiment_id)
+                             (Id.value session.id)
+                           |> link_as_button ~icon:Icon.Eye
+                         ; delete_form ()
+                         ])
                   ]
               in
               base @ cells
@@ -978,11 +991,36 @@ let close
       in
       let thead =
         txt ""
+        :: (Utils.field_to_string_capitalized
+              language
+              Message.Field.ExternalDataId
+            |> txt)
         :: ([ "all-no-show", "NS"; "all-participated", "P" ] |> CCList.map link)
       in
       CCList.map
-        (fun ({ Assignment.id; contact; _ } : Assignment.t) ->
+        (fun ({ Assignment.id; contact; external_data_id; _ } : Assignment.t) ->
+          let external_data_id_label =
+            Format.asprintf
+              "%s-%s"
+              Message.Field.(ExternalDataId |> show)
+              (Assignment.Id.value id)
+          in
           [ div [ strong [ txt (Contact.fullname contact) ] ]
+          ; div
+              ~a:[ a_class [ "form-group" ] ]
+              [ input
+                  ~a:
+                    [ a_id external_data_id_label
+                    ; a_name external_data_id_label
+                    ; a_input_type `Text
+                    ; a_value
+                        (CCOption.map_or
+                           ~default:""
+                           Assignment.ExternalDataId.value
+                           external_data_id)
+                    ]
+                  ()
+              ]
           ; checkbox_element id Message.Field.NoShow
           ; checkbox_element id Message.Field.Participated
           ])
