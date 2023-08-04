@@ -40,6 +40,13 @@ module MarkedAsDeleted = struct
   let schema = schema Pool_common.Message.Field.MarkedAsDeleted
 end
 
+module ExternalDataId = struct
+  include Pool_common.Model.String
+
+  let field = Pool_common.Message.Field.ExternalDataId
+  let schema () = schema field ()
+end
+
 type t =
   { id : Id.t
   ; contact : Contact.t
@@ -48,6 +55,7 @@ type t =
   ; matches_filter : MatchesFilter.t
   ; canceled_at : CanceledAt.t option
   ; marked_as_deleted : MarkedAsDeleted.t
+  ; external_data_id : ExternalDataId.t option
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
   }
@@ -60,6 +68,7 @@ let create
   ?(matches_filter = MatchesFilter.create true)
   ?canceled_at
   ?(marked_as_deleted = MarkedAsDeleted.init)
+  ?external_data_id
   contact
   =
   { id
@@ -69,6 +78,7 @@ let create
   ; matches_filter
   ; canceled_at
   ; marked_as_deleted
+  ; external_data_id
   ; created_at = Pool_common.CreatedAt.create ()
   ; updated_at = Pool_common.UpdatedAt.create ()
   }

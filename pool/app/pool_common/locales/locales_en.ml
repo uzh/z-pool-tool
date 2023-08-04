@@ -71,6 +71,8 @@ let rec field_to_string =
     Format.asprintf "experiment specific %s" (field_to_string LeadTime)
   | ExperimentType -> "experiment type"
   | Experimenter -> "experimenter"
+  | ExternalDataId -> "external data identifier"
+  | ExternalDataRequired -> "external data is required"
   | Failed -> "failed"
   | FieldType -> "field type"
   | File -> "file"

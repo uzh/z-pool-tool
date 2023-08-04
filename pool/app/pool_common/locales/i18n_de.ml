@@ -269,6 +269,9 @@ Wird nach diesem Feld gefiltert, wird der überschreibende Wert bevorzugt.
      Experimente nicht mehr angezeigt, obwohl im E-Mail aufgeführt. Sobald \
      alle verfügbaren Plätze einer Session belegt sind wird es nichtmehr \
      angezeigt."
+  | ExternalDataRequired ->
+    "Pro Anmeldung ist ein Identifikator für externe Daten obligatorisch \
+     (spätestens wenn eine Session abgeschlossen wird)."
   | FilterContacts ->
     "Definieren Sie die Kriterien, anhand welchen Kontakte an dieses \
      Experiment eingeladen werden."

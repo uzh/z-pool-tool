@@ -154,6 +154,7 @@ type hint =
   | ExperimentSessions
   | ExperimentSessionsPublic
   | ExperimentWaitingList
+  | ExternalDataRequired
   | FilterContacts
   | TestPhoneNumber
   | I18nText of string

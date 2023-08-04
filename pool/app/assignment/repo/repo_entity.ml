@@ -28,6 +28,12 @@ module MarkedAsDeleted = struct
   let t = Caqti_type.bool
 end
 
+module ExternalDataId = struct
+  include Entity.ExternalDataId
+
+  let t = Pool_common.Repo.make_caqti_type Caqti_type.string create value
+end
+
 type t =
   { id : Pool_common.Id.t
   ; session_id : Session.Id.t
@@ -37,6 +43,7 @@ type t =
   ; matches_filter : MatchesFilter.t
   ; canceled_at : CanceledAt.t option
   ; marked_as_deleted : MarkedAsDeleted.t
+  ; external_data_id : ExternalDataId.t option
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
   }
@@ -50,6 +57,7 @@ let to_entity (m : t) (contact : Contact.t) : Entity.t =
     ; matches_filter = m.matches_filter
     ; canceled_at = m.canceled_at
     ; marked_as_deleted = m.marked_as_deleted
+    ; external_data_id = m.external_data_id
     ; created_at = m.created_at
     ; updated_at = m.updated_at
     }
@@ -64,6 +72,7 @@ let of_entity (session_id : Session.Id.t) (m : Entity.t) : t =
   ; matches_filter = m.Entity.matches_filter
   ; canceled_at = m.Entity.canceled_at
   ; marked_as_deleted = m.Entity.marked_as_deleted
+  ; external_data_id = m.Entity.external_data_id
   ; created_at = m.Entity.created_at
   ; updated_at = m.Entity.updated_at
   }
@@ -79,8 +88,9 @@ let t =
             , ( m.participated
               , ( m.matches_filter
                 , ( m.canceled_at
-                  , (m.marked_as_deleted, (m.created_at, m.updated_at)) ) ) ) )
-          ) ) )
+                  , ( m.marked_as_deleted
+                    , (m.external_data_id, (m.created_at, m.updated_at)) ) ) )
+              ) ) ) ) )
   in
   let decode
     ( id
@@ -89,8 +99,10 @@ let t =
         , ( no_show
           , ( participated
             , ( matches_filter
-              , (canceled_at, (marked_as_deleted, (created_at, updated_at))) )
-            ) ) ) ) )
+              , ( canceled_at
+                , ( marked_as_deleted
+                  , (external_data_id, (created_at, updated_at)) ) ) ) ) ) ) )
+    )
     =
     let open CCResult in
     Ok
@@ -102,6 +114,7 @@ let t =
       ; matches_filter = MatchesFilter.create matches_filter
       ; canceled_at = CCOption.map CanceledAt.value canceled_at
       ; marked_as_deleted
+      ; external_data_id
       ; created_at
       ; updated_at
       }
@@ -127,8 +140,10 @@ let t =
                            (tup2
                               MarkedAsDeleted.t
                               (tup2
-                                 Pool_common.Repo.CreatedAt.t
-                                 Pool_common.Repo.UpdatedAt.t))))))))))
+                                 (option ExternalDataId.t)
+                                 (tup2
+                                    Pool_common.Repo.CreatedAt.t
+                                    Pool_common.Repo.UpdatedAt.t)))))))))))
 ;;
 
 module Public = struct

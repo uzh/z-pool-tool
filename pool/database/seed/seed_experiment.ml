@@ -58,6 +58,7 @@ let experiments pool =
             DirectRegistrationDisabled.create direct_registration_disabled
           in
           let allow_uninvited_signup = AllowUninvitedSignup.create false in
+          let external_data_required = ExternalDataRequired.create false in
           let registration_disabled = RegistrationDisabled.create false in
           let contact_person_id = None in
           let organisational_unit = None in
@@ -73,6 +74,7 @@ let experiments pool =
             direct_registration_disabled
             registration_disabled
             allow_uninvited_signup
+            external_data_required
             (Some Pool_common.ExperimentType.Lab)
             session_reminder_lead_time
           |> get_or_failwith

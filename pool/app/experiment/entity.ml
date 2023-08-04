@@ -52,6 +52,12 @@ module AllowUninvitedSignup = struct
   let schema = schema Common.Message.Field.AllowUninvitedSignup
 end
 
+module ExternalDataRequired = struct
+  include Pool_common.Model.Boolean
+
+  let schema = schema Common.Message.Field.ExternalDataRequired
+end
+
 type t =
   { id : Id.t
   ; title : Title.t
@@ -65,6 +71,7 @@ type t =
   ; direct_registration_disabled : DirectRegistrationDisabled.t
   ; registration_disabled : RegistrationDisabled.t
   ; allow_uninvited_signup : AllowUninvitedSignup.t
+  ; external_data_required : ExternalDataRequired.t
   ; experiment_type : Pool_common.ExperimentType.t option
   ; session_reminder_lead_time : Pool_common.Reminder.LeadTime.t option
   ; created_at : Ptime.t
@@ -84,6 +91,7 @@ let create
   direct_registration_disabled
   registration_disabled
   allow_uninvited_signup
+  external_data_required
   experiment_type
   session_reminder_lead_time
   =
@@ -101,6 +109,7 @@ let create
     ; direct_registration_disabled
     ; registration_disabled
     ; allow_uninvited_signup
+    ; external_data_required
     ; experiment_type
     ; session_reminder_lead_time
     ; created_at = Ptime_clock.now ()
@@ -157,9 +166,17 @@ let allow_uninvited_signup_value (m : t) =
   AllowUninvitedSignup.value m.allow_uninvited_signup
 ;;
 
+let external_data_required_value (m : t) =
+  ExternalDataRequired.value m.external_data_required
+;;
+
 let boolean_fields =
   Pool_common.Message.Field.
-    [ DirectRegistrationDisabled; RegistrationDisabled; AllowUninvitedSignup ]
+    [ DirectRegistrationDisabled
+    ; RegistrationDisabled
+    ; AllowUninvitedSignup
+    ; ExternalDataRequired
+    ]
 ;;
 
 let searchable_by =

@@ -261,6 +261,9 @@ Make sure to show links and URLs as plain text.
     "Please note: Maybe sessions or complete experiments are no longer \
      displayed, although listed in the email. Once all the available seats are \
      assigned a session, it is no longer displayed."
+  | ExternalDataRequired ->
+    "An external data identifier is required for every assignement (latest \
+     when a session is closed)."
   | FilterContacts ->
     "Define the criteria by which contacts will be invited to this experiment."
   | TestPhoneNumber ->

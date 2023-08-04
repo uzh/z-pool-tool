@@ -8,6 +8,7 @@ type create =
   ; direct_registration_disabled : DirectRegistrationDisabled.t
   ; registration_disabled : RegistrationDisabled.t
   ; allow_uninvited_signup : AllowUninvitedSignup.t
+  ; external_data_required : ExternalDataRequired.t
   ; experiment_type : Pool_common.ExperimentType.t option
   ; session_reminder_lead_time : Pool_common.Reminder.LeadTime.t option
   }

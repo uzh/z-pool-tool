@@ -1,3 +1,4 @@
+open CCFun.Infix
 open Tyxml.Html
 open Component.Input
 
@@ -41,28 +42,65 @@ module Partials = struct
     |> txt
   ;;
 
-  let contact_fullname (a : Assignment.t) = a.contact |> Contact.fullname |> txt
-
-  let contact_email (a : Assignment.t) =
-    a.contact |> Contact.email_address |> Pool_user.EmailAddress.value |> txt
+  (* TODO[timhub]: replace with icon when it is added to framework *)
+  let boolean_value = function
+    | false -> "x" |> txt
+    | true -> "✓" |> txt
   ;;
 
-  let canceled_at (a : Assignment.t) =
-    a.canceled_at
-    |> CCOption.map_or ~default:"" (fun c ->
-      c
-      |> Assignment.CanceledAt.value
-      |> Pool_common.Utils.Time.formatted_date_time)
+  let assignment_id { Assignment.id; _ } = id |> Assignment.Id.value |> txt
+
+  let assignment_participated { Assignment.participated; _ } =
+    participated
+    |> CCOption.map_or ~default:(txt "") (Participated.value %> boolean_value)
+  ;;
+
+  let assignment_no_show { Assignment.no_show; _ } =
+    no_show |> CCOption.map_or ~default:(txt "") (NoShow.value %> boolean_value)
+  ;;
+
+  let assignment_external_data_id { Assignment.external_data_id; _ } =
+    external_data_id |> CCOption.map_or ~default:"" ExternalDataId.value |> txt
+  ;;
+
+  let contact_firstname ({ Assignment.contact; _ } : Assignment.t) =
+    contact |> Contact.firstname |> Pool_user.Firstname.value |> txt
+  ;;
+
+  let contact_lastname ({ Assignment.contact; _ } : Assignment.t) =
+    contact |> Contact.lastname |> Pool_user.Lastname.value |> txt
+  ;;
+
+  let contact_email ({ Assignment.contact; _ } : Assignment.t) =
+    contact |> Contact.email_address |> Pool_user.EmailAddress.value |> txt
+  ;;
+
+  let contact_cellphone ({ Assignment.contact; _ } : Assignment.t) =
+    contact
+    |> fun { Contact.cell_phone; _ } ->
+    CCOption.map_or ~default:"" Pool_user.CellPhone.value cell_phone |> txt
+  ;;
+
+  let canceled_at ({ Assignment.canceled_at; _ } : Assignment.t) =
+    canceled_at
+    |> CCOption.map_or
+         ~default:""
+         (Assignment.CanceledAt.value
+          %> Pool_common.Utils.Time.formatted_date_time)
     |> txt
   ;;
 
   let overview_list
+    ?(view_contact_name = false)
+    ?(view_contact_email = false)
+    ?(view_contact_cellphone = false)
     redirect
     Pool_context.{ language; csrf; _ }
     experiment_id
     session
     assignments
     =
+    let default = txt "" in
     let deletable = CCFun.(Assignment.is_deletable %> CCResult.is_ok) in
     let cancelable m =
       Session.assignments_cancelable session |> CCResult.is_ok
@@ -116,37 +154,44 @@ module Partials = struct
         Message.MarkAsDeleted
         Component.Icon.Trash
     in
-    (* TODO[timhub]: replace with icon when it is added to framework *)
-    let boolean_value = function
-      | false -> "x" |> txt
-      | true -> "✓" |> txt
-    in
     match CCList.is_empty assignments with
     | true -> p [ language |> empty ]
     | false ->
+      let add_field_if check values = if check then values else [] in
+      let contact_information =
+        let open Pool_common.Message in
+        add_field_if
+          view_contact_name
+          [ Field.Lastname, contact_lastname
+          ; Field.Firstname, contact_firstname
+          ]
+        @ add_field_if view_contact_email [ Field.Email, contact_email ]
+        @ add_field_if
+            view_contact_cellphone
+            [ Field.CellPhone, contact_cellphone ]
+        |> function
+        | [] -> [ Field.Id, assignment_id ]
+        | fields -> fields
+      in
       let thead =
-        (Pool_common.Message.Field.
-           [ Name; Email; Participated; NoShow; CanceledAt ]
+        ((CCList.map fst contact_information
+          @ Pool_common.Message.Field.
+              [ Participated; NoShow; ExternalDataId; CanceledAt ])
          |> Component.Table.fields_to_txt language)
-        @ [ txt "" ]
+        @ [ default ]
       in
       let rows =
         let open CCFun in
         CCList.map
           (fun (assignment : Assignment.t) ->
             let base =
-              [ assignment |> contact_fullname
-              ; assignment |> contact_email
-              ; assignment.participated
-                |> CCOption.map_or
-                     ~default:(txt "")
-                     (Participated.value %> boolean_value)
-              ; assignment.no_show
-                |> CCOption.map_or
-                     ~default:(txt "")
-                     (NoShow.value %> boolean_value)
-              ; assignment |> canceled_at
-              ]
+              CCList.map snd contact_information
+              @ [ assignment_participated
+                ; assignment_no_show
+                ; assignment_external_data_id
+                ; canceled_at
+                ]
+              |> CCList.map (fun fcn -> fcn assignment)
             in
             let buttons =
               [ cancelable assignment, cancel
