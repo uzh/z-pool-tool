@@ -38,6 +38,39 @@ let personal_detail ?(admin_comment = None) language contact =
     ]
 ;;
 
+let status_icons { Contact.paused; import_pending; _ } =
+  let open Pool_user in
+  let open Icon in
+  let success = to_html ~classnames:[ "color-green" ] in
+  let error = to_html ~classnames:[ "color-red" ] in
+  let paused =
+    match paused |> Paused.value with
+    | true -> error NotificationsOff
+    | false -> success Notifications
+  in
+  [ import_pending |> ImportPending.value, ChevronForwardCircle ]
+  |> CCList.map (fun (status, icon) ->
+    if status then success icon else error icon)
+  |> CCList.cons paused
+  |> div ~a:[ a_class [ "flexrow"; "flex-gap-sm" ] ]
+;;
+
+let table_legend language =
+  let open Pool_common in
+  let open Component.Table in
+  let open Icon in
+  let field_to_string m =
+    m |> Utils.field_to_string language |> CCString.capitalize_ascii
+  in
+  let text_to_string m = m |> Utils.text_to_string language in
+  table_legend
+    [ text_to_string I18n.Disabled, legend_color_item "bg-red-lighter"
+    ; field_to_string Message.Field.Paused, legend_icon_item Notifications
+    ; ( field_to_string Message.Field.ImportPending
+      , legend_icon_item ChevronForwardCircle )
+    ]
+;;
+
 let contact_overview language contacts =
   let open Contact in
   let open Pool_user in
@@ -45,23 +78,6 @@ let contact_overview language contacts =
     (Pool_common.Message.Field.[ Email; Name; Status ]
      |> Table.fields_to_txt language)
     @ [ txt "" ]
-  in
-  let status_icons { paused; terms_accepted_at; import_pending; _ } =
-    let open Icon in
-    let success = to_html ~classnames:[ "color-green" ] in
-    let error = to_html ~classnames:[ "color-red" ] in
-    let paused =
-      match paused |> Paused.value with
-      | true -> error NotificationsOff
-      | false -> success Notifications
-    in
-    [ terms_accepted_at |> CCOption.is_some, Checkmark
-    ; import_pending |> ImportPending.value, ChevronForwardCircle
-    ]
-    |> CCList.map (fun (status, icon) ->
-      if status then success icon else error icon)
-    |> CCList.cons paused
-    |> div ~a:[ a_class [ "flexrow"; "flex-gap-sm" ] ]
   in
   let user_table contacts =
     let rows =
@@ -87,24 +103,8 @@ let contact_overview language contacts =
       ~a:[ a_class (Table.table_classes `Striped ~align_last_end:true ()) ]
       rows
   in
-  let table_legend =
-    let open Pool_common in
-    let open Component.Table in
-    let open Icon in
-    let field_to_string m =
-      m |> Utils.field_to_string language |> CCString.capitalize_ascii
-    in
-    let text_to_string m = m |> Utils.text_to_string language in
-    table_legend
-      [ text_to_string I18n.Disabled, legend_color_item "bg-red-lighter"
-      ; field_to_string Message.Field.Paused, legend_icon_item Notifications
-      ; field_to_string Message.Field.TermsAccepted, legend_icon_item Checkmark
-      ; ( field_to_string Message.Field.ImportPending
-        , legend_icon_item ChevronForwardCircle )
-      ]
-  in
   List.create
-    ~legend:table_legend
+    ~legend:(table_legend language)
     language
     user_table
     Contact.sortable_by
