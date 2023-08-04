@@ -211,6 +211,7 @@ type confirmable =
   | DeleteExperimentFilter
   | DeleteFile
   | DeleteMailing
+  | DeleteMessageTemplate
   | DeleteSession
   | MarkAssignmentAsDeleted
   | MarkAssignmentWithFollowUpsAsDeleted

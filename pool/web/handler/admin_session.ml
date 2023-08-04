@@ -14,6 +14,13 @@ let template_id =
     Pool_common.Message.Field.MessageTemplate
 ;;
 
+let session_path experiment_id session_id =
+  Format.asprintf
+    "/admin/experiments/%s/sessions/%s"
+    (experiment_id |> Experiment.Id.value)
+    (session_id |> Session.Id.value)
+;;
+
 let location urlencoded database_label =
   let open Utils.Lwt_result.Infix in
   let open Pool_common.Message in
@@ -270,12 +277,7 @@ let close req = detail req `Close
 let update_handler action req =
   let experiment_id = experiment_id req in
   let session_id = session_id req in
-  let path =
-    Format.asprintf
-      "/admin/experiments/%s/sessions/%s"
-      (Experiment.Id.value experiment_id)
-      (Session.Id.value session_id)
-  in
+  let path = session_path experiment_id session_id in
   let error_path, success_msg =
     let open Pool_common.Message in
     match action with
@@ -362,12 +364,7 @@ let cancel req =
   let open Utils.Lwt_result.Infix in
   let experiment_id = experiment_id req in
   let session_id = session_id req in
-  let success_path =
-    Format.asprintf
-      "/admin/experiments/%s/sessions/%s"
-      (Experiment.Id.value experiment_id)
-      (Session.Id.value session_id)
-  in
+  let success_path = session_path experiment_id session_id in
   let error_path = CCFormat.asprintf "%s/cancel" success_path in
   let%lwt urlencoded =
     Sihl.Web.Request.to_urlencoded req
@@ -495,12 +492,7 @@ let delete req =
 let create_follow_up req =
   let experiment_id = experiment_id req in
   let session_id = session_id req in
-  let path =
-    Format.asprintf
-      "/admin/experiments/%s/sessions/%s"
-      (Experiment.Id.value experiment_id)
-      (Session.Id.value session_id)
-  in
+  let path = session_path experiment_id session_id in
   let result { Pool_context.database_label; _ } =
     let open Utils.Lwt_result.Infix in
     let%lwt urlencoded =
@@ -536,12 +528,7 @@ let create_follow_up req =
 let close_post req =
   let experiment_id = experiment_id req in
   let session_id = session_id req in
-  let path =
-    Format.asprintf
-      "/admin/experiments/%s/sessions/%s"
-      (Experiment.Id.value experiment_id)
-      (Session.Id.value session_id)
-  in
+  let path = session_path experiment_id session_id in
   let result { Pool_context.database_label; _ } =
     let open Utils.Lwt_result.Infix in
     Lwt_result.map_error (fun err -> err, Format.asprintf "%s/close" path)
@@ -735,6 +722,17 @@ let update_template req =
     HttpUtils.redirect_to_with_actions
       (session_path "edit")
       [ HttpUtils.Message.set ~error:[ err ] ]
+;;
+
+let delete_message_template req =
+  let result { Pool_context.database_label; _ } =
+    let experiment_id = experiment_id req in
+    let session_id = session_id req in
+    let template_id = template_id req in
+    let redirect = session_path experiment_id session_id in
+    Helpers.MessageTemplates.delete database_label template_id redirect
+  in
+  result |> HttpUtils.extract_happy_path ~src req
 ;;
 
 module Api = struct

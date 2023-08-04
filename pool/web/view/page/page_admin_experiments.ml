@@ -42,6 +42,7 @@ let notifications language sys_languages message_templates =
 
 let message_templates_html
   language
+  csrf
   experiment_path
   sys_languages
   message_templates
@@ -59,11 +60,14 @@ let message_templates_html
       else label |> build_button |> CCOption.pure)
     |> div ~a:[ a_class [ "flexrow"; "flex-gap"; "justify-end" ] ]
   in
-  let edit_path =
-    CCFun.(prefixed_template_url ~append:"edit" %> experiment_path)
+  let build_path append =
+    CCFun.(prefixed_template_url ~append %> experiment_path)
   in
+  let edit_path = build_path "edit" in
+  let delete_path = build_path "delete", csrf in
   Page_admin_message_template.table
     ~buttons
+    ~delete_path
     language
     (CCList.flat_map (fun (_, templates) -> templates) message_templates)
     edit_path
@@ -377,6 +381,7 @@ let edit
           ]
       ; message_templates_html
           language
+          csrf
           experiment_path
           sys_languages
           message_templates
@@ -563,6 +568,7 @@ let detail
             ]
         ; message_templates_html
             language
+            csrf
             experiment_path
             sys_languages
             message_templates

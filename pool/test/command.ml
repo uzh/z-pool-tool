@@ -433,6 +433,14 @@ let () =
             "create message template with invalid language"
             `Quick
             Message_template_test.create_with_unavailable_language
+        ; test_case
+            "delete  with entity uuid"
+            `Quick
+            Message_template_test.delete_valid
+        ; test_case
+            "delete without entity uuid"
+            `Quick
+            Message_template_test.delete_without_entity
         ] )
     ; ( "organisational unit"
       , [ test_case

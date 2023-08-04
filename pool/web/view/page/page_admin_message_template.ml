@@ -9,7 +9,7 @@ let build_add_button label path =
     [ txt (Format.asprintf "Add %s" (Label.to_human label)) ]
 ;;
 
-let table ?(buttons = txt "") language templates to_edit_path =
+let table ?(buttons = txt "") ?delete_path language templates to_edit_path =
   let open Message_template in
   let empty_hint =
     match templates with
@@ -29,9 +29,40 @@ let table ?(buttons = txt "") language templates to_edit_path =
   in
   CCList.map
     (fun template ->
+      let buttons = edit_link (template |> to_edit_path) in
+      let buttons =
+        match delete_path with
+        | None -> buttons
+        | Some (delete_path, csrf) ->
+          let delete =
+            let action = delete_path template in
+            form
+              ~a:
+                [ a_method `Post
+                ; a_action action
+                ; a_user_data
+                    "confirmable"
+                    Pool_common.(
+                      Utils.confirmable_to_string
+                        language
+                        I18n.DeleteMessageTemplate)
+                ]
+              [ csrf_element csrf ()
+              ; submit_element
+                  ~has_icon:Icon.TrashOutline
+                  ~submit_type:`Error
+                  language
+                  Pool_common.Message.(Delete None)
+                  ()
+              ]
+          in
+          div
+            ~a:[ a_class [ "flexrow"; "flex-gap"; "justify-end" ] ]
+            [ buttons; delete ]
+      in
       [ txt (to_human_label template)
       ; txt (template.language |> Pool_common.Language.show)
-      ; edit_link (template |> to_edit_path)
+      ; buttons
       ])
     templates
   |> Component.Table.horizontal_table `Striped ~align_last_end:true ~thead

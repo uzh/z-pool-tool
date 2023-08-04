@@ -403,8 +403,9 @@ let confirmable_to_string confirmable =
    | DeleteEmailSuffix -> "email suffix", "delete", None
    | DeleteExperiment -> "experiment", "delete", None
    | DeleteExperimentFilter -> "filter", "delete", None
-   | DeleteFile -> "the file", "delete", None
+   | DeleteFile -> " file", "delete", None
    | DeleteMailing -> "mailing", "delete", None
+   | DeleteMessageTemplate -> "message template", "delete", None
    | DeleteSession -> "session", "delete", None
    | PublisCustomField ->
      ( "field an all associated options"

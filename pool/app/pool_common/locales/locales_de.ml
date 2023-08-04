@@ -347,6 +347,8 @@ let rec error_to_string = function
       (CCString.concat ", " names)
   | Authorization message ->
     field_message "Autorisierung nicht möglich: " message ""
+  | CannotBeDeleted field ->
+    Format.asprintf "%s kann nicht gelöscht werden." (field_to_string field)
   | Conformist errs ->
     CCList.map
       (fun (field, err) ->

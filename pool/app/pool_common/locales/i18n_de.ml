@@ -422,6 +422,7 @@ let confirmable_to_string confirmable =
    | DeleteExperimentFilter -> "den Filter", "löschen", None
    | DeleteFile -> "die Datei", "löschen", None
    | DeleteMailing -> "den Versand", "löschen", None
+   | DeleteMessageTemplate -> "das Nachrichtentemplate", "löschen", None
    | DeleteSession -> "die Session", "löschen", None
    | MarkAssignmentAsDeleted -> "die Anmeldung", "als gelöscht markieren", None
    | MarkAssignmentWithFollowUpsAsDeleted ->
