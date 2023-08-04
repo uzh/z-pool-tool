@@ -254,6 +254,8 @@ type t =
       [@printer go "tenant_maintenance_flag"]
   | TenantPool [@name "tenant_pool"] [@printer go "tenant_pool"]
   | TermsAccepted [@name "terms_accepted"] [@printer go "terms_accepted"]
+  | TermsAcceptedCount [@name "terms_accepted_count"]
+      [@printer go "terms_accepted_count"]
   | TermsAndConditions [@name "terms_and_conditions"]
       [@printer go "terms_and_conditions"]
   | TestPhoneNumber [@name "test_phone_number"]
@@ -278,10 +280,7 @@ type t =
   | Zip [@name "zip"] [@printer go "zip"]
 [@@deriving eq, show { with_path = false }, yojson, variants, sexp_of]
 
-let read m =
-  m |> Format.asprintf "[\"%s\"]" |> Yojson.Safe.from_string |> t_of_yojson
-;;
-
+let read = Utils.Json.read_variant t_of_yojson
 let url_key m = m |> show |> Format.asprintf ":%s"
 let array_key m = m |> show |> Format.asprintf "%s[]"
 let human_url m = m |> show |> CCString.replace ~sub:"_" ~by:"-"

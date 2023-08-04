@@ -3,6 +3,7 @@ module Countries = Countries
 module Database = Database
 module LanguageCodes = Language_codes
 module PhoneCodes = Phone_codes
+module Json = Json
 
 module Lwt_result : sig
   module Infix : sig
@@ -70,6 +71,7 @@ end
 
 module Bool = struct
   let handled_true_values = [ "on"; "checked"; "true" ]
+  let handled_false_values = [ "off"; "false" ]
 
   let to_result err value =
     match value with
@@ -78,6 +80,17 @@ module Bool = struct
   ;;
 
   let of_string s = CCList.mem ~eq:CCString.equal s handled_true_values
+
+  let of_string_opt s =
+    let eq = CCString.equal in
+    let mem = CCList.mem ~eq s in
+    if mem handled_true_values
+    then Some true
+    else if mem handled_true_values
+    then Some false
+    else None
+  ;;
+
   let to_string = Bool.to_string
 end
 

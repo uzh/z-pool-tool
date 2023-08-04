@@ -107,6 +107,10 @@ let to_string = function
   | SortUngroupedFields -> "Sort ungrouped fields"
   | SwitchChronological -> "Switch to chronological view"
   | SwitchGrouped -> "Switch to grouped view"
+  | TermsAndConditionsLastUpdated ptime ->
+    Format.asprintf
+      "Last updated: %s"
+      (Pool_common_utils.Time.formatted_date ptime)
   | TermsAndConditionsTitle -> "Terms and Conditions"
   | TermsAndConditionsUpdated ->
     "We have recently changed our terms and conditions. Please read and accept \

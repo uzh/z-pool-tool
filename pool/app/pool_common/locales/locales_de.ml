@@ -217,6 +217,7 @@ let rec field_to_string =
   | TenantMaintenanceFlag -> "Wartungsflag"
   | TenantPool -> "Tenant Pool"
   | TermsAccepted -> "Akzeptieren"
+  | TermsAcceptedCount -> "Teilnahmebedingungen akzeptiert"
   | TermsAndConditions -> "Teilnahmebedingungen"
   | TestPhoneNumber -> "Testtelefonnummer"
   | TextMessage -> "SMS"

@@ -68,6 +68,7 @@ type t =
   | SortUngroupedFields
   | SwitchChronological
   | SwitchGrouped
+  | TermsAndConditionsLastUpdated of Ptime.t
   | TermsAndConditionsTitle
   | TermsAndConditionsUpdated
   | TextTemplates

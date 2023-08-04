@@ -9,6 +9,8 @@ let create
     ; pending_contact_imports
     ; login_count
     ; sign_up_count
+    ; terms_accepted_count
+    ; terms_last_changed
     ; assignments_created
     ; invitations_sent
     ; reminders_sent
@@ -42,29 +44,51 @@ let create
           ~a:[ a_class [ "heading-4" ] ]
           [ txt (Utils.nav_link_to_string language title) ])
     in
-    div
-      [ title
-      ; Component_table.vertical_table
-          ~classnames:[ "fixed" ]
-          `Simple
-          language
-          figures
-      ]
+    figures
+    |> CCList.map (fun (field, value, hint) ->
+      let field =
+        field
+        |> Pool_common.Utils.field_to_string language
+        |> CCString.capitalize_ascii
+        |> txt
+      in
+      let head =
+        match hint with
+        | None -> [ field ]
+        | Some hint -> [ field; br (); i [ txt hint ] ]
+      in
+      tr [ th head; td [ value ] ])
+    |> table
+         ~a:
+           [ a_class
+               ("fixed"
+                :: Component_table.table_classes `Simple ~align_top:true ())
+           ]
+    |> fun figures -> div [ title; figures ]
   in
   let contact_counters =
-    [ ActiveContacts.(field, to_txt (value active_contacts))
-    ; PendingContactImports.(field, to_txt (value pending_contact_imports))
+    [ ActiveContacts.(field, to_txt (value active_contacts), None)
+    ; PendingContactImports.(
+        field, to_txt (value pending_contact_imports), None)
     ]
   in
   let user_figures =
-    [ LoginCount.(field, to_txt (value login_count))
-    ; SignUpCount.(field, to_txt (value sign_up_count))
+    [ LoginCount.(field, to_txt (value login_count), None)
+    ; SignUpCount.(field, to_txt (value sign_up_count), None)
+    ; TermsAcceptedCount.(
+        ( field
+        , to_txt (value terms_accepted_count)
+        , Some
+            Pool_common.(
+              Utils.text_to_string
+                language
+                (I18n.TermsAndConditionsLastUpdated terms_last_changed)) ))
     ]
   in
   let experiment_figures =
-    [ AssignmentsCreated.(field, to_txt (value assignments_created))
-    ; InvitationsSent.(field, to_txt (value invitations_sent))
-    ; RemindersSent.(field, to_txt (value reminders_sent))
+    [ AssignmentsCreated.(field, to_txt (value assignments_created), None)
+    ; InvitationsSent.(field, to_txt (value invitations_sent), None)
+    ; RemindersSent.(field, to_txt (value reminders_sent), None)
     ]
   in
   div

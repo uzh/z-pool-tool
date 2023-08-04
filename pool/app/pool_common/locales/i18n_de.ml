@@ -107,6 +107,10 @@ Sie kommen für mehr Experimente in Frage, umso kompletter Ihr Profil ist.|}
   | SortUngroupedFields -> "Nicht gruppierte Felder sortieren"
   | SwitchChronological -> "Zu chronologische Ansicht wechseln"
   | SwitchGrouped -> "Zu gruppierter Ansicht wechseln"
+  | TermsAndConditionsLastUpdated ptime ->
+    Format.asprintf
+      "Zuletzt angepasst: %s"
+      (Pool_common_utils.Time.formatted_date ptime)
   | TermsAndConditionsTitle -> "Nutzungsbedingungen"
   | TermsAndConditionsUpdated ->
     "Wir haben kürzlich unsere Allgemeinen Geschäftsbedingungen geändert. \

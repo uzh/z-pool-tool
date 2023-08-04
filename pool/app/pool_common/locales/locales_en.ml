@@ -218,6 +218,7 @@ let rec field_to_string =
   | TenantMaintenanceFlag -> "maintenance flag"
   | TenantPool -> "tenant pool"
   | TermsAccepted -> "accept"
+  | TermsAcceptedCount -> "terms and conditions accepted"
   | TermsAndConditions -> "terms and conditions"
   | TestPhoneNumber -> "test phone number"
   | TextMessage -> "text message"
