@@ -591,13 +591,15 @@ let detail
   ?view_contact_email
   ?view_contact_cellphone
   (Pool_context.{ language; _ } as context)
-  experiment
+  ({ Experiment.id; external_data_required; _ } as experiment)
   (session : Session.t)
   participation_tags
   assignments
   =
   let open Pool_common in
   let open Session in
+  let experiment_id = Experiment.Id.value id in
+  let session_id = Session.Id.value session.id in
   let session_link ?style (show, url, control) =
     let style, icon =
       style |> CCOption.map_or ~default:(`Primary, None) CCFun.id
@@ -612,8 +614,8 @@ let detail
         ?icon
         (Format.asprintf
            "/admin/experiments/%s/sessions/%s/%s"
-           (Experiment.Id.value experiment.Experiment.id)
-           (Id.value session.id)
+           experiment_id
+           session_id
            url)
       |> CCOption.pure
   in
@@ -629,7 +631,7 @@ let detail
                   [ a_href
                       (Format.asprintf
                          "/admin/experiments/%s/sessions/%s"
-                         (Experiment.Id.value experiment.Experiment.id)
+                         experiment_id
                          (Id.value follow_up_to)
                        |> Sihl.Web.externalize_path)
                   ]
@@ -683,9 +685,7 @@ let detail
     let links =
       let duplicate =
         let base =
-          Format.asprintf
-            "/admin/experiments/%s/sessions"
-            (Experiment.Id.value experiment.Experiment.id)
+          Format.asprintf "/admin/experiments/%s/sessions" experiment_id
         in
         let link =
           match session.follow_up_to with
@@ -694,12 +694,8 @@ let detail
               "%s/%s/follow-up?duplicate_id=%s"
               base
               (Id.value parent_session)
-              (Id.value session.id)
-          | None ->
-            Format.asprintf
-              "%s/create/?duplicate_id=%s"
-              base
-              (Id.value session.id)
+              session_id
+          | None -> Format.asprintf "%s/create/?duplicate_id=%s" base session_id
         in
         link_as_button
           ~control:(language, Message.Duplicate (Some Field.Session))
@@ -757,9 +753,11 @@ let detail
           ?view_contact_name
           ?view_contact_email
           ?view_contact_cellphone
+          ~external_data_required:
+            (Experiment.ExternalDataRequired.value external_data_required)
           Session
           context
-          experiment.Experiment.id
+          id
           session
           assignments)
     in
@@ -777,8 +775,8 @@ let detail
       ~control:(language, Message.(Edit (Some Field.Session)))
       (Format.asprintf
          "/admin/experiments/%s/sessions/%s/edit"
-         (Experiment.Id.value experiment.Experiment.id)
-         (Id.value session.id))
+         experiment_id
+         session_id)
   in
   div
     ~a:[ a_class [ "stack-lg" ] ]

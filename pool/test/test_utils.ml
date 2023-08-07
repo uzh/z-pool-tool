@@ -222,7 +222,7 @@ module Model = struct
           false |> DirectRegistrationDisabled.create
       ; registration_disabled = false |> RegistrationDisabled.create
       ; allow_uninvited_signup = false |> AllowUninvitedSignup.create
-      ; external_data_required = false |> ExternalDataRequired.create
+      ; external_data_required = true |> ExternalDataRequired.create
       ; experiment_type = Some Pool_common.ExperimentType.Lab
       ; created_at = Ptime_clock.now ()
       ; updated_at = Ptime_clock.now ()

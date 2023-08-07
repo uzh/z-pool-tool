@@ -1,6 +1,7 @@
 open CCFun.Infix
 open Tyxml.Html
 open Component.Input
+module Field = Pool_common.Message.Field
 
 let assignments_path experiment_id =
   Format.asprintf
@@ -94,6 +95,7 @@ module Partials = struct
     ?(view_contact_name = false)
     ?(view_contact_email = false)
     ?(view_contact_cellphone = false)
+    ?(external_data_required = false)
     redirect
     Pool_context.{ language; csrf; _ }
     experiment_id
@@ -112,7 +114,6 @@ module Partials = struct
     in
     let button_form suffix confirmable control icon assignment =
       let hidden_redirect_input =
-        let open Pool_common.Message in
         input_element
           ~value:(show_assignment_redirect redirect)
           language
@@ -159,7 +160,6 @@ module Partials = struct
     | false ->
       let add_field_if check values = if check then values else [] in
       let contact_information =
-        let open Pool_common.Message in
         add_field_if
           view_contact_name
           [ Field.Lastname, contact_lastname
@@ -173,10 +173,15 @@ module Partials = struct
         | [] -> [ Field.Id, assignment_id ]
         | fields -> fields
       in
+      let external_data_field =
+        add_field_if
+          external_data_required
+          [ Field.ExternalDataId, assignment_external_data_id ]
+      in
       let thead =
         ((CCList.map fst contact_information
-          @ Pool_common.Message.Field.
-              [ Participated; NoShow; ExternalDataId; CanceledAt ])
+          @ CCList.map fst external_data_field
+          @ Field.[ Participated; NoShow; CanceledAt ])
          |> Component.Table.fields_to_txt language)
         @ [ default ]
       in
@@ -186,11 +191,8 @@ module Partials = struct
           (fun (assignment : Assignment.t) ->
             let base =
               CCList.map snd contact_information
-              @ [ assignment_participated
-                ; assignment_no_show
-                ; assignment_external_data_id
-                ; canceled_at
-                ]
+              @ CCList.map snd external_data_field
+              @ [ assignment_participated; assignment_no_show; canceled_at ]
               |> CCList.map (fun fcn -> fcn assignment)
             in
             let buttons =
@@ -214,7 +216,7 @@ module Partials = struct
     ?view_contact_cellphone
     redirect
     (Pool_context.{ language; _ } as context)
-    experiment
+    { Experiment.id; external_data_required; _ }
     assignments
     =
     CCList.map
@@ -239,9 +241,11 @@ module Partials = struct
               ?view_contact_name
               ?view_contact_email
               ?view_contact_cellphone
+              ~external_data_required:
+                (Experiment.ExternalDataRequired.value external_data_required)
               redirect
               context
-              experiment.Experiment.id
+              id
               session
               assignments
           ])
@@ -254,7 +258,7 @@ let list
   ?view_contact_name
   ?view_contact_email
   ?view_contact_cellphone
-  experiment
+  ({ Experiment.id; _ } as experiment)
   ({ Pool_context.language; _ } as context)
   assignments
   =
@@ -263,7 +267,7 @@ let list
           [ a
               ~a:
                 [ a_href
-                    (assignments_path experiment.Experiment.id
+                    (assignments_path id
                      |> Format.asprintf "%s/deleted"
                      |> Sihl.Web.externalize_path)
                 ]
