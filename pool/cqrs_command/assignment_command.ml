@@ -16,7 +16,7 @@ module Create : sig
 
   type t =
     { contact : Contact.t
-    ; sessions : Session.Public.t list
+    ; sessions : Session.t list
     ; experiment : Experiment.t
     }
 
@@ -31,7 +31,7 @@ module Create : sig
 end = struct
   type t =
     { contact : Contact.t
-    ; sessions : Session.Public.t list
+    ; sessions : Session.t list
     ; experiment : Experiment.t
     }
 
@@ -57,7 +57,7 @@ end = struct
       in
       let* (_ : unit list) =
         command.sessions
-        |> CCList.map Session.Public.assignment_creatable
+        |> CCList.map Session.assignment_creatable
         |> CCList.all_ok
       in
       let create_events =
@@ -65,9 +65,7 @@ end = struct
         |> CCList.map (fun session ->
           let create =
             Assignment.
-              { contact = command.contact
-              ; session_id = session.Session.Public.id
-              }
+              { contact = command.contact; session_id = session.Session.id }
           in
           Assignment.Created create |> Pool_event.assignment)
       in

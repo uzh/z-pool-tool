@@ -4,13 +4,13 @@ module AssignmentCommand = Cqrs_command.Assignment_command
 module Field = Pool_common.Message.Field
 
 type assignment_data =
-  { session : Session.Public.t
+  { session : Session.t
   ; experiment : Experiment.t
   ; contact : Contact.t
   }
 
 let assignment_data () =
-  let session = Model.create_public_session () in
+  let session = Model.create_session () in
   let experiment = Model.create_experiment () in
   let contact = Model.create_contact () in
   { session; experiment; contact }
@@ -51,7 +51,7 @@ let create () =
   in
   let expected =
     Ok
-      [ Assignment.(Created { contact; session_id = session.Session.Public.id })
+      [ Assignment.(Created { contact; session_id = session.Session.id })
         |> Pool_event.assignment
       ; update_assignment_count_event ~step:1 contact
       ; Email.(
@@ -76,7 +76,7 @@ let create_with_experiment_smtp () =
   in
   let expected =
     Ok
-      [ Assignment.(Created { contact; session_id = session.Session.Public.id })
+      [ Assignment.(Created { contact; session_id = session.Session.id })
         |> Pool_event.assignment
       ; update_assignment_count_event ~step:1 contact
       ; Email.(Sent (confirmation_email contact, Some smtp_auth_id))
@@ -269,7 +269,7 @@ let set_attendance_with_data_id () =
 
 let assign_to_fully_booked_session () =
   let { session; experiment; contact } = assignment_data () in
-  let session = session |> Model.fully_book_public_session in
+  let session = session |> Model.fully_book_session in
   let events =
     let command =
       AssignmentCommand.Create.{ contact; sessions = [ session ]; experiment }
@@ -282,7 +282,7 @@ let assign_to_fully_booked_session () =
 
 let assign_to_experiment_with_direct_registration_disabled () =
   let { session; experiment; contact } = assignment_data () in
-  let session = session |> Model.fully_book_public_session in
+  let session = session |> Model.fully_book_session in
   let experiment =
     Experiment.
       { experiment with
@@ -320,9 +320,7 @@ let assign_to_canceled_session () =
   let { session; experiment; contact } = assignment_data () in
   let already_assigned = false in
   let canceled_at = Ptime_clock.now () in
-  let session =
-    Session.Public.{ session with canceled_at = Some canceled_at }
-  in
+  let session = Session.{ session with canceled_at = Some canceled_at } in
   let events =
     let command =
       AssignmentCommand.Create.{ contact; sessions = [ session ]; experiment }
@@ -447,11 +445,11 @@ let assign_contact_from_waiting_list_to_disabled_experiment () =
 let assign_to_session_with_follow_ups () =
   let { session; experiment; contact } = assignment_data () in
   let follow_up =
-    let base = Model.(create_public_session ~start:(in_an_hour ())) () in
-    Session.Public.
+    let base = Model.(create_session ~start:(in_an_hour ())) () in
+    Session.
       { base with
         id = Session.Id.create ()
-      ; follow_up_to = Some session.Session.Public.id
+      ; follow_up_to = Some session.Session.id
       }
   in
   let sessions = [ session; follow_up ] in
@@ -463,9 +461,7 @@ let assign_to_session_with_follow_ups () =
     let create_events =
       sessions
       |> CCList.map (fun session ->
-        let create =
-          Assignment.{ contact; session_id = session.Session.Public.id }
-        in
+        let create = Assignment.{ contact; session_id = session.Session.id } in
         Assignment.Created create |> Pool_event.assignment)
     in
     let increase_num_events =

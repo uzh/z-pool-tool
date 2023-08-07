@@ -245,17 +245,16 @@ let assignment_creation_with_sender _ () =
     in
     let%lwt session =
       Integration_utils.SessionRepo.create ~id:session_id experiment_id ()
-      ||> Test_utils.Model.session_to_public_session
     in
     let%lwt admin = Admin.find database_label admin_id ||> get_exn in
     let%lwt confirmation_email =
       let%lwt language = Contact.message_language database_label contact in
-      Message_template.AssignmentConfirmation.create_from_public_session
+      Message_template.AssignmentConfirmation.create
         database_label
         language
         tenant
         experiment
-        [ session ]
+        session
         contact
         (Some admin)
     in

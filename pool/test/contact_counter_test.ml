@@ -36,9 +36,7 @@ let set_sessions_to_past session_ids =
 
 let sign_up_for_session experiment contact session_id =
   let%lwt sessions =
-    Session.find_open_with_follow_ups database_label session_id
-    >|+ CCList.map Session.to_public
-    ||> get_exn
+    Session.find_open_with_follow_ups database_label session_id ||> get_exn
   in
   let email = Model.create_email () in
   Assignment_command.Create.(handle { contact; sessions; experiment })

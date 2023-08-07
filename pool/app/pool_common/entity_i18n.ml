@@ -119,6 +119,7 @@ type nav_link =
 type hint =
   | AdminOverwriteContactValues
   | AllowUninvitedSignup
+  | AssignmentConfirmationMessageFollowUps
   | AssignContactFromWaitingList
   | AssignmentsMarkedAsClosed
   | ContactCurrentCellPhone of string

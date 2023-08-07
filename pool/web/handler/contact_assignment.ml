@@ -23,19 +23,18 @@ let create req =
        let%lwt contact_person =
          Experiment.find_contact_person database_label experiment
        in
-       let* sessions =
-         Session.find_open_with_follow_ups database_label id
-         >|+ CCList.map Session.to_public
-       in
+       let* session = Session.find_open database_label id in
+       let* follow_up_sessions = Session.find_follow_ups database_label id in
        let tenant = Pool_context.Tenant.get_tenant_exn req in
        let%lwt confirmation_email =
          let%lwt language = Contact.message_language database_label contact in
-         Message_template.AssignmentConfirmation.create_from_public_session
+         Message_template.AssignmentConfirmation.create
+           ~follow_up_sessions
            database_label
            language
            tenant
            experiment
-           sessions
+           session
            contact
            contact_person
        in
@@ -49,6 +48,7 @@ let create req =
          ||> not
        in
        let events =
+         let sessions = session :: follow_up_sessions in
          let open Cqrs_command.Assignment_command.Create in
          handle
            ~tags

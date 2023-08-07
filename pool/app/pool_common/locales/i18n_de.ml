@@ -164,6 +164,8 @@ Wird nach diesem Feld gefiltert, wird der überschreibende Wert bevorzugt.
   | AllowUninvitedSignup ->
     "Alle Kontakte (eingeladen oder nicht), können sich für das Experiment \
      anmelden."
+  | AssignmentConfirmationMessageFollowUps ->
+    "Sie wurden außerdem den folgenden Folgesitzungen zugewiesen:"
   | AssignContactFromWaitingList ->
     "Wählen Sie die Session, zu welcher Sie den Kontakt zuweisen wollen."
   | AssignmentsMarkedAsClosed ->

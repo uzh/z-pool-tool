@@ -332,6 +332,7 @@ let update_handler action req =
           Message_template.SessionReschedule.prepare
             database_label
             tenant
+            experiment
             system_languages
             session
             admin_contact

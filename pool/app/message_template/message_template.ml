@@ -87,6 +87,36 @@ let experiment_params layout experiment =
   ]
 ;;
 
+let session_params ?follow_up_sessions lang layout experiment session =
+  let open Session in
+  let session_id = session.Session.id |> Id.value in
+  let session_url =
+    Format.asprintf
+      "experiments/%s/sessions/%s"
+      Experiment.(experiment.Experiment.id |> Id.value)
+      session_id
+    |> Sihl.Web.externalize_path
+    |> Format.asprintf "%s%s" layout.link
+  in
+  let session_overview =
+    let main_session = Session.to_email_text lang session in
+    match follow_up_sessions with
+    | None | Some ([], _) -> main_session
+    | Some (sessions, i18n) ->
+      let follow_ups =
+        [ Pool_common.(Utils.hint_to_string lang i18n)
+        ; Session.follow_up_sessions_to_email_list sessions
+        ]
+        |> CCString.concat "\n"
+      in
+      [ main_session; follow_ups ] |> CCString.concat "\n\n"
+  in
+  [ "sessionId", session_id
+  ; "sessionUrl", session_url
+  ; "sessionOverview", session_overview
+  ]
+;;
+
 module AccountSuspensionNotification = struct
   let email_params = global_params
 
@@ -121,24 +151,23 @@ end
 module AssignmentConfirmation = struct
   let base_params layout contact = contact.Contact.user |> global_params layout
 
-  let create_params layout contact experiment session_overview =
+  let email_params
+    ?follow_up_sessions
+    language
+    layout
+    contact
+    experiment
+    session
+    =
+    let follow_up_sessions =
+      CCOption.map
+        (fun lst ->
+          lst, Pool_common.I18n.AssignmentConfirmationMessageFollowUps)
+        follow_up_sessions
+    in
     base_params layout contact
-    @ [ "sessionOverview", session_overview ]
     @ experiment_params layout experiment
-  ;;
-
-  let email_params lang layout experiment sessions contact =
-    sessions
-    |> CCList.map (Session.to_email_text lang)
-    |> CCString.concat "\n\n"
-    |> create_params layout contact experiment
-  ;;
-
-  let email_params_public_session lang layout experiment sessions contact =
-    sessions
-    |> CCList.map (Session.public_to_email_text lang)
-    |> CCString.concat "\n\n"
-    |> create_params layout contact experiment
+    @ session_params ?follow_up_sessions language layout experiment session
   ;;
 
   let template pool language =
@@ -146,35 +175,25 @@ module AssignmentConfirmation = struct
   ;;
 
   let create
+    ?follow_up_sessions
     pool
     preferred_language
     tenant
     experiment
-    sessions
-    contact
-    admin_contact
-    =
-    let%lwt template, language = template pool preferred_language in
-    let layout = layout_from_tenant tenant in
-    let params = email_params language layout experiment sessions contact in
-    let email = contact |> Contact.email_address in
-    let%lwt sender = sender_of_contact_person pool admin_contact in
-    prepare_email language template sender email layout params |> Lwt.return
-  ;;
-
-  let create_from_public_session
-    pool
-    preferred_language
-    tenant
-    experiment_id
-    sessions
+    session
     contact
     admin_contact
     =
     let%lwt template, language = template pool preferred_language in
     let layout = layout_from_tenant tenant in
     let params =
-      email_params_public_session language layout experiment_id sessions contact
+      email_params
+        ?follow_up_sessions
+        language
+        layout
+        contact
+        experiment
+        session
     in
     let email = contact |> Contact.email_address in
     let%lwt sender = sender_of_contact_person pool admin_contact in
@@ -438,41 +457,21 @@ end
 
 module SessionCancellation = struct
   let email_params
-    lang
+    language
     layout
-    (tenant : Pool_tenant.t)
     (experiment : Experiment.t)
     session
     follow_up_sessions
     reason
     contact
     =
-    let experiment_url =
-      let open Experiment in
-      experiment.id
-      |> Id.value
-      |> Format.asprintf "/experiments/%s"
-      |> create_public_url tenant.Pool_tenant.url
-    in
-    let main_session = Session.to_email_text lang session in
-    let session_overview =
-      match follow_up_sessions with
-      | [] -> main_session
-      | sessions ->
-        let follow_ups =
-          [ Pool_common.(
-              Utils.hint_to_string lang I18n.SessionCancellationMessageFollowUps)
-          ; Session.follow_up_sessions_to_email_list sessions
-          ]
-          |> CCString.concat "\n"
-        in
-        [ main_session; follow_ups ] |> CCString.concat "\n\n"
+    let follow_up_sessions =
+      follow_up_sessions, Pool_common.I18n.SessionCancellationMessageFollowUps
     in
     global_params layout contact.Contact.user
-    @ [ "experimentUrl", experiment_url
-      ; "reason", reason |> Session.CancellationReason.value
-      ; "sessionOverview", session_overview
-      ]
+    @ [ "reason", reason |> Session.CancellationReason.value ]
+    @ experiment_params layout experiment
+    @ session_params ~follow_up_sessions language layout experiment session
   ;;
 
   let prepare pool tenant experiment sys_langs session follow_up_sessions =
@@ -489,7 +488,6 @@ module SessionCancellation = struct
         email_params
           lang
           layout
-          tenant
           experiment
           session
           follow_up_sessions
@@ -529,7 +527,6 @@ module SessionCancellation = struct
         email_params
           lang
           layout
-          tenant
           experiment
           session
           follow_up_sessions
@@ -546,8 +543,8 @@ end
 module SessionReminder = struct
   let email_params lang layout experiment session contact =
     global_params layout contact.Contact.user
-    @ (("sessionOverview", Session.to_email_text lang session)
-       :: experiment_params layout experiment)
+    @ experiment_params layout experiment
+    @ session_params lang layout experiment session
   ;;
 
   let create pool tenant system_languages experiment session contact =
@@ -608,17 +605,19 @@ module SessionReminder = struct
 end
 
 module SessionReschedule = struct
-  let email_params lang layout session new_start new_duration contact =
+  let email_params lang layout experiment session new_start new_duration contact
+    =
     let open Pool_common.Utils.Time in
     let open Session in
     global_params layout contact.Contact.user
-    @ [ "sessionOverview", to_email_text lang session
-      ; "newStart", new_start |> Start.value |> formatted_date_time
+    @ [ "newStart", new_start |> Start.value |> formatted_date_time
       ; "newDuration", new_duration |> Duration.value |> formatted_timespan
       ]
+    @ experiment_params layout experiment
+    @ session_params lang layout experiment session
   ;;
 
-  let prepare pool tenant sys_langs session admin_contact =
+  let prepare pool tenant experiment sys_langs session admin_contact =
     let open Message_utils in
     let%lwt templates =
       find_all_by_label_to_send pool sys_langs Label.SessionReschedule
@@ -629,7 +628,14 @@ module SessionReschedule = struct
       let open CCResult in
       let* lang, template = template_by_contact sys_langs templates contact in
       let params =
-        email_params lang layout session new_start new_duration contact
+        email_params
+          lang
+          layout
+          experiment
+          session
+          new_start
+          new_duration
+          contact
       in
       prepare_email
         lang
@@ -645,15 +651,16 @@ module SessionReschedule = struct
 end
 
 module SignUpVerification = struct
-  let email_params (tenant : Pool_tenant.t) verification_url firstname lastname =
+  let email_params layout verification_url firstname lastname =
     let open Pool_user in
-    [ ( "name"
-      , Format.asprintf
-          "%s %s"
-          (Firstname.value firstname)
-          (Lastname.value lastname) )
+    let firstname = firstname |> Firstname.value in
+    let lastname = lastname |> Lastname.value in
+    [ "name", Format.asprintf "%s %s" firstname lastname
+    ; "firstname", firstname
+    ; "lastname", lastname
     ; "verificationUrl", verification_url
-    ; ("siteTitle", Pool_tenant.(Title.value tenant.title))
+    ; "siteTitle", layout.site_title
+    ; "siteUrl", layout.link
     ]
   ;;
 
@@ -679,13 +686,14 @@ module SignUpVerification = struct
         ]
       |> create_public_url_with_params url "/email-verified"
     in
+    let layout = layout_from_tenant tenant in
     prepare_email
       language
       template
       sender
       email_address
-      (layout_from_tenant tenant)
-      (email_params tenant verification_url firstname lastname)
+      layout
+      (email_params layout verification_url firstname lastname)
     |> Lwt.return
   ;;
 end

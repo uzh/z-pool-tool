@@ -217,18 +217,23 @@ let message_template_help
   let create_contact () = value ~default:(create_contact ()) contact in
   let create_experiment () = value ~default:(create_experiment ()) experiment in
   let create_session () = value ~default:(create_session ()) session in
+  let create_follow_up session_id =
+    Session.{ (create_session ()) with follow_up_to = Some session_id }
+  in
   let layout = layout_from_tenant tenant in
   match template_label with
   | AccountSuspensionNotification ->
     let contact = create_contact () in
     AccountSuspensionNotification.email_params layout contact.Contact.user
   | AssignmentConfirmation ->
+    let session = create_session () in
     AssignmentConfirmation.email_params
+      ~follow_up_sessions:[ create_follow_up session.Session.id ]
       language
       layout
-      (create_experiment ())
-      [ create_session () ]
       (create_contact ())
+      (create_experiment ())
+      session
   | ContactRegistrationAttempt ->
     let tenant_url = tenant.Pool_tenant.url in
     ContactRegistrationAttempt.email_params
@@ -283,7 +288,6 @@ let message_template_help
     SessionCancellation.email_params
       language
       layout
-      tenant
       (create_experiment ())
       (create_session ())
       follow_up_sessions
@@ -307,6 +311,7 @@ let message_template_help
     SessionReschedule.email_params
       language
       layout
+      (create_experiment ())
       (create_session ())
       start
       duration
@@ -318,7 +323,7 @@ let message_template_help
     in
     let contact = create_contact () in
     SignUpVerification.email_params
-      tenant
+      layout
       verification_url
       (Contact.firstname contact)
       (Contact.lastname contact)

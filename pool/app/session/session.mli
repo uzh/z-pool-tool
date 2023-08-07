@@ -298,6 +298,11 @@ val find_open_with_follow_ups
   -> Id.t
   -> (t list, Pool_common.Message.error) Lwt_result.t
 
+val find_open
+  :  Pool_database.Label.t
+  -> Id.t
+  -> (t, Pool_common.Message.error) Lwt_result.t
+
 val find_for_calendar_by_location
   :  Pool_location.Id.t
   -> Pool_database.Label.t
