@@ -4,10 +4,17 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/pool/tree/HEAD)
 
+### Added
+
+- external_data_required to experiments
+- external_data_id to assignments (required latest on session close)
+
 ### Changed
 
 - include contacts whose import is pending in filter
 - allow password reset when import is pending
+- hide contact information when not allowed to read it
+- split first-/lastname of contact information list in session assignments
 
 ## [0.4.0](https://github.com/uzh/pool/tree/0.4.0) - 2023-08-03
 
