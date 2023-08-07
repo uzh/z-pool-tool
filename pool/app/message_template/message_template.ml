@@ -375,12 +375,11 @@ module PhoneVerification = struct
     let%lwt { sms_text; _ }, _ =
       find_by_label_to_send pool preferred_language Label.PhoneVerification
     in
-    let content = Content.render sms_text (message_params token) in
-    Lwt_result.return
-      { recipient = cell_phone
-      ; sender = tenant.Pool_tenant.title
-      ; text = content
-      }
+    render_and_create
+      cell_phone
+      tenant.Pool_tenant.title
+      (sms_text, message_params token)
+    |> Lwt_result.return
   ;;
 end
 
