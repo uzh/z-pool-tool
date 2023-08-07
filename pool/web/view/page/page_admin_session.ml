@@ -1010,15 +1010,19 @@ let close
               ~a:[ a_class [ "form-group" ] ]
               [ input
                   ~a:
-                    [ a_id external_data_id_label
-                    ; a_name external_data_id_label
-                    ; a_input_type `Text
-                    ; a_value
-                        (CCOption.map_or
-                           ~default:""
-                           Assignment.ExternalDataId.value
-                           external_data_id)
-                    ]
+                    ([ a_id external_data_id_label
+                     ; a_name external_data_id_label
+                     ; a_input_type `Text
+                     ; a_value
+                         (CCOption.map_or
+                            ~default:""
+                            Assignment.ExternalDataId.value
+                            external_data_id)
+                     ]
+                     @
+                     if Experiment.external_data_required_value experiment
+                     then [ a_required () ]
+                     else [])
                   ()
               ]
           ; checkbox_element id Message.Field.NoShow

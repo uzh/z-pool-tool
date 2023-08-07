@@ -533,6 +533,7 @@ let close_post req =
     @@
     let open Cqrs_command.Assignment_command in
     let open Assignment in
+    let* experiment = Experiment.find database_label experiment_id in
     let* session = Session.find database_label session_id in
     let* assignments =
       Assignment.find_uncanceled_by_session database_label session.Session.id
@@ -597,6 +598,8 @@ let close_post req =
         ||> (function
               | Some data_id ->
                 ExternalDataId.create data_id |> CCResult.map CCOption.some
+              | None when Experiment.external_data_required_value experiment ->
+                Error Pool_common.Message.(Missing Field.ExternalDataId)
               | None -> Ok None)
         >== curry UpdateExternalDataId.handle assignment)
       ||> CCResult.flatten_l

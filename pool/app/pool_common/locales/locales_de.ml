@@ -417,6 +417,11 @@ let rec error_to_string = function
       ""
       (field_to_string field)
       "wurde in der Zwischenzeit bearbeitet!"
+  | Missing field ->
+    field_message
+      "Das Feld"
+      (field_to_string field)
+      "fehlt oder ist nicht ausgefüllt."
   | MutuallyExclusive (f1, f2) ->
     Format.asprintf
       "%s und %s schliessen sich gegenseitig aus."

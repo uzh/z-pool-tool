@@ -397,6 +397,11 @@ let rec error_to_string = function
   | LoginProvideDetails -> "Please provide email and password"
   | MeantimeUpdate field ->
     field_message "" (field_to_string field) "was updated in the meantime!"
+  | Missing field ->
+    field_message
+      "The field"
+      (field_to_string field)
+      "is missing or not filled out."
   | MutuallyExclusive (f1, f2) ->
     Format.asprintf
       "%s and %s are mutually exclusive."

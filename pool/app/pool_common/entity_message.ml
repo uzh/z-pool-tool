@@ -61,6 +61,7 @@ type error =
   | IsMarkedAsDeleted of Field.t
   | LoginProvideDetails
   | MeantimeUpdate of Field.t
+  | Missing of Field.t
   | MutuallyExclusive of (Field.t * Field.t)
   | NegativeAmount
   | NoOptionSelected of Field.t
