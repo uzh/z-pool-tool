@@ -44,21 +44,21 @@ let find_available_languages database_label entity_id label languages =
 ;;
 
 let prepare_email language template sender email layout params =
+  let open Sihl_email in
   let { Entity.email_subject; email_text; plain_text; _ } = template in
-  let subject, _ = Sihl_email.Template.render params email_subject None in
+  let subject, _ = Template.render params email_subject None in
   let mail =
-    Sihl_email.
-      { sender = Pool_user.EmailAddress.value sender
-      ; recipient = Pool_user.EmailAddress.value email
-      ; subject
-      ; text = PlainText.value plain_text
-      ; html = Some (combine_html language (Some email_subject))
-      ; cc = []
-      ; bcc = []
-      }
+    { sender = Pool_user.EmailAddress.value sender
+    ; recipient = Pool_user.EmailAddress.value email
+    ; subject
+    ; text = PlainText.value plain_text
+    ; html = Some (combine_html language (Some email_subject))
+    ; cc = []
+    ; bcc = []
+    }
   in
   let params = [ "emailText", email_text ] @ layout_params layout @ params in
-  Sihl_email.Template.render_email_with_data params mail
+  Message_utils.render_email_params params mail
 ;;
 
 let global_params layout user =

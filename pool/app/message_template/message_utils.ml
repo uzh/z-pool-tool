@@ -72,6 +72,38 @@ let layout_params layout =
   ]
 ;;
 
+let line_breaks_to_html str =
+  str
+  |> CCString.split ~by:"\n"
+  |> fun lst ->
+  lst |> CCList.flat_map (CCString.split ~by:"\\n") |> CCString.concat "<br>"
+;;
+
+let render_params ?cb data text =
+  let replace str k v =
+    let regexp = Str.regexp @@ "{" ^ k ^ "}" in
+    Str.global_replace regexp v str
+  in
+  let rec render data value =
+    match data with
+    | [] -> value
+    | (k, v) :: data ->
+      (match cb with
+       | None -> v
+       | Some cb -> v |> cb)
+      |> fun v -> render data @@ replace value k v
+  in
+  render data text
+;;
+
+let render_email_params params ({ Sihl_email.text; html; _ } as email) =
+  Sihl_email.
+    { email with
+      text = render_params params text
+    ; html = html |> CCOption.map (render_params ~cb:line_breaks_to_html params)
+    }
+;;
+
 let html_to_string html =
   Format.asprintf "%a" (Tyxml.Html.pp_elt ~indent:true ()) html
 ;;
