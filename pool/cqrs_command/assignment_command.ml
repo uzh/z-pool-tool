@@ -346,3 +346,25 @@ end = struct
 
   let effects = Assignment.Guard.Access.delete
 end
+
+module UpdateExternalDataId : sig
+  include
+    Common.CommandSig
+      with type t = Assignment.t * Assignment.ExternalDataId.t option
+
+  val effects : Experiment.Id.t -> Assignment.Id.t -> Guard.ValidationSet.t
+end = struct
+  type t = Assignment.t * Assignment.ExternalDataId.t option
+
+  let handle ?(tags = Logs.Tag.empty) (assignment, external_data_id)
+    : (Pool_event.t list, Pool_common.Message.error) result
+    =
+    Logs.info ~src (fun m -> m "Handle command UpdateExternalDataId" ~tags);
+    Ok
+      [ Assignment.ExternalDataIdUpdated (assignment, external_data_id)
+        |> Pool_event.assignment
+      ]
+  ;;
+
+  let effects = Assignment.Guard.Access.update
+end

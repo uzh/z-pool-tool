@@ -1,4 +1,5 @@
 module SessionC = Cqrs_command.Session_command
+open CCFun
 open Test_utils
 
 let check_result expected generated =
@@ -522,7 +523,7 @@ let create_cancellation_message reason contact =
   let email = Model.create_email ~recipient () in
   reason
   |> Session.CancellationReason.value
-  |> CCFun.flip Sihl_email.set_text email
+  |> flip Sihl_email.set_text email
   |> CCResult.return
 ;;
 
@@ -1090,7 +1091,7 @@ let create_follow_up_later () =
   let later_start =
     parent_session.Session.start
     |> Session.Start.value
-    |> CCFun.flip Ptime.add_span @@ Ptime.Span.of_int_s (60 * 60)
+    |> flip Ptime.add_span @@ Ptime.Span.of_int_s (60 * 60)
     |> CCOption.get_exn_or "Invalid new start"
   in
   let input =
@@ -1146,7 +1147,7 @@ let update_follow_up_later () =
   let later_start =
     session.Session.start
     |> Session.Start.value
-    |> CCFun.flip Ptime.add_span @@ Ptime.Span.of_int_s (60 * 60)
+    |> flip Ptime.add_span @@ Ptime.Span.of_int_s (60 * 60)
     |> CCOption.get_exn_or "Invalid new start"
   in
   let input =
@@ -1203,7 +1204,7 @@ let update_follow_ups_earlier () =
   let later_start1 =
     Data.Validated.start2
     |> Session.Start.value
-    |> CCFun.flip Ptime.add_span @@ Ptime.Span.of_int_s (60 * 60)
+    |> flip Ptime.add_span @@ Ptime.Span.of_int_s (60 * 60)
     |> CCOption.get_exn_or "Invalid new start"
     |> Ptime.to_rfc3339 ~frac_s:12
   in
@@ -1220,7 +1221,7 @@ let update_follow_ups_earlier () =
   let later_start2 =
     Data.Validated.start3
     |> Session.Start.value
-    |> CCFun.flip Ptime.add_span @@ Ptime.Span.of_int_s (60 * 60)
+    |> flip Ptime.add_span @@ Ptime.Span.of_int_s (60 * 60)
     |> CCOption.get_exn_or "Invalid new start"
     |> Ptime.to_rfc3339 ~frac_s:12
   in
@@ -1282,7 +1283,7 @@ let update_follow_ups_later () =
   let later_start =
     Data.Validated.start1
     |> Session.Start.value
-    |> CCFun.flip Ptime.add_span @@ Ptime.Span.of_int_s (60 * 60)
+    |> flip Ptime.add_span @@ Ptime.Span.of_int_s (60 * 60)
     |> CCOption.get_exn_or "Invalid new start"
   in
   let input =
@@ -1377,6 +1378,10 @@ let close_session_check_contact_figures _ () =
   let open Utils.Lwt_result.Infix in
   let open Integration_utils in
   let open Test_utils in
+  let create_external_data_id =
+    Assignment.(
+      Id.value %> Format.asprintf "TEST_DATA_ID-%s" %> ExternalDataId.of_string)
+  in
   let%lwt experiment = Repo.first_experiment () in
   let%lwt session =
     SessionRepo.create ~start:(Model.an_hour_ago ()) experiment.Experiment.id ()
@@ -1388,11 +1393,19 @@ let close_session_check_contact_figures _ () =
     [ participated_c, `Participated; show_up_c, `ShowUp; no_show_c, `NoShow ]
   in
   let%lwt () =
-    contacts |> Lwt_list.iter_s CCFun.(fst %> AssignmentRepo.create session)
+    contacts |> Lwt_list.iter_s (fst %> AssignmentRepo.create session)
   in
   let%lwt assignments =
     Assignment.find_by_session Data.database_label session.Session.id
     ||> get_or_failwith_pool_error
+  in
+  let external_data_id_events =
+    CCList.map
+      Assignment.(
+        fun ({ id; _ } as assignment) ->
+          ExternalDataIdUpdated (assignment, Some (create_external_data_id id))
+          |> Pool_event.assignment)
+      assignments
   in
   let find_assignment contact =
     CCList.find
@@ -1433,7 +1446,8 @@ let close_session_check_contact_figures _ () =
       [ AttendanceSet (find_assignment contact, no_show, participated)
         |> Pool_event.assignment
       ; Updated contact |> Pool_event.contact
-      ])
+      ]
+      @ external_data_id_events)
     |> flatten
     |> cons (Session.Closed session |> Pool_event.session)
     |> Pool_event.handle_events Data.database_label
@@ -1466,5 +1480,16 @@ let close_session_check_contact_figures _ () =
     ||> CCList.is_empty
   in
   let () = Alcotest.(check bool "succeeds" true res) in
+  let%lwt () =
+    let open Assignment in
+    assignments
+    |> Lwt_list.iter_s (fun { id; _ } ->
+      find Data.database_label id
+      ||> get_or_failwith_pool_error
+      ||> (fun { external_data_id; _ } ->
+            Some (create_external_data_id id)
+            |> CCOption.equal ExternalDataId.equal external_data_id)
+      ||> Alcotest.(check bool "external data id succeeds" true))
+  in
   Lwt.return_unit
 ;;

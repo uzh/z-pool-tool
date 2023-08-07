@@ -147,6 +147,7 @@ type event =
   | Canceled of t
   | Created of create
   | MarkedAsDeleted of t
+  | ExternalDataIdUpdated of t * ExternalDataId.t option
 
 val attendanceset : t * NoShow.t * Participated.t -> event
 val canceled : t -> event
