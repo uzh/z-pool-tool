@@ -67,14 +67,23 @@ let global_params layout user =
     ; "firstname", user |> user_firstname |> Firstname.value
     ; "lastname", user |> user_lastname |> Lastname.value
     ; "siteTitle", layout.site_title
+    ; "siteUrl", layout.link
     ]
 ;;
 
-let experiment_params experiment =
+let experiment_params layout experiment =
   let open Experiment in
-  [ "experimentPublicTitle", public_title_value experiment
+  let experiment_id = experiment.Experiment.id |> Id.value in
+  let experiment_url =
+    Format.asprintf "experiments/%s" experiment_id
+    |> Sihl.Web.externalize_path
+    |> Format.asprintf "%s%s" layout.link
+  in
+  [ "experimentId", experiment_id
+  ; "experimentPublicTitle", public_title_value experiment
   ; ( "experimentDescription"
     , experiment.description |> CCOption.map_or ~default:"" Description.value )
+  ; "experimentUrl", experiment_url
   ]
 ;;
 
@@ -112,32 +121,42 @@ end
 module AssignmentConfirmation = struct
   let base_params layout contact = contact.Contact.user |> global_params layout
 
-  let email_params lang layout sessions contact =
-    let session_overview =
-      sessions
-      |> CCList.map (Session.to_email_text lang)
-      |> CCString.concat "\n\n"
-    in
-    base_params layout contact @ [ "sessionOverview", session_overview ]
+  let create_params layout contact experiment session_overview =
+    base_params layout contact
+    @ [ "sessionOverview", session_overview ]
+    @ experiment_params layout experiment
   ;;
 
-  let email_params_public_session lang layout sessions contact =
-    let session_overview =
-      sessions
-      |> CCList.map (Session.public_to_email_text lang)
-      |> CCString.concat "\n\n"
-    in
-    base_params layout contact @ [ "sessionOverview", session_overview ]
+  let email_params lang layout experiment sessions contact =
+    sessions
+    |> CCList.map (Session.to_email_text lang)
+    |> CCString.concat "\n\n"
+    |> create_params layout contact experiment
+  ;;
+
+  let email_params_public_session lang layout experiment sessions contact =
+    sessions
+    |> CCList.map (Session.public_to_email_text lang)
+    |> CCString.concat "\n\n"
+    |> create_params layout contact experiment
   ;;
 
   let template pool language =
     find_by_label_to_send pool language Label.AssignmentConfirmation
   ;;
 
-  let create pool preferred_language tenant sessions contact admin_contact =
+  let create
+    pool
+    preferred_language
+    tenant
+    experiment
+    sessions
+    contact
+    admin_contact
+    =
     let%lwt template, language = template pool preferred_language in
     let layout = layout_from_tenant tenant in
-    let params = email_params language layout sessions contact in
+    let params = email_params language layout experiment sessions contact in
     let email = contact |> Contact.email_address in
     let%lwt sender = sender_of_contact_person pool admin_contact in
     prepare_email language template sender email layout params |> Lwt.return
@@ -147,13 +166,16 @@ module AssignmentConfirmation = struct
     pool
     preferred_language
     tenant
+    experiment_id
     sessions
     contact
     admin_contact
     =
     let%lwt template, language = template pool preferred_language in
     let layout = layout_from_tenant tenant in
-    let params = email_params_public_session language layout sessions contact in
+    let params =
+      email_params_public_session language layout experiment_id sessions contact
+    in
     let email = contact |> Contact.email_address in
     let%lwt sender = sender_of_contact_person pool admin_contact in
     prepare_email language template sender email layout params |> Lwt.return
@@ -232,7 +254,7 @@ module ExperimentInvitation = struct
     @ [ ( "experimentUrl"
         , create_public_url public_url (Format.asprintf "experiments/%s" id) )
       ]
-    @ experiment_params experiment
+    @ experiment_params layout experiment
   ;;
 
   let prepare tenant experiment =
@@ -525,7 +547,7 @@ module SessionReminder = struct
   let email_params lang layout experiment session contact =
     global_params layout contact.Contact.user
     @ (("sessionOverview", Session.to_email_text lang session)
-       :: experiment_params experiment)
+       :: experiment_params layout experiment)
   ;;
 
   let create pool tenant system_languages experiment session contact =

@@ -182,6 +182,7 @@ module AssignmentConfirmation : sig
   val email_params
     :  Pool_common.Language.t
     -> email_layout
+    -> Experiment.t
     -> Session.t list
     -> Contact.t
     -> (string * string) list
@@ -190,6 +191,7 @@ module AssignmentConfirmation : sig
     :  Pool_database.Label.t
     -> Pool_common.Language.t
     -> Pool_tenant.t
+    -> Experiment.t
     -> Session.t list
     -> Contact.t
     -> Admin.t option
@@ -199,6 +201,7 @@ module AssignmentConfirmation : sig
     :  Pool_database.Label.t
     -> Pool_common.Language.t
     -> Pool_tenant.t
+    -> Experiment.t
     -> Session.Public.t list
     -> Contact.t
     -> Admin.t option

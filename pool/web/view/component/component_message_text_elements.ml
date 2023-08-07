@@ -226,6 +226,7 @@ let message_template_help
     AssignmentConfirmation.email_params
       language
       layout
+      (create_experiment ())
       [ create_session () ]
       (create_contact ())
   | ContactRegistrationAttempt ->

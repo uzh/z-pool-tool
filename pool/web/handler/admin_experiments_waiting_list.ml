@@ -171,6 +171,7 @@ let assign_contact req =
         database_label
         language
         tenant
+        experiment
         sessions
         contact
         contact_person

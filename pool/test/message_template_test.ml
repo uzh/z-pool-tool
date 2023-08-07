@@ -240,6 +240,9 @@ let assignment_creation_with_sender _ () =
   let%lwt () =
     let%lwt tenant = Pool_tenant.find_by_label database_label ||> get_exn in
     let%lwt contact = Contact.find database_label contact_id ||> get_exn in
+    let%lwt experiment =
+      Experiment.find database_label experiment_id ||> get_exn
+    in
     let%lwt session =
       Integration_utils.SessionRepo.create ~id:session_id experiment_id ()
       ||> Test_utils.Model.session_to_public_session
@@ -251,6 +254,7 @@ let assignment_creation_with_sender _ () =
         database_label
         language
         tenant
+        experiment
         [ session ]
         contact
         (Some admin)
