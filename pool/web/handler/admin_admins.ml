@@ -217,6 +217,7 @@ let grant_role ({ Rock.Request.target; _ } as req) =
     >>= events
     |>> handle
     |>> HttpUtils.Htmx.htmx_redirect
+          ~skip_externalize:true
           (CCString.replace ~which:`Right ~sub:"/grant-role" ~by:"/edit" target)
           ~actions:
             [ Message.set ~success:[ Pool_common.Message.Created Field.Role ] ]

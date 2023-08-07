@@ -14,44 +14,63 @@ let list ?(marked_as_deleted = false) req =
   let error_path =
     Format.asprintf "/admin/experiments/%s" (Experiment.Id.value id)
   in
-  let result ({ Pool_context.database_label; _ } as context) =
+  let result ({ Pool_context.database_label; user; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, error_path)
-    @@ let* experiment = Experiment.find database_label id in
-       let* sessions =
-         Session.find_all_for_experiment database_label experiment.Experiment.id
-         >|+ Session.group_and_sort
-         >|+ CCList.flat_map (fun (session, follow_ups) ->
-           session :: follow_ups)
-       in
-       let* html =
-         match marked_as_deleted with
-         | false ->
-           Lwt_list.map_s
-             (fun session ->
-               let* assignments =
-                 Assignment.find_by_session database_label session.Session.id
-               in
-               Lwt_result.return (session, assignments))
-             sessions
-           ||> CCList.all_ok
-           >|+ Page.Admin.Assignment.list experiment context
-         | true ->
-           Lwt_list.fold_left_s
-             (fun res session ->
-               res
-               |> Lwt_result.lift
-               >>= fun sessions ->
-               Assignment.find_deleted_by_session
-                 database_label
-                 session.Session.id
-               >|+ function
-               | [] -> sessions
-               | assignments -> sessions @ [ session, assignments ])
-             (Ok [])
-             sessions
-           >|+ Page.Admin.Assignment.marked_as_deleted experiment context
-       in
-       html >|> create_layout req context >|+ Sihl.Web.Response.of_html
+    @@
+    let* actor = Pool_context.Utils.find_authorizable database_label user in
+    let has_permission set =
+      Guard.Persistence.validate database_label set actor ||> CCResult.is_ok
+    in
+    let%lwt view_contact_name = has_permission Contact.Guard.Access.read_name in
+    let%lwt view_contact_email =
+      has_permission Contact.Guard.Access.read_email
+    in
+    let%lwt view_contact_cellphone =
+      has_permission Contact.Guard.Access.read_cellphone
+    in
+    let* experiment = Experiment.find database_label id in
+    let* sessions =
+      Session.find_all_for_experiment database_label experiment.Experiment.id
+      >|+ Session.group_and_sort
+      >|+ CCList.flat_map (fun (session, follow_ups) -> session :: follow_ups)
+    in
+    let* html =
+      match marked_as_deleted with
+      | false ->
+        Lwt_list.map_s
+          (fun session ->
+            let* assignments =
+              Assignment.find_by_session database_label session.Session.id
+            in
+            Lwt_result.return (session, assignments))
+          sessions
+        ||> CCList.all_ok
+        >|+ Page.Admin.Assignment.list
+              ~view_contact_name
+              ~view_contact_email
+              ~view_contact_cellphone
+              experiment
+              context
+      | true ->
+        Lwt_list.fold_left_s
+          (fun res session ->
+            res
+            |> Lwt_result.lift
+            >>= fun sessions ->
+            Assignment.find_deleted_by_session database_label session.Session.id
+            >|+ function
+            | [] -> sessions
+            | assignments -> sessions @ [ session, assignments ])
+          (Ok [])
+          sessions
+        >|+ Page.Admin.Assignment.marked_as_deleted
+              ~view_contact_name
+              ~view_contact_email
+              ~view_contact_cellphone
+              experiment
+              context
+    in
+    html >|> create_layout req context >|+ Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path ~src req
 ;;

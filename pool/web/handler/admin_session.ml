@@ -148,9 +148,20 @@ let detail req page =
       "/admin/experiments/%s/sessions"
       (Experiment.Id.value experiment_id)
   in
-  let result context =
+  let result ({ Pool_context.database_label; user; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, error_path)
     @@
+    let* actor = Pool_context.Utils.find_authorizable database_label user in
+    let has_permission set =
+      Guard.Persistence.validate database_label set actor ||> CCResult.is_ok
+    in
+    let%lwt view_contact_name = has_permission Contact.Guard.Access.read_name in
+    let%lwt view_contact_email =
+      has_permission Contact.Guard.Access.read_email
+    in
+    let%lwt view_contact_cellphone =
+      has_permission Contact.Guard.Access.read_cellphone
+    in
     let database_label = context.Pool_context.database_label in
     let* session = Session.find database_label session_id in
     let* experiment = Experiment.find database_label experiment_id in
@@ -165,6 +176,9 @@ let detail req page =
          Assignment.find_by_session database_label session.Session.id
        in
        Page.Admin.Session.detail
+         ~view_contact_name
+         ~view_contact_email
+         ~view_contact_cellphone
          context
          experiment
          session
@@ -217,6 +231,7 @@ let detail req page =
              (Experiment (Experiment.Id.to_common experiment_id)))
        in
        Page.Admin.Session.close
+         ~view_contact_name
          context
          experiment
          session

@@ -587,6 +587,9 @@ let new_form
 ;;
 
 let detail
+  ?view_contact_name
+  ?view_contact_email
+  ?view_contact_cellphone
   (Pool_context.{ language; _ } as context)
   experiment
   (session : Session.t)
@@ -751,6 +754,9 @@ let detail
     let assignment_list =
       Page_admin_assignments.(
         Partials.overview_list
+          ?view_contact_name
+          ?view_contact_email
+          ?view_contact_cellphone
           Session
           context
           experiment.Experiment.id
@@ -928,6 +934,7 @@ let follow_up
 ;;
 
 let close
+  ?(view_contact_name = false)
   ({ Pool_context.language; csrf; _ } as context)
   experiment
   (session : Session.t)
@@ -1005,7 +1012,12 @@ let close
               Message.Field.(ExternalDataId |> show)
               (Assignment.Id.value id)
           in
-          [ div [ strong [ txt (Contact.fullname contact) ] ]
+          let identity =
+            if view_contact_name
+            then Contact.fullname contact
+            else Assignment.Id.value id
+          in
+          [ div [ strong [ txt identity ] ]
           ; div
               ~a:[ a_class [ "form-group" ] ]
               [ input

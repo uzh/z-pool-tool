@@ -209,6 +209,9 @@ module Partials = struct
   ;;
 
   let grouped_overview_lists
+    ?view_contact_name
+    ?view_contact_email
+    ?view_contact_cellphone
     redirect
     (Pool_context.{ language; _ } as context)
     experiment
@@ -233,6 +236,9 @@ module Partials = struct
           ~a:attrs
           [ h3 ~a:[ a_class [ "heading-3" ] ] [ txt (session |> to_title) ]
           ; overview_list
+              ?view_contact_name
+              ?view_contact_email
+              ?view_contact_cellphone
               redirect
               context
               experiment.Experiment.id
@@ -244,7 +250,14 @@ module Partials = struct
   ;;
 end
 
-let list experiment ({ Pool_context.language; _ } as context) assignments =
+let list
+  ?view_contact_name
+  ?view_contact_email
+  ?view_contact_cellphone
+  experiment
+  ({ Pool_context.language; _ } as context)
+  assignments
+  =
   [ div
       [ p
           [ a
@@ -260,6 +273,9 @@ let list experiment ({ Pool_context.language; _ } as context) assignments =
               ]
           ]
       ; Partials.grouped_overview_lists
+          ?view_contact_name
+          ?view_contact_email
+          ?view_contact_cellphone
           Assignments
           context
           experiment
@@ -276,6 +292,9 @@ let list experiment ({ Pool_context.language; _ } as context) assignments =
 ;;
 
 let marked_as_deleted
+  ?view_contact_name
+  ?view_contact_email
+  ?view_contact_cellphone
   experiment
   (Pool_context.{ language; _ } as context)
   assignments
@@ -290,6 +309,9 @@ let marked_as_deleted
     in
     let list =
       Partials.grouped_overview_lists
+        ?view_contact_name
+        ?view_contact_email
+        ?view_contact_cellphone
         DeletedAssignments
         context
         experiment

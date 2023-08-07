@@ -342,12 +342,21 @@ module Htmx = struct
     Opium.Headers.of_list [ "Content-Type", "text/html; charset=utf-8" ]
   ;;
 
-  let htmx_redirect path ?query_language ?status ?(actions = []) () =
+  let htmx_redirect
+    ?(skip_externalize = false)
+    ?query_language
+    ?status
+    ?(actions = [])
+    path
+    ()
+    =
+    let externalize_path path =
+      if skip_externalize then path else Sihl.Web.externalize_path path
+    in
     Sihl.Web.Response.of_plain_text "" ?status
     |> Sihl.Web.Response.add_header
          ( "HX-Redirect"
-         , path_with_language query_language path |> Sihl.Web.externalize_path
-         )
+         , path_with_language query_language path |> externalize_path )
     |> CCList.fold_left ( % ) id actions
     |> Lwt.return
   ;;
