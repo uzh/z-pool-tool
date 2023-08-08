@@ -21,6 +21,9 @@ module Actor = struct
     | `ManageRecruiters
     | `ManageRules
     | `Operator
+    | `ReadContactName
+    | `ReadContactEmail
+    | `ReadContactCellphone
     | `RecruiterAll
     | `Recruiter of TargetId.t
     | `Root (* '`Root' not exposed in 'all' *)
@@ -58,6 +61,9 @@ module Actor = struct
     | "managerecruiters", [] -> `ManageRecruiters
     | "managerules", [] -> `ManageRules
     | "operator", [] -> `Operator
+    | "readcontactname", [] -> `ReadContactName
+    | "readcontactemail", [] -> `ReadContactEmail
+    | "readcontactcellphone", [] -> `ReadContactCellphone
     | "recruiterall", [] -> `RecruiterAll
     | "recruiter", [ id ] -> `Recruiter (target_of_string id)
     | "root", [] -> `Root
@@ -143,6 +149,9 @@ module Actor = struct
     ; `ManageOperators
     ; `ManageRecruiters
     ; `Operator
+    ; `ReadContactName
+    ; `ReadContactEmail
+    ; `ReadContactCellphone
     ; `RecruiterAll
     ; `Recruiter TargetId.nil
     ]
@@ -156,7 +165,10 @@ module Actor = struct
     | `Experimenter _
     | `Guest
     | `LocationManagerAll
-    | `LocationManager _ -> []
+    | `LocationManager _
+    | `ReadContactName
+    | `ReadContactEmail
+    | `ReadContactCellphone -> []
     | `ManageAssistant uuid -> [ `Assistant uuid ]
     | `ManageAssistants -> [ `Assistant TargetId.nil ]
     | `ManageExperimenter uuid -> [ `Experimenter uuid ]
@@ -165,7 +177,13 @@ module Actor = struct
       [ `LocationManager TargetId.nil; `LocationManagerAll ]
     | `ManageOperators -> [ `Operator ]
     | `ManageRecruiters -> [ `Recruiter TargetId.nil; `RecruiterAll ]
-    | `RecruiterAll -> [ `Assistant TargetId.nil; `Experimenter TargetId.nil ]
+    | `RecruiterAll ->
+      [ `Assistant TargetId.nil
+      ; `Experimenter TargetId.nil
+      ; `ReadContactName
+      ; `ReadContactEmail
+      ; `ReadContactCellphone
+      ]
     | `Recruiter uuid -> [ `Assistant uuid; `Experimenter uuid ]
     | `ManageRules | `Operator | `Root | `System -> all
   ;;

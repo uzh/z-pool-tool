@@ -11,6 +11,7 @@ type event =
   | Canceled of t
   | Created of create
   | MarkedAsDeleted of t
+  | ExternalDataIdUpdated of t * ExternalDataId.t option
 [@@deriving eq, show, variants]
 
 let handle_event pool : event -> unit Lwt.t = function
@@ -35,4 +36,6 @@ let handle_event pool : event -> unit Lwt.t = function
     ||> Pool_common.Utils.get_or_failwith
     ||> fun (_ : [> `Assignment ] Guard.Target.t) -> ()
   | MarkedAsDeleted assignment -> assignment.id |> Repo.marked_as_deleted pool
+  | ExternalDataIdUpdated (assignment, external_data_id) ->
+    { assignment with external_data_id } |> Repo.update pool
 ;;

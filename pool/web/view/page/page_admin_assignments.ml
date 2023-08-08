@@ -1,5 +1,7 @@
+open CCFun.Infix
 open Tyxml.Html
 open Component.Input
+module Field = Pool_common.Message.Field
 
 let assignments_path experiment_id =
   Format.asprintf
@@ -41,28 +43,66 @@ module Partials = struct
     |> txt
   ;;
 
-  let contact_fullname (a : Assignment.t) = a.contact |> Contact.fullname |> txt
-
-  let contact_email (a : Assignment.t) =
-    a.contact |> Contact.email_address |> Pool_user.EmailAddress.value |> txt
+  (* TODO[timhub]: replace with icon when it is added to framework *)
+  let boolean_value = function
+    | false -> "x" |> txt
+    | true -> "✓" |> txt
   ;;
 
-  let canceled_at (a : Assignment.t) =
-    a.canceled_at
-    |> CCOption.map_or ~default:"" (fun c ->
-      c
-      |> Assignment.CanceledAt.value
-      |> Pool_common.Utils.Time.formatted_date_time)
+  let assignment_id { Assignment.id; _ } = id |> Assignment.Id.value |> txt
+
+  let assignment_participated { Assignment.participated; _ } =
+    participated
+    |> CCOption.map_or ~default:(txt "") (Participated.value %> boolean_value)
+  ;;
+
+  let assignment_no_show { Assignment.no_show; _ } =
+    no_show |> CCOption.map_or ~default:(txt "") (NoShow.value %> boolean_value)
+  ;;
+
+  let assignment_external_data_id { Assignment.external_data_id; _ } =
+    external_data_id |> CCOption.map_or ~default:"" ExternalDataId.value |> txt
+  ;;
+
+  let contact_firstname ({ Assignment.contact; _ } : Assignment.t) =
+    contact |> Contact.firstname |> Pool_user.Firstname.value |> txt
+  ;;
+
+  let contact_lastname ({ Assignment.contact; _ } : Assignment.t) =
+    contact |> Contact.lastname |> Pool_user.Lastname.value |> txt
+  ;;
+
+  let contact_email ({ Assignment.contact; _ } : Assignment.t) =
+    contact |> Contact.email_address |> Pool_user.EmailAddress.value |> txt
+  ;;
+
+  let contact_cellphone ({ Assignment.contact; _ } : Assignment.t) =
+    contact
+    |> fun { Contact.cell_phone; _ } ->
+    CCOption.map_or ~default:"" Pool_user.CellPhone.value cell_phone |> txt
+  ;;
+
+  let canceled_at ({ Assignment.canceled_at; _ } : Assignment.t) =
+    canceled_at
+    |> CCOption.map_or
+         ~default:""
+         (Assignment.CanceledAt.value
+          %> Pool_common.Utils.Time.formatted_date_time)
     |> txt
   ;;
 
   let overview_list
+    ?(view_contact_name = false)
+    ?(view_contact_email = false)
+    ?(view_contact_cellphone = false)
+    ?(external_data_required = false)
     redirect
     Pool_context.{ language; csrf; _ }
     experiment_id
     session
     assignments
     =
+    let default = txt "" in
     let deletable = CCFun.(Assignment.is_deletable %> CCResult.is_ok) in
     let cancelable m =
       Session.assignments_cancelable session |> CCResult.is_ok
@@ -74,7 +114,6 @@ module Partials = struct
     in
     let button_form suffix confirmable control icon assignment =
       let hidden_redirect_input =
-        let open Pool_common.Message in
         input_element
           ~value:(show_assignment_redirect redirect)
           language
@@ -116,37 +155,45 @@ module Partials = struct
         Message.MarkAsDeleted
         Component.Icon.Trash
     in
-    (* TODO[timhub]: replace with icon when it is added to framework *)
-    let boolean_value = function
-      | false -> "x" |> txt
-      | true -> "✓" |> txt
-    in
     match CCList.is_empty assignments with
     | true -> p [ language |> empty ]
     | false ->
+      let add_field_if check values = if check then values else [] in
+      let contact_information =
+        add_field_if
+          view_contact_name
+          [ Field.Lastname, contact_lastname
+          ; Field.Firstname, contact_firstname
+          ]
+        @ add_field_if view_contact_email [ Field.Email, contact_email ]
+        @ add_field_if
+            view_contact_cellphone
+            [ Field.CellPhone, contact_cellphone ]
+        |> function
+        | [] -> [ Field.Id, assignment_id ]
+        | fields -> fields
+      in
+      let external_data_field =
+        add_field_if
+          external_data_required
+          [ Field.ExternalDataId, assignment_external_data_id ]
+      in
       let thead =
-        (Pool_common.Message.Field.
-           [ Name; Email; Participated; NoShow; CanceledAt ]
+        ((CCList.map fst contact_information
+          @ CCList.map fst external_data_field
+          @ Field.[ Participated; NoShow; CanceledAt ])
          |> Component.Table.fields_to_txt language)
-        @ [ txt "" ]
+        @ [ default ]
       in
       let rows =
         let open CCFun in
         CCList.map
           (fun (assignment : Assignment.t) ->
             let base =
-              [ assignment |> contact_fullname
-              ; assignment |> contact_email
-              ; assignment.participated
-                |> CCOption.map_or
-                     ~default:(txt "")
-                     (Participated.value %> boolean_value)
-              ; assignment.no_show
-                |> CCOption.map_or
-                     ~default:(txt "")
-                     (NoShow.value %> boolean_value)
-              ; assignment |> canceled_at
-              ]
+              CCList.map snd contact_information
+              @ CCList.map snd external_data_field
+              @ [ assignment_participated; assignment_no_show; canceled_at ]
+              |> CCList.map (fun fcn -> fcn assignment)
             in
             let buttons =
               [ cancelable assignment, cancel
@@ -164,9 +211,12 @@ module Partials = struct
   ;;
 
   let grouped_overview_lists
+    ?view_contact_name
+    ?view_contact_email
+    ?view_contact_cellphone
     redirect
     (Pool_context.{ language; _ } as context)
-    experiment
+    { Experiment.id; external_data_required; _ }
     assignments
     =
     CCList.map
@@ -188,9 +238,14 @@ module Partials = struct
           ~a:attrs
           [ h3 ~a:[ a_class [ "heading-3" ] ] [ txt (session |> to_title) ]
           ; overview_list
+              ?view_contact_name
+              ?view_contact_email
+              ?view_contact_cellphone
+              ~external_data_required:
+                (Experiment.ExternalDataRequired.value external_data_required)
               redirect
               context
-              experiment.Experiment.id
+              id
               session
               assignments
           ])
@@ -199,13 +254,20 @@ module Partials = struct
   ;;
 end
 
-let list experiment ({ Pool_context.language; _ } as context) assignments =
+let list
+  ?view_contact_name
+  ?view_contact_email
+  ?view_contact_cellphone
+  ({ Experiment.id; _ } as experiment)
+  ({ Pool_context.language; _ } as context)
+  assignments
+  =
   [ div
       [ p
           [ a
               ~a:
                 [ a_href
-                    (assignments_path experiment.Experiment.id
+                    (assignments_path id
                      |> Format.asprintf "%s/deleted"
                      |> Sihl.Web.externalize_path)
                 ]
@@ -215,6 +277,9 @@ let list experiment ({ Pool_context.language; _ } as context) assignments =
               ]
           ]
       ; Partials.grouped_overview_lists
+          ?view_contact_name
+          ?view_contact_email
+          ?view_contact_cellphone
           Assignments
           context
           experiment
@@ -231,6 +296,9 @@ let list experiment ({ Pool_context.language; _ } as context) assignments =
 ;;
 
 let marked_as_deleted
+  ?view_contact_name
+  ?view_contact_email
+  ?view_contact_cellphone
   experiment
   (Pool_context.{ language; _ } as context)
   assignments
@@ -245,6 +313,9 @@ let marked_as_deleted
     in
     let list =
       Partials.grouped_overview_lists
+        ?view_contact_name
+        ?view_contact_email
+        ?view_contact_cellphone
         DeletedAssignments
         context
         experiment

@@ -289,5 +289,8 @@ module Guard : sig
     val create : Guard.ValidationSet.t
     val read : Id.t -> Guard.ValidationSet.t
     val update : Id.t -> Guard.ValidationSet.t
+    val read_name : Guard.ValidationSet.t
+    val read_email : Guard.ValidationSet.t
+    val read_cellphone : Guard.ValidationSet.t
   end
 end

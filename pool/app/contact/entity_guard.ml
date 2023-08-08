@@ -49,4 +49,7 @@ module Access = struct
   let create = One (Action.Create, TargetSpec.Entity `Contact)
   let read = contact Action.Read
   let update = contact Action.Update
+  let read_name = Or [ index; SpecificRole `ReadContactName ]
+  let read_email = Or [ index; SpecificRole `ReadContactEmail ]
+  let read_cellphone = Or [ index; SpecificRole `ReadContactCellphone ]
 end

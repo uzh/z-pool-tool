@@ -71,6 +71,7 @@ module Data = struct
           false |> DirectRegistrationDisabled.create
       ; registration_disabled = false |> RegistrationDisabled.create
       ; allow_uninvited_signup = false |> AllowUninvitedSignup.create
+      ; external_data_required = false |> ExternalDataRequired.create
       ; experiment_type = Some Pool_common.ExperimentType.Lab
       ; session_reminder_lead_time = None
       ; created_at = Common.CreatedAt.create ()

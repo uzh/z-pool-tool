@@ -18,6 +18,7 @@ let default_schema command =
         ; DirectRegistrationDisabled.schema ()
         ; RegistrationDisabled.schema ()
         ; AllowUninvitedSignup.schema ()
+        ; ExternalDataRequired.schema ()
         ; Conformist.optional @@ Pool_common.ExperimentType.schema ()
         ; Conformist.optional @@ Pool_common.Reminder.LeadTime.schema ()
         ]
@@ -32,6 +33,7 @@ let default_command
   direct_registration_disabled
   registration_disabled
   allow_uninvited_signup
+  external_data_required
   experiment_type
   session_reminder_lead_time
   =
@@ -42,6 +44,7 @@ let default_command
   ; direct_registration_disabled
   ; registration_disabled
   ; allow_uninvited_signup
+  ; external_data_required
   ; experiment_type
   ; session_reminder_lead_time
   }
@@ -90,6 +93,7 @@ end = struct
         command.direct_registration_disabled
         command.registration_disabled
         command.allow_uninvited_signup
+        command.external_data_required
         command.experiment_type
         command.session_reminder_lead_time
     in
@@ -147,6 +151,7 @@ end = struct
         command.direct_registration_disabled
         command.registration_disabled
         command.allow_uninvited_signup
+        command.external_data_required
         command.experiment_type
         command.session_reminder_lead_time
     in

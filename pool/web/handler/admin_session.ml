@@ -1,3 +1,4 @@
+open CCFun
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 module Field = Pool_common.Message.Field
@@ -70,7 +71,7 @@ let new_helper req page =
          | None -> Lwt.return None
        in
        let%lwt locations = Pool_location.find_all database_label in
-       let flash_fetcher = CCFun.flip Sihl.Web.Flash.find req in
+       let flash_fetcher = flip Sihl.Web.Flash.find req in
        let%lwt default_reminder_lead_time =
          Settings.find_default_reminder_lead_time database_label
        in
@@ -147,13 +148,24 @@ let detail req page =
       "/admin/experiments/%s/sessions"
       (Experiment.Id.value experiment_id)
   in
-  let result context =
+  let result ({ Pool_context.database_label; user; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, error_path)
     @@
+    let* actor = Pool_context.Utils.find_authorizable database_label user in
+    let has_permission set =
+      Guard.Persistence.validate database_label set actor ||> CCResult.is_ok
+    in
+    let%lwt view_contact_name = has_permission Contact.Guard.Access.read_name in
+    let%lwt view_contact_email =
+      has_permission Contact.Guard.Access.read_email
+    in
+    let%lwt view_contact_cellphone =
+      has_permission Contact.Guard.Access.read_cellphone
+    in
     let database_label = context.Pool_context.database_label in
     let* session = Session.find database_label session_id in
     let* experiment = Experiment.find database_label experiment_id in
-    let flash_fetcher = CCFun.flip Sihl.Web.Flash.find req in
+    let flash_fetcher = flip Sihl.Web.Flash.find req in
     let%lwt current_tags =
       Tags.ParticipationTags.(
         find_all database_label (Session (Session.Id.to_common session_id)))
@@ -164,6 +176,9 @@ let detail req page =
          Assignment.find_by_session database_label session.Session.id
        in
        Page.Admin.Session.detail
+         ~view_contact_name
+         ~view_contact_email
+         ~view_contact_cellphone
          context
          experiment
          session
@@ -216,6 +231,7 @@ let detail req page =
              (Experiment (Experiment.Id.to_common experiment_id)))
        in
        Page.Admin.Session.close
+         ~view_contact_name
          context
          experiment
          session
@@ -532,6 +548,7 @@ let close_post req =
     @@
     let open Cqrs_command.Assignment_command in
     let open Assignment in
+    let* experiment = Experiment.find database_label experiment_id in
     let* session = Session.find database_label session_id in
     let* assignments =
       Assignment.find_uncanceled_by_session database_label session.Session.id
@@ -568,7 +585,7 @@ let close_post req =
             [ assignment ]
             experiment_id
             (Contact.id contact)
-          >|+ CCFun.(not %> IncrementParticipationCount.create)
+          >|+ not %> IncrementParticipationCount.create
         in
         let%lwt follow_ups =
           match
@@ -587,7 +604,27 @@ let close_post req =
       ||> CCResult.flatten_l
       >== SetAttendance.handle session participation_tags
     in
-    let%lwt () = Pool_event.handle_events database_label events in
+    let* external_data_id_events =
+      assignments
+      |> Lwt_list.map_s (fun ({ Assignment.id; _ } as assignment) ->
+        Sihl.Web.Request.urlencoded
+          (Format.asprintf "%s-%s" Field.(ExternalDataId |> show) (Id.value id))
+          req
+        ||> (function
+              | Some data_id when CCString.(data_id |> trim |> is_empty) |> not
+                -> ExternalDataId.create data_id |> CCResult.map CCOption.some
+              | Some _ ->
+                Error Pool_common.Message.(Missing Field.ExternalDataId)
+              | None when Experiment.external_data_required_value experiment ->
+                Error Pool_common.Message.(Missing Field.ExternalDataId)
+              | None -> Ok None)
+        >== curry UpdateExternalDataId.handle assignment)
+      ||> CCResult.flatten_l
+      >|+ CCList.flatten
+    in
+    let%lwt () =
+      Pool_event.handle_events database_label (events @ external_data_id_events)
+    in
     Http_utils.redirect_to_with_actions
       path
       [ Message.set ~success:[ Pool_common.Message.(Closed Field.Session) ] ]
@@ -687,10 +724,7 @@ let update_template req =
       (Session.Id.value session_id)
   in
   let%lwt template =
-    req
-    |> database_label_of_req
-    |> Lwt_result.lift
-    >>= CCFun.flip find template_id
+    req |> database_label_of_req |> Lwt_result.lift >>= flip find template_id
   in
   match template with
   | Ok template ->
@@ -713,7 +747,6 @@ module Api = struct
       let query_params = Sihl.Web.Request.query_list req in
       let find_param field =
         let open CCResult.Infix in
-        let open CCFun.Infix in
         HttpUtils.find_in_urlencoded field query_params
         >>= Pool_common.Utils.Time.parse_date_from_calendar
         |> Lwt_result.lift

@@ -267,6 +267,10 @@ let experiment_form
                 ~help:I18n.AllowUninvitedSignup
                 Field.AllowUninvitedSignup
                 allow_uninvited_signup_value
+            ; checkbox_element
+                ~help:I18n.ExternalDataRequired
+                Field.ExternalDataRequired
+                external_data_required_value
             ]
         ; div
             [ h3
@@ -563,6 +567,8 @@ let detail
           , registration_disabled_value |> boolean_value )
         ; ( Field.AllowUninvitedSignup
           , allow_uninvited_signup_value |> boolean_value )
+        ; ( Field.ExternalDataRequired
+          , external_data_required_value |> boolean_value )
         ; ( Field.ExperimentReminderLeadTime
           , session_reminder_lead_time_value experiment
             |> CCOption.map_or

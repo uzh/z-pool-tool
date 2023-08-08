@@ -35,6 +35,7 @@ module Sql = struct
           pool_assignments.matches_filter,
           pool_assignments.canceled_at,
           pool_assignments.marked_as_deleted,
+          pool_assignments.external_data_id,
           pool_assignments.created_at,
           pool_assignments.updated_at
         FROM
@@ -285,6 +286,7 @@ module Sql = struct
         participated,
         matches_filter,
         canceled_at,
+        external_data_id,
         created_at,
         updated_at
       ) VALUES (
@@ -296,7 +298,8 @@ module Sql = struct
         $6,
         $7,
         $9,
-        $10
+        $10,
+        $11
       )
       ON DUPLICATE KEY UPDATE
         marked_as_deleted = 0
@@ -317,14 +320,19 @@ module Sql = struct
           no_show = $2,
           participated = $3,
           matches_filter = $4,
-          canceled_at = $5
+          canceled_at = $5,
+          external_data_id = $6
         WHERE
           uuid = UNHEX(REPLACE($1, '-', ''))
       |sql}
     |> Caqti_type.(
          tup2
            string
-           (tup2 (option bool) (tup2 (option bool) (tup2 bool (option ptime))))
+           (tup2
+              (option bool)
+              (tup2
+                 (option bool)
+                 (tup2 bool (tup2 (option ptime) (option string)))))
          ->. unit)
   ;;
 
@@ -334,7 +342,8 @@ module Sql = struct
       , ( m.no_show
         , ( m.participated
           , ( m.matches_filter |> MatchesFilter.value
-            , CCOption.map CanceledAt.value m.canceled_at ) ) ) ))
+            , (CCOption.map CanceledAt.value m.canceled_at, m.external_data_id)
+            ) ) ) ))
   ;;
 
   let update pool m =

@@ -60,6 +60,17 @@ module AllowUninvitedSignup = struct
   ;;
 end
 
+module ExternalDataRequired = struct
+  include ExternalDataRequired
+
+  let t =
+    Pool_common.Repo.make_caqti_type
+      Caqti_type.bool
+      (create %> CCResult.return)
+      value
+  ;;
+end
+
 let t =
   let encode (m : t) =
     Ok
@@ -75,10 +86,11 @@ let t =
                       , ( m.direct_registration_disabled
                         , ( m.registration_disabled
                           , ( m.allow_uninvited_signup
-                            , ( m.experiment_type
-                              , ( m.session_reminder_lead_time
-                                , (m.created_at, m.updated_at) ) ) ) ) ) ) ) )
-                ) ) ) ) ) )
+                            , ( m.external_data_required
+                              , ( m.experiment_type
+                                , ( m.session_reminder_lead_time
+                                  , (m.created_at, m.updated_at) ) ) ) ) ) ) )
+                    ) ) ) ) ) ) ) )
   in
   let decode
     ( id
@@ -93,10 +105,11 @@ let t =
                     , ( direct_registration_disabled
                       , ( registration_disabled
                         , ( allow_uninvited_signup
-                          , ( experiment_type
-                            , ( session_reminder_lead_time
-                              , (created_at, updated_at) ) ) ) ) ) ) ) ) ) ) )
-        ) ) )
+                          , ( external_data_required
+                            , ( experiment_type
+                              , ( session_reminder_lead_time
+                                , (created_at, updated_at) ) ) ) ) ) ) ) ) ) )
+            ) ) ) ) )
     =
     let open CCResult in
     Ok
@@ -112,6 +125,7 @@ let t =
       ; direct_registration_disabled
       ; registration_disabled
       ; allow_uninvited_signup
+      ; external_data_required
       ; experiment_type
       ; session_reminder_lead_time
       ; created_at
@@ -147,17 +161,20 @@ let t =
                                        (tup2
                                           AllowUninvitedSignup.t
                                           (tup2
-                                             (option
-                                                Pool_common.Repo.ExperimentType
-                                                .t)
+                                             ExternalDataRequired.t
                                              (tup2
                                                 (option
-                                                   Pool_common.Repo.Reminder
-                                                   .LeadTime
+                                                   Pool_common.Repo
+                                                   .ExperimentType
                                                    .t)
                                                 (tup2
-                                                   Common.Repo.CreatedAt.t
-                                                   Common.Repo.UpdatedAt.t))))))))))))))))
+                                                   (option
+                                                      Pool_common.Repo.Reminder
+                                                      .LeadTime
+                                                      .t)
+                                                   (tup2
+                                                      Common.Repo.CreatedAt.t
+                                                      Common.Repo.UpdatedAt.t)))))))))))))))))
 ;;
 
 module Write = struct
@@ -181,8 +198,10 @@ module Write = struct
                         , ( m.direct_registration_disabled
                           , ( m.registration_disabled
                             , ( m.allow_uninvited_signup
-                              , (m.experiment_type, m.session_reminder_lead_time)
-                              ) ) ) ) ) ) ) ) ) ) ) )
+                              , ( m.external_data_required
+                                , ( m.experiment_type
+                                  , m.session_reminder_lead_time ) ) ) ) ) ) )
+                    ) ) ) ) ) ) )
     in
     let decode _ = failwith "Write only model" in
     Caqti_type.(
@@ -214,14 +233,16 @@ module Write = struct
                                          (tup2
                                             AllowUninvitedSignup.t
                                             (tup2
-                                               (option
-                                                  Pool_common.Repo
-                                                  .ExperimentType
-                                                  .t)
-                                               (option
-                                                  Pool_common.Repo.Reminder
-                                                  .LeadTime
-                                                  .t)))))))))))))))
+                                               ExternalDataRequired.t
+                                               (tup2
+                                                  (option
+                                                     Pool_common.Repo
+                                                     .ExperimentType
+                                                     .t)
+                                                  (option
+                                                     Pool_common.Repo.Reminder
+                                                     .LeadTime
+                                                     .t))))))))))))))))
   ;;
 end
 

@@ -387,6 +387,18 @@ let session_list
           let cells =
             match layout with
             | `SessionOverview ->
+              let close_btn =
+                if Session.is_closable session |> CCResult.is_ok
+                then
+                  [ Format.asprintf
+                      "/admin/experiments/%s/sessions/%s/close"
+                      (Experiment.Id.value experiment_id)
+                      (Id.value session.id)
+                    |> link_as_button
+                         ~control:(language, Pool_common.Message.Close None)
+                  ]
+                else []
+              in
               let cells =
                 Session.
                   [ txt
@@ -409,13 +421,14 @@ let session_list
                   ; txt key_figures
                   ; div
                       ~a:[ a_class [ "flexrow"; "flex-gap"; "justify-end" ] ]
-                      [ Format.asprintf
-                          "/admin/experiments/%s/sessions/%s"
-                          (Experiment.Id.value experiment_id)
-                          (Id.value session.id)
-                        |> link_as_button ~icon:Icon.Eye
-                      ; delete_form ()
-                      ]
+                      (close_btn
+                       @ [ Format.asprintf
+                             "/admin/experiments/%s/sessions/%s"
+                             (Experiment.Id.value experiment_id)
+                             (Id.value session.id)
+                           |> link_as_button ~icon:Icon.Eye
+                         ; delete_form ()
+                         ])
                   ]
               in
               base @ cells
@@ -574,14 +587,19 @@ let new_form
 ;;
 
 let detail
+  ?view_contact_name
+  ?view_contact_email
+  ?view_contact_cellphone
   (Pool_context.{ language; _ } as context)
-  experiment
+  ({ Experiment.id; external_data_required; _ } as experiment)
   (session : Session.t)
   participation_tags
   assignments
   =
   let open Pool_common in
   let open Session in
+  let experiment_id = Experiment.Id.value id in
+  let session_id = Session.Id.value session.id in
   let session_link ?style (show, url, control) =
     let style, icon =
       style |> CCOption.map_or ~default:(`Primary, None) CCFun.id
@@ -596,8 +614,8 @@ let detail
         ?icon
         (Format.asprintf
            "/admin/experiments/%s/sessions/%s/%s"
-           (Experiment.Id.value experiment.Experiment.id)
-           (Id.value session.id)
+           experiment_id
+           session_id
            url)
       |> CCOption.pure
   in
@@ -613,7 +631,7 @@ let detail
                   [ a_href
                       (Format.asprintf
                          "/admin/experiments/%s/sessions/%s"
-                         (Experiment.Id.value experiment.Experiment.id)
+                         experiment_id
                          (Id.value follow_up_to)
                        |> Sihl.Web.externalize_path)
                   ]
@@ -667,9 +685,7 @@ let detail
     let links =
       let duplicate =
         let base =
-          Format.asprintf
-            "/admin/experiments/%s/sessions"
-            (Experiment.Id.value experiment.Experiment.id)
+          Format.asprintf "/admin/experiments/%s/sessions" experiment_id
         in
         let link =
           match session.follow_up_to with
@@ -678,12 +694,8 @@ let detail
               "%s/%s/follow-up?duplicate_id=%s"
               base
               (Id.value parent_session)
-              (Id.value session.id)
-          | None ->
-            Format.asprintf
-              "%s/create/?duplicate_id=%s"
-              base
-              (Id.value session.id)
+              session_id
+          | None -> Format.asprintf "%s/create/?duplicate_id=%s" base session_id
         in
         link_as_button
           ~control:(language, Message.Duplicate (Some Field.Session))
@@ -738,9 +750,14 @@ let detail
     let assignment_list =
       Page_admin_assignments.(
         Partials.overview_list
+          ?view_contact_name
+          ?view_contact_email
+          ?view_contact_cellphone
+          ~external_data_required:
+            (Experiment.ExternalDataRequired.value external_data_required)
           Session
           context
-          experiment.Experiment.id
+          id
           session
           assignments)
     in
@@ -758,8 +775,8 @@ let detail
       ~control:(language, Message.(Edit (Some Field.Session)))
       (Format.asprintf
          "/admin/experiments/%s/sessions/%s/edit"
-         (Experiment.Id.value experiment.Experiment.id)
-         (Id.value session.id))
+         experiment_id
+         session_id)
   in
   div
     ~a:[ a_class [ "stack-lg" ] ]
@@ -915,6 +932,7 @@ let follow_up
 ;;
 
 let close
+  ?(view_contact_name = false)
   ({ Pool_context.language; csrf; _ } as context)
   experiment
   (session : Session.t)
@@ -976,16 +994,56 @@ let close
               [ txt label ]
           ]
       in
+      let external_data_id_head, external_data_id_row =
+        if Experiment.external_data_required_value experiment
+        then
+          ( [ Utils.field_to_string_capitalized
+                language
+                Message.Field.ExternalDataId
+              |> txt
+            ]
+          , fun label data_id ->
+              [ div
+                  ~a:[ a_class [ "form-group" ] ]
+                  [ input
+                      ~a:
+                        [ a_id label
+                        ; a_name label
+                        ; a_required ()
+                        ; a_input_type `Text
+                        ; a_value
+                            (CCOption.map_or
+                               ~default:""
+                               Assignment.ExternalDataId.value
+                               data_id)
+                        ]
+                      ()
+                  ]
+              ] )
+        else [], fun _ _ -> []
+      in
       let thead =
-        txt ""
-        :: ([ "all-no-show", "NS"; "all-participated", "P" ] |> CCList.map link)
+        (txt "" :: external_data_id_head)
+        @ ([ "all-no-show", "NS"; "all-participated", "P" ] |> CCList.map link)
       in
       CCList.map
-        (fun ({ Assignment.id; contact; _ } : Assignment.t) ->
-          [ div [ strong [ txt (Contact.fullname contact) ] ]
-          ; checkbox_element id Message.Field.NoShow
-          ; checkbox_element id Message.Field.Participated
-          ])
+        (fun ({ Assignment.id; contact; external_data_id; _ } : Assignment.t) ->
+          let external_data_id_label =
+            Format.asprintf
+              "%s-%s"
+              Message.Field.(ExternalDataId |> show)
+              (Assignment.Id.value id)
+          in
+          let identity =
+            if view_contact_name
+            then Contact.fullname contact
+            else Assignment.Id.value id
+          in
+          [ div [ strong [ txt identity ] ] ]
+          @ external_data_id_row external_data_id_label external_data_id
+          @ [ checkbox_element id Message.Field.NoShow
+            ; checkbox_element id Message.Field.Participated
+            ])
         assignments
       |> Table.horizontal_table ~thead `Striped
       |> fun table ->
