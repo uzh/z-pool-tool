@@ -36,6 +36,9 @@ let generate_events (experiments : Experiment.Id.t list) =
       start)
   in
   let overlaps = CCList.take 2 mailings in
+  let distribution =
+    Some Distribution.(Sorted [ SortableField.Firstname, SortOrder.Ascending ])
+  in
   CCList.mapi
     (fun index start ->
       Created
@@ -43,7 +46,7 @@ let generate_events (experiments : Experiment.Id.t list) =
             Start.(StartAt start)
             (generate_end start (index mod 3))
             (generate_rate (index mod 8))
-            None
+            distribution
           |> Pool_common.Utils.get_or_failwith
         , CCList.(CCRandom.run (random_choose experiments)) ))
     (mailings @ overlaps)
