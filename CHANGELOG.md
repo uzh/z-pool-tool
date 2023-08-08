@@ -4,6 +4,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/pool/tree/HEAD)
 
+## [0.4.2](https://github.com/uzh/pool/tree/0.4.2) - 2023-08-08
+
+### Fixed
+
+- keep filter when updating experiment
+
 ## [0.4.1](https://github.com/uzh/pool/tree/0.4.1) - 2023-08-08
 
 ### Added
