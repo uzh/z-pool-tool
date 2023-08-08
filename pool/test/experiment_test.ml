@@ -9,11 +9,45 @@ let experiment_boolean_fields =
   Experiment.boolean_fields |> CCList.map Pool_common.Message.Field.show
 ;;
 
+let boolean_fields =
+  Experiment.boolean_fields |> CCList.map Pool_common.Message.Field.show
+;;
+
 module Data = struct
-  let contact_person = Test_utils.Model.create_admin ()
+  let organisational_unit = Test_utils.Model.create_organisational_unit ()
+
+  let contact_person =
+    let open Pool_context in
+    Test_utils.Model.create_admin ()
+    |> function
+    | Admin admin -> admin
+    | Contact _ | Guest -> failwith "Invalid admin"
+  ;;
+
   let title = "New experiment"
   let public_title = "public_experiment_title"
   let description = "Description"
+  let cost_center = "cost_center"
+  let direct_registration_disabled = "false"
+  let registration_disabled = "false"
+  let allow_uninvited_signup = "false"
+  let external_data_required = "false"
+  let experiment_type = Pool_common.ExperimentType.(show Lab)
+
+  let urlencoded =
+    Pool_common.Message.
+      [ Field.(show Title), [ title ]
+      ; Field.(show PublicTitle), [ public_title ]
+      ; Field.(show Description), [ description ]
+      ; Field.(show CostCenter), [ cost_center ]
+      ; ( Field.(show DirectRegistrationDisabled)
+        , [ direct_registration_disabled ] )
+      ; Field.(show RegistrationDisabled), [ registration_disabled ]
+      ; Field.(show AllowUninvitedSignup), [ allow_uninvited_signup ]
+      ; Field.(show ExternalDataRequired), [ external_data_required ]
+      ; Field.(show ExperimentType), [ experiment_type ]
+      ]
+  ;;
 
   module Filter = struct
     open Filter
@@ -62,17 +96,29 @@ module Data = struct
       ; title
       ; public_title
       ; description = Some description
-      ; cost_center = Some ("F-00000-11-22" |> CostCenter.of_string)
+      ; cost_center = Some (cost_center |> CostCenter.of_string)
       ; organisational_unit = None
       ; filter
       ; contact_person_id = None
       ; smtp_auth_id = None
       ; direct_registration_disabled =
-          false |> DirectRegistrationDisabled.create
-      ; registration_disabled = false |> RegistrationDisabled.create
-      ; allow_uninvited_signup = false |> AllowUninvitedSignup.create
-      ; external_data_required = false |> ExternalDataRequired.create
-      ; experiment_type = Some Pool_common.ExperimentType.Lab
+          direct_registration_disabled
+          |> Utils.Bool.of_string
+          |> DirectRegistrationDisabled.create
+      ; registration_disabled =
+          registration_disabled
+          |> Utils.Bool.of_string
+          |> RegistrationDisabled.create
+      ; allow_uninvited_signup =
+          allow_uninvited_signup
+          |> Utils.Bool.of_string
+          |> AllowUninvitedSignup.create
+      ; external_data_required =
+          external_data_required
+          |> Utils.Bool.of_string
+          |> ExternalDataRequired.create
+      ; experiment_type =
+          Some (experiment_type |> Pool_common.ExperimentType.read)
       ; session_reminder_lead_time = None
       ; created_at = Common.CreatedAt.create ()
       ; updated_at = Common.UpdatedAt.create ()
@@ -87,8 +133,8 @@ let handle_create ?organisational_unit ?contact_person ?smtp_auth =
 let handle_update ?organisational_unit ?contact_person ?smtp_auth experiment =
   ExperimentCommand.Update.handle
     experiment
-    organisational_unit
     contact_person
+    organisational_unit
     smtp_auth
 ;;
 
@@ -118,23 +164,65 @@ let create_without_title () =
 ;;
 
 let update () =
-  let experiment = Model.create_experiment () in
+  let experiment = Data.experiment |> Test_utils.get_or_failwith_pool_error in
   let open CCResult.Infix in
   let events =
-    Pool_common.Message.Field.
-      [ Title |> show, [ Data.title ]
-      ; Description |> show, [ Data.description ]
-      ]
+    Data.urlencoded
+    |> Http_utils.format_request_boolean_values boolean_fields
     |> ExperimentCommand.Update.decode
     >>= handle_update experiment
   in
   let expected =
-    Pool_common.Message.Field.
-      [ Title |> show, [ Data.title ]
-      ; Description |> show, [ Data.description ]
-      ]
+    Ok [ Experiment.Updated experiment |> Pool_event.experiment ]
+  in
+  Test_utils.check_result expected events
+;;
+
+let update_add_ou_and_contact_person () =
+  let experiment = Data.experiment |> Test_utils.get_or_failwith_pool_error in
+  let open CCResult.Infix in
+  let events =
+    Data.urlencoded
+    |> Http_utils.format_request_boolean_values boolean_fields
+    |> ExperimentCommand.Update.decode
+    >>= handle_update
+          ~organisational_unit:Data.organisational_unit
+          ~contact_person:Data.contact_person
+          experiment
+  in
+  let expected =
+    Ok
+      Experiment.
+        [ Updated
+            { experiment with
+              organisational_unit = Some Data.organisational_unit
+            ; contact_person_id = Some (Admin.id Data.contact_person)
+            }
+          |> Pool_event.experiment
+        ]
+  in
+  Test_utils.check_result expected events
+;;
+
+let update_remove_ou () =
+  let experiment = Data.experiment |> Test_utils.get_or_failwith_pool_error in
+  let experiment =
+    Experiment.
+      { experiment with organisational_unit = Some Data.organisational_unit }
+  in
+  let open CCResult.Infix in
+  let events =
+    Data.urlencoded
+    |> Http_utils.format_request_boolean_values boolean_fields
     |> ExperimentCommand.Update.decode
     >>= handle_update experiment
+  in
+  let expected =
+    Ok
+      Experiment.
+        [ Updated { experiment with organisational_unit = None }
+          |> Pool_event.experiment
+        ]
   in
   Test_utils.check_result expected events
 ;;

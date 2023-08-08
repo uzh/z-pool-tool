@@ -229,6 +229,12 @@ module Model = struct
       }
   ;;
 
+  let create_organisational_unit () =
+    let open Organisational_unit in
+    let name = Name.create "SNS" |> get_or_failwith_pool_error in
+    create name
+  ;;
+
   let experiment_to_public_experiment (experiment : Experiment.t) =
     Experiment.(
       Public.
