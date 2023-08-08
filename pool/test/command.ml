@@ -200,6 +200,11 @@ let () =
             Experiment_test.create_without_title
         ; test_case "upate experiment" `Quick Experiment_test.update
         ; test_case
+            "add ou and contact person"
+            `Quick
+            Experiment_test.update_add_ou_and_contact_person
+        ; test_case "remove ou" `Quick Experiment_test.update_remove_ou
+        ; test_case
             "delete experiment with sessions"
             `Quick
             Experiment_test.delete_with_sessions

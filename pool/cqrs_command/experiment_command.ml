@@ -133,27 +133,29 @@ end = struct
     experiment
     contact_person
     organisational_unit
-    smtp_auth
+    smtp
     (command : t)
     =
     Logs.info ~src (fun m -> m "Handle command Update" ~tags);
     let open CCResult in
-    let* experiment =
-      Experiment.create
-        ~id:experiment.Experiment.id
-        command.title
-        command.public_title
-        command.description
-        command.cost_center
-        organisational_unit
-        (contact_person |> CCOption.map Admin.id)
-        (smtp_auth |> CCOption.map Email.SmtpAuth.(fun ({ id; _ } : t) -> id))
-        command.direct_registration_disabled
-        command.registration_disabled
-        command.allow_uninvited_signup
-        command.external_data_required
-        command.experiment_type
-        command.session_reminder_lead_time
+    let experiment =
+      Experiment.
+        { experiment with
+          title = command.title
+        ; public_title = command.public_title
+        ; description = command.description
+        ; cost_center = command.cost_center
+        ; organisational_unit
+        ; contact_person_id = CCOption.map Admin.id contact_person
+        ; smtp_auth_id =
+            CCOption.map Email.SmtpAuth.(fun ({ id; _ } : t) -> id) smtp
+        ; direct_registration_disabled = command.direct_registration_disabled
+        ; registration_disabled = command.registration_disabled
+        ; allow_uninvited_signup = command.allow_uninvited_signup
+        ; external_data_required = command.external_data_required
+        ; experiment_type = command.experiment_type
+        ; session_reminder_lead_time = command.session_reminder_lead_time
+        }
     in
     Ok [ Experiment.Updated experiment |> Pool_event.experiment ]
   ;;
