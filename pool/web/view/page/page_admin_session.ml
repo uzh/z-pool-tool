@@ -994,13 +994,37 @@ let close
               [ txt label ]
           ]
       in
+      let external_data_id_head, external_data_id_row =
+        if Experiment.external_data_required_value experiment
+        then
+          ( [ Utils.field_to_string_capitalized
+                language
+                Message.Field.ExternalDataId
+              |> txt
+            ]
+          , fun label data_id ->
+              [ div
+                  ~a:[ a_class [ "form-group" ] ]
+                  [ input
+                      ~a:
+                        [ a_id label
+                        ; a_name label
+                        ; a_required ()
+                        ; a_input_type `Text
+                        ; a_value
+                            (CCOption.map_or
+                               ~default:""
+                               Assignment.ExternalDataId.value
+                               data_id)
+                        ]
+                      ()
+                  ]
+              ] )
+        else [], fun _ _ -> []
+      in
       let thead =
-        txt ""
-        :: (Utils.field_to_string_capitalized
-              language
-              Message.Field.ExternalDataId
-            |> txt)
-        :: ([ "all-no-show", "NS"; "all-participated", "P" ] |> CCList.map link)
+        (txt "" :: external_data_id_head)
+        @ ([ "all-no-show", "NS"; "all-participated", "P" ] |> CCList.map link)
       in
       CCList.map
         (fun ({ Assignment.id; contact; external_data_id; _ } : Assignment.t) ->
@@ -1015,29 +1039,11 @@ let close
             then Contact.fullname contact
             else Assignment.Id.value id
           in
-          [ div [ strong [ txt identity ] ]
-          ; div
-              ~a:[ a_class [ "form-group" ] ]
-              [ input
-                  ~a:
-                    ([ a_id external_data_id_label
-                     ; a_name external_data_id_label
-                     ; a_input_type `Text
-                     ; a_value
-                         (CCOption.map_or
-                            ~default:""
-                            Assignment.ExternalDataId.value
-                            external_data_id)
-                     ]
-                     @
-                     if Experiment.external_data_required_value experiment
-                     then [ a_required () ]
-                     else [])
-                  ()
-              ]
-          ; checkbox_element id Message.Field.NoShow
-          ; checkbox_element id Message.Field.Participated
-          ])
+          [ div [ strong [ txt identity ] ] ]
+          @ external_data_id_row external_data_id_label external_data_id
+          @ [ checkbox_element id Message.Field.NoShow
+            ; checkbox_element id Message.Field.Participated
+            ])
         assignments
       |> Table.horizontal_table ~thead `Striped
       |> fun table ->
