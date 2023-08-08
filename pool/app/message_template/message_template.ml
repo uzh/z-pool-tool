@@ -87,17 +87,9 @@ let experiment_params layout experiment =
   ]
 ;;
 
-let session_params ?follow_up_sessions lang layout experiment session =
+let session_params ?follow_up_sessions lang session =
   let open Session in
   let session_id = session.Session.id |> Id.value in
-  let session_url =
-    Format.asprintf
-      "experiments/%s/sessions/%s"
-      Experiment.(experiment.Experiment.id |> Id.value)
-      session_id
-    |> Sihl.Web.externalize_path
-    |> Format.asprintf "%s%s" layout.link
-  in
   let session_overview =
     let main_session = Session.to_email_text lang session in
     match follow_up_sessions with
@@ -111,10 +103,7 @@ let session_params ?follow_up_sessions lang layout experiment session =
       in
       [ main_session; follow_ups ] |> CCString.concat "\n\n"
   in
-  [ "sessionId", session_id
-  ; "sessionUrl", session_url
-  ; "sessionOverview", session_overview
-  ]
+  [ "sessionId", session_id; "sessionOverview", session_overview ]
 ;;
 
 module AccountSuspensionNotification = struct
@@ -167,7 +156,7 @@ module AssignmentConfirmation = struct
     in
     base_params layout contact
     @ experiment_params layout experiment
-    @ session_params ?follow_up_sessions language layout experiment session
+    @ session_params ?follow_up_sessions language session
   ;;
 
   let template pool language =
@@ -471,7 +460,7 @@ module SessionCancellation = struct
     global_params layout contact.Contact.user
     @ [ "reason", reason |> Session.CancellationReason.value ]
     @ experiment_params layout experiment
-    @ session_params ~follow_up_sessions language layout experiment session
+    @ session_params ~follow_up_sessions language session
   ;;
 
   let prepare pool tenant experiment sys_langs session follow_up_sessions =
@@ -544,7 +533,7 @@ module SessionReminder = struct
   let email_params lang layout experiment session contact =
     global_params layout contact.Contact.user
     @ experiment_params layout experiment
-    @ session_params lang layout experiment session
+    @ session_params lang session
   ;;
 
   let create pool tenant system_languages experiment session contact =
@@ -614,7 +603,7 @@ module SessionReschedule = struct
       ; "newDuration", new_duration |> Duration.value |> formatted_timespan
       ]
     @ experiment_params layout experiment
-    @ session_params lang layout experiment session
+    @ session_params lang session
   ;;
 
   let prepare pool tenant experiment sys_langs session admin_contact =
