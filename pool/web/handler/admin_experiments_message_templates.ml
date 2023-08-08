@@ -24,7 +24,11 @@ let form_redirects experiment_id error_path =
   { success = base; error = Format.asprintf "%s/%s" base error_path }
 ;;
 
-let form ?template_id label req =
+type form_context =
+  | New of Message_template.Label.t
+  | Edit of Message_template.Id.t
+
+let form form_context req =
   let open Utils.Lwt_result.Infix in
   let experiment_id = experiment_id req in
   let result ({ Pool_context.database_label; _ } as context) =
@@ -33,21 +37,21 @@ let form ?template_id label req =
     let flash_fetcher key = Sihl.Web.Flash.find key req in
     let tenant = Pool_context.Tenant.get_tenant_exn req in
     let* experiment = Experiment.find database_label experiment_id in
-    let* template =
-      template_id
-      |> CCOption.map_or ~default:(Lwt_result.return None) (fun id ->
-        Message_template.find database_label id >|+ CCOption.pure)
-    in
-    let%lwt available_languages =
-      match template_id with
-      | None ->
-        Pool_context.Tenant.get_tenant_languages_exn req
-        |> Message_template.find_available_languages
-             database_label
-             (experiment_id |> Experiment.Id.to_common)
-             label
-        ||> CCOption.return
-      | Some _ -> Lwt.return_none
+    let* template, available_languages, label =
+      match form_context with
+      | New label ->
+        let%lwt available_languages =
+          Pool_context.Tenant.get_tenant_languages_exn req
+          |> Message_template.find_available_languages
+               database_label
+               (experiment_id |> Experiment.Id.to_common)
+               label
+          ||> CCOption.return
+        in
+        Lwt_result.return (None, available_languages, label)
+      | Edit id ->
+        let* template = Message_template.find database_label id in
+        Lwt_result.return (Some template, None, template.Message_template.label)
     in
     Page.Admin.Experiments.message_template_form
       context
@@ -75,13 +79,13 @@ let new_post label req =
     req
 ;;
 
-let new_invitation = form Message_template.Label.ExperimentInvitation
+let new_invitation = form (New Message_template.Label.ExperimentInvitation)
 let new_invitation_post = new_post Message_template.Label.ExperimentInvitation
-let new_session_reminder = form Message_template.Label.SessionReminder
+let new_session_reminder = form (New Message_template.Label.SessionReminder)
 let new_session_reminder_post = new_post Message_template.Label.SessionReminder
 
 let new_assignment_confirmation =
-  form Message_template.Label.AssignmentConfirmation
+  form (New Message_template.Label.AssignmentConfirmation)
 ;;
 
 let new_assignment_confirmation_post =
@@ -114,7 +118,7 @@ let update_template req =
 
 let edit_template req =
   let template_id = template_id req in
-  form ~template_id Message_template.Label.ExperimentInvitation req
+  form (Edit template_id) req
 ;;
 
 let delete req =
