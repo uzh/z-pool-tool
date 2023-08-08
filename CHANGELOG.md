@@ -4,6 +4,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/pool/tree/HEAD)
 
+## [0.4.1](https://github.com/uzh/pool/tree/0.4.1) - 2023-08-08
+
 ### Added
 
 - external_data_required to experiments
