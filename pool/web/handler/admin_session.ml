@@ -611,8 +611,10 @@ let close_post req =
           (Format.asprintf "%s-%s" Field.(ExternalDataId |> show) (Id.value id))
           req
         ||> (function
-              | Some data_id ->
-                ExternalDataId.create data_id |> CCResult.map CCOption.some
+              | Some data_id when CCString.(data_id |> trim |> is_empty) |> not
+                -> ExternalDataId.create data_id |> CCResult.map CCOption.some
+              | Some _ ->
+                Error Pool_common.Message.(Missing Field.ExternalDataId)
               | None when Experiment.external_data_required_value experiment ->
                 Error Pool_common.Message.(Missing Field.ExternalDataId)
               | None -> Ok None)
