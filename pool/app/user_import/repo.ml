@@ -180,23 +180,42 @@ let find_pending_by_token pool token =
   ||> CCOption.to_result Pool_common.Message.(Invalid Field.Token)
 ;;
 
-let find_pending_by_user_request =
+let find_pending_by_user_id_opt_request =
   let open Caqti_request.Infix in
   Format.asprintf
-    "%s\n%s"
+    "%s\n%s\n"
     select
     {sql|
-      WHERE user_uuid = UNHEX(REPLACE($1, '-', ''))
-      AND confirmed_at IS NULL
+      WHERE pool_user_imports.user_uuid = UNHEX(REPLACE($1, '-', ''))
+      AND pool_user_imports.confirmed_at IS NULL
     |sql}
-  |> Caqti_type.string ->! RepoEntity.t
+  |> Pool_common.Repo.Id.t ->! RepoEntity.t
 ;;
 
-let find_pending_by_user_opt pool user =
+let find_pending_by_user_id_opt pool =
   Utils.Database.find_opt
     (Pool_database.Label.value pool)
-    find_pending_by_user_request
-    user.Sihl_user.id
+    find_pending_by_user_id_opt_request
+;;
+
+let find_pending_by_email_opt_request =
+  let open Caqti_request.Infix in
+  Format.asprintf
+    "%s\n%s\n"
+    select
+    {sql|
+      INNER JOIN user_users
+      ON user_users.uuid = pool_user_imports.user_uuid
+      WHERE user_users.email = $1
+      AND pool_user_imports.confirmed_at IS NULL
+    |sql}
+  |> Pool_user.Repo.EmailAddress.t ->! RepoEntity.t
+;;
+
+let find_pending_by_email_opt pool =
+  Utils.Database.find_opt
+    (Pool_database.Label.value pool)
+    find_pending_by_email_opt_request
 ;;
 
 let update_request =

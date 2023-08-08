@@ -145,10 +145,14 @@ let login req urlencoded database_label =
           blocked_until
     in
     let login () =
-      Service.User.login
-        ~ctx:(Pool_database.to_ctx database_label)
-        (EmailAddress.value email)
-        ~password
+      User_import.find_pending_by_email_opt database_label email
+      >|> (function
+            | Some _ -> Lwt.return_error `Incorrect_password
+            | None ->
+              Service.User.login
+                ~ctx:(Pool_database.to_ctx database_label)
+                (EmailAddress.value email)
+                ~password)
       >|> handle_result
     in
     suspension_error login blocked_until

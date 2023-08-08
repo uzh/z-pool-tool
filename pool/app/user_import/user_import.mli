@@ -34,9 +34,14 @@ val find_pending_by_token
   -> Token.t
   -> (t, Pool_common.Message.error) result Lwt.t
 
-val find_pending_by_user_opt
+val find_pending_by_user_id_opt
   :  Pool_database.Label.t
-  -> Sihl_user.t
+  -> Pool_common.Id.t
+  -> t option Lwt.t
+
+val find_pending_by_email_opt
+  :  Pool_database.Label.t
+  -> Pool_user.EmailAddress.t
   -> t option Lwt.t
 
 type event =

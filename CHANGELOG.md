@@ -4,6 +4,11 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/pool/tree/HEAD)
 
+### Changed
+
+- include contacts whose import is pending in filter
+- allow password reset when import is pending
+
 ## [0.4.0](https://github.com/uzh/pool/tree/0.4.0) - 2023-08-03
 
 ### Added

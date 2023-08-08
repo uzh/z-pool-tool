@@ -40,6 +40,7 @@ type event =
   | Disabled of t
   | Enabled of t
   | ImportConfirmed of t * User.Password.t
+  | ImportDisabled of t
   | PasswordUpdated of
       t * User.Password.t * User.Password.t * User.PasswordConfirmed.t
   | PromotedContact of Common.Id.t
@@ -114,6 +115,10 @@ let handle_event ~tags pool : event -> unit Lwt.t =
       |> CCResult.map (Service.User.update ~ctx:(Pool_database.to_ctx pool))
       |> Utils.with_log_result_error ~src ~tags Message.nothandled
     in
+    Repo.update
+      pool
+      { admin with import_pending = Pool_user.ImportPending.create false }
+  | ImportDisabled admin ->
     Repo.update
       pool
       { admin with import_pending = Pool_user.ImportPending.create false }

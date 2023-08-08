@@ -193,6 +193,7 @@ type event =
   | CellPhoneVerified of t * Pool_user.CellPhone.t
   | CellPhoneVerificationReset of t
   | ImportConfirmed of t * Pool_user.Password.t
+  | ImportDisabled of t
   | ProfileUpdateTriggeredAtUpdated of t list
   | RegistrationAttemptNotificationSent of t
   | Updated of t
