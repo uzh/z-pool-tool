@@ -604,6 +604,10 @@ let close_post req =
       ||> CCResult.flatten_l
       >== SetAttendance.handle session participation_tags
     in
+    let%lwt () = Pool_event.handle_events database_label events in
+    let* assignments =
+      Assignment.find_uncanceled_by_session database_label session.Session.id
+    in
     let* external_data_id_events =
       assignments
       |> Lwt_list.map_s (fun ({ Assignment.id; _ } as assignment) ->
@@ -623,7 +627,7 @@ let close_post req =
       >|+ CCList.flatten
     in
     let%lwt () =
-      Pool_event.handle_events database_label (events @ external_data_id_events)
+      Pool_event.handle_events database_label external_data_id_events
     in
     Http_utils.redirect_to_with_actions
       path
