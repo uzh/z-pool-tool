@@ -134,11 +134,13 @@ module SetAttendance : sig
     * Assignment.NoShow.t
     * Assignment.Participated.t
     * Assignment.IncrementParticipationCount.t
-    * Assignment.t list option)
+    * Assignment.t list option
+    * Assignment.ExternalDataId.t option)
     list
 
   val handle
     :  ?tags:Logs.Tag.set
+    -> Experiment.t
     -> Session.t
     -> Tags.t list
     -> t
@@ -151,11 +153,13 @@ end = struct
     * Assignment.NoShow.t
     * Assignment.Participated.t
     * Assignment.IncrementParticipationCount.t
-    * Assignment.t list option)
+    * Assignment.t list option
+    * Assignment.ExternalDataId.t option)
     list
 
   let handle
     ?(tags = Logs.Tag.empty)
+    experiment
     (session : Session.t)
     (participation_tags : Tags.t list)
     (command : t)
@@ -174,7 +178,8 @@ end = struct
                , no_show
                , participated
                , increment_num_participaton
-               , follow_ups ) ->
+               , follow_ups
+               , external_data_id ) ->
         let cancel_followups =
           NoShow.value no_show || not (Participated.value participated)
         in
@@ -202,6 +207,14 @@ end = struct
             num_assignments, marked_as_deleted
           | _, _ -> 0, []
         in
+        let* external_data_id =
+          match
+            Experiment.external_data_required_value experiment, external_data_id
+          with
+          | true, None ->
+            Error Pool_common.Message.NoValue (* TODO: Improve error message *)
+          | _, _ -> Ok external_data_id
+        in
         let contact =
           Contact.update_num_assignments
             ~step:(CCInt.neg num_assignments_decrement)
@@ -222,7 +235,8 @@ end = struct
           (Contact.Updated contact |> Pool_event.contact) :: mark_as_deleted
         in
         events
-        @ ((Assignment.AttendanceSet (assignment, no_show, participated)
+        @ ((Assignment.AttendanceSet
+              (assignment, no_show, participated, external_data_id)
             |> Pool_event.assignment)
            :: contact_events)
         @ tag_events
@@ -345,26 +359,4 @@ end = struct
   ;;
 
   let effects = Assignment.Guard.Access.delete
-end
-
-module UpdateExternalDataId : sig
-  include
-    Common.CommandSig
-      with type t = Assignment.t * Assignment.ExternalDataId.t option
-
-  val effects : Experiment.Id.t -> Assignment.Id.t -> Guard.ValidationSet.t
-end = struct
-  type t = Assignment.t * Assignment.ExternalDataId.t option
-
-  let handle ?(tags = Logs.Tag.empty) (assignment, external_data_id)
-    : (Pool_event.t list, Pool_common.Message.error) result
-    =
-    Logs.info ~src (fun m -> m "Handle command UpdateExternalDataId" ~tags);
-    Ok
-      [ Assignment.ExternalDataIdUpdated (assignment, external_data_id)
-        |> Pool_event.assignment
-      ]
-  ;;
-
-  let effects = Assignment.Guard.Access.update
 end

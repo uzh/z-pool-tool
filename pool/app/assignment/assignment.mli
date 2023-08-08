@@ -143,13 +143,16 @@ type create =
   }
 
 type event =
-  | AttendanceSet of (t * NoShow.t * Participated.t)
+  | AttendanceSet of (t * NoShow.t * Participated.t * ExternalDataId.t option)
   | Canceled of t
   | Created of create
   | MarkedAsDeleted of t
   | ExternalDataIdUpdated of t * ExternalDataId.t option
 
-val attendanceset : t * NoShow.t * Participated.t -> event
+val attendanceset
+  :  t * NoShow.t * Participated.t * ExternalDataId.t option
+  -> event
+
 val canceled : t -> event
 val created : create -> event
 val markedasdeleted : t -> event
