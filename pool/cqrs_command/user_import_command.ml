@@ -71,3 +71,35 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 end
+
+module DisableImport : sig
+  type t = Pool_context.user * User_import.t
+
+  val handle
+    :  ?tags:Logs.Tag.set
+    -> t
+    -> (Pool_event.t list, Pool_common.Message.error) result
+end = struct
+  type t = Pool_context.user * User_import.t
+
+  let handle ?(tags = Logs.Tag.empty) (user, user_import) =
+    let open Pool_context in
+    let open CCResult in
+    Logs.info ~src (fun m -> m "Handle command DisableImport" ~tags);
+    let user_import_confirmed =
+      User_import.Confirmed user_import |> Pool_event.user_import
+    in
+    match user with
+    | Admin admin ->
+      Ok
+        [ Admin.ImportDisabled admin |> Pool_event.admin
+        ; user_import_confirmed
+        ]
+    | Contact contact ->
+      Ok
+        [ Contact.ImportDisabled contact |> Pool_event.contact
+        ; user_import_confirmed
+        ]
+    | Guest -> Error Pool_common.Message.(Invalid Field.User)
+  ;;
+end

@@ -59,6 +59,7 @@ type event =
   | CellPhoneVerified of t * User.CellPhone.t
   | CellPhoneVerificationReset of t
   | ImportConfirmed of t * User.Password.t
+  | ImportDisabled of t
   | ProfileUpdateTriggeredAtUpdated of t list
   | RegistrationAttemptNotificationSent of t
   | Updated of t
@@ -179,6 +180,10 @@ let handle_event ?tags pool : event -> unit Lwt.t =
         import_pending = Pool_user.ImportPending.create false
       ; terms_accepted_at = Some (User.TermsAccepted.create_now ())
       }
+  | ImportDisabled contact ->
+    Repo.update
+      pool
+      { contact with import_pending = Pool_user.ImportPending.create false }
   | ProfileUpdateTriggeredAtUpdated contacts ->
     contacts |> CCList.map id |> Repo.update_profile_updated_triggered pool
   | RegistrationAttemptNotificationSent t ->

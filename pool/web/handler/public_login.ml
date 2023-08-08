@@ -94,46 +94,37 @@ let login_post req =
          |> Admin.find database_label
          >|+ Pool_context.admin
        in
-       let%lwt user_import =
-         User_import.find_pending_by_user_opt database_label user
-         ||> CCOption.is_some
-       in
-       match user_import with
+       user
+       |> Admin.user_is_admin database_label
+       >|> function
        | true ->
-         redirect
-           (Http_utils.path_with_language query_language "/import-pending")
+         let* admin = find_admin user in
+         success admin ()
        | false ->
-         user
-         |> Admin.user_is_admin database_label
-         >|> (function
-         | true ->
-           let* admin = find_admin user in
-           success admin ()
-         | false ->
-           (match user.Sihl_user.confirmed with
-            | false ->
-              redirect
-                (Http_utils.path_with_language
-                   query_language
-                   "/email-confirmation")
-            | true ->
-              let* contact = user |> find_contact in
-              let%lwt required_answers_given =
-                Custom_field.all_required_answered
-                  database_label
-                  (Contact.id contact)
-              in
-              let contact = contact |> Pool_context.contact in
-              (match required_answers_given with
-               | true -> success contact ()
-               | false ->
-                 login
-                   contact
-                   ~set_completion_cookie:true
-                   "/user/completion"
-                   [ Message.set
-                       ~error:[ Pool_common.Message.(RequiredFieldsMissing) ]
-                   ])))
+         (match user.Sihl_user.confirmed with
+          | false ->
+            redirect
+              (Http_utils.path_with_language
+                 query_language
+                 "/email-confirmation")
+          | true ->
+            let* contact = user |> find_contact in
+            let%lwt required_answers_given =
+              Custom_field.all_required_answered
+                database_label
+                (Contact.id contact)
+            in
+            let contact = contact |> Pool_context.contact in
+            (match required_answers_given with
+             | true -> success contact ()
+             | false ->
+               login
+                 contact
+                 ~set_completion_cookie:true
+                 "/user/completion"
+                 [ Message.set
+                     ~error:[ Pool_common.Message.(RequiredFieldsMissing) ]
+                 ]))
   in
   result |> HttpUtils.extract_happy_path_with_actions ~src req
 ;;
@@ -221,6 +212,7 @@ let reset_password_post req =
     let open Utils.Lwt_result.Infix in
     let open Pool_common.Message in
     let redirect = "/reset-password/" in
+    let tags = Pool_context.Logger.Tags.req req in
     let* params =
       Field.[ Token; Password; PasswordConfirmation ]
       |> CCList.map Field.show
@@ -233,6 +225,7 @@ let reset_password_post req =
     let redirect_with_param =
       add_field_query_params redirect [ Field.Token, token ]
     in
+    let ctx = to_ctx database_label in
     let* (_ : Pool_user.Password.t) =
       let open Pool_user.Password in
       Field.Password
@@ -241,13 +234,38 @@ let reset_password_post req =
       |> Lwt_result.lift
       >|- fun err -> err, redirect_with_param
     in
+    let* user_uuid =
+      Service.Token.read ~ctx token ~k:"user_id"
+      ||> CCOption.to_result Pool_common.Message.(Invalid Field.Token)
+      >|- (fun err -> err, redirect)
+      >|+ Pool_common.Id.of_string
+    in
     let%lwt reset =
       Service.PasswordReset.reset_password
-        ~ctx:(to_ctx database_label)
+        ~ctx
         ~token
         (go Field.Password)
         (go Field.PasswordConfirmation)
       >|- CCFun.const (passwordresetinvaliddata, redirect_with_param)
+    in
+    let* import_events =
+      Lwt_result.map_error (fun err -> err, redirect)
+      @@
+      let%lwt import =
+        User_import.find_pending_by_user_id_opt database_label user_uuid
+      in
+      import
+      |> function
+      | None -> Lwt_result.return []
+      | Some import ->
+        let%lwt user =
+          Service.User.find ~ctx (Pool_common.Id.value user_uuid)
+          >|> Pool_context.user_of_sihl_user database_label
+        in
+        Cqrs_command.User_import_command.DisableImport.handle
+          ~tags
+          (user, import)
+        |> Lwt_result.lift
     in
     match reset with
     | Ok () ->
@@ -256,6 +274,7 @@ let reset_password_post req =
           ~ctx:(Pool_database.to_ctx database_label)
           token
       in
+      let%lwt () = import_events |> Pool_event.handle_events database_label in
       HttpUtils.(
         redirect_to_with_actions
           (path_with_language query_language "/login")

@@ -43,6 +43,7 @@ type event =
   | Disabled of t
   | Enabled of t
   | ImportConfirmed of t * Pool_user.Password.t
+  | ImportDisabled of t
   | PasswordUpdated of
       t
       * Pool_user.Password.t
