@@ -46,6 +46,7 @@ type error =
   | EmailMalformed
   | EndBeforeStart
   | ExperimentSessionCountNotZero
+  | FieldRequired of Field.t
   | FilterAndOrMustNotBeEmpty
   | FilterListValueMustNotBeEmpty
   | FilterMustNotContainTemplate

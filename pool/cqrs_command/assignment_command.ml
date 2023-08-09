@@ -212,7 +212,7 @@ end = struct
             Experiment.external_data_required_value experiment, external_data_id
           with
           | true, None ->
-            Error Pool_common.Message.NoValue (* TODO: Improve error message *)
+            Error Pool_common.Message.(FieldRequired Field.ExternalDataId)
           | _, _ -> Ok external_data_id
         in
         let contact =
