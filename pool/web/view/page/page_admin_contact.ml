@@ -38,7 +38,7 @@ let personal_detail ?(admin_comment = None) language contact =
     ]
 ;;
 
-let status_icons { Contact.paused; import_pending; _ } =
+let status_icons { Contact.paused; _ } =
   let open Pool_user in
   let open Icon in
   let success = to_html ~classnames:[ "color-green" ] in
@@ -48,11 +48,7 @@ let status_icons { Contact.paused; import_pending; _ } =
     | true -> error NotificationsOff
     | false -> success Notifications
   in
-  [ import_pending |> ImportPending.value, ChevronForwardCircle ]
-  |> CCList.map (fun (status, icon) ->
-    if status then success icon else error icon)
-  |> CCList.cons paused
-  |> div ~a:[ a_class [ "flexrow"; "flex-gap-sm" ] ]
+  div ~a:[ a_class [ "flexrow"; "flex-gap-sm" ] ] [ paused ]
 ;;
 
 let table_legend language =
@@ -66,8 +62,6 @@ let table_legend language =
   table_legend
     [ text_to_string I18n.Disabled, legend_color_item "bg-red-lighter"
     ; field_to_string Message.Field.Paused, legend_icon_item Notifications
-    ; ( field_to_string Message.Field.ImportPending
-      , legend_icon_item ChevronForwardCircle )
     ]
 ;;
 
