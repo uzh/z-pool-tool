@@ -54,9 +54,12 @@ let generate_events (experiments : Experiment.Id.t list) =
 
 let create pool =
   let open Utils.Lwt_result.Infix in
-  Experiment.find_all pool
-  ||> fst
-  ||> CCList.map (fun m -> m.Experiment.id)
-  ||> generate_events
-  >|> Lwt_list.iter_s (Mailing.handle_event pool)
+  if Sihl.Configuration.is_test ()
+  then Lwt.return_unit
+  else
+    Experiment.find_all pool
+    ||> fst
+    ||> CCList.map (fun m -> m.Experiment.id)
+    ||> generate_events
+    >|> Lwt_list.iter_s (Mailing.handle_event pool)
 ;;
