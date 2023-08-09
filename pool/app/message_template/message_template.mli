@@ -183,21 +183,20 @@ module AssignmentConfirmation : sig
     :  ?follow_up_sessions:Session.t list
     -> Pool_common.Language.t
     -> email_layout
-    -> Contact.t
     -> Experiment.t
     -> Session.t
+    -> Assignment.t
     -> (string * string) list
 
-  val create
+  val prepare
     :  ?follow_up_sessions:Session.t list
     -> Pool_database.Label.t
     -> Pool_common.Language.t
     -> Pool_tenant.t
     -> Experiment.t
     -> Session.t
-    -> Contact.t
     -> Admin.t option
-    -> Sihl_email.t Lwt.t
+    -> (Assignment.t -> Sihl_email.t) Lwt.t
 end
 
 module ContactRegistrationAttempt : sig

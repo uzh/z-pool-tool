@@ -8,6 +8,7 @@
   pool_event
   pool_user
   queue
+  reminder
   service
   settings
   sihl

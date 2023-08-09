@@ -249,14 +249,14 @@ let assignment_creation_with_sender _ () =
     let%lwt admin = Admin.find database_label admin_id ||> get_exn in
     let%lwt confirmation_email =
       let%lwt language = Contact.message_language database_label contact in
-      Message_template.AssignmentConfirmation.create
+      Message_template.AssignmentConfirmation.prepare
         database_label
         language
         tenant
         experiment
         session
-        contact
         (Some admin)
+      ||> fun fnc -> fnc (Assignment.create contact)
     in
     Alcotest.(
       check string "succeeds" admin_email confirmation_email.Sihl_email.sender)

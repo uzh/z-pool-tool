@@ -13,6 +13,8 @@ let get_session session_id =
   session_id |> Session.find database_label |> Lwt.map get_exn
 ;;
 
+let confirmation_mail (_ : Assignment.t) = Common_test.Data.create_email ()
+
 let find_assignment_by_contact_and_session contact_id session_id =
   let open Assignment in
   find_uncanceled_by_session database_label session_id
@@ -35,12 +37,13 @@ let set_sessions_to_past session_ids =
 ;;
 
 let sign_up_for_session experiment contact session_id =
-  let%lwt sessions =
-    Session.find_open_with_follow_ups database_label session_id ||> get_exn
+  let%lwt session = Session.find_open database_label session_id ||> get_exn in
+  let%lwt follow_up_sessions =
+    Session.find_follow_ups database_label session_id ||> get_exn
   in
-  let email = Model.create_email () in
-  Assignment_command.Create.(handle { contact; sessions; experiment })
-    email
+  Assignment_command.Create.(
+    handle { contact; session; follow_up_sessions; experiment })
+    confirmation_mail
     false
   |> get_exn
   |> Pool_event.handle_events database_label

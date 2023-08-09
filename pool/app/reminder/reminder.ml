@@ -1,11 +1,10 @@
-open Entity
+open Assignment
 
 let src = Logs.Src.create "session_reminder.service"
-let get_or_failwith = Pool_common.Utils.get_or_failwith
 
 let create_reminders pool tenant sys_languages session experiment =
   let open Utils.Lwt_result.Infix in
-  let* assignments = Repo.find_uncanceled_by_session pool session.Session.id in
+  let* assignments = find_uncanceled_by_session pool session.Session.id in
   let%lwt create_message =
     Message_template.SessionReminder.prepare
       pool

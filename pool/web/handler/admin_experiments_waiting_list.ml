@@ -169,20 +169,25 @@ let assign_contact req =
         Experiment.find_contact_person database_label experiment
       in
       let%lwt language = Contact.message_language database_label contact in
-      Message_template.AssignmentConfirmation.create
+      Message_template.AssignmentConfirmation.prepare
         ~follow_up_sessions
         database_label
         language
         tenant
         experiment
         session
-        contact
         contact_person
     in
     let events =
-      let sessions = session :: follow_up_sessions in
       let open Cqrs_command.Assignment_command.CreateFromWaitingList in
-      (handle ~tags { experiment; sessions; waiting_list; already_enrolled })
+      (handle
+         ~tags
+         { experiment
+         ; session
+         ; follow_up_sessions
+         ; waiting_list
+         ; already_enrolled
+         })
         confirmation_email
       |> Lwt_result.lift
     in

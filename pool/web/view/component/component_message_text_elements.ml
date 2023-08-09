@@ -160,6 +160,22 @@ module DummyData = struct
       }
   ;;
 
+  let create_assignment ?contact () =
+    let open Assignment in
+    let contact = CCOption.value ~default:(create_contact ()) contact in
+    { id = Id.create ()
+    ; contact
+    ; no_show = Some (false |> NoShow.create)
+    ; participated = Some (false |> Participated.create)
+    ; matches_filter = MatchesFilter.init
+    ; canceled_at = None
+    ; marked_as_deleted = MarkedAsDeleted.init
+    ; external_data_id = Some (ExternalDataId.of_string "DATA_ID")
+    ; created_at = Ptime_clock.now ()
+    ; updated_at = Ptime_clock.now ()
+    }
+  ;;
+
   let name_element = "name", div [ txt "John Doe" ]
 end
 
@@ -207,6 +223,7 @@ let message_template_help
   ?contact
   ?experiment
   ?session
+  ?assignment
   template_label
   =
   let open Message_template in
@@ -220,6 +237,9 @@ let message_template_help
   let create_follow_up session_id =
     Session.{ (create_session ()) with follow_up_to = Some session_id }
   in
+  let create_assignment () =
+    value ~default:(create_assignment ?contact ()) assignment
+  in
   let layout = layout_from_tenant tenant in
   match template_label with
   | AccountSuspensionNotification ->
@@ -231,9 +251,9 @@ let message_template_help
       ~follow_up_sessions:[ create_follow_up session.Session.id ]
       language
       layout
-      (create_contact ())
       (create_experiment ())
       session
+      (create_assignment ())
   | ContactRegistrationAttempt ->
     let tenant_url = tenant.Pool_tenant.url in
     ContactRegistrationAttempt.email_params

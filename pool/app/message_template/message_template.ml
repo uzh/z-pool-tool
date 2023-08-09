@@ -106,6 +106,15 @@ let session_params ?follow_up_sessions lang session =
   [ "sessionId", session_id; "sessionOverview", session_overview ]
 ;;
 
+let assignment_params { Assignment.id; external_data_id; _ } =
+  let open Assignment in
+  let external_data_id =
+    CCOption.map_or ExternalDataId.value ~default:"" external_data_id
+  in
+  let assignment_id = Id.value id in
+  [ "assignmentId", assignment_id; "externalDataId", external_data_id ]
+;;
+
 module AccountSuspensionNotification = struct
   let email_params = global_params
 
@@ -138,15 +147,17 @@ module AccountSuspensionNotification = struct
 end
 
 module AssignmentConfirmation = struct
+  open Assignment
+
   let base_params layout contact = contact.Contact.user |> global_params layout
 
   let email_params
     ?follow_up_sessions
     language
     layout
-    contact
     experiment
     session
+    assignment
     =
     let follow_up_sessions =
       CCOption.map
@@ -154,39 +165,42 @@ module AssignmentConfirmation = struct
           lst, Pool_common.I18n.AssignmentConfirmationMessageFollowUps)
         follow_up_sessions
     in
-    base_params layout contact
+    base_params layout assignment.contact
     @ experiment_params layout experiment
     @ session_params ?follow_up_sessions language session
+    @ assignment_params assignment
   ;;
 
   let template pool language =
     find_by_label_to_send pool language Label.AssignmentConfirmation
   ;;
 
-  let create
+  let prepare
     ?follow_up_sessions
     pool
     preferred_language
     tenant
     experiment
     session
-    contact
     admin_contact
     =
     let%lwt template, language = template pool preferred_language in
     let layout = layout_from_tenant tenant in
-    let params =
-      email_params
-        ?follow_up_sessions
-        language
-        layout
-        contact
-        experiment
-        session
-    in
-    let email = contact |> Contact.email_address in
     let%lwt sender = sender_of_contact_person pool admin_contact in
-    prepare_email language template sender email layout params |> Lwt.return
+    let fnc assignment =
+      let params =
+        email_params
+          ?follow_up_sessions
+          language
+          layout
+          experiment
+          session
+          assignment
+      in
+      let email = assignment.contact |> Contact.email_address in
+      prepare_email language template sender email layout params
+    in
+    Lwt.return fnc
   ;;
 end
 

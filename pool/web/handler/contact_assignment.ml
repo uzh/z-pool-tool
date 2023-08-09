@@ -28,14 +28,13 @@ let create req =
        let tenant = Pool_context.Tenant.get_tenant_exn req in
        let%lwt confirmation_email =
          let%lwt language = Contact.message_language database_label contact in
-         Message_template.AssignmentConfirmation.create
+         Message_template.AssignmentConfirmation.prepare
            ~follow_up_sessions
            database_label
            language
            tenant
            experiment
            session
-           contact
            contact_person
        in
        let%lwt already_enrolled =
@@ -48,11 +47,10 @@ let create req =
          ||> not
        in
        let events =
-         let sessions = session :: follow_up_sessions in
          let open Cqrs_command.Assignment_command.Create in
          handle
            ~tags
-           { contact; sessions; experiment }
+           { contact; session; follow_up_sessions; experiment }
            confirmation_email
            already_enrolled
          |> Lwt_result.lift
