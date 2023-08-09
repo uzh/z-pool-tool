@@ -96,10 +96,11 @@ let render_params ?cb data text =
   render data text
 ;;
 
-let render_email_params params ({ Sihl_email.text; html; _ } as email) =
+let render_email_params params ({ Sihl_email.text; html; subject; _ } as email) =
   Sihl_email.
     { email with
-      text = render_params params text
+      subject = render_params params subject
+    ; text = render_params params text
     ; html = html |> CCOption.map (render_params ~cb:line_breaks_to_html params)
     }
 ;;
