@@ -214,7 +214,9 @@ let set_attendance_missing_data_id () =
         , None )
       ]
   in
-  let expected = Error Pool_common.Message.(NoValue) in
+  let expected =
+    Error Pool_common.Message.(FieldRequired Field.ExternalDataId)
+  in
   check_result expected events
 ;;
 
