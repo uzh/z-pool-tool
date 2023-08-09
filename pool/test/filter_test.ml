@@ -810,13 +810,11 @@ let filter_by_experiment_participation _ () =
   let%lwt () =
     let run = Lwt_list.iter_s (Pool_event.handle_event Data.database_label) in
     let%lwt () =
-      [ Created { contact; session_id = session.Session.id }
-        |> Pool_event.assignment
-      ]
+      [ Created (create contact, session.Session.id) |> Pool_event.assignment ]
       |> run
     in
     let%lwt assignment =
-      Assignment.find_by_session database_label session.Session.id
+      find_by_session database_label session.Session.id
       >|+ CCList.find (fun (assignment : t) ->
         Contact.equal assignment.contact contact)
       ||> get_exn_poolerror

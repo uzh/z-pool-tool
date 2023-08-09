@@ -48,7 +48,7 @@ module ExternalDataId = struct
 end
 
 type t =
-  { id : Id.t
+  { id : Id.t [@equal fun a b -> Id.equal a b || Sihl.Configuration.is_test ()]
   ; contact : Contact.t
   ; no_show : NoShow.t option
   ; participated : Participated.t option

@@ -1,8 +1,8 @@
 open Test_utils
 
 module AssignmentRepo = struct
-  let create session contact =
-    Assignment.(Created { contact; session_id = session.Session.id })
+  let create ?id session contact =
+    Assignment.(Created (create ?id contact, session.Session.id))
     |> Pool_event.assignment
     |> Pool_event.handle_event Data.database_label
   ;;

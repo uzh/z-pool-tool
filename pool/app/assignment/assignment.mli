@@ -137,15 +137,10 @@ val contact_participation_in_other_assignments
 
 val group_by_contact : t list -> (Contact.t * t list) list
 
-type create =
-  { contact : Contact.t
-  ; session_id : Session.Id.t
-  }
-
 type event =
   | AttendanceSet of (t * NoShow.t * Participated.t * ExternalDataId.t option)
   | Canceled of t
-  | Created of create
+  | Created of (t * Session.Id.t)
   | MarkedAsDeleted of t
   | ExternalDataIdUpdated of t * ExternalDataId.t option
 
@@ -154,7 +149,7 @@ val attendanceset
   -> event
 
 val canceled : t -> event
-val created : create -> event
+val created : t * Session.Id.t -> event
 val markedasdeleted : t -> event
 val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool

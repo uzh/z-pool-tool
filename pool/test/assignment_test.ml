@@ -51,7 +51,7 @@ let create () =
   in
   let expected =
     Ok
-      [ Assignment.(Created { contact; session_id = session.Session.id })
+      [ Assignment.(Created (create contact, session.Session.id))
         |> Pool_event.assignment
       ; update_assignment_count_event ~step:1 contact
       ; Email.(
@@ -76,7 +76,7 @@ let create_with_experiment_smtp () =
   in
   let expected =
     Ok
-      [ Assignment.(Created { contact; session_id = session.Session.id })
+      [ Assignment.(Created (create contact, session.Session.id))
         |> Pool_event.assignment
       ; update_assignment_count_event ~step:1 contact
       ; Email.(Sent (confirmation_email contact, Some smtp_auth_id))
@@ -356,10 +356,7 @@ let assign_contact_from_waiting_list () =
   in
   let expected =
     let create =
-      Assignment.
-        { contact = waiting_list.Waiting_list.contact
-        ; session_id = session.Session.id
-        }
+      Assignment.(create waiting_list.Waiting_list.contact, session.Session.id)
     in
     Ok
       [ Assignment.Created create |> Pool_event.assignment
@@ -397,10 +394,8 @@ let assign_contact_from_waiting_list_with_follow_ups () =
       [ session; follow_up ]
       |> CCList.map (fun session ->
         let create =
-          Assignment.
-            { contact = waiting_list.Waiting_list.contact
-            ; session_id = session.Session.id
-            }
+          Assignment.(
+            create waiting_list.Waiting_list.contact, session.Session.id)
         in
         Assignment.Created create |> Pool_event.assignment)
     in
@@ -461,8 +456,8 @@ let assign_to_session_with_follow_ups () =
     let create_events =
       sessions
       |> CCList.map (fun session ->
-        let create = Assignment.{ contact; session_id = session.Session.id } in
-        Assignment.Created create |> Pool_event.assignment)
+        Assignment.(Created (create contact, session.Session.id))
+        |> Pool_event.assignment)
     in
     let increase_num_events =
       update_assignment_count_event ~step:(CCList.length sessions) contact
@@ -626,7 +621,7 @@ let cancel_assignment_with_follow_ups _ () =
     sessions
     |> CCList.map Session.to_public
     |> CCList.map (fun session ->
-      Assignment.(Created { contact; session_id = session.Session.Public.id })
+      Assignment.(Created (create contact, session.Session.Public.id))
       |> Pool_event.assignment)
     |> Pool_event.handle_events Data.database_label
   in
