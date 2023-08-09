@@ -881,21 +881,28 @@ let cancel_with_email_and_text_notification () =
 ;;
 
 let close_before_start () =
+  let experiment = Test_utils.Model.create_experiment () in
   let session = Test_utils.Model.(create_session ~start:(in_an_hour ())) () in
   let res =
-    Cqrs_command.Assignment_command.SetAttendance.handle session [] []
+    Cqrs_command.Assignment_command.SetAttendance.handle
+      experiment
+      session
+      []
+      []
   in
   check_result (Error Pool_common.Message.SessionNotStarted) res
 ;;
 
 let close_valid () =
+  let experiment = Test_utils.Model.create_experiment () in
   let open Cqrs_command.Assignment_command.SetAttendance in
   let session = Test_utils.Model.(create_session ~start:(an_hour_ago ())) () in
-  let res = handle session [] [] in
+  let res = handle experiment session [] [] in
   check_result (Ok [ Session.Closed session |> Pool_event.session ]) res
 ;;
 
 let close_valid_with_assignments () =
+  let experiment = Test_utils.Model.create_experiment () in
   let open Cqrs_command.Assignment_command in
   let open Assignment in
   let session = Test_utils.Model.(create_session ~start:(an_hour_ago ())) () in
@@ -910,10 +917,11 @@ let close_valid_with_assignments () =
       , NoShow.create false
       , Participated.create participated
       , Assignment.IncrementParticipationCount.create true
+      , None
       , None ))
   in
   let tags = Tag_test.Data.Tag.create_with_description () |> CCList.return in
-  let res = SetAttendance.handle session tags assignments in
+  let res = SetAttendance.handle experiment session tags assignments in
   let expected =
     CCList.fold_left
       (fun events
@@ -921,7 +929,8 @@ let close_valid_with_assignments () =
            , no_show
            , participated
            , _
-           , (_ : t list option) ) ->
+           , (_ : t list option)
+           , (_ : ExternalDataId.t option) ) ->
         let contact_event =
           let open Contact in
           let contact =
@@ -942,7 +951,7 @@ let close_valid_with_assignments () =
             |> Pool_event.tags)
         in
         events
-        @ [ AttendanceSet (assignment, no_show, participated)
+        @ [ AttendanceSet (assignment, no_show, participated, None)
             |> Pool_event.assignment
           ; contact_event
           ]
@@ -955,6 +964,7 @@ let close_valid_with_assignments () =
 ;;
 
 let close_with_deleted_assignment () =
+  let experiment = Test_utils.Model.create_experiment () in
   let session = Test_utils.Model.(create_session ~start:(an_hour_ago ())) () in
   let command =
     let open Assignment in
@@ -968,10 +978,15 @@ let close_with_deleted_assignment () =
     , no_show
     , participated
     , Assignment.IncrementParticipationCount.create false
+    , None
     , None )
   in
   let res =
-    Cqrs_command.Assignment_command.SetAttendance.handle session [] [ command ]
+    Cqrs_command.Assignment_command.SetAttendance.handle
+      experiment
+      session
+      []
+      [ command ]
   in
   check_result
     (Error Pool_common.Message.(IsMarkedAsDeleted Field.Assignment))
@@ -981,15 +996,17 @@ let close_with_deleted_assignment () =
 let validate_invalid_participation () =
   let open Cqrs_command.Assignment_command.SetAttendance in
   let open Assignment in
+  let experiment = Test_utils.Model.create_experiment () in
   let session = Test_utils.Model.(create_session ~start:(an_hour_ago ())) () in
   let participation =
     ( Test_utils.Model.create_contact () |> create
     , NoShow.create true
     , Participated.create true
     , Assignment.IncrementParticipationCount.create false
+    , None
     , None )
   in
-  let res = handle session [] [ participation ] in
+  let res = handle experiment session [] [ participation ] in
   let expected =
     Error Pool_common.Message.(MutuallyExclusive Field.(Participated, NoShow))
   in
@@ -1000,6 +1017,7 @@ let close_unparticipated_with_followup () =
   let open Cqrs_command.Assignment_command.SetAttendance in
   let open Test_utils in
   let open Assignment in
+  let experiment = Test_utils.Model.create_experiment () in
   let session = Test_utils.Model.(create_session ~start:(an_hour_ago ())) () in
   let contact = Model.create_contact () in
   let assignment = Model.create_assignment ~contact () in
@@ -1009,9 +1027,10 @@ let close_unparticipated_with_followup () =
     , NoShow.create false
     , Participated.create false
     , Assignment.IncrementParticipationCount.create true
-    , Some [ follow_up ] )
+    , Some [ follow_up ]
+    , None )
   in
-  let res = handle session [] [ participation ] in
+  let res = handle experiment session [] [ participation ] in
   let expected =
     let contact =
       let open Contact in
@@ -1022,7 +1041,7 @@ let close_unparticipated_with_followup () =
     Ok
       [ Session.Closed session |> Pool_event.session
       ; Assignment.AttendanceSet
-          (assignment, NoShow.create false, Participated.create false)
+          (assignment, NoShow.create false, Participated.create false, None)
         |> Pool_event.assignment
       ; Contact.Updated contact |> Pool_event.contact
       ; Assignment.MarkedAsDeleted follow_up |> Pool_event.assignment
@@ -1378,10 +1397,6 @@ let close_session_check_contact_figures _ () =
   let open Utils.Lwt_result.Infix in
   let open Integration_utils in
   let open Test_utils in
-  let create_external_data_id =
-    Assignment.(
-      Id.value %> Format.asprintf "TEST_DATA_ID-%s" %> ExternalDataId.of_string)
-  in
   let%lwt experiment = Repo.first_experiment () in
   let%lwt session =
     SessionRepo.create ~start:(Model.an_hour_ago ()) experiment.Experiment.id ()
@@ -1398,14 +1413,6 @@ let close_session_check_contact_figures _ () =
   let%lwt assignments =
     Assignment.find_by_session Data.database_label session.Session.id
     ||> get_or_failwith_pool_error
-  in
-  let external_data_id_events =
-    CCList.map
-      Assignment.(
-        fun ({ id; _ } as assignment) ->
-          ExternalDataIdUpdated (assignment, Some (create_external_data_id id))
-          |> Pool_event.assignment)
-      assignments
   in
   let find_assignment contact =
     CCList.find
@@ -1443,11 +1450,10 @@ let close_session_check_contact_figures _ () =
           increment_num_participatons
         |> Test_utils.get_or_failwith_pool_error
       in
-      [ AttendanceSet (find_assignment contact, no_show, participated)
+      [ AttendanceSet (find_assignment contact, no_show, participated, None)
         |> Pool_event.assignment
       ; Updated contact |> Pool_event.contact
-      ]
-      @ external_data_id_events)
+      ])
     |> flatten
     |> cons (Session.Closed session |> Pool_event.session)
     |> Pool_event.handle_events Data.database_label
@@ -1480,16 +1486,5 @@ let close_session_check_contact_figures _ () =
     ||> CCList.is_empty
   in
   let () = Alcotest.(check bool "succeeds" true res) in
-  let%lwt () =
-    let open Assignment in
-    assignments
-    |> Lwt_list.iter_s (fun { id; _ } ->
-      find Data.database_label id
-      ||> get_or_failwith_pool_error
-      ||> (fun { external_data_id; _ } ->
-            Some (create_external_data_id id)
-            |> CCOption.equal ExternalDataId.equal external_data_id)
-      ||> Alcotest.(check bool "external data id succeeds" true))
-  in
   Lwt.return_unit
 ;;

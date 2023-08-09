@@ -370,6 +370,10 @@ let rec error_to_string = function
   | EndBeforeStart -> "End is before start time."
   | ExperimentSessionCountNotZero ->
     "Sessions exist for this experiment. It cannot be deleted."
+  | FieldRequired field ->
+    Format.asprintf
+      "%s is required."
+      (field_to_string field |> CCString.capitalize_ascii)
   | FilterMustNotContainTemplate -> "Filter must not contain templates."
   | FilterAndOrMustNotBeEmpty -> "'And' and 'Or' predicates must not be empty."
   | FilterListValueMustNotBeEmpty -> "At least one option must be selected."

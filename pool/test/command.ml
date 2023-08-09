@@ -134,6 +134,14 @@ let () =
             `Quick
             Assignment_test.set_invalid_attendance
         ; test_case
+            "set attendance missing data id"
+            `Quick
+            Assignment_test.set_attendance_missing_data_id
+        ; test_case
+            "set attendance with data id"
+            `Quick
+            Assignment_test.set_attendance_with_data_id
+        ; test_case
             "assign to fully booked session"
             `Quick
             Assignment_test.assign_to_fully_booked_session

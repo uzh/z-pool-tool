@@ -125,6 +125,7 @@ let canceled_with_closed_session () =
 
 let set_attendance () =
   let open Assignment in
+  let experiment = Model.create_experiment () in
   let assignment = Model.create_assignment () in
   let session = Model.(create_session ~start:(an_hour_ago ()) ()) in
   let no_show = false |> NoShow.create in
@@ -132,9 +133,16 @@ let set_attendance () =
   let increment_num_participaton = IncrementParticipationCount.create false in
   let events =
     AssignmentCommand.SetAttendance.handle
+      experiment
       session
       []
-      [ assignment, no_show, participated, increment_num_participaton, None ]
+      [ ( assignment
+        , no_show
+        , participated
+        , increment_num_participaton
+        , None
+        , None )
+      ]
   in
   let expected =
     let updated_contact =
@@ -146,7 +154,7 @@ let set_attendance () =
     in
     Ok
       [ Session.Closed session |> Pool_event.session
-      ; Assignment.AttendanceSet (assignment, no_show, participated)
+      ; Assignment.AttendanceSet (assignment, no_show, participated, None)
         |> Pool_event.assignment
       ; updated_contact
       ]
@@ -156,23 +164,105 @@ let set_attendance () =
 
 let set_invalid_attendance () =
   let open Assignment in
+  let experiment = Model.create_experiment () in
   let assignment = Model.create_assignment () in
   let session = Model.(create_session ~start:(an_hour_ago ()) ()) in
-  let show_up = true |> NoShow.create in
+  let no_show = true |> NoShow.create in
   let participated = true |> Participated.create in
   let events =
     AssignmentCommand.SetAttendance.handle
+      experiment
       session
       []
       [ ( assignment
-        , show_up
+        , no_show
         , participated
         , IncrementParticipationCount.create false
+        , None
         , None )
       ]
   in
   let expected =
     Error Pool_common.Message.(MutuallyExclusive Field.(Participated, NoShow))
+  in
+  check_result expected events
+;;
+
+let set_attendance_missing_data_id () =
+  let open Assignment in
+  let experiment = Model.create_experiment () in
+  let experiment =
+    Experiment.
+      { experiment with
+        external_data_required = ExternalDataRequired.create true
+      }
+  in
+  let assignment = Model.create_assignment () in
+  let session = Model.(create_session ~start:(an_hour_ago ()) ()) in
+  let no_show = false |> NoShow.create in
+  let participated = true |> Participated.create in
+  let events =
+    AssignmentCommand.SetAttendance.handle
+      experiment
+      session
+      []
+      [ ( assignment
+        , no_show
+        , participated
+        , IncrementParticipationCount.create false
+        , None
+        , None )
+      ]
+  in
+  let expected =
+    Error Pool_common.Message.(FieldRequired Field.ExternalDataId)
+  in
+  check_result expected events
+;;
+
+let set_attendance_with_data_id () =
+  let open Assignment in
+  let experiment = Model.create_experiment () in
+  let experiment =
+    Experiment.
+      { experiment with
+        external_data_required = ExternalDataRequired.create true
+      }
+  in
+  let assignment = Model.create_assignment () in
+  let session = Model.(create_session ~start:(an_hour_ago ()) ()) in
+  let no_show = false |> NoShow.create in
+  let participated = false |> Participated.create in
+  let increment_num_participaton = IncrementParticipationCount.create false in
+  let external_data_id = Some (Assignment.ExternalDataId.of_string "data-id") in
+  let events =
+    AssignmentCommand.SetAttendance.handle
+      experiment
+      session
+      []
+      [ ( assignment
+        , no_show
+        , participated
+        , increment_num_participaton
+        , None
+        , external_data_id )
+      ]
+  in
+  let expected =
+    let updated_contact =
+      let open Contact in
+      assignment.contact
+      |> update_num_show_ups ~step:1
+      |> updated
+      |> Pool_event.contact
+    in
+    Ok
+      [ Session.Closed session |> Pool_event.session
+      ; Assignment.AttendanceSet
+          (assignment, no_show, participated, external_data_id)
+        |> Pool_event.assignment
+      ; updated_contact
+      ]
   in
   check_result expected events
 ;;

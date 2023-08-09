@@ -53,7 +53,7 @@ let close_session
   ?(participated = true)
   session
   contact_id
-  experiment_id
+  experiment
   =
   let open Assignment in
   let open Assignment_command in
@@ -66,15 +66,15 @@ let close_session
     contact_participation_in_other_assignments
       database_label
       [ assignment ]
-      experiment_id
+      experiment.Experiment.id
       contact_id
     >|+ not
     >|+ IncrementParticipationCount.create
     ||> get_exn
   in
-  (assignment, no_show, participated, increment_num_participations, None)
+  (assignment, no_show, participated, increment_num_participations, None, None)
   |> CCList.pure
-  |> SetAttendance.handle session []
+  |> SetAttendance.handle experiment session []
   |> get_exn
   |> Pool_event.handle_events database_label
 ;;
@@ -120,6 +120,11 @@ module AttendAll = struct
   let followup_session_id = Session.Id.create ()
   let experiment_id = Experiment.Id.create ()
 
+  let experiment () =
+    Experiment.find Test_utils.Data.database_label experiment_id
+    ||> Test_utils.get_or_failwith_pool_error
+  ;;
+
   let initialize =
     initialize contact_id experiment_id session_id ~followup_session_id
   ;;
@@ -139,7 +144,8 @@ module AttendAll = struct
 
   let close_first_session _ () =
     let%lwt session = get_session session_id in
-    let%lwt () = close_session session contact_id experiment_id in
+    let%lwt experiment = experiment () in
+    let%lwt () = close_session session contact_id experiment in
     let%lwt res = get_contact contact_id in
     let contact =
       Contact.
@@ -154,7 +160,8 @@ module AttendAll = struct
 
   let close_follow_up_session _ () =
     let%lwt follow_up = get_session followup_session_id in
-    let%lwt () = close_session follow_up contact_id experiment_id in
+    let%lwt experiment = experiment () in
+    let%lwt () = close_session follow_up contact_id experiment in
     let%lwt res = get_contact contact_id in
     let contact =
       Contact.{ res with num_show_ups = NumberOfShowUps.of_int 2 }
@@ -257,6 +264,12 @@ module DoNotAttend = struct
   let contact_id = Contact.Id.create ()
   let session_id = Session.Id.create ()
   let experiment_id = Experiment.Id.create ()
+
+  let experiment () =
+    Experiment.find Test_utils.Data.database_label experiment_id
+    ||> Test_utils.get_or_failwith_pool_error
+  ;;
+
   let initialize = initialize contact_id experiment_id session_id
 
   let register_for_session _ () =
@@ -274,8 +287,9 @@ module DoNotAttend = struct
 
   let close_main _ () =
     let%lwt session = get_session session_id in
+    let%lwt experiment = experiment () in
     let%lwt () =
-      close_session ~participated:false session contact_id experiment_id
+      close_session ~participated:false session contact_id experiment
     in
     let%lwt res = get_contact contact_id in
     let contact =
@@ -295,6 +309,12 @@ module NoShow = struct
   let contact_id = Contact.Id.create ()
   let session_id = Session.Id.create ()
   let experiment_id = Experiment.Id.create ()
+
+  let experiment () =
+    Experiment.find Test_utils.Data.database_label experiment_id
+    ||> Test_utils.get_or_failwith_pool_error
+  ;;
+
   let initialize = initialize contact_id experiment_id session_id
 
   let register_for_session _ () =
@@ -311,6 +331,7 @@ module NoShow = struct
   ;;
 
   let close_main _ () =
+    let%lwt experiment = experiment () in
     let%lwt session = get_session session_id in
     let%lwt () =
       close_session
@@ -318,7 +339,7 @@ module NoShow = struct
         ~participated:false
         session
         contact_id
-        experiment_id
+        experiment
     in
     let%lwt res = get_contact contact_id in
     let contact =

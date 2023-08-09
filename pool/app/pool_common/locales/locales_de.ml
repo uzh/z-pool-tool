@@ -385,6 +385,10 @@ let rec error_to_string = function
   | ExperimentSessionCountNotZero ->
     "Es existieren Sessions zu diesem Experiment. Es kann nicht gelöscht  \
      werden."
+  | FieldRequired field ->
+    Format.asprintf
+      "%s wird benötigt."
+      (field_to_string field |> CCString.capitalize_ascii)
   | FilterMustNotContainTemplate -> "Filter darf keine Template enthalten."
   | FilterAndOrMustNotBeEmpty ->
     "'And' und 'Or' Prädikate dürfen nicht leer sein."

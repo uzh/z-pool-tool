@@ -7,7 +7,7 @@ type create =
 [@@deriving eq, show]
 
 type event =
-  | AttendanceSet of (t * NoShow.t * Participated.t)
+  | AttendanceSet of (t * NoShow.t * Participated.t * ExternalDataId.t option)
   | Canceled of t
   | Created of create
   | MarkedAsDeleted of t
@@ -15,8 +15,12 @@ type event =
 [@@deriving eq, show, variants]
 
 let handle_event pool : event -> unit Lwt.t = function
-  | AttendanceSet (assignment, no_show, participated) ->
-    { assignment with participated = Some participated; no_show = Some no_show }
+  | AttendanceSet (assignment, no_show, participated, external_data_id) ->
+    { assignment with
+      participated = Some participated
+    ; no_show = Some no_show
+    ; external_data_id
+    }
     |> Repo.update pool
   | Canceled assignment ->
     let%lwt () =

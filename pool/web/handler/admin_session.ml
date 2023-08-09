@@ -548,6 +548,7 @@ let close_post req =
     @@
     let open Cqrs_command.Assignment_command in
     let open Assignment in
+    let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
     let* experiment = Experiment.find database_label experiment_id in
     let* session = Session.find database_label session_id in
     let* assignments =
@@ -568,6 +569,13 @@ let close_post req =
         Sihl.Web.Request.urlencoded_list
           Pool_common.Message.Field.(array_key field)
           req
+      in
+      let find_external_data id =
+        let open CCOption.Infix in
+        let key =
+          Format.asprintf "%s-%s" Field.(ExternalDataId |> show) (Id.value id)
+        in
+        CCList.assoc_opt ~eq:CCString.equal key urlencoded >>= CCList.head_opt
       in
       let%lwt no_shows = urlencoded_list Pool_common.Message.Field.NoShow in
       let%lwt participated =
@@ -595,36 +603,25 @@ let close_post req =
             find_follow_ups database_label assignment ||> CCOption.return
           | false -> Lwt.return_none
         in
+        let* external_data_id =
+          find_external_data assignment.id
+          |> (function
+               | None -> Ok None
+               | Some value ->
+                 ExternalDataId.create value |> CCResult.map CCOption.return)
+          |> Lwt_result.lift
+        in
         Lwt_result.return
           ( assignment
           , no_show
           , participated
           , increment_num_participations
-          , follow_ups ))
+          , follow_ups
+          , external_data_id ))
       ||> CCResult.flatten_l
-      >== SetAttendance.handle session participation_tags
+      >== SetAttendance.handle experiment session participation_tags
     in
-    let* external_data_id_events =
-      assignments
-      |> Lwt_list.map_s (fun ({ Assignment.id; _ } as assignment) ->
-        Sihl.Web.Request.urlencoded
-          (Format.asprintf "%s-%s" Field.(ExternalDataId |> show) (Id.value id))
-          req
-        ||> (function
-              | Some data_id when CCString.(data_id |> trim |> is_empty) |> not
-                -> ExternalDataId.create data_id |> CCResult.map CCOption.some
-              | Some _ ->
-                Error Pool_common.Message.(Missing Field.ExternalDataId)
-              | None when Experiment.external_data_required_value experiment ->
-                Error Pool_common.Message.(Missing Field.ExternalDataId)
-              | None -> Ok None)
-        >== curry UpdateExternalDataId.handle assignment)
-      ||> CCResult.flatten_l
-      >|+ CCList.flatten
-    in
-    let%lwt () =
-      Pool_event.handle_events database_label (events @ external_data_id_events)
-    in
+    let%lwt () = Pool_event.handle_events database_label events in
     Http_utils.redirect_to_with_actions
       path
       [ Message.set ~success:[ Pool_common.Message.(Closed Field.Session) ] ]
