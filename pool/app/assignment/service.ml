@@ -90,7 +90,7 @@ let run () =
 
 let start_handler () =
   let open Schedule in
-  let interval = Ptime.Span.of_int_s 30 in
+  let interval = Ptime.Span.of_int_s 60 in
   let periodic_fcn () =
     Logs.debug ~src (fun m ->
       m ~tags:Pool_database.(Logger.Tags.create root) "Run");
