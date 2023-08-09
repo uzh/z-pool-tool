@@ -71,7 +71,7 @@ module Sql = struct
     let open Caqti_request.Infix in
     {sql|
       WHERE
-        NOW() < pool_mailing.end AND NOW() > pool_mailing.start
+        NOW() < pool_mailing.end AND NOW() >= pool_mailing.start
       ORDER BY pool_mailing.start
     |sql}
     |> Format.asprintf "%s\n%s" select_sql

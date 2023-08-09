@@ -17,7 +17,7 @@ let rec field_to_string =
   | Argument -> "argument"
   | AssetId -> "asset identifier"
   | Assignment -> "assignment"
-  | AssignmentCount -> "assignments"
+  | AssignmentCount -> "no. assignments"
   | Assignments -> "assignments"
   | AssignmentsCreated -> "assignments created"
   | Assistants -> "assistants"

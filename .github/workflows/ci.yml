@@ -44,7 +44,7 @@ jobs:
           TEST_EMAIL: test@econ.uzh.ch
         with:
           image: ocaml/opam:debian-10-ocaml-4.14
-          options: -v ${{ github.workspace }}:/app -w /app -e DATABASE_URL -e DATABASE_URL_TENANT_TEST -e TEST_EMAIL -e SMTP_SENDER -e SIHL_ENV
+          options: -v ${{ github.workspace }}:/app -w /app -e DATABASE_URL -e DATABASE_URL_TENANT_TEST -e TEST_EMAIL -e SMTP_SENDER -e SIHL_ENV -e EMAIL_RATE_LIMIT -e MATCHER_MAX_CAPACITY
           run: |
             # Reclaim required directory permissions
             sudo chown -R opam .

@@ -1,3 +1,5 @@
+open CCFun.Infix
+
 let src = Logs.Src.create "matcher.service"
 let tags = Pool_database.(Logger.Tags.create root)
 
@@ -63,7 +65,7 @@ let get_or_failwith element =
 
 let sum = CCList.fold_left ( + ) 0
 
-let count_of_rate ?(interval = Ptime.Span.of_int_s 60) rate =
+let count_of_rate_int ?(interval = Ptime.Span.of_int_s 60) rate =
   (* calculated number of invitations from the rate per hour to the specified
      interval *)
   let rate = max rate 0 in
@@ -71,9 +73,11 @@ let count_of_rate ?(interval = Ptime.Span.of_int_s 60) rate =
   |> CCInt.of_float
 ;;
 
+let count_of_rate ?interval = Mailing.Rate.value %> count_of_rate_int ?interval
+
 let find_contacts_by_mailing pool { Mailing.id; distribution; _ } limit =
   let open Utils.Lwt_result.Infix in
-  let%lwt ({ Experiment.id; _ } as experiment) =
+  let%lwt ({ Experiment.id; filter; _ } as experiment) =
     Experiment.find_of_mailing pool (id |> Mailing.Id.to_common)
     ||> get_or_failwith
   in
@@ -86,62 +90,48 @@ let find_contacts_by_mailing pool { Mailing.id; distribution; _ } limit =
       ~limit:(max limit 0)
       pool
       (id |> Experiment.Id.to_common)
-      experiment.Experiment.filter
+      filter
   in
   (experiment, contacts) |> Lwt_result.return
 ;;
 
 let calculate_mailing_limits ?interval pool_based_mailings =
-  let open CCFun.Infix in
+  let open CCList in
   let limit = read_int EmailRateLimit |> CCInt.to_float in
   let factor = read_int MaxCapacity |> CCInt.to_float in
   let max_total_invitations =
-    CCFloat.(limit * (factor / 100.) |> to_int) |> count_of_rate ?interval
+    CCFloat.(limit * (factor / 100.) |> to_int) |> count_of_rate_int ?interval
   in
   let total =
     pool_based_mailings
-    |> CCList.fold_left
+    |> fold_left
          (fun init (_, mailings) ->
            init
            :: (mailings
-               |> CCList.map (fun ({ Mailing.rate; _ } : Mailing.t) ->
-                 rate |> Mailing.Rate.value |> count_of_rate ?interval))
+               >|= fun ({ Mailing.rate; _ } : Mailing.t) ->
+               count_of_rate ?interval rate)
            |> sum)
          0
   in
-  let reduce_factor = CCFloat.(of_int max_total_invitations / of_int total) in
+  let reduce_factor =
+    (* only allow a factor between 0 and 1 *)
+    CCFloat.(of_int max_total_invitations / of_int total) |> min 1. |> max 0.
+  in
   pool_based_mailings
-  |> CCList.map (fun (pool, mailings) ->
-    let limit_to_mailing =
-      mailings
-      |> CCList.map (fun ({ Mailing.rate; _ } as mailing : Mailing.t) ->
-        let limit_per_mailing =
-          (rate
-           |> Mailing.Rate.value
-           |> count_of_rate ?interval
-           |> CCFloat.of_int)
-          *. max reduce_factor 1.
-          |> floor
-          |> CCFloat.to_int
-        in
-        mailing, limit_per_mailing)
-    in
-    pool, limit_to_mailing)
+  >|= fun (pool, mailings) ->
+  let limit_to_mailing =
+    mailings
+    >|= fun ({ Mailing.rate; _ } as mailing : Mailing.t) ->
+    let open CCFloat in
+    let time_based_rate = rate |> count_of_rate ?interval |> of_int in
+    let limit = time_based_rate *. reduce_factor |> floor |> to_int in
+    mailing, limit
+  in
+  pool, limit_to_mailing
 ;;
 
-let match_invitations ?interval pools =
-  let open CCFun.Infix in
+let match_invitation_events ?interval pools =
   let open Utils.Lwt_result.Infix in
-  let count_mails =
-    CCList.filter_map
-      (let open Pool_event in
-       function[@warning "-4"]
-       (* TODO: Account based internal/external email count *)
-       | Email (Email.Sent _) -> Some 1
-       | Email (Email.BulkSent mails) -> Some (CCList.length mails)
-       | _ -> None)
-    %> sum
-  in
   let%lwt pool_based_mailings =
     Lwt_list.map_s
       (fun pool ->
@@ -161,6 +151,7 @@ let match_invitations ?interval pools =
           |> find_experiment
           >>= has_spots
           >== validate
+          >|- Pool_common.Utils.with_log_error ~level:Logs.Warning
           ||> CCResult.to_opt)
         ||> fun m -> pool, m)
       pools
@@ -199,6 +190,21 @@ let match_invitations ?interval pools =
       |> ok_or_log_error
       |> Lwt.return)
   in
+  pool_based_mailings |> calculate_mailing_limits ?interval |> create_events
+;;
+
+let match_invitations ?interval pools =
+  let open Utils.Lwt_result.Infix in
+  let count_mails =
+    CCList.filter_map
+      (let open Pool_event in
+       function[@warning "-4"]
+       (* TODO: Account based internal/external email count *)
+       | Email (Email.Sent _) -> Some 1
+       | Email (Email.BulkSent mails) -> Some (CCList.length mails)
+       | _ -> None)
+    %> sum
+  in
   let handle_events =
     Lwt_list.iter_s (fun (pool, events) ->
       Logs.info ~src (fun m ->
@@ -208,16 +214,13 @@ let match_invitations ?interval pools =
           (count_mails events));
       Pool_event.handle_events pool events)
   in
-  pool_based_mailings
-  |> calculate_mailing_limits ?interval
-  |> create_events
-  >|> handle_events
+  match_invitation_events ?interval pools >|> handle_events
 ;;
 
 let start_matcher () =
   let open Utils.Lwt_result.Infix in
   let open Schedule in
-  let interval = Ptime.Span.of_int_s (10 * 60) in
+  let interval = Ptime.Span.of_int_s (5 * 60) in
   let periodic_fcn () =
     Logs.debug ~src (fun m ->
       m ~tags:Pool_database.(Logger.Tags.create root) "Run");
