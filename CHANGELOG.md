@@ -4,12 +4,24 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/pool/tree/HEAD)
 
+## [0.4.3](https://github.com/uzh/pool/tree/0.4.3) - 2023-08-09
+
+### Changes
+
+- reminder runs every minute
+- matcher runs every five minutes
+- update naming for number of assignments
+
+### Fixed
+
+- persist checkboxes of session close view
+- validation of mailing rate in matcher
+
 ## [0.4.2](https://github.com/uzh/pool/tree/0.4.2) - 2023-08-08
 
 ### Fixed
 
 - keep filter when updating experiment
-- persist checkboxes of session close view
 
 ## [0.4.1](https://github.com/uzh/pool/tree/0.4.1) - 2023-08-08
 
