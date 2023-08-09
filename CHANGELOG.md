@@ -4,28 +4,31 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/pool/tree/HEAD)
 
-### Changes
-
-- rename allow all contacts to register for an experiment
-
-## [0.4.3](https://github.com/uzh/pool/tree/0.4.3) - 2023-08-09
-
 ### Added
 
 - option to delete experiment and session specific message templates
 
 ### Changes
 
+- rename allow all contacts to register for an experiment
+- extended available text elements in email templates
+
+### Fixed
+
+- linebreaks in html emails
+
+## [0.4.3](https://github.com/uzh/pool/tree/0.4.3) - 2023-08-09
+
+### Changes
+
 - reminder runs every minute
 - matcher runs every five minutes
 - update naming for number of assignments
-- extended available text elements in email templates
 
 ### Fixed
 
 - persist checkboxes of session close view
 - validation of mailing rate in matcher
-- linebreaks in html emails
 
 ## [0.4.2](https://github.com/uzh/pool/tree/0.4.2) - 2023-08-08
 
