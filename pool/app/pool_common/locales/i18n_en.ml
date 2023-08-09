@@ -159,8 +159,7 @@ let rec hint_to_string = function
 
   If you filter for this field, the overriding value is preferred.|}
   | AllowUninvitedSignup ->
-    "Contacts who have not been invited will be able to sign up for the \
-     experiment."
+    "All contacts (invited or not) will be able to sign up for the experiment."
   | AssignContactFromWaitingList ->
     "Select the session to which you want to assign the contact."
   | AssignmentsMarkedAsClosed ->

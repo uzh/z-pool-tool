@@ -162,7 +162,7 @@ let rec hint_to_string = function
 Wird nach diesem Feld gefiltert, wird der überschreibende Wert bevorzugt.
 |}
   | AllowUninvitedSignup ->
-    "Kontakte, die nicht eingeladen wurden, können sich für das Experiment \
+    "Alle Kontakte (eingeladen oder nicht), können sich für das Experiment \
      anmelden."
   | AssignContactFromWaitingList ->
     "Wählen Sie die Session, zu welcher Sie den Kontakt zuweisen wollen."

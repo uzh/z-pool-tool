@@ -11,7 +11,7 @@ let rec field_to_string =
   | AdminHint -> "Hint für Administratoren"
   | AdminInputOnly -> "Eingabe nur durch Admins"
   | AdminViewOnly -> "Nur für Admins ersichtlich"
-  | AllowUninvitedSignup -> "Einschreiben nicht eingeladener Kontakte erlauben"
+  | AllowUninvitedSignup -> "Einschreiben aller Kontakte erlauben"
   | Answer -> "Antwort"
   | AreaCode -> "Vorwahl"
   | Argument -> "Argument"

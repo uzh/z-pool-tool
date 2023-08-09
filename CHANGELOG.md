@@ -4,6 +4,10 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/pool/tree/HEAD)
 
+### Changes
+
+- rename allow all contacts to register for an experiment
+
 ## [0.4.3](https://github.com/uzh/pool/tree/0.4.3) - 2023-08-09
 
 ### Changes
