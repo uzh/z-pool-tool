@@ -602,13 +602,21 @@ module SessionCancellation = struct
 end
 
 module SessionReminder = struct
-  let email_params lang layout experiment session contact =
-    global_params layout contact.Contact.user
+  let email_params lang layout experiment session assignment =
+    global_params layout assignment.Assignment.contact.Contact.user
     @ experiment_params layout experiment
     @ session_params layout lang session
+    @ assignment_params assignment
   ;;
 
-  let create pool tenant system_languages experiment session contact =
+  let create
+    pool
+    tenant
+    system_languages
+    experiment
+    session
+    ({ Assignment.contact; _ } as assignment)
+    =
     let open Message_utils in
     let preferred_language = preferred_language system_languages contact in
     let%lwt template, language =
@@ -623,7 +631,7 @@ module SessionReminder = struct
     in
     let%lwt sender = sender_of_experiment pool experiment in
     let layout = layout_from_tenant tenant in
-    let params = email_params language layout experiment session contact in
+    let params = email_params language layout experiment session assignment in
     prepare_email
       language
       template
@@ -648,10 +656,10 @@ module SessionReminder = struct
     in
     let%lwt sender = sender_of_experiment pool experiment in
     let layout = layout_from_tenant tenant in
-    let fnc contact =
+    let fnc ({ Assignment.contact; _ } as assignment) =
       let open CCResult in
       let* lang, template = template_by_contact sys_langs templates contact in
-      let params = email_params lang layout experiment session contact in
+      let params = email_params lang layout experiment session assignment in
       prepare_email
         lang
         template

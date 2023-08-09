@@ -325,7 +325,7 @@ let message_template_help
       layout
       (create_experiment ())
       (create_session ())
-      (create_contact ())
+      (create_assignment ())
   | SessionReschedule ->
     let open Session in
     let start =

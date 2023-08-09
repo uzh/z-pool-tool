@@ -13,13 +13,7 @@ let create_reminders pool tenant sys_languages session experiment =
       experiment
       session
   in
-  let emails =
-    CCList.map
-      (fun (assignment : t) ->
-        let contact = assignment.contact in
-        create_message contact)
-      assignments
-  in
+  let emails = CCList.map create_message assignments in
   emails |> CCResult.flatten_l |> Lwt_result.lift
 ;;
 

@@ -341,7 +341,7 @@ module SessionReminder : sig
     -> email_layout
     -> Experiment.t
     -> Session.t
-    -> Contact.t
+    -> Assignment.t
     -> (string * string) list
 
   val create
@@ -350,7 +350,7 @@ module SessionReminder : sig
     -> Pool_common.Language.t list
     -> Experiment.t
     -> Session.t
-    -> Contact.t
+    -> Assignment.t
     -> Sihl_email.t Lwt.t
 
   val prepare
@@ -359,7 +359,7 @@ module SessionReminder : sig
     -> Pool_common.Language.t list
     -> Experiment.t
     -> Session.t
-    -> (Contact.t -> (Sihl_email.t, Pool_common.Message.error) result) Lwt.t
+    -> (Assignment.t -> (Sihl_email.t, Pool_common.Message.error) result) Lwt.t
 end
 
 module SessionReschedule : sig
