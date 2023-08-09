@@ -11,8 +11,6 @@ jobs:
     name: Build and test
     runs-on: ubuntu-latest
     env:
-      EMAIL_RATE_LIMIT: 3600
-      MATCHER_MAX_CAPACITY: 80
       MYSQL_DATABASE: test_econ
       MYSQL_ROOT_PASSWORD: password
     services:
@@ -42,6 +40,8 @@ jobs:
           SIHL_ENV: test
           SMTP_SENDER: test@econ.uzh.ch
           TEST_EMAIL: test@econ.uzh.ch
+          EMAIL_RATE_LIMIT: 3600
+          MATCHER_MAX_CAPACITY: 80
         with:
           image: ocaml/opam:debian-10-ocaml-4.14
           options: -v ${{ github.workspace }}:/app -w /app -e DATABASE_URL -e DATABASE_URL_TENANT_TEST -e TEST_EMAIL -e SMTP_SENDER -e SIHL_ENV
