@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 ### Fixed
 
 - keep filter when updating experiment
+- persist checkboxes of session close view
 
 ## [0.4.1](https://github.com/uzh/pool/tree/0.4.1) - 2023-08-08
 
