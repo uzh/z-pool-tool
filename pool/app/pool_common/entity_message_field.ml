@@ -274,6 +274,7 @@ type t =
   | User [@name "user"] [@printer go "user"]
   | Validation [@name "validation"] [@printer go "validation"]
   | Value [@name "value"] [@printer go "value"]
+  | Verified [@name "verified"] [@printer go "verified"]
   | Version [@name "version"] [@printer go "version"]
   | Virtual [@name "virtual"] [@printer go "virtual"]
   | WaitingList [@name "waiting_list"] [@printer go "waiting_list"]

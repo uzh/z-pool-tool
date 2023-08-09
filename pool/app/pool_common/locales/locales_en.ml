@@ -234,6 +234,7 @@ let rec field_to_string =
   | User -> "user"
   | Validation -> "validation"
   | Value -> "value"
+  | Verified -> "verified"
   | Version -> "version"
   | Virtual -> "virtual"
   | WaitingList -> "waiting list"

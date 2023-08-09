@@ -38,17 +38,22 @@ let personal_detail ?(admin_comment = None) language contact =
     ]
 ;;
 
-let status_icons { Contact.paused; _ } =
+let status_icons { Contact.paused; verified; _ } =
   let open Pool_user in
   let open Icon in
   let success = to_html ~classnames:[ "color-green" ] in
   let error = to_html ~classnames:[ "color-red" ] in
+  (* TODO: Add SMTP Bounce *)
   let paused =
     match paused |> Paused.value with
     | true -> error NotificationsOff
     | false -> success Notifications
   in
-  div ~a:[ a_class [ "flexrow"; "flex-gap-sm" ] ] [ paused ]
+  [ CCOption.is_some verified, Checkmark ]
+  |> CCList.map (fun (is_success, icon) ->
+    if is_success then success icon else error icon)
+  |> CCList.cons paused
+  |> div ~a:[ a_class [ "flexrow"; "flex-gap-sm" ] ]
 ;;
 
 let table_legend language =
@@ -62,6 +67,7 @@ let table_legend language =
   table_legend
     [ text_to_string I18n.Disabled, legend_color_item "bg-red-lighter"
     ; field_to_string Message.Field.Paused, legend_icon_item Notifications
+    ; field_to_string Message.Field.Verified, legend_icon_item Checkmark
     ]
 ;;
 
