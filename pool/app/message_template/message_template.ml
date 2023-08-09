@@ -19,6 +19,10 @@ let sender_of_contact_person pool admin =
   | Some admin -> admin |> Admin.email_address |> Lwt.return
 ;;
 
+let to_absolute_path layout path =
+  path |> Sihl.Web.externalize_path |> Format.asprintf "%s%s" layout.link
+;;
+
 let sender_of_experiment pool experiment =
   let open Utils.Lwt_result.Infix in
   Experiment.find_contact_person pool experiment
@@ -74,9 +78,7 @@ let experiment_params layout experiment =
   let open Experiment in
   let experiment_id = experiment.Experiment.id |> Id.value in
   let experiment_url =
-    Format.asprintf "experiments/%s" experiment_id
-    |> Sihl.Web.externalize_path
-    |> Format.asprintf "%s%s" layout.link
+    Format.asprintf "experiments/%s" experiment_id |> to_absolute_path layout
   in
   [ "experimentId", experiment_id
   ; "experimentPublicTitle", public_title_value experiment
@@ -86,9 +88,49 @@ let experiment_params layout experiment =
   ]
 ;;
 
-let location_params _ = []
+let location_params
+  language
+  layout
+  ({ Pool_location.id; address; _ } as location)
+  =
+  let open Pool_location in
+  let location_url =
+    id
+    |> Id.value
+    |> Format.asprintf "experiments/%s"
+    |> to_absolute_path layout
+  in
+  let location_link = Human.link_with_default ~default:location_url location in
+  let location_details = Human.detailed language location in
+  let institution, building, room, street, zip, city =
+    let open Address in
+    match address with
+    | Virtual -> "", "", "", "", "", ""
+    | Physical { Mail.institution; building; room; street; zip; city } ->
+      let open Mail in
+      let default fnc = CCOption.map_or ~default:"" fnc in
+      let institution = institution |> default Institution.value in
+      let building = building |> default Building.value in
+      let room = room |> Room.value in
+      let street = street |> Street.value in
+      let zip = zip |> Zip.value in
+      let city = city |> City.value in
+      institution, building, room, street, zip, city
+  in
+  [ "locationUrl", location_url
+  ; "locationDetails", location_details
+  ; "locationLink", location_link
+  ; "locationInstitution", institution
+  ; "locationBuilding", building
+  ; "locationRoom", room
+  ; "locationStreet", street
+  ; "locationZip", zip
+  ; "locationCity", city
+  ]
+;;
 
 let session_params
+  layout
   ?follow_up_sessions
   lang
   ({ Session.start; duration; location; _ } as session : Session.t)
@@ -119,7 +161,7 @@ let session_params
   ; "sessionDuration", duration
   ; "sessionOverview", session_overview
   ]
-  @ location_params location
+  @ location_params lang layout location
 ;;
 
 let assignment_params { Assignment.id; external_data_id; _ } =
@@ -183,7 +225,7 @@ module AssignmentConfirmation = struct
     in
     base_params layout assignment.contact
     @ experiment_params layout experiment
-    @ session_params ?follow_up_sessions language session
+    @ session_params ?follow_up_sessions layout language session
     @ assignment_params assignment
   ;;
 
@@ -490,7 +532,7 @@ module SessionCancellation = struct
     global_params layout contact.Contact.user
     @ [ "reason", reason |> Session.CancellationReason.value ]
     @ experiment_params layout experiment
-    @ session_params ~follow_up_sessions language session
+    @ session_params ~follow_up_sessions layout language session
   ;;
 
   let prepare pool tenant experiment sys_langs session follow_up_sessions =
@@ -563,7 +605,7 @@ module SessionReminder = struct
   let email_params lang layout experiment session contact =
     global_params layout contact.Contact.user
     @ experiment_params layout experiment
-    @ session_params lang session
+    @ session_params layout lang session
   ;;
 
   let create pool tenant system_languages experiment session contact =
@@ -633,7 +675,7 @@ module SessionReschedule = struct
       ; "newDuration", new_duration |> Duration.value |> formatted_timespan
       ]
     @ experiment_params layout experiment
-    @ session_params lang session
+    @ session_params layout lang session
   ;;
 
   let prepare pool tenant experiment sys_langs session admin_contact =

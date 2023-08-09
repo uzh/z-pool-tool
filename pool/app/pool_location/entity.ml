@@ -62,11 +62,7 @@ type t =
 [@@deriving show]
 
 let to_string language location =
-  CCString.concat
-    ", "
-    (Address.address_rows_human language location.address
-     |> fun (room, street, city) ->
-     [ room; street; city ] |> CCList.filter CCFun.(CCString.is_empty %> not))
+  CCString.concat ", " (Address.address_rows_human language location.address)
 ;;
 
 let equal m k =
@@ -105,3 +101,18 @@ let contact_file_path id file =
 let admin_file_path id file =
   Format.asprintf "/admin/locations/%s/%s" (Id.value id) (file_path file)
 ;;
+
+module Human = struct
+  let link_with_default ~default { link; _ } =
+    link |> CCOption.map_or ~default Link.value
+  ;;
+
+  let detailed language { description; address; _ } =
+    let concat = CCString.concat "\n" in
+    let address = Address.address_rows_human language address in
+    let address_block = address |> concat in
+    match description with
+    | None -> address_block
+    | Some description -> [ address_block; ""; description ] |> concat
+  ;;
+end

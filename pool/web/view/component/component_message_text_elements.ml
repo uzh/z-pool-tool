@@ -81,6 +81,12 @@ module DummyData = struct
       Physical mail
     in
     let name = "SNS Lab" |> Name.create |> get_exn in
+    let description =
+      "The Laboratory for Social and Neural Systems Research (SNS Lab) is the \
+       heart of the ZNE."
+      |> Description.of_string
+      |> CCOption.return
+    in
     let address = address in
     let link =
       "https://www.zne.uzh.ch/en/facilities.html" |> Link.create |> get_exn
@@ -89,7 +95,7 @@ module DummyData = struct
     let files = [] in
     { id = Id.create ()
     ; name
-    ; description = None
+    ; description
     ; address
     ; link = Some link
     ; status
