@@ -11,7 +11,7 @@ let rec field_to_string =
   | AdminHint -> "hint for admins"
   | AdminInputOnly -> "input only by admins"
   | AdminViewOnly -> "only visible for admins"
-  | AllowUninvitedSignup -> "Allow registration of uninvited contacts"
+  | AllowUninvitedSignup -> "Allow registration of all contacts"
   | Answer -> "answer"
   | AreaCode -> "area code"
   | Argument -> "argument"
