@@ -86,7 +86,13 @@ let experiment_params layout experiment =
   ]
 ;;
 
-let session_params ?follow_up_sessions lang session =
+let location_params _ = []
+
+let session_params
+  ?follow_up_sessions
+  lang
+  ({ Session.start; duration; location; _ } as session : Session.t)
+  =
   let open Session in
   let session_id = session.Session.id |> Id.value in
   let session_overview =
@@ -96,13 +102,24 @@ let session_params ?follow_up_sessions lang session =
     | Some (sessions, i18n) ->
       let follow_ups =
         [ Pool_common.(Utils.hint_to_string lang i18n)
-        ; Session.follow_up_sessions_to_email_list sessions
+        ; follow_up_sessions_to_email_list sessions
         ]
         |> CCString.concat "\n"
       in
       [ main_session; follow_ups ] |> CCString.concat "\n\n"
   in
-  [ "sessionId", session_id; "sessionOverview", session_overview ]
+  let start =
+    start |> Start.value |> Pool_common.Utils.Time.formatted_date_time
+  in
+  let duration =
+    duration |> Duration.value |> Pool_common.Utils.Time.formatted_timespan
+  in
+  [ "sessionId", session_id
+  ; "sessionStart", start
+  ; "sessionDuration", duration
+  ; "sessionOverview", session_overview
+  ]
+  @ location_params location
 ;;
 
 let assignment_params { Assignment.id; external_data_id; _ } =
