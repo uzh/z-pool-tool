@@ -52,7 +52,9 @@ module Sql = struct
 
   let find_all_request =
     let open Caqti_request.Infix in
-    "" |> Format.asprintf "%s\n%s" select_sql |> Caqti_type.unit ->* t
+    {sql|ORDER BY pool_locations.name|sql}
+    |> Format.asprintf "%s\n%s" select_sql
+    |> Caqti_type.unit ->* t
   ;;
 
   let find_all pool =
