@@ -102,6 +102,9 @@ module Sql = struct
          ~default:id_fragment
          (Format.asprintf "%s AND %s" id_fragment)
     |> select_sql
+         ~joins:
+           {sql|JOIN user_users ON pool_assignments.contact_uuid = user_users.uuid|sql}
+    |> Format.asprintf "%s\n ORDER BY user_users.name, user_users.given_name"
     |> Caqti_type.string ->* RepoEntity.t
   ;;
 
