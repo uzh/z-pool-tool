@@ -65,7 +65,9 @@ let pp_exec_header tags src =
     let user = tags >>= Logs.Tag.find tag_user |> value in
     let database_label = tags >>= Logs.Tag.find tag_database |> value in
     let src = Logs.Src.name src in
-    let now = Ptime_clock.now () |> Ptime.to_rfc3339 in
+    let now =
+      Ptime_clock.now () |> Utils.Ptime.formatted_date_time_with_seconds
+    in
     Fmt.pf
       ppf
       "%s [%a][%a][%a][%a][%a]: "

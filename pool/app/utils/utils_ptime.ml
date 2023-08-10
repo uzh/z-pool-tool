@@ -8,9 +8,12 @@ let date_to_human date =
   Format.asprintf "%s.%s.%d" (decimal day) (decimal month) year
 ;;
 
-let time_to_human time =
-  let _, ((h, m, _), _) = time in
-  Format.asprintf "%s:%s" (decimal h) (decimal m)
+let time_to_human ?(with_seconds = false) time =
+  let _, ((h, m, s), _) = time in
+  let seconds =
+    if with_seconds then Format.asprintf ":%s" (decimal s) else ""
+  in
+  Format.asprintf "%s:%s%s" (decimal h) (decimal m) seconds
 ;;
 
 (* Public functions *)
@@ -28,20 +31,23 @@ let to_local_date date =
   |> CCOption.get_exn_or "Invalid ptime provided"
 ;;
 
-let formatted_date_time (date : Ptime.t) =
-  let date = date |> to_local_date in
-  Format.asprintf
-    "%s %s"
-    (date_to_human (Ptime.to_date date))
-    (time_to_human (Ptime.to_date_time date))
-;;
-
 let formatted_date ptime =
   ptime |> to_local_date |> Ptime.to_date |> date_to_human
 ;;
 
-let formatted_time ptime =
-  ptime |> to_local_date |> Ptime.to_date_time |> time_to_human
+let formatted_time ?with_seconds ptime =
+  ptime |> to_local_date |> Ptime.to_date_time |> time_to_human ?with_seconds
+;;
+
+let formatted_date_time (date : Ptime.t) =
+  Format.asprintf "%s %s" (formatted_date date) (formatted_time date)
+;;
+
+let formatted_date_time_with_seconds (date : Ptime.t) =
+  Format.asprintf
+    "%s %s"
+    (formatted_date date)
+    (formatted_time ~with_seconds:true date)
 ;;
 
 let formatted_timespan timespan =

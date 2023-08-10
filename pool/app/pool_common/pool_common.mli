@@ -313,7 +313,7 @@ module Utils : sig
     val ptime_to_sexp : Ptime.t -> Sexplib0.Sexp.t
     val formatted_date_time : Ptime.t -> string
     val formatted_date : Ptime.t -> string
-    val formatted_time : Ptime.t -> string
+    val formatted_time : ?with_seconds:bool -> Ptime.t -> string
     val formatted_timespan : Ptime.span -> string
     val timespan_to_minutes : Ptime.span -> string
     val parse_time : string -> (Ptime.t, Message.error) result
