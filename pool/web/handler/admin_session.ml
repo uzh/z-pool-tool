@@ -536,7 +536,9 @@ let close_post req =
     @@
     let open Cqrs_command.Assignment_command in
     let open Assignment in
-    let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+    let%lwt urlencoded =
+      Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
+    in
     let* experiment = Experiment.find database_label experiment_id in
     let* session = Session.find database_label session_id in
     let* assignments =

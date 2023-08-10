@@ -224,12 +224,17 @@ end = struct
           | _, _ -> 0, []
         in
         let* external_data_id =
+          let participated =
+            no_show |> NoShow.value |> not && participated |> Participated.value
+          in
           match
-            Experiment.external_data_required_value experiment, external_data_id
+            ( Experiment.external_data_required_value experiment
+            , participated
+            , external_data_id )
           with
-          | true, None ->
+          | true, true, None ->
             Error Pool_common.Message.(FieldRequired Field.ExternalDataId)
-          | _, _ -> Ok external_data_id
+          | _, _, _ -> Ok external_data_id
         in
         let contact =
           Contact.update_num_assignments
