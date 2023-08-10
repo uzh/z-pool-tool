@@ -1,3 +1,5 @@
+open CCFun.Infix
+
 (* Formatting *)
 let decimal n =
   if n < 10 then Format.asprintf "0%d" n else Format.asprintf "%d" n
@@ -17,15 +19,18 @@ let time_to_human ?(with_seconds = false) time =
 ;;
 
 (* Public functions *)
+let to_zurich_tz_offset_s =
+  let open Ptime in
+  to_float_s
+  %> Unix.localtime
+  %> (fun { Unix.tm_isdst; _ } -> if tm_isdst then 2 else 1)
+  %> CCInt.mul (60 * 60)
+;;
+
 let to_local_date date =
   let open Ptime in
   date
-  |> to_float_s
-  |> Unix.localtime
-  |> fun { Unix.tm_isdst; _ } ->
-  (if tm_isdst then 2 else 1)
-  |> fun rate ->
-  rate * 60 * 60
+  |> to_zurich_tz_offset_s
   |> Span.of_int_s
   |> add_span date
   |> CCOption.get_exn_or "Invalid ptime provided"
@@ -41,13 +46,6 @@ let formatted_time ?with_seconds ptime =
 
 let formatted_date_time (date : Ptime.t) =
   Format.asprintf "%s %s" (formatted_date date) (formatted_time date)
-;;
-
-let formatted_date_time_with_seconds (date : Ptime.t) =
-  Format.asprintf
-    "%s %s"
-    (formatted_date date)
-    (formatted_time ~with_seconds:true date)
 ;;
 
 let formatted_timespan timespan =

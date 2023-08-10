@@ -4,6 +4,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/pool/tree/HEAD)
 
+## [0.4.4](https://github.com/uzh/pool/tree/0.4.4) - 2023-08-10
+
 ### Added
 
 - option to delete experiment and session specific message templates
@@ -12,6 +14,9 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 - rename allow all contacts to register for an experiment
 - extended available text elements in email templates
+- sort assignments alphabetically
+- sort locations alphabetically
+- show zurich timestamp in logs
 
 ### Fixed
 

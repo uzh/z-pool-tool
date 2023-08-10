@@ -66,7 +66,8 @@ let pp_exec_header tags src =
     let database_label = tags >>= Logs.Tag.find tag_database |> value in
     let src = Logs.Src.name src in
     let now =
-      Ptime_clock.now () |> Utils.Ptime.formatted_date_time_with_seconds
+      let now = Ptime_clock.now () in
+      Ptime.to_rfc3339 ~tz_offset_s:(Utils.Ptime.to_zurich_tz_offset_s now) now
     in
     Fmt.pf
       ppf
