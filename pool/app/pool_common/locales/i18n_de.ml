@@ -401,7 +401,8 @@ Wenn ein Kontakt zwar erschienen ist, aber nicht an dem Experiment teilgenommen 
      angehängt werden. Diese Tags können im Experiment-Filter verwendet werden \
      um sie ein- oder auszuschliessen."
   | TemplateTextElementsHint ->
-    "Die folgenden Textbausteine können in den Templates verwendet werden:"
+    "Die folgenden Textbausteine können in den Templates verwendet werden. \
+     Klicken Sie auf die Labels, um sie in die Zwischenablage zu kopieren."
   | TimeSpanPickerHint -> "Zeitdauer in Minuten."
   | WaitingListPhoneMissingContact ->
     "Sie haben in Ihrem Profil noch keine Telefonnummer angegenen. Wir bitten \

@@ -223,3 +223,8 @@ button.as-link {
 table.fixed {
     table-layout: fixed;
 }
+
+// Copy to clipboard
+[data-clipboard] {
+    cursor: copy;
+}

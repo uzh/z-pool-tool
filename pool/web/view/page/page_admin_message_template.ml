@@ -115,23 +115,10 @@ let template_form
     | Some _ -> Update field
   in
   let text_elements_html =
-    match text_elements with
-    | None -> txt ""
-    | Some elements ->
-      div
-        ~a:[ a_class [ "inset"; "border"; "border-radius"; "bg-grey-light" ] ]
-        [ p
-            [ txt
-                Pool_common.(
-                  Utils.hint_to_string language I18n.TemplateTextElementsHint)
-            ]
-        ; elements
-          |> CCList.map (fun (label, text) ->
-            [ txt (Format.asprintf "{%s}" label)
-            ; text |> Http_utils.add_line_breaks
-            ])
-          |> Component.Table.horizontal_table `Simple ~align_top:true
-        ]
+    text_elements
+    |> CCOption.map_or
+         ~default:(txt "")
+         (Component.MessageTextElements.build_help language)
   in
   let plain_text_element =
     let id = Field.(show PlainText) in

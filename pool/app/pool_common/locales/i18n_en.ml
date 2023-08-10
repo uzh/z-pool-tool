@@ -385,7 +385,8 @@ If a contact showed up but did not participate in the experiment, do not select 
     "The defined tags can be added to several types (e.g. contacts). The tags \
      can be used by the experiment filter to eighter include or exclude them."
   | TemplateTextElementsHint ->
-    "The following text elements can be used inside the templates:"
+    "The following text elements can be used inside the templates. Click on \
+     the labels to copy them to the clipboard."
   | TimeSpanPickerHint -> "Time duration in minutes"
   | WaitingListPhoneMissingContact ->
     "You have not entered a phone number in your profile yet. Please provide a \
