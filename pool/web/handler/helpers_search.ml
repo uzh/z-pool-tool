@@ -6,14 +6,13 @@ module HttpUtils = Http_utils
 let src = Logs.Src.create "handler.helper.search"
 
 let create search_type ?path req =
-  let query_field, path =
+  let query_field = Field.Search in
+  let path =
+    let value default = CCOption.value ~default path in
     match search_type with
-    | `Experiment ->
-      Field.Title, CCOption.value ~default:"/admin/experiments/search" path
-    | `Location ->
-      Field.Name, CCOption.value ~default:"/admin/locations/search" path
-    | `ContactTag ->
-      Field.Title, CCOption.value ~default:"/admin/settings/tags/search" path
+    | `Experiment -> value "/admin/experiments/search"
+    | `Location -> value "/admin/locations/search"
+    | `ContactTag -> value "/admin/settings/tags/search"
   in
   let result { Pool_context.database_label; user; _ } =
     let open CCList in

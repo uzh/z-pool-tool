@@ -3,6 +3,8 @@ open Tyxml.Html
 module Field = Pool_common.Message.Field
 module I18n = Pool_common.I18n
 
+let query_field = Field.Search
+
 let hidden_input name decode =
   CCOption.map_or ~default:[] (fun value ->
     [ input
@@ -14,7 +16,6 @@ let hidden_input name decode =
 let input_element
   item_to_html
   placeholder
-  input_field
   ?(disabled = false)
   ?(value = "")
   ?results
@@ -45,7 +46,7 @@ let input_element
   let attrs =
     [ a_input_type `Text
     ; a_value value
-    ; a_name Field.(show input_field)
+    ; a_name Field.(show query_field)
     ; a_class [ "query-input" ]
     ; a_placeholder placeholder
     ]
@@ -67,7 +68,6 @@ let input_element
 let create
   item_to_html
   placeholder
-  input_field
   field_label
   ?(current = [])
   ?disabled
@@ -85,14 +85,7 @@ let create
   div
     ~a:[ a_class [ "form-group" ]; a_user_data "query" "wrapper" ]
     ([ label [ txt Pool_common.(Utils.nav_link_to_string language field_label) ]
-     ; input_element
-         item_to_html
-         placeholder
-         input_field
-         ?disabled
-         ?value
-         ?results
-         path
+     ; input_element item_to_html placeholder ?disabled ?value ?results path
      ; div
          ~a:[ a_user_data "query" "results"; a_class [ "hide-empty" ] ]
          (CCList.map item_to_html current)
@@ -121,8 +114,8 @@ module Experiment = struct
   ;;
 
   let placeholder = "Search by experiment title"
-  let input_element = input_element item placeholder Field.Title
-  let create = create item placeholder Field.Title I18n.Experiments
+  let input_element = input_element item placeholder
+  let create = create item placeholder I18n.Experiments
 end
 
 module Location = struct
@@ -145,8 +138,8 @@ module Location = struct
   ;;
 
   let placeholder = "Search by location name"
-  let input_element = input_element item placeholder Field.Name
-  let create = create item placeholder Field.Name I18n.Locations
+  let input_element = input_element item placeholder
+  let create = create item placeholder I18n.Locations
 end
 
 module Tag = struct
@@ -169,6 +162,6 @@ module Tag = struct
   ;;
 
   let placeholder = "Search by tag title"
-  let input_element = input_element item placeholder Field.Title
-  let create = create item placeholder Field.Title I18n.Tags
+  let input_element = input_element item placeholder
+  let create = create item placeholder I18n.Tags
 end

@@ -266,7 +266,7 @@ module Sql = struct
       (id |> Entity.Id.value)
   ;;
 
-  let search_request ids =
+  let search_request ?(limit = 20) ids =
     let base =
       {sql|
         SELECT
@@ -282,19 +282,22 @@ module Sql = struct
         WHERE pool_experiments.title LIKE $1
       |sql}
     in
-    match ids with
-    | [] -> base
-    | ids ->
-      CCList.mapi
-        (fun i _ -> Format.asprintf "UNHEX(REPLACE($%i, '-', ''))" (i + 2))
-        ids
-      |> CCString.concat ","
-      |> Format.asprintf
-           {sql|
+    let query =
+      match ids with
+      | [] -> base
+      | ids ->
+        CCList.mapi
+          (fun i _ -> Format.asprintf "UNHEX(REPLACE($%i, '-', ''))" (i + 2))
+          ids
+        |> CCString.concat ","
+        |> Format.asprintf
+             {sql|
               %s
               AND pool_experiments.uuid NOT IN (%s)
           |sql}
-           base
+             base
+    in
+    Format.asprintf "%s LIMIT %i" query limit
   ;;
 
   let search pool exclude query =
