@@ -229,8 +229,12 @@ module AssignmentConfirmation = struct
     @ assignment_params assignment
   ;;
 
-  let template pool language =
-    find_by_label_to_send pool language Label.AssignmentConfirmation
+  let template pool language experiment =
+    find_by_label_to_send
+      ~entity_uuids:[ Experiment.Id.to_common experiment.Experiment.id ]
+      pool
+      language
+      Label.AssignmentConfirmation
   ;;
 
   let prepare
@@ -242,7 +246,7 @@ module AssignmentConfirmation = struct
     session
     admin_contact
     =
-    let%lwt template, language = template pool preferred_language in
+    let%lwt template, language = template pool preferred_language experiment in
     let layout = layout_from_tenant tenant in
     let%lwt sender = sender_of_contact_person pool admin_contact in
     let fnc assignment =
