@@ -1,11 +1,10 @@
-open Entity
+open Assignment
 
 let src = Logs.Src.create "session_reminder.service"
-let get_or_failwith = Pool_common.Utils.get_or_failwith
 
 let create_reminders pool tenant sys_languages session experiment =
   let open Utils.Lwt_result.Infix in
-  let* assignments = Repo.find_uncanceled_by_session pool session.Session.id in
+  let* assignments = find_uncanceled_by_session pool session.Session.id in
   let%lwt create_message =
     Message_template.SessionReminder.prepare
       pool
@@ -14,13 +13,7 @@ let create_reminders pool tenant sys_languages session experiment =
       experiment
       session
   in
-  let emails =
-    CCList.map
-      (fun (assignment : t) ->
-        let contact = assignment.contact in
-        create_message contact)
-      assignments
-  in
+  let emails = CCList.map create_message assignments in
   emails |> CCResult.flatten_l |> Lwt_result.lift
 ;;
 

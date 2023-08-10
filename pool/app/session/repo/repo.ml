@@ -439,6 +439,27 @@ module Sql = struct
       (Pool_common.Id.value id)
   ;;
 
+  let find_open_request =
+    let open Caqti_request.Infix in
+    {sql|
+        WHERE
+          pool_sessions.closed_at IS NULL
+        AND
+          pool_sessions.canceled_at IS NULL
+        AND
+          pool_sessions.uuid = UNHEX(REPLACE($1, '-', ''))
+      |sql}
+    |> find_sql
+    |> Caqti_type.string ->! RepoEntity.t
+  ;;
+
+  let find_open pool id =
+    Utils.Database.find_opt
+      (Database.Label.value pool)
+      find_open_request
+      (Pool_common.Id.value id)
+  ;;
+
   let find_open_with_follow_ups_request =
     let open Caqti_request.Infix in
     {sql|
@@ -698,6 +719,13 @@ let find_open_with_follow_ups pool session_id =
         | [] -> Error Pool_common.Message.(NotFound Field.Session)
         | sessions -> Ok sessions)
   >>= add_location_to_multiple pool
+;;
+
+let find_open pool session_id =
+  let open Utils.Lwt_result.Infix in
+  Sql.find_open pool session_id
+  ||> CCOption.to_result Pool_common.Message.(NotFound Field.Session)
+  >>= location_to_repo_entity pool
 ;;
 
 let find_experiment_id_and_title = Sql.find_experiment_id_and_title

@@ -14,44 +14,44 @@ let template_id =
     Pool_common.Message.Field.MessageTemplate
 ;;
 
+let experiment_path experiment_id =
+  Format.asprintf "/admin/experiments/%s" (Experiment.Id.value experiment_id)
+;;
+
 let form_redirects experiment_id error_path =
   let open Admin_message_templates in
-  let base =
-    experiment_id
-    |> Pool_common.Id.value
-    |> Format.asprintf "/admin/experiments/%s"
-  in
+  let base = experiment_path experiment_id in
   { success = base; error = Format.asprintf "%s/%s" base error_path }
 ;;
 
-let form ?template_id label req =
+type form_context =
+  | New of Message_template.Label.t
+  | Edit of Message_template.Id.t
+
+let form form_context req =
   let open Utils.Lwt_result.Infix in
   let experiment_id = experiment_id req in
   let result ({ Pool_context.database_label; _ } as context) =
-    Utils.Lwt_result.map_error (fun err ->
-      ( err
-      , experiment_id
-        |> Experiment.Id.value
-        |> Format.asprintf "/admin/experiments/%s" ))
+    Utils.Lwt_result.map_error (fun err -> err, experiment_path experiment_id)
     @@
     let flash_fetcher key = Sihl.Web.Flash.find key req in
     let tenant = Pool_context.Tenant.get_tenant_exn req in
     let* experiment = Experiment.find database_label experiment_id in
-    let* template =
-      template_id
-      |> CCOption.map_or ~default:(Lwt_result.return None) (fun id ->
-        Message_template.find database_label id >|+ CCOption.pure)
-    in
-    let%lwt available_languages =
-      match template_id with
-      | None ->
-        Pool_context.Tenant.get_tenant_languages_exn req
-        |> Message_template.find_available_languages
-             database_label
-             (experiment_id |> Experiment.Id.to_common)
-             label
-        ||> CCOption.return
-      | Some _ -> Lwt.return_none
+    let* template, available_languages, label =
+      match form_context with
+      | New label ->
+        let%lwt available_languages =
+          Pool_context.Tenant.get_tenant_languages_exn req
+          |> Message_template.find_available_languages
+               database_label
+               (experiment_id |> Experiment.Id.to_common)
+               label
+          ||> CCOption.return
+        in
+        Lwt_result.return (None, available_languages, label)
+      | Edit id ->
+        let* template = Message_template.find database_label id in
+        Lwt_result.return (Some template, None, template.Message_template.label)
     in
     Page.Admin.Experiments.message_template_form
       context
@@ -67,39 +67,36 @@ let form ?template_id label req =
   result |> HttpUtils.extract_happy_path ~src req
 ;;
 
-let new_invitation = form Message_template.Label.ExperimentInvitation
-
-let new_invitation_post req =
+let new_post label req =
   let open Admin_message_templates in
-  let experiment_id = experiment_id req |> Experiment.Id.to_common in
-  let label = Message_template.Label.ExperimentInvitation in
+  let experiment_id = experiment_id req in
   let redirect =
     form_redirects
       experiment_id
       (Message_template.Label.prefixed_human_url label)
   in
-  (write (Create (experiment_id, label, redirect))) req
+  (write (Create (experiment_id |> Experiment.Id.to_common, label, redirect)))
+    req
 ;;
 
-let new_session_reminder = form Message_template.Label.SessionReminder
+let new_invitation = form (New Message_template.Label.ExperimentInvitation)
+let new_invitation_post = new_post Message_template.Label.ExperimentInvitation
+let new_session_reminder = form (New Message_template.Label.SessionReminder)
+let new_session_reminder_post = new_post Message_template.Label.SessionReminder
 
-let new_session_reminder_post req =
-  let open Admin_message_templates in
-  let experiment_id = experiment_id req |> Experiment.Id.to_common in
-  let label = Message_template.Label.SessionReminder in
-  let redirect =
-    form_redirects
-      experiment_id
-      (Message_template.Label.prefixed_human_url label)
-  in
-  (write (Create (experiment_id, label, redirect))) req
+let new_assignment_confirmation =
+  form (New Message_template.Label.AssignmentConfirmation)
+;;
+
+let new_assignment_confirmation_post =
+  new_post Message_template.Label.AssignmentConfirmation
 ;;
 
 let update_template req =
   let open Utils.Lwt_result.Infix in
   let open Admin_message_templates in
   let open Message_template in
-  let experiment_id = experiment_id req |> Experiment.Id.to_common in
+  let experiment_id = experiment_id req in
   let template_id = template_id req in
   let%lwt template =
     req
@@ -115,15 +112,23 @@ let update_template req =
     (write (Update (template_id, redirect))) req
   | Error err ->
     HttpUtils.redirect_to_with_actions
-      (Format.asprintf
-         "/admin/experiments/%s"
-         (Pool_common.Id.value experiment_id))
+      (experiment_path experiment_id)
       [ HttpUtils.Message.set ~error:[ err ] ]
 ;;
 
 let edit_template req =
   let template_id = template_id req in
-  form ~template_id Message_template.Label.ExperimentInvitation req
+  form (Edit template_id) req
+;;
+
+let delete req =
+  let result { Pool_context.database_label; _ } =
+    let experiment_id = experiment_id req in
+    let template_id = template_id req in
+    let redirect = experiment_path experiment_id in
+    Helpers.MessageTemplates.delete database_label template_id redirect
+  in
+  result |> HttpUtils.extract_happy_path ~src req
 ;;
 
 module Access : sig
@@ -131,6 +136,7 @@ module Access : sig
 
   val invitation : Rock.Middleware.t
   val session_reminder : Rock.Middleware.t
+  val assignment_confirmation : Rock.Middleware.t
 end = struct
   include Helpers.Access
   module Field = Pool_common.Message.Field
@@ -140,15 +146,13 @@ end = struct
     Guardian.id_effects Experiment.Id.of_string Field.Experiment
   ;;
 
-  let invitation =
+  let message_template =
     Experiment.Guard.Access.update
     |> experiment_effects
     |> Guardian.validate_generic
   ;;
 
-  let session_reminder =
-    Experiment.Guard.Access.update
-    |> experiment_effects
-    |> Guardian.validate_generic
-  ;;
+  let invitation = message_template
+  let session_reminder = message_template
+  let assignment_confirmation = message_template
 end

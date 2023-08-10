@@ -824,17 +824,27 @@ let edit
       ]
   in
   let message_templates_html label list =
-    let edit_path m =
-      Message_template.prefixed_template_url ~append:"edit" m |> session_path
+    let build_path append =
+      CCFun.(Message_template.prefixed_template_url ~append %> session_path)
     in
-    let new_path =
+    let edit_path = build_path "edit" in
+    let delete_path = build_path "delete", csrf in
+    let buttons =
       if CCList.is_empty (Message_template.filter_languages sys_languages list)
       then None
-      else session_path Label.(prefixed_human_url label) |> CCOption.pure
+      else
+        session_path Label.(prefixed_human_url label)
+        |> Page_admin_message_template.build_add_button label
+        |> CCOption.pure
     in
     div
       [ h2 ~a:[ a_class [ "heading-2" ] ] [ txt (Label.to_human label) ]
-      ; Page_admin_message_template.table language list new_path edit_path
+      ; Page_admin_message_template.table
+          ?buttons
+          ~delete_path
+          language
+          list
+          edit_path
       ]
   in
   let tags_html =

@@ -108,24 +108,21 @@ type t =
   | Physical of Mail.t
 [@@deriving eq, show, variants]
 
-let address_rows_human language address =
-  match address with
-  | Virtual ->
-    ( Pool_common.Utils.field_to_string language Field.Virtual
-      |> CCString.capitalize_ascii
-    , ""
-    , "" )
-  | Physical address ->
-    let open Mail in
-    let building_room =
-      [ address.building |> CCOption.map Building.value
-      ; Some (Room.value address.room)
-      ]
-      |> CCList.filter_map CCFun.id
-      |> CCString.concat " "
-    in
-    let zip_city =
-      [ Zip.value address.zip; City.value address.city ] |> CCString.concat " "
-    in
-    building_room, Street.value address.street, zip_city
+let virtual_detail language =
+  Pool_common.Utils.field_to_string language Field.Virtual
+  |> CCString.capitalize_ascii
+  |> CCList.pure
+;;
+
+let physical_detail { Mail.institution; room; building; street; zip; city } =
+  let city = Format.asprintf "%s %s" zip city in
+  [ institution; building; Some room; Some street; Some city ]
+  |> CCList.filter_map (function
+    | None -> None
+    | Some s -> if CCString.is_empty s then None else Some s)
+;;
+
+let address_rows_human language = function
+  | Virtual -> virtual_detail language
+  | Physical mail -> physical_detail mail
 ;;

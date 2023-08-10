@@ -180,29 +180,23 @@ end
 
 module AssignmentConfirmation : sig
   val email_params
-    :  Pool_common.Language.t
+    :  ?follow_up_sessions:Session.t list
+    -> Pool_common.Language.t
     -> email_layout
-    -> Session.t list
-    -> Contact.t
+    -> Experiment.t
+    -> Session.t
+    -> Assignment.t
     -> (string * string) list
 
-  val create
-    :  Pool_database.Label.t
+  val prepare
+    :  ?follow_up_sessions:Session.t list
+    -> Pool_database.Label.t
     -> Pool_common.Language.t
     -> Pool_tenant.t
-    -> Session.t list
-    -> Contact.t
+    -> Experiment.t
+    -> Session.t
     -> Admin.t option
-    -> Sihl_email.t Lwt.t
-
-  val create_from_public_session
-    :  Pool_database.Label.t
-    -> Pool_common.Language.t
-    -> Pool_tenant.t
-    -> Session.Public.t list
-    -> Contact.t
-    -> Admin.t option
-    -> Sihl_email.t Lwt.t
+    -> (Assignment.t -> Sihl_email.t) Lwt.t
 end
 
 module ContactRegistrationAttempt : sig
@@ -308,7 +302,6 @@ module SessionCancellation : sig
   val email_params
     :  Pool_common.Language.t
     -> email_layout
-    -> Pool_tenant.t
     -> Experiment.t
     -> Session.t
     -> Session.t list
@@ -348,7 +341,7 @@ module SessionReminder : sig
     -> email_layout
     -> Experiment.t
     -> Session.t
-    -> Contact.t
+    -> Assignment.t
     -> (string * string) list
 
   val create
@@ -357,7 +350,7 @@ module SessionReminder : sig
     -> Pool_common.Language.t list
     -> Experiment.t
     -> Session.t
-    -> Contact.t
+    -> Assignment.t
     -> Sihl_email.t Lwt.t
 
   val prepare
@@ -366,13 +359,14 @@ module SessionReminder : sig
     -> Pool_common.Language.t list
     -> Experiment.t
     -> Session.t
-    -> (Contact.t -> (Sihl_email.t, Pool_common.Message.error) result) Lwt.t
+    -> (Assignment.t -> (Sihl_email.t, Pool_common.Message.error) result) Lwt.t
 end
 
 module SessionReschedule : sig
   val email_params
     :  Pool_common.Language.t
     -> email_layout
+    -> Experiment.t
     -> Session.t
     -> Session.Start.t
     -> Session.Duration.t
@@ -382,6 +376,7 @@ module SessionReschedule : sig
   val prepare
     :  Pool_database.Label.t
     -> Pool_tenant.t
+    -> Experiment.t
     -> Pool_common.Language.t list
     -> Session.t
     -> Admin.t option
@@ -394,7 +389,7 @@ end
 
 module SignUpVerification : sig
   val email_params
-    :  Pool_tenant.t
+    :  email_layout
     -> string
     -> Pool_user.Firstname.t
     -> Pool_user.Lastname.t

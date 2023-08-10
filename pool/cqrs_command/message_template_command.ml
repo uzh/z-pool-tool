@@ -137,6 +137,25 @@ end = struct
   let effects = Message_template.Guard.Access.update
 end
 
+module Delete : sig
+  type t = Message_template.t
+
+  val handle
+    :  ?tags:Logs.Tag.set
+    -> t
+    -> (Pool_event.t list, Pool_common.Message.error) result
+end = struct
+  type t = Message_template.t
+
+  let handle ?(tags = Logs.Tag.empty) template =
+    Logs.info ~src (fun m -> m "Handle command Delete" ~tags);
+    let open Message_template in
+    match template.entity_uuid with
+    | None -> Error Pool_common.Message.(CannotBeDeleted Field.MessageTemplate)
+    | Some _ -> Ok [ template |> deleted |> Pool_event.message_template ]
+  ;;
+end
+
 module RestoreDefault : sig
   type t = Pool_tenant.t
 

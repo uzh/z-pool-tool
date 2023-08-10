@@ -2,31 +2,71 @@ open Tyxml.Html
 open Component.Input
 module Field = Pool_common.Message.Field
 
-let table language templates create_path to_edit_path =
+let build_add_button label path =
   let open Message_template in
-  let create_button =
-    match create_path with
-    | None -> txt ""
-    | Some path ->
-      link_as_button
-        ~style:`Success
-        ~icon:Component.Icon.Add
-        ~control:
-          (language, Pool_common.Message.(Add (Some Field.MessageTemplate)))
-        path
+  a
+    ~a:[ a_class [ "btn"; "primary" ]; a_href (Sihl.Web.externalize_path path) ]
+    [ txt (Format.asprintf "Add %s" (Label.to_human label)) ]
+;;
+
+let table ?(buttons = txt "") ?delete_path language templates to_edit_path =
+  let open Message_template in
+  let empty_hint =
+    match templates with
+    | [] ->
+      p
+        [ txt
+            Pool_common.(
+              Utils.text_to_string
+                language
+                (I18n.NoEntries Field.MessageTemplates))
+        ]
+    | _ -> txt ""
   in
   let thead =
     ([ Field.Label; Field.Language ] |> Component.Table.fields_to_txt language)
-    @ [ create_button ]
+    @ [ buttons ]
   in
   CCList.map
     (fun template ->
+      let buttons = edit_link (template |> to_edit_path) in
+      let buttons =
+        match delete_path with
+        | None -> buttons
+        | Some (delete_path, csrf) ->
+          let delete =
+            let action = delete_path template in
+            form
+              ~a:
+                [ a_method `Post
+                ; a_action action
+                ; a_user_data
+                    "confirmable"
+                    Pool_common.(
+                      Utils.confirmable_to_string
+                        language
+                        I18n.DeleteMessageTemplate)
+                ]
+              [ csrf_element csrf ()
+              ; submit_element
+                  ~has_icon:Icon.TrashOutline
+                  ~submit_type:`Error
+                  language
+                  Pool_common.Message.(Delete None)
+                  ()
+              ]
+          in
+          div
+            ~a:[ a_class [ "flexrow"; "flex-gap"; "justify-end" ] ]
+            [ buttons; delete ]
+      in
       [ txt (to_human_label template)
       ; txt (template.language |> Pool_common.Language.show)
-      ; edit_link (template |> to_edit_path)
+      ; buttons
       ])
     templates
   |> Component.Table.horizontal_table `Striped ~align_last_end:true ~thead
+  |> fun table -> div ~a:[ a_class [ "stack" ] ] [ table; empty_hint ]
 ;;
 
 let index { Pool_context.language; _ } templates =
@@ -42,7 +82,7 @@ let index { Pool_context.language; _ } templates =
             (Pool_common.(Utils.field_to_string language Field.MessageTemplate)
              |> CCString.capitalize_ascii)
         ]
-    ; table language templates None edit_path
+    ; table language templates edit_path
     ]
 ;;
 
@@ -75,23 +115,10 @@ let template_form
     | Some _ -> Update field
   in
   let text_elements_html =
-    match text_elements with
-    | None -> txt ""
-    | Some elements ->
-      div
-        ~a:[ a_class [ "inset"; "border"; "border-radius"; "bg-grey-light" ] ]
-        [ p
-            [ txt
-                Pool_common.(
-                  Utils.hint_to_string language I18n.TemplateTextElementsHint)
-            ]
-        ; elements
-          |> CCList.map (fun (label, text) ->
-            [ txt (Format.asprintf "{%s}" label)
-            ; text |> Http_utils.add_line_breaks
-            ])
-          |> Component.Table.horizontal_table `Simple ~align_top:true
-        ]
+    text_elements
+    |> CCOption.map_or
+         ~default:(txt "")
+         (Component.MessageTextElements.build_help language)
   in
   let plain_text_element =
     let id = Field.(show PlainText) in

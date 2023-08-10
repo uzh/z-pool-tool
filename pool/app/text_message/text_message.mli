@@ -1,15 +1,10 @@
 module Content : sig
   type t
 
-  val render : string -> (string * string) list -> t
   val value : t -> string
 end
 
-type t =
-  { recipient : Pool_user.CellPhone.t
-  ; sender : Pool_tenant.Title.t
-  ; text : Content.t
-  }
+type t
 
 val create : Pool_user.CellPhone.t -> Pool_tenant.Title.t -> Content.t -> t
 

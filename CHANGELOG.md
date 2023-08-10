@@ -4,9 +4,18 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/pool/tree/HEAD)
 
+### Added
+
+- option to delete experiment and session specific message templates
+
 ### Changes
 
 - rename allow all contacts to register for an experiment
+- extended available text elements in email templates
+
+### Fixed
+
+- linebreaks in html emails
 
 ## [0.4.3](https://github.com/uzh/pool/tree/0.4.3) - 2023-08-09
 

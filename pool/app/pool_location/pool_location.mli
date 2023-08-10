@@ -288,6 +288,11 @@ val search_multiple_by_id
 
 val default_values : t list
 
+module Human : sig
+  val link_with_default : default:string -> t -> string
+  val detailed : Pool_common.Language.t -> t -> string
+end
+
 module Guard : sig
   val relation : ?ctx:(string * string) list -> unit -> unit Lwt.t
 

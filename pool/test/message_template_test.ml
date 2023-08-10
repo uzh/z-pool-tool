@@ -14,7 +14,7 @@ module Data = struct
 
   let label = Message_template.Label.ExperimentInvitation
 
-  let create id entity_uuid =
+  let create ?entity_uuid id =
     let open TemplateCommand.Create in
     urlencoded
     |> decode
@@ -23,7 +23,7 @@ module Data = struct
     Message_template.
       { id
       ; label
-      ; entity_uuid = Some entity_uuid
+      ; entity_uuid
       ; language
       ; email_subject
       ; email_text
@@ -33,35 +33,55 @@ module Data = struct
   ;;
 end
 
-let test_create ?id ?entity_id available_languages expected =
+let test_create ?id ?entity_uuid available_languages expected =
   let open TemplateCommand.Create in
   let open CCResult in
-  let entity_id =
-    entity_id |> CCOption.value ~default:(Pool_common.Id.create ())
+  let entity_uuid =
+    entity_uuid |> CCOption.value ~default:(Pool_common.Id.create ())
   in
   let events =
     Data.urlencoded
     |> decode
-    >>= handle ?id Data.label entity_id available_languages
+    >>= handle ?id Data.label entity_uuid available_languages
   in
   Test_utils.check_result expected events
 ;;
 
 let create () =
-  let entity_id = Pool_common.Id.create () in
+  let entity_uuid = Pool_common.Id.create () in
   let id = Message_template.Id.create () in
-  let template = Data.create id entity_id in
+  let template = Data.create ~entity_uuid id in
   let available_languages = Pool_common.Language.all in
   let expected =
     Ok Message_template.[ Created template |> Pool_event.message_template ]
   in
-  test_create ~id ~entity_id available_languages expected
+  test_create ~id ~entity_uuid available_languages expected
 ;;
 
 let create_with_unavailable_language () =
   let available_languages = Pool_common.Language.[ En ] in
   let expected = Error Pool_common.Message.(Invalid Field.Language) in
   test_create available_languages expected
+;;
+
+let delete_valid () =
+  let open Message_template in
+  let id = Id.create () in
+  let template = Data.create ~entity_uuid:(Pool_common.Id.create ()) id in
+  let events = TemplateCommand.Delete.handle template in
+  let expected = Ok [ Deleted template |> Pool_event.message_template ] in
+  Test_utils.check_result expected events
+;;
+
+let delete_without_entity () =
+  let open Message_template in
+  let id = Id.create () in
+  let template = Data.create id in
+  let events = TemplateCommand.Delete.handle template in
+  let expected =
+    Error Pool_common.Message.(CannotBeDeleted Field.MessageTemplate)
+  in
+  Test_utils.check_result expected events
 ;;
 
 (* Integration tests *)
@@ -220,20 +240,23 @@ let assignment_creation_with_sender _ () =
   let%lwt () =
     let%lwt tenant = Pool_tenant.find_by_label database_label ||> get_exn in
     let%lwt contact = Contact.find database_label contact_id ||> get_exn in
+    let%lwt experiment =
+      Experiment.find database_label experiment_id ||> get_exn
+    in
     let%lwt session =
       Integration_utils.SessionRepo.create ~id:session_id experiment_id ()
-      ||> Test_utils.Model.session_to_public_session
     in
     let%lwt admin = Admin.find database_label admin_id ||> get_exn in
     let%lwt confirmation_email =
       let%lwt language = Contact.message_language database_label contact in
-      Message_template.AssignmentConfirmation.create_from_public_session
+      Message_template.AssignmentConfirmation.prepare
         database_label
         language
         tenant
-        [ session ]
-        contact
+        experiment
+        session
         (Some admin)
+      ||> fun fnc -> fnc (Assignment.create contact)
     in
     Alcotest.(
       check string "succeeds" admin_email confirmation_email.Sihl_email.sender)

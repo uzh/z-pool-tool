@@ -81,6 +81,12 @@ module DummyData = struct
       Physical mail
     in
     let name = "SNS Lab" |> Name.create |> get_exn in
+    let description =
+      "The Laboratory for Social and Neural Systems Research (SNS Lab) is the \
+       heart of the ZNE."
+      |> Description.of_string
+      |> CCOption.return
+    in
     let address = address in
     let link =
       "https://www.zne.uzh.ch/en/facilities.html" |> Link.create |> get_exn
@@ -89,7 +95,7 @@ module DummyData = struct
     let files = [] in
     { id = Id.create ()
     ; name
-    ; description = None
+    ; description
     ; address
     ; link = Some link
     ; status
@@ -160,10 +166,26 @@ module DummyData = struct
       }
   ;;
 
+  let create_assignment ?contact () =
+    let open Assignment in
+    let contact = CCOption.value ~default:(create_contact ()) contact in
+    { id = Id.create ()
+    ; contact
+    ; no_show = Some (false |> NoShow.create)
+    ; participated = Some (false |> Participated.create)
+    ; matches_filter = MatchesFilter.init
+    ; canceled_at = None
+    ; marked_as_deleted = MarkedAsDeleted.init
+    ; external_data_id = Some (ExternalDataId.of_string "DATA_ID")
+    ; created_at = Ptime_clock.now ()
+    ; updated_at = Ptime_clock.now ()
+    }
+  ;;
+
   let name_element = "name", div [ txt "John Doe" ]
 end
 
-let build_help language toggle_id help =
+let build_help ?(toggle_id = Pool_common.Id.(create () |> value)) language help =
   let wrap_hints html =
     div
       ~a:[ a_class [ "card" ] ]
@@ -196,7 +218,10 @@ let build_help language toggle_id help =
   in
   help
   |> CCList.map (fun (elm, example) ->
-    [ txt (Format.asprintf "{%s}" elm); example ])
+    let placeholder = Format.asprintf "{%s}" elm in
+    [ span ~a:[ a_user_data "clipboard" placeholder ] [ txt placeholder ]
+    ; Http_utils.add_line_breaks example
+    ])
   |> Component_table.horizontal_table `Simple ~align_top:true
   |> wrap_hints
 ;;
@@ -207,6 +232,7 @@ let message_template_help
   ?contact
   ?experiment
   ?session
+  ?assignment
   template_label
   =
   let open Message_template in
@@ -217,17 +243,26 @@ let message_template_help
   let create_contact () = value ~default:(create_contact ()) contact in
   let create_experiment () = value ~default:(create_experiment ()) experiment in
   let create_session () = value ~default:(create_session ()) session in
+  let create_follow_up session_id =
+    Session.{ (create_session ()) with follow_up_to = Some session_id }
+  in
+  let create_assignment () =
+    value ~default:(create_assignment ?contact ()) assignment
+  in
   let layout = layout_from_tenant tenant in
   match template_label with
   | AccountSuspensionNotification ->
     let contact = create_contact () in
     AccountSuspensionNotification.email_params layout contact.Contact.user
   | AssignmentConfirmation ->
+    let session = create_session () in
     AssignmentConfirmation.email_params
+      ~follow_up_sessions:[ create_follow_up session.Session.id ]
       language
       layout
-      [ create_session () ]
-      (create_contact ())
+      (create_experiment ())
+      session
+      (create_assignment ())
   | ContactRegistrationAttempt ->
     let tenant_url = tenant.Pool_tenant.url in
     ContactRegistrationAttempt.email_params
@@ -282,7 +317,6 @@ let message_template_help
     SessionCancellation.email_params
       language
       layout
-      tenant
       (create_experiment ())
       (create_session ())
       follow_up_sessions
@@ -294,7 +328,7 @@ let message_template_help
       layout
       (create_experiment ())
       (create_session ())
-      (create_contact ())
+      (create_assignment ())
   | SessionReschedule ->
     let open Session in
     let start =
@@ -306,6 +340,7 @@ let message_template_help
     SessionReschedule.email_params
       language
       layout
+      (create_experiment ())
       (create_session ())
       start
       duration
@@ -317,7 +352,7 @@ let message_template_help
     in
     let contact = create_contact () in
     SignUpVerification.email_params
-      tenant
+      layout
       verification_url
       (Contact.firstname contact)
       (Contact.lastname contact)

@@ -26,7 +26,7 @@ let assignment pool =
         |> CCList.take (CCList.length invitations / 2)
         |> CCList.flat_map (fun ({ Invitation.contact; _ } : Invitation.t) ->
           let assign { Session.id; _ } =
-            Assignment.Created { Assignment.contact; session_id = id }
+            Assignment.(Created (create contact, id))
           in
           assign session :: CCList.map assign follow_ups))
       session_invitations

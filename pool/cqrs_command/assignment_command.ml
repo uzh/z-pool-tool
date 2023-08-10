@@ -11,19 +11,50 @@ let assignment_effect action id =
     )
 ;;
 
+let assignment_creation_and_confirmation_events
+  experiment
+  confirmation_email
+  session
+  follow_up_sessions
+  contact
+  =
+  let open CCResult in
+  let open Assignment in
+  let all_sessions = session :: follow_up_sessions in
+  let* (_ : unit list) =
+    all_sessions |> CCList.map Session.assignment_creatable |> CCList.all_ok
+  in
+  let follow_up_events =
+    follow_up_sessions
+    |> CCList.map (fun session -> Created (create contact, session.Session.id))
+  in
+  let main_assignment = create contact in
+  let confirmation_email = confirmation_email main_assignment in
+  let email_event =
+    Email.Sent (confirmation_email, experiment.Experiment.smtp_auth_id)
+    |> Pool_event.email
+  in
+  let create_events =
+    Created (main_assignment, session.Session.id) :: follow_up_events
+    |> CCList.map Pool_event.assignment
+  in
+  Ok (email_event :: create_events)
+;;
+
 module Create : sig
   include Common.CommandSig
 
   type t =
     { contact : Contact.t
-    ; sessions : Session.Public.t list
+    ; session : Session.t
+    ; follow_up_sessions : Session.t list
     ; experiment : Experiment.t
     }
 
   val handle
     :  ?tags:Logs.Tag.set
     -> t
-    -> Sihl_email.t
+    -> (Assignment.t -> Sihl_email.t)
     -> bool
     -> (Pool_event.t list, Pool_common.Message.error) result
 
@@ -31,60 +62,45 @@ module Create : sig
 end = struct
   type t =
     { contact : Contact.t
-    ; sessions : Session.Public.t list
+    ; session : Session.t
+    ; follow_up_sessions : Session.t list
     ; experiment : Experiment.t
     }
 
   let handle
     ?(tags = Logs.Tag.empty)
-    (command : t)
+    { contact; session; follow_up_sessions; experiment }
     confirmation_email
     already_enrolled
     =
     Logs.info ~src (fun m -> m "Handle command Create" ~tags);
     let open CCResult in
+    let all_sessions = session :: follow_up_sessions in
     if already_enrolled
     then Error Pool_common.Message.(AlreadySignedUpForExperiment)
     else
       let* () =
         let open Experiment in
-        (command.experiment.direct_registration_disabled
+        (experiment.direct_registration_disabled
          |> DirectRegistrationDisabled.value
-         || command.experiment.registration_disabled
-            |> RegistrationDisabled.value)
+         || experiment.registration_disabled |> RegistrationDisabled.value)
         |> Utils.bool_to_result_not
              Pool_common.Message.(DirectRegistrationIsDisabled)
       in
-      let* (_ : unit list) =
-        command.sessions
-        |> CCList.map Session.Public.assignment_creatable
-        |> CCList.all_ok
-      in
-      let create_events =
-        command.sessions
-        |> CCList.map (fun session ->
-          let create =
-            Assignment.
-              { contact = command.contact
-              ; session_id = session.Session.Public.id
-              }
-          in
-          Assignment.Created create |> Pool_event.assignment)
+      let* creation_events =
+        assignment_creation_and_confirmation_events
+          experiment
+          confirmation_email
+          session
+          follow_up_sessions
+          contact
       in
       let contact_event =
-        Contact_counter.update_on_session_signup
-          command.contact
-          command.sessions
+        Contact_counter.update_on_session_signup contact all_sessions
         |> Contact.updated
         |> Pool_event.contact
       in
-      Ok
-        (create_events
-         @ [ contact_event
-           ; Email.Sent
-               (confirmation_email, command.experiment.Experiment.smtp_auth_id)
-             |> Pool_event.email
-           ])
+      Ok (creation_events @ [ contact_event ])
   ;;
 
   let effects = Assignment.Guard.Access.create
@@ -253,7 +269,8 @@ module CreateFromWaitingList : sig
 
   type t =
     { experiment : Experiment.t
-    ; sessions : Session.t list
+    ; session : Session.t
+    ; follow_up_sessions : Session.t list
     ; waiting_list : Waiting_list.t
     ; already_enrolled : bool
     }
@@ -261,23 +278,26 @@ module CreateFromWaitingList : sig
   val handle
     :  ?tags:Logs.Tag.set
     -> t
-    -> Sihl_email.t
+    -> (Assignment.t -> Sihl_email.t)
     -> (Pool_event.t list, Pool_common.Message.error) result
 
   val effects : Experiment.Id.t -> Pool_common.Id.t -> Guard.ValidationSet.t
 end = struct
   type t =
     { experiment : Experiment.t
-    ; sessions : Session.t list
+    ; session : Session.t
+    ; follow_up_sessions : Session.t list
     ; waiting_list : Waiting_list.t
     ; already_enrolled : bool
     }
 
   let handle
     ?(tags = Logs.Tag.empty)
-    ({ experiment; sessions; waiting_list; already_enrolled } : t)
+    ({ experiment; session; follow_up_sessions; waiting_list; already_enrolled } :
+      t)
     confirmation_email
     =
+    let all_sessions = session :: follow_up_sessions in
     Logs.info ~src (fun m -> m "Handle command CreateFromWaitingList" ~tags);
     let open CCResult in
     if already_enrolled
@@ -288,28 +308,23 @@ end = struct
         |> Experiment.registration_disabled_value
         |> Utils.bool_to_result_not Pool_common.Message.(RegistrationDisabled)
       in
-      let* (_ : unit list) =
-        sessions |> CCList.map Session.assignment_creatable |> CCList.all_ok
-      in
       let contact = waiting_list.Waiting_list.contact in
-      let create_events =
-        sessions
-        |> CCList.map (fun session ->
-          let create =
-            Assignment.{ contact; session_id = session.Session.id }
-          in
-          Assignment.Created create |> Pool_event.assignment)
+      let* creation_events =
+        assignment_creation_and_confirmation_events
+          experiment
+          confirmation_email
+          session
+          follow_up_sessions
+          contact
       in
-      Ok
-        (create_events
-         @ [ Contact_counter.update_on_assignment_from_waiting_list
-               contact
-               sessions
-             |> Contact.updated
-             |> Pool_event.contact
-           ; Email.Sent (confirmation_email, experiment.Experiment.smtp_auth_id)
-             |> Pool_event.email
-           ])
+      let conter_events =
+        Contact_counter.update_on_assignment_from_waiting_list
+          contact
+          all_sessions
+        |> Contact.updated
+        |> Pool_event.contact
+      in
+      Ok (creation_events @ [ conter_events ])
   ;;
 
   let effects experiment_id waiting_list_id =

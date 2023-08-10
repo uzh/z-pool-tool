@@ -206,8 +206,10 @@ module Admin = struct
   let routes =
     let open Field in
     let open Handler.Admin in
-    let label_specific_template edit update new_form create =
-      let specific = [ get "/edit" edit; post "" update ] in
+    let label_specific_template edit update new_form create delete =
+      let specific =
+        [ get "/edit" edit; post "" update; post "/delete" delete ]
+      in
       [ get "" new_form
       ; post "" create
       ; choose ~scope:(MessageTemplate |> url_key) specific
@@ -352,7 +354,10 @@ module Admin = struct
             [ choose
                 ~scope:(add_template_label SessionReminder)
                 ~middlewares:[ Access.send_reminder ]
-                (label_specific new_session_reminder new_session_reminder_post)
+                (label_specific
+                   new_session_reminder
+                   new_session_reminder_post
+                   delete_message_template)
             ]
           in
           let assignments =
@@ -464,11 +469,21 @@ module Admin = struct
         [ choose
             ~scope:(add_template_label ExperimentInvitation)
             ~middlewares:[ Access.invitation ]
-            (label_specific new_invitation new_invitation_post)
+            (label_specific new_invitation new_invitation_post delete)
         ; choose
             ~scope:(add_template_label SessionReminder)
             ~middlewares:[ Access.session_reminder ]
-            (label_specific new_session_reminder new_session_reminder_post)
+            (label_specific
+               new_session_reminder
+               new_session_reminder_post
+               delete)
+        ; choose
+            ~scope:(add_template_label AssignmentConfirmation)
+            ~middlewares:[ Access.assignment_confirmation ]
+            (label_specific
+               new_assignment_confirmation
+               new_assignment_confirmation_post
+               delete)
         ]
       in
       let tags =

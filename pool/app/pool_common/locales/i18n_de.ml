@@ -164,6 +164,8 @@ Wird nach diesem Feld gefiltert, wird der überschreibende Wert bevorzugt.
   | AllowUninvitedSignup ->
     "Alle Kontakte (eingeladen oder nicht), können sich für das Experiment \
      anmelden."
+  | AssignmentConfirmationMessageFollowUps ->
+    "Sie wurden außerdem den folgenden Folgesitzungen zugewiesen:"
   | AssignContactFromWaitingList ->
     "Wählen Sie die Session, zu welcher Sie den Kontakt zuweisen wollen."
   | AssignmentsMarkedAsClosed ->
@@ -399,7 +401,8 @@ Wenn ein Kontakt zwar erschienen ist, aber nicht an dem Experiment teilgenommen 
      angehängt werden. Diese Tags können im Experiment-Filter verwendet werden \
      um sie ein- oder auszuschliessen."
   | TemplateTextElementsHint ->
-    "Die folgenden Textbausteine können in den Templates verwendet werden:"
+    "Die folgenden Textbausteine können in den Templates verwendet werden. \
+     Klicken Sie auf die Labels, um sie in die Zwischenablage zu kopieren."
   | TimeSpanPickerHint -> "Zeitdauer in Minuten."
   | WaitingListPhoneMissingContact ->
     "Sie haben in Ihrem Profil noch keine Telefonnummer angegenen. Wir bitten \
@@ -422,6 +425,7 @@ let confirmable_to_string confirmable =
    | DeleteExperimentFilter -> "den Filter", "löschen", None
    | DeleteFile -> "die Datei", "löschen", None
    | DeleteMailing -> "den Versand", "löschen", None
+   | DeleteMessageTemplate -> "das Nachrichtentemplate", "löschen", None
    | DeleteSession -> "die Session", "löschen", None
    | MarkAssignmentAsDeleted -> "die Anmeldung", "als gelöscht markieren", None
    | MarkAssignmentWithFollowUpsAsDeleted ->

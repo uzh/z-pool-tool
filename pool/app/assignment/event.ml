@@ -1,15 +1,9 @@
 open Entity
 
-type create =
-  { contact : Contact.t
-  ; session_id : Session.Id.t
-  }
-[@@deriving eq, show]
-
 type event =
   | AttendanceSet of (t * NoShow.t * Participated.t * ExternalDataId.t option)
   | Canceled of t
-  | Created of create
+  | Created of (t * Session.Id.t)
   | MarkedAsDeleted of t
   | ExternalDataIdUpdated of t * ExternalDataId.t option
 [@@deriving eq, show, variants]
@@ -30,9 +24,8 @@ let handle_event pool : event -> unit Lwt.t = function
       |> Repo.update pool
     in
     Lwt.return_unit
-  | Created { contact; session_id } ->
+  | Created (assignment, session_id) ->
     let open Utils.Lwt_result.Infix in
-    let assignment = create contact in
     let%lwt () = Repo.insert pool session_id assignment in
     Entity_guard.Target.to_authorizable
       ~ctx:(Pool_database.to_ctx pool)

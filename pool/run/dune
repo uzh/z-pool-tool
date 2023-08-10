@@ -8,6 +8,7 @@
   database
   guard
   queue
+  reminder
   routes
   service
   sihl

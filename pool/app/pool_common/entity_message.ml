@@ -28,6 +28,7 @@ type error =
   | AssignmentIsCanceled
   | AssignmentIsClosed
   | Authorization of string
+  | CannotBeDeleted of Field.t
   | Conformist of (Field.t * error) list
   | ConformistModuleErrorType
   | ContactSignupInvalidEmail

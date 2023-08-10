@@ -141,7 +141,7 @@ let assign_contact req =
     let tenant = Pool_context.Tenant.get_tenant_exn req in
     let* experiment = Experiment.find database_label experiment_id in
     let* waiting_list = Waiting_list.find database_label waiting_list_id in
-    let* sessions =
+    let* session =
       let open Pool_common.Message in
       let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
       urlencoded
@@ -149,8 +149,10 @@ let assign_contact req =
       |> CCFun.flip CCOption.bind CCList.head_opt
       |> CCOption.to_result NoValue
       |> Lwt_result.lift
-      >>= fun id ->
-      id |> Session.Id.of_string |> find_open_with_follow_ups database_label
+      >>= fun id -> id |> Session.Id.of_string |> find_open database_label
+    in
+    let* follow_up_sessions =
+      Session.find_follow_ups database_label session.Session.id
     in
     let%lwt already_enrolled =
       let open Utils.Lwt_result.Infix in
@@ -167,17 +169,25 @@ let assign_contact req =
         Experiment.find_contact_person database_label experiment
       in
       let%lwt language = Contact.message_language database_label contact in
-      Message_template.AssignmentConfirmation.create
+      Message_template.AssignmentConfirmation.prepare
+        ~follow_up_sessions
         database_label
         language
         tenant
-        sessions
-        contact
+        experiment
+        session
         contact_person
     in
     let events =
       let open Cqrs_command.Assignment_command.CreateFromWaitingList in
-      (handle ~tags { experiment; sessions; waiting_list; already_enrolled })
+      (handle
+         ~tags
+         { experiment
+         ; session
+         ; follow_up_sessions
+         ; waiting_list
+         ; already_enrolled
+         })
         confirmation_email
       |> Lwt_result.lift
     in

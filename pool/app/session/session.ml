@@ -19,6 +19,7 @@ let find_experiment_id_and_title = Repo.find_experiment_id_and_title
 let find_sessions_to_remind = Repo.find_sessions_to_remind
 let find_follow_ups = Repo.find_follow_ups
 let find_open_with_follow_ups = Repo.find_open_with_follow_ups
+let find_open = Repo.find_open
 let find_for_calendar_by_location = Repo.find_for_calendar_by_location
 let find_for_calendar_by_user = Repo.find_for_calendar_by_user
 

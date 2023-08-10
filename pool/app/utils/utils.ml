@@ -91,8 +91,7 @@ module Html = struct
     match
       str
       |> CCString.split ~by:"\n"
-      |> CCList.map (CCString.split ~by:"\\n")
-      |> CCList.flatten
+      |> CCList.flat_map (CCString.split ~by:"\\n")
     with
     | [] -> []
     | head :: tail ->
