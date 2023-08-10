@@ -115,8 +115,8 @@ let virtual_detail language =
 ;;
 
 let physical_detail { Mail.institution; room; building; street; zip; city } =
-  let city = Format.asprintf "%s %s" city zip in
-  [ institution; Some room; building; Some street; Some city ]
+  let city = Format.asprintf "%s %s" zip city in
+  [ institution; building; Some room; Some street; Some city ]
   |> CCList.filter_map (function
     | None -> None
     | Some s -> if CCString.is_empty s then None else Some s)

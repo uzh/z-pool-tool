@@ -220,7 +220,7 @@ let build_help ?(toggle_id = Pool_common.Id.(create () |> value)) language help 
   |> CCList.map (fun (elm, example) ->
     let placeholder = Format.asprintf "{%s}" elm in
     [ span ~a:[ a_user_data "clipboard" placeholder ] [ txt placeholder ]
-    ; txt example
+    ; Http_utils.add_line_breaks example
     ])
   |> Component_table.horizontal_table `Simple ~align_top:true
   |> wrap_hints
