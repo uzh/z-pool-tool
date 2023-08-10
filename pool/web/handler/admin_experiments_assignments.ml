@@ -191,6 +191,12 @@ let mark_as_deleted req =
   result |> HttpUtils.extract_happy_path ~src req
 ;;
 
+let close_htmx _ =
+  Tyxml_html.(txt "hello")
+  |> HttpUtils.Htmx.html_to_plain_text_response
+  |> Lwt.return
+;;
+
 module Access : sig
   include module type of Helpers.Access
 

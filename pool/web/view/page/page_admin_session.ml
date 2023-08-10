@@ -941,6 +941,51 @@ let follow_up
          experiment)
 ;;
 
+let close_assignment_htmx_row
+  { Pool_context.language; csrf; _ }
+  (experiment : Experiment.t)
+  view_contact_name
+  session_path
+  { Assignment.id; no_show; participated; external_data_id; contact; _ }
+  =
+  let open Assignment in
+  let checkbox_element field value =
+    Input.checkbox_element ~value language field
+  in
+  let default_bool fnc = CCOption.map_or ~default:false fnc in
+  let identity =
+    if view_contact_name then Contact.fullname contact else Id.value id
+  in
+  let action =
+    Format.asprintf "%s/assignments/%s/close" session_path (Id.value id)
+    |> Sihl.Web.externalize_path
+  in
+  let external_data_field =
+    let open Experiment in
+    match experiment.external_data_required |> ExternalDataRequired.value with
+    | false -> txt ""
+    | true ->
+      let value =
+        CCOption.map Assignment.ExternalDataId.value external_data_id
+      in
+      input_element language ?value `Text Message.Field.ExternalDataId
+  in
+  div
+    [ form
+        ~a:[ a_user_data "hx-post" action; a_user_data "hx-trigger" "change" ]
+        [ csrf_element csrf ()
+        ; div [ txt identity ]
+        ; checkbox_element
+            Message.Field.Participated
+            (default_bool Participated.value participated)
+        ; checkbox_element
+            Message.Field.NoShow
+            (default_bool NoShow.value no_show)
+        ; external_data_field
+        ]
+    ]
+;;
+
 let close
   ?(view_contact_name = false)
   ({ Pool_context.language; csrf; _ } as context)
@@ -951,134 +996,94 @@ let close
   =
   let open Pool_common in
   let control = Message.(Close (Some Field.Session)) in
-  let form =
-    let checkbox_element id field =
-      div
-        [ input
-            ~a:
-              [ a_input_type `Checkbox
-              ; a_name Message.Field.(array_key field)
-              ; a_value (id |> Assignment.Id.value)
+  let session_path =
+    Format.asprintf
+      "/admin/experiments/%s/sessions/%s"
+      (Experiment.Id.value experiment.Experiment.id)
+      Session.(Id.value session.id)
+  in
+  let tags_html =
+    let participation_tags_list =
+      match participation_tags with
+      | [] ->
+        Utils.hint_to_string
+          language
+          I18n.SessionCloseNoParticipationTagsSelected
+        |> txt
+      | tags ->
+        let tags = Component.Tag.tag_list language tags in
+        div
+          [ p
+              [ Utils.hint_to_string
+                  language
+                  I18n.SessionCloseParticipationTagsSelected
+                |> txt
               ]
-            ()
-        ]
-    in
-    let tags_html =
-      let participation_tags_list =
-        match participation_tags with
-        | [] ->
-          Utils.hint_to_string
-            language
-            I18n.SessionCloseNoParticipationTagsSelected
-          |> txt
-        | tags ->
-          let tags = Component.Tag.tag_list language tags in
-          div
-            [ p
-                [ Utils.hint_to_string
-                    language
-                    I18n.SessionCloseParticipationTagsSelected
-                  |> txt
-                ]
-            ; tags
-            ]
-      in
-      div
-        [ h4
-            ~a:[ a_class [ "heading-4" ] ]
-            [ txt (Utils.nav_link_to_string language I18n.Tags) ]
-        ; participation_tags_list
-        ]
-    in
-    let table =
-      let link (id, label) =
-        span
-          ~a:[ a_id id ]
-          [ abbr
-              ~a:
-                [ a_title
-                    Pool_common.(
-                      Utils.control_to_string language Message.ToggleAll
-                      |> CCString.capitalize_ascii)
-                ]
-              [ txt label ]
+          ; tags
           ]
-      in
-      let external_data_id_head, external_data_id_row =
-        if Experiment.external_data_required_value experiment
-        then
-          ( Utils.field_to_string_capitalized
-              language
-              Message.Field.ExternalDataId
-            |> txt
-          , fun label data_id ->
-              div
-                ~a:[ a_class [ "form-group" ] ]
-                [ input
-                    ~a:
-                      [ a_id label
-                      ; a_name label
-                      ; a_input_type `Text
-                      ; a_value
-                          (CCOption.map_or
-                             ~default:""
-                             Assignment.ExternalDataId.value
-                             data_id)
-                      ]
-                    ()
-                ] )
-        else txt "", fun _ _ -> txt ""
-      in
-      let thead =
-        [ txt ""
-        ; ("all-no-show", "NS") |> link
-        ; ("all-participated", "P") |> link
-        ; external_data_id_head
-        ]
-      in
-      CCList.map
-        (fun ({ Assignment.id; contact; external_data_id; _ } : Assignment.t) ->
-          let external_data_id_label =
-            Format.asprintf
-              "%s-%s"
-              Message.Field.(ExternalDataId |> show)
-              (Assignment.Id.value id)
-          in
-          let identity =
-            if view_contact_name
-            then Contact.fullname contact
-            else Assignment.Id.value id
-          in
-          [ div [ strong [ txt identity ] ]
-          ; checkbox_element id Message.Field.NoShow
-          ; checkbox_element id Message.Field.Participated
-          ; external_data_id_row external_data_id_label external_data_id
-          ])
-        assignments
-      |> Table.horizontal_table ~thead `Striped
-      |> fun table ->
-      form
-        ~a:
-          [ a_method `Post
-          ; a_class [ "stack" ]
-          ; a_action
-              (Format.asprintf
-                 "/admin/experiments/%s/sessions/%s/close"
-                 (Experiment.Id.value experiment.Experiment.id)
-                 Session.(Id.value session.id)
-               |> Sihl.Web.externalize_path)
-          ; a_user_data "detect-unsaved-changes" ""
-          ]
-        [ tags_html
-        ; Input.csrf_element csrf ()
-        ; table
-        ; div
-            ~a:[ a_class [ "flexrow"; "justify-end" ] ]
-            [ Input.submit_element language control ~submit_type:`Primary () ]
+    in
+    div
+      [ h4
+          ~a:[ a_class [ "heading-4" ] ]
+          [ txt (Utils.nav_link_to_string language I18n.Tags) ]
+      ; participation_tags_list
+      ]
+  in
+  let table =
+    let link (id, label) =
+      span
+        ~a:[ a_id id ]
+        [ abbr
+            ~a:
+              [ a_title
+                  Pool_common.(
+                    Utils.control_to_string language Message.ToggleAll
+                    |> CCString.capitalize_ascii)
+              ]
+            [ txt label ]
         ]
     in
-    let scripts =
-      {js|
+    let external_data_id_head =
+      if Experiment.external_data_required_value experiment
+      then
+        Utils.field_to_string_capitalized language Message.Field.ExternalDataId
+        |> txt
+      else txt ""
+    in
+    let _ =
+      [ txt ""
+      ; ("all-no-show", "NS") |> link
+      ; ("all-participated", "P") |> link
+      ; external_data_id_head
+      ]
+    in
+    CCList.map
+      (close_assignment_htmx_row
+         context
+         experiment
+         view_contact_name
+         session_path)
+      assignments
+    |> div
+  in
+  let submit_session_close =
+    form
+      ~a:
+        [ a_method `Post
+        ; a_class [ "stack" ]
+        ; a_action
+            (Format.asprintf "%s/close" session_path
+             |> Sihl.Web.externalize_path)
+        ; a_user_data "detect-unsaved-changes" ""
+        ]
+      [ Input.csrf_element csrf ()
+      ; div
+          ~a:[ a_class [ "flexrow"; "justify-end" ] ]
+          [ Input.submit_element language control ~submit_type:`Primary () ]
+      ]
+  in
+  let[@warning "-26"] scripts =
+    {js|
         const noShow = document.querySelectorAll('[name="no_show[]"]');
         for (let i = 0; i < noShow.length; i++) {
             let elm = noShow[i];
@@ -1138,9 +1143,10 @@ let close
             setToggleState(toggleNoShow, !newState);
         })
       |js}
-    in
-    div
-      [ h4
+  in
+  [ div
+      [ p [ txt (session |> session_title |> Utils.text_to_string language) ]
+      ; h4
           ~a:[ a_class [ "heading-4" ] ]
           [ txt
               (Utils.field_to_string language Message.Field.Participants
@@ -1153,15 +1159,11 @@ let close
       ; p
           [ Utils.hint_to_string language I18n.SessionCloseHints |> Unsafe.data
           ]
-      ; table
-      ; script (Unsafe.data scripts)
+      ; tags_html
+      ; table (* ; script (Unsafe.data scripts) *)
+      ; submit_session_close
       ]
-  in
-  div
-    [ p [ txt (session |> session_title |> Utils.text_to_string language) ]
-    ; form
-    ]
-  |> CCList.return
+  ]
   |> Layout.Experiment.(create context (Control control) experiment)
 ;;
 
