@@ -27,6 +27,7 @@ type error =
   | AlreadyStarted
   | AssignmentIsCanceled
   | AssignmentIsClosed
+  | AssignmentsHaveErrors
   | Authorization of string
   | CannotBeDeleted of Field.t
   | Conformist of (Field.t * error) list

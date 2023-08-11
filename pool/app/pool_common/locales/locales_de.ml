@@ -338,6 +338,8 @@ let rec error_to_string = function
       "wurde bereits veröffentlich."
   | AssignmentIsCanceled -> "Anmeldung wurde abgesagt."
   | AssignmentIsClosed -> "Anmeldung wurde bereits geschlossen."
+  | AssignmentsHaveErrors ->
+    "Einige Anmeldungen haben Fehler. Bitte korrigieren Sie diese zuerst."
   | AlreadyStarted ->
     "Bereits gestarted oder beendet, aktion nicht mehr möglich."
   | AlreadyInvitedToExperiment names ->

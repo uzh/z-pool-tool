@@ -61,8 +61,12 @@ let close_session
   let%lwt assignment =
     find_assignment_by_contact_and_session contact_id session.Session.id
   in
-  let no_show = no_show |> NoShow.create in
-  let participated = participated |> Participated.create in
+  let assignment =
+    { assignment with
+      no_show = Some (NoShow.create no_show)
+    ; participated = Some (Participated.create participated)
+    }
+  in
   let%lwt increment_num_participations =
     contact_participation_in_other_assignments
       database_label
@@ -73,7 +77,7 @@ let close_session
     >|+ IncrementParticipationCount.create
     ||> get_exn
   in
-  (assignment, no_show, participated, increment_num_participations, None, None)
+  (assignment, increment_num_participations, None)
   |> CCList.pure
   |> SetAttendance.handle experiment session []
   |> get_exn

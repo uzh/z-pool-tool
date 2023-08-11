@@ -88,6 +88,8 @@ val validate
   -> t
   -> (unit, Pool_common.Message.error list) result
 
+val set_close_default_values : t -> t * NoShow.t * Participated.t
+
 val find
   :  Pool_database.Label.t
   -> Id.t

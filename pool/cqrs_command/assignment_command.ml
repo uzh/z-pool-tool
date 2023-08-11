@@ -147,11 +147,8 @@ end
 module SetAttendance : sig
   type t =
     (Assignment.t
-    * Assignment.NoShow.t
-    * Assignment.Participated.t
     * Assignment.IncrementParticipationCount.t
-    * Assignment.t list option
-    * Assignment.ExternalDataId.t option)
+    * Assignment.t list option)
     list
 
   val handle
@@ -166,11 +163,8 @@ module SetAttendance : sig
 end = struct
   type t =
     (Assignment.t
-    * Assignment.NoShow.t
-    * Assignment.Participated.t
     * Assignment.IncrementParticipationCount.t
-    * Assignment.t list option
-    * Assignment.ExternalDataId.t option)
+    * Assignment.t list option)
     list
 
   let handle
@@ -191,11 +185,16 @@ end = struct
         >>= fun events ->
         participation
         |> fun ( ({ contact; _ } as assignment : Assignment.t)
-               , no_show
-               , participated
                , increment_num_participaton
-               , follow_ups
-               , external_data_id ) ->
+               , follow_ups ) ->
+        let assignment, no_show, participated =
+          set_close_default_values assignment
+        in
+        let* () =
+          validate experiment assignment
+          |> CCResult.map_err
+               (CCFun.const Pool_common.Message.AssignmentsHaveErrors)
+        in
         let cancel_followups =
           NoShow.value no_show || not (Participated.value participated)
         in
@@ -223,19 +222,6 @@ end = struct
             num_assignments, marked_as_deleted
           | _, _ -> 0, []
         in
-        let* external_data_id =
-          let participated =
-            no_show |> NoShow.value |> not && participated |> Participated.value
-          in
-          match
-            ( Experiment.external_data_required_value experiment
-            , participated
-            , external_data_id )
-          with
-          | true, true, None ->
-            Error Pool_common.Message.(FieldRequired Field.ExternalDataId)
-          | _, _, _ -> Ok external_data_id
-        in
         let contact =
           Contact.update_num_assignments
             ~step:(CCInt.neg num_assignments_decrement)
@@ -256,9 +242,7 @@ end = struct
           (Contact.Updated contact |> Pool_event.contact) :: mark_as_deleted
         in
         events
-        @ ((Assignment.AttendanceSet
-              (assignment, no_show, participated, external_data_id)
-            |> Pool_event.assignment)
+        @ ((Assignment.Updated assignment |> Pool_event.assignment)
            :: contact_events)
         @ tag_events
         |> CCResult.return)

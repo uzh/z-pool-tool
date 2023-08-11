@@ -132,23 +132,17 @@ let canceled_with_closed_session () =
 let set_attendance () =
   let open Assignment in
   let experiment = Model.create_experiment () in
-  let assignment = Model.create_assignment () in
+  let assignment =
+    Model.create_assignment ~no_show:false ~participated:false ()
+  in
   let session = Model.(create_session ~start:(an_hour_ago ()) ()) in
-  let no_show = false |> NoShow.create in
-  let participated = false |> Participated.create in
   let increment_num_participaton = IncrementParticipationCount.create false in
   let events =
     AssignmentCommand.SetAttendance.handle
       experiment
       session
       []
-      [ ( assignment
-        , no_show
-        , participated
-        , increment_num_participaton
-        , None
-        , None )
-      ]
+      [ assignment, increment_num_participaton, None ]
   in
   let expected =
     let updated_contact =
@@ -160,8 +154,7 @@ let set_attendance () =
     in
     Ok
       [ Session.Closed session |> Pool_event.session
-      ; Assignment.AttendanceSet (assignment, no_show, participated, None)
-        |> Pool_event.assignment
+      ; Assignment.Updated assignment |> Pool_event.assignment
       ; updated_contact
       ]
   in
@@ -171,27 +164,56 @@ let set_attendance () =
 let set_invalid_attendance () =
   let open Assignment in
   let experiment = Model.create_experiment () in
-  let assignment = Model.create_assignment () in
+  let assignment =
+    Model.create_assignment ~no_show:true ~participated:true ()
+  in
   let session = Model.(create_session ~start:(an_hour_ago ()) ()) in
-  let no_show = true |> NoShow.create in
-  let participated = true |> Participated.create in
   let events =
     AssignmentCommand.SetAttendance.handle
       experiment
       session
       []
-      [ ( assignment
-        , no_show
-        , participated
-        , IncrementParticipationCount.create false
-        , None
-        , None )
-      ]
+      [ assignment, IncrementParticipationCount.create false, None ]
   in
-  let expected =
-    Error Pool_common.Message.(MutuallyExclusive Field.(Participated, NoShow))
-  in
+  let expected = Error Pool_common.Message.AssignmentsHaveErrors in
   check_result expected events
+;;
+
+let assignment_validation () =
+  let check_result expected generated =
+    Alcotest.(
+      check (result unit (list Test_utils.error)) "succeeds" expected generated)
+  in
+  let experiment = Model.create_experiment () in
+  let missing_data_id () =
+    let experiment =
+      Experiment.
+        { experiment with
+          external_data_required = ExternalDataRequired.create true
+        }
+    in
+    let assignment =
+      Model.create_assignment ~no_show:false ~participated:true ()
+    in
+    let res = Assignment.validate experiment assignment in
+    let expected =
+      Error Pool_common.Message.[ FieldRequired Field.ExternalDataId ]
+    in
+    check_result expected res
+  in
+  let mutually_exclusive () =
+    let assignment =
+      Model.create_assignment ~no_show:true ~participated:true ()
+    in
+    let res = Assignment.validate experiment assignment in
+    let expected =
+      Error
+        Pool_common.Message.[ MutuallyExclusive Field.(NoShow, Participated) ]
+    in
+    check_result expected res
+  in
+  missing_data_id ();
+  mutually_exclusive ()
 ;;
 
 let set_attendance_missing_data_id () =
@@ -203,26 +225,18 @@ let set_attendance_missing_data_id () =
         external_data_required = ExternalDataRequired.create true
       }
   in
-  let assignment = Model.create_assignment () in
+  let assignment =
+    Model.create_assignment ~no_show:true ~participated:true ()
+  in
   let session = Model.(create_session ~start:(an_hour_ago ()) ()) in
-  let no_show = false |> NoShow.create in
-  let participated = true |> Participated.create in
   let events =
     AssignmentCommand.SetAttendance.handle
       experiment
       session
       []
-      [ ( assignment
-        , no_show
-        , participated
-        , IncrementParticipationCount.create false
-        , None
-        , None )
-      ]
+      [ assignment, IncrementParticipationCount.create false, None ]
   in
-  let expected =
-    Error Pool_common.Message.(FieldRequired Field.ExternalDataId)
-  in
+  let expected = Error Pool_common.Message.AssignmentsHaveErrors in
   check_result expected events
 ;;
 
@@ -235,24 +249,21 @@ let set_attendance_with_data_id () =
         external_data_required = ExternalDataRequired.create true
       }
   in
-  let assignment = Model.create_assignment () in
+  let assignment =
+    Model.create_assignment
+      ~no_show:false
+      ~participated:false
+      ~external_data_id:"data-id"
+      ()
+  in
   let session = Model.(create_session ~start:(an_hour_ago ()) ()) in
-  let no_show = false |> NoShow.create in
-  let participated = false |> Participated.create in
   let increment_num_participaton = IncrementParticipationCount.create false in
-  let external_data_id = Some (Assignment.ExternalDataId.of_string "data-id") in
   let events =
     AssignmentCommand.SetAttendance.handle
       experiment
       session
       []
-      [ ( assignment
-        , no_show
-        , participated
-        , increment_num_participaton
-        , None
-        , external_data_id )
-      ]
+      [ assignment, increment_num_participaton, None ]
   in
   let expected =
     let updated_contact =
@@ -264,9 +275,7 @@ let set_attendance_with_data_id () =
     in
     Ok
       [ Session.Closed session |> Pool_event.session
-      ; Assignment.AttendanceSet
-          (assignment, no_show, participated, external_data_id)
-        |> Pool_event.assignment
+      ; Assignment.Updated assignment |> Pool_event.assignment
       ; updated_contact
       ]
   in
