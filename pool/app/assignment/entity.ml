@@ -141,6 +141,7 @@ let validate experiment { no_show; participated; external_data_id; _ } =
   let open Pool_common.Message in
   [ ( Experiment.external_data_required_value experiment
       && CCOption.is_none external_data_id
+      && value participated
     , FieldRequired Field.ExternalDataId )
   ; ( value no_show && value participated
     , MutuallyExclusive (Field.NoShow, Field.Participated) )
