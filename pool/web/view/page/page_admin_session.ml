@@ -951,7 +951,12 @@ let close_assignment_htmx_row
   =
   let open Assignment in
   let open Pool_common.Utils in
-  let errors = validate experiment assignment in
+  let errors =
+    validate experiment assignment
+    |> function
+    | Ok () -> None
+    | Error err -> Some err
+  in
   let session_path = session_path experiment session in
   let checkbox_element field value =
     let identifier = Format.asprintf "%s-%s" (Field.show field) (Id.value id) in
@@ -1003,6 +1008,7 @@ let close_assignment_htmx_row
       [ a_user_data "hx-post" action
       ; a_user_data "hx-trigger" "change"
       ; a_user_data "hx-swap" "outerHTML"
+      ; a_user_data "assignment" (Id.value id)
       ; a_class [ "flexcolumn"; "stack-sm"; "inset-sm" ]
       ]
     [ div
@@ -1113,67 +1119,35 @@ let close
           [ Input.submit_element language control ~submit_type:`Primary () ]
       ]
   in
-  let[@warning "-26"] scripts =
-    {js|
-        const noShow = document.querySelectorAll('[name="no_show[]"]');
-        for (let i = 0; i < noShow.length; i++) {
-            let elm = noShow[i];
-            let target = document.querySelector(`[name="participated[]"][value="${elm.value}"]`)
-            elm.addEventListener("change", () => {
-                if (elm.checked) {
-                    target.checked = false;
-                }
-            })
-        }
+  let scripts =
+    Format.asprintf
+      {js|
+      const noShow = "%s";
+      const participated = "%s";
 
-        const participated = document.querySelectorAll('[name="participated[]"]');
-        for (let i = 0; i < participated.length; i++) {
-            let elm = participated[i];
-            let target = document.querySelector(`[name="no_show[]"][value="${elm.value}"]`)
-            elm.addEventListener("change", () => {
-                if (elm.checked) {
-                    target.checked = false;
-                }
-            })
-        }
+      const forms = document.querySelectorAll("form[data-assignment]");
 
-        const isActive = (elm) => {
-            return elm.dataset.active;
-        }
-
-        const setToggleState = (elm, state) => {
-            if (state) {
-                elm.dataset.active = true;
-            } else {
-                elm.removeAttribute("data-active");
+      document.addEventListener('htmx:beforeRequest', (e) => {
+        const form = e.detail.target;
+        const trigger = e.detail.requestConfig.triggeringEvent.srcElement;
+        switch (trigger.name) {
+          case noShow:
+            if(trigger.checked) {
+              e.detail.requestConfig.parameters['participated'] = false
             }
+            break;
+          case participated:
+            if(trigger.checked) {
+              e.detail.requestConfig.parameters[noShow] = false
+            }
+            break;
+          default:
+            return;
         }
-
-        function toggleColumnValues(elements, value) {
-            elements.forEach((elm) => {
-                var event = new Event('change');
-                elm.checked = value;
-                elm.dispatchEvent(event);
-            });
-        }
-
-        const toggleNoShow = document.getElementById("all-no-show");
-        const toggleParticipated = document.getElementById("all-participated");
-
-        toggleNoShow.addEventListener("click", () => {
-            const newState = !isActive(toggleNoShow);
-            toggleColumnValues(noShow, newState);
-            setToggleState(toggleNoShow, newState);
-            setToggleState(toggleParticipated, !newState);
-        })
-
-        toggleParticipated.addEventListener("click", () => {
-            const newState = !isActive(toggleParticipated);
-            toggleColumnValues(participated, newState);
-            setToggleState(toggleParticipated, newState);
-            setToggleState(toggleNoShow, !newState);
-        })
-      |js}
+      });
+    |js}
+      Field.(show NoShow)
+      Field.(show Participated)
   in
   [ div
       [ p [ txt (session |> session_title |> Utils.text_to_string language) ]
@@ -1191,7 +1165,8 @@ let close
           [ Utils.hint_to_string language I18n.SessionCloseHints |> Unsafe.data
           ]
       ; tags_html
-      ; table (* ; script (Unsafe.data scripts) *)
+      ; table
+      ; script (Unsafe.data scripts)
       ; submit_session_close
       ]
   ]

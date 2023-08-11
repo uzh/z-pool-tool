@@ -83,7 +83,10 @@ module IncrementParticipationCount : sig
   val create : bool -> t
 end
 
-val validate : Experiment.t -> t -> Pool_common.Message.error list option
+val validate
+  :  Experiment.t
+  -> t
+  -> (unit, Pool_common.Message.error list) result
 
 val find
   :  Pool_database.Label.t

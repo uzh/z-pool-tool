@@ -141,13 +141,13 @@ let validate experiment { no_show; participated; external_data_id; _ } =
   let open Pool_common.Message in
   [ ( Experiment.external_data_required_value experiment
       && CCOption.is_none external_data_id
-    , Missing Field.ExternalDataId )
+    , FieldRequired Field.ExternalDataId )
   ; ( value no_show && value participated
     , MutuallyExclusive (Field.NoShow, Field.Participated) )
   ]
   |> CCList.filter_map (fun (condition, error) ->
     if condition then Some error else None)
   |> function
-  | [] -> None
-  | errors -> Some errors
+  | [] -> Ok ()
+  | errors -> Error errors
 ;;
