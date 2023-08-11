@@ -205,6 +205,7 @@ type confirmable =
   | CancelAssignment
   | CancelAssignmentWithFollowUps
   | CancelSession
+  | CloseSession
   | DeleteCustomField
   | DeleteCustomFieldOption
   | DeleteEmailSuffix

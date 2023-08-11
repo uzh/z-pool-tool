@@ -945,12 +945,17 @@ let close_assignment_htmx_row
   { Pool_context.language; csrf; _ }
   (experiment : Experiment.t)
   view_contact_name
-  session_path
-  { Assignment.id; no_show; participated; external_data_id; contact; _ }
+  session
+  ({ Assignment.id; no_show; participated; external_data_id; contact; _ } as
+   assignment)
   =
   let open Assignment in
+  let open Pool_common.Utils in
+  let errors = validate experiment assignment in
+  let session_path = session_path experiment session in
   let checkbox_element field value =
-    Input.checkbox_element ~value language field
+    let identifier = Format.asprintf "%s-%s" (Field.show field) (Id.value id) in
+    Input.checkbox_element ~value ~identifier language field
   in
   let default_bool fnc = CCOption.map_or ~default:false fnc in
   let identity =
@@ -966,23 +971,58 @@ let close_assignment_htmx_row
     | false -> txt ""
     | true ->
       let value =
-        CCOption.map Assignment.ExternalDataId.value external_data_id
+        CCOption.map_or
+          ~default:""
+          Assignment.ExternalDataId.value
+          external_data_id
       in
-      input_element language ?value `Text Message.Field.ExternalDataId
+      let field = Field.ExternalDataId in
+      div
+        ~a:[ a_class [ "form-group"; "flex-basis-30" ] ]
+        [ input
+            ~a:
+              [ a_input_type `Text
+              ; a_value value
+              ; a_name Field.(show field)
+              ; a_placeholder
+                  (field_to_string language field |> CCString.capitalize_ascii)
+              ]
+            ()
+        ]
   in
-  div
-    [ form
-        ~a:[ a_user_data "hx-post" action; a_user_data "hx-trigger" "change" ]
+  let errors =
+    errors
+    |> CCOption.map_or ~default:(txt "") (fun errors ->
+      let error_to_item err =
+        error_to_string language err |> txt |> CCList.return |> li
+      in
+      CCList.map error_to_item errors |> ul ~a:[ a_class [ "color-red" ] ])
+  in
+  form
+    ~a:
+      [ a_user_data "hx-post" action
+      ; a_user_data "hx-trigger" "change"
+      ; a_user_data "hx-swap" "outerHTML"
+      ; a_class [ "flexcolumn"; "stack-sm"; "inset-sm" ]
+      ]
+    [ div
+        ~a:[ a_class [ "flexrow"; "flex-gap-sm"; "flexcolumn-mobile" ] ]
         [ csrf_element csrf ()
-        ; div [ txt identity ]
-        ; checkbox_element
-            Message.Field.Participated
-            (default_bool Participated.value participated)
-        ; checkbox_element
-            Message.Field.NoShow
-            (default_bool NoShow.value no_show)
+        ; div
+            ~a:[ a_class [ "flex-basis-40"; "grow" ] ]
+            [ strong [ txt identity ] ]
+        ; div
+            ~a:[ a_class [ "flexcolumn"; "stack-xs"; "flex-basis-30" ] ]
+            [ checkbox_element
+                Message.Field.Participated
+                (default_bool Participated.value participated)
+            ; checkbox_element
+                Message.Field.NoShow
+                (default_bool NoShow.value no_show)
+            ]
         ; external_data_field
         ]
+    ; errors
     ]
 ;;
 
@@ -996,12 +1036,7 @@ let close
   =
   let open Pool_common in
   let control = Message.(Close (Some Field.Session)) in
-  let session_path =
-    Format.asprintf
-      "/admin/experiments/%s/sessions/%s"
-      (Experiment.Id.value experiment.Experiment.id)
-      Session.(Id.value session.id)
-  in
+  let session_path = session_path experiment session in
   let tags_html =
     let participation_tags_list =
       match participation_tags with
@@ -1058,13 +1093,9 @@ let close
       ]
     in
     CCList.map
-      (close_assignment_htmx_row
-         context
-         experiment
-         view_contact_name
-         session_path)
+      (close_assignment_htmx_row context experiment view_contact_name session)
       assignments
-    |> div
+    |> div ~a:[ a_class [ "flexcolumn"; "striped"; "gap" ] ]
   in
   let submit_session_close =
     form

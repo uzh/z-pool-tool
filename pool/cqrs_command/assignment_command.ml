@@ -380,3 +380,57 @@ end = struct
 
   let effects = Assignment.Guard.Access.delete
 end
+
+module Update : sig
+  type t =
+    { no_show : Assignment.NoShow.t
+    ; participated : Assignment.Participated.t
+    ; external_data_id : Assignment.ExternalDataId.t option
+    }
+
+  val handle
+    :  ?tags:Logs.Tag.set
+    -> Assignment.t
+    -> (Pool_event.t list, Pool_common.Message.error) result
+
+  val decode
+    :  (string * string list) list
+    -> (t, Pool_common.Message.error) result
+
+  val effects : Experiment.Id.t -> Session.Id.t -> Guard.ValidationSet.t
+end = struct
+  type t =
+    { no_show : Assignment.NoShow.t
+    ; participated : Assignment.Participated.t
+    ; external_data_id : Assignment.ExternalDataId.t option
+    }
+
+  let handle ?(tags = Logs.Tag.empty) (assignment : Assignment.t) =
+    Logs.info ~src (fun m -> m "Handle command Update" ~tags);
+    let open CCResult in
+    Ok [ Assignment.Updated assignment |> Pool_event.assignment ]
+  ;;
+
+  let command no_show participated external_data_id =
+    { no_show; participated; external_data_id }
+  ;;
+
+  let schema =
+    let open Assignment in
+    Conformist.(
+      make
+        Field.
+          [ NoShow.schema ()
+          ; Participated.schema ()
+          ; Conformist.optional @@ ExternalDataId.schema ()
+          ]
+        command)
+  ;;
+
+  let decode data =
+    Conformist.decode_and_validate schema data
+    |> CCResult.map_err Pool_common.Message.to_conformist_error
+  ;;
+
+  let effects = Session.Guard.Access.update
+end

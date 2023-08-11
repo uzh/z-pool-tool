@@ -401,6 +401,7 @@ let confirmable_to_string confirmable =
      , "cancel"
      , Some "Assignments to follow-up sessions will be canceled as well." )
    | CancelSession -> "session", "cancel", None
+   | CloseSession -> "session", "close", Some "This action cannot be undone."
    | DeleteCustomField -> "field", "delete", None
    | DeleteCustomFieldOption -> "option", "delete", None
    | DeleteEmailSuffix -> "email suffix", "delete", None

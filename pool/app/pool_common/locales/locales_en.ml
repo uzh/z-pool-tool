@@ -410,7 +410,7 @@ let rec error_to_string = function
       "is missing or not filled out."
   | MutuallyExclusive (f1, f2) ->
     Format.asprintf
-      "%s and %s are mutually exclusive."
+      "'%s' and '%s' are mutually exclusive."
       (field_to_string f1)
       (field_to_string f2)
   | NegativeAmount -> "Has negative amount!"

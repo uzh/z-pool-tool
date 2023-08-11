@@ -4,6 +4,9 @@ module Field = Pool_common.Message.Field
 
 let src = Logs.Src.create "handler.admin.experiments_assignments"
 let create_layout req = General.create_tenant_layout req
+let experiment_id = HttpUtils.find_id Experiment.Id.of_string Field.Experiment
+let session_id = HttpUtils.find_id Session.Id.of_string Field.Session
+let assignment_id = HttpUtils.find_id Assignment.Id.of_string Field.Assignment
 
 let list ?(marked_as_deleted = false) req =
   let open Utils.Lwt_result.Infix in
@@ -191,10 +194,56 @@ let mark_as_deleted req =
   result |> HttpUtils.extract_happy_path ~src req
 ;;
 
-let close_htmx _ =
-  Tyxml_html.(txt "hello")
-  |> HttpUtils.Htmx.html_to_plain_text_response
-  |> Lwt.return
+let close_htmx req =
+  let tags = Pool_context.Logger.Tags.req req in
+  let experiment_id = experiment_id req in
+  let session_id = session_id req in
+  let assignment_id = assignment_id req in
+  let result ({ Pool_context.database_label; user; _ } as context) =
+    let open Cqrs_command.Assignment_command.Update in
+    let open Utils.Lwt_result.Infix in
+    let boolean_values = Field.[ show NoShow; show Participated ] in
+    let%lwt urlencoded =
+      Sihl.Web.Request.to_urlencoded req
+      ||> HttpUtils.format_request_boolean_values boolean_values
+      ||> HttpUtils.remove_empty_values
+    in
+    let* actor = Pool_context.Utils.find_authorizable database_label user in
+    let has_permission set =
+      Guard.Persistence.validate database_label set actor ||> CCResult.is_ok
+    in
+    let%lwt view_contact_name = has_permission Contact.Guard.Access.read_name in
+    let* experiment = Experiment.find database_label experiment_id in
+    let* session = Session.find database_label session_id in
+    let* assignment = Assignment.find database_label assignment_id in
+    let* assignment, events =
+      let open CCResult.Infix in
+      urlencoded
+      |> decode
+      >|= (fun { no_show; participated; external_data_id } ->
+            Assignment.
+              { assignment with
+                no_show = Some no_show
+              ; participated = Some participated
+              ; external_data_id
+              })
+      >>= (fun assignment ->
+            let* events = handle ~tags assignment in
+            Ok (assignment, events))
+      |> Lwt_result.lift
+    in
+    let%lwt () = Pool_event.handle_events ~tags database_label events in
+    Page.Admin.Session.close_assignment_htmx_row
+      context
+      experiment
+      view_contact_name
+      session
+      assignment
+    |> HttpUtils.Htmx.html_to_plain_text_response
+    |> Lwt_result.return
+  in
+  result
+  |> HttpUtils.Htmx.handle_error_message ~error_as_notification:true ~src req
 ;;
 
 module Access : sig

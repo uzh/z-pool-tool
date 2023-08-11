@@ -418,6 +418,10 @@ let confirmable_to_string confirmable =
      , "annulieren"
      , Some "Anmeldungen an Folgesession werden ebenfalls annuliert." )
    | CancelSession -> "die Session", "absagen", None
+   | CloseSession ->
+     ( "die Session"
+     , "schliessen"
+     , Some "Diese Aktion kann nicht rückgängig gemacht werden." )
    | DeleteCustomField -> "das Feld", "löschen", None
    | DeleteCustomFieldOption -> "das Option", "löschen", None
    | DeleteEmailSuffix -> "das Suffix", "löschen", None

@@ -135,3 +135,19 @@ module IncrementParticipationCount = struct
   let value m = m
   let create m = m
 end
+
+let validate experiment { no_show; participated; external_data_id; _ } =
+  let value = CCOption.value ~default:false in
+  let open Pool_common.Message in
+  [ ( Experiment.external_data_required_value experiment
+      && CCOption.is_none external_data_id
+    , Missing Field.ExternalDataId )
+  ; ( value no_show && value participated
+    , MutuallyExclusive (Field.NoShow, Field.Participated) )
+  ]
+  |> CCList.filter_map (fun (condition, error) ->
+    if condition then Some error else None)
+  |> function
+  | [] -> None
+  | errors -> Some errors
+;;

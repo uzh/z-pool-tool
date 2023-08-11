@@ -938,7 +938,7 @@ let close_valid_with_assignments () =
             |> update_num_show_ups ~step:1
             |> update_num_participations ~step:1
           in
-          Updated contact |> Pool_event.contact
+          Contact.Updated contact |> Pool_event.contact
         in
         let tag_events =
           let open Tags in
@@ -1426,7 +1426,6 @@ let close_session_check_contact_figures _ () =
     contacts
     |> map (fun (contact, status) ->
       let open Assignment in
-      let open Contact in
       let no_show, participated, increment_num_participatons =
         match status with
         | `Participated ->
@@ -1452,7 +1451,7 @@ let close_session_check_contact_figures _ () =
       in
       [ AttendanceSet (find_assignment contact, no_show, participated, None)
         |> Pool_event.assignment
-      ; Updated contact |> Pool_event.contact
+      ; Contact.Updated contact |> Pool_event.contact
       ])
     |> flatten
     |> cons (Session.Closed session |> Pool_event.session)
