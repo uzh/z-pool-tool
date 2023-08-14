@@ -1,6 +1,7 @@
 open Test_utils
 module ContactCommand = Cqrs_command.Contact_command
 module AssignmentCommand = Cqrs_command.Assignment_command
+module SessionCommand = Cqrs_command.Session_command
 module Field = Pool_common.Message.Field
 
 type assignment_data =
@@ -138,7 +139,7 @@ let set_attendance () =
   let session = Model.(create_session ~start:(an_hour_ago ()) ()) in
   let increment_num_participaton = IncrementParticipationCount.create false in
   let events =
-    AssignmentCommand.SetAttendance.handle
+    SessionCommand.Close.handle
       experiment
       session
       []
@@ -169,7 +170,7 @@ let set_invalid_attendance () =
   in
   let session = Model.(create_session ~start:(an_hour_ago ()) ()) in
   let events =
-    AssignmentCommand.SetAttendance.handle
+    SessionCommand.Close.handle
       experiment
       session
       []
@@ -230,7 +231,7 @@ let set_attendance_missing_data_id () =
   in
   let session = Model.(create_session ~start:(an_hour_ago ()) ()) in
   let events =
-    AssignmentCommand.SetAttendance.handle
+    SessionCommand.Close.handle
       experiment
       session
       []
@@ -259,7 +260,7 @@ let set_attendance_with_data_id () =
   let session = Model.(create_session ~start:(an_hour_ago ()) ()) in
   let increment_num_participaton = IncrementParticipationCount.create false in
   let events =
-    AssignmentCommand.SetAttendance.handle
+    SessionCommand.Close.handle
       experiment
       session
       []

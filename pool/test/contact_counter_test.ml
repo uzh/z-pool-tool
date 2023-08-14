@@ -57,7 +57,7 @@ let close_session
   experiment
   =
   let open Assignment in
-  let open Assignment_command in
+  let open Session_command in
   let%lwt assignment =
     find_assignment_by_contact_and_session contact_id session.Session.id
   in
@@ -79,7 +79,7 @@ let close_session
   in
   (assignment, increment_num_participations, None)
   |> CCList.pure
-  |> SetAttendance.handle experiment session []
+  |> Close.handle experiment session []
   |> get_exn
   |> Pool_event.handle_events database_label
 ;;

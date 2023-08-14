@@ -882,7 +882,7 @@ let cancel_with_email_and_text_notification () =
 
 let close_valid () =
   let experiment = Test_utils.Model.create_experiment () in
-  let open Cqrs_command.Assignment_command.SetAttendance in
+  let open Cqrs_command.Session_command.Close in
   let session = Test_utils.Model.(create_session ~start:(an_hour_ago ())) () in
   let res = handle experiment session [] [] in
   check_result (Ok [ Session.Closed session |> Pool_event.session ]) res
@@ -890,7 +890,7 @@ let close_valid () =
 
 let close_valid_with_assignments () =
   let experiment = Test_utils.Model.create_experiment () in
-  let open Cqrs_command.Assignment_command in
+  let open Cqrs_command.Session_command in
   let open Assignment in
   let session = Test_utils.Model.(create_session ~start:(an_hour_ago ())) () in
   let assignments =
@@ -905,7 +905,7 @@ let close_valid_with_assignments () =
       assignment, Assignment.IncrementParticipationCount.create true, None)
   in
   let tags = Tag_test.Data.Tag.create_with_description () |> CCList.return in
-  let res = SetAttendance.handle experiment session tags assignments in
+  let res = Close.handle experiment session tags assignments in
   let expected =
     CCList.fold_left
       (fun events ((assignment : Assignment.t), _, (_ : t list option)) ->
@@ -954,11 +954,7 @@ let close_with_deleted_assignment () =
     assignment, Assignment.IncrementParticipationCount.create false, None
   in
   let res =
-    Cqrs_command.Assignment_command.SetAttendance.handle
-      experiment
-      session
-      []
-      [ command ]
+    Cqrs_command.Session_command.Close.handle experiment session [] [ command ]
   in
   check_result
     (Error Pool_common.Message.(IsMarkedAsDeleted Field.Assignment))
@@ -966,7 +962,7 @@ let close_with_deleted_assignment () =
 ;;
 
 let validate_invalid_participation () =
-  let open Cqrs_command.Assignment_command.SetAttendance in
+  let open Cqrs_command.Session_command.Close in
   let open Assignment in
   let experiment = Test_utils.Model.create_experiment () in
   let session = Test_utils.Model.(create_session ~start:(an_hour_ago ())) () in
@@ -985,7 +981,7 @@ let validate_invalid_participation () =
 ;;
 
 let close_unparticipated_with_followup () =
-  let open Cqrs_command.Assignment_command.SetAttendance in
+  let open Cqrs_command.Session_command.Close in
   let open Test_utils in
   let open Assignment in
   let experiment = Test_utils.Model.create_experiment () in

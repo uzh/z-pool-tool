@@ -538,7 +538,7 @@ let close_post req =
     let open Utils.Lwt_result.Infix in
     Lwt_result.map_error (fun err -> err, Format.asprintf "%s/close" path)
     @@
-    let open Cqrs_command.Assignment_command in
+    let open Cqrs_command.Session_command in
     let* experiment = Experiment.find database_label experiment_id in
     let* session = Session.find database_label session_id in
     let* assignments =
@@ -582,7 +582,7 @@ let close_post req =
              Lwt_result.return
                (assignment, increment_num_participations, follow_ups))
       ||> CCResult.flatten_l
-      >== SetAttendance.handle experiment session participation_tags
+      >== Close.handle experiment session participation_tags
     in
     let%lwt () = Pool_event.handle_events database_label events in
     Http_utils.redirect_to_with_actions
@@ -832,7 +832,7 @@ end = struct
   ;;
 
   let close =
-    Cqrs_command.Assignment_command.SetAttendance.effects
+    SessionCommand.Close.effects
     |> combined_effects
     |> Guardian.validate_generic
   ;;
