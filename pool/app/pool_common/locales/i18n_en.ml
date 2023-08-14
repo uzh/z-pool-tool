@@ -1,5 +1,7 @@
 open Entity_i18n
 
+let capitalize = CCString.capitalize_ascii
+
 let to_string = function
   | Address -> "address"
   | AdminComment -> "admin comment"
@@ -355,12 +357,20 @@ The following follow-up sessions exist:|}
     "No tags were selected to be assigned to the participants who participated \
      in this experiment."
   | SessionCloseHints ->
-    {|<strong>NS</strong> and <strong>P</strong> are mutually exclusive.<br>
-If a contact showed up but did not participate in the experiment, do not select any of the options.|}
+    Format.asprintf
+      {|<strong>%s</strong> and <strong>%s</strong> are mutually exclusive.<br>
+  If a contact showed up but did not participate in the experiment, do not select any of the options.|}
+      (Locales_en.field_to_string Entity_message_field.NoShow |> capitalize)
+      (Locales_en.field_to_string Entity_message_field.Participated
+       |> capitalize)
   | SessionCloseLegend ->
-    {|NS: the contact did not show up
-    P: the contact participated in the experiment
+    Format.asprintf
+      {|%s: the contact did not show up
+  %s: the contact participated in the experiment
     |}
+      (Locales_en.field_to_string Entity_message_field.NoShow |> capitalize)
+      (Locales_en.field_to_string Entity_message_field.Participated
+       |> capitalize)
   | SearchByFields fields ->
     Format.asprintf
       "Search by: %s"

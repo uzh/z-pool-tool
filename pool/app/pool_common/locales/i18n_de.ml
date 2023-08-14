@@ -371,11 +371,17 @@ Die folgenden Folgesessions existieren:|}
     "Es wurden keine Tags ausgewählt, die den Teilnehmer/innen zugewiesen \
      werden, die an diesem Experiment teilgenommen haben."
   | SessionCloseHints ->
-    {|<strong>NS</strong> und <strong>P</strong> schliessen sich gegenseitig aus.<br>
+    Format.asprintf
+      {|<strong>%s</strong> und <strong>%s</strong> schliessen sich gegenseitig aus.<br>
 Wenn ein Kontakt zwar erschienen ist, aber nicht an dem Experiment teilgenommen hat, wählen Sie keine der Optionen aus.|}
+      (Locales_de.field_to_string Entity_message_field.NoShow)
+      (Locales_de.field_to_string Entity_message_field.Participated)
   | SessionCloseLegend ->
-    {|NS: Der Kontakt ist nicht an der Session erschienen
-    P: Der Kontakt hat am Experiment teilgenommen|}
+    Format.asprintf
+      {|%s: Der Kontakt ist nicht an der Session erschienen
+    %s: Der Kontakt hat am Experiment teilgenommen|}
+      (Locales_de.field_to_string Entity_message_field.NoShow)
+      (Locales_de.field_to_string Entity_message_field.Participated)
   | SessionReminderLanguageHint ->
     "Falls sie einen eigenen Erinnerungstext angeben, wählen Sie dessen \
      Sprache hier."

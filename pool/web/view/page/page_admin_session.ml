@@ -983,12 +983,15 @@ let session_counters
       ]
     [ div
         ~a:[ a_class [ "flexcolumn" ] ]
-        ([ field_to_string Field.Total, total
-         ; txt "NS", num_no_shows
-         ; txt "P", num_participations
+        ([ Field.Total, total
+         ; Field.NoShow, num_no_shows
+         ; Field.Participated, num_participations
          ]
-         |> CCList.map (fun (label, value) ->
-           tr [ td [ strong [ label ] ]; td [ CCInt.to_string value |> txt ] ])
+         |> CCList.map (fun (field, value) ->
+           tr
+             [ td [ strong [ field_to_string field ] ]
+             ; td [ CCInt.to_string value |> txt ]
+             ])
          |> table ~a:[ a_class [ "table"; "simple" ] ]
          |> CCList.return)
     ]
