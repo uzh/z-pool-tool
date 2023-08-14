@@ -3,6 +3,7 @@ open Entity_i18n
 let to_string = function
   | Address -> "address"
   | AdminComment -> "admin comment"
+  | AssignmentListEmpty -> "There are no assignments for this session."
   | AvailableSpots -> "Available spots"
   | Canceled -> "Canceled"
   | Closed -> "Closed"

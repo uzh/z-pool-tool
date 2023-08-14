@@ -970,6 +970,11 @@ let session_counters
   language
   { Assignment.total; num_no_shows; num_participations }
   =
+  let field_to_string field =
+    Pool_common.Utils.field_to_string language field
+    |> CCString.capitalize_ascii
+    |> txt
+  in
   div
     ~a:[ a_class [ "grid-col-2"; "gap" ] ]
     [ div
@@ -978,21 +983,12 @@ let session_counters
           ; a_id session_counter_id
           ; a_user_data "hx-swap-oob" "true"
           ]
-        ([ Field.Total, total
-         ; Field.NoShowCount, num_no_shows
-         ; Field.ParticipantCount, num_participations
+        ([ field_to_string Field.Total, total
+         ; txt "NS", num_no_shows
+         ; txt "P", num_participations
          ]
-         |> CCList.map (fun (field, value) ->
-           tr
-             [ td
-                 [ strong
-                     [ Pool_common.Utils.field_to_string language field
-                       |> CCString.capitalize_ascii
-                       |> txt
-                     ]
-                 ]
-             ; td [ CCInt.to_string value |> txt ]
-             ])
+         |> CCList.map (fun (label, value) ->
+           tr [ td [ strong [ label ] ]; td [ CCInt.to_string value |> txt ] ])
          |> table ~a:[ a_class [ "table"; "simple" ] ]
          |> CCList.return)
     ]
@@ -1131,37 +1127,50 @@ let close
       ]
   in
   let table =
-    let link (id, label) =
-      span
-        ~a:[ a_id id ]
-        [ abbr
-            ~a:
-              [ a_title
-                  Pool_common.(
-                    Utils.control_to_string language Message.ToggleAll
-                    |> CCString.capitalize_ascii)
-              ]
-            [ txt label ]
+    match assignments with
+    | [] ->
+      p
+        [ txt
+            Pool_common.(Utils.text_to_string language I18n.AssignmentListEmpty)
         ]
-    in
-    let external_data_id_head =
-      if Experiment.external_data_required_value experiment
-      then
-        Utils.field_to_string_capitalized language Message.Field.ExternalDataId
-        |> txt
-      else txt ""
-    in
-    let _ =
-      [ txt ""
-      ; ("all-no-show", "NS") |> link
-      ; ("all-participated", "P") |> link
-      ; external_data_id_head
-      ]
-    in
-    CCList.map
-      (close_assignment_htmx_row context experiment view_contact_name session)
-      assignments
-    |> div ~a:[ a_class [ "flexcolumn"; "striped"; "gap" ] ]
+    | assignments ->
+      CCList.map
+        (close_assignment_htmx_row context experiment view_contact_name session)
+        assignments
+      |> div ~a:[ a_class [ "flexcolumn"; "striped"; "gap" ] ]
+      |> fun table ->
+      let counters = session_counters language counters in
+      let scripts =
+        Format.asprintf
+          {js|
+            const noShow = "%s";
+            const participated = "%s";
+
+            const forms = document.querySelectorAll("form[data-assignment]");
+
+            document.addEventListener('htmx:beforeRequest', (e) => {
+              const form = e.detail.target;
+              const trigger = e.detail.requestConfig.triggeringEvent.srcElement;
+              switch (trigger.name) {
+                case noShow:
+                  if(trigger.checked) {
+                    e.detail.requestConfig.parameters['participated'] = false
+                  }
+                  break;
+                case participated:
+                  if(trigger.checked) {
+                    e.detail.requestConfig.parameters[noShow] = false
+                  }
+                  break;
+                default:
+                  return;
+              }
+            });
+          |js}
+          Field.(show NoShow)
+          Field.(show Participated)
+      in
+      div [ table; counters; script (Unsafe.data scripts) ]
   in
   let submit_session_close =
     form
@@ -1179,38 +1188,9 @@ let close
           [ Input.submit_element language control ~submit_type:`Primary () ]
       ]
   in
-  let scripts =
-    Format.asprintf
-      {js|
-      const noShow = "%s";
-      const participated = "%s";
-
-      const forms = document.querySelectorAll("form[data-assignment]");
-
-      document.addEventListener('htmx:beforeRequest', (e) => {
-        const form = e.detail.target;
-        const trigger = e.detail.requestConfig.triggeringEvent.srcElement;
-        switch (trigger.name) {
-          case noShow:
-            if(trigger.checked) {
-              e.detail.requestConfig.parameters['participated'] = false
-            }
-            break;
-          case participated:
-            if(trigger.checked) {
-              e.detail.requestConfig.parameters[noShow] = false
-            }
-            break;
-          default:
-            return;
-        }
-      });
-    |js}
-      Field.(show NoShow)
-      Field.(show Participated)
-  in
   [ div
       [ p [ txt (session |> session_title |> Utils.text_to_string language) ]
+      ; tags_html
       ; h4
           ~a:[ a_class [ "heading-4" ] ]
           [ txt
@@ -1224,11 +1204,7 @@ let close
       ; p
           [ Utils.hint_to_string language I18n.SessionCloseHints |> Unsafe.data
           ]
-      ; tags_html
-      ; session_counters language counters
       ; table
-      ; script (Unsafe.data scripts)
-      ; session_counters language counters
       ; submit_session_close
       ]
   ]
