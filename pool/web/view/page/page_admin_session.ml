@@ -7,6 +7,8 @@ let session_title (s : Session.t) =
   Pool_common.I18n.SessionDetailTitle (s.Session.start |> Session.Start.value)
 ;;
 
+let session_counter_id = "session-counter-table"
+
 let session_path experiment_id session_id =
   Format.asprintf
     "/admin/experiments/%s/sessions/%s"
@@ -642,6 +644,27 @@ let detail
                 ] ))
           session.follow_up_to
       in
+      let counters =
+        let length lst = lst |> CCList.length |> CCInt.to_string |> txt in
+        let open Assignment in
+        let assignment_count = Field.AssignmentCount, assignments |> length in
+        match session.Session.closed_at with
+        | None -> [ assignment_count ]
+        | Some (_ : Ptime.t) ->
+          assignment_count
+          :: [ ( Field.NoShowCount
+               , assignments
+                 |> CCList.filter (fun { no_show; _ } ->
+                   no_show |> CCOption.map_or ~default:false NoShow.value)
+                 |> length )
+             ; ( Field.Participated
+               , assignments
+                 |> CCList.filter (fun { participated; _ } ->
+                   participated
+                   |> CCOption.map_or ~default:false Participated.value)
+                 |> length )
+             ]
+      in
       let rows =
         let amount amt = amt |> ParticipantAmount.value |> string_of_int in
         [ ( Field.Start
@@ -677,7 +700,7 @@ let detail
           |> CCOption.map (fun c ->
             Field.ClosedAt, Utils.Time.formatted_date_time c |> txt)
         in
-        rows @ ([ canceled; closed ] |> CCList.filter_map CCFun.id)
+        rows @ ([ canceled; closed ] |> CCList.filter_map CCFun.id) @ counters
       in
       Table.vertical_table `Striped language ~align_top:true
       @@ CCOption.map_or ~default:rows (CCList.cons' rows) parent
@@ -943,11 +966,44 @@ let follow_up
          experiment)
 ;;
 
+let session_counters
+  language
+  { Assignment.total; num_no_shows; num_participations }
+  =
+  div
+    ~a:[ a_class [ "grid-col-2"; "gap" ] ]
+    [ div
+        ~a:
+          [ a_class [ "flexcolumn" ]
+          ; a_id "session_counter_id"
+          ; a_user_data "hx-swap-oob" "true"
+          ]
+        ([ Field.Total, total
+         ; Field.NoShowCount, num_no_shows
+         ; Field.ParticipantCount, num_participations
+         ]
+         |> CCList.map (fun (field, value) ->
+           tr
+             [ td
+                 [ strong
+                     [ Pool_common.Utils.field_to_string language field
+                       |> CCString.capitalize_ascii
+                       |> txt
+                     ]
+                 ]
+             ; td [ CCInt.to_string value |> txt ]
+             ])
+         |> table ~a:[ a_class [ "table"; "simple" ] ]
+         |> CCList.return)
+    ]
+;;
+
 let close_assignment_htmx_row
   { Pool_context.language; csrf; _ }
   (experiment : Experiment.t)
   view_contact_name
   session
+  ?counters
   ({ Assignment.id; no_show; participated; external_data_id; contact; _ } as
    assignment)
   =
@@ -1031,6 +1087,7 @@ let close_assignment_htmx_row
         ; external_data_field
         ]
     ; errors
+    ; counters |> CCOption.map_or ~default:(txt "") (session_counters language)
     ]
 ;;
 
@@ -1041,6 +1098,7 @@ let close
   (session : Session.t)
   assignments
   participation_tags
+  counters
   =
   let open Pool_common in
   let control = Message.(Close (Some Field.Session)) in
@@ -1169,6 +1227,7 @@ let close
       ; tags_html
       ; table
       ; script (Unsafe.data scripts)
+      ; session_counters language counters
       ; submit_session_close
       ]
   ]

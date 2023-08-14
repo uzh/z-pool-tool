@@ -25,6 +25,5 @@ val update_on_assignment_deletion
 val update_on_assignment_update
   :  Assignment.t
   -> Assignment.NoShow.t option
-  -> Assignment.Participated.t option
   -> bool
   -> Contact.t

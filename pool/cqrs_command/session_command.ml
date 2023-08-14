@@ -434,7 +434,7 @@ end = struct
     in
     let* (_ : unit list) =
       let open CCList in
-      assignments >|= snd |> flatten >|= Assignment.is_not_closed |> all_ok
+      sessions >|= Assignment.is_not_closed |> all_ok
     in
     let contact_events =
       assignments

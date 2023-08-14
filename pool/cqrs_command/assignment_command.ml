@@ -401,7 +401,7 @@ end = struct
     Logs.info ~src (fun m -> m "Handle command Update" ~tags);
     let open CCResult in
     let open Assignment in
-    let assignment, no_show, participated =
+    let assignment, no_show, _ =
       { assignment with
         no_show = Some no_show
       ; participated = Some participated
@@ -419,7 +419,6 @@ end = struct
       Contact_counter.update_on_assignment_update
         assignment
         (Some no_show)
-        (Some participated)
         participated_in_other_assignments
       |> Contact.updated
       |> Pool_event.contact

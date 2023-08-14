@@ -64,7 +64,7 @@ val create
   -> Contact.t
   -> t
 
-val is_not_closed : t -> (unit, Pool_common.Message.error) result
+val is_not_closed : Session.t -> (unit, Pool_common.Message.error) result
 val is_deletable : t -> (unit, Pool_common.Message.error) result
 val is_cancellable : t -> (unit, Pool_common.Message.error) result
 val attendance_settable : t -> (unit, Pool_common.Message.error) result
@@ -90,6 +90,17 @@ val validate
 
 val set_close_default_values : t -> t * NoShow.t * Participated.t
 val boolean_fields : Pool_common.Message.Field.t list
+
+type session_counters =
+  { total : int
+  ; num_no_shows : int
+  ; num_participations : int
+  }
+
+val counters_of_session
+  :  Pool_database.Label.t
+  -> Session.Id.t
+  -> (session_counters, Pool_common.Message.error) result Lwt.t
 
 val find
   :  Pool_database.Label.t

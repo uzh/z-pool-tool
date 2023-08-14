@@ -242,7 +242,9 @@ let close_htmx req =
       |> Lwt_result.lift
     in
     let%lwt () = Pool_event.handle_event ~tags database_label event in
+    let* counters = Assignment.counters_of_session database_label session_id in
     Page.Admin.Session.close_assignment_htmx_row
+      ~counters
       context
       experiment
       view_contact_name

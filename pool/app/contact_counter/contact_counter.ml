@@ -73,35 +73,32 @@ let update_on_assignment_deletion
 
 (* TODO: Should this be skipped as long the session is not closed? *)
 let update_on_assignment_update
-  { Assignment.no_show; participated; contact; _ }
+  { Assignment.no_show; contact; _ }
   updated_no_show
-  updated_participated
   participated_in_other_assignments
   =
   let open Assignment in
   let open Contact in
   let open CCOption.Infix in
+  (* update_num_show_ups is missing *)
   let contact =
     let open NoShow in
-    (* update_num_show_ups is missing *)
     match no_show >|= value, updated_no_show >|= value with
     | Some true, (Some false | None) -> update_num_no_shows ~step:(-1) contact
     | (Some false | None), Some true -> update_num_no_shows ~step:1 contact
     | None, None | Some _, Some _ | Some _, None | None, Some false -> contact
   in
   let contact =
-    let open Participated in
-    match
-      ( participated_in_other_assignments
-      , participated >|= value
-      , updated_participated >|= value )
-    with
-    | true, _, _ -> contact
-    | false, (Some false | None), Some true ->
-      update_num_participations ~step:1 contact
-    | false, Some true, (Some false | None) ->
-      update_num_participations ~step:(-1) contact
-    | _ -> contact
+    let open NoShow in
+    if participated_in_other_assignments
+    then contact
+    else (
+      match no_show >|= value, updated_no_show >|= value with
+      | Some true, (Some false | None) ->
+        update_num_participations ~step:1 contact
+      | Some false, (Some true | None) ->
+        update_num_participations ~step:(-1) contact
+      | _ -> contact)
   in
   contact
 ;;

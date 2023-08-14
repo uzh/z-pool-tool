@@ -224,6 +224,7 @@ let rec field_to_string =
   | TimeSpan -> "Zeitspanne"
   | Title -> "Titel"
   | Token -> "Token"
+  | Total -> "Total"
   | Translation -> "Übersetzung"
   | Tries -> "Versuche"
   | TriggerProfileUpdateAfter -> "Aufforderung zur Kontrolle des Profils"

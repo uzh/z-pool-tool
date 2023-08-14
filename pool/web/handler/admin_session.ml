@@ -237,6 +237,9 @@ let detail req page =
              database_label
              (Experiment (Experiment.Id.to_common experiment_id)))
        in
+       let* counters =
+         Assignment.counters_of_session database_label session_id
+       in
        Page.Admin.Session.close
          ~view_contact_name
          context
@@ -244,6 +247,7 @@ let detail req page =
          session
          assignments
          participation_tags
+         counters
        |> Lwt_result.ok
      | `Reschedule ->
        let* experiment = Experiment.find database_label experiment_id in
