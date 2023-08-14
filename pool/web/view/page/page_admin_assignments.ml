@@ -9,14 +9,17 @@ let assignments_path experiment_id =
     (experiment_id |> Experiment.Id.value)
 ;;
 
-let assignment_specific_path experiment_id session assignment =
+let assignment_specific_path ?suffix experiment_id session_id assignment_id =
   let open Pool_common in
-  Format.asprintf
-    "/admin/experiments/%s/sessions/%s/%s/%s/%s"
-    (experiment_id |> Experiment.Id.value)
-    Session.(session.id |> Id.value)
-    Message.Field.(human_url Assignments)
-    Assignment.(assignment.id |> Id.value)
+  let base =
+    Format.asprintf
+      "/admin/experiments/%s/sessions/%s/%s/%s"
+      (experiment_id |> Experiment.Id.value)
+      Session.(session_id |> Id.value)
+      Message.Field.(human_url Assignments)
+      Assignment.(assignment_id |> Id.value)
+  in
+  suffix |> CCOption.map_or ~default:base (Format.asprintf "%s/%s" base)
 ;;
 
 type assignment_redirect =
@@ -91,6 +94,10 @@ module Partials = struct
     |> txt
   ;;
 
+  let identity view_contact_name contact id =
+    if view_contact_name then Contact.fullname contact else Id.value id
+  ;;
+
   let overview_list
     ?(view_contact_name = false)
     ?(view_contact_email = false)
@@ -102,23 +109,48 @@ module Partials = struct
     session
     assignments
     =
+    let open Pool_common in
     let default = txt "" in
     let deletable = CCFun.(Assignment.is_deletable %> CCResult.is_ok) in
     let cancelable m =
       Session.assignments_cancelable session |> CCResult.is_ok
       && Assignment.is_cancellable m |> CCResult.is_ok
     in
-    let action assignment suffix =
-      assignment_specific_path experiment_id session assignment suffix
+    let action { Assignment.id; _ } suffix =
+      assignment_specific_path ~suffix experiment_id session.Session.id id
       |> Sihl.Web.externalize_path
     in
-    let button_form suffix confirmable control icon assignment =
+    let button_form
+      ?title
+      ?(style = `Primary)
+      suffix
+      confirmable
+      control
+      icon
+      assignment
+      =
       let hidden_redirect_input =
         input_element
           ~value:(show_assignment_redirect redirect)
           language
           `Hidden
           Field.Redirect
+      in
+      let icon = Icon.to_html icon in
+      let submit_content =
+        match control with
+        | None -> [ icon ]
+        | Some control ->
+          [ icon
+          ; span [ txt Pool_common.Utils.(control_to_string language control) ]
+          ]
+      in
+      let classnames = submit_type_to_class style :: [ "has-icon" ] in
+      let title =
+        CCOption.map (fun title -> title language) title
+        |> function
+        | None -> []
+        | Some title -> [ a_title title ]
       in
       form
         ~a:
@@ -130,29 +162,39 @@ module Partials = struct
           ]
         [ csrf_element csrf ()
         ; hidden_redirect_input
-        ; submit_element language control ~submit_type:`Error ~has_icon:icon ()
+        ; button
+            ~a:([ a_button_type `Submit; a_class classnames ] @ title)
+            submit_content
         ]
     in
+    let edit m =
+      let action = action m "edit" in
+      link_as_button action ~icon:Component.Icon.Create
+    in
     let cancel =
-      let open Pool_common in
       button_form
+        ~style:`Error
         "cancel"
         I18n.(
           if session.Session.has_follow_ups
           then CancelAssignmentWithFollowUps
           else CancelAssignment)
-        (Message.Cancel None)
+        (Some (Message.Cancel None))
         Component.Icon.CloseCircle
     in
     let mark_as_deleted =
-      let open Pool_common in
+      let title language =
+        Utils.control_to_string language Message.MarkAsDeleted
+      in
       button_form
+        ~title
+        ~style:`Error
         "mark-as-deleted"
         I18n.(
           if session.Session.has_follow_ups
           then MarkAssignmentWithFollowUpsAsDeleted
           else MarkAssignmentAsDeleted)
-        Message.MarkAsDeleted
+        None
         Component.Icon.Trash
     in
     match CCList.is_empty assignments with
@@ -179,11 +221,16 @@ module Partials = struct
           [ Field.ExternalDataId, assignment_external_data_id ]
       in
       let thead =
-        ((CCList.map fst contact_information
-          @ CCList.map fst external_data_field
-          @ Field.[ Participated; NoShow; CanceledAt ])
-         |> Component.Table.fields_to_txt language)
-        @ [ default ]
+        let field_to_text = Component.Table.field_to_txt language in
+        let left =
+          CCList.map (fun (field, _) -> field_to_text field) contact_information
+          @ CCList.map
+              (fun (field, _) -> field_to_text field)
+              external_data_field
+        in
+        let checkboxes = [ txt "P"; txt "NS" ] in
+        let right = [ Field.CanceledAt |> field_to_text; default ] in
+        left @ checkboxes @ right
       in
       let rows =
         let open CCFun in
@@ -196,7 +243,8 @@ module Partials = struct
               |> CCList.map (fun fcn -> fcn assignment)
             in
             let buttons =
-              [ cancelable assignment, cancel
+              [ true, edit
+              ; cancelable assignment, cancel
               ; deletable assignment, mark_as_deleted
               ]
               |> CCList.filter_map (fun (active, form) ->
@@ -207,7 +255,17 @@ module Partials = struct
             base @ buttons)
           assignments
       in
-      Component.Table.horizontal_table `Striped ~align_last_end:true ~thead rows
+      div
+        [ p
+            [ Utils.hint_to_string language I18n.SessionCloseLegend
+              |> HttpUtils.add_line_breaks
+            ]
+        ; Component.Table.horizontal_table
+            `Striped
+            ~align_last_end:true
+            ~thead
+            rows
+        ]
   ;;
 
   let grouped_overview_lists
@@ -331,4 +389,160 @@ let marked_as_deleted
       (I18n Pool_common.I18n.DeletedAssignments)
       experiment
       html)
+;;
+
+let close_assignment_htmx_row
+  { Pool_context.language; csrf; _ }
+  (experiment : Experiment.t)
+  view_contact_name
+  session
+  ({ Assignment.id; no_show; participated; external_data_id; contact; _ } as
+   assignment)
+  =
+  let open Assignment in
+  let open Pool_common.Utils in
+  let errors =
+    validate experiment assignment
+    |> function
+    | Ok () -> None
+    | Error err -> Some err
+  in
+  let checkbox_element field value =
+    let identifier = Format.asprintf "%s-%s" (Field.show field) (Id.value id) in
+    Component.Input.checkbox_element ~value ~identifier language field
+  in
+  let default_bool fnc = CCOption.map_or ~default:false fnc in
+  let identity = Partials.identity view_contact_name contact id in
+  let action =
+    assignment_specific_path
+      ~suffix:"close"
+      experiment.Experiment.id
+      session.Session.id
+      id
+    |> Sihl.Web.externalize_path
+  in
+  let external_data_field =
+    let open Experiment in
+    match experiment.external_data_required |> ExternalDataRequired.value with
+    | false -> txt ""
+    | true ->
+      let value =
+        CCOption.map_or
+          ~default:""
+          Assignment.ExternalDataId.value
+          external_data_id
+      in
+      let field = Field.ExternalDataId in
+      div
+        ~a:[ a_class [ "form-group"; "flex-basis-30" ] ]
+        [ input
+            ~a:
+              [ a_input_type `Text
+              ; a_value value
+              ; a_name Field.(show field)
+              ; a_placeholder
+                  (field_to_string language field |> CCString.capitalize_ascii)
+              ]
+            ()
+        ]
+  in
+  let errors =
+    errors
+    |> CCOption.map_or ~default:(txt "") (fun errors ->
+      let error_to_item err =
+        error_to_string language err |> txt |> CCList.return |> li
+      in
+      CCList.map error_to_item errors |> ul ~a:[ a_class [ "color-red" ] ])
+  in
+  form
+    ~a:
+      [ a_user_data "hx-post" action
+      ; a_user_data "hx-trigger" "change"
+      ; a_user_data "hx-swap" "outerHTML"
+      ; a_user_data "assignment" (Id.value id)
+      ; a_class [ "flexcolumn"; "stack-sm"; "inset-sm" ]
+      ]
+    [ div
+        ~a:[ a_class [ "flexrow"; "flex-gap-sm"; "flexcolumn-mobile" ] ]
+        [ csrf_element csrf ()
+        ; div
+            ~a:[ a_class [ "flex-basis-40"; "grow" ] ]
+            [ strong [ txt identity ] ]
+        ; div
+            ~a:[ a_class [ "flexcolumn"; "stack-xs"; "flex-basis-30" ] ]
+            [ checkbox_element
+                Field.Participated
+                (default_bool Participated.value participated)
+            ; checkbox_element Field.NoShow (default_bool NoShow.value no_show)
+            ]
+        ; external_data_field
+        ]
+    ; errors
+    ]
+;;
+
+let edit
+  ({ Pool_context.language; csrf; _ } as context)
+  view_contact_name
+  experiment
+  session
+  { Assignment.id; no_show; participated; external_data_id; contact; _ }
+  =
+  let open Assignment in
+  let open Component.Input in
+  let open CCOption.Infix in
+  let action =
+    assignment_specific_path experiment.Experiment.id session.Session.id id
+  in
+  let session_data =
+    let open Session in
+    let field_to_string = Pool_common.Utils.field_to_string language in
+    div
+      ~a:[ a_class [ "stack"; "inset"; "border"; " bg-grey-light" ] ]
+      [ p
+          [ txt (field_to_string Field.Start |> CCString.capitalize_ascii)
+          ; txt ": "
+          ; session.start
+            |> Start.value
+            |> Pool_common.Utils.Time.formatted_date_time
+            |> txt
+          ]
+      ; Component.Location.preview session.location
+      ]
+  in
+  [ div
+      ~a:[ a_class [ "switcher"; "flex-gap" ] ]
+      [ form
+          ~a:[ a_action action; a_method `Post ]
+          [ csrf_element csrf ()
+          ; div
+              ~a:[ a_class [ "flexcolumn"; "stack" ] ]
+              [ checkbox_element
+                  ?value:(no_show >|= NoShow.value)
+                  language
+                  Field.NoShow
+              ; checkbox_element
+                  ?value:(participated >|= Participated.value)
+                  language
+                  Field.Participated
+              ; input_element
+                  ?value:(external_data_id >|= ExternalDataId.value)
+                  language
+                  `Text
+                  Field.ExternalDataId
+              ; submit_element
+                  language
+                  ~classnames:[ "align-self-end" ]
+                  Pool_common.Message.(Save None)
+                  ()
+              ]
+          ]
+      ; session_data
+      ]
+  ]
+  |> Layout.Experiment.(
+       create
+         context
+         (Text (Partials.identity view_contact_name contact id))
+         experiment)
 ;;

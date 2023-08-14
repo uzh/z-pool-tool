@@ -374,14 +374,15 @@ module Update : sig
 
   val handle
     :  ?tags:Logs.Tag.set
+    -> Experiment.t
     -> Assignment.t
+    -> bool
+    -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
   val decode
     :  (string * string list) list
     -> (t, Pool_common.Message.error) result
-
-  val effects : Experiment.Id.t -> Session.Id.t -> Guard.ValidationSet.t
 end = struct
   type t =
     { no_show : Assignment.NoShow.t
@@ -389,10 +390,44 @@ end = struct
     ; external_data_id : Assignment.ExternalDataId.t option
     }
 
-  let handle ?(tags = Logs.Tag.empty) (assignment : Assignment.t) =
+  let handle
+    ?(tags = Logs.Tag.empty)
+    (experiment : Experiment.t)
+    (assignment : Assignment.t)
+    participated_in_other_assignments
+    { no_show; participated; external_data_id }
+    =
+    (* TODO: Only update counters when session is closed? *)
     Logs.info ~src (fun m -> m "Handle command Update" ~tags);
     let open CCResult in
-    Ok [ Assignment.Updated assignment |> Pool_event.assignment ]
+    let open Assignment in
+    let assignment, no_show, participated =
+      { assignment with
+        no_show = Some no_show
+      ; participated = Some participated
+      ; external_data_id
+      }
+      |> set_close_default_values (* TODO: Remove? *)
+    in
+    let* () =
+      validate experiment assignment
+      |> function
+      | Ok () | Error [] -> Ok ()
+      | Error (hd :: _) -> Error hd
+    in
+    let contact_counters =
+      Contact_counter.update_on_assignment_update
+        assignment
+        (Some no_show)
+        (Some participated)
+        participated_in_other_assignments
+      |> Contact.updated
+      |> Pool_event.contact
+    in
+    Ok
+      [ Assignment.Updated assignment |> Pool_event.assignment
+      ; contact_counters
+      ]
   ;;
 
   let command no_show participated external_data_id =
@@ -415,6 +450,4 @@ end = struct
     Conformist.decode_and_validate schema data
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
-
-  let effects = Session.Guard.Access.update
 end

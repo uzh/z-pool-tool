@@ -1,6 +1,7 @@
 open Entity
 
 type event =
+  (* TODO: Remove this event *)
   | AttendanceSet of (t * NoShow.t * Participated.t * ExternalDataId.t option)
   | Canceled of t
   | Created of (t * Session.Id.t)

@@ -136,7 +136,6 @@ module IncrementParticipationCount = struct
   let create m = m
 end
 
-(* TODO: Add option to throw error when no_show and participated are null *)
 let validate experiment { no_show; participated; external_data_id; _ } =
   let value = CCOption.value ~default:false in
   let open Pool_common.Message in
@@ -162,3 +161,5 @@ let set_close_default_values ({ no_show; participated; _ } as m) =
   , no_show
   , participated )
 ;;
+
+let boolean_fields = Pool_common.Message.Field.[ NoShow; Participated ]

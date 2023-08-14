@@ -7,11 +7,11 @@ let session_title (s : Session.t) =
   Pool_common.I18n.SessionDetailTitle (s.Session.start |> Session.Start.value)
 ;;
 
-let session_path experiment session =
+let session_path experiment_id session_id =
   Format.asprintf
     "/admin/experiments/%s/sessions/%s"
-    Experiment.(Id.value experiment.id)
-    Session.(session.id |> Id.value)
+    Experiment.(Id.value experiment_id)
+    Session.(session_id |> Id.value)
 ;;
 
 let location_select language options selected () =
@@ -803,7 +803,9 @@ let edit
   =
   let open Message_template in
   let session_path =
-    Format.asprintf "%s/%s" (session_path experiment session)
+    Format.asprintf
+      "%s/%s"
+      (session_path experiment.Experiment.id session.Session.id)
   in
   let form =
     div
@@ -957,7 +959,7 @@ let close_assignment_htmx_row
     | Ok () -> None
     | Error err -> Some err
   in
-  let session_path = session_path experiment session in
+  let session_path = session_path experiment.Experiment.id session.Session.id in
   let checkbox_element field value =
     let identifier = Format.asprintf "%s-%s" (Field.show field) (Id.value id) in
     Input.checkbox_element ~value ~identifier language field
@@ -1042,7 +1044,7 @@ let close
   =
   let open Pool_common in
   let control = Message.(Close (Some Field.Session)) in
-  let session_path = session_path experiment session in
+  let session_path = session_path experiment.Experiment.id session.Session.id in
   let tags_html =
     let participation_tags_list =
       match participation_tags with
