@@ -1395,9 +1395,9 @@ let close_session_check_contact_figures _ () =
   in
   let%lwt () =
     let open CCList in
+    let open Assignment in
     contacts
     |> map (fun (contact, status) ->
-      let open Assignment in
       let no_show, participated, increment_num_participatons =
         match status with
         | `Participated ->
@@ -1421,8 +1421,14 @@ let close_session_check_contact_figures _ () =
           increment_num_participatons
         |> Test_utils.get_or_failwith_pool_error
       in
-      [ AttendanceSet (find_assignment contact, no_show, participated, None)
-        |> Pool_event.assignment
+      let assignment = find_assignment contact in
+      let assignment =
+        { assignment with
+          no_show = Some no_show
+        ; participated = Some participated
+        }
+      in
+      [ Updated assignment |> Pool_event.assignment
       ; Contact.Updated contact |> Pool_event.contact
       ])
     |> flatten

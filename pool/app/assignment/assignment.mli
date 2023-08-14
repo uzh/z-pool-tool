@@ -157,16 +157,11 @@ val contact_participation_in_other_assignments
 val group_by_contact : t list -> (Contact.t * t list) list
 
 type event =
-  | AttendanceSet of (t * NoShow.t * Participated.t * ExternalDataId.t option)
   | Canceled of t
   | Created of (t * Session.Id.t)
   | MarkedAsDeleted of t
   | ExternalDataIdUpdated of t * ExternalDataId.t option
   | Updated of t
-
-val attendanceset
-  :  t * NoShow.t * Participated.t * ExternalDataId.t option
-  -> event
 
 val canceled : t -> event
 val created : t * Session.Id.t -> event
