@@ -976,13 +976,13 @@ let session_counters
     |> txt
   in
   div
-    ~a:[ a_class [ "grid-col-2"; "gap" ] ]
+    ~a:
+      [ a_class [ "grid-col-2"; "gap" ]
+      ; a_id session_counter_id
+      ; a_user_data "hx-swap-oob" "true"
+      ]
     [ div
-        ~a:
-          [ a_class [ "flexcolumn" ]
-          ; a_id session_counter_id
-          ; a_user_data "hx-swap-oob" "true"
-          ]
+        ~a:[ a_class [ "flexcolumn" ] ]
         ([ field_to_string Field.Total, total
          ; txt "NS", num_no_shows
          ; txt "P", num_participations
