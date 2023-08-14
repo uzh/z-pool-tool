@@ -975,7 +975,7 @@ let session_counters
     [ div
         ~a:
           [ a_class [ "flexcolumn" ]
-          ; a_id "session_counter_id"
+          ; a_id session_counter_id
           ; a_user_data "hx-swap-oob" "true"
           ]
         ([ Field.Total, total
@@ -1225,6 +1225,7 @@ let close
           [ Utils.hint_to_string language I18n.SessionCloseHints |> Unsafe.data
           ]
       ; tags_html
+      ; session_counters language counters
       ; table
       ; script (Unsafe.data scripts)
       ; session_counters language counters
