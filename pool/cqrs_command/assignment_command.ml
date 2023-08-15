@@ -283,7 +283,6 @@ end = struct
   let effects = Assignment.Guard.Access.delete
 end
 
-(* TODO: Only allow updating of closed assignments *)
 module UpdateClosed : sig
   type t = update
 
@@ -316,7 +315,7 @@ end = struct
     let* current_no_show =
       match CCOption.is_some closed_at, no_show, participated with
       | true, Some no_show, Some _ -> Ok no_show
-      | _ -> failwith "TODO: Error"
+      | _ -> Error Pool_common.Message.SessionNotClosed
     in
     let contact_counters =
       Contact_counter.update_on_assignment_update

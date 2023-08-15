@@ -518,6 +518,7 @@ let rec error_to_string = function
     CCFormat.asprintf "Diese Session wurde bereits abgesagt am %s." date
   | SessionAlreadyClosed date ->
     CCFormat.asprintf "Diese Session wurde bereits geschlossen am %s." date
+  | SessionNotClosed -> "Diese Session wurde noch nicht geschlossen."
   | SessionInPast -> "Diese Session ist beendet."
   | SessionNotStarted -> "Diese Session kann noch nicht geschlossen werden."
   | Smaller (field1, field2) ->

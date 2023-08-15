@@ -100,6 +100,7 @@ type error =
   | Retrieve of Field.t
   | SessionAlreadyCanceled of string
   | SessionAlreadyClosed of string
+  | SessionNotClosed
   | SessionFullyBooked
   | SessionHasAssignments
   | SessionHasFollowUps
