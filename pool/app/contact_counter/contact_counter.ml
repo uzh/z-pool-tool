@@ -80,24 +80,23 @@ let update_on_assignment_update
   let open Assignment in
   let open Contact in
   let open CCOption.Infix in
-  (* update_num_show_ups is missing *)
   let contact =
     let open NoShow in
-    match no_show >|= value, updated_no_show >|= value with
-    | Some true, (Some false | None) -> update_num_no_shows ~step:(-1) contact
-    | (Some false | None), Some true -> update_num_no_shows ~step:1 contact
-    | None, None | Some _, Some _ | Some _, None | None, Some false -> contact
+    match no_show >|= value, updated_no_show |> value with
+    | Some true, false ->
+      contact |> update_num_no_shows ~step:(-1) |> update_num_show_ups ~step:1
+    | (Some false | None), true ->
+      contact |> update_num_no_shows ~step:1 |> update_num_show_ups ~step:(-1)
+    | Some true, true | Some false, false | None, false -> contact
   in
   let contact =
     let open NoShow in
     if participated_in_other_assignments
     then contact
     else (
-      match no_show >|= value, updated_no_show >|= value with
-      | Some true, (Some false | None) ->
-        update_num_participations ~step:1 contact
-      | Some false, (Some true | None) ->
-        update_num_participations ~step:(-1) contact
+      match no_show >|= value, updated_no_show |> value with
+      | Some true, false -> update_num_participations ~step:1 contact
+      | Some false, true -> update_num_participations ~step:(-1) contact
       | _ -> contact)
   in
   contact

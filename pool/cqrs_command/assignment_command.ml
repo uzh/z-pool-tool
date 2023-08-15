@@ -309,7 +309,7 @@ end = struct
     let contact_counters =
       Contact_counter.update_on_assignment_update
         assignment
-        (Some no_show)
+        no_show
         participated_in_other_assignments
       |> Contact.updated
       |> Pool_event.contact
