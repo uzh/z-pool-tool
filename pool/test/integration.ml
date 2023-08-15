@@ -219,6 +219,10 @@ let suite =
     ; ( "contact counter"
       , Contact_counter_test.
           [ test_case
+              "invite contact: ssend invitation"
+              `Slow
+              InviteContact.invite
+          ; test_case
               "attend all: register for session"
               `Slow
               AttendAll.register_for_session

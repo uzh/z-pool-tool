@@ -14,6 +14,7 @@ let get_session session_id =
 ;;
 
 let confirmation_mail (_ : Assignment.t) = Common_test.Data.create_email ()
+let invitation_mail (_ : Contact.t) = Ok (Common_test.Data.create_email ())
 
 let find_assignment_by_contact_and_session contact_id session_id =
   let open Assignment in
@@ -118,6 +119,35 @@ let initialize contact_id experiment_id session_id ?followup_session_id () =
   in
   Lwt.return (contact, experiment, session, follow_up_session)
 ;;
+
+module InviteContact = struct
+  let contact_id = Contact.Id.create ()
+  let experiment_id = Experiment.Id.create ()
+  let session_id = Session.Id.create ()
+  let initialize = initialize contact_id experiment_id session_id
+
+  let invite _ () =
+    let%lwt contact, experiment, _, _ = initialize () in
+    let%lwt () =
+      Invitation_command.Create.(
+        handle
+          { experiment
+          ; contacts = [ contact ]
+          ; invited_contacts = []
+          ; create_message = invitation_mail
+          })
+      |> get_or_failwith_pool_error
+      |> Pool_event.handle_events database_label
+    in
+    let%lwt res = get_contact contact_id in
+    let expected = contact |> Contact.update_num_invitations ~step:1 in
+    let () =
+      Alcotest.(
+        check Test_utils.contact "num invitations increased" expected res)
+    in
+    Lwt.return ()
+  ;;
+end
 
 module AttendAll = struct
   let contact_id = Contact.Id.create ()

@@ -151,7 +151,7 @@ let sexp_of_t t =
 ;;
 
 let update_num_invitations ~step ({ num_invitations; _ } as m) =
-  { m with num_assignments = NumberOfInvitations.update step num_invitations }
+  { m with num_invitations = NumberOfInvitations.update step num_invitations }
 ;;
 
 let update_num_assignments ~step ({ num_assignments; _ } as m) =
