@@ -116,6 +116,7 @@ module Partials = struct
       Session.assignments_cancelable session |> CCResult.is_ok
       && Assignment.is_cancellable m |> CCResult.is_ok
     in
+    let editable = CCOption.is_some session.Session.closed_at in
     let action { Assignment.id; _ } suffix =
       assignment_specific_path ~suffix experiment_id session.Session.id id
       |> Sihl.Web.externalize_path
@@ -243,7 +244,7 @@ module Partials = struct
               |> CCList.map (fun fcn -> fcn assignment)
             in
             let buttons =
-              [ true, edit
+              [ editable, edit
               ; cancelable assignment, cancel
               ; deletable assignment, mark_as_deleted
               ]

@@ -107,6 +107,11 @@ val find
   -> Id.t
   -> (t, Pool_common.Message.error) result Lwt.t
 
+val find_closed
+  :  Pool_database.Label.t
+  -> Id.t
+  -> (t, Pool_common.Message.error) result Lwt.t
+
 val find_upcoming_by_experiment_and_contact_opt
   :  Pool_database.Label.t
   -> Experiment.Id.t

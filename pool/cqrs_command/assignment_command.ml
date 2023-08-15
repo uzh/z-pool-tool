@@ -3,6 +3,33 @@ open CCFun.Infix
 
 let src = Logs.Src.create "assignment.cqrs"
 
+type update =
+  { no_show : Assignment.NoShow.t
+  ; participated : Assignment.Participated.t
+  ; external_data_id : Assignment.ExternalDataId.t option
+  }
+
+let update_command no_show participated external_data_id =
+  { no_show; participated; external_data_id }
+;;
+
+let update_schema =
+  let open Assignment in
+  Conformist.(
+    make
+      Field.
+        [ NoShow.schema ()
+        ; Participated.schema ()
+        ; Conformist.optional @@ ExternalDataId.schema ()
+        ]
+      update_command)
+;;
+
+let decode_update data =
+  Conformist.decode_and_validate update_schema data
+  |> CCResult.map_err Pool_common.Message.to_conformist_error
+;;
+
 let assignment_effect action id =
   let open Guard in
   ValidationSet.One
@@ -256,16 +283,14 @@ end = struct
   let effects = Assignment.Guard.Access.delete
 end
 
-module Update : sig
-  type t =
-    { no_show : Assignment.NoShow.t
-    ; participated : Assignment.Participated.t
-    ; external_data_id : Assignment.ExternalDataId.t option
-    }
+(* TODO: Only allow updating of closed assignments *)
+module UpdateClosed : sig
+  type t = update
 
   val handle
     :  ?tags:Logs.Tag.set
     -> Experiment.t
+    -> Session.t
     -> Assignment.t
     -> bool
     -> t
@@ -275,67 +300,54 @@ module Update : sig
     :  (string * string list) list
     -> (t, Pool_common.Message.error) result
 end = struct
-  type t =
-    { no_show : Assignment.NoShow.t
-    ; participated : Assignment.Participated.t
-    ; external_data_id : Assignment.ExternalDataId.t option
-    }
+  type t = update
 
   let handle
     ?(tags = Logs.Tag.empty)
     (experiment : Experiment.t)
-    (assignment : Assignment.t)
+    { Session.closed_at; _ }
+    ({ Assignment.no_show; participated; _ } as assignment)
     participated_in_other_assignments
-    { no_show; participated; external_data_id }
+    (command : update)
     =
-    Logs.info ~src (fun m -> m "Handle command Update" ~tags);
+    Logs.info ~src (fun m -> m "Handle command UpdateClosed" ~tags);
     let open CCResult in
     let open Assignment in
-    let assignment =
-      { assignment with
-        no_show = Some no_show
-      ; participated = Some participated
-      ; external_data_id
-      }
-    in
-    let* () =
-      validate experiment assignment
-      |> function
-      | Ok () | Error [] -> Ok ()
-      | Error (hd :: _) -> Error hd
+    let* current_no_show =
+      match CCOption.is_some closed_at, no_show, participated with
+      | true, Some no_show, Some _ -> Ok no_show
+      | _ -> failwith "TODO: Error"
     in
     let contact_counters =
       Contact_counter.update_on_assignment_update
         assignment
-        no_show
+        current_no_show
+        command.no_show
         participated_in_other_assignments
       |> Contact.updated
       |> Pool_event.contact
     in
+    let updated_assignment =
+      { assignment with
+        no_show = Some command.no_show
+      ; participated = Some command.participated
+      ; external_data_id = command.external_data_id
+      }
+    in
+    let* () =
+      validate experiment updated_assignment
+      |> function
+      | Ok () | Error [] -> Ok ()
+      | Error (hd :: _) -> Error hd
+    in
     Ok
-      [ Assignment.Updated assignment |> Pool_event.assignment
+      [ Assignment.Updated updated_assignment |> Pool_event.assignment
       ; contact_counters
       ]
   ;;
 
-  let command no_show participated external_data_id =
-    { no_show; participated; external_data_id }
-  ;;
-
-  let schema =
-    let open Assignment in
-    Conformist.(
-      make
-        Field.
-          [ NoShow.schema ()
-          ; Participated.schema ()
-          ; Conformist.optional @@ ExternalDataId.schema ()
-          ]
-        command)
-  ;;
-
   let decode data =
-    Conformist.decode_and_validate schema data
+    Conformist.decode_and_validate update_schema data
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 end

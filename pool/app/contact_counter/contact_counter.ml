@@ -6,7 +6,6 @@ let update_on_session_signup m sessions =
 
 let update_on_assignment_from_waiting_list = update_on_session_signup
 
-(* TODO: Only update counters when session is closed? *)
 let update_on_session_closing
   contact
   no_show
@@ -72,33 +71,29 @@ let update_on_assignment_deletion
   else contact
 ;;
 
-(* TODO: Should this be skipped as long the session is not closed? *)
 let update_on_assignment_update
-  { Assignment.no_show; contact; _ }
+  { Assignment.contact; _ }
+  current_no_show
   updated_no_show
   participated_in_other_assignments
   =
-  let open Assignment in
   let open Contact in
-  let open CCOption.Infix in
-  let contact =
-    let open NoShow in
-    match no_show >|= value, updated_no_show |> value with
-    | Some true, false ->
-      contact |> update_num_no_shows ~step:(-1) |> update_num_show_ups ~step:1
-    | (Some false | None), true ->
-      contact |> update_num_no_shows ~step:1 |> update_num_show_ups ~step:(-1)
-    | Some true, true | Some false, false | None, false -> contact
-  in
-  let contact =
-    let open NoShow in
+  let value = Assignment.NoShow.value in
+  let update_participation_count ~step =
     if participated_in_other_assignments
-    then contact
-    else (
-      match no_show >|= value, updated_no_show |> value with
-      | Some true, false -> update_num_participations ~step:1 contact
-      | Some false, true -> update_num_participations ~step:(-1) contact
-      | _ -> contact)
+    then CCFun.id
+    else update_num_participations ~step
   in
-  contact
+  match current_no_show |> value, updated_no_show |> value with
+  | true, false ->
+    contact
+    |> update_num_no_shows ~step:(-1)
+    |> update_num_show_ups ~step:1
+    |> update_participation_count ~step:1
+  | false, true ->
+    contact
+    |> update_num_no_shows ~step:1
+    |> update_num_show_ups ~step:(-1)
+    |> update_participation_count ~step:(-1)
+  | true, true | false, false -> contact
 ;;

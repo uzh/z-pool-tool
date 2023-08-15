@@ -3,6 +3,7 @@ include Event
 module Guard = Entity_guard
 
 let find = Repo.find
+let find_closed = Repo.find_closed
 
 let find_upcoming_by_experiment_and_contact_opt =
   Repo.find_by_experiment_and_contact_opt `Upcoming

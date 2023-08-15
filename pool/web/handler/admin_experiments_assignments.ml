@@ -210,7 +210,7 @@ let close_htmx req =
   let session_id = session_id req in
   let assignment_id = assignment_id req in
   let result ({ Pool_context.database_label; user; _ } as context) =
-    let open Cqrs_command.Assignment_command.Update in
+    let open Cqrs_command.Assignment_command in
     let open Utils.Lwt_result.Infix in
     let boolean_fields = Assignment.boolean_fields |> CCList.map Field.show in
     let%lwt urlencoded =
@@ -226,7 +226,7 @@ let close_htmx req =
     let* assignment, event =
       let open CCResult.Infix in
       urlencoded
-      |> decode
+      |> decode_update
       >|= (fun { no_show; participated; external_data_id } ->
             Assignment.
               { assignment with
@@ -304,8 +304,9 @@ let update req =
       ||> HttpUtils.format_request_boolean_values boolean_fields
       ||> HttpUtils.remove_empty_values
     in
-    let* assignment = find database_label assignment_id in
+    let* assignment = find_closed database_label assignment_id in
     let* experiment = Experiment.find database_label experiment_id in
+    let* session = Session.find database_label session_id in
     let* participated_in_other_sessions =
       Assignment.contact_participation_in_other_assignments
         database_label
@@ -314,11 +315,16 @@ let update req =
         (Contact.id assignment.contact)
     in
     let events =
-      let open Cqrs_command.Assignment_command.Update in
+      let open Cqrs_command.Assignment_command.UpdateClosed in
       let open CCResult.Infix in
       urlencoded
       |> decode
-      >>= handle ~tags experiment assignment participated_in_other_sessions
+      >>= handle
+            ~tags
+            experiment
+            session
+            assignment
+            participated_in_other_sessions
       |> Lwt_result.lift
     in
     let handle events =
