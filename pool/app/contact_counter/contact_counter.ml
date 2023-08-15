@@ -6,6 +6,7 @@ let update_on_session_signup m sessions =
 
 let update_on_assignment_from_waiting_list = update_on_session_signup
 
+(* TODO: Only update counters when session is closed? *)
 let update_on_session_closing
   contact
   no_show

@@ -288,17 +288,15 @@ end = struct
     participated_in_other_assignments
     { no_show; participated; external_data_id }
     =
-    (* TODO: Only update counters when session is closed? *)
     Logs.info ~src (fun m -> m "Handle command Update" ~tags);
     let open CCResult in
     let open Assignment in
-    let assignment, no_show, _ =
+    let assignment =
       { assignment with
         no_show = Some no_show
       ; participated = Some participated
       ; external_data_id
       }
-      |> set_close_default_values (* TODO: Remove? *)
     in
     let* () =
       validate experiment assignment
