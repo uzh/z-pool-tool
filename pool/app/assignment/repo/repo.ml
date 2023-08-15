@@ -431,11 +431,11 @@ module Sql = struct
 
   let contact_participation_in_other_assignments
     pool
-    assignments
+    ~exclude_assignments
     experiment_uuid
     contact_uuid
     =
-    if CCList.is_empty assignments
+    if CCList.is_empty exclude_assignments
     then Lwt_result.fail Pool_common.Message.InvalidRequest
     else
       let open Caqti_request.Infix in
@@ -451,11 +451,11 @@ module Sql = struct
           (fun dyn { Entity.id; _ } ->
             dyn |> add string (id |> Entity.Id.value))
           init
-          assignments
+          exclude_assignments
       in
       let (Pack (pt, pv)) = dyn in
       let request =
-        contact_participation_in_other_assignments_request assignments
+        contact_participation_in_other_assignments_request exclude_assignments
         |> pt ->! bool
       in
       Utils.Database.find (pool |> Pool_database.Label.value) request pv

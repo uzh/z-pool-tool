@@ -564,7 +564,7 @@ let close_post req =
              let* increment_num_participations =
                Assignment.contact_participation_in_other_assignments
                  database_label
-                 [ assignment ]
+                 ~exclude_assignments:[ assignment ]
                  experiment_id
                  (Contact.id contact)
                >|+ not %> IncrementParticipationCount.create

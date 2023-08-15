@@ -272,6 +272,10 @@ let suite =
               "delete unattended: delete main session assignment"
               `Slow
               DeleteUnattended.delete_main
+          ; test_case
+              "delete closed: cannot delete of unclosed session"
+              `Slow
+              UpdateClosedAssignments.update_unclosed
           ] )
     ; ( "tagging"
       , Tag_test.

@@ -154,7 +154,7 @@ val find_follow_ups : Pool_database.Label.t -> t -> t list Lwt.t
 
 val contact_participation_in_other_assignments
   :  Pool_database.Label.t
-  -> t list
+  -> exclude_assignments:t list
   -> Experiment.Id.t
   -> Contact.Id.t
   -> (bool, Pool_common.Message.error) Lwt_result.t

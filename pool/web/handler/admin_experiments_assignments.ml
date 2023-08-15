@@ -178,7 +178,7 @@ let mark_as_deleted req =
           Assignment.(
             contact_participation_in_other_assignments
               database_label
-              assignments
+              ~exclude_assignments:assignments
               experiment_id
               (Contact.id hd.contact)
             >|+ not
@@ -310,7 +310,7 @@ let update req =
     let* participated_in_other_sessions =
       Assignment.contact_participation_in_other_assignments
         database_label
-        [ assignment ]
+        ~exclude_assignments:[ assignment ]
         experiment_id
         (Contact.id assignment.contact)
     in

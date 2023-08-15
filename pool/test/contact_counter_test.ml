@@ -13,6 +13,10 @@ let get_session session_id =
   session_id |> Session.find database_label |> Lwt.map get_exn
 ;;
 
+let get_experiment experiment_id =
+  experiment_id |> Experiment.find database_label |> Lwt.map get_exn
+;;
+
 let confirmation_mail (_ : Assignment.t) = Common_test.Data.create_email ()
 let invitation_mail (_ : Contact.t) = Ok (Common_test.Data.create_email ())
 
@@ -71,7 +75,7 @@ let close_session
   let%lwt increment_num_participations =
     contact_participation_in_other_assignments
       database_label
-      [ assignment ]
+      ~exclude_assignments:[ assignment ]
       experiment.Experiment.id
       contact_id
     >|+ not
@@ -91,7 +95,7 @@ let delete_assignment experiment_id contact assignments =
     Assignment.(
       contact_participation_in_other_assignments
         database_label
-        assignments
+        ~exclude_assignments:assignments
         experiment_id
         (Contact.id contact)
       >|+ not
@@ -494,6 +498,81 @@ module DeleteUnattended = struct
     in
     let () = Alcotest.(check Test_utils.contact "succeeds" expected res) in
     let%lwt () = set_sessions_to_past [ session_id; followup_session_id ] in
+    Lwt.return_unit
+  ;;
+end
+
+module UpdateClosedAssignments = struct
+  open Cqrs_command.Assignment_command
+  open CCResult
+  open Contact
+
+  let contact_id = Contact.Id.create ()
+  let session_id = Session.Id.create ()
+  let followup_session_id = Session.Id.create ()
+  let experiment_id = Experiment.Id.create ()
+  let initial_assignments = NumberOfAssignments.of_int 2
+  let initial_showups = NumberOfShowUps.of_int 1
+  let initial_noshows = NumberOfNoShows.of_int 1
+  let initial_participations = NumberOfParticipations.of_int 1
+
+  let initialize () =
+    initialize contact_id experiment_id session_id ~followup_session_id ()
+    >|> fun (contact, session, experiment, follow_ups) ->
+    let contact =
+      { contact with
+        num_assignments = initial_assignments
+      ; num_show_ups = initial_showups
+      ; num_no_shows = initial_noshows
+      ; num_participations = initial_participations
+      }
+    in
+    let%lwt () = Updated contact |> handle_event database_label in
+    Lwt.return (contact, session, experiment, follow_ups)
+  ;;
+
+  let get_entities () =
+    let%lwt contact = get_contact contact_id in
+    let%lwt session = get_session session_id in
+    let%lwt experiment = get_experiment experiment_id in
+    let%lwt followup_session = get_session followup_session_id in
+    Lwt.return (contact, experiment, session, followup_session)
+  ;;
+
+  let to_urlencoded ?external_data_id ~no_show ~participated () =
+    let open Pool_common in
+    let open Message in
+    let bool_to_string = Model.Boolean.stringify in
+    let base =
+      [ Field.(show NoShow), [ bool_to_string no_show ]
+      ; Field.(show Participated), [ bool_to_string participated ]
+      ]
+    in
+    match external_data_id with
+    | None -> base
+    | Some id -> base @ [ Field.(show ExternalDataId), [ id ] ]
+  ;;
+
+  let update_unclosed _ () =
+    let open UpdateClosed in
+    let%lwt contact, experiment, session, _ = initialize () in
+    let%lwt () = sign_up_for_session experiment contact session_id in
+    let%lwt assignment =
+      find_assignment_by_contact_and_session contact_id session_id
+    in
+    let participated_in_other_sessions = false in
+    let res =
+      to_urlencoded ~no_show:true ~participated:false ()
+      |> decode
+      >>= handle experiment session assignment participated_in_other_sessions
+    in
+    let expected = Error Pool_common.Message.SessionNotClosed in
+    let () =
+      check_result
+        ~msg:"Cannot update assignment of unclosed session"
+        expected
+        res
+    in
     Lwt.return_unit
   ;;
 end
