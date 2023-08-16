@@ -3,6 +3,11 @@ open Entity_i18n
 let to_string = function
   | Address -> "Addresse"
   | AdminComment -> "Administrator Kommentar"
+  | AssignmentEditTagsWarning ->
+    "Bitte beachten Sie, dass durch die Bearbeitung der Anmeldung keine Tags \
+     zugewiesen oder entfernt werden, die durch die Teilnahme an dieser \
+     Session dem Kontakt zugewiesen wurden. Wenn dies erforderlich ist, wenden \
+     Sie sich bitte an eine Person mit den erforderlichen Berechtigungen."
   | AssignmentListEmpty -> "Es existieren keine Anmeldungen für diese Session."
   | AvailableSpots -> "Freie Plätze"
   | Canceled -> "Abgesagt"

@@ -5,6 +5,11 @@ let capitalize = CCString.capitalize_ascii
 let to_string = function
   | Address -> "address"
   | AdminComment -> "admin comment"
+  | AssignmentEditTagsWarning ->
+    "Please note that editing the assignment does not assign or remove any \
+     tags that may have been assigned by participating in this session from \
+     the contact. If this is required, please a person with the necessary \
+     permissions."
   | AssignmentListEmpty -> "There are no assignments for this session."
   | AvailableSpots -> "Available spots"
   | Canceled -> "Canceled"

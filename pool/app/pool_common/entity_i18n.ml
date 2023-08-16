@@ -1,6 +1,7 @@
 type t =
   | Address
   | AdminComment
+  | AssignmentEditTagsWarning
   | AssignmentListEmpty
   | AvailableSpots
   | Canceled

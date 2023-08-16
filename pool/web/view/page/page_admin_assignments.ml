@@ -430,29 +430,39 @@ let edit
   in
   [ div
       ~a:[ a_class [ "switcher"; "flex-gap" ] ]
-      [ form
-          ~a:[ a_action action; a_method `Post ]
-          [ csrf_element csrf ()
-          ; div
-              ~a:[ a_class [ "flexcolumn"; "stack" ] ]
-              [ checkbox_element
-                  ?value:(no_show >|= NoShow.value)
-                  language
-                  Field.NoShow
-              ; checkbox_element
-                  ?value:(participated >|= Participated.value)
-                  language
-                  Field.Participated
-              ; input_element
-                  ?value:(external_data_id >|= ExternalDataId.value)
-                  language
-                  `Text
-                  Field.ExternalDataId
-              ; submit_element
-                  language
-                  ~classnames:[ "align-self-end" ]
-                  Pool_common.Message.(Save None)
-                  ()
+      [ div
+          ~a:[ a_class [ "stack" ] ]
+          [ Component.Notification.notification
+              language
+              `Warning
+              [ txt
+                  Pool_common.(
+                    Utils.text_to_string language I18n.AssignmentEditTagsWarning)
+              ]
+          ; form
+              ~a:[ a_action action; a_method `Post ]
+              [ csrf_element csrf ()
+              ; div
+                  ~a:[ a_class [ "flexcolumn"; "stack" ] ]
+                  [ checkbox_element
+                      ?value:(no_show >|= NoShow.value)
+                      language
+                      Field.NoShow
+                  ; checkbox_element
+                      ?value:(participated >|= Participated.value)
+                      language
+                      Field.Participated
+                  ; input_element
+                      ?value:(external_data_id >|= ExternalDataId.value)
+                      language
+                      `Text
+                      Field.ExternalDataId
+                  ; submit_element
+                      language
+                      ~classnames:[ "align-self-end" ]
+                      Pool_common.Message.(Save None)
+                      ()
+                  ]
               ]
           ]
       ; session_data
