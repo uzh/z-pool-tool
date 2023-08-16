@@ -575,4 +575,152 @@ module UpdateClosedAssignments = struct
     in
     Lwt.return_unit
   ;;
+
+  let close_main_session _ () =
+    let%lwt contact, experiment, session, _ = get_entities () in
+    let%lwt () =
+      close_session
+        ~no_show:false
+        ~participated:true
+        session
+        contact_id
+        experiment
+    in
+    let%lwt updated_contact = get_contact contact_id in
+    let expected =
+      contact
+      |> update_num_show_ups ~step:1
+      |> update_num_participations ~step:1
+    in
+    Alcotest.(
+      check
+        Test_utils.contact
+        "Session close: counters were updated"
+        expected
+        updated_contact)
+    |> Lwt.return
+  ;;
+
+  let update_assignment_manually _ () =
+    let%lwt contact, experiment, session, _ = get_entities () in
+    let participated_in_other_sessions assignments =
+      Assignment.(
+        contact_participation_in_other_assignments
+          database_label
+          ~exclude_assignments:assignments
+          experiment_id
+          contact_id
+        ||> get_or_failwith_pool_error)
+    in
+    let handle_update assignment urlencoded =
+      let%lwt participated_in_other_sessions =
+        participated_in_other_sessions [ assignment ]
+      in
+      let open UpdateClosed in
+      urlencoded
+      |> decode
+      >>= handle experiment session assignment participated_in_other_sessions
+      |> get_or_failwith_pool_error
+      |> Pool_event.handle_events database_label
+    in
+    let%lwt () =
+      let%lwt assignment =
+        find_assignment_by_contact_and_session contact_id session_id
+      in
+      let%lwt () =
+        to_urlencoded ~no_show:true ~participated:false ()
+        |> handle_update assignment
+      in
+      let expected =
+        assignment.Assignment.contact
+        |> update_num_show_ups ~step:(-1)
+        |> update_num_no_shows ~step:1
+        |> update_num_participations ~step:(-1)
+      in
+      let%lwt res = get_contact contact_id in
+      Alcotest.(
+        check Test_utils.contact "counters were manually updated" expected res)
+      |> Lwt.return
+    in
+    let%lwt () =
+      let%lwt assignment =
+        find_assignment_by_contact_and_session contact_id session_id
+      in
+      let%lwt () =
+        to_urlencoded ~no_show:false ~participated:true ()
+        |> handle_update assignment
+      in
+      let expected = contact in
+      let%lwt res = get_contact contact_id in
+      Alcotest.(
+        check Test_utils.contact "counters were manually updated" expected res)
+      |> Lwt.return
+    in
+    Lwt.return_unit
+  ;;
+
+  let close_followup_session _ () =
+    let%lwt contact, experiment, _, followup_session = get_entities () in
+    let%lwt () =
+      close_session
+        ~no_show:false
+        ~participated:true
+        followup_session
+        contact_id
+        experiment
+    in
+    let%lwt updated_contact = get_contact contact_id in
+    let expected = contact |> update_num_show_ups ~step:1 in
+    Alcotest.(
+      check
+        Test_utils.contact
+        "Follow up session closed: counters were updated"
+        expected
+        updated_contact)
+    |> Lwt.return
+  ;;
+
+  let update_follow_up_assignment_manually _ () =
+    let%lwt _, experiment, _, followup_session = get_entities () in
+    let participated_in_other_sessions assignments =
+      Assignment.(
+        contact_participation_in_other_assignments
+          database_label
+          ~exclude_assignments:assignments
+          experiment_id
+          contact_id
+        ||> get_or_failwith_pool_error)
+    in
+    let handle_update assignment urlencoded =
+      let%lwt participated_in_other_sessions =
+        participated_in_other_sessions [ assignment ]
+      in
+      let open UpdateClosed in
+      urlencoded
+      |> decode
+      >>= handle
+            experiment
+            followup_session
+            assignment
+            participated_in_other_sessions
+      |> get_or_failwith_pool_error
+      |> Pool_event.handle_events database_label
+    in
+    let%lwt assignment =
+      find_assignment_by_contact_and_session contact_id followup_session_id
+    in
+    let%lwt () =
+      to_urlencoded ~no_show:true ~participated:false ()
+      |> handle_update assignment
+    in
+    let expected =
+      assignment.Assignment.contact
+      |> update_num_show_ups ~step:(-1)
+      |> update_num_no_shows ~step:1
+    in
+    let%lwt res = get_contact contact_id in
+    Alcotest.(
+      check Test_utils.contact "counters were manually updated" expected res)
+    |> Lwt.return
+  ;;
 end
