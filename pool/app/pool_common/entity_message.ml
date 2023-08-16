@@ -214,6 +214,7 @@ type control =
   | MarkAsDeleted
   | More
   | NextPage
+  | OpenProfile
   | PauseAccount
   | PleaseSelect
   | PreviousPage
@@ -221,8 +222,8 @@ type control =
   | Publish of Field.t option
   | ReactivateAccount
   | Register
-  | RemoveFromWaitingList
   | Remove of Field.t option
+  | RemoveFromWaitingList
   | Reschedule of Field.t option
   | Resend of Field.t option
   | Reset

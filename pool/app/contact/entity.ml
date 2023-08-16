@@ -144,6 +144,7 @@ let id m = m.user.Sihl_user.id |> Pool_common.Id.of_string
 let fullname m = m.user |> User.user_fullname
 let firstname m = m.user |> User.user_firstname
 let lastname m = m.user |> User.user_lastname
+let lastname_firstname m = m.user |> User.user_lastname_firstname
 let email_address m = m.user.Sihl_user.email |> User.EmailAddress.of_string
 
 let sexp_of_t t =

@@ -312,4 +312,11 @@ let user_fullname user =
     (user |> user_lastname |> Lastname.value)
 ;;
 
+let user_lastname_firstname user =
+  Format.asprintf
+    "%s %s"
+    (user |> user_lastname |> Lastname.value)
+    (user |> user_firstname |> Firstname.value)
+;;
+
 let user_email_address user = user.Sihl_user.email |> EmailAddress.of_string

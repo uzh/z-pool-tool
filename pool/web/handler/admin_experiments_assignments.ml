@@ -8,14 +8,6 @@ let experiment_id = HttpUtils.find_id Experiment.Id.of_string Field.Experiment
 let session_id = HttpUtils.find_id Session.Id.of_string Field.Session
 let assignment_id = HttpUtils.find_id Assignment.Id.of_string Field.Assignment
 
-let can_view_contact_name database_label actor =
-  let open Utils.Lwt_result.Infix in
-  let has_permission set =
-    Guard.Persistence.validate database_label set actor ||> CCResult.is_ok
-  in
-  has_permission Contact.Guard.Access.read_name
-;;
-
 let list ?(marked_as_deleted = false) req =
   let open Utils.Lwt_result.Infix in
   let id =
@@ -28,16 +20,17 @@ let list ?(marked_as_deleted = false) req =
   let result ({ Pool_context.database_label; user; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, error_path)
     @@
-    let* actor = Pool_context.Utils.find_authorizable database_label user in
-    let has_permission set =
-      Guard.Persistence.validate database_label set actor ||> CCResult.is_ok
+    let%lwt access_contact_profiles =
+      Helpers.Guard.can_access_contact_profile database_label user
     in
-    let%lwt view_contact_name = has_permission Contact.Guard.Access.read_name in
+    let%lwt view_contact_name =
+      Helpers.Guard.can_view_contact_name database_label user
+    in
     let%lwt view_contact_email =
-      has_permission Contact.Guard.Access.read_email
+      Helpers.Guard.can_view_contact_email database_label user
     in
     let%lwt view_contact_cellphone =
-      has_permission Contact.Guard.Access.read_cellphone
+      Helpers.Guard.can_view_contact_cellphone database_label user
     in
     let* experiment = Experiment.find database_label id in
     let* sessions =
@@ -57,6 +50,7 @@ let list ?(marked_as_deleted = false) req =
           sessions
         ||> CCList.all_ok
         >|+ Page.Admin.Assignment.list
+              ~access_contact_profiles
               ~view_contact_name
               ~view_contact_email
               ~view_contact_cellphone
@@ -75,6 +69,7 @@ let list ?(marked_as_deleted = false) req =
           (Ok [])
           sessions
         >|+ Page.Admin.Assignment.marked_as_deleted
+              ~access_contact_profiles
               ~view_contact_name
               ~view_contact_email
               ~view_contact_cellphone
@@ -218,8 +213,9 @@ let close_htmx req =
       ||> HttpUtils.format_request_boolean_values boolean_fields
       ||> HttpUtils.remove_empty_values
     in
-    let* actor = Pool_context.Utils.find_authorizable database_label user in
-    let%lwt view_contact_name = can_view_contact_name database_label actor in
+    let%lwt view_contact_name =
+      Helpers.Guard.can_view_contact_name database_label user
+    in
     let* experiment = Experiment.find database_label experiment_id in
     let* session = Session.find database_label session_id in
     let* assignment = Assignment.find database_label assignment_id in
@@ -247,7 +243,7 @@ let close_htmx req =
       ~counters
       context
       experiment
-      view_contact_name
+      ~view_contact_name
       session
       assignment
     |> HttpUtils.Htmx.html_to_plain_text_response
@@ -266,8 +262,9 @@ let edit req =
   let result ({ Pool_context.database_label; user; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, redirect_path)
     @@
-    let* actor = Pool_context.Utils.find_authorizable database_label user in
-    let%lwt view_contact_name = can_view_contact_name database_label actor in
+    let%lwt view_contact_name =
+      Helpers.Guard.can_view_contact_name database_label user
+    in
     let* experiment = Experiment.find database_label experiment_id in
     let* session = Session.find database_label session_id in
     let* assignment = Assignment.find database_label assignment_id in

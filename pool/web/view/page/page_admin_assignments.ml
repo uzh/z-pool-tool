@@ -95,10 +95,13 @@ module Partials = struct
   ;;
 
   let identity view_contact_name contact id =
-    if view_contact_name then Contact.fullname contact else Id.value id
+    if view_contact_name
+    then Contact.lastname_firstname contact
+    else Id.value id
   ;;
 
   let overview_list
+    ?(access_contact_profiles = false)
     ?(view_contact_name = false)
     ?(view_contact_email = false)
     ?(view_contact_cellphone = false)
@@ -122,7 +125,6 @@ module Partials = struct
       |> Sihl.Web.externalize_path
     in
     let button_form
-      ?title
       ?(style = `Primary)
       suffix
       confirmable
@@ -137,22 +139,6 @@ module Partials = struct
           `Hidden
           Field.Redirect
       in
-      let icon = Icon.to_html icon in
-      let submit_content =
-        match control with
-        | None -> [ icon ]
-        | Some control ->
-          [ icon
-          ; span [ txt Pool_common.Utils.(control_to_string language control) ]
-          ]
-      in
-      let classnames = submit_type_to_class style :: [ "has-icon" ] in
-      let title =
-        CCOption.map (fun title -> title language) title
-        |> function
-        | None -> []
-        | Some title -> [ a_title title ]
-      in
       form
         ~a:
           [ a_action (action assignment suffix)
@@ -163,14 +149,32 @@ module Partials = struct
           ]
         [ csrf_element csrf ()
         ; hidden_redirect_input
-        ; button
-            ~a:([ a_button_type `Submit; a_class classnames ] @ title)
-            submit_content
+        ; submit_element
+            ~is_text:true
+            ~submit_type:style
+            ~has_icon:icon
+            language
+            control
+            ()
         ]
     in
     let edit m =
       let action = action m "edit" in
-      link_as_button action ~icon:Component.Icon.Create
+      link_as_button
+        action
+        ~is_text:true
+        ~control:(language, Pool_common.Message.(Edit None))
+        ~icon:Component.Icon.Create
+    in
+    let profile_link { Assignment.contact; _ } =
+      let action =
+        Format.asprintf "/admin/contacts/%s" Contact.(id contact |> Id.value)
+      in
+      link_as_button
+        action
+        ~is_text:true
+        ~control:(language, Pool_common.Message.OpenProfile)
+        ~icon:Component.Icon.Person
     in
     let cancel =
       button_form
@@ -180,22 +184,18 @@ module Partials = struct
           if session.Session.has_follow_ups
           then CancelAssignmentWithFollowUps
           else CancelAssignment)
-        (Some (Message.Cancel None))
+        (Message.Cancel None)
         Component.Icon.CloseCircle
     in
     let mark_as_deleted =
-      let title language =
-        Utils.control_to_string language Message.MarkAsDeleted
-      in
       button_form
-        ~title
         ~style:`Error
         "mark-as-deleted"
         I18n.(
           if session.Session.has_follow_ups
           then MarkAssignmentWithFollowUpsAsDeleted
           else MarkAssignmentAsDeleted)
-        None
+        Message.MarkAsDeleted
         Component.Icon.Trash
     in
     match CCList.is_empty assignments with
@@ -245,12 +245,13 @@ module Partials = struct
             in
             let buttons =
               [ editable, edit
+              ; access_contact_profiles, profile_link
               ; cancelable assignment, cancel
               ; deletable assignment, mark_as_deleted
               ]
               |> CCList.filter_map (fun (active, form) ->
                 if not active then None else Some (form assignment))
-              |> div ~a:[ a_class [ "flexrow"; "flex-gap"; "inline-flex" ] ]
+              |> Component.ButtonGroup.dropdown
               |> CCList.pure
             in
             base @ buttons)
@@ -270,6 +271,7 @@ module Partials = struct
   ;;
 
   let grouped_overview_lists
+    ?access_contact_profiles
     ?view_contact_name
     ?view_contact_email
     ?view_contact_cellphone
@@ -297,6 +299,7 @@ module Partials = struct
           ~a:attrs
           [ h3 ~a:[ a_class [ "heading-3" ] ] [ txt (session |> to_title) ]
           ; overview_list
+              ?access_contact_profiles
               ?view_contact_name
               ?view_contact_email
               ?view_contact_cellphone
@@ -314,6 +317,7 @@ module Partials = struct
 end
 
 let list
+  ?access_contact_profiles
   ?view_contact_name
   ?view_contact_email
   ?view_contact_cellphone
@@ -336,6 +340,7 @@ let list
               ]
           ]
       ; Partials.grouped_overview_lists
+          ?access_contact_profiles
           ?view_contact_name
           ?view_contact_email
           ?view_contact_cellphone
@@ -355,6 +360,7 @@ let list
 ;;
 
 let marked_as_deleted
+  ?access_contact_profiles
   ?view_contact_name
   ?view_contact_email
   ?view_contact_cellphone
@@ -372,6 +378,7 @@ let marked_as_deleted
     in
     let list =
       Partials.grouped_overview_lists
+        ?access_contact_profiles
         ?view_contact_name
         ?view_contact_email
         ?view_contact_cellphone

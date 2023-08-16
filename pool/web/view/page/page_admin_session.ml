@@ -589,6 +589,7 @@ let new_form
 ;;
 
 let detail
+  ?access_contact_profiles
   ?view_contact_name
   ?view_contact_email
   ?view_contact_cellphone
@@ -773,6 +774,7 @@ let detail
     let assignment_list =
       Page_admin_assignments.(
         Partials.overview_list
+          ?access_contact_profiles
           ?view_contact_name
           ?view_contact_email
           ?view_contact_cellphone
@@ -1000,7 +1002,7 @@ let session_counters
 let close_assignment_htmx_row
   { Pool_context.language; csrf; _ }
   (experiment : Experiment.t)
-  view_contact_name
+  ~view_contact_name
   session
   ?counters
   ({ Assignment.id; no_show; participated; external_data_id; contact; _ } as
@@ -1021,7 +1023,7 @@ let close_assignment_htmx_row
   in
   let default_bool fnc = CCOption.map_or ~default:false fnc in
   let identity =
-    if view_contact_name then Contact.fullname contact else Id.value id
+    Page_admin_assignments.Partials.identity view_contact_name contact id
   in
   let action =
     Format.asprintf "%s/assignments/%s/close" session_path (Id.value id)
@@ -1138,7 +1140,11 @@ let close
         ]
     | assignments ->
       CCList.map
-        (close_assignment_htmx_row context experiment view_contact_name session)
+        (close_assignment_htmx_row
+           context
+           experiment
+           ~view_contact_name
+           session)
         assignments
       |> div ~a:[ a_class [ "flexcolumn"; "striped"; "gap" ] ]
       |> fun table ->

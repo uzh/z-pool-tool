@@ -544,6 +544,7 @@ let control_to_string = function
   | MarkAsDeleted -> format_submit "mark as deleted" None
   | More -> format_submit "more" None
   | NextPage -> "next"
+  | OpenProfile -> "show profile"
   | PauseAccount -> format_submit "pause account" None
   | PleaseSelect -> format_submit "please select" None
   | PreviousPage -> "previous"

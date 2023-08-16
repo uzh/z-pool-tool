@@ -17,3 +17,19 @@ let find_roles_by_user database_label user =
 let find_roles_of_ctx { Pool_context.database_label; user; _ } =
   find_roles_by_user database_label user
 ;;
+
+let has_permission set database_label user =
+  let open Utils.Lwt_result.Infix in
+  Pool_context.Utils.find_authorizable database_label user
+  >>= Guard.Persistence.validate database_label set
+  ||> CCResult.is_ok
+;;
+
+let can_view_contact_name = has_permission Contact.Guard.Access.read_name
+let can_view_contact_email = has_permission Contact.Guard.Access.read_email
+
+let can_view_contact_cellphone =
+  has_permission Contact.Guard.Access.read_cellphone
+;;
+
+let can_access_contact_profile = has_permission Contact.Guard.Access.index

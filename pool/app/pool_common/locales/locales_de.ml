@@ -581,6 +581,7 @@ let control_to_string = function
   | MarkAsDeleted -> format_submit "als gelöscht markieren" None
   | More -> "mehr"
   | NextPage -> "weiter"
+  | OpenProfile -> "Profil anzeigen"
   | PauseAccount -> "Account pausieren"
   | PleaseSelect -> "bitte wählen"
   | PreviousPage -> "zurück"

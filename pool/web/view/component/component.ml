@@ -1,3 +1,4 @@
+module ButtonGroup = Component_button_group
 module Calendar = Component_calendar
 module Filter = Component_filter
 module Icon = Component_icon
