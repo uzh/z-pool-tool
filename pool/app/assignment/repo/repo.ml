@@ -128,7 +128,7 @@ module Sql = struct
     |> select_sql
          ~joins:
            {sql|JOIN user_users ON pool_assignments.contact_uuid = user_users.uuid|sql}
-    |> Format.asprintf "%s\n ORDER BY user_users.given_name, user_users.name"
+    |> Format.asprintf "%s\n ORDER BY user_users.name, user_users.given_name"
     |> Caqti_type.string ->* RepoEntity.t
   ;;
 
