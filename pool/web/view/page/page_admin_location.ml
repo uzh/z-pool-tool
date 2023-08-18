@@ -347,7 +347,12 @@ module FileList = struct
     @ [ add_file_btn language location_id ]
   ;;
 
-  let row csrf location_id (Mapping.{ id; label; language; _ } as file) =
+  let row
+    page_language
+    csrf
+    location_id
+    (Mapping.{ id; label; language; _ } as file)
+    =
     let delete_form =
       Tyxml.Html.form
         ~a:
@@ -360,11 +365,12 @@ module FileList = struct
                |> Sihl.Web.externalize_path)
           ; a_user_data
               "confirmable"
-              Pool_common.(Utils.confirmable_to_string language I18n.DeleteFile)
+              Pool_common.(
+                Utils.confirmable_to_string page_language I18n.DeleteFile)
           ]
         [ csrf_element csrf ()
         ; submit_element
-            language
+            page_language
             Message.(Delete (Some Field.File))
             ~submit_type:`Error
             ()
@@ -392,7 +398,7 @@ module FileList = struct
           ; div [ add_file_btn language id ]
           ]
       | false ->
-        let body = CCList.map (row csrf id) files in
+        let body = CCList.map (row language csrf id) files in
         Table.horizontal_table
           `Striped
           ~align_last_end:true
@@ -505,6 +511,24 @@ let detail (location : Pool_location.t) Pool_context.{ csrf; language; _ } =
          "/admin/locations/%s/edit"
          (location.Pool_location.id |> Id.value))
   in
+  let public_page_link =
+    p
+      [ a
+          ~a:
+            [ a_href
+                (Format.asprintf
+                   "/location/%s"
+                   (location.Pool_location.id |> Id.value)
+                 |> Sihl.Web.externalize_path)
+            ; a_target "_blank"
+            ]
+          [ txt
+              Pool_common.(
+                Utils.control_to_string language Message.PublicPage
+                |> CCString.capitalize_ascii)
+          ]
+      ]
+  in
   div
     ~a:[ a_class [ "safety-margin"; "trim" ] ]
     [ div
@@ -525,6 +549,7 @@ let detail (location : Pool_location.t) Pool_context.{ csrf; language; _ } =
                     ]
                 ; location_details
                 ]
+            ; public_page_link
             ; FileList.create csrf language location
             ]
         ; Component.Calendar.(create (Location location.Pool_location.id))
