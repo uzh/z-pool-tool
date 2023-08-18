@@ -26,6 +26,7 @@ let data = defafult_range |> CCList.map create_contact
 let contact_ids = CCList.map (fun (id, _, _, _, _, _) -> id) data
 
 let create ?contact_data db_pool =
+  let open Contact in
   let data = CCOption.value ~default:data contact_data in
   let open Utils.Lwt_result.Infix in
   let ctx = Pool_database.to_ctx db_pool in
@@ -67,19 +68,26 @@ let create ?contact_data db_pool =
           contacts)
       []
       data
-    >|> Lwt_list.iter_s (Contact.handle_event db_pool)
+    >|> Lwt_list.iter_s (handle_event db_pool)
   in
   Lwt_list.map_s
     (fun (id, _, _, _, _, _) ->
-      let%lwt contact = Contact.find db_pool id in
+      let%lwt contact = find db_pool id in
       match contact with
       | Ok contact ->
-        [ Contact.EmailVerified contact
-        ; Contact.TermsAccepted contact
-        ; Contact.Verified contact
-        ]
-        |> CCOption.pure
-        |> Lwt.return
+        let%lwt _ =
+          Service.User.update
+            ~ctx
+            Sihl_user.{ contact.user with confirmed = true }
+        in
+        let contact =
+          { contact with
+            email_verified = Some (Pool_user.EmailVerified.create_now ())
+          ; terms_accepted_at = Some (User.TermsAccepted.create_now ())
+          ; verified = Some (Pool_user.Verified.create_now ())
+          }
+        in
+        [ Updated contact ] |> CCOption.pure |> Lwt.return
       | Error _ -> Lwt.return_none)
     data
   ||> CCList.filter_map CCFun.id
