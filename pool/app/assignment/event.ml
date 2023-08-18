@@ -1,21 +1,14 @@
 open Entity
 
 type event =
-  | AttendanceSet of (t * NoShow.t * Participated.t * ExternalDataId.t option)
   | Canceled of t
   | Created of (t * Session.Id.t)
   | MarkedAsDeleted of t
   | ExternalDataIdUpdated of t * ExternalDataId.t option
+  | Updated of t
 [@@deriving eq, show, variants]
 
 let handle_event pool : event -> unit Lwt.t = function
-  | AttendanceSet (assignment, no_show, participated, external_data_id) ->
-    { assignment with
-      participated = Some participated
-    ; no_show = Some no_show
-    ; external_data_id
-    }
-    |> Repo.update pool
   | Canceled assignment ->
     let%lwt () =
       (* TODO: Check timestamps? Issue #126 *)
@@ -35,4 +28,5 @@ let handle_event pool : event -> unit Lwt.t = function
   | MarkedAsDeleted assignment -> assignment.id |> Repo.marked_as_deleted pool
   | ExternalDataIdUpdated (assignment, external_data_id) ->
     { assignment with external_data_id } |> Repo.update pool
+  | Updated t -> Repo.update pool t
 ;;

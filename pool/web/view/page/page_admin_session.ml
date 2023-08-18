@@ -7,11 +7,13 @@ let session_title (s : Session.t) =
   Pool_common.I18n.SessionDetailTitle (s.Session.start |> Session.Start.value)
 ;;
 
-let session_path experiment session =
+let session_counter_id = "session-counter-table"
+
+let session_path experiment_id session_id =
   Format.asprintf
     "/admin/experiments/%s/sessions/%s"
-    Experiment.(Id.value experiment.id)
-    Session.(session.id |> Id.value)
+    Experiment.(Id.value experiment_id)
+    Session.(session_id |> Id.value)
 ;;
 
 let location_select language options selected () =
@@ -587,6 +589,7 @@ let new_form
 ;;
 
 let detail
+  ?access_contact_profiles
   ?view_contact_name
   ?view_contact_email
   ?view_contact_cellphone
@@ -642,6 +645,27 @@ let detail
                 ] ))
           session.follow_up_to
       in
+      let counters =
+        let length lst = lst |> CCList.length |> CCInt.to_string |> txt in
+        let open Assignment in
+        let assignment_count = Field.AssignmentCount, assignments |> length in
+        match session.Session.closed_at with
+        | None -> [ assignment_count ]
+        | Some (_ : Ptime.t) ->
+          assignment_count
+          :: [ ( Field.NoShowCount
+               , assignments
+                 |> CCList.filter (fun { no_show; _ } ->
+                   no_show |> CCOption.map_or ~default:false NoShow.value)
+                 |> length )
+             ; ( Field.Participated
+               , assignments
+                 |> CCList.filter (fun { participated; _ } ->
+                   participated
+                   |> CCOption.map_or ~default:false Participated.value)
+                 |> length )
+             ]
+      in
       let rows =
         let amount amt = amt |> ParticipantAmount.value |> string_of_int in
         [ ( Field.Start
@@ -677,7 +701,7 @@ let detail
           |> CCOption.map (fun c ->
             Field.ClosedAt, Utils.Time.formatted_date_time c |> txt)
         in
-        rows @ ([ canceled; closed ] |> CCList.filter_map CCFun.id)
+        rows @ ([ canceled; closed ] |> CCList.filter_map CCFun.id) @ counters
       in
       Table.vertical_table `Striped language ~align_top:true
       @@ CCOption.map_or ~default:rows (CCList.cons' rows) parent
@@ -750,6 +774,7 @@ let detail
     let assignment_list =
       Page_admin_assignments.(
         Partials.overview_list
+          ?access_contact_profiles
           ?view_contact_name
           ?view_contact_email
           ?view_contact_cellphone
@@ -803,7 +828,9 @@ let edit
   =
   let open Message_template in
   let session_path =
-    Format.asprintf "%s/%s" (session_path experiment session)
+    Format.asprintf
+      "%s/%s"
+      (session_path experiment.Experiment.id session.Session.id)
   in
   let form =
     div
@@ -941,6 +968,130 @@ let follow_up
          experiment)
 ;;
 
+let session_counters
+  language
+  { Assignment.total; num_no_shows; num_participations }
+  =
+  let field_to_string field =
+    Pool_common.Utils.field_to_string language field
+    |> CCString.capitalize_ascii
+    |> txt
+  in
+  div
+    ~a:
+      [ a_class [ "grid-col-2"; "gap" ]
+      ; a_id session_counter_id
+      ; a_user_data "hx-swap-oob" "true"
+      ]
+    [ div
+        ~a:[ a_class [ "flexcolumn" ] ]
+        ([ Field.Total, total
+         ; Field.NoShow, num_no_shows
+         ; Field.Participated, num_participations
+         ]
+         |> CCList.map (fun (field, value) ->
+           tr
+             [ td [ strong [ field_to_string field ] ]
+             ; td [ CCInt.to_string value |> txt ]
+             ])
+         |> table ~a:[ a_class [ "table"; "simple" ] ]
+         |> CCList.return)
+    ]
+;;
+
+let close_assignment_htmx_row
+  { Pool_context.language; csrf; _ }
+  (experiment : Experiment.t)
+  ~view_contact_name
+  session
+  ?counters
+  ({ Assignment.id; no_show; participated; external_data_id; contact; _ } as
+   assignment)
+  =
+  let open Assignment in
+  let open Pool_common.Utils in
+  let errors =
+    validate experiment assignment
+    |> function
+    | Ok () -> None
+    | Error err -> Some err
+  in
+  let session_path = session_path experiment.Experiment.id session.Session.id in
+  let checkbox_element field value =
+    let identifier = Format.asprintf "%s-%s" (Field.show field) (Id.value id) in
+    Input.checkbox_element ~value ~identifier language field
+  in
+  let default_bool fnc = CCOption.map_or ~default:false fnc in
+  let identity =
+    Page_admin_assignments.Partials.identity view_contact_name contact id
+  in
+  let action =
+    Format.asprintf "%s/assignments/%s/close" session_path (Id.value id)
+    |> Sihl.Web.externalize_path
+  in
+  let external_data_field =
+    let open Experiment in
+    match experiment.external_data_required |> ExternalDataRequired.value with
+    | false -> txt ""
+    | true ->
+      let value =
+        CCOption.map_or
+          ~default:""
+          Assignment.ExternalDataId.value
+          external_data_id
+      in
+      let field = Field.ExternalDataId in
+      div
+        ~a:[ a_class [ "form-group"; "flex-basis-30" ] ]
+        [ input
+            ~a:
+              [ a_input_type `Text
+              ; a_value value
+              ; a_name Field.(show field)
+              ; a_placeholder
+                  (field_to_string language field |> CCString.capitalize_ascii)
+              ]
+            ()
+        ]
+  in
+  let errors =
+    errors
+    |> CCOption.map_or ~default:(txt "") (fun errors ->
+      let error_to_item err =
+        error_to_string language err |> txt |> CCList.return |> li
+      in
+      CCList.map error_to_item errors |> ul ~a:[ a_class [ "color-red" ] ])
+  in
+  form
+    ~a:
+      [ a_user_data "hx-post" action
+      ; a_user_data "hx-trigger" "change"
+      ; a_user_data "hx-swap" "outerHTML"
+      ; a_user_data "assignment" (Id.value id)
+      ; a_class [ "flexcolumn"; "stack-sm"; "inset-sm" ]
+      ]
+    [ div
+        ~a:[ a_class [ "flexrow"; "flex-gap-sm"; "flexcolumn-mobile" ] ]
+        [ csrf_element csrf ()
+        ; div
+            ~a:[ a_class [ "flex-basis-40"; "grow" ] ]
+            [ strong [ txt identity ] ]
+        ; div
+            ~a:[ a_class [ "flexcolumn"; "stack-xs"; "flex-basis-30" ] ]
+            [ checkbox_element
+                Message.Field.Participated
+                (default_bool Participated.value participated)
+            ; checkbox_element
+                Message.Field.NoShow
+                (default_bool NoShow.value no_show)
+            ]
+        ; external_data_field
+        ]
+    ; errors
+    ; counters |> CCOption.map_or ~default:(txt "") (session_counters language)
+    ]
+;;
+
 let close
   ?(view_contact_name = false)
   ({ Pool_context.language; csrf; _ } as context)
@@ -948,199 +1099,108 @@ let close
   (session : Session.t)
   assignments
   participation_tags
+  counters
   =
   let open Pool_common in
   let control = Message.(Close (Some Field.Session)) in
-  let form =
-    let checkbox_element id field =
-      div
-        [ input
-            ~a:
-              [ a_input_type `Checkbox
-              ; a_name Message.Field.(array_key field)
-              ; a_value (id |> Assignment.Id.value)
+  let session_path = session_path experiment.Experiment.id session.Session.id in
+  let tags_html =
+    let participation_tags_list =
+      match participation_tags with
+      | [] ->
+        Utils.hint_to_string
+          language
+          I18n.SessionCloseNoParticipationTagsSelected
+        |> txt
+      | tags ->
+        let tags = Component.Tag.tag_list language tags in
+        div
+          [ p
+              [ Utils.hint_to_string
+                  language
+                  I18n.SessionCloseParticipationTagsSelected
+                |> txt
               ]
-            ()
-        ]
-    in
-    let tags_html =
-      let participation_tags_list =
-        match participation_tags with
-        | [] ->
-          Utils.hint_to_string
-            language
-            I18n.SessionCloseNoParticipationTagsSelected
-          |> txt
-        | tags ->
-          let tags = Component.Tag.tag_list language tags in
-          div
-            [ p
-                [ Utils.hint_to_string
-                    language
-                    I18n.SessionCloseParticipationTagsSelected
-                  |> txt
-                ]
-            ; tags
-            ]
-      in
-      div
-        [ h4
-            ~a:[ a_class [ "heading-4" ] ]
-            [ txt (Utils.nav_link_to_string language I18n.Tags) ]
-        ; participation_tags_list
-        ]
-    in
-    let table =
-      let link (id, label) =
-        span
-          ~a:[ a_id id ]
-          [ abbr
-              ~a:
-                [ a_title
-                    Pool_common.(
-                      Utils.control_to_string language Message.ToggleAll
-                      |> CCString.capitalize_ascii)
-                ]
-              [ txt label ]
+          ; tags
           ]
-      in
-      let external_data_id_head, external_data_id_row =
-        if Experiment.external_data_required_value experiment
-        then
-          ( [ Utils.field_to_string_capitalized
-                language
-                Message.Field.ExternalDataId
-              |> txt
-            ]
-          , fun label data_id ->
-              [ div
-                  ~a:[ a_class [ "form-group" ] ]
-                  [ input
-                      ~a:
-                        [ a_id label
-                        ; a_name label
-                        ; a_required ()
-                        ; a_input_type `Text
-                        ; a_value
-                            (CCOption.map_or
-                               ~default:""
-                               Assignment.ExternalDataId.value
-                               data_id)
-                        ]
-                      ()
-                  ]
-              ] )
-        else [], fun _ _ -> []
-      in
-      let thead =
-        (txt "" :: external_data_id_head)
-        @ ([ "all-no-show", "NS"; "all-participated", "P" ] |> CCList.map link)
-      in
-      CCList.map
-        (fun ({ Assignment.id; contact; external_data_id; _ } : Assignment.t) ->
-          let external_data_id_label =
-            Format.asprintf
-              "%s-%s"
-              Message.Field.(ExternalDataId |> show)
-              (Assignment.Id.value id)
-          in
-          let identity =
-            if view_contact_name
-            then Contact.fullname contact
-            else Assignment.Id.value id
-          in
-          [ div [ strong [ txt identity ] ] ]
-          @ external_data_id_row external_data_id_label external_data_id
-          @ [ checkbox_element id Message.Field.NoShow
-            ; checkbox_element id Message.Field.Participated
-            ])
-        assignments
-      |> Table.horizontal_table ~thead `Striped
-      |> fun table ->
-      form
-        ~a:
-          [ a_method `Post
-          ; a_class [ "stack" ]
-          ; a_action
-              (Format.asprintf
-                 "/admin/experiments/%s/sessions/%s/close"
-                 (Experiment.Id.value experiment.Experiment.id)
-                 Session.(Id.value session.id)
-               |> Sihl.Web.externalize_path)
-          ; a_user_data "detect-unsaved-changes" ""
-          ]
-        [ tags_html
-        ; Input.csrf_element csrf ()
-        ; table
-        ; div
-            ~a:[ a_class [ "flexrow"; "justify-end" ] ]
-            [ Input.submit_element language control ~submit_type:`Primary () ]
-        ]
-    in
-    let scripts =
-      {js|
-        const noShow = document.querySelectorAll('[name="no_show[]"]');
-        for (let i = 0; i < noShow.length; i++) {
-            let elm = noShow[i];
-            let target = document.querySelector(`[name="participated[]"][value="${elm.value}"]`)
-            elm.addEventListener("change", () => {
-                if (elm.checked) {
-                    target.checked = false;
-                }
-            })
-        }
-
-        const participated = document.querySelectorAll('[name="participated[]"]');
-        for (let i = 0; i < participated.length; i++) {
-            let elm = participated[i];
-            let target = document.querySelector(`[name="no_show[]"][value="${elm.value}"]`)
-            elm.addEventListener("change", () => {
-                if (elm.checked) {
-                    target.checked = false;
-                }
-            })
-        }
-
-        const isActive = (elm) => {
-            return elm.dataset.active;
-        }
-
-        const setToggleState = (elm, state) => {
-            if (state) {
-                elm.dataset.active = true;
-            } else {
-                elm.removeAttribute("data-active");
-            }
-        }
-
-        function toggleColumnValues(elements, value) {
-            elements.forEach((elm) => {
-                var event = new Event('change');
-                elm.checked = value;
-                elm.dispatchEvent(event);
-            });
-        }
-
-        const toggleNoShow = document.getElementById("all-no-show");
-        const toggleParticipated = document.getElementById("all-participated");
-
-        toggleNoShow.addEventListener("click", () => {
-            const newState = !isActive(toggleNoShow);
-            toggleColumnValues(noShow, newState);
-            setToggleState(toggleNoShow, newState);
-            setToggleState(toggleParticipated, !newState);
-        })
-
-        toggleParticipated.addEventListener("click", () => {
-            const newState = !isActive(toggleParticipated);
-            toggleColumnValues(participated, newState);
-            setToggleState(toggleParticipated, newState);
-            setToggleState(toggleNoShow, !newState);
-        })
-      |js}
     in
     div
       [ h4
+          ~a:[ a_class [ "heading-4" ] ]
+          [ txt (Utils.nav_link_to_string language I18n.Tags) ]
+      ; participation_tags_list
+      ]
+  in
+  let table =
+    match assignments with
+    | [] ->
+      p
+        [ txt
+            Pool_common.(Utils.text_to_string language I18n.AssignmentListEmpty)
+        ]
+    | assignments ->
+      CCList.map
+        (close_assignment_htmx_row
+           context
+           experiment
+           ~view_contact_name
+           session)
+        assignments
+      |> div ~a:[ a_class [ "flexcolumn"; "striped"; "gap" ] ]
+      |> fun table ->
+      let counters = session_counters language counters in
+      let scripts =
+        Format.asprintf
+          {js|
+            const noShow = "%s";
+            const participated = "%s";
+
+            const forms = document.querySelectorAll("form[data-assignment]");
+
+            document.addEventListener('htmx:beforeRequest', (e) => {
+              const form = e.detail.target;
+              const trigger = e.detail.requestConfig.triggeringEvent.srcElement;
+              switch (trigger.name) {
+                case noShow:
+                  if(trigger.checked) {
+                    e.detail.requestConfig.parameters['participated'] = false
+                  }
+                  break;
+                case participated:
+                  if(trigger.checked) {
+                    e.detail.requestConfig.parameters[noShow] = false
+                  }
+                  break;
+                default:
+                  return;
+              }
+            });
+          |js}
+          Field.(show NoShow)
+          Field.(show Participated)
+      in
+      div [ table; counters; script (Unsafe.data scripts) ]
+  in
+  let submit_session_close =
+    form
+      ~a:
+        [ a_method `Post
+        ; a_class [ "stack" ]
+        ; a_action
+            (Format.asprintf "%s/close" session_path
+             |> Sihl.Web.externalize_path)
+        ; a_user_data "detect-unsaved-changes" ""
+        ]
+      [ Input.csrf_element csrf ()
+      ; div
+          ~a:[ a_class [ "flexrow"; "justify-end" ] ]
+          [ Input.submit_element language control ~submit_type:`Primary () ]
+      ]
+  in
+  [ div
+      [ p [ txt (session |> session_title |> Utils.text_to_string language) ]
+      ; tags_html
+      ; h4
           ~a:[ a_class [ "heading-4" ] ]
           [ txt
               (Utils.field_to_string language Message.Field.Participants
@@ -1154,14 +1214,9 @@ let close
           [ Utils.hint_to_string language I18n.SessionCloseHints |> Unsafe.data
           ]
       ; table
-      ; script (Unsafe.data scripts)
+      ; submit_session_close
       ]
-  in
-  div
-    [ p [ txt (session |> session_title |> Utils.text_to_string language) ]
-    ; form
-    ]
-  |> CCList.return
+  ]
   |> Layout.Experiment.(create context (Control control) experiment)
 ;;
 

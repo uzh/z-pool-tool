@@ -27,6 +27,7 @@ type error =
   | AlreadyStarted
   | AssignmentIsCanceled
   | AssignmentIsClosed
+  | AssignmentsHaveErrors
   | Authorization of string
   | CannotBeDeleted of Field.t
   | Conformist of (Field.t * error) list
@@ -99,6 +100,7 @@ type error =
   | Retrieve of Field.t
   | SessionAlreadyCanceled of string
   | SessionAlreadyClosed of string
+  | SessionNotClosed
   | SessionFullyBooked
   | SessionHasAssignments
   | SessionHasFollowUps
@@ -212,6 +214,7 @@ type control =
   | MarkAsDeleted
   | More
   | NextPage
+  | OpenProfile
   | PauseAccount
   | PleaseSelect
   | PreviousPage
@@ -219,8 +222,8 @@ type control =
   | Publish of Field.t option
   | ReactivateAccount
   | Register
-  | RemoveFromWaitingList
   | Remove of Field.t option
+  | RemoveFromWaitingList
   | Reschedule of Field.t option
   | Resend of Field.t option
   | Reset

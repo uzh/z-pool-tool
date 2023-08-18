@@ -880,22 +880,9 @@ let cancel_with_email_and_text_notification () =
     res
 ;;
 
-let close_before_start () =
-  let experiment = Test_utils.Model.create_experiment () in
-  let session = Test_utils.Model.(create_session ~start:(in_an_hour ())) () in
-  let res =
-    Cqrs_command.Assignment_command.SetAttendance.handle
-      experiment
-      session
-      []
-      []
-  in
-  check_result (Error Pool_common.Message.SessionNotStarted) res
-;;
-
 let close_valid () =
   let experiment = Test_utils.Model.create_experiment () in
-  let open Cqrs_command.Assignment_command.SetAttendance in
+  let open Cqrs_command.Session_command.Close in
   let session = Test_utils.Model.(create_session ~start:(an_hour_ago ())) () in
   let res = handle experiment session [] [] in
   check_result (Ok [ Session.Closed session |> Pool_event.session ]) res
@@ -903,7 +890,7 @@ let close_valid () =
 
 let close_valid_with_assignments () =
   let experiment = Test_utils.Model.create_experiment () in
-  let open Cqrs_command.Assignment_command in
+  let open Cqrs_command.Session_command in
   let open Assignment in
   let session = Test_utils.Model.(create_session ~start:(an_hour_ago ())) () in
   let assignments =
@@ -912,25 +899,16 @@ let close_valid_with_assignments () =
       ()
       |> Test_utils.Model.create_contact
       |> create
+           ~no_show:(NoShow.create false)
+           ~participated:(Participated.create participated)
       |> fun assignment ->
-      ( assignment
-      , NoShow.create false
-      , Participated.create participated
-      , Assignment.IncrementParticipationCount.create true
-      , None
-      , None ))
+      assignment, Assignment.IncrementParticipationCount.create true, None)
   in
   let tags = Tag_test.Data.Tag.create_with_description () |> CCList.return in
-  let res = SetAttendance.handle experiment session tags assignments in
+  let res = Close.handle experiment session tags assignments in
   let expected =
     CCList.fold_left
-      (fun events
-           ( (assignment : Assignment.t)
-           , no_show
-           , participated
-           , _
-           , (_ : t list option)
-           , (_ : ExternalDataId.t option) ) ->
+      (fun events ((assignment : Assignment.t), _, (_ : t list option)) ->
         let contact_event =
           let open Contact in
           let contact =
@@ -938,7 +916,7 @@ let close_valid_with_assignments () =
             |> update_num_show_ups ~step:1
             |> update_num_participations ~step:1
           in
-          Updated contact |> Pool_event.contact
+          Contact.Updated contact |> Pool_event.contact
         in
         let tag_events =
           let open Tags in
@@ -951,10 +929,7 @@ let close_valid_with_assignments () =
             |> Pool_event.tags)
         in
         events
-        @ [ AttendanceSet (assignment, no_show, participated, None)
-            |> Pool_event.assignment
-          ; contact_event
-          ]
+        @ [ Updated assignment |> Pool_event.assignment; contact_event ]
         @ tag_events)
       [ Session.Closed session |> Pool_event.session ]
       assignments
@@ -970,23 +945,16 @@ let close_with_deleted_assignment () =
     let open Assignment in
     let base = Test_utils.Model.create_assignment () in
     let assignment =
-      { base with marked_as_deleted = MarkedAsDeleted.create true }
+      { base with
+        marked_as_deleted = MarkedAsDeleted.create true
+      ; no_show = Some (NoShow.create false)
+      ; participated = Some (Participated.create true)
+      }
     in
-    let no_show = NoShow.create false in
-    let participated = Participated.create true in
-    ( assignment
-    , no_show
-    , participated
-    , Assignment.IncrementParticipationCount.create false
-    , None
-    , None )
+    assignment, Assignment.IncrementParticipationCount.create false, None
   in
   let res =
-    Cqrs_command.Assignment_command.SetAttendance.handle
-      experiment
-      session
-      []
-      [ command ]
+    Cqrs_command.Session_command.Close.handle experiment session [] [ command ]
   in
   check_result
     (Error Pool_common.Message.(IsMarkedAsDeleted Field.Assignment))
@@ -994,41 +962,43 @@ let close_with_deleted_assignment () =
 ;;
 
 let validate_invalid_participation () =
-  let open Cqrs_command.Assignment_command.SetAttendance in
+  let open Cqrs_command.Session_command.Close in
   let open Assignment in
   let experiment = Test_utils.Model.create_experiment () in
   let session = Test_utils.Model.(create_session ~start:(an_hour_ago ())) () in
+  let assignment =
+    Test_utils.Model.create_contact ()
+    |> create
+         ~no_show:(NoShow.create true)
+         ~participated:(Participated.create true)
+  in
   let participation =
-    ( Test_utils.Model.create_contact () |> create
-    , NoShow.create true
-    , Participated.create true
-    , Assignment.IncrementParticipationCount.create false
-    , None
-    , None )
+    assignment, Assignment.IncrementParticipationCount.create false, None
   in
   let res = handle experiment session [] [ participation ] in
-  let expected =
-    Error Pool_common.Message.(MutuallyExclusive Field.(Participated, NoShow))
-  in
+  let expected = Error Pool_common.Message.AssignmentsHaveErrors in
   check_result expected res
 ;;
 
 let close_unparticipated_with_followup () =
-  let open Cqrs_command.Assignment_command.SetAttendance in
+  let open Cqrs_command.Session_command.Close in
   let open Test_utils in
   let open Assignment in
   let experiment = Test_utils.Model.create_experiment () in
   let session = Test_utils.Model.(create_session ~start:(an_hour_ago ())) () in
   let contact = Model.create_contact () in
   let assignment = Model.create_assignment ~contact () in
+  let assignment =
+    { assignment with
+      no_show = Some (NoShow.create false)
+    ; participated = Some (Participated.create false)
+    }
+  in
   let follow_up = Model.create_assignment ~contact () in
   let participation =
     ( assignment
-    , NoShow.create false
-    , Participated.create false
     , Assignment.IncrementParticipationCount.create true
-    , Some [ follow_up ]
-    , None )
+    , Some [ follow_up ] )
   in
   let res = handle experiment session [] [ participation ] in
   let expected =
@@ -1040,9 +1010,7 @@ let close_unparticipated_with_followup () =
     in
     Ok
       [ Session.Closed session |> Pool_event.session
-      ; Assignment.AttendanceSet
-          (assignment, NoShow.create false, Participated.create false, None)
-        |> Pool_event.assignment
+      ; Assignment.Updated assignment |> Pool_event.assignment
       ; Contact.Updated contact |> Pool_event.contact
       ; Assignment.MarkedAsDeleted follow_up |> Pool_event.assignment
       ]
@@ -1423,10 +1391,9 @@ let close_session_check_contact_figures _ () =
   in
   let%lwt () =
     let open CCList in
+    let open Assignment in
     contacts
     |> map (fun (contact, status) ->
-      let open Assignment in
-      let open Contact in
       let no_show, participated, increment_num_participatons =
         match status with
         | `Participated ->
@@ -1450,9 +1417,15 @@ let close_session_check_contact_figures _ () =
           increment_num_participatons
         |> Test_utils.get_or_failwith_pool_error
       in
-      [ AttendanceSet (find_assignment contact, no_show, participated, None)
-        |> Pool_event.assignment
-      ; Updated contact |> Pool_event.contact
+      let assignment = find_assignment contact in
+      let assignment =
+        { assignment with
+          no_show = Some no_show
+        ; participated = Some participated
+        }
+      in
+      [ Updated assignment |> Pool_event.assignment
+      ; Contact.Updated contact |> Pool_event.contact
       ])
     |> flatten
     |> cons (Session.Closed session |> Pool_event.session)

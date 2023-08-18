@@ -3,6 +3,12 @@ open Entity_i18n
 let to_string = function
   | Address -> "Addresse"
   | AdminComment -> "Administrator Kommentar"
+  | AssignmentEditTagsWarning ->
+    "Bitte beachten Sie, dass durch die Bearbeitung der Anmeldung keine Tags \
+     zugewiesen oder entfernt werden, die durch die Teilnahme an dieser \
+     Session dem Kontakt zugewiesen wurden. Wenn dies erforderlich ist, wenden \
+     Sie sich bitte an eine Person mit den erforderlichen Berechtigungen."
+  | AssignmentListEmpty -> "Es existieren keine Anmeldungen für diese Session."
   | AvailableSpots -> "Freie Plätze"
   | Canceled -> "Abgesagt"
   | Closed -> "Geschlossen"
@@ -370,11 +376,17 @@ Die folgenden Folgesessions existieren:|}
     "Es wurden keine Tags ausgewählt, die den Teilnehmer/innen zugewiesen \
      werden, die an diesem Experiment teilgenommen haben."
   | SessionCloseHints ->
-    {|<strong>NS</strong> und <strong>P</strong> schliessen sich gegenseitig aus.<br>
+    Format.asprintf
+      {|<strong>%s</strong> und <strong>%s</strong> schliessen sich gegenseitig aus.<br>
 Wenn ein Kontakt zwar erschienen ist, aber nicht an dem Experiment teilgenommen hat, wählen Sie keine der Optionen aus.|}
+      (Locales_de.field_to_string Entity_message_field.NoShow)
+      (Locales_de.field_to_string Entity_message_field.Participated)
   | SessionCloseLegend ->
-    {|NS: Der Kontakt ist nicht an der Session erschienen
-    P: Der Kontakt hat am Experiment teilgenommen|}
+    Format.asprintf
+      {|%s: Der Kontakt ist nicht an der Session erschienen
+    %s: Der Kontakt hat am Experiment teilgenommen|}
+      (Locales_de.field_to_string Entity_message_field.NoShow)
+      (Locales_de.field_to_string Entity_message_field.Participated)
   | SessionReminderLanguageHint ->
     "Falls sie einen eigenen Erinnerungstext angeben, wählen Sie dessen \
      Sprache hier."
@@ -418,6 +430,10 @@ let confirmable_to_string confirmable =
      , "annulieren"
      , Some "Anmeldungen an Folgesession werden ebenfalls annuliert." )
    | CancelSession -> "die Session", "absagen", None
+   | CloseSession ->
+     ( "die Session"
+     , "schliessen"
+     , Some "Diese Aktion kann nicht rückgängig gemacht werden." )
    | DeleteCustomField -> "das Feld", "löschen", None
    | DeleteCustomFieldOption -> "das Option", "löschen", None
    | DeleteEmailSuffix -> "das Suffix", "löschen", None

@@ -364,6 +364,9 @@ module Admin = struct
             let open Experiments.Assignment in
             let specific =
               [ post "/cancel" ~middlewares:[ Access.cancel ] cancel
+              ; post "/close" ~middlewares:[ Session.Access.close ] close_htmx
+              ; get "/edit" ~middlewares:[ Access.update ] edit
+              ; post "" ~middlewares:[ Access.update ] update
               ; post
                   "/mark-as-deleted"
                   ~middlewares:[ Access.mark_as_deleted ]

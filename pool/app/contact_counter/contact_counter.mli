@@ -21,3 +21,10 @@ val update_on_assignment_deletion
   -> Contact.t
   -> Assignment.IncrementParticipationCount.t
   -> Contact.t
+
+val update_on_assignment_update
+  :  Assignment.t
+  -> Assignment.NoShow.t
+  -> Assignment.NoShow.t
+  -> bool
+  -> Contact.t

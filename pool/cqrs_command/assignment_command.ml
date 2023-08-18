@@ -3,6 +3,33 @@ open CCFun.Infix
 
 let src = Logs.Src.create "assignment.cqrs"
 
+type update =
+  { no_show : Assignment.NoShow.t
+  ; participated : Assignment.Participated.t
+  ; external_data_id : Assignment.ExternalDataId.t option
+  }
+
+let update_command no_show participated external_data_id =
+  { no_show; participated; external_data_id }
+;;
+
+let update_schema =
+  let open Assignment in
+  Conformist.(
+    make
+      Field.
+        [ NoShow.schema ()
+        ; Participated.schema ()
+        ; Conformist.optional @@ ExternalDataId.schema ()
+        ]
+      update_command)
+;;
+
+let decode_update data =
+  Conformist.decode_and_validate update_schema data
+  |> CCResult.map_err Pool_common.Message.to_conformist_error
+;;
+
 let assignment_effect action id =
   let open Guard in
   ValidationSet.One
@@ -144,126 +171,6 @@ end = struct
   let effects = Assignment.Guard.Access.delete
 end
 
-module SetAttendance : sig
-  type t =
-    (Assignment.t
-    * Assignment.NoShow.t
-    * Assignment.Participated.t
-    * Assignment.IncrementParticipationCount.t
-    * Assignment.t list option
-    * Assignment.ExternalDataId.t option)
-    list
-
-  val handle
-    :  ?tags:Logs.Tag.set
-    -> Experiment.t
-    -> Session.t
-    -> Tags.t list
-    -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
-
-  val effects : Experiment.Id.t -> Session.Id.t -> Guard.ValidationSet.t
-end = struct
-  type t =
-    (Assignment.t
-    * Assignment.NoShow.t
-    * Assignment.Participated.t
-    * Assignment.IncrementParticipationCount.t
-    * Assignment.t list option
-    * Assignment.ExternalDataId.t option)
-    list
-
-  let handle
-    ?(tags = Logs.Tag.empty)
-    experiment
-    (session : Session.t)
-    (participation_tags : Tags.t list)
-    (command : t)
-    =
-    Logs.info ~src (fun m -> m "Handle command SetAttendance" ~tags);
-    let open CCResult in
-    let open Assignment in
-    let open Session in
-    let* () = Session.is_closable session in
-    CCList.fold_left
-      (fun events participation ->
-        events
-        >>= fun events ->
-        participation
-        |> fun ( ({ contact; _ } as assignment : Assignment.t)
-               , no_show
-               , participated
-               , increment_num_participaton
-               , follow_ups
-               , external_data_id ) ->
-        let cancel_followups =
-          NoShow.value no_show || not (Participated.value participated)
-        in
-        let* () = attendance_settable assignment in
-        let* contact =
-          Contact_counter.update_on_session_closing
-            contact
-            no_show
-            participated
-            increment_num_participaton
-        in
-        let num_assignments_decrement, mark_as_deleted =
-          let open CCList in
-          match cancel_followups, follow_ups with
-          | true, Some follow_ups ->
-            let num_assignments =
-              follow_ups
-              |> filter (fun assignment ->
-                   CCOption.is_none assignment.Assignment.canceled_at)
-                 %> length
-            in
-            let marked_as_deleted =
-              follow_ups >|= markedasdeleted %> Pool_event.assignment
-            in
-            num_assignments, marked_as_deleted
-          | _, _ -> 0, []
-        in
-        let* external_data_id =
-          match
-            Experiment.external_data_required_value experiment, external_data_id
-          with
-          | true, None ->
-            Error Pool_common.Message.(FieldRequired Field.ExternalDataId)
-          | _, _ -> Ok external_data_id
-        in
-        let contact =
-          Contact.update_num_assignments
-            ~step:(CCInt.neg num_assignments_decrement)
-            contact
-        in
-        let tag_events =
-          let open Tags in
-          match participated |> Participated.value with
-          | false -> []
-          | true ->
-            participation_tags
-            |> CCList.map (fun (tag : t) ->
-              Tagged
-                Tagged.{ model_uuid = Contact.id contact; tag_uuid = tag.id }
-              |> Pool_event.tags)
-        in
-        let contact_events =
-          (Contact.Updated contact |> Pool_event.contact) :: mark_as_deleted
-        in
-        events
-        @ ((Assignment.AttendanceSet
-              (assignment, no_show, participated, external_data_id)
-            |> Pool_event.assignment)
-           :: contact_events)
-        @ tag_events
-        |> CCResult.return)
-      (Ok [ Closed session |> Pool_event.session ])
-      command
-  ;;
-
-  let effects = Session.Guard.Access.update
-end
-
 module CreateFromWaitingList : sig
   include Common.CommandSig
 
@@ -374,4 +281,72 @@ end = struct
   ;;
 
   let effects = Assignment.Guard.Access.delete
+end
+
+module UpdateClosed : sig
+  type t = update
+
+  val handle
+    :  ?tags:Logs.Tag.set
+    -> Experiment.t
+    -> Session.t
+    -> Assignment.t
+    -> bool
+    -> t
+    -> (Pool_event.t list, Pool_common.Message.error) result
+
+  val decode
+    :  (string * string list) list
+    -> (t, Pool_common.Message.error) result
+end = struct
+  type t = update
+
+  let handle
+    ?(tags = Logs.Tag.empty)
+    (experiment : Experiment.t)
+    { Session.closed_at; _ }
+    ({ Assignment.no_show; participated; _ } as assignment)
+    participated_in_other_assignments
+    (command : update)
+    =
+    Logs.info ~src (fun m -> m "Handle command UpdateClosed" ~tags);
+    let open CCResult in
+    let open Assignment in
+    let* current_no_show =
+      match CCOption.is_some closed_at, no_show, participated with
+      | true, Some no_show, Some _ -> Ok no_show
+      | _ -> Error Pool_common.Message.SessionNotClosed
+    in
+    let contact_counters =
+      Contact_counter.update_on_assignment_update
+        assignment
+        current_no_show
+        command.no_show
+        participated_in_other_assignments
+      |> Contact.updated
+      |> Pool_event.contact
+    in
+    let updated_assignment =
+      { assignment with
+        no_show = Some command.no_show
+      ; participated = Some command.participated
+      ; external_data_id = command.external_data_id
+      }
+    in
+    let* () =
+      validate experiment updated_assignment
+      |> function
+      | Ok () | Error [] -> Ok ()
+      | Error (hd :: _) -> Error hd
+    in
+    Ok
+      [ Assignment.Updated updated_assignment |> Pool_event.assignment
+      ; contact_counters
+      ]
+  ;;
+
+  let decode data =
+    Conformist.decode_and_validate update_schema data
+    |> CCResult.map_err Pool_common.Message.to_conformist_error
+  ;;
 end

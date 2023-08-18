@@ -225,6 +225,7 @@ let rec field_to_string =
   | TimeSpan -> "time span"
   | Title -> "title"
   | Token -> "token"
+  | Total -> "total"
   | Translation -> "translation"
   | Tries -> "tries"
   | TriggerProfileUpdateAfter -> "request to check the profile"
@@ -328,6 +329,8 @@ let rec error_to_string = function
     "You are already signed up for this experiment."
   | AssignmentIsCanceled -> "Assignment was canceled."
   | AssignmentIsClosed -> "Assignment is already closed."
+  | AssignmentsHaveErrors ->
+    "Some assignments have errors. Please resolve them first."
   | AlreadyStarted -> "Already started or ended, action not possible anymore."
   | AlreadyInvitedToExperiment names ->
     Format.asprintf
@@ -410,7 +413,7 @@ let rec error_to_string = function
       "is missing or not filled out."
   | MutuallyExclusive (f1, f2) ->
     Format.asprintf
-      "%s and %s are mutually exclusive."
+      "'%s' and '%s' are mutually exclusive."
       (field_to_string f1)
       (field_to_string f2)
   | NegativeAmount -> "Has negative amount!"
@@ -478,6 +481,7 @@ let rec error_to_string = function
     CCFormat.asprintf "This session has already been canceled on %s." date
   | SessionAlreadyClosed date ->
     CCFormat.asprintf "This session has already been closed at %s." date
+  | SessionNotClosed -> "This session has not been closed yet."
   | SessionInPast -> "This session has already finished."
   | SessionNotStarted -> "This session cannot be closed, yet."
   | SessionRegistrationViaParent -> "Registration via main session."
@@ -540,6 +544,7 @@ let control_to_string = function
   | MarkAsDeleted -> format_submit "mark as deleted" None
   | More -> format_submit "more" None
   | NextPage -> "next"
+  | OpenProfile -> "show profile"
   | PauseAccount -> format_submit "pause account" None
   | PleaseSelect -> format_submit "please select" None
   | PreviousPage -> "previous"

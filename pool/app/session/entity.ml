@@ -529,15 +529,11 @@ let is_deletable session follow_ups =
   | false, false -> Ok ()
 ;;
 
-(* Closable if after session ends *)
 let is_closable session =
   let open CCResult.Infix in
-  let open Pool_common.Message in
   let* () = not_closed session in
   let* () = not_canceled session in
-  if Ptime.is_earlier session.start ~than:Ptime_clock.(now ())
-  then Ok ()
-  else Error SessionNotStarted
+  Ok ()
 ;;
 
 let assignments_cancelable session =

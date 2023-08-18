@@ -64,7 +64,7 @@ val create
   -> Contact.t
   -> t
 
-val is_not_closed : t -> (unit, Pool_common.Message.error) result
+val is_not_closed : Session.t -> (unit, Pool_common.Message.error) result
 val is_deletable : t -> (unit, Pool_common.Message.error) result
 val is_cancellable : t -> (unit, Pool_common.Message.error) result
 val attendance_settable : t -> (unit, Pool_common.Message.error) result
@@ -83,7 +83,31 @@ module IncrementParticipationCount : sig
   val create : bool -> t
 end
 
+val validate
+  :  Experiment.t
+  -> t
+  -> (unit, Pool_common.Message.error list) result
+
+val set_close_default_values : t -> t * NoShow.t * Participated.t
+val boolean_fields : Pool_common.Message.Field.t list
+
+type session_counters =
+  { total : int
+  ; num_no_shows : int
+  ; num_participations : int
+  }
+
+val counters_of_session
+  :  Pool_database.Label.t
+  -> Session.Id.t
+  -> (session_counters, Pool_common.Message.error) result Lwt.t
+
 val find
+  :  Pool_database.Label.t
+  -> Id.t
+  -> (t, Pool_common.Message.error) result Lwt.t
+
+val find_closed
   :  Pool_database.Label.t
   -> Id.t
   -> (t, Pool_common.Message.error) result Lwt.t
@@ -130,7 +154,7 @@ val find_follow_ups : Pool_database.Label.t -> t -> t list Lwt.t
 
 val contact_participation_in_other_assignments
   :  Pool_database.Label.t
-  -> t list
+  -> exclude_assignments:t list
   -> Experiment.Id.t
   -> Contact.Id.t
   -> (bool, Pool_common.Message.error) Lwt_result.t
@@ -138,15 +162,11 @@ val contact_participation_in_other_assignments
 val group_by_contact : t list -> (Contact.t * t list) list
 
 type event =
-  | AttendanceSet of (t * NoShow.t * Participated.t * ExternalDataId.t option)
   | Canceled of t
   | Created of (t * Session.Id.t)
   | MarkedAsDeleted of t
   | ExternalDataIdUpdated of t * ExternalDataId.t option
-
-val attendanceset
-  :  t * NoShow.t * Participated.t * ExternalDataId.t option
-  -> event
+  | Updated of t
 
 val canceled : t -> event
 val created : t * Session.Id.t -> event

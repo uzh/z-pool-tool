@@ -85,7 +85,31 @@ module Sql = struct
       (Pool_database.Label.value pool)
       find_request
       (Pool_common.Id.value id)
-    ||> CCOption.to_result Pool_common.Message.(NotFound Field.Tenant)
+    ||> CCOption.to_result Pool_common.Message.(NotFound Field.Assignment)
+  ;;
+
+  let find_closed_request =
+    let joins =
+      {sql|
+        INNER JOIN pool_sessions ON pool_sessions.uuid = pool_assignments.session_uuid
+      |sql}
+    in
+    let open Caqti_request.Infix in
+    {sql|
+        pool_assignments.uuid = UNHEX(REPLACE(?, '-', ''))
+        AND pool_sessions.closed_at IS NOT NULL
+    |sql}
+    |> select_sql ~joins
+    |> Caqti_type.string ->! RepoEntity.t
+  ;;
+
+  let find_closed pool id =
+    let open Utils.Lwt_result.Infix in
+    Utils.Database.find_opt
+      (Pool_database.Label.value pool)
+      find_closed_request
+      (Pool_common.Id.value id)
+    ||> CCOption.to_result Pool_common.Message.(NotFound Field.Assignment)
   ;;
 
   let find_by_session_request ?where_condition () =
@@ -275,7 +299,7 @@ module Sql = struct
       (Pool_database.Label.value pool)
       find_session_id_request
       id
-    ||> CCOption.to_result Pool_common.Message.(NotFound Field.Experiment)
+    ||> CCOption.to_result Pool_common.Message.(NotFound Field.Session)
   ;;
 
   let insert_request =
@@ -407,11 +431,11 @@ module Sql = struct
 
   let contact_participation_in_other_assignments
     pool
-    assignments
+    ~exclude_assignments
     experiment_uuid
     contact_uuid
     =
-    if CCList.is_empty assignments
+    if CCList.is_empty exclude_assignments
     then Lwt_result.fail Pool_common.Message.InvalidRequest
     else
       let open Caqti_request.Infix in
@@ -427,11 +451,11 @@ module Sql = struct
           (fun dyn { Entity.id; _ } ->
             dyn |> add string (id |> Entity.Id.value))
           init
-          assignments
+          exclude_assignments
       in
       let (Pack (pt, pv)) = dyn in
       let request =
-        contact_participation_in_other_assignments_request assignments
+        contact_participation_in_other_assignments_request exclude_assignments
         |> pt ->! bool
       in
       Utils.Database.find (pool |> Pool_database.Label.value) request pv
@@ -448,6 +472,11 @@ let find pool id =
   let open Utils.Lwt_result.Infix in
   (* TODO Implement as transaction *)
   Sql.find pool id >>= contact_to_assignment pool
+;;
+
+let find_closed pool id =
+  let open Utils.Lwt_result.Infix in
+  Sql.find_closed pool id >>= contact_to_assignment pool
 ;;
 
 let uncanceled_condition = "pool_assignments.canceled_at IS NULL"

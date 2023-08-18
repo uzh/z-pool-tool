@@ -144,6 +144,7 @@ let id m = m.user.Sihl_user.id |> Pool_common.Id.of_string
 let fullname m = m.user |> User.user_fullname
 let firstname m = m.user |> User.user_firstname
 let lastname m = m.user |> User.user_lastname
+let lastname_firstname m = m.user |> User.user_lastname_firstname
 let email_address m = m.user.Sihl_user.email |> User.EmailAddress.of_string
 
 let sexp_of_t t =
@@ -151,7 +152,7 @@ let sexp_of_t t =
 ;;
 
 let update_num_invitations ~step ({ num_invitations; _ } as m) =
-  { m with num_assignments = NumberOfInvitations.update step num_invitations }
+  { m with num_invitations = NumberOfInvitations.update step num_invitations }
 ;;
 
 let update_num_assignments ~step ({ num_assignments; _ } as m) =

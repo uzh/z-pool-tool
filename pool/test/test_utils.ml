@@ -492,19 +492,29 @@ module Model = struct
     Session.{ session with follow_up_to = Some main.id }
   ;;
 
-  let create_assignment ?(contact = create_contact ()) () =
-    Assignment.
-      { id = Id.create ()
-      ; contact
-      ; no_show = None
-      ; participated = None
-      ; matches_filter = MatchesFilter.init
-      ; canceled_at = None
-      ; marked_as_deleted = MarkedAsDeleted.init
-      ; external_data_id = None
-      ; created_at = Pool_common.CreatedAt.create ()
-      ; updated_at = Pool_common.UpdatedAt.create ()
-      }
+  let create_assignment
+    ?no_show
+    ?participated
+    ?external_data_id
+    ?(contact = create_contact ())
+    ()
+    =
+    let open CCOption in
+    let open Assignment in
+    let no_show = no_show >|= NoShow.create in
+    let participated = participated >|= Participated.create in
+    let external_data_id = external_data_id >|= ExternalDataId.of_string in
+    { id = Id.create ()
+    ; contact
+    ; no_show
+    ; participated
+    ; matches_filter = MatchesFilter.init
+    ; canceled_at = None
+    ; marked_as_deleted = MarkedAsDeleted.init
+    ; external_data_id
+    ; created_at = Pool_common.CreatedAt.create ()
+    ; updated_at = Pool_common.UpdatedAt.create ()
+    }
   ;;
 
   let create_message_template ?label ?language ?entity_uuid () =

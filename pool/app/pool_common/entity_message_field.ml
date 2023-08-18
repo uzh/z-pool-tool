@@ -263,6 +263,7 @@ type t =
   | TimeSpan [@name "timespan"] [@printer go "timespan"]
   | Title [@name "title"] [@printer go "title"]
   | Token [@name "token"] [@printer go "token"]
+  | Total [@name "total"] [@printer go "total"]
   | Translation [@name "translation"] [@printer go "translation"]
   | Tries [@name "tries"] [@printer go "tries"]
   | TriggerProfileUpdateAfter [@name "trigger_profile_update_after"]

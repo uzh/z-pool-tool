@@ -224,6 +224,7 @@ let rec field_to_string =
   | TimeSpan -> "Zeitspanne"
   | Title -> "Titel"
   | Token -> "Token"
+  | Total -> "Total"
   | Translation -> "Übersetzung"
   | Tries -> "Versuche"
   | TriggerProfileUpdateAfter -> "Aufforderung zur Kontrolle des Profils"
@@ -338,6 +339,8 @@ let rec error_to_string = function
       "wurde bereits veröffentlich."
   | AssignmentIsCanceled -> "Anmeldung wurde abgesagt."
   | AssignmentIsClosed -> "Anmeldung wurde bereits geschlossen."
+  | AssignmentsHaveErrors ->
+    "Einige Anmeldungen haben Fehler. Bitte korrigieren Sie diese zuerst."
   | AlreadyStarted ->
     "Bereits gestarted oder beendet, aktion nicht mehr möglich."
   | AlreadyInvitedToExperiment names ->
@@ -515,6 +518,7 @@ let rec error_to_string = function
     CCFormat.asprintf "Diese Session wurde bereits abgesagt am %s." date
   | SessionAlreadyClosed date ->
     CCFormat.asprintf "Diese Session wurde bereits geschlossen am %s." date
+  | SessionNotClosed -> "Diese Session wurde noch nicht geschlossen."
   | SessionInPast -> "Diese Session ist beendet."
   | SessionNotStarted -> "Diese Session kann noch nicht geschlossen werden."
   | Smaller (field1, field2) ->
@@ -577,6 +581,7 @@ let control_to_string = function
   | MarkAsDeleted -> format_submit "als gelöscht markieren" None
   | More -> "mehr"
   | NextPage -> "weiter"
+  | OpenProfile -> "Profil anzeigen"
   | PauseAccount -> "Account pausieren"
   | PleaseSelect -> "bitte wählen"
   | PreviousPage -> "zurück"

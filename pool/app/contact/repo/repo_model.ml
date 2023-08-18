@@ -320,11 +320,11 @@ module Write = struct
                                       (tup2
                                          NumberOfAssignments.t
                                          (tup2
-                                            NumberOfAssignments.t
+                                            NumberOfShowUps.t
                                             (tup2
-                                               NumberOfShowUps.t
+                                               NumberOfNoShows.t
                                                (tup2
-                                                  NumberOfNoShows.t
+                                                  NumberOfParticipations.t
                                                   (tup2
                                                      Pool_common.Repo.Version.t
                                                      (tup2

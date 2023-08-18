@@ -90,8 +90,8 @@ let is_not_deleted { marked_as_deleted; _ } =
   else Error Pool_common.Message.(IsMarkedAsDeleted Field.Assignment)
 ;;
 
-let is_not_closed { no_show; participated; _ } =
-  if CCOption.(is_none no_show && is_none participated)
+let is_not_closed { Session.closed_at; canceled_at; _ } =
+  if CCOption.(is_none closed_at && is_none canceled_at)
   then Ok ()
   else Error Pool_common.Message.AssignmentIsClosed
 ;;
@@ -135,3 +135,31 @@ module IncrementParticipationCount = struct
   let value m = m
   let create m = m
 end
+
+let validate experiment { no_show; participated; external_data_id; _ } =
+  let value = CCOption.value ~default:false in
+  let open Pool_common.Message in
+  [ ( Experiment.external_data_required_value experiment
+      && CCOption.is_none external_data_id
+      && value participated
+    , FieldRequired Field.ExternalDataId )
+  ; ( value no_show && value participated
+    , MutuallyExclusive (Field.NoShow, Field.Participated) )
+  ]
+  |> CCList.filter_map (fun (condition, error) ->
+    if condition then Some error else None)
+  |> function
+  | [] -> Ok ()
+  | errors -> Error errors
+;;
+
+let set_close_default_values ({ no_show; participated; _ } as m) =
+  let default = CCOption.value ~default:false in
+  let no_show = default no_show in
+  let participated = default participated in
+  ( { m with no_show = Some no_show; participated = Some participated }
+  , no_show
+  , participated )
+;;
+
+let boolean_fields = Pool_common.Message.Field.[ NoShow; Participated ]

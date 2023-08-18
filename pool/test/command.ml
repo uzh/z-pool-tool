@@ -134,6 +134,10 @@ let () =
             `Quick
             Assignment_test.set_invalid_attendance
         ; test_case
+            "assignment validation"
+            `Quick
+            Assignment_test.assignment_validation
+        ; test_case
             "set attendance missing data id"
             `Quick
             Assignment_test.set_attendance_missing_data_id
@@ -336,10 +340,6 @@ let () =
             "cancel with email and text notification"
             `Quick
             Session_test.cancel_with_email_and_text_notification
-        ; test_case
-            "close session before start"
-            `Quick
-            Session_test.close_before_start
         ; test_case "close session" `Quick Session_test.close_valid
         ; test_case
             "close session with valid assignments"

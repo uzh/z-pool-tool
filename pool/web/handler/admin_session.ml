@@ -158,16 +158,14 @@ let detail req page =
   let result ({ Pool_context.database_label; user; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, error_path)
     @@
-    let* actor = Pool_context.Utils.find_authorizable database_label user in
-    let has_permission set =
-      Guard.Persistence.validate database_label set actor ||> CCResult.is_ok
+    let%lwt view_contact_name =
+      Helpers.Guard.can_view_contact_name database_label user
     in
-    let%lwt view_contact_name = has_permission Contact.Guard.Access.read_name in
     let%lwt view_contact_email =
-      has_permission Contact.Guard.Access.read_email
+      Helpers.Guard.can_view_contact_email database_label user
     in
     let%lwt view_contact_cellphone =
-      has_permission Contact.Guard.Access.read_cellphone
+      Helpers.Guard.can_view_contact_cellphone database_label user
     in
     let database_label = context.Pool_context.database_label in
     let* session = Session.find database_label session_id in
@@ -182,7 +180,11 @@ let detail req page =
        let* assignments =
          Assignment.find_by_session database_label session.Session.id
        in
+       let%lwt access_contact_profiles =
+         Helpers.Guard.can_access_contact_profile database_label user
+       in
        Page.Admin.Session.detail
+         ~access_contact_profiles
          ~view_contact_name
          ~view_contact_email
          ~view_contact_cellphone
@@ -237,6 +239,9 @@ let detail req page =
              database_label
              (Experiment (Experiment.Id.to_common experiment_id)))
        in
+       let* counters =
+         Assignment.counters_of_session database_label session_id
+       in
        Page.Admin.Session.close
          ~view_contact_name
          context
@@ -244,6 +249,7 @@ let detail req page =
          session
          assignments
          participation_tags
+         counters
        |> Lwt_result.ok
      | `Reschedule ->
        let* experiment = Experiment.find database_label experiment_id in
@@ -534,9 +540,7 @@ let close_post req =
     let open Utils.Lwt_result.Infix in
     Lwt_result.map_error (fun err -> err, Format.asprintf "%s/close" path)
     @@
-    let open Cqrs_command.Assignment_command in
-    let open Assignment in
-    let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+    let open Cqrs_command.Session_command in
     let* experiment = Experiment.find database_label experiment_id in
     let* session = Session.find database_label session_id in
     let* assignments =
@@ -553,61 +557,34 @@ let close_post req =
            []
     in
     let* events =
-      let urlencoded_list field =
-        Sihl.Web.Request.urlencoded_list
-          Pool_common.Message.Field.(array_key field)
-          req
-      in
-      let find_external_data id =
-        let open CCOption.Infix in
-        let key =
-          Format.asprintf "%s-%s" Field.(ExternalDataId |> show) (Id.value id)
-        in
-        CCList.assoc_opt ~eq:CCString.equal key urlencoded >>= CCList.head_opt
-      in
-      let%lwt no_shows = urlencoded_list Pool_common.Message.Field.NoShow in
-      let%lwt participated =
-        urlencoded_list Pool_common.Message.Field.Participated
-      in
       assignments
-      |> Lwt_list.map_s (fun ({ Assignment.id; contact; _ } as assignment) ->
-        let id = Id.value id in
-        let find = CCList.mem ~eq:CCString.equal id in
-        let no_show = no_shows |> find |> NoShow.create in
-        let participated = participated |> find |> Participated.create in
-        let* increment_num_participations =
-          Assignment.contact_participation_in_other_assignments
-            database_label
-            [ assignment ]
-            experiment_id
-            (Contact.id contact)
-          >|+ not %> IncrementParticipationCount.create
-        in
-        let%lwt follow_ups =
-          match
-            NoShow.value no_show || not (Participated.value participated)
-          with
-          | true ->
-            find_follow_ups database_label assignment ||> CCOption.return
-          | false -> Lwt.return_none
-        in
-        let* external_data_id =
-          find_external_data assignment.id
-          |> (function
-               | None -> Ok None
-               | Some value ->
-                 ExternalDataId.create value |> CCResult.map CCOption.return)
-          |> Lwt_result.lift
-        in
-        Lwt_result.return
-          ( assignment
-          , no_show
-          , participated
-          , increment_num_participations
-          , follow_ups
-          , external_data_id ))
+      |> Lwt_list.map_s
+           (fun
+               ({ Assignment.no_show; participated; contact; _ } as assignment)
+             ->
+             let open Assignment in
+             let* increment_num_participations =
+               Assignment.contact_participation_in_other_assignments
+                 database_label
+                 ~exclude_assignments:[ assignment ]
+                 experiment_id
+                 (Contact.id contact)
+               >|+ not %> IncrementParticipationCount.create
+             in
+             let%lwt follow_ups =
+               let with_default fnc = CCOption.map_or ~default:false fnc in
+               match
+                 with_default NoShow.value no_show
+                 || not (with_default Participated.value participated)
+               with
+               | true ->
+                 find_follow_ups database_label assignment ||> CCOption.return
+               | false -> Lwt.return_none
+             in
+             Lwt_result.return
+               (assignment, increment_num_participations, follow_ups))
       ||> CCResult.flatten_l
-      >== SetAttendance.handle experiment session participation_tags
+      >== Close.handle experiment session participation_tags
     in
     let%lwt () = Pool_event.handle_events database_label events in
     Http_utils.redirect_to_with_actions
@@ -857,7 +834,7 @@ end = struct
   ;;
 
   let close =
-    Cqrs_command.Assignment_command.SetAttendance.effects
+    SessionCommand.Close.effects
     |> combined_effects
     |> Guardian.validate_generic
   ;;

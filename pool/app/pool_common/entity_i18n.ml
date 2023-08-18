@@ -1,6 +1,8 @@
 type t =
   | Address
   | AdminComment
+  | AssignmentEditTagsWarning
+  | AssignmentListEmpty
   | AvailableSpots
   | Canceled
   | Closed
@@ -205,6 +207,7 @@ type confirmable =
   | CancelAssignment
   | CancelAssignmentWithFollowUps
   | CancelSession
+  | CloseSession
   | DeleteCustomField
   | DeleteCustomFieldOption
   | DeleteEmailSuffix

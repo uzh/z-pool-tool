@@ -445,6 +445,7 @@ let textarea_element
 let submit_element
   lang
   control
+  ?(is_text = false)
   ?(submit_type = `Primary)
   ?(classnames = [])
   ?has_icon
@@ -452,8 +453,9 @@ let submit_element
   ()
   =
   let button_type_class =
-    submit_type_to_class submit_type
-    :: CCOption.map_or ~default:[] (fun _ -> [ "has-icon" ]) has_icon
+    (submit_type_to_class submit_type
+     :: CCOption.map_or ~default:[] (fun _ -> [ "has-icon" ]) has_icon)
+    @ if is_text then [ "is-text" ] else []
   in
   let text_content =
     span [ txt Pool_common.Utils.(control_to_string lang control) ]
@@ -480,6 +482,7 @@ let submit_icon ?(classnames = []) ?(attributes = []) icon_type =
 ;;
 
 let link_as_button
+  ?(is_text = false)
   ?(style = `Primary)
   ?(classnames = [])
   ?(attributes = [])
@@ -488,7 +491,10 @@ let link_as_button
   href
   =
   let classnames =
-    let base = submit_type_to_class style :: "btn" :: classnames in
+    let base =
+      (submit_type_to_class style :: "btn" :: classnames)
+      @ if is_text then [ "is-text" ] else []
+    in
     match icon with
     | None -> base
     | Some _ -> "has-icon" :: base
@@ -507,7 +513,9 @@ let link_as_button
       | None -> txt ""
       | Some (language, control) ->
         let base =
-          Pool_common.Utils.(control_to_string language control) |> txt
+          Pool_common.Utils.(control_to_string language control)
+          |> CCString.capitalize_ascii
+          |> txt
         in
         if CCOption.is_some icon then span [ base ] else base
     in
