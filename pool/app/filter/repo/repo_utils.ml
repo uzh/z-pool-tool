@@ -196,8 +196,6 @@ let participation_subquery dyn operator ids =
           AND pool_assignments.no_show = 0
           AND pool_assignments.canceled_at IS NULL
           AND pool_experiments.uuid IN (%s)
-        GROUP BY
-          pool_experiments.uuid
       |sql}
       query_params
   in

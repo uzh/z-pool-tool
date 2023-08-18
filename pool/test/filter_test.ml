@@ -376,13 +376,15 @@ let admin_override_nr_field_filter ~nr () =
        (Single (Nr (nr |> CCFloat.of_int))))
 ;;
 
-let participation_filter experiment_id operator () =
+let participation_filter experiment_ids operator () =
   let open Filter in
   Pred
     (Predicate.create
        Key.(Hardcoded Participation)
        operator
-       (Lst [ Str (experiment_id |> Experiment.Id.value) ]))
+       (Lst
+          (experiment_ids
+           |> CCList.map (fun id -> Str (id |> Experiment.Id.value)))))
 ;;
 
 let firstname firstname =
@@ -792,29 +794,41 @@ let filter_ignore_admin_value _ () =
   Lwt.return_unit
 ;;
 
-let filter_by_experiment_participation _ () =
+let[@warning "-27"] filter_by_experiment_participation _ () =
   let open Assignment in
   let open Utils.Lwt_result.Infix in
   let hd = CCList.hd in
   let database_label = Data.database_label in
   let%lwt all_experiments = Repo.all_experiments () in
-  let participated_experiment =
+  let first_experiment =
     CCList.nth all_experiments 0 |> Experiment.(fun exp -> exp.id)
   in
-  let%lwt session =
-    Session.find_all_for_experiment database_label participated_experiment
+  let second_experiment =
+    CCList.nth all_experiments 2 |> Experiment.(fun exp -> exp.id)
+  in
+  let%lwt first_session =
+    Session.find_all_for_experiment database_label first_experiment
+    ||> get_exn_poolerror
+    ||> hd
+  in
+  let%lwt second_session =
+    Session.find_all_for_experiment database_label second_experiment
     ||> get_exn_poolerror
     ||> hd
   in
   let%lwt contact = TestContacts.get_contact 2 in
+  let handle_events =
+    Lwt_list.iter_s (Pool_event.handle_event Data.database_label)
+  in
   let%lwt () =
-    let run = Lwt_list.iter_s (Pool_event.handle_event Data.database_label) in
     let%lwt () =
-      [ Created (create contact, session.Session.id) |> Pool_event.assignment ]
-      |> run
+      [ Created (create contact, first_session.Session.id)
+        |> Pool_event.assignment
+      ]
+      |> handle_events
     in
     let%lwt assignment =
-      find_by_session database_label session.Session.id
+      find_by_session database_label first_session.Session.id
       >|+ CCList.find (fun (assignment : t) ->
         Contact.equal assignment.contact contact)
       ||> get_exn_poolerror
@@ -826,37 +840,76 @@ let filter_by_experiment_participation _ () =
       }
     in
     [ Updated assignment |> Pool_event.assignment
-    ; Session.Closed session |> Pool_event.session
+    ; Session.Closed first_session |> Pool_event.session
     ]
-    |> run
+    |> handle_events
   in
   let experiment_id =
     CCList.nth all_experiments 1
     |> Experiment.(fun exp -> exp.id |> Id.to_common)
   in
   let search = find_contact_in_filtered_list contact experiment_id in
-  let%lwt should_not_contain =
+  let%lwt res =
     Filter.(
       create
         None
         (participation_filter
-           participated_experiment
+           [ first_experiment ]
            Operator.(ListM.ContainsNone |> list)
            ()))
     |> search
   in
-  let%lwt should_contain =
+  let () =
+    Alcotest.(
+      check bool "filtering 'ContainsNone' should not contain contact" false res)
+  in
+  let%lwt res =
     Filter.(
       create
         None
         (participation_filter
-           participated_experiment
+           [ first_experiment ]
            Operator.(ListM.ContainsAll |> list)
            ()))
     |> search
   in
-  let res = should_contain && not should_not_contain in
-  Alcotest.(check bool "succeeds" true res) |> Lwt.return
+  let () =
+    Alcotest.(
+      check bool "filtering 'ContainsAll' should contain contact" true res)
+  in
+  let%lwt () =
+    let assignment = create contact in
+    let assignment =
+      { assignment with
+        no_show = Some (NoShow.create true)
+      ; participated = Some (Participated.create true)
+      }
+    in
+    [ Created (assignment, second_session.Session.id) |> Pool_event.assignment
+    ; Session.Closed second_session |> Pool_event.session
+    ]
+    |> handle_events
+  in
+  let%lwt res =
+    Filter.(
+      create
+        None
+        (participation_filter
+           [ first_experiment; second_experiment ]
+           Operator.(ListM.ContainsSome |> list)
+           ()))
+    |> search
+  in
+  let () =
+    Alcotest.(
+      check
+        bool
+        "filtering 'ContainsSome' with multiple experiments should contain \
+         contact"
+        true
+        res)
+  in
+  Lwt.return_unit
 ;;
 
 let filter_by_empty_hardcoded_value _ () =
