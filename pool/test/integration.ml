@@ -17,29 +17,26 @@ let suite =
               `Slow
               check_inactive_user_disable_after
           ; test_case
-              "read inactive user\n         warning after"
+              "read inactive user warning after"
               `Slow
               check_inactive_user_warning
-          ; test_case "read\n         languages" `Slow check_languages
+          ; test_case "read languages" `Slow check_languages
           ; test_case
               "has terms and conditions"
               `Slow
               check_terms_and_conditions
           ; test_case
-              "update terms and\n         conditions"
+              "update terms and conditions"
               `Slow
               update_terms_and_conditions
-          ; test_case
-              "login after\n         terms update"
-              `Slow
-              login_after_terms_update
+          ; test_case "login after terms update" `Slow login_after_terms_update
           ] )
     ; ( "dev/test"
       , [ test_case "intercept email" `Slow Common_test.validate_email ] )
     ; ( "authorization"
       , Authorization_test.
           [ test_case
-              "permit valid\n         operation"
+              "permit valid operation"
               `Slow
               recruiter_can_update_contact_language
           ; test_case
@@ -48,22 +45,16 @@ let suite =
               guest_cannot_update_language
           ; test_case "use parametric roles" `Slow operator_works
           ; test_case
-              "grant valid\n         and invalid roles"
+              "grant valid and invalid roles"
               `Slow
               Admin_role_assignment.grant_roles
           ] )
     ; ( "partial_update"
       , Partial_update.
-          [ test_case
-              "update with old\n         version"
-              `Slow
-              update_with_old_version
+          [ test_case "update with old version" `Slow update_with_old_version
+          ; test_case "update custom field answer" `Slow update_custom_field
           ; test_case
-              "update custom field\n         answer"
-              `Slow
-              update_custom_field
-          ; test_case
-              "update custom field with\n         invalid answer"
+              "update custom field with invalid answer"
               `Slow
               update_custom_field_with_invalid_answer
           ; test_case
@@ -71,7 +62,7 @@ let suite =
               `Slow
               update_admin_input_only_field_as_user
           ; test_case
-              "update non override\n         field as admin"
+              "update non override field as admin"
               `Slow
               update_non_override_field_as_admin
           ; test_case
@@ -79,7 +70,7 @@ let suite =
               `Slow
               set_value_of_none_required_field_to_null
           ; test_case
-              "set value of\n         required field to null"
+              "set value of required field to null"
               `Slow
               set_value_of_required_field_to_null
           ] )
@@ -92,7 +83,7 @@ let suite =
               `Slow
               validate_filter_with_unknown_field
           ; test_case
-              "validate filter with\n         invalid value"
+              "validate filter with invalid value"
               `Slow
               validate_filter_with_invalid_value
           ; test_case "filter contains all" `Slow filter_by_list_contains_all
@@ -103,7 +94,7 @@ let suite =
               `Slow
               retrieve_fitleterd_and_ordered_contacts
           ; test_case
-              "create filter\n         template with template"
+              "create filter template with template"
               `Slow
               create_filter_template_with_template
           ; test_case
@@ -115,11 +106,11 @@ let suite =
               `Slow
               no_admin_values_shown_to_contacts
           ; test_case
-              "filter ignore\n         admin value"
+              "filter ignore admin value"
               `Slow
               filter_ignore_admin_value
           ; test_case
-              "filter by\n         experiment participation"
+              "filter by experiment participation"
               `Slow
               filter_by_experiment_participation
           ; test_case
@@ -127,11 +118,11 @@ let suite =
               `Slow
               filter_by_empty_hardcoded_value
           ; test_case
-              "filter by non-empty\n         language"
+              "filter by non-empty language"
               `Slow
               filter_by_non_empty_hardcoded_value
           ; test_case
-              "filter\n         by empty custom field"
+              "filter by empty custom field"
               `Slow
               filter_by_empty_custom_field
           ; test_case
@@ -139,11 +130,11 @@ let suite =
               `Slow
               filter_by_non_empty_custom_field
           ; test_case
-              "filter by empty custom\n         field with deleted answer"
+              "filter by empty custom field with deleted answer"
               `Slow
               filter_by_empty_custom_field_with_deleted_value
           ; test_case
-              "filter by\n         date type custom field"
+              "filter by date type custom field"
               `Slow
               filter_by_date_custom_field
           ] )
@@ -164,7 +155,7 @@ let suite =
               `Slow
               get_template_with_language_missing
           ; test_case
-              "get templates in\n         multiple languages"
+              "get templates in multiple languages"
               `Slow
               get_templates_in_multile_languages
           ; test_case
@@ -172,7 +163,7 @@ let suite =
               `Slow
               experiment_invitation_with_sender
           ; test_case
-              "assignment creation with\n         sender"
+              "assignment creation with sender"
               `Slow
               assignment_creation_with_sender
           ] )
@@ -193,7 +184,7 @@ let suite =
     ; ( "waiting lists"
       , Waiting_list_test.
           [ test_case
-              "find pending waiting lists entries by\n         contcat"
+              "find pending waiting lists entries by contcat"
               `Slow
               PendingWaitingLists.find_pending_waitinglists_by_contact
           ; test_case
@@ -208,7 +199,7 @@ let suite =
     ; ( "experiment"
       , Experiment_test.
           [ test_case
-              "list available\n         experiments"
+              "list available experiments"
               `Slow
               AvailableExperiments.list_available_experiments
           ; test_case
@@ -221,7 +212,7 @@ let suite =
               `Slow
               AvailableExperiments.cancel_session
           ; test_case
-              "mark assignments as\n         deleted"
+              "mark assignments as deleted"
               `Slow
               AvailableExperiments.mark_assignment_as_deleted
           ] )
@@ -232,11 +223,11 @@ let suite =
               `Slow
               InviteContact.invite
           ; test_case
-              "attend all: register for\n               session"
+              "attend all: register for session"
               `Slow
               AttendAll.register_for_session
           ; test_case
-              "attend\n               all: close first session"
+              "attend all: close first session"
               `Slow
               AttendAll.close_first_session
           ; test_case
@@ -244,7 +235,7 @@ let suite =
               `Slow
               AttendAll.close_follow_up_session
           ; test_case
-              "delete attended:\n               delete follow up"
+              "delete attended: delete follow up"
               `Slow
               DeleteAttended.delete_follow_up
           ; test_case
@@ -252,7 +243,7 @@ let suite =
               `Slow
               DeleteAttended.delete_main
           ; test_case
-              "cancel session: without\n               follow up"
+              "cancel session: without follow up"
               `Slow
               CancelSession.without_followups
           ; test_case "cancel session: follow up" `Slow CancelSession.follow_up
@@ -261,7 +252,7 @@ let suite =
               `Slow
               CancelSession.main_with_follow_up
           ; test_case
-              "Do not attend:\n               register for session"
+              "Do not attend: register for session"
               `Slow
               DoNotAttend.register_for_session
           ; test_case
@@ -269,15 +260,12 @@ let suite =
               `Slow
               DoNotAttend.close_main
           ; test_case
-              "no show: register for\n               session"
+              "no show: register for session"
               `Slow
               NoShow.register_for_session
+          ; test_case "no show: close main" `Slow NoShow.close_main
           ; test_case
-              "no show:\n               close main"
-              `Slow
-              NoShow.close_main
-          ; test_case
-              "delete\n               unattended: register"
+              "delete unattended: register"
               `Slow
               DeleteUnattended.register_for_session
           ; test_case
