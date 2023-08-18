@@ -219,6 +219,7 @@ type control =
   | PleaseSelect
   | PreviousPage
   | PromoteContact
+  | PublicPage
   | Publish of Field.t option
   | ReactivateAccount
   | Register
