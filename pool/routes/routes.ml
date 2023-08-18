@@ -44,6 +44,14 @@ module Public = struct
   ;;
 
   let routes =
+    let locations =
+      let open Handler.Contact.Location in
+      let specific =
+        let files = [ choose ~scope:(add_key Field.File) [ get "" asset ] ] in
+        [ get "" show; choose ~scope:"/files" files ]
+      in
+      [ choose ~scope:(add_key Field.Location) specific ]
+    in
     Handler.Public.(
       choose
         ~middlewares:
@@ -60,6 +68,7 @@ module Public = struct
             ; get "/custom/assets/index.css" index_css
             ; get "/credits" credits
             ; get "/privacy-policy" privacy_policy
+            ; choose ~scope:Field.(Location |> human_url) locations
             ]
         ; choose
             ~middlewares:
@@ -126,14 +135,6 @@ module Contact = struct
         ; choose ~scope:(build_scope "sessions") sessions
         ]
       in
-      let locations =
-        let specific =
-          let open Location in
-          let files = [ choose ~scope:(add_key Field.File) [ get "" asset ] ] in
-          [ get "" show; choose ~scope:"/files" files ]
-        in
-        [ choose ~scope:(add_key Field.Location) specific ]
-      in
       [ get "/user/personal-details" UserProfile.personal_details
       ; get "/user/login-information" UserProfile.login_information
       ; get "/user/contact-information" UserProfile.contact_information
@@ -146,7 +147,6 @@ module Contact = struct
       ; post "/user/phone/reset" UserProfile.reset_phone_verification
       ; post "/user/phone/resend-token" UserProfile.resend_token
       ; choose ~scope:"/experiments" experiments
-      ; choose ~scope:Field.(Location |> human_url) locations
       ]
     in
     [ choose

@@ -95,10 +95,7 @@ let location_params
   =
   let open Pool_location in
   let location_url =
-    id
-    |> Id.value
-    |> Format.asprintf "experiments/%s"
-    |> to_absolute_path layout
+    id |> Id.value |> Format.asprintf "location/%s" |> to_absolute_path layout
   in
   let location_link = Human.link_with_default ~default:location_url location in
   let location_details = Human.detailed language location in
