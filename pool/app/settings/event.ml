@@ -4,6 +4,7 @@ open Default
 type event =
   | ContactEmailUpdated of ContactEmail.t
   | DefaultReminderLeadTimeUpdated of Pool_common.Reminder.LeadTime.t
+  | DefaultTextMsgReminderLeadTimeUpdated of Pool_common.Reminder.LeadTime.t
   | EmailSuffixesUpdated of EmailSuffix.t list
   | InactiveUserDisableAfterUpdated of InactiveUser.DisableAfter.t
   | InactiveUserWarningUpdated of InactiveUser.Warning.t
@@ -24,6 +25,13 @@ let handle_event pool : event -> unit Lwt.t =
     Lwt.return_unit
   | DefaultReminderLeadTimeUpdated lead_time ->
     let%lwt () = Repo.update pool (Value.DefaultReminderLeadTime lead_time) in
+    Lwt.return_unit
+  | DefaultTextMsgReminderLeadTimeUpdated lead_time ->
+    Logs.info (fun m ->
+      m "%s" "IN EVENT: DefaultTextMsgReminderLeadTimeUpdated");
+    let%lwt () =
+      Repo.update pool (Value.DefaultTextMsgReminderLeadTime lead_time)
+    in
     Lwt.return_unit
   | ContactEmailUpdated contact_email ->
     let%lwt () = Repo.update pool (Value.TenantContactEmail contact_email) in
@@ -52,6 +60,7 @@ let handle_event pool : event -> unit Lwt.t =
     Lwt.return_unit
   | DefaultRestored
       { default_reminder_lead_time
+      ; default_text_msg_reminder_lead_time
       ; tenant_languages
       ; tenant_email_suffixes
       ; tenant_contact_email
@@ -61,20 +70,9 @@ let handle_event pool : event -> unit Lwt.t =
       ; terms_and_conditions
       } ->
     let%lwt () =
-      [ ReminderLeadTime
-      ; Languages
-      ; EmailSuffixes
-      ; ContactEmail
-      ; InactiveUserDisableAfter
-      ; InactiveUserWarning
-      ; TriggerProfileUpdateAfter
-      ; TermsAndConditions
-      ]
-      |> Lwt_list.iter_s (Repo.delete pool)
-    in
-    let%lwt () =
       Value.
         [ DefaultReminderLeadTime default_reminder_lead_time
+        ; DefaultTextMsgReminderLeadTime default_text_msg_reminder_lead_time
         ; TenantLanguages tenant_languages
         ; TenantEmailSuffixes tenant_email_suffixes
         ; TenantContactEmail tenant_contact_email
@@ -85,7 +83,7 @@ let handle_event pool : event -> unit Lwt.t =
         ]
       |> Lwt_list.iter_s (fun value ->
         let id = Pool_common.Id.create () in
-        let%lwt () = Repo.insert ~id pool value in
+        let%lwt () = Repo.upsert ~id pool value in
         Entity_guard.Target.to_authorizable ~ctx:(Pool_database.to_ctx pool) id
         ||> Pool_common.Utils.get_or_failwith
         ||> fun (_ : Role.Target.t Guard.Target.t) -> ())

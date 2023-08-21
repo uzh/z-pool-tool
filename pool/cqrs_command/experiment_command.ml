@@ -8,7 +8,8 @@ let to_target { id; _ } = BaseGuard.Uuid.target_of Id.value id
 let to_role = BaseGuard.RoleSet.singleton
 
 let default_schema command =
-  Pool_common.Utils.PoolConformist.(
+  let open Pool_common in
+  Utils.PoolConformist.(
     make
       Field.
         [ Title.schema ()
@@ -19,8 +20,13 @@ let default_schema command =
         ; RegistrationDisabled.schema ()
         ; AllowUninvitedSignup.schema ()
         ; ExternalDataRequired.schema ()
-        ; Conformist.optional @@ Pool_common.ExperimentType.schema ()
-        ; Conformist.optional @@ Pool_common.Reminder.LeadTime.schema ()
+        ; Conformist.optional @@ ExperimentType.schema ()
+        ; Conformist.optional
+          @@ Reminder.LeadTime.schema ~field:Message.Field.EmailLeadTime ()
+        ; Conformist.optional
+          @@ Reminder.LeadTime.schema
+               ~field:Message.Field.TextMessageLeadTime
+               ()
         ]
       command)
 ;;
@@ -35,7 +41,8 @@ let default_command
   allow_uninvited_signup
   external_data_required
   experiment_type
-  session_reminder_lead_time
+  email_session_reminder_lead_time
+  text_message_session_reminder_lead_time
   =
   { title
   ; public_title
@@ -46,7 +53,8 @@ let default_command
   ; allow_uninvited_signup
   ; external_data_required
   ; experiment_type
-  ; session_reminder_lead_time
+  ; email_session_reminder_lead_time
+  ; text_message_session_reminder_lead_time
   }
 ;;
 
@@ -95,7 +103,8 @@ end = struct
         command.allow_uninvited_signup
         command.external_data_required
         command.experiment_type
-        command.session_reminder_lead_time
+        command.email_session_reminder_lead_time
+        command.text_message_session_reminder_lead_time
     in
     Ok [ Experiment.Created experiment |> Pool_event.experiment ]
   ;;
@@ -154,7 +163,8 @@ end = struct
         ; allow_uninvited_signup = command.allow_uninvited_signup
         ; external_data_required = command.external_data_required
         ; experiment_type = command.experiment_type
-        ; session_reminder_lead_time = command.session_reminder_lead_time
+        ; email_session_reminder_lead_time =
+            command.email_session_reminder_lead_time
         }
     in
     Ok [ Experiment.Updated experiment |> Pool_event.experiment ]

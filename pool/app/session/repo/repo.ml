@@ -104,8 +104,10 @@ module Sql = struct
           pool_sessions.max_participants,
           pool_sessions.min_participants,
           pool_sessions.overbook,
-          pool_sessions.reminder_lead_time,
-          pool_sessions.reminder_sent_at,
+          pool_sessions.email_reminder_lead_time,
+          pool_sessions.email_reminder_sent_at,
+          pool_sessions.text_message_reminder_lead_time,
+          pool_sessions.text_message_reminder_sent_at,
           COUNT(pool_assignments.id),
           COALESCE( SUM(pool_assignments.no_show), 0),
           COALESCE( SUM(pool_assignments.participated), 0),
@@ -394,7 +396,7 @@ module Sql = struct
     INNER JOIN pool_experiments
       ON pool_experiments.uuid = pool_sessions.experiment_uuid
     WHERE
-      pool_sessions.reminder_sent_at IS NULL
+      pool_sessions.email_reminder_sent_at IS NULL
     AND
       pool_sessions.canceled_at IS NULL
     AND
@@ -404,8 +406,8 @@ module Sql = struct
     AND
       pool_sessions.start <= DATE_ADD(NOW(), INTERVAL
         COALESCE(
-          pool_sessions.reminder_lead_time,
-          pool_experiments.session_reminder_lead_time,
+          pool_sessions.email_reminder_lead_time,
+          pool_experiments.email_session_reminder_lead_time,
           (SELECT value FROM pool_system_settings WHERE settings_key = $1))
         SECOND)
     |sql}
@@ -507,8 +509,10 @@ module Sql = struct
         max_participants,
         min_participants,
         overbook,
-        reminder_lead_time,
-        reminder_sent_at,
+        email_reminder_lead_time,
+        email_reminder_sent_at,
+        text_message_reminder_lead_time,
+        text_message_reminder_sent_at,
         closed_at,
         canceled_at
       ) VALUES (
@@ -526,7 +530,9 @@ module Sql = struct
         $12,
         $13,
         $14,
-        $15
+        $15,
+        $16,
+        $17
       )
     |sql}
     |> Caqti_type.(tup2 string RepoEntity.Write.t ->. unit)
@@ -553,10 +559,12 @@ module Sql = struct
         max_participants = $8,
         min_participants = $9,
         overbook = $10,
-        reminder_lead_time = $11,
-        reminder_sent_at = $12,
-        closed_at = $13,
-        canceled_at = $14
+        email_reminder_lead_time = $11,
+        email_reminder_sent_at = $12,
+        text_message_reminder_lead_time = $13,
+        text_message_reminder_sent_at = $14,
+        closed_at = $15,
+        canceled_at = $16
       WHERE
         uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}

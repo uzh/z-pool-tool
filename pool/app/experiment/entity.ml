@@ -73,7 +73,9 @@ type t =
   ; allow_uninvited_signup : AllowUninvitedSignup.t
   ; external_data_required : ExternalDataRequired.t
   ; experiment_type : Pool_common.ExperimentType.t option
-  ; session_reminder_lead_time : Pool_common.Reminder.LeadTime.t option
+  ; email_session_reminder_lead_time : Pool_common.Reminder.LeadTime.t option
+  ; text_message_session_reminder_lead_time :
+      Pool_common.Reminder.LeadTime.t option
   ; created_at : Ptime.t
   ; updated_at : Ptime.t
   }
@@ -93,7 +95,8 @@ let create
   allow_uninvited_signup
   external_data_required
   experiment_type
-  session_reminder_lead_time
+  email_session_reminder_lead_time
+  text_message_session_reminder_lead_time
   =
   let open CCResult in
   Ok
@@ -111,7 +114,8 @@ let create
     ; allow_uninvited_signup
     ; external_data_required
     ; experiment_type
-    ; session_reminder_lead_time
+    ; email_session_reminder_lead_time
+    ; text_message_session_reminder_lead_time
     ; created_at = Ptime_clock.now ()
     ; updated_at = Ptime_clock.now ()
     }
@@ -149,8 +153,13 @@ let to_public
     }
 ;;
 
-let session_reminder_lead_time_value m =
-  m.session_reminder_lead_time
+let email_session_reminder_lead_time_value m =
+  m.email_session_reminder_lead_time
+  |> CCOption.map Pool_common.Reminder.LeadTime.value
+;;
+
+let text_message_session_reminder_lead_time_value m =
+  m.text_message_session_reminder_lead_time
   |> CCOption.map Pool_common.Reminder.LeadTime.value
 ;;
 

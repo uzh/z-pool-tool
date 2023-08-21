@@ -124,14 +124,16 @@ module DummyData = struct
           ParticipantAmount.create 1 |> Pool_common.Utils.get_or_failwith
       ; overbook =
           ParticipantAmount.create 4 |> Pool_common.Utils.get_or_failwith
-      ; reminder_lead_time = None
-      ; reminder_sent_at = None
       ; assignment_count =
           0 |> AssignmentCount.create |> Pool_common.Utils.get_or_failwith
       ; no_show_count =
           0 |> NoShowCount.create |> Pool_common.Utils.get_or_failwith
       ; participant_count =
           0 |> ParticipantCount.create |> Pool_common.Utils.get_or_failwith
+      ; email_reminder_lead_time = None
+      ; email_reminder_sent_at = None
+      ; text_message_reminder_lead_time = None
+      ; text_message_reminder_sent_at = None
       ; closed_at = None
       ; canceled_at = None
       ; created_at = Pool_common.CreatedAt.create ()
@@ -154,13 +156,14 @@ module DummyData = struct
       ; cost_center = Some ("A-11111-22-33" |> CostCenter.of_string)
       ; filter = None
       ; contact_person_id = None
-      ; session_reminder_lead_time = None
       ; direct_registration_disabled =
           false |> DirectRegistrationDisabled.create
       ; registration_disabled = false |> RegistrationDisabled.create
       ; allow_uninvited_signup = false |> AllowUninvitedSignup.create
       ; external_data_required = false |> ExternalDataRequired.create
       ; experiment_type = Some Pool_common.ExperimentType.Lab
+      ; email_session_reminder_lead_time = None
+      ; text_message_session_reminder_lead_time = None
       ; created_at = Ptime_clock.now ()
       ; updated_at = Ptime_clock.now ()
       }

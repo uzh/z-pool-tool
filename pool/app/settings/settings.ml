@@ -94,6 +94,17 @@ let[@warning "-4"] find_default_reminder_lead_time pool =
     Pool_common.(Message.(Retrieve Field.LeadTime) |> Utils.failwith)
 ;;
 
+let[@warning "-4"] find_default_text_msg_reminder_lead_time pool =
+  let open Utils.Lwt_result.Infix in
+  Repo.find_default_text_msg_reminder_lead_time pool
+  ||> fun { value; _ } ->
+  match value with
+  | Value.DefaultTextMsgReminderLeadTime value -> value
+  | _ ->
+    (* Due to Repo function, this state cannot be reached. *)
+    Pool_common.(Message.(Retrieve Field.TextMessageLeadTime) |> Utils.failwith)
+;;
+
 let terms_and_conditions_last_updated pool =
   let open Utils.Lwt_result.Infix in
   Repo.find_terms_and_conditions pool ||> fun { updated_at; _ } -> updated_at

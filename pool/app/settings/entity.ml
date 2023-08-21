@@ -132,6 +132,9 @@ module Value = struct
   type default_reminder_lead_time = Pool_common.Reminder.LeadTime.t
   [@@deriving eq, show, yojson]
 
+  type default_text_msg_reminder_lead_time = Pool_common.Reminder.LeadTime.t
+  [@@deriving eq, show, yojson]
+
   type tenant_languages = Pool_common.Language.t list
   [@@deriving eq, show, yojson]
 
@@ -152,6 +155,7 @@ module Value = struct
 
   type t =
     | DefaultReminderLeadTime of default_reminder_lead_time
+    | DefaultTextMsgReminderLeadTime of default_text_msg_reminder_lead_time
     | TenantLanguages of tenant_languages
     | TenantEmailSuffixes of tenant_email_suffixes
     | TenantContactEmail of tenant_contact_email
@@ -164,6 +168,7 @@ end
 
 type setting_key =
   | ReminderLeadTime [@name "default_reminder_lead_time"]
+  | TextMsgReminderLeadTime [@name "default_text_msg_reminder_lead_time"]
   | Languages [@name "languages"]
   | EmailSuffixes [@name "email_suffixes"]
   | ContactEmail [@name "contact_email"]
@@ -188,6 +193,7 @@ let action_of_param = function
   | "create_emailsuffix" -> Ok `CreateEmailSuffix
   | "delete_emailsuffix" -> Ok `DeleteEmailSuffix
   | "update_default_lead_time" -> Ok `UpdateDefaultLeadTime
+  | "update_text_msg_default_lead_time" -> Ok `UpdateTextMsgDefaultLeadTime
   | "update_inactive_user_disable_after" -> Ok `UpdateInactiveUserDisableAfter
   | "update_inactive_user_warning" -> Ok `UpdateInactiveUserWarning
   | "update_contact_email" -> Ok `UpdateContactEmail
@@ -202,6 +208,7 @@ let stringify_action = function
   | `CreateEmailSuffix -> "create_emailsuffix"
   | `DeleteEmailSuffix -> "delete_emailsuffix"
   | `UpdateDefaultLeadTime -> "update_default_lead_time"
+  | `UpdateTextMsgDefaultLeadTime -> "update_text_msg_default_lead_time"
   | `UpdateInactiveUserDisableAfter -> "update_inactive_user_disable_after"
   | `UpdateInactiveUserWarning -> "update_inactive_user_warning"
   | `UpdateContactEmail -> "update_contact_email"

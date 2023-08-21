@@ -188,10 +188,10 @@ let session_form
                     ~help:I18n.TimeSpanPickerHint
                     ?value:
                       (CCOption.bind session (fun (e : t) ->
-                         e.reminder_lead_time
+                         e.email_reminder_lead_time
                          |> CCOption.map Reminder.LeadTime.value))
                     ~flash_fetcher
-                ; (experiment.Experiment.session_reminder_lead_time
+                ; (experiment.Experiment.email_session_reminder_lead_time
                    |> CCOption.value ~default:default_reminder_lead_time
                    |> fun t ->
                    Utils.text_to_string

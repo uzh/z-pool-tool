@@ -213,11 +213,12 @@ module Model = struct
       ; filter = None
       ; contact_person_id = None
       ; smtp_auth_id = None
-      ; session_reminder_lead_time =
+      ; email_session_reminder_lead_time =
           Ptime.Span.of_int_s @@ (60 * 60)
           |> Pool_common.Reminder.LeadTime.create
           |> map_err show_error
           |> to_opt
+      ; text_message_session_reminder_lead_time = None
       ; direct_registration_disabled =
           false |> DirectRegistrationDisabled.create
       ; registration_disabled = false |> RegistrationDisabled.create
@@ -355,8 +356,10 @@ module Model = struct
     ; min_participants =
         ParticipantAmount.create 1 |> get_or_failwith_pool_error
     ; overbook = ParticipantAmount.create 4 |> get_or_failwith_pool_error
-    ; reminder_lead_time = None
-    ; reminder_sent_at = None
+    ; email_reminder_lead_time = None
+    ; email_reminder_sent_at = None
+    ; text_message_reminder_lead_time = None
+    ; text_message_reminder_sent_at = None
     ; assignment_count =
         0 |> AssignmentCount.create |> get_or_failwith_pool_error
     ; no_show_count = 0 |> NoShowCount.create |> get_or_failwith_pool_error
@@ -440,7 +443,8 @@ module Model = struct
      ; max_participants
      ; min_participants
      ; overbook
-     ; reminder_lead_time
+     ; email_reminder_lead_time
+     ; text_message_reminder_lead_time
      ; _
      } :
       Session.t)
@@ -454,7 +458,8 @@ module Model = struct
       ; max_participants
       ; min_participants
       ; overbook
-      ; reminder_lead_time
+      ; email_reminder_lead_time
+      ; text_message_reminder_lead_time
       }
   ;;
 

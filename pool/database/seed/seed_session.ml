@@ -9,7 +9,8 @@ let session_data =
     , 30
     , 4
     , 4
-    , Some 3600 )
+    , Some 3600
+    , Some 1800 )
   ; ( Ptime.add_span (Ptime_clock.now ()) halfhour
       |> CCOption.get_exn_or "Invalid time"
     , halfhour
@@ -18,6 +19,7 @@ let session_data =
     , 28
     , 20
     , 0
+    , None
     , None )
   ; ( Ptime.add_span (Ptime_clock.now ()) hour
       |> CCOption.get_exn_or "Invalid time"
@@ -27,7 +29,8 @@ let session_data =
     , 30
     , 2
     , 5
-    , Some 7200 )
+    , Some 7200
+    , None )
   ]
 ;;
 
@@ -48,7 +51,8 @@ let create pool =
                  , max
                  , min
                  , overbook
-                 , reminder_lead_time ) ->
+                 , email_reminder_lead_time
+                 , text_message_lead_time ) ->
               let open CCOption in
               let (session : Session.t) =
                 let open Session in
@@ -69,11 +73,16 @@ let create pool =
                 let overbook =
                   ParticipantAmount.create overbook |> get_or_failwith
                 in
-                let reminder_lead_time =
-                  reminder_lead_time
-                  >|= Ptime.Span.of_int_s
-                      %> Pool_common.Reminder.LeadTime.create
-                      %> get_or_failwith
+                let create_lead_time =
+                  Ptime.Span.of_int_s
+                  %> Pool_common.Reminder.LeadTime.create
+                  %> get_or_failwith
+                in
+                let email_reminder_lead_time =
+                  email_reminder_lead_time >|= create_lead_time
+                in
+                let text_message_lead_time =
+                  text_message_lead_time >|= create_lead_time
                 in
                 let location = CCList.hd locations in
                 create
@@ -85,7 +94,8 @@ let create pool =
                   max_participants
                   min_participants
                   overbook
-                  reminder_lead_time
+                  email_reminder_lead_time
+                  text_message_lead_time
               in
               Session.Created (session, experiment.Experiment.id))
             session_data
@@ -123,6 +133,7 @@ let create pool =
           parent.max_participants
           parent.min_participants
           parent.overbook
+          None
           None
       in
       Session.handle_event pool

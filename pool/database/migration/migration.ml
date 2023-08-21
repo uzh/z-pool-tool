@@ -128,6 +128,7 @@ module Tenant = struct
       ; Migration_202308021016.migration ()
       ; Migration_202308030850.migration ()
       ; Migration_202308041330.migration ()
+      ; Migration_202308210946.migration ()
       ]
   ;;
 

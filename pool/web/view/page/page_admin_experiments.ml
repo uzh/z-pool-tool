@@ -121,7 +121,8 @@ let experiment_form
   contact_persons
   organisational_units
   smtp_auth_list
-  default_reminder_lead_time
+  default_email_reminder_lead_time
+  default_text_msg_reminder_lead_time
   flash_fetcher
   =
   let open Experiment in
@@ -153,6 +154,22 @@ let experiment_form
       ~add_empty:true
       ~flash_fetcher
       ()
+  in
+  let lead_time_group field get_value default_value =
+    div
+      [ timespan_picker
+          language
+          field
+          ~help:I18n.TimeSpanPickerHint
+          ?value:CCOption.(bind experiment get_value)
+          ~flash_fetcher
+      ; Utils.text_to_string
+          language
+          (I18n.SessionReminderDefaultLeadTime
+             (default_value |> Reminder.LeadTime.value))
+        |> txt
+        |> HttpUtils.default_value_style
+      ]
   in
   form
     ~a:
@@ -273,25 +290,14 @@ let experiment_form
                     ]
                 ; div
                     ~a:[ a_class [ "grid-col-2" ] ]
-                    [ div
-                        [ timespan_picker
-                            language
-                            Field.LeadTime
-                            ~help:I18n.TimeSpanPickerHint
-                            ?value:
-                              (CCOption.bind experiment (fun (e : t) ->
-                                 e.session_reminder_lead_time
-                                 |> CCOption.map
-                                      Pool_common.Reminder.LeadTime.value))
-                            ~flash_fetcher
-                        ; Utils.text_to_string
-                            language
-                            (I18n.SessionReminderDefaultLeadTime
-                               (default_reminder_lead_time
-                                |> Reminder.LeadTime.value))
-                          |> txt
-                          |> HttpUtils.default_value_style
-                        ]
+                    [ lead_time_group
+                        Field.EmailLeadTime
+                        email_session_reminder_lead_time_value
+                        default_email_reminder_lead_time
+                    ; lead_time_group
+                        Field.TextMessageLeadTime
+                        text_message_session_reminder_lead_time_value
+                        default_text_msg_reminder_lead_time
                     ]
                 ]
             ]
@@ -318,7 +324,8 @@ let experiment_form
 let create
   (Pool_context.{ language; _ } as context)
   organisational_units
-  default_reminder_lead_time
+  default_email_reminder_lead_time
+  default_text_msg_reminder_lead_time
   contact_persons
   smtp_auth_list
   flash_fetcher
@@ -336,7 +343,8 @@ let create
         contact_persons
         organisational_units
         smtp_auth_list
-        default_reminder_lead_time
+        default_email_reminder_lead_time
+        default_text_msg_reminder_lead_time
         flash_fetcher
     ]
 ;;
@@ -346,7 +354,8 @@ let edit
   experiment
   ({ Pool_context.language; csrf; query_language; _ } as context)
   sys_languages
-  default_reminder_lead_time
+  default_email_reminder_lead_time
+  default_text_msg_reminder_lead_time
   contact_persons
   organisational_units
   smtp_auth_list
@@ -363,7 +372,8 @@ let edit
       contact_persons
       organisational_units
       smtp_auth_list
-      default_reminder_lead_time
+      default_email_reminder_lead_time
+      default_text_msg_reminder_lead_time
       flash_fetcher
   in
   let experiment_path =
@@ -550,7 +560,7 @@ let detail
         ; ( Field.ExternalDataRequired
           , external_data_required_value |> boolean_value )
         ; ( Field.ExperimentReminderLeadTime
-          , session_reminder_lead_time_value experiment
+          , email_session_reminder_lead_time_value experiment
             |> CCOption.map_or
                  ~default:"-"
                  Pool_common.Utils.Time.formatted_timespan

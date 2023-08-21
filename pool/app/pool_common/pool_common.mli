@@ -165,7 +165,8 @@ module Reminder : sig
     val yojson_of_t : t -> Yojson.Safe.t
 
     val schema
-      :  unit
+      :  ?field:Message.Field.t
+      -> unit
       -> (Message.error, t) Pool_common_utils.PoolConformist.Field.t
   end
 

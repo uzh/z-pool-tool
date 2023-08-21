@@ -251,6 +251,7 @@ let timespan_picker
   ?(classnames = [])
   ?help
   ?identifier
+  ?label_field
   ?(required = false)
   ?flash_fetcher
   ?value
@@ -258,14 +259,15 @@ let timespan_picker
   language
   name
   =
-  let input_label = Elements.input_label language name None required in
+  let human_field = CCOption.value ~default:name label_field in
+  let input_label = Elements.input_label language human_field None required in
   let value =
     flash_fetched_value
       flash_fetcher
       (value |> CCOption.map Pool_common.Utils.Time.timespan_to_minutes)
       name
   in
-  let id = Elements.identifier ?identifier name in
+  let id = Elements.identifier ?identifier human_field in
   let attributes =
     let attrs =
       Elements.attributes `Number name id [ a_value value ]

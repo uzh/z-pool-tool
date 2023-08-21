@@ -193,11 +193,11 @@ module Reminder = struct
     let yojson_of_t = Utils_time.yojson_of_ptime_span
     let value m = m
 
-    let schema () =
+    let schema ?(field = PoolError.Field.LeadTime) () =
       let open CCResult in
       let decode str = Pool_common_utils.Time.parse_time_span str >>= create in
       let encode span = Pool_common_utils.Time.print_time_span span in
-      Pool_common_utils.schema_decoder decode encode PoolError.Field.LeadTime
+      Pool_common_utils.schema_decoder decode encode field
     ;;
   end
 

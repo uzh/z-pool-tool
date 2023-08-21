@@ -339,26 +339,34 @@ end = struct
 end
 
 module UpdateDefaultLeadTime : sig
-  include Common.CommandSig with type t = Pool_common.Reminder.LeadTime.t
+  type t = Pool_common.Reminder.LeadTime.t
+
+  val handle
+    :  ?tags:Logs.Tag.set
+    -> [< `Email | `TextMessage ]
+    -> t
+    -> (Pool_event.t list, Pool_common.Message.error) result
 
   val decode
     :  (string * string list) list
     -> (t, Pool_common.Message.error) result
+
+  val effects : Guard.ValidationSet.t
 end = struct
   type t = Pool_common.Reminder.LeadTime.t
 
-  let command contact_email = contact_email
-
   let schema =
-    Conformist.(make Field.[ Pool_common.Reminder.LeadTime.schema () ] command)
+    Conformist.(make Field.[ Pool_common.Reminder.LeadTime.schema () ] CCFun.id)
   ;;
 
-  let handle ?(tags = Logs.Tag.empty) contact_email =
+  let handle ?(tags = Logs.Tag.empty) key lead_time =
     Logs.info ~src (fun m -> m "Handle command UpdateDefaultLeadTime" ~tags);
-    Ok
-      [ Settings.DefaultReminderLeadTimeUpdated contact_email
-        |> Pool_event.settings
-      ]
+    let event =
+      match key with
+      | `Email -> Settings.DefaultReminderLeadTimeUpdated lead_time
+      | `TextMessage -> Settings.DefaultTextMsgReminderLeadTimeUpdated lead_time
+    in
+    Ok [ event |> Pool_event.settings ]
   ;;
 
   let decode data =

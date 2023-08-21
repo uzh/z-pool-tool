@@ -11,7 +11,8 @@ let create_command
   max_participants
   min_participants
   overbook
-  reminder_lead_time
+  email_reminder_lead_time
+  text_message_reminder_lead_time
   : Session.base
   =
   Session.
@@ -22,11 +23,13 @@ let create_command
     ; max_participants
     ; min_participants
     ; overbook
-    ; reminder_lead_time
+    ; email_reminder_lead_time
+    ; text_message_reminder_lead_time
     }
 ;;
 
 let create_schema =
+  let open Pool_common in
   Conformist.(
     make
       Field.
@@ -34,12 +37,15 @@ let create_schema =
         ; Session.Duration.schema ()
         ; Conformist.optional @@ Session.Description.schema ()
         ; Conformist.optional @@ Session.Limitations.schema ()
-        ; Session.ParticipantAmount.schema
-            Pool_common.Message.Field.MaxParticipants
-        ; Session.ParticipantAmount.schema
-            Pool_common.Message.Field.MinParticipants
-        ; Session.ParticipantAmount.schema Pool_common.Message.Field.Overbook
-        ; Conformist.optional @@ Pool_common.Reminder.LeadTime.schema ()
+        ; Session.ParticipantAmount.schema Message.Field.MaxParticipants
+        ; Session.ParticipantAmount.schema Message.Field.MinParticipants
+        ; Session.ParticipantAmount.schema Message.Field.Overbook
+        ; Conformist.optional
+          @@ Reminder.LeadTime.schema ~field:Message.Field.EmailLeadTime ()
+        ; Conformist.optional
+          @@ Reminder.LeadTime.schema
+               ~field:Message.Field.TextMessageLeadTime
+               ()
         ]
       create_command)
 ;;
@@ -52,7 +58,8 @@ let update_command
   max_participants
   min_participants
   overbook
-  reminder_lead_time
+  email_reminder_lead_time
+  text_message_reminder_lead_time
   : Session.update
   =
   Session.
@@ -63,11 +70,13 @@ let update_command
     ; max_participants
     ; min_participants
     ; overbook
-    ; reminder_lead_time
+    ; email_reminder_lead_time
+    ; text_message_reminder_lead_time
     }
 ;;
 
 let update_schema =
+  let open Pool_common in
   Conformist.(
     make
       Field.
@@ -75,12 +84,15 @@ let update_schema =
         ; Conformist.optional @@ Session.Duration.schema ()
         ; Conformist.optional @@ Session.Description.schema ()
         ; Conformist.optional @@ Session.Limitations.schema ()
-        ; Session.ParticipantAmount.schema
-            Pool_common.Message.Field.MaxParticipants
-        ; Session.ParticipantAmount.schema
-            Pool_common.Message.Field.MinParticipants
-        ; Session.ParticipantAmount.schema Pool_common.Message.Field.Overbook
-        ; Conformist.optional @@ Pool_common.Reminder.LeadTime.schema ()
+        ; Session.ParticipantAmount.schema Message.Field.MaxParticipants
+        ; Session.ParticipantAmount.schema Message.Field.MinParticipants
+        ; Session.ParticipantAmount.schema Message.Field.Overbook
+        ; Conformist.optional
+          @@ Reminder.LeadTime.schema ~field:Message.Field.EmailLeadTime ()
+        ; Conformist.optional
+          @@ Reminder.LeadTime.schema
+               ~field:Message.Field.TextMessageLeadTime
+               ()
         ]
       update_command)
 ;;
@@ -152,7 +164,8 @@ end = struct
        ; min_participants
        ; (* TODO [aerben] find a better name *)
          overbook
-       ; reminder_lead_time
+       ; email_reminder_lead_time
+       ; text_message_reminder_lead_time
        } :
       Session.base)
     =
@@ -179,7 +192,8 @@ end = struct
         max_participants
         min_participants
         overbook
-        reminder_lead_time
+        email_reminder_lead_time
+        text_message_reminder_lead_time
     in
     Ok [ Session.Created (session, experiment_id) |> Pool_event.session ]
   ;;
@@ -226,7 +240,8 @@ end = struct
        ; max_participants
        ; min_participants
        ; overbook
-       ; reminder_lead_time
+       ; email_reminder_lead_time
+       ; text_message_reminder_lead_time
        } :
       Session.update)
     =
@@ -264,7 +279,8 @@ end = struct
         ; max_participants
         ; min_participants
         ; overbook
-        ; reminder_lead_time
+        ; email_reminder_lead_time
+        ; text_message_reminder_lead_time
         }
     in
     Ok

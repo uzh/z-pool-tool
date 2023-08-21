@@ -211,7 +211,7 @@ let reminders_sent_request period =
         pool_assignments
         INNER JOIN pool_sessions ON pool_assignments.session_uuid = pool_sessions.uuid
       WHERE
-        pool_sessions.reminder_sent_at >= (NOW() - INTERVAL %s)
+        pool_sessions.email_reminder_sent_at >= (NOW() - INTERVAL %s)
         AND pool_assignments.marked_as_deleted = 0
         AND pool_assignments.canceled_at IS NULL
     |sql}

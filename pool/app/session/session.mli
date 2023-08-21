@@ -49,7 +49,8 @@ type base =
   ; max_participants : ParticipantAmount.t
   ; min_participants : ParticipantAmount.t
   ; overbook : ParticipantAmount.t
-  ; reminder_lead_time : Pool_common.Reminder.LeadTime.t option
+  ; email_reminder_lead_time : Pool_common.Reminder.LeadTime.t option
+  ; text_message_reminder_lead_time : Pool_common.Reminder.LeadTime.t option
   }
 
 type update =
@@ -60,7 +61,8 @@ type update =
   ; max_participants : ParticipantAmount.t
   ; min_participants : ParticipantAmount.t
   ; overbook : ParticipantAmount.t
-  ; reminder_lead_time : Pool_common.Reminder.LeadTime.t option
+  ; email_reminder_lead_time : Pool_common.Reminder.LeadTime.t option
+  ; text_message_reminder_lead_time : Pool_common.Reminder.LeadTime.t option
   }
 
 type reschedule =
@@ -115,8 +117,10 @@ type t =
   ; max_participants : ParticipantAmount.t
   ; min_participants : ParticipantAmount.t
   ; overbook : ParticipantAmount.t
-  ; reminder_lead_time : Pool_common.Reminder.LeadTime.t option
-  ; reminder_sent_at : Pool_common.Reminder.SentAt.t option
+  ; email_reminder_lead_time : Pool_common.Reminder.LeadTime.t option
+  ; email_reminder_sent_at : Pool_common.Reminder.SentAt.t option
+  ; text_message_reminder_lead_time : Pool_common.Reminder.LeadTime.t option
+  ; text_message_reminder_sent_at : Pool_common.Reminder.SentAt.t option
   ; assignment_count : AssignmentCount.t
   ; no_show_count : NoShowCount.t
   ; participant_count : ParticipantCount.t
@@ -139,6 +143,7 @@ val create
   -> ParticipantAmount.t
   -> ParticipantAmount.t
   -> ParticipantAmount.t
+  -> Pool_common.Reminder.LeadTime.t option
   -> Pool_common.Reminder.LeadTime.t option
   -> t
 

@@ -10,7 +10,9 @@ type create =
   ; allow_uninvited_signup : AllowUninvitedSignup.t
   ; external_data_required : ExternalDataRequired.t
   ; experiment_type : Pool_common.ExperimentType.t option
-  ; session_reminder_lead_time : Pool_common.Reminder.LeadTime.t option
+  ; email_session_reminder_lead_time : Pool_common.Reminder.LeadTime.t option
+  ; text_message_session_reminder_lead_time :
+      Pool_common.Reminder.LeadTime.t option
   }
 [@@deriving eq, show]
 

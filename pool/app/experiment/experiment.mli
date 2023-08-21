@@ -61,7 +61,9 @@ type t =
   ; allow_uninvited_signup : AllowUninvitedSignup.t
   ; external_data_required : ExternalDataRequired.t
   ; experiment_type : Pool_common.ExperimentType.t option
-  ; session_reminder_lead_time : Pool_common.Reminder.LeadTime.t option
+  ; email_session_reminder_lead_time : Pool_common.Reminder.LeadTime.t option
+  ; text_message_session_reminder_lead_time :
+      Pool_common.Reminder.LeadTime.t option
   ; created_at : Ptime.t
   ; updated_at : Ptime.t
   }
@@ -85,6 +87,7 @@ val create
   -> ExternalDataRequired.t
   -> Pool_common.ExperimentType.t option
   -> Pool_common.Reminder.LeadTime.t option
+  -> Pool_common.Reminder.LeadTime.t option
   -> (t, Pool_common.Message.error) result
 
 type create =
@@ -97,7 +100,9 @@ type create =
   ; allow_uninvited_signup : AllowUninvitedSignup.t
   ; external_data_required : ExternalDataRequired.t
   ; experiment_type : Pool_common.ExperimentType.t option
-  ; session_reminder_lead_time : Pool_common.Reminder.LeadTime.t option
+  ; email_session_reminder_lead_time : Pool_common.Reminder.LeadTime.t option
+  ; text_message_session_reminder_lead_time :
+      Pool_common.Reminder.LeadTime.t option
   }
 
 val equal_create : create -> create -> bool
@@ -203,7 +208,8 @@ val possible_participant_count : t -> int Lwt.t
 val possible_participants : t -> Contact.t list Lwt.t
 val title_value : t -> string
 val public_title_value : t -> string
-val session_reminder_lead_time_value : t -> Ptime.span option
+val email_session_reminder_lead_time_value : t -> Ptime.span option
+val text_message_session_reminder_lead_time_value : t -> Ptime.span option
 val direct_registration_disabled_value : t -> bool
 val registration_disabled_value : t -> bool
 val allow_uninvited_signup_value : t -> bool
