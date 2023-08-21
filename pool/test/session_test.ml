@@ -120,6 +120,7 @@ module Data = struct
     ; show MinParticipants, [ String.min_participants ]
     ; show Overbook, [ String.overbook ]
     ; show EmailLeadTime, [ String.lead_time ]
+    ; show TextMessageLeadTime, [ String.lead_time ]
     ; show SentAt, [ String.sent_at ]
     ; show AssignmentCount, [ String.assignment_count ]
     ]
@@ -230,7 +231,13 @@ let create_no_optional () =
   let input =
     let open Data in
     delete_from_input
-      [ Description; Limitations; EmailLeadTime; SentAt; AssignmentCount ]
+      [ Description
+      ; Limitations
+      ; EmailLeadTime
+      ; TextMessageLeadTime
+      ; SentAt
+      ; AssignmentCount
+      ]
   in
   let experiment_id = Experiment.Id.create () in
   let location = Location_test.create_location () in
@@ -280,7 +287,7 @@ let create_full () =
       min_participants
       overbook
       (Some lead_time)
-      None
+      (Some lead_time)
   in
   check_result
     (Ok [ Pool_event.Session (Session.Created (session, experiment_id)) ])
@@ -314,7 +321,7 @@ let create_min_eq_max () =
       min_participants
       overbook
       (Some lead_time)
-      None
+      (Some lead_time)
   in
   check_result
     (Ok [ Pool_event.Session (Session.Created (session, experiment_id)) ])
@@ -387,7 +394,13 @@ let update_no_optional () =
   let input =
     let open Data in
     delete_from_input
-      [ Description; Limitations; EmailLeadTime; SentAt; AssignmentCount ]
+      [ Description
+      ; Limitations
+      ; EmailLeadTime
+      ; TextMessageLeadTime
+      ; SentAt
+      ; AssignmentCount
+      ]
   in
   let session = Model.create_session () in
   let location = Location_test.create_location () in
@@ -435,7 +448,7 @@ let update_full () =
                  ; min_participants
                  ; overbook
                  ; email_reminder_lead_time = Some lead_time
-                 ; text_message_reminder_lead_time = None
+                 ; text_message_reminder_lead_time = Some lead_time
                  }
                , location
                , session )))
@@ -466,7 +479,7 @@ let update_min_eq_max () =
                  ; min_participants
                  ; overbook
                  ; email_reminder_lead_time = Some lead_time
-                 ; text_message_reminder_lead_time = None
+                 ; text_message_reminder_lead_time = Some lead_time
                  }
                , location
                , session )))
@@ -1113,7 +1126,7 @@ let create_follow_up_later () =
       min_participants
       overbook
       (Some lead_time)
-      None
+      (Some lead_time)
   in
   check_result
     (Ok [ Pool_event.Session (Session.Created (session, experiment_id)) ])
@@ -1167,7 +1180,7 @@ let update_follow_up_later () =
                  ; min_participants
                  ; overbook
                  ; email_reminder_lead_time = Some lead_time
-                 ; text_message_reminder_lead_time = None
+                 ; text_message_reminder_lead_time = Some lead_time
                  }
                , location
                , session )))
@@ -1269,7 +1282,7 @@ let update_follow_ups_later () =
                  ; min_participants
                  ; overbook
                  ; email_reminder_lead_time = Some lead_time
-                 ; text_message_reminder_lead_time = None
+                 ; text_message_reminder_lead_time = Some lead_time
                  }
                , location
                , session )))
@@ -1305,7 +1318,7 @@ let update_follow_ups_later () =
                  ; min_participants
                  ; overbook
                  ; email_reminder_lead_time = Some lead_time
-                 ; text_message_reminder_lead_time = None
+                 ; text_message_reminder_lead_time = Some lead_time
                  }
                , location
                , session )))
