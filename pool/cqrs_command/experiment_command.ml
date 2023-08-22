@@ -165,6 +165,8 @@ end = struct
         ; experiment_type = command.experiment_type
         ; email_session_reminder_lead_time =
             command.email_session_reminder_lead_time
+        ; text_message_session_reminder_lead_time =
+            command.text_message_session_reminder_lead_time
         }
     in
     Ok [ Experiment.Updated experiment |> Pool_event.experiment ]

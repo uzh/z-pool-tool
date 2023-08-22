@@ -79,8 +79,11 @@ let new_helper req page =
        in
        let%lwt locations = Pool_location.find_all database_label in
        let flash_fetcher = flip Sihl.Web.Flash.find req in
-       let%lwt default_reminder_lead_time =
+       let%lwt default_email_reminder_lead_time =
          Settings.find_default_reminder_lead_time database_label
+       in
+       let%lwt default_text_msg_reminder_lead_time =
+         Settings.find_default_text_msg_reminder_lead_time database_label
        in
        let html =
          match page with
@@ -90,7 +93,8 @@ let new_helper req page =
            Page.Admin.Session.follow_up
              context
              experiment
-             default_reminder_lead_time
+             default_email_reminder_lead_time
+             default_text_msg_reminder_lead_time
              duplicate_session
              parent_session
              locations
@@ -100,7 +104,8 @@ let new_helper req page =
            Page.Admin.Session.new_form
              context
              experiment
-             default_reminder_lead_time
+             default_email_reminder_lead_time
+             default_text_msg_reminder_lead_time
              duplicate_session
              locations
              flash_fetcher
@@ -202,8 +207,11 @@ let detail req page =
            (session_id |> Session.Id.to_common)
            Message_template.Label.SessionReminder
        in
-       let%lwt default_reminder_lead_time =
+       let%lwt default_email_reminder_lead_time =
          Settings.find_default_reminder_lead_time database_label
+       in
+       let%lwt default_text_msg_reminder_lead_time =
+         Settings.find_default_text_msg_reminder_lead_time database_label
        in
        let%lwt available_tags =
          Tags.ParticipationTags.(
@@ -221,7 +229,8 @@ let detail req page =
        Page.Admin.Session.edit
          context
          experiment
-         default_reminder_lead_time
+         default_email_reminder_lead_time
+         default_text_msg_reminder_lead_time
          session
          locations
          session_reminder_templates

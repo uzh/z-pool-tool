@@ -559,8 +559,14 @@ let detail
           , allow_uninvited_signup_value |> boolean_value )
         ; ( Field.ExternalDataRequired
           , external_data_required_value |> boolean_value )
-        ; ( Field.ExperimentReminderLeadTime
+        ; ( Field.ExperimentEmailReminderLeadTime
           , email_session_reminder_lead_time_value experiment
+            |> CCOption.map_or
+                 ~default:"-"
+                 Pool_common.Utils.Time.formatted_timespan
+            |> txt )
+        ; ( Field.ExperimentTextMessageReminderLeadTime
+          , text_message_session_reminder_lead_time_value experiment
             |> CCOption.map_or
                  ~default:"-"
                  Pool_common.Utils.Time.formatted_timespan

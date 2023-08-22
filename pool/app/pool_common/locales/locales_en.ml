@@ -68,8 +68,12 @@ let rec field_to_string =
   | Exclude -> "exclude"
   | ExcludeRolesOf -> "exclude roles of"
   | Experiment -> "experiment"
-  | ExperimentReminderLeadTime ->
-    Format.asprintf "experiment specific %s" (field_to_string LeadTime)
+  | ExperimentEmailReminderLeadTime ->
+    Format.asprintf "experiment specific email %s" (field_to_string LeadTime)
+  | ExperimentTextMessageReminderLeadTime ->
+    Format.asprintf
+      "experiment specific text message %s"
+      (field_to_string LeadTime)
   | ExperimentType -> "experiment type"
   | Experimenter -> "experimenter"
   | ExternalDataId -> "external data identifier"

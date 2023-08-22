@@ -26,14 +26,14 @@ let terms_de =
 ;;
 
 let default_reminder_lead_time =
-  14400
+  28800
   |> Ptime.Span.of_int_s
   |> Pool_common.Reminder.LeadTime.create
   |> get_or_failwith
 ;;
 
 let default_text_msg_reminder_lead_time =
-  86400
+  14400
   |> Ptime.Span.of_int_s
   |> Pool_common.Reminder.LeadTime.create
   |> get_or_failwith

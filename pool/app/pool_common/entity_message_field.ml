@@ -87,8 +87,12 @@ type t =
   | ExcludeRolesOf [@name "exclude_roles_of"] [@printer go "exclude_roles_of"]
   | Experiment [@name "experiment"] [@printer go "experiment"]
   | Experimenter [@name "experimenter"] [@printer go "experimenter"]
-  | ExperimentReminderLeadTime [@name "experiment_reminder_lead_time"]
-      [@printer go "experiment_reminder_lead_time"]
+  | ExperimentEmailReminderLeadTime
+      [@name "experiment_email_reminder_lead_time"]
+      [@printer go "experiment_email_reminder_lead_time"]
+  | ExperimentTextMessageReminderLeadTime
+      [@name "experiment_text_message_lead_time"]
+      [@printer go "experiment_text_message_lead_time"]
   | ExperimentType [@name "experiment_type"] [@printer go "experiment_type"]
   | ExternalDataId [@name "external_data_id"] [@printer go "external_data_id"]
   | ExternalDataRequired [@name "external_data_required"]

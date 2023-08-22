@@ -69,8 +69,14 @@ let rec field_to_string =
   | ExcludeRolesOf -> "Ausgenommen (Rollen von jmd)"
   | Experiment -> "Experiment"
   | Experimenter -> "Experimenter"
-  | ExperimentReminderLeadTime ->
-    Format.asprintf "Experimentspezifische %s" (field_to_string LeadTime)
+  | ExperimentEmailReminderLeadTime ->
+    Format.asprintf
+      "Experimentspezifische Erinnerungsemail %s"
+      (field_to_string LeadTime)
+  | ExperimentTextMessageReminderLeadTime ->
+    Format.asprintf
+      "Experimentspezifische Erinnerungs-SMS %s"
+      (field_to_string LeadTime)
   | ExperimentType -> "Experimenttyp"
   | ExternalDataId -> "Externer Daten Identifikator"
   | ExternalDataRequired -> "Externe Daten müssen angegeben werden"

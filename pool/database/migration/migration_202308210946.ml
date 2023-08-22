@@ -41,7 +41,7 @@ let add_session_text_msg_reminder_lead_time =
     {sql|
       ALTER TABLE pool_sessions
         ADD COLUMN text_message_reminder_lead_time INTEGER AFTER email_reminder_sent_at,
-        ADD COLUMN text_message_reminder_sent_at timestamp AFTER text_message_reminder_lead_time
+        ADD COLUMN text_message_reminder_sent_at timestamp NULL DEFAULT NULL AFTER text_message_reminder_lead_time
     |sql}
 ;;
 
