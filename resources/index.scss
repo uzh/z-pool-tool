@@ -324,3 +324,17 @@ input[type="submit"].is-text {
         }
     }
 }
+
+.session-close-checkboxes {
+    @extend .flexrow;
+    @extend .flex-gap;
+    width: 5rem;
+    align-items: flex-start;
+    padding-top: $space-xs;
+
+    &>* {
+        flex-basis: 50%;
+        display: flex;
+        justify-content: center;
+    }
+}
