@@ -586,6 +586,7 @@ let control_to_string = function
   | PleaseSelect -> "bitte wählen"
   | PreviousPage -> "zurück"
   | PromoteContact -> "Kontakt befördern"
+  | PublicPage -> "Öffne öffentliche Seite"
   | Publish field -> format_submit "veröffentlichen" field
   | ReactivateAccount -> "Account reaktivieren"
   | Register -> format_submit "einschreiben" None
