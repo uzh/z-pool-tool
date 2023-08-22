@@ -337,6 +337,7 @@ let session_list
                   ]
                 [ csrf_element csrf ()
                 ; submit_element
+                    ~is_text:true
                     language
                     Message.(Delete None)
                     ~submit_type:`Error
@@ -390,16 +391,28 @@ let session_list
             match layout with
             | `SessionOverview ->
               let close_btn =
-                if Session.is_closable session |> CCResult.is_ok
-                then
-                  [ Format.asprintf
-                      "/admin/experiments/%s/sessions/%s/close"
-                      (Experiment.Id.value experiment_id)
-                      (Id.value session.id)
-                    |> link_as_button
-                         ~control:(language, Pool_common.Message.Close None)
-                  ]
-                else []
+                Format.asprintf
+                  "/admin/experiments/%s/sessions/%s/close"
+                  (Experiment.Id.value experiment_id)
+                  (Id.value session.id)
+                |> link_as_button
+                     ~is_text:true
+                     ~control:(language, Pool_common.Message.Close None)
+              in
+              let detail_button =
+                Format.asprintf
+                  "/admin/experiments/%s/sessions/%s"
+                  (Experiment.Id.value experiment_id)
+                  (Id.value session.id)
+                |> link_as_button ~is_text:true ~icon:Icon.Eye
+              in
+              let buttons =
+                [ Session.is_closable session |> CCResult.is_ok, close_btn
+                ; true, detail_button
+                ; true, delete_form ()
+                ]
+                |> CCList.filter_map (fun (condition, button) ->
+                  if condition then Some button else None)
               in
               let cells =
                 Session.
@@ -421,16 +434,7 @@ let session_list
                          |> CCInt.to_string
                        else "")
                   ; txt key_figures
-                  ; div
-                      ~a:[ a_class [ "flexrow"; "flex-gap"; "justify-end" ] ]
-                      (close_btn
-                       @ [ Format.asprintf
-                             "/admin/experiments/%s/sessions/%s"
-                             (Experiment.Id.value experiment_id)
-                             (Id.value session.id)
-                           |> link_as_button ~icon:Icon.Eye
-                         ; delete_form ()
-                         ])
+                  ; Component.ButtonGroup.dropdown buttons
                   ]
               in
               base @ cells
