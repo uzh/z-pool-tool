@@ -337,6 +337,7 @@ let session_list
                   ]
                 [ csrf_element csrf ()
                 ; submit_element
+                    ~has_icon:Icon.Trash
                     ~is_text:true
                     language
                     Message.(Delete None)
@@ -345,6 +346,7 @@ let session_list
                 ]
             else
               submit_element
+                ~has_icon:Icon.Trash
                 language
                 Message.(Delete None)
                 ~submit_type:`Disabled
@@ -397,14 +399,17 @@ let session_list
                   (Id.value session.id)
                 |> link_as_button
                      ~is_text:true
-                     ~control:(language, Pool_common.Message.Close None)
+                     ~control:(language, Message.Close (Some Field.Session))
               in
               let detail_button =
                 Format.asprintf
                   "/admin/experiments/%s/sessions/%s"
                   (Experiment.Id.value experiment_id)
                   (Id.value session.id)
-                |> link_as_button ~is_text:true ~icon:Icon.Eye
+                |> link_as_button
+                     ~is_text:true
+                     ~icon:Icon.Eye
+                     ~control:(language, Message.SessionDetails)
               in
               let buttons =
                 [ Session.is_closable session |> CCResult.is_ok, close_btn

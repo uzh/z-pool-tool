@@ -230,6 +230,7 @@ type control =
   | ResetForm
   | ResetPlainText
   | Save of Field.t option
+  | SessionDetails
   | SelectAll of Field.t option
   | SelectFilePlaceholder
   | Send of Field.t option
