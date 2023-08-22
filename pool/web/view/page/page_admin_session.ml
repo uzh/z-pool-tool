@@ -1058,7 +1058,16 @@ let close_assignment_htmx_row
       in
       let field = Field.ExternalDataId in
       let classnames =
-        if CCList.mem ~eq:Pool_common.Message.Field.equal field updated_fields
+        let open Pool_common.Message in
+        if CCList.mem
+             ~eq:equal_error
+             (FieldRequired Field.ExternalDataId)
+             (errors |> CCOption.value ~default:[])
+        then [ a_class [ "has-error" ] ]
+        else if CCList.mem
+                  ~eq:Pool_common.Message.Field.equal
+                  field
+                  updated_fields
         then [ a_class [ "success" ] ]
         else []
       in

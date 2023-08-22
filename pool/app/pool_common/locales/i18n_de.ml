@@ -383,11 +383,8 @@ Wenn keine der Checkboxen angewählt ist, bedeutet das, dass der Kontakt erschie
       (Locales_de.field_to_string Entity_message_field.NoShow)
       (Locales_de.field_to_string Entity_message_field.Participated)
   | SessionCloseLegend ->
-    Format.asprintf
-      {|%s: Der Kontakt ist nicht an der Session erschienen
-    %s: Der Kontakt hat am Experiment teilgenommen|}
-      (Locales_de.field_to_string Entity_message_field.NoShow)
-      (Locales_de.field_to_string Entity_message_field.Participated)
+    {|NS: Der Kontakt ist nicht an der Session erschienen
+    P: Der Kontakt hat am Experiment teilgenommen|}
   | SessionReminderLanguageHint ->
     "Falls sie einen eigenen Erinnerungstext angeben, wählen Sie dessen \
      Sprache hier."
