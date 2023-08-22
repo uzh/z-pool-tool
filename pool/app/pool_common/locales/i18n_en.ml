@@ -54,7 +54,6 @@ let to_string = function
      contact an administrator."
   | ImportPendingTitle -> "Pending import"
   | LocationDetails -> "Location details"
-
   | NoEntries field ->
     Format.asprintf "There are no %s yet." (Locales_en.field_to_string field)
   | OurPartners -> "Our partners"
@@ -371,13 +370,8 @@ The following follow-up sessions exist:|}
       (Locales_en.field_to_string Entity_message_field.Participated
        |> capitalize)
   | SessionCloseLegend ->
-    Format.asprintf
-      {|%s: the contact did not show up
-  %s: the contact participated in the experiment
-    |}
-      (Locales_en.field_to_string Entity_message_field.NoShow |> capitalize)
-      (Locales_en.field_to_string Entity_message_field.Participated
-       |> capitalize)
+    {|NS: the contact did not show up
+  P: the contact participated in the experiment|}
   | SearchByFields fields ->
     Format.asprintf
       "Search by: %s"
