@@ -4,6 +4,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/pool/tree/HEAD)
 
+## [0.4.5](https://github.com/uzh/pool/tree/0.4.5) - 2023-08-22
+
 ### Added
 
 - added edit form assignments of closed sessions
@@ -15,6 +17,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 ### Fixed
 
 - filtering by multiple experiment participations
+- input naming conflict in search form
+- location path in message templates
 
 ## [0.4.4](https://github.com/uzh/pool/tree/0.4.4) - 2023-08-10
 
