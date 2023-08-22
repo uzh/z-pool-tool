@@ -7,9 +7,9 @@ let to_string = function
   | AdminComment -> "admin comment"
   | AssignmentEditTagsWarning ->
     "Please note that editing the assignment does not assign or remove any \
-     tags that may have been assigned by participating in this session from \
-     the contact. If this is required, please a person with the necessary \
-     permissions."
+     tags from the contact that may have been assigned by participating in \
+     this session. If this is required, please get in touch with a person with \
+     the necessary permissions."
   | AssignmentListEmpty -> "There are no assignments for this session."
   | AvailableSpots -> "Available spots"
   | Canceled -> "Canceled"
@@ -53,6 +53,8 @@ let to_string = function
     "The import of your user is not completed yet. Please check your inbox or \
      contact an administrator."
   | ImportPendingTitle -> "Pending import"
+  | LocationDetails -> "Location details"
+
   | NoEntries field ->
     Format.asprintf "There are no %s yet." (Locales_en.field_to_string field)
   | OurPartners -> "Our partners"
@@ -364,7 +366,7 @@ The following follow-up sessions exist:|}
   | SessionCloseHints ->
     Format.asprintf
       {|<strong>%s</strong> and <strong>%s</strong> are mutually exclusive.<br>
-  If a contact showed up but did not participate in the experiment, do not select any of the options.|}
+  If none of the two checkboxes is checked, it equals to 'show up but did not participate'|}
       (Locales_en.field_to_string Entity_message_field.NoShow |> capitalize)
       (Locales_en.field_to_string Entity_message_field.Participated
        |> capitalize)
