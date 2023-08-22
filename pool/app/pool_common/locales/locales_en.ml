@@ -565,6 +565,7 @@ let control_to_string = function
       (field_to_string Field.PlainText)
       (field_to_string Field.EmailText)
   | Save field -> format_submit "save" field
+  | SessionDetails -> format_submit "session details" None
   | SelectAll field -> format_submit "select all" field
   | SelectFilePlaceholder -> format_submit "select file.." None
   | Send field -> format_submit "send" field
