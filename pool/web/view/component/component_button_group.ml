@@ -1,8 +1,8 @@
 open Tyxml.Html
 
-let dropdown buttons =
+let dropdown ?(classnames = []) buttons =
   div
-    ~a:[ a_class [ "button-list" ] ]
+    ~a:[ a_class ("button-list" :: classnames) ]
     [ div [ Component_icon.(to_html Sort) ]
     ; ul
         ~a:[ a_class [ "dropdown" ] ]

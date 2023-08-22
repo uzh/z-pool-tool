@@ -347,6 +347,7 @@ let session_list
             else
               submit_element
                 ~has_icon:Icon.Trash
+                ~is_text:true
                 language
                 Message.(Delete None)
                 ~submit_type:`Disabled
@@ -398,6 +399,7 @@ let session_list
                   (Experiment.Id.value experiment_id)
                   (Id.value session.id)
                 |> link_as_button
+                     ~icon:Icon.Create
                      ~is_text:true
                      ~control:(language, Message.Close (Some Field.Session))
               in
@@ -439,7 +441,12 @@ let session_list
                          |> CCInt.to_string
                        else "")
                   ; txt key_figures
-                  ; Component.ButtonGroup.dropdown buttons
+                  ; div
+                      ~a:[ a_class [ "flexrow" ] ]
+                      [ Component.ButtonGroup.dropdown
+                          ~classnames:[ "push" ]
+                          buttons
+                      ]
                   ]
               in
               base @ cells
