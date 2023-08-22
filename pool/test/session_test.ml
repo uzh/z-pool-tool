@@ -1066,7 +1066,7 @@ let send_reminder () =
        (CCList.flat_map
           (fun (s, es) ->
             let es = es |> CCList.map (fun email -> email, smtp_auth_id) in
-            [ Pool_event.session (Session.ReminderSent s)
+            [ Pool_event.session (Session.EmailReminderSent s)
             ; Pool_event.email (Email.BulkSent es)
             ])
           [ session1, CCList.take 2 users; session2, CCList.drop 2 users ]))

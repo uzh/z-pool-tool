@@ -38,7 +38,8 @@ type event =
   | Closed of t
   | Deleted of t
   | Updated of (base * Pool_location.t * t)
-  | ReminderSent of t
+  | EmailReminderSent of t
+  | TextMsgReminderSent of t
   | Rescheduled of (t * reschedule)
 [@@deriving eq, show]
 
@@ -86,9 +87,15 @@ let handle_event pool =
       ; email_reminder_lead_time
       ; text_message_reminder_lead_time
       }
-  | ReminderSent session ->
+  | EmailReminderSent session ->
     { session with
       email_reminder_sent_at = Some (Pool_common.Reminder.SentAt.create_now ())
+    }
+    |> Repo.update pool
+  | TextMsgReminderSent session ->
+    { session with
+      text_message_reminder_sent_at =
+        Some (Pool_common.Reminder.SentAt.create_now ())
     }
     |> Repo.update pool
   | Rescheduled (session, { start; duration }) ->

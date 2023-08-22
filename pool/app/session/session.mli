@@ -161,7 +161,8 @@ type event =
   | Closed of t
   | Deleted of t
   | Updated of (base * Pool_location.t * t)
-  | ReminderSent of t
+  | EmailReminderSent of t
+  | TextMsgReminderSent of t
   | Rescheduled of (t * reschedule)
 
 val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
@@ -291,7 +292,7 @@ val find_experiment_id_and_title
 
 val find_sessions_to_remind
   :  Pool_database.Label.t
-  -> (t list, Pool_common.Message.error) Lwt_result.t
+  -> (t list * t list, Pool_common.Message.error) Lwt_result.t
 
 val find_follow_ups
   :  Pool_database.Label.t

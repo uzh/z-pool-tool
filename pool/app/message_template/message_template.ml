@@ -643,7 +643,7 @@ module SessionReminder = struct
     |> Lwt.return
   ;;
 
-  let prepare pool tenant sys_langs experiment session =
+  let prepare_emails pool tenant sys_langs experiment session =
     let open Message_utils in
     let%lwt templates =
       find_all_by_label_to_send
@@ -668,6 +668,36 @@ module SessionReminder = struct
         (Contact.email_address contact)
         layout
         params
+      |> CCResult.return
+    in
+    Lwt.return fnc
+  ;;
+
+  let prepare_text_messages
+    pool
+    (tenant : Pool_tenant.t)
+    sys_langs
+    experiment
+    session
+    =
+    let open Message_utils in
+    let%lwt templates =
+      find_all_by_label_to_send
+        ~entity_uuids:
+          [ Session.Id.to_common session.Session.id
+          ; Experiment.Id.to_common experiment.Experiment.id
+          ]
+        pool
+        sys_langs
+        Label.SessionReminder
+    in
+    let title = tenant.Pool_tenant.title in
+    let layout = layout_from_tenant tenant in
+    let fnc ({ Assignment.contact; _ } as assignment) cell_phone =
+      let open CCResult in
+      let* lang, template = template_by_contact sys_langs templates contact in
+      let params = email_params lang layout experiment session assignment in
+      Text_message.render_and_create cell_phone title (template.sms_text, params)
       |> CCResult.return
     in
     Lwt.return fnc

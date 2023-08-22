@@ -638,7 +638,7 @@ end = struct
            let emails =
              emails |> CCList.map (fun email -> email, smtp_auth_id)
            in
-           (Session.ReminderSent session |> Pool_event.session)
+           (Session.EmailReminderSent session |> Pool_event.session)
            ::
            (if emails |> CCList.is_empty |> not
             then [ Email.BulkSent emails |> Pool_event.email ]

@@ -218,8 +218,12 @@ let stringify_action = function
   | `UpdateTriggerProfileUpdateAfter -> "update_trigger_profile_update_after"
 ;;
 
-let default_session_reminder_lead_time_key_yojson =
+let default_email_session_reminder_lead_time_key_yojson =
   yojson_of_setting_key ReminderLeadTime
+;;
+
+let default_text_message_session_reminder_lead_time_key_yojson =
+  yojson_of_setting_key TextMsgReminderLeadTime
 ;;
 
 let trigger_profile_update_after_key_yojson =

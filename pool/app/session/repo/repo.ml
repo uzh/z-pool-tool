@@ -390,13 +390,29 @@ module Sql = struct
     ||> CCOption.to_result Pool_common.Message.(NotFound Field.Experiment)
   ;;
 
-  let find_sessions_to_remind_request =
+  let find_sessions_to_remind_request channel =
+    let reminder_sent_at, lead_time =
+      match channel with
+      | `Email ->
+        ( "pool_sessions.email_reminder_sent_at IS NULL"
+        , {sql| pool_sessions.email_reminder_lead_time,
+      pool_experiments.email_session_reminder_lead_time,
+      (SELECT value FROM pool_system_settings WHERE settings_key = $1))|sql}
+        )
+      | `TextMessage ->
+        ( "pool_sessions.text_message_reminder_sent_at IS NULL"
+        , {sql| pool_sessions.text_message_reminder_lead_time,
+      pool_experiments.text_message_session_reminder_lead_time,
+      (SELECT value FROM pool_system_settings WHERE settings_key = $1))|sql}
+        )
+    in
     let open Caqti_request.Infix in
-    {sql|
+    Format.asprintf
+      {sql|
     INNER JOIN pool_experiments
       ON pool_experiments.uuid = pool_sessions.experiment_uuid
     WHERE
-      pool_sessions.email_reminder_sent_at IS NULL
+      %s
     AND
       pool_sessions.canceled_at IS NULL
     AND
@@ -406,22 +422,34 @@ module Sql = struct
     AND
       pool_sessions.start <= DATE_ADD(NOW(), INTERVAL
         COALESCE(
-          pool_sessions.email_reminder_lead_time,
-          pool_experiments.email_session_reminder_lead_time,
-          (SELECT value FROM pool_system_settings WHERE settings_key = $1))
+          %s
         SECOND)
     |sql}
+      reminder_sent_at
+      lead_time
     |> find_sql
     |> Caqti_type.(string) ->* RepoEntity.t
   ;;
 
   let find_sessions_to_remind pool =
-    let settings_key = Settings.default_session_reminder_lead_time_key_yojson in
-    Lwt_result.ok
-    @@ Utils.Database.collect
-         (Database.Label.value pool)
-         find_sessions_to_remind_request
-         (settings_key |> Yojson.Safe.to_string)
+    let email_default_lead_time =
+      Settings.default_email_session_reminder_lead_time_key_yojson
+    in
+    let text_message_default_lead_time =
+      Settings.default_text_message_session_reminder_lead_time_key_yojson
+    in
+    let collect = Utils.Database.collect (Database.Label.value pool) in
+    let%lwt email_reminders =
+      collect
+        (find_sessions_to_remind_request `Email)
+        (email_default_lead_time |> Yojson.Safe.to_string)
+    in
+    let%lwt text_msg_reminders =
+      collect
+        (find_sessions_to_remind_request `TextMessage)
+        (text_message_default_lead_time |> Yojson.Safe.to_string)
+    in
+    Lwt_result.return (email_reminders, text_msg_reminders)
   ;;
 
   let find_follow_ups_request =
@@ -755,7 +783,13 @@ let find_upcoming_public_by_contact pool contact_id =
 
 let find_sessions_to_remind pool =
   let open Utils.Lwt_result.Infix in
-  Sql.find_sessions_to_remind pool >>= add_location_to_multiple pool
+  Sql.find_sessions_to_remind pool
+  >>= fun (email_reminders, text_message_reminders) ->
+  let* email_reminders = add_location_to_multiple pool email_reminders in
+  let* text_message_reminders =
+    add_location_to_multiple pool text_message_reminders
+  in
+  Lwt_result.return (email_reminders, text_message_reminders)
 ;;
 
 let insert = Sql.insert
