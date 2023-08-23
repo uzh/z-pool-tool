@@ -83,6 +83,7 @@ Sie kommen für mehr Experimente in Frage, umso kompletter Ihr Profil ist.|}
     Format.asprintf "Total generierter Einladungen: %d" number
   | ResetPasswordLink | ResetPasswordTitle -> "Passwort zurücksetzen"
   | Reminder -> "Erinnerung"
+  | ResendReminders -> "Erinnerungen erneut schicken"
   | RoleApplicableToAssign -> "Zuweisbare Benutzer"
   | RoleCurrentlyAssigned -> "Aktuell zugewiesen"
   | RoleCurrentlyNoneAssigned field ->
@@ -273,6 +274,10 @@ Wird nach diesem Feld gefiltert, wird der überschreibende Wert bevorzugt.
     Gestartete Mailings können nicht mehr gelöscht werden.|}
   | ExperimentMailingsRegistrationDisabled ->
     {|Die Registrierung für dieses Experiment ist derzeit deaktiviert. Einladungen werden weiterhin verschickt, wenn ein Mailing erstellt wird, aber die Kontakte können sich nicht für eine Session anmelden.|}
+  | ResendRemindersChannel ->
+    "Wenn Sie sich dafür entscheiden, die Erinnerungen als Textnachrichten zu \
+     versenden, erhalten Kontakte, die keine verifizierte Handynummer haben, \
+     die Erinnerung per E-Mail."
   | ExperimentWaitingList ->
     "Kontakte, die zu diesem Experiment eingeladen wurden, und sich auf die \
      Warteliste gesetzt haben. Sie müssen manuell einer Session zugewiesen \

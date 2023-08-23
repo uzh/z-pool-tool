@@ -648,3 +648,85 @@ end = struct
 
   let effects = Session.Guard.Access.update
 end
+
+module ResendReminders : sig
+  include Common.CommandSig with type t = Pool_common.Reminder.Channel.t
+
+  val handle
+    :  ?tags:Logs.Tag.set
+    -> (Assignment.t -> (Sihl_email.t, Pool_common.Message.error) result)
+    -> (Assignment.t
+        -> Pool_user.CellPhone.t
+        -> (Text_message.t, Pool_common.Message.error) result)
+    -> Experiment.t
+    -> Session.t
+    -> Assignment.t list
+    -> t
+    -> (Pool_event.t list, Conformist.error_msg) result
+
+  val decode : Conformist.input -> (t, Conformist.error_msg) result
+  val effects : Experiment.Id.t -> Session.Id.t -> Guard.ValidationSet.t
+end = struct
+  type t = Pool_common.Reminder.Channel.t
+
+  let schema =
+    Conformist.(make Field.[ Pool_common.Reminder.Channel.schema () ] CCFun.id)
+  ;;
+
+  let handle
+    ?(tags = Logs.Tag.empty)
+    create_email
+    create_text_message
+    experiment
+    _
+    assignments
+    channel
+    =
+    Logs.info ~src (fun m -> m "Handle command ResendReminders" ~tags);
+    let open Pool_common.Reminder.Channel in
+    let open CCResult.Infix in
+    let create_email assignment =
+      assignment
+      |> create_email
+      >|= fun email -> email, experiment.Experiment.smtp_auth_id
+    in
+    let* events =
+      match channel with
+      | Email ->
+        assignments
+        |> CCList.map create_email
+        |> CCList.all_ok
+        >|= Email.bulksent
+        >|= Pool_event.email
+        >|= CCList.return
+      | TextMessage ->
+        let* emails, text_messages =
+          assignments
+          |> CCList.fold_left
+               (fun messages ({ Assignment.contact; _ } as assignment) ->
+                 messages
+                 >>= fun (emails, text_messages) ->
+                 match contact.Contact.cell_phone with
+                 | None ->
+                   create_email assignment
+                   >|= fun email -> email :: emails, text_messages
+                 | Some cell_phone ->
+                   create_text_message assignment cell_phone
+                   >|= fun msg -> emails, msg :: text_messages)
+               (Ok ([], []))
+        in
+        Ok
+          [ Email.BulkSent emails |> Pool_event.email
+          ; Text_message.BulkSent text_messages |> Pool_event.text_message
+          ]
+    in
+    Ok events
+  ;;
+
+  let decode data =
+    Conformist.decode_and_validate schema data
+    |> CCResult.map_err Pool_common.Message.to_conformist_error
+  ;;
+
+  let effects = Session.Guard.Access.update
+end

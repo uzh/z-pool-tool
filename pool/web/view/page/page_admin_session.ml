@@ -733,7 +733,25 @@ let detail
           |> CCOption.map (fun c ->
             Field.ClosedAt, Utils.Time.formatted_date_time c |> txt)
         in
-        rows @ ([ canceled; closed ] |> CCList.filter_map CCFun.id) @ counters
+        let time_stamps =
+          let format value =
+            value
+            |> CCOption.map_or
+                 ~default:""
+                 CCFun.(
+                   Pool_common.Reminder.SentAt.value
+                   %> Utils.Time.formatted_date_time)
+            |> txt
+          in
+          [ Field.EmailRemindersSentAt, format session.email_reminder_sent_at
+          ; ( Field.TextMessageRemindersSentAt
+            , format session.text_message_reminder_sent_at )
+          ]
+        in
+        rows
+        @ counters
+        @ time_stamps
+        @ ([ canceled; closed ] |> CCList.filter_map CCFun.id)
       in
       Table.vertical_table `Striped language ~align_top:true
       @@ CCOption.map_or ~default:rows (CCList.cons' rows) parent
@@ -794,6 +812,44 @@ let detail
     in
     div ~a:[ a_class [ "stack" ] ] [ table; links ]
   in
+  let resend_reminders =
+    let open Pool_common.Reminder in
+ (**    let id = "resend-reminders-modal" in
+   let modal =
+      Modal.create
+        language
+        (fun language ->
+          Pool_common.(
+            Utils.hint_to_string language I18n.ResendRemindersChannel))
+        id
+        []
+    in*)
+    div
+      [ h2
+          [ txt Pool_common.(Utils.text_to_string language I18n.ResendReminders)
+          ]
+      ; form
+          ~a:[ a_method `Post; a_action ""; a_class [ "stack" ] ]
+          [ p
+              [ txt
+                  Pool_common.(
+                    Utils.hint_to_string language I18n.ResendRemindersChannel)
+              ]
+          ; selector
+              language
+              Message.Field.MessageChannel
+              Channel.show
+              Channel.all
+              None
+              ~option_formatter:(fun channel ->
+                Channel.show channel
+                |> CCString.replace ~sub:"_" ~by:" "
+                |> CCString.capitalize_ascii)
+              ()
+          ; submit_element language Message.(Resend None) ()
+          ]
+      ]
+  in
   let tags_html =
     div
       [ h2
@@ -837,7 +893,7 @@ let detail
   in
   div
     ~a:[ a_class [ "stack-lg" ] ]
-    [ session_overview; tags_html; assignments_html ]
+    [ session_overview; resend_reminders; tags_html; assignments_html ]
   |> CCList.return
   |> Layout.Experiment.(
        create

@@ -49,6 +49,7 @@ type t =
   | ProfileCompletionText
   | RateTotalSent of int
   | Reminder
+  | ResendReminders
   | ResetPasswordLink
   | ResetPasswordTitle
   | RoleApplicableToAssign
@@ -183,6 +184,7 @@ type hint =
   | RateDependencyWithout
   | RateNumberPerMinutes of int * float
   | RegistrationDisabled
+  | ResendRemindersChannel
   | RulesIntro
   | ScheduleEvery of Ptime.Span.t
   | ScheduleAt of Ptime.t

@@ -209,6 +209,20 @@ module Reminder = struct
     let value m = m
     let sexp_of_t = Pool_common_utils.Time.ptime_to_sexp
   end
+
+  module Channel = struct
+    module Core = struct
+      let field = PoolError.Field.MessageChannel
+
+      type t =
+        | Email [@name "email"] [@printer print "email"]
+        | TextMessage [@name "text_message"] [@printer print "text_message"]
+      [@@deriving enum, eq, ord, sexp_of, show { with_path = false }, yojson]
+    end
+
+    include Entity_base_model.SelectorType (Core)
+    include Core
+  end
 end
 
 module ExperimentType = struct

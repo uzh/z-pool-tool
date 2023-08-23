@@ -10,6 +10,7 @@ Available tables:
     - guardian_rules
     - i18n
     - message_templates
+    - system_settings
 
 Example: seed.default message_templates
     |}
