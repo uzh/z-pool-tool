@@ -303,6 +303,10 @@ module Sql = struct
     let request =
       sql |> where_prefix |> count_filtered_request_sql |> pt ->! Caqti_type.int
     in
+    let () =
+      Caqti_request.make_pp_with_param () Format.std_formatter (request, pv)
+    in
+    print_endline "";
     let%lwt count =
       Utils.Database.find_opt (pool |> Pool_database.Label.value) request pv
     in
