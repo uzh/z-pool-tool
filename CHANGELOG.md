@@ -4,6 +4,11 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/pool/tree/HEAD)
 
+### Changed
+
+- refactored session close view layout
+- places buttons of session list in a dropdown
+
 ## [0.4.5](https://github.com/uzh/pool/tree/0.4.5) - 2023-08-22
 
 ### Added
