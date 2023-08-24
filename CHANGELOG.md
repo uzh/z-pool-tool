@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 - refactored session close view layout
 - places buttons of session list in a dropdown
+- improve performance of 'contains none' and 'contains some' filters
 
 ## [0.4.5](https://github.com/uzh/pool/tree/0.4.5) - 2023-08-22
 
