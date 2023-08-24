@@ -24,6 +24,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 ### Added
 
 - added edit form assignments of closed sessions
+- send reminders via text message
+- form to resend reminders manually
 
 ### Changed
 
