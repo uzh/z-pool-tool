@@ -162,16 +162,21 @@ let add_uuid_param dyn ids =
 
 let add_list_condition subquery dyn ids =
   let open Operator in
+  let compare_length (dyn, condition) =
+    (dyn, Format.asprintf "(%s) %s" (subquery ~count:true) condition)
+    |> CCResult.return
+  in
   function
   | List o ->
     let open ListM in
     (match o with
      | ContainsAll ->
-       Dynparam.add Caqti_type.int (CCList.length ids) dyn, " = ? "
-     | ContainsNone -> dyn, " = 0 "
-     | ContainsSome -> dyn, " > 0 ")
-    |> fun (dyn, condition) ->
-    (dyn, Format.asprintf "(%s) %s" subquery condition) |> CCResult.return
+       (Dynparam.add Caqti_type.int (CCList.length ids) dyn, " = ? ")
+       |> compare_length
+     | ContainsNone ->
+       Ok (dyn, Format.asprintf "NOT EXISTS (%s)" (subquery ~count:false))
+     | ContainsSome ->
+       Ok (dyn, Format.asprintf "EXISTS (%s)" (subquery ~count:false)))
   | Equality _ | String _ | Size _ | Existence _ ->
     Error Message.(Invalid Field.Operator)
 ;;
@@ -182,11 +187,13 @@ let add_list_condition subquery dyn ids =
 let participation_subquery dyn operator ids =
   let open CCResult in
   let* dyn, query_params = add_uuid_param dyn ids in
-  let subquery =
+  let subquery ~count =
+    let col = "DISTINCT pool_experiments.uuid" in
+    let select = if count then Format.asprintf "COUNT(%s)" col else col in
     Format.asprintf
       {sql|
         SELECT
-          COUNT(DISTINCT pool_experiments.uuid)
+          %s
         FROM
           pool_assignments
           INNER JOIN pool_sessions ON pool_sessions.uuid = pool_assignments.session_uuid
@@ -197,6 +204,7 @@ let participation_subquery dyn operator ids =
           AND pool_assignments.canceled_at IS NULL
           AND pool_experiments.uuid IN (%s)
       |sql}
+      select
       query_params
   in
   add_list_condition subquery dyn ids operator
@@ -205,16 +213,22 @@ let participation_subquery dyn operator ids =
 let tag_subquery dyn operator ids =
   let open CCResult in
   let* dyn, query_params = add_uuid_param dyn ids in
-  let subquery =
+  let subquery ~count =
+    let col = "DISTINCT pool_tags.uuid" in
+    let select =
+      if count then Format.asprintf "SELECT COUNT(%s)" col else col
+    in
     Format.asprintf
       {sql|
-        SELECT COUNT(DISTINCT pool_tags.uuid)
+        SELECT
+          %s
         FROM
           pool_tagging
           INNER JOIN pool_tags ON pool_tagging.tag_uuid = pool_tags.uuid
         WHERE pool_tagging.model_uuid = pool_contacts.user_uuid
           AND pool_tags.uuid IN (%s)
         |sql}
+      select
       query_params
   in
   add_list_condition subquery dyn ids operator
