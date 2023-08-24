@@ -140,7 +140,7 @@ let input_element
     in
     let attrs = if required then a_required () :: attrs else attrs in
     let attrs = if disabled then a_disabled () :: attrs else attrs in
-    if CCOption.is_some error then a_class [ "has-error" ] :: attrs else attrs
+    if CCOption.is_some error then a_class [ "is-invalid" ] :: attrs else attrs
   in
   match input_type with
   | `Hidden -> input ~a:attributes ()
@@ -189,7 +189,7 @@ let flatpicker_element
     | `DateTime -> false
   in
   let flatpicker_attributes =
-    let input_class = "datepicker" :: (if success then [ "success" ] else []) in
+    let input_class = "datepicker" :: (if success then [ "is-valid" ] else []) in
     [ a_class input_class
     ; a_user_data "language" (Pool_common.Language.show language)
     ]
@@ -271,7 +271,7 @@ let timespan_picker
       @ [ a_input_min (`Number 0); a_step (Some 1.) ]
     in
     let attrs = if required then a_required () :: attrs else attrs in
-    if CCOption.is_some error then a_class [ "has-error" ] :: attrs else attrs
+    if CCOption.is_some error then a_class [ "is-invalid" ] :: attrs else attrs
   in
   let group_class = Elements.group_class classnames orientation in
   let help = Elements.help language help in
@@ -558,7 +558,7 @@ let selector
   in
   let attributes =
     let checks =
-      [ CCOption.is_some error, a_class [ "has-error" ]
+      [ CCOption.is_some error, a_class [ "is-invalid" ]
       ; read_only, a_disabled ()
       ; required, a_required ()
       ; disabled, a_disabled ()

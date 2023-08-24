@@ -11,7 +11,7 @@ let dummy_css () =
   ; filename = "dummy.css"
   ; filesize = 20
   ; mime = "text/css"
-  ; body = "html {font-family: sans-serif;}"
+  ; body = ""
   }
 ;;
 

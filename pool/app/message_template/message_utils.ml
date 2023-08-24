@@ -131,10 +131,7 @@ let combine_html language html_title =
       ; style
           ~a:[ a_mime_type "text/css" ]
           [ Unsafe.data
-              {css| body { font-family:
-   BlinkMacSystemFont,-apple-system,Segoe UI,Roboto,Oxygen,Ubuntu,Cantarell,Fira
-   Sans,Droid Sans,Helvetica Neue,Helvetica,Arial,sans-serif; line-height: 1.4;
-   } |css}
+              {css| body { font-family:sans-serif, Arial; line-height: 1.4; } |css}
           ]
       ]
   in

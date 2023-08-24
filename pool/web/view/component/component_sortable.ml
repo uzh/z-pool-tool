@@ -6,7 +6,7 @@ let sortable_icon sortable =
     ~a:[ a_class classnames ]
     [ div
         ~a:[ a_class [ "flexrow"; "align-center" ] ]
-        Component_icon.[ to_html Sort ]
+        Component_icon.[ to_html ReorderThree ]
     ; sortable
     ]
 ;;
