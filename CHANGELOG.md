@@ -4,6 +4,10 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/pool/tree/HEAD)
 
+### Changed
+
+- improve performance of 'contains none' and 'contains some' filters
+
 ## [0.4.5](https://github.com/uzh/pool/tree/0.4.5) - 2023-08-22
 
 ### Added
