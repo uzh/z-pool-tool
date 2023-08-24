@@ -625,7 +625,7 @@ let detail
   ?view_contact_name
   ?view_contact_email
   ?view_contact_cellphone
-  (Pool_context.{ language; _ } as context)
+  (Pool_context.{ language; csrf; _ } as context)
   ({ Experiment.id; external_data_required; _ } as experiment)
   (session : Session.t)
   participation_tags
@@ -647,12 +647,73 @@ let detail
         ~classnames:[ "small" ]
         ~style
         ?icon
-        (Format.asprintf
-           "/admin/experiments/%s/sessions/%s/%s"
-           experiment_id
-           session_id
-           url)
+        (Format.asprintf "%s/%s" (session_path id session.id) url)
       |> CCOption.pure
+  in
+  let resend_reminders_modal =
+    let open Pool_common.Reminder in
+    if Session.reminder_resendable session |> CCResult.is_ok |> not
+    then txt ""
+    else (
+      let modal_id = "resend-reminders-modal" in
+      let resend_txt language =
+        Pool_common.(Utils.text_to_string language I18n.ResendReminders)
+      in
+      let inner =
+        let resend_action =
+          Format.asprintf "%s/resend-reminders" (session_path id session.id)
+          |> Sihl.Web.externalize_path
+        in
+        let warning =
+          match
+            CCOption.is_none session.email_reminder_sent_at
+            && CCOption.is_none session.text_message_reminder_sent_at
+          with
+          | false -> txt ""
+          | true ->
+            Notification.notification
+              language
+              `Warning
+              [ Utils.hint_to_string language I18n.ResendRemindersWarning
+                |> HttpUtils.add_line_breaks
+              ]
+        in
+        div
+          [ warning
+          ; p
+              [ txt
+                  Pool_common.(
+                    Utils.hint_to_string language I18n.ResendRemindersChannel)
+              ]
+          ; form
+              ~a:[ a_method `Post; a_action resend_action; a_class [ "stack" ] ]
+              [ csrf_element csrf ()
+              ; selector
+                  language
+                  Message.Field.MessageChannel
+                  Channel.show
+                  Channel.all
+                  None
+                  ~option_formatter:(fun channel ->
+                    Channel.show channel
+                    |> CCString.replace ~sub:"_" ~by:" "
+                    |> CCString.capitalize_ascii)
+                  ()
+              ; submit_element language Message.(Resend None) ()
+              ]
+          ]
+      in
+      let modal = Modal.create language resend_txt modal_id inner in
+      let button =
+        a
+          ~a:
+            [ a_href "#"
+            ; a_user_data "modal" modal_id
+            ; a_class [ "has-icon"; "primary"; "btn"; "small" ]
+            ]
+          [ txt (resend_txt language) ]
+      in
+      div [ modal; button ])
   in
   let session_overview =
     let table =
@@ -804,51 +865,13 @@ let detail
             , Some (`Error, Some Icon.CloseCircle) )
           ]
         |> CCList.filter_map (fun (t, style) -> session_link ?style t)
-        |> wrap
+        |> fun btns -> wrap (resend_reminders_modal :: btns)
       in
       div
         ~a:[ a_class [ "flexrow"; "flex-gap"; "justify-between" ] ]
         [ left; right ]
     in
     div ~a:[ a_class [ "stack" ] ] [ table; links ]
-  in
-  let resend_reminders =
-    let open Pool_common.Reminder in
- (**    let id = "resend-reminders-modal" in
-   let modal =
-      Modal.create
-        language
-        (fun language ->
-          Pool_common.(
-            Utils.hint_to_string language I18n.ResendRemindersChannel))
-        id
-        []
-    in*)
-    div
-      [ h2
-          [ txt Pool_common.(Utils.text_to_string language I18n.ResendReminders)
-          ]
-      ; form
-          ~a:[ a_method `Post; a_action ""; a_class [ "stack" ] ]
-          [ p
-              [ txt
-                  Pool_common.(
-                    Utils.hint_to_string language I18n.ResendRemindersChannel)
-              ]
-          ; selector
-              language
-              Message.Field.MessageChannel
-              Channel.show
-              Channel.all
-              None
-              ~option_formatter:(fun channel ->
-                Channel.show channel
-                |> CCString.replace ~sub:"_" ~by:" "
-                |> CCString.capitalize_ascii)
-              ()
-          ; submit_element language Message.(Resend None) ()
-          ]
-      ]
   in
   let tags_html =
     div
@@ -893,7 +916,7 @@ let detail
   in
   div
     ~a:[ a_class [ "stack-lg" ] ]
-    [ session_overview; resend_reminders; tags_html; assignments_html ]
+    [ session_overview; tags_html; assignments_html ]
   |> CCList.return
   |> Layout.Experiment.(
        create

@@ -678,7 +678,7 @@ end = struct
     create_email
     create_text_message
     experiment
-    _
+    session
     assignments
     channel
     =
@@ -690,6 +690,7 @@ end = struct
       |> create_email
       >|= fun email -> email, experiment.Experiment.smtp_auth_id
     in
+    let* () = Session.reminder_resendable session in
     let* events =
       match channel with
       | Email ->
@@ -699,6 +700,7 @@ end = struct
         >|= Email.bulksent
         >|= Pool_event.email
         >|= CCList.return
+        >|= CCList.cons (Session.EmailReminderSent session |> Pool_event.session)
       | TextMessage ->
         let* emails, text_messages =
           assignments
@@ -718,6 +720,7 @@ end = struct
         Ok
           [ Email.BulkSent emails |> Pool_event.email
           ; Text_message.BulkSent text_messages |> Pool_event.text_message
+          ; Session.TextMsgReminderSent session |> Pool_event.session
           ]
     in
     Ok events

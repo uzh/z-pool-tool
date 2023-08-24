@@ -559,3 +559,10 @@ let assignment_creatable session =
   let* () = not_past session in
   Ok ()
 ;;
+
+let reminder_resendable session =
+  let open CCResult.Infix in
+  let* () = not_canceled session in
+  let* () = not_closed session in
+  Ok ()
+;;

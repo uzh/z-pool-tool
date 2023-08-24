@@ -393,6 +393,10 @@ module Admin = struct
           ; post "/reschedule" ~middlewares:[ Access.reschedule ] reschedule
           ; get "/close" ~middlewares:[ Access.close ] close
           ; post "/close" ~middlewares:[ Access.close ] close_post
+          ; post
+              "/resend-reminders"
+              ~middlewares:[ Access.update ]
+              resend_reminders
           ; choose ~scope:(add_human_field Assignments) assignments
           ; choose ~scope:(add_human_field MessageTemplate) message_templates
           ; choose ~scope:(ParticipationTag |> human_url) participation_tags

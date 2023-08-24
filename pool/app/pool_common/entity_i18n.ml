@@ -185,6 +185,7 @@ type hint =
   | RateNumberPerMinutes of int * float
   | RegistrationDisabled
   | ResendRemindersChannel
+  | ResendRemindersWarning
   | RulesIntro
   | ScheduleEvery of Ptime.Span.t
   | ScheduleAt of Ptime.t

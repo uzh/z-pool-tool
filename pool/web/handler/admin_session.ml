@@ -782,7 +782,7 @@ let resend_reminders req =
     let%lwt () = Pool_event.handle_events ~tags database_label events in
     Http_utils.redirect_to_with_actions
       path
-      [ Message.set ~success:[ Pool_common.Message.(Created Field.Session) ] ]
+      [ Message.set ~success:[ Pool_common.Message.RemindersResent ] ]
     |> Lwt_result.ok
   in
   result |> HttpUtils.extract_happy_path_with_actions ~src req

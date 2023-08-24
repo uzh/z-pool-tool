@@ -278,6 +278,10 @@ Wird nach diesem Feld gefiltert, wird der überschreibende Wert bevorzugt.
     "Wenn Sie sich dafür entscheiden, die Erinnerungen als Textnachrichten zu \
      versenden, erhalten Kontakte, die keine verifizierte Handynummer haben, \
      die Erinnerung per E-Mail."
+  | ResendRemindersWarning ->
+    {sql|Es wurden noch keine automatischen Erinnerungen für diese Session verschickt. Stellen Sie sicher, dass das Nachrichtentemplate korrekt ist, falls Sie die Erinnerungen jetzt auslösen wollen.
+
+Wenn Sie die Erinnerungen jetzt manuell auslösen werden über den gewählten Nachrichtenkanal keine automatischen Erinnerungen mehr verschickt.|sql}
   | ExperimentWaitingList ->
     "Kontakte, die zu diesem Experiment eingeladen wurden, und sich auf die \
      Warteliste gesetzt haben. Sie müssen manuell einer Session zugewiesen \

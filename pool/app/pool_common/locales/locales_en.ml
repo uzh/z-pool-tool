@@ -290,6 +290,7 @@ let success_to_string : success -> string = function
   | Published field ->
     field_message "" (field_to_string field) "was successfully published."
   | RemovedFromWaitingList -> "You were removed from the waiting list."
+  | RemindersResent -> "The reminders have been resent."
   | Rescheduled field ->
     field_message "" (field_to_string field) "was successfully rescheduled."
   | RoleAssigned -> "Role was assigned."

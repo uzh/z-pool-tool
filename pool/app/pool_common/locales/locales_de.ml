@@ -291,6 +291,7 @@ let success_to_string : success -> string = function
   | Published field ->
     field_message "" (field_to_string field) "wurde erfolgreich veröffentlicht."
   | RemovedFromWaitingList -> "Sie wurden von der Warteliste entfernt."
+  | RemindersResent -> "Die Erinnerungen wirden erneut versendet."
   | Rescheduled field ->
     field_message "" (field_to_string field) "wurden erfolgreich verschoben."
   | RoleAssigned -> "Rolle wurde zugewiesen."
