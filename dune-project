@@ -73,6 +73,10 @@
     (< 2.0.0)))
   (caqti-driver-mariadb
    (>= 1.8.0))
+  (caqti-lwt
+   (and
+    (>= 1.9.0)
+    (< 2.0.0)))
   (caqti
    (>= 1.8.0))
   (ocamlformat

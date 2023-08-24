@@ -15,7 +15,7 @@ depends: [
   "angstrom" {= "0.15.0"}
   "asn1-combinators" {= "0.2.6"}
   "astring" {= "0.8.5"}
-  "base" {= "v0.16.1"}
+  "base" {= "v0.16.3"}
   "base-bytes" {= "base"}
   "base-threads" {= "base"}
   "base-unix" {= "base"}
@@ -31,9 +31,9 @@ depends: [
   "caqti-driver-mariadb" {= "1.9.0"}
   "caqti-lwt" {= "1.9.0"}
   "cmdliner" {= "1.2.0"}
-  "cohttp" {= "5.2.0"}
-  "cohttp-lwt" {= "5.2.0"}
-  "cohttp-lwt-unix" {= "5.2.0"}
+  "cohttp" {= "5.3.0"}
+  "cohttp-lwt" {= "5.3.0"}
+  "cohttp-lwt-unix" {= "5.3.0"}
   "coin" {= "0.1.4"}
   "colombe" {= "0.8.0"}
   "conduit" {= "6.2.0"}
@@ -57,9 +57,9 @@ depends: [
   "ctypes" {= "0.20.2"}
   "digestif" {= "1.1.4"}
   "domain-name" {= "0.4.0"}
-  "dune" {= "3.9.1"}
-  "dune-build-info" {= "3.9.1"}
-  "dune-configurator" {= "3.9.1"}
+  "dune" {= "3.10.0"}
+  "dune-build-info" {= "3.10.0"}
+  "dune-configurator" {= "3.10.0"}
   "duration" {= "0.2.1"}
   "either" {= "1.0.0"}
   "emile" {= "1.1"}
@@ -85,7 +85,7 @@ depends: [
   "ke" {= "0.6"}
   "letters" {= "0.3.3"}
   "logs" {= "0.7.0"}
-  "lwt" {= "5.6.1"}
+  "lwt" {= "5.7.0"}
   "lwt_ppx" {= "2.1.0"}
   "lwt_ssl" {= "1.2.0"}
   "macaddr" {= "5.5.0"}
@@ -152,7 +152,7 @@ depends: [
   "sihl-storage" {= "4.0.0"}
   "sihl-token" {= "4.0.0"}
   "sihl-user" {= "4.0.0"}
-  "ssl" {= "0.6.0"}
+  "ssl" {= "0.7.0"}
   "stdio" {= "v0.16.0"}
   "stdlib-shims" {= "0.3.0"}
   "stringext" {= "1.6.0"}
@@ -224,7 +224,6 @@ pin-depends: [
     "canary.0.0.1"
     "git+https://github.com/uzh/canary.git#02cf40e029268560e160ca032850426e387aa598"
   ]
-  ["letters.0.3.3" "git+https://github.com/oxidizing/letters.git#0.3.3"]
   [
     "sihl.4.0.0"
     "git+https://github.com/oxidizing/sihl.git#e0b304a4ebd3cb2ac0d21e0f6d151b9db301f9eb"
