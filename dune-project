@@ -90,8 +90,6 @@
   canary
   (guardian
    (= 0.2.0))
-  (tls
-   (= 0.15.4))
   ;; Test/Dev dependencies
   (alcotest-lwt :with-test)
   (ppx_inline_test :with-test)))
