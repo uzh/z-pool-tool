@@ -184,11 +184,13 @@ let add_list_condition subquery dyn ids =
 (* The subquery does not return any contacts that have shown up at a session of
    the current experiment. It does not make a difference, if they
    participated. *)
-let participation_subquery dyn operator ids =
+let participation_subquery_old dyn operator ids =
+  (* TODO: Reduce joins? join in experiments not necessary. maybe even preload
+     all sessions *)
   let open CCResult in
   let* dyn, query_params = add_uuid_param dyn ids in
   let subquery ~count =
-    let col = "DISTINCT pool_experiments.uuid" in
+    let col = "DISTINCT pool_sessions.experiment_uuid" in
     let select = if count then Format.asprintf "COUNT(%s)" col else col in
     Format.asprintf
       {sql|
@@ -197,15 +199,41 @@ let participation_subquery dyn operator ids =
         FROM
           pool_assignments
           INNER JOIN pool_sessions ON pool_sessions.uuid = pool_assignments.session_uuid
-          INNER JOIN pool_experiments ON pool_sessions.experiment_uuid = pool_experiments.uuid
         WHERE
           pool_assignments.contact_uuid = pool_contacts.user_uuid
           AND pool_assignments.participated = 1
           AND pool_assignments.canceled_at IS NULL
-          AND pool_experiments.uuid IN (%s)
+          AND pool_sessions.experiment_uuid IN (%s)
       |sql}
       select
       query_params
+  in
+  add_list_condition subquery dyn ids operator
+;;
+
+let participation_subquery dyn operator ids =
+  let open CCResult in
+  let* dyn, query_params = add_uuid_param dyn ids in
+  let subquery ~count =
+    let col = "DISTINCT tmp_participations.experiment_uuid" in
+    let select = if count then Format.asprintf "COUNT(%s)" col else col in
+    let base =
+      Format.asprintf
+        {sql|
+        SELECT
+          %s
+        FROM
+          tmp_participations
+        WHERE
+          tmp_participations.contact_uuid = pool_contacts.user_uuid
+        AND tmp_participations.experiment_uuid IN (%s)
+      |sql}
+        select
+        query_params
+    in
+    if count
+    then Format.asprintf "%s GROUP BY tmp_participations.contact_uuid" base
+    else base
   in
   add_list_condition subquery dyn ids operator
 ;;
@@ -398,4 +426,32 @@ let rec search_templates ids query =
   | Not f -> search_templates ids f
   | Pred _ -> ids
   | Template id -> id :: ids
+;;
+
+let find_participation_experiments_of_query query =
+  let rec search ids query =
+    let search_list ids =
+      CCList.fold_left (fun ids predicate -> search ids predicate) ids
+    in
+    match query with
+    | And lst | Or lst -> search_list ids lst
+    | Not f -> search ids f
+    | Template _ -> ids
+    | Pred { Predicate.key; value; _ } ->
+      let open Key in
+      (match[@warning "-4"] key with
+       | Hardcoded key ->
+         if equal_hardcoded key Participation
+         then (
+           match value with
+           | Lst values -> values @ ids
+           | _ -> ids)
+         else ids
+       | _ -> ids)
+  in
+  search [] query
+  |> CCList.filter_map (fun value ->
+    match value with
+    | Str id -> Some id
+    | Bool _ | Date _ | Language _ | Nr _ | Option _ -> None)
 ;;
