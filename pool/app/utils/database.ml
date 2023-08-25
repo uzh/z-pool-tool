@@ -100,9 +100,17 @@ let as_transaction database_label ~setup ~cleanup fnc =
         Lwt.catch
           (fun () ->
             let%lwt () = exec_each setup in
-            let%lwt result = fnc connection in
+            let* result = fnc connection in
             let%lwt () = exec_each cleanup in
-            Lwt.return result)
+            Connection.commit ()
+            >|- (fun err ->
+                  Logs.err ~src (fun m ->
+                    m
+                      ~tags
+                      "Failed to commit transaction: %s"
+                      (Caqti_error.show err));
+                  err)
+            >|+ CCFun.const result)
           (fun exn ->
             (* Do we need commands to be passed to execute here? *)
             Connection.rollback ()
