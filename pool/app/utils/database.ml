@@ -112,7 +112,6 @@ let as_transaction database_label ~setup ~cleanup fnc =
                   err)
             >|+ CCFun.const result)
           (fun exn ->
-            (* Do we need commands to be passed to execute here? *)
             Connection.rollback ()
             >|> function
             | Ok () ->
