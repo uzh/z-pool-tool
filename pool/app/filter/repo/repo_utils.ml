@@ -184,31 +184,6 @@ let add_list_condition subquery dyn ids =
 (* The subquery does not return any contacts that have shown up at a session of
    the current experiment. It does not make a difference, if they
    participated. *)
-let participation_subquery_old dyn operator ids =
-  let open CCResult in
-  let* dyn, query_params = add_uuid_param dyn ids in
-  let subquery ~count =
-    let col = "DISTINCT pool_sessions.experiment_uuid" in
-    let select = if count then Format.asprintf "COUNT(%s)" col else col in
-    Format.asprintf
-      {sql|
-        SELECT
-          %s
-        FROM
-          pool_assignments
-          INNER JOIN pool_sessions ON pool_sessions.uuid = pool_assignments.session_uuid
-        WHERE
-          pool_assignments.contact_uuid = pool_contacts.user_uuid
-          AND pool_assignments.participated = 1
-          AND pool_assignments.canceled_at IS NULL
-          AND pool_sessions.experiment_uuid IN (%s)
-      |sql}
-      select
-      query_params
-  in
-  add_list_condition subquery dyn ids operator
-;;
-
 let participation_subquery dyn operator ids =
   let open CCResult in
   let* dyn, query_params = add_uuid_param dyn ids in
