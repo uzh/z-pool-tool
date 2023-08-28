@@ -36,10 +36,8 @@ type t =
       [@printer prt "prev-circle-outline"]
   | PrevOutline [@name "prev-outline"] [@printer prt "prev-outline"]
   | RefreshOutline [@name "refresh-outline"] [@printer prt "refresh-outline"]
-
   | ReorderThree [@name "reorder-three"] [@printer prt "reorder-three"]
   | ReorderTwo [@name "reorder-two"] [@printer prt "reorder-two"]
-
   | Save [@name "save"] [@printer prt "save"]
   | SaveOutline [@name "save-outline"] [@printer prt "save-outline"]
   | School [@name "school"] [@printer prt "school"]
