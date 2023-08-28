@@ -144,36 +144,6 @@ let transaction database_label commands =
       ||> raise_caqti_error ~tags)
 ;;
 
-let transaction_find_opt database_label commands query =
-  let open Lwt_result.Infix in
-  let tags = Logger.Tags.create database_label in
-  Sihl.Database.query
-    ~ctx:[ "pool", database_label ]
-    (fun connection ->
-      let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-      Lwt_list.map_s
-        (fun (request, input) -> Connection.exec request input)
-        commands
-      ||> CCResult.flatten_l
-      |> CCFun.const @@ Connection.collect_list query input
-      ||> raise_caqti_error ~tags)
-;;
-
-let transaction_collect database_label commands query =
-  let open Lwt_result.Infix in
-  let tags = Logger.Tags.create database_label in
-  Sihl.Database.query
-    ~ctx:[ "pool", database_label ]
-    (fun connection ->
-      let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-      Lwt_list.map_s
-        (fun (request, input) -> Connection.exec request input)
-        commands
-      ||> CCResult.flatten_l
-      |> CCFun.const @@ Connection.collect_list query input
-      ||> raise_caqti_error ~tags)
-;;
-
 let set_fk_check_request =
   let open Caqti_request.Infix in
   "SET FOREIGN_KEY_CHECKS = ?" |> Caqti_type.(bool ->. unit)
