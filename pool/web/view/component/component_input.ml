@@ -189,7 +189,9 @@ let flatpicker_element
     | `DateTime -> false
   in
   let flatpicker_attributes =
-    let input_class = "datepicker" :: (if success then [ "is-valid" ] else []) in
+    let input_class =
+      "datepicker" :: (if success then [ "is-valid" ] else [])
+    in
     [ a_class input_class
     ; a_user_data "language" (Pool_common.Language.show language)
     ]
