@@ -54,11 +54,10 @@ module MakeUserProfile (Config : module type of Config) = struct
              decode urlencoded >>= handle ~tags ~notification admin)
            |> Lwt_result.lift
          in
-         Utils.Database.with_transaction database_label (fun () ->
-           let%lwt () = Pool_event.handle_events ~tags database_label events in
-           redirect_to_with_actions
-             active_navigation
-             [ Message.set ~success:[ Pool_common.Message.PasswordChanged ] ])
+         let%lwt () = Pool_event.handle_events ~tags database_label events in
+         redirect_to_with_actions
+           active_navigation
+           [ Message.set ~success:[ Pool_common.Message.PasswordChanged ] ]
          |> Lwt_result.ok
     in
     result |> extract_happy_path_with_actions ~src req
@@ -77,11 +76,10 @@ module MakeUserProfile (Config : module type of Config) = struct
            Command.Update.(decode urlencoded >>= handle ~tags admin)
            |> Lwt_result.lift
          in
-         Utils.Database.with_transaction database_label (fun () ->
-           let%lwt () = Pool_event.handle_events ~tags database_label events in
-           redirect_to_with_actions
-             active_navigation
-             [ Message.set ~success:[ Pool_common.Message.Updated Field.Name ] ])
+         let%lwt () = Pool_event.handle_events ~tags database_label events in
+         redirect_to_with_actions
+           active_navigation
+           [ Message.set ~success:[ Pool_common.Message.Updated Field.Name ] ]
          |> Lwt_result.ok
     in
     result |> extract_happy_path_with_actions ~src req

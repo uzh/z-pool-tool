@@ -12,11 +12,6 @@ module Logger = struct
   end
 end
 
-let with_transaction _ f =
-  (* TODO with_transaction *)
-  f ()
-;;
-
 module Dynparam = struct
   type t = Pack : 'a Caqti_type.t * 'a -> t
 
@@ -78,7 +73,7 @@ let exec database_label request input =
       Connection.exec request input ||> raise_caqti_error ~tags)
 ;;
 
-let as_transaction database_label ~setup ~cleanup fnc =
+let transaction database_label fnc =
   let open Lwt_result.Infix in
   let tags = Logger.Tags.create database_label in
   let pool = Sihl.Database.fetch_pool ~ctx:[ "pool", database_label ] () in
@@ -92,16 +87,10 @@ let as_transaction database_label ~setup ~cleanup fnc =
           m ~tags "Failed to start transaction: %s" (Caqti_error.show err));
         Lwt.return @@ Error err
       | Ok () ->
-        let exec_each =
-          Lwt_list.iter_s (fun request ->
-            request connection ||> raise_caqti_error ~tags)
-        in
         Logs.debug ~src (fun m -> m ~tags "Started transaction");
         Lwt.catch
           (fun () ->
-            let%lwt () = exec_each setup in
             let* result = fnc connection in
-            let%lwt () = exec_each cleanup in
             Connection.commit ()
             >|- (fun err ->
                   Logs.err ~src (fun m ->
@@ -129,19 +118,33 @@ let as_transaction database_label ~setup ~cleanup fnc =
   ||> raise_caqti_error ~tags
 ;;
 
-let transaction database_label commands =
+let find_as_transaction database_label ?(setup = []) ?(cleanup = []) fnc =
   let open Lwt_result.Infix in
   let tags = Logger.Tags.create database_label in
-  Sihl.Database.query
-    ~ctx:[ "pool", database_label ]
-    (fun connection ->
-      let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-      Lwt_list.map_s
-        (fun (request, input) -> Connection.exec request input)
-        commands
-      ||> CCResult.flatten_l
-      >|+ ignore
-      ||> raise_caqti_error ~tags)
+  let fnc connection =
+    let exec_each =
+      Lwt_list.iter_s (fun request ->
+        request connection ||> raise_caqti_error ~tags)
+    in
+    let%lwt () = exec_each setup in
+    let* result = fnc connection in
+    let%lwt () = exec_each cleanup in
+    Lwt.return @@ Ok result
+  in
+  transaction database_label fnc
+;;
+
+let exec_as_transaction database_label commands =
+  let open Lwt_result.Infix in
+  let tags = Logger.Tags.create database_label in
+  let fnc connection =
+    let exec_each =
+      Lwt_list.iter_s (fun request ->
+        request connection ||> raise_caqti_error ~tags)
+    in
+    exec_each commands ||> CCResult.return
+  in
+  transaction database_label fnc
 ;;
 
 let set_fk_check_request =
