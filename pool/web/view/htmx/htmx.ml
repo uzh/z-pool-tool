@@ -126,7 +126,7 @@ let create
   =
   let input_class =
     match error, success with
-    | None, Some _ -> [ "success" ]
+    | None, Some _ -> [ "is-valid" ]
     | _, _ -> []
   in
   let classnames = classnames @ input_class in
