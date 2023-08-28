@@ -1027,7 +1027,10 @@ let close_assignment_htmx_row
   in
   let default_bool fnc = CCOption.map_or ~default:false fnc in
   let identity =
-    Page_admin_assignments.Partials.identity view_contact_name contact id
+    Component.Contacts.identity
+      view_contact_name
+      contact
+      (Assignment.Id.to_common id)
   in
   let action =
     Format.asprintf "%s/assignments/%s/close" session_path (Id.value id)

@@ -94,12 +94,6 @@ module Partials = struct
     |> txt
   ;;
 
-  let identity view_contact_name contact id =
-    if view_contact_name
-    then Contact.lastname_firstname contact
-    else Id.value id
-  ;;
-
   let overview_list
     ?(access_contact_profiles = false)
     ?(view_contact_name = false)
@@ -242,6 +236,13 @@ module Partials = struct
               @ CCList.map snd external_data_field
               @ [ assignment_participated; assignment_no_show; canceled_at ]
               |> CCList.map (fun fcn -> fcn assignment)
+              |> CCList.mapi (fun i value ->
+                if CCInt.equal i 0
+                then
+                  div
+                    ~a:[ a_class [ "flexrow"; "flex-gap-sm" ] ]
+                    (value :: Component.Contacts.status_icons assignment.contact)
+                else value)
             in
             let buttons =
               [ editable, edit
@@ -471,6 +472,10 @@ let edit
   |> Layout.Experiment.(
        create
          context
-         (Text (Partials.identity view_contact_name contact id))
+         (Text
+            (Component.Contacts.identity
+               view_contact_name
+               contact
+               (Assignment.Id.to_common id)))
          experiment)
 ;;

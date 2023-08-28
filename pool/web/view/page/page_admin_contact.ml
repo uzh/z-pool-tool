@@ -38,47 +38,11 @@ let personal_detail ?(admin_comment = None) language contact =
     ]
 ;;
 
-let status_icons { Contact.paused; verified; _ } =
-  (* TODO: Add SMTP Bounce *)
-  let open Pool_user in
-  let open Icon in
-  let success = to_html ~classnames:[ "color-green" ] in
-  let error = to_html ~classnames:[ "color-red" ] in
-  let paused =
-    match paused |> Paused.value with
-    | true -> error NotificationsOffOutline
-    | false -> success NotificationsOutline
-  in
-  [ CCOption.is_some verified, CheckmarkCircleOutline ]
-  |> CCList.map (fun (is_success, icon) ->
-    if is_success then success icon else error icon)
-  |> CCList.cons paused
-  |> div ~a:[ a_class [ "flexrow"; "flex-gap-sm" ] ]
-;;
-
-let table_legend language =
-  let open Pool_common in
-  let open Component.Table in
-  let open Icon in
-  let field_to_string m =
-    m |> Utils.field_to_string language |> CCString.capitalize_ascii
-  in
-  let text_to_string m = m |> Utils.text_to_string language in
-  table_legend
-    [ text_to_string I18n.Disabled, legend_color_item "bg-red-lighter"
-    ; ( field_to_string Message.Field.Paused
-      , legend_icon_item NotificationsOutline )
-    ; ( field_to_string Message.Field.Verified
-      , legend_icon_item CheckmarkCircleOutline )
-    ]
-;;
-
 let contact_overview language contacts =
   let open Contact in
   let open Pool_user in
   let thead =
-    (Pool_common.Message.Field.[ Email; Name; Status ]
-     |> Table.fields_to_txt language)
+    (Pool_common.Message.Field.[ Name; Email ] |> Table.fields_to_txt language)
     @ [ txt "" ]
   in
   let user_table contacts =
@@ -90,9 +54,11 @@ let contact_overview language contacts =
             | true -> tr ~a:[ a_class [ "bg-red-lighter" ] ]
             | false -> tr ~a:[]
           in
-          [ txt (email_address contact |> EmailAddress.value)
-          ; txt (fullname contact)
-          ; status_icons contact
+          [ Component.Contacts.identity_with_icons
+              true
+              contact
+              Contact.(id contact)
+          ; txt (email_address contact |> EmailAddress.value)
           ; contact |> path |> Input.link_as_button ~icon:Icon.Eye
           ]
           |> CCList.map (fun cell -> td [ cell ])
@@ -106,7 +72,9 @@ let contact_overview language contacts =
       rows
   in
   List.create
-    ~legend:(table_legend language)
+    ~legend:
+      (Contacts.status_icons_table_legend language
+       |> Component.Table.table_legend)
     language
     user_table
     Contact.sortable_by
