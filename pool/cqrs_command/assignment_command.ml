@@ -283,7 +283,7 @@ end = struct
   let effects = Assignment.Guard.Access.delete
 end
 
-module UpdateClosed : sig
+module Update : sig
   type t = update
 
   val handle
@@ -309,7 +309,7 @@ end = struct
     participated_in_other_assignments
     (command : update)
     =
-    Logs.info ~src (fun m -> m "Handle command UpdateClosed" ~tags);
+    Logs.info ~src (fun m -> m "Handle command Update" ~tags);
     let open CCResult in
     let open Assignment in
     let contact_counters =

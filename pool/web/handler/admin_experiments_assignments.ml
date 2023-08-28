@@ -335,7 +335,7 @@ let update req =
         (Contact.id assignment.contact)
     in
     let events =
-      let open Cqrs_command.Assignment_command.UpdateClosed in
+      let open Cqrs_command.Assignment_command.Update in
       let open CCResult.Infix in
       urlencoded
       |> decode
