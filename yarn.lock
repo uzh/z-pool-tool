@@ -294,10 +294,10 @@
     "@ckeditor/ckeditor5-utils" "^36.0.1"
     lodash-es "^4.17.15"
 
-"@econ/frontend-framework@^3.0.1":
-  version "3.0.1"
-  resolved "https://gitlab.uzh.ch/api/v4/projects/662/packages/npm/@econ/frontend-framework/-/@econ/frontend-framework-3.0.1.tgz#afc651464c2179d81a94ef73a02d7774d8d5f584"
-  integrity sha1-r8ZRRkwhedgalO9zoC13dNjV9YQ=
+"@econ/frontend-framework@^3.0.3":
+  version "3.0.3"
+  resolved "https://gitlab.uzh.ch/api/v4/projects/662/packages/npm/@econ/frontend-framework/-/@econ/frontend-framework-3.0.3.tgz#978878b6b94294bb17b52b3da7a61c06352e239e"
+  integrity sha1-l4h4trlClLsXtSs9p6YcBjUuI54=
   dependencies:
     flatpickr "^4.6.13"
 
