@@ -324,7 +324,7 @@ let update req =
       ||> HttpUtils.format_request_boolean_values boolean_fields
       ||> HttpUtils.remove_empty_values
     in
-    let* assignment = find_closed database_label assignment_id in
+    let* assignment = find database_label assignment_id in
     let* experiment = Experiment.find database_label experiment_id in
     let* session = Session.find database_label session_id in
     let* participated_in_other_sessions =

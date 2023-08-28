@@ -304,7 +304,7 @@ end = struct
   let handle
     ?(tags = Logs.Tag.empty)
     (experiment : Experiment.t)
-    { Session.closed_at; _ }
+    ({ Session.closed_at; _ } as session)
     ({ Assignment.no_show; participated; _ } as assignment)
     participated_in_other_assignments
     (command : update)
@@ -312,19 +312,19 @@ end = struct
     Logs.info ~src (fun m -> m "Handle command UpdateClosed" ~tags);
     let open CCResult in
     let open Assignment in
-    let* current_no_show =
-      match CCOption.is_some closed_at, no_show, participated with
-      | true, Some no_show, Some _ -> Ok no_show
-      | _ -> Error Pool_common.Message.SessionNotClosed
-    in
     let contact_counters =
-      Contact_counter.update_on_assignment_update
-        assignment
-        current_no_show
-        command.no_show
-        participated_in_other_assignments
-      |> Contact.updated
-      |> Pool_event.contact
+      match CCOption.is_some closed_at, no_show, participated with
+      | true, Some no_show, Some _ ->
+        Contact_counter.update_on_assignment_update
+          assignment
+          session
+          no_show
+          command.no_show
+          participated_in_other_assignments
+        |> Contact.updated
+        |> Pool_event.contact
+        |> CCList.return
+      | _ -> []
     in
     let updated_assignment =
       { assignment with
@@ -340,9 +340,8 @@ end = struct
       | Error (hd :: _) -> Error hd
     in
     Ok
-      [ Assignment.Updated updated_assignment |> Pool_event.assignment
-      ; contact_counters
-      ]
+      ((Assignment.Updated updated_assignment |> Pool_event.assignment)
+       :: contact_counters)
   ;;
 
   let decode data =
