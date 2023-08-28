@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 ### Fixed
 
 - Layout of navigation in footer on mobile devices
+- Retain filter when using pagination
 
 ## [0.4.5](https://github.com/uzh/pool/tree/0.4.5) - 2023-08-22
 
