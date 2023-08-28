@@ -168,7 +168,6 @@ module Sql = struct
     Utils.Database.exec (Pool_database.Label.value pool) delete_request
   ;;
 
-  (* TODO: Move to utils *)
   let find_templates_of_query tenant_db query =
     let open Utils.Lwt_result.Infix in
     let rec go queries ids templates =

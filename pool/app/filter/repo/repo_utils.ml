@@ -185,8 +185,6 @@ let add_list_condition subquery dyn ids =
    the current experiment. It does not make a difference, if they
    participated. *)
 let participation_subquery_old dyn operator ids =
-  (* TODO: Reduce joins? join in experiments not necessary. maybe even preload
-     all sessions *)
   let open CCResult in
   let* dyn, query_params = add_uuid_param dyn ids in
   let subquery ~count =
