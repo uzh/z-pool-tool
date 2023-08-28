@@ -4,6 +4,14 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/pool/tree/HEAD)
 
+### Added
+
+- Icons for paused / verified status of contacts
+
+### Fixed
+
+- Layout of navigation in footer on mobile devices
+
 ## [0.4.5](https://github.com/uzh/pool/tree/0.4.5) - 2023-08-22
 
 ### Added
