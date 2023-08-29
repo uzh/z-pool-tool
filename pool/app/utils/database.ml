@@ -12,11 +12,6 @@ module Logger = struct
   end
 end
 
-let with_transaction _ f =
-  (* TODO with_transaction *)
-  f ()
-;;
-
 module Dynparam = struct
   type t = Pack : 'a Caqti_type.t * 'a -> t
 
@@ -78,49 +73,78 @@ let exec database_label request input =
       Connection.exec request input ||> raise_caqti_error ~tags)
 ;;
 
-let transaction database_label commands =
+let transaction database_label fnc =
   let open Lwt_result.Infix in
   let tags = Logger.Tags.create database_label in
-  Sihl.Database.query
-    ~ctx:[ "pool", database_label ]
+  let pool = Sihl.Database.fetch_pool ~ctx:[ "pool", database_label ] () in
+  Caqti_lwt.Pool.use
     (fun connection ->
-      let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-      Lwt_list.map_s
-        (fun (request, input) -> Connection.exec request input)
-        commands
-      ||> CCResult.flatten_l
-      >|+ ignore
-      ||> raise_caqti_error ~tags)
+      let (module Connection : Caqti_lwt.CONNECTION) = connection in
+      let%lwt start_result = Connection.start () in
+      match start_result with
+      | Error err ->
+        Logs.err ~src (fun m ->
+          m ~tags "Failed to start transaction: %s" (Caqti_error.show err));
+        Lwt.return @@ Error err
+      | Ok () ->
+        Logs.debug ~src (fun m -> m ~tags "Started transaction");
+        Lwt.catch
+          (fun () ->
+            let* result = fnc connection in
+            Connection.commit ()
+            >|- (fun err ->
+                  Logs.err ~src (fun m ->
+                    m
+                      ~tags
+                      "Failed to commit transaction: %s"
+                      (Caqti_error.show err));
+                  err)
+            >|+ CCFun.const result)
+          (fun exn ->
+            Connection.rollback ()
+            >|> function
+            | Ok () ->
+              Logs.debug ~src (fun m ->
+                m ~tags "Successfully rolled back transaction");
+              Lwt.fail exn
+            | Error err ->
+              Logs.err ~src (fun m ->
+                m
+                  ~tags
+                  "Failed to rollback transaction: %s"
+                  (Caqti_error.show err));
+              Lwt.fail exn))
+    pool
+  ||> raise_caqti_error ~tags
 ;;
 
-let transaction_find_opt database_label commands query =
+let find_as_transaction database_label ?(setup = []) ?(cleanup = []) fnc =
   let open Lwt_result.Infix in
   let tags = Logger.Tags.create database_label in
-  Sihl.Database.query
-    ~ctx:[ "pool", database_label ]
-    (fun connection ->
-      let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-      Lwt_list.map_s
-        (fun (request, input) -> Connection.exec request input)
-        commands
-      ||> CCResult.flatten_l
-      |> CCFun.const @@ Connection.collect_list query input
-      ||> raise_caqti_error ~tags)
+  let fnc connection =
+    let exec_each =
+      Lwt_list.iter_s (fun request ->
+        request connection ||> raise_caqti_error ~tags)
+    in
+    let%lwt () = exec_each setup in
+    let* result = fnc connection in
+    let%lwt () = exec_each cleanup in
+    Lwt.return @@ Ok result
+  in
+  transaction database_label fnc
 ;;
 
-let transaction_collect database_label commands query =
+let exec_as_transaction database_label commands =
   let open Lwt_result.Infix in
   let tags = Logger.Tags.create database_label in
-  Sihl.Database.query
-    ~ctx:[ "pool", database_label ]
-    (fun connection ->
-      let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-      Lwt_list.map_s
-        (fun (request, input) -> Connection.exec request input)
-        commands
-      ||> CCResult.flatten_l
-      |> CCFun.const @@ Connection.collect_list query input
-      ||> raise_caqti_error ~tags)
+  let fnc connection =
+    let exec_each =
+      Lwt_list.iter_s (fun request ->
+        request connection ||> raise_caqti_error ~tags)
+    in
+    exec_each commands ||> CCResult.return
+  in
+  transaction database_label fnc
 ;;
 
 let set_fk_check_request =
