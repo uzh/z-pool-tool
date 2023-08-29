@@ -171,7 +171,20 @@ module Name : sig
 end
 
 module Description : sig
-  include Pool_common.Model.StringSig
+  type t
+
+  val pp : Format.formatter -> t -> unit
+  val equal : t -> t -> bool
+  val show : t -> string
+  val field_name : Pool_common.Language.t -> string
+  val find_opt : Pool_common.Language.t -> t -> string option
+
+  val create
+    :  Pool_common.Language.t list
+    -> (Pool_common.Language.t * string) list
+    -> (t, Pool_common.Message.error) Result.t
+
+  val value : t -> (Pool_common.Language.t * string) list
 end
 
 module Link : sig
@@ -215,7 +228,7 @@ val show : t -> string
 val create
   :  ?id:Id.t
   -> string
-  -> string option
+  -> Description.t option
   -> Address.t
   -> string option
   -> Status.t
@@ -291,6 +304,7 @@ val default_values : t list
 module Human : sig
   val link_with_default : default:string -> t -> string
   val detailed : Pool_common.Language.t -> t -> string
+  val description : Pool_common.Language.t -> t -> string option
 end
 
 module Guard : sig

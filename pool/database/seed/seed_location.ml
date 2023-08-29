@@ -54,6 +54,14 @@ let locations =
     , Status.Active )
   ]
   |> CCList.map (fun (label, description, address, link, status) ->
+    let description =
+      description
+      |> CCOption.map (fun value ->
+        Pool_common.Language.all
+        |> CCList.map (fun lang -> lang, value)
+        |> Description.create Pool_common.Language.all
+        |> CCResult.get_exn)
+    in
     let address =
       match address with
       | Some (institution, room, building, street, zip, city) ->

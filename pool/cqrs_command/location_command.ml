@@ -23,11 +23,13 @@ module Create : sig
     -> t
     -> (Pool_event.t list, 'a) result
 
-  val decode : Conformist.input -> (t, Message.error) result
+  val decode
+    :  Description.t option
+    -> Conformist.input
+    -> (t, Message.error) result
 end = struct
   type base =
     { name : Name.t
-    ; description : Description.t option
     ; link : Link.t option
     }
 
@@ -40,17 +42,13 @@ end = struct
     ; address : address
     }
 
-  let command_base name description link = { name; description; link }
+  let command_base name link = { name; link }
   let schema_mail_address = Address.Mail.schema ()
 
   let schema =
     Conformist.(
       make
-        Field.
-          [ Name.schema ()
-          ; Conformist.optional @@ Description.schema ()
-          ; Conformist.optional @@ Link.schema ()
-          ]
+        Field.[ Name.schema (); Conformist.optional @@ Link.schema () ]
         command_base)
   ;;
 
@@ -76,7 +74,7 @@ end = struct
     Ok [ Created location |> Pool_event.pool_location ]
   ;;
 
-  let decode data =
+  let decode description data =
     let open CCResult in
     map_err Message.to_conformist_error
     @@ let* base = Conformist.decode_and_validate schema data in
@@ -91,12 +89,7 @@ end = struct
            Conformist.decode_and_validate schema_mail_address data
            >|= Address.physical
        in
-       Ok
-         { name = base.name
-         ; description = base.description
-         ; link = base.link
-         ; address
-         }
+       Ok { name = base.name; description; link = base.link; address }
   ;;
 
   let effects = Pool_location.Guard.Access.create
@@ -107,7 +100,6 @@ module Update : sig
 
   type t =
     { name : Name.t
-    ; description : Description.t option
     ; link : Link.t option
     ; status : Status.t
     }
@@ -120,22 +112,22 @@ module Update : sig
     -> update
     -> (Pool_event.t list, 'a) result
 
-  val decode : Conformist.input -> (update, Message.error) result
+  val decode
+    :  Description.t option
+    -> Conformist.input
+    -> (update, Message.error) result
+
   val effects : Id.t -> BaseGuard.ValidationSet.t
 end = struct
   type t =
     { name : Name.t
-    ; description : Description.t option
     ; link : Link.t option
     ; status : Status.t
     }
 
   type address = Address.t
 
-  let command_base name description link status =
-    { name; description; link; status }
-  ;;
-
+  let command_base name link status = { name; link; status }
   let schema_mail_address = Address.Mail.schema ()
 
   let schema =
@@ -143,7 +135,6 @@ end = struct
       make
         Field.
           [ Name.schema ()
-          ; Conformist.optional @@ Description.schema ()
           ; Conformist.optional @@ Link.schema ()
           ; Status.schema ()
           ]
@@ -155,7 +146,7 @@ end = struct
     Ok [ Updated (location, update) |> Pool_event.pool_location ]
   ;;
 
-  let decode data =
+  let decode description data =
     let open CCResult in
     map_err Message.to_conformist_error
     @@ let* base = Conformist.decode_and_validate schema data in
@@ -172,7 +163,7 @@ end = struct
        in
        Ok
          { name = base.name
-         ; description = base.description
+         ; description
          ; address = address_new
          ; link = base.link
          ; status = base.status

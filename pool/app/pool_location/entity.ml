@@ -16,10 +16,43 @@ module Name = struct
 end
 
 module Description = struct
-  include Pool_common.Model.String
+  open Ppx_yojson_conv_lib.Yojson_conv
+
+  type t = (Pool_common.Language.t * string) list [@@deriving eq, show, yojson]
+
+  let pp ppf =
+    CCList.iter (fun (key, value) ->
+      Format.fprintf ppf "[%s: %s]." (Pool_common.Language.show key) value)
+  ;;
 
   let field = Field.Description
-  let schema () = schema field ()
+
+  let field_name langauge =
+    Format.asprintf
+      "%s[%s]"
+      Message.Field.(show field)
+      (Pool_common.Language.show langauge)
+  ;;
+
+  let find_opt = CCList.assoc_opt ~eq:Pool_common.Language.equal
+
+  let create sys_languages descriptions =
+    CCList.filter
+      (fun lang ->
+        CCList.assoc_opt ~eq:Pool_common.Language.equal lang descriptions
+        |> CCOption.is_none)
+      sys_languages
+    |> function
+    | [] -> Ok descriptions
+    | _ -> Error Message.(AllLanguagesRequired field)
+  ;;
+
+  let read yojson =
+    try Ok (yojson |> Yojson.Safe.from_string |> t_of_yojson) with
+    | _ -> Error Pool_common.Message.(Invalid field)
+  ;;
+
+  let value m = m
 end
 
 module Link = struct
@@ -75,7 +108,6 @@ let equal m k =
 let create ?(id = Id.create ()) name description address link status files =
   let open CCResult in
   let* name = Name.create name in
-  let* description = description |> CCResult.opt_map Description.create in
   let* link = link |> CCResult.opt_map Link.create in
   Ok
     { id
@@ -111,8 +143,15 @@ module Human = struct
     let concat = CCString.concat "\n" in
     let address = Address.address_rows_human language address in
     let address_block = address |> concat in
+    let description =
+      CCOption.bind description (Description.find_opt language)
+    in
     match description with
     | None -> address_block
     | Some description -> [ address_block; ""; description ] |> concat
+  ;;
+
+  let description langauge { description; _ } =
+    CCOption.bind description (Description.find_opt langauge)
   ;;
 end

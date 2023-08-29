@@ -1,14 +1,29 @@
 open Tyxml.Html
-open Component
-open Input
+open Component.Input
 module Message = Pool_common.Message
+
+let descriptions_all_languages (location : Pool_location.t) =
+  let open Pool_location in
+  location.description
+  |> CCOption.map (fun desc ->
+    desc
+    |> Description.value
+    |> CCList.map (fun (lang, value) ->
+      div
+        [ strong [ txt Pool_common.Language.(show lang) ]
+        ; div [ Unsafe.data value ]
+        ]))
+  |> CCOption.value ~default:[]
+  |> Utils.Html.concat_html
+  |> div
+;;
 
 module List = struct
   open Pool_location
 
   let thead language =
     (Pool_common.Message.Field.[ Name; Description; Location ]
-     |> Table.fields_to_txt language)
+     |> Component.Table.fields_to_txt language)
     @ [ link_as_button
           ~style:`Success
           ~icon:Icon.Add
@@ -21,15 +36,14 @@ module List = struct
   let rows language locations =
     CCList.map
       (fun (location : Pool_location.t) ->
+        let description = descriptions_all_languages location in
         [ location.name
           |> Name.value
           |> txt
           |> CCList.return
           |> span ~a:[ a_class [ "nobr" ] ]
-        ; location.description
-          |> CCOption.map_or ~default:"" Description.value
-          |> Unsafe.data
-        ; Partials.address_to_html language location.address
+        ; description
+        ; Component.Partials.address_to_html language location.address
           |> CCList.return
           |> p ~a:[ a_class [ "nobr" ] ]
         ; Format.asprintf
@@ -42,7 +56,7 @@ module List = struct
 
   let create language locations =
     let rows = rows language locations in
-    Table.horizontal_table
+    Component.Table.horizontal_table
       `Striped
       ~thead:(thead language)
       ~align_top:true
@@ -127,6 +141,7 @@ let form
   ?(location : Pool_location.t option)
   ?(states : Pool_location.Status.t list = [])
   Pool_context.{ language; csrf; _ }
+  tenant_languages
   flash_fetcher
   =
   let open Pool_location in
@@ -183,6 +198,42 @@ let form
          @ checked)
       ()
   in
+  let description_html =
+    let field description_language =
+      let open CCOption in
+      let name = Description.field_name description_language in
+      let current =
+        location
+        >>= fun { description; _ } ->
+        description >>= Description.find_opt description_language
+      in
+      let value =
+        flash_fetcher name <+> current |> CCOption.get_or ~default:""
+      in
+      div
+        ~a:[ a_class [ "form_group" ] ]
+        [ label
+            ~a:[ a_label_for name ]
+            [ txt (Pool_common.Language.show description_language) ]
+        ; textarea
+            ~a:[ a_id name; a_name name; a_class [ "rich-text" ] ]
+            (txt value)
+        ]
+    in
+    tenant_languages
+    |> CCList.map field
+    |> fun textareas ->
+    div
+      ~a:[ a_class [ "full-width" ] ]
+      [ h3
+          [ txt
+              Pool_common.(
+                Utils.field_to_string language Message.Field.description
+                |> CCString.capitalize_ascii)
+          ]
+      ; div ~a:[ a_class [ "grid-col-2" ] ] textareas
+      ]
+  in
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
     [ h1
@@ -212,13 +263,7 @@ let form
                  Message.Field.Link
                  ~value:(value_opt (fun m -> m.link) Link.value)
                  ~flash_fetcher
-             ; textarea_element
-                 ~rich_text:true
-                 ~classnames:[ "full-width" ]
-                 language
-                 Message.Field.Description
-                 ~value:(value_opt (fun m -> m.description) Description.value)
-                 ~flash_fetcher
+             ; description_html
              ; status_select_opt
              ]
          ]
@@ -389,7 +434,7 @@ module FileList = struct
 
   let thead language location_id =
     (Pool_common.Message.Field.[ Label; Language ]
-     |> Table.fields_to_txt language)
+     |> Component.Table.fields_to_txt language)
     @ [ add_file_btn language location_id ]
   ;;
 
@@ -445,7 +490,7 @@ module FileList = struct
           ]
       | false ->
         let body = CCList.map (row language csrf id) files in
-        Table.horizontal_table
+        Component.Table.horizontal_table
           `Striped
           ~align_last_end:true
           ~thead:(thead language id)
@@ -509,11 +554,15 @@ module SessionList = struct
         let thead =
           (Pool_common.Message.Field.
              [ Session; Experiment; Duration; CanceledAt ]
-           |> Table.fields_to_txt language)
+           |> Component.Table.fields_to_txt language)
           @ [ txt "" ]
         in
         let rows = rows sessions in
-        Table.horizontal_table `Striped ~align_last_end:true ~thead rows)
+        Component.Table.horizontal_table
+          `Striped
+          ~align_last_end:true
+          ~thead
+          rows)
     in
     div
       [ h2
@@ -534,15 +583,13 @@ let detail (location : Pool_location.t) Pool_context.{ csrf; language; _ } =
   let location_details =
     let open Pool_common.Message in
     [ Field.Name, location.name |> Name.value |> txt
-    ; ( Field.Description
-      , location.description
-        |> CCOption.map_or ~default:"" Description.value
-        |> Unsafe.data )
-    ; Field.Location, Partials.address_to_html language location.address
+    ; Field.Description, descriptions_all_languages location
+    ; ( Field.Location
+      , Component.Partials.address_to_html language location.address )
     ; Field.Link, location.link |> CCOption.map_or ~default:"" Link.value |> txt
     ; Field.Status, location.status |> Status.show |> txt (* TODO: Show files *)
     ]
-    |> Table.vertical_table
+    |> Component.Table.vertical_table
          ~classnames:[ "gap" ]
          `Striped
          ~align_top:true

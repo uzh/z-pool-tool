@@ -82,9 +82,15 @@ module DummyData = struct
     in
     let name = "SNS Lab" |> Name.create |> get_exn in
     let description =
-      "The Laboratory for Social and Neural Systems Research (SNS Lab) is the \
-       heart of the ZNE."
-      |> Description.of_string
+      let text =
+        "The Laboratory for Social and Neural Systems Research (SNS Lab) is \
+         the heart of the ZNE."
+      in
+      let languages = Pool_common.Language.all in
+      languages
+      |> CCList.map (fun lang -> lang, text)
+      |> Description.create languages
+      |> get_exn
       |> CCOption.return
     in
     let address = address in

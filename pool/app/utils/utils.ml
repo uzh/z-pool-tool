@@ -95,10 +95,11 @@ module Bool = struct
 end
 
 module Html = struct
+  open Tyxml.Html
+
   (* placed here due to circular dependency between email and http_utils
      library *)
   let handle_line_breaks finally_fcn str =
-    let open Tyxml.Html in
     finally_fcn
     @@
     match
@@ -112,5 +113,14 @@ module Html = struct
         (fun html str -> html @ [ br (); txt str ])
         [ txt head ]
         tail
+  ;;
+
+  let concat_html ?(by = br ()) (elements : [> `P | `Div ] elt list) =
+    let rec folder html = function
+      | [] -> html
+      | hd :: [] -> hd :: html
+      | hd :: tl -> folder ([ by; hd ] @ html) tl
+    in
+    elements |> CCList.rev |> folder []
   ;;
 end
