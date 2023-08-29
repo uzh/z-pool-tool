@@ -32,17 +32,24 @@ let locations =
   [ ( "ETH Decision Science Laboratory"
     , Some "Tram 6, 7, 10 or 15 to Haldenegg"
     , Some
-        (None, "Stockwerk A", Some "IFW", "Haldeneggsteig 4", "8092", "Zurich")
+        ( None
+        , Some "Stockwerk A"
+        , Some "IFW"
+        , "Haldeneggsteig 4"
+        , "8092"
+        , "Zurich" )
     , Some "https://www.uast.uzh.ch/assets/map-descil.jpg"
     , Status.Active )
   ; ( "SNS Lab fMRI"
     , Some sns_fmri_description
-    , Some (Some "USZ", "SNS Labor", None, "Rämistrasse 100", "8091", "Zürich")
+    , Some
+        (Some "USZ", Some "SNS Labor", None, "Rämistrasse 100", "8091", "Zürich")
     , Some "https://www.uast.uzh.ch/assets/map-usz.jpg"
     , Status.Active )
   ; ( "SNS Behavioral Lab"
     , Some sns_behavioural_description
-    , Some (Some "USZ", "SNS Labor", None, "Rämistrasse 100", "8091", "Zürich")
+    , Some
+        (Some "USZ", Some "SNS Labor", None, "Rämistrasse 100", "8091", "Zürich")
     , Some "https://www.uast.uzh.ch/assets/map-usz.jpg"
     , Status.Active )
   ]

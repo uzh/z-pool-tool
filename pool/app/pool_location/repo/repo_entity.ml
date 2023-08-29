@@ -70,7 +70,7 @@ module Address = struct
           (tup2
              (option Institution.t)
              (tup2
-                Room.t
+                (option Room.t)
                 (tup2 (option Building.t) (tup2 Street.t (tup2 Zip.t City.t))))))
     ;;
   end

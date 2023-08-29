@@ -148,7 +148,14 @@ let form
   let status_select_opt =
     match location with
     | Some { status; _ } ->
-      selector language Message.Field.Status Status.show states (Some status) ()
+      selector
+        language
+        Message.Field.Status
+        Status.show
+        states
+        (Some status)
+        ~required:true
+        ()
     | None -> txt ""
   in
   let address_value fcn =
@@ -158,21 +165,22 @@ let form
       | Address.Virtual -> default
       | Address.Physical m -> m |> fcn)
   in
+  let is_virtual =
+    location
+    |> CCOption.map_or ~default:false (fun ({ address; _ } : t) ->
+      match address with
+      | Address.Virtual -> true
+      | Address.Physical _ -> false)
+  in
   let is_virtual_checkbox =
-    let selected =
-      location
-      |> CCOption.map_or ~default:[] (fun ({ address; _ } : t) ->
-        match address with
-        | Address.Virtual -> [ a_checked () ]
-        | Address.Physical _ -> [])
-    in
+    let checked = if is_virtual then [ a_checked () ] else [] in
     input
       ~a:
-        ([ a_class [ "toggle-address" ]
+        ([ a_id "toggle-address"
          ; a_input_type `Checkbox
          ; a_name Message.Field.(Virtual |> show)
          ]
-         @ selected)
+         @ checked)
       ()
   in
   div
@@ -197,6 +205,7 @@ let form
                  Message.Field.Name
                  ~value:(value (fun m -> m.name) Name.value)
                  ~flash_fetcher
+                 ~required:true
              ; input_element
                  language
                  `Text
@@ -225,16 +234,21 @@ let form
                    ~a:[ a_class [ "stack" ] ]
                    [ is_virtual_checkbox
                    ; label
+                       ~a:[ a_label_for "toggle-address" ]
                        [ txt
                            Message.Field.(
                              Virtual |> show |> CCString.capitalize_ascii)
                        ]
                    ; div
-                       ~a:[ a_class [ "toggled"; "stack"; "flexcolumn" ] ]
+                       ~a:
+                         [ a_id "address-subform"
+                         ; a_class [ "stack"; "flexcolumn" ]
+                         ]
                        [ input_element
                            language
                            `Text
                            Message.Field.Institution
+                           ~flash_fetcher
                            ~value:
                              (address_value
                                 Address.Mail.(
@@ -249,14 +263,17 @@ let form
                                language
                                `Text
                                Message.Field.Room
+                               ~flash_fetcher
                                ~value:
                                  (address_value
                                     Address.Mail.(
-                                      fun { room; _ } -> Room.value room))
+                                      fun { room; _ } ->
+                                        CCOption.map_or ~default Room.value room))
                            ; input_element
                                language
                                `Text
                                Message.Field.Building
+                               ~flash_fetcher
                                ~value:
                                  (address_value
                                     Address.Mail.(
@@ -270,6 +287,8 @@ let form
                            language
                            `Text
                            Message.Field.Street
+                           ~required:true
+                           ~flash_fetcher
                            ~value:
                              Address.Mail.(
                                address_value (fun { street; _ } ->
@@ -280,6 +299,8 @@ let form
                                language
                                `Text
                                Message.Field.Zip
+                               ~required:true
+                               ~flash_fetcher
                                ~value:
                                  Address.Mail.(
                                    address_value (fun { zip; _ } ->
@@ -288,6 +309,8 @@ let form
                                language
                                `Text
                                Message.Field.City
+                               ~required:true
+                               ~flash_fetcher
                                ~value:
                                  Address.Mail.(
                                    address_value (fun { city; _ } ->
@@ -310,6 +333,29 @@ let form
                    ()
                ]
            ])
+    ; script
+        (Unsafe.data
+           {sql|
+      const toggle = document.getElementById("toggle-address");
+      const subform = document.getElementById("address-subform");
+      const inputs = subform.querySelectorAll("input");
+
+      const toggleInputs = (disabled) => {
+        inputs.forEach( el => el.disabled = disabled)
+      }
+
+      const toggleActive = (checkbox) => {
+        if(checkbox.checked) {
+          subform.style.display = "none";
+        } else {
+          subform.style.display = "flex";
+        }
+        toggleInputs(checkbox.checked);
+      }
+
+      toggle.addEventListener("click", (e) => toggleActive(e.currentTarget));
+      toggleActive(toggle);
+    |sql})
     ]
 ;;
 

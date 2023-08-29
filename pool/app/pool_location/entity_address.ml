@@ -65,7 +65,7 @@ module Mail = struct
 
   type t =
     { institution : Institution.t option
-    ; room : Room.t
+    ; room : Room.t option
     ; building : Building.t option
     ; street : Street.t
     ; zip : Zip.t
@@ -76,7 +76,11 @@ module Mail = struct
   let create institution room building street zip city =
     let open CCResult in
     let* institution = institution |> CCResult.opt_map Institution.create in
-    let* room = Room.create room in
+    let* room =
+      match room with
+      | None -> Ok None
+      | Some room -> room |> Room.create >|= CCOption.return
+    in
     let* building = building |> CCResult.opt_map Building.create in
     let* street = Street.create street in
     let* zip = Zip.create zip in
@@ -93,7 +97,7 @@ module Mail = struct
       make
         Field.
           [ Conformist.optional @@ Institution.schema ()
-          ; Room.schema ()
+          ; Conformist.optional @@ Room.schema ()
           ; Conformist.optional @@ Building.schema ()
           ; Street.schema ()
           ; Zip.schema ()
@@ -115,8 +119,8 @@ let virtual_detail language =
 ;;
 
 let physical_detail { Mail.institution; room; building; street; zip; city } =
-  let city = Format.asprintf "%s %s" zip city in
-  [ institution; building; Some room; Some street; Some city ]
+  let city = Format.asprintf "%s %s" zip city |> CCString.trim in
+  [ institution; building; room; Some street; Some city ]
   |> CCList.filter_map (function
     | None -> None
     | Some s -> if CCString.is_empty s then None else Some s)

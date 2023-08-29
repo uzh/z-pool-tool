@@ -108,7 +108,7 @@ let location_params
       let default fnc = CCOption.map_or ~default:"" fnc in
       let institution = institution |> default Institution.value in
       let building = building |> default Building.value in
-      let room = room |> Room.value in
+      let room = room |> default Room.value in
       let street = street |> Street.value in
       let zip = zip |> Zip.value in
       let city = city |> City.value in

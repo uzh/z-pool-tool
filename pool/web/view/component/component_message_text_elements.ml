@@ -70,7 +70,7 @@ module DummyData = struct
         let* city = "Zurich" |> City.create in
         Ok
           { institution = Some institution
-          ; room
+          ; room = Some room
           ; building = Some building
           ; street
           ; zip

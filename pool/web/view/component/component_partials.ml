@@ -2,20 +2,25 @@ open Tyxml.Html
 
 let mail_to_html ?(highlight_first_line = true) mail =
   let open Pool_location.Address.Mail in
+  let open CCOption in
   let { institution; room; building; street; zip; city } = mail in
   let building_room =
-    match building with
-    | Some building ->
-      Format.asprintf "%s %s" (room |> Room.value) (building |> Building.value)
-    | None -> room |> Room.value
+    [ room >|= Room.value; building >|= Building.value ]
+    |> CCList.filter_map CCFun.id
+    |> CCString.concat " "
+    |> CCString.trim
+    |> function
+    | "" -> None
+    | str -> Some str
   in
   let city_zip =
     Format.asprintf "%s %s" (city |> City.value) (zip |> Zip.value)
   in
-  let base = [ building_room; street |> Street.value; city_zip ] in
-  (match institution with
-   | Some institution -> CCList.cons (institution |> Institution.value) base
-   | None -> base)
+  let base = [ street |> Street.value; city_zip ] in
+  [ institution >|= Institution.value; building_room ]
+  |> CCList.filter_map CCFun.id
+  |> fun lst ->
+  lst @ base
   |> CCList.foldi
        (fun html index str ->
          let str = str |> txt in

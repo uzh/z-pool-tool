@@ -26,10 +26,6 @@ $red-light: color.adjust($red, $lightness: $color-shades-ratio * 2);
     display: flex;
 }
 
-.toggle-address:checked~.toggled {
-    display: none;
-}
-
 // Filter
 .switcher-sm>* {
     flex-basis: calc((24rem - 100%)*999);

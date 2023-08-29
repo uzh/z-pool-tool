@@ -26,7 +26,7 @@ module Address : sig
 
     type t =
       { institution : Institution.t option
-      ; room : Room.t
+      ; room : Room.t option
       ; building : Building.t option
       ; street : Street.t
       ; zip : Zip.t
@@ -39,7 +39,7 @@ module Address : sig
 
     val create
       :  string option
-      -> string
+      -> string option
       -> string option
       -> string
       -> string
@@ -48,7 +48,7 @@ module Address : sig
 
     val command
       :  Institution.t option
-      -> Room.t
+      -> Room.t option
       -> Building.t option
       -> Street.t
       -> Zip.t
@@ -59,7 +59,7 @@ module Address : sig
       :  unit
       -> ( Pool_common.Message.error
          , Institution.t option
-           -> Room.t
+           -> Room.t option
            -> Building.t option
            -> Street.t
            -> Zip.t
