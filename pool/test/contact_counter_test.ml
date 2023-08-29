@@ -502,7 +502,7 @@ module DeleteUnattended = struct
   ;;
 end
 
-module UpdateClosedAssignments = struct
+module UpdateAssignments = struct
   open Cqrs_command.Assignment_command
   open CCResult
   open Contact
@@ -554,7 +554,7 @@ module UpdateClosedAssignments = struct
   ;;
 
   let update_unclosed _ () =
-    let open UpdateClosed in
+    let open Update in
     let%lwt contact, experiment, session, _ = initialize () in
     let%lwt () = sign_up_for_session experiment contact session_id in
     let%lwt assignment =
@@ -566,7 +566,17 @@ module UpdateClosedAssignments = struct
       |> decode
       >>= handle experiment session assignment participated_in_other_sessions
     in
-    let expected = Error Pool_common.Message.SessionNotClosed in
+    let expected =
+      Assignment.(
+        Updated
+          { assignment with
+            no_show = Some (NoShow.create true)
+          ; participated = Some (Participated.create false)
+          })
+      |> Pool_event.assignment
+      |> CCList.return
+      |> CCResult.return
+    in
     let () =
       check_result
         ~msg:"Cannot update assignment of unclosed session"
@@ -616,7 +626,7 @@ module UpdateClosedAssignments = struct
       let%lwt participated_in_other_sessions =
         participated_in_other_sessions [ assignment ]
       in
-      let open UpdateClosed in
+      let open Update in
       urlencoded
       |> decode
       >>= handle experiment session assignment participated_in_other_sessions
@@ -695,7 +705,7 @@ module UpdateClosedAssignments = struct
       let%lwt participated_in_other_sessions =
         participated_in_other_sessions [ assignment ]
       in
-      let open UpdateClosed in
+      let open Update in
       urlencoded
       |> decode
       >>= handle

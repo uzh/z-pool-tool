@@ -33,6 +33,7 @@ type t =
   | ImportConfirmationTitle
   | ImportPendingNote
   | ImportPendingTitle
+  | LocationDetails
   | LocationFileNew
   | LocationListTitle
   | LocationNewTitle

@@ -27,11 +27,10 @@ let update_password req =
            decode urlencoded >>= handle ~tags admin)
          |> Lwt_result.lift
        in
-       Utils.Database.with_transaction database_label (fun () ->
-         let%lwt () = Pool_event.handle_events ~tags database_label events in
-         redirect_to_with_actions
-           active_navigation
-           [ Message.set ~success:[ Pool_common.Message.PasswordChanged ] ])
+       let%lwt () = Pool_event.handle_events ~tags database_label events in
+       redirect_to_with_actions
+         active_navigation
+         [ Message.set ~success:[ Pool_common.Message.PasswordChanged ] ]
        |> Lwt_result.ok
   in
   result |> extract_happy_path_with_actions ~src req

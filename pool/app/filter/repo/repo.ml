@@ -188,6 +188,86 @@ module Sql = struct
     go [ query ] [] []
   ;;
 
+  let drop_temp_table connection =
+    let open Caqti_request.Infix in
+    let (module Connection : Caqti_lwt.CONNECTION) = connection in
+    let request =
+      {sql| DROP TEMPORARY TABLE IF EXISTS tmp_participations; |sql}
+      |> Caqti_type.(unit ->. unit)
+    in
+    Connection.exec request ()
+  ;;
+
+  let find_participation_experiments_of_query query =
+    let rec search ids query =
+      let search_list ids =
+        CCList.fold_left (fun ids predicate -> search ids predicate) ids
+      in
+      match query with
+      | And lst | Or lst -> search_list ids lst
+      | Not f -> search ids f
+      | Template _ -> ids
+      | Pred { Predicate.key; value; _ } ->
+        let open Key in
+        (match[@warning "-4"] key with
+         | Hardcoded key ->
+           if equal_hardcoded key Participation
+           then (
+             match value with
+             | Lst values -> values @ ids
+             | _ -> ids)
+           else ids
+         | _ -> ids)
+    in
+    search [] query
+    |> CCList.filter_map (fun value ->
+      match value with
+      | Str id -> Some id
+      | Bool _ | Date _ | Language _ | Nr _ | Option _ -> None)
+  ;;
+
+  let create_temporary_participation_table query =
+    let open Dynparam in
+    let open Caqti_request.Infix in
+    let create_request ids =
+      Format.asprintf
+        {sql|
+        CREATE TEMPORARY TABLE tmp_participations AS (
+          SELECT
+            pool_assignments.contact_uuid AS contact_uuid,
+            pool_sessions.experiment_uuid AS experiment_uuid
+          FROM
+            pool_assignments
+            INNER JOIN pool_sessions ON pool_sessions.uuid = pool_assignments.session_uuid
+              AND pool_assignments.participated = 1
+              AND pool_assignments.canceled_at IS NULL
+              AND pool_sessions.experiment_uuid IN ( %s ))
+        |sql}
+        (CCList.mapi
+           (fun i _ -> Format.asprintf "UNHEX(REPLACE($%n, '-', ''))" (i + 1))
+           ids
+         |> CCString.concat ",")
+    in
+    let open CCOption in
+    let fnc connection =
+      query
+      >|= Repo_utils.find_participation_experiments_of_query
+      |> function
+      | None | Some [] -> Lwt_result.return ()
+      | Some ids ->
+        let (Pack (pt, pv)) =
+          CCList.fold_left
+            (fun dyn id -> dyn |> add Caqti_type.string id)
+            empty
+            ids
+        in
+        let (module Connection : Caqti_lwt.CONNECTION) = connection in
+        let request = create_request ids |> pt ->. Caqti_type.unit in
+        Connection.exec request pv
+    in
+    fnc
+  ;;
+
   let find_filtered_request_sql ?limit where_fragment =
     let base = Contact.Repo.Sql.find_request_sql where_fragment in
     match limit with
@@ -198,6 +278,7 @@ module Sql = struct
   let find_filtered_contacts pool ?order_by ?limit experiment_id filter =
     let filter = filter |> CCOption.map (fun f -> f.Entity.query) in
     let open Utils.Lwt_result.Infix in
+    let create_temp_table = create_temporary_participation_table filter in
     let%lwt template_list =
       match filter with
       | None -> Lwt.return []
@@ -219,10 +300,16 @@ module Sql = struct
       |> find_filtered_request_sql ?limit
       |> pt ->* Contact.Repo.Entity.t
     in
-    let%lwt contacts =
-      Utils.Database.collect (pool |> Pool_database.Label.value) request pv
+    let query connection =
+      let (module Connection : Caqti_lwt.CONNECTION) = connection in
+      Connection.collect_list request pv
     in
-    Lwt_result.return contacts
+    Utils.Database.find_as_transaction
+      (pool |> Pool_database.Label.value)
+      ~setup:[ drop_temp_table; create_temp_table ]
+      ~cleanup:[ drop_temp_table ]
+      query
+    ||> CCResult.return
   ;;
 
   let contact_matches_filter
@@ -288,27 +375,6 @@ module Sql = struct
     Format.asprintf "%s\n%s" select where_fragment
   ;;
 
-  let count_filtered_contacts pool experiment_id query =
-    let open Utils.Lwt_result.Infix in
-    let%lwt template_list =
-      match query with
-      | None -> Lwt.return []
-      | Some query -> find_templates_of_query pool query
-    in
-    filtered_params template_list experiment_id query
-    |> Lwt_result.lift
-    >>= fun (dyn, sql) ->
-    let (Dynparam.Pack (pt, pv)) = dyn in
-    let open Caqti_request.Infix in
-    let request =
-      sql |> where_prefix |> count_filtered_request_sql |> pt ->! Caqti_type.int
-    in
-    let%lwt count =
-      Utils.Database.find_opt (pool |> Pool_database.Label.value) request pv
-    in
-    Lwt_result.return (count |> CCOption.value ~default:0)
-  ;;
-
   let find_experiment_id_opt_request =
     let open Caqti_request.Infix in
     {sql|
@@ -334,6 +400,36 @@ module Sql = struct
       (Pool_database.Label.value pool)
       find_experiment_id_opt_request
       id
+  ;;
+
+  let count_filtered_contacts pool experiment_id query =
+    let open Utils.Lwt_result.Infix in
+    let open Caqti_request.Infix in
+    let open Dynparam in
+    let create_temp_table = create_temporary_participation_table query in
+    let%lwt template_list =
+      match query with
+      | None -> Lwt.return []
+      | Some query -> find_templates_of_query pool query
+    in
+    filtered_params template_list experiment_id query
+    |> Lwt_result.lift
+    >>= fun (dyn, sql) ->
+    let (Pack (pt, pv)) = dyn in
+    let request =
+      sql |> where_prefix |> count_filtered_request_sql |> pt ->! Caqti_type.int
+    in
+    let query connection =
+      let (module Connection : Caqti_lwt.CONNECTION) = connection in
+      Connection.find_opt request pv
+    in
+    Utils.Database.find_as_transaction
+      (pool |> Pool_database.Label.value)
+      ~setup:[ drop_temp_table; create_temp_table ]
+      ~cleanup:[ drop_temp_table ]
+      query
+    ||> CCOption.value ~default:0
+    ||> CCResult.return
   ;;
 end
 

@@ -113,10 +113,8 @@ module Partials = struct
       Session.assignments_cancelable session |> CCResult.is_ok
       && Assignment.is_cancellable m |> CCResult.is_ok
     in
-    let editable = CCOption.is_some session.Session.closed_at in
     let action { Assignment.id; _ } suffix =
       assignment_specific_path ~suffix experiment_id session.Session.id id
-      |> Sihl.Web.externalize_path
     in
     let button_form
       ?(style = `Primary)
@@ -135,7 +133,7 @@ module Partials = struct
       in
       form
         ~a:
-          [ a_action (action assignment suffix)
+          [ a_action (action assignment suffix |> Sihl.Web.externalize_path)
           ; a_method `Post
           ; a_user_data
               "confirmable"
@@ -245,7 +243,7 @@ module Partials = struct
                 else value)
             in
             let buttons =
-              [ editable, edit
+              [ true, edit
               ; access_contact_profiles, profile_link
               ; cancelable assignment, cancel
               ; deletable assignment, mark_as_deleted
@@ -412,13 +410,20 @@ let edit
   let open CCOption.Infix in
   let action =
     assignment_specific_path experiment.Experiment.id session.Session.id id
+    |> Sihl.Web.externalize_path
   in
   let session_data =
     let open Session in
     let field_to_string = Pool_common.Utils.field_to_string language in
     div
       ~a:[ a_class [ "stack"; "inset"; "border"; " bg-grey-light" ] ]
-      [ p
+      [ h3
+          [ txt
+              Pool_common.(
+                Utils.field_to_string language Message.Field.Session
+                |> CCString.capitalize_ascii)
+          ]
+      ; p
           [ txt (field_to_string Field.Start |> CCString.capitalize_ascii)
           ; txt ": "
           ; session.start
@@ -426,7 +431,7 @@ let edit
             |> Pool_common.Utils.Time.formatted_date_time
             |> txt
           ]
-      ; Component.Location.preview session.location
+      ; Component.Location.preview language session.location
       ]
   in
   [ div
@@ -439,6 +444,11 @@ let edit
               [ txt
                   Pool_common.(
                     Utils.text_to_string language I18n.AssignmentEditTagsWarning)
+              ]
+          ; p
+              [ Unsafe.data
+                  Pool_common.(
+                    Utils.hint_to_string language I18n.SessionCloseHints)
               ]
           ; form
               ~a:[ a_action action; a_method `Post ]

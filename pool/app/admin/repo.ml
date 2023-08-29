@@ -277,13 +277,15 @@ module Sql = struct
   ;;
 
   let promote_contact pool id =
-    Utils.Database.transaction
-      (Pool_database.Label.value pool)
-      [ promote_contact_insert_contact_to_promoted_request, id
-      ; promote_contact_insert_admin_request, id
-      ; promote_contact_set_admin_request, id
-      ; promote_contact_delete_contact_request, id
-      ]
+    [ promote_contact_insert_contact_to_promoted_request, id
+    ; promote_contact_insert_admin_request, id
+    ; promote_contact_set_admin_request, id
+    ; promote_contact_delete_contact_request, id
+    ]
+    |> CCList.map (fun (request, input) connection ->
+      let (module Connection : Caqti_lwt.CONNECTION) = connection in
+      Connection.exec request input)
+    |> Utils.Database.exec_as_transaction (Pool_database.Label.value pool)
   ;;
 end
 

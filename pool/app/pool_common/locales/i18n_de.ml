@@ -55,6 +55,7 @@ let to_string = function
     "Der Import Ihres Users ist noch nicht abgeschlossen. Bitte kontrollieren \
      Sie Ihren Posteingang oder kontaktieren Sie einen Administrator."
   | ImportPendingTitle -> "Pendenter Import"
+  | LocationDetails -> "Standortdetails"
   | NoEntries field ->
     Format.asprintf
       "Es existiert noch keine %s."
@@ -386,15 +387,12 @@ Die folgenden Folgesessions existieren:|}
   | SessionCloseHints ->
     Format.asprintf
       {|<strong>%s</strong> und <strong>%s</strong> schliessen sich gegenseitig aus.<br>
-Wenn ein Kontakt zwar erschienen ist, aber nicht an dem Experiment teilgenommen hat, wählen Sie keine der Optionen aus.|}
+Wenn keine der Checkboxen angewählt ist, bedeutet das, dass der Kontakt erschienen ist, aber nicht teilgenommen hat.|}
       (Locales_de.field_to_string Entity_message_field.NoShow)
       (Locales_de.field_to_string Entity_message_field.Participated)
   | SessionCloseLegend ->
-    Format.asprintf
-      {|%s: Der Kontakt ist nicht an der Session erschienen
-    %s: Der Kontakt hat am Experiment teilgenommen|}
-      (Locales_de.field_to_string Entity_message_field.NoShow)
-      (Locales_de.field_to_string Entity_message_field.Participated)
+    {|NS: Der Kontakt ist nicht an der Session erschienen
+    P: Der Kontakt hat am Experiment teilgenommen|}
   | SessionReminderLanguageHint ->
     "Falls sie einen eigenen Erinnerungstext angeben, wählen Sie dessen \
      Sprache hier."

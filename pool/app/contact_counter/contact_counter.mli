@@ -24,6 +24,7 @@ val update_on_assignment_deletion
 
 val update_on_assignment_update
   :  Assignment.t
+  -> Session.t
   -> Assignment.NoShow.t
   -> Assignment.NoShow.t
   -> bool

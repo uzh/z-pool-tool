@@ -329,6 +329,7 @@ input[type="submit"].is-text {
         }
     }
 }
+
 table.simple {
     tbody tr:not(:last-child) th {
         border-bottom: $border-width solid $grey-border;
@@ -338,4 +339,18 @@ table.simple {
 [data-statistics] .table.simple th {
     font-weight: $font-weight-normal;
     padding-left: 0;
+}
+
+.session-close-checkboxes {
+    @extend .flexrow;
+    @extend .flex-gap;
+    width: 5rem;
+    align-items: flex-start;
+    padding-top: $space-xs;
+
+    &>* {
+        flex-basis: 50%;
+        display: flex;
+        justify-content: center;
+    }
 }

@@ -126,14 +126,13 @@ let sign_up_create req =
              |> Lwt_result.lift
            | Error _ -> Lwt_result.return [])
        in
-       Utils.Database.with_transaction database_label (fun () ->
-         let%lwt () = Pool_event.handle_events ~tags database_label events in
-         HttpUtils.(
-           redirect_to_with_actions
-             (path_with_language query_language "/email-confirmation")
-             [ Message.set
-                 ~success:[ Pool_common.Message.EmailConfirmationMessage ]
-             ]))
+       let%lwt () = Pool_event.handle_events ~tags database_label events in
+       HttpUtils.(
+         redirect_to_with_actions
+           (path_with_language query_language "/email-confirmation")
+           [ Message.set
+               ~success:[ Pool_common.Message.EmailConfirmationMessage ]
+           ])
        |> Lwt_result.ok
   in
   result |> HttpUtils.extract_happy_path_with_actions ~src req
