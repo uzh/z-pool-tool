@@ -27,8 +27,6 @@ let handle_event pool : event -> unit Lwt.t =
     let%lwt () = Repo.update pool (Value.DefaultReminderLeadTime lead_time) in
     Lwt.return_unit
   | DefaultTextMsgReminderLeadTimeUpdated lead_time ->
-    Logs.info (fun m ->
-      m "%s" "IN EVENT: DefaultTextMsgReminderLeadTimeUpdated");
     let%lwt () =
       Repo.update pool (Value.DefaultTextMsgReminderLeadTime lead_time)
     in

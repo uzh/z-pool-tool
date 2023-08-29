@@ -1,40 +1,37 @@
 open CCFun
 open Entity
-module Common = Pool_common
-module Id = Common.Repo.Id
+module Common = Pool_common.Repo
+module Id = Common.Id
 
 module Title = struct
   include Title
 
-  let t = Pool_common.Repo.make_caqti_type Caqti_type.string create value
+  let t = Common.make_caqti_type Caqti_type.string create value
 end
 
 module PublicTitle = struct
   include PublicTitle
 
-  let t = Pool_common.Repo.make_caqti_type Caqti_type.string create value
+  let t = Common.make_caqti_type Caqti_type.string create value
 end
 
 module Description = struct
   include Description
 
-  let t = Pool_common.Repo.make_caqti_type Caqti_type.string create value
+  let t = Common.make_caqti_type Caqti_type.string create value
 end
 
 module CostCenter = struct
   include CostCenter
 
-  let t = Pool_common.Repo.make_caqti_type Caqti_type.string create value
+  let t = Common.make_caqti_type Caqti_type.string create value
 end
 
 module DirectRegistrationDisabled = struct
   include DirectRegistrationDisabled
 
   let t =
-    Pool_common.Repo.make_caqti_type
-      Caqti_type.bool
-      (create %> CCResult.return)
-      value
+    Common.make_caqti_type Caqti_type.bool (create %> CCResult.return) value
   ;;
 end
 
@@ -42,10 +39,7 @@ module RegistrationDisabled = struct
   include RegistrationDisabled
 
   let t =
-    Pool_common.Repo.make_caqti_type
-      Caqti_type.bool
-      (create %> CCResult.return)
-      value
+    Common.make_caqti_type Caqti_type.bool (create %> CCResult.return) value
   ;;
 end
 
@@ -53,10 +47,7 @@ module AllowUninvitedSignup = struct
   include AllowUninvitedSignup
 
   let t =
-    Pool_common.Repo.make_caqti_type
-      Caqti_type.bool
-      (create %> CCResult.return)
-      value
+    Common.make_caqti_type Caqti_type.bool (create %> CCResult.return) value
   ;;
 end
 
@@ -64,10 +55,7 @@ module ExternalDataRequired = struct
   include ExternalDataRequired
 
   let t =
-    Pool_common.Repo.make_caqti_type
-      Caqti_type.bool
-      (create %> CCResult.return)
-      value
+    Common.make_caqti_type Caqti_type.bool (create %> CCResult.return) value
   ;;
 end
 
@@ -172,9 +160,7 @@ let t =
                                                    .t)
                                                 (tup2
                                                    (option
-                                                      Pool_common.Repo.Reminder
-                                                      .LeadTime
-                                                      .t)
+                                                      Common.Reminder.LeadTime.t)
                                                    (tup2
                                                       (option
                                                          Pool_common.Repo
@@ -182,8 +168,8 @@ let t =
                                                          .LeadTime
                                                          .t)
                                                       (tup2
-                                                         Common.Repo.CreatedAt.t
-                                                         Common.Repo.UpdatedAt.t))))))))))))))))))
+                                                         Common.CreatedAt.t
+                                                         Common.UpdatedAt.t))))))))))))))))))
 ;;
 
 module Write = struct
@@ -299,6 +285,6 @@ module Public = struct
                  (option Description.t)
                  (tup2
                     DirectRegistrationDisabled.t
-                    (option Pool_common.Repo.ExperimentType.t))))))
+                    (option Common.ExperimentType.t))))))
   ;;
 end
