@@ -5,7 +5,7 @@ let mail_to_html ?(highlight_first_line = true) mail =
   let open CCOption in
   let { institution; room; building; street; zip; city } = mail in
   let building_room =
-    [ room >|= Room.value; building >|= Building.value ]
+    [ building >|= Building.value; room >|= Room.value ]
     |> CCList.filter_map CCFun.id
     |> CCString.concat " "
     |> CCString.trim
@@ -14,7 +14,7 @@ let mail_to_html ?(highlight_first_line = true) mail =
     | str -> Some str
   in
   let city_zip =
-    Format.asprintf "%s %s" (city |> City.value) (zip |> Zip.value)
+    Format.asprintf "%s %s" (zip |> Zip.value) (city |> City.value)
   in
   let base = [ street |> Street.value; city_zip ] in
   [ institution >|= Institution.value; building_room ]
