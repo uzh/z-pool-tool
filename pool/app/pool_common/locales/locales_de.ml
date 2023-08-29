@@ -602,6 +602,7 @@ let control_to_string = function
   | Reset -> "zurücksetzen"
   | ResetForm -> "Formular zurücksetzen"
   | Save field -> format_submit "speichern" field
+  | SessionDetails -> format_submit "Sessiondetails" None
   | SelectAll field -> format_submit "alle auswählen" field
   | SelectFilePlaceholder -> format_submit "datei auswählen.." None
   | Send field -> format_submit "senden" field

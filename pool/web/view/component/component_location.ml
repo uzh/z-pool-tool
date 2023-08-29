@@ -27,7 +27,7 @@ let formatted_address language address =
        []
 ;;
 
-let preview (location : Pool_location.t) =
+let preview language (location : Pool_location.t) =
   let open Pool_location in
   let name = p [ txt (Name.value location.name) ] in
   let link =
@@ -42,7 +42,9 @@ let preview (location : Pool_location.t) =
           (Id.value location.id)
         |> Sihl.Web.externalize_path
       in
-      a ~a:[ a_href url ] [ txt "Details" ]
+      a
+        ~a:[ a_href url ]
+        [ txt Pool_common.(Utils.text_to_string language I18n.LocationDetails) ]
   in
   [ name; br (); link ] |> address
 ;;

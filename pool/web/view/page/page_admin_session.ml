@@ -337,6 +337,8 @@ let session_list
                   ]
                 [ csrf_element csrf ()
                 ; submit_element
+                    ~has_icon:Icon.Trash
+                    ~is_text:true
                     language
                     Message.(Delete None)
                     ~submit_type:`Error
@@ -344,6 +346,8 @@ let session_list
                 ]
             else
               submit_element
+                ~has_icon:Icon.Trash
+                ~is_text:true
                 language
                 Message.(Delete None)
                 ~submit_type:`Disabled
@@ -390,16 +394,32 @@ let session_list
             match layout with
             | `SessionOverview ->
               let close_btn =
-                if Session.is_closable session |> CCResult.is_ok
-                then
-                  [ Format.asprintf
-                      "/admin/experiments/%s/sessions/%s/close"
-                      (Experiment.Id.value experiment_id)
-                      (Id.value session.id)
-                    |> link_as_button
-                         ~control:(language, Pool_common.Message.Close None)
-                  ]
-                else []
+                Format.asprintf
+                  "/admin/experiments/%s/sessions/%s/close"
+                  (Experiment.Id.value experiment_id)
+                  (Id.value session.id)
+                |> link_as_button
+                     ~icon:Icon.Create
+                     ~is_text:true
+                     ~control:(language, Message.Close (Some Field.Session))
+              in
+              let detail_button =
+                Format.asprintf
+                  "/admin/experiments/%s/sessions/%s"
+                  (Experiment.Id.value experiment_id)
+                  (Id.value session.id)
+                |> link_as_button
+                     ~is_text:true
+                     ~icon:Icon.Eye
+                     ~control:(language, Message.SessionDetails)
+              in
+              let buttons =
+                [ Session.is_closable session |> CCResult.is_ok, close_btn
+                ; true, detail_button
+                ; true, delete_form ()
+                ]
+                |> CCList.filter_map (fun (condition, button) ->
+                  if condition then Some button else None)
               in
               let cells =
                 Session.
@@ -422,15 +442,11 @@ let session_list
                        else "")
                   ; txt key_figures
                   ; div
-                      ~a:[ a_class [ "flexrow"; "flex-gap"; "justify-end" ] ]
-                      (close_btn
-                       @ [ Format.asprintf
-                             "/admin/experiments/%s/sessions/%s"
-                             (Experiment.Id.value experiment_id)
-                             (Id.value session.id)
-                           |> link_as_button ~icon:Icon.Eye
-                         ; delete_form ()
-                         ])
+                      ~a:[ a_class [ "flexrow" ] ]
+                      [ Component.ButtonGroup.dropdown
+                          ~classnames:[ "push" ]
+                          buttons
+                      ]
                   ]
               in
               base @ cells
@@ -979,23 +995,23 @@ let session_counters
   in
   div
     ~a:
-      [ a_class [ "grid-col-2"; "gap" ]
+      [ a_class [ "flexrow"; "flex-gap"; "inset-sm" ]
       ; a_id session_counter_id
       ; a_user_data "hx-swap-oob" "true"
       ]
     [ div
-        ~a:[ a_class [ "flexcolumn" ] ]
-        ([ Field.Total, total
-         ; Field.NoShow, num_no_shows
-         ; Field.Participated, num_participations
-         ]
-         |> CCList.map (fun (field, value) ->
-           tr
-             [ td [ strong [ field_to_string field ] ]
-             ; td [ CCInt.to_string value |> txt ]
-             ])
-         |> table ~a:[ a_class [ "table"; "simple" ] ]
-         |> CCList.return)
+        [ strong
+            [ field_to_string Field.Total
+            ; txt ":"
+            ; txt " "
+            ; CCInt.to_string total |> txt
+            ]
+        ]
+    ; div
+        ~a:[ a_class [ "push"; "session-close-checkboxes" ] ]
+        [ div [ strong [ CCInt.to_string num_participations |> txt ] ]
+        ; div [ strong [ CCInt.to_string num_no_shows |> txt ] ]
+        ]
     ]
 ;;
 
@@ -1003,6 +1019,7 @@ let close_assignment_htmx_row
   { Pool_context.language; csrf; _ }
   (experiment : Experiment.t)
   ~view_contact_name
+  ?(updated_fields = [])
   session
   ?counters
   ({ Assignment.id; no_show; participated; external_data_id; contact; _ } as
@@ -1018,8 +1035,23 @@ let close_assignment_htmx_row
   in
   let session_path = session_path experiment.Experiment.id session.Session.id in
   let checkbox_element field value =
-    let identifier = Format.asprintf "%s-%s" (Field.show field) (Id.value id) in
-    Input.checkbox_element ~value ~identifier language field
+    let checked = if value then [ a_checked () ] else [] in
+    let classnames =
+      if CCList.mem ~eq:Pool_common.Message.Field.equal field updated_fields
+      then [ a_class [ "success" ] ]
+      else []
+    in
+    div
+      ~a:[ a_class [ "form-group" ] ]
+      [ div
+          [ input
+              ~a:
+                ([ a_input_type `Checkbox; a_name (Field.show field) ]
+                 @ checked
+                 @ classnames)
+              ()
+          ]
+      ]
   in
   let default_bool fnc = CCOption.map_or ~default:false fnc in
   let identity =
@@ -1041,16 +1073,31 @@ let close_assignment_htmx_row
           external_data_id
       in
       let field = Field.ExternalDataId in
+      let classnames =
+        let open Pool_common.Message in
+        if CCList.mem
+             ~eq:equal_error
+             (FieldRequired Field.ExternalDataId)
+             (errors |> CCOption.value ~default:[])
+        then [ a_class [ "has-error" ] ]
+        else if CCList.mem
+                  ~eq:Pool_common.Message.Field.equal
+                  field
+                  updated_fields
+        then [ a_class [ "success" ] ]
+        else []
+      in
       div
         ~a:[ a_class [ "form-group"; "flex-basis-30" ] ]
         [ input
             ~a:
-              [ a_input_type `Text
-              ; a_value value
-              ; a_name Field.(show field)
-              ; a_placeholder
-                  (field_to_string language field |> CCString.capitalize_ascii)
-              ]
+              ([ a_input_type `Text
+               ; a_value value
+               ; a_name Field.(show field)
+               ; a_placeholder
+                   (field_to_string language field |> CCString.capitalize_ascii)
+               ]
+               @ classnames)
             ()
         ]
   in
@@ -1071,13 +1118,21 @@ let close_assignment_htmx_row
       ; a_class [ "flexcolumn"; "stack-sm"; "inset-sm" ]
       ]
     [ div
-        ~a:[ a_class [ "flexrow"; "flex-gap-sm"; "flexcolumn-mobile" ] ]
+        ~a:[ a_class [ "flexrow"; "flex-gap-sm" ] ]
         [ csrf_element csrf ()
         ; div
-            ~a:[ a_class [ "flex-basis-40"; "grow" ] ]
-            [ strong [ txt identity ] ]
+            ~a:
+              [ a_class
+                  [ "grow"
+                  ; "flexrow"
+                  ; "flex-gap-sm"
+                  ; "flexcolumn-mobile"
+                  ; "justify-between"
+                  ]
+              ]
+            [ strong [ txt identity ]; external_data_field ]
         ; div
-            ~a:[ a_class [ "flexcolumn"; "stack-xs"; "flex-basis-30" ] ]
+            ~a:[ a_class [ "session-close-checkboxes" ] ]
             [ checkbox_element
                 Message.Field.Participated
                 (default_bool Participated.value participated)
@@ -1085,7 +1140,6 @@ let close_assignment_htmx_row
                 Message.Field.NoShow
                 (default_bool NoShow.value no_show)
             ]
-        ; external_data_field
         ]
     ; errors
     ; counters |> CCOption.map_or ~default:(txt "") (session_counters language)
@@ -1146,8 +1200,16 @@ let close
            ~view_contact_name
            session)
         assignments
-      |> div ~a:[ a_class [ "flexcolumn"; "striped"; "gap" ] ]
+      |> div ~a:[ a_class [ "flexcolumn"; "striped" ] ]
       |> fun table ->
+      let header =
+        div
+          ~a:[ a_class [ "flexrow"; "inset-sm" ] ]
+          [ div
+              ~a:[ a_class [ "push"; "session-close-checkboxes" ] ]
+              [ div [ strong [ txt "P" ] ]; div [ strong [ txt "NS" ] ] ]
+          ]
+      in
       let counters = session_counters language counters in
       let scripts =
         Format.asprintf
@@ -1179,7 +1241,7 @@ let close
           Field.(show NoShow)
           Field.(show Participated)
       in
-      div [ table; counters; script (Unsafe.data scripts) ]
+      div [ header; table; counters; script (Unsafe.data scripts) ]
   in
   let submit_session_close =
     form

@@ -275,23 +275,23 @@ let suite =
           ; test_case
               "update closed: cannot delete of unclosed session"
               `Slow
-              UpdateClosedAssignments.update_unclosed
+              UpdateAssignments.update_unclosed
           ; test_case
               "update closed: close main session"
               `Slow
-              UpdateClosedAssignments.close_main_session
+              UpdateAssignments.close_main_session
           ; test_case
               "update closed: update assignment manually"
               `Slow
-              UpdateClosedAssignments.update_assignment_manually
+              UpdateAssignments.update_assignment_manually
           ; test_case
               "update closed: close follow up session"
               `Slow
-              UpdateClosedAssignments.close_followup_session
+              UpdateAssignments.close_followup_session
           ; test_case
               "update closed: update follow up assignment manually"
               `Slow
-              UpdateClosedAssignments.update_follow_up_assignment_manually
+              UpdateAssignments.update_follow_up_assignment_manually
           ] )
     ; ( "tagging"
       , Tag_test.

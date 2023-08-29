@@ -219,33 +219,56 @@ let close_htmx req =
     let* experiment = Experiment.find database_label experiment_id in
     let* session = Session.find database_label session_id in
     let* assignment = Assignment.find database_label assignment_id in
-    let* assignment, event =
+    let* updated_assignment, event, no_show, participated, external_data_id =
       let open CCResult.Infix in
       urlencoded
       |> decode_update
-      >|= (fun { no_show; participated; external_data_id } ->
-            Assignment.
-              { assignment with
-                no_show = Some no_show
-              ; participated = Some participated
-              ; external_data_id
-              })
-      >>= (fun assignment ->
+      >>= (fun { no_show; participated; external_data_id } ->
+            let assignment =
+              Assignment.
+                { assignment with
+                  no_show = Some no_show
+                ; participated = Some participated
+                ; external_data_id
+                }
+            in
             let events =
               Assignment.(Updated assignment) |> Pool_event.assignment
             in
-            Ok (assignment, events))
+            Ok (assignment, events, no_show, participated, external_data_id))
       |> Lwt_result.lift
     in
     let%lwt () = Pool_event.handle_event ~tags database_label event in
     let* counters = Assignment.counters_of_session database_label session_id in
+    let updated_fields =
+      let open Assignment in
+      let fields =
+        if assignment.no_show
+           |> CCOption.map_or ~default:false NoShow.value
+           = NoShow.value no_show
+        then []
+        else [ Field.NoShow ]
+      in
+      let fields =
+        if assignment.participated
+           |> CCOption.map_or ~default:false Participated.value
+           = Participated.value participated
+        then fields
+        else Field.Participated :: fields
+      in
+      match assignment.external_data_id, external_data_id with
+      | None, None -> fields
+      | Some id1, Some id2 when ExternalDataId.equal id1 id2 -> fields
+      | _ -> Field.ExternalDataId :: fields
+    in
     Page.Admin.Session.close_assignment_htmx_row
       ~counters
+      ~updated_fields
       context
       experiment
       ~view_contact_name
       session
-      assignment
+      updated_assignment
     |> HttpUtils.Htmx.html_to_plain_text_response
     |> Lwt_result.return
   in
@@ -301,7 +324,7 @@ let update req =
       ||> HttpUtils.format_request_boolean_values boolean_fields
       ||> HttpUtils.remove_empty_values
     in
-    let* assignment = find_closed database_label assignment_id in
+    let* assignment = find database_label assignment_id in
     let* experiment = Experiment.find database_label experiment_id in
     let* session = Session.find database_label session_id in
     let* participated_in_other_sessions =
@@ -312,7 +335,7 @@ let update req =
         (Contact.id assignment.contact)
     in
     let events =
-      let open Cqrs_command.Assignment_command.UpdateClosed in
+      let open Cqrs_command.Assignment_command.Update in
       let open CCResult.Infix in
       urlencoded
       |> decode
