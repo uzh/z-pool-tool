@@ -62,17 +62,17 @@ end
 let count_contacts_select =
   {sql|
     SELECT
-          COUNT(*)
-        FROM
-          pool_contacts
-          INNER JOIN user_users ON user_users.uuid = pool_contacts.user_uuid
-        WHERE
-          user_users.admin = 0
-          AND user_users.confirmed = 1
-          AND pool_contacts.email_verified IS NOT NULL
-          AND pool_contacts.disabled = 0
-          AND pool_contacts.paused = 0
-          AND pool_contacts.import_pending = 0
+      COUNT(*)
+    FROM
+      pool_contacts
+      INNER JOIN user_users ON user_users.uuid = pool_contacts.user_uuid
+    WHERE
+      user_users.admin = 0
+      AND user_users.confirmed = 1
+      AND pool_contacts.email_verified IS NOT NULL
+      AND pool_contacts.disabled = 0
+      AND pool_contacts.paused = 0
+      AND pool_contacts.import_pending = 0
   |sql}
 ;;
 
