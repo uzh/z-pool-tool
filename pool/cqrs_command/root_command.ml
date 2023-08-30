@@ -59,7 +59,7 @@ end = struct
       ; password = command.password
       ; firstname = command.firstname
       ; lastname = command.lastname
-      ; roles = Some (Guard.RoleSet.singleton `Root)
+      ; roles = [ `Operator, None ]
       }
     in
     Ok [ Admin.Created admin |> Pool_event.admin ]
@@ -72,7 +72,7 @@ end = struct
 
   let effects =
     let open Guard in
-    ValidationSet.One (Action.Manage, TargetSpec.Entity `System)
+    ValidationSet.One (Permission.Manage, TargetEntity.Model `System)
   ;;
 end
 
@@ -91,18 +91,13 @@ end = struct
   let handle ?(tags = Logs.Tag.empty) (admin : Admin.t) =
     Logs.info ~src (fun m -> m "Handle command ToggleStatus" ~tags);
     let open Sihl.Contract.User in
-    let status = (admin |> Admin.user).status in
-    match status with
+    match (admin |> Admin.user).status with
     | Active -> Ok [ Admin.Disabled admin |> Pool_event.admin ]
     | Inactive -> Ok [ Admin.Enabled admin |> Pool_event.admin ]
   ;;
 
   let effects =
     let open Guard in
-    ValidationSet.(
-      And
-        [ One (Action.Update, TargetSpec.Entity `System)
-        ; SpecificRole `ManageOperators
-        ])
+    ValidationSet.(And [ One (Permission.Manage, TargetEntity.Model `Admin) ])
   ;;
 end

@@ -1,13 +1,5 @@
 open Utils.Lwt_result.Infix
 
-let relation ?ctx () =
-  let open Guard in
-  let to_target =
-    Relation.Query.create Repo.Sql.find_binary_experiment_id_sql
-  in
-  Persistence.Relation.add ?ctx ~to_target ~target:`Experiment `Session
-;;
-
 module Target = struct
   type t = Entity.t [@@deriving eq, show]
 
@@ -16,7 +8,7 @@ module Target = struct
     Persistence.Target.decorate
       ?ctx
       (fun { Entity.id; _ } ->
-        Target.make `Session (id |> Uuid.target_of Pool_common.Id.value))
+        Target.create `Session (id |> Uuid.target_of Pool_common.Id.value))
       t
     >|- Pool_common.Message.authorization
   ;;
@@ -25,46 +17,37 @@ end
 module Access = struct
   open Guard
   open ValidationSet
+  open Permission
+  open TargetEntity
 
-  let index_action = Action.Read
+  let index_permission = Read
 
-  let session action id =
-    let target_id = id |> Uuid.target_of Entity.Id.value in
-    One (action, TargetSpec.Id (`Session, target_id))
+  let session permission uuid =
+    One (permission, uuid |> Uuid.target_of Entity.Id.value |> id)
   ;;
 
   let index id =
     And
-      [ One (index_action, TargetSpec.Entity `Session)
+      [ One (index_permission, Model `Session)
       ; Experiment.Guard.Access.read id
       ]
   ;;
 
   let create id =
-    And
-      [ One (Action.Create, TargetSpec.Entity `Session)
-      ; Experiment.Guard.Access.update id
-      ]
+    And [ One (Create, Model `Session); Experiment.Guard.Access.update id ]
   ;;
 
   let read experiment_id session_id =
-    And
-      [ session Action.Read session_id
-      ; Experiment.Guard.Access.read experiment_id
-      ]
+    And [ session Read session_id; Experiment.Guard.Access.read experiment_id ]
   ;;
 
   let update experiment_id session_id =
     And
-      [ session Action.Update session_id
-      ; Experiment.Guard.Access.read experiment_id
-      ]
+      [ session Update session_id; Experiment.Guard.Access.read experiment_id ]
   ;;
 
   let delete experiment_id session_id =
     And
-      [ session Action.Delete session_id
-      ; Experiment.Guard.Access.read experiment_id
-      ]
+      [ session Delete session_id; Experiment.Guard.Access.read experiment_id ]
   ;;
 end

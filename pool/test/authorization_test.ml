@@ -10,18 +10,16 @@ let update_language_as actor =
   let effects =
     Cqrs_command.Contact_command.Update.effects (Contact.id subject)
   in
-  let* (_ : [> `Contact ] Guard.Target.t) =
+  let* (_ : Guard.Target.t) =
     Pool_tenant.Guard.Target.to_authorizable ~ctx tenant
   in
-  let* (_ : [> `Contact ] Guard.Target.t) =
+  let* (_ : Guard.Target.t) =
     Contact.Guard.Target.to_authorizable ~ctx subject
   in
-  let* (_ : [> `Contact ] Guard.Actor.t) =
+  let* (_ : Guard.Actor.t) =
     Pool_tenant.Guard.Actor.to_authorizable ~ctx tenant
   in
-  let* (_ : [> `Contact ] Guard.Actor.t) =
-    Contact.Guard.Actor.to_authorizable ~ctx subject
-  in
+  let* (_ : Guard.Actor.t) = Contact.Guard.Actor.to_authorizable ~ctx subject in
   let* () =
     Guard.Persistence.validate Test_utils.Data.database_label effects actor
   in
@@ -32,10 +30,10 @@ let recruiter_can_update_contact_language _ () =
   let open Utils.Lwt_result.Infix in
   let ctx = Pool_database.to_ctx Test_utils.Data.database_label in
   let%lwt actor =
-    let open Guard.Persistence.Actor in
-    find_by_role ~ctx `RecruiterAll
+    let open Guard.Persistence in
+    ActorRole.find_actors_by_role ~ctx (`Recruiter, None)
     ||> CCList.hd
-    >|> find Test_utils.Data.database_label `RecruiterAll
+    >|> Actor.find Test_utils.Data.database_label
     ||> CCResult.get_or_failwith
   in
   let%lwt actual = update_language_as actor in
@@ -69,35 +67,27 @@ let operator_works _ () =
       |> Contact_test.create_contact true
     in
     let* _ = Contact.Guard.Actor.to_authorizable ~ctx target in
-    let* target' = Contact.Guard.Target.to_authorizable ~ctx target in
     let subject =
       "john@gmail.com"
       |> Contact_test.contact_info
       |> Contact_test.create_contact true
     in
     let* actor = Contact.Guard.Actor.to_authorizable ~ctx subject in
-    let* () =
-      Persistence.Actor.grant_roles
-        ~ctx
-        (actor |> Actor.id)
-        (RoleSet.singleton `Operator)
-      >|- to_error
-      ||> CCFun.tap (fun _ -> Persistence.Cache.clear ())
+    let%lwt () =
+      ActorRole.create actor.Actor.uuid `Operator
+      |> Persistence.ActorRole.upsert ~ctx
+      ||> CCFun.tap (fun () -> Persistence.Cache.clear ())
     in
     let* actor = Contact.Guard.Actor.to_authorizable ~ctx subject in
     let* () =
       let open Guard in
-      Persistence.Rule.save
-        ~ctx
-        ( ActorSpec.Entity `Operator
-        , Action.Manage
-        , TargetSpec.Id (`Contact, target' |> Target.id) )
+      RolePermission.create `Operator Permission.Manage `Contact
+      |> Persistence.RolePermission.insert ~ctx
       >|- to_error
       ||> CCFun.tap (fun _ -> Persistence.Cache.clear ())
     in
     let effects =
-      ValidationSet.One
-        (Action.Manage, TargetSpec.Id (`Contact, target' |> Target.id))
+      ValidationSet.One (Permission.Manage, TargetEntity.Model `Contact)
     in
     let* () =
       Persistence.validate Test_utils.Data.database_label effects actor

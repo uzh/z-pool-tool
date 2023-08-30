@@ -13,7 +13,7 @@ module ResetPassword : sig
     -> (Pool_event.t list, 'a) result
 
   val decode : Conformist.input -> (t, Conformist.error_msg) result
-  val effects : Role.Target.t -> Sihl_user.t -> Guard.ValidationSet.t
+  val effects : Sihl_user.t -> Guard.ValidationSet.t
 end = struct
   type t = Pool_user.EmailAddress.t
 
@@ -33,9 +33,9 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let effects role user =
+  let effects user =
     let open Guard in
     let target_id = user.Sihl_user.id |> Guard.Uuid.Target.of_string_exn in
-    ValidationSet.One (Action.Update, TargetSpec.Id (role, target_id))
+    ValidationSet.One (Permission.Update, TargetEntity.Id target_id)
   ;;
 end

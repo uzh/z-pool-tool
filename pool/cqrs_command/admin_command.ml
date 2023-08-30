@@ -17,7 +17,7 @@ module CreateAdmin : sig
     :  ?tags:Logs.Tag.set
     -> ?allowed_email_suffixes:Settings.EmailSuffix.t list
     -> ?id:Admin.Id.t
-    -> ?roles:Guard.RoleSet.t
+    -> ?roles:(Role.Role.t * Guard.Uuid.Target.t option) list
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
@@ -48,7 +48,12 @@ end = struct
         command)
   ;;
 
-  let handle ?(tags = Logs.Tag.empty) ?allowed_email_suffixes ?id ?roles command
+  let handle
+    ?(tags = Logs.Tag.empty)
+    ?allowed_email_suffixes
+    ?id
+    ?(roles = [])
+    command
     =
     Logs.info ~src (fun m -> m "Handle command CreateAdmin" ~tags);
     let open CCResult in

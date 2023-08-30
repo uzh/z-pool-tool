@@ -15,18 +15,45 @@ let roles_path ?suffix admin =
   CCOption.map_or ~default (Format.asprintf "%s%s" default) suffix
 ;;
 
-let target_path : Role.Actor.t -> string option =
-  let open Guard.Uuid.Target in
-  let experiment_path = to_string %> Format.asprintf "/admin/experiments/%s/" in
-  let location_path = to_string %> Format.asprintf "/admin/locations/%s/" in
-  function
-  | `Assistant id -> Some (experiment_path id)
-  | `Experimenter id -> Some (experiment_path id)
-  | `LocationManager id -> Some (location_path id)
-  | `ManageAssistant id -> Some (experiment_path id)
-  | `ManageExperimenter id -> Some (experiment_path id)
-  | `Recruiter id -> Some (experiment_path id)
-  | _ -> None
+let target_path ({ Guard.ActorRole.target_uuid; _ }, target_model) =
+  let build path =
+    Guard.Uuid.Target.to_string %> Format.asprintf "/admin/%s/%s/" path
+  in
+  CCOption.map2
+    (fun uuid -> function
+      | `Experiment -> Some (build "experiments" uuid)
+      | `Location -> Some (build "locations" uuid)
+      | `Admin -> Some (build "admins" uuid)
+      | `Contact -> Some (build "contacts" uuid)
+      | `CustomField -> Some (build "custom-fields/contact/field" uuid)
+      | `CustomFieldGroup -> Some (build "custom-fields/contact/group" uuid)
+      | `Filter -> Some (build "filter" uuid)
+      | `Tag -> Some (build "settings/tags" uuid)
+      | `Assignment
+      | `ContactInfo
+      | `ContactName
+      | `I18n
+      | `Invitation
+      | `LocationFile
+      | `Mailing
+      | `Message
+      | `MessageTemplate
+      | `OrganisationalUnit
+      | `Permission
+      | `Queue
+      | `Role
+      | `Schedule
+      | `Session
+      | `SessionClose
+      | `SystemSetting
+      | `Smtp
+      | `Statistics
+      | `System
+      | `Tenant
+      | `WaitingList -> None)
+    target_uuid
+    target_model
+  |> CCOption.flatten
 ;;
 
 module List = struct
@@ -34,7 +61,8 @@ module List = struct
     ?(is_edit = false)
     Pool_context.{ csrf; language; _ }
     target_admin
-    (role : Role.Actor.t)
+    (( ({ Guard.ActorRole.actor_uuid; role; target_uuid } as actor_role)
+     , (_ : Role.Target.t option) ) as role_element)
     =
     let button_form target name submit_type confirm_text =
       form
@@ -50,7 +78,21 @@ module List = struct
         ; input
             ~a:
               [ a_name Input.Field.(show Role)
-              ; a_value ([%show: Role.Actor.t] role)
+              ; a_value ([%show: Role.Role.t] role)
+              ; a_hidden ()
+              ]
+            ()
+        ; input
+            ~a:
+              [ a_name Input.Field.(show Actor)
+              ; a_value ([%show: Guard.Uuid.Actor.t] actor_uuid)
+              ; a_hidden ()
+              ]
+            ()
+        ; input
+            ~a:
+              [ a_name Input.Field.(show Target)
+              ; a_value ([%show: Guard.Uuid.Target.t option] target_uuid)
               ; a_hidden ()
               ]
             ()
@@ -66,7 +108,7 @@ module List = struct
              ~control:(language, Pool_common.Message.show)
              ~icon:Icon.Eye
            %> CCList.return)
-          (target_path role)
+          (target_path role_element)
       in
       let remove_button =
         if is_edit
@@ -76,7 +118,7 @@ module List = struct
       target_button @ remove_button
       |> div ~a:[ a_class [ "flexrow"; "flex-gap"; "justify-end" ] ]
     in
-    [ txt ([%show: Role.Actor.t] role); buttons ]
+    [ txt (Guard.ActorRole.role_to_human actor_role); buttons ]
   ;;
 
   let create
@@ -102,7 +144,7 @@ module Search = struct
   ;;
 
   let value_input ?exclude_roles_of ?role ?value language =
-    let open Role.Actor in
+    let open Role.Role in
     function
     | Some QueryLocations ->
       Component_search.Location.create
@@ -121,7 +163,7 @@ module Search = struct
   ;;
 
   let value_form language ?exclude_roles_of ?key ?value () =
-    CCOption.map_or ~default:(Ok None) Role.Actor.type_of_key key
+    CCOption.map_or ~default:(Ok None) Role.Role.type_of_key key
     |> function
     | Error err -> p [ Pool_common.Utils.error_to_string language err |> txt ]
     | Ok input_type ->
@@ -147,12 +189,12 @@ module Search = struct
       Component_input.selector
         ~attributes
         ~add_empty:true
-        ~option_formatter:Role.Actor.key_to_string
+        ~option_formatter:Role.Role.show
         ~required:true
         ~classnames:[ "key-select" ]
         language
         Pool_common.Message.Field.Role
-        Role.Actor.show
+        Role.Role.show
         role_list
         key
         ()

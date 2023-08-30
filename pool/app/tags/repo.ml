@@ -222,51 +222,65 @@ module Sql = struct
     ||> CCOption.value ~default:false
   ;;
 
-  let find_all_validated_request =
-    let open Guard.Persistence in
+  let find_all_validated_request ?guardian () =
+    (* let open Guard.Persistence in *)
     Format.asprintf
       {sql|
         %s
-        GROUP BY pool_tags.uuid
-        HAVING guardianValidateTagUuid(guardianEncodeUuid(?), ?, pool_tags.uuid)
+        %s
         ORDER BY pool_tags.title, pool_tags.model
       |sql}
       select_tag_sql
-    |> Caqti_type.(tup2 Uuid.Actor.t Action.t) ->* RepoEntity.t
+      (CCOption.map_or ~default:"" (Format.asprintf "WHERE %s") guardian)
+    |> Caqti_type.unit ->* RepoEntity.t
   ;;
 
-  let find_all_validated ?(action = Guard.Action.Read) pool actor =
+  let find_all_validated ?(permission = Guard.Permission.Read) pool actor =
+    let%lwt guardian =
+      Guard.sql_where_fragment
+        ~field:"pool_tags.uuid"
+        pool
+        permission
+        `Tag
+        actor
+    in
     Utils.Database.collect
       (Label.value pool)
-      find_all_validated_request
-      (Guard.Actor.id actor, action)
+      (find_all_validated_request ?guardian ())
+      ()
   ;;
 
-  let find_all_validated_with_model_request =
-    let open Guard.Persistence in
+  let find_all_validated_with_model_request ?guardian () =
     Format.asprintf
       {sql|
         %s
         WHERE pool_tags.model = ?
-        GROUP BY pool_tags.uuid
-        HAVING guardianValidateTagUuid(guardianEncodeUuid(?), ?, pool_tags.uuid)
+          %s
         ORDER BY pool_tags.title, pool_tags.model
       |sql}
       select_tag_sql
-    |> Caqti_type.(tup3 RepoEntity.Model.t Uuid.Actor.t Action.t)
-       ->* RepoEntity.t
+      (CCOption.map_or ~default:"" (Format.asprintf "AND %s") guardian)
+    |> RepoEntity.Model.t ->* RepoEntity.t
   ;;
 
   let find_all_validated_with_model
-    ?(action = Guard.Action.Read)
+    ?(permission = Guard.Permission.Read)
     pool
     model
     actor
     =
+    let%lwt guardian =
+      Guard.sql_where_fragment
+        ~field:"pool_tags.uuid"
+        pool
+        permission
+        `Tag
+        actor
+    in
     Utils.Database.collect
       (Label.value pool)
-      find_all_validated_with_model_request
-      (model, Guard.Actor.id actor, action)
+      (find_all_validated_with_model_request ?guardian ())
+      model
   ;;
 
   let insert_request =

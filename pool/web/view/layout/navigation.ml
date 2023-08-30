@@ -5,7 +5,7 @@ open Entity
 
 module NavElements = struct
   let read_entity entity =
-    Guard.(ValidationSet.One (Action.Read, TargetSpec.Entity entity))
+    Guard.(ValidationSet.One (Permission.Read, TargetEntity.Model entity))
   ;;
 
   module Profile = struct

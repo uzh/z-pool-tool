@@ -12,7 +12,7 @@ let handle_event pool : event -> unit Lwt.t = function
     let%lwt () = Repo.insert pool t in
     Entity_guard.Target.to_authorizable ~ctx:(Pool_database.to_ctx pool) t
     ||> Pool_common.Utils.get_or_failwith
-    ||> fun (_ : [> `Filter ] Guard.Target.t) -> ()
+    ||> fun (_ : Guard.Target.t) -> ()
   | Deleted t -> Repo.delete pool t.id
   | Updated t -> Repo.update pool t
 ;;

@@ -266,7 +266,7 @@ module Guard : sig
     val to_authorizable
       :  ?ctx:(string * string) list
       -> t
-      -> (Role.Target.t Guard.Target.t, Pool_common.Message.error) Lwt_result.t
+      -> (Guard.Target.t, Pool_common.Message.error) Lwt_result.t
 
     type t
 
@@ -278,7 +278,7 @@ module Guard : sig
     val to_authorizable
       :  ?ctx:(string * string) list
       -> t
-      -> (Role.Actor.t Guard.Actor.t, Pool_common.Message.error) Lwt_result.t
+      -> (Guard.Actor.t, Pool_common.Message.error) Lwt_result.t
 
     type t
 
@@ -292,7 +292,6 @@ module Guard : sig
     val read : Id.t -> Guard.ValidationSet.t
     val update : Id.t -> Guard.ValidationSet.t
     val read_name : Guard.ValidationSet.t
-    val read_email : Guard.ValidationSet.t
-    val read_cellphone : Guard.ValidationSet.t
+    val read_info : Guard.ValidationSet.t
   end
 end

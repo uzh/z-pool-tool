@@ -8,7 +8,7 @@ module Target = struct
     Guard.Persistence.Target.decorate
       ?ctx
       (Guard.Uuid.target_of Pool_common.Id.value
-       %> Guard.Target.make `SystemSetting)
+       %> Guard.Target.create `SystemSetting)
       t
     >|- Pool_common.Message.authorization
   ;;
@@ -17,11 +17,12 @@ end
 module Access = struct
   open Guard
   open ValidationSet
+  open Permission
 
-  let setting action = One (action, TargetSpec.Entity `SystemSetting)
-  let index = setting Action.Read
-  let create = setting Action.Create
-  let read = setting Action.Read
-  let update = setting Action.Update
-  let delete = setting Action.Delete
+  let setting action = One (action, TargetEntity.Model `SystemSetting)
+  let index = setting Read
+  let create = setting Create
+  let read = setting Read
+  let update = setting Update
+  let delete = setting Delete
 end

@@ -30,26 +30,22 @@ let experiment_boolean_fields =
 let customizable_message_templates = []
 
 let contact_person_roles experiment_id =
-  let base = [ `RecruiterAll ] in
+  let base = [ `Recruiter, None; `Experimenter, None ] in
   match experiment_id with
   | None -> base
   | Some id ->
     id
     |> Guard.Uuid.target_of Experiment.Id.value
-    |> fun target_id -> [ `Experimenter target_id; `Recruiter target_id ] @ base
+    |> fun target_id -> [ `Experimenter, Some target_id ] @ base
 ;;
 
 let validation_set =
   let open Guard in
   let open ValidationSet in
-  let base = [ SpecificRole `RecruiterAll ] in
+  let base = [ One (Permission.Update, TargetEntity.Model `Experiment) ] in
   CCOption.map_or ~default:base (fun exp_id ->
     let id = Uuid.target_of Experiment.Id.value exp_id in
-    base
-    @ [ SpecificRole (`Recruiter id)
-      ; SpecificRole (`Experimenter id)
-      ; SpecificRole (`Recruiter id)
-      ])
+    base @ [ One (Permission.Update, TargetEntity.Id id) ])
   %> or_
 ;;
 
@@ -62,7 +58,7 @@ let contact_person_from_urlencoded database_label urlencoded experiment_id =
       |> CCOption.to_result Pool_common.Message.(NotFound Field.ContactPerson)
       |> Lwt_result.lift
       >>= (fun id ->
-            Guard.Persistence.Actor.find database_label `Admin id
+            Guard.Persistence.Actor.find database_label id
             >|- Pool_common.Message.authorization)
       >>= Guard.Persistence.validate
             database_label
@@ -116,7 +112,11 @@ let index req =
           ~default:Experiment.default_query
           req
       in
-      find_all ~query ~actor ~action:Guard.Access.index_action database_label
+      find_all
+        ~query
+        ~actor
+        ~permission:Guard.Access.index_permission
+        database_label
     in
     find_actor
     |>> find_experiments
@@ -380,12 +380,14 @@ let delete req =
     let%lwt assistants =
       Admin.find_all_with_role
         database_label
-        (`Assistant (Guard.Uuid.target_of Experiment.Id.value experiment_id))
+        ( `Assistant
+        , Some (Guard.Uuid.target_of Experiment.Id.value experiment_id) )
     in
     let%lwt experimenters =
       Admin.find_all_with_role
         database_label
-        (`Experimenter (Guard.Uuid.target_of Experiment.Id.value experiment_id))
+        ( `Experimenter
+        , Some (Guard.Uuid.target_of Experiment.Id.value experiment_id) )
     in
     let%lwt templates =
       let open Message_template in

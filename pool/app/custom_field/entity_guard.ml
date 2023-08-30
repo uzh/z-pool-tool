@@ -10,7 +10,7 @@ module Target = struct
     Persistence.Target.decorate
       ?ctx
       (fun field ->
-        Target.make
+        Target.create
           `CustomField
           (field |> Entity.id |> Uuid.target_of Entity.Id.value))
       t
@@ -26,7 +26,7 @@ module Group = struct
       Persistence.Target.decorate
         ?ctx
         (fun { Entity.Group.id; _ } ->
-          Guard.Target.make
+          Guard.Target.create
             `CustomField
             (id |> Uuid.target_of Entity.Group.Id.value))
         t
@@ -38,26 +38,26 @@ end
 module Access = struct
   open Guard
   open ValidationSet
+  open Permission
+  open TargetEntity
 
-  let custom_field action id =
-    let target_id = id |> Uuid.target_of Entity.Id.value in
-    One (action, TargetSpec.Id (`CustomField, target_id))
+  let custom_field action uuid =
+    One (action, uuid |> Uuid.target_of Entity.Id.value |> id)
   ;;
 
-  let index = One (Action.Read, TargetSpec.Entity `CustomField)
-  let create = One (Action.Create, TargetSpec.Entity `CustomField)
-  let update = custom_field Action.Update
-  let delete = custom_field Action.Delete
+  let index = One (Read, Model `CustomField)
+  let create = One (Create, Model `CustomField)
+  let update = custom_field Update
+  let delete = custom_field Delete
 
   module Group = struct
-    let group action id =
-      let target_id = id |> Uuid.target_of Entity.Group.Id.value in
-      One (action, TargetSpec.Id (`CustomFieldGroup, target_id))
+    let group action uuid =
+      One (action, uuid |> Uuid.target_of Entity.Group.Id.value |> id)
     ;;
 
-    let index = One (Action.Read, TargetSpec.Entity `CustomFieldGroup)
-    let create = One (Action.Create, TargetSpec.Entity `CustomFieldGroup)
-    let update = group Action.Update
-    let delete = group Action.Delete
+    let index = One (Read, Model `CustomFieldGroup)
+    let create = One (Create, Model `CustomFieldGroup)
+    let update = group Update
+    let delete = group Delete
   end
 end

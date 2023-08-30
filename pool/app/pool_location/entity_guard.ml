@@ -2,13 +2,6 @@ open CCFun.Infix
 open Utils.Lwt_result.Infix
 open Guard
 
-let relation ?ctx () =
-  let to_target =
-    Relation.Query.create Repo.RepoFileMapping.Sql.find_binary_location_id_sql
-  in
-  Persistence.Relation.add ?ctx ~to_target ~target:`Location `LocationFile
-;;
-
 module Target = struct
   type t = Entity.t [@@deriving eq, show]
 
@@ -16,7 +9,7 @@ module Target = struct
     Persistence.Target.decorate
       ?ctx
       (fun Entity.{ id; _ } ->
-        Target.make `Location (id |> Uuid.target_of Entity.Id.value))
+        Target.create `Location (id |> Uuid.target_of Entity.Id.value))
       t
     >|- Pool_common.Message.authorization
   ;;
@@ -28,7 +21,8 @@ module FileTarget = struct
   let decorate ?ctx id =
     Persistence.Target.decorate
       ?ctx
-      (Uuid.target_of Entity.Mapping.Id.value %> Guard.Target.make `LocationFile)
+      (Uuid.target_of Entity.Mapping.Id.value
+       %> Guard.Target.create `LocationFile)
       id
     >|- Pool_common.Message.authorization
   ;;
@@ -43,28 +37,28 @@ end
 module Access = struct
   open Guard
   open ValidationSet
+  open Permission
+  open TargetEntity
 
-  let location action id =
-    let target_id = id |> Uuid.target_of Entity.Id.value in
-    One (action, TargetSpec.Id (`Location, target_id))
+  let location action uuid =
+    One (action, uuid |> Uuid.target_of Entity.Id.value |> id)
   ;;
 
-  let index = One (Action.Read, TargetSpec.Entity `Location)
-  let create = One (Action.Create, TargetSpec.Entity `Location)
-  let read = location Action.Read
-  let update = location Action.Update
-  let delete = location Action.Delete
+  let index = One (Read, Model `Location)
+  let create = One (Create, Model `Location)
+  let read = location Read
+  let update = location Update
+  let delete = location Delete
 
   module File = struct
-    let file action id =
-      let target_id = id |> Uuid.target_of Entity.Mapping.Id.value in
-      One (action, TargetSpec.Id (`LocationFile, target_id))
+    let file action uuid =
+      One (action, uuid |> Uuid.target_of Entity.Mapping.Id.value |> id)
     ;;
 
-    let index = One (Action.Read, TargetSpec.Entity `LocationFile)
-    let create = One (Action.Create, TargetSpec.Entity `LocationFile)
-    let read = file Action.Read
-    let update = file Action.Update
-    let delete = file Action.Delete
+    let index = One (Read, Model `LocationFile)
+    let create = One (Create, Model `LocationFile)
+    let read = file Read
+    let update = file Update
+    let delete = file Delete
   end
 end

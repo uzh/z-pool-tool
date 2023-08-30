@@ -6,7 +6,7 @@ module Target = struct
     Guard.Persistence.Target.decorate
       ?ctx
       (fun { Entity.id; _ } ->
-        Guard.Target.make
+        Guard.Target.create
           `OrganisationalUnit
           (id |> Entity.Id.value |> Guard.Uuid.Target.of_string_exn))
       t
@@ -17,14 +17,15 @@ end
 module Access = struct
   open Guard
   open ValidationSet
+  open Permission
+  open TargetEntity
 
-  let organisational_unit action id =
-    let target_id = id |> Uuid.target_of Entity.Id.value in
-    One (action, TargetSpec.Id (`OrganisationalUnit, target_id))
+  let organisational_unit action uuid =
+    One (action, uuid |> Uuid.target_of Entity.Id.value |> id)
   ;;
 
-  let index = One (Action.Read, TargetSpec.Entity `OrganisationalUnit)
-  let create = One (Action.Create, TargetSpec.Entity `OrganisationalUnit)
-  let update = organisational_unit Action.Update
-  let delete = organisational_unit Action.Delete
+  let index = One (Read, Model `OrganisationalUnit)
+  let create = One (Create, Model `OrganisationalUnit)
+  let update = organisational_unit Update
+  let delete = organisational_unit Delete
 end

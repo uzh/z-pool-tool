@@ -122,26 +122,13 @@ let admins db_label =
     Experiment.find_all db_label
     ||> fst
         %> CCList.map (fun { Experiment.id; _ } ->
-          `Experimenter (Guard.Uuid.target_of Experiment.Id.value id))
+          `Experimenter, Some (Guard.Uuid.target_of Experiment.Id.value id))
   in
   let data =
-    [ "The", "One", "admin@example.com", [ `Admin ] @ experimenter_roles
-    ; ( "engineering"
-      , "admin"
-      , "it@econ.uzh.ch"
-      , [ `Operator
-        ; `RecruiterAll
-        ; `ManageAssistants
-        ; `ManageExperimenters
-        ; `ManageLocationManagers
-        ; `ManageRecruiters
-        ; `ManageRules
-        ] )
-    ; "Scooby", "Doo", "assistant@econ.uzh.ch", [ `LocationManagerAll ]
-    ; ( "Winnie"
-      , "Pooh"
-      , "experimenter@econ.uzh.ch"
-      , [ `RecruiterAll; `ManageAssistants; `ManageExperimenters ] )
+    [ "The", "One", "admin@example.com", [ `Admin, None ] @ experimenter_roles
+    ; "engineering", "admin", "it@econ.uzh.ch", [ `Operator, None ]
+    ; "Scooby", "Doo", "assistant@econ.uzh.ch", [ `LocationManager, None ]
+    ; "Winnie", "Pooh", "experimenter@econ.uzh.ch", [ `Recruiter, None ]
     ]
   in
   let ctx = Pool_database.to_ctx db_label in
@@ -151,7 +138,10 @@ let admins db_label =
     |> CCOption.value ~default:"Password1!"
   in
   Lwt_list.iter_s
-    (fun (given_name, name, email, (role : Guard.RoleSet.elt list)) ->
+    (fun ( given_name
+         , name
+         , email
+         , (roles : (Role.Role.t * Guard.Uuid.Target.t option) list) ) ->
       let%lwt user = Service.User.find_by_email_opt ~ctx email in
       match user with
       | None ->
@@ -164,7 +154,7 @@ let admins db_label =
             ; password = Password.create password |> CCResult.get_exn
             ; firstname = Firstname.of_string given_name
             ; lastname = Lastname.of_string name
-            ; roles = None
+            ; roles = []
             }
           in
           let%lwt () =
@@ -172,19 +162,21 @@ let admins db_label =
           in
           Admin.find db_label id |> Lwt.map CCResult.get_exn
         in
-        let%lwt (_ : Role.Actor.t Guard.Actor.t) =
-          let%lwt (_ : Role.Target.t Guard.Target.t) =
+        let%lwt (_ : Guard.Actor.t) =
+          let%lwt (_ : Guard.Target.t) =
             admin |> Admin.Guard.Target.to_authorizable ~ctx ||> get_or_failwith
           in
           admin |> Admin.Guard.Actor.to_authorizable ~ctx ||> get_or_failwith
         in
         let%lwt () =
           let open Guard in
-          Persistence.Actor.grant_roles
-            ~ctx
-            (Uuid.Actor.of_string_exn Admin.(id admin |> Id.value))
-            RoleSet.(CCList.fold_left (flip add) empty role)
-          ||> CCResult.get_or_failwith
+          roles
+          |> Lwt_list.iter_s (fun (role, target_uuid) ->
+            ActorRole.create
+              ?target_uuid
+              (Uuid.Actor.of_string_exn Admin.(id admin |> Id.value))
+              role
+            |> Persistence.ActorRole.upsert ~ctx)
           ||> tap (fun _ -> Persistence.Cache.clear ())
         in
         Lwt.return_unit

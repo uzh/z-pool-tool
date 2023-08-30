@@ -24,7 +24,7 @@ let insert_template ?(default = true) db_label t =
   t
   |> Entity_guard.Target.to_authorizable ~ctx:(Pool_database.to_ctx db_label)
   ||> Pool_common.Utils.get_or_failwith
-  ||> fun (_ : Role.Target.t Guard.Target.t) -> ()
+  ||> fun (_ : Guard.Target.t) -> ()
 ;;
 
 let handle_event pool : event -> unit Lwt.t = function

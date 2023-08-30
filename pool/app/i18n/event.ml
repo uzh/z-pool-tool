@@ -22,7 +22,7 @@ let insert_i18n pool i18n =
   i18n
   |> Entity_guard.Target.to_authorizable ~ctx:(Pool_database.to_ctx pool)
   ||> Pool_common.Utils.get_or_failwith
-  ||> fun (_ : [> `I18n ] Guard.Target.t) -> ()
+  ||> fun (_ : Guard.Target.t) -> ()
 ;;
 
 let handle_event pool : event -> unit Lwt.t = function

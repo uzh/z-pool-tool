@@ -9,7 +9,7 @@ module Target = struct
     Persistence.Target.decorate
       ?ctx
       (fun user ->
-        Target.make
+        Target.create
           `Contact
           (user |> Entity.id |> Uuid.target_of Pool_common.Id.value))
       t
@@ -22,10 +22,7 @@ module Actor = struct
   type t = Entity.t [@@deriving eq, show]
 
   let decorate ?ctx encode id =
-    Persistence.Actor.decorate
-      ?ctx
-      (encode %> Actor.make (RoleSet.singleton `Contact) `Contact)
-      id
+    Persistence.Actor.decorate ?ctx (encode %> Actor.create `Contact) id
     >|- Format.asprintf "Failed to convert Contact to authorizable: %s"
     >|- Pool_common.Message.authorization
   ;;
@@ -39,17 +36,17 @@ end
 module Access = struct
   open Guard
   open ValidationSet
+  open Permission
+  open TargetEntity
 
-  let contact action id =
-    let target_id = id |> Uuid.target_of Pool_common.Id.value in
-    One (action, TargetSpec.Id (`Contact, target_id))
+  let contact action uuid =
+    One (action, uuid |> Uuid.target_of Pool_common.Id.value |> id)
   ;;
 
-  let index = One (Action.Read, TargetSpec.Entity `Contact)
-  let create = One (Action.Create, TargetSpec.Entity `Contact)
-  let read = contact Action.Read
-  let update = contact Action.Update
-  let read_name = Or [ index; SpecificRole `ReadContactName ]
-  let read_email = Or [ index; SpecificRole `ReadContactEmail ]
-  let read_cellphone = Or [ index; SpecificRole `ReadContactCellphone ]
+  let index = One (Read, Model `Contact)
+  let create = One (Create, Model `Contact)
+  let read = contact Read
+  let update = contact Update
+  let read_name = Or [ index; One (Read, Model `ContactName) ]
+  let read_info = Or [ index; One (Read, Model `ContactInfo) ]
 end

@@ -25,7 +25,7 @@ let handle_event pool event =
         Entity.create ~id contact
         |> Entity_guard.Target.to_authorizable ~ctx:(Pool_database.to_ctx pool)
         ||> Pool_common.Utils.get_or_failwith
-        ||> fun (_ : [> `Invitation ] Guard.Target.t) -> ())
+        ||> fun (_ : Guard.Target.t) -> ())
       contacts
   | Resent invitation ->
     Repo.update pool { invitation with resent_at = Some (ResentAt.create ()) }

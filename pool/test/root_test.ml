@@ -33,7 +33,7 @@ let create_root () =
       ; password
       ; firstname
       ; lastname
-      ; roles = Some (Guard.RoleSet.singleton `Root)
+      ; roles = [ `Operator, None ]
       }
     in
     Ok [ Admin.Created create |> Pool_event.admin ]

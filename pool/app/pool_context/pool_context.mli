@@ -74,13 +74,13 @@ module Utils : sig
     :  ?admin_only:bool
     -> Pool_database.Label.t
     -> user
-    -> Role.Actor.t Guard.Actor.t option Lwt.t
+    -> Guard.Actor.t option Lwt.t
 
   val find_authorizable
     :  ?admin_only:bool
     -> Pool_database.Label.t
     -> user
-    -> (Role.Actor.t Guard.Actor.t, Pool_common.Message.error) result Lwt.t
+    -> (Guard.Actor.t, Pool_common.Message.error) result Lwt.t
 end
 
 module Logger : sig

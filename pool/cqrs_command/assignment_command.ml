@@ -30,12 +30,11 @@ let decode_update data =
   |> CCResult.map_err Pool_common.Message.to_conformist_error
 ;;
 
-let assignment_effect action id =
+let assignment_effect action uuid =
   let open Guard in
+  let open TargetEntity in
   ValidationSet.One
-    ( action
-    , TargetSpec.Id (`Assignment, id |> Guard.Uuid.target_of Assignment.Id.value)
-    )
+    (action, uuid |> Guard.Uuid.target_of Assignment.Id.value |> id)
 ;;
 
 let assignment_creation_and_confirmation_events

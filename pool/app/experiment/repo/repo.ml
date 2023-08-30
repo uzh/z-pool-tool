@@ -2,6 +2,8 @@ open CCFun
 module Database = Pool_database
 module Dynparam = Utils.Database.Dynparam
 
+let src = Logs.Src.create "experiment.repo"
+
 module Sql = struct
   let default_order_by = "pool_experiments.created_at"
 
@@ -121,13 +123,7 @@ module Sql = struct
     Format.asprintf "%s %s" select_from where_fragment
   ;;
 
-  let validate_experiment_sql actor action =
-    let open Guard.Persistence in
-    let open Dynparam in
-    ( {sql| guardianValidateExperimentUuid(guardianEncodeUuid(?), ?, pool_experiments.uuid) |sql}
-    , empty |> add Uuid.Actor.t (actor |> Guard.Actor.id) |> add Action.t action
-    )
-  ;;
+  let validate_experiment_sql m = Format.asprintf " AND %s " m, Dynparam.empty
 
   let select_count where_fragment =
     Format.asprintf
@@ -139,10 +135,40 @@ module Sql = struct
       where_fragment
   ;;
 
-  let find_all ?query ?actor ?action pool =
+  let find_all ?query ?actor ?permission pool =
+    let%lwt guardian =
+      let tags = Pool_database.Logger.Tags.create pool in
+      match actor, permission with
+      | Some actor, Some permission ->
+        Guard.sql_where_fragment
+          ~field:"pool_experiments.uuid"
+          pool
+          permission
+          `Experiment
+          actor
+      | None, Some _ ->
+        let _ =
+          Pool_common.Utils.with_log_error
+            ~src
+            ~level:Logs.Warning
+            ~tags
+            Pool_common.Message.(Undefined Field.Actor)
+        in
+        Lwt.return_some "FALSE"
+      | Some _, None ->
+        let _ =
+          Pool_common.Utils.with_log_error
+            ~src
+            ~level:Logs.Warning
+            ~tags
+            Pool_common.Message.(Undefined Field.Permission)
+        in
+        Lwt.return_some "FALSE"
+      | None, None -> Lwt.return_none
+    in
     let where =
-      let open CCOption in
-      ( and* ) actor action |> map (CCFun.uncurry validate_experiment_sql)
+      guardian
+      |> CCOption.map (fun m -> Format.asprintf " AND %s " m, Dynparam.empty)
     in
     Query.collect_and_count
       pool

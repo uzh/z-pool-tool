@@ -147,8 +147,8 @@ val find
 
 val find_all
   :  ?query:Query.t
-  -> ?actor:'a Guard.Actor.t
-  -> ?action:Guard.Action.t
+  -> ?actor:Guard.Actor.t
+  -> ?permission:Guard.Permission.t
   -> Pool_database.Label.t
   -> (t list * Query.t) Lwt.t
 
@@ -254,7 +254,7 @@ module Guard : sig
     val to_authorizable
       :  ?ctx:(string * string) list
       -> t
-      -> (Role.Target.t Guard.Target.t, Pool_common.Message.error) Lwt_result.t
+      -> (Guard.Target.t, Pool_common.Message.error) Lwt_result.t
 
     type t
 
@@ -264,13 +264,12 @@ module Guard : sig
   end
 
   module Access : sig
-    val index_action : Guard.Action.t
+    val index_permission : Guard.Permission.t
     val index : Guard.ValidationSet.t
     val create : Guard.ValidationSet.t
     val read : Id.t -> Guard.ValidationSet.t
     val update : Id.t -> Guard.ValidationSet.t
     val delete : Id.t -> Guard.ValidationSet.t
-    val recruiter_of : Id.t -> Guard.ValidationSet.t
   end
 end
 

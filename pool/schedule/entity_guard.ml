@@ -1,6 +1,8 @@
 module Access = struct
   open Guard
   open ValidationSet
+  open Permission
+  open TargetEntity
 
-  let index = One (Action.Read, TargetSpec.Entity `Schedule)
+  let index = One (Read, Model `Schedule)
 end

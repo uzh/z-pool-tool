@@ -22,7 +22,6 @@ type t =
   | Settings of Settings.event
   | SystemEvent of System_event.event
   | Tags of Tags.event
-  | Tenant of Tenant.event
   | TextMessage of Text_message.event
   | UserImport of User_import.event
   | WaitingList of Waiting_list.event
@@ -49,7 +48,6 @@ let session events = Session events
 let settings events = Settings events
 let system_event events = SystemEvent events
 let tags events = Tags events
-let tenant events = Tenant events
 let text_message events = TextMessage events
 let user_import events = UserImport events
 let waiting_list events = WaitingList events
@@ -160,11 +158,6 @@ let handle_event ?(tags = Logs.Tag.empty) pool event =
     let src = Logs.Src.create "tags.events" in
     Logs.info ~src (fun m -> m "Handle event %s" (Tags.show_event event) ~tags);
     Tags.handle_event pool event
-  | Tenant event ->
-    let src = Logs.Src.create "tenants.events" in
-    Logs.info ~src (fun m ->
-      m "Handle event %s" (Tenant.show_event event) ~tags);
-    Tenant.handle_event pool event
   | TextMessage event ->
     let src = Logs.Src.create "text_message.events" in
     Logs.info ~src (fun m ->

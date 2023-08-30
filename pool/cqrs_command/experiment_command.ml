@@ -5,7 +5,10 @@ module Conformist = Pool_common.Utils.PoolConformist
 let src = Logs.Src.create "experiment_command.cqrs"
 let to_actor = CCFun.(Admin.id %> BaseGuard.Uuid.actor_of Admin.Id.value)
 let to_target { id; _ } = BaseGuard.Uuid.target_of Id.value id
-let to_role = BaseGuard.RoleSet.singleton
+
+let to_role (admin, role, target_uuid) =
+  BaseGuard.ActorRole.create ?target_uuid admin role
+;;
 
 let default_schema command =
   let open Pool_common in
@@ -234,12 +237,16 @@ end = struct
     let delete_mailing = Mailing.deleted %> Pool_event.mailing in
     let revoke_experimenter admin =
       BaseGuard.RolesRevoked
-        (admin |> to_actor, `Experimenter (experiment |> to_target) |> to_role)
+        [ (admin |> to_actor, `Experimenter, Some (experiment |> to_target))
+          |> to_role
+        ]
       |> Pool_event.guard
     in
     let revoke_assistant admin =
       BaseGuard.RolesRevoked
-        (admin |> to_actor, `Assistant (experiment |> to_target) |> to_role)
+        [ (admin |> to_actor, `Assistant, Some (experiment |> to_target))
+          |> to_role
+        ]
       |> Pool_event.guard
     in
     let filter_events =
@@ -274,24 +281,15 @@ end = struct
     Logs.info ~src (fun m -> m "Handle command AssignAssistant" ~tags);
     Ok
       [ BaseGuard.RolesGranted
-          (admin |> to_actor, `Assistant (experiment |> to_target) |> to_role)
+          [ (admin |> to_actor, `Assistant, Some (experiment |> to_target))
+            |> to_role
+          ]
         |> Pool_event.guard
       ; Common.guardian_cache_cleared_event ()
       ]
   ;;
 
-  let effects id =
-    let open BaseGuard in
-    let target_id = id |> Uuid.target_of Id.value in
-    ValidationSet.(
-      And
-        [ Experiment.Guard.Access.update id
-        ; Or
-            [ SpecificRole `ManageAssistants
-            ; SpecificRole (`ManageAssistant target_id)
-            ]
-        ])
-  ;;
+  let effects = Experiment.Guard.Access.update
 end
 
 module UnassignAssistant : sig
@@ -305,24 +303,15 @@ end = struct
     Logs.info ~src (fun m -> m "Handle command UnassignAssistant" ~tags);
     Ok
       [ BaseGuard.RolesRevoked
-          (admin |> to_actor, `Assistant (experiment |> to_target) |> to_role)
+          [ (admin |> to_actor, `Assistant, Some (experiment |> to_target))
+            |> to_role
+          ]
         |> Pool_event.guard
       ; Common.guardian_cache_cleared_event ()
       ]
   ;;
 
-  let effects id =
-    let open BaseGuard in
-    let target_id = id |> Uuid.target_of Id.value in
-    ValidationSet.(
-      And
-        [ Experiment.Guard.Access.update id
-        ; Or
-            [ SpecificRole `ManageAssistants
-            ; SpecificRole (`ManageAssistant target_id)
-            ]
-        ])
-  ;;
+  let effects = Experiment.Guard.Access.update
 end
 
 module AssignExperimenter : sig
@@ -336,28 +325,15 @@ end = struct
     Logs.info ~src (fun m -> m "Handle command AssignExperimenter" ~tags);
     Ok
       [ BaseGuard.RolesGranted
-          ( admin |> to_actor
-          , `Experimenter (experiment |> to_target)
+          [ (admin |> to_actor, `Experimenter, Some (experiment |> to_target))
             |> to_role
-            |> BaseGuard.RoleSet.add
-                 (`ManageAssistant (experiment |> to_target)) )
+          ]
         |> Pool_event.guard
       ; Common.guardian_cache_cleared_event ()
       ]
   ;;
 
-  let effects id =
-    let open BaseGuard in
-    let target_id = id |> Uuid.target_of Id.value in
-    ValidationSet.(
-      And
-        [ Experiment.Guard.Access.update id
-        ; Or
-            [ SpecificRole `ManageExperimenters
-            ; SpecificRole (`ManageExperimenter target_id)
-            ]
-        ])
-  ;;
+  let effects = Experiment.Guard.Access.update
 end
 
 module UnassignExperimenter : sig
@@ -371,28 +347,15 @@ end = struct
     Logs.info ~src (fun m -> m "Handle command UnassignExperimenter" ~tags);
     Ok
       [ BaseGuard.RolesRevoked
-          ( admin |> to_actor
-          , `Experimenter (experiment |> to_target)
+          [ (admin |> to_actor, `Experimenter, Some (experiment |> to_target))
             |> to_role
-            |> BaseGuard.RoleSet.add
-                 (`ManageAssistant (experiment |> to_target)) )
+          ]
         |> Pool_event.guard
       ; Common.guardian_cache_cleared_event ()
       ]
   ;;
 
-  let effects id =
-    let open BaseGuard in
-    let target_id = id |> Uuid.target_of Id.value in
-    ValidationSet.(
-      And
-        [ Experiment.Guard.Access.update id
-        ; Or
-            [ SpecificRole `ManageExperimenters
-            ; SpecificRole (`ManageExperimenter target_id)
-            ]
-        ])
-  ;;
+  let effects = Experiment.Guard.Access.update
 end
 
 module CreateFilter : sig

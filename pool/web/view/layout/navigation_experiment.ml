@@ -3,7 +3,7 @@ open Tyxml.Html
 module Field = Pool_common.Message.Field
 
 let read_entity entity =
-  Guard.(ValidationSet.One (Action.Read, TargetSpec.Entity entity))
+  Guard.(ValidationSet.One (Permission.Read, TargetEntity.Model entity))
 ;;
 
 type title =
@@ -25,21 +25,23 @@ let nav_elements { Experiment.id; direct_registration_disabled; _ } =
   let open Guard in
   let open ValidationSet in
   let open I18n in
-  let target_id = id |> Uuid.target_of Experiment.Id.value in
   let left =
+    let exp_and_any_of_model role =
+      let open Permission in
+      And
+        [ Experiment.Guard.Access.update id
+        ; Or
+            TargetEntity.
+              [ One (Create, Model role)
+              ; One (Read, Model role)
+              ; One (Update, Model role)
+              ; One (Delete, Model role)
+              ]
+        ]
+    in
     [ "", Overview, Experiment.Guard.Access.read id
-    ; ( "assistants"
-      , Field Field.Assistants
-      , Or
-          [ SpecificRole `ManageAssistants
-          ; SpecificRole (`ManageAssistant target_id)
-          ] )
-    ; ( "experimenter"
-      , Field Field.Experimenter
-      , Or
-          [ SpecificRole `ManageExperimenters
-          ; SpecificRole (`ManageExperimenter target_id)
-          ] )
+    ; "assistants", Field Field.Assistants, exp_and_any_of_model `Role
+    ; "experimenter", Field Field.Experimenter, exp_and_any_of_model `Role
     ; "invitations", Invitations, Invitation.Guard.Access.index id
     ]
   in

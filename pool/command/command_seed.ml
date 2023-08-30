@@ -66,7 +66,7 @@ let tenant_seed_default =
          ; Message_template.(
              DefaultRestored default_values_tenant
              |> Pool_event.message_template)
-         ; Guard.(DefaultRestored root_permissions) |> Pool_event.guard
+         ; Guard.(DefaultRestored all_role_permissions) |> Pool_event.guard
          ]
          |> Pool_event.handle_events pool
        in

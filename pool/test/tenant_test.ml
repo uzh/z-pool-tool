@@ -431,7 +431,7 @@ let[@warning "-4"] create_tenant () =
       ; I18n.(DefaultRestored default_values) |> Pool_event.i18n
       ; Message_template.(
           DefaultRestored default_values_tenant |> Pool_event.message_template)
-      ; Guard.(DefaultRestored root_permissions) |> Pool_event.guard
+      ; Guard.(DefaultRestored all_role_permissions) |> Pool_event.guard
       ]
     in
     ( Ok expected_root_events
@@ -567,9 +567,7 @@ let create_operator () =
   let events =
     let open CCResult.Infix in
     let open Admin_command.CreateAdmin in
-    Data.urlencoded
-    |> decode
-    >>= handle ~id ~roles:(Guard.RoleSet.singleton `Operator)
+    Data.urlencoded |> decode >>= handle ~id ~roles:[ `Operator, None ]
   in
   let expected =
     let open CCResult in
@@ -583,7 +581,7 @@ let create_operator () =
       ; password
       ; firstname
       ; lastname
-      ; roles = Some (Guard.RoleSet.singleton `Operator)
+      ; roles = [ `Operator, None ]
       }
     in
     Ok [ Admin.Created admin |> Pool_event.admin ]

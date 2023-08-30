@@ -164,13 +164,10 @@ let detail req page =
     Utils.Lwt_result.map_error (fun err -> err, error_path)
     @@
     let%lwt view_contact_name =
-      Helpers.Guard.can_view_contact_name database_label user
+      Helpers.Guard.can_read_contact_name database_label user
     in
-    let%lwt view_contact_email =
-      Helpers.Guard.can_view_contact_email database_label user
-    in
-    let%lwt view_contact_cellphone =
-      Helpers.Guard.can_view_contact_cellphone database_label user
+    let%lwt view_contact_info =
+      Helpers.Guard.can_read_contact_info database_label user
     in
     let database_label = context.Pool_context.database_label in
     let* session = Session.find database_label session_id in
@@ -191,8 +188,7 @@ let detail req page =
        Page.Admin.Session.detail
          ~access_contact_profiles
          ~view_contact_name
-         ~view_contact_email
-         ~view_contact_cellphone
+         ~view_contact_info
          context
          experiment
          session

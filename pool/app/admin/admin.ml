@@ -6,28 +6,21 @@ include Entity
 let find = Repo.find
 let find_all = Repo.find_all
 
-let find_all_with_role ?exclude pool role =
-  let open CCList in
-  Guard.Persistence.Actor.find_by_role
+let find_all_id_with_role ?exclude pool role =
+  Guard.Persistence.ActorRole.find_actors_by_role
     ~ctx:(Pool_database.to_ctx pool)
     ?exclude
     role
-  ||> map CCFun.(Guard.Uuid.Actor.to_string %> Pool_common.Id.of_string)
-  >|> Repo.find_multiple pool
+  ||> CCList.map CCFun.(Guard.Uuid.Actor.to_string %> Pool_common.Id.of_string)
+;;
+
+let find_all_with_role ?exclude pool role =
+  find_all_id_with_role ?exclude pool role >|> Repo.find_multiple pool
 ;;
 
 let find_all_with_roles ?exclude pool roles =
-  let open CCList in
-  let open Guard in
-  Persistence.Actor.find_by_roles
-    ~ctx:(Pool_database.to_ctx pool)
-    ?exclude
-    roles
-  ||> fold_left
-        (fun acc (_, actors) ->
-          acc @ (map (Uuid.Actor.to_string %> Id.of_string)) actors)
-        []
-  ||> uniq ~eq:Id.equal
+  Lwt_list.map_s (find_all_id_with_role ?exclude pool) roles
+  ||> CCList.flatten %> CCList.uniq ~eq:Id.equal
   >|> Repo.find_multiple pool
 ;;
 

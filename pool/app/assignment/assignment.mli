@@ -177,13 +177,11 @@ val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
 
 module Guard : sig
-  val relation : ?ctx:(string * string) list -> unit -> unit Lwt.t
-
   module Target : sig
     val to_authorizable
       :  ?ctx:(string * string) list
       -> t
-      -> (Role.Target.t Guard.Target.t, Pool_common.Message.error) Lwt_result.t
+      -> (Guard.Target.t, Pool_common.Message.error) Lwt_result.t
 
     type t
 

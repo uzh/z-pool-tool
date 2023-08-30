@@ -8,46 +8,6 @@ let src = Logs.Src.create "handler.admin.admins"
 let extract_happy_path = HttpUtils.extract_happy_path ~src
 let create_layout req = General.create_tenant_layout req
 
-let complete_roles database_label (role : Role.Actor.t) ini =
-  let open Guard in
-  let replace_nil_targets =
-    let open CCList in
-    let experiments () =
-      Experiment.find_all database_label
-      ||> fst
-          %> map (fun { Experiment.id; _ } ->
-            id |> Uuid.target_of Experiment.Id.value)
-    in
-    function
-    | `Assistant _ ->
-      experiments () ||> map (fun id -> `Assistant id) ||> ( @ ) ini
-    | `Experimenter _ ->
-      experiments () ||> map (fun id -> `Experimenter id) ||> ( @ ) ini
-    | `ManageAssistant _ ->
-      experiments () ||> map (fun id -> `ManageAssistant id) ||> ( @ ) ini
-    | `ManageExperimenter _ ->
-      experiments () ||> map (fun id -> `ManageExperimenter id) ||> ( @ ) ini
-    | `Recruiter _ ->
-      experiments () ||> map (fun id -> `Recruiter id) ||> ( @ ) ini
-    | `LocationManager _ ->
-      Pool_location.find_all database_label
-      ||> map (fun { Pool_location.id; _ } ->
-        `LocationManager (id |> Uuid.target_of Pool_location.Id.value))
-      ||> ( @ ) ini
-    | role -> Lwt.return (role :: ini)
-  in
-  if role |> Role.Actor.has_nil_target |> not
-  then Lwt.return (role :: ini)
-  else replace_nil_targets role
-;;
-
-let generate_all_accessible_roles database_label =
-  let open Guard in
-  Persistence.Actor.expand_roles
-  %> RoleSet.to_list
-  %> flip (Lwt_list.fold_right_s (complete_roles database_label)) []
-;;
-
 let index req =
   let result ({ Pool_context.database_label; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, "/admin/dashboard")
@@ -62,12 +22,19 @@ let index req =
 
 let admin_detail req is_edit =
   let result ({ Pool_context.csrf; database_label; language; _ } as context) =
-    let%lwt available_roles = Helpers.Guard.find_roles_of_ctx context in
+    let%lwt available_roles =
+      Helpers.Guard.find_roles_of_ctx context
+      ||> CCList.map (fun { Guard.ActorRole.role; _ } -> role)
+    in
     Utils.Lwt_result.map_error (fun err -> err, "/admin/admins")
     @@
     let id = HttpUtils.find_id Admin.Id.of_string Field.Admin req in
     let* admin = id |> Admin.find database_label in
-    let%lwt roles = Helpers.Guard.find_roles database_label admin in
+    let%lwt roles =
+      let open Helpers.Guard in
+      find_roles database_label admin
+      >|> Lwt_list.map_s (target_model_for_actor_role database_label)
+    in
     let* () =
       let* _ = General.admin_from_session database_label req in
       Lwt.return_ok ()
@@ -133,7 +100,8 @@ let handle_toggle_role req =
   let result (_ : Pool_context.t) =
     Sihl.Web.Request.to_urlencoded req
     ||> HttpUtils.find_in_urlencoded Field.Role
-    >== Role.Actor.of_string_res
+    >== Role.Role.of_string_res
+        %> CCResult.map_err Pool_common.Message.authorization
     >|+ fun key ->
     let exclude_roles_of =
       try
@@ -154,66 +122,61 @@ let handle_toggle_role req =
 let grant_role ({ Rock.Request.target; _ } as req) =
   let open Utils.Lwt_result.Infix in
   let lift = Lwt_result.lift in
-  let result { Pool_context.database_label; user; _ } =
+  let result { Pool_context.database_label; _ } =
     let tags = Pool_context.Logger.Tags.req req in
     let* admin =
       HttpUtils.find_id Admin.Id.of_string Field.Admin req
       |> Admin.find database_label
     in
-    let* actor =
-      Pool_context.Utils.find_authorizable ~admin_only:true database_label user
-    in
     let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-    let role =
+    let* role =
       HttpUtils.find_in_urlencoded Field.Role urlencoded
       |> lift
-      >== Role.Actor.of_string_res
+      >== Role.Role.of_string_res
+          %> CCResult.map_err Pool_common.Message.authorization
     in
-    let expand_targets role =
-      if Role.Actor.find_target role |> CCOption.is_none
-      then Lwt.return_ok [ role ]
+    let* role_target =
+      HttpUtils.htmx_urlencoded_list Field.(Target |> array_key) req
+      ||> CCList.map
+            (Guard.Uuid.Target.of_string
+             %> CCOption.to_result Pool_common.Message.(Decode Field.Id))
+      ||> CCResult.flatten_l
+    in
+    let expand_targets =
+      let open Guard.Uuid.Target in
+      if role_target |> CCList.is_empty
+      then Lwt.return_ok [ role, None ]
       else (
         match role with
-        | `Assistant _
-        | `Experimenter _
-        | `ManageAssistant _
-        | `ManageExperimenter _
-        | `Recruiter _ ->
-          HttpUtils.htmx_urlencoded_list Field.(Target |> array_key) req
-          ||> CCList.map Experiment.Id.of_string
-          >|> Lwt_list.filter_s (fun id ->
-            Experiment.find database_label id ||> CCResult.is_ok)
-          ||> CCList.map
-                (Guard.Uuid.target_of Experiment.Id.value
-                 %> Role.Actor.update_target role)
+        | `Assistant | `Experimenter ->
+          let to_id = to_string %> Experiment.Id.of_string in
+          role_target
+          |> Lwt_list.filter_s (fun id ->
+            id |> to_id |> Experiment.find database_label ||> CCResult.is_ok)
+          ||> CCList.map (fun uuid -> role, Some uuid)
           |> Lwt_result.ok
-        | `LocationManager _ ->
-          HttpUtils.htmx_urlencoded_list Field.(Target |> array_key) req
-          ||> CCList.map Pool_location.Id.of_string
-          >|> Lwt_list.filter_s (fun id ->
-            Pool_location.find database_label id ||> CCResult.is_ok)
-          ||> CCList.map
-                (Guard.Uuid.target_of Pool_location.Id.value
-                 %> Role.Actor.update_target role)
+        | `LocationManager ->
+          let to_id = to_string %> Pool_location.Id.of_string in
+          role_target
+          |> Lwt_list.filter_s (fun id ->
+            id |> to_id |> Pool_location.find database_label ||> CCResult.is_ok)
+          ||> CCList.map (fun uuid -> role, Some uuid)
           |> Lwt_result.ok
         | role ->
           Logs.err (fun m ->
-            m "Admin handler: Missing role %s" ([%show: Role.Actor.t] role));
+            m "Admin handler: Missing role %s" ([%show: Role.Role.t] role));
           Lwt.return_error Pool_common.Message.(NotFound Field.Role)
           ||> Pool_common.Utils.with_log_result_error ~src ~tags CCFun.id)
     in
     let events roles =
       let open Cqrs_command.Guardian_command in
-      let grant = { target = admin; roles } in
-      generate_all_accessible_roles database_label actor
-      ||> GrantRoles.validate_role grant
-      >== fun () -> GrantRoles.handle ~tags grant
+      (* TODO: validate if role can be granted *)
+      GrantRoles.handle ~tags { target = admin; roles } |> lift
     in
     let handle events =
       Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
     in
-    role
-    >>= expand_targets
+    expand_targets
     >>= events
     |>> handle
     |>> HttpUtils.Htmx.htmx_redirect
@@ -230,30 +193,22 @@ let revoke_role ({ Rock.Request.target; _ } as req) =
   let edit_route =
     CCString.replace ~which:`Right ~sub:"/revoke-role" ~by:"/edit" target
   in
-  let result { Pool_context.database_label; user; _ } =
+  let result { Pool_context.database_label; _ } =
     (let tags = Pool_context.Logger.Tags.req req in
      let* admin =
        HttpUtils.find_id Admin.Id.of_string Field.Admin req
        |> Admin.find database_label
      in
-     let* actor =
-       Pool_context.Utils.find_authorizable_opt
-         ~admin_only:true
-         database_label
-         user
-       ||> CCOption.to_result Pool_common.Message.(NotFound Field.Admin)
-     in
      let role =
        Sihl.Web.Request.to_urlencoded req
        ||> HttpUtils.find_in_urlencoded Field.Role
-       >== Role.Actor.of_string_res
+       >== Role.Role.of_string_res
+           %> CCResult.map_err Pool_common.Message.authorization
+       >|+ fun role -> role, None
      in
      let events role =
        let open Cqrs_command.Guardian_command in
-       let revoke = { target = admin; role } in
-       generate_all_accessible_roles database_label actor
-       ||> RevokeRole.validate_role revoke
-       >== fun () -> RevokeRole.handle ~tags revoke
+       RevokeRole.handle ~tags { target = admin; role } |> Lwt_result.lift
      in
      let handle events =
        let%lwt () =
@@ -300,13 +255,11 @@ end = struct
 
   let grant_role =
     GuardianCommand.GrantRoles.effects
-    |> admin_effects
-    |> Middleware.Guardian.validate_generic
+    |> Middleware.Guardian.validate_admin_entity
   ;;
 
   let revoke_role =
     GuardianCommand.RevokeRole.effects
-    |> admin_effects
-    |> Middleware.Guardian.validate_generic
+    |> Middleware.Guardian.validate_admin_entity
   ;;
 end

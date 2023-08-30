@@ -21,11 +21,14 @@ let index role req =
     let current_roles =
       let id = id |> Guard.Uuid.target_of Experiment.Id.value in
       match role with
-      | `Assistants -> [ `Assistant id ]
-      | `Experimenter -> [ `Experimenter id ]
+      | `Assistants -> [ `Assistant, Some id ]
+      | `Experimenter -> [ `Experimenter, Some id ]
     in
     let%lwt applicable_admins =
-      Admin.find_all_with_role database_label `Admin ~exclude:current_roles
+      Admin.find_all_with_role
+        database_label
+        (`Admin, None)
+        ~exclude:current_roles
     in
     let%lwt currently_assigned =
       Admin.find_all_with_roles database_label current_roles ~exclude:[]

@@ -75,7 +75,7 @@ let handle_event pool : event -> unit Lwt.t = function
       Repo.Smtp.find pool id
       >>= Entity_guard.SmtpTarget.to_authorizable ~ctx
       ||> get_or_failwith
-      ||> fun (_ : Role.Target.t Guard.Target.t) -> ()
+      ||> fun (_ : Guard.Target.t) -> ()
     in
     Lwt.return_unit
   | SmtpEdited updated ->

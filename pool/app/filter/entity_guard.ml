@@ -6,7 +6,7 @@ module Target = struct
     Guard.Persistence.Target.decorate
       ?ctx
       (fun { Entity.id; _ } ->
-        Guard.Target.make
+        Guard.Target.create
           `Filter
           (id |> Guard.Uuid.target_of Pool_common.Id.value))
       t
@@ -17,14 +17,15 @@ end
 module Access = struct
   open Guard
   open ValidationSet
+  open Permission
+  open TargetEntity
 
-  let filter action id =
-    let target_id = id |> Uuid.target_of Entity.Id.value in
-    One (action, TargetSpec.Id (`Filter, target_id))
+  let filter action uuid =
+    One (action, uuid |> Uuid.target_of Entity.Id.value |> id)
   ;;
 
-  let index = One (Action.Read, TargetSpec.Entity `Filter)
-  let create = One (Action.Read, TargetSpec.Entity `Filter)
-  let update = filter Action.Update
-  let delete = filter Action.Delete
+  let index = One (Read, Model `Filter)
+  let create = One (Read, Model `Filter)
+  let update = filter Update
+  let delete = filter Delete
 end

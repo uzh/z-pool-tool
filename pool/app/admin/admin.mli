@@ -21,7 +21,7 @@ type create =
   ; password : Pool_user.Password.t
   ; firstname : Pool_user.Firstname.t
   ; lastname : Pool_user.Lastname.t
-  ; roles : Guard.RoleSet.t option
+  ; roles : (Role.Role.t * Guard.Uuid.Target.t option) list
   }
 
 val equal_create : create -> create -> bool
@@ -72,15 +72,15 @@ val find
 val find_all : Pool_database.Label.t -> unit -> t list Lwt.t
 
 val find_all_with_role
-  :  ?exclude:Role.Actor.t list
+  :  ?exclude:(Role.Role.t * Guard.Uuid.Target.t option) list
   -> Pool_database.Label.t
-  -> Role.Actor.t
+  -> Role.Role.t * Guard.Uuid.Target.t option
   -> t list Lwt.t
 
 val find_all_with_roles
-  :  ?exclude:Role.Actor.t list
+  :  ?exclude:(Role.Role.t * Guard.Uuid.Target.t option) list
   -> Pool_database.Label.t
-  -> Role.Actor.t list
+  -> (Role.Role.t * Guard.Uuid.Target.t option) list
   -> t list Lwt.t
 
 module Duplicate : sig
@@ -96,7 +96,7 @@ module Guard : sig
     val to_authorizable
       :  ?ctx:(string * string) list
       -> t
-      -> (Role.Actor.t Guard.Actor.t, Pool_common.Message.error) Lwt_result.t
+      -> (Guard.Actor.t, Pool_common.Message.error) Lwt_result.t
 
     type t
 
@@ -109,19 +109,13 @@ module Guard : sig
     val to_authorizable
       :  ?ctx:(string * string) list
       -> t
-      -> (Role.Target.t Guard.Target.t, Pool_common.Message.error) Lwt_result.t
+      -> (Guard.Target.t, Pool_common.Message.error) Lwt_result.t
 
     type t
 
     val equal : t -> t -> bool
     val pp : Format.formatter -> t -> unit
     val show : t -> string
-  end
-
-  module RuleSet : sig
-    val assistant : Pool_common.Id.t -> Guard.Rule.t list
-    val experimenter : Pool_common.Id.t -> Guard.Rule.t list
-    val location_manager : Pool_common.Id.t -> Guard.Rule.t list
   end
 
   module Access : sig

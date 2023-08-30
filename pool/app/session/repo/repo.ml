@@ -647,23 +647,28 @@ module Sql = struct
 
   let find_for_calendar_by_user actor pool ~start_time ~end_time =
     let open Caqti_request.Infix in
+    let%lwt guardian =
+      Guard.sql_where_fragment
+        ~field:"pool_experiments"
+        pool
+        Guard.Permission.Read
+        `Experiment
+        actor
+    in
     let sql =
       [ "pool_sessions.start > ?"
       ; "pool_sessions.start < ?"
       ; "pool_sessions.canceled_at IS NULL"
-      ; {sql|guardianValidateExperimentUuid(guardianEncodeUuid(?), ?, pool_experiments.uuid)|sql}
       ]
+      @ CCOption.to_list guardian
       |> CCString.concat " AND "
     in
     let dyn =
-      let open Guard.Persistence in
       let open Dynparam in
       CCList.fold_left
-        (fun dyn p -> dyn |> Dynparam.add Caqti_type.ptime p)
+        (fun dyn p -> dyn |> add Caqti_type.ptime p)
         empty
         [ start_time; end_time ]
-      |> add Uuid.Actor.t (actor |> Guard.Actor.id)
-      |> add Action.t Guard.Action.Read
     in
     let (Dynparam.Pack (pt, pv)) = dyn in
     let request =

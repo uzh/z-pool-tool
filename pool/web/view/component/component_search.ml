@@ -78,7 +78,7 @@ let create
   language
   path
   =
-  let search_role = hidden_input Field.Role Role.Actor.show role in
+  let search_role = hidden_input Field.Role Role.Role.show role in
   let exclude_roles_of =
     hidden_input Field.ExcludeRolesOf Admin.(Id.value) exclude_roles_of
   in

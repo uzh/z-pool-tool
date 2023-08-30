@@ -1,49 +1,145 @@
 include Core
 include Event
 module Persistence = Repo
-module Act = ActorSpec
-module Tar = TargetSpec
 
-(** [console_authorizable] is an Persistence.Role.t Actor.t] for use in
+(** [console_authorizable] is an Actor.t] for use in
     administrative tasks, such as working with the command line or running
     tests. *)
-let console_authorizable : Persistence.Role.t Actor.t =
-  Actor.make (RoleSet.singleton `System) `System (Uuid.Actor.create ())
-;;
+let console_authorizable : Actor.t = Actor.create `System (Uuid.Actor.create ())
 
-(** [guest_authorizable] is a [Persistence.Role.t Actor.t] to be assigned to
+(** [guest_authorizable] is a [Actor.t] to be assigned to
     entities at the absolute lowest level of trust, such as users browsing the
     public facing website without logging in. *)
-let guest_authorizable : Persistence.Role.t Actor.t =
-  Actor.make (RoleSet.singleton `Guest) `Guest (Uuid.Actor.create ())
-;;
+let guest_authorizable : Actor.t = Actor.create `Guest (Uuid.Actor.create ())
 
 (** The list of permissions that we need [Guardian] to be aware of in order to
-    achieve a minimal level of functionality. Notably, the [`Admin] role should
+    achieve a minimal level of functionality. Notably, the [`Operator] role should
     have [Manage] authority on everything in the system. *)
-let root_permissions : Rule.t list =
-  let open Core.Action in
-  [ Act.Entity `LocationManagerAll, Manage, Tar.Entity `Location
-  ; Act.Entity `RecruiterAll, Manage, Tar.Entity `Assignment
-  ; Act.Entity `RecruiterAll, Manage, Tar.Entity `Contact
-  ; Act.Entity `RecruiterAll, Manage, Tar.Entity `CustomField
-  ; Act.Entity `RecruiterAll, Manage, Tar.Entity `CustomFieldGroup
-  ; Act.Entity `RecruiterAll, Manage, Tar.Entity `Experiment
-  ; Act.Entity `RecruiterAll, Manage, Tar.Entity `Filter
-  ; Act.Entity `RecruiterAll, Manage, Tar.Entity `I18n
-  ; Act.Entity `RecruiterAll, Manage, Tar.Entity `Invitation
-  ; Act.Entity `RecruiterAll, Manage, Tar.Entity `Mailing
-  ; Act.Entity `RecruiterAll, Manage, Tar.Entity `Session
-  ; Act.Entity `RecruiterAll, Manage, Tar.Entity `Tag
+let map_role_permission =
+  CCList.map (fun (role, permission, model) ->
+    RolePermission.create role permission model)
+;;
+
+let location_manager_permissions : RolePermission.t list =
+  let open Core.Permission in
+  [ `LocationManager, Manage, `Location
+  ; `LocationManager, Manage, `LocationFile
+  ; `LocationManager, Read, `ContactInfo
+  ; `LocationManager, Read, `Session
   ]
-  |> fun (init : Rule.t list) ->
-  CCList.fold_product
-    (fun acc actor role -> acc @ [ Act.Entity actor, Manage, Tar.Entity role ])
-    init
-    [ `Operator; `System; `Root ]
-    Role.Target.all
+  |> map_role_permission
+;;
+
+let recruiter_permissions : RolePermission.t list =
+  let open Core.Permission in
+  [ `Recruiter, Read, `Admin
+  ; `Recruiter, Manage, `Assignment
+  ; `Recruiter, Manage, `Contact
+  ; `Recruiter, Manage, `CustomField
+  ; `Recruiter, Manage, `CustomFieldGroup
+  ; `Recruiter, Manage, `Experiment
+  ; `Recruiter, Manage, `Filter
+  ; `Recruiter, Manage, `I18n
+  ; `Recruiter, Manage, `Invitation
+  ; `Recruiter, Manage, `Location
+  ; `Recruiter, Manage, `LocationFile
+  ; `Recruiter, Manage, `Mailing
+  ; `Recruiter, Manage, `MessageTemplate
+  ; `Recruiter, Read, `Permission
+  ; `Recruiter, Read, `OrganisationalUnit
+  ; `Recruiter, Read, `Queue
+  ; `Recruiter, Manage, `Role
+  ; `Recruiter, Read, `Schedule
+  ; `Recruiter, Manage, `Session
+  ; `Recruiter, Read, `SystemSetting
+  ; `Recruiter, Read, `Smtp
+  ; `Recruiter, Read, `Statistics
+  ; `Recruiter, Read, `System
+  ; `Recruiter, Manage, `Tag
+  ; `Recruiter, Read, `Tenant
+  ; `Recruiter, Manage, `WaitingList
+  ]
+  |> map_role_permission
+;;
+
+let assistant_permissions : RolePermission.t list =
+  let open Core.Permission in
+  [ `Assistant, Read, `Contact
+  ; `Assistant, Update, `Contact
+  ; `Assistant, Create, `Message
+  ; `Assistant, Read, `Session
+  ; `Assistant, Read, `SessionClose
+  ; `Assistant, Update, `SessionClose
+  ; `Assistant, Read, `Assignment
+  ; `Assistant, Update, `Assignment
+  ; `Assistant, Read, `Experiment
+  ]
+  |> map_role_permission
+;;
+
+let experimenter_permissions : RolePermission.t list =
+  let open Core.Permission in
+  [ `Experimenter, Read, `ContactName
+  ; `Experimenter, Read, `Session
+  ; `Experimenter, Read, `SessionClose
+  ; `Experimenter, Update, `SessionClose
+  ; `Experimenter, Read, `Assignment
+  ; `Experimenter, Update, `Assignment
+  ; `Experimenter, Read, `Experiment
+  ]
+  |> map_role_permission
+;;
+
+let operator_permissions : RolePermission.t list =
+  let open Core.Permission in
+  CCList.flat_map (fun role -> [ `Operator, Manage, role ]) Role.Target.all
+  |> map_role_permission
+;;
+
+let all_role_permissions =
+  operator_permissions
+  @ recruiter_permissions
+  @ assistant_permissions
+  @ experimenter_permissions
+  @ location_manager_permissions
+;;
+
+let actor_to_model_permission pool permission model actor =
+  let open Utils.Lwt_result.Infix in
+  Persistence.ActorRole.permissions_of_actor
+    ~ctx:(Pool_database.to_ctx pool)
+    actor.Actor.uuid
+  ||> Persistence.permission_of_model permission model
+;;
+
+let sql_where_fragment ?(field = "uuid") pool permission model actor =
+  let open CCFun in
+  let open Utils.Lwt_result.Infix in
+  actor_to_model_permission pool permission model actor
+  ||> function
+  | true, _ -> None
+  | false, [] -> Some "FALSE"
+  | false, ids ->
+    ids
+    |> CCList.map
+         (Uuid.Target.to_string %> Format.asprintf "guardianEncode('%s')")
+    |> CCString.concat ", "
+    |> Format.asprintf {sql| %s IN (%s) |sql} field
+    |> CCOption.return
 ;;
 
 module Access = struct
-  let manage_rules = ValidationSet.SpecificRole `ManageRules
+  open ValidationSet
+  open Permission
+  open TargetEntity
+
+  let create_role = One (Create, Model `Role)
+  let read_role = One (Read, Model `Role)
+  let update_role = One (Update, Model `Role)
+  let delete_role = One (Delete, Model `Role)
+  let manage_role = One (Manage, Model `Role)
+
+  let manage_rules =
+    ValidationSet.One (Permission.Manage, TargetEntity.Model `Permission)
+  ;;
 end

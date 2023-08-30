@@ -39,7 +39,7 @@ let handle_event pool : event -> unit Lwt.t = function
       Repo.find pool id
       >>= Entity_guard.Target.to_authorizable ~ctx
       ||> get_or_failwith
-      ||> fun (_ : Role.Target.t Target.t) -> ()
+      ||> fun (_ : Target.t) -> ()
     in
     Lwt.return_unit
   | LogosUploaded logo_mappings ->
