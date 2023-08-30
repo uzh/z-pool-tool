@@ -6,7 +6,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ### Added
 
-- Icons for paused / verified status of contacts
+- icons for paused / verified status of contacts
+- send reminders via text message
 
 ### Fixed
 
@@ -24,7 +25,6 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 ### Added
 
 - added edit form assignments of closed sessions
-- send reminders via text message
 - form to resend reminders manually
 
 ### Changed
