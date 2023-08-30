@@ -40,23 +40,41 @@ let personal_detail ?(admin_comment = None) language contact =
 
 let contact_overview language contacts =
   let open Contact in
+  let open Pool_user in
   let thead =
-    (Pool_common.Message.Field.[ Email; Name ] |> Table.fields_to_txt language)
+    (Pool_common.Message.Field.[ Name; Email ] |> Table.fields_to_txt language)
     @ [ txt "" ]
   in
   let user_table contacts =
     let rows =
       CCList.map
         (fun contact ->
-          [ txt (email_address contact |> Pool_user.EmailAddress.value)
-          ; txt (fullname contact)
+          let row =
+            match contact.disabled |> Disabled.value with
+            | true -> tr ~a:[ a_class [ "bg-red-lighter" ] ]
+            | false -> tr ~a:[]
+          in
+          [ Component.Contacts.identity_with_icons
+              true
+              contact
+              Contact.(id contact)
+          ; txt (email_address contact |> EmailAddress.value)
           ; contact |> path |> Input.link_as_button ~icon:Icon.Eye
-          ])
+          ]
+          |> CCList.map (fun cell -> td [ cell ])
+          |> row)
         contacts
     in
-    rows |> Table.horizontal_table `Striped ~align_last_end:true ~thead
+    let thead = Table.table_head thead in
+    table
+      ~thead
+      ~a:[ a_class (Table.table_classes `Striped ~align_last_end:true ()) ]
+      rows
   in
   List.create
+    ~legend:
+      (Contacts.status_icons_table_legend language
+       |> Component.Table.table_legend)
     language
     user_table
     Contact.sortable_by

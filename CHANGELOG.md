@@ -4,6 +4,15 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/pool/tree/HEAD)
 
+### Added
+
+- Icons for paused / verified status of contacts
+
+### Fixed
+
+- Layout of navigation in footer on mobile devices
+- Retain filter when using pagination
+
 ### Changed
 
 - improve performance of 'contains none' and 'contains some' filters

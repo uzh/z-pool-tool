@@ -7,7 +7,7 @@ let retain_search_and_sort query =
   let search =
     let open Search in
     query.search
-    |> CCOption.map (fun { query; _ } -> [ Field.Query, query |> Query.value ])
+    |> CCOption.map (fun { query; _ } -> [ Field.Search, query |> Query.value ])
   in
   let sort =
     let open Sort in
@@ -194,10 +194,11 @@ let search_and_sort language query sortable_by searchable_by =
     ]
 ;;
 
-let create language to_table sortable_by searchable_by (items, query) =
+let create ?legend language to_table sortable_by searchable_by (items, query) =
   div
     ~a:[ a_class [ "stack" ] ]
     [ search_and_sort language query sortable_by searchable_by
+    ; CCOption.value ~default:(txt "") legend
     ; to_table items
     ; query.pagination
       |> CCOption.map_or ~default:(txt "") (pagination language query)

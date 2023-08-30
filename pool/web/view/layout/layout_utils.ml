@@ -63,8 +63,21 @@ module App = struct
 
   let version = Format.asprintf "Z-Pool-Tool %s" Version.to_string
 
-  let combine_footer_fragments fragments =
-    let separator = span [ txt "|" ] in
+  let combine_footer_fragments
+    ?(column_mobile = false)
+    ?(classnames = [])
+    fragments
+    =
+    let classnames = [ "flexrow"; "flex-gap" ] @ classnames in
+    let classnames =
+      if column_mobile then "flexcolumn-mobile" :: classnames else classnames
+    in
+    let separator =
+      let text = [ txt "|" ] in
+      if column_mobile
+      then span ~a:[ a_class [ "hidden-mobile" ] ] text
+      else span text
+    in
     let rec combine html = function
       | [] -> html
       | hd :: tl ->
@@ -75,7 +88,7 @@ module App = struct
          else [ span [ hd ] ])
         |> fun html -> combine html tl
     in
-    combine [] fragments
+    combine [] fragments |> div ~a:[ a_class classnames ]
   ;;
 
   let root_footer =
@@ -83,15 +96,8 @@ module App = struct
     footer
       ~a:
         [ a_class
-            [ "inset"
-            ; "flexrow"
-            ; "flex-gap"
-            ; "justify-center"
-            ; "bg-grey-light"
-            ; "border-top"
-            ; "push"
-            ]
+            [ "inset"; "justify-center"; "bg-grey-light"; "border-top"; "push" ]
         ]
-      html
+      [ html ]
   ;;
 end

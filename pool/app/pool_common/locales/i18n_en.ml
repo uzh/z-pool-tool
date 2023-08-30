@@ -3,6 +3,7 @@ open Entity_i18n
 let capitalize = CCString.capitalize_ascii
 
 let to_string = function
+  | Activity -> "activity"
   | Address -> "address"
   | AdminComment -> "admin comment"
   | AssignmentEditTagsWarning ->
@@ -22,6 +23,9 @@ let to_string = function
   | DashboardProfileCompletionTitle -> "Profile completion"
   | DashboardTitle -> "Dashboard"
   | DeletedAssignments -> "Deleted assignments"
+  | Disabled ->
+    Locales_en.field_to_string Entity_message_field.Disabled
+    |> CCString.capitalize_ascii
   | DontHaveAnAccount -> "Don't have an account?"
   | EmailConfirmationNote ->
     "Please check your emails and confirm your address first."
@@ -104,6 +108,10 @@ let to_string = function
   | SortUngroupedFields -> "Sort ungrouped fields"
   | SwitchChronological -> "Switch to chronological view"
   | SwitchGrouped -> "Switch to grouped view"
+  | TermsAndConditionsLastUpdated ptime ->
+    Format.asprintf
+      "Last updated: %s"
+      (Pool_common_utils.Time.formatted_date ptime)
   | TermsAndConditionsTitle -> "Terms and Conditions"
   | TermsAndConditionsUpdated ->
     "We have recently changed our terms and conditions. Please read and accept \

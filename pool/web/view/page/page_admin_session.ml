@@ -492,10 +492,14 @@ let session_list
       rows
   in
   let table_legend =
-    Component.Table.table_color_legend
-      language
-      Pool_common.I18n.
-        [ Closed, "bg-green-lighter"; Canceled, "bg-red-lighter" ]
+    let open Pool_common in
+    let to_string = Utils.text_to_string language in
+    let open Component.Table in
+    table_legend
+      I18n.
+        [ to_string Closed, legend_color_item "bg-green-lighter"
+        ; to_string Canceled, legend_color_item "bg-red-lighter"
+        ]
   in
   let hover_script =
     match chronological with
@@ -1055,7 +1059,10 @@ let close_assignment_htmx_row
   in
   let default_bool fnc = CCOption.map_or ~default:false fnc in
   let identity =
-    Page_admin_assignments.Partials.identity view_contact_name contact id
+    Component.Contacts.identity
+      view_contact_name
+      contact
+      (Assignment.Id.to_common id)
   in
   let action =
     Format.asprintf "%s/assignments/%s/close" session_path (Id.value id)

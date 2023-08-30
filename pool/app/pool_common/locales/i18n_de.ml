@@ -1,6 +1,7 @@
 open Entity_i18n
 
 let to_string = function
+  | Activity -> "Aktivität"
   | Address -> "Addresse"
   | AdminComment -> "Administrator Kommentar"
   | AssignmentEditTagsWarning ->
@@ -20,6 +21,9 @@ let to_string = function
   | DashboardProfileCompletionTitle -> "Profilvervollständigung"
   | DashboardTitle -> "Dashboard"
   | DeletedAssignments -> "Gelöschte Anmeldungen"
+  | Disabled ->
+    Locales_de.field_to_string Entity_message_field.Disabled
+    |> CCString.capitalize_ascii
   | DontHaveAnAccount -> "Noch kein Zugang?"
   | EmailConfirmationNote ->
     "Bitte prüfen Sie zunächst Ihre E-Mails und bestätigen Sie Ihre Adresse."
@@ -104,6 +108,10 @@ Sie kommen für mehr Experimente in Frage, umso kompletter Ihr Profil ist.|}
   | SortUngroupedFields -> "Nicht gruppierte Felder sortieren"
   | SwitchChronological -> "Zu chronologische Ansicht wechseln"
   | SwitchGrouped -> "Zu gruppierter Ansicht wechseln"
+  | TermsAndConditionsLastUpdated ptime ->
+    Format.asprintf
+      "Zuletzt angepasst: %s"
+      (Pool_common_utils.Time.formatted_date ptime)
   | TermsAndConditionsTitle -> "Nutzungsbedingungen"
   | TermsAndConditionsUpdated ->
     "Wir haben kürzlich unsere Allgemeinen Geschäftsbedingungen geändert. \

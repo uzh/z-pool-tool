@@ -3,53 +3,63 @@ open Entity
 module RepoEntity = struct
   open CCFun.Infix
 
-  let make_caqti_type = Pool_common.Repo.make_caqti_type
+  let int_caqti of_int value =
+    Pool_common.Repo.make_caqti_type
+      Caqti_type.int
+      (of_int %> CCResult.return)
+      value
+  ;;
 
   module ActiveContacts = struct
     include ActiveContacts
 
-    let t = make_caqti_type Caqti_type.int (of_int %> CCResult.return) value
+    let t = int_caqti of_int value
   end
 
   module PendingContactImports = struct
     include PendingContactImports
 
-    let t = make_caqti_type Caqti_type.int (of_int %> CCResult.return) value
+    let t = int_caqti of_int value
   end
 
   module SignUpCount = struct
     include SignUpCount
 
-    let t = make_caqti_type Caqti_type.int (of_int %> CCResult.return) value
+    let t = int_caqti of_int value
   end
 
   module LoginCount = struct
     include LoginCount
 
-    let t = make_caqti_type Caqti_type.int (of_int %> CCResult.return) value
+    let t = int_caqti of_int value
+  end
+
+  module TermsAcceptedCount = struct
+    include TermsAcceptedCount
+
+    let t = int_caqti of_int value
   end
 
   module AssignmentsCreated = struct
     include AssignmentsCreated
 
-    let t = make_caqti_type Caqti_type.int (of_int %> CCResult.return) value
+    let t = int_caqti of_int value
   end
 
   module InvitationsSent = struct
     include InvitationsSent
 
-    let t = make_caqti_type Caqti_type.int (of_int %> CCResult.return) value
+    let t = int_caqti of_int value
   end
 
   module RemindersSent = struct
     include RemindersSent
 
-    let t = make_caqti_type Caqti_type.int (of_int %> CCResult.return) value
+    let t = int_caqti of_int value
   end
 end
 
-let active_contacts_request =
-  let open Caqti_request.Infix in
+let count_contacts_select =
   {sql|
     SELECT
       COUNT(*)
@@ -64,7 +74,11 @@ let active_contacts_request =
       AND pool_contacts.paused = 0
       AND pool_contacts.import_pending = 0
   |sql}
-  |> Caqti_type.(unit ->! RepoEntity.ActiveContacts.t)
+;;
+
+let active_contacts_request =
+  let open Caqti_request.Infix in
+  count_contacts_select |> Caqti_type.(unit ->! RepoEntity.ActiveContacts.t)
 ;;
 
 let active_contacts pool =
@@ -209,5 +223,24 @@ let reminders_sent pool period =
   Utils.Database.find
     (Pool_database.Label.value pool)
     (reminders_sent_request period)
+    ()
+;;
+
+let terms_accepted_count_request period =
+  let open Caqti_request.Infix in
+  Format.asprintf
+    {sql|
+      %s
+      AND pool_contacts.terms_accepted_at >= (NOW() - INTERVAL %s)
+    |sql}
+    count_contacts_select
+    (Entity.period_to_sql period)
+  |> Caqti_type.(unit ->! RepoEntity.TermsAcceptedCount.t)
+;;
+
+let terms_accepted_count pool period =
+  Utils.Database.find
+    (Pool_database.Label.value pool)
+    (terms_accepted_count_request period)
     ()
 ;;

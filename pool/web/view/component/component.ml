@@ -1,5 +1,6 @@
 module ButtonGroup = Component_button_group
 module Calendar = Component_calendar
+module Contacts = Component_contacts
 module Filter = Component_filter
 module Icon = Component_icon
 module Image = Component_image
@@ -14,7 +15,7 @@ module Partials = Component_partials
 module Role = Component_role
 module Search = Component_search
 module Sortable = Component_sortable
+module Statistics = Component_statistics
 module Table = Component_table
 module Tag = Component_tag
 module Utils = Component_utils
-module Statistics = Component_statistics

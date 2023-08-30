@@ -1,4 +1,5 @@
 type t =
+  | Activity
   | Address
   | AdminComment
   | AssignmentEditTagsWarning
@@ -12,6 +13,7 @@ type t =
   | DashboardProfileCompletionTitle
   | DashboardTitle
   | DeletedAssignments
+  | Disabled
   | DontHaveAnAccount
   | EmailConfirmationNote
   | EmailConfirmationTitle
@@ -67,6 +69,7 @@ type t =
   | SortUngroupedFields
   | SwitchChronological
   | SwitchGrouped
+  | TermsAndConditionsLastUpdated of Ptime.t
   | TermsAndConditionsTitle
   | TermsAndConditionsUpdated
   | TextTemplates

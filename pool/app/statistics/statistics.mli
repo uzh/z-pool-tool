@@ -22,6 +22,12 @@ module SignUpCount : sig
   val field : Pool_common.Message.Field.t
 end
 
+module TermsAcceptedCount : sig
+  include Pool_common.Model.IntegerSig
+
+  val field : Pool_common.Message.Field.t
+end
+
 module AssignmentsCreated : sig
   include Pool_common.Model.IntegerSig
 
@@ -57,6 +63,8 @@ type t =
   ; pending_contact_imports : PendingContactImports.t
   ; login_count : LoginCount.t
   ; sign_up_count : SignUpCount.t
+  ; terms_accepted_count : TermsAcceptedCount.t
+  ; terms_last_changed : Pool_common.Model.Ptime.t
   ; assignments_created : AssignmentsCreated.t
   ; invitations_sent : InvitationsSent.t
   ; reminders_sent : RemindersSent.t

@@ -25,16 +25,25 @@ let table_classes layout ?(align_top = false) ?(align_last_end = false) () =
   |> CCList.append base
 ;;
 
-let table_color_legend language items =
+let legend_color_item classname =
+  div
+    ~a:
+      [ a_class
+          [ classname; "aspect-ratio"; "square"; "legend-item"; "legend-color" ]
+      ]
+    []
+;;
+
+let legend_icon_item icon =
+  div ~a:[ a_class [ "legend-item" ] ] [ Component_icon.to_html icon ]
+;;
+
+let table_legend items =
   items
-  |> CCList.map (fun (i18n, classname) ->
+  |> CCList.map (fun (label, item) ->
     div
       ~a:[ a_class [ "flexrow"; "flex-gap"; "align-center" ] ]
-      [ div
-          ~a:[ a_class [ classname; "aspect-ratio"; "square"; "legend-color" ] ]
-          []
-      ; span Pool_common.[ Utils.text_to_string language i18n |> txt ]
-      ])
+      [ item; span [ label |> txt ] ])
   |> div ~a:[ a_class [ "flexcolumn"; "stack-sm" ] ]
 ;;
 

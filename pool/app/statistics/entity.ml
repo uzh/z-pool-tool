@@ -36,6 +36,13 @@ module SignUpCount = struct
   let schema = schema field
 end
 
+module TermsAcceptedCount = struct
+  include KeyFigure
+
+  let field = Field.TermsAcceptedCount
+  let schema = schema field
+end
+
 module AssignmentsCreated = struct
   include KeyFigure
 
@@ -118,6 +125,8 @@ type t =
   ; pending_contact_imports : PendingContactImports.t
   ; login_count : LoginCount.t
   ; sign_up_count : SignUpCount.t
+  ; terms_accepted_count : TermsAcceptedCount.t
+  ; terms_last_changed : Pool_common.Model.Ptime.t
   ; assignments_created : AssignmentsCreated.t
   ; invitations_sent : InvitationsSent.t
   ; reminders_sent : RemindersSent.t
