@@ -1037,42 +1037,6 @@ let close_unparticipated_with_followup () =
   check_result expected res
 ;;
 
-let send_reminder () =
-  let session1 = Test_utils.Model.create_session () in
-  let session2 =
-    { (Test_utils.Model.create_session ()) with
-      Session.start = Data.Validated.start1
-    }
-  in
-  let experiment = Model.create_experiment () in
-  let users =
-    CCList.range 1 4
-    |> CCList.map (fun i ->
-      Sihl_email.create
-        ~sender:"admin@mail.com"
-        ~recipient:(CCFormat.asprintf "user%i@mail.com" i)
-        ~subject:"Reminder"
-        "Hello, this is a reminder for the session")
-  in
-  let res =
-    SessionC.SendReminder.handle
-      [ session1, experiment, CCList.take 2 users
-      ; session2, experiment, CCList.drop 2 users
-      ]
-  in
-  let smtp_auth_id = experiment.Experiment.smtp_auth_id in
-  check_result
-    (Ok
-       (CCList.flat_map
-          (fun (s, es) ->
-            let es = es |> CCList.map (fun email -> email, smtp_auth_id) in
-            [ Pool_event.session (Session.EmailReminderSent s)
-            ; Pool_event.email (Email.BulkSent es)
-            ])
-          [ session1, CCList.take 2 users; session2, CCList.drop 2 users ]))
-    res
-;;
-
 let create_follow_up_earlier () =
   let open CCResult.Infix in
   let open Pool_common.Message in

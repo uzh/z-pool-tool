@@ -845,7 +845,6 @@ module Access : sig
 
   val reschedule : Rock.Middleware.t
   val cancel : Rock.Middleware.t
-  val send_reminder : Rock.Middleware.t
   val close : Rock.Middleware.t
 end = struct
   module SessionCommand = Cqrs_command.Session_command
@@ -898,12 +897,6 @@ end = struct
 
   let cancel =
     SessionCommand.Cancel.effects
-    |> combined_effects
-    |> Guardian.validate_generic
-  ;;
-
-  let send_reminder =
-    SessionCommand.SendReminder.effects
     |> combined_effects
     |> Guardian.validate_generic
   ;;
