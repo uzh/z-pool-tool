@@ -60,6 +60,8 @@ let rec field_to_string =
   | EmailAddress -> "email address"
   | EmailAddressUnverified -> "unverified email address"
   | EmailAddressVerified -> "verified email address"
+  | EmailLeadTime -> "email lead time"
+  | EmailRemindersSentAt -> "email reminders sent at"
   | EmailSubject -> "email subject"
   | EmailSuffix -> "email suffix"
   | EmailText -> "email text"
@@ -67,8 +69,12 @@ let rec field_to_string =
   | Exclude -> "exclude"
   | ExcludeRolesOf -> "exclude roles of"
   | Experiment -> "experiment"
-  | ExperimentReminderLeadTime ->
-    Format.asprintf "experiment specific %s" (field_to_string LeadTime)
+  | ExperimentEmailReminderLeadTime ->
+    Format.asprintf "experiment specific email %s" (field_to_string LeadTime)
+  | ExperimentTextMessageReminderLeadTime ->
+    Format.asprintf
+      "experiment specific text message %s"
+      (field_to_string LeadTime)
   | ExperimentType -> "experiment type"
   | Experimenter -> "experimenter"
   | ExternalDataId -> "external data identifier"
@@ -222,6 +228,8 @@ let rec field_to_string =
   | TermsAndConditions -> "terms and conditions"
   | TestPhoneNumber -> "test phone number"
   | TextMessage -> "text message"
+  | TextMessageLeadTime -> "text message lead time"
+  | TextMessageRemindersSentAt -> "text message reminders sent at"
   | Time -> "time"
   | TimeSpan -> "time span"
   | Title -> "title"
@@ -282,6 +290,7 @@ let success_to_string : success -> string = function
   | Published field ->
     field_message "" (field_to_string field) "was successfully published."
   | RemovedFromWaitingList -> "You were removed from the waiting list."
+  | RemindersResent -> "The reminders have been resent."
   | Rescheduled field ->
     field_message "" (field_to_string field) "was successfully rescheduled."
   | RoleAssigned -> "Role was assigned."

@@ -16,6 +16,7 @@ let show
   trigger_profile_update_after
   terms_and_conditions
   default_reminder_lead_time
+  default_text_msg_reminder_lead_time
   Pool_context.{ language; csrf; _ }
   flash_fetcher
   =
@@ -286,21 +287,32 @@ let show
       ]
   in
   let default_lead_time =
+    let lead_time_form action field value =
+      let open Pool_common in
+      form
+        ~a:(form_attrs action)
+        [ csrf_element csrf ()
+        ; timespan_picker
+            ~label_field:field
+            ~help:I18n.TimeSpanPickerHint
+            ~value:(value |> Reminder.LeadTime.value)
+            ~required:true
+            ~flash_fetcher
+            language
+            Message.Field.LeadTime
+        ; submit ()
+        ]
+    in
     div
-      [ h2 [ txt "Default reminder lead time" ]
-      ; form
-          ~a:(form_attrs `UpdateDefaultLeadTime)
-          [ csrf_element csrf ()
-          ; timespan_picker
-              language
-              Message.Field.LeadTime
-              ~value:
-                Pool_common.(
-                  default_reminder_lead_time |> Reminder.LeadTime.value)
-              ~required:true
-              ~flash_fetcher
-          ; submit ()
-          ]
+      [ h2 [ txt "Reminder lead time" ]
+      ; lead_time_form
+          `UpdateDefaultLeadTime
+          Message.Field.EmailLeadTime
+          default_reminder_lead_time
+      ; lead_time_form
+          `UpdateTextMsgDefaultLeadTime
+          Message.Field.TextMessageLeadTime
+          default_text_msg_reminder_lead_time
       ]
   in
   div

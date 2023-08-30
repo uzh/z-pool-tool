@@ -104,8 +104,10 @@ module Sql = struct
           pool_sessions.max_participants,
           pool_sessions.min_participants,
           pool_sessions.overbook,
-          pool_sessions.reminder_lead_time,
-          pool_sessions.reminder_sent_at,
+          pool_sessions.email_reminder_lead_time,
+          pool_sessions.email_reminder_sent_at,
+          pool_sessions.text_message_reminder_lead_time,
+          pool_sessions.text_message_reminder_sent_at,
           COUNT(pool_assignments.id),
           COALESCE( SUM(pool_assignments.no_show), 0),
           COALESCE( SUM(pool_assignments.participated), 0),
@@ -388,13 +390,29 @@ module Sql = struct
     ||> CCOption.to_result Pool_common.Message.(NotFound Field.Experiment)
   ;;
 
-  let find_sessions_to_remind_request =
+  let find_sessions_to_remind_request channel =
+    let reminder_sent_at, lead_time =
+      match channel with
+      | `Email ->
+        ( "pool_sessions.email_reminder_sent_at IS NULL"
+        , {sql| pool_sessions.email_reminder_lead_time,
+      pool_experiments.email_session_reminder_lead_time,
+      (SELECT value FROM pool_system_settings WHERE settings_key = $1))|sql}
+        )
+      | `TextMessage ->
+        ( "pool_sessions.text_message_reminder_sent_at IS NULL"
+        , {sql| pool_sessions.text_message_reminder_lead_time,
+      pool_experiments.text_message_session_reminder_lead_time,
+      (SELECT value FROM pool_system_settings WHERE settings_key = $1))|sql}
+        )
+    in
     let open Caqti_request.Infix in
-    {sql|
+    Format.asprintf
+      {sql|
     INNER JOIN pool_experiments
       ON pool_experiments.uuid = pool_sessions.experiment_uuid
     WHERE
-      pool_sessions.reminder_sent_at IS NULL
+      %s
     AND
       pool_sessions.canceled_at IS NULL
     AND
@@ -404,22 +422,34 @@ module Sql = struct
     AND
       pool_sessions.start <= DATE_ADD(NOW(), INTERVAL
         COALESCE(
-          pool_sessions.reminder_lead_time,
-          pool_experiments.session_reminder_lead_time,
-          (SELECT value FROM pool_system_settings WHERE settings_key = $1))
+          %s
         SECOND)
     |sql}
+      reminder_sent_at
+      lead_time
     |> find_sql
     |> Caqti_type.(string) ->* RepoEntity.t
   ;;
 
   let find_sessions_to_remind pool =
-    let settings_key = Settings.default_session_reminder_lead_time_key_yojson in
-    Lwt_result.ok
-    @@ Utils.Database.collect
-         (Database.Label.value pool)
-         find_sessions_to_remind_request
-         (settings_key |> Yojson.Safe.to_string)
+    let email_default_lead_time =
+      Settings.default_email_session_reminder_lead_time_key_yojson
+    in
+    let text_message_default_lead_time =
+      Settings.default_text_message_session_reminder_lead_time_key_yojson
+    in
+    let collect = Utils.Database.collect (Database.Label.value pool) in
+    let%lwt email_reminders =
+      collect
+        (find_sessions_to_remind_request `Email)
+        (email_default_lead_time |> Yojson.Safe.to_string)
+    in
+    let%lwt text_msg_reminders =
+      collect
+        (find_sessions_to_remind_request `TextMessage)
+        (text_message_default_lead_time |> Yojson.Safe.to_string)
+    in
+    Lwt_result.return (email_reminders, text_msg_reminders)
   ;;
 
   let find_follow_ups_request =
@@ -507,8 +537,10 @@ module Sql = struct
         max_participants,
         min_participants,
         overbook,
-        reminder_lead_time,
-        reminder_sent_at,
+        email_reminder_lead_time,
+        email_reminder_sent_at,
+        text_message_reminder_lead_time,
+        text_message_reminder_sent_at,
         closed_at,
         canceled_at
       ) VALUES (
@@ -526,7 +558,9 @@ module Sql = struct
         $12,
         $13,
         $14,
-        $15
+        $15,
+        $16,
+        $17
       )
     |sql}
     |> Caqti_type.(tup2 string RepoEntity.Write.t ->. unit)
@@ -553,10 +587,12 @@ module Sql = struct
         max_participants = $8,
         min_participants = $9,
         overbook = $10,
-        reminder_lead_time = $11,
-        reminder_sent_at = $12,
-        closed_at = $13,
-        canceled_at = $14
+        email_reminder_lead_time = $11,
+        email_reminder_sent_at = $12,
+        text_message_reminder_lead_time = $13,
+        text_message_reminder_sent_at = $14,
+        closed_at = $15,
+        canceled_at = $16
       WHERE
         uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}
@@ -747,7 +783,13 @@ let find_upcoming_public_by_contact pool contact_id =
 
 let find_sessions_to_remind pool =
   let open Utils.Lwt_result.Infix in
-  Sql.find_sessions_to_remind pool >>= add_location_to_multiple pool
+  Sql.find_sessions_to_remind pool
+  >>= fun (email_reminders, text_message_reminders) ->
+  let* email_reminders = add_location_to_multiple pool email_reminders in
+  let* text_message_reminders =
+    add_location_to_multiple pool text_message_reminders
+  in
+  Lwt_result.return (email_reminders, text_message_reminders)
 ;;
 
 let insert = Sql.insert

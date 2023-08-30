@@ -193,11 +193,11 @@ module Reminder = struct
     let yojson_of_t = Utils_time.yojson_of_ptime_span
     let value m = m
 
-    let schema () =
+    let schema ?(field = PoolError.Field.LeadTime) () =
       let open CCResult in
       let decode str = Pool_common_utils.Time.parse_time_span str >>= create in
       let encode span = Pool_common_utils.Time.print_time_span span in
-      Pool_common_utils.schema_decoder decode encode PoolError.Field.LeadTime
+      Pool_common_utils.schema_decoder decode encode field
     ;;
   end
 
@@ -208,6 +208,20 @@ module Reminder = struct
     let create_now () = Ptime_clock.now ()
     let value m = m
     let sexp_of_t = Pool_common_utils.Time.ptime_to_sexp
+  end
+
+  module Channel = struct
+    module Core = struct
+      let field = PoolError.Field.MessageChannel
+
+      type t =
+        | Email [@name "email"] [@printer print "email"]
+        | TextMessage [@name "text_message"] [@printer print "text_message"]
+      [@@deriving enum, eq, ord, sexp_of, show { with_path = false }, yojson]
+    end
+
+    include Entity_base_model.SelectorType (Core)
+    include Core
   end
 end
 

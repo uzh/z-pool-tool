@@ -34,7 +34,8 @@ let session_form
   csrf
   language
   (experiment : Experiment.t)
-  default_reminder_lead_time
+  default_email_reminder_lead_time
+  default_text_msg_reminder_lead_time
   ?(session : Session.t option)
   ?(follow_up_to : Session.t option)
   ?(duplicate : Session.t option)
@@ -92,6 +93,24 @@ let session_form
     | Some session, _ ->
       ( Format.asprintf "%s/%s" base Session.(session.id |> Id.value)
       , Message.(Update (Some Field.Session)) )
+  in
+  let lead_time_group field get_value default_value =
+    div
+      [ timespan_picker
+          language
+          field
+          ~help:I18n.TimeSpanPickerHint
+          ?value:
+            CCOption.(
+              bind session get_value |> CCOption.map Reminder.LeadTime.value)
+          ~flash_fetcher
+      ; Utils.text_to_string
+          language
+          (I18n.SessionReminderDefaultLeadTime
+             (default_value |> Reminder.LeadTime.value))
+        |> txt
+        |> HttpUtils.default_value_style
+      ]
   in
   form
     ~a:
@@ -181,26 +200,17 @@ let session_form
             [ txt (Utils.text_to_string language I18n.Reminder) ]
         ; div
             ~a:[ a_class [ "grid-col-2" ] ]
-            [ div
-                [ timespan_picker
-                    language
-                    Message.Field.LeadTime
-                    ~help:I18n.TimeSpanPickerHint
-                    ?value:
-                      (CCOption.bind session (fun (e : t) ->
-                         e.reminder_lead_time
-                         |> CCOption.map Reminder.LeadTime.value))
-                    ~flash_fetcher
-                ; (experiment.Experiment.session_reminder_lead_time
-                   |> CCOption.value ~default:default_reminder_lead_time
-                   |> fun t ->
-                   Utils.text_to_string
-                     language
-                     (I18n.SessionReminderDefaultLeadTime
-                        (t |> Reminder.LeadTime.value))
-                   |> txt
-                   |> HttpUtils.default_value_style)
-                ]
+            [ lead_time_group
+                Message.Field.EmailLeadTime
+                (fun (s : t) -> s.email_reminder_lead_time)
+                (experiment.Experiment.email_session_reminder_lead_time
+                 |> CCOption.value ~default:default_email_reminder_lead_time)
+            ; lead_time_group
+                Message.Field.TextMessageLeadTime
+                (fun (s : t) -> s.text_message_reminder_lead_time)
+                (experiment.Experiment.text_message_session_reminder_lead_time
+                 |> CCOption.value ~default:default_text_msg_reminder_lead_time
+                )
             ]
         ]
     ; div
@@ -590,7 +600,8 @@ let index
 let new_form
   ({ Pool_context.language; csrf; _ } as context)
   experiment
-  default_reminder_lead_time
+  default_email_reminder_lead_time
+  default_text_msg_reminder_lead_time
   duplicate_session
   locations
   flash_fetcher
@@ -599,7 +610,8 @@ let new_form
     csrf
     language
     experiment
-    default_reminder_lead_time
+    default_email_reminder_lead_time
+    default_text_msg_reminder_lead_time
     ?duplicate:duplicate_session
     locations
     ~flash_fetcher
@@ -613,7 +625,7 @@ let detail
   ?view_contact_name
   ?view_contact_email
   ?view_contact_cellphone
-  (Pool_context.{ language; _ } as context)
+  (Pool_context.{ language; csrf; _ } as context)
   ({ Experiment.id; external_data_required; _ } as experiment)
   (session : Session.t)
   participation_tags
@@ -635,12 +647,73 @@ let detail
         ~classnames:[ "small" ]
         ~style
         ?icon
-        (Format.asprintf
-           "/admin/experiments/%s/sessions/%s/%s"
-           experiment_id
-           session_id
-           url)
+        (Format.asprintf "%s/%s" (session_path id session.id) url)
       |> CCOption.pure
+  in
+  let resend_reminders_modal =
+    let open Pool_common.Reminder in
+    if Session.reminder_resendable session |> CCResult.is_ok |> not
+    then txt ""
+    else (
+      let modal_id = "resend-reminders-modal" in
+      let resend_txt language =
+        Pool_common.(Utils.text_to_string language I18n.ResendReminders)
+      in
+      let inner =
+        let resend_action =
+          Format.asprintf "%s/resend-reminders" (session_path id session.id)
+          |> Sihl.Web.externalize_path
+        in
+        let warning =
+          match
+            CCOption.is_none session.email_reminder_sent_at
+            && CCOption.is_none session.text_message_reminder_sent_at
+          with
+          | false -> txt ""
+          | true ->
+            Notification.notification
+              language
+              `Warning
+              [ Utils.hint_to_string language I18n.ResendRemindersWarning
+                |> HttpUtils.add_line_breaks
+              ]
+        in
+        div
+          [ warning
+          ; p
+              [ txt
+                  Pool_common.(
+                    Utils.hint_to_string language I18n.ResendRemindersChannel)
+              ]
+          ; form
+              ~a:[ a_method `Post; a_action resend_action; a_class [ "stack" ] ]
+              [ csrf_element csrf ()
+              ; selector
+                  language
+                  Message.Field.MessageChannel
+                  Channel.show
+                  Channel.all
+                  None
+                  ~option_formatter:(fun channel ->
+                    Channel.show channel
+                    |> CCString.replace ~sub:"_" ~by:" "
+                    |> CCString.capitalize_ascii)
+                  ()
+              ; submit_element language Message.(Resend None) ()
+              ]
+          ]
+      in
+      let modal = Modal.create language resend_txt modal_id inner in
+      let button =
+        a
+          ~a:
+            [ a_href "#"
+            ; a_user_data "modal" modal_id
+            ; a_class [ "has-icon"; "primary"; "btn"; "small" ]
+            ]
+          [ txt (resend_txt language) ]
+      in
+      div [ modal; button ])
   in
   let session_overview =
     let table =
@@ -721,7 +794,25 @@ let detail
           |> CCOption.map (fun c ->
             Field.ClosedAt, Utils.Time.formatted_date_time c |> txt)
         in
-        rows @ ([ canceled; closed ] |> CCList.filter_map CCFun.id) @ counters
+        let time_stamps =
+          let format value =
+            value
+            |> CCOption.map_or
+                 ~default:""
+                 CCFun.(
+                   Pool_common.Reminder.SentAt.value
+                   %> Utils.Time.formatted_date_time)
+            |> txt
+          in
+          [ Field.EmailRemindersSentAt, format session.email_reminder_sent_at
+          ; ( Field.TextMessageRemindersSentAt
+            , format session.text_message_reminder_sent_at )
+          ]
+        in
+        rows
+        @ counters
+        @ time_stamps
+        @ ([ canceled; closed ] |> CCList.filter_map CCFun.id)
       in
       Table.vertical_table `Striped language ~align_top:true
       @@ CCOption.map_or ~default:rows (CCList.cons' rows) parent
@@ -774,7 +865,7 @@ let detail
             , Some (`Error, Some Icon.CloseCircle) )
           ]
         |> CCList.filter_map (fun (t, style) -> session_link ?style t)
-        |> wrap
+        |> fun btns -> wrap (resend_reminders_modal :: btns)
       in
       div
         ~a:[ a_class [ "flexrow"; "flex-gap"; "justify-between" ] ]
@@ -838,7 +929,8 @@ let detail
 let edit
   ({ Pool_context.language; csrf; _ } as context)
   experiment
-  default_reminder_lead_time
+  default_email_reminder_lead_time
+  default_text_msg_reminder_lead_time
   (session : Session.t)
   locations
   session_reminder_templates
@@ -864,7 +956,8 @@ let edit
           csrf
           language
           experiment
-          default_reminder_lead_time
+          default_email_reminder_lead_time
+          default_text_msg_reminder_lead_time
           ~session
           locations
           ~flash_fetcher
@@ -952,7 +1045,8 @@ let edit
 let follow_up
   ({ Pool_context.language; csrf; _ } as context)
   experiment
-  default_reminder_lead_time
+  default_email_reminder_lead_time
+  default_text_msg_reminder_lead_time
   duplicate_session
   (parent_session : Session.t)
   locations
@@ -974,7 +1068,8 @@ let follow_up
         csrf
         language
         experiment
-        default_reminder_lead_time
+        default_email_reminder_lead_time
+        default_text_msg_reminder_lead_time
         ~follow_up_to:parent_session
         ?duplicate:duplicate_session
         locations

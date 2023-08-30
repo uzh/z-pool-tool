@@ -153,6 +153,7 @@ type success =
   | PasswordResetSuccessMessage
   | Published of Field.t
   | RemovedFromWaitingList
+  | RemindersResent
   | Rescheduled of Field.t
   | RoleAssigned
   | RoleUnassigned

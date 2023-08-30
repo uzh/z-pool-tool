@@ -119,7 +119,8 @@ module Data = struct
           |> ExternalDataRequired.create
       ; experiment_type =
           Some (experiment_type |> Pool_common.ExperimentType.read)
-      ; session_reminder_lead_time = None
+      ; email_session_reminder_lead_time = None
+      ; text_message_session_reminder_lead_time = None
       ; created_at = Common.CreatedAt.create ()
       ; updated_at = Common.UpdatedAt.create ()
       }

@@ -37,7 +37,7 @@ let experiments pool =
            , description
            , cost_center
            , direct_registration_disabled
-           , session_reminder_lead_time ) ->
+           , email_session_reminder_lead_time ) ->
         let experiment =
           let open Experiment in
           let title = Title.create title |> get_or_failwith in
@@ -48,11 +48,11 @@ let experiments pool =
             Description.create description |> get_or_failwith |> CCOption.return
           in
           let cost_center = cost_center |> CCOption.map CostCenter.of_string in
-          let session_reminder_lead_time =
-            session_reminder_lead_time
-            >|= Ptime.Span.of_int_s
-                %> Reminder.LeadTime.create
-                %> get_or_failwith
+          let create_lead_time =
+            Ptime.Span.of_int_s %> Reminder.LeadTime.create %> get_or_failwith
+          in
+          let email_session_reminder_lead_time =
+            email_session_reminder_lead_time >|= create_lead_time
           in
           let direct_registration_disabled =
             DirectRegistrationDisabled.create direct_registration_disabled
@@ -76,7 +76,8 @@ let experiments pool =
             allow_uninvited_signup
             external_data_required
             (Some Pool_common.ExperimentType.Lab)
-            session_reminder_lead_time
+            email_session_reminder_lead_time
+            None
           |> get_or_failwith
         in
         Experiment.Created experiment)

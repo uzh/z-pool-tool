@@ -165,7 +165,8 @@ module Reminder : sig
     val yojson_of_t : t -> Yojson.Safe.t
 
     val schema
-      :  unit
+      :  ?field:Message.Field.t
+      -> unit
       -> (Message.error, t) Pool_common_utils.PoolConformist.Field.t
   end
 
@@ -178,6 +179,22 @@ module Reminder : sig
     val create : Ptime.t -> t
     val create_now : unit -> t
     val value : t -> Ptime.t
+  end
+
+  module Channel : sig
+    type t =
+      | Email
+      | TextMessage
+
+    val schema
+      :  unit
+      -> (Message.error, t) Pool_common_utils.PoolConformist.Field.t
+
+    val pp : Format.formatter -> t -> unit
+    val show : t -> string
+    val equal : t -> t -> bool
+    val read : string -> t
+    val all : t list
   end
 end
 

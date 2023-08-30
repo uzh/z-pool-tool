@@ -353,13 +353,24 @@ module SessionReminder : sig
     -> Assignment.t
     -> Sihl_email.t Lwt.t
 
-  val prepare
+  val prepare_emails
     :  Pool_database.Label.t
     -> Pool_tenant.t
     -> Pool_common.Language.t list
     -> Experiment.t
     -> Session.t
     -> (Assignment.t -> (Sihl_email.t, Pool_common.Message.error) result) Lwt.t
+
+  val prepare_text_messages
+    :  Pool_database.Label.t
+    -> Pool_tenant.t
+    -> Pool_common.Language.t list
+    -> Experiment.t
+    -> Session.t
+    -> (Assignment.t
+        -> Pool_user.CellPhone.t
+        -> (Text_message.t, Pool_common.Message.error) result)
+       Lwt.t
 end
 
 module SessionReschedule : sig

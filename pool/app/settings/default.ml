@@ -2,6 +2,8 @@ open Entity
 
 type default =
   { default_reminder_lead_time : Value.default_reminder_lead_time
+  ; default_text_msg_reminder_lead_time :
+      Value.default_text_msg_reminder_lead_time
   ; tenant_languages : Value.tenant_languages
   ; tenant_email_suffixes : Value.tenant_email_suffixes
   ; tenant_contact_email : Value.tenant_contact_email
@@ -24,6 +26,13 @@ let terms_de =
 ;;
 
 let default_reminder_lead_time =
+  28800
+  |> Ptime.Span.of_int_s
+  |> Pool_common.Reminder.LeadTime.create
+  |> get_or_failwith
+;;
+
+let default_text_msg_reminder_lead_time =
   14400
   |> Ptime.Span.of_int_s
   |> Pool_common.Reminder.LeadTime.create
@@ -58,6 +67,7 @@ let terms_and_conditions =
 
 let default_values =
   { default_reminder_lead_time
+  ; default_text_msg_reminder_lead_time
   ; tenant_languages
   ; tenant_email_suffixes
   ; tenant_contact_email

@@ -152,8 +152,10 @@ type t =
   ; max_participants : ParticipantAmount.t
   ; min_participants : ParticipantAmount.t
   ; overbook : ParticipantAmount.t
-  ; reminder_lead_time : Pool_common.Reminder.LeadTime.t option
-  ; reminder_sent_at : Pool_common.Reminder.SentAt.t option
+  ; email_reminder_lead_time : Pool_common.Reminder.LeadTime.t option
+  ; email_reminder_sent_at : Pool_common.Reminder.SentAt.t option
+  ; text_message_reminder_lead_time : Pool_common.Reminder.LeadTime.t option
+  ; text_message_reminder_sent_at : Pool_common.Reminder.SentAt.t option
   ; assignment_count : AssignmentCount.t
   ; no_show_count : NoShowCount.t
   ; participant_count : ParticipantCount.t
@@ -187,7 +189,8 @@ let create
   max_participants
   min_participants
   overbook
-  reminder_lead_time
+  email_reminder_lead_time
+  text_message_reminder_lead_time
   =
   { id = id |> CCOption.value ~default:(Id.create ())
   ; follow_up_to
@@ -200,8 +203,10 @@ let create
   ; max_participants
   ; min_participants
   ; overbook
-  ; reminder_lead_time
-  ; reminder_sent_at = None
+  ; email_reminder_lead_time
+  ; email_reminder_sent_at = None
+  ; text_message_reminder_lead_time
+  ; text_message_reminder_sent_at = None
   ; assignment_count = 0
   ; no_show_count = 0
   ; participant_count = 0
@@ -552,5 +557,12 @@ let assignment_creatable session =
   let* () = not_canceled session in
   let* () = not_closed session in
   let* () = not_past session in
+  Ok ()
+;;
+
+let reminder_resendable session =
+  let open CCResult.Infix in
+  let* () = not_canceled session in
+  let* () = not_closed session in
   Ok ()
 ;;

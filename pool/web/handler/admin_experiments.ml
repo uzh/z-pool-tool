@@ -134,8 +134,11 @@ let new_form req =
     Utils.Lwt_result.map_error (fun err -> err, error_path)
     @@
     let flash_fetcher key = Sihl.Web.Flash.find key req in
-    let%lwt default_reminder_lead_time =
+    let%lwt default_email_reminder_lead_time =
       Settings.find_default_reminder_lead_time database_label
+    in
+    let%lwt default_text_msg_reminder_lead_time =
+      Settings.find_default_text_msg_reminder_lead_time database_label
     in
     let%lwt organisational_units = Organisational_unit.all database_label () in
     let%lwt contact_persons =
@@ -145,7 +148,8 @@ let new_form req =
     Page.Admin.Experiments.create
       context
       organisational_units
-      default_reminder_lead_time
+      default_email_reminder_lead_time
+      default_text_msg_reminder_lead_time
       contact_persons
       smtp_auth_list
       flash_fetcher
@@ -247,8 +251,11 @@ let detail edit req =
        |> Lwt_result.ok
      | true ->
        let flash_fetcher key = Sihl.Web.Flash.find key req in
-       let%lwt default_reminder_lead_time =
+       let%lwt default_email_reminder_lead_time =
          Settings.find_default_reminder_lead_time database_label
+       in
+       let%lwt default_text_msg_reminder_lead_time =
+         Settings.find_default_text_msg_reminder_lead_time database_label
        in
        let%lwt organisational_units =
          Organisational_unit.all database_label ()
@@ -281,7 +288,8 @@ let detail edit req =
          experiment
          context
          sys_languages
-         default_reminder_lead_time
+         default_email_reminder_lead_time
+         default_text_msg_reminder_lead_time
          contact_persons
          organisational_units
          smtp_auth_list

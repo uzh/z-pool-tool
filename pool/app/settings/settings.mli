@@ -68,6 +68,7 @@ end
 
 type default =
   { default_reminder_lead_time : Pool_common.Reminder.LeadTime.t
+  ; default_text_msg_reminder_lead_time : Pool_common.Reminder.LeadTime.t
   ; tenant_languages : Pool_common.Language.t list
   ; tenant_email_suffixes : EmailSuffix.t list
   ; tenant_contact_email : ContactEmail.t
@@ -90,6 +91,7 @@ val action_of_param
   -> ( [> `CreateEmailSuffix
        | `DeleteEmailSuffix
        | `UpdateDefaultLeadTime
+       | `UpdateTextMsgDefaultLeadTime
        | `UpdateInactiveUserDisableAfter
        | `UpdateInactiveUserWarning
        | `UpdateContactEmail
@@ -105,6 +107,7 @@ val stringify_action
   :  [< `CreateEmailSuffix
      | `DeleteEmailSuffix
      | `UpdateDefaultLeadTime
+     | `UpdateTextMsgDefaultLeadTime
      | `UpdateInactiveUserDisableAfter
      | `UpdateInactiveUserWarning
      | `UpdateContactEmail
@@ -118,6 +121,7 @@ val stringify_action
 type event =
   | ContactEmailUpdated of ContactEmail.t
   | DefaultReminderLeadTimeUpdated of Pool_common.Reminder.LeadTime.t
+  | DefaultTextMsgReminderLeadTimeUpdated of Pool_common.Reminder.LeadTime.t
   | EmailSuffixesUpdated of EmailSuffix.t list
   | InactiveUserDisableAfterUpdated of InactiveUser.DisableAfter.t
   | InactiveUserWarningUpdated of InactiveUser.Warning.t
@@ -167,7 +171,12 @@ val find_default_reminder_lead_time
   :  Pool_database.Label.t
   -> Pool_common.Reminder.LeadTime.t Lwt.t
 
-val default_session_reminder_lead_time_key_yojson : Yojson.Safe.t
+val find_default_text_msg_reminder_lead_time
+  :  Pool_database.Label.t
+  -> Pool_common.Reminder.LeadTime.t Lwt.t
+
+val default_email_session_reminder_lead_time_key_yojson : Yojson.Safe.t
+val default_text_message_session_reminder_lead_time_key_yojson : Yojson.Safe.t
 val trigger_profile_update_after_key_yojson : Yojson.Safe.t
 
 module Guard : sig

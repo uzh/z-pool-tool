@@ -48,7 +48,7 @@ module Sql = struct
     Utils.Database.exec (Database.Label.value pool) update_request
   ;;
 
-  let insert_request =
+  let upsert_request =
     let open Caqti_request.Infix in
     {sql|
       INSERT INTO pool_system_settings (
@@ -63,13 +63,14 @@ module Sql = struct
         ?,
         ?,
         ?
-      )
+      ) ON DUPLICATE KEY UPDATE
+        id = id
     |sql}
     |> Caqti_type.(tup2 Pool_common.Repo.Id.t RepoEntity.t ->. unit)
   ;;
 
-  let insert pool =
-    Utils.Database.exec (Database.Label.value pool) insert_request
+  let upsert pool =
+    Utils.Database.exec (Database.Label.value pool) upsert_request
   ;;
 
   let delete_request =
@@ -110,10 +111,14 @@ let find_default_reminder_lead_time pool =
   Sql.find pool RepoEntity.t Entity.ReminderLeadTime
 ;;
 
+let find_default_text_msg_reminder_lead_time pool =
+  Sql.find pool RepoEntity.t Entity.TextMsgReminderLeadTime
+;;
+
 let update pool value = Sql.update pool Entity.Write.{ value }
 
-let insert pool ?(id = Pool_common.Id.create ()) (value : Entity.Value.t) =
-  Sql.insert
+let upsert pool ?(id = Pool_common.Id.create ()) (value : Entity.Value.t) =
+  Sql.upsert
     pool
     ( id
     , { Entity.value

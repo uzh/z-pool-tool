@@ -33,6 +33,9 @@ let show req =
     let%lwt default_reminder_lead_time =
       Settings.find_default_reminder_lead_time database_label
     in
+    let%lwt default_tet_msg_reminder_lead_time =
+      Settings.find_default_text_msg_reminder_lead_time database_label
+    in
     let flash_fetcher key = Sihl.Web.Flash.find key req in
     Page.Admin.Settings.show
       languages
@@ -43,6 +46,7 @@ let show req =
       trigger_profile_update_after
       terms_and_conditions
       default_reminder_lead_time
+      default_tet_msg_reminder_lead_time
       context
       flash_fetcher
     |> create_layout req ~active_navigation:"/admin/settings" context
@@ -91,7 +95,12 @@ let update_settings req =
             let%lwt suffixes = Settings.find_email_suffixes database_label in
             DeleteEmailSuffix.(m |> decode >>= handle ~tags suffixes) |> lift
         | `UpdateDefaultLeadTime ->
-          fun m -> UpdateDefaultLeadTime.(m |> decode >>= handle ~tags) |> lift
+          fun m ->
+            UpdateDefaultLeadTime.(m |> decode >>= handle `Email ~tags) |> lift
+        | `UpdateTextMsgDefaultLeadTime ->
+          fun m ->
+            UpdateDefaultLeadTime.(m |> decode >>= handle `TextMessage ~tags)
+            |> lift
         | `UpdateContactEmail ->
           fun m -> UpdateContactEmail.(m |> decode >>= handle ~tags) |> lift
         | `UpdateInactiveUserDisableAfter ->
@@ -133,7 +142,8 @@ module Access : module type of Helpers.Access = struct
     let find_effects = function
       | `CreateEmailSuffix -> Command.CreateEmailSuffix.effects
       | `DeleteEmailSuffix -> Command.DeleteEmailSuffix.effects
-      | `UpdateDefaultLeadTime -> Command.UpdateDefaultLeadTime.effects
+      | `UpdateDefaultLeadTime | `UpdateTextMsgDefaultLeadTime ->
+        Command.UpdateDefaultLeadTime.effects
       | `UpdateInactiveUserDisableAfter ->
         Command.InactiveUser.DisableAfter.effects
       | `UpdateInactiveUserWarning -> Command.InactiveUser.Warning.effects

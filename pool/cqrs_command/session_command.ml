@@ -11,7 +11,8 @@ let create_command
   max_participants
   min_participants
   overbook
-  reminder_lead_time
+  email_reminder_lead_time
+  text_message_reminder_lead_time
   : Session.base
   =
   Session.
@@ -22,11 +23,13 @@ let create_command
     ; max_participants
     ; min_participants
     ; overbook
-    ; reminder_lead_time
+    ; email_reminder_lead_time
+    ; text_message_reminder_lead_time
     }
 ;;
 
 let create_schema =
+  let open Pool_common in
   Conformist.(
     make
       Field.
@@ -34,12 +37,15 @@ let create_schema =
         ; Session.Duration.schema ()
         ; Conformist.optional @@ Session.Description.schema ()
         ; Conformist.optional @@ Session.Limitations.schema ()
-        ; Session.ParticipantAmount.schema
-            Pool_common.Message.Field.MaxParticipants
-        ; Session.ParticipantAmount.schema
-            Pool_common.Message.Field.MinParticipants
-        ; Session.ParticipantAmount.schema Pool_common.Message.Field.Overbook
-        ; Conformist.optional @@ Pool_common.Reminder.LeadTime.schema ()
+        ; Session.ParticipantAmount.schema Message.Field.MaxParticipants
+        ; Session.ParticipantAmount.schema Message.Field.MinParticipants
+        ; Session.ParticipantAmount.schema Message.Field.Overbook
+        ; Conformist.optional
+          @@ Reminder.LeadTime.schema ~field:Message.Field.EmailLeadTime ()
+        ; Conformist.optional
+          @@ Reminder.LeadTime.schema
+               ~field:Message.Field.TextMessageLeadTime
+               ()
         ]
       create_command)
 ;;
@@ -52,7 +58,8 @@ let update_command
   max_participants
   min_participants
   overbook
-  reminder_lead_time
+  email_reminder_lead_time
+  text_message_reminder_lead_time
   : Session.update
   =
   Session.
@@ -63,11 +70,13 @@ let update_command
     ; max_participants
     ; min_participants
     ; overbook
-    ; reminder_lead_time
+    ; email_reminder_lead_time
+    ; text_message_reminder_lead_time
     }
 ;;
 
 let update_schema =
+  let open Pool_common in
   Conformist.(
     make
       Field.
@@ -75,12 +84,15 @@ let update_schema =
         ; Conformist.optional @@ Session.Duration.schema ()
         ; Conformist.optional @@ Session.Description.schema ()
         ; Conformist.optional @@ Session.Limitations.schema ()
-        ; Session.ParticipantAmount.schema
-            Pool_common.Message.Field.MaxParticipants
-        ; Session.ParticipantAmount.schema
-            Pool_common.Message.Field.MinParticipants
-        ; Session.ParticipantAmount.schema Pool_common.Message.Field.Overbook
-        ; Conformist.optional @@ Pool_common.Reminder.LeadTime.schema ()
+        ; Session.ParticipantAmount.schema Message.Field.MaxParticipants
+        ; Session.ParticipantAmount.schema Message.Field.MinParticipants
+        ; Session.ParticipantAmount.schema Message.Field.Overbook
+        ; Conformist.optional
+          @@ Reminder.LeadTime.schema ~field:Message.Field.EmailLeadTime ()
+        ; Conformist.optional
+          @@ Reminder.LeadTime.schema
+               ~field:Message.Field.TextMessageLeadTime
+               ()
         ]
       update_command)
 ;;
@@ -152,7 +164,8 @@ end = struct
        ; min_participants
        ; (* TODO [aerben] find a better name *)
          overbook
-       ; reminder_lead_time
+       ; email_reminder_lead_time
+       ; text_message_reminder_lead_time
        } :
       Session.base)
     =
@@ -179,7 +192,8 @@ end = struct
         max_participants
         min_participants
         overbook
-        reminder_lead_time
+        email_reminder_lead_time
+        text_message_reminder_lead_time
     in
     Ok [ Session.Created (session, experiment_id) |> Pool_event.session ]
   ;;
@@ -226,7 +240,8 @@ end = struct
        ; max_participants
        ; min_participants
        ; overbook
-       ; reminder_lead_time
+       ; email_reminder_lead_time
+       ; text_message_reminder_lead_time
        } :
       Session.update)
     =
@@ -264,7 +279,8 @@ end = struct
         ; max_participants
         ; min_participants
         ; overbook
-        ; reminder_lead_time
+        ; email_reminder_lead_time
+        ; text_message_reminder_lead_time
         }
     in
     Ok
@@ -622,12 +638,97 @@ end = struct
            let emails =
              emails |> CCList.map (fun email -> email, smtp_auth_id)
            in
-           (Session.ReminderSent session |> Pool_event.session)
+           (Session.EmailReminderSent session |> Pool_event.session)
            ::
            (if emails |> CCList.is_empty |> not
             then [ Email.BulkSent emails |> Pool_event.email ]
             else []))
          command)
+  ;;
+
+  let effects = Session.Guard.Access.update
+end
+
+module ResendReminders : sig
+  include Common.CommandSig with type t = Pool_common.Reminder.Channel.t
+
+  val handle
+    :  ?tags:Logs.Tag.set
+    -> (Assignment.t -> (Sihl_email.t, Pool_common.Message.error) result)
+    -> (Assignment.t
+        -> Pool_user.CellPhone.t
+        -> (Text_message.t, Pool_common.Message.error) result)
+    -> Experiment.t
+    -> Session.t
+    -> Assignment.t list
+    -> t
+    -> (Pool_event.t list, Conformist.error_msg) result
+
+  val decode : Conformist.input -> (t, Conformist.error_msg) result
+  val effects : Experiment.Id.t -> Session.Id.t -> Guard.ValidationSet.t
+end = struct
+  type t = Pool_common.Reminder.Channel.t
+
+  let schema =
+    Conformist.(make Field.[ Pool_common.Reminder.Channel.schema () ] CCFun.id)
+  ;;
+
+  let handle
+    ?(tags = Logs.Tag.empty)
+    create_email
+    create_text_message
+    experiment
+    session
+    assignments
+    channel
+    =
+    Logs.info ~src (fun m -> m "Handle command ResendReminders" ~tags);
+    let open Pool_common.Reminder.Channel in
+    let open CCResult.Infix in
+    let create_email assignment =
+      assignment
+      |> create_email
+      >|= fun email -> email, experiment.Experiment.smtp_auth_id
+    in
+    let* () = Session.reminder_resendable session in
+    let* events =
+      match channel with
+      | Email ->
+        assignments
+        |> CCList.map create_email
+        |> CCList.all_ok
+        >|= Email.bulksent
+        >|= Pool_event.email
+        >|= CCList.return
+        >|= CCList.cons (Session.EmailReminderSent session |> Pool_event.session)
+      | TextMessage ->
+        let* emails, text_messages =
+          assignments
+          |> CCList.fold_left
+               (fun messages ({ Assignment.contact; _ } as assignment) ->
+                 messages
+                 >>= fun (emails, text_messages) ->
+                 match contact.Contact.cell_phone with
+                 | None ->
+                   create_email assignment
+                   >|= fun email -> email :: emails, text_messages
+                 | Some cell_phone ->
+                   create_text_message assignment cell_phone
+                   >|= fun msg -> emails, msg :: text_messages)
+               (Ok ([], []))
+        in
+        Ok
+          [ Email.BulkSent emails |> Pool_event.email
+          ; Text_message.BulkSent text_messages |> Pool_event.text_message
+          ; Session.TextMsgReminderSent session |> Pool_event.session
+          ]
+    in
+    Ok events
+  ;;
+
+  let decode data =
+    Conformist.decode_and_validate schema data
+    |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
   let effects = Session.Guard.Access.update

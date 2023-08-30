@@ -60,6 +60,8 @@ let rec field_to_string =
   | EmailAddress -> "E-Mail Adresse"
   | EmailAddressUnverified -> "Unverifizierte E-Mail Adresse"
   | EmailAddressVerified -> "Verifizierte E-Mail Adresse"
+  | EmailLeadTime -> "Email Vorlaufzeit"
+  | EmailRemindersSentAt -> "Email Erinnerungen verschickt am"
   | EmailSubject -> "E-Mail Betreff"
   | EmailSuffix -> "E-Mail Endung"
   | EmailText -> "E-Mail Text"
@@ -68,8 +70,14 @@ let rec field_to_string =
   | ExcludeRolesOf -> "Ausgenommen (Rollen von jmd)"
   | Experiment -> "Experiment"
   | Experimenter -> "Experimenter"
-  | ExperimentReminderLeadTime ->
-    Format.asprintf "Experimentspezifische %s" (field_to_string LeadTime)
+  | ExperimentEmailReminderLeadTime ->
+    Format.asprintf
+      "Experimentspezifische Erinnerungsemail %s"
+      (field_to_string LeadTime)
+  | ExperimentTextMessageReminderLeadTime ->
+    Format.asprintf
+      "Experimentspezifische Erinnerungs-SMS %s"
+      (field_to_string LeadTime)
   | ExperimentType -> "Experimenttyp"
   | ExternalDataId -> "Externer Daten Identifikator"
   | ExternalDataRequired -> "Externe Daten müssen angegeben werden"
@@ -221,6 +229,8 @@ let rec field_to_string =
   | TermsAndConditions -> "Teilnahmebedingungen"
   | TestPhoneNumber -> "Testtelefonnummer"
   | TextMessage -> "SMS"
+  | TextMessageLeadTime -> "SMS Vorlaufzeit"
+  | TextMessageRemindersSentAt -> "SMS Erinnerungen verschickt am"
   | Time -> "Uhrzeit"
   | TimeSpan -> "Zeitspanne"
   | Title -> "Titel"
@@ -281,6 +291,7 @@ let success_to_string : success -> string = function
   | Published field ->
     field_message "" (field_to_string field) "wurde erfolgreich veröffentlicht."
   | RemovedFromWaitingList -> "Sie wurden von der Warteliste entfernt."
+  | RemindersResent -> "Die Erinnerungen wirden erneut versendet."
   | Rescheduled field ->
     field_message "" (field_to_string field) "wurden erfolgreich verschoben."
   | RoleAssigned -> "Rolle wurde zugewiesen."

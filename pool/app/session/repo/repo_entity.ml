@@ -18,8 +18,10 @@ type t =
   ; max_participants : Entity.ParticipantAmount.t
   ; min_participants : Entity.ParticipantAmount.t
   ; overbook : Entity.ParticipantAmount.t
-  ; reminder_lead_time : Reminder.LeadTime.t option
-  ; reminder_sent_at : Reminder.SentAt.t option
+  ; email_reminder_lead_time : Reminder.LeadTime.t option
+  ; email_reminder_sent_at : Reminder.SentAt.t option
+  ; text_message_reminder_lead_time : Reminder.LeadTime.t option
+  ; text_message_reminder_sent_at : Reminder.SentAt.t option
   ; assignment_count : Entity.AssignmentCount.t
   ; no_show_count : Entity.NoShowCount.t
   ; participant_count : Entity.ParticipantCount.t
@@ -42,8 +44,10 @@ let of_entity (m : Entity.t) =
   ; max_participants = m.Entity.max_participants
   ; min_participants = m.Entity.min_participants
   ; overbook = m.Entity.overbook
-  ; reminder_lead_time = m.Entity.reminder_lead_time
-  ; reminder_sent_at = m.Entity.reminder_sent_at
+  ; email_reminder_lead_time = m.Entity.email_reminder_lead_time
+  ; email_reminder_sent_at = m.Entity.email_reminder_sent_at
+  ; text_message_reminder_lead_time = m.Entity.text_message_reminder_lead_time
+  ; text_message_reminder_sent_at = m.Entity.text_message_reminder_sent_at
   ; assignment_count = m.Entity.assignment_count
   ; no_show_count = m.Entity.no_show_count
   ; participant_count = m.Entity.participant_count
@@ -67,8 +71,10 @@ let to_entity (m : t) location : Entity.t =
     ; max_participants = m.max_participants
     ; min_participants = m.min_participants
     ; overbook = m.overbook
-    ; reminder_lead_time = m.reminder_lead_time
-    ; reminder_sent_at = m.reminder_sent_at
+    ; email_reminder_lead_time = m.email_reminder_lead_time
+    ; email_reminder_sent_at = m.email_reminder_sent_at
+    ; text_message_reminder_lead_time = m.text_message_reminder_lead_time
+    ; text_message_reminder_sent_at = m.text_message_reminder_sent_at
     ; assignment_count = m.assignment_count
     ; no_show_count = m.no_show_count
     ; participant_count = m.participant_count
@@ -94,15 +100,17 @@ let t =
                     , ( m.max_participants
                       , ( m.min_participants
                         , ( m.overbook
-                          , ( m.reminder_lead_time
-                            , ( m.reminder_sent_at
-                              , ( m.assignment_count
-                                , ( m.no_show_count
-                                  , ( m.participant_count
-                                    , ( m.closed_at
-                                      , ( m.canceled_at
-                                        , (m.created_at, m.updated_at) ) ) ) )
-                                ) ) ) ) ) ) ) ) ) ) ) ) ) )
+                          , ( m.email_reminder_lead_time
+                            , ( m.email_reminder_sent_at
+                              , ( m.text_message_reminder_lead_time
+                                , ( m.text_message_reminder_sent_at
+                                  , ( m.assignment_count
+                                    , ( m.no_show_count
+                                      , ( m.participant_count
+                                        , ( m.closed_at
+                                          , ( m.canceled_at
+                                            , (m.created_at, m.updated_at) ) )
+                                        ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) )
   in
   let decode
     ( id
@@ -116,14 +124,16 @@ let t =
                   , ( max_participants
                     , ( min_participants
                       , ( overbook
-                        , ( reminder_lead_time
-                          , ( reminder_sent_at
-                            , ( assignment_count
-                              , ( no_show_count
-                                , ( participant_count
-                                  , ( closed_at
-                                    , (canceled_at, (created_at, updated_at)) )
-                                  ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) )
+                        , ( email_reminder_lead_time
+                          , ( email_reminder_sent_at
+                            , ( text_message_reminder_lead_time
+                              , ( text_message_reminder_sent_at
+                                , ( assignment_count
+                                  , ( no_show_count
+                                    , ( participant_count
+                                      , ( closed_at
+                                        , (canceled_at, (created_at, updated_at))
+                                        ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) )
     =
     Ok
       { id
@@ -137,8 +147,10 @@ let t =
       ; max_participants
       ; min_participants
       ; overbook
-      ; reminder_lead_time
-      ; reminder_sent_at
+      ; email_reminder_lead_time
+      ; email_reminder_sent_at
+      ; text_message_reminder_lead_time
+      ; text_message_reminder_sent_at
       ; assignment_count
       ; no_show_count
       ; participant_count
@@ -179,16 +191,23 @@ let t =
                                           (tup2
                                              (option RepoReminder.SentAt.t)
                                              (tup2
-                                                int
+                                                (option RepoReminder.LeadTime.t)
                                                 (tup2
-                                                   int
+                                                   (option
+                                                      RepoReminder.SentAt.t)
                                                    (tup2
                                                       int
                                                       (tup2
-                                                         (option ptime)
+                                                         int
                                                          (tup2
-                                                            (option ptime)
-                                                            (tup2 ptime ptime))))))))))))))))))))
+                                                            int
+                                                            (tup2
+                                                               (option ptime)
+                                                               (tup2
+                                                                  (option ptime)
+                                                                  (tup2
+                                                                     ptime
+                                                                     ptime))))))))))))))))))))))
 ;;
 
 module Write = struct
@@ -203,8 +222,10 @@ module Write = struct
     ; max_participants : Entity.ParticipantAmount.t
     ; min_participants : Entity.ParticipantAmount.t
     ; overbook : Entity.ParticipantAmount.t
-    ; reminder_lead_time : Reminder.LeadTime.t option
-    ; reminder_sent_at : Reminder.SentAt.t option
+    ; email_reminder_lead_time : Reminder.LeadTime.t option
+    ; email_reminder_sent_at : Reminder.SentAt.t option
+    ; text_message_reminder_lead_time : Reminder.LeadTime.t option
+    ; text_message_reminder_sent_at : Reminder.SentAt.t option
     ; closed_at : Ptime.t option
     ; canceled_at : Ptime.t option
     }
@@ -221,8 +242,10 @@ module Write = struct
        ; max_participants
        ; min_participants
        ; overbook
-       ; reminder_lead_time
-       ; reminder_sent_at
+       ; email_reminder_lead_time
+       ; email_reminder_sent_at
+       ; text_message_reminder_lead_time
+       ; text_message_reminder_sent_at
        ; closed_at
        ; canceled_at
        ; _
@@ -239,8 +262,10 @@ module Write = struct
     ; max_participants
     ; min_participants
     ; overbook
-    ; reminder_lead_time
-    ; reminder_sent_at
+    ; email_reminder_lead_time
+    ; email_reminder_sent_at
+    ; text_message_reminder_lead_time
+    ; text_message_reminder_sent_at
     ; closed_at
     ; canceled_at
     }
@@ -259,9 +284,12 @@ module Write = struct
                     , ( m.max_participants
                       , ( m.min_participants
                         , ( m.overbook
-                          , ( m.reminder_lead_time
-                            , (m.reminder_sent_at, (m.closed_at, m.canceled_at))
-                            ) ) ) ) ) ) ) ) ) ) )
+                          , ( m.email_reminder_lead_time
+                            , ( m.email_reminder_sent_at
+                              , ( m.text_message_reminder_lead_time
+                                , ( m.text_message_reminder_sent_at
+                                  , (m.closed_at, m.canceled_at) ) ) ) ) ) ) )
+                    ) ) ) ) ) ) )
     in
     let decode
       ( id
@@ -274,9 +302,12 @@ module Write = struct
                   , ( max_participants
                     , ( min_participants
                       , ( overbook
-                        , ( reminder_lead_time
-                          , (reminder_sent_at, (closed_at, canceled_at)) ) ) )
-                    ) ) ) ) ) ) ) )
+                        , ( email_reminder_lead_time
+                          , ( email_reminder_sent_at
+                            , ( text_message_reminder_lead_time
+                              , ( text_message_reminder_sent_at
+                                , (closed_at, canceled_at) ) ) ) ) ) ) ) ) ) )
+            ) ) ) )
       =
       Ok
         { id
@@ -289,8 +320,10 @@ module Write = struct
         ; max_participants
         ; min_participants
         ; overbook
-        ; reminder_lead_time
-        ; reminder_sent_at
+        ; email_reminder_lead_time
+        ; email_reminder_sent_at
+        ; text_message_reminder_lead_time
+        ; text_message_reminder_sent_at
         ; closed_at
         ; canceled_at
         }
@@ -326,7 +359,19 @@ module Write = struct
                                             (option
                                                Pool_common.Repo.Reminder.SentAt
                                                .t)
-                                            (tup2 (option ptime) (option ptime)))))))))))))))
+                                            (tup2
+                                               (option
+                                                  Pool_common.Repo.Reminder
+                                                  .LeadTime
+                                                  .t)
+                                               (tup2
+                                                  (option
+                                                     Pool_common.Repo.Reminder
+                                                     .SentAt
+                                                     .t)
+                                                  (tup2
+                                                     (option ptime)
+                                                     (option ptime)))))))))))))))))
   ;;
 end
 

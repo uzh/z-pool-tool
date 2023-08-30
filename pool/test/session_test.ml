@@ -119,7 +119,8 @@ module Data = struct
     ; show MaxParticipants, [ String.max_participants ]
     ; show MinParticipants, [ String.min_participants ]
     ; show Overbook, [ String.overbook ]
-    ; show LeadTime, [ String.lead_time ]
+    ; show EmailLeadTime, [ String.lead_time ]
+    ; show TextMessageLeadTime, [ String.lead_time ]
     ; show SentAt, [ String.sent_at ]
     ; show AssignmentCount, [ String.assignment_count ]
     ]
@@ -134,7 +135,7 @@ module Data = struct
     ; show MaxParticipants, [ max ]
     ; show MinParticipants, [ min ]
     ; show Overbook, [ overbook ]
-    ; show LeadTime, [ lead_time ]
+    ; show EmailLeadTime, [ lead_time ]
     ]
   ;;
 
@@ -201,7 +202,7 @@ let create_invalid_data () =
           ; MaxParticipants, NotANumber max
           ; MinParticipants, NotANumber min
           ; Overbook, NotANumber overbook
-          ; LeadTime, NegativeAmount
+          ; EmailLeadTime, NegativeAmount
           ]))
     res
 ;;
@@ -230,7 +231,13 @@ let create_no_optional () =
   let input =
     let open Data in
     delete_from_input
-      [ Description; Limitations; LeadTime; SentAt; AssignmentCount ]
+      [ Description
+      ; Limitations
+      ; EmailLeadTime
+      ; TextMessageLeadTime
+      ; SentAt
+      ; AssignmentCount
+      ]
   in
   let experiment_id = Experiment.Id.create () in
   let location = Location_test.create_location () in
@@ -250,6 +257,7 @@ let create_no_optional () =
       max_participants
       min_participants
       overbook
+      None
       None
   in
   check_result
@@ -278,6 +286,7 @@ let create_full () =
       max_participants
       min_participants
       overbook
+      (Some lead_time)
       (Some lead_time)
   in
   check_result
@@ -311,6 +320,7 @@ let create_min_eq_max () =
       max_participants2
       min_participants
       overbook
+      (Some lead_time)
       (Some lead_time)
   in
   check_result
@@ -358,7 +368,7 @@ let update_invalid_data () =
           ; MaxParticipants, NotANumber max
           ; MinParticipants, NotANumber min
           ; Overbook, NotANumber overbook
-          ; LeadTime, NegativeAmount
+          ; EmailLeadTime, NegativeAmount
           ]))
     res
 ;;
@@ -384,7 +394,13 @@ let update_no_optional () =
   let input =
     let open Data in
     delete_from_input
-      [ Description; Limitations; LeadTime; SentAt; AssignmentCount ]
+      [ Description
+      ; Limitations
+      ; EmailLeadTime
+      ; TextMessageLeadTime
+      ; SentAt
+      ; AssignmentCount
+      ]
   in
   let session = Model.create_session () in
   let location = Location_test.create_location () in
@@ -401,7 +417,8 @@ let update_no_optional () =
                  ; max_participants
                  ; min_participants
                  ; overbook
-                 ; reminder_lead_time = None
+                 ; email_reminder_lead_time = None
+                 ; text_message_reminder_lead_time = None
                  }
                , location
                , session )))
@@ -430,7 +447,8 @@ let update_full () =
                  ; max_participants
                  ; min_participants
                  ; overbook
-                 ; reminder_lead_time = Some lead_time
+                 ; email_reminder_lead_time = Some lead_time
+                 ; text_message_reminder_lead_time = Some lead_time
                  }
                , location
                , session )))
@@ -460,7 +478,8 @@ let update_min_eq_max () =
                  ; max_participants = max_participants2
                  ; min_participants
                  ; overbook
-                 ; reminder_lead_time = Some lead_time
+                 ; email_reminder_lead_time = Some lead_time
+                 ; text_message_reminder_lead_time = Some lead_time
                  }
                , location
                , session )))
@@ -1047,7 +1066,7 @@ let send_reminder () =
        (CCList.flat_map
           (fun (s, es) ->
             let es = es |> CCList.map (fun email -> email, smtp_auth_id) in
-            [ Pool_event.session (Session.ReminderSent s)
+            [ Pool_event.session (Session.EmailReminderSent s)
             ; Pool_event.email (Email.BulkSent es)
             ])
           [ session1, CCList.take 2 users; session2, CCList.drop 2 users ]))
@@ -1107,6 +1126,7 @@ let create_follow_up_later () =
       min_participants
       overbook
       (Some lead_time)
+      (Some lead_time)
   in
   check_result
     (Ok [ Pool_event.Session (Session.Created (session, experiment_id)) ])
@@ -1159,7 +1179,8 @@ let update_follow_up_later () =
                  ; max_participants
                  ; min_participants
                  ; overbook
-                 ; reminder_lead_time = Some lead_time
+                 ; email_reminder_lead_time = Some lead_time
+                 ; text_message_reminder_lead_time = Some lead_time
                  }
                , location
                , session )))
@@ -1260,7 +1281,8 @@ let update_follow_ups_later () =
                  ; max_participants
                  ; min_participants
                  ; overbook
-                 ; reminder_lead_time = Some lead_time
+                 ; email_reminder_lead_time = Some lead_time
+                 ; text_message_reminder_lead_time = Some lead_time
                  }
                , location
                , session )))
@@ -1295,7 +1317,8 @@ let update_follow_ups_later () =
                  ; max_participants
                  ; min_participants
                  ; overbook
-                 ; reminder_lead_time = Some lead_time
+                 ; email_reminder_lead_time = Some lead_time
+                 ; text_message_reminder_lead_time = Some lead_time
                  }
                , location
                , session )))
@@ -1359,6 +1382,101 @@ let reschedule_with_experiment_smtp () =
       ]
   in
   Test_utils.check_result expected events
+;;
+
+let resend_reminders_invalid () =
+  let open Cqrs_command.Session_command.ResendReminders in
+  let open Test_utils in
+  let experiment = Model.create_experiment () in
+  let assignments = [] in
+  let create_email _ = Ok (Model.create_email ()) in
+  let create_tet_message _ cell_phone =
+    Ok (Model.create_text_message cell_phone)
+  in
+  let channel = Pool_common.Reminder.Channel.Email in
+  let session = Model.create_session () in
+  let canceled_at = Ptime_clock.now () in
+  let session1 = Session.{ session with canceled_at = Some canceled_at } in
+  let closed_at = Ptime_clock.now () in
+  let session2 = Session.{ session with closed_at = Some closed_at } in
+  let handle session =
+    handle
+      create_email
+      create_tet_message
+      experiment
+      session
+      assignments
+      channel
+  in
+  let res1 = handle session1 in
+  let () =
+    check_result
+      (Error
+         Pool_common.(
+           Message.SessionAlreadyCanceled
+             (Pool_common.Utils.Time.formatted_date_time canceled_at)))
+      res1
+  in
+  let res2 = handle session2 in
+  let () =
+    check_result
+      (Error
+         Pool_common.(
+           Message.SessionAlreadyClosed
+             (Pool_common.Utils.Time.formatted_date_time closed_at)))
+      res2
+  in
+  ()
+;;
+
+let resend_reminders_valid () =
+  let open Cqrs_command.Session_command.ResendReminders in
+  let open Test_utils in
+  let open Pool_common.Reminder in
+  let experiment = Model.create_experiment () in
+  let session = Model.create_session () in
+  let cell_phone = Pool_user.CellPhone.of_string "+41791234567" in
+  let contact1 = Model.create_contact () in
+  let contact2 = Contact.{ (Model.create_contact ()) with cell_phone = None } in
+  let assignments =
+    [ contact1; contact2 ]
+    |> CCList.map (fun contact -> Model.create_assignment ~contact ())
+  in
+  let create_email _ = Ok (Model.create_email ()) in
+  let create_text_message _ cell_phone =
+    Ok (Model.create_text_message cell_phone)
+  in
+  let handle channel =
+    handle
+      create_email
+      create_text_message
+      experiment
+      session
+      assignments
+      channel
+  in
+  let res1 = handle Channel.Email in
+  let expected1 =
+    let emails =
+      assignments |> CCList.map (CCFun.const (Model.create_email (), None))
+    in
+    Ok
+      [ Session.EmailReminderSent session |> Pool_event.session
+      ; Email.BulkSent emails |> Pool_event.email
+      ]
+  in
+  let () = check_result expected1 res1 in
+  let res2 = handle Channel.TextMessage in
+  let expected2 =
+    Ok
+      [ Email.BulkSent [ Model.create_email (), None ] |> Pool_event.email
+      ; Text_message.BulkSent [ Model.create_text_message cell_phone ]
+        |> Pool_event.text_message
+      ; Session.TextMsgReminderSent session |> Pool_event.session
+      ]
+  in
+  let () = check_result expected2 res2 in
+  ()
 ;;
 
 let close_session_check_contact_figures _ () =

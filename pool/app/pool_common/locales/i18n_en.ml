@@ -83,6 +83,7 @@ let to_string = function
     Format.asprintf "Totally generated invitations: %d" number
   | ResetPasswordLink | ResetPasswordTitle -> "Reset password"
   | Reminder -> "Reminder"
+  | ResendReminders -> "Resend reminders"
   | RoleApplicableToAssign -> "Applicable users"
   | RoleCurrentlyAssigned -> "Currently assigned"
   | RoleCurrentlyNoneAssigned field ->
@@ -339,6 +340,13 @@ Make sure to show links and URLs as plain text.
   | RegistrationDisabled ->
     "If this option is activated, contacts can neither register nor join the \
      waiting list. The experiment is not visible to the contacts."
+  | ResendRemindersChannel ->
+    "If you choose to resend the reminders as text messages, contacts without \
+     a verified cell phone number will receive the reminder via email."
+  | ResendRemindersWarning ->
+    {sql|No automatic reminders have been sent for this session yet. Make sure that the message template is correct if you want to trigger the reminders now.
+
+If you trigger the reminders manually now, no more automatic reminders will be sent via the selected message channel.|sql}
   | RulesIntro ->
     {|All existing rules which are defined for actors of the tenant.
       When a new experiment is created, a default set of rules gets added.

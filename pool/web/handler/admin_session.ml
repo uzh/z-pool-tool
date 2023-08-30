@@ -79,8 +79,11 @@ let new_helper req page =
        in
        let%lwt locations = Pool_location.find_all database_label in
        let flash_fetcher = flip Sihl.Web.Flash.find req in
-       let%lwt default_reminder_lead_time =
+       let%lwt default_email_reminder_lead_time =
          Settings.find_default_reminder_lead_time database_label
+       in
+       let%lwt default_text_msg_reminder_lead_time =
+         Settings.find_default_text_msg_reminder_lead_time database_label
        in
        let html =
          match page with
@@ -90,7 +93,8 @@ let new_helper req page =
            Page.Admin.Session.follow_up
              context
              experiment
-             default_reminder_lead_time
+             default_email_reminder_lead_time
+             default_text_msg_reminder_lead_time
              duplicate_session
              parent_session
              locations
@@ -100,7 +104,8 @@ let new_helper req page =
            Page.Admin.Session.new_form
              context
              experiment
-             default_reminder_lead_time
+             default_email_reminder_lead_time
+             default_text_msg_reminder_lead_time
              duplicate_session
              locations
              flash_fetcher
@@ -202,8 +207,11 @@ let detail req page =
            (session_id |> Session.Id.to_common)
            Message_template.Label.SessionReminder
        in
-       let%lwt default_reminder_lead_time =
+       let%lwt default_email_reminder_lead_time =
          Settings.find_default_reminder_lead_time database_label
+       in
+       let%lwt default_text_msg_reminder_lead_time =
+         Settings.find_default_text_msg_reminder_lead_time database_label
        in
        let%lwt available_tags =
          Tags.ParticipationTags.(
@@ -221,7 +229,8 @@ let detail req page =
        Page.Admin.Session.edit
          context
          experiment
-         default_reminder_lead_time
+         default_email_reminder_lead_time
+         default_text_msg_reminder_lead_time
          session
          locations
          session_reminder_templates
@@ -711,6 +720,72 @@ let delete_message_template req =
     Helpers.MessageTemplates.delete database_label template_id redirect
   in
   result |> HttpUtils.extract_happy_path ~src req
+;;
+
+let resend_reminders req =
+  let experiment_id = experiment_id req in
+  let session_id = session_id req in
+  let path =
+    Format.asprintf
+      "/admin/experiments/%s/sessions/%s"
+      (Experiment.Id.value experiment_id)
+      (Session.Id.value session_id)
+  in
+  let result { Pool_context.database_label; _ } =
+    let open Utils.Lwt_result.Infix in
+    let tags = Pool_context.Logger.Tags.req req in
+    let%lwt urlencoded =
+      Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
+    in
+    Utils.Lwt_result.map_error (fun err ->
+      ( err
+      , Format.asprintf "%s/%s" path "create"
+      , [ HttpUtils.urlencoded_to_flash urlencoded ] ))
+    @@
+    let* experiment = Experiment.find database_label experiment_id in
+    let* session = Session.find database_label session_id in
+    let* assignments =
+      Assignment.find_uncanceled_by_session database_label session.Session.id
+    in
+    let tenant = Pool_context.Tenant.get_tenant_exn req in
+    let tenant_languages = Pool_context.Tenant.get_tenant_languages_exn req in
+    let%lwt email_reminders =
+      Message_template.SessionReminder.prepare_emails
+        database_label
+        tenant
+        tenant_languages
+        experiment
+        session
+    in
+    let%lwt text_message_reminders =
+      Message_template.SessionReminder.prepare_text_messages
+        database_label
+        tenant
+        tenant_languages
+        experiment
+        session
+    in
+    let* events =
+      let open CCResult.Infix in
+      let open Cqrs_command.Session_command.ResendReminders in
+      urlencoded
+      |> decode
+      >>= handle
+            ~tags
+            email_reminders
+            text_message_reminders
+            experiment
+            session
+            assignments
+      |> Lwt_result.lift
+    in
+    let%lwt () = Pool_event.handle_events ~tags database_label events in
+    Http_utils.redirect_to_with_actions
+      path
+      [ Message.set ~success:[ Pool_common.Message.RemindersResent ] ]
+    |> Lwt_result.ok
+  in
+  result |> HttpUtils.extract_happy_path_with_actions ~src req
 ;;
 
 module Api = struct

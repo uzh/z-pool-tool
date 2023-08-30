@@ -49,7 +49,8 @@ type base =
   ; max_participants : ParticipantAmount.t
   ; min_participants : ParticipantAmount.t
   ; overbook : ParticipantAmount.t
-  ; reminder_lead_time : Pool_common.Reminder.LeadTime.t option
+  ; email_reminder_lead_time : Pool_common.Reminder.LeadTime.t option
+  ; text_message_reminder_lead_time : Pool_common.Reminder.LeadTime.t option
   }
 
 type update =
@@ -60,7 +61,8 @@ type update =
   ; max_participants : ParticipantAmount.t
   ; min_participants : ParticipantAmount.t
   ; overbook : ParticipantAmount.t
-  ; reminder_lead_time : Pool_common.Reminder.LeadTime.t option
+  ; email_reminder_lead_time : Pool_common.Reminder.LeadTime.t option
+  ; text_message_reminder_lead_time : Pool_common.Reminder.LeadTime.t option
   }
 
 type reschedule =
@@ -115,8 +117,10 @@ type t =
   ; max_participants : ParticipantAmount.t
   ; min_participants : ParticipantAmount.t
   ; overbook : ParticipantAmount.t
-  ; reminder_lead_time : Pool_common.Reminder.LeadTime.t option
-  ; reminder_sent_at : Pool_common.Reminder.SentAt.t option
+  ; email_reminder_lead_time : Pool_common.Reminder.LeadTime.t option
+  ; email_reminder_sent_at : Pool_common.Reminder.SentAt.t option
+  ; text_message_reminder_lead_time : Pool_common.Reminder.LeadTime.t option
+  ; text_message_reminder_sent_at : Pool_common.Reminder.SentAt.t option
   ; assignment_count : AssignmentCount.t
   ; no_show_count : NoShowCount.t
   ; participant_count : ParticipantCount.t
@@ -140,6 +144,7 @@ val create
   -> ParticipantAmount.t
   -> ParticipantAmount.t
   -> Pool_common.Reminder.LeadTime.t option
+  -> Pool_common.Reminder.LeadTime.t option
   -> t
 
 val equal : t -> t -> bool
@@ -156,7 +161,8 @@ type event =
   | Closed of t
   | Deleted of t
   | Updated of (base * Pool_location.t * t)
-  | ReminderSent of t
+  | EmailReminderSent of t
+  | TextMsgReminderSent of t
   | Rescheduled of (t * reschedule)
 
 val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
@@ -229,6 +235,7 @@ val is_closable : t -> (unit, Pool_common.Message.error) result
 val is_deletable : t -> t list -> (unit, Pool_common.Message.error) result
 val assignments_cancelable : t -> (unit, Pool_common.Message.error) result
 val assignment_creatable : t -> (unit, Pool_common.Message.error) result
+val reminder_resendable : t -> (unit, Pool_common.Message.error) result
 
 val find
   :  Pool_database.Label.t
@@ -286,7 +293,7 @@ val find_experiment_id_and_title
 
 val find_sessions_to_remind
   :  Pool_database.Label.t
-  -> (t list, Pool_common.Message.error) Lwt_result.t
+  -> (t list * t list, Pool_common.Message.error) Lwt_result.t
 
 val find_follow_ups
   :  Pool_database.Label.t

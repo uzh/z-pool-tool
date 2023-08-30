@@ -393,6 +393,14 @@ let () =
             "reschedule with experiment smtp auth"
             `Quick
             Session_test.reschedule_with_experiment_smtp
+        ; test_case
+            "resend reminders invalid"
+            `Quick
+            Session_test.resend_reminders_invalid
+        ; test_case
+            "resend reminders valid"
+            `Quick
+            Session_test.resend_reminders_valid
         ] )
     ; ( "custom_field"
       , [ test_case "create custom field" `Quick Custom_field_test.create

@@ -6,6 +6,9 @@ let encode_key_value value =
    | DefaultReminderLeadTime v ->
      ( yojson_of_setting_key ReminderLeadTime
      , yojson_of_default_reminder_lead_time v )
+   | DefaultTextMsgReminderLeadTime v ->
+     ( yojson_of_setting_key TextMsgReminderLeadTime
+     , yojson_of_default_text_msg_reminder_lead_time v )
    | TenantLanguages v ->
      yojson_of_setting_key Languages, yojson_of_tenant_languages v
    | TenantEmailSuffixes v ->
@@ -39,6 +42,10 @@ let t =
       match key with
       | ReminderLeadTime ->
         value |> default_reminder_lead_time_of_yojson |> defaultreminderleadtime
+      | TextMsgReminderLeadTime ->
+        value
+        |> default_text_msg_reminder_lead_time_of_yojson
+        |> defaulttextmsgreminderleadtime
       | Languages -> value |> tenant_languages_of_yojson |> tenantlanguages
       | EmailSuffixes ->
         value |> tenant_email_suffixes_of_yojson |> tenantemailsuffixes

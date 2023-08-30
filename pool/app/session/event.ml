@@ -8,7 +8,8 @@ type base =
   ; max_participants : ParticipantAmount.t
   ; min_participants : ParticipantAmount.t
   ; overbook : ParticipantAmount.t
-  ; reminder_lead_time : Pool_common.Reminder.LeadTime.t option
+  ; email_reminder_lead_time : Pool_common.Reminder.LeadTime.t option
+  ; text_message_reminder_lead_time : Pool_common.Reminder.LeadTime.t option
   }
 [@@deriving eq, show]
 
@@ -20,7 +21,8 @@ type update =
   ; max_participants : ParticipantAmount.t
   ; min_participants : ParticipantAmount.t
   ; overbook : ParticipantAmount.t
-  ; reminder_lead_time : Pool_common.Reminder.LeadTime.t option
+  ; email_reminder_lead_time : Pool_common.Reminder.LeadTime.t option
+  ; text_message_reminder_lead_time : Pool_common.Reminder.LeadTime.t option
   }
 [@@deriving eq, show]
 
@@ -36,7 +38,8 @@ type event =
   | Closed of t
   | Deleted of t
   | Updated of (base * Pool_location.t * t)
-  | ReminderSent of t
+  | EmailReminderSent of t
+  | TextMsgReminderSent of t
   | Rescheduled of (t * reschedule)
 [@@deriving eq, show]
 
@@ -65,7 +68,8 @@ let handle_event pool =
         ; max_participants
         ; min_participants
         ; overbook
-        ; reminder_lead_time
+        ; email_reminder_lead_time
+        ; text_message_reminder_lead_time
         }
       , location
       , session ) ->
@@ -80,11 +84,18 @@ let handle_event pool =
       ; max_participants
       ; min_participants
       ; overbook
-      ; reminder_lead_time
+      ; email_reminder_lead_time
+      ; text_message_reminder_lead_time
       }
-  | ReminderSent session ->
+  | EmailReminderSent session ->
     { session with
-      reminder_sent_at = Some (Pool_common.Reminder.SentAt.create_now ())
+      email_reminder_sent_at = Some (Pool_common.Reminder.SentAt.create_now ())
+    }
+    |> Repo.update pool
+  | TextMsgReminderSent session ->
+    { session with
+      text_message_reminder_sent_at =
+        Some (Pool_common.Reminder.SentAt.create_now ())
     }
     |> Repo.update pool
   | Rescheduled (session, { start; duration }) ->
