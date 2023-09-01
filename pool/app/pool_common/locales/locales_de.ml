@@ -176,6 +176,7 @@ let rec field_to_string =
   | Reason -> "Grund"
   | Redirect -> "Weiterleitung"
   | RegistrationDisabled -> "Registrierung deaktiviert"
+  | Reminder -> "Erinnerung"
   | LastRemindedAt -> "Erinnert am"
   | ReminderCount -> "Anzahl Reminder"
   | RemindersSent -> "Gesendete reminders"
@@ -298,6 +299,8 @@ let success_to_string : success -> string = function
   | RoleUnassigned -> "Rolle wurde entzogen."
   | SentList field ->
     field_message "" (field_to_string field) "wurden erfolgreich verschickt."
+  | Sent field ->
+    field_message "" (field_to_string field) "wurde erfolgreich verschickt."
   | SettingsUpdated -> "Die Einstellungen wurden erfolgreich gespeichert."
   | SmtpConfigurationAdded ->
     "Die SMTP Konfiguration wurde erfolgreich hinzugefügt."

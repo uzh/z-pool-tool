@@ -1365,8 +1365,7 @@ let resend_reminders_invalid () =
   let session2 = Session.{ session with closed_at = Some closed_at } in
   let handle session =
     handle
-      create_email
-      create_tet_message
+      (create_email, create_tet_message)
       experiment
       session
       assignments
@@ -1412,8 +1411,7 @@ let resend_reminders_valid () =
   in
   let handle channel =
     handle
-      create_email
-      create_text_message
+      (create_email, create_text_message)
       experiment
       session
       assignments
@@ -1603,7 +1601,7 @@ let send_session_reminders_with_default_leat_time _ () =
     filter email_reminders, filter text_message_reminders
   in
   let%lwt res =
-    Reminder.create_reminder_events
+    Reminder.Service.create_reminder_events
       tenant
       email_reminders
       text_message_reminders

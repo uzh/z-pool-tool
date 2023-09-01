@@ -158,6 +158,7 @@ type success =
   | RoleAssigned
   | RoleUnassigned
   | SentList of Field.t
+  | Sent of Field.t
   | SettingsUpdated
   | SmtpConfigurationAdded
   | SmtpDetailsUpdated

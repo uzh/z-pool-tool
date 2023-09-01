@@ -174,6 +174,7 @@ let rec field_to_string =
   | Rate -> "rate limit"
   | Reason -> "reason"
   | Redirect -> "redirect"
+  | Reminder -> "reminder"
   | RegistrationDisabled -> "registration disabled"
   | LastRemindedAt -> "reminded at"
   | ReminderCount -> "nr of reminders"
@@ -297,6 +298,8 @@ let success_to_string : success -> string = function
   | RoleUnassigned -> "Role was unassigned."
   | SentList field ->
     field_message "" (field_to_string field) "were successfully sent."
+  | Sent field ->
+    field_message "" (field_to_string field) "was successfully sent."
   | SettingsUpdated -> "Settings were updated successfully."
   | SmtpConfigurationAdded -> "The SMTP configuration was added successfully."
   | SmtpDetailsUpdated -> "SMTP settings successfully updated."

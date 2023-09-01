@@ -627,9 +627,9 @@ module ResendReminders : sig
   val handle
     :  ?tags:Logs.Tag.set
     -> (Assignment.t -> (Sihl_email.t, Pool_common.Message.error) result)
-    -> (Assignment.t
-        -> Pool_user.CellPhone.t
-        -> (Text_message.t, Pool_common.Message.error) result)
+       * (Assignment.t
+          -> Pool_user.CellPhone.t
+          -> (Text_message.t, Pool_common.Message.error) result)
     -> Experiment.t
     -> Session.t
     -> Assignment.t list
@@ -647,8 +647,7 @@ end = struct
 
   let handle
     ?(tags = Logs.Tag.empty)
-    create_email
-    create_text_message
+    (create_email, create_text_message)
     experiment
     session
     assignments

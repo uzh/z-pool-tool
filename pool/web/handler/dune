@@ -16,6 +16,7 @@
   page
   pool_common
   queue
+  reminder
   schedule
   service
   sihl

@@ -349,3 +349,66 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 end
+
+module SendReminder : sig
+  include Common.CommandSig with type t = Pool_common.Reminder.Channel.t
+
+  val handle
+    :  ?tags:Logs.Tag.set
+    -> (Assignment.t -> (Sihl_email.t, Pool_common.Message.error) result)
+       * (Assignment.t
+          -> Pool_user.CellPhone.t
+          -> (Text_message.t, Pool_common.Message.error) result)
+    -> Experiment.t
+    -> Session.t
+    -> Assignment.t
+    -> t
+    -> (Pool_event.t list, Conformist.error_msg) result
+
+  val decode : Conformist.input -> (t, Conformist.error_msg) result
+  val effects : Experiment.Id.t -> Session.Id.t -> Guard.ValidationSet.t
+end = struct
+  type t = Pool_common.Reminder.Channel.t
+
+  let schema =
+    Conformist.(make Field.[ Pool_common.Reminder.Channel.schema () ] CCFun.id)
+  ;;
+
+  let handle
+    ?(tags = Logs.Tag.empty)
+    (create_email, create_text_message)
+    experiment
+    session
+    ({ Assignment.contact; _ } as assignment)
+    channel
+    =
+    Logs.info ~src (fun m -> m "Handle command ResendReminders" ~tags);
+    let open Pool_common.Reminder.Channel in
+    let open CCResult.Infix in
+    let create_email assignment =
+      assignment
+      |> create_email
+      >|= fun email -> email, experiment.Experiment.smtp_auth_id
+    in
+    let* () = Session.reminder_resendable session in
+    let* event =
+      match channel with
+      | Email -> assignment |> create_email >|= Email.sent >|= Pool_event.email
+      | TextMessage ->
+        (match contact.Contact.cell_phone with
+         | None -> Error Pool_common.Message.(Missing Field.CellPhone)
+         | Some cell_phone ->
+           create_text_message assignment cell_phone
+           >|= Text_message.sent
+           >|= Pool_event.text_message)
+    in
+    Ok [ event ]
+  ;;
+
+  let decode data =
+    Conformist.decode_and_validate schema data
+    |> CCResult.map_err Pool_common.Message.to_conformist_error
+  ;;
+
+  let effects = Session.Guard.Access.update
+end

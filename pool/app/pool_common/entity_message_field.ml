@@ -207,6 +207,7 @@ type t =
   | Rate [@name "rate"] [@printer go "rate"]
   | Reason [@name "reason"] [@printer go "reason"]
   | Redirect [@name "redirect"] [@printer go "redirect"]
+  | Reminder [@name "reminder"] [@printer go "reminder"]
   | RegistrationDisabled [@name "registration_disabled"]
       [@printer go "registration_disabled"]
   | ReminderCount [@name "reminder_count"] [@printer go "reminder_count"]

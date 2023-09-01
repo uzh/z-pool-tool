@@ -94,6 +94,59 @@ module Partials = struct
     |> txt
   ;;
 
+  module ReminderModal = struct
+    let modal_id id = Format.asprintf "%s-reminder" (Assignment.Id.value id)
+    let control = Pool_common.Message.(Send (Some Field.Reminder))
+    let title language = Pool_common.(Utils.control_to_string language control)
+
+    let modal
+      { Pool_context.language; csrf; _ }
+      experiment_id
+      session_id
+      { Assignment.id; contact; _ }
+      =
+      let open Pool_common.Reminder in
+      let action =
+        assignment_specific_path ~suffix:"remind" experiment_id session_id id
+      in
+      let available_channels =
+        let open Channel in
+        match contact.Contact.cell_phone with
+        | None -> CCList.remove ~eq:equal ~key:TextMessage all
+        | Some _ -> all
+      in
+      let html =
+        form
+          ~a:[ a_method `Post; a_action action; a_class [ "stack" ] ]
+          [ csrf_element csrf ()
+          ; selector
+              language
+              Field.MessageChannel
+              Channel.show
+              available_channels
+              None
+              ~option_formatter:(fun channel ->
+                Channel.show channel
+                |> CCString.replace ~sub:"_" ~by:" "
+                |> CCString.capitalize_ascii)
+              ()
+          ; submit_element language Pool_common.Message.(Send None) ()
+          ]
+      in
+      Component.Modal.create language title (modal_id id) html
+    ;;
+
+    let button { Pool_context.language; _ } { Assignment.id; _ } =
+      a
+        ~a:
+          [ a_href "#"
+          ; a_user_data "modal" (modal_id id)
+          ; a_class [ "has-icon"; "primary"; "btn"; "is-text" ]
+          ]
+        [ Component.Icon.(to_html Mail); txt (title language) ]
+    ;;
+  end
+
   let overview_list
     ?(access_contact_profiles = false)
     ?(view_contact_name = false)
@@ -101,7 +154,7 @@ module Partials = struct
     ?(view_contact_cellphone = false)
     ?(external_data_required = false)
     redirect
-    Pool_context.{ language; csrf; _ }
+    (Pool_context.{ language; csrf; _ } as context)
     experiment_id
     session
     assignments
@@ -115,6 +168,9 @@ module Partials = struct
     in
     let action { Assignment.id; _ } suffix =
       assignment_specific_path ~suffix experiment_id session.Session.id id
+    in
+    let create_reminder_modal =
+      Session.reminder_resendable session |> CCResult.is_ok
     in
     let button_form
       ?(style = `Primary)
@@ -225,10 +281,10 @@ module Partials = struct
         let right = [ Field.CanceledAt |> field_to_text; default ] in
         left @ checkboxes @ right
       in
-      let rows =
+      let rows, modals =
         let open CCFun in
-        CCList.map
-          (fun (assignment : Assignment.t) ->
+        CCList.fold_left
+          (fun (rows, modals) (assignment : Assignment.t) ->
             let base =
               CCList.map snd contact_information
               @ CCList.map snd external_data_field
@@ -245,6 +301,7 @@ module Partials = struct
             let buttons =
               [ true, edit
               ; access_contact_profiles, profile_link
+              ; create_reminder_modal, ReminderModal.button context
               ; cancelable assignment, cancel
               ; deletable assignment, mark_as_deleted
               ]
@@ -253,7 +310,19 @@ module Partials = struct
               |> Component.ButtonGroup.dropdown
               |> CCList.pure
             in
-            base @ buttons)
+            let modals =
+              match create_reminder_modal with
+              | true ->
+                ReminderModal.modal
+                  context
+                  experiment_id
+                  session.Session.id
+                  assignment
+                :: modals
+              | false -> modals
+            in
+            (base @ buttons) :: rows, modals)
+          ([], [])
           assignments
       in
       div
@@ -266,6 +335,7 @@ module Partials = struct
             ~align_last_end:true
             ~thead
             rows
+        ; div modals
         ]
   ;;
 

@@ -367,6 +367,7 @@ module Admin = struct
               ; post "/close" ~middlewares:[ Session.Access.close ] close_htmx
               ; get "/edit" ~middlewares:[ Access.update ] edit
               ; post "" ~middlewares:[ Access.update ] update
+              ; post "/remind" ~middlewares:[ Access.update ] remind
               ; post
                   "/mark-as-deleted"
                   ~middlewares:[ Access.mark_as_deleted ]
