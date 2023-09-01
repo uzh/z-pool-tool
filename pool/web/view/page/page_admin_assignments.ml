@@ -335,7 +335,7 @@ module Partials = struct
             ~align_last_end:true
             ~thead
             rows
-        ; div modals
+        ; div ~a:[ a_class [ "assignment-reminder-modals" ] ] modals
         ]
   ;;
 

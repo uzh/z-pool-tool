@@ -352,6 +352,7 @@ table.simple {
 }
 
 // Modal
-.modal-body {
-    min-width: 500px;
+.assignment-reminder-modals .modal-body {
+    width: 500px;
+    max-width: 100%;
 }
