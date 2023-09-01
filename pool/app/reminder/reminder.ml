@@ -67,6 +67,52 @@ let create_text_message_events data =
   :: session_events
 ;;
 
+let create_reminder_events
+  ({ Pool_tenant.database_label; _ } as tenant)
+  email_reminders
+  text_message_reminders
+  =
+  let open Utils.Lwt_result.Infix in
+  let%lwt sys_languages = Settings.find_languages database_label in
+  let* email_events =
+    Lwt_list.map_s
+      (fun session ->
+        Experiment.find_of_session
+          database_label
+          (Session.Id.to_common session.Session.id)
+        >>= fun experiment ->
+        create_reminder_emails
+          database_label
+          tenant
+          sys_languages
+          session
+          experiment
+        >|+ fun emails -> session, experiment, emails)
+      email_reminders
+    ||> CCResult.flatten_l
+    >|+ create_email_events
+  in
+  let* text_msg_events =
+    Lwt_list.map_s
+      (fun session ->
+        Experiment.find_of_session
+          database_label
+          (Session.Id.to_common session.Session.id)
+        >>= fun experiment ->
+        create_reminder_text_messages
+          database_label
+          tenant
+          sys_languages
+          session
+          experiment
+        >|+ fun emails -> session, emails)
+      text_message_reminders
+    ||> CCResult.flatten_l
+    >|+ create_text_message_events
+  in
+  Lwt_result.return (email_events @ text_msg_events)
+;;
+
 let send_tenant_reminder ({ Pool_tenant.database_label; _ } as tenant) =
   let open CCFun in
   let open Utils.Lwt_result.Infix in
@@ -74,46 +120,10 @@ let send_tenant_reminder ({ Pool_tenant.database_label; _ } as tenant) =
     let* email_reminders, text_message_reminders =
       Session.find_sessions_to_remind database_label
     in
-    let%lwt sys_languages = Settings.find_languages database_label in
-    let* email_events =
-      Lwt_list.map_s
-        (fun session ->
-          Experiment.find_of_session
-            database_label
-            (Session.Id.to_common session.Session.id)
-          >>= fun experiment ->
-          create_reminder_emails
-            database_label
-            tenant
-            sys_languages
-            session
-            experiment
-          >|+ fun emails -> session, experiment, emails)
-        email_reminders
-      ||> CCResult.flatten_l
-      >|+ create_email_events
+    let* events =
+      create_reminder_events tenant email_reminders text_message_reminders
     in
-    let* text_msg_events =
-      Lwt_list.map_s
-        (fun session ->
-          Experiment.find_of_session
-            database_label
-            (Session.Id.to_common session.Session.id)
-          >>= fun experiment ->
-          create_reminder_text_messages
-            database_label
-            tenant
-            sys_languages
-            session
-            experiment
-          >|+ fun emails -> session, emails)
-        text_message_reminders
-      ||> CCResult.flatten_l
-      >|+ create_text_message_events
-    in
-    let%lwt () =
-      Pool_event.handle_events database_label (email_events @ text_msg_events)
-    in
+    let%lwt () = Pool_event.handle_events database_label events in
     Lwt_result.return (email_reminders, text_message_reminders)
   in
   ()

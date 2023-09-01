@@ -124,7 +124,9 @@ module PendingWaitingLists = struct
     let%lwt session =
       Integration_utils.SessionRepo.create ~id:session_id experiment_id ()
     in
-    let%lwt () = Integration_utils.AssignmentRepo.create session contact in
+    let%lwt (_ : Assignment.t) =
+      Integration_utils.AssignmentRepo.create session contact
+    in
     let%lwt res =
       let open CCFun in
       Experiment.find_pending_waitinglists_by_contact

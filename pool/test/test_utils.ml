@@ -192,9 +192,21 @@ module Model = struct
         })
   ;;
 
-  let create_experiment ?(id = Experiment.Id.create ()) ?filter () =
+  let create_experiment
+    ?(id = Experiment.Id.create ())
+    ?email_session_reminder_lead_time_hours
+    ?filter
+    ()
+    =
     let show_error err = Pool_common.(Utils.error_to_string Language.En err) in
     let open CCResult in
+    let email_session_reminder_lead_time =
+      CCOption.bind email_session_reminder_lead_time_hours (fun h ->
+        Ptime.Span.of_int_s @@ (h * 60 * 60)
+        |> Pool_common.Reminder.LeadTime.create
+        |> map_err show_error
+        |> to_opt)
+    in
     Experiment.
       { id
       ; title =
@@ -213,11 +225,7 @@ module Model = struct
       ; filter
       ; contact_person_id = None
       ; smtp_auth_id = None
-      ; email_session_reminder_lead_time =
-          Ptime.Span.of_int_s @@ (60 * 60)
-          |> Pool_common.Reminder.LeadTime.create
-          |> map_err show_error
-          |> to_opt
+      ; email_session_reminder_lead_time
       ; text_message_session_reminder_lead_time = None
       ; direct_registration_disabled =
           false |> DirectRegistrationDisabled.create
@@ -339,6 +347,7 @@ module Model = struct
     ?(location = create_location ())
     ?follow_up_to
     ?start
+    ?email_reminder_sent_at
     ()
     =
     let open Session in
@@ -357,7 +366,7 @@ module Model = struct
         ParticipantAmount.create 1 |> get_or_failwith_pool_error
     ; overbook = ParticipantAmount.create 4 |> get_or_failwith_pool_error
     ; email_reminder_lead_time = None
-    ; email_reminder_sent_at = None
+    ; email_reminder_sent_at
     ; text_message_reminder_lead_time = None
     ; text_message_reminder_sent_at = None
     ; assignment_count =

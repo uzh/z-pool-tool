@@ -191,7 +191,7 @@ module Partials = struct
         Component.Icon.Trash
     in
     match CCList.is_empty assignments with
-    | true -> p [ language |> empty ]
+    | true -> p [ empty language ]
     | false ->
       let add_field_if check values = if check then values else [] in
       let contact_information =
