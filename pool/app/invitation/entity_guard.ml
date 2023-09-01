@@ -19,18 +19,24 @@ module Access = struct
   open Guard
   open ValidationSet
   open Permission
-  open TargetEntity
 
   let invitation action uuid =
-    One (action, uuid |> Uuid.target_of Pool_common.Id.value |> id)
+    one_of_tuple
+      (action, `Invitation, Some (uuid |> Uuid.target_of Pool_common.Id.value))
   ;;
 
   let index id =
-    And [ One (Read, Model `Invitation); Experiment.Guard.Access.read id ]
+    And
+      [ one_of_tuple (Read, `Invitation, None)
+      ; Experiment.Guard.Access.read id
+      ]
   ;;
 
   let create id =
-    And [ One (Create, Model `Invitation); Experiment.Guard.Access.update id ]
+    And
+      [ one_of_tuple (Create, `Invitation, None)
+      ; Experiment.Guard.Access.update id
+      ]
   ;;
 
   let read experiment_id invitation_id =

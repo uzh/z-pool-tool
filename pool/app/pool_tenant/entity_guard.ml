@@ -34,12 +34,11 @@ module Access = struct
   open Permission
 
   let tenant action id =
-    let target_id = id |> Uuid.target_of Entity.Id.value in
-    One (action, TargetEntity.Id target_id)
+    one_of_tuple (action, `Tenant, Some (id |> Uuid.target_of Entity.Id.value))
   ;;
 
-  let index = One (Read, TargetEntity.Model `Tenant)
-  let create = One (Create, TargetEntity.Model `Tenant)
+  let index = one_of_tuple (Read, `Tenant, None)
+  let create = one_of_tuple (Create, `Tenant, None)
   let read = tenant Read
   let update = tenant Update
   let delete = tenant Delete

@@ -37,16 +37,16 @@ module Access = struct
   open Guard
   open ValidationSet
   open Permission
-  open TargetEntity
 
   let contact action uuid =
-    One (action, uuid |> Uuid.target_of Pool_common.Id.value |> id)
+    one_of_tuple
+      (action, `Contact, Some (uuid |> Uuid.target_of Pool_common.Id.value))
   ;;
 
-  let index = One (Read, Model `Contact)
-  let create = One (Create, Model `Contact)
+  let index = one_of_tuple (Read, `Contact, None)
+  let create = one_of_tuple (Create, `Contact, None)
   let read = contact Read
   let update = contact Update
-  let read_name = Or [ index; One (Read, Model `ContactName) ]
-  let read_info = Or [ index; One (Read, Model `ContactInfo) ]
+  let read_name = Or [ index; one_of_tuple (Read, `ContactName, None) ]
+  let read_info = Or [ index; one_of_tuple (Read, `ContactInfo, None) ]
 end

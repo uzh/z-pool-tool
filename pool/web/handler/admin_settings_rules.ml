@@ -38,7 +38,9 @@ let delete req =
         (try read rule with
          | _ -> Error "Undefined Yojson for rule.")
     in
-    let events = Cqrs_command.Guardian_command.DeleteRule.handle ~tags in
+    let events =
+      Cqrs_command.Guardian_command.DeleteRolePermission.handle ~tags
+    in
     let handle = function
       | Ok events ->
         let%lwt () =
@@ -61,11 +63,11 @@ module Access : module type of Helpers.Access = struct
   include Helpers.Access
 
   let index =
-    Guard.Access.manage_rules |> Middleware.Guardian.validate_admin_entity
+    Guard.Access.manage_permission |> Middleware.Guardian.validate_admin_entity
   ;;
 
   let delete =
-    Cqrs_command.Guardian_command.DeleteRule.effects
+    Cqrs_command.Guardian_command.DeleteRolePermission.effects
     |> Middleware.Guardian.validate_admin_entity
   ;;
 end

@@ -8,14 +8,11 @@ module Experiment = Navigation_experiment
 
 module Tenant = struct
   let create
-    children
-    Pool_context.Tenant.{ tenant_languages; tenant }
     ?active_navigation
-    ?message
-    ?query_language
-    database_label
-    active_language
-    user
+    ({ Pool_context.database_label; language; query_language; message; user; _ }
+     as context)
+    Pool_context.Tenant.{ tenant_languages; tenant }
+    children
     =
     let open Pool_context in
     let open Pool_tenant in
@@ -32,7 +29,7 @@ module Tenant = struct
       (if user_is_admin user then [ `IndexJs; `AdminJs ] else [ `IndexJs ])
       |> CCList.map js_script_tag
     in
-    let message = Message.create message active_language () in
+    let message = Message.create message language () in
     let htmx_notification =
       div ~a:[ a_id Http_utils.Htmx.notification_id ] []
     in
@@ -46,18 +43,11 @@ module Tenant = struct
     in
     let%lwt children =
       let title = App.create_title query_language title_text in
-      Navigation.create
-        ?active_navigation
-        database_label
-        title
-        tenant_languages
-        query_language
-        active_language
-        user
+      Navigation.create ?active_navigation context title tenant_languages
     in
     let%lwt footer =
       let%lwt privacy_policy_is_set =
-        I18n.(i18n_is_set database_label active_language Key.PrivacyPolicy)
+        I18n.i18n_is_set database_label language I18n.Key.PrivacyPolicy
       in
       let open Pool_common in
       let externalize path =
@@ -73,7 +63,7 @@ module Tenant = struct
         let base =
           [ a
               ~a:[ a_href (externalize "/credits") ]
-              [ txt (Utils.nav_link_to_string active_language I18n.Credits) ]
+              [ txt (Utils.nav_link_to_string language I18n.Credits) ]
           ]
         in
         let nav_links =
@@ -82,11 +72,7 @@ module Tenant = struct
             base
             @ [ a
                   ~a:[ a_href (externalize "/privacy-policy") ]
-                  [ txt
-                      (Utils.nav_link_to_string
-                         active_language
-                         I18n.PrivacyPolicy)
-                  ]
+                  [ txt (Utils.nav_link_to_string language I18n.PrivacyPolicy) ]
               ]
           else base
         in
@@ -125,7 +111,8 @@ module Tenant = struct
 end
 
 module Root = struct
-  let create ?active_navigation ?message database_label user content =
+  let create ?active_navigation ({ Pool_context.message; _ } as context) content
+    =
     let open Layout_utils in
     let language = Language.En in
     let title_text = App.app_name in
@@ -135,12 +122,9 @@ module Root = struct
       let title = App.create_title None title_text in
       Navigation.create_root
         ?active_navigation
-        database_label
+        Pool_context.{ context with language }
         title
         []
-        None
-        language
-        user
     in
     html
       (head

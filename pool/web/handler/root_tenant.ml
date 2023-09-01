@@ -190,12 +190,11 @@ end = struct
   let read_operator = Admin.Guard.Access.index |> Guardian.validate_admin_entity
 
   let create_operator =
-    Guard.(
-      ValidationSet.(
-        And
-          [ One (Permission.Manage, TargetEntity.Model `Admin)
-          ; One (Permission.Manage, TargetEntity.Model `Role)
-          ]))
+    let open Guard in
+    let open ValidationSet in
+    [ Permission.Manage, `Admin, None; Permission.Manage, `Role, None ]
+    |> CCList.map one_of_tuple
+    |> and_
     |> Middleware.Guardian.validate_admin_entity
   ;;
 end

@@ -42,10 +42,11 @@ let contact_person_roles experiment_id =
 let validation_set =
   let open Guard in
   let open ValidationSet in
-  let base = [ One (Permission.Update, TargetEntity.Model `Experiment) ] in
+  let base = [ Permission.Update, `Experiment, None ] in
   CCOption.map_or ~default:base (fun exp_id ->
     let id = Uuid.target_of Experiment.Id.value exp_id in
-    base @ [ One (Permission.Update, TargetEntity.Id id) ])
+    base @ [ Permission.Update, `Experiment, Some id ])
+  %> CCList.map one_of_tuple
   %> or_
 ;;
 

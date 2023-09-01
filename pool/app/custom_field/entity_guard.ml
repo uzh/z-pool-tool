@@ -39,24 +39,27 @@ module Access = struct
   open Guard
   open ValidationSet
   open Permission
-  open TargetEntity
 
   let custom_field action uuid =
-    One (action, uuid |> Uuid.target_of Entity.Id.value |> id)
+    one_of_tuple
+      (action, `CustomField, Some (uuid |> Uuid.target_of Entity.Id.value))
   ;;
 
-  let index = One (Read, Model `CustomField)
-  let create = One (Create, Model `CustomField)
+  let index = one_of_tuple (Read, `CustomField, None)
+  let create = one_of_tuple (Create, `CustomField, None)
   let update = custom_field Update
   let delete = custom_field Delete
 
   module Group = struct
     let group action uuid =
-      One (action, uuid |> Uuid.target_of Entity.Group.Id.value |> id)
+      one_of_tuple
+        ( action
+        , `CustomFieldGroup
+        , Some (uuid |> Uuid.target_of Entity.Group.Id.value) )
     ;;
 
-    let index = One (Read, Model `CustomFieldGroup)
-    let create = One (Create, Model `CustomFieldGroup)
+    let index = one_of_tuple (Read, `CustomFieldGroup, None)
+    let create = one_of_tuple (Create, `CustomFieldGroup, None)
     let update = group Update
     let delete = group Delete
   end

@@ -19,7 +19,7 @@ module Access = struct
   open ValidationSet
   open Permission
 
-  let setting action = One (action, TargetEntity.Model `SystemSetting)
+  let setting action = one_of_tuple (action, `SystemSetting, None)
   let index = setting Read
   let create = setting Create
   let read = setting Read

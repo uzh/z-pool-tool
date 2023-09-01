@@ -3,7 +3,7 @@ open Tyxml.Html
 module Field = Pool_common.Message.Field
 
 let read_entity entity =
-  Guard.(ValidationSet.One (Permission.Read, TargetEntity.Model entity))
+  Guard.(ValidationSet.one_of_tuple (Permission.Read, entity, None))
 ;;
 
 type title =
@@ -31,12 +31,11 @@ let nav_elements { Experiment.id; direct_registration_disabled; _ } =
       And
         [ Experiment.Guard.Access.update id
         ; Or
-            TargetEntity.
-              [ One (Create, Model role)
-              ; One (Read, Model role)
-              ; One (Update, Model role)
-              ; One (Delete, Model role)
-              ]
+            [ one_of_tuple (Create, role, None)
+            ; read_entity role
+            ; one_of_tuple (Update, role, None)
+            ; one_of_tuple (Delete, role, None)
+            ]
         ]
     in
     [ "", Overview, Experiment.Guard.Access.read id
@@ -108,20 +107,19 @@ let create
   ?active_navigation
   ?buttons
   ?hint
-  { Pool_context.database_label; language; user; _ }
+  { Pool_context.database_label; language; user; guardian; _ }
   title
   experiment
   content
   =
-  let open Utils.Lwt_result.Infix in
   let%lwt actor =
     Pool_context.Utils.find_authorizable_opt database_label user
   in
   let html = combine ?buttons ?hint language title content in
-  let%lwt subpage =
+  let subpage =
     nav_elements experiment
-    |> Navigation_utils.filter_items ~validate:true ?actor database_label
-    ||> CCFun.flip (Navigation_tab.create ?active_navigation language) html
+    |> Navigation_utils.filter_items ~validate:true ?actor ~guardian
+    |> CCFun.flip (Navigation_tab.create ?active_navigation language) html
   in
   with_heading experiment subpage |> Lwt.return
 ;;

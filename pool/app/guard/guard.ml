@@ -109,7 +109,7 @@ let actor_to_model_permission pool permission model actor =
   Persistence.ActorRole.permissions_of_actor
     ~ctx:(Pool_database.to_ctx pool)
     actor.Actor.uuid
-  ||> Persistence.permission_of_model permission model
+  ||> PermissionOnTarget.permission_of_model permission model
 ;;
 
 let sql_where_fragment ?(field = "uuid") pool permission model actor =
@@ -122,7 +122,7 @@ let sql_where_fragment ?(field = "uuid") pool permission model actor =
   | false, ids ->
     ids
     |> CCList.map
-         (Uuid.Target.to_string %> Format.asprintf "guardianEncode('%s')")
+         (Uuid.Target.to_string %> Format.asprintf "guardianEncodeUuid('%s')")
     |> CCString.concat ", "
     |> Format.asprintf {sql| %s IN (%s) |sql} field
     |> CCOption.return
@@ -131,15 +131,11 @@ let sql_where_fragment ?(field = "uuid") pool permission model actor =
 module Access = struct
   open ValidationSet
   open Permission
-  open TargetEntity
 
-  let create_role = One (Create, Model `Role)
-  let read_role = One (Read, Model `Role)
-  let update_role = One (Update, Model `Role)
-  let delete_role = One (Delete, Model `Role)
-  let manage_role = One (Manage, Model `Role)
-
-  let manage_rules =
-    ValidationSet.One (Permission.Manage, TargetEntity.Model `Permission)
-  ;;
+  let create_role = one_of_tuple (Create, `Role, None)
+  let read_role = one_of_tuple (Read, `Role, None)
+  let update_role = one_of_tuple (Update, `Role, None)
+  let delete_role = one_of_tuple (Delete, `Role, None)
+  let manage_role = one_of_tuple (Manage, `Role, None)
+  let manage_permission = one_of_tuple (Manage, `Permission, None)
 end

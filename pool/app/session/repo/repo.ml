@@ -649,7 +649,7 @@ module Sql = struct
     let open Caqti_request.Infix in
     let%lwt guardian =
       Guard.sql_where_fragment
-        ~field:"pool_experiments"
+        ~field:"pool_experiments.uuid"
         pool
         Guard.Permission.Read
         `Experiment

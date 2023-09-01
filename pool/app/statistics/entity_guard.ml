@@ -2,5 +2,5 @@ module Access = struct
   open Guard
   open ValidationSet
 
-  let read = One (Permission.Read, TargetEntity.Model `Statistics)
+  let read = one_of_tuple (Permission.Read, `Statistics, None)
 end

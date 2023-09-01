@@ -19,7 +19,7 @@ end = struct
     ValidationSet.(
       And
         [ Pool_tenant.Guard.Access.update id
-        ; One (Permission.Manage, TargetEntity.Model `System)
+        ; one_of_tuple (Permission.Manage, `System, None)
         ])
   ;;
 end

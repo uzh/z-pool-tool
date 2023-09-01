@@ -166,10 +166,7 @@ module Sql = struct
         Lwt.return_some "FALSE"
       | None, None -> Lwt.return_none
     in
-    let where =
-      guardian
-      |> CCOption.map (fun m -> Format.asprintf " AND %s " m, Dynparam.empty)
-    in
+    let where = guardian |> CCOption.map (fun m -> m, Dynparam.empty) in
     Query.collect_and_count
       pool
       query

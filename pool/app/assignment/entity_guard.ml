@@ -18,16 +18,23 @@ module Access = struct
   open Guard
   open ValidationSet
   open Permission
-  open TargetEntity
 
-  let assignment action uuid = One (action, uuid |> target_of |> id)
+  let assignment action uuid =
+    one_of_tuple (action, `Assignment, Some (uuid |> target_of))
+  ;;
 
   let index id =
-    And [ One (Read, Model `Assignment); Experiment.Guard.Access.read id ]
+    And
+      [ one_of_tuple (Read, `Assignment, None)
+      ; Experiment.Guard.Access.read id
+      ]
   ;;
 
   let create id =
-    And [ One (Create, Model `Assignment); Experiment.Guard.Access.read id ]
+    And
+      [ one_of_tuple (Create, `Assignment, None)
+      ; Experiment.Guard.Access.read id
+      ]
   ;;
 
   let read experiment_id assignment_id =

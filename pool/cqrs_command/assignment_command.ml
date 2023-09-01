@@ -32,9 +32,8 @@ let decode_update data =
 
 let assignment_effect action uuid =
   let open Guard in
-  let open TargetEntity in
-  ValidationSet.One
-    (action, uuid |> Guard.Uuid.target_of Assignment.Id.value |> id)
+  let target_id = uuid |> Guard.Uuid.target_of Assignment.Id.value in
+  ValidationSet.one_of_tuple (action, `Assignment, Some target_id)
 ;;
 
 let assignment_creation_and_confirmation_events

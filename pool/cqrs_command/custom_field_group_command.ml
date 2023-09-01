@@ -7,7 +7,7 @@ type name_command = (Pool_common.Language.t * string) list
 let custom_field_group_effect action id =
   let open Guard in
   let target_id = id |> Guard.Uuid.target_of Custom_field.Group.Id.value in
-  ValidationSet.One (action, TargetEntity.Id target_id)
+  ValidationSet.one_of_tuple (action, `CustomFieldGroup, Some target_id)
 ;;
 
 module Create : sig

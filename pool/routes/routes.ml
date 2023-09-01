@@ -6,7 +6,7 @@ let session_expiration = `Max_age (60 * 60 * 4 |> CCInt64.of_int)
 
 let validate_entity action entity =
   CustomMiddleware.Guardian.validate_admin_entity
-    Guard.(ValidationSet.One (action, TargetEntity.Model entity))
+    Guard.(ValidationSet.one_of_tuple (action, entity, None))
 ;;
 
 let add_key ?(prefix = "") ?(suffix = "") field =

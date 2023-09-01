@@ -109,14 +109,7 @@ let denied req =
   let open Common in
   match req |> Pool_context.find with
   | Error (_ : Message.error) -> Utils.failwith Message.(NotFound Field.Context)
-  | Ok
-      ({ Pool_context.database_label
-       ; language
-       ; query_language
-       ; message
-       ; user
-       ; _
-       } as context) ->
+  | Ok ({ Pool_context.database_label; language; _ } as context) ->
     let tenant = Pool_context.Tenant.find req in
     let html =
       Page.Utils.error_page_terminatory
@@ -126,17 +119,15 @@ let denied req =
         ()
     in
     (match Pool_context.is_from_root context, tenant with
-     | false, Ok tenant ->
-       Layout.Tenant.create
-         html
-         tenant
-         ?message
-         ?query_language
-         database_label
-         language
-         user
+     | false, Ok tenant -> Layout.Tenant.create context tenant html
      | false, Error _ | true, Ok _ | true, Error _ ->
-       Layout.Root.create database_label Pool_context.Guest html)
+       let context =
+         let open Pool_context in
+         let csrf = Sihl.Web.Csrf.find_exn req in
+         create
+           (None, Pool_common.Language.En, database_label, None, csrf, Guest, [])
+       in
+       Layout.Root.create context html)
     ||> Sihl.Web.Response.of_html
 ;;
 

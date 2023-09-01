@@ -38,25 +38,28 @@ module Access = struct
   open Guard
   open ValidationSet
   open Permission
-  open TargetEntity
 
   let location action uuid =
-    One (action, uuid |> Uuid.target_of Entity.Id.value |> id)
+    one_of_tuple
+      (action, `Location, Some (uuid |> Uuid.target_of Entity.Id.value))
   ;;
 
-  let index = One (Read, Model `Location)
-  let create = One (Create, Model `Location)
+  let index = one_of_tuple (Read, `Location, None)
+  let create = one_of_tuple (Create, `Location, None)
   let read = location Read
   let update = location Update
   let delete = location Delete
 
   module File = struct
     let file action uuid =
-      One (action, uuid |> Uuid.target_of Entity.Mapping.Id.value |> id)
+      one_of_tuple
+        ( action
+        , `LocationFile
+        , Some (uuid |> Uuid.target_of Entity.Mapping.Id.value) )
     ;;
 
-    let index = One (Read, Model `LocationFile)
-    let create = One (Create, Model `LocationFile)
+    let index = one_of_tuple (Read, `LocationFile, None)
+    let create = one_of_tuple (Create, `LocationFile, None)
     let read = file Read
     let update = file Update
     let delete = file Delete

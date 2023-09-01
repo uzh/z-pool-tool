@@ -26,9 +26,9 @@ type t =
   ; message : Pool_common.Message.Collection.t option
   ; csrf : string
   ; user : user
+  ; guardian : Guard.PermissionOnTarget.t list
   }
 
-(* val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t *)
 val show : t -> string
 val pp : Format.formatter -> t -> unit
 val find : Rock.Request.t -> (t, Pool_common.Message.error) result
@@ -45,6 +45,7 @@ val create
      * Pool_common.Message.Collection.t option
      * string
      * user
+     * Guard.PermissionOnTarget.t list
   -> t
 
 module Tenant : sig

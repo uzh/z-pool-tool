@@ -87,7 +87,7 @@ let operator_works _ () =
       ||> CCFun.tap (fun _ -> Persistence.Cache.clear ())
     in
     let effects =
-      ValidationSet.One (Permission.Manage, TargetEntity.Model `Contact)
+      ValidationSet.one_of_tuple (Permission.Manage, `Contact, None)
     in
     let* () =
       Persistence.validate Test_utils.Data.database_label effects actor

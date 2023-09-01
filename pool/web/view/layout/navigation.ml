@@ -5,7 +5,7 @@ open Entity
 
 module NavElements = struct
   let read_entity entity =
-    Guard.(ValidationSet.One (Permission.Read, TargetEntity.Model entity))
+    Guard.(ValidationSet.one_of_tuple (Permission.Read, entity, None))
   ;;
 
   module Profile = struct
@@ -43,12 +43,12 @@ module NavElements = struct
     ;;
   end
 
-  let guest ?(root = false) =
+  let guest ?(root = false) context =
     let prefix = if root then Some "root" else None in
-    [ NavElement.login ?prefix () ] |> NavUtils.with_language_switch
+    [ NavElement.login ?prefix () ] |> NavUtils.with_language_switch context
   ;;
 
-  let contact =
+  let contact context =
     let open I18n in
     let links =
       [ "/experiments", Experiments, None, []
@@ -56,10 +56,10 @@ module NavElements = struct
       ]
       |> NavElement.create_all
     in
-    links @ [ NavElement.logout () ] |> NavUtils.with_language_switch
+    links @ [ NavElement.logout () ] |> NavUtils.with_language_switch context
   ;;
 
-  let admin =
+  let admin context =
     let open I18n in
     let settings =
       [ "/admin/custom-fields", CustomFields, Custom_field.Guard.Access.index
@@ -69,7 +69,7 @@ module NavElements = struct
       ; "/admin/settings", SystemSettings, Settings.Guard.Access.index
       ; "/admin/settings/schedules", Schedules, Schedule.Guard.Access.index
       ; "/admin/settings/smtp", Smtp, Email.Guard.Access.Smtp.index
-      ; "/admin/settings/rules", Rules, Guard.Access.manage_rules
+      ; "/admin/settings/rules", Rules, Guard.Access.manage_permission
       ; "/admin/settings/tags", Tags, Tags.Guard.Access.index
       ; ( "/admin/message-template"
         , MessageTemplates
@@ -117,10 +117,10 @@ module NavElements = struct
     ; Profile.nav ~prefix:"/admin" ()
     ; NavElement.logout ()
     ]
-    |> NavUtils.create_main ~validate:true
+    |> NavUtils.create_main ~validate:true context
   ;;
 
-  let root =
+  let root context =
     let open I18n in
     let tenants =
       NavElement.create
@@ -145,30 +145,30 @@ module NavElements = struct
     ; Profile.nav ~prefix:"/root" ()
     ; NavElement.logout ~prefix:"/root" ()
     ]
-    |> NavUtils.create_main ~validate:true
+    |> NavUtils.create_main ~validate:true context
   ;;
 
-  let find_tenant_nav_links languages = function
-    | Pool_context.Guest -> guest languages
-    | Pool_context.Contact _ -> contact languages
-    | Pool_context.Admin _ -> admin
+  let find_tenant_nav_links ({ Pool_context.user; _ } as context) languages =
+    match user with
+    | Pool_context.Guest -> guest context languages
+    | Pool_context.Contact _ -> contact context languages
+    | Pool_context.Admin _ -> admin context
   ;;
 
-  let find_root_nav_links languages = function
-    | Pool_context.Guest | Pool_context.Contact _ -> guest ~root:true languages
-    | Pool_context.Admin _ -> root
+  let find_root_nav_links ({ Pool_context.user; _ } as context) languages =
+    match user with
+    | Pool_context.Guest | Pool_context.Contact _ ->
+      guest ~root:true context languages
+    | Pool_context.Admin _ -> root context
   ;;
 end
 
 let create
   ?(kind : [ `Tenant | `Root ] = `Tenant)
   ?active_navigation
-  database_label
+  ({ Pool_context.database_label; user; _ } as context)
   title
   tenant_languages
-  query_language
-  active_lang
-  user
   =
   let%lwt actor =
     Pool_context.Utils.find_authorizable_opt database_label user
@@ -177,13 +177,10 @@ let create
     (match kind with
      | `Tenant -> NavElements.find_tenant_nav_links
      | `Root -> NavElements.find_root_nav_links)
+      context
       tenant_languages
-      user
       ?actor
       ?active_navigation
-      database_label
-      active_lang
-      query_language
   in
   let%lwt desktop = NavUtils.create_desktop nav_links in
   let%lwt mobile = NavUtils.create_mobile title nav_links in

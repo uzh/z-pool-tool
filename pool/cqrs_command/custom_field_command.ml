@@ -5,7 +5,7 @@ let src = Logs.Src.create "custom_field.cqrs"
 let custom_field_effect action id =
   let open Guard in
   let target_id = id |> Guard.Uuid.target_of Custom_field.Id.value in
-  ValidationSet.One (action, TargetEntity.Id target_id)
+  ValidationSet.one_of_tuple (action, `CustomField, Some target_id)
 ;;
 
 type command =

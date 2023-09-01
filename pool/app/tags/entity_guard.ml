@@ -22,12 +22,12 @@ module Access = struct
 
   let tag action id =
     let target_id = id |> Uuid.target_of Entity.Id.value in
-    One (action, TargetEntity.Id target_id)
+    one_of_tuple (action, `Tag, Some target_id)
   ;;
 
-  let index = One (Update, TargetEntity.Model `Tag)
-  let create = One (Create, TargetEntity.Model `Tag)
-  let read_entity = One (Read, TargetEntity.Model `Tag)
+  let index = one_of_tuple (Update, `Tag, None)
+  let create = one_of_tuple (Create, `Tag, None)
+  let read_entity = one_of_tuple (Read, `Tag, None)
   let read = tag Read
   let update = tag Update
   let delete = tag Delete

@@ -18,23 +18,26 @@ module Access = struct
   open Guard
   open ValidationSet
   open Permission
-  open TargetEntity
 
   let index_permission = Read
 
   let session permission uuid =
-    One (permission, uuid |> Uuid.target_of Entity.Id.value |> id)
+    one_of_tuple
+      (permission, `Session, Some (uuid |> Uuid.target_of Entity.Id.value))
   ;;
 
   let index id =
     And
-      [ One (index_permission, Model `Session)
+      [ one_of_tuple (index_permission, `Session, None)
       ; Experiment.Guard.Access.read id
       ]
   ;;
 
   let create id =
-    And [ One (Create, Model `Session); Experiment.Guard.Access.update id ]
+    And
+      [ one_of_tuple (Create, `Session, None)
+      ; Experiment.Guard.Access.update id
+      ]
   ;;
 
   let read experiment_id session_id =

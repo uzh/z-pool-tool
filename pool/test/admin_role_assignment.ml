@@ -65,78 +65,72 @@ let grant_roles _ () =
   let%lwt operator = Data.create_operator db >|> to_actor db in
   let%lwt actor = Data.create_assistant db "Assistant1" exp1 >|> to_actor db in
   let%lwt target = Data.create_assistant db "Assistant2" exp2 in
-  let target_has_role target role () =
-    Guard.(
-      Persistence.ActorRole.find_by_actor
-        (Uuid.actor_of Admin.Id.value (Admin.id target)))
-    ||> CCList.exists (ActorRole.equal role)
+  let target_has_role (target_role, target_uuid) () =
+    let actor = Uuid.actor_of Admin.Id.value (Admin.id target) in
+    let actor_role = ActorRole.create ?target_uuid actor target_role in
+    let%lwt actor_roles =
+      Persistence.ActorRole.find_by_actor ~ctx:(Pool_database.to_ctx db) actor
+    in
+    actor_roles |> CCList.mem ~eq:ActorRole.equal actor_role |> Lwt.return
   in
-  let open GuardianCommand in
-  let grant_role role = { target; roles = [ role ] } in
-  let handle_validated_events role =
-    GrantRoles.handle role
-    |> Lwt_result.lift
+  let handle_validated_events actor role =
+    let open GuardianCommand in
+    let grant_role role = { target; roles = [ role ] } in
+    let validate actor role =
+      Guard.Persistence.Actor.validate_assign_role db actor.Actor.uuid role
+    in
+    validate actor role
+    >|+ grant_role
+    >== GrantRoles.handle
     |>> Pool_event.handle_events db
     >|+ Guard.Persistence.Cache.clear
   in
   let%lwt () =
-    let ((target_role, target_uuid) as role) =
+    let role =
       `Experimenter, Some Experiment.(exp1.id |> Uuid.target_of Id.value)
     in
-    let ({ target; _ } as grant : grant_role) = grant_role role in
-    handle_validated_events grant
+    handle_validated_events actor role
     ||> check_result
           "Grant experimenter rights as assistant fails."
           (Error Pool_common.Message.PermissionDeniedGrantRole)
-    >|> target_has_role
-          target
-          (ActorRole.create ?target_uuid actor.Actor.uuid target_role)
+    >|> target_has_role role
     ||> Alcotest.(check bool)
           (role_message "Target shouldn't has the granted role (%s)" role)
           false
   in
   let%lwt () =
-    let ((target_role, target_uuid) as role) =
+    let role =
       `Assistant, Some Experiment.(exp2.id |> Uuid.target_of Id.value)
     in
-    let ({ target; _ } as grant : grant_role) = grant_role role in
-    handle_validated_events grant
+    handle_validated_events actor role
     ||> check_result
           "Grant assistant rights as assistant of other experiment fails."
           (Error Pool_common.Message.PermissionDeniedGrantRole)
-    >|> target_has_role
-          target
-          (ActorRole.create ?target_uuid actor.Actor.uuid target_role)
+    >|> target_has_role role
     ||> Alcotest.(check bool)
           (role_message "Target had permission already (%s)" role)
           true
   in
   let%lwt () =
-    let ((target_role, target_uuid) as role) =
+    let role =
       `Assistant, Some Experiment.(exp1.id |> Uuid.target_of Id.value)
     in
-    let ({ target; _ } as grant : grant_role) = grant_role role in
-    handle_validated_events grant
+    handle_validated_events actor role
     ||> check_result
-          "Grant assistant rights as assistant of the experiment works."
-          (Ok ())
-    >|> target_has_role
-          target
-          (ActorRole.create ?target_uuid actor.Actor.uuid target_role)
+          "Grant assistant rights as assistant of the experiment fails."
+          (Error Pool_common.Message.PermissionDeniedGrantRole)
+    >|> target_has_role role
     ||> Alcotest.(check bool)
           (role_message "Target has the granted role (%s)" role)
-          true
+          false
   in
   let%lwt () =
-    let ((target_role, target_uuid) as role) =
-      `Assistant, Some Experiment.(exp1.id |> Uuid.target_of Id.value)
+    let role =
+      `Experimenter, Some Experiment.(exp1.id |> Uuid.target_of Id.value)
     in
-    let ({ target; _ } as grant : grant_role) = grant_role role in
-    handle_validated_events grant
+    handle_validated_events operator role
     ||> check_result "Grant experimenter rights as operator works." (Ok ())
-    >|> target_has_role
-          target
-          (ActorRole.create ?target_uuid operator.Actor.uuid target_role)
+    >|> target_has_role role
     ||> Alcotest.(check bool)
           (role_message "Target has the granted role (%s)" role)
           true

@@ -60,6 +60,18 @@ module Actor = struct
         BaseRole.Role.can_assign_roles role
         |> CCList.map (fun r -> r, Some uuid))
   ;;
+
+  let validate_assign_role database_label actor role =
+    let%lwt possible_assigns = can_assign_roles database_label actor in
+    let eq (r1, u1) (r2, u2) =
+      Role.Role.equal r1 r2
+      && (CCOption.(map2 Core.Uuid.Target.equal u1 u2 |> value ~default:false)
+          || CCOption.is_none u2)
+    in
+    if CCList.mem ~eq role possible_assigns
+    then Lwt.return_ok role
+    else Lwt.return_error Pool_common.Message.PermissionDeniedGrantRole
+  ;;
 end
 
 let validate

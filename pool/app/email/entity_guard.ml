@@ -21,12 +21,12 @@ module Access = struct
 
   module Smtp = struct
     let smtp action id =
-      (action, id |> Uuid.target_of Entity.SmtpAuth.Id.value |> TargetEntity.id)
-      |> one
+      one_of_tuple
+        (action, `Smtp, Some (id |> Uuid.target_of Entity.SmtpAuth.Id.value))
     ;;
 
-    let index = One (Read, TargetEntity.Model `Smtp)
-    let create = One (Create, TargetEntity.Model `Smtp)
+    let index = one_of_tuple (Read, `Smtp, None)
+    let create = one_of_tuple (Create, `Smtp, None)
     let read = smtp Read
     let update = smtp Update
     let delete = smtp Delete

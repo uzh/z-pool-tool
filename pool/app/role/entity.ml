@@ -10,7 +10,7 @@ module Actor = struct
     | `Guest
     | `System
     ]
-  [@@deriving show, eq, ord, yojson]
+  [@@deriving show, eq, ord, yojson, sexp_of]
 
   let name = show %> Guardian.Utils.decompose_variant_string %> fst
 
@@ -37,7 +37,7 @@ module Role = struct
     | `Operator
     | `Recruiter
     ]
-  [@@deriving show, eq, ord, yojson]
+  [@@deriving show, eq, ord, yojson, sexp_of]
 
   let name = show %> Guardian.Utils.decompose_variant_string %> fst
 
@@ -118,7 +118,7 @@ module Target = struct
     | `Tenant
     | `WaitingList
     ]
-  [@@deriving show, eq, ord, yojson]
+  [@@deriving show, eq, ord, yojson, sexp_of]
 
   let name t = show t |> Guardian.Utils.decompose_variant_string |> fst
   let to_admin m = `Admin m

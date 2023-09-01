@@ -21,9 +21,9 @@ module Access = struct
 
   let i18n action id =
     let target_id = id |> Uuid.target_of Pool_common.Id.value in
-    One (action, TargetEntity.Id target_id)
+    one_of_tuple (action, `I18n, Some target_id)
   ;;
 
-  let index = One (Read, TargetEntity.Model `I18n)
+  let index = one_of_tuple (Read, `I18n, None)
   let update = i18n Update
 end

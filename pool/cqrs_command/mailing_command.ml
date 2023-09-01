@@ -16,8 +16,8 @@ let src = Logs.Src.create "mailing.cqrs"
 
 let mailing_effect action id =
   let open BaseGuard in
-  ValidationSet.One
-    (action, TargetEntity.Id (id |> Uuid.target_of Mailing.Id.value))
+  ValidationSet.one_of_tuple
+    (action, `Mailing, Some (id |> Uuid.target_of Mailing.Id.value))
 ;;
 
 let default_command start_at start_now end_at rate random distribution : create =

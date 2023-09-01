@@ -18,14 +18,16 @@ module Access = struct
   open Guard
   open ValidationSet
   open Permission
-  open TargetEntity
 
   let organisational_unit action uuid =
-    One (action, uuid |> Uuid.target_of Entity.Id.value |> id)
+    one_of_tuple
+      ( action
+      , `OrganisationalUnit
+      , Some (uuid |> Uuid.target_of Entity.Id.value) )
   ;;
 
-  let index = One (Read, Model `OrganisationalUnit)
-  let create = One (Create, Model `OrganisationalUnit)
+  let index = one_of_tuple (Read, `OrganisationalUnit, None)
+  let create = one_of_tuple (Create, `OrganisationalUnit, None)
   let update = organisational_unit Update
   let delete = organisational_unit Delete
 end

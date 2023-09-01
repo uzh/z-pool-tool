@@ -16,18 +16,21 @@ module Access = struct
   open Guard
   open ValidationSet
   open Permission
-  open TargetEntity
 
   let mailing action uuid =
-    One (action, uuid |> Uuid.target_of Entity.Id.value |> id)
+    one_of_tuple
+      (action, `WaitingList, Some (uuid |> Uuid.target_of Entity.Id.value))
   ;;
 
   let index id =
-    And [ One (Read, Model `Mailing); Experiment.Guard.Access.read id ]
+    And [ one_of_tuple (Read, `Mailing, None); Experiment.Guard.Access.read id ]
   ;;
 
   let create id =
-    And [ One (Create, Model `Mailing); Experiment.Guard.Access.update id ]
+    And
+      [ one_of_tuple (Create, `Mailing, None)
+      ; Experiment.Guard.Access.update id
+      ]
   ;;
 
   let read experiment_id mailing_id =

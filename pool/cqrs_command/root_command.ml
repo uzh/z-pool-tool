@@ -72,7 +72,7 @@ end = struct
 
   let effects =
     let open Guard in
-    ValidationSet.One (Permission.Manage, TargetEntity.Model `System)
+    ValidationSet.one_of_tuple (Permission.Manage, `System, None)
   ;;
 end
 
@@ -98,6 +98,6 @@ end = struct
 
   let effects =
     let open Guard in
-    ValidationSet.(And [ One (Permission.Manage, TargetEntity.Model `Admin) ])
+    ValidationSet.(one_of_tuple (Permission.Manage, `Admin, None))
   ;;
 end

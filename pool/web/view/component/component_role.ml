@@ -73,30 +73,35 @@ module List = struct
               "confirmable"
               (Pool_common.Utils.confirmable_to_string language confirm_text)
           ]
-        [ Input.csrf_element csrf ()
-        ; Input.submit_element ~submit_type language (name None) ()
-        ; input
-            ~a:
-              [ a_name Input.Field.(show Role)
-              ; a_value ([%show: Role.Role.t] role)
-              ; a_hidden ()
-              ]
-            ()
-        ; input
-            ~a:
-              [ a_name Input.Field.(show Actor)
-              ; a_value ([%show: Guard.Uuid.Actor.t] actor_uuid)
-              ; a_hidden ()
-              ]
-            ()
-        ; input
-            ~a:
-              [ a_name Input.Field.(show Target)
-              ; a_value ([%show: Guard.Uuid.Target.t option] target_uuid)
-              ; a_hidden ()
-              ]
-            ()
-        ]
+        ([ Input.csrf_element csrf ()
+         ; Input.submit_element ~submit_type language (name None) ()
+         ; input
+             ~a:
+               [ a_name Input.Field.(show Role)
+               ; a_value ([%show: Role.Role.t] role)
+               ; a_hidden ()
+               ]
+             ()
+         ; input
+             ~a:
+               [ a_name Input.Field.(show Actor)
+               ; a_value ([%show: Guard.Uuid.Actor.t] actor_uuid)
+               ; a_hidden ()
+               ]
+             ()
+         ]
+         @ CCOption.map_or
+             ~default:[]
+             (fun uuid ->
+               [ input
+                   ~a:
+                     [ a_name Input.Field.(show Target)
+                     ; a_value ([%show: Guard.Uuid.Target.t] uuid)
+                     ; a_hidden ()
+                     ]
+                   ()
+               ])
+             target_uuid)
     in
     let buttons =
       let open Pool_common in

@@ -27,10 +27,10 @@ end = struct
     Ok [ Guard.RolePermissionSaved [ role_permission ] |> Pool_event.guard ]
   ;;
 
-  let effects = Guard.Access.manage_rules
+  let effects = Guard.Access.manage_permission
 end
 
-module DeleteRule : sig
+module DeleteRolePermission : sig
   include Common.CommandSig with type t = Guard.RolePermission.t
 
   val handle
@@ -45,7 +45,7 @@ end = struct
     Ok [ Guard.RolePermissionDeleted role_permissino |> Pool_event.guard ]
   ;;
 
-  let effects = Guard.Access.manage_rules
+  let effects = Guard.Access.manage_permission
 end
 
 module GrantRoles : sig

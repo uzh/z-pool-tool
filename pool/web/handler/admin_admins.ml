@@ -24,7 +24,8 @@ let admin_detail req is_edit =
   let result ({ Pool_context.csrf; database_label; language; _ } as context) =
     let%lwt available_roles =
       Helpers.Guard.find_roles_of_ctx context
-      ||> CCList.map (fun { Guard.ActorRole.role; _ } -> role)
+      ||> CCList.flat_map (fun { Guard.ActorRole.role; _ } ->
+        Role.Role.can_assign_roles role)
     in
     Utils.Lwt_result.map_error (fun err -> err, "/admin/admins")
     @@
@@ -200,11 +201,18 @@ let revoke_role ({ Rock.Request.target; _ } as req) =
        |> Admin.find database_label
      in
      let role =
-       Sihl.Web.Request.to_urlencoded req
-       ||> HttpUtils.find_in_urlencoded Field.Role
-       >== Role.Role.of_string_res
-           %> CCResult.map_err Pool_common.Message.authorization
-       >|+ fun role -> role, None
+       let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+       let role =
+         let open CCResult in
+         HttpUtils.find_in_urlencoded Field.Role urlencoded
+         >>= Role.Role.of_string_res
+             %> CCResult.map_err Pool_common.Message.authorization
+       in
+       let uuid =
+         HttpUtils.find_in_urlencoded_opt Field.Target urlencoded
+         |> flip CCOption.bind Guard.Uuid.Target.of_string
+       in
+       role |> Lwt_result.lift >|+ fun role -> role, uuid
      in
      let events role =
        let open Cqrs_command.Guardian_command in

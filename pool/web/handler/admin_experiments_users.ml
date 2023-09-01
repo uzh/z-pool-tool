@@ -31,7 +31,7 @@ let index role req =
         ~exclude:current_roles
     in
     let%lwt currently_assigned =
-      Admin.find_all_with_roles database_label current_roles ~exclude:[]
+      Admin.find_all_with_roles database_label current_roles
     in
     let* experiment = Experiment.find database_label id in
     Page.Admin.Experiments.users

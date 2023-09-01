@@ -35,10 +35,9 @@ end
 module Access = struct
   open ValidationSet
   open Permission
-  open TargetEntity
 
-  let index = One (Read, Model `Admin)
-  let create = One (Create, Model `Admin)
-  let read id = One (Read, Id (target_of id))
-  let update id = One (Update, Id (target_of id))
+  let index = one_of_tuple (Read, `Admin, None)
+  let create = one_of_tuple (Create, `Admin, None)
+  let read id = one_of_tuple (Read, `Admin, Some (target_of id))
+  let update id = one_of_tuple (Update, `Admin, Some (target_of id))
 end

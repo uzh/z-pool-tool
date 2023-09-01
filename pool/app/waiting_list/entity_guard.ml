@@ -21,18 +21,24 @@ module Access = struct
   open Guard
   open ValidationSet
   open Permission
-  open TargetEntity
 
   let waiting_list action uuid =
-    One (action, uuid |> Uuid.target_of Pool_common.Id.value |> id)
+    one_of_tuple
+      (action, `WaitingList, Some (uuid |> Uuid.target_of Pool_common.Id.value))
   ;;
 
   let index id =
-    And [ One (Read, Model `WaitingList); Experiment.Guard.Access.read id ]
+    And
+      [ one_of_tuple (Read, `WaitingList, None)
+      ; Experiment.Guard.Access.read id
+      ]
   ;;
 
   let create id =
-    And [ One (Create, Model `WaitingList); Experiment.Guard.Access.update id ]
+    And
+      [ one_of_tuple (Create, `WaitingList, None)
+      ; Experiment.Guard.Access.update id
+      ]
   ;;
 
   let read experiment_id waiting_list_id =
