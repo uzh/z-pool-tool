@@ -91,7 +91,7 @@ let experiment_params layout experiment =
 let location_params
   language
   layout
-  ({ Pool_location.id; address; _ } as location)
+  ({ Pool_location.id; address; description; _ } as location)
   =
   let open Pool_location in
   let location_url =
@@ -99,6 +99,10 @@ let location_params
   in
   let location_link = Human.link_with_default ~default:location_url location in
   let location_details = Human.detailed language location in
+  let location_description =
+    CCOption.bind description (Description.find_opt language)
+    |> CCOption.value ~default:""
+  in
   let institution, building, room, street, zip, city =
     let open Address in
     match address with
@@ -123,6 +127,7 @@ let location_params
   ; "locationStreet", street
   ; "locationZip", zip
   ; "locationCity", city
+  ; "locationDescription", location_description
   ]
 ;;
 
