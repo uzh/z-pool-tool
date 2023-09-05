@@ -236,7 +236,7 @@ end = struct
     |> CCResult.map_err Message.to_conformist_error
   ;;
 
-  let effects = Experiment.Guard.Access.update
+  let effects id = Experiment.Guard.Access.update id
 end
 
 module RemoveParticipationTagFromEntity : sig
@@ -258,5 +258,5 @@ end = struct
     Ok Tags.[ ParticipationTagRemoved (entity, tag.Tags.id) |> Pool_event.tags ]
   ;;
 
-  let effects = Experiment.Guard.Access.update
+  let effects id = Experiment.Guard.Access.update id
 end

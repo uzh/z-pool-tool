@@ -19,16 +19,36 @@ let find_roles_of_ctx { Pool_context.database_label; user; _ } =
       uuid)
 ;;
 
-let has_permission set database_label user =
+let has_permission database_label user set =
   let open Utils.Lwt_result.Infix in
   Pool_context.Utils.find_authorizable database_label user
   >>= Guard.Persistence.validate database_label set
   ||> CCResult.is_ok
 ;;
 
-let can_read_contact_name = has_permission Contact.Guard.Access.read_name
-let can_read_contact_info = has_permission Contact.Guard.Access.read_info
-let can_access_contact_profile = has_permission Contact.Guard.Access.index
+let can_read_contact permisson_on_target { Pool_context.guardian; _ } =
+  let open Guard in
+  let open PermissionOnTarget in
+  permisson_on_target
+  |> CCList.fold_left
+       (fun init set -> if init then init else validate set guardian)
+       false
+;;
+
+let can_read_contact_name context verify_on_ids =
+  can_read_contact Contact.Guard.Access.(read_name ~verify_on_ids ()) context
+;;
+
+let can_read_contact_info context verify_on_ids =
+  can_read_contact Contact.Guard.Access.(read_info ~verify_on_ids ()) context
+;;
+
+let can_access_contact_profile context id =
+  can_read_contact
+    Contact.Guard.Access.(
+      read_of_target (Guard.Uuid.target_of Experiment.Id.value id))
+    context
+;;
 
 let target_model_for_actor_role
   pool

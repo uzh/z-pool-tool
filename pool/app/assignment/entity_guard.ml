@@ -25,36 +25,62 @@ module Access = struct
 
   let index id =
     And
-      [ one_of_tuple (Read, `Assignment, None)
+      [ Or
+          [ one_of_tuple (Read, `Assignment, None)
+          ; one_of_tuple
+              (Read, `Assignment, Some (Uuid.target_of Experiment.Id.value id))
+          ]
       ; Experiment.Guard.Access.read id
       ]
   ;;
 
   let create id =
     And
-      [ one_of_tuple (Create, `Assignment, None)
+      [ Or
+          [ one_of_tuple (Create, `Assignment, None)
+          ; one_of_tuple
+              (Create, `Assignment, Some (Uuid.target_of Experiment.Id.value id))
+          ]
       ; Experiment.Guard.Access.read id
       ]
   ;;
 
   let read experiment_id assignment_id =
     And
-      [ assignment Read assignment_id
+      [ Or
+          [ assignment Read assignment_id
+          ; one_of_tuple
+              ( Read
+              , `Assignment
+              , Some (Uuid.target_of Experiment.Id.value experiment_id) )
+          ]
       ; Experiment.Guard.Access.read experiment_id
       ]
   ;;
 
   let update experiment_id assignment_id =
     And
-      [ assignment Update assignment_id
-      ; Experiment.Guard.Access.update experiment_id
+      [ Or
+          [ assignment Update assignment_id
+          ; one_of_tuple
+              ( Update
+              , `Assignment
+              , Some (Uuid.target_of Experiment.Id.value experiment_id) )
+          ]
+      ; Experiment.Guard.Access.read experiment_id
       ]
   ;;
 
   let delete experiment_id assignment_id =
     And
-      [ assignment Delete assignment_id
-      ; Experiment.Guard.Access.update experiment_id
+      [ Or
+          [ assignment Delete assignment_id
+          ; one_of_tuple
+              ( Delete
+              , `Assignment
+              , Some (Uuid.target_of Experiment.Id.value experiment_id) )
+          ]
+      ; Experiment.Guard.Access.read experiment_id
       ]
   ;;
 

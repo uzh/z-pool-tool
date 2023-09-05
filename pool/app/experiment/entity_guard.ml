@@ -18,15 +18,15 @@ module Access = struct
   open ValidationSet
   open Permission
 
-  let experiment permission uuid =
+  let experiment ?(model = `Experiment) permission uuid =
     one_of_tuple
-      (permission, `Experiment, Some (uuid |> Uuid.target_of Entity.Id.value))
+      (permission, model, Some (uuid |> Uuid.target_of Entity.Id.value))
   ;;
 
   let index_permission = Read
   let index = one_of_tuple (index_permission, `Experiment, None)
   let create = one_of_tuple (Create, `Experiment, None)
-  let read = experiment Read
-  let update = experiment Update
-  let delete = experiment Delete
+  let read ?model = experiment ?model Read
+  let update ?model = experiment ?model Update
+  let delete ?model = experiment ?model Delete
 end

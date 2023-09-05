@@ -166,7 +166,7 @@ end = struct
     Ok (cancel_events @ [ decrease_assignment_count ])
   ;;
 
-  let effects = Assignment.Guard.Access.delete
+  let effects = Assignment.Guard.Access.update
 end
 
 module CreateFromWaitingList : sig
@@ -408,5 +408,5 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let effects = Session.Guard.Access.update
+  let effects exp_id = Session.Guard.Access.update exp_id
 end

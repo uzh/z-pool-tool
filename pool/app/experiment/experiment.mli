@@ -152,6 +152,11 @@ val find_all
   -> Pool_database.Label.t
   -> (t list * Query.t) Lwt.t
 
+val find_all_ids_of_contact_id
+  :  Pool_database.Label.t
+  -> Contact.Id.t
+  -> Id.t list Lwt.t
+
 val find_public
   :  Pool_database.Label.t
   -> Id.t
@@ -267,9 +272,9 @@ module Guard : sig
     val index_permission : Guard.Permission.t
     val index : Guard.ValidationSet.t
     val create : Guard.ValidationSet.t
-    val read : Id.t -> Guard.ValidationSet.t
-    val update : Id.t -> Guard.ValidationSet.t
-    val delete : Id.t -> Guard.ValidationSet.t
+    val read : ?model:Role.Target.t -> Id.t -> Guard.ValidationSet.t
+    val update : ?model:Role.Target.t -> Id.t -> Guard.ValidationSet.t
+    val delete : ?model:Role.Target.t -> Id.t -> Guard.ValidationSet.t
   end
 end
 

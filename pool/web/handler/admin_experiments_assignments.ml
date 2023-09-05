@@ -17,17 +17,18 @@ let list ?(marked_as_deleted = false) req =
   let error_path =
     Format.asprintf "/admin/experiments/%s" (Experiment.Id.value id)
   in
-  let result ({ Pool_context.database_label; user; _ } as context) =
+  let result ({ Pool_context.database_label; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, error_path)
     @@
-    let%lwt access_contact_profiles =
-      Helpers.Guard.can_access_contact_profile database_label user
+    let access_contact_profiles =
+      Helpers.Guard.can_access_contact_profile context id
     in
-    let%lwt view_contact_name =
-      Helpers.Guard.can_read_contact_name database_label user
+    let experiment_target_id = Guard.Uuid.target_of Experiment.Id.value id in
+    let view_contact_name =
+      Helpers.Guard.can_read_contact_name context [ experiment_target_id ]
     in
-    let%lwt view_contact_info =
-      Helpers.Guard.can_read_contact_info database_label user
+    let view_contact_info =
+      Helpers.Guard.can_read_contact_info context [ experiment_target_id ]
     in
     let* experiment = Experiment.find database_label id in
     let* sessions =
@@ -199,7 +200,7 @@ let close_htmx req =
   let experiment_id = experiment_id req in
   let session_id = session_id req in
   let assignment_id = assignment_id req in
-  let result ({ Pool_context.database_label; user; _ } as context) =
+  let result ({ Pool_context.database_label; _ } as context) =
     let open Cqrs_command.Assignment_command in
     let open Utils.Lwt_result.Infix in
     let boolean_fields = Assignment.boolean_fields |> CCList.map Field.show in
@@ -208,8 +209,10 @@ let close_htmx req =
       ||> HttpUtils.format_request_boolean_values boolean_fields
       ||> HttpUtils.remove_empty_values
     in
-    let%lwt view_contact_name =
-      Helpers.Guard.can_read_contact_name database_label user
+    let view_contact_name =
+      Helpers.Guard.can_read_contact_name
+        context
+        [ Guard.Uuid.target_of Experiment.Id.value experiment_id ]
     in
     let* experiment = Experiment.find database_label experiment_id in
     let* session = Session.find database_label session_id in
@@ -277,11 +280,13 @@ let edit req =
   let redirect_path =
     Page.Admin.Session.session_path experiment_id session_id
   in
-  let result ({ Pool_context.database_label; user; _ } as context) =
+  let result ({ Pool_context.database_label; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, redirect_path)
     @@
-    let%lwt view_contact_name =
-      Helpers.Guard.can_read_contact_name database_label user
+    let view_contact_name =
+      Helpers.Guard.can_read_contact_name
+        context
+        [ Guard.Uuid.target_of Experiment.Id.value experiment_id ]
     in
     let* experiment = Experiment.find database_label experiment_id in
     let* session = Session.find database_label session_id in

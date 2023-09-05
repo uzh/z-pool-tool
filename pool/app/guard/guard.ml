@@ -128,6 +128,50 @@ let sql_where_fragment ?(field = "uuid") pool permission model actor =
     |> CCOption.return
 ;;
 
+let sql_uuid_list_fragment pool permission model actor =
+  let open CCFun in
+  let open Utils.Lwt_result.Infix in
+  actor_to_model_permission pool permission model actor
+  ||> function
+  | true, _ -> None
+  | false, [] -> Some "()"
+  | false, ids ->
+    ids
+    |> CCList.map
+         (Uuid.Target.to_string %> Format.asprintf "guardianEncodeUuid('%s')")
+    |> CCString.concat ", "
+    |> Format.asprintf "(%s)"
+    |> CCOption.return
+;;
+
+let create_where
+  ?actor
+  ?permission
+  ?(checks : (string -> string) list = [])
+  pool
+  model
+  =
+  let open Utils.Lwt_result.Infix in
+  let tags = Pool_database.Logger.Tags.create pool in
+  let log_warning =
+    Pool_common.Utils.with_log_error ~src ~level:Logs.Warning ~tags
+  in
+  match actor, permission with
+  | Some actor, Some permission ->
+    sql_uuid_list_fragment pool permission model actor
+    ||> CCOption.map (fun uuid_list ->
+      CCList.map (fun fcn -> fcn uuid_list) checks
+      |> CCString.concat " OR "
+      |> Format.asprintf "(%s)")
+  | None, Some _ ->
+    let _ = log_warning Pool_common.Message.(Undefined Field.Actor) in
+    Lwt.return_some "FALSE"
+  | Some _, None ->
+    let _ = log_warning Pool_common.Message.(Undefined Field.Permission) in
+    Lwt.return_some "FALSE"
+  | None, None -> Lwt.return_none
+;;
+
 module Access = struct
   open ValidationSet
   open Permission

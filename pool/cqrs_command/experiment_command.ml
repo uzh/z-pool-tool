@@ -180,7 +180,7 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let effects = Experiment.Guard.Access.update
+  let effects id = Experiment.Guard.Access.update id
 end
 
 module Delete : sig
@@ -267,7 +267,7 @@ end = struct
        @ [ Common.guardian_cache_cleared_event ?id:system_event_id () ])
   ;;
 
-  let effects = Experiment.Guard.Access.delete
+  let effects id = Experiment.Guard.Access.delete id
 end
 
 module AssignAssistant : sig
@@ -289,7 +289,7 @@ end = struct
       ]
   ;;
 
-  let effects = Experiment.Guard.Access.update
+  let effects id = Experiment.Guard.Access.update id
 end
 
 module UnassignAssistant : sig
@@ -311,7 +311,7 @@ end = struct
       ]
   ;;
 
-  let effects = Experiment.Guard.Access.update
+  let effects id = Experiment.Guard.Access.update id
 end
 
 module AssignExperimenter : sig
@@ -333,7 +333,7 @@ end = struct
       ]
   ;;
 
-  let effects = Experiment.Guard.Access.update
+  let effects id = Experiment.Guard.Access.update id
 end
 
 module UnassignExperimenter : sig
@@ -355,7 +355,7 @@ end = struct
       ]
   ;;
 
-  let effects = Experiment.Guard.Access.update
+  let effects id = Experiment.Guard.Access.update id
 end
 
 module CreateFilter : sig

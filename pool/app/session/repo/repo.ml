@@ -220,6 +220,33 @@ module Sql = struct
       (Experiment.Id.value id)
   ;;
 
+  let find_all_ids_of_contact_id_request =
+    let open Caqti_request.Infix in
+    {sql|
+      SELECT
+        LOWER(CONCAT(
+          SUBSTR(HEX(pool_sessions.uuid), 1, 8), '-',
+          SUBSTR(HEX(pool_sessions.uuid), 9, 4), '-',
+          SUBSTR(HEX(pool_sessions.uuid), 13, 4), '-',
+          SUBSTR(HEX(pool_sessions.uuid), 17, 4), '-',
+          SUBSTR(HEX(pool_sessions.uuid), 21)
+        ))
+      FROM pool_sessions
+      INNER JOIN pool_assignments
+        ON pool_assignments.session_uuid = pool_sessions.uuid
+      WHERE pool_assignments.contact_uuid = UNHEX(REPLACE(?, '-', ''))
+        AND pool_assignments.marked_as_deleted = 0
+      |sql}
+    |> Pool_common.Repo.Id.t ->* RepoEntity.Id.t
+  ;;
+
+  let find_all_ids_of_contact_id pool id =
+    Utils.Database.collect
+      (Database.Label.value pool)
+      find_all_ids_of_contact_id_request
+      (Contact.Id.to_common id)
+  ;;
+
   let find_public_request =
     let open Caqti_request.Infix in
     {sql|
@@ -802,3 +829,4 @@ let update = Sql.update
 let delete = Sql.delete
 let find_for_calendar_by_location = Sql.find_for_calendar_by_location
 let find_for_calendar_by_user = Sql.find_for_calendar_by_user
+let find_all_ids_of_contact_id = Sql.find_all_ids_of_contact_id

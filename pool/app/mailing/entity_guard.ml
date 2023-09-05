@@ -23,28 +23,62 @@ module Access = struct
   ;;
 
   let index id =
-    And [ one_of_tuple (Read, `Mailing, None); Experiment.Guard.Access.read id ]
+    And
+      [ Or
+          [ one_of_tuple (Read, `Mailing, None)
+          ; one_of_tuple
+              (Read, `Mailing, Some (Uuid.target_of Experiment.Id.value id))
+          ]
+      ; Experiment.Guard.Access.read id
+      ]
   ;;
 
   let create id =
     And
-      [ one_of_tuple (Create, `Mailing, None)
+      [ Or
+          [ one_of_tuple (Create, `Mailing, None)
+          ; one_of_tuple
+              (Create, `Mailing, Some (Uuid.target_of Experiment.Id.value id))
+          ]
       ; Experiment.Guard.Access.update id
       ]
   ;;
 
   let read experiment_id mailing_id =
-    And [ mailing Read mailing_id; Experiment.Guard.Access.read experiment_id ]
+    And
+      [ Or
+          [ mailing Read mailing_id
+          ; one_of_tuple
+              ( Read
+              , `Mailing
+              , Some (Uuid.target_of Experiment.Id.value experiment_id) )
+          ]
+      ; Experiment.Guard.Access.read experiment_id
+      ]
   ;;
 
   let update experiment_id mailing_id =
     And
-      [ mailing Update mailing_id; Experiment.Guard.Access.read experiment_id ]
+      [ Or
+          [ mailing Update mailing_id
+          ; one_of_tuple
+              ( Update
+              , `Mailing
+              , Some (Uuid.target_of Experiment.Id.value experiment_id) )
+          ]
+      ; Experiment.Guard.Access.read experiment_id
+      ]
   ;;
 
   let delete experiment_id mailing_id =
     And
-      [ mailing Delete mailing_id
+      [ Or
+          [ mailing Delete mailing_id
+          ; one_of_tuple
+              ( Delete
+              , `Mailing
+              , Some (Uuid.target_of Experiment.Id.value experiment_id) )
+          ]
       ; Experiment.Guard.Access.delete experiment_id
       ]
   ;;

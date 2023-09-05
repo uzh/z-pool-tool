@@ -21,36 +21,75 @@ module Access = struct
 
   let index_permission = Read
 
-  let session permission uuid =
+  let session ?session_id ?(model = `Session) permission =
     one_of_tuple
-      (permission, `Session, Some (uuid |> Uuid.target_of Entity.Id.value))
+      ( permission
+      , model
+      , CCOption.map (Uuid.target_of Entity.Id.value) session_id )
   ;;
 
-  let index id =
+  let index ?(model = `Session) id =
     And
-      [ one_of_tuple (index_permission, `Session, None)
+      [ Or
+          [ session ~model index_permission
+          ; Experiment.Guard.Access.read ~model id
+          ]
       ; Experiment.Guard.Access.read id
       ]
   ;;
 
-  let create id =
+  let create ?model id =
     And
-      [ one_of_tuple (Create, `Session, None)
+      [ Or
+          [ session ?model Create
+          ; one_of_tuple
+              ( Create
+              , CCOption.value ~default:`Session model
+              , Some (Uuid.target_of Experiment.Id.value id) )
+          ]
       ; Experiment.Guard.Access.update id
       ]
   ;;
 
-  let read experiment_id session_id =
-    And [ session Read session_id; Experiment.Guard.Access.read experiment_id ]
+  let read ?(model = `Session) experiment_id session_id =
+    And
+      [ Or
+          [ session ~model ~session_id Read
+          ; Experiment.Guard.Access.read ~model experiment_id
+          ]
+      ; Experiment.Guard.Access.read experiment_id
+      ]
   ;;
 
-  let update experiment_id session_id =
+  let update ?(model = `Session) experiment_id session_id =
     And
-      [ session Update session_id; Experiment.Guard.Access.read experiment_id ]
+      [ Or
+          [ session ~model ~session_id Update
+          ; Experiment.Guard.Access.update ~model experiment_id
+          ]
+      ; Experiment.Guard.Access.read experiment_id
+      ]
   ;;
 
-  let delete experiment_id session_id =
+  let delete ?(model = `Session) experiment_id session_id =
     And
-      [ session Delete session_id; Experiment.Guard.Access.read experiment_id ]
+      [ Or
+          [ session ~model ~session_id Delete
+          ; Experiment.Guard.Access.delete ~model experiment_id
+          ]
+      ; Experiment.Guard.Access.read experiment_id
+      ]
+  ;;
+
+  let close experiment_id session_id =
+    And
+      [ Or
+          [ session ~model:`Session ~session_id Update
+          ; session ~model:`SessionClose ~session_id Update
+          ; Experiment.Guard.Access.update ~model:`Session experiment_id
+          ; Experiment.Guard.Access.update ~model:`SessionClose experiment_id
+          ]
+      ; Experiment.Guard.Access.read experiment_id
+      ]
   ;;
 end

@@ -43,10 +43,29 @@ module Access = struct
       (action, `Contact, Some (uuid |> Uuid.target_of Pool_common.Id.value))
   ;;
 
-  let index = one_of_tuple (Read, `Contact, None)
+  let index_permission = Read
+  let index = one_of_tuple (index_permission, `Contact, None)
   let create = one_of_tuple (Create, `Contact, None)
   let read = contact Read
   let update = contact Update
-  let read_name = Or [ index; one_of_tuple (Read, `ContactName, None) ]
-  let read_info = Or [ index; one_of_tuple (Read, `ContactInfo, None) ]
+
+  let read_additionals model ?(verify_on_ids = []) () =
+    let open PermissionOnTarget in
+    let create ?target_uuid = create ?target_uuid Permission.Read in
+    CCList.flat_map
+      (fun target_uuid ->
+        [ create ~target_uuid `Contact; create ~target_uuid model ])
+      verify_on_ids
+    @ [ create `Contact; create model ]
+  ;;
+
+  let read_name = read_additionals `ContactName
+  let read_info = read_additionals `ContactInfo
+
+  let read_of_target target_uuid =
+    let open PermissionOnTarget in
+    [ create index_permission `Contact
+    ; create ~target_uuid index_permission `Contact
+    ]
+  ;;
 end

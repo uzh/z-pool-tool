@@ -125,8 +125,10 @@ val find_by_user
   -> (t, Pool_common.Message.error) result Lwt.t
 
 val find_all
-  :  Pool_database.Label.t
-  -> ?query:Query.t
+  :  ?query:Query.t
+  -> ?actor:Guard.Actor.t
+  -> ?permission:Guard.Permission.t
+  -> Pool_database.Label.t
   -> unit
   -> (t list * Query.t) Lwt.t
 
@@ -287,11 +289,21 @@ module Guard : sig
   end
 
   module Access : sig
+    val index_permission : Guard.Permission.t
     val index : Guard.ValidationSet.t
     val create : Guard.ValidationSet.t
     val read : Id.t -> Guard.ValidationSet.t
     val update : Id.t -> Guard.ValidationSet.t
-    val read_name : Guard.ValidationSet.t
-    val read_info : Guard.ValidationSet.t
+    val read_of_target : Guard.Uuid.Target.t -> Guard.PermissionOnTarget.t list
+
+    val read_name
+      :  ?verify_on_ids:Guard.Uuid.Target.t list
+      -> unit
+      -> Guard.PermissionOnTarget.t list
+
+    val read_info
+      :  ?verify_on_ids:Guard.Uuid.Target.t list
+      -> unit
+      -> Guard.PermissionOnTarget.t list
   end
 end

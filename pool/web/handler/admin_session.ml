@@ -160,18 +160,20 @@ let detail req page =
       "/admin/experiments/%s/sessions"
       (Experiment.Id.value experiment_id)
   in
-  let result ({ Pool_context.database_label; user; _ } as context) =
+  let result ({ Pool_context.database_label; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, error_path)
     @@
-    let%lwt view_contact_name =
-      Helpers.Guard.can_read_contact_name database_label user
-    in
-    let%lwt view_contact_info =
-      Helpers.Guard.can_read_contact_info database_label user
-    in
-    let database_label = context.Pool_context.database_label in
     let* session = Session.find database_label session_id in
     let* experiment = Experiment.find database_label experiment_id in
+    let experiment_target_id =
+      Guard.Uuid.target_of Experiment.Id.value experiment_id
+    in
+    let view_contact_name =
+      Helpers.Guard.can_read_contact_name context [ experiment_target_id ]
+    in
+    let view_contact_info =
+      Helpers.Guard.can_read_contact_info context [ experiment_target_id ]
+    in
     let flash_fetcher = flip Sihl.Web.Flash.find req in
     let%lwt current_tags =
       Tags.ParticipationTags.(
@@ -182,8 +184,8 @@ let detail req page =
        let* assignments =
          Assignment.find_by_session database_label session.Session.id
        in
-       let%lwt access_contact_profiles =
-         Helpers.Guard.can_access_contact_profile database_label user
+       let access_contact_profiles =
+         Helpers.Guard.can_access_contact_profile context experiment_id
        in
        Page.Admin.Session.detail
          ~access_contact_profiles
@@ -844,9 +846,8 @@ end = struct
   ;;
 
   let index =
-    Session.Guard.Access.index
-    |> experiment_effects
-    |> Guardian.validate_generic ~any_id:true
+    let read id = Session.Guard.Access.index id in
+    read |> experiment_effects |> Guardian.validate_generic ~any_id:true
   ;;
 
   let create =
@@ -856,7 +857,8 @@ end = struct
   ;;
 
   let read =
-    Session.Guard.Access.read |> combined_effects |> Guardian.validate_generic
+    let read id = Session.Guard.Access.read id in
+    read |> combined_effects |> Guardian.validate_generic
   ;;
 
   let update =

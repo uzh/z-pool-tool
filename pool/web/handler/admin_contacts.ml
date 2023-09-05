@@ -9,14 +9,24 @@ let contact_id = HttpUtils.find_id Contact.Id.of_string Field.Contact
 
 let index req =
   let open Utils.Lwt_result.Infix in
-  let result ({ Pool_context.database_label; _ } as context) =
+  let result ({ Pool_context.database_label; user; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, "/admin/dashboard")
     @@
     let query =
       let open Contact in
       Query.from_request ~searchable_by ~sortable_by req
     in
-    let%lwt contacts = Contact.find_all ~query database_label () in
+    let* actor =
+      Pool_context.Utils.find_authorizable ~admin_only:true database_label user
+    in
+    let%lwt contacts =
+      Contact.find_all
+        ~query
+        ~actor
+        ~permission:Contact.Guard.Access.index_permission
+        database_label
+        ()
+    in
     Page.Admin.Contact.index context contacts
     |> create_layout req ~active_navigation:"/admin/contacts" context
     >|+ Sihl.Web.Response.of_html
@@ -186,6 +196,22 @@ let delete_answer req =
   result |> HttpUtils.Htmx.extract_happy_path ~src req
 ;;
 
+let toggle_paused req =
+  let open Utils.Lwt_result.Infix in
+  let id = contact_id req in
+  let redirect_path =
+    Format.asprintf "/admin/contacts/%s/edit" (Contact.Id.value id)
+  in
+  let tags = Pool_context.Logger.Tags.req req in
+  let result ({ Pool_context.database_label; _ } as context) =
+    let* contact =
+      Contact.find database_label id >|- fun err -> err, redirect_path
+    in
+    Helpers.ContactUpdate.toggle_paused context redirect_path contact tags
+  in
+  result |> HttpUtils.extract_happy_path ~src req
+;;
+
 module Tags = Admin_contacts_tags
 
 module Access : sig
@@ -204,14 +230,42 @@ end = struct
     Contact.Guard.Access.index |> Guardian.validate_admin_entity ~any_id:true
   ;;
 
+  let create_contact_validation_set contact_fcn permission =
+    (fun req ->
+      let open Utils.Lwt_result.Infix in
+      let open Guard.ValidationSet in
+      let* { Pool_context.database_label; _ } =
+        req |> Pool_context.find |> Lwt_result.lift
+      in
+      let contact = Http_utils.find_id Contact.Id.of_string Field.Contact req in
+      let%lwt experiments =
+        Experiment.find_all_ids_of_contact_id database_label contact
+        ||> CCList.map (Guard.Uuid.target_of Experiment.Id.value)
+      in
+      let%lwt sessions =
+        Session.find_all_ids_of_contact_id database_label contact
+        ||> CCList.map (Guard.Uuid.target_of Session.Id.value)
+      in
+      contact_fcn contact
+      :: (CCList.map
+            (fun id -> permission, `Contact, Some id)
+            (experiments @ sessions)
+          |> CCList.map one_of_tuple)
+      |> or_
+      |> Lwt.return_ok)
+    |> Guardian.validate_generic_lwt_result
+  ;;
+
   let read =
-    Contact.Guard.Access.read |> contact_effects |> Guardian.validate_generic
+    create_contact_validation_set
+      Contact.Guard.Access.read
+      Guard.Permission.Read
   ;;
 
   let update =
-    ContactCommand.Update.effects
-    |> contact_effects
-    |> Guardian.validate_generic
+    create_contact_validation_set
+      Contact.Guard.Access.update
+      Guard.Permission.Update
   ;;
 
   let delete_answer =
@@ -222,19 +276,3 @@ end = struct
 
   let promote = Admin.Guard.Access.create |> Guardian.validate_admin_entity
 end
-
-let toggle_paused req =
-  let open Utils.Lwt_result.Infix in
-  let id = contact_id req in
-  let redirect_path =
-    Format.asprintf "/admin/contacts/%s/edit" (Contact.Id.value id)
-  in
-  let tags = Pool_context.Logger.Tags.req req in
-  let result ({ Pool_context.database_label; _ } as context) =
-    let* contact =
-      Contact.find database_label id >|- fun err -> err, redirect_path
-    in
-    Helpers.ContactUpdate.toggle_paused context redirect_path contact tags
-  in
-  result |> HttpUtils.extract_happy_path ~src req
-;;

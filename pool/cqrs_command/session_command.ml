@@ -203,7 +203,7 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let effects = Session.Guard.Access.create
+  let effects exp_id = Session.Guard.Access.create exp_id
 end
 
 module Update : sig
@@ -292,7 +292,7 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let effects = Session.Guard.Access.update
+  let effects exp_id = Session.Guard.Access.update exp_id
 end
 
 module Reschedule : sig
@@ -368,7 +368,7 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let effects = Session.Guard.Access.update
+  let effects exp_id = Session.Guard.Access.update exp_id
 end
 
 module Delete : sig
@@ -408,7 +408,7 @@ end = struct
          :: (templates |> CCList.map delete_template))
   ;;
 
-  let effects = Session.Guard.Access.delete
+  let effects exp_id = Session.Guard.Access.delete exp_id
 end
 
 module Cancel : sig
@@ -509,7 +509,7 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let effects = Session.Guard.Access.update
+  let effects exp_id = Session.Guard.Access.update exp_id
 end
 
 module Close : sig
@@ -618,7 +618,35 @@ end = struct
       command
   ;;
 
-  let effects = Session.Guard.Access.update
+  let effects = Session.Guard.Access.close
+end
+
+module SendReminder : sig
+  include
+    Common.CommandSig
+    with type t = (Session.t * Experiment.t * Sihl_email.t list) list
+
+  val effects : Experiment.Id.t -> Session.Id.t -> Guard.ValidationSet.t
+end = struct
+  type t = (Session.t * Experiment.t * Sihl_email.t list) list
+
+  let handle ?(tags = Logs.Tag.empty) command =
+    Logs.info ~src (fun m -> m "Handle command SendReminder" ~tags);
+    Ok
+      (CCList.flat_map
+         (fun (session, { Experiment.smtp_auth_id; _ }, emails) ->
+           let emails =
+             emails |> CCList.map (fun email -> email, smtp_auth_id)
+           in
+           (Session.EmailReminderSent session |> Pool_event.session)
+           ::
+           (if emails |> CCList.is_empty |> not
+            then [ Email.BulkSent emails |> Pool_event.email ]
+            else []))
+         command)
+  ;;
+
+  let effects exp_id = Session.Guard.Access.update exp_id
 end
 
 module ResendReminders : sig
@@ -702,5 +730,5 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let effects = Session.Guard.Access.update
+  let effects exp_id = Session.Guard.Access.update exp_id
 end

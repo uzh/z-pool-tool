@@ -514,9 +514,8 @@ end = struct
   ;;
 
   let read =
-    Experiment.Guard.Access.read
-    |> experiment_effects
-    |> Guardian.validate_generic
+    let read id = Experiment.Guard.Access.read id in
+    read |> experiment_effects |> Guardian.validate_generic
   ;;
 
   let update =

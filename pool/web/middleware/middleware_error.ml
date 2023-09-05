@@ -38,7 +38,7 @@ let schema =
 let before_start () =
   if Sihl.Configuration.is_production ()
   then (
-    (* Validate configuration variables for production environment*)
+    (* Validate configuration variables for production environment *)
     let (_ : config) = Sihl.Configuration.(read schema) in
     ())
   else ()

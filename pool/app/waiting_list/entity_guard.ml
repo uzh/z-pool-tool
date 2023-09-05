@@ -29,35 +29,63 @@ module Access = struct
 
   let index id =
     And
-      [ one_of_tuple (Read, `WaitingList, None)
+      [ Or
+          [ one_of_tuple (Read, `WaitingList, None)
+          ; one_of_tuple
+              (Read, `WaitingList, Some (Uuid.target_of Experiment.Id.value id))
+          ]
       ; Experiment.Guard.Access.read id
       ]
   ;;
 
   let create id =
     And
-      [ one_of_tuple (Create, `WaitingList, None)
+      [ Or
+          [ one_of_tuple (Create, `WaitingList, None)
+          ; one_of_tuple
+              ( Create
+              , `WaitingList
+              , Some (Uuid.target_of Experiment.Id.value id) )
+          ]
       ; Experiment.Guard.Access.update id
       ]
   ;;
 
   let read experiment_id waiting_list_id =
     And
-      [ waiting_list Read waiting_list_id
+      [ Or
+          [ waiting_list Read waiting_list_id
+          ; one_of_tuple
+              ( Read
+              , `WaitingList
+              , Some (Uuid.target_of Experiment.Id.value experiment_id) )
+          ]
       ; Experiment.Guard.Access.read experiment_id
       ]
   ;;
 
   let update experiment_id waiting_list_id =
     And
-      [ waiting_list Update waiting_list_id
+      [ Or
+          [ waiting_list Update waiting_list_id
+          ; one_of_tuple
+              ( Update
+              , `WaitingList
+              , Some (Uuid.target_of Experiment.Id.value experiment_id) )
+          ]
       ; Experiment.Guard.Access.update experiment_id
       ]
   ;;
 
   let delete experiment_id waiting_list_id =
     And
-      [ waiting_list Delete waiting_list_id
+      [ Or
+          [ waiting_list Delete waiting_list_id
+          ; one_of_tuple
+              ( Delete
+              , `WaitingList
+              , Some (Uuid.target_of Experiment.Id.value experiment_id) )
+          ]
       ; Experiment.Guard.Access.update experiment_id
       ]
   ;;
