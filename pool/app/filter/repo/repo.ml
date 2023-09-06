@@ -335,32 +335,29 @@ module Sql = struct
         where_fragment
     in
     let%lwt template_list = find_templates_of_query pool query in
+    let create_temp_table = create_temporary_participation_table (Some query) in
     filtered_params ~allow_invited:true template_list experiment_id (Some query)
-    |> CCResult.map_err (fun err ->
-      let () =
-        Logs.info ~src (fun m ->
-          m
-            ~tags
-            "%s\n%s"
-            ([%show: Contact.t] contact)
-            ([%show: Pool_common.Id.t] experiment_id))
-      in
-      Pool_common.Utils.with_log_error ~src ~level:Logs.Warning ~tags err)
+    |> CCResult.map_err
+         (Pool_common.Utils.with_log_error ~src ~level:Logs.Warning ~tags)
     |> CCResult.get_or
          ~default:(Dynparam.empty, if default then "TRUE" else "FALSE")
     |> fun (dyn, sql) ->
-    let dyn =
+    let (Dynparam.Pack (pt, pv)) =
       Dynparam.(
         dyn |> add Caqti_type.string Contact.(contact |> id |> Id.value))
     in
-    let (Dynparam.Pack (pt, pv)) = dyn in
     let open Caqti_request.Infix in
     let request = sql |> find_sql |> pt ->? Caqti_type.int in
-    let%lwt contacts =
-      Utils.Database.find_opt (pool |> Pool_database.Label.value) request pv
-      ||> CCOption.map_or ~default (CCInt.equal 1)
+    let matches_filter_request connection =
+      let (module Connection : Caqti_lwt.CONNECTION) = connection in
+      Connection.find_opt request pv
     in
-    Lwt.return contacts
+    Utils.Database.find_as_transaction
+      (pool |> Pool_database.Label.value)
+      ~setup:[ drop_temp_table; create_temp_table ]
+      ~cleanup:[ drop_temp_table ]
+      matches_filter_request
+    ||> CCOption.map_or ~default (CCInt.equal 1)
   ;;
 
   let count_filtered_request_sql where_fragment =
