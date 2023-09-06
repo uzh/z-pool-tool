@@ -730,5 +730,5 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let effects exp_id = Session.Guard.Access.update exp_id
+  let effects id = Session.Guard.Access.update id
 end
