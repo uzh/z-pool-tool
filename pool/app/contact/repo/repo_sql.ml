@@ -217,6 +217,14 @@ let find_all ?query ?actor ?permission pool () =
             WHERE pool_assignments.session_uuid IN %s
             )
         |sql}
+    ; Format.asprintf
+        {sql|
+          user_users.uuid IN (
+            SELECT contact_uuid FROM pool_sessions
+            JOIN pool_assignments ON pool_sessions.uuid = pool_assignments.session_uuid
+            WHERE pool_sessions.location_uuid IN %s
+            )
+        |sql}
     ; Format.asprintf "user_users.uuid IN %s"
     ]
   in

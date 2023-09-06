@@ -170,7 +170,7 @@ end = struct
          }
   ;;
 
-  let effects = Pool_location.Guard.Access.update
+  let effects id = Pool_location.Guard.Access.update id
 end
 
 module AddFile : sig

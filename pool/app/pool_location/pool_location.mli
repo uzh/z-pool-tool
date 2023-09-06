@@ -337,9 +337,9 @@ module Guard : sig
   module Access : sig
     val index : Guard.ValidationSet.t
     val create : Guard.ValidationSet.t
-    val read : Id.t -> Guard.ValidationSet.t
-    val update : Id.t -> Guard.ValidationSet.t
-    val delete : Id.t -> Guard.ValidationSet.t
+    val read : ?model:Role.Target.t -> Id.t -> Guard.ValidationSet.t
+    val update : ?model:Role.Target.t -> Id.t -> Guard.ValidationSet.t
+    val delete : ?model:Role.Target.t -> Id.t -> Guard.ValidationSet.t
 
     module File : sig
       val index : Guard.ValidationSet.t

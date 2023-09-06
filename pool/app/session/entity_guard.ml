@@ -52,12 +52,9 @@ module Access = struct
   ;;
 
   let read ?(model = `Session) experiment_id session_id =
-    And
-      [ Or
-          [ session ~model ~session_id Read
-          ; Experiment.Guard.Access.read ~model experiment_id
-          ]
-      ; Experiment.Guard.Access.read experiment_id
+    Or
+      [ session ~model ~session_id Read
+      ; Experiment.Guard.Access.read ~model experiment_id
       ]
   ;;
 

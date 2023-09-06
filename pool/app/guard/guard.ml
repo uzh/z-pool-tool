@@ -24,6 +24,7 @@ let location_manager_permissions : RolePermission.t list =
   let open Core.Permission in
   [ `LocationManager, Manage, `Location
   ; `LocationManager, Manage, `LocationFile
+  ; `LocationManager, Read, `ContactName
   ; `LocationManager, Read, `ContactInfo
   ; `LocationManager, Read, `Session
   ]

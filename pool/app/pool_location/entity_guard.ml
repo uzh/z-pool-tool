@@ -39,16 +39,15 @@ module Access = struct
   open ValidationSet
   open Permission
 
-  let location action uuid =
-    one_of_tuple
-      (action, `Location, Some (uuid |> Uuid.target_of Entity.Id.value))
+  let location ?(model = `Location) action uuid =
+    one_of_tuple (action, model, Some (uuid |> Uuid.target_of Entity.Id.value))
   ;;
 
   let index = one_of_tuple (Read, `Location, None)
   let create = one_of_tuple (Create, `Location, None)
-  let read = location Read
-  let update = location Update
-  let delete = location Delete
+  let read ?model = location ?model Read
+  let update ?model = location ?model Update
+  let delete ?model = location ?model Delete
 
   module File = struct
     let file action uuid =
