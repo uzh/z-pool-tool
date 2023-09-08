@@ -1,3 +1,5 @@
+open CCFun.Infix
+
 module Id = struct
   include Pool_common.Repo.Id
 end
@@ -12,13 +14,9 @@ module Description = struct
   include Entity.Description
 
   let t =
-    let encode str =
-      str |> yojson_of_t |> Yojson.Safe.to_string |> CCResult.return
-    in
-    let decode str =
-      str
-      |> read
-      |> CCResult.map_err Pool_common.(Utils.error_to_string Language.En)
+    let encode = yojson_of_t %> Yojson.Safe.to_string %> CCResult.return in
+    let decode =
+      read %> CCResult.map_err Pool_common.(Utils.error_to_string Language.En)
     in
     Caqti_type.(custom ~encode ~decode string)
   ;;

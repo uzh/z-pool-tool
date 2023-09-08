@@ -8,7 +8,7 @@ let default_values =
   let description =
     Pool_common.Language.all
     |> CCList.map (fun lang -> lang, "Online experiment location")
-    |> CCOption.pure
+    |> CCOption.return
   in
   [ "Online", None, None, Status.Active ]
   |> CCList.map (fun (label, address, link, status) ->
