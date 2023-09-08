@@ -107,8 +107,7 @@ let create search_type ?path req =
           ~model:Tags.Model.Contact
           ~exclude
           value
-        >|> Lwt_list.filter_s (fun ((id, _) as tag) ->
-          Logs.warn (fun m -> m "%s" ([%show: Tags.Id.t * Tags.Title.t] tag));
+        >|> Lwt_list.filter_s (fun (id, _) ->
           validate database_label (read id) actor ||> CCResult.is_ok)
       in
       (match query, actor with

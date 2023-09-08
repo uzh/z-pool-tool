@@ -216,9 +216,7 @@ let tag_subquery dyn operator ids =
   let* dyn, query_params = add_uuid_param dyn ids in
   let subquery ~count =
     let col = "DISTINCT pool_tags.uuid" in
-    let select =
-      if count then Format.asprintf "SELECT COUNT(%s)" col else col
-    in
+    let select = if count then Format.asprintf "COUNT(%s)" col else col in
     Format.asprintf
       {sql|
         SELECT
