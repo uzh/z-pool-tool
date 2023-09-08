@@ -387,6 +387,15 @@ let participation_filter experiment_ids operator () =
            |> CCList.map (fun id -> Str (id |> Experiment.Id.value)))))
 ;;
 
+let tag_filter tag_ids operator () =
+  let open Filter in
+  Pred
+    (Predicate.create
+       Key.(Hardcoded Tag)
+       operator
+       (Lst (tag_ids |> CCList.map (fun id -> Str (id |> Tags.Id.value)))))
+;;
+
 let firstname firstname =
   let open Filter in
   Pred
@@ -1061,4 +1070,118 @@ let filter_by_date_custom_field _ () =
       ()
   in
   test_filter true contact equal_filter experiment
+;;
+
+let[@warning "-27"] filter_by_tags _ () =
+  let open Utils.Lwt_result.Infix in
+  let open CCFun in
+  let open Tags in
+  let open Operator.ListM in
+  let open Alcotest in
+  let database_label = Data.database_label in
+  let%lwt tags = Tags.find_all database_label in
+  let contact_testable = Contact.(testable pp equal) in
+  let create_tag title =
+    let id = Id.create () in
+    let tag =
+      create ~id (Title.of_string title) Tags.Model.Contact
+      |> Test_utils.get_or_failwith_pool_error
+    in
+    let%lwt () = Created tag |> Tags.handle_event database_label in
+    find database_label id ||> Test_utils.get_or_failwith_pool_error
+  in
+  let%lwt tag_one = create_tag "A Testing Tag" in
+  let%lwt tag_two = create_tag "Another Testing Tag" in
+  let%lwt tag_three = create_tag "Some Testing Tag" in
+  let%lwt contact_one = TestContacts.get_contact 2 in
+  let%lwt contact_two = TestContacts.get_contact 3 in
+  let%lwt contact_three = TestContacts.get_contact 4 in
+  let handle_events =
+    Lwt_list.iter_s (Pool_event.handle_event Data.database_label)
+  in
+  let%lwt () =
+    let create_tagged_event contact tag =
+      let open Tagged in
+      { model_uuid = Contact.id contact; tag_uuid = tag.Tags.id }
+      |> tagged
+      |> Pool_event.tags
+    in
+    [ create_tagged_event contact_one tag_one
+    ; create_tagged_event contact_two tag_two
+    ; create_tagged_event contact_three tag_one
+    ; create_tagged_event contact_three tag_two
+    ]
+    |> handle_events
+  in
+  let%lwt experiment = Repo.create_experiment () in
+  let search filter =
+    let find =
+      experiment.Experiment.id
+      |> Experiment.Id.to_common
+      |> Filter.find_filtered_contacts Data.database_label
+    in
+    find (Some filter)
+    ||> get_exn_poolerror
+    ||> CCList.filter
+          (flip
+             (CCList.mem ~eq:Contact.equal)
+             [ contact_one; contact_two; contact_three ])
+    ||> CCList.sort Contact.compare
+  in
+  let create_filter ?(not = false) operator tags =
+    let query =
+      tag_filter
+        (CCList.map (fun tag -> tag.Tags.id) tags)
+        Operator.(operator |> list)
+        ()
+    in
+    Filter.create None (if not then Filter.Not query else query)
+  in
+  let%lwt () =
+    let%lwt res = create_filter ContainsNone [ tag_one ] |> search in
+    let msg =
+      "filtering 'ContainsNone' should not contain contact one or three"
+    in
+    check (list contact_testable) msg [ contact_two ] res |> Lwt.return
+  in
+  let%lwt () =
+    let%lwt res = create_filter ContainsAll [ tag_one; tag_two ] |> search in
+    let msg = "filtering 'ContainsAll' should contain contact three" in
+    check (list contact_testable) msg [ contact_three ] res |> Lwt.return
+  in
+  let%lwt () =
+    let%lwt res = create_filter ContainsAll [ tag_one ] |> search in
+    let msg = "filtering 'ContainsAll' should contain contact one and three" in
+    check (list contact_testable) msg [ contact_one; contact_three ] res
+    |> Lwt.return
+  in
+  let%lwt () =
+    let%lwt res = create_filter ~not:true ContainsAll [ tag_one ] |> search in
+    let msg = "filtering excluding 'ContainsAll' should contain contact two" in
+    check (list contact_testable) msg [ contact_two ] res |> Lwt.return
+  in
+  let%lwt () =
+    let%lwt res =
+      create_filter ContainsSome [ tag_one; tag_two; tag_three ] |> search
+    in
+    let msg =
+      "filtering 'ContainsSome' with multiple tags should contain all three \
+       contacts"
+    in
+    check
+      (list contact_testable)
+      msg
+      ([ contact_one; contact_two; contact_three ]
+       |> CCList.sort Contact.compare)
+      res
+    |> Lwt.return
+  in
+  let%lwt () =
+    let%lwt res = create_filter ContainsSome [ tag_three ] |> search in
+    let msg =
+      "filtering 'ContainsSome' with unassigned tag should contain no one"
+    in
+    check (list contact_testable) msg [] res |> Lwt.return
+  in
+  Lwt.return_unit
 ;;

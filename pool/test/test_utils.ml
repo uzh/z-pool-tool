@@ -192,7 +192,7 @@ module Model = struct
         })
   ;;
 
-  let create_experiment ?(id = Experiment.Id.create ()) () =
+  let create_experiment ?(id = Experiment.Id.create ()) ?filter () =
     let show_error err = Pool_common.(Utils.error_to_string Language.En err) in
     let open CCResult in
     Experiment.
@@ -210,7 +210,7 @@ module Model = struct
           |> CCOption.return
       ; cost_center = Some ("F-00000-11-22" |> CostCenter.of_string)
       ; organisational_unit = None
-      ; filter = None
+      ; filter
       ; contact_person_id = None
       ; smtp_auth_id = None
       ; email_session_reminder_lead_time =
@@ -565,8 +565,8 @@ module Repo = struct
     all_experiments () ||> CCList.hd
   ;;
 
-  let create_experiment ?(id = Experiment.Id.create ()) () =
-    let experiment = Model.create_experiment ~id () in
+  let create_experiment ?(id = Experiment.Id.create ()) ?filter () =
+    let experiment = Model.create_experiment ~id ?filter () in
     let%lwt () =
       Experiment.Created experiment
       |> Pool_event.experiment

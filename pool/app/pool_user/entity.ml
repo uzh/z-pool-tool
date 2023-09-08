@@ -204,7 +204,7 @@ module EmailAddress = struct
 end
 
 module CellPhone = struct
-  type t = string [@@deriving eq, show, yojson]
+  type t = string [@@deriving eq, ord, show, yojson]
 
   let validate str =
     let regex =
@@ -263,7 +263,7 @@ module Paused = struct
 end
 
 module Disabled = struct
-  type t = bool [@@deriving eq, show]
+  type t = bool [@@deriving eq, ord, show]
 
   let create m = m
   let value m = m

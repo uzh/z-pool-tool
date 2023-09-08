@@ -34,6 +34,7 @@ module Language : sig
   val create : string -> (t, Message.error) result
   val label : t -> string
   val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+  val compare : t -> t -> int
 
   val schema
     :  unit
@@ -55,6 +56,7 @@ module Version : sig
   val create : unit -> t
   val of_int : int -> t
   val increment : t -> t
+  val compare : t -> t -> int
 end
 
 module CreatedAt : sig
@@ -210,6 +212,7 @@ module ExperimentType : sig
   val pp : Format.formatter -> t -> unit
   val show : t -> string
   val equal : t -> t -> bool
+  val compare : t -> t -> int
   val read : string -> t
   val all : t list
 end

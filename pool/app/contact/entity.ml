@@ -1,5 +1,11 @@
 module User = Pool_user
 
+module Sihl_user = struct
+  include Sihl_user
+
+  let compare a b = CCString.compare a.Sihl_user.email b.Sihl_user.email
+end
+
 module MessageChannel = struct
   type t =
     | Email
@@ -8,7 +14,7 @@ module MessageChannel = struct
 end
 
 module NumberOfInvitations = struct
-  type t = int [@@deriving eq, show]
+  type t = int [@@deriving eq, ord, show]
 
   let init = 0
   let value m = m
@@ -18,7 +24,7 @@ module NumberOfInvitations = struct
 end
 
 module NumberOfAssignments = struct
-  type t = int [@@deriving eq, show]
+  type t = int [@@deriving eq, ord, show]
 
   let init = 0
   let value m = m
@@ -27,7 +33,7 @@ module NumberOfAssignments = struct
 end
 
 module NumberOfShowUps = struct
-  type t = int [@@deriving eq, show]
+  type t = int [@@deriving eq, ord, show]
 
   let init = 0
   let value m = m
@@ -36,7 +42,7 @@ module NumberOfShowUps = struct
 end
 
 module NumberOfNoShows = struct
-  type t = int [@@deriving eq, show]
+  type t = int [@@deriving eq, ord, show]
 
   let init = 0
   let value m = m
@@ -45,7 +51,7 @@ module NumberOfNoShows = struct
 end
 
 module NumberOfParticipations = struct
-  type t = int [@@deriving eq, show]
+  type t = int [@@deriving eq, ord, show]
 
   let init = 0
   let value m = m
@@ -87,7 +93,7 @@ type t =
   ; updated_at : Pool_common.Model.Ptime.t
        [@equal fun a b -> Ptime.equal a b || Sihl.Configuration.is_test ()]
   }
-[@@deriving eq, show]
+[@@deriving eq, show, ord]
 
 module Write = struct
   type t =

@@ -97,6 +97,7 @@ val lastname_firstname : t -> string
 val email_address : t -> Pool_user.EmailAddress.t
 val sexp_of_t : t -> Sexplib0.Sexp.t
 val show : t -> string
+val compare : t -> t -> int
 
 val find
   :  Pool_database.Label.t
