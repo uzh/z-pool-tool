@@ -18,8 +18,6 @@ module Data = struct
     let create =
       let open Pool_location in
       [ Field.(Name |> show), [ name |> Name.value ]
-      ; ( Field.(Description |> show)
-        , [ description |> CCOption.map_or ~default:"" Description.value ] )
       ; Field.(Link |> show), [ link |> CCOption.map_or ~default:"" Link.value ]
       ; Field.(Virtual |> show), [ "true" ]
       ; Field.(Status |> show), [ status |> Status.show ]
@@ -49,7 +47,7 @@ let create () =
   let events =
     Data.Location.create
     |> Http_utils.remove_empty_values
-    |> decode
+    |> decode None
     |> Pool_common.Utils.get_or_failwith
     |> handle ~id:Data.Location.id
   in

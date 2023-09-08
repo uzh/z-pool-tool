@@ -1,3 +1,5 @@
+open CCFun.Infix
+
 module Id = struct
   include Pool_common.Repo.Id
 end
@@ -11,7 +13,13 @@ end
 module Description = struct
   include Entity.Description
 
-  let t = Pool_common.Repo.make_caqti_type Caqti_type.string create value
+  let t =
+    let encode = yojson_of_t %> Yojson.Safe.to_string %> CCResult.return in
+    let decode =
+      read %> CCResult.map_err Pool_common.(Utils.error_to_string Language.En)
+    in
+    Caqti_type.(custom ~encode ~decode string)
+  ;;
 end
 
 module Address = struct
@@ -70,7 +78,7 @@ module Address = struct
           (tup2
              (option Institution.t)
              (tup2
-                Room.t
+                (option Room.t)
                 (tup2 (option Building.t) (tup2 Street.t (tup2 Zip.t City.t))))))
     ;;
   end

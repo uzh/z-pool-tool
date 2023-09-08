@@ -53,12 +53,14 @@ let show { Pool_context.language; _ } (location : Pool_location.t) =
             ]
         ; files_html
         ]
-    ; location.description
-      |> CCOption.map_or ~default:(txt "") (fun description ->
+    ; CCOption.bind location.description (fun description ->
         description
-        |> Description.value
-        |> Unsafe.data
-        |> CCList.return
-        |> div ~a:[ a_class [ "gap-lg" ] ])
+        |> Description.find_opt language
+        |> CCOption.map (fun desc ->
+          desc
+          |> Unsafe.data
+          |> CCList.return
+          |> div ~a:[ a_class [ "gap-lg" ] ]))
+      |> CCOption.value ~default:(txt "")
     ]
 ;;

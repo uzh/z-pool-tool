@@ -9,6 +9,23 @@ let id req field encode =
   Sihl.Web.Router.param req @@ Field.show field |> encode
 ;;
 
+let descriptions_from_urlencoded req urlencoded =
+  let open Pool_location in
+  let open CCOption in
+  let tenant_languages = Pool_context.Tenant.get_tenant_languages_exn req in
+  tenant_languages
+  |> CCList.filter_map (fun language ->
+    CCList.assoc_opt
+      ~eq:CCString.equal
+      (Description.field_name language)
+      urlencoded
+    >>= CCList.head_opt
+    >|= CCPair.make language)
+  |> function
+  | [] -> Ok None
+  | lst -> Description.create tenant_languages lst |> CCResult.map return
+;;
+
 let index req =
   let open Utils.Lwt_result.Infix in
   let result ({ Pool_context.database_label; _ } as context) =
@@ -28,7 +45,8 @@ let new_form req =
     Utils.Lwt_result.map_error (fun err -> err, "/admin/locations")
     @@
     let flash_fetcher key = Sihl.Web.Flash.find key req in
-    Page.Admin.Location.form context flash_fetcher
+    let tenant_languages = Pool_context.Tenant.get_tenant_languages_exn req in
+    Page.Admin.Location.form context tenant_languages flash_fetcher
     |> create_layout req context
     >|+ Sihl.Web.Response.of_html
   in
@@ -37,7 +55,11 @@ let new_form req =
 
 let create req =
   let open Utils.Lwt_result.Infix in
-  let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+  let%lwt urlencoded =
+    Sihl.Web.Request.to_urlencoded req
+    ||> HttpUtils.format_request_boolean_values [ Field.(Virtual |> show) ]
+    ||> HttpUtils.remove_empty_values
+  in
   let result { Pool_context.database_label; _ } =
     Utils.Lwt_result.map_error (fun err ->
       ( err
@@ -45,13 +67,16 @@ let create req =
       , [ HttpUtils.urlencoded_to_flash urlencoded ] ))
     @@
     let tags = Pool_context.Logger.Tags.req req in
+    let* description =
+      descriptions_from_urlencoded req urlencoded |> Lwt_result.lift
+    in
     let events =
       let open CCResult.Infix in
       let open Cqrs_command.Location_command.Create in
       urlencoded
       |> HttpUtils.format_request_boolean_values [ Field.(Virtual |> show) ]
       |> HttpUtils.remove_empty_values
-      |> decode
+      |> decode description
       >>= handle ~tags
       |> Lwt_result.lift
     in
@@ -159,13 +184,14 @@ let detail edit req =
     @@
     let id = id req Field.Location Pool_location.Id.of_string in
     let* location = Pool_location.find database_label id in
+    let tenant_languages = Pool_context.Tenant.get_tenant_languages_exn req in
     let states = Pool_location.Status.all in
     Page.Admin.Location.(
       match edit with
       | false -> detail location context
       | true ->
         let flash_fetcher key = Sihl.Web.Flash.find key req in
-        form ~location ~states context flash_fetcher)
+        form ~location ~states context tenant_languages flash_fetcher)
     |> Lwt.return_ok
     >>= create_layout req context
     >|+ Sihl.Web.Response.of_html
@@ -180,7 +206,11 @@ let update req =
   let open Utils.Lwt_result.Infix in
   let result { Pool_context.database_label; _ } =
     let id = id req Field.Location Pool_location.Id.of_string in
-    let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+    let%lwt urlencoded =
+      Sihl.Web.Request.to_urlencoded req
+      ||> HttpUtils.format_request_boolean_values [ Field.(Virtual |> show) ]
+      ||> HttpUtils.remove_empty_values
+    in
     let detail_path =
       id |> Pool_location.Id.value |> Format.asprintf "/admin/locations/%s"
     in
@@ -189,14 +219,15 @@ let update req =
       , Format.asprintf "%s/edit" detail_path
       , [ HttpUtils.urlencoded_to_flash urlencoded ] ))
     @@ let* location = Pool_location.find database_label id in
+       let* description =
+         descriptions_from_urlencoded req urlencoded |> Lwt_result.lift
+       in
        let tags = Pool_context.Logger.Tags.req req in
        let events =
          let open CCResult.Infix in
          let open Cqrs_command.Location_command.Update in
          urlencoded
-         |> HttpUtils.format_request_boolean_values [ Field.(Virtual |> show) ]
-         |> HttpUtils.remove_empty_values
-         |> decode
+         |> decode description
          >>= handle ~tags location
          |> Lwt_result.lift
        in

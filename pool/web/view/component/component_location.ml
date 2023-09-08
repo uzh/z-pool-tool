@@ -13,7 +13,7 @@ let formatted_address language address =
      let open Mail in
      let open CCOption in
      [ institution >|= Institution.value
-     ; room |> Room.value |> pure
+     ; room >|= Room.value
      ; building >|= Building.value
      ; street |> Street.value |> pure
      ; Format.asprintf "%s %s" (Zip.value zip) (City.value city) |> pure

@@ -235,13 +235,11 @@ let files_to_location pool ({ id; _ } as location) =
 
 let find pool id =
   let open Utils.Lwt_result.Infix in
-  (* TODO Implement as transaction *)
   Sql.find pool id |>> files_to_location pool
 ;;
 
 let find_all pool =
   let open Utils.Lwt_result.Infix in
-  (* TODO Implement as transaction *)
   Sql.find_all pool >|> Lwt_list.map_s (files_to_location pool)
 ;;
 
