@@ -803,7 +803,7 @@ let filter_ignore_admin_value _ () =
   Lwt.return_unit
 ;;
 
-let[@warning "-27"] filter_by_experiment_participation _ () =
+let filter_by_experiment_participation _ () =
   let open Assignment in
   let open Utils.Lwt_result.Infix in
   let hd = CCList.hd in
@@ -1072,14 +1072,13 @@ let filter_by_date_custom_field _ () =
   test_filter true contact equal_filter experiment
 ;;
 
-let[@warning "-27"] filter_by_tags _ () =
+let filter_by_tags _ () =
   let open Utils.Lwt_result.Infix in
   let open CCFun in
   let open Tags in
   let open Operator.ListM in
   let open Alcotest in
   let database_label = Data.database_label in
-  let%lwt tags = Tags.find_all database_label in
   let contact_testable = Contact.(testable pp equal) in
   let create_tag title =
     let id = Id.create () in
