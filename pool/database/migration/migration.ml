@@ -75,6 +75,7 @@ module Root = struct
       ; Migration_202306261642.migration_root ()
       ; Migration_202307121722.migration_root ()
       ; Migration_202307131619.migration_root ()
+      ; Migration_202309121645.migration ()
       ]
   ;;
 
@@ -130,6 +131,7 @@ module Tenant = struct
       ; Migration_202308041330.migration ()
       ; Migration_202308210946.migration ()
       ; Migration_202309081700.migration ()
+      ; Migration_202309121645.migration ()
       ]
   ;;
 
