@@ -25,7 +25,7 @@ end
 module Boolean = struct
   open Sexplib.Conv
 
-  type t = bool [@@deriving eq, show, sexp_of, yojson]
+  type t = bool [@@deriving eq, ord, show, sexp_of, yojson]
 
   let create m = m
   let value m = m
@@ -67,6 +67,7 @@ module type BooleanSig = sig
   val value : t -> bool
   val stringify : t -> string
   val of_string : string -> t
+  val compare : t -> t -> int
 
   val schema
     :  unit
@@ -116,7 +117,7 @@ end
 module Integer = struct
   open Sexplib.Conv
 
-  type t = int [@@deriving eq, show, sexp_of, yojson]
+  type t = int [@@deriving eq, ord, show, sexp_of, yojson]
 
   let value m = m
 
@@ -144,6 +145,7 @@ module type IntegerSig = sig
   val yojson_of_t : t -> Yojson.Safe.t
   val create : int -> (t, Entity_message.error) result
   val value : t -> int
+  val compare : t -> t -> int
 
   val schema
     :  unit
@@ -200,6 +202,7 @@ module Ptime = struct
   let create_now = Ptime_clock.now
   let to_human = Utils.Ptime.formatted_date_time
   let date_time_to_flatpickr = Ptime.to_rfc3339
+  let compare = Ptime.compare
 
   (* Date *)
   let equal_date (y1, m1, d1) (y2, m2, d2) =
@@ -245,6 +248,7 @@ module type PtimeSig = sig
   val value : t -> Ptime.t
   val create_now : unit -> t
   val to_human : t -> string
+  val compare : t -> t -> int
 
   val schema
     :  unit

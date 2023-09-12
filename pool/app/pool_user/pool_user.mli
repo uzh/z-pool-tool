@@ -78,6 +78,7 @@ module Disabled : sig
   val show : t -> string
   val value : t -> bool
   val create : bool -> t
+  val compare : t -> t -> int
 end
 
 module TermsAccepted : sig
@@ -89,6 +90,7 @@ module TermsAccepted : sig
   val create : Ptime.t -> t
   val create_now : unit -> t
   val value : t -> Ptime.t
+  val compare : t -> t -> int
 end
 
 module Verified : sig
@@ -100,6 +102,7 @@ module Verified : sig
   val create : Ptime.t -> t
   val create_now : unit -> t
   val value : t -> Ptime.t
+  val compare : t -> t -> int
 end
 
 module CellPhone : sig
@@ -112,6 +115,7 @@ module CellPhone : sig
   val t_of_yojson : Yojson.Safe.t -> t
   val yojson_of_t : t -> Yojson.Safe.t
   val pp : Format.formatter -> t -> unit
+  val compare : t -> t -> int
 
   val schema_test_cell_phone
     :  unit
@@ -168,6 +172,7 @@ module EmailVerified : sig
   val create : Ptime.t -> t
   val create_now : unit -> t
   val value : t -> Ptime.t
+  val compare : t -> t -> int
 end
 
 module Repo : sig

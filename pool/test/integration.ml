@@ -304,6 +304,7 @@ let suite =
               "try to assign experiment tag to contact"
               `Slow
               try_assign_experiment_tag_to_contact
+          ; test_case "filter tags" `Slow Filter_test.filter_by_tags
           ] )
     ; "cleanup", [ test_case "clean up test database" `Quick Seed.cleanup ]
     ; ( "user import"

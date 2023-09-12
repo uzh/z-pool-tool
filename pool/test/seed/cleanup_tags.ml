@@ -1,4 +1,4 @@
-let cleanup_tags database_label =
+let cleanup database_label =
   let open CCFun in
   let open Caqti_request.Infix in
   let delete_tagged =
