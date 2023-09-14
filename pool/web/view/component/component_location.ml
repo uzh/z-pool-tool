@@ -27,24 +27,21 @@ let formatted_address language address =
        []
 ;;
 
-let preview language (location : Pool_location.t) =
+let preview (location : Pool_location.t) =
   let open Pool_location in
-  let name = p [ txt (Name.value location.name) ] in
-  let link =
-    let open Address in
-    match location.address with
-    | Virtual -> txt ""
-    | Physical _ ->
-      let url =
-        Format.asprintf
-          "%s/%s"
-          Pool_common.Message.Field.(human_url Location)
-          (Id.value location.id)
-        |> Sihl.Web.externalize_path
-      in
-      a
-        ~a:[ a_href url ]
-        [ txt Pool_common.(Utils.text_to_string language I18n.LocationDetails) ]
-  in
-  [ name; br (); link ] |> address
+  let name = txt (Name.value location.name) in
+  let open Address in
+  (match location.address with
+   | Virtual -> p [ name ]
+   | Physical _ ->
+     let url =
+       Format.asprintf
+         "%s/%s"
+         Pool_common.Message.Field.(human_url Location)
+         (Id.value location.id)
+       |> Sihl.Web.externalize_path
+     in
+     a ~a:[ a_href url ] [ name ])
+  |> CCList.return
+  |> address
 ;;

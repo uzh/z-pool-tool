@@ -40,6 +40,7 @@ let index req =
 ;;
 
 let show req =
+  let open CCFun in
   let open Utils.Lwt_result.Infix in
   let error_path = "/experiments" in
   let result ({ Pool_context.database_label; _ } as context) =
@@ -56,6 +57,7 @@ let show req =
     let* grouped_sessions =
       Session.find_all_public_for_experiment database_label contact id
       >|+ Session.Public.group_and_sort
+      >|+ CCList.filter (fst %> Session.Public.is_fully_booked %> not)
     in
     let find_sessions fnc =
       let open Assignment in

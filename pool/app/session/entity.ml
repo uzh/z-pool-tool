@@ -252,6 +252,10 @@ let session_date_to_human (session : t) =
   session.start |> Start.value |> Pool_common.Utils.Time.formatted_date_time
 ;;
 
+let start_end_to_human ({ start; duration; _ } : t) =
+  Utils.Ptime.format_datetime_with_span start duration
+;;
+
 let compare_start s1 s2 = Start.compare s1.start s2.start
 
 let add_follow_ups_to_parents groups (parent, session) =
@@ -373,6 +377,10 @@ module Public = struct
   let get_session_end (session : t) =
     Ptime.add_span session.start session.duration
     |> CCOption.get_exn_or "Session end not in range"
+  ;;
+
+  let start_end_to_human ({ start; duration; _ } : t) =
+    Utils.Ptime.format_datetime_with_span start duration
   ;;
 end
 

@@ -49,11 +49,8 @@ let session_item layout language (experiment : Experiment.Public.t) session =
           ; br ()
           ]
         else [])
-       @ [ txt (session.Public.start |> Start.value |> Time.formatted_date_time)
-         ])
-  ; txt (session.Public.duration |> Duration.value |> Time.formatted_timespan)
-  ; txt (session |> Public.get_session_end |> Time.formatted_time)
-  ; session.Public.location |> Component.Location.preview language
+       @ [ txt (Session.Public.start_end_to_human session) ])
+  ; session.Public.location |> Component.Location.preview
   ]
   |> fun cells ->
   match layout with
@@ -62,9 +59,7 @@ let session_item layout language (experiment : Experiment.Public.t) session =
 ;;
 
 let public_overview sessions experiment language =
-  let thead =
-    Field.[ Some Start; Some Duration; Some End; Some Location; None ]
-  in
+  let thead = Field.[ Some DateTime; Some Location; None ] in
   let session_item = session_item `Register language experiment in
   CCList.flat_map
     (fun (session, follow_ups) ->

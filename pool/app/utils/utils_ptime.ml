@@ -36,6 +36,10 @@ let to_local_date date =
   |> CCOption.get_exn_or "Invalid ptime provided"
 ;;
 
+let equal_date ((y1, m1, d1) : Ptime.date) ((y2, m2, d2) : Ptime.date) =
+  CCInt.(equal y1 y2 && equal m1 m2 && equal d1 d2)
+;;
+
 let formatted_date ptime =
   ptime |> to_local_date |> Ptime.to_date |> date_to_human
 ;;
@@ -58,6 +62,22 @@ let timespan_to_minutes timespan =
   |> Ptime.Span.to_int_s
   |> CCOption.map_or ~default:"" (fun timespan ->
     timespan / 60 |> CCInt.to_string)
+;;
+
+let format_datetime_with_span start duration =
+  let end_time =
+    Ptime.add_span start duration |> CCOption.get_exn_or "end time not in range"
+  in
+  let format_end_date =
+    if equal_date (Ptime.to_date start) (Ptime.to_date end_time)
+    then formatted_time ~with_seconds:false
+    else formatted_date_time
+  in
+  Format.asprintf
+    "%s - %s (%s)"
+    (formatted_date_time start)
+    (format_end_date end_time)
+    (formatted_timespan duration)
 ;;
 
 (* Utilities *)

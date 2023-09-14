@@ -3,6 +3,7 @@ open Component.Input
 module PageSession = Page_contact_sessions
 module Assignment = Page_contact_assignment
 module HttpUtils = Http_utils
+module Field = Pool_common.Message.Field
 
 let index
   experiment_list
@@ -197,20 +198,22 @@ let show
     | false -> Message.AddToWaitingList, "primary"
   in
   let session_list sessions =
-    if CCList.is_empty sessions
-    then
-      p
-        [ Utils.text_to_string language (I18n.EmtpyList Message.Field.Sessions)
-          |> txt
-        ]
-    else
-      div
-        [ h2
-            ~a:[ a_class [ "heading-2" ] ]
-            [ txt (Utils.nav_link_to_string language I18n.Sessions) ]
-        ; p [ txt (hint_to_string I18n.ExperimentSessionsPublic) ]
-        ; div [ PageSession.public_overview sessions experiment language ]
-        ]
+    div
+      ([ h2
+           ~a:[ a_class [ "heading-2" ] ]
+           [ txt (Utils.nav_link_to_string language I18n.Sessions) ]
+       ; p [ txt (hint_to_string I18n.ExperimentSessionsPublic) ]
+       ]
+       @
+       if CCList.is_empty sessions
+       then
+         [ p
+             [ Utils.text_to_string language (I18n.EmtpyList Field.Sessions)
+               |> txt
+             ]
+         ]
+       else [ div [ PageSession.public_overview sessions experiment language ] ]
+      )
   in
   let waiting_list_form () =
     let form_action =
