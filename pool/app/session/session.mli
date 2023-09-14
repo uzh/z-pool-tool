@@ -154,6 +154,7 @@ val is_fully_booked : t -> bool
 val available_spots : t -> int
 val has_assignments : t -> bool
 val session_date_to_human : t -> string
+val start_end_to_human : t -> string
 
 type event =
   | Created of (t * Experiment.Id.t)
@@ -192,6 +193,7 @@ module Public : sig
   val assignment_creatable : t -> (unit, Pool_common.Message.error) result
   val group_and_sort : t list -> (t * t list) list
   val get_session_end : t -> Ptime.t
+  val start_end_to_human : t -> string
 end
 
 val to_public : t -> Public.t

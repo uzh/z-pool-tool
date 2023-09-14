@@ -414,7 +414,6 @@ let edit
   in
   let session_data =
     let open Session in
-    let field_to_string = Pool_common.Utils.field_to_string language in
     div
       ~a:[ a_class [ "stack"; "inset"; "border"; " bg-grey-light" ] ]
       [ h3
@@ -423,15 +422,8 @@ let edit
                 Utils.field_to_string language Message.Field.Session
                 |> CCString.capitalize_ascii)
           ]
-      ; p
-          [ txt (field_to_string Field.Start |> CCString.capitalize_ascii)
-          ; txt ": "
-          ; session.start
-            |> Start.value
-            |> Pool_common.Utils.Time.formatted_date_time
-            |> txt
-          ]
-      ; Component.Location.preview language session.location
+      ; p [ session |> Session.start_end_to_human |> txt ]
+      ; Component.Location.preview session.location
       ]
   in
   [ div
