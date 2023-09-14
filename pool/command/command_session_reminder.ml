@@ -9,7 +9,7 @@ let tenant_specific_session_reminder =
       pool
       |> Pool_tenant.find_by_label
       ||> get_or_failwith
-      >|> Reminder.send_tenant_reminder
+      >|> Reminder.Service.send_tenant_reminder
       ||> CCOption.some)
 ;;
 
@@ -22,5 +22,5 @@ let all_tenants_session_reminder =
       let%lwt (_ : Pool_database.Label.t list) =
         Command_utils.setup_databases ()
       in
-      Reminder.run () ||> CCOption.some)
+      Reminder.Service.run () ||> CCOption.some)
 ;;

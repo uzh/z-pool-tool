@@ -8,8 +8,8 @@
   caqti-driver-mariadb
   contact
   contact_counter
-  custom_field
   cqrs_command
+  custom_field
   database
   experiment
   guard
@@ -21,6 +21,7 @@
   pool_event
   pool_location
   pool_tenant
+  reminder
   tags
   tenant
   utils

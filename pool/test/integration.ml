@@ -180,6 +180,10 @@ let suite =
               "close session and check contact figures"
               `Slow
               close_session_check_contact_figures
+          ; test_case
+              "send session reminders with default lead times"
+              `Slow
+              send_session_reminders_with_default_leat_time
           ] )
     ; ( "waiting lists"
       , Waiting_list_test.

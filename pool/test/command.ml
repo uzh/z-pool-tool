@@ -358,10 +358,6 @@ let () =
             `Quick
             Session_test.close_unparticipated_with_followup
         ; test_case
-            "send reminders for session succeeds"
-            `Quick
-            Session_test.send_reminder
-        ; test_case
             "create follow up earlier than parent fails"
             `Quick
             Session_test.create_follow_up_earlier

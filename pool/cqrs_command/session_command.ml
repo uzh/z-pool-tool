@@ -621,43 +621,15 @@ end = struct
   let effects = Session.Guard.Access.update
 end
 
-module SendReminder : sig
-  include
-    Common.CommandSig
-      with type t = (Session.t * Experiment.t * Sihl_email.t list) list
-
-  val effects : Experiment.Id.t -> Session.Id.t -> Guard.ValidationSet.t
-end = struct
-  type t = (Session.t * Experiment.t * Sihl_email.t list) list
-
-  let handle ?(tags = Logs.Tag.empty) command =
-    Logs.info ~src (fun m -> m "Handle command SendReminder" ~tags);
-    Ok
-      (CCList.flat_map
-         (fun (session, { Experiment.smtp_auth_id; _ }, emails) ->
-           let emails =
-             emails |> CCList.map (fun email -> email, smtp_auth_id)
-           in
-           (Session.EmailReminderSent session |> Pool_event.session)
-           ::
-           (if emails |> CCList.is_empty |> not
-            then [ Email.BulkSent emails |> Pool_event.email ]
-            else []))
-         command)
-  ;;
-
-  let effects = Session.Guard.Access.update
-end
-
 module ResendReminders : sig
   include Common.CommandSig with type t = Pool_common.Reminder.Channel.t
 
   val handle
     :  ?tags:Logs.Tag.set
     -> (Assignment.t -> (Sihl_email.t, Pool_common.Message.error) result)
-    -> (Assignment.t
-        -> Pool_user.CellPhone.t
-        -> (Text_message.t, Pool_common.Message.error) result)
+       * (Assignment.t
+          -> Pool_user.CellPhone.t
+          -> (Text_message.t, Pool_common.Message.error) result)
     -> Experiment.t
     -> Session.t
     -> Assignment.t list
@@ -675,8 +647,7 @@ end = struct
 
   let handle
     ?(tags = Logs.Tag.empty)
-    create_email
-    create_text_message
+    (create_email, create_text_message)
     experiment
     session
     assignments

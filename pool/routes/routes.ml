@@ -353,7 +353,7 @@ module Admin = struct
             in
             [ choose
                 ~scope:(add_template_label SessionReminder)
-                ~middlewares:[ Access.send_reminder ]
+                ~middlewares:[ Access.update ]
                 (label_specific
                    new_session_reminder
                    new_session_reminder_post
@@ -367,6 +367,7 @@ module Admin = struct
               ; post "/close" ~middlewares:[ Session.Access.close ] close_htmx
               ; get "/edit" ~middlewares:[ Access.update ] edit
               ; post "" ~middlewares:[ Access.update ] update
+              ; post "/remind" ~middlewares:[ Access.update ] remind
               ; post
                   "/mark-as-deleted"
                   ~middlewares:[ Access.mark_as_deleted ]

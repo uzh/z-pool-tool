@@ -749,16 +749,8 @@ let resend_reminders req =
     in
     let tenant = Pool_context.Tenant.get_tenant_exn req in
     let tenant_languages = Pool_context.Tenant.get_tenant_languages_exn req in
-    let%lwt email_reminders =
-      Message_template.SessionReminder.prepare_emails
-        database_label
-        tenant
-        tenant_languages
-        experiment
-        session
-    in
-    let%lwt text_message_reminders =
-      Message_template.SessionReminder.prepare_text_messages
+    let%lwt create_messages =
+      Reminder.prepare_messages
         database_label
         tenant
         tenant_languages
@@ -770,13 +762,7 @@ let resend_reminders req =
       let open Cqrs_command.Session_command.ResendReminders in
       urlencoded
       |> decode
-      >>= handle
-            ~tags
-            email_reminders
-            text_message_reminders
-            experiment
-            session
-            assignments
+      >>= handle ~tags create_messages experiment session assignments
       |> Lwt_result.lift
     in
     let%lwt () = Pool_event.handle_events ~tags database_label events in
@@ -845,7 +831,6 @@ module Access : sig
 
   val reschedule : Rock.Middleware.t
   val cancel : Rock.Middleware.t
-  val send_reminder : Rock.Middleware.t
   val close : Rock.Middleware.t
 end = struct
   module SessionCommand = Cqrs_command.Session_command
@@ -898,12 +883,6 @@ end = struct
 
   let cancel =
     SessionCommand.Cancel.effects
-    |> combined_effects
-    |> Guardian.validate_generic
-  ;;
-
-  let send_reminder =
-    SessionCommand.SendReminder.effects
     |> combined_effects
     |> Guardian.validate_generic
   ;;

@@ -397,13 +397,13 @@ module Sql = struct
         ( "pool_sessions.email_reminder_sent_at IS NULL"
         , {sql| pool_sessions.email_reminder_lead_time,
       pool_experiments.email_session_reminder_lead_time,
-      (SELECT value FROM pool_system_settings WHERE settings_key = $1))|sql}
+      (SELECT value FROM pool_system_settings WHERE settings_key = $1)|sql}
         )
       | `TextMessage ->
         ( "pool_sessions.text_message_reminder_sent_at IS NULL"
         , {sql| pool_sessions.text_message_reminder_lead_time,
       pool_experiments.text_message_session_reminder_lead_time,
-      (SELECT value FROM pool_system_settings WHERE settings_key = $1))|sql}
+      (SELECT value FROM pool_system_settings WHERE settings_key = $1)|sql}
         )
     in
     let open Caqti_request.Infix in
@@ -423,7 +423,7 @@ module Sql = struct
       pool_sessions.start <= DATE_ADD(NOW(), INTERVAL
         COALESCE(
           %s
-        SECOND)
+        ) SECOND)
     |sql}
       reminder_sent_at
       lead_time

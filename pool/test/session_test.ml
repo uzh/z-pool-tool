@@ -1037,42 +1037,6 @@ let close_unparticipated_with_followup () =
   check_result expected res
 ;;
 
-let send_reminder () =
-  let session1 = Test_utils.Model.create_session () in
-  let session2 =
-    { (Test_utils.Model.create_session ()) with
-      Session.start = Data.Validated.start1
-    }
-  in
-  let experiment = Model.create_experiment () in
-  let users =
-    CCList.range 1 4
-    |> CCList.map (fun i ->
-      Sihl_email.create
-        ~sender:"admin@mail.com"
-        ~recipient:(CCFormat.asprintf "user%i@mail.com" i)
-        ~subject:"Reminder"
-        "Hello, this is a reminder for the session")
-  in
-  let res =
-    SessionC.SendReminder.handle
-      [ session1, experiment, CCList.take 2 users
-      ; session2, experiment, CCList.drop 2 users
-      ]
-  in
-  let smtp_auth_id = experiment.Experiment.smtp_auth_id in
-  check_result
-    (Ok
-       (CCList.flat_map
-          (fun (s, es) ->
-            let es = es |> CCList.map (fun email -> email, smtp_auth_id) in
-            [ Pool_event.session (Session.EmailReminderSent s)
-            ; Pool_event.email (Email.BulkSent es)
-            ])
-          [ session1, CCList.take 2 users; session2, CCList.drop 2 users ]))
-    res
-;;
-
 let create_follow_up_earlier () =
   let open CCResult.Infix in
   let open Pool_common.Message in
@@ -1401,8 +1365,7 @@ let resend_reminders_invalid () =
   let session2 = Session.{ session with closed_at = Some closed_at } in
   let handle session =
     handle
-      create_email
-      create_tet_message
+      (create_email, create_tet_message)
       experiment
       session
       assignments
@@ -1448,8 +1411,7 @@ let resend_reminders_valid () =
   in
   let handle channel =
     handle
-      create_email
-      create_text_message
+      (create_email, create_text_message)
       experiment
       session
       assignments
@@ -1493,8 +1455,8 @@ let close_session_check_contact_figures _ () =
   let contacts =
     [ participated_c, `Participated; show_up_c, `ShowUp; no_show_c, `NoShow ]
   in
-  let%lwt () =
-    contacts |> Lwt_list.iter_s (fst %> AssignmentRepo.create session)
+  let%lwt (_ : Assignment.t list) =
+    contacts |> Lwt_list.map_s (fst %> AssignmentRepo.create session)
   in
   let%lwt assignments =
     Assignment.find_by_session Data.database_label session.Session.id
@@ -1577,5 +1539,111 @@ let close_session_check_contact_figures _ () =
     ||> CCList.is_empty
   in
   let () = Alcotest.(check bool "succeeds" true res) in
+  Lwt.return_unit
+;;
+
+let send_session_reminders_with_default_leat_time _ () =
+  let open Utils.Lwt_result.Infix in
+  let open Integration_utils in
+  let get_exn = get_or_failwith_pool_error in
+  let database_label = Test_utils.Data.database_label in
+  let%lwt tenant = Pool_tenant.find_by_label database_label ||> get_exn in
+  let s_to_lead s =
+    s |> Ptime.Span.of_int_s |> Pool_common.Reminder.LeadTime.create |> get_exn
+  in
+  let%lwt () =
+    [ Settings.DefaultReminderLeadTimeUpdated (24 * 60 * 60 |> s_to_lead)
+    ; Settings.DefaultTextMsgReminderLeadTimeUpdated (12 * 60 * 60 |> s_to_lead)
+    ]
+    |> Lwt_list.iter_s (Settings.handle_event database_label)
+  in
+  let%lwt experiment = ExperimentRepo.create () in
+  let create_session ?email_reminder_sent_at hours =
+    let start =
+      hours * 60 * 60
+      |> Ptime.Span.of_int_s
+      |> Test_utils.Model.session_start_in
+    in
+    SessionRepo.create
+      ~start
+      ?email_reminder_sent_at
+      experiment.Experiment.id
+      ()
+  in
+  let%lwt session1 = create_session 16 in
+  let%lwt session2 =
+    let email_reminder_sent_at =
+      let hour = Ptime.Span.of_int_s @@ (60 * 60) in
+      Ptime.sub_span (Ptime_clock.now ()) hour
+      |> CCOption.get_exn_or "Invalid timespan"
+      |> Pool_common.Reminder.SentAt.create
+    in
+    create_session ~email_reminder_sent_at 8
+  in
+  let%lwt contact = ContactRepo.create () in
+  let%lwt assignment1 = AssignmentRepo.create session1 contact in
+  let%lwt assignment2 = AssignmentRepo.create session2 contact in
+  let update_session { Session.id; _ } =
+    Session.find database_label id ||> get_exn
+  in
+  let%lwt session1 = update_session session1 in
+  let%lwt session2 = update_session session2 in
+  let%lwt email_reminders, text_message_reminders =
+    Session.find_sessions_to_remind database_label
+    ||> get_exn
+    ||> fun (email_reminders, text_message_reminders) ->
+    let open Session in
+    (* Make sure only relevant sessions are returned *)
+    let filter =
+      CCList.filter (fun { id; _ } ->
+        CCList.mem id [ session1.id; session2.id ])
+    in
+    filter email_reminders, filter text_message_reminders
+  in
+  let%lwt res =
+    Reminder.Service.create_reminder_events
+      tenant
+      email_reminders
+      text_message_reminders
+  in
+  let%lwt expected =
+    let open Message_template in
+    let%lwt sys_languages = Settings.find_languages database_label in
+    let%lwt emails =
+      let%lwt create =
+        SessionReminder.prepare_emails
+          database_label
+          tenant
+          sys_languages
+          experiment
+          session1
+      in
+      [ Email.BulkSent [ create assignment1 |> get_exn, None ]
+        |> Pool_event.email
+      ; Session.EmailReminderSent session1 |> Pool_event.session
+      ]
+      |> Lwt.return
+    in
+    let%lwt text_messages =
+      let cell_phone =
+        contact.Contact.cell_phone |> CCOption.get_exn_or "Missing cell phone"
+      in
+      let%lwt create =
+        Message_template.SessionReminder.prepare_text_messages
+          database_label
+          tenant
+          sys_languages
+          experiment
+          session2
+      in
+      [ Text_message.BulkSent [ create assignment2 cell_phone |> get_exn ]
+        |> Pool_event.text_message
+      ; Session.TextMsgReminderSent session2 |> Pool_event.session
+      ]
+      |> Lwt.return
+    in
+    Lwt_result.return (emails @ text_messages)
+  in
+  let () = check_result expected res in
   Lwt.return_unit
 ;;

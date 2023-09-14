@@ -2,9 +2,13 @@ open Test_utils
 
 module AssignmentRepo = struct
   let create ?id session contact =
-    Assignment.(Created (create ?id contact, session.Session.id))
-    |> Pool_event.assignment
-    |> Pool_event.handle_event Data.database_label
+    let assignment = Assignment.create ?id contact in
+    let%lwt () =
+      Assignment.(Created (assignment, session.Session.id))
+      |> Pool_event.assignment
+      |> Pool_event.handle_event Data.database_label
+    in
+    Lwt.return assignment
   ;;
 end
 
@@ -110,11 +114,27 @@ module WaitingListRepo = struct
 end
 
 module SessionRepo = struct
-  let create ?id ?location ?follow_up_to ?start experiment_id () =
+  let create
+    ?id
+    ?location
+    ?follow_up_to
+    ?start
+    ?email_reminder_sent_at
+    experiment_id
+    ()
+    =
     let%lwt location =
       location |> CCOption.map_or ~default:(LocationRepo.create ()) Lwt.return
     in
-    let session = Model.create_session ?id ~location ?follow_up_to ?start () in
+    let session =
+      Model.create_session
+        ?id
+        ~location
+        ?follow_up_to
+        ?start
+        ?email_reminder_sent_at
+        ()
+    in
     let%lwt () =
       Session.(Created (session, experiment_id))
       |> Pool_event.session

@@ -362,6 +362,54 @@ let update req =
   result |> HttpUtils.extract_happy_path ~src req
 ;;
 
+let remind req =
+  let open Utils.Lwt_result.Infix in
+  let open Assignment in
+  let experiment_id, session_id, assignment_id = ids_from_request req in
+  let redirect_path =
+    Page.Admin.Session.session_path experiment_id session_id
+  in
+  let result { Pool_context.database_label; _ } =
+    Utils.Lwt_result.map_error (fun err -> err, redirect_path)
+    @@
+    let tags = Pool_context.Logger.Tags.req req in
+    let%lwt urlencoded =
+      Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
+    in
+    let tenant = Pool_context.Tenant.get_tenant_exn req in
+    let tenant_languages = Pool_context.Tenant.get_tenant_languages_exn req in
+    let* assignment = find database_label assignment_id in
+    let* experiment = Experiment.find database_label experiment_id in
+    let* session = Session.find database_label session_id in
+    let%lwt create_messages =
+      Reminder.prepare_messages
+        database_label
+        tenant
+        tenant_languages
+        experiment
+        session
+    in
+    let events =
+      let open Cqrs_command.Assignment_command.SendReminder in
+      let open CCResult.Infix in
+      urlencoded
+      |> decode
+      >>= handle ~tags create_messages experiment session assignment
+      |> Lwt_result.lift
+    in
+    let handle events =
+      let%lwt () =
+        Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
+      in
+      Http_utils.redirect_to_with_actions
+        redirect_path
+        [ Message.set ~success:[ Pool_common.Message.(Sent Field.Reminder) ] ]
+    in
+    events |>> handle
+  in
+  result |> HttpUtils.extract_happy_path ~src req
+;;
+
 module Access : sig
   include module type of Helpers.Access
 
