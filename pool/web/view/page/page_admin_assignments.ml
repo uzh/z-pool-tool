@@ -108,6 +108,7 @@ module Partials = struct
       let open Pool_common.Reminder in
       let action =
         assignment_specific_path ~suffix:"remind" experiment_id session_id id
+        |> Sihl.Web.externalize_path
       in
       let available_channels =
         let open Channel in
