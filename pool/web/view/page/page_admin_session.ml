@@ -741,7 +741,13 @@ let detail
       let counters =
         let length lst = lst |> CCList.length |> CCInt.to_string |> txt in
         let open Assignment in
-        let assignment_count = Field.AssignmentCount, assignments |> length in
+        let assignment_count =
+          ( Field.AssignmentCount
+          , session.assignment_count
+            |> AssignmentCount.value
+            |> CCInt.to_string
+            |> txt )
+        in
         match session.Session.closed_at with
         | None -> [ assignment_count ]
         | Some (_ : Ptime.t) ->
