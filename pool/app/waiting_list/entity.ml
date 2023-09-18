@@ -54,6 +54,6 @@ let searchable_by = Contact.searchable_by
 
 let sortable_by =
   searchable_by
-  @ (Pool_common.Message.[ Field.CreatedAt, "pool_invitations.created_at" ]
+  @ (Pool_common.Message.[ Field.CreatedAt, "pool_waiting_list.created_at" ]
      |> Query.Column.create_list)
 ;;
