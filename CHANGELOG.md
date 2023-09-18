@@ -4,21 +4,37 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/pool/tree/HEAD)
 
+## [0.4.6](https://github.com/uzh/pool/tree/0.4.6) - 2023-09-18
+
 ### Added
 
 - icons for paused / verified status of contacts
 - send reminders via text message
+- location description per language
+- resend a single reminder
 
 ### Fixed
 
 - Layout of navigation in footer on mobile devices
 - Retain filter when using pagination
+- checking if contact matches filter
+- location address format
+- filter for including tags
+- session registration sessions with cancelled assignments
+- searchable created at field for waiting list
+- text message intercepter
 
 ### Changed
 
 - improve performance of 'contains none' and 'contains some' filters
 - refactored session close view layout
 - placed buttons of session list in a dropdown
+- improve location create form
+- sort locations alphabetically
+- hide fully booked sessions for contact registration
+- always show hint about empty session list for contact registration
+- reformat displayed session start/end/duration
+- add message template element for session start/end/duration
 
 ## [0.4.5](https://github.com/uzh/pool/tree/0.4.5) - 2023-08-22
 
