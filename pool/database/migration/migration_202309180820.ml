@@ -82,7 +82,7 @@ let add_session_experiment_index =
   Sihl.Database.Migration.create_step
     ~label:"add session experiment index"
     {sql|
-      CREATE INDEX fk_pool_experiments ON pool_sessions (experiment_uuid)
+      CREATE INDEX index_pool_experiments ON pool_sessions (experiment_uuid)
     |sql}
 ;;
 
