@@ -154,7 +154,6 @@ let handle ?ctx msg =
   in
   let%lwt api_key = get_api_key database_label in
   let tags = tags database_label in
-  let () = if is_development () then print_message ~tags msg else () in
   match is_production (), bypass () with
   | true, _ | _, true ->
     let open Cohttp in
