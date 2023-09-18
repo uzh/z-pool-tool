@@ -92,7 +92,8 @@ let intercept_prepare database_label ({ recipient; _ } as job) =
     else ()
   in
   match
-    Sihl.Configuration.is_production (), incercept_text_message_address ()
+    ( Sihl.Configuration.is_production () || bypass ()
+    , incercept_text_message_address () )
   with
   | true, _ -> Lwt.return_ok (TextMessageJob job)
   | false, Some new_recipient ->
@@ -154,8 +155,8 @@ let handle ?ctx msg =
   in
   let%lwt api_key = get_api_key database_label in
   let tags = tags database_label in
-  match is_production (), bypass () with
-  | true, _ | _, true ->
+  match is_production () || bypass () with
+  | true ->
     let open Cohttp in
     let%lwt resp, body_string = send_message api_key msg in
     (match
@@ -179,7 +180,7 @@ let handle ?ctx msg =
            msg.text
            body_string);
        Lwt.return_ok ())
-  | false, false ->
+  | false ->
     "Sending text message intercepted (non production environment)."
     |> Lwt.return_error
 ;;
@@ -189,8 +190,8 @@ let test_api_key ~tags api_key cell_phone tenant_title =
   let open Cohttp in
   let msg = create cell_phone tenant_title "Your API Key is valid." in
   let () = if is_development () then print_message ~tags msg else () in
-  match is_production (), bypass () with
-  | true, _ | _, true ->
+  match is_production () || bypass () with
+  | true ->
     let%lwt resp, body_string = send_message api_key msg in
     (match
        resp |> Response.status |> Code.code_of_status |> CCInt.equal 200
@@ -213,7 +214,7 @@ let test_api_key ~tags api_key cell_phone tenant_title =
            msg.text
            body_string);
        Lwt.return_ok api_key)
-  | false, false ->
+  | false ->
     Pool_common.Message.TextMessageInterceptionError
       "Sending text message intercepted"
     |> Lwt.return_error
