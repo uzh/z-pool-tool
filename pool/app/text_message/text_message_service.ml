@@ -1,7 +1,12 @@
-module Queue = Sihl_queue.MariaDb
-open Entity
 open CCFun
+open Utils.Lwt_result.Infix
+open Entity
+module Queue = Sihl_queue.MariaDb
 module CellPhone = Pool_user.CellPhone
+
+type message =
+  | TextMessageJob of t
+  | EmailJob of Email.job
 
 let src = Logs.Src.create "pool_tenant.service.text_message"
 let tags database_label = Pool_database.(Logger.Tags.create database_label)
@@ -25,6 +30,10 @@ let bypass () =
   CCOption.get_or
     ~default:false
     (Sihl.Configuration.read_bool "TEXT_MESSAGE_BYPASS_INTERCEPT")
+;;
+
+let incercept_text_message_address () =
+  Sihl.Configuration.read_string "TEXT_MESSAGE_INTERCEPT_ADDRESS"
 ;;
 
 module Config = struct
@@ -75,46 +84,49 @@ let print_message ~tags ?(log_level = Logs.Info) msg =
   Logs.msg ~src log_level (fun m -> m ~tags "%s" text_message)
 ;;
 
-let intercept_message ~tags database_label msg =
-  let send_intercept_message recipient =
+let intercept_prepare database_label ({ recipient; _ } as job) =
+  let tags = tags database_label in
+  let () =
+    if Sihl.Configuration.is_development ()
+    then print_message ~tags ~log_level:Logs.Info job
+    else ()
+  in
+  match
+    ( Sihl.Configuration.is_production () || bypass ()
+    , incercept_text_message_address () )
+  with
+  | true, _ -> Lwt.return_ok (TextMessageJob job)
+  | false, Some new_recipient ->
     Logs.info ~src (fun m ->
       m
         ~tags
         "Sending text message intercepted. Sending message as email to ('%s')"
-        (Pool_user.EmailAddress.value recipient));
+        new_recipient);
     let%lwt sender =
       Email.Service.default_sender_of_pool database_label
       |> Lwt.map Pool_user.EmailAddress.value
     in
-    let body = format_message msg in
-    let subject = "Text message intercept" in
-    ( Sihl_email.create
-        ~sender
-        ~recipient:(Pool_user.EmailAddress.value recipient)
-        ~subject
-        ~html:body
-        body
-    , None )
-    |> Email.Service.dispatch database_label
-  in
-  match Sihl.Configuration.is_production () || bypass () with
-  | false -> print_message ~tags msg |> Lwt.return_some
-  | true ->
-    let intercept_address =
-      match
-        Sihl.Configuration.(
-          is_production (), read_string "TEXT_MESSAGE_INTERCEPT_ADDRESS")
-      with
-      | true, _ | _, None -> None
-      | false, Some address -> Some address
+    let subject =
+      Format.asprintf
+        "[Pool Tool] Text message intercept (original to: %s)"
+        (CellPhone.value recipient)
     in
-    intercept_address
-    |> CCOption.map_or
-         ~default:Lwt.return_none
-         CCFun.(
-           Pool_user.EmailAddress.of_string
-           %> send_intercept_message
-           %> Lwt.map CCOption.return)
+    EmailJob
+      { Email.email =
+          Sihl_email.create
+            ~sender
+            ~recipient:new_recipient
+            ~subject
+            (format_message job)
+      ; smtp_auth_id = None
+      }
+    |> Lwt.return_ok
+  | false, None ->
+    Lwt.return_error
+      (Pool_common.Message.TextMessageInterceptionError
+         "Sending text message intercepted! As no redirect email is specified \
+          it/they wont be sent. Please define environment variable \
+          'TEXT_MESSAGE_INTERCEPT_ADDRESS'.")
 ;;
 
 let send_message api_key msg =
@@ -133,6 +145,7 @@ let send_message api_key msg =
 ;;
 
 let handle ?ctx msg =
+  let open Sihl.Configuration in
   let database_label =
     let open CCOption in
     ctx
@@ -142,9 +155,8 @@ let handle ?ctx msg =
   in
   let%lwt api_key = get_api_key database_label in
   let tags = tags database_label in
-  match%lwt intercept_message ~tags database_label msg with
-  | Some () -> Lwt_result.return ()
-  | None ->
+  match is_production () || bypass () with
+  | true ->
     let open Cohttp in
     let%lwt resp, body_string = send_message api_key msg in
     (match
@@ -168,14 +180,18 @@ let handle ?ctx msg =
            msg.text
            body_string);
        Lwt.return_ok ())
+  | false ->
+    "Sending text message intercepted (non production environment)."
+    |> Lwt.return_error
 ;;
 
-let test_api_key ~tags database_label api_key cell_phone tenant_title =
+let test_api_key ~tags api_key cell_phone tenant_title =
+  let open Sihl.Configuration in
   let open Cohttp in
   let msg = create cell_phone tenant_title "Your API Key is valid." in
-  match%lwt intercept_message ~tags database_label msg with
-  | Some () -> Lwt_result.return api_key
-  | None ->
+  let () = if is_development () then print_message ~tags msg else () in
+  match is_production () || bypass () with
+  | true ->
     let%lwt resp, body_string = send_message api_key msg in
     (match
        resp |> Response.status |> Code.code_of_status |> CCInt.equal 200
@@ -198,6 +214,10 @@ let test_api_key ~tags database_label api_key cell_phone tenant_title =
            msg.text
            body_string);
        Lwt.return_ok api_key)
+  | false ->
+    Pool_common.Message.TextMessageInterceptionError
+      "Sending text message intercepted"
+    |> Lwt.return_error
 ;;
 
 module Job = struct
@@ -226,10 +246,15 @@ module Job = struct
 end
 
 let send database_label msg =
+  let ctx = Pool_database.to_ctx database_label in
   Logs.debug ~src (fun m ->
     m
       ~tags:(Pool_database.Logger.Tags.create database_label)
       "Dispatch text message to %s"
       (Pool_user.CellPhone.value msg.recipient));
-  Queue.dispatch ~ctx:(Pool_database.to_ctx database_label) msg Job.send
+  intercept_prepare database_label msg
+  ||> Pool_common.Utils.get_or_failwith
+  >|> function
+  | TextMessageJob job -> Queue.dispatch ~ctx job Job.send
+  | EmailJob job -> Queue.dispatch ~ctx job Email.Service.Job.send
 ;;

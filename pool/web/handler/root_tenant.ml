@@ -29,7 +29,7 @@ let create req =
     multipart_encoded
     |> HttpUtils.multipart_to_urlencoded Pool_tenant.file_fields
   in
-  let result { Pool_context.database_label; _ } =
+  let result (_ : Pool_context.t) =
     Utils.Lwt_result.map_error (fun err ->
       err, tenants_path, [ HttpUtils.urlencoded_to_flash urlencoded ])
     @@
@@ -56,11 +56,7 @@ let create req =
         |> Lwt_result.lift
       in
       let* gtx_api_key =
-        Update.validated_gtx_api_key
-          ~tags
-          database_label
-          decoded.title
-          urlencoded
+        Update.validated_gtx_api_key ~tags decoded.title urlencoded
       in
       let events =
         Create.handle ~tags database gtx_api_key decoded |> Lwt_result.lift

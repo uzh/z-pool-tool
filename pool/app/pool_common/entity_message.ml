@@ -118,6 +118,7 @@ type error =
   | TermsAndConditionsNotAccepted
   | TextLengthMax of int
   | TextLengthMin of int
+  | TextMessageInterceptionError of string
   | TimeInPast
   | TimeSpanPositive
   | TokenAlreadyUsed
