@@ -514,6 +514,8 @@ let rec error_to_string = function
   | TermsAndConditionsNotAccepted -> "Terms and conditions not accepted"
   | TextLengthMax i -> Format.asprintf "Must not be longer than %i." i
   | TextLengthMin i -> Format.asprintf "Must not be shorter than %i." i
+  | TextMessageInterceptionError error ->
+    Format.asprintf "Text message interception error: %s" error
   | TimeInPast -> "Time is in the past!"
   | TimeSpanPositive -> "Time span must be positive!"
   | TokenAlreadyUsed -> "The token was already used."

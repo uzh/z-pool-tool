@@ -19,7 +19,6 @@ module Service : sig
 
   val test_api_key
     :  tags:Logs.Tag.set
-    -> Pool_database.Label.t
     -> Pool_tenant.GtxApiKey.t
     -> Pool_user.CellPhone.t
     -> Pool_tenant.Title.t

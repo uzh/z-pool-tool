@@ -7,7 +7,7 @@ module Conformist = Pool_common.Utils.PoolConformist
 
 let src = Logs.Src.create "handler.root.tenant_update"
 
-let validated_gtx_api_key ~tags database_label title urlencoded =
+let validated_gtx_api_key ~tags title urlencoded =
   let open Utils.Lwt_result.Infix in
   let schema =
     Conformist.(
@@ -22,7 +22,7 @@ let validated_gtx_api_key ~tags database_label title urlencoded =
   |> Lwt_result.lift
   >|- Pool_common.Message.to_conformist_error
   >>= fun (api_key, phone_nr) ->
-  Text_message.Service.test_api_key ~tags database_label api_key phone_nr title
+  Text_message.Service.test_api_key ~tags api_key phone_nr title
 ;;
 
 let update req command success_message =
@@ -44,7 +44,7 @@ let update req command success_message =
   let redirect_path =
     Format.asprintf "/root/tenants/%s" (Pool_tenant.Id.value id)
   in
-  let result { Pool_context.database_label; _ } =
+  let result (_ : Pool_context.t) =
     Utils.Lwt_result.map_error (fun err ->
       err, redirect_path, [ HttpUtils.urlencoded_to_flash urlencoded ])
     @@
@@ -95,11 +95,7 @@ let update req command success_message =
         | `ExitGtxApiKey ->
           let open UpdateGtxApiKey in
           let* gtx_api_key =
-            validated_gtx_api_key
-              ~tags
-              database_label
-              tenant.Write.title
-              urlencoded
+            validated_gtx_api_key ~tags tenant.Write.title urlencoded
           in
           handle ~tags tenant gtx_api_key |> lift
       in

@@ -552,6 +552,8 @@ let rec error_to_string = function
     "Die Teilnahmebedingungen sind noch nicht akzeptiert."
   | TextLengthMax i -> Format.asprintf "Darf nicht länger als %i sein." i
   | TextLengthMin i -> Format.asprintf "Darf nicht kürzer als %i sein." i
+  | TextMessageInterceptionError error ->
+    Format.asprintf "Text message interception error: %s" error
   | TimeInPast -> "Zeitpunkt liegt in der Vergangenheint!"
   | TimeSpanPositive -> "Zeitspanne muss grösser als 0 sein!"
   | TokenAlreadyUsed -> "Das Token wurde bereits verwendet."
