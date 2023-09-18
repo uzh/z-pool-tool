@@ -5,7 +5,7 @@ let update_location_descriptions =
       UPDATE pool_locations
       SET description = CASE
           WHEN description LIKE '[[[%]]' THEN description
-          ELSE CONCAT('[[["EN"],"', description, '"],[["DE"],"', description, '"]]')
+          ELSE CONCAT('[[["EN"],"', REPLACE(description, '"', '\\"'), '"],[["DE"],"', REPLACE(description, '"', '\\"'), '"]]')
       END
     |sql}
 ;;
