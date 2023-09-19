@@ -9,6 +9,12 @@ $red-lighter: color.adjust($red, $lightness: $color-shades-ratio * 3);
 $green-light: color.adjust($green, $lightness: $color-shades-ratio * 2);
 $red-light: color.adjust($red, $lightness: $color-shades-ratio * 2);
 
+// Typography
+ul.no-style {
+    list-style: none;
+    padding: 0;
+}
+
 // Index page
 .index-page>*:nth-child(2) {
     flex-basis: 25%;

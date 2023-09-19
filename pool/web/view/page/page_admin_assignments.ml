@@ -102,12 +102,16 @@ module Partials = struct
     let modal
       { Pool_context.language; csrf; _ }
       experiment_id
-      session_id
+      session
       { Assignment.id; contact; _ }
       =
       let open Pool_common.Reminder in
       let action =
-        assignment_specific_path ~suffix:"remind" experiment_id session_id id
+        assignment_specific_path
+          ~suffix:"remind"
+          experiment_id
+          session.Session.id
+          id
         |> Sihl.Web.externalize_path
       in
       let available_channels =
@@ -117,21 +121,41 @@ module Partials = struct
         | Some _ -> all
       in
       let html =
-        form
-          ~a:[ a_method `Post; a_action action; a_class [ "stack" ] ]
-          [ csrf_element csrf ()
-          ; selector
-              language
-              Field.MessageChannel
-              Channel.show
-              available_channels
-              None
-              ~option_formatter:(fun channel ->
-                Channel.show channel
-                |> CCString.replace ~sub:"_" ~by:" "
-                |> CCString.capitalize_ascii)
-              ()
-          ; submit_element language Pool_common.Message.(Send None) ()
+        let timestamps =
+          let open Session in
+          let format = Component.Utils.format_reminder_sent_opt ~default:"-" in
+          [ Field.EmailRemindersSentAt, format session.email_reminder_sent_at
+          ; ( Field.TextMessageRemindersSentAt
+            , format session.text_message_reminder_sent_at )
+          ]
+          |> CCList.map (fun (label, value) ->
+            li
+              [ txt
+                  (Pool_common.Utils.field_to_string language label
+                   |> CCString.capitalize_ascii)
+              ; txt ": "
+              ; value
+              ])
+          |> ul ~a:[ a_class [ "no-style" ] ]
+        in
+        div
+          [ timestamps
+          ; form
+              ~a:[ a_method `Post; a_action action; a_class [ "stack" ] ]
+              [ csrf_element csrf ()
+              ; selector
+                  language
+                  Field.MessageChannel
+                  Channel.show
+                  available_channels
+                  None
+                  ~option_formatter:(fun channel ->
+                    Channel.show channel
+                    |> CCString.replace ~sub:"_" ~by:" "
+                    |> CCString.capitalize_ascii)
+                  ()
+              ; submit_element language Pool_common.Message.(Send None) ()
+              ]
           ]
       in
       Component.Modal.create language title (modal_id id) html
@@ -287,8 +311,8 @@ module Partials = struct
               CCList.map snd contact_information
               @ CCList.map snd external_data_field
               @ [ assignment_participated; assignment_no_show; canceled_at ]
-              |> CCList.map (fun fcn -> fcn assignment)
-              |> CCList.mapi (fun i value ->
+              |> CCList.mapi (fun i fcn ->
+                let value = fcn assignment in
                 if CCInt.equal i 0
                 then
                   div
@@ -311,11 +335,7 @@ module Partials = struct
             let modals =
               match create_reminder_modal with
               | true ->
-                ReminderModal.modal
-                  context
-                  experiment_id
-                  session.Session.id
-                  assignment
+                ReminderModal.modal context experiment_id session assignment
                 :: modals
               | false -> modals
             in

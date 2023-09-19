@@ -800,15 +800,7 @@ let detail
             Field.ClosedAt, Utils.Time.formatted_date_time c |> txt)
         in
         let time_stamps =
-          let format value =
-            value
-            |> CCOption.map_or
-                 ~default:""
-                 CCFun.(
-                   Pool_common.Reminder.SentAt.value
-                   %> Utils.Time.formatted_date_time)
-            |> txt
-          in
+          let format = Component.Utils.format_reminder_sent_opt in
           [ Field.EmailRemindersSentAt, format session.email_reminder_sent_at
           ; ( Field.TextMessageRemindersSentAt
             , format session.text_message_reminder_sent_at )
