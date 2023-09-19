@@ -4,6 +4,10 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/pool/tree/HEAD)
 
+### Added
+
+- display session and assignment reminder sent timestamps in resend single reminder modal
+
 ## [0.4.6](https://github.com/uzh/pool/tree/0.4.6) - 2023-09-18
 
 ### Added
