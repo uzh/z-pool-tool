@@ -1,8 +1,12 @@
-let add_assignment_session_index =
+let add_assignment_session_fk_constraint =
   Sihl.Database.Migration.create_step
-    ~label:"add assignment session index"
+    ~label:"add assignment session fk constraint"
     {sql|
-      CREATE INDEX index_session_uuid ON pool_assignments (session_uuid)
+      ALTER TABLE pool_assignments
+      ADD CONSTRAINT fk_pool_assignments_sessions
+      FOREIGN KEY (session_uuid)
+      REFERENCES pool_sessions (uuid)
+      ON DELETE CASCADE;
     |sql}
 ;;
 
@@ -14,36 +18,40 @@ let add_assignment_contact_index =
     |sql}
 ;;
 
-let add_custom_field_answers_custom_field_uuid_index =
+let add_custom_field_answers_custom_field_fk_constraint =
   Sihl.Database.Migration.create_step
-    ~label:"add custom field answers custom field index"
+    ~label:"add custom field answers custom field fk constraint"
     {sql|
-      CREATE INDEX index_custom_field_uuid ON pool_custom_field_answers (custom_field_uuid)
+      ALTER TABLE pool_custom_field_answers
+      ADD CONSTRAINT fk_pool_custom_field_answers_pool_custom_fields
+      FOREIGN KEY (custom_field_uuid)
+      REFERENCES pool_custom_fields (uuid)
+      ON DELETE RESTRICT;
     |sql}
 ;;
 
-let add_custom_field_answers_entity_uuid_index =
+let add_custom_field_options_custom_field_fk_constraint =
   Sihl.Database.Migration.create_step
-    ~label:"add custom field answers entity index"
+    ~label:"add custom field options custom field fk constraint"
     {sql|
-      CREATE INDEX index_entity_uuid ON pool_custom_field_answers (entity_uuid)
-    |sql}
+        ALTER TABLE pool_custom_field_options
+        ADD CONSTRAINT fk_pool_custom_field_options_pool_custom_fields
+        FOREIGN KEY (custom_field_uuid)
+        REFERENCES pool_custom_fields (uuid)
+        ON DELETE CASCADE;
+      |sql}
 ;;
 
-let add_custom_field_options_index =
+let add_custom_fields_custom_field_groups_fk_constraint =
   Sihl.Database.Migration.create_step
-    ~label:"add custom field options index"
+    ~label:"add custom field custom field groups fk constraint"
     {sql|
-      CREATE INDEX index_custom_field_uuid ON pool_custom_field_options (custom_field_uuid)
-    |sql}
-;;
-
-let add_custom_field_group_index =
-  Sihl.Database.Migration.create_step
-    ~label:"add custom field group index"
-    {sql|
-      CREATE INDEX index_custom_field_group_uuid ON pool_custom_fields (custom_field_group_uuid)
-    |sql}
+        ALTER TABLE pool_custom_fields
+        ADD CONSTRAINT fk_pool_custom_fields_custom_field_groups
+        FOREIGN KEY (custom_field_group_uuid)
+        REFERENCES pool_custom_field_groups (uuid)
+        ON DELETE SET NULL;
+      |sql}
 ;;
 
 let add_email_verification_index =
@@ -54,82 +62,122 @@ let add_email_verification_index =
     |sql}
 ;;
 
-let add_location_file_asset_index =
+let add_location_file_asseet_fk_constraint =
   Sihl.Database.Migration.create_step
-    ~label:"add location file asset index"
+    ~label:"add location file asseet fk constraint"
     {sql|
-      CREATE INDEX index_asset_id ON pool_location_file_mappings (asset_id)
-    |sql}
+        ALTER TABLE pool_location_file_mappings
+        ADD CONSTRAINT fk_pool_file_mappings_storage_handles
+        FOREIGN KEY (asset_id)
+        REFERENCES storage_handles (id)
+        ON DELETE CASCADE;
+      |sql}
 ;;
 
-let add_location_file_location_index =
+let add_location_file_location_fk_constraint =
   Sihl.Database.Migration.create_step
-    ~label:"add location file location index"
+    ~label:"add location file location fk constraint"
     {sql|
-      CREATE INDEX index_location_id ON pool_location_file_mappings (location_id)
-    |sql}
+        ALTER TABLE pool_location_file_mappings
+        ADD CONSTRAINT fk_pool_file_mappings_locations
+        FOREIGN KEY (location_id)
+        REFERENCES pool_locations (id)
+        ON DELETE CASCADE;
+      |sql}
 ;;
 
-let add_mailing_experiment_index =
+let add_mailing_experiment_fk_constraint =
   Sihl.Database.Migration.create_step
-    ~label:"add location file location index"
+    ~label:"add mailing experiment fk constraint"
     {sql|
-      CREATE INDEX index_experiment_uuid ON pool_mailing (experiment_uuid)
-    |sql}
+        ALTER TABLE pool_mailing
+        ADD CONSTRAINT fk_pool_mailing_experiments
+        FOREIGN KEY (experiment_uuid)
+        REFERENCES pool_experiments (uuid)
+        ON DELETE CASCADE;
+      |sql}
 ;;
 
-let add_session_experiment_index =
+let add_session_experiment_fk_constraint =
   Sihl.Database.Migration.create_step
-    ~label:"add session experiment index"
+    ~label:"add session experiment fk constraint"
     {sql|
-      CREATE INDEX index_pool_experiments ON pool_sessions (experiment_uuid)
-    |sql}
+        ALTER TABLE pool_sessions
+        ADD CONSTRAINT fk_pool_session_experiments
+        FOREIGN KEY (experiment_uuid)
+        REFERENCES pool_experiments (uuid)
+        ON DELETE RESTRICT;
+      |sql}
+;;
+
+let add_experiment_filter_fk_constraint =
+  Sihl.Database.Migration.create_step
+    ~label:"add session experiment fk constraint"
+    {sql|
+        ALTER TABLE pool_experiments
+        ADD CONSTRAINT fk_pool_experiments_filter
+        FOREIGN KEY (filter_uuid)
+        REFERENCES pool_filter (uuid)
+        ON DELETE SET NULL;
+      |sql}
 ;;
 
 let migration () =
   Sihl.Database.Migration.(
     empty "202309180820"
-    |> add_step add_assignment_session_index
+    |> add_step add_assignment_session_fk_constraint
     |> add_step add_assignment_contact_index
-    |> add_step add_custom_field_answers_custom_field_uuid_index
-    |> add_step add_custom_field_answers_entity_uuid_index
-    |> add_step add_custom_field_options_index
-    |> add_step add_custom_field_group_index
+    |> add_step add_custom_field_answers_custom_field_fk_constraint
+    |> add_step add_custom_field_options_custom_field_fk_constraint
+    |> add_step add_custom_fields_custom_field_groups_fk_constraint
     |> add_step add_email_verification_index
-    |> add_step add_location_file_asset_index
-    |> add_step add_location_file_location_index
-    |> add_step add_mailing_experiment_index
-    |> add_step add_session_experiment_index)
+    |> add_step add_location_file_asseet_fk_constraint
+    |> add_step add_location_file_location_fk_constraint
+    |> add_step add_mailing_experiment_fk_constraint
+    |> add_step add_session_experiment_fk_constraint
+    |> add_step add_experiment_filter_fk_constraint)
 ;;
 
-let add_system_event_logs_index =
+let add_system_event_logs_system_event_fk_constraint =
   Sihl.Database.Migration.create_step
-    ~label:"add system event logs index"
+    ~label:"add system event logs system event fk constraint"
     {sql|
-      CREATE INDEX index_system_event_uuid ON pool_system_event_logs (event_uuid)
-    |sql}
+        ALTER TABLE pool_system_event_logs
+        ADD CONSTRAINT fk_pool_system_event_logs_system_events
+        FOREIGN KEY (event_uuid)
+        REFERENCES pool_system_events (uuid)
+        ON DELETE CASCADE;
+      |sql}
 ;;
 
-let add_tenant_logo_tenant_index =
+let add_tenant_logo_tenant_fk_constraint =
   Sihl.Database.Migration.create_step
-    ~label:"add tenant logo tenant index"
+    ~label:"add tenant logo tenant fk constraint"
     {sql|
-      CREATE INDEX index_tenant_uuid ON pool_tenant_logo_mappings (tenant_uuid)
-    |sql}
+        ALTER TABLE pool_tenant_logo_mappings
+        ADD CONSTRAINT fk_pool_tenant_logo_mappings_tenant
+        FOREIGN KEY (tenant_uuid)
+        REFERENCES pool_tenant (uuid)
+        ON DELETE CASCADE;
+      |sql}
 ;;
 
-let add_tenant_logo_asset_index =
+let add_tenant_logo_storage_handle_fk_constraint =
   Sihl.Database.Migration.create_step
-    ~label:"add tenant logo asset index"
+    ~label:"add tenant logo storage handle fk constraint"
     {sql|
-      CREATE INDEX index_asset_uuid ON pool_tenant_logo_mappings (asset_uuid)
-    |sql}
+        ALTER TABLE pool_tenant_logo_mappings
+        ADD CONSTRAINT fk_pool_tenant_logo_mappings_storage_handles
+        FOREIGN KEY (asset_uuid)
+        REFERENCES storage_handles (uuid)
+        ON DELETE CASCADE;
+      |sql}
 ;;
 
 let migration_root () =
   Sihl.Database.Migration.(
     empty "202309180820"
-    |> add_step add_system_event_logs_index
-    |> add_step add_tenant_logo_tenant_index
-    |> add_step add_tenant_logo_asset_index)
+    |> add_step add_system_event_logs_system_event_fk_constraint
+    |> add_step add_tenant_logo_tenant_fk_constraint
+    |> add_step add_tenant_logo_storage_handle_fk_constraint)
 ;;
