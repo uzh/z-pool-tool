@@ -115,6 +115,7 @@ let rec field_to_string =
   | LanguageEn -> "english"
   | LastError -> "last error message"
   | LastErrorAt -> "last error"
+  | LastManuallyRemindedAt -> "Last manually reminded at"
   | Lastname -> "lastname"
   | LastRunAt -> "last run"
   | LeadTime -> "lead time"

@@ -528,6 +528,7 @@ module Model = struct
     ; canceled_at = None
     ; marked_as_deleted = MarkedAsDeleted.init
     ; external_data_id
+    ; reminder_manually_last_sent_at = None
     ; created_at = Pool_common.CreatedAt.create ()
     ; updated_at = Pool_common.UpdatedAt.create ()
     }

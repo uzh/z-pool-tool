@@ -103,7 +103,7 @@ module Partials = struct
       { Pool_context.language; csrf; _ }
       experiment_id
       session
-      { Assignment.id; contact; _ }
+      { Assignment.id; contact; reminder_manually_last_sent_at; _ }
       =
       let open Pool_common.Reminder in
       let action =
@@ -121,21 +121,31 @@ module Partials = struct
         | Some _ -> all
       in
       let html =
+        let format = Component.Utils.format_reminder_sent_opt ~default:"-" in
         let timestamps =
           let open Session in
-          let format = Component.Utils.format_reminder_sent_opt ~default:"-" in
-          [ Field.EmailRemindersSentAt, format session.email_reminder_sent_at
-          ; ( Field.TextMessageRemindersSentAt
-            , format session.text_message_reminder_sent_at )
-          ]
-          |> CCList.map (fun (label, value) ->
+          let to_list_item ?(classnames = []) (label, value) =
             li
+              ~a:[ a_class classnames ]
               [ txt
                   (Pool_common.Utils.field_to_string language label
                    |> CCString.capitalize_ascii)
               ; txt ": "
-              ; value
-              ])
+              ; format value
+              ]
+          in
+          let session_timestamps =
+            [ Field.EmailRemindersSentAt, session.email_reminder_sent_at
+            ; ( Field.TextMessageRemindersSentAt
+              , session.text_message_reminder_sent_at )
+            ]
+            |> CCList.map to_list_item
+          in
+          let assignment_timestamps =
+            (Field.LastManuallyRemindedAt, reminder_manually_last_sent_at)
+            |> to_list_item ~classnames:[ "border-top"; "inset-xs"; "top" ]
+          in
+          session_timestamps @ [ assignment_timestamps ]
           |> ul ~a:[ a_class [ "no-style" ] ]
         in
         div

@@ -381,7 +381,7 @@ end = struct
     channel
     =
     Logs.info ~src (fun m -> m "Handle command ResendReminders" ~tags);
-    let open Pool_common.Reminder.Channel in
+    let open Pool_common.Reminder in
     let open CCResult.Infix in
     let create_email assignment =
       assignment
@@ -389,7 +389,8 @@ end = struct
       >|= fun email -> email, experiment.Experiment.smtp_auth_id
     in
     let* () = Session.reminder_resendable session in
-    let* event =
+    let* msg_event =
+      let open Channel in
       match channel with
       | Email -> assignment |> create_email >|= Email.sent >|= Pool_event.email
       | TextMessage ->
@@ -400,7 +401,15 @@ end = struct
            >|= Text_message.sent
            >|= Pool_event.text_message)
     in
-    Ok [ event ]
+    let update =
+      Assignment.(
+        Updated
+          { assignment with
+            reminder_manually_last_sent_at = Some (SentAt.create_now ())
+          })
+      |> Pool_event.assignment
+    in
+    Ok [ msg_event; update ]
   ;;
 
   let decode data =

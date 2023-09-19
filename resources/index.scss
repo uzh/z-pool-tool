@@ -15,6 +15,12 @@ ul.no-style {
     padding: 0;
 }
 
+[class*="inset"].top {
+  padding-left: 0;
+  padding-bottom: 0;
+  padding-right: 0;
+}
+
 // Index page
 .index-page>*:nth-child(2) {
     flex-basis: 25%;
