@@ -424,8 +424,8 @@ let session_list
                      ~control:(language, Message.SessionDetails)
               in
               let buttons =
-                [ Session.is_closable session |> CCResult.is_ok, close_btn
-                ; true, detail_button
+                [ true, detail_button
+                ; Session.is_closable session |> CCResult.is_ok, close_btn
                 ; true, delete_form ()
                 ]
                 |> CCList.filter_map (fun (condition, button) ->
