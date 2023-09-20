@@ -10,7 +10,7 @@ let cleanup database_label =
   let delete_tag_targets =
     {sql|
       DELETE FROM guardian_targets
-      WHERE kind = '`Tag'
+      WHERE model = '`Tag'
     |sql}
     |> Caqti_type.(unit ->. unit)
   in
