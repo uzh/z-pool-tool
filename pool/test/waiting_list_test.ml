@@ -8,6 +8,7 @@ let database_label = Test_utils.Data.database_label
 let create () =
   let open Waiting_list in
   let experiment = Model.create_public_experiment () in
+  let confirmation = Test_utils.Model.create_email () in
   let experiment =
     Experiment.Public.
       { experiment with
@@ -19,10 +20,13 @@ let create () =
   let command = { experiment; contact } in
   let events =
     let open WaitingListCommand in
-    Create.handle command
+    Create.handle confirmation command
   in
   let expected =
-    Ok [ Waiting_list.Created command |> Pool_event.waiting_list ]
+    Ok
+      [ Waiting_list.Created command |> Pool_event.waiting_list
+      ; Email.Sent (confirmation, None) |> Pool_event.email
+      ]
   in
   Test_utils.check_result expected events
 ;;
@@ -42,6 +46,7 @@ let delete () =
 let create_with_direct_registration_enabled () =
   let open Waiting_list in
   let experiment = Model.create_public_experiment () in
+  let confirmation = Test_utils.Model.create_email () in
   let experiment =
     Experiment.Public.
       { experiment with
@@ -53,7 +58,7 @@ let create_with_direct_registration_enabled () =
   let command = { experiment; contact } in
   let events =
     let open WaitingListCommand in
-    Create.handle command
+    Create.handle confirmation command
   in
   let expected = Error Pool_common.Message.NotEligible in
   Test_utils.check_result expected events

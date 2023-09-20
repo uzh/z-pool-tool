@@ -15,7 +15,14 @@ let select_from_experiments_sql ?(distinct = false) where_fragment =
           pool_experiments.public_title,
           pool_experiments.description,
           pool_experiments.direct_registration_disabled,
-          pool_experiments.experiment_type
+          pool_experiments.experiment_type,
+          LOWER(CONCAT(
+            SUBSTR(HEX(pool_experiments.smtp_auth_uuid), 1, 8), '-',
+            SUBSTR(HEX(pool_experiments.smtp_auth_uuid), 9, 4), '-',
+            SUBSTR(HEX(pool_experiments.smtp_auth_uuid), 13, 4), '-',
+            SUBSTR(HEX(pool_experiments.smtp_auth_uuid), 17, 4), '-',
+            SUBSTR(HEX(pool_experiments.smtp_auth_uuid), 21)
+          ))
         FROM pool_experiments
       |sql}
       (if distinct then "DISTINCT" else "")

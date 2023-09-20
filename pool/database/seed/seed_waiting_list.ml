@@ -12,6 +12,7 @@ let waiting_list pool =
       ; direct_registration_disabled =
           experiment.Experiment.direct_registration_disabled
       ; experiment_type = Some Pool_common.ExperimentType.Lab
+      ; smtp_auth_id = None
       }
   in
   let%lwt waiting_list_events, invitation_events =

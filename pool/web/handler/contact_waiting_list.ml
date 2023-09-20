@@ -25,8 +25,15 @@ let handle req action =
       let open Cqrs_command.Waiting_list_command in
       match action with
       | `Create ->
+        let tenant = Pool_context.Tenant.get_tenant_exn req in
+        let* confirmation_email =
+          Message_template.WaitingListConfirmation.create
+            tenant
+            contact
+            experiment
+        in
         Waiting_list.{ contact; experiment }
-        |> Create.handle ~tags
+        |> Create.handle ~tags confirmation_email
         |> Lwt_result.lift
       | `Destroy ->
         let* waiting_list =

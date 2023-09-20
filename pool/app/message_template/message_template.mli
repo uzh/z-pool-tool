@@ -440,8 +440,12 @@ module WaitingListConfirmation : sig
   val email_params
     :  email_layout
     -> Contact.t
-    -> Experiment.t
+    -> Experiment.Public.t
     -> (string * string) list
 
-  val create : Pool_tenant.t -> Contact.t -> Experiment.t -> Sihl_email.t Lwt.t
+  val create
+    :  Pool_tenant.t
+    -> Contact.t
+    -> Experiment.Public.t
+    -> (Sihl_email.t, Pool_common.Message.error) result Lwt.t
 end

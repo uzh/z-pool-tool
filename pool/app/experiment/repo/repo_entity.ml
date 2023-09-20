@@ -257,13 +257,16 @@ module Public = struct
       Ok
         ( m.id
         , ( m.public_title
-          , (m.description, (m.direct_registration_disabled, m.experiment_type))
-          ) )
+          , ( m.description
+            , ( m.direct_registration_disabled
+              , (m.experiment_type, m.smtp_auth_id) ) ) ) )
     in
     let decode
       ( id
       , ( public_title
-        , (description, (direct_registration_disabled, experiment_type)) ) )
+        , ( description
+          , (direct_registration_disabled, (experiment_type, smtp_auth_id)) ) )
+      )
       =
       Ok
         { id
@@ -271,6 +274,7 @@ module Public = struct
         ; description
         ; direct_registration_disabled
         ; experiment_type
+        ; smtp_auth_id
         }
     in
     Caqti_type.(
@@ -285,6 +289,8 @@ module Public = struct
                  (option Description.t)
                  (tup2
                     DirectRegistrationDisabled.t
-                    (option Common.ExperimentType.t))))))
+                    (tup2
+                       (option Common.ExperimentType.t)
+                       (option Email.SmtpAuth.RepoEntity.Id.t)))))))
   ;;
 end

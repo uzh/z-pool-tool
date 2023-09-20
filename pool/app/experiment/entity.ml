@@ -131,6 +131,7 @@ module Public = struct
     ; description : Description.t option
     ; direct_registration_disabled : DirectRegistrationDisabled.t
     ; experiment_type : Pool_common.ExperimentType.t option
+    ; smtp_auth_id : Email.SmtpAuth.Id.t option
     }
   [@@deriving eq, show]
 end
@@ -141,6 +142,7 @@ let to_public
   ; description
   ; direct_registration_disabled
   ; experiment_type
+  ; smtp_auth_id
   ; _
   }
   =
@@ -150,6 +152,7 @@ let to_public
     ; description
     ; direct_registration_disabled
     ; experiment_type
+    ; smtp_auth_id
     }
 ;;
 
