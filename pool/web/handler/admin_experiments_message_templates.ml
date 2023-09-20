@@ -14,6 +14,12 @@ let template_id =
     Pool_common.Message.Field.MessageTemplate
 ;;
 
+let template_label req =
+  let open Message_template.Label in
+  HttpUtils.find_id read_from_url Pool_common.Message.Field.Label req
+  |> fun label -> CCList.find (equal label) customizable_by_experiment
+;;
+
 let experiment_path experiment_id =
   Format.asprintf "/admin/experiments/%s" (Experiment.Id.value experiment_id)
 ;;
@@ -79,17 +85,14 @@ let new_post label req =
     req
 ;;
 
-let new_invitation = form (New Message_template.Label.ExperimentInvitation)
-let new_invitation_post = new_post Message_template.Label.ExperimentInvitation
-let new_session_reminder = form (New Message_template.Label.SessionReminder)
-let new_session_reminder_post = new_post Message_template.Label.SessionReminder
-
-let new_assignment_confirmation =
-  form (New Message_template.Label.AssignmentConfirmation)
+let new_message_template req =
+  let label = template_label req in
+  form (New label) req
 ;;
 
-let new_assignment_confirmation_post =
-  new_post Message_template.Label.AssignmentConfirmation
+let new_message_template_post req =
+  let label = template_label req in
+  new_post label req
 ;;
 
 let update_template req =
@@ -134,9 +137,7 @@ let delete req =
 module Access : sig
   include module type of Helpers.Access
 
-  val invitation : Rock.Middleware.t
-  val session_reminder : Rock.Middleware.t
-  val assignment_confirmation : Rock.Middleware.t
+  val message_template : Rock.Middleware.t
 end = struct
   include Helpers.Access
   module Field = Pool_common.Message.Field
@@ -151,8 +152,4 @@ end = struct
     |> experiment_effects
     |> Guardian.validate_generic
   ;;
-
-  let invitation = message_template
-  let session_reminder = message_template
-  let assignment_confirmation = message_template
 end

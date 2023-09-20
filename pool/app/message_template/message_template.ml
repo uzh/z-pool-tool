@@ -859,3 +859,28 @@ module UserImport = struct
       (email_params layout confirmation_url user)
   ;;
 end
+
+module WaitingListConfirmation = struct
+  let base_params layout contact = contact.Contact.user |> global_params layout
+
+  let email_params layout contact experiment =
+    base_params layout contact @ experiment_params layout experiment
+  ;;
+
+  let create ({ Pool_tenant.database_label; _ } as tenant) contact experiment =
+    let open Message_utils in
+    let%lwt system_languages = Settings.find_languages database_label in
+    let%lwt sender = sender_of_experiment database_label experiment in
+    let preferred_language = preferred_language system_languages contact in
+    let layout = layout_from_tenant tenant in
+    let%lwt template, language =
+      find_by_label_to_send
+        database_label
+        preferred_language
+        Label.PasswordReset
+    in
+    let email = contact |> Contact.email_address in
+    let params = email_params layout contact experiment in
+    prepare_email language template sender email layout params |> Lwt.return
+  ;;
+end

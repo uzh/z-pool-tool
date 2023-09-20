@@ -469,28 +469,16 @@ module Admin = struct
         ]
       in
       let message_templates =
-        let open Message_template.Label in
         let open Handler.Admin.Experiments.MessageTemplates in
         let label_specific =
           label_specific_template edit_template update_template
         in
         [ choose
-            ~scope:(add_template_label ExperimentInvitation)
-            ~middlewares:[ Access.invitation ]
-            (label_specific new_invitation new_invitation_post delete)
-        ; choose
-            ~scope:(add_template_label SessionReminder)
-            ~middlewares:[ Access.session_reminder ]
+            ~scope:(Label |> url_key)
+            ~middlewares:[ Access.message_template ]
             (label_specific
-               new_session_reminder
-               new_session_reminder_post
-               delete)
-        ; choose
-            ~scope:(add_template_label AssignmentConfirmation)
-            ~middlewares:[ Access.assignment_confirmation ]
-            (label_specific
-               new_assignment_confirmation
-               new_assignment_confirmation_post
+               new_message_template
+               new_message_template_post
                delete)
         ]
       in

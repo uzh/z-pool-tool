@@ -563,3 +563,39 @@ let user_import =
   ; sms_text
   }
 ;;
+
+let waiting_list_confirmation =
+  let label = Label.WaitingListConfirmation in
+  let email_text =
+    [ p
+        [ txt
+            "You have successfully enrolled to the waiting list of the \
+             experiment {experimentPublicTitle}."
+        ; br ()
+        ; txt "The recruitment team will get in touch with you."
+        ]
+    ]
+    |> add_salutation
+    |> html_to_string
+    |> EmailText.of_string
+  in
+  let email_subject =
+    "Waiting list enrollment confirmation" |> EmailSubject.of_string
+  in
+  let sms_text =
+    {|You have successfully enrolled to the waiting list of the experiment {experimentPublicTitle}.
+
+    The recruitment team will get in touch with you.|}
+    |> add_salutation_to_text
+    |> SmsText.of_string
+  in
+  { id = Id.create ()
+  ; label
+  ; language
+  ; entity_uuid
+  ; email_text
+  ; email_subject
+  ; plain_text = sms_text
+  ; sms_text
+  }
+;;

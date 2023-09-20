@@ -377,4 +377,9 @@ let message_template_help
     in
     let contact = create_contact () in
     UserImport.email_params layout confirmation_url (`Contact contact)
+  | WaitingListConfirmation ->
+    WaitingListConfirmation.email_params
+      layout
+      (create_contact ())
+      (create_experiment ())
 ;;

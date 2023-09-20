@@ -27,6 +27,8 @@ let experiment_boolean_fields =
   Experiment.boolean_fields |> CCList.map Field.show
 ;;
 
+let customizable_message_templates = []
+
 let contact_person_roles experiment_id =
   let base = [ `RecruiterAll ] in
   match experiment_id with
@@ -95,8 +97,7 @@ let experiment_message_templates database_label experiment_id =
       label
     ||> CCPair.make label
   in
-  Label.[ ExperimentInvitation; SessionReminder; AssignmentConfirmation ]
-  |> Lwt_list.map_s find_templates
+  Label.customizable_by_experiment |> Lwt_list.map_s find_templates
 ;;
 
 let index req =
