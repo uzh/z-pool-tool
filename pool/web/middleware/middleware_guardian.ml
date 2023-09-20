@@ -72,10 +72,10 @@ let validate_access_request_dependent =
         effects
         req
       ->
-      let* effects = effects req |> Lwt_result.lift in
-      let tags = Pool_context.Logger.Tags.context context in
-      let () = debug_log ~tags auth effects in
-      Guard.Persistence.validate ?any_id database_label effects auth)
+       let* effects = effects req |> Lwt_result.lift in
+       let tags = Pool_context.Logger.Tags.context context in
+       let () = debug_log ~tags auth effects in
+       Guard.Persistence.validate ?any_id database_label effects auth)
 ;;
 
 let validate_access_request_dependent_lwt ?any_id effects req =
