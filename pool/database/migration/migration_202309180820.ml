@@ -122,6 +122,90 @@ let add_experiment_filter_fk_constraint =
       |sql}
 ;;
 
+let add_admin_sihl_user_fk_constraint =
+  Sihl.Database.Migration.create_step
+    ~label:"add admin sihl user fk constraint"
+    {sql|
+        ALTER TABLE pool_admins
+        ADD CONSTRAINT fk_pool_admins_sihl_user
+        FOREIGN KEY (user_uuid)
+        REFERENCES user_users (uuid)
+        ON DELETE RESTRICT;
+      |sql}
+;;
+
+let add_contact_sihl_user_fk_constraint =
+  Sihl.Database.Migration.create_step
+    ~label:"add contact sihl user fk constraint"
+    {sql|
+        ALTER TABLE pool_contacts
+        ADD CONSTRAINT fk_pool_contacts_sihl_user
+        FOREIGN KEY (user_uuid)
+        REFERENCES user_users (uuid)
+        ON DELETE RESTRICT;
+      |sql}
+;;
+
+let add_promoted_contact_sihl_user_fk_constraint =
+  Sihl.Database.Migration.create_step
+    ~label:"add promoted contact sihl user fk constraint"
+    {sql|
+        ALTER TABLE pool_contacts_promoted
+        ADD CONSTRAINT fk_pool_contacts_promoted_sihl_user
+        FOREIGN KEY (user_uuid)
+        REFERENCES user_users (uuid)
+        ON DELETE RESTRICT;
+      |sql}
+;;
+
+let add_waiting_list_experiment_fk_constraint =
+  Sihl.Database.Migration.create_step
+    ~label:"add waiting list experiment fk constraint"
+    {sql|
+        ALTER TABLE pool_waiting_list
+        ADD CONSTRAINT fk_pool_waiting_list_experiment
+        FOREIGN KEY (experiment_uuid)
+        REFERENCES pool_experiments (uuid)
+        ON DELETE RESTRICT;
+      |sql}
+;;
+
+let add_invitations_experiment_fk_constraint =
+  Sihl.Database.Migration.create_step
+    ~label:"add invitations experiment fk constraint"
+    {sql|
+        ALTER TABLE pool_invitations
+        ADD CONSTRAINT fk_pool_invitations_experiment
+        FOREIGN KEY (experiment_uuid)
+        REFERENCES pool_experiments (uuid)
+        ON DELETE RESTRICT;
+      |sql}
+;;
+
+let add_taggings_tags_fk_constraint =
+  Sihl.Database.Migration.create_step
+    ~label:"add taggings tag fk constraint"
+    {sql|
+        ALTER TABLE pool_tagging
+        ADD CONSTRAINT fk_pool_tagging_tag
+        FOREIGN KEY (tag_uuid)
+        REFERENCES pool_tags (uuid)
+        ON DELETE RESTRICT;
+      |sql}
+;;
+
+let add_participation_tags_tags_fk_constraint =
+  Sihl.Database.Migration.create_step
+    ~label:"add participation tags tag fk constraint"
+    {sql|
+        ALTER TABLE pool_participation_tags
+        ADD CONSTRAINT fk_pool_participation_tags_tag
+        FOREIGN KEY (tag_uuid)
+        REFERENCES pool_tags (uuid)
+        ON DELETE RESTRICT;
+      |sql}
+;;
+
 let migration () =
   Sihl.Database.Migration.(
     empty "202309180820"
@@ -135,7 +219,14 @@ let migration () =
     |> add_step add_location_file_location_fk_constraint
     |> add_step add_mailing_experiment_fk_constraint
     |> add_step add_session_experiment_fk_constraint
-    |> add_step add_experiment_filter_fk_constraint)
+    |> add_step add_experiment_filter_fk_constraint
+    |> add_step add_admin_sihl_user_fk_constraint
+    |> add_step add_contact_sihl_user_fk_constraint
+    |> add_step add_promoted_contact_sihl_user_fk_constraint
+    |> add_step add_waiting_list_experiment_fk_constraint
+    |> add_step add_invitations_experiment_fk_constraint
+    |> add_step add_taggings_tags_fk_constraint
+    |> add_step add_participation_tags_tags_fk_constraint)
 ;;
 
 let add_system_event_logs_system_event_fk_constraint =

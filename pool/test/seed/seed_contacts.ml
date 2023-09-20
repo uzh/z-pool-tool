@@ -126,6 +126,6 @@ let cleanup db_pool =
       request
       (Pool_common.Id.value id)
   in
-  let%lwt () = Lwt_list.iter_s (exec delete_sihl_user_request) contact_ids in
-  Lwt_list.iter_s (exec delete_contact_request) contact_ids
+  let%lwt () = Lwt_list.iter_s (exec delete_contact_request) contact_ids in
+  Lwt_list.iter_s (exec delete_sihl_user_request) contact_ids
 ;;
