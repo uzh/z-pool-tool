@@ -204,7 +204,7 @@ let create pool =
       data
   in
   let%lwt () =
-    (field_events |> CCList.flatten) @ group_events
+    group_events @ (field_events |> CCList.flatten)
     |> Lwt_list.iter_s (Custom_field.handle_event pool)
   in
   Lwt.return_unit
