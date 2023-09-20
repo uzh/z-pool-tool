@@ -71,6 +71,7 @@ let create
   field_label
   ?(current = [])
   ?disabled
+  ?hint
   ?role
   ?exclude_roles_of
   ?value
@@ -90,6 +91,14 @@ let create
          ~a:[ a_user_data "query" "results"; a_class [ "hide-empty" ] ]
          (CCList.map item_to_html current)
      ]
+     @ CCOption.map_or
+         ~default:[]
+         (fun hint ->
+           [ span
+               ~a:[ a_class [ "help" ] ]
+               [ Pool_common.(Utils.hint_to_string language hint) |> txt ]
+           ])
+         hint
      @ search_role
      @ exclude_roles_of)
 ;;

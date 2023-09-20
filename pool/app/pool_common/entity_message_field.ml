@@ -88,6 +88,7 @@ type t =
   | Exclude [@name "exclude"] [@printer go "exclude"]
   | ExcludeRolesOf [@name "exclude_roles_of"] [@printer go "exclude_roles_of"]
   | Experiment [@name "experiment"] [@printer go "experiment"]
+  | Experiments [@name "experiments"] [@printer go "experiments"]
   | Experimenter [@name "experimenter"] [@printer go "experimenter"]
   | ExperimentEmailReminderLeadTime
   [@name "experiment_email_reminder_lead_time"]
@@ -145,6 +146,7 @@ type t =
   | Limitations [@name "limitations"] [@printer go "limitations"]
   | Link [@name "link"] [@printer go "link"]
   | Location [@name "location"] [@printer go "location"]
+  | Locations [@name "locations"] [@printer go "locations"]
   | LoginCount [@name "login_count"] [@printer go "login_count"]
   | LogoType [@name "logo_type"] [@printer go "logo_type"]
   | Mailing [@name "mailing"] [@printer go "mailing"]

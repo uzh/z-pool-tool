@@ -3,6 +3,7 @@ open Tyxml.Html
 module Input = Component_input
 module Table = Component_table
 module Icon = Component_icon
+module Field = Pool_common.Message.Field
 
 let print = Utils.ppx_printer
 
@@ -152,15 +153,21 @@ module Search = struct
     let open Role.Role in
     function
     | Some QueryLocations ->
+      let hint = Pool_common.I18n.RoleIntro (Field.Location, Field.Locations) in
       Component_search.Location.create
         ?exclude_roles_of
+        ~hint
         ?role
         ?value
         language
         "/admin/locations/search"
     | Some QueryExperiments ->
+      let hint =
+        Pool_common.I18n.RoleIntro (Field.Experiment, Field.Experiments)
+      in
       Component_search.Experiment.create
         ?exclude_roles_of
+        ~hint
         ?role
         language
         "/admin/experiments/search"
@@ -198,7 +205,7 @@ module Search = struct
         ~required:true
         ~classnames:[ "key-select" ]
         language
-        Pool_common.Message.Field.Role
+        Field.Role
         Role.Role.show
         role_list
         key

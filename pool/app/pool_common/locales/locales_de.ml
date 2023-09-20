@@ -69,6 +69,7 @@ let rec field_to_string =
   | Exclude -> "Ausgenommen"
   | ExcludeRolesOf -> "Ausgenommen (Rollen von jmd)"
   | Experiment -> "Experiment"
+  | Experiments -> "Experimente"
   | Experimenter -> "Experimenter"
   | ExperimentEmailReminderLeadTime ->
     Format.asprintf
@@ -123,6 +124,7 @@ let rec field_to_string =
   | Limitations -> "Einschränkungen"
   | Link -> "Link"
   | Location -> "Standort"
+  | Locations -> "Standorte"
   | LoginCount -> "Logins von Kontakten"
   | LogoType -> "Logo Typ"
   | Mailing -> "Versand"
