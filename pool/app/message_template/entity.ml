@@ -35,7 +35,7 @@ module Label = struct
     [@printer print "session_reschedule"]
     | UserImport [@name "user_import"] [@printer print "user_import"]
     | WaitingListConfirmation [@name "waiting_list_confirmation"]
-        [@printer print "waiting_list_confirmation"]
+    [@printer print "waiting_list_confirmation"]
   [@@deriving eq, show { with_path = false }, yojson, variants]
 
   let read m =
