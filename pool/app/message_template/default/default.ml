@@ -70,6 +70,11 @@ let user_import = function
   | En -> Default_en.user_import
 ;;
 
+let waiting_list_confirmation = function
+  | De -> Default_de.waiting_list_confirmation
+  | En -> Default_en.waiting_list_confirmation
+;;
+
 let ( @@@ ) constructors =
   CCList.flat_map (fun lang -> CCList.map (fun fcn -> fcn lang) constructors)
 ;;
@@ -91,6 +96,7 @@ let default_values_tenant =
   ; session_reschedule
   ; signup_verification
   ; user_import
+  ; waiting_list_confirmation
   ]
   @@@ [ En; De ]
 ;;

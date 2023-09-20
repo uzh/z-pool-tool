@@ -31,6 +31,11 @@ let sender_of_experiment pool experiment =
         (Admin.email_address %> Lwt.return)
 ;;
 
+let sender_of_public_experiment pool { Experiment.Public.id; _ } =
+  let open Utils.Lwt_result.Infix in
+  Experiment.find pool id |>> sender_of_experiment pool
+;;
+
 let filter_languages languages templates =
   languages
   |> CCList.filter (fun lang ->
@@ -74,18 +79,25 @@ let global_params layout user =
     ]
 ;;
 
-let experiment_params layout experiment =
+let public_experiment_params
+  layout
+  { Experiment.Public.id; public_title; description; _ }
+  =
   let open Experiment in
-  let experiment_id = experiment.Experiment.id |> Id.value in
+  let experiment_id = id |> Id.value in
   let experiment_url =
     Format.asprintf "experiments/%s" experiment_id |> to_absolute_path layout
   in
   [ "experimentId", experiment_id
-  ; "experimentPublicTitle", public_title_value experiment
+  ; "experimentPublicTitle", PublicTitle.value public_title
   ; ( "experimentDescription"
-    , experiment.description |> CCOption.map_or ~default:"" Description.value )
+    , description |> CCOption.map_or ~default:"" Description.value )
   ; "experimentUrl", experiment_url
   ]
+;;
+
+let experiment_params layout experiment =
+  public_experiment_params layout (Experiment.to_public experiment)
 ;;
 
 let location_params
@@ -857,5 +869,33 @@ module UserImport = struct
       (email_address user)
       layout
       (email_params layout confirmation_url user)
+  ;;
+end
+
+module WaitingListConfirmation = struct
+  let base_params layout contact = contact.Contact.user |> global_params layout
+
+  let email_params layout contact experiment =
+    base_params layout contact @ public_experiment_params layout experiment
+  ;;
+
+  let create ({ Pool_tenant.database_label; _ } as tenant) contact experiment =
+    let open Utils.Lwt_result.Infix in
+    let open Message_utils in
+    let%lwt system_languages = Settings.find_languages database_label in
+    let* sender = sender_of_public_experiment database_label experiment in
+    let preferred_language = preferred_language system_languages contact in
+    let layout = layout_from_tenant tenant in
+    let%lwt template, language =
+      find_by_label_to_send
+        ~entity_uuids:Experiment.[ experiment.Public.id |> Id.to_common ]
+        database_label
+        preferred_language
+        Label.WaitingListConfirmation
+    in
+    let email = contact |> Contact.email_address in
+    let params = email_params layout contact experiment in
+    prepare_email language template sender email layout params
+    |> Lwt_result.return
   ;;
 end

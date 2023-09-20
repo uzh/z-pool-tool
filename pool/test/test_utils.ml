@@ -189,6 +189,7 @@ module Model = struct
         ; direct_registration_disabled =
             false |> DirectRegistrationDisabled.create
         ; experiment_type = Some Pool_common.ExperimentType.Lab
+        ; smtp_auth_id = None
         })
   ;;
 
@@ -252,6 +253,7 @@ module Model = struct
         ; description = experiment.description
         ; direct_registration_disabled = experiment.direct_registration_disabled
         ; experiment_type = experiment.experiment_type
+        ; smtp_auth_id = None
         })
   ;;
 

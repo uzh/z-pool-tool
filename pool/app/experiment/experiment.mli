@@ -116,12 +116,15 @@ module Public : sig
     ; description : Description.t option
     ; direct_registration_disabled : DirectRegistrationDisabled.t
     ; experiment_type : Pool_common.ExperimentType.t option
+    ; smtp_auth_id : Email.SmtpAuth.Id.t option
     }
 
   val equal : t -> t -> bool
   val pp : Format.formatter -> t -> unit
   val show : t -> string
 end
+
+val to_public : t -> Public.t
 
 type event =
   | Created of t

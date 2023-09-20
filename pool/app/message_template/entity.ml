@@ -34,10 +34,16 @@ module Label = struct
     | SessionReschedule [@name "session_reschedule"]
     [@printer print "session_reschedule"]
     | UserImport [@name "user_import"] [@printer print "user_import"]
+    | WaitingListConfirmation [@name "waiting_list_confirmation"]
+    [@printer print "waiting_list_confirmation"]
   [@@deriving eq, show { with_path = false }, yojson, variants]
 
   let read m =
     m |> Format.asprintf "[\"%s\"]" |> Yojson.Safe.from_string |> t_of_yojson
+  ;;
+
+  let read_from_url m =
+    m |> CCString.replace ~which:`All ~sub:"-" ~by:"_" |> read
   ;;
 
   let of_string str =
@@ -57,6 +63,14 @@ module Label = struct
     |> Format.asprintf
          "%s/%s"
          Pool_common.Message.Field.(human_url MessageTemplate)
+  ;;
+
+  let customizable_by_experiment =
+    [ ExperimentInvitation
+    ; SessionReminder
+    ; AssignmentConfirmation
+    ; WaitingListConfirmation
+    ]
   ;;
 end
 

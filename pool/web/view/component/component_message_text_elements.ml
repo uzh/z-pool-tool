@@ -254,6 +254,9 @@ let message_template_help
   let open CCOption in
   let create_contact () = value ~default:(create_contact ()) contact in
   let create_experiment () = value ~default:(create_experiment ()) experiment in
+  let create_public_experiment () =
+    create_experiment () |> Experiment.to_public
+  in
   let create_session () = value ~default:(create_session ()) session in
   let create_follow_up session_id =
     Session.{ (create_session ()) with follow_up_to = Some session_id }
@@ -377,4 +380,9 @@ let message_template_help
     in
     let contact = create_contact () in
     UserImport.email_params layout confirmation_url (`Contact contact)
+  | WaitingListConfirmation ->
+    WaitingListConfirmation.email_params
+      layout
+      (create_contact ())
+      (create_public_experiment ())
 ;;
