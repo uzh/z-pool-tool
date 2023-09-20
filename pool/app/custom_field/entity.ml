@@ -142,9 +142,9 @@ module Validation = struct
   module Text = struct
     type key =
       | TextLengthMin [@name "text_length_min"]
-          [@printer printer "text_length_min"]
+      [@printer printer "text_length_min"]
       | TextLengthMax [@name "text_length_max"]
-          [@printer printer "text_length_max"]
+      [@printer printer "text_length_max"]
     [@@deriving show, eq, yojson]
 
     let key_to_human = function

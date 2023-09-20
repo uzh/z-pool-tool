@@ -100,31 +100,31 @@ let sign_up_create req =
            in
            contact
            |> (function
-           | Ok contact when contact.Contact.user.Sihl_user.confirmed ->
-             let%lwt send_notification =
-               Contact.should_send_registration_attempt_notification
-                 database_label
-                 contact
-             in
-             if not send_notification
-             then Lwt_result.return []
-             else
-               contact
-               |> Message_template.ContactRegistrationAttempt.create
-                    database_label
-                    (CCOption.value ~default:language contact.Contact.language)
-                    tenant
-               ||> Command.SendRegistrationAttemptNotifitacion.handle
-                     ~tags
-                     contact
-           | Ok contact ->
-             let* create_contact_events = create_contact_events () in
-             let open CCResult.Infix in
-             contact
-             |> Command.DeleteUnverified.handle ~tags
-             >|= CCFun.flip CCList.append create_contact_events
-             |> Lwt_result.lift
-           | Error _ -> Lwt_result.return [])
+            | Ok contact when contact.Contact.user.Sihl_user.confirmed ->
+              let%lwt send_notification =
+                Contact.should_send_registration_attempt_notification
+                  database_label
+                  contact
+              in
+              if not send_notification
+              then Lwt_result.return []
+              else
+                contact
+                |> Message_template.ContactRegistrationAttempt.create
+                     database_label
+                     (CCOption.value ~default:language contact.Contact.language)
+                     tenant
+                ||> Command.SendRegistrationAttemptNotifitacion.handle
+                      ~tags
+                      contact
+            | Ok contact ->
+              let* create_contact_events = create_contact_events () in
+              let open CCResult.Infix in
+              contact
+              |> Command.DeleteUnverified.handle ~tags
+              >|= CCFun.flip CCList.append create_contact_events
+              |> Lwt_result.lift
+            | Error _ -> Lwt_result.return [])
        in
        let%lwt () = Pool_event.handle_events ~tags database_label events in
        HttpUtils.(

@@ -42,7 +42,7 @@ let create_email_events data =
   data
   |> CCList.fold_left
        (fun (session_events, emails)
-            (session, { Experiment.smtp_auth_id; _ }, reminders) ->
+         (session, { Experiment.smtp_auth_id; _ }, reminders) ->
          let reminders =
            reminders |> CCList.map (fun email -> email, smtp_auth_id)
          in

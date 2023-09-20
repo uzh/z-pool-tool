@@ -752,8 +752,8 @@ let find_open_with_follow_ups pool session_id =
   let open Utils.Lwt_result.Infix in
   Sql.find_open_with_follow_ups pool session_id
   ||> (function
-        | [] -> Error Pool_common.Message.(NotFound Field.Session)
-        | sessions -> Ok sessions)
+         | [] -> Error Pool_common.Message.(NotFound Field.Session)
+         | sessions -> Ok sessions)
   >>= add_location_to_multiple pool
 ;;
 

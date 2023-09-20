@@ -571,27 +571,27 @@ let close_post req =
            (fun
                ({ Assignment.no_show; participated; contact; _ } as assignment)
              ->
-             let open Assignment in
-             let* increment_num_participations =
-               Assignment.contact_participation_in_other_assignments
-                 database_label
-                 ~exclude_assignments:[ assignment ]
-                 experiment_id
-                 (Contact.id contact)
-               >|+ not %> IncrementParticipationCount.create
-             in
-             let%lwt follow_ups =
-               let with_default fnc = CCOption.map_or ~default:false fnc in
-               match
-                 with_default NoShow.value no_show
-                 || not (with_default Participated.value participated)
-               with
-               | true ->
-                 find_follow_ups database_label assignment ||> CCOption.return
-               | false -> Lwt.return_none
-             in
-             Lwt_result.return
-               (assignment, increment_num_participations, follow_ups))
+              let open Assignment in
+              let* increment_num_participations =
+                Assignment.contact_participation_in_other_assignments
+                  database_label
+                  ~exclude_assignments:[ assignment ]
+                  experiment_id
+                  (Contact.id contact)
+                >|+ not %> IncrementParticipationCount.create
+              in
+              let%lwt follow_ups =
+                let with_default fnc = CCOption.map_or ~default:false fnc in
+                match
+                  with_default NoShow.value no_show
+                  || not (with_default Participated.value participated)
+                with
+                | true ->
+                  find_follow_ups database_label assignment ||> CCOption.return
+                | false -> Lwt.return_none
+              in
+              Lwt_result.return
+                (assignment, increment_num_participations, follow_ups))
       ||> CCResult.flatten_l
       >== Close.handle experiment session participation_tags
     in

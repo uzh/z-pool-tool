@@ -7,19 +7,19 @@ end
 module Job = struct
   type t =
     | GuardianCacheCleared [@name "guardiancachecleared"]
-        [@printer Utils.ppx_printer "guardiancachecleared"]
+    [@printer Utils.ppx_printer "guardiancachecleared"]
     | I18nPageUpdated [@name "i18npageupdated"]
-        [@printer Utils.ppx_printer "i18npageupdated"]
+    [@printer Utils.ppx_printer "i18npageupdated"]
     | SmtpAccountUpdated [@name "smtpaccountupdated"]
-        [@printer Utils.ppx_printer "smtpaccountupdated"]
+    [@printer Utils.ppx_printer "smtpaccountupdated"]
     | TenantDatabaseAdded of Pool_database.Label.t [@name "tenantdatabaseadded"]
-        [@printer Utils.ppx_printer "tenantdatabaseadded"]
+    [@printer Utils.ppx_printer "tenantdatabaseadded"]
     | TenantDatabaseUpdated of Pool_database.Label.t
-        [@name "tenantdatabaseupdated"]
-        [@printer Utils.ppx_printer "tenantdatabaseupdated"]
+    [@name "tenantdatabaseupdated"]
+    [@printer Utils.ppx_printer "tenantdatabaseupdated"]
     | TenantDatabaseDeleted of Pool_database.Label.t
-        [@name "tenantdatabasedeleted"]
-        [@printer Utils.ppx_printer "tenantdatabasedeleted"]
+    [@name "tenantdatabasedeleted"]
+    [@printer Utils.ppx_printer "tenantdatabasedeleted"]
   [@@deriving eq, show, yojson]
 
   let read m = m |> Yojson.Safe.from_string |> t_of_yojson

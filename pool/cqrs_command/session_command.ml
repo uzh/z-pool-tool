@@ -517,7 +517,7 @@ module Close : sig
     (Assignment.t
     * Assignment.IncrementParticipationCount.t
     * Assignment.t list option)
-    list
+      list
 
   val handle
     :  ?tags:Logs.Tag.set
@@ -533,7 +533,7 @@ end = struct
     (Assignment.t
     * Assignment.IncrementParticipationCount.t
     * Assignment.t list option)
-    list
+      list
 
   let handle
     ?(tags = Logs.Tag.empty)

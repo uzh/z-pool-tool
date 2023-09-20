@@ -80,10 +80,10 @@ module Distribution = struct
 
       type t =
         | AssignmentCount [@name "assignment_count"]
-            [@printer print "assignment_count"]
+        [@printer print "assignment_count"]
         | Firstname [@name "firstname"] [@printer print "firstname"]
         | InvitationCount [@name "invitation_count"]
-            [@printer print "invitation_count"]
+        [@printer print "invitation_count"]
         | Lastname [@name "lastname"] [@printer print "lastname"]
       [@@deriving enum, eq, ord, sexp_of, show { with_path = false }, yojson]
     end
@@ -116,8 +116,8 @@ module Distribution = struct
       let open CCFun in
       let open Pool_common in
       (function
-       | Ascending -> Message.Ascending
-       | Descending -> Message.Descending)
+        | Ascending -> Message.Ascending
+        | Descending -> Message.Descending)
       %> Utils.control_to_string lang
     ;;
   end
@@ -147,16 +147,16 @@ module Distribution = struct
   let get_order_element =
     let open CCFun in
     (function
-     | Random -> Some "RAND()"
-     | Sorted [] -> None
-     | Sorted distribution ->
-       distribution
-       |> CCList.map (fun (field, order) ->
-         CCString.concat
-           " "
-           [ field |> SortableField.to_sql; order |> SortOrder.show ])
-       |> CCString.concat ", "
-       |> CCOption.pure)
+      | Random -> Some "RAND()"
+      | Sorted [] -> None
+      | Sorted distribution ->
+        distribution
+        |> CCList.map (fun (field, order) ->
+          CCString.concat
+            " "
+            [ field |> SortableField.to_sql; order |> SortOrder.show ])
+        |> CCString.concat ", "
+        |> CCOption.pure)
     %> CCOption.map_or ~default:"" (Format.asprintf "ORDER BY %s")
   ;;
 

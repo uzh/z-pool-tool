@@ -53,7 +53,7 @@ let init_session_counters =
 let assignments_to_session_counters =
   CCList.fold_left
     (fun { total; num_no_shows; num_participations }
-         ({ no_show; participated; _ } : t) ->
+      ({ no_show; participated; _ } : t) ->
       let default = CCOption.value ~default:false in
       { total = total + 1
       ; num_no_shows =

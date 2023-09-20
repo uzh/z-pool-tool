@@ -17,6 +17,6 @@ let version =
     "version"
     "Show version of current executable."
     (fun () ->
-      print_endline (Format.asprintf "Version: %s" Version.to_string);
-      Lwt.return_some ())
+       print_endline (Format.asprintf "Version: %s" Version.to_string);
+       Lwt.return_some ())
 ;;

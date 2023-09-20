@@ -127,14 +127,14 @@ module Distribution : sig
   val schema
     :  unit
     -> ( Pool_common.Message.error
-       , sorted )
-       Pool_common.Utils.PoolConformist.Field.t
+         , sorted )
+         Pool_common.Utils.PoolConformist.Field.t
 
   val is_random_schema
     :  unit
     -> ( Pool_common.Message.error
-       , bool )
-       Pool_common.Utils.PoolConformist.Field.t
+         , bool )
+         Pool_common.Utils.PoolConformist.Field.t
 
   val of_urlencoded_list
     :  string list

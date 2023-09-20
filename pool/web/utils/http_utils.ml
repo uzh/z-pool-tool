@@ -248,8 +248,8 @@ let format_request_boolean_values values urlencoded =
     StringMap.update
       k
       (function
-       | None -> Some [ "false" ]
-       | Some values -> values |> intersection_to_bool_string |> CCOption.some)
+        | None -> Some [ "false" ]
+        | Some values -> values |> intersection_to_bool_string |> CCOption.some)
       m
   in
   handle_boolean_values update urlencoded values
@@ -477,8 +477,8 @@ module Json = struct
       res
       |> Pool_common.Utils.with_log_result_error ~src ~tags id
       |> (function
-      | Ok json -> yojson_response json
-      | Error error_msg -> return_error language error_msg)
+       | Ok json -> yojson_response json
+       | Error error_msg -> return_error language error_msg)
     | Error err ->
       Logs.err ~src (fun m ->
         m ~tags "%s" Pool_common.(Utils.error_to_string Language.En err));

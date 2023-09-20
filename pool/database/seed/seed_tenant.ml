@@ -77,44 +77,44 @@ let create () =
              , icon
              , default_language )
            ->
-           let tenant =
-             let database =
-               let open Pool_tenant.Database in
-               let open CCResult.Infix in
-               let* url = Url.create database_url in
-               let* label = Label.create database_label in
-               create label url
-             in
-             Pool_tenant.(
-               Write.create
-                 (Title.create title |> get_or_failwith)
-                 (Description.create description
-                  |> get_or_failwith
-                  |> CCOption.return)
-                 (Url.create url |> get_or_failwith)
-                 (database |> get_or_failwith)
-                 (GtxApiKey.of_string gtx_api_key)
-                 (Styles.Write.create styles
-                  |> get_or_failwith
-                  |> CCOption.return)
-                 (Icon.Write.create icon |> get_or_failwith |> CCOption.return)
-                 (Pool_common.Language.create default_language
-                  |> get_or_failwith))
-           in
-           let logo_mappings =
-             let open Pool_tenant.LogoMapping in
-             [ LogoType.TenantLogo, tenant_logo.Assets.id ]
-             |> CCList.map (fun (logo_type, asset_id) ->
-               { Write.id = Pool_common.Id.create ()
-               ; tenant_id = tenant.Pool_tenant.Write.id
-               ; asset_id = Pool_common.Id.of_string asset_id
-               ; logo_type
-               })
-           in
-           [ Pool_tenant.Created tenant
-           ; Pool_tenant.LogosUploaded logo_mappings
-           ]
-           |> Lwt_list.iter_s (Pool_tenant.handle_event Pool_database.root))
+            let tenant =
+              let database =
+                let open Pool_tenant.Database in
+                let open CCResult.Infix in
+                let* url = Url.create database_url in
+                let* label = Label.create database_label in
+                create label url
+              in
+              Pool_tenant.(
+                Write.create
+                  (Title.create title |> get_or_failwith)
+                  (Description.create description
+                   |> get_or_failwith
+                   |> CCOption.return)
+                  (Url.create url |> get_or_failwith)
+                  (database |> get_or_failwith)
+                  (GtxApiKey.of_string gtx_api_key)
+                  (Styles.Write.create styles
+                   |> get_or_failwith
+                   |> CCOption.return)
+                  (Icon.Write.create icon |> get_or_failwith |> CCOption.return)
+                  (Pool_common.Language.create default_language
+                   |> get_or_failwith))
+            in
+            let logo_mappings =
+              let open Pool_tenant.LogoMapping in
+              [ LogoType.TenantLogo, tenant_logo.Assets.id ]
+              |> CCList.map (fun (logo_type, asset_id) ->
+                { Write.id = Pool_common.Id.create ()
+                ; tenant_id = tenant.Pool_tenant.Write.id
+                ; asset_id = Pool_common.Id.of_string asset_id
+                ; logo_type
+                })
+            in
+            [ Pool_tenant.Created tenant
+            ; Pool_tenant.LogosUploaded logo_mappings
+            ]
+            |> Lwt_list.iter_s (Pool_tenant.handle_event Pool_database.root))
   in
   Lwt.return_unit
 ;;

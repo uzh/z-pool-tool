@@ -17,7 +17,7 @@ module Label = struct
     type t =
       | Direction [@name "direction"] [@printer print "direction"]
       | AdditionalInformation [@name "additional_information"]
-          [@printer print "additional_information"]
+      [@printer print "additional_information"]
     [@@deriving enum, eq, ord, sexp_of, show { with_path = false }, yojson]
   end
 

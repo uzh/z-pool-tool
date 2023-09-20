@@ -111,8 +111,8 @@ let responsive_horizontal_table
            i
            |> fnc
            |> (function
-           | Some classnames -> tr ~a:[ a_class classnames ] cells
-           | None -> tr cells))
+            | Some classnames -> tr ~a:[ a_class classnames ] cells
+            | None -> tr cells))
        rows)
 ;;
 

@@ -58,15 +58,15 @@ module Address : sig
     val schema
       :  unit
       -> ( Pool_common.Message.error
-         , Institution.t option
-           -> Room.t option
-           -> Building.t option
-           -> Street.t
-           -> Zip.t
-           -> City.t
-           -> t
-         , t )
-         Pool_common.Utils.PoolConformist.t
+           , Institution.t option
+             -> Room.t option
+             -> Building.t option
+             -> Street.t
+             -> Zip.t
+             -> City.t
+             -> t
+           , t )
+           Pool_common.Utils.PoolConformist.t
   end
 
   type t =

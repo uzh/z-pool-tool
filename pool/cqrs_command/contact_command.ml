@@ -423,8 +423,7 @@ end
 module AddCellPhone : sig
   include
     Common.CommandSig
-      with type t =
-        Contact.t * User.CellPhone.t * Pool_common.VerificationCode.t
+    with type t = Contact.t * User.CellPhone.t * Pool_common.VerificationCode.t
 
   val handle
     :  ?tags:Logs.Tag.set

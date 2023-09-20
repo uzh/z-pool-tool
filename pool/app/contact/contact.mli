@@ -154,7 +154,7 @@ val find_full_cell_phone_verification_by_contact
   :  Pool_database.Label.t
   -> t
   -> (Pool_user.UnverifiedCellPhone.full, Pool_common.Message.error) result
-     Lwt.t
+       Lwt.t
 
 val has_terms_accepted : Pool_database.Label.t -> t -> bool Lwt.t
 

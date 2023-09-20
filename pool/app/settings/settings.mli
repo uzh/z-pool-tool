@@ -100,8 +100,8 @@ val action_of_param
        | `UpdateTermsAndConditions
        | `UpdateTriggerProfileUpdateAfter
        ]
-     , Pool_common.Message.error )
-     result
+       , Pool_common.Message.error )
+       result
 
 val stringify_action
   :  [< `CreateEmailSuffix

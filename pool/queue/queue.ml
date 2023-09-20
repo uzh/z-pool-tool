@@ -119,8 +119,8 @@ let work_queue database_labels jobs =
           (fun (job : job') -> job.name |> String.equal job_instance.name)
           jobs
         |> (function
-        | None -> loop job_instances jobs
-        | Some job -> work_job job job_instance)
+         | None -> loop job_instances jobs
+         | Some job -> work_job job job_instance)
     in
     let%lwt () = loop pending_job_instances jobs in
     Logs.info ~src (fun m -> m ~tags "Finish working queue");

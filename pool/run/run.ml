@@ -72,10 +72,10 @@ let () =
     |> with_services services
     |> before_start (fun () ->
       (Lwt.async_exception_hook
-         := fun exn ->
-              Pool_common.Message.NotHandled (Printexc.to_string exn)
-              |> Pool_common.Utils.with_log_error ~src
-              |> ignore);
+       := fun exn ->
+            Pool_common.Message.NotHandled (Printexc.to_string exn)
+            |> Pool_common.Utils.with_log_error ~src
+            |> ignore);
       Logger.create_logs_dir ();
       Lwt.return @@ Middleware.Error.before_start ())
     |> run ~commands ~log_reporter:Logger.reporter)

@@ -59,8 +59,8 @@ module Logos : sig
   val schema
     :  unit
     -> ( Pool_common.Message.error
-       , Pool_common.Id.t list )
-       Pool_common.Utils.PoolConformist.Field.t
+         , Pool_common.Id.t list )
+         Pool_common.Utils.PoolConformist.Field.t
 
   val of_files : Pool_common.File.t list -> t
 end
@@ -74,8 +74,8 @@ module PartnerLogos : sig
   val schema
     :  unit
     -> ( Pool_common.Message.error
-       , Pool_common.Id.t list )
-       Pool_common.Utils.PoolConformist.Field.t
+         , Pool_common.Id.t list )
+         Pool_common.Utils.PoolConformist.Field.t
 
   val of_files : Pool_common.File.t list -> t
 end

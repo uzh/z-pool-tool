@@ -60,16 +60,17 @@ let tenant_seed_default =
     "seed.tenant.default"
     "Seed default tables (without clean)"
     (fun pool ->
-      let%lwt () =
-        [ Settings.(DefaultRestored default_values) |> Pool_event.settings
-        ; I18n.(DefaultRestored default_values) |> Pool_event.i18n
-        ; Message_template.(
-            DefaultRestored default_values_tenant |> Pool_event.message_template)
-        ; Guard.(DefaultRestored root_permissions) |> Pool_event.guard
-        ]
-        |> Pool_event.handle_events pool
-      in
-      Lwt.return_some ())
+       let%lwt () =
+         [ Settings.(DefaultRestored default_values) |> Pool_event.settings
+         ; I18n.(DefaultRestored default_values) |> Pool_event.i18n
+         ; Message_template.(
+             DefaultRestored default_values_tenant
+             |> Pool_event.message_template)
+         ; Guard.(DefaultRestored root_permissions) |> Pool_event.guard
+         ]
+         |> Pool_event.handle_events pool
+       in
+       Lwt.return_some ())
 ;;
 
 let tenant_data_contacts_specific =

@@ -319,7 +319,7 @@ module SessionCancellation : sig
     -> (Session.CancellationReason.t
         -> Contact.t
         -> (Sihl_email.t, Pool_common.Message.error) result)
-       Lwt.t
+         Lwt.t
 
   val prepare_text_message
     :  Pool_database.Label.t
@@ -332,7 +332,7 @@ module SessionCancellation : sig
         -> Contact.t
         -> Pool_user.CellPhone.t
         -> (Text_message.t, Pool_common.Message.error) result)
-       Lwt.t
+         Lwt.t
 end
 
 module SessionReminder : sig
@@ -370,7 +370,7 @@ module SessionReminder : sig
     -> (Assignment.t
         -> Pool_user.CellPhone.t
         -> (Text_message.t, Pool_common.Message.error) result)
-       Lwt.t
+         Lwt.t
 end
 
 module SessionReschedule : sig
@@ -395,7 +395,7 @@ module SessionReschedule : sig
         -> Session.Start.t
         -> Session.Duration.t
         -> (Sihl_email.t, Pool_common.Message.error) result)
-       Lwt.t
+         Lwt.t
 end
 
 module SignUpVerification : sig
@@ -430,5 +430,5 @@ module UserImport : sig
     -> ([< `Admin of Admin.t | `Contact of Contact.t ]
         -> string
         -> Sihl_email.t)
-       Lwt.t
+         Lwt.t
 end

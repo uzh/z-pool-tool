@@ -3,8 +3,8 @@ let handle_user_import_notifications =
     "user_import.notfiy"
     "Notify users about import"
     (fun () ->
-      let open Utils.Lwt_result.Infix in
-      Command_utils.setup_databases ()
-      >|> Lwt_list.iter_s User_import.Service.run
-      ||> CCOption.return)
+       let open Utils.Lwt_result.Infix in
+       Command_utils.setup_databases ()
+       >|> Lwt_list.iter_s User_import.Service.run
+       ||> CCOption.return)
 ;;

@@ -13,8 +13,8 @@ let[@warning "-4"] confirmed_and_terms_agreed () =
         let error = Pool_common.Message.(NotFound Field.User) in
         user
         |> (function
-             | Contact c -> Ok c
-             | Admin _ | Guest -> Error error)
+              | Contact c -> Ok c
+              | Admin _ | Guest -> Error error)
         |> Lwt_result.lift
       in
       let import_closed contact =

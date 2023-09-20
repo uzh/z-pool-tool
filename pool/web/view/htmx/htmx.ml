@@ -262,7 +262,7 @@ let select_value language options v =
    ; option_formatter = Some SelectOption.Public.(name language)
    ; selected = v
    }
-    : 'a selector)
+   : 'a selector)
   |> select
 ;;
 
@@ -355,17 +355,17 @@ let custom_field_overridden_value ?hx_delete is_admin lang m =
        answer
        >>= field_overridden_value
        >|= (function
-       | `NoValue -> no_value
-       | `Overridden lst ->
-         lst
-         |> CCList.map
-              (SelectOption.Public.name lang %> txt %> CCList.pure %> li)
-            %> ul
-            %> (fun html ->
-                 [ span [ prefix; txt ":" ]
-                 ; div ~a:[ a_class [ "input-group" ] ] [ html ]
-                 ])
-            %> wrap)
+        | `NoValue -> no_value
+        | `Overridden lst ->
+          lst
+          |> CCList.map
+               (SelectOption.Public.name lang %> txt %> CCList.pure %> li)
+             %> ul
+             %> (fun html ->
+                  [ span [ prefix; txt ":" ]
+                  ; div ~a:[ a_class [ "input-group" ] ] [ html ]
+                  ])
+             %> wrap)
      | Public.Number (_, answer) ->
        answer >>= field_overridden_value >|= build_html (CCInt.to_string %> txt)
      | Public.Select (_, _, answer) ->

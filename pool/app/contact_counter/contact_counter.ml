@@ -43,7 +43,7 @@ let update_on_assignment_deletion
   =
   CCList.fold_left
     (fun (contact, closed_assignment)
-         { Assignment.no_show; participated; canceled_at; _ } ->
+      { Assignment.no_show; participated; canceled_at; _ } ->
       let open Contact in
       let open Assignment in
       let closed_assignment =

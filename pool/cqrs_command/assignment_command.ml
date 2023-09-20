@@ -247,8 +247,8 @@ end
 module MarkAsDeleted : sig
   include
     Common.CommandSig
-      with type t =
-        Contact.t * Assignment.t list * Assignment.IncrementParticipationCount.t
+    with type t =
+      Contact.t * Assignment.t list * Assignment.IncrementParticipationCount.t
 
   val effects : Experiment.Id.t -> Assignment.Id.t -> Guard.ValidationSet.t
 end = struct

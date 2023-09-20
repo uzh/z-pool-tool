@@ -21,8 +21,8 @@ let index req =
         I18nMap.update
           (I18n.key t)
           (function
-           | None -> Some [ t ]
-           | Some values -> Some (t :: values))
+            | None -> Some [ t ]
+            | Some values -> Some (t :: values))
           m
       in
       CCList.fold_left update I18nMap.empty translations

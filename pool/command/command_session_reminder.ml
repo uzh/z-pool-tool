@@ -5,12 +5,12 @@ let tenant_specific_session_reminder =
     "session_reminder.send"
     "Send session reminders of specified tenant"
     (fun pool ->
-      let open Utils.Lwt_result.Infix in
-      pool
-      |> Pool_tenant.find_by_label
-      ||> get_or_failwith
-      >|> Reminder.Service.send_tenant_reminder
-      ||> CCOption.some)
+       let open Utils.Lwt_result.Infix in
+       pool
+       |> Pool_tenant.find_by_label
+       ||> get_or_failwith
+       >|> Reminder.Service.send_tenant_reminder
+       ||> CCOption.some)
 ;;
 
 let all_tenants_session_reminder =
@@ -18,9 +18,9 @@ let all_tenants_session_reminder =
     "session_reminder.send_all"
     "Send session reminders of all tenants"
     (fun () ->
-      let open Utils.Lwt_result.Infix in
-      let%lwt (_ : Pool_database.Label.t list) =
-        Command_utils.setup_databases ()
-      in
-      Reminder.Service.run () ||> CCOption.some)
+       let open Utils.Lwt_result.Infix in
+       let%lwt (_ : Pool_database.Label.t list) =
+         Command_utils.setup_databases ()
+       in
+       Reminder.Service.run () ||> CCOption.some)
 ;;

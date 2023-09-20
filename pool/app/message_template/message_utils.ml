@@ -193,8 +193,8 @@ let search_by_language templates lang =
     (fun { language; _ } -> Language.equal language lang)
     templates
   |> (function
-       | None -> templates |> CCList.head_opt
-       | Some template -> Some template)
+        | None -> templates |> CCList.head_opt
+        | Some template -> Some template)
   |> CCOption.map (fun ({ language; _ } as t) -> language, t)
   |> CCOption.to_result (Message.NotFound Field.MessageTemplate)
 ;;

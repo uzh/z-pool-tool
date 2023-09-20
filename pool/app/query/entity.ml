@@ -117,8 +117,8 @@ module Sort = struct
       let open CCFun in
       let open Pool_common in
       (function
-       | Ascending -> Message.Ascending
-       | Descending -> Message.Descending)
+        | Ascending -> Message.Ascending
+        | Descending -> Message.Descending)
       %> Utils.control_to_string lang
     ;;
   end

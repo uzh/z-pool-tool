@@ -124,11 +124,11 @@ let job_reporter
     in
     Gitlab_notify.notify ~additional (Exception last_error) ""
     ||> (function
-    | Ok iid ->
-      Logs.info ~src (fun m ->
-        m ~tags "Successfully reported error to gitlab as issue %d." iid)
-    | Error err ->
-      Logs.err ~src (fun m ->
-        m ~tags "Unable to report error to gitlab: %s" err))
+     | Ok iid ->
+       Logs.info ~src (fun m ->
+         m ~tags "Successfully reported error to gitlab as issue %d." iid)
+     | Error err ->
+       Logs.err ~src (fun m ->
+         m ~tags "Unable to report error to gitlab: %s" err))
   | (Succeeded | Pending | Cancelled | Failed), _ -> Lwt.return_unit
 ;;

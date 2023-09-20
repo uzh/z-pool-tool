@@ -44,8 +44,8 @@ module Create : sig
     -> Pool_tenant.GtxApiKey.t
     -> t
     -> ( Pool_event.t list * (Pool_database.Label.t * Pool_event.t list)
-       , Pool_common.Message.error )
-       result
+         , Pool_common.Message.error )
+         result
 
   val effects : Guard.ValidationSet.t
 end = struct

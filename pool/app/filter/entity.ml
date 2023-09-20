@@ -27,10 +27,10 @@ type single_val =
   | Bool of bool [@name "bool"] [@printer print "bool"]
   | Date of Pool_common.Model.Ptime.date [@name "date"] [@printer print "date"]
   | Language of Pool_common.Language.t [@name "language"]
-      [@printer print "language"]
+  [@printer print "language"]
   | Nr of float [@name "nr"] [@printer print "nr"]
   | Option of Custom_field.SelectOption.Id.t [@name "option"]
-      [@printer print "option"]
+  [@printer print "option"]
   | Str of string [@name "str"] [@printer print "str"]
 [@@deriving show { with_path = false }, eq]
 
@@ -107,23 +107,23 @@ module Key = struct
     | Str [@printer print "str"]
     | Select of Custom_field.SelectOption.t list [@printer print "option"]
     | MultiSelect of Custom_field.SelectOption.t list
-        [@printer print "multi_select"]
+    [@printer print "multi_select"]
     | QueryExperiments
     | QueryTags
   [@@deriving show]
 
   type hardcoded =
     | ContactLanguage [@printer print "contact_language"]
-        [@name "contact_language"]
+    [@name "contact_language"]
     | Firstname [@printer print "first_name"] [@name "first_name"]
     | Name [@printer print "name"] [@name "name"]
     | NumAssignments [@printer print "num_assignments"]
-        [@name "num_assignments"]
+    [@name "num_assignments"]
     | NumInvitations [@printer print "num_invitations"]
-        [@name "num_invitations"]
+    [@name "num_invitations"]
     | NumNoShows [@printer print "num_no_shows"] [@name "num_no_shows"]
     | NumParticipations [@printer print "num_participations"]
-        [@name "num_participations"]
+    [@name "num_participations"]
     | NumShowUps [@printer print "num_show_ups"] [@name "num_show_ups"]
     | Participation [@printer print "participation"] [@name "participation"]
     | Tag [@printer print "tag"] [@name "tag"]

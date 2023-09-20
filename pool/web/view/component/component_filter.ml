@@ -97,8 +97,8 @@ let value_input
        let value =
          single_value
          >>= (function[@warning "-4"]
-               | Nr n -> Some n
-               | _ -> None)
+                | Nr n -> Some n
+                | _ -> None)
          |> CCOption.map (fun f -> f |> CCFloat.to_int |> CCInt.to_string)
        in
        Component_input.input_element
@@ -182,8 +182,8 @@ let value_input
              | Lst lst ->
                CCList.filter_map
                  (function[@warning "-4"]
-                  | Option id -> find_in_options options id
-                  | _ -> None)
+                   | Option id -> find_in_options options id
+                   | _ -> None)
                  lst)
            value
        in
@@ -211,12 +211,12 @@ let value_input
            | Lst lst ->
              CCList.filter_map
                (function[@warning "-4"]
-                | Str id ->
-                  let experiment_id = id |> Experiment.Id.of_string in
-                  CCList.find_opt
-                    (fun (id, _) -> Experiment.Id.equal id experiment_id)
-                    query_experiments
-                | _ -> None)
+                 | Str id ->
+                   let experiment_id = id |> Experiment.Id.of_string in
+                   CCList.find_opt
+                     (fun (id, _) -> Experiment.Id.equal id experiment_id)
+                     query_experiments
+                 | _ -> None)
                lst)
        in
        Component_search.Experiment.create
@@ -232,12 +232,12 @@ let value_input
            | Lst lst ->
              CCList.filter_map
                (function[@warning "-4"]
-                | Str id ->
-                  let tag_id = id |> Tags.Id.of_string in
-                  CCList.find_opt
-                    (fun (id, _) -> Tags.Id.equal id tag_id)
-                    query_tags
-                | _ -> None)
+                 | Str id ->
+                   let tag_id = id |> Tags.Id.of_string in
+                   CCList.find_opt
+                     (fun (id, _) -> Tags.Id.equal id tag_id)
+                     query_tags
+                 | _ -> None)
                lst)
        in
        Component_search.Tag.create

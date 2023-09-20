@@ -14,7 +14,8 @@ module I18nPageCache = struct
 
   let tbl
     : ( Pool_tenant.Database.Label.t * Entity.Key.t * Pool_common.Language.t
-    , bool ) t
+        , bool )
+        t
     =
     create 5
   ;;

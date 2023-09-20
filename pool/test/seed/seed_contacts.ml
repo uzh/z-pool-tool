@@ -39,7 +39,7 @@ let create ?contact_data db_pool =
   let%lwt () =
     Lwt_list.fold_left_s
       (fun contacts
-           (user_id, firstname, lastname, email, language, terms_accepted_at) ->
+        (user_id, firstname, lastname, email, language, terms_accepted_at) ->
         let%lwt user =
           Service.User.find_by_email_opt ~ctx (User.EmailAddress.value email)
         in

@@ -27,11 +27,11 @@ let option_form
       custom_field_option
       Message.Field.Name
       (fun lang o ->
-        let open CCOption in
-        o.SelectOption.name
-        |> Name.find_opt lang
-        >|= Name.value_name
-        |> value ~default:"")
+         let open CCOption in
+         o.SelectOption.name
+         |> Name.find_opt lang
+         >|= Name.value_name
+         |> value ~default:"")
   in
   form
     ~a:

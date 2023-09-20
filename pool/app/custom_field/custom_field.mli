@@ -536,8 +536,8 @@ module Guard : sig
         :  ?ctx:(string * string) list
         -> Group.t
         -> ( Role.Target.t Guard.Target.t
-           , Pool_common.Message.error )
-           Lwt_result.t
+             , Pool_common.Message.error )
+             Lwt_result.t
 
       type t
 

@@ -51,8 +51,8 @@ let smtp_form location req =
         |> SmtpAuth.find_default
         ||> CCResult.to_opt
         ||> (function
-              | Some auth -> show context location flash_fetcher auth
-              | None -> smtp_create_form context location flash_fetcher)
+               | Some auth -> show context location flash_fetcher auth
+               | None -> smtp_create_form context location flash_fetcher)
         >|> General.create_root_layout ~active_navigation context
         ||> CCResult.return
     in

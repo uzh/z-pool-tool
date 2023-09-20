@@ -26,13 +26,13 @@ let answer_custom_fields fields contact =
   in
   CCList.filter_map
     (function
-     | (Select (public, options, _) : Public.t) ->
-       let answer = Some (select_random options) |> Answer.create in
-       Public.Select (public, options, Some answer) |> CCOption.pure
-     | MultiSelect (public, options, _) ->
-       let answer = Some [ select_random options ] |> Answer.create in
-       Public.MultiSelect (public, options, Some answer) |> CCOption.pure
-     | Boolean _ | Date _ | Number _ | Text _ -> None)
+      | (Select (public, options, _) : Public.t) ->
+        let answer = Some (select_random options) |> Answer.create in
+        Public.Select (public, options, Some answer) |> CCOption.pure
+      | MultiSelect (public, options, _) ->
+        let answer = Some [ select_random options ] |> Answer.create in
+        Public.MultiSelect (public, options, Some answer) |> CCOption.pure
+      | Boolean _ | Date _ | Number _ | Text _ -> None)
     fields
   |> CCList.map (fun field ->
     let open Custom_field in
@@ -264,29 +264,31 @@ let contacts db_label =
              , _
              , _ )
            ->
-           match%lwt
-             Service.User.find_by_email_opt ~ctx (User.EmailAddress.value email)
-           with
-           | None ->
-             Lwt.return_some
-               [ Contact.Created
-                   { Contact.user_id
-                   ; email
-                   ; password
-                   ; firstname
-                   ; lastname
-                   ; terms_accepted_at
-                   ; language
-                   }
-               ]
-           | Some { Sihl_user.id; _ } ->
-             Logs.debug ~src (fun m ->
-               m
-                 ~tags
-                 "Contact already exists (%s): %s"
-                 (db_label |> Pool_database.Label.value)
-                 id);
-             Lwt.return_none)
+            match%lwt
+              Service.User.find_by_email_opt
+                ~ctx
+                (User.EmailAddress.value email)
+            with
+            | None ->
+              Lwt.return_some
+                [ Contact.Created
+                    { Contact.user_id
+                    ; email
+                    ; password
+                    ; firstname
+                    ; lastname
+                    ; terms_accepted_at
+                    ; language
+                    }
+                ]
+            | Some { Sihl_user.id; _ } ->
+              Logs.debug ~src (fun m ->
+                m
+                  ~tags
+                  "Contact already exists (%s): %s"
+                  (db_label |> Pool_database.Label.value)
+                  id);
+              Lwt.return_none)
     ||> CCList.flatten
     >|> Lwt_list.iter_s (Contact.handle_event db_label)
   in
@@ -294,7 +296,7 @@ let contacts db_label =
   let%lwt contact_events, field_events =
     Lwt_list.fold_left_s
       (fun (contacts, fields)
-           (user_id, _, _, _, _, _, paused, disabled, verified) ->
+        (user_id, _, _, _, _, _, paused, disabled, verified) ->
         let%lwt contact = Contact.find db_label user_id in
         let custom_fields contact =
           let open Custom_field in
