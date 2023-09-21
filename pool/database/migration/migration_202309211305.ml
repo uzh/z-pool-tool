@@ -88,3 +88,47 @@ let migration () =
   Sihl.Database.Migration.(
     empty "202309211305" |> add_step add_default_guardian_role_permission)
 ;;
+
+let add_default_guardian_role_permission_root =
+  Sihl.Database.Migration.create_step
+    ~label:"add default guardian role permissions"
+    {sql|
+    INSERT INTO `guardian_role_permissions` (`role`, `permission`, `target_model`) VALUES
+    ('`Operator', 'manage', '`Admin'),
+    ('`Operator', 'manage', '`Assignment'),
+    ('`Operator', 'manage', '`Contact'),
+    ('`Operator', 'manage', '`ContactInfo'),
+    ('`Operator', 'manage', '`ContactName'),
+    ('`Operator', 'manage', '`CustomField'),
+    ('`Operator', 'manage', '`CustomFieldGroup'),
+    ('`Operator', 'manage', '`Experiment'),
+    ('`Operator', 'manage', '`Filter'),
+    ('`Operator', 'manage', '`I18n'),
+    ('`Operator', 'manage', '`Invitation'),
+    ('`Operator', 'manage', '`Location'),
+    ('`Operator', 'manage', '`LocationFile'),
+    ('`Operator', 'manage', '`Message'),
+    ('`Operator', 'manage', '`MessageTemplate'),
+    ('`Operator', 'manage', '`OrganisationalUnit'),
+    ('`Operator', 'manage', '`Mailing'),
+    ('`Operator', 'manage', '`Permission'),
+    ('`Operator', 'manage', '`Queue'),
+    ('`Operator', 'manage', '`Role'),
+    ('`Operator', 'manage', '`Schedule'),
+    ('`Operator', 'manage', '`Session'),
+    ('`Operator', 'manage', '`SessionClose'),
+    ('`Operator', 'manage', '`SystemSetting'),
+    ('`Operator', 'manage', '`Smtp'),
+    ('`Operator', 'manage', '`Statistics'),
+    ('`Operator', 'manage', '`System'),
+    ('`Operator', 'manage', '`Tag'),
+    ('`Operator', 'manage', '`Tenant'),
+    ('`Operator', 'manage', '`WaitingList')
+    ON DUPLICATE KEY UPDATE updated_at=updated_at;
+    |sql}
+;;
+
+let migration_root () =
+  Sihl.Database.Migration.(
+    empty "202309211305" |> add_step add_default_guardian_role_permission_root)
+;;
