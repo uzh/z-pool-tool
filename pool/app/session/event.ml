@@ -52,7 +52,7 @@ let handle_event pool =
     in
     Entity_guard.Target.to_authorizable ~ctx:(Pool_database.to_ctx pool) session
     ||> Pool_common.Utils.get_or_failwith
-    ||> fun (_ : Role.Target.t Guard.Target.t) -> ()
+    ||> fun (_ : Guard.Target.t) -> ()
   | Canceled session ->
     (* TODO: Check timestamps? Issue #126 *)
     { session with canceled_at = Some (Ptime_clock.now ()) } |> Repo.update pool

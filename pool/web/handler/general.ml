@@ -13,31 +13,15 @@ let admin_from_session db_pool req =
   user.Sihl.Contract.User.id |> Admin.Id.of_string |> Admin.find db_pool
 ;;
 
-let create_tenant_layout
-  req
-  ?active_navigation
-  Pool_context.{ database_label; language; query_language; message; user; _ }
-  children
-  =
+let create_tenant_layout req ?active_navigation context children =
   let open Utils.Lwt_result.Infix in
   let* tenant_context = Pool_context.Tenant.find req |> Lwt_result.lift in
-  Layout.Tenant.create
-    children
-    tenant_context
-    ?active_navigation
-    ?message
-    ?query_language
-    database_label
-    language
-    user
+  Layout.Tenant.create ?active_navigation context tenant_context children
   |> Lwt_result.ok
 ;;
 
-let create_root_layout
-  ?active_navigation
-  Pool_context.{ database_label; message; user; _ }
-  =
-  Layout.Root.create ?active_navigation ?message database_label user
+let create_root_layout ?active_navigation context =
+  Layout.Root.create ?active_navigation context
 ;;
 
 let note ~title ~body req =

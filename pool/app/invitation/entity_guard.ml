@@ -1,11 +1,3 @@
-let relation ?ctx () =
-  let open Guard in
-  let to_target =
-    Relation.Query.create Repo.Sql.find_binary_experiment_id_sql
-  in
-  Persistence.Relation.add ?ctx ~to_target ~target:`Experiment `Invitation
-;;
-
 module Target = struct
   type t = Entity.t [@@deriving eq, show]
 
@@ -15,7 +7,7 @@ module Target = struct
     Persistence.Target.decorate
       ?ctx
       (fun Entity.{ id; _ } ->
-        Target.make
+        Target.create
           `Invitation
           (id |> Pool_common.Id.value |> Uuid.Target.of_string_exn))
       t
@@ -26,49 +18,71 @@ end
 module Access = struct
   open Guard
   open ValidationSet
+  open Permission
 
-  let invitation action id =
-    let target_id = id |> Uuid.target_of Pool_common.Id.value in
-    One (action, TargetSpec.Id (`Invitation, target_id))
+  let invitation action uuid =
+    one_of_tuple
+      (action, `Invitation, Some (uuid |> Uuid.target_of Pool_common.Id.value))
   ;;
 
   let index id =
     And
-      [ One (Action.Read, TargetSpec.Entity `Invitation)
+      [ Or
+          [ one_of_tuple (Read, `Invitation, None)
+          ; one_of_tuple
+              (Read, `Invitation, Some (Uuid.target_of Experiment.Id.value id))
+          ]
       ; Experiment.Guard.Access.read id
-      ; Experiment.Guard.Access.recruiter_of id
       ]
   ;;
 
   let create id =
     And
-      [ One (Action.Create, TargetSpec.Entity `Invitation)
+      [ Or
+          [ one_of_tuple (Create, `Invitation, None)
+          ; one_of_tuple
+              (Create, `Invitation, Some (Uuid.target_of Experiment.Id.value id))
+          ]
       ; Experiment.Guard.Access.update id
-      ; Experiment.Guard.Access.recruiter_of id
       ]
   ;;
 
   let read experiment_id invitation_id =
     And
-      [ invitation Action.Read invitation_id
+      [ Or
+          [ invitation Read invitation_id
+          ; one_of_tuple
+              ( Read
+              , `Invitation
+              , Some (Uuid.target_of Experiment.Id.value experiment_id) )
+          ]
       ; Experiment.Guard.Access.read experiment_id
-      ; Experiment.Guard.Access.recruiter_of experiment_id
       ]
   ;;
 
   let update experiment_id invitation_id =
     And
-      [ invitation Action.Update invitation_id
+      [ Or
+          [ invitation Update invitation_id
+          ; one_of_tuple
+              ( Update
+              , `Invitation
+              , Some (Uuid.target_of Experiment.Id.value experiment_id) )
+          ]
       ; Experiment.Guard.Access.read experiment_id
-      ; Experiment.Guard.Access.recruiter_of experiment_id
       ]
   ;;
 
   let delete experiment_id invitation_id =
     And
-      [ invitation Action.Delete invitation_id
+      [ Or
+          [ invitation Delete invitation_id
+          ; one_of_tuple
+              ( Delete
+              , `Invitation
+              , Some (Uuid.target_of Experiment.Id.value experiment_id) )
+          ]
       ; Experiment.Guard.Access.update experiment_id
-      ; Experiment.Guard.Access.recruiter_of experiment_id
       ]
   ;;
 end

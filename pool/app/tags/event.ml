@@ -19,7 +19,7 @@ let handle_event pool : event -> unit Lwt.t =
     in
     Entity_guard.Target.to_authorizable ~ctx tag
     ||> Pool_common.Utils.get_or_failwith
-    ||> fun (_ : Role.Target.t Guard.Target.t) -> ()
+    ||> fun (_ : Guard.Target.t) -> ()
   | Updated tag ->
     let%lwt () = Repo.update pool tag in
     Lwt.return_unit

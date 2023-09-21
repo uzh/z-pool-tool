@@ -8,10 +8,7 @@ module Actor = struct
     Persistence.Actor.decorate
       ?ctx
       (fun ({ Entity.id; _ } : t) ->
-        Actor.make
-          (RoleSet.singleton `System)
-          `System
-          (id |> Uuid.actor_of Pool_common.Id.value))
+        Actor.create `System (id |> Uuid.actor_of Pool_common.Id.value))
       t
     >|- Pool_common.Message.authorization
   ;;
@@ -25,7 +22,7 @@ module Target = struct
     Persistence.Target.decorate
       ?ctx
       (fun ({ Entity.id; _ } : t) ->
-        Target.make `Tenant (id |> Uuid.target_of Pool_common.Id.value))
+        Target.create `Tenant (id |> Uuid.target_of Pool_common.Id.value))
       t
     >|- Pool_common.Message.authorization
   ;;
@@ -34,15 +31,15 @@ end
 module Access = struct
   open Guard
   open ValidationSet
+  open Permission
 
   let tenant action id =
-    let target_id = id |> Uuid.target_of Entity.Id.value in
-    One (action, TargetSpec.Id (`Tenant, target_id))
+    one_of_tuple (action, `Tenant, Some (id |> Uuid.target_of Entity.Id.value))
   ;;
 
-  let index = One (Action.Read, TargetSpec.Entity `Tenant)
-  let create = One (Action.Create, TargetSpec.Entity `Tenant)
-  let read = tenant Action.Read
-  let update = tenant Action.Update
-  let delete = tenant Action.Delete
+  let index = one_of_tuple (Read, `Tenant, None)
+  let create = one_of_tuple (Create, `Tenant, None)
+  let read = tenant Read
+  let update = tenant Update
+  let delete = tenant Delete
 end

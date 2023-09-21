@@ -2,6 +2,8 @@ open CCFun
 module Database = Pool_database
 module Dynparam = Utils.Database.Dynparam
 
+let src = Logs.Src.create "experiment.repo"
+
 module Sql = struct
   let default_order_by = "pool_experiments.created_at"
 
@@ -121,13 +123,7 @@ module Sql = struct
     Format.asprintf "%s %s" select_from where_fragment
   ;;
 
-  let validate_experiment_sql actor action =
-    let open Guard.Persistence in
-    let open Dynparam in
-    ( {sql| guardianValidateExperimentUuid(guardianEncodeUuid(?), ?, pool_experiments.uuid) |sql}
-    , empty |> add Uuid.Actor.t (actor |> Guard.Actor.id) |> add Action.t action
-    )
-  ;;
+  let validate_experiment_sql m = Format.asprintf " AND %s " m, Dynparam.empty
 
   let select_count where_fragment =
     Format.asprintf
@@ -139,10 +135,12 @@ module Sql = struct
       where_fragment
   ;;
 
-  let find_all ?query ?actor ?action pool =
-    let where =
-      let open CCOption in
-      ( and* ) actor action |> map (CCFun.uncurry validate_experiment_sql)
+  let find_all ?query ?actor ?permission pool =
+    let open Utils.Lwt_result.Infix in
+    let checks = [ Format.asprintf "pool_experiments.uuid IN %s" ] in
+    let%lwt where =
+      Guard.create_where ?actor ?permission ~checks pool `Experiment
+      ||> CCOption.map (fun m -> m, Dynparam.empty)
     in
     Query.collect_and_count
       pool
@@ -359,10 +357,39 @@ module Sql = struct
       in
       Utils.Database.collect (pool |> Database.Label.value) request pv
   ;;
+
+  let find_all_ids_of_contact_id_request =
+    let open Caqti_request.Infix in
+    {sql|
+        SELECT
+          LOWER(CONCAT(
+            SUBSTR(HEX(pool_experiments.uuid), 1, 8), '-',
+            SUBSTR(HEX(pool_experiments.uuid), 9, 4), '-',
+            SUBSTR(HEX(pool_experiments.uuid), 13, 4), '-',
+            SUBSTR(HEX(pool_experiments.uuid), 17, 4), '-',
+            SUBSTR(HEX(pool_experiments.uuid), 21)
+          ))
+        FROM pool_experiments
+        INNER JOIN pool_sessions
+          ON pool_experiments.uuid = pool_sessions.experiment_uuid
+        INNER JOIN pool_assignments
+          ON pool_sessions.uuid = pool_assignments.session_uuid
+        WHERE pool_assignments.contact_uuid = UNHEX(REPLACE(?, '-', ''))
+      |sql}
+    |> Pool_common.Repo.Id.t ->* Repo_entity.Id.t
+  ;;
+
+  let find_all_ids_of_contact_id pool id =
+    Utils.Database.collect
+      (pool |> Database.Label.value)
+      find_all_ids_of_contact_id_request
+      (Contact.Id.to_common id)
+  ;;
 end
 
 let find = Sql.find
 let find_all = Sql.find_all
+let find_all_ids_of_contact_id = Sql.find_all_ids_of_contact_id
 let find_of_session = Sql.find_of_session
 let find_of_mailing = Sql.find_of_mailing
 let session_count = Sql.session_count

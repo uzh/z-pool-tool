@@ -2,7 +2,7 @@ open CCFun.Infix
 module BaseGuard = Guard
 
 let get_or_failwith = Pool_common.Utils.get_or_failwith
-let role_of_string = CCFun.(Format.asprintf "`%s" %> Role.Actor.of_string)
+let role_of_string = CCFun.(Format.asprintf "`%s" %> Role.Role.of_string)
 
 let role_uuid_of_string role uuid =
   Format.asprintf "`%s (%s)" role uuid |> Role.Actor.of_string
@@ -15,23 +15,21 @@ let role_to_string =
   %> CCString.replace ~which:`Right ~sub:")" ~by:""
 ;;
 
-let grant_role ctx admin role =
+let grant_role ctx admin (role, target_uuid) =
   let open Utils.Lwt_result.Infix in
-  let%lwt (_ : [> `Admin ] Guard.Actor.t) =
+  let%lwt (_ : Guard.Actor.t) =
     admin
     |> Admin.create
     |> Admin.Guard.Actor.to_authorizable ~ctx
     ||> Pool_common.Utils.get_or_failwith
   in
   let open Guard in
-  Persistence.Actor.grant_roles
-    ~ctx
+  ActorRole.create
+    ?target_uuid
     (Uuid.Actor.of_string_exn admin.Sihl_user.id)
-    RoleSet.(CCList.fold_left (CCFun.flip add) empty [ role ])
-  >|- (fun (_ : string) ->
-        "Invalid Role: check possible role patterns (admin.list_roles)")
+    role
+  |> Persistence.ActorRole.upsert ~ctx
   ||> CCFun.tap (fun _ -> Persistence.Cache.clear ())
-  ||> CCResult.get_or_failwith
 ;;
 
 let create =
@@ -50,7 +48,7 @@ let create =
         ; password
         ; firstname
         ; lastname
-        ; roles = Some (Guard.RoleSet.singleton role)
+        ; roles = [ role ]
         }
       in
       let%lwt () =
@@ -86,11 +84,12 @@ Example: admin.create econ-uzh example@mail.com securePassword Max Muster Recrui
     (function
     | [ db_pool; email; password; given_name; name; role ] ->
       let%lwt pool = Command_utils.is_available_exn db_pool in
-      role_of_string role
+      (role_of_string role, None)
       |> create_and_grant_role_exn pool email password given_name name
     | [ db_pool; email; password; given_name; name; role; uuid ] ->
       let%lwt pool = Command_utils.is_available_exn db_pool in
-      role_uuid_of_string role uuid
+      let target_uuid = Guard.Uuid.Target.of_string_exn uuid in
+      (role_of_string role, Some target_uuid)
       |> create_and_grant_role_exn pool email password given_name name
     | _ -> Command_utils.failwith_missmatch help)
 ;;
@@ -110,8 +109,7 @@ let create_root_admin =
           ; password = password |> Password.create |> CCResult.get_exn
           ; firstname = given_name |> Firstname.of_string
           ; lastname = name |> Lastname.of_string
-          ; roles =
-              Some (BaseGuard.RoleSet.of_list [ `Operator; `ManageOperators ])
+          ; roles = [ `Operator, None ]
           }
         |> handle_event
              ~tags:Pool_database.(Logger.Tags.create root)
@@ -175,10 +173,11 @@ Example: admin.grant_role econ-uzh example@mail.com RecruiterAll
     (function
     | [ db_pool; email; role ] ->
       let%lwt pool = Command_utils.is_available_exn db_pool in
-      role |> role_of_string |> grant_if_admin pool email
+      (role |> role_of_string, None) |> grant_if_admin pool email
     | [ db_pool; email; role; uuid ] ->
       let%lwt pool = Command_utils.is_available_exn db_pool in
-      role_uuid_of_string role uuid |> grant_if_admin pool email
+      let target_uuid = Guard.Uuid.Target.of_string_exn uuid in
+      (role_of_string role, Some target_uuid) |> grant_if_admin pool email
     | _ -> Command_utils.failwith_missmatch help)
 ;;
 

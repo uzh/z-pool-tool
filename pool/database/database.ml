@@ -78,16 +78,7 @@ module Tenant = struct
   module Migration = Migration.Tenant
   module Seed = Seed.Tenant
 
-  let setup_functions =
-    [ Assignment.Guard.relation
-    ; Invitation.Guard.relation
-    ; Mailing.Guard.relation
-    ; Pool_location.Guard.relation
-    ; Session.Guard.relation
-    ; Waiting_list.Guard.relation
-    ; Guard.Persistence.start
-    ]
-  ;;
+  let setup_functions = [ Guard.Persistence.start ]
 
   let setup_tenant ?(run_functions = []) database =
     let open Pool_database in
@@ -109,18 +100,7 @@ module Tenant = struct
     | tenants -> Lwt_list.map_s (setup_tenant ?run_functions) tenants
   ;;
 
-  let setup =
-    setup_core
-      ~run_functions:
-        [ Assignment.Guard.relation
-        ; Invitation.Guard.relation
-        ; Mailing.Guard.relation
-        ; Pool_location.Guard.relation
-        ; Session.Guard.relation
-        ; Waiting_list.Guard.relation
-        ; Guard.Persistence.start
-        ]
-  ;;
+  let setup = setup_core ~run_functions:[ Guard.Persistence.start ]
 end
 
 type event = Migrated of Pool_database.t [@@deriving eq, show]

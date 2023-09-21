@@ -2,6 +2,8 @@ module Id = Pool_common.Id
 module Database = Pool_database
 module Dynparam = Utils.Database.Dynparam
 
+let src = Logs.Src.create "contact.repo"
+
 let select_from_contacts_columns =
   Format.asprintf
     {sql|
@@ -197,12 +199,45 @@ let select_count where_fragment =
   Format.asprintf "%s %s" select_from where_fragment
 ;;
 
-let find_all pool ?query () =
+let find_all ?query ?actor ?permission pool () =
+  let open Utils.Lwt_result.Infix in
+  let checks =
+    [ Format.asprintf
+        {sql|
+          user_users.uuid IN (
+            SELECT contact_uuid FROM pool_sessions
+            JOIN pool_assignments ON pool_sessions.uuid = pool_assignments.session_uuid
+            WHERE pool_sessions.experiment_uuid IN %s
+            )
+        |sql}
+    ; Format.asprintf
+        {sql|
+          user_users.uuid IN (
+            SELECT contact_uuid FROM pool_assignments
+            WHERE pool_assignments.session_uuid IN %s
+            )
+        |sql}
+    ; Format.asprintf
+        {sql|
+          user_users.uuid IN (
+            SELECT contact_uuid FROM pool_sessions
+            JOIN pool_assignments ON pool_sessions.uuid = pool_assignments.session_uuid
+            WHERE pool_sessions.location_uuid IN %s
+            )
+        |sql}
+    ; Format.asprintf "user_users.uuid IN %s"
+    ]
+  in
+  let%lwt where =
+    Guard.create_where ?actor ?permission ~checks pool `Contact
+    ||> CCOption.map (fun m -> m, Dynparam.empty)
+  in
   Query.collect_and_count
     pool
     query
     ~select:find_request_sql
     ~count:select_count
+    ?where
     Repo_model.t
 ;;
 

@@ -25,8 +25,11 @@ let create search_type ?path req =
     let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
     let query = HttpUtils.find_in_urlencoded_opt query_field urlencoded in
     let search_role =
+      let open CCOption in
       HttpUtils.find_in_urlencoded_opt Field.Role urlencoded
-      |> CCOption.(flip bind (Role.Actor.of_string_res %> of_result))
+      |> flip bind (fun role ->
+        try Role.Role.of_string role |> return with
+        | _ -> None)
     in
     let%lwt exclude_roles_of =
       HttpUtils.find_in_urlencoded_opt Field.ExcludeRolesOf urlencoded
@@ -37,11 +40,9 @@ let create search_type ?path req =
       >|> CCOption.map_or
             ~default:(Lwt.return [])
             (Helpers_guard.find_roles database_label)
-      ||> filter_map
-            (CCOption.map_or
-               ~default:(CCFun.const None)
-               Role.Actor.find_target_of
-               search_role)
+      ||> filter_map (fun { Guard.ActorRole.target_uuid; role; _ } ->
+        CCOption.bind search_role (fun search_role ->
+          if Role.Role.equal role search_role then None else target_uuid))
     in
     let exclude =
       HttpUtils.find_in_urlencoded_list_opt Field.Exclude urlencoded

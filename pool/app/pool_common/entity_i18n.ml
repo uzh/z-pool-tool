@@ -186,6 +186,7 @@ type hint =
   | RegistrationDisabled
   | ResendRemindersChannel
   | ResendRemindersWarning
+  | RoleIntro of Entity_message.Field.t * Entity_message.Field.t
   | RulesIntro
   | ScheduleEvery of Ptime.Span.t
   | ScheduleAt of Ptime.t

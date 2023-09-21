@@ -3,7 +3,7 @@ open Tyxml.Html
 module Field = Pool_common.Message.Field
 
 let read_entity entity =
-  Guard.(ValidationSet.One (Action.Read, TargetSpec.Entity entity))
+  Guard.(ValidationSet.one_of_tuple (Permission.Read, entity, None))
 ;;
 
 type title =
@@ -25,21 +25,22 @@ let nav_elements { Experiment.id; direct_registration_disabled; _ } =
   let open Guard in
   let open ValidationSet in
   let open I18n in
-  let target_id = id |> Uuid.target_of Experiment.Id.value in
   let left =
+    let exp_and_any_of_model role =
+      let open Permission in
+      And
+        [ Experiment.Guard.Access.update id
+        ; Or
+            [ one_of_tuple (Create, role, None)
+            ; read_entity role
+            ; one_of_tuple (Update, role, None)
+            ; one_of_tuple (Delete, role, None)
+            ]
+        ]
+    in
     [ "", Overview, Experiment.Guard.Access.read id
-    ; ( "assistants"
-      , Field Field.Assistants
-      , Or
-          [ SpecificRole `ManageAssistants
-          ; SpecificRole (`ManageAssistant target_id)
-          ] )
-    ; ( "experimenter"
-      , Field Field.Experimenter
-      , Or
-          [ SpecificRole `ManageExperimenters
-          ; SpecificRole (`ManageExperimenter target_id)
-          ] )
+    ; "assistants", Field Field.Assistants, exp_and_any_of_model `Role
+    ; "experimenter", Field Field.Experimenter, exp_and_any_of_model `Role
     ; "invitations", Invitations, Invitation.Guard.Access.index id
     ]
   in
@@ -106,20 +107,19 @@ let create
   ?active_navigation
   ?buttons
   ?hint
-  { Pool_context.database_label; language; user; _ }
+  { Pool_context.database_label; language; user; guardian; _ }
   title
   experiment
   content
   =
-  let open Utils.Lwt_result.Infix in
   let%lwt actor =
     Pool_context.Utils.find_authorizable_opt database_label user
   in
   let html = combine ?buttons ?hint language title content in
-  let%lwt subpage =
+  let subpage =
     nav_elements experiment
-    |> Navigation_utils.filter_items ~validate:true ?actor database_label
-    ||> CCFun.flip (Navigation_tab.create ?active_navigation language) html
+    |> Navigation_utils.filter_items ~validate:true ?actor ~guardian
+    |> CCFun.flip (Navigation_tab.create ?active_navigation language) html
   in
   with_heading experiment subpage |> Lwt.return
 ;;

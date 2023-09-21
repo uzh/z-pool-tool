@@ -2,6 +2,7 @@ module Database = Pool_database
 module Map = CCMap.Make (String)
 
 let src = Logs.Src.create "database.migration"
+let sort = CCList.stable_sort (fun a b -> CCString.compare (fst a) (fst b))
 
 let execute db_pools steps =
   Lwt_list.iter_s
@@ -63,19 +64,24 @@ let run_pending_migrations db_pools migration_steps =
 
 module Root = struct
   let steps =
-    extend_migrations
-      [ Migration_tenant.migration_root ()
-      ; Migration_authorization.migration ()
-      ; Migration_tenant_logo_mappings.migration ()
-      ; Migration_i18n.migration ()
-      ; Migration_message_templates.migration ()
-      ; Migration_schedule.migration ()
-      ; Migration_202305261314.migration ()
-      ; Migration_202306021033.migration ()
-      ; Migration_202306261642.migration_root ()
-      ; Migration_202307121722.migration_root ()
-      ; Migration_202307131619.migration_root ()
-      ]
+    let sorted =
+      Migration_authorization.migration ()
+      @ [ Migration_202305261314.migration ()
+        ; Migration_202306021033.migration ()
+        ; Migration_202306261642.migration_root ()
+        ; Migration_202307121722.migration_root ()
+        ; Migration_202307131619.migration_root ()
+        ]
+      |> sort
+    in
+    [ Migration_tenant.migration_root ()
+    ; Migration_tenant_logo_mappings.migration ()
+    ; Migration_i18n.migration ()
+    ; Migration_message_templates.migration ()
+    ; Migration_schedule.migration ()
+    ]
+    @ sorted
+    |> extend_migrations
   ;;
 
   let run () = execute [ Database.root ] @@ steps ()
@@ -87,51 +93,57 @@ end
 
 module Tenant = struct
   let steps =
-    extend_migrations
-      [ Migration_authorization.migration ()
-      ; Migration_person.migration ()
-      ; Migration_contact.migration ()
-      ; Migration_email_address.migration ()
-      ; Migration_settings.migration ()
-      ; Migration_i18n.migration ()
-      ; Migration_assignment.migration ()
-      ; Migration_session.migration ()
-      ; Migration_invitation.migration ()
-      ; Migration_experiment.migration ()
-      ; Migration_waiting_list.migration ()
-      ; Migration_location.migration ()
-      ; Migration_location_file_mapping.migration ()
-      ; Migration_mailing.migration ()
-      ; Migration_filter.migration ()
-      ; Migration_custom_fields.migration ()
-      ; Migration_custom_field_answers.migration ()
-      ; Migration_custom_field_options.migration ()
-      ; Migration_custom_field_groups.migration ()
-      ; Migration_custom_field_answer_versions.migration ()
-      ; Migration_message_templates.migration ()
-      ; Migration_tenant.migration_tenant ()
-      ; Migration_202303211734.migration ()
-      ; Migration_202303230956.migration ()
-      ; Migration_202303291025.migration ()
-      ; Migration_202305151556.migration ()
-      ; Migration_202306021512.migration ()
-      ; Migration_202306071352.migration ()
-      ; Migration_202306081615.migration ()
-      ; Migration_202306261642.migration ()
-      ; Migration_202307081414.migration ()
-      ; Migration_202307121006.migration ()
-      ; Migration_202307121330.migration ()
-      ; Migration_202307121722.migration ()
-      ; Migration_202307131619.migration ()
-      ; Migration_202307250839.migration ()
-      ; Migration_202307281144.migration ()
-      ; Migration_202308021016.migration ()
-      ; Migration_202308030850.migration ()
-      ; Migration_202308041330.migration ()
-      ; Migration_202308210946.migration ()
-      ; Migration_202309081700.migration ()
-      ; Migration_202309121645.migration ()
-      ]
+    let sorted =
+      Migration_authorization.migration ()
+      @ [ Migration_202303211734.migration ()
+        ; Migration_202303230956.migration ()
+        ; Migration_202303291025.migration ()
+        ; Migration_202305151556.migration ()
+        ; Migration_202306021512.migration ()
+        ; Migration_202306071352.migration ()
+        ; Migration_202306081615.migration ()
+        ; Migration_202306261642.migration ()
+        ; Migration_202307081414.migration ()
+        ; Migration_202307121006.migration ()
+        ; Migration_202307121330.migration ()
+        ; Migration_202307121722.migration ()
+        ; Migration_202307131619.migration ()
+        ; Migration_202307250839.migration ()
+        ; Migration_202307281144.migration ()
+        ; Migration_202308021016.migration ()
+        ; Migration_202308030850.migration ()
+        ; Migration_202308041330.migration ()
+        ; Migration_202308210946.migration ()
+        ; Migration_202309081700.migration ()
+        ; Migration_202309121645.migration ()
+        ; Migration_202309211305.migration ()
+        ]
+      |> sort
+    in
+    [ Migration_person.migration ()
+    ; Migration_contact.migration ()
+    ; Migration_email_address.migration ()
+    ; Migration_settings.migration ()
+    ; Migration_i18n.migration ()
+    ; Migration_assignment.migration ()
+    ; Migration_session.migration ()
+    ; Migration_invitation.migration ()
+    ; Migration_experiment.migration ()
+    ; Migration_waiting_list.migration ()
+    ; Migration_location.migration ()
+    ; Migration_location_file_mapping.migration ()
+    ; Migration_mailing.migration ()
+    ; Migration_filter.migration ()
+    ; Migration_custom_fields.migration ()
+    ; Migration_custom_field_answers.migration ()
+    ; Migration_custom_field_options.migration ()
+    ; Migration_custom_field_groups.migration ()
+    ; Migration_custom_field_answer_versions.migration ()
+    ; Migration_message_templates.migration ()
+    ; Migration_tenant.migration_tenant ()
+    ]
+    @ sorted
+    |> extend_migrations
   ;;
 
   let run db_pools () = execute db_pools @@ steps ()

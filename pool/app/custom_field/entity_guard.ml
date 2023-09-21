@@ -10,7 +10,7 @@ module Target = struct
     Persistence.Target.decorate
       ?ctx
       (fun field ->
-        Target.make
+        Target.create
           `CustomField
           (field |> Entity.id |> Uuid.target_of Entity.Id.value))
       t
@@ -26,7 +26,7 @@ module Group = struct
       Persistence.Target.decorate
         ?ctx
         (fun { Entity.Group.id; _ } ->
-          Guard.Target.make
+          Guard.Target.create
             `CustomField
             (id |> Uuid.target_of Entity.Group.Id.value))
         t
@@ -38,26 +38,29 @@ end
 module Access = struct
   open Guard
   open ValidationSet
+  open Permission
 
-  let custom_field action id =
-    let target_id = id |> Uuid.target_of Entity.Id.value in
-    One (action, TargetSpec.Id (`CustomField, target_id))
+  let custom_field action uuid =
+    one_of_tuple
+      (action, `CustomField, Some (uuid |> Uuid.target_of Entity.Id.value))
   ;;
 
-  let index = One (Action.Read, TargetSpec.Entity `CustomField)
-  let create = One (Action.Create, TargetSpec.Entity `CustomField)
-  let update = custom_field Action.Update
-  let delete = custom_field Action.Delete
+  let index = one_of_tuple (Read, `CustomField, None)
+  let create = one_of_tuple (Create, `CustomField, None)
+  let update = custom_field Update
+  let delete = custom_field Delete
 
   module Group = struct
-    let group action id =
-      let target_id = id |> Uuid.target_of Entity.Group.Id.value in
-      One (action, TargetSpec.Id (`CustomFieldGroup, target_id))
+    let group action uuid =
+      one_of_tuple
+        ( action
+        , `CustomFieldGroup
+        , Some (uuid |> Uuid.target_of Entity.Group.Id.value) )
     ;;
 
-    let index = One (Action.Read, TargetSpec.Entity `CustomFieldGroup)
-    let create = One (Action.Create, TargetSpec.Entity `CustomFieldGroup)
-    let update = group Action.Update
-    let delete = group Action.Delete
+    let index = one_of_tuple (Read, `CustomFieldGroup, None)
+    let create = one_of_tuple (Create, `CustomFieldGroup, None)
+    let update = group Update
+    let delete = group Delete
   end
 end

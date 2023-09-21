@@ -3,31 +3,32 @@ open Tyxml.Html
 open Entity
 module CommonUtils = Pool_common.Utils
 
-let filter_items ?validate ?actor database_label items =
+let filter_items ?validate ?actor ?(guardian = []) items =
   let open Guard in
   match validate, actor with
-  | (None | Some false), _ -> Lwt.return items
-  | Some true, None -> Lwt.return []
+  | (None | Some false), _ -> items
+  | Some true, None -> []
   | Some true, Some actor ->
     let rec filter_nav items =
-      Lwt_list.filter_map_s
+      CCList.filter_map
         (fun ({ NavElement.validation_set; children; _ } as element) ->
           try
-            let%lwt self =
-              Persistence.validate
+            let self =
+              Persistence.PermissionOnTarget.validate_set
                 ~any_id:true
-                database_label
+                guardian
+                Pool_common.Message.authorization
                 validation_set
                 actor
             in
             match self with
-            | Ok () when CCList.is_empty children -> Lwt.return_some element
+            | Ok () when CCList.is_empty children -> Some element
             | Ok () ->
-              let%lwt children = filter_nav children in
-              Lwt.return_some NavElement.{ element with children }
-            | Error _ -> Lwt.return_none
+              let children = filter_nav children in
+              Some NavElement.{ element with children }
+            | Error _ -> None
           with
-          | _ -> Lwt.return_none)
+          | _ -> None)
         items
     in
     filter_nav items
@@ -96,20 +97,17 @@ let rec build_nav_links
 ;;
 
 let create_main
+  { Pool_context.query_language; language; guardian; _ }
   items
   ?validate
   ?actor
   ?active_navigation
-  database_label
-  language
-  query_language
   mobile
   =
-  let open Utils.Lwt_result.Infix in
-  let%lwt nav_links =
-    filter_items ?validate ?actor database_label items
-    ||> CCList.map
-          (build_nav_links ~mobile ?active_navigation language query_language)
+  let nav_links =
+    filter_items ?validate ?actor ~guardian items
+    |> CCList.map
+         (build_nav_links ~mobile ?active_navigation language query_language)
   in
   let nav = [ nav ~a:[ a_class [ "main-nav" ] ] [ ul nav_links ] ] in
   Lwt.return
@@ -148,25 +146,16 @@ let i18n_links languages active_language mobile =
 ;;
 
 let with_language_switch
+  ({ Pool_context.language; _ } as context)
   elements
   available_languages
   ?actor:_
   ?active_navigation
-  database_label
-  active_language
-  query_language
   mobile
   =
-  let language_switch = i18n_links available_languages active_language in
+  let language_switch = i18n_links available_languages language in
   let%lwt main =
-    create_main
-      elements
-      ~validate:false
-      ?active_navigation
-      database_label
-      active_language
-      query_language
-      mobile
+    create_main ~validate:false ?active_navigation context elements mobile
   in
   main @ [ language_switch mobile ] |> Lwt.return
 ;;

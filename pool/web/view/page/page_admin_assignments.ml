@@ -151,8 +151,7 @@ module Partials = struct
   let overview_list
     ?(access_contact_profiles = false)
     ?(view_contact_name = false)
-    ?(view_contact_email = false)
-    ?(view_contact_cellphone = false)
+    ?(view_contact_info = false)
     ?(external_data_required = false)
     redirect
     (Pool_context.{ language; csrf; _ } as context)
@@ -257,10 +256,8 @@ module Partials = struct
           [ Field.Lastname, contact_lastname
           ; Field.Firstname, contact_firstname
           ]
-        @ add_field_if view_contact_email [ Field.Email, contact_email ]
-        @ add_field_if
-            view_contact_cellphone
-            [ Field.CellPhone, contact_cellphone ]
+        @ add_field_if view_contact_info [ Field.Email, contact_email ]
+        @ add_field_if view_contact_info [ Field.CellPhone, contact_cellphone ]
         |> function
         | [] -> [ Field.Id, assignment_id ]
         | fields -> fields
@@ -343,8 +340,7 @@ module Partials = struct
   let grouped_overview_lists
     ?access_contact_profiles
     ?view_contact_name
-    ?view_contact_email
-    ?view_contact_cellphone
+    ?view_contact_info
     redirect
     (Pool_context.{ language; _ } as context)
     { Experiment.id; external_data_required; _ }
@@ -371,8 +367,7 @@ module Partials = struct
           ; overview_list
               ?access_contact_profiles
               ?view_contact_name
-              ?view_contact_email
-              ?view_contact_cellphone
+              ?view_contact_info
               ~external_data_required:
                 (Experiment.ExternalDataRequired.value external_data_required)
               redirect
@@ -389,8 +384,7 @@ end
 let list
   ?access_contact_profiles
   ?view_contact_name
-  ?view_contact_email
-  ?view_contact_cellphone
+  ?view_contact_info
   ({ Experiment.id; _ } as experiment)
   ({ Pool_context.language; _ } as context)
   assignments
@@ -412,8 +406,7 @@ let list
       ; Partials.grouped_overview_lists
           ?access_contact_profiles
           ?view_contact_name
-          ?view_contact_email
-          ?view_contact_cellphone
+          ?view_contact_info
           Assignments
           context
           experiment
@@ -432,8 +425,7 @@ let list
 let marked_as_deleted
   ?access_contact_profiles
   ?view_contact_name
-  ?view_contact_email
-  ?view_contact_cellphone
+  ?view_contact_info
   experiment
   (Pool_context.{ language; _ } as context)
   assignments
@@ -450,8 +442,7 @@ let marked_as_deleted
       Partials.grouped_overview_lists
         ?access_contact_profiles
         ?view_contact_name
-        ?view_contact_email
-        ?view_contact_cellphone
+        ?view_contact_info
         DeletedAssignments
         context
         experiment

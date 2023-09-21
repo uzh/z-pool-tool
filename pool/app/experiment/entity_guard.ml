@@ -7,7 +7,7 @@ module Target = struct
     Persistence.Target.decorate
       ?ctx
       (fun Entity.{ id; _ } ->
-        Target.make `Experiment (id |> Uuid.target_of Entity.Id.value))
+        Target.create `Experiment (id |> Uuid.target_of Entity.Id.value))
       t
     >|- Pool_common.Message.authorization
   ;;
@@ -16,21 +16,17 @@ end
 module Access = struct
   open Guard
   open ValidationSet
+  open Permission
 
-  let target_of = Uuid.target_of Entity.Id.value
-
-  let experiment action id =
-    One (action, TargetSpec.Id (`Experiment, target_of id))
+  let experiment ?(model = `Experiment) permission uuid =
+    one_of_tuple
+      (permission, model, Some (uuid |> Uuid.target_of Entity.Id.value))
   ;;
 
-  let recruiter_of id =
-    Or [ SpecificRole (`Recruiter (target_of id)); SpecificRole `RecruiterAll ]
-  ;;
-
-  let index_action = Action.Read
-  let index = One (index_action, TargetSpec.Entity `Experiment)
-  let create = One (Action.Create, TargetSpec.Entity `Experiment)
-  let read = experiment Action.Read
-  let update = experiment Action.Update
-  let delete = experiment Action.Delete
+  let index_permission = Read
+  let index = one_of_tuple (index_permission, `Experiment, None)
+  let create = one_of_tuple (Create, `Experiment, None)
+  let read ?model = experiment ?model Read
+  let update ?model = experiment ?model Update
+  let delete ?model = experiment ?model Delete
 end

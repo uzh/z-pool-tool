@@ -11,7 +11,7 @@ type create =
   ; password : User.Password.t [@opaque]
   ; firstname : User.Firstname.t
   ; lastname : User.Lastname.t
-  ; roles : Guard.RoleSet.t option
+  ; roles : (Role.Role.t * Guard.Uuid.Target.t option) list
   }
 [@@deriving eq, show]
 
@@ -59,22 +59,20 @@ let map_or ~tags ~default fcn =
 
 let handle_event ~tags pool : event -> unit Lwt.t =
   let open Utils.Lwt_result.Infix in
-  let admin_authorizable ?roles pool admin =
+  let admin_authorizable ?(roles = []) pool admin =
+    let open Guard in
     let open Common.Utils in
     let ctx = Pool_database.to_ctx pool in
-    let%lwt (authorizable : Role.Actor.t Guard.Actor.t) =
+    let%lwt (authorizable : Actor.t) =
       Entity_guard.Actor.to_authorizable ~ctx admin
       >|- with_log_error ~src ~tags
       ||> get_or_failwith
     in
-    match roles with
-    | Some roles ->
-      Guard.Persistence.Actor.grant_roles
-        ~ctx
-        (authorizable |> Guard.Actor.id)
-        roles
-      ||> CCResult.get_or_failwith
-    | None -> Lwt.return_unit
+    Lwt_list.iter_s
+      (fun (role, target_uuid) ->
+        ActorRole.create ?target_uuid authorizable.Actor.uuid role
+        |> Persistence.ActorRole.upsert ~ctx)
+      roles
   in
   function
   | Created { id; lastname; firstname; password; email; roles } ->
@@ -91,12 +89,12 @@ let handle_event ~tags pool : event -> unit Lwt.t =
       ||> create
     in
     let%lwt () = Repo.insert pool admin in
-    let%lwt (_ : Role.Target.t Guard.Target.t) =
+    let%lwt (_ : Guard.Target.t) =
       Entity_guard.Target.to_authorizable ~ctx admin
       >|- with_log_error ~src ~tags
       ||> get_or_failwith
     in
-    admin_authorizable ?roles pool admin
+    admin_authorizable ~roles pool admin
   | DetailsUpdated (admin, { firstname; lastname }) ->
     let name = User.Lastname.value lastname in
     let given_name = User.Firstname.value firstname in
@@ -144,14 +142,18 @@ let handle_event ~tags pool : event -> unit Lwt.t =
     let target =
       Guard.Persistence.Target.find
         ~ctx:(Pool_database.to_ctx pool)
-        `Contact
         (Guard.Uuid.target_of Id.value contact_id)
     in
     target
     >|- Common.Message.nothandled
-    >|> map_or ~tags ~default:Lwt.return_unit (fun target ->
+    >|> map_or ~tags ~default:Lwt.return_unit (fun { Guard.Target.uuid; _ } ->
       let%lwt () = Repo.promote_contact pool contact_id in
-      let%lwt () = Guard.Persistence.Target.promote pool target `Admin in
+      let%lwt () =
+        Guard.Persistence.Target.promote
+          ~ctx:(Pool_database.to_ctx pool)
+          uuid
+          `Admin
+      in
       let%lwt () =
         Repo.find pool contact_id
         >|> map_or ~tags ~default:Lwt.return_unit (admin_authorizable pool)

@@ -1,7 +1,8 @@
 module Access = struct
   open Guard
   open ValidationSet
+  open Permission
 
-  let index = One (Action.Read, TargetSpec.Entity `Queue)
-  let read = One (Action.Read, TargetSpec.Entity `Queue)
+  let index = one_of_tuple (Read, `Queue, None)
+  let read = one_of_tuple (Read, `Queue, None)
 end

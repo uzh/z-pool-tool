@@ -6,7 +6,7 @@ module Target = struct
     Guard.Persistence.Target.decorate
       ?ctx
       (fun { Entity.id; _ } ->
-        Guard.Target.make
+        Guard.Target.create
           `MessageTemplate
           (id |> Entity.Id.value |> Guard.Uuid.Target.of_string_exn))
       t
@@ -17,14 +17,15 @@ end
 module Access = struct
   open Guard
   open ValidationSet
+  open Permission
 
-  let message_template action id =
-    let target_id = id |> Uuid.target_of Entity.Id.value in
-    One (action, TargetSpec.Id (`MessageTemplate, target_id))
+  let message_template action uuid =
+    one_of_tuple
+      (action, `MessageTemplate, Some (uuid |> Uuid.target_of Entity.Id.value))
   ;;
 
-  let index = One (Action.Read, TargetSpec.Entity `MessageTemplate)
-  let create = One (Action.Create, TargetSpec.Entity `MessageTemplate)
-  let update = message_template Action.Update
-  let delete = message_template Action.Delete
+  let index = one_of_tuple (Read, `MessageTemplate, None)
+  let create = one_of_tuple (Create, `MessageTemplate, None)
+  let update = message_template Update
+  let delete = message_template Delete
 end

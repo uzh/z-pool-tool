@@ -37,7 +37,7 @@ Example: seed.default message_templates
       Lwt.return_some ()
     | [ "guardian_rules" ] ->
       let events =
-        [ Guard.(DefaultRestored root_permissions) |> Pool_event.guard ]
+        [ Guard.(DefaultRestored all_role_permissions) |> Pool_event.guard ]
       in
       let%lwt () =
         Command_utils.setup_databases ()

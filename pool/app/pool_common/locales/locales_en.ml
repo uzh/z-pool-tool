@@ -4,7 +4,7 @@ let rec field_to_string =
   let open Field in
   function
   | Action -> "action"
-  | ActorSpec -> "actor"
+  | Actor -> "actor"
   | ActiveContactsCount -> "active contacts count"
   | Admin -> "admin"
   | AdminComment -> "admin comment"
@@ -69,6 +69,7 @@ let rec field_to_string =
   | Exclude -> "exclude"
   | ExcludeRolesOf -> "exclude roles of"
   | Experiment -> "experiment"
+  | Experiments -> "experiments"
   | ExperimentEmailReminderLeadTime ->
     Format.asprintf "experiment specific email %s" (field_to_string LeadTime)
   | ExperimentTextMessageReminderLeadTime ->
@@ -121,6 +122,7 @@ let rec field_to_string =
   | Limitations -> "Limitations"
   | Link -> "link"
   | Location -> "location"
+  | Locations -> "locations"
   | LoginCount -> "contact logins"
   | LogoType -> "logo type"
   | Mailing -> "mailing"
@@ -157,11 +159,12 @@ let rec field_to_string =
   | Participated -> "participated"
   | ParticipationTag -> "participation tag"
   | PartnerLogos -> "partner logos"
-  | PendingContactImports -> "pending contact imports"
-  | Period -> "period"
   | Password -> "password"
   | PasswordConfirmation -> "password confirmation"
   | Paused -> "paused"
+  | PendingContactImports -> "pending contact imports"
+  | Period -> "period"
+  | Permission -> "permission"
   | PlainText -> "plaintext"
   | Predicate -> "predicate"
   | PromptOnRegistration -> "promt during registration"
@@ -216,7 +219,6 @@ let rec field_to_string =
   | Tag -> "tag"
   | Tagging -> "tagging"
   | Target -> "target"
-  | TargetSpec -> "target"
   | Template -> "template"
   | Tenant -> "tenant"
   | TenantDisabledFlag -> "disabled"

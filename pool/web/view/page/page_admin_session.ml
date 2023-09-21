@@ -623,8 +623,7 @@ let new_form
 let detail
   ?access_contact_profiles
   ?view_contact_name
-  ?view_contact_email
-  ?view_contact_cellphone
+  ?view_contact_info
   (Pool_context.{ language; csrf; _ } as context)
   ({ Experiment.id; external_data_required; _ } as experiment)
   (session : Session.t)
@@ -893,8 +892,7 @@ let detail
         Partials.overview_list
           ?access_contact_profiles
           ?view_contact_name
-          ?view_contact_email
-          ?view_contact_cellphone
+          ?view_contact_info
           ~external_data_required:
             (Experiment.ExternalDataRequired.value external_data_required)
           Session

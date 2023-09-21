@@ -1,13 +1,5 @@
 open Utils.Lwt_result.Infix
 
-let relation ?ctx () =
-  let open Guard in
-  let to_target =
-    Relation.Query.create Repo.Sql.find_binary_experiment_id_sql
-  in
-  Persistence.Relation.add ?ctx ~to_target ~target:`Experiment `Session
-;;
-
 module Target = struct
   type t = Entity.t [@@deriving eq, show]
 
@@ -16,7 +8,7 @@ module Target = struct
     Persistence.Target.decorate
       ?ctx
       (fun { Entity.id; _ } ->
-        Target.make `Session (id |> Uuid.target_of Pool_common.Id.value))
+        Target.create `Session (id |> Uuid.target_of Pool_common.Id.value))
       t
     >|- Pool_common.Message.authorization
   ;;
@@ -25,45 +17,75 @@ end
 module Access = struct
   open Guard
   open ValidationSet
+  open Permission
 
-  let index_action = Action.Read
+  let index_permission = Read
 
-  let session action id =
-    let target_id = id |> Uuid.target_of Entity.Id.value in
-    One (action, TargetSpec.Id (`Session, target_id))
+  let session ?session_id ?(model = `Session) permission =
+    one_of_tuple
+      ( permission
+      , model
+      , CCOption.map (Uuid.target_of Entity.Id.value) session_id )
   ;;
 
-  let index id =
+  let index ?(model = `Session) id =
     And
-      [ One (index_action, TargetSpec.Entity `Session)
+      [ Or
+          [ session ~model index_permission
+          ; Experiment.Guard.Access.read ~model id
+          ]
       ; Experiment.Guard.Access.read id
       ]
   ;;
 
-  let create id =
+  let create ?model id =
     And
-      [ One (Action.Create, TargetSpec.Entity `Session)
+      [ Or
+          [ session ?model Create
+          ; one_of_tuple
+              ( Create
+              , CCOption.value ~default:`Session model
+              , Some (Uuid.target_of Experiment.Id.value id) )
+          ]
       ; Experiment.Guard.Access.update id
       ]
   ;;
 
-  let read experiment_id session_id =
+  let read ?(model = `Session) experiment_id session_id =
+    Or
+      [ session ~model ~session_id Read
+      ; Experiment.Guard.Access.read ~model experiment_id
+      ]
+  ;;
+
+  let update ?(model = `Session) experiment_id session_id =
     And
-      [ session Action.Read session_id
+      [ Or
+          [ session ~model ~session_id Update
+          ; Experiment.Guard.Access.update ~model experiment_id
+          ]
       ; Experiment.Guard.Access.read experiment_id
       ]
   ;;
 
-  let update experiment_id session_id =
+  let delete ?(model = `Session) experiment_id session_id =
     And
-      [ session Action.Update session_id
+      [ Or
+          [ session ~model ~session_id Delete
+          ; Experiment.Guard.Access.delete ~model experiment_id
+          ]
       ; Experiment.Guard.Access.read experiment_id
       ]
   ;;
 
-  let delete experiment_id session_id =
+  let close experiment_id session_id =
     And
-      [ session Action.Delete session_id
+      [ Or
+          [ session ~model:`Session ~session_id Update
+          ; session ~model:`SessionClose ~session_id Update
+          ; Experiment.Guard.Access.update ~model:`Session experiment_id
+          ; Experiment.Guard.Access.update ~model:`SessionClose experiment_id
+          ]
       ; Experiment.Guard.Access.read experiment_id
       ]
   ;;

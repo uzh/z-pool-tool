@@ -15,5 +15,5 @@ let add_missing_columns_to_contacts =
 
 let migration () =
   Sihl.Database.Migration.(
-    empty "202308071352" |> add_step add_missing_columns_to_contacts)
+    empty "202306071352" |> add_step add_missing_columns_to_contacts)
 ;;

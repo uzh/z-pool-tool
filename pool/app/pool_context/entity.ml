@@ -29,11 +29,14 @@ type t =
   ; message : PoolError.Collection.t option
   ; csrf : string
   ; user : user
+  ; guardian : Guard.PermissionOnTarget.t list [@sexp.list]
   }
 [@@deriving show, sexp_of]
 
-let create (query_language, language, database_label, message, csrf, user) =
-  { query_language; language; database_label; message; csrf; user }
+let create
+  (query_language, language, database_label, message, csrf, user, guardian)
+  =
+  { query_language; language; database_label; message; csrf; user; guardian }
 ;;
 
 let find_context key req =

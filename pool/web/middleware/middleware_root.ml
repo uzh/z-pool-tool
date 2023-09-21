@@ -5,8 +5,20 @@ let from_root_only () =
     |> function
     | true -> handler req
     | false ->
+      let context =
+        let open Pool_context in
+        let csrf = Sihl.Web.Csrf.find_exn req in
+        create
+          ( None
+          , Pool_common.Language.En
+          , Pool_database.root
+          , None
+          , csrf
+          , Guest
+          , [] )
+      in
       Page.Utils.error_page_not_found Pool_common.Language.En ()
-      |> Layout.Root.create Pool_database.root Pool_context.Guest
+      |> Layout.Root.create context
       ||> Sihl.Web.Response.of_html
   in
   Rock.Middleware.create ~name:"root.only" ~filter

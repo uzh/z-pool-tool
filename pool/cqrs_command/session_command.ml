@@ -203,7 +203,7 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let effects = Session.Guard.Access.create
+  let effects exp_id = Session.Guard.Access.create exp_id
 end
 
 module Update : sig
@@ -292,7 +292,7 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let effects = Session.Guard.Access.update
+  let effects exp_id = Session.Guard.Access.update exp_id
 end
 
 module Reschedule : sig
@@ -368,7 +368,7 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let effects = Session.Guard.Access.update
+  let effects exp_id = Session.Guard.Access.update exp_id
 end
 
 module Delete : sig
@@ -408,7 +408,7 @@ end = struct
          :: (templates |> CCList.map delete_template))
   ;;
 
-  let effects = Session.Guard.Access.delete
+  let effects exp_id = Session.Guard.Access.delete exp_id
 end
 
 module Cancel : sig
@@ -509,7 +509,7 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let effects = Session.Guard.Access.update
+  let effects exp_id = Session.Guard.Access.update exp_id
 end
 
 module Close : sig
@@ -618,7 +618,7 @@ end = struct
       command
   ;;
 
-  let effects = Session.Guard.Access.update
+  let effects = Session.Guard.Access.close
 end
 
 module ResendReminders : sig
@@ -702,5 +702,5 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let effects = Session.Guard.Access.update
+  let effects id = Session.Guard.Access.update id
 end

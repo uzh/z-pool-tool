@@ -30,12 +30,10 @@ let decode_update data =
   |> CCResult.map_err Pool_common.Message.to_conformist_error
 ;;
 
-let assignment_effect action id =
+let assignment_effect action uuid =
   let open Guard in
-  ValidationSet.One
-    ( action
-    , TargetSpec.Id (`Assignment, id |> Guard.Uuid.target_of Assignment.Id.value)
-    )
+  let target_id = uuid |> Guard.Uuid.target_of Assignment.Id.value in
+  ValidationSet.one_of_tuple (action, `Assignment, Some target_id)
 ;;
 
 let assignment_creation_and_confirmation_events
@@ -168,7 +166,7 @@ end = struct
     Ok (cancel_events @ [ decrease_assignment_count ])
   ;;
 
-  let effects = Assignment.Guard.Access.delete
+  let effects = Assignment.Guard.Access.update
 end
 
 module CreateFromWaitingList : sig
@@ -410,5 +408,5 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let effects = Session.Guard.Access.update
+  let effects exp_id = Session.Guard.Access.update exp_id
 end

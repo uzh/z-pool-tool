@@ -36,6 +36,6 @@ end = struct
   let effects role user =
     let open Guard in
     let target_id = user.Sihl_user.id |> Guard.Uuid.Target.of_string_exn in
-    ValidationSet.One (Action.Update, TargetSpec.Id (role, target_id))
+    ValidationSet.one_of_tuple (Permission.Update, role, Some target_id)
   ;;
 end

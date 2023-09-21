@@ -62,7 +62,7 @@ module AdminRepo = struct
         ; firstname = Firstname.of_string "Foo"
         ; password = Password.create "Password1!" |> CCResult.get_exn
         ; email
-        ; roles = None
+        ; roles = []
         }
     in
     let%lwt () =

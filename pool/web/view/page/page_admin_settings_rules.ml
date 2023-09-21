@@ -12,23 +12,9 @@ let rules_path ?suffix () =
 module List = struct
   let row
     Pool_context.{ csrf; language; _ }
-    ((actor_spec, action, target_spec) as rule : Guard.Rule.t)
+    ({ Guard.RolePermission.role; permission; model } as role_permission)
     =
-    let actor_spec_to_string = function
-      | Guard.ActorSpec.Id (role, uuid) ->
-        CCString.concat
-          ": "
-          [ [%show: Role.Actor.t] role; [%show: Guard.Uuid.Actor.t] uuid ]
-      | Guard.ActorSpec.Entity role -> [%show: Role.Actor.t] role
-    in
-    let target_spec_to_string = function
-      | Guard.TargetSpec.Id (role, uuid) ->
-        CCString.concat
-          ": "
-          [ [%show: Role.Target.t] role; [%show: Guard.Uuid.Target.t] uuid ]
-      | Guard.TargetSpec.Entity role -> [%show: Role.Target.t] role
-    in
-    let button_form target name submit_type confirm_text rule =
+    let button_form target name submit_type confirm_text role_permission =
       form
         ~a:
           [ a_method `Post
@@ -39,7 +25,10 @@ module List = struct
           ]
         [ Input.csrf_element csrf ()
         ; Input.input_element
-            ~value:(rule |> Guard.Rule.to_yojson |> Yojson.Safe.to_string)
+            ~value:
+              (role_permission
+               |> Guard.RolePermission.to_yojson
+               |> Yojson.Safe.to_string)
             language
             `Hidden
             Input.Field.Rule
@@ -51,17 +40,17 @@ module List = struct
         [ button_form "remove" Message.delete `Error I18n.RemoveRule rule ]
       |> div ~a:[ a_class [ "flexrow"; "flex-gap"; "justify-end" ] ]
     in
-    [ txt (actor_spec_to_string actor_spec)
-    ; txt ([%show: Guard.Action.t] action)
-    ; txt (target_spec_to_string target_spec)
-    ; buttons rule
+    [ txt ([%show: Role.Role.t] role)
+    ; txt ([%show: Guard.Permission.t] permission)
+    ; txt ([%show: Role.Target.t] model)
+    ; buttons role_permission
     ]
   ;;
 
   let create ({ Pool_context.language; _ } as context) rules =
     let open Pool_common in
     let thead =
-      (Message.Field.[ ActorSpec; Action; TargetSpec ]
+      (Message.Field.[ Role; Action; Model ]
        |> Component.Table.fields_to_txt language)
       @ [ txt "" ]
     in

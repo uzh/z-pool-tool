@@ -9,6 +9,10 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 - display session and assignment reminder sent timestamps in resend single reminder modal
 - waiting list signup confirmation email
 
+### Changed
+
+- performance update for guardian, rework roles
+
 ## [0.4.6](https://github.com/uzh/pool/tree/0.4.6) - 2023-09-18
 
 ### Added

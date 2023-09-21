@@ -1,4 +1,4 @@
-include Guardian.Make (Role.Actor) (Role.Target)
+include Guardian.Make (Role.Actor) (Role.Role) (Role.Target)
 
 module Uuid = struct
   include Uuid

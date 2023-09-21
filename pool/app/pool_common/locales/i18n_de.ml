@@ -358,6 +358,11 @@ Wenn Sie die Erinnerungen jetzt manuell auslösen werden über den gewählten Na
     "Ist diese Option aktiviert, können sich Kontakte weder anmelden noch auf \
      die Warteliste setzen. Das Experiment ist für die Kontakte nicht \
      ersichtlich."
+  | RoleIntro (singular, plural) ->
+    Format.asprintf
+      "Wenn kein %s angegeben wird, gilt die Rolle für alle %s."
+      (Locales_en.field_to_string singular)
+      (Locales_en.field_to_string plural)
   | RulesIntro ->
     {|Alle Regeln, welche für Akteure des Tools existieren.
     Beispielsweise, wenn ein neues Experiment erstellt wird, wird für dieses ein Standard Regelsatz hinzugefügt.

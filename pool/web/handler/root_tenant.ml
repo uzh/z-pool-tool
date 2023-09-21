@@ -90,7 +90,9 @@ let manage_operators req =
     in
     let* tenant = Pool_tenant.find id in
     let%lwt operators =
-      Admin.find_all_with_role tenant.Pool_tenant.database_label `Operator
+      Admin.find_all_with_role
+        tenant.Pool_tenant.database_label
+        (`Operator, None)
     in
     Page.Root.Tenant.manage_operators tenant operators context
     |> General.create_root_layout context
@@ -129,7 +131,7 @@ let create_operator req =
       let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
       urlencoded
       |> decode
-      >>= handle ~roles:(Guard.RoleSet.singleton `Operator) ~tags
+      >>= handle ~roles:[ `Operator, None ] ~tags
       |> Lwt_result.lift
     in
     let handle =
@@ -188,7 +190,11 @@ end = struct
   let read_operator = Admin.Guard.Access.index |> Guardian.validate_admin_entity
 
   let create_operator =
-    Guard.ValidationSet.(SpecificRole `ManageOperators)
+    let open Guard in
+    let open ValidationSet in
+    [ Permission.Manage, `Admin, None; Permission.Manage, `Role, None ]
+    |> CCList.map one_of_tuple
+    |> and_
     |> Middleware.Guardian.validate_admin_entity
   ;;
 end

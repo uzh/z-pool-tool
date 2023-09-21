@@ -9,7 +9,7 @@ module Target = struct
     Persistence.Target.decorate
       ?ctx
       (fun user ->
-        Target.make
+        Target.create
           `Contact
           (user |> Entity.id |> Uuid.target_of Pool_common.Id.value))
       t
@@ -22,10 +22,7 @@ module Actor = struct
   type t = Entity.t [@@deriving eq, show]
 
   let decorate ?ctx encode id =
-    Persistence.Actor.decorate
-      ?ctx
-      (encode %> Actor.make (RoleSet.singleton `Contact) `Contact)
-      id
+    Persistence.Actor.decorate ?ctx (encode %> Actor.create `Contact) id
     >|- Format.asprintf "Failed to convert Contact to authorizable: %s"
     >|- Pool_common.Message.authorization
   ;;
@@ -39,17 +36,36 @@ end
 module Access = struct
   open Guard
   open ValidationSet
+  open Permission
 
-  let contact action id =
-    let target_id = id |> Uuid.target_of Pool_common.Id.value in
-    One (action, TargetSpec.Id (`Contact, target_id))
+  let contact action uuid =
+    one_of_tuple
+      (action, `Contact, Some (uuid |> Uuid.target_of Pool_common.Id.value))
   ;;
 
-  let index = One (Action.Read, TargetSpec.Entity `Contact)
-  let create = One (Action.Create, TargetSpec.Entity `Contact)
-  let read = contact Action.Read
-  let update = contact Action.Update
-  let read_name = Or [ index; SpecificRole `ReadContactName ]
-  let read_email = Or [ index; SpecificRole `ReadContactEmail ]
-  let read_cellphone = Or [ index; SpecificRole `ReadContactCellphone ]
+  let index_permission = Read
+  let index = one_of_tuple (index_permission, `Contact, None)
+  let create = one_of_tuple (Create, `Contact, None)
+  let read = contact Read
+  let update = contact Update
+
+  let read_additionals model ?(verify_on_ids = []) () =
+    let open PermissionOnTarget in
+    let create ?target_uuid = create ?target_uuid Permission.Read in
+    CCList.flat_map
+      (fun target_uuid ->
+        [ create ~target_uuid `Contact; create ~target_uuid model ])
+      verify_on_ids
+    @ [ create `Contact; create model ]
+  ;;
+
+  let read_name = read_additionals `ContactName
+  let read_info = read_additionals `ContactInfo
+
+  let read_of_target target_uuid =
+    let open PermissionOnTarget in
+    [ create index_permission `Contact
+    ; create ~target_uuid index_permission `Contact
+    ]
+  ;;
 end

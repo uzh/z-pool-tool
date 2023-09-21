@@ -4,7 +4,7 @@ let rec field_to_string =
   let open Field in
   function
   | Action -> "Aktion"
-  | ActorSpec -> "Akteur"
+  | Actor -> "Akteur"
   | ActiveContactsCount -> "Anzahl aktive Kontakte"
   | Admin -> "Administrator"
   | AdminComment -> "Adminkommentar"
@@ -69,6 +69,7 @@ let rec field_to_string =
   | Exclude -> "Ausgenommen"
   | ExcludeRolesOf -> "Ausgenommen (Rollen von jmd)"
   | Experiment -> "Experiment"
+  | Experiments -> "Experimente"
   | Experimenter -> "Experimenter"
   | ExperimentEmailReminderLeadTime ->
     Format.asprintf
@@ -123,6 +124,7 @@ let rec field_to_string =
   | Limitations -> "Einschränkungen"
   | Link -> "Link"
   | Location -> "Standort"
+  | Locations -> "Standorte"
   | LoginCount -> "Logins von Kontakten"
   | LogoType -> "Logo Typ"
   | Mailing -> "Versand"
@@ -158,11 +160,12 @@ let rec field_to_string =
   | Participated -> "teilgenommen"
   | ParticipationTag -> "Teilnahmetag"
   | PartnerLogos -> "Partner logos"
-  | PendingContactImports -> "Pendente Kontaktimporte"
-  | Period -> "Zeitraum"
   | Password -> "Passwort"
   | PasswordConfirmation -> "Passwort wiederholen"
   | Paused -> "Pausiert"
+  | PendingContactImports -> "Pendente Kontaktimporte"
+  | Period -> "Zeitraum"
+  | Permission -> "Berechtigung"
   | PlainText -> "Klartext"
   | Predicate -> "Prädikat"
   | PromptOnRegistration -> "Eingabeaufforderung bei der Registrierung"
@@ -217,7 +220,6 @@ let rec field_to_string =
   | Tag -> "Tag"
   | Tagging -> "Tagging"
   | Target -> "Target"
-  | TargetSpec -> "Target"
   | Template -> "Template"
   | Tenant -> "Tenant"
   | TenantDisabledFlag -> "Deaktiviert"

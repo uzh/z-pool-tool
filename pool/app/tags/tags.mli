@@ -113,16 +113,16 @@ val find_all_of_entity
   -> t list Lwt.t
 
 val find_all_validated
-  :  ?action:Guard.Action.t
+  :  ?permission:Guard.Permission.t
   -> Pool_database.Label.t
-  -> 'a Guard.Actor.t
+  -> Guard.Actor.t
   -> t list Lwt.t
 
 val find_all_validated_with_model
-  :  ?action:Guard.Action.t
+  :  ?permission:Guard.Permission.t
   -> Pool_database.Label.t
   -> Model.t
-  -> 'a Guard.Actor.t
+  -> Guard.Actor.t
   -> t list Lwt.t
 
 val create_find_all_tag_sql : string -> string -> string
@@ -153,7 +153,7 @@ module Guard : sig
     val to_authorizable
       :  ?ctx:(string * string) list
       -> t
-      -> (Role.Target.t Guard.Target.t, Pool_common.Message.error) Lwt_result.t
+      -> (Guard.Target.t, Pool_common.Message.error) Lwt_result.t
 
     type t
 

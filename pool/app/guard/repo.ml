@@ -2,24 +2,10 @@ open CCFun
 module BaseRole = Role
 
 include
-  Guardian_backend.MariaDb.Make (Role.Actor) (Role.Target)
+  Guardian_backend.MariaDb.Make (Role.Actor) (Role.Role) (Role.Target)
     (Pool_database.GuardBackend)
 
 let src = Logs.Src.create "guard"
-
-module Relation = struct
-  include Relation
-
-  let add ?ctx ?to_target ~target kind =
-    let open Utils.Lwt_result.Infix in
-    let tags =
-      let open Pool_database in
-      CCOption.(bind ctx of_ctx_opt |> map Logger.Tags.create)
-    in
-    add ?ctx ?tags ~ignore_duplicates:true ?to_target ~target kind
-    ||> CCResult.get_or_failwith
-  ;;
-end
 
 module Cache = struct
   (* TODO: Once the guardian package has a cached version, this implementation
@@ -27,17 +13,15 @@ module Cache = struct
      https://github.com/uzh/guardian/issues/11) *)
   open CCCache
 
-  let equal_find_actor (l1, r1, a1) (l2, r2, a2) =
-    Pool_database.Label.equal l1 l2
-    && Role.equal r1 r2
-    && Uuid.Actor.equal a1 a2
+  let equal_find_actor (l1, a1) (l2, a2) =
+    Pool_database.Label.equal l1 l2 && Core.Uuid.Actor.equal a1 a2
   ;;
 
   let equal_validation (l1, s1, any1, a1) (l2, s2, any2, a2) =
     Pool_database.Label.equal l1 l2
     && Core.ValidationSet.equal s1 s2
     && CCBool.equal any1 any2
-    && Core.Actor.(Uuid.Actor.equal (id a1) (id a2))
+    && Core.Uuid.Actor.equal a1.Core.Actor.uuid a2.Core.Actor.uuid
   ;;
 
   let lru_find_actor = lru ~eq:equal_find_actor 2048
@@ -52,37 +36,41 @@ end
 module Actor = struct
   include Actor
 
-  let find database_label typ id =
+  let find database_label id =
     let cb ~in_cache _ _ =
       if in_cache
       then (
         let tags = Pool_database.Logger.Tags.create database_label in
         Logs.debug ~src (fun m ->
-          m ~tags "Found in cache: Actor %s" (id |> Uuid.Actor.to_string)))
+          m ~tags "Found in cache: Actor %s" (id |> Core.Uuid.Actor.to_string)))
       else ()
     in
-    let find' (label, typ, id) =
-      find ~ctx:(Pool_database.to_ctx label) typ id
+    let find' (label, id) = find ~ctx:(Pool_database.to_ctx label) id in
+    (database_label, id) |> CCCache.(with_cache ~cb Cache.lru_find_actor find')
+  ;;
+
+  let can_assign_roles database_label actor =
+    let open Utils.Lwt_result.Infix in
+    ActorRole.find_by_actor ~ctx:(Pool_database.to_ctx database_label) actor
+    ||> CCList.flat_map (fun { Core.ActorRole.role; target_uuid; _ } ->
+      match target_uuid with
+      | None ->
+        BaseRole.Role.can_assign_roles role |> CCList.map (fun r -> r, None)
+      | Some uuid ->
+        BaseRole.Role.can_assign_roles role
+        |> CCList.map (fun r -> r, Some uuid))
+  ;;
+
+  let validate_assign_role database_label actor role =
+    let%lwt possible_assigns = can_assign_roles database_label actor in
+    let eq (r1, u1) (r2, u2) =
+      Role.Role.equal r1 r2
+      && (CCOption.(map2 Core.Uuid.Target.equal u1 u2 |> value ~default:false)
+          || CCOption.is_none u2)
     in
-    (database_label, typ, id)
-    |> CCCache.(with_cache ~cb Cache.lru_find_actor find')
-  ;;
-
-  let expand_roles : roles actor -> role_set =
-    Core.Actor.roles
-    %> fun set ->
-    Core.RoleSet.fold
-      (fun role ini ->
-        role |> BaseRole.Actor.can_assign_roles |> Core.RoleSet.add_list ini)
-      set
-      set
-  ;;
-
-  let match_role (actor : BaseRole.Actor.t Core.Actor.t) role =
-    Core.RoleSet.fold
-      (fun role' ini -> ini || BaseRole.Actor.equal_or_nil_target role' role)
-      (actor |> expand_roles)
-      false
+    if CCList.mem ~eq role possible_assigns
+    then Lwt.return_ok role
+    else Lwt.return_error Pool_common.Message.PermissionDeniedGrantRole
   ;;
 end
 
@@ -90,7 +78,7 @@ let validate
   ?(any_id = false)
   database_label
   validation_set
-  (actor : Role.t Core.Actor.t)
+  ({ Core.Actor.uuid; _ } as actor)
   =
   let cb ~in_cache _ _ =
     if in_cache
@@ -99,7 +87,7 @@ let validate
         m
           ~tags:(Pool_database.Logger.Tags.create database_label)
           "Found in cache: Actor %s\nValidation set %s"
-          (actor |> Core.Actor.id |> Uuid.Actor.to_string)
+          (uuid |> Core.Uuid.Actor.to_string)
           ([%show: Core.ValidationSet.t] validation_set))
     else ()
   in
@@ -114,105 +102,3 @@ let validate
   (database_label, validation_set, any_id, actor)
   |> CCCache.(with_cache ~cb Cache.lru_validation validate')
 ;;
-
-module Rule = struct
-  include Rule
-
-  let t =
-    let encode =
-      let open Core in
-      function
-      | ActorSpec.Entity arole, act, TargetSpec.Entity trole ->
-        Ok (arole, (None, (act, (trole, None))))
-      | ActorSpec.Id (arole, aid), act, TargetSpec.Entity trole ->
-        Ok (arole, (Some aid, (act, (trole, None))))
-      | ActorSpec.Entity arole, act, TargetSpec.Id (trole, tid) ->
-        Ok (arole, (None, (act, (trole, Some tid))))
-      | ActorSpec.Id (arole, aid), act, TargetSpec.Id (trole, tid) ->
-        Ok (arole, (Some aid, (act, (trole, Some tid))))
-    in
-    let decode (arole, (aid, (act, (trole, tid)))) =
-      let open Core in
-      match aid, tid with
-      | Some aid, Some tid ->
-        Ok (ActorSpec.Id (arole, aid), act, TargetSpec.Id (trole, tid))
-      | None, Some tid ->
-        Ok (ActorSpec.Entity arole, act, TargetSpec.Id (trole, tid))
-      | Some aid, None ->
-        Ok (ActorSpec.Id (arole, aid), act, TargetSpec.Entity trole)
-      | None, None -> Ok (ActorSpec.Entity arole, act, TargetSpec.Entity trole)
-    in
-    Caqti_type.(
-      custom
-        ~encode
-        ~decode
-        (tup2
-           Role.t
-           (tup2
-              (option Uuid.Actor.t)
-              (tup2 Action.t (tup2 Kind.t (option Uuid.Target.t))))))
-  ;;
-
-  let find_all_by_actor database_label actor : Core.Rule.t list Lwt.t =
-    let open Utils.Lwt_result.Infix in
-    let filter_by (actor : BaseRole.Actor.t Core.Actor.t) (rules : rule list) =
-      CCList.filter
-        (fun (actor', _, _) ->
-          match actor' with
-          | Core.ActorSpec.Id (role, id) ->
-            Uuid.Actor.equal id (actor |> Core.Actor.id)
-            && Actor.match_role actor role
-          | Core.ActorSpec.Entity role -> Actor.match_role actor role)
-        rules
-    in
-    let open Caqti_request.Infix in
-    let query =
-      Format.asprintf
-        {sql|
-        SELECT
-          actor_role,
-          LOWER(CONCAT(
-            SUBSTR(HEX(actor_uuid), 1, 8), '-',
-            SUBSTR(HEX(actor_uuid), 9, 4), '-',
-            SUBSTR(HEX(actor_uuid), 13, 4), '-',
-            SUBSTR(HEX(actor_uuid), 17, 4), '-',
-            SUBSTR(HEX(actor_uuid), 21)
-          )),
-          act,
-          target_role,
-          LOWER(CONCAT(
-            SUBSTR(HEX(target_uuid), 1, 8), '-',
-            SUBSTR(HEX(target_uuid), 9, 4), '-',
-            SUBSTR(HEX(target_uuid), 13, 4), '-',
-            SUBSTR(HEX(target_uuid), 17, 4), '-',
-            SUBSTR(HEX(target_uuid), 21)
-          ))
-        FROM guardian_rules
-      |sql}
-      |> Caqti_type.unit ->* t
-    in
-    Utils.Database.collect (Pool_database.Label.value database_label) query ()
-    ||> filter_by actor
-  ;;
-end
-
-module Target = struct
-  include Target
-
-  let promote database_label (target : kind target) (new_role : Kind.t) =
-    let uuid = Core.Target.id target in
-    let query =
-      let open Caqti_request.Infix in
-      {sql|
-        UPDATE guardian_targets
-        SET kind = $2
-        WHERE uuid = guardianEncodeUuid($1)
-      |sql}
-      |> Caqti_type.(tup2 Uuid.Target.t Kind.t ->. unit)
-    in
-    Utils.Database.exec
-      (Pool_database.Label.value database_label)
-      query
-      (uuid, new_role)
-  ;;
-end

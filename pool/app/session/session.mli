@@ -270,6 +270,11 @@ val find_all_public_for_experiment
   -> Experiment.Id.t
   -> (Public.t list, Pool_common.Message.error) Lwt_result.t
 
+val find_all_ids_of_contact_id
+  :  Pool_database.Label.t
+  -> Contact.Id.t
+  -> Id.t list Lwt.t
+
 val find_public_by_assignment
   :  Pool_database.Label.t
   -> Pool_common.Id.t
@@ -320,7 +325,7 @@ val find_for_calendar_by_location
   -> Calendar.t list Lwt.t
 
 val find_for_calendar_by_user
-  :  'a Guard.Persistence.actor
+  :  Guard.Actor.t
   -> Pool_database.Label.t
   -> start_time:Ptime.t
   -> end_time:Ptime.t
@@ -342,13 +347,11 @@ module Repo : sig
 end
 
 module Guard : sig
-  val relation : ?ctx:(string * string) list -> unit -> unit Lwt.t
-
   module Target : sig
     val to_authorizable
       :  ?ctx:(string * string) list
       -> t
-      -> (Role.Target.t Guard.Target.t, Pool_common.Message.error) Lwt_result.t
+      -> (Guard.Target.t, Pool_common.Message.error) Lwt_result.t
 
     type t
 
@@ -358,11 +361,32 @@ module Guard : sig
   end
 
   module Access : sig
-    val index_action : Guard.Action.t
-    val index : Experiment.Id.t -> Guard.ValidationSet.t
-    val create : Experiment.Id.t -> Guard.ValidationSet.t
-    val read : Experiment.Id.t -> Id.t -> Guard.ValidationSet.t
-    val update : Experiment.Id.t -> Id.t -> Guard.ValidationSet.t
-    val delete : Experiment.Id.t -> Id.t -> Guard.ValidationSet.t
+    val index_permission : Guard.Permission.t
+    val index : ?model:Role.Target.t -> Experiment.Id.t -> Guard.ValidationSet.t
+
+    val create
+      :  ?model:Role.Target.t
+      -> Experiment.Id.t
+      -> Guard.ValidationSet.t
+
+    val read
+      :  ?model:Role.Target.t
+      -> Experiment.Id.t
+      -> Id.t
+      -> Guard.ValidationSet.t
+
+    val update
+      :  ?model:Role.Target.t
+      -> Experiment.Id.t
+      -> Id.t
+      -> Guard.ValidationSet.t
+
+    val delete
+      :  ?model:Role.Target.t
+      -> Experiment.Id.t
+      -> Id.t
+      -> Guard.ValidationSet.t
+
+    val close : Experiment.Id.t -> Id.t -> Guard.ValidationSet.t
   end
 end

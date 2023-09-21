@@ -10,11 +10,13 @@ let active_navigation = "/admin/settings/rules"
 let show req =
   let result ({ Pool_context.database_label; user; _ } as context) =
     let actor = Pool_context.Utils.find_authorizable_opt database_label user in
+    (* TODO: check only available permissions *)
     actor
-    >|> CCOption.map_or
-          ~default:(Lwt.return [])
-          (Guard.Persistence.Rule.find_all_by_actor database_label)
-    ||> CCList.stable_sort Guard.Rule.compare
+    >|> CCOption.map_or ~default:(Lwt.return []) (fun _ ->
+      Guard.Persistence.RolePermission.find_all
+        ~ctx:(Pool_database.to_ctx database_label)
+        ())
+    ||> CCList.stable_sort Guard.RolePermission.compare
     ||> Page.Admin.Settings.Rules.index context
     >|> General.create_tenant_layout req ~active_navigation context
     >|+ Sihl.Web.Response.of_html
@@ -30,13 +32,15 @@ let delete req =
       Sihl.Web.Request.to_urlencoded req
       ||> HttpUtils.find_in_urlencoded Field.Rule
       >== fun rule ->
-      let read = Yojson.Safe.from_string %> Guard.Rule.of_yojson in
+      let read = Yojson.Safe.from_string %> Guard.RolePermission.of_yojson in
       CCResult.map_err
         Pool_common.Message.authorization
         (try read rule with
          | _ -> Error "Undefined Yojson for rule.")
     in
-    let events = Cqrs_command.Guardian_command.DeleteRule.handle ~tags in
+    let events =
+      Cqrs_command.Guardian_command.DeleteRolePermission.handle ~tags
+    in
     let handle = function
       | Ok events ->
         let%lwt () =
@@ -59,11 +63,11 @@ module Access : module type of Helpers.Access = struct
   include Helpers.Access
 
   let index =
-    Guard.Access.manage_rules |> Middleware.Guardian.validate_admin_entity
+    Guard.Access.manage_permission |> Middleware.Guardian.validate_admin_entity
   ;;
 
   let delete =
-    Cqrs_command.Guardian_command.DeleteRule.effects
+    Cqrs_command.Guardian_command.DeleteRolePermission.effects
     |> Middleware.Guardian.validate_admin_entity
   ;;
 end

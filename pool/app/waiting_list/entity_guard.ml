@@ -1,14 +1,6 @@
 open CCFun.Infix
 open Utils.Lwt_result.Infix
 
-let relation ?ctx () =
-  let open Guard in
-  let to_target =
-    Relation.Query.create Repo.Sql.find_binary_experiment_id_sql
-  in
-  Persistence.Relation.add ?ctx ~to_target ~target:`Experiment `WaitingList
-;;
-
 module Target = struct
   type t = Entity.t [@@deriving eq, show]
 
@@ -16,7 +8,7 @@ module Target = struct
     let open Guard in
     Persistence.Target.decorate
       ?ctx
-      (Uuid.target_of Pool_common.Id.value %> Target.make `WaitingList)
+      (Uuid.target_of Pool_common.Id.value %> Target.create `WaitingList)
       t
     >|- Pool_common.Message.authorization
   ;;
@@ -28,49 +20,73 @@ end
 module Access = struct
   open Guard
   open ValidationSet
+  open Permission
 
-  let waiting_list action id =
-    let target_id = id |> Uuid.target_of Pool_common.Id.value in
-    One (action, TargetSpec.Id (`WaitingList, target_id))
+  let waiting_list action uuid =
+    one_of_tuple
+      (action, `WaitingList, Some (uuid |> Uuid.target_of Pool_common.Id.value))
   ;;
 
   let index id =
     And
-      [ One (Action.Read, TargetSpec.Entity `WaitingList)
+      [ Or
+          [ one_of_tuple (Read, `WaitingList, None)
+          ; one_of_tuple
+              (Read, `WaitingList, Some (Uuid.target_of Experiment.Id.value id))
+          ]
       ; Experiment.Guard.Access.read id
-      ; Experiment.Guard.Access.recruiter_of id
       ]
   ;;
 
   let create id =
     And
-      [ One (Action.Create, TargetSpec.Entity `WaitingList)
+      [ Or
+          [ one_of_tuple (Create, `WaitingList, None)
+          ; one_of_tuple
+              ( Create
+              , `WaitingList
+              , Some (Uuid.target_of Experiment.Id.value id) )
+          ]
       ; Experiment.Guard.Access.update id
-      ; Experiment.Guard.Access.recruiter_of id
       ]
   ;;
 
   let read experiment_id waiting_list_id =
     And
-      [ waiting_list Action.Read waiting_list_id
+      [ Or
+          [ waiting_list Read waiting_list_id
+          ; one_of_tuple
+              ( Read
+              , `WaitingList
+              , Some (Uuid.target_of Experiment.Id.value experiment_id) )
+          ]
       ; Experiment.Guard.Access.read experiment_id
-      ; Experiment.Guard.Access.recruiter_of experiment_id
       ]
   ;;
 
   let update experiment_id waiting_list_id =
     And
-      [ waiting_list Action.Update waiting_list_id
+      [ Or
+          [ waiting_list Update waiting_list_id
+          ; one_of_tuple
+              ( Update
+              , `WaitingList
+              , Some (Uuid.target_of Experiment.Id.value experiment_id) )
+          ]
       ; Experiment.Guard.Access.update experiment_id
-      ; Experiment.Guard.Access.recruiter_of experiment_id
       ]
   ;;
 
   let delete experiment_id waiting_list_id =
     And
-      [ waiting_list Action.Delete waiting_list_id
+      [ Or
+          [ waiting_list Delete waiting_list_id
+          ; one_of_tuple
+              ( Delete
+              , `WaitingList
+              , Some (Uuid.target_of Experiment.Id.value experiment_id) )
+          ]
       ; Experiment.Guard.Access.update experiment_id
-      ; Experiment.Guard.Access.recruiter_of experiment_id
       ]
   ;;
 end

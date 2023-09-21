@@ -89,7 +89,7 @@ module Guard : sig
     val to_authorizable
       :  ?ctx:(string * string) list
       -> t
-      -> (Role.Target.t Guard.Target.t, Entity.PoolError.error) Lwt_result.t
+      -> (Guard.Target.t, Entity.PoolError.error) Lwt_result.t
 
     type t
 

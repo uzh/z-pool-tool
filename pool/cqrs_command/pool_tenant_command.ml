@@ -125,7 +125,7 @@ end = struct
       ; I18n.(DefaultRestored default_values) |> Pool_event.i18n
       ; Message_template.(
           DefaultRestored default_values_tenant |> Pool_event.message_template)
-      ; Guard.(DefaultRestored root_permissions) |> Pool_event.guard
+      ; Guard.(DefaultRestored all_role_permissions) |> Pool_event.guard
       ]
     in
     Ok (root_events, (database.Pool_database.label, tenant_events))

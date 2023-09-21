@@ -4,81 +4,52 @@ let src = Logs.Src.create "guardian.cqrs"
 
 type grant_role =
   { target : Admin.t
-  ; roles : Role.Actor.t list
+  ; roles : (Role.Role.t * Guard.Uuid.Target.t option) list
   }
 
 type revoke_role =
   { target : Admin.t
-  ; role : Role.Actor.t
+  ; role : Role.Role.t * Guard.Uuid.Target.t option
   }
 
-module CreateRule : sig
-  include Common.CommandSig with type t = Guard.Rule.t
+module CreateRolePermission : sig
+  include Common.CommandSig with type t = Guard.RolePermission.t
 
   val handle
     :  ?tags:Logs.Tag.set
-    -> Guard.Rule.t
+    -> Guard.RolePermission.t
     -> (Pool_event.t list, Pool_common.Message.error) result
-
-  val validate
-    :  'a Guard.Actor.t
-    -> Guard.Rule.t
-    -> (unit, Pool_common.Message.error) result
 end = struct
-  type t = Guard.Rule.t
+  type t = Guard.RolePermission.t
 
-  let handle ?(tags = Logs.Tag.empty) rule =
+  let handle ?(tags = Logs.Tag.empty) role_permission =
     Logs.info ~src (fun m -> m "Handle command Create" ~tags);
-    Ok [ Guard.RulesSaved [ rule ] |> Pool_event.guard ]
+    Ok [ Guard.RolePermissionSaved [ role_permission ] |> Pool_event.guard ]
   ;;
 
-  let validate actor ((role, _, _) : Guard.Rule.t) =
-    let open Guard in
-    (match role with
-     | ActorSpec.Entity role -> actor |> Actor.roles |> RoleSet.mem role
-     | ActorSpec.Id (role, uuid) ->
-       actor |> Actor.id |> Uuid.Actor.equal uuid
-       && actor |> Actor.roles |> RoleSet.mem role)
-    |> function
-    | true -> Ok ()
-    | false -> Error Pool_common.Message.PermissionDeniedCreateRule
-  ;;
-
-  let effects = Guard.Access.manage_rules
+  let effects = Guard.Access.manage_permission
 end
 
-module DeleteRule : sig
-  include Common.CommandSig with type t = Guard.Rule.t
+module DeleteRolePermission : sig
+  include Common.CommandSig with type t = Guard.RolePermission.t
 
   val handle
     :  ?tags:Logs.Tag.set
-    -> Guard.Rule.t
+    -> Guard.RolePermission.t
     -> (Pool_event.t list, Pool_common.Message.error) result
 end = struct
-  type t = Guard.Rule.t
+  type t = Guard.RolePermission.t
 
-  let handle ?(tags = Logs.Tag.empty) rule =
+  let handle ?(tags = Logs.Tag.empty) role_permissino =
     Logs.info ~src (fun m -> m "Handle command Create" ~tags);
-    Ok [ Guard.RuleDeleted rule |> Pool_event.guard ]
+    Ok [ Guard.RolePermissionDeleted role_permissino |> Pool_event.guard ]
   ;;
 
-  let effects = Guard.Access.manage_rules
+  let effects = Guard.Access.manage_permission
 end
 
 module GrantRoles : sig
   include Common.CommandSig with type t = grant_role
-
-  val handle
-    :  ?tags:Logs.Tag.set
-    -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
-
-  val validate_role
-    :  t
-    -> Guard.RoleSet.elt list
-    -> (unit, Pool_common.Message.error) result
-
-  val effects : Admin.Id.t -> Guard.ValidationSet.t
 end = struct
   open Guard
 
@@ -86,46 +57,24 @@ end = struct
 
   let handle ?(tags = Logs.Tag.empty) { target; roles } =
     Logs.info ~src (fun m -> m "Handle command GrantRoles" ~tags);
-    let to_id = Admin.id %> Guard.Uuid.actor_of Admin.Id.value in
+    let actor_roles =
+      let to_id = Admin.id %> Guard.Uuid.actor_of Admin.Id.value in
+      CCList.map
+        (fun (role, target_uuid) ->
+          Guard.ActorRole.create ?target_uuid (target |> to_id) role)
+        roles
+    in
     Ok
-      [ Guard.RolesGranted (target |> to_id, Guard.RoleSet.of_list roles)
-        |> Pool_event.guard
+      [ Guard.RolesGranted actor_roles |> Pool_event.guard
       ; Common.guardian_cache_cleared_event ()
       ]
   ;;
 
-  let validate_role ({ roles; _ } : t) accessible_roles =
-    match roles with
-    | [] -> Error Pool_common.Message.(NotFound Field.Role)
-    | roles ->
-      let validated =
-        CCList.fold_left
-          (fun ini role -> ini && CCList.mem role accessible_roles)
-          true
-          roles
-      in
-      if validated
-      then Ok ()
-      else Error Pool_common.Message.PermissionDeniedGrantRole
-  ;;
-
-  let effects = Admin.Guard.Access.read
+  let effects = Guard.Access.create_role
 end
 
 module RevokeRole : sig
   include Common.CommandSig with type t = revoke_role
-
-  val handle
-    :  ?tags:Logs.Tag.set
-    -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
-
-  val validate_role
-    :  t
-    -> Guard.RoleSet.elt list
-    -> (unit, Pool_common.Message.error) result
-
-  val effects : Admin.Id.t -> Guard.ValidationSet.t
 end = struct
   open Guard
 
@@ -133,19 +82,16 @@ end = struct
 
   let handle ?(tags = Logs.Tag.empty) { target; role } =
     Logs.info ~src (fun m -> m ~tags "Handle command RevokeRole");
-    let to_id = Admin.id %> Guard.Uuid.actor_of Admin.Id.value in
+    let actor_roles =
+      let role, target_uuid = role in
+      let to_id = Admin.id %> Guard.Uuid.actor_of Admin.Id.value in
+      Guard.ActorRole.create ?target_uuid (target |> to_id) role
+    in
     Ok
-      [ Guard.RolesRevoked (target |> to_id, Guard.RoleSet.singleton role)
-        |> Pool_event.guard
+      [ Guard.RolesRevoked [ actor_roles ] |> Pool_event.guard
       ; Common.guardian_cache_cleared_event ()
       ]
   ;;
 
-  let validate_role { role; _ } accessible_roles =
-    if CCList.mem role accessible_roles
-    then Ok ()
-    else Error Pool_common.Message.PermissionDeniedRevokeRole
-  ;;
-
-  let effects = Admin.Guard.Access.read
+  let effects = Guard.Access.delete_role
 end
