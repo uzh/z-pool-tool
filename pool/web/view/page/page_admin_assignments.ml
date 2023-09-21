@@ -182,7 +182,7 @@ module Partials = struct
           ; a_user_data "modal" (modal_id id)
           ; a_class [ "has-icon"; "primary"; "btn"; "is-text" ]
           ]
-        [ Component.Icon.(to_html Mail); txt (title language) ]
+        [ Component.Icon.(to_html MailOutline); txt (title language) ]
     ;;
   end
 
@@ -305,7 +305,7 @@ module Partials = struct
         action
         ~is_text:true
         ~control:(language, Pool_common.Message.(Edit None))
-        ~icon:Component.Icon.Create
+        ~icon:Component.Icon.CreateOutline
     in
     let profile_link { Assignment.contact; _ } =
       let action =
@@ -315,7 +315,7 @@ module Partials = struct
         action
         ~is_text:true
         ~control:(language, Pool_common.Message.OpenProfile)
-        ~icon:Component.Icon.Person
+        ~icon:Component.Icon.PersonOutline
     in
     let external_data_ids { Assignment.contact; _ } =
       a
@@ -353,7 +353,7 @@ module Partials = struct
           ]
         ~is_text:true
         ~control:(language, Pool_common.Message.ChangeSession)
-        ~icon:Component.Icon.RefreshOutline
+        ~icon:Component.Icon.SwapHorizonal
     in
     let cancel =
       button_form
@@ -364,7 +364,7 @@ module Partials = struct
           then CancelAssignmentWithFollowUps
           else CancelAssignment)
         (Message.Cancel None)
-        Component.Icon.CloseCircle
+        Component.Icon.Close
     in
     let mark_as_deleted =
       button_form
@@ -375,7 +375,7 @@ module Partials = struct
           then MarkAssignmentWithFollowUpsAsDeleted
           else MarkAssignmentAsDeleted)
         Message.MarkAsDeleted
-        Component.Icon.Trash
+        Component.Icon.TrashOutline
     in
     match CCList.is_empty assignments with
     | true -> p [ empty language ]
