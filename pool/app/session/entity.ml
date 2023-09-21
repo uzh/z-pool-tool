@@ -542,19 +542,16 @@ let is_deletable session follow_ups =
   | false, false -> Ok ()
 ;;
 
-let is_closable session =
+let not_closed_or_canceled session =
   let open CCResult.Infix in
   let* () = not_closed session in
   let* () = not_canceled session in
   Ok ()
 ;;
 
-let assignments_cancelable session =
-  let open CCResult.Infix in
-  let* () = not_canceled session in
-  let* () = not_closed session in
-  Ok ()
-;;
+let is_closable = not_closed_or_canceled
+let assignments_cancelable = not_closed_or_canceled
+let assignments_session_changeable = not_closed_or_canceled
 
 let assignment_creatable session =
   let open CCResult.Infix in
@@ -562,15 +559,9 @@ let assignment_creatable session =
     is_fully_booked session
     |> Utils.bool_to_result_not Pool_common.Message.(SessionFullyBooked)
   in
-  let* () = not_canceled session in
-  let* () = not_closed session in
+  let* () = not_closed_or_canceled session in
   let* () = not_past session in
   Ok ()
 ;;
 
-let reminder_resendable session =
-  let open CCResult.Infix in
-  let* () = not_canceled session in
-  let* () = not_closed session in
-  Ok ()
-;;
+let reminder_resendable = not_closed_or_canceled

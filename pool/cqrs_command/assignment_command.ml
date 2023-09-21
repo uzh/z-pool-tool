@@ -419,3 +419,28 @@ end = struct
 
   let effects exp_id = Session.Guard.Access.update exp_id
 end
+
+module SwapSession : sig
+  val handle
+    :  ?tags:Logs.Tag.set
+    -> current_session:Session.t
+    -> new_session:Session.t
+    -> Assignment.t
+    -> (Pool_event.t list, Pool_common.Message.error) result
+end = struct
+  let handle ?(tags = Logs.Tag.empty) ~current_session ~new_session assignment
+    : (Pool_event.t list, Pool_common.Message.error) result
+    =
+    let open Assignment in
+    let open CCResult in
+    Logs.info ~src (fun m -> m ~tags "Handle command MarkAsDeleted");
+    let* () = Session.assignment_creatable new_session in
+    let* () = session_changeable current_session assignment in
+    let new_assignment = { assignment with id = Assignment.Id.create () } in
+    Ok
+      [ MarkedAsDeleted assignment |> Pool_event.assignment
+      ; Created (new_assignment, new_session.Session.id)
+        |> Pool_event.assignment
+      ]
+  ;;
+end

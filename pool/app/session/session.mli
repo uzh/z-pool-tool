@@ -236,6 +236,11 @@ val is_cancellable : t -> (unit, Pool_common.Message.error) result
 val is_closable : t -> (unit, Pool_common.Message.error) result
 val is_deletable : t -> t list -> (unit, Pool_common.Message.error) result
 val assignments_cancelable : t -> (unit, Pool_common.Message.error) result
+
+val assignments_session_changeable
+  :  t
+  -> (unit, Pool_common.Message.error) result
+
 val assignment_creatable : t -> (unit, Pool_common.Message.error) result
 val reminder_resendable : t -> (unit, Pool_common.Message.error) result
 

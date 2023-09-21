@@ -22,6 +22,10 @@ let assignment_specific_path ?suffix experiment_id session_id assignment_id =
   suffix |> CCOption.map_or ~default:base (Format.asprintf "%s/%s" base)
 ;;
 
+let swap_session_modal_id session =
+  Format.asprintf "swap-session-%s" Session.(Id.value session.Session.id)
+;;
+
 type assignment_redirect =
   | Assignments
   | DeletedAssignments
@@ -182,6 +186,51 @@ module Partials = struct
     ;;
   end
 
+  let swap_session_form
+    { Pool_context.language; csrf; _ }
+    experiment_id
+    session
+    assignment
+    available_sessions
+    =
+    let action =
+      assignment_specific_path
+        ~suffix:"swap-session"
+        experiment_id
+        session.Session.id
+        assignment.Assignment.id
+      |> Sihl.Web.externalize_path
+    in
+    let html =
+      form
+        ~a:[ a_method `Post; a_class [ "stack" ]; a_action action ]
+        [ csrf_element csrf ()
+        ; selector
+            ~required:true
+            ~add_empty:true
+            ~option_formatter:Session.start_end_to_human
+            language
+            Field.Session
+            (fun s -> s.Session.id |> Session.Id.value)
+            available_sessions
+            None
+            ()
+        ; submit_element
+            language
+            (Pool_common.Message.Save None)
+            ~submit_type:`Primary
+            ()
+        ]
+    in
+    Component.Modal.create
+      ~active:true
+      language
+      (fun lang ->
+        Pool_common.(Utils.control_to_string lang Message.ChangeSession))
+      (swap_session_modal_id session)
+      html
+  ;;
+
   let overview_list
     ?(access_contact_profiles = false)
     ?(view_contact_name = false)
@@ -194,10 +243,17 @@ module Partials = struct
     =
     let open Pool_common in
     let default = txt "" in
+    let assignemnts_table_id =
+      Format.asprintf "assignments-%s" Session.(Id.value session.Session.id)
+    in
+    let swap_session_modal_id = swap_session_modal_id session in
     let deletable = CCFun.(Assignment.is_deletable %> CCResult.is_ok) in
     let cancelable m =
       Session.assignments_cancelable session |> CCResult.is_ok
       && Assignment.is_cancellable m |> CCResult.is_ok
+    in
+    let session_changeable m =
+      Assignment.session_changeable session m |> CCResult.is_ok
     in
     let action { Assignment.id; _ } suffix =
       assignment_specific_path
@@ -275,6 +331,29 @@ module Partials = struct
         [ Icon.(to_html ReorderThree)
         ; txt Utils.(nav_link_to_string language I18n.ExternalDataIds)
         ]
+    in
+    let session_change_toggle { Assignment.id; _ } =
+      let action =
+        assignment_specific_path
+          ~suffix:"swap-session"
+          experiment.Experiment.id
+          session.Session.id
+          id
+        |> Sihl.Web.externalize_path
+      in
+      link_as_button
+        "#"
+        ~attributes:
+          [ a_user_data "hx-trigger" "click"
+          ; a_user_data "hx-get" action
+          ; a_user_data "hx-swap" "outerHTML"
+          ; a_user_data
+              "hx-target"
+              (Format.asprintf "#%s" swap_session_modal_id)
+          ]
+        ~is_text:true
+        ~control:(language, Pool_common.Message.ChangeSession)
+        ~icon:Component.Icon.RefreshOutline
     in
     let cancel =
       button_form
@@ -354,6 +433,7 @@ module Partials = struct
               ; create_reminder_modal, ReminderModal.button context
               ; ( Experiment.(show_external_data_id_links_value experiment)
                 , external_data_ids )
+              ; session_changeable assignment, session_change_toggle
               ; cancelable assignment, cancel
               ; deletable assignment, mark_as_deleted
               ]
@@ -377,17 +457,54 @@ module Partials = struct
           ([], [])
           assignments
       in
+      let js =
+        Format.asprintf
+          {js|
+        const table = document.getElementById("%s");
+        table.addEventListener("htmx:beforeSend", (e) => {
+          const { target } = e.detail;
+          const content = document.createElement("div");
+          const body = document.createElement("div");
+          body.classList.add("modal-body");
+          content.classList.add("modal-content", "flexrow", "justify-center")
+          const icon = document.createElement("i");
+          icon.classList.add("icon-spinner-outline", "rotate");
+          content.appendChild(icon);
+          body.appendChild(content);
+          target.innerHTML = '';
+          target.appendChild(body);
+          target.classList.add("active");
+        })
+
+        document.addEventListener("htmx:afterSwap", (e) => {
+          e.detail.elt.querySelector(".modal-close").addEventListener("click", (e) => {
+            const modal = e.currentTarget.closest(".modal");
+            modal.classList.remove("active");
+            modal.setAttribute("aria-hidden", "true");
+          })
+        })
+        |js}
+          assignemnts_table_id
+      in
       div
         [ p
             [ Utils.hint_to_string language I18n.SessionCloseLegend
               |> HttpUtils.add_line_breaks
             ]
+        ; div
+            ~a:
+              [ a_id swap_session_modal_id
+              ; a_class [ "fullscreen-overlay"; "modal" ]
+              ]
+            []
         ; Component.Table.horizontal_table
             `Striped
             ~align_last_end:true
+            ~id:assignemnts_table_id
             ~thead
             rows
         ; div ~a:[ a_class [ "assignment-reminder-modals" ] ] modals
+        ; script (Unsafe.data js)
         ]
   ;;
 

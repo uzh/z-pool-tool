@@ -199,6 +199,7 @@ type control =
   | Assign of Field.t option
   | Back
   | Cancel of Field.t option
+  | ChangeSession
   | Choose of Field.t option
   | Close of Field.t option
   | Create of Field.t option

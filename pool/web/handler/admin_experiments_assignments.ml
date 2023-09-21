@@ -410,6 +410,73 @@ let remind req =
   result |> HttpUtils.extract_happy_path ~src req
 ;;
 
+let swap_session_get req =
+  let experiment_id, session_id, assignment_id = ids_from_request req in
+  let result ({ Pool_context.database_label; _ } as context) =
+    let open Utils.Lwt_result.Infix in
+    let* assignment = Assignment.find database_label assignment_id in
+    let* current_session = Session.find database_label session_id in
+    (* TODO: Exclude current session? *)
+    let* sessions =
+      Session.find_all_for_experiment database_label experiment_id
+    in
+    Page.Admin.Assignment.Partials.swap_session_form
+      context
+      experiment_id
+      current_session
+      assignment
+      sessions
+    |> HttpUtils.Htmx.html_to_plain_text_response
+    |> Lwt_result.return
+  in
+  result
+  |> HttpUtils.Htmx.handle_error_message ~error_as_notification:true ~src req
+;;
+
+let swap_session_post req =
+  let open Utils.Lwt_result.Infix in
+  let open Assignment in
+  let experiment_id, session_id, assignment_id = ids_from_request req in
+  let redirect_path =
+    Page.Admin.Session.session_path experiment_id session_id
+  in
+  let result { Pool_context.database_label; _ } =
+    Utils.Lwt_result.map_error (fun err -> err, redirect_path)
+    @@
+    let tags = Pool_context.Logger.Tags.req req in
+    let%lwt urlencoded =
+      Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
+    in
+    (* let tenant = Pool_context.Tenant.get_tenant_exn req in let
+       tenant_languages = Pool_context.Tenant.get_tenant_languages_exn req in
+       let* experiment = Experiment.find database_label experiment_id in *)
+    let* assignment = find database_label assignment_id in
+    let* current_session = Session.find database_label session_id in
+    let* new_session =
+      HttpUtils.find_in_urlencoded Field.Session urlencoded
+      |> Lwt_result.lift
+      >|+ Session.Id.of_string
+      >>= Session.find database_label
+    in
+    (* let%lwt create_messages = Reminder.prepare_messages database_label tenant
+       tenant_languages experiment session in *)
+    let events =
+      let open Cqrs_command.Assignment_command.SwapSession in
+      handle ~tags ~current_session ~new_session assignment |> Lwt_result.lift
+    in
+    let handle events =
+      let%lwt () =
+        Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
+      in
+      Http_utils.redirect_to_with_actions
+        redirect_path
+        [ Message.set ~success:[ Pool_common.Message.(Updated Field.Session) ] ]
+    in
+    events |>> handle
+  in
+  result |> HttpUtils.extract_happy_path ~src req
+;;
+
 module Access : sig
   include module type of Helpers.Access
 
