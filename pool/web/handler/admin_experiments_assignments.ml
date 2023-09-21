@@ -416,9 +416,8 @@ let swap_session_get req =
     let open Utils.Lwt_result.Infix in
     let* assignment = Assignment.find database_label assignment_id in
     let* current_session = Session.find database_label session_id in
-    (* TODO: Exclude current session? *)
     let* sessions =
-      Session.find_all_for_experiment database_label experiment_id
+      Session.find_all_to_swap_by_experiment database_label experiment_id
     in
     Page.Admin.Assignment.Partials.swap_session_form
       context

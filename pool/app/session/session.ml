@@ -34,6 +34,21 @@ let has_bookable_spots_for_experiments tenant experiment =
   >|+ not
 ;;
 
+let find_all_to_swap_by_experiment database_label experiment_id =
+  let open Utils.Lwt_result.Infix in
+  find_all_for_experiment database_label experiment_id
+  >|+ group_and_sort
+  >|+ CCList.fold_left
+        (fun sessions (parent, followups) ->
+          parent :: followups
+          |> fun list ->
+          CCList.find_opt CCFun.(assignment_creatable %> CCResult.is_ok) list
+          |> function
+          | None -> sessions
+          | Some _ -> list @ sessions)
+        []
+;;
+
 module Repo = struct
   module Id = Repo_entity.Id
   module Start = Repo_entity.Start

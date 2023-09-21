@@ -201,6 +201,17 @@ module Partials = struct
         assignment.Assignment.id
       |> Sihl.Web.externalize_path
     in
+    let option_formatter m =
+      let open Session in
+      let str = start_end_to_human m in
+      match m.follow_up_to with
+      | Some _ -> Unsafe.data (Format.asprintf "&nbsp;&nbsp;&nbsp;%s" str)
+      | None -> txt str
+    in
+    let option_disabler m =
+      Session.assignment_creatable m |> CCResult.is_error
+      || Session.equal session m
+    in
     let html =
       form
         ~a:[ a_method `Post; a_class [ "stack" ]; a_action action ]
@@ -208,7 +219,8 @@ module Partials = struct
         ; selector
             ~required:true
             ~add_empty:true
-            ~option_formatter:Session.start_end_to_human
+            ~elt_option_formatter:option_formatter
+            ~option_disabler
             language
             Field.Session
             (fun s -> s.Session.id |> Session.Id.value)

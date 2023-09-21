@@ -345,6 +345,11 @@ val has_bookable_spots_for_experiments
   -> Experiment.Id.t
   -> (bool, Pool_common.Message.error) result Lwt.t
 
+val find_all_to_swap_by_experiment
+  :  Pool_database.Label.t
+  -> Experiment.Id.t
+  -> (t list, Pool_common.Message.error) result Lwt.t
+
 module Repo : sig
   module Id : sig
     val t : Id.t Caqti_type.t
