@@ -72,7 +72,7 @@ depends: [
   "fmt" {= "0.9.0"}
   "fpath" {= "0.7.3"}
   "gmap" {= "0.3.0"}
-  "guardian" {= "0.2.0"}
+  "guardian" {= "0.3.0"}
   "hkdf" {= "1.0.4"}
   "hmap" {= "0.8.1"}
   "httpaf" {= "0.7.1"}
@@ -95,11 +95,11 @@ depends: [
   "menhir" {= "20230608"}
   "menhirLib" {= "20230608"}
   "menhirSdk" {= "20230608"}
-  "mirage-crypto" {= "0.11.1"}
-  "mirage-crypto-ec" {= "0.11.1"}
-  "mirage-crypto-pk" {= "0.11.1"}
-  "mirage-crypto-rng" {= "0.11.1"}
-  "mirage-crypto-rng-lwt" {= "0.11.1"}
+  "mirage-crypto" {= "0.11.2"}
+  "mirage-crypto-ec" {= "0.11.2"}
+  "mirage-crypto-pk" {= "0.11.2"}
+  "mirage-crypto-rng" {= "0.11.2"}
+  "mirage-crypto-rng-lwt" {= "0.11.2"}
   "mirage-no-solo5" {= "1"}
   "mirage-no-xen" {= "1"}
   "mrmime" {= "0.6.0"}
@@ -110,11 +110,11 @@ depends: [
   "ocaml" {= "4.14.1"}
   "ocaml-compiler-libs" {= "v0.12.4"}
   "ocaml-syntax-shims" {= "1.0.0"}
-  "ocaml-version" {= "3.6.1"}
+  "ocaml-version" {= "3.6.2"}
   "ocamlbuild" {= "0.14.2"}
   "ocamlfind" {= "1.9.6"}
-  "ocamlformat" {= "0.26.0"}
-  "ocamlformat-lib" {= "0.26.0"}
+  "ocamlformat" {= "0.26.1"}
+  "ocamlformat-lib" {= "0.26.1"}
   "ocb-stubblr" {= "0.1.1-1"}
   "ocp-indent" {= "1.8.1"}
   "ocplib-endian" {= "1.2"}
@@ -135,7 +135,7 @@ depends: [
   "ppxlib" {= "0.30.0"}
   "prettym" {= "0.0.3"}
   "ptime" {= "1.1.0"}
-  "re" {= "1.10.4"}
+  "re" {= "1.11.0"}
   "result" {= "1.5"}
   "rock" {= "0.20.0"}
   "rosetta" {= "0.3.0"}
@@ -167,9 +167,9 @@ depends: [
   "unstrctrd" {= "0.3"}
   "uri" {= "4.2.0"}
   "uri-sexp" {= "4.2.0"}
-  "uucp" {= "15.0.0"}
+  "uucp" {= "15.1.0"}
   "uuidm" {= "0.9.8"}
-  "uuseg" {= "15.0.0"}
+  "uuseg" {= "15.1.0"}
   "uutf" {= "1.0.3"}
   "uuuu" {= "0.3.0"}
   "variantslib" {= "v0.16.0"}
@@ -219,11 +219,15 @@ pin-depends: [
     "sihl-cache.4.0.0"
     "git+https://github.com/oxidizing/sihl.git#e0b304a4ebd3cb2ac0d21e0f6d151b9db301f9eb"
   ]
-  ["guardian.0.2.0" "git+https://github.com/uzh/guardian.git#0.2.0"]
+  [
+    "guardian.0.3.0"
+    "git+https://github.com/uzh/guardian.git#ccb87ed3a97fb01abdc7ecb53746d827657ec097"
+  ]
   [
     "canary.0.0.1"
     "git+https://github.com/uzh/canary.git#02cf40e029268560e160ca032850426e387aa598"
   ]
+  ["letters.0.3.3" "git+https://github.com/oxidizing/letters.git#0.3.3"]
   [
     "sihl.4.0.0"
     "git+https://github.com/oxidizing/sihl.git#e0b304a4ebd3cb2ac0d21e0f6d151b9db301f9eb"
