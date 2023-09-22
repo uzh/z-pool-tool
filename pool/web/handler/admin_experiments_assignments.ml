@@ -412,7 +412,6 @@ let remind req =
 
 let swap_session_get req =
   let experiment_id, session_id, assignment_id = ids_from_request req in
-  (* TODO: Set flash fetcher *)
   let result ({ Pool_context.database_label; _ } as context) =
     let open Utils.Lwt_result.Infix in
     let* assignment = Assignment.find database_label assignment_id in
@@ -456,15 +455,16 @@ let swap_session_post req =
   let redirect_path =
     Page.Admin.Session.session_path experiment_id session_id
   in
+  let%lwt urlencoded =
+    Sihl.Web.Request.to_urlencoded req
+    ||> HttpUtils.remove_empty_values
+    ||> HttpUtils.format_request_boolean_values Field.[ show NotifyContact ]
+  in
   let result { Pool_context.database_label; _ } =
-    Utils.Lwt_result.map_error (fun err -> err, redirect_path)
+    Utils.Lwt_result.map_error (fun err ->
+      err, redirect_path, [ HttpUtils.urlencoded_to_flash urlencoded ])
     @@
     let tags = Pool_context.Logger.Tags.req req in
-    let%lwt urlencoded =
-      Sihl.Web.Request.to_urlencoded req
-      ||> HttpUtils.remove_empty_values
-      ||> HttpUtils.format_request_boolean_values Field.[ show NotifyContact ]
-    in
     let* decoded = SwapSession.decode urlencoded |> Lwt_result.lift in
     let* assignment = find database_label assignment_id in
     let* experiment = Experiment.find database_label experiment_id in
@@ -513,7 +513,7 @@ let swap_session_post req =
     in
     events |>> handle
   in
-  result |> HttpUtils.extract_happy_path ~src req
+  result |> HttpUtils.extract_happy_path_with_actions ~src req
 ;;
 
 module Access : sig
