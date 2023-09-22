@@ -216,7 +216,7 @@ type t =
   | ReminderCount [@name "reminder_count"] [@printer go "reminder_count"]
   | RemindersSent [@name "reminders_sent"] [@printer go "reminders_sent"]
   | LastManuallyRemindedAt [@name "last_manually_reminded_at"]
-      [@printer go "last_manually_reminded_at"]
+  [@printer go "last_manually_reminded_at"]
   | LastRemindedAt [@name "last_reminded_at"] [@printer go "reminded_at"]
   | Required [@name "required"] [@printer go "required"]
   | ResentAt [@name "resent_at"] [@printer go "resent_at"]
