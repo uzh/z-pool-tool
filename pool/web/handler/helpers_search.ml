@@ -40,7 +40,7 @@ let create search_type ?path req =
       >|> CCOption.map_or
             ~default:(Lwt.return [])
             (Helpers_guard.find_roles database_label)
-      ||> filter_map (fun { Guard.ActorRole.target_uuid; role; _ } ->
+      ||> filter_map (fun ({ Guard.ActorRole.target_uuid; role; _ }, _, _) ->
         CCOption.bind search_role (fun search_role ->
           if Role.Role.equal role search_role then None else target_uuid))
     in

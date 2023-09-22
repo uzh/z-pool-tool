@@ -24,11 +24,13 @@ module Cache = struct
     && Core.Uuid.Actor.equal a1.Core.Actor.uuid a2.Core.Actor.uuid
   ;;
 
+  let lru_find_by_actor = lru ~eq:equal_find_actor 2048
   let lru_find_actor = lru ~eq:equal_find_actor 2048
   let lru_validation = lru ~eq:equal_validation 2048
 
   let clear () =
     let () = clear lru_validation in
+    let () = clear lru_find_by_actor in
     clear lru_find_actor
   ;;
 end
@@ -71,6 +73,67 @@ module Actor = struct
     if CCList.mem ~eq role possible_assigns
     then Lwt.return_ok role
     else Lwt.return_error Pool_common.Message.PermissionDeniedGrantRole
+  ;;
+end
+
+module ActorRole = struct
+  include ActorRole
+  open Caqti_request.Infix
+
+  let find_by_actor_request =
+    {sql|
+      SELECT
+        guardianDecodeUuid(role_targets.actor_uuid),
+        role_targets.role,
+        guardianDecodeUuid(role_targets.target_uuid),
+        targets.model,
+        COALESCE(
+          exp.title,
+          CONCAT(session_exp.title, ': Session at ', DATE_FORMAT(sessions.start, '%d.%m.%Y %H:%i')),
+          locations.name
+          )
+      FROM guardian_actor_role_targets AS role_targets
+      JOIN guardian_targets AS targets
+        ON role_targets.target_uuid = targets.uuid
+      LEFT JOIN pool_experiments AS exp
+        ON role_targets.target_uuid = exp.uuid
+      LEFT JOIN pool_sessions AS sessions
+        ON role_targets.target_uuid = sessions.uuid
+      LEFT JOIN pool_experiments AS session_exp
+        ON sessions.experiment_uuid = session_exp.uuid
+      LEFT JOIN pool_locations AS locations
+        ON role_targets.target_uuid = locations.uuid
+      WHERE role_targets.actor_uuid = guardianEncodeUuid($1)
+        AND role_targets.mark_as_deleted IS NULL
+      UNION
+      SELECT guardianDecodeUuid(roles.actor_uuid), roles.role, NULL, NULL, NULL
+      FROM guardian_actor_roles AS roles
+      WHERE roles.actor_uuid = guardianEncodeUuid($1)
+        AND roles.mark_as_deleted IS NULL
+    |sql}
+    |> Entity.(
+         Uuid.Actor.t
+         ->* Caqti_type.(
+               tup3 ActorRole.t (option TargetModel.t) (option string)))
+  ;;
+
+  let find_by_actor database_label actor =
+    let cb ~in_cache _ _ =
+      if in_cache
+      then (
+        let tags = Pool_database.Logger.Tags.create database_label in
+        Logs.debug ~src (fun m ->
+          m ~tags "Found in cache: Actor %s" (actor |> Core.Uuid.Actor.to_string)))
+      else ()
+    in
+    let find_by_actor' (label, actor) =
+      Utils.Database.collect
+        (Pool_database.Label.value label)
+        find_by_actor_request
+        actor
+    in
+    (database_label, actor)
+    |> CCCache.(with_cache ~cb Cache.lru_find_by_actor find_by_actor')
   ;;
 end
 

@@ -16,7 +16,7 @@ let roles_path ?suffix admin =
   CCOption.map_or ~default (Format.asprintf "%s%s" default) suffix
 ;;
 
-let target_path ({ Guard.ActorRole.target_uuid; _ }, target_model) =
+let target_path ({ Guard.ActorRole.target_uuid; _ }, target_model, _) =
   let build path =
     Guard.Uuid.Target.to_string %> Format.asprintf "/admin/%s/%s/" path
   in
@@ -63,7 +63,8 @@ module List = struct
     Pool_context.{ csrf; language; _ }
     target_admin
     (( ({ Guard.ActorRole.actor_uuid; role; target_uuid } as actor_role)
-     , (_ : Role.Target.t option) ) as role_element)
+     , (_ : Role.Target.t option)
+     , (title : string option) ) as role_element)
     =
     let button_form target name submit_type confirm_text =
       form
@@ -124,7 +125,12 @@ module List = struct
       target_button @ remove_button
       |> div ~a:[ a_class [ "flexrow"; "flex-gap"; "justify-end" ] ]
     in
-    [ txt (Guard.ActorRole.role_to_human actor_role); buttons ]
+    let to_human { Guard.ActorRole.role; _ } =
+      let role_human = Role.Role.show role in
+      CCOption.map_or ~default:(txt role_human) (fun title ->
+        div [ Format.asprintf "%s of " role_human |> txt; em [ txt title ] ])
+    in
+    to_human actor_role title :: [ buttons ]
   ;;
 
   let create
