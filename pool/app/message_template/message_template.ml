@@ -80,6 +80,27 @@ let prepare_email language template sender email layout params =
   Message_utils.render_email_params params mail
 ;;
 
+let prepare_manual_email
+  { ManualMessage.recipient; language; email_subject; email_text; plain_text }
+  layout
+  params
+  sender
+  =
+  let open Sihl_email in
+  let mail =
+    { sender = Pool_user.EmailAddress.value sender
+    ; recipient = Pool_user.EmailAddress.value recipient
+    ; subject = email_subject
+    ; text = PlainText.value plain_text
+    ; html = Some (combine_html language (Some email_subject))
+    ; cc = []
+    ; bcc = []
+    }
+  in
+  let params = [ "emailText", email_text ] @ layout_params layout @ params in
+  Message_utils.render_email_params params mail
+;;
+
 let global_params layout user =
   Pool_user.
     [ "name", user |> user_fullname
@@ -318,34 +339,20 @@ module AssignmentSessionChange = struct
     @ assignment_params assignment
   ;;
 
-  let create
-    pool
-    preferred_language
-    tenant
-    experiment
-    ~new_session
-    ~old_session
-    assignment
+  let create pool message tenant experiment ~new_session ~old_session assignment
     =
-    let%lwt template, language =
-      find_by_label_to_send
-        pool
-        preferred_language
-        Label.AssignmentSessionChange
-    in
     let layout = layout_from_tenant tenant in
     let%lwt sender = sender_of_experiment pool experiment in
     let params =
       email_params
-        language
+        message.ManualMessage.language
         layout
         experiment
         ~new_session
         ~old_session
         assignment
     in
-    let email = assignment.Assignment.contact |> Contact.email_address in
-    prepare_email language template sender email layout params |> Lwt.return
+    prepare_manual_email message layout params sender |> Lwt.return
   ;;
 end
 

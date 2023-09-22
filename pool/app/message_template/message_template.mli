@@ -73,6 +73,20 @@ type update =
   ; sms_text : SmsText.t
   }
 
+module ManualMessage : sig
+  type t =
+    { recipient : Pool_user.EmailAddress.t
+    ; language : Pool_common.Language.t
+    ; email_subject : EmailSubject.t
+    ; email_text : EmailText.t
+    ; plain_text : PlainText.t
+    }
+
+  val equal : t -> t -> bool
+  val pp : Format.formatter -> t -> unit
+  val show : t -> string
+end
+
 type event =
   | Created of t
   | DefaultRestored of t list
@@ -221,7 +235,7 @@ module AssignmentSessionChange : sig
 
   val create
     :  Pool_database.Label.t
-    -> Pool_common.Language.t
+    -> ManualMessage.t
     -> Pool_tenant.t
     -> Experiment.t
     -> new_session:Session.t

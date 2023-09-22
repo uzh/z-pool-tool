@@ -412,6 +412,7 @@ let remind req =
 
 let swap_session_get req =
   let experiment_id, session_id, assignment_id = ids_from_request req in
+  (* TODO: Set flash fetcher *)
   let result ({ Pool_context.database_label; _ } as context) =
     let open Utils.Lwt_result.Infix in
     let* assignment = Assignment.find database_label assignment_id in
@@ -474,9 +475,18 @@ let swap_session_post req =
       | false -> Lwt.return_none
       | true ->
         let tenant = Pool_context.Tenant.get_tenant_exn req in
+        let msg =
+          Message_template.ManualMessage.
+            { recipient = Contact.email_address assignment.contact
+            ; language = decoded.language
+            ; email_subject = decoded.email_subject
+            ; email_text = decoded.email_text
+            ; plain_text = decoded.plain_text
+            }
+        in
         Message_template.AssignmentSessionChange.create
           database_label
-          decoded.language
+          msg
           tenant
           experiment
           ~new_session

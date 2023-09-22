@@ -116,6 +116,17 @@ type t =
   }
 [@@deriving eq, show]
 
+module ManualMessage = struct
+  type t =
+    { recipient : Pool_user.EmailAddress.t
+    ; language : Pool_common.Language.t
+    ; email_subject : EmailSubject.t
+    ; email_text : EmailText.t
+    ; plain_text : PlainText.t
+    }
+  [@@deriving eq, show]
+end
+
 type layout =
   | Tenant of Pool_tenant.t
   | Root
