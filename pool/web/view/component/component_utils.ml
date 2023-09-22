@@ -60,3 +60,13 @@ let htmx_attribs
   @ hx_vals
   @ CCList.filter_map CCFun.id [ target ]
 ;;
+
+let format_reminder_sent_opt ?(default = "") value =
+  let open CCFun in
+  let open Pool_common in
+  value
+  |> CCOption.map_or
+       ~default
+       CCFun.(Reminder.SentAt.value %> Utils.Time.formatted_date_time)
+  |> txt
+;;

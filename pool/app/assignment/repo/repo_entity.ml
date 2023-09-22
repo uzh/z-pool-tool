@@ -44,6 +44,7 @@ type t =
   ; canceled_at : CanceledAt.t option
   ; marked_as_deleted : MarkedAsDeleted.t
   ; external_data_id : ExternalDataId.t option
+  ; reminder_manually_last_sent_at : Pool_common.Reminder.SentAt.t option
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
   }
@@ -58,6 +59,7 @@ let to_entity (m : t) (contact : Contact.t) : Entity.t =
     ; canceled_at = m.canceled_at
     ; marked_as_deleted = m.marked_as_deleted
     ; external_data_id = m.external_data_id
+    ; reminder_manually_last_sent_at = m.reminder_manually_last_sent_at
     ; created_at = m.created_at
     ; updated_at = m.updated_at
     }
@@ -73,6 +75,7 @@ let of_entity (session_id : Session.Id.t) (m : Entity.t) : t =
   ; canceled_at = m.Entity.canceled_at
   ; marked_as_deleted = m.Entity.marked_as_deleted
   ; external_data_id = m.Entity.external_data_id
+  ; reminder_manually_last_sent_at = m.Entity.reminder_manually_last_sent_at
   ; created_at = m.Entity.created_at
   ; updated_at = m.Entity.updated_at
   }
@@ -89,8 +92,9 @@ let t =
               , ( m.matches_filter
                 , ( m.canceled_at
                   , ( m.marked_as_deleted
-                    , (m.external_data_id, (m.created_at, m.updated_at)) ) ) )
-              ) ) ) ) )
+                    , ( m.external_data_id
+                      , ( m.reminder_manually_last_sent_at
+                        , (m.created_at, m.updated_at) ) ) ) ) ) ) ) ) ) )
   in
   let decode
     ( id
@@ -101,8 +105,9 @@ let t =
             , ( matches_filter
               , ( canceled_at
                 , ( marked_as_deleted
-                  , (external_data_id, (created_at, updated_at)) ) ) ) ) ) ) )
-    )
+                  , ( external_data_id
+                    , (reminder_manually_last_sent_at, (created_at, updated_at))
+                    ) ) ) ) ) ) ) ) )
     =
     let open CCResult in
     Ok
@@ -115,6 +120,7 @@ let t =
       ; canceled_at = CCOption.map CanceledAt.value canceled_at
       ; marked_as_deleted
       ; external_data_id
+      ; reminder_manually_last_sent_at
       ; created_at
       ; updated_at
       }
@@ -142,8 +148,10 @@ let t =
                               (tup2
                                  (option ExternalDataId.t)
                                  (tup2
-                                    Pool_common.Repo.CreatedAt.t
-                                    Pool_common.Repo.UpdatedAt.t)))))))))))
+                                    (option Pool_common.Repo.Reminder.SentAt.t)
+                                    (tup2
+                                       Pool_common.Repo.CreatedAt.t
+                                       Pool_common.Repo.UpdatedAt.t))))))))))))
 ;;
 
 module Public = struct

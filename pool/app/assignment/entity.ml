@@ -56,6 +56,7 @@ type t =
   ; canceled_at : CanceledAt.t option
   ; marked_as_deleted : MarkedAsDeleted.t
   ; external_data_id : ExternalDataId.t option
+  ; reminder_manually_last_sent_at : Pool_common.Reminder.SentAt.t option
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
   }
@@ -69,6 +70,7 @@ let create
   ?canceled_at
   ?(marked_as_deleted = MarkedAsDeleted.init)
   ?external_data_id
+  ?reminder_manually_last_sent_at
   contact
   =
   { id
@@ -79,6 +81,7 @@ let create
   ; canceled_at
   ; marked_as_deleted
   ; external_data_id
+  ; reminder_manually_last_sent_at
   ; created_at = Pool_common.CreatedAt.create ()
   ; updated_at = Pool_common.UpdatedAt.create ()
   }

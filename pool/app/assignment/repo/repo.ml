@@ -36,6 +36,7 @@ module Sql = struct
           pool_assignments.canceled_at,
           pool_assignments.marked_as_deleted,
           pool_assignments.external_data_id,
+          pool_assignments.reminder_manually_last_sent_at,
           pool_assignments.created_at,
           pool_assignments.updated_at
         FROM
@@ -314,6 +315,7 @@ module Sql = struct
         matches_filter,
         canceled_at,
         external_data_id,
+        reminder_manually_last_sent_at,
         created_at,
         updated_at
       ) VALUES (
@@ -326,7 +328,8 @@ module Sql = struct
         $7,
         $9,
         $10,
-        $11
+        $11,
+        $12
       )
       ON DUPLICATE KEY UPDATE
         marked_as_deleted = 0
@@ -348,7 +351,8 @@ module Sql = struct
           participated = $3,
           matches_filter = $4,
           canceled_at = $5,
-          external_data_id = $6
+          external_data_id = $6,
+          reminder_manually_last_sent_at = $7
         WHERE
           uuid = UNHEX(REPLACE($1, '-', ''))
       |sql}
@@ -359,7 +363,13 @@ module Sql = struct
               (option bool)
               (tup2
                  (option bool)
-                 (tup2 bool (tup2 (option ptime) (option string)))))
+                 (tup2
+                    bool
+                    (tup2
+                       (option ptime)
+                       (tup2
+                          (option string)
+                          (option Pool_common.Repo.Reminder.SentAt.t))))))
          ->. unit)
   ;;
 
@@ -369,8 +379,8 @@ module Sql = struct
       , ( m.no_show
         , ( m.participated
           , ( m.matches_filter |> MatchesFilter.value
-            , (CCOption.map CanceledAt.value m.canceled_at, m.external_data_id)
-            ) ) ) ))
+            , ( CCOption.map CanceledAt.value m.canceled_at
+              , (m.external_data_id, m.reminder_manually_last_sent_at) ) ) ) ) ))
   ;;
 
   let update pool m =
