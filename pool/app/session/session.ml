@@ -12,6 +12,12 @@ let find_all_public_for_experiment = Repo.find_all_public_for_experiment
 let find_all_public_by_location = Repo.find_all_public_by_location
 let find_all_ids_of_contact_id = Repo.find_all_ids_of_contact_id
 let find = Repo.find
+let find_multiple = Repo.find_multiple
+
+let find_contact_is_assigned_by_experiment =
+  Repo.find_contact_is_assigned_by_experiment
+;;
+
 let find_public = Repo.find_public
 let find_public_by_assignment = Repo.find_public_by_assignment
 let find_upcoming_public_by_contact = Repo.find_upcoming_public_by_contact

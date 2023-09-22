@@ -191,6 +191,7 @@ module Partials = struct
     experiment_id
     session
     assignment
+    assigned_sessions
     available_sessions
     swap_session_template
     languages
@@ -213,7 +214,7 @@ module Partials = struct
     in
     let option_disabler m =
       Session.assignment_creatable m |> CCResult.is_error
-      || Session.equal session m
+      || CCList.mem ~eq:Session.equal m assigned_sessions
     in
     let notifier_id =
       Format.asprintf "nofify-%s" Session.(Id.value session.id)

@@ -249,6 +249,17 @@ val find
   -> Id.t
   -> (t, Pool_common.Message.error) Lwt_result.t
 
+val find_multiple
+  :  Pool_database.Label.t
+  -> Id.t list
+  -> (t list, Pool_common.Message.error) Lwt_result.t
+
+val find_contact_is_assigned_by_experiment
+  :  Pool_database.Label.t
+  -> Contact.Id.t
+  -> Experiment.Id.t
+  -> (t list, Pool_common.Message.error) Lwt_result.t
+
 val find_public
   :  Pool_database.Label.t
   -> Id.t
