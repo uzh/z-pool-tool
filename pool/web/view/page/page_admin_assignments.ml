@@ -531,6 +531,7 @@ module Partials = struct
         })
 
         document.addEventListener("htmx:afterSwap", (e) => {
+          window['pool-tool'].initRichTextEditor(e.detail.elt);
           e.detail.elt.querySelector(".modal-close").addEventListener("click", (e) => {
             const modal = e.currentTarget.closest(".modal");
             modal.classList.remove("active");

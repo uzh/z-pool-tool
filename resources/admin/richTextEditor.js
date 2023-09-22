@@ -35,8 +35,8 @@ ClassicEditor.defaultConfig = {
     language: 'en'
 };
 
-export function initRichTextEditor() {
-    document.querySelectorAll(".rich-text").forEach(element => {
+export function initRichTextEditor(container = document) {
+    container.querySelectorAll(".rich-text").forEach(element => {
         ClassicEditor.create(element)
             .then((editor) => {
                 const id = editor.sourceElement.id;
