@@ -209,6 +209,7 @@ type hint =
   | SignUpForWaitingList
   | SmtpSettingsDefaultFlag
   | SmtpSettingsIntro
+  | SwapSessions
   | TagsIntro
   | TemplateTextElementsHint
   | TimeSpanPickerHint

@@ -418,6 +418,9 @@ The following follow-up sessions exist:|}
 
     Note: When using the mechanism "LOGIN" a username and password are required.
     |}
+  | SwapSessions ->
+    "Changing the session will only change the session of this assignment. If \
+     follow-up assignments exists, they must be updated manually."
   | TagsIntro ->
     "The defined tags can be added to several types (e.g. contacts). The tags \
      can be used by the experiment filter to eighter include or exclude them."

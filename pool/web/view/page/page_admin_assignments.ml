@@ -228,35 +228,43 @@ module Partials = struct
                 Utils.text_to_string language I18n.SwapSessionsListEmpty)
           ]
       | available_sessions ->
-        form
-          ~a:[ a_method `Post; a_class [ "stack" ]; a_action action ]
-          [ selector
-              ~required:true
-              ~add_empty:true
-              ~elt_option_formatter:option_formatter
-              ~option_disabler
+        div
+          ~a:[ a_class [ "stack" ] ]
+          [ Component.Notification.notification
               language
-              Field.Session
-              (fun s -> s.Session.id |> Session.Id.value)
-              available_sessions
-              None
-              ()
-          ; checkbox_element
-              ~additional_attributes:[ a_user_data "toggle" notifier_id ]
-              language
-              Field.NotifyContact
-          ; div
-              ~a:[ a_id notifier_id; a_class [ "hidden"; "stack" ] ]
-              (Page_admin_message_template.template_inputs
-                 ~hide_text_message_input:true
-                 context
-                 (Some swap_session_template)
-                 ~languages
-                 flash_fetcher)
-          ; script
-              (Unsafe.data
-                 (Format.asprintf
-                    {sql|
+              `Warning
+              [ txt
+                  Pool_common.(Utils.hint_to_string language I18n.SwapSessions)
+              ]
+          ; form
+              ~a:[ a_method `Post; a_class [ "stack" ]; a_action action ]
+              [ selector
+                  ~required:true
+                  ~add_empty:true
+                  ~elt_option_formatter:option_formatter
+                  ~option_disabler
+                  language
+                  Field.Session
+                  (fun s -> s.Session.id |> Session.Id.value)
+                  available_sessions
+                  None
+                  ()
+              ; checkbox_element
+                  ~additional_attributes:[ a_user_data "toggle" notifier_id ]
+                  language
+                  Field.NotifyContact
+              ; div
+                  ~a:[ a_id notifier_id; a_class [ "hidden"; "stack" ] ]
+                  (Page_admin_message_template.template_inputs
+                     ~hide_text_message_input:true
+                     context
+                     (Some swap_session_template)
+                     ~languages
+                     flash_fetcher)
+              ; script
+                  (Unsafe.data
+                     (Format.asprintf
+                        {sql|
                         const id = "%s";
                         const checkbox = document.querySelector(`[data-toggle='${id}']`);
                         const target = document.getElementById(id);
@@ -268,13 +276,14 @@ module Partials = struct
                           }
                         })
                     |sql}
-                    notifier_id))
-          ; submit_element
-              language
-              (Pool_common.Message.Save None)
-              ~submit_type:`Primary
-              ()
-          ; csrf_element csrf ()
+                        notifier_id))
+              ; submit_element
+                  language
+                  (Pool_common.Message.Save None)
+                  ~submit_type:`Primary
+                  ()
+              ; csrf_element csrf ()
+              ]
           ]
     in
     Component.Modal.create
