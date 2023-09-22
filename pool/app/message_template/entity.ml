@@ -12,6 +12,8 @@ module Label = struct
     [@printer print "account_suspension_notification"]
     | AssignmentConfirmation [@name "assignment_confirmation"]
     [@printer print "assignment_confirmation"]
+    | AssignmentSessionChange [@name "assignment_session_change"]
+    [@printer print "assignment_session_change"]
     | ContactRegistrationAttempt [@name "contact_registration_attempt"]
     [@printer print "contact_registration_attempt"]
     | EmailVerification [@name "email_verification"]

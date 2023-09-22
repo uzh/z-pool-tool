@@ -419,12 +419,27 @@ let swap_session_get req =
     let* sessions =
       Session.find_all_to_swap_by_experiment database_label experiment_id
     in
+    let%lwt template_lang =
+      Contact.message_language database_label assignment.Assignment.contact
+    in
+    let%lwt swap_session_template =
+      Message_template.(
+        find_default_by_label_and_language
+          database_label
+          template_lang
+          Label.AssignmentSessionChange)
+    in
+    let tenant_languages = Pool_context.Tenant.get_tenant_languages_exn req in
+    let flash_fetcher key = Sihl.Web.Flash.find key req in
     Page.Admin.Assignment.Partials.swap_session_form
       context
       experiment_id
       current_session
       assignment
       sessions
+      swap_session_template
+      tenant_languages
+      flash_fetcher
     |> HttpUtils.Htmx.html_to_plain_text_response
     |> Lwt_result.return
   in
@@ -435,6 +450,7 @@ let swap_session_get req =
 let swap_session_post req =
   let open Utils.Lwt_result.Infix in
   let open Assignment in
+  let open Cqrs_command.Assignment_command in
   let experiment_id, session_id, assignment_id = ids_from_request req in
   let redirect_path =
     Page.Admin.Session.session_path experiment_id session_id
@@ -444,24 +460,38 @@ let swap_session_post req =
     @@
     let tags = Pool_context.Logger.Tags.req req in
     let%lwt urlencoded =
-      Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
+      Sihl.Web.Request.to_urlencoded req
+      ||> HttpUtils.remove_empty_values
+      ||> HttpUtils.format_request_boolean_values Field.[ show NotifyContact ]
     in
-    (* let tenant = Pool_context.Tenant.get_tenant_exn req in let
-       tenant_languages = Pool_context.Tenant.get_tenant_languages_exn req in
-       let* experiment = Experiment.find database_label experiment_id in *)
+    let* decoded = SwapSession.decode urlencoded |> Lwt_result.lift in
     let* assignment = find database_label assignment_id in
+    let* experiment = Experiment.find database_label experiment_id in
     let* current_session = Session.find database_label session_id in
-    let* new_session =
-      HttpUtils.find_in_urlencoded Field.Session urlencoded
-      |> Lwt_result.lift
-      >|+ Session.Id.of_string
-      >>= Session.find database_label
+    let* new_session = Session.find database_label decoded.session in
+    let%lwt notification_email =
+      match decoded.notify_contact |> Pool_common.NotifyContact.value with
+      | false -> Lwt.return_none
+      | true ->
+        let tenant = Pool_context.Tenant.get_tenant_exn req in
+        Message_template.AssignmentSessionChange.create
+          database_label
+          decoded.language
+          tenant
+          experiment
+          ~new_session
+          ~old_session:current_session
+          assignment
+        ||> fun msg -> CCOption.return (msg, experiment.Experiment.smtp_auth_id)
     in
-    (* let%lwt create_messages = Reminder.prepare_messages database_label tenant
-       tenant_languages experiment session in *)
     let events =
-      let open Cqrs_command.Assignment_command.SwapSession in
-      handle ~tags ~current_session ~new_session assignment |> Lwt_result.lift
+      SwapSession.handle
+        ~tags
+        ~current_session
+        ~new_session
+        assignment
+        notification_email
+      |> Lwt_result.lift
     in
     let handle events =
       let%lwt () =

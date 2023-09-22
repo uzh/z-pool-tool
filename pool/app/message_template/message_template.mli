@@ -6,6 +6,7 @@ module Label : sig
   type t =
     | AccountSuspensionNotification
     | AssignmentConfirmation
+    | AssignmentSessionChange
     | ContactRegistrationAttempt
     | EmailVerification
     | ExperimentInvitation
@@ -93,6 +94,12 @@ val find
   :  Pool_database.Label.t
   -> Id.t
   -> (t, Pool_common.Message.error) result Lwt.t
+
+val find_default_by_label_and_language
+  :  Pool_database.Label.t
+  -> Pool_common.Language.t
+  -> Label.t
+  -> t Lwt.t
 
 val all_default : Pool_database.Label.t -> unit -> t list Lwt.t
 
@@ -200,6 +207,27 @@ module AssignmentConfirmation : sig
     -> Session.t
     -> Admin.t option
     -> (Assignment.t -> Sihl_email.t) Lwt.t
+end
+
+module AssignmentSessionChange : sig
+  val email_params
+    :  Pool_common.Language.t
+    -> email_layout
+    -> Experiment.t
+    -> new_session:Session.t
+    -> old_session:Session.t
+    -> Assignment.t
+    -> (string * string) list
+
+  val create
+    :  Pool_database.Label.t
+    -> Pool_common.Language.t
+    -> Pool_tenant.t
+    -> Experiment.t
+    -> new_session:Session.t
+    -> old_session:Session.t
+    -> Assignment.t
+    -> Sihl_email.t Lwt.t
 end
 
 module ContactRegistrationAttempt : sig

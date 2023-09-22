@@ -187,11 +187,14 @@ module Partials = struct
   end
 
   let swap_session_form
-    { Pool_context.language; csrf; _ }
+    ({ Pool_context.language; csrf; _ } as context)
     experiment_id
     session
     assignment
     available_sessions
+    swap_session_template
+    languages
+    flash_fetcher
     =
     let action =
       assignment_specific_path
@@ -212,27 +215,66 @@ module Partials = struct
       Session.assignment_creatable m |> CCResult.is_error
       || Session.equal session m
     in
+    let notifier_id =
+      Format.asprintf "nofify-%s" Session.(Id.value session.id)
+    in
     let html =
-      form
-        ~a:[ a_method `Post; a_class [ "stack" ]; a_action action ]
-        [ csrf_element csrf ()
-        ; selector
-            ~required:true
-            ~add_empty:true
-            ~elt_option_formatter:option_formatter
-            ~option_disabler
-            language
-            Field.Session
-            (fun s -> s.Session.id |> Session.Id.value)
-            available_sessions
-            None
-            ()
-        ; submit_element
-            language
-            (Pool_common.Message.Save None)
-            ~submit_type:`Primary
-            ()
-        ]
+      match available_sessions with
+      | [] ->
+        p
+          [ txt
+              Pool_common.(
+                Utils.text_to_string language I18n.SwapSessionsListEmpty)
+          ]
+      | available_sessions ->
+        form
+          ~a:[ a_method `Post; a_class [ "stack" ]; a_action action ]
+          [ selector
+              ~required:true
+              ~add_empty:true
+              ~elt_option_formatter:option_formatter
+              ~option_disabler
+              language
+              Field.Session
+              (fun s -> s.Session.id |> Session.Id.value)
+              available_sessions
+              None
+              ()
+          ; checkbox_element
+              ~additional_attributes:[ a_user_data "toggle" notifier_id ]
+              language
+              Field.NotifyContact
+          ; div
+              ~a:[ a_id notifier_id; a_class [ "hidden"; "stack" ] ]
+              (Page_admin_message_template.template_inputs
+                 ~hide_text_message_input:true
+                 context
+                 (Some swap_session_template)
+                 ~languages
+                 flash_fetcher)
+          ; script
+              (Unsafe.data
+                 (Format.asprintf
+                    {sql|
+                        const id = "%s";
+                        const checkbox = document.querySelector(`[data-toggle='${id}']`);
+                        const target = document.getElementById(id);
+                        checkbox.addEventListener("click", (e) => {
+                          if(e.currentTarget.checked) {
+                            target.classList.remove("hidden");
+                          } else {
+                            target.classList.add("hidden");
+                          }
+                        })
+                    |sql}
+                    notifier_id))
+          ; submit_element
+              language
+              (Pool_common.Message.Save None)
+              ~submit_type:`Primary
+              ()
+          ; csrf_element csrf ()
+          ]
     in
     Component.Modal.create
       ~active:true

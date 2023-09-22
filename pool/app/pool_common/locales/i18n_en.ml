@@ -108,6 +108,8 @@ let to_string = function
   | SignUpCTA -> "Register now to participate in economic experiments."
   | SignUpTitle -> "Sign up"
   | SortUngroupedFields -> "Sort ungrouped fields"
+  | SwapSessionsListEmpty ->
+    "No sessions were found to which you can assign this contact."
   | SwitchChronological -> "Switch to chronological view"
   | SwitchGrouped -> "Switch to grouped view"
   | TermsAndConditionsLastUpdated ptime ->

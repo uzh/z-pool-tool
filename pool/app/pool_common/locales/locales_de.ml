@@ -147,6 +147,7 @@ let rec field_to_string =
   | NoShowCount -> "Abwesende"
   | NotifiedAt -> "Benachrichtigt am"
   | NotifyVia -> "Benachrichtigen via"
+  | NotifyContact -> "Kontakt benachrichtigen"
   | Offset -> "Offset"
   | Operator -> "Operator"
   | Operators -> "Operatoren"

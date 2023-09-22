@@ -7,6 +7,17 @@ open CCFun.Infix
 
 let src = Logs.Src.create "message_template"
 let find = Repo.find
+
+let find_default_by_label_and_language pool language label =
+  let open Utils.Lwt_result.Infix in
+  Repo.find_default_by_label_and_language pool language label
+  ||> CCOption.get_exn_or
+        Pool_common.(
+          Utils.error_to_string
+            Language.En
+            Message.(NotFound Field.MessageTemplate))
+;;
+
 let all_default = Repo.all_default
 let find_all_of_entity_by_label = Repo.find_all_of_entity_by_label
 let find_by_label_to_send = Repo.find_by_label_to_send
@@ -146,6 +157,7 @@ let location_params
 let session_params
   layout
   ?follow_up_sessions
+  ?prefix
   lang
   ({ Session.start; duration; location; _ } as session : Session.t)
   =
@@ -170,13 +182,20 @@ let session_params
   let duration =
     duration |> Duration.value |> Pool_common.Utils.Time.formatted_timespan
   in
-  [ "sessionId", session_id
-  ; "sessionStart", start
-  ; "sessionDateTime", Session.start_end_to_human session
-  ; "sessionDuration", duration
-  ; "sessionOverview", session_overview
-  ]
-  @ location_params lang layout location
+  let session_params =
+    [ "sessionId", session_id
+    ; "sessionStart", start
+    ; "sessionDateTime", Session.start_end_to_human session
+    ; "sessionDuration", duration
+    ; "sessionOverview", session_overview
+    ]
+  in
+  match prefix with
+  | None -> session_params @ location_params lang layout location
+  | Some prefix ->
+    session_params
+    |> CCList.map (fun (label, value) ->
+      Format.asprintf "%s%s" prefix (CCString.capitalize_ascii label), value)
 ;;
 
 let assignment_params { Assignment.id; external_data_id; _ } =
@@ -278,6 +297,55 @@ module AssignmentConfirmation = struct
       prepare_email language template sender email layout params
     in
     Lwt.return fnc
+  ;;
+end
+
+module AssignmentSessionChange = struct
+  let base_params layout contact = contact.Contact.user |> global_params layout
+
+  let email_params
+    language
+    layout
+    experiment
+    ~new_session
+    ~old_session
+    assignment
+    =
+    base_params layout assignment.Assignment.contact
+    @ experiment_params layout experiment
+    @ session_params layout language new_session
+    @ session_params ~prefix:"old" layout language old_session
+    @ assignment_params assignment
+  ;;
+
+  let create
+    pool
+    preferred_language
+    tenant
+    experiment
+    ~new_session
+    ~old_session
+    assignment
+    =
+    let%lwt template, language =
+      find_by_label_to_send
+        pool
+        preferred_language
+        Label.AssignmentSessionChange
+    in
+    let layout = layout_from_tenant tenant in
+    let%lwt sender = sender_of_experiment pool experiment in
+    let params =
+      email_params
+        language
+        layout
+        experiment
+        ~new_session
+        ~old_session
+        assignment
+    in
+    let email = assignment.Assignment.contact |> Contact.email_address in
+    prepare_email language template sender email layout params |> Lwt.return
   ;;
 end
 

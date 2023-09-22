@@ -170,6 +170,7 @@ type t =
   | NoShowCount [@name "no_show_count"] [@printer go "no_show_count"]
   | NotifiedAt [@name "notified_at"] [@printer go "notified_at"]
   | NotifyVia [@name "notify_via"] [@printer go "notify_via"]
+  | NotifyContact [@name "notify_contact"] [@printer go "notify_contact"]
   | Offset [@name "offset"] [@printer go "offset"]
   | Operator [@name "operator"] [@printer go "operator"]
   | Operators [@name "operators"] [@printer go "operators"]

@@ -108,6 +108,8 @@ Sie kommen für mehr Experimente in Frage, umso kompletter Ihr Profil ist.|}
   | SignUpCTA -> "Jetzt anmelden und an Experimenten teilnehmen."
   | SignUpTitle -> "Anmeldung"
   | SortUngroupedFields -> "Nicht gruppierte Felder sortieren"
+  | SwapSessionsListEmpty ->
+    "Es wurden keine Sessions gefunden, der Sie diesen Kontakt zuweisen können."
   | SwitchChronological -> "Zu chronologische Ansicht wechseln"
   | SwitchGrouped -> "Zu gruppierter Ansicht wechseln"
   | TermsAndConditionsLastUpdated ptime ->

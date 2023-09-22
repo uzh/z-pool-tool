@@ -420,27 +420,92 @@ end = struct
   let effects exp_id = Session.Guard.Access.update exp_id
 end
 
+type session_swap =
+  { session : Session.Id.t
+  ; notify_contact : Pool_common.NotifyContact.t
+  ; language : Pool_common.Language.t
+  ; email_subject : Message_template.EmailSubject.t
+  ; email_text : Message_template.EmailText.t
+  ; plain_text : Message_template.PlainText.t
+  }
+
+let session_schema () =
+  let open Session in
+  Pool_common.Utils.schema_decoder
+    CCFun.(Id.of_string %> CCResult.return)
+    Id.value
+    Pool_common.Message.Field.Session
+;;
+
 module SwapSession : sig
   val handle
     :  ?tags:Logs.Tag.set
     -> current_session:Session.t
     -> new_session:Session.t
     -> Assignment.t
+    -> (Sihl_email.t * Email.SmtpAuth.Id.t option) option
     -> (Pool_event.t list, Pool_common.Message.error) result
+
+  val decode
+    :  (string * string list) list
+    -> (session_swap, Pool_common.Message.error) result
 end = struct
-  let handle ?(tags = Logs.Tag.empty) ~current_session ~new_session assignment
+  let handle
+    ?(tags = Logs.Tag.empty)
+    ~current_session
+    ~new_session
+    assignment
+    notification_email
     : (Pool_event.t list, Pool_common.Message.error) result
     =
     let open Assignment in
     let open CCResult in
-    Logs.info ~src (fun m -> m ~tags "Handle command MarkAsDeleted");
+    Logs.info ~src (fun m -> m ~tags "Handle command SwapSession");
     let* () = Session.assignment_creatable new_session in
     let* () = session_changeable current_session assignment in
     let new_assignment = { assignment with id = Assignment.Id.create () } in
+    let email_event =
+      notification_email
+      |> CCOption.map_or
+           ~default:[]
+           CCFun.(Email.sent %> Pool_event.email %> CCList.return)
+    in
     Ok
-      [ MarkedAsDeleted assignment |> Pool_event.assignment
-      ; Created (new_assignment, new_session.Session.id)
-        |> Pool_event.assignment
-      ]
+      ([ MarkedAsDeleted assignment |> Pool_event.assignment
+       ; Created (new_assignment, new_session.Session.id)
+         |> Pool_event.assignment
+       ]
+       @ email_event)
+  ;;
+
+  let command
+    session
+    notify_contact
+    language
+    email_subject
+    email_text
+    plain_text
+    =
+    { session; notify_contact; language; email_subject; email_text; plain_text }
+  ;;
+
+  let schema =
+    let open Message_template in
+    Pool_common.Utils.PoolConformist.(
+      make
+        Field.
+          [ session_schema ()
+          ; Pool_common.NotifyContact.schema ()
+          ; Pool_common.Language.schema ()
+          ; EmailSubject.schema ()
+          ; EmailText.schema ()
+          ; PlainText.schema ()
+          ]
+        command)
+  ;;
+
+  let decode data =
+    Conformist.decode_and_validate schema data
+    |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 end

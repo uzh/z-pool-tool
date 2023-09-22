@@ -246,6 +246,10 @@ module NotifyVia : sig
   val checked_by_default : t -> bool
 end
 
+module NotifyContact : sig
+  include Entity_base_model.BooleanSig
+end
+
 module Repo : sig
   val make_caqti_type
     :  'a Caqti_type.t

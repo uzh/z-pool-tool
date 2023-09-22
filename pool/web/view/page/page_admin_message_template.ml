@@ -86,15 +86,13 @@ let index { Pool_context.language; _ } templates =
     ]
 ;;
 
-let template_form
-  { Pool_context.language; query_language; csrf; _ }
+let template_inputs
+  { Pool_context.language; _ }
+  ?(hide_text_message_input = false)
   ?languages
-  ?text_elements
   (template : Message_template.t option)
-  action
   flash_fetcher
   =
-  let externalize = Http_utils.externalize_path_with_lang query_language in
   let value = CCFun.flip (CCOption.map_or ~default:"") template in
   let open Message_template in
   let language_select =
@@ -106,19 +104,6 @@ let template_form
   in
   let textarea_element ?rich_text ~value =
     textarea_element language ?rich_text ~value ~flash_fetcher ~required:true
-  in
-  let submit =
-    let open Pool_common.Message in
-    let field = Field.MessageTemplate |> CCOption.pure in
-    match template with
-    | None -> Create field
-    | Some _ -> Update field
-  in
-  let text_elements_html =
-    text_elements
-    |> CCOption.map_or
-         ~default:(txt "")
-         (Component.MessageTextElements.build_help language)
   in
   let plain_text_element =
     let id = Field.(show PlainText) in
@@ -159,6 +144,58 @@ let template_form
           ]
       ]
   in
+  let text_message_input =
+    if hide_text_message_input
+    then txt ""
+    else
+      textarea_element
+        ~rich_text:false
+        ~value:(value (fun t -> t.sms_text |> SmsText.value))
+        Field.SmsText
+  in
+  [ div
+      ~a:[ a_class [ "switcher"; "flex-gap" ] ]
+      [ input_element
+          language
+          ~flash_fetcher
+          ~required:true
+          ~value:(value (fun t -> t.email_subject |> EmailSubject.value))
+          `Text
+          Field.EmailSubject
+      ; language_select
+      ]
+  ; textarea_element
+      ~rich_text:true
+      ~value:(value (fun t -> t.email_text |> EmailText.value))
+      Field.EmailText
+  ; plain_text_element
+  ; text_message_input
+  ]
+;;
+
+let template_form
+  ({ Pool_context.language; query_language; csrf; _ } as context)
+  ?(hide_text_message_input = false)
+  ?languages
+  ?text_elements
+  (template : Message_template.t option)
+  action
+  flash_fetcher
+  =
+  let externalize = Http_utils.externalize_path_with_lang query_language in
+  let submit =
+    let open Pool_common.Message in
+    let field = Field.MessageTemplate |> CCOption.pure in
+    match template with
+    | None -> Create field
+    | Some _ -> Update field
+  in
+  let text_elements_html =
+    text_elements
+    |> CCOption.map_or
+         ~default:(txt "")
+         (Component.MessageTextElements.build_help language)
+  in
   let form =
     form
       ~a:
@@ -167,31 +204,17 @@ let template_form
         ; a_class [ "stack" ]
         ; a_user_data "detect-unsaved-changes" ""
         ]
-      [ csrf_element csrf ()
-      ; div
-          ~a:[ a_class [ "switcher"; "flex-gap" ] ]
-          [ input_element
-              language
-              ~flash_fetcher
-              ~required:true
-              ~value:(value (fun t -> t.email_subject |> EmailSubject.value))
-              `Text
-              Field.EmailSubject
-          ; language_select
-          ]
-      ; textarea_element
-          ~rich_text:true
-          ~value:(value (fun t -> t.email_text |> EmailText.value))
-          Field.EmailText
-      ; plain_text_element
-      ; textarea_element
-          ~rich_text:false
-          ~value:(value (fun t -> t.sms_text |> SmsText.value))
-          Field.SmsText
-      ; div
-          ~a:[ a_class [ "flexrow" ] ]
-          [ submit_element ~classnames:[ "push" ] language submit () ]
-      ]
+      ((csrf_element csrf ()
+        :: template_inputs
+             context
+             ~hide_text_message_input
+             ?languages
+             template
+             flash_fetcher)
+       @ [ div
+             ~a:[ a_class [ "flexrow" ] ]
+             [ submit_element ~classnames:[ "push" ] language submit () ]
+         ])
   in
   div ~a:[ a_class [ "stack" ] ] [ text_elements_html; form ]
 ;;

@@ -97,6 +97,47 @@ Die Teilnahme ist obligatorisch.|}
   }
 ;;
 
+let assignment_session_change =
+  let label = Label.AssignmentSessionChange in
+  let email_text =
+    [ p
+        [ txt "Sie wurden einer neuen Session zugewiesen:"
+        ; br ()
+        ; txt "{sessionOverview}"
+        ]
+    ; p
+        [ txt
+            "An der Session vom {oldSessionStart} sind Sie nicht mehr \
+             angemeldet."
+        ]
+    ]
+    |> add_salutation
+    |> html_to_string
+    |> EmailText.of_string
+  in
+  let email_subject =
+    "Sie wurden einer neuen Session zugewiesen" |> EmailSubject.of_string
+  in
+  let sms_text =
+    {|Sie wurden einer neuen Session zugewiesen:
+
+{sessionOverview}
+
+An der Session vom {oldSessionStart} sind Sie nicht mehr angemeldet.|}
+    |> add_salutation_to_text
+    |> SmsText.of_string
+  in
+  { id = Id.create ()
+  ; label
+  ; language
+  ; entity_uuid
+  ; email_text
+  ; email_subject
+  ; plain_text = sms_text
+  ; sms_text
+  }
+;;
+
 let email_verification =
   let label = Label.EmailVerification in
   let email_text =

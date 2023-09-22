@@ -290,3 +290,10 @@ module NotifyVia = struct
     | TextMessage -> false
   ;;
 end
+
+module NotifyContact = struct
+  include Entity_base_model.Boolean
+
+  let init = false
+  let schema = schema Entity_message_field.NotifyContact
+end
