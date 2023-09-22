@@ -71,6 +71,7 @@ module Root = struct
         ; Migration_202306261642.migration_root ()
         ; Migration_202307121722.migration_root ()
         ; Migration_202307131619.migration_root ()
+        ; Migration_202309180820.migration_root ()
         ; Migration_202309211305.migration_root ()
         ]
       |> sort
@@ -117,6 +118,7 @@ module Tenant = struct
         ; Migration_202308210946.migration ()
         ; Migration_202309081700.migration ()
         ; Migration_202309121645.migration ()
+        ; Migration_202309180820.migration ()
         ; Migration_202309190858.migration ()
         ; Migration_202309211305.migration ()
         ]
