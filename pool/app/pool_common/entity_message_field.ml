@@ -233,6 +233,8 @@ type t =
   | Sessions [@name "sessions"] [@printer go "sessions"]
   | Setting [@name "setting"] [@printer go "setting"]
   | ShowUpCount [@name "show_up_count"] [@printer go "show_up_count"]
+  | ShowExteralDataIdLinks [@name "show_external_data_id_links"]
+  [@printer go "show_external_data_id_links"]
   | SignedUpAt [@name "signed_up_at"] [@printer go "signed_up_at"]
   | SignUpCount [@name "sign_up_count"] [@printer go "sign_up_count"]
   | SMS [@name "sms"] [@printer go "sms"]

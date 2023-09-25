@@ -9,6 +9,7 @@ type create =
   ; registration_disabled : RegistrationDisabled.t
   ; allow_uninvited_signup : AllowUninvitedSignup.t
   ; external_data_required : ExternalDataRequired.t
+  ; show_external_data_id_links : ShowExternalDataIdLinks.t
   ; experiment_type : Pool_common.ExperimentType.t option
   ; email_session_reminder_lead_time : Pool_common.Reminder.LeadTime.t option
   ; text_message_session_reminder_lead_time :

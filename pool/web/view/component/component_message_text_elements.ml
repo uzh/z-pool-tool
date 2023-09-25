@@ -170,6 +170,7 @@ module DummyData = struct
       ; registration_disabled = false |> RegistrationDisabled.create
       ; allow_uninvited_signup = false |> AllowUninvitedSignup.create
       ; external_data_required = false |> ExternalDataRequired.create
+      ; show_external_data_id_links = false |> ShowExternalDataIdLinks.create
       ; experiment_type = Some Pool_common.ExperimentType.Lab
       ; email_session_reminder_lead_time = None
       ; text_message_session_reminder_lead_time = None

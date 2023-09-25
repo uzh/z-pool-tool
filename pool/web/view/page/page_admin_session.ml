@@ -625,14 +625,14 @@ let detail
   ?view_contact_name
   ?view_contact_info
   (Pool_context.{ language; csrf; _ } as context)
-  ({ Experiment.id; external_data_required; _ } as experiment)
+  experiment
   (session : Session.t)
   participation_tags
   assignments
   =
   let open Pool_common in
   let open Session in
-  let experiment_id = Experiment.Id.value id in
+  let experiment_id = experiment.Experiment.id in
   let session_id = Session.Id.value session.id in
   let session_link ?style (show, url, control) =
     let style, icon =
@@ -646,7 +646,7 @@ let detail
         ~classnames:[ "small" ]
         ~style
         ?icon
-        (Format.asprintf "%s/%s" (session_path id session.id) url)
+        (Format.asprintf "%s/%s" (session_path experiment_id session.id) url)
       |> CCOption.pure
   in
   let resend_reminders_modal =
@@ -660,7 +660,9 @@ let detail
       in
       let inner =
         let resend_action =
-          Format.asprintf "%s/resend-reminders" (session_path id session.id)
+          Format.asprintf
+            "%s/resend-reminders"
+            (session_path experiment_id session.id)
           |> Sihl.Web.externalize_path
         in
         let warning =
@@ -726,7 +728,7 @@ let detail
                   [ a_href
                       (Format.asprintf
                          "/admin/experiments/%s/sessions/%s"
-                         experiment_id
+                         (Experiment.Id.value experiment_id)
                          (Id.value follow_up_to)
                        |> Sihl.Web.externalize_path)
                   ]
@@ -817,7 +819,9 @@ let detail
     let links =
       let duplicate =
         let base =
-          Format.asprintf "/admin/experiments/%s/sessions" experiment_id
+          Format.asprintf
+            "/admin/experiments/%s/sessions"
+            (Experiment.Id.value experiment_id)
         in
         let link =
           match session.follow_up_to with
@@ -885,11 +889,9 @@ let detail
           ?access_contact_profiles
           ?view_contact_name
           ?view_contact_info
-          ~external_data_required:
-            (Experiment.ExternalDataRequired.value external_data_required)
           Session
           context
-          id
+          experiment
           session
           assignments)
     in
@@ -907,7 +909,7 @@ let detail
       ~control:(language, Message.(Edit (Some Field.Session)))
       (Format.asprintf
          "/admin/experiments/%s/sessions/%s/edit"
-         experiment_id
+         (Experiment.Id.value experiment_id)
          session_id)
   in
   div

@@ -59,6 +59,14 @@ module ExternalDataRequired = struct
   ;;
 end
 
+module ShowExternalDataIdLinks = struct
+  include ShowExternalDataIdLinks
+
+  let t =
+    Common.make_caqti_type Caqti_type.bool (create %> CCResult.return) value
+  ;;
+end
+
 let t =
   let encode (m : t) =
     Ok
@@ -75,11 +83,12 @@ let t =
                         , ( m.registration_disabled
                           , ( m.allow_uninvited_signup
                             , ( m.external_data_required
-                              , ( m.experiment_type
-                                , ( m.email_session_reminder_lead_time
-                                  , ( m.text_message_session_reminder_lead_time
-                                    , (m.created_at, m.updated_at) ) ) ) ) ) )
-                        ) ) ) ) ) ) ) ) ) )
+                              , ( m.show_external_data_id_links
+                                , ( m.experiment_type
+                                  , ( m.email_session_reminder_lead_time
+                                    , ( m.text_message_session_reminder_lead_time
+                                      , (m.created_at, m.updated_at) ) ) ) ) )
+                            ) ) ) ) ) ) ) ) ) ) ) )
   in
   let decode
     ( id
@@ -95,11 +104,12 @@ let t =
                       , ( registration_disabled
                         , ( allow_uninvited_signup
                           , ( external_data_required
-                            , ( experiment_type
-                              , ( email_session_reminder_lead_time
-                                , ( text_message_session_reminder_lead_time
-                                  , (created_at, updated_at) ) ) ) ) ) ) ) ) )
-                ) ) ) ) ) ) )
+                            , ( show_external_data_id_links
+                              , ( experiment_type
+                                , ( email_session_reminder_lead_time
+                                  , ( text_message_session_reminder_lead_time
+                                    , (created_at, updated_at) ) ) ) ) ) ) ) )
+                    ) ) ) ) ) ) ) ) )
     =
     let open CCResult in
     Ok
@@ -116,6 +126,7 @@ let t =
       ; registration_disabled
       ; allow_uninvited_signup
       ; external_data_required
+      ; show_external_data_id_links
       ; experiment_type
       ; email_session_reminder_lead_time
       ; text_message_session_reminder_lead_time
@@ -154,22 +165,26 @@ let t =
                                           (tup2
                                              ExternalDataRequired.t
                                              (tup2
-                                                (option
-                                                   Pool_common.Repo
-                                                   .ExperimentType
-                                                   .t)
+                                                ShowExternalDataIdLinks.t
                                                 (tup2
                                                    (option
-                                                      Common.Reminder.LeadTime.t)
+                                                      Pool_common.Repo
+                                                      .ExperimentType
+                                                      .t)
                                                    (tup2
                                                       (option
-                                                         Pool_common.Repo
-                                                         .Reminder
+                                                         Common.Reminder
                                                          .LeadTime
                                                          .t)
                                                       (tup2
-                                                         Common.CreatedAt.t
-                                                         Common.UpdatedAt.t))))))))))))))))))
+                                                         (option
+                                                            Pool_common.Repo
+                                                            .Reminder
+                                                            .LeadTime
+                                                            .t)
+                                                         (tup2
+                                                            Common.CreatedAt.t
+                                                            Common.UpdatedAt.t)))))))))))))))))))
 ;;
 
 module Write = struct
@@ -194,10 +209,12 @@ module Write = struct
                           , ( m.registration_disabled
                             , ( m.allow_uninvited_signup
                               , ( m.external_data_required
-                                , ( m.experiment_type
-                                  , ( m.email_session_reminder_lead_time
-                                    , m.text_message_session_reminder_lead_time
-                                    ) ) ) ) ) ) ) ) ) ) ) ) ) ) )
+                                , ( m.show_external_data_id_links
+                                  , ( m.experiment_type
+                                    , ( m.email_session_reminder_lead_time
+                                      , m
+                                          .text_message_session_reminder_lead_time
+                                      ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) )
     in
     let decode _ = failwith "Write only model" in
     Caqti_type.(
@@ -231,21 +248,23 @@ module Write = struct
                                             (tup2
                                                ExternalDataRequired.t
                                                (tup2
-                                                  (option
-                                                     Pool_common.Repo
-                                                     .ExperimentType
-                                                     .t)
+                                                  ShowExternalDataIdLinks.t
                                                   (tup2
                                                      (option
                                                         Pool_common.Repo
-                                                        .Reminder
-                                                        .LeadTime
+                                                        .ExperimentType
                                                         .t)
-                                                     (option
-                                                        Pool_common.Repo
-                                                        .Reminder
-                                                        .LeadTime
-                                                        .t)))))))))))))))))
+                                                     (tup2
+                                                        (option
+                                                           Pool_common.Repo
+                                                           .Reminder
+                                                           .LeadTime
+                                                           .t)
+                                                        (option
+                                                           Pool_common.Repo
+                                                           .Reminder
+                                                           .LeadTime
+                                                           .t))))))))))))))))))
   ;;
 end
 
