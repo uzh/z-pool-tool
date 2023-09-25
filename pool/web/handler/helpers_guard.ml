@@ -1,22 +1,18 @@
 open CCFun
 open Utils.Lwt_result.Infix
 
-let find_roles database_label admin : Guard.ActorRole.t list Lwt.t =
+let find_roles database_label admin =
   Pool_context.Admin admin
   |> Pool_context.Utils.find_authorizable_opt database_label
   >|> CCOption.map_or ~default:(Lwt.return []) (fun { Guard.Actor.uuid; _ } ->
-    Guard.Persistence.ActorRole.find_by_actor
-      ~ctx:(Pool_database.to_ctx database_label)
-      uuid)
+    Guard.Persistence.ActorRole.find_by_actor database_label uuid)
 ;;
 
 let find_roles_of_ctx { Pool_context.database_label; user; _ } =
   user
   |> Pool_context.Utils.find_authorizable_opt database_label
   >|> CCOption.map_or ~default:(Lwt.return []) (fun { Guard.Actor.uuid; _ } ->
-    Guard.Persistence.ActorRole.find_by_actor
-      ~ctx:(Pool_database.to_ctx database_label)
-      uuid)
+    Guard.Persistence.ActorRole.find_by_actor database_label uuid)
 ;;
 
 let has_permission database_label user set =

@@ -69,7 +69,8 @@ let grant_roles _ () =
     let actor = Uuid.actor_of Admin.Id.value (Admin.id target) in
     let actor_role = ActorRole.create ?target_uuid actor target_role in
     let%lwt actor_roles =
-      Persistence.ActorRole.find_by_actor ~ctx:(Pool_database.to_ctx db) actor
+      Persistence.ActorRole.find_by_actor db actor
+      ||> CCList.map (fun (role, _, _) -> role)
     in
     actor_roles |> CCList.mem ~eq:ActorRole.equal actor_role |> Lwt.return
   in
