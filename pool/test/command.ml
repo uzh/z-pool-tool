@@ -195,6 +195,14 @@ let () =
             "cancel deleted assignment"
             `Quick
             Assignment_test.cancel_deleted_assignment
+        ; test_case
+            "swap session without notification"
+            `Quick
+            Assignment_test.swap_session_without_notification
+        ; test_case
+            "swap session with notification"
+            `Quick
+            Assignment_test.swap_session_with_notification
         ] )
     ; ( "invitation"
       , [ test_case "create invitation" `Quick Invitation_test.create

@@ -440,6 +440,7 @@ let session_schema () =
 module SwapSession : sig
   val handle
     :  ?tags:Logs.Tag.set
+    -> ?assignment_id:Assignment.Id.t
     -> current_session:Session.t
     -> new_session:Session.t
     -> Assignment.t
@@ -452,6 +453,7 @@ module SwapSession : sig
 end = struct
   let handle
     ?(tags = Logs.Tag.empty)
+    ?assignment_id
     ~current_session
     ~new_session
     assignment
@@ -463,7 +465,11 @@ end = struct
     Logs.info ~src (fun m -> m ~tags "Handle command SwapSession");
     let* () = Session.assignment_creatable new_session in
     let* () = session_changeable current_session assignment in
-    let new_assignment = { assignment with id = Assignment.Id.create () } in
+    let new_assignment =
+      { assignment with
+        id = CCOption.value ~default:(Assignment.Id.create ()) assignment_id
+      }
+    in
     let email_event =
       notification_email
       |> CCOption.map_or

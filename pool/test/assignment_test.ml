@@ -602,6 +602,74 @@ let cancel_deleted_assignment () =
   check_result expected events
 ;;
 
+module SwapSessionData = struct
+  open Message_template
+  open Pool_common
+
+  let language = Language.En
+  let email_subject = "Change" |> EmailSubject.of_string
+  let email_text = "<p>Text</p>" |> EmailText.of_string
+  let plain_text = "Text" |> PlainText.of_string
+
+  let urlencoded notify_user session_id =
+    Message.Field.
+      [ show Session, [ Session.Id.value session_id ]
+      ; show NotifyContact, [ NotifyContact.stringify notify_user ]
+      ; show Language, [ Pool_common.Language.show Language.En ]
+      ; show EmailSubject, [ EmailSubject.value email_subject ]
+      ; show EmailText, [ EmailText.value email_text ]
+      ; show PlainText, [ PlainText.value plain_text ]
+      ]
+  ;;
+end
+
+let swap_session_without_notification () =
+  let current_session = Model.(create_session ~start:(in_an_hour ()) ()) in
+  let new_session = Model.(create_session ~start:(in_an_hour ()) ()) in
+  let assignment = Model.create_assignment () in
+  let assignment_id = Assignment.Id.create () in
+  let result =
+    let open AssignmentCommand.SwapSession in
+    handle ~assignment_id ~current_session ~new_session assignment None
+  in
+  let expected =
+    Assignment.
+      [ MarkedAsDeleted assignment
+      ; Created ({ assignment with id = assignment_id }, new_session.Session.id)
+      ]
+    |> CCList.map Pool_event.assignment
+    |> CCResult.return
+  in
+  check_result expected result
+;;
+
+let swap_session_with_notification () =
+  let current_session = Model.(create_session ~start:(in_an_hour ()) ()) in
+  let new_session = Model.(create_session ~start:(in_an_hour ()) ()) in
+  let assignment = Model.create_assignment () in
+  let assignment_id = Assignment.Id.create () in
+  let msg = Model.create_email () in
+  let result =
+    let open AssignmentCommand.SwapSession in
+    handle
+      ~assignment_id
+      ~current_session
+      ~new_session
+      assignment
+      (Some (msg, None))
+  in
+  let expected =
+    Assignment.
+      [ MarkedAsDeleted assignment |> Pool_event.assignment
+      ; Created ({ assignment with id = assignment_id }, new_session.Session.id)
+        |> Pool_event.assignment
+      ; Email.Sent (msg, None) |> Pool_event.email
+      ]
+    |> CCResult.return
+  in
+  check_result expected result
+;;
+
 (* Integration tests *)
 
 let cancel_assignment_with_follow_ups _ () =
