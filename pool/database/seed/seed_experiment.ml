@@ -59,6 +59,9 @@ let experiments pool =
           in
           let allow_uninvited_signup = AllowUninvitedSignup.create false in
           let external_data_required = ExternalDataRequired.create false in
+          let show_external_data_id_links =
+            ShowExternalDataIdLinks.create false
+          in
           let registration_disabled = RegistrationDisabled.create false in
           let contact_person_id = None in
           let organisational_unit = None in
@@ -75,6 +78,7 @@ let experiments pool =
             registration_disabled
             allow_uninvited_signup
             external_data_required
+            show_external_data_id_links
             (Some Pool_common.ExperimentType.Lab)
             email_session_reminder_lead_time
             None

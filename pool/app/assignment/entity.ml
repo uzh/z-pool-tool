@@ -87,6 +87,17 @@ let create
   }
 ;;
 
+module ExternalDataIdentifier = struct
+  type t =
+    { external_data_id : ExternalDataId.t
+    ; experiment_id : Experiment.Id.t
+    ; experiment_title : Experiment.Title.t
+    ; session_id : Session.Id.t
+    ; session_start : Session.Start.t
+    ; session_duration : Session.Duration.t
+    }
+end
+
 let is_not_deleted { marked_as_deleted; _ } =
   if not marked_as_deleted
   then Ok ()

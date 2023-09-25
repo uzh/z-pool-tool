@@ -6,6 +6,18 @@ module Id = struct
   include RepoId
 end
 
+module Start = struct
+  include Entity.Start
+
+  let t = Caqti_type.ptime
+end
+
+module Duration = struct
+  include Entity.Duration
+
+  let t = Caqti_type.ptime_span
+end
+
 type t =
   { id : Entity.Id.t
   ; follow_up_to : Entity.Id.t option
@@ -171,9 +183,9 @@ let t =
             (tup2
                bool
                (tup2
-                  ptime
+                  Start.t
                   (tup2
-                     ptime_span
+                     Duration.t
                      (tup2
                         (option string)
                         (tup2
@@ -337,9 +349,9 @@ module Write = struct
            (tup2
               (option RepoId.t)
               (tup2
-                 ptime
+                 Start.t
                  (tup2
-                    ptime_span
+                    Duration.t
                     (tup2
                        (option string)
                        (tup2
@@ -471,9 +483,9 @@ module Public = struct
            (tup2
               (option RepoId.t)
               (tup2
-                 ptime
+                 Start.t
                  (tup2
-                    ptime_span
+                    Duration.t
                     (tup2
                        (option string)
                        (tup2
@@ -575,9 +587,9 @@ module Calendar = struct
               (tup2
                  RepoId.t
                  (tup2
-                    ptime
+                    Start.t
                     (tup2
-                       ptime_span
+                       Duration.t
                        (tup2
                           (option string)
                           (tup2

@@ -275,6 +275,9 @@ let experiment_form
                 ~help:I18n.ExternalDataRequired
                 Field.ExternalDataRequired
                 external_data_required_value
+            ; checkbox_element
+                Field.ShowExteralDataIdLinks
+                show_external_data_id_links_value
             ]
         ; div
             [ h3
@@ -559,6 +562,8 @@ let detail
           , allow_uninvited_signup_value |> boolean_value )
         ; ( Field.ExternalDataRequired
           , external_data_required_value |> boolean_value )
+        ; ( Field.ShowExteralDataIdLinks
+          , show_external_data_id_links_value |> boolean_value )
         ; ( Field.ExperimentEmailReminderLeadTime
           , email_session_reminder_lead_time_value experiment
             |> CCOption.map_or

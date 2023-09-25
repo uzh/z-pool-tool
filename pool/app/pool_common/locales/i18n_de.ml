@@ -36,6 +36,7 @@ let to_string = function
     Format.asprintf
       "Es sind keine %s vorhanden."
       (Locales_de.field_to_string field)
+  | EmptyListGeneric -> "Es konnten keine Einträge gefunden werden."
   | Files -> "Dateien"
   | FilterNrOfContacts ->
     "Anzahl der Kontakte, die den Kriterien dieses Filters entsprechen:"
@@ -142,6 +143,7 @@ let nav_link_to_string = function
   | CustomFields -> "Felder"
   | Dashboard -> "Dashboard"
   | Experiments -> "Experimente"
+  | ExternalDataIds -> "Externe Daten Identifikatoren"
   | Filter -> "Filter"
   | Field field -> Locales_de.field_to_string field |> CCString.capitalize_ascii
   | I18n -> "Übersetzungen"

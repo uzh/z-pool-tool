@@ -1,6 +1,8 @@
 open CCFun
 open Tyxml.Html
-open Component
+module Table = Component.Table
+module Input = Component.Input
+module Icon = Component.Icon
 
 let path =
   Contact.id %> Pool_common.Id.value %> Format.asprintf "/admin/contacts/%s"
@@ -71,9 +73,9 @@ let contact_overview language contacts =
       ~a:[ a_class (Table.table_classes `Striped ~align_last_end:true ()) ]
       rows
   in
-  List.create
+  Component.List.create
     ~legend:
-      (Contacts.status_icons_table_legend language
+      (Component.Contacts.status_icons_table_legend language
        |> Component.Table.table_legend)
     language
     user_table
@@ -92,9 +94,20 @@ let index Pool_context.{ language; _ } contacts =
     ]
 ;;
 
-let detail ?admin_comment Pool_context.{ language; _ } contact tags =
+let detail
+  ?admin_comment
+  Pool_context.{ language; _ }
+  contact
+  tags
+  external_data_ids
+  =
+  let subtitle nav =
+    h3
+      ~a:[ a_class [ "heading-3" ] ]
+      Pool_common.[ Utils.nav_link_to_string language nav |> txt ]
+  in
   div
-    ~a:[ a_class [ "trim"; "safety-margin" ] ]
+    ~a:[ a_class [ "trim"; "safety-margin"; "stack-lg" ] ]
     [ div
         ~a:[ a_class [ "flexrow"; "wrap"; "flex-gap"; "justify-between" ] ]
         [ div
@@ -123,12 +136,13 @@ let detail ?admin_comment Pool_context.{ language; _ } contact tags =
           ]
         [ personal_detail ?admin_comment language contact
         ; div
-            [ h3
-                ~a:[ a_class [ "heading-3" ] ]
-                Pool_common.
-                  [ Utils.nav_link_to_string language I18n.Tags |> txt ]
+            [ subtitle Pool_common.I18n.Tags
             ; Component.Tag.tag_list language tags
             ]
+        ]
+    ; div
+        [ subtitle Pool_common.I18n.ExternalDataIds
+        ; Component.Contacts.external_data_ids language external_data_ids
         ]
     ]
 ;;
@@ -263,5 +277,18 @@ let edit
                 ]
             ]
         ]
+    ]
+;;
+
+let external_data_ids { Pool_context.language; _ } contact external_data_ids =
+  let table = Component.Contacts.external_data_ids language external_data_ids in
+  div
+    ~a:[ a_class [ "trim"; "safety-margin"; "stack" ] ]
+    [ h1 [ txt (Contact.fullname contact) ]
+    ; h2
+        [ txt
+            Pool_common.(Utils.nav_link_to_string language I18n.ExternalDataIds)
+        ]
+    ; table
     ]
 ;;

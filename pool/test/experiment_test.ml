@@ -32,6 +32,7 @@ module Data = struct
   let registration_disabled = "false"
   let allow_uninvited_signup = "false"
   let external_data_required = "false"
+  let show_external_data_id_links = "false"
   let experiment_type = Pool_common.ExperimentType.(show Lab)
 
   let urlencoded =
@@ -45,6 +46,7 @@ module Data = struct
       ; Field.(show RegistrationDisabled), [ registration_disabled ]
       ; Field.(show AllowUninvitedSignup), [ allow_uninvited_signup ]
       ; Field.(show ExternalDataRequired), [ external_data_required ]
+      ; Field.(show ShowExteralDataIdLinks), [ show_external_data_id_links ]
       ; Field.(show ExperimentType), [ experiment_type ]
       ]
   ;;
@@ -117,6 +119,10 @@ module Data = struct
           external_data_required
           |> Utils.Bool.of_string
           |> ExternalDataRequired.create
+      ; show_external_data_id_links =
+          show_external_data_id_links
+          |> Utils.Bool.of_string
+          |> ShowExternalDataIdLinks.create
       ; experiment_type =
           Some (experiment_type |> Pool_common.ExperimentType.read)
       ; email_session_reminder_lead_time = None

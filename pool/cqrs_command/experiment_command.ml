@@ -23,6 +23,7 @@ let default_schema command =
         ; RegistrationDisabled.schema ()
         ; AllowUninvitedSignup.schema ()
         ; ExternalDataRequired.schema ()
+        ; ShowExternalDataIdLinks.schema ()
         ; Conformist.optional @@ ExperimentType.schema ()
         ; Conformist.optional
           @@ Reminder.LeadTime.schema ~field:Message.Field.EmailLeadTime ()
@@ -43,6 +44,7 @@ let default_command
   registration_disabled
   allow_uninvited_signup
   external_data_required
+  show_external_data_id_links
   experiment_type
   email_session_reminder_lead_time
   text_message_session_reminder_lead_time
@@ -55,6 +57,7 @@ let default_command
   ; registration_disabled
   ; allow_uninvited_signup
   ; external_data_required
+  ; show_external_data_id_links
   ; experiment_type
   ; email_session_reminder_lead_time
   ; text_message_session_reminder_lead_time
@@ -105,6 +108,7 @@ end = struct
         command.registration_disabled
         command.allow_uninvited_signup
         command.external_data_required
+        command.show_external_data_id_links
         command.experiment_type
         command.email_session_reminder_lead_time
         command.text_message_session_reminder_lead_time
@@ -165,6 +169,7 @@ end = struct
         ; registration_disabled = command.registration_disabled
         ; allow_uninvited_signup = command.allow_uninvited_signup
         ; external_data_required = command.external_data_required
+        ; show_external_data_id_links = command.show_external_data_id_links
         ; experiment_type = command.experiment_type
         ; email_session_reminder_lead_time =
             command.email_session_reminder_lead_time

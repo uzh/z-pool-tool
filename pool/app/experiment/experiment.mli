@@ -46,6 +46,10 @@ module ExternalDataRequired : sig
   include Pool_common.Model.BooleanSig
 end
 
+module ShowExternalDataIdLinks : sig
+  include Pool_common.Model.BooleanSig
+end
+
 type t =
   { id : Id.t
   ; title : Title.t
@@ -60,6 +64,7 @@ type t =
   ; registration_disabled : RegistrationDisabled.t
   ; allow_uninvited_signup : AllowUninvitedSignup.t
   ; external_data_required : ExternalDataRequired.t
+  ; show_external_data_id_links : ShowExternalDataIdLinks.t
   ; experiment_type : Pool_common.ExperimentType.t option
   ; email_session_reminder_lead_time : Pool_common.Reminder.LeadTime.t option
   ; text_message_session_reminder_lead_time :
@@ -85,6 +90,7 @@ val create
   -> RegistrationDisabled.t
   -> AllowUninvitedSignup.t
   -> ExternalDataRequired.t
+  -> ShowExternalDataIdLinks.t
   -> Pool_common.ExperimentType.t option
   -> Pool_common.Reminder.LeadTime.t option
   -> Pool_common.Reminder.LeadTime.t option
@@ -99,6 +105,7 @@ type create =
   ; registration_disabled : RegistrationDisabled.t
   ; allow_uninvited_signup : AllowUninvitedSignup.t
   ; external_data_required : ExternalDataRequired.t
+  ; show_external_data_id_links : ShowExternalDataIdLinks.t
   ; experiment_type : Pool_common.ExperimentType.t option
   ; email_session_reminder_lead_time : Pool_common.Reminder.LeadTime.t option
   ; text_message_session_reminder_lead_time :
@@ -222,6 +229,7 @@ val direct_registration_disabled_value : t -> bool
 val registration_disabled_value : t -> bool
 val allow_uninvited_signup_value : t -> bool
 val external_data_required_value : t -> bool
+val show_external_data_id_links_value : t -> bool
 
 val smtp_auth
   :  Pool_database.Label.t

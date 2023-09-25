@@ -197,6 +197,7 @@ let rec field_to_string =
   | Sessions -> "sessions"
   | Setting -> "setting"
   | ShowUpCount -> "show ups"
+  | ShowExteralDataIdLinks -> "show links to external data identifiers"
   | SignedUpAt -> "signed up at"
   | SignUpCount -> "new sign ups"
   | SMS -> "SMS"

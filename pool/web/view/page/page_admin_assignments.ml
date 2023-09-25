@@ -186,10 +186,9 @@ module Partials = struct
     ?(access_contact_profiles = false)
     ?(view_contact_name = false)
     ?(view_contact_info = false)
-    ?(external_data_required = false)
     redirect
     (Pool_context.{ language; csrf; _ } as context)
-    experiment_id
+    experiment
     session
     assignments
     =
@@ -201,7 +200,11 @@ module Partials = struct
       && Assignment.is_cancellable m |> CCResult.is_ok
     in
     let action { Assignment.id; _ } suffix =
-      assignment_specific_path ~suffix experiment_id session.Session.id id
+      assignment_specific_path
+        ~suffix
+        experiment.Experiment.id
+        session.Session.id
+        id
     in
     let create_reminder_modal =
       Session.reminder_resendable session |> CCResult.is_ok
@@ -258,6 +261,21 @@ module Partials = struct
         ~control:(language, Pool_common.Message.OpenProfile)
         ~icon:Component.Icon.Person
     in
+    let external_data_ids { Assignment.contact; _ } =
+      a
+        ~a:
+          [ a_href
+              (Format.asprintf
+                 "%s/%s"
+                 (Page_admin_contact.path contact)
+                 Field.(human_url ExternalDataId)
+               |> Sihl.Web.externalize_path)
+          ; a_class [ "has-icon"; "primary"; "btn"; "is-text" ]
+          ]
+        [ Icon.(to_html ReorderThree)
+        ; txt Utils.(nav_link_to_string language I18n.ExternalDataIds)
+        ]
+    in
     let cancel =
       button_form
         ~style:`Error
@@ -298,7 +316,7 @@ module Partials = struct
       in
       let external_data_field =
         add_field_if
-          external_data_required
+          Experiment.(external_data_required_value experiment)
           [ Field.ExternalDataId, assignment_external_data_id ]
       in
       let thead =
@@ -334,6 +352,8 @@ module Partials = struct
               [ true, edit
               ; access_contact_profiles, profile_link
               ; create_reminder_modal, ReminderModal.button context
+              ; ( Experiment.(show_external_data_id_links_value experiment)
+                , external_data_ids )
               ; cancelable assignment, cancel
               ; deletable assignment, mark_as_deleted
               ]
@@ -345,7 +365,11 @@ module Partials = struct
             let modals =
               match create_reminder_modal with
               | true ->
-                ReminderModal.modal context experiment_id session assignment
+                ReminderModal.modal
+                  context
+                  experiment.Experiment.id
+                  session
+                  assignment
                 :: modals
               | false -> modals
             in
@@ -373,7 +397,7 @@ module Partials = struct
     ?view_contact_info
     redirect
     (Pool_context.{ language; _ } as context)
-    { Experiment.id; external_data_required; _ }
+    experiment
     assignments
     =
     CCList.map
@@ -398,11 +422,9 @@ module Partials = struct
               ?access_contact_profiles
               ?view_contact_name
               ?view_contact_info
-              ~external_data_required:
-                (Experiment.ExternalDataRequired.value external_data_required)
               redirect
               context
-              id
+              experiment
               session
               assignments
           ])

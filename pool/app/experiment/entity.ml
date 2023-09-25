@@ -58,6 +58,12 @@ module ExternalDataRequired = struct
   let schema = schema Common.Message.Field.ExternalDataRequired
 end
 
+module ShowExternalDataIdLinks = struct
+  include Pool_common.Model.Boolean
+
+  let schema = schema Common.Message.Field.ShowExteralDataIdLinks
+end
+
 type t =
   { id : Id.t
   ; title : Title.t
@@ -72,6 +78,7 @@ type t =
   ; registration_disabled : RegistrationDisabled.t
   ; allow_uninvited_signup : AllowUninvitedSignup.t
   ; external_data_required : ExternalDataRequired.t
+  ; show_external_data_id_links : ShowExternalDataIdLinks.t
   ; experiment_type : Pool_common.ExperimentType.t option
   ; email_session_reminder_lead_time : Pool_common.Reminder.LeadTime.t option
   ; text_message_session_reminder_lead_time :
@@ -94,6 +101,7 @@ let create
   registration_disabled
   allow_uninvited_signup
   external_data_required
+  show_external_data_id_links
   experiment_type
   email_session_reminder_lead_time
   text_message_session_reminder_lead_time
@@ -113,6 +121,7 @@ let create
     ; registration_disabled
     ; allow_uninvited_signup
     ; external_data_required
+    ; show_external_data_id_links
     ; experiment_type
     ; email_session_reminder_lead_time
     ; text_message_session_reminder_lead_time
@@ -182,12 +191,17 @@ let external_data_required_value (m : t) =
   ExternalDataRequired.value m.external_data_required
 ;;
 
+let show_external_data_id_links_value (m : t) =
+  ShowExternalDataIdLinks.value m.show_external_data_id_links
+;;
+
 let boolean_fields =
   Pool_common.Message.Field.
     [ DirectRegistrationDisabled
     ; RegistrationDisabled
     ; AllowUninvitedSignup
     ; ExternalDataRequired
+    ; ShowExteralDataIdLinks
     ]
 ;;
 
