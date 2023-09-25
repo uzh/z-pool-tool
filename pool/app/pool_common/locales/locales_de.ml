@@ -4,8 +4,8 @@ let rec field_to_string =
   let open Field in
   function
   | Action -> "Aktion"
-  | Actor -> "Akteur"
   | ActiveContactsCount -> "Anzahl aktive Kontakte"
+  | Actor -> "Akteur"
   | Admin -> "Administrator"
   | AdminComment -> "Adminkommentar"
   | AdminHint -> "Hint für Administratoren"
@@ -32,8 +32,8 @@ let rec field_to_string =
   | ContactEmail -> "Kontakt E-Mail Adresse"
   | ContactPerson -> "Kontaktperson"
   | Contacts -> "Kontakte"
-  | CostCenter -> "Kostenstelle"
   | Context -> "Kontext"
+  | CostCenter -> "Kostenstelle"
   | CreatedAt -> "Erstellt am"
   | CurrentPassword -> "Aktuelles Passwort"
   | CustomField -> "Feld"
@@ -69,12 +69,12 @@ let rec field_to_string =
   | Exclude -> "Ausgenommen"
   | ExcludeRolesOf -> "Ausgenommen (Rollen von jmd)"
   | Experiment -> "Experiment"
-  | Experiments -> "Experimente"
-  | Experimenter -> "Experimenter"
   | ExperimentEmailReminderLeadTime ->
     Format.asprintf
       "Experimentspezifische Erinnerungsemail %s"
       (field_to_string LeadTime)
+  | Experimenter -> "Experimenter"
+  | Experiments -> "Experimente"
   | ExperimentTextMessageReminderLeadTime ->
     Format.asprintf
       "Experimentspezifische Erinnerungs-SMS %s"
@@ -170,6 +170,7 @@ let rec field_to_string =
   | Permission -> "Berechtigung"
   | PlainText -> "Klartext"
   | Predicate -> "Prädikat"
+  | Process -> "Prozess"
   | Profile -> "Profil"
   | PromptOnRegistration -> "Eingabeaufforderung bei der Registrierung"
   | PublicTitle -> "Öffentlicher Titel"
@@ -197,8 +198,8 @@ let rec field_to_string =
   | Session -> "Session"
   | Sessions -> "Sessions"
   | Setting -> "Einstellung"
-  | ShowUpCount -> "Anwesende"
   | ShowExteralDataIdLinks -> "Link zu externen Datenidentifikatoren anzeigen"
+  | ShowUpCount -> "Anwesende"
   | SignedUpAt -> "Eingeschrieben am"
   | SignUpCount -> "Neuregistrierungen"
   | SMS -> "SMS"
@@ -580,8 +581,8 @@ let control_to_string = function
   | Accept field -> format_submit "akzeptieren" field
   | Add field -> format_submit "hinzufügen" field
   | AddToWaitingList -> "Ich möchte mich zur Warteliste hinzufügen"
-  | Ascending -> "aufsteigend"
   | Apply -> "anwenden"
+  | Ascending -> "aufsteigend"
   | Assign field -> format_submit "zuweisen" field
   | Back -> format_submit "zurück" None
   | Cancel field -> format_submit "absagen" field
@@ -612,23 +613,25 @@ let control_to_string = function
   | Publish field -> format_submit "veröffentlichen" field
   | ReactivateAccount -> "Account reaktivieren"
   | Register -> format_submit "einschreiben" None
-  | RemoveFromWaitingList -> "Ich möchte mich von der Warteliste austragen"
   | Remove field -> format_submit "entfernen" field
+  | RemoveFromWaitingList -> "Ich möchte mich von der Warteliste austragen"
   | Reschedule field -> format_submit "verschieben" field
+  | Resend field -> format_submit "erneut senden" field
+  | ResendNr (field, nr) ->
+    format_submit (Format.asprintf "erneut senden (%i)" nr) (Some field)
+  | Reset -> "zurücksetzen"
+  | ResetForm -> "Formular zurücksetzen"
   | ResetPlainText ->
     Format.asprintf
       "%s zu formatiertem '%s' zurücksetzen"
       (field_to_string Field.PlainText)
       (field_to_string Field.EmailText)
-  | Resend field -> format_submit "erneut senden" field
-  | Reset -> "zurücksetzen"
-  | ResetForm -> "Formular zurücksetzen"
   | Save field -> format_submit "speichern" field
-  | SessionDetails -> format_submit "Sessiondetails" None
   | SelectAll field -> format_submit "alle auswählen" field
   | SelectFilePlaceholder -> format_submit "datei auswählen.." None
   | Send field -> format_submit "senden" field
   | SendResetLink -> format_submit "link senden" None
+  | SessionDetails -> format_submit "Sessiondetails" None
   | Show -> "anzeigen"
   | SignUp -> format_submit "anmelden" None
   | Stop field -> format_submit "stoppen" field

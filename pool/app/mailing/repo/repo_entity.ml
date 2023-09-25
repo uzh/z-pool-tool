@@ -35,6 +35,8 @@ module Distribution = struct
   ;;
 end
 
+module Process = Pool_common.Repo.Model.SelectorType (Entity.Process)
+
 type t =
   { id : Id.t
   ; experiment_id : Experiment.Id.t
@@ -42,20 +44,47 @@ type t =
   ; end_at : EndAt.t
   ; rate : Rate.t
   ; distribution : Distribution.t option
+  ; process : Process.t
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
   }
 [@@deriving show]
 
 let to_entity
-  { id; start_at; end_at; rate; distribution; created_at; updated_at; _ }
+  { id
+  ; start_at
+  ; end_at
+  ; rate
+  ; distribution
+  ; process
+  ; created_at
+  ; updated_at
+  ; _
+  }
   =
-  Entity.{ id; start_at; end_at; rate; distribution; created_at; updated_at }
+  Entity.
+    { id
+    ; start_at
+    ; end_at
+    ; rate
+    ; distribution
+    ; process
+    ; created_at
+    ; updated_at
+    }
 ;;
 
 let of_entity
   (experiment_id : Experiment.Id.t)
-  { Entity.id; start_at; end_at; rate; distribution; created_at; updated_at }
+  { Entity.id
+  ; start_at
+  ; end_at
+  ; rate
+  ; distribution
+  ; process
+  ; created_at
+  ; updated_at
+  }
   =
   { id
   ; experiment_id
@@ -63,6 +92,7 @@ let of_entity
   ; end_at
   ; rate
   ; distribution
+  ; process
   ; created_at
   ; updated_at
   }
@@ -74,14 +104,17 @@ let t =
       ( m.id
       , ( m.experiment_id
         , ( m.start_at
-          , (m.end_at, (m.rate, (m.distribution, (m.created_at, m.updated_at))))
+          , ( m.end_at
+            , ( m.rate
+              , (m.distribution, (m.process, (m.created_at, m.updated_at))) ) )
           ) ) )
   in
   let decode
     ( id
     , ( experiment_id
-      , (start_at, (end_at, (rate, (distribution, (created_at, updated_at)))))
-      ) )
+      , ( start_at
+        , (end_at, (rate, (distribution, (process, (created_at, updated_at)))))
+        ) ) )
     =
     let open CCResult in
     Ok
@@ -91,6 +124,7 @@ let t =
       ; end_at
       ; rate
       ; distribution
+      ; process
       ; created_at
       ; updated_at
       }
@@ -112,22 +146,18 @@ let t =
                      (tup2
                         (option Distribution.t)
                         (tup2
-                           Pool_common.Repo.CreatedAt.t
-                           Pool_common.Repo.UpdatedAt.t))))))))
+                           Process.t
+                           (tup2
+                              Pool_common.Repo.CreatedAt.t
+                              Pool_common.Repo.UpdatedAt.t)))))))))
 ;;
 
 module Update = struct
-  type t =
-    { id : Id.t
-    ; start_at : StartAt.t
-    ; end_at : EndAt.t
-    ; rate : Rate.t
-    ; distribution : Distribution.t
-    }
+  type t = Entity.update
 
   let t =
-    let encode { Entity.id; start_at; end_at; rate; distribution; _ } =
-      Ok (id, (start_at, (end_at, (rate, distribution))))
+    let encode { Entity.id; start_at; end_at; rate; distribution; process; _ } =
+      Ok (id, (start_at, (end_at, (rate, (distribution, process)))))
     in
     let decode _ =
       failwith
@@ -140,6 +170,10 @@ module Update = struct
         ~decode
         (tup2
            Id.t
-           (tup2 StartAt.t (tup2 EndAt.t (tup2 Rate.t (option Distribution.t))))))
+           (tup2
+              StartAt.t
+              (tup2
+                 EndAt.t
+                 (tup2 Rate.t (tup2 (option Distribution.t) Process.t))))))
   ;;
 end

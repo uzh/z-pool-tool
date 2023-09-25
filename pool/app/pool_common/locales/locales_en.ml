@@ -4,8 +4,8 @@ let rec field_to_string =
   let open Field in
   function
   | Action -> "action"
-  | Actor -> "actor"
   | ActiveContactsCount -> "active contacts count"
+  | Actor -> "actor"
   | Admin -> "admin"
   | AdminComment -> "admin comment"
   | AdminHint -> "hint for admins"
@@ -69,15 +69,15 @@ let rec field_to_string =
   | Exclude -> "exclude"
   | ExcludeRolesOf -> "exclude roles of"
   | Experiment -> "experiment"
-  | Experiments -> "experiments"
   | ExperimentEmailReminderLeadTime ->
     Format.asprintf "experiment specific email %s" (field_to_string LeadTime)
+  | Experimenter -> "experimenter"
+  | Experiments -> "experiments"
   | ExperimentTextMessageReminderLeadTime ->
     Format.asprintf
       "experiment specific text message %s"
       (field_to_string LeadTime)
   | ExperimentType -> "experiment type"
-  | Experimenter -> "experimenter"
   | ExternalDataId -> "external data identifier"
   | ExternalDataRequired -> "external data is required"
   | Failed -> "failed"
@@ -105,8 +105,8 @@ let rec field_to_string =
   | Invitation -> "invitation"
   | InvitationCount -> "no. invitations"
   | Invitations -> "invitations"
-  | InvitationSubject -> "invitation subject"
   | InvitationsSent -> "invitations sent"
+  | InvitationSubject -> "invitation subject"
   | InvitationText -> "invitation text"
   | Key -> "key"
   | Label -> "label"
@@ -117,6 +117,7 @@ let rec field_to_string =
   | LastErrorAt -> "last error"
   | LastManuallyRemindedAt -> "Last manually reminded at"
   | Lastname -> "lastname"
+  | LastRemindedAt -> "reminded at"
   | LastRunAt -> "last run"
   | LeadTime -> "lead time"
   | Limit -> "Limit"
@@ -168,8 +169,9 @@ let rec field_to_string =
   | Permission -> "permission"
   | PlainText -> "plaintext"
   | Predicate -> "predicate"
-  | PromptOnRegistration -> "promt during registration"
+  | Process -> "process"
   | Profile -> "profile"
+  | PromptOnRegistration -> "promt during registration"
   | PublicTitle -> "public title"
   | PublishedAt -> "published"
   | Query -> "query"
@@ -178,9 +180,8 @@ let rec field_to_string =
   | Rate -> "rate limit"
   | Reason -> "reason"
   | Redirect -> "redirect"
-  | Reminder -> "reminder"
   | RegistrationDisabled -> "registration disabled"
-  | LastRemindedAt -> "reminded at"
+  | Reminder -> "reminder"
   | ReminderCount -> "nr of reminders"
   | RemindersSent -> "reminders sent"
   | Required -> "required"
@@ -196,8 +197,8 @@ let rec field_to_string =
   | Session -> "session"
   | Sessions -> "sessions"
   | Setting -> "setting"
-  | ShowUpCount -> "show ups"
   | ShowExteralDataIdLinks -> "show links to external data identifiers"
+  | ShowUpCount -> "show ups"
   | SignedUpAt -> "signed up at"
   | SignUpCount -> "new sign ups"
   | SMS -> "SMS"
@@ -541,8 +542,8 @@ let control_to_string = function
   | Accept field -> format_submit "accept" field
   | Add field -> format_submit "add" field
   | AddToWaitingList -> "Sign up for the waiting list"
-  | Ascending -> format_submit "ascending" None
   | Apply -> "apply"
+  | Ascending -> format_submit "ascending" None
   | Assign field -> format_submit "assign" field
   | Back -> format_submit "back" None
   | Cancel field -> format_submit "cancel" field
@@ -573,10 +574,12 @@ let control_to_string = function
   | Publish field -> format_submit "publish" field
   | ReactivateAccount -> format_submit "reactivate account" None
   | Register -> format_submit "register" None
-  | RemoveFromWaitingList -> "Remove from waiting list"
   | Remove field -> format_submit "remove" field
+  | RemoveFromWaitingList -> "Remove from waiting list"
   | Reschedule field -> format_submit "reschedule" field
   | Resend field -> format_submit "resend" field
+  | ResendNr (field, nr) ->
+    format_submit (Format.asprintf "resend (%i)" nr) (Some field)
   | Reset -> "reset"
   | ResetForm -> "reset form"
   | ResetPlainText ->
@@ -585,11 +588,11 @@ let control_to_string = function
       (field_to_string Field.PlainText)
       (field_to_string Field.EmailText)
   | Save field -> format_submit "save" field
-  | SessionDetails -> format_submit "session details" None
   | SelectAll field -> format_submit "select all" field
   | SelectFilePlaceholder -> format_submit "select file.." None
   | Send field -> format_submit "send" field
   | SendResetLink -> format_submit "send reset link" None
+  | SessionDetails -> format_submit "session details" None
   | Show -> format_submit "show" None
   | SignUp -> format_submit "sign up" None
   | Stop field -> format_submit "stop" field

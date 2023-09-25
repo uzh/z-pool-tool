@@ -197,12 +197,41 @@ module Distribution = struct
   ;;
 end
 
+module Process = struct
+  module Core = struct
+    let print = Utils.ppx_printer
+    let field = Pool_common.Message.Field.Process
+
+    type t =
+      | NewInvitation [@name "new_invitation"] [@printer print "new_invitation"]
+      | ResendOnce [@name "resend_once"] [@printer print "resend_once"]
+      | ResendTwice [@name "resend_twice"] [@printer print "resend_twice"]
+    [@@deriving enum, eq, ord, sexp_of, show { with_path = false }, yojson]
+  end
+
+  include Pool_common.Model.SelectorType (Core)
+  include Core
+
+  let default = NewInvitation
+
+  let to_human lang =
+    let open CCFun in
+    let open Pool_common in
+    (function
+      | NewInvitation -> Message.(Create (Some Field.Invitation))
+      | ResendOnce -> Message.(ResendNr (Field.Invitation, 1))
+      | ResendTwice -> Message.(ResendNr (Field.Invitation, 2)))
+    %> Utils.control_to_string lang
+  ;;
+end
+
 type t =
   { id : Id.t
   ; start_at : StartAt.t
   ; end_at : EndAt.t
   ; rate : Rate.t
   ; distribution : Distribution.t option
+  ; process : Process.t
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
   }
@@ -220,6 +249,7 @@ let equal m1 m2 =
 let create
   ?allow_start_in_past
   ?(id = Id.create ())
+  ?(process = Process.default)
   start
   end_at
   rate
@@ -233,6 +263,7 @@ let create
     ; end_at
     ; rate
     ; distribution
+    ; process
     ; created_at = Pool_common.CreatedAt.create ()
     ; updated_at = Pool_common.UpdatedAt.create ()
     }
@@ -255,3 +286,12 @@ let total { start_at; end_at; rate; _ } =
   |> round
   |> to_int
 ;;
+
+type update =
+  { start_at : StartAt.t
+  ; end_at : EndAt.t
+  ; rate : Rate.t
+  ; distribution : Distribution.t option
+  ; process : Process.t
+  }
+[@@deriving eq, show]

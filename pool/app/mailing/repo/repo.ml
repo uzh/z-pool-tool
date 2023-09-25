@@ -25,6 +25,7 @@ module Sql = struct
         pool_mailing.end,
         pool_mailing.rate,
         pool_mailing.distribution,
+        pool_mailing.process,
         pool_mailing.created_at,
         pool_mailing.updated_at
       FROM
@@ -148,6 +149,7 @@ module Sql = struct
         end,
         rate,
         distribution,
+        process,
         created_at,
         updated_at
       ) VALUES (
@@ -158,7 +160,8 @@ module Sql = struct
         $5,
         $6,
         $7,
-        $8
+        $8,
+        $9
       )
     |sql}
     |> RepoEntity.t ->. Caqti_type.unit
@@ -177,6 +180,7 @@ module Sql = struct
         end = $3,
         rate = $4,
         distribution = $5
+        process = $6
       WHERE uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}
     |> RepoEntity.Update.t ->. Caqti_type.unit

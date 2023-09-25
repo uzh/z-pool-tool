@@ -230,15 +230,16 @@ type control =
   | RemoveFromWaitingList
   | Reschedule of Field.t option
   | Resend of Field.t option
+  | ResendNr of Field.t * int
   | Reset
   | ResetForm
   | ResetPlainText
   | Save of Field.t option
-  | SessionDetails
   | SelectAll of Field.t option
   | SelectFilePlaceholder
   | Send of Field.t option
   | SendResetLink
+  | SessionDetails
   | Show
   | SignUp
   | Stop of Field.t option

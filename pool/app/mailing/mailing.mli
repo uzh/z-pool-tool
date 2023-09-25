@@ -141,12 +141,36 @@ module Distribution : sig
     -> (string, Pool_common.Message.error) result
 end
 
+module Process : sig
+  type t =
+    | NewInvitation
+    | ResendOnce
+    | ResendTwice
+
+  val read : string -> t
+  val create : string -> (t, Pool_common.Message.error) result
+  val all : t list
+  val schema : unit -> ('a, t) Pool_common.Utils.PoolConformist.Field.t
+  val field : Pool_common.Message.Field.t
+  val equal : t -> t -> bool
+  val compare : t -> t -> int
+  val pp : Format.formatter -> t -> unit
+  val show : t -> string
+  val sexp_of_t : t -> Sexplib0.Sexp.t
+  val t_of_yojson : Yojson.Safe.t -> t
+  val yojson_of_t : t -> Yojson.Safe.t
+  val to_yojson_string : string -> string
+  val default : t
+  val to_human : Pool_common.Language.t -> t -> string
+end
+
 type t =
   { id : Id.t
   ; start_at : StartAt.t
   ; end_at : EndAt.t
   ; rate : Rate.t
   ; distribution : Distribution.t option
+  ; process : Process.t
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
   }
@@ -160,6 +184,7 @@ val total : t -> int
 val create
   :  ?allow_start_in_past:bool
   -> ?id:Id.t
+  -> ?process:Process.t
   -> Start.t
   -> EndAt.t
   -> Rate.t
@@ -171,6 +196,7 @@ type update =
   ; end_at : EndAt.t
   ; rate : Rate.t
   ; distribution : Distribution.t option
+  ; process : Process.t
   }
 
 val equal_update : update -> update -> bool

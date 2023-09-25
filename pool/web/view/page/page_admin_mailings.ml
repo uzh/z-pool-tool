@@ -138,6 +138,7 @@ module List = struct
     [ mailing.start_at |> StartAt.to_human |> txt
     ; mailing.end_at |> EndAt.to_human |> txt
     ; mailing.rate |> Rate.value |> CCInt.to_string |> txt
+    ; mailing.process |> Process.to_human language |> txt
     ; buttons
     ]
   ;;
@@ -149,7 +150,7 @@ module List = struct
     mailings
     =
     let base_head =
-      Field.[ Start; End; Rate ] |> Table.fields_to_txt language
+      Field.[ Start; End; Rate; Process ] |> Table.fields_to_txt language
     in
     let thead =
       let new_btn () =
@@ -198,6 +199,7 @@ let detail
            ; ( Field.Distribution
              , mailing.distribution
                |> CCOption.map_or ~default:"" Mailing.Distribution.show )
+           ; Field.Process, mailing.process |> Process.to_human language
            ]
            |> CCList.map (fun (field, value) ->
              tr
@@ -460,6 +462,7 @@ let form
   in
   let html =
     let open Htmx in
+    let required = true in
     div
       ~a:[ a_class [ "stack" ] ]
       ((notification :: fully_booked_note)
@@ -501,7 +504,7 @@ let form
                          language
                          Field.Start
                          ~flash_fetcher
-                         ~required:true
+                         ~required
                          ~disable_past:true
                          ?value:
                            (CCOption.map
@@ -515,7 +518,7 @@ let form
                      Field.End
                      ~flash_fetcher
                      ~disable_past:true
-                     ~required:true
+                     ~required
                      ?value:
                        (CCOption.map
                           (fun (m : Mailing.t) ->
@@ -526,7 +529,7 @@ let form
                      `Number
                      Field.Rate
                      ~flash_fetcher
-                     ~required:true
+                     ~required
                      ~help:I18n.Rate
                      ~value:
                        (mailing
@@ -536,6 +539,16 @@ let form
                         |> Mailing.Rate.value
                         |> CCInt.to_string)
                      ~additional_attributes:[ a_input_min (`Number 1) ]
+                 ; Mailing.Process.(
+                     selector
+                       ~flash_fetcher
+                       ~required
+                       language
+                       Field.Process
+                       (to_human language)
+                       all
+                       (Some NewInvitation)
+                       ())
                  ]
              ; distribution_select
                  (CCOption.bind mailing (fun (m : Mailing.t) ->

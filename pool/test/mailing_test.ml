@@ -79,6 +79,7 @@ let create_mailing () =
     ; end_at
     ; rate
     ; distribution = Some (distribution |> Distribution.create_sorted)
+    ; process = Process.NewInvitation
     ; created_at = Pool_common.CreatedAt.create ()
     ; updated_at = Pool_common.UpdatedAt.create ()
     }
@@ -185,9 +186,9 @@ let create_with_start_now () =
     ()
     |> urlencoded
     |> Create.decode
-    >>= (fun { start_at; start_now; end_at; rate; distribution } ->
+    >>= (fun { start_at; start_now; end_at; rate; distribution; process } ->
           let* start_at = Start.create start_at start_now in
-          Mailing.create start_at end_at rate distribution)
+          Mailing.create ~process start_at end_at rate distribution)
     |> CCResult.is_ok
   in
   (* Only testing if mailing is Ok, as comparison of timestampts with

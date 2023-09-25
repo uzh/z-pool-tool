@@ -9,6 +9,7 @@ type create =
   ; end_at : EndAt.t
   ; rate : Rate.t
   ; distribution : Distribution.t option
+  ; process : Process.t
   }
 [@@deriving eq, show]
 
@@ -20,12 +21,15 @@ let mailing_effect action id =
     (action, `Mailing, Some (id |> Uuid.target_of Mailing.Id.value))
 ;;
 
-let default_command start_at start_now end_at rate random distribution : create =
+let default_command start_at start_now end_at rate random distribution process
+  : create
+  =
   let distribution =
     let open Distribution in
     if random then Some Random else distribution |> CCOption.map create_sorted
   in
-  { start_at; start_now; end_at; rate; distribution }
+  let process = CCOption.value ~default:Process.NewInvitation process in
+  { start_at; start_now; end_at; rate; distribution; process }
 ;;
 
 let defalt_schema =
@@ -38,6 +42,7 @@ let defalt_schema =
         ; Rate.schema ()
         ; Distribution.is_random_schema ()
         ; Conformist.optional @@ Distribution.schema ()
+        ; Conformist.optional @@ Process.schema ()
         ]
       default_command)
 ;;
@@ -66,12 +71,12 @@ end = struct
     ?(tags = Logs.Tag.empty)
     ?(id = Mailing.Id.create ())
     experiment
-    ({ start_at; start_now; end_at; rate; distribution } : t)
+    ({ start_at; start_now; end_at; rate; distribution; process } : t)
     =
     Logs.info ~src (fun m -> m "Handle command CreateOperator" ~tags);
     let open CCResult in
     let* start = Start.create start_at start_now in
-    let* mailing = Mailing.create ~id start end_at rate distribution in
+    let* mailing = Mailing.create ~id ~process start end_at rate distribution in
     Ok
       [ Mailing.Created (mailing, experiment.Experiment.id)
         |> Pool_event.mailing
@@ -103,7 +108,7 @@ end = struct
   let handle
     ?(tags = Logs.Tag.empty)
     (mailing : Mailing.t)
-    ({ start_at; start_now; end_at; rate; distribution } : t)
+    ({ start_at; start_now; end_at; rate; distribution; process } : t)
     =
     let open CCResult in
     Logs.info ~src (fun m -> m "Handle command Update" ~tags);
@@ -111,7 +116,7 @@ end = struct
       Start.create start_at start_now
       >>= CCFun.flip Mailing.Start.validate end_at
     in
-    let update = { start_at; end_at; rate; distribution } in
+    let update = { start_at; end_at; rate; distribution; process } in
     match Ptime_clock.now () < Mailing.StartAt.value start_at with
     | true -> Ok [ Mailing.Updated (update, mailing) |> Pool_event.mailing ]
     | false -> Error Pool_common.Message.AlreadyStarted
