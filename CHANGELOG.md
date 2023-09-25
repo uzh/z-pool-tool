@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 - display session and assignment reminder sent timestamps in resend single reminder modal
 - waiting list signup confirmation email
+- page to list all external data ids of a contact
 
 ### Changed
 
