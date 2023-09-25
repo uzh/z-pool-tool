@@ -94,9 +94,20 @@ let index Pool_context.{ language; _ } contacts =
     ]
 ;;
 
-let detail ?admin_comment Pool_context.{ language; _ } contact tags =
+let detail
+  ?admin_comment
+  Pool_context.{ language; _ }
+  contact
+  tags
+  external_data_ids
+  =
+  let subtitle nav =
+    h3
+      ~a:[ a_class [ "heading-3" ] ]
+      Pool_common.[ Utils.nav_link_to_string language nav |> txt ]
+  in
   div
-    ~a:[ a_class [ "trim"; "safety-margin" ] ]
+    ~a:[ a_class [ "trim"; "safety-margin"; "stack-lg" ] ]
     [ div
         ~a:[ a_class [ "flexrow"; "wrap"; "flex-gap"; "justify-between" ] ]
         [ div
@@ -125,12 +136,13 @@ let detail ?admin_comment Pool_context.{ language; _ } contact tags =
           ]
         [ personal_detail ?admin_comment language contact
         ; div
-            [ h3
-                ~a:[ a_class [ "heading-3" ] ]
-                Pool_common.
-                  [ Utils.nav_link_to_string language I18n.Tags |> txt ]
+            [ subtitle Pool_common.I18n.Tags
             ; Component.Tag.tag_list language tags
             ]
+        ]
+    ; div
+        [ subtitle Pool_common.I18n.ExternalDataIds
+        ; Component.Contacts.external_data_ids language external_data_ids
         ]
     ]
 ;;
@@ -268,12 +280,8 @@ let edit
     ]
 ;;
 
-let external_data_ids
-  ({ Pool_context.language; _ } as context)
-  contact
-  external_data_ids
-  =
-  let table = Component.Contacts.external_data_ids context external_data_ids in
+let external_data_ids { Pool_context.language; _ } contact external_data_ids =
+  let table = Component.Contacts.external_data_ids language external_data_ids in
   div
     ~a:[ a_class [ "trim"; "safety-margin"; "stack" ] ]
     [ h1 [ txt (Contact.fullname contact) ]

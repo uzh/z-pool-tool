@@ -50,10 +50,20 @@ let detail_view action req =
        in
        match action with
        | `Show ->
+         let%lwt external_data_ids =
+           Assignment.find_external_data_identifiers_by_contact
+             database_label
+             (Contact.id contact)
+         in
          let%lwt admin_comment =
            Contact.find_admin_comment database_label (Contact.id contact)
          in
-         Page.Admin.Contact.detail ~admin_comment context contact contact_tags
+         Page.Admin.Contact.detail
+           ~admin_comment
+           context
+           contact
+           contact_tags
+           external_data_ids
          |> create_layout req context
          >|+ Sihl.Web.Response.of_html
        | `Edit ->

@@ -42,7 +42,7 @@ let identity_with_icons view_contact_name contact entity_id =
   |> div ~a:[ a_class [ "flexrow"; "flex-gap-sm" ] ]
 ;;
 
-let external_data_ids { Pool_context.language; _ } external_data_ids =
+let external_data_ids language external_data_ids =
   match external_data_ids with
   | [] ->
     p [ txt Pool_common.(Utils.text_to_string language I18n.EmptyListGeneric) ]
