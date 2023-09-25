@@ -27,6 +27,10 @@ let contact_participation_in_other_assignments =
   Repo.contact_participation_in_other_assignments
 ;;
 
+let find_external_data_identifiers_by_contact =
+  Repo_external_data_identifier.find_by_contact
+;;
+
 let group_by_contact list =
   let tbl = Hashtbl.create 20 in
   List.iter

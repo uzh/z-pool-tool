@@ -258,6 +258,21 @@ module Partials = struct
         ~control:(language, Pool_common.Message.OpenProfile)
         ~icon:Component.Icon.Person
     in
+    let external_data_ids { Assignment.contact; _ } =
+      a
+        ~a:
+          [ a_href
+              (Format.asprintf
+                 "%s/%s"
+                 (Page_admin_contact.path contact)
+                 Field.(human_url ExternalDataId)
+               |> Sihl.Web.externalize_path)
+          ; a_class [ "has-icon"; "primary"; "btn"; "is-text" ]
+          ]
+        [ Icon.(to_html ReorderThree)
+        ; txt Utils.(nav_link_to_string language I18n.ExternalDataIds)
+        ]
+    in
     let cancel =
       button_form
         ~style:`Error
@@ -334,6 +349,7 @@ module Partials = struct
               [ true, edit
               ; access_contact_profiles, profile_link
               ; create_reminder_modal, ReminderModal.button context
+              ; true, external_data_ids
               ; cancelable assignment, cancel
               ; deletable assignment, mark_as_deleted
               ]

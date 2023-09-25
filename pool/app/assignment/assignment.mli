@@ -66,6 +66,17 @@ val create
   -> Contact.t
   -> t
 
+module ExternalDataIdentifier : sig
+  type t =
+    { external_data_id : ExternalDataId.t
+    ; experiment_id : Experiment.Id.t
+    ; experiment_title : Experiment.Title.t
+    ; session_id : Session.Id.t
+    ; session_start : Session.Start.t
+    ; session_duration : Session.Duration.t
+    }
+end
+
 val is_not_closed : Session.t -> (unit, Pool_common.Message.error) result
 val is_deletable : t -> (unit, Pool_common.Message.error) result
 val is_cancellable : t -> (unit, Pool_common.Message.error) result
@@ -160,6 +171,11 @@ val contact_participation_in_other_assignments
   -> Experiment.Id.t
   -> Contact.Id.t
   -> (bool, Pool_common.Message.error) Lwt_result.t
+
+val find_external_data_identifiers_by_contact
+  :  Pool_database.Label.t
+  -> Contact.Id.t
+  -> ExternalDataIdentifier.t list Lwt.t
 
 val group_by_contact : t list -> (Contact.t * t list) list
 

@@ -1,6 +1,8 @@
 open CCFun
 open Tyxml.Html
-open Component
+module Table = Component.Table
+module Input = Component.Input
+module Icon = Component.Icon
 
 let path =
   Contact.id %> Pool_common.Id.value %> Format.asprintf "/admin/contacts/%s"
@@ -71,9 +73,9 @@ let contact_overview language contacts =
       ~a:[ a_class (Table.table_classes `Striped ~align_last_end:true ()) ]
       rows
   in
-  List.create
+  Component.List.create
     ~legend:
-      (Contacts.status_icons_table_legend language
+      (Component.Contacts.status_icons_table_legend language
        |> Component.Table.table_legend)
     language
     user_table
@@ -263,5 +265,68 @@ let edit
                 ]
             ]
         ]
+    ]
+;;
+
+let external_data_ids { Pool_context.language; _ } contact external_data_ids =
+  let open Assignment in
+  let table =
+    match external_data_ids with
+    | [] ->
+      p
+        [ txt Pool_common.(Utils.text_to_string language I18n.EmptyListGeneric)
+        ]
+    | external_data_ids ->
+      let thead =
+        let open Pool_common in
+        Message.Field.[ Experiment; Session; ExternalDataId ]
+        |> CCList.map CCFun.(Utils.field_to_string_capitalized language %> txt)
+      in
+      external_data_ids
+      |> CCList.map
+           (fun
+               { ExternalDataIdentifier.external_data_id
+               ; experiment_id
+               ; experiment_title
+               ; session_id
+               ; session_start
+               ; session_duration
+               }
+             ->
+              let experiment_path =
+                Format.asprintf
+                  "/admin/experiments/%s"
+                  Experiment.(Id.value experiment_id)
+              in
+              [ a
+                  ~a:[ a_href (experiment_path |> Sihl.Web.externalize_path) ]
+                  [ txt (Experiment.Title.value experiment_title) ]
+              ; a
+                  ~a:
+                    [ a_href
+                        (Format.asprintf
+                           "%s/sessions/%s"
+                           experiment_path
+                           (Session.Id.value session_id)
+                         |> Sihl.Web.externalize_path)
+                    ]
+                  [ txt
+                      Session.(
+                        Utils.Ptime.format_datetime_with_span
+                          (Start.value session_start)
+                          (Duration.value session_duration))
+                  ]
+              ; txt Assignment.(ExternalDataId.value external_data_id)
+              ])
+      |> Component.Table.horizontal_table ~thead `Striped
+  in
+  div
+    ~a:[ a_class [ "trim"; "safety-margin"; "stack" ] ]
+    [ h1 [ txt (Contact.fullname contact) ]
+    ; h2
+        [ txt
+            Pool_common.(Utils.nav_link_to_string language I18n.ExternalDataIds)
+        ]
+    ; table
     ]
 ;;

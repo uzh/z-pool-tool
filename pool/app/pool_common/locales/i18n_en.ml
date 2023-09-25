@@ -34,6 +34,7 @@ let to_string = function
     Format.asprintf
       "Currently, there are no %s available."
       (Locales_en.field_to_string field)
+  | EmptyListGeneric -> "No entries were found."
   | ExperimentNewTitle -> "Create new experiment"
   | ExperimentListTitle -> "Experiments"
   | ExperimentListEmpty ->
@@ -142,6 +143,7 @@ let nav_link_to_string = function
   | CustomFields -> "Fields"
   | Dashboard -> "Dashboard"
   | Experiments -> "Experiments"
+  | ExternalDataIds -> "External data ids"
   | Field field -> Locales_en.field_to_string field |> CCString.capitalize_ascii
   | Filter -> "Filter"
   | I18n -> "Translations"

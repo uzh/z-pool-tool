@@ -569,6 +569,10 @@ module Admin = struct
         ; post "pause" ~middlewares:[ Access.update ] toggle_paused
         ; get "/edit" ~middlewares:[ Access.update ] edit
         ; post "/promote" ~middlewares:[ Access.promote ] promote
+        ; get
+            (ExternalDataId |> human_url)
+            ~middlewares:[ Access.read ]
+            external_data_ids
         ; choose
             ~scope:(Format.asprintf "field/%s" (CustomField |> url_key))
             field_specific

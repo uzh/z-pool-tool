@@ -344,6 +344,14 @@ module Repo : sig
   module Id : sig
     val t : Id.t Caqti_type.t
   end
+
+  module Start : sig
+    val t : Start.t Caqti_type.t
+  end
+
+  module Duration : sig
+    val t : Duration.t Caqti_type.t
+  end
 end
 
 module Guard : sig

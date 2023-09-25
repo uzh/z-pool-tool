@@ -18,6 +18,7 @@ type t =
   | EmailConfirmationNote
   | EmailConfirmationTitle
   | EmtpyList of Entity_message.Field.t
+  | EmptyListGeneric
   | ExperimentListEmpty
   | ExperimentListPublicTitle
   | ExperimentListTitle
@@ -94,6 +95,7 @@ type nav_link =
   | CustomFields
   | Dashboard
   | Experiments
+  | ExternalDataIds
   | Field of Entity_message.Field.t
   | Filter
   | I18n

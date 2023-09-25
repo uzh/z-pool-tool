@@ -167,3 +167,42 @@ module Public = struct
       custom ~encode ~decode (tup2 Pool_common.Repo.Id.t (option CanceledAt.t)))
   ;;
 end
+
+module ExternalDataIdentifier = struct
+  open Entity.ExternalDataIdentifier
+
+  let t =
+    let encode _ =
+      failwith
+        Pool_common.(Message.ReadOnlyModel |> Utils.error_to_string Language.En)
+    in
+    let decode
+      ( external_data_id
+      , ( experiment_id
+        , (experiment_title, (session_id, (session_start, session_duration))) )
+      )
+      =
+      Ok
+        { external_data_id
+        ; experiment_id
+        ; experiment_title
+        ; session_id
+        ; session_start
+        ; session_duration
+        }
+    in
+    Caqti_type.(
+      custom
+        ~encode
+        ~decode
+        (tup2
+           ExternalDataId.t
+           (tup2
+              Experiment.Repo.Entity.Id.t
+              (tup2
+                 Experiment.Repo.Entity.Title.t
+                 (tup2
+                    Session.Repo.Id.t
+                    (tup2 Session.Repo.Start.t Session.Repo.Duration.t))))))
+  ;;
+end

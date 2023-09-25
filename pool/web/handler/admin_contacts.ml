@@ -212,11 +212,32 @@ let toggle_paused req =
   result |> HttpUtils.extract_happy_path ~src req
 ;;
 
+let external_data_ids req =
+  let open Utils.Lwt_result.Infix in
+  let contact_id = contact_id req in
+  let result ({ Pool_context.database_label; _ } as context) =
+    Utils.Lwt_result.map_error (fun err ->
+      err, Format.asprintf "/admin/contacts/%s" (Contact.Id.value contact_id))
+    @@
+    let* contact = Contact.find database_label contact_id in
+    let%lwt external_data_ids =
+      Assignment.find_external_data_identifiers_by_contact
+        database_label
+        contact_id
+    in
+    Page.Admin.Contact.external_data_ids context contact external_data_ids
+    |> create_layout req context
+    >|+ Sihl.Web.Response.of_html
+  in
+  result |> extract_happy_path req
+;;
+
 module Tags = Admin_contacts_tags
 
 module Access : sig
   include module type of Helpers.Access
 
+  val external_data_ids : Rock.Middleware.t
   val delete_answer : Rock.Middleware.t
   val promote : Rock.Middleware.t
 end = struct
@@ -267,6 +288,8 @@ end = struct
       Contact.Guard.Access.update
       Guard.Permission.Update
   ;;
+
+  let external_data_ids = read
 
   let delete_answer =
     ContactCommand.ClearAnswer.effects

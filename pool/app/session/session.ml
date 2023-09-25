@@ -36,4 +36,6 @@ let has_bookable_spots_for_experiments tenant experiment =
 
 module Repo = struct
   module Id = Repo_entity.Id
+  module Start = Repo_entity.Start
+  module Duration = Repo_entity.Duration
 end
