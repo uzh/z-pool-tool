@@ -13,6 +13,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 ### Changed
 
 - performance update for guardian, rework roles
+- functionality to change the session of an assignment
 
 ## [0.4.6](https://github.com/uzh/pool/tree/0.4.6) - 2023-09-18
 
