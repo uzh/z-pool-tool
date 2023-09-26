@@ -229,6 +229,11 @@ let is_fully_booked (m : t) =
   m.assignment_count >= m.max_participants + m.overbook
 ;;
 
+let is_fully_booked_res (m : t) =
+  is_fully_booked m
+  |> Utils.bool_to_result_not Pool_common.Message.(SessionFullyBooked)
+;;
+
 let available_spots m =
   m.max_participants + m.overbook - m.assignment_count |> CCInt.max 0
 ;;
@@ -323,12 +328,14 @@ module Public = struct
     m.assignment_count >= m.max_participants + m.overbook
   ;;
 
+  let is_fully_booked_res (m : t) =
+    is_fully_booked m
+    |> Utils.bool_to_result_not Pool_common.Message.(SessionFullyBooked)
+  ;;
+
   let assignment_creatable session =
     let open CCResult.Infix in
-    let* () =
-      is_fully_booked session
-      |> Utils.bool_to_result_not Pool_common.Message.(SessionFullyBooked)
-    in
+    let* () = is_fully_booked_res session in
     let* () = not_canceled session in
     let* () = not_past session in
     Ok ()
@@ -553,12 +560,16 @@ let is_closable = not_closed_or_canceled
 let assignments_cancelable = not_closed_or_canceled
 let assignments_session_changeable = not_closed_or_canceled
 
+let can_be_assigned_to_existing_assignment new_session =
+  let open CCResult in
+  let* () = is_fully_booked_res new_session in
+  let* () = not_closed_or_canceled new_session in
+  Ok ()
+;;
+
 let assignment_creatable session =
   let open CCResult.Infix in
-  let* () =
-    is_fully_booked session
-    |> Utils.bool_to_result_not Pool_common.Message.(SessionFullyBooked)
-  in
+  let* () = is_fully_booked_res session in
   let* () = not_closed_or_canceled session in
   let* () = not_past session in
   Ok ()

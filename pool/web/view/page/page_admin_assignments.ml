@@ -213,7 +213,7 @@ module Partials = struct
       | None -> txt str
     in
     let option_disabler m =
-      Session.assignment_creatable m |> CCResult.is_error
+      Session.can_be_assigned_to_existing_assignment m |> CCResult.is_error
       || CCList.mem ~eq:Session.equal m assigned_sessions
     in
     let notifier_id =

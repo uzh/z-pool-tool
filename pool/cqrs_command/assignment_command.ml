@@ -463,7 +463,7 @@ end = struct
     let open Assignment in
     let open CCResult in
     Logs.info ~src (fun m -> m ~tags "Handle command SwapSession");
-    let* () = Session.assignment_creatable new_session in
+    let* () = Session.can_be_assigned_to_existing_assignment new_session in
     let* () = session_changeable current_session assignment in
     let new_assignment =
       { assignment with

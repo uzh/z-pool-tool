@@ -242,6 +242,11 @@ val assignments_session_changeable
   -> (unit, Pool_common.Message.error) result
 
 val assignment_creatable : t -> (unit, Pool_common.Message.error) result
+
+val can_be_assigned_to_existing_assignment
+  :  t
+  -> (unit, Pool_common.Message.error) result
+
 val reminder_resendable : t -> (unit, Pool_common.Message.error) result
 
 val find

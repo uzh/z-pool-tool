@@ -670,6 +670,26 @@ let swap_session_with_notification () =
   check_result expected result
 ;;
 
+let swap_session_to_past_session () =
+  let current_session = Model.(create_session ~start:(an_hour_ago ()) ()) in
+  let new_session = Model.(create_session ~start:(an_hour_ago ()) ()) in
+  let assignment = Model.create_assignment () in
+  let assignment_id = Assignment.Id.create () in
+  let result =
+    let open AssignmentCommand.SwapSession in
+    handle ~assignment_id ~current_session ~new_session assignment None
+  in
+  let expected =
+    Assignment.
+      [ MarkedAsDeleted assignment
+      ; Created ({ assignment with id = assignment_id }, new_session.Session.id)
+      ]
+    |> CCList.map Pool_event.assignment
+    |> CCResult.return
+  in
+  check_result expected result
+;;
+
 (* Integration tests *)
 
 let cancel_assignment_with_follow_ups _ () =
