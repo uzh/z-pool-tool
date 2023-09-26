@@ -433,8 +433,10 @@ Wenn keine der Checkboxen angewählt ist, bedeutet das, dass der Kontakt erschie
     Beachte: Bei Verwendung des Mechanismus für "LOGIN" muss ein Benutzername und Passwort angegeben werden.
     |}
   | SwapSessions ->
-    "Das Ändern der Session wird nur diese Anmeldung anpassen. Wenn es \
-     Folgezuweisungen gibt, müssen diese manuell aktualisiert werden."
+    {|Das Ändern der Session wird nur diese Anmeldung anpassen. Wenn es \
+     Folgezuweisungen gibt, müssen diese manuell aktualisiert werden.
+
+Es können nur Sitzungen mit freien Plätzen ausgewählt werden.|}
   | TagsIntro ->
     "Die definierten Tags können an die verschiedenen Objekte (z.B. Kontakte) \
      angehängt werden. Diese Tags können im Experiment-Filter verwendet werden \

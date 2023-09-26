@@ -233,8 +233,8 @@ module Partials = struct
           [ Component.Notification.notification
               language
               `Warning
-              [ txt
-                  Pool_common.(Utils.hint_to_string language I18n.SwapSessions)
+              [ Pool_common.(Utils.hint_to_string language I18n.SwapSessions)
+                |> HttpUtils.add_line_breaks
               ]
           ; form
               ~a:[ a_method `Post; a_class [ "stack" ]; a_action action ]
