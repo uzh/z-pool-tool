@@ -424,8 +424,8 @@ let session_list
                      ~control:(language, Message.SessionDetails)
               in
               let buttons =
-                [ Session.is_closable session |> CCResult.is_ok, close_btn
-                ; true, detail_button
+                [ true, detail_button
+                ; Session.is_closable session |> CCResult.is_ok, close_btn
                 ; true, delete_form ()
                 ]
                 |> CCList.filter_map (fun (condition, button) ->
@@ -886,6 +886,7 @@ let detail
     let assignment_list =
       Page_admin_assignments.(
         Partials.overview_list
+          ~allow_session_swap:true
           ?access_contact_profiles
           ?view_contact_name
           ?view_contact_info

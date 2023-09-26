@@ -12,6 +12,8 @@ module Label = struct
     [@printer print "account_suspension_notification"]
     | AssignmentConfirmation [@name "assignment_confirmation"]
     [@printer print "assignment_confirmation"]
+    | AssignmentSessionChange [@name "assignment_session_change"]
+    [@printer print "assignment_session_change"]
     | ContactRegistrationAttempt [@name "contact_registration_attempt"]
     [@printer print "contact_registration_attempt"]
     | EmailVerification [@name "email_verification"]
@@ -113,6 +115,17 @@ type t =
   ; sms_text : SmsText.t
   }
 [@@deriving eq, show]
+
+module ManualMessage = struct
+  type t =
+    { recipient : Pool_user.EmailAddress.t
+    ; language : Pool_common.Language.t
+    ; email_subject : EmailSubject.t
+    ; email_text : EmailText.t
+    ; plain_text : PlainText.t
+    }
+  [@@deriving eq, show]
+end
 
 type layout =
   | Tenant of Pool_tenant.t

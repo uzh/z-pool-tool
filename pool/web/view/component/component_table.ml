@@ -50,6 +50,7 @@ let table_legend items =
 let horizontal_table
   layout
   ?(classnames = [])
+  ?id
   ?thead
   ?align_top
   ?align_last_end
@@ -58,10 +59,15 @@ let horizontal_table
   let classes =
     table_classes layout ?align_top ?align_last_end () @ classnames
   in
+  let attributes =
+    match id with
+    | None -> [ a_class classes ]
+    | Some id -> [ a_class classes; a_id id ]
+  in
   let thead = CCOption.map table_head thead in
   table
     ?thead
-    ~a:[ a_class classes ]
+    ~a:attributes
     (CCList.map (fun row -> tr (CCList.map (fun cell -> td [ cell ]) row)) rows)
 ;;
 

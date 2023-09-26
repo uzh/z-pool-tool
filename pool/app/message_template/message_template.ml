@@ -7,6 +7,17 @@ open CCFun.Infix
 
 let src = Logs.Src.create "message_template"
 let find = Repo.find
+
+let find_default_by_label_and_language pool language label =
+  let open Utils.Lwt_result.Infix in
+  Repo.find_default_by_label_and_language pool language label
+  ||> CCOption.get_exn_or
+        Pool_common.(
+          Utils.error_to_string
+            Language.En
+            Message.(NotFound Field.MessageTemplate))
+;;
+
 let all_default = Repo.all_default
 let find_all_of_entity_by_label = Repo.find_all_of_entity_by_label
 let find_by_label_to_send = Repo.find_by_label_to_send
@@ -58,6 +69,27 @@ let prepare_email language template sender email layout params =
   let mail =
     { sender = Pool_user.EmailAddress.value sender
     ; recipient = Pool_user.EmailAddress.value email
+    ; subject = email_subject
+    ; text = PlainText.value plain_text
+    ; html = Some (combine_html language (Some email_subject))
+    ; cc = []
+    ; bcc = []
+    }
+  in
+  let params = [ "emailText", email_text ] @ layout_params layout @ params in
+  Message_utils.render_email_params params mail
+;;
+
+let prepare_manual_email
+  { ManualMessage.recipient; language; email_subject; email_text; plain_text }
+  layout
+  params
+  sender
+  =
+  let open Sihl_email in
+  let mail =
+    { sender = Pool_user.EmailAddress.value sender
+    ; recipient = Pool_user.EmailAddress.value recipient
     ; subject = email_subject
     ; text = PlainText.value plain_text
     ; html = Some (combine_html language (Some email_subject))
@@ -146,6 +178,7 @@ let location_params
 let session_params
   layout
   ?follow_up_sessions
+  ?prefix
   lang
   ({ Session.start; duration; location; _ } as session : Session.t)
   =
@@ -170,13 +203,20 @@ let session_params
   let duration =
     duration |> Duration.value |> Pool_common.Utils.Time.formatted_timespan
   in
-  [ "sessionId", session_id
-  ; "sessionStart", start
-  ; "sessionDateTime", Session.start_end_to_human session
-  ; "sessionDuration", duration
-  ; "sessionOverview", session_overview
-  ]
-  @ location_params lang layout location
+  let session_params =
+    [ "sessionId", session_id
+    ; "sessionStart", start
+    ; "sessionDateTime", Session.start_end_to_human session
+    ; "sessionDuration", duration
+    ; "sessionOverview", session_overview
+    ]
+  in
+  match prefix with
+  | None -> session_params @ location_params lang layout location
+  | Some prefix ->
+    session_params
+    |> CCList.map (fun (label, value) ->
+      Format.asprintf "%s%s" prefix (CCString.capitalize_ascii label), value)
 ;;
 
 let assignment_params { Assignment.id; external_data_id; _ } =
@@ -278,6 +318,41 @@ module AssignmentConfirmation = struct
       prepare_email language template sender email layout params
     in
     Lwt.return fnc
+  ;;
+end
+
+module AssignmentSessionChange = struct
+  let base_params layout contact = contact.Contact.user |> global_params layout
+
+  let email_params
+    language
+    layout
+    experiment
+    ~new_session
+    ~old_session
+    assignment
+    =
+    base_params layout assignment.Assignment.contact
+    @ experiment_params layout experiment
+    @ session_params layout language new_session
+    @ session_params ~prefix:"old" layout language old_session
+    @ assignment_params assignment
+  ;;
+
+  let create pool message tenant experiment ~new_session ~old_session assignment
+    =
+    let layout = layout_from_tenant tenant in
+    let%lwt sender = sender_of_experiment pool experiment in
+    let params =
+      email_params
+        message.ManualMessage.language
+        layout
+        experiment
+        ~new_session
+        ~old_session
+        assignment
+    in
+    prepare_manual_email message layout params sender |> Lwt.return
   ;;
 end
 

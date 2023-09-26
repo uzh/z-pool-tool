@@ -108,6 +108,8 @@ Sie kommen für mehr Experimente in Frage, umso kompletter Ihr Profil ist.|}
   | SignUpCTA -> "Jetzt anmelden und an Experimenten teilnehmen."
   | SignUpTitle -> "Anmeldung"
   | SortUngroupedFields -> "Nicht gruppierte Felder sortieren"
+  | SwapSessionsListEmpty ->
+    "Es wurden keine Sessions gefunden, der Sie diesen Kontakt zuweisen können."
   | SwitchChronological -> "Zu chronologische Ansicht wechseln"
   | SwitchGrouped -> "Zu gruppierter Ansicht wechseln"
   | TermsAndConditionsLastUpdated ptime ->
@@ -430,6 +432,11 @@ Wenn keine der Checkboxen angewählt ist, bedeutet das, dass der Kontakt erschie
 
     Beachte: Bei Verwendung des Mechanismus für "LOGIN" muss ein Benutzername und Passwort angegeben werden.
     |}
+  | SwapSessions ->
+    {|Das Ändern der Session wird nur diese Anmeldung anpassen. Wenn es \
+     Folgezuweisungen gibt, müssen diese manuell aktualisiert werden.
+
+Es können nur Sitzungen mit freien Plätzen ausgewählt werden.|}
   | TagsIntro ->
     "Die definierten Tags können an die verschiedenen Objekte (z.B. Kontakte) \
      angehängt werden. Diese Tags können im Experiment-Filter verwendet werden \

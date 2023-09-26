@@ -116,10 +116,6 @@ ul.no-style {
 }
 
 // Flex
-.inline-flex {
-    display: inline-flex;
-}
-
 .flexcolumn-reversed-tablet {
     &>* {
         flex-basis: 50%;
@@ -132,10 +128,6 @@ ul.no-style {
 
 abbr[title] {
     text-decoration: none;
-}
-
-.flexrow.even>* {
-    flex-basis: 50%;
 }
 
 // CK Editor

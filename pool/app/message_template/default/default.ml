@@ -10,6 +10,11 @@ let assignment_confirmation = function
   | En -> Default_en.assignment_confirmation
 ;;
 
+let assignment_session_change = function
+  | De -> Default_de.assignment_session_change
+  | En -> Default_en.assignment_session_change
+;;
+
 let contact_registration_attempt = function
   | De -> Default_de.contact_registration_attempt
   | En -> Default_en.contact_registration_attempt
@@ -84,6 +89,7 @@ let default_values_root = [ password_reset ] @@@ [ En; De ]
 let default_values_tenant =
   [ account_suspension_notification
   ; assignment_confirmation
+  ; assignment_session_change
   ; contact_registration_attempt
   ; email_verification
   ; experiment_invitation

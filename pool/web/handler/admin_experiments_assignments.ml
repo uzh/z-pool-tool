@@ -410,6 +410,120 @@ let remind req =
   result |> HttpUtils.extract_happy_path ~src req
 ;;
 
+let swap_session_get req =
+  let open Assignment in
+  let experiment_id, session_id, assignment_id = ids_from_request req in
+  let result ({ Pool_context.database_label; _ } as context) =
+    let open Utils.Lwt_result.Infix in
+    let* assignment = find database_label assignment_id in
+    let* current_session = Session.find database_label session_id in
+    let* assigned_sessions =
+      Session.find_contact_is_assigned_by_experiment
+        database_label
+        (Contact.id assignment.contact)
+        experiment_id
+    in
+    let* sessions =
+      Session.find_all_to_swap_by_experiment database_label experiment_id
+    in
+    let%lwt template_lang =
+      Contact.message_language database_label assignment.contact
+    in
+    let%lwt swap_session_template =
+      Message_template.(
+        find_default_by_label_and_language
+          database_label
+          template_lang
+          Label.AssignmentSessionChange)
+    in
+    let tenant_languages = Pool_context.Tenant.get_tenant_languages_exn req in
+    let flash_fetcher key = Sihl.Web.Flash.find key req in
+    Page.Admin.Assignment.Partials.swap_session_form
+      context
+      experiment_id
+      current_session
+      assignment
+      assigned_sessions
+      sessions
+      swap_session_template
+      tenant_languages
+      flash_fetcher
+    |> HttpUtils.Htmx.html_to_plain_text_response
+    |> Lwt_result.return
+  in
+  result
+  |> HttpUtils.Htmx.handle_error_message ~error_as_notification:true ~src req
+;;
+
+let swap_session_post req =
+  let open Utils.Lwt_result.Infix in
+  let open Assignment in
+  let open Cqrs_command.Assignment_command in
+  let experiment_id, session_id, assignment_id = ids_from_request req in
+  let redirect_path =
+    Page.Admin.Session.session_path experiment_id session_id
+  in
+  let%lwt urlencoded =
+    Sihl.Web.Request.to_urlencoded req
+    ||> HttpUtils.remove_empty_values
+    ||> HttpUtils.format_request_boolean_values Field.[ show NotifyContact ]
+  in
+  let result { Pool_context.database_label; _ } =
+    Utils.Lwt_result.map_error (fun err ->
+      err, redirect_path, [ HttpUtils.urlencoded_to_flash urlencoded ])
+    @@
+    let tags = Pool_context.Logger.Tags.req req in
+    let* decoded = SwapSession.decode urlencoded |> Lwt_result.lift in
+    let* assignment = find database_label assignment_id in
+    let* experiment = Experiment.find database_label experiment_id in
+    let* current_session = Session.find database_label session_id in
+    let* new_session = Session.find database_label decoded.session in
+    let%lwt notification_email =
+      match decoded.notify_contact |> Pool_common.NotifyContact.value with
+      | false -> Lwt.return_none
+      | true ->
+        let tenant = Pool_context.Tenant.get_tenant_exn req in
+        let msg =
+          Message_template.ManualMessage.
+            { recipient = Contact.email_address assignment.contact
+            ; language = decoded.language
+            ; email_subject = decoded.email_subject
+            ; email_text = decoded.email_text
+            ; plain_text = decoded.plain_text
+            }
+        in
+        Message_template.AssignmentSessionChange.create
+          database_label
+          msg
+          tenant
+          experiment
+          ~new_session
+          ~old_session:current_session
+          assignment
+        ||> fun msg -> CCOption.return (msg, experiment.Experiment.smtp_auth_id)
+    in
+    let events =
+      SwapSession.handle
+        ~tags
+        ~current_session
+        ~new_session
+        assignment
+        notification_email
+      |> Lwt_result.lift
+    in
+    let handle events =
+      let%lwt () =
+        Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
+      in
+      Http_utils.redirect_to_with_actions
+        redirect_path
+        [ Message.set ~success:[ Pool_common.Message.(Updated Field.Session) ] ]
+    in
+    events |>> handle
+  in
+  result |> HttpUtils.extract_happy_path_with_actions ~src req
+;;
+
 module Access : sig
   include module type of Helpers.Access
 

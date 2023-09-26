@@ -82,6 +82,11 @@ val is_deletable : t -> (unit, Pool_common.Message.error) result
 val is_cancellable : t -> (unit, Pool_common.Message.error) result
 val attendance_settable : t -> (unit, Pool_common.Message.error) result
 
+val session_changeable
+  :  Session.t
+  -> t
+  -> (unit, Pool_common.Message.error) result
+
 module Public : sig
   type t =
     { id : Id.t

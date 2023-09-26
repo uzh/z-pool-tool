@@ -136,6 +136,14 @@ let attendance_settable m =
   Ok ()
 ;;
 
+let session_changeable current_session m =
+  let open CCResult in
+  let* () = is_not_deleted m in
+  let* () = is_not_canceled m in
+  let* () = Session.assignments_session_changeable current_session in
+  Ok ()
+;;
+
 module Public = struct
   type t =
     { id : Id.t

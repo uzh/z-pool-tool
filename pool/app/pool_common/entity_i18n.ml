@@ -69,6 +69,7 @@ type t =
   | SignUpCTA
   | SignUpTitle
   | SortUngroupedFields
+  | SwapSessionsListEmpty
   | SwitchChronological
   | SwitchGrouped
   | TermsAndConditionsLastUpdated of Ptime.t
@@ -208,6 +209,7 @@ type hint =
   | SignUpForWaitingList
   | SmtpSettingsDefaultFlag
   | SmtpSettingsIntro
+  | SwapSessions
   | TagsIntro
   | TemplateTextElementsHint
   | TimeSpanPickerHint

@@ -280,6 +280,15 @@ let message_template_help
       (create_experiment ())
       session
       (create_assignment ())
+  | AssignmentSessionChange ->
+    let session = create_session () in
+    AssignmentSessionChange.email_params
+      language
+      layout
+      (create_experiment ())
+      ~new_session:session
+      ~old_session:session
+      (create_assignment ())
   | ContactRegistrationAttempt ->
     let tenant_url = tenant.Pool_tenant.url in
     ContactRegistrationAttempt.email_params

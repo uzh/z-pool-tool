@@ -236,13 +236,34 @@ val is_cancellable : t -> (unit, Pool_common.Message.error) result
 val is_closable : t -> (unit, Pool_common.Message.error) result
 val is_deletable : t -> t list -> (unit, Pool_common.Message.error) result
 val assignments_cancelable : t -> (unit, Pool_common.Message.error) result
+
+val assignments_session_changeable
+  :  t
+  -> (unit, Pool_common.Message.error) result
+
 val assignment_creatable : t -> (unit, Pool_common.Message.error) result
+
+val can_be_assigned_to_existing_assignment
+  :  t
+  -> (unit, Pool_common.Message.error) result
+
 val reminder_resendable : t -> (unit, Pool_common.Message.error) result
 
 val find
   :  Pool_database.Label.t
   -> Id.t
   -> (t, Pool_common.Message.error) Lwt_result.t
+
+val find_multiple
+  :  Pool_database.Label.t
+  -> Id.t list
+  -> (t list, Pool_common.Message.error) Lwt_result.t
+
+val find_contact_is_assigned_by_experiment
+  :  Pool_database.Label.t
+  -> Contact.Id.t
+  -> Experiment.Id.t
+  -> (t list, Pool_common.Message.error) Lwt_result.t
 
 val find_public
   :  Pool_database.Label.t
@@ -339,6 +360,11 @@ val has_bookable_spots_for_experiments
   :  Pool_database.Label.t
   -> Experiment.Id.t
   -> (bool, Pool_common.Message.error) result Lwt.t
+
+val find_all_to_swap_by_experiment
+  :  Pool_database.Label.t
+  -> Experiment.Id.t
+  -> (t list, Pool_common.Message.error) result Lwt.t
 
 module Repo : sig
   module Id : sig

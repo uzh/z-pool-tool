@@ -22,6 +22,10 @@ let assignment_specific_path ?suffix experiment_id session_id assignment_id =
   suffix |> CCOption.map_or ~default:base (Format.asprintf "%s/%s" base)
 ;;
 
+let swap_session_modal_id session =
+  Format.asprintf "swap-session-%s" Session.(Id.value session.Session.id)
+;;
+
 type assignment_redirect =
   | Assignments
   | DeletedAssignments
@@ -178,14 +182,108 @@ module Partials = struct
           ; a_user_data "modal" (modal_id id)
           ; a_class [ "has-icon"; "primary"; "btn"; "is-text" ]
           ]
-        [ Component.Icon.(to_html Mail); txt (title language) ]
+        [ Component.Icon.(to_html MailOutline); txt (title language) ]
     ;;
   end
+
+  let swap_session_form
+    ({ Pool_context.language; csrf; _ } as context)
+    experiment_id
+    session
+    assignment
+    assigned_sessions
+    available_sessions
+    swap_session_template
+    languages
+    flash_fetcher
+    =
+    let action =
+      assignment_specific_path
+        ~suffix:"swap-session"
+        experiment_id
+        session.Session.id
+        assignment.Assignment.id
+      |> Sihl.Web.externalize_path
+    in
+    let option_formatter m =
+      let open Session in
+      let str = start_end_to_human m in
+      match m.follow_up_to with
+      | Some _ -> Unsafe.data (Format.asprintf "&nbsp;&nbsp;&nbsp;%s" str)
+      | None -> txt str
+    in
+    let option_disabler m =
+      Session.can_be_assigned_to_existing_assignment m |> CCResult.is_error
+      || CCList.mem ~eq:Session.equal m assigned_sessions
+    in
+    let notifier_id =
+      Format.asprintf "nofify-%s" Session.(Id.value session.id)
+    in
+    let html =
+      match available_sessions with
+      | [] ->
+        p
+          [ txt
+              Pool_common.(
+                Utils.text_to_string language I18n.SwapSessionsListEmpty)
+          ]
+      | available_sessions ->
+        div
+          ~a:[ a_class [ "stack" ] ]
+          [ Component.Notification.notification
+              language
+              `Warning
+              [ Pool_common.(Utils.hint_to_string language I18n.SwapSessions)
+                |> HttpUtils.add_line_breaks
+              ]
+          ; form
+              ~a:[ a_method `Post; a_class [ "stack" ]; a_action action ]
+              [ selector
+                  ~required:true
+                  ~add_empty:true
+                  ~elt_option_formatter:option_formatter
+                  ~option_disabler
+                  language
+                  Field.Session
+                  (fun s -> s.Session.id |> Session.Id.value)
+                  available_sessions
+                  None
+                  ()
+              ; checkbox_element
+                  ~additional_attributes:[ a_user_data "toggle" notifier_id ]
+                  language
+                  Field.NotifyContact
+              ; div
+                  ~a:[ a_id notifier_id; a_class [ "hidden"; "stack" ] ]
+                  (Page_admin_message_template.template_inputs
+                     ~hide_text_message_input:true
+                     context
+                     (Some swap_session_template)
+                     ~languages
+                     flash_fetcher)
+              ; submit_element
+                  language
+                  (Pool_common.Message.Save None)
+                  ~submit_type:`Primary
+                  ()
+              ; csrf_element csrf ()
+              ]
+          ]
+    in
+    Component.Modal.create
+      ~active:true
+      language
+      (fun lang ->
+        Pool_common.(Utils.control_to_string lang Message.ChangeSession))
+      (swap_session_modal_id session)
+      html
+  ;;
 
   let overview_list
     ?(access_contact_profiles = false)
     ?(view_contact_name = false)
     ?(view_contact_info = false)
+    ?(allow_session_swap = false)
     redirect
     (Pool_context.{ language; csrf; _ } as context)
     experiment
@@ -194,10 +292,18 @@ module Partials = struct
     =
     let open Pool_common in
     let default = txt "" in
+    let assignemnts_table_id =
+      Format.asprintf "assignments-%s" Session.(Id.value session.Session.id)
+    in
+    let swap_session_modal_id = swap_session_modal_id session in
     let deletable = CCFun.(Assignment.is_deletable %> CCResult.is_ok) in
     let cancelable m =
       Session.assignments_cancelable session |> CCResult.is_ok
       && Assignment.is_cancellable m |> CCResult.is_ok
+    in
+    let session_changeable m =
+      Assignment.session_changeable session m |> CCResult.is_ok
+      && allow_session_swap
     in
     let action { Assignment.id; _ } suffix =
       assignment_specific_path
@@ -249,7 +355,7 @@ module Partials = struct
         action
         ~is_text:true
         ~control:(language, Pool_common.Message.(Edit None))
-        ~icon:Component.Icon.Create
+        ~icon:Component.Icon.CreateOutline
     in
     let profile_link { Assignment.contact; _ } =
       let action =
@@ -259,7 +365,7 @@ module Partials = struct
         action
         ~is_text:true
         ~control:(language, Pool_common.Message.OpenProfile)
-        ~icon:Component.Icon.Person
+        ~icon:Component.Icon.PersonOutline
     in
     let external_data_ids { Assignment.contact; _ } =
       a
@@ -276,6 +382,29 @@ module Partials = struct
         ; txt Utils.(nav_link_to_string language I18n.ExternalDataIds)
         ]
     in
+    let session_change_toggle { Assignment.id; _ } =
+      let action =
+        assignment_specific_path
+          ~suffix:"swap-session"
+          experiment.Experiment.id
+          session.Session.id
+          id
+        |> Sihl.Web.externalize_path
+      in
+      link_as_button
+        "#"
+        ~attributes:
+          [ a_user_data "hx-trigger" "click"
+          ; a_user_data "hx-get" action
+          ; a_user_data "hx-swap" "outerHTML"
+          ; a_user_data
+              "hx-target"
+              (Format.asprintf "#%s" swap_session_modal_id)
+          ]
+        ~is_text:true
+        ~control:(language, Pool_common.Message.ChangeSession)
+        ~icon:Component.Icon.SwapHorizonal
+    in
     let cancel =
       button_form
         ~style:`Error
@@ -285,7 +414,7 @@ module Partials = struct
           then CancelAssignmentWithFollowUps
           else CancelAssignment)
         (Message.Cancel None)
-        Component.Icon.CloseCircle
+        Component.Icon.Close
     in
     let mark_as_deleted =
       button_form
@@ -296,7 +425,7 @@ module Partials = struct
           then MarkAssignmentWithFollowUpsAsDeleted
           else MarkAssignmentAsDeleted)
         Message.MarkAsDeleted
-        Component.Icon.Trash
+        Component.Icon.TrashOutline
     in
     match CCList.is_empty assignments with
     | true -> p [ empty language ]
@@ -354,6 +483,7 @@ module Partials = struct
               ; create_reminder_modal, ReminderModal.button context
               ; ( Experiment.(show_external_data_id_links_value experiment)
                 , external_data_ids )
+              ; session_changeable assignment, session_change_toggle
               ; cancelable assignment, cancel
               ; deletable assignment, mark_as_deleted
               ]
@@ -377,17 +507,64 @@ module Partials = struct
           ([], [])
           assignments
       in
+      let js =
+        Format.asprintf
+          {js|
+        document.addEventListener("htmx:beforeSend", (e) => {
+          const { target } = e.detail;
+          const content = document.createElement("div");
+          const body = document.createElement("div");
+          body.classList.add("modal-body");
+          content.classList.add("modal-content", "flexrow", "justify-center")
+          const icon = document.createElement("i");
+          icon.classList.add("icon-spinner-outline", "rotate");
+          content.appendChild(icon);
+          body.appendChild(content);
+          target.innerHTML = '';
+          target.appendChild(body);
+          target.classList.add("active");
+        })
+
+        document.addEventListener("htmx:afterSwap", (e) => {
+          const modal = e.detail.elt;
+          window['pool-tool'].initRichTextEditor(modal);
+
+          modal.querySelector(".modal-close").addEventListener("click", (e) => {
+            modal.classList.remove("active");
+            modal.setAttribute("aria-hidden", "true");
+          })
+
+          const checkbox = modal.querySelector(`[data-toggle]`);
+          const target = document.getElementById(checkbox.dataset.toggle);
+          checkbox.addEventListener("click", (e) => {
+            if(e.currentTarget.checked) {
+              target.classList.remove("hidden");
+            } else {
+              target.classList.add("hidden");
+            }
+          })
+         })
+        |js}
+      in
       div
         [ p
             [ Utils.hint_to_string language I18n.SessionCloseLegend
               |> HttpUtils.add_line_breaks
             ]
+        ; div
+            ~a:
+              [ a_id swap_session_modal_id
+              ; a_class [ "fullscreen-overlay"; "modal" ]
+              ]
+            []
         ; Component.Table.horizontal_table
             `Striped
             ~align_last_end:true
+            ~id:assignemnts_table_id
             ~thead
             rows
         ; div ~a:[ a_class [ "assignment-reminder-modals" ] ] modals
+        ; (if allow_session_swap then script (Unsafe.data js) else txt "")
         ]
   ;;
 

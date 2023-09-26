@@ -87,6 +87,46 @@ The participation in the session is compulsory.|}
   }
 ;;
 
+let assignment_session_change =
+  let label = Label.AssignmentSessionChange in
+  let email_text =
+    [ p
+        [ txt "You have been assigned to a new session:"
+        ; br ()
+        ; txt "{sessionOverview}"
+        ]
+    ; p
+        [ txt
+            "You are no longer signed up for the session on {oldSessionStart}."
+        ]
+    ]
+    |> add_salutation
+    |> html_to_string
+    |> EmailText.of_string
+  in
+  let email_subject =
+    "You have been assigned to a new session" |> EmailSubject.of_string
+  in
+  let sms_text =
+    {|You have been assigned to a new session:
+
+{sessionOverview}
+
+You are no longer signed up for the session on {oldSessionStart}.|}
+    |> add_salutation_to_text
+    |> SmsText.of_string
+  in
+  { id = Id.create ()
+  ; label
+  ; language
+  ; entity_uuid
+  ; email_text
+  ; email_subject
+  ; plain_text = sms_text
+  ; sms_text
+  }
+;;
+
 let email_verification =
   let label = Label.EmailVerification in
   let email_text =

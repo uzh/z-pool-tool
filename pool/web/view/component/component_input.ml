@@ -549,6 +549,8 @@ let selector
   ?flash_fetcher
   ?help
   ?option_formatter
+  ?elt_option_formatter
+  ?option_disabler
   ?(append_html = [])
   ()
   =
@@ -583,12 +585,24 @@ let selector
             selected
           |> CCOption.value ~default:[]
         in
-        option
-          ~a:((l |> show |> a_value) :: is_selected)
-          (l
-           |> CCOption.value ~default:show option_formatter
-           |> CCString.capitalize_ascii
-           |> txt))
+        let is_disabled =
+          option_disabler
+          |> CCOption.map_or ~default:false (fun fnc -> fnc l)
+          |> function
+          | true -> [ a_disabled () ]
+          | false -> []
+        in
+        let attrs = is_selected @ is_disabled in
+        let label =
+          match elt_option_formatter with
+          | Some fnc -> fnc l
+          | None ->
+            l
+            |> CCOption.value ~default:show option_formatter
+            |> CCString.capitalize_ascii
+            |> txt
+        in
+        option ~a:((l |> show |> a_value) :: attrs) label)
       options
   in
   let options =

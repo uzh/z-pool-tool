@@ -62,6 +62,7 @@ type t =
   | SaveOutline [@name "save-outline"] [@printer prt "save-outline"]
   | School [@name "school"] [@printer prt "school"]
   | SchoolOutline [@name "school-outline"] [@printer prt "school-outline"]
+  | SwapHorizonal [@name "swap-horizonal"] [@printer prt "swap-horizonal"]
   | Trash [@name "trash"] [@printer prt "trash"]
   | TrashOutline [@name "trash-outline"] [@printer prt "trash-outline"]
   | UploadOutline [@name "upload-outline"] [@printer prt "upload-outline"]

@@ -144,6 +144,7 @@ let rec field_to_string =
   | NoShowCount -> "no shows"
   | NotifiedAt -> "notified at"
   | NotifyVia -> "notify via"
+  | NotifyContact -> "notify contact"
   | Offset -> "offset"
   | Operator -> "operator"
   | Operators -> "operators"
@@ -546,6 +547,7 @@ let control_to_string = function
   | Assign field -> format_submit "assign" field
   | Back -> format_submit "back" None
   | Cancel field -> format_submit "cancel" field
+  | ChangeSession -> format_submit "change" (Some Entity_message_field.Session)
   | Choose field -> format_submit "choose" field
   | Close field -> format_submit "close" field
   | Create field -> format_submit "create" field

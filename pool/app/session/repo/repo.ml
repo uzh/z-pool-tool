@@ -186,6 +186,65 @@ module Sql = struct
     ||> CCOption.to_result Pool_common.Message.(NotFound Field.Session)
   ;;
 
+  let find_multiple_request ids =
+    Format.asprintf
+      {sql|
+        WHERE pool_sessions.uuid IN ( %s )
+      |sql}
+      (CCList.mapi
+         (fun i _ -> Format.asprintf "UNHEX(REPLACE($%n, '-', ''))" (i + 1))
+         ids
+       |> CCString.concat ",")
+    |> find_sql
+  ;;
+
+  let find_multiple pool ids =
+    let open Caqti_request.Infix in
+    if CCList.is_empty ids
+    then Lwt.return []
+    else (
+      let (Dynparam.Pack (pt, pv)) =
+        CCList.fold_left
+          (fun dyn id ->
+            dyn |> Dynparam.add Caqti_type.string (id |> Entity.Id.value))
+          Dynparam.empty
+          ids
+      in
+      let request = find_multiple_request ids |> pt ->* RepoEntity.t in
+      Utils.Database.collect (pool |> Pool_database.Label.value) request pv)
+  ;;
+
+  let find_contact_is_assigned_by_experiment_request =
+    let open Caqti_request.Infix in
+    {sql|
+        SELECT
+          LOWER(CONCAT(
+            SUBSTR(HEX(pool_sessions.uuid), 1, 8), '-',
+            SUBSTR(HEX(pool_sessions.uuid), 9, 4), '-',
+            SUBSTR(HEX(pool_sessions.uuid), 13, 4), '-',
+            SUBSTR(HEX(pool_sessions.uuid), 17, 4), '-',
+            SUBSTR(HEX(pool_sessions.uuid), 21)
+          ))
+          FROM pool_sessions
+          LEFT JOIN pool_assignments ON pool_assignments.session_uuid = pool_sessions.uuid
+            AND pool_assignments.canceled_at IS NULL
+            AND pool_assignments.marked_as_deleted = 0
+          WHERE
+            pool_assignments.contact_uuid = UNHEX(REPLACE(?, '-', ''))
+            AND pool_sessions.experiment_uuid = UNHEX(REPLACE(?, '-', ''))
+      |sql}
+    |> Caqti_type.(tup2 string string) ->* RepoEntity.Id.t
+  ;;
+
+  let find_contact_is_assigned_by_experiment pool contact_id experiment_id =
+    let open Utils.Lwt_result.Infix in
+    Utils.Database.collect
+      (Database.Label.value pool)
+      find_contact_is_assigned_by_experiment_request
+      (Contact.Id.value contact_id, Experiment.Id.value experiment_id)
+    >|> find_multiple pool
+  ;;
+
   let find_all_for_experiment_request =
     let open Caqti_request.Infix in
     {sql|
@@ -727,6 +786,17 @@ let location_to_public_repo_entity pool session =
 let find pool id =
   let open Utils.Lwt_result.Infix in
   Sql.find pool id >>= location_to_repo_entity pool
+;;
+
+let find_multiple pool ids =
+  let open Utils.Lwt_result.Infix in
+  Sql.find_multiple pool ids >|> add_location_to_multiple pool
+;;
+
+let find_contact_is_assigned_by_experiment pool contact_id experiment_id =
+  let open Utils.Lwt_result.Infix in
+  Sql.find_contact_is_assigned_by_experiment pool contact_id experiment_id
+  >|> add_location_to_multiple pool
 ;;
 
 (* TODO [aerben] these queries are very inefficient, how to circumvent? *)

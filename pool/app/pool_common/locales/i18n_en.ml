@@ -108,6 +108,8 @@ let to_string = function
   | SignUpCTA -> "Register now to participate in economic experiments."
   | SignUpTitle -> "Sign up"
   | SortUngroupedFields -> "Sort ungrouped fields"
+  | SwapSessionsListEmpty ->
+    "No sessions were found to which you can assign this contact."
   | SwitchChronological -> "Switch to chronological view"
   | SwitchGrouped -> "Switch to grouped view"
   | TermsAndConditionsLastUpdated ptime ->
@@ -416,6 +418,10 @@ The following follow-up sessions exist:|}
 
     Note: When using the mechanism "LOGIN" a username and password are required.
     |}
+  | SwapSessions ->
+    {|Changing the session will only change the session of this assignment. If follow-up assignments exists, they must be updated manually.
+
+Only sessions with open spots can be selected.|}
   | TagsIntro ->
     "The defined tags can be added to several types (e.g. contacts). The tags \
      can be used by the experiment filter to eighter include or exclude them."
