@@ -8,6 +8,7 @@ let create_invitation () =
     { id = Pool_common.Id.create ()
     ; contact
     ; resent_at = None
+    ; resent_count = ResentCount.init
     ; created_at = Pool_common.CreatedAt.create ()
     ; updated_at = Pool_common.UpdatedAt.create ()
     }

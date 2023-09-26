@@ -9,4 +9,17 @@ let add_process_to_mailing =
     |sql}
 ;;
 
-let migration () = empty "202309251545" |> add_step add_process_to_mailing
+let add_resent_count_to_invitation =
+  create_step
+    ~label:"add resent count to invitation"
+    {sql|
+      ALTER TABLE pool_invitations
+        ADD COLUMN resent_count int(10) DEFAULT 0 AFTER resent_at
+    |sql}
+;;
+
+let migration () =
+  empty "202309251545"
+  |> add_step add_process_to_mailing
+  |> add_step add_resent_count_to_invitation
+;;

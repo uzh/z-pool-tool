@@ -28,5 +28,10 @@ let handle_event pool event =
         ||> fun (_ : Guard.Target.t) -> ())
       contacts
   | Resent invitation ->
-    Repo.update pool { invitation with resent_at = Some (ResentAt.create ()) }
+    Repo.update
+      pool
+      { invitation with
+        resent_at = Some (ResentAt.create ())
+      ; resent_count = ResentCount.increment invitation.resent_count
+      }
 ;;

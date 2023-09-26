@@ -31,6 +31,7 @@ module Sql = struct
             SUBSTR(HEX(pool_contacts.user_uuid), 21)
           )),
           pool_invitations.resent_at,
+          pool_invitations.resent_count,
           pool_invitations.created_at,
           pool_invitations.updated_at
         FROM
@@ -98,6 +99,24 @@ module Sql = struct
       Repo_entity.t
   ;;
 
+  let find_by_experiment_and_resent_count pool (id, resent_count) limit =
+    let open Caqti_request.Infix in
+    let request =
+      select_sql
+        {sql|
+          WHERE
+            experiment_uuid = UNHEX(REPLACE(?, '-', '')) AND resent_count = ?
+          LIMIT ?
+        |sql}
+      |> Caqti_type.(tup3 Pool_common.Repo.Id.t RepoEntity.ResentCount.t int)
+         ->* RepoEntity.t
+    in
+    Utils.Database.collect
+      (Pool_database.Label.value pool)
+      request
+      (Experiment.Id.to_common id, resent_count, limit)
+  ;;
+
   let find_by_contact_request =
     let open Caqti_request.Infix in
     {sql|
@@ -157,7 +176,8 @@ module Sql = struct
     {sql|
       UPDATE pool_invitations
       SET
-        resent_at = $2
+        resent_at = $2,
+        resent_count = $3
       WHERE uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}
     |> RepoEntity.Update.t ->. Caqti_type.unit
@@ -237,6 +257,15 @@ let find_by_experiment ?query pool id =
   >|+ fun invitations -> invitations, query
 ;;
 
+let find_by_experiment_and_resent_count pool (id, count) limit =
+  let open Utils.Lwt_result.Infix in
+  (* TODO Implement as transaction *)
+  let%lwt invitations =
+    Sql.find_by_experiment_and_resent_count pool (id, count) limit
+  in
+  invitations |> Lwt_list.map_s (contact_to_invitation pool) ||> CCList.all_ok
+;;
+
 let find_by_contact pool contact =
   let open Utils.Lwt_result.Infix in
   (* TODO Implement as transaction *)
@@ -265,6 +294,7 @@ let bulk_insert pool contacts experiment_id =
         experiment_uuid,
         contact_uuid,
         resent_at,
+        resent_count,
         created_at,
         updated_at
       ) VALUES
@@ -278,6 +308,7 @@ let bulk_insert pool contacts experiment_id =
             UNHEX(REPLACE(?, '-', '')),
             UNHEX(REPLACE(?, '-', '')),
             UNHEX(REPLACE(?, '-', '')),
+            ?,
             ?,
             ?,
             ?

@@ -10,3 +10,7 @@ let find_experiment_id_of_invitation = Repo.find_experiment_id_of_invitation
 let find_multiple_by_experiment_and_contacts =
   Repo.find_multiple_by_experiment_and_contacts
 ;;
+
+let find_by_experiment_and_resent_count =
+  Repo.find_by_experiment_and_resent_count
+;;

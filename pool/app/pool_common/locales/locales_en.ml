@@ -186,6 +186,7 @@ let rec field_to_string =
   | RemindersSent -> "reminders sent"
   | Required -> "required"
   | ResentAt -> "resent at"
+  | ResentCount -> "nr of resents"
   | Role -> "role"
   | Room -> "room"
   | Root -> "root"

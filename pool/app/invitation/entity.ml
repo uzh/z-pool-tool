@@ -4,10 +4,26 @@ module ResentAt = struct
   let create = Ptime_clock.now
 end
 
+module ResentCount = struct
+  include Pool_common.Model.Integer
+
+  let field = Pool_common.Message.Field.ResentCount
+
+  let create m =
+    if m >= 0 then Ok m else Error (Pool_common.Message.Invalid field)
+  ;;
+
+  let of_int = CCFun.(create %> Pool_common.Utils.get_or_failwith)
+  let init = 0
+  let increment m = m + 1
+  let schema = schema field create
+end
+
 type t =
   { id : Pool_common.Id.t
   ; contact : Contact.t
   ; resent_at : ResentAt.t option
+  ; resent_count : ResentCount.t
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
   }
@@ -17,6 +33,7 @@ let create ?(id = Pool_common.Id.create ()) contact =
   { id
   ; contact
   ; resent_at = None
+  ; resent_count = ResentCount.init
   ; created_at = Pool_common.CreatedAt.create ()
   ; updated_at = Pool_common.UpdatedAt.create ()
   }

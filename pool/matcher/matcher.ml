@@ -169,26 +169,61 @@ let match_invitation_events ?interval pools =
         let (_ : Message.error) = Utils.with_log_error ~tags err in
         None
     in
+    let resend level pool tenant id limit =
+      let%lwt experiment =
+        Experiment.find_of_mailing pool (Mailing.Id.to_common id)
+        ||> get_or_failwith
+      in
+      let%lwt invitations =
+        Invitation.find_by_experiment_and_resent_count
+          pool
+          (experiment.Experiment.id, level)
+          limit
+        ||> get_or_failwith
+      in
+      invitations
+      |> Lwt_list.map_s
+           (fun ({ Invitation.contact; _ } as invitation : Invitation.t) ->
+              let open Cqrs_command.Invitation_command.Resend in
+              let%lwt invitation_mail =
+                Message_template.ExperimentInvitation.create
+                  tenant
+                  experiment
+                  contact
+              in
+              handle invitation_mail { invitation; experiment } |> Lwt.return)
+      ||> CCResult.flatten_l
+      >|+ CCList.flatten
+    in
     Lwt_list.filter_map_s (fun (pool, limited_mailings) ->
-      let open Lwt_result.Syntax in
       let%lwt events =
+        let open Mailing.Process in
         let* tenant = Pool_tenant.find_by_label pool in
         limited_mailings
-        |> Lwt_list.map_s (fun (mailing, limit) ->
-          find_contacts_by_mailing pool mailing limit
-          >>= fun (experiment, contacts) ->
-          let%lwt create_message =
-            Message_template.ExperimentInvitation.prepare tenant experiment
-          in
-          { mailing; experiment; contacts; create_message } |> Lwt_result.return)
+        |> Lwt_list.map_s
+             (fun
+                 (({ Mailing.id; process; _ } as mailing : Mailing.t), limit) ->
+                match process with
+                | NewInvitation ->
+                  find_contacts_by_mailing pool mailing limit
+                  >>= fun (experiment, contacts) ->
+                  let%lwt create_message =
+                    Message_template.ExperimentInvitation.prepare
+                      tenant
+                      experiment
+                  in
+                  { mailing; experiment; contacts; create_message }
+                  |> handle
+                  |> Lwt.return
+                | ResendOnce ->
+                  resend (Invitation.ResentCount.of_int 0) pool tenant id limit
+                | ResendTwice ->
+                  resend (Invitation.ResentCount.of_int 1) pool tenant id limit)
         ||> CCList.all_ok
+        >|+ CCList.flatten
+        >|+ fun events -> pool, events
       in
-      let open CCResult in
-      events
-      >>= handle
-      >|= (fun events -> pool, events)
-      |> ok_or_log_error
-      |> Lwt.return)
+      events |> ok_or_log_error |> Lwt.return)
   in
   pool_based_mailings |> calculate_mailing_limits ?interval |> create_events
 ;;

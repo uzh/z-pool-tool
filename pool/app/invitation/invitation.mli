@@ -7,10 +7,33 @@ module ResentAt : sig
   val value : t -> Ptime.t
 end
 
+module ResentCount : sig
+  type t
+
+  val equal : t -> t -> bool
+  val compare : t -> t -> int
+  val pp : Format.formatter -> t -> unit
+  val show : t -> string
+  val sexp_of_t : t -> Sexplib0.Sexp.t
+  val t_of_yojson : Yojson.Safe.t -> t
+  val yojson_of_t : t -> Yojson.Safe.t
+  val value : t -> int
+  val field : Pool_common.Message.Field.t
+  val create : int -> (int, Pool_common.Message.error) result
+  val init : t
+  val increment : t -> t
+  val of_int : int -> t
+
+  val schema
+    :  unit
+    -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
+end
+
 type t =
   { id : Pool_common.Id.t
   ; contact : Contact.t
   ; resent_at : ResentAt.t option
+  ; resent_count : ResentCount.t
   ; created_at : Ptime.t
   ; updated_at : Ptime.t
   }
@@ -60,6 +83,12 @@ val find_by_experiment
   -> Pool_database.Label.t
   -> Experiment.Id.t
   -> (t list * Query.t, Pool_common.Message.error) result Lwt.t
+
+val find_by_experiment_and_resent_count
+  :  Pool_database.Label.t
+  -> Experiment.Id.t * ResentCount.t
+  -> int
+  -> (t list, Pool_common.Message.error) result Lwt.t
 
 val find_by_contact
   :  Pool_database.Label.t
