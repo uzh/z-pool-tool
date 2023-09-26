@@ -261,22 +261,6 @@ module Partials = struct
                      (Some swap_session_template)
                      ~languages
                      flash_fetcher)
-              ; script
-                  (Unsafe.data
-                     (Format.asprintf
-                        {sql|
-                        const id = "%s";
-                        const checkbox = document.querySelector(`[data-toggle='${id}']`);
-                        const target = document.getElementById(id);
-                        checkbox.addEventListener("click", (e) => {
-                          if(e.currentTarget.checked) {
-                            target.classList.remove("hidden");
-                          } else {
-                            target.classList.add("hidden");
-                          }
-                        })
-                    |sql}
-                        notifier_id))
               ; submit_element
                   language
                   (Pool_common.Message.Save None)
@@ -299,6 +283,7 @@ module Partials = struct
     ?(access_contact_profiles = false)
     ?(view_contact_name = false)
     ?(view_contact_info = false)
+    ?(allow_session_swap = false)
     redirect
     (Pool_context.{ language; csrf; _ } as context)
     experiment
@@ -318,6 +303,7 @@ module Partials = struct
     in
     let session_changeable m =
       Assignment.session_changeable session m |> CCResult.is_ok
+      && allow_session_swap
     in
     let action { Assignment.id; _ } suffix =
       assignment_specific_path
@@ -524,8 +510,7 @@ module Partials = struct
       let js =
         Format.asprintf
           {js|
-        const table = document.getElementById("%s");
-        table.addEventListener("htmx:beforeSend", (e) => {
+        document.addEventListener("htmx:beforeSend", (e) => {
           const { target } = e.detail;
           const content = document.createElement("div");
           const body = document.createElement("div");
@@ -541,15 +526,25 @@ module Partials = struct
         })
 
         document.addEventListener("htmx:afterSwap", (e) => {
-          window['pool-tool'].initRichTextEditor(e.detail.elt);
-          e.detail.elt.querySelector(".modal-close").addEventListener("click", (e) => {
-            const modal = e.currentTarget.closest(".modal");
+          const modal = e.detail.elt;
+          window['pool-tool'].initRichTextEditor(modal);
+
+          modal.querySelector(".modal-close").addEventListener("click", (e) => {
             modal.classList.remove("active");
             modal.setAttribute("aria-hidden", "true");
           })
-        })
+
+          const checkbox = modal.querySelector(`[data-toggle]`);
+          const target = document.getElementById(checkbox.dataset.toggle);
+          checkbox.addEventListener("click", (e) => {
+            if(e.currentTarget.checked) {
+              target.classList.remove("hidden");
+            } else {
+              target.classList.add("hidden");
+            }
+          })
+         })
         |js}
-          assignemnts_table_id
       in
       div
         [ p
@@ -569,7 +564,7 @@ module Partials = struct
             ~thead
             rows
         ; div ~a:[ a_class [ "assignment-reminder-modals" ] ] modals
-        ; script (Unsafe.data js)
+        ; (if allow_session_swap then script (Unsafe.data js) else txt "")
         ]
   ;;
 

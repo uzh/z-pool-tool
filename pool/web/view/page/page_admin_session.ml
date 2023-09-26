@@ -886,6 +886,7 @@ let detail
     let assignment_list =
       Page_admin_assignments.(
         Partials.overview_list
+          ~allow_session_swap:true
           ?access_contact_profiles
           ?view_contact_name
           ?view_contact_info
