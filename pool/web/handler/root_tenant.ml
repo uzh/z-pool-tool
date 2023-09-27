@@ -63,12 +63,7 @@ let create req =
       in
       events >|> HttpUtils.File.cleanup_upload Database.root files
     in
-    let handle (root_events, (databas_label, tenant_events)) =
-      let%lwt () =
-        Lwt_list.iter_s (Pool_event.handle_event Pool_database.root) root_events
-      in
-      Lwt_list.iter_s (Pool_event.handle_event databas_label) tenant_events
-    in
+    let handle = Lwt_list.iter_s (Pool_event.handle_event Pool_database.root) in
     let return_to_overview () =
       Http_utils.redirect_to_with_actions
         tenants_path

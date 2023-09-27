@@ -66,20 +66,6 @@ module TermsAndConditions : sig
   val value : t -> Pool_common.Language.t * Terms.t
 end
 
-type default =
-  { default_reminder_lead_time : Pool_common.Reminder.LeadTime.t
-  ; default_text_msg_reminder_lead_time : Pool_common.Reminder.LeadTime.t
-  ; tenant_languages : Pool_common.Language.t list
-  ; tenant_email_suffixes : EmailSuffix.t list
-  ; tenant_contact_email : ContactEmail.t
-  ; inactive_user_disable_after : InactiveUser.DisableAfter.t
-  ; inactive_user_warning : InactiveUser.Warning.t
-  ; trigger_profile_update_after : TriggerProfileUpdateAfter.t
-  ; terms_and_conditions : TermsAndConditions.t list
-  }
-
-val default_values : default
-
 module Value : sig
   type t
 end
@@ -128,7 +114,6 @@ type event =
   | LanguagesUpdated of Pool_common.Language.t list
   | TermsAndConditionsUpdated of TermsAndConditions.t list
   | TriggerProfileUpdateAfterUpdated of TriggerProfileUpdateAfter.t
-  | DefaultRestored of default
 
 val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
