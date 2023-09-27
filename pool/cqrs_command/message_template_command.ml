@@ -155,30 +155,3 @@ end = struct
     | Some _ -> Ok [ template |> deleted |> Pool_event.message_template ]
   ;;
 end
-
-module RestoreDefault : sig
-  type t = Pool_tenant.t
-
-  val handle
-    :  Message_template.t list
-    -> unit
-    -> (Pool_event.t list, Pool_common.Message.error) result
-
-  val effects : Message_template.Id.t -> Guard.ValidationSet.t
-end = struct
-  type t = Pool_tenant.t
-
-  let handle default () =
-    Ok
-      [ Message_template.(DefaultRestored default)
-        |> Pool_event.message_template
-      ]
-  ;;
-
-  let effects id =
-    Guard.ValidationSet.And
-      [ Message_template.Guard.Access.delete id
-      ; Message_template.Guard.Access.create
-      ]
-  ;;
-end
