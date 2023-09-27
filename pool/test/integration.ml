@@ -310,11 +310,11 @@ let suite =
               try_assign_experiment_tag_to_contact
           ; test_case "filter tags" `Slow Filter_test.filter_by_tags
           ] )
-    ; "cleanup", [ test_case "clean up test database" `Quick Seed.cleanup ]
     ; ( "user import"
       , User_import_test.
           [ test_case "confirm as contact" `Slow confirm_as_contact_integration
           ] )
+    ; "cleanup", [ test_case "clean up test database" `Slow Seed.cleanup ]
     ]
 ;;
 

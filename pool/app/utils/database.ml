@@ -173,13 +173,17 @@ let with_disabled_fk_check database_label f =
     Skipped database tables:
 
     - core_migration_state: migration state of the application
-    - email_templates: clean up is handled by RestoreDefault mail event *)
+    - pool_message_templates: clean up is handled by RestoreDefault mail event
+    - guardian_role_permissions
+    - pool_i18n
+    - pool_system_settings *)
+
 let table_names_request =
   let open Caqti_request.Infix in
   {sql|
     SELECT TABLE_NAME
     FROM INFORMATION_SCHEMA.`TABLES`
-    WHERE TABLE_SCHEMA IN (DATABASE()) AND TABLE_NAME NOT IN ('core_migration_state', 'email_templates')
+    WHERE TABLE_SCHEMA IN (DATABASE()) AND TABLE_NAME NOT IN ('core_migration_state', 'pool_message_templates', 'guardian_role_permissions', 'pool_i18n', 'pool_system_settings')
   |sql}
   |> Caqti_type.(unit ->* string) ~oneshot:true
 ;;
