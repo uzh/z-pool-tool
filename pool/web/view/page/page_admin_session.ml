@@ -1136,7 +1136,7 @@ let close_assignment_htmx_row
     let checked = if value then [ a_checked () ] else [] in
     let classnames =
       if CCList.mem ~eq:Pool_common.Message.Field.equal field updated_fields
-      then [ a_class [ "success" ] ]
+      then [ a_class [ "is-valid" ] ]
       else []
     in
     div
@@ -1180,12 +1180,12 @@ let close_assignment_htmx_row
              ~eq:equal_error
              (FieldRequired Field.ExternalDataId)
              (errors |> CCOption.value ~default:[])
-        then [ a_class [ "has-error" ] ]
+        then [ a_class [ "is-invalid" ] ]
         else if CCList.mem
                   ~eq:Pool_common.Message.Field.equal
                   field
                   updated_fields
-        then [ a_class [ "success" ] ]
+        then [ a_class [ "is-valid" ] ]
         else []
       in
       div
@@ -1352,7 +1352,9 @@ let close
         ; a_action
             (Format.asprintf "%s/close" session_path
              |> Sihl.Web.externalize_path)
-        ; a_user_data "detect-unsaved-changes" ""
+        ; a_user_data
+            "confirmable"
+            Pool_common.(Utils.confirmable_to_string language I18n.CloseSession)
         ]
       [ Input.csrf_element csrf ()
       ; div
