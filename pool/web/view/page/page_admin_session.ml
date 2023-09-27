@@ -1352,7 +1352,9 @@ let close
         ; a_action
             (Format.asprintf "%s/close" session_path
              |> Sihl.Web.externalize_path)
-        ; a_user_data "detect-unsaved-changes" ""
+        ; a_user_data
+            "confirmable"
+            Pool_common.(Utils.confirmable_to_string language I18n.CloseSession)
         ]
       [ Input.csrf_element csrf ()
       ; div
