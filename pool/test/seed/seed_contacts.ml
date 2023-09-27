@@ -102,30 +102,3 @@ let find_contact_by_id pool id =
   |> Contact.find_by_email pool
   |> Lwt.map CCResult.get_exn
 ;;
-
-let cleanup db_pool =
-  let delete_sihl_user_request =
-    let open Caqti_request.Infix in
-    {sql|
-      DELETE FROM user_users
-      WHERE uuid = UNHEX(REPLACE(?, '-', ''))
-    |sql}
-    |> Caqti_type.(string ->. unit)
-  in
-  let delete_contact_request =
-    let open Caqti_request.Infix in
-    {sql|
-      DELETE FROM pool_contacts
-      WHERE user_uuid = UNHEX(REPLACE(?, '-', ''))
-    |sql}
-    |> Caqti_type.(string ->. unit)
-  in
-  let exec request id =
-    Utils.Database.exec
-      (Pool_database.Label.value db_pool)
-      request
-      (Pool_common.Id.value id)
-  in
-  let%lwt () = Lwt_list.iter_s (exec delete_contact_request) contact_ids in
-  Lwt_list.iter_s (exec delete_sihl_user_request) contact_ids
-;;
