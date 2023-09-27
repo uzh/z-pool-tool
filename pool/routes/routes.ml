@@ -402,6 +402,7 @@ module Admin = struct
           ; post "/reschedule" ~middlewares:[ Access.reschedule ] reschedule
           ; get "/close" ~middlewares:[ Access.close ] close
           ; post "/close" ~middlewares:[ Access.close ] close_post
+          ; get "/print" ~middlewares:[ Access.read ] print
           ; post
               "/resend-reminders"
               ~middlewares:[ Access.update ]

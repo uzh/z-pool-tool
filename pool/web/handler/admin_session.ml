@@ -151,7 +151,7 @@ let create req =
   result |> HttpUtils.extract_happy_path_with_actions ~src req
 ;;
 
-let detail req page =
+let detail page req =
   let open Utils.Lwt_result.Infix in
   let experiment_id = experiment_id req in
   let session_id = session_id req in
@@ -274,18 +274,31 @@ let detail req page =
          session
          follow_ups
          flash_fetcher
-       |> Lwt_result.ok)
+       |> Lwt_result.ok
+     | `Print ->
+       let* assignments =
+         Assignment.find_by_session database_label session.Session.id
+       in
+       Page.Admin.Session.print
+         ~view_contact_name
+         ~view_contact_info
+         context
+         experiment
+         session
+         assignments
+       |> Lwt_result.return)
     >>= create_layout req context
     >|+ Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path ~src req
 ;;
 
-let show req = detail req `Detail
-let edit req = detail req `Edit
-let reschedule_form req = detail req `Reschedule
-let cancel_form req = detail req `Cancel
-let close req = detail req `Close
+let show = detail `Detail
+let edit = detail `Edit
+let reschedule_form = detail `Reschedule
+let cancel_form = detail `Cancel
+let close = detail `Close
+let print = detail `Print
 
 let update_handler action req =
   let experiment_id = experiment_id req in

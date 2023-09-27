@@ -925,6 +925,36 @@ let detail
          experiment)
 ;;
 
+let print
+  ?view_contact_name
+  ?view_contact_info
+  (Pool_context.{ language; _ } as context)
+  experiment
+  (session : Session.t)
+  assignments
+  =
+  let assignment_list =
+    Page_admin_assignments.(
+      Partials.overview_list
+        ?view_contact_name
+        ?view_contact_info
+        ~is_print:true
+        Session
+        context
+        experiment
+        session
+        assignments)
+  in
+  div
+    ~a:[ a_class [ "safety-margin" ] ]
+    [ h1
+        [ txt
+            Pool_common.(Utils.text_to_string language (session_title session))
+        ]
+    ; assignment_list
+    ]
+;;
+
 let edit
   ({ Pool_context.language; csrf; _ } as context)
   experiment
