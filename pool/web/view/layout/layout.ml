@@ -5,6 +5,7 @@ module Language = Pool_common.Language
 module Message = Message
 module Navigation = Navigation
 module Experiment = Navigation_experiment
+module Print = Layout_print
 
 module Tenant = struct
   let create

@@ -179,6 +179,7 @@ let detail page req =
       Tags.ParticipationTags.(
         find_all database_label (Session (Session.Id.to_common session_id)))
     in
+    let create_layout = create_layout req context in
     (match page with
      | `Detail ->
        let* assignments =
@@ -196,7 +197,7 @@ let detail page req =
          session
          current_tags
          assignments
-       |> Lwt_result.ok
+       >|> create_layout
      | `Edit ->
        let%lwt locations = Pool_location.find_all database_label in
        let%lwt session_reminder_templates =
@@ -235,7 +236,7 @@ let detail page req =
          sys_languages
          (current_tags, available_tags, experiment_participation_tags)
          flash_fetcher
-       |> Lwt_result.ok
+       >|> create_layout
      | `Close ->
        let* assignments =
          Assignment.find_uncanceled_by_session database_label session.Session.id
@@ -257,7 +258,7 @@ let detail page req =
          assignments
          participation_tags
          counters
-       |> Lwt_result.ok
+       >|> create_layout
      | `Reschedule ->
        let* experiment = Experiment.find database_label experiment_id in
        Page.Admin.Session.reschedule_session
@@ -265,7 +266,7 @@ let detail page req =
          experiment
          session
          flash_fetcher
-       |> Lwt_result.ok
+       >|> create_layout
      | `Cancel ->
        let* follow_ups = Session.find_follow_ups database_label session_id in
        Page.Admin.Session.cancel
@@ -274,7 +275,7 @@ let detail page req =
          session
          follow_ups
          flash_fetcher
-       |> Lwt_result.ok
+       >|> create_layout
      | `Print ->
        let* assignments =
          Assignment.find_by_session database_label session.Session.id
@@ -287,7 +288,6 @@ let detail page req =
          session
          assignments
        |> Lwt_result.return)
-    >>= create_layout req context
     >|+ Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path ~src req

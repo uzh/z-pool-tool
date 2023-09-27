@@ -900,6 +900,11 @@ let detail
       [ h2
           ~a:[ a_class [ "heading-2" ] ]
           [ txt (Utils.nav_link_to_string language I18n.Assignments) ]
+      ; div
+          [ a
+              ~a:[ a_href "#"; a_user_data "print" "assignments" ]
+              [ txt "Print" ]
+          ]
       ; assignment_list
       ]
   in
@@ -945,14 +950,12 @@ let print
         session
         assignments)
   in
-  div
-    ~a:[ a_class [ "safety-margin" ] ]
-    [ h1
-        [ txt
-            Pool_common.(Utils.text_to_string language (session_title session))
-        ]
-    ; assignment_list
-    ]
+  let title =
+    Pool_common.(Utils.text_to_string language (session_title session))
+  in
+  [ div ~a:[ a_class [ "safety-margin" ] ] [ h1 [ txt title ]; assignment_list ]
+  ]
+  |> Layout.Print.create ~document_title:title
 ;;
 
 let edit
