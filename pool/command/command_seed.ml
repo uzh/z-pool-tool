@@ -19,6 +19,16 @@ let root_data_clean =
     Lwt.return_some ())
 ;;
 
+let seed_tenant_clean ?is_test db_pools =
+  let%lwt () =
+    Lwt_list.iter_s
+      CCFun.(Pool_database.Label.value %> Utils.Database.clean_all)
+      db_pools
+  in
+  let%lwt () = Database.Tenant.Seed.create ?is_test db_pools () in
+  Lwt.return_some ()
+;;
+
 let tenant_data =
   let name = "seed.tenant" in
   let description = "Seed development data to tenant databases" in
@@ -35,13 +45,17 @@ let tenant_data_clean =
   in
   Command_utils.make_no_args name description (fun () ->
     let%lwt db_pools = Command_utils.setup_databases () in
-    let%lwt () =
-      Lwt_list.iter_s
-        CCFun.(Pool_database.Label.value %> Utils.Database.clean_all)
-        db_pools
-    in
-    let%lwt () = Database.Tenant.Seed.create db_pools () in
-    Lwt.return_some ())
+    seed_tenant_clean db_pools)
+;;
+
+let tenant_data_test =
+  let name = "seed.tenant.test" in
+  let description =
+    "Clean database and seed development data for test purpose"
+  in
+  Command_utils.make_no_args name description (fun () ->
+    let%lwt db_pools = Command_utils.setup_databases () in
+    seed_tenant_clean ~is_test:true db_pools)
 ;;
 
 let tenant_data_clean_specific =
@@ -50,9 +64,7 @@ let tenant_data_clean_specific =
     "Clean database and seed development data to specific tenant database"
   in
   Command_utils.make_pool_specific name description (fun pool ->
-    let%lwt () = Utils.Database.clean_all (Pool_database.Label.value pool) in
-    let%lwt () = Database.Tenant.Seed.create [ pool ] () in
-    Lwt.return_some ())
+    seed_tenant_clean [ pool ])
 ;;
 
 let tenant_seed_default =

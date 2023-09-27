@@ -10,23 +10,27 @@ module Root = struct
 end
 
 module Tenant = struct
-  let create db_pools () =
+  let create ?(is_test = false) db_pools () =
     Lwt_list.iter_s
       (fun pool ->
-        let%lwt () = Seed_experiment.experiments pool in
-        let%lwt () = Seed_custom_fields.create pool in
-        let%lwt () = Seed_user.admins pool in
-        let%lwt () = Seed_user.contacts pool in
-        let%lwt () = Seed_location.create pool in
-        let%lwt () = Seed_session.create pool in
-        let%lwt () = Seed_invitation.invitations pool in
-        let%lwt () = Seed_waiting_list.waiting_list pool in
-        let%lwt () = Seed_assignment.assignment pool in
-        let%lwt () = Seed_mailings.create pool in
-        let%lwt () = Seed_filter.filter pool in
-        let%lwt () = Seed_smtp.create pool in
-        let%lwt () = Seed_organisational_units.create pool in
-        Lwt.return_unit)
+        let seeds =
+          [ Seed_experiment.experiments
+          ; Seed_custom_fields.create
+          ; Seed_user.admins
+          ; Seed_location.create
+          ; Seed_session.create
+          ; Seed_invitation.invitations
+          ; Seed_waiting_list.waiting_list
+          ; Seed_assignment.assignment
+          ; Seed_assignment.assignment
+          ; Seed_mailings.create
+          ; Seed_filter.filter
+          ; Seed_smtp.create
+          ; Seed_organisational_units.create
+          ]
+          @ if is_test then [] else [ Seed_user.contacts ]
+        in
+        seeds |> Lwt_list.iter_s (fun fnc -> fnc pool))
       db_pools
   ;;
 

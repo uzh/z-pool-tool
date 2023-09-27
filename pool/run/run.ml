@@ -39,6 +39,7 @@ let commands =
   ; Seed.root_data_clean
   ; Seed.tenant_data
   ; Seed.tenant_data_clean
+  ; Seed.tenant_data_test
   ; Seed.tenant_data_clean_specific
   ; Seed.tenant_data_contacts_specific
   ; Seed.tenant_seed_default
