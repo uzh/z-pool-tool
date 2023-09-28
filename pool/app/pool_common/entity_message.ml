@@ -225,6 +225,7 @@ type control =
   | PromoteContact
   | PublicPage
   | Publish of Field.t option
+  | Print of Field.t option
   | ReactivateAccount
   | Register
   | Remove of Field.t option

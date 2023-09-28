@@ -897,13 +897,33 @@ let detail
           assignments)
     in
     div
-      [ h2
-          ~a:[ a_class [ "heading-2" ] ]
-          [ txt (Utils.nav_link_to_string language I18n.Assignments) ]
-      ; div
-          [ a
-              ~a:[ a_href "#"; a_user_data "print" "assignments" ]
-              [ txt "Print" ]
+      ~a:[ a_class [ "stack" ] ]
+      [ div
+          ~a:
+            [ a_class
+                [ "flexrow"
+                ; "flex-gap"
+                ; "justify-between"
+                ; "flexcolumn-mobile"
+                ]
+            ]
+          [ div
+              [ h2
+                  ~a:[ a_class [ "heading-2" ] ]
+                  [ txt (Utils.nav_link_to_string language I18n.Assignments) ]
+              ]
+          ; button
+              ~a:
+                [ a_class [ "btn"; "primary"; "has-icon"; "small" ]
+                ; a_user_data "print" "assignments"
+                ]
+              [ Icon.(to_html PrintOutline)
+              ; txt
+                  Pool_common.(
+                    Utils.control_to_string
+                      language
+                      Message.(Print (Some Field.Assignments)))
+              ]
           ]
       ; assignment_list
       ]
