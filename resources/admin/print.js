@@ -21,3 +21,11 @@ export const initPrint = () => {
         })
     })
 }
+
+window.addEventListener("afterprint", (e) => {
+    const elms = document.querySelectorAll(`.${frameClass}`);
+});
+
+            // window.addEventListener("afterprint", (e) => {
+            //     console.log('frame in event event: ', printFrame);
+            // }, { once: true });
