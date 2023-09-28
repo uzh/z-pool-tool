@@ -95,9 +95,12 @@ let path_with_language lang path =
   |> CCOption.value ~default:path
 ;;
 
-let redirect_to_with_actions path actions =
+let redirect_to_with_actions ?(skip_externalize = false) path actions =
+  let externalize_path path =
+    if skip_externalize then path else Sihl.Web.externalize_path path
+  in
   path
-  |> Sihl.Web.externalize_path
+  |> externalize_path
   |> Sihl.Web.Response.redirect_to
   |> CCList.fold_left ( % ) id actions
   |> Lwt.return

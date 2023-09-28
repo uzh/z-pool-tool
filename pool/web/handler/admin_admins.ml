@@ -222,6 +222,7 @@ let revoke_role ({ Rock.Request.target; _ } as req) =
          Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
        in
        Http_utils.redirect_to_with_actions
+         ~skip_externalize:true
          edit_route
          [ Message.set ~success:[ Pool_common.Message.RoleUnassigned ] ]
      in

@@ -1,6 +1,6 @@
 {
   "name": "pool",
-  "version": "0.4.6",
+  "version": "0.4.7",
   "license": "GPL-2.0-or-later",
   "scripts": {
     "build": "export NODE_OPTIONS=--trace-warnings PUBLIC_URL=$PREFIX_PATH/assets/; parcel build resources/index.js resources/images/** --dist-dir public --public-url $PUBLIC_URL && parcel build resources/admin.js --dist-dir public --public-url $PUBLIC_URL",
@@ -22,7 +22,7 @@
   },
   "dependencies": {
     "@ckeditor/ckeditor5-build-classic": "^36.0.0",
-    "@econ/frontend-framework": "^3.1.2",
+    "@econ/frontend-framework": "^3.2.1",
     "@fullcalendar/core": "^6.1.8",
     "@fullcalendar/daygrid": "^6.1.8",
     "@fullcalendar/list": "^6.1.8",

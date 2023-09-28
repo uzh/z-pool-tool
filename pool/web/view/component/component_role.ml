@@ -70,7 +70,9 @@ module List = struct
       form
         ~a:
           [ a_method `Post
-          ; a_action (roles_path ~suffix:target target_admin)
+          ; a_action
+              (roles_path ~suffix:target target_admin
+               |> Sihl.Web.externalize_path)
           ; a_user_data
               "confirmable"
               (Pool_common.Utils.confirmable_to_string language confirm_text)
