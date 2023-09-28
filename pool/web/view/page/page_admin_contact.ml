@@ -28,7 +28,7 @@ let personal_detail ?(admin_comment = None) language contact =
         |> txt )
     ]
     @ with_comment)
-  |> Table.vertical_table `Striped language
+  |> Table.vertical_table ~align_top:true `Striped language
   |> fun html ->
   div
     [ h3
