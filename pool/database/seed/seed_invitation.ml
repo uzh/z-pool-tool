@@ -5,10 +5,11 @@ let invitations pool =
     Lwt_list.fold_left_s
       (fun events experiment ->
         let%lwt filtered_contacts =
-          Filter.find_filtered_contacts
-            pool
-            (experiment.Experiment.id |> Experiment.Id.to_common)
-            experiment.Experiment.filter
+          Filter.(
+            find_filtered_contacts
+              pool
+              (Matcher (experiment.Experiment.id |> Experiment.Id.to_common))
+              experiment.Experiment.filter)
           ||> CCResult.get_exn
         in
         let n = CCList.length filtered_contacts / 2 in
@@ -17,7 +18,11 @@ let invitations pool =
           (events
            @ CCList.map
                (fun contact ->
-                 Invitation.Created (contact |> CCList.pure, experiment))
+                 Invitation.Created
+                   { Invitation.contacts = contact |> CCList.pure
+                   ; mailing = None
+                   ; experiment
+                   })
                contacts))
       []
       experiments

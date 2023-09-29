@@ -24,9 +24,14 @@ end = struct
     let open CCFun.Infix in
     let open CCList in
     mailings
-    |> map (fun { experiment; contacts; create_message; _ } ->
+    |> map (fun { mailing; experiment; contacts; create_message; _ } ->
          let open Invitation_command.Create in
-         { experiment; contacts; invited_contacts = []; create_message }
+         { experiment
+         ; contacts
+         ; invited_contacts = []
+         ; create_message
+         ; mailing = Some mailing
+         }
          |> handle)
        %> all_ok
        %> CCResult.map flatten

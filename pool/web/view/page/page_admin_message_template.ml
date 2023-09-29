@@ -9,7 +9,14 @@ let build_add_button label path =
     [ txt (Format.asprintf "Add %s" (Label.to_human label)) ]
 ;;
 
-let table ?(buttons = txt "") ?delete_path language templates to_edit_path =
+let table
+  ?(buttons = txt "")
+  ?(can_update_experiment = false)
+  ?delete_path
+  language
+  templates
+  to_edit_path
+  =
   let open Message_template in
   let empty_hint =
     match templates with
@@ -56,9 +63,8 @@ let table ?(buttons = txt "") ?delete_path language templates to_edit_path =
                   ()
               ]
           in
-          div
-            ~a:[ a_class [ "flexrow"; "flex-gap"; "justify-end" ] ]
-            [ buttons; delete ]
+          (if can_update_experiment then [ buttons; delete ] else [])
+          |> div ~a:[ a_class [ "flexrow"; "flex-gap"; "justify-end" ] ]
       in
       [ txt (to_human_label template)
       ; txt (template.language |> Pool_common.Language.show)

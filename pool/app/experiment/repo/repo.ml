@@ -26,7 +26,8 @@ module Sql = struct
         show_external_data_id_links,
         experiment_type,
         email_session_reminder_lead_time,
-        text_message_session_reminder_lead_time
+        text_message_session_reminder_lead_time,
+        invitation_reset_at
       ) VALUES (
         UNHEX(REPLACE(?, '-', '')),
         ?,
@@ -37,6 +38,7 @@ module Sql = struct
         UNHEX(REPLACE(?, '-', '')),
         UNHEX(REPLACE(?, '-', '')),
         UNHEX(REPLACE(?, '-', '')),
+        ?,
         ?,
         ?,
         ?,
@@ -114,6 +116,7 @@ module Sql = struct
           pool_experiments.experiment_type,
           pool_experiments.email_session_reminder_lead_time,
           pool_experiments.text_message_session_reminder_lead_time,
+          pool_experiments.invitation_reset_at,
           pool_experiments.created_at,
           pool_experiments.updated_at
         FROM pool_experiments
@@ -245,7 +248,8 @@ module Sql = struct
         show_external_data_id_links = $14,
         experiment_type = $15,
         email_session_reminder_lead_time = $16,
-        text_message_session_reminder_lead_time = $17
+        text_message_session_reminder_lead_time = $17,
+        invitation_reset_at = $18
       WHERE
         uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}

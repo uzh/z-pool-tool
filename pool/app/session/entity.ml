@@ -179,18 +179,18 @@ type t =
 
 let create
   ?id
+  ?description
+  ?email_reminder_lead_time
   ?follow_up_to
   ?(has_follow_ups = false)
+  ?limitations
+  ?text_message_reminder_lead_time
   start
   duration
-  description
-  limitations
   location
   max_participants
   min_participants
   overbook
-  email_reminder_lead_time
-  text_message_reminder_lead_time
   =
   { id = id |> CCOption.value ~default:(Id.create ())
   ; follow_up_to

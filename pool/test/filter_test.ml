@@ -2,7 +2,7 @@ open Test_utils
 module Operator = Filter.Operator
 
 let equal_operator = FilterHelper.equal
-let get_exn_poolerror = get_or_failwith_pool_error
+let get_exn = get_or_failwith
 let contact_email_address = "jane.doe@email.com"
 let lang = Pool_common.Language.En
 let tenant = Tenant_test.Data.full_tenant
@@ -11,7 +11,7 @@ let allowed_email_suffixes =
   [ "mail.com" ]
   |> CCList.map Settings.EmailSuffix.create
   |> CCResult.flatten_l
-  |> get_exn_poolerror
+  |> get_exn
 ;;
 
 let convert_id = CCFun.(Experiment.Id.value %> Pool_common.Id.of_string)
@@ -26,7 +26,7 @@ module TestContacts = struct
     index
     |> CCList.nth Seed.Contacts.contact_ids
     |> Contact.find Data.database_label
-    ||> get_exn_poolerror
+    ||> get_exn
   ;;
 
   let persist_contact_update contact =
@@ -46,8 +46,8 @@ module CustomFieldData = struct
     Custom_field.
       { id = Id.create ()
       ; model = Model.Contact
-      ; name = Name.create [ lang ] [ lang, field_name ] |> get_exn_poolerror
-      ; hint = [] |> Hint.create |> get_exn_poolerror
+      ; name = Name.create [ lang ] [ lang, field_name ] |> get_exn
+      ; hint = [] |> Hint.create |> get_exn
       ; validation = Validation.pure
       ; required = false |> Required.create
       ; disabled = false |> Disabled.create
@@ -124,9 +124,7 @@ module CustomFieldData = struct
 
   module Birthday = struct
     let answer_value =
-      "1990-01-01"
-      |> Pool_common.Model.Ptime.date_of_string
-      |> get_or_failwith_pool_error
+      "1990-01-01" |> Pool_common.Model.Ptime.date_of_string |> get_exn
     ;;
 
     let field = create_custom_field "Birthday" (fun a -> Custom_field.Date a)
@@ -191,9 +189,8 @@ module CustomFieldData = struct
         { id = Id.create ()
         ; model = Model.Contact
         ; name =
-            Name.create [ lang ] [ lang, "admin_override_nr_field" ]
-            |> get_exn_poolerror
-        ; hint = [] |> Hint.create |> get_exn_poolerror
+            Name.create [ lang ] [ lang, "admin_override_nr_field" ] |> get_exn
+        ; hint = [] |> Hint.create |> get_exn
         ; validation = Validation.pure
         ; required = false |> Required.create
         ; disabled = false |> Disabled.create
@@ -255,7 +252,7 @@ module CustomFieldData = struct
     |> map (fun i -> [ lang, CCInt.to_string i ])
     |> map (Name.create [ lang ])
     |> CCList.all_ok
-    |> get_exn_poolerror
+    |> get_exn
     |> map (fun name -> Custom_field.SelectOption.Id.create (), name)
   ;;
 
@@ -284,9 +281,8 @@ module CustomFieldData = struct
     MultiSelect
       ( { id = Id.create ()
         ; model = Model.Contact
-        ; name =
-            Name.create [ lang ] [ lang, "Multi select" ] |> get_exn_poolerror
-        ; hint = [] |> Hint.create |> get_exn_poolerror
+        ; name = Name.create [ lang ] [ lang, "Multi select" ] |> get_exn
+        ; hint = [] |> Hint.create |> get_exn
         ; validation = Validation.pure
         ; required = false |> Required.create
         ; disabled = false |> Disabled.create
@@ -411,16 +407,16 @@ let find_contact_in_filtered_list contact experiment_id filter =
   filter
   |> CCOption.pure
   |> find
-  ||> get_exn_poolerror
+  ||> get_exn
   ||> CCList.find_opt (Contact.equal contact)
   ||> CCOption.is_some
 ;;
 
-let test_filter expected contact filter experiment =
+let test_filter expected contact filter { Experiment.id; _ } =
   let%lwt res =
     find_contact_in_filtered_list
       contact
-      (experiment.Experiment.id |> convert_id)
+      (Filter.Matcher (id |> convert_id))
       filter
   in
   Alcotest.(check bool "succeeds" expected res) |> Lwt.return
@@ -450,11 +446,12 @@ let filter_contacts _ () =
     let%lwt () = save_filter filter experiment in
     let expected = true in
     let%lwt filtered_contacts =
-      Filter.find_filtered_contacts
-        Data.database_label
-        (experiment.Experiment.id |> convert_id)
-        (Some filter)
-      ||> get_exn_poolerror
+      Filter.(
+        find_filtered_contacts
+          Data.database_label
+          (Matcher (experiment.Experiment.id |> convert_id))
+          (Some filter))
+      ||> get_exn
     in
     let res =
       filtered_contacts
@@ -632,7 +629,7 @@ let retrieve_fitleterd_and_ordered_contacts _ () =
     let find_contact = Seed.Contacts.find_contact_by_id pool in
     let%lwt contact_one = find_contact 11 in
     let%lwt contact_two = find_contact 12 in
-    let%lwt experiment = Repo.first_experiment () in
+    let%lwt { Experiment.id; _ } = Repo.first_experiment () in
     let filter =
       let open Filter in
       Pred
@@ -657,12 +654,13 @@ let retrieve_fitleterd_and_ordered_contacts _ () =
       |> get_order_element
     in
     let%lwt contacts =
-      Filter.find_filtered_contacts
-        ~order_by
-        Data.database_label
-        Experiment.(experiment.Experiment.id |> Id.to_common)
-        (Some filter)
-      |> Lwt.map get_exn_poolerror
+      Filter.(
+        find_filtered_contacts
+          ~order_by
+          Data.database_label
+          (Matcher Experiment.(id |> Id.to_common))
+          (Some filter))
+      |> Lwt.map get_exn
     in
     let get_index contact =
       CCList.find_idx
@@ -712,7 +710,7 @@ let create_filter_template_with_template _ () =
 let filter_with_admin_value _ () =
   let%lwt () =
     let open Utils.Lwt_result.Infix in
-    let%lwt experiment_id =
+    let%lwt id =
       Repo.first_experiment ()
       ||> fun { Experiment.id; _ } -> id |> Experiment.Id.to_common
     in
@@ -726,7 +724,7 @@ let filter_with_admin_value _ () =
            ))
       |> Lwt_list.iter_s (Pool_event.handle_event Data.database_label)
     in
-    let search = find_contact_in_filtered_list contact experiment_id in
+    let search = find_contact_in_filtered_list contact (Filter.Matcher id) in
     let%lwt should_not_contain =
       Filter.create None (admin_override_nr_field_filter ~nr:3 ()) |> search
     in
@@ -776,7 +774,7 @@ let filter_ignore_admin_value _ () =
     let open Utils.Lwt_result.Infix in
     let open CustomFieldData in
     let answer_value = 3 in
-    let%lwt experiment_id =
+    let%lwt id =
       Repo.first_experiment ()
       ||> fun { Experiment.id; _ } -> id |> Experiment.Id.to_common
     in
@@ -793,7 +791,7 @@ let filter_ignore_admin_value _ () =
       :: answer_admin_override_nr_field ~answer_value [ contact ]
       |> Lwt_list.iter_s (Pool_event.handle_event Data.database_label)
     in
-    let search = find_contact_in_filtered_list contact experiment_id in
+    let search = find_contact_in_filtered_list contact (Filter.Matcher id) in
     let%lwt res =
       Filter.create None (admin_override_nr_field_filter ~nr:answer_value ())
       |> search
@@ -817,12 +815,12 @@ let filter_by_experiment_participation _ () =
   in
   let%lwt first_session =
     Session.find_all_for_experiment database_label first_experiment
-    ||> get_exn_poolerror
+    ||> get_exn
     ||> hd
   in
   let%lwt second_session =
     Session.find_all_for_experiment database_label second_experiment
-    ||> get_exn_poolerror
+    ||> get_exn
     ||> hd
   in
   let%lwt contact = TestContacts.get_contact 2 in
@@ -840,7 +838,7 @@ let filter_by_experiment_participation _ () =
       find_by_session database_label first_session.Session.id
       >|+ CCList.find (fun (assignment : t) ->
         Contact.equal assignment.contact contact)
-      ||> get_exn_poolerror
+      ||> get_exn
     in
     let assignment =
       { assignment with
@@ -853,11 +851,11 @@ let filter_by_experiment_participation _ () =
     ]
     |> handle_events
   in
-  let experiment_id =
+  let id =
     CCList.nth all_experiments 1
     |> Experiment.(fun exp -> exp.id |> Id.to_common)
   in
-  let search = find_contact_in_filtered_list contact experiment_id in
+  let search = find_contact_in_filtered_list contact (Filter.Matcher id) in
   let%lwt res =
     Filter.(
       create
@@ -1053,9 +1051,7 @@ let filter_by_date_custom_field _ () =
     |> Lwt_list.iter_s (Pool_event.handle_event Data.database_label)
   in
   let date =
-    "1985-01-01"
-    |> Pool_common.Model.Ptime.date_of_string
-    |> get_or_failwith_pool_error
+    "1985-01-01" |> Pool_common.Model.Ptime.date_of_string |> get_exn
   in
   let greater_filter =
     Birthday.filter ~date Operator.(Size.Greater |> size) ()
@@ -1083,11 +1079,10 @@ let filter_by_tags _ () =
   let create_tag title =
     let id = Id.create () in
     let tag =
-      create ~id (Title.of_string title) Tags.Model.Contact
-      |> Test_utils.get_or_failwith_pool_error
+      create ~id (Title.of_string title) Tags.Model.Contact |> get_exn
     in
     let%lwt () = Created tag |> Tags.handle_event database_label in
-    find database_label id ||> Test_utils.get_or_failwith_pool_error
+    find database_label id ||> get_exn
   in
   let%lwt tag_one = create_tag "A Testing Tag" in
   let%lwt tag_two = create_tag "Another Testing Tag" in
@@ -1112,15 +1107,14 @@ let filter_by_tags _ () =
     ]
     |> handle_events
   in
-  let%lwt experiment = Repo.create_experiment () in
+  let%lwt { Experiment.id; _ } = Repo.create_experiment () in
   let search filter =
     let find =
-      experiment.Experiment.id
-      |> Experiment.Id.to_common
+      Filter.Matcher (id |> Experiment.Id.to_common)
       |> Filter.find_filtered_contacts Data.database_label
     in
     find (Some filter)
-    ||> get_exn_poolerror
+    ||> get_exn
     ||> CCList.filter
           (flip
              (CCList.mem ~eq:Contact.equal)

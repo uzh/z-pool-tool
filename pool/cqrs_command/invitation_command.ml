@@ -5,6 +5,7 @@ module Create : sig
 
   type t =
     { experiment : Experiment.t
+    ; mailing : Mailing.t option
     ; contacts : Contact.t list
     ; invited_contacts : Pool_common.Id.t list
     ; create_message :
@@ -20,6 +21,7 @@ module Create : sig
 end = struct
   type t =
     { experiment : Experiment.t
+    ; mailing : Mailing.t option
     ; contacts : Contact.t list
     ; invited_contacts : Pool_common.Id.t list
     ; create_message :
@@ -28,7 +30,7 @@ end = struct
 
   let handle
     ?(tags = Logs.Tag.empty)
-    { invited_contacts; contacts; create_message; experiment }
+    { invited_contacts; contacts; create_message; experiment; mailing }
     =
     Logs.info ~src (fun m -> m "Handle command Create" ~tags);
     let open CCResult in
@@ -58,7 +60,8 @@ end = struct
       | Ok emails when CCList.is_empty emails -> Ok []
       | Ok emails ->
         Ok
-          ([ Invitation.Created (contacts, experiment) |> Pool_event.invitation
+          ([ Invitation.(Created { contacts; mailing; experiment })
+             |> Pool_event.invitation
            ; Email.BulkSent emails |> Pool_event.email
            ]
            @ CCList.(

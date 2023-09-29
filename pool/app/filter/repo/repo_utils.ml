@@ -12,7 +12,7 @@ let coalesce_value =
   {sql| IF(pool_custom_fields.admin_override,COALESCE(admin_value,value),value) |sql}
 ;;
 
-let filtered_base_condition ~allow_invited () =
+let filtered_base_condition =
   let base =
     {sql|
     user_users.admin = 0
@@ -24,33 +24,42 @@ let filtered_base_condition ~allow_invited () =
   in
   let exclude_invited =
     {sql|
-    AND NOT EXISTS (
-      SELECT
-        1
-      FROM
-        pool_invitations
-      WHERE
-          pool_invitations.contact_uuid = pool_contacts.user_uuid
-        AND
-          pool_invitations.experiment_uuid = UNHEX(REPLACE(?, '-', ''))
-      LIMIT 1 )
-    AND NOT EXISTS (
-      SELECT
-        1
-      FROM
-        pool_assignments
-      INNER JOIN pool_sessions
-        ON pool_assignments.session_uuid = pool_sessions.uuid
-      WHERE
-        pool_assignments.contact_uuid = pool_contacts.user_uuid
-      AND
-        pool_sessions.experiment_uuid = UNHEX(REPLACE(?, '-', ''))
-      LIMIT 1 )
+      AND NOT EXISTS (
+        SELECT 1
+        FROM pool_invitations
+        WHERE pool_invitations.contact_uuid = pool_contacts.user_uuid
+          AND pool_invitations.experiment_uuid = UNHEX(REPLACE(?, '-', ''))
+        LIMIT 1)
     |sql}
   in
-  match allow_invited with
-  | true -> base
-  | false -> Format.asprintf "%s\n%s" base exclude_invited
+  let exclude_invited_after =
+    {sql|
+      AND NOT EXISTS (
+        SELECT 1
+        FROM pool_invitations
+        WHERE pool_invitations.contact_uuid = pool_contacts.user_uuid
+          AND pool_invitations.experiment_uuid = UNHEX(REPLACE(?, '-', ''))
+          AND pool_invitations.updated_at > ?
+        LIMIT 1)
+    |sql}
+  in
+  let exclude_assigned =
+    {sql|
+      AND NOT EXISTS (
+        SELECT 1
+        FROM pool_assignments
+        INNER JOIN pool_sessions
+          ON pool_assignments.session_uuid = pool_sessions.uuid
+        WHERE pool_assignments.contact_uuid = pool_contacts.user_uuid
+          AND pool_sessions.experiment_uuid = UNHEX(REPLACE(?, '-', ''))
+        LIMIT 1 )
+    |sql}
+  in
+  (function
+    | MatchesFilter -> [ base ]
+    | Matcher _ -> [ base; exclude_assigned; exclude_invited ]
+    | MatcherReset _ -> [ base; exclude_assigned; exclude_invited_after ])
+  %> CCString.concat "\n"
 ;;
 
 let custom_field_sql =
@@ -345,33 +354,29 @@ let filter_to_sql template_list dyn query =
   query_sql (dyn, "") query
 ;;
 
-let filtered_params
-  ?group_by
-  ?order_by
-  ?(allow_invited = false)
-  template_list
-  experiment_id
-  filter
-  =
+let filtered_params ?group_by ?order_by use_case template_list filter =
   let open CCResult.Infix in
   let id_param =
-    match allow_invited with
-    | true -> Dynparam.empty
-    | false ->
+    let open Dynparam in
+    match use_case with
+    | MatchesFilter -> empty
+    | Matcher experiment_id ->
       let id = experiment_id |> Pool_common.Id.value in
-      Dynparam.(empty |> add Caqti_type.string id |> add Caqti_type.string id)
+      empty |> add Caqti_type.string id |> add Caqti_type.string id
+    | MatcherReset (experiment_id, allow_before) ->
+      let id = experiment_id |> Pool_common.Id.value in
+      empty
+      |> add Caqti_type.string id
+      |> add Caqti_type.string id
+      |> add Caqti_type.ptime allow_before
   in
   let query =
     match filter with
-    | None -> Ok (id_param, filtered_base_condition ~allow_invited ())
+    | None -> Ok (id_param, filtered_base_condition use_case)
     | Some filter ->
       filter_to_sql template_list id_param filter
       >|= fun (dyn, sql) ->
-      ( dyn
-      , Format.asprintf
-          "%s\n AND %s"
-          (filtered_base_condition ~allow_invited ())
-          sql )
+      dyn, Format.asprintf "%s\n AND %s" (filtered_base_condition use_case) sql
   in
   query
   >|= fun (dyn, sql) ->

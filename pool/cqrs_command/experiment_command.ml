@@ -74,9 +74,9 @@ module Create : sig
 
   val handle
     :  ?tags:Logs.Tag.set
-    -> Admin.t option
-    -> Organisational_unit.t option
-    -> Email.SmtpAuth.t option
+    -> ?contact_person:Admin.t
+    -> ?organisational_unit:Organisational_unit.t
+    -> ?smtp_auth:Email.SmtpAuth.t
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
@@ -88,30 +88,38 @@ end = struct
 
   let handle
     ?(tags = Logs.Tag.empty)
-    contact_person
-    organisational_unit
-    smtp_auth
-    (command : t)
+    ?contact_person
+    ?organisational_unit
+    ?smtp_auth
+    ({ cost_center
+     ; description
+     ; email_session_reminder_lead_time
+     ; experiment_type
+     ; text_message_session_reminder_lead_time
+     ; _
+     } as command :
+      t)
     =
     Logs.info ~src (fun m -> m "Handle command Create" ~tags);
     let open CCResult in
     let* experiment =
       Experiment.create
+        ?contact_person_id:(contact_person |> CCOption.map Admin.id)
+        ?cost_center
+        ?description
+        ?email_session_reminder_lead_time
+        ?experiment_type
+        ?organisational_unit
+        ?smtp_auth_id:
+          (smtp_auth |> CCOption.map Email.SmtpAuth.(fun ({ id; _ } : t) -> id))
+        ?text_message_session_reminder_lead_time
         command.title
         command.public_title
-        command.description
-        command.cost_center
-        organisational_unit
-        (contact_person |> CCOption.map Admin.id)
-        (smtp_auth |> CCOption.map Email.SmtpAuth.(fun ({ id; _ } : t) -> id))
         command.direct_registration_disabled
         command.registration_disabled
         command.allow_uninvited_signup
         command.external_data_required
         command.show_external_data_id_links
-        command.experiment_type
-        command.email_session_reminder_lead_time
-        command.text_message_session_reminder_lead_time
     in
     Ok [ Experiment.Created experiment |> Pool_event.experiment ]
   ;;
@@ -183,6 +191,21 @@ end = struct
   let decode data =
     Conformist.decode_and_validate (default_schema default_command) data
     |> CCResult.map_err Pool_common.Message.to_conformist_error
+  ;;
+
+  let effects id = Experiment.Guard.Access.update id
+end
+
+module ResetInvitations : sig
+  include Common.CommandSig with type t = Experiment.t
+
+  val effects : Id.t -> BaseGuard.ValidationSet.t
+end = struct
+  type t = Experiment.t
+
+  let handle ?(tags = Logs.Tag.empty) (experiment : t) =
+    Logs.info ~src (fun m -> m "Handle command ResetInvitations" ~tags);
+    Ok [ Experiment.ResetInvitations experiment |> Pool_event.experiment ]
   ;;
 
   let effects id = Experiment.Guard.Access.update id

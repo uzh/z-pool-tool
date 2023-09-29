@@ -294,10 +294,11 @@ let count_contacts req =
            (fun str -> str |> Filter.query_of_string >|= CCOption.pure)
       |> Lwt_result.lift
     in
-    Filter.count_filtered_contacts
-      database_label
-      (experiment.Experiment.id |> Experiment.Id.to_common)
-      query
+    Filter.(
+      count_filtered_contacts
+        database_label
+        (Matcher (experiment.Experiment.id |> Experiment.Id.to_common))
+        query)
     >|+ fun count -> `Assoc [ "count", `Int count ]
   in
   result |> HttpUtils.Json.handle_yojson_response ~src req

@@ -251,14 +251,10 @@ let create_no_optional () =
       ~id:session_id
       start1
       duration
-      None
-      None
       location
       max_participants
       min_participants
       overbook
-      None
-      None
   in
   check_result
     (Ok [ Pool_event.Session (Session.Created (session, experiment_id)) ])
@@ -278,16 +274,16 @@ let create_full () =
     let open Data.Validated in
     Session.create
       ~id:session_id
+      ~email_reminder_lead_time:lead_time
+      ~description
+      ~limitations
+      ~text_message_reminder_lead_time:lead_time
       start1
       duration
-      (Some description)
-      (Some limitations)
       location
       max_participants
       min_participants
       overbook
-      (Some lead_time)
-      (Some lead_time)
   in
   check_result
     (Ok [ Pool_event.Session (Session.Created (session, experiment_id)) ])
@@ -312,16 +308,16 @@ let create_min_eq_max () =
     let open Data.Validated in
     Session.create
       ~id:session_id
+      ~email_reminder_lead_time:lead_time
+      ~description
+      ~limitations
+      ~text_message_reminder_lead_time:lead_time
       start1
       duration
-      (Some description)
-      (Some limitations)
       location
       max_participants2
       min_participants
       overbook
-      (Some lead_time)
-      (Some lead_time)
   in
   check_result
     (Ok [ Pool_event.Session (Session.Created (session, experiment_id)) ])
@@ -718,7 +714,7 @@ let cancel_valid () =
       create_cancellation_message
         (reason |> Session.CancellationReason.of_string)
         contact
-      |> Test_utils.get_or_failwith_pool_error
+      |> Test_utils.get_or_failwith
       |> fun msg ->
       (msg, experiment.Experiment.smtp_auth_id)
       |> Email.sent
@@ -760,7 +756,7 @@ let cancel_valid () =
       contact.Contact.cell_phone
       |> CCOption.get_exn_or "No phone number provided"
       |> create_cancellation_text_message reason contact
-      |> get_or_failwith_pool_error
+      |> get_or_failwith
       |> Text_message.sent
       |> Pool_event.text_message)
   in
@@ -794,11 +790,11 @@ let cancel_valid_with_missing_cell_phone () =
     let text_msg =
       contact1.Contact.cell_phone
       |> CCOption.to_result Pool_common.Message.(Invalid Field.CellPhone)
-      |> Test_utils.get_or_failwith_pool_error
+      |> Test_utils.get_or_failwith
       |> create_cancellation_text_message
            (Session.CancellationReason.of_string reason)
            contact1
-      |> Test_utils.get_or_failwith_pool_error
+      |> Test_utils.get_or_failwith
       |> Text_message.sent
       |> Pool_event.text_message
     in
@@ -806,7 +802,7 @@ let cancel_valid_with_missing_cell_phone () =
       create_cancellation_message
         (reason |> Session.CancellationReason.of_string)
         contact2
-      |> Test_utils.get_or_failwith_pool_error
+      |> Test_utils.get_or_failwith
       |> fun msg ->
       (msg, experiment.Experiment.smtp_auth_id)
       |> Email.sent
@@ -858,7 +854,7 @@ let cancel_with_email_and_text_notification () =
       create_cancellation_message
         (reason |> Session.CancellationReason.of_string)
         contact
-      |> Test_utils.get_or_failwith_pool_error
+      |> Test_utils.get_or_failwith
       |> fun msg ->
       (msg, experiment.Experiment.smtp_auth_id)
       |> Email.sent
@@ -867,11 +863,11 @@ let cancel_with_email_and_text_notification () =
     let text_msg contact =
       contact.Contact.cell_phone
       |> CCOption.to_result Pool_common.Message.(Invalid Field.CellPhone)
-      |> Test_utils.get_or_failwith_pool_error
+      |> Test_utils.get_or_failwith
       |> create_cancellation_text_message
            (Session.CancellationReason.of_string reason)
            contact
-      |> Test_utils.get_or_failwith_pool_error
+      |> Test_utils.get_or_failwith
       |> Text_message.sent
       |> Pool_event.text_message
     in
@@ -1080,17 +1076,17 @@ let create_follow_up_later () =
     let open Data.Validated in
     Session.create
       ~id:session_id
+      ~email_reminder_lead_time:lead_time
+      ~description
       ~follow_up_to:parent_session.Session.id
       (Session.Start.create later_start)
+      ~limitations
+      ~text_message_reminder_lead_time:lead_time
       duration
-      (Some description)
-      (Some limitations)
       location
       max_participants
       min_participants
       overbook
-      (Some lead_time)
-      (Some lead_time)
   in
   check_result
     (Ok [ Pool_event.Session (Session.Created (session, experiment_id)) ])
@@ -1460,7 +1456,7 @@ let close_session_check_contact_figures _ () =
   in
   let%lwt assignments =
     Assignment.find_by_session Data.database_label session.Session.id
-    ||> get_or_failwith_pool_error
+    ||> get_or_failwith
   in
   let find_assignment contact =
     CCList.find
@@ -1495,7 +1491,7 @@ let close_session_check_contact_figures _ () =
           no_show
           participated
           increment_num_participatons
-        |> Test_utils.get_or_failwith_pool_error
+        |> Test_utils.get_or_failwith
       in
       let assignment = find_assignment contact in
       let assignment =
@@ -1527,7 +1523,7 @@ let close_session_check_contact_figures _ () =
       in
       let%lwt contact =
         find_by_email Data.database_label (Contact.email_address contact)
-        ||> get_or_failwith_pool_error
+        ||> get_or_failwith
       in
       (NumberOfShowUps.equal contact.num_show_ups num_show_ups
        && NumberOfNoShows.equal contact.num_no_shows num_no_shows
@@ -1545,7 +1541,7 @@ let close_session_check_contact_figures _ () =
 let send_session_reminders_with_default_leat_time _ () =
   let open Utils.Lwt_result.Infix in
   let open Integration_utils in
-  let get_exn = get_or_failwith_pool_error in
+  let get_exn = get_or_failwith in
   let database_label = Test_utils.Data.database_label in
   let%lwt tenant = Pool_tenant.find_by_label database_label ||> get_exn in
   let s_to_lead s =

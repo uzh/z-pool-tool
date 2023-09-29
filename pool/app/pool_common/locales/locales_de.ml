@@ -33,6 +33,7 @@ let rec field_to_string =
   | ContactPerson -> "Kontaktperson"
   | Contacts -> "Kontakte"
   | CostCenter -> "Kostenstelle"
+  | Count -> "Anzahl"
   | Context -> "Kontext"
   | CreatedAt -> "Erstellt am"
   | CurrentPassword -> "Aktuelles Passwort"
@@ -106,6 +107,7 @@ let rec field_to_string =
   | Interval -> "Interval"
   | Invitation -> "Einladung"
   | InvitationCount -> "Anz. Einladungen"
+  | InvitationResetAt -> "Einladungen zurückgesetzt am"
   | Invitations -> "Einladungen"
   | InvitationsSent -> "Gesendete Einladungen"
   | InvitationSubject -> "Einladungsbetreff"
@@ -198,6 +200,7 @@ let rec field_to_string =
   | Session -> "Session"
   | Sessions -> "Sessions"
   | Setting -> "Einstellung"
+  | Settings -> "Einstellungen"
   | ShowUpCount -> "Anwesende"
   | ShowExteralDataIdLinks -> "Link zu externen Datenidentifikatoren anzeigen"
   | SignedUpAt -> "Eingeschrieben am"
@@ -300,6 +303,9 @@ let success_to_string : success -> string = function
   | RemindersResent -> "Die Erinnerungen wirden erneut versendet."
   | Rescheduled field ->
     field_message "" (field_to_string field) "wurden erfolgreich verschoben."
+  | ResetInvitations ->
+    "Einladungsversand zurückgesetzt. Bei kommenden versanden werden frühere \
+     Einladungen ignoriert respektive die Einladung erneut versendet."
   | RoleAssigned -> "Rolle wurde zugewiesen."
   | RoleUnassigned -> "Rolle wurde entzogen."
   | SentList field ->
@@ -626,7 +632,7 @@ let control_to_string = function
       (field_to_string Field.PlainText)
       (field_to_string Field.EmailText)
   | Resend field -> format_submit "erneut senden" field
-  | Reset -> "zurücksetzen"
+  | Reset field -> format_submit "zurücksetzen" field
   | ResetForm -> "Formular zurücksetzen"
   | Save field -> format_submit "speichern" field
   | SessionDetails -> format_submit "Sessiondetails" None

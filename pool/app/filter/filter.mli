@@ -262,24 +262,28 @@ val toggle_predicate_type
 val all_query_experiments : t -> Pool_common.Id.t list
 val all_query_tags : t -> Tags.Id.t list
 
+type base_condition =
+  | MatchesFilter
+  | Matcher of Pool_common.Id.t
+  | MatcherReset of Pool_common.Id.t * Ptime.t
+
 val find_filtered_contacts
   :  Pool_database.Label.t
   -> ?order_by:string
   -> ?limit:int
-  -> Pool_common.Id.t
+  -> base_condition
   -> t option
   -> (Contact.t list, Pool_common.Message.error) Lwt_result.t
 
 val count_filtered_contacts
   :  Pool_database.Label.t
-  -> Pool_common.Id.t
+  -> base_condition
   -> query option
   -> (int, Pool_common.Message.error) Lwt_result.t
 
 val contact_matches_filter
   :  ?default:bool
   -> Pool_database.Label.t
-  -> Pool_common.Id.t
   -> query
   -> Contact.t
   -> bool Lwt.t

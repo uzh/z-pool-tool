@@ -25,7 +25,7 @@ module ContactRepo = struct
           ; password =
               contact.user.Sihl_user.password
               |> Pool_user.Password.create
-              |> get_or_failwith_pool_error
+              |> get_or_failwith
           ; firstname = firstname contact
           ; lastname = lastname contact
           ; terms_accepted_at = None
@@ -35,7 +35,7 @@ module ContactRepo = struct
       @ confirm
       |> Lwt_list.iter_s (handle_event Data.database_label)
     in
-    contact |> id |> find Data.database_label ||> get_or_failwith_pool_error
+    contact |> id |> find Data.database_label ||> get_or_failwith
   ;;
 end
 
@@ -69,7 +69,7 @@ module AdminRepo = struct
       [ Created admin ]
       |> Lwt_list.iter_s (handle_event ~tags Data.database_label)
     in
-    admin_id |> find Data.database_label ||> get_or_failwith_pool_error
+    admin_id |> find Data.database_label ||> get_or_failwith
   ;;
 end
 
@@ -109,7 +109,7 @@ module WaitingListRepo = struct
       Data.database_label
       contact
       experiment
-    ||> get_or_failwith_pool_error
+    ||> get_or_failwith
   ;;
 end
 

@@ -9,13 +9,18 @@ let build_experiment_path experiment =
   Format.asprintf "/admin/experiments/%s/%s" Experiment.(Id.value experiment.id)
 ;;
 
-let notifications language sys_languages message_templates =
+let notifications
+  ?(can_update_experiment = false)
+  language
+  sys_languages
+  message_templates
+  =
   let open CCList in
   let open Pool_common in
   let open Message_template in
   message_templates
   |> filter_map (fun (label, templates) ->
-    if is_empty templates
+    if is_empty templates || not can_update_experiment
     then None
     else
       filter
@@ -41,6 +46,7 @@ let notifications language sys_languages message_templates =
 ;;
 
 let message_templates_html
+  ?(can_update_experiment = false)
   language
   csrf
   experiment_path
@@ -59,6 +65,7 @@ let message_templates_html
       then None
       else label |> build_button |> CCOption.pure)
     |> div ~a:[ a_class [ "flexrow"; "flex-gap"; "justify-end" ] ]
+    |> fun buttons -> if can_update_experiment then Some buttons else None
   in
   let build_path append =
     CCFun.(prefixed_template_url ~append %> experiment_path)
@@ -66,7 +73,8 @@ let message_templates_html
   let edit_path = build_path "edit" in
   let delete_path = build_path "delete", csrf in
   Page_admin_message_template.table
-    ~buttons
+    ?buttons
+    ~can_update_experiment
     ~delete_path
     language
     (CCList.flat_map (fun (_, templates) -> templates) message_templates)
@@ -354,8 +362,8 @@ let create
 
 let edit
   ?(allowed_to_assign = false)
-  experiment
-  ({ Pool_context.language; csrf; query_language; _ } as context)
+  ({ Experiment.id; _ } as experiment)
+  ({ Pool_context.language; csrf; query_language; guardian; _ } as context)
   sys_languages
   default_email_reminder_lead_time
   default_text_msg_reminder_lead_time
@@ -367,7 +375,18 @@ let edit
   (available_participation_tags, current_participation_tags)
   flash_fetcher
   =
-  let notifications = notifications language sys_languages message_templates in
+  let can_update_experiment =
+    Guard.PermissionOnTarget.validate
+      (Experiment.Guard.Access.update_permission_on_target id)
+      guardian
+  in
+  let notifications =
+    notifications
+      ~can_update_experiment
+      language
+      sys_languages
+      message_templates
+  in
   let form =
     experiment_form
       ~experiment
@@ -380,9 +399,7 @@ let edit
       flash_fetcher
   in
   let experiment_path =
-    Format.asprintf
-      "/admin/experiments/%s/%s"
-      Experiment.(Id.value experiment.id)
+    Format.asprintf "/admin/experiments/%s/%s" Experiment.(Id.value id)
   in
   let message_templates =
     div
@@ -393,6 +410,7 @@ let edit
                 Utils.nav_link_to_string language I18n.MessageTemplates)
           ]
       ; message_templates_html
+          ~can_update_experiment
           language
           csrf
           experiment_path
@@ -460,7 +478,7 @@ let edit
 ;;
 
 let detail
-  experiment
+  ({ Experiment.id; _ } as experiment)
   session_count
   message_templates
   sys_languages
@@ -468,50 +486,114 @@ let detail
   smtp_account
   tags
   participation_tags
-  ({ Pool_context.language; csrf; _ } as context)
+  ({ Pool_context.language; csrf; guardian; _ } as context)
   =
   let experiment_path = build_experiment_path experiment in
-  let notifications = notifications language sys_languages message_templates in
+  let can_update_experiment =
+    Guard.PermissionOnTarget.validate
+      (Experiment.Guard.Access.update_permission_on_target id)
+      guardian
+  in
+  let notifications =
+    notifications
+      ~can_update_experiment
+      language
+      sys_languages
+      message_templates
+  in
   let delete_form =
     match session_count > 0 with
     | true ->
       div
+        ~a:[ a_class [ "flexrow"; "flex-gap"; "flexcolumn-mobile" ] ]
         [ submit_element
             language
             Message.(Delete (Some Field.Experiment))
             ~submit_type:`Disabled
+            ~has_icon:Icon.TrashOutline
             ~classnames:[ "small" ]
             ()
-        ; p
-            [ small
-                [ txt
-                    (Message.ExperimentSessionCountNotZero
-                     |> Utils.error_to_string language)
-                ]
+        ; div
+            ~a:[ a_class [ "grow" ] ]
+            [ txt
+                (Message.ExperimentSessionCountNotZero
+                 |> Utils.error_to_string language)
             ]
         ]
     | false ->
-      Tyxml.Html.form
-        ~a:
-          [ a_method `Post
-          ; a_action
-              (Sihl.Web.externalize_path
-                 (Format.asprintf
-                    "/admin/experiments/%s/delete"
-                    (experiment.Experiment.id |> Experiment.Id.value)))
-          ; a_user_data
-              "confirmable"
-              (Utils.confirmable_to_string language I18n.DeleteExperiment)
-          ]
-        [ csrf_element csrf ()
-        ; submit_element
-            language
-            Message.(Delete (Some Field.Experiment))
-            ~classnames:[ "small" ]
-            ~submit_type:`Error
-            ~has_icon:Icon.TrashOutline
-            ()
+      div
+        ~a:[ a_class [ "flexrow"; "flex-gap"; "flexcolumn-mobile" ] ]
+        [ form
+            ~a:
+              [ a_method `Post
+              ; a_action
+                  (Sihl.Web.externalize_path
+                     (Format.asprintf
+                        "/admin/experiments/%s/delete"
+                        (experiment.Experiment.id |> Experiment.Id.value)))
+              ; a_user_data
+                  "confirmable"
+                  (Utils.confirmable_to_string language I18n.DeleteExperiment)
+              ]
+            [ csrf_element csrf ()
+            ; submit_element
+                language
+                Message.(Delete (Some Field.Experiment))
+                ~classnames:[ "small" ]
+                ~submit_type:`Error
+                ~has_icon:Icon.TrashOutline
+                ()
+            ]
         ]
+  in
+  let reset_invitation_form =
+    div
+      ~a:[ a_class [ "flexrow"; "flex-gap"; "flexcolumn-mobile" ] ]
+      [ form
+          ~a:
+            [ a_method `Post
+            ; a_action
+                (Sihl.Web.externalize_path
+                   (Format.asprintf
+                      "/admin/experiments/%s/reset-invitations"
+                      (experiment.Experiment.id |> Experiment.Id.value)))
+            ; a_user_data
+                "confirmable"
+                (Utils.confirmable_to_string language I18n.ResetInvitations)
+            ]
+          [ csrf_element csrf ()
+          ; submit_element
+              language
+              Message.(Reset (Some Field.Invitations))
+              ~classnames:[ "small" ]
+              ~submit_type:`Primary
+              ~has_icon:Icon.RefreshOutline
+              ()
+          ]
+      ; div
+          ~a:[ a_class [ "grow" ] ]
+          [ txt
+              Pool_common.(Utils.hint_to_string language I18n.ResetInvitations)
+          ]
+      ]
+  in
+  let setting =
+    if can_update_experiment
+    then
+      [ div
+          ~a:[ a_class [ "stack-md" ] ]
+          [ h2
+              ~a:[ a_class [ "heading-2" ] ]
+              [ txt
+                  Pool_common.(
+                    Utils.field_to_string language Message.Field.Settings
+                    |> CCString.capitalize_ascii)
+              ]
+          ; reset_invitation_form
+          ; delete_form
+          ]
+      ]
+    else []
   in
   let bool_to_string = Utils.bool_to_string language in
   let open Experiment in
@@ -576,6 +658,10 @@ let detail
                  ~default:"-"
                  Pool_common.Utils.Time.formatted_timespan
             |> txt )
+        ; ( Field.InvitationResetAt
+          , experiment.invitation_reset_at
+            |> CCOption.map_or ~default:"-" InvitationResetAt.to_human
+            |> txt )
         ]
       |> vertical_table
     in
@@ -588,6 +674,7 @@ let detail
                   Utils.nav_link_to_string language I18n.MessageTemplates)
             ]
         ; message_templates_html
+            ~can_update_experiment
             language
             csrf
             experiment_path
@@ -610,27 +697,27 @@ let detail
     in
     [ div
         ~a:[ a_class [ "stack-lg" ] ]
-        [ notifications
-        ; experiment_table
-        ; tag_overview
-        ; message_template
-        ; delete_form
-        ]
+        ([ notifications; experiment_table; tag_overview; message_template ]
+         @ setting)
     ]
   in
   let edit_button =
-    link_as_button
-      ~icon:Icon.Create
-      ~classnames:[ "small" ]
-      ~control:(language, Message.(Edit (Some Field.Experiment)))
-      (Format.asprintf
-         "/admin/experiments/%s/edit"
-         (experiment.id |> Experiment.Id.value))
+    if can_update_experiment
+    then
+      link_as_button
+        ~icon:Icon.Create
+        ~classnames:[ "small" ]
+        ~control:(language, Message.(Edit (Some Field.Experiment)))
+        (Format.asprintf
+           "/admin/experiments/%s/edit"
+           (experiment.id |> Experiment.Id.value))
+      |> CCOption.some
+    else None
   in
   Layout.Experiment.(
     create
       ~active_navigation:I18n.Overview
-      ~buttons:edit_button
+      ?buttons:edit_button
       context
       (NavLink I18n.Overview)
       experiment

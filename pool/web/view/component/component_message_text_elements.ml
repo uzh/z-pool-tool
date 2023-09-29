@@ -174,6 +174,7 @@ module DummyData = struct
       ; experiment_type = Some Pool_common.ExperimentType.Lab
       ; email_session_reminder_lead_time = None
       ; text_message_session_reminder_lead_time = None
+      ; invitation_reset_at = None
       ; created_at = Ptime_clock.now ()
       ; updated_at = Ptime_clock.now ()
       }

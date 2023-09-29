@@ -2,7 +2,7 @@ module ExperimentCommand = Cqrs_command.Experiment_command
 module Common = Pool_common
 module Model = Test_utils.Model
 
-let get_exn = Test_utils.get_or_failwith_pool_error
+let get_exn = Test_utils.get_or_failwith
 let database_label = Test_utils.Data.database_label
 
 let experiment_boolean_fields =
@@ -90,52 +90,26 @@ module Data = struct
   let experiment =
     let open CCResult in
     let open Experiment in
+    let to_bool = Utils.Bool.of_string in
     let* title = title |> Title.create in
     let* public_title = public_title |> PublicTitle.create in
     let* description = description |> Description.create in
-    Ok
-      { id = Id.create ()
-      ; title
-      ; public_title
-      ; description = Some description
-      ; cost_center = Some (cost_center |> CostCenter.of_string)
-      ; organisational_unit = None
-      ; filter
-      ; contact_person_id = None
-      ; smtp_auth_id = None
-      ; direct_registration_disabled =
-          direct_registration_disabled
-          |> Utils.Bool.of_string
-          |> DirectRegistrationDisabled.create
-      ; registration_disabled =
-          registration_disabled
-          |> Utils.Bool.of_string
-          |> RegistrationDisabled.create
-      ; allow_uninvited_signup =
-          allow_uninvited_signup
-          |> Utils.Bool.of_string
-          |> AllowUninvitedSignup.create
-      ; external_data_required =
-          external_data_required
-          |> Utils.Bool.of_string
-          |> ExternalDataRequired.create
-      ; show_external_data_id_links =
-          show_external_data_id_links
-          |> Utils.Bool.of_string
-          |> ShowExternalDataIdLinks.create
-      ; experiment_type =
-          Some (experiment_type |> Pool_common.ExperimentType.read)
-      ; email_session_reminder_lead_time = None
-      ; text_message_session_reminder_lead_time = None
-      ; created_at = Common.CreatedAt.create ()
-      ; updated_at = Common.UpdatedAt.create ()
-      }
+    Experiment.create
+      ~cost_center:(cost_center |> CostCenter.of_string)
+      ~description
+      ~experiment_type:(experiment_type |> Pool_common.ExperimentType.read)
+      ?filter
+      title
+      public_title
+      (direct_registration_disabled
+       |> to_bool
+       |> DirectRegistrationDisabled.create)
+      (registration_disabled |> to_bool |> RegistrationDisabled.create)
+      (allow_uninvited_signup |> to_bool |> AllowUninvitedSignup.create)
+      (external_data_required |> to_bool |> ExternalDataRequired.create)
+      (show_external_data_id_links |> to_bool |> ShowExternalDataIdLinks.create)
   ;;
 end
-
-let handle_create ?organisational_unit ?contact_person ?smtp_auth =
-  ExperimentCommand.Create.handle organisational_unit contact_person smtp_auth
-;;
 
 let handle_update ?organisational_unit ?contact_person ?smtp_auth experiment =
   ExperimentCommand.Update.handle
@@ -164,14 +138,14 @@ let create_without_title () =
       ]
     |> Http_utils.format_request_boolean_values experiment_boolean_fields
     |> ExperimentCommand.Create.decode
-    >>= handle_create
+    >>= ExperimentCommand.Create.handle
   in
   let expected = Error Common.Message.(Conformist [ Field.Title, NoValue ]) in
   Test_utils.check_result expected events
 ;;
 
 let update () =
-  let experiment = Data.experiment |> Test_utils.get_or_failwith_pool_error in
+  let experiment = Data.experiment |> get_exn in
   let open CCResult.Infix in
   let events =
     Data.urlencoded
@@ -186,7 +160,7 @@ let update () =
 ;;
 
 let update_add_ou_and_contact_person () =
-  let experiment = Data.experiment |> Test_utils.get_or_failwith_pool_error in
+  let experiment = Data.experiment |> get_exn in
   let open CCResult.Infix in
   let events =
     Data.urlencoded
@@ -212,7 +186,7 @@ let update_add_ou_and_contact_person () =
 ;;
 
 let update_remove_ou () =
-  let experiment = Data.experiment |> Test_utils.get_or_failwith_pool_error in
+  let experiment = Data.experiment |> get_exn in
   let experiment =
     Experiment.
       { experiment with organisational_unit = Some Data.organisational_unit }
@@ -299,7 +273,8 @@ module AvailableExperiments = struct
     in
     let%lwt experiment = ExperimentRepo.create ~id:experiment_id () in
     let%lwt () =
-      Invitation.Created ([ contact ], experiment)
+      Invitation.(
+        Created { contacts = [ contact ]; mailing = None; experiment })
       |> Pool_event.invitation
       |> Pool_event.handle_event database_label
     in

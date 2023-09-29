@@ -20,6 +20,7 @@ type create =
 type event =
   | Created of t
   | Updated of t
+  | ResetInvitations of t
   | Deleted of Common.Id.t
 [@@deriving eq, show, variants]
 
@@ -33,6 +34,15 @@ let handle_event pool : event -> unit Lwt.t =
     ||> Pool_common.Utils.get_or_failwith
     ||> fun (_ : Guard.Target.t) -> ()
   | Updated t -> Repo.update pool t
+  | ResetInvitations t ->
+    let%lwt experiment =
+      Repo.find pool t.id ||> Pool_common.Utils.get_or_failwith
+    in
+    Repo.update
+      pool
+      { experiment with
+        invitation_reset_at = Some (InvitationResetAt.create_now ())
+      }
   | Deleted experiment_id -> Repo.delete pool experiment_id
 [@@deriving eq, show]
 ;;

@@ -315,7 +315,7 @@ let valid_swiss_number () =
   let expected =
     nr
     |> Pool_user.CellPhone.create
-    |> Test_utils.get_or_failwith_pool_error
+    |> Test_utils.get_or_failwith
     |> CCResult.return
   in
   validate_cell_phone nr expected
@@ -326,7 +326,7 @@ let valid_german_number () =
   let expected =
     nr
     |> Pool_user.CellPhone.create
-    |> Test_utils.get_or_failwith_pool_error
+    |> Test_utils.get_or_failwith
     |> CCResult.return
   in
   validate_cell_phone nr expected
@@ -337,7 +337,7 @@ let valid_password () =
   let expected =
     password
     |> Pool_user.Password.create
-    |> Test_utils.get_or_failwith_pool_error
+    |> Test_utils.get_or_failwith
     |> CCResult.return
   in
   validate_password_policy password expected
@@ -554,7 +554,7 @@ let should_not_send_registration_notification _ () =
         }
       |> Cqrs_command.Contact_command.SendRegistrationAttemptNotifitacion.handle
            contact
-      |> Test_utils.get_or_failwith_pool_error
+      |> Test_utils.get_or_failwith
       |> Lwt_list.iter_s (Pool_event.handle_event database_label)
     in
     let%lwt res =

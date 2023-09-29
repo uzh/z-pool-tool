@@ -205,6 +205,14 @@ val find_by_experiment
 val find_overlaps : Pool_database.Label.t -> t -> t list Lwt.t
 val find_current : Pool_database.Label.t -> t list Lwt.t
 
+module Repo : sig
+  module Id : sig
+    type t = Id.t
+
+    val t : t Caqti_type.t
+  end
+end
+
 module Guard : sig
   module Target : sig
     val to_authorizable

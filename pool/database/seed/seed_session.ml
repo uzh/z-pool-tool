@@ -52,7 +52,7 @@ let create pool =
                  , min
                  , overbook
                  , email_reminder_lead_time
-                 , text_message_lead_time ) ->
+                 , text_message_reminder_lead_time ) ->
               let open CCOption in
               let (session : Session.t) =
                 let open Session in
@@ -81,21 +81,21 @@ let create pool =
                 let email_reminder_lead_time =
                   email_reminder_lead_time >|= create_lead_time
                 in
-                let text_message_lead_time =
-                  text_message_lead_time >|= create_lead_time
+                let text_message_reminder_lead_time =
+                  text_message_reminder_lead_time >|= create_lead_time
                 in
                 let location = CCList.hd locations in
                 create
+                  ?description
+                  ?email_reminder_lead_time
+                  ?limitations
+                  ?text_message_reminder_lead_time
                   start
                   duration
-                  description
-                  limitations
                   location
                   max_participants
                   min_participants
                   overbook
-                  email_reminder_lead_time
-                  text_message_lead_time
               in
               Session.Created (session, experiment.Experiment.id))
             session_data
@@ -124,17 +124,14 @@ let create pool =
           Some "MRI Study" >>= Description.create %> of_result
         in
         Session.create
+          ?description
           ~follow_up_to:parent.Session.id
           start
           duration
-          description
-          None
           parent.location
           parent.max_participants
           parent.min_participants
           parent.overbook
-          None
-          None
       in
       Session.handle_event pool
       @@ Session.Created (follow_up, experiment.Experiment.id))
