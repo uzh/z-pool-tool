@@ -20,4 +20,10 @@ export const initPrint = () => {
             printFrame.contentWindow.print();
         })
     })
+
+    window.addEventListener("afterprint", () => {
+        document.querySelectorAll(`.${frameClass}`).forEach(frame => {
+            frame.remove();
+        })
+    });
 }
