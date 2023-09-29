@@ -15,11 +15,13 @@ let index req =
   in
   let result ({ Pool_context.database_label; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, error_path)
-    @@ let* experiment = Experiment.find database_label id in
+    @@ let* ({ Experiment.id; filter; _ } as experiment) =
+         Experiment.find database_label id
+       in
        let%lwt key_list = Filter.all_keys database_label in
        let%lwt template_list = Filter.find_all_templates database_label () in
        let%lwt query_experiments, query_tags =
-         match experiment.Experiment.filter with
+         match filter with
          | None -> Lwt.return ([], [])
          | Some filter ->
            Lwt.both
@@ -34,11 +36,12 @@ let index req =
          if Sihl.Configuration.is_production ()
          then Lwt_result.return None
          else
-           Filter.find_filtered_contacts
-             ~limit:50
-             database_label
-             (experiment.Experiment.id |> Experiment.Id.to_common)
-             experiment.Experiment.filter
+           Filter.(
+             find_filtered_contacts
+               ~limit:50
+               database_label
+               (Matcher (id |> Experiment.Id.to_common))
+               filter)
            >|+ CCOption.pure
        in
        Page.Admin.Experiments.invitations
@@ -134,7 +137,14 @@ let create req =
     in
     let%lwt events =
       let open Cqrs_command.Invitation_command.Create in
-      handle ~tags { experiment; contacts; invited_contacts; create_message }
+      handle
+        ~tags
+        { experiment
+        ; contacts
+        ; invited_contacts
+        ; create_message
+        ; mailing = None
+        }
       |> Lwt_result.lift
     in
     let handle events =
@@ -187,6 +197,34 @@ let resend req =
         [ HttpMessage.set
             ~success:[ Pool_common.Message.(SentList Field.Invitations) ]
         ]
+    in
+    events |>> handle
+  in
+  result |> extract_happy_path req
+;;
+
+let reset req =
+  let open Utils.Lwt_result.Infix in
+  let tags = Pool_context.Logger.Tags.req req in
+  let experiment_id = experiment_id req in
+  let redirect_path =
+    Format.asprintf "/admin/experiments/%s" (Experiment.Id.value experiment_id)
+  in
+  let result { Pool_context.database_label; _ } =
+    Utils.Lwt_result.map_error (fun err -> err, redirect_path)
+    @@
+    let* experiment = Experiment.find database_label experiment_id in
+    let events =
+      let open Cqrs_command.Experiment_command.ResetInvitations in
+      handle ~tags experiment |> Lwt.return
+    in
+    let handle events =
+      let%lwt () =
+        Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
+      in
+      Http_utils.redirect_to_with_actions
+        redirect_path
+        [ HttpMessage.set ~success:[ Pool_common.Message.ResetInvitations ] ]
     in
     events |>> handle
   in

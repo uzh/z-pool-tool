@@ -133,18 +133,18 @@ type t =
 
 val create
   :  ?id:Id.t
+  -> ?description:Description.t
+  -> ?email_reminder_lead_time:Pool_common.Reminder.LeadTime.t
   -> ?follow_up_to:Id.t
   -> ?has_follow_ups:bool
+  -> ?limitations:Limitations.t
+  -> ?text_message_reminder_lead_time:Pool_common.Reminder.LeadTime.t
   -> Start.t
   -> Duration.t
-  -> Description.t option
-  -> Limitations.t option
   -> Pool_location.t
   -> ParticipantAmount.t
   -> ParticipantAmount.t
   -> ParticipantAmount.t
-  -> Pool_common.Reminder.LeadTime.t option
-  -> Pool_common.Reminder.LeadTime.t option
   -> t
 
 val equal : t -> t -> bool

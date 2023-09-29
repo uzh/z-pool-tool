@@ -275,7 +275,7 @@ module Sql = struct
     | Some limit -> Format.asprintf "%s\nLIMIT %i" base limit
   ;;
 
-  let find_filtered_contacts pool ?order_by ?limit experiment_id filter =
+  let find_filtered_contacts pool ?order_by ?limit use_case filter =
     let filter = filter |> CCOption.map (fun f -> f.Entity.query) in
     let open Utils.Lwt_result.Infix in
     let create_temp_table = create_temporary_participation_table filter in
@@ -285,10 +285,10 @@ module Sql = struct
       | Some filter -> find_templates_of_query pool filter
     in
     filtered_params
+      use_case
       template_list
       ~group_by:"pool_contacts.user_uuid"
       ?order_by
-      experiment_id
       filter
     |> Lwt_result.lift
     >>= fun (dyn, sql) ->
@@ -312,12 +312,7 @@ module Sql = struct
     ||> CCResult.return
   ;;
 
-  let contact_matches_filter
-    ?(default = false)
-    pool
-    experiment_id
-    query
-    (contact : Contact.t)
+  let contact_matches_filter ?(default = false) pool query (contact : Contact.t)
     =
     let open Utils.Lwt_result.Infix in
     let tags = Pool_database.Logger.Tags.create pool in
@@ -336,7 +331,7 @@ module Sql = struct
     in
     let%lwt template_list = find_templates_of_query pool query in
     let create_temp_table = create_temporary_participation_table (Some query) in
-    filtered_params ~allow_invited:true template_list experiment_id (Some query)
+    filtered_params MatchesFilter template_list (Some query)
     |> CCResult.map_err
          (Pool_common.Utils.with_log_error ~src ~level:Logs.Warning ~tags)
     |> CCResult.get_or
@@ -399,7 +394,7 @@ module Sql = struct
       id
   ;;
 
-  let count_filtered_contacts pool experiment_id query =
+  let count_filtered_contacts pool use_case query =
     let open Utils.Lwt_result.Infix in
     let open Caqti_request.Infix in
     let open Dynparam in
@@ -409,7 +404,7 @@ module Sql = struct
       | None -> Lwt.return []
       | Some query -> find_templates_of_query pool query
     in
-    filtered_params template_list experiment_id query
+    filtered_params use_case template_list query
     |> Lwt_result.lift
     >>= fun (dyn, sql) ->
     let (Pack (pt, pv)) = dyn in

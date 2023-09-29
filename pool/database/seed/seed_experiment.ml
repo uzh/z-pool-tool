@@ -44,9 +44,7 @@ let experiments pool =
           let public_title =
             PublicTitle.create public_title |> get_or_failwith
           in
-          let description =
-            Description.create description |> get_or_failwith |> CCOption.return
-          in
+          let description = Description.create description |> get_or_failwith in
           let cost_center = cost_center |> CCOption.map CostCenter.of_string in
           let create_lead_time =
             Ptime.Span.of_int_s %> Reminder.LeadTime.create %> get_or_failwith
@@ -63,25 +61,18 @@ let experiments pool =
             ShowExternalDataIdLinks.create false
           in
           let registration_disabled = RegistrationDisabled.create false in
-          let contact_person_id = None in
-          let organisational_unit = None in
-          let smtp_auth_id = None in
           create
             title
             public_title
-            description
-            cost_center
-            contact_person_id
-            organisational_unit
-            smtp_auth_id
+            ?cost_center
+            ~description
+            ?email_session_reminder_lead_time
+            ~experiment_type:Pool_common.ExperimentType.Lab
             direct_registration_disabled
             registration_disabled
             allow_uninvited_signup
             external_data_required
             show_external_data_id_links
-            (Some Pool_common.ExperimentType.Lab)
-            email_session_reminder_lead_time
-            None
           |> get_or_failwith
         in
         Experiment.Created experiment)

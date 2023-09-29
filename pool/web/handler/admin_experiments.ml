@@ -187,7 +187,7 @@ let create req =
       let open Cqrs_command.Experiment_command.Create in
       urlencoded
       |> decode
-      >>= handle ~tags contact_person organisational_unit smtp_auth
+      >>= handle ~tags ?contact_person ?organisational_unit ?smtp_auth
       |> Lwt_result.lift
     in
     let handle events =

@@ -352,9 +352,12 @@ Make sure to show links and URLs as plain text.
     "If you choose to resend the reminders as text messages, contacts without \
      a verified cell phone number will receive the reminder via email."
   | ResendRemindersWarning ->
-    {sql|No automatic reminders have been sent for this session yet. Make sure that the message template is correct if you want to trigger the reminders now.
+    {|No automatic reminders have been sent for this session yet. Make sure that the message template is correct if you want to trigger the reminders now.
 
-If you trigger the reminders manually now, no more automatic reminders will be sent via the selected message channel.|sql}
+If you trigger the reminders manually now, no more automatic reminders will be sent via the selected message channel.|}
+  | ResetInvitations ->
+    "Resets invitations, all previous invitations up to the now will be \
+     ignored."
   | RoleIntro (singular, plural) ->
     Format.asprintf
       "If no %s is specified, the role includes all %s."
@@ -479,6 +482,13 @@ let confirmable_to_string confirmable =
    | ReactivateAccount -> "account", "reactivate", None
    | RemoveTag -> "tag", "remove", None
    | RemoveRule -> "rule", "delete", None
+   | ResetInvitations ->
+     ( "invitations"
+     , "reset"
+     , Some
+         "Subsequently, all previous invitations up to the now are ignored, \
+          i.e. contacts who have already been invited will receive a further \
+          invitation." )
    | RevokeRole -> "role", "revoke", None
    | StopMailing -> "mailing", "stop", None)
   |> fun (obj, action, additive) ->

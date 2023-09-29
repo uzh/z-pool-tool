@@ -191,6 +191,7 @@ type hint =
   | RegistrationDisabled
   | ResendRemindersChannel
   | ResendRemindersWarning
+  | ResetInvitations
   | RoleIntro of Entity_message.Field.t * Entity_message.Field.t
   | RulesIntro
   | ScheduleEvery of Ptime.Span.t
@@ -240,5 +241,6 @@ type confirmable =
   | ReactivateAccount
   | RemoveRule
   | RemoveTag
+  | ResetInvitations
   | RevokeRole
   | StopMailing

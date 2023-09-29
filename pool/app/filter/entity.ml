@@ -727,3 +727,8 @@ let rec contains_template = function
   | Pred _ -> false
   | Template _ -> true
 ;;
+
+type base_condition =
+  | MatchesFilter
+  | Matcher of Pool_common.Id.t
+  | MatcherReset of Pool_common.Id.t * Ptime.t

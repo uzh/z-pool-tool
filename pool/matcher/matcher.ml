@@ -77,20 +77,23 @@ let count_of_rate ?interval = Mailing.Rate.value %> count_of_rate_int ?interval
 
 let find_contacts_by_mailing pool { Mailing.id; distribution; _ } limit =
   let open Utils.Lwt_result.Infix in
-  let%lwt ({ Experiment.id; filter; _ } as experiment) =
+  let%lwt ({ Experiment.id; filter; invitation_reset_at; _ } as experiment) =
     Experiment.find_of_mailing pool (id |> Mailing.Id.to_common)
     ||> get_or_failwith
+  in
+  let use_case =
+    let id = id |> Experiment.Id.to_common in
+    match invitation_reset_at with
+    | Some reset_at ->
+      Filter.MatcherReset (id, Experiment.InvitationResetAt.value reset_at)
+    | None -> Filter.Matcher id
   in
   let order_by =
     distribution |> CCOption.map Mailing.Distribution.get_order_element
   in
   let* contacts =
-    Filter.find_filtered_contacts
-      ?order_by
-      ~limit:(max limit 0)
-      pool
-      (id |> Experiment.Id.to_common)
-      filter
+    let limit = max limit 0 in
+    Filter.find_filtered_contacts ?order_by ~limit pool use_case filter
   in
   (experiment, contacts) |> Lwt_result.return
 ;;

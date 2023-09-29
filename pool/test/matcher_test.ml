@@ -3,7 +3,7 @@ module MatcherCommand = Cqrs_command.Matcher_command
 module Field = Pool_common.Message.Field
 module Model = Test_utils.Model
 
-let get_or_failwith = Test_utils.get_or_failwith_pool_error
+let get_or_failwith = Test_utils.get_or_failwith
 
 let sort_events =
   CCList.stable_sort Pool_event.(fun a b -> CCString.compare (show a) (show b))
@@ -11,6 +11,7 @@ let sort_events =
 
 let expected_events
   ({ Experiment.smtp_auth_id; _ } as experiment)
+  mailing
   contacts
   create_message
   =
@@ -20,7 +21,8 @@ let expected_events
     |> CCList.map (fun msg -> msg, smtp_auth_id)
   in
   let events =
-    [ Invitation.Created (contacts, experiment) |> Pool_event.invitation
+    [ Invitation.(Created { contacts; mailing; experiment })
+      |> Pool_event.invitation
     ; Email.BulkSent emails |> Pool_event.email
     ]
     @ CCList.map
@@ -60,7 +62,9 @@ let create_invitations_model () =
     |> handle
     |> CCResult.map sort_events
   in
-  let expected = expected_events experiment contacts create_message in
+  let expected =
+    expected_events experiment (Some mailing) contacts create_message
+  in
   Test_utils.check_result expected events
 ;;
 
@@ -109,7 +113,9 @@ let create_invitations_repo _ () =
       ||> CCResult.get_exn
     in
     let%lwt create_message = create_message experiment in
-    let expected = expected_events experiment contacts create_message in
+    let expected =
+      expected_events experiment (Some mailing) contacts create_message
+    in
     let%lwt events = Matcher.match_invitation_events ~interval [ pool ] in
     let events =
       CCList.assoc ~eq:Pool_database.Label.equal pool events |> sort_events

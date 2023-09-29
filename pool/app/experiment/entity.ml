@@ -65,6 +65,13 @@ module ShowExternalDataIdLinks = struct
   let schema = schema Common.Message.Field.ShowExteralDataIdLinks
 end
 
+module InvitationResetAt = struct
+  include Pool_common.Model.Ptime
+
+  let create m = Ok m
+  let schema = schema Common.Message.Field.InvitationResetAt create
+end
+
 type t =
   { id : Id.t
   ; title : Title.t
@@ -84,6 +91,7 @@ type t =
   ; email_session_reminder_lead_time : Pool_common.Reminder.LeadTime.t option
   ; text_message_session_reminder_lead_time :
       Pool_common.Reminder.LeadTime.t option
+  ; invitation_reset_at : InvitationResetAt.t option
   ; created_at : Ptime.t
   ; updated_at : Ptime.t
   }
@@ -91,21 +99,23 @@ type t =
 
 let create
   ?id
+  ?contact_person_id
+  ?cost_center
+  ?description
+  ?email_session_reminder_lead_time
+  ?experiment_type
+  ?filter
+  ?invitation_reset_at
+  ?organisational_unit
+  ?smtp_auth_id
+  ?text_message_session_reminder_lead_time
   title
   public_title
-  description
-  cost_center
-  organisational_unit
-  contact_person_id
-  smtp_auth_id
   direct_registration_disabled
   registration_disabled
   allow_uninvited_signup
   external_data_required
   show_external_data_id_links
-  experiment_type
-  email_session_reminder_lead_time
-  text_message_session_reminder_lead_time
   =
   let open CCResult in
   Ok
@@ -115,7 +125,7 @@ let create
     ; description
     ; cost_center
     ; organisational_unit
-    ; filter = None
+    ; filter
     ; contact_person_id
     ; smtp_auth_id
     ; direct_registration_disabled
@@ -126,6 +136,7 @@ let create
     ; experiment_type
     ; email_session_reminder_lead_time
     ; text_message_session_reminder_lead_time
+    ; invitation_reset_at
     ; created_at = Ptime_clock.now ()
     ; updated_at = Ptime_clock.now ()
     }

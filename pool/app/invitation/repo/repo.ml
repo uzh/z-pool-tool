@@ -24,6 +24,13 @@ module Sql = struct
             SUBSTR(HEX(pool_experiments.uuid), 21)
           )),
           LOWER(CONCAT(
+            SUBSTR(HEX(pool_mailing.uuid), 1, 8), '-',
+            SUBSTR(HEX(pool_mailing.uuid), 9, 4), '-',
+            SUBSTR(HEX(pool_mailing.uuid), 13, 4), '-',
+            SUBSTR(HEX(pool_mailing.uuid), 17, 4), '-',
+            SUBSTR(HEX(pool_mailing.uuid), 21)
+          )),
+          LOWER(CONCAT(
             SUBSTR(HEX(pool_contacts.user_uuid), 1, 8), '-',
             SUBSTR(HEX(pool_contacts.user_uuid), 9, 4), '-',
             SUBSTR(HEX(pool_contacts.user_uuid), 13, 4), '-',
@@ -31,6 +38,7 @@ module Sql = struct
             SUBSTR(HEX(pool_contacts.user_uuid), 21)
           )),
           pool_invitations.resent_at,
+          pool_invitations.resend_count,
           pool_invitations.created_at,
           pool_invitations.updated_at
         FROM
@@ -41,6 +49,8 @@ module Sql = struct
           ON pool_contacts.user_uuid = user_users.uuid
         LEFT JOIN pool_experiments
           ON pool_invitations.experiment_uuid = pool_experiments.uuid
+        LEFT JOIN pool_mailing
+          ON pool_experiments.uuid = pool_mailing.experiment_uuid
         %s
       |sql}
   ;;
@@ -57,6 +67,8 @@ module Sql = struct
           ON pool_contacts.user_uuid = user_users.uuid
         LEFT JOIN pool_experiments
           ON pool_invitations.experiment_uuid = pool_experiments.uuid
+        LEFT JOIN pool_mailing
+          ON pool_experiments.uuid = pool_mailing.experiment_uuid
         %s
       |sql}
   ;;
@@ -82,7 +94,9 @@ module Sql = struct
 
   let find_by_experiment ?query pool id =
     let where =
-      let sql = {sql| experiment_uuid = UNHEX(REPLACE(?, '-', '')) |sql} in
+      let sql =
+        {sql| pool_invitations.experiment_uuid = UNHEX(REPLACE(?, '-', '')) |sql}
+      in
       let dyn =
         Dynparam.(
           empty |> add Pool_common.Repo.Id.t (Experiment.Id.to_common id))
@@ -158,6 +172,7 @@ module Sql = struct
       UPDATE pool_invitations
       SET
         resent_at = $2
+        resend_count = resend_count + 1
       WHERE uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}
     |> RepoEntity.Update.t ->. Caqti_type.unit
@@ -257,14 +272,16 @@ let find_multiple_by_experiment_and_contacts =
 
 let update = Sql.update
 
-let bulk_insert pool contacts experiment_id =
+let bulk_insert ?mailing_id pool contacts experiment_id =
   let insert_sql =
     {sql|
       INSERT INTO pool_invitations (
         uuid,
         experiment_uuid,
+        mailing_uuid,
         contact_uuid,
         resent_at,
+        resend_count,
         created_at,
         updated_at
       ) VALUES
@@ -278,12 +295,16 @@ let bulk_insert pool contacts experiment_id =
             UNHEX(REPLACE(?, '-', '')),
             UNHEX(REPLACE(?, '-', '')),
             UNHEX(REPLACE(?, '-', '')),
+            UNHEX(REPLACE(?, '-', '')),
+            ?,
             ?,
             ?,
             ?
           ) |sql}
         in
-        let entity = contact |> Entity.create ~id |> of_entity experiment_id in
+        let entity =
+          contact |> Entity.create ~id |> of_entity ?mailing_id experiment_id
+        in
         dyn |> Dynparam.add RepoEntity.t entity, sql @ [ sql_line ])
       (Dynparam.empty, [])
       contacts
@@ -291,7 +312,14 @@ let bulk_insert pool contacts experiment_id =
   let (Dynparam.Pack (pt, pv)) = values in
   let prepare_request =
     let open Caqti_request.Infix in
-    Format.asprintf "%s %s" insert_sql (CCString.concat ",\n" value_insert)
+    Format.asprintf
+      {sql|
+        %s
+        %s
+        ON DUPLICATE KEY UPDATE resend_count = resend_count + 1, updated_at = NOW()
+      |sql}
+      insert_sql
+      (CCString.concat ",\n" value_insert)
     |> (pt ->. Caqti_type.unit) ~oneshot:true
   in
   Utils.Database.exec (pool |> Pool_database.Label.value) prepare_request pv

@@ -183,17 +183,17 @@ end = struct
     let session =
       Session.create
         ?id:session_id
+        ?description
+        ?email_reminder_lead_time
         ?follow_up_to:(parent_session |> CCOption.map (fun s -> s.Session.id))
+        ?limitations
+        ?text_message_reminder_lead_time
         start
         duration
-        description
-        limitations
         location
         max_participants
         min_participants
         overbook
-        email_reminder_lead_time
-        text_message_reminder_lead_time
     in
     Ok [ Session.Created (session, experiment_id) |> Pool_event.session ]
   ;;

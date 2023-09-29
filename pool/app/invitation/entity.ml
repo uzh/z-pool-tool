@@ -4,12 +4,26 @@ module ResentAt = struct
   let create = Ptime_clock.now
 end
 
+module ResendCount = struct
+  open Pool_common
+  include Model.Integer
+
+  let field = Message.Field.Count
+  let create m = if m > 0 then Ok m else Error Message.(Invalid field)
+  let of_int m = if m > 0 then m else Utils.failwith Message.(Invalid field)
+  let init = 1
+  let schema = schema field create
+end
+
 type t =
   { id : Pool_common.Id.t
   ; contact : Contact.t
   ; resent_at : ResentAt.t option
+  ; resend_count : ResendCount.t
   ; created_at : Pool_common.CreatedAt.t
+       [@equal fun a b -> Ptime.equal a b || Sihl.Configuration.is_test ()]
   ; updated_at : Pool_common.UpdatedAt.t
+       [@equal fun a b -> Ptime.equal a b || Sihl.Configuration.is_test ()]
   }
 [@@deriving eq, show]
 
@@ -17,6 +31,7 @@ let create ?(id = Pool_common.Id.create ()) contact =
   { id
   ; contact
   ; resent_at = None
+  ; resend_count = ResendCount.init
   ; created_at = Pool_common.CreatedAt.create ()
   ; updated_at = Pool_common.UpdatedAt.create ()
   }

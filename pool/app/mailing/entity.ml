@@ -204,18 +204,11 @@ type t =
   ; rate : Rate.t
   ; distribution : Distribution.t option
   ; created_at : Pool_common.CreatedAt.t
+       [@equal fun a b -> Ptime.equal a b || Sihl.Configuration.is_test ()]
   ; updated_at : Pool_common.UpdatedAt.t
+       [@equal fun a b -> Ptime.equal a b || Sihl.Configuration.is_test ()]
   }
-[@@deriving show]
-
-let equal m1 m2 =
-  Id.equal m1.id m2.id
-  && StartAt.equal m1.start_at m2.start_at
-  && EndAt.equal m1.end_at m2.end_at
-  && Rate.equal m1.rate m2.rate
-  && CCOption.map2 Distribution.equal m1.distribution m2.distribution
-     |> CCOption.get_or ~default:false
-;;
+[@@deriving eq, show]
 
 let create
   ?allow_start_in_past
