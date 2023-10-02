@@ -142,7 +142,7 @@ let request_reset_password_post req =
   let open HttpUtils in
   let open Cqrs_command.Common_command.ResetPassword in
   let open Message_template in
-  let result { Pool_context.database_label; query_language; language; _ } =
+  let result ({ Pool_context.database_label; query_language; _ } as context) =
     let redirect_path =
       path_with_language query_language "/request-reset-password"
     in
@@ -163,7 +163,24 @@ let request_reset_password_post req =
       match user with
       | None -> Lwt_result.return ()
       | Some user ->
-        PasswordReset.create database_label language (Tenant tenant) user
+        let%lwt message_language =
+          match query_language with
+          | Some lang -> Lwt.return lang
+          | None ->
+            (match%lwt Admin.user_is_admin database_label user with
+             | true -> Lwt.return context.Pool_context.language
+             | false ->
+               Contact.find_by_user database_label user
+               >|- Pool_common.Utils.failwith
+               ||> CCResult.get_or_failwith
+               ||> fun Contact.{ language; _ } ->
+               CCOption.value ~default:context.Pool_context.language language)
+        in
+        PasswordReset.create
+          database_label
+          message_language
+          (Tenant tenant)
+          user
         >== handle ~tags
         |>> Pool_event.handle_events ~tags database_label
     in
