@@ -515,41 +515,29 @@ module Partials = struct
       let js =
         Format.asprintf
           {js|
-        document.addEventListener("htmx:beforeSend", (e) => {
-          const { target } = e.detail;
-          const content = document.createElement("div");
-          const body = document.createElement("div");
-          body.classList.add("modal-body");
-          content.classList.add("modal-content", "flexrow", "justify-center")
-          const icon = document.createElement("i");
-          icon.classList.add("icon-spinner-outline", "rotate");
-          content.appendChild(icon);
-          body.appendChild(content);
-          target.innerHTML = '';
-          target.appendChild(body);
-          target.classList.add("active");
-        })
+          %s
 
-        document.addEventListener("htmx:afterSwap", (e) => {
-          const modal = e.detail.elt;
-          window['pool-tool'].initRichTextEditor(modal);
+          document.addEventListener("htmx:afterSwap", (e) => {
+            const modal = e.detail.elt;
+            window['pool-tool'].initRichTextEditor(modal);
 
-          modal.querySelector(".modal-close").addEventListener("click", (e) => {
-            modal.classList.remove("active");
-            modal.setAttribute("aria-hidden", "true");
+            modal.querySelector(".modal-close").addEventListener("click", (e) => {
+              modal.classList.remove("active");
+              modal.setAttribute("aria-hidden", "true");
+            })
+
+            const checkbox = modal.querySelector(`[data-toggle]`);
+            const target = document.getElementById(checkbox.dataset.toggle);
+            checkbox.addEventListener("click", (e) => {
+              if(e.currentTarget.checked) {
+                target.classList.remove("hidden");
+              } else {
+                target.classList.add("hidden");
+              }
+            })
           })
-
-          const checkbox = modal.querySelector(`[data-toggle]`);
-          const target = document.getElementById(checkbox.dataset.toggle);
-          checkbox.addEventListener("click", (e) => {
-            if(e.currentTarget.checked) {
-              target.classList.remove("hidden");
-            } else {
-              target.classList.add("hidden");
-            }
-          })
-         })
-        |js}
+          |js}
+          (Component.Modal.js_modal_add_spinner swap_session_modal_id)
       in
       div
         [ p

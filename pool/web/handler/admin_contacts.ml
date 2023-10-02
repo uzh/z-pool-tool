@@ -6,6 +6,7 @@ let src = Logs.Src.create "handler.admin.contacts"
 let extract_happy_path = HttpUtils.extract_happy_path ~src
 let create_layout req = General.create_tenant_layout req
 let contact_id = HttpUtils.find_id Contact.Id.of_string Field.Contact
+let experiment_id = HttpUtils.find_id Experiment.Id.of_string Field.Experiment
 
 let index req =
   let open Utils.Lwt_result.Infix in
@@ -240,6 +241,127 @@ let external_data_ids req =
     >|+ Sihl.Web.Response.of_html
   in
   result |> extract_happy_path req
+;;
+
+let htmx_experiments_get req =
+  let open Utils.Lwt_result.Infix in
+  let contact_id = contact_id req in
+  let result ({ Pool_context.database_label; _ } as context) =
+    let query = Sihl.Web.Request.query Field.(show Experiment) req in
+    let* contact = Contact.find database_label contact_id in
+    let%lwt experiments =
+      query
+      |> CCOption.map_or ~default:(Lwt.return []) (fun query ->
+        Experiment.find_to_enroll_directly database_label contact ~query)
+    in
+    Page.Admin.Contact.assign_contact_experiment_list
+      context
+      contact_id
+      experiments
+    |> HttpUtils.Htmx.html_to_plain_text_response
+    |> Lwt_result.return
+  in
+  result
+  |> HttpUtils.Htmx.handle_error_message ~error_as_notification:true ~src req
+;;
+
+let htmx_experiment_modal req =
+  let open Utils.Lwt_result.Infix in
+  let contact_id = contact_id req in
+  let experiment_id = experiment_id req in
+  let result ({ Pool_context.database_label; _ } as context) =
+    let* contact = Contact.find database_label contact_id in
+    let* experiment = Experiment.find database_label experiment_id in
+    let* sessions =
+      Session.find_all_for_experiment database_label experiment_id
+      >|+ Session.group_and_sort
+    in
+    let%lwt matches_filter =
+      experiment.Experiment.filter
+      |> CCOption.map_or ~default:Lwt.return_true (fun { Filter.query; _ } ->
+        Filter.contact_matches_filter
+          database_label
+          (Experiment.Id.to_common experiment_id)
+          query
+          contact)
+    in
+    Page.Admin.Contact.assign_contact_experiment_modal
+      context
+      contact_id
+      experiment
+      sessions
+      matches_filter
+    |> HttpUtils.Htmx.html_to_plain_text_response
+    |> Lwt_result.return
+  in
+  result
+  |> HttpUtils.Htmx.handle_error_message ~error_as_notification:true ~src req
+;;
+
+let enroll_contact_post req =
+  let open Utils.Lwt_result.Infix in
+  let contact_id = contact_id req in
+  let experiment_id = experiment_id req in
+  let redirect_path =
+    Format.asprintf "/admin/contacts/%s" (Contact.Id.value contact_id)
+  in
+  let tags = Pool_context.Logger.Tags.req req in
+  let result { Pool_context.database_label; _ } =
+    Lwt_result.map_error (fun err -> err, redirect_path)
+    @@
+    let%lwt urlencoded =
+      Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
+    in
+    let* contact = Contact.find database_label contact_id in
+    let* experiment = Experiment.find database_label experiment_id in
+    let* session =
+      urlencoded
+      |> HttpUtils.find_in_urlencoded Field.Session
+      |> Lwt_result.lift
+      >|+ Session.Id.of_string
+      >>= Session.find database_label
+    in
+    let* follow_up_sessions =
+      Session.find_follow_ups database_label session.Session.id
+    in
+    let%lwt confirmation =
+      let%lwt language = Contact.message_language database_label contact in
+      let tenant = Pool_context.Tenant.get_tenant_exn req in
+      let%lwt contact_person =
+        Experiment.find_contact_person database_label experiment
+      in
+      Message_template.AssignmentConfirmation.prepare
+        ~follow_up_sessions
+        database_label
+        language
+        tenant
+        experiment
+        session
+        contact_person
+    in
+    let%lwt contact_is_enrolled =
+      Experiment.contact_is_enrolled database_label experiment_id contact_id
+    in
+    let events =
+      let open Cqrs_command.Assignment_command.Create in
+      handle
+        ~tags
+        { contact; session; follow_up_sessions; experiment }
+        confirmation
+        contact_is_enrolled
+      |> Lwt_result.lift
+    in
+    let handle events =
+      let%lwt () =
+        Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
+      in
+      Http_utils.redirect_to_with_actions
+        redirect_path
+        [ Message.set ~success:[ Pool_common.Message.AssignmentCreated ] ]
+    in
+    events |>> handle
+  in
+  result |> HttpUtils.extract_happy_path ~src req
 ;;
 
 module Tags = Admin_contacts_tags

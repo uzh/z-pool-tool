@@ -383,6 +383,8 @@ let rec error_to_string = function
       errs
     |> CCString.concat "\n"
   | ConformistModuleErrorType -> failwith "Do not use"
+  | ContactDoesNotMatchFilter ->
+    "Der Kontakt erfüllt die im Filter bestimmten Kriterien nicht."
   | ContactSignupInvalidEmail ->
     "Bitte eine valide und nicht bereits verwendete E-Mail Adresse verwenden."
   | ContactUnconfirmed -> "Teilnehmer noch nicht verifiziert!"

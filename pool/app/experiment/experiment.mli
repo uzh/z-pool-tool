@@ -133,6 +133,23 @@ end
 
 val to_public : t -> Public.t
 
+module DirectEnrollment : sig
+  type t =
+    { id : Id.t
+    ; title : Title.t
+    ; filter : Filter.query option
+    ; direct_registration_disabled : DirectRegistrationDisabled.t
+    ; registration_disabled : RegistrationDisabled.t
+    ; available_spots : bool
+    ; matches_filter : bool
+    }
+
+  val equal : t -> t -> bool
+  val pp : Format.formatter -> t -> unit
+  val show : t -> string
+  val assignable : t -> bool
+end
+
 type event =
   | Created of t
   | Updated of t
@@ -218,6 +235,18 @@ val search_multiple_by_id
   :  Pool_database.Label.t
   -> Pool_common.Id.t list
   -> (Id.t * Title.t) list Lwt.t
+
+val find_to_enroll_directly
+  :  Pool_database.Label.t
+  -> Contact.t
+  -> query:string
+  -> DirectEnrollment.t list Lwt.t
+
+val contact_is_enrolled
+  :  Pool_database.Label.t
+  -> Id.t
+  -> Contact.Id.t
+  -> bool Lwt.t
 
 val possible_participant_count : t -> int Lwt.t
 val possible_participants : t -> Contact.t list Lwt.t

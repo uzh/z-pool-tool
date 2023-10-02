@@ -9,7 +9,7 @@ module Title = struct
   let t = Pool_common.Repo.make_caqti_type Caqti_type.string create value
 end
 
-module Filter = struct
+module Query = struct
   let t =
     Caqti_type.(
       custom
@@ -37,7 +37,7 @@ let t =
       (tup2
          Id.t
          (tup2
-            Filter.t
+            Query.t
             (tup2
                (option Title.t)
                (tup2 Common.Repo.CreatedAt.t Common.Repo.UpdatedAt.t)))))
@@ -48,6 +48,6 @@ module Write = struct
     let encode (m : t) = Ok (m.id, (m.query, m.title)) in
     let decode _ = failwith "Write only model" in
     Caqti_type.(
-      custom ~encode ~decode (tup2 Id.t (tup2 Filter.t (option Title.t))))
+      custom ~encode ~decode (tup2 Id.t (tup2 Query.t (option Title.t))))
   ;;
 end

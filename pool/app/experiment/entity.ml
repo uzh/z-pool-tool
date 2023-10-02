@@ -130,6 +130,31 @@ let create
     }
 ;;
 
+module DirectEnrollment = struct
+  type t =
+    { id : Id.t
+    ; title : Title.t
+    ; filter : Filter.query option
+    ; direct_registration_disabled : DirectRegistrationDisabled.t
+    ; registration_disabled : RegistrationDisabled.t
+    ; available_spots : bool
+    ; matches_filter : bool
+    }
+  [@@deriving eq, show]
+
+  let assignable
+    { available_spots
+    ; direct_registration_disabled
+    ; registration_disabled
+    ; _
+    }
+    =
+    available_spots
+    && (not direct_registration_disabled)
+    && not registration_disabled
+  ;;
+end
+
 let title_value (m : t) = Title.value m.title
 let public_title_value (m : t) = PublicTitle.value m.public_title
 

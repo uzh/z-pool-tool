@@ -3,9 +3,25 @@ open Tyxml.Html
 module Table = Component.Table
 module Input = Component.Input
 module Icon = Component.Icon
+module Modal = Component.Modal
 
 let path =
   Contact.id %> Pool_common.Id.value %> Format.asprintf "/admin/contacts/%s"
+;;
+
+let enroll_contact_modal_id = "enroll-modal"
+
+let enroll_contact_path ?suffix contact_id =
+  let open Pool_common in
+  Format.asprintf
+    "/admin/contacts/%s/%s"
+    (Contact.Id.value contact_id)
+    Message.Field.(Experiments |> human_url)
+  |> (fun base ->
+       match suffix with
+       | None -> base
+       | Some suffix -> Format.asprintf "%s/%s" base suffix)
+  |> Sihl.Web.externalize_path
 ;;
 
 let personal_detail ?(admin_comment = None) language contact =
@@ -37,6 +53,217 @@ let personal_detail ?(admin_comment = None) language contact =
             Utils.nav_link_to_string language I18n.PersonalDetails |> txt)
         ]
     ; html
+    ]
+;;
+
+let assign_contact_experiment_modal
+  { Pool_context.language; csrf; _ }
+  contact_id
+  experiment
+  sessions
+  matches_filter
+  =
+  let open Pool_common in
+  let title language = Utils.text_to_string language I18n.EnrollInExperiment in
+  let notification =
+    match matches_filter with
+    | true -> txt ""
+    | false ->
+      Component.Notification.notification
+        language
+        `Error
+        [ p
+            Utils.
+              [ txt (hint_to_string language I18n.ContactDoesNotMatchFilter) ]
+        ]
+  in
+  let session_select =
+    let label = Session.start_end_to_human in
+    let follow_up_row session = div [ txt (label session) ] in
+    let row (session, follow_ups) =
+      let tooltip, attribs =
+        Session.assignment_creatable session
+        |> function
+        | Ok () ->
+          ( txt ""
+          , [ a_name Message.Field.(show Session)
+            ; a_value Session.(Id.value session.id)
+            ; a_required ()
+            ] )
+        | Error msg ->
+          ( msg |> Utils.error_to_string language |> Component.Tooltip.create
+          , [ a_disabled () ] )
+      in
+      div
+        ~a:[ a_class [ "flexrow"; "flex-gap-xs" ] ]
+        [ span [ input ~a:(a_input_type `Radio :: attribs) () ]
+        ; div
+            ~a:[ a_class [ "grow"; "flexcolumn"; "stack-xs" ] ]
+            [ div
+                ~a:[ a_class [ "flexrow"; "flex-gap-sm" ] ]
+                [ span [ txt (label session) ]; tooltip ]
+            ; div
+                ~a:[ a_class [ "inset"; " left"; "hide-empty" ] ]
+                (CCList.map follow_up_row follow_ups)
+            ]
+        ]
+    in
+    sessions |> CCList.map row |> div ~a:[ a_class [ "stack" ] ]
+  in
+  let form =
+    div
+      [ h4 [ txt Message.Field.(show Sessions |> CCString.capitalize_ascii) ]
+      ; form
+          ~a:
+            [ a_method `Post
+            ; a_action
+                (enroll_contact_path
+                   ~suffix:Experiment.(Id.value experiment.Experiment.id)
+                   contact_id)
+            ; a_class [ "stack" ]
+            ]
+          Input.
+            [ csrf_element csrf ()
+            ; session_select
+            ; submit_element language Message.Enroll ()
+            ]
+      ]
+  in
+  let html = div ~a:[ a_class [ "stack-lg" ] ] [ notification; form ] in
+  Modal.create ~active:true language title enroll_contact_modal_id html
+;;
+
+let assign_contact_experiment_list
+  { Pool_context.language; _ }
+  contact_id
+  experiments
+  =
+  let open Experiment in
+  let base_class = [ "data-item" ] in
+  let disabled =
+    [ a_class ([ "bg-grey-light"; "not-allowed" ] @ base_class) ]
+  in
+  let htmx_attribs experiment_id =
+    [ a_user_data "hx-trigger" "click"
+    ; a_user_data
+        "hx-get"
+        (enroll_contact_path
+           ~suffix:Experiment.(Id.value experiment_id)
+           contact_id)
+    ; a_user_data "hx-swap" "outerHTML"
+    ; a_user_data "hx-target" (Format.asprintf "#%s" enroll_contact_modal_id)
+    ]
+  in
+  let assignable experiment_id =
+    a_class base_class :: htmx_attribs experiment_id
+  in
+  let not_matching_filter experiment_id =
+    [ a_class ([ "bg-red-lighter" ] @ base_class) ] @ htmx_attribs experiment_id
+  in
+  div
+    ~a:[ a_class [ "data-list"; "relative"; "flexcolumn" ] ]
+    (match experiments with
+     | [] ->
+       [ div
+           ~a:[ a_class [ "inset-sm"; "cursor-default" ] ]
+           [ txt
+               Pool_common.(Utils.text_to_string language I18n.EmptyListGeneric)
+           ]
+       ]
+     | experiments ->
+       CCList.map
+         (fun DirectEnrollment.({ id; title; matches_filter; _ } as experiment) ->
+           let attrs =
+             if not (DirectEnrollment.assignable experiment)
+             then disabled
+             else if not matches_filter
+             then not_matching_filter id
+             else assignable id
+           in
+           div ~a:attrs [ txt (Title.value title) ])
+         experiments)
+;;
+
+let assign_contact_form { Pool_context.csrf; language; _ } contact =
+  let open Pool_common in
+  let result_target = "query-results" in
+  let form_identifier = Pool_common.Id.(create () |> value) in
+  let field_name = Pool_common.Message.Field.Experiment in
+  let htmx_attribs =
+    [ a_user_data "hx-target" (Format.asprintf "#%s" result_target)
+    ; a_user_data "hx-get" (enroll_contact_path (Contact.id contact))
+    ; a_user_data "hx-trigger" "keyup changed delay:200ms"
+    ; a_id form_identifier
+    ]
+  in
+  let functions =
+    Format.asprintf
+      {js|
+        const formId = '%s';
+        const inputName = '%s';
+        const resultTargetId = '%s';
+
+        const form = document.getElementById(formId);
+        const input = form.querySelector(`[name="${inputName}"]`);
+        const target = document.getElementById(resultTargetId);
+
+        document.addEventListener('htmx:beforeRequest', (e) => {
+          if(e.detail.target && e.detail.target.id === resultTargetId) {
+            const icon = document.createElement("i");
+            icon.classList.add("icon-spinner-outline", "rotate");
+            target.innerHTML = '';
+            target.appendChild(icon);
+          }
+        });
+
+        %s
+
+        %s
+
+        input.addEventListener('keyup', () => {
+          target.innerHTML = '';
+        })
+      |js}
+      form_identifier
+      (Message.Field.show field_name)
+      result_target
+      (Modal.js_modal_add_spinner enroll_contact_modal_id)
+      Modal.js_add_modal_close_listener
+  in
+  let legend =
+    Component.Table.(
+      table_legend
+        Pool_common.Utils.
+          [ ( error_to_string language Message.ContactDoesNotMatchFilter
+            , legend_color_item "bg-red-lighter" )
+          ])
+  in
+  div
+    [ h3
+        [ txt
+            Pool_common.Utils.(text_to_string language I18n.EnrollInExperiment)
+        ]
+    ; div
+        ~a:[ a_class [ "stack" ] ]
+        [ legend
+        ; form
+            ~a:[ a_id form_identifier ]
+            [ Input.csrf_element csrf ()
+            ; Input.input_element
+                ~additional_attributes:htmx_attribs
+                language
+                `Search
+                field_name
+            ]
+        ]
+    ; div
+        ~a:
+          [ a_id enroll_contact_modal_id
+          ; a_class [ "modal"; "fullscreen-overlay" ]
+          ]
+        []
+    ; div ~a:[ a_id result_target ] []
+    ; script (Unsafe.data functions)
     ]
 ;;
 
@@ -96,7 +323,7 @@ let index Pool_context.{ language; _ } contacts =
 
 let detail
   ?admin_comment
-  Pool_context.{ language; _ }
+  (Pool_context.{ language; _ } as context)
   contact
   tags
   external_data_ids
@@ -144,6 +371,9 @@ let detail
         [ subtitle Pool_common.I18n.ExternalDataIds
         ; Component.Contacts.external_data_ids language external_data_ids
         ]
+    ; div
+        ~a:[ a_class [ "grid-col-2" ] ]
+        [ assign_contact_form context contact ]
     ]
 ;;
 
