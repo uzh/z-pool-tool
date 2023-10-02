@@ -172,7 +172,8 @@ let assign_contact_experiment_list
        ]
      | experiments ->
        CCList.map
-         (fun DirectEnrollment.({ id; title; matches_filter; _ } as experiment) ->
+         (fun DirectEnrollment.(
+                { id; title; public_title; matches_filter; _ } as experiment) ->
            let attrs =
              if not (DirectEnrollment.assignable experiment)
              then disabled
@@ -180,7 +181,14 @@ let assign_contact_experiment_list
              then not_matching_filter id
              else assignable id
            in
-           div ~a:attrs [ txt (Title.value title) ])
+           div
+             ~a:attrs
+             [ txt
+                 (Format.asprintf
+                    "%s (%s)"
+                    (Title.value title)
+                    (PublicTitle.value public_title))
+             ])
          experiments)
 ;;
 

@@ -137,6 +137,7 @@ module DirectEnrollment : sig
   type t =
     { id : Id.t
     ; title : Title.t
+    ; public_title : PublicTitle.t
     ; filter : Filter.query option
     ; direct_registration_disabled : DirectRegistrationDisabled.t
     ; registration_disabled : RegistrationDisabled.t

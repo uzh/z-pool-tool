@@ -325,14 +325,16 @@ module DirectEnrollment = struct
     let decode
       ( id
       , ( title
-        , ( filter
-          , ( direct_registration_disabled
-            , (registration_disabled, available_spots) ) ) ) )
+        , ( public_title
+          , ( filter
+            , ( direct_registration_disabled
+              , (registration_disabled, available_spots) ) ) ) ) )
       =
       let matches_filter = false in
       Ok
         { id
         ; title
+        ; public_title
         ; filter
         ; direct_registration_disabled
         ; registration_disabled
@@ -349,9 +351,11 @@ module DirectEnrollment = struct
            (tup2
               Title.t
               (tup2
-                 (option Filter.Repo.query)
+                 PublicTitle.t
                  (tup2
-                    DirectRegistrationDisabled.t
-                    (tup2 RegistrationDisabled.t bool))))))
+                    (option Filter.Repo.query)
+                    (tup2
+                       DirectRegistrationDisabled.t
+                       (tup2 RegistrationDisabled.t bool)))))))
   ;;
 end

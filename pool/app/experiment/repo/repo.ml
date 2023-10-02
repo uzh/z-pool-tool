@@ -407,6 +407,7 @@ module Sql = struct
         SUBSTR(HEX(pool_experiments.uuid), 21)
       )),
       pool_experiments.title,
+      pool_experiments.public_title,
       pool_filter.query,
       pool_experiments.direct_registration_disabled,
       pool_experiments.registration_disabled,

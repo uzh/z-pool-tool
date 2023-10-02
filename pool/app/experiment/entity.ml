@@ -134,6 +134,7 @@ module DirectEnrollment = struct
   type t =
     { id : Id.t
     ; title : Title.t
+    ; public_title : PublicTitle.t
     ; filter : Filter.query option
     ; direct_registration_disabled : DirectRegistrationDisabled.t
     ; registration_disabled : RegistrationDisabled.t
@@ -143,11 +144,7 @@ module DirectEnrollment = struct
   [@@deriving eq, show]
 
   let assignable
-    { available_spots
-    ; direct_registration_disabled
-    ; registration_disabled
-    ; _
-    }
+    { available_spots; direct_registration_disabled; registration_disabled; _ }
     =
     available_spots
     && (not direct_registration_disabled)
