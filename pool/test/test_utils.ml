@@ -103,9 +103,8 @@ module Model = struct
       ; username = None
       ; name = Some "Doe"
       ; given_name = Some "Jane"
-      ; password =
-          "somepassword" |> Sihl_user.Hashing.hash |> CCResult.get_or_failwith
-      ; status = Sihl_user.status_of_string "active" |> CCResult.get_or_failwith
+      ; password = "somepassword" |> Sihl_user.Hashing.hash |> CCResult.get_exn
+      ; status = Sihl_user.status_of_string "active" |> CCResult.get_exn
       ; admin = false
       ; confirmed = true
       ; created_at = Pool_common.CreatedAt.create ()
@@ -119,7 +118,7 @@ module Model = struct
       { user = sihl_user
       ; terms_accepted_at =
           (if with_terms_accepted
-           then Pool_user.TermsAccepted.create_now () |> CCOption.pure
+           then Pool_user.TermsAccepted.create_now () |> CCOption.return
            else None)
       ; language = Some Pool_common.Language.En
       ; experiment_type_preference = None
@@ -131,7 +130,7 @@ module Model = struct
           ()
           |> Ptime_clock.now
           |> Pool_user.EmailVerified.create
-          |> CCOption.pure
+          |> CCOption.return
       ; num_invitations = NumberOfInvitations.init
       ; num_assignments = NumberOfAssignments.init
       ; num_show_ups = NumberOfShowUps.init
@@ -155,9 +154,7 @@ module Model = struct
   let create_location ?(id = Pool_location.Id.create ()) () =
     Pool_location.
       { id
-      ; name =
-          Pool_location.Name.create "Online"
-          |> Pool_common.Utils.get_or_failwith
+      ; name = Pool_location.Name.create "Online" |> get_or_failwith
       ; description = None
       ; link = None
       ; address = Pool_location.Address.Virtual
@@ -169,18 +166,13 @@ module Model = struct
   ;;
 
   let create_public_experiment () =
-    let show_error err = Pool_common.(Utils.error_to_string Language.En err) in
     Experiment.(
       Public.
         { id = Experiment.Id.create ()
-        ; public_title =
-            PublicTitle.create "public_title"
-            |> CCResult.map_err show_error
-            |> CCResult.get_or_failwith
+        ; public_title = PublicTitle.create "public_title" |> get_or_failwith
         ; description =
             Description.create "A description for everyone"
-            |> CCResult.map_err show_error
-            |> CCResult.get_or_failwith
+            |> get_or_failwith
             |> CCOption.return
         ; direct_registration_disabled =
             false |> DirectRegistrationDisabled.create
@@ -443,7 +435,6 @@ module Model = struct
   ;;
 
   let fully_book_session session =
-    let get_or_failwith = Pool_common.Utils.get_or_failwith in
     Session.
       { session with
         max_participants = ParticipantAmount.create 5 |> get_or_failwith
@@ -456,19 +447,11 @@ module Model = struct
   let fully_book_public_session session =
     Session.Public.
       { session with
-        max_participants =
-          Session.ParticipantAmount.create 5
-          |> Pool_common.Utils.get_or_failwith
-      ; min_participants =
-          Session.ParticipantAmount.create 0
-          |> Pool_common.Utils.get_or_failwith
-      ; overbook =
-          Session.ParticipantAmount.create 0
-          |> Pool_common.Utils.get_or_failwith
+        max_participants = Session.ParticipantAmount.create 5 |> get_or_failwith
+      ; min_participants = Session.ParticipantAmount.create 0 |> get_or_failwith
+      ; overbook = Session.ParticipantAmount.create 0 |> get_or_failwith
       ; assignment_count =
-          5
-          |> Session.AssignmentCount.create
-          |> Pool_common.Utils.get_or_failwith
+          5 |> Session.AssignmentCount.create |> get_or_failwith
       }
   ;;
 
