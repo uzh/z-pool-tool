@@ -133,7 +133,7 @@ let input_element
   let attributes =
     let attrs =
       let additional =
-        if input_type == `Password then [ a_autocomplete false ] else []
+        if input_type == `Password then [ a_autocomplete `Off ] else []
       in
       Elements.attributes input_type name id (a_value value :: additional)
       @ additional_attributes
