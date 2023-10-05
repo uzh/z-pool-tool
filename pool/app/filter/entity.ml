@@ -685,8 +685,8 @@ type t =
   { id : Pool_common.Id.t
   ; query : query
   ; title : Title.t option
-  ; created_at : Ptime.t
-  ; updated_at : Ptime.t
+  ; created_at : Pool_common.CreatedAt.t
+  ; updated_at : Pool_common.UpdatedAt.t
   }
 [@@deriving eq, show]
 
