@@ -89,7 +89,6 @@ end
 
 type event =
   | Created of t
-  | DefaultRestored of t list
   | Updated of t * update
   | Deleted of t
 
@@ -97,12 +96,9 @@ val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
 val created : t -> event
-val defaultrestored : t list -> event
 val updated : t -> update -> event
 val deleted : t -> event
 val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
-val default_values_tenant : t list
-val default_values_root : t list
 
 val find
   :  Pool_database.Label.t

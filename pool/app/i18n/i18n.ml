@@ -1,6 +1,5 @@
 include Entity
 include Event
-include Default
 module Guard = Entity_guard
 
 let find = Repo.find

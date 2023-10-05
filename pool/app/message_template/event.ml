@@ -10,7 +10,6 @@ type update =
 
 type event =
   | Created of t
-  | DefaultRestored of t list
   | Updated of t * update
   | Deleted of t
 [@@deriving eq, show, variants]
@@ -29,8 +28,6 @@ let insert_template ?(default = true) db_label t =
 
 let handle_event pool : event -> unit Lwt.t = function
   | Created template -> insert_template pool ~default:false template
-  | DefaultRestored templates ->
-    Lwt_list.iter_s (insert_template pool) templates
   | Updated (template, { email_subject; email_text; plain_text; sms_text }) ->
     { template with email_subject; email_text; plain_text; sms_text }
     |> Repo.update pool

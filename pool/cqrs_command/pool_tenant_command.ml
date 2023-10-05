@@ -43,9 +43,7 @@ module Create : sig
     -> Pool_database.t
     -> Pool_tenant.GtxApiKey.t
     -> t
-    -> ( Pool_event.t list * (Pool_database.Label.t * Pool_event.t list)
-         , Pool_common.Message.error )
-         result
+    -> (Pool_event.t list, Pool_common.Message.error) result
 
   val effects : Guard.ValidationSet.t
 end = struct
@@ -111,7 +109,7 @@ end = struct
         ]
       |> CCList.flatten
     in
-    let root_events =
+    Ok
       [ Pool_tenant.Created tenant |> Pool_event.pool_tenant
       ; Pool_tenant.LogosUploaded logo_mappings |> Pool_event.pool_tenant
       ; Database.Migrated database |> Pool_event.database
@@ -119,16 +117,6 @@ end = struct
         |> system_event_from_job
       ; Common.guardian_cache_cleared_event ()
       ]
-    in
-    let tenant_events =
-      [ Settings.(DefaultRestored default_values) |> Pool_event.settings
-      ; I18n.(DefaultRestored default_values) |> Pool_event.i18n
-      ; Message_template.(
-          DefaultRestored default_values_tenant |> Pool_event.message_template)
-      ; Guard.(DefaultRestored all_role_permissions) |> Pool_event.guard
-      ]
-    in
-    Ok (root_events, (database.Pool_database.label, tenant_events))
   ;;
 
   let decode data =

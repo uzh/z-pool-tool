@@ -168,18 +168,30 @@ let with_disabled_fk_check database_label f =
           Connection.exec set_fk_check_request true ||> raise_caqti_error ~tags])
 ;;
 
-(** [table_names_request] request to return all table names
+let message_templates_cleanup_requeset =
+  let open Caqti_request.Infix in
+  {sql|
+    DELETE FROM pool_message_templates
+    WHERE entity_uuid IS NOT NULL
+  |sql}
+  |> Caqti_type.(unit ->. unit)
+;;
+
+(** [truncate_table_names_request] request to return all table names
 
     Skipped database tables:
-
     - core_migration_state: migration state of the application
-    - email_templates: clean up is handled by RestoreDefault mail event *)
-let table_names_request =
+    - pool_message_templates
+    - guardian_role_permissions
+    - pool_i18n
+    - pool_system_settings *)
+
+let truncate_table_names_request =
   let open Caqti_request.Infix in
   {sql|
     SELECT TABLE_NAME
     FROM INFORMATION_SCHEMA.`TABLES`
-    WHERE TABLE_SCHEMA IN (DATABASE()) AND TABLE_NAME NOT IN ('core_migration_state', 'email_templates')
+    WHERE TABLE_SCHEMA IN (DATABASE()) AND TABLE_NAME NOT IN ('core_migration_state', 'pool_message_templates', 'guardian_role_permissions', 'pool_i18n', 'pool_system_settings')
   |sql}
   |> Caqti_type.(unit ->* string) ~oneshot:true
 ;;
@@ -192,7 +204,13 @@ let clean_requests database_label =
     Logs.debug ~src (fun m -> m ~tags "Truncate table '%s'" table);
     CCFormat.asprintf "TRUNCATE TABLE %s" table |> Caqti_type.(unit ->. unit)
   in
-  () |> collect database_label table_names_request ||> CCList.map truncate_table
+  let%lwt truncate_reqs =
+    ()
+    |> collect database_label truncate_table_names_request
+    ||> CCList.map truncate_table
+  in
+  let manual_cleanups = [ message_templates_cleanup_requeset ] in
+  Lwt.return (truncate_reqs @ manual_cleanups)
 ;;
 
 let clean_all database_label =

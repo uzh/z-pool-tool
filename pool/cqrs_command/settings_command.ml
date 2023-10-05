@@ -314,30 +314,6 @@ end = struct
   let effects = Settings.Guard.Access.update
 end
 
-module RestoreDefault : sig
-  include Common.CommandSig with type t = Pool_tenant.t
-
-  val handle
-    :  ?tags:Logs.Tag.set
-    -> unit
-    -> (Pool_event.t list, Pool_common.Message.error) result
-end = struct
-  type t = Pool_tenant.t
-
-  let handle ?(tags = Logs.Tag.empty) () =
-    Logs.info ~src (fun m -> m "Handle command RestoreDefault" ~tags);
-    Ok
-      [ Settings.(DefaultRestored default_values) |> Pool_event.settings
-      ; Common.guardian_cache_cleared_event ()
-      ]
-  ;;
-
-  let effects =
-    Guard.ValidationSet.And
-      [ Settings.Guard.Access.delete; Settings.Guard.Access.create ]
-  ;;
-end
-
 module UpdateDefaultLeadTime : sig
   type t = Pool_common.Reminder.LeadTime.t
 

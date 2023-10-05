@@ -314,16 +314,11 @@ let update_smtp_auth () =
 
 let[@warning "-4"] create_tenant () =
   let open Data in
-  let events =
+  let root_events =
     let open CCResult.Infix in
     let api_key = gtx_api_key |> Pool_tenant.GtxApiKey.of_string in
     Pool_tenant_command.Create.(
       Data.urlencoded |> decode >>= handle database api_key)
-  in
-  let root_events, tenant_events =
-    events
-    |> fail_with
-    |> fun (root_events, (_, tenant_events)) -> Ok root_events, Ok tenant_events
   in
   let ( tenant_id
       , created_at
@@ -335,23 +330,17 @@ let[@warning "-4"] create_tenant () =
       , guardian_cache_cleared_event )
     =
     (* Read Ids and timestamps to create an equal event list *)
-    events
-    |> Test_utils.get_or_failwith_pool_error
+    root_events
+    |> fail_with
     |> function
-    | ( [ Pool_event.PoolTenant
-            Pool_tenant.(Created Write.{ id; created_at; updated_at; _ })
-        ; Pool_event.PoolTenant
-            (Pool_tenant.LogosUploaded [ partner_logo; tenant_logo ])
-        ; Pool_event.Database (Database.Migrated _)
-        ; Pool_event.SystemEvent System_event.(Created db_added_event)
-        ; Pool_event.SystemEvent System_event.(Created guardian_cache_cleared)
-        ]
-      , ( database_label
-        , [ Pool_event.Settings (Settings.DefaultRestored _)
-          ; Pool_event.I18n (I18n.DefaultRestored _)
-          ; Pool_event.MessageTemplate (Message_template.DefaultRestored _)
-          ; Pool_event.Guard (Guard.DefaultRestored _)
-          ] ) ) ->
+    | [ Pool_event.PoolTenant
+          Pool_tenant.(Created Write.{ id; created_at; updated_at; _ })
+      ; Pool_event.PoolTenant
+          (Pool_tenant.LogosUploaded [ partner_logo; tenant_logo ])
+      ; Pool_event.Database (Database.Migrated Pool_database.{ label; _ })
+      ; Pool_event.SystemEvent System_event.(Created db_added_event)
+      ; Pool_event.SystemEvent System_event.(Created guardian_cache_cleared)
+      ] ->
       let read_ids Pool_tenant.LogoMapping.Write.{ id; asset_id; _ } =
         id, asset_id
       in
@@ -360,12 +349,12 @@ let[@warning "-4"] create_tenant () =
       , updated_at
       , tenant_logo |> read_ids
       , partner_logo |> read_ids
-      , database_label
+      , label
       , db_added_event.System_event.id
       , guardian_cache_cleared.System_event.id )
     | _ -> failwith "Tenant create events don't match in test."
   in
-  let expected_root_events, (expected_database_label, expected_tenant_events) =
+  let expected_root_events, expected_database_label =
     let open CCResult in
     let database =
       let url = database_url |> Pool_tenant.Database.Url.create |> fail_with in
@@ -426,16 +415,7 @@ let[@warning "-4"] create_tenant () =
         |> Pool_event.system_event
       ]
     in
-    let expected_tenant_events =
-      [ Settings.(DefaultRestored default_values) |> Pool_event.settings
-      ; I18n.(DefaultRestored default_values) |> Pool_event.i18n
-      ; Message_template.(
-          DefaultRestored default_values_tenant |> Pool_event.message_template)
-      ; Guard.(DefaultRestored all_role_permissions) |> Pool_event.guard
-      ]
-    in
-    ( Ok expected_root_events
-    , (database.Pool_database.label, Ok expected_tenant_events) )
+    Ok expected_root_events, database.Pool_database.label
   in
   let () =
     Alcotest.(
@@ -444,14 +424,6 @@ let[@warning "-4"] create_tenant () =
         "succeeds"
         expected_root_events
         root_events)
-  in
-  let () =
-    Alcotest.(
-      check
-        (result (list Test_utils.event) Test_utils.error)
-        "succeeds"
-        expected_tenant_events
-        tenant_events)
   in
   Alcotest.(
     check

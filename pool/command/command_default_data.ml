@@ -8,11 +8,8 @@ Provide table to insert default data:
 
 Available tables:
     - guardian_rules
-    - i18n
-    - message_templates
-    - system_settings
 
-Example: seed.default message_templates
+Example: seed.default guardian_rules
     |}
   in
   Sihl.Command.make
@@ -20,21 +17,6 @@ Example: seed.default message_templates
     ~description:"Insert required default data into tenant database."
     ~help
     (function
-    | [ "message_templates" ] ->
-      let root_event =
-        Message_template.(DefaultRestored default_values_root)
-        |> Pool_event.message_template
-      in
-      let tenant_event =
-        Message_template.(DefaultRestored default_values_tenant)
-        |> Pool_event.message_template
-      in
-      let%lwt () =
-        Command_utils.setup_databases ()
-        >|> Lwt_list.iter_s CCFun.(flip Pool_event.handle_event tenant_event)
-      in
-      let%lwt () = Pool_event.handle_event Pool_database.root root_event in
-      Lwt.return_some ()
     | [ "guardian_rules" ] ->
       let events =
         [ Guard.(DefaultRestored all_role_permissions) |> Pool_event.guard ]
@@ -42,25 +24,6 @@ Example: seed.default message_templates
       let%lwt () =
         Command_utils.setup_databases ()
         ||> CCList.cons Pool_database.root
-        >|> Lwt_list.iter_s CCFun.(flip Pool_event.handle_events events)
-      in
-      Lwt.return_some ()
-    | [ "i18n" ] ->
-      let events =
-        [ I18n.(DefaultRestored default_values) |> Pool_event.i18n ]
-      in
-      let%lwt () =
-        Command_utils.setup_databases ()
-        ||> CCList.cons Pool_database.root
-        >|> Lwt_list.iter_s CCFun.(flip Pool_event.handle_events events)
-      in
-      Lwt.return_some ()
-    | [ "system_settings" ] ->
-      let events =
-        [ Settings.(DefaultRestored default_values) |> Pool_event.settings ]
-      in
-      let%lwt () =
-        Command_utils.setup_databases ()
         >|> Lwt_list.iter_s CCFun.(flip Pool_event.handle_events events)
       in
       Lwt.return_some ()

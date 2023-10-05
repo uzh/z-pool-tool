@@ -66,13 +66,7 @@ Provide all fields to create a new tenant:
           ]
         >>= Cqrs_command.Pool_tenant_command.Create.handle database api_key
         |> Pool_common.Utils.get_or_failwith
-        |> fun (root_events, (databas_label, tenant_events)) ->
-        let%lwt () =
-          Lwt_list.iter_s
-            (Pool_event.handle_event Pool_database.root)
-            root_events
-        in
-        Lwt_list.iter_s (Pool_event.handle_event databas_label) tenant_events
+        |> Lwt_list.iter_s (Pool_event.handle_event Pool_database.root)
       in
       Lwt.return_some ()
     | _ -> Command_utils.failwith_missmatch help)
