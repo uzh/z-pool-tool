@@ -45,7 +45,7 @@ type t =
   ; notified_at : NotifiedAt.t option
   ; reminder_count : ReminderCount.t
   ; last_reminded_at : LastRemindedAt.t option
-  ; created_at : Pool_common.CreatedAt.t [@equal fun _ _ -> true]
-  ; updated_at : Pool_common.UpdatedAt.t [@equal fun _ _ -> true]
+  ; created_at : Pool_common.CreatedAt.t
+  ; updated_at : Pool_common.UpdatedAt.t
   }
 [@@deriving eq, show]

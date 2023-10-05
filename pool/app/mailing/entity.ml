@@ -204,9 +204,7 @@ type t =
   ; rate : Rate.t
   ; distribution : Distribution.t option
   ; created_at : Pool_common.CreatedAt.t
-       [@equal fun a b -> Ptime.equal a b || Sihl.Configuration.is_test ()]
   ; updated_at : Pool_common.UpdatedAt.t
-       [@equal fun a b -> Ptime.equal a b || Sihl.Configuration.is_test ()]
   }
 [@@deriving eq, show]
 

@@ -92,8 +92,8 @@ type t =
   ; text_message_session_reminder_lead_time :
       Pool_common.Reminder.LeadTime.t option
   ; invitation_reset_at : InvitationResetAt.t option
-  ; created_at : Ptime.t
-  ; updated_at : Ptime.t
+  ; created_at : Pool_common.CreatedAt.t
+  ; updated_at : Pool_common.UpdatedAt.t
   }
 [@@deriving eq, show]
 

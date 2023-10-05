@@ -63,6 +63,7 @@ module CreatedAt : sig
   type t = Ptime.t
 
   val equal : t -> t -> bool
+  val compare : t -> t -> int
   val pp : Format.formatter -> t -> unit
   val show : t -> string
   val create : unit -> t
@@ -74,6 +75,7 @@ module UpdatedAt : sig
   type t = Ptime.t
 
   val equal : t -> t -> bool
+  val compare : t -> t -> int
   val pp : Format.formatter -> t -> unit
   val show : t -> string
   val create : unit -> t
