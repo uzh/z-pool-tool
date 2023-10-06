@@ -313,3 +313,51 @@ module Public = struct
                        (option Email.SmtpAuth.RepoEntity.Id.t)))))))
   ;;
 end
+
+module DirectEnrollment = struct
+  open Entity.DirectEnrollment
+
+  let t =
+    let encode _ =
+      failwith
+        Pool_common.(Message.ReadOnlyModel |> Utils.error_to_string Language.En)
+    in
+    let decode
+      ( id
+      , ( title
+        , ( public_title
+          , ( filter
+            , ( direct_registration_disabled
+              , ( registration_disabled
+                , (available_spots, contact_already_assigned) ) ) ) ) ) )
+      =
+      let matches_filter = false in
+      Ok
+        { id
+        ; title
+        ; public_title
+        ; filter
+        ; direct_registration_disabled
+        ; registration_disabled
+        ; available_spots
+        ; matches_filter
+        ; contact_already_assigned
+        }
+    in
+    Caqti_type.(
+      custom
+        ~encode
+        ~decode
+        (tup2
+           Id.t
+           (tup2
+              Title.t
+              (tup2
+                 PublicTitle.t
+                 (tup2
+                    (option Filter.Repo.query)
+                    (tup2
+                       DirectRegistrationDisabled.t
+                       (tup2 RegistrationDisabled.t (tup2 bool bool))))))))
+  ;;
+end

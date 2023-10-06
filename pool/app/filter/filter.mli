@@ -142,6 +142,8 @@ type query =
   | Template of Pool_common.Id.t
 
 val show_query : query -> string
+val equal_query : query -> query -> bool
+val pp_query : Format.formatter -> query -> unit
 
 type t =
   { id : Pool_common.Id.t
@@ -239,6 +241,7 @@ end
 
 module Repo : sig
   val t : t Caqti_type.t
+  val query : query Caqti_type.t
 end
 
 val all_keys : Pool_database.Label.t -> Key.human list Lwt.t

@@ -573,11 +573,21 @@ module Admin = struct
             (Tags.assign_tag, Access.assign_tag_to_contact)
             (Tags.remove_tag, Access.remove_tag_from_contact)
         in
+        let experiment =
+          [ get "" htmx_experiments_get
+          ; get (Experiment |> url_key) htmx_experiment_modal
+          ; post (Experiment |> url_key) enroll_contact_post
+          ]
+        in
         [ get "" ~middlewares:[ Access.read ] detail
         ; post "" ~middlewares:[ Access.update ] update
         ; post "pause" ~middlewares:[ Access.update ] toggle_paused
         ; get "/edit" ~middlewares:[ Access.update ] edit
         ; post "/promote" ~middlewares:[ Access.promote ] promote
+        ; choose
+            ~middlewares:[ Access.update ]
+            ~scope:(Experiments |> human_url)
+            experiment
         ; get
             (ExternalDataId |> human_url)
             ~middlewares:[ Access.read ]

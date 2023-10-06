@@ -277,3 +277,19 @@ table.simple {
     width: 500px;
     max-width: 100%;
 }
+
+// Live Search
+.data-list.relative {
+    display: flex;
+    position: relative;
+}
+
+.data-list>.data-item.bg-red-lighter {
+    &, &:hover {
+        background-color: $red-lighter;
+    }
+}
+
+.cursor-default {
+    cursor: default;
+}

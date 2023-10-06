@@ -35,6 +35,7 @@ let to_string = function
       "Currently, there are no %s available."
       (Locales_en.field_to_string field)
   | EmptyListGeneric -> "No entries were found."
+  | EnrollInExperiment -> "Enroll in experiment"
   | ExperimentNewTitle -> "Create new experiment"
   | ExperimentListTitle -> "Experiments"
   | ExperimentListEmpty ->
@@ -191,6 +192,9 @@ let rec hint_to_string = function
      still meet the experiment criteria, they can register for sessions again."
   | ContactCurrentCellPhone cell_phone ->
     Format.asprintf "Your current phone number is %s." cell_phone
+  | ContactDoesNotMatchFilter ->
+    "The contact does not meet the criteria specified in the filter for this \
+     experiment, but can still be enrolled."
   | ContactNoCellPhone -> "You have not yet verified a phone number."
   | ContactEnterCellPhoneToken cell_phone ->
     Format.asprintf

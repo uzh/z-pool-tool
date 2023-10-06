@@ -32,8 +32,9 @@ type error =
   | CannotBeDeleted of Field.t
   | Conformist of (Field.t * error) list
   | ConformistModuleErrorType
-  | ContactSignupInvalidEmail
+  | ContactDoesNotMatchFilter
   | ContactUnconfirmed
+  | ContactSignupInvalidEmail
   | CustomFieldTypeChangeNotAllowed
   | Decode of Field.t
   | DecodeAction

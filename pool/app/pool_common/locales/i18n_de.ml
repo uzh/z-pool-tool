@@ -37,6 +37,7 @@ let to_string = function
       "Es sind keine %s vorhanden."
       (Locales_de.field_to_string field)
   | EmptyListGeneric -> "Es konnten keine Einträge gefunden werden."
+  | EnrollInExperiment -> "Zum Experiment anmelden"
   | Files -> "Dateien"
   | FilterNrOfContacts ->
     "Anzahl der Kontakte, die den Kriterien dieses Filters entsprechen:"
@@ -194,6 +195,9 @@ Wird nach diesem Feld gefiltert, wird der überschreibende Wert bevorzugt.
      anmelden."
   | ContactCurrentCellPhone cell_phone ->
     Format.asprintf "Ihre aktuelle Mobiltelefonnummer lautet %s." cell_phone
+  | ContactDoesNotMatchFilter ->
+    "Der Kontakt erfüllt nicht die im Filter bestimmten Kriterien für dieses \
+     Experiment, kann jedoch trotzdem angemeldet werden."
   | ContactNoCellPhone -> "Sie haben noch keine Mobiltelefonnummer verifiziert."
   | ContactEnterCellPhoneToken cell_phone ->
     Format.asprintf

@@ -389,6 +389,110 @@ module Sql = struct
       find_all_ids_of_contact_id_request
       (Contact.Id.to_common id)
   ;;
+
+  let find_to_enroll_directly_request where =
+    let open Caqti_request.Infix in
+    Format.asprintf
+      {sql|
+        SELECT DISTINCT
+          LOWER(CONCAT(
+            SUBSTR(HEX(pool_experiments.uuid), 1, 8), '-',
+            SUBSTR(HEX(pool_experiments.uuid), 9, 4), '-',
+            SUBSTR(HEX(pool_experiments.uuid), 13, 4), '-',
+            SUBSTR(HEX(pool_experiments.uuid), 17, 4), '-',
+            SUBSTR(HEX(pool_experiments.uuid), 21)
+          )),
+          pool_experiments.title,
+          pool_experiments.public_title,
+          pool_filter.query,
+          pool_experiments.direct_registration_disabled,
+          pool_experiments.registration_disabled,
+          COUNT(pool_sessions.uuid) > 0,
+          EXISTS(
+            SELECT TRUE FROM pool_sessions
+            LEFT JOIN pool_assignments
+              ON pool_assignments.session_uuid = pool_sessions.uuid
+              AND pool_assignments.contact_uuid = UNHEX(REPLACE($2, '-', ''))
+            WHERE pool_sessions.experiment_uuid = pool_experiments.uuid
+              AND pool_assignments.canceled_at IS NULL
+              AND pool_assignments.marked_as_deleted = 0
+          )
+        FROM
+          pool_experiments
+          LEFT JOIN pool_filter ON pool_filter.uuid = pool_experiments.filter_uuid
+          LEFT JOIN pool_sessions ON pool_sessions.experiment_uuid = pool_experiments.uuid
+            AND pool_sessions.closed_at IS NULL
+            AND pool_sessions.canceled_at IS NULL
+            AND pool_sessions.max_participants + pool_sessions.overbook >
+            (SELECT COUNT(*) FROM pool_assignments
+             WHERE pool_assignments.session_uuid = pool_sessions.uuid
+               AND pool_assignments.canceled_at IS NULL
+               AND pool_assignments.marked_as_deleted = 0)
+          WHERE
+            (pool_experiments.title LIKE $1
+            OR pool_experiments.public_title LIKE $1)
+            %s
+          GROUP BY
+            pool_experiments.uuid
+          ORDER BY
+            pool_experiments.created_at DESC
+          LIMIT 5
+        |sql}
+      (where |> CCOption.map_or ~default:"" (fun where -> "AND " ^ where))
+    |> Caqti_type.(tup2 string Pool_common.Repo.Id.t)
+       ->* Repo_entity.DirectEnrollment.t
+  ;;
+
+  let find_to_enroll_directly ?actor pool contact ~query =
+    let open Utils.Lwt_result.Infix in
+    let open Entity in
+    let checks = [ Format.asprintf "pool_experiments.uuid IN %s" ] in
+    let%lwt where =
+      let open Guard in
+      let permission = CCOption.map (const Permission.Create) actor in
+      create_where ?actor ?permission ~checks pool `Assignment
+    in
+    Utils.Database.collect
+      (Pool_database.Label.value pool)
+      (find_to_enroll_directly_request where)
+      ("%" ^ query ^ "%", Contact.(contact |> id |> Id.to_common))
+    >|> Lwt_list.map_s
+          (fun ({ DirectEnrollment.id; filter; _ } as experiment) ->
+             let%lwt matches_filter =
+               match filter with
+               | None -> Lwt.return_true
+               | Some filter ->
+                 Filter.contact_matches_filter pool id filter contact
+             in
+             Lwt.return DirectEnrollment.{ experiment with matches_filter })
+  ;;
+
+  let contact_is_enrolled_request =
+    let open Caqti_request.Infix in
+    {sql|
+    SELECT
+      EXISTS (
+        SELECT
+          1
+        FROM
+          pool_assignments
+          INNER JOIN pool_sessions ON pool_assignments.session_uuid = pool_sessions.uuid
+          INNER JOIN pool_experiments ON pool_experiments.uuid = pool_sessions.experiment_uuid
+        WHERE
+          pool_sessions.canceled_at IS NULL
+          AND pool_assignments.marked_as_deleted = 0
+          AND pool_experiments.uuid = UNHEX(REPLACE(?, '-', ''))
+          AND pool_assignments.contact_uuid = UNHEX(REPLACE(?, '-', '')))
+    |sql}
+    |> Caqti_type.(tup2 string string ->! bool)
+  ;;
+
+  let contact_is_enrolled pool experiment_id contact_id =
+    Utils.Database.find
+      (Pool_database.Label.value pool)
+      contact_is_enrolled_request
+      (experiment_id |> Entity.Id.value, contact_id |> Contact.Id.value)
+  ;;
 end
 
 let find = Sql.find
@@ -402,3 +506,5 @@ let update = Sql.update
 let delete = Sql.delete
 let search = Sql.search
 let search_multiple_by_id = Sql.search_multiple_by_id
+let find_to_enroll_directly = Sql.find_to_enroll_directly
+let contact_is_enrolled = Sql.contact_is_enrolled

@@ -18,4 +18,5 @@ module Sortable = Component_sortable
 module Statistics = Component_statistics
 module Table = Component_table
 module Tag = Component_tag
+module Tooltip = Component_tooltip
 module Utils = Component_utils

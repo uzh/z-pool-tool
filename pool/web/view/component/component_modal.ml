@@ -28,3 +28,39 @@ let create ?(active = false) ?subtitle language title id html =
         ]
     ]
 ;;
+
+let js_modal_add_spinner =
+  Format.asprintf
+    {js|
+      document.addEventListener("htmx:beforeSend", (e) => {
+        const { target } = e.detail;
+        if(target && target.id === "%s" ) {
+          const content = document.createElement("div");
+          const body = document.createElement("div");
+          body.classList.add("modal-body");
+          content.classList.add("modal-content", "flexrow", "justify-center")
+          const icon = document.createElement("i");
+          icon.classList.add("icon-spinner-outline", "rotate");
+          content.appendChild(icon);
+          body.appendChild(content);
+          target.innerHTML = '';
+          target.appendChild(body);
+          target.classList.add("active");
+        }
+      })
+    |js}
+;;
+
+let js_add_modal_close_listener =
+  {js|
+    document.addEventListener("htmx:afterSwap", (e) => {
+      const modal = e.detail.elt;
+      if(modal.classList.contains("modal")) {
+        modal.querySelector(".modal-close").addEventListener("click", (e) => {
+          modal.classList.remove("active");
+          modal.setAttribute("aria-hidden", "true");
+        })
+      }
+    })
+  |js}
+;;

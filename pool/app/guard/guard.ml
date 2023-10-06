@@ -135,7 +135,7 @@ let sql_uuid_list_fragment pool permission model actor =
   actor_to_model_permission pool permission model actor
   ||> function
   | true, _ -> None
-  | false, [] -> Some "()"
+  | false, [] -> Some "(NULL)"
   | false, ids ->
     ids
     |> CCList.map

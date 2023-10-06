@@ -19,6 +19,7 @@ type t =
   | EmailConfirmationTitle
   | EmtpyList of Entity_message.Field.t
   | EmptyListGeneric
+  | EnrollInExperiment
   | ExperimentListEmpty
   | ExperimentListPublicTitle
   | ExperimentListTitle
@@ -133,6 +134,7 @@ type hint =
   | AssignContactFromWaitingList
   | AssignmentsMarkedAsClosed
   | ContactCurrentCellPhone of string
+  | ContactDoesNotMatchFilter
   | ContactNoCellPhone
   | ContactEnterCellPhoneToken of string
   | ContactPhoneNumberVerificationWasReset
