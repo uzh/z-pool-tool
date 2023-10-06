@@ -69,7 +69,7 @@ let job_reporter
     instance)
   =
   match status, last_error with
-  | (Failed | Pending), Some last_error ->
+  | (Failed | Pending), Some last_error when tries >= max_tries ->
     let config = Sihl.Configuration.(read schema) in
     let module Gitlab_notify =
       Canary.Notifier.Gitlab (struct
