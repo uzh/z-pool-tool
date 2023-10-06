@@ -571,6 +571,7 @@ let control_to_string = function
   | PleaseSelect -> format_submit "please select" None
   | PreviousPage -> "previous"
   | PromoteContact -> format_submit "promote contact" None
+  | Print field -> format_submit "print" field
   | PublicPage -> "show public page"
   | Publish field -> format_submit "publish" field
   | ReactivateAccount -> format_submit "reactivate account" None

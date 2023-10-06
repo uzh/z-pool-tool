@@ -610,6 +610,7 @@ let control_to_string = function
   | PleaseSelect -> "bitte wählen"
   | PreviousPage -> "zurück"
   | PromoteContact -> "Kontakt befördern"
+  | Print field -> format_submit "drucken" field
   | PublicPage -> "Öffne öffentliche Seite"
   | Publish field -> format_submit "veröffentlichen" field
   | ReactivateAccount -> "Account reaktivieren"

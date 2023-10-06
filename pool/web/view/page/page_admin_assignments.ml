@@ -284,6 +284,7 @@ module Partials = struct
     ?(view_contact_name = false)
     ?(view_contact_info = false)
     ?(allow_session_swap = false)
+    ?(is_print = false)
     redirect
     (Pool_context.{ language; csrf; _ } as context)
     experiment
@@ -457,7 +458,10 @@ module Partials = struct
               external_data_field
         in
         let checkboxes = [ txt "P"; txt "NS" ] in
-        let right = [ Field.CanceledAt |> field_to_text; default ] in
+        let right =
+          let base = [ Field.CanceledAt |> field_to_text ] in
+          if is_print then base else base @ [ default ]
+        in
         left @ checkboxes @ right
       in
       let rows, modals =
@@ -503,7 +507,8 @@ module Partials = struct
                 :: modals
               | false -> modals
             in
-            (base @ buttons) :: rows, modals)
+            let columns = if is_print then base else base @ buttons in
+            columns :: rows, modals)
           ([], [])
           assignments
       in

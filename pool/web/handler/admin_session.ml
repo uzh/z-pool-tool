@@ -151,7 +151,7 @@ let create req =
   result |> HttpUtils.extract_happy_path_with_actions ~src req
 ;;
 
-let detail req page =
+let detail page req =
   let open Utils.Lwt_result.Infix in
   let experiment_id = experiment_id req in
   let session_id = session_id req in
@@ -179,6 +179,7 @@ let detail req page =
       Tags.ParticipationTags.(
         find_all database_label (Session (Session.Id.to_common session_id)))
     in
+    let create_layout = create_layout req context in
     (match page with
      | `Detail ->
        let* assignments =
@@ -196,7 +197,7 @@ let detail req page =
          session
          current_tags
          assignments
-       |> Lwt_result.ok
+       >|> create_layout
      | `Edit ->
        let%lwt locations = Pool_location.find_all database_label in
        let%lwt session_reminder_templates =
@@ -235,7 +236,7 @@ let detail req page =
          sys_languages
          (current_tags, available_tags, experiment_participation_tags)
          flash_fetcher
-       |> Lwt_result.ok
+       >|> create_layout
      | `Close ->
        let* assignments =
          Assignment.find_uncanceled_by_session database_label session.Session.id
@@ -257,7 +258,7 @@ let detail req page =
          assignments
          participation_tags
          counters
-       |> Lwt_result.ok
+       >|> create_layout
      | `Reschedule ->
        let* experiment = Experiment.find database_label experiment_id in
        Page.Admin.Session.reschedule_session
@@ -265,7 +266,7 @@ let detail req page =
          experiment
          session
          flash_fetcher
-       |> Lwt_result.ok
+       >|> create_layout
      | `Cancel ->
        let* follow_ups = Session.find_follow_ups database_label session_id in
        Page.Admin.Session.cancel
@@ -274,18 +275,30 @@ let detail req page =
          session
          follow_ups
          flash_fetcher
-       |> Lwt_result.ok)
-    >>= create_layout req context
+       >|> create_layout
+     | `Print ->
+       let* assignments =
+         Assignment.find_by_session database_label session.Session.id
+       in
+       Page.Admin.Session.print
+         ~view_contact_name
+         ~view_contact_info
+         context
+         experiment
+         session
+         assignments
+       |> Lwt_result.return)
     >|+ Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path ~src req
 ;;
 
-let show req = detail req `Detail
-let edit req = detail req `Edit
-let reschedule_form req = detail req `Reschedule
-let cancel_form req = detail req `Cancel
-let close req = detail req `Close
+let show = detail `Detail
+let edit = detail `Edit
+let reschedule_form = detail `Reschedule
+let cancel_form = detail `Cancel
+let close = detail `Close
+let print = detail `Print
 
 let update_handler action req =
   let experiment_id = experiment_id req in

@@ -897,9 +897,34 @@ let detail
           assignments)
     in
     div
-      [ h2
-          ~a:[ a_class [ "heading-2" ] ]
-          [ txt (Utils.nav_link_to_string language I18n.Assignments) ]
+      ~a:[ a_class [ "stack" ] ]
+      [ div
+          ~a:
+            [ a_class
+                [ "flexrow"
+                ; "flex-gap"
+                ; "justify-between"
+                ; "flexcolumn-mobile"
+                ]
+            ]
+          [ div
+              [ h2
+                  ~a:[ a_class [ "heading-2" ] ]
+                  [ txt (Utils.nav_link_to_string language I18n.Assignments) ]
+              ]
+          ; button
+              ~a:
+                [ a_class [ "btn"; "primary"; "has-icon"; "small" ]
+                ; a_user_data "print" "assignments"
+                ]
+              [ Icon.(to_html PrintOutline)
+              ; txt
+                  Pool_common.(
+                    Utils.control_to_string
+                      language
+                      Message.(Print (Some Field.Assignments)))
+              ]
+          ]
       ; assignment_list
       ]
   in
@@ -923,6 +948,34 @@ let detail
          context
          (I18n (session_title session))
          experiment)
+;;
+
+let print
+  ?view_contact_name
+  ?view_contact_info
+  (Pool_context.{ language; _ } as context)
+  experiment
+  (session : Session.t)
+  assignments
+  =
+  let assignment_list =
+    Page_admin_assignments.(
+      Partials.overview_list
+        ?view_contact_name
+        ?view_contact_info
+        ~is_print:true
+        Session
+        context
+        experiment
+        session
+        assignments)
+  in
+  let title =
+    Pool_common.(Utils.text_to_string language (session_title session))
+  in
+  [ div ~a:[ a_class [ "safety-margin" ] ] [ h1 [ txt title ]; assignment_list ]
+  ]
+  |> Layout.Print.create ~document_title:title
 ;;
 
 let edit
