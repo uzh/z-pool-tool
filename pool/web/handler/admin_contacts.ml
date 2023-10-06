@@ -246,13 +246,16 @@ let external_data_ids req =
 let htmx_experiments_get req =
   let open Utils.Lwt_result.Infix in
   let contact_id = contact_id req in
-  let result ({ Pool_context.database_label; _ } as context) =
+  let result ({ Pool_context.database_label; user; _ } as context) =
     let query = Sihl.Web.Request.query Field.(show Experiment) req in
     let* contact = Contact.find database_label contact_id in
+    let* actor =
+      Pool_context.Utils.find_authorizable ~admin_only:true database_label user
+    in
     let%lwt experiments =
       query
       |> CCOption.map_or ~default:(Lwt.return []) (fun query ->
-        Experiment.find_to_enroll_directly database_label contact ~query)
+        Experiment.find_to_enroll_directly ~actor database_label contact ~query)
     in
     Page.Admin.Contact.assign_contact_experiment_list
       context
@@ -266,6 +269,7 @@ let htmx_experiments_get req =
 ;;
 
 let htmx_experiment_modal req =
+  let open CCFun in
   let open Utils.Lwt_result.Infix in
   let contact_id = contact_id req in
   let experiment_id = experiment_id req in
@@ -275,6 +279,7 @@ let htmx_experiment_modal req =
     let* sessions =
       Session.find_all_for_experiment database_label experiment_id
       >|+ Session.group_and_sort
+      >|+ CCList.filter (fst %> Session.is_fully_booked %> not)
     in
     let%lwt matches_filter =
       experiment.Experiment.filter

@@ -328,7 +328,8 @@ module DirectEnrollment = struct
         , ( public_title
           , ( filter
             , ( direct_registration_disabled
-              , (registration_disabled, available_spots) ) ) ) ) )
+              , ( registration_disabled
+                , (available_spots, contact_already_assigned) ) ) ) ) ) )
       =
       let matches_filter = false in
       Ok
@@ -340,6 +341,7 @@ module DirectEnrollment = struct
         ; registration_disabled
         ; available_spots
         ; matches_filter
+        ; contact_already_assigned
         }
     in
     Caqti_type.(
@@ -356,6 +358,6 @@ module DirectEnrollment = struct
                     (option Filter.Repo.query)
                     (tup2
                        DirectRegistrationDisabled.t
-                       (tup2 RegistrationDisabled.t bool)))))))
+                       (tup2 RegistrationDisabled.t (tup2 bool bool))))))))
   ;;
 end

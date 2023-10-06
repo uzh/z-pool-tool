@@ -143,6 +143,7 @@ module DirectEnrollment : sig
     ; registration_disabled : RegistrationDisabled.t
     ; available_spots : bool
     ; matches_filter : bool
+    ; contact_already_assigned : bool
     }
 
   val equal : t -> t -> bool
@@ -238,7 +239,8 @@ val search_multiple_by_id
   -> (Id.t * Title.t) list Lwt.t
 
 val find_to_enroll_directly
-  :  Pool_database.Label.t
+  :  ?actor:Guard.Actor.t
+  -> Pool_database.Label.t
   -> Contact.t
   -> query:string
   -> DirectEnrollment.t list Lwt.t
