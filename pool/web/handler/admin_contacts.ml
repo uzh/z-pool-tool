@@ -279,7 +279,6 @@ let htmx_experiment_modal req =
     let* sessions =
       Session.find_all_for_experiment database_label experiment_id
       >|+ Session.group_and_sort
-      >|+ CCList.filter (fst %> Session.is_fully_booked %> not)
     in
     let%lwt matches_filter =
       experiment.Experiment.filter
