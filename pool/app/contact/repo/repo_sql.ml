@@ -367,9 +367,9 @@ let delete_unverified pool id =
       request
       (Pool_common.Id.value id)
   in
-  let%lwt _ = exec delete_unverified_user_request in
-  let%lwt _ = exec delete_unverified_email_verifications_request in
-  exec delete_unverified_contact_request
+  let%lwt () = exec delete_unverified_contact_request in
+  let%lwt () = exec delete_unverified_email_verifications_request in
+  exec delete_unverified_user_request
 ;;
 
 let find_to_trigger_profile_update_request =
