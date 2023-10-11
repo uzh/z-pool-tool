@@ -92,33 +92,78 @@ let update_email req =
             |> CCList.hd)
          |> Lwt_result.lift
        in
-       let%lwt token = Email.create_token database_label new_email in
+       let%lwt existing_user =
+         Service.User.find_by_email_opt
+           ~ctx:(Pool_database.to_ctx database_label)
+           (Pool_user.EmailAddress.value new_email)
+       in
        let tenant = Pool_context.Tenant.get_tenant_exn req in
-       let%lwt verification_mail =
-         let open Message_template in
-         EmailVerification.create
-           database_label
-           language
-           (Tenant tenant)
-           contact
-           new_email
-           token
+       let send_verification_mail unverified_contact =
+         let* email_event =
+           let%lwt token = Email.create_token database_label new_email in
+           let%lwt verification_mail =
+             let open Message_template in
+             EmailVerification.create
+               database_label
+               language
+               (Tenant tenant)
+               contact
+               new_email
+               token
+           in
+           Command.RequestEmailValidation.(
+             handle
+               ~tags
+               ?allowed_email_suffixes
+               token
+               verification_mail
+               contact
+               new_email
+             |> Lwt_result.lift)
+         in
+         match unverified_contact with
+         | None -> Lwt_result.return email_event
+         | Some contact ->
+           let* delete_event =
+             Cqrs_command.Contact_command.DeleteUnverified.handle ~tags contact
+             |> Lwt_result.lift
+           in
+           Lwt_result.return (email_event @ delete_event)
        in
        let* events =
-         Command.RequestEmailValidation.(
-           handle
-             ~tags
-             ?allowed_email_suffixes
-             token
-             verification_mail
-             contact
-             new_email
-           |> Lwt_result.lift)
+         match existing_user with
+         | None -> send_verification_mail None
+         | Some user ->
+           let notification language =
+             Message_template.ContactPasswordChangeAttempt.create
+               database_label
+               language
+               tenant
+               user
+           in
+           (match%lwt Admin.user_is_admin database_label user with
+            | true ->
+              let%lwt notification = notification Pool_common.Language.En in
+              Lwt_result.return
+                [ Email.Sent (notification, None) |> Pool_event.email ]
+            | false ->
+              let* contact = Contact.find_by_user database_label user in
+              (match contact.Contact.email_verified with
+               | Some _ ->
+                 let%lwt notification =
+                   let%lwt language =
+                     Contact.message_language database_label contact
+                   in
+                   notification language
+                 in
+                 Lwt_result.return
+                   [ Email.Sent (notification, None) |> Pool_event.email ]
+               | None -> send_verification_mail (Some contact)))
        in
        let%lwt () = Pool_event.handle_events ~tags database_label events in
        HttpUtils.(
          redirect_to_with_actions
-           (path_with_language query_language "/email-confirmation")
+           (path_with_language query_language "/user/login-information")
            [ Message.set ~success:[ EmailConfirmationMessage ] ])
        |> Lwt_result.ok
   in
