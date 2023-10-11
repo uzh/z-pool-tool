@@ -356,18 +356,50 @@ module AssignmentSessionChange = struct
   ;;
 end
 
-module ContactRegistrationAttempt = struct
-  let email_params layout tenant_url contact =
+module ContactPasswordChangeAttempt = struct
+  let email_params layout tenant_url user =
     let reset_url = create_public_url tenant_url "/request-reset-password" in
-    global_params layout contact.Contact.user
+    global_params layout user
     @ [ "tenantUrl", Pool_tenant.Url.value tenant_url
       ; "resetUrl", reset_url
       ; ( "emailAddress"
-        , Pool_user.EmailAddress.value (Contact.email_address contact) )
+        , Pool_user.EmailAddress.value (Pool_user.user_email_address user) )
       ]
   ;;
 
-  let create pool preferred_language tenant contact =
+  let create pool preferred_language tenant user =
+    let%lwt template, language =
+      find_by_label_to_send
+        pool
+        preferred_language
+        Label.ContactPasswordChangeAttempt
+    in
+    let layout = layout_from_tenant tenant in
+    let tenant_url = tenant.Pool_tenant.url in
+    let%lwt sender = default_sender_of_pool pool in
+    prepare_email
+      language
+      template
+      sender
+      (Pool_user.user_email_address user)
+      layout
+      (email_params layout tenant_url user)
+    |> Lwt.return
+  ;;
+end
+
+module ContactRegistrationAttempt = struct
+  let email_params layout tenant_url user =
+    let reset_url = create_public_url tenant_url "/request-reset-password" in
+    global_params layout user
+    @ [ "tenantUrl", Pool_tenant.Url.value tenant_url
+      ; "resetUrl", reset_url
+      ; ( "emailAddress"
+        , Pool_user.EmailAddress.value (Pool_user.user_email_address user) )
+      ]
+  ;;
+
+  let create pool preferred_language tenant user =
     let%lwt template, language =
       find_by_label_to_send
         pool
@@ -381,9 +413,9 @@ module ContactRegistrationAttempt = struct
       language
       template
       sender
-      (contact |> Contact.email_address)
+      (Pool_user.user_email_address user)
       layout
-      (email_params layout tenant_url contact)
+      (email_params layout tenant_url user)
     |> Lwt.return
   ;;
 end

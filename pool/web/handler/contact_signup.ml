@@ -122,6 +122,7 @@ let sign_up_create req =
                then Lwt_result.return []
                else
                  contact
+                 |> Contact.user
                  |> Message_template.ContactRegistrationAttempt.create
                       database_label
                       (CCOption.value

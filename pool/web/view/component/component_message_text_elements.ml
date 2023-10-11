@@ -289,12 +289,18 @@ let message_template_help
       ~new_session:session
       ~old_session:session
       (create_assignment ())
+  | ContactPasswordChangeAttempt ->
+    let tenant_url = tenant.Pool_tenant.url in
+    ContactPasswordChangeAttempt.email_params
+      layout
+      tenant_url
+      (create_sihl_user ())
   | ContactRegistrationAttempt ->
     let tenant_url = tenant.Pool_tenant.url in
     ContactRegistrationAttempt.email_params
       layout
       tenant_url
-      (create_contact ())
+      (create_sihl_user ())
   | EmailVerification ->
     let validation_url =
       Pool_common.[ Message.Field.Token, Email.Token.value token ]

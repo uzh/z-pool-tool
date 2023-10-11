@@ -7,6 +7,7 @@ module Label : sig
     | AccountSuspensionNotification
     | AssignmentConfirmation
     | AssignmentSessionChange
+    | ContactPasswordChangeAttempt
     | ContactRegistrationAttempt
     | EmailVerification
     | ExperimentInvitation
@@ -240,18 +241,33 @@ module AssignmentSessionChange : sig
     -> Sihl_email.t Lwt.t
 end
 
-module ContactRegistrationAttempt : sig
+module ContactPasswordChangeAttempt : sig
   val email_params
     :  email_layout
     -> Pool_tenant.Url.t
-    -> Contact.t
+    -> Sihl_user.t
     -> (string * string) list
 
   val create
     :  Pool_database.Label.t
     -> Pool_common.Language.t
     -> Pool_tenant.t
-    -> Contact.t
+    -> Sihl_user.t
+    -> Sihl_email.t Lwt.t
+end
+
+module ContactRegistrationAttempt : sig
+  val email_params
+    :  email_layout
+    -> Pool_tenant.Url.t
+    -> Sihl_user.t
+    -> (string * string) list
+
+  val create
+    :  Pool_database.Label.t
+    -> Pool_common.Language.t
+    -> Pool_tenant.t
+    -> Sihl_user.t
     -> Sihl_email.t Lwt.t
 end
 
