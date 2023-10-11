@@ -4,6 +4,14 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/pool/tree/HEAD)
 
+### Added
+
+- notification when a contact changes their email address to an existing one
+
+### Fixed
+
+- updating contact email address will not update email if the address is already in use
+
 ## [0.4.7](https://github.com/uzh/pool/tree/0.4.7) - 2023-09-27
 
 ### Added
