@@ -390,6 +390,8 @@ let rec error_to_string = function
   | EmailAlreadyInUse -> "Email address is already in use."
   | EmailDeleteAlreadyVerified ->
     "Email address is already verified cannot be deleted."
+  | EmailIdenticalToCurrent ->
+    "The provided email address is identical to the current one."
   | EmailMalformed -> "Malformed email"
   | EmailInterceptionError error ->
     Format.asprintf "Email interception error: %s" error

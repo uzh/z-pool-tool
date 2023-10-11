@@ -72,7 +72,8 @@ let update_email req =
   let open Pool_common.Message in
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
   let result
-    ({ Pool_context.database_label; query_language; language; _ } as context)
+    ({ Pool_context.database_label; query_language; language; user; _ } as
+     context)
     =
     let open Utils.Lwt_result.Infix in
     let tags = tags req in
@@ -91,6 +92,19 @@ let update_email req =
            (CCList.assoc ~eq:CCString.equal Field.(Email |> show) urlencoded
             |> CCList.hd)
          |> Lwt_result.lift
+       in
+       let* () =
+         let open Pool_context in
+         let equal = Pool_user.EmailAddress.equal new_email in
+         (fun is_equal ->
+           if is_equal
+           then Lwt_result.fail EmailIdenticalToCurrent
+           else Lwt_result.return ())
+         @@
+         match user with
+         | Guest -> false
+         | Admin admin -> Admin.email_address admin |> equal
+         | Contact contact -> Contact.email_address contact |> equal
        in
        let%lwt existing_user =
          Service.User.find_by_email_opt

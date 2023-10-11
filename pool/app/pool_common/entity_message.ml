@@ -45,6 +45,7 @@ type error =
   | EmailAddressMissingRoot
   | EmailAlreadyInUse
   | EmailDeleteAlreadyVerified
+  | EmailIdenticalToCurrent
   | EmailInterceptionError of string
   | EmailMalformed
   | EndBeforeStart
