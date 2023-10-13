@@ -293,3 +293,10 @@ table.simple {
 .cursor-default {
     cursor: default;
 }
+
+// Button dropdown
+.button-list.left .dropdown {
+    right: auto;
+    left: 0;
+    transform: translateX(-100%);
+}
