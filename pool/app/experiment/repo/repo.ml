@@ -489,15 +489,13 @@ module Sql = struct
       (Pool_database.Label.value pool)
       (find_to_enroll_directly_request where)
       ("%" ^ query ^ "%", Contact.(contact |> id |> Id.to_common))
-    >|> Lwt_list.map_s
-          (fun ({ DirectEnrollment.id; filter; _ } as experiment) ->
-             let%lwt matches_filter =
-               match filter with
-               | None -> Lwt.return_true
-               | Some filter ->
-                 Filter.contact_matches_filter pool id filter contact
-             in
-             Lwt.return DirectEnrollment.{ experiment with matches_filter })
+    >|> Lwt_list.map_s (fun ({ DirectEnrollment.filter; _ } as experiment) ->
+      let%lwt matches_filter =
+        match filter with
+        | None -> Lwt.return_true
+        | Some filter -> Filter.contact_matches_filter pool filter contact
+      in
+      Lwt.return DirectEnrollment.{ experiment with matches_filter })
   ;;
 
   let contact_is_enrolled_request =
