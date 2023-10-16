@@ -289,9 +289,9 @@ let message_template_help
       ~new_session:session
       ~old_session:session
       (create_assignment ())
-  | ContactPasswordChangeAttempt ->
+  | ContactEmailChangeAttempt ->
     let tenant_url = tenant.Pool_tenant.url in
-    ContactPasswordChangeAttempt.email_params
+    ContactEmailChangeAttempt.email_params
       layout
       tenant_url
       (create_sihl_user ())

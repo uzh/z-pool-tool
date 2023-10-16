@@ -149,7 +149,7 @@ let update_email req =
          | None -> send_verification_mail None
          | Some user ->
            let notification language =
-             Message_template.ContactPasswordChangeAttempt.create
+             Message_template.ContactEmailChangeAttempt.create
                database_label
                language
                tenant

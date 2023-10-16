@@ -7,7 +7,7 @@ module Label : sig
     | AccountSuspensionNotification
     | AssignmentConfirmation
     | AssignmentSessionChange
-    | ContactPasswordChangeAttempt
+    | ContactEmailChangeAttempt
     | ContactRegistrationAttempt
     | EmailVerification
     | ExperimentInvitation
@@ -241,7 +241,7 @@ module AssignmentSessionChange : sig
     -> Sihl_email.t Lwt.t
 end
 
-module ContactPasswordChangeAttempt : sig
+module ContactEmailChangeAttempt : sig
   val email_params
     :  email_layout
     -> Pool_tenant.Url.t

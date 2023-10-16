@@ -356,7 +356,7 @@ module AssignmentSessionChange = struct
   ;;
 end
 
-module ContactPasswordChangeAttempt = struct
+module ContactEmailChangeAttempt = struct
   let email_params layout tenant_url user =
     let reset_url = create_public_url tenant_url "/request-reset-password" in
     global_params layout user
@@ -372,7 +372,7 @@ module ContactPasswordChangeAttempt = struct
       find_by_label_to_send
         pool
         preferred_language
-        Label.ContactPasswordChangeAttempt
+        Label.ContactEmailChangeAttempt
     in
     let layout = layout_from_tenant tenant in
     let tenant_url = tenant.Pool_tenant.url in
