@@ -103,23 +103,27 @@ let create
      @ exclude_roles_of)
 ;;
 
+let search_item ~id ~title =
+  div
+    ~a:[ a_user_data "id" id; a_class [ "has-icon"; "inset-xs" ] ]
+    [ Component_icon.(to_html ~classnames:[ "toggle-item" ] CloseCircle)
+    ; span [ txt title ]
+    ; input
+        ~a:
+          [ a_input_type `Checkbox
+          ; a_class [ "hidden" ]
+          ; a_name Field.(array_key Value)
+          ; a_value id
+          ; a_checked ()
+          ]
+        ()
+    ]
+;;
+
 module Experiment = struct
   let item (id, title) =
     let open Experiment in
-    div
-      ~a:[ a_user_data "id" (Id.value id); a_class [ "has-icon"; "inset-xs" ] ]
-      [ Component_icon.(to_html ~classnames:[ "toggle-item" ] CloseCircle)
-      ; span [ txt (Title.value title) ]
-      ; input
-          ~a:
-            [ a_input_type `Checkbox
-            ; a_class [ "hidden" ]
-            ; a_name Field.(array_key Value)
-            ; a_value (Id.value id)
-            ; a_checked ()
-            ]
-          ()
-      ]
+    search_item ~id:(Id.value id) ~title:(Title.value title)
   ;;
 
   let placeholder = "Search by experiment title"
@@ -130,20 +134,7 @@ end
 module Location = struct
   let item (id, name) =
     let open Pool_location in
-    div
-      ~a:[ a_user_data "id" (Id.value id); a_class [ "has-icon"; "inset-xs" ] ]
-      [ Component_icon.(to_html ~classnames:[ "toggle-item" ] CloseCircle)
-      ; span [ txt (Name.value name) ]
-      ; input
-          ~a:
-            [ a_input_type `Checkbox
-            ; a_class [ "hidden" ]
-            ; a_name Field.(array_key Value)
-            ; a_value (Id.value id)
-            ; a_checked ()
-            ]
-          ()
-      ]
+    search_item ~id:(Id.value id) ~title:(Name.value name)
   ;;
 
   let placeholder = "Search by location name"
@@ -154,20 +145,7 @@ end
 module Tag = struct
   let item (id, title) =
     let open Tags in
-    div
-      ~a:[ a_user_data "id" (Id.value id); a_class [ "has-icon"; "inset-xs" ] ]
-      [ Component_icon.(to_html ~classnames:[ "toggle-item" ] CloseCircle)
-      ; span [ txt (Title.value title) ]
-      ; input
-          ~a:
-            [ a_input_type `Checkbox
-            ; a_class [ "hidden" ]
-            ; a_name Field.(array_key Value)
-            ; a_value (Id.value id)
-            ; a_checked ()
-            ]
-          ()
-      ]
+    search_item ~id:(Id.value id) ~title:(Title.value title)
   ;;
 
   let placeholder = "Search by tag title"
