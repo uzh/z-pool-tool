@@ -7,7 +7,7 @@ module ResentAt : sig
   val value : t -> Ptime.t
 end
 
-module ResendCount : sig
+module SendCount : sig
   include Pool_common.Model.IntegerSig
 
   val init : t
@@ -18,7 +18,7 @@ type t =
   { id : Pool_common.Id.t
   ; contact : Contact.t
   ; resent_at : ResentAt.t option
-  ; resend_count : ResendCount.t
+  ; send_count : SendCount.t
   ; created_at : Ptime.t
   ; updated_at : Ptime.t
   }

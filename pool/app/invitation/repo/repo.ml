@@ -38,7 +38,7 @@ module Sql = struct
             SUBSTR(HEX(pool_contacts.user_uuid), 21)
           )),
           pool_invitations.resent_at,
-          pool_invitations.resend_count,
+          pool_invitations.send_count,
           pool_invitations.created_at,
           pool_invitations.updated_at
         FROM
@@ -172,7 +172,7 @@ module Sql = struct
       UPDATE pool_invitations
       SET
         resent_at = $2
-        resend_count = resend_count + 1
+        send_count = send_count + 1
       WHERE uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}
     |> RepoEntity.Update.t ->. Caqti_type.unit
@@ -281,7 +281,7 @@ let bulk_insert ?mailing_id pool contacts experiment_id =
         mailing_uuid,
         contact_uuid,
         resent_at,
-        resend_count,
+        send_count,
         created_at,
         updated_at
       ) VALUES
@@ -316,7 +316,7 @@ let bulk_insert ?mailing_id pool contacts experiment_id =
       {sql|
         %s
         %s
-        ON DUPLICATE KEY UPDATE resend_count = resend_count + 1, updated_at = NOW()
+        ON DUPLICATE KEY UPDATE send_count = send_count + 1, updated_at = NOW()
       |sql}
       insert_sql
       (CCString.concat ",\n" value_insert)
