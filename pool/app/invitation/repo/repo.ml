@@ -24,11 +24,11 @@ module Sql = struct
             SUBSTR(HEX(pool_experiments.uuid), 21)
           )),
           LOWER(CONCAT(
-            SUBSTR(HEX(pool_mailing.uuid), 1, 8), '-',
-            SUBSTR(HEX(pool_mailing.uuid), 9, 4), '-',
-            SUBSTR(HEX(pool_mailing.uuid), 13, 4), '-',
-            SUBSTR(HEX(pool_mailing.uuid), 17, 4), '-',
-            SUBSTR(HEX(pool_mailing.uuid), 21)
+            SUBSTR(HEX(pool_invitations.mailing_uuid), 1, 8), '-',
+            SUBSTR(HEX(pool_invitations.mailing_uuid), 9, 4), '-',
+            SUBSTR(HEX(pool_invitations.mailing_uuid), 13, 4), '-',
+            SUBSTR(HEX(pool_invitations.mailing_uuid), 17, 4), '-',
+            SUBSTR(HEX(pool_invitations.mailing_uuid), 21)
           )),
           LOWER(CONCAT(
             SUBSTR(HEX(pool_contacts.user_uuid), 1, 8), '-',
@@ -49,8 +49,6 @@ module Sql = struct
           ON pool_contacts.user_uuid = user_users.uuid
         LEFT JOIN pool_experiments
           ON pool_invitations.experiment_uuid = pool_experiments.uuid
-        LEFT JOIN pool_mailing
-          ON pool_experiments.uuid = pool_mailing.experiment_uuid
         %s
       |sql}
   ;;
@@ -67,8 +65,6 @@ module Sql = struct
           ON pool_contacts.user_uuid = user_users.uuid
         LEFT JOIN pool_experiments
           ON pool_invitations.experiment_uuid = pool_experiments.uuid
-        LEFT JOIN pool_mailing
-          ON pool_experiments.uuid = pool_mailing.experiment_uuid
         %s
       |sql}
   ;;
@@ -171,7 +167,7 @@ module Sql = struct
     {sql|
       UPDATE pool_invitations
       SET
-        resent_at = $2
+        resent_at = $2,
         send_count = send_count + 1
       WHERE uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}
