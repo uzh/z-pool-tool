@@ -4,7 +4,7 @@ module ResentAt = struct
   let create = Ptime_clock.now
 end
 
-module ResendCount = struct
+module SendCount = struct
   open Pool_common
   include Model.Integer
 
@@ -19,7 +19,7 @@ type t =
   { id : Pool_common.Id.t
   ; contact : Contact.t
   ; resent_at : ResentAt.t option
-  ; resend_count : ResendCount.t
+  ; send_count : SendCount.t
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
   }
@@ -29,7 +29,7 @@ let create ?(id = Pool_common.Id.create ()) contact =
   { id
   ; contact
   ; resent_at = None
-  ; resend_count = ResendCount.init
+  ; send_count = SendCount.init
   ; created_at = Pool_common.CreatedAt.create ()
   ; updated_at = Pool_common.UpdatedAt.create ()
   }
