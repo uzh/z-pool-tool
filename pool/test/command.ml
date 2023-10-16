@@ -246,6 +246,12 @@ let () =
             Waiting_list_test.create_with_direct_registration_enabled
         ; test_case "update comment" `Quick Waiting_list_test.update
         ] )
+    ; ( "user"
+      , [ test_case
+            "validate email addresses"
+            `Quick
+            User_test.validate_email_adress
+        ] )
     ; "location", [ test_case "create location" `Quick Location_test.create ]
     ; ( "mailing"
       , [ test_case "create mailing" `Quick Mailing_test.create
