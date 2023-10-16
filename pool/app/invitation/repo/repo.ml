@@ -24,13 +24,6 @@ module Sql = struct
             SUBSTR(HEX(pool_experiments.uuid), 21)
           )),
           LOWER(CONCAT(
-            SUBSTR(HEX(pool_invitations.mailing_uuid), 1, 8), '-',
-            SUBSTR(HEX(pool_invitations.mailing_uuid), 9, 4), '-',
-            SUBSTR(HEX(pool_invitations.mailing_uuid), 13, 4), '-',
-            SUBSTR(HEX(pool_invitations.mailing_uuid), 17, 4), '-',
-            SUBSTR(HEX(pool_invitations.mailing_uuid), 21)
-          )),
-          LOWER(CONCAT(
             SUBSTR(HEX(pool_contacts.user_uuid), 1, 8), '-',
             SUBSTR(HEX(pool_contacts.user_uuid), 9, 4), '-',
             SUBSTR(HEX(pool_contacts.user_uuid), 13, 4), '-',
@@ -225,6 +218,51 @@ module Sql = struct
     in
     Utils.Database.collect (pool |> Pool_database.Label.value) request pv
   ;;
+
+  module MailingInvitationMapping = struct
+    let bulk_insert pool invitations mailing_id =
+      let insert_sql =
+        {sql|
+          INSERT INTO pool_mailing_invitations (
+            mailing_uuid,
+            invitation_uuid
+          ) VALUES
+        |sql}
+      in
+      let values, value_insert =
+        CCList.fold_left
+          (fun (dyn, sql) invitation ->
+            let sql_line =
+              {sql| ( UNHEX(REPLACE(?, '-', '')),
+                (SELECT uuid FROM pool_invitations WHERE experiment_uuid = (SELECT experiment_uuid FROM pool_mailing WHERE uuid = UNHEX(REPLACE(?, '-', ''))) AND contact_uuid = UNHEX(REPLACE(?, '-', '')))
+              ) |sql}
+            in
+            ( dyn
+              |> Dynparam.add Mailing.Repo.Id.t mailing_id
+              |> Dynparam.add Mailing.Repo.Id.t mailing_id
+              |> Dynparam.add
+                   Pool_common.Repo.Id.t
+                   (invitation.Entity.contact |> Contact.id)
+            , sql @ [ sql_line ] ))
+          (Dynparam.empty, [])
+          invitations
+      in
+      let (Dynparam.Pack (pt, pv)) = values in
+      let prepare_request =
+        let open Caqti_request.Infix in
+        Format.asprintf
+          {sql|
+            %s
+            %s
+            ON DUPLICATE KEY UPDATE updated_at = NOW()
+          |sql}
+          insert_sql
+          (CCString.concat ",\n" value_insert)
+        |> (pt ->. Caqti_type.unit) ~oneshot:true
+      in
+      Utils.Database.exec (pool |> Pool_database.Label.value) prepare_request pv
+    ;;
+  end
 end
 
 let contact_to_invitation pool invitation =
@@ -274,7 +312,6 @@ let bulk_insert ?mailing_id pool contacts experiment_id =
       INSERT INTO pool_invitations (
         uuid,
         experiment_uuid,
-        mailing_uuid,
         contact_uuid,
         resent_at,
         send_count,
@@ -283,9 +320,12 @@ let bulk_insert ?mailing_id pool contacts experiment_id =
       ) VALUES
     |sql}
   in
+  let invitations =
+    CCList.map CCFun.(uncurry (fun id -> Entity.create ~id)) contacts
+  in
   let values, value_insert =
     CCList.fold_left
-      (fun (dyn, sql) (id, contact) ->
+      (fun (dyn, sql) entity ->
         let sql_line =
           {sql| (
             UNHEX(REPLACE(?, '-', '')),
@@ -294,16 +334,13 @@ let bulk_insert ?mailing_id pool contacts experiment_id =
             UNHEX(REPLACE(?, '-', '')),
             ?,
             ?,
-            ?,
             ?
           ) |sql}
         in
-        let entity =
-          contact |> Entity.create ~id |> of_entity ?mailing_id experiment_id
-        in
-        dyn |> Dynparam.add RepoEntity.t entity, sql @ [ sql_line ])
+        ( dyn |> Dynparam.add RepoEntity.t (entity |> of_entity experiment_id)
+        , sql @ [ sql_line ] ))
       (Dynparam.empty, [])
-      contacts
+      invitations
   in
   let (Dynparam.Pack (pt, pv)) = values in
   let prepare_request =
@@ -318,5 +355,14 @@ let bulk_insert ?mailing_id pool contacts experiment_id =
       (CCString.concat ",\n" value_insert)
     |> (pt ->. Caqti_type.unit) ~oneshot:true
   in
-  Utils.Database.exec (pool |> Pool_database.Label.value) prepare_request pv
+  let%lwt () =
+    Utils.Database.exec (pool |> Pool_database.Label.value) prepare_request pv
+  in
+  let%lwt () =
+    CCOption.map_or
+      ~default:Lwt.return_unit
+      (Sql.MailingInvitationMapping.bulk_insert pool invitations)
+      mailing_id
+  in
+  Lwt.return_unit
 ;;

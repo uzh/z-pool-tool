@@ -13,7 +13,6 @@ end
 type t =
   { id : Pool_common.Id.t
   ; experiment_id : Experiment.Id.t
-  ; mailing_id : Mailing.Id.t option
   ; contact_id : Pool_common.Id.t
   ; resent_at : Entity.ResentAt.t option
   ; send_count : SendCount.t
@@ -32,15 +31,9 @@ let to_entity (m : t) (contact : Contact.t) : Entity.t =
     }
 ;;
 
-let of_entity
-  ?(mailing_id : Mailing.Id.t option)
-  (experiment_id : Experiment.Id.t)
-  (m : Entity.t)
-  : t
-  =
+let of_entity (experiment_id : Experiment.Id.t) (m : Entity.t) : t =
   { id = m.Entity.id
   ; experiment_id
-  ; mailing_id
   ; contact_id = Contact.id m.Entity.contact
   ; resent_at = m.Entity.resent_at
   ; send_count = m.Entity.send_count
@@ -54,23 +47,18 @@ let t =
     Ok
       ( m.id
       , ( m.experiment_id
-        , ( m.mailing_id
-          , ( m.contact_id
-            , (m.resent_at, (m.send_count, (m.created_at, m.updated_at))) ) ) )
-      )
+        , ( m.contact_id
+          , (m.resent_at, (m.send_count, (m.created_at, m.updated_at))) ) ) )
   in
   let decode
     ( id
     , ( experiment_id
-      , ( mailing_id
-        , (contact_id, (resent_at, (send_count, (created_at, updated_at)))) ) )
-    )
+      , (contact_id, (resent_at, (send_count, (created_at, updated_at)))) ) )
     =
     let open CCResult in
     Ok
       { id
       ; experiment_id
-      ; mailing_id
       ; contact_id
       ; resent_at
       ; send_count
@@ -88,12 +76,10 @@ let t =
          (tup2
             Experiment.Repo.Entity.Id.t
             (tup2
-               (option Mailing.Repo.Id.t)
+               Id.t
                (tup2
-                  Id.t
-                  (tup2
-                     (option ResentAt.t)
-                     (tup2 SendCount.t (tup2 CreatedAt.t UpdatedAt.t))))))))
+                  (option ResentAt.t)
+                  (tup2 SendCount.t (tup2 CreatedAt.t UpdatedAt.t)))))))
 ;;
 
 module Update = struct
