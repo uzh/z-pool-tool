@@ -10,31 +10,6 @@ let to_role (admin, role, target_uuid) =
   BaseGuard.ActorRole.create ?target_uuid admin role
 ;;
 
-let default_schema command =
-  let open Pool_common in
-  Utils.PoolConformist.(
-    make
-      Field.
-        [ Title.schema ()
-        ; PublicTitle.schema ()
-        ; Conformist.optional @@ Description.schema ()
-        ; Conformist.optional @@ CostCenter.schema ()
-        ; DirectRegistrationDisabled.schema ()
-        ; RegistrationDisabled.schema ()
-        ; AllowUninvitedSignup.schema ()
-        ; ExternalDataRequired.schema ()
-        ; ShowExternalDataIdLinks.schema ()
-        ; Conformist.optional @@ ExperimentType.schema ()
-        ; Conformist.optional
-          @@ Reminder.LeadTime.schema ~field:Message.Field.EmailLeadTime ()
-        ; Conformist.optional
-          @@ Reminder.LeadTime.schema
-               ~field:Message.Field.TextMessageLeadTime
-               ()
-        ]
-      command)
-;;
-
 let default_command
   title
   public_title
@@ -62,6 +37,85 @@ let default_command
   ; email_session_reminder_lead_time
   ; text_message_session_reminder_lead_time
   }
+;;
+
+let create_command
+  title
+  public_title
+  description
+  cost_center
+  direct_registration_disabled
+  registration_disabled
+  allow_uninvited_signup
+  external_data_required
+  show_external_data_id_links
+  experiment_type
+  email_session_reminder_lead_time
+  text_message_session_reminder_lead_time
+  =
+  default_command
+    title
+    (CCOption.value ~default:PublicTitle.placeholder public_title)
+    description
+    cost_center
+    direct_registration_disabled
+    registration_disabled
+    allow_uninvited_signup
+    external_data_required
+    show_external_data_id_links
+    experiment_type
+    email_session_reminder_lead_time
+    text_message_session_reminder_lead_time
+;;
+
+let update_schema command =
+  let open Pool_common in
+  Utils.PoolConformist.(
+    make
+      Field.
+        [ Title.schema ()
+        ; PublicTitle.schema ()
+        ; Conformist.optional @@ Description.schema ()
+        ; Conformist.optional @@ CostCenter.schema ()
+        ; DirectRegistrationDisabled.schema ()
+        ; RegistrationDisabled.schema ()
+        ; AllowUninvitedSignup.schema ()
+        ; ExternalDataRequired.schema ()
+        ; ShowExternalDataIdLinks.schema ()
+        ; Conformist.optional @@ ExperimentType.schema ()
+        ; Conformist.optional
+          @@ Reminder.LeadTime.schema ~field:Message.Field.EmailLeadTime ()
+        ; Conformist.optional
+          @@ Reminder.LeadTime.schema
+               ~field:Message.Field.TextMessageLeadTime
+               ()
+        ]
+      command)
+;;
+
+let create_schema command =
+  let open Pool_common in
+  Utils.PoolConformist.(
+    make
+      Field.
+        [ Title.schema ()
+        ; Conformist.optional @@ PublicTitle.schema ()
+        ; Conformist.optional @@ Description.schema ()
+        ; Conformist.optional @@ CostCenter.schema ()
+        ; DirectRegistrationDisabled.schema ()
+        ; RegistrationDisabled.schema ()
+        ; AllowUninvitedSignup.schema ()
+        ; ExternalDataRequired.schema ()
+        ; ShowExternalDataIdLinks.schema ()
+        ; Conformist.optional @@ ExperimentType.schema ()
+        ; Conformist.optional
+          @@ Reminder.LeadTime.schema ~field:Message.Field.EmailLeadTime ()
+        ; Conformist.optional
+          @@ Reminder.LeadTime.schema
+               ~field:Message.Field.TextMessageLeadTime
+               ()
+        ]
+      command)
 ;;
 
 type update_role =
@@ -117,7 +171,7 @@ end = struct
   ;;
 
   let decode data =
-    Conformist.decode_and_validate (default_schema default_command) data
+    Conformist.decode_and_validate (create_schema create_command) data
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
@@ -181,7 +235,7 @@ end = struct
   ;;
 
   let decode data =
-    Conformist.decode_and_validate (default_schema default_command) data
+    Conformist.decode_and_validate (update_schema default_command) data
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 

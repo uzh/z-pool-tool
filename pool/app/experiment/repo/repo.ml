@@ -54,8 +54,39 @@ module Sql = struct
     insert_sql |> Repo_entity.Write.t ->. Caqti_type.unit
   ;;
 
-  let insert pool =
-    Utils.Database.exec (Database.Label.value pool) insert_request
+  let set_public_title =
+    {sql|
+      UPDATE pool_experiments
+      SET
+        public_title = CONCAT('#', id)
+      WHERE
+        uuid = UNHEX(REPLACE($1, '-', ''))
+      AND
+        public_title = $2
+    |sql}
+  ;;
+
+  let set_public_title_request =
+    let open Caqti_request.Infix in
+    set_public_title
+    |> Caqti_type.(tup2 Repo_entity.Id.t Repo_entity.PublicTitle.t ->. unit)
+  ;;
+
+  let insert pool experiment =
+    let open Entity in
+    let with_connection request input connection =
+      let (module Connection : Caqti_lwt.CONNECTION) = connection in
+      Connection.exec request input
+    in
+    let insert = with_connection insert_request experiment in
+    let set_title =
+      with_connection
+        set_public_title_request
+        (experiment.id, PublicTitle.placeholder)
+    in
+    Utils.Database.exec_as_transaction
+      (Pool_database.Label.value pool)
+      [ insert; set_title ]
   ;;
 
   let select_from_experiments_sql where_fragment =

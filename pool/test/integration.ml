@@ -202,7 +202,8 @@ let suite =
           ] )
     ; ( "experiment"
       , Experiment_test.
-          [ test_case
+          [ test_case "autofill public title" `Slow autofill_public_title
+          ; test_case
               "list available experiments"
               `Slow
               AvailableExperiments.list_available_experiments

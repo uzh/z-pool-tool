@@ -195,7 +195,7 @@ let experiment_form
                 `Text
                 Field.PublicTitle
                 ~value:(value public_title_value)
-                ~required:true
+                ~required:(CCOption.is_some experiment)
                 ~flash_fetcher
             ; textarea_element
                 language
