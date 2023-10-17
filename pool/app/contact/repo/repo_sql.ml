@@ -68,8 +68,9 @@ let select_imported_contacts_sql ~import_columns ~where ~limit =
     limit
 ;;
 
-let find_request_sql where_fragment =
-  Format.asprintf "%s\n%s" select_fields where_fragment
+let find_request_sql ?(joins = []) where_fragment =
+  let joins = CCString.concat "\n" joins in
+  Format.asprintf "%s\n%s\n%s" select_fields joins where_fragment
 ;;
 
 let join_custom_field_answers =

@@ -22,26 +22,9 @@ let filtered_base_condition =
     AND pool_contacts.email_verified IS NOT NULL
     |sql}
   in
-  let exclude_invited =
-    {sql|
-      AND NOT EXISTS (
-        SELECT 1
-        FROM pool_invitations
-        WHERE pool_invitations.contact_uuid = pool_contacts.user_uuid
-          AND pool_invitations.experiment_uuid = UNHEX(REPLACE(?, '-', ''))
-        LIMIT 1)
-    |sql}
-  in
+  let exclude_invited = {sql| AND pool_invitations.uuid IS NULL |sql} in
   let exclude_invited_after =
-    {sql|
-      AND NOT EXISTS (
-        SELECT 1
-        FROM pool_invitations
-        WHERE pool_invitations.contact_uuid = pool_contacts.user_uuid
-          AND pool_invitations.experiment_uuid = UNHEX(REPLACE(?, '-', ''))
-          AND pool_invitations.updated_at > ?
-        LIMIT 1)
-    |sql}
+    {sql| AND (pool_invitations.resent_at IS NULL OR pool_invitations.resent_at < ?) |sql}
   in
   let exclude_assigned =
     {sql|
@@ -362,13 +345,10 @@ let filtered_params ?group_by ?order_by use_case template_list filter =
     | MatchesFilter -> empty
     | Matcher experiment_id ->
       let id = experiment_id |> Pool_common.Id.value in
-      empty |> add Caqti_type.string id |> add Caqti_type.string id
+      empty |> add Caqti_type.string id
     | MatcherReset (experiment_id, allow_before) ->
       let id = experiment_id |> Pool_common.Id.value in
-      empty
-      |> add Caqti_type.string id
-      |> add Caqti_type.string id
-      |> add Caqti_type.ptime allow_before
+      empty |> add Caqti_type.string id |> add Caqti_type.ptime allow_before
   in
   let query =
     match filter with
