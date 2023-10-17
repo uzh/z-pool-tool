@@ -253,7 +253,7 @@ module Repo : sig
   end
 
   module Sql : sig
-    val find_request_sql : string -> string
+    val find_request_sql : ?joins:string list -> string -> string
 
     val select_imported_contacts_sql
       :  import_columns:string
