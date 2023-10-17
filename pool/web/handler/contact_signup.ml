@@ -57,6 +57,14 @@ let sign_up_create req =
          ||> CCOption.to_result ContactSignupInvalidEmail
          >== Pool_user.EmailAddress.create
        in
+       let log_request () =
+         Logging_helper.log_request_with_ip
+           ~src
+           "User registration"
+           req
+           tags
+           email_address
+       in
        let create_contact_events () =
          let open Command.SignUp in
          let* ({ firstname; lastname; _ } as decoded) =
@@ -92,39 +100,48 @@ let sign_up_create req =
        in
        let* events =
          match existing_user with
-         | None -> create_contact_events ()
+         | None ->
+           let* events = create_contact_events () in
+           log_request ();
+           Lwt_result.return events
          | Some user when Service.User.is_admin user -> Lwt_result.return []
          | Some _ ->
            let%lwt contact =
              email_address |> Contact.find_by_email database_label
            in
-           contact
-           |> (function
-            | Ok contact when contact.Contact.user.Sihl_user.confirmed ->
-              let%lwt send_notification =
-                Contact.should_send_registration_attempt_notification
-                  database_label
-                  contact
-              in
-              if not send_notification
-              then Lwt_result.return []
-              else
-                contact
-                |> Message_template.ContactRegistrationAttempt.create
-                     database_label
-                     (CCOption.value ~default:language contact.Contact.language)
-                     tenant
-                ||> Command.SendRegistrationAttemptNotifitacion.handle
-                      ~tags
-                      contact
-            | Ok contact ->
-              let* create_contact_events = create_contact_events () in
-              let open CCResult.Infix in
-              contact
-              |> Command.DeleteUnverified.handle ~tags
-              >|= CCFun.flip CCList.append create_contact_events
-              |> Lwt_result.lift
-            | Error _ -> Lwt_result.return [])
+           let* events =
+             contact
+             |> function
+             | Ok contact when contact.Contact.user.Sihl_user.confirmed ->
+               let%lwt send_notification =
+                 Contact.should_send_registration_attempt_notification
+                   database_label
+                   contact
+               in
+               if not send_notification
+               then Lwt_result.return []
+               else
+                 contact
+                 |> Message_template.ContactRegistrationAttempt.create
+                      database_label
+                      (CCOption.value
+                         ~default:language
+                         contact.Contact.language)
+                      tenant
+                 ||> Command.SendRegistrationAttemptNotifitacion.handle
+                       ~tags
+                       contact
+             | Ok contact ->
+               let* create_contact_events = create_contact_events () in
+               let open CCResult.Infix in
+               contact
+               |> Command.DeleteUnverified.handle ~tags
+               >|= CCFun.flip CCList.append create_contact_events
+               |> Lwt_result.lift
+             | Error _ -> Lwt_result.return []
+           in
+           log_request ();
+           Lwt_result.return events
        in
        let%lwt () = Pool_event.handle_events ~tags database_label events in
        HttpUtils.(
