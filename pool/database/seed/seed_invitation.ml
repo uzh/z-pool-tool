@@ -22,6 +22,7 @@ let invitations pool =
                    { Invitation.contacts = contact |> CCList.pure
                    ; mailing = None
                    ; experiment
+                   ; as_matcher = None
                    })
                contacts))
       []

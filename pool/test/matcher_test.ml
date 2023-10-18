@@ -21,7 +21,8 @@ let expected_events
     |> CCList.map (fun msg -> msg, smtp_auth_id)
   in
   let events =
-    [ Invitation.(Created { contacts; mailing; experiment })
+    [ Invitation.(
+        Created { contacts; mailing; experiment; as_matcher = Some true })
       |> Pool_event.invitation
     ; Email.BulkSent emails |> Pool_event.email
     ]

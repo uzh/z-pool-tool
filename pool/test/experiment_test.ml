@@ -274,7 +274,12 @@ module AvailableExperiments = struct
     let%lwt experiment = ExperimentRepo.create ~id:experiment_id () in
     let%lwt () =
       Invitation.(
-        Created { contacts = [ contact ]; mailing = None; experiment })
+        Created
+          { contacts = [ contact ]
+          ; mailing = None
+          ; experiment
+          ; as_matcher = None
+          })
       |> Pool_event.invitation
       |> Pool_event.handle_event database_label
     in
