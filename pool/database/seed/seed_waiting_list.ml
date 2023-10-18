@@ -40,7 +40,11 @@ let waiting_list pool =
           in
           let invitations =
             Invitation.Created
-              { Invitation.contacts; mailing = None; experiment }
+              { Invitation.contacts
+              ; mailing = None
+              ; experiment
+              ; as_matcher = None
+              }
             :: invitations
           in
           (waiting_lists, invitations) |> Lwt.return

@@ -306,7 +306,7 @@ let find_multiple_by_experiment_and_contacts =
 
 let update = Sql.update
 
-let bulk_insert ?mailing_id pool contacts experiment_id =
+let bulk_insert ?(as_matcher = false) ?mailing_id pool contacts experiment_id =
   let insert_sql =
     {sql|
       INSERT INTO pool_invitations (
@@ -344,15 +344,21 @@ let bulk_insert ?mailing_id pool contacts experiment_id =
   in
   let (Dynparam.Pack (pt, pv)) = values in
   let prepare_request =
+    let on_duplicate =
+      if as_matcher
+      then "send_count = send_count + 1, resent_at = NOW(), "
+      else ""
+    in
     let open Caqti_request.Infix in
     Format.asprintf
       {sql|
         %s
         %s
-        ON DUPLICATE KEY UPDATE send_count = send_count + 1, updated_at = NOW()
+        ON DUPLICATE KEY UPDATE %s updated_at = NOW()
       |sql}
       insert_sql
       (CCString.concat ",\n" value_insert)
+      on_duplicate
     |> (pt ->. Caqti_type.unit) ~oneshot:true
   in
   let%lwt () =

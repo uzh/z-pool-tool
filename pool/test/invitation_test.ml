@@ -31,7 +31,12 @@ let create () =
     in
     Ok
       [ Invitation.(
-          Created { contacts = [ contact ]; mailing = None; experiment })
+          Created
+            { contacts = [ contact ]
+            ; mailing = None
+            ; experiment
+            ; as_matcher = None
+            })
         |> Pool_event.invitation
       ; Email.BulkSent [ email, experiment.Experiment.smtp_auth_id ]
         |> Pool_event.email
@@ -56,7 +61,12 @@ let create_with_experiment_smtp () =
     in
     Ok
       [ Invitation.(
-          Created { contacts = [ contact ]; mailing = None; experiment })
+          Created
+            { contacts = [ contact ]
+            ; mailing = None
+            ; experiment
+            ; as_matcher = None
+            })
         |> Pool_event.invitation
       ; Email.BulkSent [ email, Some smtp_auth_id ] |> Pool_event.email
       ; contact_update
