@@ -12,7 +12,7 @@ const isListOperator = (operator) => {
 const disableValueInput = (o) => ["empty", "not_empty"].includes(o)
 
 const isQueryKey = (key) => {
-    return ["participation"].includes(key)
+    return ["participation", "tag"].includes(key)
 }
 
 const findChildPredicates = (wrapper) => {
