@@ -44,7 +44,6 @@ type create =
   { experiment : Experiment.t
   ; mailing : Mailing.t option
   ; contacts : Contact.t list
-  ; as_matcher : bool option
   }
 
 val equal_create : create -> create -> bool

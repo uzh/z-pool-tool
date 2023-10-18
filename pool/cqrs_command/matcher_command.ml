@@ -32,7 +32,7 @@ end = struct
          ; create_message
          ; mailing = Some mailing
          }
-         |> handle ~as_matcher:true)
+         |> handle)
        %> all_ok
        %> CCResult.map flatten
   ;;

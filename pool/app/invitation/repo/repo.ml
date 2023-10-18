@@ -263,6 +263,67 @@ module Sql = struct
       Utils.Database.exec (pool |> Pool_database.Label.value) prepare_request pv
     ;;
   end
+
+  let bulk_insert ?mailing_id pool contacts experiment_id =
+    let insert_sql =
+      {sql|
+        INSERT INTO pool_invitations (
+          uuid,
+          experiment_uuid,
+          contact_uuid,
+          resent_at,
+          send_count,
+          created_at,
+          updated_at
+        ) VALUES
+      |sql}
+    in
+    let invitations =
+      CCList.map CCFun.(uncurry (fun id -> Entity.create ~id)) contacts
+    in
+    let values, value_insert =
+      CCList.fold_left
+        (fun (dyn, sql) entity ->
+          let sql_line =
+            {sql| (
+              UNHEX(REPLACE(?, '-', '')),
+              UNHEX(REPLACE(?, '-', '')),
+              UNHEX(REPLACE(?, '-', '')),
+              UNHEX(REPLACE(?, '-', '')),
+              ?,
+              ?,
+              ?
+            ) |sql}
+          in
+          ( dyn |> Dynparam.add RepoEntity.t (entity |> of_entity experiment_id)
+          , sql @ [ sql_line ] ))
+        (Dynparam.empty, [])
+        invitations
+    in
+    let (Dynparam.Pack (pt, pv)) = values in
+    let prepare_request =
+      let open Caqti_request.Infix in
+      Format.asprintf
+        {sql|
+          %s
+          %s
+          ON DUPLICATE KEY UPDATE send_count = send_count + 1, resent_at = NOW(), updated_at = NOW()
+        |sql}
+        insert_sql
+        (CCString.concat ",\n" value_insert)
+      |> (pt ->. Caqti_type.unit) ~oneshot:true
+    in
+    let%lwt () =
+      Utils.Database.exec (pool |> Pool_database.Label.value) prepare_request pv
+    in
+    let%lwt () =
+      CCOption.map_or
+        ~default:Lwt.return_unit
+        (MailingInvitationMapping.bulk_insert pool invitations)
+        mailing_id
+    in
+    Lwt.return_unit
+  ;;
 end
 
 let contact_to_invitation pool invitation =
@@ -305,70 +366,4 @@ let find_multiple_by_experiment_and_contacts =
 ;;
 
 let update = Sql.update
-
-let bulk_insert ?(as_matcher = false) ?mailing_id pool contacts experiment_id =
-  let insert_sql =
-    {sql|
-      INSERT INTO pool_invitations (
-        uuid,
-        experiment_uuid,
-        contact_uuid,
-        resent_at,
-        send_count,
-        created_at,
-        updated_at
-      ) VALUES
-    |sql}
-  in
-  let invitations =
-    CCList.map CCFun.(uncurry (fun id -> Entity.create ~id)) contacts
-  in
-  let values, value_insert =
-    CCList.fold_left
-      (fun (dyn, sql) entity ->
-        let sql_line =
-          {sql| (
-            UNHEX(REPLACE(?, '-', '')),
-            UNHEX(REPLACE(?, '-', '')),
-            UNHEX(REPLACE(?, '-', '')),
-            UNHEX(REPLACE(?, '-', '')),
-            ?,
-            ?,
-            ?
-          ) |sql}
-        in
-        ( dyn |> Dynparam.add RepoEntity.t (entity |> of_entity experiment_id)
-        , sql @ [ sql_line ] ))
-      (Dynparam.empty, [])
-      invitations
-  in
-  let (Dynparam.Pack (pt, pv)) = values in
-  let prepare_request =
-    let on_duplicate =
-      if as_matcher
-      then "send_count = send_count + 1, resent_at = NOW(), "
-      else ""
-    in
-    let open Caqti_request.Infix in
-    Format.asprintf
-      {sql|
-        %s
-        %s
-        ON DUPLICATE KEY UPDATE %s updated_at = NOW()
-      |sql}
-      insert_sql
-      (CCString.concat ",\n" value_insert)
-      on_duplicate
-    |> (pt ->. Caqti_type.unit) ~oneshot:true
-  in
-  let%lwt () =
-    Utils.Database.exec (pool |> Pool_database.Label.value) prepare_request pv
-  in
-  let%lwt () =
-    CCOption.map_or
-      ~default:Lwt.return_unit
-      (Sql.MailingInvitationMapping.bulk_insert pool invitations)
-      mailing_id
-  in
-  Lwt.return_unit
-;;
+let bulk_insert = Sql.bulk_insert
