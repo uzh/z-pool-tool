@@ -86,16 +86,7 @@ let login_params urlencoded =
   Lwt_result.return (email, password)
 ;;
 
-let log_request req tags email =
-  let open Opium in
-  let open Request in
-  let ip =
-    Headers.get req.headers "X-Real-IP"
-    |> CCOption.value ~default:"X-Real-IP not found"
-  in
-  Logs.warn ~src (fun m ->
-    m "Failed login attempt: %s %s" ip (EmailAddress.value email) ~tags)
-;;
+let log_request = Logging_helper.log_request_with_ip ~src "Failed login attempt"
 
 let login req urlencoded database_label =
   let open Utils.Lwt_result.Infix in
