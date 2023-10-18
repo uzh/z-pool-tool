@@ -14,6 +14,8 @@ module Label = struct
     [@printer print "assignment_confirmation"]
     | AssignmentSessionChange [@name "assignment_session_change"]
     [@printer print "assignment_session_change"]
+    | ContactEmailChangeAttempt [@name "contact_email_change_attempt"]
+    [@printer print "contact_email_change_attempt"]
     | ContactRegistrationAttempt [@name "contact_registration_attempt"]
     [@printer print "contact_registration_attempt"]
     | EmailVerification [@name "email_verification"]
