@@ -148,17 +148,10 @@ module EmailAddress = struct
   type t = string [@@deriving eq, show, yojson]
 
   let validate_characters email =
-    let open Re in
-    (* Checks for more than 1 character before and more than 2 characters after
-       the @ sign *)
-    let regex =
-      seq [ repn any 1 None; char '@'; repn any 2 None ]
-      |> whole_string
-      |> compile
-    in
-    if Re.execp regex email
-    then Ok email
-    else Error PoolError.(Invalid Field.EmailAddress)
+    let open Mrmime in
+    match Mailbox.of_string email with
+    | Ok _ -> Ok email
+    | Error _ -> Error PoolError.(Invalid Field.EmailAddress)
   ;;
 
   let strip_email_suffix email =
