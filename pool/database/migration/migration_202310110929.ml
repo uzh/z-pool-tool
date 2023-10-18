@@ -1,4 +1,4 @@
-let seed_password_change_attempt_templates =
+let seed_concat_email_change_attempt_template =
   Sihl.Database.Migration.create_step
     ~label:"seed concat_email_change_attempt template"
     {sql|
@@ -10,5 +10,5 @@ let seed_password_change_attempt_templates =
 
 let migration () =
   Sihl.Database.Migration.(
-    empty "202310110929" |> add_step seed_password_change_attempt_templates)
+    empty "202310110929" |> add_step seed_concat_email_change_attempt_template)
 ;;
