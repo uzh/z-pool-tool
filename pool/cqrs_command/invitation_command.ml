@@ -36,7 +36,6 @@ module Create : sig
 
   val handle
     :  ?tags:Logs.Tag.set
-    -> ?as_matcher:bool
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
@@ -53,7 +52,6 @@ end = struct
 
   let handle
     ?(tags = Logs.Tag.empty)
-    ?as_matcher
     { invited_contacts; contacts; create_message; experiment; mailing }
     =
     Logs.info ~src (fun m -> m "Handle command Create" ~tags);
@@ -69,7 +67,7 @@ end = struct
       | Ok emails when CCList.is_empty emails -> Ok []
       | Ok emails ->
         Ok
-          ([ Invitation.(Created { contacts; mailing; experiment; as_matcher })
+          ([ Invitation.(Created { contacts; mailing; experiment })
              |> Pool_event.invitation
            ; Email.BulkSent emails |> Pool_event.email
            ]
