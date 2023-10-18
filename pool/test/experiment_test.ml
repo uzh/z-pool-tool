@@ -286,6 +286,42 @@ let delete_with_filter () =
 
 (* Integration *)
 
+let autofill_public_title _ () =
+  let open Utils.Lwt_result.Infix in
+  let open Experiment in
+  let without_title =
+    let experiment = Model.create_experiment () in
+    { experiment with public_title = PublicTitle.placeholder }
+  in
+  let with_title = Model.create_experiment () in
+  let%lwt () =
+    [ without_title; with_title ]
+    |> CCList.map CCFun.(created %> Pool_event.experiment)
+    |> Pool_event.handle_events database_label
+  in
+  let find id = Experiment.find database_label id ||> get_exn in
+  let%lwt without_title_persisted = find without_title.id in
+  let%lwt with_title_persisted = find with_title.id in
+  let () =
+    Alcotest.(
+      check
+        bool
+        "succeeds"
+        false
+        PublicTitle.(equal without_title_persisted.public_title placeholder))
+  in
+  let () =
+    Alcotest.(
+      check
+        bool
+        "succeeds"
+        true
+        PublicTitle.(
+          equal with_title_persisted.public_title with_title.public_title))
+  in
+  Lwt.return_unit
+;;
+
 module AvailableExperiments = struct
   let contact_id = Pool_common.Id.create ()
   let experiment_id = Experiment.Id.create ()

@@ -10,6 +10,8 @@ end
 
 module PublicTitle : sig
   include Pool_common.Model.StringSig
+
+  val placeholder : t
 end
 
 module Description : sig

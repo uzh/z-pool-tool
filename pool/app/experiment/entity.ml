@@ -18,6 +18,7 @@ module PublicTitle = struct
 
   let field = Common.Message.Field.PublicTitle
   let schema () = schema field ()
+  let placeholder = "###"
 end
 
 module Description = struct
