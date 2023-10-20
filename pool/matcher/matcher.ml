@@ -214,7 +214,7 @@ let events_of_mailings =
           >>= fun (invitations, contacts) ->
           let* resend_events = resend_existing invitations |> Lwt_result.lift in
           let* create_events = create_new contacts |> Lwt_result.lift in
-          Lwt_result.return (resend_events @ create_events))
+          Lwt_result.return (create_events @ resend_events))
       ||> CCList.all_ok
       >|+ CCList.flatten
     in
