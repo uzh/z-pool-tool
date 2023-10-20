@@ -7,8 +7,6 @@ let of_entity = RepoEntity.of_entity
 module Sql = struct
   module MailingInvitationMapping = struct
     let bulk_insert pool invitations mailing_id =
-      (* TODO: remove upsert part? Should never happen, as mailings are only
-         executed once *)
       let insert_sql =
         {sql|
           INSERT INTO pool_mailing_invitations (
@@ -311,7 +309,6 @@ module Sql = struct
         (Dynparam.empty, [])
         invitations
     in
-    (* TODO: This will not be required anymore *)
     let (Dynparam.Pack (pt, pv)) = values in
     let prepare_request =
       let open Caqti_request.Infix in
@@ -319,7 +316,6 @@ module Sql = struct
         {sql|
           %s
           %s
-          ON DUPLICATE KEY UPDATE send_count = send_count + 1, resent_at = NOW(), updated_at = NOW()
         |sql}
         insert_sql
         (CCString.concat ",\n" value_insert)
