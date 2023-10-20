@@ -178,15 +178,12 @@ let resend req =
     let tenant = Pool_context.Tenant.get_tenant_exn req in
     let* invitation = Invitation.find database_label id in
     let* experiment = Experiment.find database_label experiment_id in
-    let%lwt invitation_mail =
-      Message_template.ExperimentInvitation.create
-        tenant
-        experiment
-        invitation.Invitation.contact
+    let%lwt create_email =
+      Message_template.ExperimentInvitation.prepare tenant experiment
     in
     let events =
       let open Cqrs_command.Invitation_command.Resend in
-      handle ~tags invitation_mail { invitation; experiment } |> Lwt.return
+      handle ~tags create_email { invitation; experiment } |> Lwt.return
     in
     let handle events =
       let%lwt () =

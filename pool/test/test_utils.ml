@@ -95,13 +95,15 @@ module Model = struct
     ?(id = Pool_common.Id.create ())
     ?(email =
       Format.asprintf "test+%s@econ.uzh.ch" (Uuidm.v `V4 |> Uuidm.to_string))
+    ?(name = "Doe")
     ()
     =
+    let surname = name in
     Sihl_user.
       { id = id |> Pool_common.Id.value
       ; email
       ; username = None
-      ; name = Some "Doe"
+      ; name = Some surname
       ; given_name = Some "Jane"
       ; password = "somepassword" |> Sihl_user.Hashing.hash |> CCResult.get_exn
       ; status = Sihl_user.status_of_string "active" |> CCResult.get_exn
@@ -112,8 +114,8 @@ module Model = struct
       }
   ;;
 
-  let create_contact ?id ?(with_terms_accepted = true) () =
-    let sihl_user = create_sihl_user ?id () in
+  let create_contact ?id ?name ?(with_terms_accepted = true) () =
+    let sihl_user = create_sihl_user ?id ?name () in
     Contact.
       { user = sihl_user
       ; terms_accepted_at =
@@ -183,6 +185,7 @@ module Model = struct
 
   let create_experiment
     ?(id = Experiment.Id.create ())
+    ?(title = "An Experiment")
     ?email_session_reminder_lead_time_hours
     ?filter
     ()
@@ -197,7 +200,7 @@ module Model = struct
         |> to_opt)
     in
     let open Experiment in
-    let title = Title.create "An Experiment" |> get_or_failwith in
+    let title = Title.create title |> get_or_failwith in
     let public_title = PublicTitle.create "public_title" |> get_or_failwith in
     let description =
       Description.create "A description for everyone" |> get_or_failwith

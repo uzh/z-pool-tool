@@ -86,12 +86,16 @@ module Update = struct
   type t =
     { id : Pool_common.Id.t
     ; resent_at : Entity.ResentAt.t option
+    ; send_count : Entity.SendCount.t
     }
 
   let t =
-    let encode (m : Entity.t) = Ok (m.Entity.id, m.Entity.resent_at) in
+    let encode (m : Entity.t) = Ok Entity.(m.id, (m.resent_at, m.send_count)) in
     let decode _ = failwith "Write model only" in
     Caqti_type.(
-      custom ~encode ~decode (tup2 Pool_common.Repo.Id.t (option ResentAt.t)))
+      custom
+        ~encode
+        ~decode
+        (tup2 Pool_common.Repo.Id.t (tup2 (option ResentAt.t) SendCount.t)))
   ;;
 end

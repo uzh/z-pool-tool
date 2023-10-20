@@ -138,7 +138,7 @@ module Distribution : sig
 
   val of_urlencoded_list
     :  string list
-    -> (string, Pool_common.Message.error) result
+    -> (string option, Pool_common.Message.error) result
 end
 
 type t =

@@ -1,4 +1,5 @@
 open CCFun.Infix
+open Utils.Lwt_result.Infix
 
 let src = Logs.Src.create "matcher.service"
 let tags = Pool_database.(Logger.Tags.create root)
@@ -75,6 +76,16 @@ let count_of_rate_int ?(interval = Ptime.Span.of_int_s 60) rate =
 
 let count_of_rate ?interval = Mailing.Rate.value %> count_of_rate_int ?interval
 
+let sort_contacts contacts =
+  match Sihl.Configuration.is_test () with
+  | false -> contacts
+  | true ->
+    CCList.stable_sort
+      (fun c1 c2 ->
+        Contact.(CCString.compare (id c1 |> Id.value) (id c2 |> Id.value)))
+      contacts
+;;
+
 let find_contacts_by_mailing pool { Mailing.id; distribution; _ } limit =
   let open Utils.Lwt_result.Infix in
   let%lwt ({ Experiment.id; filter; invitation_reset_at; _ } as experiment) =
@@ -95,7 +106,7 @@ let find_contacts_by_mailing pool { Mailing.id; distribution; _ } limit =
     let limit = max limit 0 in
     Filter.find_filtered_contacts ?order_by ~limit pool use_case filter
   in
-  (experiment, contacts) |> Lwt_result.return
+  (experiment, contacts, use_case) |> Lwt_result.return
 ;;
 
 let calculate_mailing_limits ?interval pool_based_mailings =
@@ -133,8 +144,85 @@ let calculate_mailing_limits ?interval pool_based_mailings =
   pool, limit_to_mailing
 ;;
 
-let match_invitation_events ?interval pools =
-  let open Utils.Lwt_result.Infix in
+let events_of_mailings =
+  let ok_or_log_error = function
+    | Ok (pool, events) when CCList.is_empty events ->
+      Logs.info ~src (fun m ->
+        m ~tags:(Pool_database.Logger.Tags.create pool) "No action");
+      None
+    | Ok m -> Some m
+    | Error err ->
+      let open Pool_common in
+      let (_ : Message.error) = Utils.with_log_error ~tags err in
+      None
+  in
+  Lwt_list.filter_map_s (fun (pool, limited_mailings) ->
+    let open Lwt_result.Syntax in
+    let%lwt events =
+      let* tenant = Pool_tenant.find_by_label pool in
+      limited_mailings
+      |> Lwt_list.map_s (fun (mailing, limit) ->
+        find_contacts_by_mailing pool mailing limit
+        >>= fun (experiment, contacts, use_case) ->
+        let open Cqrs_command.Invitation_command in
+        let contacts = sort_contacts contacts in
+        let%lwt create_message =
+          Message_template.ExperimentInvitation.prepare tenant experiment
+        in
+        let create_new contacts =
+          Create.(
+            handle
+              ~tags
+              { experiment
+              ; mailing = Some mailing
+              ; contacts
+              ; invited_contacts = []
+              ; create_message
+              })
+        in
+        let resend_existing invitations =
+          invitations
+          |> CCList.map (fun invitation ->
+            Resend.(
+              handle
+                ~tags
+                ~mailing_id:mailing.Mailing.id
+                create_message
+                { invitation; experiment }))
+          |> CCList.all_ok
+          |> CCResult.map CCList.flatten
+        in
+        match use_case with
+        | Filter.MatchesFilter -> failwith "Invalid use case"
+        | Filter.Matcher _ -> create_new contacts |> Lwt_result.lift
+        | Filter.MatcherReset _ ->
+          contacts
+          |> Lwt_list.fold_left_s
+               (fun acc contact ->
+                 match acc with
+                 | Error err -> Lwt_result.fail err
+                 | Ok (invitations, contacts) ->
+                   contact
+                   |> Contact.id
+                   |> Invitation.find_by_contact_and_experiment_opt
+                        pool
+                        experiment.Experiment.id
+                   >|+ (function
+                    | None -> invitations, contacts @ [ contact ]
+                    | Some invitation -> invitations @ [ invitation ], contacts))
+               (Ok ([], []))
+          >>= fun (invitations, contacts) ->
+          let* resend_events = resend_existing invitations |> Lwt_result.lift in
+          let* create_events = create_new contacts |> Lwt_result.lift in
+          Lwt_result.return (resend_events @ create_events))
+      ||> CCList.all_ok
+      >|+ CCList.flatten
+    in
+    let open CCResult in
+    events >|= CCPair.make pool |> ok_or_log_error |> Lwt.return)
+;;
+
+let create_invitation_events ?interval pools =
   let%lwt pool_based_mailings =
     Lwt_list.map_s
       (fun pool ->
@@ -159,41 +247,9 @@ let match_invitation_events ?interval pools =
         ||> fun m -> pool, m)
       pools
   in
-  let create_events =
-    let open Cqrs_command.Matcher_command.Run in
-    let ok_or_log_error = function
-      | Ok (pool, events) when CCList.is_empty events ->
-        Logs.info ~src (fun m ->
-          m ~tags:(Pool_database.Logger.Tags.create pool) "No action");
-        None
-      | Ok m -> Some m
-      | Error err ->
-        let open Pool_common in
-        let (_ : Message.error) = Utils.with_log_error ~tags err in
-        None
-    in
-    Lwt_list.filter_map_s (fun (pool, limited_mailings) ->
-      let open Lwt_result.Syntax in
-      let%lwt events =
-        let* tenant = Pool_tenant.find_by_label pool in
-        limited_mailings
-        |> Lwt_list.map_s (fun (mailing, limit) ->
-          find_contacts_by_mailing pool mailing limit
-          >>= fun (experiment, contacts) ->
-          let%lwt create_message =
-            Message_template.ExperimentInvitation.prepare tenant experiment
-          in
-          { mailing; experiment; contacts; create_message } |> Lwt_result.return)
-        ||> CCList.all_ok
-      in
-      let open CCResult in
-      events
-      >>= handle
-      >|= (fun events -> pool, events)
-      |> ok_or_log_error
-      |> Lwt.return)
-  in
-  pool_based_mailings |> calculate_mailing_limits ?interval |> create_events
+  pool_based_mailings
+  |> calculate_mailing_limits ?interval
+  |> events_of_mailings
 ;;
 
 let match_invitations ?interval pools =
@@ -217,7 +273,7 @@ let match_invitations ?interval pools =
           (count_mails events));
       Pool_event.handle_events pool events)
   in
-  match_invitation_events ?interval pools >|> handle_events
+  create_invitation_events ?interval pools >|> handle_events
 ;;
 
 let start_matcher () =

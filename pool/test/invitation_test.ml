@@ -70,11 +70,12 @@ let resend () =
   let invitation = create_invitation () in
   let experiment = Model.create_experiment () in
   let email = Test_utils.Model.create_email () in
-  let events = handle email { invitation; experiment } in
+  let create_messge _ = Ok email in
+  let events = handle create_messge { invitation; experiment } in
   let expected =
     let open CCResult in
     Ok
-      [ Invitation.(Resent invitation) |> Pool_event.invitation
+      [ Invitation.(Resent (invitation, None)) |> Pool_event.invitation
       ; Email.Sent (email, experiment.Experiment.smtp_auth_id)
         |> Pool_event.email
       ]

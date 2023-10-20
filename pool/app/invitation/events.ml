@@ -9,7 +9,7 @@ type create =
 
 type event =
   | Created of create
-  | Resent of t
+  | Resent of (t * Mailing.Id.t option)
 [@@deriving eq, show]
 
 let handle_event pool = function
@@ -20,6 +20,12 @@ let handle_event pool = function
     in
     let mailing_id = CCOption.map (fun { Mailing.id; _ } -> id) mailing in
     Repo.bulk_insert ?mailing_id pool contacts experiment.Experiment.id
-  | Resent invitation ->
-    Repo.update pool { invitation with resent_at = Some (ResentAt.create ()) }
+  | Resent (invitation, mailing_id) ->
+    Repo.resend
+      ?mailing_id
+      pool
+      { invitation with
+        resent_at = Some (ResentAt.create ())
+      ; send_count = SendCount.increment invitation.send_count
+      }
 ;;

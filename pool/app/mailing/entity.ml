@@ -183,17 +183,21 @@ module Distribution = struct
     Pool_common.Utils.schema_decoder decode encode field
   ;;
 
-  let of_urlencoded_list data =
+  let of_urlencoded_list =
     let open CCResult in
-    data
-    |> CCList.map (fun distribution_field ->
-      match CCString.split ~by:"," distribution_field with
-      | [ field; order ] ->
-        Ok (Format.asprintf "[[\"%s\"],[\"%s\"]]" field order)
-      | _ -> Error Pool_common.Message.(Invalid Field.Distribution))
-    |> CCResult.flatten_l
-    >|= CCString.concat ","
-    >|= Format.asprintf "[%s]"
+    function
+    | [] -> Ok None
+    | data ->
+      data
+      |> CCList.map (fun distribution_field ->
+        match CCString.split ~by:"," distribution_field with
+        | [ field; order ] ->
+          Ok (Format.asprintf "[[\"%s\"],[\"%s\"]]" field order)
+        | _ -> Error Pool_common.Message.(Invalid Field.Distribution))
+      |> CCResult.flatten_l
+      >|= CCString.concat ","
+      >|= Format.asprintf "[%s]"
+      >|= CCOption.return
   ;;
 end
 
