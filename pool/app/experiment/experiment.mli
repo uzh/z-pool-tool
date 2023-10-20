@@ -52,6 +52,8 @@ end
 
 module InvitationResetAt : sig
   include Pool_common.Model.PtimeSig
+
+  val of_ptime : Ptime.t -> t
 end
 
 type t =

@@ -69,6 +69,7 @@ module InvitationResetAt = struct
 
   let create m = Ok m
   let schema = schema Common.Message.Field.InvitationResetAt create
+  let of_ptime m = m
 end
 
 type t =

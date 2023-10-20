@@ -88,7 +88,8 @@ module Resend : sig
 
   val handle
     :  ?tags:Logs.Tag.set
-    -> Sihl_email.t
+    -> ?mailing_id:Mailing.Id.t
+    -> (Contact.t -> (Sihl_email.t, Pool_common.Message.error) result)
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
@@ -101,13 +102,16 @@ end = struct
 
   let handle
     ?(tags = Logs.Tag.empty)
-    invitation_email
+    ?mailing_id
+    create_email
     ({ invitation; experiment } : t)
     =
+    let open CCResult in
     Logs.info ~src (fun m -> m "Handle command Resend" ~tags);
+    let* email = create_email invitation.Invitation.contact in
     Ok
-      [ Invitation.Resent invitation |> Pool_event.invitation
-      ; Email.Sent (invitation_email, experiment.Experiment.smtp_auth_id)
+      [ Invitation.Resent (invitation, mailing_id) |> Pool_event.invitation
+      ; Email.Sent (email, experiment.Experiment.smtp_auth_id)
         |> Pool_event.email
       ]
   ;;

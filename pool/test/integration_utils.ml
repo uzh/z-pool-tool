@@ -13,9 +13,9 @@ module AssignmentRepo = struct
 end
 
 module ContactRepo = struct
-  let create ?id ?(with_terms_accepted = false) () =
+  let create ?id ?name ?(with_terms_accepted = false) () =
     let open Utils.Lwt_result.Infix in
-    let contact = Model.create_contact ?id ~with_terms_accepted () in
+    let contact = Model.create_contact ?id ?name ~with_terms_accepted () in
     let open Contact in
     let confirm = [ Verified contact; EmailVerified contact ] in
     let%lwt () =
@@ -74,8 +74,8 @@ module AdminRepo = struct
 end
 
 module ExperimentRepo = struct
-  let create ?(id = Experiment.Id.create ()) () =
-    let experiment = Model.create_experiment ~id () in
+  let create ?(id = Experiment.Id.create ()) ?title () =
+    let experiment = Model.create_experiment ~id ?title () in
     let%lwt () =
       Experiment.Created experiment
       |> Pool_event.experiment
@@ -94,6 +94,17 @@ module LocationRepo = struct
       |> Pool_event.handle_event Data.database_label
     in
     location |> Lwt.return
+  ;;
+end
+
+module MailingRepo = struct
+  let create ?(id = Mailing.Id.create ()) ?rate experiment_id =
+    let mailing = Model.create_mailing ~id ?rate () in
+    let%lwt () =
+      Mailing.(
+        Created (mailing, experiment_id) |> handle_event Data.database_label)
+    in
+    Mailing.find Data.database_label id |> Lwt.map get_or_failwith
   ;;
 end
 

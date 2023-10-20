@@ -12,6 +12,7 @@ module SendCount : sig
 
   val init : t
   val of_int : int -> t
+  val increment : t -> t
 end
 
 type t =
@@ -52,7 +53,7 @@ val show_create : create -> string
 
 type event =
   | Created of create
-  | Resent of t
+  | Resent of (t * Mailing.Id.t option)
 
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
@@ -85,6 +86,12 @@ val find_multiple_by_experiment_and_contacts
   -> Pool_common.Id.t list
   -> Experiment.t
   -> Pool_common.Id.t list Lwt.t
+
+val find_by_contact_and_experiment_opt
+  :  Pool_database.Label.t
+  -> Experiment.Id.t
+  -> Contact.Id.t
+  -> (t option, Pool_common.Message.error) result Lwt.t
 
 val searchable_by : Query.Column.t list
 val sortable_by : Query.Column.t list

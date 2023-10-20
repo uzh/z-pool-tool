@@ -13,6 +13,7 @@ module SendCount = struct
   let of_int m = if m > 0 then m else Utils.failwith Message.(Invalid field)
   let init = 1
   let schema = schema field create
+  let increment m = m + 1
 end
 
 type t =

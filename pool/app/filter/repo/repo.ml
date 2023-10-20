@@ -304,7 +304,7 @@ module Sql = struct
     let order_by =
       match use_case with
       | MatcherReset _ when CCOption.is_none order_by ->
-        Some "pool_invitations.created_at ASC"
+        Some "ORDER BY pool_invitations.created_at ASC"
       | MatchesFilter | Matcher _ | MatcherReset _ -> order_by
     in
     filtered_params

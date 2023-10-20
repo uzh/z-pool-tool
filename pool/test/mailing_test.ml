@@ -125,20 +125,24 @@ let create_with_distribution () =
     { mailing with distribution = Some (distribution |> create_sorted) }
   in
   let experiment = Model.create_experiment () in
+  let show = Field.show in
+  let urlencoded =
+    [ show Field.Start, mailing.start_at |> StartAt.value |> Ptime.to_rfc3339
+    ; show Field.End, mailing.end_at |> EndAt.value |> Ptime.to_rfc3339
+    ; show Field.Rate, mailing.rate |> Rate.value |> CCInt.to_string
+    ]
+  in
   let urlencoded () =
     distribution
     |> CCList.map (fun (field, sort) ->
       Format.asprintf "%s,%s" (SortableField.show field) (SortOrder.show sort))
     |> of_urlencoded_list
-    >|= fun distribution ->
-    let show = Field.show in
-    [ show Field.Start, mailing.start_at |> StartAt.value |> Ptime.to_rfc3339
-    ; show Field.End, mailing.end_at |> EndAt.value |> Ptime.to_rfc3339
-    ; show Field.Rate, mailing.rate |> Rate.value |> CCInt.to_string
-    ; show Field.Distribution, distribution
-    ]
-    |> CCList.map (fun (field, value) -> field, [ value ])
-    |> Http_utils.format_request_boolean_values mailing_boolean_fields
+    >|= (function
+           | None -> urlencoded
+           | Some distribution ->
+             (show Field.Distribution, distribution) :: urlencoded)
+    >|= CCList.map (fun (field, value) -> field, [ value ])
+    >|= Http_utils.format_request_boolean_values mailing_boolean_fields
   in
   let events =
     () |> urlencoded >>= decode >>= handle ~id:Data.Mailing.id experiment

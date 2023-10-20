@@ -5,6 +5,53 @@ let to_entity = RepoEntity.to_entity
 let of_entity = RepoEntity.of_entity
 
 module Sql = struct
+  module MailingInvitationMapping = struct
+    let bulk_insert pool invitations mailing_id =
+      (* TODO: remove upsert part? Should never happen, as mailings are only
+         executed once *)
+      let insert_sql =
+        {sql|
+          INSERT INTO pool_mailing_invitations (
+            mailing_uuid,
+            invitation_uuid
+          ) VALUES
+        |sql}
+      in
+      let values, value_insert =
+        CCList.fold_left
+          (fun (dyn, sql) invitation ->
+            let sql_line =
+              {sql| ( UNHEX(REPLACE(?, '-', '')),
+                (SELECT uuid FROM pool_invitations WHERE experiment_uuid = (SELECT experiment_uuid FROM pool_mailing WHERE uuid = UNHEX(REPLACE(?, '-', ''))) AND contact_uuid = UNHEX(REPLACE(?, '-', '')))
+              ) |sql}
+            in
+            ( dyn
+              |> Dynparam.add Mailing.Repo.Id.t mailing_id
+              |> Dynparam.add Mailing.Repo.Id.t mailing_id
+              |> Dynparam.add
+                   Pool_common.Repo.Id.t
+                   (invitation.Entity.contact |> Contact.id)
+            , sql @ [ sql_line ] ))
+          (Dynparam.empty, [])
+          invitations
+      in
+      let (Dynparam.Pack (pt, pv)) = values in
+      let prepare_request =
+        let open Caqti_request.Infix in
+        Format.asprintf
+          {sql|
+            %s
+            %s
+            ON DUPLICATE KEY UPDATE updated_at = NOW()
+          |sql}
+          insert_sql
+          (CCString.concat ",\n" value_insert)
+        |> (pt ->. Caqti_type.unit) ~oneshot:true
+      in
+      Utils.Database.exec (pool |> Pool_database.Label.value) prepare_request pv
+    ;;
+  end
+
   let select_sql =
     Format.asprintf
       {sql|
@@ -155,20 +202,29 @@ module Sql = struct
     ||> CCOption.to_result Pool_common.Message.(NotFound Field.Tenant)
   ;;
 
-  let update_request =
+  let resend_request =
     let open Caqti_request.Infix in
     {sql|
       UPDATE pool_invitations
       SET
         resent_at = $2,
-        send_count = send_count + 1
+        send_count = $3
       WHERE uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}
     |> RepoEntity.Update.t ->. Caqti_type.unit
   ;;
 
-  let update pool =
-    Utils.Database.exec (Pool_database.Label.value pool) update_request
+  let resend ?mailing_id pool invitation =
+    let%lwt () =
+      Utils.Database.exec
+        (Pool_database.Label.value pool)
+        resend_request
+        invitation
+    in
+    CCOption.map_or
+      ~default:Lwt.return_unit
+      (MailingInvitationMapping.bulk_insert pool [ invitation ])
+      mailing_id
   ;;
 
   let find_multiple_by_experiment_and_contacts_request ids =
@@ -219,51 +275,6 @@ module Sql = struct
     Utils.Database.collect (pool |> Pool_database.Label.value) request pv
   ;;
 
-  module MailingInvitationMapping = struct
-    let bulk_insert pool invitations mailing_id =
-      let insert_sql =
-        {sql|
-          INSERT INTO pool_mailing_invitations (
-            mailing_uuid,
-            invitation_uuid
-          ) VALUES
-        |sql}
-      in
-      let values, value_insert =
-        CCList.fold_left
-          (fun (dyn, sql) invitation ->
-            let sql_line =
-              {sql| ( UNHEX(REPLACE(?, '-', '')),
-                (SELECT uuid FROM pool_invitations WHERE experiment_uuid = (SELECT experiment_uuid FROM pool_mailing WHERE uuid = UNHEX(REPLACE(?, '-', ''))) AND contact_uuid = UNHEX(REPLACE(?, '-', '')))
-              ) |sql}
-            in
-            ( dyn
-              |> Dynparam.add Mailing.Repo.Id.t mailing_id
-              |> Dynparam.add Mailing.Repo.Id.t mailing_id
-              |> Dynparam.add
-                   Pool_common.Repo.Id.t
-                   (invitation.Entity.contact |> Contact.id)
-            , sql @ [ sql_line ] ))
-          (Dynparam.empty, [])
-          invitations
-      in
-      let (Dynparam.Pack (pt, pv)) = values in
-      let prepare_request =
-        let open Caqti_request.Infix in
-        Format.asprintf
-          {sql|
-            %s
-            %s
-            ON DUPLICATE KEY UPDATE updated_at = NOW()
-          |sql}
-          insert_sql
-          (CCString.concat ",\n" value_insert)
-        |> (pt ->. Caqti_type.unit) ~oneshot:true
-      in
-      Utils.Database.exec (pool |> Pool_database.Label.value) prepare_request pv
-    ;;
-  end
-
   let bulk_insert ?mailing_id pool contacts experiment_id =
     let insert_sql =
       {sql|
@@ -300,6 +311,7 @@ module Sql = struct
         (Dynparam.empty, [])
         invitations
     in
+    (* TODO: This will not be required anymore *)
     let (Dynparam.Pack (pt, pv)) = values in
     let prepare_request =
       let open Caqti_request.Infix in
@@ -323,6 +335,25 @@ module Sql = struct
         mailing_id
     in
     Lwt.return_unit
+  ;;
+
+  let find_by_contact_and_experiment_opt_request =
+    let open Caqti_request.Infix in
+    {sql|
+      WHERE
+        experiment_uuid = UNHEX(REPLACE(?, '-', ''))
+      AND
+        contact_uuid = UNHEX(REPLACE(?, '-', ''))
+    |sql}
+    |> select_sql
+    |> Caqti_type.(tup2 string string) ->? RepoEntity.t
+  ;;
+
+  let find_by_contact_and_experiment_opt pool experiment_id contact_id =
+    Utils.Database.find_opt
+      (Pool_database.Label.value pool)
+      find_by_contact_and_experiment_opt_request
+      (Experiment.Id.value experiment_id, Contact.Id.value contact_id)
   ;;
 end
 
@@ -365,5 +396,13 @@ let find_multiple_by_experiment_and_contacts =
   Sql.find_multiple_by_experiment_and_contacts
 ;;
 
-let update = Sql.update
+let resend = Sql.resend
 let bulk_insert = Sql.bulk_insert
+
+let find_by_contact_and_experiment_opt pool experiment_id contact_id =
+  let open Utils.Lwt_result.Infix in
+  Sql.find_by_contact_and_experiment_opt pool experiment_id contact_id
+  >|> function
+  | None -> Lwt_result.return None
+  | Some invitation -> contact_to_invitation pool invitation >|+ CCOption.return
+;;
