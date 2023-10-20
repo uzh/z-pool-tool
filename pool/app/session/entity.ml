@@ -30,6 +30,8 @@ module ParticipantAmount = struct
     if amount < 0 then Error Pool_common.Message.(NegativeAmount) else Ok amount
   ;;
 
+  let compare = CCInt.compare
+
   let schema field =
     let decode str =
       let open CCResult in

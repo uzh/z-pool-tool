@@ -263,7 +263,7 @@ module Model = struct
       }
   ;;
 
-  let create_mailing ?id ?(rate = Mailing.Rate.default) () =
+  let create_mailing ?id ?(limit = Mailing.Limit.default) () =
     let open Mailing in
     let start =
       Ptime.add_span
@@ -281,7 +281,7 @@ module Model = struct
       |> EndAt.create
       |> get_or_failwith
     in
-    create ?id Start.(StartAt start) deadline rate None |> get_or_failwith
+    create ?id Start.(StartAt start) deadline limit None |> get_or_failwith
   ;;
 
   let create_email

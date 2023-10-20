@@ -98,8 +98,8 @@ module LocationRepo = struct
 end
 
 module MailingRepo = struct
-  let create ?(id = Mailing.Id.create ()) ?rate experiment_id =
-    let mailing = Model.create_mailing ~id ?rate () in
+  let create ?(id = Mailing.Id.create ()) ?limit experiment_id =
+    let mailing = Model.create_mailing ~id ?limit () in
     let%lwt () =
       Mailing.(
         Created (mailing, experiment_id) |> handle_event Data.database_label)

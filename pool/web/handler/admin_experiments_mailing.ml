@@ -193,7 +193,9 @@ let search_info req =
       match with_default_rate with
       | true -> None, None
       | false ->
-        Some (Mailing.per_minutes 5 mailing), Some (Mailing.total mailing)
+        let interval = 5 * 60 |> Ptime.Span.of_int_s in
+        ( Some (Mailing.per_interval ~interval mailing)
+        , Some (mailing.Mailing.limit |> Mailing.Limit.value) )
     in
     let%lwt mailings = Mailing.find_overlaps database_label mailing in
     Page.Admin.Mailing.overlaps ?average_send ?total context id mailings

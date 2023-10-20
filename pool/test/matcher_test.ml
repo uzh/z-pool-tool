@@ -84,7 +84,7 @@ let create_invitations_repo _ () =
   in
   let%lwt tenant = Pool_tenant.find_by_label pool ||> get_or_failwith in
   let%lwt { Experiment.id; _ } = Test_utils.Repo.first_experiment () in
-  let rate = Mailing.Rate.create 100 |> get_or_failwith in
+  let limit = Mailing.Limit.create 100 |> get_or_failwith in
   let mailing =
     let open Mailing in
     let distribution =
@@ -98,23 +98,24 @@ let create_invitations_repo _ () =
        |> CCOption.get_exn_or "Invalid end time of mailing"
        |> EndAt.create
        |> get_or_failwith)
-      rate
+      limit
       distribution
     |> get_or_failwith
   in
   let%lwt () = Mailing.(Created (mailing, id) |> handle_event pool) in
+  let interval = 2 * 60 |> Ptime.Span.of_int_s in
   let create_message experiment =
     Message_template.ExperimentInvitation.prepare tenant experiment
   in
-  let find_by_mailing interval mailing =
+  let find_by_mailing mailing =
     Matcher.find_contacts_by_mailing
       pool
       mailing
-      (Matcher.count_of_rate ~interval rate)
+      (Mailing.per_interval ~interval mailing |> CCFloat.(round %> to_int))
     ||> CCResult.get_exn
   in
-  let find_events interval =
-    Matcher.create_invitation_events ~interval [ pool ]
+  let find_events () =
+    Matcher.create_invitation_events interval [ pool ]
     ||> CCList.assoc ~eq:Pool_database.Label.equal pool
     ||> sort_events
   in
@@ -122,28 +123,30 @@ let create_invitations_repo _ () =
     create_message experiment
     ||> expected_events experiment (Some mailing) contacts
   in
-  Mailing.find_current pool
+  Mailing.Status.find_current pool interval
   ||> tap (CCList.length %> Alcotest.(check int "count mailings" 1))
-  >|> Lwt_list.iter_s (fun ({ Mailing.rate; _ } as mailing : Mailing.t) ->
-    let interval = 2 * 60 |> Ptime.Span.of_int_s in
-    let%lwt experiment, contacts, _ = find_by_mailing interval mailing in
+  >|> Lwt_list.iter_s (fun { Mailing.Status.mailing; _ } ->
+    let%lwt experiment, contacts, _ = find_by_mailing mailing in
     let%lwt expected = create_expected mailing experiment contacts in
-    let%lwt events = find_events interval in
+    let%lwt events = find_events () in
     let () = Test_utils.check_result expected (Ok events) in
     let%lwt before = find_invitation_count experiment in
     let%lwt () = Pool_event.handle_events pool events in
     let%lwt after = find_invitation_count experiment in
     let () =
-      let msg = "count generated invitations -> smaller or equal rate" in
-      let is_less_or_equal = after - before <= Mailing.Rate.value rate in
+      let msg = "count generated invitations -> smaller or equal limit" in
+      let is_less_or_equal =
+        after - before
+        <= (Mailing.per_interval ~interval mailing |> CCFloat.(round %> to_int))
+      in
       Alcotest.(check bool msg true is_less_or_equal)
     in
     let%lwt () =
       Experiment.handle_event pool (Experiment.ResetInvitations experiment)
     in
-    let%lwt experiment, contacts, _ = find_by_mailing interval mailing in
+    let%lwt experiment, contacts, _ = find_by_mailing mailing in
     let%lwt expected = create_expected mailing experiment contacts in
-    let%lwt events = find_events interval in
+    let%lwt events = find_events () in
     let () = Test_utils.check_result expected (Ok events) in
     let%lwt () = Pool_event.handle_events pool events in
     let%lwt after_reset = find_invitation_count experiment in

@@ -137,7 +137,7 @@ module List = struct
     in
     [ mailing.start_at |> StartAt.to_human |> txt
     ; mailing.end_at |> EndAt.to_human |> txt
-    ; mailing.rate |> Rate.value |> CCInt.to_string |> txt
+    ; mailing.limit |> Limit.value |> CCInt.to_string |> txt
     ; buttons
     ]
   ;;
@@ -194,7 +194,7 @@ let detail
            let open Message in
            [ Field.Start, mailing.start_at |> StartAt.to_human
            ; Field.End, mailing.end_at |> EndAt.to_human
-           ; Field.Rate, mailing.rate |> Rate.value |> CCInt.to_string
+           ; Field.Rate, mailing.limit |> Limit.value |> CCInt.to_string
            ; ( Field.Distribution
              , mailing.distribution
                |> CCOption.map_or ~default:"" Mailing.Distribution.show )
@@ -529,12 +529,13 @@ let form
                      ~required:true
                      ~help:I18n.Rate
                      ~value:
-                       (mailing
-                        |> CCOption.map_or
-                             ~default:Mailing.Rate.default
-                             (fun (m : Mailing.t) -> m.Mailing.rate)
-                        |> Mailing.Rate.value
-                        |> CCInt.to_string)
+                       Mailing.(
+                         mailing
+                         |> CCOption.map_or
+                              ~default:Limit.default
+                              (fun (m : t) -> m.limit)
+                         |> Limit.value
+                         |> CCInt.to_string)
                      ~additional_attributes:[ a_input_min (`Number 1) ]
                  ]
              ; distribution_select

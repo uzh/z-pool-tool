@@ -3,7 +3,7 @@ open Entity
 type update =
   { start_at : StartAt.t
   ; end_at : EndAt.t
-  ; rate : Rate.t
+  ; limit : Limit.t
   ; distribution : Distribution.t option
   }
 [@@deriving eq, show]
@@ -23,8 +23,8 @@ let handle_event pool =
     Entity_guard.Target.to_authorizable ~ctx:(Pool_database.to_ctx pool) mailing
     ||> Pool_common.Utils.get_or_failwith
     ||> fun (_ : Guard.Target.t) -> ()
-  | Updated ({ start_at; end_at; rate; distribution }, mailing) ->
-    { mailing with start_at; end_at; rate; distribution } |> Repo.update pool
+  | Updated ({ start_at; end_at; limit; distribution }, mailing) ->
+    { mailing with start_at; end_at; limit; distribution } |> Repo.update pool
   | Deleted { id; _ } -> Repo.delete pool id
   | Stopped mailing ->
     { mailing with end_at = Ptime_clock.now () } |> Repo.update pool

@@ -34,7 +34,7 @@ module Data = struct
       |> get_or_failwith
     ;;
 
-    let rate = Mailing.Rate.create 200 |> get_or_failwith
+    let limit = Mailing.Limit.create 200 |> get_or_failwith
 
     let distribution =
       Mailing.Distribution.
@@ -47,7 +47,7 @@ module Data = struct
       let open Mailing in
       [ Field.(Start |> show), [ start_at |> StartAt.value |> Ptime.to_rfc3339 ]
       ; Field.(End |> show), [ end_at |> EndAt.value |> Ptime.to_rfc3339 ]
-      ; Field.(Rate |> show), [ rate |> Rate.value |> CCInt.to_string ]
+      ; Field.(Limit |> show), [ limit |> Limit.value |> CCInt.to_string ]
       ; ( Field.(Distribution |> show)
         , [ distribution
             |> Distribution.yojson_of_sorted
@@ -60,7 +60,7 @@ module Data = struct
       let open Mailing in
       [ Field.(Start |> show), [ end_at |> EndAt.value |> Ptime.to_rfc3339 ]
       ; Field.(End |> show), [ start_at |> StartAt.value |> Ptime.to_rfc3339 ]
-      ; Field.(Rate |> show), [ rate |> Rate.value |> CCInt.to_string ]
+      ; Field.(Limit |> show), [ limit |> Limit.value |> CCInt.to_string ]
       ; ( Field.(Distribution |> show)
         , [ distribution
             |> Distribution.yojson_of_sorted
@@ -77,7 +77,7 @@ let create_mailing () =
     { id
     ; start_at
     ; end_at
-    ; rate
+    ; limit
     ; distribution = Some (distribution |> Distribution.create_sorted)
     ; created_at = Pool_common.CreatedAt.create ()
     ; updated_at = Pool_common.UpdatedAt.create ()
@@ -129,7 +129,7 @@ let create_with_distribution () =
   let urlencoded =
     [ show Field.Start, mailing.start_at |> StartAt.value |> Ptime.to_rfc3339
     ; show Field.End, mailing.end_at |> EndAt.value |> Ptime.to_rfc3339
-    ; show Field.Rate, mailing.rate |> Rate.value |> CCInt.to_string
+    ; show Field.Limit, mailing.limit |> Limit.value |> CCInt.to_string
     ]
   in
   let urlencoded () =
@@ -180,7 +180,7 @@ let create_with_start_now () =
     let show = Field.show in
     [ show Field.StartNow, "true"
     ; show Field.End, mailing.end_at |> EndAt.value |> Ptime.to_rfc3339
-    ; show Field.Rate, mailing.rate |> Rate.value |> CCInt.to_string
+    ; show Field.Limit, mailing.limit |> Limit.value |> CCInt.to_string
     ]
     |> CCList.map (fun (field, value) -> field, [ value ])
     |> Http_utils.format_request_boolean_values mailing_boolean_fields
@@ -189,9 +189,9 @@ let create_with_start_now () =
     ()
     |> urlencoded
     |> Create.decode
-    >>= (fun { start_at; start_now; end_at; rate; distribution } ->
+    >>= (fun { start_at; start_now; end_at; limit; distribution } ->
           let* start_at = Start.create start_at start_now in
-          Mailing.create start_at end_at rate distribution)
+          Mailing.create start_at end_at limit distribution)
     |> CCResult.is_ok
   in
   (* Only testing if mailing is Ok, as comparison of timestampts with

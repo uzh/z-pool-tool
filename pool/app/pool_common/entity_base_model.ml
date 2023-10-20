@@ -161,6 +161,7 @@ module PtimeSpan = struct
   let value m = m
   let of_span m = m
   let to_human = Pool_common_utils.Time.formatted_timespan
+  let compare = Ptime.Span.compare
 
   let schema field create ()
     : (Entity_message.error, t) Pool_common_utils.PoolConformist.Field.t
@@ -259,6 +260,7 @@ module type BaseSig = sig
   type t
 
   val equal : t -> t -> bool
+  val compare : t -> t -> int
   val pp : Format.formatter -> t -> unit
   val show : t -> string
   val create : string -> (t, Entity_message.error) result
