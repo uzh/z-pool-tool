@@ -309,7 +309,6 @@ module Sql = struct
         (Dynparam.empty, [])
         invitations
     in
-    (* TODO: This will not be required anymore *)
     let (Dynparam.Pack (pt, pv)) = values in
     let prepare_request =
       let open Caqti_request.Infix in
