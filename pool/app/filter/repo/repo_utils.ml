@@ -24,7 +24,10 @@ let filtered_base_condition =
   in
   let exclude_invited = {sql| AND pool_invitations.uuid IS NULL |sql} in
   let exclude_invited_after =
-    {sql| AND (pool_invitations.resent_at IS NULL OR pool_invitations.resent_at < ?) |sql}
+    {sql| AND(pool_invitations.created_at IS NULL
+          OR (pool_invitations.resent_at IS NULL
+            OR COALESCE(pool_invitations.resent_at, pool_invitations.created_at) < ?))
+    |sql}
   in
   let exclude_assigned =
     {sql|
