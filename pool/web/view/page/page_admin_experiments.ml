@@ -547,6 +547,20 @@ let detail
         ]
   in
   let reset_invitation_form =
+    let open Experiment in
+    let last_reset_at =
+      match experiment.invitation_reset_at with
+      | None -> txt ""
+      | Some reset_at ->
+        span
+          [ Pool_common.(
+              Utils.hint_to_string
+                language
+                (I18n.ResetInvitationsLastReset
+                   (InvitationResetAt.value reset_at))
+              |> Unsafe.data)
+          ]
+    in
     div
       ~a:[ a_class [ "flexrow"; "flex-gap"; "flexcolumn-mobile" ] ]
       [ form
@@ -571,9 +585,13 @@ let detail
               ()
           ]
       ; div
-          ~a:[ a_class [ "grow" ] ]
-          [ txt
-              Pool_common.(Utils.hint_to_string language I18n.ResetInvitations)
+          ~a:[ a_class [ "grow"; "flexcolumn" ] ]
+          [ span
+              [ txt
+                  Pool_common.(
+                    Utils.hint_to_string language I18n.ResetInvitations)
+              ]
+          ; last_reset_at
           ]
       ]
   in

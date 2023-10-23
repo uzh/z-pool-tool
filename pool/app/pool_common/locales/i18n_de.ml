@@ -369,6 +369,10 @@ Wenn Sie die Erinnerungen jetzt manuell auslösen werden über den gewählten Na
   | ResetInvitations ->
     "Einladungen zurücksetzen, alle bisherigen Einladungen werden für \
      zukünftige Versande ignoriert."
+  | ResetInvitationsLastReset reset_at ->
+    Format.asprintf
+      "Die Einladungen wirden zuletzt am <strong>%s</strong> zurückgesetzt."
+      (Utils_time.formatted_date_time reset_at)
   | RoleIntro (singular, plural) ->
     Format.asprintf
       "Wenn kein %s angegeben wird, gilt die Rolle für alle %s."

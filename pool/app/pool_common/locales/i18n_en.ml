@@ -358,6 +358,10 @@ If you trigger the reminders manually now, no more automatic reminders will be s
   | ResetInvitations ->
     "Resets invitations, all previous invitations up to the now will be \
      ignored."
+  | ResetInvitationsLastReset reset_at ->
+    Format.asprintf
+      "The invitations were last reset on <strong>%s</strong>."
+      (Utils_time.formatted_date_time reset_at)
   | RoleIntro (singular, plural) ->
     Format.asprintf
       "If no %s is specified, the role includes all %s."
