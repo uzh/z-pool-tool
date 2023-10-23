@@ -17,7 +17,7 @@ let form_action ?path id =
 module Partials = struct
   let list Pool_context.{ csrf; language; _ } experiment invitation_list =
     let thead =
-      (Pool_common.Message.Field.[ Contact; ResentAt; CreatedAt ]
+      (Pool_common.Message.Field.[ Contact; ResentAt; Count; CreatedAt ]
        |> Table.fields_to_txt language)
       @ [ txt "" ]
     in
@@ -32,6 +32,7 @@ module Partials = struct
               |> ResentAt.value
               |> Pool_common.Utils.Time.formatted_date_time)
             |> txt
+          ; invitation.send_count |> SendCount.value |> CCInt.to_string |> txt
           ; invitation.created_at
             |> Pool_common.CreatedAt.value
             |> Pool_common.Utils.Time.formatted_date_time
