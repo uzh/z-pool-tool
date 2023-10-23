@@ -57,6 +57,7 @@ let to_string = function
     "Der Import Ihres Users ist noch nicht abgeschlossen. Bitte kontrollieren \
      Sie Ihren Posteingang oder kontaktieren Sie einen Administrator."
   | ImportPendingTitle -> "Pendenter Import"
+  | InvitationsStatistic -> "Einladungsstatistik"
   | LocationDetails -> "Standortdetails"
   | NoEntries field ->
     Format.asprintf

@@ -142,4 +142,39 @@ module Partials = struct
       ; div ~a:[ a_class [ "gap-lg" ] ] [ filtered_contacts_form ]
       ]
   ;;
+
+  let statistics language { Invitation.Statistics.total_sent; sent_by_count } =
+    let open Pool_common in
+    let to_string = CCInt.to_string in
+    let field_to_string field =
+      Utils.field_to_string language field |> CCString.capitalize_ascii
+    in
+    let thead =
+      Message.Field.[ Count; InvitationCount ]
+      |> CCList.map CCFun.(field_to_string %> txt %> CCList.return %> th)
+      |> tr
+      |> CCList.return
+      |> thead
+    in
+    let to_row ?(classnames = []) (key, value) =
+      let td = td ~a:[ a_class classnames ] in
+      tr [ td [ txt key ]; td [ txt value ] ]
+    in
+    let total =
+      (field_to_string Message.Field.Total, to_string total_sent)
+      |> to_row ~classnames:[ "font-bold" ]
+    in
+    div
+      [ h3
+          [ txt
+              Pool_common.(
+                Utils.text_to_string language I18n.InvitationsStatistic)
+          ]
+      ; (sent_by_count
+         |> CCList.map (fun (key, value) ->
+           (to_string key, to_string value) |> to_row)
+         |> fun rows ->
+         rows @ [ total ] |> table ~thead ~a:[ a_class [ "table"; "simple" ] ])
+      ]
+  ;;
 end

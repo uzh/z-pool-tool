@@ -71,3 +71,13 @@ let sortable_by =
        ]
      |> Query.Column.create_list)
 ;;
+
+module Statistics = struct
+  type sent_by_count = int * int [@@deriving eq, show]
+
+  type t =
+    { total_sent : int
+    ; sent_by_count : sent_by_count list
+    }
+  [@@deriving eq, show]
+end

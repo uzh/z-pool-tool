@@ -59,6 +59,7 @@ let to_string = function
     "The import of your user is not completed yet. Please check your inbox or \
      contact an administrator."
   | ImportPendingTitle -> "Pending import"
+  | InvitationsStatistic -> "Invitation statistics"
   | LocationDetails -> "Location details"
   | NoEntries field ->
     Format.asprintf "There are no %s yet." (Locales_en.field_to_string field)

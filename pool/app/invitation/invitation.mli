@@ -118,3 +118,17 @@ module Guard : sig
     val delete : Experiment.Id.t -> Pool_common.Id.t -> Guard.ValidationSet.t
   end
 end
+
+module Statistics : sig
+  type sent_by_count = int * int
+
+  type t =
+    { total_sent : int
+    ; sent_by_count : sent_by_count list
+    }
+
+  val equal : t -> t -> bool
+  val show : t -> string
+  val pp : Format.formatter -> t -> unit
+  val by_experiment : Pool_database.Label.t -> Experiment.Id.t -> t Lwt.t
+end

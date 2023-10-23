@@ -32,6 +32,9 @@ let index req =
               |> Filter.all_query_tags
               |> Tags.find_multiple database_label)
        in
+       let%lwt statistics =
+         Invitation.Statistics.by_experiment database_label id
+       in
        let* filtered_contacts =
          if Sihl.Configuration.is_production ()
          then Lwt_result.return None
@@ -50,6 +53,7 @@ let index req =
          template_list
          query_experiments
          query_tags
+         statistics
          filtered_contacts
          context
        >|> create_layout req context

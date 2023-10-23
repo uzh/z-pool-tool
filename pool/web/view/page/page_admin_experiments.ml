@@ -748,21 +748,31 @@ let invitations
   template_list
   query_experiments
   query_tags
+  statistics
   filtered_contacts
   ({ Pool_context.language; _ } as context)
   =
   [ div
       ~a:[ a_class [ "stack" ] ]
-      [ p
-          [ a
-              ~a:
-                [ a_href
-                    (experiment.Experiment.id
-                     |> Experiment.Id.value
-                     |> Format.asprintf "admin/experiments/%s/invitations/sent"
-                     |> Sihl.Web.externalize_path)
-                ]
-              [ txt (Utils.text_to_string language I18n.SentInvitations) ]
+      [ div
+          ~a:[ a_class [ "grid-col-2" ] ]
+          [ div
+              ~a:[ a_class [ "stack-xs"; "inset"; "bg-grey-light"; "border" ] ]
+              [ Page_admin_invitations.Partials.statistics language statistics
+              ; p
+                  [ a
+                      ~a:
+                        [ a_href
+                            (experiment.Experiment.id
+                             |> Experiment.Id.value
+                             |> Format.asprintf
+                                  "admin/experiments/%s/invitations/sent"
+                             |> Sihl.Web.externalize_path)
+                        ]
+                      [ txt (Utils.text_to_string language I18n.SentInvitations)
+                      ]
+                  ]
+              ]
           ]
       ; Page_admin_invitations.Partials.send_invitation
           context
