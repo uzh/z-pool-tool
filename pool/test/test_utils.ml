@@ -53,7 +53,7 @@ let setup_test () =
   Lwt.return_unit
 ;;
 
-let get_or_failwith_pool_error res =
+let get_or_failwith res =
   res
   |> CCResult.map_err Pool_common.(Utils.error_to_string Language.En)
   |> CCResult.get_or_failwith
@@ -77,13 +77,9 @@ let file_to_storage file =
 let dummy_to_file (dummy : Database.SeedAssets.file) =
   let open Database.SeedAssets in
   let open Pool_common in
-  let name = File.Name.create dummy.filename |> get_or_failwith_pool_error in
-  let filesize =
-    File.Size.create dummy.filesize |> get_or_failwith_pool_error
-  in
-  let mime_type =
-    File.Mime.of_string dummy.mime |> get_or_failwith_pool_error
-  in
+  let name = File.Name.create dummy.filename |> get_or_failwith in
+  let filesize = File.Size.create dummy.filesize |> get_or_failwith in
+  let mime_type = File.Mime.of_string dummy.mime |> get_or_failwith in
   File.
     { id = dummy.id |> Id.of_string
     ; name
@@ -99,17 +95,18 @@ module Model = struct
     ?(id = Pool_common.Id.create ())
     ?(email =
       Format.asprintf "test+%s@econ.uzh.ch" (Uuidm.v `V4 |> Uuidm.to_string))
+    ?(name = "Doe")
     ()
     =
+    let surname = name in
     Sihl_user.
       { id = id |> Pool_common.Id.value
       ; email
       ; username = None
-      ; name = Some "Doe"
+      ; name = Some surname
       ; given_name = Some "Jane"
-      ; password =
-          "somepassword" |> Sihl_user.Hashing.hash |> CCResult.get_or_failwith
-      ; status = Sihl_user.status_of_string "active" |> CCResult.get_or_failwith
+      ; password = "somepassword" |> Sihl_user.Hashing.hash |> CCResult.get_exn
+      ; status = Sihl_user.status_of_string "active" |> CCResult.get_exn
       ; admin = false
       ; confirmed = true
       ; created_at = Pool_common.CreatedAt.create ()
@@ -117,13 +114,13 @@ module Model = struct
       }
   ;;
 
-  let create_contact ?id ?(with_terms_accepted = true) () =
-    let sihl_user = create_sihl_user ?id () in
+  let create_contact ?id ?name ?(with_terms_accepted = true) () =
+    let sihl_user = create_sihl_user ?id ?name () in
     Contact.
       { user = sihl_user
       ; terms_accepted_at =
           (if with_terms_accepted
-           then Pool_user.TermsAccepted.create_now () |> CCOption.pure
+           then Pool_user.TermsAccepted.create_now () |> CCOption.return
            else None)
       ; language = Some Pool_common.Language.En
       ; experiment_type_preference = None
@@ -135,7 +132,7 @@ module Model = struct
           ()
           |> Ptime_clock.now
           |> Pool_user.EmailVerified.create
-          |> CCOption.pure
+          |> CCOption.return
       ; num_invitations = NumberOfInvitations.init
       ; num_assignments = NumberOfAssignments.init
       ; num_show_ups = NumberOfShowUps.init
@@ -159,9 +156,7 @@ module Model = struct
   let create_location ?(id = Pool_location.Id.create ()) () =
     Pool_location.
       { id
-      ; name =
-          Pool_location.Name.create "Online"
-          |> Pool_common.Utils.get_or_failwith
+      ; name = Pool_location.Name.create "Online" |> get_or_failwith
       ; description = None
       ; link = None
       ; address = Pool_location.Address.Virtual
@@ -173,18 +168,13 @@ module Model = struct
   ;;
 
   let create_public_experiment () =
-    let show_error err = Pool_common.(Utils.error_to_string Language.En err) in
     Experiment.(
       Public.
         { id = Experiment.Id.create ()
-        ; public_title =
-            PublicTitle.create "public_title"
-            |> CCResult.map_err show_error
-            |> CCResult.get_or_failwith
+        ; public_title = PublicTitle.create "public_title" |> get_or_failwith
         ; description =
             Description.create "A description for everyone"
-            |> CCResult.map_err show_error
-            |> CCResult.get_or_failwith
+            |> get_or_failwith
             |> CCOption.return
         ; direct_registration_disabled =
             false |> DirectRegistrationDisabled.create
@@ -195,55 +185,46 @@ module Model = struct
 
   let create_experiment
     ?(id = Experiment.Id.create ())
+    ?(title = "An Experiment")
     ?email_session_reminder_lead_time_hours
     ?filter
     ()
     =
     let show_error err = Pool_common.(Utils.error_to_string Language.En err) in
-    let open CCResult in
     let email_session_reminder_lead_time =
+      let open CCResult in
       CCOption.bind email_session_reminder_lead_time_hours (fun h ->
         Ptime.Span.of_int_s @@ (h * 60 * 60)
         |> Pool_common.Reminder.LeadTime.create
         |> map_err show_error
         |> to_opt)
     in
-    Experiment.
-      { id
-      ; title =
-          Title.create "An Experiment" |> map_err show_error |> get_or_failwith
-      ; public_title =
-          PublicTitle.create "public_title"
-          |> map_err show_error
-          |> get_or_failwith
-      ; description =
-          Description.create "A description for everyone"
-          |> map_err show_error
-          |> get_or_failwith
-          |> CCOption.return
-      ; cost_center = Some ("F-00000-11-22" |> CostCenter.of_string)
-      ; organisational_unit = None
-      ; filter
-      ; contact_person_id = None
-      ; smtp_auth_id = None
-      ; email_session_reminder_lead_time
-      ; text_message_session_reminder_lead_time = None
-      ; direct_registration_disabled =
-          false |> DirectRegistrationDisabled.create
-      ; registration_disabled = false |> RegistrationDisabled.create
-      ; allow_uninvited_signup = false |> AllowUninvitedSignup.create
-      ; external_data_required = false |> ExternalDataRequired.create
-      ; show_external_data_id_links = false |> ShowExternalDataIdLinks.create
-      ; experiment_type = Some Pool_common.ExperimentType.Lab
-      ; created_at = Ptime_clock.now ()
-      ; updated_at = Ptime_clock.now ()
-      }
+    let open Experiment in
+    let title = Title.create title |> get_or_failwith in
+    let public_title = PublicTitle.create "public_title" |> get_or_failwith in
+    let description =
+      Description.create "A description for everyone" |> get_or_failwith
+    in
+    create
+      ~id
+      ~cost_center:("F-00000-11-22" |> CostCenter.of_string)
+      ~description
+      ~experiment_type:Pool_common.ExperimentType.Lab
+      ?filter
+      ?email_session_reminder_lead_time
+      title
+      public_title
+      (DirectRegistrationDisabled.create false)
+      (RegistrationDisabled.create false)
+      (AllowUninvitedSignup.create false)
+      (ExternalDataRequired.create false)
+      (ShowExternalDataIdLinks.create false)
+    |> get_or_failwith
   ;;
 
   let create_organisational_unit () =
     let open Organisational_unit in
-    let name = Name.create "SNS" |> get_or_failwith_pool_error in
-    create name
+    Name.create "SNS" |> get_or_failwith |> create
   ;;
 
   let experiment_to_public_experiment (experiment : Experiment.t) =
@@ -290,7 +271,7 @@ module Model = struct
         Sihl.Time.(OneSecond |> duration_to_span)
       |> CCOption.get_exn_or "Time calculation failed!"
       |> StartAt.create
-      |> get_or_failwith_pool_error
+      |> get_or_failwith
     in
     let deadline =
       Ptime.add_span
@@ -298,10 +279,9 @@ module Model = struct
         Sihl.Time.(OneHour |> duration_to_span)
       |> CCOption.get_exn_or "Time calculation failed!"
       |> EndAt.create
-      |> get_or_failwith_pool_error
+      |> get_or_failwith
     in
-    create ?id Start.(StartAt start) deadline rate None
-    |> get_or_failwith_pool_error
+    create ?id Start.(StartAt start) deadline rate None |> get_or_failwith
   ;;
 
   let create_email
@@ -354,34 +334,16 @@ module Model = struct
     ()
     =
     let open Session in
-    let start = start |> CCOption.value ~default:(in_an_hour ()) in
-    { id
-    ; follow_up_to
-    ; has_follow_ups = false
-    ; start
-    ; duration = Duration.create hour |> get_or_failwith_pool_error
-    ; description = None
-    ; limitations = None
-    ; location
-    ; max_participants =
-        ParticipantAmount.create 30 |> get_or_failwith_pool_error
-    ; min_participants =
-        ParticipantAmount.create 1 |> get_or_failwith_pool_error
-    ; overbook = ParticipantAmount.create 4 |> get_or_failwith_pool_error
-    ; email_reminder_lead_time = None
-    ; email_reminder_sent_at
-    ; text_message_reminder_lead_time = None
-    ; text_message_reminder_sent_at = None
-    ; assignment_count =
-        0 |> AssignmentCount.create |> get_or_failwith_pool_error
-    ; no_show_count = 0 |> NoShowCount.create |> get_or_failwith_pool_error
-    ; participant_count =
-        0 |> ParticipantCount.create |> get_or_failwith_pool_error
-    ; closed_at = None
-    ; canceled_at = None
-    ; created_at = Pool_common.CreatedAt.create ()
-    ; updated_at = Pool_common.UpdatedAt.create ()
-    }
+    create
+      ~id
+      ?follow_up_to
+      (start |> CCOption.value ~default:(in_an_hour ()))
+      (Duration.create hour |> get_or_failwith)
+      location
+      (ParticipantAmount.create 30 |> get_or_failwith)
+      (ParticipantAmount.create 1 |> get_or_failwith)
+      (ParticipantAmount.create 4 |> get_or_failwith)
+    |> fun session -> { session with email_reminder_sent_at }
   ;;
 
   let create_public_session ?start () =
@@ -476,7 +438,6 @@ module Model = struct
   ;;
 
   let fully_book_session session =
-    let get_or_failwith = Pool_common.Utils.get_or_failwith in
     Session.
       { session with
         max_participants = ParticipantAmount.create 5 |> get_or_failwith
@@ -489,19 +450,11 @@ module Model = struct
   let fully_book_public_session session =
     Session.Public.
       { session with
-        max_participants =
-          Session.ParticipantAmount.create 5
-          |> Pool_common.Utils.get_or_failwith
-      ; min_participants =
-          Session.ParticipantAmount.create 0
-          |> Pool_common.Utils.get_or_failwith
-      ; overbook =
-          Session.ParticipantAmount.create 0
-          |> Pool_common.Utils.get_or_failwith
+        max_participants = Session.ParticipantAmount.create 5 |> get_or_failwith
+      ; min_participants = Session.ParticipantAmount.create 0 |> get_or_failwith
+      ; overbook = Session.ParticipantAmount.create 0 |> get_or_failwith
       ; assignment_count =
-          5
-          |> Session.AssignmentCount.create
-          |> Pool_common.Utils.get_or_failwith
+          5 |> Session.AssignmentCount.create |> get_or_failwith
       }
   ;;
 

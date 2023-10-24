@@ -4,10 +4,23 @@ module ResentAt = struct
   let create = Ptime_clock.now
 end
 
+module SendCount = struct
+  open Pool_common
+  include Model.Integer
+
+  let field = Message.Field.Count
+  let create m = if m > 0 then Ok m else Error Message.(Invalid field)
+  let of_int m = if m > 0 then m else Utils.failwith Message.(Invalid field)
+  let init = 1
+  let schema = schema field create
+  let increment m = m + 1
+end
+
 type t =
   { id : Pool_common.Id.t
   ; contact : Contact.t
   ; resent_at : ResentAt.t option
+  ; send_count : SendCount.t
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
   }
@@ -17,6 +30,7 @@ let create ?(id = Pool_common.Id.create ()) contact =
   { id
   ; contact
   ; resent_at = None
+  ; send_count = SendCount.init
   ; created_at = Pool_common.CreatedAt.create ()
   ; updated_at = Pool_common.UpdatedAt.create ()
   }

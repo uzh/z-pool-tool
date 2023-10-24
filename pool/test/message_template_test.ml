@@ -184,7 +184,7 @@ module MessageTemplateData = struct
     Format.asprintf "admin+%s@econ.uzh.ch" (Uuidm.v `V4 |> Uuidm.to_string)
   ;;
 
-  let get_exn = Test_utils.get_or_failwith_pool_error
+  let get_exn = Test_utils.get_or_failwith
 
   let initialize () =
     let open Integration_utils in
@@ -213,6 +213,7 @@ let experiment_invitation_with_sender _ () =
     let events =
       let open Cqrs_command.Invitation_command.Create in
       { experiment
+      ; mailing = None
       ; contacts = [ contact ]
       ; invited_contacts = []
       ; create_message

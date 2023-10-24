@@ -158,6 +158,7 @@ type success =
   | RemovedFromWaitingList
   | RemindersResent
   | Rescheduled of Field.t
+  | ResetInvitations
   | RoleAssigned
   | RoleUnassigned
   | SentList of Field.t
@@ -234,7 +235,7 @@ type control =
   | RemoveFromWaitingList
   | Reschedule of Field.t option
   | Resend of Field.t option
-  | Reset
+  | Reset of Field.t option
   | ResetForm
   | ResetPlainText
   | Save of Field.t option

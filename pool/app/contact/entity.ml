@@ -3,6 +3,15 @@ module User = Pool_user
 module Sihl_user = struct
   include Sihl_user
 
+  let equal a b =
+    let open CCString in
+    equal a.id b.id
+    && equal a.email b.email
+    && equal_status a.status b.status
+    && CCBool.equal a.admin b.admin
+    && CCBool.equal a.confirmed b.confirmed
+  ;;
+
   let compare a b = CCString.compare a.Sihl_user.email b.Sihl_user.email
 end
 
@@ -88,10 +97,8 @@ type t =
   ; language_version : Pool_common.Version.t
   ; experiment_type_preference_version : Pool_common.Version.t
   ; import_pending : Pool_user.ImportPending.t
-  ; created_at : Pool_common.Model.Ptime.t
-       [@equal fun a b -> Ptime.equal a b || Sihl.Configuration.is_test ()]
-  ; updated_at : Pool_common.Model.Ptime.t
-       [@equal fun a b -> Ptime.equal a b || Sihl.Configuration.is_test ()]
+  ; created_at : Pool_common.CreatedAt.t
+  ; updated_at : Pool_common.UpdatedAt.t
   }
 [@@deriving eq, show, ord]
 

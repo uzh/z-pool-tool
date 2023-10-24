@@ -21,7 +21,7 @@ let validate_email _ () =
   let { Email.email; _ } =
     Email.{ email; smtp_auth_id }
     |> intercept_prepare
-    |> Test_utils.get_or_failwith_pool_error
+    |> Test_utils.get_or_failwith
   in
   let msg = "Missing 'TEST_EMAIL' env variable." in
   let%lwt { subject; _ } =

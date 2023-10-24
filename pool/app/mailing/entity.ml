@@ -183,17 +183,21 @@ module Distribution = struct
     Pool_common.Utils.schema_decoder decode encode field
   ;;
 
-  let of_urlencoded_list data =
+  let of_urlencoded_list =
     let open CCResult in
-    data
-    |> CCList.map (fun distribution_field ->
-      match CCString.split ~by:"," distribution_field with
-      | [ field; order ] ->
-        Ok (Format.asprintf "[[\"%s\"],[\"%s\"]]" field order)
-      | _ -> Error Pool_common.Message.(Invalid Field.Distribution))
-    |> CCResult.flatten_l
-    >|= CCString.concat ","
-    >|= Format.asprintf "[%s]"
+    function
+    | [] -> Ok None
+    | data ->
+      data
+      |> CCList.map (fun distribution_field ->
+        match CCString.split ~by:"," distribution_field with
+        | [ field; order ] ->
+          Ok (Format.asprintf "[[\"%s\"],[\"%s\"]]" field order)
+        | _ -> Error Pool_common.Message.(Invalid Field.Distribution))
+      |> CCResult.flatten_l
+      >|= CCString.concat ","
+      >|= Format.asprintf "[%s]"
+      >|= CCOption.return
   ;;
 end
 
@@ -206,16 +210,7 @@ type t =
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
   }
-[@@deriving show]
-
-let equal m1 m2 =
-  Id.equal m1.id m2.id
-  && StartAt.equal m1.start_at m2.start_at
-  && EndAt.equal m1.end_at m2.end_at
-  && Rate.equal m1.rate m2.rate
-  && CCOption.map2 Distribution.equal m1.distribution m2.distribution
-     |> CCOption.get_or ~default:false
-;;
+[@@deriving eq, show]
 
 let create
   ?allow_start_in_past

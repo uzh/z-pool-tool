@@ -35,8 +35,8 @@ end
 type t =
   { id : Id.t
   ; job : Job.t
-  ; created_at : Pool_common.CreatedAt.t [@equal fun _ _ -> true]
-  ; updated_at : Pool_common.UpdatedAt.t [@equal fun _ _ -> true]
+  ; created_at : Pool_common.CreatedAt.t
+  ; updated_at : Pool_common.UpdatedAt.t
   }
 [@@deriving eq, show]
 
@@ -108,8 +108,8 @@ module EventLog = struct
     ; service_identifier : ServiceIdentifier.t
     ; status : Status.t
     ; message : Message.t option
-    ; created_at : Pool_common.CreatedAt.t [@equal fun _ _ -> true]
-    ; updated_at : Pool_common.UpdatedAt.t [@equal fun _ _ -> true]
+    ; created_at : Pool_common.CreatedAt.t
+    ; updated_at : Pool_common.UpdatedAt.t
     }
   [@@deriving eq, show]
 

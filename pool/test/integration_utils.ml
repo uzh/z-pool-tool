@@ -13,9 +13,9 @@ module AssignmentRepo = struct
 end
 
 module ContactRepo = struct
-  let create ?id ?(with_terms_accepted = false) () =
+  let create ?id ?name ?(with_terms_accepted = false) () =
     let open Utils.Lwt_result.Infix in
-    let contact = Model.create_contact ?id ~with_terms_accepted () in
+    let contact = Model.create_contact ?id ?name ~with_terms_accepted () in
     let open Contact in
     let confirm = [ Verified contact; EmailVerified contact ] in
     let%lwt () =
@@ -25,7 +25,7 @@ module ContactRepo = struct
           ; password =
               contact.user.Sihl_user.password
               |> Pool_user.Password.create
-              |> get_or_failwith_pool_error
+              |> get_or_failwith
           ; firstname = firstname contact
           ; lastname = lastname contact
           ; terms_accepted_at = None
@@ -35,7 +35,7 @@ module ContactRepo = struct
       @ confirm
       |> Lwt_list.iter_s (handle_event Data.database_label)
     in
-    contact |> id |> find Data.database_label ||> get_or_failwith_pool_error
+    contact |> id |> find Data.database_label ||> get_or_failwith
   ;;
 end
 
@@ -69,13 +69,13 @@ module AdminRepo = struct
       [ Created admin ]
       |> Lwt_list.iter_s (handle_event ~tags Data.database_label)
     in
-    admin_id |> find Data.database_label ||> get_or_failwith_pool_error
+    admin_id |> find Data.database_label ||> get_or_failwith
   ;;
 end
 
 module ExperimentRepo = struct
-  let create ?(id = Experiment.Id.create ()) () =
-    let experiment = Model.create_experiment ~id () in
+  let create ?(id = Experiment.Id.create ()) ?title () =
+    let experiment = Model.create_experiment ~id ?title () in
     let%lwt () =
       Experiment.Created experiment
       |> Pool_event.experiment
@@ -97,6 +97,17 @@ module LocationRepo = struct
   ;;
 end
 
+module MailingRepo = struct
+  let create ?(id = Mailing.Id.create ()) ?rate experiment_id =
+    let mailing = Model.create_mailing ~id ?rate () in
+    let%lwt () =
+      Mailing.(
+        Created (mailing, experiment_id) |> handle_event Data.database_label)
+    in
+    Mailing.find Data.database_label id |> Lwt.map get_or_failwith
+  ;;
+end
+
 module WaitingListRepo = struct
   let create experiment contact () =
     let open Utils.Lwt_result.Infix in
@@ -109,7 +120,7 @@ module WaitingListRepo = struct
       Data.database_label
       contact
       experiment
-    ||> get_or_failwith_pool_error
+    ||> get_or_failwith
   ;;
 end
 

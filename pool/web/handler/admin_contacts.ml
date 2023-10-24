@@ -283,11 +283,7 @@ let htmx_experiment_modal req =
     let%lwt matches_filter =
       experiment.Experiment.filter
       |> CCOption.map_or ~default:Lwt.return_true (fun { Filter.query; _ } ->
-        Filter.contact_matches_filter
-          database_label
-          (Experiment.Id.to_common experiment_id)
-          query
-          contact)
+        Filter.contact_matches_filter database_label query contact)
     in
     Page.Admin.Contact.assign_contact_experiment_modal
       context

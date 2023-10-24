@@ -712,7 +712,7 @@ let cancel_assignment_with_follow_ups _ () =
     let%lwt () = create_session (Model.in_an_hour ()) in
     Session.find_all_for_experiment Data.database_label experiment.Experiment.id
     >|+ CCList.hd
-    ||> get_or_failwith_pool_error
+    ||> get_or_failwith
   in
   let%lwt () =
     create_session ~parent_id:parent_session.Session.id (Model.in_two_hours ())
@@ -720,11 +720,11 @@ let cancel_assignment_with_follow_ups _ () =
   let%lwt sessions =
     let%lwt session =
       Session.find Data.database_label parent_session.Session.id
-      ||> get_or_failwith_pool_error
+      ||> get_or_failwith
     in
     let%lwt follow_ups =
       Session.find_follow_ups Data.database_label session.Session.id
-      ||> get_or_failwith_pool_error
+      ||> get_or_failwith
     in
     Lwt.return (session :: follow_ups)
   in
@@ -749,11 +749,10 @@ let cancel_assignment_with_follow_ups _ () =
       ||> fun ({ Public.id; _ } : Public.t) -> id |> Id.value |> Id.of_string
     in
     let%lwt assignments =
-      find_with_follow_ups Data.database_label assignment_id
-      ||> get_or_failwith_pool_error
+      find_with_follow_ups Data.database_label assignment_id ||> get_or_failwith
     in
     AssignmentCommand.Cancel.handle (assignments, parent_session)
-    |> get_or_failwith_pool_error
+    |> get_or_failwith
     |> Pool_event.handle_events Data.database_label
   in
   (* Expect all assigments to be canceled *)

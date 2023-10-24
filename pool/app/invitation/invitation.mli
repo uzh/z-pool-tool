@@ -7,10 +7,19 @@ module ResentAt : sig
   val value : t -> Ptime.t
 end
 
+module SendCount : sig
+  include Pool_common.Model.IntegerSig
+
+  val init : t
+  val of_int : int -> t
+  val increment : t -> t
+end
+
 type t =
   { id : Pool_common.Id.t
   ; contact : Contact.t
   ; resent_at : ResentAt.t option
+  ; send_count : SendCount.t
   ; created_at : Ptime.t
   ; updated_at : Ptime.t
   }
@@ -34,7 +43,8 @@ val email_experiment_elements : Experiment.t -> (string * string) list
 
 type create =
   { experiment : Experiment.t
-  ; contact : Contact.t
+  ; mailing : Mailing.t option
+  ; contacts : Contact.t list
   }
 
 val equal_create : create -> create -> bool
@@ -42,8 +52,8 @@ val pp_create : Format.formatter -> create -> unit
 val show_create : create -> string
 
 type event =
-  | Created of Contact.t list * Experiment.t
-  | Resent of t
+  | Created of create
+  | Resent of (t * Mailing.Id.t option)
 
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
@@ -76,6 +86,12 @@ val find_multiple_by_experiment_and_contacts
   -> Pool_common.Id.t list
   -> Experiment.t
   -> Pool_common.Id.t list Lwt.t
+
+val find_by_contact_and_experiment_opt
+  :  Pool_database.Label.t
+  -> Experiment.Id.t
+  -> Contact.Id.t
+  -> (t option, Pool_common.Message.error) result Lwt.t
 
 val searchable_by : Query.Column.t list
 val sortable_by : Query.Column.t list

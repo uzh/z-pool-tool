@@ -366,6 +366,9 @@ Wenn Sie die Erinnerungen jetzt manuell auslösen werden über den gewählten Na
     "Ist diese Option aktiviert, können sich Kontakte weder anmelden noch auf \
      die Warteliste setzen. Das Experiment ist für die Kontakte nicht \
      ersichtlich."
+  | ResetInvitations ->
+    "Einladungen zurücksetzen, alle bisherigen Einladungen werden für \
+     zukünftige Versande ignoriert."
   | RoleIntro (singular, plural) ->
     Format.asprintf
       "Wenn kein %s angegeben wird, gilt die Rolle für alle %s."
@@ -500,6 +503,13 @@ let confirmable_to_string confirmable =
    | ReactivateAccount -> "den Account", "reaktivieren", None
    | RemoveRule -> "die Regel", "löschen", None
    | RemoveTag -> "den Tag", "entfernen", None
+   | ResetInvitations ->
+     ( "die Einladungen"
+     , "zurücksetzen"
+     , Some
+         "Anschliessend werden alle bisherigen Einladungen bis zum jetztigen \
+          Zeitpunkt ignoriert, heisst bereits zuvor Eingeladene Kontakte \
+          erhalten erneut eine Einladung." )
    | RevokeRole -> "die Rolle", "entfernen", None
    | StopMailing -> "den Versand", "stoppen", None)
   |> fun (obj, action, additive) ->

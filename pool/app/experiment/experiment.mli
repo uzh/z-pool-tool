@@ -52,6 +52,12 @@ module ShowExternalDataIdLinks : sig
   include Pool_common.Model.BooleanSig
 end
 
+module InvitationResetAt : sig
+  include Pool_common.Model.PtimeSig
+
+  val of_ptime : Ptime.t -> t
+end
+
 type t =
   { id : Id.t
   ; title : Title.t
@@ -71,6 +77,7 @@ type t =
   ; email_session_reminder_lead_time : Pool_common.Reminder.LeadTime.t option
   ; text_message_session_reminder_lead_time :
       Pool_common.Reminder.LeadTime.t option
+  ; invitation_reset_at : InvitationResetAt.t option
   ; created_at : Ptime.t
   ; updated_at : Ptime.t
   }
@@ -81,21 +88,23 @@ val show : t -> string
 
 val create
   :  ?id:Id.t
+  -> ?contact_person_id:Admin.Id.t
+  -> ?cost_center:CostCenter.t
+  -> ?description:Description.t
+  -> ?email_session_reminder_lead_time:Pool_common.Reminder.LeadTime.t
+  -> ?experiment_type:Pool_common.ExperimentType.t
+  -> ?filter:Filter.t
+  -> ?invitation_reset_at:Ptime.t
+  -> ?organisational_unit:Organisational_unit.t
+  -> ?smtp_auth_id:Email.SmtpAuth.Id.t
+  -> ?text_message_session_reminder_lead_time:Pool_common.Reminder.LeadTime.t
   -> Title.t
   -> PublicTitle.t
-  -> Description.t option
-  -> CostCenter.t option
-  -> Organisational_unit.t option
-  -> Admin.Id.t option
-  -> Email.SmtpAuth.Id.t option
   -> DirectRegistrationDisabled.t
   -> RegistrationDisabled.t
   -> AllowUninvitedSignup.t
   -> ExternalDataRequired.t
   -> ShowExternalDataIdLinks.t
-  -> Pool_common.ExperimentType.t option
-  -> Pool_common.Reminder.LeadTime.t option
-  -> Pool_common.Reminder.LeadTime.t option
   -> (t, Pool_common.Message.error) result
 
 type create =
@@ -157,6 +166,7 @@ end
 type event =
   | Created of t
   | Updated of t
+  | ResetInvitations of t
   | Deleted of Id.t
 
 val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
@@ -165,6 +175,7 @@ val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
 val created : t -> event
 val updated : t -> event
+val resetinvitations : t -> event
 val deleted : Pool_common.Id.t -> event
 val boolean_fields : Pool_common.Message.Field.t list
 
@@ -315,6 +326,12 @@ module Guard : sig
     val index : Guard.ValidationSet.t
     val create : Guard.ValidationSet.t
     val read : ?model:Role.Target.t -> Id.t -> Guard.ValidationSet.t
+
+    val update_permission_on_target
+      :  ?model:Role.Target.t
+      -> Id.t
+      -> Guard.PermissionOnTarget.t
+
     val update : ?model:Role.Target.t -> Id.t -> Guard.ValidationSet.t
     val delete : ?model:Role.Target.t -> Id.t -> Guard.ValidationSet.t
   end

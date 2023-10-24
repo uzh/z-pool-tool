@@ -83,8 +83,8 @@ type t =
   ; language_version : Pool_common.Version.t
   ; experiment_type_preference_version : Pool_common.Version.t
   ; import_pending : Pool_user.ImportPending.t
-  ; created_at : Ptime.t
-  ; updated_at : Ptime.t
+  ; created_at : Pool_common.CreatedAt.t
+  ; updated_at : Pool_common.UpdatedAt.t
   }
 
 val profile_completion_cookie : string
@@ -253,7 +253,7 @@ module Repo : sig
   end
 
   module Sql : sig
-    val find_request_sql : string -> string
+    val find_request_sql : ?joins:string list -> string -> string
 
     val select_imported_contacts_sql
       :  import_columns:string

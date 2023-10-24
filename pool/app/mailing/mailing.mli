@@ -138,7 +138,7 @@ module Distribution : sig
 
   val of_urlencoded_list
     :  string list
-    -> (string, Pool_common.Message.error) result
+    -> (string option, Pool_common.Message.error) result
 end
 
 type t =
@@ -204,6 +204,14 @@ val find_by_experiment
 
 val find_overlaps : Pool_database.Label.t -> t -> t list Lwt.t
 val find_current : Pool_database.Label.t -> t list Lwt.t
+
+module Repo : sig
+  module Id : sig
+    type t = Id.t
+
+    val t : t Caqti_type.t
+  end
+end
 
 module Guard : sig
   module Target : sig

@@ -2,31 +2,30 @@ open Entity
 
 type create =
   { experiment : Experiment.t
-  ; contact : Contact.t
+  ; mailing : Mailing.t option
+  ; contacts : Contact.t list
   }
 [@@deriving eq, show]
 
 type event =
-  | Created of Contact.t list * Experiment.t
-  | Resent of t
+  | Created of create
+  | Resent of (t * Mailing.Id.t option)
 [@@deriving eq, show]
 
-let handle_event pool event =
-  let open Utils.Lwt_result.Infix in
-  match event with
-  | Created (contacts, _) when CCList.is_empty contacts -> Lwt.return_unit
-  | Created (contacts, experiment) ->
+let handle_event pool = function
+  | Created { contacts; _ } when CCList.is_empty contacts -> Lwt.return_unit
+  | Created { contacts; experiment; mailing } ->
     let contacts =
       CCList.map (fun contact -> Pool_common.Id.create (), contact) contacts
     in
-    let%lwt () = Repo.bulk_insert pool contacts experiment.Experiment.id in
-    Lwt_list.iter_s
-      (fun (id, contact) ->
-        Entity.create ~id contact
-        |> Entity_guard.Target.to_authorizable ~ctx:(Pool_database.to_ctx pool)
-        ||> Pool_common.Utils.get_or_failwith
-        ||> fun (_ : Guard.Target.t) -> ())
-      contacts
-  | Resent invitation ->
-    Repo.update pool { invitation with resent_at = Some (ResentAt.create ()) }
+    let mailing_id = CCOption.map (fun { Mailing.id; _ } -> id) mailing in
+    Repo.bulk_insert ?mailing_id pool contacts experiment.Experiment.id
+  | Resent (invitation, mailing_id) ->
+    Repo.resend
+      ?mailing_id
+      pool
+      { invitation with
+        resent_at = Some (ResentAt.create ())
+      ; send_count = SendCount.increment invitation.send_count
+      }
 ;;

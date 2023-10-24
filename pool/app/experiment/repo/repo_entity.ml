@@ -67,6 +67,12 @@ module ShowExternalDataIdLinks = struct
   ;;
 end
 
+module InvitationResetAt = struct
+  include InvitationResetAt
+
+  let t = Common.make_caqti_type Caqti_type.ptime create value
+end
+
 let t =
   let encode (m : t) =
     Ok
@@ -87,8 +93,9 @@ let t =
                                 , ( m.experiment_type
                                   , ( m.email_session_reminder_lead_time
                                     , ( m.text_message_session_reminder_lead_time
-                                      , (m.created_at, m.updated_at) ) ) ) ) )
-                            ) ) ) ) ) ) ) ) ) ) ) )
+                                      , ( m.invitation_reset_at
+                                        , (m.created_at, m.updated_at) ) ) ) )
+                                ) ) ) ) ) ) ) ) ) ) ) ) ) )
   in
   let decode
     ( id
@@ -108,8 +115,9 @@ let t =
                               , ( experiment_type
                                 , ( email_session_reminder_lead_time
                                   , ( text_message_session_reminder_lead_time
-                                    , (created_at, updated_at) ) ) ) ) ) ) ) )
-                    ) ) ) ) ) ) ) ) )
+                                    , ( invitation_reset_at
+                                      , (created_at, updated_at) ) ) ) ) ) ) )
+                        ) ) ) ) ) ) ) ) ) ) )
     =
     let open CCResult in
     Ok
@@ -130,10 +138,12 @@ let t =
       ; experiment_type
       ; email_session_reminder_lead_time
       ; text_message_session_reminder_lead_time
+      ; invitation_reset_at
       ; created_at
       ; updated_at
       }
   in
+  let open Common in
   Caqti_type.(
     custom
       ~encode
@@ -167,24 +177,20 @@ let t =
                                              (tup2
                                                 ShowExternalDataIdLinks.t
                                                 (tup2
-                                                   (option
-                                                      Pool_common.Repo
-                                                      .ExperimentType
-                                                      .t)
+                                                   (option ExperimentType.t)
                                                    (tup2
                                                       (option
-                                                         Common.Reminder
-                                                         .LeadTime
-                                                         .t)
+                                                         Reminder.LeadTime.t)
                                                       (tup2
                                                          (option
-                                                            Pool_common.Repo
-                                                            .Reminder
-                                                            .LeadTime
-                                                            .t)
+                                                            Reminder.LeadTime.t)
                                                          (tup2
-                                                            Common.CreatedAt.t
-                                                            Common.UpdatedAt.t)))))))))))))))))))
+                                                            (option
+                                                               InvitationResetAt
+                                                               .t)
+                                                            (tup2
+                                                               CreatedAt.t
+                                                               UpdatedAt.t))))))))))))))))))))
 ;;
 
 module Write = struct
@@ -212,11 +218,13 @@ module Write = struct
                                 , ( m.show_external_data_id_links
                                   , ( m.experiment_type
                                     , ( m.email_session_reminder_lead_time
-                                      , m
-                                          .text_message_session_reminder_lead_time
-                                      ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) )
+                                      , ( m
+                                            .text_message_session_reminder_lead_time
+                                        , m.invitation_reset_at ) ) ) ) ) ) ) )
+                        ) ) ) ) ) ) ) ) )
     in
     let decode _ = failwith "Write only model" in
+    let open Common in
     Caqti_type.(
       custom
         ~encode
@@ -250,21 +258,17 @@ module Write = struct
                                                (tup2
                                                   ShowExternalDataIdLinks.t
                                                   (tup2
-                                                     (option
-                                                        Pool_common.Repo
-                                                        .ExperimentType
-                                                        .t)
+                                                     (option ExperimentType.t)
                                                      (tup2
                                                         (option
-                                                           Pool_common.Repo
-                                                           .Reminder
-                                                           .LeadTime
-                                                           .t)
-                                                        (option
-                                                           Pool_common.Repo
-                                                           .Reminder
-                                                           .LeadTime
-                                                           .t))))))))))))))))))
+                                                           Reminder.LeadTime.t)
+                                                        (tup2
+                                                           (option
+                                                              Reminder.LeadTime
+                                                              .t)
+                                                           (option
+                                                              InvitationResetAt
+                                                              .t)))))))))))))))))))
   ;;
 end
 

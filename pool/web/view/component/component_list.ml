@@ -166,6 +166,7 @@ let sort language sortable_by query =
 ;;
 
 let search_and_sort language query sortable_by searchable_by =
+  let open Pool_common in
   form
     ~a:[ a_method `Get; a_action "?"; a_class [ "flexcolumn"; "flex-gap" ] ]
     [ div
@@ -181,13 +182,11 @@ let search_and_sort language query sortable_by searchable_by =
             ~a:[ a_class [ "push"; "flexrow"; "flex-gap"; "align-center" ] ]
             [ a
                 ~a:[ a_href "?" ]
-                [ txt
-                    Pool_common.(Utils.control_to_string language Message.Reset)
-                ]
+                [ txt (Utils.control_to_string language Message.(Reset None)) ]
             ; Component_input.submit_element
                 ~classnames:[ "small" ]
                 language
-                Pool_common.Message.Apply
+                Message.Apply
                 ()
             ]
         ]

@@ -2,7 +2,7 @@ module WaitingListCommand = Cqrs_command.Waiting_list_command
 module Field = Pool_common.Message.Field
 module Model = Test_utils.Model
 
-let get_exn = Test_utils.get_or_failwith_pool_error
+let get_exn = Test_utils.get_or_failwith
 let database_label = Test_utils.Data.database_label
 
 let create () =

@@ -735,7 +735,7 @@ let reset_form_button language =
       ; a_user_data "reset-form" ""
       ]
     [ Icon.(to_html RefreshOutline)
-    ; txt Pool_common.(Utils.control_to_string language Message.Reset)
+    ; txt Pool_common.(Utils.control_to_string language Message.(Reset None))
     ]
 ;;
 

@@ -268,14 +268,31 @@ module Sql = struct
     fnc
   ;;
 
-  let find_filtered_request_sql ?limit where_fragment =
-    let base = Contact.Repo.Sql.find_request_sql where_fragment in
-    match limit with
-    | None -> base
-    | Some limit -> Format.asprintf "%s\nLIMIT %i" base limit
+  let prepare_use_case_joins dyn =
+    let open Dynparam in
+    let invitation_join =
+      {|LEFT JOIN pool_invitations ON pool_invitations.contact_uuid = pool_contacts.user_uuid
+        AND pool_invitations.experiment_uuid = UNHEX(REPLACE(?, '-', ''))|}
+    in
+    function
+    | MatchesFilter -> dyn, []
+    | Matcher experiment_id ->
+      let id = experiment_id |> Pool_common.Id.value in
+      dyn |> prefix Caqti_type.string id, [ invitation_join ]
+    | MatcherReset (experiment_id, _) ->
+      let id = experiment_id |> Pool_common.Id.value in
+      dyn |> prefix Caqti_type.string id, [ invitation_join ]
   ;;
 
-  let find_filtered_contacts pool ?order_by ?limit experiment_id filter =
+  let find_filtered_request_sql ?limit use_case dyn where_fragment =
+    let dyn, joins = prepare_use_case_joins dyn use_case in
+    let base = Contact.Repo.Sql.find_request_sql ~joins where_fragment in
+    match limit with
+    | None -> dyn, base
+    | Some limit -> dyn, Format.asprintf "%s\nLIMIT %i" base limit
+  ;;
+
+  let find_filtered_contacts pool ?order_by ?limit use_case filter =
     let filter = filter |> CCOption.map (fun f -> f.Entity.query) in
     let open Utils.Lwt_result.Infix in
     let create_temp_table = create_temporary_participation_table filter in
@@ -284,22 +301,25 @@ module Sql = struct
       | None -> Lwt.return []
       | Some filter -> find_templates_of_query pool filter
     in
+    let order_by =
+      match use_case with
+      | MatcherReset _ when CCOption.is_none order_by ->
+        Some "ORDER BY pool_invitations.created_at ASC"
+      | MatchesFilter | Matcher _ | MatcherReset _ -> order_by
+    in
     filtered_params
+      use_case
       template_list
       ~group_by:"pool_contacts.user_uuid"
       ?order_by
-      experiment_id
       filter
     |> Lwt_result.lift
     >>= fun (dyn, sql) ->
-    let (Dynparam.Pack (pt, pv)) = dyn in
     let open Caqti_request.Infix in
-    let request =
-      sql
-      |> where_prefix
-      |> find_filtered_request_sql ?limit
-      |> pt ->* Contact.Repo.Entity.t
+    let Dynparam.Pack (pt, pv), prepared_request =
+      sql |> where_prefix |> find_filtered_request_sql ?limit use_case dyn
     in
+    let request = prepared_request |> pt ->* Contact.Repo.Entity.t in
     let query connection =
       let (module Connection : Caqti_lwt.CONNECTION) = connection in
       Connection.collect_list request pv
@@ -312,12 +332,7 @@ module Sql = struct
     ||> CCResult.return
   ;;
 
-  let contact_matches_filter
-    ?(default = false)
-    pool
-    experiment_id
-    query
-    (contact : Contact.t)
+  let contact_matches_filter ?(default = false) pool query (contact : Contact.t)
     =
     let open Utils.Lwt_result.Infix in
     let tags = Pool_database.Logger.Tags.create pool in
@@ -336,7 +351,7 @@ module Sql = struct
     in
     let%lwt template_list = find_templates_of_query pool query in
     let create_temp_table = create_temporary_participation_table (Some query) in
-    filtered_params ~allow_invited:true template_list experiment_id (Some query)
+    filtered_params MatchesFilter template_list (Some query)
     |> CCResult.map_err
          (Pool_common.Utils.with_log_error ~src ~level:Logs.Warning ~tags)
     |> CCResult.get_or
@@ -360,7 +375,9 @@ module Sql = struct
     ||> CCOption.map_or ~default (CCInt.equal 1)
   ;;
 
-  let count_filtered_request_sql where_fragment =
+  let count_filtered_request_sql use_case dyn where_fragment =
+    let dyn, joins = prepare_use_case_joins dyn use_case in
+    let joins = CCString.concat "\n" joins in
     let select =
       {sql|
         SELECT COUNT(*)
@@ -369,7 +386,7 @@ module Sql = struct
           ON pool_contacts.user_uuid = user_users.uuid
       |sql}
     in
-    Format.asprintf "%s\n%s" select where_fragment
+    dyn, Format.asprintf "%s\n%s\n%s" select joins where_fragment
   ;;
 
   let find_experiment_id_opt_request =
@@ -399,7 +416,7 @@ module Sql = struct
       id
   ;;
 
-  let count_filtered_contacts pool experiment_id query =
+  let count_filtered_contacts pool use_case query =
     let open Utils.Lwt_result.Infix in
     let open Caqti_request.Infix in
     let open Dynparam in
@@ -409,13 +426,13 @@ module Sql = struct
       | None -> Lwt.return []
       | Some query -> find_templates_of_query pool query
     in
-    filtered_params template_list experiment_id query
+    filtered_params use_case template_list query
     |> Lwt_result.lift
     >>= fun (dyn, sql) ->
-    let (Pack (pt, pv)) = dyn in
-    let request =
-      sql |> where_prefix |> count_filtered_request_sql |> pt ->! Caqti_type.int
+    let Pack (pt, pv), prepared_request =
+      sql |> where_prefix |> count_filtered_request_sql use_case dyn
     in
+    let request = prepared_request |> pt ->! Caqti_type.int in
     let query connection =
       let (module Connection : Caqti_lwt.CONNECTION) = connection in
       Connection.find_opt request pv

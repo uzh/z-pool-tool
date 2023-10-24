@@ -3,7 +3,7 @@ open Cqrs_command
 open Utils.Lwt_result.Infix
 
 let database_label = Data.database_label
-let get_exn = get_or_failwith_pool_error
+let get_exn = get_or_failwith
 
 let get_contact contact_id =
   contact_id |> Contact.find database_label |> Lwt.map get_exn
@@ -136,11 +136,12 @@ module InviteContact = struct
       Invitation_command.Create.(
         handle
           { experiment
+          ; mailing = None
           ; contacts = [ contact ]
           ; invited_contacts = []
           ; create_message = invitation_mail
           })
-      |> get_or_failwith_pool_error
+      |> get_exn
       |> Pool_event.handle_events database_label
     in
     let%lwt res = get_contact contact_id in
@@ -160,8 +161,7 @@ module AttendAll = struct
   let experiment_id = Experiment.Id.create ()
 
   let experiment () =
-    Experiment.find Test_utils.Data.database_label experiment_id
-    ||> Test_utils.get_or_failwith_pool_error
+    Experiment.find Test_utils.Data.database_label experiment_id ||> get_exn
   ;;
 
   let initialize =
@@ -305,8 +305,7 @@ module DoNotAttend = struct
   let experiment_id = Experiment.Id.create ()
 
   let experiment () =
-    Experiment.find Test_utils.Data.database_label experiment_id
-    ||> Test_utils.get_or_failwith_pool_error
+    Experiment.find Test_utils.Data.database_label experiment_id ||> get_exn
   ;;
 
   let initialize = initialize contact_id experiment_id session_id
@@ -350,8 +349,7 @@ module NoShow = struct
   let experiment_id = Experiment.Id.create ()
 
   let experiment () =
-    Experiment.find Test_utils.Data.database_label experiment_id
-    ||> Test_utils.get_or_failwith_pool_error
+    Experiment.find Test_utils.Data.database_label experiment_id ||> get_exn
   ;;
 
   let initialize = initialize contact_id experiment_id session_id
@@ -620,7 +618,7 @@ module UpdateAssignments = struct
           ~exclude_assignments:assignments
           experiment_id
           contact_id
-        ||> get_or_failwith_pool_error)
+        ||> get_exn)
     in
     let handle_update assignment urlencoded =
       let%lwt participated_in_other_sessions =
@@ -630,7 +628,7 @@ module UpdateAssignments = struct
       urlencoded
       |> decode
       >>= handle experiment session assignment participated_in_other_sessions
-      |> get_or_failwith_pool_error
+      |> get_exn
       |> Pool_event.handle_events database_label
     in
     let%lwt () =
@@ -699,7 +697,7 @@ module UpdateAssignments = struct
           ~exclude_assignments:assignments
           experiment_id
           contact_id
-        ||> get_or_failwith_pool_error)
+        ||> get_exn)
     in
     let handle_update assignment urlencoded =
       let%lwt participated_in_other_sessions =
@@ -713,7 +711,7 @@ module UpdateAssignments = struct
             followup_session
             assignment
             participated_in_other_sessions
-      |> get_or_failwith_pool_error
+      |> get_exn
       |> Pool_event.handle_events database_label
     in
     let%lwt assignment =

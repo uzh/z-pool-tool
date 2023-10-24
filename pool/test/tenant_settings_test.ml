@@ -23,7 +23,7 @@ let check_contact_email _ () =
   let%lwt contact = Settings.find_contact_email database_label in
   let expected =
     Settings.ContactEmail.create "pool@econ.uzh.ch"
-    |> Test_utils.get_or_failwith_pool_error
+    |> Test_utils.get_or_failwith
   in
   Alcotest.(
     check Testable.contact_email "contact email address" contact expected)
@@ -41,8 +41,7 @@ let check_email_suffix _ () =
 let check_inactive_user_disable_after _ () =
   let%lwt disable = Settings.find_inactive_user_disable_after database_label in
   let expected =
-    Settings.InactiveUser.DisableAfter.create "5"
-    |> Test_utils.get_or_failwith_pool_error
+    Settings.InactiveUser.DisableAfter.create "5" |> Test_utils.get_or_failwith
   in
   Alcotest.(
     check
@@ -56,8 +55,7 @@ let check_inactive_user_disable_after _ () =
 let check_inactive_user_warning _ () =
   let%lwt warning = Settings.find_inactive_user_warning database_label in
   let expected =
-    Settings.InactiveUser.Warning.create "7"
-    |> Test_utils.get_or_failwith_pool_error
+    Settings.InactiveUser.Warning.create "7" |> Test_utils.get_or_failwith
   in
   Alcotest.(
     check

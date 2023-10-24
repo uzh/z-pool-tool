@@ -28,6 +28,20 @@ let index req =
   result |> HttpUtils.extract_happy_path ~src req
 ;;
 
+let urlencoded_with_distribution urlencoded req =
+  let open Utils.Lwt_result.Infix in
+  Sihl.Web.Request.urlencoded_list Field.(array_key Distribution) req
+  ||> Mailing.Distribution.of_urlencoded_list
+  >|+ function
+  | None -> urlencoded
+  | Some distribution ->
+    CCList.Assoc.set
+      ~eq:( = )
+      Field.(show Distribution)
+      [ distribution ]
+      urlencoded
+;;
+
 let new_form req =
   let open Utils.Lwt_result.Infix in
   let id = experiment_id req in
@@ -67,17 +81,7 @@ let create req =
     @@
     let tags = Pool_context.Logger.Tags.req req in
     let* experiment = Experiment.find database_label experiment_id in
-    let* distribution =
-      Sihl.Web.Request.urlencoded_list Field.(array_key Distribution) req
-      ||> Mailing.Distribution.of_urlencoded_list
-    in
-    let urlencoded =
-      CCList.Assoc.set
-        ~eq:( = )
-        Field.(show Distribution)
-        [ distribution ]
-        urlencoded
-    in
+    let* urlencoded = urlencoded_with_distribution urlencoded req in
     let events =
       let open CCResult in
       let open Cqrs_command.Mailing_command.Create in
@@ -154,17 +158,7 @@ let update req =
     @@
     let tags = Pool_context.Logger.Tags.req req in
     let* mailing = Mailing.find database_label id in
-    let* distribution =
-      Sihl.Web.Request.urlencoded_list Field.(array_key Distribution) req
-      ||> Mailing.Distribution.of_urlencoded_list
-    in
-    let urlencoded =
-      CCList.Assoc.set
-        ~eq:( = )
-        Field.(show Distribution)
-        [ distribution ]
-        urlencoded
-    in
+    let* urlencoded = urlencoded_with_distribution urlencoded req in
     let events =
       let open CCResult in
       let open Cqrs_command.Mailing_command.Update in

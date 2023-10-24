@@ -60,14 +60,14 @@ end
 module CreatedAt = struct
   include Model.Ptime
 
-  let equal c1 c2 = if Sihl.Configuration.is_test () then true else equal c1 c2
+  let equal a b = Ptime.equal a b || Sihl.Configuration.is_test ()
   let create = Ptime_clock.now
 end
 
 module UpdatedAt = struct
   include Model.Ptime
 
-  let equal c1 c2 = if Sihl.Configuration.is_test () then true else equal c1 c2
+  let equal a b = Ptime.equal a b || Sihl.Configuration.is_test ()
   let create = Ptime_clock.now
 end
 

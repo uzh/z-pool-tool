@@ -5,7 +5,7 @@ module Data = struct
   let password = "Password1!"
 end
 
-let get_or_failwith_pool_error = Test_utils.get_or_failwith_pool_error
+let get_exn = Test_utils.get_or_failwith
 
 let create_user_import ?(token = Data.token) user =
   let open User_import in
@@ -17,7 +17,7 @@ let create_user_import ?(token = Data.token) user =
     | Guest -> failwith "Invalid user"
   in
   { user_uuid
-  ; token = Token.create token |> get_or_failwith_pool_error
+  ; token = Token.create token |> get_exn
   ; confirmed_at = None
   ; notified_at = None
   ; reminder_count = ReminderCount.init
@@ -68,9 +68,7 @@ let confirm_as_contact () =
   let expected =
     Ok
       [ Contact.ImportConfirmed
-          ( contact
-          , Pool_user.Password.create Data.password
-            |> get_or_failwith_pool_error )
+          (contact, Pool_user.Password.create Data.password |> get_exn)
         |> Pool_event.contact
       ; User_import.Confirmed user_import |> Pool_event.user_import
       ]
@@ -102,9 +100,7 @@ let confirm_as_admin () =
   let expected =
     Ok
       [ Admin.ImportConfirmed
-          ( admin
-          , Pool_user.Password.create Data.password
-            |> get_or_failwith_pool_error )
+          (admin, Pool_user.Password.create Data.password |> get_exn)
         |> Pool_event.admin
       ; User_import.Confirmed user_import |> Pool_event.user_import
       ]
@@ -131,12 +127,12 @@ let confirm_as_contact_integration _ () =
     urlencoded
     |> decode
     >>= handle (user_import, user)
-    |> get_or_failwith_pool_error
+    |> get_exn
     |> Pool_event.handle_events Test_utils.Data.database_label
   in
   let%lwt contact =
     Contact.find Test_utils.Data.database_label (Contact.id contact)
-    |> Lwt.map get_or_failwith_pool_error
+    |> Lwt.map get_exn
   in
   let () =
     Alcotest.(

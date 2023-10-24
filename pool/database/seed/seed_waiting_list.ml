@@ -18,18 +18,16 @@ let waiting_list pool =
   let%lwt waiting_list_events, invitation_events =
     let open Utils.Lwt_result.Infix in
     Lwt_list.fold_left_s
-      (fun (waiting_lists, invitations) (experiment : Experiment.t) ->
+      (fun (waiting_lists, invitations)
+        ({ Experiment.id; direct_registration_disabled; filter; _ } as
+         experiment :
+          Experiment.t) ->
         let open Experiment in
-        match
-          experiment.direct_registration_disabled
-          |> DirectRegistrationDisabled.value
-        with
+        let common_id = Id.to_common id in
+        match DirectRegistrationDisabled.value direct_registration_disabled with
         | true ->
           let%lwt filtered_contacts =
-            Filter.find_filtered_contacts
-              pool
-              (experiment.id |> Id.to_common)
-              experiment.filter
+            Filter.(find_filtered_contacts pool (Matcher common_id) filter)
             ||> CCResult.get_exn
           in
           let contacts = take_n 10 filtered_contacts in
@@ -41,7 +39,9 @@ let waiting_list pool =
             @ waiting_lists
           in
           let invitations =
-            Invitation.Created (contacts, experiment) :: invitations
+            Invitation.Created
+              { Invitation.contacts; mailing = None; experiment }
+            :: invitations
           in
           (waiting_lists, invitations) |> Lwt.return
         | false -> Lwt.return (waiting_lists, invitations))

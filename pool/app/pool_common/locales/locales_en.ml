@@ -34,6 +34,7 @@ let rec field_to_string =
   | Contacts -> "contacts"
   | Context -> "Context"
   | CostCenter -> "Cost center"
+  | Count -> "count"
   | CreatedAt -> "created at"
   | CurrentPassword -> "current password"
   | CustomField -> "field"
@@ -104,6 +105,7 @@ let rec field_to_string =
   | Interval -> "interval"
   | Invitation -> "invitation"
   | InvitationCount -> "no. invitations"
+  | InvitationResetAt -> "invitation reset at"
   | Invitations -> "invitations"
   | InvitationSubject -> "invitation subject"
   | InvitationsSent -> "invitations sent"
@@ -197,6 +199,7 @@ let rec field_to_string =
   | Session -> "session"
   | Sessions -> "sessions"
   | Setting -> "setting"
+  | Settings -> "settings"
   | ShowUpCount -> "show ups"
   | ShowExteralDataIdLinks -> "show links to external data identifiers"
   | SignedUpAt -> "signed up at"
@@ -299,6 +302,9 @@ let success_to_string : success -> string = function
   | RemindersResent -> "The reminders have been resent."
   | Rescheduled field ->
     field_message "" (field_to_string field) "was successfully rescheduled."
+  | ResetInvitations ->
+    "Reset Invitations. In upcomming mailings, previous invitations will be \
+     considered to reinvite."
   | RoleAssigned -> "Role was assigned."
   | RoleUnassigned -> "Role was unassigned."
   | SentList field ->
@@ -584,7 +590,7 @@ let control_to_string = function
   | Remove field -> format_submit "remove" field
   | Reschedule field -> format_submit "reschedule" field
   | Resend field -> format_submit "resend" field
-  | Reset -> "reset"
+  | Reset field -> format_submit "reset" field
   | ResetForm -> "reset form"
   | ResetPlainText ->
     Format.asprintf

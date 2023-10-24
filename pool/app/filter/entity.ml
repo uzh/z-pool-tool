@@ -685,8 +685,8 @@ type t =
   { id : Pool_common.Id.t
   ; query : query
   ; title : Title.t option
-  ; created_at : Ptime.t
-  ; updated_at : Ptime.t
+  ; created_at : Pool_common.CreatedAt.t
+  ; updated_at : Pool_common.UpdatedAt.t
   }
 [@@deriving eq, show]
 
@@ -727,3 +727,9 @@ let rec contains_template = function
   | Pred _ -> false
   | Template _ -> true
 ;;
+
+type base_condition =
+  | MatchesFilter
+  | Matcher of Pool_common.Id.t
+  | MatcherReset of Pool_common.Id.t * Ptime.t
+[@@deriving eq, show]

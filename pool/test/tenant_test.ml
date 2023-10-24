@@ -5,7 +5,7 @@ module HttpUtils = Http_utils
 module Common = Pool_common
 module SmtpAuth = Email.SmtpAuth
 
-let fail_with = Test_utils.get_or_failwith_pool_error
+let fail_with = Test_utils.get_or_failwith
 
 module Data = struct
   open Database.SeedAssets
@@ -35,18 +35,8 @@ module Data = struct
     create label url |> fail_with
   ;;
 
-  let styles =
-    Asset.styles
-    |> Pool_tenant.Styles.Write.create
-    |> Test_utils.get_or_failwith_pool_error
-  ;;
-
-  let icon =
-    Asset.icon
-    |> Pool_tenant.Icon.Write.create
-    |> Test_utils.get_or_failwith_pool_error
-  ;;
-
+  let styles = Asset.styles |> Pool_tenant.Styles.Write.create |> fail_with
+  let icon = Asset.icon |> Pool_tenant.Icon.Write.create |> fail_with
   let tenant_logo = Asset.tenant_logo
   let partner_logo = Asset.partner_logo
   let default_language = "EN"
@@ -470,7 +460,7 @@ let[@warning "-4"] update_tenant_details () =
       let logo_event =
         (* read logo event, as it's not value of update in this test *)
         events
-        |> Test_utils.get_or_failwith_pool_error
+        |> fail_with
         |> function
         | [ _
           ; (Pool_event.PoolTenant (Pool_tenant.LogosUploaded [ _; _ ]) as logos)
@@ -505,7 +495,7 @@ let update_tenant_database () =
         |> decode_database
         >>= (fun { database_url; database_label } ->
               Pool_database.create database_label database_url)
-        |> Test_utils.get_or_failwith_pool_error
+        |> fail_with
       in
       UpdateDatabase.handle ~system_event_id tenant database
     in
