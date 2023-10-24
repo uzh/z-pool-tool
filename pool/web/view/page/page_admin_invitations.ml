@@ -168,7 +168,12 @@ module Partials = struct
       [ h3
           [ txt
               Pool_common.(
-                Utils.text_to_string language I18n.InvitationsStatistic)
+                Utils.text_to_string language I18n.InvitationsStatistics)
+          ]
+      ; p
+          [ txt
+              Pool_common.(
+                Utils.text_to_string language I18n.InvitationsStatisticsIntro)
           ]
       ; (sent_by_count
          |> CCList.map (fun (key, value) ->

@@ -35,7 +35,8 @@ type t =
   | ImportConfirmationTitle
   | ImportPendingNote
   | ImportPendingTitle
-  | InvitationsStatistic
+  | InvitationsStatistics
+  | InvitationsStatisticsIntro
   | LocationDetails
   | LocationFileNew
   | LocationListTitle
