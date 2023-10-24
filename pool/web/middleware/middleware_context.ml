@@ -65,19 +65,24 @@ let context () =
       let* database_label = database_label_of_request is_root req in
       let%lwt user = find_user database_label in
       let%lwt query_lang, language, guardian =
-        let to_actor = Admin.id %> Guard.Uuid.actor_of Admin.Id.value in
-        let combine roles = Lwt.return (None, Pool_common.Language.En, roles) in
-        let ctx = Pool_database.to_ctx database_label in
-        match user with
-        | Admin admin ->
-          to_actor admin
-          |> Guard.Persistence.ActorRole.permissions_of_actor ~ctx
-          >|> combine
-        | Contact _ | Guest ->
-          let%lwt query_lang, language =
-            languages_from_request req database_label
-          in
-          Lwt.return (query_lang, language, [])
+        let combine_admin roles =
+          Lwt.return (None, Pool_common.Language.En, roles)
+        in
+        match is_root with
+        | true -> combine_admin []
+        | false ->
+          let to_actor = Admin.id %> Guard.Uuid.actor_of Admin.Id.value in
+          let ctx = Pool_database.to_ctx database_label in
+          (match user with
+           | Admin admin ->
+             to_actor admin
+             |> Guard.Persistence.ActorRole.permissions_of_actor ~ctx
+             >|> combine_admin
+           | Contact _ | Guest ->
+             let%lwt query_lang, language =
+               languages_from_request req database_label
+             in
+             Lwt.return (query_lang, language, []))
       in
       create
         (query_lang, language, database_label, message, csrf, user, guardian)
