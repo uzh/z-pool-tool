@@ -12,3 +12,9 @@ let find_multiple_by_experiment_and_contacts =
 ;;
 
 let find_by_contact_and_experiment_opt = Repo.find_by_contact_and_experiment_opt
+
+module Statistics = struct
+  include Entity.Statistics
+
+  let by_experiment = Repo.Statistics.by_experiment
+end

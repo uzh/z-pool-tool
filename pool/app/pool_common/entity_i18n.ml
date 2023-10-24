@@ -35,6 +35,8 @@ type t =
   | ImportConfirmationTitle
   | ImportPendingNote
   | ImportPendingTitle
+  | InvitationsStatistics
+  | InvitationsStatisticsIntro
   | LocationDetails
   | LocationFileNew
   | LocationListTitle
@@ -192,6 +194,7 @@ type hint =
   | ResendRemindersChannel
   | ResendRemindersWarning
   | ResetInvitations
+  | ResetInvitationsLastReset of Ptime.t
   | RoleIntro of Entity_message.Field.t * Entity_message.Field.t
   | RulesIntro
   | ScheduleEvery of Ptime.Span.t

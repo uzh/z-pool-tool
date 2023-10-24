@@ -1,5 +1,6 @@
 module RepoEntity = Repo_entity
 module Dynparam = Utils.Database.Dynparam
+module Statistics = Repo_statistics
 
 let to_entity = RepoEntity.to_entity
 let of_entity = RepoEntity.of_entity

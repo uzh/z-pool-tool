@@ -71,13 +71,20 @@ let sent_invitations req =
          let open Invitation in
          Query.from_request ~searchable_by ~sortable_by req
        in
+       let%lwt statistics =
+         Invitation.Statistics.by_experiment database_label id
+       in
        let* invitations =
          Invitation.find_by_experiment
            ~query
            database_label
            experiment.Experiment.id
        in
-       Page.Admin.Experiments.sent_invitations context experiment invitations
+       Page.Admin.Experiments.sent_invitations
+         context
+         experiment
+         invitations
+         statistics
        >|> create_layout req context
        >|+ Sihl.Web.Response.of_html
   in
