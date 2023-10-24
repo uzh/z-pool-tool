@@ -91,6 +91,7 @@ let log_request = Logging_helper.log_request_with_ip ~src "Failed login attempt"
 let login req urlencoded database_label =
   let open Utils.Lwt_result.Infix in
   let open Pool_user.FailedLoginAttempt in
+  let is_root = Pool_database.is_root database_label in
   let tags = Pool_context.Logger.Tags.req req in
   let* email, password = login_params urlencoded in
   let handle_login login_attempts =
@@ -136,14 +137,23 @@ let login req urlencoded database_label =
           blocked_until
     in
     let login () =
-      User_import.find_pending_by_email_opt database_label email
-      >|> (function
-             | Some _ -> Lwt.return_error `Incorrect_password
-             | None ->
-               Service.User.login
-                 ~ctx:(Pool_database.to_ctx database_label)
-                 (EmailAddress.value email)
-                 ~password)
+      let create_session () =
+        Service.User.login
+          ~ctx:(Pool_database.to_ctx database_label)
+          (EmailAddress.value email)
+          ~password
+      in
+      (match is_root with
+       | true -> create_session ()
+       | false ->
+         User_import.find_pending_by_email_opt database_label email
+         >|> (function
+          | Some _ -> Lwt.return_error `Incorrect_password
+          | None ->
+            Service.User.login
+              ~ctx:(Pool_database.to_ctx database_label)
+              (EmailAddress.value email)
+              ~password))
       >|> handle_result
     in
     suspension_error login blocked_until
