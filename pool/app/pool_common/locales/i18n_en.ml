@@ -443,6 +443,12 @@ Only sessions with open spots can be selected.|}
   | TemplateTextElementsHint ->
     "The following text elements can be used inside the templates. Click on \
      the labels to copy them to the clipboard."
+  | TenantDatabaseLabel ->
+    "A label that is an identifier for the tenant, e.g. 'econ-uzh'. The label \
+     must be unique."
+  | TenantDatabaseUrl ->
+    "The database URL, according to the following scheme: \
+     mariadb://<user>:<pw>@<host>:<port>/<database>"
   | TimeSpanPickerHint -> "Time duration in minutes"
   | WaitingListPhoneMissingContact ->
     "You have not entered a phone number in your profile yet. Please provide a \

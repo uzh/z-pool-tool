@@ -6,18 +6,27 @@ module Id = Pool_tenant.Id
 module Message = Pool_common.Message
 
 let database_fields tenant language flash_fetcher =
+  let open Pool_common.I18n in
   let fields =
     Message.
-      [ Field.DatabaseUrl, ""
+      [ Field.DatabaseUrl, "", TenantDatabaseUrl
       ; ( Field.DatabaseLabel
         , tenant
           |> CCOption.map_or ~default:"" (fun t ->
-            t.Pool_tenant.database_label |> Pool_database.Label.value) )
+            t.Pool_tenant.database_label |> Pool_database.Label.value)
+        , TenantDatabaseLabel )
       ]
   in
   fields
-  |> CCList.map (fun (field, value) ->
-    input_element language `Text field ~value ~flash_fetcher ~required:true)
+  |> CCList.map (fun (field, value, help) ->
+    input_element
+      language
+      `Text
+      field
+      ~help
+      ~value
+      ~flash_fetcher
+      ~required:true)
   |> div ~a:[ a_class [ "stack" ] ]
 ;;
 
