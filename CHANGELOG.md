@@ -4,13 +4,31 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/pool/tree/HEAD)
 
+## [0.4.8](https://github.com/uzh/pool/tree/0.4.8) - 2023-10-24
+
 ### Added
 
 - notification when a contact changes their email address to an existing one
+- layout for session print view
+- session enrollment through contact detail page
+- autofill experiment public title
+- ability to reset the invitations per experiment
+- optional mapping between mailings and invitations
 
 ### Fixed
 
 - updating contact email address will not update email if the address is already in use
+- order of delete requests
+- use mrmime package to validate email address
+- only the specified tag in search gets handled (not all search results)
+
+### Changed
+
+- required default data is seeded in the migrations
+- consider user language in password reset email
+- queue reports issues only when it finally fails
+- logging of newly registered users
+- resend invitation UI adjustments
 
 ## [0.4.7](https://github.com/uzh/pool/tree/0.4.7) - 2023-09-27
 
@@ -24,7 +42,6 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 - performance update for guardian, rework roles
 - functionality to change the session of an assignment
-- required default data is seeded in the migrations
 
 ## [0.4.6](https://github.com/uzh/pool/tree/0.4.6) - 2023-09-18
 
