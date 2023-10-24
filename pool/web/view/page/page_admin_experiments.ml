@@ -748,31 +748,21 @@ let invitations
   template_list
   query_experiments
   query_tags
-  statistics
   filtered_contacts
   ({ Pool_context.language; _ } as context)
   =
   [ div
       ~a:[ a_class [ "stack" ] ]
-      [ div
-          ~a:[ a_class [ "grid-col-2" ] ]
-          [ div
-              ~a:[ a_class [ "stack-xs"; "inset"; "bg-grey-light"; "border" ] ]
-              [ Page_admin_invitations.Partials.statistics language statistics
-              ; p
-                  [ a
-                      ~a:
-                        [ a_href
-                            (experiment.Experiment.id
-                             |> Experiment.Id.value
-                             |> Format.asprintf
-                                  "admin/experiments/%s/invitations/sent"
-                             |> Sihl.Web.externalize_path)
-                        ]
-                      [ txt (Utils.text_to_string language I18n.SentInvitations)
-                      ]
-                  ]
-              ]
+      [ p
+          [ a
+              ~a:
+                [ a_href
+                    (experiment.Experiment.id
+                     |> Experiment.Id.value
+                     |> Format.asprintf "admin/experiments/%s/invitations/sent"
+                     |> Sihl.Web.externalize_path)
+                ]
+              [ txt (Utils.text_to_string language I18n.SentInvitations) ]
           ]
       ; Page_admin_invitations.Partials.send_invitation
           context
@@ -796,16 +786,26 @@ let sent_invitations
   (Pool_context.{ language; _ } as context)
   experiment
   invitations
+  statistics
   =
   let invitation_table =
     Page_admin_invitations.Partials.list context experiment
   in
-  Component.List.create
-    language
-    invitation_table
-    Invitation.sortable_by
-    Invitation.searchable_by
-    invitations
+  div
+    ~a:[ a_class [ "stack-lg" ] ]
+    [ div
+        ~a:[ a_class [ "grid-col-2" ] ]
+        [ div
+            ~a:[ a_class [ "stack-xs"; "inset"; "bg-grey-light"; "border" ] ]
+            [ Page_admin_invitations.Partials.statistics language statistics ]
+        ]
+    ; Component.List.create
+        language
+        invitation_table
+        Invitation.sortable_by
+        Invitation.searchable_by
+        invitations
+    ]
   |> CCList.return
   |> Layout.Experiment.(
        create

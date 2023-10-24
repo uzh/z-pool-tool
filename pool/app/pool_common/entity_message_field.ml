@@ -38,6 +38,7 @@ type t =
   | ClosedAt [@name "closed_at"] [@printer go "closed_at"]
   | ConfirmedAt [@name "confirmed_at"] [@printer go "confirmed_at"]
   | Contact [@name "contact"] [@printer go "contact"]
+  | ContactCount [@name "contact_count"] [@printer go "contact_count"]
   | ContactEmail [@name "contact_email"] [@printer go "contact_email"]
   | ContactPerson [@name "contact_person"] [@printer go "contact_person"]
   | Contacts [@name "contacts"] [@printer go "contacts"]

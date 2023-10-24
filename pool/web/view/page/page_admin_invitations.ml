@@ -150,7 +150,7 @@ module Partials = struct
       Utils.field_to_string language field |> CCString.capitalize_ascii
     in
     let thead =
-      Message.Field.[ Count; InvitationCount ]
+      Message.Field.[ InvitationCount; ContactCount ]
       |> CCList.map CCFun.(field_to_string %> txt %> CCList.return %> th)
       |> tr
       |> CCList.return

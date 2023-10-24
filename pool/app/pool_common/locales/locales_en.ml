@@ -29,6 +29,7 @@ let rec field_to_string =
   | ClosedAt -> "Closed at"
   | ConfirmedAt -> "Confirmed at"
   | Contact -> "contact"
+  | ContactCount -> "No. contacts"
   | ContactEmail -> "contact email address"
   | ContactPerson -> "contact person"
   | Contacts -> "contacts"
