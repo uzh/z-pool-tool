@@ -73,6 +73,7 @@ let context () =
           to_actor admin
           |> Guard.Persistence.ActorRole.permissions_of_actor ~ctx
           >|> combine
+        | (Guest | Contact _) when is_root -> combine []
         | Contact _ | Guest ->
           let%lwt query_lang, language =
             languages_from_request req database_label
