@@ -450,7 +450,7 @@ end = struct
     in
     let* (_ : unit list) =
       let open CCList in
-      sessions >|= Session.is_not_closed_nor_canceled |> all_ok
+      sessions >|= Session.is_cancelable |> all_ok
     in
     let contact_events =
       assignments

@@ -521,13 +521,6 @@ let not_closed session =
     |> CCResult.fail
 ;;
 
-let is_not_closed_nor_canceled session =
-  let open CCResult in
-  let* () = not_closed session in
-  let* () = not_canceled session in
-  Ok ()
-;;
-
 let not_past session =
   if Ptime.is_later
        (session |> get_session_end |> Start.value)
@@ -564,6 +557,7 @@ let not_closed_or_canceled session =
 ;;
 
 let is_closable = not_closed_or_canceled
+let is_cancelable = not_closed_or_canceled
 let assignments_cancelable = not_closed_or_canceled
 let assignments_session_changeable = not_closed_or_canceled
 
