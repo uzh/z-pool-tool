@@ -196,6 +196,10 @@ let () =
             `Quick
             Assignment_test.cancel_deleted_assignment
         ; test_case
+            "send reminder invalid"
+            `Quick
+            Assignment_test.send_reminder_invalid
+        ; test_case
             "swap session without notification"
             `Quick
             Assignment_test.swap_session_without_notification

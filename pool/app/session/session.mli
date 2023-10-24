@@ -247,6 +247,7 @@ val can_be_assigned_to_existing_assignment
   :  t
   -> (unit, Pool_common.Message.error) result
 
+val is_not_closed_nor_canceled : t -> (unit, Pool_common.Message.error) result
 val reminder_resendable : t -> (unit, Pool_common.Message.error) result
 
 val find

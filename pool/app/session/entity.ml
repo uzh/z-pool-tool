@@ -521,6 +521,13 @@ let not_closed session =
     |> CCResult.fail
 ;;
 
+let is_not_closed_nor_canceled session =
+  let open CCResult in
+  let* () = not_closed session in
+  let* () = not_canceled session in
+  Ok ()
+;;
+
 let not_past session =
   if Ptime.is_later
        (session |> get_session_end |> Start.value)
