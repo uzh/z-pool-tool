@@ -275,7 +275,10 @@ Make sure to show links and URLs as plain text.
     "The selected user's email address will be used as 'reply-to' address for \
      all experiment-related emails."
   | ExperimentMailings ->
-    {|Invitation mailings of this experiment. 'Rate' defines the maximum generated invitations per hour.
+    {|Invitation mailings of this experiment. The limit defines the number of invitations sent by the mailing withing it's duration.
+
+    Check the No. Invitations to see how many of the invitations where already sent/handled.
+    In case there are multiple mailings running at the same time, the server might has to reduce the amount and thus doesn't reach the desired limit.
 
     Started mailings can no longer be deleted.|}
   | ExperimentMailingsRegistrationDisabled ->

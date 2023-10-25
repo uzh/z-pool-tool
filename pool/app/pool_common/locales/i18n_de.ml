@@ -281,7 +281,10 @@ Wird nach diesem Feld gefiltert, wird der überschreibende Wert bevorzugt.
     "Die E-Mail-Adresse des ausgewählten Nutzers wird als 'reply-to' Adresse \
      für alle experimentbezogenen E-Mails verwendet."
   | ExperimentMailings ->
-    {|Einladungsversand dieses Experiments. Die 'Rate' definiert die maximal generierten Einladungen pro Stunde.
+    {|Einladungsversand dieses Experiments.
+
+    Die Limite definiert die Anzahl an Einladungen für dieses Mailing und die Anzahl Einladungen zeigt den momentanen Stand der versendeten/bearbeiteten.
+    Falls mehrere Mailings parallel laufen, kann es sein, dass die Anzahl runtergesetzt wird und dadurch nicht das gewünschte Limit erreicht.
 
     Gestartete Mailings können nicht mehr gelöscht werden.|}
   | ExperimentMailingsRegistrationDisabled ->
