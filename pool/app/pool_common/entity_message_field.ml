@@ -213,7 +213,6 @@ type t =
   | Query [@name "query"] [@printer go "query"]
   | Queue [@name "queue"] [@printer go "queue"]
   | RandomOrder [@name "random_order"] [@printer go "random_order"]
-  | Rate [@name "rate"] [@printer go "rate"]
   | Reason [@name "reason"] [@printer go "reason"]
   | Redirect [@name "redirect"] [@printer go "redirect"]
   | Reminder [@name "reminder"] [@printer go "reminder"]

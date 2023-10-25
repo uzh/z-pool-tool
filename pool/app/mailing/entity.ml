@@ -71,6 +71,19 @@ module Limit = struct
   let schema = schema field create
 end
 
+module InvitationCount = struct
+  include Pool_common.Model.Integer
+
+  let field = Pool_common.Message.Field.InvitationCount
+
+  let create m =
+    if m >= 0 then Ok m else Error Pool_common.Message.(Invalid field)
+  ;;
+
+  let default = 0
+  let schema = schema field create
+end
+
 module Distribution = struct
   let print = Utils.ppx_printer
 

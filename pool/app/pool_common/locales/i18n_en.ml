@@ -310,6 +310,7 @@ Make sure to show links and URLs as plain text.
     "Locations, where experiments are conducted. Every session has to have a \
      location."
   | I18nText str -> str
+  | MailingLimit -> "Max. generated Invitations during the mailing."
   | MissingMessageTemplates (label, languages) ->
     Format.asprintf
       "The '%s' template is missing is the following languages: %s"
@@ -337,7 +338,6 @@ Make sure to show links and URLs as plain text.
     "Attention: one-time action. The contact is promoted to an admin, who is \
      subsequently no longer invited for experiments and can no longer register \
      for such."
-  | Rate -> "Max. generated Invitations per hour"
   | RateDependencyWith ->
     "There are other mailings running at the same time, see its details \
      bellow. In case the sum of all rates reaches the maximum of the server, \

@@ -23,6 +23,12 @@ module Limit = struct
   let t = Pool_common.Repo.make_caqti_type Caqti_type.int create value
 end
 
+module InvitationCount = struct
+  include Entity.InvitationCount
+
+  let t = Pool_common.Repo.make_caqti_type Caqti_type.int create value
+end
+
 module Distribution = struct
   include Entity.Distribution
 

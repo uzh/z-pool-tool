@@ -19,7 +19,9 @@ let index req =
     Utils.Lwt_result.map_error (fun err -> err, experiment_path id)
     @@ let* experiment = Experiment.find database_label id in
        let%lwt mailings =
-         Mailing.find_by_experiment database_label experiment.Experiment.id
+         Mailing.find_by_experiment_with_detail
+           database_label
+           experiment.Experiment.id
        in
        Page.Admin.Mailing.index context experiment mailings
        >|> create_layout req context
@@ -110,17 +112,17 @@ let detail edit req =
   let result ({ Pool_context.database_label; _ } as context) =
     Utils.Lwt_result.map_error (fun err ->
       err, experiment_path ~suffix:"mailings" experiment_id)
-    @@ let* mailing =
-         Mailing.find database_label id
-         >== fun m ->
+    @@ let* mailing, count =
+         Mailing.find_with_detail database_label id
+         >== fun (m, count) ->
          if edit
             && Ptime_clock.now () > Mailing.StartAt.value m.Mailing.start_at
          then Error Pool_common.Message.AlreadyStarted
-         else Ok m
+         else Ok (m, count)
        in
        let* experiment = Experiment.find database_label experiment_id in
        (match edit with
-        | false -> Page.Admin.Mailing.detail context experiment mailing
+        | false -> Page.Admin.Mailing.detail context experiment (mailing, count)
         | true ->
           Page.Admin.Mailing.form
             ~mailing

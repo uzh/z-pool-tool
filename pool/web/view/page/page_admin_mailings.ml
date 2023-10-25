@@ -94,12 +94,11 @@ let distribution_form_field language (field, current_order) =
 ;;
 
 module List = struct
-  let row
-    with_link
-    Pool_context.{ csrf; language; _ }
-    experiment_id
-    (mailing : Mailing.t)
-    =
+  type mailing =
+    | Standard of Mailing.t list
+    | Counted of (Mailing.t * Mailing.InvitationCount.t) list
+
+  let buttons with_link experiment_id mailing language csrf =
     let open Mailing in
     let now = Ptime_clock.now () in
     let button_form target name submit_type confirm_text =
@@ -117,24 +116,47 @@ module List = struct
         ; submit_element ~submit_type language (name None) ()
         ]
     in
-    let buttons =
-      (if with_link
-       then (
-         match
-           ( StartAt.value mailing.start_at < now
-           , now < EndAt.value mailing.end_at )
-         with
-         | true, true ->
-           [ button_form "stop" Message.stop `Primary I18n.StopMailing ]
-         | false, true ->
-           [ button_form "delete" Message.delete `Error I18n.DeleteMailing ]
-         | _ -> [ txt "" ])
-       else [])
-      @ [ detail_mailing_path experiment_id mailing
-          |> link_as_button ~icon:Icon.Eye
-        ]
-      |> div ~a:[ a_class [ "flexrow"; "flex-gap"; "justify-end" ] ]
-    in
+    (if with_link
+     then (
+       match
+         StartAt.value mailing.start_at < now, now < EndAt.value mailing.end_at
+       with
+       | true, true ->
+         [ button_form "stop" Message.stop `Primary I18n.StopMailing ]
+       | false, true ->
+         [ button_form "delete" Message.delete `Error I18n.DeleteMailing ]
+       | _ -> [ txt "" ])
+     else [])
+    @ [ detail_mailing_path experiment_id mailing
+        |> link_as_button ~icon:Icon.Eye
+      ]
+    |> div ~a:[ a_class [ "flexrow"; "flex-gap"; "justify-end" ] ]
+  ;;
+
+  let row_with_count
+    with_link
+    Pool_context.{ csrf; language; _ }
+    experiment_id
+    ((mailing, count) : Mailing.t * Mailing.InvitationCount.t)
+    =
+    let open Mailing in
+    let buttons = buttons with_link experiment_id mailing language csrf in
+    [ mailing.start_at |> StartAt.to_human |> txt
+    ; mailing.end_at |> EndAt.to_human |> txt
+    ; mailing.limit |> Limit.value |> CCInt.to_string |> txt
+    ; count |> InvitationCount.value |> CCInt.to_string |> txt
+    ; buttons
+    ]
+  ;;
+
+  let row
+    with_link
+    Pool_context.{ csrf; language; _ }
+    experiment_id
+    (mailing : Mailing.t)
+    =
+    let open Mailing in
+    let buttons = buttons with_link experiment_id mailing language csrf in
     [ mailing.start_at |> StartAt.to_human |> txt
     ; mailing.end_at |> EndAt.to_human |> txt
     ; mailing.limit |> Limit.value |> CCInt.to_string |> txt
@@ -149,7 +171,11 @@ module List = struct
     mailings
     =
     let base_head =
-      Field.[ Start; End; Rate ] |> Table.fields_to_txt language
+      Table.fields_to_txt language
+      @@
+      match mailings with
+      | Standard _ -> Field.[ Start; End; Limit ]
+      | Counted _ -> Field.[ Start; End; Limit; InvitationCount ]
     in
     let thead =
       let new_btn () =
@@ -162,14 +188,19 @@ module List = struct
       if with_link then base_head @ [ new_btn () ] else base_head
     in
     Table.(horizontal_table `Striped ~align_last_end:true ~thead)
-      (CCList.map (row with_link context experiment_id) mailings)
+    @@
+    match mailings with
+    | Standard mailings ->
+      CCList.map (row with_link context experiment_id) mailings
+    | Counted mailings ->
+      CCList.map (row_with_count with_link context experiment_id) mailings
   ;;
 end
 
 let index context experiment mailings =
   let experiment_id = experiment.Experiment.id in
   let open Pool_common in
-  List.create true context experiment_id mailings
+  List.(create true context experiment_id (Counted mailings))
   |> CCList.return
   |> Layout.Experiment.(
        create
@@ -183,7 +214,7 @@ let index context experiment mailings =
 let detail
   ({ Pool_context.language; _ } as context)
   experiment
-  (mailing : Mailing.t)
+  ((mailing, count) : Mailing.t * Mailing.InvitationCount.t)
   =
   let open Mailing in
   let mailing_overview =
@@ -194,7 +225,9 @@ let detail
            let open Message in
            [ Field.Start, mailing.start_at |> StartAt.to_human
            ; Field.End, mailing.end_at |> EndAt.to_human
-           ; Field.Rate, mailing.limit |> Limit.value |> CCInt.to_string
+           ; Field.Limit, mailing.limit |> Limit.value |> CCInt.to_string
+           ; ( Field.InvitationCount
+             , count |> InvitationCount.value |> CCInt.to_string )
            ; ( Field.Distribution
              , mailing.distribution
                |> CCOption.map_or ~default:"" Mailing.Distribution.show )
@@ -524,10 +557,10 @@ let form
                  ; input_element
                      language
                      `Number
-                     Field.Rate
+                     Field.Limit
                      ~flash_fetcher
                      ~required:true
-                     ~help:I18n.Rate
+                     ~help:I18n.MailingLimit
                      ~value:
                        Mailing.(
                          mailing
@@ -607,7 +640,7 @@ let overlaps
             |> Pool_common.Utils.hint_to_string language
             |> txt
           ]
-      ; List.create false context experiment_id mailings
+      ; List.(create false context experiment_id (Standard mailings))
       ]
   in
   div ~a:[ a_class [ "stack" ] ] (average @ total @ mailings)

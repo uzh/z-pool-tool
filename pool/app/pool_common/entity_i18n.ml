@@ -176,6 +176,7 @@ type hint =
   | LocationFiles
   | Locations
   | LocationSessions
+  | MailingLimit
   | MissingMessageTemplates of string * string list
   | NumberIsDaysHint
   | NumberIsSecondsHint
@@ -186,7 +187,6 @@ type hint =
   | PauseAccountAdmin
   | PauseAccountContact
   | PromoteContact
-  | Rate
   | RateDependencyWith
   | RateDependencyWithout
   | RateNumberPerMinutes of int * float

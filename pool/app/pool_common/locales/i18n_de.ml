@@ -332,6 +332,7 @@ Wenn Sie die Erinnerungen jetzt manuell auslösen werden über den gewählten Na
   | Locations ->
     "Standorte, an denen Experimente durchgeführt werden. Jede Session muss \
      eine Location haben."
+  | MailingLimit -> "Max. generierte Einladungen pro Mailing."
   | NumberIsSecondsHint -> "Anzahl Sekunden"
   | NumberIsDaysHint -> "Anzahl Tage"
   | NumberIsWeeksHint -> "Anzahl Wochen"
@@ -354,7 +355,6 @@ Wenn Sie die Erinnerungen jetzt manuell auslösen werden über den gewählten Na
     "Achtung: einmalige Aktion. Der Kontakt wird zu einem Admin befördert, \
      dieser wird anschliessend nicht mehr für Experimente eingeladen und kann \
      sich nicht mehr für solche registrieren."
-  | Rate -> "Generierte Einladungen pro Stunde"
   | RateDependencyWith ->
     "Zur selben Zeit finden weitere Versande statt, details werden unten \
      angezeigt. Die Summe aller Raten wird automatisch gedrosselt, sobald das \

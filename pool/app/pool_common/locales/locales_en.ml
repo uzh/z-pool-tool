@@ -180,7 +180,6 @@ let rec field_to_string =
   | Query -> "query"
   | Queue -> "queue"
   | RandomOrder -> "select the contacts in random order."
-  | Rate -> "rate limit"
   | Reason -> "reason"
   | Redirect -> "redirect"
   | Reminder -> "reminder"

@@ -182,7 +182,6 @@ let rec field_to_string =
   | Query -> "Query"
   | Queue -> "Warteschlange"
   | RandomOrder -> "Wähle die Kontakte in zufälliger Reihenfolge."
-  | Rate -> "Höchstrate"
   | Reason -> "Grund"
   | Redirect -> "Weiterleitung"
   | RegistrationDisabled -> "Registrierung deaktiviert"

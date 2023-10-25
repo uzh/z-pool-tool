@@ -55,6 +55,31 @@ module Sql = struct
     ||> CCOption.to_result Pool_common.Message.(NotFound Field.Mailing)
   ;;
 
+  let find_with_detail_request =
+    let open Caqti_request.Infix in
+    Format.asprintf
+      {sql|
+        SELECT
+          %s,
+          (SELECT COUNT(invitation_uuid) FROM pool_mailing_invitations WHERE mailing_uuid = pool_mailing.uuid)
+        FROM pool_mailing
+        WHERE
+          pool_mailing.uuid = UNHEX(REPLACE(?, '-', ''))
+        ORDER BY pool_mailing.start
+      |sql}
+      columns_sql
+    |> RepoEntity.(Id.t ->! Caqti_type.tup2 t InvitationCount.t)
+  ;;
+
+  let find_with_detail pool id =
+    let open Utils.Lwt_result.Infix in
+    Utils.Database.find_opt
+      (Pool_database.Label.value pool)
+      find_with_detail_request
+      id
+    ||> CCOption.to_result Pool_common.Message.(NotFound Field.Mailing)
+  ;;
+
   let find_by_experiment_request =
     let open Caqti_request.Infix in
     {sql|
@@ -70,6 +95,29 @@ module Sql = struct
     Utils.Database.collect
       (Pool_database.Label.value pool)
       find_by_experiment_request
+  ;;
+
+  let find_by_experiment_with_detail_request =
+    let open Caqti_request.Infix in
+    Format.asprintf
+      {sql|
+        SELECT
+          %s,
+          (SELECT COUNT(invitation_uuid) FROM pool_mailing_invitations WHERE mailing_uuid = pool_mailing.uuid)
+        FROM pool_mailing
+        WHERE
+          experiment_uuid = UNHEX(REPLACE(?, '-', ''))
+        ORDER BY pool_mailing.start
+      |sql}
+      columns_sql
+    |> Experiment.Repo.Entity.Id.t
+       ->* RepoEntity.(Caqti_type.tup2 t InvitationCount.t)
+  ;;
+
+  let find_by_experiment_with_details pool =
+    Utils.Database.collect
+      (Pool_database.Label.value pool)
+      find_by_experiment_with_detail_request
   ;;
 
   let find_current_request =
@@ -246,9 +294,21 @@ let find pool id =
   Sql.find pool id >|+ to_entity
 ;;
 
+let find_with_detail pool id =
+  let open Utils.Lwt_result.Infix in
+  Sql.find_with_detail pool id
+  >|+ fun (model, count) -> model |> to_entity, count
+;;
+
 let find_by_experiment pool id =
   let open Utils.Lwt_result.Infix in
   Sql.find_by_experiment pool id ||> CCList.map to_entity
+;;
+
+let find_by_experiment_with_detail pool id =
+  let open Utils.Lwt_result.Infix in
+  Sql.find_by_experiment_with_details pool id
+  ||> CCList.map (fun (model, count) -> model |> to_entity, count)
 ;;
 
 let find_overlaps pool Entity.{ id; start_at; end_at; _ } =

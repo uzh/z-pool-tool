@@ -55,6 +55,12 @@ module Limit : sig
   val default : t
 end
 
+module InvitationCount : sig
+  include Pool_common.Model.IntegerSig
+
+  val default : t
+end
+
 module Distribution : sig
   module SortableField : sig
     val field : Pool_common.Message.Field.t
@@ -196,10 +202,20 @@ val find
   -> Id.t
   -> (t, Pool_common.Message.error) Lwt_result.t
 
+val find_with_detail
+  :  Pool_database.Label.t
+  -> Id.t
+  -> (t * InvitationCount.t, Pool_common.Message.error) Lwt_result.t
+
 val find_by_experiment
   :  Pool_database.Label.t
   -> Experiment.Id.t
   -> t list Lwt.t
+
+val find_by_experiment_with_detail
+  :  Pool_database.Label.t
+  -> Experiment.Id.t
+  -> (t * InvitationCount.t) list Lwt.t
 
 val find_overlaps : Pool_database.Label.t -> t -> t list Lwt.t
 
