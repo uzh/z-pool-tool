@@ -557,6 +557,7 @@ let not_closed_or_canceled session =
 ;;
 
 let is_closable = not_closed_or_canceled
+let is_cancelable = not_closed_or_canceled
 let assignments_cancelable = not_closed_or_canceled
 let assignments_session_changeable = not_closed_or_canceled
 

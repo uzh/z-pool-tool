@@ -602,6 +602,43 @@ let cancel_deleted_assignment () =
   check_result expected events
 ;;
 
+let send_reminder_invalid () =
+  let open Cqrs_command.Assignment_command.SendReminder in
+  let open Test_utils in
+  let experiment = Model.create_experiment () in
+  let session = Model.create_session () in
+  let assignment = Model.create_assignment () in
+  let create_email _ = Ok (Model.create_email ()) in
+  let create_tet_message _ cell_phone =
+    Ok (Model.create_text_message cell_phone)
+  in
+  let channel = Pool_common.Reminder.Channel.Email in
+  let assignment1 =
+    Assignment.
+      { assignment with marked_as_deleted = MarkedAsDeleted.(create true) }
+  in
+  let assignment2 =
+    Assignment.{ assignment with canceled_at = Some (CanceledAt.create_now ()) }
+  in
+  let handle assignment =
+    handle
+      (create_email, create_tet_message)
+      experiment
+      session
+      assignment
+      channel
+  in
+  let res1 = handle assignment1 in
+  let () =
+    check_result
+      (Error Pool_common.Message.(IsMarkedAsDeleted Field.Assignment))
+      res1
+  in
+  let res2 = handle assignment2 in
+  let () = check_result (Error Pool_common.Message.AssignmentIsCanceled) res2 in
+  ()
+;;
+
 module SwapSessionData = struct
   open Message_template
   open Pool_common

@@ -234,6 +234,7 @@ end
 val group_and_sort : t list -> (t * t list) list
 val is_cancellable : t -> (unit, Pool_common.Message.error) result
 val is_closable : t -> (unit, Pool_common.Message.error) result
+val is_cancelable : t -> (unit, Pool_common.Message.error) result
 val is_deletable : t -> t list -> (unit, Pool_common.Message.error) result
 val assignments_cancelable : t -> (unit, Pool_common.Message.error) result
 

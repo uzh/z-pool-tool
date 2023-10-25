@@ -313,8 +313,8 @@ module Partials = struct
         session.Session.id
         id
     in
-    let create_reminder_modal =
-      Session.reminder_resendable session |> CCResult.is_ok
+    let create_reminder_modal assignment =
+      Assignment.reminder_sendable session assignment |> CCResult.is_ok
     in
     let button_form
       ?(style = `Primary)
@@ -484,7 +484,7 @@ module Partials = struct
             let buttons =
               [ true, edit
               ; access_contact_profiles, profile_link
-              ; create_reminder_modal, ReminderModal.button context
+              ; create_reminder_modal assignment, ReminderModal.button context
               ; ( Experiment.(show_external_data_id_links_value experiment)
                 , external_data_ids )
               ; session_changeable assignment, session_change_toggle
@@ -497,7 +497,7 @@ module Partials = struct
               |> CCList.pure
             in
             let modals =
-              match create_reminder_modal with
+              match create_reminder_modal assignment with
               | true ->
                 ReminderModal.modal
                   context

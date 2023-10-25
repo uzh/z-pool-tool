@@ -77,12 +77,16 @@ module ExternalDataIdentifier : sig
     }
 end
 
-val is_not_closed : Session.t -> (unit, Pool_common.Message.error) result
 val is_deletable : t -> (unit, Pool_common.Message.error) result
 val is_cancellable : t -> (unit, Pool_common.Message.error) result
 val attendance_settable : t -> (unit, Pool_common.Message.error) result
 
 val session_changeable
+  :  Session.t
+  -> t
+  -> (unit, Pool_common.Message.error) result
+
+val reminder_sendable
   :  Session.t
   -> t
   -> (unit, Pool_common.Message.error) result

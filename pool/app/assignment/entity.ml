@@ -104,16 +104,17 @@ let is_not_deleted { marked_as_deleted; _ } =
   else Error Pool_common.Message.(IsMarkedAsDeleted Field.Assignment)
 ;;
 
-let is_not_closed { Session.closed_at; canceled_at; _ } =
-  if CCOption.(is_none closed_at && is_none canceled_at)
-  then Ok ()
-  else Error Pool_common.Message.AssignmentIsClosed
-;;
-
 let is_not_canceled { canceled_at; _ } =
   if CCOption.is_none canceled_at
   then Ok ()
   else Error Pool_common.Message.AssignmentIsCanceled
+;;
+
+let is_not_canceled_nor_deleted m =
+  let open CCResult in
+  let* () = is_not_deleted m in
+  let* () = is_not_canceled m in
+  Ok ()
 ;;
 
 let is_deletable m =
@@ -129,18 +130,19 @@ let is_cancellable m =
   Ok ()
 ;;
 
-let attendance_settable m =
-  let open CCResult in
-  let* () = is_not_deleted m in
-  let* () = is_not_canceled m in
-  Ok ()
-;;
+let attendance_settable = is_not_canceled_nor_deleted
 
 let session_changeable current_session m =
   let open CCResult in
-  let* () = is_not_deleted m in
-  let* () = is_not_canceled m in
+  let* () = is_not_canceled_nor_deleted m in
   let* () = Session.assignments_session_changeable current_session in
+  Ok ()
+;;
+
+let reminder_sendable session m =
+  let open CCResult in
+  let* () = is_not_canceled_nor_deleted m in
+  let* () = Session.reminder_resendable session in
   Ok ()
 ;;
 

@@ -388,7 +388,7 @@ end = struct
       |> create_email
       >|= fun email -> email, experiment.Experiment.smtp_auth_id
     in
-    let* () = Session.reminder_resendable session in
+    let* () = Assignment.reminder_sendable session assignment in
     let* msg_event =
       let open Channel in
       match channel with
