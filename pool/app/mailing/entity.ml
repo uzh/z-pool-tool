@@ -67,6 +67,7 @@ module Limit = struct
     if m > 0 then Ok m else Error Pool_common.Message.(Invalid field)
   ;;
 
+  let of_int m = m
   let default = 1
   let schema = schema field create
 end
@@ -248,10 +249,7 @@ let create
 let seconds_per_minute = 60
 let seconds_per_hour = 60 * seconds_per_minute
 
-let per_interval
-  ?(interval = Ptime.Span.of_int_s 60)
-  { start_at; end_at; limit; _ }
-  =
+let per_interval interval { start_at; end_at; limit; _ } =
   let open Ptime in
   let open CCFloat in
   let limit = of_int limit in

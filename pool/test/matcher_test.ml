@@ -111,7 +111,7 @@ let create_invitations_repo _ () =
     Matcher.find_contacts_by_mailing
       pool
       mailing
-      (Mailing.per_interval ~interval mailing |> CCFloat.(round %> to_int))
+      (Mailing.per_interval interval mailing |> CCFloat.(round %> to_int))
     ||> CCResult.get_exn
   in
   let find_events () =
@@ -137,7 +137,7 @@ let create_invitations_repo _ () =
       let msg = "count generated invitations -> smaller or equal limit" in
       let is_less_or_equal =
         after - before
-        <= (Mailing.per_interval ~interval mailing |> CCFloat.(round %> to_int))
+        <= (Mailing.per_interval interval mailing |> CCFloat.(round %> to_int))
       in
       Alcotest.(check bool msg true is_less_or_equal)
     in

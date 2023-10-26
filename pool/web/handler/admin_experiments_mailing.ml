@@ -196,7 +196,7 @@ let search_info req =
       | true -> None, None
       | false ->
         let interval = 5 * 60 |> Ptime.Span.of_int_s in
-        ( Some (Mailing.per_interval ~interval mailing)
+        ( Some (Mailing.per_interval interval mailing)
         , Some (mailing.Mailing.limit |> Mailing.Limit.value) )
     in
     let%lwt mailings = Mailing.find_overlaps database_label mailing in

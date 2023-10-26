@@ -20,7 +20,12 @@ end
 module Limit = struct
   include Entity.Limit
 
-  let t = Pool_common.Repo.make_caqti_type Caqti_type.int create value
+  let t =
+    Pool_common.Repo.make_caqti_type
+      Caqti_type.int
+      (of_int %> CCResult.return)
+      value
+  ;;
 end
 
 module InvitationCount = struct

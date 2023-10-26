@@ -1,21 +1,3 @@
-let create_pool_queue_jobs_mapping_table =
-  Sihl.Database.Migration.create_step
-    ~label:"create pool queue jobs mapping table"
-    {sql|
-      CREATE TABLE IF NOT EXISTS pool_queue_jobs_mapping (
-        `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-        `queue_uuid` binary(16) NOT NULL,
-        `entity` varchar(255) NOT NULL,
-        `entity_uuid` binary(16) NOT NULL,
-        `tag_uuid` binary(16) NOT NULL,
-        `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-      PRIMARY KEY (id),
-      UNIQUE KEY `queue_entity_uuid` (`queue_uuid`, `entity`, `entity_uuid`)
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-    |sql}
-;;
-
 let add_limit_to_mailing =
   Sihl.Database.Migration.create_step
     ~label:"add limit to mailing"
@@ -48,7 +30,6 @@ let drop_rate_from_mailing =
 let migration () =
   Sihl.Database.Migration.(
     empty "202310191345"
-    |> add_step create_pool_queue_jobs_mapping_table
     |> add_step add_limit_to_mailing
     |> add_step change_mailing_rate_to_limit
     |> add_step drop_rate_from_mailing)
