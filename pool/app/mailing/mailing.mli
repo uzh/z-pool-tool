@@ -49,7 +49,13 @@ module Start : sig
     -> (t, Pool_common.Message.error) result
 end
 
-module Rate : sig
+module Limit : sig
+  include Pool_common.Model.IntegerSig
+
+  val default : t
+end
+
+module InvitationCount : sig
   include Pool_common.Model.IntegerSig
 
   val default : t
@@ -145,7 +151,7 @@ type t =
   { id : Id.t
   ; start_at : StartAt.t
   ; end_at : EndAt.t
-  ; rate : Rate.t
+  ; limit : Limit.t
   ; distribution : Distribution.t option
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
@@ -154,22 +160,21 @@ type t =
 val pp : Format.formatter -> t -> unit
 val show : t -> string
 val equal : t -> t -> bool
-val per_minutes : CCInt.t -> t -> CCFloat.t
-val total : t -> int
+val per_interval : Ptime.span -> t -> CCFloat.t
 
 val create
   :  ?allow_start_in_past:bool
   -> ?id:Id.t
   -> Start.t
   -> EndAt.t
-  -> Rate.t
+  -> Limit.t
   -> Distribution.t option
   -> (t, Pool_common.Message.error) result
 
 type update =
   { start_at : StartAt.t
   ; end_at : EndAt.t
-  ; rate : Rate.t
+  ; limit : Limit.t
   ; distribution : Distribution.t option
   }
 
@@ -197,13 +202,49 @@ val find
   -> Id.t
   -> (t, Pool_common.Message.error) Lwt_result.t
 
+val find_with_detail
+  :  Pool_database.Label.t
+  -> Id.t
+  -> (t * InvitationCount.t, Pool_common.Message.error) Lwt_result.t
+
 val find_by_experiment
   :  Pool_database.Label.t
   -> Experiment.Id.t
   -> t list Lwt.t
 
+val find_by_experiment_with_detail
+  :  Pool_database.Label.t
+  -> Experiment.Id.t
+  -> (t * InvitationCount.t) list Lwt.t
+
 val find_overlaps : Pool_database.Label.t -> t -> t list Lwt.t
-val find_current : Pool_database.Label.t -> t list Lwt.t
+
+module Status : sig
+  module ToHandle : sig
+    include Pool_common.Model.BaseSig
+
+    val value : t -> int
+    val create : int -> (t, Pool_common.Message.error) result
+  end
+
+  module LastRun : sig
+    include Pool_common.Model.BooleanSig
+  end
+
+  type status =
+    { mailing : t
+    ; to_handle : ToHandle.t
+    ; last_run : LastRun.t
+    }
+
+  type t = status
+
+  val to_handle : t -> ToHandle.t
+  val equal : t -> t -> bool
+  val pp : Format.formatter -> t -> unit
+  val show : t -> string
+  val find_current : Pool_database.Label.t -> Ptime.span -> t list Lwt.t
+end
 
 module Repo : sig
   module Id : sig

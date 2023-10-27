@@ -7,7 +7,7 @@ type create =
   { start_at : StartAt.t option
   ; start_now : StartNow.t
   ; end_at : EndAt.t
-  ; rate : Rate.t
+  ; limit : Limit.t
   ; distribution : Distribution.t option
   }
 [@@deriving eq, show]
@@ -20,12 +20,13 @@ let mailing_effect action id =
     (action, `Mailing, Some (id |> Uuid.target_of Mailing.Id.value))
 ;;
 
-let default_command start_at start_now end_at rate random distribution : create =
+let default_command start_at start_now end_at limit random distribution : create
+  =
   let distribution =
     let open Distribution in
     if random then Some Random else distribution |> CCOption.map create_sorted
   in
-  { start_at; start_now; end_at; rate; distribution }
+  { start_at; start_now; end_at; limit; distribution }
 ;;
 
 let defalt_schema =
@@ -35,7 +36,7 @@ let defalt_schema =
         [ Conformist.optional @@ StartAt.schema ()
         ; StartNow.schema ()
         ; EndAt.schema ()
-        ; Rate.schema ()
+        ; Limit.schema ()
         ; Distribution.is_random_schema ()
         ; Conformist.optional @@ Distribution.schema ()
         ]
@@ -66,12 +67,12 @@ end = struct
     ?(tags = Logs.Tag.empty)
     ?(id = Mailing.Id.create ())
     experiment
-    ({ start_at; start_now; end_at; rate; distribution } : t)
+    ({ start_at; start_now; end_at; limit; distribution } : t)
     =
     Logs.info ~src (fun m -> m "Handle command CreateOperator" ~tags);
     let open CCResult in
     let* start = Start.create start_at start_now in
-    let* mailing = Mailing.create ~id start end_at rate distribution in
+    let* mailing = Mailing.create ~id start end_at limit distribution in
     Ok
       [ Mailing.Created (mailing, experiment.Experiment.id)
         |> Pool_event.mailing
@@ -103,7 +104,7 @@ end = struct
   let handle
     ?(tags = Logs.Tag.empty)
     (mailing : Mailing.t)
-    ({ start_at; start_now; end_at; rate; distribution } : t)
+    ({ start_at; start_now; end_at; limit; distribution } : t)
     =
     let open CCResult in
     Logs.info ~src (fun m -> m "Handle command Update" ~tags);
@@ -111,7 +112,7 @@ end = struct
       Start.create start_at start_now
       >>= CCFun.flip Mailing.Start.validate end_at
     in
-    let update = { start_at; end_at; rate; distribution } in
+    let update = { start_at; end_at; limit; distribution } in
     match Ptime_clock.now () < Mailing.StartAt.value start_at with
     | true -> Ok [ Mailing.Updated (update, mailing) |> Pool_event.mailing ]
     | false -> Error Pool_common.Message.AlreadyStarted
@@ -162,7 +163,7 @@ module Overlaps : sig
     { id : Id.t option
     ; start_at : StartAt.t
     ; end_at : EndAt.t
-    ; rate : Rate.t option
+    ; limit : Limit.t option
     ; distribution : Distribution.t option
     }
 
@@ -176,18 +177,18 @@ end = struct
     { id : Id.t option
     ; start_at : StartAt.t
     ; end_at : EndAt.t
-    ; rate : Rate.t option
+    ; limit : Limit.t option
     ; distribution : Distribution.t option
     }
 
   type with_default_rate = bool
 
-  let command id start_at end_at rate random distribution : t =
+  let command id start_at end_at limit random distribution : t =
     let distribution =
       let open Distribution in
       if random then Some Random else distribution |> CCOption.map create_sorted
     in
-    { id; start_at; end_at; rate; distribution }
+    { id; start_at; end_at; limit; distribution }
   ;;
 
   let schema =
@@ -197,7 +198,7 @@ end = struct
           [ Conformist.optional @@ Id.schema ()
           ; StartAt.schema ()
           ; EndAt.schema ()
-          ; Conformist.optional @@ Rate.schema ()
+          ; Conformist.optional @@ Limit.schema ()
           ; Distribution.is_random_schema ()
           ; Conformist.optional @@ Distribution.schema ()
           ]
@@ -209,16 +210,16 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let handle ({ id; start_at; end_at; rate; distribution } : t) =
+  let handle ({ id; start_at; end_at; limit; distribution } : t) =
     let open CCResult in
     Mailing.create
       ~allow_start_in_past:true
       ?id
       Start.(StartAt start_at)
       end_at
-      (CCOption.get_or ~default:Mailing.Rate.default rate)
+      (CCOption.get_or ~default:Mailing.Limit.default limit)
       distribution
-    >|= fun m -> CCOption.is_none rate, m
+    >|= fun m -> CCOption.is_none limit, m
   ;;
 
   let effects = Mailing.Guard.Access.index

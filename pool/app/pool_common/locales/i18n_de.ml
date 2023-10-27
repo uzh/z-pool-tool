@@ -281,7 +281,10 @@ Wird nach diesem Feld gefiltert, wird der überschreibende Wert bevorzugt.
     "Die E-Mail-Adresse des ausgewählten Nutzers wird als 'reply-to' Adresse \
      für alle experimentbezogenen E-Mails verwendet."
   | ExperimentMailings ->
-    {|Einladungsversand dieses Experiments. Die 'Rate' definiert die maximal generierten Einladungen pro Stunde.
+    {|Einladungsversand dieses Experiments.
+
+    Die Limite definiert die Anzahl an Einladungen für dieses Mailing und die Anzahl Einladungen zeigt den momentanen Stand der versendeten/bearbeiteten.
+    Falls mehrere Mailings parallel laufen, kann es sein, dass die Anzahl runtergesetzt wird und dadurch nicht das gewünschte Limit erreicht.
 
     Gestartete Mailings können nicht mehr gelöscht werden.|}
   | ExperimentMailingsRegistrationDisabled ->
@@ -332,6 +335,7 @@ Wenn Sie die Erinnerungen jetzt manuell auslösen werden über den gewählten Na
   | Locations ->
     "Standorte, an denen Experimente durchgeführt werden. Jede Session muss \
      eine Location haben."
+  | MailingLimit -> "Max. generierte Einladungen pro Mailing."
   | NumberIsSecondsHint -> "Anzahl Sekunden"
   | NumberIsDaysHint -> "Anzahl Tage"
   | NumberIsWeeksHint -> "Anzahl Wochen"
@@ -354,7 +358,6 @@ Wenn Sie die Erinnerungen jetzt manuell auslösen werden über den gewählten Na
     "Achtung: einmalige Aktion. Der Kontakt wird zu einem Admin befördert, \
      dieser wird anschliessend nicht mehr für Experimente eingeladen und kann \
      sich nicht mehr für solche registrieren."
-  | Rate -> "Generierte Einladungen pro Stunde"
   | RateDependencyWith ->
     "Zur selben Zeit finden weitere Versande statt, details werden unten \
      angezeigt. Die Summe aller Raten wird automatisch gedrosselt, sobald das \

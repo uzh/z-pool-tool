@@ -17,8 +17,19 @@ module EndAt = struct
   let t = Caqti_type.ptime
 end
 
-module Rate = struct
-  include Entity.Rate
+module Limit = struct
+  include Entity.Limit
+
+  let t =
+    Pool_common.Repo.make_caqti_type
+      Caqti_type.int
+      (of_int %> CCResult.return)
+      value
+  ;;
+end
+
+module InvitationCount = struct
+  include Entity.InvitationCount
 
   let t = Pool_common.Repo.make_caqti_type Caqti_type.int create value
 end
@@ -40,7 +51,7 @@ type t =
   ; experiment_id : Experiment.Id.t
   ; start_at : StartAt.t
   ; end_at : EndAt.t
-  ; rate : Rate.t
+  ; limit : Limit.t
   ; distribution : Distribution.t option
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
@@ -48,20 +59,20 @@ type t =
 [@@deriving show]
 
 let to_entity
-  { id; start_at; end_at; rate; distribution; created_at; updated_at; _ }
+  { id; start_at; end_at; limit; distribution; created_at; updated_at; _ }
   =
-  Entity.{ id; start_at; end_at; rate; distribution; created_at; updated_at }
+  Entity.{ id; start_at; end_at; limit; distribution; created_at; updated_at }
 ;;
 
 let of_entity
   (experiment_id : Experiment.Id.t)
-  { Entity.id; start_at; end_at; rate; distribution; created_at; updated_at }
+  { Entity.id; start_at; end_at; limit; distribution; created_at; updated_at }
   =
   { id
   ; experiment_id
   ; start_at
   ; end_at
-  ; rate
+  ; limit
   ; distribution
   ; created_at
   ; updated_at
@@ -74,13 +85,13 @@ let t =
       ( m.id
       , ( m.experiment_id
         , ( m.start_at
-          , (m.end_at, (m.rate, (m.distribution, (m.created_at, m.updated_at))))
+          , (m.end_at, (m.limit, (m.distribution, (m.created_at, m.updated_at))))
           ) ) )
   in
   let decode
     ( id
     , ( experiment_id
-      , (start_at, (end_at, (rate, (distribution, (created_at, updated_at)))))
+      , (start_at, (end_at, (limit, (distribution, (created_at, updated_at)))))
       ) )
     =
     let open CCResult in
@@ -89,7 +100,7 @@ let t =
       ; experiment_id
       ; start_at
       ; end_at
-      ; rate
+      ; limit
       ; distribution
       ; created_at
       ; updated_at
@@ -108,7 +119,7 @@ let t =
                (tup2
                   EndAt.t
                   (tup2
-                     Rate.t
+                     Limit.t
                      (tup2
                         (option Distribution.t)
                         (tup2
@@ -121,18 +132,17 @@ module Update = struct
     { id : Id.t
     ; start_at : StartAt.t
     ; end_at : EndAt.t
-    ; rate : Rate.t
+    ; limit : Limit.t
     ; distribution : Distribution.t
     }
 
   let t =
-    let encode { Entity.id; start_at; end_at; rate; distribution; _ } =
-      Ok (id, (start_at, (end_at, (rate, distribution))))
+    let encode { Entity.id; start_at; end_at; limit; distribution; _ } =
+      Ok (id, (start_at, (end_at, (limit, distribution))))
     in
     let decode _ =
-      failwith
-        Pool_common.(
-          Message.WriteOnlyModel |> Utils.error_to_string Language.En)
+      let open Pool_common in
+      failwith (Message.WriteOnlyModel |> Utils.error_to_string Language.En)
     in
     Caqti_type.(
       custom
@@ -140,6 +150,41 @@ module Update = struct
         ~decode
         (tup2
            Id.t
-           (tup2 StartAt.t (tup2 EndAt.t (tup2 Rate.t (option Distribution.t))))))
+           (tup2
+              StartAt.t
+              (tup2 EndAt.t (tup2 Limit.t (option Distribution.t))))))
+  ;;
+end
+
+module Status = struct
+  include Entity_status
+
+  module ToHandle = struct
+    include ToHandle
+
+    let t = Pool_common.Repo.make_caqti_type Caqti_type.int create value
+  end
+
+  module LastRun = struct
+    include LastRun
+
+    let t =
+      Pool_common.Repo.make_caqti_type
+        Caqti_type.bool
+        (create %> CCResult.return)
+        value
+    ;;
+  end
+
+  let t =
+    let encode _ =
+      let open Pool_common in
+      failwith (Message.ReadOnlyModel |> Utils.error_to_string Language.En)
+    in
+    let decode (mailing, (to_handle, last_run)) =
+      let mailing = to_entity mailing in
+      Ok { mailing; to_handle; last_run }
+    in
+    Caqti_type.(custom ~encode ~decode (tup2 t (tup2 ToHandle.t LastRun.t)))
   ;;
 end

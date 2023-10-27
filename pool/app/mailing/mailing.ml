@@ -3,9 +3,16 @@ include Event
 module Guard = Entity_guard
 
 let find = Repo.find
+let find_with_detail = Repo.find_with_detail
 let find_by_experiment = Repo.find_by_experiment
+let find_by_experiment_with_detail = Repo.find_by_experiment_with_detail
 let find_overlaps = Repo.find_overlaps
-let find_current = Repo.find_current
+
+module Status = struct
+  include Entity_status
+
+  let find_current = Repo.Status.find_current
+end
 
 module Repo = struct
   module Id = Repo_entity.Id

@@ -15,7 +15,7 @@ let generate_end (start : Mailing.StartAt.t) rand_day =
 ;;
 
 let generate_rate delta =
-  (delta + 1) * 100 |> Mailing.Rate.create |> get_or_failwith
+  (delta + 1) * 100 |> Mailing.Limit.create |> get_or_failwith
 ;;
 
 let generate_events (experiments : Experiment.Id.t list) =

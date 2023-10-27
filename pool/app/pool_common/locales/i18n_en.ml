@@ -275,7 +275,10 @@ Make sure to show links and URLs as plain text.
     "The selected user's email address will be used as 'reply-to' address for \
      all experiment-related emails."
   | ExperimentMailings ->
-    {|Invitation mailings of this experiment. 'Rate' defines the maximum generated invitations per hour.
+    {|Invitation mailings of this experiment. The limit defines the number of invitations sent by the mailing withing it's duration.
+
+    Check the No. Invitations to see how many of the invitations where already sent/handled.
+    In case there are multiple mailings running at the same time, the server might has to reduce the amount and thus doesn't reach the desired limit.
 
     Started mailings can no longer be deleted.|}
   | ExperimentMailingsRegistrationDisabled ->
@@ -310,6 +313,7 @@ Make sure to show links and URLs as plain text.
     "Locations, where experiments are conducted. Every session has to have a \
      location."
   | I18nText str -> str
+  | MailingLimit -> "Max. generated Invitations during the mailing."
   | MissingMessageTemplates (label, languages) ->
     Format.asprintf
       "The '%s' template is missing is the following languages: %s"
@@ -337,7 +341,6 @@ Make sure to show links and URLs as plain text.
     "Attention: one-time action. The contact is promoted to an admin, who is \
      subsequently no longer invited for experiments and can no longer register \
      for such."
-  | Rate -> "Max. generated Invitations per hour"
   | RateDependencyWith ->
     "There are other mailings running at the same time, see its details \
      bellow. In case the sum of all rates reaches the maximum of the server, \

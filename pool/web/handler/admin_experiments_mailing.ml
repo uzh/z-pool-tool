@@ -19,7 +19,9 @@ let index req =
     Utils.Lwt_result.map_error (fun err -> err, experiment_path id)
     @@ let* experiment = Experiment.find database_label id in
        let%lwt mailings =
-         Mailing.find_by_experiment database_label experiment.Experiment.id
+         Mailing.find_by_experiment_with_detail
+           database_label
+           experiment.Experiment.id
        in
        Page.Admin.Mailing.index context experiment mailings
        >|> create_layout req context
@@ -110,17 +112,17 @@ let detail edit req =
   let result ({ Pool_context.database_label; _ } as context) =
     Utils.Lwt_result.map_error (fun err ->
       err, experiment_path ~suffix:"mailings" experiment_id)
-    @@ let* mailing =
-         Mailing.find database_label id
-         >== fun m ->
+    @@ let* mailing, count =
+         Mailing.find_with_detail database_label id
+         >== fun (m, count) ->
          if edit
             && Ptime_clock.now () > Mailing.StartAt.value m.Mailing.start_at
          then Error Pool_common.Message.AlreadyStarted
-         else Ok m
+         else Ok (m, count)
        in
        let* experiment = Experiment.find database_label experiment_id in
        (match edit with
-        | false -> Page.Admin.Mailing.detail context experiment mailing
+        | false -> Page.Admin.Mailing.detail context experiment (mailing, count)
         | true ->
           Page.Admin.Mailing.form
             ~mailing
@@ -193,7 +195,9 @@ let search_info req =
       match with_default_rate with
       | true -> None, None
       | false ->
-        Some (Mailing.per_minutes 5 mailing), Some (Mailing.total mailing)
+        let interval = 5 * 60 |> Ptime.Span.of_int_s in
+        ( Some (Mailing.per_interval interval mailing)
+        , Some (mailing.Mailing.limit |> Mailing.Limit.value) )
     in
     let%lwt mailings = Mailing.find_overlaps database_label mailing in
     Page.Admin.Mailing.overlaps ?average_send ?total context id mailings

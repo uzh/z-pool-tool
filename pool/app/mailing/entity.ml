@@ -58,16 +58,30 @@ module EndAt = struct
   let schema = schema field create
 end
 
-module Rate = struct
+module Limit = struct
   include Pool_common.Model.Integer
 
-  let field = Pool_common.Message.Field.Rate
+  let field = Pool_common.Message.Field.Limit
 
   let create m =
     if m > 0 then Ok m else Error Pool_common.Message.(Invalid field)
   ;;
 
+  let of_int m = m
   let default = 1
+  let schema = schema field create
+end
+
+module InvitationCount = struct
+  include Pool_common.Model.Integer
+
+  let field = Pool_common.Message.Field.InvitationCount
+
+  let create m =
+    if m >= 0 then Ok m else Error Pool_common.Message.(Invalid field)
+  ;;
+
+  let default = 0
   let schema = schema field create
 end
 
@@ -82,8 +96,7 @@ module Distribution = struct
         | AssignmentCount [@name "assignment_count"]
         [@printer print "assignment_count"]
         | Firstname [@name "firstname"] [@printer print "firstname"]
-        | InvitationCount [@name "invitation_count"]
-        [@printer print "invitation_count"]
+        | InvitationCount [@name "count"] [@printer print "count"]
         | Lastname [@name "lastname"] [@printer print "lastname"]
       [@@deriving enum, eq, ord, sexp_of, show { with_path = false }, yojson]
     end
@@ -205,7 +218,7 @@ type t =
   { id : Id.t
   ; start_at : StartAt.t
   ; end_at : EndAt.t
-  ; rate : Rate.t
+  ; limit : Limit.t
   ; distribution : Distribution.t option
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
@@ -217,7 +230,7 @@ let create
   ?(id = Id.create ())
   start
   end_at
-  rate
+  limit
   distribution
   =
   let open CCResult in
@@ -226,7 +239,7 @@ let create
     { id
     ; start_at
     ; end_at
-    ; rate
+    ; limit
     ; distribution
     ; created_at = Pool_common.CreatedAt.create ()
     ; updated_at = Pool_common.UpdatedAt.create ()
@@ -236,17 +249,13 @@ let create
 let seconds_per_minute = 60
 let seconds_per_hour = 60 * seconds_per_minute
 
-let per_minutes n_minutes { rate; _ } =
+let per_interval interval { start_at; end_at; limit; _ } =
+  let open Ptime in
   let open CCFloat in
-  let total_seconds = CCInt.(n_minutes * seconds_per_minute |> to_float) in
-  of_int rate / of_int seconds_per_hour * total_seconds
-;;
-
-let total { start_at; end_at; rate; _ } =
-  let open CCFloat in
-  of_int rate
-  / of_int seconds_per_hour
-  * (Ptime.diff end_at start_at |> Ptime.Span.to_float_s)
-  |> round
-  |> to_int
+  let limit = of_int limit in
+  let sec_to_min = CCFun.flip ( / ) 60. in
+  let duration =
+    diff end_at start_at |> Span.to_float_s |> max 0. |> sec_to_min
+  in
+  if limit <= 0. then 0. else duration / limit * Span.to_float_s interval
 ;;
