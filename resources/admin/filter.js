@@ -5,6 +5,16 @@ const notificationId = "filter-notification";
 
 const form = document.getElementById("filter-form");
 
+function isTextInput(ele) {
+    let tagName = ele.tagName;
+    if (tagName === "INPUT") {
+        let validType = ['text', 'number', 'search'];
+        let eleType = ele.type;
+        return validType.includes(eleType);
+    }
+    return false;
+}
+
 const isListOperator = (operator) => {
     return ["contains_all", "contains_some", "contains_none"].includes(operator)
 }
@@ -200,7 +210,7 @@ function addOperatorChangeListeners(wrapper) {
 }
 
 function configRequest(e, form) {
-    if (!e.srcElement.value) {
+    if (isTextInput(e.srcElement) && !e.srcElement.value) {
         e.preventDefault()
     }
     const isPredicateType = e.detail.parameters.predicate;
