@@ -371,6 +371,7 @@ module Operator = struct
     [@@deriving show { with_path = false }, eq, enum, yojson]
 
     let all = generate_all min max of_enum
+    let single_select_operators = [ ContainsSome; ContainsNone ]
     let json_key = "List"
 
     let read yojson =
@@ -379,6 +380,8 @@ module Operator = struct
     ;;
 
     let to_sql = function
+      (* TODO: Differ between select ( = & != ) and multi select ( LIKE / NOT
+         LIKE ), if it is performance relevant *)
       (* List operators are used to query custom field answers by their value
          which store json arrays *)
       | ContainsSome | ContainsAll -> "LIKE"
@@ -482,6 +485,7 @@ module Operator = struct
   let all_string_operators = StringM.all >|= string
   let all_size_operators = Size.all >|= size
   let all_list_operators = ListM.all >|= list
+  let all_select_operators = ListM.single_select_operators >|= list
   let all_existence_operators = Existence.all >|= existence
 
   let all =
@@ -536,9 +540,10 @@ module Operator = struct
   let input_type_to_operator (key : Key.input_type) =
     let open Key in
     match key with
-    | Bool | Languages _ | Select _ -> all_equality_operators
+    | Bool | Languages _ -> all_equality_operators
     | Date | Nr -> all_equality_operators @ all_size_operators
     | MultiSelect _ | QueryExperiments | QueryTags -> all_list_operators
+    | Select _ -> all_select_operators
     | Str -> all_equality_operators @ all_string_operators
   ;;
 
@@ -604,9 +609,9 @@ module Predicate = struct
     match yojson with
     | `Assoc assoc ->
       let open CCResult in
-      let go key of_yojson =
+      let go json_key of_yojson =
         assoc
-        |> CCList.assoc_opt ~eq:CCString.equal key
+        |> CCList.assoc_opt ~eq:CCString.equal json_key
         |> CCOption.map of_yojson
       in
       let* key = go key_string Key.of_yojson |> to_result Message.Field.Key in
