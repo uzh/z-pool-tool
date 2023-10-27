@@ -161,7 +161,7 @@ let assign_contact_experiment_list
     [ a_class ([ "bg-red-lighter" ] @ base_class) ] @ htmx_attribs experiment_id
   in
   div
-    ~a:[ a_class [ "data-list"; "relative"; "flexcolumn" ] ]
+    ~a:[ a_class [ "data-list"; "relative"; "flexcolumn"; "active" ] ]
     (match experiments with
      | [] ->
        [ div

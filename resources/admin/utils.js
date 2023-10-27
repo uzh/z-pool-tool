@@ -42,8 +42,9 @@ export function destroySelected(item) {
 }
 
 export function addInputListeners(queryInput) {
-    var wrapper = queryInput.closest("[data-query='wrapper']");
-    var results = wrapper.querySelector("[data-query='results']");
+    const wrapper = queryInput.closest("[data-query='wrapper']");
+    const results = wrapper.querySelector("[data-query='results']");
+    const dataList = wrapper.querySelector(".data-list");
 
     [...queryInput.querySelectorAll("[data-id]")].forEach(item => {
         item.addEventListener("click", () => {
@@ -51,4 +52,12 @@ export function addInputListeners(queryInput) {
             item.querySelector(".toggle-item").addEventListener("click", () => destroySelected(item));
         }, { once: true })
     })
+
+    if (dataList) {
+        queryInput.addEventListener("change", (e) => {
+            if (!e.currentTarget.value) {
+                dataList.classList.remove("active")
+            }
+        })
+    }
 }

@@ -200,12 +200,14 @@ function addOperatorChangeListeners(wrapper) {
 }
 
 function configRequest(e, form) {
+    if (!e.srcElement.value) {
+        e.preventDefault()
+    }
     const isPredicateType = e.detail.parameters.predicate;
     const allowEmpty = e.detail.parameters.allow_empty_values;
     const isSubmit = e.target.type === "submit"
     const isSearchForm = Boolean(e.detail.elt.classList.contains("query-input"));
     e.detail.parameters._csrf = csrfToken(form);
-
     const filterId = form.dataset.filter;
     if (filterId) {
         e.detail.parameters.filter = filterId;

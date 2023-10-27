@@ -23,19 +23,7 @@ let input_element
   =
   let result_list =
     let wrap =
-      div
-        ~a:
-          [ a_class
-              [ "flexcolumn"
-              ; "gap-sm"
-              ; "striped"
-              ; "bg-white"
-              ; "inset-sm"
-              ; "border"
-              ; "border-radius"
-              ; "hide-empty"
-              ]
-          ]
+      div ~a:[ a_class [ "data-list"; "active"; "hide-empty"; "relative" ] ]
       %> CCList.return
     in
     match results with
@@ -44,7 +32,7 @@ let input_element
     | Some results -> results |> CCList.map item_to_html |> wrap
   in
   let attrs =
-    [ a_input_type `Text
+    [ a_input_type `Search
     ; a_value value
     ; a_name Field.(show query_field)
     ; a_class [ "query-input" ]
@@ -62,7 +50,7 @@ let input_element
            ())
     ()
   :: result_list
-  |> div ~a:[ a_class [ "flexcolumn" ]; a_user_data "query" "input" ]
+  |> div ~a:[ a_class [ "relative" ]; a_user_data "query" "input" ]
 ;;
 
 let create
@@ -88,7 +76,11 @@ let create
     ([ label [ txt Pool_common.(Utils.nav_link_to_string language field_label) ]
      ; input_element item_to_html placeholder ?disabled ?value ?results path
      ; div
-         ~a:[ a_user_data "query" "results"; a_class [ "hide-empty" ] ]
+         ~a:
+           [ a_user_data "query" "results"
+           ; a_user_data "search-selection" ""
+           ; a_class [ "hide-empty" ]
+           ]
          (CCList.map item_to_html current)
      ]
      @ CCOption.map_or
@@ -105,8 +97,8 @@ let create
 
 let search_item ~id ~title =
   div
-    ~a:[ a_user_data "id" id; a_class [ "has-icon"; "inset-xs" ] ]
-    [ Component_icon.(to_html ~classnames:[ "toggle-item" ] CloseCircle)
+    ~a:[ a_user_data "id" id; a_user_data "selection-item" "" ]
+    [ Component_icon.(to_html ~classnames:[ "toggle-item" ] Close)
     ; span [ txt title ]
     ; input
         ~a:

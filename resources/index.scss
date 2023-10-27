@@ -102,16 +102,17 @@ ul.no-style {
         [data-id] {
             cursor: pointer;
         }
-
-        .toggle-item {
-            color: $green;
-            transform: rotate(45deg)
-        }
     }
 
-    [data-query="results"] .toggle-item {
-        color: $red;
-        cursor: pointer;
+    .data-list > [data-selection-item] {
+        @extend .has-icon;
+        padding: $space-sm;
+        &:hover {
+            background-color: $grey-light;
+        }
+        .toggle-item {
+            display: none;
+        }
     }
 }
 
@@ -280,8 +281,11 @@ table.simple {
 
 // Live Search
 .data-list.relative {
-    display: flex;
+    display: none;
     position: relative;
+    &.active {
+        display: flex;
+    }
 }
 
 .data-list>.data-item.bg-red-lighter {
