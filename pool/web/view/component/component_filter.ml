@@ -162,12 +162,11 @@ let value_input
            ; to_value = Custom_field.SelectOption.show_id
            }
        in
-       Input.multi_select
+       Input.multi_live_search
          ~additional_attributes
-         ~disabled
          language
-         multi_select
          field_name
+         multi_select
          ()
      | Key.Languages languages ->
        let selected =
