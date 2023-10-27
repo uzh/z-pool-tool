@@ -34,7 +34,9 @@ module PoolConformist = struct
     let input =
       input
       |> CCList.map (fun (k, v) ->
-        CCFormat.sprintf "(%s: %s)" k (CCString.concat ", " v))
+        if CCInt.equal CCString.(find ~sub:"password" (lowercase_ascii k)) (-1)
+        then CCFormat.sprintf "(%s: [opaque])" k
+        else CCFormat.sprintf "(%s: %s)" k (CCString.concat ", " v))
       |> CCString.concat ", "
       |> CCFormat.sprintf "(%s)"
     in
