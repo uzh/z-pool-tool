@@ -116,6 +116,11 @@ ul.no-style {
     }
 }
 
+[data-search-selection] {
+    row-gap: $space-xs;
+    column-gap: $space-sm;
+}
+
 // Flex
 .flexcolumn-reversed-tablet {
     &>* {

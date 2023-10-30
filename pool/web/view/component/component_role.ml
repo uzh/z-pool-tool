@@ -157,28 +157,26 @@ module Search = struct
     Format.asprintf "/admin/admins/%s/%s" Admin.(admin |> id |> Id.value)
   ;;
 
-  let value_input ?exclude_roles_of ?role ?value language =
+  let[@warning "-27"] value_input ?exclude_roles_of ?role ?value language =
     let open Role.Role in
     function
     | Some QueryLocations ->
+      (* What is exclude_roles_of? / value *)
       let hint = Pool_common.I18n.RoleIntro (Field.Location, Field.Locations) in
-      Component_search.Location.create
-        ?exclude_roles_of
+      Component_search.Location.multi_search
         ~hint
-        ?role
-        ?value
+        ~tag_name:Field.Target
         language
-        "/admin/locations/search"
+        ()
     | Some QueryExperiments ->
       let hint =
         Pool_common.I18n.RoleIntro (Field.Experiment, Field.Experiments)
       in
-      Component_search.Experiment.create
-        ?exclude_roles_of
+      Component_search.Experiment.multi_search
         ~hint
-        ?role
+        ~tag_name:Field.Target
         language
-        "/admin/experiments/search"
+        ()
     | None -> div []
   ;;
 
@@ -193,7 +191,7 @@ module Search = struct
       div ~a:[ a_class [ "switcher-sm"; "flex-gap" ] ] [ input_field ]
   ;;
 
-  let role_form ?key ?value language admin identifier role_list =
+  let role_form ?key ?value language csrf admin identifier role_list =
     let toggle_id = Format.asprintf "role-search-%i" identifier in
     let toggled_content = value_form language ?key ?value () in
     let key_selector =
@@ -220,34 +218,35 @@ module Search = struct
         ()
     in
     let submit_btn =
-      let action = action_path admin "grant-role" in
       Component_input.submit_element
         language
         ~classnames:[ "push"; "align-self-end" ]
-        ~attributes:
-          (a_id "submit-role-search-form"
-           :: Utils.htmx_attribs ~action ~swap:"none" ~trigger:"click" ())
         Pool_common.Message.(Add None)
         ()
     in
-    div
-      ~a:[ a_class [ "flexrow"; "flex-gap" ] ]
-      [ key_selector
-      ; div ~a:[ a_id toggle_id; a_class [ "grow-2" ] ] [ toggled_content ]
-      ; submit_btn
+    form
+      ~a:[ a_action (action_path admin "grant-role"); a_method `Post ]
+      [ Component_input.csrf_element csrf ()
+      ; div
+          ~a:[ a_class [ "flexrow"; "flex-gap" ] ]
+          [ key_selector
+          ; div ~a:[ a_id toggle_id; a_class [ "grow-2" ] ] [ toggled_content ]
+          ; submit_btn
+          ]
       ]
   ;;
 
   let input_form ?(identifier = 0) ?key ?value csrf language admin role_list () =
-    let role_form = role_form ?key ?value language admin identifier role_list in
+    let role_form =
+      role_form ?key ?value language csrf admin identifier role_list
+    in
     let stack = "stack-sm" in
     div
       ~a:[ a_class [ stack; "inset-sm"; "border"; "role-search" ] ]
       [ div
           ~a:
             [ a_id "role-search-form"; a_user_data "detect-unsaved-changes" "" ]
-          [ Component_input.csrf_element csrf ()
-          ; div
+          [ div
               ~a:[ a_class [ stack; "grow"; "role-search-wrapper" ] ]
               [ role_form ]
           ]

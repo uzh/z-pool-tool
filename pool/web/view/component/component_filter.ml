@@ -154,16 +154,20 @@ let value_input
          field_name
      | Key.Select options ->
        let selected = selected_options options in
+       let open Component_search in
        let multi_select =
-         Input.
-           { selected
-           ; options
-           ; to_label = Custom_field.SelectOption.name language
-           ; to_value = Custom_field.SelectOption.show_id
-           }
+         Static
+           Input.
+             { selected
+             ; options
+             ; to_label = Custom_field.SelectOption.name language
+             ; to_value = Custom_field.SelectOption.show_id
+             }
        in
-       Input.multi_live_search
+       multi_search
          ~additional_attributes
+         ~is_filter:true
+         ~input_type
          language
          field_name
          multi_select
@@ -204,7 +208,7 @@ let value_input
          field_name
          ()
      | Key.QueryExperiments ->
-       let current =
+       let selected =
          value
          |> CCOption.map_or ~default:[] (function
            | NoValue | Single _ -> []
@@ -219,13 +223,13 @@ let value_input
                  | _ -> None)
                lst)
        in
-       Component_search.Experiment.create
-         ~current
+       Component_search.Experiment.filter_multi_search
+         ~selected
          ~disabled
          language
-         "/admin/experiments/search"
+         ()
      | Key.QueryTags ->
-       let current =
+       let selected =
          value
          |> CCOption.map_or ~default:[] (function
            | NoValue | Single _ -> []
@@ -240,11 +244,7 @@ let value_input
                  | _ -> None)
                lst)
        in
-       Component_search.Tag.create
-         ~current
-         ~disabled
-         language
-         "/admin/settings/tags/search")
+       Component_search.Tag.filter_multi_search ~selected ~disabled language ())
 ;;
 
 let predicate_value_form

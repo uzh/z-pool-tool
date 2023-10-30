@@ -5,15 +5,8 @@ module HttpUtils = Http_utils
 
 let src = Logs.Src.create "handler.helper.search"
 
-let create search_type ?path req =
+let create search_type req =
   let query_field = Field.Search in
-  let path =
-    let value default = CCOption.value ~default path in
-    match search_type with
-    | `Experiment -> value "/admin/experiments/search"
-    | `Location -> value "/admin/locations/search"
-    | `ContactTag -> value "/admin/settings/tags/search"
-  in
   let result { Pool_context.database_label; user; _ } =
     let open CCList in
     let%lwt actor =
@@ -47,6 +40,11 @@ let create search_type ?path req =
     let exclude =
       HttpUtils.find_in_urlencoded_list_opt Field.Exclude urlencoded
     in
+    let to_response html =
+      html
+      |> HttpUtils.Htmx.multi_html_to_plain_text_response
+      |> CCResult.return
+    in
     let open Guard.Persistence in
     match search_type with
     | `Experiment ->
@@ -66,10 +64,8 @@ let create search_type ?path req =
        | None, _ | Some _, None -> Lwt.return []
        | Some value, Some actor ->
          search_experiment (exclude @ exclude_roles_of) value actor)
-      ||> fun results ->
-      input_element ?value:query ~results path
-      |> HttpUtils.Htmx.html_to_plain_text_response
-      |> CCResult.return
+      ||> query_results
+      ||> to_response
     | `Location ->
       let open Component.Search.Location in
       let open Pool_location.Guard.Access in
@@ -89,12 +85,9 @@ let create search_type ?path req =
          |> HttpUtils.Htmx.html_to_plain_text_response
          |> Lwt_result.return
        | Some value, Some actor ->
-         let%lwt results =
-           search_location (exclude @ exclude_roles_of) value actor
-         in
-         input_element ?value:query ~results path
-         |> HttpUtils.Htmx.html_to_plain_text_response
-         |> Lwt_result.return)
+         search_location (exclude @ exclude_roles_of) value actor
+         ||> query_results
+         ||> to_response)
     | `ContactTag ->
       let open Component.Search.Tag in
       let open Tags.Guard.Access in
@@ -115,10 +108,8 @@ let create search_type ?path req =
        | None, _ | Some _, None -> Lwt.return []
        | Some value, Some actor ->
          search_tags (exclude @ exclude_roles_of) value actor)
-      ||> fun results ->
-      input_element ?value:query ~results path
-      |> HttpUtils.Htmx.html_to_plain_text_response
-      |> CCResult.return
+      ||> query_results
+      ||> to_response
   in
   result |> HttpUtils.Htmx.handle_error_message ~src req
 ;;

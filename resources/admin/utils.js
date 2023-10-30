@@ -1,7 +1,8 @@
 export const globalErrorMsg = "An Error occurred";
 
 export const csrfToken = (form) => {
-    return form.querySelector('[name="_csrf"]').value;
+    const container = form || document;
+    return container.querySelector('[name="_csrf"]').value;
 }
 
 export const icon = (classnames) => {

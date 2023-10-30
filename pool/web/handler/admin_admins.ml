@@ -119,15 +119,20 @@ let handle_toggle_role req =
   result |> HttpUtils.Htmx.handle_error_message ~src req
 ;;
 
-let grant_role ({ Rock.Request.target; _ } as req) =
+let grant_role req =
   let open Utils.Lwt_result.Infix in
   let lift = Lwt_result.lift in
+  let admin_id = HttpUtils.find_id Admin.Id.of_string Field.Admin req in
+  (* let redirect_path = CCString.replace ~which:`Right ~sub:"/grant-role"
+     ~by:"/edit" target in *)
+  let redirect_path =
+    Format.asprintf "/admin/admins/%s/edit" (Admin.Id.value admin_id)
+  in
   let result { Pool_context.database_label; _ } =
+    Utils.Lwt_result.map_error (fun err -> err, redirect_path)
+    @@
     let tags = Pool_context.Logger.Tags.req req in
-    let* admin =
-      HttpUtils.find_id Admin.Id.of_string Field.Admin req
-      |> Admin.find database_label
-    in
+    let* admin = Admin.find database_label admin_id in
     let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
     let* role =
       HttpUtils.find_in_urlencoded Field.Role urlencoded
@@ -176,16 +181,13 @@ let grant_role ({ Rock.Request.target; _ } as req) =
     let handle events =
       Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
     in
-    expand_targets
-    >>= events
-    |>> handle
-    |>> HttpUtils.Htmx.htmx_redirect
-          ~skip_externalize:true
-          (CCString.replace ~which:`Right ~sub:"/grant-role" ~by:"/edit" target)
-          ~actions:
-            [ Message.set ~success:[ Pool_common.Message.Created Field.Role ] ]
+    let* () = expand_targets >>= events |>> handle in
+    Lwt_result.ok
+      (Http_utils.redirect_to_with_actions
+         redirect_path
+         [ Message.set ~success:[ Pool_common.Message.Created Field.Role ] ])
   in
-  result |> HttpUtils.Htmx.handle_error_message ~src req
+  result |> extract_happy_path req
 ;;
 
 let revoke_role ({ Rock.Request.target; _ } as req) =

@@ -1,5 +1,4 @@
 import { addCloseListener, addInputListeners, csrfToken, destroySelected, icon, notifyUser, globalErrorMsg } from "./utils.js";
-import { initStaticSearch } from "./staticSearch.js"
 
 const errorClass = "error-message";
 const notificationId = "filter-notification";
@@ -157,7 +156,6 @@ const predicateToJson = (outerPredicate, allowEmpty = false) => {
                 if (isQueryKey(key)) {
                     values = [...outerPredicate.querySelectorAll(`[data-query="results"] [name="value[]"]:checked`)];
                 } else {
-                    console.log("IS NOT QUERY KEY")
                     values = [...outerPredicate.querySelectorAll(`[name="value[]"]:checked`)];
                 }
                 value = values.map(toValue)
@@ -270,7 +268,6 @@ export function initFilterForm() {
             e.querySelector(".toggle-item").addEventListener("click", () => destroySelected(e))
         );
         addOperatorChangeListeners(form);
-        initStaticSearch(form);
 
         form.addEventListener('htmx:afterSwap', (e) => {
             addRemovePredicateListener(e.detail.elt);
@@ -282,7 +279,6 @@ export function initFilterForm() {
                 updateContactCount();
             }
             addCloseListener(notificationId);
-            initStaticSearch(e.detail.elt)
         })
         updateContactCount()
         form.addEventListener('htmx:configRequest', (e) => configRequest(e, form))

@@ -728,61 +728,6 @@ let multi_select
     ]
 ;;
 
-let multi_live_search
-  langauge
-  field
-  { selected; options; to_label; to_value }
-  ?(additional_attributes = [])
-  ()
-  =
-  let open Pool_common in
-  let selected_item item =
-    span
-      ~a:[ a_user_data "selection-item" "" ]
-      [ txt (to_label item)
-      ; Icon.(to_html Close)
-      ; input
-          ~a:
-            [ a_input_type `Checkbox
-            ; a_value (to_value item)
-            ; a_user_data
-                "input-type"
-                "option" (* input-type and array_key are filter specific*)
-            ; a_name (Message.Field.array_key field)
-            ; a_checked ()
-            ; a_hidden ()
-            ]
-          ()
-      ]
-  in
-  let available_item item =
-    span
-      ~a:[ a_class [ "data-item" ]; a_user_data "value" (to_value item) ]
-      [ txt (to_label item) ]
-  in
-  div
-    ~a:[ a_class [ "form-group" ] ]
-    [ label
-        [ txt (Utils.field_to_string langauge field |> CCString.capitalize_ascii)
-        ]
-    ; input
-        ~a:
-          ([ a_input_type `Search
-           ; a_user_data "name" (Message.Field.show field)
-           ; a_user_data "search" "static"
-           ]
-           @ additional_attributes)
-        ()
-    ; div
-        ~a:[ a_class [ "data-list"; "relative" ] ]
-        (CCList.map available_item options)
-    ; div
-        ~a:[ a_user_data "search-selection" ""; a_user_data "query" "results" ]
-          (* 'a_user_data "query" "results"' is filter specific*)
-        (CCList.map selected_item selected)
-    ]
-;;
-
 let reset_form_button language =
   span
     ~a:
