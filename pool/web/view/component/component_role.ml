@@ -163,16 +163,12 @@ module Search = struct
     | Some QueryLocations ->
       (* What is exclude_roles_of? / value *)
       let hint = Pool_common.I18n.RoleIntro (Field.Location, Field.Locations) in
-      Component_search.Location.multi_search
-        ~hint
-        ~tag_name:Field.Target
-        language
-        ()
+      Component_search.Location.create ~hint ~tag_name:Field.Target language ()
     | Some QueryExperiments ->
       let hint =
         Pool_common.I18n.RoleIntro (Field.Experiment, Field.Experiments)
       in
-      Component_search.Experiment.multi_search
+      Component_search.Experiment.create
         ~hint
         ~tag_name:Field.Target
         language

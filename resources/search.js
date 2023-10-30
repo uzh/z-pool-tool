@@ -1,3 +1,27 @@
+let assignContactCallback = (option) => {
+    const { hxTarget } = option.dataset;
+    const body = document.querySelector("body");
+    document.addEventListener("htmx:afterSwap", (e) => {
+        const { elt } = e.detail;
+        if (elt.id === hxTarget.substring(1)) {
+            body.toggleAttribute("data-noscroll")
+            elt.querySelector(".modal-close").addEventListener("click", () => {
+                body.toggleAttribute("data-noscroll");
+                elt.classList.remove("active")
+            }, { once: true })
+        }
+    }, { once: true })
+}
+
+let callbackOfAttribute = (callback) => {
+    switch (callback) {
+        case "assign-contact":
+            return assignContactCallback
+        default:
+            return null;
+    }
+}
+
 const createTag = (option, name, inputType) => {
     const item = document.createElement("span");
     item.setAttribute("data-selection-item", "");
@@ -29,10 +53,11 @@ const addRemoveItemListener = (item, callback) => {
 
 class Search {
     constructor(input) {
-        const { name, inputType } = input.dataset;
+        const { name, inputType, callback } = input.dataset;
         this.input = input;
         this.name = name;
         this.inputType = inputType;
+        this.clickCallack = callbackOfAttribute(callback)
         this.wrapper = this.input.closest(".form-group");
         this.selection = this.wrapper.querySelector("[data-search-selection]");
         this.optionsWrapper = this.wrapper.querySelector(".data-list");
@@ -97,8 +122,12 @@ class StaticSearch extends Search {
     addClickOptionListener() {
         [...this.options].forEach(option => {
             option.addEventListener("click", () => {
-                this.createSelectedItem(option);
-                option.style.display = "none";
+                if (this.clickCallack) {
+                    this.clickCallack(option)
+                } else {
+                    this.createSelectedItem(option);
+                    option.style.display = "none";
+                }
             })
         })
     }
@@ -115,8 +144,12 @@ class DynamicSearch extends Search {
         this.wrapper.addEventListener("htmx:afterSwap", (e) => {
             [...e.detail.elt.querySelectorAll(".data-item")].forEach(option => {
                 option.addEventListener("click", () => {
-                    this.createSelectedItem(option);
-                    option.style.display = "none";
+                    if (this.clickCallack) {
+                        this.clickCallack(option)
+                    } else {
+                        this.createSelectedItem(option);
+                        option.style.display = "none";
+                    }
                 })
             })
             this.optionsWrapper.classList.add("active")

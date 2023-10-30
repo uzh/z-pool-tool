@@ -247,7 +247,7 @@ let htmx_experiments_get req =
   let open Utils.Lwt_result.Infix in
   let contact_id = contact_id req in
   let result ({ Pool_context.database_label; user; _ } as context) =
-    let query = Sihl.Web.Request.query Field.(show Experiment) req in
+    let query = Sihl.Web.Request.query Field.(show Search) req in
     let* contact = Contact.find database_label contact_id in
     let* actor =
       Pool_context.Utils.find_authorizable ~admin_only:true database_label user

@@ -1,4 +1,4 @@
-import { csrfToken, notifyUser } from "./admin/utils.js";
+import { csrfToken } from "./admin/utils.js";
 import { initSearch } from "./search.js";
 
 const configRequest = (e, form) => {

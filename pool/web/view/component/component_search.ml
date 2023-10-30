@@ -6,7 +6,8 @@ module I18n = Pool_common.I18n
 let query_field = Field.Search
 
 type 'a dynamic_search =
-  { hx_post : string
+  { hx_url : string
+  ; hx_method : [ `Get | `Post ]
   ; to_label : 'a -> string
   ; to_value : 'a -> string
   ; selected : 'a list
@@ -34,6 +35,7 @@ let multi_search
   ?(disabled = false)
   ?hint
   ?(is_filter = false)
+  ?js_callback
   ?input_type
   ?placeholder
   ?tag_name
@@ -73,6 +75,11 @@ let multi_search
         placeholder
     in
     let disabled = if disabled then [ a_disabled () ] else [] in
+    let js_callback =
+      match js_callback with
+      | Some cb -> [ a_user_data "callback" cb ]
+      | None -> []
+    in
     [ a_input_type `Search
     ; a_name (Message.Field.show query_field)
     ; a_user_data "name" (Message.Field.array_key tag_name)
@@ -80,6 +87,7 @@ let multi_search
     @ placeholder
     @ disabled
     @ filter_selected_attributes
+    @ js_callback
   in
   let wrap html =
     (* TODO: Place hint *)
@@ -113,15 +121,21 @@ let multi_search
         (CCList.map (selected_item to_label to_value) selected)
     ]
     |> wrap
-  | Dynamic { hx_post; to_label; to_value; selected } ->
+  | Dynamic { hx_url; hx_method; to_label; to_value; selected } ->
+    let url = Sihl.Web.externalize_path hx_url in
+    let hx_method =
+      match hx_method with
+      | `Get -> a_user_data "hx-get" url
+      | `Post -> a_user_data "hx-post" url
+    in
     [ div
         ~a:[ a_class [ "relative"; "stack-xs" ] ]
         [ input
             ~a:
               ((base_attributes
                 @ [ a_user_data "search" ""
-                  ; a_user_data "hx-post" (Sihl.Web.externalize_path hx_post)
-                  ; a_user_data "hx-trigger" "keyup changed delay:1s"
+                  ; hx_method
+                  ; a_user_data "hx-trigger" "keyup changed delay:400ms"
                   ; a_user_data "hx-target" "next .data-list"
                   ])
                @ additional_attributes)
@@ -149,16 +163,14 @@ module Experiment = struct
   let to_label = snd %> Title.value
   let to_value = fst %> Id.value
 
-  let multi_search
-    ?disabled
-    ?hint
-    ?is_filter
-    ?tag_name
-    ?(selected = [])
-    language
-    =
+  let create ?disabled ?hint ?is_filter ?tag_name ?(selected = []) language =
     let dynamic_search =
-      { hx_post = "/admin/experiments/search"; to_label; to_value; selected }
+      { hx_url = "/admin/experiments/search"
+      ; hx_method = `Post
+      ; to_label
+      ; to_value
+      ; selected
+      }
     in
     multi_search
       ?disabled
@@ -172,12 +184,32 @@ module Experiment = struct
   ;;
 
   let filter_multi_search ~selected ~disabled language =
-    multi_search
+    create
       ~selected
       ~disabled
       ~is_filter:true
       ~tag_name:Pool_common.Message.Field.Value
       language
+  ;;
+
+  let assign_contact_search language contact =
+    let dynamic_search =
+      { hx_url =
+          Format.asprintf
+            "/admin/contacts/%s/experiments"
+            (Contact.id contact |> Pool_common.Id.value)
+      ; hx_method = `Get
+      ; to_label
+      ; to_value
+      ; selected = []
+      }
+    in
+    multi_search
+      ~placeholder
+      ~js_callback:"assign-contact"
+      language
+      Field.Experiments
+      (Dynamic dynamic_search)
   ;;
 
   let query_results =
@@ -192,16 +224,14 @@ module Location = struct
   let to_label ({ name; _ } : t) = Name.value name
   let to_value { id; _ } = Id.value id
 
-  let multi_search
-    ?disabled
-    ?hint
-    ?is_filter
-    ?tag_name
-    ?(selected = [])
-    language
-    =
+  let create ?disabled ?hint ?is_filter ?tag_name ?(selected = []) language =
     let dynamic_search =
-      ({ hx_post = "/admin/locations/search"; to_label; to_value; selected }
+      ({ hx_url = "/admin/locations/search"
+       ; hx_method = `Get
+       ; to_label
+       ; to_value
+       ; selected
+       }
        : t dynamic_search)
     in
     multi_search
@@ -230,16 +260,14 @@ module Tag = struct
   let to_label = snd %> Title.value
   let to_value = fst %> Id.value
 
-  let multi_search
-    ?disabled
-    ?hint
-    ?is_filter
-    ?tag_name
-    ?(selected = [])
-    language
-    =
+  let create ?disabled ?hint ?is_filter ?tag_name ?(selected = []) language =
     let dynamic_search =
-      { hx_post = "/admin/settings/tags/search"; to_label; to_value; selected }
+      { hx_url = "/admin/settings/tags/search"
+      ; hx_method = `Post
+      ; to_label
+      ; to_value
+      ; selected
+      }
     in
     multi_search
       ?disabled
@@ -253,7 +281,7 @@ module Tag = struct
   ;;
 
   let filter_multi_search ~selected ~disabled language =
-    multi_search
+    create
       ~selected
       ~disabled
       ~is_filter:true
