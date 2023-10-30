@@ -1,4 +1,4 @@
-import { addCloseListener, addInputListeners, csrfToken, destroySelected, icon, notifyUser, globalErrorMsg } from "./utils.js";
+import { addCloseListener, addInputListeners, destroySelected, icon, notifyUser, globalErrorMsg } from "./utils.js";
 
 const errorClass = "error-message";
 const notificationId = "filter-notification";
@@ -217,7 +217,6 @@ function configRequest(e, form) {
     const allowEmpty = e.detail.parameters.allow_empty_values;
     const isSubmit = e.target.type === "submit"
     const isSearchForm = Boolean(e.detail.elt.classList.contains("query-input"));
-    e.detail.parameters._csrf = csrfToken(form);
     const filterId = form.dataset.filter;
     if (filterId) {
         e.detail.parameters.filter = filterId;
