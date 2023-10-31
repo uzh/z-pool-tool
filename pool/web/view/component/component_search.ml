@@ -100,7 +100,6 @@ let multi_search
     @ js_callback
   in
   let wrap html =
-    (* TODO: Place hint *)
     div
       ~a:
         (a_class [ "form-group" ]
