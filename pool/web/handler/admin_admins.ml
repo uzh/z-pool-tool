@@ -145,12 +145,10 @@ let search_role_entities req =
         (map (Guard.Uuid.Target.to_string %> encode_id) existing_targets
          @ map encode_id selected)
     in
-    let execute_search search_fnc to_html encode_id =
+    let execute_search search_fnc to_html =
       (match query with
        | None -> Lwt.return []
-       | Some query ->
-         let%lwt exclude = entities_to_exclude encode_id in
-         search_fnc exclude query actor)
+       | Some query -> search_fnc query actor)
       ||> to_html language
       ||> HttpUtils.Htmx.multi_html_to_plain_text_response %> CCResult.return
     in
@@ -158,27 +156,23 @@ let search_role_entities req =
     match search_role with
     | `Assistant | `Experimenter ->
       let open Experiment.Guard.Access in
-      let search_experiment exclude value actor =
+      let%lwt exclude = entities_to_exclude Experiment.Id.of_string in
+      let search_experiment value actor =
         Experiment.search database_label exclude value
         >|> Lwt_list.filter_s (fun (id, _) ->
           (* TODO: Could be solved on database lvl *)
           validate database_label (read id) actor ||> CCResult.is_ok)
       in
-      execute_search
-        search_experiment
-        Component.Search.Experiment.query_results
-        Experiment.Id.of_string
+      execute_search search_experiment Component.Search.Experiment.query_results
     | `LocationManager ->
       let open Pool_location.Guard.Access in
-      let search_location exclude value actor =
+      let%lwt exclude = entities_to_exclude Pool_location.Id.of_string in
+      let search_location value actor =
         Pool_location.search database_label exclude value
         >|> Lwt_list.filter_s (fun (id, _) ->
           validate database_label (read id) actor ||> CCResult.is_ok)
       in
-      execute_search
-        search_location
-        Component.Search.Location.query_results
-        Pool_location.Id.of_string
+      execute_search search_location Component.Search.Location.query_results
     | _ -> Lwt_result.fail Pool_common.Message.(Invalid Field.Role)
   in
   result |> HttpUtils.Htmx.handle_error_message ~src req

@@ -102,7 +102,9 @@ let multi_search
   let wrap html =
     (* TODO: Place hint *)
     div
-      ~a:[ a_class [ "form-group" ] ]
+      ~a:
+        (a_class [ "form-group" ]
+         :: (if is_filter then [ a_user_data "query" "wrapper" ] else []))
       ((label
           [ txt
               (Utils.field_to_string language field |> CCString.capitalize_ascii)
@@ -158,12 +160,12 @@ let multi_search
     |> wrap
 ;;
 
-let hidden_input name decode =
-  CCOption.map_or ~default:[] (fun value ->
-    [ input
-        ~a:[ a_hidden (); a_name (Field.show name); a_value (decode value) ]
-        ()
-    ])
+let additional_filter_attributes =
+  [ a_user_data
+      "hx-params"
+      Pool_common.Message.Field.(
+        [ array_key Value; show Search ] |> CCString.concat ", ")
+  ]
 ;;
 
 module Experiment = struct
@@ -264,9 +266,9 @@ module Tag = struct
 
   let filter_multi_search ~selected ~disabled language =
     create
-      ~selected
       ~disabled
       ~is_filter:true
+      ~selected
       ~tag_name:Pool_common.Message.Field.Value
       language
   ;;

@@ -427,7 +427,7 @@ let delete req =
   result |> HttpUtils.extract_happy_path ~src req
 ;;
 
-let search = Helpers.Search.create `Experiment
+let search = Helpers.Search.htmx_search_helper `Experiment
 
 module Filter = struct
   open HttpUtils.Filter

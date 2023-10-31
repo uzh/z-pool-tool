@@ -102,7 +102,7 @@ let write action req =
 
 let create = write `Create
 let update req = write (`Update (id req)) req
-let search = Helpers.Search.create `ContactTag
+let search = Helpers.Search.htmx_search_helper `ContactTag
 
 module Access : sig
   include module type of Helpers.Access
