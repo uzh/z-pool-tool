@@ -162,7 +162,8 @@ let write action req =
     in
     events |>> handle |>> success
   in
-  result |> HttpUtils.Htmx.handle_error_message ~src req
+  result
+  |> HttpUtils.Htmx.handle_error_message ~error_as_notification:true ~src req
 ;;
 
 let handle_toggle_predicate_type action req =

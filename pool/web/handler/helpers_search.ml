@@ -68,5 +68,6 @@ let htmx_search_helper
       in
       execute_search search_tags query_results
   in
-  result |> HttpUtils.Htmx.handle_error_message ~src req
+  result
+  |> HttpUtils.Htmx.handle_error_message ~error_as_notification:true ~src req
 ;;
