@@ -289,13 +289,11 @@ let detail edit req =
          ~allowed_to_assign
          experiment
          context
-         sys_languages
          default_email_reminder_lead_time
          default_text_msg_reminder_lead_time
          contact_persons
          organisational_units
          smtp_auth_list
-         message_templates
          (experiment_tags, current_tags)
          (participation_tags, current_participation_tags)
          flash_fetcher
