@@ -463,8 +463,8 @@ Es können nur Sitzungen mit freien Plätzen ausgewählt werden.|}
     "Ein Label, das als Identifikator für den Tenant gilt, z.B. 'econ-uzh'. \
      Das Label muss einzigartig sein."
   | TenantDatabaseUrl ->
-    "Die Datenbank URL, nach folgendem Schema: \
-     mariadb://<user>:<pw>@<host>:<port>/<database>"
+    {|Die Datenbank URL, nach folgendem Schema:
+    mariadb://<user>:<pw>@<host>:<port>/<database>|}
   | TimeSpanPickerHint -> "Zeitdauer in Minuten."
   | WaitingListPhoneMissingContact ->
     "Sie haben in Ihrem Profil noch keine Telefonnummer angegenen. Wir bitten \
