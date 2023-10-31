@@ -7,7 +7,7 @@ let src = Logs.Src.create "handler.helper.search"
 
 let create search_type req =
   let query_field = Field.Search in
-  let result { Pool_context.database_label; user; _ } =
+  let result { Pool_context.database_label; user; language; _ } =
     let open CCList in
     let%lwt actor =
       Pool_context.Utils.find_authorizable_opt
@@ -64,7 +64,7 @@ let create search_type req =
        | None, _ | Some _, None -> Lwt.return []
        | Some value, Some actor ->
          search_experiment (exclude @ exclude_roles_of) value actor)
-      ||> query_results
+      ||> query_results language
       ||> to_response
     | `Location ->
       let open Component.Search.Location in
@@ -86,7 +86,7 @@ let create search_type req =
          |> Lwt_result.return
        | Some value, Some actor ->
          search_location (exclude @ exclude_roles_of) value actor
-         ||> query_results
+         ||> query_results language
          ||> to_response)
     | `ContactTag ->
       let open Component.Search.Tag in
@@ -108,7 +108,7 @@ let create search_type req =
        | None, _ | Some _, None -> Lwt.return []
        | Some value, Some actor ->
          search_tags (exclude @ exclude_roles_of) value actor)
-      ||> query_results
+      ||> query_results language
       ||> to_response
   in
   result |> HttpUtils.Htmx.handle_error_message ~src req

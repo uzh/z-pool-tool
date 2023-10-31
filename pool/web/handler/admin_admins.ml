@@ -98,23 +98,88 @@ let create_admin req =
 
 let handle_toggle_role req =
   let result (_ : Pool_context.t) =
+    let admin_id = HttpUtils.find_id Admin.Id.of_string Field.Admin req in
     Sihl.Web.Request.to_urlencoded req
     ||> HttpUtils.find_in_urlencoded Field.Role
     >== Role.Role.of_string_res
         %> CCResult.map_err Pool_common.Message.authorization
     >|+ fun key ->
-    let exclude_roles_of =
-      try
-        HttpUtils.find_id Admin.Id.of_string Field.Admin req |> CCOption.return
-      with
-      | _ -> None
-    in
-    Component.Role.Search.value_form
-      Pool_common.Language.En
-      ?exclude_roles_of
-      ~key
-      ()
+    Component.Role.Search.value_form Pool_common.Language.En ~key admin_id ()
     |> HttpUtils.Htmx.html_to_plain_text_response
+  in
+  result |> HttpUtils.Htmx.handle_error_message ~src req
+;;
+
+let search_role_entities req =
+  let admin_id = HttpUtils.find_id Admin.Id.of_string Field.Admin req in
+  let result { Pool_context.database_label; user; language; _ } =
+    let* admin = Admin.find database_label admin_id in
+    let* actor =
+      Pool_context.Utils.find_authorizable ~admin_only:true database_label user
+    in
+    let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+    let query = HttpUtils.find_in_urlencoded_opt Field.Search urlencoded in
+    let* search_role =
+      let open CCOption in
+      HttpUtils.find_in_urlencoded_opt Field.Role urlencoded
+      |> flip bind (fun role ->
+        try Role.Role.of_string role |> return with
+        | _ -> None)
+      |> to_result Pool_common.Message.(NotFound Field.Role)
+      |> Lwt_result.lift
+    in
+    let%lwt existing_targets =
+      (* TODO: Could be solved on database lvl *)
+      Helpers_guard.find_roles database_label admin
+      ||> CCList.filter_map
+            (fun ({ Guard.ActorRole.target_uuid; role; _ }, _, _) ->
+               if Role.Role.equal role search_role then None else target_uuid)
+    in
+    let entities_to_exclude encode_id =
+      let open CCList in
+      let%lwt selected =
+        HttpUtils.htmx_urlencoded_list Field.(array_key Target) req
+      in
+      (* TODO: NOT SURE THIS WORKS CORRECTLY *)
+      Lwt.return
+        (map (Guard.Uuid.Target.to_string %> encode_id) existing_targets
+         @ map encode_id selected)
+    in
+    let execute_search search_fnc to_html encode_id =
+      (match query with
+       | None -> Lwt.return []
+       | Some query ->
+         let%lwt exclude = entities_to_exclude encode_id in
+         search_fnc exclude query actor)
+      ||> to_html language
+      ||> HttpUtils.Htmx.multi_html_to_plain_text_response %> CCResult.return
+    in
+    let open Guard.Persistence in
+    match search_role with
+    | `Assistant | `Experimenter ->
+      let open Experiment.Guard.Access in
+      let search_experiment exclude value actor =
+        Experiment.search database_label exclude value
+        >|> Lwt_list.filter_s (fun (id, _) ->
+          (* TODO: Could be solved on database lvl *)
+          validate database_label (read id) actor ||> CCResult.is_ok)
+      in
+      execute_search
+        search_experiment
+        Component.Search.Experiment.query_results
+        Experiment.Id.of_string
+    | `LocationManager ->
+      let open Pool_location.Guard.Access in
+      let search_location exclude value actor =
+        Pool_location.search database_label exclude value
+        >|> Lwt_list.filter_s (fun (id, _) ->
+          validate database_label (read id) actor ||> CCResult.is_ok)
+      in
+      execute_search
+        search_location
+        Component.Search.Location.query_results
+        Pool_location.Id.of_string
+    | _ -> Lwt_result.fail Pool_common.Message.(Invalid Field.Role)
   in
   result |> HttpUtils.Htmx.handle_error_message ~src req
 ;;
@@ -123,8 +188,6 @@ let grant_role req =
   let open Utils.Lwt_result.Infix in
   let lift = Lwt_result.lift in
   let admin_id = HttpUtils.find_id Admin.Id.of_string Field.Admin req in
-  (* let redirect_path = CCString.replace ~which:`Right ~sub:"/grant-role"
-     ~by:"/edit" target in *)
   let redirect_path =
     Format.asprintf "/admin/admins/%s/edit" (Admin.Id.value admin_id)
   in

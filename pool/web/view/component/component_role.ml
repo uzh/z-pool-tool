@@ -157,39 +157,32 @@ module Search = struct
     Format.asprintf "/admin/admins/%s/%s" Admin.(admin |> id |> Id.value)
   ;;
 
-  let[@warning "-27"] value_input ?exclude_roles_of ?role ?value language =
+  let value_input language admin_id =
     let open Role.Role in
     function
     | Some QueryLocations ->
-      (* What is exclude_roles_of? / value *)
       let hint = Pool_common.I18n.RoleIntro (Field.Location, Field.Locations) in
-      Component_search.Location.create ~hint ~tag_name:Field.Target language ()
+      Component_search.RoleTarget.locations ~hint language admin_id
     | Some QueryExperiments ->
       let hint =
         Pool_common.I18n.RoleIntro (Field.Experiment, Field.Experiments)
       in
-      Component_search.Experiment.create
-        ~hint
-        ~tag_name:Field.Target
-        language
-        ()
+      Component_search.RoleTarget.experiments ~hint language admin_id
     | None -> div []
   ;;
 
-  let value_form language ?exclude_roles_of ?key ?value () =
+  let value_form language admin_id ?key () =
     CCOption.map_or ~default:(Ok None) Role.Role.type_of_key key
     |> function
     | Error err -> p [ Pool_common.Utils.error_to_string language err |> txt ]
     | Ok input_type ->
-      let input_field =
-        value_input ?exclude_roles_of ?role:key ?value language input_type
-      in
+      let input_field = value_input language admin_id input_type in
       div ~a:[ a_class [ "switcher-sm"; "flex-gap" ] ] [ input_field ]
   ;;
 
-  let role_form ?key ?value language csrf admin identifier role_list =
+  let role_form ?key language csrf admin identifier role_list =
     let toggle_id = Format.asprintf "role-search-%i" identifier in
-    let toggled_content = value_form language ?key ?value () in
+    let toggled_content = value_form language (Admin.id admin) ?key () in
     let key_selector =
       let attributes =
         Utils.htmx_attribs
@@ -232,10 +225,9 @@ module Search = struct
       ]
   ;;
 
-  let input_form ?(identifier = 0) ?key ?value csrf language admin role_list () =
-    let role_form =
-      role_form ?key ?value language csrf admin identifier role_list
-    in
+  (* TODO: Identifier? Can I remove? *)
+  let input_form ?(identifier = 0) ?key csrf language admin role_list () =
+    let role_form = role_form ?key language csrf admin identifier role_list in
     let stack = "stack-sm" in
     div
       ~a:[ a_class [ stack; "inset-sm"; "border"; "role-search" ] ]

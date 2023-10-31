@@ -227,7 +227,6 @@ let value_input
          ~selected
          ~disabled
          language
-         ()
      | Key.QueryTags ->
        let selected =
          value
