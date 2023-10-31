@@ -499,16 +499,17 @@ module Partials = struct
             let modals =
               match create_reminder_modal assignment with
               | true ->
-                ReminderModal.modal
-                  context
-                  experiment.Experiment.id
-                  session
-                  assignment
-                :: modals
+                modals
+                @ [ ReminderModal.modal
+                      context
+                      experiment.Experiment.id
+                      session
+                      assignment
+                  ]
               | false -> modals
             in
             let columns = if is_print then base else base @ buttons in
-            columns :: rows, modals)
+            rows @ [ columns ], modals)
           ([], [])
           assignments
       in
