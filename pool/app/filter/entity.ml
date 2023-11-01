@@ -380,8 +380,6 @@ module Operator = struct
     ;;
 
     let to_sql = function
-      (* TODO: Differ between select ( = & != ) and multi select ( LIKE / NOT
-         LIKE ), if it is performance relevant *)
       (* List operators are used to query custom field answers by their value
          which store json arrays *)
       | ContainsSome | ContainsAll -> "LIKE"
