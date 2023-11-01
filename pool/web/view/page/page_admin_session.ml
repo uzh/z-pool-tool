@@ -231,37 +231,38 @@ let reschedule_session
       (Experiment.Id.value experiment.Experiment.id)
       Session.(Id.value session.id)
   in
-  form
-    ~a:
-      [ a_class [ "stack" ]
-      ; a_method `Post
-      ; a_action (action |> Sihl.Web.externalize_path)
-      ]
-    [ csrf_element csrf ()
-    ; date_time_picker_element
-        language
-        Message.Field.Start
-        ~required:true
-        ~flash_fetcher
-        ~value:(session.start |> Start.value)
-        ~disable_past:true
-    ; timespan_picker
-        language
-        ~required:true
-        Message.Field.Duration
-        ~help:[ I18n.TimeSpanPickerHint ]
-        ~value:(session.duration |> Duration.value)
-        ~flash_fetcher
-    ; div
-        ~a:[ a_class [ "flexrow" ] ]
-        [ submit_element
-            ~classnames:[ "push" ]
-            language
-            Message.(Reschedule (Some Field.Session))
-            ()
+  [ p [ txt Pool_common.(Utils.hint_to_string language I18n.RescheduleSession) ]
+  ; form
+      ~a:
+        [ a_class [ "stack" ]
+        ; a_method `Post
+        ; a_action (action |> Sihl.Web.externalize_path)
         ]
-    ]
-  |> CCList.return
+      [ csrf_element csrf ()
+      ; date_time_picker_element
+          language
+          Message.Field.Start
+          ~required:true
+          ~flash_fetcher
+          ~value:(session.start |> Start.value)
+          ~disable_past:true
+      ; timespan_picker
+          language
+          ~required:true
+          Message.Field.Duration
+          ~help:[ I18n.TimeSpanPickerHint ]
+          ~value:(session.duration |> Duration.value)
+          ~flash_fetcher
+      ; div
+          ~a:[ a_class [ "flexrow" ] ]
+          [ submit_element
+              ~classnames:[ "push" ]
+              language
+              Message.(Reschedule (Some Field.Session))
+              ()
+          ]
+      ]
+  ]
   |> Layout.Experiment.(
        create
          context

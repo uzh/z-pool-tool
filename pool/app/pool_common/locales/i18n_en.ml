@@ -371,6 +371,9 @@ Make sure to show links and URLs as plain text.
     {|No automatic reminders have been sent for this session yet. Make sure that the message template is correct if you want to trigger the reminders now.
 
 If you trigger the reminders manually now, no more automatic reminders will be sent via the selected message channel.|}
+  | RescheduleSession ->
+    "When you reschedule a session, all registered contacts are automatically \
+     informed."
   | ResetInvitations ->
     "Resets invitations, all previous invitations up to the now will be \
      ignored."

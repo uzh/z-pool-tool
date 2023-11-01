@@ -381,6 +381,9 @@ Wenn Sie die Erinnerungen jetzt manuell auslösen werden über den gewählten Na
     "Ist diese Option aktiviert, können sich Kontakte weder anmelden noch auf \
      die Warteliste setzen. Das Experiment ist für die Kontakte nicht \
      ersichtlich."
+  | RescheduleSession ->
+    "Wenn Sie eine Session verschieben werden alle an dieser Session \
+     registrierten Kontakte automatisch informiert."
   | ResetInvitations ->
     "Einladungen zurücksetzen, alle bisherigen Einladungen werden für \
      zukünftige Versande ignoriert."
