@@ -353,6 +353,11 @@ let form
         inputs.forEach((elm) => {
           elm.disabled = random.checked
         })
+        if(random.checked) {
+          subform.classList.add("hidden");
+        } else {
+          subform.classList.remove("hidden");
+        }
       }
 
       random.addEventListener("change", (e) => {
@@ -412,7 +417,7 @@ let form
         ; div ~a:[ a_class [ "select" ] ] [ select ]
         ]
     in
-    let check_random =
+    let random_is_checked =
       match mailing with
       | None -> true
       | Some mailing ->
@@ -429,56 +434,62 @@ let form
           ]
       ; p [ txt Pool_common.(Utils.hint_to_string language I18n.Distribution) ]
       ; checkbox_element
-          ~value:check_random
+          ~value:random_is_checked
           ~flash_fetcher
           language
           Field.RandomOrder
       ; div
           ~a:
-            [ a_class
-                [ "border-bottom"
-                ; "inset"
-                ; "u-shape"
-                ; "vertical"
-                ; "flexrow"
-                ; "flex-gap"
-                ; "gap"
-                ]
-            ; a_id subform_id
+            [ a_id subform_id
+            ; a_class (if random_is_checked then [ "hidden" ] else [])
             ]
           [ div
-              ~a:[ a_class [ "switcher"; "flex-gap"; "grow" ] ]
-              [ form_group field_select Field.DistributionField
-              ; form_group sort_select Field.SortOrder
+              ~a:
+                [ a_class
+                    [ "border-bottom"
+                    ; "inset"
+                    ; "u-shape"
+                    ; "vertical"
+                    ; "flexrow"
+                    ; "flex-gap"
+                    ; "gap"
+                    ]
+                ; a_id subform_id
+                ]
+              [ div
+                  ~a:[ a_class [ "switcher"; "flex-gap"; "grow" ] ]
+                  [ form_group field_select Field.DistributionField
+                  ; form_group sort_select Field.SortOrder
+                  ]
+              ; div
+                  ~a:[ a_class [ "form-group"; "justify-end" ] ]
+                  [ button
+                      ~a:
+                        [ a_class [ "success" ]
+                        ; a_user_data
+                            "hx-post"
+                            (mailings_path
+                               ~suffix:"add-condition"
+                               experiment.Experiment.id
+                             |> Sihl.Web.externalize_path)
+                        ; a_user_data "hx-trigger" "click"
+                        ; a_user_data "hx-target" "#distribution-list"
+                        ; a_user_data "hx-swap" "beforeend"
+                        ]
+                      Icon.[ to_html Add ]
+                  ]
               ]
           ; div
-              ~a:[ a_class [ "form-group"; "justify-end" ] ]
-              [ button
-                  ~a:
-                    [ a_class [ "success" ]
-                    ; a_user_data
-                        "hx-post"
-                        (mailings_path
-                           ~suffix:"add-condition"
-                           experiment.Experiment.id
-                         |> Sihl.Web.externalize_path)
-                    ; a_user_data "hx-trigger" "click"
-                    ; a_user_data "hx-target" "#distribution-list"
-                    ; a_user_data "hx-swap" "beforeend"
-                    ]
-                  Icon.[ to_html Add ]
+              [ Mailing.Distribution.(
+                  distribution |> CCOption.map_or ~default:[] find_dist)
+                |> CCList.map (distribution_form_field language)
+                |> Component.Sortable.create
+                     ~classnames:[ "flexcolumn" ]
+                     ~attributes:[ a_id "distribution-list" ]
+                |> CCList.pure
+                |> div ~a:[ a_class [ "gap" ] ]
+              ; script (Unsafe.data distribution_fncs)
               ]
-          ]
-      ; div
-          [ Mailing.Distribution.(
-              distribution |> CCOption.map_or ~default:[] find_dist)
-            |> CCList.map (distribution_form_field language)
-            |> Component.Sortable.create
-                 ~classnames:[ "flexcolumn" ]
-                 ~attributes:[ a_id "distribution-list" ]
-            |> CCList.pure
-            |> div ~a:[ a_class [ "gap" ] ]
-          ; script (Unsafe.data distribution_fncs)
           ]
       ]
   in
