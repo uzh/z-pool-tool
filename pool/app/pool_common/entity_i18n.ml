@@ -214,6 +214,7 @@ type hint =
   | SessionRegistrationFollowUpHint
   | SessionRegistrationHint
   | SessionReminderLanguageHint
+  | SettingsNoEmailSuffixes
   | SignUpForWaitingList
   | SmtpSettingsDefaultFlag
   | SmtpSettingsIntro

@@ -432,6 +432,9 @@ The following follow-up sessions exist:|}
       "Search by: %s"
       (fields |> CCList.map Locales_en.field_to_string |> CCString.concat ", ")
   | SelectedDateIsPast -> "The selected date is in the past."
+  | SettingsNoEmailSuffixes ->
+    "There are no email suffixes defined that are allowed. This means that all \
+     email suffixes are allowed."
   | SessionReminderLanguageHint ->
     "If you provide a custom reminder text, select its language here."
   | SessionRegistrationHint -> "The registration for a session is binding."

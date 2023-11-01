@@ -443,6 +443,9 @@ Wenn keine der Checkboxen angewählt ist, bedeutet das, dass der Kontakt erschie
   | SessionReminderLanguageHint ->
     "Falls sie einen eigenen Erinnerungstext angeben, wählen Sie dessen \
      Sprache hier."
+  | SettingsNoEmailSuffixes ->
+    "Es sind keine Email-Endungen definiert, die zugelassen sind. Somit kann \
+     sich mit allen Email-Endungen registriert werden."
   | SessionRegistrationHint ->
     "Die Registrierung für eine Session ist verbindlich."
   | SessionRegistrationFollowUpHint ->
