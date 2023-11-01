@@ -49,6 +49,7 @@ module Logger = struct
       let open CCOption in
       let default = "undefined" in
       let id = Sihl.Web.Id.find req |> value ~default in
+      let ip = Opium.Request.header "X-Real-IP" req |> value ~default in
       let database_label, user =
         find req
         |> of_result
@@ -61,6 +62,7 @@ module Logger = struct
       |> add Logger.tag_req id
       |> add Logger.tag_database database_label
       |> add Logger.tag_user user
+      |> add Logger.tag_ip ip
     ;;
 
     let context { database_label; user; _ } : Logs.Tag.set =
