@@ -72,10 +72,10 @@ module Elements = struct
   let help language = function
     | None -> []
     | Some help ->
-      [ span
-          ~a:[ a_class [ "help" ] ]
-          [ txt Pool_common.(Utils.hint_to_string language help) ]
-      ]
+      help
+      |> Pool_common.Utils.hint_to_string language
+      |> Utils.Html.handle_line_breaks (span ~a:[ a_class [ "help" ] ])
+      |> CCList.return
   ;;
 
   let error language = function

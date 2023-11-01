@@ -218,6 +218,8 @@ type hint =
   | SwapSessions
   | TagsIntro
   | TemplateTextElementsHint
+  | TenantDatabaseLabel
+  | TenantDatabaseUrl
   | TimeSpanPickerHint
   | WaitingListPhoneMissingContact
 
