@@ -63,10 +63,7 @@ let distribution_sort_select language ?field current_order =
 
 let distribution_form_field language (field, current_order) =
   div
-    ~a:
-      [ a_class [ "flexrow"; "flex-gap"; "distribution"; "inset-sm" ]
-      ; a_user_data "sortable-item" ""
-      ]
+    ~a:[ a_class [ "flexrow"; "flex-gap"; "distribution" ] ]
     [ div
         ~a:[ a_class [ "switcher"; "flex-gap"; "align-center"; "grow" ] ]
         [ label
@@ -325,7 +322,7 @@ let form
                 option.disabled = false;
             }
           })
-          e.currentTarget.closest('.distribution').remove();
+          e.currentTarget.closest('[data-sortable-item]').remove();
         }
 
       document.querySelector('#distribution-list').addEventListener('htmx:beforeSwap', (e) => {
@@ -483,7 +480,7 @@ let form
               [ Mailing.Distribution.(
                   distribution |> CCOption.map_or ~default:[] find_dist)
                 |> CCList.map (distribution_form_field language)
-                |> Component.Sortable.create
+                |> Component.Sortable.create_sortable
                      ~classnames:[ "flexcolumn" ]
                      ~attributes:[ a_id "distribution-list" ]
                 |> CCList.pure

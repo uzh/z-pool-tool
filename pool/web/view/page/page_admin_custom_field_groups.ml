@@ -73,9 +73,7 @@ let form
                           ; "flex-gap"
                           ; "justify-between"
                           ; "align-center"
-                          ; "inset-sm"
                           ]
-                      ; a_user_data "sortable-item" ""
                       ]
                     [ div
                         [ txt (field |> name |> Name.find_opt_or language "-") ]
@@ -92,7 +90,7 @@ let form
                       |> edit_link ~classnames:[ "small" ]
                     ])
                 fields
-              |> Component.Sortable.create
+              |> Component.Sortable.create_sortable
             ; div
                 ~a:[ a_class [ "flexrow" ] ]
                 [ submit_element

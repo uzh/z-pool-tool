@@ -1,28 +1,33 @@
 open Tyxml.Html
 
-let sortable_icon sortable =
-  let classnames = [ "flexrow"; "flex-gap-sm" ] in
-  div
-    ~a:[ a_class classnames ]
-    [ div
-        ~a:[ a_class [ "flexrow"; "align-center" ] ]
-        Component_icon.[ to_html ReorderThree ]
-    ; sortable
-    ]
-;;
+let icon = Component_icon.(to_html ReorderTwo)
+let sortable_list_attrib = a_user_data "sortable" ""
+let sortable_item_attrib = a_user_data "sortable-item" ""
 
-let create ?(classnames = []) ?(attributes = []) children =
+let sortable_item sortable =
   div
     ~a:
-      ([ a_user_data "sortable" ""; a_class ([ "grow" ] @ classnames) ]
-       @ attributes)
-    children
-  |> sortable_icon
+      [ a_class [ "flexrow"; "flex-gap-sm"; "inset-sm"; "align-center" ]
+      ; sortable_item_attrib
+      ]
+    [ div [ icon ]; sortable ]
 ;;
 
-let create_table ?(classnames = []) children =
-  tablex
-    ~a:[ a_class ([ "grow" ] @ classnames) ]
-    [ tbody ~a:[ a_user_data "sortable" "" ] children ]
-  |> sortable_icon
+let create_sortable ?(classnames = []) ?(attributes = []) sortables =
+  sortables
+  |> CCList.map sortable_item
+  |> div
+       ~a:
+         ([ sortable_list_attrib; a_class ([ "grow" ] @ classnames) ]
+          @ attributes)
+;;
+
+let create_table ?(classnames = []) sortable_cells =
+  let open CCList in
+  let icon = td [ icon ] in
+  sortable_cells
+  >|= (fun cells -> icon :: cells |> tr ~a:[ sortable_item_attrib ])
+  |> tbody ~a:[ sortable_list_attrib ]
+  |> return
+  |> tablex ~a:[ a_class ("sortable" :: classnames) ]
 ;;

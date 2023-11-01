@@ -316,3 +316,8 @@ table.simple {
     left: 0;
     transform: translateX(-100%);
 }
+
+// Sortable
+[data-sortable-item] > *:not(:first-child) {
+    flex-grow: 1;
+}

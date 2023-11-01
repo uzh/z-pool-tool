@@ -74,11 +74,9 @@ let show
             | None -> [ a_disabled () ]
           in
           let checkbox = input ~a:(attrs @ selected @ disabled) () in
-          div
-            ~a:[ a_user_data "sortable-item" ""; a_class [ "inset-sm" ] ]
-            [ checkbox; label [ txt (Pool_common.Language.show language) ] ])
+          div [ checkbox; label [ txt (Pool_common.Language.show language) ] ])
         all_languages
-      |> Component.Sortable.create
+      |> Component.Sortable.create_sortable
     in
     div
       [ h2 ~a:[ a_class [ "heading-2" ] ] [ txt "Languages" ]
