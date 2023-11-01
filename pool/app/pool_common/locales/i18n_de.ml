@@ -103,10 +103,6 @@ Sie kommen für mehr Experimente in Frage, umso kompletter Ihr Profil ist.|}
   | SessionDetailTitle start ->
     Format.asprintf "Session am %s" (Utils_time.formatted_date_time start)
   | SessionIndent -> "Einrückungen groupieren Folgesessions."
-  | SessionReminderDefaultLeadTime leadtime ->
-    Format.asprintf
-      "Die Standardvorlaufzeit ist: %s"
-      (leadtime |> Pool_common_utils.Time.formatted_timespan)
   | SessionReminder -> "Sessionerinnerung"
   | SessionRegistrationTitle -> "Für diese Session anmelden"
   | SignUpAcceptTermsAndConditions -> "Ich akzeptiere die Nutzungsbedingungen."
@@ -440,16 +436,19 @@ Wenn keine der Checkboxen angewählt ist, bedeutet das, dass der Kontakt erschie
   | SessionCloseLegend ->
     {|NS: Der Kontakt ist nicht an der Session erschienen
     P: Der Kontakt hat am Experiment teilgenommen|}
+  | SessionReminderLeadTime ->
+    "Die Vorlaufzeit bestimmt, wie lange vor dem Start der Session die \
+     Erinnerungen an die Kontakte verschickt wird."
   | SessionReminderLanguageHint ->
     "Falls sie einen eigenen Erinnerungstext angeben, wählen Sie dessen \
      Sprache hier."
   | SettingsNoEmailSuffixes ->
-    "Es sind keine Email-Endungen definiert, die zugelassen sind. Somit kann \
-     sich mit allen Email-Endungen registriert werden."
+    "Es sind keine Email-Endungen definiert, die zugelassen sind. Das \
+     bedeutet, dass alle Email-Endungen erlaubt sind."
   | SessionRegistrationHint ->
     "Die Registrierung für eine Session ist verbindlich."
   | SessionRegistrationFollowUpHint ->
-    "Die Registrierung für eine Session inlk. allen Folgesessions ist \
+    "Die Registrierung für eine Session inkl. allen Folgesessions ist \
      verbindlich."
   | SelectedDateIsPast -> "Das gewählte Datum liegt in der Vergangenheit."
   | SignUpForWaitingList ->

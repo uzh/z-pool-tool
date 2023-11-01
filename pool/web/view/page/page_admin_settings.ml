@@ -335,14 +335,22 @@ let show
     in
     div
       [ h2 [ txt "Reminder lead time" ]
-      ; lead_time_form
-          `UpdateDefaultLeadTime
-          Message.Field.EmailLeadTime
-          default_reminder_lead_time
-      ; lead_time_form
-          `UpdateTextMsgDefaultLeadTime
-          Message.Field.TextMessageLeadTime
-          default_text_msg_reminder_lead_time
+      ; p
+          [ txt
+              Pool_common.(
+                Utils.hint_to_string language I18n.SessionReminderLeadTime)
+          ]
+      ; div
+          ~a:[ a_class [ "stack" ] ]
+          [ lead_time_form
+              `UpdateDefaultLeadTime
+              Message.Field.EmailLeadTime
+              default_reminder_lead_time
+          ; lead_time_form
+              `UpdateTextMsgDefaultLeadTime
+              Message.Field.TextMessageLeadTime
+              default_text_msg_reminder_lead_time
+          ]
       ]
   in
   div

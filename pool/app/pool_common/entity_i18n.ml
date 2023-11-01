@@ -66,7 +66,6 @@ type t =
   | SessionDetailTitle of Ptime.t
   | SessionIndent
   | SessionReminder
-  | SessionReminderDefaultLeadTime of Entity.Reminder.LeadTime.t
   | SessionRegistrationTitle
   | SignUpAcceptTermsAndConditions
   | SignUpCTA
@@ -213,6 +212,7 @@ type hint =
   | SessionCloseLegend
   | SessionRegistrationFollowUpHint
   | SessionRegistrationHint
+  | SessionReminderLeadTime
   | SessionReminderLanguageHint
   | SettingsNoEmailSuffixes
   | SignUpForWaitingList

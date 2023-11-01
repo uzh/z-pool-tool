@@ -103,10 +103,6 @@ let to_string = function
   | SessionDetailTitle start ->
     Format.asprintf "Session at %s" (Utils_time.formatted_date_time start)
   | SessionIndent -> "Indentations group follow-up sessions."
-  | SessionReminderDefaultLeadTime leadtime ->
-    Format.asprintf
-      "The default lead time is: %s"
-      (leadtime |> Pool_common_utils.Time.formatted_timespan)
   | SessionReminder -> "Session reminder"
   | SessionRegistrationTitle -> "Register for this session"
   | SignUpAcceptTermsAndConditions -> "I accept the terms and conditions."
@@ -435,6 +431,9 @@ The following follow-up sessions exist:|}
   | SettingsNoEmailSuffixes ->
     "There are no email suffixes defined that are allowed. This means that all \
      email suffixes are allowed."
+  | SessionReminderLeadTime ->
+    "The lead time determines how long before the start of the session the \
+     reminders are sent to the contacts"
   | SessionReminderLanguageHint ->
     "If you provide a custom reminder text, select its language here."
   | SessionRegistrationHint -> "The registration for a session is binding."
