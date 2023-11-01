@@ -257,6 +257,10 @@ let rec hint_to_string = function
     "You will be able to create the available options in the section 'Option' \
      after the custom field is created."
   | CustomFieldTypeMultiSelect -> hint_to_string CustomFieldTypeSelect
+  | DefaultReminderLeadTime lead_time ->
+    Format.asprintf
+      "If left blank, the default lead time of %s is applied."
+      (lead_time |> Utils_time.formatted_timespan)
   | CustomHtmx s -> s
   | DirectRegistrationDisbled ->
     "If this option is enabled, contacts can join the waiting list but cannot \

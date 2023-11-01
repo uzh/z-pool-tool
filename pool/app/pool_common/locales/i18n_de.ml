@@ -265,6 +265,10 @@ Wird nach diesem Feld gefiltert, wird der überschreibende Wert bevorzugt.
      Abschnitt 'Option' erstellen."
   | CustomFieldTypeMultiSelect -> hint_to_string CustomFieldTypeSelect
   | CustomHtmx s -> s
+  | DefaultReminderLeadTime lead_time ->
+    Format.asprintf
+      "Bleibt diese Angabe leer, wird die Standardvorlaufzeit von %s verwendet."
+      (lead_time |> Utils_time.formatted_timespan)
   | DirectRegistrationDisbled ->
     "Ist diese Option aktiviert, können sich Kontakte auf die Warteliste \
      setzen, aber nicht direkt für das Experiment einschreiben."

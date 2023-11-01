@@ -294,7 +294,7 @@ let show
         [ csrf_element csrf ()
         ; timespan_picker
             ~label_field:field
-            ~help:I18n.TimeSpanPickerHint
+            ~help:[ I18n.TimeSpanPickerHint ]
             ~value:(value |> Reminder.LeadTime.value)
             ~required:true
             ~flash_fetcher

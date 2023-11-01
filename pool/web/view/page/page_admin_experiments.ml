@@ -168,15 +168,13 @@ let experiment_form
       [ timespan_picker
           language
           field
-          ~help:I18n.TimeSpanPickerHint
+          ~help:
+            [ I18n.TimeSpanPickerHint
+            ; I18n.DefaultReminderLeadTime
+                (default_value |> Reminder.LeadTime.value)
+            ]
           ?value:CCOption.(bind experiment get_value)
           ~flash_fetcher
-      ; Utils.text_to_string
-          language
-          (I18n.SessionReminderDefaultLeadTime
-             (default_value |> Reminder.LeadTime.value))
-        |> txt
-        |> HttpUtils.default_value_style
       ]
   in
   form
