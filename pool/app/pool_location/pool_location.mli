@@ -289,14 +289,25 @@ val find_location_file
   -> (Mapping.file, Entity.Message.error) result Lwt.t
 
 val search
-  :  Pool_database.Label.t
-  -> Id.t list
+  :  ?conditions:string
+  -> ?dyn:Utils.Database.Dynparam.t
+  -> ?exclude:Id.t list
+  -> ?joins:string
+  -> ?limit:int
+  -> Pool_database.Label.t
   -> string
   -> (Id.t * Name.t) list Lwt.t
 
 val search_multiple_by_id
   :  Pool_database.Label.t
   -> Id.t list
+  -> (Id.t * Name.t) list Lwt.t
+
+val find_targets_grantable_by_admin
+  :  ?exclude:Id.t list
+  -> Pool_database.Label.t
+  -> Admin.t
+  -> string
   -> (Id.t * Name.t) list Lwt.t
 
 val default_values : t list

@@ -456,7 +456,7 @@ end = struct
   type t = Filter.query
 
   let handle ?(tags = Logs.Tag.empty) experiment key_list template_list query =
-    Logs.info ~src (fun m -> m "Handle command UpdateFilter" ~tags);
+    Logs.info ~src (fun m -> m "Handle command CreateFilter" ~tags);
     let open CCResult in
     let* query = Filter.validate_query key_list template_list query in
     let id = Pool_common.Id.create () in

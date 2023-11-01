@@ -1,6 +1,8 @@
 import 'htmx.org'
 import './index.scss'
 import { initDatepicker } from "./flatpickr.js"
+import { initHTMX } from './htmx'
+import { initSearch } from "./search"
 import {
     initConfirmable,
     initFileInput,
@@ -19,3 +21,5 @@ initNotification();
 initSortable();
 initDetectFormChanges();
 initFormSubmitInterferer();
+initHTMX();
+initSearch();

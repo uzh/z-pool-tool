@@ -102,17 +102,26 @@ ul.no-style {
         [data-id] {
             cursor: pointer;
         }
+    }
 
+    .data-list > [data-selection-item] {
+        @extend .has-icon;
+        padding: $space-sm;
+        &:hover {
+            background-color: $grey-light;
+        }
         .toggle-item {
-            color: $green;
-            transform: rotate(45deg)
+            display: none;
         }
     }
-
-    [data-query="results"] .toggle-item {
-        color: $red;
-        cursor: pointer;
+    input[disabled] {
+        cursor: not-allowed;
     }
+}
+
+[data-search-selection] {
+    row-gap: $space-xs;
+    column-gap: $space-sm;
 }
 
 // Flex
@@ -280,8 +289,11 @@ table.simple {
 
 // Live Search
 .data-list.relative {
-    display: flex;
+    display: none;
     position: relative;
+    &.active {
+        display: flex;
+    }
 }
 
 .data-list>.data-item.bg-red-lighter {

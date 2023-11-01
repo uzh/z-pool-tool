@@ -148,6 +148,26 @@ let exec_as_transaction database_label commands =
   transaction database_label fnc
 ;;
 
+let exclude_ids column_name decode_id dyn exclude =
+  let sql = "UNHEX(REPLACE(?, '-', ''))" in
+  match exclude with
+  | [] -> dyn, None
+  | exclude ->
+    let dyn, sql_strings =
+      CCList.fold_left
+        (fun (dyn, sql_strings) id ->
+          ( dyn |> Dynparam.add Caqti_type.string (id |> decode_id)
+          , sql :: sql_strings ))
+        (dyn, [])
+        exclude
+    in
+    sql_strings
+    |> CCString.concat ", "
+    |> Format.asprintf "%s NOT IN (%s)" column_name
+    |> CCOption.return
+    |> CCPair.make dyn
+;;
+
 let set_fk_check_request =
   let open Caqti_request.Infix in
   "SET FOREIGN_KEY_CHECKS = ?" |> Caqti_type.(bool ->. unit)

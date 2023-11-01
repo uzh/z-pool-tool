@@ -275,7 +275,7 @@ let delete req =
   result |> HttpUtils.extract_happy_path ~src req
 ;;
 
-let search = Helpers.Search.create `Location
+let search = Helpers.Search.htmx_search_helper `Location
 
 module Access : sig
   include module type of Helpers.Access

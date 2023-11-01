@@ -158,6 +158,21 @@ module Sql = struct
     Format.asprintf "%s %s" select_from where_fragment
   ;;
 
+  let search_select =
+    {sql|
+        SELECT
+          LOWER(CONCAT(
+            SUBSTR(HEX(pool_experiments.uuid), 1, 8), '-',
+            SUBSTR(HEX(pool_experiments.uuid), 9, 4), '-',
+            SUBSTR(HEX(pool_experiments.uuid), 13, 4), '-',
+            SUBSTR(HEX(pool_experiments.uuid), 17, 4), '-',
+            SUBSTR(HEX(pool_experiments.uuid), 21)
+          )),
+          pool_experiments.title
+        FROM pool_experiments
+    |sql}
+  ;;
+
   let validate_experiment_sql m = Format.asprintf " AND %s " m, Dynparam.empty
 
   let select_count where_fragment =
@@ -305,72 +320,62 @@ module Sql = struct
       (id |> Entity.Id.value)
   ;;
 
-  let search_request ?(limit = 20) ids =
-    let base =
-      {sql|
-        SELECT
-          LOWER(CONCAT(
-            SUBSTR(HEX(pool_experiments.uuid), 1, 8), '-',
-            SUBSTR(HEX(pool_experiments.uuid), 9, 4), '-',
-            SUBSTR(HEX(pool_experiments.uuid), 13, 4), '-',
-            SUBSTR(HEX(pool_experiments.uuid), 17, 4), '-',
-            SUBSTR(HEX(pool_experiments.uuid), 21)
-          )),
-          pool_experiments.title
-        FROM pool_experiments
-        WHERE pool_experiments.title LIKE $1
-      |sql}
+  let search_request ?conditions ?joins ~limit () =
+    let default_contidion = "pool_experiments.title LIKE ?" in
+    let joined_select =
+      CCOption.map_or
+        ~default:search_select
+        (Format.asprintf "%s %s" search_select)
+        joins
     in
-    let query =
-      match ids with
-      | [] -> base
-      | ids ->
-        CCList.mapi
-          (fun i _ -> Format.asprintf "UNHEX(REPLACE($%i, '-', ''))" (i + 2))
-          ids
-        |> CCString.concat ","
-        |> Format.asprintf
-             {sql|
-              %s
-              AND pool_experiments.uuid NOT IN (%s)
-          |sql}
-             base
+    let where =
+      CCOption.map_or
+        ~default:default_contidion
+        (Format.asprintf "%s AND %s" default_contidion)
+        conditions
     in
-    Format.asprintf "%s LIMIT %i" query limit
+    Format.asprintf "%s WHERE %s LIMIT %i" joined_select where limit
   ;;
 
-  let search pool exclude query =
+  let search
+    ?conditions
+    ?(dyn = Dynparam.empty)
+    ?exclude
+    ?joins
+    ?(limit = 20)
+    pool
+    query
+    =
     let open Caqti_request.Infix in
-    let dyn =
-      CCList.fold_left
-        (fun dyn id ->
-          dyn |> Dynparam.add Caqti_type.string (id |> Entity.Id.value))
-        Dynparam.(empty |> add Caqti_type.string ("%" ^ query ^ "%"))
-        exclude
+    let exclude_ids =
+      Utils.Database.exclude_ids "pool_experiments.uuid" Entity.Id.value
+    in
+    let dyn = Dynparam.(dyn |> add Caqti_type.string ("%" ^ query ^ "%")) in
+    let dyn, exclude =
+      exclude |> CCOption.map_or ~default:(dyn, None) (exclude_ids dyn)
+    in
+    let conditions =
+      [ conditions; exclude ]
+      |> CCList.filter_map CCFun.id
+      |> function
+      | [] -> None
+      | conditions -> conditions |> CCString.concat " AND " |> CCOption.return
     in
     let (Dynparam.Pack (pt, pv)) = dyn in
     let request =
-      search_request exclude
-      |> pt ->* Caqti_type.(Repo_entity.(tup2 Repo_entity.Id.t Title.t))
+      search_request ?conditions ?joins ~limit ()
+      |> pt ->* Repo_entity.(Caqti_type.tup2 Id.t Title.t)
     in
-    Utils.Database.collect (pool |> Database.Label.value) request pv
+    Utils.Database.collect (pool |> Pool_database.Label.value) request pv
   ;;
 
   let search_multiple_by_id_request ids =
     Format.asprintf
       {sql|
-        SELECT
-          LOWER(CONCAT(
-            SUBSTR(HEX(pool_experiments.uuid), 1, 8), '-',
-            SUBSTR(HEX(pool_experiments.uuid), 9, 4), '-',
-            SUBSTR(HEX(pool_experiments.uuid), 13, 4), '-',
-            SUBSTR(HEX(pool_experiments.uuid), 17, 4), '-',
-            SUBSTR(HEX(pool_experiments.uuid), 21)
-          )),
-          pool_experiments.title
-        FROM pool_experiments
+        %s
         WHERE pool_experiments.uuid in ( %s )
       |sql}
+      search_select
       (CCList.map (fun _ -> Format.asprintf "UNHEX(REPLACE(?, '-', ''))") ids
        |> CCString.concat ",")
   ;;
@@ -524,6 +529,24 @@ module Sql = struct
       contact_is_enrolled_request
       (experiment_id |> Entity.Id.value, contact_id |> Contact.Id.value)
   ;;
+
+  let find_targets_grantable_by_admin ?exclude database_label admin role query =
+    let joins =
+      {sql|
+      LEFT JOIN guardian_actor_role_targets t ON t.target_uuid = pool_experiments.uuid
+        AND t.actor_uuid = UNHEX(REPLACE(?, '-', ''))
+        AND t.role = ?
+    |sql}
+    in
+    let conditions = "t.role IS NULL" in
+    let dyn =
+      Dynparam.(
+        empty
+        |> add Caqti_type.string Admin.(id admin |> Id.value)
+        |> add Caqti_type.string Role.Role.(show role))
+    in
+    search ~conditions ~joins ~dyn ?exclude database_label query
+  ;;
 end
 
 let find = Sql.find
@@ -539,3 +562,4 @@ let search = Sql.search
 let search_multiple_by_id = Sql.search_multiple_by_id
 let find_to_enroll_directly = Sql.find_to_enroll_directly
 let contact_is_enrolled = Sql.contact_is_enrolled
+let find_targets_grantable_by_admin = Sql.find_targets_grantable_by_admin

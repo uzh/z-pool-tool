@@ -161,7 +161,7 @@ let assign_contact_experiment_list
     [ a_class ([ "bg-red-lighter" ] @ base_class) ] @ htmx_attribs experiment_id
   in
   div
-    ~a:[ a_class [ "data-list"; "relative"; "flexcolumn" ] ]
+    ~a:[ a_class [ "data-list"; "relative"; "flexcolumn"; "active" ] ]
     (match experiments with
      | [] ->
        [ div
@@ -194,50 +194,7 @@ let assign_contact_experiment_list
 
 let assign_contact_form { Pool_context.csrf; language; _ } contact =
   let open Pool_common in
-  let result_target = "query-results" in
   let form_identifier = Pool_common.Id.(create () |> value) in
-  let field_name = Pool_common.Message.Field.Experiment in
-  let htmx_attribs =
-    [ a_user_data "hx-target" (Format.asprintf "#%s" result_target)
-    ; a_user_data "hx-get" (enroll_contact_path (Contact.id contact))
-    ; a_user_data "hx-trigger" "keyup changed delay:200ms"
-    ; a_id form_identifier
-    ]
-  in
-  let functions =
-    Format.asprintf
-      {js|
-        const formId = '%s';
-        const inputName = '%s';
-        const resultTargetId = '%s';
-
-        const form = document.getElementById(formId);
-        const input = form.querySelector(`[name="${inputName}"]`);
-        const target = document.getElementById(resultTargetId);
-
-        document.addEventListener('htmx:beforeRequest', (e) => {
-          if(e.detail.target && e.detail.target.id === resultTargetId) {
-            const icon = document.createElement("i");
-            icon.classList.add("icon-spinner-outline", "rotate");
-            target.innerHTML = '';
-            target.appendChild(icon);
-          }
-        });
-
-        %s
-
-        %s
-
-        input.addEventListener('keyup', () => {
-          target.innerHTML = '';
-        })
-      |js}
-      form_identifier
-      (Message.Field.show field_name)
-      result_target
-      (Modal.js_modal_add_spinner enroll_contact_modal_id)
-      Modal.js_add_modal_close_listener
-  in
   let legend =
     Component.Table.(
       table_legend
@@ -257,11 +214,10 @@ let assign_contact_form { Pool_context.csrf; language; _ } contact =
         ; form
             ~a:[ a_id form_identifier ]
             [ Input.csrf_element csrf ()
-            ; Input.input_element
-                ~additional_attributes:htmx_attribs
+            ; Component.Search.Experiment.assign_contact_search
                 language
-                `Search
-                field_name
+                contact
+                ()
             ]
         ]
     ; div
@@ -270,8 +226,6 @@ let assign_contact_form { Pool_context.csrf; language; _ } contact =
           ; a_class [ "modal"; "fullscreen-overlay" ]
           ]
         []
-    ; div ~a:[ a_id result_target ] []
-    ; script (Unsafe.data functions)
     ]
 ;;
 

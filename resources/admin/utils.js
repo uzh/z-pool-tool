@@ -1,7 +1,8 @@
 export const globalErrorMsg = "An Error occurred";
 
 export const csrfToken = (form) => {
-    return form.querySelector('[name="_csrf"]').value;
+    const container = form || document;
+    return container.querySelector('[name="_csrf"]').value;
 }
 
 export const icon = (classnames) => {
@@ -35,20 +36,4 @@ export const notifyUser = (notificationId, classname, msg) => {
     const notification = document.getElementById(notificationId)
     notification.parentElement.replaceChild(wrapper, notification)
     addCloseListener(notificationId);
-}
-
-export function destroySelected(item) {
-    item.remove();
-}
-
-export function addInputListeners(queryInput) {
-    var wrapper = queryInput.closest("[data-query='wrapper']");
-    var results = wrapper.querySelector("[data-query='results']");
-
-    [...queryInput.querySelectorAll("[data-id]")].forEach(item => {
-        item.addEventListener("click", () => {
-            results.appendChild(item);
-            item.querySelector(".toggle-item").addEventListener("click", () => destroySelected(item));
-        }, { once: true })
-    })
 }

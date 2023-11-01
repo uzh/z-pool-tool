@@ -98,36 +98,90 @@ let create_admin req =
 
 let handle_toggle_role req =
   let result (_ : Pool_context.t) =
+    let admin_id = HttpUtils.find_id Admin.Id.of_string Field.Admin req in
     Sihl.Web.Request.to_urlencoded req
     ||> HttpUtils.find_in_urlencoded Field.Role
     >== Role.Role.of_string_res
         %> CCResult.map_err Pool_common.Message.authorization
     >|+ fun key ->
-    let exclude_roles_of =
-      try
-        HttpUtils.find_id Admin.Id.of_string Field.Admin req |> CCOption.return
-      with
-      | _ -> None
-    in
-    Component.Role.Search.value_form
-      Pool_common.Language.En
-      ?exclude_roles_of
-      ~key
-      ()
+    Component.Role.Search.value_form Pool_common.Language.En ~key admin_id ()
     |> HttpUtils.Htmx.html_to_plain_text_response
   in
   result |> HttpUtils.Htmx.handle_error_message ~src req
 ;;
 
-let grant_role ({ Rock.Request.target; _ } as req) =
+let search_role_entities req =
+  let admin_id = HttpUtils.find_id Admin.Id.of_string Field.Admin req in
+  let result { Pool_context.database_label; user; language; _ } =
+    let* admin = Admin.find database_label admin_id in
+    let* actor =
+      Pool_context.Utils.find_authorizable ~admin_only:true database_label user
+    in
+    let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+    let query = HttpUtils.find_in_urlencoded_opt Field.Search urlencoded in
+    let* search_role =
+      let open CCOption in
+      HttpUtils.find_in_urlencoded_opt Field.Role urlencoded
+      |> flip bind (fun role ->
+        try Role.Role.of_string role |> return with
+        | _ -> None)
+      |> to_result Pool_common.Message.(NotFound Field.Role)
+      |> Lwt_result.lift
+    in
+    let entities_to_exclude encode_id =
+      HttpUtils.htmx_urlencoded_list Field.(array_key Target) req
+      ||> CCList.map encode_id
+    in
+    let execute_search search_fnc to_html =
+      (match query with
+       | None -> Lwt.return []
+       | Some query -> search_fnc query actor)
+      ||> to_html language
+      ||> HttpUtils.Htmx.multi_html_to_plain_text_response %> CCResult.return
+    in
+    let open Guard.Persistence in
+    match search_role with
+    | `Assistant | `Experimenter ->
+      let open Experiment.Guard.Access in
+      let%lwt exclude = entities_to_exclude Experiment.Id.of_string in
+      let search_experiment value actor =
+        Experiment.find_targets_grantable_by_admin
+          ~exclude
+          database_label
+          admin
+          search_role
+          value
+        >|> Lwt_list.filter_s (fun (id, _) ->
+          validate database_label (read id) actor ||> CCResult.is_ok)
+      in
+      execute_search search_experiment Component.Search.Experiment.query_results
+    | `LocationManager ->
+      let open Pool_location.Guard.Access in
+      let open Pool_location in
+      let%lwt exclude = entities_to_exclude Id.of_string in
+      let search_location value actor =
+        find_targets_grantable_by_admin ~exclude database_label admin value
+        >|> Lwt_list.filter_s (fun (id, _) ->
+          validate database_label (read id) actor ||> CCResult.is_ok)
+      in
+      execute_search search_location Component.Search.Location.query_results
+    | _ -> Lwt_result.fail Pool_common.Message.(Invalid Field.Role)
+  in
+  result |> HttpUtils.Htmx.handle_error_message ~src req
+;;
+
+let grant_role req =
   let open Utils.Lwt_result.Infix in
   let lift = Lwt_result.lift in
+  let admin_id = HttpUtils.find_id Admin.Id.of_string Field.Admin req in
+  let redirect_path =
+    Format.asprintf "/admin/admins/%s/edit" (Admin.Id.value admin_id)
+  in
   let result { Pool_context.database_label; _ } =
+    Utils.Lwt_result.map_error (fun err -> err, redirect_path)
+    @@
     let tags = Pool_context.Logger.Tags.req req in
-    let* admin =
-      HttpUtils.find_id Admin.Id.of_string Field.Admin req
-      |> Admin.find database_label
-    in
+    let* admin = Admin.find database_label admin_id in
     let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
     let* role =
       HttpUtils.find_in_urlencoded Field.Role urlencoded
@@ -176,16 +230,13 @@ let grant_role ({ Rock.Request.target; _ } as req) =
     let handle events =
       Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
     in
-    expand_targets
-    >>= events
-    |>> handle
-    |>> HttpUtils.Htmx.htmx_redirect
-          ~skip_externalize:true
-          (CCString.replace ~which:`Right ~sub:"/grant-role" ~by:"/edit" target)
-          ~actions:
-            [ Message.set ~success:[ Pool_common.Message.Created Field.Role ] ]
+    let* () = expand_targets >>= events |>> handle in
+    Lwt_result.ok
+      (Http_utils.redirect_to_with_actions
+         redirect_path
+         [ Message.set ~success:[ Pool_common.Message.Created Field.Role ] ])
   in
-  result |> HttpUtils.Htmx.handle_error_message ~src req
+  result |> extract_happy_path req
 ;;
 
 let revoke_role ({ Rock.Request.target; _ } as req) =

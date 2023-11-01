@@ -1,9 +1,19 @@
-import { addCloseListener, addInputListeners, csrfToken, destroySelected, icon, notifyUser, globalErrorMsg } from "./utils.js";
+import { addCloseListener, icon, notifyUser, globalErrorMsg } from "./utils.js";
 
 const errorClass = "error-message";
 const notificationId = "filter-notification";
 
 const form = document.getElementById("filter-form");
+
+function isTextInput(ele) {
+    let tagName = ele.tagName;
+    if (tagName === "INPUT") {
+        let validType = ['text', 'number', 'search'];
+        let eleType = ele.type;
+        return validType.includes(eleType);
+    }
+    return false;
+}
 
 const isListOperator = (operator) => {
     return ["contains_all", "contains_some", "contains_none"].includes(operator)
@@ -193,19 +203,20 @@ function addOperatorChangeListeners(wrapper) {
     [...wrapper.querySelectorAll("[name='operator']")].forEach((elm) => {
         elm.addEventListener("change", (e) => {
             const predicate = e.target.closest('.predicate');
-            const inputs = [...predicate.querySelectorAll("[name='value'],[name='value[]']")];
+            const inputs = [...predicate.querySelectorAll("[data-name='value[]'],[name='value'],[name='value[]']")];
             inputs.forEach(input => input.disabled = disableValueInput(e.currentTarget.value))
         })
     })
 }
 
 function configRequest(e, form) {
+    if (isTextInput(e.srcElement) && !e.srcElement.value) {
+        e.preventDefault()
+    }
     const isPredicateType = e.detail.parameters.predicate;
     const allowEmpty = e.detail.parameters.allow_empty_values;
     const isSubmit = e.target.type === "submit"
-    const isSearchForm = Boolean(e.detail.elt.classList.contains("query-input"));
-    e.detail.parameters._csrf = csrfToken(form);
-
+    const isSearchForm = e.detail.elt.name === "search";
     const filterId = form.dataset.filter;
     if (filterId) {
         e.detail.parameters.filter = filterId;
@@ -250,19 +261,10 @@ export function initFilterForm() {
             }
         })
         addRemovePredicateListener(form);
-        // Query event listeners
-        [...form.querySelectorAll("[data-query='input']")].forEach(e => addInputListeners(e));
-        [...form.querySelectorAll("[data-query='results'] [data-id]")].forEach(e =>
-            e.querySelector(".toggle-item").addEventListener("click", () => destroySelected(e))
-        );
         addOperatorChangeListeners(form);
-
         form.addEventListener('htmx:afterSwap', (e) => {
             addRemovePredicateListener(e.detail.elt);
             addOperatorChangeListeners(e.detail.elt);
-            if (e.detail.elt.dataset.query) {
-                addInputListeners(e.detail.elt)
-            }
             if (e.detail.target.type === "submit") {
                 updateContactCount();
             }

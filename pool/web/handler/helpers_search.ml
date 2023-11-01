@@ -5,104 +5,58 @@ module HttpUtils = Http_utils
 
 let src = Logs.Src.create "handler.helper.search"
 
-let create search_type ?path req =
-  let query_field = Field.Search in
-  let path =
-    let value default = CCOption.value ~default path in
-    match search_type with
-    | `Experiment -> value "/admin/experiments/search"
-    | `Location -> value "/admin/locations/search"
-    | `ContactTag -> value "/admin/settings/tags/search"
-  in
-  let result { Pool_context.database_label; user; _ } =
-    let open CCList in
-    let%lwt actor =
-      Pool_context.Utils.find_authorizable_opt
-        ~admin_only:true
-        database_label
-        user
+let htmx_search_helper
+  ?(query_field = Field.Search)
+  ?(exclude_field = Field.Exclude)
+  entity
+  req
+  =
+  let result { Pool_context.database_label; user; language; _ } =
+    let* actor =
+      Pool_context.Utils.find_authorizable ~admin_only:true database_label user
     in
     let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
     let query = HttpUtils.find_in_urlencoded_opt query_field urlencoded in
-    let search_role =
-      let open CCOption in
-      HttpUtils.find_in_urlencoded_opt Field.Role urlencoded
-      |> flip bind (fun role ->
-        try Role.Role.of_string role |> return with
-        | _ -> None)
+    let entities_to_exclude encode_id =
+      let%lwt selected =
+        HttpUtils.htmx_urlencoded_list Field.(array_key exclude_field) req
+      in
+      CCList.map encode_id selected |> Lwt.return
     in
-    let%lwt exclude_roles_of =
-      HttpUtils.find_in_urlencoded_opt Field.ExcludeRolesOf urlencoded
-      |> CCOption.map_or
-           ~default:Lwt.return_none
-           (Admin.Id.of_string
-            %> fun id -> Admin.find database_label id ||> CCResult.to_opt)
-      >|> CCOption.map_or
-            ~default:(Lwt.return [])
-            (Helpers_guard.find_roles database_label)
-      ||> filter_map (fun ({ Guard.ActorRole.target_uuid; role; _ }, _, _) ->
-        CCOption.bind search_role (fun search_role ->
-          if Role.Role.equal role search_role then None else target_uuid))
-    in
-    let exclude =
-      HttpUtils.find_in_urlencoded_list_opt Field.Exclude urlencoded
+    let execute_search search_fnc to_html =
+      (match query with
+       | None -> Lwt.return []
+       | Some query -> search_fnc query actor)
+      ||> to_html language
+      ||> HttpUtils.Htmx.multi_html_to_plain_text_response %> CCResult.return
     in
     let open Guard.Persistence in
-    match search_type with
+    match entity with
     | `Experiment ->
       let open Component.Search.Experiment in
       let open Experiment.Guard.Access in
-      let exclude = exclude >|= Experiment.Id.of_string in
-      let exclude_roles_of =
-        exclude_roles_of
-        >|= Guard.Uuid.Target.to_string %> Experiment.Id.of_string
-      in
-      let search_experiment exclude value actor =
-        Experiment.search database_label exclude value
+      let%lwt exclude = entities_to_exclude Experiment.Id.of_string in
+      let search_experiment value actor =
+        Experiment.search ~exclude database_label value
         >|> Lwt_list.filter_s (fun (id, _) ->
           validate database_label (read id) actor ||> CCResult.is_ok)
       in
-      (match query, actor with
-       | None, _ | Some _, None -> Lwt.return []
-       | Some value, Some actor ->
-         search_experiment (exclude @ exclude_roles_of) value actor)
-      ||> fun results ->
-      input_element ?value:query ~results path
-      |> HttpUtils.Htmx.html_to_plain_text_response
-      |> CCResult.return
+      execute_search search_experiment query_results
     | `Location ->
       let open Component.Search.Location in
       let open Pool_location.Guard.Access in
-      let exclude = exclude >|= Pool_location.Id.of_string in
-      let exclude_roles_of =
-        exclude_roles_of
-        >|= Guard.Uuid.Target.to_string %> Pool_location.Id.of_string
-      in
-      let search_location exclude value actor =
-        Pool_location.search database_label exclude value
+      let%lwt exclude = entities_to_exclude Pool_location.Id.of_string in
+      let search_location value actor =
+        Pool_location.search database_label ~exclude value
         >|> Lwt_list.filter_s (fun (id, _) ->
           validate database_label (read id) actor ||> CCResult.is_ok)
       in
-      (match query, actor with
-       | None, _ | Some _, None ->
-         Tyxml.Html.txt ""
-         |> HttpUtils.Htmx.html_to_plain_text_response
-         |> Lwt_result.return
-       | Some value, Some actor ->
-         let%lwt results =
-           search_location (exclude @ exclude_roles_of) value actor
-         in
-         input_element ?value:query ~results path
-         |> HttpUtils.Htmx.html_to_plain_text_response
-         |> Lwt_result.return)
+      execute_search search_location query_results
     | `ContactTag ->
       let open Component.Search.Tag in
       let open Tags.Guard.Access in
-      let exclude = exclude >|= Tags.Id.of_string in
-      let exclude_roles_of =
-        exclude_roles_of >|= Guard.Uuid.Target.to_string %> Tags.Id.of_string
-      in
-      let search_tags exclude value actor =
+      let%lwt exclude = entities_to_exclude Tags.Id.of_string in
+      let search_tags value actor =
         Tags.search_by_title
           database_label
           ~model:Tags.Model.Contact
@@ -111,14 +65,8 @@ let create search_type ?path req =
         >|> Lwt_list.filter_s (fun (id, _) ->
           validate database_label (read id) actor ||> CCResult.is_ok)
       in
-      (match query, actor with
-       | None, _ | Some _, None -> Lwt.return []
-       | Some value, Some actor ->
-         search_tags (exclude @ exclude_roles_of) value actor)
-      ||> fun results ->
-      input_element ?value:query ~results path
-      |> HttpUtils.Htmx.html_to_plain_text_response
-      |> CCResult.return
+      execute_search search_tags query_results
   in
-  result |> HttpUtils.Htmx.handle_error_message ~src req
+  result
+  |> HttpUtils.Htmx.handle_error_message ~error_as_notification:true ~src req
 ;;

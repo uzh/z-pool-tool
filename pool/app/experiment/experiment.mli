@@ -241,8 +241,12 @@ val find_past_experiments_by_contact
 val session_count : Pool_database.Label.t -> Id.t -> int Lwt.t
 
 val search
-  :  Pool_database.Label.t
-  -> Id.t list
+  :  ?conditions:string
+  -> ?dyn:Utils.Database.Dynparam.t
+  -> ?exclude:Id.t list
+  -> ?joins:string
+  -> ?limit:int
+  -> Pool_database.Label.t
   -> string
   -> (Id.t * Title.t) list Lwt.t
 
@@ -263,6 +267,14 @@ val contact_is_enrolled
   -> Id.t
   -> Contact.Id.t
   -> bool Lwt.t
+
+val find_targets_grantable_by_admin
+  :  ?exclude:Id.t list
+  -> Pool_database.Label.t
+  -> Admin.t
+  -> Role.Role.t
+  -> string
+  -> (Id.t * Title.t) list Lwt.t
 
 val possible_participant_count : t -> int Lwt.t
 val possible_participants : t -> Contact.t list Lwt.t

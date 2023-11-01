@@ -235,7 +235,8 @@ let add_condition req =
     >|= HttpUtils.Htmx.html_to_plain_text_response
     |> Lwt.return
   in
-  result |> HttpUtils.Htmx.handle_error_message ~src req
+  result
+  |> HttpUtils.Htmx.handle_error_message ~error_as_notification:true ~src req
 ;;
 
 let disabler command success_handler req =

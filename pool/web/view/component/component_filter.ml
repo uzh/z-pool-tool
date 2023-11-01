@@ -38,7 +38,7 @@ let operators_select language ?operators ?selected () =
   match operators with
   | None -> txt ""
   | Some operators ->
-    Component_input.selector
+    Input.selector
       ~option_formatter:Operator.to_human
       language
       Pool_common.Message.Field.Operator
@@ -72,6 +72,20 @@ let value_input
         fun option -> SelectOption.Id.equal option.SelectOption.id option_id)
       options
   in
+  let selected_options options =
+    CCOption.map_or
+      ~default:[]
+      (fun value ->
+        match value with
+        | NoValue | Single _ -> []
+        | Lst lst ->
+          CCList.filter_map
+            (function[@warning "-4"]
+              | Option id -> find_in_options options id
+              | _ -> None)
+            lst)
+      value
+  in
   match input_type with
   | None -> div []
   | Some input_type ->
@@ -86,7 +100,7 @@ let value_input
          | Str s -> Some s
          | _ -> None
        in
-       Component_input.input_element
+       Input.input_element
          ~additional_attributes
          ~disabled
          ?value
@@ -101,7 +115,7 @@ let value_input
                 | _ -> None)
          |> CCOption.map (fun f -> f |> CCFloat.to_int |> CCInt.to_string)
        in
-       Component_input.input_element
+       Input.input_element
          ~additional_attributes
          ~disabled
          language
@@ -118,8 +132,7 @@ let value_input
              | _ -> false)
            single_value
        in
-       (* TODO: Add option to disable *)
-       Component_input.checkbox_element
+       Input.checkbox_element
          ~additional_attributes
          ~as_switch:true
          ~disabled
@@ -133,27 +146,31 @@ let value_input
          | Date d -> Some d
          | _ -> None
        in
-       Component_input.date_picker_element
+       Input.date_picker_element
          ~additional_attributes
          ?value
          language
          field_name
      | Key.Select options ->
-       let selected =
-         single_value
-         >>= function[@warning "-4"]
-         | Option o -> find_in_options options o
-         | _ -> None
+       let selected = selected_options options in
+       let open Component_search in
+       let multi_select =
+         Static
+           Input.
+             { selected
+             ; options
+             ; to_label = Custom_field.SelectOption.name language
+             ; to_value = Custom_field.SelectOption.show_id
+             }
        in
-       Component_input.selector
-         ~attributes:additional_attributes
-         ~option_formatter:(Custom_field.SelectOption.name language)
+       multi_search
+         ~additional_attributes
+         ~is_filter:true
+         ~input_type
          ~disabled
          language
          field_name
-         Custom_field.SelectOption.show_id
-         options
-         selected
+         multi_select
          ()
      | Key.Languages languages ->
        let selected =
@@ -163,7 +180,7 @@ let value_input
            CCList.find_opt (Pool_common.Language.equal lang) languages
          | _ -> None
        in
-       Component_input.selector
+       Input.selector
          ~attributes:additional_attributes
          ~disabled
          language
@@ -173,29 +190,16 @@ let value_input
          selected
          ()
      | Key.MultiSelect options ->
-       let selected =
-         CCOption.map_or
-           ~default:[]
-           (fun value ->
-             match value with
-             | NoValue | Single _ -> []
-             | Lst lst ->
-               CCList.filter_map
-                 (function[@warning "-4"]
-                   | Option id -> find_in_options options id
-                   | _ -> None)
-                 lst)
-           value
-       in
+       let selected = selected_options options in
        let multi_select =
-         Component_input.
+         Input.
            { options
            ; selected
            ; to_label = Custom_field.SelectOption.name language
            ; to_value = Custom_field.SelectOption.show_id
            }
        in
-       Component_input.multi_select
+       Input.multi_select
          ~additional_attributes
          ~orientation:`Vertical
          ~disabled
@@ -204,7 +208,7 @@ let value_input
          field_name
          ()
      | Key.QueryExperiments ->
-       let current =
+       let selected =
          value
          |> CCOption.map_or ~default:[] (function
            | NoValue | Single _ -> []
@@ -219,13 +223,12 @@ let value_input
                  | _ -> None)
                lst)
        in
-       Component_search.Experiment.create
-         ~current
+       Component_search.Experiment.filter_multi_search
+         ~selected
          ~disabled
          language
-         "/admin/experiments/search"
      | Key.QueryTags ->
-       let current =
+       let selected =
          value
          |> CCOption.map_or ~default:[] (function
            | NoValue | Single _ -> []
@@ -240,11 +243,7 @@ let value_input
                  | _ -> None)
                lst)
        in
-       Component_search.Tag.create
-         ~current
-         ~disabled
-         language
-         "/admin/settings/tags/search")
+       Component_search.Tag.filter_multi_search ~selected ~disabled language ())
 ;;
 
 let predicate_value_form
@@ -315,7 +314,7 @@ let single_predicate_form
         ~templates_disabled
         ()
     in
-    Component_input.selector
+    Input.selector
       ~attributes
       ~add_empty:true
       ~option_formatter:(Key.human_to_label language)
@@ -360,7 +359,7 @@ let predicate_type_select
     then CCList.remove ~eq:equal_filter_label ~key:Template all_filter_labels
     else all_filter_labels
   in
-  Component_input.selector
+  Input.selector
     ~option_formatter:to_label
     ~attributes
     ~hide_label:true
@@ -467,7 +466,7 @@ let rec predicate_form
           template_list
           |> CCList.find_opt (fun filter -> Pool_common.Id.equal filter.id id))
       in
-      Component_input.selector
+      Input.selector
         ~add_empty:true
         ~option_formatter:(fun f ->
           f.title
@@ -609,7 +608,7 @@ let filter_form
     | Template _ ->
       let open CCOption.Infix in
       let open Pool_common in
-      ( Component_input.input_element
+      ( Input.input_element
           ?value:(filter >>= fun filter -> filter.title >|= Title.value)
           ~required:true
           language
@@ -637,13 +636,13 @@ let filter_form
            ; a_class [ "stack" ]
            ]
            @ filter_id)
-        [ Component_input.csrf_element csrf ()
+        [ Input.csrf_element csrf ()
         ; title_input
         ; predicates
         ; div
             ~a:[ a_class [ "flexrow"; "align-center"; "gap" ] ]
             [ delete_form
-            ; Component_input.submit_element
+            ; Input.submit_element
                 language
                 ~classnames:[ "push" ]
                 ~attributes:
