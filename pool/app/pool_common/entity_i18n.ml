@@ -248,6 +248,7 @@ type confirmable =
   | ReactivateAccount
   | RemoveRule
   | RemoveTag
+  | RescheduleSession
   | ResetInvitations
   | RevokeRole
   | StopMailing

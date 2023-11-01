@@ -237,6 +237,9 @@ let reschedule_session
         [ a_class [ "stack" ]
         ; a_method `Post
         ; a_action (action |> Sihl.Web.externalize_path)
+        ; a_user_data
+            "confirmable"
+            (Utils.confirmable_to_string language I18n.RescheduleSession)
         ]
       [ csrf_element csrf ()
       ; date_time_picker_element

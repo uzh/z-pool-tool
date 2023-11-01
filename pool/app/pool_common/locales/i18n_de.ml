@@ -531,6 +531,7 @@ let confirmable_to_string confirmable =
    | ReactivateAccount -> "den Account", "reaktivieren", None
    | RemoveRule -> "die Regel", "löschen", None
    | RemoveTag -> "den Tag", "entfernen", None
+   | RescheduleSession -> "die Session", "verschieben", None
    | ResetInvitations ->
      ( "die Einladungen"
      , "zurücksetzen"
