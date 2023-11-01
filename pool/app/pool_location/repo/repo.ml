@@ -5,11 +5,6 @@ module Dynparam = Utils.Database.Dynparam
 let to_entity = to_entity
 let of_entity = of_entity
 
-let files_to_location pool ({ id; _ } as location) =
-  let open Utils.Lwt_result.Infix in
-  RepoFileMapping.find_by_location pool id ||> to_entity location
-;;
-
 module Sql = struct
   let select_sql =
     {sql|
@@ -258,6 +253,11 @@ module Sql = struct
     search ~conditions ~joins ~dyn ?exclude database_label query
   ;;
 end
+
+let files_to_location pool ({ id; _ } as location) =
+  let open Utils.Lwt_result.Infix in
+  RepoFileMapping.find_by_location pool id ||> to_entity location
+;;
 
 let find pool id =
   let open Utils.Lwt_result.Infix in
