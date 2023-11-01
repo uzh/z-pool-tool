@@ -303,6 +303,7 @@ let form
   in
   let distribution_select (distribution : Mailing.Distribution.t option) =
     let open Mailing.Distribution in
+    let subform_id = "distribution-subform" in
     let is_disabled field =
       CCOption.map_or
         ~default:false
@@ -346,11 +347,16 @@ let form
       })
 
       const random = document.querySelector('[name="%s"]');
-      random.addEventListener("change", (e) => {
-        const inputs = document.querySelectorAll('[name="%s"], [name="%s"], [name="%s"]');
+      const subform = document.getElementById('%s')
+      const inputs = subform.querySelectorAll('input, select, button');
+      const toggleRandomOrder = () => {
         inputs.forEach((elm) => {
-          elm.disabled = e.currentTarget.checked
+          elm.disabled = random.checked
         })
+      }
+
+      random.addEventListener("change", (e) => {
+        toggleRandomOrder();
       })
 
       const startNow = document.querySelector('[name="%s"]');
@@ -363,11 +369,10 @@ let form
         start.disabled = startNow.checked;
         startFlatpicker.disabled = startNow.checked;
       })
+      toggleRandomOrder();
     |js}
         (show RandomOrder)
-        (show DistributionField)
-        (show SortOrder)
-        (array_key Distribution)
+        subform_id
         (show StartNow)
         (show Start)
     in
@@ -407,6 +412,14 @@ let form
         ; div ~a:[ a_class [ "select" ] ] [ select ]
         ]
     in
+    let check_random =
+      match mailing with
+      | None -> true
+      | Some mailing ->
+        mailing.Mailing.distribution
+        |> CCOption.map Mailing.Distribution.is_random
+        |> CCOption.value ~default:false
+    in
     div
       ~a:[ a_class [ "flexcolumn" ] ]
       [ h3
@@ -416,7 +429,8 @@ let form
           ]
       ; p [ txt Pool_common.(Utils.hint_to_string language I18n.Distribution) ]
       ; checkbox_element
-          ?value:(distribution |> CCOption.map Mailing.Distribution.is_random)
+          ~value:check_random
+          ~flash_fetcher
           language
           Field.RandomOrder
       ; div
@@ -430,6 +444,7 @@ let form
                 ; "flex-gap"
                 ; "gap"
                 ]
+            ; a_id subform_id
             ]
           [ div
               ~a:[ a_class [ "switcher"; "flex-gap"; "grow" ] ]
