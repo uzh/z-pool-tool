@@ -222,7 +222,7 @@ let show
               ~a:(form_attrs `UpdateInactiveUserDisableAfter)
               [ csrf_element csrf ()
               ; input_element
-                  ~help:Pool_common.I18n.NumberIsWeeksHint
+                  ~help:Pool_common.I18n.NumberIsDaysHint
                   ~required:true
                   language
                   `Number

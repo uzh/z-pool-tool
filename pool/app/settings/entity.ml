@@ -36,19 +36,19 @@ end
 
 module InactiveUser = struct
   module DisableAfter = struct
-    type t = Week.t [@@deriving eq, show, yojson]
+    type t = Day.t [@@deriving eq, show, yojson]
 
-    let create week =
+    let create day =
       let open CCResult.Infix in
-      week
+      day
       |> CCInt.of_string
       |> CCOption.to_result Pool_common.Message.(Invalid Field.TimeSpan)
-      >>= fun week ->
-      if week < 0 then Error Pool_common.Message.TimeSpanPositive else Ok week
+      >>= fun day ->
+      if day < 0 then Error Pool_common.Message.TimeSpanPositive else Ok day
     ;;
 
     let value m = m
-    let to_timespan = Week.to_timespan
+    let to_timespan = Day.to_timespan
 
     let schema () =
       Pool_common.Utils.schema_decoder
