@@ -318,8 +318,12 @@ Wenn Sie die Erinnerungen jetzt manuell auslösen werden über den gewählten Na
     "Pro Anmeldung ist ein Identifikator für externe Daten obligatorisch \
      (spätestens wenn eine Session abgeschlossen wird)."
   | FilterContacts ->
-    "Definieren Sie die Kriterien, anhand welchen Kontakte an dieses \
-     Experiment eingeladen werden."
+    {|<p>Um Kontakte zu diesem Experiment einzuladen, folgen Sie diesen Schritten:</p>
+    <ol>
+      <li>Erstellen Sie einen Filter mit einer oder mehreren Bedingungen, um festzulegen, welche Kontakte Sie in dieses Experiment aufnehmen möchten.</li>
+      <li>Erstellen Sie die Sessions, in denen Sie das Experiment durchführen möchten.</li>
+      <li>Erstellen Sie ein oder mehrere Mailings, um den Versand von E-Mails an diese Teilnehmer zu starten.</li>
+    </ol>|}
   | TestPhoneNumber ->
     "Bitte geben Sie eine Telefonnummer an, an die wir eine einzige \
      Testnachricht schicken können, um den API Key zu verifizieren. Die Nummer \

@@ -303,7 +303,12 @@ Make sure to show links and URLs as plain text.
     "An external data identifier is required for every assignement (latest \
      when a session is closed)."
   | FilterContacts ->
-    "Define the criteria by which contacts will be invited to this experiment."
+    {|<p>To start inviting contacts to this experiment, follow those steps:</p>
+    <ol>
+      <li>Create a filter using one or multiple conditions to define which contacts you would like to include in this experiment.</li>
+      <li>Create the sessions on which you want to perform the experiment.</li>
+      <li>Create one or more mailings to start sending out emails to these participants.</li>
+    </ol>|}
   | TestPhoneNumber ->
     "Please provide a phone number where we can send a single test message to \
      verify the api key. The number must have the format +41791234567."
