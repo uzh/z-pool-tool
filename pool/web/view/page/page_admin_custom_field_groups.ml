@@ -133,7 +133,7 @@ let form
                 ~classnames:[ "push" ]
                 language
                 Message.(
-                  let field = Some Field.CustomField in
+                  let field = Some Field.CustomFieldGroup in
                   match custom_field_group with
                   | None -> Create field
                   | Some _ -> Update field)
