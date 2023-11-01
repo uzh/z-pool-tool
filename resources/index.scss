@@ -114,6 +114,9 @@ ul.no-style {
             display: none;
         }
     }
+    input[disabled] {
+        cursor: not-allowed;
+    }
 }
 
 [data-search-selection] {

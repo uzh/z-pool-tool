@@ -132,7 +132,6 @@ let value_input
              | _ -> false)
            single_value
        in
-       (* TODO: Add option to disable *)
        Input.checkbox_element
          ~additional_attributes
          ~as_switch:true
@@ -168,6 +167,7 @@ let value_input
          ~additional_attributes
          ~is_filter:true
          ~input_type
+         ~disabled
          language
          field_name
          multi_select

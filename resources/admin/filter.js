@@ -203,7 +203,7 @@ function addOperatorChangeListeners(wrapper) {
     [...wrapper.querySelectorAll("[name='operator']")].forEach((elm) => {
         elm.addEventListener("change", (e) => {
             const predicate = e.target.closest('.predicate');
-            const inputs = [...predicate.querySelectorAll("[name='value'],[name='value[]']")];
+            const inputs = [...predicate.querySelectorAll("[data-name='value[]'],[name='value'],[name='value[]']")];
             inputs.forEach(input => input.disabled = disableValueInput(e.currentTarget.value))
         })
     })
