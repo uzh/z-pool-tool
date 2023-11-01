@@ -5,6 +5,11 @@ module Dynparam = Utils.Database.Dynparam
 let to_entity = to_entity
 let of_entity = of_entity
 
+let files_to_location pool ({ id; _ } as location) =
+  let open Utils.Lwt_result.Infix in
+  RepoFileMapping.find_by_location pool id ||> to_entity location
+;;
+
 module Sql = struct
   let select_sql =
     {sql|
@@ -32,6 +37,21 @@ module Sql = struct
       FROM
         pool_locations
     |sql}
+  ;;
+
+  let search_select =
+    {sql|
+    SELECT
+      LOWER(CONCAT(
+        SUBSTR(HEX(pool_locations.uuid), 1, 8), '-',
+        SUBSTR(HEX(pool_locations.uuid), 9, 4), '-',
+        SUBSTR(HEX(pool_locations.uuid), 13, 4), '-',
+        SUBSTR(HEX(pool_locations.uuid), 17, 4), '-',
+        SUBSTR(HEX(pool_locations.uuid), 21)
+      )),
+      pool_locations.name
+    FROM pool_locations
+  |sql}
   ;;
 
   let find_request =
@@ -140,50 +160,51 @@ module Sql = struct
       (id, (name, (description, (address, (link, status)))))
   ;;
 
-  let search_request =
-    let base =
-      {sql|
-        SELECT
-          LOWER(CONCAT(
-            SUBSTR(HEX(pool_locations.uuid), 1, 8), '-',
-            SUBSTR(HEX(pool_locations.uuid), 9, 4), '-',
-            SUBSTR(HEX(pool_locations.uuid), 13, 4), '-',
-            SUBSTR(HEX(pool_locations.uuid), 17, 4), '-',
-            SUBSTR(HEX(pool_locations.uuid), 21)
-          )),
-          pool_locations.name
-        FROM pool_locations
-        WHERE pool_locations.name LIKE $1
-      |sql}
+  let search_request ?joins ?conditions ~limit () =
+    let default_contidion = "pool_locations.name LIKE ?" in
+    let joined_select =
+      CCOption.map_or
+        ~default:search_select
+        (Format.asprintf "%s %s" search_select)
+        joins
     in
-    function
-    | [] -> base
-    | ids ->
-      ids
-      |> CCList.mapi (fun i _ ->
-        Format.asprintf "UNHEX(REPLACE($%i, '-', ''))" (i + 2))
-      |> CCString.concat ","
-      |> Format.asprintf
-           {sql|
-              %s
-              AND pool_locations.uuid NOT IN (%s)
-           |sql}
-           base
+    let where =
+      CCOption.map_or
+        ~default:default_contidion
+        (Format.asprintf "%s AND %s" default_contidion)
+        conditions
+    in
+    Format.asprintf "%s WHERE %s LIMIT %i" joined_select where limit
   ;;
 
-  let search pool exclude query =
+  let search
+    ?conditions
+    ?(dyn = Dynparam.empty)
+    ?exclude
+    ?joins
+    ?(limit = 20)
+    pool
+    query
+    =
     let open Caqti_request.Infix in
-    let dyn =
-      CCList.fold_left
-        (fun dyn id ->
-          dyn |> Dynparam.add Caqti_type.string (id |> Entity.Id.value))
-        Dynparam.(empty |> add Caqti_type.string ("%" ^ query ^ "%"))
-        exclude
+    let exclude_ids =
+      Utils.Database.exclude_ids "pool_locations.uuid" Entity.Id.value
+    in
+    let dyn = Dynparam.(dyn |> add Caqti_type.string ("%" ^ query ^ "%")) in
+    let dyn, exclude =
+      exclude |> CCOption.map_or ~default:(dyn, None) (exclude_ids dyn)
+    in
+    let conditions =
+      [ conditions; exclude ]
+      |> CCList.filter_map CCFun.id
+      |> function
+      | [] -> None
+      | conditions -> conditions |> CCString.concat " AND " |> CCOption.return
     in
     let (Dynparam.Pack (pt, pv)) = dyn in
     let request =
-      search_request exclude
-      |> pt ->* Caqti_type.(Repo_entity.(tup2 Id.t Name.t))
+      search_request ?joins ?conditions ~limit ()
+      |> pt ->* Caqti_type.tup2 Id.t Name.t
     in
     Utils.Database.collect (pool |> Pool_database.Label.value) request pv
   ;;
@@ -191,18 +212,10 @@ module Sql = struct
   let search_multiple_by_id_request ids =
     Format.asprintf
       {sql|
-        SELECT
-          LOWER(CONCAT(
-            SUBSTR(HEX(pool_locations.uuid), 1, 8), '-',
-            SUBSTR(HEX(pool_locations.uuid), 9, 4), '-',
-            SUBSTR(HEX(pool_locations.uuid), 13, 4), '-',
-            SUBSTR(HEX(pool_locations.uuid), 17, 4), '-',
-            SUBSTR(HEX(pool_locations.uuid), 21)
-          )),
-          pool_locations.name
-        FROM pool_locations
+        %s
         WHERE pool_locations.uuid in ( %s )
       |sql}
+      search_select
       (CCList.map (fun _ -> Format.asprintf "UNHEX(REPLACE(?, '-', ''))") ids
        |> CCString.concat ",")
   ;;
@@ -226,12 +239,25 @@ module Sql = struct
       in
       Utils.Database.collect (pool |> Pool_database.Label.value) request pv
   ;;
-end
 
-let files_to_location pool ({ id; _ } as location) =
-  let open Utils.Lwt_result.Infix in
-  RepoFileMapping.find_by_location pool id ||> to_entity location
-;;
+  let find_targets_grantable_by_admin ?exclude database_label admin query =
+    let joins =
+      {sql|
+      LEFT JOIN guardian_actor_role_targets t ON t.target_uuid = pool_locations.uuid
+        AND t.actor_uuid = UNHEX(REPLACE(?, '-', ''))
+        AND t.role = ?
+    |sql}
+    in
+    let conditions = "t.role IS NULL" in
+    let dyn =
+      Dynparam.(
+        empty
+        |> add Caqti_type.string Admin.(id admin |> Id.value)
+        |> add Caqti_type.string Role.Role.(show `LocationManager))
+    in
+    search ~conditions ~joins ~dyn ?exclude database_label query
+  ;;
+end
 
 let find pool id =
   let open Utils.Lwt_result.Infix in
@@ -251,3 +277,4 @@ let insert pool location files =
 let update = Sql.update
 let search = Sql.search
 let search_multiple_by_id = Sql.search_multiple_by_id
+let find_targets_grantable_by_admin = Sql.find_targets_grantable_by_admin

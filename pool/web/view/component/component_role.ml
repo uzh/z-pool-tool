@@ -180,8 +180,8 @@ module Search = struct
       div ~a:[ a_class [ "switcher-sm"; "flex-gap" ] ] [ input_field ]
   ;;
 
-  let role_form ?key language csrf admin identifier role_list =
-    let toggle_id = Format.asprintf "role-search-%i" identifier in
+  let role_form ?key language csrf admin role_list =
+    let toggle_id = "role-search" in
     let toggled_content = value_form language (Admin.id admin) ?key () in
     let key_selector =
       let attributes =
@@ -225,9 +225,8 @@ module Search = struct
       ]
   ;;
 
-  (* TODO: Identifier? Can I remove? *)
-  let input_form ?(identifier = 0) ?key csrf language admin role_list () =
-    let role_form = role_form ?key language csrf admin identifier role_list in
+  let input_form ?key csrf language admin role_list () =
+    let role_form = role_form ?key language csrf admin role_list in
     let stack = "stack-sm" in
     div
       ~a:[ a_class [ stack; "inset-sm"; "border"; "role-search" ] ]

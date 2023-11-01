@@ -37,9 +37,8 @@ let htmx_search_helper
       let open Experiment.Guard.Access in
       let%lwt exclude = entities_to_exclude Experiment.Id.of_string in
       let search_experiment value actor =
-        Experiment.search database_label exclude value
+        Experiment.search ~exclude database_label value
         >|> Lwt_list.filter_s (fun (id, _) ->
-          (* TODO: Could be solved on database lvl *)
           validate database_label (read id) actor ||> CCResult.is_ok)
       in
       execute_search search_experiment query_results
@@ -48,7 +47,7 @@ let htmx_search_helper
       let open Pool_location.Guard.Access in
       let%lwt exclude = entities_to_exclude Pool_location.Id.of_string in
       let search_location value actor =
-        Pool_location.search database_label exclude value
+        Pool_location.search database_label ~exclude value
         >|> Lwt_list.filter_s (fun (id, _) ->
           validate database_label (read id) actor ||> CCResult.is_ok)
       in

@@ -128,22 +128,9 @@ let search_role_entities req =
       |> to_result Pool_common.Message.(NotFound Field.Role)
       |> Lwt_result.lift
     in
-    let%lwt existing_targets =
-      (* TODO: Could be solved on database lvl *)
-      Helpers_guard.find_roles database_label admin
-      ||> CCList.filter_map
-            (fun ({ Guard.ActorRole.target_uuid; role; _ }, _, _) ->
-               if Role.Role.equal role search_role then None else target_uuid)
-    in
     let entities_to_exclude encode_id =
-      let open CCList in
-      let%lwt selected =
-        HttpUtils.htmx_urlencoded_list Field.(array_key Target) req
-      in
-      (* TODO: NOT SURE THIS WORKS CORRECTLY *)
-      Lwt.return
-        (map (Guard.Uuid.Target.to_string %> encode_id) existing_targets
-         @ map encode_id selected)
+      HttpUtils.htmx_urlencoded_list Field.(array_key Target) req
+      ||> CCList.map encode_id
     in
     let execute_search search_fnc to_html =
       (match query with
@@ -158,17 +145,22 @@ let search_role_entities req =
       let open Experiment.Guard.Access in
       let%lwt exclude = entities_to_exclude Experiment.Id.of_string in
       let search_experiment value actor =
-        Experiment.search database_label exclude value
+        Experiment.find_targets_grantable_by_admin
+          ~exclude
+          database_label
+          admin
+          search_role
+          value
         >|> Lwt_list.filter_s (fun (id, _) ->
-          (* TODO: Could be solved on database lvl *)
           validate database_label (read id) actor ||> CCResult.is_ok)
       in
       execute_search search_experiment Component.Search.Experiment.query_results
     | `LocationManager ->
       let open Pool_location.Guard.Access in
-      let%lwt exclude = entities_to_exclude Pool_location.Id.of_string in
+      let open Pool_location in
+      let%lwt exclude = entities_to_exclude Id.of_string in
       let search_location value actor =
-        Pool_location.search database_label exclude value
+        find_targets_grantable_by_admin ~exclude database_label admin value
         >|> Lwt_list.filter_s (fun (id, _) ->
           validate database_label (read id) actor ||> CCResult.is_ok)
       in
