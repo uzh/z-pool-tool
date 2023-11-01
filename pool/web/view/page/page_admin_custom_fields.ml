@@ -733,7 +733,7 @@ let detail
           ]
         [ model_subtitle language current_model; button_form ]
     ; div
-        ~a:[ a_class [ "stack-lg"; "gap" ] ]
+        ~a:[ a_class [ "stack-lg"; "gap-lg" ] ]
         (field_form
            ?custom_field
            current_model
