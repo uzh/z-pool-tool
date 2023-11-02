@@ -20,7 +20,14 @@ module ContactEmail = struct
   let field = Message.Field.ContactEmail
   (* TODO: email address validation *)
 
-  let schema () = schema field ()
+  let create email =
+    let open Mrmime in
+    match Mailbox.of_string email with
+    | Ok _ -> Ok email
+    | Error _ -> Error Pool_common.Message.(Invalid field)
+  ;;
+
+  let schema () = schema ~validation:create field ()
   let of_string m = m
 end
 
