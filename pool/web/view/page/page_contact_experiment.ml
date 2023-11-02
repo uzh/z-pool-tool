@@ -13,11 +13,21 @@ let index
   custom_fields_ansered
   Pool_context.{ language; _ }
   =
-  let list_html ?empty_msg title classnames list =
+  let open Experiment in
+  let list_html ?empty_msg ?note title classnames list =
     div
       [ h2
           ~a:[ a_class [ "heading-2" ] ]
           [ txt Pool_common.(Utils.text_to_string language title) ]
+      ; CCOption.map_or
+          ~default:(txt "")
+          (fun hint ->
+            hint
+            |> Pool_common.Utils.hint_to_string language
+            |> txt
+            |> CCList.return
+            |> p)
+          note
       ; (match list, empty_msg with
          | [], Some empty_msg ->
            p Pool_common.[ Utils.text_to_string language empty_msg |> txt ]
@@ -51,41 +61,36 @@ let index
     |> CCList.filter_map CCFun.id
     |> div ~a:[ a_class [ "stack" ] ]
   in
-  let experiment_description experiment =
-    let open Experiment.Public in
+  let experiment_link (experiment : Public.t) =
     div
-      ~a:[ a_class [ "flexrow"; "flex-gap"; "flexcolumn-mobile" ] ]
-      [ experiment.description
-        |> CCOption.map_or ~default:(txt "") (fun desc ->
-          div
-            ~a:[ a_class [ "grow" ] ]
-            [ txt (Experiment.Description.value desc) ])
-      ; div
-          ~a:[ a_class [ "flexrow"; "align-end"; "justify-end" ] ]
-          [ a
-              ~a:
-                [ a_href
-                    (Sihl.Web.externalize_path
-                       (Format.asprintf
-                          "/experiments/%s"
-                          (experiment.id |> Experiment.Id.value)))
-                ]
-              [ txt
-                  Pool_common.(Message.More |> Utils.control_to_string language)
-              ]
-          ]
+      [ a
+          ~a:
+            [ a_href
+                (Sihl.Web.externalize_path
+                   (Format.asprintf
+                      "/experiments/%s"
+                      (experiment.Public.id |> Id.value)))
+            ]
+          [ txt Pool_common.(Message.More |> Utils.control_to_string language) ]
       ]
   in
-  let experiment_item (experiment : Experiment.Public.t) =
-    let open Experiment.Public in
+  let experiment_item (experiment : Public.t) =
+    let open Public in
+    let title =
+      p
+        ~a:[ a_class [ "word-wrap-break" ] ]
+        [ strong [ txt (PublicTitle.value experiment.public_title) ] ]
+    in
     div
-      ~a:[ a_class [ "stack-sm"; "inset-sm" ] ]
-      [ p
-          ~a:[ a_class [ "word-wrap-break" ] ]
-          [ strong
-              [ txt (Experiment.PublicTitle.value experiment.public_title) ]
+      ~a:[ a_class [ "flexcolumn"; "stack-sm"; "inset-sm" ] ]
+      [ div
+          ~a:[ a_class [ "flexrow"; "flex-gap"; "justify-between" ] ]
+          [ div ~a:[ a_class [ "grow" ] ] [ title ]
+          ; experiment_link experiment
           ]
-      ; experiment_description experiment
+      ; experiment.description
+        |> CCOption.map_or ~default:(txt "") (fun desc ->
+          div [ txt (Description.value desc) ])
       ]
   in
   let experiment_html =
@@ -94,6 +99,7 @@ let index
     |> CCList.map experiment_item
     |> list_html
          ExperimentListPublicTitle
+         ~note:ExperimentSessionsPublic
          ~empty_msg:ExperimentListEmpty
          [ "striped" ]
   in
@@ -107,7 +113,7 @@ let index
       |> list_html PastExperimentListPublicTitle [ "striped" ]
   in
   let session_html =
-    let experiment_overview ((exp : Experiment.Public.t), parent, follow_ups) =
+    let experiment_overview ((exp : Public.t), parent, follow_ups) =
       let thead = Field.[ Some Start; Some Location ] in
       let session_item = PageSession.session_item `Upcoming language exp in
       let sessions = parent :: follow_ups in
@@ -130,12 +136,21 @@ let index
              thead
       in
       div
-        [ h3
-            ~a:[ a_class [ "heading-4" ] ]
-            [ txt Experiment.(exp.Public.public_title |> PublicTitle.value) ]
-        ; div
+        ~a:[ a_class [ "flexcolumn"; "stack" ] ]
+        [ div
             ~a:[ a_class [ "stack-sm" ] ]
-            [ experiment_description exp; session_table ]
+            [ div
+                ~a:[ a_class [ "flexrow"; "flex-gap"; "justify-between" ] ]
+                [ h3
+                    ~a:[ a_class [ "heading-4"; "grow" ] ]
+                    [ txt (exp.Public.public_title |> PublicTitle.value) ]
+                ; experiment_link exp
+                ]
+            ; exp.Public.description
+              |> CCOption.map_or ~default:(txt "") (fun desc ->
+                Description.value desc |> txt |> CCList.return |> div)
+            ]
+        ; session_table
         ]
     in
     let open Pool_common.I18n in

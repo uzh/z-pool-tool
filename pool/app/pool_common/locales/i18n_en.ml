@@ -292,7 +292,7 @@ Make sure to show links and URLs as plain text.
       Once someone has registered for the session, it can no longer be deleted.
     |}
   | ExperimentSessionsPublic ->
-    "Please note: Maybe sessions or complete experiments are no longer \
+    "Please note: Maybe sessions or completed experiments are no longer \
      displayed, although listed in the email. Once all the available seats are \
      assigned a session, it is no longer displayed."
   | ExternalDataRequired ->
