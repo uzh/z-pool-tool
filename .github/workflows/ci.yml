@@ -34,6 +34,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      - name: add commit SHA for non-production builds
+        if: github.ref_type != 'tag'
+        run: |
+          CURRENT_VERSION=$(grep -oP 'let to_string = "\K[^"]+' ./pool/version/version.ml)
+          GIT_SHA=$(git rev-parse --short HEAD)
+          sed -i "s/^let to_string = \".*\"/let to_string = \"${CURRENT_VERSION}-${GIT_SHA}\"/" ./pool/version/version.ml
+
       - name: Build and test with Docker
         uses: addnab/docker-run-action@v3
         env:
