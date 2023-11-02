@@ -1,6 +1,6 @@
-let change_disable_user_after_from_days_to_weeks =
+let change_disable_user_after_from_weeks_to_days =
   Sihl.Database.Migration.create_step
-    ~label:"change disable user after from days to weeks"
+    ~label:"change disable user after from week to days"
     {sql|
       UPDATE
         pool_system_settings
@@ -14,5 +14,5 @@ let change_disable_user_after_from_days_to_weeks =
 let migration () =
   Sihl.Database.Migration.(
     empty "202311011626"
-    |> add_step change_disable_user_after_from_days_to_weeks)
+    |> add_step change_disable_user_after_from_weeks_to_days)
 ;;
