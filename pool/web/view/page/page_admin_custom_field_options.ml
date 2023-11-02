@@ -37,7 +37,7 @@ let option_form
     ~a:
       [ a_method `Post
       ; a_action (Sihl.Web.externalize_path action)
-      ; a_class [ "stack-lg" ]
+      ; a_class [ "stack" ]
       ]
     [ csrf_element csrf ()
     ; div ~a:[ a_class [ "stack" ] ] name_inputs
@@ -125,28 +125,15 @@ let detail
         language
         Message.Field.CustomFieldOption
         custom_field_option
-    ; buttons_form
     ; div
         ~a:[ a_class [ "stack" ] ]
-        [ option_form
+        [ buttons_form
+        ; option_form
             ?custom_field_option
             custom_field
             context
             sys_languages
             flash_fetcher
-        ; p
-            [ a
-                ~a:
-                  [ a_href
-                      (Url.Field.edit_path
-                         Custom_field.(model custom_field, id custom_field)
-                       |> Sihl.Web.externalize_path)
-                  ]
-                [ txt
-                    Pool_common.(
-                      Utils.control_to_string language Message.(Back))
-                ]
-            ]
         ]
     ]
 ;;
