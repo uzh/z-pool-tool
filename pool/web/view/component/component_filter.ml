@@ -580,7 +580,6 @@ let filter_form
            ; Input.submit_element
                language
                Pool_common.Message.(Delete (Some Field.Filter))
-               ~classnames:[ "small" ]
                ~submit_type:`Error
                ~has_icon:Icon.TrashOutline
                ()
