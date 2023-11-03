@@ -63,10 +63,7 @@ let distribution_sort_select language ?field current_order =
 
 let distribution_form_field language (field, current_order) =
   div
-    ~a:
-      [ a_class [ "flexrow"; "flex-gap"; "distribution"; "inset-sm" ]
-      ; a_user_data "sortable-item" ""
-      ]
+    ~a:[ a_class [ "flexrow"; "flex-gap"; "distribution" ] ]
     [ div
         ~a:[ a_class [ "switcher"; "flex-gap"; "align-center"; "grow" ] ]
         [ label
@@ -303,6 +300,7 @@ let form
   in
   let distribution_select (distribution : Mailing.Distribution.t option) =
     let open Mailing.Distribution in
+    let subform_id = "distribution-subform" in
     let is_disabled field =
       CCOption.map_or
         ~default:false
@@ -324,7 +322,7 @@ let form
                 option.disabled = false;
             }
           })
-          e.currentTarget.closest('.distribution').remove();
+          e.currentTarget.closest('[data-sortable-item]').remove();
         }
 
       document.querySelector('#distribution-list').addEventListener('htmx:beforeSwap', (e) => {
@@ -346,11 +344,21 @@ let form
       })
 
       const random = document.querySelector('[name="%s"]');
-      random.addEventListener("change", (e) => {
-        const inputs = document.querySelectorAll('[name="%s"], [name="%s"], [name="%s"]');
+      const subform = document.getElementById('%s')
+      const inputs = subform.querySelectorAll('input, select, button');
+      const toggleRandomOrder = () => {
         inputs.forEach((elm) => {
-          elm.disabled = e.currentTarget.checked
+          elm.disabled = random.checked
         })
+        if(random.checked) {
+          subform.classList.add("hidden");
+        } else {
+          subform.classList.remove("hidden");
+        }
+      }
+
+      random.addEventListener("change", (e) => {
+        toggleRandomOrder();
       })
 
       const startNow = document.querySelector('[name="%s"]');
@@ -363,11 +371,10 @@ let form
         start.disabled = startNow.checked;
         startFlatpicker.disabled = startNow.checked;
       })
+      toggleRandomOrder();
     |js}
         (show RandomOrder)
-        (show DistributionField)
-        (show SortOrder)
-        (array_key Distribution)
+        subform_id
         (show StartNow)
         (show Start)
     in
@@ -407,6 +414,14 @@ let form
         ; div ~a:[ a_class [ "select" ] ] [ select ]
         ]
     in
+    let random_is_checked =
+      match mailing with
+      | None -> true
+      | Some mailing ->
+        mailing.Mailing.distribution
+        |> CCOption.map Mailing.Distribution.is_random
+        |> CCOption.value ~default:false
+    in
     div
       ~a:[ a_class [ "flexcolumn" ] ]
       [ h3
@@ -416,54 +431,62 @@ let form
           ]
       ; p [ txt Pool_common.(Utils.hint_to_string language I18n.Distribution) ]
       ; checkbox_element
-          ?value:(distribution |> CCOption.map Mailing.Distribution.is_random)
+          ~value:random_is_checked
+          ~flash_fetcher
           language
           Field.RandomOrder
       ; div
           ~a:
-            [ a_class
-                [ "border-bottom"
-                ; "inset"
-                ; "u-shape"
-                ; "vertical"
-                ; "flexrow"
-                ; "flex-gap"
-                ; "gap"
-                ]
+            [ a_id subform_id
+            ; a_class (if random_is_checked then [ "hidden" ] else [])
             ]
           [ div
-              ~a:[ a_class [ "switcher"; "flex-gap"; "grow" ] ]
-              [ form_group field_select Field.DistributionField
-              ; form_group sort_select Field.SortOrder
+              ~a:
+                [ a_class
+                    [ "border-bottom"
+                    ; "inset"
+                    ; "u-shape"
+                    ; "vertical"
+                    ; "flexrow"
+                    ; "flex-gap"
+                    ; "gap"
+                    ]
+                ; a_id subform_id
+                ]
+              [ div
+                  ~a:[ a_class [ "switcher"; "flex-gap"; "grow" ] ]
+                  [ form_group field_select Field.DistributionField
+                  ; form_group sort_select Field.SortOrder
+                  ]
+              ; div
+                  ~a:[ a_class [ "form-group"; "justify-end" ] ]
+                  [ button
+                      ~a:
+                        [ a_class [ "success" ]
+                        ; a_user_data
+                            "hx-post"
+                            (mailings_path
+                               ~suffix:"add-condition"
+                               experiment.Experiment.id
+                             |> Sihl.Web.externalize_path)
+                        ; a_user_data "hx-trigger" "click"
+                        ; a_user_data "hx-target" "#distribution-list"
+                        ; a_user_data "hx-swap" "beforeend"
+                        ]
+                      Icon.[ to_html Add ]
+                  ]
               ]
           ; div
-              ~a:[ a_class [ "form-group"; "justify-end" ] ]
-              [ button
-                  ~a:
-                    [ a_class [ "success" ]
-                    ; a_user_data
-                        "hx-post"
-                        (mailings_path
-                           ~suffix:"add-condition"
-                           experiment.Experiment.id
-                         |> Sihl.Web.externalize_path)
-                    ; a_user_data "hx-trigger" "click"
-                    ; a_user_data "hx-target" "#distribution-list"
-                    ; a_user_data "hx-swap" "beforeend"
-                    ]
-                  Icon.[ to_html Add ]
+              [ Mailing.Distribution.(
+                  distribution |> CCOption.map_or ~default:[] find_dist)
+                |> CCList.map (distribution_form_field language)
+                |> Component.Sortable.create_sortable
+                     ~classnames:[ "flexcolumn" ]
+                     ~attributes:[ a_id "distribution-list" ]
+                |> CCList.pure
+                |> div ~a:[ a_class [ "gap" ] ]
+              ; script (Unsafe.data distribution_fncs)
               ]
-          ]
-      ; div
-          [ Mailing.Distribution.(
-              distribution |> CCOption.map_or ~default:[] find_dist)
-            |> CCList.map (distribution_form_field language)
-            |> Component.Sortable.create
-                 ~classnames:[ "flexcolumn" ]
-                 ~attributes:[ a_id "distribution-list" ]
-            |> CCList.pure
-            |> div ~a:[ a_class [ "gap" ] ]
-          ; script (Unsafe.data distribution_fncs)
           ]
       ]
   in

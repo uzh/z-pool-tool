@@ -78,6 +78,18 @@ module Elements = struct
       |> CCList.return
   ;;
 
+  let help_list language = function
+    | [] -> []
+    | help ->
+      [ span
+          ~a:[ a_class [ "help" ] ]
+          CCList.(
+            help
+            >|= CCFun.(Pool_common.(Utils.hint_to_string language) %> txt)
+            |> intersperse (br ()))
+      ]
+  ;;
+
   let error language = function
     | None -> []
     | Some error ->
@@ -249,7 +261,7 @@ let timespan_picker
   ?(additional_attributes = [])
   ?(orientation = `Vertical)
   ?(classnames = [])
-  ?help
+  ?(help = [])
   ?identifier
   ?label_field
   ?(required = false)
@@ -278,7 +290,7 @@ let timespan_picker
     if CCOption.is_some error then a_class [ "is-invalid" ] :: attrs else attrs
   in
   let group_class = Elements.group_class classnames orientation in
-  let help = Elements.help language help in
+  let help = Elements.help_list language help in
   let error = Elements.error language error in
   let input_element = Elements.apply_orientation attributes orientation in
   div

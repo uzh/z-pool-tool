@@ -103,10 +103,6 @@ let to_string = function
   | SessionDetailTitle start ->
     Format.asprintf "Session at %s" (Utils_time.formatted_date_time start)
   | SessionIndent -> "Indentations group follow-up sessions."
-  | SessionReminderDefaultLeadTime leadtime ->
-    Format.asprintf
-      "The default lead time is: %s"
-      (leadtime |> Pool_common_utils.Time.formatted_timespan)
   | SessionReminder -> "Session reminder"
   | SessionRegistrationTitle -> "Register for this session"
   | SignUpAcceptTermsAndConditions -> "I accept the terms and conditions."
@@ -257,6 +253,10 @@ let rec hint_to_string = function
     "You will be able to create the available options in the section 'Option' \
      after the custom field is created."
   | CustomFieldTypeMultiSelect -> hint_to_string CustomFieldTypeSelect
+  | DefaultReminderLeadTime lead_time ->
+    Format.asprintf
+      "If left blank, the default lead time of %s is applied."
+      (lead_time |> Utils_time.formatted_timespan)
   | CustomHtmx s -> s
   | DirectRegistrationDisbled ->
     "If this option is enabled, contacts can join the waiting list but cannot \
@@ -292,14 +292,19 @@ Make sure to show links and URLs as plain text.
       Once someone has registered for the session, it can no longer be deleted.
     |}
   | ExperimentSessionsPublic ->
-    "Please note: Maybe sessions or complete experiments are no longer \
+    "Please note: Maybe sessions or completed experiments are no longer \
      displayed, although listed in the email. Once all the available seats are \
      assigned a session, it is no longer displayed."
   | ExternalDataRequired ->
     "An external data identifier is required for every assignement (latest \
      when a session is closed)."
   | FilterContacts ->
-    "Define the criteria by which contacts will be invited to this experiment."
+    {|<p>To start inviting contacts to this experiment, follow those steps:</p>
+    <ol>
+      <li>Create a filter using one or multiple conditions to define which contacts you would like to include in this experiment.</li>
+      <li>Create the sessions on which you want to perform the experiment.</li>
+      <li>Create one or more mailings to start sending out emails to these participants.</li>
+    </ol>|}
   | TestPhoneNumber ->
     "Please provide a phone number where we can send a single test message to \
      verify the api key. The number must have the format +41791234567."
@@ -314,6 +319,55 @@ Make sure to show links and URLs as plain text.
      location."
   | I18nText str -> str
   | MailingLimit -> "Max. generated Invitations during the mailing."
+  | MessageTemplateAccountSuspensionNotification ->
+    "This message will be sent to a user after the account has been \
+     temporarily suspended because of too many failed login attempts."
+  | MessageTemplateAssignmentConfirmation ->
+    "This message will be sent to contacts after successfully registering for \
+     a session."
+  | MessageTemplateAssignmentSessionChange ->
+    "This message will be sent to contacts after they have been assigned to \
+     another session by an administrator."
+  | MessageTemplateContactEmailChangeAttempt ->
+    "This message will be sent to a user after someone tries to change their \
+     email address to an existing one."
+  | MessageTemplateContactRegistrationAttempt ->
+    "This message will be sent to a user after a registration attempt using an \
+     existing email address."
+  | MessageTemplateEmailVerification ->
+    "This email is used to verify new email addresses after changing an \
+     account email address. You can ignore the SMS text input."
+  | MessageTemplateExperimentInvitation ->
+    "This message is sent to invite contacts to experiments."
+  | MessageTemplatePasswordChange ->
+    "This message is sent to notify users that the account password has been \
+     changed."
+  | MessageTemplatePasswordReset ->
+    "This message sends the password reset token to the given address."
+  | MessageTemplatePhoneVerification ->
+    "This message sends the phone number verification token to the contact's \
+     phone. You can ignore the email and plain text."
+  | MessageTemplateProfileUpdateTrigger ->
+    "This message is used to notify contacts who last updated their profile a \
+     while ago and request them to control their personal information."
+  | MessageTemplateSessionCancellation ->
+    "This message is used to notify contacts about the cancellation of a \
+     session."
+  | MessageTemplateSessionReminder ->
+    "This message reminds contacts about upcoming sessions they are signed up \
+     for."
+  | MessageTemplateSessionReschedule ->
+    "This message is used to notify contacts about the rescheduling of a \
+     session."
+  | MessageTemplateSignupVerification ->
+    "This email is used to verify new email addresses after signing up. You \
+     can ignore the SMS text input."
+  | MessageTemplateUserImport ->
+    "This message informs imported contacts about the migration to the \
+     Z-Pool-Tool and contains the token they need to reset their password."
+  | MessageTemplateWaitingListConfirmation ->
+    "This message confirms the successful enrollment to an experiment waiting \
+     list."
   | MissingMessageTemplates (label, languages) ->
     Format.asprintf
       "The '%s' template is missing is the following languages: %s"
@@ -362,6 +416,9 @@ Make sure to show links and URLs as plain text.
     {|No automatic reminders have been sent for this session yet. Make sure that the message template is correct if you want to trigger the reminders now.
 
 If you trigger the reminders manually now, no more automatic reminders will be sent via the selected message channel.|}
+  | RescheduleSession ->
+    "When you reschedule a session, all registered contacts are automatically \
+     informed."
   | ResetInvitations ->
     "Resets invitations, all previous invitations up to the now will be \
      ignored."
@@ -420,6 +477,12 @@ The following follow-up sessions exist:|}
       "Search by: %s"
       (fields |> CCList.map Locales_en.field_to_string |> CCString.concat ", ")
   | SelectedDateIsPast -> "The selected date is in the past."
+  | SettingsNoEmailSuffixes ->
+    "There are no email suffixes defined that are allowed. This means that all \
+     email suffixes are allowed."
+  | SessionReminderLeadTime ->
+    "The lead time determines how long before the start of the session the \
+     reminders are sent to the contacts"
   | SessionReminderLanguageHint ->
     "If you provide a custom reminder text, select its language here."
   | SessionRegistrationHint -> "The registration for a session is binding."
@@ -499,6 +562,7 @@ let confirmable_to_string confirmable =
    | ReactivateAccount -> "account", "reactivate", None
    | RemoveTag -> "tag", "remove", None
    | RemoveRule -> "rule", "delete", None
+   | RescheduleSession -> "session", "reschedule", None
    | ResetInvitations ->
      ( "invitations"
      , "reset"

@@ -66,7 +66,6 @@ type t =
   | SessionDetailTitle of Ptime.t
   | SessionIndent
   | SessionReminder
-  | SessionReminderDefaultLeadTime of Entity.Reminder.LeadTime.t
   | SessionRegistrationTitle
   | SignUpAcceptTermsAndConditions
   | SignUpCTA
@@ -159,6 +158,7 @@ type hint =
   | CustomFieldTypeSelect
   | CustomFieldTypeMultiSelect
   | CustomHtmx of string
+  | DefaultReminderLeadTime of Entity.Reminder.LeadTime.t
   | DirectRegistrationDisbled
   | Distribution
   | EmailPlainText
@@ -177,6 +177,23 @@ type hint =
   | Locations
   | LocationSessions
   | MailingLimit
+  | MessageTemplateAccountSuspensionNotification
+  | MessageTemplateAssignmentConfirmation
+  | MessageTemplateAssignmentSessionChange
+  | MessageTemplateContactEmailChangeAttempt
+  | MessageTemplateContactRegistrationAttempt
+  | MessageTemplateEmailVerification
+  | MessageTemplateExperimentInvitation
+  | MessageTemplatePasswordChange
+  | MessageTemplatePasswordReset
+  | MessageTemplatePhoneVerification
+  | MessageTemplateProfileUpdateTrigger
+  | MessageTemplateSessionCancellation
+  | MessageTemplateSessionReminder
+  | MessageTemplateSessionReschedule
+  | MessageTemplateSignupVerification
+  | MessageTemplateUserImport
+  | MessageTemplateWaitingListConfirmation
   | MissingMessageTemplates of string * string list
   | NumberIsDaysHint
   | NumberIsSecondsHint
@@ -191,6 +208,7 @@ type hint =
   | RateDependencyWithout
   | RateNumberPerMinutes of int * float
   | RegistrationDisabled
+  | RescheduleSession
   | ResendRemindersChannel
   | ResendRemindersWarning
   | ResetInvitations
@@ -211,7 +229,9 @@ type hint =
   | SessionCloseLegend
   | SessionRegistrationFollowUpHint
   | SessionRegistrationHint
+  | SessionReminderLeadTime
   | SessionReminderLanguageHint
+  | SettingsNoEmailSuffixes
   | SignUpForWaitingList
   | SmtpSettingsDefaultFlag
   | SmtpSettingsIntro
@@ -246,6 +266,7 @@ type confirmable =
   | ReactivateAccount
   | RemoveRule
   | RemoveTag
+  | RescheduleSession
   | ResetInvitations
   | RevokeRole
   | StopMailing

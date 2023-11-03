@@ -58,17 +58,16 @@ end
 
 let model_subtitle language model =
   div
-    [ p
-        [ strong
-            [ txt
-                (Format.asprintf
-                   "%s: "
-                   Pool_common.(
-                     Utils.field_to_string language Message.Field.Model
-                     |> CCString.capitalize_ascii))
-            ]
-        ; txt (Custom_field.Model.show model |> CCString.capitalize_ascii)
+    ~a:[ a_class [ "large-font-size" ] ]
+    [ strong
+        [ txt
+            (Format.asprintf
+               "%s: "
+               Pool_common.(
+                 Utils.field_to_string language Message.Field.Model
+                 |> CCString.capitalize_ascii))
         ]
+    ; txt (Custom_field.Model.show model |> CCString.capitalize_ascii)
     ]
 ;;
 
@@ -354,44 +353,41 @@ let field_form
                  (CCList.cons
                     (CCList.map
                        (fun option ->
-                         tr
-                           ~a:[ a_user_data "sortable-item" "" ]
-                           [ td [ txt (SelectOption.name language option) ]
-                           ; td
-                               [ txt
-                                   (if CCOption.is_some
-                                         option.SelectOption.published_at
-                                    then
-                                      Pool_common.(
-                                        Utils.field_to_string
-                                          language
-                                          Message.Field.PublishedAt)
-                                    else "")
-                               ]
-                           ; td
-                               [ input
-                                   ~a:
-                                     [ a_input_type `Hidden
-                                     ; a_name
-                                         Message.Field.(
-                                           CustomFieldOption |> array_key)
-                                     ; a_value SelectOption.(Id.value option.id)
-                                     ]
-                                   ()
-                               ]
-                           ; td
-                               ~a:[ a_class [ "flexrow"; "justify-end" ] ]
-                               [ Url.Option.edit_path
-                                   (model m, id m)
-                                   option.SelectOption.id
-                                 |> Component.Input.edit_link
-                               ]
-                           ])
+                         [ td [ txt (SelectOption.name language option) ]
+                         ; td
+                             [ txt
+                                 (if CCOption.is_some
+                                       option.SelectOption.published_at
+                                  then
+                                    Pool_common.(
+                                      Utils.field_to_string
+                                        language
+                                        Message.Field.PublishedAt)
+                                  else "")
+                             ]
+                         ; td
+                             [ input
+                                 ~a:
+                                   [ a_input_type `Hidden
+                                   ; a_name
+                                       Message.Field.(
+                                         CustomFieldOption |> array_key)
+                                   ; a_value SelectOption.(Id.value option.id)
+                                   ]
+                                 ()
+                             ]
+                         ; td
+                             ~a:[ a_class [ "flexrow"; "justify-end" ] ]
+                             [ Url.Option.edit_path
+                                 (model m, id m)
+                                 option.SelectOption.id
+                               |> Component.Input.edit_link
+                             ]
+                         ])
                        options
                      |> Component.Sortable.create_table
-                          ~classnames:[ "table"; "simple"; "sortable" ])
-                    [ csrf_element csrf ()
-                    ; div
+                          ~classnames:[ "table"; "simple" ])
+                    [ div
                         ~a:[ a_class [ "flexrow" ] ]
                         [ submit_element
                             ~classnames:[ "push" ]
@@ -400,6 +396,7 @@ let field_form
                             ~submit_type:`Primary
                             ()
                         ]
+                    ; csrf_element csrf ()
                     ])
              ]
          in
@@ -736,7 +733,7 @@ let detail
           ]
         [ model_subtitle language current_model; button_form ]
     ; div
-        ~a:[ a_class [ "stack-lg" ] ]
+        ~a:[ a_class [ "stack-lg"; "gap-lg" ] ]
         (field_form
            ?custom_field
            current_model
@@ -824,10 +821,7 @@ let index field_list group_list current_model Pool_context.{ language; csrf; _ }
             ; CCList.map
                 (fun field ->
                   div
-                    ~a:
-                      [ a_class [ "flexrow"; "align-center"; "inset-sm" ]
-                      ; a_user_data "sortable-item" ""
-                      ]
+                    ~a:[ a_class [ "flexrow"; "align-center" ] ]
                     [ txt (field |> field_name)
                     ; input
                         ~a:
@@ -838,7 +832,7 @@ let index field_list group_list current_model Pool_context.{ language; csrf; _ }
                         ()
                     ])
                 ungrouped
-              |> Component.Sortable.create
+              |> Component.Sortable.create_sortable
             ; div
                 ~a:[ a_class [ "flexrow" ] ]
                 [ submit_element
@@ -890,49 +884,45 @@ let index field_list group_list current_model Pool_context.{ language; csrf; _ }
               ; a_class [ "stack" ]
               ; a_user_data "detect-unsaved-changes" ""
               ]
-            (CCList.cons
-               (CCList.map
-                  (fun group ->
-                    let open Custom_field in
-                    div
-                      ~a:
-                        [ a_class
-                            [ "flexrow"
-                            ; "flex-gap"
-                            ; "justify-between"
-                            ; "align-center"
-                            ; "inset-sm"
-                            ]
-                        ; a_user_data "sortable-item" ""
-                        ]
-                      [ div [ txt Group.(group |> name language) ]
-                      ; div
-                          [ input
-                              ~a:
-                                [ a_input_type `Hidden
-                                ; a_name
-                                    Message.Field.(
-                                      CustomFieldGroup |> array_key)
-                                ; a_value Group.(Id.value group.id)
-                                ]
-                              ()
+            [ CCList.map
+                (fun group ->
+                  let open Custom_field in
+                  div
+                    ~a:
+                      [ a_class
+                          [ "flexrow"
+                          ; "flex-gap"
+                          ; "justify-between"
+                          ; "align-center"
                           ]
-                      ; Url.Group.edit_path Group.(group.model, group.id)
-                        |> edit_link ~classnames:[ "small" ]
-                      ])
-                  group_list
-                |> Component.Sortable.create)
-               [ csrf_element csrf ()
-               ; div
-                   ~a:[ a_class [ "flexrow" ] ]
-                   [ submit_element
-                       ~classnames:[ "push"; "small" ]
-                       language
-                       Message.UpdateOrder
-                       ~submit_type:`Primary
-                       ()
-                   ]
-               ])
+                      ]
+                    [ div [ txt Group.(group |> name language) ]
+                    ; div
+                        [ input
+                            ~a:
+                              [ a_input_type `Hidden
+                              ; a_name
+                                  Message.Field.(CustomFieldGroup |> array_key)
+                              ; a_value Group.(Id.value group.id)
+                              ]
+                            ()
+                        ]
+                    ; Url.Group.edit_path Group.(group.model, group.id)
+                      |> edit_link ~classnames:[ "small" ]
+                    ])
+                group_list
+              |> Component.Sortable.create_sortable
+            ; div
+                ~a:[ a_class [ "flexrow" ] ]
+                [ submit_element
+                    ~classnames:[ "push"; "small" ]
+                    language
+                    Message.UpdateOrder
+                    ~submit_type:`Primary
+                    ()
+                ; csrf_element csrf ()
+                ]
+            ]
         ]
     in
     div

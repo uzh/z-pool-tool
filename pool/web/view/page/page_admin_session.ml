@@ -99,17 +99,15 @@ let session_form
       [ timespan_picker
           language
           field
-          ~help:I18n.TimeSpanPickerHint
+          ~help:
+            [ I18n.TimeSpanPickerHint
+            ; I18n.DefaultReminderLeadTime
+                (default_value |> Reminder.LeadTime.value)
+            ]
           ?value:
             CCOption.(
               bind session get_value |> CCOption.map Reminder.LeadTime.value)
           ~flash_fetcher
-      ; Utils.text_to_string
-          language
-          (I18n.SessionReminderDefaultLeadTime
-             (default_value |> Reminder.LeadTime.value))
-        |> txt
-        |> HttpUtils.default_value_style
       ]
   in
   form
@@ -143,7 +141,7 @@ let session_form
             language
             ~required:true
             Message.Field.Duration
-            ~help:I18n.TimeSpanPickerHint
+            ~help:[ I18n.TimeSpanPickerHint ]
             ?value:
               (CCOption.map
                  (fun (s : t) -> s.duration |> Duration.value)
@@ -233,37 +231,41 @@ let reschedule_session
       (Experiment.Id.value experiment.Experiment.id)
       Session.(Id.value session.id)
   in
-  form
-    ~a:
-      [ a_class [ "stack" ]
-      ; a_method `Post
-      ; a_action (action |> Sihl.Web.externalize_path)
-      ]
-    [ csrf_element csrf ()
-    ; date_time_picker_element
-        language
-        Message.Field.Start
-        ~required:true
-        ~flash_fetcher
-        ~value:(session.start |> Start.value)
-        ~disable_past:true
-    ; timespan_picker
-        language
-        ~required:true
-        Message.Field.Duration
-        ~help:I18n.TimeSpanPickerHint
-        ~value:(session.duration |> Duration.value)
-        ~flash_fetcher
-    ; div
-        ~a:[ a_class [ "flexrow" ] ]
-        [ submit_element
-            ~classnames:[ "push" ]
-            language
-            Message.(Reschedule (Some Field.Session))
-            ()
+  [ p [ txt Pool_common.(Utils.hint_to_string language I18n.RescheduleSession) ]
+  ; form
+      ~a:
+        [ a_class [ "stack" ]
+        ; a_method `Post
+        ; a_action (action |> Sihl.Web.externalize_path)
+        ; a_user_data
+            "confirmable"
+            (Utils.confirmable_to_string language I18n.RescheduleSession)
         ]
-    ]
-  |> CCList.return
+      [ csrf_element csrf ()
+      ; date_time_picker_element
+          language
+          Message.Field.Start
+          ~required:true
+          ~flash_fetcher
+          ~value:(session.start |> Start.value)
+          ~disable_past:true
+      ; timespan_picker
+          language
+          ~required:true
+          Message.Field.Duration
+          ~help:[ I18n.TimeSpanPickerHint ]
+          ~value:(session.duration |> Duration.value)
+          ~flash_fetcher
+      ; div
+          ~a:[ a_class [ "flexrow" ] ]
+          [ submit_element
+              ~classnames:[ "push" ]
+              language
+              Message.(Reschedule (Some Field.Session))
+              ()
+          ]
+      ]
+  ]
   |> Layout.Experiment.(
        create
          context
@@ -1519,16 +1521,17 @@ let message_template_form
   flash_fetcher
   =
   let open Message_template in
-  let action =
-    let go =
+  let action, input =
+    let open Page_admin_message_template in
+    let path =
       Format.asprintf
         "/admin/experiments/%s/sessions/%s/%s"
         Experiment.(Id.value experiment.Experiment.id)
         Session.(Id.value session.Session.id)
     in
     match template with
-    | None -> go (Label.prefixed_human_url label)
-    | Some template -> prefixed_template_url template |> go
+    | None -> path (Label.prefixed_human_url label), New label
+    | Some template -> path (prefixed_template_url template), Existing template
   in
   let title =
     let open Pool_common in
@@ -1554,7 +1557,7 @@ let message_template_form
     context
     ~text_elements
     ?languages
-    template
+    input
     action
     flash_fetcher
   |> CCList.return

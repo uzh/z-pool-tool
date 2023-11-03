@@ -168,15 +168,13 @@ let experiment_form
       [ timespan_picker
           language
           field
-          ~help:I18n.TimeSpanPickerHint
+          ~help:
+            [ I18n.TimeSpanPickerHint
+            ; I18n.DefaultReminderLeadTime
+                (default_value |> Reminder.LeadTime.value)
+            ]
           ?value:CCOption.(bind experiment get_value)
           ~flash_fetcher
-      ; Utils.text_to_string
-          language
-          (I18n.SessionReminderDefaultLeadTime
-             (default_value |> Reminder.LeadTime.value))
-        |> txt
-        |> HttpUtils.default_value_style
       ]
   in
   form
@@ -362,31 +360,17 @@ let create
 
 let edit
   ?(allowed_to_assign = false)
-  ({ Experiment.id; _ } as experiment)
-  ({ Pool_context.language; csrf; query_language; guardian; _ } as context)
-  sys_languages
+  experiment
+  ({ Pool_context.language; csrf; query_language; _ } as context)
   default_email_reminder_lead_time
   default_text_msg_reminder_lead_time
   contact_persons
   organisational_units
   smtp_auth_list
-  message_templates
   (available_tags, current_tags)
   (available_participation_tags, current_participation_tags)
   flash_fetcher
   =
-  let can_update_experiment =
-    Guard.PermissionOnTarget.validate
-      (Experiment.Guard.Access.update_permission_on_target id)
-      guardian
-  in
-  let notifications =
-    notifications
-      ~can_update_experiment
-      language
-      sys_languages
-      message_templates
-  in
   let form =
     experiment_form
       ~experiment
@@ -397,26 +381,6 @@ let edit
       default_email_reminder_lead_time
       default_text_msg_reminder_lead_time
       flash_fetcher
-  in
-  let experiment_path =
-    Format.asprintf "/admin/experiments/%s/%s" Experiment.(Id.value id)
-  in
-  let message_templates =
-    div
-      [ h3
-          ~a:[ a_class [ "heading-3" ] ]
-          [ txt
-              Pool_common.(
-                Utils.nav_link_to_string language I18n.MessageTemplates)
-          ]
-      ; message_templates_html
-          ~can_update_experiment
-          language
-          csrf
-          experiment_path
-          sys_languages
-          message_templates
-      ]
   in
   let tags_html (available, current) field =
     if allowed_to_assign
@@ -466,10 +430,7 @@ let edit
           ]
       ]
   in
-  [ div
-      ~a:[ a_class [ "stack-lg" ] ]
-      [ notifications; form; tags; message_templates ]
-  ]
+  [ div ~a:[ a_class [ "stack-lg" ] ] [ form; tags ] ]
   |> Layout.Experiment.(
        create
          context
@@ -917,15 +878,16 @@ let message_template_form
   flash_fetcher
   =
   let open Message_template in
-  let action =
-    let go =
+  let action, input =
+    let open Page_admin_message_template in
+    let path =
       Format.asprintf
         "/admin/experiments/%s/%s"
         Experiment.(Id.value experiment.Experiment.id)
     in
     match template with
-    | None -> go (Label.prefixed_human_url label)
-    | Some template -> prefixed_template_url template |> go
+    | None -> path (Label.prefixed_human_url label), New label
+    | Some template -> path (prefixed_template_url template), Existing template
   in
   let title =
     let open Pool_common in
@@ -951,7 +913,7 @@ let message_template_form
     context
     ?languages
     ~text_elements
-    template
+    input
     action
     flash_fetcher
   |> CCList.return

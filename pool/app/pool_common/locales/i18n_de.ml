@@ -103,10 +103,6 @@ Sie kommen für mehr Experimente in Frage, umso kompletter Ihr Profil ist.|}
   | SessionDetailTitle start ->
     Format.asprintf "Session am %s" (Utils_time.formatted_date_time start)
   | SessionIndent -> "Einrückungen groupieren Folgesessions."
-  | SessionReminderDefaultLeadTime leadtime ->
-    Format.asprintf
-      "Die Standardvorlaufzeit ist: %s"
-      (leadtime |> Pool_common_utils.Time.formatted_timespan)
   | SessionReminder -> "Sessionerinnerung"
   | SessionRegistrationTitle -> "Für diese Session anmelden"
   | SignUpAcceptTermsAndConditions -> "Ich akzeptiere die Nutzungsbedingungen."
@@ -265,6 +261,10 @@ Wird nach diesem Feld gefiltert, wird der überschreibende Wert bevorzugt.
      Abschnitt 'Option' erstellen."
   | CustomFieldTypeMultiSelect -> hint_to_string CustomFieldTypeSelect
   | CustomHtmx s -> s
+  | DefaultReminderLeadTime lead_time ->
+    Format.asprintf
+      "Bleibt diese Angabe leer, wird die Standardvorlaufzeit von %s verwendet."
+      (lead_time |> Utils_time.formatted_timespan)
   | DirectRegistrationDisbled ->
     "Ist diese Option aktiviert, können sich Kontakte auf die Warteliste \
      setzen, aber nicht direkt für das Experiment einschreiben."
@@ -314,8 +314,12 @@ Wenn Sie die Erinnerungen jetzt manuell auslösen werden über den gewählten Na
     "Pro Anmeldung ist ein Identifikator für externe Daten obligatorisch \
      (spätestens wenn eine Session abgeschlossen wird)."
   | FilterContacts ->
-    "Definieren Sie die Kriterien, anhand welchen Kontakte an dieses \
-     Experiment eingeladen werden."
+    {|<p>Um Kontakte zu diesem Experiment einzuladen, folgen Sie diesen Schritten:</p>
+    <ol>
+      <li>Erstellen Sie einen Filter mit einer oder mehreren Bedingungen, um festzulegen, welche Kontakte Sie in dieses Experiment aufnehmen möchten.</li>
+      <li>Erstellen Sie die Sessions, in denen Sie das Experiment durchführen möchten.</li>
+      <li>Erstellen Sie ein oder mehrere Mailings, um den Versand von E-Mails an diese Teilnehmer zu starten.</li>
+    </ol>|}
   | TestPhoneNumber ->
     "Bitte geben Sie eine Telefonnummer an, an die wir eine einzige \
      Testnachricht schicken können, um den API Key zu verifizieren. Die Nummer \
@@ -336,6 +340,58 @@ Wenn Sie die Erinnerungen jetzt manuell auslösen werden über den gewählten Na
     "Standorte, an denen Experimente durchgeführt werden. Jede Session muss \
      eine Location haben."
   | MailingLimit -> "Max. generierte Einladungen pro Mailing."
+  | MessageTemplateAccountSuspensionNotification ->
+    "Diese Nachricht wird an einen Benutzer gesendet, nachdem sein Konto wegen \
+     zu vieler fehlgeschlagener Anmeldeversuche vorübergehend gesperrt wurde."
+  | MessageTemplateAssignmentConfirmation ->
+    "Diese Nachricht wird an Kontakte gesendet, nachdem sie sich erfolgreich \
+     für eine Sitzung angemeldet haben."
+  | MessageTemplateAssignmentSessionChange ->
+    "Diese Nachricht wird an Kontakte gesendet, nachdem sie von einem \
+     Administrator einer anderen Session zugewiesen wurden."
+  | MessageTemplateContactEmailChangeAttempt ->
+    "Diese Nachricht wird an einen Benutzer gesendet, nachdem jemand versucht \
+     hat, seine E-Mail-Adresse in eine bestehende Adresse zu ändern."
+  | MessageTemplateContactRegistrationAttempt ->
+    "Diese Nachricht wird an einen Benutzer gesendet, nachdem er versucht hat, \
+     sich mit einer bestehenden E-Mail-Adresse zu registrieren."
+  | MessageTemplateEmailVerification ->
+    "Diese E-Mail wird verwendet, um neue E-Mail-Adressen nach der Änderung \
+     einer Konto-E-Mail-Adresse zu verifizieren. Sie können die \
+     SMS-Texteingabe ignorieren."
+  | MessageTemplateExperimentInvitation ->
+    "Diese Nachricht wird gesendet, um Kontakte zu Experimenten einzuladen."
+  | MessageTemplatePasswordChange ->
+    "Diese Nachricht wird gesendet, um Benutzer zu benachrichtigen, dass das \
+     Kontopasswort geändert wurde."
+  | MessageTemplatePasswordReset ->
+    "Diese Nachricht sendet das Passwort-Reset-Token an die angegebene Adresse."
+  | MessageTemplatePhoneVerification ->
+    "Diese Nachricht sendet das Token zur Überprüfung der Telefonnummer an das \
+     Telefon des Kontakts. Sie können die E-Mail und den Klartext ignorieren."
+  | MessageTemplateProfileUpdateTrigger ->
+    "Diese Nachricht wird verwendet, um Kontakte zu benachrichtigen, die ihr \
+     Profil vor einiger Zeit zuletzt aktualisiert haben, und sie aufzufordern, \
+     ihre persönlichen Daten zu kontrollieren."
+  | MessageTemplateSessionCancellation ->
+    "Diese Nachricht wird verwendet, um Kontakte über die Annullierung einer \
+     Session zu informieren."
+  | MessageTemplateSessionReminder ->
+    "Diese Nachricht erinnert Kontakte an bevorstehende Sessions, für die sie \
+     sich angemeldet haben."
+  | MessageTemplateSessionReschedule ->
+    "Diese Nachricht wird verwendet, um Kontakte über die Verschiebung einer \
+     Session zu benachrichtigen."
+  | MessageTemplateSignupVerification ->
+    "Diese E-Mail wird verwendet, um neue E-Mail-Adressen nach der Anmeldung \
+     zu verifizieren. Sie können die SMS-Texteingabe ignorieren."
+  | MessageTemplateUserImport ->
+    "Diese Nachricht informiert importierte Kontakte über die Migration zum \
+     Z-Pool-Tool und enthält das Token, das sie zum Zurücksetzen ihres \
+     Passworts benötigen."
+  | MessageTemplateWaitingListConfirmation ->
+    "Diese Nachricht bestätigt die erfolgreiche Eintragung in eine \
+     Experiment-Warteliste."
   | NumberIsSecondsHint -> "Anzahl Sekunden"
   | NumberIsDaysHint -> "Anzahl Tage"
   | NumberIsWeeksHint -> "Anzahl Wochen"
@@ -373,6 +429,9 @@ Wenn Sie die Erinnerungen jetzt manuell auslösen werden über den gewählten Na
     "Ist diese Option aktiviert, können sich Kontakte weder anmelden noch auf \
      die Warteliste setzen. Das Experiment ist für die Kontakte nicht \
      ersichtlich."
+  | RescheduleSession ->
+    "Wenn Sie eine Session verschieben werden alle an dieser Session \
+     registrierten Kontakte automatisch informiert."
   | ResetInvitations ->
     "Einladungen zurücksetzen, alle bisherigen Einladungen werden für \
      zukünftige Versande ignoriert."
@@ -429,13 +488,19 @@ Wenn keine der Checkboxen angewählt ist, bedeutet das, dass der Kontakt erschie
   | SessionCloseLegend ->
     {|NS: Der Kontakt ist nicht an der Session erschienen
     P: Der Kontakt hat am Experiment teilgenommen|}
+  | SessionReminderLeadTime ->
+    "Die Vorlaufzeit bestimmt, wie lange vor dem Start der Session die \
+     Erinnerungen an die Kontakte verschickt wird."
   | SessionReminderLanguageHint ->
     "Falls sie einen eigenen Erinnerungstext angeben, wählen Sie dessen \
      Sprache hier."
+  | SettingsNoEmailSuffixes ->
+    "Es sind keine Email-Endungen definiert, die zugelassen sind. Das \
+     bedeutet, dass alle Email-Endungen erlaubt sind."
   | SessionRegistrationHint ->
     "Die Registrierung für eine Session ist verbindlich."
   | SessionRegistrationFollowUpHint ->
-    "Die Registrierung für eine Session inlk. allen Folgesessions ist \
+    "Die Registrierung für eine Session inkl. allen Folgesessions ist \
      verbindlich."
   | SelectedDateIsPast -> "Das gewählte Datum liegt in der Vergangenheit."
   | SignUpForWaitingList ->
@@ -520,6 +585,7 @@ let confirmable_to_string confirmable =
    | ReactivateAccount -> "den Account", "reaktivieren", None
    | RemoveRule -> "die Regel", "löschen", None
    | RemoveTag -> "den Tag", "entfernen", None
+   | RescheduleSession -> "die Session", "verschieben", None
    | ResetInvitations ->
      ( "die Einladungen"
      , "zurücksetzen"

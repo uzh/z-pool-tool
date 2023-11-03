@@ -74,11 +74,9 @@ let show
             | None -> [ a_disabled () ]
           in
           let checkbox = input ~a:(attrs @ selected @ disabled) () in
-          div
-            ~a:[ a_user_data "sortable-item" ""; a_class [ "inset-sm" ] ]
-            [ checkbox; label [ txt (Pool_common.Language.show language) ] ])
+          div [ checkbox; label [ txt (Pool_common.Language.show language) ] ])
         all_languages
-      |> Component.Sortable.create
+      |> Component.Sortable.create_sortable
     in
     div
       [ h2 ~a:[ a_class [ "heading-2" ] ] [ txt "Languages" ]
@@ -93,77 +91,107 @@ let show
       ]
   in
   let email_suffixes_html =
+    let create_form =
+      div
+        [ h3
+            [ txt
+                Pool_common.(
+                  Utils.control_to_string
+                    language
+                    Message.(Add (Some Field.EmailSuffix)))
+            ]
+        ; form
+            ~a:(form_attrs `CreateEmailSuffix)
+            [ csrf_element csrf ()
+            ; div
+                ~a:[ a_class [ "stack" ] ]
+                [ input_element
+                    language
+                    `Text
+                    Message.Field.EmailSuffix
+                    ~required:true
+                ; submit ~control:Message.(Add None) ()
+                ]
+            ]
+        ]
+    in
+    let delete_forms suffixes =
+      suffixes
+      |> CCList.map (fun suffix ->
+        form
+          ~a:
+            [ a_method `Post
+            ; a_action (action_path `DeleteEmailSuffix)
+            ; a_user_data
+                "confirmable"
+                Pool_common.(
+                  Utils.confirmable_to_string language I18n.DeleteEmailSuffix)
+            ]
+          [ submit_icon ~classnames:[ "error" ] Icon.TrashOutline
+          ; input
+              ~a:
+                [ a_input_type `Hidden
+                ; a_name "email_suffix"
+                ; a_value (Settings.EmailSuffix.value suffix)
+                ; a_readonly ()
+                ]
+              ()
+          ; csrf_element csrf ()
+          ])
+      |> div ~a:[ a_class [ "flexcolumn"; "stack-xs" ] ]
+    in
+    let update_forms suffixes =
+      form
+        ~a:
+          [ a_method `Post
+          ; a_action (action_path `UpdateEmailSuffixes)
+          ; a_user_data "detect-unsaved-changes" ""
+          ; a_class [ "grow" ]
+          ]
+        [ csrf_element csrf ()
+        ; div
+            ~a:[ a_class [ "flexcolumn"; "stack-xs" ] ]
+            (suffixes
+             |> CCList.map (fun suffix ->
+               input
+                 ~a:
+                   [ a_value (Settings.EmailSuffix.value suffix)
+                   ; a_input_type `Text
+                   ; a_name (Message.Field.show Field.EmailSuffix)
+                   ; a_required ()
+                   ]
+                 ()))
+        ; div
+            ~a:[ a_class [ "flexrow"; "gap" ] ]
+            [ submit_element
+                ~classnames:[ "push" ]
+                language
+                Message.(Update None)
+                ()
+            ]
+        ]
+    in
+    let suffix_rows suffixes =
+      div
+        ~a:[ a_class [ "flexrow"; "flex-gap" ] ]
+        [ update_forms suffixes; delete_forms suffixes ]
+    in
     div
       [ h2 ~a:[ a_class [ "heading-2" ] ] [ txt "Email Suffixes" ]
       ; div
-          ~a:[ a_class [ "stack" ] ]
-          (let constant =
-             [ form
-                 ~a:(form_attrs `CreateEmailSuffix)
-                 [ csrf_element csrf ()
-                 ; input_element
-                     language
-                     `Text
-                     Message.Field.EmailSuffix
-                     ~required:true
-                 ; submit ~control:Message.(Add None) ()
+          ~a:[ a_class [ "stack"; "flexcolumn" ] ]
+          [ (match email_suffixes with
+             | [] ->
+               div
+                 [ txt
+                     Pool_common.(
+                       Utils.hint_to_string
+                         language
+                         I18n.SettingsNoEmailSuffixes)
                  ]
-             ; div
-                 (CCList.map
-                    (fun suffix ->
-                      [ txt (Settings.EmailSuffix.value suffix)
-                      ; form
-                          ~a:
-                            [ a_method `Post
-                            ; a_action (action_path `DeleteEmailSuffix)
-                            ; a_user_data
-                                "confirmable"
-                                Pool_common.(
-                                  Utils.confirmable_to_string
-                                    language
-                                    I18n.DeleteEmailSuffix)
-                            ]
-                          [ csrf_element csrf ()
-                          ; input
-                              ~a:
-                                [ a_input_type `Hidden
-                                ; a_name "email_suffix"
-                                ; a_value (Settings.EmailSuffix.value suffix)
-                                ; a_readonly ()
-                                ]
-                              ()
-                          ; submit_element
-                              language
-                              Message.(Delete None)
-                              ~submit_type:`Error
-                              ()
-                          ]
-                      ])
-                    email_suffixes
-                  |> Component.Table.horizontal_table
-                       ~align_last_end:true
-                       `Striped
-                  |> CCList.pure)
-             ]
-           in
-           let update =
-             form
-               ~a:(form_attrs `UpdateEmailSuffixes)
-               ([ csrf_element csrf () ]
-                @ CCList.map
-                    (fun suffix ->
-                      input_element
-                        language
-                        `Text
-                        Message.Field.EmailSuffix
-                        ~required:true
-                        ~value:(suffix |> Settings.EmailSuffix.value))
-                    email_suffixes
-                @ [ submit () ])
-           in
-           if CCList.is_empty email_suffixes
-           then constant
-           else update :: constant)
+             | suffixes -> suffix_rows suffixes)
+          ; create_form
+          ]
       ]
   in
   let contact_email_html =
@@ -192,7 +220,7 @@ let show
               ~a:(form_attrs `UpdateInactiveUserDisableAfter)
               [ csrf_element csrf ()
               ; input_element
-                  ~help:Pool_common.I18n.NumberIsWeeksHint
+                  ~help:Pool_common.I18n.NumberIsDaysHint
                   ~required:true
                   language
                   `Number
@@ -294,7 +322,7 @@ let show
         [ csrf_element csrf ()
         ; timespan_picker
             ~label_field:field
-            ~help:I18n.TimeSpanPickerHint
+            ~help:[ I18n.TimeSpanPickerHint ]
             ~value:(value |> Reminder.LeadTime.value)
             ~required:true
             ~flash_fetcher
@@ -305,14 +333,22 @@ let show
     in
     div
       [ h2 [ txt "Reminder lead time" ]
-      ; lead_time_form
-          `UpdateDefaultLeadTime
-          Message.Field.EmailLeadTime
-          default_reminder_lead_time
-      ; lead_time_form
-          `UpdateTextMsgDefaultLeadTime
-          Message.Field.TextMessageLeadTime
-          default_text_msg_reminder_lead_time
+      ; p
+          [ txt
+              Pool_common.(
+                Utils.hint_to_string language I18n.SessionReminderLeadTime)
+          ]
+      ; div
+          ~a:[ a_class [ "stack" ] ]
+          [ lead_time_form
+              `UpdateDefaultLeadTime
+              Message.Field.EmailLeadTime
+              default_reminder_lead_time
+          ; lead_time_form
+              `UpdateTextMsgDefaultLeadTime
+              Message.Field.TextMessageLeadTime
+              default_text_msg_reminder_lead_time
+          ]
       ]
   in
   div

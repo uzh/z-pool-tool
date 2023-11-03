@@ -200,17 +200,13 @@ module Option = struct
 
   module Update = struct
     let t =
-      let encode m = Ok (m.SelectOption.id, (m.name, m.published_at)) in
+      let encode m = Ok (m.SelectOption.id, m.name) in
       let decode _ =
         failwith
           Pool_common.(
             Message.WriteOnlyModel |> Utils.error_to_string Language.En)
       in
-      Caqti_type.(
-        custom
-          ~encode
-          ~decode
-          (tup2 Pool_common.Repo.Id.t (tup2 Name.t (option PublishedAt.t))))
+      Caqti_type.(custom ~encode ~decode (tup2 Pool_common.Repo.Id.t Name.t))
     ;;
   end
 end

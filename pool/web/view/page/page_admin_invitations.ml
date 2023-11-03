@@ -127,9 +127,8 @@ module Partials = struct
                 Message.(Filter (Some Field.Contacts))
                 |> Utils.control_to_string language)
           ]
-      ; p
-          [ txt Pool_common.(Utils.hint_to_string language I18n.FilterContacts)
-          ]
+      ; Unsafe.data
+          Pool_common.(Utils.hint_to_string language I18n.FilterContacts)
       ; Filter.(
           filter_form
             csrf

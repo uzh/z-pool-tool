@@ -68,7 +68,7 @@ type t =
   | SchoolOutline [@name "school-outline"] [@printer prt "school-outline"]
   | Settings [@name "settings"] [@printer prt "settings"]
   | SettingsOutline [@name "settings-outline"] [@printer prt "settings-outline"]
-  | SwapHorizonal [@name "swap-horizonal"] [@printer prt "swap-horizonal"]
+  | SwapHorizonal [@name "swap-horizontal"] [@printer prt "swap-horizontal"]
   | Trash [@name "trash"] [@printer prt "trash"]
   | TrashOutline [@name "trash-outline"] [@printer prt "trash-outline"]
   | UploadOutline [@name "upload-outline"] [@printer prt "upload-outline"]

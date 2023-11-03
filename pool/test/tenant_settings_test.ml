@@ -1,3 +1,10 @@
+module Command = Cqrs_command.Settings_command
+module Field = Pool_common.Message.Field
+open Settings
+
+let get_or_failwith = Test_utils.get_or_failwith
+let database_label = Test_utils.Data.database_label
+
 module Testable = struct
   let contact_email = Settings.ContactEmail.(Alcotest.testable pp equal)
   let email_suffix = Settings.EmailSuffix.(Alcotest.testable pp equal)
@@ -17,53 +24,186 @@ module Testable = struct
   ;;
 end
 
-let database_label = Test_utils.Data.database_label
+let check_events expected generated =
+  Alcotest.(
+    check
+      (result (list Test_utils.event) Test_utils.error)
+      "succeeds"
+      expected
+      generated)
+;;
+
+let handle_result result =
+  result |> get_or_failwith |> Pool_event.handle_events database_label
+;;
 
 let check_contact_email _ () =
-  let%lwt contact = Settings.find_contact_email database_label in
+  let open CCResult.Infix in
+  let open Command.UpdateContactEmail in
+  let field = Field.ContactEmail in
+  let handle email = [ Field.show field, [ email ] ] |> decode >>= handle in
+  let invalid_email = "email.example.com" in
+  let result = handle invalid_email in
   let expected =
-    Settings.ContactEmail.create "pool@econ.uzh.ch"
-    |> Test_utils.get_or_failwith
+    Error Pool_common.Message.(Conformist [ field, Invalid field ])
   in
-  Alcotest.(
-    check Testable.contact_email "contact email address" contact expected)
-  |> Lwt.return
+  let () = check_events expected result in
+  let valid_email = "pool@econ.uzh.ch" in
+  let result = handle valid_email in
+  let expected_email = ContactEmail.of_string valid_email in
+  let expected =
+    Ok [ ContactEmailUpdated expected_email |> Pool_event.settings ]
+  in
+  let () = check_events expected result in
+  let%lwt () = handle_result result in
+  let%lwt contact_email = Settings.find_contact_email database_label in
+  let () =
+    Alcotest.(
+      check
+        Testable.contact_email
+        "contact email address"
+        contact_email
+        expected_email)
+  in
+  Lwt.return ()
 ;;
 
 let check_email_suffix _ () =
-  let open Settings in
-  let%lwt suffix = find_email_suffixes database_label in
-  Alcotest.(
-    check bool "has minimum one email suffix" (suffix |> CCList.is_empty) false)
-  |> Lwt.return
+  let open CCResult.Infix in
+  let open Command in
+  let field = Field.EmailSuffix in
+  let suffix = "econ.uzh.ch" in
+  let handle_create suffix =
+    CreateEmailSuffix.([ Field.show field, [ suffix ] ] |> decode >>= handle [])
+  in
+  let result = handle_create suffix in
+  let expected =
+    Ok
+      [ Settings.EmailSuffixesUpdated [ EmailSuffix.of_string suffix ]
+        |> Pool_event.settings
+      ]
+  in
+  let () = check_events expected result in
+  let%lwt () = handle_result result in
+  let%lwt suffixes = find_email_suffixes database_label in
+  let expected = EmailSuffix.of_string suffix |> CCList.return in
+  let () =
+    Alcotest.(
+      check
+        (list Testable.email_suffix)
+        "created email suffix"
+        suffixes
+        expected)
+  in
+  let handle_updated suffix =
+    UpdateEmailSuffixes.([ Field.show field, [ suffix ] ] |> handle)
+  in
+  let updated = "uzh.ch" in
+  let result = handle_updated updated in
+  let expected =
+    Ok
+      [ Settings.EmailSuffixesUpdated [ EmailSuffix.of_string updated ]
+        |> Pool_event.settings
+      ]
+  in
+  let () = check_events expected result in
+  let%lwt () = handle_result result in
+  let%lwt suffixes = find_email_suffixes database_label in
+  let expected = EmailSuffix.of_string updated |> CCList.return in
+  let () =
+    Alcotest.(
+      check
+        (list Testable.email_suffix)
+        "updated email suffix"
+        suffixes
+        expected)
+  in
+  Lwt.return ()
 ;;
 
 let check_inactive_user_disable_after _ () =
-  let%lwt disable = Settings.find_inactive_user_disable_after database_label in
-  let expected =
-    Settings.InactiveUser.DisableAfter.create "5" |> Test_utils.get_or_failwith
+  let open CCResult.Infix in
+  let open Command.InactiveUser in
+  let field = Field.InactiveUserDisableAfter in
+  let handle nr =
+    DisableAfter.(
+      [ Field.(show field), [ CCInt.to_string nr ] ] |> decode >>= handle)
   in
-  Alcotest.(
-    check
-      Testable.inactive_user_disable_after
-      "disable inactive user after weeks"
-      disable
-      expected)
-  |> Lwt.return
+  let result = handle (-1) in
+  let expected =
+    Error Pool_common.Message.(Conformist [ field, TimeSpanPositive ])
+  in
+  let () = check_events expected result in
+  let valid = 365 in
+  let result = handle valid in
+  let expected =
+    Ok
+      [ Settings.InactiveUserDisableAfterUpdated
+          (InactiveUser.DisableAfter.create (CCInt.to_string valid)
+           |> get_or_failwith)
+        |> Pool_event.settings
+      ]
+  in
+  let () = check_events expected result in
+  let%lwt () = handle_result result in
+  let%lwt disable_after =
+    Settings.find_inactive_user_disable_after database_label
+  in
+  let expected =
+    valid
+    |> CCInt.to_string
+    |> InactiveUser.DisableAfter.create
+    |> get_or_failwith
+  in
+  let () =
+    Alcotest.(
+      check
+        Testable.inactive_user_disable_after
+        "inavtive user disable after"
+        disable_after
+        expected)
+  in
+  Lwt.return ()
 ;;
 
 let check_inactive_user_warning _ () =
-  let%lwt warning = Settings.find_inactive_user_warning database_label in
-  let expected =
-    Settings.InactiveUser.Warning.create "7" |> Test_utils.get_or_failwith
+  let open CCResult.Infix in
+  let open Command.InactiveUser in
+  let field = Field.InactiveUserWarning in
+  let handle nr =
+    Warning.(
+      [ Field.(show field), [ CCInt.to_string nr ] ] |> decode >>= handle)
   in
-  Alcotest.(
-    check
-      Testable.inactive_user_warning
-      "inactive user warning after days"
-      warning
-      expected)
-  |> Lwt.return
+  let result = handle (-1) in
+  let expected =
+    Error Pool_common.Message.(Conformist [ field, TimeSpanPositive ])
+  in
+  let () = check_events expected result in
+  let valid = 365 in
+  let result = handle valid in
+  let expected =
+    Ok
+      [ Settings.InactiveUserWarningUpdated
+          (InactiveUser.Warning.create (CCInt.to_string valid)
+           |> get_or_failwith)
+        |> Pool_event.settings
+      ]
+  in
+  let () = check_events expected result in
+  let%lwt () = handle_result result in
+  let%lwt warning_after = Settings.find_inactive_user_warning database_label in
+  let expected =
+    valid |> CCInt.to_string |> InactiveUser.Warning.create |> get_or_failwith
+  in
+  let () =
+    Alcotest.(
+      check
+        Testable.inactive_user_warning
+        "inavtive user warning after"
+        warning_after
+        expected)
+  in
+  Lwt.return ()
 ;;
 
 let check_languages _ () =

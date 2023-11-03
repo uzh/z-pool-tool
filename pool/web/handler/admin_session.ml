@@ -346,7 +346,9 @@ let update_handler action req =
       | `Reschedule ->
         let open Cqrs_command.Session_command.Reschedule in
         let* assignments =
-          Assignment.find_by_session database_label session.Session.id
+          Assignment.find_uncanceled_by_session
+            database_label
+            session.Session.id
         in
         let system_languages =
           Pool_context.Tenant.get_tenant_languages_exn req

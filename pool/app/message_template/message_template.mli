@@ -189,6 +189,7 @@ type email_layout =
   }
 
 val layout_from_tenant : Pool_tenant.t -> email_layout
+val template_hint : Label.t -> Pool_common.I18n.hint
 
 module AccountSuspensionNotification : sig
   val email_params : email_layout -> Sihl_user.t -> (string * string) list
