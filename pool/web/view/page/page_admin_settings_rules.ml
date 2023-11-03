@@ -12,6 +12,7 @@ let rules_path ?suffix () =
 module List = struct
   let row
     Pool_context.{ csrf; language; _ }
+    can_manage
     ({ Guard.RolePermission.role; permission; model } as role_permission)
     =
     let button_form target name submit_type confirm_text role_permission =
@@ -43,18 +44,23 @@ module List = struct
     [ txt ([%show: Role.Role.t] role)
     ; txt ([%show: Guard.Permission.t] permission)
     ; txt ([%show: Role.Target.t] model)
-    ; buttons role_permission
     ]
+    @ if can_manage then [ buttons role_permission ] else []
   ;;
 
-  let create ({ Pool_context.language; _ } as context) rules =
+  let create ({ Pool_context.language; guardian; _ } as context) rules =
     let open Pool_common in
+    let can_manage =
+      Guard.PermissionOnTarget.validate
+        Guard.(PermissionOnTarget.create Permission.Manage `Permission)
+        guardian
+    in
     let thead =
       (Message.Field.[ Role; Action; Model ]
        |> Component.Table.fields_to_txt language)
-      @ [ txt "" ]
+      @ if can_manage then [ txt "" ] else []
     in
-    CCList.map (row context) rules
+    CCList.map (row context can_manage) rules
     |> Component.Table.horizontal_table `Striped ~thead
   ;;
 end
