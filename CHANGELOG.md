@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 ### Changed
 - use multi select in filter form for select custom fields
 - standardize the creation of search components
+- do not allow publication of select / multi-select custom fields without options
 
 ## [0.4.8](https://github.com/uzh/pool/tree/0.4.8) - 2023-10-24
 
