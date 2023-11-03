@@ -179,6 +179,7 @@ module Access = struct
 
   let create_role = one_of_tuple (Create, `Role, None)
   let read_role = one_of_tuple (Read, `Role, None)
+  let read_permission = one_of_tuple (Read, `Permission, None)
   let update_role = one_of_tuple (Update, `Role, None)
   let delete_role = one_of_tuple (Delete, `Role, None)
   let manage_role = one_of_tuple (Manage, `Role, None)

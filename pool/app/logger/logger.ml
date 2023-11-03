@@ -2,6 +2,10 @@ let tag_req : string Logs.Tag.def =
   Logs.Tag.def "request_id" ~doc:"Rock.Request/Response id" CCString.pp
 ;;
 
+let tag_ip : string Logs.Tag.def =
+  Logs.Tag.def "request_ip" ~doc:"X-Real-IP" CCString.pp
+;;
+
 let tag_database = Utils.Database.Logger.Tags.add_label
 
 let tag_user : string Logs.Tag.def =
@@ -55,13 +59,14 @@ let pp_header ~pp_h ppf (l, h) =
 let pp_source = Fmt.(styled source_style string)
 let pp_database = Fmt.(styled `Green string)
 let pp_user = Fmt.(styled `Cyan string)
-let pp_id = Fmt.(styled `Red string)
+let pp_req = Fmt.(styled `Red string)
 
 let pp_exec_header tags src =
   let open CCOption.Infix in
   let pp_h ppf style level =
     let value = CCOption.value ~default:"-" in
     let id = tags >>= Logs.Tag.find tag_req |> value in
+    let ip = tags >>= Logs.Tag.find tag_ip |> value in
     let user = tags >>= Logs.Tag.find tag_user |> value in
     let database_label = tags >>= Logs.Tag.find tag_database |> value in
     let src = Logs.Src.name src in
@@ -71,7 +76,7 @@ let pp_exec_header tags src =
     in
     Fmt.pf
       ppf
-      "%s [%a][%a][%a][%a][%a]: "
+      "%s [%a][%a][%a][%a][%a][%a]: "
       now
       Fmt.(styled style string)
       level
@@ -79,7 +84,9 @@ let pp_exec_header tags src =
       src
       pp_database
       database_label
-      pp_id
+      pp_req
+      ip
+      pp_req
       id
       pp_user
       user
