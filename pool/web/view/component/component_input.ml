@@ -78,11 +78,11 @@ module Elements = struct
       |> CCList.return
   ;;
 
-  let help_list language = function
+  let help_list ?(classnames = []) language = function
     | [] -> []
     | help ->
       [ span
-          ~a:[ a_class [ "help" ] ]
+          ~a:[ a_class ("help" :: classnames) ]
           CCList.(
             help
             >|= CCFun.(Pool_common.(Utils.hint_to_string language) %> txt)
@@ -689,6 +689,7 @@ let multi_select
   ?(orientation = `Horizontal)
   ?additional_attributes
   ?(classnames = [])
+  ?help
   ?error
   ?(disabled = false)
   ?(required = false)
@@ -696,6 +697,12 @@ let multi_select
   ()
   =
   let error = Elements.error language error in
+  let help_html =
+    help
+    |> CCOption.map_or
+         ~default:[]
+         (Elements.help_list ~classnames:[ "flex-basis-100" ] language)
+  in
   CCList.map
     (fun option ->
       let value = to_value option in
@@ -725,19 +732,19 @@ let multi_select
     options
   |> fun inputs ->
   let classnames =
-    if CCOption.is_some append_html
+    if CCOption.(is_some append_html || is_some help)
     then classnames @ [ "flexrow"; "wrap" ]
     else classnames
   in
   div
     ~a:[ a_class (Elements.group_class classnames orientation) ]
-    [ label [ txt (Elements.input_label language group_field None required) ]
-    ; div ~a:[ a_class [ "input-group" ] ] (inputs @ error)
-    ; append_html
-      |> CCOption.map_or
-           ~default:(txt "")
-           (div ~a:[ a_class [ "flex-basis-100" ] ])
-    ]
+    ([ label [ txt (Elements.input_label language group_field None required) ]
+     ; div ~a:[ a_class [ "input-group" ] ] (inputs @ error)
+     ]
+     @ help_html
+     @ (append_html
+        |> CCOption.map_or ~default:[] (fun html ->
+          div ~a:[ a_class [ "flex-basis-100" ] ] html |> CCList.return)))
 ;;
 
 let reset_form_button language =

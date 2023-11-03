@@ -396,6 +396,7 @@ let rec error_to_string = function
   | ContactSignupInvalidEmail ->
     "Bitte eine valide und nicht bereits verwendete E-Mail Adresse verwenden."
   | ContactUnconfirmed -> "Teilnehmer noch nicht verifiziert!"
+  | CustomFieldNoOptions -> "Es muss mindestens eine Option existieren."
   | CustomFieldTypeChangeNotAllowed ->
     "Sie können den Typ des Feldes nicht ändern."
   | Decode field ->

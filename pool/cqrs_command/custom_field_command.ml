@@ -220,7 +220,9 @@ end = struct
   type t = Custom_field.t
 
   let handle ?(tags = Logs.Tag.empty) m =
+    let open CCResult.Infix in
     Logs.info ~src (fun m -> m "Handle command Publish" ~tags);
+    let* () = Custom_field.has_options m in
     Ok [ Custom_field.Published m |> Pool_event.custom_field ]
   ;;
 

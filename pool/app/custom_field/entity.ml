@@ -857,6 +857,14 @@ let boolean_fields =
     ]
 ;;
 
+let has_options = function
+  | MultiSelect (_, options) | Select (_, options) ->
+    if CCList.is_empty options
+    then Error Pool_common.Message.CustomFieldNoOptions
+    else Ok ()
+  | Boolean _ | Date _ | Number _ | Text _ -> Ok ()
+;;
+
 module Write = struct
   type t =
     { id : Id.t

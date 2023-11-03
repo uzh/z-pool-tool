@@ -352,6 +352,7 @@ val create
   -> (t, Pool_common.Message.error) result
 
 val boolean_fields : Pool_common.Message.Field.t list
+val has_options : t -> (unit, Pool_common.Message.error) result
 val id : t -> Id.t
 val model : t -> Model.t
 val name : t -> Name.t

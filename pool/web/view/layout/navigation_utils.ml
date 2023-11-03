@@ -113,7 +113,7 @@ let create_main
   Lwt.return
   @@
   if mobile
-  then [ div ~a:[ a_class [ "grow"; "flexcolumn"; "justify-center" ] ] nav ]
+  then [ div ~a:[ a_class [ "grow"; "flexcolumn"; "gap" ] ] nav ]
   else nav
 ;;
 
