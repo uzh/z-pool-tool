@@ -46,6 +46,13 @@ let to_string = function
     "These are default settings for the sessions of this experiment. These \
      settings can be overwritten for each session."
   | Files -> "Files"
+  | FilterContactsDescription ->
+    {|<p>To start inviting contacts to this experiment, follow those steps:</p>
+    <ol>
+      <li>Create a filter using one or multiple conditions to define which contacts you would like to include in this experiment.</li>
+      <li>Create the sessions on which you want to perform the experiment.</li>
+      <li>Create one or more mailings to start sending out emails to these participants.</li>
+    </ol>|}
   | FilterNrOfContacts ->
     "Number of contacts meeting the criteria of this filter:"
   | FollowUpSessionFor -> "Follow-up for:"
@@ -79,6 +86,12 @@ let to_string = function
   | LoginTitle -> "Login"
   | MailingDetailTitle start ->
     Format.asprintf "Mailing at %s" (Utils_time.formatted_date_time start)
+  | MailingDistributionDescription ->
+    {|<ol>
+    <li>Select by which field and in which order you want to sort the contacts.</li>
+    <li>Press the 'add' button to add the sorting parameter.</li>
+    <li>Repeat that to add more parameters. You can sort them by dragging and dropping them.</li>
+  </ol>|}
   | MailingExperimentSessionFullyBooked ->
     "All sessions are fully booked. No invitations will be sent (independent \
      if mailings are active at the moment).\n\n\
@@ -298,13 +311,6 @@ Make sure to show links and URLs as plain text.
   | ExternalDataRequired ->
     "An external data identifier is required for every assignement (latest \
      when a session is closed)."
-  | FilterContacts ->
-    {|<p>To start inviting contacts to this experiment, follow those steps:</p>
-    <ol>
-      <li>Create a filter using one or multiple conditions to define which contacts you would like to include in this experiment.</li>
-      <li>Create the sessions on which you want to perform the experiment.</li>
-      <li>Create one or more mailings to start sending out emails to these participants.</li>
-    </ol>|}
   | TestPhoneNumber ->
     "Please provide a phone number where we can send a single test message to \
      verify the api key. The number must have the format +41791234567."

@@ -27,6 +27,7 @@ type t =
   | ExperimentSessionReminderHint
   | ExperimentWaitingListTitle
   | Files
+  | FilterContactsDescription
   | FilterNrOfContacts
   | FollowUpSessionFor
   | HomeTitle
@@ -45,6 +46,7 @@ type t =
   | LocationNoSessions
   | LoginTitle
   | MailingDetailTitle of Ptime.t
+  | MailingDistributionDescription
   | MailingExperimentSessionFullyBooked
   | MailingNewTitle
   | ExperimentMessagingSubtitle
@@ -170,7 +172,6 @@ type hint =
   | ExperimentSessionsPublic
   | ExperimentWaitingList
   | ExternalDataRequired
-  | FilterContacts
   | TestPhoneNumber
   | I18nText of string
   | LocationFiles

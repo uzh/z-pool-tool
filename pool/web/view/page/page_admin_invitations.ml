@@ -128,7 +128,8 @@ module Partials = struct
                 |> Utils.control_to_string language)
           ]
       ; Unsafe.data
-          Pool_common.(Utils.hint_to_string language I18n.FilterContacts)
+          Pool_common.(
+            Utils.text_to_string language I18n.FilterContactsDescription)
       ; Filter.(
           filter_form
             csrf
