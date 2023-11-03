@@ -61,33 +61,35 @@ let index
     |> CCList.filter_map CCFun.id
     |> div ~a:[ a_class [ "stack" ] ]
   in
-  let experiment_link (experiment : Public.t) =
+  let experiment_link id =
     div
       [ a
           ~a:
             [ a_href
                 (Sihl.Web.externalize_path
-                   (Format.asprintf
-                      "/experiments/%s"
-                      (experiment.Public.id |> Id.value)))
+                   (Format.asprintf "/experiments/%s" (Id.value id)))
             ]
           [ txt Pool_common.(Message.More |> Utils.control_to_string language) ]
       ]
   in
+  let experiment_title { Public.id; public_title; _ } =
+    div
+      ~a:
+        [ a_class [ "flexrow"; "flex-gap"; "justify-between"; "align-center" ] ]
+      [ div
+          ~a:[ a_class [ "grow" ] ]
+          [ h4
+              ~a:[ a_class [ "word-wrap-break" ] ]
+              [ strong [ txt (PublicTitle.value public_title) ] ]
+          ]
+      ; experiment_link id
+      ]
+  in
   let experiment_item (experiment : Public.t) =
     let open Public in
-    let title =
-      p
-        ~a:[ a_class [ "word-wrap-break" ] ]
-        [ strong [ txt (PublicTitle.value experiment.public_title) ] ]
-    in
     div
       ~a:[ a_class [ "flexcolumn"; "stack-sm"; "inset-sm" ] ]
-      [ div
-          ~a:[ a_class [ "flexrow"; "flex-gap"; "justify-between" ] ]
-          [ div ~a:[ a_class [ "grow" ] ] [ title ]
-          ; experiment_link experiment
-          ]
+      [ experiment_title experiment
       ; experiment.description
         |> CCOption.map_or ~default:(txt "") (fun desc ->
           div [ txt (Description.value desc) ])
@@ -139,13 +141,7 @@ let index
         ~a:[ a_class [ "flexcolumn"; "stack" ] ]
         [ div
             ~a:[ a_class [ "stack-sm" ] ]
-            [ div
-                ~a:[ a_class [ "flexrow"; "flex-gap"; "justify-between" ] ]
-                [ h3
-                    ~a:[ a_class [ "heading-4"; "grow" ] ]
-                    [ txt (exp.Public.public_title |> PublicTitle.value) ]
-                ; experiment_link exp
-                ]
+            [ experiment_title exp
             ; exp.Public.description
               |> CCOption.map_or ~default:(txt "") (fun desc ->
                 Description.value desc |> txt |> CCList.return |> div)
