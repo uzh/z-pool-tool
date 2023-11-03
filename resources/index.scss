@@ -25,6 +25,10 @@ form[class*="stack"] input[type="hidden"] + * {
     margin-top: 0;
 }
 
+.form-group.horizontal.wrap.flex-gap {
+    row-gap: 0;
+}
+
 // Index page
 .index-page>*:nth-child(2) {
     flex-basis: 25%;

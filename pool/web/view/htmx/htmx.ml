@@ -192,6 +192,7 @@ let create
       ~additional_attributes
       ?append_html
       ~classnames
+      ~help:([ help ] |> CCList.filter_map CCFun.id)
       ?required
       ?error
       ?disabled
