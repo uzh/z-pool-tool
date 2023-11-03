@@ -221,7 +221,7 @@ pin-depends: [
   ]
   [
     "guardian.0.3.0"
-    "git+https://github.com/uzh/guardian.git#67a7ec70910d49f9df7a79b5b4ce1c344dab767d"
+    "git+https://github.com/uzh/guardian.git#f144f2c12459e13365c8d6adc481556223dd87f9"
   ]
   [
     "canary.0.0.1"

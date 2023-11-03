@@ -69,7 +69,7 @@ module NavElements = struct
       ; "/admin/settings", SystemSettings, Settings.Guard.Access.index
       ; "/admin/settings/schedules", Schedules, Schedule.Guard.Access.index
       ; "/admin/settings/smtp", Smtp, Email.Guard.Access.Smtp.index
-      ; "/admin/settings/rules", Rules, Guard.Access.manage_permission
+      ; "/admin/settings/rules", Rules, Guard.Access.read_permission
       ; "/admin/settings/tags", Tags, Tags.Guard.Access.index
       ; ( "/admin/message-template"
         , MessageTemplates

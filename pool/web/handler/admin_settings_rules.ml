@@ -63,7 +63,7 @@ module Access : module type of Helpers.Access = struct
   include Helpers.Access
 
   let index =
-    Guard.Access.manage_permission |> Middleware.Guardian.validate_admin_entity
+    Guard.Access.read_permission |> Middleware.Guardian.validate_admin_entity
   ;;
 
   let delete =
