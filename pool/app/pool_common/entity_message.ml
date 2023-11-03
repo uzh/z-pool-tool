@@ -35,6 +35,7 @@ type error =
   | ContactDoesNotMatchFilter
   | ContactUnconfirmed
   | ContactSignupInvalidEmail
+  | CustomFieldNoOptions
   | CustomFieldTypeChangeNotAllowed
   | Decode of Field.t
   | DecodeAction

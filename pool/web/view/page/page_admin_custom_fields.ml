@@ -673,7 +673,15 @@ let field_buttons language csrf current_model field =
     |> (fun base -> Format.asprintf "%s/%s" base appendix)
     |> Sihl.Web.externalize_path
   in
-  let make_form action msg submit_type confirmable =
+  let make_form ?disabled_reason action msg submit_type confirmable =
+    let button_attribs =
+      match disabled_reason with
+      | None -> []
+      | Some err ->
+        [ a_disabled ()
+        ; a_title Pool_common.Utils.(error_to_string language err)
+        ]
+    in
     form
       ~a:
         [ a_action action
@@ -682,7 +690,9 @@ let field_buttons language csrf current_model field =
             "confirmable"
             (Utils.confirmable_to_string language confirmable)
         ]
-      [ csrf_element csrf (); submit_element language msg ~submit_type () ]
+      [ csrf_element csrf ()
+      ; submit_element ~attributes:button_attribs language msg ~submit_type ()
+      ]
   in
   match field with
   | None -> txt ""
@@ -700,6 +710,12 @@ let field_buttons language csrf current_model field =
               |> Utils.Time.formatted_date_time)
          ]
      | None ->
+       let disable_publish =
+         Custom_field.has_options field
+         |> function
+         | Ok () -> None
+         | Error err -> Some err
+       in
        div
          ~a:[ a_class [ "flexrow"; "flex-gap" ] ]
          [ make_form
@@ -708,6 +724,7 @@ let field_buttons language csrf current_model field =
              `Error
              I18n.DeleteCustomField
          ; make_form
+             ?disabled_reason:disable_publish
              (action field "publish")
              Message.(Publish (Some Field.CustomField))
              `Success

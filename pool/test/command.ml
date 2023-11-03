@@ -443,6 +443,14 @@ let () =
             "delete published field option"
             `Quick
             Custom_field_test.delete_published_option
+        ; test_case
+            "publish field without options"
+            `Quick
+            Custom_field_test.publish_field_without_options
+        ; test_case
+            "publish field with options"
+            `Quick
+            Custom_field_test.publish_field_with_options
         ] )
     ; ( "matcher"
       , [ test_case

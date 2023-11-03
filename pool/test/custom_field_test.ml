@@ -34,8 +34,17 @@ module Data = struct
   let admin_input_only = AdminInputOnly.create false
   let prompt_on_registration = PromptOnRegistration.create false
 
+  let select_option name =
+    let open CCResult in
+    let lang = Pool_common.Language.En in
+    Name.create [ Pool_common.Language.En ] [ lang, name ]
+    >|= SelectOption.create
+    |> get_exn
+  ;;
+
   let custom_field
     ?published_at
+    ?select_options
     ?validation
     ?(required = required)
     ?(admin_override = AdminOverride.create false)
@@ -49,6 +58,7 @@ module Data = struct
     Custom_field.create
       ~id:(Id.create ())
       ?published_at
+      ?select_options
       field_type
       model
       name
@@ -82,7 +92,9 @@ module Data = struct
       FieldType.Text
   ;;
 
-  let custom_select_field () = custom_field ~validation:[] FieldType.Select
+  let custom_select_field ?select_options () =
+    custom_field ?select_options ~validation:[] FieldType.Select
+  ;;
 
   let custom_number_field ?validation () =
     custom_field ?validation FieldType.Number
@@ -385,6 +397,33 @@ let delete_published_option () =
   in
   let expected =
     Error Pool_common.Message.(AlreadyPublished Field.CustomFieldOption)
+  in
+  Alcotest.(
+    check
+      (result (list Test_utils.event) Test_utils.error)
+      "succeeds"
+      expected
+      events)
+;;
+
+let publish_field_without_options () =
+  let custom_field = Data.custom_select_field () in
+  let events = Cqrs_command.Custom_field_command.Publish.handle custom_field in
+  let expected = Error Pool_common.Message.CustomFieldNoOptions in
+  Alcotest.(
+    check
+      (result (list Test_utils.event) Test_utils.error)
+      "succeeds"
+      expected
+      events)
+;;
+
+let publish_field_with_options () =
+  let select_options = Data.select_option "name" |> CCList.return in
+  let custom_field = Data.custom_select_field ~select_options () in
+  let events = Cqrs_command.Custom_field_command.Publish.handle custom_field in
+  let expected =
+    Ok [ Custom_field.Published custom_field |> Pool_event.custom_field ]
   in
   Alcotest.(
     check

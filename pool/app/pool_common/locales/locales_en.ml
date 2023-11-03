@@ -386,6 +386,7 @@ let rec error_to_string = function
   | ContactSignupInvalidEmail ->
     "Please provide a valid and unused email address."
   | ContactUnconfirmed -> "Participant isn't confirmed!"
+  | CustomFieldNoOptions -> "At least one option must exist."
   | CustomFieldTypeChangeNotAllowed -> "Type of field cannot be changed."
   | Decode field -> field_message "Cannot decode" (field_to_string field) ""
   | DirectRegistrationIsDisabled ->
