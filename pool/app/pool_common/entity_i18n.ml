@@ -177,6 +177,23 @@ type hint =
   | Locations
   | LocationSessions
   | MailingLimit
+  | MessageTemplateAccountSuspensionNotification
+  | MessageTemplateAssignmentConfirmation
+  | MessageTemplateAssignmentSessionChange
+  | MessageTemplateContactEmailChangeAttempt
+  | MessageTemplateContactRegistrationAttempt
+  | MessageTemplateEmailVerification
+  | MessageTemplateExperimentInvitation
+  | MessageTemplatePasswordChange
+  | MessageTemplatePasswordReset
+  | MessageTemplatePhoneVerification
+  | MessageTemplateProfileUpdateTrigger
+  | MessageTemplateSessionCancellation
+  | MessageTemplateSessionReminder
+  | MessageTemplateSessionReschedule
+  | MessageTemplateSignupVerification
+  | MessageTemplateUserImport
+  | MessageTemplateWaitingListConfirmation
   | MissingMessageTemplates of string * string list
   | NumberIsDaysHint
   | NumberIsSecondsHint

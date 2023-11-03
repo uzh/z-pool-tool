@@ -340,6 +340,58 @@ Wenn Sie die Erinnerungen jetzt manuell auslösen werden über den gewählten Na
     "Standorte, an denen Experimente durchgeführt werden. Jede Session muss \
      eine Location haben."
   | MailingLimit -> "Max. generierte Einladungen pro Mailing."
+  | MessageTemplateAccountSuspensionNotification ->
+    "Diese Nachricht wird an einen Benutzer gesendet, nachdem sein Konto wegen \
+     zu vieler fehlgeschlagener Anmeldeversuche vorübergehend gesperrt wurde."
+  | MessageTemplateAssignmentConfirmation ->
+    "Diese Nachricht wird an Kontakte gesendet, nachdem sie sich erfolgreich \
+     für eine Sitzung angemeldet haben."
+  | MessageTemplateAssignmentSessionChange ->
+    "Diese Nachricht wird an Kontakte gesendet, nachdem sie von einem \
+     Administrator einer anderen Session zugewiesen wurden."
+  | MessageTemplateContactEmailChangeAttempt ->
+    "Diese Nachricht wird an einen Benutzer gesendet, nachdem jemand versucht \
+     hat, seine E-Mail-Adresse in eine bestehende Adresse zu ändern."
+  | MessageTemplateContactRegistrationAttempt ->
+    "Diese Nachricht wird an einen Benutzer gesendet, nachdem er versucht hat, \
+     sich mit einer bestehenden E-Mail-Adresse zu registrieren."
+  | MessageTemplateEmailVerification ->
+    "Diese E-Mail wird verwendet, um neue E-Mail-Adressen nach der Änderung \
+     einer Konto-E-Mail-Adresse zu verifizieren. Sie können die \
+     SMS-Texteingabe ignorieren."
+  | MessageTemplateExperimentInvitation ->
+    "Diese Nachricht wird gesendet, um Kontakte zu Experimenten einzuladen."
+  | MessageTemplatePasswordChange ->
+    "Diese Nachricht wird gesendet, um Benutzer zu benachrichtigen, dass das \
+     Kontopasswort geändert wurde."
+  | MessageTemplatePasswordReset ->
+    "Diese Nachricht sendet das Passwort-Reset-Token an die angegebene Adresse."
+  | MessageTemplatePhoneVerification ->
+    "Diese Nachricht sendet das Token zur Überprüfung der Telefonnummer an das \
+     Telefon des Kontakts. Sie können die E-Mail und den Klartext ignorieren."
+  | MessageTemplateProfileUpdateTrigger ->
+    "Diese Nachricht wird verwendet, um Kontakte zu benachrichtigen, die ihr \
+     Profil vor einiger Zeit zuletzt aktualisiert haben, und sie aufzufordern, \
+     ihre persönlichen Daten zu kontrollieren."
+  | MessageTemplateSessionCancellation ->
+    "Diese Nachricht wird verwendet, um Kontakte über die Annullierung einer \
+     Session zu informieren."
+  | MessageTemplateSessionReminder ->
+    "Diese Nachricht erinnert Kontakte an bevorstehende Sessions, für die sie \
+     sich angemeldet haben."
+  | MessageTemplateSessionReschedule ->
+    "Diese Nachricht wird verwendet, um Kontakte über die Verschiebung einer \
+     Session zu benachrichtigen."
+  | MessageTemplateSignupVerification ->
+    "Diese E-Mail wird verwendet, um neue E-Mail-Adressen nach der Anmeldung \
+     zu verifizieren. Sie können die SMS-Texteingabe ignorieren."
+  | MessageTemplateUserImport ->
+    "Diese Nachricht informiert importierte Kontakte über die Migration zum \
+     Z-Pool-Tool und enthält das Token, das sie zum Zurücksetzen ihres \
+     Passworts benötigen."
+  | MessageTemplateWaitingListConfirmation ->
+    "Diese Nachricht bestätigt die erfolgreiche Eintragung in eine \
+     Experiment-Warteliste."
   | NumberIsSecondsHint -> "Anzahl Sekunden"
   | NumberIsDaysHint -> "Anzahl Tage"
   | NumberIsWeeksHint -> "Anzahl Wochen"

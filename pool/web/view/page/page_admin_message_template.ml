@@ -179,22 +179,35 @@ let template_inputs
   ]
 ;;
 
+type template_form_input =
+  | New of Message_template.Label.t
+  | Existing of Message_template.t
+
 let template_form
   ({ Pool_context.language; query_language; csrf; _ } as context)
   ?(hide_text_message_input = false)
   ?languages
   ?text_elements
-  (template : Message_template.t option)
+  input
   action
   flash_fetcher
   =
+  let open Message_template in
   let externalize = Http_utils.externalize_path_with_lang query_language in
-  let submit =
+  let submit, template, label =
     let open Pool_common.Message in
     let field = Field.MessageTemplate |> CCOption.pure in
-    match template with
-    | None -> Create field
-    | Some _ -> Update field
+    match input with
+    | New label -> Create field, None, label
+    | Existing t -> Update field, Some t, t.label
+  in
+  let hint =
+    label
+    |> Message_template.template_hint
+    |> Pool_common.Utils.hint_to_string language
+    |> txt
+    |> CCList.return
+    |> div
   in
   let text_elements_html =
     text_elements
@@ -222,7 +235,7 @@ let template_form
              [ submit_element ~classnames:[ "push" ] language submit () ]
          ])
   in
-  div ~a:[ a_class [ "stack" ] ] [ text_elements_html; form ]
+  div ~a:[ a_class [ "stack" ] ] [ hint; text_elements_html; form ]
 ;;
 
 let edit
@@ -247,6 +260,11 @@ let edit
         language
         Field.MessageTemplate
         (Some template)
-    ; template_form context ~text_elements (Some template) action flash_fetcher
+    ; template_form
+        context
+        ~text_elements
+        (Existing template)
+        action
+        flash_fetcher
     ]
 ;;

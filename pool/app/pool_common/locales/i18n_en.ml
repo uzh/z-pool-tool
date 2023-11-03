@@ -319,6 +319,55 @@ Make sure to show links and URLs as plain text.
      location."
   | I18nText str -> str
   | MailingLimit -> "Max. generated Invitations during the mailing."
+  | MessageTemplateAccountSuspensionNotification ->
+    "This message will be sent to a user after the account has been \
+     temporarily suspended because of too many failed login attempts."
+  | MessageTemplateAssignmentConfirmation ->
+    "This message will be sent to contacts after successfully registering for \
+     a session."
+  | MessageTemplateAssignmentSessionChange ->
+    "This message will be sent to contacts after they have been assigned to \
+     another session by an administrator."
+  | MessageTemplateContactEmailChangeAttempt ->
+    "This message will be sent to a user after someone tries to change their \
+     email address to an existing one."
+  | MessageTemplateContactRegistrationAttempt ->
+    "This message will be sent to a user after a registration attempt using an \
+     existing email address."
+  | MessageTemplateEmailVerification ->
+    "This email is used to verify new email addresses after changing an \
+     account email address. You can ignore the SMS text input."
+  | MessageTemplateExperimentInvitation ->
+    "This message is sent to invite contacts to experiments."
+  | MessageTemplatePasswordChange ->
+    "This message is sent to notify users that the account password has been \
+     changed."
+  | MessageTemplatePasswordReset ->
+    "This message sends the password reset token to the given address."
+  | MessageTemplatePhoneVerification ->
+    "This message sends the phone number verification token to the contact's \
+     phone. You can ignore the email and plain text."
+  | MessageTemplateProfileUpdateTrigger ->
+    "This message is used to notify contacts who last updated their profile a \
+     while ago and request them to control their personal information."
+  | MessageTemplateSessionCancellation ->
+    "This message is used to notify contacts about the cancellation of a \
+     session."
+  | MessageTemplateSessionReminder ->
+    "This message reminds contacts about upcoming sessions they are signed up \
+     for."
+  | MessageTemplateSessionReschedule ->
+    "This message is used to notify contacts about the rescheduling of a \
+     session."
+  | MessageTemplateSignupVerification ->
+    "This email is used to verify new email addresses after signing up. You \
+     can ignore the SMS text input."
+  | MessageTemplateUserImport ->
+    "This message informs imported contacts about the migration to the \
+     Z-Pool-Tool and contains the token they need to reset their password."
+  | MessageTemplateWaitingListConfirmation ->
+    "This message confirms the successful enrollment to an experiment waiting \
+     list."
   | MissingMessageTemplates (label, languages) ->
     Format.asprintf
       "The '%s' template is missing is the following languages: %s"

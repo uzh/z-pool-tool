@@ -878,15 +878,16 @@ let message_template_form
   flash_fetcher
   =
   let open Message_template in
-  let action =
-    let go =
+  let action, input =
+    let open Page_admin_message_template in
+    let path =
       Format.asprintf
         "/admin/experiments/%s/%s"
         Experiment.(Id.value experiment.Experiment.id)
     in
     match template with
-    | None -> go (Label.prefixed_human_url label)
-    | Some template -> prefixed_template_url template |> go
+    | None -> path (Label.prefixed_human_url label), New label
+    | Some template -> path (prefixed_template_url template), Existing template
   in
   let title =
     let open Pool_common in
@@ -912,7 +913,7 @@ let message_template_form
     context
     ?languages
     ~text_elements
-    template
+    input
     action
     flash_fetcher
   |> CCList.return

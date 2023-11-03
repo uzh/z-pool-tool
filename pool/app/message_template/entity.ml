@@ -141,3 +141,27 @@ let prefixed_template_url ?append m =
   in
   append |> CCOption.map_or ~default:base (Format.asprintf "%s/%s" base)
 ;;
+
+let template_hint label =
+  let open Label in
+  let open Pool_common.I18n in
+  match label with
+  | AccountSuspensionNotification ->
+    MessageTemplateAccountSuspensionNotification
+  | AssignmentConfirmation -> MessageTemplateAssignmentConfirmation
+  | AssignmentSessionChange -> MessageTemplateAssignmentSessionChange
+  | ContactEmailChangeAttempt -> MessageTemplateContactEmailChangeAttempt
+  | ContactRegistrationAttempt -> MessageTemplateContactRegistrationAttempt
+  | EmailVerification -> MessageTemplateEmailVerification
+  | ExperimentInvitation -> MessageTemplateExperimentInvitation
+  | PasswordChange -> MessageTemplatePasswordChange
+  | PasswordReset -> MessageTemplatePasswordReset
+  | PhoneVerification -> MessageTemplatePhoneVerification
+  | ProfileUpdateTrigger -> MessageTemplateProfileUpdateTrigger
+  | SignUpVerification -> MessageTemplateSignupVerification
+  | SessionCancellation -> MessageTemplateSessionCancellation
+  | SessionReminder -> MessageTemplateSessionReminder
+  | SessionReschedule -> MessageTemplateSessionReschedule
+  | UserImport -> MessageTemplateUserImport
+  | WaitingListConfirmation -> MessageTemplateWaitingListConfirmation
+;;
