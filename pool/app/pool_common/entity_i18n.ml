@@ -23,6 +23,7 @@ type t =
   | ExperimentListEmpty
   | ExperimentListPublicTitle
   | ExperimentListTitle
+  | ExperimentMessagingSubtitle
   | ExperimentNewTitle
   | ExperimentSessionReminderHint
   | ExperimentWaitingListTitle
@@ -49,8 +50,8 @@ type t =
   | MailingDistributionDescription
   | MailingExperimentSessionFullyBooked
   | MailingNewTitle
-  | ExperimentMessagingSubtitle
   | NoEntries of Entity_message.Field.t
+  | Note
   | OurPartners
   | ProfileCompletionText
   | RateTotalSent of int

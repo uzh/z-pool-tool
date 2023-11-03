@@ -73,6 +73,7 @@ let to_string = function
     Format.asprintf
       "Es existiert noch keine %s."
       (Locales_de.field_to_string field)
+  | Note -> "Hinweis"
   | OurPartners -> "Unsere Partner"
   | ProfileCompletionText ->
     {|Die folgenden Angaben werden benötigt, um an Experimente eingeladen werden zu können. Weitere Angaben können anschliessend in Ihrem Profil gemacht werden.

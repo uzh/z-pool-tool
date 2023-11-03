@@ -330,3 +330,19 @@ table.simple {
 .main-nav .dropdown {
     z-index: 12;
 }
+
+.note + * {
+    margin-top: $space-base;
+}
+
+.collapsible.note .collapsible-title {
+    gap: $space-base;
+}
+
+.note.active .collapsible-header i[class*="icon-help"] {
+    transform: rotate(0);
+}
+
+.has-icon.flex-gap-xs {
+    gap: $space-xs;
+}

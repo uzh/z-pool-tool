@@ -130,6 +130,7 @@ module Partials = struct
       ; Unsafe.data
           Pool_common.(
             Utils.text_to_string language I18n.FilterContactsDescription)
+        |> Component.Collapsible.create_note language
       ; Filter.(
           filter_form
             csrf
