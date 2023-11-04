@@ -2,7 +2,7 @@ include Core
 include Event
 module Persistence = Repo
 
-(** [console_authorizable] is an Actor.t] for use in
+(** [console_authorizable] is an [Actor.t] for use in
     administrative tasks, such as working with the command line or running
     tests. *)
 let console_authorizable : Actor.t = Actor.create `System (Uuid.Actor.create ())

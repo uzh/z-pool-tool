@@ -8,6 +8,7 @@ let session_title (s : Session.t) =
 ;;
 
 let session_counter_id = "session-counter-table"
+let key_figures_head = "Min / Max (Overbook)"
 
 let session_path experiment_id session_id =
   Format.asprintf
@@ -296,6 +297,182 @@ let waiting_list_radio_button language session =
         ())
 ;;
 
+let session_row
+  layout
+  chronological
+  language
+  csrf
+  experiment_id
+  ?(is_followup = false)
+  (session, follow_ups)
+  =
+  let open Pool_common in
+  let open Message in
+  let open Session in
+  let show_field field =
+    Utils.field_to_string language field |> CCString.capitalize_ascii
+  in
+  let follow_up_icon =
+    span
+      ~a:[ a_class [ "font-bold" ] ]
+      [ abbr
+          ~a:
+            [ a_title
+                (Utils.field_to_string language Message.Field.FollowUpSession)
+            ]
+          [ txt "(F)" ]
+      ]
+  in
+  let delete_form () =
+    if Session.is_deletable session follow_ups |> CCResult.is_ok
+    then
+      form
+        ~a:
+          [ a_method `Post
+          ; a_action
+              (Format.asprintf
+                 "/admin/experiments/%s/sessions/%s/delete"
+                 (Experiment.Id.value experiment_id)
+                 (Id.value session.id)
+               |> Sihl.Web.externalize_path)
+          ; a_user_data
+              "confirmable"
+              (Utils.confirmable_to_string language I18n.DeleteSession)
+          ]
+        [ csrf_element csrf ()
+        ; submit_element
+            ~has_icon:Icon.Trash
+            ~is_text:true
+            language
+            Message.(Delete None)
+            ~submit_type:`Error
+            ()
+        ]
+    else
+      submit_element
+        ~has_icon:Icon.Trash
+        ~is_text:true
+        language
+        Message.(Delete None)
+        ~submit_type:`Disabled
+        ()
+  in
+  let key_figures =
+    let open Session in
+    let value = ParticipantAmount.value in
+    Format.asprintf
+      "%i / %i (%i)"
+      (session.min_participants |> value)
+      (session.max_participants |> value)
+      (session.overbook |> value)
+  in
+  let row_attrs =
+    let id = a_user_data "id" Session.(Id.value session.id) in
+    let classnames =
+      let check opt classname = if opt then Some classname else None in
+      [ check (CCOption.is_some session.canceled_at) "bg-red-lighter"
+      ; check (CCOption.is_some session.closed_at) "bg-green-lighter"
+      ; check is_followup "follow-up"
+      ]
+      |> CCList.filter_map CCFun.id
+    in
+    session.follow_up_to
+    |> CCOption.map (fun parent ->
+      a_user_data "parent-id" (Session.Id.value parent))
+    |> CCOption.map_or ~default:[ id ] (fun parent -> [ id; parent ])
+    |> fun attrs -> a_class classnames :: attrs
+  in
+  let title =
+    let date = span [ txt (session |> session_date_to_human) ] in
+    match CCOption.is_some session.follow_up_to, chronological with
+    | false, true | false, false -> date
+    | true, true ->
+      div ~a:[ a_class [ "flexrow"; "flex-gap-sm" ] ] [ date; follow_up_icon ]
+    | true, false -> div ~a:[ a_class [ "inset"; "left" ] ] [ date ]
+  in
+  let close_btn =
+    Format.asprintf
+      "/admin/experiments/%s/sessions/%s/close"
+      (Experiment.Id.value experiment_id)
+      (Id.value session.id)
+    |> link_as_button
+         ~icon:Icon.Create
+         ~is_text:true
+         ~control:(language, Message.Close (Some Field.Session))
+  in
+  let detail_button =
+    Format.asprintf
+      "/admin/experiments/%s/sessions/%s"
+      (Experiment.Id.value experiment_id)
+      (Id.value session.id)
+    |> link_as_button
+         ~is_text:true
+         ~icon:Icon.Eye
+         ~control:(language, Message.SessionDetails)
+  in
+  let base = [ title, Some (show_field Field.Start) ] in
+  let cells =
+    let open Message in
+    match layout with
+    | `SessionOverview ->
+      let buttons =
+        [ true, detail_button
+        ; Session.is_closable session |> CCResult.is_ok, close_btn
+        ; true, delete_form ()
+        ]
+        |> CCList.filter_map (fun (condition, button) ->
+          if condition then Some button else None)
+      in
+      let cells =
+        Session.
+          [ ( txt
+                (CCInt.to_string
+                   (session.assignment_count |> AssignmentCount.value))
+            , Some (show_field Field.AssignmentCount) )
+          ; ( txt
+                (if CCOption.is_some session.closed_at
+                 then
+                   session.no_show_count |> NoShowCount.value |> CCInt.to_string
+                 else "")
+            , Some (show_field Field.NoShowCount) )
+          ; ( txt
+                (if CCOption.is_some session.closed_at
+                 then
+                   session.participant_count
+                   |> ParticipantCount.value
+                   |> CCInt.to_string
+                 else "")
+            , Some (show_field Field.ParticipantCount) )
+          ; txt key_figures, Some key_figures_head
+          ; ( div
+                ~a:[ a_class [ "flexrow" ] ]
+                [ Component.ButtonGroup.dropdown ~classnames:[ "push" ] buttons
+                ]
+            , None )
+          ]
+      in
+      base @ cells
+    | `WaitingList ->
+      let cells =
+        [ ( waiting_list_radio_button language session
+          , Some Pool_common.(Utils.control_to_string language Message.Select) )
+        ; ( txt
+              (CCInt.to_string
+                 (session.assignment_count |> AssignmentCount.value))
+          , Some (show_field Field.AssignmentCount) )
+        ; txt key_figures, Some key_figures_head
+        ]
+      in
+      base @ cells
+  in
+  let cell (value, label) =
+    match label with
+    | None -> td [ value ]
+    | Some label -> td ~a:[ a_user_data "label" label ] [ value ]
+  in
+  cells |> CCList.map cell |> tr ~a:row_attrs
+;;
+
 let session_list
   layout
   Pool_context.{ language; csrf; _ }
@@ -326,161 +503,7 @@ let session_list
          "/admin/experiments/%s/sessions/create"
          (experiment_id |> Experiment.Id.value))
   in
-  let rows =
-    CCList.flat_map
-      (fun (parent, follow_ups) ->
-        let open Session in
-        let session_row session follow_ups =
-          let delete_form () =
-            if Session.is_deletable session follow_ups |> CCResult.is_ok
-            then
-              form
-                ~a:
-                  [ a_method `Post
-                  ; a_action
-                      (Format.asprintf
-                         "/admin/experiments/%s/sessions/%s/delete"
-                         (Experiment.Id.value experiment_id)
-                         (Id.value session.id)
-                       |> Sihl.Web.externalize_path)
-                  ; a_user_data
-                      "confirmable"
-                      (Utils.confirmable_to_string language I18n.DeleteSession)
-                  ]
-                [ csrf_element csrf ()
-                ; submit_element
-                    ~has_icon:Icon.Trash
-                    ~is_text:true
-                    language
-                    Message.(Delete None)
-                    ~submit_type:`Error
-                    ()
-                ]
-            else
-              submit_element
-                ~has_icon:Icon.Trash
-                ~is_text:true
-                language
-                Message.(Delete None)
-                ~submit_type:`Disabled
-                ()
-          in
-          let key_figures =
-            let open Session in
-            let value = ParticipantAmount.value in
-            Format.asprintf
-              "%i / %i (%i)"
-              (session.min_participants |> value)
-              (session.max_participants |> value)
-              (session.overbook |> value)
-          in
-          let row_attrs =
-            let id = a_user_data "id" Session.(Id.value session.id) in
-            let classnames =
-              let check opt classname =
-                if CCOption.is_some opt then Some classname else None
-              in
-              [ check session.canceled_at "bg-red-lighter"
-              ; check session.closed_at "bg-green-lighter"
-              ]
-              |> CCList.filter_map CCFun.id
-            in
-            session.follow_up_to
-            |> CCOption.map (fun parent ->
-              a_user_data "parent-id" (Session.Id.value parent))
-            |> CCOption.map_or ~default:[ id ] (fun parent -> [ id; parent ])
-            |> fun attrs -> a_class classnames :: attrs
-          in
-          let title =
-            let date = span [ txt (session |> session_date_to_human) ] in
-            match CCOption.is_some session.follow_up_to, chronological with
-            | false, true | false, false -> date
-            | true, true ->
-              div
-                ~a:[ a_class [ "flexrow"; "flex-gap-sm" ] ]
-                [ date; follow_up_icon () ]
-            | true, false -> div ~a:[ a_class [ "inset"; "left" ] ] [ date ]
-          in
-          let base = [ title ] in
-          let cells =
-            match layout with
-            | `SessionOverview ->
-              let close_btn =
-                Format.asprintf
-                  "/admin/experiments/%s/sessions/%s/close"
-                  (Experiment.Id.value experiment_id)
-                  (Id.value session.id)
-                |> link_as_button
-                     ~icon:Icon.Create
-                     ~is_text:true
-                     ~control:(language, Message.Close (Some Field.Session))
-              in
-              let detail_button =
-                Format.asprintf
-                  "/admin/experiments/%s/sessions/%s"
-                  (Experiment.Id.value experiment_id)
-                  (Id.value session.id)
-                |> link_as_button
-                     ~is_text:true
-                     ~icon:Icon.Eye
-                     ~control:(language, Message.SessionDetails)
-              in
-              let buttons =
-                [ true, detail_button
-                ; Session.is_closable session |> CCResult.is_ok, close_btn
-                ; true, delete_form ()
-                ]
-                |> CCList.filter_map (fun (condition, button) ->
-                  if condition then Some button else None)
-              in
-              let cells =
-                Session.
-                  [ txt
-                      (CCInt.to_string
-                         (session.assignment_count |> AssignmentCount.value))
-                  ; txt
-                      (if CCOption.is_some session.closed_at
-                       then
-                         session.no_show_count
-                         |> NoShowCount.value
-                         |> CCInt.to_string
-                       else "")
-                  ; txt
-                      (if CCOption.is_some session.closed_at
-                       then
-                         session.participant_count
-                         |> ParticipantCount.value
-                         |> CCInt.to_string
-                       else "")
-                  ; txt key_figures
-                  ; div
-                      ~a:[ a_class [ "flexrow" ] ]
-                      [ Component.ButtonGroup.dropdown
-                          ~classnames:[ "push" ]
-                          buttons
-                      ]
-                  ]
-              in
-              base @ cells
-            | `WaitingList ->
-              let cells =
-                [ waiting_list_radio_button language session
-                ; txt
-                    (CCInt.to_string
-                       (session.assignment_count |> AssignmentCount.value))
-                ; txt key_figures
-                ]
-              in
-              base @ cells
-          in
-          cells |> CCList.map CCFun.(CCList.return %> td) |> tr ~a:row_attrs
-        in
-        session_row parent follow_ups
-        :: CCList.map CCFun.(flip session_row []) follow_ups)
-      grouped_sessions
-  in
   let thead =
-    let key_figures_head = "Min / Max (Overbook)" in
     let open Message in
     let base = [ Field.Date ] |> Table.fields_to_txt language in
     let cells =
@@ -496,10 +519,34 @@ let session_list
     in
     cells |> Component.Table.table_head
   in
+  let rows =
+    let session_row ?is_followup =
+      session_row ?is_followup layout chronological language csrf experiment_id
+    in
+    CCList.flat_map
+      (fun (parent, follow_ups) ->
+        let parent = session_row (parent, follow_ups) in
+        let follow_ups =
+          CCList.map
+            (fun follow_up -> session_row ~is_followup:true (follow_up, []))
+            follow_ups
+        in
+        parent :: follow_ups)
+      grouped_sessions
+  in
   let table =
     let id = if chronological then [ a_id chronological_id ] else [] in
     table
-      ~a:([ a_class [ "table"; "striped"; "align-last-end" ] ] @ id)
+      ~a:
+        ([ a_class
+             [ "table"
+             ; "break-mobile"
+             ; "session-list"
+             ; "striped"
+             ; "align-last-end"
+             ]
+         ]
+         @ id)
       ~thead
       rows
   in
