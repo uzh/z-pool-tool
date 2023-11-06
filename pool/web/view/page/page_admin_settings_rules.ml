@@ -3,8 +3,8 @@ open Tyxml.Html
 module HttpUtils = Http_utils
 module Input = Component.Input
 
-let rules_path ?suffix () =
-  let default = "/admin/settings/rules/" in
+let role_permission_path ?suffix () =
+  let default = "/admin/settings/role-permission/" in
   CCOption.map_or ~default (Format.asprintf "%s%s" default) suffix
   |> Sihl.Web.externalize_path
 ;;
@@ -19,7 +19,7 @@ module List = struct
       form
         ~a:
           [ a_method `Post
-          ; a_action (rules_path ~suffix:target ())
+          ; a_action (role_permission_path ~suffix:target ())
           ; a_user_data
               "confirmable"
               (Pool_common.Utils.confirmable_to_string language confirm_text)
@@ -70,9 +70,11 @@ let index ({ Pool_context.language; _ } as context) rules =
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
     [ h1
         ~a:[ a_class [ "heading-1" ] ]
-        [ txt Pool_common.(Utils.nav_link_to_string language I18n.Rules) ]
+        [ txt
+            Pool_common.(Utils.nav_link_to_string language I18n.RolePermissions)
+        ]
     ; p
-        [ Pool_common.(Utils.hint_to_string language I18n.RulesIntro)
+        [ Pool_common.(Utils.hint_to_string language I18n.RolePermissionsIntro)
           |> HttpUtils.add_line_breaks
         ]
     ; List.create context rules

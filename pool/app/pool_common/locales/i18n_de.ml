@@ -178,7 +178,7 @@ let nav_link_to_string = function
   | PrivacyPolicy -> "Datenschutzerklärung"
   | Profile -> "Profil"
   | Queue -> "Hintergrundjobs"
-  | Rules -> "Regeln"
+  | RolePermissions -> "Rollenberechtigungen"
   | Schedules -> "Prozesse"
   | Sessions -> "Sessions"
   | Settings -> "Einstellungen"
@@ -207,6 +207,11 @@ Wird nach diesem Feld gefiltert, wird der überschreibende Wert bevorzugt.
     "Diese Anmeldungen wurden als gelöscht markiert. Insofern die Kontakte den \
      Experimentkriterien noch entsprechen, können Sie sich erneut an Sessions \
      anmelden."
+  | AssistantRole ->
+    {|Als Assistent des 'Recruiters' haben sie verschiedene zusätzliche Rechte, um bei administrativen Aufgaben zu helfen, z.B. beim Telefon-Screening von Experimenten auf der Warteliste oder bei der Durchführung und Schliessung von Sessions.
+     Ein Assistent kann das vollständige Benutzerprofil für die Teilnahme an dem Experiment lesen, dem er/sie zugewiesen ist.
+
+     Eine detaillierte Liste mit allen Rollenberechtigungen ist nur für Recruiter verfügbar.|}
   | ContactCurrentCellPhone cell_phone ->
     Format.asprintf "Ihre aktuelle Mobiltelefonnummer lautet %s." cell_phone
   | ContactDoesNotMatchFilter ->
@@ -294,6 +299,11 @@ Wird nach diesem Feld gefiltert, wird der überschreibende Wert bevorzugt.
   | ExperimentContactPerson ->
     "Die E-Mail-Adresse des ausgewählten Nutzers wird als 'reply-to' Adresse \
      für alle experimentbezogenen E-Mails verwendet."
+  | ExperimenterRole ->
+    {|Ein Experimentator hat nur eingeschränkte Rechte, die Rolle kann hauptsächlich nur die Informationen lesen und darf Sitzungen schließen.
+    Der Experimentator kann die Namen der teilnehmenden Kontakte des Experiments lesen, dem er/sie zugewiesen ist.
+
+    Eine detaillierte Liste mit allen Rollenberechtigungen ist nur für Recruiter verfügbar.|}
   | ExperimentMailings ->
     {|Einladungsversand dieses Experiments.
 
@@ -451,10 +461,8 @@ Wenn Sie die Erinnerungen jetzt manuell auslösen werden über den gewählten Na
       "Wenn kein %s angegeben wird, gilt die Rolle für alle %s."
       (Locales_en.field_to_string singular)
       (Locales_en.field_to_string plural)
-  | RulesIntro ->
-    {|Alle Regeln, welche für Akteure des Tools existieren.
-    Beispielsweise, wenn ein neues Experiment erstellt wird, wird für dieses ein Standard Regelsatz hinzugefügt.
-    |}
+  | RolePermissionsIntro ->
+    {|Alle Berechtigungen, welche für Rollen des Tenants existieren.|}
   | ScheduleEvery sec ->
     sec
     |> Pool_common_utils.Time.formatted_timespan

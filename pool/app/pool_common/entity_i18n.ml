@@ -119,7 +119,7 @@ type nav_link =
   | PrivacyPolicy
   | Profile
   | Queue
-  | Rules
+  | RolePermissions
   | Schedules
   | Sessions
   | Settings
@@ -137,6 +137,7 @@ type hint =
   | AssignmentConfirmationMessageFollowUps
   | AssignContactFromWaitingList
   | AssignmentsMarkedAsClosed
+  | AssistantRole
   | ContactCurrentCellPhone of string
   | ContactDoesNotMatchFilter
   | ContactNoCellPhone
@@ -167,6 +168,7 @@ type hint =
   | EmailPlainText
   | ExperimentAssignment
   | ExperimentContactPerson
+  | ExperimenterRole
   | ExperimentMailings
   | ExperimentMailingsRegistrationDisabled
   | ExperimentSessions
@@ -216,7 +218,7 @@ type hint =
   | ResetInvitations
   | ResetInvitationsLastReset of Ptime.t
   | RoleIntro of Entity_message.Field.t * Entity_message.Field.t
-  | RulesIntro
+  | RolePermissionsIntro
   | ScheduleEvery of Ptime.Span.t
   | ScheduleAt of Ptime.t
   | ScheduledIntro

@@ -4,8 +4,8 @@ module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 module Field = Pool_common.Message.Field
 
-let src = Logs.Src.create "handler.admin.settings_rules"
-let active_navigation = "/admin/settings/rules"
+let src = Logs.Src.create "handler.admin.settings_role_permission"
+let active_navigation = "/admin/settings/role-permission"
 
 let show req =
   let result ({ Pool_context.database_label; user; _ } as context) =
@@ -17,7 +17,7 @@ let show req =
         ~ctx:(Pool_database.to_ctx database_label)
         ())
     ||> CCList.stable_sort Guard.RolePermission.compare
-    ||> Page.Admin.Settings.Rules.index context
+    ||> Page.Admin.Settings.RolePermission.index context
     >|> General.create_tenant_layout req ~active_navigation context
     >|+ Sihl.Web.Response.of_html
     >|- fun err -> err, "/"
