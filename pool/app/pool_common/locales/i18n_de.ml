@@ -39,6 +39,13 @@ let to_string = function
   | EmptyListGeneric -> "Es konnten keine Einträge gefunden werden."
   | EnrollInExperiment -> "Zum Experiment anmelden"
   | Files -> "Dateien"
+  | FilterContactsDescription ->
+    {|<p>Um Kontakte zu diesem Experiment einzuladen, folgen Sie diesen Schritten:</p>
+    <ol>
+      <li>Erstellen Sie einen Filter mit einer oder mehreren Bedingungen, um festzulegen, welche Kontakte Sie in dieses Experiment aufnehmen möchten.</li>
+      <li>Erstellen Sie die Sessions, in denen Sie das Experiment durchführen möchten.</li>
+      <li>Erstellen Sie ein oder mehrere Mailings, um den Versand von E-Mails an diese Teilnehmer zu starten.</li>
+    </ol>|}
   | FilterNrOfContacts ->
     "Anzahl der Kontakte, die den Kriterien dieses Filters entsprechen:"
   | FollowUpSessionFor -> "Folgesession für:"
@@ -66,6 +73,7 @@ let to_string = function
     Format.asprintf
       "Es existiert noch keine %s."
       (Locales_de.field_to_string field)
+  | Note -> "Hinweis"
   | OurPartners -> "Unsere Partner"
   | ProfileCompletionText ->
     {|Die folgenden Angaben werden benötigt, um an Experimente eingeladen werden zu können. Weitere Angaben können anschliessend in Ihrem Profil gemacht werden.
@@ -79,6 +87,12 @@ Sie kommen für mehr Experimente in Frage, umso kompletter Ihr Profil ist.|}
   | LoginTitle -> "Login"
   | MailingDetailTitle start ->
     Format.asprintf "Versand vom %s" (Utils_time.formatted_date_time start)
+  | MailingDistributionDescription ->
+    {|<ol>
+  <li>Wählen Sie aus, nach welchem Feld und in welcher Reihenfolge Sie die Kontakte sortieren möchten.</li>
+  <li>Drücken Sie die Schaltfläche "Hinzufügen", um den Sortierparameter hinzuzufügen.</li>
+  <li>Wiederholen Sie diesen Vorgang, um weitere Parameter hinzuzufügen. Sie können sie durch "drag and drop" sortieren.</li>
+</ol>|}
   | MailingExperimentSessionFullyBooked ->
     "Alle Sessions sind ausgebucht. Es werden keine Einladungen versendet \
      (unabhängig ob z.Z. Mailings aktiv sind).\n\n\
@@ -313,13 +327,6 @@ Wenn Sie die Erinnerungen jetzt manuell auslösen werden über den gewählten Na
   | ExternalDataRequired ->
     "Pro Anmeldung ist ein Identifikator für externe Daten obligatorisch \
      (spätestens wenn eine Session abgeschlossen wird)."
-  | FilterContacts ->
-    {|<p>Um Kontakte zu diesem Experiment einzuladen, folgen Sie diesen Schritten:</p>
-    <ol>
-      <li>Erstellen Sie einen Filter mit einer oder mehreren Bedingungen, um festzulegen, welche Kontakte Sie in dieses Experiment aufnehmen möchten.</li>
-      <li>Erstellen Sie die Sessions, in denen Sie das Experiment durchführen möchten.</li>
-      <li>Erstellen Sie ein oder mehrere Mailings, um den Versand von E-Mails an diese Teilnehmer zu starten.</li>
-    </ol>|}
   | TestPhoneNumber ->
     "Bitte geben Sie eine Telefonnummer an, an die wir eine einzige \
      Testnachricht schicken können, um den API Key zu verifizieren. Die Nummer \

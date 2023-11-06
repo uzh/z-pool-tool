@@ -23,10 +23,12 @@ type t =
   | ExperimentListEmpty
   | ExperimentListPublicTitle
   | ExperimentListTitle
+  | ExperimentMessagingSubtitle
   | ExperimentNewTitle
   | ExperimentSessionReminderHint
   | ExperimentWaitingListTitle
   | Files
+  | FilterContactsDescription
   | FilterNrOfContacts
   | FollowUpSessionFor
   | HomeTitle
@@ -45,10 +47,11 @@ type t =
   | LocationNoSessions
   | LoginTitle
   | MailingDetailTitle of Ptime.t
+  | MailingDistributionDescription
   | MailingExperimentSessionFullyBooked
   | MailingNewTitle
-  | ExperimentMessagingSubtitle
   | NoEntries of Entity_message.Field.t
+  | Note
   | OurPartners
   | ProfileCompletionText
   | RateTotalSent of int
@@ -170,7 +173,6 @@ type hint =
   | ExperimentSessionsPublic
   | ExperimentWaitingList
   | ExternalDataRequired
-  | FilterContacts
   | TestPhoneNumber
   | I18nText of string
   | LocationFiles

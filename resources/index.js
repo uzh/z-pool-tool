@@ -5,6 +5,7 @@ import { initHTMX } from './htmx'
 import { initSearch } from "./search"
 import {
     initConfirmable,
+    initCollapsible,
     initFileInput,
     initModal,
     initNotification,
@@ -15,6 +16,7 @@ import { initFormSubmitInterferer } from "./formSubmitInterferer.js"
 
 initDatepicker();
 initConfirmable();
+initCollapsible();
 initFileInput();
 initModal();
 initNotification();

@@ -200,36 +200,11 @@ module DummyData = struct
   let name_element = "name", div [ txt "John Doe" ]
 end
 
-let build_help ?(toggle_id = Pool_common.Id.(create () |> value)) language help =
-  let wrap_hints html =
-    div
-      ~a:[ a_class [ "card" ] ]
-      [ div
-          ~a:[ a_class [ "card-header" ] ]
-          [ label
-              ~a:[ a_label_for toggle_id; a_class [ "flexrow"; "flex-gap-xs" ] ]
-              [ strong
-                  [ txt
-                      Pool_common.(
-                        Utils.text_to_string language I18n.TextTemplates
-                        |> CCString.capitalize_ascii)
-                  ]
-              ; Component_icon.(to_html HelpOutline)
-              ]
-          ]
-      ; input
-          ~a:[ a_input_type `Checkbox; a_class [ "toggle" ]; a_id toggle_id ]
-          ()
-      ; div
-          ~a:[ a_class [ "toggle-body"; "card-body" ] ]
-          [ p
-              [ txt
-                  Pool_common.(
-                    Utils.hint_to_string language I18n.TemplateTextElementsHint)
-              ]
-          ; html
-          ]
-      ]
+let build_help language help =
+  let title =
+    Pool_common.(
+      Utils.text_to_string language I18n.TextTemplates
+      |> CCString.capitalize_ascii)
   in
   help
   |> CCList.map (fun (elm, example) ->
@@ -238,7 +213,7 @@ let build_help ?(toggle_id = Pool_common.Id.(create () |> value)) language help 
     ; Http_utils.add_line_breaks example
     ])
   |> Component_table.horizontal_table `Simple ~align_top:true
-  |> wrap_hints
+  |> Component_collapsible.create_note ~title language
 ;;
 
 let message_template_help

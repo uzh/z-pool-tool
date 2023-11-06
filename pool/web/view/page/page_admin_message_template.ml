@@ -206,8 +206,7 @@ let template_form
     |> Message_template.template_hint
     |> Pool_common.Utils.hint_to_string language
     |> txt
-    |> CCList.return
-    |> div
+    |> Component.Collapsible.create_note language
   in
   let text_elements_html =
     text_elements

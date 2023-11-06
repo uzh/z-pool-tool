@@ -438,9 +438,15 @@ let form
       ; div
           ~a:
             [ a_id subform_id
-            ; a_class (if random_is_checked then [ "hidden" ] else [])
+            ; a_class ("gap" :: (if random_is_checked then [ "hidden" ] else []))
             ]
-          [ div
+          [ Unsafe.data
+              Pool_common.(
+                Utils.text_to_string
+                  language
+                  I18n.MailingDistributionDescription)
+            |> Collapsible.create_note language
+          ; div
               ~a:
                 [ a_class
                     [ "border-bottom"

@@ -15,7 +15,7 @@ let index req =
     @@
     let query =
       let open Contact in
-      Query.from_request ~searchable_by ~sortable_by req
+      Query.from_request ~default:default_query ~searchable_by ~sortable_by req
     in
     let* actor =
       Pool_context.Utils.find_authorizable ~admin_only:true database_label user
