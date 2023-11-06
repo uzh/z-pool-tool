@@ -4,10 +4,36 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/pool/tree/HEAD)
 
+## [0.5.0](https://github.com/uzh/pool/tree/0.5.0) - 2023-11-06
+
+### Added
+
+- many hints (e.g. default lead time, contact filter, message templates, experiment roles)
+- reschedule session confirmable
+- mailings: display the amount of invitations handeld within the mailing
+- setup: add short commit SHA to non-production builds
+- logging: add IP address
+
+### Fixed
+
+- settings: show role permissions to recruiters and operators
+- upcomming session overview for contacts
+- do not notify uncanceled assignemtns when rescheduling
+- custom fields: group button naming
+- root middleware for login
+- mobile session UI
+
 ### Changed
-- use multi select in filter form for select custom fields
+
 - standardize the creation of search components
-- do not allow publication of select / multi-select custom fields without options
+- custom fields: use multi select in filter form for select custom fields
+- custom fields: do not allow publication of select / multi-select custom fields without options
+- mailing: uses now a limit (N emails during the mailing period) instead of rate (hourly rate)
+- mailing: check random order by default
+- mailing: hide subform when random is checked
+- settings: restructure email suffix form
+- settings: change disable_profile_after from weeks to days
+- settings: rename rules to role permission
 
 ## [0.4.8](https://github.com/uzh/pool/tree/0.4.8) - 2023-10-24
 
