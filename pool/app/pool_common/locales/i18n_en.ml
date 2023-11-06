@@ -178,7 +178,7 @@ let nav_link_to_string = function
   | PrivacyPolicy -> "Privacy policy"
   | Profile -> "Profile"
   | Queue -> "Queued jobs"
-  | Rules -> "Rules"
+  | RolePermissions -> "Role permission"
   | Schedules -> "Schedules"
   | Sessions -> "Sessions"
   | Settings -> "Settings"
@@ -204,6 +204,11 @@ let rec hint_to_string = function
   | AssignmentsMarkedAsClosed ->
     "These assignments have been marked as deleted. Provided that the contacts \
      still meet the experiment criteria, they can register for sessions again."
+  | AssistantRole ->
+    {|As an assistant of the recruiter, they have several additional rights to help with administrative tasks, e.g. handling the telephone screening for waiting list experiments or running and closing the sessions.
+    An assistant can read the full user profile for usert attending on the experiment he/she's assigned to.
+
+    A detailed list with all role permissions is available for recruiters only.|}
   | ContactCurrentCellPhone cell_phone ->
     Format.asprintf "Your current phone number is %s." cell_phone
   | ContactDoesNotMatchFilter ->
@@ -288,6 +293,11 @@ Make sure to show links and URLs as plain text.
   | ExperimentContactPerson ->
     "The selected user's email address will be used as 'reply-to' address for \
      all experiment-related emails."
+  | ExperimenterRole ->
+    {|An experimenter has limited rights, the role can mainly just read the information and is allowed to close sessions.
+      The experimenter can read the names of attending contacts to the experiment he/she's assigned to.
+
+      A detailed list with all role permissions is available for recruiters only.|}
   | ExperimentMailings ->
     {|Invitation mailings of this experiment. The limit defines the number of invitations sent by the mailing withing it's duration.
 
@@ -438,10 +448,8 @@ If you trigger the reminders manually now, no more automatic reminders will be s
       "If no %s is specified, the role includes all %s."
       (Locales_en.field_to_string singular)
       (Locales_en.field_to_string plural)
-  | RulesIntro ->
-    {|All existing rules which are defined for actors of the tenant.
-      When a new experiment is created, a default set of rules gets added.
-      |}
+  | RolePermissionsIntro ->
+    {|All existing permissions which are defined for roles of the tenant.|}
   | ScheduleEvery sec ->
     sec
     |> Pool_common_utils.Time.formatted_timespan

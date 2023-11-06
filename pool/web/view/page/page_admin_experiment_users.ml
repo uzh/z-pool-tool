@@ -60,5 +60,17 @@ let role_assignment
   let available =
     available |> CCList.map (form `Assign) |> column RoleApplicableToAssign
   in
-  div ~a:[ a_class [ "switcher"; "flex-gap" ] ] [ existing; available ]
+  let[@warning "-4"] main_hint =
+    (match field with
+     | Field.Assistants -> Some I18n.AssistantRole
+     | Field.Experimenter -> Some I18n.ExperimenterRole
+     | _ -> None)
+    |> CCOption.map_or ~default:(txt "") (fun hint ->
+      p [ Utils.hint_to_string language hint |> HttpUtils.add_line_breaks ])
+  in
+  div
+    ~a:[ a_class [ "stack-lg" ] ]
+    [ main_hint
+    ; div ~a:[ a_class [ "switcher"; "flex-gap" ] ] [ existing; available ]
+    ]
 ;;

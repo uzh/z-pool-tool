@@ -7,9 +7,9 @@ Provide table to insert default data:
         <table>              : string
 
 Available tables:
-    - guardian_rules
+    - guardian_role_permission
 
-Example: seed.default guardian_rules
+Example: seed.default guardian_role_permission
     |}
   in
   Sihl.Command.make
@@ -17,7 +17,7 @@ Example: seed.default guardian_rules
     ~description:"Insert required default data into tenant database."
     ~help
     (function
-    | [ "guardian_rules" ] ->
+    | [ "guardian_role_permission" ] ->
       let events =
         [ Guard.(DefaultRestored all_role_permissions) |> Pool_event.guard ]
       in

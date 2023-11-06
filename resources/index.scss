@@ -10,18 +10,23 @@ $green-light: color.adjust($green, $lightness: $color-shades-ratio * 2);
 $red-light: color.adjust($red, $lightness: $color-shades-ratio * 2);
 
 // Typography
+h1,
+.heading-1 {
+    word-wrap: break-word;
+}
+
 ul.no-style {
     list-style: none;
     padding: 0;
 }
 
 [class*="inset"].top {
-  padding-left: 0;
-  padding-bottom: 0;
-  padding-right: 0;
+    padding-left: 0;
+    padding-bottom: 0;
+    padding-right: 0;
 }
 
-form[class*="stack"] input[type="hidden"] + * {
+form[class*="stack"] input[type="hidden"]+* {
     margin-top: 0;
 }
 
@@ -112,16 +117,19 @@ form[class*="stack"] input[type="hidden"] + * {
         }
     }
 
-    .data-list > [data-selection-item] {
+    .data-list>[data-selection-item] {
         @extend .has-icon;
         padding: $space-sm;
+
         &:hover {
             background-color: $grey-light;
         }
+
         .toggle-item {
             display: none;
         }
     }
+
     input[disabled] {
         cursor: not-allowed;
     }
@@ -299,13 +307,16 @@ table.simple {
 .data-list.relative {
     display: none;
     position: relative;
+
     &.active {
         display: flex;
     }
 }
 
 .data-list>.data-item.bg-red-lighter {
-    &, &:hover {
+
+    &,
+    &:hover {
         background-color: $red-lighter;
     }
 }
@@ -322,7 +333,7 @@ table.simple {
 }
 
 // Sortable
-[data-sortable-item] > *:not(:first-child) {
+[data-sortable-item]>*:not(:first-child) {
     flex-grow: 1;
 }
 
@@ -331,7 +342,7 @@ table.simple {
     z-index: 12;
 }
 
-.note + * {
+.note+* {
     margin-top: $space-base;
 }
 
@@ -345,4 +356,61 @@ table.simple {
 
 .has-icon.flex-gap-xs {
     gap: $space-xs;
+}
+
+// Session list
+@include mobile {
+    .session-list.break-mobile {
+        td>.inset.left {
+            padding: 0;
+        }
+
+        td[data-label] {
+            flex-direction: row;
+            gap: $space-sm;
+
+            &:before {
+                width: 50%;
+            }
+        }
+
+        .follow-up {
+            padding-left: $space-base;
+        }
+
+        .button-list {
+            margin: 0;
+
+            .btn,
+            button {
+                padding: 0;
+            }
+        }
+
+        .has-dropdown {
+            cursor: auto;
+
+            &>.btn {
+                display: none;
+            }
+        }
+
+        .dropdown {
+            position: relative;
+            background: none;
+            padding: 0;
+            box-shadow: none;
+            display: flex;
+            left: 0;
+            transform: translate(0);
+
+            li {
+                padding: 0;
+            }
+
+            li+li {
+                margin-top: $space-sm;
+            }
+        }
+    }
 }

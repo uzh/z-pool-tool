@@ -698,8 +698,8 @@ module Admin = struct
         ; choose ~scope:(Queue |> url_key) specific
         ]
       in
-      let rules =
-        let open Rules in
+      let role_permission =
+        let open RolePermission in
         [ get "" ~middlewares:[ Access.index ] show
         ; post "remove" ~middlewares:[ Access.delete ] delete
         ]
@@ -734,7 +734,7 @@ module Admin = struct
       in
       [ get "" ~middlewares:[ Access.index ] show
       ; choose ~scope:"/queue" queue
-      ; choose ~scope:"/rules" rules
+      ; choose ~scope:"/role-permission" role_permission
       ; choose ~scope:"/smtp" smtp
       ; choose ~scope:"/tags" tags
       ; post "/:action" ~middlewares:[ Access.update ] update_settings

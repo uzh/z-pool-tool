@@ -241,6 +241,7 @@ type control =
   | ResetPlainText
   | Save of Field.t option
   | SessionDetails
+  | Select
   | SelectAll of Field.t option
   | SelectFilePlaceholder
   | Send of Field.t option
