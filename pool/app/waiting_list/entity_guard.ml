@@ -47,7 +47,7 @@ module Access = struct
               , `WaitingList
               , Some (Uuid.target_of Experiment.Id.value id) )
           ]
-      ; Experiment.Guard.Access.update id
+      ; Experiment.Guard.Access.read id
       ]
   ;;
 
@@ -73,7 +73,7 @@ module Access = struct
               , `WaitingList
               , Some (Uuid.target_of Experiment.Id.value experiment_id) )
           ]
-      ; Experiment.Guard.Access.update experiment_id
+      ; Experiment.Guard.Access.read experiment_id
       ]
   ;;
 
