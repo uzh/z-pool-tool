@@ -184,23 +184,24 @@ let search_info req =
   let result ({ Pool_context.database_label; _ } as context) =
     let open Utils.Lwt_result.Infix in
     let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-    let* with_default_rate, mailing =
+    let* mailing =
       Lwt_result.lift
       @@
       let open CCResult in
       Cqrs_command.Mailing_command.Overlaps.(
-        urlencoded |> HttpUtils.remove_empty_values |> decode >>= handle)
+        urlencoded
+        |> HttpUtils.remove_empty_values
+        |> HttpUtils.format_request_boolean_values
+             Field.([ StartNow; RandomOrder ] |> CCList.map show)
+        |> decode
+        >>= handle)
     in
-    let average_send, total =
-      match with_default_rate with
-      | true -> None, None
-      | false ->
-        let interval = 5 * 60 |> Ptime.Span.of_int_s in
-        ( Some (Mailing.per_interval interval mailing)
-        , Some (mailing.Mailing.limit |> Mailing.Limit.value) )
+    let average_send =
+      let interval = 5 * 60 |> Ptime.Span.of_int_s in
+      Mailing.per_interval interval mailing
     in
     let%lwt mailings = Mailing.find_overlaps database_label mailing in
-    Page.Admin.Mailing.overlaps ?average_send ?total context id mailings
+    Page.Admin.Mailing.overlaps ~average_send context id mailings
     |> HttpUtils.Htmx.html_to_plain_text_response
     |> Lwt.return_ok
   in

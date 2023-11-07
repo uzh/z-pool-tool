@@ -13,7 +13,8 @@ let change_mailing_rate_to_limit =
     {sql|
       UPDATE pool_mailing
       SET
-        `limit` = ROUND(TIMESTAMPDIFF(MINUTE, `start`, `end`) / 60 * rate)
+        `limit` = ROUND(TIMESTAMPDIFF(MINUTE, `start`, `end`) / 60 * rate),
+        `start` = `start`
       WHERE rate != 0 AND `start` < `end`;
     |sql}
 ;;

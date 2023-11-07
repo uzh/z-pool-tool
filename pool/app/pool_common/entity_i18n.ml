@@ -54,7 +54,6 @@ type t =
   | Note
   | OurPartners
   | ProfileCompletionText
-  | RateTotalSent of int
   | Reminder
   | ResendReminders
   | ResetPasswordLink

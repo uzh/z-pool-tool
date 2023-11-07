@@ -253,9 +253,8 @@ let per_interval interval { start_at; end_at; limit; _ } =
   let open Ptime in
   let open CCFloat in
   let limit = of_int limit in
-  let sec_to_min = CCFun.flip ( / ) 60. in
-  let duration =
-    diff end_at start_at |> Span.to_float_s |> max 0. |> sec_to_min
-  in
-  if limit <= 0. then 0. else duration / limit * Span.to_float_s interval
+  let duration = diff end_at start_at |> Span.to_float_s |> max 0. in
+  if limit <= 0.
+  then 0.
+  else limit / duration * Span.to_float_s interval |> max 0. |> min limit
 ;;
