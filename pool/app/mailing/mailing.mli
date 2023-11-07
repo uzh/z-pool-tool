@@ -8,6 +8,7 @@ module StartAt : sig
   include Pool_common.Model.BaseSig
 
   val create : Ptime.t -> (t, Pool_common.Message.error) result
+  val create_now : unit -> t
   val value : t -> Ptime.t
   val to_human : t -> string
 

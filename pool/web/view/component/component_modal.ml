@@ -15,7 +15,7 @@ let create ?(active = false) ?subtitle language title id html =
   in
   let attrs =
     let base_classnames = [ "fullscreen-overlay"; "modal" ] in
-    let dataset = a_user_data "modal" "" in
+    let dataset = a_user_data "modal" id in
     match active with
     | true ->
       dataset

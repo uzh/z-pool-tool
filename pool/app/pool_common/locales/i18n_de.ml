@@ -99,8 +99,6 @@ Sie kommen für mehr Experimente in Frage, umso kompletter Ihr Profil ist.|}
      Füge zusätzliche Sessions zum Experiment hinzu."
   | MailingNewTitle -> "Neuen Versand erstellen"
   | ExperimentMessagingSubtitle -> "Nachrichtenversand"
-  | RateTotalSent number ->
-    Format.asprintf "Total generierter Einladungen: %d" number
   | ResetPasswordLink | ResetPasswordTitle -> "Passwort zurücksetzen"
   | Reminder -> "Erinnerung"
   | ResendReminders -> "Erinnerungen erneut schicken"
@@ -432,9 +430,9 @@ Wenn Sie die Erinnerungen jetzt manuell auslösen werden über den gewählten Na
      dieser wird anschliessend nicht mehr für Experimente eingeladen und kann \
      sich nicht mehr für solche registrieren."
   | RateDependencyWith ->
-    "Zur selben Zeit finden weitere Versande statt, details werden unten \
-     angezeigt. Die Summe aller Raten wird automatisch gedrosselt, sobald das \
-     maximum des Servers erreicht wird."
+    "Zur gleichen Zeit laufen noch andere Versande. Siehe deren Details unten. \
+     Wenn die Summe aller Versande das Maximum des Servers erreicht, werden \
+     sie automatisch gleichmässig reduziert."
   | RateDependencyWithout ->
     "Zur Zeit finden im angegebenen Zeitfenster keine weiteren Versande statt."
   | RateNumberPerMinutes (per_n_minutes, number) ->

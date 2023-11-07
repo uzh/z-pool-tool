@@ -99,8 +99,6 @@ let to_string = function
      Add additional sessions to the experiment."
   | MailingNewTitle -> "Create new mailing"
   | ExperimentMessagingSubtitle -> "Messaging"
-  | RateTotalSent number ->
-    Format.asprintf "Totally generated invitations: %d" number
   | ResetPasswordLink | ResetPasswordTitle -> "Reset password"
   | Reminder -> "Reminder"
   | ResendReminders -> "Resend reminders"
@@ -413,9 +411,9 @@ Make sure to show links and URLs as plain text.
      subsequently no longer invited for experiments and can no longer register \
      for such."
   | RateDependencyWith ->
-    "There are other mailings running at the same time, see its details \
-     bellow. In case the sum of all rates reaches the maximum of the server, \
-     they will automatically get reduced."
+    "There are other mailings running at the same time. See its details below. \
+     If the sum of all reaches the server's maximum, they will automatically \
+     get reduced."
   | RateDependencyWithout ->
     "There are currently no other mailings running in the specified time range."
   | RateNumberPerMinutes (per_n_minutes, number) ->

@@ -182,7 +182,7 @@ module List = struct
           ~control:(language, Message.Add (Some Field.Mailing))
           (mailings_path ~suffix:"create" experiment_id)
       in
-      if with_link then base_head @ [ new_btn () ] else base_head
+      if with_link then base_head @ [ new_btn () ] else base_head @ [ txt "" ]
     in
     Table.(horizontal_table `Striped ~align_last_end:true ~thead)
     @@
@@ -275,9 +275,10 @@ let form
       var container = document.getElementById('mailings');
       container.addEventListener('htmx:beforeRequest', (e) => {
         var start = container.querySelector("[name='start']").value;
+        var startNow = container.querySelector("[name='start_now']").checked;
         var end = container.querySelector("[name='end']").value;
 
-        if ((!start || !end) || Date.parse(start) > Date.parse(end)) {
+        if ((!(start || startNow) || !end) || (!startNow && Date.parse(start) > Date.parse(end))) {
           e.preventDefault();
           };
       });
@@ -627,7 +628,6 @@ let edit context experiment_id mailing flash_fetcher =
 
 let overlaps
   ?average_send
-  ?total
   (Pool_context.{ language; _ } as context)
   experiment_id
   mailings
@@ -639,17 +639,6 @@ let overlaps
       [ p
           [ I18n.RateNumberPerMinutes (5, average)
             |> Pool_common.Utils.hint_to_string language
-            |> txt
-          ]
-      ]
-  in
-  let total =
-    match total with
-    | None -> []
-    | Some total ->
-      [ p
-          [ I18n.RateTotalSent total
-            |> Pool_common.Utils.text_to_string language
             |> txt
           ]
       ]
@@ -672,5 +661,5 @@ let overlaps
       ; List.(create false context experiment_id (Standard mailings))
       ]
   in
-  div ~a:[ a_class [ "stack" ] ] (average @ total @ mailings)
+  div ~a:[ a_class [ "stack" ] ] (average @ mailings)
 ;;

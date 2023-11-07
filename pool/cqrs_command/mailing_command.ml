@@ -167,9 +167,7 @@ module Overlaps : sig
     ; distribution : Distribution.t option
     }
 
-  type with_default_rate = bool
-
-  val handle : t -> (with_default_rate * Mailing.t, Message.error) result
+  val handle : t -> (Mailing.t, Message.error) result
   val decode : Conformist.input -> (t, Message.error) result
   val effects : Experiment.Id.t -> BaseGuard.ValidationSet.t
 end = struct
@@ -181,9 +179,13 @@ end = struct
     ; distribution : Distribution.t option
     }
 
-  type with_default_rate = bool
-
-  let command id start_at end_at limit random distribution : t =
+  let command id start_at start_now end_at limit random distribution : t =
+    let start_at =
+      let default = StartAt.create_now () in
+      if StartNow.value start_now
+      then default
+      else CCOption.value ~default start_at
+    in
     let distribution =
       let open Distribution in
       if random then Some Random else distribution |> CCOption.map create_sorted
@@ -196,7 +198,8 @@ end = struct
       make
         Field.
           [ Conformist.optional @@ Id.schema ()
-          ; StartAt.schema ()
+          ; Conformist.optional @@ StartAt.schema ()
+          ; StartNow.schema ()
           ; EndAt.schema ()
           ; Conformist.optional @@ Limit.schema ()
           ; Distribution.is_random_schema ()
@@ -211,7 +214,6 @@ end = struct
   ;;
 
   let handle ({ id; start_at; end_at; limit; distribution } : t) =
-    let open CCResult in
     Mailing.create
       ~allow_start_in_past:true
       ?id
@@ -219,7 +221,6 @@ end = struct
       end_at
       (CCOption.get_or ~default:Mailing.Limit.default limit)
       distribution
-    >|= fun m -> CCOption.is_none limit, m
   ;;
 
   let effects = Mailing.Guard.Access.index
