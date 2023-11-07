@@ -89,6 +89,7 @@ let handle_event ~tags pool : event -> unit Lwt.t =
       ||> create
     in
     let%lwt () = Repo.insert pool admin in
+    let () = Guard.Persistence.clear_cache () in
     let%lwt (_ : Guard.Target.t) =
       Entity_guard.Target.to_authorizable ~ctx admin
       >|- with_log_error ~src ~tags
