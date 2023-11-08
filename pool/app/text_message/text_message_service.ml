@@ -215,9 +215,13 @@ let test_api_key ~tags api_key cell_phone tenant_title =
            body_string);
        Lwt.return_ok api_key)
   | false ->
-    Pool_common.Message.TextMessageInterceptionError
-      "Sending text message intercepted"
-    |> Lwt.return_error
+    let (_ : Pool_common.Message.error) =
+      Pool_common.Utils.with_log_error
+        ~level:Logs.Warning
+        (Pool_common.Message.TextMessageInterceptionError
+           "Verifying API Key: intercepted for development")
+    in
+    api_key |> Lwt.return_ok
 ;;
 
 module Job = struct
