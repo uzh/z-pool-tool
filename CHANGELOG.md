@@ -4,6 +4,16 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/pool/tree/HEAD)
 
+## [0.5.1](https://github.com/uzh/pool/tree/0.5.1) - 2023-11-08
+
+### Fixed
+
+- modals e.g. terms and conditions, resend reminder
+- mailing overlaps view
+- mailing create form
+- clear cache when adding an admin
+- permission to update waiting list element
+
 ## [0.5.0](https://github.com/uzh/pool/tree/0.5.0) - 2023-11-06
 
 ### Added
