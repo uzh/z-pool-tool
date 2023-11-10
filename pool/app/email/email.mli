@@ -151,6 +151,8 @@ module SmtpAuth : sig
     ; default : Default.t
     }
 
+  type smtp = t
+
   type update_password =
     { id : Id.t
     ; password : Password.t option
@@ -171,6 +173,8 @@ module SmtpAuth : sig
       ; protocol : Protocol.t
       ; default : Default.t
       }
+
+    val to_entity : t -> smtp
 
     val create
       :  ?id:Id.t
@@ -290,6 +294,7 @@ type event =
   | BulkSent of (Sihl_email.t * SmtpAuth.Id.t option) list
   | SmtpCreated of SmtpAuth.Write.t
   | SmtpEdited of SmtpAuth.t
+  | SmtpDeleted of SmtpAuth.Id.t
   | SmtpPasswordEdited of SmtpAuth.update_password
 
 val handle_event : Pool_database.Label.t -> event -> unit Lwt.t

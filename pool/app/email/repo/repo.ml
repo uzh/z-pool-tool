@@ -25,6 +25,7 @@ module Smtp = struct
   let find_all = Sql.Smtp.find_all
   let insert = Sql.Smtp.insert
   let update = Sql.Smtp.update
+  let delete = Sql.Smtp.delete
 
   let update_password label Entity.SmtpAuth.{ id; password } =
     Sql.Smtp.update_password label (id, password)

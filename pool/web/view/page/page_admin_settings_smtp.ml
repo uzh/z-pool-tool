@@ -30,6 +30,22 @@ let index Pool_context.{ language; _ } location smtp_auth_list =
      |> Component.Table.fields_to_txt language)
     @ [ add_btn ]
   in
+  let delete_button (auth : SmtpAuth.t) =
+    let open SmtpAuth in
+    let action_path =
+      Format.asprintf "%s/%s/delete" (base_path location) (auth.id |> Id.value)
+    in
+    form
+      ~a:
+        [ a_method `Post
+        ; a_action action_path
+        ; a_user_data
+            "confirmable"
+            Pool_common.(
+              Utils.confirmable_to_string language I18n.DeleteSmtpServer)
+        ]
+      [ submit_icon ~classnames:[ "error" ] Icon.TrashOutline ]
+  in
   let rows =
     let open SmtpAuth in
     smtp_auth_list
@@ -40,8 +56,14 @@ let index Pool_context.{ language; _ } location smtp_auth_list =
       ; auth.mechanism |> Mechanism.show |> txt
       ; auth.protocol |> Protocol.show |> txt
       ; auth.default |> Default.value |> Utils.Bool.to_string |> txt
-      ; edit_link
-          (Format.asprintf "%s/%s" (base_path location) (auth.id |> Id.value))
+      ; button_group
+          [ edit_link
+              (Format.asprintf
+                 "%s/%s"
+                 (base_path location)
+                 (auth.id |> Id.value))
+          ; delete_button auth
+          ]
       ])
   in
   div

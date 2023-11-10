@@ -552,6 +552,7 @@ let confirmable_to_string confirmable =
    | DeleteMailing -> "mailing", "delete", None
    | DeleteMessageTemplate -> "message template", "delete", None
    | DeleteSession -> "session", "delete", None
+   | DeleteSmtpServer -> "email Server", "delete", None
    | PublisCustomField ->
      ( "field an all associated options"
      , "publish"

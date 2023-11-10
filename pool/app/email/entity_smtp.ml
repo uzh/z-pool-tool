@@ -93,6 +93,8 @@ type t =
   }
 [@@deriving eq, show, sexp_of]
 
+type smtp = t
+
 type update_password =
   { id : Id.t
   ; password : Password.t option [@opaque]
@@ -125,5 +127,17 @@ module Write = struct
       ; protocol
       ; default
       }
+  ;;
+
+  let to_entity (t : t) : smtp =
+    { id = t.id
+    ; label = t.label
+    ; server = t.server
+    ; port = t.port
+    ; username = t.username
+    ; mechanism = t.mechanism
+    ; protocol = t.protocol
+    ; default = t.default
+    }
   ;;
 end

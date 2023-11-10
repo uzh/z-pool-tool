@@ -175,6 +175,26 @@ let new_form req =
   result |> HttpUtils.extract_happy_path ~src req
 ;;
 
+let delete_base location req =
+  let tags = Pool_context.Logger.Tags.req req in
+  let path = active_navigation location in
+  HttpUtils.extract_happy_path ~src req
+  @@ fun Pool_context.{ database_label; _ } ->
+  let smtp_id =
+    Sihl.Web.Router.param req (Field.show Field.Smtp) |> SmtpAuth.Id.of_string
+  in
+  Cqrs_command.Smtp_command.Delete.handle ~tags smtp_id
+  |> Lwt_result.lift
+  |>> (fun events ->
+        let%lwt () = Pool_event.handle_events ~tags database_label events in
+        Http_utils.redirect_to_with_actions
+          path
+          [ Message.set ~success:[ Pool_common.Message.(Deleted Field.Smtp) ] ])
+  |> Utils.Lwt_result.map_error (fun err -> err, path)
+;;
+
+let delete = delete_base `Tenant
+
 module Access : module type of Helpers.Access = struct
   include Helpers.Access
   module Guardian = Middleware.Guardian
@@ -189,5 +209,9 @@ module Access : module type of Helpers.Access = struct
 
   let update =
     Command.Update.effects |> smtp_effects |> Guardian.validate_generic
+  ;;
+
+  let delete =
+    Email.Guard.Access.Smtp.delete |> smtp_effects |> Guardian.validate_generic
   ;;
 end

@@ -381,6 +381,19 @@ module Smtp = struct
     Utils.Database.exec (Database.Label.value pool) update_request t
   ;;
 
+  let delete_request =
+    let open Caqti_request.Infix in
+    {sql|
+        DELETE FROM pool_smtp
+        WHERE uuid = UNHEX(REPLACE(?, '-', ''))
+    |sql}
+    |> RepoEntity.SmtpAuth.(Id.t ->. Caqti_type.unit)
+  ;;
+
+  let delete pool t =
+    Utils.Database.exec (Database.Label.value pool) delete_request t
+  ;;
+
   let update_password_request =
     let open Caqti_request.Infix in
     {sql|

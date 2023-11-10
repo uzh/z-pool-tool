@@ -130,6 +130,7 @@ module Update : sig
 
   val handle
     :  ?tags:Logs.Tag.set
+    -> ?clear_id:System_event.Id.t
     -> SmtpAuth.t option
     -> SmtpAuth.t
     -> t
@@ -145,6 +146,7 @@ end = struct
 
   let handle
     ?(tags = Logs.Tag.empty)
+    ?(clear_id = System_event.Id.create ())
     (default_smtp : SmtpAuth.t option)
     (smtp_auth : SmtpAuth.t)
     (command : t)
@@ -171,7 +173,10 @@ end = struct
       ; default
       }
     in
-    Ok [ Email.SmtpEdited update |> Pool_event.email; clear_cache_event () ]
+    Ok
+      [ Email.SmtpEdited update |> Pool_event.email
+      ; clear_cache_event ~id:clear_id ()
+      ]
   ;;
 
   let decode data =
@@ -216,6 +221,34 @@ end = struct
   let decode data =
     Conformist.decode_and_validate schema data
     |> CCResult.map_err Pool_common.Message.to_conformist_error
+  ;;
+
+  let effects = Email.Guard.Access.Smtp.update
+end
+
+module Delete : sig
+  include Common.CommandSig with type t = SmtpAuth.Id.t
+
+  val handle
+    :  ?tags:Logs.Tag.set
+    -> ?clear_id:System_event.Id.t
+    -> t
+    -> (Pool_event.t list, Pool_common.Message.error) result
+
+  val effects : SmtpAuth.Id.t -> Guard.ValidationSet.t
+end = struct
+  type t = SmtpAuth.Id.t
+
+  let handle
+    ?(tags = Logs.Tag.empty)
+    ?(clear_id = System_event.Id.create ())
+    (command : t)
+    =
+    Logs.info ~src (fun m -> m "Handle command Delete" ~tags);
+    Ok
+      [ Email.SmtpDeleted command |> Pool_event.email
+      ; clear_cache_event ~id:clear_id ()
+      ]
   ;;
 
   let effects = Email.Guard.Access.Smtp.update
