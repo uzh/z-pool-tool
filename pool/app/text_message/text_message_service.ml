@@ -219,7 +219,8 @@ let test_api_key ~tags api_key cell_phone tenant_title =
       Pool_common.Utils.with_log_error
         ~level:Logs.Warning
         (Pool_common.Message.TextMessageInterceptionError
-           "Verifying API Key: intercepted for development")
+           "Verifying API Key: Skip validation due to non production \
+            environment!")
     in
     api_key |> Lwt.return_ok
 ;;
