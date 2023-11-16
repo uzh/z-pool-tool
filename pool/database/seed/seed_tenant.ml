@@ -46,7 +46,8 @@ let create () =
       [ ( "Econ UZH"
         , "description"
         , "localhost:3017"
-        , "mariadb://root@database-tenant:3306/dev_econ"
+        , Sihl.Configuration.read_string "DATABASE_URL_TENANT_TEST"
+          |> Option.value ~default:"mariadb://root@database-tenant:3306/dev_econ"
         , "econ-uzh"
         , gtx_api_key
         , styles.Assets.id
@@ -55,7 +56,8 @@ let create () =
       ; ( "ZHAW"
         , "description"
         , "pool.zhaw.ch"
-        , "mariadb://root@database-tenant:3306/dev_zhaw"
+        , Sihl.Configuration.read_string "DATABASE_URL_TENANT_TEST_ZHAW"
+          |> Option.value ~default:"mariadb://root@database-tenant:3306/dev_zhaw"
         , "zhaw"
         , gtx_api_key
         , styles.Assets.id

@@ -1,5 +1,5 @@
 {
-  "checksum": "5e55626385f48d44f2d86c75977b49b3",
+  "checksum": "04fc786e5582aa2215f17b00e24e633b",
   "root": "pool@link-dev:./esy.json",
   "node": {
     "yarn-pkg-config@github:esy-ocaml/yarn-pkg-config#db3a0b63883606dd57c54a7158d560d6cba8cd79@d41d8cd9": {
@@ -41,6 +41,10 @@
         "@opam/ppx_deriving@opam:5.2.1@2315fdd0",
         "@opam/ocamlformat@opam:0.26.1@3a835116",
         "@opam/ocaml-lsp-server@opam:1.16.2@6e0031b9",
+        "@opam/mirage-crypto-rng-lwt@opam:0.11.2@ec98ed6d",
+        "@opam/mirage-crypto-rng@opam:0.11.2@b3a0290a",
+        "@opam/mirage-crypto-pk@opam:0.11.2@d39f88e2",
+        "@opam/mirage-crypto@opam:0.11.2@b88dd6f7",
         "@opam/mariadb@opam:1.1.6@da912768",
         "@opam/lwt_ssl@opam:1.1.3@653af026",
         "@opam/lwt_ppx@opam:2.1.0@f0dd3e73", "@opam/lwt@opam:5.7.0@4a33823d",
@@ -48,8 +52,8 @@
         "@opam/guardian@github:uzh/guardian#f144f2c12459e13365c8d6adc481556223dd87f9@d41d8cd9",
         "@opam/dune@opam:3.11.1@ba2e0e6a",
         "@opam/cstruct@opam:6.2.0@7f5eb076",
-        "@opam/containers-data@opam:3.6.1@c62c2806",
-        "@opam/containers@opam:3.6.1@24a81624",
+        "@opam/containers-data@opam:3.12@7c3c31e1",
+        "@opam/containers@opam:3.12@c6cdb677",
         "@opam/conformist@opam:0.8.1@79edddec",
         "@opam/conf-libssl@opam:3@7fc50e3c",
         "@opam/caqti-lwt@github:paurkedal/ocaml-caqti:caqti-lwt.opam#cba1047b9e318bc450be72ab9dfb302aac8e4a78@d41d8cd9",
@@ -1245,7 +1249,7 @@
         "@opam/dune-build-info@opam:3.11.1@0dfbdab2",
         "@opam/dune@opam:3.11.1@ba2e0e6a",
         "@opam/cstruct@opam:6.2.0@7f5eb076",
-        "@opam/containers@opam:3.6.1@24a81624",
+        "@opam/containers@opam:3.12@c6cdb677",
         "@opam/conformist@opam:0.8.1@79edddec",
         "@opam/caqti-lwt@github:paurkedal/ocaml-caqti:caqti-lwt.opam#cba1047b9e318bc450be72ab9dfb302aac8e4a78@d41d8cd9",
         "@opam/caqti@opam:1.9.0@e5055eb2", "@opam/bos@opam:0.2.1@02b5c6e3",
@@ -1271,7 +1275,7 @@
         "@opam/dune-build-info@opam:3.11.1@0dfbdab2",
         "@opam/dune@opam:3.11.1@ba2e0e6a",
         "@opam/cstruct@opam:6.2.0@7f5eb076",
-        "@opam/containers@opam:3.6.1@24a81624",
+        "@opam/containers@opam:3.12@c6cdb677",
         "@opam/conformist@opam:0.8.1@79edddec",
         "@opam/caqti-lwt@github:paurkedal/ocaml-caqti:caqti-lwt.opam#cba1047b9e318bc450be72ab9dfb302aac8e4a78@d41d8cd9",
         "@opam/caqti@opam:1.9.0@e5055eb2", "@opam/bos@opam:0.2.1@02b5c6e3"
@@ -3905,8 +3909,8 @@
         "@opam/mariadb@opam:1.1.6@da912768",
         "@opam/lwt_ppx@opam:2.1.0@f0dd3e73", "@opam/lwt@opam:5.7.0@4a33823d",
         "@opam/logs@opam:0.7.0@46a3dffc", "@opam/dune@opam:3.11.1@ba2e0e6a",
-        "@opam/containers-data@opam:3.6.1@c62c2806",
-        "@opam/containers@opam:3.6.1@24a81624",
+        "@opam/containers-data@opam:3.12@7c3c31e1",
+        "@opam/containers@opam:3.12@c6cdb677",
         "@opam/caqti-lwt@github:paurkedal/ocaml-caqti:caqti-lwt.opam#cba1047b9e318bc450be72ab9dfb302aac8e4a78@d41d8cd9",
         "@opam/caqti-driver-mariadb@opam:1.9.0@e990ff3f",
         "@esy-ocaml/substs@0.0.1@d41d8cd9"
@@ -3920,8 +3924,8 @@
         "@opam/mariadb@opam:1.1.6@da912768",
         "@opam/lwt_ppx@opam:2.1.0@f0dd3e73", "@opam/lwt@opam:5.7.0@4a33823d",
         "@opam/logs@opam:0.7.0@46a3dffc", "@opam/dune@opam:3.11.1@ba2e0e6a",
-        "@opam/containers-data@opam:3.6.1@c62c2806",
-        "@opam/containers@opam:3.6.1@24a81624",
+        "@opam/containers-data@opam:3.12@7c3c31e1",
+        "@opam/containers@opam:3.12@c6cdb677",
         "@opam/caqti-lwt@github:paurkedal/ocaml-caqti:caqti-lwt.opam#cba1047b9e318bc450be72ab9dfb302aac8e4a78@d41d8cd9",
         "@opam/caqti-driver-mariadb@opam:1.9.0@e990ff3f"
       ]
@@ -4625,49 +4629,49 @@
         "@opam/base-unix@opam:base@87d0b2eb"
       ]
     },
-    "@opam/containers-data@opam:3.6.1@c62c2806": {
-      "id": "@opam/containers-data@opam:3.6.1@c62c2806",
+    "@opam/containers-data@opam:3.12@7c3c31e1": {
+      "id": "@opam/containers-data@opam:3.12@7c3c31e1",
       "name": "@opam/containers-data",
-      "version": "opam:3.6.1",
+      "version": "opam:3.12",
       "source": {
         "type": "install",
         "source": [
-          "archive:https://opam.ocaml.org/cache/md5/ef/efbef89f1e3460225c7d03e3ae2af62e#md5:efbef89f1e3460225c7d03e3ae2af62e",
-          "archive:https://github.com/c-cube/ocaml-containers/archive/v3.6.1.tar.gz#md5:efbef89f1e3460225c7d03e3ae2af62e"
+          "archive:https://opam.ocaml.org/cache/md5/d7/d74226924b65697a8558eb34a6074417#md5:d74226924b65697a8558eb34a6074417",
+          "archive:https://github.com/c-cube/ocaml-containers/archive/v3.12.tar.gz#md5:d74226924b65697a8558eb34a6074417"
         ],
         "opam": {
           "name": "containers-data",
-          "version": "3.6.1",
-          "path": "esy.lock/opam/containers-data.3.6.1"
+          "version": "3.12",
+          "path": "esy.lock/opam/containers-data.3.12"
         }
       },
       "overrides": [],
       "dependencies": [
         "ocaml@4.14.0@d41d8cd9", "@opam/seq@opam:base@d8d7de1d",
         "@opam/dune@opam:3.11.1@ba2e0e6a",
-        "@opam/containers@opam:3.6.1@24a81624",
+        "@opam/containers@opam:3.12@c6cdb677",
         "@esy-ocaml/substs@0.0.1@d41d8cd9"
       ],
       "devDependencies": [
         "ocaml@4.14.0@d41d8cd9", "@opam/seq@opam:base@d8d7de1d",
         "@opam/dune@opam:3.11.1@ba2e0e6a",
-        "@opam/containers@opam:3.6.1@24a81624"
+        "@opam/containers@opam:3.12@c6cdb677"
       ]
     },
-    "@opam/containers@opam:3.6.1@24a81624": {
-      "id": "@opam/containers@opam:3.6.1@24a81624",
+    "@opam/containers@opam:3.12@c6cdb677": {
+      "id": "@opam/containers@opam:3.12@c6cdb677",
       "name": "@opam/containers",
-      "version": "opam:3.6.1",
+      "version": "opam:3.12",
       "source": {
         "type": "install",
         "source": [
-          "archive:https://opam.ocaml.org/cache/md5/ef/efbef89f1e3460225c7d03e3ae2af62e#md5:efbef89f1e3460225c7d03e3ae2af62e",
-          "archive:https://github.com/c-cube/ocaml-containers/archive/v3.6.1.tar.gz#md5:efbef89f1e3460225c7d03e3ae2af62e"
+          "archive:https://opam.ocaml.org/cache/md5/d7/d74226924b65697a8558eb34a6074417#md5:d74226924b65697a8558eb34a6074417",
+          "archive:https://github.com/c-cube/ocaml-containers/archive/v3.12.tar.gz#md5:d74226924b65697a8558eb34a6074417"
         ],
         "opam": {
           "name": "containers",
-          "version": "3.6.1",
-          "path": "esy.lock/opam/containers.3.6.1"
+          "version": "3.12",
+          "path": "esy.lock/opam/containers.3.12"
         }
       },
       "overrides": [],
