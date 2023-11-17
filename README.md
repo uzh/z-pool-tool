@@ -6,7 +6,9 @@ Follow the [Architecture](./doc/ARCHITECTURE.md) documentation.
 
 ## Development
 
-A guide how to setup the project with devcontainers can be found [here](./.devcontainer/README.md).
+A guide to setup the project with devcontainers can be found
+[here](./.devcontainer/README.md). If you prefer to [run the project
+locally](#running-locally-with-Esy), you can do that with [esy][esy].
 
 The project executable can be run via command line `make sihl` and shows the information of the executable.
 
@@ -17,6 +19,18 @@ The project executable can be run via command line `make sihl` and shows the inf
 1. Seed tenant database `make sihl seed.tenant`
 1. Run development server `make dev`
 1. See `pool/database/seed/seed_user.ml` for default users or `make sihl admin.create ...` (see [Application Commands](#application-commands)) to generate one
+
+### Running locally with Esy
+
+Esy is a reproducible package manager for OCaml with heavy emphasis on
+usability. You can get it installed with `npm install --global esy`, and then
+run `esy` inside the project.
+
+Once `esy` finishes running, you can prefix any command with `esy ...` to
+execute it within the project's sandbox, or you can start a new development
+shell within it by running `esy shell`.
+
+[esy]: https://esy.sh
 
 ### Commands
 
