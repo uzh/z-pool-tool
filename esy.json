@@ -10,15 +10,12 @@
     "@opam/containers": "3.12",
     "@opam/containers-data": "3.12",
     "@opam/cstruct": "*",
-    "@opam/dune": "*",
     "@opam/guardian": "*",
     "@opam/logs": "0.7.0",
     "@opam/lwt": "5.7.0",
     "@opam/lwt_ppx": "2.1.0",
     "@opam/lwt_ssl": "1.2.0",
     "@opam/mariadb": "*",
-    "@opam/ocaml-lsp-server": "*",
-    "@opam/ocamlformat": "0.26.1",
     "@opam/mirage-crypto": "*",
     "@opam/mirage-crypto-rng": "*",
     "@opam/mirage-crypto-rng-lwt": "*",
@@ -39,6 +36,11 @@
     "esy-mariadb": "*",
     "esy-openssl": "*",
     "ocaml": "4.14.0"
+  },
+  "devDependencies": {
+    "@opam/dune": "*",
+    "@opam/ocamlformat": "*",
+    "@opam/ocaml-lsp-server": "*"
   },
   "resolutions": {
     "@opam/canary": "uzh/canary#02cf40e029268560e160ca032850426e387aa598",

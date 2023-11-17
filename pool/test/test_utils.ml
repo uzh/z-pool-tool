@@ -555,3 +555,11 @@ let case fn (_switch : Lwt_switch.t) () : unit Lwt.t =
   let result = Lwt_result.get_exn @@ Lwt_result.catch fn in
   Lwt.map (fun _ -> ()) result
 ;;
+
+let run_test fn =
+  let run () =
+  let result = Lwt_result.get_exn @@ Lwt_result.catch fn in
+  Lwt.map (fun _ -> ()) result
+  in
+  Lwt_main.run (run ())
+;;

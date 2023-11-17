@@ -1,5 +1,9 @@
 (tests
- (names command integration)
+ (names
+   command
+   integration
+   experiment_filter_test
+   )
  (libraries
   admin
   alcotest

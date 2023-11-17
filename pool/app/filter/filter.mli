@@ -17,6 +17,21 @@ type value =
   | Single of single_val
   | Lst of single_val list
 
+module Value : sig
+
+val string : string -> single_val
+val bool : bool -> single_val
+val date : Ptime.date -> single_val
+val language : Pool_common.Language.t -> single_val
+val number : float -> single_val
+val option : Custom_field.SelectOption.Id.t -> single_val
+
+val list : single_val list -> value
+val single : single_val -> value
+val no_value : value
+
+end
+
 module Key : sig
   type input_type =
     | Bool
