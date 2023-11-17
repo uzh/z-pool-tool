@@ -30,6 +30,7 @@ let error =
 ;;
 
 let contact = Alcotest.testable Contact.pp Contact.equal
+let smtp_auth = Alcotest.testable Email.SmtpAuth.pp Email.SmtpAuth.equal
 
 let check_result ?(msg = "succeeds") =
   let open Alcotest in
@@ -546,3 +547,11 @@ module Repo = struct
     Pool_location.find_all Data.database_label ||> CCList.hd
   ;;
 end
+
+(* NOTE(@leostera): here be dragons. This machinery gets rid of any resulting
+   value we have. It will fail a test if the underlying promise returns an
+   Error. *)
+let case fn (_switch : Lwt_switch.t) () : unit Lwt.t =
+  let result = Lwt_result.get_exn @@ Lwt_result.catch fn in
+  Lwt.map (fun _ -> ()) result
+;;

@@ -61,6 +61,7 @@ type event =
   | BulkSent of (Sihl_email.t * SmtpAuth.Id.t option) list
   | SmtpCreated of SmtpAuth.Write.t
   | SmtpEdited of SmtpAuth.t
+  | SmtpDeleted of SmtpAuth.Id.t
   | SmtpPasswordEdited of SmtpAuth.update_password
 [@@deriving eq, show, variants]
 
@@ -83,5 +84,8 @@ let handle_event pool : event -> unit Lwt.t = function
     Lwt.return_unit
   | SmtpPasswordEdited updated_password ->
     let%lwt () = Repo.Smtp.update_password pool updated_password in
+    Lwt.return_unit
+  | SmtpDeleted id ->
+    let%lwt () = Repo.Smtp.delete pool id in
     Lwt.return_unit
 ;;

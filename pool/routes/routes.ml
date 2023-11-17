@@ -709,6 +709,7 @@ module Admin = struct
         let specific =
           [ get "" ~middlewares:[ Access.update ] show
           ; post "" ~middlewares:[ Access.update ] update
+          ; post "/delete" ~middlewares:[ Access.delete ] delete
           ; post "/password" ~middlewares:[ Access.update ] update_password
           ]
         in
@@ -844,6 +845,7 @@ module Root = struct
         [ get "" ~middlewares:[ Access.index ] show_smtp
         ; post "/create" ~middlewares:[ Access.create ] create_smtp
         ; post "/:smtp" ~middlewares:[ Access.update ] update_smtp
+        ; post "/:smtp/delete" ~middlewares:[ Access.delete ] delete_smtp
         ; post
             "/:smtp/password"
             ~middlewares:[ Access.update ]

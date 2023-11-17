@@ -297,3 +297,97 @@ let login_after_terms_update _ () =
       expected
       accepted)
 ;;
+
+(* Test the creation of an SMTP Authentication record. *)
+let create_smtp_auth =
+  Test_utils.case
+  @@ fun () ->
+  let ( let* ) x f = Lwt_result.bind (Lwt_result.lift x) f in
+  let ( let& ) = Lwt_result.bind in
+  let test_db = Test_utils.Data.database_label in
+  let open Email.SmtpAuth in
+  (* create an smtp auth instance *)
+  let id = Id.create () in
+  let* label = Label.create ("a-label-" ^ Id.show id) in
+  let* server = Server.create "a-server" in
+  let* port = Port.create 2112 in
+  let* username = Username.create "a-username" in
+  let* password = Password.create "Password1!" in
+  let mechanism = Mechanism.PLAIN in
+  let protocol = Protocol.SSL_TLS in
+  let default = Default.create false in
+  let* write_event =
+    Email.SmtpAuth.Write.create
+      ~id
+      label
+      server
+      port
+      (Some username)
+      (Some password)
+      mechanism
+      protocol
+      default
+  in
+  (* feed the event into the event handler to affect the database *)
+  let& () =
+    [ Email.SmtpCreated write_event |> Pool_event.email ]
+    |> Pool_event.handle_events test_db
+    |> Lwt_result.ok
+  in
+  (* get the smtp auth that was actually saved and compare it *)
+  let expected = Email.SmtpAuth.Write.to_entity write_event in
+  let& actual = Email.SmtpAuth.find test_db id in
+  Alcotest.(check Test_utils.smtp_auth "smtp saved correctly" expected actual);
+  Lwt.return_ok ()
+;;
+
+(* Test the deletion of an SMTP Authentication record. *)
+let delete_smtp_auth =
+  Test_utils.case
+  @@ fun () ->
+  let ( let* ) x f = Lwt_result.bind (Lwt_result.lift x) f in
+  let ( let& ) = Lwt_result.bind in
+  let ( let^ ) = Lwt.bind in
+  let test_db = Test_utils.Data.database_label in
+  let open Email.SmtpAuth in
+  (* create an smtp auth instance *)
+  let id = Id.create () in
+  let* label = Label.create ("a-label-" ^ Id.show id) in
+  let* server = Server.create "a-server" in
+  let* port = Port.create 2112 in
+  let* username = Username.create "a-username" in
+  let* password = Password.create "Password1!" in
+  let mechanism = Mechanism.PLAIN in
+  let protocol = Protocol.SSL_TLS in
+  let default = Default.create false in
+  let* write_event =
+    Email.SmtpAuth.Write.create
+      ~id
+      label
+      server
+      port
+      (Some username)
+      (Some password)
+      mechanism
+      protocol
+      default
+  in
+  (* feed the event into the event handler to affect the database *)
+  let& () =
+    [ Email.SmtpCreated write_event |> Pool_event.email
+    ; Email.SmtpDeleted id |> Pool_event.email
+    ]
+    |> Pool_event.handle_events test_db
+    |> Lwt_result.ok
+  in
+  (* get the smtp auth that was actually saved and compare it *)
+  let^ result = Email.SmtpAuth.find test_db id in
+  let error = Result.get_error result in
+  Alcotest.(
+    check
+      Test_utils.error
+      "the auth record was not deleted"
+      error
+      (Pool_common.Message.NotFound Field.Smtp));
+  Lwt.return_ok ()
+;;

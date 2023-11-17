@@ -30,6 +30,8 @@ let suite =
               `Slow
               update_terms_and_conditions
           ; test_case "login after terms update" `Slow login_after_terms_update
+          ; test_case "can create smtp auth" `Slow create_smtp_auth
+          ; test_case "can delete smtp auth" `Slow delete_smtp_auth
           ] )
     ; ( "dev/test"
       , [ test_case "intercept email" `Slow Common_test.validate_email ] )

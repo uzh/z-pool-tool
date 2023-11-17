@@ -17,4 +17,6 @@ let update_smtp_password =
     Pool_common.Message.SmtpPasswordUpdated
 ;;
 
+let delete_smtp = Admin_settings_smtp.delete_base `Root
+
 module Access = Admin_settings.Smtp.Access

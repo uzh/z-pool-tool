@@ -10,6 +10,20 @@ let submit_type_to_class = function
   | `Success -> "success"
 ;;
 
+let button_group buttons =
+  div
+    ~a:
+      [ a_class
+          [ "flexrow"
+          ; "justify-end"
+          ; "align-center"
+          ; "items-center"
+          ; "flex-gap-xs"
+          ]
+      ]
+    buttons
+;;
+
 let language_select
   options
   selected

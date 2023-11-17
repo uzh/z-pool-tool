@@ -281,18 +281,40 @@ let create_smtp_force_defaut () =
 
 let update_smtp_auth () =
   let open Email in
+  let id = System_event.Id.create () in
   let smtp_auth = Data.Smtp.(create () |> from_write) in
   let events =
     let open CCResult in
     let open Cqrs_command.Smtp_command.Update in
-    decode (Data.Smtp.urlencoded ()) >>= handle None smtp_auth
+    decode (Data.Smtp.urlencoded ()) >>= handle ~clear_id:id None smtp_auth
   in
   let expected =
     let sys_event =
       let open System_event in
-      Job.SmtpAccountUpdated |> create |> created |> Pool_event.system_event
+      Job.SmtpAccountUpdated |> create ~id |> created |> Pool_event.system_event
     in
     Ok [ SmtpEdited smtp_auth |> Pool_event.email; sys_event ]
+  in
+  Alcotest.(
+    check
+      (result (list Test_utils.event) Test_utils.error)
+      "succeeds"
+      expected
+      events)
+;;
+
+let delete_smtp_auth () =
+  let open Email in
+  let id = System_event.Id.create () in
+  let smtp_auth = Data.Smtp.(create () |> from_write) in
+  let smtp_id = SmtpAuth.(smtp_auth.id) in
+  let events = Cqrs_command.Smtp_command.Delete.handle ~clear_id:id smtp_id in
+  let expected =
+    let sys_event =
+      let open System_event in
+      Job.SmtpAccountUpdated |> create ~id |> created |> Pool_event.system_event
+    in
+    Ok [ SmtpDeleted smtp_id |> Pool_event.email; sys_event ]
   in
   Alcotest.(
     check
