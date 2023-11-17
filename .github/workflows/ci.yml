@@ -79,6 +79,88 @@ jobs:
         with:
           webhook: ${{ secrets.ECON_TEAMS_WEBHOOK }}
 
+  fast-build:
+    name: Build and test
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+        ocaml-compiler:
+          - "4.14.1"
+
+    runs-on: ${{ matrix.os }}
+
+    env:
+      EMAIL_RATE_LIMIT: 3600
+      MATCHER_MAX_CAPACITY: 80
+      MYSQL_DATABASE: test_econ
+      MYSQL_ROOT_PASSWORD: password
+
+    services:
+      database-root:
+        image: mariadb:10.6
+        env:
+          MYSQL_DATABASE: ${{ env.MYSQL_DATABASE }}
+          MYSQL_ROOT_PASSWORD: ${{ env.MYSQL_ROOT_PASSWORD }}
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+        ports:
+          - 3306:3306
+
+      database-tenant:
+        image: mariadb:10.6
+        env:
+          MYSQL_DATABASE: ${{ env.MYSQL_DATABASE }}
+          MYSQL_ROOT_PASSWORD: ${{ env.MYSQL_ROOT_PASSWORD }}
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+        ports:
+          - 3307:3306
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: add commit SHA for non-production builds
+        if: github.ref_type != 'tag'
+        run: |
+          CURRENT_VERSION=$(grep -oP 'let to_string = "\K[^"]+' ./pool/version/version.ml)
+          GIT_SHA=$(git rev-parse --short HEAD)
+          sed -i "s/^let to_string = \".*\"/let to_string = \"${CURRENT_VERSION}-${GIT_SHA}\"/" ./pool/version/version.ml
+
+      - name: Set-up OCaml ${{ matrix.ocaml-compiler }}
+        uses: ocaml/setup-ocaml@v2
+        with:
+          ocaml-compiler: ${{ matrix.ocaml-compiler }}
+          dune-cache: true
+          opam-pin: false
+          opam-depext: false
+
+      - name: "Setup Pins and Deps"
+        run: |
+          ./scripts/setup.sh
+          opam install . --deps-only --with-test
+
+      - name: "Build"
+        run: opam exec -- dune build
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: pool.exe
+          path: _build/default/pool/run/run.exe
+
+      - uses: actions/upload-artifact@v3
+        if: failure()
+        with:
+          name: tests
+          path: _build/default/pool/test/
+
+            #      - name: Notify about failure
+            #        if: failure()
+            #        uses: ./.github/actions/notify-failure
+            #        with:
+            #          webhook: ${{ secrets.ECON_TEAMS_WEBHOOK }}
+
   assets:
     name: Build assets
     if: github.repository == 'uzh/pool'
