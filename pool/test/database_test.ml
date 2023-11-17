@@ -11,8 +11,8 @@ module Data = struct
 
   let database =
     let url =
-      Sihl.Configuration.read_string "DATABASE_URL_TENANT_TEST"
-      |> CCOption.get_exn_or "DATABASE_URL_TENANT_TEST undefined"
+      Sihl.Configuration.read_string "DATABASE_URL_TENANT_ONE"
+      |> CCOption.get_exn_or "DATABASE_URL_TENANT_ONE undefined"
       |> Url.create
       |> get_exn
     in

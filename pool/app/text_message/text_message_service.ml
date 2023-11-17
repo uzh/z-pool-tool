@@ -59,7 +59,7 @@ let request_body { recipient; text; sender } =
 ;;
 
 let response_to_string res =
-  Cohttp_lwt.Response.pp_hum Format.str_formatter res;
+  Cohttp.Response.pp_hum Format.str_formatter res;
   Format.flush_str_formatter ()
 ;;
 

@@ -1,4 +1,5 @@
 # ocamlbuild working directory
+_esy/
 _build/
 public/
 guardian/

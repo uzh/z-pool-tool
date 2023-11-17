@@ -1,6 +1,6 @@
 FROM node:lts AS node
 FROM hadolint/hadolint:latest-alpine AS hadolint
-FROM ocaml/opam:debian-10-ocaml-4.14
+FROM ocaml/opam:debian-12-ocaml-4.14
 
 USER root
 

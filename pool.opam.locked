@@ -50,16 +50,14 @@ depends: [
   "containers" {= "3.12"}
   "containers-data" {= "3.12"}
   "cppo" {= "1.6.9"}
-  "cpuid" {= "0.1.2"}
   "csexp" {= "1.5.2"}
   "cstruct" {= "6.0.1"}
-  "cstruct-lwt" {= "6.0.1"}
   "ctypes" {= "0.20.2"}
   "digestif" {= "1.1.4"}
   "domain-name" {= "0.4.0"}
-  "dune" {= "3.11.0"}
-  "dune-build-info" {= "3.11.0"}
-  "dune-configurator" {= "3.11.0"}
+  "dune" {= "3.11.1"}
+  "dune-build-info" {= "3.11.1"}
+  "dune-configurator" {= "3.11.1"}
   "duration" {= "0.2.1"}
   "either" {= "1.0.0"}
   "emile" {= "1.1"}
@@ -100,12 +98,9 @@ depends: [
   "mirage-crypto-pk" {= "0.11.2"}
   "mirage-crypto-rng" {= "0.11.2"}
   "mirage-crypto-rng-lwt" {= "0.11.2"}
-  "mirage-no-solo5" {= "1"}
-  "mirage-no-xen" {= "1"}
   "mrmime" {= "0.6.0"}
   "mtime" {= "2.0.0"}
   "multipart-form-data" {= "0.3.0"}
-  "nocrypto" {= "0.5.4-2"}
   "num" {= "1.4"}
   "ocaml" {= "4.14.1"}
   "ocaml-compiler-libs" {= "v0.12.4"}
@@ -115,7 +110,6 @@ depends: [
   "ocamlfind" {= "1.9.6"}
   "ocamlformat" {= "0.26.1"}
   "ocamlformat-lib" {= "0.26.1"}
-  "ocb-stubblr" {= "0.1.1-1"}
   "ocp-indent" {= "1.8.1"}
   "ocplib-endian" {= "1.2"}
   "octavius" {= "1.2.2"}
@@ -132,7 +126,7 @@ depends: [
   "ppx_variants_conv" {= "v0.16.0"}
   "ppx_yojson_conv" {= "v0.16.0"}
   "ppx_yojson_conv_lib" {= "v0.16.0"}
-  "ppxlib" {= "0.30.0"}
+  "ppxlib" {= "0.31.0"}
   "prettym" {= "0.0.3"}
   "ptime" {= "1.1.0"}
   "re" {= "1.11.0"}
@@ -174,7 +168,7 @@ depends: [
   "uuuu" {= "0.3.0"}
   "variantslib" {= "v0.16.0"}
   "x509" {= "0.16.5"}
-  "yojson" {= "2.1.0"}
+  "yojson" {= "2.1.1"}
   "yuscii" {= "0.3.0"}
   "zarith" {= "1.13"}
 ]
@@ -230,7 +224,7 @@ pin-depends: [
   ["letters.0.3.3" "git+https://github.com/oxidizing/letters.git#0.3.3"]
   [
     "sihl.4.0.0"
-    "git+https://github.com/oxidizing/sihl.git#e0b304a4ebd3cb2ac0d21e0f6d151b9db301f9eb"
+    "git+https://github.com/leostera/sihl.git#ef4c89fd3d72fdf51caf30082cc55b7e7430b8f2"
   ]
   [
     "conformist.0.8.1"

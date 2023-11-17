@@ -12,7 +12,7 @@ repo_uzh=https://github.com/uzh
 repo_sihl=$repo_oxi/sihl.git#e0b304a4ebd3cb2ac0d21e0f6d151b9db301f9eb
 
 # pin Sihl repos to ensure edge is available
-opam pin add -yn sihl $repo_sihl
+opam pin add -yn sihl https://github.com/leostera/sihl.git#ef4c89fd3d72fdf51caf30082cc55b7e7430b8f2
 opam pin add -yn sihl-cache $repo_sihl
 opam pin add -yn sihl-email $repo_sihl
 opam pin add -yn sihl-queue $repo_sihl

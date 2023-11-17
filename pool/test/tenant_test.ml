@@ -22,8 +22,8 @@ module Data = struct
   let url = "pool.econ.uzh.ch"
 
   let database_url =
-    Sihl.Configuration.read_string "DATABASE_URL_TENANT_TEST"
-    |> CCOption.get_exn_or "DATABASE_URL_TENANT_TEST undefined"
+    Sihl.Configuration.read_string "DATABASE_URL_TENANT_ONE"
+    |> CCOption.get_exn_or "DATABASE_URL_TENANT_ONE undefined"
   ;;
 
   let database_label = "econ-test"

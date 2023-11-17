@@ -29,8 +29,8 @@ let create () =
     if Sihl.Configuration.is_test ()
     then (
       let database_url =
-        Sihl.Configuration.read_string "DATABASE_URL_TENANT_TEST"
-        |> CCOption.get_exn_or "DATABASE_URL_TENANT_TEST undefined"
+        Sihl.Configuration.read_string "DATABASE_URL_TENANT_ONE"
+        |> CCOption.get_exn_or "DATABASE_URL_TENANT_ONE undefined"
       in
       [ ( "Econ test"
         , "description"
@@ -46,7 +46,9 @@ let create () =
       [ ( "Econ UZH"
         , "description"
         , "localhost:3017"
-        , "mariadb://root@database-tenant:3306/dev_econ"
+        , Sihl.Configuration.read_string "DATABASE_URL_TENANT_ONE"
+          |> Option.value
+               ~default:"mariadb://root@database-tenant:3306/dev_econ"
         , "econ-uzh"
         , gtx_api_key
         , styles.Assets.id
@@ -55,7 +57,9 @@ let create () =
       ; ( "ZHAW"
         , "description"
         , "pool.zhaw.ch"
-        , "mariadb://root@database-tenant:3306/dev_zhaw"
+        , Sihl.Configuration.read_string "DATABASE_URL_TENANT_TWO"
+          |> Option.value
+               ~default:"mariadb://root@database-tenant:3306/dev_zhaw"
         , "zhaw"
         , gtx_api_key
         , styles.Assets.id
