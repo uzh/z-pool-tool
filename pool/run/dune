@@ -1,4 +1,5 @@
 (executable
+ (public_name run)
  (name run)
  (preprocess
   (pps lwt_ppx ppx_deriving.show))

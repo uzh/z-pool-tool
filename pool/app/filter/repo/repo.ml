@@ -192,7 +192,10 @@ module Sql = struct
     let open Caqti_request.Infix in
     let (module Connection : Caqti_lwt.CONNECTION) = connection in
     let request =
-      {sql| DROP TEMPORARY TABLE IF EXISTS tmp_participations; |sql}
+      {sql|
+        DROP TEMPORARY TABLE IF EXISTS tmp_participations;
+        DROP TEMPORARY TABLE IF EXISTS tmp_invitations;
+      |sql}
       |> Caqti_type.(unit ->. unit)
     in
     Connection.exec request ()
@@ -226,6 +229,48 @@ module Sql = struct
       | Bool _ | Date _ | Language _ | Nr _ | Option _ -> None)
   ;;
 
+  let create_temporary_invitation_table query =
+    let open Dynparam in
+    let open Caqti_request.Infix in
+    let create_request ids =
+      Format.asprintf
+        {sql|
+        CREATE TEMPORARY TABLE tmp_invitations AS (
+          SELECT
+            pool_assignments.contact_uuid AS contact_uuid,
+            pool_sessions.experiment_uuid AS experiment_uuid
+          FROM
+            pool_assignments
+            INNER JOIN pool_sessions ON pool_sessions.uuid = pool_assignments.session_uuid
+              AND pool_assignments.participated = 1
+              AND pool_assignments.canceled_at IS NULL
+              AND pool_sessions.experiment_uuid IN ( %s ))
+        |sql}
+        (CCList.mapi
+           (fun i _ -> Format.asprintf "UNHEX(REPLACE($%n, '-', ''))" (i + 1))
+           ids
+         |> CCString.concat ",")
+    in
+    let open CCOption in
+    let fnc connection =
+      query
+      >|= Repo_utils.find_experiments_by_key Entity.Key.Invitation
+      |> function
+      | None | Some [] -> Lwt_result.return ()
+      | Some ids ->
+        let (Pack (pt, pv)) =
+          CCList.fold_left
+            (fun dyn id -> dyn |> add Caqti_type.string id)
+            empty
+            ids
+        in
+        let (module Connection : Caqti_lwt.CONNECTION) = connection in
+        let request = create_request ids |> pt ->. Caqti_type.unit in
+        Connection.exec request pv
+    in
+    fnc
+  ;;
+
   let create_temporary_participation_table query =
     let open Dynparam in
     let open Caqti_request.Infix in
@@ -251,7 +296,7 @@ module Sql = struct
     let open CCOption in
     let fnc connection =
       query
-      >|= Repo_utils.find_participation_experiments_of_query
+      >|= Repo_utils.find_experiments_by_key Entity.Key.Participation
       |> function
       | None | Some [] -> Lwt_result.return ()
       | Some ids ->
