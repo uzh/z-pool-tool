@@ -4,8 +4,8 @@
 set -ex
 
 # get newest opam packages
-# opam remote remove --all default
-# opam remote add default https://opam.ocaml.org
+opam remote remove --all default
+opam remote add default https://opam.ocaml.org
 
 repo_oxi=https://github.com/oxidizing
 repo_uzh=https://github.com/uzh
