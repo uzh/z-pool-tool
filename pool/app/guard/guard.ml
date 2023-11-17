@@ -33,7 +33,9 @@ let location_manager_permissions : RolePermission.t list =
 
 let recruiter_permissions : RolePermission.t list =
   let open Core.Permission in
-  [ `Recruiter, Read, `Admin
+  [ `Recruiter, Create, `Admin
+  ; `Recruiter, Read, `Admin
+  ; `Recruiter, Update, `Admin
   ; `Recruiter, Manage, `Assignment
   ; `Recruiter, Manage, `Contact
   ; `Recruiter, Manage, `CustomField
@@ -74,6 +76,8 @@ let assistant_permissions : RolePermission.t list =
   ; `Assistant, Read, `Assignment
   ; `Assistant, Update, `Assignment
   ; `Assistant, Read, `Experiment
+  ; `Assistant, Read, `WaitingList
+  ; `Assistant, Update, `WaitingList
   ]
   |> map_role_permission
 ;;
