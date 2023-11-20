@@ -214,7 +214,7 @@ let find_request =
   let open Caqti_request.Infix in
   where_contact_can_access
   |> select_from_experiments_sql
-  |> Caqti_type.(tup2 string string) ->! RepoEntity.Public.t
+  |> Caqti_type.(t2 string string) ->! RepoEntity.Public.t
 ;;
 
 let find pool id contact =
@@ -230,7 +230,7 @@ let find_full_by_contact_request =
   let open Caqti_request.Infix in
   where_contact_can_access
   |> Repo.Sql.select_from_experiments_sql
-  |> Caqti_type.(tup2 string string) ->! RepoEntity.t
+  |> Caqti_type.(t2 string string) ->! RepoEntity.t
 ;;
 
 let find_full_by_contact pool id contact =

@@ -187,7 +187,7 @@ module Sql = struct
         pool_assignments.marked_as_deleted = 0
     |sql}
       |> select_public_sql ~joins
-      |> Caqti_type.(tup2 string string) ->* RepoEntity.Public.t
+      |> Caqti_type.(t2 string string) ->* RepoEntity.Public.t
     in
     let joins =
       Format.asprintf
@@ -259,7 +259,7 @@ module Sql = struct
         pool_assignments.marked_as_deleted = 0
     |sql}
     |> select_sql ~joins
-    |> Caqti_type.(tup2 string string) ->* RepoEntity.t
+    |> Caqti_type.(t2 string string) ->* RepoEntity.t
   ;;
 
   let find_follow_ups pool m =
@@ -357,17 +357,17 @@ module Sql = struct
           uuid = UNHEX(REPLACE($1, '-', ''))
       |sql}
     |> Caqti_type.(
-         tup2
+         t2
            string
-           (tup2
+           (t2
               (option bool)
-              (tup2
+              (t2
                  (option bool)
-                 (tup2
+                 (t2
                     bool
-                    (tup2
+                    (t2
                        (option ptime)
-                       (tup2
+                       (t2
                           (option string)
                           (option Pool_common.Repo.Reminder.SentAt.t))))))
          ->. unit)

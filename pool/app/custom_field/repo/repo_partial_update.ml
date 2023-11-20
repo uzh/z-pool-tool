@@ -92,7 +92,7 @@ let clear_answer_request is_admin =
           admin_version = admin_version + 1
     |sql}
   in
-  Format.asprintf "%s %s" update where |> Caqti_type.(tup2 Id.t Id.t ->. unit)
+  Format.asprintf "%s %s" update where |> Caqti_type.(t2 Id.t Id.t ->. unit)
 ;;
 
 let clear_answer pool ~is_admin ~field_id ~entity_uuid () =

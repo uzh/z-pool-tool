@@ -233,7 +233,7 @@ module Sql = struct
             pool_assignments.contact_uuid = UNHEX(REPLACE(?, '-', ''))
             AND pool_sessions.experiment_uuid = UNHEX(REPLACE(?, '-', ''))
       |sql}
-    |> Caqti_type.(tup2 string string) ->* RepoEntity.Id.t
+    |> Caqti_type.(t2 string string) ->* RepoEntity.Id.t
   ;;
 
   let find_contact_is_assigned_by_experiment pool contact_id experiment_id =
@@ -446,7 +446,7 @@ module Sql = struct
         ON pool_experiments.uuid = pool_sessions.experiment_uuid
       WHERE pool_sessions.uuid = UNHEX(REPLACE(?, '-', ''))
     |sql}
-    |> Caqti_type.(string ->! tup2 Experiment.Repo.Entity.Id.t string)
+    |> Caqti_type.(string ->! t2 Experiment.Repo.Entity.Id.t string)
   ;;
 
   let find_experiment_id_and_title pool id =
@@ -649,7 +649,7 @@ module Sql = struct
         $17
       )
     |sql}
-    |> Caqti_type.(tup2 string RepoEntity.Write.t ->. unit)
+    |> Caqti_type.(t2 string RepoEntity.Write.t ->. unit)
   ;;
 
   let insert pool (experiment_id, session) =
@@ -717,7 +717,7 @@ module Sql = struct
         AND pool_sessions.location_uuid = UNHEX(REPLACE($1, '-', ''))
       |sql}
     |> select_for_calendar ~order_by:"pool_sessions.start"
-    |> Caqti_type.(tup3 string ptime ptime ->* RepoEntity.Calendar.t)
+    |> Caqti_type.(t3 string ptime ptime ->* RepoEntity.Calendar.t)
   ;;
 
   let find_for_calendar_by_location location_id pool ~start_time ~end_time =

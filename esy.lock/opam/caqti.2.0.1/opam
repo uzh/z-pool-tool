@@ -3,6 +3,7 @@ maintainer: "Petter A. Urkedal <paurkedal@gmail.com>"
 authors: [
   "Petter A. Urkedal <paurkedal@gmail.com>"
   "Nathan Rebours <nathan@cryptosense.com>"
+  "Basile Clément"
 ]
 license: "LGPL-3.0-or-later WITH LGPL-3.0-linking-exception"
 homepage: "https://github.com/paurkedal/ocaml-caqti/"
@@ -13,14 +14,20 @@ depends: [
   "angstrom" {>= "0.14.0"}
   "bigstringaf"
   "cmdliner" {with-test & >= "1.1.0"}
-  "cppo" {build & >= "1.1.0"}
-  "dune" {>= "2.0"}
+  "domain-name" {>= "0.2.0"}
+  "dune" {>= "2.5"}
+  "ipaddr" {>= "3.0.0"}
   "logs"
-  "ocaml" {>= "4.04.0"}
+  "lwt-dllist"
+  "mtime" {>= "2.0.0"}
+  "ocaml" {>= "4.08.0"}
   "odoc" {with-doc}
   "ptime"
   "re" {with-test}
-  "uri" {>= "1.9.0"}
+  "uri" {>= "2.2.0"}
+]
+conflicts: [
+  "result" {< "1.5"}
 ]
 build: [
   ["dune" "build" "-p" name "-j" jobs]
@@ -47,10 +54,10 @@ decoding returned tuples. It is hoped that this agnostic choice makes it a
 suitable target for higher level interfaces and code generators."""
 url {
   src:
-    "https://github.com/paurkedal/ocaml-caqti/releases/download/v1.9.0/caqti-v1.9.0.tbz"
+    "https://github.com/paurkedal/ocaml-caqti/releases/download/v2.0.1/caqti-v2.0.1.tbz"
   checksum: [
-    "sha256=e1f580848faf3a54f23174067f2c75f77f6a2fe50ca8bc923428d0e1841192c5"
-    "sha512=7a11edfcfbbe4855347b066e222cf6bf46d1afedcd4978661b9a2b3931921faa1768a6bc24031fd3afa84537fe2adc8b139399deb77120461bee8fb394d68e82"
+    "sha256=7eb57225c521fe25395653d960b1c381bb2b2ccae47bc2a827bb16611988da8b"
+    "sha512=eeafaf495b08fb8620ddee1711b8f9fa2ca0c79fb450a905c8d071806b7046d665e1e2ac0e7d3c7ca1258455decbf184e689e9ecb2453ec9d952b864f9dd14f4"
   ]
 }
-x-commit-hash: "55ab7a2851694f08c62cbb6438c681ebb565636d"
+x-commit-hash: "7fb87f8f956ae84b191bc297f300649941110850"

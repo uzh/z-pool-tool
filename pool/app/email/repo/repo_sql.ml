@@ -120,7 +120,7 @@ let insert_request =
       )
     |sql}
   |> Caqti_type.(
-       tup3 User.Repo.EmailAddress.t Pool_common.Repo.Id.t RepoEntity.Token.t
+       t3 User.Repo.EmailAddress.t Pool_common.Repo.Id.t RepoEntity.Token.t
        ->. unit)
 ;;
 
@@ -140,10 +140,7 @@ let verify_request =
       WHERE user_uuid = UNHEX(REPLACE($1, '-', '')) AND address = $2 AND verified IS NULL
     |sql}
   |> Caqti_type.(
-       tup3
-         Pool_common.Repo.Id.t
-         User.Repo.EmailAddress.t
-         RepoEntity.VerifiedAt.t
+       t3 Pool_common.Repo.Id.t User.Repo.EmailAddress.t RepoEntity.VerifiedAt.t
        ->. unit)
 ;;
 
@@ -403,7 +400,7 @@ module Smtp = struct
         WHERE
           uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}
-    |> Caqti_type.(RepoEntity.SmtpAuth.(tup2 Id.t (option Password.t)) ->. unit)
+    |> Caqti_type.(RepoEntity.SmtpAuth.(t2 Id.t (option Password.t)) ->. unit)
   ;;
 
   let update_password pool =

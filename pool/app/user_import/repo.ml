@@ -67,19 +67,19 @@ module RepoEntity = struct
       custom
         ~encode
         ~decode
-        (tup2
+        (t2
            Common.Id.t
-           (tup2
+           (t2
               Token.t
-              (tup2
+              (t2
                  (option ConfirmedAt.t)
-                 (tup2
+                 (t2
                     (option NotifiedAt.t)
-                    (tup2
+                    (t2
                        ReminderCount.t
-                       (tup2
+                       (t2
                           (option LastRemindedAt.t)
-                          (tup2 Common.CreatedAt.t Common.UpdatedAt.t))))))))
+                          (t2 Common.CreatedAt.t Common.UpdatedAt.t))))))))
   ;;
 
   module Write = struct
@@ -119,13 +119,13 @@ module RepoEntity = struct
         custom
           ~encode
           ~decode
-          (tup2
+          (t2
              Common.Id.t
-             (tup2
+             (t2
                 (option ConfirmedAt.t)
-                (tup2
+                (t2
                    (option NotifiedAt.t)
-                   (tup2 ReminderCount.t (option LastRemindedAt.t))))))
+                   (t2 ReminderCount.t (option LastRemindedAt.t))))))
     ;;
   end
 end
@@ -247,7 +247,7 @@ let find_admins_request ~where limit =
     ~import_columns:select_user_import_columns
     ~where
     ~limit
-  |> Caqti_type.(unit ->* tup2 Admin.Repo.Entity.t RepoEntity.t)
+  |> Caqti_type.(unit ->* t2 Admin.Repo.Entity.t RepoEntity.t)
 ;;
 
 let reminder_where_clause =
@@ -288,7 +288,7 @@ let find_contacts_request ~where limit =
     ~import_columns:select_user_import_columns
     ~where
     ~limit
-  |> Caqti_type.(unit ->* tup2 Contact.Repo.Entity.t RepoEntity.t)
+  |> Caqti_type.(unit ->* t2 Contact.Repo.Entity.t RepoEntity.t)
 ;;
 
 let find_contacts_to_notify pool limit =

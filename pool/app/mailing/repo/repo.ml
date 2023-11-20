@@ -68,7 +68,7 @@ module Sql = struct
         ORDER BY pool_mailing.start
       |sql}
       columns_sql
-    |> RepoEntity.(Id.t ->! Caqti_type.tup2 t InvitationCount.t)
+    |> RepoEntity.(Id.t ->! Caqti_type.t2 t InvitationCount.t)
   ;;
 
   let find_with_detail pool id =
@@ -111,7 +111,7 @@ module Sql = struct
       |sql}
       columns_sql
     |> Experiment.Repo.Entity.Id.t
-       ->* RepoEntity.(Caqti_type.tup2 t InvitationCount.t)
+       ->* RepoEntity.(Caqti_type.t2 t InvitationCount.t)
   ;;
 
   let find_by_experiment_with_details pool =
@@ -146,7 +146,7 @@ module Sql = struct
       ORDER BY pool_mailing.start
     |sql}
     |> Format.asprintf "%s\n%s" select_sql
-    |> Caqti_type.tup3 RepoEntity.StartAt.t RepoEntity.EndAt.t RepoEntity.Id.t
+    |> Caqti_type.t3 RepoEntity.StartAt.t RepoEntity.EndAt.t RepoEntity.Id.t
        ->* RepoEntity.t
   ;;
 

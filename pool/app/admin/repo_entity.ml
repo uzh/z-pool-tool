@@ -8,7 +8,7 @@ let t =
     Ok { user; import_pending }
   in
   Caqti_type.(
-    custom ~encode ~decode Pool_user.Repo.(tup2 user_caqti ImportPending.t))
+    custom ~encode ~decode Pool_user.Repo.(t2 user_caqti ImportPending.t))
 ;;
 
 module Write = struct
@@ -33,6 +33,6 @@ module Write = struct
       custom
         ~encode
         ~decode
-        (tup2 Pool_common.Repo.Id.t Pool_user.Repo.ImportPending.t))
+        (t2 Pool_common.Repo.Id.t Pool_user.Repo.ImportPending.t))
   ;;
 end

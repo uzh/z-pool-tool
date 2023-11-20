@@ -24,7 +24,7 @@ let insert_request =
     ON DUPLICATE KEY UPDATE
       updated_at = NOW()
   |sql}
-  |> Caqti_type.(tup2 Id.t Id.t ->. unit)
+  |> Caqti_type.(t2 Id.t Id.t ->. unit)
 ;;
 
 let insert pool =
@@ -38,7 +38,7 @@ let delete_request =
     WHERE entity_uuid = UNHEX(REPLACE($1, '-', ''))
     AND tag_uuid = UNHEX(REPLACE($2, '-', ''))
   |sql}
-  |> Caqti_type.(tup2 Id.t Id.t ->. unit)
+  |> Caqti_type.(t2 Id.t Id.t ->. unit)
 ;;
 
 let delete pool =
@@ -79,7 +79,7 @@ let find_available_for_experiment_request =
         entity_uuid = UNHEX(REPLACE($2, '-', '')));
     |sql}
     Repo.Sql.select_tag_sql
-  |> Caqti_type.(tup2 RepoEntity.Model.t Id.t) ->* RepoEntity.t
+  |> Caqti_type.(t2 RepoEntity.Model.t Id.t) ->* RepoEntity.t
 ;;
 
 let find_available_for_session_request =
@@ -105,7 +105,7 @@ let find_available_for_session_request =
             uuid = UNHEX(REPLACE($2, '-', ''))))
     |sql}
     Repo.Sql.select_tag_sql
-  |> Caqti_type.(tup2 RepoEntity.Model.t Id.t) ->* RepoEntity.t
+  |> Caqti_type.(t2 RepoEntity.Model.t Id.t) ->* RepoEntity.t
 ;;
 
 let find_available pool entity =

@@ -15,9 +15,8 @@ end
 
 let test_and_create url label =
   let%lwt connection =
-    url
-    |> Uri.of_string
-    |> CCFun.flip Caqti_lwt.with_connection (fun (_ : Caqti_lwt.connection) ->
+    let uri = url |> Uri.of_string in
+    Caqti_lwt_unix.with_connection uri (fun (_ : Caqti_lwt.connection) ->
       Lwt_result.return ())
   in
   match connection with

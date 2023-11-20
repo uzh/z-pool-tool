@@ -176,48 +176,48 @@ let t =
     custom
       ~encode
       ~decode
-      (tup2
+      (t2
          RepoId.t
-         (tup2
+         (t2
             (option RepoId.t)
-            (tup2
+            (t2
                bool
-               (tup2
+               (t2
                   Start.t
-                  (tup2
+                  (t2
                      Duration.t
-                     (tup2
+                     (t2
                         (option string)
-                        (tup2
+                        (t2
                            (option string)
-                           (tup2
+                           (t2
                               Pool_location.Repo.Id.t
-                              (tup2
+                              (t2
                                  int
-                                 (tup2
+                                 (t2
                                     int
-                                    (tup2
+                                    (t2
                                        int
-                                       (tup2
+                                       (t2
                                           (option RepoReminder.LeadTime.t)
-                                          (tup2
+                                          (t2
                                              (option RepoReminder.SentAt.t)
-                                             (tup2
+                                             (t2
                                                 (option RepoReminder.LeadTime.t)
-                                                (tup2
+                                                (t2
                                                    (option
                                                       RepoReminder.SentAt.t)
-                                                   (tup2
+                                                   (t2
                                                       int
-                                                      (tup2
+                                                      (t2
                                                          int
-                                                         (tup2
+                                                         (t2
                                                             int
-                                                            (tup2
+                                                            (t2
                                                                (option ptime)
-                                                               (tup2
+                                                               (t2
                                                                   (option ptime)
-                                                                  (tup2
+                                                                  (t2
                                                                      ptime
                                                                      ptime))))))))))))))))))))))
 ;;
@@ -344,44 +344,44 @@ module Write = struct
       custom
         ~encode
         ~decode
-        (tup2
+        (t2
            RepoId.t
-           (tup2
+           (t2
               (option RepoId.t)
-              (tup2
+              (t2
                  Start.t
-                 (tup2
+                 (t2
                     Duration.t
-                    (tup2
+                    (t2
                        (option string)
-                       (tup2
+                       (t2
                           (option string)
-                          (tup2
+                          (t2
                              Pool_location.Repo.Id.t
-                             (tup2
+                             (t2
                                 int
-                                (tup2
+                                (t2
                                    int
-                                   (tup2
+                                   (t2
                                       int
-                                      (tup2
+                                      (t2
                                          (option
                                             Pool_common.Repo.Reminder.LeadTime.t)
-                                         (tup2
+                                         (t2
                                             (option
                                                Pool_common.Repo.Reminder.SentAt
                                                .t)
-                                            (tup2
+                                            (t2
                                                (option
                                                   Pool_common.Repo.Reminder
                                                   .LeadTime
                                                   .t)
-                                               (tup2
+                                               (t2
                                                   (option
                                                      Pool_common.Repo.Reminder
                                                      .SentAt
                                                      .t)
-                                                  (tup2
+                                                  (t2
                                                      (option ptime)
                                                      (option ptime)))))))))))))))))
   ;;
@@ -478,21 +478,19 @@ module Public = struct
       custom
         ~encode
         ~decode
-        (tup2
+        (t2
            RepoId.t
-           (tup2
+           (t2
               (option RepoId.t)
-              (tup2
+              (t2
                  Start.t
-                 (tup2
+                 (t2
                     Duration.t
-                    (tup2
+                    (t2
                        (option string)
-                       (tup2
+                       (t2
                           Pool_location.Repo.Id.t
-                          (tup2
-                             int
-                             (tup2 int (tup2 int (tup2 int (option ptime))))))))))))
+                          (t2 int (t2 int (t2 int (t2 int (option ptime))))))))))))
   ;;
 end
 
@@ -514,10 +512,7 @@ module Calendar = struct
         Ok { name = fullname; email }
       in
       Caqti_type.(
-        custom
-          ~encode
-          ~decode
-          (tup3 string string Pool_user.Repo.EmailAddress.t))
+        custom ~encode ~decode (t3 string string Pool_user.Repo.EmailAddress.t))
     ;;
   end
 
@@ -529,7 +524,7 @@ module Calendar = struct
         custom
           ~encode
           ~decode
-          (tup2 Pool_location.Repo.Id.t Pool_location.Repo.Name.t))
+          (t2 Pool_location.Repo.Id.t Pool_location.Repo.Name.t))
     ;;
   end
 
@@ -580,26 +575,26 @@ module Calendar = struct
       custom
         ~encode
         ~decode
-        (tup2
+        (t2
            RepoId.t
-           (tup2
+           (t2
               Experiment.Repo.Entity.Title.t
-              (tup2
+              (t2
                  RepoId.t
-                 (tup2
+                 (t2
                     Start.t
-                    (tup2
+                    (t2
                        Duration.t
-                       (tup2
+                       (t2
                           (option string)
-                          (tup2
+                          (t2
                              int
-                             (tup2
+                             (t2
                                 int
-                                (tup2
+                                (t2
                                    int
-                                   (tup2
+                                   (t2
                                       int
-                                      (tup2 Location.t (option ContactPerson.t)))))))))))))
+                                      (t2 Location.t (option ContactPerson.t)))))))))))))
   ;;
 end

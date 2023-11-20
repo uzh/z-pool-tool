@@ -217,7 +217,7 @@ let update_position_request =
         position = $1
       WHERE uuid = UNHEX(REPLACE($2, '-', ''))
   |sql}
-  |> Caqti_type.(tup2 int string ->. unit)
+  |> Caqti_type.(t2 int string ->. unit)
 ;;
 
 let sort_options pool ids =

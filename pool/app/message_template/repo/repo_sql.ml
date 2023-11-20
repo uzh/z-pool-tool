@@ -233,7 +233,7 @@ let find_all_of_entity_by_label_request =
   AND pool_message_templates.label = $2
     |}
     select_sql
-  |> Caqti_type.(tup2 string string) ->* RepoEntity.t
+  |> Caqti_type.(t2 string string) ->* RepoEntity.t
 ;;
 
 let find_all_of_entity_by_label pool entity_uuid label =
@@ -256,7 +256,7 @@ let find_default_by_label_and_language_request =
       pool_message_templates.entity_uuid IS NULL
     |sql}
     select_sql
-  |> Caqti_type.(tup2 string string) ->! RepoEntity.t
+  |> Caqti_type.(t2 string string) ->! RepoEntity.t
 ;;
 
 let find_default_by_label_and_language pool language label =

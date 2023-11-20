@@ -68,17 +68,15 @@ let t =
     custom
       ~encode
       ~decode
-      (tup2
+      (t2
          Pool_common.Repo.Id.t
-         (tup2
+         (t2
             Pool_common.Repo.Id.t
-            (tup2
+            (t2
                Experiment.Repo.Entity.Id.t
-               (tup2
+               (t2
                   (option AdminComment.t)
-                  (tup2
-                     Pool_common.Repo.CreatedAt.t
-                     Pool_common.Repo.UpdatedAt.t))))))
+                  (t2 Pool_common.Repo.CreatedAt.t Pool_common.Repo.UpdatedAt.t))))))
 ;;
 
 module Experiment = struct
@@ -101,14 +99,12 @@ module Experiment = struct
       custom
         ~encode
         ~decode
-        (tup2
+        (t2
            Pool_common.Repo.Id.t
-           (tup2
+           (t2
               Contact.Repo.Preview.t
-              (tup2
+              (t2
                  (option AdminComment.t)
-                 (tup2
-                    Pool_common.Repo.CreatedAt.t
-                    Pool_common.Repo.UpdatedAt.t)))))
+                 (t2 Pool_common.Repo.CreatedAt.t Pool_common.Repo.UpdatedAt.t)))))
   ;;
 end

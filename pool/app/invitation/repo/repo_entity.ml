@@ -71,15 +71,15 @@ let t =
     custom
       ~encode
       ~decode
-      (tup2
+      (t2
          Id.t
-         (tup2
+         (t2
             Experiment.Repo.Entity.Id.t
-            (tup2
+            (t2
                Id.t
-               (tup2
+               (t2
                   (option ResentAt.t)
-                  (tup2 SendCount.t (tup2 CreatedAt.t UpdatedAt.t)))))))
+                  (t2 SendCount.t (t2 CreatedAt.t UpdatedAt.t)))))))
 ;;
 
 module Update = struct
@@ -96,6 +96,6 @@ module Update = struct
       custom
         ~encode
         ~decode
-        (tup2 Pool_common.Repo.Id.t (tup2 (option ResentAt.t) SendCount.t)))
+        (t2 Pool_common.Repo.Id.t (t2 (option ResentAt.t) SendCount.t)))
   ;;
 end

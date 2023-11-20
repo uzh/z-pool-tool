@@ -69,7 +69,7 @@ module UnverifiedCellPhone = struct
     let encode (m : t) = Ok (m.cell_phone, m.created_at) in
     let decode (cell_phone, created_at) = Ok { cell_phone; created_at } in
     Caqti_type.(
-      custom ~encode ~decode (tup2 CellPhone.t Pool_common.Repo.CreatedAt.t))
+      custom ~encode ~decode (t2 CellPhone.t Pool_common.Repo.CreatedAt.t))
   ;;
 
   let full =
@@ -81,7 +81,7 @@ module UnverifiedCellPhone = struct
       custom
         ~encode
         ~decode
-        (tup3
+        (t3
            CellPhone.t
            Pool_common.Repo.VerificationCode.t
            Pool_common.Repo.CreatedAt.t))
@@ -117,21 +117,19 @@ module User = struct
       custom
         ~encode
         ~decode
-        (tup2
+        (t2
            string
-           (tup2
+           (t2
               string
-              (tup2
+              (t2
                  (option string)
-                 (tup2
+                 (t2
                     (option string)
-                    (tup2
+                    (t2
                        (option string)
-                       (tup2
+                       (t2
                           string
-                          (tup2
-                             status
-                             (tup2 bool (tup2 bool (tup2 ptime ptime)))))))))))
+                          (t2 status (t2 bool (t2 bool (t2 ptime ptime)))))))))))
   ;;
 
   let encode m =

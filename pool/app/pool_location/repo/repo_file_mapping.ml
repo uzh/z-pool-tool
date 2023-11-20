@@ -23,7 +23,7 @@ let file =
     custom
       ~encode
       ~decode
-      (tup2 Id.t (tup2 Label.t (tup2 Pool_common.Repo.Language.t File.t))))
+      (t2 Id.t (t2 Label.t (t2 Pool_common.Repo.Language.t File.t))))
 ;;
 
 module Write = struct
@@ -40,9 +40,7 @@ module Write = struct
       custom
         ~encode
         ~decode
-        (tup2
-           Id.t
-           (tup2 Label.t (tup2 Pool_common.Repo.Language.t (tup2 Id.t Id.t)))))
+        (t2 Id.t (t2 Label.t (t2 Pool_common.Repo.Language.t (t2 Id.t Id.t)))))
   ;;
 end
 

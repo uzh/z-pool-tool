@@ -66,7 +66,7 @@ module Sql = struct
       ) ON DUPLICATE KEY UPDATE
         id = id
     |sql}
-    |> Caqti_type.(tup2 Pool_common.Repo.Id.t RepoEntity.t ->. unit)
+    |> Caqti_type.(t2 Pool_common.Repo.Id.t RepoEntity.t ->. unit)
   ;;
 
   let upsert pool =

@@ -129,27 +129,27 @@ let t =
     custom
       ~encode
       ~decode
-      (tup2
+      (t2
          Pool_common.Repo.Id.t
-         (tup2
+         (t2
             Session.Repo.Id.t
-            (tup2
+            (t2
                Pool_common.Repo.Id.t
-               (tup2
+               (t2
                   (option NoShow.t)
-                  (tup2
+                  (t2
                      (option Participated.t)
-                     (tup2
+                     (t2
                         MatchesFilter.t
-                        (tup2
+                        (t2
                            (option CanceledAt.t)
-                           (tup2
+                           (t2
                               MarkedAsDeleted.t
-                              (tup2
+                              (t2
                                  (option ExternalDataId.t)
-                                 (tup2
+                                 (t2
                                     (option Pool_common.Repo.Reminder.SentAt.t)
-                                    (tup2
+                                    (t2
                                        Pool_common.Repo.CreatedAt.t
                                        Pool_common.Repo.UpdatedAt.t))))))))))))
 ;;
@@ -164,7 +164,7 @@ module Public = struct
       Ok { id; canceled_at }
     in
     Caqti_type.(
-      custom ~encode ~decode (tup2 Pool_common.Repo.Id.t (option CanceledAt.t)))
+      custom ~encode ~decode (t2 Pool_common.Repo.Id.t (option CanceledAt.t)))
   ;;
 end
 
@@ -195,14 +195,14 @@ module ExternalDataIdentifier = struct
       custom
         ~encode
         ~decode
-        (tup2
+        (t2
            ExternalDataId.t
-           (tup2
+           (t2
               Experiment.Repo.Entity.Id.t
-              (tup2
+              (t2
                  Experiment.Repo.Entity.Title.t
-                 (tup2
+                 (t2
                     Session.Repo.Id.t
-                    (tup2 Session.Repo.Start.t Session.Repo.Duration.t))))))
+                    (t2 Session.Repo.Start.t Session.Repo.Duration.t))))))
   ;;
 end

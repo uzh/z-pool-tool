@@ -259,7 +259,7 @@ module Sql = struct
           position = $1
         WHERE uuid = UNHEX(REPLACE($2, '-', ''))
     |sql}
-    |> Caqti_type.(tup2 int string ->. unit)
+    |> Caqti_type.(t2 int string ->. unit)
   ;;
 
   let delete_request =

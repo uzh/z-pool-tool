@@ -113,8 +113,7 @@ module ActorRole = struct
     |sql}
     |> Entity.(
          Uuid.Actor.t
-         ->* Caqti_type.(
-               tup3 ActorRole.t (option TargetModel.t) (option string)))
+         ->* Caqti_type.(t3 ActorRole.t (option TargetModel.t) (option string)))
   ;;
 
   let find_by_actor database_label actor =

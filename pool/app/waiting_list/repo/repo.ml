@@ -68,7 +68,7 @@ module Sql = struct
         experiment_uuid = UNHEX(REPLACE($2, '-', ''))
     |sql}
     |> select_sql
-    |> Caqti_type.(tup2 string string) ->! RepoEntity.t
+    |> Caqti_type.(t2 string string) ->! RepoEntity.t
   ;;
 
   let find_by_contact_and_experiment pool contact experiment =
@@ -216,7 +216,7 @@ module Sql = struct
         UNHEX(REPLACE($3, '-', ''))
       )
     |sql}
-    |> Caqti_type.(tup3 string string string ->. unit)
+    |> Caqti_type.(t3 string string string ->. unit)
   ;;
 
   let insert pool m =
@@ -236,7 +236,7 @@ module Sql = struct
           comment = $1
         WHERE uuid = UNHEX(REPLACE($2, '-', ''))
     |sql}
-    |> Caqti_type.(tup2 (option string) string ->. unit)
+    |> Caqti_type.(t2 (option string) string ->. unit)
   ;;
 
   let update pool (m : Entity.t) =

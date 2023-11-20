@@ -31,8 +31,6 @@ module Write = struct
       custom
         ~encode
         ~decode
-        (tup2
-           Repo.Id.t
-           (tup2 Repo.Id.t (tup2 Repo.Id.t (tup2 Value.t Repo.Version.t)))))
+        (t2 Repo.Id.t (t2 Repo.Id.t (t2 Repo.Id.t (t2 Value.t Repo.Version.t)))))
   ;;
 end

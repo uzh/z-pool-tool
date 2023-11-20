@@ -70,7 +70,7 @@ let t =
     custom
       ~encode
       ~decode
-      (tup4
+      (t4
          string
          string
          Pool_common.Repo.CreatedAt.t
@@ -90,6 +90,6 @@ module Write = struct
         Pool_common.(
           Message.WriteOnlyModel |> Utils.error_to_string Language.En)
     in
-    Caqti_type.(custom ~encode ~decode (tup2 string string))
+    Caqti_type.(custom ~encode ~decode (t2 string string))
   ;;
 end

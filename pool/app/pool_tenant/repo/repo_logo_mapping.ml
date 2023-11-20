@@ -16,10 +16,7 @@ let t =
        Ok { id; logo_type; tenant_id; file }
   in
   Caqti_type.(
-    custom
-      ~encode
-      ~decode
-      (tup2 RepoId.t (tup2 string (tup2 RepoId.t RepoFile.t))))
+    custom ~encode ~decode (t2 RepoId.t (t2 string (t2 RepoId.t RepoFile.t))))
 ;;
 
 module Write = struct
@@ -36,10 +33,7 @@ module Write = struct
          Ok { id; tenant_id; asset_id; logo_type }
     in
     Caqti_type.(
-      custom
-        ~encode
-        ~decode
-        (tup2 RepoId.t (tup2 RepoId.t (tup2 RepoId.t string))))
+      custom ~encode ~decode (t2 RepoId.t (t2 RepoId.t (t2 RepoId.t string))))
   ;;
 end
 
@@ -133,7 +127,7 @@ module Sql = struct
       WHERE tenant_uuid = UNHEX(REPLACE(?, '-', ''))
       AND asset_uuid = UNHEX(REPLACE(?, '-', ''))
     |sql}
-    |> Caqti_type.(tup2 string string ->. unit)
+    |> Caqti_type.(t2 string string ->. unit)
   ;;
 
   let delete pool tenant_id asset_id =

@@ -138,13 +138,13 @@ module Sql = struct
         pool_locations.uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}
     |> Caqti_type.(
-         tup2
+         t2
            Id.t
-           (tup2
+           (t2
               Name.t
-              (tup2
+              (t2
                  (option Description.t)
-                 (tup2 Address.t (tup2 (option Link.t) Status.t))))
+                 (t2 Address.t (t2 (option Link.t) Status.t))))
          ->. unit)
   ;;
 
@@ -199,7 +199,7 @@ module Sql = struct
     let (Dynparam.Pack (pt, pv)) = dyn in
     let request =
       search_request ?joins ?conditions ~limit ()
-      |> pt ->* Caqti_type.tup2 Id.t Name.t
+      |> pt ->* Caqti_type.t2 Id.t Name.t
     in
     Utils.Database.collect (pool |> Pool_database.Label.value) request pv
   ;;
@@ -230,7 +230,7 @@ module Sql = struct
       let (Dynparam.Pack (pt, pv)) = dyn in
       let request =
         search_multiple_by_id_request ids
-        |> pt ->* Caqti_type.(Repo_entity.(tup2 Id.t Name.t))
+        |> pt ->* Caqti_type.(Repo_entity.(t2 Id.t Name.t))
       in
       Utils.Database.collect (pool |> Pool_database.Label.value) request pv
   ;;

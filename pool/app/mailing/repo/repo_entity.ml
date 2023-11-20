@@ -110,19 +110,19 @@ let t =
     custom
       ~encode
       ~decode
-      (tup2
+      (t2
          Id.t
-         (tup2
+         (t2
             Experiment.Repo.Entity.Id.t
-            (tup2
+            (t2
                StartAt.t
-               (tup2
+               (t2
                   EndAt.t
-                  (tup2
+                  (t2
                      Limit.t
-                     (tup2
+                     (t2
                         (option Distribution.t)
-                        (tup2
+                        (t2
                            Pool_common.Repo.CreatedAt.t
                            Pool_common.Repo.UpdatedAt.t))))))))
 ;;
@@ -148,11 +148,9 @@ module Update = struct
       custom
         ~encode
         ~decode
-        (tup2
+        (t2
            Id.t
-           (tup2
-              StartAt.t
-              (tup2 EndAt.t (tup2 Limit.t (option Distribution.t))))))
+           (t2 StartAt.t (t2 EndAt.t (t2 Limit.t (option Distribution.t))))))
   ;;
 end
 
@@ -185,6 +183,6 @@ module Status = struct
       let mailing = to_entity mailing in
       Ok { mailing; to_handle; last_run }
     in
-    Caqti_type.(custom ~encode ~decode (tup2 t (tup2 ToHandle.t LastRun.t)))
+    Caqti_type.(custom ~encode ~decode (t2 t (t2 ToHandle.t LastRun.t)))
   ;;
 end

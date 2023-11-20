@@ -8,5 +8,5 @@ let t =
     custom
       ~encode
       ~decode
-      (tup2 Repo.Id.t (tup2 Repo_entity.Model.t Repo_entity.Name.t)))
+      (t2 Repo.Id.t (t2 Repo_entity.Model.t Repo_entity.Name.t)))
 ;;
