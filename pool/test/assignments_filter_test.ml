@@ -1,10 +1,6 @@
-(*
-
-test 1: 1 assigned contact, 1 probe contact
-test 2: 1 assigned contact marked as deleted, 1 contacts was found
-test 3: 1 assigned contact marked as cancelled, no contacts found
-
-*)
+(* test 1: 1 assigned contact, 1 probe contact test 2: 1 assigned contact marked
+   as deleted, 1 contacts was found test 3: 1 assigned contact marked as
+   cancelled, no contacts found *)
 
 (**
 subquery_for_invitation

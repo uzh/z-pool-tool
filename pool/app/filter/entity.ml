@@ -41,16 +41,15 @@ type value =
 [@@deriving show { with_path = false }, eq, variants]
 
 module Value = struct
-let string s = Str s
-let bool b = Bool b
-let date d = Date d
-let language l = Language l
-let number n = Nr n
-let option o = Option o
-
-let list xs = Lst xs
-let single v = Single v
-let no_value = NoValue
+  let string s = Str s
+  let bool b = Bool b
+  let date d = Date d
+  let language l = Language l
+  let number n = Nr n
+  let option o = Option o
+  let list xs = Lst xs
+  let single v = Single v
+  let no_value = NoValue
 end
 
 let single_value_of_yojson (yojson : Yojson.Safe.t) =

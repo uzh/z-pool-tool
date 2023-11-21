@@ -189,16 +189,20 @@ module Sql = struct
   ;;
 
   let drop_temp_table connection =
-    let open Caqti_request.Infix in
-    let (module Connection : Caqti_lwt.CONNECTION) = connection in
-    let request =
-      {sql|
-        DROP TEMPORARY TABLE IF EXISTS tmp_participations;
-        DROP TEMPORARY TABLE IF EXISTS tmp_invitations;
-      |sql}
-      |> Caqti_type.(unit ->. unit)
+    let run_query q =
+      let open Caqti_request.Infix in
+      let (module Connection : Caqti_lwt.CONNECTION) = connection in
+      let request = q |> Caqti_type.(unit ->. unit) in
+      Connection.exec request ()
     in
-    Connection.exec request ()
+    let queries =
+      [ {sql| DROP TEMPORARY TABLE IF EXISTS tmp_participations; |sql}
+      ; {sql| DROP TEMPORARY TABLE IF EXISTS tmp_invitations; |sql}
+      ]
+    in
+    Lwt_list.map_s run_query queries
+    |> Lwt.map CCResult.flatten_l
+    |> Lwt_result.map (fun _ -> ())
   ;;
 
   let find_participation_experiments_of_query query =

@@ -1,6 +1,3 @@
-(* test 1: 1 invited contact, 1 probe contact test 2: 1 invited contact, no
-   contacts left *)
-
 let ( let@ ) = Result.bind
 let ( let* ) x f = Lwt_result.bind (Lwt_result.lift x) f
 let ( let& ) = Lwt_result.bind
@@ -21,7 +18,9 @@ let test_db = Test_utils.Data.database_label
     7. assert on the found contacts
 
     Fin. *)
-let test () =
+let test =
+  Test_utils.case
+  @@ fun () ->
   (* 1. create a session *)
   let _session =
     let open Session in
@@ -186,5 +185,3 @@ let test () =
       (List.length found_contacts));
   Lwt_result.lift (Ok ())
 ;;
-
-let () = Test_utils.run_test test
