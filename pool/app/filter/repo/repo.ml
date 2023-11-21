@@ -344,7 +344,11 @@ module Sql = struct
   let find_filtered_contacts pool ?order_by ?limit use_case filter =
     let filter = filter |> CCOption.map (fun f -> f.Entity.query) in
     let open Utils.Lwt_result.Infix in
-    let create_temp_table = create_temporary_participation_table filter in
+    let create_temp_tables =
+      [ create_temporary_participation_table filter
+      ; create_temporary_invitation_table filter
+      ]
+    in
     let%lwt template_list =
       match filter with
       | None -> Lwt.return []
@@ -375,7 +379,7 @@ module Sql = struct
     in
     Utils.Database.find_as_transaction
       (pool |> Pool_database.Label.value)
-      ~setup:[ drop_temp_table; create_temp_table ]
+      ~setup:(drop_temp_table :: create_temp_tables)
       ~cleanup:[ drop_temp_table ]
       query
     ||> CCResult.return
@@ -399,7 +403,11 @@ module Sql = struct
         where_fragment
     in
     let%lwt template_list = find_templates_of_query pool query in
-    let create_temp_table = create_temporary_participation_table (Some query) in
+    let create_temp_tables =
+      [ create_temporary_participation_table (Some query)
+      ; create_temporary_invitation_table (Some query)
+      ]
+    in
     filtered_params MatchesFilter template_list (Some query)
     |> CCResult.map_err
          (Pool_common.Utils.with_log_error ~src ~level:Logs.Warning ~tags)
@@ -418,7 +426,7 @@ module Sql = struct
     in
     Utils.Database.find_as_transaction
       (pool |> Pool_database.Label.value)
-      ~setup:[ drop_temp_table; create_temp_table ]
+      ~setup:(drop_temp_table :: create_temp_tables)
       ~cleanup:[ drop_temp_table ]
       matches_filter_request
     ||> CCOption.map_or ~default (CCInt.equal 1)
@@ -469,7 +477,11 @@ module Sql = struct
     let open Utils.Lwt_result.Infix in
     let open Caqti_request.Infix in
     let open Dynparam in
-    let create_temp_table = create_temporary_participation_table query in
+    let create_temp_tables =
+      [ create_temporary_participation_table query
+      ; create_temporary_invitation_table query
+      ]
+    in
     let%lwt template_list =
       match query with
       | None -> Lwt.return []
@@ -488,7 +500,7 @@ module Sql = struct
     in
     Utils.Database.find_as_transaction
       (pool |> Pool_database.Label.value)
-      ~setup:[ drop_temp_table; create_temp_table ]
+      ~setup:(drop_temp_table :: create_temp_tables)
       ~cleanup:[ drop_temp_table ]
       query
     ||> CCOption.value ~default:0
