@@ -15,7 +15,7 @@ module Sql = struct
       )
     |sql}
     |> Caqti_type.(
-         tup2 Pool_common.Repo.Id.t Pool_user.Repo.ImportPending.t ->. unit)
+         t2 Pool_common.Repo.Id.t Pool_user.Repo.ImportPending.t ->. unit)
   ;;
 
   let insert pool t =

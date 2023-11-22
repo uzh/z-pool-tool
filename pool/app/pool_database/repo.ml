@@ -24,5 +24,5 @@ end
 let t =
   let encode m = Ok (m.url, m.label) in
   let decode (url, label) = Ok { url; label } in
-  Caqti_type.(custom ~encode ~decode (tup2 Url.t Label.t))
+  Caqti_type.(custom ~encode ~decode (t2 Url.t Label.t))
 ;;

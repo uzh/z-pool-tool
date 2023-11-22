@@ -90,8 +90,7 @@ module Sql = struct
         ORDER BY events.created_at DESC
       |sql}
       |> Format.asprintf "%s\n%s" select_sql
-      |> Caqti_type.(
-           tup2 RepoEntity.Id.t RepoEntity.EventLog.ServiceIdentifier.t)
+      |> Caqti_type.(t2 RepoEntity.Id.t RepoEntity.EventLog.ServiceIdentifier.t)
          ->* RepoEntity.t
     ;;
 

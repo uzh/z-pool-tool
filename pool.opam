@@ -28,9 +28,9 @@ depends: [
   "containers" {>= "3.6"}
   "containers-data" {>= "3.6"}
   "mariadb" {>= "1.1.6" & < "2.0.0"}
-  "caqti-driver-mariadb" {>= "1.8.0"}
-  "caqti-lwt" {>= "1.9.0" & < "2.0.0"}
-  "caqti" {>= "1.8.0"}
+  "caqti-driver-mariadb" {>= "2.0.1"}
+  "caqti-lwt" {>= "2.0.1" }
+  "caqti" {>= "2.0.1"}
   "ocamlformat" {>= "0.18.0"}
   "ppx_deriving" {>= "5.2.1"}
   "ppx_yojson_conv" {>= "0.14.0"}

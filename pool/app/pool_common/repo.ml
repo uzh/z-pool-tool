@@ -81,7 +81,7 @@ module File = struct
       custom
         ~encode
         ~decode
-        (tup2 Id.t (tup2 Name.t (tup2 Size.t (tup2 Mime.t (tup2 ptime ptime))))))
+        (t2 Id.t (t2 Name.t (t2 Size.t (t2 Mime.t (t2 ptime ptime))))))
   ;;
 end
 

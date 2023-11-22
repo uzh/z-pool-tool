@@ -119,7 +119,7 @@ module Sql = struct
     in
     let order = {sql| ORDER BY pool_custom_fields.position ASC |sql} in
     Format.asprintf "%s \n %s \n %s" select_sql where order
-    |> Caqti_type.(tup2 string string ->* Repo_entity.Public.t)
+    |> Caqti_type.(t2 string string ->* Repo_entity.Public.t)
   ;;
 
   let find_all_by_model model ~required ~is_admin pool id =
@@ -145,7 +145,7 @@ module Sql = struct
     in
     let order = {sql| ORDER BY pool_custom_fields.position ASC |sql} in
     Format.asprintf "%s \n %s \n %s" select_sql where order
-    |> Caqti_type.(tup2 string string ->* Repo_entity.Public.t)
+    |> Caqti_type.(t2 string string ->* Repo_entity.Public.t)
   ;;
 
   let find_unanswered_required_by_model model ~is_admin pool id =
@@ -225,7 +225,7 @@ module Sql = struct
     |sql}
       select_sql
       (base_filter_conditions is_admin)
-    |> Caqti_type.(tup3 string string string) ->* Repo_entity.Public.t
+    |> Caqti_type.(t3 string string string) ->* Repo_entity.Public.t
   ;;
 
   let find_by_contact ?(is_admin = false) pool contact_id field_id =
@@ -268,7 +268,7 @@ module Sql = struct
      | false -> base
      | true -> Format.asprintf "%s AND pool_custom_fields.required = 1" base)
     |> Caqti_type.(
-         tup3 string Repo_entity.Model.t Repo_entity.FieldType.t ->! int)
+         t3 string Repo_entity.Model.t Repo_entity.FieldType.t ->! int)
   ;;
 
   let all_answered required pool contact_id =

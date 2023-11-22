@@ -17,9 +17,7 @@ let t =
     custom
       ~encode
       ~decode
-      (tup2
-         Common.Repo.Id.t
-         (tup2 Key.t (tup2 Common.Repo.Language.t Content.t))))
+      (t2 Common.Repo.Id.t (t2 Key.t (t2 Common.Repo.Language.t Content.t))))
 ;;
 
 let t_with_default_content =
@@ -33,7 +31,7 @@ let t_with_default_content =
     custom
       ~encode
       ~decode
-      (tup2
+      (t2
          Common.Repo.Id.t
-         (tup2 Key.t (tup2 Common.Repo.Language.t (option string)))))
+         (t2 Key.t (t2 Common.Repo.Language.t (option string)))))
 ;;

@@ -158,9 +158,7 @@ module Option = struct
       custom
         ~encode
         ~decode
-        (tup2
-           Pool_common.Repo.Id.t
-           (tup2 Id.t (tup2 Name.t (option PublishedAt.t)))))
+        (t2 Pool_common.Repo.Id.t (t2 Id.t (t2 Name.t (option PublishedAt.t)))))
   ;;
 
   module Public = struct
@@ -172,7 +170,7 @@ module Option = struct
       let encode ((field_id, m) : repo) = Ok (field_id, (m.id, m.name)) in
       let decode (field_id, (id, name)) = Ok (field_id, { id; name }) in
       Caqti_type.(
-        custom ~encode ~decode (tup2 Pool_common.Repo.Id.t (tup2 Id.t Name.t)))
+        custom ~encode ~decode (t2 Pool_common.Repo.Id.t (t2 Id.t Name.t)))
     ;;
 
     let to_entity = snd
@@ -194,7 +192,7 @@ module Option = struct
         custom
           ~encode
           ~decode
-          (tup2 Pool_common.Repo.Id.t (tup2 Pool_common.Repo.Id.t Name.t)))
+          (t2 Pool_common.Repo.Id.t (t2 Pool_common.Repo.Id.t Name.t)))
     ;;
   end
 
@@ -206,7 +204,7 @@ module Option = struct
           Pool_common.(
             Message.WriteOnlyModel |> Utils.error_to_string Language.En)
       in
-      Caqti_type.(custom ~encode ~decode (tup2 Pool_common.Repo.Id.t Name.t))
+      Caqti_type.(custom ~encode ~decode (t2 Pool_common.Repo.Id.t Name.t))
     ;;
   end
 end
@@ -259,31 +257,31 @@ module Write = struct
       custom
         ~encode
         ~decode
-        (tup2
+        (t2
            Common.Repo.Id.t
-           (tup2
+           (t2
               Model.t
-              (tup2
+              (t2
                  Name.t
-                 (tup2
+                 (t2
                     Hint.t
-                    (tup2
+                    (t2
                        FieldType.t
-                       (tup2
+                       (t2
                           Validation.t
-                          (tup2
+                          (t2
                              Required.t
-                             (tup2
+                             (t2
                                 Disabled.t
-                                (tup2
+                                (t2
                                    (option Common.Repo.Id.t)
-                                   (tup2
+                                   (t2
                                       (option AdminHint.t)
-                                      (tup2
+                                      (t2
                                          AdminOverride.t
-                                         (tup2
+                                         (t2
                                             AdminViewOnly.t
-                                            (tup2
+                                            (t2
                                                AdminInputOnly.t
                                                PromptOnRegistration.t))))))))))))))
   ;;
@@ -612,33 +610,33 @@ module Public = struct
       custom
         ~encode
         ~decode
-        (tup2
+        (t2
            Common.Repo.Id.t
-           (tup2
+           (t2
               Name.t
-              (tup2
+              (t2
                  Hint.t
-                 (tup2
+                 (t2
                     Validation.t
-                    (tup2
+                    (t2
                        FieldType.t
-                       (tup2
+                       (t2
                           Required.t
-                          (tup2
+                          (t2
                              (option Common.Repo.Id.t)
-                             (tup2
+                             (t2
                                 AdminOverride.t
-                                (tup2
+                                (t2
                                    AdminInputOnly.t
-                                   (tup2
+                                   (t2
                                       PromptOnRegistration.t
-                                      (tup2
+                                      (t2
                                          (option Common.Repo.Id.t)
-                                         (tup2
+                                         (t2
                                             (option Caqti_type.string)
-                                            (tup2
+                                            (t2
                                                (option Caqti_type.string)
-                                               (tup2
+                                               (t2
                                                   (option Common.Repo.Version.t)
                                                   (option Common.Repo.Version.t))))))))))))))))
   ;;
@@ -707,33 +705,33 @@ let t =
     custom
       ~encode
       ~decode
-      (tup2
+      (t2
          Common.Repo.Id.t
-         (tup2
+         (t2
             Model.t
-            (tup2
+            (t2
                Name.t
-               (tup2
+               (t2
                   Hint.t
-                  (tup2
+                  (t2
                      FieldType.t
-                     (tup2
+                     (t2
                         Validation.t
-                        (tup2
+                        (t2
                            Required.t
-                           (tup2
+                           (t2
                               Disabled.t
-                              (tup2
+                              (t2
                                  (option Common.Repo.Id.t)
-                                 (tup2
+                                 (t2
                                     (option AdminHint.t)
-                                    (tup2
+                                    (t2
                                        AdminOverride.t
-                                       (tup2
+                                       (t2
                                           AdminViewOnly.t
-                                          (tup2
+                                          (t2
                                              AdminInputOnly.t
-                                             (tup2
+                                             (t2
                                                 PromptOnRegistration.t
                                                 (option PublishedAt.t))))))))))))))))
 ;;

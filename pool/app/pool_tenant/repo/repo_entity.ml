@@ -146,27 +146,27 @@ let t =
     custom
       ~encode
       ~decode
-      (tup2
+      (t2
          Common.Repo.Id.t
-         (tup2
+         (t2
             Title.t
-            (tup2
+            (t2
                (option Description.t)
-               (tup2
+               (t2
                   Url.t
-                  (tup2
+                  (t2
                      Database.Repo.Label.t
-                     (tup2
+                     (t2
                         (option Styles.t)
-                        (tup2
+                        (t2
                            (option Icon.t)
-                           (tup2
+                           (t2
                               Maintenance.t
-                              (tup2
+                              (t2
                                  Disabled.t
-                                 (tup2
+                                 (t2
                                     Pool_common.Repo.Language.t
-                                    (tup2
+                                    (t2
                                        Common.Repo.CreatedAt.t
                                        Common.Repo.UpdatedAt.t))))))))))))
 ;;
@@ -223,29 +223,29 @@ module Write = struct
       custom
         ~encode
         ~decode
-        (tup2
+        (t2
            Common.Repo.Id.t
-           (tup2
+           (t2
               Title.t
-              (tup2
+              (t2
                  (option Description.t)
-                 (tup2
+                 (t2
                     Url.t
-                    (tup2
+                    (t2
                        Database.Repo.t
-                       (tup2
+                       (t2
                           GtxApiKey.t
-                          (tup2
+                          (t2
                              (option Styles.Write.t)
-                             (tup2
+                             (t2
                                 (option Icon.Write.t)
-                                (tup2
+                                (t2
                                    Maintenance.t
-                                   (tup2
+                                   (t2
                                       Disabled.t
-                                      (tup2
+                                      (t2
                                          Pool_common.Repo.Language.t
-                                         (tup2
+                                         (t2
                                             Common.Repo.CreatedAt.t
                                             Common.Repo.UpdatedAt.t)))))))))))))
   ;;
@@ -257,6 +257,6 @@ module Selection = struct
   let t =
     let encode m = Ok (m.Selection.url, m.database_label) in
     let decode (url, database_label) = Ok { url; database_label } in
-    Caqti_type.(custom ~encode ~decode (tup2 Url.t Database.Repo.Label.t))
+    Caqti_type.(custom ~encode ~decode (t2 Url.t Database.Repo.Label.t))
   ;;
 end

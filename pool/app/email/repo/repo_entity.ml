@@ -38,13 +38,13 @@ let unverified_t =
     custom
       ~encode
       ~decode
-      (tup2
+      (t2
          User.Repo.EmailAddress.t
-         (tup2
+         (t2
             Pool_user.Repo.user_caqti
-            (tup2
+            (t2
                Token.t
-               (tup2 Pool_common.Repo.CreatedAt.t Pool_common.Repo.UpdatedAt.t)))))
+               (t2 Pool_common.Repo.CreatedAt.t Pool_common.Repo.UpdatedAt.t)))))
 ;;
 
 let verified_t =
@@ -66,11 +66,11 @@ let verified_t =
     custom
       ~encode
       ~decode
-      (tup2
+      (t2
          User.Repo.EmailAddress.t
-         (tup2
+         (t2
             Pool_user.Repo.user_caqti
-            (tup2
+            (t2
                VerifiedAt.t
-               (tup2 Pool_common.Repo.CreatedAt.t Pool_common.Repo.UpdatedAt.t)))))
+               (t2 Pool_common.Repo.CreatedAt.t Pool_common.Repo.UpdatedAt.t)))))
 ;;

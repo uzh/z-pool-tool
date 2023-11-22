@@ -72,17 +72,17 @@ let t =
     custom
       ~encode
       ~decode
-      (tup2
+      (t2
          Id.t
-         (tup2
+         (t2
             Label.t
-            (tup2
+            (t2
                Server.t
-               (tup2
+               (t2
                   Port.t
-                  (tup2
+                  (t2
                      (option Username.t)
-                     (tup2 Mechanism.t (tup2 Protocol.t Default.t))))))))
+                     (t2 Mechanism.t (t2 Protocol.t Default.t))))))))
 ;;
 
 module Write = struct
@@ -123,18 +123,18 @@ module Write = struct
       custom
         ~encode
         ~decode
-        (tup2
+        (t2
            Id.t
-           (tup2
+           (t2
               Label.t
-              (tup2
+              (t2
                  Server.t
-                 (tup2
+                 (t2
                     Port.t
-                    (tup2
+                    (t2
                        (option Username.t)
-                       (tup2
+                       (t2
                           (option Password.t)
-                          (tup2 Mechanism.t (tup2 Protocol.t Default.t)))))))))
+                          (t2 Mechanism.t (t2 Protocol.t Default.t)))))))))
   ;;
 end

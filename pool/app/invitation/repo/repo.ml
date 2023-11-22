@@ -343,7 +343,7 @@ module Sql = struct
         contact_uuid = UNHEX(REPLACE(?, '-', ''))
     |sql}
     |> select_sql
-    |> Caqti_type.(tup2 string string) ->? RepoEntity.t
+    |> Caqti_type.(t2 string string) ->? RepoEntity.t
   ;;
 
   let find_by_contact_and_experiment_opt pool experiment_id contact_id =

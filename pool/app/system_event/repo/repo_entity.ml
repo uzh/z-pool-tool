@@ -22,11 +22,11 @@ let t =
     custom
       ~encode
       ~decode
-      (tup2
+      (t2
          Id.t
-         (tup2
+         (t2
             Job.t
-            (tup2 Pool_common.Repo.CreatedAt.t Pool_common.Repo.UpdatedAt.t))))
+            (t2 Pool_common.Repo.CreatedAt.t Pool_common.Repo.UpdatedAt.t))))
 ;;
 
 module EventLog = struct
@@ -84,15 +84,15 @@ module EventLog = struct
       custom
         ~encode
         ~decode
-        (tup2
+        (t2
            Id.t
-           (tup2
+           (t2
               ServiceIdentifier.t
-              (tup2
+              (t2
                  Status.t
-                 (tup2
+                 (t2
                     (option Message.t)
-                    (tup2
+                    (t2
                        Pool_common.Repo.CreatedAt.t
                        Pool_common.Repo.UpdatedAt.t))))))
   ;;

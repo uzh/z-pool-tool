@@ -72,7 +72,7 @@ module Sql = struct
     let autofill_public_title =
       let open Caqti_request.Infix in
       autofill_public_title_request
-      |> Caqti_type.(tup2 Repo_entity.Id.t Repo_entity.PublicTitle.t ->. unit)
+      |> Caqti_type.(t2 Repo_entity.Id.t Repo_entity.PublicTitle.t ->. unit)
     in
     let with_connection request input connection =
       let (module Connection : Caqti_lwt.CONNECTION) = connection in
@@ -364,7 +364,7 @@ module Sql = struct
     let (Dynparam.Pack (pt, pv)) = dyn in
     let request =
       search_request ?conditions ?joins ~limit ()
-      |> pt ->* Repo_entity.(Caqti_type.tup2 Id.t Title.t)
+      |> pt ->* Repo_entity.(Caqti_type.t2 Id.t Title.t)
     in
     Utils.Database.collect (pool |> Pool_database.Label.value) request pv
   ;;
@@ -395,7 +395,7 @@ module Sql = struct
       let (Dynparam.Pack (pt, pv)) = dyn in
       let request =
         search_multiple_by_id_request ids
-        |> pt ->* Caqti_type.(Repo_entity.(tup2 Repo_entity.Id.t Title.t))
+        |> pt ->* Caqti_type.(Repo_entity.(t2 Repo_entity.Id.t Title.t))
       in
       Utils.Database.collect (pool |> Database.Label.value) request pv
   ;;
@@ -477,7 +477,7 @@ module Sql = struct
           LIMIT 5
         |sql}
       (where |> CCOption.map_or ~default:"" (fun where -> "AND " ^ where))
-    |> Caqti_type.(tup2 string Pool_common.Repo.Id.t)
+    |> Caqti_type.(t2 string Pool_common.Repo.Id.t)
        ->* Repo_entity.DirectEnrollment.t
   ;;
 
@@ -520,7 +520,7 @@ module Sql = struct
           AND pool_experiments.uuid = UNHEX(REPLACE(?, '-', ''))
           AND pool_assignments.contact_uuid = UNHEX(REPLACE(?, '-', '')))
     |sql}
-    |> Caqti_type.(tup2 string string ->! bool)
+    |> Caqti_type.(t2 string string ->! bool)
   ;;
 
   let contact_is_enrolled pool experiment_id contact_id =

@@ -55,7 +55,7 @@ module Sql = struct
       WHERE i18n_key = ? AND language = ? AND content IS NOT NULL AND content != ''
     |sql}
     |> select_from_i18n_sql
-    |> Caqti_type.(tup2 RepoEntity.Key.t Pool_common.Repo.Language.t)
+    |> Caqti_type.(t2 RepoEntity.Key.t Pool_common.Repo.Language.t)
        ->! RepoEntity.t
   ;;
 

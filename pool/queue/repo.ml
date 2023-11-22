@@ -73,25 +73,25 @@ let job =
     custom
       ~encode
       ~decode
-      (tup2
+      (t2
          string
-         (tup2
+         (t2
             string
-            (tup2
+            (t2
                string
-               (tup2
+               (t2
                   int
-                  (tup2
+                  (t2
                      ptime
-                     (tup2
+                     (t2
                         int
-                        (tup2
+                        (t2
                            status
-                           (tup2
+                           (t2
                               (option string)
-                              (tup2
+                              (t2
                                  (option ptime)
-                                 (tup2 (option string) (option ctx))))))))))))
+                                 (t2 (option string) (option ctx))))))))))))
 ;;
 
 let update_request =

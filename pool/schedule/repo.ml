@@ -44,13 +44,11 @@ let t =
     custom
       ~encode
       ~decode
-      (tup2
+      (t2
          Label.t
-         (tup2
+         (t2
             (option ScheduledTime.t)
-            (tup2
-               (option ScheduledTimeSpan.t)
-               (tup2 Status.t (option LastRunAt.t))))))
+            (t2 (option ScheduledTimeSpan.t) (t2 Status.t (option LastRunAt.t))))))
 ;;
 
 let public =
@@ -76,13 +74,11 @@ let public =
     custom
       ~encode
       ~decode
-      (tup2
+      (t2
          Label.t
-         (tup2
+         (t2
             (option ScheduledTime.t)
-            (tup2
-               (option ScheduledTimeSpan.t)
-               (tup2 Status.t (option LastRunAt.t))))))
+            (t2 (option ScheduledTimeSpan.t) (t2 Status.t (option LastRunAt.t))))))
 ;;
 
 module Sql = struct
@@ -142,7 +138,7 @@ module Sql = struct
       WHERE
         status = $1
     |sql}
-    |> Caqti_type.(tup2 Status.t Status.t ->. unit)
+    |> Caqti_type.(t2 Status.t Status.t ->. unit)
   ;;
 
   let stop_all_active pool =

@@ -77,15 +77,15 @@ let t =
     custom
       ~encode
       ~decode
-      (tup2
+      (t2
          Id.t
-         (tup2
+         (t2
             Label.t
-            (tup2
+            (t2
                (option Common.Id.t)
-               (tup2
+               (t2
                   Common.Language.t
-                  (tup2
+                  (t2
                      EmailSubject.t
-                     (tup2 EmailText.t (tup2 PlainText.t SmsText.t))))))))
+                     (t2 EmailText.t (t2 PlainText.t SmsText.t))))))))
 ;;

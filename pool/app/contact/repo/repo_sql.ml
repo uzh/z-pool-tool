@@ -445,7 +445,7 @@ let should_send_registration_attempt_notification_request =
     WHERE user_uuid = UNHEX(REPLACE(?, '-', ''))
     AND registration_attempt_notification_sent_at >= DATE_SUB(NOW(), INTERVAL ? SECOND)
   |}
-  |> Caqti_type.(tup2 string int ->? int)
+  |> Caqti_type.(t2 string int ->? int)
 ;;
 
 let should_send_registration_attempt_notification pool contact =
@@ -492,7 +492,7 @@ let add_cell_phone_request =
       updated_at = NOW(),
       created_at = NOW()
     |sql}
-  |> Caqti_type.(tup3 string string string ->. unit)
+  |> Caqti_type.(t3 string string string ->. unit)
 ;;
 
 let add_cell_phone pool contact cell_phone code =
@@ -535,7 +535,7 @@ let find_cell_phone_verification_by_contact pool contact =
 let find_cell_phone_verification_by_contact_and_code_request =
   let open Caqti_request.Infix in
   cell_phone_verifiaction_sql ~where:"AND token = ?" ()
-  |> Caqti_type.(tup2 string string ->? Pool_user.Repo.UnverifiedCellPhone.t)
+  |> Caqti_type.(t2 string string ->? Pool_user.Repo.UnverifiedCellPhone.t)
 ;;
 
 let find_cell_phone_verification_by_contact_and_code pool contact code =

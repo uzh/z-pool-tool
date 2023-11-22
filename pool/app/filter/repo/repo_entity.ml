@@ -34,20 +34,19 @@ let t =
     custom
       ~encode
       ~decode
-      (tup2
+      (t2
          Id.t
-         (tup2
+         (t2
             Query.t
-            (tup2
+            (t2
                (option Title.t)
-               (tup2 Common.Repo.CreatedAt.t Common.Repo.UpdatedAt.t)))))
+               (t2 Common.Repo.CreatedAt.t Common.Repo.UpdatedAt.t)))))
 ;;
 
 module Write = struct
   let t =
     let encode (m : t) = Ok (m.id, (m.query, m.title)) in
     let decode _ = failwith "Write only model" in
-    Caqti_type.(
-      custom ~encode ~decode (tup2 Id.t (tup2 Query.t (option Title.t))))
+    Caqti_type.(custom ~encode ~decode (t2 Id.t (t2 Query.t (option Title.t))))
   ;;
 end

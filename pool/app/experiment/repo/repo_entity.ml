@@ -148,47 +148,47 @@ let t =
     custom
       ~encode
       ~decode
-      (tup2
+      (t2
          Id.t
-         (tup2
+         (t2
             Title.t
-            (tup2
+            (t2
                PublicTitle.t
-               (tup2
+               (t2
                   (option Description.t)
-                  (tup2
+                  (t2
                      (option CostCenter.t)
-                     (tup2
+                     (t2
                         (option Organisational_unit.Repo.t)
-                        (tup2
+                        (t2
                            (option Filter.Repo.t)
-                           (tup2
+                           (t2
                               (option Admin.Repo.Entity.Id.t)
-                              (tup2
+                              (t2
                                  (option Email.SmtpAuth.RepoEntity.Id.t)
-                                 (tup2
+                                 (t2
                                     DirectRegistrationDisabled.t
-                                    (tup2
+                                    (t2
                                        RegistrationDisabled.t
-                                       (tup2
+                                       (t2
                                           AllowUninvitedSignup.t
-                                          (tup2
+                                          (t2
                                              ExternalDataRequired.t
-                                             (tup2
+                                             (t2
                                                 ShowExternalDataIdLinks.t
-                                                (tup2
+                                                (t2
                                                    (option ExperimentType.t)
-                                                   (tup2
+                                                   (t2
                                                       (option
                                                          Reminder.LeadTime.t)
-                                                      (tup2
+                                                      (t2
                                                          (option
                                                             Reminder.LeadTime.t)
-                                                         (tup2
+                                                         (t2
                                                             (option
                                                                InvitationResetAt
                                                                .t)
-                                                            (tup2
+                                                            (t2
                                                                CreatedAt.t
                                                                UpdatedAt.t))))))))))))))))))))
 ;;
@@ -229,40 +229,40 @@ module Write = struct
       custom
         ~encode
         ~decode
-        (tup2
+        (t2
            Id.t
-           (tup2
+           (t2
               Title.t
-              (tup2
+              (t2
                  PublicTitle.t
-                 (tup2
+                 (t2
                     (option Description.t)
-                    (tup2
+                    (t2
                        (option CostCenter.t)
-                       (tup2
+                       (t2
                           (option Organisational_unit.Repo.Id.t)
-                          (tup2
+                          (t2
                              (option Id.t)
-                             (tup2
+                             (t2
                                 (option Admin.Repo.Entity.Id.t)
-                                (tup2
+                                (t2
                                    (option Email.SmtpAuth.RepoEntity.Id.t)
-                                   (tup2
+                                   (t2
                                       DirectRegistrationDisabled.t
-                                      (tup2
+                                      (t2
                                          RegistrationDisabled.t
-                                         (tup2
+                                         (t2
                                             AllowUninvitedSignup.t
-                                            (tup2
+                                            (t2
                                                ExternalDataRequired.t
-                                               (tup2
+                                               (t2
                                                   ShowExternalDataIdLinks.t
-                                                  (tup2
+                                                  (t2
                                                      (option ExperimentType.t)
-                                                     (tup2
+                                                     (t2
                                                         (option
                                                            Reminder.LeadTime.t)
-                                                        (tup2
+                                                        (t2
                                                            (option
                                                               Reminder.LeadTime
                                                               .t)
@@ -304,15 +304,15 @@ module Public = struct
       custom
         ~encode
         ~decode
-        (tup2
+        (t2
            Id.t
-           (tup2
+           (t2
               PublicTitle.t
-              (tup2
+              (t2
                  (option Description.t)
-                 (tup2
+                 (t2
                     DirectRegistrationDisabled.t
-                    (tup2
+                    (t2
                        (option Common.ExperimentType.t)
                        (option Email.SmtpAuth.RepoEntity.Id.t)))))))
   ;;
@@ -352,16 +352,16 @@ module DirectEnrollment = struct
       custom
         ~encode
         ~decode
-        (tup2
+        (t2
            Id.t
-           (tup2
+           (t2
               Title.t
-              (tup2
+              (t2
                  PublicTitle.t
-                 (tup2
+                 (t2
                     (option Filter.Repo.query)
-                    (tup2
+                    (t2
                        DirectRegistrationDisabled.t
-                       (tup2 RegistrationDisabled.t (tup2 bool bool))))))))
+                       (t2 RegistrationDisabled.t (t2 bool bool))))))))
   ;;
 end

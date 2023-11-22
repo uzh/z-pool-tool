@@ -16,8 +16,8 @@ module Dynparam = struct
   type t = Pack : 'a Caqti_type.t * 'a -> t
 
   let empty = Pack (Caqti_type.unit, ())
-  let prefix t x (Pack (t', x')) = Pack (Caqti_type.tup2 t t', (x, x'))
-  let add t x (Pack (t', x')) = Pack (Caqti_type.tup2 t' t, (x', x))
+  let prefix t x (Pack (t', x')) = Pack (Caqti_type.t2 t t', (x, x'))
+  let add t x (Pack (t', x')) = Pack (Caqti_type.t2 t' t, (x', x))
 end
 
 let raise_caqti_error ?tags =
@@ -78,7 +78,7 @@ let transaction database_label fnc =
   let open Lwt_result.Infix in
   let tags = Logger.Tags.create database_label in
   let pool = Sihl.Database.fetch_pool ~ctx:[ "pool", database_label ] () in
-  Caqti_lwt.Pool.use
+  Caqti_lwt_unix.Pool.use
     (fun connection ->
       let (module Connection : Caqti_lwt.CONNECTION) = connection in
       let%lwt start_result = Connection.start () in

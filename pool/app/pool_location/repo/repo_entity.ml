@@ -75,11 +75,11 @@ module Address = struct
         custom
           ~encode
           ~decode
-          (tup2
+          (t2
              (option Institution.t)
-             (tup2
+             (t2
                 (option Room.t)
-                (tup2 (option Building.t) (tup2 Street.t (tup2 Zip.t City.t))))))
+                (t2 (option Building.t) (t2 Street.t (t2 Zip.t City.t))))))
     ;;
   end
 
@@ -97,7 +97,7 @@ module Address = struct
           "Location could be created without beeing virtual and without \
            address!"
     in
-    Caqti_type.(custom ~encode ~decode (tup2 bool (option Mail.t)))
+    Caqti_type.(custom ~encode ~decode (t2 bool (option Mail.t)))
   ;;
 end
 
@@ -142,19 +142,19 @@ let t =
     custom
       ~encode
       ~decode
-      (tup2
+      (t2
          Pool_common.Repo.Id.t
-         (tup2
+         (t2
             Name.t
-            (tup2
+            (t2
                (option Description.t)
-               (tup2
+               (t2
                   Address.t
-                  (tup2
+                  (t2
                      (option Link.t)
-                     (tup2
+                     (t2
                         Status.t
-                        (tup2
+                        (t2
                            Pool_common.Repo.CreatedAt.t
                            Pool_common.Repo.UpdatedAt.t))))))))
 ;;
@@ -202,10 +202,10 @@ module Update = struct
       custom
         ~encode
         ~decode
-        (tup2
+        (t2
            Pool_common.Repo.Id.t
-           (tup2
+           (t2
               Name.t
-              (tup2 (option Description.t) (tup2 Address.t (option Link.t))))))
+              (t2 (option Description.t) (t2 Address.t (option Link.t))))))
   ;;
 end

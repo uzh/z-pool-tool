@@ -32,7 +32,7 @@ module RepoEntity = struct
       custom
         ~encode
         ~decode
-        (tup2 Id.t (tup2 Title.t (tup2 (option Description.t) Model.t))))
+        (t2 Id.t (t2 Title.t (t2 (option Description.t) Model.t))))
   ;;
 end
 
@@ -43,7 +43,7 @@ module Tagged = struct
     let encode m = Ok (m.model_uuid, m.tag_uuid) in
     let decode (model_uuid, tag_uuid) = Ok { model_uuid; tag_uuid } in
     let open RepoEntity in
-    Caqti_type.(custom ~encode ~decode (tup2 Pool_common.Repo.Id.t Id.t))
+    Caqti_type.(custom ~encode ~decode (t2 Pool_common.Repo.Id.t Id.t))
   ;;
 end
 
@@ -104,7 +104,7 @@ module Sql = struct
       in
       let request =
         find_multiple_request ids
-        |> pt ->* Caqti_type.(tup2 RepoEntity.Id.t RepoEntity.Title.t)
+        |> pt ->* Caqti_type.(t2 RepoEntity.Id.t RepoEntity.Title.t)
       in
       Utils.Database.collect (pool |> Pool_database.Label.value) request pv
   ;;
@@ -157,7 +157,7 @@ module Sql = struct
     in
     let request =
       search_by_title_request ?model exclude
-      |> pt ->* tup2 RepoEntity.Id.t RepoEntity.Title.t
+      |> pt ->* t2 RepoEntity.Id.t RepoEntity.Title.t
     in
     Utils.Database.collect (Label.value pool) request pv
   ;;
@@ -211,7 +211,7 @@ module Sql = struct
           %s
       |sql}
       without_uuid
-    |> Caqti_type.(tup2 Title.t Model.t ->! bool)
+    |> Caqti_type.(t2 Title.t Model.t ->! bool)
   ;;
 
   let already_exists pool ?exclude_id title model =
@@ -421,7 +421,7 @@ module Sql = struct
             AND pool_tagging.model_uuid = UNHEX(REPLACE(?, '-', ''))
         |sql}
         select_tag_sql
-      |> Caqti_type.(tup2 Model.t Pool_common.Repo.Id.t ->* t)
+      |> Caqti_type.(t2 Model.t Pool_common.Repo.Id.t ->* t)
     ;;
 
     let find_all_of_entity pool model id =

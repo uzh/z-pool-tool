@@ -120,55 +120,55 @@ let t =
     custom
       ~encode
       ~decode
-      (tup2
+      (t2
          Pool_user.Repo.user_caqti
-         (tup2
+         (t2
             (option TermsAccepted.t)
-            (tup2
+            (t2
                (option Language.t)
-               (tup2
+               (t2
                   (option Pool_common.Repo.ExperimentType.t)
-                  (tup2
+                  (t2
                      (option CellPhone.t)
-                     (tup2
+                     (t2
                         Paused.t
-                        (tup2
+                        (t2
                            Disabled.t
-                           (tup2
+                           (t2
                               (option Verified.t)
-                              (tup2
+                              (t2
                                  (option EmailVerified.t)
-                                 (tup2
+                                 (t2
                                     NumberOfInvitations.t
-                                    (tup2
+                                    (t2
                                        NumberOfAssignments.t
-                                       (tup2
+                                       (t2
                                           NumberOfShowUps.t
-                                          (tup2
+                                          (t2
                                              NumberOfNoShows.t
-                                             (tup2
+                                             (t2
                                                 NumberOfParticipations.t
-                                                (tup2
+                                                (t2
                                                    Pool_common.Repo.Version.t
-                                                   (tup2
+                                                   (t2
                                                       Pool_common.Repo.Version.t
-                                                      (tup2
+                                                      (t2
                                                          Pool_common.Repo
                                                          .Version
                                                          .t
-                                                         (tup2
+                                                         (t2
                                                             Pool_common.Repo
                                                             .Version
                                                             .t
-                                                            (tup2
+                                                            (t2
                                                                Pool_common.Repo
                                                                .Version
                                                                .t
-                                                               (tup2
+                                                               (t2
                                                                   Pool_user.Repo
                                                                   .ImportPending
                                                                   .t
-                                                                  (tup2
+                                                                  (t2
                                                                      CreatedAt.t
                                                                      UpdatedAt.t))))))))))))))))))))))
 ;;
@@ -208,51 +208,51 @@ let contact =
     custom
       ~encode
       ~decode
-      (tup2
+      (t2
          string
-         (tup2
+         (t2
             (option TermsAccepted.t)
-            (tup2
+            (t2
                (option Language.t)
-               (tup2
+               (t2
                   (option Pool_common.Repo.ExperimentType.t)
-                  (tup2
+                  (t2
                      Paused.t
-                     (tup2
+                     (t2
                         Disabled.t
-                        (tup2
+                        (t2
                            (option Verified.t)
-                           (tup2
+                           (t2
                               (option EmailVerified.t)
-                              (tup2
+                              (t2
                                  NumberOfInvitations.t
-                                 (tup2
+                                 (t2
                                     NumberOfAssignments.t
-                                    (tup2
+                                    (t2
                                        NumberOfAssignments.t
-                                       (tup2
+                                       (t2
                                           NumberOfShowUps.t
-                                          (tup2
+                                          (t2
                                              NumberOfNoShows.t
-                                             (tup2
+                                             (t2
                                                 Pool_common.Repo.Version.t
-                                                (tup2
+                                                (t2
                                                    Pool_common.Repo.Version.t
-                                                   (tup2
+                                                   (t2
                                                       Pool_common.Repo.Version.t
-                                                      (tup2
+                                                      (t2
                                                          Pool_common.Repo
                                                          .Version
                                                          .t
-                                                         (tup2
+                                                         (t2
                                                             Pool_common.Repo
                                                             .Version
                                                             .t
-                                                            (tup2
+                                                            (t2
                                                                Pool_user.Repo
                                                                .ImportPending
                                                                .t
-                                                               (tup2
+                                                               (t2
                                                                   CreatedAt.t
                                                                   UpdatedAt.t)))))))))))))))))))))
 ;;
@@ -297,48 +297,48 @@ module Write = struct
       custom
         ~encode
         ~decode
-        (tup2
+        (t2
            Id.t
-           (tup2
+           (t2
               (option TermsAccepted.t)
-              (tup2
+              (t2
                  (option Language.t)
-                 (tup2
+                 (t2
                     (option Pool_common.Repo.ExperimentType.t)
-                    (tup2
+                    (t2
                        (option User.Repo.CellPhone.t)
-                       (tup2
+                       (t2
                           Paused.t
-                          (tup2
+                          (t2
                              Disabled.t
-                             (tup2
+                             (t2
                                 (option Verified.t)
-                                (tup2
+                                (t2
                                    (option EmailVerified.t)
-                                   (tup2
+                                   (t2
                                       NumberOfInvitations.t
-                                      (tup2
+                                      (t2
                                          NumberOfAssignments.t
-                                         (tup2
+                                         (t2
                                             NumberOfShowUps.t
-                                            (tup2
+                                            (t2
                                                NumberOfNoShows.t
-                                               (tup2
+                                               (t2
                                                   NumberOfParticipations.t
-                                                  (tup2
+                                                  (t2
                                                      Pool_common.Repo.Version.t
-                                                     (tup2
+                                                     (t2
                                                         Pool_common.Repo.Version
                                                         .t
-                                                        (tup2
+                                                        (t2
                                                            Pool_common.Repo
                                                            .Version
                                                            .t
-                                                           (tup2
+                                                           (t2
                                                               Pool_common.Repo
                                                               .Version
                                                               .t
-                                                              (tup2
+                                                              (t2
                                                                  Pool_common
                                                                  .Repo
                                                                  .Version
@@ -384,16 +384,16 @@ module Preview = struct
       custom
         ~encode
         ~decode
-        (tup2
+        (t2
            Pool_user.Repo.user_caqti
-           (tup2
+           (t2
               (option Pool_common.Repo.Language.t)
-              (tup2
+              (t2
                  (option User.Repo.CellPhone.t)
-                 (tup2
+                 (t2
                     Paused.t
-                    (tup2
+                    (t2
                        (option Verified.t)
-                       (tup2 NumberOfInvitations.t NumberOfAssignments.t)))))))
+                       (t2 NumberOfInvitations.t NumberOfAssignments.t)))))))
   ;;
 end

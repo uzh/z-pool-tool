@@ -9,7 +9,7 @@ end
 let t =
   let encode m = Ok (m.id, m.name) in
   let decode (id, name) = Ok { id; name } in
-  Caqti_type.(custom ~encode ~decode (tup2 Pool_common.Repo.Id.t Name.t))
+  Caqti_type.(custom ~encode ~decode (t2 Pool_common.Repo.Id.t Name.t))
 ;;
 
 let select_from =
@@ -64,7 +64,7 @@ let insert_request =
         $2
       )
     |sql}
-  |> Caqti_type.(tup2 Pool_common.Repo.Id.t Name.t ->. unit)
+  |> Caqti_type.(t2 Pool_common.Repo.Id.t Name.t ->. unit)
 ;;
 
 let insert pool t =
