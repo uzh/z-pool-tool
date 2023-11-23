@@ -202,7 +202,7 @@ module Sql = struct
     in
     Lwt_list.map_s run_query queries
     |> Lwt.map CCResult.flatten_l
-    |> Lwt_result.map (fun _ -> ())
+    |> Lwt_result.map (fun (_ : unit list) -> ())
   ;;
 
   let find_participation_experiments_of_query query =
@@ -254,7 +254,7 @@ module Sql = struct
     let open CCOption in
     let fnc connection =
       query
-      >|= Repo_utils.find_experiments_by_key Entity.Key.Invitation
+      >|= Repo_utils.find_experiments_by_key Key.Invitation
       |> function
       | None | Some [] -> Lwt_result.return ()
       | Some ids ->
@@ -296,7 +296,7 @@ module Sql = struct
     let open CCOption in
     let fnc connection =
       query
-      >|= Repo_utils.find_experiments_by_key Entity.Key.Participation
+      >|= Repo_utils.find_experiments_by_key Key.Participation
       |> function
       | None | Some [] -> Lwt_result.return ()
       | Some ids ->

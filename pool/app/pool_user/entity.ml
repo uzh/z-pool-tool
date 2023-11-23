@@ -151,9 +151,7 @@ module EmailAddress = struct
     let open Mrmime in
     match Mailbox.of_string email with
     | Ok _ -> Ok email
-    | Error _ ->
-      Printf.printf "invalid_email: %s" email;
-      Error PoolError.(Invalid Field.EmailAddress)
+    | Error _ -> Error PoolError.(Invalid Field.EmailAddress)
   ;;
 
   let strip_email_suffix email =
