@@ -241,14 +241,10 @@ module Sql = struct
         {sql|
         CREATE TEMPORARY TABLE tmp_invitations AS (
           SELECT
-            pool_assignments.contact_uuid AS contact_uuid,
-            pool_sessions.experiment_uuid AS experiment_uuid
-          FROM
-            pool_assignments
-            INNER JOIN pool_sessions ON pool_sessions.uuid = pool_assignments.session_uuid
-              AND pool_assignments.participated = 1
-              AND pool_assignments.canceled_at IS NULL
-              AND pool_sessions.experiment_uuid IN ( %s ))
+            pool_invitations.contact_uuid AS contact_uuid,
+            pool_invitations.experiment_uuid AS experiment_uuid
+          FROM pool_invitations
+          WHERE experiment_uuid IN ( %s ))
         |sql}
         (CCList.mapi
            (fun i _ -> Format.asprintf "UNHEX(REPLACE($%n, '-', ''))" (i + 1))
@@ -372,6 +368,10 @@ module Sql = struct
     let Dynparam.Pack (pt, pv), prepared_request =
       sql |> where_prefix |> find_filtered_request_sql ?limit use_case dyn
     in
+    Format.fprintf
+      Format.std_formatter
+      "PREPARED_REQUEST: %s\n%!"
+      prepared_request;
     let request = prepared_request |> pt ->* Contact.Repo.Entity.t in
     let query connection =
       let (module Connection : Caqti_lwt.CONNECTION) = connection in
