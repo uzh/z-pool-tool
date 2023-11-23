@@ -213,7 +213,7 @@ let build_help language help =
     ; Http_utils.add_line_breaks example
     ])
   |> Component_table.horizontal_table `Simple ~align_top:true
-  |> Component_collapsible.create_note ~title language
+  |> Component_collapsible.create_note ~icon:None ~title language
 ;;
 
 let message_template_help
