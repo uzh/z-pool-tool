@@ -574,7 +574,6 @@ let assignment_creatable session =
   let open CCResult.Infix in
   let* () = is_fully_booked_res session in
   let* () = not_closed_or_canceled session in
-  let* () = not_past session in
   Ok ()
 ;;
 
