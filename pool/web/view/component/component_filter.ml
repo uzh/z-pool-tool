@@ -29,7 +29,7 @@ let form_action = function
 
 let select_default_option language selected =
   let attrs = if selected then [ a_selected () ] else [] in
-  Tyxml.Html.option
+  option
     ~a:attrs
     (txt Pool_common.(Utils.control_to_string language Message.PleaseSelect))
 ;;

@@ -368,10 +368,6 @@ module Sql = struct
     let Dynparam.Pack (pt, pv), prepared_request =
       sql |> where_prefix |> find_filtered_request_sql ?limit use_case dyn
     in
-    Format.fprintf
-      Format.std_formatter
-      "PREPARED_REQUEST: %s\n%!"
-      prepared_request;
     let request = prepared_request |> pt ->* Contact.Repo.Entity.t in
     let query connection =
       let (module Connection : Caqti_lwt.CONNECTION) = connection in

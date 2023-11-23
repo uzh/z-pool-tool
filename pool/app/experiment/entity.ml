@@ -143,31 +143,6 @@ let create
     }
 ;;
 
-let id t = t.id
-let title t = t.title
-let public_title t = t.public_title
-let description t = t.description
-let cost_center t = t.cost_center
-let organisational_unit t = t.organisational_unit
-let filter t = t.filter
-let contact_person_id t = t.contact_person_id
-let smtp_auth_id t = t.smtp_auth_id
-let direct_registration_disabled t = t.direct_registration_disabled
-let registration_disabled t = t.registration_disabled
-let allow_uninvited_signup t = t.allow_uninvited_signup
-let external_data_required t = t.external_data_required
-let show_external_data_id_links t = t.show_external_data_id_links
-let experiment_type t = t.experiment_type
-let email_session_reminder_lead_time t = t.email_session_reminder_lead_time
-
-let text_message_session_reminder_lead_time t =
-  t.text_message_session_reminder_lead_time
-;;
-
-let invitation_reset_at t = t.invitation_reset_at
-let created_at t = t.created_at
-let updated_at t = t.updated_at
-
 module DirectEnrollment = struct
   type t =
     { id : Id.t

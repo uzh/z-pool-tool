@@ -229,7 +229,7 @@ let suite =
       , [ test_case
             "uninvited contact is listed"
             `Slow
-            Experiment_filter_test.test
+            Filter_invitation_tests.test
         ] )
     ; ( "contact counter"
       , Contact_counter_test.

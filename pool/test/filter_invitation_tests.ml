@@ -184,13 +184,13 @@ let test =
       let exp_ids =
         [ Experiment.(experiment.id) ]
         |> List.map Experiment.Id.value
-        |> List.map Filter.Value.string
+        |> List.map (fun value -> Filter.Str value)
       in
       Lst exp_ids
     in
-    let operator = Operator.(List ListM.ContainsSome) in
+    let operator = Operator.(List ListM.ContainsNone) in
     let predicate = Predicate.create key operator value in
-    Filter.create None (Not (Pred predicate))
+    Filter.create None (Pred predicate)
   in
   let& found_contacts =
     Filter.find_filtered_contacts
@@ -198,6 +198,11 @@ let test =
       Filter.MatchesFilter
       (Some invitation_filter)
   in
+  (* FIXME(@leostera): since tests are not currently running in isolation, when
+     we search for things we may find a lot more than we care about. This little
+     filtering makes sure that we only ever return some of the users that we
+     have created. This is a HACK and we shoudl fix it by ensuring every test is
+     run in its own transaction. *)
   let found_contacts =
     List.filter
       (fun contact ->
