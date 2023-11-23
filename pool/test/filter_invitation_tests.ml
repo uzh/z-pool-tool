@@ -3,44 +3,6 @@ let ( let* ) x f = Lwt_result.bind (Lwt_result.lift x) f
 let ( let& ) = Lwt_result.bind
 let test_db = Test_utils.Data.database_label
 
-let session () =
-  let open Session in
-  let sid = Id.create () in
-  let now = Ptime_clock.now () in
-  let session_start = Start.create now in
-  let* session_duration =
-    Duration.create (Ptime.diff now (Ptime_clock.now ()))
-  in
-  let pid = Pool_location.Id.create () in
-  let pool_address = Pool_location.Address.virtual_ in
-  let pool_status = Pool_location.Status.Active in
-  let mapping_file = [] in
-  let* pool_location =
-    Pool_location.create
-      ~id:pid
-      "a-pool-location"
-      None
-      pool_address
-      None
-      pool_status
-      mapping_file
-  in
-  let* max_participants = ParticipantAmount.create 2112 in
-  let* min_participants = ParticipantAmount.create 1984 in
-  let* overbook = ParticipantAmount.create 7 in
-  let session =
-    Session.create
-      ~id:sid
-      session_start
-      session_duration
-      pool_location
-      max_participants
-      min_participants
-      overbook
-  in
-  Lwt_result.lift (Ok session)
-;;
-
 let experiment () =
   let open Experiment in
   let experiment_id = Id.create () in
@@ -156,27 +118,24 @@ let invitation ~experiment ~contacts =
 
     It does so by:
 
-    1. creating a session
-    2. creating an experiment
-    3. creating a contact that is invited to the experiment
-    4. creating a contact that is NOT invited to the experiment
-    5. create a filter that for invitations that includes our experiment
-    6. assert on the found contacts
+    1. creating an experiment
+    2. creating a contact that is invited to the experiment
+    3. creating a contact that is NOT invited to the experiment
+    4. create a filter that for invitations that includes our experiment
+    5. assert on the found contacts
 
     Fin. *)
-let test =
+let finds_uninvited_contacts =
   Test_utils.case
   @@ fun () ->
-  (* 1. creating a session *)
-  (* let _session = session () in *)
-  (* 2. creating an experiment *)
+  (* 1. creating an experiment *)
   let& experiment = experiment () in
-  (* 3. creating a contact that is invited to the experiment *)
+  (* 2. creating a contact that is invited to the experiment *)
   let& invited_contact = contact ~prefix:"invited" () in
   let& _invitation = invitation ~experiment ~contacts:[ invited_contact ] in
-  (* 4. creating a contact that is NOT invited to the experiment *)
+  (* 3. creating a contact that is NOT invited to the experiment *)
   let& expected_contact = contact ~prefix:"probe" () in
-  (* 5. create a filter that for invitations that includes our experiment *)
+  (* 4. create a filter that for invitations that includes our experiment *)
   let invitation_filter =
     let open Filter in
     let key : Key.t = Key.(Hardcoded Invitation) in
@@ -212,7 +171,7 @@ let test =
         || contact.user.id = expected_contact.user.id)
       found_contacts
   in
-  (* 6. assert on the found contacts *)
+  (* 5. assert on the found contacts *)
   Alcotest.(
     check int "wrong number of contacts returned" 1 (List.length found_contacts));
   let actual_contact = List.hd found_contacts in
@@ -222,5 +181,65 @@ let test =
       "wrong contact retrieved"
       expected_contact
       actual_contact);
+  Lwt_result.lift (Ok ())
+;;
+
+(** This test verifies that given a contact that was invited to an experiment,
+    that contact is properly excluded by the filter.
+
+    It does so by:
+
+    1. creating an experiment
+    2. creating a contact that is invited to the experiment
+    3. create a filter that for invitations that includes our experiment
+    4. assert on the found contacts
+
+    Fin. *)
+let filters_out_invited_contacts =
+  Test_utils.case
+  @@ fun () ->
+  (* 1. creating an experiment *)
+  let& experiment = experiment () in
+  (* 2. creating a contact that is invited to the experiment *)
+  let& invited_contact = contact ~prefix:"invited" () in
+  let& _invitation = invitation ~experiment ~contacts:[ invited_contact ] in
+  (* 3. create a filter that for invitations that includes our experiment *)
+  let invitation_filter =
+    let open Filter in
+    let key : Key.t = Key.(Hardcoded Invitation) in
+    let value =
+      let exp_ids =
+        [ Experiment.(experiment.id) ]
+        |> List.map Experiment.Id.value
+        |> List.map (fun value -> Filter.Str value)
+      in
+      Lst exp_ids
+    in
+    let operator = Operator.(List ListM.ContainsNone) in
+    let predicate = Predicate.create key operator value in
+    Filter.create None (Pred predicate)
+  in
+  let& found_contacts =
+    Filter.find_filtered_contacts
+      test_db
+      Filter.MatchesFilter
+      (Some invitation_filter)
+  in
+  (* FIXME(@leostera): since tests are not currently running in isolation, when
+     we search for things we may find a lot more than we care about. This little
+     filtering makes sure that we only ever return some of the users that we
+     have created. This is a HACK and we shoudl fix it by ensuring every test is
+     run in its own transaction. *)
+  let found_contacts =
+    List.filter
+      (fun contact ->
+        let open Contact in
+        let open Sihl_user in
+        contact.user.id = invited_contact.user.id)
+      found_contacts
+  in
+  (* 4. assert on the found contacts *)
+  Alcotest.(
+    check int "wrong number of contacts returned" 0 (List.length found_contacts));
   Lwt_result.lift (Ok ())
 ;;
