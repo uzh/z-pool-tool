@@ -552,6 +552,7 @@ end
    value we have. It will fail a test if the underlying promise returns an
    Error. *)
 let case fn (_switch : Lwt_switch.t) () : unit Lwt.t =
-  let result = Lwt_result.get_exn @@ Lwt_result.catch fn in
-  Lwt.map (fun _ -> ()) result
+  match%lwt fn () with
+  | Ok () -> Lwt.return_unit
+  | Error err -> Pool_common.Message.error_to_exn err |> Lwt.fail
 ;;
