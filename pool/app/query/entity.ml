@@ -96,7 +96,10 @@ module Search = struct
         |> CCList.map Column.to_sql
         |> CCList.fold_left
              (fun (dyn, columns) column ->
-               ( dyn |> Dynparam.add Caqti_type.string ("%" ^ query ^ "%")
+               ( dyn
+                 |> Dynparam.add
+                      Caqti_type.string
+                      ("%" ^ CCString.(split ~by:" " query |> concat "%") ^ "%")
                , Format.asprintf "%s LIKE ? " column :: columns ))
              (dyn, [])
       in
