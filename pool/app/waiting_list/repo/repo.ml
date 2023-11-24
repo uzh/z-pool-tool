@@ -150,7 +150,8 @@ module Sql = struct
             FROM pool_assignments
             INNER JOIN pool_sessions ON pool_assignments.session_uuid = pool_sessions.uuid
               AND pool_sessions.experiment_uuid = UNHEX(REPLACE($1, '-', ''))
-            WHERE pool_assignments.contact_uuid = user_users.uuid)
+            WHERE pool_assignments.contact_uuid = user_users.uuid
+              AND pool_assignments.marked_as_deleted IS NULL)
         |sql}
       in
       let dyn =
