@@ -35,12 +35,11 @@ const tooltipContent = ({ _instance, _def }, hideLocation) => {
     const { start, end } = _instance.range;
     const { title, extendedProps } = _def;
     const contactPerson = extendedProps.contact_person
-    const { assignment_count, experiment_url, session_url, max_participants, min_participants, overbook } = extendedProps;
+    const { assignment_count, experiment_url, session_url, max_participants, min_participants, overbook, show_session_url, show_experiment_url } = extendedProps;
     const counterHtml = `<p><strong>Participants: ${assignment_count} / ${max_participants}</strong><br>Overbook: ${overbook}<br>Min. participants: ${min_participants}</p>`
-    const linksHtml = `<p>
-        <a href="${experiment_url}">Experiment details</a><br>
-        <a href="${session_url}">Session details</a>
-    </p>`
+    const sessionLink = show_session_url ? `<a href="${session_url}">Session details</a>` : ''
+    const experimentLink = show_experiment_url ? `<a href="${experiment_url}">Experiment details</a>` : ''
+    const linksHtml = show_session_url || show_experiment_url ? `<p>${[sessionLink, experimentLink].join(`<br/>`)}</p>` : ''
     const contactPersonHtml = contactPerson ? `<a href="mailto:${contactPerson.email}">${contactPerson.name}</a><br>` : ''
     const header = `<div class="card-header">${title}</div>`
     const body = `<div class="card-body">

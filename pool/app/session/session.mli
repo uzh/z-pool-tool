@@ -211,11 +211,14 @@ module Calendar : sig
 
   type t =
     { id : Id.t
+    ; experiment_id : Experiment.Id.t
     ; title : Experiment.Title.t
     ; start : Start.t
     ; end_ : End.t
     ; session_url : string
+    ; show_session_url : bool
     ; experiment_url : string
+    ; show_experiment_url : bool
     ; max_participants : ParticipantAmount.t
     ; min_participants : ParticipantAmount.t
     ; overbook : ParticipantAmount.t

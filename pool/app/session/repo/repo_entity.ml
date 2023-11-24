@@ -549,7 +549,7 @@ module Calendar = struct
       let experiment_url =
         Format.asprintf
           "admin/experiments/%s"
-          (Pool_common.Id.value experiment_id)
+          (Experiment.Id.value experiment_id)
         |> Sihl.Web.externalize_path
       in
       let session_url =
@@ -557,11 +557,14 @@ module Calendar = struct
       in
       Ok
         { id
+        ; experiment_id
         ; title
         ; start
         ; end_
         ; description
+        ; show_experiment_url = false
         ; experiment_url
+        ; show_session_url = false
         ; session_url
         ; max_participants
         ; min_participants
@@ -580,7 +583,7 @@ module Calendar = struct
            (t2
               Experiment.Repo.Entity.Title.t
               (t2
-                 RepoId.t
+                 Experiment.Repo.Entity.Id.t
                  (t2
                     Start.t
                     (t2

@@ -788,8 +788,8 @@ let resend_reminders req =
 ;;
 
 module Api = struct
-  let calendar_api req query =
-    let result { Pool_context.database_label; _ } =
+  let calendar_api ?actor req query =
+    let result { Pool_context.database_label; guardian; _ } =
       let open Utils.Lwt_result.Infix in
       let query_params = Sihl.Web.Request.query_list req in
       let find_param field =
@@ -802,6 +802,40 @@ module Api = struct
       let* end_time = find_param Field.End in
       let%lwt sessions =
         query database_label ~start_time ~end_time
+        ||> CCList.map
+              (fun
+                  (Session.Calendar.{ id; experiment_id; location; _ } as cal)
+                ->
+                 let open Session.Calendar in
+                 match actor with
+                 | None -> cal
+                 | Some actor ->
+                   let open Guard in
+                   let session = Uuid.target_of Session.Id.value id in
+                   let experiment =
+                     Uuid.target_of Experiment.Id.value experiment_id
+                   in
+                   let location =
+                     Uuid.target_of Pool_location.Id.value location.id
+                   in
+                   let check_guardian model target =
+                     let open ValidationSet in
+                     Persistence.PermissionOnTarget.validate_set
+                       guardian
+                       Pool_common.Message.authorization
+                       (one_of_tuple (Permission.Read, model, Some target))
+                       actor
+                     |> CCResult.is_ok
+                   in
+                   let show_experiment_url =
+                     check_guardian `Experiment experiment
+                   in
+                   let show_session_url =
+                     show_experiment_url
+                     || check_guardian `Session session
+                     || check_guardian `Location location
+                   in
+                   { cal with show_session_url; show_experiment_url })
         ||> CCList.map Session.Calendar.yojson_of_t
       in
       `List sessions |> Lwt.return_ok
@@ -825,7 +859,8 @@ module Api = struct
       Pool_context.Utils.find_authorizable ~admin_only:true database_label user
     in
     match actor with
-    | Ok actor -> calendar_api req (Session.find_for_calendar_by_user actor)
+    | Ok actor ->
+      calendar_api ~actor req (Session.find_for_calendar_by_user actor)
     | Error err ->
       `Assoc
         [ "message", `String Pool_common.(Utils.error_to_string language err) ]
