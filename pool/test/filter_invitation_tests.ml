@@ -142,8 +142,8 @@ let finds_uninvited_contacts =
     let value =
       let exp_ids =
         [ Experiment.(experiment.id) ]
-        |> List.map Experiment.Id.value
-        |> List.map (fun value -> Filter.Str value)
+        |> CCList.map Experiment.Id.value
+        |> CCList.map (fun value -> Filter.Str value)
       in
       Lst exp_ids
     in
@@ -163,7 +163,7 @@ let finds_uninvited_contacts =
      have created. This is a HACK and we shoudl fix it by ensuring every test is
      run in its own transaction. *)
   let found_contacts =
-    List.filter
+    CCList.filter
       (fun contact ->
         let open Contact in
         let open Sihl_user in
@@ -173,8 +173,12 @@ let finds_uninvited_contacts =
   in
   (* 5. assert on the found contacts *)
   Alcotest.(
-    check int "wrong number of contacts returned" 1 (List.length found_contacts));
-  let actual_contact = List.hd found_contacts in
+    check
+      int
+      "wrong number of contacts returned"
+      1
+      (CCList.length found_contacts));
+  let actual_contact = CCList.hd found_contacts in
   Alcotest.(
     check
       Test_utils.contact
@@ -210,8 +214,8 @@ let filters_out_invited_contacts =
     let value =
       let exp_ids =
         [ Experiment.(experiment.id) ]
-        |> List.map Experiment.Id.value
-        |> List.map (fun value -> Filter.Str value)
+        |> CCList.map Experiment.Id.value
+        |> CCList.map (fun value -> Filter.Str value)
       in
       Lst exp_ids
     in
@@ -231,7 +235,7 @@ let filters_out_invited_contacts =
      have created. This is a HACK and we shoudl fix it by ensuring every test is
      run in its own transaction. *)
   let found_contacts =
-    List.filter
+    CCList.filter
       (fun contact ->
         let open Contact in
         let open Sihl_user in
@@ -240,6 +244,10 @@ let filters_out_invited_contacts =
   in
   (* 4. assert on the found contacts *)
   Alcotest.(
-    check int "wrong number of contacts returned" 0 (List.length found_contacts));
+    check
+      int
+      "wrong number of contacts returned"
+      0
+      (CCList.length found_contacts));
   Lwt_result.lift (Ok ())
 ;;

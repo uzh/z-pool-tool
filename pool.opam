@@ -29,7 +29,7 @@ depends: [
   "containers-data" {>= "3.6"}
   "mariadb" {>= "1.1.6" & < "2.0.0"}
   "caqti-driver-mariadb" {>= "2.0.1"}
-  "caqti-lwt" {>= "2.0.1" }
+  "caqti-lwt" {>= "2.0.1"}
   "caqti" {>= "2.0.1"}
   "ocamlformat" {>= "0.18.0"}
   "ppx_deriving" {>= "5.2.1"}
