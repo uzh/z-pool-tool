@@ -733,13 +733,27 @@ module Sql = struct
 
   let find_for_calendar_by_user actor pool ~start_time ~end_time =
     let open Caqti_request.Infix in
+    let open Utils.Lwt_result.Infix in
+    let experiment_checks = [ Format.asprintf "pool_experiments.uuid IN %s" ] in
+    let session_checks =
+      [ Format.asprintf "pool_sessions.uuid IN %s"
+      ; Format.asprintf "pool_sessions.experiment_uuid IN %s"
+      ]
+    in
+    let location_checks = [ Format.asprintf "pool_locations.uuid IN %s" ] in
     let%lwt guardian =
-      Guard.sql_where_fragment
-        ~field:"pool_experiments.uuid"
-        pool
-        Guard.Permission.Read
-        `Experiment
-        actor
+      [ session_checks, `Session, "pool_sessions.uuid IS NOT NULL"
+      ; experiment_checks, `Experiment, "pool_experiments.uuid IS NOT NULL"
+      ; location_checks, `Location, "pool_locations.uuid IS NOT NULL"
+      ]
+      |> Lwt_list.map_s (fun (checks, target, all) ->
+        let permission = Guard.Permission.Read in
+        Guard.create_where ~all ~actor ~permission ~checks pool target)
+      ||> CCList.filter_map CCFun.id
+      ||> CCString.concat " OR "
+      ||> function
+      | "" -> None
+      | query -> Some (Format.asprintf "(%s)" query)
     in
     let sql =
       [ "pool_sessions.start > ?"
@@ -749,14 +763,13 @@ module Sql = struct
       @ CCOption.to_list guardian
       |> CCString.concat " AND "
     in
-    let dyn =
+    let (Dynparam.Pack (pt, pv)) =
       let open Dynparam in
       CCList.fold_left
         (fun dyn p -> dyn |> add Caqti_type.ptime p)
         empty
         [ start_time; end_time ]
     in
-    let (Dynparam.Pack (pt, pv)) = dyn in
     let request =
       find_for_calendar_by_user_request sql
       |> (pt ->* RepoEntity.Calendar.t) ~oneshot:true

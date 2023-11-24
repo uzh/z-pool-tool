@@ -153,6 +153,7 @@ let create_where
   ?actor
   ?permission
   ?(checks : (string -> string) list = [])
+  ?all
   pool
   model
   =
@@ -164,10 +165,13 @@ let create_where
   match actor, permission with
   | Some actor, Some permission ->
     sql_uuid_list_fragment pool permission model actor
-    ||> CCOption.map (fun uuid_list ->
-      CCList.map (fun fcn -> fcn uuid_list) checks
-      |> CCString.concat " OR "
-      |> Format.asprintf "(%s)")
+    ||> (function
+     | Some uuid_list ->
+       CCList.map (fun fcn -> fcn uuid_list) checks
+       |> CCString.concat " OR "
+       |> Format.asprintf "(%s)"
+       |> CCOption.return
+     | None -> all)
   | None, Some _ ->
     let _ = log_warning Pool_common.Message.(Undefined Field.Actor) in
     Lwt.return_some "FALSE"
