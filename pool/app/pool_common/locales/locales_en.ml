@@ -518,8 +518,8 @@ let rec error_to_string = function
   | SessionNotStarted -> "This session cannot be closed, yet."
   | SessionRegistrationViaParent -> "Registration via main session."
   | SessionTenantNotFound ->
-    "Something on our side went wrong, please try again later or on multi  \
-     occurrences please contact the Administrator."
+    "Missing tenant: something on our side went wrong, please try again later \
+     or on multi  occurrences please contact the Administrator."
   | Smaller (field1, field2) ->
     Format.asprintf
       "%s smaller than %s"

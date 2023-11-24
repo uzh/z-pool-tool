@@ -126,6 +126,7 @@ module Key = struct
     [@name "num_participations"]
     | NumShowUps [@printer print "num_show_ups"] [@name "num_show_ups"]
     | Participation [@printer print "participation"] [@name "participation"]
+    | Invitation [@printer print "invitation"] [@name "invitation"]
     | Tag [@printer print "tag"] [@name "tag"]
   [@@deriving show { with_path = false }, eq, yojson, variants, enum]
 
@@ -205,7 +206,7 @@ module Key = struct
     | NumNoShows -> Ok "pool_contacts.num_no_shows"
     | NumParticipations -> Ok "pool_contacts.num_participations"
     | NumShowUps -> Ok "pool_contacts.num_show_ups"
-    | Participation | Tag ->
+    | Invitation | Participation | Tag ->
       Error Pool_common.Message.(QueryNotCompatible (Field.Key, Field.Value))
   ;;
 
@@ -219,7 +220,7 @@ module Key = struct
     | NumNoShows
     | NumParticipations
     | NumShowUps -> Nr
-    | Participation -> QueryExperiments
+    | Invitation | Participation -> QueryExperiments
     | Tag -> QueryTags
   ;;
 
@@ -531,8 +532,7 @@ module Operator = struct
     | NumNoShows
     | NumParticipations
     | NumShowUps -> all_equality_operators @ all_size_operators
-    | Participation -> all_list_operators
-    | Tag -> all_list_operators
+    | Participation | Tag | Invitation -> all_list_operators
   ;;
 
   let input_type_to_operator (key : Key.input_type) =

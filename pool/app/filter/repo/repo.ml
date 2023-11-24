@@ -189,13 +189,20 @@ module Sql = struct
   ;;
 
   let drop_temp_table connection =
-    let open Caqti_request.Infix in
-    let (module Connection : Caqti_lwt.CONNECTION) = connection in
-    let request =
-      {sql| DROP TEMPORARY TABLE IF EXISTS tmp_participations; |sql}
-      |> Caqti_type.(unit ->. unit)
+    let run_query q =
+      let open Caqti_request.Infix in
+      let (module Connection : Caqti_lwt.CONNECTION) = connection in
+      let request = q |> Caqti_type.(unit ->. unit) in
+      Connection.exec request ()
     in
-    Connection.exec request ()
+    let queries =
+      [ {sql| DROP TEMPORARY TABLE IF EXISTS tmp_participations; |sql}
+      ; {sql| DROP TEMPORARY TABLE IF EXISTS tmp_invitations; |sql}
+      ]
+    in
+    Lwt_list.map_s run_query queries
+    |> Lwt.map CCResult.flatten_l
+    |> Lwt_result.map (fun (_ : unit list) -> ())
   ;;
 
   let find_participation_experiments_of_query query =
@@ -226,6 +233,44 @@ module Sql = struct
       | Bool _ | Date _ | Language _ | Nr _ | Option _ -> None)
   ;;
 
+  let create_temporary_invitation_table query =
+    let open Dynparam in
+    let open Caqti_request.Infix in
+    let create_request ids =
+      Format.asprintf
+        {sql|
+        CREATE TEMPORARY TABLE tmp_invitations AS (
+          SELECT
+            pool_invitations.contact_uuid AS contact_uuid,
+            pool_invitations.experiment_uuid AS experiment_uuid
+          FROM pool_invitations
+          WHERE experiment_uuid IN ( %s ))
+        |sql}
+        (CCList.mapi
+           (fun i _ -> Format.asprintf "UNHEX(REPLACE($%n, '-', ''))" (i + 1))
+           ids
+         |> CCString.concat ",")
+    in
+    let open CCOption in
+    let fnc connection =
+      query
+      >|= Repo_utils.find_experiments_by_key Key.Invitation
+      |> function
+      | None | Some [] -> Lwt_result.return ()
+      | Some ids ->
+        let (Pack (pt, pv)) =
+          CCList.fold_left
+            (fun dyn id -> dyn |> add Caqti_type.string id)
+            empty
+            ids
+        in
+        let (module Connection : Caqti_lwt.CONNECTION) = connection in
+        let request = create_request ids |> pt ->. Caqti_type.unit in
+        Connection.exec request pv
+    in
+    fnc
+  ;;
+
   let create_temporary_participation_table query =
     let open Dynparam in
     let open Caqti_request.Infix in
@@ -251,7 +296,7 @@ module Sql = struct
     let open CCOption in
     let fnc connection =
       query
-      >|= Repo_utils.find_participation_experiments_of_query
+      >|= Repo_utils.find_experiments_by_key Key.Participation
       |> function
       | None | Some [] -> Lwt_result.return ()
       | Some ids ->
@@ -295,7 +340,11 @@ module Sql = struct
   let find_filtered_contacts pool ?order_by ?limit use_case filter =
     let filter = filter |> CCOption.map (fun f -> f.Entity.query) in
     let open Utils.Lwt_result.Infix in
-    let create_temp_table = create_temporary_participation_table filter in
+    let create_temp_tables =
+      [ create_temporary_participation_table filter
+      ; create_temporary_invitation_table filter
+      ]
+    in
     let%lwt template_list =
       match filter with
       | None -> Lwt.return []
@@ -326,7 +375,7 @@ module Sql = struct
     in
     Utils.Database.find_as_transaction
       (pool |> Pool_database.Label.value)
-      ~setup:[ drop_temp_table; create_temp_table ]
+      ~setup:(drop_temp_table :: create_temp_tables)
       ~cleanup:[ drop_temp_table ]
       query
     ||> CCResult.return
@@ -350,7 +399,11 @@ module Sql = struct
         where_fragment
     in
     let%lwt template_list = find_templates_of_query pool query in
-    let create_temp_table = create_temporary_participation_table (Some query) in
+    let create_temp_tables =
+      [ create_temporary_participation_table (Some query)
+      ; create_temporary_invitation_table (Some query)
+      ]
+    in
     filtered_params MatchesFilter template_list (Some query)
     |> CCResult.map_err
          (Pool_common.Utils.with_log_error ~src ~level:Logs.Warning ~tags)
@@ -369,7 +422,7 @@ module Sql = struct
     in
     Utils.Database.find_as_transaction
       (pool |> Pool_database.Label.value)
-      ~setup:[ drop_temp_table; create_temp_table ]
+      ~setup:(drop_temp_table :: create_temp_tables)
       ~cleanup:[ drop_temp_table ]
       matches_filter_request
     ||> CCOption.map_or ~default (CCInt.equal 1)
@@ -420,7 +473,11 @@ module Sql = struct
     let open Utils.Lwt_result.Infix in
     let open Caqti_request.Infix in
     let open Dynparam in
-    let create_temp_table = create_temporary_participation_table query in
+    let create_temp_tables =
+      [ create_temporary_participation_table query
+      ; create_temporary_invitation_table query
+      ]
+    in
     let%lwt template_list =
       match query with
       | None -> Lwt.return []
@@ -439,7 +496,7 @@ module Sql = struct
     in
     Utils.Database.find_as_transaction
       (pool |> Pool_database.Label.value)
-      ~setup:[ drop_temp_table; create_temp_table ]
+      ~setup:(drop_temp_table :: create_temp_tables)
       ~cleanup:[ drop_temp_table ]
       query
     ||> CCOption.value ~default:0

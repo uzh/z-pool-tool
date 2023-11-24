@@ -548,10 +548,6 @@ module Repo = struct
   ;;
 end
 
-(* NOTE(@leostera): here be dragons. This machinery gets rid of any resulting
-   value we have. It will fail a test if the underlying promise returns an
-   Error. *)
 let case fn (_switch : Lwt_switch.t) () : unit Lwt.t =
-  let result = Lwt_result.get_exn @@ Lwt_result.catch fn in
-  Lwt.map (fun _ -> ()) result
+  Lwt.map Pool_common.Utils.get_or_failwith (fn ())
 ;;
