@@ -1,5 +1,5 @@
 (tests
- (names command integration filter_invitation_tests)
+ (names command integration filter_invitation_tests filter_assignment_tests)
  (libraries
   admin
   alcotest

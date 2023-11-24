@@ -176,6 +176,35 @@ let add_list_condition subquery dyn ids =
     Error Message.(Invalid Field.Operator)
 ;;
 
+(* The subquery returns any contacts that has been an assignment to an
+   experiment. *)
+let assignment_subquery dyn operator ids =
+  let open CCResult in
+  let* dyn, query_params = add_uuid_param dyn ids in
+  let subquery ~count =
+    let col = "DISTINCT tmp_assignments.experiment_uuid" in
+    let select = if count then Format.asprintf "COUNT(%s)" col else col in
+    let base =
+      Format.asprintf
+        {sql|
+        SELECT
+          %s
+        FROM
+          tmp_assignments
+        WHERE
+          tmp_assignments.contact_uuid = pool_contacts.user_uuid
+        AND tmp_assignments.experiment_uuid IN (%s)
+      |sql}
+        select
+        query_params
+    in
+    if count
+    then Format.asprintf "%s GROUP BY tmp_assignments.contact_uuid" base
+    else base
+  in
+  add_list_condition subquery dyn ids operator
+;;
+
 (* The subquery returns any contacts that has been invited to an experiment. *)
 let invitation_subquery dyn operator ids =
   let open CCResult in
@@ -283,6 +312,7 @@ let predicate_to_sql
        (match hardcoded with
         | Participation -> participation_subquery dyn operator values
         | Invitation -> invitation_subquery dyn operator values
+        | Assignment -> assignment_subquery dyn operator values
         | Tag -> tag_subquery dyn operator values
         | ContactLanguage
         | Firstname

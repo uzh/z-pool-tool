@@ -41,6 +41,7 @@ module Key : sig
     | NumParticipations
     | NumShowUps
     | Participation
+    | Assignment
     | Invitation
     | Tag
 
