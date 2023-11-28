@@ -60,3 +60,21 @@ There is an `Adminer` container added to the development package. To be able to 
 1. Uncomment its line in the `.devcontainer/devcontainer.json` under `runServices`
 1. Use `Remote-Containers: Rebuild Container` that it will also create and startup the `Adminer` container
 1. Open your web browser and open `localhost:8080`
+
+## Troubleshooting
+
+### "Go-to-definition" opens Capitalized File
+
+This behaviour is related to the ocaml-lsp-server (as a first impression), when using a ritght click on a function name and selecting "Go to Definition" it jumps to the capitalized filename instead of the correct and existing (in our case lowercased) filename.
+
+#### Solution
+
+This issue isn't related to ocaml-lsp-server it's depending on the underliing format of your data volume and it's ability to handle case sensitivity (link for [MacOS](https://support.apple.com/en-gb/guide/disk-utility/dsku19ed921c/mac) and [Windows WSL](https://learn.microsoft.com/en-us/windows/wsl/case-sensitivity)).
+
+##### MacOS
+
+- Create a "Case-Sensitive" volume
+- Clone the project on the new volume
+- Delete all currently existing Container/Images/Volumes related to the pool tool
+- Open the newly cloned project in VSCode
+- Use "Reopen in Container"
