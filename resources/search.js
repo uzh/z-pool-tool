@@ -31,7 +31,7 @@ const createTag = (option, name, inputType) => {
     const input = document.createElement("input");
     input.setAttribute("type", "checkbox");
     if (inputType) {
-        input.setAttribute("data-input-type", "option")
+        input.setAttribute("data-input-type", inputType)
     }
     input.checked = true;
     input.setAttribute("hidden", "")
