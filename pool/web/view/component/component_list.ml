@@ -2,6 +2,18 @@ open Tyxml.Html
 open Query
 module Icon = Component_icon
 
+let table_header_cell language sortable_by field =
+  let stringified = Component_table.field_to_txt language field in
+  let icon = Icon.(to_html CaretDown) in
+  CCList.find_opt
+    (fun sortable ->
+      sortable |> Column.field |> Pool_common.Message.Field.equal field)
+    sortable_by
+  |> function
+  | None -> stringified
+  | Some _ -> span ~a:[ a_class [ "has-icon" ] ] [ stringified; icon ]
+;;
+
 let retain_search_and_sort query =
   let open Pool_common.Message in
   let search =
@@ -193,12 +205,25 @@ let search_and_sort language query sortable_by searchable_by =
     ]
 ;;
 
-let create ?legend language to_table sortable_by searchable_by (items, query) =
+type 'a t =
+  { items : 'a list
+  ; to_table :
+      Query.Column.t list_wrap -> 'a list -> Html_types.div_content_fun elt
+  ; sortable_by : Query.Column.t list_wrap
+  ; searchable_by : Query.Column.t list_wrap
+  ; query : Query.t
+  }
+
+let create
+  ?legend
+  language
+  { items; to_table; sortable_by; searchable_by; query }
+  =
   div
     ~a:[ a_class [ "stack" ] ]
     [ search_and_sort language query sortable_by searchable_by
     ; CCOption.value ~default:(txt "") legend
-    ; to_table items
+    ; to_table sortable_by items
     ; query.pagination
       |> CCOption.map_or ~default:(txt "") (pagination language query)
     ]

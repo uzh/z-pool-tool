@@ -229,14 +229,16 @@ let assign_contact_form { Pool_context.csrf; language; _ } contact =
     ]
 ;;
 
-let contact_overview language contacts =
+let contact_overview language (contacts, query) =
   let open Contact in
   let open Pool_user in
-  let thead =
-    (Pool_common.Message.Field.[ Name; Email ] |> Table.fields_to_txt language)
+  let open Component.List in
+  let thead sortable_by =
+    (Pool_common.Message.Field.[ Name; Email ]
+     |> CCList.map (table_header_cell language sortable_by))
     @ [ txt "" ]
   in
-  let user_table contacts =
+  let to_table sortable_by contacts =
     let rows =
       CCList.map
         (fun contact ->
@@ -256,21 +258,26 @@ let contact_overview language contacts =
           |> row)
         contacts
     in
-    let thead = Table.table_head thead in
+    let thead = Table.table_head (thead sortable_by) in
     table
       ~thead
       ~a:[ a_class (Table.table_classes `Striped ~align_last_end:true ()) ]
       rows
+  in
+  let list =
+    { items = contacts
+    ; to_table
+    ; sortable_by = Contact.sortable_by
+    ; searchable_by = Contact.searchable_by
+    ; query
+    }
   in
   Component.List.create
     ~legend:
       (Component.Contacts.status_icons_table_legend language
        |> Component.Table.table_legend)
     language
-    user_table
-    Contact.sortable_by
-    Contact.searchable_by
-    contacts
+    list
 ;;
 
 let index Pool_context.{ language; _ } contacts =

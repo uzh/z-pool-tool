@@ -15,10 +15,15 @@ let form_action ?path id =
 ;;
 
 module Partials = struct
-  let list Pool_context.{ csrf; language; _ } experiment invitation_list =
+  let list
+    Pool_context.{ csrf; language; _ }
+    experiment
+    sortable_by
+    invitation_list
+    =
     let thead =
       (Pool_common.Message.Field.[ Contact; ResentAt; Count; CreatedAt ]
-       |> Table.fields_to_txt language)
+       |> CCList.map (Component.List.table_header_cell language sortable_by))
       @ [ txt "" ]
     in
     let rows =

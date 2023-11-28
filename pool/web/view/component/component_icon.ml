@@ -6,6 +6,8 @@ type t =
   | Add [@name "add"] [@printer prt "add"]
   | Calendar [@name "calendar"] [@printer prt "calendar"]
   | CalendarOutline [@name "calendar-outline"] [@printer prt "calendar-outline"]
+  | CaretDown [@name "caret-down"] [@printer prt "caret-down"]
+  | CaretUp [@name "caret-up"] [@printer prt "caret-up"]
   | Checkmark [@name "checkmark"] [@printer prt "checkmark"]
   | CheckmarkCircle [@name "checkmark-circle"] [@printer prt "checkmark-circle"]
   | CheckmarkCircleOutline [@name "checkmark-circle-outline"]

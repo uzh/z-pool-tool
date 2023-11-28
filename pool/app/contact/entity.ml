@@ -209,10 +209,7 @@ let profile_completion_cookie = "profile_completion"
 
 let searchable_and_sortable_by =
   let open Pool_common.Message in
-  [ Field.Email, "user_users.email"
-  ; Field.Firstname, "user_users.given_name"
-  ; Field.Lastname, "user_users.name"
-  ]
+  [ Field.Email, "user_users.email" ]
 ;;
 
 let searchable_by =
@@ -223,19 +220,22 @@ let searchable_by =
   |> Query.Column.create_list
 ;;
 
+let sortable_name_column =
+  ( Pool_common.Message.Field.Name
+  , "CONCAT_WS(' ', user_users.name, user_users.given_name)" )
+;;
+
 let sortable_by =
   let open Pool_common.Message in
-  searchable_and_sortable_by @ [ Field.CreatedAt, "pool_contacts.created_at" ]
+  searchable_and_sortable_by
+  @ [ Field.CreatedAt, "pool_contacts.created_at"; sortable_name_column ]
   |> Query.Column.create_list
 ;;
 
 let default_sort =
   let open Query in
   Sort.
-    { column =
-        Column.create (Pool_common.Message.Field.Lastname, "user_users.name")
-    ; order = SortOrder.Ascending
-    }
+    { column = Column.create sortable_name_column; order = SortOrder.Ascending }
 ;;
 
 let default_query =

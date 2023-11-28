@@ -81,12 +81,14 @@ let message_templates_html
     edit_path
 ;;
 
-let index Pool_context.{ language; _ } experiment_list =
-  let experiment_table experiments =
+let index Pool_context.{ language; _ } (experiments, query) =
+  let open Component.List in
+  let to_table sortable_by experiments =
     let thead =
+      let to_cell = table_header_cell language sortable_by in
       Message.
-        [ Field.Title |> Table.field_to_txt language
-        ; Field.PublicTitle |> Table.field_to_txt language
+        [ to_cell Field.Title
+        ; to_cell Field.PublicTitle
         ; link_as_button
             ~style:`Success
             ~icon:Icon.Add
@@ -109,17 +111,20 @@ let index Pool_context.{ language; _ } experiment_list =
     in
     Table.horizontal_table `Striped ~align_last_end:true ~thead rows
   in
+  let list =
+    { items = experiments
+    ; to_table
+    ; sortable_by = Experiment.sortable_by
+    ; searchable_by = Experiment.searchable_by
+    ; query
+    }
+  in
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
     [ h1
         ~a:[ a_class [ "heading-1" ] ]
         [ txt (Utils.text_to_string language I18n.ExperimentListTitle) ]
-    ; Component.List.create
-        language
-        experiment_table
-        Experiment.sortable_by
-        Experiment.searchable_by
-        experiment_list
+    ; Component.List.create language list
     ]
 ;;
 
@@ -746,11 +751,24 @@ let invitations
 let sent_invitations
   (Pool_context.{ language; _ } as context)
   experiment
-  invitations
+  (invitations, query)
   statistics
   =
-  let invitation_table =
-    Page_admin_invitations.Partials.list context experiment
+  let to_table sortable_by invitations =
+    Page_admin_invitations.Partials.list
+      context
+      experiment
+      sortable_by
+      invitations
+  in
+  let open Component.List in
+  let list =
+    { items = invitations
+    ; to_table
+    ; sortable_by = Invitation.sortable_by
+    ; searchable_by = Invitation.searchable_by
+    ; query
+    }
   in
   div
     ~a:[ a_class [ "stack-lg" ] ]
@@ -760,12 +778,7 @@ let sent_invitations
             ~a:[ a_class [ "stack-xs"; "inset"; "bg-grey-light"; "border" ] ]
             [ Page_admin_invitations.Partials.statistics language statistics ]
         ]
-    ; Component.List.create
-        language
-        invitation_table
-        Invitation.sortable_by
-        Invitation.searchable_by
-        invitations
+    ; Component.List.create language list
     ]
   |> CCList.return
   |> Layout.Experiment.(
@@ -781,10 +794,11 @@ let waiting_list
   ({ Pool_context.language; _ } as context)
   =
   let open Waiting_list.ExperimentList in
-  let waiting_list_table waiting_list_entries =
+  let open Component.List in
+  let to_table sortable_by waiting_list_entries =
     let thead =
       (Field.[ Name; Email; CellPhone; SignedUpAt; AdminComment ]
-       |> Table.fields_to_txt language)
+       |> CCList.map (table_header_cell language sortable_by))
       @ [ txt "" ]
     in
     let rows =
@@ -820,12 +834,15 @@ let waiting_list
       ~thead
       rows
   in
-  Component.List.create
-    language
-    waiting_list_table
-    Waiting_list.sortable_by
-    Waiting_list.searchable_by
-    (waiting_list_entries, query)
+  let list =
+    { items = waiting_list_entries
+    ; to_table
+    ; sortable_by = Waiting_list.sortable_by
+    ; searchable_by = Waiting_list.searchable_by
+    ; query
+    }
+  in
+  Component.List.create language list
   |> CCList.return
   |> Layout.Experiment.(
        create
