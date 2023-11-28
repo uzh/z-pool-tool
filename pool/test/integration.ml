@@ -91,6 +91,7 @@ let suite =
           ; test_case "filter contains all" `Slow filter_by_list_contains_all
           ; test_case "filter contains none" `Slow filter_by_list_contains_none
           ; test_case "filter contains some" `Slow filter_by_list_contains_some
+          ; test_case "filter by select field" `Slow filter_by_select_field
           ; test_case
               "retrieve ordered contacts"
               `Slow
