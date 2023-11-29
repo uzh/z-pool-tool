@@ -29,7 +29,7 @@ let form
         ]
     ; form
         ~a:
-          [ a_class [ "stack" ]
+          [ a_class [ "stack"; "gap-lg" ]
           ; a_method `Post
           ; a_action
               (Http_utils.externalize_path_with_lang

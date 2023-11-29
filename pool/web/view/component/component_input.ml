@@ -953,7 +953,7 @@ let custom_field_to_static_input
       ; to_value = SelectOption.Public.show_id
       }
     in
-    multi_select language t field ()
+    multi_select ~required language t field ()
   | Public.Number (_, answer) ->
     answer >>= Answer.value >|= CCInt.to_string |> create `Number
   | Public.Text (_, answer) -> answer >>= Answer.value |> create `Text

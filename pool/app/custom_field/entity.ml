@@ -662,10 +662,7 @@ let create
            ; name
            ; hint
            ; validation = Validation.pure
-           ; required =
-               false
-               (* TODO: add a default Option and allow Multi Selects to be
-                  required. *)
+           ; required
            ; disabled
            ; custom_field_group_id
            ; admin_hint

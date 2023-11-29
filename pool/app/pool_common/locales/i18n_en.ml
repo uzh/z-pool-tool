@@ -259,6 +259,9 @@ let rec hint_to_string = function
     "If this option is enabled, this field is already prompted during \
      registration, but is no longer displayed to the contact in the user \
      profile."
+  | CustomFieldSelectRequiredOptions ->
+    "This field is required. Make sure that the options are exhaustive or add \
+     an option'None of the others'."
   | CustomFieldSort field ->
     Format.asprintf
       "The %s will be displayed to the contacts in this order."

@@ -265,6 +265,9 @@ Wird nach diesem Feld gefiltert, wird der überschreibende Wert bevorzugt.
     "Ist diese Option aktiviert, wird dieses Feld bereits bei der \
      Registrierung abgefragt, jedoch dem Kontakt nicht mehr im Benutzerprofil \
      angezeigt."
+  | CustomFieldSelectRequiredOptions ->
+    "Dieses Feld ist erforderlich. Vergewissern Sie sich, dass die Optionen \
+     abschlissend sind, oder fügen Sie die Option 'Keine der anderen' hinzu."
   | CustomFieldSort field ->
     Format.asprintf
       "In dieser Reihenfolge werden die %s den Kontakten angezeigt."

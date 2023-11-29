@@ -429,14 +429,18 @@ let field_form
                        (Url.Option.new_path (model m, id m))
                    ]
                ]
-           ; p
-               [ txt
-                   Pool_common.(
-                     Utils.hint_to_string
-                       language
-                       I18n.CustomFieldOptionsCompleteness)
-               ]
-           ; div ~a:[ a_class [ "gap" ] ] list
+           ; div
+               ~a:[ a_class [ "stack"; "gap" ] ]
+               (Component.Notification.notification
+                  language
+                  `Warning
+                  [ txt
+                      Pool_common.(
+                        Utils.hint_to_string
+                          language
+                          I18n.CustomFieldOptionsCompleteness)
+                  ]
+                :: list)
            ]
        | Boolean _ | Date _ | Number _ | Text _ -> empty)
   in
@@ -603,8 +607,7 @@ let field_form
               ~disabled:
                 (custom_field
                  |> CCOption.map_or ~default:false (fun f ->
-                   f |> admin_input_only |> AdminInputOnly.value
-                   || FieldType.(equal (f |> field_type) MultiSelect)))
+                   f |> admin_input_only |> AdminInputOnly.value))
               Message.Field.Required
               (required %> Required.value)
           ; checkbox_element Message.Field.Disabled (disabled %> Disabled.value)
@@ -649,16 +652,11 @@ let field_form
                   triggerEvent(adminInputOnly, 'change');
                 }
               })
-
-              fieldType.addEventListener("change", function(e) {
-                required.disabled = (e.currentTarget.value === "%s")
-              })
          |js}
            Message.Field.(show AdminViewOnly)
            Message.Field.(show AdminInputOnly)
            Message.Field.(show Required)
            Message.Field.(show FieldType)
-           FieldType.(show MultiSelect)
          |> fun js -> script (Unsafe.data js))
       ]
   ; select_options_html

@@ -17,17 +17,21 @@ let contact_profile_layout language title html =
 let grouped_custom_fields_form language custom_fields to_html =
   let open Custom_field in
   let groups, ungrouped_fields = custom_fields in
-  div ~a:[ a_class [ "grid-col-2" ] ] (CCList.map to_html ungrouped_fields)
-  :: CCList.map
-       (fun (Group.Public.{ fields; _ } as group) ->
-         div
-           ~a:[ a_class [ "gap-lg" ] ]
-           [ h2
-               ~a:[ a_class [ "heading-2" ] ]
-               [ txt Group.(Public.name language group) ]
-           ; div ~a:[ a_class [ "grid-col-2" ] ] (fields |> CCList.map to_html)
-           ])
-       groups
+  [ div
+      ~a:[ a_class [ "stack-lg" ] ]
+      (div ~a:[ a_class [ "grid-col-2" ] ] (CCList.map to_html ungrouped_fields)
+       :: CCList.map
+            (fun (Group.Public.{ fields; _ } as group) ->
+              div
+                [ h2
+                    ~a:[ a_class [ "heading-2" ] ]
+                    [ txt Group.(Public.name language group) ]
+                ; div
+                    ~a:[ a_class [ "grid-col-2" ] ]
+                    (fields |> CCList.map to_html)
+                ])
+            groups)
+  ]
 ;;
 
 let personal_details_form
