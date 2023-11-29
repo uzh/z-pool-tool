@@ -156,6 +156,12 @@ module Validation : sig
       -> (string -> (string, Pool_common.Message.error) result) * raw
   end
 
+  module MultiSelect : sig
+    val schema
+      :  (string * string) list
+      -> ('a list -> ('a list, Pool_common.Message.error) result) * raw
+  end
+
   val key_to_human : string -> string
   val raw_of_yojson : Yojson.Safe.t -> raw
   val all : (string * [> `Number ] * FieldType.t) list

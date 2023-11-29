@@ -509,6 +509,10 @@ let rec error_to_string = function
     "There is already a follow-up session for this session. It cannot be \
      deleted."
   | SessionInvalid -> "Invalid session, please login."
+  | SelectedOptionsCountMax i ->
+    Format.asprintf "A maximum of %i options may be selected." i
+  | SelectedOptionsCountMin i ->
+    Format.asprintf "A minimum of %i options have be selected." i
   | SessionAlreadyCanceled date ->
     CCFormat.asprintf "This session has already been canceled on %s." date
   | SessionAlreadyClosed date ->

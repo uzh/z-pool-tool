@@ -101,14 +101,16 @@ type error =
   | RequestRequiredFields
   | RequiredFieldsMissing
   | Retrieve of Field.t
+  | SelectedOptionsCountMax of int
+  | SelectedOptionsCountMin of int
   | SessionAlreadyCanceled of string
   | SessionAlreadyClosed of string
-  | SessionNotClosed
   | SessionFullyBooked
   | SessionHasAssignments
   | SessionHasFollowUps
   | SessionInPast
   | SessionInvalid
+  | SessionNotClosed
   | SessionNotStarted
   | SessionRegistrationViaParent
   | SessionTenantNotFound

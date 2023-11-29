@@ -118,7 +118,7 @@ let create
   ?(classnames = [])
   ?disabled
   ?error
-  ?flash_fetcher
+  ?flash_values
   ?hx_post
   ?required
   ?success
@@ -142,10 +142,6 @@ let create
   in
   let default s = Option.value ~default:"" s in
   let append_html = overridden_value in
-  let fetched_value =
-    CCOption.bind flash_fetcher (fun flash_fetcher ->
-      field |> Pool_common.Message.Field.show |> flash_fetcher)
-  in
   (* TODO: Allow multiple hints *)
   let help = CCOption.(help <+> promt_in_registration_hint) in
   match value with
@@ -192,6 +188,7 @@ let create
       ~additional_attributes
       ?append_html
       ~classnames
+      ?flash_values
       ~help:([ help ] |> CCList.filter_map CCFun.id)
       ?required
       ?error
@@ -201,7 +198,7 @@ let create
     Input.input_element
       ~classnames
       ~value:
-        (fetched_value
+        (CCOption.bind flash_values CCList.head_opt
          |> CCOption.value
               ~default:(n |> CCOption.map CCInt.to_string |> default))
       ~additional_attributes:(additional_attributes ())
@@ -235,7 +232,9 @@ let create
       ~classnames
       ?error
       ?help
-      ~value:(fetched_value |> CCOption.value ~default:(str |> default))
+      ~value:
+        (CCOption.bind flash_values CCList.head_opt
+         |> CCOption.value ~default:(str |> default))
       ?required
       language
       `Text
@@ -276,6 +275,7 @@ let field_value is_admin answer =
   | false -> value
 ;;
 
+(* TODO: Make sure selected mutli select checkboxes stay selected *)
 let custom_field_to_htmx_value language is_admin =
   let open CCOption in
   let open Custom_field in
@@ -383,7 +383,7 @@ let custom_field_to_htmx
   ?hx_delete
   ?classnames
   ?error
-  ?flash_fetcher
+  ?flash_values
   ?success
   language
   is_admin
@@ -421,7 +421,7 @@ let custom_field_to_htmx
   let value = custom_field_to_htmx_value language is_admin custom_field in
   let help = Public.to_common_hint language custom_field in
   { version; field; value; htmx_attributes = Some htmx_attributes; help }
-  |> to_html disabled ?hx_post ?classnames ?error ?flash_fetcher ?success
+  |> to_html disabled ?hx_post ?classnames ?error ?flash_values ?success
 ;;
 
 let partial_update_to_htmx
@@ -433,7 +433,6 @@ let partial_update_to_htmx
   ?hx_post
   ?classnames
   ?error
-  ?flash_fetcher
   ?success
   =
   let open Custom_field.PartialUpdate in
@@ -443,7 +442,6 @@ let partial_update_to_htmx
       ~disabled:false
       ?classnames
       ?error
-      ?flash_fetcher
       ?hx_post
       ~required:(is_required partial_update)
       ?success
@@ -480,7 +478,6 @@ let partial_update_to_htmx
     custom_field_to_htmx
       ?classnames
       ?error
-      ?flash_fetcher
       ?hx_delete
       ?hx_post
       ?success

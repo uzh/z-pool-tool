@@ -74,10 +74,6 @@ let update ?contact req =
     let with_redirect path res =
       res |> CCResult.map_err (fun err -> err, path_with_lang path)
     in
-    let flash_fetcher key =
-      CCList.assoc_opt ~eq:CCString.equal key urlencoded
-      |> CCFun.flip CCOption.bind CCList.head_opt
-    in
     let* contact =
       match contact with
       | Some contact -> Lwt_result.return contact
@@ -216,7 +212,7 @@ let update ?contact req =
                   ~version
                   ~hx_post
                   ~error
-                  ~flash_fetcher
+                  ~flash_values:value
                   ()
                 |> html_response))
       in

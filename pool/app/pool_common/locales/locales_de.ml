@@ -543,6 +543,10 @@ let rec error_to_string = function
     "Es existieren bereits Folgesessions für diese Session. Sie kann nicht \
      gelöscht werden."
   | SessionInvalid -> "Ungültige Session, bitte erneut einloggen."
+  | SelectedOptionsCountMax i ->
+    Format.asprintf "Es dürfen höchstens %i Optionen ausgewählt werden." i
+  | SelectedOptionsCountMin i ->
+    Format.asprintf "Es müssen mindestens %i Optionen ausgewählt werden." i
   | SessionRegistrationViaParent -> "Einschreibung via Hauptsession."
   | SessionTenantNotFound ->
     "Auf unserer Seite ist etwas schief gegangen, bitte später nochmals  \

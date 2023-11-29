@@ -139,6 +139,17 @@ module Validation = struct
     [@equal fun (_, raw1) (_, raw2) -> equal_raw raw1 raw2])
   [@@deriving show, eq]
 
+  let read_key key_of_yojson m =
+    try
+      Some
+        (m
+         |> Format.asprintf "[\"%s\"]"
+         |> Yojson.Safe.from_string
+         |> key_of_yojson)
+    with
+    | _ -> None
+  ;;
+
   module Text = struct
     type key =
       | TextLengthMin [@name "text_length_min"]
@@ -152,16 +163,7 @@ module Validation = struct
       | TextLengthMax -> "Text max. length"
     ;;
 
-    let read_key m =
-      try
-        Some
-          (m
-           |> Format.asprintf "[\"%s\"]"
-           |> Yojson.Safe.from_string
-           |> key_of_yojson)
-      with
-      | _ -> None
-    ;;
+    let read_key = read_key key_of_yojson
 
     let check_min_length rule_value value =
       if CCString.length value >= rule_value
@@ -212,16 +214,7 @@ module Validation = struct
       | NumberMax -> "Number max."
     ;;
 
-    let read_key m =
-      try
-        Some
-          (m
-           |> Format.asprintf "[\"%s\"]"
-           |> Yojson.Safe.from_string
-           |> key_of_yojson)
-      with
-      | _ -> None
-    ;;
+    let read_key = read_key key_of_yojson
 
     let check_min rule_value value =
       if value >= rule_value
@@ -259,11 +252,65 @@ module Validation = struct
     let all = [ show_key NumberMin, `Number; show_key NumberMax, `Number ]
   end
 
+  module MultiSelect = struct
+    type key =
+      | OptionsCountMin [@name "options_count_min"]
+      [@printer printer "options_count_min"]
+      | OptionsCountMax [@name "options_count_max"]
+      [@printer printer "options_count_max"]
+    [@@deriving show, eq, yojson]
+
+    let key_to_human = function
+      | OptionsCountMin -> "Min. number of selected options"
+      | OptionsCountMax -> "Max. number of selected options"
+    ;;
+
+    let read_key = read_key key_of_yojson
+
+    let check_options_min_count rule_value options =
+      if CCList.length options >= rule_value
+      then Ok options
+      else Error (Message.SelectedOptionsCountMin rule_value)
+    ;;
+
+    let check_options_max_count rule_value options =
+      if CCList.length options <= rule_value
+      then Ok options
+      else Error (Message.SelectedOptionsCountMax rule_value)
+    ;;
+
+    let schema data =
+      let open CCResult in
+      ( (fun value ->
+          CCList.fold_left
+            (fun result (key, rule_value) ->
+              let map_or = CCOption.map_or ~default:result in
+              match read_key key with
+              | Some OptionsCountMin ->
+                rule_value
+                |> CCInt.of_string
+                |> map_or (fun rule -> result >>= check_options_min_count rule)
+              | Some OptionsCountMax ->
+                rule_value
+                |> CCInt.of_string
+                |> map_or (fun rule -> result >>= check_options_max_count rule)
+              | None -> result)
+            (Ok value)
+            data)
+      , data )
+    ;;
+
+    let all =
+      [ show_key OptionsCountMin, `Number; show_key OptionsCountMax, `Number ]
+    ;;
+  end
+
   let key_to_human key =
     let open CCOption in
     let text = Text.(read_key key >|= key_to_human) in
     let number = Number.(read_key key >|= key_to_human) in
-    CCOption.value ~default:key (text <+> number)
+    let multi_select = MultiSelect.(read_key key >|= key_to_human) in
+    CCOption.value ~default:key (text <+> number <+> multi_select)
   ;;
 
   let pure = CCResult.return, []
@@ -280,7 +327,9 @@ module Validation = struct
     let go field_type lst =
       CCList.map (fun (key, input_type) -> key, input_type, field_type) lst
     in
-    go FieldType.Number Number.all @ go FieldType.Text Text.all
+    go FieldType.Number Number.all
+    @ go FieldType.Text Text.all
+    @ go FieldType.MultiSelect MultiSelect.all
   ;;
 end
 
@@ -655,13 +704,14 @@ let create
          ; prompt_on_registration
          })
   | FieldType.MultiSelect ->
+    let validation = Validation.MultiSelect.schema validation in
     Ok
       (MultiSelect
          ( { id
            ; model
            ; name
            ; hint
-           ; validation = Validation.pure
+           ; validation
            ; required
            ; disabled
            ; custom_field_group_id
@@ -831,14 +881,16 @@ let field_type = function
 let validation_strings =
   let open Validation in
   function
-  | Boolean _ | Date _ | Select _ | MultiSelect _ -> []
+  | Boolean _ | Date _ | Select _ -> []
+  | MultiSelect ({ validation; _ }, _) ->
+    validation |> snd |> to_strings MultiSelect.all
   | Number { validation; _ } -> validation |> snd |> to_strings Number.all
   | Text { validation; _ } -> validation |> snd |> to_strings Text.all
 ;;
 
 let validation_to_yojson = function
-  | Boolean _ | Date _ | Select _ | MultiSelect _ ->
-    "[]" |> Yojson.Safe.from_string
+  | Boolean _ | Date _ | Select _ -> "[]" |> Yojson.Safe.from_string
+  | MultiSelect ({ validation; _ }, _) -> Validation.encode_to_yojson validation
   | Number { validation; _ } -> Validation.encode_to_yojson validation
   | Text { validation; _ } -> Validation.encode_to_yojson validation
 ;;

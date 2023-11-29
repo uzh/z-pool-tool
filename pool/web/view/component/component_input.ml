@@ -703,6 +703,7 @@ let multi_select
   ?(orientation = `Horizontal)
   ?additional_attributes
   ?(classnames = [])
+  ?flash_values
   ?help
   ?error
   ?(disabled = false)
@@ -721,10 +722,17 @@ let multi_select
     (fun option ->
       let value = to_value option in
       let is_checked =
-        CCList.mem
-          ~eq:(fun o1 o2 -> CCString.equal (to_value o1) (to_value o2))
-          option
-          selected
+        match flash_values with
+        | None ->
+          CCList.mem
+            ~eq:(fun o1 o2 -> CCString.equal (to_value o1) (to_value o2))
+            option
+            selected
+        | Some flash_values ->
+          CCList.find_opt
+            (fun flash_value -> CCString.equal flash_value value)
+            flash_values
+          |> CCOption.is_some
       in
       let input_elm =
         let checked = if is_checked then [ a_checked () ] else [] in
