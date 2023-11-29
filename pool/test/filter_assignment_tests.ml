@@ -142,7 +142,7 @@ let assignment ~experiment ~session ~contact =
     Create.(
       handle
         { experiment; contact; follow_up_sessions = []; session }
-        (fun _ ->
+        (fun (_ : Assignment.t) ->
           Sihl_email.create
             ~sender:"sender"
             ~recipient:"recipient"
@@ -163,7 +163,7 @@ let invitation ~experiment ~contacts =
         ; contacts
         ; invited_contacts = []
         ; create_message =
-            (fun _ ->
+            (fun (_ : Contact.t) ->
               Sihl_email.create
                 ~sender:"sender"
                 ~recipient:"recipient"
@@ -201,13 +201,11 @@ let finds_unassigned_contacts =
   let& assigned_contact = contact ~prefix:"invited" () in
   let& unassigned_contact = contact ~prefix:"probe" () in
   (* 3. send invitations *)
-  let& _invitation =
+  let& () =
     invitation ~experiment ~contacts:[ assigned_contact; unassigned_contact ]
   in
   (* 4. only accept one of the invitations, creating the assignment *)
-  let& _assignment =
-    assignment ~experiment ~contact:assigned_contact ~session
-  in
+  let& () = assignment ~experiment ~contact:assigned_contact ~session in
   (* 5. create a filter that for assignments that includes our experiment *)
   let assignment_filter =
     let open Filter in
@@ -284,11 +282,9 @@ let filters_out_assigned_contacts =
   let& session = session ~experiment in
   (* 2. creating a contact that is invited to the experiment *)
   let& assigned_contact = contact ~prefix:"invited" () in
-  let& _invitation = invitation ~experiment ~contacts:[ assigned_contact ] in
+  let& () = invitation ~experiment ~contacts:[ assigned_contact ] in
   (* 4. only accept one of the invitations, creating the assignment *)
-  let& _assignment =
-    assignment ~experiment ~contact:assigned_contact ~session
-  in
+  let& () = assignment ~experiment ~contact:assigned_contact ~session in
   (* 3. create a filter that for assignments that includes our experiment *)
   let assignment_filter =
     let open Filter in

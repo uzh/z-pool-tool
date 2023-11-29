@@ -98,7 +98,7 @@ let invitation ~experiment ~contacts =
         ; contacts
         ; invited_contacts = []
         ; create_message =
-            (fun _ ->
+            (fun (_ : Contact.t) ->
               Sihl_email.create
                 ~sender:"sender"
                 ~recipient:"recipient"
@@ -132,7 +132,7 @@ let finds_uninvited_contacts =
   let& experiment = experiment () in
   (* 2. creating a contact that is invited to the experiment *)
   let& invited_contact = contact ~prefix:"invited" () in
-  let& _invitation = invitation ~experiment ~contacts:[ invited_contact ] in
+  let& () = invitation ~experiment ~contacts:[ invited_contact ] in
   (* 3. creating a contact that is NOT invited to the experiment *)
   let& expected_contact = contact ~prefix:"probe" () in
   (* 4. create a filter that for invitations that includes our experiment *)
@@ -206,7 +206,7 @@ let filters_out_invited_contacts =
   let& experiment = experiment () in
   (* 2. creating a contact that is invited to the experiment *)
   let& invited_contact = contact ~prefix:"invited" () in
-  let& _invitation = invitation ~experiment ~contacts:[ invited_contact ] in
+  let& () = invitation ~experiment ~contacts:[ invited_contact ] in
   (* 3. create a filter that for invitations that includes our experiment *)
   let invitation_filter =
     let open Filter in
