@@ -102,7 +102,7 @@ type 'a t =
   { version : Version.t
   ; field : Pool_common.Message.Field.t
   ; value : 'a value
-  ; help : Pool_common.I18n.hint option
+  ; help : Pool_common.I18n.hint list option
   ; htmx_attributes : (string * string) list option
   }
 
@@ -143,7 +143,12 @@ let create
   let default s = Option.value ~default:"" s in
   let append_html = overridden_value in
   let hints =
-    [ help; promt_in_registration_hint ] |> CCList.filter_map CCFun.id
+    help
+    |> CCOption.value ~default:[]
+    |> fun hints ->
+    promt_in_registration_hint
+    |> CCOption.map_or ~default:[] CCList.return
+    |> CCList.append hints
   in
   match value with
   | Boolean boolean ->
@@ -419,8 +424,13 @@ let custom_field_to_htmx
   let version = CCOption.value ~default:(Public.version custom_field) version in
   let disabled = Public.is_disabled is_admin custom_field in
   let value = custom_field_to_htmx_value language is_admin custom_field in
-  let help = Public.to_common_hint language custom_field in
-  { version; field; value; htmx_attributes = Some htmx_attributes; help }
+  let hints = Public.help_elements language custom_field in
+  { version
+  ; field
+  ; value
+  ; htmx_attributes = Some htmx_attributes
+  ; help = Some hints
+  }
   |> to_html disabled ?hx_post ?classnames ?error ?flash_values ?success
 ;;
 

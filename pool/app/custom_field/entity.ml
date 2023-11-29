@@ -348,8 +348,8 @@ module Validation = struct
         |> CCInt.of_string
         >|= fun i ->
         match key with
-        | OptionsCountMin -> I18n.SelectedOptionsCountMax i
-        | OptionsCountMax -> I18n.SelectedOptionsCountMin i
+        | OptionsCountMin -> I18n.SelectedOptionsCountMin i
+        | OptionsCountMax -> I18n.SelectedOptionsCountMax i
       in
       build_hints read_key to_hints rules
     ;;
@@ -589,6 +589,25 @@ module Public = struct
     hint language m
     >|= Hint.value_hint
     >|= fun h -> Pool_common.I18n.CustomHtmx h
+  ;;
+
+  let validation_hints =
+    let return = CCOption.return in
+    function
+    | Boolean _ | Date _ | Select _ -> None
+    | Number ({ validation; _ }, _) ->
+      return (Validation.Number.hints validation)
+    | MultiSelect ({ validation; _ }, _, _) ->
+      return (Validation.MultiSelect.hints validation)
+    | Text ({ validation; _ }, _) -> return (Validation.Text.hints validation)
+  ;;
+
+  let help_elements language m =
+    let common_hint = to_common_hint language m in
+    let validation_hints = validation_hints m |> CCOption.value ~default:[] in
+    match common_hint with
+    | None -> validation_hints
+    | Some hint -> hint :: validation_hints
   ;;
 end
 
@@ -936,16 +955,6 @@ let validation_strings =
     validation |> snd |> to_strings MultiSelect.all
   | Number { validation; _ } -> validation |> snd |> to_strings Number.all
   | Text { validation; _ } -> validation |> snd |> to_strings Text.all
-;;
-
-let validation_hints =
-  let return = CCOption.return in
-  function
-  | Boolean _ | Date _ | Select _ -> None
-  | Number { validation; _ } -> return (Validation.Number.hints validation)
-  | MultiSelect ({ validation; _ }, _) ->
-    return (Validation.MultiSelect.hints validation)
-  | Text { validation; _ } -> return (Validation.Text.hints validation)
 ;;
 
 let validation_to_yojson = function

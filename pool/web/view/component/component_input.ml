@@ -914,7 +914,7 @@ let custom_field_to_static_input
   let open Custom_field in
   let open CCOption in
   let field = Public.to_common_field language custom_field in
-  let hints = Public.to_common_hint language custom_field >|= CCList.return in
+  let hints = Public.help_elements language custom_field in
   let required =
     force_required || Public.required custom_field |> Required.value
   in
@@ -922,7 +922,7 @@ let custom_field_to_static_input
     input_element
       ?flash_fetcher
       ?value
-      ?hints
+      ~hints
       ~required
       language
       input_type
@@ -953,7 +953,7 @@ let custom_field_to_static_input
       ; to_value = SelectOption.Public.show_id
       }
     in
-    multi_select ~required language t field ()
+    multi_select ~hints ~required language t field ()
   | Public.Number (_, answer) ->
     answer >>= Answer.value >|= CCInt.to_string |> create `Number
   | Public.Text (_, answer) -> answer >>= Answer.value |> create `Text
@@ -961,7 +961,7 @@ let custom_field_to_static_input
     let value = answer >>= Answer.value in
     selector
       ?flash_fetcher
-      ?hints
+      ~hints
       ~required
       ~option_formatter:SelectOption.Public.(name language)
       ~add_empty:true

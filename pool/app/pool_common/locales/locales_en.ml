@@ -510,9 +510,15 @@ let rec error_to_string = function
      deleted."
   | SessionInvalid -> "Invalid session, please login."
   | SelectedOptionsCountMax i ->
-    Format.asprintf "A maximum of %i options may be selected." i
+    Format.asprintf
+      "A maximum of %i option%s may be selected."
+      i
+      (if i == 1 then "" else "s")
   | SelectedOptionsCountMin i ->
-    Format.asprintf "A minimum of %i options have be selected." i
+    Format.asprintf
+      "A minimum of %i %s to be selected."
+      i
+      (if i == 1 then "option has" else "options have")
   | SessionAlreadyCanceled date ->
     CCFormat.asprintf "This session has already been canceled on %s." date
   | SessionAlreadyClosed date ->
@@ -534,8 +540,10 @@ let rec error_to_string = function
     "An error occurred"
   | TermsAndConditionsMissing -> "Terms and conditions have to be added first."
   | TermsAndConditionsNotAccepted -> "Terms and conditions not accepted"
-  | TextLengthMax i -> Format.asprintf "Must not be longer than %i." i
-  | TextLengthMin i -> Format.asprintf "Must not be shorter than %i." i
+  | TextLengthMax i ->
+    Format.asprintf "Must not be longer than %i characters." i
+  | TextLengthMin i ->
+    Format.asprintf "Must not be shorter than %i characters." i
   | TextMessageInterceptionError error ->
     Format.asprintf "Text message interception error: %s" error
   | TimeInPast -> "Time is in the past!"

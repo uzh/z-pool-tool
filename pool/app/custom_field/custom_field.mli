@@ -272,6 +272,9 @@ module Public : sig
     :  Pool_common.Language.t
     -> t
     -> Pool_common.I18n.hint option
+
+  val validation_hints : t -> Pool_common.I18n.hint list option
+  val help_elements : Pool_common.Language.t -> t -> Pool_common.I18n.hint list
 end
 
 module Group : sig
@@ -375,7 +378,6 @@ val admin_input_only : t -> AdminInputOnly.t
 val prompt_on_registration : t -> PromptOnRegistration.t
 val field_type : t -> FieldType.t
 val validation_strings : t -> (string * string) list
-val validation_hints : t -> Pool_common.I18n.hint list option
 val validation_to_yojson : t -> Yojson.Safe.t
 
 module PartialUpdate : sig
