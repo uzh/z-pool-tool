@@ -276,7 +276,6 @@ let field_value is_admin answer =
   | false -> value
 ;;
 
-(* TODO: Make sure selected mutli select checkboxes stay selected *)
 let custom_field_to_htmx_value language is_admin =
   let open CCOption in
   let open Custom_field in
