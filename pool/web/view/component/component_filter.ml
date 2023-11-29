@@ -191,21 +191,23 @@ let value_input
          ()
      | Key.MultiSelect options ->
        let selected = selected_options options in
+       let open Component_search in
        let multi_select =
-         Input.
-           { options
-           ; selected
-           ; to_label = Custom_field.SelectOption.name language
-           ; to_value = Custom_field.SelectOption.show_id
-           }
+         Static
+           Input.
+             { options
+             ; selected
+             ; to_label = Custom_field.SelectOption.name language
+             ; to_value = Custom_field.SelectOption.show_id
+             }
        in
-       Input.multi_select
+       multi_search
          ~additional_attributes
-         ~orientation:`Vertical
          ~disabled
+         ~input_type
          language
-         multi_select
          field_name
+         multi_select
          ()
      | Key.QueryExperiments ->
        let selected =
