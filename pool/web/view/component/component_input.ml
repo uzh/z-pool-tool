@@ -948,6 +948,7 @@ let custom_field_to_static_input
   | Public.Date (_, answer) ->
     date_picker_element
       ~disable_future:true
+      ?flash_fetcher
       ?value:(answer >>= Answer.value)
       ~required
       language
