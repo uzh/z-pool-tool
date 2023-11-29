@@ -4,6 +4,10 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/pool/tree/HEAD)
 
+### Added
+
+- option to enable min/max number of selected options for a multi_select custom field
+
 ## [0.5.1](https://github.com/uzh/pool/tree/0.5.1) - 2023-11-08
 
 ### Fixed
