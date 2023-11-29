@@ -198,7 +198,7 @@ let field_form
   let checkbox_element
     ?(disabled = false)
     ?orientation
-    ?help
+    ?hints
     ?(default = false)
     ?append_html
     field
@@ -209,7 +209,7 @@ let field_form
       ~additional_attributes:(if disabled then [ a_disabled () ] else [])
       ?append_html
       ?orientation
-      ?help
+      ?hints
       field
       ~value:(custom_field |> CCOption.map_or ~default fnc)
       ~flash_fetcher
@@ -574,7 +574,7 @@ let field_form
               ~flash_fetcher
           ; checkbox_element
               Message.Field.Override
-              ~help:I18n.CustomFieldAdminOverride
+              ~hints:[ I18n.CustomFieldAdminOverride ]
               ?append_html:
                 (if custom_field
                     |> CCOption.map_or
@@ -589,15 +589,15 @@ let field_form
                  |> CCOption.map_or
                       ~default:false
                       (admin_view_only %> AdminViewOnly.value))
-              ~help:I18n.CustomFieldAdminInputOnly
+              ~hints:[ I18n.CustomFieldAdminInputOnly ]
               Message.Field.AdminInputOnly
               (admin_input_only %> AdminInputOnly.value)
           ; checkbox_element
-              ~help:I18n.CustomFieldAdminViewOnly
+              ~hints:[ I18n.CustomFieldAdminViewOnly ]
               Message.Field.AdminViewOnly
               (admin_view_only %> AdminViewOnly.value)
           ; checkbox_element
-              ~help:I18n.CustomFieldPromptOnRegistration
+              ~hints:[ I18n.CustomFieldPromptOnRegistration ]
               Message.Field.PromptOnRegistration
               (prompt_on_registration %> PromptOnRegistration.value)
           ]

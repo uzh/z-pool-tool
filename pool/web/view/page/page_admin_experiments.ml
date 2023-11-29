@@ -142,10 +142,10 @@ let experiment_form
         "/admin/experiments/%s"
         (experiment.id |> Experiment.Id.value)
   in
-  let checkbox_element ?help ?(default = false) field fnc =
+  let checkbox_element ?hints ?(default = false) field fnc =
     checkbox_element
       language
-      ?help
+      ?hints
       field
       ~value:(experiment |> CCOption.map_or ~default fnc)
       ~flash_fetcher
@@ -168,7 +168,7 @@ let experiment_form
       [ timespan_picker
           language
           field
-          ~help:
+          ~hints:
             [ I18n.TimeSpanPickerHint
             ; I18n.DefaultReminderLeadTime
                 (default_value |> Reminder.LeadTime.value)
@@ -239,7 +239,7 @@ let experiment_form
                     contact_persons
                     (CCOption.bind experiment (fun exp -> exp.contact_person_id))
                     Field.ContactPerson
-                    ~help:Pool_common.I18n.ExperimentContactPerson
+                    ~hints:[ Pool_common.I18n.ExperimentContactPerson ]
                     ()
                 ; selector
                     language
@@ -266,19 +266,19 @@ let experiment_form
         ; div
             ~a:[ a_class [ "stack" ] ]
             [ checkbox_element
-                ~help:I18n.DirectRegistrationDisbled
+                ~hints:[ I18n.DirectRegistrationDisbled ]
                 Field.DirectRegistrationDisabled
                 direct_registration_disabled_value
             ; checkbox_element
-                ~help:I18n.RegistrationDisabled
+                ~hints:[ I18n.RegistrationDisabled ]
                 Field.RegistrationDisabled
                 registration_disabled_value
             ; checkbox_element
-                ~help:I18n.AllowUninvitedSignup
+                ~hints:[ I18n.AllowUninvitedSignup ]
                 Field.AllowUninvitedSignup
                 allow_uninvited_signup_value
             ; checkbox_element
-                ~help:I18n.ExternalDataRequired
+                ~hints:[ I18n.ExternalDataRequired ]
                 Field.ExternalDataRequired
                 external_data_required_value
             ; checkbox_element

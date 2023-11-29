@@ -195,9 +195,9 @@ let reset_password
         [ csrf_element csrf ()
         ; input_element language `Hidden Message.Field.Token ~value:token
         ; input_element
-            ~help:
-              (Pool_common.I18n.I18nText
-                 (password_policy |> I18n.content_to_string))
+            ~hints:
+              Pool_common.I18n.
+                [ I18nText (password_policy |> I18n.content_to_string) ]
             language
             `Password
             Message.Field.Password

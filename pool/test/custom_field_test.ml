@@ -160,11 +160,12 @@ module Data = struct
         |> CCOption.map CCList.pure
         |> Answer.create ~id:answer_id
       in
+      let validation = validation_schema Validation.MultiSelect.schema in
       Public.MultiSelect
         ( { Public.id
           ; name
           ; hint
-          ; validation = Validation.pure
+          ; validation
           ; required
           ; admin_override
           ; admin_input_only

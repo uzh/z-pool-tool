@@ -299,9 +299,9 @@ let login_information
               ~required:true
           ; input_element
               language
-              ~help:
-                Pool_common.I18n.(
-                  I18nText (password_policy |> I18n.content_to_string))
+              ~hints:
+                Pool_common.I18n.
+                  [ I18nText (password_policy |> I18n.content_to_string) ]
               `Password
               ~value:""
               Field.NewPassword

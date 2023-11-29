@@ -43,7 +43,7 @@ let multi_search
   multi_search
   ?(additional_attributes = [])
   ?(disabled = false)
-  ?hint
+  ?hints
   ?(is_filter = false)
   ?js_callback
   ?input_type
@@ -76,7 +76,7 @@ let multi_search
           ()
       ]
   in
-  let hint = Component_input.Elements.help language hint in
+  let hint = Component_input.Elements.hints language hints in
   let base_attributes =
     let placeholder =
       CCOption.map_or
@@ -243,7 +243,7 @@ module Tag = struct
   let to_label = snd %> Title.value
   let to_value = fst %> Id.value
 
-  let create ?disabled ?hint ?is_filter ?tag_name ?(selected = []) language =
+  let create ?disabled ?hints ?is_filter ?tag_name ?(selected = []) language =
     let dynamic_search =
       { hx_url = "/admin/settings/tags/search"
       ; hx_method = `Post
@@ -254,7 +254,7 @@ module Tag = struct
     in
     multi_search
       ?disabled
-      ?hint
+      ?hints
       ?is_filter
       ~placeholder
       ?tag_name
@@ -291,11 +291,11 @@ module RoleTarget = struct
     ]
   ;;
 
-  let experiments ?hint language admin_id =
+  let experiments ?hints language admin_id =
     let open Experiment in
     multi_search
       ~additional_attributes
-      ?hint
+      ?hints
       ~tag_name:Field.Target
       ~placeholder
       language
@@ -304,11 +304,11 @@ module RoleTarget = struct
       ()
   ;;
 
-  let locations ?hint language admin_id =
+  let locations ?hints language admin_id =
     let open Location in
     multi_search
       ~additional_attributes
-      ?hint
+      ?hints
       ~tag_name:Field.Target
       ~placeholder
       language

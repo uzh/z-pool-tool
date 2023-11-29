@@ -122,8 +122,10 @@ let pagination language query { Pagination.page; page_count; _ } =
 let search language query searchable_by =
   [ Component_input.input_element
       ?value:(query.search |> CCOption.map Search.query_string)
-      ~help:
-        (Pool_common.I18n.SearchByFields (CCList.map Column.field searchable_by))
+      ~hints:
+        [ Pool_common.I18n.SearchByFields
+            (CCList.map Column.field searchable_by)
+        ]
       language
       `Text
       Pool_common.Message.Field.Search

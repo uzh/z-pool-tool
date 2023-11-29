@@ -83,25 +83,19 @@ module Elements = struct
     | `Horizontal -> [ "horizontal"; "flex-gap" ]
   ;;
 
-  let help language = function
+  let hints ?(classnames = []) language =
+    let to_html help =
+      help
+      |> Pool_common.Utils.hint_to_string language
+      |> Utils.Html.handle_line_breaks span
+    in
+    function
     | None -> []
     | Some help ->
       help
-      |> Pool_common.Utils.hint_to_string language
-      |> Utils.Html.handle_line_breaks (span ~a:[ a_class [ "help" ] ])
+      |> CCList.map to_html
+      |> span ~a:[ a_class ("help" :: classnames) ]
       |> CCList.return
-  ;;
-
-  let help_list ?(classnames = []) language = function
-    | [] -> []
-    | help ->
-      [ span
-          ~a:[ a_class ("help" :: classnames) ]
-          CCList.(
-            help
-            >|= CCFun.(Pool_common.(Utils.hint_to_string language) %> txt)
-            |> intersperse (br ()))
-      ]
   ;;
 
   let error language = function
@@ -140,7 +134,7 @@ let input_element
   ?(orientation = `Vertical)
   ?(classnames = [])
   ?label_field
-  ?help
+  ?hints
   ?identifier
   ?(required = false)
   ?(disabled = false)
@@ -172,7 +166,7 @@ let input_element
   | `Hidden -> input ~a:attributes ()
   | _ ->
     let group_class = Elements.group_class classnames orientation in
-    let help = Elements.help language help in
+    let help = Elements.hints language hints in
     let error = Elements.error language error in
     let input_element = Elements.apply_orientation attributes orientation in
     div
@@ -190,7 +184,7 @@ let flatpicker_element
   ?(classnames = [])
   ?error
   ?label_field
-  ?help
+  ?hints
   ?identifier
   ?(required = false)
   ?flash_fetcher
@@ -244,7 +238,7 @@ let flatpicker_element
     |> fun attrs -> if required then attrs @ [ a_required () ] else attrs
   in
   let group_class = Elements.group_class classnames orientation in
-  let help = Elements.help language help in
+  let help = Elements.hints language hints in
   let error = Elements.error language error in
   let input_element = Elements.apply_orientation attributes orientation in
   div
@@ -275,7 +269,7 @@ let timespan_picker
   ?(additional_attributes = [])
   ?(orientation = `Vertical)
   ?(classnames = [])
-  ?(help = [])
+  ?hints
   ?identifier
   ?label_field
   ?(required = false)
@@ -304,7 +298,7 @@ let timespan_picker
     if CCOption.is_some error then a_class [ "is-invalid" ] :: attrs else attrs
   in
   let group_class = Elements.group_class classnames orientation in
-  let help = Elements.help_list language help in
+  let help = Elements.hints language hints in
   let error = Elements.error language error in
   let input_element = Elements.apply_orientation attributes orientation in
   div
@@ -321,7 +315,7 @@ let checkbox_element
   ?(classnames = [])
   ?error
   ?flash_fetcher
-  ?help
+  ?hints
   ?identifier
   ?label_field
   ?(orientation = `Vertical)
@@ -357,7 +351,7 @@ let checkbox_element
   in
   let attributes = attributes @ additional_attributes in
   let group_class = Elements.group_class classnames orientation in
-  let help = Elements.help language help in
+  let help = Elements.hints language hints in
   let error = Elements.error language error in
   let input_element =
     let checkbox =
@@ -436,7 +430,7 @@ let textarea_element
   ?(orientation = `Vertical)
   ?label_field
   ?identifier
-  ?help
+  ?hints
   ?(required = false)
   ?(rich_text = false)
   ?value
@@ -451,7 +445,7 @@ let textarea_element
       name |> Field.show |> flash_fetcher)
   in
   let value = old_value <+> value |> CCOption.get_or ~default:"" in
-  let help = Elements.help language help in
+  let help = Elements.hints language hints in
   let textarea_attributes =
     let base = [ a_name (name |> Field.show); a_id id ] in
     let base = if rich_text then a_class [ "rich-text" ] :: base else base in
@@ -573,7 +567,7 @@ let selector
   ?(read_only = false)
   ?error
   ?flash_fetcher
-  ?help
+  ?hints
   ?option_formatter
   ?elt_option_formatter
   ?option_disabler
@@ -662,7 +656,7 @@ let selector
         ()
     else txt ""
   in
-  let help = Elements.help language help in
+  let help = Elements.hints language hints in
   let error = Elements.error language error in
   div
     ~a:[ a_class (Elements.group_class classnames `Vertical) ]
@@ -704,7 +698,7 @@ let multi_select
   ?additional_attributes
   ?(classnames = [])
   ?flash_values
-  ?help
+  ?hints
   ?error
   ?(disabled = false)
   ?(required = false)
@@ -713,10 +707,7 @@ let multi_select
   =
   let error = Elements.error language error in
   let help_html =
-    help
-    |> CCOption.map_or
-         ~default:[]
-         (Elements.help_list ~classnames:[ "flex-basis-100" ] language)
+    Elements.hints ~classnames:[ "flex-basis-100" ] language hints
   in
   CCList.map
     (fun option ->
@@ -754,7 +745,7 @@ let multi_select
     options
   |> fun inputs ->
   let classnames =
-    if CCOption.(is_some append_html || is_some help)
+    if CCOption.(is_some append_html || is_some hints)
     then classnames @ [ "flexrow"; "wrap" ]
     else classnames
   in
@@ -853,7 +844,7 @@ let admin_select
   field
   ?(attributes = [])
   ?(required = false)
-  ?help
+  ?hints
   ()
   =
   let open Pool_common in
@@ -868,7 +859,7 @@ let admin_select
     in
     attrs @ attributes
   in
-  let help = Elements.help language help in
+  let help = Elements.hints language hints in
   let options =
     let default_option =
       let attrs = [ a_value "" ] in
@@ -923,7 +914,7 @@ let custom_field_to_static_input
   let open Custom_field in
   let open CCOption in
   let field = Public.to_common_field language custom_field in
-  let help = Public.to_common_hint language custom_field in
+  let hints = Public.to_common_hint language custom_field >|= CCList.return in
   let required =
     force_required || Public.required custom_field |> Required.value
   in
@@ -931,7 +922,7 @@ let custom_field_to_static_input
     input_element
       ?flash_fetcher
       ?value
-      ?help
+      ?hints
       ~required
       language
       input_type
@@ -970,7 +961,7 @@ let custom_field_to_static_input
     let value = answer >>= Answer.value in
     selector
       ?flash_fetcher
-      ?help
+      ?hints
       ~required
       ~option_formatter:SelectOption.Public.(name language)
       ~add_empty:true

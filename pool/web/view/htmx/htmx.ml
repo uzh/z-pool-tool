@@ -142,8 +142,9 @@ let create
   in
   let default s = Option.value ~default:"" s in
   let append_html = overridden_value in
-  (* TODO: Allow multiple hints *)
-  let help = CCOption.(help <+> promt_in_registration_hint) in
+  let hints =
+    [ help; promt_in_registration_hint ] |> CCList.filter_map CCFun.id
+  in
   match value with
   | Boolean boolean ->
     Input.checkbox_element
@@ -153,7 +154,7 @@ let create
       ?append_html
       ~classnames
       ?value:boolean
-      ?help
+      ~hints
       ?error
       ?required
       language
@@ -166,7 +167,7 @@ let create
       ~disable_future:true
       ?error
       ?value:date
-      ?help
+      ~hints
       ?required
       ?success
       language
@@ -189,7 +190,7 @@ let create
       ?append_html
       ~classnames
       ?flash_values
-      ~help:([ help ] |> CCList.filter_map CCFun.id)
+      ~hints
       ?required
       ?error
       ?disabled
@@ -205,7 +206,7 @@ let create
       ?append_html
       ?error
       ?required
-      ?help
+      ~hints
       language
       `Number
       field
@@ -215,7 +216,7 @@ let create
       ?append_html
       ~classnames
       ?error
-      ?help
+      ~hints
       ?option_formatter
       ?required
       ~add_empty:true
@@ -231,7 +232,7 @@ let create
       ?append_html
       ~classnames
       ?error
-      ?help
+      ~hints
       ~value:
         (CCOption.bind flash_values CCList.head_opt
          |> CCOption.value ~default:(str |> default))

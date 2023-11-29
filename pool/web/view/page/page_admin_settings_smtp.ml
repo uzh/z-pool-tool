@@ -162,7 +162,7 @@ let show
               ()
           ; checkbox_element
               ~value:(Default.value default)
-              ~help:Pool_common.I18n.SmtpSettingsDefaultFlag
+              ~hints:[ Pool_common.I18n.SmtpSettingsDefaultFlag ]
               language
               Field.DefaultSmtpServer
           ; submit ()
@@ -262,7 +262,7 @@ let smtp_create_form Pool_context.{ language; csrf; _ } location flash_fetcher =
           ()
       ; checkbox_element
           ~flash_fetcher
-          ~help:Pool_common.I18n.SmtpSettingsDefaultFlag
+          ~hints:[ Pool_common.I18n.SmtpSettingsDefaultFlag ]
           language
           Field.DefaultSmtpServer
       ; submit ()

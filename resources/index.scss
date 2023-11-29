@@ -34,6 +34,10 @@ form[class*="stack"] input[type="hidden"]+* {
     row-gap: 0;
 }
 
+.form-group .help {
+    @extend .flexcolumn;
+}
+
 // Index page
 .index-page>*:nth-child(2) {
     flex-basis: 25%;

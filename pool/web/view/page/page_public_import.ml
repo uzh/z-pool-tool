@@ -31,9 +31,9 @@ let import_confirmation
             Message.Field.Token
             ~value:(User_import.Token.value token)
         ; input_element
-            ~help:
-              (Pool_common.I18n.I18nText
-                 (password_policy |> I18n.content_to_string))
+            ~hints:
+              Pool_common.I18n.
+                [ I18nText (password_policy |> I18n.content_to_string) ]
             ~required:true
             language
             `Password

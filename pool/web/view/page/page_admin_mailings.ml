@@ -590,7 +590,7 @@ let form
                      Field.Limit
                      ~flash_fetcher
                      ~required:true
-                     ~help:I18n.MailingLimit
+                     ~hints:[ I18n.MailingLimit ]
                      ~value:
                        Mailing.(
                          mailing

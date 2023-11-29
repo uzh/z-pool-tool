@@ -175,8 +175,6 @@ let validate_partial_update
   custom_field
   (field, current_version, value)
   =
-  let () = Logs.info (fun m -> m "%s" "validate_partial_update") in
-  let () = Logs.info (fun m -> m "VALUES: %s" (CCString.concat ", " value)) in
   let open PartialUpdate in
   let check_version old_v t =
     let open Pool_common.Version in
