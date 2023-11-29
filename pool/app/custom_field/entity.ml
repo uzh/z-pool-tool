@@ -150,6 +150,14 @@ module Validation = struct
     | _ -> None
   ;;
 
+  let build_hints read_key to_hints (rules : 'a t) =
+    let open CCOption.Infix in
+    rules
+    |> snd
+    |> CCList.filter_map (fun (key, rule_value) ->
+      read_key key >>= to_hints rule_value)
+  ;;
+
   module Text = struct
     type key =
       | TextLengthMin [@name "text_length_min"]
@@ -201,6 +209,20 @@ module Validation = struct
     let all =
       [ show_key TextLengthMin, `Number; show_key TextLengthMax, `Number ]
     ;;
+
+    let hints rules =
+      let open CCOption.Infix in
+      let open Pool_common in
+      let to_hints rule_value key =
+        rule_value
+        |> CCInt.of_string
+        >|= fun i ->
+        match key with
+        | TextLengthMin -> I18n.TextLengthMin i
+        | TextLengthMax -> I18n.TextLengthMax i
+      in
+      build_hints read_key to_hints rules
+    ;;
   end
 
   module Number = struct
@@ -250,6 +272,20 @@ module Validation = struct
     ;;
 
     let all = [ show_key NumberMin, `Number; show_key NumberMax, `Number ]
+
+    let hints rules =
+      let open CCOption.Infix in
+      let open Pool_common in
+      let to_hints rule_value key =
+        rule_value
+        |> CCInt.of_string
+        >|= fun i ->
+        match key with
+        | NumberMin -> I18n.NumberMin i
+        | NumberMax -> I18n.NumberMax i
+      in
+      build_hints read_key to_hints rules
+    ;;
   end
 
   module MultiSelect = struct
@@ -302,6 +338,20 @@ module Validation = struct
 
     let all =
       [ show_key OptionsCountMin, `Number; show_key OptionsCountMax, `Number ]
+    ;;
+
+    let hints rules =
+      let open CCOption.Infix in
+      let open Pool_common in
+      let to_hints rule_value key =
+        rule_value
+        |> CCInt.of_string
+        >|= fun i ->
+        match key with
+        | OptionsCountMin -> I18n.SelectedOptionsCountMax i
+        | OptionsCountMax -> I18n.SelectedOptionsCountMin i
+      in
+      build_hints read_key to_hints rules
     ;;
   end
 
@@ -886,6 +936,16 @@ let validation_strings =
     validation |> snd |> to_strings MultiSelect.all
   | Number { validation; _ } -> validation |> snd |> to_strings Number.all
   | Text { validation; _ } -> validation |> snd |> to_strings Text.all
+;;
+
+let validation_hints =
+  let return = CCOption.return in
+  function
+  | Boolean _ | Date _ | Select _ -> None
+  | Number { validation; _ } -> return (Validation.Number.hints validation)
+  | MultiSelect ({ validation; _ }, _) ->
+    return (Validation.MultiSelect.hints validation)
+  | Text { validation; _ } -> return (Validation.Text.hints validation)
 ;;
 
 let validation_to_yojson = function

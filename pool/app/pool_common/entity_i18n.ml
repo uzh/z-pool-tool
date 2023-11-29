@@ -201,6 +201,8 @@ type hint =
   | NumberIsDaysHint
   | NumberIsSecondsHint
   | NumberIsWeeksHint
+  | NumberMax of int
+  | NumberMin of int
   | Overbook
   | PartialUpdate
   | ParticipationTags
@@ -223,6 +225,8 @@ type hint =
   | ScheduledIntro
   | SearchByFields of Entity_message.Field.t list
   | SelectedDateIsPast
+  | SelectedOptionsCountMax of int
+  | SelectedOptionsCountMin of int
   | SessionCancellationMessageFollowUps
   | SessionCancellationWithFollowups
   | SessionCancelMessage
@@ -243,6 +247,8 @@ type hint =
   | TemplateTextElementsHint
   | TenantDatabaseLabel
   | TenantDatabaseUrl
+  | TextLengthMin of int
+  | TextLengthMax of int
   | TimeSpanPickerHint
   | WaitingListPhoneMissingContact
 

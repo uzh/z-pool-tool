@@ -1,5 +1,7 @@
 open Entity_i18n
 
+let error_to_string = Locales_de.error_to_string
+
 let to_string = function
   | Activity -> "Aktivität"
   | Address -> "Addresse"
@@ -410,6 +412,8 @@ Wenn Sie die Erinnerungen jetzt manuell auslösen werden über den gewählten Na
   | NumberIsSecondsHint -> "Anzahl Sekunden"
   | NumberIsDaysHint -> "Anzahl Tage"
   | NumberIsWeeksHint -> "Anzahl Wochen"
+  | NumberMax i -> error_to_string (Entity_message.NumberMax i)
+  | NumberMin i -> error_to_string (Entity_message.NumberMin i)
   | Overbook ->
     "Anzahl Kontakte, die sich zusätzlich zur maximalen Anzahl Teilnehmer, an \
      einer Session einschreiben können."
@@ -478,6 +482,10 @@ Wenn Sie die Erinnerungen jetzt manuell auslösen werden über den gewählten Na
     Format.asprintf
       "Suche nach: %s"
       (fields |> CCList.map Locales_en.field_to_string |> CCString.concat ", ")
+  | SelectedOptionsCountMax i ->
+    error_to_string (Entity_message.SelectedOptionsCountMax i)
+  | SelectedOptionsCountMin i ->
+    error_to_string (Entity_message.SelectedOptionsCountMin i)
   | SessionCancellationWithFollowups ->
     {|Wenn Sie diese Sitzung absagen, werden auch alle Folgesessions abgesagt.
 
@@ -546,6 +554,8 @@ Es können nur Sitzungen mit freien Plätzen ausgewählt werden.|}
   | TenantDatabaseUrl ->
     {|Die Datenbank URL, nach folgendem Schema:
     mariadb://<user>:<pw>@<host>:<port>/<database>|}
+  | TextLengthMin i -> error_to_string (Entity_message.TextLengthMin i)
+  | TextLengthMax i -> error_to_string (Entity_message.TextLengthMax i)
   | TimeSpanPickerHint -> "Zeitdauer in Minuten."
   | WaitingListPhoneMissingContact ->
     "Sie haben in Ihrem Profil noch keine Telefonnummer angegenen. Wir bitten \
