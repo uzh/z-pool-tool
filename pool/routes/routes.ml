@@ -240,6 +240,9 @@ module Admin = struct
             [ get "" ~middlewares:[ Access.read_file ] asset ]
         ]
       in
+      let sessions =
+        [ get "" ~middlewares:[ Session.Access.read_by_location ] Session.show ]
+      in
       let specific =
         [ get "" ~middlewares:[ Access.index ] show
         ; get "/edit" ~middlewares:[ Access.update ] edit
@@ -248,6 +251,7 @@ module Admin = struct
         ; choose
             ~scope:(add_key ~prefix:"mapping" FileMapping)
             [ post "/delete" ~middlewares:[ Access.delete_file ] delete ]
+        ; choose ~scope:(add_key ~prefix:"sessions" Session) sessions
         ]
       in
       [ get "" ~middlewares:[ Access.index ] index

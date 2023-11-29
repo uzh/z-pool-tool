@@ -207,7 +207,26 @@ module Calendar : sig
   type location =
     { id : Pool_location.Id.t
     ; name : Pool_location.Name.t
+    ; url : string
     }
+
+  type links =
+    { show_experiment : bool
+    ; show_session : bool
+    ; show_location_session : bool
+    ; experiment : string
+    ; session : string
+    ; location_session : string
+    }
+
+  val create_links
+    :  ?show_experiment:bool
+    -> ?show_session:bool
+    -> ?show_location_session:bool
+    -> Experiment.Id.t
+    -> Id.t
+    -> location
+    -> links
 
   type t =
     { id : Id.t
@@ -215,10 +234,7 @@ module Calendar : sig
     ; title : Experiment.Title.t
     ; start : Start.t
     ; end_ : End.t
-    ; session_url : string
-    ; show_session_url : bool
-    ; experiment_url : string
-    ; show_experiment_url : bool
+    ; links : links
     ; max_participants : ParticipantAmount.t
     ; min_participants : ParticipantAmount.t
     ; overbook : ParticipantAmount.t
@@ -410,6 +426,12 @@ module Guard : sig
     val read
       :  ?model:Role.Target.t
       -> Experiment.Id.t
+      -> Id.t
+      -> Guard.ValidationSet.t
+
+    val read_by_location
+      :  ?model:Role.Target.t
+      -> Pool_location.Id.t
       -> Id.t
       -> Guard.ValidationSet.t
 

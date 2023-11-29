@@ -58,6 +58,13 @@ module Access = struct
       ]
   ;;
 
+  let read_by_location ?(model = `Session) location_id session_id =
+    Or
+      [ session ~model ~session_id Read
+      ; Pool_location.Guard.Access.read ~model location_id
+      ]
+  ;;
+
   let update ?(model = `Session) experiment_id session_id =
     And
       [ Or
