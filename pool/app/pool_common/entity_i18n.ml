@@ -155,7 +155,6 @@ type hint =
   | CustomFieldNoContactValue
   | CustomFieldOptionsCompleteness
   | CustomFieldPromptOnRegistration
-  | CustomFieldSelectRequiredOptions
   | CustomFieldSessionModel
   | CustomFieldSort of Entity_message.Field.t
   | CustomFieldTypeText
