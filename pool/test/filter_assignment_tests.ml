@@ -3,6 +3,55 @@ let ( let* ) x f = Lwt_result.bind (Lwt_result.lift x) f
 let ( let& ) = Lwt_result.bind
 let test_db = Test_utils.Data.database_label
 
+let session ~experiment =
+  let open Session in
+  let sid = Id.create () in
+  let now = Ptime_clock.now () in
+  let session_start = Start.create now in
+  let* session_duration =
+    let one_day = Ptime.Span.of_int_s 86_400 in
+    let tomorrow =
+      Ptime.add_span now one_day
+      |> CCOption.get_exn_or "could not add one day to now"
+    in
+    Duration.create (Ptime.diff tomorrow now)
+  in
+  let pid = Pool_location.Id.create () in
+  let pool_address = Pool_location.Address.virtual_ in
+  let pool_status = Pool_location.Status.Active in
+  let mapping_file = [] in
+  let* pool_location =
+    Pool_location.create
+      ~id:pid
+      "a-pool-location"
+      None
+      pool_address
+      None
+      pool_status
+      mapping_file
+  in
+  let* max_participants = ParticipantAmount.create 2112 in
+  let* min_participants = ParticipantAmount.create 1984 in
+  let* overbook = ParticipantAmount.create 7 in
+  let session =
+    Session.create
+      ~id:sid
+      session_start
+      session_duration
+      pool_location
+      max_participants
+      min_participants
+      overbook
+  in
+  let events =
+    [ Pool_location.created pool_location |> Pool_event.pool_location
+    ; Session.Created (session, experiment.Experiment.id) |> Pool_event.session
+    ]
+  in
+  let& () = Pool_event.handle_events test_db events |> Lwt_result.ok in
+  Lwt_result.lift (Ok session)
+;;
+
 let experiment () =
   let open Experiment in
   let experiment_id = Id.create () in
@@ -35,11 +84,9 @@ let experiment () =
 
 let contact ~prefix () =
   let open Contact in
-  let invited_contact_id = Id.create () in
+  let user_id = Id.create () in
   let* email =
-    let email =
-      Format.asprintf "%s+%s@domain.test" prefix (Id.value invited_contact_id)
-    in
+    let email = Format.asprintf "%s+%s@domain.test" prefix (Id.value user_id) in
     Pool_user.EmailAddress.create email
   in
   let* password = Pool_user.Password.create_unvalidated "a-password" in
@@ -51,7 +98,7 @@ let contact ~prefix () =
   let language = Pool_common.Language.En |> Option.some in
   let contact_created =
     [ Contact.created
-        { user_id = invited_contact_id
+        { user_id
         ; email
         ; password
         ; firstname
@@ -63,13 +110,12 @@ let contact ~prefix () =
     ]
   in
   let& () = Pool_event.handle_events test_db contact_created |> Lwt_result.ok in
-  let& contact = Contact.find test_db invited_contact_id in
+  let& contact = Contact.find test_db user_id in
   let%lwt token = Email.create_token test_db email in
   let* verification_events =
     let open Cqrs_command.User_command in
     let created_email =
-      Email.Created (email, token, invited_contact_id)
-      |> Pool_event.email_verification
+      Email.Created (email, token, user_id) |> Pool_event.email_verification
     in
     let email = Email.create email contact.user token in
     let@ verify_events = VerifyEmail.handle (Contact contact) email in
@@ -78,15 +124,34 @@ let contact ~prefix () =
   let& () =
     Pool_event.handle_events test_db verification_events |> Lwt_result.ok
   in
-  let& contact = Contact.find test_db invited_contact_id in
+  let& contact = Contact.find test_db user_id in
   let verification_events =
     [ Contact.Verified contact |> Pool_event.contact ]
   in
   let& () =
     Pool_event.handle_events test_db verification_events |> Lwt_result.ok
   in
-  let& contact = Contact.find test_db invited_contact_id in
+  let& contact = Contact.find test_db user_id in
   Lwt_result.lift (Ok contact)
+;;
+
+let assignment ~experiment ~session ~contact =
+  let open Cqrs_command.Assignment_command in
+  let already_enrolled = false in
+  let* events =
+    Create.(
+      handle
+        { experiment; contact; follow_up_sessions = []; session }
+        (fun (_ : Assignment.t) ->
+          Sihl_email.create
+            ~sender:"sender"
+            ~recipient:"recipient"
+            ~subject:"subject"
+            "body")
+        already_enrolled)
+  in
+  let& () = Pool_event.handle_events test_db events |> Lwt_result.ok in
+  Lwt_result.lift (Ok ())
 ;;
 
 let invitation ~experiment ~contacts =
@@ -112,33 +177,39 @@ let invitation ~experiment ~contacts =
   Lwt_result.lift (Ok ())
 ;;
 
-(** This test verifies that given a contact that was invited to an experiment,
-    and one that was not, the contact that was not invited will show after the
-    invitation exclusion filter is applied.
+(** This test verifies that given a contact that has accpeted an invitation to an experiment,
+    and one that was not, the contact that did not accept will show after the
+    assignment exclusion filter is applied.
 
     It does so by:
 
     1. creating an experiment
-    2. creating a contact that is invited to the experiment
-    3. creating a contact that is NOT invited to the experiment
-    4. create a filter that for invitations that includes our experiment
+    2. creating a contact that has accepted an invitation to the experiment
+    3. creating a contact that has NOT accepted an invitation to the experiment
+    4. create a filter that for assignments that includes our experiment
     5. assert on the found contacts
 
     Fin. *)
-let finds_uninvited_contacts =
+let finds_unassigned_contacts =
   Test_utils.case
   @@ fun () ->
   (* 1. creating an experiment *)
   let& experiment = experiment () in
-  (* 2. creating a contact that is invited to the experiment *)
-  let& invited_contact = contact ~prefix:"invited" () in
-  let& () = invitation ~experiment ~contacts:[ invited_contact ] in
-  (* 3. creating a contact that is NOT invited to the experiment *)
-  let& expected_contact = contact ~prefix:"probe" () in
-  (* 4. create a filter that for invitations that includes our experiment *)
-  let invitation_filter =
+  (* 2. creating an session *)
+  let& session = session ~experiment in
+  (* 2. creating contacts *)
+  let& assigned_contact = contact ~prefix:"invited" () in
+  let& unassigned_contact = contact ~prefix:"probe" () in
+  (* 3. send invitations *)
+  let& () =
+    invitation ~experiment ~contacts:[ assigned_contact; unassigned_contact ]
+  in
+  (* 4. only accept one of the invitations, creating the assignment *)
+  let& () = assignment ~experiment ~contact:assigned_contact ~session in
+  (* 5. create a filter that for assignments that includes our experiment *)
+  let assignment_filter =
     let open Filter in
-    let key : Key.t = Key.(Hardcoded Invitation) in
+    let key : Key.t = Key.(Hardcoded Assignment) in
     let value =
       let exp_ids =
         [ Experiment.(experiment.id) ]
@@ -155,7 +226,7 @@ let finds_uninvited_contacts =
     Filter.find_filtered_contacts
       test_db
       Filter.MatchesFilter
-      (Some invitation_filter)
+      (Some assignment_filter)
   in
   (* FIXME(@leostera): since tests are not currently running in isolation, when
      we search for things we may find a lot more than we care about. This little
@@ -167,11 +238,14 @@ let finds_uninvited_contacts =
       (fun contact ->
         let open Contact in
         let open Sihl_user in
-        contact.user.id = invited_contact.user.id
-        || contact.user.id = expected_contact.user.id)
+        contact.user.id = unassigned_contact.user.id
+        || contact.user.id = assigned_contact.user.id)
       found_contacts
   in
-  (* 5. assert on the found contacts *)
+  (* 6. assert on the found contacts *)
+  let& expected_contact =
+    Contact.find test_db (Contact.id unassigned_contact)
+  in
   Alcotest.(
     check
       int
@@ -194,23 +268,27 @@ let finds_uninvited_contacts =
     It does so by:
 
     1. creating an experiment
-    2. creating a contact that is invited to the experiment
-    3. create a filter that for invitations that includes our experiment
+    2. creating a contact that has accepted an invitation to the experiment
+    3. create a filter that for assignments that includes our experiment
     4. assert on the found contacts
 
     Fin. *)
-let filters_out_invited_contacts =
+let filters_out_assigned_contacts =
   Test_utils.case
   @@ fun () ->
   (* 1. creating an experiment *)
   let& experiment = experiment () in
+  (* 2. creating an session *)
+  let& session = session ~experiment in
   (* 2. creating a contact that is invited to the experiment *)
-  let& invited_contact = contact ~prefix:"invited" () in
-  let& () = invitation ~experiment ~contacts:[ invited_contact ] in
-  (* 3. create a filter that for invitations that includes our experiment *)
-  let invitation_filter =
+  let& assigned_contact = contact ~prefix:"invited" () in
+  let& () = invitation ~experiment ~contacts:[ assigned_contact ] in
+  (* 4. only accept one of the invitations, creating the assignment *)
+  let& () = assignment ~experiment ~contact:assigned_contact ~session in
+  (* 3. create a filter that for assignments that includes our experiment *)
+  let assignment_filter =
     let open Filter in
-    let key : Key.t = Key.(Hardcoded Invitation) in
+    let key : Key.t = Key.(Hardcoded Assignment) in
     let value =
       let exp_ids =
         [ Experiment.(experiment.id) ]
@@ -227,7 +305,7 @@ let filters_out_invited_contacts =
     Filter.find_filtered_contacts
       test_db
       Filter.MatchesFilter
-      (Some invitation_filter)
+      (Some assignment_filter)
   in
   (* FIXME(@leostera): since tests are not currently running in isolation, when
      we search for things we may find a lot more than we care about. This little
@@ -239,7 +317,7 @@ let filters_out_invited_contacts =
       (fun contact ->
         let open Contact in
         let open Sihl_user in
-        contact.user.id = invited_contact.user.id)
+        contact.user.id = assigned_contact.user.id)
       found_contacts
   in
   (* 4. assert on the found contacts *)
