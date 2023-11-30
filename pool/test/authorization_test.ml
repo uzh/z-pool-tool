@@ -26,7 +26,9 @@ let update_language_as actor =
   Lwt.return_ok ()
 ;;
 
-let recruiter_can_update_contact_language _ () =
+let recruiter_can_update_contact_language =
+  Test_utils.case
+  @@ fun () ->
   let open Utils.Lwt_result.Infix in
   let ctx = Pool_database.to_ctx Test_utils.Data.database_label in
   let%lwt actor =
@@ -41,10 +43,12 @@ let recruiter_can_update_contact_language _ () =
     "Admin can update a contact."
     (Ok ())
     actual
-  |> Lwt.return
+  |> Lwt.return_ok
 ;;
 
-let guest_cannot_update_language _ () =
+let guest_cannot_update_language =
+  Test_utils.case
+  @@ fun () ->
   let%lwt actual = update_language_as Guard.guest_authorizable in
   Alcotest.(check (result unit Test_utils.error))
     "Guest cannot update a contact."
@@ -52,10 +56,12 @@ let guest_cannot_update_language _ () =
     (CCResult.map_err
        (fun _ -> Pool_common.Message.authorization "Failure")
        actual)
-  |> Lwt.return
+  |> Lwt.return_ok
 ;;
 
-let operator_works _ () =
+let operator_works =
+  Test_utils.case
+  @@ fun () ->
   let ctx = Pool_database.to_ctx Test_utils.Data.database_label in
   let%lwt actual =
     let open Utils.Lwt_result.Infix in
@@ -98,5 +104,5 @@ let operator_works _ () =
     "Parametric roles work."
     (Ok ())
     actual
-  |> Lwt.return
+  |> Lwt.return_ok
 ;;

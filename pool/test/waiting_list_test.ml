@@ -92,7 +92,9 @@ module PendingWaitingLists = struct
   let experiment_id = Experiment.Id.create ()
   let session_id = Session.Id.create ()
 
-  let find_pending_waitinglists_by_contact _ () =
+  let find_pending_waitinglists_by_contact =
+    Test_utils.case
+    @@ fun () ->
     let open Utils.Lwt_result.Infix in
     let open Integration_utils in
     let%lwt contact =
@@ -115,10 +117,12 @@ module PendingWaitingLists = struct
           %> CCOption.is_some
     in
     let () = Alcotest.(check bool "succeeds" true res) in
-    Lwt.return_unit
+    Lwt.return_ok ()
   ;;
 
-  let exclude_after_assignign_to_session _ () =
+  let exclude_after_assignign_to_session =
+    Test_utils.case
+    @@ fun () ->
     let open Utils.Lwt_result.Infix in
     let%lwt experiment =
       Experiment.find database_label experiment_id
@@ -141,10 +145,12 @@ module PendingWaitingLists = struct
           %> CCOption.is_none
     in
     let () = Alcotest.(check bool "succeeds" true res) in
-    Lwt.return_unit
+    Lwt.return_ok ()
   ;;
 
-  let include_after_session_cancellation _ () =
+  let include_after_session_cancellation =
+    Test_utils.case
+    @@ fun () ->
     let open Utils.Lwt_result.Infix in
     let%lwt experiment =
       Experiment.find database_label experiment_id
@@ -167,6 +173,6 @@ module PendingWaitingLists = struct
           %> CCOption.is_some
     in
     let () = Alcotest.(check bool "succeeds" true res) in
-    Lwt.return_unit
+    Lwt.return_ok ()
   ;;
 end

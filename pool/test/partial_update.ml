@@ -17,7 +17,9 @@ let save_custom_fields custom_field contact =
   Lwt_list.iter_s (Pool_event.handle_event database_label) events
 ;;
 
-let update_with_old_version _ () =
+let update_with_old_version =
+  Test_utils.case
+  @@ fun () ->
   let%lwt () =
     let open CCResult in
     let contact = Test_utils.Model.create_contact () in
@@ -43,10 +45,12 @@ let update_with_old_version _ () =
         partial_update)
     |> Lwt.return
   in
-  Lwt.return_unit
+  Lwt.return_ok ()
 ;;
 
-let update_custom_field _ () =
+let update_custom_field =
+  Test_utils.case
+  @@ fun () ->
   let%lwt () =
     let open CCResult in
     let open Custom_field in
@@ -85,7 +89,7 @@ let update_custom_field _ () =
         partial_update)
     |> Lwt.return
   in
-  Lwt.return_unit
+  Lwt.return_ok ()
 ;;
 
 let partial_update_exec
@@ -118,10 +122,12 @@ let partial_update_exec
         partial_update)
     |> Lwt.return
   in
-  Lwt.return_unit
+  Lwt.return_ok ()
 ;;
 
-let update_custom_field_with_invalid_answer _ () =
+let update_custom_field_with_invalid_answer =
+  Test_utils.case
+  @@ fun () ->
   let validation = [ "text_length_max", "10" ] in
   let custom_field = Custom_field_test.Data.custom_text_field ~validation () in
   let value = "this value is longer than 10" in
@@ -129,7 +135,9 @@ let update_custom_field_with_invalid_answer _ () =
   partial_update_exec ~custom_field ~value expected ()
 ;;
 
-let update_admin_input_only_field_as_user _ () =
+let update_admin_input_only_field_as_user =
+  Test_utils.case
+  @@ fun () ->
   let open Custom_field in
   let custom_field =
     Custom_field_test.Data.custom_text_field
@@ -140,7 +148,9 @@ let update_admin_input_only_field_as_user _ () =
   partial_update_exec ~is_admin:false ~custom_field expected ()
 ;;
 
-let update_non_override_field_as_admin _ () =
+let update_non_override_field_as_admin =
+  Test_utils.case
+  @@ fun () ->
   let open Custom_field in
   let custom_field =
     Custom_field_test.Data.custom_text_field
@@ -151,7 +161,9 @@ let update_non_override_field_as_admin _ () =
   partial_update_exec ~is_admin:true ~custom_field expected ()
 ;;
 
-let set_value_of_none_required_field_to_null _ () =
+let set_value_of_none_required_field_to_null =
+  Test_utils.case
+  @@ fun () ->
   let open Custom_field in
   let custom_field = Custom_field_test.Data.custom_text_field () in
   let value = "" in
@@ -167,7 +179,9 @@ let set_value_of_none_required_field_to_null _ () =
   partial_update_exec ~custom_field ~value expected ()
 ;;
 
-let set_value_of_required_field_to_null _ () =
+let set_value_of_required_field_to_null =
+  Test_utils.case
+  @@ fun () ->
   let required = Custom_field.Required.create true in
   let custom_field = Custom_field_test.Data.custom_text_field ~required () in
   let value = "" in

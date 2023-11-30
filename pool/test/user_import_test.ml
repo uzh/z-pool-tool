@@ -108,7 +108,9 @@ let confirm_as_admin () =
   Test_utils.check_result expected result
 ;;
 
-let confirm_as_contact_integration _ () =
+let confirm_as_contact_integration =
+  Test_utils.case
+  @@ fun () ->
   let%lwt contact =
     Integration_utils.ContactRepo.create ~with_terms_accepted:false ()
   in
@@ -150,5 +152,5 @@ let confirm_as_contact_integration _ () =
         true
         (contact.Contact.terms_accepted_at |> CCOption.is_some))
   in
-  Lwt.return_unit
+  Lwt.return_ok ()
 ;;

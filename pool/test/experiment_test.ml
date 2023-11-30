@@ -260,7 +260,9 @@ let delete_with_filter () =
 
 (* Integration *)
 
-let autofill_public_title _ () =
+let autofill_public_title =
+  Test_utils.case
+  @@ fun () ->
   let open Utils.Lwt_result.Infix in
   let open Experiment in
   let without_title =
@@ -293,7 +295,7 @@ let autofill_public_title _ () =
         PublicTitle.(
           equal with_title_persisted.public_title with_title.public_title))
   in
-  Lwt.return_unit
+  Lwt.return_ok ()
 ;;
 
 module AvailableExperiments = struct
@@ -301,7 +303,9 @@ module AvailableExperiments = struct
   let experiment_id = Experiment.Id.create ()
   let session_id = Session.Id.create ()
 
-  let list_available_experiments _ () =
+  let list_available_experiments =
+    Test_utils.case
+    @@ fun () ->
     let open Utils.Lwt_result.Infix in
     let open Integration_utils in
     let%lwt contact =
@@ -322,10 +326,12 @@ module AvailableExperiments = struct
       ||> CCOption.is_some
     in
     let () = Alcotest.(check bool "succeeds" true res) in
-    Lwt.return_unit
+    Lwt.return_ok ()
   ;;
 
-  let exclude_experiment_after_registration_for_session _ () =
+  let exclude_experiment_after_registration_for_session =
+    Test_utils.case
+    @@ fun () ->
     let open Utils.Lwt_result.Infix in
     let%lwt experiment =
       Experiment.find database_label experiment_id
@@ -358,10 +364,12 @@ module AvailableExperiments = struct
     in
     let res = experiment_not_available && upcomming_session_found in
     let () = Alcotest.(check bool "succeeds" true res) in
-    Lwt.return_unit
+    Lwt.return_ok ()
   ;;
 
-  let cancel_session _ () =
+  let cancel_session =
+    Test_utils.case
+    @@ fun () ->
     let open Utils.Lwt_result.Infix in
     let%lwt contact = Contact.find database_label contact_id ||> get_exn in
     let%lwt session = Session.find database_label session_id ||> get_exn in
@@ -393,10 +401,12 @@ module AvailableExperiments = struct
     in
     let res = experiment_available && upcomming_session_found in
     let () = Alcotest.(check bool "succeeds" true res) in
-    Lwt.return_unit
+    Lwt.return_ok ()
   ;;
 
-  let mark_assignment_as_deleted _ () =
+  let mark_assignment_as_deleted =
+    Test_utils.case
+    @@ fun () ->
     let open Utils.Lwt_result.Infix in
     let%lwt contact = Contact.find database_label contact_id ||> get_exn in
     let%lwt session = Session.find database_label session_id ||> get_exn in
@@ -429,6 +439,6 @@ module AvailableExperiments = struct
     in
     let res = experiment_available && upcomming_session_not_found in
     let () = Alcotest.(check bool "succeeds" true res) in
-    Lwt.return_unit
+    Lwt.return_ok ()
   ;;
 end

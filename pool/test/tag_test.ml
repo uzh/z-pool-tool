@@ -90,7 +90,9 @@ let update_event () =
   Test_utils.check_result expected events
 ;;
 
-let create_persistent _ () =
+let create_persistent =
+  Test_utils.case
+  @@ fun () ->
   let tag = Data.Tag.create_with_description () in
   let%lwt () =
     Pool_event.handle_events
@@ -100,10 +102,12 @@ let create_persistent _ () =
   let%lwt found_tag = Tags.find Test_utils.Data.database_label Data.Tag.id in
   let expected = Ok tag in
   let () = check_tag_result expected found_tag in
-  Lwt.return_unit
+  Lwt.return_ok ()
 ;;
 
-let create_persistent_fail _ () =
+let create_persistent_fail =
+  Test_utils.case
+  @@ fun () ->
   let tag = Data.Tag.create_with_description () in
   let%lwt () =
     Lwt.catch
@@ -119,10 +123,12 @@ let create_persistent_fail _ () =
         in
         Alcotest.(check bool "duplicate error" true correct_exn) |> Lwt.return)
   in
-  Lwt.return_unit
+  Lwt.return_ok ()
 ;;
 
-let update_persistent _ () =
+let update_persistent =
+  Test_utils.case
+  @@ fun () ->
   let tag = Data.Tag.updated_tag () in
   let%lwt () =
     Pool_event.handle_events
@@ -132,10 +138,12 @@ let update_persistent _ () =
   let%lwt found_tag = Tags.find Test_utils.Data.database_label Data.Tag.id in
   let expected = Ok tag in
   let () = check_tag_result expected found_tag in
-  Lwt.return_unit
+  Lwt.return_ok ()
 ;;
 
-let assign_tag_to_contact _ () =
+let assign_tag_to_contact =
+  Test_utils.case
+  @@ fun () ->
   let open Command.AssignTagToContact in
   let%lwt contact = Test_utils.Repo.first_contact () in
   let%lwt tag = Test_utils.Repo.first_tag () in
@@ -159,10 +167,12 @@ let assign_tag_to_contact _ () =
     Alcotest.(
       check (list testable_tag) "all needed tags assigned" expected found_tagged)
   in
-  Lwt.return_unit
+  Lwt.return_ok ()
 ;;
 
-let remove_tag_from_contact _ () =
+let remove_tag_from_contact =
+  Test_utils.case
+  @@ fun () ->
   let open Command.RemoveTagFromContact in
   let%lwt contact = Test_utils.Repo.first_contact () in
   let%lwt tag = Test_utils.Repo.first_tag () in
@@ -177,10 +187,12 @@ let remove_tag_from_contact _ () =
     Alcotest.(
       check (list testable_tag) "all needed tags assigned" expected found_tagged)
   in
-  Lwt.return_unit
+  Lwt.return_ok ()
 ;;
 
-let try_assign_experiment_tag_to_contact _ () =
+let try_assign_experiment_tag_to_contact =
+  Test_utils.case
+  @@ fun () ->
   let open Command.AssignTagToContact in
   let%lwt contact = Test_utils.Repo.first_contact () in
   let tag = Tags.(create Data.Tag.title Model.Experiment) |> get_or_failwith in
@@ -206,7 +218,7 @@ let try_assign_experiment_tag_to_contact _ () =
         (Error Pool_common.Message.(Invalid Field.Tag))
         events)
   in
-  Lwt.return_unit
+  Lwt.return_ok ()
 ;;
 
 let assign_auto_tag_to_experiment () =

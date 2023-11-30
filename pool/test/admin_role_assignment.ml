@@ -56,7 +56,9 @@ module Data = struct
   ;;
 end
 
-let grant_roles _ () =
+let grant_roles =
+  Test_utils.case
+  @@ fun () ->
   let open Guard in
   let db = Test_utils.Data.database_label in
   let%lwt exp1, exp2 =
@@ -136,5 +138,5 @@ let grant_roles _ () =
           (role_message "Target has the granted role (%s)" role)
           true
   in
-  Lwt.return_unit
+  Lwt.return_ok ()
 ;;

@@ -73,7 +73,9 @@ let create_invitations_model () =
   Test_utils.check_result expected events
 ;;
 
-let create_invitations_repo _ () =
+let create_invitations_repo =
+  Test_utils.case
+  @@ fun () ->
   let open Utils.Lwt_result.Infix in
   let pool = Test_utils.Data.database_label in
   let find_invitation_count { Experiment.id; _ } =
@@ -123,38 +125,39 @@ let create_invitations_repo _ () =
     create_message experiment
     ||> expected_events experiment (Some mailing) contacts
   in
-  Mailing.Status.find_current pool interval
-  ||> tap (CCList.length %> Alcotest.(check int "count mailings" 1))
-  >|> Lwt_list.iter_s (fun { Mailing.Status.mailing; _ } ->
-    let%lwt experiment, contacts, _ = find_by_mailing mailing in
-    let%lwt expected = create_expected mailing experiment contacts in
-    let%lwt events = find_events () in
-    let () = Test_utils.check_result expected (Ok events) in
-    let%lwt before = find_invitation_count experiment in
-    let%lwt () = Pool_event.handle_events pool events in
-    let%lwt after = find_invitation_count experiment in
-    let () =
-      let msg = "count generated invitations -> smaller or equal limit" in
-      let is_less_or_equal =
-        after - before
-        <= (Mailing.per_interval interval mailing |> CCFloat.(round %> to_int))
+  let%lwt mailings = Mailing.Status.find_current pool interval in
+  Alcotest.(check int "count mailings" 1 (CCList.length mailings));
+  let%lwt () =
+    mailings
+    |> Lwt_list.iter_s (fun { Mailing.Status.mailing; _ } ->
+      let%lwt experiment, contacts, _ = find_by_mailing mailing in
+      let%lwt expected = create_expected mailing experiment contacts in
+      let%lwt events = find_events () in
+      let () = Test_utils.check_result expected (Ok events) in
+      let%lwt before = find_invitation_count experiment in
+      let%lwt () = Pool_event.handle_events pool events in
+      let%lwt after = find_invitation_count experiment in
+      let () =
+        let msg = "count generated invitations -> smaller or equal limit" in
+        let is_less_or_equal =
+          after - before
+          <= (Mailing.per_interval interval mailing |> CCFloat.(round %> to_int))
+        in
+        Alcotest.(check bool msg true is_less_or_equal)
       in
-      Alcotest.(check bool msg true is_less_or_equal)
-    in
-    let%lwt () =
-      Experiment.handle_event pool (Experiment.ResetInvitations experiment)
-    in
-    let%lwt experiment, contacts, _ = find_by_mailing mailing in
-    let%lwt expected = create_expected mailing experiment contacts in
-    let%lwt events = find_events () in
-    let () = Test_utils.check_result expected (Ok events) in
-    let%lwt () = Pool_event.handle_events pool events in
-    let%lwt after_reset = find_invitation_count experiment in
-    let () =
+      let%lwt () =
+        Experiment.handle_event pool (Experiment.ResetInvitations experiment)
+      in
+      let%lwt experiment, contacts, _ = find_by_mailing mailing in
+      let%lwt expected = create_expected mailing experiment contacts in
+      let%lwt events = find_events () in
+      let () = Test_utils.check_result expected (Ok events) in
+      let%lwt () = Pool_event.handle_events pool events in
+      let%lwt after_reset = find_invitation_count experiment in
       let msg = "count generated invitations -> equal to before reset" in
-      Alcotest.(check int msg after after_reset)
-    in
-    Lwt.return_unit)
+      Alcotest.(check int msg after after_reset) |> Lwt.return)
+  in
+  Lwt.return_ok ()
 ;;
 
 open Integration_utils
@@ -230,7 +233,9 @@ let store_filter experiment filter =
 
 let limit = 10
 
-let create_invitations _ () =
+let create_invitations =
+  Test_utils.case
+  @@ fun () ->
   let%lwt tenant =
     Pool_tenant.find_by_label database_label ||> get_or_failwith
   in
@@ -264,10 +269,12 @@ let create_invitations _ () =
     Alcotest.(check (list Test_utils.event) "succeeds" expected events)
   in
   let%lwt () = Pool_event.handle_events database_label expected in
-  Lwt.return_unit
+  Lwt.return_ok ()
 ;;
 
-let reset_invitations _ () =
+let reset_invitations =
+  Test_utils.case
+  @@ fun () ->
   let%lwt tenant =
     Pool_tenant.find_by_label database_label ||> get_or_failwith
   in
@@ -302,5 +309,5 @@ let reset_invitations _ () =
     Alcotest.(check (list Test_utils.event) "succeeds" expected events)
   in
   let%lwt () = Pool_event.handle_events database_label events in
-  Lwt.return_unit
+  Lwt.return_ok ()
 ;;

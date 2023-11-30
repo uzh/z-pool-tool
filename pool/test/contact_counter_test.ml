@@ -130,7 +130,9 @@ module InviteContact = struct
   let session_id = Session.Id.create ()
   let initialize = initialize contact_id experiment_id session_id
 
-  let invite _ () =
+  let invite =
+    Test_utils.case
+    @@ fun () ->
     let%lwt contact, experiment, _, _ = initialize () in
     let%lwt () =
       Invitation_command.Create.(
@@ -150,7 +152,7 @@ module InviteContact = struct
       Alcotest.(
         check Test_utils.contact "num invitations increased" expected res)
     in
-    Lwt.return ()
+    Lwt.return_ok ()
   ;;
 end
 
@@ -168,7 +170,9 @@ module AttendAll = struct
     initialize contact_id experiment_id session_id ~followup_session_id
   ;;
 
-  let register_for_session _ () =
+  let register_for_session =
+    Test_utils.case
+    @@ fun () ->
     let%lwt contact, experiment, _, _ = initialize () in
     let%lwt () = sign_up_for_session experiment contact session_id in
     let%lwt res = get_contact contact_id in
@@ -178,10 +182,12 @@ module AttendAll = struct
     in
     let () = Alcotest.(check Test_utils.contact "succeeds" expected res) in
     let%lwt () = set_sessions_to_past [ session_id; followup_session_id ] in
-    Lwt.return_unit
+    Lwt.return_ok ()
   ;;
 
-  let close_first_session _ () =
+  let close_first_session =
+    Test_utils.case
+    @@ fun () ->
     let%lwt session = get_session session_id in
     let%lwt experiment = experiment () in
     let%lwt () = close_session session contact_id experiment in
@@ -194,10 +200,12 @@ module AttendAll = struct
         }
     in
     let () = Alcotest.(check Test_utils.contact "succeeds" contact res) in
-    Lwt.return_unit
+    Lwt.return_ok ()
   ;;
 
-  let close_follow_up_session _ () =
+  let close_follow_up_session =
+    Test_utils.case
+    @@ fun () ->
     let%lwt follow_up = get_session followup_session_id in
     let%lwt experiment = experiment () in
     let%lwt () = close_session follow_up contact_id experiment in
@@ -206,7 +214,7 @@ module AttendAll = struct
       Contact.{ res with num_show_ups = NumberOfShowUps.of_int 2 }
     in
     let () = Alcotest.(check Test_utils.contact "succeeds" contact res) in
-    Lwt.return_unit
+    Lwt.return_ok ()
   ;;
 end
 
@@ -234,48 +242,56 @@ module CancelSession = struct
       Lwt.return_unit
     in
     let%lwt () = test_result initial_nr_assignments in
-    test_cases
-    |> Lwt_list.iter_s (fun (session, expected_nr_assignments) ->
-      let%lwt () =
-        let open Cqrs_command.Session_command.Cancel in
-        let%lwt follow_ups =
-          Session.find_follow_ups database_label session.Session.id ||> get_exn
+    let%lwt () =
+      test_cases
+      |> Lwt_list.iter_s (fun (session, expected_nr_assignments) ->
+        let%lwt () =
+          let open Cqrs_command.Session_command.Cancel in
+          let%lwt follow_ups =
+            Session.find_follow_ups database_label session.Session.id
+            ||> get_exn
+          in
+          let%lwt assignments =
+            session :: follow_ups
+            |> Lwt_list.fold_left_s
+                 (fun assignments session ->
+                   Assignment.find_uncanceled_by_session
+                     database_label
+                     session.Session.id
+                   ||> get_exn
+                   ||> CCList.append assignments)
+                 []
+            ||> Assignment.group_by_contact
+          in
+          let email = Model.create_email () in
+          let reason = "Some reason" |> Session.CancellationReason.of_string in
+          handle
+            (session :: follow_ups)
+            experiment
+            assignments
+            (fun _ _ -> Ok email)
+            Session_test.create_cancellation_text_message
+            [ Pool_common.NotifyVia.Email ]
+            reason
+          |> get_exn
+          |> Pool_event.handle_events database_label
         in
-        let%lwt assignments =
-          session :: follow_ups
-          |> Lwt_list.fold_left_s
-               (fun assignments session ->
-                 Assignment.find_uncanceled_by_session
-                   database_label
-                   session.Session.id
-                 ||> get_exn
-                 ||> CCList.append assignments)
-               []
-          ||> Assignment.group_by_contact
-        in
-        let email = Model.create_email () in
-        let reason = "Some reason" |> Session.CancellationReason.of_string in
-        handle
-          (session :: follow_ups)
-          experiment
-          assignments
-          (fun _ _ -> Ok email)
-          Session_test.create_cancellation_text_message
-          [ Pool_common.NotifyVia.Email ]
-          reason
-        |> get_exn
-        |> Pool_event.handle_events database_label
-      in
-      test_result expected_nr_assignments)
+        test_result expected_nr_assignments)
+    in
+    Lwt.return_ok ()
   ;;
 
-  let without_followups _ () =
+  let without_followups =
+    Test_utils.case
+    @@ fun () ->
     let%lwt contact, experiment, session, _ = initialize () in
     let%lwt () = sign_up_for_session experiment contact session.Session.id in
     test_cancellation experiment (Contact.id contact) 1 [ session, 0 ]
   ;;
 
-  let follow_up _ () =
+  let follow_up =
+    Test_utils.case
+    @@ fun () ->
     let%lwt contact, experiment, session, followup_session =
       initialize ~followup_session_id:(Session.Id.create ()) ()
     in
@@ -290,7 +306,9 @@ module CancelSession = struct
       [ followup_session, 1; session, 0 ]
   ;;
 
-  let main_with_follow_up _ () =
+  let main_with_follow_up =
+    Test_utils.case
+    @@ fun () ->
     let%lwt contact, experiment, session, _ =
       initialize ~followup_session_id:(Session.Id.create ()) ()
     in
@@ -310,7 +328,9 @@ module DoNotAttend = struct
 
   let initialize = initialize contact_id experiment_id session_id
 
-  let register_for_session _ () =
+  let register_for_session =
+    Test_utils.case
+    @@ fun () ->
     let%lwt contact, experiment, _, _ = initialize () in
     let%lwt () = sign_up_for_session experiment contact session_id in
     let%lwt res = get_contact contact_id in
@@ -320,10 +340,12 @@ module DoNotAttend = struct
     in
     let () = Alcotest.(check Test_utils.contact "succeeds" expected res) in
     let%lwt () = set_sessions_to_past [ session_id ] in
-    Lwt.return_unit
+    Lwt.return_ok ()
   ;;
 
-  let close_main _ () =
+  let close_main =
+    Test_utils.case
+    @@ fun () ->
     let%lwt session = get_session session_id in
     let%lwt experiment = experiment () in
     let%lwt () =
@@ -339,7 +361,7 @@ module DoNotAttend = struct
         }
     in
     let () = Alcotest.(check Test_utils.contact "succeeds" contact res) in
-    Lwt.return_unit
+    Lwt.return_ok ()
   ;;
 end
 
@@ -354,7 +376,9 @@ module NoShow = struct
 
   let initialize = initialize contact_id experiment_id session_id
 
-  let register_for_session _ () =
+  let register_for_session =
+    Test_utils.case
+    @@ fun () ->
     let%lwt contact, experiment, _, _ = initialize () in
     let%lwt () = sign_up_for_session experiment contact session_id in
     let%lwt res = get_contact contact_id in
@@ -364,10 +388,12 @@ module NoShow = struct
     in
     let () = Alcotest.(check Test_utils.contact "succeeds" expected res) in
     let%lwt () = set_sessions_to_past [ session_id ] in
-    Lwt.return_unit
+    Lwt.return_ok ()
   ;;
 
-  let close_main _ () =
+  let close_main =
+    Test_utils.case
+    @@ fun () ->
     let%lwt experiment = experiment () in
     let%lwt session = get_session session_id in
     let%lwt () =
@@ -389,7 +415,7 @@ module NoShow = struct
         }
     in
     let () = Alcotest.(check Test_utils.contact "succeeds" contact res) in
-    Lwt.return_unit
+    Lwt.return_ok ()
   ;;
 end
 
@@ -399,7 +425,9 @@ module DeleteAttended = struct
   let session_id = AttendAll.session_id
   let followup_session_id = AttendAll.followup_session_id
 
-  let delete_follow_up _ () =
+  let delete_follow_up =
+    Test_utils.case
+    @@ fun () ->
     let%lwt follow_up =
       find_assignment_by_contact_and_session contact_id followup_session_id
     in
@@ -413,10 +441,12 @@ module DeleteAttended = struct
     in
     let%lwt res = get_contact contact_id in
     let () = Alcotest.(check Test_utils.contact "succeeds" contact res) in
-    Lwt.return_unit
+    Lwt.return_ok ()
   ;;
 
-  let delete_main _ () =
+  let delete_main =
+    Test_utils.case
+    @@ fun () ->
     let%lwt session =
       find_assignment_by_contact_and_session contact_id session_id
     in
@@ -431,7 +461,7 @@ module DeleteAttended = struct
     in
     let%lwt res = get_contact contact_id in
     let () = Alcotest.(check Test_utils.contact "succeeds" contact res) in
-    Lwt.return_unit
+    Lwt.return_ok ()
   ;;
 end
 
@@ -447,7 +477,9 @@ module DeleteUnattended = struct
 
   let num_assignments = 4
 
-  let register_for_session _ () =
+  let register_for_session =
+    Test_utils.case
+    @@ fun () ->
     let%lwt contact, experiment, _, _ = initialize () in
     let contact =
       Contact.
@@ -474,10 +506,12 @@ module DeleteUnattended = struct
     in
     let () = Alcotest.(check Test_utils.contact "succeeds" expected res) in
     let%lwt () = set_sessions_to_past [ session_id; followup_session_id ] in
-    Lwt.return_unit
+    Lwt.return_ok ()
   ;;
 
-  let delete_main _ () =
+  let delete_main =
+    Test_utils.case
+    @@ fun () ->
     let%lwt contact = get_contact contact_id in
     let%lwt assignments =
       [ session_id; followup_session_id ]
@@ -496,7 +530,7 @@ module DeleteUnattended = struct
     in
     let () = Alcotest.(check Test_utils.contact "succeeds" expected res) in
     let%lwt () = set_sessions_to_past [ session_id; followup_session_id ] in
-    Lwt.return_unit
+    Lwt.return_ok ()
   ;;
 end
 
@@ -551,7 +585,9 @@ module UpdateAssignments = struct
     | Some id -> base @ [ Field.(show ExternalDataId), [ id ] ]
   ;;
 
-  let update_unclosed _ () =
+  let update_unclosed =
+    Test_utils.case
+    @@ fun () ->
     let open Update in
     let%lwt contact, experiment, session, _ = initialize () in
     let%lwt () = sign_up_for_session experiment contact session_id in
@@ -581,10 +617,12 @@ module UpdateAssignments = struct
         expected
         res
     in
-    Lwt.return_unit
+    Lwt.return_ok ()
   ;;
 
-  let close_main_session _ () =
+  let close_main_session =
+    Test_utils.case
+    @@ fun () ->
     let%lwt contact, experiment, session, _ = get_entities () in
     let%lwt () =
       close_session
@@ -606,10 +644,12 @@ module UpdateAssignments = struct
         "Session close: counters were updated"
         expected
         updated_contact)
-    |> Lwt.return
+    |> Lwt.return_ok
   ;;
 
-  let update_assignment_manually _ () =
+  let update_assignment_manually =
+    Test_utils.case
+    @@ fun () ->
     let%lwt contact, experiment, session, _ = get_entities () in
     let participated_in_other_sessions assignments =
       Assignment.(
@@ -650,24 +690,23 @@ module UpdateAssignments = struct
         check Test_utils.contact "counters were manually updated" expected res)
       |> Lwt.return
     in
-    let%lwt () =
-      let%lwt assignment =
-        find_assignment_by_contact_and_session contact_id session_id
-      in
-      let%lwt () =
-        to_urlencoded ~no_show:false ~participated:true ()
-        |> handle_update assignment
-      in
-      let expected = contact in
-      let%lwt res = get_contact contact_id in
-      Alcotest.(
-        check Test_utils.contact "counters were manually updated" expected res)
-      |> Lwt.return
+    let%lwt assignment =
+      find_assignment_by_contact_and_session contact_id session_id
     in
-    Lwt.return_unit
+    let%lwt () =
+      to_urlencoded ~no_show:false ~participated:true ()
+      |> handle_update assignment
+    in
+    let expected = contact in
+    let%lwt res = get_contact contact_id in
+    Alcotest.(
+      check Test_utils.contact "counters were manually updated" expected res)
+    |> Lwt.return_ok
   ;;
 
-  let close_followup_session _ () =
+  let close_followup_session =
+    Test_utils.case
+    @@ fun () ->
     let%lwt contact, experiment, _, followup_session = get_entities () in
     let%lwt () =
       close_session
@@ -685,10 +724,12 @@ module UpdateAssignments = struct
         "Follow up session closed: counters were updated"
         expected
         updated_contact)
-    |> Lwt.return
+    |> Lwt.return_ok
   ;;
 
-  let update_follow_up_assignment_manually _ () =
+  let update_follow_up_assignment_manually =
+    Test_utils.case
+    @@ fun () ->
     let%lwt _, experiment, _, followup_session = get_entities () in
     let participated_in_other_sessions assignments =
       Assignment.(
@@ -729,6 +770,6 @@ module UpdateAssignments = struct
     let%lwt res = get_contact contact_id in
     Alcotest.(
       check Test_utils.contact "counters were manually updated" expected res)
-    |> Lwt.return
+    |> Lwt.return_ok
   ;;
 end

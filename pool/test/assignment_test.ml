@@ -729,7 +729,9 @@ let swap_session_to_past_session () =
 
 (* Integration tests *)
 
-let cancel_assignment_with_follow_ups _ () =
+let cancel_assignment_with_follow_ups =
+  Test_utils.case
+  @@ fun () ->
   let open Utils.Lwt_result.Infix in
   let%lwt experiment = Repo.create_experiment () in
   let%lwt contact =
@@ -803,5 +805,5 @@ let cancel_assignment_with_follow_ups _ () =
     ||> CCList.is_empty
   in
   let () = Alcotest.(check bool "succeeds" true res) in
-  Lwt.return_unit
+  Lwt.return_ok ()
 ;;

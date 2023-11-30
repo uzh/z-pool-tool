@@ -1437,7 +1437,9 @@ let resend_reminders_valid () =
   ()
 ;;
 
-let close_session_check_contact_figures _ () =
+let close_session_check_contact_figures =
+  Test_utils.case
+  @@ fun () ->
   let open Utils.Lwt_result.Infix in
   let open Integration_utils in
   let open Test_utils in
@@ -1535,10 +1537,12 @@ let close_session_check_contact_figures _ () =
     ||> CCList.is_empty
   in
   let () = Alcotest.(check bool "succeeds" true res) in
-  Lwt.return_unit
+  Lwt.return_ok ()
 ;;
 
-let send_session_reminders_with_default_leat_time _ () =
+let send_session_reminders_with_default_leat_time =
+  Test_utils.case
+  @@ fun () ->
   let open Utils.Lwt_result.Infix in
   let open Integration_utils in
   let get_exn = get_or_failwith in
@@ -1641,5 +1645,5 @@ let send_session_reminders_with_default_leat_time _ () =
     Lwt_result.return (emails @ text_messages)
   in
   let () = check_result expected res in
-  Lwt.return_unit
+  Lwt.return_ok ()
 ;;

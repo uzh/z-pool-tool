@@ -13,7 +13,9 @@ module Data = struct
   let create_email () = Sihl_email.create ~sender ~recipient ~subject body
 end
 
-let validate_email _ () =
+let validate_email =
+  Test_utils.case
+  @@ fun () ->
   let open Email.Service in
   let open Smtp in
   let email = Data.create_email () in
@@ -42,5 +44,5 @@ let validate_email _ () =
       "intercepted recipient"
       email.Sihl_email.recipient
       (Sihl.Configuration.read_string "TEST_EMAIL" |> CCOption.get_exn_or msg));
-  Lwt.return_unit
+  Lwt.return_ok ()
 ;;

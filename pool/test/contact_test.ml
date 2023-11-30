@@ -533,37 +533,34 @@ let accept_terms_and_conditions () =
   check_result expected events
 ;;
 
-let should_not_send_registration_notification _ () =
+let should_not_send_registration_notification =
+  Test_utils.case
+  @@ fun () ->
   let database_label = Test_utils.Data.database_label in
+  let contact_data = Seed.Contacts.create_contact 12 |> CCList.pure in
   let%lwt () =
-    let contact_data = Seed.Contacts.create_contact 12 |> CCList.pure in
-    let%lwt () =
-      Seed.Contacts.create ~contact_data Test_utils.Data.database_label
-    in
-    let%lwt contact = Seed.Contacts.find_contact_by_id database_label 12 in
-    let%lwt () =
-      Sihl_email.
-        { sender = "test@econ.uzh.ch"
-        ; recipient =
-            Contact.email_address contact |> Pool_user.EmailAddress.value
-        ; subject = "subject"
-        ; text = ""
-        ; html = Some "text"
-        ; cc = []
-        ; bcc = []
-        }
-      |> Cqrs_command.Contact_command.SendRegistrationAttemptNotifitacion.handle
-           contact
-      |> Test_utils.get_or_failwith
-      |> Lwt_list.iter_s (Pool_event.handle_event database_label)
-    in
-    let%lwt res =
-      Contact.should_send_registration_attempt_notification
-        database_label
-        contact
-    in
-    let expected = false in
-    Alcotest.(check bool "succeeds" expected res) |> Lwt.return
+    Seed.Contacts.create ~contact_data Test_utils.Data.database_label
   in
-  Lwt.return_unit
+  let%lwt contact = Seed.Contacts.find_contact_by_id database_label 12 in
+  let%lwt () =
+    Sihl_email.
+      { sender = "test@econ.uzh.ch"
+      ; recipient =
+          Contact.email_address contact |> Pool_user.EmailAddress.value
+      ; subject = "subject"
+      ; text = ""
+      ; html = Some "text"
+      ; cc = []
+      ; bcc = []
+      }
+    |> Cqrs_command.Contact_command.SendRegistrationAttemptNotifitacion.handle
+         contact
+    |> Test_utils.get_or_failwith
+    |> Lwt_list.iter_s (Pool_event.handle_event database_label)
+  in
+  let%lwt res =
+    Contact.should_send_registration_attempt_notification database_label contact
+  in
+  let expected = false in
+  Alcotest.(check bool "succeeds" expected res) |> Lwt.return_ok
 ;;
