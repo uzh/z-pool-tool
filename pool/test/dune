@@ -1,5 +1,10 @@
 (tests
- (names command integration filter_invitation_tests filter_assignment_tests)
+ (names
+  command_tests
+  integration
+  filter_invitation_uninvited_tests
+  filter_invitation_tests
+  filter_assignment_tests)
  (libraries
   admin
   alcotest
@@ -8,6 +13,7 @@
   caqti-driver-mariadb
   contact
   contact_counter
+  command
   cqrs_command
   custom_field
   database

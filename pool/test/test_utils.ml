@@ -548,6 +548,14 @@ module Repo = struct
   ;;
 end
 
-let case fn (_switch : Lwt_switch.t) () : unit Lwt.t =
-  Lwt.map Pool_common.Utils.get_or_failwith (fn ())
+let case test_fn (_switch : Lwt_switch.t) () : unit Lwt.t =
+  Sihl.Database.transaction (fun (module Conn : Caqti_lwt.CONNECTION) ->
+    Conn.with_transaction (fun () ->
+      test_fn () |> Lwt_result.map_error (fun err -> `Test_error err)))
+  |> Lwt.map (fun result ->
+    match result with
+    | Error (`Test_error err) -> Pool_common.Utils.get_or_failwith (Error err)
+    | Error ((#Caqti_error.load_or_connect | #Caqti_error.transact) as err) ->
+      raise (Caqti_error.Exn err)
+    | Ok () -> ())
 ;;

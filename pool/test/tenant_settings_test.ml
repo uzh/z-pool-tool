@@ -37,7 +37,9 @@ let handle_result result =
   result |> get_or_failwith |> Pool_event.handle_events database_label
 ;;
 
-let check_contact_email _ () =
+let check_contact_email =
+  Test_utils.case
+  @@ fun () ->
   let open CCResult.Infix in
   let open Command.UpdateContactEmail in
   let field = Field.ContactEmail in
@@ -57,18 +59,18 @@ let check_contact_email _ () =
   let () = check_events expected result in
   let%lwt () = handle_result result in
   let%lwt contact_email = Settings.find_contact_email database_label in
-  let () =
-    Alcotest.(
-      check
-        Testable.contact_email
-        "contact email address"
-        contact_email
-        expected_email)
-  in
-  Lwt.return ()
+  Alcotest.(
+    check
+      Testable.contact_email
+      "contact email address"
+      contact_email
+      expected_email)
+  |> Lwt.return_ok
 ;;
 
-let check_email_suffix _ () =
+let check_email_suffix =
+  Test_utils.case
+  @@ fun () ->
   let open CCResult.Infix in
   let open Command in
   let field = Field.EmailSuffix in
@@ -110,18 +112,14 @@ let check_email_suffix _ () =
   let%lwt () = handle_result result in
   let%lwt suffixes = find_email_suffixes database_label in
   let expected = EmailSuffix.of_string updated |> CCList.return in
-  let () =
-    Alcotest.(
-      check
-        (list Testable.email_suffix)
-        "updated email suffix"
-        suffixes
-        expected)
-  in
-  Lwt.return ()
+  Alcotest.(
+    check (list Testable.email_suffix) "updated email suffix" suffixes expected)
+  |> Lwt.return_ok
 ;;
 
-let check_inactive_user_disable_after _ () =
+let check_inactive_user_disable_after =
+  Test_utils.case
+  @@ fun () ->
   let open CCResult.Infix in
   let open Command.InactiveUser in
   let field = Field.InactiveUserDisableAfter in
@@ -155,18 +153,18 @@ let check_inactive_user_disable_after _ () =
     |> InactiveUser.DisableAfter.create
     |> get_or_failwith
   in
-  let () =
-    Alcotest.(
-      check
-        Testable.inactive_user_disable_after
-        "inavtive user disable after"
-        disable_after
-        expected)
-  in
-  Lwt.return ()
+  Alcotest.(
+    check
+      Testable.inactive_user_disable_after
+      "inavtive user disable after"
+      disable_after
+      expected)
+  |> Lwt.return_ok
 ;;
 
-let check_inactive_user_warning _ () =
+let check_inactive_user_warning =
+  Test_utils.case
+  @@ fun () ->
   let open CCResult.Infix in
   let open Command.InactiveUser in
   let field = Field.InactiveUserWarning in
@@ -195,18 +193,18 @@ let check_inactive_user_warning _ () =
   let expected =
     valid |> CCInt.to_string |> InactiveUser.Warning.create |> get_or_failwith
   in
-  let () =
-    Alcotest.(
-      check
-        Testable.inactive_user_warning
-        "inavtive user warning after"
-        warning_after
-        expected)
-  in
-  Lwt.return ()
+  Alcotest.(
+    check
+      Testable.inactive_user_warning
+      "inavtive user warning after"
+      warning_after
+      expected)
+  |> Lwt.return_ok
 ;;
 
-let check_languages _ () =
+let check_languages =
+  Test_utils.case
+  @@ fun () ->
   let%lwt language = Settings.find_languages database_label in
   Alcotest.(
     check
@@ -214,17 +212,22 @@ let check_languages _ () =
       "languages"
       language
       Pool_common.Language.[ En; De ])
-  |> Lwt.return
+  |> Lwt.return_ok
 ;;
 
-let check_terms_and_conditions _ () =
+let check_terms_and_conditions =
+  Test_utils.case
+  @@ fun () ->
   let open Settings in
   let%lwt terms = find_terms_and_conditions database_label in
   let has_terms = terms |> CCList.is_empty |> not in
-  Alcotest.(check bool "has terms and conditions" has_terms true) |> Lwt.return
+  Alcotest.(check bool "has terms and conditions" has_terms true)
+  |> Lwt.return_ok
 ;;
 
-let update_terms_and_conditions _ () =
+let update_terms_and_conditions =
+  Test_utils.case
+  @@ fun () ->
   let%lwt languages = Settings.find_languages database_label in
   let terms_and_conditions_text = "Terms and conditions" in
   let%lwt events =
@@ -268,10 +271,12 @@ let update_terms_and_conditions _ () =
       "succeeds"
       expected
       events)
-  |> Lwt.return
+  |> Lwt.return_ok
 ;;
 
-let login_after_terms_update _ () =
+let login_after_terms_update =
+  Test_utils.case
+  @@ fun () ->
   let open Utils.Lwt_result.Infix in
   let open Pool_common.Message in
   let%lwt user = Integration_utils.ContactRepo.create () in
@@ -288,14 +293,17 @@ let login_after_terms_update _ () =
     contact >|- CCFun.const (NotFound Field.Contact) >>= terms_agreed
   in
   let expected = Error TermsAndConditionsNotAccepted in
-  accepted
-  ||> fun accepted ->
-  Alcotest.(
-    check
-      (result Test_utils.contact Test_utils.error)
-      "succeeds"
-      expected
-      accepted)
+  let%lwt () =
+    accepted
+    ||> fun accepted ->
+    Alcotest.(
+      check
+        (result Test_utils.contact Test_utils.error)
+        "succeeds"
+        expected
+        accepted)
+  in
+  Lwt.return_ok ()
 ;;
 
 (* Test the creation of an SMTP Authentication record. *)

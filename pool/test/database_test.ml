@@ -20,24 +20,30 @@ module Data = struct
   ;;
 end
 
-let check_root_database _ () =
+let check_root_database =
+  Test_utils.case
+  @@ fun () ->
   let ctx =
     Database.Root.label |> Pool_database.Label.of_string |> Pool_database.to_ctx
   in
   let _ = Sihl.Database.fetch_pool ~ctx () in
-  Lwt.return_unit
+  Lwt_result.lift (Ok ())
 ;;
 
-let check_find_tenant_database _ () =
+let check_find_tenant_database =
+  Test_utils.case
+  @@ fun () ->
   let create label url = Pool_database.create label url |> get_exn in
   let expected = CCList.map (CCFun.uncurry create) [ Data.database ] in
   let%lwt tenants = Pool_tenant.find_databases () in
   Alcotest.(check (list Testable.database) "databases found" expected tenants)
-  |> Lwt.return
+  |> Lwt_result.return
 ;;
 
-let check_tenant_database _ () =
+let check_tenant_database =
+  Test_utils.case
+  @@ fun () ->
   let ctx = Data.database_label |> Pool_database.to_ctx in
   let _ = Sihl.Database.fetch_pool ~ctx () in
-  Lwt.return_unit
+  Lwt_result.lift (Ok ())
 ;;

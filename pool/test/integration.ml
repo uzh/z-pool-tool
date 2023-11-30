@@ -225,24 +225,6 @@ let suite =
               `Slow
               AvailableExperiments.mark_assignment_as_deleted
           ] )
-    ; ( "filtering"
-      , [ test_case
-            "uninvited contact is listed"
-            `Slow
-            Filter_invitation_tests.finds_uninvited_contacts
-        ; test_case
-            "invited contact is not listed"
-            `Slow
-            Filter_invitation_tests.filters_out_invited_contacts
-        ; test_case
-            "unassigned contact is listed"
-            `Slow
-            Filter_assignment_tests.finds_unassigned_contacts
-        ; test_case
-            "assigned contact is not listed"
-            `Slow
-            Filter_assignment_tests.filters_out_assigned_contacts
-        ] )
     ; ( "contact counter"
       , Contact_counter_test.
           [ test_case
