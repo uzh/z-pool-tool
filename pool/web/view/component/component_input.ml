@@ -253,11 +253,17 @@ let timespan_picker
   =
   let human_field = CCOption.value ~default:name label_field in
   let input_label = Elements.input_label language human_field None required in
-  let value =
-    flash_fetched_value
-      flash_fetcher
-      (value |> CCOption.map Pool_common.Utils.Time.timespan_to_minutes)
-      name
+  let time_unit, value =
+    let open CCOption.Infix in
+    flash_fetcher
+    >>= (fun flash -> flash (Field.show name))
+    >>= CCInt.of_string
+    >|= Ptime.Span.of_int_s
+    <+> value
+    >|= Pool_common.TimeUnit.ptime_span_to_larges_unit
+    |> function
+    | None -> None, ""
+    | Some (unit, value) -> Some unit, CCInt.to_string value
   in
   let id = Elements.identifier ?identifier human_field in
   let attributes =
@@ -272,7 +278,34 @@ let timespan_picker
   let group_class = Elements.group_class classnames orientation in
   let help = Elements.hints language hints in
   let error = Elements.error language error in
-  let input_element = Elements.apply_orientation attributes orientation in
+  let input_element =
+    let timeunit_select =
+      let open Pool_common in
+      TimeUnit.all
+      |> CCList.map (fun unit ->
+        let selected =
+          time_unit
+          |> CCOption.map_or ~default:false (TimeUnit.equal unit)
+          |> function
+          | true -> [ a_selected () ]
+          | false -> []
+        in
+        option
+          ~a:(a_value (TimeUnit.show unit) :: selected)
+          (txt (TimeUnit.to_human unit)))
+      |> select ~a:[ a_name (TimeUnit.field_name name) ]
+      |> CCList.return
+      |> div ~a:[ a_class [ "select" ] ]
+    in
+    let input_group =
+      div
+        ~a:[ a_class [ "flexrow"; "grouped-input" ] ]
+        [ input ~a:attributes (); timeunit_select ]
+    in
+    match orientation with
+    | `Vertical -> input_group
+    | `Horizontal -> div ~a:[ a_class [ "input-group" ] ] [ input_group ]
+  in
   div
     ~a:[ a_class group_class ]
     ([ label ~a:[ a_label_for id ] [ txt input_label ]; input_element ]

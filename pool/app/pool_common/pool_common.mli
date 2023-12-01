@@ -45,6 +45,44 @@ module Language : sig
   val field_of_t : t -> Message.Field.t
 end
 
+module TimeUnit : sig
+  type t =
+    | Seconds
+    | Minutes
+    | Hours
+    | Days
+
+  val field : Message.Field.t
+  val pp : Format.formatter -> t -> unit
+  val show : t -> string
+  val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+  val t_of_yojson : Yojson.Safe.t -> t
+  val yojson_of_t : t -> Yojson.Safe.t
+  val equal : t -> t -> bool
+  val all : t list
+  val field_name : Message.Field.t -> string
+  val to_human : t -> string
+  val to_ptime_span : int -> t -> Ptime.Span.t
+  val ptime_span_to_larges_unit : Ptime.Span.t -> t * int
+
+  val decode
+    :  (Ptime.span -> ('a, Message.error) result)
+    -> int
+    -> t
+    -> ('a, Message.error) result
+
+  val decode_opt
+    :  (Ptime.span -> ('a, Message.error) result)
+    -> int option
+    -> t option
+    -> ('a option, Message.error) result
+
+  val schema
+    :  field:Message.Field.t
+    -> unit
+    -> (Message.error, t) Pool_common_utils.PoolConformist.Field.t
+end
+
 module Version : sig
   type t
 

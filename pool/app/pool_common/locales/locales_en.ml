@@ -245,6 +245,7 @@ let rec field_to_string =
   | TextMessageRemindersSentAt -> "text message reminders sent at"
   | Time -> "time"
   | TimeSpan -> "time span"
+  | TimeUnit -> "time unit"
   | Title -> "title"
   | ToHandle -> "to handle"
   | Token -> "token"

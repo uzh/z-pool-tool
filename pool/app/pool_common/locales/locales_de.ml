@@ -246,6 +246,7 @@ let rec field_to_string =
   | TextMessageRemindersSentAt -> "SMS Erinnerungen verschickt am"
   | Time -> "Uhrzeit"
   | TimeSpan -> "Zeitspanne"
+  | TimeUnit -> "Zeiteinheit"
   | Title -> "Titel"
   | ToHandle -> "zu bearbeiten"
   | Token -> "Token"

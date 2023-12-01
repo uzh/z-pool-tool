@@ -290,6 +290,7 @@ type t =
   [@printer go "text_message_reminders_sent_at"]
   | Time [@name "time"] [@printer go "time"]
   | TimeSpan [@name "timespan"] [@printer go "timespan"]
+  | TimeUnit [@name "timeunit"] [@printer go "timeunit"]
   | Title [@name "title"] [@printer go "title"]
   | ToHandle [@name "to_handle"] [@printer go "to_handle"]
   | Token [@name "token"] [@printer go "token"]

@@ -41,8 +41,31 @@ form[class*="stack"] input[type="hidden"]+* {
     row-gap: 0;
 }
 
+<<<<<<< HEAD
 .form-group .help {
     @extend .flexcolumn;
+=======
+.grouped-input {
+    border-radius: $border-radius;
+    border: 1px solid $grey;
+    overflow: hidden;
+
+    select, input {
+        border: none;
+        border-radius: 0;
+    }
+
+    & > * {
+        width: auto;
+    }
+
+    & > .select select {
+        padding-right: $space-base * 2;
+        width: auto;
+        background-color: $grey-light;
+        border-left: 1px solid $grey;
+    }
+>>>>>>> a1a506b0 (add time unit module)
 }
 
 // Index page
