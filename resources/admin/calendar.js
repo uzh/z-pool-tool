@@ -42,7 +42,11 @@ const tooltipContent = ({ _instance, _def }, hideLocation) => {
     const locationSessionLink = show_location_session ? `<a href="${location_session}">Session details</a>` : '';
     const experimentLink = show_experiment ? `<a href="${experiment}">Experiment details</a>` : '';
     var linkList = [];
-    show_session ? linkList.push(sessionLink) : show_location_session ? linkList.push(locationSessionLink) : null;
+    if (show_session) {
+        linkList.push(sessionLink);
+    } else if (show_location_session) {
+        linkList.push(locationSessionLink);
+    }
     show_experiment ? linkList.push(experimentLink) : null;
     const linksHtml = !linkList.lenght ? `<p>${linkList.join(`<br/>`)}</p>` : '';
     const contactPersonHtml = contactPerson ? `<a href="mailto:${contactPerson.email}">${contactPerson.name}</a><br>` : ''
