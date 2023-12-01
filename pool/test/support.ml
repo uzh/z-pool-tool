@@ -16,13 +16,15 @@ let database_case
   : string -> (unit -> (unit, Pool_common.Message.error) result Lwt.t) -> unit
   =
   fun name test_fn ->
-  Printexc.record_backtrace true;
   let open Test_utils in
   let open Alcotest_lwt in
+  Printexc.record_backtrace true;
   let test_fn (_switch : Lwt_switch.t) () =
-    Sihl.Database.transaction (fun (module Conn : Caqti_lwt.CONNECTION) ->
-      Conn.with_transaction (fun () ->
-        test_fn () |> Lwt_result.map_error (fun err -> `Test_error err)))
+    Sihl.Database.transaction (fun (module _ : Caqti_lwt.CONNECTION) ->
+      (* let& () =  Conn.start() in *)
+      let result = test_fn () |> Lwt_result.map_error (fun err -> `Test_error err) in
+      (* let& () = Conn.rollback () in *)
+      result)
     |> Lwt.map (fun result ->
       match result with
       | Error (`Test_error err) -> Pool_common.Utils.get_or_failwith (Error err)

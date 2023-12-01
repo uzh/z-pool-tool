@@ -550,10 +550,12 @@ end
 
 let case test_fn (_switch : Lwt_switch.t) () : unit Lwt.t =
   Sihl.Database.transaction (fun (module Conn : Caqti_lwt.CONNECTION) ->
+    let ( let& ) = Lwt_result.bind in
+    let& () = Conn.start () in
     let result =
       test_fn () |> Lwt_result.map_error (fun err -> `Test_error err)
     in
-    let%lwt _ = Conn.rollback () in
+    let& () = Conn.rollback () in
     result)
   |> Lwt.map (fun result ->
     match result with
