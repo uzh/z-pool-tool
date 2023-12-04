@@ -436,16 +436,52 @@ module Calendar = struct
   type location =
     { id : Pool_location.Id.t
     ; name : Pool_location.Name.t
+    ; url : string
     }
   [@@deriving eq, show, yojson]
 
+  type links =
+    { show_experiment : bool
+    ; show_session : bool
+    ; show_location_session : bool
+    ; experiment : string
+    ; session : string
+    ; location_session : string
+    }
+  [@@deriving eq, show, yojson]
+
+  let create_links
+    ?(show_experiment = false)
+    ?(show_session = false)
+    ?(show_location_session = false)
+    experiment_id
+    session_id
+    ({ url; _ } : location)
+    =
+    let session_id = Id.value session_id in
+    let experiment =
+      Format.asprintf "admin/experiments/%s" (Experiment.Id.value experiment_id)
+      |> Sihl.Web.externalize_path
+    in
+    let session base_url =
+      Format.asprintf "%s/sessions/%s" base_url session_id
+    in
+    { show_experiment
+    ; show_session
+    ; show_location_session
+    ; experiment
+    ; session = session experiment
+    ; location_session = session url
+    }
+  ;;
+
   type t =
     { id : Id.t
+    ; experiment_id : Experiment.Id.t
     ; title : Experiment.Title.t
     ; start : Start.t
     ; end_ : End.t
-    ; session_url : string
-    ; experiment_url : string
+    ; links : links
     ; max_participants : ParticipantAmount.t
     ; min_participants : ParticipantAmount.t
     ; overbook : ParticipantAmount.t

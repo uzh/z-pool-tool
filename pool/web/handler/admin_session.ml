@@ -151,143 +151,151 @@ let create req =
   result |> HttpUtils.extract_happy_path_with_actions ~src req
 ;;
 
+let session_page database_label req context session experiment =
+  let open Utils.Lwt_result.Infix in
+  let open Helpers.Guard in
+  let session_id = Session.(session.id) in
+  let experiment_id = Experiment.(experiment.id) in
+  let experiment_target_id =
+    [ Guard.Uuid.target_of Experiment.Id.value experiment_id ]
+  in
+  let view_contact_name = can_read_contact_name context experiment_target_id in
+  let view_contact_info = can_read_contact_info context experiment_target_id in
+  let flash_fetcher = flip Sihl.Web.Flash.find req in
+  let current_tags () =
+    let open Tags.ParticipationTags in
+    find_all database_label (Session (Session.Id.to_common session_id))
+  in
+  let create_layout = create_layout req context in
+  function
+  | `Detail ->
+    let%lwt current_tags = current_tags () in
+    let* assignments = Assignment.find_by_session database_label session_id in
+    let access_contact_profiles =
+      can_access_contact_profile context experiment_id
+    in
+    Page.Admin.Session.detail
+      ~access_contact_profiles
+      ~view_contact_name
+      ~view_contact_info
+      context
+      experiment
+      session
+      current_tags
+      assignments
+    >|> create_layout
+  | `Edit ->
+    let%lwt current_tags = current_tags () in
+    let%lwt locations = Pool_location.find_all database_label in
+    let%lwt session_reminder_templates =
+      Message_template.find_all_of_entity_by_label
+        database_label
+        (session_id |> Session.Id.to_common)
+        Message_template.Label.SessionReminder
+    in
+    let%lwt default_email_reminder_lead_time =
+      Settings.find_default_reminder_lead_time database_label
+    in
+    let%lwt default_text_msg_reminder_lead_time =
+      Settings.find_default_text_msg_reminder_lead_time database_label
+    in
+    let%lwt available_tags =
+      Tags.ParticipationTags.(
+        find_available
+          database_label
+          (Session (Session.Id.to_common session_id)))
+    in
+    let%lwt experiment_participation_tags =
+      Tags.ParticipationTags.(
+        find_all
+          database_label
+          (Experiment (Experiment.Id.to_common experiment_id)))
+    in
+    let sys_languages = Pool_context.Tenant.get_tenant_languages_exn req in
+    Page.Admin.Session.edit
+      context
+      experiment
+      default_email_reminder_lead_time
+      default_text_msg_reminder_lead_time
+      session
+      locations
+      session_reminder_templates
+      sys_languages
+      (current_tags, available_tags, experiment_participation_tags)
+      flash_fetcher
+    >|> create_layout
+  | `Close ->
+    let* assignments =
+      Assignment.find_uncanceled_by_session database_label session.Session.id
+    in
+    let%lwt participation_tags =
+      Tags.ParticipationTags.(
+        find_all
+          database_label
+          (Experiment (Experiment.Id.to_common experiment_id)))
+    in
+    let* counters = Assignment.counters_of_session database_label session_id in
+    Page.Admin.Session.close
+      ~view_contact_name
+      context
+      experiment
+      session
+      assignments
+      participation_tags
+      counters
+    >|> create_layout
+  | `Reschedule ->
+    let* experiment = Experiment.find database_label experiment_id in
+    Page.Admin.Session.reschedule_session
+      context
+      experiment
+      session
+      flash_fetcher
+    >|> create_layout
+  | `Cancel ->
+    let* follow_ups = Session.find_follow_ups database_label session_id in
+    Page.Admin.Session.cancel
+      context
+      experiment
+      session
+      follow_ups
+      flash_fetcher
+    >|> create_layout
+  | `Print ->
+    let* assignments =
+      Assignment.find_by_session database_label session.Session.id
+    in
+    Page.Admin.Session.print
+      ~view_contact_name
+      ~view_contact_info
+      context
+      experiment
+      session
+      assignments
+    |> Lwt_result.return
+;;
+
 let detail page req =
   let open Utils.Lwt_result.Infix in
-  let experiment_id = experiment_id req in
   let session_id = session_id req in
   let error_path =
-    Format.asprintf
-      "/admin/experiments/%s/sessions"
-      (Experiment.Id.value experiment_id)
+    (try experiment_id req |> CCOption.some with
+     | _ -> None)
+    |> CCOption.map_or
+         ~default:"/admin/dashboard"
+         (Experiment.Id.value
+          %> Format.asprintf "/admin/experiments/%s/sessions")
   in
   let result ({ Pool_context.database_label; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, error_path)
     @@
     let* session = Session.find database_label session_id in
-    let* experiment = Experiment.find database_label experiment_id in
-    let experiment_target_id =
-      Guard.Uuid.target_of Experiment.Id.value experiment_id
+    let* experiment =
+      Experiment.find_of_session
+        database_label
+        (session_id |> Session.Id.to_common)
     in
-    let view_contact_name =
-      Helpers.Guard.can_read_contact_name context [ experiment_target_id ]
-    in
-    let view_contact_info =
-      Helpers.Guard.can_read_contact_info context [ experiment_target_id ]
-    in
-    let flash_fetcher = flip Sihl.Web.Flash.find req in
-    let%lwt current_tags =
-      Tags.ParticipationTags.(
-        find_all database_label (Session (Session.Id.to_common session_id)))
-    in
-    let create_layout = create_layout req context in
-    (match page with
-     | `Detail ->
-       let* assignments =
-         Assignment.find_by_session database_label session.Session.id
-       in
-       let access_contact_profiles =
-         Helpers.Guard.can_access_contact_profile context experiment_id
-       in
-       Page.Admin.Session.detail
-         ~access_contact_profiles
-         ~view_contact_name
-         ~view_contact_info
-         context
-         experiment
-         session
-         current_tags
-         assignments
-       >|> create_layout
-     | `Edit ->
-       let%lwt locations = Pool_location.find_all database_label in
-       let%lwt session_reminder_templates =
-         Message_template.find_all_of_entity_by_label
-           database_label
-           (session_id |> Session.Id.to_common)
-           Message_template.Label.SessionReminder
-       in
-       let%lwt default_email_reminder_lead_time =
-         Settings.find_default_reminder_lead_time database_label
-       in
-       let%lwt default_text_msg_reminder_lead_time =
-         Settings.find_default_text_msg_reminder_lead_time database_label
-       in
-       let%lwt available_tags =
-         Tags.ParticipationTags.(
-           find_available
-             database_label
-             (Session (Session.Id.to_common session_id)))
-       in
-       let%lwt experiment_participation_tags =
-         Tags.ParticipationTags.(
-           find_all
-             database_label
-             (Experiment (Experiment.Id.to_common experiment_id)))
-       in
-       let sys_languages = Pool_context.Tenant.get_tenant_languages_exn req in
-       Page.Admin.Session.edit
-         context
-         experiment
-         default_email_reminder_lead_time
-         default_text_msg_reminder_lead_time
-         session
-         locations
-         session_reminder_templates
-         sys_languages
-         (current_tags, available_tags, experiment_participation_tags)
-         flash_fetcher
-       >|> create_layout
-     | `Close ->
-       let* assignments =
-         Assignment.find_uncanceled_by_session database_label session.Session.id
-       in
-       let%lwt participation_tags =
-         Tags.ParticipationTags.(
-           find_all
-             database_label
-             (Experiment (Experiment.Id.to_common experiment_id)))
-       in
-       let* counters =
-         Assignment.counters_of_session database_label session_id
-       in
-       Page.Admin.Session.close
-         ~view_contact_name
-         context
-         experiment
-         session
-         assignments
-         participation_tags
-         counters
-       >|> create_layout
-     | `Reschedule ->
-       let* experiment = Experiment.find database_label experiment_id in
-       Page.Admin.Session.reschedule_session
-         context
-         experiment
-         session
-         flash_fetcher
-       >|> create_layout
-     | `Cancel ->
-       let* follow_ups = Session.find_follow_ups database_label session_id in
-       Page.Admin.Session.cancel
-         context
-         experiment
-         session
-         follow_ups
-         flash_fetcher
-       >|> create_layout
-     | `Print ->
-       let* assignments =
-         Assignment.find_by_session database_label session.Session.id
-       in
-       Page.Admin.Session.print
-         ~view_contact_name
-         ~view_contact_info
-         context
-         experiment
-         session
-         assignments
-       |> Lwt_result.return)
+    session_page database_label req context session experiment page
     >|+ Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path ~src req
@@ -788,8 +796,8 @@ let resend_reminders req =
 ;;
 
 module Api = struct
-  let calendar_api req query =
-    let result { Pool_context.database_label; _ } =
+  let calendar_api ?actor req query =
+    let result { Pool_context.database_label; guardian; _ } =
       let open Utils.Lwt_result.Infix in
       let query_params = Sihl.Web.Request.query_list req in
       let find_param field =
@@ -802,6 +810,47 @@ module Api = struct
       let* end_time = find_param Field.End in
       let%lwt sessions =
         query database_label ~start_time ~end_time
+        ||> CCList.map
+              (fun
+                  (Session.Calendar.{ id; experiment_id; location; links; _ } as
+                   cal)
+                ->
+                 let open Session.Calendar in
+                 match actor with
+                 | None -> cal
+                 | Some actor ->
+                   let open Guard in
+                   let session = Uuid.target_of Session.Id.value id in
+                   let experiment =
+                     Uuid.target_of Experiment.Id.value experiment_id
+                   in
+                   let location =
+                     Uuid.target_of Pool_location.Id.value location.id
+                   in
+                   let check_guardian model target =
+                     let open ValidationSet in
+                     Persistence.PermissionOnTarget.validate_set
+                       guardian
+                       Pool_common.Message.authorization
+                       (one_of_tuple (Permission.Read, model, Some target))
+                       actor
+                     |> CCResult.is_ok
+                   in
+                   let show_experiment =
+                     check_guardian `Experiment experiment
+                   in
+                   let show_session = check_guardian `Session session in
+                   let show_location_session =
+                     check_guardian `Location location
+                   in
+                   let links =
+                     { links with
+                       show_session
+                     ; show_experiment
+                     ; show_location_session
+                     }
+                   in
+                   { cal with links })
         ||> CCList.map Session.Calendar.yojson_of_t
       in
       `List sessions |> Lwt.return_ok
@@ -825,7 +874,8 @@ module Api = struct
       Pool_context.Utils.find_authorizable ~admin_only:true database_label user
     in
     match actor with
-    | Ok actor -> calendar_api req (Session.find_for_calendar_by_user actor)
+    | Ok actor ->
+      calendar_api ~actor req (Session.find_for_calendar_by_user actor)
     | Error err ->
       `Assoc
         [ "message", `String Pool_common.(Utils.error_to_string language err) ]
@@ -842,6 +892,7 @@ end
 module Access : sig
   include module type of Helpers.Access
 
+  val read_by_location : Rock.Middleware.t
   val reschedule : Rock.Middleware.t
   val cancel : Rock.Middleware.t
   val close : Rock.Middleware.t
@@ -860,6 +911,13 @@ end = struct
     fcn experiment_id session_id
   ;;
 
+  let combined_with_location_effects fcn req =
+    let open HttpUtils in
+    let location_id = find_id Pool_location.Id.of_string Field.Location req in
+    let session_id = find_id Session.Id.of_string Field.Session req in
+    fcn location_id session_id
+  ;;
+
   let index =
     let read id = Session.Guard.Access.index id in
     read |> experiment_effects |> Guardian.validate_generic ~any_id:true
@@ -874,6 +932,11 @@ end = struct
   let read =
     let read id = Session.Guard.Access.read id in
     read |> combined_effects |> Guardian.validate_generic
+  ;;
+
+  let read_by_location =
+    let read id = Session.Guard.Access.read_by_location id in
+    read |> combined_with_location_effects |> Guardian.validate_generic
   ;;
 
   let update =
