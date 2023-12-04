@@ -68,6 +68,23 @@ form[class*="stack"] input[type="hidden"]+* {
 >>>>>>> a1a506b0 (add time unit module)
 }
 
+input[readonly], select[readonly] {
+    background-color: $grey-light;
+    color: $grey-dark;
+    cursor: not-allowed;
+
+    &:hover {
+      background-color: $grey-light;
+    }
+}
+
+// Flatpicker
+// TODO: Add to framework
+.form-group:not(.horizontal) > .flatpickr-input + .datepicker {
+    margin-top: $space-xs;
+}
+
+
 // Index page
 .index-page>*:nth-child(2) {
     flex-basis: 25%;

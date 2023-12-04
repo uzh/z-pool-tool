@@ -30,6 +30,7 @@ type error =
   | AssignmentsHaveErrors
   | Authorization of string
   | CannotBeDeleted of Field.t
+  | CannotBeUpdated of Field.t
   | Conformist of (Field.t * error) list
   | ConformistModuleErrorType
   | ContactDoesNotMatchFilter

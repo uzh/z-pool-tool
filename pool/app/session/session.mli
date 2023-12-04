@@ -43,26 +43,17 @@ end
 
 type base =
   { start : Start.t
-  ; duration : Duration.t
+  ; duration : int
+  ; duration_unit : Pool_common.TimeUnit.t
   ; description : Description.t option
   ; limitations : Limitations.t option
   ; max_participants : ParticipantAmount.t
   ; min_participants : ParticipantAmount.t
   ; overbook : ParticipantAmount.t
-  ; email_reminder_lead_time : Pool_common.Reminder.LeadTime.t option
-  ; text_message_reminder_lead_time : Pool_common.Reminder.LeadTime.t option
-  }
-
-type update =
-  { start : Start.t option
-  ; duration : Duration.t option
-  ; description : Description.t option
-  ; limitations : Limitations.t option
-  ; max_participants : ParticipantAmount.t
-  ; min_participants : ParticipantAmount.t
-  ; overbook : ParticipantAmount.t
-  ; email_reminder_lead_time : Pool_common.Reminder.LeadTime.t option
-  ; text_message_reminder_lead_time : Pool_common.Reminder.LeadTime.t option
+  ; email_reminder_lead_time : int option
+  ; email_reminder_lead_time_unit : Pool_common.TimeUnit.t option
+  ; text_message_reminder_lead_time : int option
+  ; text_message_reminder_lead_time_unit : Pool_common.TimeUnit.t option
   }
 
 type reschedule =
@@ -161,7 +152,7 @@ type event =
   | Canceled of t
   | Closed of t
   | Deleted of t
-  | Updated of (base * Pool_location.t * t)
+  | Updated of t
   | EmailReminderSent of t
   | TextMsgReminderSent of t
   | Rescheduled of (t * reschedule)

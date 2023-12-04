@@ -379,6 +379,8 @@ let rec error_to_string = function
   | Authorization message -> field_message "Unable to authorize: " message ""
   | CannotBeDeleted field ->
     Format.asprintf "%s cannot be deleted." (field_to_string field)
+  | CannotBeUpdated field ->
+    Format.asprintf "%s cannot be updated." (field_to_string field)
   | Conformist errs ->
     CCList.map
       (fun (field, err) ->

@@ -3,98 +3,92 @@ open CCFun
 
 let src = Logs.Src.create "session.cqrs"
 
-let create_command
+let command
   start
   duration
+  duration_unit
   description
   limitations
   max_participants
   min_participants
   overbook
   email_reminder_lead_time
+  email_reminder_lead_time_unit
   text_message_reminder_lead_time
+  text_message_reminder_lead_time_unit
   : Session.base
   =
   Session.
     { start
     ; duration
+    ; duration_unit
     ; description
     ; limitations
     ; max_participants
     ; min_participants
     ; overbook
     ; email_reminder_lead_time
+    ; email_reminder_lead_time_unit
     ; text_message_reminder_lead_time
+    ; text_message_reminder_lead_time_unit
     }
 ;;
 
-let create_schema =
+let schema =
   let open Pool_common in
   Conformist.(
     make
       Field.
         [ Session.Start.schema ()
-        ; Session.Duration.schema ()
+        ; Model.Integer.schema Message.Field.Duration CCResult.return ()
+        ; TimeUnit.schema ~field:Message.Field.Duration ()
         ; Conformist.optional @@ Session.Description.schema ()
         ; Conformist.optional @@ Session.Limitations.schema ()
         ; Session.ParticipantAmount.schema Message.Field.MaxParticipants
         ; Session.ParticipantAmount.schema Message.Field.MinParticipants
         ; Session.ParticipantAmount.schema Message.Field.Overbook
         ; Conformist.optional
-          @@ Reminder.LeadTime.schema ~field:Message.Field.EmailLeadTime ()
+          @@ Model.Integer.schema Message.Field.EmailLeadTime CCResult.return ()
         ; Conformist.optional
-          @@ Reminder.LeadTime.schema
-               ~field:Message.Field.TextMessageLeadTime
+          @@ TimeUnit.schema ~field:Message.Field.EmailLeadTime ()
+        ; Conformist.optional
+          @@ Model.Integer.schema
+               Message.Field.TextMessageLeadTime
+               CCResult.return
                ()
+        ; Conformist.optional
+          @@ TimeUnit.schema ~field:Message.Field.TextMessageLeadTime ()
         ]
-      create_command)
+      command)
 ;;
 
-let update_command
-  start
-  duration
-  description
-  limitations
-  max_participants
-  min_participants
-  overbook
-  email_reminder_lead_time
-  text_message_reminder_lead_time
-  : Session.update
+let decode_time_durations
+  { Session.duration
+  ; duration_unit
+  ; email_reminder_lead_time
+  ; email_reminder_lead_time_unit
+  ; text_message_reminder_lead_time
+  ; text_message_reminder_lead_time_unit
+  ; _
+  }
   =
-  Session.
-    { start
-    ; duration
-    ; description
-    ; limitations
-    ; max_participants
-    ; min_participants
-    ; overbook
-    ; email_reminder_lead_time
-    ; text_message_reminder_lead_time
-    }
-;;
-
-let update_schema =
+  let open CCResult in
   let open Pool_common in
-  Conformist.(
-    make
-      Field.
-        [ Conformist.optional @@ Session.Start.schema ()
-        ; Conformist.optional @@ Session.Duration.schema ()
-        ; Conformist.optional @@ Session.Description.schema ()
-        ; Conformist.optional @@ Session.Limitations.schema ()
-        ; Session.ParticipantAmount.schema Message.Field.MaxParticipants
-        ; Session.ParticipantAmount.schema Message.Field.MinParticipants
-        ; Session.ParticipantAmount.schema Message.Field.Overbook
-        ; Conformist.optional
-          @@ Reminder.LeadTime.schema ~field:Message.Field.EmailLeadTime ()
-        ; Conformist.optional
-          @@ Reminder.LeadTime.schema
-               ~field:Message.Field.TextMessageLeadTime
-               ()
-        ]
-      update_command)
+  let decode_lead_time value unit =
+    TimeUnit.decode_opt Reminder.LeadTime.create value unit
+  in
+  let* duration =
+    TimeUnit.decode Session.Duration.create duration duration_unit
+  in
+  let* email_lead_time =
+    decode_lead_time email_reminder_lead_time email_reminder_lead_time_unit
+  in
+  let* text_message_lead_time =
+    decode_lead_time
+      text_message_reminder_lead_time
+      text_message_reminder_lead_time_unit
+  in
+  Ok (duration, email_lead_time, text_message_lead_time)
 ;;
 
 (* If session is follow-up, make sure it's later than parent *)
@@ -147,7 +141,7 @@ module Create : sig
 end = struct
   type t = Session.base
 
-  let schema = create_schema
+  let schema = schema
 
   let handle
     ?(tags = Logs.Tag.empty)
@@ -157,16 +151,13 @@ end = struct
     location
     (Session.
        { start
-       ; duration
        ; description
        ; limitations
        ; max_participants
        ; min_participants
-       ; (* TODO [aerben] find a better name *)
-         overbook
-       ; email_reminder_lead_time
-       ; text_message_reminder_lead_time
-       } :
+       ; overbook
+       ; _
+       } as command :
       Session.base)
     =
     Logs.info ~src (fun m -> m "Handle command Create" ~tags);
@@ -180,6 +171,9 @@ end = struct
       ]
     in
     let* () = run_validations validations in
+    let* duration, email_reminder_lead_time, text_message_reminder_lead_time =
+      decode_time_durations command
+    in
     let session =
       Session.create
         ?id:session_id
@@ -207,7 +201,7 @@ end = struct
 end
 
 module Update : sig
-  include Common.CommandSig with type t = Session.update
+  include Common.CommandSig with type t = Session.base
 
   val handle
     :  ?tags:Logs.Tag.set
@@ -224,7 +218,7 @@ module Update : sig
 
   val effects : Experiment.Id.t -> Session.Id.t -> Guard.ValidationSet.t
 end = struct
-  type t = Session.update
+  type t = Session.base
 
   let handle
     ?(tags = Logs.Tag.empty)
@@ -234,48 +228,48 @@ end = struct
     location
     (Session.
        { start
-       ; duration
        ; description
        ; limitations
        ; max_participants
        ; min_participants
        ; overbook
-       ; email_reminder_lead_time
-       ; text_message_reminder_lead_time
-       } :
-      Session.update)
+       ; _
+       } as command :
+      Session.base)
     =
     Logs.info ~src (fun m -> m "Handle command Update" ~tags);
     let open Session in
     let open CCResult in
-    let has_assignments = Session.has_assignments session in
-    let* start, duration =
-      let open Pool_common.Message in
-      let to_result field =
-        CCOption.to_result (Conformist [ field, Pool_common.Message.NoValue ])
-      in
-      match has_assignments with
-      | false ->
-        CCResult.both
-          (to_result Field.Start start)
-          (to_result Field.Duration duration)
-      | true -> Ok (session.start, session.duration)
+    let open Pool_common.Message in
+    let* duration, email_reminder_lead_time, text_message_reminder_lead_time =
+      decode_time_durations command
+    in
+    let* () =
+      match Session.has_assignments session with
+      | false -> Ok ()
+      | true ->
+        let error field = Error (CannotBeUpdated field) in
+        let* () =
+          if Start.equal session.start start then Ok () else error Field.Start
+        in
+        if Duration.equal session.duration duration
+        then Ok ()
+        else error Field.Start
     in
     let* () = validate_start follow_up_sessions parent_session start in
     let* () =
       if max_participants < min_participants
-      then
-        Error
-          Pool_common.Message.(
-            Smaller (Field.MaxParticipants, Field.MinParticipants))
+      then Error (Smaller (Field.MaxParticipants, Field.MinParticipants))
       else Ok ()
     in
-    let (session_cmd : Session.base) =
+    let session =
       Session.
-        { start
+        { session with
+          start
         ; duration
-        ; description
         ; limitations
+        ; location
+        ; description
         ; max_participants
         ; min_participants
         ; overbook
@@ -283,12 +277,11 @@ end = struct
         ; text_message_reminder_lead_time
         }
     in
-    Ok
-      [ Session.Updated (session_cmd, location, session) |> Pool_event.session ]
+    Ok [ Session.Updated session |> Pool_event.session ]
   ;;
 
   let decode data =
-    Conformist.decode_and_validate update_schema data
+    Conformist.decode_and_validate schema data
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 

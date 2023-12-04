@@ -136,8 +136,7 @@ let session_form
              ~flash_fetcher
              ?value
              ~warn_past:true
-             ~additional_attributes:
-               (if has_assignments then [ a_disabled () ] else []))
+             ~read_only:has_assignments)
         ; timespan_picker
             language
             ~required:true
@@ -148,8 +147,7 @@ let session_form
                  (fun (s : t) -> s.duration |> Duration.value)
                  session)
             ~flash_fetcher
-            ~additional_attributes:
-              (if has_assignments then [ a_disabled () ] else [])
+            ~read_only:has_assignments
         ; reschedule_hint ()
         ; textarea_element
             language

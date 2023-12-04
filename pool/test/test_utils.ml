@@ -416,34 +416,6 @@ module Model = struct
       }
   ;;
 
-  let session_to_session_base
-    ({ Session.start
-     ; duration
-     ; description
-     ; limitations
-     ; max_participants
-     ; min_participants
-     ; overbook
-     ; email_reminder_lead_time
-     ; text_message_reminder_lead_time
-     ; _
-     } :
-      Session.t)
-    : Session.base
-    =
-    Session.
-      { start
-      ; duration
-      ; description
-      ; limitations
-      ; max_participants
-      ; min_participants
-      ; overbook
-      ; email_reminder_lead_time
-      ; text_message_reminder_lead_time
-      }
-  ;;
-
   let fully_book_session session =
     Session.
       { session with

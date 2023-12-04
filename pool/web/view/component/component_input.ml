@@ -158,6 +158,7 @@ let flatpicker_element
   ?label_field
   ?hints
   ?identifier
+  ?(read_only = false)
   ?(required = false)
   ?flash_fetcher
   ?value
@@ -206,7 +207,9 @@ let flatpicker_element
       `Datetime_local
       name
       id
-      ([ a_value value ] @ flatpicker_attributes)
+      ([ a_value value ]
+       @ (if read_only then [ a_readonly () ] else [])
+       @ flatpicker_attributes)
     |> fun attrs -> if required then attrs @ [ a_required () ] else attrs
   in
   let group_class = Elements.group_class classnames orientation in
@@ -244,6 +247,7 @@ let timespan_picker
   ?hints
   ?identifier
   ?label_field
+  ?(read_only = false)
   ?(required = false)
   ?flash_fetcher
   ?value
@@ -271,6 +275,7 @@ let timespan_picker
       Elements.attributes `Number name id [ a_value value ]
       @ additional_attributes
       @ [ a_input_min (`Number 0); a_step (Some 1.) ]
+      @ if read_only then [ a_readonly () ] else []
     in
     let attrs = if required then a_required () :: attrs else attrs in
     if CCOption.is_some error then a_class [ "is-invalid" ] :: attrs else attrs
@@ -279,8 +284,24 @@ let timespan_picker
   let help = Elements.hints language hints in
   let error = Elements.error language error in
   let input_element =
+    let open Pool_common in
+    let unit_field_name = TimeUnit.field_name name in
+    let hidden_unit_field =
+      if read_only
+      then
+        input
+          ~a:
+            [ a_name unit_field_name
+            ; a_input_type `Hidden
+            ; a_value
+                (time_unit
+                 |> CCOption.value ~default:(TimeUnit.all |> CCList.hd)
+                 |> TimeUnit.show)
+            ]
+          ()
+      else txt ""
+    in
     let timeunit_select =
-      let open Pool_common in
       TimeUnit.all
       |> CCList.map (fun unit ->
         let selected =
@@ -293,14 +314,18 @@ let timespan_picker
         option
           ~a:(a_value (TimeUnit.show unit) :: selected)
           (txt (TimeUnit.to_human unit)))
-      |> select ~a:[ a_name (TimeUnit.field_name name) ]
+      |> select
+           ~a:
+             (if read_only
+              then [ a_disabled () ]
+              else [ a_name unit_field_name ])
       |> CCList.return
       |> div ~a:[ a_class [ "select" ] ]
     in
     let input_group =
       div
         ~a:[ a_class [ "flexrow"; "grouped-input" ] ]
-        [ input ~a:attributes (); timeunit_select ]
+        [ input ~a:attributes (); timeunit_select; hidden_unit_field ]
     in
     match orientation with
     | `Vertical -> input_group

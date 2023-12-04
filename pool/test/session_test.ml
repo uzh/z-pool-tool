@@ -1,4 +1,5 @@
 module SessionC = Cqrs_command.Session_command
+module TimeUnit = Pool_common.TimeUnit
 open CCFun
 open Test_utils
 
@@ -24,6 +25,7 @@ module Data = struct
     ;;
 
     let duration = Ptime.Span.of_int_s 3600
+    let duration_unit = TimeUnit.Minutes
     let description = "Description"
     let limitations = "Limitations"
     let max_participants = 24
@@ -44,6 +46,7 @@ module Data = struct
     let start2 = Raw.start2 |> Ptime.to_rfc3339 ~frac_s:12
     let start3 = Raw.start3 |> Ptime.to_rfc3339 ~frac_s:12
     let duration = Raw.duration |> Pool_common.Utils.Time.timespan_to_minutes
+    let duration_unit = Raw.duration_unit |> TimeUnit.show
     let description = Raw.description
     let limitations = Raw.limitations
     let max_participants = Raw.max_participants |> string_of_int
@@ -104,9 +107,10 @@ module Data = struct
         , overbook
         , subject
         , text
-        , lead_time )
+        , lead_time
+        , time_unit )
       =
-      "01", "long", "", "many", "few", "none", "", "", "-1.5"
+      "01", "long", "", "many", "few", "none", "", "", "-1.5", "moment"
     ;;
   end
 
@@ -114,6 +118,7 @@ module Data = struct
     let open Pool_common.Message.Field in
     [ show Start, [ String.start1 ]
     ; show Duration, [ String.duration ]
+    ; TimeUnit.field_name Duration, [ String.duration_unit ]
     ; show Description, [ String.description ]
     ; show Limitations, [ String.limitations ]
     ; show MaxParticipants, [ String.max_participants ]
@@ -335,7 +340,9 @@ let update_empty_data () =
        (let open Pool_common.Message in
         let open Field in
         Conformist
-          [ MaxParticipants, NoValue
+          [ Start, NoValue
+          ; Duration, NoValue
+          ; MaxParticipants, NoValue
           ; MinParticipants, NoValue
           ; Overbook, NoValue
           ]))
@@ -401,25 +408,22 @@ let update_no_optional () =
   let session = Model.create_session () in
   let location = Location_test.create_location () in
   let res = SessionC.Update.(input |> decode >>= handle [] session location) in
-  check_result
-    (Ok
-       [ Pool_event.Session
-           (Session.Updated
-              (let open Data.Validated in
-               ( { Session.start = start1
-                 ; duration
-                 ; description = None
-                 ; limitations = None
-                 ; max_participants
-                 ; min_participants
-                 ; overbook
-                 ; email_reminder_lead_time = None
-                 ; text_message_reminder_lead_time = None
-                 }
-               , location
-               , session )))
-       ])
-    res
+  let session =
+    let open Data.Validated in
+    Session.
+      { session with
+        start = start1
+      ; duration
+      ; description = None
+      ; limitations = None
+      ; max_participants
+      ; min_participants
+      ; overbook
+      ; email_reminder_lead_time = None
+      ; text_message_reminder_lead_time = None
+      }
+  in
+  check_result (Ok [ Pool_event.Session (Session.Updated session) ]) res
 ;;
 
 let update_full () =
@@ -431,25 +435,22 @@ let update_full () =
     update_input [ Pool_common.Message.Field.Start, String.start2 ]
   in
   let res = SessionC.Update.(input |> decode >>= handle [] session location) in
-  check_result
-    (Ok
-       [ Pool_event.Session
-           (Session.Updated
-              (let open Data.Validated in
-               ( { Session.start = start2
-                 ; duration
-                 ; description = Some description
-                 ; limitations = Some limitations
-                 ; max_participants
-                 ; min_participants
-                 ; overbook
-                 ; email_reminder_lead_time = Some lead_time
-                 ; text_message_reminder_lead_time = Some lead_time
-                 }
-               , location
-               , session )))
-       ])
-    res
+  let session =
+    let open Data.Validated in
+    Session.
+      { session with
+        start = start2
+      ; duration
+      ; description = Some description
+      ; limitations = Some limitations
+      ; max_participants
+      ; min_participants
+      ; overbook
+      ; email_reminder_lead_time = Some lead_time
+      ; text_message_reminder_lead_time = Some lead_time
+      }
+  in
+  check_result (Ok [ Pool_event.Session (Session.Updated session) ]) res
 ;;
 
 let update_min_eq_max () =
@@ -462,25 +463,22 @@ let update_min_eq_max () =
   let session = Model.create_session () in
   let location = Location_test.create_location () in
   let res = SessionC.Update.(input |> decode >>= handle [] session location) in
-  check_result
-    (Ok
-       [ Pool_event.Session
-           (Session.Updated
-              (let open Data.Validated in
-               ( { Session.start = start1
-                 ; duration
-                 ; description = Some description
-                 ; limitations = Some limitations
-                 ; max_participants = max_participants2
-                 ; min_participants
-                 ; overbook
-                 ; email_reminder_lead_time = Some lead_time
-                 ; text_message_reminder_lead_time = Some lead_time
-                 }
-               , location
-               , session )))
-       ])
-    res
+  let session =
+    let open Data.Validated in
+    Session.
+      { session with
+        start = start1
+      ; duration
+      ; description = Some description
+      ; limitations = Some limitations
+      ; max_participants = max_participants2
+      ; min_participants
+      ; overbook
+      ; email_reminder_lead_time = Some lead_time
+      ; text_message_reminder_lead_time = Some lead_time
+      }
+  in
+  check_result (Ok [ Pool_event.Session (Session.Updated session) ]) res
 ;;
 
 let delete () =
@@ -1127,25 +1125,22 @@ let update_follow_up_later () =
     SessionC.Update.(
       input |> decode >>= handle ~parent_session:session [] session location)
   in
-  check_result
-    (Ok
-       [ Pool_event.Session
-           (Session.Updated
-              (let open Data.Validated in
-               ( { Session.start = Session.Start.create later_start
-                 ; duration
-                 ; description = Some description
-                 ; limitations = Some limitations
-                 ; max_participants
-                 ; min_participants
-                 ; overbook
-                 ; email_reminder_lead_time = Some lead_time
-                 ; text_message_reminder_lead_time = Some lead_time
-                 }
-               , location
-               , session )))
-       ])
-    res
+  let session =
+    let open Data.Validated in
+    Session.
+      { session with
+        start = Session.Start.create later_start
+      ; duration
+      ; description = Some description
+      ; limitations = Some limitations
+      ; max_participants
+      ; min_participants
+      ; overbook
+      ; email_reminder_lead_time = Some lead_time
+      ; text_message_reminder_lead_time = Some lead_time
+      }
+  in
+  check_result (Ok [ Pool_event.Session (Session.Updated session) ]) res
 ;;
 
 let update_follow_ups_earlier () =
@@ -1229,25 +1224,22 @@ let update_follow_ups_later () =
       |> decode
       >>= handle [ follow_up1; follow_up2 ] session location)
   in
-  check_result
-    (Ok
-       [ Pool_event.Session
-           (Session.Updated
-              (let open Data.Validated in
-               ( { Session.start = start1
-                 ; duration
-                 ; description = Some description
-                 ; limitations = Some limitations
-                 ; max_participants
-                 ; min_participants
-                 ; overbook
-                 ; email_reminder_lead_time = Some lead_time
-                 ; text_message_reminder_lead_time = Some lead_time
-                 }
-               , location
-               , session )))
-       ])
-    res_normal;
+  let session =
+    let open Data.Validated in
+    Session.
+      { session with
+        start = start1
+      ; duration
+      ; description = Some description
+      ; limitations = Some limitations
+      ; max_participants
+      ; min_participants
+      ; overbook
+      ; email_reminder_lead_time = Some lead_time
+      ; text_message_reminder_lead_time = Some lead_time
+      }
+  in
+  check_result (Ok [ Pool_event.Session (Session.Updated session) ]) res_normal;
   (* Make input start later, but before both follow-ups *)
   let later_start =
     Data.Validated.start1
@@ -1270,7 +1262,9 @@ let update_follow_ups_later () =
        [ Pool_event.Session
            (Session.Updated
               (let open Data.Validated in
-               ( { Session.start = Session.Start.create later_start
+               Session.
+                 { session with
+                   start = Start.create later_start
                  ; duration
                  ; description = Some description
                  ; limitations = Some limitations
@@ -1279,9 +1273,7 @@ let update_follow_ups_later () =
                  ; overbook
                  ; email_reminder_lead_time = Some lead_time
                  ; text_message_reminder_lead_time = Some lead_time
-                 }
-               , location
-               , session )))
+                 }))
        ])
     res_later_but_earlier
 ;;

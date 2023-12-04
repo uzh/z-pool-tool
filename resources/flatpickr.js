@@ -65,6 +65,7 @@ export function initDatepicker(container = document) {
                     }
                 },
                 onReady: function (value, originalValue, { altInput }) {
+                    altInput.disabled = e.readOnly; // Workaround for https://github.com/flatpickr/flatpickr/issues/2492
                     classlist.forEach(cls => altInput.classList.add(cls))
                 }
             })
