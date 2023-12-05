@@ -1073,10 +1073,9 @@ let edit
     let buttons =
       if CCList.is_empty (Message_template.filter_languages sys_languages list)
       then None
-      else
-        session_path Label.(prefixed_human_url label)
-        |> Page_admin_message_template.build_add_button label
-        |> CCOption.pure
+      else (
+        let path = session_path Label.(prefixed_human_url label) in
+        Some (Button.add label path))
     in
     div
       [ h2 ~a:[ a_class [ "heading-2" ] ] [ txt (Label.to_human label) ]

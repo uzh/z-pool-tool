@@ -3,6 +3,15 @@ module Version = Pool_common.Version
 module User = Pool_user
 module Input = Component.Input
 
+let hx_request_header = "Hx-Request"
+
+let is_hx_request req =
+  let headers = Rock.Request.(req.headers) in
+  match Httpaf.Headers.get headers hx_request_header with
+  | Some "true" -> true
+  | _ -> false
+;;
+
 let hx_trigger = a_user_data "hx-trigger"
 let hx_post = a_user_data "hx-post"
 let hx_get = a_user_data "hx-get"

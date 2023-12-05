@@ -120,6 +120,7 @@ module Integer = struct
   type t = int [@@deriving eq, ord, show, sexp_of, yojson]
 
   let value m = m
+  let to_string t = Int.to_string t
 
   let schema field create ()
     : (Entity_message.error, t) Pool_common_utils.PoolConformist.Field.t

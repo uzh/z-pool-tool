@@ -100,33 +100,44 @@ let experiment_message_templates database_label experiment_id =
 let index req =
   let open Utils.Lwt_result.Infix in
   let error_path = "/admin/dashboard" in
-  let result ({ Pool_context.database_label; user; _ } as context) =
-    let find_actor =
-      Pool_context.Utils.find_authorizable ~admin_only:true database_label user
-    in
-    let find_experiments actor =
-      let open Experiment in
-      let query =
-        Query.from_request
-          ~searchable_by
-          ~sortable_by
-          ~default:Experiment.default_query
-          req
-      in
-      find_all
-        ~query
-        ~actor
-        ~permission:Guard.Access.index_permission
-        database_label
-    in
-    find_actor
-    |>> find_experiments
-    >|+ Page.Admin.Experiments.index context
-    >>= create_layout ~active_navigation:"/admin/experiments" req context
-    >|+ Sihl.Web.Response.of_html
-    >|- fun err -> err, error_path
+  let active_navigation = "/admin/experiments" in
+  HttpUtils.extract_happy_path ~src req
+  @@ fun ({ Pool_context.database_label; user; _ } as context) ->
+  let find_actor =
+    Pool_context.Utils.find_authorizable ~admin_only:true database_label user
   in
-  result |> HttpUtils.extract_happy_path ~src req
+  let find_experiments actor =
+    let open Experiment in
+    let query =
+      Query.from_request
+        ~searchable_by
+        ~sortable_by
+        ~default:Experiment.default_query
+        req
+    in
+    find_all
+      ~query
+      ~actor
+      ~permission:Guard.Access.index_permission
+      database_label
+  in
+  let* actor = find_actor >|- fun err -> err, error_path in
+  let%lwt experiments, query = find_experiments actor in
+  let page =
+    Page.Admin.Experiments.index
+      ~with_search:(not (Htmx.is_hx_request req))
+      context
+      experiments
+      query
+  in
+  if Htmx.is_hx_request req
+  then Ok (HttpUtils.Htmx.html_to_plain_text_response page) |> Lwt_result.lift
+  else
+    let* view =
+      create_layout ~active_navigation req context page
+      >|- fun err -> err, error_path
+    in
+    Ok (Sihl.Web.Response.of_html view) |> Lwt_result.lift
 ;;
 
 let new_form req =

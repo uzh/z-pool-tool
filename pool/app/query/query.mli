@@ -52,6 +52,7 @@ module Sort : sig
     val create : string -> (t, Pool_common.Message.error) result
     val all : t list
     val default : t
+    val flip : t -> t
 
     val schema
       :  unit
@@ -71,6 +72,9 @@ type t =
   }
 
 val show : t -> string
+val to_uri_query : t -> (string * string list) list
+val with_sort_order : Sort.SortOrder.t -> t -> t
+val with_sort_column : Column.t -> t -> t
 
 val create
   :  ?pagination:Pagination.t

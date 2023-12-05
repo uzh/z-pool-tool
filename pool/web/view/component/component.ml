@@ -21,3 +21,5 @@ module Table = Component_table
 module Tag = Component_tag
 module Tooltip = Component_tooltip
 module Utils = Component_utils
+module Sortable_table = Sortable_table
+module Button = Button

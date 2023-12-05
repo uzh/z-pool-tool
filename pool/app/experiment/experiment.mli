@@ -349,6 +349,8 @@ module Guard : sig
   end
 end
 
+val column_title : Query.Column.t
+val column_public_title : Query.Column.t
 val default_query : Query.t
 val searchable_by : Query.Column.t list
 val sortable_by : Query.Column.t list

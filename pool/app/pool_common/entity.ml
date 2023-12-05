@@ -177,6 +177,13 @@ module SortOrder = struct
   include Core
 
   let default = Ascending
+
+  let flip = function
+    | Ascending -> Descending
+    | Descending -> Ascending
+  ;;
+
+  let to_query_parts t = [ Core.field, show t ]
 end
 
 module Reminder = struct

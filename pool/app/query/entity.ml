@@ -9,6 +9,10 @@ module Column = struct
   let to_sql m = snd m
   let create_list lst = lst
   let create m = m
+
+  let to_query_parts (field, _value) =
+    [ Common.Message.Field.Order, Common.Message.Field.show field ]
+  ;;
 end
 
 module Pagination = struct
@@ -44,6 +48,13 @@ module Pagination = struct
     ; page_count : PageCount.t
     }
   [@@deriving eq, show]
+
+  let to_query_parts { limit; page; page_count } =
+    [ Common.Message.Field.Limit, Limit.to_string limit
+    ; Common.Message.Field.Page, Page.to_string page
+    ; Common.Message.Field.PageCount, PageCount.to_string page_count
+    ]
+  ;;
 
   let create ?limit ?page ?(page_count = 1) () =
     let open CCOption in
@@ -110,6 +121,7 @@ module Search = struct
   ;;
 
   let query_string t = t.query |> Query.value
+  let to_query_parts t = [ Common.Message.Field.Search, query_string t ]
 end
 
 module Sort = struct
@@ -142,6 +154,10 @@ module Sort = struct
   let to_sql { column; order } =
     Format.asprintf "%s %s" (snd column) (SortOrder.show order)
   ;;
+
+  let to_query_parts { column; order } =
+    SortOrder.to_query_parts order @ Column.to_query_parts column
+  ;;
 end
 
 type t =
@@ -151,10 +167,30 @@ type t =
   }
 [@@deriving eq, show]
 
+let to_uri_query { pagination; search; sort } =
+  [ pagination |> Option.map Pagination.to_query_parts
+  ; search |> Option.map Search.to_query_parts
+  ; sort |> Option.map Sort.to_query_parts
+  ]
+  |> List.map (Option.value ~default:[])
+  |> List.flatten
+  |> List.map (fun (k, v) -> Common.Message.Field.show k, [ Uri.pct_encode v ])
+;;
+
 let pagination { pagination; _ } = pagination
 let search { search; _ } = search
 let sort { sort; _ } = sort
 let create ?pagination ?search ?sort () = { pagination; search; sort }
+
+let with_sort_order order t =
+  let sort = t.sort |> Option.map (fun sort -> Sort.{ sort with order }) in
+  { t with sort }
+;;
+
+let with_sort_column column t =
+  let sort = t.sort |> Option.map (fun sort -> Sort.{ sort with column }) in
+  { t with sort }
+;;
 
 let set_page_count ({ pagination; _ } as t) row_count =
   let pagination =
