@@ -64,10 +64,9 @@ module CustomFieldData = struct
 
   let save_custom_field t = Custom_field.Created t |> Pool_event.custom_field
 
-  let save_options field options =
+  let save_options field =
     let field_id = Custom_field.id field in
-    options
-    |> CCList.map (fun option ->
+    CCList.map (fun option ->
       Custom_field.OptionCreated (field_id, option) |> Pool_event.custom_field)
   ;;
 
@@ -179,11 +178,9 @@ module CustomFieldData = struct
   end
 
   module SelectField = struct
-    let option_to_public opt =
-      opt
-      |> Custom_field.(
-           fun { SelectOption.id; name; _ } ->
-             SelectOption.Public.create ~id name)
+    let option_to_public =
+      let open Custom_field in
+      fun { SelectOption.id; name; _ } -> SelectOption.Public.create ~id name
     ;;
 
     let options =
