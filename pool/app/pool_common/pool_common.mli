@@ -19,7 +19,13 @@ module Model : sig
   module type StringSig = Entity_base_model.StringSig
 end
 
-module Id : Model.IdSig
+module Id : sig
+  include Model.IdSig
+
+  val to_string : t -> string
+  val sql_select_fragment : field:string -> string
+  val sql_value_fragment : string -> string
+end
 
 module Language : sig
   type t =

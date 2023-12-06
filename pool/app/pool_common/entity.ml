@@ -15,9 +15,29 @@ module Id = struct
   let value m = m
   let to_common m = m
   let of_common m = m
+  let to_string t = t
 
   let schema ?(field = PoolError.Field.Id) () =
     Pool_common_utils.schema_decoder (of_string %> CCResult.return) value field
+  ;;
+
+  (** the SQL fragment used to extract UUIDs *)
+  let sql_select_fragment ~field =
+    [%string
+      {sql|
+        LOWER(CONCAT(
+          SUBSTR(HEX(%{field}), 1, 8), '-',
+          SUBSTR(HEX(%{field}), 9, 4), '-',
+          SUBSTR(HEX(%{field}), 13, 4), '-',
+          SUBSTR(HEX(%{field}), 17, 4), '-',
+          SUBSTR(HEX(%{field}), 21)
+        ))
+    |sql}]
+  ;;
+
+  (** the SQL fragent used to place a UUID into a query *)
+  let sql_value_fragment name =
+    [%string {sql| UNHEX(REPLACE(%{name}, '-', '')) |sql}]
   ;;
 end
 

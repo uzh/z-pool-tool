@@ -244,3 +244,7 @@ let clean_all database_label =
       (fun request -> Connection.exec request () ||> raise_caqti_error ~tags)
       clean_reqs)
 ;;
+
+let exec_query request input (module Connection : Caqti_lwt.CONNECTION) =
+  Connection.exec request input
+;;

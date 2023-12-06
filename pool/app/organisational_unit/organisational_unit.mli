@@ -61,3 +61,5 @@ module Repo : sig
 
   val t : t Caqti_type.t
 end
+
+val sql_select_fragment : string
