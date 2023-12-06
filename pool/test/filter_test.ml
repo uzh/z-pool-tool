@@ -62,18 +62,13 @@ module CustomFieldData = struct
     |> encoder
   ;;
 
-  let save_answers public ?admin contacts =
-    CCList.map
-      (fun contact ->
-        let user =
-          admin |> CCOption.value ~default:(Pool_context.Contact contact)
-        in
-        Custom_field.AnswerUpserted (public, Contact.id contact, user)
-        |> Pool_event.custom_field)
-      contacts
-  ;;
-
   let save_custom_field t = Custom_field.Created t |> Pool_event.custom_field
+
+  let save_options field =
+    let field_id = Custom_field.id field in
+    CCList.map (fun option ->
+      Custom_field.OptionCreated (field_id, option) |> Pool_event.custom_field)
+  ;;
 
   module NrOfSiblings = struct
     let answer_value = 3
@@ -179,6 +174,90 @@ module CustomFieldData = struct
              (Single (Date value)))
       in
       create None query
+    ;;
+  end
+
+  module SelectField = struct
+    let option_to_public =
+      let open Custom_field in
+      fun { SelectOption.id; name; _ } -> SelectOption.Public.create ~id name
+    ;;
+
+    let options =
+      [ "1"; "2" ]
+      |> CCList.map
+           Custom_field.(
+             fun label ->
+               [ lang, label ]
+               |> Name.create [ lang ]
+               |> get_or_failwith
+               |> SelectOption.create)
+    ;;
+
+    let public_options = options |> CCList.map option_to_public
+    let default_answer = CCList.hd options
+
+    let field =
+      create_custom_field "Select" (fun a -> Custom_field.Select (a, options))
+    ;;
+
+    let public is_admin answer =
+      let open Custom_field in
+      let open Custom_field_test in
+      let answer =
+        match is_admin with
+        | true -> Answer.create ?admin_value:answer None
+        | false -> Answer.create answer
+      in
+      let version = 0 |> Pool_common.Version.of_int in
+      Public.Select
+        ( { Public.id = id field
+          ; name = name field
+          ; hint = hint field
+          ; validation = Validation.pure
+          ; required = required field
+          ; admin_override = Data.admin_override
+          ; admin_input_only = Data.admin_input_only
+          ; prompt_on_registration = Data.prompt_on_registration
+          ; version
+          }
+        , public_options
+        , Some answer )
+    ;;
+
+    let save () = save_custom_field field
+
+    let save_answer answer ?admin contacts =
+      CCList.map
+        (fun contact ->
+          let user =
+            admin |> CCOption.value ~default:(Pool_context.Contact contact)
+          in
+          Custom_field.AnswerUpserted
+            (public (CCOption.is_some admin) answer, Contact.id contact, user)
+          |> Pool_event.custom_field)
+        contacts
+    ;;
+
+    let filter answers operator () =
+      let open Filter in
+      let value =
+        answers
+        |> CCList.map (fun opt -> Option opt.Custom_field.SelectOption.id)
+      in
+      let query =
+        Pred
+          (Predicate.create
+             Key.(CustomField (field |> Custom_field.id))
+             operator
+             (Lst value))
+      in
+      create None query
+    ;;
+
+    let init () =
+      save () :: save_options field options
+      |> Pool_event.handle_events Test_utils.Data.database_label
     ;;
   end
 
@@ -613,6 +692,27 @@ let filter_by_list_contains_some _ () =
       experiment
       true
   in
+  Lwt.return_unit
+;;
+
+let filter_by_select_field _ () =
+  let open CustomFieldData in
+  let%lwt () = SelectField.init () in
+  let%lwt contact = TestContacts.get_contact 0 in
+  let%lwt experiment = Repo.first_experiment () in
+  let%lwt () =
+    SelectField.(
+      save_answer (Some (option_to_public default_answer)) [ contact ])
+    |> Lwt_list.iter_s (Pool_event.handle_event Data.database_label)
+  in
+  let test_select_filter operator expected =
+    let filter = SelectField.(filter [ default_answer ] operator) () in
+    let%lwt () = save_filter filter experiment in
+    test_filter expected contact filter experiment
+  in
+  let open Filter.Operator in
+  let%lwt () = test_select_filter (List ListM.ContainsAll) true in
+  let%lwt () = test_select_filter (List ListM.ContainsNone) false in
   Lwt.return_unit
 ;;
 
