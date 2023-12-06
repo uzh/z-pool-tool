@@ -86,9 +86,7 @@ module EventLog = struct
       | Successful -> Field.Successful |> go
     ;;
 
-    let read m =
-      m |> Format.asprintf "[\"%s\"]" |> Yojson.Safe.from_string |> t_of_yojson
-    ;;
+    let read = Utils.Json.read_variant t_of_yojson
 
     let of_string str =
       try Ok (read str) with

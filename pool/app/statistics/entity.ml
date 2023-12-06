@@ -82,13 +82,7 @@ let all_periods =
 ;;
 
 let read_period m =
-  try
-    Some
-      (m
-       |> Format.asprintf "[\"%s\"]"
-       |> Yojson.Safe.from_string
-       |> period_of_yojson)
-  with
+  try Some (Utils.Json.read_variant period_of_yojson m) with
   | _ -> None
 ;;
 

@@ -511,9 +511,9 @@ let rec error_to_string = function
   | SessionInvalid -> "Invalid session, please login."
   | SelectedOptionsCountMax i ->
     Format.asprintf
-      "A maximum of %i option%s may be selected."
+      "A maximum of %i %s may be selected."
       i
-      (if i == 1 then "" else "s")
+      (if i == 1 then "option" else "options")
   | SelectedOptionsCountMin i ->
     Format.asprintf
       "A minimum of %i %s to be selected."

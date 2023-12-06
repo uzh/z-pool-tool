@@ -140,13 +140,7 @@ module Validation = struct
   [@@deriving show, eq]
 
   let read_key key_of_yojson m =
-    try
-      Some
-        (m
-         |> Format.asprintf "[\"%s\"]"
-         |> Yojson.Safe.from_string
-         |> key_of_yojson)
-    with
+    try Some (Utils.Json.read_variant key_of_yojson m) with
     | _ -> None
   ;;
 

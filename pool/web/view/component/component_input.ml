@@ -720,9 +720,7 @@ let multi_select
             option
             selected
         | Some flash_values ->
-          CCList.find_opt
-            (fun flash_value -> CCString.equal flash_value value)
-            flash_values
+          CCList.find_opt (CCString.equal value) flash_values
           |> CCOption.is_some
       in
       let input_elm =

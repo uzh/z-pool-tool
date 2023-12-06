@@ -33,11 +33,7 @@ type assignment_redirect =
 [@@deriving show { with_path = false }, yojson]
 
 let read_assignment_redirect m =
-  m
-  |> Format.asprintf "[\"%s\"]"
-  |> Yojson.Safe.from_string
-  |> fun json ->
-  try Some (assignment_redirect_of_yojson json) with
+  try Some (Utils.Json.read_variant assignment_redirect_of_yojson m) with
   | _ -> None
 ;;
 
