@@ -2,8 +2,9 @@ open Entity
 
 type event =
   | ContactEmailUpdated of ContactEmail.t
-  | DefaultReminderLeadTimeUpdated of Pool_common.Reminder.LeadTime.t
-  | DefaultTextMsgReminderLeadTimeUpdated of Pool_common.Reminder.LeadTime.t
+  | DefaultReminderLeadTimeUpdated of Pool_common.Reminder.EmailLeadTime.t
+  | DefaultTextMsgReminderLeadTimeUpdated of
+      Pool_common.Reminder.TextMessageLeadTime.t
   | EmailSuffixesUpdated of EmailSuffix.t list
   | InactiveUserDisableAfterUpdated of InactiveUser.DisableAfter.t
   | InactiveUserWarningUpdated of InactiveUser.Warning.t

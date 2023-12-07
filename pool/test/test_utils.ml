@@ -201,7 +201,7 @@ module Model = struct
       let open CCResult in
       CCOption.bind email_session_reminder_lead_time_hours (fun h ->
         Ptime.Span.of_int_s @@ (h * 60 * 60)
-        |> Pool_common.Reminder.LeadTime.create
+        |> Pool_common.Reminder.EmailLeadTime.create
         |> map_err show_error
         |> to_opt)
     in

@@ -1,6 +1,7 @@
 module HttpUtils = Http_utils
 module Field = Pool_common.Message.Field
 module Icon = Component_icon
+module TimeUnit = Pool_common.Model.TimeUnit
 open Tyxml.Html
 
 let submit_type_to_class = function
@@ -264,7 +265,7 @@ let timespan_picker
     >>= CCInt.of_string
     >|= Ptime.Span.of_int_s
     <+> value
-    >|= Pool_common.TimeUnit.ptime_span_to_larges_unit
+    >|= TimeUnit.ptime_span_to_largest_unit
     |> function
     | None -> None, ""
     | Some (unit, value) -> Some unit, CCInt.to_string value
@@ -284,8 +285,9 @@ let timespan_picker
   let help = Elements.hints language hints in
   let error = Elements.error language error in
   let input_element =
-    let open Pool_common in
-    let unit_field_name = TimeUnit.field_name name in
+    let unit_field_name =
+      name |> TimeUnit.named_field |> Pool_common.Message.Field.show
+    in
     let hidden_unit_field =
       if read_only
       then

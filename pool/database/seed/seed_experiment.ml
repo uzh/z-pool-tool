@@ -3,7 +3,6 @@ module Reminder = Pool_common.Reminder
 let get_or_failwith = Pool_common.Utils.get_or_failwith
 
 let experiments pool =
-  let open CCFun in
   let open CCOption.Infix in
   let data =
     [ ( "The Twenty pound auction"
@@ -46,11 +45,11 @@ let experiments pool =
           in
           let description = Description.create description |> get_or_failwith in
           let cost_center = cost_center |> CCOption.map CostCenter.of_string in
-          let create_lead_time =
-            Ptime.Span.of_int_s %> Reminder.LeadTime.create %> get_or_failwith
-          in
           let email_session_reminder_lead_time =
-            email_session_reminder_lead_time >|= create_lead_time
+            email_session_reminder_lead_time
+            >|= Ptime.Span.of_int_s
+            >|= Reminder.EmailLeadTime.create
+            >|= get_or_failwith
           in
           let direct_registration_disabled =
             DirectRegistrationDisabled.create direct_registration_disabled

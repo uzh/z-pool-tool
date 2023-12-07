@@ -247,6 +247,8 @@ let rec field_to_string =
   | Time -> "Uhrzeit"
   | TimeSpan -> "Zeitspanne"
   | TimeUnit -> "Zeiteinheit"
+  | TimeUnitOf field ->
+    Format.asprintf "Zeiteinheit: %s" (field_to_string field)
   | Title -> "Titel"
   | ToHandle -> "zu bearbeiten"
   | Token -> "Token"

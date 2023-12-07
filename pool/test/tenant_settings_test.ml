@@ -4,6 +4,7 @@ open Settings
 
 let get_or_failwith = Test_utils.get_or_failwith
 let database_label = Test_utils.Data.database_label
+let days_to_timespan days = days * 60 * 60 * 24 |> Ptime.Span.of_int_s
 
 module Testable = struct
   let contact_email = Settings.ContactEmail.(Alcotest.testable pp equal)
@@ -127,19 +128,23 @@ let check_inactive_user_disable_after _ () =
   let field = Field.InactiveUserDisableAfter in
   let handle nr =
     DisableAfter.(
-      [ Field.(show field), [ CCInt.to_string nr ] ] |> decode >>= handle)
+      Field.
+        [ show field, [ CCInt.to_string nr ]
+        ; (show (TimeUnitOf field), Pool_common.Model.TimeUnit.[ show Days ])
+        ]
+      |> decode
+      >>= handle)
   in
   let result = handle (-1) in
-  let expected =
-    Error Pool_common.Message.(Conformist [ field, TimeSpanPositive ])
-  in
+  let expected = Error Pool_common.Message.NegativeAmount in
   let () = check_events expected result in
   let valid = 365 in
   let result = handle valid in
   let expected =
     Ok
       [ Settings.InactiveUserDisableAfterUpdated
-          (InactiveUser.DisableAfter.create (CCInt.to_string valid)
+          (days_to_timespan valid
+           |> InactiveUser.DisableAfter.create
            |> get_or_failwith)
         |> Pool_event.settings
       ]
@@ -150,8 +155,7 @@ let check_inactive_user_disable_after _ () =
     Settings.find_inactive_user_disable_after database_label
   in
   let expected =
-    valid
-    |> CCInt.to_string
+    days_to_timespan valid
     |> InactiveUser.DisableAfter.create
     |> get_or_failwith
   in
@@ -172,19 +176,24 @@ let check_inactive_user_warning _ () =
   let field = Field.InactiveUserWarning in
   let handle nr =
     Warning.(
-      [ Field.(show field), [ CCInt.to_string nr ] ] |> decode >>= handle)
+      Field.
+        [ show field, [ CCInt.to_string nr ]
+        ; (show (TimeUnitOf field), Pool_common.Model.TimeUnit.[ show Days ])
+        ]
+      |> decode
+      >>= handle)
   in
   let result = handle (-1) in
-  let expected =
-    Error Pool_common.Message.(Conformist [ field, TimeSpanPositive ])
-  in
+  let expected = Error Pool_common.Message.NegativeAmount in
   let () = check_events expected result in
   let valid = 365 in
   let result = handle valid in
   let expected =
     Ok
       [ Settings.InactiveUserWarningUpdated
-          (InactiveUser.Warning.create (CCInt.to_string valid)
+          (valid
+           |> days_to_timespan
+           |> InactiveUser.Warning.create
            |> get_or_failwith)
         |> Pool_event.settings
       ]
@@ -193,7 +202,7 @@ let check_inactive_user_warning _ () =
   let%lwt () = handle_result result in
   let%lwt warning_after = Settings.find_inactive_user_warning database_label in
   let expected =
-    valid |> CCInt.to_string |> InactiveUser.Warning.create |> get_or_failwith
+    valid |> days_to_timespan |> InactiveUser.Warning.create |> get_or_failwith
   in
   let () =
     Alcotest.(

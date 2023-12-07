@@ -1,3 +1,5 @@
+module Reminder = Pool_common.Reminder
+
 let halfhour, hour = CCPair.map_same Ptime.Span.of_int_s (30 * 60, 60 * 60)
 
 let session_data =
@@ -73,16 +75,21 @@ let create pool =
                 let overbook =
                   ParticipantAmount.create overbook |> get_or_failwith
                 in
-                let create_lead_time =
-                  Ptime.Span.of_int_s
-                  %> Pool_common.Reminder.LeadTime.create
-                  %> get_or_failwith
+                let create_lead_time seconds decoder =
+                  seconds
+                  >|= Ptime.Span.of_int_s
+                  >|= decoder
+                  >|= get_or_failwith
                 in
                 let email_reminder_lead_time =
-                  email_reminder_lead_time >|= create_lead_time
+                  create_lead_time
+                    email_reminder_lead_time
+                    Reminder.EmailLeadTime.create
                 in
                 let text_message_reminder_lead_time =
-                  text_message_reminder_lead_time >|= create_lead_time
+                  create_lead_time
+                    text_message_reminder_lead_time
+                    Reminder.TextMessageLeadTime.create
                 in
                 let location = CCList.hd locations in
                 create

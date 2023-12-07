@@ -35,25 +35,22 @@ module End : sig
 end
 
 module Duration : sig
-  include Pool_common.Model.BaseSig
-
-  val value : t -> Ptime.Span.t
-  val create : Ptime.Span.t -> (t, Pool_common.Message.error) result
+  include Pool_common.Model.DurationSig
 end
 
 type base =
   { start : Start.t
   ; duration : int
-  ; duration_unit : Pool_common.TimeUnit.t
+  ; duration_unit : Pool_common.Model.TimeUnit.t
   ; description : Description.t option
   ; limitations : Limitations.t option
   ; max_participants : ParticipantAmount.t
   ; min_participants : ParticipantAmount.t
   ; overbook : ParticipantAmount.t
   ; email_reminder_lead_time : int option
-  ; email_reminder_lead_time_unit : Pool_common.TimeUnit.t option
+  ; email_reminder_lead_time_unit : Pool_common.Model.TimeUnit.t option
   ; text_message_reminder_lead_time : int option
-  ; text_message_reminder_lead_time_unit : Pool_common.TimeUnit.t option
+  ; text_message_reminder_lead_time_unit : Pool_common.Model.TimeUnit.t option
   }
 
 type reschedule =
@@ -108,9 +105,10 @@ type t =
   ; max_participants : ParticipantAmount.t
   ; min_participants : ParticipantAmount.t
   ; overbook : ParticipantAmount.t
-  ; email_reminder_lead_time : Pool_common.Reminder.LeadTime.t option
+  ; email_reminder_lead_time : Pool_common.Reminder.EmailLeadTime.t option
   ; email_reminder_sent_at : Pool_common.Reminder.SentAt.t option
-  ; text_message_reminder_lead_time : Pool_common.Reminder.LeadTime.t option
+  ; text_message_reminder_lead_time :
+      Pool_common.Reminder.TextMessageLeadTime.t option
   ; text_message_reminder_sent_at : Pool_common.Reminder.SentAt.t option
   ; assignment_count : AssignmentCount.t
   ; no_show_count : NoShowCount.t
@@ -125,11 +123,11 @@ type t =
 val create
   :  ?id:Id.t
   -> ?description:Description.t
-  -> ?email_reminder_lead_time:Pool_common.Reminder.LeadTime.t
+  -> ?email_reminder_lead_time:Pool_common.Reminder.EmailLeadTime.t
   -> ?follow_up_to:Id.t
   -> ?has_follow_ups:bool
   -> ?limitations:Limitations.t
-  -> ?text_message_reminder_lead_time:Pool_common.Reminder.LeadTime.t
+  -> ?text_message_reminder_lead_time:Pool_common.Reminder.TextMessageLeadTime.t
   -> Start.t
   -> Duration.t
   -> Pool_location.t

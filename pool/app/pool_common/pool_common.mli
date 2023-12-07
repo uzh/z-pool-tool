@@ -2,7 +2,9 @@ module Message = Entity_message
 module I18n = Entity_i18n
 
 module Model : sig
+  module TimeUnit : module type of Entity_base_model.TimeUnit
   module Boolean : module type of Entity_base_model.Boolean
+  module Duration : module type of Entity_base_model.Duration
   module Integer : module type of Entity_base_model.Integer
   module Ptime : module type of Entity_base_model.Ptime
   module PtimeSpan : module type of Entity_base_model.PtimeSpan
@@ -11,6 +13,7 @@ module Model : sig
 
   module type BaseSig = Entity_base_model.BaseSig
   module type BooleanSig = Entity_base_model.BooleanSig
+  module type DurationSig = Entity_base_model.DurationSig
   module type IdSig = Entity_base_model.IdSig
   module type IntegerSig = Entity_base_model.IntegerSig
   module type PtimeSig = Entity_base_model.PtimeSig
@@ -43,44 +46,6 @@ module Language : sig
   val all : t list
   val all_codes : string list
   val field_of_t : t -> Message.Field.t
-end
-
-module TimeUnit : sig
-  type t =
-    | Seconds
-    | Minutes
-    | Hours
-    | Days
-
-  val field : Message.Field.t
-  val pp : Format.formatter -> t -> unit
-  val show : t -> string
-  val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
-  val t_of_yojson : Yojson.Safe.t -> t
-  val yojson_of_t : t -> Yojson.Safe.t
-  val equal : t -> t -> bool
-  val all : t list
-  val field_name : Message.Field.t -> string
-  val to_human : t -> string
-  val to_ptime_span : int -> t -> Ptime.Span.t
-  val ptime_span_to_larges_unit : Ptime.Span.t -> t * int
-
-  val decode
-    :  (Ptime.span -> ('a, Message.error) result)
-    -> int
-    -> t
-    -> ('a, Message.error) result
-
-  val decode_opt
-    :  (Ptime.span -> ('a, Message.error) result)
-    -> int option
-    -> t option
-    -> ('a option, Message.error) result
-
-  val schema
-    :  field:Message.Field.t
-    -> unit
-    -> (Message.error, t) Pool_common_utils.PoolConformist.Field.t
 end
 
 module Version : sig
@@ -197,21 +162,12 @@ module SortOrder : sig
 end
 
 module Reminder : sig
-  module LeadTime : sig
-    type t
+  module EmailLeadTime : sig
+    include Model.DurationSig
+  end
 
-    val equal : t -> t -> bool
-    val show : t -> string
-    val create : Ptime.Span.t -> (t, Message.error) result
-    val value : t -> Ptime.Span.t
-    val pp : Format.formatter -> t -> unit
-    val t_of_yojson : Yojson.Safe.t -> t
-    val yojson_of_t : t -> Yojson.Safe.t
-
-    val schema
-      :  ?field:Message.Field.t
-      -> unit
-      -> (Message.error, t) Pool_common_utils.PoolConformist.Field.t
+  module TextMessageLeadTime : sig
+    include Model.DurationSig
   end
 
   module SentAt : sig
@@ -346,8 +302,14 @@ module Repo : sig
   end
 
   module Reminder : sig
-    module LeadTime : sig
-      type t = Reminder.LeadTime.t
+    module EmailLeadTime : sig
+      type t = Reminder.EmailLeadTime.t
+
+      val t : t Caqti_type.t
+    end
+
+    module TextMessageLeadTime : sig
+      type t = Reminder.TextMessageLeadTime.t
 
       val t : t Caqti_type.t
     end

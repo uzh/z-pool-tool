@@ -13,9 +13,10 @@ type create =
   ; show_external_data_id_links : ShowExternalDataIdLinks.t
   ; experiment_type : Pool_common.ExperimentType.t option
   ; email_session_reminder_lead_time : int option
-  ; email_session_reminder_lead_time_unit : Pool_common.TimeUnit.t option
+  ; email_session_reminder_lead_time_unit : Pool_common.Model.TimeUnit.t option
   ; text_message_session_reminder_lead_time : int option
-  ; text_message_session_reminder_lead_time_unit : Pool_common.TimeUnit.t option
+  ; text_message_session_reminder_lead_time_unit :
+      Pool_common.Model.TimeUnit.t option
   }
 [@@deriving eq, show]
 

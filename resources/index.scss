@@ -41,10 +41,10 @@ form[class*="stack"] input[type="hidden"]+* {
     row-gap: 0;
 }
 
-<<<<<<< HEAD
 .form-group .help {
     @extend .flexcolumn;
-=======
+}
+
 .grouped-input {
     border-radius: $border-radius;
     border: 1px solid $grey;
@@ -65,7 +65,6 @@ form[class*="stack"] input[type="hidden"]+* {
         background-color: $grey-light;
         border-left: 1px solid $grey;
     }
->>>>>>> a1a506b0 (add time unit module)
 }
 
 input[readonly], select[readonly] {

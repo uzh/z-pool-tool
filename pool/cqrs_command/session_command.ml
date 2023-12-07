@@ -1,5 +1,14 @@
 module Conformist = Pool_common.Utils.PoolConformist
+module Reminder = Pool_common.Reminder
+module TimeUnit = Pool_common.Model.TimeUnit
 open CCFun
+
+(* TODO: DRY *)
+type reschedule =
+  { start : Session.Start.t
+  ; duration : int
+  ; duration_unit : TimeUnit.t
+  }
 
 let src = Logs.Src.create "session.cqrs"
 
@@ -40,24 +49,19 @@ let schema =
     make
       Field.
         [ Session.Start.schema ()
-        ; Model.Integer.schema Message.Field.Duration CCResult.return ()
-        ; TimeUnit.schema ~field:Message.Field.Duration ()
+        ; Session.Duration.integer_schema ()
+        ; TimeUnit.named_schema Session.Duration.name ()
         ; Conformist.optional @@ Session.Description.schema ()
         ; Conformist.optional @@ Session.Limitations.schema ()
         ; Session.ParticipantAmount.schema Message.Field.MaxParticipants
         ; Session.ParticipantAmount.schema Message.Field.MinParticipants
         ; Session.ParticipantAmount.schema Message.Field.Overbook
+        ; Conformist.optional @@ Reminder.EmailLeadTime.integer_schema ()
         ; Conformist.optional
-          @@ Model.Integer.schema Message.Field.EmailLeadTime CCResult.return ()
+          @@ TimeUnit.named_schema Reminder.EmailLeadTime.name ()
+        ; Conformist.optional @@ Reminder.TextMessageLeadTime.integer_schema ()
         ; Conformist.optional
-          @@ TimeUnit.schema ~field:Message.Field.EmailLeadTime ()
-        ; Conformist.optional
-          @@ Model.Integer.schema
-               Message.Field.TextMessageLeadTime
-               CCResult.return
-               ()
-        ; Conformist.optional
-          @@ TimeUnit.schema ~field:Message.Field.TextMessageLeadTime ()
+          @@ TimeUnit.named_schema Reminder.TextMessageLeadTime.name ()
         ]
       command)
 ;;
@@ -74,17 +78,14 @@ let decode_time_durations
   =
   let open CCResult in
   let open Pool_common in
-  let decode_lead_time value unit =
-    TimeUnit.decode_opt Reminder.LeadTime.create value unit
-  in
-  let* duration =
-    TimeUnit.decode Session.Duration.create duration duration_unit
-  in
+  let* duration = Session.Duration.of_int duration duration_unit in
   let* email_lead_time =
-    decode_lead_time email_reminder_lead_time email_reminder_lead_time_unit
+    Reminder.EmailLeadTime.of_int_opt
+      email_reminder_lead_time
+      email_reminder_lead_time_unit
   in
   let* text_message_lead_time =
-    decode_lead_time
+    Reminder.TextMessageLeadTime.of_int_opt
       text_message_reminder_lead_time
       text_message_reminder_lead_time_unit
   in
@@ -289,7 +290,7 @@ end = struct
 end
 
 module Reschedule : sig
-  include Common.CommandSig with type t = Session.reschedule
+  include Common.CommandSig with type t = reschedule
 
   val handle
     :  ?tags:Logs.Tag.set
@@ -311,13 +312,19 @@ module Reschedule : sig
 
   val effects : Experiment.Id.t -> Session.Id.t -> Guard.ValidationSet.t
 end = struct
-  type t = Session.reschedule
+  type t = reschedule
 
-  let command start duration : Session.reschedule = Session.{ start; duration }
+  let command start duration duration_unit = { start; duration; duration_unit }
 
   let schema =
     Conformist.(
-      make Field.[ Session.Start.schema (); Session.Duration.schema () ] command)
+      make
+        Field.
+          [ Session.Start.schema ()
+          ; Session.Duration.integer_schema ()
+          ; TimeUnit.named_schema Session.Duration.name ()
+          ]
+        command)
   ;;
 
   let handle
@@ -328,11 +335,12 @@ end = struct
     assignments
     experiment
     create_message
-    (Session.{ start; duration } as reschedule : Session.reschedule)
+    ({ start; duration; duration_unit } : reschedule)
     =
     Logs.info ~src (fun m -> m "Handle command Reschedule" ~tags);
     let open CCResult in
     let* () = validate_start follow_up_sessions parent_session start in
+    let* duration = Session.Duration.of_int duration duration_unit in
     let* () =
       if Ptime.is_earlier
            ~than:(Ptime_clock.now ())
@@ -349,7 +357,8 @@ end = struct
       |> CCResult.flatten_l
     in
     Ok
-      ((Session.Rescheduled (session, reschedule) |> Pool_event.session)
+      ((Session.Rescheduled (session, { Session.start; duration })
+        |> Pool_event.session)
        ::
        (if emails |> CCList.is_empty |> not
         then [ Email.BulkSent emails |> Pool_event.email ]

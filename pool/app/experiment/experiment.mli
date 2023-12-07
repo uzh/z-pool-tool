@@ -75,9 +75,10 @@ type t =
   ; external_data_required : ExternalDataRequired.t
   ; show_external_data_id_links : ShowExternalDataIdLinks.t
   ; experiment_type : Pool_common.ExperimentType.t option
-  ; email_session_reminder_lead_time : Pool_common.Reminder.LeadTime.t option
+  ; email_session_reminder_lead_time :
+      Pool_common.Reminder.EmailLeadTime.t option
   ; text_message_session_reminder_lead_time :
-      Pool_common.Reminder.LeadTime.t option
+      Pool_common.Reminder.TextMessageLeadTime.t option
   ; invitation_reset_at : InvitationResetAt.t option
   ; created_at : Ptime.t
   ; updated_at : Ptime.t
@@ -93,13 +94,14 @@ val create
   -> ?cost_center:CostCenter.t
   -> ?description:Description.t
   -> ?language:Pool_common.Language.t
-  -> ?email_session_reminder_lead_time:Pool_common.Reminder.LeadTime.t
+  -> ?email_session_reminder_lead_time:Pool_common.Reminder.EmailLeadTime.t
   -> ?experiment_type:Pool_common.ExperimentType.t
   -> ?filter:Filter.t
   -> ?invitation_reset_at:Ptime.t
   -> ?organisational_unit:Organisational_unit.t
   -> ?smtp_auth_id:Email.SmtpAuth.Id.t
-  -> ?text_message_session_reminder_lead_time:Pool_common.Reminder.LeadTime.t
+  -> ?text_message_session_reminder_lead_time:
+       Pool_common.Reminder.TextMessageLeadTime.t
   -> Title.t
   -> PublicTitle.t
   -> DirectRegistrationDisabled.t
@@ -122,9 +124,10 @@ type create =
   ; show_external_data_id_links : ShowExternalDataIdLinks.t
   ; experiment_type : Pool_common.ExperimentType.t option
   ; email_session_reminder_lead_time : int option
-  ; email_session_reminder_lead_time_unit : Pool_common.TimeUnit.t option
+  ; email_session_reminder_lead_time_unit : Pool_common.Model.TimeUnit.t option
   ; text_message_session_reminder_lead_time : int option
-  ; text_message_session_reminder_lead_time_unit : Pool_common.TimeUnit.t option
+  ; text_message_session_reminder_lead_time_unit :
+      Pool_common.Model.TimeUnit.t option
   }
 
 val equal_create : create -> create -> bool

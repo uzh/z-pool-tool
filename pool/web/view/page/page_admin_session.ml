@@ -95,19 +95,16 @@ let session_form
       ( Format.asprintf "%s/%s" base Session.(session.id |> Id.value)
       , Message.(Update (Some Field.Session)) )
   in
-  let lead_time_group field get_value default_value =
+  let lead_time_group field get_value encode default_value =
     div
       [ timespan_picker
           language
           field
           ~hints:
             [ I18n.TimeSpanPickerHint
-            ; I18n.DefaultReminderLeadTime
-                (default_value |> Reminder.LeadTime.value)
+            ; I18n.DefaultReminderLeadTime (default_value |> encode)
             ]
-          ?value:
-            CCOption.(
-              bind session get_value |> CCOption.map Reminder.LeadTime.value)
+          ?value:(CCOption.bind session get_value |> CCOption.map encode)
           ~flash_fetcher
       ]
   in
@@ -200,11 +197,13 @@ let session_form
             [ lead_time_group
                 Message.Field.EmailLeadTime
                 (fun (s : t) -> s.email_reminder_lead_time)
+                Reminder.EmailLeadTime.value
                 (experiment.Experiment.email_session_reminder_lead_time
                  |> CCOption.value ~default:default_email_reminder_lead_time)
             ; lead_time_group
                 Message.Field.TextMessageLeadTime
                 (fun (s : t) -> s.text_message_reminder_lead_time)
+                Reminder.TextMessageLeadTime.value
                 (experiment.Experiment.text_message_session_reminder_lead_time
                  |> CCOption.value ~default:default_text_msg_reminder_lead_time
                 )

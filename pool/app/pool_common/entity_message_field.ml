@@ -8,6 +8,10 @@ let custom _ fmt t =
   Format.pp_print_string fmt name
 ;;
 
+let nested name show fmt t =
+  Format.pp_print_string fmt (Format.asprintf "%s[%s]" name (show t))
+;;
+
 type t =
   | Action [@name "action"] [@printer go "action"]
   | Actor [@name "actor"] [@printer go "actor"]
@@ -291,6 +295,7 @@ type t =
   | Time [@name "time"] [@printer go "time"]
   | TimeSpan [@name "timespan"] [@printer go "timespan"]
   | TimeUnit [@name "timeunit"] [@printer go "timeunit"]
+  | TimeUnitOf of t [@name "timeunit_of"] [@printer nested "timeunit_of" show]
   | Title [@name "title"] [@printer go "title"]
   | ToHandle [@name "to_handle"] [@printer go "to_handle"]
   | Token [@name "token"] [@printer go "token"]
@@ -310,7 +315,51 @@ type t =
   | Zip [@name "zip"] [@printer go "zip"]
 [@@deriving eq, show { with_path = false }, yojson, variants, sexp_of]
 
-let read = Utils.Json.read_variant t_of_yojson
+(* let read_nested str = let open Str in let regex = regexp "\\[\\(.*\\)\\]" in
+   try if string_match regex str 0 then Some (matched_group 1 str) else None
+   with | _ -> None ;; *)
+
+let read_nested2 str =
+  Logs.info (fun m -> m "read nested %s" str);
+  let open Str in
+  (* let regex = regexp "\[(\w+)\]" in *)
+  (* let regex = regexp {|\[(\w+)\]|} in *)
+  let regex = regexp {|\[(.*?)\]|} in
+  Logs.info (fun m -> m "%s" (if string_match regex str 0 then "YES" else "NO"));
+  try if string_match regex str 0 then Some (matched_group 1 str) else None with
+  | _ -> None
+;;
+
+let read_nested str =
+  Logs.info (fun m -> m "read_nested: %s" str);
+  let open CCString in
+  match contains str '[' && contains str ']' with
+  | false -> None
+  | true ->
+    let open CCList in
+    Logs.info (fun m -> m "%s" "has brackets");
+    (try
+       str
+       |> split_on_char '['
+       |> function
+       | [ "timeunit_of"; tl ] ->
+         Logs.info (fun m -> m "%s" "equas timeunit_of");
+         let subfield =
+           tl |> split_on_char ']' |> hd |> Utils.Json.read_variant t_of_yojson
+         in
+         Some (TimeUnitOf subfield)
+       | _ -> None
+     with
+     | _ -> None)
+;;
+
+let read str =
+  read_nested str
+  |> function
+  | Some m -> m
+  | None -> Utils.Json.read_variant t_of_yojson str
+;;
+
 let url_key m = m |> show |> Format.asprintf ":%s"
 let array_key m = m |> show |> Format.asprintf "%s[]"
 let human_url m = m |> show |> CCString.replace ~sub:"_" ~by:"-"

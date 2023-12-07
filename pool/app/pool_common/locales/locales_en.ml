@@ -246,6 +246,7 @@ let rec field_to_string =
   | Time -> "time"
   | TimeSpan -> "time span"
   | TimeUnit -> "time unit"
+  | TimeUnitOf field -> Format.asprintf "time unit: %s" (field_to_string field)
   | Title -> "title"
   | ToHandle -> "to handle"
   | Token -> "token"

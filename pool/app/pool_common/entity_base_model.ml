@@ -165,6 +165,9 @@ module PtimeSpan = struct
   let value m = m
   let of_span m = m
   let to_human = Pool_common_utils.Time.formatted_timespan
+  let to_int_s = Ptime.Span.to_int_s
+  let of_int_s = Ptime.Span.of_int_s
+  let abs = Ptime.Span.abs
   let compare = Ptime.Span.compare
 
   let schema field create ()
@@ -188,6 +191,9 @@ module type PtimeSpanSig = sig
   val t_of_yojson : Yojson.Safe.t -> t
   val yojson_of_t : t -> Yojson.Safe.t
   val value : t -> Ptime.Span.t
+  val to_int_s : t -> int option
+  val of_int_s : int -> t
+  val abs : t -> t
   val of_span : Ptime.Span.t -> t
   val to_human : t -> string
 
@@ -316,4 +322,129 @@ module SelectorType (Core : SelectorCoreTypeSig) = struct
   ;;
 
   let schema () = Pool_common_utils.schema_decoder create show field
+end
+
+module TimeUnit = struct
+  let print = Utils.ppx_printer
+
+  module Core = struct
+    let field = Entity_message_field.TimeUnit
+
+    type t =
+      | Seconds [@name "seconds"] [@printer print "seconds"]
+      | Minutes [@name "minutes"] [@printer print "minutes"]
+      | Hours [@name "hours"] [@printer print "hours"]
+      | Days [@name "days"] [@printer print "days"]
+    [@@deriving enum, eq, ord, sexp_of, show { with_path = false }, yojson]
+
+    let factor = function
+      | Seconds -> 1
+      | Minutes -> 60
+      | Hours -> 60 * 60
+      | Days -> 60 * 60 * 24
+    ;;
+  end
+
+  include SelectorType (Core)
+  include Core
+
+  let read m =
+    m |> Format.asprintf "[\"%s\"]" |> Yojson.Safe.from_string |> t_of_yojson
+  ;;
+
+  let of_string str =
+    try Ok (read str) with
+    | _ -> Error Entity_message.(Invalid Core.field)
+  ;;
+
+  let named_field name = Entity_message_field.TimeUnitOf name
+
+  let named_schema name () =
+    Pool_common_utils.schema_decoder of_string show (named_field name)
+  ;;
+
+  let to_human = CCFun.(show %> CCString.capitalize_ascii)
+  let to_seconds value unit = value * factor unit
+
+  let ptime_span_to_largest_unit span =
+    let seconds = PtimeSpan.to_int_s span |> CCOption.value ~default:0 in
+    let default = Seconds, seconds in
+    let rec folder = function
+      | [] -> default
+      | hd :: tl ->
+        (match seconds mod factor hd with
+         | 0 -> hd, seconds / factor hd
+         | _ -> folder tl)
+    in
+    if seconds > 0 then all |> CCList.rev |> folder else default
+  ;;
+end
+
+module type DurationCore = sig
+  val name : Entity_message_field.t
+end
+
+module Duration (Core : DurationCore) = struct
+  include PtimeSpan
+  include Core
+
+  let value = PtimeSpan.value
+
+  let to_ptime_span value unit =
+    TimeUnit.to_seconds value unit |> PtimeSpan.of_int_s
+  ;;
+
+  let create m =
+    if PtimeSpan.(equal (abs m) m)
+    then Ok m
+    else Error Entity_message.NegativeAmount
+  ;;
+
+  let of_int_s s =
+    if s >= 0
+    then Ok (s |> PtimeSpan.of_int_s)
+    else Error Entity_message.NegativeAmount
+  ;;
+
+  let of_int value unit = to_ptime_span value unit |> create
+
+  let of_int_opt value unit =
+    match value, unit with
+    | Some value, Some unit -> of_int value unit |> CCResult.map CCOption.return
+    | _, _ -> Ok None
+  ;;
+
+  let with_largest_unit (m : t) = TimeUnit.ptime_span_to_largest_unit m
+  let integer_schema = Integer.schema name CCResult.return
+end
+
+module type DurationSig = sig
+  type t
+
+  include DurationCore
+
+  val equal : t -> t -> bool
+  val pp : Format.formatter -> t -> unit
+  val show : t -> string
+  val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+  val t_of_yojson : Yojson.Safe.t -> t
+  val yojson_of_t : t -> Yojson.Safe.t
+  val value : t -> PtimeSpan.t
+  val create : PtimeSpan.t -> (t, Entity_message.error) result
+  val of_int_s : int -> (t, Entity_message.error) result
+  val of_int : int -> TimeUnit.t -> (t, Entity_message.error) result
+  val to_int_s : t -> int option
+
+  val of_int_opt
+    :  int option
+    -> TimeUnit.t option
+    -> (t option, Entity_message.error) result
+
+  val to_human : t -> string
+  val to_ptime_span : int -> TimeUnit.t -> PtimeSpan.t
+  val with_largest_unit : t -> TimeUnit.t * int
+
+  val integer_schema
+    :  unit
+    -> (Entity_message.error, int) Pool_common_utils.PoolConformist.Field.t
 end

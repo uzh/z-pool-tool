@@ -90,9 +90,10 @@ type t =
   ; external_data_required : ExternalDataRequired.t
   ; show_external_data_id_links : ShowExternalDataIdLinks.t
   ; experiment_type : Pool_common.ExperimentType.t option
-  ; email_session_reminder_lead_time : Pool_common.Reminder.LeadTime.t option
+  ; email_session_reminder_lead_time :
+      Pool_common.Reminder.EmailLeadTime.t option
   ; text_message_session_reminder_lead_time :
-      Pool_common.Reminder.LeadTime.t option
+      Pool_common.Reminder.TextMessageLeadTime.t option
   ; invitation_reset_at : InvitationResetAt.t option
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
@@ -209,12 +210,12 @@ let to_public
 
 let email_session_reminder_lead_time_value m =
   m.email_session_reminder_lead_time
-  |> CCOption.map Pool_common.Reminder.LeadTime.value
+  |> CCOption.map Pool_common.Reminder.EmailLeadTime.value
 ;;
 
 let text_message_session_reminder_lead_time_value m =
   m.text_message_session_reminder_lead_time
-  |> CCOption.map Pool_common.Reminder.LeadTime.value
+  |> CCOption.map Pool_common.Reminder.TextMessageLeadTime.value
 ;;
 
 let direct_registration_disabled_value (m : t) =

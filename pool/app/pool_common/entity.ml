@@ -2,7 +2,10 @@ open CCFun
 open Sexplib.Conv
 open Ppx_yojson_conv_lib.Yojson_conv
 module PoolError = Entity_message
-module Model = Entity_base_model
+
+module Model = struct
+  include Entity_base_model
+end
 
 let print = Utils.ppx_printer
 
@@ -79,80 +82,6 @@ module CreatedAt = struct
 
   let equal a b = Ptime.equal a b || Sihl.Configuration.is_test ()
   let create = Ptime_clock.now
-end
-
-module TimeUnit = struct
-  let print = Utils.ppx_printer
-
-  module Core = struct
-    let field = Entity_message_field.TimeUnit
-
-    type t =
-      | Seconds [@name "seconds"] [@printer print "seconds"]
-      | Minutes [@name "minutes"] [@printer print "minutes"]
-      | Hours [@name "hours"] [@printer print "hours"]
-      | Days [@name "days"] [@printer print "days"]
-    [@@deriving enum, eq, ord, sexp_of, show { with_path = false }, yojson]
-  end
-
-  include Entity_base_model.SelectorType (Core)
-  include Core
-
-  let read m =
-    m |> Format.asprintf "[\"%s\"]" |> Yojson.Safe.from_string |> t_of_yojson
-  ;;
-
-  let of_string str =
-    try Ok (read str) with
-    | _ -> Error Entity_message.(Invalid Core.field)
-  ;;
-
-  let field_name field =
-    let open Entity_message_field in
-    Format.asprintf "%s[%s]" (show field) (show Core.field)
-  ;;
-
-  let to_human = CCFun.(show %> CCString.capitalize_ascii)
-
-  let factor = function
-    | Seconds -> 1
-    | Minutes -> 60
-    | Hours -> 60 * 60
-    | Days -> 60 * 60 * 24
-  ;;
-
-  let to_seconds value unit = value * factor unit
-
-  let ptime_span_to_larges_unit span =
-    let seconds = Ptime.Span.to_int_s span |> CCOption.value ~default:0 in
-    let default = Seconds, seconds in
-    let rec folder = function
-      | [] -> default
-      | hd :: tl ->
-        (match seconds mod factor hd with
-         | 0 -> hd, seconds / factor hd
-         | _ -> folder tl)
-    in
-    if seconds > 0 then all |> CCList.rev |> folder else default
-  ;;
-
-  let schema ~field () =
-    let open Pool_common_utils in
-    PoolConformist.custom
-      (decoder of_string Core.field)
-      CCFun.(show %> CCList.pure)
-      (field_name field)
-  ;;
-
-  let to_ptime_span value unit = to_seconds value unit |> Ptime.Span.of_int_s
-  let decode decoder value unit = to_ptime_span value unit |> decoder
-
-  let decode_opt decoder value unit =
-    match value, unit with
-    | Some value, Some unit ->
-      decode decoder value unit |> CCResult.map CCOption.return
-    | _, _ -> Ok None
-  ;;
 end
 
 module UpdatedAt = struct
@@ -278,25 +207,20 @@ module SortOrder = struct
 end
 
 module Reminder = struct
-  module LeadTime = struct
-    type t = Ptime.Span.t [@@deriving eq, show]
+  module EmailLeadTime = struct
+    module TimeDurationCore = struct
+      let name = Entity_message_field.EmailLeadTime
+    end
 
-    let create m =
-      if Ptime.Span.abs m |> Ptime.Span.equal m
-      then Ok m
-      else Error PoolError.NegativeAmount
-    ;;
+    include Model.Duration (TimeDurationCore)
+  end
 
-    let t_of_yojson = Utils_time.ptime_span_of_yojson
-    let yojson_of_t = Utils_time.yojson_of_ptime_span
-    let value m = m
+  module TextMessageLeadTime = struct
+    module TimeDurationCore = struct
+      let name = Entity_message_field.TextMessageLeadTime
+    end
 
-    let schema ?(field = PoolError.Field.LeadTime) () =
-      let open CCResult in
-      let decode str = Pool_common_utils.Time.parse_time_span str >>= create in
-      let encode span = Pool_common_utils.Time.print_time_span span in
-      Pool_common_utils.schema_decoder decode encode field
-    ;;
+    include Model.Duration (TimeDurationCore)
   end
 
   module SentAt = struct

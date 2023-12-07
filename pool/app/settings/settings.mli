@@ -1,3 +1,16 @@
+type command =
+  { time_value : int
+  ; time_unit : Pool_common.Model.TimeUnit.t
+  }
+
+val update_schema
+  :  (Pool_common.Message.error, int) Pool_common.Utils.PoolConformist.Field.t
+  -> Pool_common.Message.Field.t
+  -> ( Pool_common.Message.error
+       , int -> Pool_common.Model.TimeUnit.t -> command
+       , command )
+       Pool_common.Utils.PoolConformist.t
+
 module ContactEmail : sig
   include Pool_common.Model.StringSig
 end
@@ -8,49 +21,16 @@ end
 
 module InactiveUser : sig
   module DisableAfter : sig
-    type t
-
-    val create : string -> (t, Pool_common.Message.error) result
-    val equal : t -> t -> bool
-    val pp : Format.formatter -> t -> unit
-    val show : t -> string
-    val value : t -> int
-    val to_timespan : t -> Ptime.span
-
-    val schema
-      :  unit
-      -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
+    include Pool_common.Model.DurationSig
   end
 
   module Warning : sig
-    type t
-
-    val create : string -> (t, Pool_common.Message.error) result
-    val equal : t -> t -> bool
-    val pp : Format.formatter -> t -> unit
-    val show : t -> string
-    val value : t -> int
-    val to_timespan : t -> Ptime.span
-
-    val schema
-      :  unit
-      -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
+    include Pool_common.Model.DurationSig
   end
 end
 
 module TriggerProfileUpdateAfter : sig
-  type t
-
-  val create : string -> (t, Pool_common.Message.error) result
-  val equal : t -> t -> bool
-  val pp : Format.formatter -> t -> unit
-  val show : t -> string
-  val value : t -> int
-  val to_timespan : t -> Ptime.span
-
-  val schema
-    :  unit
-    -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
+  include Pool_common.Model.DurationSig
 end
 
 module TermsAndConditions : sig
@@ -104,8 +84,9 @@ val stringify_action
 
 type event =
   | ContactEmailUpdated of ContactEmail.t
-  | DefaultReminderLeadTimeUpdated of Pool_common.Reminder.LeadTime.t
-  | DefaultTextMsgReminderLeadTimeUpdated of Pool_common.Reminder.LeadTime.t
+  | DefaultReminderLeadTimeUpdated of Pool_common.Reminder.EmailLeadTime.t
+  | DefaultTextMsgReminderLeadTimeUpdated of
+      Pool_common.Reminder.TextMessageLeadTime.t
   | EmailSuffixesUpdated of EmailSuffix.t list
   | InactiveUserDisableAfterUpdated of InactiveUser.DisableAfter.t
   | InactiveUserWarningUpdated of InactiveUser.Warning.t
@@ -140,11 +121,11 @@ val default_language : Pool_database.Label.t -> Pool_common.Language.t Lwt.t
 
 val find_default_reminder_lead_time
   :  Pool_database.Label.t
-  -> Pool_common.Reminder.LeadTime.t Lwt.t
+  -> Pool_common.Reminder.EmailLeadTime.t Lwt.t
 
 val find_default_text_msg_reminder_lead_time
   :  Pool_database.Label.t
-  -> Pool_common.Reminder.LeadTime.t Lwt.t
+  -> Pool_common.Reminder.TextMessageLeadTime.t Lwt.t
 
 val default_email_session_reminder_lead_time_key_yojson : Yojson.Safe.t
 val default_text_message_session_reminder_lead_time_key_yojson : Yojson.Safe.t

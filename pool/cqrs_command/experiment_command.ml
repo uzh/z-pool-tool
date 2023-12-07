@@ -1,6 +1,8 @@
 module BaseGuard = Guard
 open Experiment
 module Conformist = Pool_common.Utils.PoolConformist
+module Reminder = Pool_common.Reminder
+module TimeUnit = Pool_common.Model.TimeUnit
 
 let opt = Conformist.optional
 let src = Logs.Src.create "experiment_command.cqrs"
@@ -9,11 +11,6 @@ let to_target { id; _ } = BaseGuard.Uuid.target_of Id.value id
 
 let to_role (admin, role, target_uuid) =
   BaseGuard.ActorRole.create ?target_uuid admin role
-;;
-
-let decode_lead_time value unit =
-  let open Pool_common in
-  TimeUnit.decode_opt Reminder.LeadTime.create value unit
 ;;
 
 let default_command
@@ -103,15 +100,10 @@ let update_schema command =
         ; ExternalDataRequired.schema ()
         ; ShowExternalDataIdLinks.schema ()
         ; opt @@ ExperimentType.schema ()
-        ; opt
-          @@ Model.Integer.schema Message.Field.EmailLeadTime CCResult.return ()
-        ; opt @@ TimeUnit.schema ~field:Message.Field.EmailLeadTime ()
-        ; opt
-          @@ Model.Integer.schema
-               Message.Field.TextMessageLeadTime
-               CCResult.return
-               ()
-        ; opt @@ TimeUnit.schema ~field:Message.Field.TextMessageLeadTime ()
+        ; opt @@ Reminder.EmailLeadTime.integer_schema ()
+        ; opt @@ TimeUnit.named_schema Reminder.EmailLeadTime.name ()
+        ; opt @@ Reminder.TextMessageLeadTime.integer_schema ()
+        ; opt @@ TimeUnit.named_schema Reminder.TextMessageLeadTime.name ()
         ]
       command)
 ;;
@@ -134,13 +126,13 @@ let create_schema command =
         ; opt @@ ExperimentType.schema ()
         ; opt
           @@ Model.Integer.schema Message.Field.EmailLeadTime CCResult.return ()
-        ; opt @@ TimeUnit.schema ~field:Message.Field.EmailLeadTime ()
+        ; opt @@ TimeUnit.named_schema Reminder.EmailLeadTime.name ()
         ; opt
           @@ Model.Integer.schema
                Message.Field.TextMessageLeadTime
                CCResult.return
                ()
-        ; opt @@ TimeUnit.schema ~field:Message.Field.TextMessageLeadTime ()
+        ; opt @@ TimeUnit.named_schema Reminder.TextMessageLeadTime.name ()
         ]
       command)
 ;;
@@ -177,12 +169,12 @@ end = struct
     Logs.info ~src (fun m -> m "Handle command Create" ~tags);
     let open CCResult in
     let* email_session_reminder_lead_time =
-      decode_lead_time
+      Reminder.EmailLeadTime.of_int_opt
         command.email_session_reminder_lead_time
         command.email_session_reminder_lead_time_unit
     in
     let* text_message_session_reminder_lead_time =
-      decode_lead_time
+      Reminder.TextMessageLeadTime.of_int_opt
         command.text_message_session_reminder_lead_time
         command.text_message_session_reminder_lead_time_unit
     in
@@ -248,12 +240,12 @@ end = struct
     Logs.info ~src (fun m -> m "Handle command Update" ~tags);
     let open CCResult in
     let* email_session_reminder_lead_time =
-      decode_lead_time
+      Reminder.EmailLeadTime.of_int_opt
         command.email_session_reminder_lead_time
         command.email_session_reminder_lead_time_unit
     in
     let* text_message_session_reminder_lead_time =
-      decode_lead_time
+      Reminder.TextMessageLeadTime.of_int_opt
         command.text_message_session_reminder_lead_time
         command.text_message_session_reminder_lead_time_unit
     in

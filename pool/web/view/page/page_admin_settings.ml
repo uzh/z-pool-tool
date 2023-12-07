@@ -205,29 +205,21 @@ let show
           [ form
               ~a:(form_attrs `UpdateInactiveUserDisableAfter)
               [ csrf_element csrf ()
-              ; input_element
-                  ~hints:[ Pool_common.I18n.NumberIsDaysHint ]
+              ; timespan_picker
                   ~required:true
                   language
-                  `Number
                   Message.Field.InactiveUserDisableAfter
-                  ~value:
-                    (inactive_user_disable_after
-                     |> DisableAfter.value
-                     |> CCInt.to_string)
+                  ~value:(inactive_user_disable_after |> DisableAfter.value)
               ; submit ()
               ]
           ; form
               ~a:(form_attrs `UpdateInactiveUserWarning)
               [ csrf_element csrf ()
-              ; input_element
+              ; timespan_picker
                   ~required:true
-                  ~hints:[ Pool_common.I18n.NumberIsDaysHint ]
                   language
-                  `Number
                   Message.Field.InactiveUserWarning
-                  ~value:
-                    (inactive_user_warning |> Warning.value |> CCInt.to_string)
+                  ~value:(inactive_user_warning |> Warning.value)
               ; submit ()
               ]
           ]
@@ -250,21 +242,18 @@ let show
           [ form
               ~a:(form_attrs `UpdateTriggerProfileUpdateAfter)
               [ csrf_element csrf ()
-              ; input_element
-                  ~hints:[ Pool_common.I18n.NumberIsDaysHint ]
+              ; timespan_picker
                   ~required:true
                   language
-                  `Number
                   Message.Field.TriggerProfileUpdateAfter
-                  ~value:
-                    (trigger_profile_update_after |> value |> CCInt.to_string)
+                  ~value:(trigger_profile_update_after |> value)
               ; submit ()
               ]
           ]
       ]
   in
   let default_lead_time =
-    let lead_time_form action field value =
+    let lead_time_form action field value encode =
       let open Pool_common in
       form
         ~a:(form_attrs action)
@@ -272,7 +261,7 @@ let show
         ; timespan_picker
             ~label_field:field
             ~hints:[ I18n.TimeSpanPickerHint ]
-            ~value:(value |> Reminder.LeadTime.value)
+            ~value:(value |> encode)
             ~required:true
             ~flash_fetcher
             language
@@ -293,10 +282,12 @@ let show
               `UpdateDefaultLeadTime
               Message.Field.EmailLeadTime
               default_reminder_lead_time
+              Pool_common.Reminder.EmailLeadTime.value
           ; lead_time_form
               `UpdateTextMsgDefaultLeadTime
               Message.Field.TextMessageLeadTime
               default_text_msg_reminder_lead_time
+              Pool_common.Reminder.TextMessageLeadTime.value
           ]
       ]
   in
