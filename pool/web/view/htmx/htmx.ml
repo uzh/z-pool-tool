@@ -325,7 +325,7 @@ let custom_field_overridden_value ?hx_delete is_admin lang m =
           ; hx_trigger "click"
           ; a_class [ "push"; "pointer"; "has-icon" ]
           ]
-        [ Icon.(to_html RefreshOutline); txt "Reset value" ]
+        [ Icon.(to_html RefreshOutline); txt "Remove admin value" ]
     | _, _ -> txt ""
   in
   match is_admin with
