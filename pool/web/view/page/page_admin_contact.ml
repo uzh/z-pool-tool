@@ -78,6 +78,10 @@ let personal_detail
       , contact.cell_phone
         |> CCOption.map_or ~default:"" Pool_user.CellPhone.value
         |> txt )
+    ; ( field_to_string Field.Language
+      , contact.language
+        |> CCOption.map_or ~default:"" Pool_common.Language.show
+        |> txt )
     ]
     @ with_comment
     @ tags)
