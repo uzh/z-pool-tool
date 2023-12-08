@@ -1,5 +1,3 @@
-open CCFun
-
 module Label = struct
   include Pool_common.Model.String
 

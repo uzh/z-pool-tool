@@ -24,7 +24,6 @@ type event =
 [@@deriving eq, show]
 
 let handle_event pool : event -> unit Lwt.t =
-  let open CCFun in
   let open Utils.Lwt_result.Infix in
   let tags = Pool_database.Logger.Tags.create pool in
   let ctx = [ "pool", Pool_database.Label.value pool ] in

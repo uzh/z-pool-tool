@@ -34,7 +34,6 @@ let create req =
       err, tenants_path, [ HttpUtils.urlencoded_to_flash urlencoded ])
     @@
     let events () =
-      let open CCFun in
       let open Cqrs_command.Pool_tenant_command in
       let* database =
         let open Cqrs_command.Pool_tenant_command in

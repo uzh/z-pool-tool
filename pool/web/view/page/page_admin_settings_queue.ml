@@ -1,4 +1,3 @@
-open CCFun
 open Tyxml.Html
 module HttpUtils = Http_utils
 

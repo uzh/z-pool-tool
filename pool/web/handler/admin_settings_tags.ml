@@ -1,4 +1,3 @@
-open CCFun
 open Utils.Lwt_result.Infix
 module Field = Pool_common.Message.Field
 module HttpUtils = Http_utils

@@ -1,4 +1,3 @@
-open CCFun.Infix
 open Utils.Lwt_result.Infix
 open Guard
 

@@ -1,4 +1,3 @@
-open CCFun.Infix
 module SmtpAuth = Entity.SmtpAuth
 module Queue = Sihl_queue.MariaDb
 

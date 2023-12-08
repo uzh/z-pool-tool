@@ -1,4 +1,3 @@
-open CCFun
 module Countries = Countries
 module Database = Database
 module LanguageCodes = Language_codes
