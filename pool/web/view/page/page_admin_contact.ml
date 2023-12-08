@@ -295,10 +295,7 @@ let contact_overview language contacts =
             | true -> tr ~a:[ a_class [ "bg-red-lighter" ] ]
             | false -> tr ~a:[]
           in
-          [ Component.Contacts.identity_with_icons
-              true
-              contact
-              Contact.(id contact)
+          [ Component.Contacts.identity_with_icons true contact
           ; txt (email_address contact |> EmailAddress.value)
           ; contact |> path |> Input.link_as_button ~icon:Icon.Eye
           ]
@@ -353,7 +350,7 @@ let detail
         [ div
             [ h1
                 ~a:[ a_class [ "heading-1" ] ]
-                [ txt (Contact.fullname contact) ]
+                [ Component.Contacts.identity_with_icons true contact ]
             ]
         ; contact
           |> path
