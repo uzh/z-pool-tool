@@ -34,7 +34,8 @@ let answer user language (custom_field : Custom_field.Public.t) =
   in
   let select_option_to_html = SelectOption.Public.name language %> txt in
   match custom_field with
-  | Boolean (_, answer) -> answer_to_html (Utils.Bool.to_string %> txt) answer
+  | Boolean (_, answer) ->
+    answer_to_html (Pool_common.Utils.bool_to_string language %> txt) answer
   | Date (_, answer) -> answer_to_html (Utils.Ptime.date_to_human %> txt) answer
   | MultiSelect (_, _, answer) ->
     answer_to_html
