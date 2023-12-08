@@ -1103,7 +1103,7 @@ let edit
           [ txt Pool_common.(Utils.nav_link_to_string language I18n.Tags) ]
       ; p
           Pool_common.
-            [ Utils.hint_to_string language I18n.ParticipationTags |> txt ]
+            [ Utils.hint_to_string language I18n.ParticipationTagsHint |> txt ]
       ; div
           ~a:[ a_class [ "switcher-lg"; "flex-gap" ] ]
           [ Tag.add_tags_form

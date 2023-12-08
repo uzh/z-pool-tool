@@ -328,9 +328,7 @@ Make sure to show links and URLs as plain text.
     "Additional information about the location, such as directions. Contacts \
      who are participating in a session at this location can access access \
      these files."
-  | LocationSessions ->
-    "Future sessions, that will be conducted at this location."
-  | Locations ->
+  | LocationsIndex ->
     "Locations, where experiments are conducted. Every session has to have a \
      location."
   | I18nText str -> str
@@ -400,7 +398,7 @@ Make sure to show links and URLs as plain text.
   | PartialUpdate ->
     "The following form will save the changed values immediately. You do not \
      need to submit the form."
-  | ParticipationTags ->
+  | ParticipationTagsHint ->
     "Tags, which are automatically assigned to participants after they have \
      participated in a session of this experiment."
   | PauseAccountAdmin ->

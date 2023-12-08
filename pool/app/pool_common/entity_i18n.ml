@@ -177,8 +177,7 @@ type hint =
   | TestPhoneNumber
   | I18nText of string
   | LocationFiles
-  | Locations
-  | LocationSessions
+  | LocationsIndex
   | MailingLimit
   | MessageTemplateAccountSuspensionNotification
   | MessageTemplateAssignmentConfirmation
@@ -205,7 +204,7 @@ type hint =
   | NumberMin of int
   | Overbook
   | PartialUpdate
-  | ParticipationTags
+  | ParticipationTagsHint
   | PauseAccountAdmin
   | PauseAccountContact
   | PromoteContact
@@ -251,6 +250,7 @@ type hint =
   | TextLengthMax of int
   | TimeSpanPickerHint
   | WaitingListPhoneMissingContact
+[@@deriving variants]
 
 type confirmable =
   | CancelAssignment

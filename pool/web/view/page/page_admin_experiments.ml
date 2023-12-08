@@ -423,7 +423,9 @@ let edit
                 |> String.capitalize_ascii
                 |> txt
               ]
-          ; p [ Utils.hint_to_string language I18n.ParticipationTags |> txt ]
+          ; p
+              [ Utils.hint_to_string language I18n.ParticipationTagsHint |> txt
+              ]
           ; tags_html
               (available_participation_tags, current_participation_tags)
               Field.ParticipationTag

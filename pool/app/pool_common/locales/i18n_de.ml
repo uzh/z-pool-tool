@@ -351,9 +351,7 @@ Wenn Sie die Erinnerungen jetzt manuell auslösen werden über den gewählten Na
     "Zusatzinformationen zum Standort, wie z.B. eine Wegbeschreibung. \
      Kontakte, die an einer Session an diesem Standort teilnehmen, können auf \
      diese Dateien zugreiffen."
-  | LocationSessions ->
-    "Zukünftige Sessions, die an diesem Standort durchgeführt werden."
-  | Locations ->
+  | LocationsIndex ->
     "Standorte, an denen Experimente durchgeführt werden. Jede Session muss \
      eine Location haben."
   | MailingLimit -> "Max. generierte Einladungen pro Mailing."
@@ -420,7 +418,7 @@ Wenn Sie die Erinnerungen jetzt manuell auslösen werden über den gewählten Na
   | PartialUpdate ->
     "Das folgende Formular wird die geänderten Werte sofort speichern. Sie \
      brauchen das Formular nicht abzuschicken."
-  | ParticipationTags ->
+  | ParticipationTagsHint ->
     "Tags, welche den Teilnehmern nach einer Teilnahme an einer Session dieses \
      Experiments automatisch zugewiesen werden."
   | PauseAccountAdmin ->

@@ -74,7 +74,7 @@ let index location_list Pool_context.{ language; _ } =
         ]
     ; p
         Pool_common.
-          [ Utils.hint_to_string language I18n.Locations
+          [ Utils.hint_to_string language I18n.LocationsIndex
             |> HttpUtils.add_line_breaks
           ]
     ; List.create language location_list
@@ -539,42 +539,6 @@ module SessionList = struct
           |> edit_link
         ])
       sessions
-  ;;
-
-  let create language sessions =
-    let html =
-      if CCList.is_empty sessions
-      then
-        div
-          [ Pool_common.(
-              I18n.LocationNoSessions |> Utils.text_to_string language)
-            |> txt
-          ]
-      else (
-        let thead =
-          (Pool_common.Message.Field.
-             [ Session; Experiment; Duration; CanceledAt ]
-           |> Component.Table.fields_to_txt language)
-          @ [ txt "" ]
-        in
-        let rows = rows sessions in
-        Component.Table.horizontal_table
-          `Striped
-          ~align_last_end:true
-          ~thead
-          rows)
-    in
-    div
-      [ h2
-          ~a:[ a_class [ "heading-2" ] ]
-          [ txt Pool_common.(Utils.nav_link_to_string language I18n.Sessions) ]
-      ; p
-          Pool_common.
-            [ Utils.hint_to_string language I18n.LocationSessions
-              |> HttpUtils.add_line_breaks
-            ]
-      ; div ~a:[ a_class [ "stack" ] ] [ html ]
-      ]
   ;;
 end
 
