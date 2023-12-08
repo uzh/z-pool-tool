@@ -144,12 +144,14 @@ module Validation = struct
     | _ -> None
   ;;
 
-  let build_hints read_key to_hints (rules : 'a t) =
+  let build_hints read_key to_hint (rules : 'a t) =
     let open CCOption.Infix in
     rules
     |> snd
     |> CCList.filter_map (fun (key, rule_value) ->
-      read_key key >>= to_hints rule_value)
+      read_key key
+      >|= to_hint
+      >>= fun (parse, variant) -> parse rule_value >|= variant)
   ;;
 
   module Text = struct
@@ -204,18 +206,13 @@ module Validation = struct
       [ show_key TextLengthMin, `Number; show_key TextLengthMax, `Number ]
     ;;
 
-    let hints rules =
-      let open CCOption.Infix in
+    let hints =
       let open Pool_common in
-      let to_hints rule_value key =
-        rule_value
-        |> CCInt.of_string
-        >|= fun i ->
-        match key with
-        | TextLengthMin -> I18n.TextLengthMin i
-        | TextLengthMax -> I18n.TextLengthMax i
+      let to_hint = function
+        | TextLengthMin -> CCInt.of_string, I18n.textlengthmin
+        | TextLengthMax -> CCInt.of_string, I18n.textlengthmax
       in
-      build_hints read_key to_hints rules
+      build_hints read_key to_hint
     ;;
   end
 
@@ -267,18 +264,13 @@ module Validation = struct
 
     let all = [ show_key NumberMin, `Number; show_key NumberMax, `Number ]
 
-    let hints rules =
-      let open CCOption.Infix in
+    let hints =
       let open Pool_common in
-      let to_hints rule_value key =
-        rule_value
-        |> CCInt.of_string
-        >|= fun i ->
-        match key with
-        | NumberMin -> I18n.NumberMin i
-        | NumberMax -> I18n.NumberMax i
+      let to_hint = function
+        | NumberMin -> CCInt.of_string, I18n.numbermin
+        | NumberMax -> CCInt.of_string, I18n.numbermax
       in
-      build_hints read_key to_hints rules
+      build_hints read_key to_hint
     ;;
   end
 
@@ -335,17 +327,12 @@ module Validation = struct
     ;;
 
     let hints rules =
-      let open CCOption.Infix in
       let open Pool_common in
-      let to_hints rule_value key =
-        rule_value
-        |> CCInt.of_string
-        >|= fun i ->
-        match key with
-        | OptionsCountMin -> I18n.SelectedOptionsCountMin i
-        | OptionsCountMax -> I18n.SelectedOptionsCountMax i
+      let to_hint = function
+        | OptionsCountMin -> CCInt.of_string, I18n.selectedoptionscountmin
+        | OptionsCountMax -> CCInt.of_string, I18n.selectedoptionscountmax
       in
-      build_hints read_key to_hints rules
+      build_hints read_key to_hint rules
     ;;
   end
 
