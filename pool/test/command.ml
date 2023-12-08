@@ -459,6 +459,18 @@ let () =
             "publish field with options"
             `Quick
             Custom_field_test.publish_field_with_options
+        ; test_case
+            "validate string custom field"
+            `Quick
+            Custom_field_test.ValidationTests.validate_text_field
+        ; test_case
+            "validate number custom field"
+            `Quick
+            Custom_field_test.ValidationTests.validate_number_field
+        ; test_case
+            "validate multi select custom field"
+            `Quick
+            Custom_field_test.ValidationTests.validate_multi_select_field
         ] )
     ; ( "matcher"
       , [ test_case

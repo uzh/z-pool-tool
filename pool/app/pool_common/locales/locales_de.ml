@@ -543,6 +543,16 @@ let rec error_to_string = function
     "Es existieren bereits Folgesessions für diese Session. Sie kann nicht \
      gelöscht werden."
   | SessionInvalid -> "Ungültige Session, bitte erneut einloggen."
+  | SelectedOptionsCountMax i ->
+    let verb, noun =
+      if i == 1 then "darf", "Option" else "dürfen", "Optionen"
+    in
+    Format.asprintf "Es %s höchstens %i %s ausgewählt werden." verb i noun
+  | SelectedOptionsCountMin i ->
+    let verb, noun =
+      if i == 1 then "muss", "Option" else "müssen", "Optionen"
+    in
+    Format.asprintf "Es %s mindestens %i %s ausgewählt werden." verb i noun
   | SessionRegistrationViaParent -> "Einschreibung via Hauptsession."
   | SessionTenantNotFound ->
     "Auf unserer Seite ist etwas schief gegangen, bitte später nochmals  \
@@ -568,8 +578,10 @@ let rec error_to_string = function
     "Die Teilnamhebedingungen müssen zuerst erfasst werden."
   | TermsAndConditionsNotAccepted ->
     "Die Teilnahmebedingungen sind noch nicht akzeptiert."
-  | TextLengthMax i -> Format.asprintf "Darf nicht länger als %i sein." i
-  | TextLengthMin i -> Format.asprintf "Darf nicht kürzer als %i sein." i
+  | TextLengthMax i ->
+    Format.asprintf "Darf nicht länger als %i Zeichen sein." i
+  | TextLengthMin i ->
+    Format.asprintf "Darf nicht kürzer als %i Zeichen sein." i
   | TextMessageInterceptionError error ->
     Format.asprintf "Text message interception error: %s" error
   | TimeInPast -> "Zeitpunkt liegt in der Vergangenheint!"

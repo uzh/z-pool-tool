@@ -177,8 +177,7 @@ type hint =
   | TestPhoneNumber
   | I18nText of string
   | LocationFiles
-  | Locations
-  | LocationSessions
+  | LocationsIndex
   | MailingLimit
   | MessageTemplateAccountSuspensionNotification
   | MessageTemplateAssignmentConfirmation
@@ -201,9 +200,11 @@ type hint =
   | NumberIsDaysHint
   | NumberIsSecondsHint
   | NumberIsWeeksHint
+  | NumberMax of int
+  | NumberMin of int
   | Overbook
   | PartialUpdate
-  | ParticipationTags
+  | ParticipationTagsHint
   | PauseAccountAdmin
   | PauseAccountContact
   | PromoteContact
@@ -223,6 +224,8 @@ type hint =
   | ScheduledIntro
   | SearchByFields of Entity_message.Field.t list
   | SelectedDateIsPast
+  | SelectedOptionsCountMax of int
+  | SelectedOptionsCountMin of int
   | SessionCancellationMessageFollowUps
   | SessionCancellationWithFollowups
   | SessionCancelMessage
@@ -243,8 +246,11 @@ type hint =
   | TemplateTextElementsHint
   | TenantDatabaseLabel
   | TenantDatabaseUrl
+  | TextLengthMin of int
+  | TextLengthMax of int
   | TimeSpanPickerHint
   | WaitingListPhoneMissingContact
+[@@deriving variants]
 
 type confirmable =
   | CancelAssignment

@@ -94,7 +94,7 @@ let validate_htmx ~is_admin value (m : Public.t) =
     |> CCFun.flip CCOption.bind (fun v ->
       if CCString.is_empty v then None else Some v)
   in
-  let go validation value = validation |> fst |> fun rule -> rule value in
+  let validate validation value = validation |> fst |> fun rule -> rule value in
   match m with
   | Boolean (public, answer) ->
     (* Ignoring required, as false is default *)
@@ -115,7 +115,7 @@ let validate_htmx ~is_admin value (m : Public.t) =
        >|= to_field
      | None, false -> to_field None |> CCResult.return
      | None, true -> no_value)
-  | MultiSelect (public, options, answer) ->
+  | MultiSelect (({ validation; _ } as public), options, answer) ->
     let to_field a = Public.MultiSelect (public, options, a) in
     (match value, required with
      | [], true -> no_value
@@ -129,6 +129,7 @@ let validate_htmx ~is_admin value (m : Public.t) =
          |> CCOption.to_result
               Pool_common.Message.(Invalid Field.CustomFieldOption))
        |> CCList.all_ok
+       >>= validate validation
        >|= create_answer is_admin answer
        >|= to_field)
   | Number (({ validation; _ } as public), answer) ->
@@ -138,7 +139,7 @@ let validate_htmx ~is_admin value (m : Public.t) =
        value
        |> CCInt.of_string
        |> CCOption.to_result Message.(NotANumber value)
-       >>= go validation
+       >>= validate validation
        >|= create_answer is_admin answer
        >|= to_field
      | None, false -> Ok (to_field None)
@@ -160,7 +161,10 @@ let validate_htmx ~is_admin value (m : Public.t) =
     let to_field a = Public.Text (public, a) in
     (match single_value, required with
      | Some value, _ ->
-       value |> go validation >|= create_answer is_admin answer >|= to_field
+       value
+       |> validate validation
+       >|= create_answer is_admin answer
+       >|= to_field
      | None, false -> Ok (to_field None)
      | None, true -> no_value)
 ;;

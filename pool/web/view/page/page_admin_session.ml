@@ -100,7 +100,7 @@ let session_form
       [ timespan_picker
           language
           field
-          ~help:
+          ~hints:
             [ I18n.TimeSpanPickerHint
             ; I18n.DefaultReminderLeadTime
                 (default_value |> Reminder.LeadTime.value)
@@ -142,7 +142,7 @@ let session_form
             language
             ~required:true
             Message.Field.Duration
-            ~help:[ I18n.TimeSpanPickerHint ]
+            ~hints:[ I18n.TimeSpanPickerHint ]
             ?value:
               (CCOption.map
                  (fun (s : t) -> s.duration |> Duration.value)
@@ -254,7 +254,7 @@ let reschedule_session
           language
           ~required:true
           Message.Field.Duration
-          ~help:[ I18n.TimeSpanPickerHint ]
+          ~hints:[ I18n.TimeSpanPickerHint ]
           ~value:(session.duration |> Duration.value)
           ~flash_fetcher
       ; div
@@ -1103,7 +1103,7 @@ let edit
           [ txt Pool_common.(Utils.nav_link_to_string language I18n.Tags) ]
       ; p
           Pool_common.
-            [ Utils.hint_to_string language I18n.ParticipationTags |> txt ]
+            [ Utils.hint_to_string language I18n.ParticipationTagsHint |> txt ]
       ; div
           ~a:[ a_class [ "switcher-lg"; "flex-gap" ] ]
           [ Tag.add_tags_form
@@ -1535,7 +1535,7 @@ let cancel
              ]
            [ csrf_element csrf ()
            ; textarea_element
-               ~help:I18n.SessionCancelMessage
+               ~hints:[ I18n.SessionCancelMessage ]
                ~flash_fetcher
                ~required:true
                language

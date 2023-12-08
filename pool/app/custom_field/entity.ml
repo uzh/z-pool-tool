@@ -139,6 +139,21 @@ module Validation = struct
     [@equal fun (_, raw1) (_, raw2) -> equal_raw raw1 raw2])
   [@@deriving show, eq]
 
+  let read_key key_of_yojson m =
+    try Some (Utils.Json.read_variant key_of_yojson m) with
+    | _ -> None
+  ;;
+
+  let build_hints read_key to_hint (rules : 'a t) =
+    let open CCOption.Infix in
+    rules
+    |> snd
+    |> CCList.filter_map (fun (key, rule_value) ->
+      read_key key
+      >|= to_hint
+      >>= fun (parse, variant) -> parse rule_value >|= variant)
+  ;;
+
   module Text = struct
     type key =
       | TextLengthMin [@name "text_length_min"]
@@ -152,16 +167,7 @@ module Validation = struct
       | TextLengthMax -> "Text max. length"
     ;;
 
-    let read_key m =
-      try
-        Some
-          (m
-           |> Format.asprintf "[\"%s\"]"
-           |> Yojson.Safe.from_string
-           |> key_of_yojson)
-      with
-      | _ -> None
-    ;;
+    let read_key = read_key key_of_yojson
 
     let check_min_length rule_value value =
       if CCString.length value >= rule_value
@@ -199,6 +205,15 @@ module Validation = struct
     let all =
       [ show_key TextLengthMin, `Number; show_key TextLengthMax, `Number ]
     ;;
+
+    let hints =
+      let open Pool_common in
+      let to_hint = function
+        | TextLengthMin -> CCInt.of_string, I18n.textlengthmin
+        | TextLengthMax -> CCInt.of_string, I18n.textlengthmax
+      in
+      build_hints read_key to_hint
+    ;;
   end
 
   module Number = struct
@@ -212,16 +227,7 @@ module Validation = struct
       | NumberMax -> "Number max."
     ;;
 
-    let read_key m =
-      try
-        Some
-          (m
-           |> Format.asprintf "[\"%s\"]"
-           |> Yojson.Safe.from_string
-           |> key_of_yojson)
-      with
-      | _ -> None
-    ;;
+    let read_key = read_key key_of_yojson
 
     let check_min rule_value value =
       if value >= rule_value
@@ -257,13 +263,85 @@ module Validation = struct
     ;;
 
     let all = [ show_key NumberMin, `Number; show_key NumberMax, `Number ]
+
+    let hints =
+      let open Pool_common in
+      let to_hint = function
+        | NumberMin -> CCInt.of_string, I18n.numbermin
+        | NumberMax -> CCInt.of_string, I18n.numbermax
+      in
+      build_hints read_key to_hint
+    ;;
+  end
+
+  module MultiSelect = struct
+    type key =
+      | OptionsCountMin [@name "options_count_min"]
+      [@printer printer "options_count_min"]
+      | OptionsCountMax [@name "options_count_max"]
+      [@printer printer "options_count_max"]
+    [@@deriving show, eq, yojson]
+
+    let key_to_human = function
+      | OptionsCountMin -> "Min. number of selected options"
+      | OptionsCountMax -> "Max. number of selected options"
+    ;;
+
+    let read_key = read_key key_of_yojson
+
+    let check_options_min_count rule_value options =
+      if CCList.length options >= rule_value
+      then Ok options
+      else Error (Message.SelectedOptionsCountMin rule_value)
+    ;;
+
+    let check_options_max_count rule_value options =
+      if CCList.length options <= rule_value
+      then Ok options
+      else Error (Message.SelectedOptionsCountMax rule_value)
+    ;;
+
+    let schema data =
+      let open CCResult in
+      ( (fun value ->
+          CCList.fold_left
+            (fun result (key, rule_value) ->
+              let map_or = CCOption.map_or ~default:result in
+              match read_key key with
+              | Some OptionsCountMin ->
+                rule_value
+                |> CCInt.of_string
+                |> map_or (fun rule -> result >>= check_options_min_count rule)
+              | Some OptionsCountMax ->
+                rule_value
+                |> CCInt.of_string
+                |> map_or (fun rule -> result >>= check_options_max_count rule)
+              | None -> result)
+            (Ok value)
+            data)
+      , data )
+    ;;
+
+    let all =
+      [ show_key OptionsCountMin, `Number; show_key OptionsCountMax, `Number ]
+    ;;
+
+    let hints rules =
+      let open Pool_common in
+      let to_hint = function
+        | OptionsCountMin -> CCInt.of_string, I18n.selectedoptionscountmin
+        | OptionsCountMax -> CCInt.of_string, I18n.selectedoptionscountmax
+      in
+      build_hints read_key to_hint rules
+    ;;
   end
 
   let key_to_human key =
     let open CCOption in
     let text = Text.(read_key key >|= key_to_human) in
     let number = Number.(read_key key >|= key_to_human) in
-    CCOption.value ~default:key (text <+> number)
+    let multi_select = MultiSelect.(read_key key >|= key_to_human) in
+    CCOption.value ~default:key (text <+> number <+> multi_select)
   ;;
 
   let pure = CCResult.return, []
@@ -280,7 +358,9 @@ module Validation = struct
     let go field_type lst =
       CCList.map (fun (key, input_type) -> key, input_type, field_type) lst
     in
-    go FieldType.Number Number.all @ go FieldType.Text Text.all
+    go FieldType.Number Number.all
+    @ go FieldType.Text Text.all
+    @ go FieldType.MultiSelect MultiSelect.all
   ;;
 end
 
@@ -491,6 +571,25 @@ module Public = struct
     >|= Hint.value_hint
     >|= fun h -> Pool_common.I18n.CustomHtmx h
   ;;
+
+  let validation_hints =
+    let return = CCOption.return in
+    function
+    | Boolean _ | Date _ | Select _ -> None
+    | Number ({ validation; _ }, _) ->
+      return (Validation.Number.hints validation)
+    | MultiSelect ({ validation; _ }, _, _) ->
+      return (Validation.MultiSelect.hints validation)
+    | Text ({ validation; _ }, _) -> return (Validation.Text.hints validation)
+  ;;
+
+  let help_elements language m =
+    let common_hint = to_common_hint language m in
+    let validation_hints = validation_hints m |> CCOption.value ~default:[] in
+    match common_hint with
+    | None -> validation_hints
+    | Some hint -> hint :: validation_hints
+  ;;
 end
 
 module Group = struct
@@ -655,17 +754,15 @@ let create
          ; prompt_on_registration
          })
   | FieldType.MultiSelect ->
+    let validation = Validation.MultiSelect.schema validation in
     Ok
       (MultiSelect
          ( { id
            ; model
            ; name
            ; hint
-           ; validation = Validation.pure
-           ; required =
-               false
-               (* TODO: add a default Option and allow Multi Selects to be
-                  required. *)
+           ; validation
+           ; required
            ; disabled
            ; custom_field_group_id
            ; admin_hint
@@ -834,14 +931,16 @@ let field_type = function
 let validation_strings =
   let open Validation in
   function
-  | Boolean _ | Date _ | Select _ | MultiSelect _ -> []
+  | Boolean _ | Date _ | Select _ -> []
+  | MultiSelect ({ validation; _ }, _) ->
+    validation |> snd |> to_strings MultiSelect.all
   | Number { validation; _ } -> validation |> snd |> to_strings Number.all
   | Text { validation; _ } -> validation |> snd |> to_strings Text.all
 ;;
 
 let validation_to_yojson = function
-  | Boolean _ | Date _ | Select _ | MultiSelect _ ->
-    "[]" |> Yojson.Safe.from_string
+  | Boolean _ | Date _ | Select _ -> "[]" |> Yojson.Safe.from_string
+  | MultiSelect ({ validation; _ }, _) -> Validation.encode_to_yojson validation
   | Number { validation; _ } -> Validation.encode_to_yojson validation
   | Text { validation; _ } -> Validation.encode_to_yojson validation
 ;;

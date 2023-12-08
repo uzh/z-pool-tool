@@ -42,6 +42,10 @@ module Data = struct
     |> get_exn
   ;;
 
+  let select_option_to_public { SelectOption.id; name; _ } =
+    SelectOption.Public.create ~id name
+  ;;
+
   let custom_field
     ?published_at
     ?select_options
@@ -92,8 +96,18 @@ module Data = struct
       FieldType.Text
   ;;
 
-  let custom_select_field ?select_options () =
-    custom_field ?select_options ~validation:[] FieldType.Select
+  let custom_select_field ?select_options ?validation () =
+    custom_field
+      ?select_options
+      ~validation:(CCOption.value ~default:[] validation)
+      FieldType.Select
+  ;;
+
+  let custom_multi_select_field ?select_options ?validation () =
+    custom_field
+      ?select_options
+      ~validation:(CCOption.value ~default:[] validation)
+      FieldType.MultiSelect
   ;;
 
   let custom_number_field ?validation () =
@@ -160,11 +174,12 @@ module Data = struct
         |> CCOption.map CCList.pure
         |> Answer.create ~id:answer_id
       in
+      let validation = validation_schema Validation.MultiSelect.schema in
       Public.MultiSelect
         ( { Public.id
           ; name
           ; hint
-          ; validation = Validation.pure
+          ; validation
           ; required
           ; admin_override
           ; admin_input_only
@@ -432,3 +447,164 @@ let publish_field_with_options () =
       expected
       events)
 ;;
+
+module ValidationTests = struct
+  open Custom_field
+  open Pool_common
+
+  let check_result expected generated =
+    let open Alcotest in
+    let field = testable Public.pp Public.equal in
+    check (result field Test_utils.error) "succeeds" expected generated
+  ;;
+
+  let update_answer answer valid_value =
+    answer
+    |> CCOption.get_exn_or "No answer"
+    |> fun a -> Answer.{ a with value = Some valid_value }
+  ;;
+
+  let validate_text_field () =
+    let min_length = 2 in
+    let max_length = 5 in
+    let validation =
+      Validation.Text.
+        [ show_key TextLengthMin, CCInt.to_string min_length
+        ; show_key TextLengthMax, CCInt.to_string max_length
+        ]
+    in
+    let custom_field =
+      Data.custom_text_field ~validation () |> Data.to_public
+    in
+    let validate value = validate_htmx ~is_admin:false [ value ] custom_field in
+    let validate_too_short () =
+      let result = validate "x" in
+      let expected = Error (Message.TextLengthMin min_length) in
+      check_result expected result
+    in
+    let validate_too_long () =
+      let result = validate "foobar" in
+      let expected = Error (Message.TextLengthMax max_length) in
+      check_result expected result
+    in
+    let validate_ok () =
+      let valid_value = "foo" in
+      let result = validate valid_value in
+      let[@warning "-4"] expected =
+        result
+        |> Test_utils.get_or_failwith
+        |> function
+        | Public.Text (field, answer) ->
+          let answer = update_answer answer valid_value in
+          Ok (Public.Text (field, Some answer))
+        | _ -> failwith "Invalid custom field type"
+      in
+      check_result expected result
+    in
+    let () = validate_too_short () in
+    let () = validate_too_long () in
+    let () = validate_ok () in
+    ()
+  ;;
+
+  let validate_number_field () =
+    let min_num = 2 in
+    let max_num = 5 in
+    let validation =
+      Validation.Number.
+        [ show_key NumberMin, CCInt.to_string min_num
+        ; show_key NumberMax, CCInt.to_string max_num
+        ]
+    in
+    let custom_field =
+      Data.custom_number_field ~validation () |> Data.to_public
+    in
+    let validate value =
+      validate_htmx ~is_admin:false [ CCInt.to_string value ] custom_field
+    in
+    let validate_too_small () =
+      let result = validate 1 in
+      let expected = Error (Message.NumberMin min_num) in
+      check_result expected result
+    in
+    let validate_too_big () =
+      let result = validate 10 in
+      let expected = Error (Message.NumberMax max_num) in
+      check_result expected result
+    in
+    let validate_ok () =
+      let valid_value = 3 in
+      let result = validate valid_value in
+      let[@warning "-4"] expected =
+        result
+        |> Test_utils.get_or_failwith
+        |> function
+        | Public.Number (field, answer) ->
+          let answer = update_answer answer valid_value in
+          Ok (Public.Number (field, Some answer))
+        | _ -> failwith "Invalid custom field type"
+      in
+      check_result expected result
+    in
+    let () = validate_too_small () in
+    let () = validate_too_big () in
+    let () = validate_ok () in
+    ()
+  ;;
+
+  let validate_multi_select_field () =
+    let min_num = 2 in
+    let max_num = 3 in
+    let validation =
+      Validation.MultiSelect.
+        [ show_key OptionsCountMin, CCInt.to_string min_num
+        ; show_key OptionsCountMax, CCInt.to_string max_num
+        ]
+    in
+    let select_options =
+      [ 1; 2; 3; 4; 5 ]
+      |> CCList.map (fun i -> Data.select_option (CCInt.to_string i))
+    in
+    let public_options =
+      select_options |> CCList.map Data.select_option_to_public
+    in
+    let custom_field =
+      Data.custom_multi_select_field ~validation ~select_options ()
+      |> Data.to_public ~field_options:public_options
+    in
+    let validate options =
+      validate_htmx
+        ~is_admin:false
+        (CCList.map SelectOption.(fun { Public.id; _ } -> Id.value id) options)
+        custom_field
+    in
+    let validate_too_few () =
+      let result = validate (CCList.take 1 public_options) in
+      let expected = Error (Message.SelectedOptionsCountMin min_num) in
+      check_result expected result
+    in
+    let validate_too_many () =
+      let result = validate public_options in
+      let expected = Error (Message.SelectedOptionsCountMax max_num) in
+      check_result expected result
+    in
+    let validate_ok () =
+      let valid_value = CCList.take 2 public_options in
+      let result = validate valid_value in
+      let[@warning "-4"] expected =
+        result
+        |> Test_utils.get_or_failwith
+        |> function
+        | Public.MultiSelect (field, options, answer) ->
+          let answer = update_answer answer valid_value in
+          Ok (Public.MultiSelect (field, options, Some answer))
+        | _ -> failwith "Invalid custom field type"
+      in
+      check_result expected result
+    in
+    let () = validate_too_few () in
+    let () = validate_too_many () in
+    let () = validate_ok () in
+    ()
+  ;;
+end

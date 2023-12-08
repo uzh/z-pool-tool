@@ -145,15 +145,39 @@ module Validation : sig
   type 'a t = ('a -> ('a, Pool_common.Message.error) result) * raw
 
   module Number : sig
+    type key =
+      | NumberMin
+      | NumberMax
+
+    val show_key : key -> string
+
     val schema
       :  (string * string) list
       -> (int -> (int, Pool_common.Message.error) result) * raw
   end
 
   module Text : sig
+    type key =
+      | TextLengthMin
+      | TextLengthMax
+
+    val show_key : key -> string
+
     val schema
       :  (string * string) list
       -> (string -> (string, Pool_common.Message.error) result) * raw
+  end
+
+  module MultiSelect : sig
+    type key =
+      | OptionsCountMin
+      | OptionsCountMax
+
+    val show_key : key -> string
+
+    val schema
+      :  (string * string) list
+      -> ('a list -> ('a list, Pool_common.Message.error) result) * raw
   end
 
   val key_to_human : string -> string
@@ -266,6 +290,9 @@ module Public : sig
     :  Pool_common.Language.t
     -> t
     -> Pool_common.I18n.hint option
+
+  val validation_hints : t -> Pool_common.I18n.hint list option
+  val help_elements : Pool_common.Language.t -> t -> Pool_common.I18n.hint list
 end
 
 module Group : sig

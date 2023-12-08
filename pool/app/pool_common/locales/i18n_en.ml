@@ -1,6 +1,7 @@
 open Entity_i18n
 
 let capitalize = CCString.capitalize_ascii
+let error_to_string = Locales_en.error_to_string
 
 let to_string = function
   | Activity -> "activity"
@@ -327,9 +328,7 @@ Make sure to show links and URLs as plain text.
     "Additional information about the location, such as directions. Contacts \
      who are participating in a session at this location can access access \
      these files."
-  | LocationSessions ->
-    "Future sessions, that will be conducted at this location."
-  | Locations ->
+  | LocationsIndex ->
     "Locations, where experiments are conducted. Every session has to have a \
      location."
   | I18nText str -> str
@@ -391,13 +390,15 @@ Make sure to show links and URLs as plain text.
   | NumberIsSecondsHint -> "Nr. of seconds"
   | NumberIsDaysHint -> "Nr. of days"
   | NumberIsWeeksHint -> "Nr. of weeks"
+  | NumberMax i -> error_to_string (Entity_message.NumberMax i)
+  | NumberMin i -> error_to_string (Entity_message.NumberMin i)
   | Overbook ->
     "Number of subjects that can enroll in a session in addition to the \
      maximum number of contacts."
   | PartialUpdate ->
     "The following form will save the changed values immediately. You do not \
      need to submit the form."
-  | ParticipationTags ->
+  | ParticipationTagsHint ->
     "Tags, which are automatically assigned to participants after they have \
      participated in a session of this experiment."
   | PauseAccountAdmin ->
@@ -461,6 +462,10 @@ If you trigger the reminders manually now, no more automatic reminders will be s
 
       Note: When the application restarts all active schedules get stopped.
       |}
+  | SelectedOptionsCountMax i ->
+    error_to_string (Entity_message.SelectedOptionsCountMax i)
+  | SelectedOptionsCountMin i ->
+    error_to_string (Entity_message.SelectedOptionsCountMin i)
   | SessionCancellationWithFollowups ->
     {|Cancelling this session will also cancel all follow-up sessions.
 
@@ -528,6 +533,8 @@ Only sessions with open spots can be selected.|}
   | TenantDatabaseUrl ->
     {|The database URL, according to the following scheme:
      mariadb://<user>:<pw>@<host>:<port>/<database>|}
+  | TextLengthMin i -> error_to_string (Entity_message.TextLengthMin i)
+  | TextLengthMax i -> error_to_string (Entity_message.TextLengthMax i)
   | TimeSpanPickerHint -> "Time duration in minutes"
   | WaitingListPhoneMissingContact ->
     "You have not entered a phone number in your profile yet. Please provide a \

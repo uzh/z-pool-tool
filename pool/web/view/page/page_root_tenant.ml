@@ -23,7 +23,7 @@ let database_fields tenant language flash_fetcher =
       language
       `Text
       field
-      ~help
+      ~hints:[ help ]
       ~value
       ~flash_fetcher
       ~required:true)
@@ -42,7 +42,7 @@ let gtx_api_inputs ~flash_fetcher language =
         Field.TestPhoneNumber
         ~flash_fetcher
         ~required:true
-        ~help:Pool_common.I18n.TestPhoneNumber
+        ~hints:[ Pool_common.I18n.TestPhoneNumber ]
     ]
 ;;
 

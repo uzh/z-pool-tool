@@ -469,6 +469,7 @@ module Public = struct
             if Pool_common.Id.equal field_id id then Some option else None)
           select_options
       in
+      let validation = validation_schema Validation.MultiSelect.schema in
       let answer =
         let open SelectOption in
         let create value =
@@ -500,7 +501,7 @@ module Public = struct
         ( { Public.id
           ; name
           ; hint
-          ; validation = Validation.pure
+          ; validation
           ; required
           ; admin_override
           ; admin_input_only
@@ -842,12 +843,13 @@ let to_entity
           if Pool_common.Id.equal field_id id then Some option else None)
         select_options
     in
+    let validation = validation_schema Validation.MultiSelect.schema in
     MultiSelect
       ( { id
         ; model
         ; name
         ; hint
-        ; validation = Validation.pure
+        ; validation
         ; required
         ; disabled
         ; custom_field_group_id

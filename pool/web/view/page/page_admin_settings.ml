@@ -220,7 +220,7 @@ let show
               ~a:(form_attrs `UpdateInactiveUserDisableAfter)
               [ csrf_element csrf ()
               ; input_element
-                  ~help:Pool_common.I18n.NumberIsDaysHint
+                  ~hints:[ Pool_common.I18n.NumberIsDaysHint ]
                   ~required:true
                   language
                   `Number
@@ -236,7 +236,7 @@ let show
               [ csrf_element csrf ()
               ; input_element
                   ~required:true
-                  ~help:Pool_common.I18n.NumberIsDaysHint
+                  ~hints:[ Pool_common.I18n.NumberIsDaysHint ]
                   language
                   `Number
                   Message.Field.InactiveUserWarning
@@ -265,7 +265,7 @@ let show
               ~a:(form_attrs `UpdateTriggerProfileUpdateAfter)
               [ csrf_element csrf ()
               ; input_element
-                  ~help:Pool_common.I18n.NumberIsDaysHint
+                  ~hints:[ Pool_common.I18n.NumberIsDaysHint ]
                   ~required:true
                   language
                   `Number
@@ -322,7 +322,7 @@ let show
         [ csrf_element csrf ()
         ; timespan_picker
             ~label_field:field
-            ~help:[ I18n.TimeSpanPickerHint ]
+            ~hints:[ I18n.TimeSpanPickerHint ]
             ~value:(value |> Reminder.LeadTime.value)
             ~required:true
             ~flash_fetcher

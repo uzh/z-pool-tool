@@ -159,15 +159,14 @@ module Search = struct
 
   let value_input language admin_id =
     let open Role.Role in
+    let open Pool_common.I18n in
     function
     | Some QueryLocations ->
-      let hint = Pool_common.I18n.RoleIntro (Field.Location, Field.Locations) in
-      Component_search.RoleTarget.locations ~hint language admin_id
+      let hints = [ RoleIntro (Field.Location, Field.Locations) ] in
+      Component_search.RoleTarget.locations ~hints language admin_id
     | Some QueryExperiments ->
-      let hint =
-        Pool_common.I18n.RoleIntro (Field.Experiment, Field.Experiments)
-      in
-      Component_search.RoleTarget.experiments ~hint language admin_id
+      let hints = [ RoleIntro (Field.Experiment, Field.Experiments) ] in
+      Component_search.RoleTarget.experiments ~hints language admin_id
     | None -> div []
   ;;
 

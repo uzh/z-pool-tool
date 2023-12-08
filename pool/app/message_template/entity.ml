@@ -42,9 +42,7 @@ module Label = struct
     [@printer print "waiting_list_confirmation"]
   [@@deriving eq, show { with_path = false }, yojson, variants]
 
-  let read m =
-    m |> Format.asprintf "[\"%s\"]" |> Yojson.Safe.from_string |> t_of_yojson
-  ;;
+  let read = Utils.Json.read_variant t_of_yojson
 
   let read_from_url m =
     m |> CCString.replace ~which:`All ~sub:"-" ~by:"_" |> read
