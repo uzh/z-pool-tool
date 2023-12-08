@@ -301,7 +301,7 @@ let contact_overview language contacts =
             | false -> tr ~a:[]
           in
           [ Component.Contacts.identity_with_icons true contact
-          ; txt (email_address contact |> EmailAddress.value)
+          ; Component.Contacts.email_with_icons contact
           ; contact |> path |> Input.link_as_button ~icon:Icon.Eye
           ]
           |> CCList.map (fun cell -> td [ cell ])
@@ -316,7 +316,7 @@ let contact_overview language contacts =
   in
   Component.List.create
     ~legend:
-      (Component.Contacts.status_icons_table_legend language
+      (Component.Contacts.status_icons_table_legend language `All
        |> Component.Table.table_legend)
     language
     user_table
@@ -355,7 +355,11 @@ let detail
         [ div
             [ h1
                 ~a:[ a_class [ "heading-1" ] ]
-                [ Component.Contacts.identity_with_icons true contact ]
+                [ Component.Contacts.identity_with_icons
+                    ~context:`All
+                    true
+                    contact
+                ]
             ]
         ; contact
           |> path
