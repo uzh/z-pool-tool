@@ -24,27 +24,73 @@ let enroll_contact_path ?suffix contact_id =
   |> Sihl.Web.externalize_path
 ;;
 
-let personal_detail ?(admin_comment = None) language contact =
+let personal_detail
+  ?admin_comment
+  ?custom_fields
+  ?tags
+  current_user
+  language
+  contact
+  =
   let open Contact in
   let open Pool_common.Message in
+  let field_to_string =
+    CCFun.(
+      Pool_common.Utils.field_to_string language %> CCString.capitalize_ascii)
+  in
   let with_comment =
     match admin_comment with
     | None -> []
     | Some comment ->
-      [ ( Field.AdminComment
+      [ ( field_to_string Field.AdminComment
         , comment |> AdminComment.value |> Http_utils.add_line_breaks )
       ]
   in
+  let tags =
+    tags
+    |> CCOption.map_or ~default:[] (fun tags ->
+      [ field_to_string Field.Tags, Component.Tag.tag_list language tags ])
+  in
+  let custom_field_rows =
+    let open Custom_field in
+    let open CCList in
+    let field_to_row custom_field =
+      let field_name = Public.name_value language custom_field in
+      tr
+        [ th [ txt field_name ]
+        ; td [ Component.CustomField.answer current_user language custom_field ]
+        ]
+    in
+    custom_fields
+    |> CCOption.map_or ~default:[] (fun (grouped, ungrouped) ->
+      let ungrouped = ungrouped >|= field_to_row in
+      let grouped =
+        grouped
+        |> flat_map (fun { Group.Public.fields; _ } -> fields >|= field_to_row)
+      in
+      ungrouped @ grouped)
+  in
   Pool_common.Message.(
-    [ Field.Name, fullname contact |> txt
-    ; Field.Email, email_address contact |> Pool_user.EmailAddress.value |> txt
-    ; ( Field.CellPhone
+    [ field_to_string Field.Name, fullname contact |> txt
+    ; ( field_to_string Field.Email
+      , email_address contact |> Pool_user.EmailAddress.value |> txt )
+    ; ( field_to_string Field.CellPhone
       , contact.cell_phone
         |> CCOption.map_or ~default:"" Pool_user.CellPhone.value
         |> txt )
     ]
-    @ with_comment)
-  |> Table.vertical_table ~align_top:true `Striped language
+    @ with_comment
+    @ tags)
+  |> fun rows ->
+  let rows =
+    CCList.map
+      (fun (label, value) -> tr [ th [ txt label ]; td [ value ] ])
+      rows
+    @ custom_field_rows
+  in
+  table
+    ~a:[ a_class (Component.Table.table_classes `Striped ~align_top:true ()) ]
+    rows
   |> fun html ->
   div
     [ h3
@@ -285,10 +331,11 @@ let index Pool_context.{ language; _ } contacts =
 
 let detail
   ?admin_comment
-  (Pool_context.{ language; _ } as context)
+  (Pool_context.{ language; user; _ } as context)
   contact
   tags
   external_data_ids
+  custom_fields
   =
   let subtitle nav =
     h3
@@ -313,22 +360,7 @@ let detail
                ~control:
                  Pool_common.(language, Message.(Edit (Some Field.Contact)))
         ]
-    ; div
-        ~a:
-          [ a_class
-              [ "flexrow"
-              ; "flexcolumn-reversed-tablet"
-              ; "flex-gap"
-              ; "gap-lg"
-              ; "reverse"
-              ]
-          ]
-        [ personal_detail ?admin_comment language contact
-        ; div
-            [ subtitle Pool_common.I18n.Tags
-            ; Component.Tag.tag_list language tags
-            ]
-        ]
+    ; personal_detail ?admin_comment ~custom_fields ~tags user language contact
     ; div
         [ subtitle Pool_common.I18n.ExternalDataIds
         ; Component.Contacts.external_data_ids language external_data_ids
@@ -418,10 +450,10 @@ let edit
         ; div
             ~a:[ a_class [ "switcher-lg"; "flex-gap" ] ]
             [ tag_form context ~existing:tags available_tags contact
-            ; Component.Tag.tag_list
+            ; Component.Tag.tag_form
+                ~label:Pool_common.I18n.SelectedTags
                 language
-                ~remove_action:(remove_action, csrf)
-                ~title:Pool_common.I18n.SelectedTags
+                (remove_action, csrf)
                 tags
             ]
         ])

@@ -6,7 +6,7 @@ let detail
   (Waiting_list.{ id; contact; experiment; admin_comment; _ } : Waiting_list.t)
   sessions
   experiment_id
-  (Pool_context.{ language; csrf; _ } as context)
+  (Pool_context.{ language; csrf; user; _ } as context)
   flash_fetcher
   chronological
   =
@@ -14,7 +14,7 @@ let detail
   let waiting_list_detail =
     div
       ~a:[ a_class [ "stack" ] ]
-      [ Page_admin_contact.personal_detail language contact
+      [ Page_admin_contact.personal_detail user language contact
       ; form
           ~a:
             [ a_class [ "stack" ]

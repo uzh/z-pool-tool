@@ -1112,10 +1112,10 @@ let edit
               (tags_action "assign")
           ; div
               ~a:[ a_class [ "flexcolumn"; "flex-gap" ] ]
-              [ Component.Tag.tag_list
+              [ Component.Tag.tag_form
+                  ~label:Pool_common.I18n.SelectedTags
                   language
-                  ~remove_action:(remove_action, csrf)
-                  ~title:Pool_common.I18n.SelectedTags
+                  (remove_action, csrf)
                   current_tags
               ; div
                   ~a:

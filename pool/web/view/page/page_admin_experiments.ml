@@ -406,10 +406,10 @@ let edit
       div
         ~a:[ a_class [ "switcher-lg"; "flex-gap" ] ]
         [ Tag.add_tags_form context ~existing:current available assign_action
-        ; Component.Tag.tag_list
+        ; Component.Tag.tag_form
+            ~label:Pool_common.I18n.SelectedTags
             language
-            ~remove_action:(remove_action, csrf)
-            ~title:Pool_common.I18n.SelectedTags
+            (remove_action, csrf)
             current
         ])
     else txt ""
