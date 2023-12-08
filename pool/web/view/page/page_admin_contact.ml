@@ -58,7 +58,12 @@ let personal_detail
       let field_name = Public.name_value language custom_field in
       tr
         [ th [ txt field_name ]
-        ; td [ Component.CustomField.answer current_user language custom_field ]
+        ; td
+            [ Component.CustomField.answer_to_html
+                current_user
+                language
+                custom_field
+            ]
         ]
     in
     custom_fields

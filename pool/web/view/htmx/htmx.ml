@@ -323,9 +323,9 @@ let custom_field_overridden_value ?hx_delete is_admin lang m =
           ; hx_params "_csrf"
           ; hx_post path
           ; hx_trigger "click"
-          ; a_class [ "color-red"; "push"; "pointer" ]
+          ; a_class [ "push"; "pointer"; "has-icon" ]
           ]
-        [ abbr ~a:[ a_title "Reset value" ] Icon.[ to_html TrashOutline ] ]
+        [ Icon.(to_html RefreshOutline); txt "Reset value" ]
     | _, _ -> txt ""
   in
   match is_admin with
@@ -339,10 +339,10 @@ let custom_field_overridden_value ?hx_delete is_admin lang m =
       |> CCString.capitalize_ascii
       |> txt
     in
-    let add_prefix m = [ prefix; txt ": "; m ] in
+    let add_prefix m = [ span [ strong [ prefix ]; txt ": "; m ] ] in
     let wrap html =
       div
-        ~a:[ a_class [ "help"; "flexrow"; "flex-gap" ] ]
+        ~a:[ a_class [ "help"; "flexrow"; "flex-gap"; "color-orange" ] ]
         (html @ [ delete_form () ])
       |> CCList.pure
     in
