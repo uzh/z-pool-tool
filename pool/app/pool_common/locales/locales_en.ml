@@ -281,6 +281,10 @@ let success_to_string : success -> string = function
   | EmailConfirmationMessage ->
     "An email has been sent to your email address for verification if the \
      given email address is still available."
+  | EmailUpdateConfirmationMessage ->
+    {|If the e-mail address you entered is still available, an e-mail with a confirmation link has been sent to this address. Please confirm the address by opening this link.
+
+As long as the new e-mail address has not been confirmed, the current address will remain in use.|}
   | EmailVerified -> "Email successfully verified."
   | FileDeleted -> "File was successfully deleted."
   | ImportCompleted ->

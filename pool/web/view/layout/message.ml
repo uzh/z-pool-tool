@@ -3,7 +3,10 @@ open Tyxml.Html
 let concat_messages txts classnames =
   div
     ~a:[ a_class ("notification" :: classnames) ]
-    [ txt (txts |> CCString.unlines |> CCString.capitalize_ascii)
+    [ txts
+      |> CCString.unlines
+      |> CCString.capitalize_ascii
+      |> Http_utils.add_line_breaks
     ; Component.Icon.(to_html ~classnames:[ "notification-close" ] Close)
     ]
 ;;
