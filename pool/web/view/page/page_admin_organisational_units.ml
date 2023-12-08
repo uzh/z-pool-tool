@@ -1,4 +1,3 @@
-open CCFun
 open Tyxml.Html
 open Component
 

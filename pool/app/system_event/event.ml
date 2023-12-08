@@ -1,4 +1,3 @@
-open CCFun
 open Entity
 
 type event = Created of t [@@deriving show, eq, variants]

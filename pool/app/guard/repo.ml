@@ -1,4 +1,3 @@
-open CCFun
 module BaseRole = Role
 
 include

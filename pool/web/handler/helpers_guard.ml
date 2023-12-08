@@ -1,4 +1,3 @@
-open CCFun
 open Utils.Lwt_result.Infix
 
 let find_roles database_label admin =

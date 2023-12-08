@@ -62,7 +62,6 @@ let htmx_attribs
 ;;
 
 let format_reminder_sent_opt ?(default = "") value =
-  let open CCFun in
   let open Pool_common in
   value
   |> CCOption.map_or

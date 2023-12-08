@@ -1495,7 +1495,6 @@ let cancel
   flash_fetcher
   =
   let open Pool_common in
-  let open CCFun in
   let action =
     Format.asprintf
       "/admin/experiments/%s/sessions/%s/cancel"

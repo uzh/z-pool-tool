@@ -1,6 +1,5 @@
 module I18nGuard = I18n.Guard
 module NavUtils = Navigation_utils
-open CCFun
 open Entity
 
 module NavElements = struct

@@ -465,7 +465,6 @@ module Partials = struct
         left @ checkboxes @ right
       in
       let rows, modals =
-        let open CCFun in
         CCList.fold_left
           (fun (rows, modals) (assignment : Assignment.t) ->
             let base =

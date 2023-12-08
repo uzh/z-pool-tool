@@ -269,7 +269,6 @@ let htmx_experiments_get req =
 ;;
 
 let htmx_experiment_modal req =
-  let open CCFun in
   let open Utils.Lwt_result.Infix in
   let contact_id = contact_id req in
   let experiment_id = experiment_id req in

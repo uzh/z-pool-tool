@@ -1,7 +1,6 @@
 let get_or_failwith = Pool_common.Utils.get_or_failwith
 
 let create pool =
-  let open CCFun in
   let data = [ "SNS"; "TNU" ] in
   let events =
     let open Organisational_unit in

@@ -1,7 +1,6 @@
 let get_or_failwith = Pool_common.Utils.get_or_failwith
 
 let create pool =
-  let open CCFun in
   let open Custom_field in
   let open Pool_common.Language in
   let system_languages = Pool_common.Language.all in

@@ -114,7 +114,6 @@ let create_reminder_events
 ;;
 
 let send_tenant_reminder ({ Pool_tenant.database_label; _ } as tenant) =
-  let open CCFun in
   let open Utils.Lwt_result.Infix in
   let run () =
     let* email_reminders, text_message_reminders =
