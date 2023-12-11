@@ -56,8 +56,7 @@ let message_templates_html
   let open Message_template in
   let buttons =
     let build_button label =
-      experiment_path Label.(prefixed_human_url label)
-      |> Page_admin_message_template.build_add_button label
+      experiment_path Label.(prefixed_human_url label) |> Button.add label
     in
     message_templates
     |> CCList.filter_map (fun (label, templates) ->
@@ -81,46 +80,52 @@ let message_templates_html
     edit_path
 ;;
 
-let index Pool_context.{ language; _ } experiment_list =
-  let experiment_table experiments =
-    let thead =
-      Message.
-        [ Field.Title |> Table.field_to_txt language
-        ; Field.PublicTitle |> Table.field_to_txt language
-        ; link_as_button
-            ~style:`Success
-            ~icon:Icon.Add
-            ~control:(language, Message.(Add (Some Field.Experiment)))
-            "/admin/experiments/create"
-        ]
+let index Pool_context.{ language; _ } ?(with_search = true) experiments query =
+  let url = Uri.of_string "/admin/experiments" in
+  let sort = Sortable_table.{ url; query; language } in
+  let cols =
+    let create_experiment : [ | Html_types.flow5 ] elt =
+      Input.link_as_button
+        ~style:`Success
+        ~icon:Icon.Add
+        ~control:(language, Message.(Add (Some Field.Experiment)))
+        "/admin/experiments/create"
     in
-    let rows =
-      CCList.map
-        (fun (experiment : Experiment.t) ->
-          let open Experiment in
-          [ txt (Title.value experiment.title)
-          ; txt (PublicTitle.value experiment.public_title)
-          ; Format.asprintf
-              "/admin/experiments/%s"
-              (experiment.id |> Experiment.Id.value)
-            |> link_as_button ~icon:Icon.Eye
-          ])
-        experiments
-    in
-    Table.horizontal_table `Striped ~align_last_end:true ~thead rows
-  in
-  div
-    ~a:[ a_class [ "trim"; "safety-margin" ] ]
-    [ h1
-        ~a:[ a_class [ "heading-1" ] ]
-        [ txt (Utils.text_to_string language I18n.ExperimentListTitle) ]
-    ; Component.List.create
-        language
-        experiment_table
-        Experiment.sortable_by
-        Experiment.searchable_by
-        experiment_list
+    [ `column Experiment.column_title
+    ; `column Experiment.column_public_title
+    ; `custom create_experiment
     ]
+  in
+  let rows =
+    let open Experiment in
+    let row (experiment : Experiment.t) =
+      [ txt (Title.value experiment.title)
+      ; txt (PublicTitle.value experiment.public_title)
+      ; Format.asprintf
+          "/admin/experiments/%s"
+          (Experiment.Id.value experiment.id)
+        |> Input.link_as_button ~icon:Icon.Eye
+      ]
+    in
+    CCList.map row experiments
+  in
+  let table = Sortable_table.make ~id:"experiment-list" ~cols ~rows sort in
+  if with_search
+  then
+    div
+      ~a:[ a_class [ "trim"; "safety-margin" ] ]
+      [ h1
+          ~a:[ a_class [ "heading-1" ] ]
+          [ txt (Utils.text_to_string language I18n.ExperimentListTitle) ]
+      ; List.create
+          ~hide_sort:true
+          language
+          (fun _ -> table)
+          Experiment.sortable_by
+          Experiment.searchable_by
+          (experiments, query)
+      ]
+  else table
 ;;
 
 let experiment_form

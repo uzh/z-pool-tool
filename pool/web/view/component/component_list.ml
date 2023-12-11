@@ -167,16 +167,19 @@ let sort language sortable_by query =
   [ field; order ]
 ;;
 
-let search_and_sort language query sortable_by searchable_by =
+let search_and_sort ~hide_sort language query sortable_by searchable_by =
   let open Pool_common in
   form
     ~a:[ a_method `Get; a_action "?"; a_class [ "flexcolumn"; "flex-gap" ] ]
     [ div
         ~a:[ a_class [ "flexrow"; "flex-gap"; "flexcolumn-mobile" ] ]
         [ div ~a:[ a_class [ "grow-3" ] ] (search language query searchable_by)
-        ; div
-            ~a:[ a_class [ "flexrow"; "flex-gap"; "grow-1" ] ]
-            (sort language sortable_by query)
+        ; (if hide_sort
+           then div []
+           else
+             div
+               ~a:[ a_class [ "flexrow"; "flex-gap"; "grow-1" ] ]
+               (sort language sortable_by query))
         ]
     ; div
         ~a:[ a_class [ "flexrow" ] ]
@@ -195,10 +198,18 @@ let search_and_sort language query sortable_by searchable_by =
     ]
 ;;
 
-let create ?legend language to_table sortable_by searchable_by (items, query) =
+let create
+  ?(hide_sort = false)
+  ?legend
+  language
+  to_table
+  sortable_by
+  searchable_by
+  (items, query)
+  =
   div
     ~a:[ a_class [ "stack" ] ]
-    [ search_and_sort language query sortable_by searchable_by
+    [ search_and_sort ~hide_sort language query sortable_by searchable_by
     ; CCOption.value ~default:(txt "") legend
     ; to_table items
     ; query.pagination

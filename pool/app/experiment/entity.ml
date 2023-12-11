@@ -241,19 +241,22 @@ let boolean_fields =
     ]
 ;;
 
-let searchable_by =
-  Pool_common.Message.
-    [ Field.Title, "pool_experiments.title"
-    ; Field.PublicTitle, "pool_experiments.public_title"
-    ]
-  |> Query.Column.create_list
+open Pool_common.Message
+
+let column_title =
+  (Field.Title, "pool_experiments.title") |> Query.Column.create
 ;;
 
-let default_sort_column =
-  Pool_common.Message.(Field.CreatedAt, "pool_experiments.created_at")
-  |> Query.Column.create
+let column_public_title =
+  (Field.PublicTitle, "pool_experiments.public_title") |> Query.Column.create
 ;;
 
+let column_created_at =
+  (Field.CreatedAt, "pool_experiments.created_at") |> Query.Column.create
+;;
+
+let searchable_by = [ column_title; column_public_title ]
+let default_sort_column = column_created_at
 let sortable_by = default_sort_column :: searchable_by
 
 let default_query =

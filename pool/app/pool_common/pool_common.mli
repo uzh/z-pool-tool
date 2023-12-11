@@ -148,6 +148,8 @@ module SortOrder : sig
   val all : t list
   val create : string -> (t, Message.error) result
   val read : string -> t
+  val flip : t -> t
+  val to_query_parts : t -> (Message.Field.t * string) list
 
   val schema
     :  unit

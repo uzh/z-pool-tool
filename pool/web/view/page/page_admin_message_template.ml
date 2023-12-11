@@ -2,13 +2,6 @@ open Tyxml.Html
 open Component.Input
 module Field = Pool_common.Message.Field
 
-let build_add_button label path =
-  let open Message_template in
-  a
-    ~a:[ a_class [ "btn"; "primary" ]; a_href (Sihl.Web.externalize_path path) ]
-    [ txt (Format.asprintf "Add %s" (Label.to_human label)) ]
-;;
-
 let table
   ?(buttons = txt "")
   ?(can_update_experiment = false)
