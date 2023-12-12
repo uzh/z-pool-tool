@@ -18,7 +18,7 @@ let contact_has_status { Contact.paused; email_verified; verified; _ } =
 let status_to_icon =
   let open Component_icon in
   function
-  | EmailUnverified -> CloseCircle (* TODO: Use correct icon *)
+  | EmailUnverified -> MailError
   | Paused -> NotificationsOffOutline
   | Verified -> CheckmarkCircleOutline
 ;;
@@ -29,7 +29,7 @@ let status_legend_text language =
     m |> Utils.field_to_string language |> CCString.capitalize_ascii
   in
   function
-  | EmailUnverified -> field_to_string Message.Field.EmailAddressVerified
+  | EmailUnverified -> field_to_string Message.Field.EmailAddressUnverified
   | Paused -> field_to_string Message.Field.Paused
   | Verified -> field_to_string Message.Field.Verified
 ;;
