@@ -249,11 +249,10 @@ let assignment_creation_with_sender _ () =
     in
     let%lwt admin = Admin.find database_label admin_id ||> get_exn in
     let%lwt confirmation_email =
-      let%lwt language = Contact.message_language database_label contact in
       Message_template.AssignmentConfirmation.prepare
         database_label
-        language
         tenant
+        contact
         experiment
         session
         (Some admin)

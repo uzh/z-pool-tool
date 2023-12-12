@@ -168,12 +168,11 @@ let assign_contact req =
       let%lwt contact_person =
         Experiment.find_contact_person database_label experiment
       in
-      let%lwt language = Contact.message_language database_label contact in
       Message_template.AssignmentConfirmation.prepare
         ~follow_up_sessions
         database_label
-        language
         tenant
+        contact
         experiment
         session
         contact_person

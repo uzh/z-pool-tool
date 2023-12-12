@@ -213,8 +213,8 @@ module AssignmentConfirmation : sig
   val prepare
     :  ?follow_up_sessions:Session.t list
     -> Pool_database.Label.t
-    -> Pool_common.Language.t
     -> Pool_tenant.t
+    -> Contact.t
     -> Experiment.t
     -> Session.t
     -> Admin.t option
@@ -251,10 +251,9 @@ module ContactEmailChangeAttempt : sig
 
   val create
     :  Pool_database.Label.t
-    -> Pool_common.Language.t
     -> Pool_tenant.t
     -> Sihl_user.t
-    -> Sihl_email.t Lwt.t
+    -> (Sihl_email.t, Pool_common.Message.error) Lwt_result.t
 end
 
 module ContactRegistrationAttempt : sig

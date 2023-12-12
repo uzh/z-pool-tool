@@ -27,12 +27,11 @@ let create req =
        let* follow_up_sessions = Session.find_follow_ups database_label id in
        let tenant = Pool_context.Tenant.get_tenant_exn req in
        let%lwt confirmation_email =
-         let%lwt language = Contact.message_language database_label contact in
          Message_template.AssignmentConfirmation.prepare
            ~follow_up_sessions
            database_label
-           language
            tenant
+           contact
            experiment
            session
            contact_person

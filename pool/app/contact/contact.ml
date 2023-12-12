@@ -31,6 +31,7 @@ let find_full_cell_phone_verification_by_contact =
 
 let has_terms_accepted = Event.has_terms_accepted
 
+(* TODO: Can this be removed? *)
 let message_language database_label ({ language; _ } : t) =
   language
   |> CCOption.map_or
