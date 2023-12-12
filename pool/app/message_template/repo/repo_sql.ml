@@ -84,24 +84,29 @@ let update pool t =
 let find_by_label_to_send pool ?entity_uuids language label =
   let open Utils.Lwt_result.Infix in
   let open Caqti_request.Infix in
-  let where =
-    Format.asprintf {sql|
-    pool_message_templates.label = $1
-    %s
-    |sql}
+  let select_where =
+    Format.asprintf
+      {sql|
+        %s
+        WHERE
+          pool_message_templates.label = $1
+        AND 
+          pool_message_templates.language = $2
+        %s
+      |sql}
+      select_sql
   in
-  let order_by_lang = {| FIELD(pool_message_templates.language, $2) DESC |} in
   let dyn =
     Dynparam.(
       empty
       |> add Caqti_type.string (Label.show label)
       |> add Caqti_type.string (Pool_common.Language.show language))
   in
-  let where, order_by, dyn =
+  let select_where, order_by, dyn =
     match entity_uuids with
     | None | Some [] ->
-      ( where {sql| AND pool_message_templates.entity_uuid IS NULL |sql}
-      , order_by_lang
+      ( select_where {sql| AND pool_message_templates.entity_uuid IS NULL |sql}
+      , None
       , dyn )
     | Some entity_uuids ->
       let id_list, dyn =
@@ -117,15 +122,7 @@ let find_by_label_to_send pool ?entity_uuids language label =
           entity_uuids
       in
       let ids = id_list |> CCString.concat "," in
-      let order_by =
-        Format.asprintf
-          {|
-        FIELD(entity_uuid, %s) DESC,
-        %s
-        |}
-          ids
-          order_by_lang
-      in
+      let order_by = Format.asprintf {| FIELD(entity_uuid, %s) DESC |} ids in
       ( Format.asprintf
           {sql| AND(
               pool_message_templates.entity_uuid IS NULL
@@ -133,14 +130,21 @@ let find_by_label_to_send pool ?entity_uuids language label =
               pool_message_templates.entity_uuid IN (%s))
           |sql}
           ids
-        |> where
-      , order_by
+        |> select_where
+      , Some order_by
       , dyn )
   in
   let (Dynparam.Pack (pt, pv)) = dyn in
+  let with_limit = Format.asprintf "%s LIMIT 1" in
   let request =
-    Format.asprintf "%s WHERE %s ORDER BY %s LIMIT 1" select_sql where order_by
-    |> pt ->! RepoEntity.t
+    let sql =
+      with_limit
+      @@
+      match order_by with
+      | None -> select_where
+      | Some order_by -> Format.asprintf "%s ORDER BY %s" select_where order_by
+    in
+    sql |> pt ->! RepoEntity.t
   in
   Utils.Database.find (pool |> Database.Label.value) request pv
   ||> fun ({ language; _ } as t) -> t, language

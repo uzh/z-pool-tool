@@ -109,6 +109,138 @@ let create_invitation language ?entity_uuid () =
   Lwt.return template
 ;;
 
+module LanguageTestsData = struct
+  open Pool_common
+  open Message_template
+
+  let database_label = Test_utils.Data.database_label
+  let invitation_label = Label.ExperimentInvitation
+
+  let create_experiment ?language () =
+    Experiment.{ (Test_utils.Model.create_experiment ()) with language }
+  ;;
+
+  let contact_de = Test_utils.Model.create_contact ~language:Language.De ()
+  let contact_en = Test_utils.Model.create_contact ~language:Language.En ()
+  let en = Pool_common.Language.En
+  let de = Pool_common.Language.De
+
+  let find_message_template experiment language label =
+    find_by_label_to_send
+      database_label
+      ~entity_uuids:Experiment.[ experiment.Experiment.id |> Id.to_common ]
+      language
+      label
+    |> Lwt.map fst
+  ;;
+
+  let experiment_message_language =
+    experiment_message_language Pool_common.Language.all
+  ;;
+
+  let find_default_by_label_and_language lang label =
+    find_default_by_label_and_language database_label lang label
+  ;;
+
+  let create_experiment_message_template experiment label language =
+    let message_template =
+      let entity_uuid = Experiment.(experiment.Experiment.id |> Id.to_common) in
+      Test_utils.Model.create_message_template ~label ~language ~entity_uuid ()
+    in
+    let%lwt () = Created message_template |> handle_event database_label in
+    Lwt.return message_template
+  ;;
+
+  let find_template_to_send experiment contact =
+    let language = experiment_message_language experiment contact in
+    find_message_template experiment language invitation_label
+  ;;
+end
+
+let get_template_without_experiment_language_and_templates _ () =
+  let open LanguageTestsData in
+  let label = invitation_label in
+  let experiment = create_experiment () in
+  let find_template = find_template_to_send experiment in
+  let%lwt default_template_de = find_default_by_label_and_language de label in
+  let%lwt default_template_en = find_default_by_label_and_language en label in
+  let%lwt res_de = find_template contact_de in
+  let%lwt res_en = find_template contact_en in
+  (* As no experiment language is defined, always expect a template in the
+     contat language to be returned *)
+  let () =
+    Alcotest.(
+      check Test_utils.message_template "succeeds" default_template_de res_de)
+  in
+  let () =
+    Alcotest.(
+      check Test_utils.message_template "succeeds" default_template_en res_en)
+  in
+  Lwt.return_unit
+;;
+
+let get_template_without_experiment_language _ () =
+  let open LanguageTestsData in
+  let label = invitation_label in
+  let experiment = create_experiment () in
+  let find_template = find_template_to_send experiment in
+  let%lwt template_de =
+    create_experiment_message_template experiment label de
+  in
+  let%lwt default_template_en = find_default_by_label_and_language en label in
+  let%lwt res_de = find_template contact_de in
+  let%lwt res_en = find_template contact_en in
+  (* Expect the custom de template and the default en tempalte to be returned *)
+  let () =
+    Alcotest.(check Test_utils.message_template "succeeds" template_de res_de)
+  in
+  let () =
+    Alcotest.(
+      check Test_utils.message_template "succeeds" default_template_en res_en)
+  in
+  Lwt.return_unit
+;;
+
+let get_template_with_experiment_language _ () =
+  let open LanguageTestsData in
+  let label = invitation_label in
+  let experiment = create_experiment ~language:Pool_common.Language.De () in
+  let find_template = find_template_to_send experiment in
+  let%lwt default_template_de = find_default_by_label_and_language de label in
+  let%lwt res_de = find_template contact_de in
+  let%lwt res_en = find_template contact_en in
+  (* Always expect the template to be in experiment language *)
+  let () =
+    Alcotest.(
+      check Test_utils.message_template "succeeds" default_template_de res_de)
+  in
+  let () =
+    Alcotest.(
+      check Test_utils.message_template "succeeds" default_template_de res_en)
+  in
+  Lwt.return_unit
+;;
+
+let get_template_with_experiment_language_and_template _ () =
+  let open LanguageTestsData in
+  let label = invitation_label in
+  let experiment = create_experiment ~language:Pool_common.Language.De () in
+  let%lwt template_de =
+    create_experiment_message_template experiment label de
+  in
+  let find_template = find_template_to_send experiment in
+  let%lwt res_de = find_template contact_de in
+  let%lwt res_en = find_template contact_en in
+  (* Always expect the template to be in experiment language *)
+  let () =
+    Alcotest.(check Test_utils.message_template "succeeds" template_de res_de)
+  in
+  let () =
+    Alcotest.(check Test_utils.message_template "succeeds" template_de res_en)
+  in
+  Lwt.return_unit
+;;
+
 let get_template_with_language_missing _ () =
   let open Utils.Lwt_result.Infix in
   let%lwt () =
@@ -173,7 +305,7 @@ let get_templates_in_multile_languages _ () =
   Lwt.return_unit
 ;;
 
-module MessageTemplateData = struct
+module ExperimentSenderData = struct
   let experiment_id = Experiment.Id.create ()
   let admin_id = Admin.Id.create ()
   let contact_id = Contact.Id.create ()
@@ -199,7 +331,7 @@ end
 
 let experiment_invitation_with_sender _ () =
   let open Utils.Lwt_result.Infix in
-  let open MessageTemplateData in
+  let open ExperimentSenderData in
   let%lwt () =
     let%lwt () = initialize () in
     let%lwt tenant = Pool_tenant.find_by_label database_label ||> get_exn in
@@ -237,7 +369,7 @@ let experiment_invitation_with_sender _ () =
 
 let assignment_creation_with_sender _ () =
   let open Utils.Lwt_result.Infix in
-  let open MessageTemplateData in
+  let open ExperimentSenderData in
   let%lwt () =
     let%lwt tenant = Pool_tenant.find_by_label database_label ||> get_exn in
     let%lwt contact = Contact.find database_label contact_id ||> get_exn in

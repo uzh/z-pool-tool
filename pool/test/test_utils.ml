@@ -115,7 +115,13 @@ module Model = struct
       }
   ;;
 
-  let create_contact ?id ?name ?(with_terms_accepted = true) () =
+  let create_contact
+    ?id
+    ?(language = Pool_common.Language.En)
+    ?name
+    ?(with_terms_accepted = true)
+    ()
+    =
     let sihl_user = create_sihl_user ?id ?name () in
     Contact.
       { user = sihl_user
@@ -123,7 +129,7 @@ module Model = struct
           (if with_terms_accepted
            then Pool_user.TermsAccepted.create_now () |> CCOption.return
            else None)
-      ; language = Some Pool_common.Language.En
+      ; language = Some language
       ; experiment_type_preference = None
       ; cell_phone = Some ("+41791234567" |> Pool_user.CellPhone.of_string)
       ; paused = Pool_user.Paused.create false

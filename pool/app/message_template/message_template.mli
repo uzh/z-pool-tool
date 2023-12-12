@@ -503,3 +503,9 @@ module WaitingListConfirmation : sig
     -> Experiment.Public.t
     -> (Sihl_email.t, Pool_common.Message.error) result Lwt.t
 end
+
+val experiment_message_language
+  :  Pool_common.Language.t list
+  -> Experiment.t
+  -> Contact.t
+  -> Pool_common.Language.t

@@ -156,9 +156,21 @@ let suite =
     ; ( "message_template"
       , Message_template_test.
           [ test_case
-              "get template with language missing"
+              "get template without experiment language and templates"
               `Slow
-              get_template_with_language_missing
+              get_template_without_experiment_language_and_templates
+          ; test_case
+              "get template without experiment languages"
+              `Slow
+              get_template_without_experiment_language
+          ; test_case
+              "get template with experiment language"
+              `Slow
+              get_template_with_experiment_language
+          ; test_case
+              "get template with experiment language and template"
+              `Slow
+              get_template_with_experiment_language_and_template
           ; test_case
               "get templates in multiple languages"
               `Slow
