@@ -24,6 +24,12 @@ let enroll_contact_path ?suffix contact_id =
   |> Sihl.Web.externalize_path
 ;;
 
+let heading_with_icons contact =
+  h1
+    ~a:[ a_class [ "heading-1" ] ]
+    [ Component.Contacts.identity_with_icons ~context:`All true contact ]
+;;
+
 let personal_detail
   ?admin_comment
   ?custom_fields
@@ -352,15 +358,7 @@ let detail
     ~a:[ a_class [ "trim"; "safety-margin"; "stack-lg" ] ]
     [ div
         ~a:[ a_class [ "flexrow"; "wrap"; "flex-gap"; "justify-between" ] ]
-        [ div
-            [ h1
-                ~a:[ a_class [ "heading-1" ] ]
-                [ Component.Contacts.identity_with_icons
-                    ~context:`All
-                    true
-                    contact
-                ]
-            ]
+        [ div [ heading_with_icons contact ]
         ; contact
           |> path
           |> Format.asprintf "%s/edit"
@@ -477,7 +475,7 @@ let edit
   let form_context = `Admin in
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
-    [ h1 ~a:[ a_class [ "heading-1" ] ] [ txt (Contact.fullname contact) ]
+    [ heading_with_icons contact
     ; div
         ~a:[ a_class [ "stack-lg" ] ]
         [ Page_contact_edit.personal_details_form
