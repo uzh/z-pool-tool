@@ -3,14 +3,14 @@ open Tyxml.Html
 (* TODO: Add EmailBouncing *)
 
 type status_icon =
-  | EmailVerified
+  | EmailUnverified
   | Paused
   | Verified
 
 let contact_has_status { Contact.paused; email_verified; verified; _ } =
   let open Pool_user in
   function
-  | EmailVerified -> CCOption.is_none email_verified
+  | EmailUnverified -> CCOption.is_none email_verified
   | Paused -> Paused.value paused
   | Verified -> CCOption.is_some verified
 ;;
@@ -18,7 +18,7 @@ let contact_has_status { Contact.paused; email_verified; verified; _ } =
 let status_to_icon =
   let open Component_icon in
   function
-  | EmailVerified -> CloseCircle (* TODO: Use correct icon *)
+  | EmailUnverified -> CloseCircle (* TODO: Use correct icon *)
   | Paused -> NotificationsOffOutline
   | Verified -> CheckmarkCircleOutline
 ;;
@@ -29,12 +29,12 @@ let status_legend_text language =
     m |> Utils.field_to_string language |> CCString.capitalize_ascii
   in
   function
-  | EmailVerified -> field_to_string Message.Field.EmailAddressVerified
+  | EmailUnverified -> field_to_string Message.Field.EmailAddressVerified
   | Paused -> field_to_string Message.Field.Paused
   | Verified -> field_to_string Message.Field.Verified
 ;;
 
-let email_status_icons = [ EmailVerified ]
+let email_status_icons = [ EmailUnverified ]
 let contact_status_icons = [ Paused; Verified ]
 let all_status_icons = contact_status_icons @ email_status_icons
 
