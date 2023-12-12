@@ -24,34 +24,6 @@ let button_group buttons =
     buttons
 ;;
 
-let language_select
-  options
-  selected
-  ?(field = Field.Language)
-  ?(attributes = [])
-  ()
-  =
-  let open Pool_common in
-  let name = Message.Field.show field in
-  let options =
-    CCList.map
-      (fun l ->
-        let is_selected =
-          selected
-          |> CCOption.map (fun selected ->
-            if Language.equal selected l then [ a_selected () ] else [])
-          |> CCOption.value ~default:[]
-        in
-        option
-          ~a:([ a_value (Language.show l) ] @ is_selected)
-          (txt (Language.show l)))
-      options
-  in
-  div
-    ~a:[ a_class [ "select" ] ]
-    [ select ~a:([ a_name name ] @ attributes) options ]
-;;
-
 let csrf_attibs ?id csrf =
   let attribs = [ a_input_type `Hidden; a_name "_csrf"; a_value csrf ] in
   match id with

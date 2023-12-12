@@ -296,6 +296,10 @@ Make sure to show links and URLs as plain text.
       The experimenter can read the names of attending contacts to the experiment he/she's assigned to.
 
       A detailed list with all role permissions is available for recruiters only.|}
+  | ExperimentLanguage ->
+    "If an experiment language is defined, all messages regarding this \
+     experiment will be sent in this language, disregarding the contact \
+     language."
   | ExperimentMailings ->
     {|Invitation mailings of this experiment. The limit defines the number of invitations sent by the mailing withing it's duration.
 

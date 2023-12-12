@@ -14,6 +14,7 @@ module Sql = struct
         title,
         public_title,
         description,
+        language,
         cost_center,
         organisational_unit_uuid,
         filter_uuid,
@@ -30,6 +31,7 @@ module Sql = struct
         invitation_reset_at
       ) VALUES (
         UNHEX(REPLACE(?, '-', '')),
+        ?,
         ?,
         ?,
         ?,
@@ -103,6 +105,7 @@ module Sql = struct
           pool_experiments.title,
           pool_experiments.public_title,
           pool_experiments.description,
+          pool_experiments.language,
           pool_experiments.cost_center,
           LOWER(CONCAT(
             SUBSTR(HEX(pool_organisational_units.uuid), 1, 8), '-',
@@ -280,20 +283,21 @@ module Sql = struct
         title = $2,
         public_title = $3,
         description = $4,
-        cost_center = $5,
-        organisational_unit_uuid = UNHEX(REPLACE($6, '-', '')),
-        filter_uuid = UNHEX(REPLACE($7, '-', '')),
-        contact_person_uuid = UNHEX(REPLACE($8, '-', '')),
-        smtp_auth_uuid = UNHEX(REPLACE($9, '-', '')),
-        direct_registration_disabled = $10,
-        registration_disabled = $11,
-        allow_uninvited_signup = $12,
-        external_data_required = $13,
-        show_external_data_id_links = $14,
-        experiment_type = $15,
-        email_session_reminder_lead_time = $16,
-        text_message_session_reminder_lead_time = $17,
-        invitation_reset_at = $18
+        language = $5,
+        cost_center = $6,
+        organisational_unit_uuid = UNHEX(REPLACE($7, '-', '')),
+        filter_uuid = UNHEX(REPLACE($8, '-', '')),
+        contact_person_uuid = UNHEX(REPLACE($9, '-', '')),
+        smtp_auth_uuid = UNHEX(REPLACE($10, '-', '')),
+        direct_registration_disabled = $11,
+        registration_disabled = $12,
+        allow_uninvited_signup = $13,
+        external_data_required = $14,
+        show_external_data_id_links = $15,
+        experiment_type = $16,
+        email_session_reminder_lead_time = $17,
+        text_message_session_reminder_lead_time = $18,
+        invitation_reset_at = $19
       WHERE
         uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}

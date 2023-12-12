@@ -1,5 +1,4 @@
 module ExperimentCommand = Cqrs_command.Experiment_command
-module Common = Pool_common
 module Model = Test_utils.Model
 
 let get_exn = Test_utils.get_or_failwith
@@ -27,6 +26,7 @@ module Data = struct
   let title = "New experiment"
   let public_title = "public_experiment_title"
   let description = "Description"
+  let language = Pool_common.Language.En
   let cost_center = "cost_center"
   let direct_registration_disabled = "false"
   let registration_disabled = "false"
@@ -40,6 +40,7 @@ module Data = struct
       [ Field.(show Title), [ title ]
       ; Field.(show PublicTitle), [ public_title ]
       ; Field.(show Description), [ description ]
+      ; Field.(show Language), [ Pool_common.Language.show language ]
       ; Field.(show CostCenter), [ cost_center ]
       ; ( Field.(show DirectRegistrationDisabled)
         , [ direct_registration_disabled ] )
@@ -97,6 +98,7 @@ module Data = struct
     Experiment.create
       ~cost_center:(cost_center |> CostCenter.of_string)
       ~description
+      ~language
       ~experiment_type:(experiment_type |> Pool_common.ExperimentType.read)
       ?filter
       title
@@ -140,7 +142,9 @@ let create_without_title () =
     |> ExperimentCommand.Create.decode
     >>= ExperimentCommand.Create.handle
   in
-  let expected = Error Common.Message.(Conformist [ Field.Title, NoValue ]) in
+  let expected =
+    Error Pool_common.Message.(Conformist [ Field.Title, NoValue ])
+  in
   Test_utils.check_result expected events
 ;;
 

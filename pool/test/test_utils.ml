@@ -177,6 +177,7 @@ module Model = struct
             Description.create "A description for everyone"
             |> get_or_failwith
             |> CCOption.return
+        ; language = None
         ; direct_registration_disabled =
             false |> DirectRegistrationDisabled.create
         ; experiment_type = Some Pool_common.ExperimentType.Lab
@@ -234,6 +235,7 @@ module Model = struct
         { id = experiment.id
         ; public_title = experiment.public_title
         ; description = experiment.description
+        ; language = experiment.language
         ; direct_registration_disabled = experiment.direct_registration_disabled
         ; experiment_type = experiment.experiment_type
         ; smtp_auth_id = None

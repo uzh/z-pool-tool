@@ -63,6 +63,7 @@ type t =
   ; title : Title.t
   ; public_title : PublicTitle.t
   ; description : Description.t option
+  ; language : Pool_common.Language.t option
   ; cost_center : CostCenter.t option
   ; organisational_unit : Organisational_unit.t option
   ; filter : Filter.t option
@@ -91,6 +92,7 @@ val create
   -> ?contact_person_id:Admin.Id.t
   -> ?cost_center:CostCenter.t
   -> ?description:Description.t
+  -> ?language:Pool_common.Language.t
   -> ?email_session_reminder_lead_time:Pool_common.Reminder.LeadTime.t
   -> ?experiment_type:Pool_common.ExperimentType.t
   -> ?filter:Filter.t
@@ -111,6 +113,7 @@ type create =
   { title : Title.t
   ; public_title : PublicTitle.t
   ; description : Description.t option
+  ; language : Pool_common.Language.t option
   ; cost_center : CostCenter.t option
   ; direct_registration_disabled : DirectRegistrationDisabled.t
   ; registration_disabled : RegistrationDisabled.t
@@ -132,6 +135,7 @@ module Public : sig
     { id : Id.t
     ; public_title : PublicTitle.t
     ; description : Description.t option
+    ; language : Pool_common.Language.t option
     ; direct_registration_disabled : DirectRegistrationDisabled.t
     ; experiment_type : Pool_common.ExperimentType.t option
     ; smtp_auth_id : Email.SmtpAuth.Id.t option

@@ -168,6 +168,18 @@ let experiment_form
       ~flash_fetcher
       ()
   in
+  let language_select =
+    let open Pool_common.Language in
+    selector
+      ~add_empty:true
+      ~hints:[ I18n.ExperimentLanguage ]
+      language
+      Message.Field.Language
+      show
+      all
+      (CCOption.bind experiment (fun { language; _ } -> language))
+      ()
+  in
   let lead_time_group field get_value default_value =
     div
       [ timespan_picker
@@ -215,6 +227,7 @@ let experiment_form
                   (CCOption.bind experiment (fun { description; _ } ->
                      description |> CCOption.map Description.value))
                 ~flash_fetcher
+            ; language_select
             ; experiment_type_select
             ; input_element
                 language
@@ -593,6 +606,7 @@ let detail
   let html =
     let experiment_table =
       let boolean_value fnc = fnc experiment |> bool_to_string |> txt in
+      let default = "" in
       Message.
         [ Field.PublicTitle, experiment.public_title |> PublicTitle.value |> txt
         ; ( Field.ExperimentType
@@ -603,23 +617,26 @@ let detail
           , experiment.description
             |> CCOption.map_or ~default:(txt "") (fun desc ->
               desc |> Description.value |> HttpUtils.add_line_breaks) )
+        ; ( Field.Language
+          , experiment.language
+            |> CCOption.map_or ~default (fun lang -> lang |> Language.show)
+            |> txt )
         ; ( Field.CostCenter
           , experiment.cost_center
-            |> CCOption.map_or ~default:"" CostCenter.value
+            |> CCOption.map_or ~default CostCenter.value
             |> txt )
         ; ( Field.OrganisationalUnit
           , experiment.organisational_unit
             |> CCOption.map_or
-                 ~default:""
+                 ~default
                  Organisational_unit.(fun ou -> ou.name |> Name.value)
             |> txt )
         ; ( Field.ContactPerson
-          , contact_person |> CCOption.map_or ~default:"" Admin.full_name |> txt
-          )
+          , contact_person |> CCOption.map_or ~default Admin.full_name |> txt )
         ; ( Field.Smtp
           , smtp_account
             |> CCOption.map_or
-                 ~default:""
+                 ~default
                  Email.SmtpAuth.(fun auth -> auth.label |> Label.value)
             |> txt )
         ; ( Field.DirectRegistrationDisabled

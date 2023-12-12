@@ -14,6 +14,7 @@ let default_command
   title
   public_title
   description
+  language
   cost_center
   direct_registration_disabled
   registration_disabled
@@ -27,6 +28,7 @@ let default_command
   { title
   ; public_title
   ; description
+  ; language
   ; cost_center
   ; direct_registration_disabled
   ; registration_disabled
@@ -43,6 +45,7 @@ let create_command
   title
   public_title
   description
+  language
   cost_center
   direct_registration_disabled
   registration_disabled
@@ -57,6 +60,7 @@ let create_command
     title
     (CCOption.value ~default:PublicTitle.placeholder public_title)
     description
+    language
     cost_center
     direct_registration_disabled
     registration_disabled
@@ -76,6 +80,7 @@ let update_schema command =
         [ Title.schema ()
         ; PublicTitle.schema ()
         ; Conformist.optional @@ Description.schema ()
+        ; Conformist.optional @@ Pool_common.Language.schema ()
         ; Conformist.optional @@ CostCenter.schema ()
         ; DirectRegistrationDisabled.schema ()
         ; RegistrationDisabled.schema ()
@@ -101,6 +106,7 @@ let create_schema command =
         [ Title.schema ()
         ; Conformist.optional @@ PublicTitle.schema ()
         ; Conformist.optional @@ Description.schema ()
+        ; Conformist.optional @@ Pool_common.Language.schema ()
         ; Conformist.optional @@ CostCenter.schema ()
         ; DirectRegistrationDisabled.schema ()
         ; RegistrationDisabled.schema ()
@@ -147,6 +153,7 @@ end = struct
     ?smtp_auth
     ({ cost_center
      ; description
+     ; language
      ; email_session_reminder_lead_time
      ; experiment_type
      ; text_message_session_reminder_lead_time
@@ -161,6 +168,7 @@ end = struct
         ?contact_person_id:(contact_person |> CCOption.map Admin.id)
         ?cost_center
         ?description
+        ?language
         ?email_session_reminder_lead_time
         ?experiment_type
         ?organisational_unit
@@ -222,6 +230,7 @@ end = struct
           title = command.title
         ; public_title = command.public_title
         ; description = command.description
+        ; language = command.language
         ; cost_center = command.cost_center
         ; organisational_unit
         ; contact_person_id = CCOption.map Admin.id contact_person

@@ -167,6 +167,7 @@ type hint =
   | ExperimentAssignment
   | ExperimentContactPerson
   | ExperimenterRole
+  | ExperimentLanguage
   | ExperimentMailings
   | ExperimentMailingsRegistrationDisabled
   | ExperimentSessions

@@ -14,6 +14,7 @@ let select_from_experiments_sql ?(distinct = false) where_fragment =
           )),
           pool_experiments.public_title,
           pool_experiments.description,
+          pool_experiments.language,
           pool_experiments.direct_registration_disabled,
           pool_experiments.experiment_type,
           LOWER(CONCAT(

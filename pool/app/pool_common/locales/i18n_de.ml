@@ -302,6 +302,10 @@ Beim Einladen von Kontakten bevorzugt der Filter den überschreibenden Wert, wen
     Der Experimentator kann die Namen der teilnehmenden Kontakte des Experiments lesen, dem er/sie zugewiesen ist.
 
     Eine detaillierte Liste mit allen Rollenberechtigungen ist nur für Recruiter verfügbar.|}
+  | ExperimentLanguage ->
+    "ist eine Experimentsprache definiert, werden alle Nachrichten, die dieses \
+     Experiment betreffen, in dieser Sprache gesendet, ohne Rücksicht auf die \
+     Kontaktsprache."
   | ExperimentMailings ->
     {|Einladungsversand dieses Experiments.
 
