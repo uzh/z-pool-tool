@@ -213,6 +213,9 @@ When inviting contacts, the filter will prefer the overriding value if both are 
     "The contact does not meet the criteria specified in the filter for this \
      experiment, but can still be enrolled."
   | ContactNoCellPhone -> "You have not yet verified a phone number."
+  | ContactLanguage ->
+    "Some experiments choose to communicate in a different language, \
+     disregarding your contact language."
   | ContactEnterCellPhoneToken cell_phone ->
     Format.asprintf
       "Please enter the verification code we sent yout to %s. The code is \

@@ -88,8 +88,9 @@ let personal_details_form
         ~a:[ a_class [ "grid-col-2" ] ]
         (csrf_element csrf ()
          :: CCList.map
-              (fun (version, field, label, value) ->
-                Htmx.create_entity ?label version field value |> htmx_create)
+              (fun (version, field, label, value, help) ->
+                Htmx.create_entity ?help ?label version field value
+                |> htmx_create)
               Htmx.
                 [ ( contact.firstname_version
                   , Field.Firstname
@@ -98,7 +99,8 @@ let personal_details_form
                       (contact
                        |> Contact.firstname
                        |> User.Firstname.value
-                       |> CCOption.pure) )
+                       |> CCOption.pure)
+                  , None )
                 ; ( contact.lastname_version
                   , Field.Lastname
                   , None
@@ -106,7 +108,8 @@ let personal_details_form
                       (contact
                        |> Contact.lastname
                        |> User.Lastname.value
-                       |> CCOption.pure) )
+                       |> CCOption.pure)
+                  , None )
                 ; ( contact.language_version
                   , Field.Language
                   , Some Field.ContactLanguage
@@ -115,7 +118,8 @@ let personal_details_form
                       ; options = tenant_languages
                       ; option_formatter = None
                       ; selected = contact.language
-                      } )
+                      }
+                  , Some [ Pool_common.I18n.ContactLanguage ] )
                 ])
     in
     match is_admin with

@@ -140,6 +140,7 @@ type hint =
   | ContactDoesNotMatchFilter
   | ContactNoCellPhone
   | ContactEnterCellPhoneToken of string
+  | ContactLanguage
   | ContactPhoneNumberVerificationWasReset
   | ContactOnWaitingList
   | ContactProfileVisibleOverride

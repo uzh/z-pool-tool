@@ -492,6 +492,7 @@ let partial_update_to_htmx
   | Language (v, lang) ->
     create_entity
       v
+      ~help:[ Pool_common.I18n.ContactLanguage ]
       ~label:Field.ContactLanguage
       Field.Language
       (Select

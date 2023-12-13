@@ -221,6 +221,9 @@ Beim Einladen von Kontakten bevorzugt der Filter den überschreibenden Wert, wen
       "PBitte geben Sie den Verifizierungscode ein, den wir Ihnen an %s \
        geschickt haben. Der Code ist eine Stunde lang gültig."
       cell_phone
+  | ContactLanguage ->
+    "Bei einigen Experimenten wird in einer anderen Sprache kommuniziert, ohne \
+     Rücksicht auf die Kontaktsprache."
   | ContactPhoneNumberVerificationWasReset ->
     "Sie können nun eine neue Telefonnummer eingeben."
   | ContactOnWaitingList ->
