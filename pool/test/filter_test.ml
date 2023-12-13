@@ -1045,7 +1045,10 @@ let filter_by_empty_hardcoded_value _ () =
 
 let filter_by_non_empty_hardcoded_value _ () =
   let%lwt contact =
-    Integration_utils.ContactRepo.create ~with_terms_accepted:true ()
+    Integration_utils.ContactRepo.create
+      ~with_terms_accepted:true
+      ~language:Pool_common.Language.En
+      ()
   in
   let%lwt experiment = Repo.first_experiment () in
   let filter operator =

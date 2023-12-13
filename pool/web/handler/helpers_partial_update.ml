@@ -148,16 +148,23 @@ let update ?contact req =
         let open Pool_common.Message in
         match partial_update with
         | Ok partial_update ->
-          Htmx.partial_update_to_htmx
-            language
-            tenant_languages
-            is_admin
-            partial_update
-            ~hx_post
-            ?hx_delete
-            ~success:true
-            ()
-          |> html_response
+          let open Custom_field.PartialUpdate in
+          (match partial_update with
+           | Language _ ->
+             HttpUtils.Htmx.htmx_redirect
+               (Sihl.Web.externalize_path back_path)
+               ()
+           | Firstname _ | Lastname _ | Custom _ ->
+             Htmx.partial_update_to_htmx
+               language
+               tenant_languages
+               is_admin
+               partial_update
+               ~hx_post
+               ?hx_delete
+               ~success:true
+               ()
+             |> html_response)
         | Error error ->
           let error = Pool_common.Utils.with_log_error ~src ~tags error in
           let create_htmx ?htmx_attributes ?label ?(field = field) value =

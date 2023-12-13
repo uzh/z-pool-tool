@@ -155,6 +155,8 @@ module LanguageTestsData = struct
     let language = experiment_message_language experiment contact in
     find_message_template experiment language invitation_label
   ;;
+
+  let check_template = Alcotest.(check Test_utils.message_template "succeeds")
 end
 
 let get_template_without_experiment_language_and_templates _ () =
@@ -168,14 +170,8 @@ let get_template_without_experiment_language_and_templates _ () =
   let%lwt res_en = find_template contact_en in
   (* As no experiment language is defined, always expect a template in the
      contat language to be returned *)
-  let () =
-    Alcotest.(
-      check Test_utils.message_template "succeeds" default_template_de res_de)
-  in
-  let () =
-    Alcotest.(
-      check Test_utils.message_template "succeeds" default_template_en res_en)
-  in
+  check_template default_template_de res_de;
+  check_template default_template_en res_en;
   Lwt.return_unit
 ;;
 
@@ -191,13 +187,8 @@ let get_template_without_experiment_language _ () =
   let%lwt res_de = find_template contact_de in
   let%lwt res_en = find_template contact_en in
   (* Expect the custom de template and the default en tempalte to be returned *)
-  let () =
-    Alcotest.(check Test_utils.message_template "succeeds" template_de res_de)
-  in
-  let () =
-    Alcotest.(
-      check Test_utils.message_template "succeeds" default_template_en res_en)
-  in
+  check_template template_de res_de;
+  check_template default_template_en res_en;
   Lwt.return_unit
 ;;
 
@@ -209,15 +200,9 @@ let get_template_with_experiment_language _ () =
   let%lwt default_template_de = find_default_by_label_and_language de label in
   let%lwt res_de = find_template contact_de in
   let%lwt res_en = find_template contact_en in
-  (* Always expect the template to be in experiment language *)
-  let () =
-    Alcotest.(
-      check Test_utils.message_template "succeeds" default_template_de res_de)
-  in
-  let () =
-    Alcotest.(
-      check Test_utils.message_template "succeeds" default_template_de res_en)
-  in
+  let check = check_template default_template_de in
+  check res_de;
+  check res_en;
   Lwt.return_unit
 ;;
 
@@ -231,13 +216,9 @@ let get_template_with_experiment_language_and_template _ () =
   let find_template = find_template_to_send experiment in
   let%lwt res_de = find_template contact_de in
   let%lwt res_en = find_template contact_en in
-  (* Always expect the template to be in experiment language *)
-  let () =
-    Alcotest.(check Test_utils.message_template "succeeds" template_de res_de)
-  in
-  let () =
-    Alcotest.(check Test_utils.message_template "succeeds" template_de res_en)
-  in
+  let check = check_template template_de in
+  check res_de;
+  check res_en;
   Lwt.return_unit
 ;;
 

@@ -178,34 +178,6 @@ let combine_html language html_title =
   |> html_to_string
 ;;
 
-module Old = struct
-  let preferred_language sys (contact : Contact.t) =
-    let open Pool_common in
-    let open CCOption in
-    let default = Settings.default_language_of_list sys in
-    contact.Contact.language
-    >>= (fun contact_lang -> CCList.find_opt (Language.equal contact_lang) sys)
-    |> value ~default
-  ;;
-
-  let search_by_language templates lang =
-    let open Pool_common in
-    CCList.find_opt
-      (fun { language; _ } -> Language.equal language lang)
-      templates
-    |> (function
-          | None -> templates |> CCList.head_opt
-          | Some template -> Some template)
-    |> CCOption.map (fun ({ language; _ } as t) -> language, t)
-    |> CCOption.to_result (Message.NotFound Field.MessageTemplate)
-  ;;
-
-  let template_by_contact sys_langs templates contact =
-    let preferred_language = preferred_language sys_langs contact in
-    search_by_language templates preferred_language
-  ;;
-end
-
 let find_template_by_language templates lang =
   let open Pool_common in
   CCList.find_opt

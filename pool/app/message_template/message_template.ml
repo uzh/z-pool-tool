@@ -79,7 +79,6 @@ let prepare_email language template sender email layout params =
   Message_utils.render_email_params params mail
 ;;
 
-(* TODO: Should this be using experiment language as well? *)
 let prepare_manual_email
   { ManualMessage.recipient; language; email_subject; email_text; plain_text }
   layout
