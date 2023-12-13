@@ -94,6 +94,10 @@ let collect_and_count database_label query ~select ~count ?where caqti_type =
     |> CCOption.map_or ~default:base (Format.asprintf "%s %s" base)
     |> pt ->* caqti_type
   in
+  let () =
+    Caqti_request.make_pp_with_param () Format.std_formatter (request, pv)
+  in
+  print_endline "";
   let count_request = count where |> pt ->! Caqti_type.int in
   let%lwt rows = collect database_label request pv in
   let%lwt count = find database_label count_request pv in

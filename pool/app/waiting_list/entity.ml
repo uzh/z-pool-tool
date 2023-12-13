@@ -57,3 +57,7 @@ let sortable_by =
   @ (Pool_common.Message.[ Field.CreatedAt, "pool_waiting_list.created_at" ]
      |> Query.Column.create_list)
 ;;
+
+let default_query =
+  Query.{ pagination = None; search = None; sort = Some Contact.default_sort }
+;;

@@ -99,6 +99,7 @@ val find_by_contact_and_experiment
 
 val searchable_by : Query.Column.t list
 val sortable_by : Query.Column.t list
+val default_query : Query.t
 
 module Guard : sig
   module Target : sig
