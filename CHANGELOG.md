@@ -7,8 +7,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 ### Added
 
 - option to enable min/max number of selected options for a multi_select custom field
-- show custom field data on contact detail page
-- mark unverified contact email addresses
+- Option to define an experiment language in which all messages are sent
 
 ## [0.5.1](https://github.com/uzh/pool/tree/0.5.1) - 2023-11-08
 
