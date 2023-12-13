@@ -1,29 +1,72 @@
 open Tyxml.Html
 
-let status_icons { Contact.paused; verified; _ } =
-  (* TODO: Add SMTP Bounce *)
+(* TODO: Add EmailBouncing *)
+
+type status_icon =
+  | EmailUnverified
+  | Paused
+  | Verified
+
+let contact_has_status { Contact.paused; email_verified; verified; _ } =
   let open Pool_user in
-  let open Component_icon in
-  [ paused |> Paused.value, NotificationsOffOutline
-  ; CCOption.is_some verified, CheckmarkCircleOutline
-  ]
-  |> CCList.filter_map (fun (show, icon) ->
-    if show then Some (to_html icon) else None)
+  function
+  | EmailUnverified -> CCOption.is_none email_verified
+  | Paused -> Paused.value paused
+  | Verified -> CCOption.is_some verified
 ;;
 
-let status_icons_table_legend language =
-  let open Pool_common in
-  let open Component_table in
+let status_to_icon =
   let open Component_icon in
+  function
+  | EmailUnverified -> MailError
+  | Paused -> NotificationsOffOutline
+  | Verified -> CheckmarkCircleOutline
+;;
+
+let status_legend_text language =
+  let open Pool_common in
   let field_to_string m =
     m |> Utils.field_to_string language |> CCString.capitalize_ascii
   in
+  function
+  | EmailUnverified -> field_to_string Message.Field.EmailAddressUnverified
+  | Paused -> field_to_string Message.Field.Paused
+  | Verified -> field_to_string Message.Field.Verified
+;;
+
+let email_status_icons = [ EmailUnverified ]
+let contact_status_icons = [ Paused; Verified ]
+let all_status_icons = contact_status_icons @ email_status_icons
+
+let icons_by_context = function
+  | `All -> all_status_icons
+  | `Name -> contact_status_icons
+  | `Email -> email_status_icons
+;;
+
+let make_icons contact context =
+  icons_by_context context
+  |> CCList.filter (contact_has_status contact)
+  |> CCList.map CCFun.(status_to_icon %> Component_icon.to_html)
+;;
+
+let status_icons_table_legend language context =
+  let open Pool_common in
   let text_to_string m = m |> Utils.text_to_string language in
-  [ text_to_string I18n.Disabled, legend_color_item "bg-red-lighter"
-  ; field_to_string Message.Field.Paused, legend_icon_item NotificationsOutline
-  ; ( field_to_string Message.Field.Verified
-    , legend_icon_item CheckmarkCircleOutline )
-  ]
+  let additional_items =
+    if context = `All
+    then
+      [ ( text_to_string I18n.Disabled
+        , Component_table.legend_color_item "bg-red-lighter" )
+      ]
+    else []
+  in
+  icons_by_context context
+  |> CCList.map (fun status_icon ->
+    ( status_legend_text language status_icon
+    , status_to_icon status_icon
+      |> Component_icon.to_html ~classnames:[ "legend-item" ] ))
+  |> CCList.append additional_items
 ;;
 
 let identity view_contact_name contact entity_id =
@@ -32,14 +75,22 @@ let identity view_contact_name contact entity_id =
   else Pool_common.Id.value entity_id
 ;;
 
-let identity_with_icons view_contact_name contact entity_id =
+let wrap_icons text icons =
+  span [ txt text ] :: icons |> span ~a:[ a_class [ "flexrow"; "flex-gap-sm" ] ]
+;;
+
+let identity_with_icons ?(context = `Name) view_contact_name contact =
   let text =
     if view_contact_name
     then Contact.lastname_firstname contact
-    else Pool_common.Id.value entity_id
+    else Pool_common.Id.value (Contact.id contact)
   in
-  span [ txt text ] :: status_icons contact
-  |> div ~a:[ a_class [ "flexrow"; "flex-gap-sm" ] ]
+  make_icons contact context |> wrap_icons text
+;;
+
+let email_with_icons contact =
+  let text = Contact.email_address contact |> Pool_user.EmailAddress.value in
+  make_icons contact `Email |> wrap_icons text
 ;;
 
 let external_data_ids language external_data_ids =

@@ -191,9 +191,9 @@ let nav_link_to_string = function
 
 let rec hint_to_string = function
   | AdminOverwriteContactValues ->
-    {|If you overwrite one of the following values, this is not apparent to the contact.
+    {|If you overwrite one of the following values, this is not apparent to the contact. If a value entered by the contact is overridden, the overridden value is displayed below the input field.
 
-  If you filter for this field, the overriding value is preferred.|}
+When inviting contacts, the filter will prefer the overriding value if both are available.|}
   | AllowUninvitedSignup ->
     "All contacts (invited or not) will be able to sign up for the experiment."
   | AssignmentConfirmationMessageFollowUps ->

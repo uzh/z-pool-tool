@@ -192,10 +192,9 @@ let nav_link_to_string = function
 
 let rec hint_to_string = function
   | AdminOverwriteContactValues ->
-    {|Wenn Sie einen der folgenden Werte anpassen, ist dies für den Kontakt nicht ersichtlich.
+    {|Wenn Sie einen der folgenden Werte überschreiben, ist dies für den Kontakt nicht ersichtlich. Wenn ein vom Kontakt eingegebener Wert überschrieben wird, wird der überschriebene Wert unterhalb des Eingabefeldes angezeigt.
 
-Wird nach diesem Feld gefiltert, wird der überschreibende Wert bevorzugt.
-|}
+Beim Einladen von Kontakten bevorzugt der Filter den überschreibenden Wert, wenn beide vorhanden sind.|}
   | AllowUninvitedSignup ->
     "Alle Kontakte (eingeladen oder nicht), können sich für das Experiment \
      anmelden."

@@ -8,6 +8,7 @@ let rec field_to_string =
   | ActiveContactsCount -> "active contacts count"
   | Admin -> "admin"
   | AdminComment -> "admin comment"
+  | AdminInput -> "admin input"
   | AdminHint -> "hint for admins"
   | AdminInputOnly -> "input only by admins"
   | AdminViewOnly -> "only visible for admins"
@@ -224,6 +225,7 @@ let rec field_to_string =
   | Successful -> "successful"
   | SystemEvent -> "system event"
   | Tag -> "tag"
+  | Tags -> "tags"
   | Tagging -> "tagging"
   | Target -> "target"
   | Template -> "template"
@@ -279,6 +281,10 @@ let success_to_string : success -> string = function
   | EmailConfirmationMessage ->
     "An email has been sent to your email address for verification if the \
      given email address is still available."
+  | EmailUpdateConfirmationMessage ->
+    {|If the email address you entered is still available, an email with a confirmation link has been sent to this address. Please confirm the address by opening this link.
+
+As long as the new e-mail address has not been confirmed, the current address will remain in use.|}
   | EmailVerified -> "Email successfully verified."
   | FileDeleted -> "File was successfully deleted."
   | ImportCompleted ->

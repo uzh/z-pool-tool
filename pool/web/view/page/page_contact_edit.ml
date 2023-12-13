@@ -75,9 +75,9 @@ let personal_details_form
   let admin_hint =
     match is_admin with
     | true ->
-      [ txt
-          Pool_common.(
-            Utils.hint_to_string language I18n.AdminOverwriteContactValues)
+      [ Pool_common.(
+          Utils.hint_to_string language I18n.AdminOverwriteContactValues)
+        |> HttpUtils.add_line_breaks
       ]
       |> Component.Notification.notification language `Warning
     | false -> txt ""

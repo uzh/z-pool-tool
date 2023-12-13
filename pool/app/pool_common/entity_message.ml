@@ -149,6 +149,7 @@ type success =
   | Created of Field.t
   | Deleted of Field.t
   | EmailConfirmationMessage
+  | EmailUpdateConfirmationMessage
   | EmailVerified
   | FileDeleted
   | ImportCompleted

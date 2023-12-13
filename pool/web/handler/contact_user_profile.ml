@@ -178,7 +178,7 @@ let update_email req =
        HttpUtils.(
          redirect_to_with_actions
            (path_with_language query_language "/user/login-information")
-           [ Message.set ~success:[ EmailConfirmationMessage ] ])
+           [ Message.set ~success:[ EmailUpdateConfirmationMessage ] ])
        |> Lwt_result.ok
   in
   result |> HttpUtils.extract_happy_path_with_actions ~src req

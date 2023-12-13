@@ -42,6 +42,7 @@ type t =
   | LocationOutline [@name "location-outline"] [@printer prt "location-outline"]
   | Mail [@name "mail"] [@printer prt "mail"]
   | MailAlert [@name "mail-alert"] [@printer prt "mail-alert"]
+  | MailError [@name "mail-error"] [@printer prt "mail-error"]
   | MailOutline [@name "mail-outline"] [@printer prt "mail-outline"]
   | MenuOutline [@name "menu-outline"] [@printer prt "menu-outline"]
   | NextCircleOutline [@name "next-circle-outline"]

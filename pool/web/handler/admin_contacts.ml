@@ -59,12 +59,19 @@ let detail_view action req =
          let%lwt admin_comment =
            Contact.find_admin_comment database_label (Contact.id contact)
          in
+         let%lwt custom_fields =
+           Custom_field.find_all_by_contact
+             database_label
+             user
+             (Contact.id contact)
+         in
          Page.Admin.Contact.detail
-           ~admin_comment
+           ?admin_comment
            context
            contact
            contact_tags
            external_data_ids
+           custom_fields
          |> create_layout req context
          >|+ Sihl.Web.Response.of_html
        | `Edit ->

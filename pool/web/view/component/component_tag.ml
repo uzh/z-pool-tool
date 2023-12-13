@@ -29,24 +29,29 @@ let create ?remove_action language tag =
   div ~a:[ a_class classnames ] content
 ;;
 
-let tag_list ?remove_action ?title language tags =
-  (match tags with
-   | [] ->
-     p
-       ~a:[ a_class [ "help" ] ]
-       [ txt Pool_common.(Utils.text_to_string language I18n.SelectedTagsEmpty)
-       ]
-   | tags ->
-     tags
-     |> CCList.map (create ?remove_action language)
-     |> div ~a:[ a_class [ "flexrow"; "wrap"; "flex-gap"; "align-start" ] ])
-  |> fun html ->
-  match title with
+let tag_list ?remove_action language tags =
+  match tags with
+  | [] ->
+    p
+      ~a:(if CCOption.is_some remove_action then [ a_class [ "help" ] ] else [])
+      [ txt Pool_common.(Utils.text_to_string language I18n.SelectedTagsEmpty) ]
+  | tags ->
+    tags
+    |> CCList.map (create ?remove_action language)
+    |> div ~a:[ a_class [ "flexrow"; "wrap"; "flex-gap"; "align-start" ] ]
+;;
+
+let tag_form ?label language remove_action tags =
+  let html = tag_list ~remove_action language tags in
+  match label with
   | None -> html
   | Some i18n ->
     div
       ~a:[ a_class [ "form-group" ] ]
-      [ label [ txt Pool_common.(Utils.text_to_string language i18n) ]; html ]
+      [ Tyxml.Html.label
+          [ txt Pool_common.(Utils.text_to_string language i18n) ]
+      ; html
+      ]
 ;;
 
 let add_tags_form
