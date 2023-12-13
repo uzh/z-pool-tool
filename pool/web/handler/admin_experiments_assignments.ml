@@ -427,10 +427,12 @@ let swap_session_get req =
     let* sessions =
       Session.find_all_to_swap_by_experiment database_label experiment_id
     in
-    let%lwt template_lang =
-      match experiment.Experiment.language with
-      | Some language -> Lwt.return language
-      | None -> Contact.message_language database_label assignment.contact
+    let template_lang =
+      let system_languages = Pool_context.Tenant.get_tenant_languages_exn req in
+      Message_template.experiment_message_language
+        system_languages
+        experiment
+        assignment.contact
     in
     let%lwt swap_session_template =
       Message_template.(
