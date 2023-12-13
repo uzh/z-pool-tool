@@ -790,7 +790,8 @@ let cell_phone_input ?(required = false) () =
             ~a:
               ([ a_name Pool_common.Message.Field.(show CellPhone)
                ; a_class [ "input" ]
-               ; a_input_type `Number
+               ; a_input_type `Text
+               ; a_pattern "^[1-9]\d{3,12}"
                ; a_placeholder "791234567"
                ]
                @ attrs)
