@@ -196,7 +196,7 @@ type hint =
   | MessageTemplateSignupVerification
   | MessageTemplateUserImport
   | MessageTemplateWaitingListConfirmation
-  | MissingMessageTemplates of string * string list
+  | MissingMessageTemplates
   | NumberIsDaysHint
   | NumberIsSecondsHint
   | NumberIsWeeksHint

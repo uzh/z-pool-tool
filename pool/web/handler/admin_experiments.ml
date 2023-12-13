@@ -84,14 +84,22 @@ let smtp_auth_from_urlencoded urlencoded database_label =
   find_entity_in_urlencoded urlencoded Field.Smtp query
 ;;
 
-let experiment_message_templates database_label experiment_id =
+let experiment_message_templates database_label experiment =
   let open Message_template in
+  let open Experiment in
   let open Utils.Lwt_result.Infix in
   let find_templates label =
     find_all_of_entity_by_label
       database_label
-      (experiment_id |> Experiment.Id.to_common)
+      (experiment.Experiment.id |> Id.to_common)
       label
+    ||> (fun templates ->
+          match experiment.language with
+          | None -> templates
+          | Some experiment_language ->
+            templates
+            |> CCList.filter (fun { Message_template.language; _ } ->
+              Pool_common.Language.equal language experiment_language))
     ||> CCPair.make label
   in
   Label.customizable_by_experiment |> Lwt_list.map_s find_templates
@@ -226,7 +234,7 @@ let detail edit req =
     let* experiment = Experiment.find database_label id in
     let sys_languages = Pool_context.Tenant.get_tenant_languages_exn req in
     let%lwt message_templates =
-      experiment_message_templates database_label id
+      experiment_message_templates database_label experiment
     in
     let%lwt current_tags =
       Tags.(find_all_of_entity database_label Model.Experiment)

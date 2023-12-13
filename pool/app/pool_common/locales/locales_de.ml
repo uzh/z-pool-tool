@@ -32,6 +32,7 @@ let rec field_to_string =
   | Contact -> "Kontakt"
   | ContactCount -> "Anzahl Kontakte"
   | ContactEmail -> "Kontakt E-Mail Adresse"
+  | ContactLanguage -> "Kontakt- & Anzeigesprache"
   | ContactPerson -> "Kontaktperson"
   | Contacts -> "Kontakte"
   | CostCenter -> "Kostenstelle"

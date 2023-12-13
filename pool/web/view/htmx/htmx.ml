@@ -110,17 +110,18 @@ type 'a value =
 type 'a t =
   { version : Version.t
   ; field : Pool_common.Message.Field.t
+  ; label : Pool_common.Message.Field.t option
   ; value : 'a value
   ; help : Pool_common.I18n.hint list option
   ; htmx_attributes : (string * string) list option
   }
 
-let create_entity ?help ?htmx_attributes version field value =
-  { version; field; value; help; htmx_attributes }
+let create_entity ?help ?htmx_attributes ?label version field value =
+  { version; field; label; value; help; htmx_attributes }
 ;;
 
 let create
-  ({ version; field; value; help; htmx_attributes } : 'a t)
+  ({ version; field; label; value; help; htmx_attributes } : 'a t)
   language
   ?overridden_value
   ?promt_in_registration_hint
@@ -162,15 +163,16 @@ let create
   match value with
   | Boolean boolean ->
     Input.checkbox_element
-      ~as_switch:true
-      ~switcher_class:input_class
       ~additional_attributes:(additional_attributes ())
       ?append_html
+      ~as_switch:true
       ~classnames
-      ?value:boolean
       ~hints
       ?error
+      ?label_field:label
       ?required
+      ?value:boolean
+      ~switcher_class:input_class
       language
       field
   | Date date ->
@@ -180,10 +182,11 @@ let create
       ~classnames
       ~disable_future:true
       ?error
-      ?value:date
       ~hints
+      ?label_field:label
       ?required
       ?success
+      ?value:date
       language
       field
   | MultiSelect t ->
@@ -197,17 +200,18 @@ let create
           ()
     in
     Input.multi_select
-      language
-      t
-      field
       ~additional_attributes
       ?append_html
       ~classnames
+      ?disabled
+      ?error
       ?flash_values
       ~hints
+      ?label_field:label
       ?required
-      ?error
-      ?disabled
+      language
+      t
+      field
       ()
   | Number n ->
     Input.input_element
@@ -221,19 +225,21 @@ let create
       ?error
       ?required
       ~hints
+      ?label_field:label
       language
       `Number
       field
   | Select { show; options; option_formatter; selected } ->
     Input.selector
+      ~add_empty:true
       ~attributes:(additional_attributes ())
       ?append_html
       ~classnames
       ?error
       ~hints
+      ?label_field:label
       ?option_formatter
       ?required
-      ~add_empty:true
       language
       field
       show
@@ -436,6 +442,7 @@ let custom_field_to_htmx
   let hints = Public.help_elements language custom_field in
   { version
   ; field
+  ; label = None
   ; value
   ; htmx_attributes = Some htmx_attributes
   ; help = Some hints
@@ -485,6 +492,7 @@ let partial_update_to_htmx
   | Language (v, lang) ->
     create_entity
       v
+      ~label:Field.ContactLanguage
       Field.Language
       (Select
          { show = Pool_common.Language.show

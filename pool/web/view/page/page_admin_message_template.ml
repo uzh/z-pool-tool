@@ -89,17 +89,38 @@ let template_inputs
   { Pool_context.language; _ }
   ?(hide_text_message_input = false)
   ?languages
+  ?fixed_language
+  ?selected_language
   (template : Message_template.t option)
   flash_fetcher
   =
   let value = CCFun.flip (CCOption.map_or ~default:"") template in
   let open Message_template in
   let language_select =
-    match languages with
-    | None -> div []
-    | Some languages ->
-      let open Pool_common.Language in
-      selector ~required:true language Field.Language show languages None ()
+    let open Pool_common.Language in
+    let languages_select () =
+      match languages with
+      | None -> div []
+      | Some languages ->
+        selector
+          ~required:true
+          language
+          Field.Language
+          show
+          languages
+          selected_language
+          ()
+    in
+    fixed_language
+    |> CCOption.map_or ~default:(languages_select ()) (fun lang ->
+      selector
+        ~read_only:true
+        language
+        Field.Language
+        show
+        [ lang ]
+        (Some lang)
+        ())
   in
   let textarea_element ?rich_text ~value =
     textarea_element language ?rich_text ~value ~flash_fetcher ~required:true
@@ -181,6 +202,7 @@ let template_form
   ?(hide_text_message_input = false)
   ?languages
   ?text_elements
+  ?fixed_language
   input
   action
   flash_fetcher
@@ -220,6 +242,7 @@ let template_form
              context
              ~hide_text_message_input
              ?languages
+             ?fixed_language
              template
              flash_fetcher)
        @ [ div

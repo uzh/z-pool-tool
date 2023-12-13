@@ -47,20 +47,19 @@ let sender_of_public_experiment pool { Experiment.Public.id; _ } =
   Experiment.find pool id |>> sender_of_experiment pool
 ;;
 
-let filter_languages languages templates =
-  languages
-  |> CCList.filter (fun lang ->
-    CCList.find_opt
-      (fun template -> Pool_common.Language.equal template.language lang)
-      templates
-    |> CCOption.is_none)
+let filter_languages ?(exclude = []) available templates =
+  let exclude =
+    exclude @ (templates |> CCList.map (fun { language; _ } -> language))
+  in
+  available |> CCList.filter CCFun.(flip CCList.mem exclude %> not)
 ;;
 
-let find_available_languages database_label entity_id label languages =
+let missing_template_languages database_label entity_id label ?exclude languages
+  =
   let%lwt existing =
     find_all_of_entity_by_label database_label entity_id label
   in
-  filter_languages languages existing |> Lwt.return
+  filter_languages ?exclude languages existing |> Lwt.return
 ;;
 
 let prepare_email language template sender email layout params =

@@ -160,9 +160,9 @@ let update ?contact req =
           |> html_response
         | Error error ->
           let error = Pool_common.Utils.with_log_error ~src ~tags error in
-          let create_htmx ?htmx_attributes ?(field = field) value =
+          let create_htmx ?htmx_attributes ?label ?(field = field) value =
             Htmx.create
-              (Htmx.create_entity ?htmx_attributes version field value)
+              (Htmx.create_entity ?htmx_attributes ?label version field value)
               language
               ~hx_post
               ~error
@@ -186,7 +186,7 @@ let update ?contact req =
                      CCOption.bind (value |> CCList.head_opt) (fun value ->
                        value |> Pool_common.Language.create |> CCResult.to_opt)
                  }
-             |> create_htmx
+             |> create_htmx ~label:Field.ContactLanguage
            | _ ->
              let open Custom_field in
              let%lwt field =

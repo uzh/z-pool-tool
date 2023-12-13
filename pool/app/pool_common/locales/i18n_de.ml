@@ -344,11 +344,10 @@ Wenn Sie die Erinnerungen jetzt manuell auslösen werden über den gewählten Na
      Testnachricht schicken können, um den API Key zu verifizieren. Die Nummer \
      muss im Format +41791234567 sein."
   | I18nText str -> str
-  | MissingMessageTemplates (label, languages) ->
-    Format.asprintf
-      "Das '%s' Template fehlt in den folgenden Sprachen: %s"
-      label
-      (languages |> CCString.concat ", ")
+  | MissingMessageTemplates ->
+    "Die folgenden Nachrichtenvorlagen sind nicht vorhanden. Die \
+     Standardnachricht wird an Kontakte gesendet, die eine dieser Sprachen als \
+     ihre Kommunikationssprache ausgewählt haben."
   | LocationFiles ->
     "Zusatzinformationen zum Standort, wie z.B. eine Wegbeschreibung. \
      Kontakte, die an einer Session an diesem Standort teilnehmen, können auf \

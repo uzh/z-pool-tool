@@ -385,11 +385,10 @@ Make sure to show links and URLs as plain text.
   | MessageTemplateWaitingListConfirmation ->
     "This message confirms the successful enrollment to an experiment waiting \
      list."
-  | MissingMessageTemplates (label, languages) ->
-    Format.asprintf
-      "The '%s' template is missing is the following languages: %s"
-      label
-      (languages |> CCString.concat ", ")
+  | MissingMessageTemplates ->
+    "The following message templates are missing. The default message will be \
+     sent to contacts who selected one of those languages as their \
+     communication language."
   | NumberIsSecondsHint -> "Nr. of seconds"
   | NumberIsDaysHint -> "Nr. of days"
   | NumberIsWeeksHint -> "Nr. of weeks"

@@ -135,14 +135,16 @@ val find_all_by_label_to_send
   -> t list Lwt.t
 
 val filter_languages
-  :  Pool_common.Language.t list
+  :  ?exclude:Pool_common.Language.t list
+  -> Pool_common.Language.t list
   -> t list
   -> Pool_common.Language.t list
 
-val find_available_languages
+val missing_template_languages
   :  Pool_database.Label.t
   -> Pool_common.Id.t
   -> Label.t
+  -> ?exclude:Pool_common.Language.t list
   -> Pool_common.Language.t list
   -> Pool_common.Language.t list Lwt.t
 
