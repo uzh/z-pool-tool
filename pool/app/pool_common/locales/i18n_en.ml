@@ -119,7 +119,6 @@ let to_string = function
   | SessionReminder -> "Session reminder"
   | SessionRegistrationTitle -> "Register for this session"
   | SignUpAcceptTermsAndConditions -> "I accept the terms and conditions."
-  | SignUpCTA -> "Register now to participate in economic experiments."
   | SignUpTitle -> "Sign up"
   | SortUngroupedFields -> "Sort ungrouped fields"
   | SwapSessionsListEmpty ->

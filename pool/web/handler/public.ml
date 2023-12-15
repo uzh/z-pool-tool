@@ -29,7 +29,10 @@ let index req =
          let%lwt welcome_text =
            I18n.find_by_key database_label I18n.Key.WelcomeText language
          in
-         Page.Public.index tenant context welcome_text
+         let%lwt signup_cta =
+           I18n.find_by_key database_label I18n.Key.SignUpCTA language
+         in
+         Page.Public.index tenant context welcome_text signup_cta
          |> create_layout req context
          >|+ Sihl.Web.Response.of_html
     in

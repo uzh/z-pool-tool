@@ -120,7 +120,6 @@ Sie kommen für mehr Experimente in Frage, umso kompletter Ihr Profil ist.|}
   | SessionReminder -> "Sessionerinnerung"
   | SessionRegistrationTitle -> "Für diese Session anmelden"
   | SignUpAcceptTermsAndConditions -> "Ich akzeptiere die Nutzungsbedingungen."
-  | SignUpCTA -> "Jetzt anmelden und an Experimenten teilnehmen."
   | SignUpTitle -> "Anmeldung"
   | SortUngroupedFields -> "Nicht gruppierte Felder sortieren"
   | SwapSessionsListEmpty ->

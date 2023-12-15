@@ -4,6 +4,7 @@ module Key : sig
     | GreetingsText
     | PasswordPolicyText
     | PrivacyPolicy
+    | SignUpCTA
     | WelcomeText
 
   val create : string -> (t, Pool_common.Message.error) result
