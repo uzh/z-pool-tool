@@ -246,7 +246,7 @@ module Model = struct
     let contact = create_contact () in
     let experiment = create_experiment () in
     Waiting_list.
-      { id = Pool_common.Id.create ()
+      { id = Waiting_list.Id.create ()
       ; contact
       ; experiment
       ; admin_comment = None
@@ -257,7 +257,7 @@ module Model = struct
 
   let create_waiting_list_from_experiment_and_contact experiment contact =
     Waiting_list.
-      { id = Pool_common.Id.create ()
+      { id = Waiting_list.Id.create ()
       ; contact
       ; experiment
       ; admin_comment = None

@@ -12,7 +12,6 @@ let detail
   flash_fetcher
   chronological
   =
-  let open Pool_common in
   let waiting_list_detail =
     div
       ~a:[ a_class [ "stack" ] ]
@@ -26,7 +25,7 @@ let detail
                    (Format.asprintf
                       "/admin/experiments/%s/waiting-list/%s"
                       (Experiment.Id.value experiment.Experiment.id)
-                      (Id.value id)))
+                      (Waiting_list.Id.value id)))
             ]
           [ csrf_element csrf ()
           ; textarea_element
@@ -98,7 +97,7 @@ let detail
                   (Format.asprintf
                      "/admin/experiments/%s/waiting-list/%s/assign"
                      (experiment_id |> Experiment.Id.value)
-                     (id |> Id.value)
+                     (id |> Waiting_list.Id.value)
                    |> Sihl.Web.externalize_path)
               ]
             [ csrf_element csrf ()
@@ -131,10 +130,10 @@ let detail
 ;;
 
 let index
-  ({ Waiting_list.ExperimentList.experiment; waiting_list_entries }, query)
+  experiment
+  (waiting_list, query)
   ({ Pool_context.language; _ } as context)
   =
-  let open Waiting_list.ExperimentList in
   let waiting_list_table waiting_list_entries =
     let thead =
       (Field.[ Name; Email; CellPhone; SignedUpAt; AdminComment ]
@@ -144,25 +143,24 @@ let index
     let rows =
       let open CCOption in
       CCList.map
-        Contact.Preview.(
-          fun entry ->
-            [ txt (fullname entry.contact)
-            ; txt (email_address entry.contact |> Pool_user.EmailAddress.value)
+        Contact.(
+          fun ({ Waiting_list.id; contact; admin_comment; created_at; _ } :
+                Waiting_list.t) ->
+            [ txt (fullname contact)
+            ; txt (email_address contact |> Pool_user.EmailAddress.value)
             ; txt
-                (entry.contact.cell_phone
+                (contact.cell_phone
                  |> map_or ~default:"" Pool_user.CellPhone.value)
             ; txt
-                (entry.created_at
-                 |> CreatedAt.value
-                 |> Utils.Time.formatted_date_time)
-            ; entry.admin_comment
+                (created_at |> CreatedAt.value |> Utils.Time.formatted_date_time)
+            ; admin_comment
               |> map_or ~default:"" Waiting_list.AdminComment.value
               |> HttpUtils.first_n_characters
               |> HttpUtils.add_line_breaks
             ; Format.asprintf
                 "/admin/experiments/%s/waiting-list/%s"
                 (experiment.Experiment.id |> Experiment.Id.value)
-                (entry.id |> Id.value)
+                (id |> Waiting_list.Id.value)
               |> edit_link
             ])
         waiting_list_entries
@@ -179,7 +177,7 @@ let index
     waiting_list_table
     Waiting_list.sortable_by
     Waiting_list.searchable_by
-    (waiting_list_entries, query)
+    (waiting_list, query)
   |> CCList.return
   |> Layout.Experiment.(
        create

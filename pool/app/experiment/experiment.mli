@@ -323,6 +323,8 @@ module Repo : sig
 
       val t : t Caqti_type.t
     end
+
+    val t : t Caqti_type.t
   end
 end
 

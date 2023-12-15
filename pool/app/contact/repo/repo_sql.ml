@@ -38,10 +38,9 @@ let joins =
 ;;
 
 let find_request_sql ?(additional_joins = []) where_fragment =
-  let select = CCString.concat ", " sql_select_columns in
   Format.asprintf
     {sql|SELECT %s FROM pool_contacts %s %s|sql}
-    select
+    (sql_select_columns |> CCString.concat ", ")
     (joins :: additional_joins |> CCString.concat "\n")
     where_fragment
 ;;

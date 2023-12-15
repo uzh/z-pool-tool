@@ -14,7 +14,10 @@ module Target = struct
   ;;
 
   let to_authorizable ?ctx { Entity.id; _ } = decorate ?ctx id
-  let to_authorizable_of_repo ?ctx { Repo_entity.id; _ } = decorate ?ctx id
+
+  let to_authorizable_of_write ?ctx { Repo_entity.Write.id; _ } =
+    decorate ?ctx id
+  ;;
 end
 
 module Access = struct
