@@ -55,6 +55,8 @@ val find
 val all : Pool_database.Label.t -> unit -> t list Lwt.t
 
 module Repo : sig
+  val sql_select_columns : string list
+
   module Id : sig
     val t : Id.t Caqti_type.t
   end

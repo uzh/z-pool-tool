@@ -20,6 +20,9 @@ module type IdSig = sig
     :  ?field:Entity_message.Field.t
     -> unit
     -> (Entity_message.error, t) Pool_common_utils.PoolConformist.Field.t
+
+  val sql_select_fragment : field:string -> string
+  val sql_value_fragment : string -> string
 end
 
 module Boolean = struct

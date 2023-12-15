@@ -130,22 +130,22 @@ module RepoEntity = struct
   end
 end
 
-let select_user_import_columns =
+let sql_select_columns =
+  [ Pool_common.Id.sql_select_fragment ~field:"pool_user_imports.user_uuid"
+  ; "pool_user_imports.token"
+  ; "pool_user_imports.confirmed_at"
+  ; "pool_user_imports.notification_sent_at"
+  ; "pool_user_imports.reminder_count"
+  ; "pool_user_imports.last_reminder_sent_at"
+  ; "pool_user_imports.created_at"
+  ; "pool_user_imports.updated_at"
+  ]
+;;
+
+let joins =
   {sql|
-    LOWER(CONCAT(
-      SUBSTR(HEX(pool_user_imports.user_uuid), 1, 8), '-',
-      SUBSTR(HEX(pool_user_imports.user_uuid), 9, 4), '-',
-      SUBSTR(HEX(pool_user_imports.user_uuid), 13, 4), '-',
-      SUBSTR(HEX(pool_user_imports.user_uuid), 17, 4), '-',
-      SUBSTR(HEX(pool_user_imports.user_uuid), 21)
-    )),
-    pool_user_imports.token,
-    pool_user_imports.confirmed_at,
-    pool_user_imports.notification_sent_at,
-    pool_user_imports.reminder_count,
-    pool_user_imports.last_reminder_sent_at,
-    pool_user_imports.created_at,
-    pool_user_imports.updated_at
+    INNER JOIN pool_user_imports
+      ON user_users.uuid = pool_user_imports.user_uuid
   |sql}
 ;;
 
@@ -156,7 +156,7 @@ let select =
       %s
     FROM pool_user_imports
     |sql}
-    select_user_import_columns
+    (sql_select_columns |> CCString.concat ", ")
 ;;
 
 let find_pending_by_token_request =
@@ -243,10 +243,22 @@ let update pool t =
 
 let find_admins_request ~where limit =
   let open Caqti_request.Infix in
-  Admin.Repo.select_imported_admins_sql
-    ~import_columns:select_user_import_columns
-    ~where
-    ~limit
+  Format.asprintf
+    {sql|
+      SELECT
+        %s
+      FROM pool_admins
+        %s
+      WHERE
+        %s
+      ORDER BY
+        pool_admins.created_at ASC
+      LIMIT %i
+    |sql}
+    (Admin.Repo.sql_select_columns @ sql_select_columns |> CCString.concat ", ")
+    ([ Admin.Repo.joins; joins ] |> CCString.concat "\n")
+    where
+    limit
   |> Caqti_type.(unit ->* t2 Admin.Repo.Entity.t RepoEntity.t)
 ;;
 
@@ -284,10 +296,23 @@ let find_admins_to_remind pool limit =
 
 let find_contacts_request ~where limit =
   let open Caqti_request.Infix in
-  Contact.Repo.Sql.select_imported_contacts_sql
-    ~import_columns:select_user_import_columns
-    ~where
-    ~limit
+  Format.asprintf
+    {sql|
+      SELECT
+        %s
+      FROM pool_contacts
+        %s
+      WHERE
+        %s
+      ORDER BY
+        pool_contacts.created_at ASC
+      LIMIT %i
+    |sql}
+    (Contact.Repo.sql_select_columns @ sql_select_columns
+     |> CCString.concat ", ")
+    ([ Contact.Repo.joins; joins ] |> CCString.concat "\n")
+    where
+    limit
   |> Caqti_type.(unit ->* t2 Contact.Repo.Entity.t RepoEntity.t)
 ;;
 

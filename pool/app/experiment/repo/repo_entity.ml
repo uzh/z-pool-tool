@@ -82,22 +82,21 @@ let t =
           , ( m.description
             , ( m.language
               , ( m.cost_center
-                , ( m.organisational_unit
-                  , ( m.filter
-                    , ( m.contact_person_id
-                      , ( m.smtp_auth_id
-                        , ( m.direct_registration_disabled
-                          , ( m.registration_disabled
-                            , ( m.allow_uninvited_signup
-                              , ( m.external_data_required
-                                , ( m.show_external_data_id_links
-                                  , ( m.experiment_type
-                                    , ( m.email_session_reminder_lead_time
-                                      , ( m
-                                            .text_message_session_reminder_lead_time
-                                        , ( m.invitation_reset_at
-                                          , (m.created_at, m.updated_at) ) ) )
-                                    ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) )
+                , ( m.contact_person_id
+                  , ( m.smtp_auth_id
+                    , ( m.direct_registration_disabled
+                      , ( m.registration_disabled
+                        , ( m.allow_uninvited_signup
+                          , ( m.external_data_required
+                            , ( m.show_external_data_id_links
+                              , ( m.experiment_type
+                                , ( m.email_session_reminder_lead_time
+                                  , ( m.text_message_session_reminder_lead_time
+                                    , ( m.invitation_reset_at
+                                      , ( m.created_at
+                                        , ( m.updated_at
+                                          , (m.filter, m.organisational_unit) )
+                                        ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) )
   in
   let decode
     ( id
@@ -106,21 +105,21 @@ let t =
         , ( description
           , ( language
             , ( cost_center
-              , ( organisational_unit
-                , ( filter
-                  , ( contact_person_id
-                    , ( smtp_auth_id
-                      , ( direct_registration_disabled
-                        , ( registration_disabled
-                          , ( allow_uninvited_signup
-                            , ( external_data_required
-                              , ( show_external_data_id_links
-                                , ( experiment_type
-                                  , ( email_session_reminder_lead_time
-                                    , ( text_message_session_reminder_lead_time
-                                      , ( invitation_reset_at
-                                        , (created_at, updated_at) ) ) ) ) ) )
-                            ) ) ) ) ) ) ) ) ) ) ) ) )
+              , ( contact_person_id
+                , ( smtp_auth_id
+                  , ( direct_registration_disabled
+                    , ( registration_disabled
+                      , ( allow_uninvited_signup
+                        , ( external_data_required
+                          , ( show_external_data_id_links
+                            , ( experiment_type
+                              , ( email_session_reminder_lead_time
+                                , ( text_message_session_reminder_lead_time
+                                  , ( invitation_reset_at
+                                    , ( created_at
+                                      , ( updated_at
+                                        , (filter, organisational_unit) ) ) ) )
+                                ) ) ) ) ) ) ) ) ) ) ) ) ) ) )
     =
     let open CCResult in
     Ok
@@ -165,39 +164,41 @@ let t =
                      (t2
                         (option CostCenter.t)
                         (t2
-                           (option Organisational_unit.Repo.t)
+                           (option Admin.Repo.Entity.Id.t)
                            (t2
-                              (option Filter.Repo.t)
+                              (option Email.SmtpAuth.RepoEntity.Id.t)
                               (t2
-                                 (option Admin.Repo.Entity.Id.t)
+                                 DirectRegistrationDisabled.t
                                  (t2
-                                    (option Email.SmtpAuth.RepoEntity.Id.t)
+                                    RegistrationDisabled.t
                                     (t2
-                                       DirectRegistrationDisabled.t
+                                       AllowUninvitedSignup.t
                                        (t2
-                                          RegistrationDisabled.t
+                                          ExternalDataRequired.t
                                           (t2
-                                             AllowUninvitedSignup.t
+                                             ShowExternalDataIdLinks.t
                                              (t2
-                                                ExternalDataRequired.t
+                                                (option ExperimentType.t)
                                                 (t2
-                                                   ShowExternalDataIdLinks.t
+                                                   (option Reminder.LeadTime.t)
                                                    (t2
-                                                      (option ExperimentType.t)
+                                                      (option
+                                                         Reminder.LeadTime.t)
                                                       (t2
                                                          (option
-                                                            Reminder.LeadTime.t)
+                                                            InvitationResetAt.t)
                                                          (t2
-                                                            (option
-                                                               Reminder.LeadTime
-                                                               .t)
+                                                            CreatedAt.t
                                                             (t2
-                                                               (option
-                                                                  InvitationResetAt
-                                                                  .t)
+                                                               UpdatedAt.t
                                                                (t2
-                                                                  CreatedAt.t
-                                                                  UpdatedAt.t)))))))))))))))))))))
+                                                                  (option
+                                                                     Filter.Repo
+                                                                     .t)
+                                                                  (option
+                                                                     Organisational_unit
+                                                                     .Repo
+                                                                     .t))))))))))))))))))))))
 ;;
 
 module Write = struct

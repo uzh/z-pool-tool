@@ -55,7 +55,8 @@ val show_event : event -> string
 val handle_event : Pool_tenant.Database.Label.t -> event -> unit Lwt.t
 
 module Repo : sig
-  val select_user_import_columns : string
+  val sql_select_columns : string list
+  val joins : string
   val t : t Caqti_type.t
 end
 

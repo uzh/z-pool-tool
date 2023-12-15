@@ -1,5 +1,11 @@
 open Entity
 
+let sql_select_columns =
+  [ Id.sql_select_fragment ~field:"pool_organisational_units.uuid"
+  ; "pool_organisational_units.name"
+  ]
+;;
+
 module Name = struct
   include Name
 

@@ -4,6 +4,17 @@ module RepoEntity = Repo_entity
 module Sql = struct
   open Caqti_request.Infix
 
+  let sql_select_columns =
+    Pool_user.Repo.sql_select_columns @ [ "pool_admins.import_pending" ]
+  ;;
+
+  let joins =
+    {sql|
+      LEFT JOIN user_users
+        ON pool_admins.user_uuid = user_users.uuid
+    |sql}
+  ;;
+
   let insert_request =
     {sql|
       INSERT INTO pool_admins (
@@ -25,62 +36,38 @@ module Sql = struct
       (Entity.id t, t.Entity.import_pending)
   ;;
 
-  let select_from_admin_columns =
-    Format.asprintf
-      {sql|
-        %s
-        pool_admins.import_pending
-      |sql}
-      Pool_user.Repo.select_from_sihl_user_columns
-  ;;
-
-  let select_from_users_sql ?order_by where_fragment =
+  let find_request_sql ?order_by ?additional_joins where =
+    let joins =
+      match additional_joins with
+      | None -> joins
+      | Some additional_joins -> Format.asprintf "%s\n%s" joins additional_joins
+    in
+    let order_by = order_by |> CCOption.map (Format.asprintf "ORDER BY %s") in
     let select_from =
       Format.asprintf
         {sql|
           SELECT
-          %s
-          FROM user_users
-          INNER JOIN pool_admins
-          ON pool_admins.user_uuid = user_users.uuid
+            %s
+          FROM pool_admins
+            %s
         |sql}
-        select_from_admin_columns
+        (sql_select_columns |> CCString.concat ", ")
+        joins
     in
-    let query = Format.asprintf "%s %s" select_from where_fragment in
+    let query = Format.asprintf "%s %s" select_from where in
     match order_by with
     | Some order_by -> Format.asprintf "%s ORDER BY %s" query order_by
     | None -> query
   ;;
 
-  let select_imported_admins_sql ~import_columns ~where ~limit =
-    Format.asprintf
-      {sql|
-        SELECT
-        %s,
-        %s
-        FROM user_users
-        INNER JOIN pool_admins
-          ON pool_admins.user_uuid = user_users.uuid
-        INNER JOIN pool_user_imports
-          ON user_users.uuid = pool_user_imports.user_uuid
-        WHERE
-          %s
-        ORDER BY
-          pool_admins.created_at ASC
-        LIMIT %i
-      |sql}
-      select_from_admin_columns
-      import_columns
-      where
-      limit
-  ;;
-
   let find_request caqti_type =
     {sql|
-      WHERE user_users.uuid = UNHEX(REPLACE(?, '-', ''))
-      AND user_users.confirmed = 1
+      WHERE 
+        user_users.uuid = UNHEX(REPLACE(?, '-', ''))
+      AND 
+        user_users.confirmed = 1
     |sql}
-    |> select_from_users_sql
+    |> find_request_sql
     |> Pool_common.Repo.Id.t ->! caqti_type
   ;;
 
@@ -96,11 +83,11 @@ module Sql = struct
   let find_all_request =
     {sql|
       WHERE
-      user_users.confirmed = 1
+        user_users.confirmed = 1
       AND
-      user_users.admin = 1
+        user_users.admin = 1
       |sql}
-    |> select_from_users_sql
+    |> find_request_sql
     |> Caqti_type.unit ->* RepoEntity.t
   ;;
 
@@ -117,7 +104,7 @@ module Sql = struct
          (fun i _ -> Format.asprintf "UNHEX(REPLACE($%n, '-', ''))" (i + 1))
          ids
        |> CCString.concat ",")
-    |> select_from_users_sql
+    |> find_request_sql
   ;;
 
   let find_multiple pool ids =

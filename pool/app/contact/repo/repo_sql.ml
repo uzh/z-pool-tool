@@ -4,73 +4,46 @@ module Dynparam = Utils.Database.Dynparam
 
 let src = Logs.Src.create "contact.repo"
 
-let select_from_contacts_columns =
-  Format.asprintf
-    {sql|
-    %s
-    pool_contacts.terms_accepted_at,
-    pool_contacts.language,
-    pool_contacts.experiment_type_preference,
-    pool_contacts.cell_phone,
-    pool_contacts.paused,
-    pool_contacts.disabled,
-    pool_contacts.verified,
-    pool_contacts.email_verified,
-    pool_contacts.num_invitations,
-    pool_contacts.num_assignments,
-    pool_contacts.num_show_ups,
-    pool_contacts.num_no_shows,
-    pool_contacts.num_participations,
-    pool_contacts.firstname_version,
-    pool_contacts.lastname_version,
-    pool_contacts.paused_version,
-    pool_contacts.language_version,
-    pool_contacts.experiment_type_preference_version,
-    pool_contacts.import_pending,
-    pool_contacts.created_at,
-    pool_contacts.updated_at
-  |sql}
-    Pool_user.Repo.select_from_sihl_user_columns
+let sql_select_columns =
+  Pool_user.Repo.sql_select_columns
+  @ [ "pool_contacts.terms_accepted_at"
+    ; "pool_contacts.language"
+    ; "pool_contacts.experiment_type_preference"
+    ; "pool_contacts.cell_phone"
+    ; "pool_contacts.paused"
+    ; "pool_contacts.disabled"
+    ; "pool_contacts.verified"
+    ; "pool_contacts.email_verified"
+    ; "pool_contacts.num_invitations"
+    ; "pool_contacts.num_assignments"
+    ; "pool_contacts.num_show_ups"
+    ; "pool_contacts.num_no_shows"
+    ; "pool_contacts.num_participations"
+    ; "pool_contacts.firstname_version"
+    ; "pool_contacts.lastname_version"
+    ; "pool_contacts.paused_version"
+    ; "pool_contacts.language_version"
+    ; "pool_contacts.experiment_type_preference_version"
+    ; "pool_contacts.import_pending"
+    ; "pool_contacts.created_at"
+    ; "pool_contacts.updated_at"
+    ]
 ;;
 
-let select_fields =
-  Format.asprintf
-    {sql|
-      SELECT
-        %s
-      FROM pool_contacts
-      LEFT JOIN user_users
+let joins =
+  {sql|
+    LEFT JOIN user_users
       ON pool_contacts.user_uuid = user_users.uuid
-    |sql}
-    select_from_contacts_columns
+  |sql}
 ;;
 
-let select_imported_contacts_sql ~import_columns ~where ~limit =
+let find_request_sql ?(additional_joins = []) where_fragment =
+  let select = CCString.concat ", " sql_select_columns in
   Format.asprintf
-    {sql|
-      SELECT
-      %s,
-      %s
-      FROM pool_contacts
-      LEFT JOIN user_users
-        ON pool_contacts.user_uuid = user_users.uuid
-      INNER JOIN pool_user_imports
-        ON user_users.uuid = pool_user_imports.user_uuid
-      WHERE
-        %s
-      ORDER BY
-        pool_contacts.created_at ASC
-      LIMIT %i
-    |sql}
-    select_from_contacts_columns
-    import_columns
-    where
-    limit
-;;
-
-let find_request_sql ?(joins = []) where_fragment =
-  let joins = CCString.concat "\n" joins in
-  Format.asprintf "%s\n%s\n%s" select_fields joins where_fragment
+    {sql|SELECT %s FROM pool_contacts %s %s|sql}
+    select
+    (joins :: additional_joins |> CCString.concat "\n")
+    where_fragment
 ;;
 
 let join_custom_field_answers =
