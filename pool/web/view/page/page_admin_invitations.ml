@@ -69,6 +69,7 @@ module Partials = struct
     query_experiments
     query_tags
     filtered_contacts
+    matching_filter_count
     =
     let filtered_contacts_form =
       match filtered_contacts with
@@ -133,6 +134,7 @@ module Partials = struct
         |> Component.Collapsible.create_note language
       ; Filter.(
           filter_form
+            ~matching_filter_count
             csrf
             language
             (Http_utils.Filter.Experiment experiment)
