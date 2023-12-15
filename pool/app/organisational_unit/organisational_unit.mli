@@ -52,6 +52,7 @@ val find
   -> Id.t
   -> (t, Pool_common.Message.error) result Lwt.t
 
+val find_by : Query.t -> Pool_database.Label.t -> (t list * Query.t) Lwt.t
 val all : Pool_database.Label.t -> unit -> t list Lwt.t
 
 module Repo : sig
@@ -63,3 +64,8 @@ module Repo : sig
 
   val t : t Caqti_type.t
 end
+
+val column_name : Query.Column.t
+val default_query : Query.t
+val searchable_by : Query.Column.t list
+val sortable_by : Query.Column.t list

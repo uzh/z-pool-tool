@@ -1,3 +1,4 @@
+open Containers
 open CCFun
 open Tyxml.Html
 module Table = Component.Table
@@ -331,13 +332,33 @@ let contact_overview language contacts =
     contacts
 ;;
 
-let index Pool_context.{ language; _ } contacts =
+let index Pool_context.{ language; _ } contacts query =
+  let open Pool_user in
+  let open Pool_common in
+  let url = Uri.of_string "/admin/contacts" in
+  let sort = Component.Sortable_table.{ url; query; language } in
+  let cols =
+    [ `field (Message.Field.Name, Contact.column_first_name)
+    ; `column Contact.column_email
+    ; `empty
+    ]
+  in
+  let rows =
+    let row (contact : Contact.t) =
+      [ Component.Contacts.identity_with_icons true contact
+      ; txt (EmailAddress.value (Contact.email_address contact))
+      ; Input.link_as_button ~icon:Icon.Eye (path contact)
+      ]
+    in
+    CCList.map row contacts
+  in
+  let target_id = "contacts-list" in
   div
-    ~a:[ a_class [ "trim"; "safety-margin" ] ]
+    ~a:[ a_id target_id; a_class [ "trim"; "safety-margin" ] ]
     [ h1
         ~a:[ a_class [ "heading-1" ] ]
         [ txt Pool_common.(Utils.nav_link_to_string language I18n.Contacts) ]
-    ; contact_overview language contacts
+    ; Component.Sortable_table.make ~target_id ~cols ~rows sort
     ]
 ;;
 

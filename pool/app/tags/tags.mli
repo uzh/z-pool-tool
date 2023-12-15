@@ -105,6 +105,7 @@ val search_by_title
 
 val find_all : Pool_database.Label.t -> t list Lwt.t
 val find_all_with_model : Pool_database.Label.t -> Model.t -> t list Lwt.t
+val find_by : Query.t -> Pool_database.Label.t -> (t list * Query.t) Lwt.t
 
 val find_all_of_entity
   :  Pool_database.Label.t
@@ -189,3 +190,10 @@ end
 module Sql : sig
   val select_tag_sql : string
 end
+
+val column_title : Query.Column.t
+val column_description : Query.Column.t
+val column_model : Query.Column.t
+val default_query : Query.t
+val searchable_by : Query.Column.t list
+val sortable_by : Query.Column.t list

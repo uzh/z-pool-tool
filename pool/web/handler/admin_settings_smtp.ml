@@ -16,19 +16,19 @@ let smtp_auth_id req =
 
 let index req =
   let location = `Tenant in
-  let result ({ Pool_context.database_label; _ } as context) =
-    Utils.Lwt_result.map_error (fun err -> err, "/")
-    @@
-    let open Page.Admin.Settings.Smtp in
-    SmtpAuth.find_all database_label
-    ||> index context location
-    >|> General.create_tenant_layout
-          req
-          ~active_navigation:(active_navigation location)
-          context
-    >|+ Sihl.Web.Response.of_html
-  in
-  result |> HttpUtils.extract_happy_path ~src req
+  let active_navigation = active_navigation location in
+  HttpUtils.Htmx.handler
+    ~active_navigation
+    ~error_path:active_navigation
+    ~query:(module SmtpAuth)
+    ~create_layout:General.create_tenant_layout
+    (fun ({ Pool_context.database_label; _ } as context) query ->
+      let%lwt smtp_list, query = SmtpAuth.find_by query database_label in
+      let page =
+        Page.Admin.Settings.Smtp.index context location smtp_list query
+      in
+      Lwt_result.return page)
+    req
 ;;
 
 let smtp_form location req =

@@ -207,8 +207,19 @@ end
 
 let profile_completion_cookie = "profile_completion"
 
+open Pool_common.Message
+
+let column_email = (Field.Email, "user_users.email") |> Query.Column.create
+
+let column_first_name =
+  (Field.Firstname, "user_users.given_name") |> Query.Column.create
+;;
+
+let column_last_name =
+  (Field.Lastname, "user_users.name") |> Query.Column.create
+;;
+
 let searchable_and_sortable_by =
-  let open Pool_common.Message in
   [ Field.Email, "user_users.email"
   ; Field.Firstname, "user_users.given_name"
   ; Field.Lastname, "user_users.name"

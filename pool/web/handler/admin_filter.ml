@@ -41,18 +41,16 @@ let get_id req field encode =
   Sihl.Web.Router.param req @@ Field.show field |> encode
 ;;
 
-let index req =
-  let open Utils.Lwt_result.Infix in
-  let error_path = Format.asprintf "/admin/filter" in
-  let result ({ Pool_context.database_label; _ } as context) =
-    Utils.Lwt_result.map_error (fun err -> err, error_path)
-    @@
-    let%lwt filter_list = Filter.find_all_templates database_label () in
-    Page.Admin.Filter.index context filter_list
-    |> create_layout ~active_navigation:"/admin/filter" req context
-    >|+ Sihl.Web.Response.of_html
-  in
-  result |> HttpUtils.extract_happy_path ~src req
+let index =
+  Http_utils.Htmx.handler
+    ~active_navigation:"/admin/filter"
+    ~error_path:(Format.asprintf "/admin/filter")
+    ~query:(module Filter)
+    ~create_layout
+  @@ fun ({ Pool_context.database_label; _ } as context) query ->
+  let%lwt filter_list, query = Filter.find_by query database_label in
+  let page = Page.Admin.Filter.index context filter_list query in
+  Lwt.return (Ok page)
 ;;
 
 let form is_edit req =

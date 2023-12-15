@@ -82,9 +82,9 @@ let public =
 ;;
 
 module Sql = struct
-  let find_all_request =
-    let open Caqti_request.Infix in
-    {sql|
+  let select_fragment fragment =
+    Format.sprintf
+      {sql|
       SELECT
         label,
         scheduled_time,
@@ -92,9 +92,17 @@ module Sql = struct
         status,
         last_run_at
       FROM pool_schedules
-      ORDER BY last_run_at DESC
+      %s
     |sql}
-    |> Caqti_type.unit ->* public
+      fragment
+  ;;
+
+  let find_all_request =
+    let open Caqti_request.Infix in
+    let order_by = {sql|
+      ORDER BY last_run_at DESC
+    |sql} in
+    select_fragment order_by |> Caqti_type.unit ->* public
   ;;
 
   let find_all pool =
@@ -147,8 +155,28 @@ module Sql = struct
       change_all_status_request
       Entity.Status.(Active, Stopped)
   ;;
+
+  let select_count where_fragment =
+    Format.asprintf
+      {sql|
+        SELECT COUNT(*)
+        FROM pool_schedules
+        %s
+      |sql}
+      where_fragment
+  ;;
+
+  let find_by pool query =
+    Query.collect_and_count
+      pool
+      (Some query)
+      ~select:select_fragment
+      ~count:select_count
+      public
+  ;;
 end
 
 let find_all = Sql.find_all Pool_database.root
+let find_by = Sql.find_by Pool_database.root
 let upsert = Sql.upsert Pool_database.root
 let stop_all_active () = Sql.stop_all_active Pool_database.root

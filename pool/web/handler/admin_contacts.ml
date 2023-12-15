@@ -8,31 +8,27 @@ let create_layout req = General.create_tenant_layout req
 let contact_id = HttpUtils.find_id Contact.Id.of_string Field.Contact
 let experiment_id = HttpUtils.find_id Experiment.Id.of_string Field.Experiment
 
-let index req =
+let index =
+  Http_utils.Htmx.handler
+    ~active_navigation:"/admin/contacts"
+    ~error_path:"/admin/dashboard"
+    ~query:(module Contact)
+    ~create_layout:General.create_tenant_layout
+  @@ fun (Pool_context.{ database_label; user; _ } as context) query ->
   let open Utils.Lwt_result.Infix in
-  let result ({ Pool_context.database_label; user; _ } as context) =
-    Utils.Lwt_result.map_error (fun err -> err, "/admin/dashboard")
-    @@
-    let query =
-      let open Contact in
-      Query.from_request ~default:default_query ~searchable_by ~sortable_by req
-    in
-    let* actor =
-      Pool_context.Utils.find_authorizable ~admin_only:true database_label user
-    in
-    let%lwt contacts =
-      Contact.find_all
-        ~query
-        ~actor
-        ~permission:Contact.Guard.Access.index_permission
-        database_label
-        ()
-    in
-    Page.Admin.Contact.index context contacts
-    |> create_layout req ~active_navigation:"/admin/contacts" context
-    >|+ Sihl.Web.Response.of_html
+  let* actor =
+    Pool_context.Utils.find_authorizable ~admin_only:true database_label user
   in
-  result |> extract_happy_path req
+  let%lwt contacts, query =
+    Contact.find_all
+      ~query
+      ~actor
+      ~permission:Contact.Guard.Access.index_permission
+      database_label
+      ()
+  in
+  let page = Page.Admin.Contact.index context contacts query in
+  Lwt_result.return page
 ;;
 
 let detail_view action req =

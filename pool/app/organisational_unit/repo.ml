@@ -95,3 +95,18 @@ let update_request =
 let update pool =
   Utils.Database.exec (Pool_database.Label.value pool) update_request
 ;;
+
+let select_count where_fragment =
+  Format.asprintf
+    {sql|
+        SELECT COUNT(*)
+        FROM pool_organisational_units
+        %s
+      |sql}
+    where_fragment
+;;
+
+let find_by query pool =
+  let select fragment = select_from ^ "  " ^ fragment in
+  Query.collect_and_count pool (Some query) ~select ~count:select_count t
+;;

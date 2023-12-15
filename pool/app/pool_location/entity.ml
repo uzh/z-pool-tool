@@ -155,3 +155,29 @@ module Human = struct
     CCOption.bind description (Description.find_opt langauge)
   ;;
 end
+
+let column_name = (Field.Name, "pool_locations.name") |> Query.Column.create
+
+let column_location =
+  (Field.Location, "pool_locations.location") |> Query.Column.create
+;;
+
+let column_description =
+  (Field.Description, "pool_locations.description") |> Query.Column.create
+;;
+
+let column_created_at =
+  (Field.CreatedAt, "pool_locations.created_at") |> Query.Column.create
+;;
+
+let searchable_by = [ column_name; column_location; column_description ]
+let default_sort_column = column_created_at
+let sortable_by = default_sort_column :: searchable_by
+
+let default_query =
+  let open Query in
+  let sort =
+    Sort.{ column = default_sort_column; order = SortOrder.Descending }
+  in
+  create ~sort ()
+;;

@@ -1,8 +1,54 @@
 module BaseRole = Role
 
-include
+module Backend =
   Guardian_backend.MariaDb.Make (Role.Actor) (Role.Role) (Role.Target)
     (Pool_database.GuardBackend)
+
+include Backend
+
+module RolePermission = struct
+  include RolePermission
+
+  let from_sql =
+    {sql| 
+    guardian_role_permissions AS role_permissions
+  |sql}
+  ;;
+
+  let std_filter_sql = {sql| role_permissions.mark_as_deleted IS NULL |sql}
+
+  let select_sql =
+    {sql|
+      role_permissions.role,
+      role_permissions.permission,
+      role_permissions.target_model
+     |sql}
+  ;;
+
+  let select fragment =
+    Format.sprintf
+      "SELECT\n  %s\nFROM  %s\n  WHERE\n  %s\n %s"
+      select_sql
+      from_sql
+      std_filter_sql
+      fragment
+  ;;
+
+  let count fragment =
+    Format.sprintf
+      {sql| SELECT COUNT(*) from guardian_role_permissions %s |sql}
+      fragment
+  ;;
+
+  let find_by query pool =
+    Query.collect_and_count
+      pool
+      (Some query)
+      ~select
+      ~count
+      Backend.Entity.RolePermission.t
+  ;;
+end
 
 let src = Logs.Src.create "guard"
 
@@ -162,4 +208,32 @@ let validate
   in
   (database_label, validation_set, any_id, actor)
   |> CCCache.(with_cache ~cb Cache.lru_validation validate')
+;;
+
+open Pool_common.Message
+
+let column_role = (Field.Role, "role_permissions.role") |> Query.Column.create
+
+let column_model =
+  (Field.Model, "role_permissions.target_model") |> Query.Column.create
+;;
+
+let column_action =
+  (Field.Action, "role_permissions.permission") |> Query.Column.create
+;;
+
+let column_created_at =
+  (Field.CreatedAt, "role_permissions.created_at") |> Query.Column.create
+;;
+
+let searchable_by = [ column_role; column_model; column_action ]
+let default_sort_column = column_created_at
+let sortable_by = default_sort_column :: searchable_by
+
+let default_query =
+  let open Query in
+  let sort =
+    Sort.{ column = default_sort_column; order = SortOrder.Descending }
+  in
+  create ~sort ()
 ;;

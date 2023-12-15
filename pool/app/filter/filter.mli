@@ -197,6 +197,7 @@ val find
   -> (t, Pool_common.Message.error) result Lwt.t
 
 val find_all_templates : Pool_database.Label.t -> unit -> t list Lwt.t
+val find_by : Query.t -> Pool_database.Label.t -> (t list * Query.t) Lwt.t
 
 val find_template
   :  Pool_database.Label.t
@@ -312,3 +313,8 @@ module Guard : sig
     val delete : Id.t -> Guard.ValidationSet.t
   end
 end
+
+val column_title : Query.Column.t
+val default_query : Query.t
+val searchable_by : Query.Column.t list
+val sortable_by : Query.Column.t list

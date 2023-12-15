@@ -302,6 +302,25 @@ module Smtp = struct
     Utils.Database.collect (Pool_database.Label.value pool) find_all_request ()
   ;;
 
+  let select_count where_fragment =
+    Format.asprintf
+      {sql|
+        SELECT COUNT(*)
+        FROM pool_smtp
+        %s
+      |sql}
+      where_fragment
+  ;;
+
+  let find_by query pool =
+    Query.collect_and_count
+      pool
+      (Some query)
+      ~select:select_smtp_sql
+      ~count:select_count
+      RepoEntity.SmtpAuth.t
+  ;;
+
   let unset_default_flags pool =
     let open Caqti_request.Infix in
     let request =

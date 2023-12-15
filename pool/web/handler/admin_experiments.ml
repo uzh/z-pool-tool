@@ -105,47 +105,27 @@ let experiment_message_templates database_label experiment =
   Label.customizable_by_experiment |> Lwt_list.map_s find_templates
 ;;
 
-let index req =
+let index =
+  HttpUtils.Htmx.handler
+    ~active_navigation:"/admin/dashboard"
+    ~error_path:"/admin/experiments"
+    ~create_layout
+    ~query:(module Experiment)
+  @@ fun ({ Pool_context.database_label; user; _ } as context) query ->
   let open Utils.Lwt_result.Infix in
-  let error_path = "/admin/dashboard" in
-  let active_navigation = "/admin/experiments" in
-  HttpUtils.extract_happy_path ~src req
-  @@ fun ({ Pool_context.database_label; user; _ } as context) ->
   let find_actor =
     Pool_context.Utils.find_authorizable ~admin_only:true database_label user
   in
-  let find_experiments actor =
-    let open Experiment in
-    let query =
-      Query.from_request
-        ~searchable_by
-        ~sortable_by
-        ~default:Experiment.default_query
-        req
-    in
-    find_all
+  let* actor = find_actor in
+  let%lwt experiments, query =
+    Experiment.find_all
       ~query
       ~actor
-      ~permission:Guard.Access.index_permission
+      ~permission:Experiment.Guard.Access.index_permission
       database_label
   in
-  let* actor = find_actor >|- fun err -> err, error_path in
-  let%lwt experiments, query = find_experiments actor in
-  let page =
-    Page.Admin.Experiments.index
-      ~with_search:(not (Htmx.is_hx_request req))
-      context
-      experiments
-      query
-  in
-  if Htmx.is_hx_request req
-  then Ok (HttpUtils.Htmx.html_to_plain_text_response page) |> Lwt_result.lift
-  else
-    let* view =
-      create_layout ~active_navigation req context page
-      >|- fun err -> err, error_path
-    in
-    Ok (Sihl.Web.Response.of_html view) |> Lwt_result.lift
+  let page = Page.Admin.Experiments.index context experiments query in
+  Lwt_result.return page
 ;;
 
 let new_form req =

@@ -8,6 +8,7 @@
   pool_database
   pool_tenant
   service
+  query
   sihl
   utils)
  (preprocess

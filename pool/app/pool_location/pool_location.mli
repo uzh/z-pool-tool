@@ -282,6 +282,7 @@ val find
   -> (t, Pool_common.Message.error) Lwt_result.t
 
 val find_all : Pool_database.Label.t -> t list Lwt.t
+val find_by : Query.t -> Pool_database.Label.t -> (t list * Query.t) Lwt.t
 
 val find_location_file
   :  Pool_database.Label.t
@@ -361,3 +362,10 @@ module Guard : sig
     end
   end
 end
+
+val column_name : Query.Column.t
+val column_description : Query.Column.t
+val column_location : Query.Column.t
+val default_query : Query.t
+val searchable_by : Query.Column.t list
+val sortable_by : Query.Column.t list

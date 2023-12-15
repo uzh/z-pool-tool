@@ -141,3 +141,51 @@ module Write = struct
     }
   ;;
 end
+
+open Pool_common.Message
+
+let column_label = (Field.Label, "pool_smtp.label") |> Query.Column.create
+
+let column_smtp_server =
+  (Field.SmtpServer, "pool_smtp.server") |> Query.Column.create
+;;
+
+let column_smtp_username =
+  (Field.SmtpUsername, "pool_smtp.username") |> Query.Column.create
+;;
+
+let column_smtp_mechanism =
+  (Field.SmtpMechanism, "pool_smtp.mechanism") |> Query.Column.create
+;;
+
+let column_smtp_protocol =
+  (Field.SmtpProtocol, "pool_smtp.protocol") |> Query.Column.create
+;;
+
+let column_smtp_default_account =
+  (Field.DefaultSmtpServer, "pool_smtp.default_account") |> Query.Column.create
+;;
+
+let column_created_at =
+  (Field.CreatedAt, "pool_smtp.created_at") |> Query.Column.create
+;;
+
+let searchable_by =
+  [ column_label
+  ; column_smtp_server
+  ; column_smtp_username
+  ; column_smtp_mechanism
+  ; column_smtp_protocol
+  ]
+;;
+
+let default_sort_column = column_created_at
+let sortable_by = default_sort_column :: searchable_by
+
+let default_query =
+  let open Query in
+  let sort =
+    Sort.{ column = default_sort_column; order = SortOrder.Descending }
+  in
+  create ~sort ()
+;;

@@ -340,7 +340,22 @@ let first_n_characters ?(n = 47) m =
   else m
 ;;
 
+module type Queryable = sig
+  val default_query : Query.t
+  val searchable_by : Query.Column.t list
+  val sortable_by : Query.Column.t list
+end
+
 module Htmx = struct
+  let hx_request_header = "Hx-Request"
+
+  let is_hx_request req =
+    let headers = Rock.Request.(req.headers) in
+    match Httpaf.Headers.get headers hx_request_header with
+    | Some "true" -> true
+    | _ -> false
+  ;;
+
   let headers =
     Opium.Headers.of_list [ "Content-Type", "text/html; charset=utf-8" ]
   ;;
@@ -381,6 +396,43 @@ module Htmx = struct
     |> Sihl.Web.Response.of_plain_text
          ~status:(status |> Opium.Status.of_code)
          ~headers
+  ;;
+
+  let handler
+    :  active_navigation:string -> error_path:string -> query:(module Queryable)
+    -> create_layout:
+         (Rock.Request.t
+          -> ?active_navigation:CCString.t
+          -> Pool_context.t
+          -> 'page Tyxml_html.elt
+          -> ( [> Html_types.html ] Tyxml_html.elt
+               , Pool_common.Message.error )
+               Lwt_result.t)
+    -> (Pool_context.t
+        -> Query.t
+        -> ('page Tyxml_html.elt, Pool_common.Message.error) Lwt_result.t)
+    -> Rock.Request.t -> Rock.Response.t Lwt.t
+    =
+    fun ~active_navigation ~error_path ~query:(module Q) ~create_layout run req ->
+    let open Utils.Lwt_result.Infix in
+    extract_happy_path ~src req
+    @@ fun context ->
+    let query =
+      Query.from_request
+        ~searchable_by:Q.searchable_by
+        ~sortable_by:Q.sortable_by
+        ~default:Q.default_query
+        req
+    in
+    let* page = run context query >|- fun err -> err, error_path in
+    if is_hx_request req
+    then Ok (html_to_plain_text_response page) |> Lwt_result.lift
+    else
+      let* view =
+        create_layout ~active_navigation req context page
+        >|- fun err -> err, error_path
+      in
+      Ok (Sihl.Web.Response.of_html view) |> Lwt_result.lift
   ;;
 
   let notification_id = "hx-notification"

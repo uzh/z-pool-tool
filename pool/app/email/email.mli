@@ -207,6 +207,16 @@ module SmtpAuth : sig
 
   val find_default_opt : Pool_database.Label.t -> t option Lwt.t
   val find_all : Pool_database.Label.t -> t list Lwt.t
+  val find_by : Query.t -> Pool_database.Label.t -> (t list * Query.t) Lwt.t
+  val column_label : Query.Column.t
+  val column_smtp_server : Query.Column.t
+  val column_smtp_username : Query.Column.t
+  val column_smtp_mechanism : Query.Column.t
+  val column_smtp_protocol : Query.Column.t
+  val column_smtp_default_account : Query.Column.t
+  val default_query : Query.t
+  val searchable_by : Query.Column.t list
+  val sortable_by : Query.Column.t list
 end
 
 type job =

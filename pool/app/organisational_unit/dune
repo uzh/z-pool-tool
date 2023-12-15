@@ -1,6 +1,6 @@
 (library
  (name organisational_unit)
- (libraries guard pool_common pool_tenant sihl)
+ (libraries guard pool_common pool_tenant query sihl)
  (preprocess
   (pps
    lwt_ppx

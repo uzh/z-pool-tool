@@ -1,3 +1,4 @@
+open Containers
 open Tyxml.Html
 open Component.Input
 module Message = Pool_common.Message
@@ -18,56 +19,48 @@ let descriptions_all_languages (location : Pool_location.t) =
   |> div
 ;;
 
-module List = struct
-  open Pool_location
-
-  let thead language =
-    (Pool_common.Message.Field.[ Name; Description; Location ]
-     |> Component.Table.fields_to_txt language)
-    @ [ link_as_button
-          ~style:`Success
-          ~icon:Icon.Add
-          ~classnames:[ "small"; "nobr" ]
-          ~control:(language, Pool_common.Message.(Add (Some Field.Location)))
-          "admin/locations/create"
+let index Pool_context.{ language; _ } location_list query =
+  let url = Uri.of_string "/admin/locations" in
+  let sort = Component.Sortable_table.{ url; query; language } in
+  let cols =
+    let create_filter : [ | Html_types.flow5 ] elt =
+      Component.Input.link_as_button
+        ~style:`Success
+        ~icon:Component.Icon.Add
+        ~classnames:[ "small"; "nobr" ]
+        ~control:(language, Pool_common.Message.(Add (Some Field.Location)))
+        "admin/locations/create"
+    in
+    [ `column Pool_location.column_name
+    ; `column Pool_location.column_description
+    ; `custom
+        (span
+           [ Component.Table.field_to_txt
+               language
+               (Query.Column.field Pool_location.column_location)
+           ])
+    ; `custom create_filter
+    ]
+  in
+  let rows =
+    let open Pool_location in
+    let row (location : Pool_location.t) =
+      [ span ~a:[ a_class [ "nobr" ] ] [ txt (Name.value location.name) ]
+      ; descriptions_all_languages location
+      ; p
+          ~a:[ a_class [ "nobr" ] ]
+          [ Component.Partials.address_to_html language location.address ]
+      ; Format.asprintf
+          "/admin/locations/%s"
+          (Pool_location.Id.value location.id)
+        |> Component.Input.link_as_button ~icon:Component.Icon.Eye
       ]
-  ;;
-
-  let rows language locations =
-    CCList.map
-      (fun (location : Pool_location.t) ->
-        let description = descriptions_all_languages location in
-        [ location.name
-          |> Name.value
-          |> txt
-          |> CCList.return
-          |> span ~a:[ a_class [ "nobr" ] ]
-        ; description
-        ; Component.Partials.address_to_html language location.address
-          |> CCList.return
-          |> p ~a:[ a_class [ "nobr" ] ]
-        ; Format.asprintf
-            "/admin/locations/%s"
-            (location.Pool_location.id |> Id.value)
-          |> link_as_button ~icon:Icon.Eye
-        ])
-      locations
-  ;;
-
-  let create language locations =
-    let rows = rows language locations in
-    Component.Table.horizontal_table
-      `Striped
-      ~thead:(thead language)
-      ~align_top:true
-      ~align_last_end:true
-      rows
-  ;;
-end
-
-let index location_list Pool_context.{ language; _ } =
+    in
+    List.map row location_list
+  in
+  let target_id = "location-table" in
   div
-    ~a:[ a_class [ "trim"; "safety-margin" ] ]
+    ~a:[ a_id target_id; a_class [ "trim"; "safety-margin" ] ]
     [ h1
         ~a:[ a_class [ "heading-1" ] ]
         [ txt Pool_common.(Utils.text_to_string language I18n.LocationListTitle)
@@ -77,7 +70,7 @@ let index location_list Pool_context.{ language; _ } =
           [ Utils.hint_to_string language I18n.LocationsIndex
             |> HttpUtils.add_line_breaks
           ]
-    ; List.create language location_list
+    ; Component.Sortable_table.make ~target_id ~cols ~rows sort
     ]
 ;;
 
