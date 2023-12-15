@@ -38,12 +38,14 @@ let joins =
   |sql}
 ;;
 
-let find_request_sql ?(additional_joins = []) where_fragment =
-  let select = CCString.concat ", " sql_select_columns in
+let find_request_sql ?(count = false) where_fragment =
+  let columns =
+    if count then "COUNT(*)" else sql_select_columns |> CCString.concat ", "
+  in
   Format.asprintf
     {sql|SELECT %s FROM pool_experiments %s %s|sql}
-    select
-    (joins :: additional_joins |> CCString.concat "\n")
+    columns
+    joins
     where_fragment
 ;;
 
@@ -151,16 +153,6 @@ module Sql = struct
 
   let validate_experiment_sql m = Format.asprintf " AND %s " m, Dynparam.empty
 
-  let select_count where_fragment =
-    Format.asprintf
-      {sql|
-        SELECT COUNT(*)
-        FROM pool_experiments
-        %s
-      |sql}
-      where_fragment
-  ;;
-
   let find_all ?query ?actor ?permission pool =
     let open Utils.Lwt_result.Infix in
     let checks = [ Format.asprintf "pool_experiments.uuid IN %s" ] in
@@ -172,7 +164,6 @@ module Sql = struct
       pool
       query
       ~select:find_request_sql
-      ~count:select_count
       ?where
       Repo_entity.t
   ;;

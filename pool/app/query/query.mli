@@ -101,8 +101,7 @@ val append_query_to_sql
 val collect_and_count
   :  Pool_database.Label.t
   -> t option
-  -> select:(string -> string)
-  -> count:(string -> string)
+  -> select:(?count:bool -> string -> string)
   -> ?where:string * Utils.Database.Dynparam.t
   -> 'a Caqti_type.t
   -> ('a list * t) Lwt.t

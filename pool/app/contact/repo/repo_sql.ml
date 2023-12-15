@@ -37,10 +37,13 @@ let joins =
   |sql}
 ;;
 
-let find_request_sql ?(additional_joins = []) where_fragment =
+let find_request_sql ?(additional_joins = []) ?(count = false) where_fragment =
+  let columns =
+    if count then "COUNT(*)" else CCString.concat ", " sql_select_columns
+  in
   Format.asprintf
     {sql|SELECT %s FROM pool_contacts %s %s|sql}
-    (sql_select_columns |> CCString.concat ", ")
+    columns
     (joins :: additional_joins |> CCString.concat "\n")
     where_fragment
 ;;
@@ -208,8 +211,7 @@ let find_all ?query ?actor ?permission pool () =
   Query.collect_and_count
     pool
     query
-    ~select:find_request_sql
-    ~count:select_count
+    ~select:(find_request_sql ?additional_joins:None)
     ?where
     Repo_model.t
 ;;

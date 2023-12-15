@@ -27,10 +27,13 @@ module Sql = struct
       Experiment.Repo.joins
   ;;
 
-  let find_request_sql where_fragment =
+  let find_request_sql ?(count = false) where_fragment =
+    let columns =
+      if count then "COUNT(*)" else CCString.concat ", " sql_select_columns
+    in
     Format.asprintf
       {sql|SELECT %s FROM pool_waiting_list %s %s|sql}
-      (sql_select_columns |> CCString.concat ", ")
+      columns
       joins
       where_fragment
   ;;
@@ -73,20 +76,6 @@ module Sql = struct
       , experiment_id |> Experiment.Id.value )
   ;;
 
-  let select_count =
-    Format.asprintf
-      {sql|
-        SELECT COUNT(*)
-          FROM
-          pool_waiting_list
-        LEFT JOIN pool_contacts
-          ON pool_waiting_list.contact_uuid = pool_contacts.user_uuid
-        LEFT JOIN user_users
-          ON pool_contacts.user_uuid = user_users.uuid
-        %s
-      |sql}
-  ;;
-
   let find_by_experiment ?query pool id =
     let where =
       let sql =
@@ -114,7 +103,6 @@ module Sql = struct
       pool
       query
       ~select:find_request_sql
-      ~count:select_count
       ~where
       RepoEntity.t
   ;;

@@ -251,7 +251,12 @@ module Repo : sig
 
   val joins : string
   val sql_select_columns : string list
-  val find_request_sql : ?additional_joins:string list -> string -> string
+
+  val find_request_sql
+    :  ?additional_joins:string list
+    -> ?count:bool
+    -> string
+    -> string
 end
 
 module Guard : sig
