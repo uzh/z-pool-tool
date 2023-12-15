@@ -13,6 +13,7 @@ module Key = struct
       | PasswordPolicyText [@name "password_policy_text"]
       [@printer print "password_policy_text"]
       | PrivacyPolicy [@name "privacy_policy"] [@printer print "privacy_policy"]
+      | SignUpCTA [@name "signupcta"] [@printer print "signupcta"]
       | WelcomeText [@name "welcome_text"] [@printer print "welcome_text"]
     [@@deriving enum, eq, ord, sexp_of, show { with_path = false }, yojson]
   end
@@ -21,7 +22,8 @@ module Key = struct
   include Core
 
   let is_rich_text = function
-    | CreditsText | GreetingsText | PrivacyPolicy | WelcomeText -> true
+    | CreditsText | GreetingsText | PrivacyPolicy | SignUpCTA | WelcomeText ->
+      true
     | PasswordPolicyText -> false
   ;;
 end

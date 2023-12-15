@@ -50,6 +50,7 @@ let index
   (tenant : Pool_tenant.t)
   Pool_context.({ language; query_language; user; _ } as context)
   welcome_text
+  signup_cta
   =
   let text_to_string = Pool_common.Utils.text_to_string language in
   let is_logged_in =
@@ -65,12 +66,15 @@ let index
       [ h2
           ~a:[ a_class [ "heading-2" ] ]
           [ txt (text_to_string Pool_common.I18n.DontHaveAnAccount) ]
-      ; p Pool_common.[ Utils.text_to_string language I18n.SignUpCTA |> txt ]
       ; div
-          ~a:[ a_class [ "flexrow" ] ]
-          [ link_as_button
-              ~control:(language, Pool_common.Message.SignUp)
-              (HttpUtils.path_with_language query_language "/signup")
+          ~a:[ a_class [ "stack" ] ]
+          [ div [ signup_cta |> I18n.content_to_string |> Unsafe.data ]
+          ; div
+              ~a:[ a_class [ "flexrow" ] ]
+              [ link_as_button
+                  ~control:(language, Pool_common.Message.SignUp)
+                  (HttpUtils.path_with_language query_language "/signup")
+              ]
           ]
       ]
   in

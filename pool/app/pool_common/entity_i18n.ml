@@ -70,7 +70,6 @@ type t =
   | SessionReminder
   | SessionRegistrationTitle
   | SignUpAcceptTermsAndConditions
-  | SignUpCTA
   | SignUpTitle
   | SortUngroupedFields
   | SwapSessionsListEmpty

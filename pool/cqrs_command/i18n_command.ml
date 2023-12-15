@@ -31,7 +31,11 @@ end = struct
     let system_events =
       let open Key in
       match property |> key with
-      | CreditsText | GreetingsText | PasswordPolicyText | WelcomeText -> []
+      | CreditsText
+      | GreetingsText
+      | PasswordPolicyText
+      | SignUpCTA
+      | WelcomeText -> []
       | PrivacyPolicy ->
         System_event.
           [ Job.I18nPageUpdated |> create |> created |> Pool_event.system_event
