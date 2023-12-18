@@ -282,17 +282,18 @@ let count_contacts req =
   let result { Pool_context.database_label; _ } =
     let open Utils.Lwt_result.Infix in
     let* experiment = Experiment.find database_label experiment_id in
-    let%lwt reqest_body =
-      Sihl.Web.Request.to_json req ||> CCOption.value ~default:(`Assoc [])
-    in
+    let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
     let* query =
-      Utils.Json.find_in_json_assoc_opt reqest_body Field.(show Query)
-      |> CCOption.map_or ~default:(Lwt_result.return None) (fun json ->
-        json
-        |> Yojson.Safe.to_string
-        |> Filter.query_of_string
-        |> CCResult.map CCOption.return
-        |> Lwt_result.lift)
+      let open CCResult in
+      HttpUtils.find_in_urlencoded Field.Query urlencoded
+      |> CCOption.of_result
+      |> CCOption.map_or
+           ~default:
+             (Ok
+                (experiment.Experiment.filter
+                 |> CCOption.map (fun filter -> filter.Filter.query)))
+           (fun str -> str |> Filter.query_of_string >|= CCOption.pure)
+      |> Lwt_result.lift
     in
     Filter.(
       count_filtered_contacts

@@ -1,7 +1,7 @@
-import { addCloseListener, csrfToken, icon, notifyUser, globalErrorMsg } from "./utils.js";
+import { addCloseListener, icon, notifyUser, globalErrorMsg } from "./utils.js";
 
 const errorClass = "error-message";
-const notificationId = "hx-notification";
+const notificationId = "filter-notification";
 
 const form = document.getElementById("filter-form");
 
@@ -29,10 +29,6 @@ const findChildPredicates = (wrapper) => {
     return [...wrapper.querySelector(".predicate-wrapper").children].filter((elm) => elm.classList.contains("predicate"))
 }
 
-const findValueInputs = (predicate) => {
-    return [...predicate.querySelectorAll("[data-name='value[]'],[name='value'],[name='value[]']")];
-}
-
 const addRequiredError = (elm) => {
     if (elm) {
         const wrapper = elm.closest(".form-group");
@@ -41,6 +37,31 @@ const addRequiredError = (elm) => {
         error.innerHTML = "This field is required."
         error.classList.add(errorClass, "help");
         wrapper.appendChild(error);
+    }
+}
+
+// Should this update every time, the filter gets adjusted but not saved?
+const updateContactCount = async () => {
+    const target = document.getElementById("contact-counter");
+    if (target) {
+        const action = target.dataset.action;
+        const spinner = icon(["icon-spinner-outline", "rotate"])
+        target.appendChild(spinner);
+        try {
+            const response = await fetch(action);
+            const data = await response.json();
+            if (!response.ok) {
+                throw (data.message || response.statusText || globalErrorMsg)
+            }
+            if (response.status < 200 || response.status > 300) {
+                notifyUser(notificationId, "error", data.message)
+            } else {
+                target.innerHTML = data.count
+            }
+        } catch (error) {
+            target.innerHTML = globalErrorMsg;
+            notifyUser(notificationId, "error", error)
+        };
     }
 }
 
@@ -161,7 +182,8 @@ const predicateToJson = (outerPredicate, allowEmpty = false) => {
                 [predicateType]: predicate
             }
         } else {
-            throw "Please fill out all fields";
+            notifyUser(notificationId, "error", "Please fill out all fields.")
+            throw "Missing values";
         }
     } else {
         throw 'Unknown predicate type';
@@ -172,6 +194,17 @@ function addRemovePredicateListener(element) {
     [...element.querySelectorAll("[data-delete-predicate]")].forEach(elm => {
         elm.addEventListener("click", (e) => {
             e.currentTarget.closest(".predicate").remove();
+        })
+    })
+}
+
+
+function addOperatorChangeListeners(wrapper) {
+    [...wrapper.querySelectorAll("[name='operator']")].forEach((elm) => {
+        elm.addEventListener("change", (e) => {
+            const predicate = e.target.closest('.predicate');
+            const inputs = [...predicate.querySelectorAll("[data-name='value[]'],[name='value'],[name='value[]']")];
+            inputs.forEach(input => input.disabled = disableValueInput(e.currentTarget.value))
         })
     })
 }
@@ -219,79 +252,6 @@ function configRequest(e, form) {
     form.dispatchEvent(event);
 }
 
-// Should this update every time, the filter gets adjusted but not saved?
-const updateContactCount = async (form) => {
-    console.log("updateContactCount")
-    const target = document.getElementById("contact-counter");
-    let message = "-"
-    const parseQuery = () => {
-        try {
-            const predicate = form.querySelector(".predicate");
-            return predicateToJson(predicate, false)
-        } catch (error) {
-            // TODO: improve error handling
-            // console.error(error)
-            return false
-        }
-    }
-
-    if (target) {
-        const action = target.dataset.action;
-        const spinner = icon(["icon-spinner-outline", "rotate"])
-        target.innerHTML = "";
-        target.appendChild(spinner);
-        try {
-            const query = parseQuery();
-            const body = JSON.stringify({ query: query, _csrf: csrfToken(form) })
-            if (query) {
-                const response = await fetch(action, {
-                    method: "POST",
-                    body,
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                });
-                const data = await response.json();
-                if (!response.ok) {
-                    throw (data.message || response.statusText || globalErrorMsg)
-                }
-                if (response.status < 200 || response.status > 300) {
-                    notifyUser(notificationId, "error", data.message)
-                } else {
-                    message = data.count
-                }
-            }
-        } catch (error) {
-            message = globalErrorMsg;
-            notifyUser(notificationId, "error", error)
-        };
-        target.innerHTML = message
-    }
-}
-
-function addOperatorChangeListeners(form, wrapper) {
-    const el = wrapper || form;
-    [...el.querySelectorAll("[name='operator']")].forEach((el) => {
-        el.addEventListener("change", (e) => {
-            const predicate = e.target.closest('.predicate');
-            const inputs = findValueInputs(predicate)
-            inputs.forEach(input => input.disabled = disableValueInput(e.currentTarget.value))
-            updateContactCount(form);
-        })
-    })
-}
-
-const addInputChangeListeners = (form, wrapper) => {
-    const el = wrapper || form;
-    const listener = () => {
-        updateContactCount(form);
-    }
-    const valueInputs = findValueInputs(el)
-    valueInputs.forEach(input => {
-        input.addEventListener("input", listener);
-    })
-}
-
 export function initFilterForm() {
     if (form) {
         const submitButton = document.getElementById("submit-filter-form");
@@ -302,14 +262,15 @@ export function initFilterForm() {
         })
         addRemovePredicateListener(form);
         addOperatorChangeListeners(form);
-        addInputChangeListeners(form);
         form.addEventListener('htmx:afterSwap', (e) => {
             addRemovePredicateListener(e.detail.elt);
-            addOperatorChangeListeners(form, e.detail.elt);
-            addInputChangeListeners(form, e.detail.elt);
-            updateContactCount(form);
+            addOperatorChangeListeners(e.detail.elt);
+            if (e.detail.target.type === "submit") {
+                updateContactCount();
+            }
             addCloseListener(notificationId);
         })
+        updateContactCount()
         form.addEventListener('htmx:configRequest', (e) => configRequest(e, form))
     }
 }

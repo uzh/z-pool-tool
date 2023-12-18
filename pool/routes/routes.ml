@@ -518,7 +518,7 @@ module Admin = struct
               "/reset-invitations"
               ~middlewares:[ Access.update ]
               Invitations.reset
-          ; post
+          ; get
               "/contact-count"
               ~middlewares:[ Access.read ]
               Handler.Admin.Filter.count_contacts

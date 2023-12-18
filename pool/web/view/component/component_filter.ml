@@ -508,7 +508,6 @@ let rec predicate_form
 ;;
 
 let filter_form
-  ?matching_filter_count
   csrf
   language
   param
@@ -553,12 +552,7 @@ let filter_form
                    |> Format.asprintf "/admin/experiments/%s/contact-count"
                    |> Sihl.Web.externalize_path)
               ]
-            [ txt
-                (CCOption.map_or
-                   ~default:""
-                   CCInt.to_string
-                   matching_filter_count)
-            ]
+            []
         ]
   in
   let delete_form =
