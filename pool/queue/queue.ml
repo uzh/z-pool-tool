@@ -16,6 +16,7 @@ let increment_tries (retry_delay : Ptime.Span.t) (job_instance : instance) =
 
 let registered_jobs : job' list ref = ref []
 let find = Repo.find
+let count_workable = Repo.count_workable
 
 let run_job
   ?tags

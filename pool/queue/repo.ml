@@ -160,18 +160,24 @@ let find label id =
   ||> CCOption.to_result Pool_common.Message.(NotFound Field.Queue)
 ;;
 
+let workable_query =
+  {sql|
+    status = "pending"
+      AND next_run_at <= NOW()
+      AND tries < max_tries
+  |sql}
+;;
+
 let find_workable_request =
   let open Caqti_request.Infix in
   Format.asprintf
     {sql|
       %s
-      WHERE
-        status = "pending"
-        AND next_run_at <= NOW()
-        AND tries < max_tries
-      ORDER BY id DESC
+      WHERE %s
+      ORDER BY id ASC
     |sql}
     select_from_fragment
+    workable_query
   |> Caqti_type.unit ->* job
 ;;
 
@@ -180,4 +186,25 @@ let find_workable label =
     (Pool_database.Label.value label)
     find_workable_request
     ()
+;;
+
+let count_workable_request =
+  let open Caqti_request.Infix in
+  Format.asprintf
+    {sql|
+      SELECT COUNT(*)
+      FROM queue_jobs
+      WHERE %s
+    |sql}
+    workable_query
+  |> Caqti_type.(unit ->? int)
+;;
+
+let count_workable label =
+  let open Utils.Lwt_result.Infix in
+  Utils.Database.find_opt
+    (Pool_database.Label.value label)
+    count_workable_request
+    ()
+  ||> CCOption.to_result Pool_common.Message.NoValue
 ;;

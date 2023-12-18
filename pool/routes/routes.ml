@@ -789,6 +789,7 @@ module Root = struct
     ; post "/request-reset-password" Login.request_reset_password_post
     ; get "/reset-password" Login.reset_password_get
     ; post "/reset-password" Login.reset_password_post
+    ; get "/api/v1/status" Status.show
     ]
   ;;
 
@@ -876,16 +877,17 @@ module Root = struct
   ;;
 
   let routes =
+    let open Handler in
     choose
       ~middlewares
-      [ get "" Handler.Root.forward_to_entrypoint
+      [ get "" Root.forward_to_entrypoint
       ; choose
           ~middlewares:
             [ CustomMiddleware.Guardian.require_user_type_of
                 Pool_context.UserType.[ Guest ]
             ]
           public_routes
-      ; get "/denied" Handler.Public.denied
+      ; get "/denied" Public.denied
       ; choose ~middlewares:locked_middlewares locked_routes
       ]
   ;;

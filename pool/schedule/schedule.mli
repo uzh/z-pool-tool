@@ -52,6 +52,7 @@ val add_and_start : t -> unit Lwt.t
 val stop : unit -> unit Lwt.t
 val lifecycle : Sihl.Container.lifecycle
 val register : ?schedules:t list -> unit -> Sihl.Container.Service.t
+val is_ok : public -> bool
 val find_all : unit -> public list Lwt.t
 
 module Guard : sig
