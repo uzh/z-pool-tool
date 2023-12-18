@@ -13,58 +13,100 @@ let notifications
   ?(can_update_experiment = false)
   language
   sys_languages
+  (experiment : Experiment.t)
   message_templates
   =
   let open CCList in
   let open Pool_common in
   let open Message_template in
+  match experiment.Experiment.language with
+  | Some _ -> txt ""
+  | None ->
+    message_templates
+    |> filter_map (fun (label, templates) ->
+      if is_empty templates || not can_update_experiment
+      then None
+      else
+        filter
+          (fun lang ->
+            find_opt
+              (fun { language; _ } -> Language.equal language lang)
+              templates
+            |> CCOption.is_none)
+          sys_languages
+        |> function
+        | [] -> None
+        | langs -> Some (label, langs))
+    |> (function
+     | [] -> txt ""
+     | missing_templates ->
+       let list =
+         missing_templates
+         |> CCList.map (fun (label, languages) ->
+           Format.asprintf
+             "%s: [%s]"
+             (Label.to_human label)
+             (CCString.concat
+                ", "
+                (CCList.map Pool_common.Language.show languages))
+           |> txt
+           |> CCList.pure
+           |> li)
+         |> ul
+       in
+       [ p
+           [ txt
+               Pool_common.(
+                 Utils.hint_to_string language I18n.MissingMessageTemplates)
+           ]
+       ; list
+       ]
+       |> Notification.notification language `Warning)
+;;
+
+let message_template_buttons
+  can_update_experiment
+  sys_languages
+  (experiment : Experiment.t)
   message_templates
-  |> filter_map (fun (label, templates) ->
-    if is_empty templates || not can_update_experiment
+  =
+  let open Message_template in
+  let build_button label =
+    build_experiment_path experiment Label.(prefixed_human_url label)
+    |> Button.add label
+  in
+  let exclude =
+    experiment.Experiment.language
+    |> CCOption.map (fun experiment_language ->
+      CCList.filter
+        CCFun.(Pool_common.Language.equal experiment_language %> not)
+        sys_languages)
+  in
+  message_templates
+  |> CCList.filter_map (fun (label, templates) ->
+    if CCList.is_empty (filter_languages ?exclude sys_languages templates)
     then None
-    else
-      filter
-        (fun lang ->
-          find_opt
-            (fun { language; _ } -> Language.equal language lang)
-            templates
-          |> CCOption.is_none)
-        sys_languages
-      |> function
-      | [] -> None
-      | langs ->
-        I18n.MissingMessageTemplates
-          (Label.to_human label, CCList.map Language.show langs)
-        |> Utils.hint_to_string language
-        |> txt
-        |> pure
-        |> Notification.notification language `Warning
-        |> CCOption.return)
-  |> function
-  | [] -> txt ""
-  | notifications -> div ~a:[ a_class [ "stack" ] ] notifications
+    else label |> build_button |> CCOption.pure)
+  |> div ~a:[ a_class [ "flexrow"; "flex-gap"; "justify-end" ] ]
+  |> fun buttons -> if can_update_experiment then Some buttons else None
 ;;
 
 let message_templates_html
   ?(can_update_experiment = false)
   language
   csrf
-  experiment_path
+  experiment
   sys_languages
   message_templates
   =
   let open Message_template in
+  let experiment_path = build_experiment_path experiment in
   let buttons =
-    let build_button label =
-      experiment_path Label.(prefixed_human_url label) |> Button.add label
-    in
-    message_templates
-    |> CCList.filter_map (fun (label, templates) ->
-      if CCList.is_empty (filter_languages sys_languages templates)
-      then None
-      else label |> build_button |> CCOption.pure)
-    |> div ~a:[ a_class [ "flexrow"; "flex-gap"; "justify-end" ] ]
-    |> fun buttons -> if can_update_experiment then Some buttons else None
+    message_template_buttons
+      can_update_experiment
+      sys_languages
+      experiment
+      message_templates
   in
   let build_path append =
     CCFun.(prefixed_template_url ~append %> experiment_path)
@@ -168,6 +210,18 @@ let experiment_form
       ~flash_fetcher
       ()
   in
+  let language_select =
+    let open Pool_common.Language in
+    selector
+      ~add_empty:true
+      ~hints:[ I18n.ExperimentLanguage ]
+      language
+      Message.Field.Language
+      show
+      all
+      (CCOption.bind experiment (fun { language; _ } -> language))
+      ()
+  in
   let lead_time_group field get_value default_value =
     div
       [ timespan_picker
@@ -215,6 +269,7 @@ let experiment_form
                   (CCOption.bind experiment (fun { description; _ } ->
                      description |> CCOption.map Description.value))
                 ~flash_fetcher
+            ; language_select
             ; experiment_type_select
             ; input_element
                 language
@@ -456,7 +511,6 @@ let detail
   participation_tags
   ({ Pool_context.language; csrf; guardian; _ } as context)
   =
-  let experiment_path = build_experiment_path experiment in
   let can_update_experiment =
     Guard.PermissionOnTarget.validate
       (Experiment.Guard.Access.update_permission_on_target id)
@@ -467,6 +521,7 @@ let detail
       ~can_update_experiment
       language
       sys_languages
+      experiment
       message_templates
   in
   let delete_form =
@@ -593,6 +648,7 @@ let detail
   let html =
     let experiment_table =
       let boolean_value fnc = fnc experiment |> bool_to_string |> txt in
+      let default = "" in
       Message.
         [ Field.PublicTitle, experiment.public_title |> PublicTitle.value |> txt
         ; ( Field.ExperimentType
@@ -603,23 +659,26 @@ let detail
           , experiment.description
             |> CCOption.map_or ~default:(txt "") (fun desc ->
               desc |> Description.value |> HttpUtils.add_line_breaks) )
+        ; ( Field.Language
+          , experiment.language
+            |> CCOption.map_or ~default (fun lang -> lang |> Language.show)
+            |> txt )
         ; ( Field.CostCenter
           , experiment.cost_center
-            |> CCOption.map_or ~default:"" CostCenter.value
+            |> CCOption.map_or ~default CostCenter.value
             |> txt )
         ; ( Field.OrganisationalUnit
           , experiment.organisational_unit
             |> CCOption.map_or
-                 ~default:""
+                 ~default
                  Organisational_unit.(fun ou -> ou.name |> Name.value)
             |> txt )
         ; ( Field.ContactPerson
-          , contact_person |> CCOption.map_or ~default:"" Admin.full_name |> txt
-          )
+          , contact_person |> CCOption.map_or ~default Admin.full_name |> txt )
         ; ( Field.Smtp
           , smtp_account
             |> CCOption.map_or
-                 ~default:""
+                 ~default
                  Email.SmtpAuth.(fun auth -> auth.label |> Label.value)
             |> txt )
         ; ( Field.DirectRegistrationDisabled
@@ -663,7 +722,7 @@ let detail
             ~can_update_experiment
             language
             csrf
-            experiment_path
+            experiment
             sys_languages
             message_templates
         ]
@@ -920,6 +979,7 @@ let message_template_form
     context
     ?languages
     ~text_elements
+    ?fixed_language:experiment.Experiment.language
     input
     action
     flash_fetcher

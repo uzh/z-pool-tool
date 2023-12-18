@@ -80,44 +80,47 @@ let t =
       , ( m.title
         , ( m.public_title
           , ( m.description
-            , ( m.cost_center
-              , ( m.organisational_unit
-                , ( m.filter
-                  , ( m.contact_person_id
-                    , ( m.smtp_auth_id
-                      , ( m.direct_registration_disabled
-                        , ( m.registration_disabled
-                          , ( m.allow_uninvited_signup
-                            , ( m.external_data_required
-                              , ( m.show_external_data_id_links
-                                , ( m.experiment_type
-                                  , ( m.email_session_reminder_lead_time
-                                    , ( m.text_message_session_reminder_lead_time
-                                      , ( m.invitation_reset_at
-                                        , (m.created_at, m.updated_at) ) ) ) )
-                                ) ) ) ) ) ) ) ) ) ) ) ) ) )
+            , ( m.language
+              , ( m.cost_center
+                , ( m.organisational_unit
+                  , ( m.filter
+                    , ( m.contact_person_id
+                      , ( m.smtp_auth_id
+                        , ( m.direct_registration_disabled
+                          , ( m.registration_disabled
+                            , ( m.allow_uninvited_signup
+                              , ( m.external_data_required
+                                , ( m.show_external_data_id_links
+                                  , ( m.experiment_type
+                                    , ( m.email_session_reminder_lead_time
+                                      , ( m
+                                            .text_message_session_reminder_lead_time
+                                        , ( m.invitation_reset_at
+                                          , (m.created_at, m.updated_at) ) ) )
+                                    ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) )
   in
   let decode
     ( id
     , ( title
       , ( public_title
         , ( description
-          , ( cost_center
-            , ( organisational_unit
-              , ( filter
-                , ( contact_person_id
-                  , ( smtp_auth_id
-                    , ( direct_registration_disabled
-                      , ( registration_disabled
-                        , ( allow_uninvited_signup
-                          , ( external_data_required
-                            , ( show_external_data_id_links
-                              , ( experiment_type
-                                , ( email_session_reminder_lead_time
-                                  , ( text_message_session_reminder_lead_time
-                                    , ( invitation_reset_at
-                                      , (created_at, updated_at) ) ) ) ) ) ) )
-                        ) ) ) ) ) ) ) ) ) ) )
+          , ( language
+            , ( cost_center
+              , ( organisational_unit
+                , ( filter
+                  , ( contact_person_id
+                    , ( smtp_auth_id
+                      , ( direct_registration_disabled
+                        , ( registration_disabled
+                          , ( allow_uninvited_signup
+                            , ( external_data_required
+                              , ( show_external_data_id_links
+                                , ( experiment_type
+                                  , ( email_session_reminder_lead_time
+                                    , ( text_message_session_reminder_lead_time
+                                      , ( invitation_reset_at
+                                        , (created_at, updated_at) ) ) ) ) ) )
+                            ) ) ) ) ) ) ) ) ) ) ) ) )
     =
     let open CCResult in
     Ok
@@ -125,6 +128,7 @@ let t =
       ; title
       ; public_title
       ; description
+      ; language
       ; cost_center
       ; organisational_unit
       ; filter
@@ -157,40 +161,43 @@ let t =
                (t2
                   (option Description.t)
                   (t2
-                     (option CostCenter.t)
+                     (option Pool_common.Repo.Language.t)
                      (t2
-                        (option Organisational_unit.Repo.t)
+                        (option CostCenter.t)
                         (t2
-                           (option Filter.Repo.t)
+                           (option Organisational_unit.Repo.t)
                            (t2
-                              (option Admin.Repo.Entity.Id.t)
+                              (option Filter.Repo.t)
                               (t2
-                                 (option Email.SmtpAuth.RepoEntity.Id.t)
+                                 (option Admin.Repo.Entity.Id.t)
                                  (t2
-                                    DirectRegistrationDisabled.t
+                                    (option Email.SmtpAuth.RepoEntity.Id.t)
                                     (t2
-                                       RegistrationDisabled.t
+                                       DirectRegistrationDisabled.t
                                        (t2
-                                          AllowUninvitedSignup.t
+                                          RegistrationDisabled.t
                                           (t2
-                                             ExternalDataRequired.t
+                                             AllowUninvitedSignup.t
                                              (t2
-                                                ShowExternalDataIdLinks.t
+                                                ExternalDataRequired.t
                                                 (t2
-                                                   (option ExperimentType.t)
+                                                   ShowExternalDataIdLinks.t
                                                    (t2
-                                                      (option
-                                                         Reminder.LeadTime.t)
+                                                      (option ExperimentType.t)
                                                       (t2
                                                          (option
                                                             Reminder.LeadTime.t)
                                                          (t2
                                                             (option
-                                                               InvitationResetAt
+                                                               Reminder.LeadTime
                                                                .t)
                                                             (t2
-                                                               CreatedAt.t
-                                                               UpdatedAt.t))))))))))))))))))))
+                                                               (option
+                                                                  InvitationResetAt
+                                                                  .t)
+                                                               (t2
+                                                                  CreatedAt.t
+                                                                  UpdatedAt.t)))))))))))))))))))))
 ;;
 
 module Write = struct
@@ -206,22 +213,23 @@ module Write = struct
         , ( m.title
           , ( m.public_title
             , ( m.description
-              , ( m.cost_center
-                , ( organisational_unit
-                  , ( filter
-                    , ( m.contact_person_id
-                      , ( m.smtp_auth_id
-                        , ( m.direct_registration_disabled
-                          , ( m.registration_disabled
-                            , ( m.allow_uninvited_signup
-                              , ( m.external_data_required
-                                , ( m.show_external_data_id_links
-                                  , ( m.experiment_type
-                                    , ( m.email_session_reminder_lead_time
-                                      , ( m
-                                            .text_message_session_reminder_lead_time
-                                        , m.invitation_reset_at ) ) ) ) ) ) ) )
-                        ) ) ) ) ) ) ) ) )
+              , ( m.language
+                , ( m.cost_center
+                  , ( organisational_unit
+                    , ( filter
+                      , ( m.contact_person_id
+                        , ( m.smtp_auth_id
+                          , ( m.direct_registration_disabled
+                            , ( m.registration_disabled
+                              , ( m.allow_uninvited_signup
+                                , ( m.external_data_required
+                                  , ( m.show_external_data_id_links
+                                    , ( m.experiment_type
+                                      , ( m.email_session_reminder_lead_time
+                                        , ( m
+                                              .text_message_session_reminder_lead_time
+                                          , m.invitation_reset_at ) ) ) ) ) ) )
+                            ) ) ) ) ) ) ) ) ) ) )
     in
     let decode _ = failwith "Write only model" in
     let open Common in
@@ -238,37 +246,42 @@ module Write = struct
                  (t2
                     (option Description.t)
                     (t2
-                       (option CostCenter.t)
+                       (option Pool_common.Repo.Language.t)
                        (t2
-                          (option Organisational_unit.Repo.Id.t)
+                          (option CostCenter.t)
                           (t2
-                             (option Id.t)
+                             (option Organisational_unit.Repo.Id.t)
                              (t2
-                                (option Admin.Repo.Entity.Id.t)
+                                (option Id.t)
                                 (t2
-                                   (option Email.SmtpAuth.RepoEntity.Id.t)
+                                   (option Admin.Repo.Entity.Id.t)
                                    (t2
-                                      DirectRegistrationDisabled.t
+                                      (option Email.SmtpAuth.RepoEntity.Id.t)
                                       (t2
-                                         RegistrationDisabled.t
+                                         DirectRegistrationDisabled.t
                                          (t2
-                                            AllowUninvitedSignup.t
+                                            RegistrationDisabled.t
                                             (t2
-                                               ExternalDataRequired.t
+                                               AllowUninvitedSignup.t
                                                (t2
-                                                  ShowExternalDataIdLinks.t
+                                                  ExternalDataRequired.t
                                                   (t2
-                                                     (option ExperimentType.t)
+                                                     ShowExternalDataIdLinks.t
                                                      (t2
                                                         (option
-                                                           Reminder.LeadTime.t)
+                                                           ExperimentType.t)
                                                         (t2
                                                            (option
                                                               Reminder.LeadTime
                                                               .t)
-                                                           (option
-                                                              InvitationResetAt
-                                                              .t)))))))))))))))))))
+                                                           (t2
+                                                              (option
+                                                                 Reminder
+                                                                 .LeadTime
+                                                                 .t)
+                                                              (option
+                                                                 InvitationResetAt
+                                                                 .t))))))))))))))))))))
   ;;
 end
 
@@ -281,20 +294,23 @@ module Public = struct
         ( m.id
         , ( m.public_title
           , ( m.description
-            , ( m.direct_registration_disabled
-              , (m.experiment_type, m.smtp_auth_id) ) ) ) )
+            , ( m.language
+              , ( m.direct_registration_disabled
+                , (m.experiment_type, m.smtp_auth_id) ) ) ) ) )
     in
     let decode
       ( id
       , ( public_title
         , ( description
-          , (direct_registration_disabled, (experiment_type, smtp_auth_id)) ) )
-      )
+          , ( language
+            , (direct_registration_disabled, (experiment_type, smtp_auth_id)) )
+          ) ) )
       =
       Ok
         { id
         ; public_title
         ; description
+        ; language
         ; direct_registration_disabled
         ; experiment_type
         ; smtp_auth_id
@@ -311,10 +327,12 @@ module Public = struct
               (t2
                  (option Description.t)
                  (t2
-                    DirectRegistrationDisabled.t
+                    (option Pool_common.Repo.Language.t)
                     (t2
-                       (option Common.ExperimentType.t)
-                       (option Email.SmtpAuth.RepoEntity.Id.t)))))))
+                       DirectRegistrationDisabled.t
+                       (t2
+                          (option Common.ExperimentType.t)
+                          (option Email.SmtpAuth.RepoEntity.Id.t))))))))
   ;;
 end
 

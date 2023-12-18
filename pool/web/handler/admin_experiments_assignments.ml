@@ -415,6 +415,7 @@ let swap_session_get req =
   let experiment_id, session_id, assignment_id = ids_from_request req in
   let result ({ Pool_context.database_label; _ } as context) =
     let open Utils.Lwt_result.Infix in
+    let* experiment = Experiment.find database_label experiment_id in
     let* assignment = find database_label assignment_id in
     let* current_session = Session.find database_label session_id in
     let* assigned_sessions =
@@ -426,8 +427,12 @@ let swap_session_get req =
     let* sessions =
       Session.find_all_to_swap_by_experiment database_label experiment_id
     in
-    let%lwt template_lang =
-      Contact.message_language database_label assignment.contact
+    let template_lang =
+      let system_languages = Pool_context.Tenant.get_tenant_languages_exn req in
+      Message_template.experiment_message_language
+        system_languages
+        experiment
+        assignment.contact
     in
     let%lwt swap_session_template =
       Message_template.(
@@ -440,7 +445,7 @@ let swap_session_get req =
     let flash_fetcher key = Sihl.Web.Flash.find key req in
     Page.Admin.Assignment.Partials.swap_session_form
       context
-      experiment_id
+      experiment
       current_session
       assignment
       assigned_sessions

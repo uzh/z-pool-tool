@@ -221,6 +221,9 @@ Beim Einladen von Kontakten bevorzugt der Filter den überschreibenden Wert, wen
       "PBitte geben Sie den Verifizierungscode ein, den wir Ihnen an %s \
        geschickt haben. Der Code ist eine Stunde lang gültig."
       cell_phone
+  | ContactLanguage ->
+    "Bei einigen Experimenten wird in einer anderen Sprache kommuniziert, ohne \
+     Rücksicht auf die Kontaktsprache."
   | ContactPhoneNumberVerificationWasReset ->
     "Sie können nun eine neue Telefonnummer eingeben."
   | ContactOnWaitingList ->
@@ -302,6 +305,10 @@ Beim Einladen von Kontakten bevorzugt der Filter den überschreibenden Wert, wen
     Der Experimentator kann die Namen der teilnehmenden Kontakte des Experiments lesen, dem er/sie zugewiesen ist.
 
     Eine detaillierte Liste mit allen Rollenberechtigungen ist nur für Recruiter verfügbar.|}
+  | ExperimentLanguage ->
+    "ist eine Experimentsprache definiert, werden alle Nachrichten, die dieses \
+     Experiment betreffen, in dieser Sprache gesendet, ohne Rücksicht auf die \
+     Kontaktsprache."
   | ExperimentMailings ->
     {|Einladungsversand dieses Experiments.
 
@@ -340,11 +347,10 @@ Wenn Sie die Erinnerungen jetzt manuell auslösen werden über den gewählten Na
      Testnachricht schicken können, um den API Key zu verifizieren. Die Nummer \
      muss im Format +41791234567 sein."
   | I18nText str -> str
-  | MissingMessageTemplates (label, languages) ->
-    Format.asprintf
-      "Das '%s' Template fehlt in den folgenden Sprachen: %s"
-      label
-      (languages |> CCString.concat ", ")
+  | MissingMessageTemplates ->
+    "Die folgenden Nachrichtenvorlagen sind nicht vorhanden. Die \
+     Standardnachricht wird an Kontakte gesendet, die eine dieser Sprachen als \
+     ihre Kommunikationssprache ausgewählt haben."
   | LocationFiles ->
     "Zusatzinformationen zum Standort, wie z.B. eine Wegbeschreibung. \
      Kontakte, die an einer Session an diesem Standort teilnehmen, können auf \

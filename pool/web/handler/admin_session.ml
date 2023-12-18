@@ -649,7 +649,7 @@ let message_template_form ?template_id label req =
       match template_id with
       | None ->
         Pool_context.Tenant.get_tenant_languages_exn req
-        |> Message_template.find_available_languages
+        |> Message_template.missing_template_languages
              database_label
              (session_id |> Session.Id.to_common)
              label

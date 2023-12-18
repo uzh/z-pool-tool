@@ -46,12 +46,16 @@ let form form_context req =
     let* template, available_languages, label =
       match form_context with
       | New label ->
+        let exclude =
+          CCOption.map CCList.return experiment.Experiment.language
+        in
         let%lwt available_languages =
           Pool_context.Tenant.get_tenant_languages_exn req
-          |> Message_template.find_available_languages
+          |> Message_template.missing_template_languages
                database_label
                (experiment_id |> Experiment.Id.to_common)
                label
+               ?exclude
           ||> CCOption.return
         in
         Lwt_result.return (None, available_languages, label)

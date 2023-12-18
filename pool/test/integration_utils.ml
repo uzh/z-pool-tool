@@ -13,9 +13,11 @@ module AssignmentRepo = struct
 end
 
 module ContactRepo = struct
-  let create ?id ?name ?(with_terms_accepted = false) () =
+  let create ?id ?name ?language ?(with_terms_accepted = false) () =
     let open Utils.Lwt_result.Infix in
-    let contact = Model.create_contact ?id ?name ~with_terms_accepted () in
+    let contact =
+      Model.create_contact ?id ?name ?language ~with_terms_accepted ()
+    in
     let open Contact in
     let confirm = [ Verified contact; EmailVerified contact ] in
     let%lwt () =

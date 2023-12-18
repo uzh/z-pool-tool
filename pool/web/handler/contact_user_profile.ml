@@ -148,28 +148,22 @@ let update_email req =
          match existing_user with
          | None -> send_verification_mail None
          | Some user ->
-           let notification language =
+           let change_attempt_notification () =
              Message_template.ContactEmailChangeAttempt.create
                database_label
-               language
                tenant
                user
            in
            (match%lwt Admin.user_is_admin database_label user with
             | true ->
-              let%lwt notification = notification Pool_common.Language.En in
+              let* notification = change_attempt_notification () in
               Lwt_result.return
                 [ Email.Sent (notification, None) |> Pool_event.email ]
             | false ->
               let* contact = Contact.find_by_user database_label user in
               (match contact.Contact.email_verified with
                | Some _ ->
-                 let%lwt notification =
-                   let%lwt language =
-                     Contact.message_language database_label contact
-                   in
-                   notification language
-                 in
+                 let* notification = change_attempt_notification () in
                  Lwt_result.return
                    [ Email.Sent (notification, None) |> Pool_event.email ]
                | None -> send_verification_mail (Some contact)))

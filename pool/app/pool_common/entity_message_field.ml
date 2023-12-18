@@ -41,6 +41,7 @@ type t =
   | Contact [@name "contact"] [@printer go "contact"]
   | ContactCount [@name "contact_count"] [@printer go "contact_count"]
   | ContactEmail [@name "contact_email"] [@printer go "contact_email"]
+  | ContactLanguage [@name "contact_language"] [@printer go "contact_language"]
   | ContactPerson [@name "contact_person"] [@printer go "contact_person"]
   | Contacts [@name "contacts"] [@printer go "contacts"]
   | Context [@name "context"] [@printer go "context"]

@@ -148,21 +148,34 @@ let update ?contact req =
         let open Pool_common.Message in
         match partial_update with
         | Ok partial_update ->
-          Htmx.partial_update_to_htmx
-            language
-            tenant_languages
-            is_admin
-            partial_update
-            ~hx_post
-            ?hx_delete
-            ~success:true
-            ()
-          |> html_response
+          let open Custom_field.PartialUpdate in
+          (match partial_update with
+           | Language _ when not is_admin ->
+             HttpUtils.Htmx.htmx_redirect
+               (Sihl.Web.externalize_path back_path)
+               ()
+           | Language _ | Firstname _ | Lastname _ | Custom _ ->
+             Htmx.partial_update_to_htmx
+               language
+               tenant_languages
+               is_admin
+               partial_update
+               ~hx_post
+               ?hx_delete
+               ~success:true
+               ()
+             |> html_response)
         | Error error ->
           let error = Pool_common.Utils.with_log_error ~src ~tags error in
-          let create_htmx ?htmx_attributes ?(field = field) value =
+          let create_htmx ?help ?htmx_attributes ?label ?(field = field) value =
             Htmx.create
-              (Htmx.create_entity ?htmx_attributes version field value)
+              (Htmx.create_entity
+                 ?help
+                 ?htmx_attributes
+                 ?label
+                 version
+                 field
+                 value)
               language
               ~hx_post
               ~error
@@ -187,6 +200,8 @@ let update ?contact req =
                        value |> Pool_common.Language.create |> CCResult.to_opt)
                  }
              |> create_htmx
+                  ~label:Field.ContactLanguage
+                  ~help:[ Pool_common.I18n.ContactLanguage ]
            | _ ->
              let open Custom_field in
              let%lwt field =

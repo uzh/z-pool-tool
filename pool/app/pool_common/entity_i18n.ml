@@ -140,6 +140,7 @@ type hint =
   | ContactDoesNotMatchFilter
   | ContactNoCellPhone
   | ContactEnterCellPhoneToken of string
+  | ContactLanguage
   | ContactPhoneNumberVerificationWasReset
   | ContactOnWaitingList
   | ContactProfileVisibleOverride
@@ -167,6 +168,7 @@ type hint =
   | ExperimentAssignment
   | ExperimentContactPerson
   | ExperimenterRole
+  | ExperimentLanguage
   | ExperimentMailings
   | ExperimentMailingsRegistrationDisabled
   | ExperimentSessions
@@ -195,7 +197,7 @@ type hint =
   | MessageTemplateSignupVerification
   | MessageTemplateUserImport
   | MessageTemplateWaitingListConfirmation
-  | MissingMessageTemplates of string * string list
+  | MissingMessageTemplates
   | NumberIsDaysHint
   | NumberIsSecondsHint
   | NumberIsWeeksHint

@@ -78,6 +78,7 @@ type t =
   ; title : Title.t
   ; public_title : PublicTitle.t
   ; description : Description.t option
+  ; language : Pool_common.Language.t option
   ; cost_center : CostCenter.t option
   ; organisational_unit : Organisational_unit.t option
   ; filter : Filter.t option
@@ -103,6 +104,7 @@ let create
   ?contact_person_id
   ?cost_center
   ?description
+  ?language
   ?email_session_reminder_lead_time
   ?experiment_type
   ?filter
@@ -124,6 +126,7 @@ let create
     ; title
     ; public_title
     ; description
+    ; language
     ; cost_center
     ; organisational_unit
     ; filter
@@ -174,6 +177,7 @@ module Public = struct
     { id : Id.t
     ; public_title : PublicTitle.t
     ; description : Description.t option
+    ; language : Pool_common.Language.t option
     ; direct_registration_disabled : DirectRegistrationDisabled.t
     ; experiment_type : Pool_common.ExperimentType.t option
     ; smtp_auth_id : Email.SmtpAuth.Id.t option
@@ -185,6 +189,7 @@ let to_public
   { id
   ; public_title
   ; description
+  ; language
   ; direct_registration_disabled
   ; experiment_type
   ; smtp_auth_id
@@ -195,6 +200,7 @@ let to_public
     { id
     ; public_title
     ; description
+    ; language
     ; direct_registration_disabled
     ; experiment_type
     ; smtp_auth_id

@@ -331,7 +331,6 @@ let enroll_contact_post req =
       Session.find_follow_ups database_label session.Session.id
     in
     let%lwt confirmation =
-      let%lwt language = Contact.message_language database_label contact in
       let tenant = Pool_context.Tenant.get_tenant_exn req in
       let%lwt contact_person =
         Experiment.find_contact_person database_label experiment
@@ -339,8 +338,8 @@ let enroll_contact_post req =
       Message_template.AssignmentConfirmation.prepare
         ~follow_up_sessions
         database_label
-        language
         tenant
+        contact
         experiment
         session
         contact_person

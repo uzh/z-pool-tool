@@ -24,34 +24,6 @@ let button_group buttons =
     buttons
 ;;
 
-let language_select
-  options
-  selected
-  ?(field = Field.Language)
-  ?(attributes = [])
-  ()
-  =
-  let open Pool_common in
-  let name = Message.Field.show field in
-  let options =
-    CCList.map
-      (fun l ->
-        let is_selected =
-          selected
-          |> CCOption.map (fun selected ->
-            if Language.equal selected l then [ a_selected () ] else [])
-          |> CCOption.value ~default:[]
-        in
-        option
-          ~a:([ a_value (Language.show l) ] @ is_selected)
-          (txt (Language.show l)))
-      options
-  in
-  div
-    ~a:[ a_class [ "select" ] ]
-    [ select ~a:([ a_name name ] @ attributes) options ]
-;;
-
 let csrf_attibs ?id csrf =
   let attribs = [ a_input_type `Hidden; a_name "_csrf"; a_value csrf ] in
   match id with
@@ -559,23 +531,23 @@ let selector
   options
   selected
   ?(add_empty = false)
+  ?(append_html = [])
   ?(attributes = [])
   ?(classnames = [])
   ?(disabled = false)
   ?(hide_label = false)
-  ?(required = false)
   ?(read_only = false)
+  ?(required = false)
+  ?elt_option_formatter
   ?error
   ?flash_fetcher
   ?hints
-  ?option_formatter
-  ?elt_option_formatter
+  ?label_field
   ?option_disabler
-  ?(append_html = [])
+  ?option_formatter
   ()
   =
   let name = Field.(show field) in
-  let input_label = Elements.input_label language field None required in
   let selected =
     let open CCOption in
     bind flash_fetcher (fun flash_fetcher ->
@@ -658,9 +630,20 @@ let selector
   in
   let help = Elements.hints language hints in
   let error = Elements.error language error in
+  let label =
+    match hide_label with
+    | true -> txt ""
+    | false ->
+      CCOption.value ~default:field label_field
+      |> fun field ->
+      Elements.input_label language field None required
+      |> txt
+      |> CCList.return
+      |> label
+  in
   div
     ~a:[ a_class (Elements.group_class classnames `Vertical) ]
-    ([ (if hide_label then txt "" else label [ input_label |> txt ])
+    ([ label
      ; div
          ~a:[ a_class [ "select" ] ]
          [ select ~a:(a_name name :: attributes) options; hidden_field ]
@@ -694,15 +677,16 @@ let multi_select
   language
   { options; selected; to_label; to_value }
   group_field
-  ?(orientation = `Horizontal)
-  ?additional_attributes
   ?(classnames = [])
+  ?(disabled = false)
+  ?(orientation = `Horizontal)
+  ?(required = false)
+  ?additional_attributes
+  ?append_html
+  ?error
   ?flash_values
   ?hints
-  ?error
-  ?(disabled = false)
-  ?(required = false)
-  ?append_html
+  ?label_field
   ()
   =
   let error = Elements.error language error in
@@ -749,7 +733,14 @@ let multi_select
   in
   div
     ~a:[ a_class (Elements.group_class classnames orientation) ]
-    ([ label [ txt (Elements.input_label language group_field None required) ]
+    ([ label
+         [ txt
+             (Elements.input_label
+                language
+                (CCOption.value ~default:group_field label_field)
+                None
+                required)
+         ]
      ; div ~a:[ a_class [ "input-group" ] ] (inputs @ error)
      ]
      @ help_html

@@ -184,7 +184,7 @@ module Partials = struct
 
   let swap_session_form
     ({ Pool_context.language; csrf; _ } as context)
-    experiment_id
+    experiment
     session
     assignment
     assigned_sessions
@@ -196,7 +196,7 @@ module Partials = struct
     let action =
       assignment_specific_path
         ~suffix:"swap-session"
-        experiment_id
+        experiment.Experiment.id
         session.Session.id
         assignment.Assignment.id
       |> Sihl.Web.externalize_path
@@ -256,6 +256,9 @@ module Partials = struct
                      context
                      (Some swap_session_template)
                      ~languages
+                     ?fixed_language:experiment.Experiment.language
+                     ~selected_language:
+                       swap_session_template.Message_template.language
                      flash_fetcher)
               ; submit_element
                   language

@@ -74,7 +74,7 @@ let write action req =
       | Create (entity_id, label, _) ->
         let%lwt available_languages =
           Pool_context.Tenant.get_tenant_languages_exn req
-          |> Message_template.find_available_languages
+          |> Message_template.missing_template_languages
                database_label
                entity_id
                label

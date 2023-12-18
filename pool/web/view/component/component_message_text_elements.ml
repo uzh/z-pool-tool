@@ -160,6 +160,7 @@ module DummyData = struct
           Description.create "A description for everyone"
           |> get_exn
           |> CCOption.return
+      ; language = None
       ; organisational_unit = None
       ; smtp_auth_id = None
       ; cost_center = Some ("A-11111-22-33" |> CostCenter.of_string)

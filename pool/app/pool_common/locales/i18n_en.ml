@@ -213,6 +213,9 @@ When inviting contacts, the filter will prefer the overriding value if both are 
     "The contact does not meet the criteria specified in the filter for this \
      experiment, but can still be enrolled."
   | ContactNoCellPhone -> "You have not yet verified a phone number."
+  | ContactLanguage ->
+    "Some experiments choose to communicate in a different language, \
+     disregarding your contact language."
   | ContactEnterCellPhoneToken cell_phone ->
     Format.asprintf
       "Please enter the verification code we sent yout to %s. The code is \
@@ -296,6 +299,10 @@ Make sure to show links and URLs as plain text.
       The experimenter can read the names of attending contacts to the experiment he/she's assigned to.
 
       A detailed list with all role permissions is available for recruiters only.|}
+  | ExperimentLanguage ->
+    "If an experiment language is defined, all messages regarding this \
+     experiment will be sent in this language, disregarding the contact \
+     language."
   | ExperimentMailings ->
     {|Invitation mailings of this experiment. The limit defines the number of invitations sent by the mailing withing it's duration.
 
@@ -381,11 +388,10 @@ Make sure to show links and URLs as plain text.
   | MessageTemplateWaitingListConfirmation ->
     "This message confirms the successful enrollment to an experiment waiting \
      list."
-  | MissingMessageTemplates (label, languages) ->
-    Format.asprintf
-      "The '%s' template is missing is the following languages: %s"
-      label
-      (languages |> CCString.concat ", ")
+  | MissingMessageTemplates ->
+    "The following message templates are missing. The default message will be \
+     sent to contacts who selected one of those languages as their \
+     communication language."
   | NumberIsSecondsHint -> "Nr. of seconds"
   | NumberIsDaysHint -> "Nr. of days"
   | NumberIsWeeksHint -> "Nr. of weeks"

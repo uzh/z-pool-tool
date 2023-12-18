@@ -31,13 +31,6 @@ let find_full_cell_phone_verification_by_contact =
 
 let has_terms_accepted = Event.has_terms_accepted
 
-let message_language database_label ({ language; _ } : t) =
-  language
-  |> CCOption.map_or
-       ~default:(Settings.default_language database_label)
-       Lwt.return
-;;
-
 module Repo = struct
   module Preview = Repo_model.Preview
   module Entity = Repo_model
