@@ -1,5 +1,11 @@
 import { addCloseListener, csrfToken, icon, notifyUser, globalErrorMsg } from "./utils.js";
 
+MutationObserver = window.MutationObserver || window.WebKitMutationObserver;
+const observerConfig = {
+    subtree: true,
+    childList: true
+}
+
 const errorClass = "error-message";
 const notificationId = "hx-notification";
 
@@ -168,14 +174,6 @@ const predicateToJson = (outerPredicate, allowEmpty = false) => {
     }
 }
 
-function addRemovePredicateListener(element) {
-    [...element.querySelectorAll("[data-delete-predicate]")].forEach(elm => {
-        elm.addEventListener("click", (e) => {
-            e.currentTarget.closest(".predicate").remove();
-        })
-    })
-}
-
 function configRequest(e, form) {
     if (isTextInput(e.srcElement) && !e.srcElement.value) {
         e.preventDefault()
@@ -221,7 +219,6 @@ function configRequest(e, form) {
 
 // Should this update every time, the filter gets adjusted but not saved?
 const updateContactCount = async (form) => {
-    console.log("updateContactCount")
     const target = document.getElementById("contact-counter");
     let message = "-"
     const parseQuery = () => {
@@ -229,8 +226,6 @@ const updateContactCount = async (form) => {
             const predicate = form.querySelector(".predicate");
             return predicateToJson(predicate, false)
         } catch (error) {
-            // TODO: improve error handling
-            // console.error(error)
             return false
         }
     }
@@ -269,6 +264,16 @@ const updateContactCount = async (form) => {
     }
 }
 
+function addRemovePredicateListener(form, wrapper) {
+    const el = wrapper || form;
+    [...el.querySelectorAll("[data-delete-predicate]")].forEach(elm => {
+        elm.addEventListener("click", (e) => {
+            e.currentTarget.closest(".predicate").remove();
+            updateContactCount(form);
+        })
+    })
+}
+
 function addOperatorChangeListeners(form, wrapper) {
     const el = wrapper || form;
     [...el.querySelectorAll("[name='operator']")].forEach((el) => {
@@ -292,6 +297,16 @@ const addInputChangeListeners = (form, wrapper) => {
     })
 }
 
+const addMultiSelectObserver = (form, wrapper) => {
+    const el = wrapper || form;
+    [...el.querySelectorAll("[data-search-selection]")].forEach(results => {
+        const observer = new MutationObserver(function (mutations, observer) {
+            updateContactCount(form)
+        })
+        observer.observe(results, observerConfig);
+    })
+}
+
 export function initFilterForm() {
     if (form) {
         const submitButton = document.getElementById("submit-filter-form");
@@ -303,12 +318,14 @@ export function initFilterForm() {
         addRemovePredicateListener(form);
         addOperatorChangeListeners(form);
         addInputChangeListeners(form);
+        addMultiSelectObserver(form);
         form.addEventListener('htmx:afterSwap', (e) => {
-            addRemovePredicateListener(e.detail.elt);
+            addRemovePredicateListener(form, e.detail.elt);
             addOperatorChangeListeners(form, e.detail.elt);
             addInputChangeListeners(form, e.detail.elt);
-            updateContactCount(form);
+            addMultiSelectObserver(form, e.detail.elt);
             addCloseListener(notificationId);
+            updateContactCount(form);
         })
         form.addEventListener('htmx:configRequest', (e) => configRequest(e, form))
     }
