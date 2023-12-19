@@ -717,6 +717,7 @@ let invitations
   query_experiments
   query_tags
   matching_filter_count
+  invitation_count
   filtered_contacts
   ({ Pool_context.language; _ } as context)
   =
@@ -742,6 +743,7 @@ let invitations
           query_tags
           filtered_contacts
           matching_filter_count
+          invitation_count
       ]
   ]
   |> Layout.Experiment.(

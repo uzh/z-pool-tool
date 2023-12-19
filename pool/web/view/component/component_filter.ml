@@ -507,8 +507,36 @@ let rec predicate_form
     ]
 ;;
 
+let counts_table language experiment (matching_filter_count, invitation_count) =
+  let open Pool_common in
+  let to_string = Utils.text_to_string language in
+  table
+    ~a:[ a_class [ "table"; "simple"; "width-auto" ] ]
+    [ tr
+        [ th [ txt (to_string I18n.FilterNrOfContacts) ]
+        ; td
+            [ span
+                ~a:
+                  [ a_id "contact-counter"
+                  ; a_user_data
+                      "action"
+                      (experiment.Experiment.id
+                       |> Experiment.Id.value
+                       |> Format.asprintf "/admin/experiments/%s/contact-count"
+                       |> Sihl.Web.externalize_path)
+                  ]
+                [ txt (CCInt.to_string matching_filter_count) ]
+            ]
+        ]
+    ; tr
+        [ th [ txt (to_string I18n.FilterNrOfSentInvitations) ]
+        ; td [ txt (CCInt.to_string invitation_count) ]
+        ]
+    ]
+;;
+
 let filter_form
-  ?matching_filter_count
+  ?counts
   csrf
   language
   param
@@ -536,30 +564,11 @@ let filter_form
            fun filter -> filter.query |> t_to_human key_list template_list)
   in
   let result_counter =
+    let default = txt "" in
     match param with
-    | Template _ -> txt ""
+    | Template _ -> default
     | Experiment experiment ->
-      div
-        ~a:[ a_class [ "flexrow"; "flex-gap-xs" ] ]
-        [ txt
-            Pool_common.(Utils.text_to_string language I18n.FilterNrOfContacts)
-        ; span
-            ~a:
-              [ a_id "contact-counter"
-              ; a_user_data
-                  "action"
-                  (experiment.Experiment.id
-                   |> Experiment.Id.value
-                   |> Format.asprintf "/admin/experiments/%s/contact-count"
-                   |> Sihl.Web.externalize_path)
-              ]
-            [ txt
-                (CCOption.map_or
-                   ~default:""
-                   CCInt.to_string
-                   matching_filter_count)
-            ]
-        ]
+      counts |> CCOption.map_or ~default (counts_table language experiment)
   in
   let delete_form =
     match param with

@@ -71,6 +71,8 @@ val find_by_experiment
   -> Experiment.Id.t
   -> (t list * Query.t, Pool_common.Message.error) result Lwt.t
 
+val count_by_experiment : Pool_database.Label.t -> Experiment.Id.t -> int Lwt.t
+
 val find_by_contact
   :  Pool_database.Label.t
   -> Contact.t

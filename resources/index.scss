@@ -261,6 +261,10 @@ table.fixed {
     table-layout: fixed;
 }
 
+table.width-auto {
+    width: auto;
+}
+
 // Copy to clipboard
 [data-clipboard] {
     cursor: copy;
