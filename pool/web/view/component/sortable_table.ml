@@ -66,7 +66,7 @@ let sort_icon sort col =
 ;;
 
 let make_sortable_head id sort col =
-  let url = make_url sort col in
+  let url = make_url sort col |> Sihl.Web.externalize_path in
   span
     ~a:(hx_get ~url ~target:("#" ^ id) @ [ a_class [ "has-icon"; "pointer" ] ])
     (if is_selected sort col
