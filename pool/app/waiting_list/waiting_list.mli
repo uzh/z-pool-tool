@@ -1,3 +1,9 @@
+module Id : sig
+  include module type of Pool_common.Id
+
+  val to_common : t -> Pool_common.Id.t
+end
+
 module AdminComment : sig
   type t
 
@@ -12,7 +18,7 @@ module AdminComment : sig
 end
 
 type t =
-  { id : Pool_common.Id.t
+  { id : Id.t
   ; contact : Contact.t
   ; experiment : Experiment.t
   ; admin_comment : AdminComment.t option
@@ -55,25 +61,6 @@ val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
 val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
 
-module ExperimentList : sig
-  type waiting_list_entry =
-    { id : Pool_common.Id.t
-    ; contact : Contact.Preview.t
-    ; admin_comment : AdminComment.t option
-    ; created_at : Ptime.t
-    ; updated_at : Ptime.t
-    }
-
-  type t =
-    { experiment : Experiment.t
-    ; waiting_list_entries : waiting_list_entry list
-    }
-
-  val equal : t -> t -> bool
-  val pp : Format.formatter -> t -> unit
-  val show : t -> string
-end
-
 val find
   :  Pool_database.Label.t
   -> Pool_common.Id.t
@@ -82,23 +69,24 @@ val find
 val user_is_enlisted
   :  Pool_database.Label.t
   -> Contact.t
-  -> Experiment.Public.t
+  -> Experiment.Id.t
   -> bool Lwt.t
 
 val find_by_experiment
   :  ?query:Query.t
   -> Pool_database.Label.t
   -> Experiment.Id.t
-  -> (ExperimentList.t * Query.t, Pool_common.Message.error) Lwt_result.t
+  -> (t list * Query.t) Lwt.t
 
 val find_by_contact_and_experiment
   :  Pool_database.Label.t
   -> Contact.t
-  -> Experiment.Public.t
-  -> (t option, Pool_common.Message.error) result Lwt.t
+  -> Experiment.Id.t
+  -> t option Lwt.t
 
 val searchable_by : Query.Column.t list
 val sortable_by : Query.Column.t list
+val default_query : Query.t
 
 module Guard : sig
   module Target : sig

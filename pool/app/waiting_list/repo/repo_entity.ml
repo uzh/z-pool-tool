@@ -1,3 +1,4 @@
+module Common = Pool_common.Repo
 open Entity
 
 module AdminComment = struct
@@ -6,94 +7,60 @@ module AdminComment = struct
   let t = Caqti_type.string
 end
 
-type t =
-  { id : Pool_common.Id.t
-  ; contact_id : Pool_common.Id.t
-  ; experiment_id : Experiment.Id.t
-  ; admin_comment : AdminComment.t option
-  ; created_at : Pool_common.CreatedAt.t
-  ; updated_at : Pool_common.UpdatedAt.t
-  }
-[@@deriving eq, show]
-
-let create
-  ?(id = Pool_common.Id.create ())
-  contact_id
-  experiment_id
-  admin_comment
-  =
-  { id
-  ; contact_id
-  ; experiment_id
-  ; admin_comment
-  ; created_at = Pool_common.CreatedAt.create ()
-  ; updated_at = Pool_common.UpdatedAt.create ()
-  }
-;;
-
-let to_entity (m : t) contact experiment =
-  Entity.
-    { id = m.id
-    ; contact
-    ; experiment
-    ; admin_comment = m.admin_comment
-    ; created_at = m.created_at
-    ; updated_at = m.updated_at
-    }
-;;
-
 let t =
-  let encode (m : t) =
-    Ok
-      ( m.id
-      , ( m.contact_id
-        , (m.experiment_id, (m.admin_comment, (m.created_at, m.updated_at))) )
-      )
+  let encode _ =
+    failwith
+      Pool_common.(Message.ReadOnlyModel |> Utils.error_to_string Language.En)
   in
   let decode
-    ( id
-    , (contact_id, (experiment_id, (admin_comment, (created_at, updated_at))))
-    )
+    (id, (contact, (experiment, (admin_comment, (created_at, updated_at)))))
     =
-    Ok
-      { id
-      ; contact_id
-      ; experiment_id
-      ; admin_comment = CCOption.map AdminComment.create admin_comment
-      ; created_at
-      ; updated_at
-      }
+    Ok { id; contact; experiment; admin_comment; created_at; updated_at }
   in
   Caqti_type.(
     custom
       ~encode
       ~decode
       (t2
-         Pool_common.Repo.Id.t
+         Common.Id.t
          (t2
-            Pool_common.Repo.Id.t
+            Contact.Repo.Entity.t
             (t2
-               Experiment.Repo.Entity.Id.t
+               Experiment.Repo.Entity.t
                (t2
                   (option AdminComment.t)
-                  (t2 Pool_common.Repo.CreatedAt.t Pool_common.Repo.UpdatedAt.t))))))
+                  (t2 Common.CreatedAt.t Common.UpdatedAt.t))))))
 ;;
 
-module Experiment = struct
-  open Entity.ExperimentList
+module Write = struct
+  type t =
+    { id : Entity.Id.t
+    ; contact_id : Pool_common.Id.t
+    ; experiment_id : Experiment.Id.t
+    ; admin_comment : Entity.AdminComment.t option
+    }
+  [@@deriving eq, show]
+
+  let of_entity { id; contact; experiment; admin_comment; _ } =
+    { id
+    ; contact_id = Contact.id contact
+    ; experiment_id = experiment.Experiment.id
+    ; admin_comment
+    }
+  ;;
+
+  let create ?(id = Entity.Id.create ()) contact_id experiment_id admin_comment =
+    { id; contact_id; experiment_id; admin_comment }
+  ;;
 
   let t =
-    let encode (m : waiting_list_entry) =
-      Ok (m.id, (m.contact, (m.admin_comment, (m.created_at, m.updated_at))))
+    let encode (m : t) =
+      Ok (m.id, (m.contact_id, (m.experiment_id, m.admin_comment)))
     in
-    let decode (id, (contact, (admin_comment, (created_at, updated_at)))) =
-      Ok
-        { id
-        ; contact
-        ; admin_comment = CCOption.map AdminComment.create admin_comment
-        ; created_at
-        ; updated_at
-        }
+    let decode _ =
+      failwith
+        Pool_common.(
+          Message.WriteOnlyModel |> Utils.error_to_string Language.En)
     in
     Caqti_type.(
       custom
@@ -102,9 +69,7 @@ module Experiment = struct
         (t2
            Pool_common.Repo.Id.t
            (t2
-              Contact.Repo.Preview.t
-              (t2
-                 (option AdminComment.t)
-                 (t2 Pool_common.Repo.CreatedAt.t Pool_common.Repo.UpdatedAt.t)))))
+              Pool_common.Repo.Id.t
+              (t2 Experiment.Repo.Entity.Id.t (option AdminComment.t)))))
   ;;
 end

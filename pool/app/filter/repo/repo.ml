@@ -5,6 +5,15 @@ open Repo_utils
 
 let src = Logs.Src.create "filter.repo"
 
+let sql_select_columns =
+  [ Id.sql_select_fragment ~field:"pool_filter.uuid"
+  ; "pool_filter.query"
+  ; "pool_filter.title"
+  ; "pool_filter.created_at"
+  ; "pool_filter.updated_at"
+  ]
+;;
+
 module Sql = struct
   let select_filter_sql where_fragment =
     let select_from =
@@ -389,8 +398,8 @@ module Sql = struct
   ;;
 
   let find_filtered_request_sql ?limit use_case dyn where_fragment =
-    let dyn, joins = prepare_use_case_joins dyn use_case in
-    let base = Contact.Repo.Sql.find_request_sql ~joins where_fragment in
+    let dyn, additional_joins = prepare_use_case_joins dyn use_case in
+    let base = Contact.Repo.find_request_sql ~additional_joins where_fragment in
     match limit with
     | None -> dyn, base
     | Some limit -> dyn, Format.asprintf "%s\nLIMIT %i" base limit

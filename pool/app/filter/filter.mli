@@ -242,6 +242,7 @@ module UtilsF : sig
 end
 
 module Repo : sig
+  val sql_select_columns : string list
   val t : t Caqti_type.t
   val query : query Caqti_type.t
 end

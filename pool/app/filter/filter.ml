@@ -14,6 +14,7 @@ let count_filtered_contacts = Repo.count_filtered_contacts
 let contact_matches_filter = Repo.contact_matches_filter
 
 module Repo = struct
+  let sql_select_columns = Repo.sql_select_columns
   let t = Repo_entity.t
   let query = Repo_entity.Query.t
 end

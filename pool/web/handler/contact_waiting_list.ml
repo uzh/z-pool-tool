@@ -36,11 +36,11 @@ let handle req action =
         |> Create.handle ~tags confirmation_email
         |> Lwt_result.lift
       | `Destroy ->
-        let* waiting_list =
+        let%lwt waiting_list =
           Waiting_list.find_by_contact_and_experiment
             database_label
             contact
-            experiment
+            experiment_id
         in
         let open CCResult.Infix in
         waiting_list

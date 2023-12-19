@@ -75,7 +75,13 @@ let append_query_to_sql dyn where t =
   dyn, sql, paginate_and_sort
 ;;
 
-let collect_and_count database_label query ~select ~count ?where caqti_type =
+let collect_and_count
+  database_label
+  query
+  ~(select : ?count:bool -> string -> string)
+  ?where
+  caqti_type
+  =
   let open Utils.Database in
   let open Caqti_request.Infix in
   let where, dyn =
@@ -94,7 +100,7 @@ let collect_and_count database_label query ~select ~count ?where caqti_type =
     |> CCOption.map_or ~default:base (Format.asprintf "%s %s" base)
     |> pt ->* caqti_type
   in
-  let count_request = count where |> pt ->! Caqti_type.int in
+  let count_request = select ~count:true where |> pt ->! Caqti_type.int in
   let%lwt rows = collect database_label request pv in
   let%lwt count = find database_label count_request pv in
   let query = CCOption.value ~default:(empty ()) query in

@@ -300,6 +300,9 @@ val smtp_auth
 val find_contact_person : Pool_database.Label.t -> t -> Admin.t option Lwt.t
 
 module Repo : sig
+  val sql_select_columns : string list
+  val joins : string
+
   module Public : sig
     val select_from_experiments_sql : ?distinct:bool -> string -> string
 
@@ -320,6 +323,8 @@ module Repo : sig
 
       val t : t Caqti_type.t
     end
+
+    val t : t Caqti_type.t
   end
 end
 

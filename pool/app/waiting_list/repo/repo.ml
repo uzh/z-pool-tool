@@ -3,42 +3,39 @@ module Database = Pool_database
 module Dynparam = Utils.Database.Dynparam
 
 module Sql = struct
-  let select_sql where_fragment =
-    let select_from =
+  let sql_select_columns =
+    (Entity.Id.sql_select_fragment ~field:"pool_waiting_list.uuid"
+     :: Contact.Repo.sql_select_columns)
+    @ Experiment.Repo.sql_select_columns
+    @ [ "pool_waiting_list.comment"
+      ; "pool_waiting_list.created_at"
+      ; "pool_waiting_list.updated_at"
+      ]
+  ;;
+
+  let joins =
+    Format.asprintf
       {sql|
-          SELECT
-            LOWER(CONCAT(
-              SUBSTR(HEX(pool_waiting_list.uuid), 1, 8), '-',
-              SUBSTR(HEX(pool_waiting_list.uuid), 9, 4), '-',
-              SUBSTR(HEX(pool_waiting_list.uuid), 13, 4), '-',
-              SUBSTR(HEX(pool_waiting_list.uuid), 17, 4), '-',
-              SUBSTR(HEX(pool_waiting_list.uuid), 21)
-            )),
-            LOWER(CONCAT(
-              SUBSTR(HEX(pool_contacts.user_uuid), 1, 8), '-',
-              SUBSTR(HEX(pool_contacts.user_uuid), 9, 4), '-',
-              SUBSTR(HEX(pool_contacts.user_uuid), 13, 4), '-',
-              SUBSTR(HEX(pool_contacts.user_uuid), 17, 4), '-',
-              SUBSTR(HEX(pool_contacts.user_uuid), 21)
-            )),
-            LOWER(CONCAT(
-              SUBSTR(HEX(pool_experiments.uuid), 1, 8), '-',
-              SUBSTR(HEX(pool_experiments.uuid), 9, 4), '-',
-              SUBSTR(HEX(pool_experiments.uuid), 13, 4), '-',
-              SUBSTR(HEX(pool_experiments.uuid), 17, 4), '-',
-              SUBSTR(HEX(pool_experiments.uuid), 21)
-            )),
-            pool_waiting_list.comment,
-            pool_waiting_list.created_at,
-            pool_waiting_list.updated_at
-          FROM pool_waiting_list
-          LEFT JOIN pool_contacts
-            ON pool_waiting_list.contact_uuid = pool_contacts.user_uuid
-          LEFT JOIN pool_experiments
-            ON pool_waiting_list.experiment_uuid = pool_experiments.uuid
-        |sql}
+        LEFT JOIN pool_contacts
+          ON pool_waiting_list.contact_uuid = pool_contacts.user_uuid
+        %s
+        LEFT JOIN pool_experiments
+          ON pool_waiting_list.experiment_uuid = pool_experiments.uuid
+        %s
+      |sql}
+      Contact.Repo.joins
+      Experiment.Repo.joins
+  ;;
+
+  let find_request_sql ?(count = false) where_fragment =
+    let columns =
+      if count then "COUNT(*)" else CCString.concat ", " sql_select_columns
     in
-    Format.asprintf "%s %s" select_from where_fragment
+    Format.asprintf
+      {sql|SELECT %s FROM pool_waiting_list %s %s|sql}
+      columns
+      joins
+      where_fragment
   ;;
 
   let find_request =
@@ -46,7 +43,7 @@ module Sql = struct
     {sql|
       WHERE pool_waiting_list.uuid = UNHEX(REPLACE(?, '-', ''))
     |sql}
-    |> select_sql
+    |> find_request_sql
     |> Caqti_type.string ->! RepoEntity.t
   ;;
 
@@ -67,106 +64,47 @@ module Sql = struct
       AND
         experiment_uuid = UNHEX(REPLACE($2, '-', ''))
     |sql}
-    |> select_sql
+    |> find_request_sql
     |> Caqti_type.(t2 string string) ->! RepoEntity.t
   ;;
 
-  let find_by_contact_and_experiment pool contact experiment =
+  let find_by_contact_and_experiment pool contact experiment_id =
     Utils.Database.find_opt
       (Pool_database.Label.value pool)
       user_is_enlisted_request
       ( contact |> Contact.id |> Pool_common.Id.value
-      , experiment.Experiment.Public.id |> Experiment.Id.value )
-  ;;
-
-  let find_multiple_sql where_fragment =
-    Format.asprintf
-      "SELECT %s %s"
-      {sql|
-      LOWER(CONCAT(
-        SUBSTR(HEX(pool_waiting_list.uuid), 1, 8), '-',
-        SUBSTR(HEX(pool_waiting_list.uuid), 9, 4), '-',
-        SUBSTR(HEX(pool_waiting_list.uuid), 13, 4), '-',
-        SUBSTR(HEX(pool_waiting_list.uuid), 17, 4), '-',
-        SUBSTR(HEX(pool_waiting_list.uuid), 21)
-      )),
-      LOWER(CONCAT(
-        SUBSTR(HEX(user_users.uuid), 1, 8), '-',
-        SUBSTR(HEX(user_users.uuid), 9, 4), '-',
-        SUBSTR(HEX(user_users.uuid), 13, 4), '-',
-        SUBSTR(HEX(user_users.uuid), 17, 4), '-',
-        SUBSTR(HEX(user_users.uuid), 21)
-      )),
-      user_users.email,
-      user_users.username,
-      user_users.name,
-      user_users.given_name,
-      user_users.password,
-      user_users.status,
-      user_users.admin,
-      user_users.confirmed,
-      user_users.created_at,
-      user_users.updated_at,
-      pool_contacts.language,
-      pool_contacts.cell_phone,
-      pool_contacts.paused,
-      pool_contacts.verified,
-      pool_contacts.num_invitations,
-      pool_contacts.num_assignments,
-      pool_waiting_list.comment,
-      pool_waiting_list.created_at,
-      pool_waiting_list.updated_at
-    FROM
-      pool_waiting_list
-    LEFT JOIN pool_contacts
-      ON pool_waiting_list.contact_uuid = pool_contacts.user_uuid
-    LEFT JOIN user_users
-      ON pool_contacts.user_uuid = user_users.uuid
-    |sql}
-      where_fragment
-  ;;
-
-  let select_count =
-    Format.asprintf
-      {sql|
-        SELECT COUNT(*)
-          FROM
-          pool_waiting_list
-        LEFT JOIN pool_contacts
-          ON pool_waiting_list.contact_uuid = pool_contacts.user_uuid
-        LEFT JOIN user_users
-          ON pool_contacts.user_uuid = user_users.uuid
-        %s
-      |sql}
+      , experiment_id |> Experiment.Id.value )
   ;;
 
   let find_by_experiment ?query pool id =
     let where =
       let sql =
         {sql|
-          pool_waiting_list.experiment_uuid = UNHEX(REPLACE($1, '-', ''))
+          pool_waiting_list.experiment_uuid = UNHEX(REPLACE(?, '-', ''))
           AND NOT EXISTS (
             SELECT 1
             FROM pool_assignments
             INNER JOIN pool_sessions ON pool_assignments.session_uuid = pool_sessions.uuid
-              AND pool_sessions.experiment_uuid = UNHEX(REPLACE($1, '-', ''))
+              AND pool_sessions.experiment_uuid = UNHEX(REPLACE(?, '-', ''))
             WHERE pool_assignments.contact_uuid = user_users.uuid
-              AND pool_assignments.marked_as_deleted IS NULL)
+              AND pool_assignments.marked_as_deleted IS NOT NULL)
         |sql}
       in
       let dyn =
+        let open Experiment in
         Dynparam.(
-          empty |> add Pool_common.Repo.Id.t (Experiment.Id.to_common id))
+          empty
+          |> add Pool_common.Repo.Id.t (Id.to_common id)
+          |> add Pool_common.Repo.Id.t (Id.to_common id))
       in
       sql, dyn
     in
     Query.collect_and_count
       pool
       query
-      ~select:find_multiple_sql
-      ~count:select_count
+      ~select:find_request_sql
       ~where
-      RepoEntity.Experiment.t
+      RepoEntity.t
   ;;
 
   let find_binary_experiment_id_sql =
@@ -210,23 +148,20 @@ module Sql = struct
       INSERT INTO pool_waiting_list (
         uuid,
         contact_uuid,
-        experiment_uuid
+        experiment_uuid,
+        comment
       ) VALUES (
         UNHEX(REPLACE($1, '-', '')),
         UNHEX(REPLACE($2, '-', '')),
-        UNHEX(REPLACE($3, '-', ''))
+        UNHEX(REPLACE($3, '-', '')),
+        $4
       )
     |sql}
-    |> Caqti_type.(t3 string string string ->. unit)
+    |> Caqti_type.(RepoEntity.Write.t ->. unit)
   ;;
 
-  let insert pool m =
-    let caqti =
-      ( m.RepoEntity.id |> Pool_common.Id.value
-      , m.RepoEntity.contact_id |> Pool_common.Id.value
-      , m.RepoEntity.experiment_id |> Experiment.Id.value )
-    in
-    Utils.Database.exec (Pool_database.Label.value pool) insert_request caqti
+  let insert pool =
+    Utils.Database.exec (Pool_database.Label.value pool) insert_request
   ;;
 
   let update_request =
@@ -266,43 +201,16 @@ module Sql = struct
   ;;
 end
 
-let find pool id =
+let find = Sql.find
+let find_by_contact_and_experiment = Sql.find_by_contact_and_experiment
+
+let user_is_enlisted pool contact experiment_id =
   let open Utils.Lwt_result.Infix in
-  let* waiting_list = Sql.find pool id in
-  let experiment_id = waiting_list.RepoEntity.experiment_id in
-  let* experiment = Experiment.find pool experiment_id in
-  let* contact = Contact.find pool waiting_list.RepoEntity.contact_id in
-  RepoEntity.to_entity waiting_list contact experiment |> Lwt.return_ok
+  Sql.find_by_contact_and_experiment pool contact experiment_id
+  ||> CCOption.is_some
 ;;
 
-let find_by_contact_and_experiment pool contact experiment =
-  let open Utils.Lwt_result.Infix in
-  let%lwt waiting_list =
-    Sql.find_by_contact_and_experiment pool contact experiment
-  in
-  let* experiment = Experiment.find pool experiment.Experiment.Public.id in
-  CCOption.map
-    (fun waiting_list -> RepoEntity.to_entity waiting_list contact experiment)
-    waiting_list
-  |> Lwt.return_ok
-;;
-
-let user_is_enlisted pool contact experiment =
-  let open Utils.Lwt_result.Infix in
-  Sql.find_by_contact_and_experiment pool contact experiment
-  ||> function
-  | None -> false
-  | Some _ -> true
-;;
-
-let find_by_experiment ?query pool id =
-  let open Utils.Lwt_result.Infix in
-  let%lwt entries, query = Sql.find_by_experiment ?query pool id in
-  let* experiment = Experiment.find pool id in
-  (Entity.ExperimentList.{ waiting_list_entries = entries; experiment }, query)
-  |> Lwt.return_ok
-;;
-
+let find_by_experiment = Sql.find_by_experiment
 let find_experiment_id = Sql.find_experiment_id
 let insert = Sql.insert
 let update = Sql.update

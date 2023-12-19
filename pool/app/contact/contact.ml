@@ -35,8 +35,7 @@ module Repo = struct
   module Preview = Repo_model.Preview
   module Entity = Repo_model
 
-  module Sql = struct
-    let find_request_sql = Repo_sql.find_request_sql
-    let select_imported_contacts_sql = Repo_sql.select_imported_contacts_sql
-  end
+  let joins = Repo_sql.joins
+  let sql_select_columns = Repo_sql.sql_select_columns
+  let find_request_sql = Repo_sql.find_request_sql
 end

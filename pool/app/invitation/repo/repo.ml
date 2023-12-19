@@ -51,10 +51,9 @@ module Sql = struct
     ;;
   end
 
-  let select_sql =
-    Format.asprintf
+  let select_sql ?(count = false) =
+    let select_sql =
       {sql|
-        SELECT
           LOWER(CONCAT(
             SUBSTR(HEX(pool_invitations.uuid), 1, 8), '-',
             SUBSTR(HEX(pool_invitations.uuid), 9, 4), '-',
@@ -80,22 +79,12 @@ module Sql = struct
           pool_invitations.send_count,
           pool_invitations.created_at,
           pool_invitations.updated_at
-        FROM
-          pool_invitations
-        LEFT JOIN pool_contacts
-          ON pool_invitations.contact_uuid = pool_contacts.user_uuid
-        LEFT JOIN user_users
-          ON pool_contacts.user_uuid = user_users.uuid
-        LEFT JOIN pool_experiments
-          ON pool_invitations.experiment_uuid = pool_experiments.uuid
-        %s
-      |sql}
-  ;;
-
-  let select_count =
+        |sql}
+    in
     Format.asprintf
       {sql|
-        SELECT COUNT(*)
+        SELECT
+          %s
         FROM
           pool_invitations
         LEFT JOIN pool_contacts
@@ -106,6 +95,7 @@ module Sql = struct
           ON pool_invitations.experiment_uuid = pool_experiments.uuid
         %s
       |sql}
+      (if count then "COUNT(*)" else select_sql)
   ;;
 
   let find_request =
@@ -138,13 +128,7 @@ module Sql = struct
       in
       sql, dyn
     in
-    Query.collect_and_count
-      pool
-      query
-      ~select:select_sql
-      ~count:select_count
-      ~where
-      Repo_entity.t
+    Query.collect_and_count pool query ~select:select_sql ~where Repo_entity.t
   ;;
 
   let find_by_contact_request =

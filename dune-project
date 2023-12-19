@@ -74,14 +74,15 @@
   (caqti-driver-mariadb
    (>= 2.0.1))
   (caqti-lwt
-    (>= 2.0.1)
-)
+   (>= 2.0.1))
   (caqti
    (>= 2.0.1))
   (ocamlformat
    (>= 0.18.0))
   (ppx_deriving
    (>= 5.2.1))
+  (ppx_string
+   (>= 0.16.0))
   (ppx_yojson_conv
    (>= 0.14.0))
   (ppx_variants_conv

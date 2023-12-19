@@ -37,5 +37,6 @@ module Guard = Entity_guard
 module Repo = struct
   module Entity = Repo_entity
 
-  let select_imported_admins_sql = Repo.Sql.select_imported_admins_sql
+  let sql_select_columns = Repo.Sql.sql_select_columns
+  let joins = Repo.Sql.joins
 end

@@ -106,7 +106,7 @@ let find_all_public_by_contact_request ?(has_session = false) () =
     condition_allow_uninvited_signup
     is_invited
     session_exists
-  |> Repo.Sql.select_from_experiments_sql
+  |> Repo.find_request_sql
   |> Pool_common.Repo.Id.t ->* RepoEntity.t
 ;;
 
@@ -230,7 +230,7 @@ let find pool id contact =
 let find_full_by_contact_request =
   let open Caqti_request.Infix in
   where_contact_can_access
-  |> Repo.Sql.select_from_experiments_sql
+  |> Repo.find_request_sql
   |> Caqti_type.(t2 string string) ->! RepoEntity.t
 ;;
 

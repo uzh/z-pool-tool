@@ -23,6 +23,7 @@
     "@opam/ppx_deriving": "5.2.1",
     "@opam/ppx_inline_test": "*",
     "@opam/ppx_sexp_conv": "v0.16.0",
+    "@opam/ppx_string": "v0.16.0",
     "@opam/ppx_variants_conv": "v0.16.0",
     "@opam/ppx_yojson_conv": "v0.16.0",
     "@opam/sihl": "*",

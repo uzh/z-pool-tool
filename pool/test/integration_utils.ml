@@ -112,7 +112,6 @@ end
 
 module WaitingListRepo = struct
   let create experiment contact () =
-    let open Utils.Lwt_result.Infix in
     let%lwt () =
       Waiting_list.(Created { experiment; contact })
       |> Pool_event.waiting_list
@@ -121,8 +120,7 @@ module WaitingListRepo = struct
     Waiting_list.find_by_contact_and_experiment
       Data.database_label
       contact
-      experiment
-    ||> get_or_failwith
+      experiment.Experiment.Public.id
   ;;
 end
 

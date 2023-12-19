@@ -249,15 +249,14 @@ module Repo : sig
     val t : t Caqti_type.t
   end
 
-  module Sql : sig
-    val find_request_sql : ?joins:string list -> string -> string
+  val joins : string
+  val sql_select_columns : string list
 
-    val select_imported_contacts_sql
-      :  import_columns:string
-      -> where:string
-      -> limit:int
-      -> string
-  end
+  val find_request_sql
+    :  ?additional_joins:string list
+    -> ?count:bool
+    -> string
+    -> string
 end
 
 module Guard : sig

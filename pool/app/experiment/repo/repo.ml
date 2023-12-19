@@ -4,6 +4,51 @@ module Dynparam = Utils.Database.Dynparam
 
 let src = Logs.Src.create "experiment.repo"
 
+let sql_select_columns =
+  [ Entity.Id.sql_select_fragment ~field:"pool_experiments.uuid"
+  ; "pool_experiments.title"
+  ; "pool_experiments.public_title"
+  ; "pool_experiments.description"
+  ; "pool_experiments.language"
+  ; "pool_experiments.cost_center"
+  ; Entity.Id.sql_select_fragment ~field:"pool_experiments.contact_person_uuid"
+  ; Entity.Id.sql_select_fragment ~field:"pool_experiments.smtp_auth_uuid"
+  ; "pool_experiments.direct_registration_disabled"
+  ; "pool_experiments.registration_disabled"
+  ; "pool_experiments.allow_uninvited_signup"
+  ; "pool_experiments.external_data_required"
+  ; "pool_experiments.show_external_data_id_links"
+  ; "pool_experiments.experiment_type"
+  ; "pool_experiments.email_session_reminder_lead_time"
+  ; "pool_experiments.text_message_session_reminder_lead_time"
+  ; "pool_experiments.invitation_reset_at"
+  ; "pool_experiments.created_at"
+  ; "pool_experiments.updated_at"
+  ]
+  @ Filter.Repo.sql_select_columns
+  @ Organisational_unit.Repo.sql_select_columns
+;;
+
+let joins =
+  {sql|
+    LEFT JOIN pool_filter
+      ON pool_filter.uuid = pool_experiments.filter_uuid
+    LEFT JOIN pool_organisational_units
+      ON pool_organisational_units.uuid = pool_experiments.organisational_unit_uuid
+  |sql}
+;;
+
+let find_request_sql ?(count = false) where_fragment =
+  let columns =
+    if count then "COUNT(*)" else sql_select_columns |> CCString.concat ", "
+  in
+  Format.asprintf
+    {sql|SELECT %s FROM pool_experiments %s %s|sql}
+    columns
+    joins
+    where_fragment
+;;
+
 module Sql = struct
   let default_order_by = "pool_experiments.created_at"
 
@@ -91,76 +136,6 @@ module Sql = struct
       [ insert; set_title ]
   ;;
 
-  let select_from_experiments_sql where_fragment =
-    let select_from =
-      {sql|
-        SELECT
-          LOWER(CONCAT(
-            SUBSTR(HEX(pool_experiments.uuid), 1, 8), '-',
-            SUBSTR(HEX(pool_experiments.uuid), 9, 4), '-',
-            SUBSTR(HEX(pool_experiments.uuid), 13, 4), '-',
-            SUBSTR(HEX(pool_experiments.uuid), 17, 4), '-',
-            SUBSTR(HEX(pool_experiments.uuid), 21)
-          )),
-          pool_experiments.title,
-          pool_experiments.public_title,
-          pool_experiments.description,
-          pool_experiments.language,
-          pool_experiments.cost_center,
-          LOWER(CONCAT(
-            SUBSTR(HEX(pool_organisational_units.uuid), 1, 8), '-',
-            SUBSTR(HEX(pool_organisational_units.uuid), 9, 4), '-',
-            SUBSTR(HEX(pool_organisational_units.uuid), 13, 4), '-',
-            SUBSTR(HEX(pool_organisational_units.uuid), 17, 4), '-',
-            SUBSTR(HEX(pool_organisational_units.uuid), 21)
-          )),
-          pool_organisational_units.name,
-          LOWER(CONCAT(
-            SUBSTR(HEX(pool_filter.uuid), 1, 8), '-',
-            SUBSTR(HEX(pool_filter.uuid), 9, 4), '-',
-            SUBSTR(HEX(pool_filter.uuid), 13, 4), '-',
-            SUBSTR(HEX(pool_filter.uuid), 17, 4), '-',
-            SUBSTR(HEX(pool_filter.uuid), 21)
-          )),
-          pool_filter.query,
-          pool_filter.title,
-          pool_filter.created_at,
-          pool_filter.updated_at,
-          LOWER(CONCAT(
-            SUBSTR(HEX(pool_experiments.contact_person_uuid), 1, 8), '-',
-            SUBSTR(HEX(pool_experiments.contact_person_uuid), 9, 4), '-',
-            SUBSTR(HEX(pool_experiments.contact_person_uuid), 13, 4), '-',
-            SUBSTR(HEX(pool_experiments.contact_person_uuid), 17, 4), '-',
-            SUBSTR(HEX(pool_experiments.contact_person_uuid), 21)
-          )),
-          LOWER(CONCAT(
-            SUBSTR(HEX(pool_experiments.smtp_auth_uuid), 1, 8), '-',
-            SUBSTR(HEX(pool_experiments.smtp_auth_uuid), 9, 4), '-',
-            SUBSTR(HEX(pool_experiments.smtp_auth_uuid), 13, 4), '-',
-            SUBSTR(HEX(pool_experiments.smtp_auth_uuid), 17, 4), '-',
-            SUBSTR(HEX(pool_experiments.smtp_auth_uuid), 21)
-          )),
-          pool_experiments.direct_registration_disabled,
-          pool_experiments.registration_disabled,
-          pool_experiments.allow_uninvited_signup,
-          pool_experiments.external_data_required,
-          pool_experiments.show_external_data_id_links,
-          pool_experiments.experiment_type,
-          pool_experiments.email_session_reminder_lead_time,
-          pool_experiments.text_message_session_reminder_lead_time,
-          pool_experiments.invitation_reset_at,
-          pool_experiments.created_at,
-          pool_experiments.updated_at
-        FROM pool_experiments
-        LEFT JOIN pool_filter
-          ON pool_filter.uuid = pool_experiments.filter_uuid
-        LEFT JOIN pool_organisational_units
-          ON pool_organisational_units.uuid = pool_experiments.organisational_unit_uuid
-      |sql}
-    in
-    Format.asprintf "%s %s" select_from where_fragment
-  ;;
-
   let search_select =
     {sql|
         SELECT
@@ -178,16 +153,6 @@ module Sql = struct
 
   let validate_experiment_sql m = Format.asprintf " AND %s " m, Dynparam.empty
 
-  let select_count where_fragment =
-    Format.asprintf
-      {sql|
-        SELECT COUNT(*)
-        FROM pool_experiments
-        %s
-      |sql}
-      where_fragment
-  ;;
-
   let find_all ?query ?actor ?permission pool =
     let open Utils.Lwt_result.Infix in
     let checks = [ Format.asprintf "pool_experiments.uuid IN %s" ] in
@@ -198,8 +163,7 @@ module Sql = struct
     Query.collect_and_count
       pool
       query
-      ~select:select_from_experiments_sql
-      ~count:select_count
+      ~select:find_request_sql
       ?where
       Repo_entity.t
   ;;
@@ -209,7 +173,7 @@ module Sql = struct
     {sql|
       WHERE pool_experiments.uuid = UNHEX(REPLACE(?, '-', ''))
     |sql}
-    |> select_from_experiments_sql
+    |> find_request_sql
     |> Caqti_type.string ->! Repo_entity.t
   ;;
 
@@ -229,7 +193,7 @@ module Sql = struct
         ON pool_experiments.uuid = pool_sessions.experiment_uuid
       WHERE pool_sessions.uuid = UNHEX(REPLACE(?, '-', ''))
     |sql}
-    |> select_from_experiments_sql
+    |> find_request_sql
     |> Caqti_type.string ->! Repo_entity.t
   ;;
 
@@ -247,7 +211,7 @@ module Sql = struct
     {sql|
       WHERE pool_experiments.uuid = (SELECT experiment_uuid FROM pool_mailing WHERE uuid = UNHEX(REPLACE(?, '-', '')) )
     |sql}
-    |> select_from_experiments_sql
+    |> find_request_sql
     |> Caqti_type.string ->! Repo_entity.t
   ;;
 

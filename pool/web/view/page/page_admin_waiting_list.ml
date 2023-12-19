@@ -1,5 +1,7 @@
 open Tyxml.Html
+open Pool_common
 open Component.Input
+module Table = Component.Table
 module Message = Pool_common.Message
 
 let detail
@@ -10,7 +12,6 @@ let detail
   flash_fetcher
   chronological
   =
-  let open Pool_common in
   let waiting_list_detail =
     div
       ~a:[ a_class [ "stack" ] ]
@@ -24,7 +25,7 @@ let detail
                    (Format.asprintf
                       "/admin/experiments/%s/waiting-list/%s"
                       (Experiment.Id.value experiment.Experiment.id)
-                      (Id.value id)))
+                      (Waiting_list.Id.value id)))
             ]
           [ csrf_element csrf ()
           ; textarea_element
@@ -96,7 +97,7 @@ let detail
                   (Format.asprintf
                      "/admin/experiments/%s/waiting-list/%s/assign"
                      (experiment_id |> Experiment.Id.value)
-                     (id |> Id.value)
+                     (id |> Waiting_list.Id.value)
                    |> Sihl.Web.externalize_path)
               ]
             [ csrf_element csrf ()
@@ -126,4 +127,63 @@ let detail
   div ~a:[ a_class [ "stack-lg" ] ] [ waiting_list_detail; sessions ]
   |> CCList.return
   |> Layout.Experiment.(create context (NavLink I18n.WaitingList) experiment)
+;;
+
+let index
+  experiment
+  (waiting_list, query)
+  ({ Pool_context.language; _ } as context)
+  =
+  let waiting_list_table waiting_list_entries =
+    let thead =
+      (Field.[ Name; Email; CellPhone; SignedUpAt; AdminComment ]
+       |> Component.Table.fields_to_txt language)
+      @ [ txt "" ]
+    in
+    let rows =
+      let open CCOption in
+      CCList.map
+        Contact.(
+          fun ({ Waiting_list.id; contact; admin_comment; created_at; _ } :
+                Waiting_list.t) ->
+            [ txt (fullname contact)
+            ; txt (email_address contact |> Pool_user.EmailAddress.value)
+            ; txt
+                (contact.cell_phone
+                 |> map_or ~default:"" Pool_user.CellPhone.value)
+            ; txt
+                (created_at |> CreatedAt.value |> Utils.Time.formatted_date_time)
+            ; admin_comment
+              |> map_or ~default:"" Waiting_list.AdminComment.value
+              |> HttpUtils.first_n_characters
+              |> HttpUtils.add_line_breaks
+            ; Format.asprintf
+                "/admin/experiments/%s/waiting-list/%s"
+                (experiment.Experiment.id |> Experiment.Id.value)
+                (id |> Waiting_list.Id.value)
+              |> edit_link
+            ])
+        waiting_list_entries
+    in
+    Table.horizontal_table
+      `Striped
+      ~align_top:true
+      ~align_last_end:true
+      ~thead
+      rows
+  in
+  Component.List.create
+    language
+    waiting_list_table
+    Waiting_list.sortable_by
+    Waiting_list.searchable_by
+    (waiting_list, query)
+  |> CCList.return
+  |> Layout.Experiment.(
+       create
+         ~active_navigation:I18n.WaitingList
+         ~hint:I18n.ExperimentWaitingList
+         context
+         (NavLink I18n.WaitingList)
+         experiment)
 ;;

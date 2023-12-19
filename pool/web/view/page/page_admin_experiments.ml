@@ -842,66 +842,6 @@ let sent_invitations
          experiment)
 ;;
 
-let waiting_list
-  ({ Waiting_list.ExperimentList.experiment; waiting_list_entries }, query)
-  ({ Pool_context.language; _ } as context)
-  =
-  let open Waiting_list.ExperimentList in
-  let waiting_list_table waiting_list_entries =
-    let thead =
-      (Field.[ Name; Email; CellPhone; SignedUpAt; AdminComment ]
-       |> Table.fields_to_txt language)
-      @ [ txt "" ]
-    in
-    let rows =
-      let open CCOption in
-      CCList.map
-        Contact.Preview.(
-          fun entry ->
-            [ txt (fullname entry.contact)
-            ; txt (email_address entry.contact |> Pool_user.EmailAddress.value)
-            ; txt
-                (entry.contact.cell_phone
-                 |> map_or ~default:"" Pool_user.CellPhone.value)
-            ; txt
-                (entry.created_at
-                 |> CreatedAt.value
-                 |> Utils.Time.formatted_date_time)
-            ; entry.admin_comment
-              |> map_or ~default:"" Waiting_list.AdminComment.value
-              |> HttpUtils.first_n_characters
-              |> HttpUtils.add_line_breaks
-            ; Format.asprintf
-                "/admin/experiments/%s/waiting-list/%s"
-                (experiment.Experiment.id |> Experiment.Id.value)
-                (entry.id |> Id.value)
-              |> edit_link
-            ])
-        waiting_list_entries
-    in
-    Table.horizontal_table
-      `Striped
-      ~align_top:true
-      ~align_last_end:true
-      ~thead
-      rows
-  in
-  Component.List.create
-    language
-    waiting_list_table
-    Waiting_list.sortable_by
-    Waiting_list.searchable_by
-    (waiting_list_entries, query)
-  |> CCList.return
-  |> Layout.Experiment.(
-       create
-         ~active_navigation:I18n.WaitingList
-         ~hint:I18n.ExperimentWaitingList
-         context
-         (NavLink I18n.WaitingList)
-         experiment)
-;;
-
 let users role experiment applicable_admins currently_assigned context =
   let base_url field admin =
     Format.asprintf

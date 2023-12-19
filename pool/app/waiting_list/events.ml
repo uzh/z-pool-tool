@@ -18,13 +18,15 @@ let handle_event pool : event -> unit Lwt.t =
   let open Utils.Lwt_result.Infix in
   function
   | Created { experiment; contact } ->
-    let experiment_id = experiment.Experiment.Public.id in
-    let waiting_list =
-      Repo_entity.create (Contact.id contact) experiment_id None
+    let write =
+      Repo_entity.Write.create
+        (Contact.id contact)
+        experiment.Experiment.Public.id
+        None
     in
-    let%lwt () = Repo.insert pool waiting_list in
-    waiting_list
-    |> Entity_guard.Target.to_authorizable_of_repo
+    let%lwt () = Repo.insert pool write in
+    write
+    |> Entity_guard.Target.to_authorizable_of_write
          ~ctx:(Pool_database.to_ctx pool)
     ||> Pool_common.Utils.get_or_failwith
     ||> fun (_ : Guard.Target.t) -> ()
