@@ -285,8 +285,10 @@ let find_by query pool =
     Query.collect_and_count
       pool
       (Some query)
-      ~select:(fun fragment -> Format.sprintf "%s %s" Sql.select_sql fragment)
-      ~count:Sql.select_count
+      ~select:(fun ?(count = false) fragment ->
+        if count
+        then Sql.select_count fragment
+        else Format.sprintf "%s %s" Sql.select_sql fragment)
       t
   in
   let* locations = Lwt_list.map_s (files_to_location pool) locations in

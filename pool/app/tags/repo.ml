@@ -187,13 +187,10 @@ module Sql = struct
   ;;
 
   let find_by query pool =
-    let select fragment = select_tag_sql ^ "  " ^ fragment in
-    Query.collect_and_count
-      pool
-      (Some query)
-      ~select
-      ~count:select_count
-      RepoEntity.t
+    let select ?(count = false) fragment =
+      if count then select_count fragment else select_tag_sql ^ "  " ^ fragment
+    in
+    Query.collect_and_count pool (Some query) ~select RepoEntity.t
   ;;
 
   let find_all_with_model_request =

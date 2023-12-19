@@ -170,8 +170,8 @@ module Sql = struct
     Query.collect_and_count
       pool
       (Some query)
-      ~select:select_fragment
-      ~count:select_count
+      ~select:(fun ?(count = false) fragment ->
+        if count then select_count fragment else select_fragment fragment)
       public
   ;;
 end

@@ -568,15 +568,12 @@ module Sql = struct
   ;;
 
   let find_by query pool =
-    let select fragment =
-      select_filter_sql component_base_query ^ "  " ^ fragment
+    let select ?(count = false) fragment =
+      if count
+      then select_count fragment
+      else select_filter_sql component_base_query ^ "  " ^ fragment
     in
-    Query.collect_and_count
-      pool
-      (Some query)
-      ~select
-      ~count:select_count
-      Repo_entity.t
+    Query.collect_and_count pool (Some query) ~select Repo_entity.t
   ;;
 end
 

@@ -107,6 +107,8 @@ let select_count where_fragment =
 ;;
 
 let find_by query pool =
-  let select fragment = select_from ^ "  " ^ fragment in
-  Query.collect_and_count pool (Some query) ~select ~count:select_count t
+  let select ?(count = false) fragment =
+    if count then select_count fragment else select_from ^ "  " ^ fragment
+  in
+  Query.collect_and_count pool (Some query) ~select t
 ;;

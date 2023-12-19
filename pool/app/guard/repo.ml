@@ -25,19 +25,19 @@ module RolePermission = struct
      |sql}
   ;;
 
-  let select fragment =
-    Format.sprintf
-      "SELECT\n  %s\nFROM  %s\n  WHERE\n  %s\n %s"
-      select_sql
-      from_sql
-      std_filter_sql
-      fragment
-  ;;
-
-  let count fragment =
-    Format.sprintf
-      {sql| SELECT COUNT(*) from guardian_role_permissions %s |sql}
-      fragment
+  let select ?(count = false) fragment =
+    if count
+    then
+      Format.sprintf
+        {sql| SELECT COUNT(*) from guardian_role_permissions %s |sql}
+        fragment
+    else
+      Format.sprintf
+        "SELECT\n  %s\nFROM  %s\n  WHERE\n  %s\n %s"
+        select_sql
+        from_sql
+        std_filter_sql
+        fragment
   ;;
 
   let find_by query pool =
@@ -45,7 +45,6 @@ module RolePermission = struct
       pool
       (Some query)
       ~select
-      ~count
       Backend.Entity.RolePermission.t
   ;;
 end
