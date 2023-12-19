@@ -25,9 +25,6 @@ let handle_event pool : event -> unit Lwt.t =
         None
     in
     let%lwt () = Repo.insert pool write in
-    let () =
-      Logs.info (fun m -> m "%s" "======= CREATED EVENT inserted =======")
-    in
     write
     |> Entity_guard.Target.to_authorizable_of_write
          ~ctx:(Pool_database.to_ctx pool)
