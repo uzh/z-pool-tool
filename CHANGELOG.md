@@ -7,7 +7,32 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 ### Added
 
 - option to enable min/max number of selected options for a multi_select custom field
-- Option to define an experiment language in which all messages are sent
+- option to define an experiment language in which all messages are sent
+- dev: reproducible package manager for OCaml (esy)
+- support deleting smtp servers
+- new filter fields for invitation and assignment
+- sortable table for experiments overview page
+- show custom field data on contact detail page
+- mark unverified contact email addresses
+- additional phone number validation
+- status page to root api
+
+### Fixed
+
+- skip api key verification in non productive environments
+- externalize form action for root gtx key update
+- UI: info icon only on note message boxes
+- show contact again in waiting list, when assignment is deleted
+
+### Changed
+
+- move signup call to action to settings translations
+- calendar view: show all sessions with link if user has permission
+- allow to mark a multi select field as required (ability to define min/max amount of selections)
+- use live search component for multi select fields
+- contact overview page allow search for fullname
+- allow manual session assignment for past events
+- upgrade packages
 
 ## [0.5.1](https://github.com/uzh/pool/tree/0.5.1) - 2023-11-08
 
