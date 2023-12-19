@@ -37,3 +37,19 @@ export const notifyUser = (notificationId, classname, msg) => {
     notification.parentElement.replaceChild(wrapper, notification)
     addCloseListener(notificationId);
 }
+
+export const postIUrlencoded = async (url, body) => {
+    let formBody = [];
+    for (let key in body) {
+        const encodedKey = encodeURIComponent(key);
+        const encodedValue = encodeURIComponent(body[key]);
+        formBody.push(encodedKey + "=" + encodedValue);
+    }
+    return fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
+        },
+        body: formBody.join("&")
+    })
+}

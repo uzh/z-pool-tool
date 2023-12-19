@@ -1,4 +1,4 @@
-import { addCloseListener, csrfToken, icon, notifyUser, globalErrorMsg } from "./utils.js";
+import { addCloseListener, csrfToken, icon, notifyUser, globalErrorMsg, postIUrlencoded } from "./utils.js";
 
 MutationObserver = window.MutationObserver || window.WebKitMutationObserver;
 const observerConfig = {
@@ -237,15 +237,10 @@ const updateContactCount = async (form) => {
         target.appendChild(spinner);
         try {
             const query = parseQuery();
-            const body = JSON.stringify({ query: query, _csrf: csrfToken(form) })
+            const body = { query: JSON.stringify(query), _csrf: csrfToken(form) }
             if (query) {
-                const response = await fetch(action, {
-                    method: "POST",
-                    body,
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                });
+                const response = await postIUrlencoded(action, body)
+                console.log(response)
                 const data = await response.json();
                 if (!response.ok) {
                     throw (data.message || response.statusText || globalErrorMsg)
@@ -258,7 +253,7 @@ const updateContactCount = async (form) => {
             }
         } catch (error) {
             message = globalErrorMsg;
-            notifyUser(notificationId, "error", error)
+            console.error(error)
         };
         target.innerHTML = message
     }
