@@ -34,6 +34,7 @@ let index Pool_context.{ language; _ } location smtp_auth_list =
     let open SmtpAuth in
     let action_path =
       Format.asprintf "%s/%s/delete" (base_path location) (auth.id |> Id.value)
+      |> Sihl.Web.externalize_path
     in
     form
       ~a:
