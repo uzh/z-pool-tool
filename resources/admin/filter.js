@@ -286,14 +286,33 @@ function addOperatorChangeListeners(form, wrapper) {
     })
 }
 
+const hideError = (input) => {
+    const error = input.closest(".form-group").querySelector(".error-message");
+    if (input.value && error) {
+        error.innerHTML = "";
+    }
+}
+
 const addInputChangeListeners = (form, wrapper) => {
     const el = wrapper || form;
-    const listener = () => {
+    const listener = (e) => {
+        hideError(e.currentTarget);
         updateContactCount(form);
     }
     const valueInputs = findValueInputs(el)
     valueInputs.forEach(input => {
         input.addEventListener("input", listener);
+    })
+}
+
+const addKeyChangeListeners = (form, wrapper) => {
+    const el = wrapper || form;
+    const listener = (e) => {
+        hideError(e.currentTarget);
+        updateContactCount(form);
+    }
+    [...el.querySelectorAll('[name="key"]')].forEach(select => {
+        select.addEventListener("input", listener)
     })
 }
 
@@ -307,6 +326,14 @@ const addMultiSelectObserver = (form, wrapper) => {
     })
 }
 
+const addEventListeners = (form, htmxElt) => {
+    addRemovePredicateListener(form, htmxElt);
+    addOperatorChangeListeners(form, htmxElt);
+    addInputChangeListeners(form, htmxElt);
+    addMultiSelectObserver(form, htmxElt);
+    addKeyChangeListeners(form, htmxElt);
+}
+
 export function initFilterForm() {
     if (form) {
         const submitButton = document.getElementById("submit-filter-form");
@@ -315,15 +342,9 @@ export function initFilterForm() {
                 e.detail.shouldSwap = true;
             }
         })
-        addRemovePredicateListener(form);
-        addOperatorChangeListeners(form);
-        addInputChangeListeners(form);
-        addMultiSelectObserver(form);
+        addEventListeners(form);
         form.addEventListener('htmx:afterSwap', (e) => {
-            addRemovePredicateListener(form, e.detail.elt);
-            addOperatorChangeListeners(form, e.detail.elt);
-            addInputChangeListeners(form, e.detail.elt);
-            addMultiSelectObserver(form, e.detail.elt);
+            addEventListeners(form, e.detail.elt)
             addCloseListener(notificationId);
             updateContactCount(form);
         })
