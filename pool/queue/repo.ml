@@ -160,19 +160,24 @@ let find label id =
   ||> CCOption.to_result Pool_common.Message.(NotFound Field.Queue)
 ;;
 
-let find_workable_request =
-  let open Caqti_request.Infix in
+let find_workable_query ?(count = false) () =
+  let select =
+    if count then "SELECT COUNT(*) FROM queue_jobs" else select_from_fragment
+  in
   Format.asprintf
     {sql|
       %s
-      WHERE
-        status = "pending"
+      WHERE status = "pending"
         AND next_run_at <= NOW()
         AND tries < max_tries
-      ORDER BY id DESC
+      ORDER BY id ASC
     |sql}
-    select_from_fragment
-  |> Caqti_type.unit ->* job
+    select
+;;
+
+let find_workable_request =
+  let open Caqti_request.Infix in
+  find_workable_query () |> Caqti_type.unit ->* job
 ;;
 
 let find_workable label =
@@ -180,4 +185,18 @@ let find_workable label =
     (Pool_database.Label.value label)
     find_workable_request
     ()
+;;
+
+let count_workable_request =
+  let open Caqti_request.Infix in
+  find_workable_query ~count:true () |> Caqti_type.(unit ->? int)
+;;
+
+let count_workable label =
+  let open Utils.Lwt_result.Infix in
+  Utils.Database.find_opt
+    (Pool_database.Label.value label)
+    count_workable_request
+    ()
+  ||> CCOption.to_result Pool_common.Message.NoValue
 ;;

@@ -11,6 +11,10 @@ val find
   -> Pool_common.Id.t
   -> (Sihl_queue.instance, Pool_common.Message.error) Lwt_result.t
 
+val count_workable
+  :  Pool_database.Label.t
+  -> (int, Pool_common.Message.error) Lwt_result.t
+
 module Guard : sig
   module Access : sig
     val index : Guard.ValidationSet.t

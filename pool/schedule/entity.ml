@@ -86,3 +86,22 @@ type public =
   ; last_run : LastRunAt.t option
   }
 [@@deriving eq, show]
+
+let is_ok ({ scheduled_time; status; last_run; _ } : public) =
+  let open Status in
+  let is_fine = function
+    | Finished | Paused -> true
+    | Active | Running | Stopped -> false
+  in
+  let did_run () =
+    match scheduled_time, last_run with
+    | (At _ | Every _), None -> false
+    | At _, Some _ -> true
+    | Every duration, Some last_run ->
+      Ptime.add_span last_run (Ptime.Span.add duration duration)
+      |> CCOption.map_or
+           ~default:false
+           (Ptime.is_later ~than:(Ptime_clock.now ()))
+  in
+  is_fine status || did_run ()
+;;

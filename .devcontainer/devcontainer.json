@@ -12,7 +12,7 @@
     "dev",
     "database-root",
     "database-tenant",
-    "phpmyadmin"
+    // "phpmyadmin"
   ],
   "workspaceFolder": "/workspace",
   "postCreateCommand": "/bin/bash .devcontainer/wait-for-database.sh -d db-root/test -d db-tenant/dev_zhaw -d db-tenant/test_econ .devcontainer/postCreate.sh",
