@@ -291,47 +291,6 @@ let assign_contact_form { Pool_context.csrf; language; _ } contact =
     ]
 ;;
 
-let contact_overview language contacts =
-  let open Contact in
-  let open Pool_user in
-  let thead =
-    (Pool_common.Message.Field.[ Name; Email ] |> Table.fields_to_txt language)
-    @ [ txt "" ]
-  in
-  let user_table contacts =
-    let rows =
-      CCList.map
-        (fun contact ->
-          let row =
-            match contact.disabled |> Disabled.value with
-            | true -> tr ~a:[ a_class [ "bg-red-lighter" ] ]
-            | false -> tr ~a:[]
-          in
-          [ Component.Contacts.identity_with_icons true contact
-          ; Component.Contacts.email_with_icons contact
-          ; contact |> path |> Input.link_as_button ~icon:Icon.Eye
-          ]
-          |> CCList.map (fun cell -> td [ cell ])
-          |> row)
-        contacts
-    in
-    let thead = Table.table_head thead in
-    table
-      ~thead
-      ~a:[ a_class (Table.table_classes `Striped ~align_last_end:true ()) ]
-      rows
-  in
-  Component.List.create
-    ~legend:
-      (Component.Contacts.status_icons_table_legend language `All
-       |> Component.Table.table_legend)
-    language
-    user_table
-    Contact.sortable_by
-    Contact.searchable_by
-    contacts
-;;
-
 let index Pool_context.{ language; _ } contacts query =
   let open Pool_user in
   let open Pool_common in
@@ -358,7 +317,15 @@ let index Pool_context.{ language; _ } contacts query =
     [ h1
         ~a:[ a_class [ "heading-1" ] ]
         [ txt Pool_common.(Utils.nav_link_to_string language I18n.Contacts) ]
-    ; Component.Sortable_table.make ~target_id ~cols ~rows sort
+    ; Component.List.create
+        ~legend:
+          (Component.Contacts.status_icons_table_legend language `All
+           |> Component.Table.table_legend)
+        language
+        (fun _ -> Component.Sortable_table.make ~target_id ~cols ~rows sort)
+        Contact.sortable_by
+        Contact.searchable_by
+        (contacts, query)
     ]
 ;;
 
