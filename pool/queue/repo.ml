@@ -162,7 +162,7 @@ let find label id =
 
 let find_workable_query ?(count = false) () =
   let select =
-    if count then "SELECT COUNT (*) FROM queue_jobs" else select_from_fragment
+    if count then "SELECT COUNT(*) FROM queue_jobs" else select_from_fragment
   in
   Format.asprintf
     {sql|

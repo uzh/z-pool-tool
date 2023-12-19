@@ -24,11 +24,11 @@ let show _ =
     @ [ "job_count", CCInt.to_string job_count
       ; ("ok", if is_ok schedules then "true" else "false")
       ]
-    |> CCList.map (fun (k, v) -> `Tuple [ `String k; `String v ])
+    |> CCList.map (fun (k, v) -> k, `String v)
     |> Lwt.return_ok
   in
   match result with
-  | Ok result -> yojson_response (`List result)
+  | Ok result -> yojson_response (`Assoc result)
   | Error _ -> Rock.Response.make ~status:`No_content () |> Lwt.return
 ;;
 
