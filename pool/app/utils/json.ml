@@ -7,7 +7,7 @@ let read_variant_opt of_yojson m =
   | _ -> None
 ;;
 
-let[@warning "-8"] find_in_json_assoc_opt (json : Yojson.Safe.t) search_key =
+let find_in_json_assoc_opt (json : Yojson.Safe.t) search_key =
   match json with
   | `Assoc values ->
     values
