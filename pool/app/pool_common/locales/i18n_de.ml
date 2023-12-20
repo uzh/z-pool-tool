@@ -50,6 +50,7 @@ let to_string = function
     </ol>|}
   | FilterNrOfContacts ->
     "Anzahl der Kontakte, die den Kriterien dieses Filters entsprechen:"
+  | FilterNrOfSentInvitations -> "Anzahl bereits eingeladener Kontakte:"
   | FollowUpSessionFor -> "Folgesession für:"
   | ExperimentListTitle -> "Experimente"
   | ExperimentListEmpty ->

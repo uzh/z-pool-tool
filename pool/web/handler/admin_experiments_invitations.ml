@@ -44,12 +44,25 @@ let index req =
                filter)
            >|+ CCOption.pure
        in
+       let* matching_filter_count =
+         let open Filter in
+         let open Experiment in
+         count_filtered_contacts
+           database_label
+           (Matcher (Id.to_common id))
+           (experiment.filter |> CCOption.map (fun { Filter.query; _ } -> query))
+       in
+       let%lwt invitation_count =
+         Invitation.count_by_experiment database_label id
+       in
        Page.Admin.Experiments.invitations
          experiment
          key_list
          template_list
          query_experiments
          query_tags
+         matching_filter_count
+         invitation_count
          filtered_contacts
          context
        >|> create_layout req context

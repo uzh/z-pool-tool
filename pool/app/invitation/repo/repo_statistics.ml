@@ -25,6 +25,14 @@ let find_unique_counts_request =
   |> Caqti_type.(string ->* int)
 ;;
 
+let total_invitation_count_by_experiment pool experiment_id =
+  let open Caqti_request.Infix in
+  Utils.Database.find
+    (pool |> Pool_database.Label.value)
+    (count_invitations_request () |> Caqti_type.(string ->! int))
+    (Experiment.Id.value experiment_id)
+;;
+
 let by_experiment pool experiment_id =
   let%lwt counts =
     Utils.Database.collect
@@ -37,9 +45,7 @@ let by_experiment pool experiment_id =
       empty |> add Caqti_type.string (Experiment.Id.value experiment_id))
   in
   let%lwt total_sent =
-    let (Dynparam.Pack (pt, pv)) = base_dyn in
-    let request = count_invitations_request () |> pt ->! Caqti_type.int in
-    Utils.Database.find (pool |> Pool_database.Label.value) request pv
+    total_invitation_count_by_experiment pool experiment_id
   in
   let%lwt sent_by_count =
     counts

@@ -285,12 +285,8 @@ let count_contacts req =
       let open CCResult in
       HttpUtils.find_in_urlencoded Field.Query urlencoded
       |> CCOption.of_result
-      |> CCOption.map_or
-           ~default:
-             (Ok
-                (experiment.Experiment.filter
-                 |> CCOption.map (fun filter -> filter.Filter.query)))
-           (fun str -> str |> Filter.query_of_string >|= CCOption.pure)
+      |> CCOption.map_or ~default:(Ok None) (fun str ->
+        str |> Filter.query_of_string >|= CCOption.pure)
       |> Lwt_result.lift
     in
     Filter.(

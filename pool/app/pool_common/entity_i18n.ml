@@ -30,6 +30,7 @@ type t =
   | Files
   | FilterContactsDescription
   | FilterNrOfContacts
+  | FilterNrOfSentInvitations
   | FollowUpSessionFor
   | HomeTitle
   | I18nTitle

@@ -1,7 +1,13 @@
-import { addCloseListener, icon, notifyUser, globalErrorMsg } from "./utils.js";
+import { addCloseListener, csrfToken, icon, notifyUser, globalErrorMsg, postIUrlencoded } from "./utils.js";
+
+MutationObserver = window.MutationObserver || window.WebKitMutationObserver;
+const observerConfig = {
+    subtree: true,
+    childList: true
+}
 
 const errorClass = "error-message";
-const notificationId = "filter-notification";
+const notificationId = "hx-notification";
 
 const form = document.getElementById("filter-form");
 
@@ -29,6 +35,10 @@ const findChildPredicates = (wrapper) => {
     return [...wrapper.querySelector(".predicate-wrapper").children].filter((elm) => elm.classList.contains("predicate"))
 }
 
+const findValueInputs = (predicate) => {
+    return [...predicate.querySelectorAll("[data-name='value[]'],[name='value'],[name='value[]']")];
+}
+
 const addRequiredError = (elm) => {
     if (elm) {
         const wrapper = elm.closest(".form-group");
@@ -37,31 +47,6 @@ const addRequiredError = (elm) => {
         error.innerHTML = "This field is required."
         error.classList.add(errorClass, "help");
         wrapper.appendChild(error);
-    }
-}
-
-// Should this update every time, the filter gets adjusted but not saved?
-const updateContactCount = async () => {
-    const target = document.getElementById("contact-counter");
-    if (target) {
-        const action = target.dataset.action;
-        const spinner = icon(["icon-spinner-outline", "rotate"])
-        target.appendChild(spinner);
-        try {
-            const response = await fetch(action);
-            const data = await response.json();
-            if (!response.ok) {
-                throw (data.message || response.statusText || globalErrorMsg)
-            }
-            if (response.status < 200 || response.status > 300) {
-                notifyUser(notificationId, "error", data.message)
-            } else {
-                target.innerHTML = data.count
-            }
-        } catch (error) {
-            target.innerHTML = globalErrorMsg;
-            notifyUser(notificationId, "error", error)
-        };
     }
 }
 
@@ -182,31 +167,11 @@ const predicateToJson = (outerPredicate, allowEmpty = false) => {
                 [predicateType]: predicate
             }
         } else {
-            notifyUser(notificationId, "error", "Please fill out all fields.")
-            throw "Missing values";
+            throw "Please fill out all fields";
         }
     } else {
         throw 'Unknown predicate type';
     }
-}
-
-function addRemovePredicateListener(element) {
-    [...element.querySelectorAll("[data-delete-predicate]")].forEach(elm => {
-        elm.addEventListener("click", (e) => {
-            e.currentTarget.closest(".predicate").remove();
-        })
-    })
-}
-
-
-function addOperatorChangeListeners(wrapper) {
-    [...wrapper.querySelectorAll("[name='operator']")].forEach((elm) => {
-        elm.addEventListener("change", (e) => {
-            const predicate = e.target.closest('.predicate');
-            const inputs = [...predicate.querySelectorAll("[data-name='value[]'],[name='value'],[name='value[]']")];
-            inputs.forEach(input => input.disabled = disableValueInput(e.currentTarget.value))
-        })
-    })
 }
 
 function configRequest(e, form) {
@@ -252,6 +217,118 @@ function configRequest(e, form) {
     form.dispatchEvent(event);
 }
 
+// Should this update every time, the filter gets adjusted but not saved?
+const updateContactCount = async (form) => {
+    const target = document.getElementById("contact-counter");
+    let message = "-"
+    const parseQuery = () => {
+        try {
+            const predicate = form.querySelector(".predicate");
+            return predicateToJson(predicate, false)
+        } catch (error) {
+            return false
+        }
+    }
+
+    if (target) {
+        const action = target.dataset.action;
+        const spinner = icon(["icon-spinner-outline", "rotate"])
+        target.innerHTML = "";
+        target.appendChild(spinner);
+        try {
+            const query = parseQuery();
+            const body = { query: JSON.stringify(query), _csrf: csrfToken(form) }
+            if (query) {
+                const response = await postIUrlencoded(action, body)
+                console.log(response)
+                const data = await response.json();
+                if (!response.ok) {
+                    throw (data.message || response.statusText || globalErrorMsg)
+                }
+                if (response.status < 200 || response.status > 300) {
+                    notifyUser(notificationId, "error", data.message)
+                } else {
+                    message = data.count
+                }
+            }
+        } catch (error) {
+            message = globalErrorMsg;
+            console.error(error)
+        };
+        target.innerHTML = message
+    }
+}
+
+function addRemovePredicateListener(form, wrapper) {
+    const el = wrapper || form;
+    [...el.querySelectorAll("[data-delete-predicate]")].forEach(elm => {
+        elm.addEventListener("click", (e) => {
+            e.currentTarget.closest(".predicate").remove();
+            updateContactCount(form);
+        })
+    })
+}
+
+function addOperatorChangeListeners(form, wrapper) {
+    const el = wrapper || form;
+    [...el.querySelectorAll("[name='operator']")].forEach((el) => {
+        el.addEventListener("change", (e) => {
+            const predicate = e.target.closest('.predicate');
+            const inputs = findValueInputs(predicate)
+            inputs.forEach(input => input.disabled = disableValueInput(e.currentTarget.value))
+            updateContactCount(form);
+        })
+    })
+}
+
+const hideError = (input) => {
+    const error = input.closest(".form-group").querySelector(".error-message");
+    if (input.value && error) {
+        error.innerHTML = "";
+    }
+}
+
+const addInputChangeListeners = (form, wrapper) => {
+    const el = wrapper || form;
+    const listener = (e) => {
+        hideError(e.currentTarget);
+        updateContactCount(form);
+    }
+    const valueInputs = findValueInputs(el)
+    valueInputs.forEach(input => {
+        input.addEventListener("input", listener);
+    })
+}
+
+const addKeyChangeListeners = (form, wrapper) => {
+    const el = wrapper || form;
+    const listener = (e) => {
+        hideError(e.currentTarget);
+        updateContactCount(form);
+    }
+    [...el.querySelectorAll('[name="key"]')].forEach(select => {
+        select.addEventListener("input", listener)
+    })
+}
+
+const addMultiSelectObserver = (form, wrapper) => {
+    const el = wrapper || form;
+    [...el.querySelectorAll("[data-search-selection]")].forEach(results => {
+        const observer = new MutationObserver(function (mutations, observer) {
+            updateContactCount(form)
+        })
+        observer.observe(results, observerConfig);
+    })
+}
+
+const addEventListeners = (form, htmxElt) => {
+    addRemovePredicateListener(form, htmxElt);
+    addOperatorChangeListeners(form, htmxElt);
+    addInputChangeListeners(form, htmxElt);
+    addMultiSelectObserver(form, htmxElt);
+    addKeyChangeListeners(form, htmxElt);
+}
+
 export function initFilterForm() {
     if (form) {
         const submitButton = document.getElementById("submit-filter-form");
@@ -260,17 +337,12 @@ export function initFilterForm() {
                 e.detail.shouldSwap = true;
             }
         })
-        addRemovePredicateListener(form);
-        addOperatorChangeListeners(form);
+        addEventListeners(form);
         form.addEventListener('htmx:afterSwap', (e) => {
-            addRemovePredicateListener(e.detail.elt);
-            addOperatorChangeListeners(e.detail.elt);
-            if (e.detail.target.type === "submit") {
-                updateContactCount();
-            }
+            addEventListeners(form, e.detail.elt)
             addCloseListener(notificationId);
+            updateContactCount(form);
         })
-        updateContactCount()
         form.addEventListener('htmx:configRequest', (e) => configRequest(e, form))
     }
 }

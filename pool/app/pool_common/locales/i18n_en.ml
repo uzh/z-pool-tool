@@ -56,6 +56,7 @@ let to_string = function
     </ol>|}
   | FilterNrOfContacts ->
     "Number of contacts meeting the criteria of this filter:"
+  | FilterNrOfSentInvitations -> "Number of contacts already invited:"
   | FollowUpSessionFor -> "Follow-up for:"
   | HomeTitle -> "University Registration Center for Study Participants"
   | I18nTitle -> "Translations"
