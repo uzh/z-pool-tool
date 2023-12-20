@@ -8,27 +8,37 @@ let create_layout req = General.create_tenant_layout req
 let contact_id = HttpUtils.find_id Contact.Id.of_string Field.Contact
 let experiment_id = HttpUtils.find_id Experiment.Id.of_string Field.Experiment
 
-let index =
-  Http_utils.Htmx.handler
+let index req =
+  HttpUtils.Htmx.handler
     ~active_navigation:"/admin/contacts"
     ~error_path:"/admin/dashboard"
     ~query:(module Contact)
     ~create_layout:General.create_tenant_layout
-  @@ fun (Pool_context.{ database_label; user; _ } as context) query ->
-  let open Utils.Lwt_result.Infix in
-  let* actor =
-    Pool_context.Utils.find_authorizable ~admin_only:true database_label user
-  in
-  let%lwt contacts, query =
-    Contact.find_all
-      ~query
-      ~actor
-      ~permission:Contact.Guard.Access.index_permission
-      database_label
-      ()
-  in
-  let page = Page.Admin.Contact.index context contacts query in
-  Lwt_result.return page
+    (fun (Pool_context.{ database_label; user; _ } as context) query ->
+      let open Utils.Lwt_result.Infix in
+      let* actor =
+        Pool_context.Utils.find_authorizable
+          ~admin_only:true
+          database_label
+          user
+      in
+      let%lwt contacts, query =
+        Contact.find_all
+          ~query
+          ~actor
+          ~permission:Contact.Guard.Access.index_permission
+          database_label
+          ()
+      in
+      let page =
+        let open Page.Admin.Contact in
+        (if HttpUtils.Htmx.is_hx_request req then list else index)
+          context
+          contacts
+          query
+      in
+      Lwt_result.return page)
+    req
 ;;
 
 let detail_view action req =
@@ -158,7 +168,7 @@ let promote req =
     |> Lwt_result.lift
     |>> Pool_event.handle_events ~tags database_label
     |>> fun () ->
-    Http_utils.redirect_to_with_actions
+    HttpUtils.redirect_to_with_actions
       (Format.asprintf "/admin/admins/%s" (Pool_common.Id.value contact_id))
       [ Message.set ~success:[ Pool_common.Message.ContactPromoted ] ]
   in
@@ -356,7 +366,7 @@ let enroll_contact_post req =
       let%lwt () =
         Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
       in
-      Http_utils.redirect_to_with_actions
+      HttpUtils.redirect_to_with_actions
         redirect_path
         [ Message.set ~success:[ Pool_common.Message.AssignmentCreated ] ]
     in
@@ -391,7 +401,7 @@ end = struct
       let* { Pool_context.database_label; _ } =
         req |> Pool_context.find |> Lwt_result.lift
       in
-      let contact = Http_utils.find_id Contact.Id.of_string Field.Contact req in
+      let contact = HttpUtils.find_id Contact.Id.of_string Field.Contact req in
       let%lwt experiments =
         Experiment.find_all_ids_of_contact_id database_label contact
         ||> CCList.map (Guard.Uuid.target_of Experiment.Id.value)

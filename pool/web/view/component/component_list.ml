@@ -119,51 +119,49 @@ let pagination language query { Pagination.page; page_count; _ } =
     ]
 ;;
 
-let searchbar language query searchable_by =
+let hx_get ~url ~target =
+  [ a_user_data "hx-get" url
+  ; a_user_data "hx-push-url" "true"
+  ; a_user_data "hx-target" target
+  ; a_user_data "hx-swap" "innerHTML"
+  ]
+;;
+
+let searchbar ~url ~target_id language query searchable_by =
   let open Pool_common in
   let search_field, search_label = Message.Field.(Search, Search |> show) in
-  form
-    ~a:[ a_method `Get; a_action "?" ]
-    [ div
-        ~a:[ a_class [ "form-group" ] ]
-        [ label
-            ~a:[ a_label_for search_label ]
-            [ search_field |> Utils.field_to_string_capitalized language |> txt
-            ]
-        ; div
-            ~a:[ a_class [ "flexrow"; "flex-gap"; "flexcolumn-mobile" ] ]
-            [ div
-                ~a:[ a_class [ "flexcolumn"; "grow" ] ]
-                [ input
-                    ~a:
-                      [ a_name search_label
-                      ; a_id search_label
-                      ; a_input_type `Text
-                      ; a_value
-                          (query.search
-                           |> CCOption.map_or ~default:"" Search.query_string)
-                      ]
-                    ()
-                ; span
-                    ~a:[ a_class [ "help" ] ]
-                    [ I18n.SearchByFields
-                        (CCList.map Column.field searchable_by)
-                      |> Utils.hint_to_string language
-                      |> txt
-                    ]
-                ]
-            ; div
-                ~a:[ a_class [ "flexrow"; "flex-gap-xs" ] ]
-                [ a
-                    ~a:[ a_class [ "gap-xs" ]; a_href "?" ]
-                    [ txt
-                        (Utils.control_to_string language Message.(Reset None))
-                    ]
-                ; Component_input.submit_element
-                    ~classnames:[ "small" ]
-                    language
-                    Message.Apply
-                    ()
+  let url =
+    Uri.with_query url (Query.to_uri_query { query with search = None })
+    |> Format.asprintf "%a" Uri.pp
+    |> Sihl.Web.externalize_path
+  in
+  div
+    ~a:[ a_class [ "form-group" ] ]
+    [ label
+        ~a:[ a_label_for search_label ]
+        [ search_field |> Utils.field_to_string_capitalized language |> txt ]
+    ; div
+        ~a:[ a_class [ "flexrow"; "flex-gap"; "flexcolumn-mobile" ] ]
+        [ div
+            ~a:[ a_class [ "flexcolumn"; "grow" ] ]
+            [ input
+                ~a:
+                  ([ a_name search_label
+                   ; a_input_type `Search
+                   ; a_value
+                       (query.search
+                        |> CCOption.map_or ~default:"" Search.query_string)
+                   ; a_user_data
+                       "hx-trigger"
+                       "input changed delay:300ms, search"
+                   ]
+                   @ hx_get ~url ~target:("#" ^ target_id))
+                ()
+            ; span
+                ~a:[ a_class [ "help" ] ]
+                [ I18n.SearchByFields (CCList.map Column.field searchable_by)
+                  |> Utils.hint_to_string language
+                  |> txt
                 ]
             ]
         ]
@@ -205,10 +203,11 @@ let sort language sortable_by query =
   [ field; order ]
 ;;
 
-let create ?legend language to_table searchable_by (items, query) =
+let create ?legend ~url ~target_id language to_table searchable_by (items, query)
+  =
   div
-    ~a:[ a_class [ "stack" ] ]
-    [ searchbar language query searchable_by
+    ~a:[ a_id target_id; a_class [ "stack"; "hx-search" ] ]
+    [ searchbar ~url ~target_id language query searchable_by
     ; CCOption.value ~default:(txt "") legend
     ; to_table items
     ; query.pagination

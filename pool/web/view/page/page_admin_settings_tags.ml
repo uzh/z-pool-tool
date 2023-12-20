@@ -9,9 +9,9 @@ let tags_path ?suffix () =
   CCOption.map_or ~default (Format.asprintf "%s%s" default) suffix
 ;;
 
-let layout ?(id = "") language children =
+let layout language children =
   div
-    ~a:[ a_id id; a_class [ "trim"; "safety-margin" ] ]
+    ~a:[ a_class [ "trim"; "safety-margin" ] ]
     (h1
        ~a:[ a_class [ "heading-1" ] ]
        [ txt Pool_common.(Utils.nav_link_to_string language I18n.Tags) ]
@@ -50,7 +50,7 @@ module List = struct
   ;;
 end
 
-let index Pool_context.{ language; _ } tags query =
+let list Pool_context.{ language; _ } tags query =
   let url = Uri.of_string (tags_path ()) in
   let sort = Component.Sortable_table.{ url; query; language } in
   let cols =
@@ -85,14 +85,19 @@ let index Pool_context.{ language; _ } tags query =
     CCList.map row tags
   in
   let target_id = "tags-table" in
+  div
+    ~a:[ a_id target_id ]
+    [ Component.Sortable_table.make ~target_id ~cols ~rows sort ]
+;;
+
+let index (Pool_context.{ language; _ } as context) tags query =
   layout
-    ~id:target_id
     language
     [ p
         [ Pool_common.(Utils.hint_to_string language I18n.TagsIntro)
           |> HttpUtils.add_line_breaks
         ]
-    ; Component.Sortable_table.make ~target_id ~cols ~rows sort
+    ; list context tags query
     ]
 ;;
 

@@ -47,7 +47,7 @@ let form { Pool_context.language; csrf; _ } organisational_unit =
     ]
 ;;
 
-let index { Pool_context.language; _ } organizations query =
+let list { Pool_context.language; _ } organizations query =
   let open Pool_common in
   let url = Uri.of_string (ou_path ()) in
   let sort = Component.Sortable_table.{ url; query; language } in
@@ -72,13 +72,19 @@ let index { Pool_context.language; _ } organizations query =
   in
   let target_id = "organisations-table" in
   div
-    ~a:[ a_id target_id; a_class [ "trim"; "safety-margin" ] ]
+    ~a:[ a_id target_id ]
+    [ Component.Sortable_table.make ~target_id ~cols ~rows sort ]
+;;
+
+let index ({ Pool_context.language; _ } as context) organizations query =
+  div
+    ~a:[ a_class [ "trim"; "safety-margin" ] ]
     [ h1
         ~a:[ a_class [ "heading-1" ] ]
         [ txt
             Pool_common.(
               Utils.nav_link_to_string language I18n.OrganisationalUnits)
         ]
-    ; Component.Sortable_table.make ~target_id ~cols ~rows sort
+    ; list context organizations query
     ]
 ;;

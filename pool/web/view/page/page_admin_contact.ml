@@ -292,7 +292,7 @@ let assign_contact_form { Pool_context.csrf; language; _ } contact =
     ]
 ;;
 
-let index Pool_context.{ language; _ } contacts query =
+let list Pool_context.{ language; _ } contacts query =
   let open Pool_user in
   let open Pool_common in
   let url = Uri.of_string "/admin/contacts" in
@@ -313,17 +313,23 @@ let index Pool_context.{ language; _ } contacts query =
     CCList.map row contacts
   in
   let target_id = "contacts-list" in
+  Component.List.create
+    ~url
+    ~target_id
+    ~legend:(Status.status_icons_table_legend language `All)
+    language
+    (fun _ -> Component.Sortable_table.make ~target_id ~cols ~rows sort)
+    Contact.searchable_by
+    (contacts, query)
+;;
+
+let index ({ Pool_context.language; _ } as context) contacts query =
   div
-    ~a:[ a_id target_id; a_class [ "trim"; "safety-margin" ] ]
+    ~a:[ a_class [ "trim"; "safety-margin" ] ]
     [ h1
         ~a:[ a_class [ "heading-1" ] ]
         [ txt Pool_common.(Utils.nav_link_to_string language I18n.Contacts) ]
-    ; Component.List.create
-        ~legend:(Status.status_icons_table_legend language `All)
-        language
-        (fun _ -> Component.Sortable_table.make ~target_id ~cols ~rows sort)
-        Contact.searchable_by
-        (contacts, query)
+    ; list context contacts query
     ]
 ;;
 

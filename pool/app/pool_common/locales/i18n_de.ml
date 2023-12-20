@@ -182,7 +182,7 @@ let nav_link_to_string = function
   | Schedules -> "Prozesse"
   | Sessions -> "Sessions"
   | Settings -> "Einstellungen"
-  | Smtp -> "E-Mail Server"
+  | Smtp -> "E-Mail Server (SMTP)"
   | SystemSettings -> "Systemeinstellungen"
   | Tags -> "Tags"
   | Tenants -> "Tenants"

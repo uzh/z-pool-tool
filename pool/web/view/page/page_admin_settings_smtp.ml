@@ -10,7 +10,7 @@ let base_path = function
   | `Root -> "/root/settings/smtp"
 ;;
 
-let index Pool_context.{ language; _ } location smtp_auth_list query =
+let list Pool_context.{ language; _ } location smtp_auth_list query =
   let url = Uri.of_string (base_path location) in
   let sort = Component.Sortable_table.{ url; query; language } in
   let cols =
@@ -70,9 +70,22 @@ let index Pool_context.{ language; _ } location smtp_auth_list query =
   in
   let target_id = "smtp-table" in
   div
-    ~a:[ a_id target_id; a_class [ "trim"; "safety-margin" ] ]
-    [ h1 ~a:[ a_class [ "heading-1" ] ] [ txt "Email Server Settings (SMTP)" ]
-    ; Component.Sortable_table.make ~target_id ~cols ~rows sort
+    ~a:[ a_id target_id ]
+    [ Component.Sortable_table.make ~target_id ~cols ~rows sort ]
+;;
+
+let index
+  (Pool_context.{ language; _ } as context)
+  location
+  smtp_auth_list
+  query
+  =
+  div
+    ~a:[ a_class [ "trim"; "safety-margin" ] ]
+    [ h1
+        ~a:[ a_class [ "heading-1" ] ]
+        [ txt Pool_common.(Utils.nav_link_to_string language I18n.Smtp) ]
+    ; list context location smtp_auth_list query
     ]
 ;;
 

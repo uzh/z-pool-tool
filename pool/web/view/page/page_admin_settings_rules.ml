@@ -6,10 +6,9 @@ module Input = Component.Input
 let role_permission_path ?suffix () =
   let default = "/admin/settings/role-permission/" in
   CCOption.map_or ~default (Format.asprintf "%s%s" default) suffix
-  |> Sihl.Web.externalize_path
 ;;
 
-let index Pool_context.{ language; csrf; guardian; _ } rules query =
+let list Pool_context.{ language; csrf; guardian; _ } rules query =
   let open Pool_common in
   let can_manage =
     Guard.PermissionOnTarget.validate
@@ -30,7 +29,9 @@ let index Pool_context.{ language; csrf; guardian; _ } rules query =
       form
         ~a:
           [ a_method `Post
-          ; a_action (role_permission_path ~suffix:target ())
+          ; a_action
+              (role_permission_path ~suffix:target ()
+               |> Sihl.Web.externalize_path)
           ; a_user_data
               "confirmable"
               (Pool_common.Utils.confirmable_to_string language confirm_text)
@@ -64,7 +65,13 @@ let index Pool_context.{ language; csrf; guardian; _ } rules query =
   in
   let target_id = "permissions-table" in
   div
-    ~a:[ a_id target_id; a_class [ "trim"; "safety-margin" ] ]
+    ~a:[ a_id target_id ]
+    [ Component.Sortable_table.make ~target_id ~cols ~rows sort ]
+;;
+
+let index (Pool_context.{ language; _ } as context) rules query =
+  div
+    ~a:[ a_class [ "trim"; "safety-margin" ] ]
     [ h1
         ~a:[ a_class [ "heading-1" ] ]
         [ txt
@@ -74,6 +81,6 @@ let index Pool_context.{ language; csrf; guardian; _ } rules query =
         [ Pool_common.(Utils.hint_to_string language I18n.RolePermissionsIntro)
           |> HttpUtils.add_line_breaks
         ]
-    ; Component.Sortable_table.make ~target_id ~cols ~rows sort
+    ; list context rules query
     ]
 ;;

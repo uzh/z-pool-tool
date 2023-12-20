@@ -105,27 +105,37 @@ let experiment_message_templates database_label experiment =
   Label.customizable_by_experiment |> Lwt_list.map_s find_templates
 ;;
 
-let index =
+let index req =
   HttpUtils.Htmx.handler
     ~active_navigation:"/admin/dashboard"
     ~error_path:"/admin/experiments"
     ~create_layout
     ~query:(module Experiment)
-  @@ fun ({ Pool_context.database_label; user; _ } as context) query ->
-  let open Utils.Lwt_result.Infix in
-  let find_actor =
-    Pool_context.Utils.find_authorizable ~admin_only:true database_label user
-  in
-  let* actor = find_actor in
-  let%lwt experiments, query =
-    Experiment.find_all
-      ~query
-      ~actor
-      ~permission:Experiment.Guard.Access.index_permission
-      database_label
-  in
-  let page = Page.Admin.Experiments.index context experiments query in
-  Lwt_result.return page
+    (fun ({ Pool_context.database_label; user; _ } as context) query ->
+      let open Utils.Lwt_result.Infix in
+      let find_actor =
+        Pool_context.Utils.find_authorizable
+          ~admin_only:true
+          database_label
+          user
+      in
+      let* actor = find_actor in
+      let%lwt experiments, query =
+        Experiment.find_all
+          ~query
+          ~actor
+          ~permission:Experiment.Guard.Access.index_permission
+          database_label
+      in
+      let page =
+        let open Page.Admin.Experiments in
+        (if HttpUtils.Htmx.is_hx_request req then list else index)
+          context
+          experiments
+          query
+      in
+      Lwt_result.return page)
+    req
 ;;
 
 let new_form req =

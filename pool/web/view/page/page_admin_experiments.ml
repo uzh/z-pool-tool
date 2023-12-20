@@ -122,7 +122,7 @@ let message_templates_html
     edit_path
 ;;
 
-let index Pool_context.{ language; _ } experiments query =
+let list Pool_context.{ language; _ } experiments query =
   let url = Uri.of_string "/admin/experiments" in
   let sort = Sortable_table.{ url; query; language } in
   let cols =
@@ -153,16 +153,22 @@ let index Pool_context.{ language; _ } experiments query =
   in
   let target_id = "experiment-list" in
   let table = Sortable_table.make ~target_id ~cols ~rows sort in
+  List.create
+    ~url
+    ~target_id:"experiment-list-search"
+    language
+    (fun _ -> table)
+    Experiment.searchable_by
+    (experiments, query)
+;;
+
+let index (Pool_context.{ language; _ } as context) experiments query =
   div
-    ~a:[ a_id target_id; a_class [ "trim"; "safety-margin" ] ]
+    ~a:[ a_class [ "trim"; "safety-margin" ] ]
     [ h1
         ~a:[ a_class [ "heading-1" ] ]
         [ txt (Utils.text_to_string language I18n.ExperimentListTitle) ]
-    ; List.create
-        language
-        (fun _ -> table)
-        Experiment.searchable_by
-        (experiments, query)
+    ; list context experiments query
     ]
 ;;
 
@@ -815,6 +821,13 @@ let sent_invitations
   invitations
   statistics
   =
+  let url =
+    Format.asprintf
+      "/experiments/%a/invitations"
+      Experiment.Id.pp
+      experiment.Experiment.id
+    |> Uri.of_string
+  in
   let invitation_table =
     Page_admin_invitations.Partials.list context experiment
   in
@@ -827,6 +840,8 @@ let sent_invitations
             [ Page_admin_invitations.Partials.statistics language statistics ]
         ]
     ; Component.List.create
+        ~url
+        ~target_id:"sent-invitation-search"
         language
         invitation_table
         Invitation.searchable_by

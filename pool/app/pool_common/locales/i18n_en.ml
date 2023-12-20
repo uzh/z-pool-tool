@@ -181,7 +181,7 @@ let nav_link_to_string = function
   | Schedules -> "Schedules"
   | Sessions -> "Sessions"
   | Settings -> "Settings"
-  | Smtp -> "Email Server"
+  | Smtp -> "Email Server (SMTP)"
   | SystemSettings -> "System settings"
   | Tags -> "Tags"
   | Tenants -> "Tenants"

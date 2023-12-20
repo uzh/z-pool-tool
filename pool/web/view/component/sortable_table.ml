@@ -4,7 +4,7 @@ let hx_get ~url ~target =
   [ a_user_data "hx-get" url
   ; a_user_data "hx-push-url" url
   ; a_user_data "hx-target" target
-  ; a_user_data "hx-swap" "outerHTML"
+  ; a_user_data "hx-swap" "innerHTML"
   ]
 ;;
 

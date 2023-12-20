@@ -18,7 +18,7 @@ let database_label_of_req req =
   Pool_context.(req |> find >|= fun { database_label; _ } -> database_label)
 ;;
 
-let index =
+let index req =
   let active_navigation = base_path in
   let error_path = "/admin/dashboard" in
   HttpUtils.Htmx.handler
@@ -26,12 +26,18 @@ let index =
     ~error_path
     ~create_layout
     ~query:(module Organisational_unit)
-  @@ fun ({ Pool_context.database_label; _ } as context) query ->
-  let%lwt organisational_unit_list, query =
-    Organisational_unit.find_by query database_label
-  in
-  let page = View.index context organisational_unit_list query in
-  Lwt_result.return page
+    (fun ({ Pool_context.database_label; _ } as context) query ->
+      let%lwt organisational_unit_list, query =
+        Organisational_unit.find_by query database_label
+      in
+      let page =
+        (if HttpUtils.Htmx.is_hx_request req then View.list else View.index)
+          context
+          organisational_unit_list
+          query
+      in
+      Lwt_result.return page)
+    req
 ;;
 
 let write action req =

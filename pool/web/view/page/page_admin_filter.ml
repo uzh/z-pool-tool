@@ -2,7 +2,8 @@ open Containers
 open Tyxml.Html
 open Pool_common
 
-let index { Pool_context.language; _ } filter_list query =
+let list { Pool_context.language; _ } filter_list query =
+  let target_id = "filters-list" in
   let url = Uri.of_string "/admin/filter" in
   let sort = Component.Sortable_table.{ url; query; language } in
   let cols =
@@ -28,14 +29,20 @@ let index { Pool_context.language; _ } filter_list query =
     CCList.map row filter_list
   in
   div
-    ~a:[ a_id "filters-list"; a_class [ "trim"; "measure"; "safety-margin" ] ]
+    ~a:[ a_id target_id ]
+    [ Component.Sortable_table.make ~target_id ~cols ~rows sort ]
+;;
+
+let index ({ Pool_context.language; _ } as context) filter_list query =
+  div
+    ~a:[ a_class [ "trim"; "measure"; "safety-margin" ] ]
     [ h1
         ~a:[ a_class [ "heading-1" ] ]
         [ txt
             (Pool_common.(Utils.field_to_string language Message.Field.Filter)
              |> CCString.capitalize_ascii)
         ]
-    ; Component.Sortable_table.make ~target_id:"filters-list" ~cols ~rows sort
+    ; list context filter_list query
     ]
 ;;
 

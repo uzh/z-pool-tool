@@ -19,7 +19,7 @@ let descriptions_all_languages (location : Pool_location.t) =
   |> div
 ;;
 
-let index Pool_context.{ language; _ } location_list query =
+let list Pool_context.{ language; _ } location_list query =
   let url = Uri.of_string "/admin/locations" in
   let sort = Component.Sortable_table.{ url; query; language } in
   let cols =
@@ -60,7 +60,13 @@ let index Pool_context.{ language; _ } location_list query =
   in
   let target_id = "location-table" in
   div
-    ~a:[ a_id target_id; a_class [ "trim"; "safety-margin" ] ]
+    ~a:[ a_id target_id ]
+    [ Component.Sortable_table.make ~target_id ~cols ~rows sort ]
+;;
+
+let index (Pool_context.{ language; _ } as context) location_list query =
+  div
+    ~a:[ a_class [ "trim"; "safety-margin" ] ]
     [ h1
         ~a:[ a_class [ "heading-1" ] ]
         [ txt Pool_common.(Utils.text_to_string language I18n.LocationListTitle)
@@ -70,7 +76,7 @@ let index Pool_context.{ language; _ } location_list query =
           [ Utils.hint_to_string language I18n.LocationsIndex
             |> HttpUtils.add_line_breaks
           ]
-    ; Component.Sortable_table.make ~target_id ~cols ~rows sort
+    ; list context location_list query
     ]
 ;;
 
