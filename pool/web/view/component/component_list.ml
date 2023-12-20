@@ -119,17 +119,55 @@ let pagination language query { Pagination.page; page_count; _ } =
     ]
 ;;
 
-let search language query searchable_by =
-  [ Component_input.input_element
-      ?value:(query.search |> CCOption.map Search.query_string)
-      ~hints:
-        [ Pool_common.I18n.SearchByFields
-            (CCList.map Column.field searchable_by)
+let searchbar language query searchable_by =
+  let open Pool_common in
+  let search_field, search_label = Message.Field.(Search, Search |> show) in
+  form
+    ~a:[ a_method `Get; a_action "?" ]
+    [ div
+        ~a:[ a_class [ "form-group" ] ]
+        [ label
+            ~a:[ a_label_for search_label ]
+            [ search_field |> Utils.field_to_string_capitalized language |> txt
+            ]
+        ; div
+            ~a:[ a_class [ "flexrow"; "flex-gap"; "flexcolumn-mobile" ] ]
+            [ div
+                ~a:[ a_class [ "flexcolumn"; "grow" ] ]
+                [ input
+                    ~a:
+                      [ a_name search_label
+                      ; a_id search_label
+                      ; a_input_type `Text
+                      ; a_value
+                          (query.search
+                           |> CCOption.map_or ~default:"" Search.query_string)
+                      ]
+                    ()
+                ; span
+                    ~a:[ a_class [ "help" ] ]
+                    [ I18n.SearchByFields
+                        (CCList.map Column.field searchable_by)
+                      |> Utils.hint_to_string language
+                      |> txt
+                    ]
+                ]
+            ; div
+                ~a:[ a_class [ "flexrow"; "flex-gap-xs" ] ]
+                [ a
+                    ~a:[ a_class [ "gap-xs" ]; a_href "?" ]
+                    [ txt
+                        (Utils.control_to_string language Message.(Reset None))
+                    ]
+                ; Component_input.submit_element
+                    ~classnames:[ "small" ]
+                    language
+                    Message.Apply
+                    ()
+                ]
+            ]
         ]
-      language
-      `Text
-      Pool_common.Message.Field.Search
-  ]
+    ]
 ;;
 
 let sort language sortable_by query =
@@ -167,49 +205,10 @@ let sort language sortable_by query =
   [ field; order ]
 ;;
 
-let search_and_sort ~hide_sort language query sortable_by searchable_by =
-  let open Pool_common in
-  form
-    ~a:[ a_method `Get; a_action "?"; a_class [ "flexcolumn"; "flex-gap" ] ]
-    [ div
-        ~a:[ a_class [ "flexrow"; "flex-gap"; "flexcolumn-mobile" ] ]
-        [ div ~a:[ a_class [ "grow-3" ] ] (search language query searchable_by)
-        ; (if hide_sort
-           then div []
-           else
-             div
-               ~a:[ a_class [ "flexrow"; "flex-gap"; "grow-1" ] ]
-               (sort language sortable_by query))
-        ]
-    ; div
-        ~a:[ a_class [ "flexrow" ] ]
-        [ div
-            ~a:[ a_class [ "push"; "flexrow"; "flex-gap"; "align-center" ] ]
-            [ a
-                ~a:[ a_href "?" ]
-                [ txt (Utils.control_to_string language Message.(Reset None)) ]
-            ; Component_input.submit_element
-                ~classnames:[ "small" ]
-                language
-                Message.Apply
-                ()
-            ]
-        ]
-    ]
-;;
-
-let create
-  ?(hide_sort = false)
-  ?legend
-  language
-  to_table
-  sortable_by
-  searchable_by
-  (items, query)
-  =
+let create ?legend language to_table searchable_by (items, query) =
   div
     ~a:[ a_class [ "stack" ] ]
-    [ search_and_sort ~hide_sort language query sortable_by searchable_by
+    [ searchbar language query searchable_by
     ; CCOption.value ~default:(txt "") legend
     ; to_table items
     ; query.pagination

@@ -159,10 +159,8 @@ let index Pool_context.{ language; _ } experiments query =
         ~a:[ a_class [ "heading-1" ] ]
         [ txt (Utils.text_to_string language I18n.ExperimentListTitle) ]
     ; List.create
-        ~hide_sort:true
         language
         (fun _ -> table)
-        Experiment.sortable_by
         Experiment.searchable_by
         (experiments, query)
     ]
@@ -831,7 +829,6 @@ let sent_invitations
     ; Component.List.create
         language
         invitation_table
-        Invitation.sortable_by
         Invitation.searchable_by
         invitations
     ]

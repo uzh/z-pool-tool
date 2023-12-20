@@ -175,7 +175,6 @@ let index
   Component.List.create
     language
     waiting_list_table
-    Waiting_list.sortable_by
     Waiting_list.searchable_by
     (waiting_list, query)
   |> CCList.return

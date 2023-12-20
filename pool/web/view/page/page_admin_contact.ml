@@ -322,7 +322,6 @@ let index Pool_context.{ language; _ } contacts query =
         ~legend:(Status.status_icons_table_legend language `All)
         language
         (fun _ -> Component.Sortable_table.make ~target_id ~cols ~rows sort)
-        Contact.sortable_by
         Contact.searchable_by
         (contacts, query)
     ]
