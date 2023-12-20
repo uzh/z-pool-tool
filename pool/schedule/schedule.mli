@@ -54,9 +54,18 @@ val lifecycle : Sihl.Container.lifecycle
 val register : ?schedules:t list -> unit -> Sihl.Container.Service.t
 val is_ok : public -> bool
 val find_all : unit -> public list Lwt.t
+val find_by : Query.t -> (public list * Query.t) Lwt.t
 
 module Guard : sig
   module Access : sig
     val index : Guard.ValidationSet.t
   end
 end
+
+val column_label : Query.Column.t
+val column_scheduled_time : Query.Column.t
+val column_status : Query.Column.t
+val column_last_run_at : Query.Column.t
+val default_query : Query.t
+val searchable_by : Query.Column.t list
+val sortable_by : Query.Column.t list

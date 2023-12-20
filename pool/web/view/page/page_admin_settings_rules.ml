@@ -1,3 +1,4 @@
+open Containers
 open Tyxml.Html
 module HttpUtils = Http_utils
 module Input = Component.Input
@@ -8,12 +9,23 @@ let role_permission_path ?suffix () =
   |> Sihl.Web.externalize_path
 ;;
 
-module List = struct
-  let row
-    Pool_context.{ csrf; language; _ }
-    can_manage
-    ({ Guard.RolePermission.role; permission; model } as role_permission)
-    =
+let index Pool_context.{ language; csrf; guardian; _ } rules query =
+  let open Pool_common in
+  let can_manage =
+    Guard.PermissionOnTarget.validate
+      Guard.(PermissionOnTarget.create Permission.Manage `Permission)
+      guardian
+  in
+  let url = Uri.of_string (role_permission_path ()) in
+  let sort = Component.Sortable_table.{ url; query; language } in
+  let cols =
+    [ `column Guard.column_role
+    ; `column Guard.column_action
+    ; `column Guard.column_model
+    ; `empty
+    ]
+  in
+  let rows =
     let button_form target name submit_type confirm_text role_permission =
       form
         ~a:
@@ -35,38 +47,24 @@ module List = struct
         ; Input.submit_element ~submit_type language (name None) ()
         ]
     in
-    let buttons rule =
-      Pool_common.
-        [ button_form "remove" Message.delete `Error I18n.RemoveRule rule ]
-      |> div ~a:[ a_class [ "flexrow"; "flex-gap"; "justify-end" ] ]
+    let open Guard.RolePermission in
+    let row (rule : Guard.RolePermission.t) =
+      [ txt (Role.Role.show rule.role)
+      ; txt (Guard.Permission.show rule.permission)
+      ; txt (Role.Target.show rule.model)
+      ; (if can_manage
+         then
+           div
+             ~a:[ a_class [ "flexrow"; "flex-gap"; "justify-end" ] ]
+             [ button_form "remove" Message.delete `Error I18n.RemoveRule rule ]
+         else txt "")
+      ]
     in
-    [ txt ([%show: Role.Role.t] role)
-    ; txt ([%show: Guard.Permission.t] permission)
-    ; txt ([%show: Role.Target.t] model)
-    ]
-    @ if can_manage then [ buttons role_permission ] else []
-  ;;
-
-  let create ({ Pool_context.language; guardian; _ } as context) rules =
-    let open Pool_common in
-    let can_manage =
-      Guard.PermissionOnTarget.validate
-        Guard.(PermissionOnTarget.create Permission.Manage `Permission)
-        guardian
-    in
-    let thead =
-      (Message.Field.[ Role; Action; Model ]
-       |> Component.Table.fields_to_txt language)
-      @ if can_manage then [ txt "" ] else []
-    in
-    CCList.map (row context can_manage) rules
-    |> Component.Table.horizontal_table `Striped ~thead
-  ;;
-end
-
-let index ({ Pool_context.language; _ } as context) rules =
+    List.map row rules
+  in
+  let target_id = "permissions-table" in
   div
-    ~a:[ a_class [ "trim"; "safety-margin" ] ]
+    ~a:[ a_id target_id; a_class [ "trim"; "safety-margin" ] ]
     [ h1
         ~a:[ a_class [ "heading-1" ] ]
         [ txt
@@ -76,6 +74,6 @@ let index ({ Pool_context.language; _ } as context) rules =
         [ Pool_common.(Utils.hint_to_string language I18n.RolePermissionsIntro)
           |> HttpUtils.add_line_breaks
         ]
-    ; List.create context rules
+    ; Component.Sortable_table.make ~target_id ~cols ~rows sort
     ]
 ;;

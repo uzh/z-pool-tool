@@ -8,6 +8,7 @@
   pool_common
   pool_database
   role
+  query
   sihl
   utils)
  (preprocess

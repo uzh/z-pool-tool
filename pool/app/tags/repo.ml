@@ -176,6 +176,23 @@ module Sql = struct
     Utils.Database.collect (Label.value pool) find_all_request ()
   ;;
 
+  let select_count where_fragment =
+    Format.asprintf
+      {sql|
+        SELECT COUNT(*)
+        FROM pool_tags
+        %s
+      |sql}
+      where_fragment
+  ;;
+
+  let find_by query pool =
+    let select ?(count = false) fragment =
+      if count then select_count fragment else select_tag_sql ^ "  " ^ fragment
+    in
+    Query.collect_and_count pool (Some query) ~select RepoEntity.t
+  ;;
+
   let find_all_with_model_request =
     Format.asprintf
       {sql|
@@ -441,6 +458,7 @@ let find_all_with_model = Sql.find_all_with_model
 let find_all_validated = Sql.find_all_validated
 let find_all_validated_with_model = Sql.find_all_validated_with_model
 let find_all_of_entity = Sql.Tagged.find_all_of_entity
+let find_by = Sql.find_by
 let create_find_all_tag_sql = Sql.Tagged.create_find_all_tag_sql
 let already_exists = Sql.already_exists
 let insert = Sql.insert

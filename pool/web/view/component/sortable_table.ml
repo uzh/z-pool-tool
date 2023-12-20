@@ -17,6 +17,8 @@ type sort =
 type col =
   [ `column of Query.Column.t
   | `custom of [ | Html_types.flow5 ] Tyxml_html.elt
+  | `field of Pool_common.Message.Field.t * Query.Column.t
+  | `empty
   ]
 
 let is_selected { query; _ } column =
@@ -51,8 +53,8 @@ let make_url ({ url; query; _ } as sort) column =
   Format.asprintf "%a" Uri.pp url
 ;;
 
-let make_name { language; _ } col =
-  span [ Component_table.field_to_txt language (Query.Column.field col) ]
+let make_name { language; _ } field =
+  span [ Component_table.field_to_txt language field ]
 ;;
 
 let sort_icon sort col =
@@ -65,36 +67,48 @@ let sort_icon sort col =
   Component_icon.to_html icon
 ;;
 
-let make_sortable_head id sort col =
+let make_sortable_head target_id sort col field =
   let url = make_url sort col |> Sihl.Web.externalize_path in
   span
-    ~a:(hx_get ~url ~target:("#" ^ id) @ [ a_class [ "has-icon"; "pointer" ] ])
+    ~a:
+      (hx_get ~url ~target:("#" ^ target_id)
+       @ [ a_class [ "has-icon"; "pointer" ] ])
     (if is_selected sort col
-     then [ make_name sort col; sort_icon sort col ]
-     else [ make_name sort col ])
+     then [ make_name sort field; sort_icon sort col ]
+     else [ make_name sort field ])
 ;;
 
-let make_head id sort column =
+let make_head target_id sort column =
   th
     [ (match column with
        | `custom el -> el
-       | `column col -> make_sortable_head id sort col)
+       | `empty -> txt ""
+       | `field (field, col) -> make_sortable_head target_id sort col field
+       | `column col ->
+         make_sortable_head target_id sort col (Query.Column.field col))
     ]
 ;;
 
-let make_header id cols sort =
-  thead [ tr (CCList.map (make_head id sort) cols) ]
+let make_header target_id cols sort =
+  thead [ tr (CCList.map (make_head target_id sort) cols) ]
 ;;
 
 let make_rows rows =
   CCList.map (fun row -> tr (CCList.map (fun cell -> td [ cell ]) row)) rows
 ;;
 
-let make ?(layout = `Striped) ?(align_last_end = true) ~id ~cols ~rows sort =
-  let thead = make_header id cols sort in
+let make
+  ?(layout = `Striped)
+  ?(align_last_end = true)
+  ~target_id
+  ~cols
+  ~rows
+  sort
+  =
+  let thead = make_header target_id cols sort in
   let rows = make_rows rows in
   let classes =
     a_class (Component_table.table_classes layout ~align_last_end ())
   in
-  table ~a:[ a_id id; classes ] ~thead rows
+  table ~a:[ classes ] ~thead rows
 ;;

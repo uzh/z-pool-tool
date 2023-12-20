@@ -28,12 +28,14 @@ type sort =
 type col =
   [ `column of Query.Column.t
   | `custom of [ | Html_types.flow5 ] Tyxml_html.elt
+  | `field of Pool_common.Message.Field.t * Query.Column.t
+  | `empty
   ]
 
 val make
   :  ?layout:[ `Striped | `Simple ]
   -> ?align_last_end:bool
-  -> id:string
+  -> target_id:string
   -> cols:col list
   -> rows:[< Html_types.td_content_fun ] Tyxml_html.elt list list
   -> sort

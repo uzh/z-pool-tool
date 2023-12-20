@@ -26,17 +26,16 @@ let descriptions_from_urlencoded req urlencoded =
   | lst -> Description.create tenant_languages lst |> CCResult.map return
 ;;
 
-let index req =
-  let open Utils.Lwt_result.Infix in
-  let result ({ Pool_context.database_label; _ } as context) =
-    Utils.Lwt_result.map_error (fun err -> err, "/admin/dashboard")
-    @@
-    let%lwt location_list = Pool_location.find_all database_label in
-    Page.Admin.Location.index location_list context
-    |> create_layout ~active_navigation:"/admin/locations" req context
-    >|+ Sihl.Web.Response.of_html
-  in
-  result |> HttpUtils.extract_happy_path ~src req
+let index =
+  HttpUtils.Htmx.handler
+    ~active_navigation:"/admin/locations"
+    ~error_path:"/admin/locations"
+    ~query:(module Pool_location)
+    ~create_layout
+  @@ fun ({ Pool_context.database_label; _ } as context) query ->
+  let%lwt location_list, query = Pool_location.find_by query database_label in
+  let page = Page.Admin.Location.index context location_list query in
+  Lwt_result.return page
 ;;
 
 let new_form req =

@@ -1,3 +1,4 @@
+open Containers
 open Tyxml.Html
 module HttpUtils = Http_utils
 module Input = Component.Input
@@ -8,9 +9,9 @@ let tags_path ?suffix () =
   CCOption.map_or ~default (Format.asprintf "%s%s" default) suffix
 ;;
 
-let layout language children =
+let layout ?(id = "") language children =
   div
-    ~a:[ a_class [ "trim"; "safety-margin" ] ]
+    ~a:[ a_id id; a_class [ "trim"; "safety-margin" ] ]
     (h1
        ~a:[ a_class [ "heading-1" ] ]
        [ txt Pool_common.(Utils.nav_link_to_string language I18n.Tags) ]
@@ -49,14 +50,49 @@ module List = struct
   ;;
 end
 
-let index ({ Pool_context.language; _ } as context) tags =
+let index Pool_context.{ language; _ } tags query =
+  let url = Uri.of_string (tags_path ()) in
+  let sort = Component.Sortable_table.{ url; query; language } in
+  let cols =
+    let create_tag : [ | Html_types.flow5 ] elt =
+      Component.Input.link_as_button
+        ~style:`Success
+        ~icon:Component.Icon.Add
+        ~control:(language, Pool_common.Message.(Add (Some Field.Tag)))
+        (tags_path ~suffix:"create" ())
+    in
+    [ `column Tags.column_title
+    ; `column Tags.column_description
+    ; `column Tags.column_model
+    ; `custom create_tag
+    ]
+  in
+  let rows =
+    let open Tags in
+    let buttons tag =
+      tags_path ~suffix:(tag.Tags.id |> Tags.Id.value) ()
+      |> Input.edit_link
+      |> CCList.return
+      |> div ~a:[ a_class [ "flexrow"; "flex-gap"; "justify-end" ] ]
+    in
+    let row (tag : Tags.t) =
+      [ txt (Title.value tag.title)
+      ; txt (CCOption.map_or ~default:"" Tags.Description.value tag.description)
+      ; txt (Model.show tag.model |> String.capitalize_ascii)
+      ; buttons tag
+      ]
+    in
+    CCList.map row tags
+  in
+  let target_id = "tags-table" in
   layout
+    ~id:target_id
     language
     [ p
         [ Pool_common.(Utils.hint_to_string language I18n.TagsIntro)
           |> HttpUtils.add_line_breaks
         ]
-    ; List.create context tags
+    ; Component.Sortable_table.make ~target_id ~cols ~rows sort
     ]
 ;;
 

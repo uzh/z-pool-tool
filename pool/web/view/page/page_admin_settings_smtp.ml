@@ -10,25 +10,25 @@ let base_path = function
   | `Root -> "/root/settings/smtp"
 ;;
 
-let index Pool_context.{ language; _ } location smtp_auth_list =
-  let thead =
-    let add_btn =
+let index Pool_context.{ language; _ } location smtp_auth_list query =
+  let url = Uri.of_string (base_path location) in
+  let sort = Component.Sortable_table.{ url; query; language } in
+  let cols =
+    let create_smtp : [ | Html_types.flow5 ] elt =
       Component.Input.link_as_button
         ~style:`Success
         ~icon:Icon.Add
         ~control:(language, Pool_common.Message.(Add (Some Field.Smtp)))
         (Format.asprintf "%s/new" (base_path location))
     in
-    (Pool_common.Message.Field.
-       [ Label
-       ; SmtpServer
-       ; SmtpUsername
-       ; SmtpMechanism
-       ; SmtpProtocol
-       ; DefaultSmtpServer
-       ]
-     |> Component.Table.fields_to_txt language)
-    @ [ add_btn ]
+    [ `column SmtpAuth.column_label
+    ; `column SmtpAuth.column_smtp_server
+    ; `column SmtpAuth.column_smtp_username
+    ; `column SmtpAuth.column_smtp_mechanism
+    ; `column SmtpAuth.column_smtp_protocol
+    ; `column SmtpAuth.column_smtp_default_account
+    ; `custom create_smtp
+    ]
   in
   let delete_button (auth : SmtpAuth.t) =
     let open SmtpAuth in
@@ -49,8 +49,7 @@ let index Pool_context.{ language; _ } location smtp_auth_list =
   in
   let rows =
     let open SmtpAuth in
-    smtp_auth_list
-    |> CCList.map (fun auth ->
+    let row (auth : SmtpAuth.t) =
       [ auth.label |> Label.value |> txt
       ; auth.server |> Server.value |> txt
       ; auth.username |> CCOption.map_or ~default:"" Username.value |> txt
@@ -65,12 +64,15 @@ let index Pool_context.{ language; _ } location smtp_auth_list =
                  (auth.id |> Id.value))
           ; delete_button auth
           ]
-      ])
+      ]
+    in
+    CCList.map row smtp_auth_list
   in
+  let target_id = "smtp-table" in
   div
-    ~a:[ a_class [ "trim"; "safety-margin" ] ]
+    ~a:[ a_id target_id; a_class [ "trim"; "safety-margin" ] ]
     [ h1 ~a:[ a_class [ "heading-1" ] ] [ txt "Email Server Settings (SMTP)" ]
-    ; Component.Table.horizontal_table `Striped ~align_last_end:true ~thead rows
+    ; Component.Sortable_table.make ~target_id ~cols ~rows sort
     ]
 ;;
 

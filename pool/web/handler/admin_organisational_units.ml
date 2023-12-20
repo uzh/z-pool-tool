@@ -18,19 +18,20 @@ let database_label_of_req req =
   Pool_context.(req |> find >|= fun { database_label; _ } -> database_label)
 ;;
 
-let index req =
-  let open Utils.Lwt_result.Infix in
-  let result ({ Pool_context.database_label; _ } as context) =
-    Utils.Lwt_result.map_error (fun err -> err, "/admin/dashboard")
-    @@
-    let%lwt organisational_unit_list =
-      Organisational_unit.all database_label ()
-    in
-    View.index context organisational_unit_list
-    |> create_layout ~active_navigation:base_path req context
-    >|+ Sihl.Web.Response.of_html
+let index =
+  let active_navigation = base_path in
+  let error_path = "/admin/dashboard" in
+  HttpUtils.Htmx.handler
+    ~active_navigation
+    ~error_path
+    ~create_layout
+    ~query:(module Organisational_unit)
+  @@ fun ({ Pool_context.database_label; _ } as context) query ->
+  let%lwt organisational_unit_list, query =
+    Organisational_unit.find_by query database_label
   in
-  result |> HttpUtils.extract_happy_path ~src req
+  let page = View.index context organisational_unit_list query in
+  Lwt_result.return page
 ;;
 
 let write action req =

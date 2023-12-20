@@ -1,3 +1,4 @@
+open Containers
 open CCFun
 open Tyxml.Html
 module Table = Component.Table
@@ -290,54 +291,41 @@ let assign_contact_form { Pool_context.csrf; language; _ } contact =
     ]
 ;;
 
-let contact_overview language contacts =
-  let open Contact in
+let index Pool_context.{ language; _ } contacts query =
   let open Pool_user in
-  let thead =
-    (Pool_common.Message.Field.[ Name; Email ] |> Table.fields_to_txt language)
-    @ [ txt "" ]
+  let open Pool_common in
+  let url = Uri.of_string "/admin/contacts" in
+  let sort = Component.Sortable_table.{ url; query; language } in
+  let cols =
+    [ `field (Message.Field.Name, Contact.column_first_name)
+    ; `column Contact.column_email
+    ; `empty
+    ]
   in
-  let user_table contacts =
-    let rows =
-      CCList.map
-        (fun contact ->
-          let row =
-            match contact.disabled |> Disabled.value with
-            | true -> tr ~a:[ a_class [ "bg-red-lighter" ] ]
-            | false -> tr ~a:[]
-          in
-          [ Component.Contacts.identity_with_icons true contact
-          ; Component.Contacts.email_with_icons contact
-          ; contact |> path |> Input.link_as_button ~icon:Icon.Eye
-          ]
-          |> CCList.map (fun cell -> td [ cell ])
-          |> row)
-        contacts
+  let rows =
+    let row (contact : Contact.t) =
+      [ Component.Contacts.identity_with_icons true contact
+      ; txt (EmailAddress.value (Contact.email_address contact))
+      ; Input.link_as_button ~icon:Icon.Eye (path contact)
+      ]
     in
-    let thead = Table.table_head thead in
-    table
-      ~thead
-      ~a:[ a_class (Table.table_classes `Striped ~align_last_end:true ()) ]
-      rows
+    CCList.map row contacts
   in
-  Component.List.create
-    ~legend:
-      (Component.Contacts.status_icons_table_legend language `All
-       |> Component.Table.table_legend)
-    language
-    user_table
-    Contact.sortable_by
-    Contact.searchable_by
-    contacts
-;;
-
-let index Pool_context.{ language; _ } contacts =
+  let target_id = "contacts-list" in
   div
-    ~a:[ a_class [ "trim"; "safety-margin" ] ]
+    ~a:[ a_id target_id; a_class [ "trim"; "safety-margin" ] ]
     [ h1
         ~a:[ a_class [ "heading-1" ] ]
         [ txt Pool_common.(Utils.nav_link_to_string language I18n.Contacts) ]
-    ; contact_overview language contacts
+    ; Component.List.create
+        ~legend:
+          (Component.Contacts.status_icons_table_legend language `All
+           |> Component.Table.table_legend)
+        language
+        (fun _ -> Component.Sortable_table.make ~target_id ~cols ~rows sort)
+        Contact.sortable_by
+        Contact.searchable_by
+        (contacts, query)
     ]
 ;;
 

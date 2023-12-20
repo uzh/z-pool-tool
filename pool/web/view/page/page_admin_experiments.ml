@@ -122,7 +122,7 @@ let message_templates_html
     edit_path
 ;;
 
-let index Pool_context.{ language; _ } ?(with_search = true) experiments query =
+let index Pool_context.{ language; _ } experiments query =
   let url = Uri.of_string "/admin/experiments" in
   let sort = Sortable_table.{ url; query; language } in
   let cols =
@@ -151,23 +151,21 @@ let index Pool_context.{ language; _ } ?(with_search = true) experiments query =
     in
     CCList.map row experiments
   in
-  let table = Sortable_table.make ~id:"experiment-list" ~cols ~rows sort in
-  if with_search
-  then
-    div
-      ~a:[ a_class [ "trim"; "safety-margin" ] ]
-      [ h1
-          ~a:[ a_class [ "heading-1" ] ]
-          [ txt (Utils.text_to_string language I18n.ExperimentListTitle) ]
-      ; List.create
-          ~hide_sort:true
-          language
-          (fun _ -> table)
-          Experiment.sortable_by
-          Experiment.searchable_by
-          (experiments, query)
-      ]
-  else table
+  let target_id = "experiment-list" in
+  let table = Sortable_table.make ~target_id ~cols ~rows sort in
+  div
+    ~a:[ a_id target_id; a_class [ "trim"; "safety-margin" ] ]
+    [ h1
+        ~a:[ a_class [ "heading-1" ] ]
+        [ txt (Utils.text_to_string language I18n.ExperimentListTitle) ]
+    ; List.create
+        ~hide_sort:true
+        language
+        (fun _ -> table)
+        Experiment.sortable_by
+        Experiment.searchable_by
+        (experiments, query)
+    ]
 ;;
 
 let experiment_form

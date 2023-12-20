@@ -737,3 +737,23 @@ type base_condition =
   | Matcher of Pool_common.Id.t
   | MatcherReset of Pool_common.Id.t * Ptime.t
 [@@deriving eq, show]
+
+open Pool_common.Message
+
+let column_title = (Field.Title, "pool_filter.title") |> Query.Column.create
+
+let column_created_at =
+  (Field.CreatedAt, "pool_filter.created_at") |> Query.Column.create
+;;
+
+let searchable_by = [ column_title ]
+let default_sort_column = column_created_at
+let sortable_by = default_sort_column :: searchable_by
+
+let default_query =
+  let open Query in
+  let sort =
+    Sort.{ column = default_sort_column; order = SortOrder.Descending }
+  in
+  create ~sort ()
+;;

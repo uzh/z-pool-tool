@@ -5,19 +5,21 @@ module Message = HttpUtils.Message
 
 let field = Field.Tag
 let base_path = "/admin/settings/tags"
+let error_path = "/admin/settings/tags"
 let src = Logs.Src.create "handler.admin.settings_tags"
 let active_navigation = base_path
 let id req = Sihl.Web.Router.param req @@ Field.show field |> Tags.Id.of_string
 
-let show req =
-  let result ({ Pool_context.database_label; _ } as context) =
-    Tags.find_all database_label
-    ||> Page.Admin.Settings.Tags.index context
-    >|> General.create_tenant_layout req ~active_navigation context
-    >|+ Sihl.Web.Response.of_html
-    >|- fun err -> err, "/"
-  in
-  result |> HttpUtils.extract_happy_path ~src req
+let show =
+  HttpUtils.Htmx.handler
+    ~active_navigation
+    ~error_path
+    ~query:(module Tags)
+    ~create_layout:General.create_tenant_layout
+  @@ fun ({ Pool_context.database_label; _ } as context) query ->
+  let%lwt tags, query = Tags.find_by query database_label in
+  let page = Page.Admin.Settings.Tags.index context tags query in
+  Lwt_result.return page
 ;;
 
 let new_form req =

@@ -152,3 +152,4 @@ let add_and_start schedule =
 ;;
 
 let find_all = Repo.find_all
+let find_by = Repo.find_by

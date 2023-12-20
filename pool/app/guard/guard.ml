@@ -193,3 +193,10 @@ module Access = struct
   let manage_role = one_of_tuple (Manage, `Role, None)
   let manage_permission = one_of_tuple (Manage, `Permission, None)
 end
+
+let column_role = Repo.column_role
+let column_model = Repo.column_model
+let column_action = Repo.column_action
+let searchable_by = Repo.searchable_by
+let sortable_by = Repo.sortable_by
+let default_query = Repo.default_query

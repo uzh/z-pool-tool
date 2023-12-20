@@ -556,9 +556,29 @@ module Sql = struct
     ||> CCOption.value ~default:0
     ||> CCResult.return
   ;;
+
+  let select_count where_fragment =
+    Format.asprintf
+      {sql|
+        SELECT COUNT(*)
+        FROM pool_filter
+        %s
+      |sql}
+      where_fragment
+  ;;
+
+  let find_by query pool =
+    let select ?(count = false) fragment =
+      if count
+      then select_count fragment
+      else select_filter_sql component_base_query ^ "  " ^ fragment
+    in
+    Query.collect_and_count pool (Some query) ~select Repo_entity.t
+  ;;
 end
 
 let find = Sql.find
+let find_by = Sql.find_by
 let find_all_templates = Sql.find_all_templates
 let find_template = Sql.find_template
 let find_multiple_templates = Sql.find_multiple_templates

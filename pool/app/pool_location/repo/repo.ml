@@ -34,6 +34,16 @@ module Sql = struct
     |sql}
   ;;
 
+  let select_count where_fragment =
+    Format.asprintf
+      {sql|
+        SELECT COUNT(*)
+        FROM pool_locations
+        %s
+      |sql}
+      where_fragment
+  ;;
+
   let search_select =
     {sql|
     SELECT
@@ -267,6 +277,22 @@ let find pool id =
 let find_all pool =
   let open Utils.Lwt_result.Infix in
   Sql.find_all pool >|> Lwt_list.map_s (files_to_location pool)
+;;
+
+let find_by query pool =
+  let open Lwt.Syntax in
+  let* locations, query =
+    Query.collect_and_count
+      pool
+      (Some query)
+      ~select:(fun ?(count = false) fragment ->
+        if count
+        then Sql.select_count fragment
+        else Format.sprintf "%s %s" Sql.select_sql fragment)
+      t
+  in
+  let* locations = Lwt_list.map_s (files_to_location pool) locations in
+  Lwt.return (locations, query)
 ;;
 
 let insert pool location files =

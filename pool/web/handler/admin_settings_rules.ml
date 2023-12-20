@@ -7,22 +7,27 @@ module Field = Pool_common.Message.Field
 let src = Logs.Src.create "handler.admin.settings_role_permission"
 let active_navigation = "/admin/settings/role-permission"
 
-let show req =
-  let result ({ Pool_context.database_label; user; _ } as context) =
-    let actor = Pool_context.Utils.find_authorizable_opt database_label user in
-    (* TODO: check only available permissions *)
-    actor
-    >|> CCOption.map_or ~default:(Lwt.return []) (fun _ ->
-      Guard.Persistence.RolePermission.find_all
-        ~ctx:(Pool_database.to_ctx database_label)
-        ())
-    ||> CCList.stable_sort Guard.RolePermission.compare
-    ||> Page.Admin.Settings.RolePermission.index context
-    >|> General.create_tenant_layout req ~active_navigation context
-    >|+ Sihl.Web.Response.of_html
-    >|- fun err -> err, "/"
+let show =
+  HttpUtils.Htmx.handler
+    ~active_navigation
+    ~error_path:"/"
+    ~query:(module Guard)
+    ~create_layout:General.create_tenant_layout
+  @@ fun ({ Pool_context.database_label; user; _ } as context) query ->
+  let%lwt actor =
+    Pool_context.Utils.find_authorizable_opt database_label user
   in
-  result |> HttpUtils.extract_happy_path ~src req
+  (* TODO: check only available permissions *)
+  let%lwt permissions, query =
+    match actor with
+    | None -> Lwt.return ([], query)
+    | Some _actor ->
+      Guard.Persistence.RolePermission.find_by query database_label
+  in
+  let page =
+    Page.Admin.Settings.RolePermission.index context permissions query
+  in
+  Lwt_result.return page
 ;;
 
 let delete req =
