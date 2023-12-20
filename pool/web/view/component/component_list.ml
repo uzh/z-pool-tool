@@ -164,6 +164,9 @@ let searchbar ~url ~target_id language query searchable_by =
                   |> txt
                 ]
             ]
+        ; a
+            ~a:[ a_class [ "btn"; "small"; "is-text"; "gap-sm" ]; a_href "?" ]
+            [ txt (Utils.control_to_string language Message.(Reset None)) ]
         ]
     ]
 ;;
