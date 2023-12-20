@@ -49,14 +49,12 @@ let index req =
     ~create_layout
     (fun ({ Pool_context.database_label; _ } as context) query ->
       let%lwt filter_list, query = Filter.find_by query database_label in
-      let page =
-        let open Page.Admin.Filter in
-        (if HttpUtils.Htmx.is_hx_request req then list else index)
-          context
-          filter_list
-          query
-      in
-      Lwt_result.return page)
+      let open Page.Admin.Filter in
+      (if HttpUtils.Htmx.is_hx_request req then list else index)
+        context
+        filter_list
+        query
+      |> Lwt_result.return)
     req
 ;;
 

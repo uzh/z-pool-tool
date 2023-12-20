@@ -127,14 +127,12 @@ let index req =
           ~permission:Experiment.Guard.Access.index_permission
           database_label
       in
-      let page =
-        let open Page.Admin.Experiments in
-        (if HttpUtils.Htmx.is_hx_request req then list else index)
-          context
-          experiments
-          query
-      in
-      Lwt_result.return page)
+      let open Page.Admin.Experiments in
+      (if HttpUtils.Htmx.is_hx_request req then list else index)
+        context
+        experiments
+        query
+      |> Lwt_result.return)
     req
 ;;
 

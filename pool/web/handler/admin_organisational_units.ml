@@ -30,13 +30,11 @@ let index req =
       let%lwt organisational_unit_list, query =
         Organisational_unit.find_by query database_label
       in
-      let page =
-        (if HttpUtils.Htmx.is_hx_request req then View.list else View.index)
-          context
-          organisational_unit_list
-          query
-      in
-      Lwt_result.return page)
+      (if HttpUtils.Htmx.is_hx_request req then View.list else View.index)
+        context
+        organisational_unit_list
+        query
+      |> Lwt_result.return)
     req
 ;;
 

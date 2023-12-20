@@ -24,14 +24,12 @@ let show req =
         | Some _actor ->
           Guard.Persistence.RolePermission.find_by query database_label
       in
-      let page =
-        let open Page.Admin.Settings.RolePermission in
-        (if HttpUtils.Htmx.is_hx_request req then list else index)
-          context
-          permissions
-          query
-      in
-      Lwt_result.return page)
+      let open Page.Admin.Settings.RolePermission in
+      (if HttpUtils.Htmx.is_hx_request req then list else index)
+        context
+        permissions
+        query
+      |> Lwt_result.return)
     req
 ;;
 

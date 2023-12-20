@@ -12,14 +12,12 @@ let show req =
     ~create_layout:General.create_tenant_layout
     (fun context query ->
       let%lwt schedules, query = Schedule.find_by query in
-      let page =
-        let open Page.Admin.Settings.Schedule in
-        (if HttpUtils.Htmx.is_hx_request req then list else index)
-          context
-          schedules
-          query
-      in
-      Lwt.return (Ok page))
+      let open Page.Admin.Settings.Schedule in
+      (if HttpUtils.Htmx.is_hx_request req then list else index)
+        context
+        schedules
+        query
+      |> Lwt_result.return)
     req
 ;;
 

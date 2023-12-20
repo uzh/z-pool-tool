@@ -36,14 +36,12 @@ let index req =
       let%lwt location_list, query =
         Pool_location.find_by query database_label
       in
-      let page =
-        let open Page.Admin.Location in
-        (if HttpUtils.Htmx.is_hx_request req then list else index)
-          context
-          location_list
-          query
-      in
-      Lwt_result.return page)
+      let open Page.Admin.Location in
+      (if HttpUtils.Htmx.is_hx_request req then list else index)
+        context
+        location_list
+        query
+      |> Lwt_result.return)
     req
 ;;
 

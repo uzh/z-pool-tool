@@ -30,14 +30,12 @@ let index req =
           database_label
           ()
       in
-      let page =
-        let open Page.Admin.Contact in
-        (if HttpUtils.Htmx.is_hx_request req then list else index)
-          context
-          contacts
-          query
-      in
-      Lwt_result.return page)
+      let open Page.Admin.Contact in
+      (if HttpUtils.Htmx.is_hx_request req then list else index)
+        context
+        contacts
+        query
+      |> Lwt_result.return)
     req
 ;;
 
