@@ -2,6 +2,7 @@ module Id : module type of Pool_common.Id
 
 type t =
   { user : Sihl_user.t
+  ; email_verified : Pool_user.EmailVerified.t option
   ; import_pending : Pool_user.ImportPending.t
   }
 
@@ -10,7 +11,7 @@ val pp : Format.formatter -> t -> unit
 val show : t -> string
 val sexp_of_t : t -> Sexplib0.Sexp.t
 val user : t -> Sihl_user.t
-val create : Sihl_user.t -> t
+val create : email_verified:Pool_user.EmailVerified.t option -> Sihl_user.t -> t
 val id : t -> Id.t
 val email_address : t -> Pool_user.EmailAddress.t
 val full_name : t -> string
@@ -40,6 +41,7 @@ val show_update : update -> string
 type event =
   | Created of create
   | DetailsUpdated of t * update
+  | EmailVerified of t
   | Disabled of t
   | Enabled of t
   | ImportConfirmed of t * Pool_user.Password.t
@@ -51,7 +53,6 @@ type event =
       * Pool_user.PasswordConfirmed.t
   | PromotedContact of Pool_common.Id.t
   | SignInCounterUpdated of t
-  | Verified of t
 
 val handle_event
   :  tags:Logs.Tag.set
@@ -67,6 +68,11 @@ val user_is_admin : Pool_database.Label.t -> Sihl_user.t -> bool Lwt.t
 val find
   :  Pool_database.Label.t
   -> Id.t
+  -> (t, Pool_common.Message.error) result Lwt.t
+
+val find_by_email
+  :  Pool_database.Label.t
+  -> Pool_user.EmailAddress.t
   -> (t, Pool_common.Message.error) result Lwt.t
 
 val find_all : Pool_database.Label.t -> unit -> t list Lwt.t

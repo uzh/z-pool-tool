@@ -5,6 +5,7 @@ module Table = Component.Table
 module Input = Component.Input
 module Icon = Component.Icon
 module Modal = Component.Modal
+module Status = Component.UserStatus.Contact
 
 let path =
   Contact.id %> Pool_common.Id.value %> Format.asprintf "/admin/contacts/%s"
@@ -28,7 +29,7 @@ let enroll_contact_path ?suffix contact_id =
 let heading_with_icons contact =
   h1
     ~a:[ a_class [ "heading-1" ] ]
-    [ Component.Contacts.identity_with_icons ~context:`All true contact ]
+    [ Status.identity_with_icons ~context:`All true contact ]
 ;;
 
 let personal_detail
@@ -304,7 +305,7 @@ let index Pool_context.{ language; _ } contacts query =
   in
   let rows =
     let row (contact : Contact.t) =
-      [ Component.Contacts.identity_with_icons true contact
+      [ Status.identity_with_icons true contact
       ; txt (EmailAddress.value (Contact.email_address contact))
       ; Input.link_as_button ~icon:Icon.Eye (path contact)
       ]
@@ -318,9 +319,7 @@ let index Pool_context.{ language; _ } contacts query =
         ~a:[ a_class [ "heading-1" ] ]
         [ txt Pool_common.(Utils.nav_link_to_string language I18n.Contacts) ]
     ; Component.List.create
-        ~legend:
-          (Component.Contacts.status_icons_table_legend language `All
-           |> Component.Table.table_legend)
+        ~legend:(Status.status_icons_table_legend language `All)
         language
         (fun _ -> Component.Sortable_table.make ~target_id ~cols ~rows sort)
         Contact.sortable_by

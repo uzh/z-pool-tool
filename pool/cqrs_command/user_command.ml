@@ -67,8 +67,11 @@ end = struct
         [ Contact.EmailVerified contact |> Pool_event.contact
         ; Email.EmailVerified command |> Pool_event.email_verification
         ]
-    | Admin _ ->
-      Ok [ Email.EmailVerified command |> Pool_event.email_verification ]
+    | Admin admin ->
+      Ok
+        [ Admin.EmailVerified admin |> Pool_event.admin
+        ; Email.EmailVerified command |> Pool_event.email_verification
+        ]
   ;;
 
   let effects role user =

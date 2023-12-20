@@ -1,6 +1,7 @@
 open CCFun
 open Tyxml.Html
 open Component
+module Status = UserStatus.Admin
 
 let admin_overview ?(disable_edit = false) language admins =
   let thead =
@@ -23,7 +24,7 @@ let admin_overview ?(disable_edit = false) language admins =
       let default_empty o = CCOption.value ~default:"" o in
       let user = Admin.user admin in
       let base =
-        [ txt user.email
+        [ Status.email_with_icons admin
         ; txt
             (Format.asprintf
                "%s %s"
@@ -40,7 +41,12 @@ let admin_overview ?(disable_edit = false) language admins =
           ]
       | true -> base)
     admins
-  |> Table.horizontal_table ~align_last_end:true `Striped ~thead
+  |> fun rows ->
+  div
+    ~a:[ a_class [ "stack" ] ]
+    [ Status.status_icons_table_legend language
+    ; Table.horizontal_table ~align_last_end:true `Striped ~thead rows
+    ]
 ;;
 
 let roles_section ?(top_element = []) language children =

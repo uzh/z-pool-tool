@@ -4,6 +4,7 @@ include Event
 include Entity
 
 let find = Repo.find
+let find_by_email = Repo.find_by_email
 let find_all = Repo.find_all
 
 let find_all_id_with_role ?exclude pool role =

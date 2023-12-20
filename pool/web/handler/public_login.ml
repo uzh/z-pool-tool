@@ -94,33 +94,35 @@ let login_post req =
          |> Admin.find database_label
          >|+ Pool_context.admin
        in
-       user
-       |> Admin.user_is_admin database_label
-       >|> function
-       | true ->
-         let* admin = find_admin user in
-         success admin ()
-       | false when user.Sihl_user.confirmed |> not ->
+       match user.Sihl_user.confirmed with
+       | false ->
          redirect
            (Http_utils.path_with_language query_language "/email-confirmation")
-       | false ->
-         let* contact = user |> find_contact in
-         let%lwt required_answers_given =
-           Custom_field.all_required_answered
-             database_label
-             (Contact.id contact)
-         in
-         let contact = contact |> Pool_context.contact in
-         (match required_answers_given with
-          | true -> success contact ()
+       | true ->
+         user
+         |> Admin.user_is_admin database_label
+         >|> (function
+          | true ->
+            let* admin = find_admin user in
+            success admin ()
           | false ->
-            login
-              contact
-              ~set_completion_cookie:true
-              "/user/completion"
-              [ Message.set
-                  ~error:[ Pool_common.Message.(RequiredFieldsMissing) ]
-              ])
+            let* contact = user |> find_contact in
+            let%lwt required_answers_given =
+              Custom_field.all_required_answered
+                database_label
+                (Contact.id contact)
+            in
+            let contact = contact |> Pool_context.contact in
+            (match required_answers_given with
+             | true -> success contact ()
+             | false ->
+               login
+                 contact
+                 ~set_completion_cookie:true
+                 "/user/completion"
+                 [ Message.set
+                     ~error:[ Pool_common.Message.(RequiredFieldsMissing) ]
+                 ]))
   in
   result |> HttpUtils.extract_happy_path_with_actions ~src req
 ;;

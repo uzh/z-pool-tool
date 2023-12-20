@@ -1,3 +1,4 @@
+module Button = Button
 module ButtonGroup = Component_button_group
 module Calendar = Component_calendar
 module Collapsible = Component_collapsible
@@ -17,10 +18,10 @@ module Partials = Component_partials
 module Role = Component_role
 module Search = Component_search
 module Sortable = Component_sortable
+module Sortable_table = Sortable_table
 module Statistics = Component_statistics
 module Table = Component_table
 module Tag = Component_tag
 module Tooltip = Component_tooltip
+module UserStatus = Component_user_status
 module Utils = Component_utils
-module Sortable_table = Sortable_table
-module Button = Button

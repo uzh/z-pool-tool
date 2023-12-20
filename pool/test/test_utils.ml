@@ -151,7 +151,11 @@ module Model = struct
   ;;
 
   let create_admin ?id ?email () =
-    () |> create_sihl_user ?id ?email |> Admin.create |> Pool_context.admin
+    ()
+    |> create_sihl_user ?id ?email
+    |> Admin.create
+         ~email_verified:(Some (Pool_user.EmailVerified.create_now ()))
+    |> Pool_context.admin
   ;;
 
   let create_location ?(id = Pool_location.Id.create ()) () =
