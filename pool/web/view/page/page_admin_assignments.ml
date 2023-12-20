@@ -2,6 +2,7 @@ open CCFun.Infix
 open Tyxml.Html
 open Component.Input
 module Field = Pool_common.Message.Field
+module Status = Component.UserStatus.Contact
 
 let assignments_path experiment_id =
   Format.asprintf
@@ -476,8 +477,7 @@ module Partials = struct
                 then
                   div
                     ~a:[ a_class [ "flexrow"; "flex-gap-sm" ] ]
-                    (value
-                     :: Component.Contacts.make_icons assignment.contact `Name)
+                    (value :: Status.make_icons assignment.contact `Name)
                 else value)
             in
             let buttons =
@@ -759,7 +759,7 @@ let edit
        create
          context
          (Text
-            (Component.Contacts.identity
+            (Status.identity
                view_contact_name
                contact
                (Assignment.Id.to_common id)))

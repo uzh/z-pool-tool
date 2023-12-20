@@ -2,14 +2,18 @@ module Id = Pool_common.Id
 
 type t =
   { user : Sihl_user.t
+  ; email_verified : Pool_user.EmailVerified.t option
   ; import_pending : Pool_user.ImportPending.t
   }
 [@@deriving eq, show]
 
 let user { user; _ } = user
 
-let create (user : Sihl_user.t) : t =
-  { user; import_pending = Pool_user.ImportPending.create false }
+let create ~email_verified (user : Sihl_user.t) : t =
+  { user
+  ; email_verified
+  ; import_pending = Pool_user.ImportPending.create false
+  }
 ;;
 
 let id ({ user; _ } : t) = Id.of_string user.Sihl_user.id

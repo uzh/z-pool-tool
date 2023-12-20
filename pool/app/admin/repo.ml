@@ -5,7 +5,8 @@ module Sql = struct
   open Caqti_request.Infix
 
   let sql_select_columns =
-    Pool_user.Repo.sql_select_columns @ [ "pool_admins.import_pending" ]
+    Pool_user.Repo.sql_select_columns
+    @ [ "pool_admins.email_verified"; "pool_admins.import_pending" ]
   ;;
 
   let joins =
@@ -19,21 +20,22 @@ module Sql = struct
     {sql|
       INSERT INTO pool_admins (
         user_uuid,
+        email_verified,
         import_pending
       ) VALUES (
         UNHEX(REPLACE($1, '-', '')),
-        $2
+        $2,
+        $3
       )
     |sql}
-    |> Caqti_type.(
-         t2 Pool_common.Repo.Id.t Pool_user.Repo.ImportPending.t ->. unit)
+    |> Caqti_type.(RepoEntity.Write.t ->. unit)
   ;;
 
   let insert pool t =
     Utils.Database.exec
       (Pool_database.Label.value pool)
       insert_request
-      (Entity.id t, t.Entity.import_pending)
+      (RepoEntity.Write.of_entity t)
   ;;
 
   let find_request_sql ?order_by ?additional_joins where =
@@ -64,8 +66,6 @@ module Sql = struct
     {sql|
       WHERE 
         user_users.uuid = UNHEX(REPLACE(?, '-', ''))
-      AND 
-        user_users.confirmed = 1
     |sql}
     |> find_request_sql
     |> Pool_common.Repo.Id.t ->! caqti_type
@@ -80,11 +80,27 @@ module Sql = struct
     >|= CCOption.to_result Pool_common.Message.(NotFound Field.Admin)
   ;;
 
+  let find_by_email_request caqti_type =
+    {sql|
+      WHERE 
+        user_users.email = ?
+    |sql}
+    |> find_request_sql
+    |> Pool_user.Repo.EmailAddress.t ->! caqti_type
+  ;;
+
+  let find_by_email pool email =
+    let open Lwt.Infix in
+    Utils.Database.find_opt
+      (Pool_database.Label.value pool)
+      (find_by_email_request RepoEntity.t)
+      email
+    >|= CCOption.to_result Pool_common.Message.(NotFound Field.Admin)
+  ;;
+
   let find_all_request =
     {sql|
       WHERE
-        user_users.confirmed = 1
-      AND
         user_users.admin = 1
       |sql}
     |> find_request_sql
@@ -127,7 +143,8 @@ module Sql = struct
       UPDATE
         pool_admins
       SET
-        import_pending = $2
+        email_verified = $2,
+        import_pending = $3
       WHERE
         user_uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}
@@ -159,16 +176,6 @@ module Sql = struct
       (Pool_database.Label.value pool)
       update_sign_in_count_request
       Entity.(id t |> Id.value)
-  ;;
-
-  let promote_contact_insert_admin_request =
-    {sql|
-      INSERT INTO pool_admins (user_uuid, sign_in_count, last_sign_in_at)
-      SELECT user_uuid, sign_in_count, last_sign_in_at
-      FROM pool_contacts
-      WHERE user_uuid = UNHEX(REPLACE($1, '-', ''))
-    |sql}
-    |> Pool_common.Repo.Id.t ->. Caqti_type.unit
   ;;
 
   let promote_contact_insert_contact_to_promoted_request =
@@ -246,6 +253,16 @@ module Sql = struct
     |> Pool_common.Repo.Id.t ->. Caqti_type.unit
   ;;
 
+  let promote_contact_insert_admin_request =
+    {sql|
+      INSERT INTO pool_admins (user_uuid, email_verified, sign_in_count, last_sign_in_at)
+      SELECT user_uuid, email_verified, sign_in_count, last_sign_in_at
+      FROM pool_contacts
+      WHERE user_uuid = UNHEX(REPLACE($1, '-', ''))
+    |sql}
+    |> Pool_common.Repo.Id.t ->. Caqti_type.unit
+  ;;
+
   let promote_contact_set_admin_request =
     {sql|
       UPDATE user_users
@@ -278,6 +295,7 @@ end
 
 let insert = Sql.insert
 let find = Sql.find
+let find_by_email = Sql.find_by_email
 let find_all = Sql.find_all
 let find_multiple = Sql.find_multiple
 let update = Sql.update

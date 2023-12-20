@@ -18,15 +18,12 @@ let role_to_string =
 let grant_role ctx admin (role, target_uuid) =
   let open Utils.Lwt_result.Infix in
   let%lwt (_ : Guard.Actor.t) =
-    admin
-    |> Admin.create
-    |> Admin.Guard.Actor.to_authorizable ~ctx
-    ||> Pool_common.Utils.get_or_failwith
+    admin |> Admin.Guard.Actor.to_authorizable ~ctx ||> get_or_failwith
   in
   let open Guard in
   ActorRole.create
     ?target_uuid
-    (Uuid.Actor.of_string_exn admin.Sihl_user.id)
+    (Uuid.Actor.of_string_exn admin.Admin.user.Sihl_user.id)
     role
   |> Persistence.ActorRole.upsert ~ctx
   ||> CCFun.tap (fun _ -> Persistence.Cache.clear ())
@@ -143,13 +140,16 @@ Example: admin.root.create example@mail.com securePassword Max Muster
 
 let grant_role =
   let grant_if_admin pool email role =
+    let open Utils.Lwt_result.Infix in
     let ctx = Pool_database.to_ctx pool in
-    match%lwt Service.User.find_by_email_opt ~ctx email with
-    | Some admin when Sihl_user.is_admin admin ->
-      let%lwt () = grant_role ctx admin role in
-      Lwt.return_some ()
-    | Some _ -> failwith "The user isn't administrator."
-    | None -> failwith "The user doesn't exist, use the 'create' command."
+    let%lwt admin =
+      email
+      |> Pool_user.EmailAddress.of_string
+      |> Admin.find_by_email pool
+      ||> get_or_failwith
+    in
+    let%lwt () = grant_role ctx admin role in
+    Lwt.return_some ()
   in
   let help =
     {|<database_label> <email> <role>

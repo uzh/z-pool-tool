@@ -1254,7 +1254,7 @@ let close_assignment_htmx_row
   in
   let default_bool fnc = CCOption.map_or ~default:false fnc in
   let identity =
-    Component.Contacts.identity
+    Component.UserStatus.Contact.identity
       view_contact_name
       contact
       (Assignment.Id.to_common id)
