@@ -293,24 +293,27 @@ let assign_contact_form { Pool_context.csrf; language; _ } contact =
 ;;
 
 let list Pool_context.{ language; _ } contacts query =
-  let open Pool_user in
   let open Pool_common in
   let url = Uri.of_string "/admin/contacts" in
   let sort = Component.Sortable_table.{ url; query; language } in
   let cols =
-    [ `field (Message.Field.Name, Contact.column_first_name)
+    [ `field (Message.Field.Name, Contact.column_last_name)
     ; `column Contact.column_email
     ; `empty
     ]
   in
-  let rows =
-    let row (contact : Contact.t) =
-      [ Status.identity_with_icons true contact
-      ; txt (EmailAddress.value (Contact.email_address contact))
-      ; Input.link_as_button ~icon:Icon.Eye (path contact)
-      ]
+  let row (Contact.{ disabled; _ } as contact) =
+    let a =
+      if Pool_user.Disabled.value disabled
+      then [ a_class [ "bg-red-lighter" ] ]
+      else []
     in
-    CCList.map row contacts
+    [ Status.identity_with_icons true contact
+    ; Status.email_with_icons contact
+    ; Input.link_as_button ~icon:Icon.Eye (path contact)
+    ]
+    |> CCList.map (CCList.return %> td)
+    |> tr ~a
   in
   let target_id = "contacts-list" in
   Component.List.create
@@ -318,7 +321,7 @@ let list Pool_context.{ language; _ } contacts query =
     ~target_id
     ~legend:(Status.status_icons_table_legend language `All)
     language
-    (fun _ -> Component.Sortable_table.make ~target_id ~cols ~rows sort)
+    (Component.Sortable_table.make_styled ~target_id ~cols ~row sort)
     Contact.searchable_by
     (contacts, query)
 ;;

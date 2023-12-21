@@ -10,15 +10,15 @@ let show req =
     ~error_path:active_navigation
     ~query:(module Schedule)
     ~create_layout:General.create_tenant_layout
-    (fun context query ->
-      let%lwt schedules, query = Schedule.find_by query in
-      let open Page.Admin.Settings.Schedule in
-      (if HttpUtils.Htmx.is_hx_request req then list else index)
-        context
-        schedules
-        query
-      |> Lwt_result.return)
     req
+  @@ fun context query ->
+  let%lwt schedules, query = Schedule.find_by query in
+  let open Page.Admin.Settings.Schedule in
+  (if HttpUtils.Htmx.is_hx_request req then list else index)
+    context
+    schedules
+    query
+  |> Lwt_result.return
 ;;
 
 module Access : module type of Helpers.Access = struct

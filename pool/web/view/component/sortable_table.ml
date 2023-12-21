@@ -112,3 +112,20 @@ let make
   in
   table ~a:[ classes ] ~thead rows
 ;;
+
+let make_styled
+  ?(layout = `Striped)
+  ?(align_last_end = true)
+  ~target_id
+  ~cols
+  ~row
+  sort
+  items
+  =
+  let thead = make_header target_id cols sort in
+  let rows = CCList.map row items in
+  let classes =
+    a_class (Component_table.table_classes layout ~align_last_end ())
+  in
+  table ~a:[ classes ] ~thead rows
+;;

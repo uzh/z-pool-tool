@@ -111,29 +111,26 @@ let index req =
     ~error_path:"/admin/experiments"
     ~create_layout
     ~query:(module Experiment)
-    (fun ({ Pool_context.database_label; user; _ } as context) query ->
-      let open Utils.Lwt_result.Infix in
-      let find_actor =
-        Pool_context.Utils.find_authorizable
-          ~admin_only:true
-          database_label
-          user
-      in
-      let* actor = find_actor in
-      let%lwt experiments, query =
-        Experiment.find_all
-          ~query
-          ~actor
-          ~permission:Experiment.Guard.Access.index_permission
-          database_label
-      in
-      let open Page.Admin.Experiments in
-      (if HttpUtils.Htmx.is_hx_request req then list else index)
-        context
-        experiments
-        query
-      |> Lwt_result.return)
     req
+  @@ fun ({ Pool_context.database_label; user; _ } as context) query ->
+  let open Utils.Lwt_result.Infix in
+  let find_actor =
+    Pool_context.Utils.find_authorizable ~admin_only:true database_label user
+  in
+  let* actor = find_actor in
+  let%lwt experiments, query =
+    Experiment.find_all
+      ~query
+      ~actor
+      ~permission:Experiment.Guard.Access.index_permission
+      database_label
+  in
+  let open Page.Admin.Experiments in
+  (if HttpUtils.Htmx.is_hx_request req then list else index)
+    context
+    experiments
+    query
+  |> Lwt_result.return
 ;;
 
 let new_form req =

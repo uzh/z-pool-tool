@@ -16,15 +16,12 @@ let show req =
     ~error_path
     ~query:(module Tags)
     ~create_layout:General.create_tenant_layout
-    (fun ({ Pool_context.database_label; _ } as context) query ->
-      let%lwt tags, query = Tags.find_by query database_label in
-      let open Page.Admin.Settings.Tags in
-      (if HttpUtils.Htmx.is_hx_request req then list else index)
-        context
-        tags
-        query
-      |> Lwt_result.return)
     req
+  @@ fun ({ Pool_context.database_label; _ } as context) query ->
+  let%lwt tags, query = Tags.find_by query database_label in
+  let open Page.Admin.Settings.Tags in
+  (if HttpUtils.Htmx.is_hx_request req then list else index) context tags query
+  |> Lwt_result.return
 ;;
 
 let new_form req =

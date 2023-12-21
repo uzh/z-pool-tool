@@ -47,15 +47,15 @@ let index req =
     ~error_path:(Format.asprintf "/admin/filter")
     ~query:(module Filter)
     ~create_layout
-    (fun ({ Pool_context.database_label; _ } as context) query ->
-      let%lwt filter_list, query = Filter.find_by query database_label in
-      let open Page.Admin.Filter in
-      (if HttpUtils.Htmx.is_hx_request req then list else index)
-        context
-        filter_list
-        query
-      |> Lwt_result.return)
     req
+  @@ fun ({ Pool_context.database_label; _ } as context) query ->
+  let%lwt filter_list, query = Filter.find_by query database_label in
+  let open Page.Admin.Filter in
+  (if HttpUtils.Htmx.is_hx_request req then list else index)
+    context
+    filter_list
+    query
+  |> Lwt_result.return
 ;;
 
 let form is_edit req =

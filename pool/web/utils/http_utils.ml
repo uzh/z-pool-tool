@@ -408,12 +408,13 @@ module Htmx = struct
           -> ( [> Html_types.html ] Tyxml_html.elt
                , Pool_common.Message.error )
                Lwt_result.t)
+    -> Rock.Request.t
     -> (Pool_context.t
         -> Query.t
         -> ('page Tyxml_html.elt, Pool_common.Message.error) Lwt_result.t)
-    -> Rock.Request.t -> Rock.Response.t Lwt.t
+    -> Rock.Response.t Lwt.t
     =
-    fun ~active_navigation ~error_path ~query:(module Q) ~create_layout run req ->
+    fun ~active_navigation ~error_path ~query:(module Q) ~create_layout req run ->
     let open Utils.Lwt_result.Infix in
     extract_happy_path ~src req
     @@ fun context ->

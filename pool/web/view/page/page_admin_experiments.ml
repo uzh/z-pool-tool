@@ -155,7 +155,7 @@ let list Pool_context.{ language; _ } experiments query =
   let table = Sortable_table.make ~target_id ~cols ~rows sort in
   List.create
     ~url
-    ~target_id:"experiment-list-search"
+    ~target_id
     language
     (fun _ -> table)
     Experiment.searchable_by

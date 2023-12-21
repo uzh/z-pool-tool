@@ -32,17 +32,15 @@ let index req =
     ~error_path:"/admin/locations"
     ~query:(module Pool_location)
     ~create_layout
-    (fun ({ Pool_context.database_label; _ } as context) query ->
-      let%lwt location_list, query =
-        Pool_location.find_by query database_label
-      in
-      let open Page.Admin.Location in
-      (if HttpUtils.Htmx.is_hx_request req then list else index)
-        context
-        location_list
-        query
-      |> Lwt_result.return)
     req
+  @@ fun ({ Pool_context.database_label; _ } as context) query ->
+  let%lwt location_list, query = Pool_location.find_by query database_label in
+  let open Page.Admin.Location in
+  (if HttpUtils.Htmx.is_hx_request req then list else index)
+    context
+    location_list
+    query
+  |> Lwt_result.return
 ;;
 
 let new_form req =

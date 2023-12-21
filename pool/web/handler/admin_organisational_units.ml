@@ -26,16 +26,16 @@ let index req =
     ~error_path
     ~create_layout
     ~query:(module Organisational_unit)
-    (fun ({ Pool_context.database_label; _ } as context) query ->
-      let%lwt organisational_unit_list, query =
-        Organisational_unit.find_by query database_label
-      in
-      (if HttpUtils.Htmx.is_hx_request req then View.list else View.index)
-        context
-        organisational_unit_list
-        query
-      |> Lwt_result.return)
     req
+  @@ fun ({ Pool_context.database_label; _ } as context) query ->
+  let%lwt organisational_unit_list, query =
+    Organisational_unit.find_by query database_label
+  in
+  (if HttpUtils.Htmx.is_hx_request req then View.list else View.index)
+    context
+    organisational_unit_list
+    query
+  |> Lwt_result.return
 ;;
 
 let write action req =

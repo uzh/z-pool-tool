@@ -14,29 +14,26 @@ let index req =
     ~error_path:"/admin/dashboard"
     ~query:(module Contact)
     ~create_layout:General.create_tenant_layout
-    (fun (Pool_context.{ database_label; user; _ } as context) query ->
-      let open Utils.Lwt_result.Infix in
-      let* actor =
-        Pool_context.Utils.find_authorizable
-          ~admin_only:true
-          database_label
-          user
-      in
-      let%lwt contacts, query =
-        Contact.find_all
-          ~query
-          ~actor
-          ~permission:Contact.Guard.Access.index_permission
-          database_label
-          ()
-      in
-      let open Page.Admin.Contact in
-      (if HttpUtils.Htmx.is_hx_request req then list else index)
-        context
-        contacts
-        query
-      |> Lwt_result.return)
     req
+  @@ fun (Pool_context.{ database_label; user; _ } as context) query ->
+  let open Utils.Lwt_result.Infix in
+  let* actor =
+    Pool_context.Utils.find_authorizable ~admin_only:true database_label user
+  in
+  let%lwt contacts, query =
+    Contact.find_all
+      ~query
+      ~actor
+      ~permission:Contact.Guard.Access.index_permission
+      database_label
+      ()
+  in
+  let open Page.Admin.Contact in
+  (if HttpUtils.Htmx.is_hx_request req then list else index)
+    context
+    contacts
+    query
+  |> Lwt_result.return
 ;;
 
 let detail_view action req =
