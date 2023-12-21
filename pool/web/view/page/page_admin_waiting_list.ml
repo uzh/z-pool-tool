@@ -134,6 +134,11 @@ let index
   (waiting_list, query)
   ({ Pool_context.language; _ } as context)
   =
+  let waiting_list_path =
+    Format.asprintf
+      "/admin/experiments/%s/waiting-list"
+      (experiment.Experiment.id |> Experiment.Id.value)
+  in
   let waiting_list_table waiting_list_entries =
     let thead =
       (Field.[ Name; Email; CellPhone; SignedUpAt; AdminComment ]
@@ -158,8 +163,8 @@ let index
               |> HttpUtils.first_n_characters
               |> HttpUtils.add_line_breaks
             ; Format.asprintf
-                "/admin/experiments/%s/waiting-list/%s"
-                (experiment.Experiment.id |> Experiment.Id.value)
+                "%s/%s"
+                waiting_list_path
                 (id |> Waiting_list.Id.value)
               |> edit_link
             ])
@@ -173,9 +178,10 @@ let index
       rows
   in
   Component.List.create
+    ~url:(Uri.of_string waiting_list_path)
+    ~target_id:"waiting-list-search"
     language
     waiting_list_table
-    Waiting_list.sortable_by
     Waiting_list.searchable_by
     (waiting_list, query)
   |> CCList.return

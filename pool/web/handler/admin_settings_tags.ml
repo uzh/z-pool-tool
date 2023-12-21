@@ -10,16 +10,18 @@ let src = Logs.Src.create "handler.admin.settings_tags"
 let active_navigation = base_path
 let id req = Sihl.Web.Router.param req @@ Field.show field |> Tags.Id.of_string
 
-let show =
+let show req =
   HttpUtils.Htmx.handler
     ~active_navigation
     ~error_path
     ~query:(module Tags)
     ~create_layout:General.create_tenant_layout
+    req
   @@ fun ({ Pool_context.database_label; _ } as context) query ->
   let%lwt tags, query = Tags.find_by query database_label in
-  let page = Page.Admin.Settings.Tags.index context tags query in
-  Lwt_result.return page
+  let open Page.Admin.Settings.Tags in
+  (if HttpUtils.Htmx.is_hx_request req then list else index) context tags query
+  |> Lwt_result.return
 ;;
 
 let new_form req =

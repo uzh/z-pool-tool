@@ -1,3 +1,4 @@
+open CCFun
 open Containers
 open Tyxml.Html
 module HttpUtils = Http_utils
@@ -6,10 +7,9 @@ module Input = Component.Input
 let role_permission_path ?suffix () =
   let default = "/admin/settings/role-permission/" in
   CCOption.map_or ~default (Format.asprintf "%s%s" default) suffix
-  |> Sihl.Web.externalize_path
 ;;
 
-let index Pool_context.{ language; csrf; guardian; _ } rules query =
+let list Pool_context.{ language; csrf; guardian; _ } rules query =
   let open Pool_common in
   let can_manage =
     Guard.PermissionOnTarget.validate
@@ -25,12 +25,15 @@ let index Pool_context.{ language; csrf; guardian; _ } rules query =
     ; `empty
     ]
   in
-  let rows =
+  let row (rule : Guard.RolePermission.t) =
+    let open Guard.RolePermission in
     let button_form target name submit_type confirm_text role_permission =
       form
         ~a:
           [ a_method `Post
-          ; a_action (role_permission_path ~suffix:target ())
+          ; a_action
+              (role_permission_path ~suffix:target ()
+               |> Sihl.Web.externalize_path)
           ; a_user_data
               "confirmable"
               (Pool_common.Utils.confirmable_to_string language confirm_text)
@@ -47,24 +50,28 @@ let index Pool_context.{ language; csrf; guardian; _ } rules query =
         ; Input.submit_element ~submit_type language (name None) ()
         ]
     in
-    let open Guard.RolePermission in
-    let row (rule : Guard.RolePermission.t) =
-      [ txt (Role.Role.show rule.role)
-      ; txt (Guard.Permission.show rule.permission)
-      ; txt (Role.Target.show rule.model)
-      ; (if can_manage
-         then
-           div
-             ~a:[ a_class [ "flexrow"; "flex-gap"; "justify-end" ] ]
-             [ button_form "remove" Message.delete `Error I18n.RemoveRule rule ]
-         else txt "")
-      ]
-    in
-    List.map row rules
+    [ txt (Role.Role.show rule.role)
+    ; txt (Guard.Permission.show rule.permission)
+    ; txt (Role.Target.show rule.model)
+    ; (if can_manage
+       then
+         div
+           ~a:[ a_class [ "flexrow"; "flex-gap"; "justify-end" ] ]
+           [ button_form "remove" Message.delete `Error I18n.RemoveRule rule ]
+       else txt "")
+    ]
+    |> CCList.map (CCList.return %> td)
+    |> tr
   in
   let target_id = "permissions-table" in
   div
-    ~a:[ a_id target_id; a_class [ "trim"; "safety-margin" ] ]
+    ~a:[ a_id target_id ]
+    [ Component.Sortable_table.make ~target_id ~cols ~row sort rules ]
+;;
+
+let index (Pool_context.{ language; _ } as context) rules query =
+  div
+    ~a:[ a_class [ "trim"; "safety-margin" ] ]
     [ h1
         ~a:[ a_class [ "heading-1" ] ]
         [ txt
@@ -74,6 +81,6 @@ let index Pool_context.{ language; csrf; guardian; _ } rules query =
         [ Pool_common.(Utils.hint_to_string language I18n.RolePermissionsIntro)
           |> HttpUtils.add_line_breaks
         ]
-    ; Component.Sortable_table.make ~target_id ~cols ~rows sort
+    ; list context rules query
     ]
 ;;

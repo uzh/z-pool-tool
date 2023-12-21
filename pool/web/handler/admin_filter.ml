@@ -41,16 +41,21 @@ let get_id req field encode =
   Sihl.Web.Router.param req @@ Field.show field |> encode
 ;;
 
-let index =
+let index req =
   Http_utils.Htmx.handler
     ~active_navigation:"/admin/filter"
     ~error_path:(Format.asprintf "/admin/filter")
     ~query:(module Filter)
     ~create_layout
+    req
   @@ fun ({ Pool_context.database_label; _ } as context) query ->
   let%lwt filter_list, query = Filter.find_by query database_label in
-  let page = Page.Admin.Filter.index context filter_list query in
-  Lwt.return (Ok page)
+  let open Page.Admin.Filter in
+  (if HttpUtils.Htmx.is_hx_request req then list else index)
+    context
+    filter_list
+    query
+  |> Lwt_result.return
 ;;
 
 let form is_edit req =

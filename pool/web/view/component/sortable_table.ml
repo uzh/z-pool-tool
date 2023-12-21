@@ -4,7 +4,7 @@ let hx_get ~url ~target =
   [ a_user_data "hx-get" url
   ; a_user_data "hx-push-url" url
   ; a_user_data "hx-target" target
-  ; a_user_data "hx-swap" "outerHTML"
+  ; a_user_data "hx-swap" "innerHTML"
   ]
 ;;
 
@@ -93,20 +93,17 @@ let make_header target_id cols sort =
   thead [ tr (CCList.map (make_head target_id sort) cols) ]
 ;;
 
-let make_rows rows =
-  CCList.map (fun row -> tr (CCList.map (fun cell -> td [ cell ]) row)) rows
-;;
-
 let make
   ?(layout = `Striped)
   ?(align_last_end = true)
   ~target_id
   ~cols
-  ~rows
+  ~row
   sort
+  items
   =
   let thead = make_header target_id cols sort in
-  let rows = make_rows rows in
+  let rows = CCList.map row items in
   let classes =
     a_class (Component_table.table_classes layout ~align_last_end ())
   in

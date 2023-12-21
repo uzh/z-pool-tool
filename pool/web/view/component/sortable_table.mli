@@ -37,6 +37,7 @@ val make
   -> ?align_last_end:bool
   -> target_id:string
   -> cols:col list
-  -> rows:[< Html_types.td_content_fun ] Tyxml_html.elt list list
+  -> row:('a -> [< Html_types.table_content_fun ] Tyxml_html.elt)
   -> sort
+  -> 'a list
   -> [> Html_types.table ] Tyxml_html.elt

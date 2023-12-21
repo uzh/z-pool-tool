@@ -26,16 +26,21 @@ let descriptions_from_urlencoded req urlencoded =
   | lst -> Description.create tenant_languages lst |> CCResult.map return
 ;;
 
-let index =
+let index req =
   HttpUtils.Htmx.handler
     ~active_navigation:"/admin/locations"
     ~error_path:"/admin/locations"
     ~query:(module Pool_location)
     ~create_layout
+    req
   @@ fun ({ Pool_context.database_label; _ } as context) query ->
   let%lwt location_list, query = Pool_location.find_by query database_label in
-  let page = Page.Admin.Location.index context location_list query in
-  Lwt_result.return page
+  let open Page.Admin.Location in
+  (if HttpUtils.Htmx.is_hx_request req then list else index)
+    context
+    location_list
+    query
+  |> Lwt_result.return
 ;;
 
 let new_form req =

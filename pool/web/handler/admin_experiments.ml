@@ -105,12 +105,13 @@ let experiment_message_templates database_label experiment =
   Label.customizable_by_experiment |> Lwt_list.map_s find_templates
 ;;
 
-let index =
+let index req =
   HttpUtils.Htmx.handler
     ~active_navigation:"/admin/dashboard"
     ~error_path:"/admin/experiments"
     ~create_layout
     ~query:(module Experiment)
+    req
   @@ fun ({ Pool_context.database_label; user; _ } as context) query ->
   let open Utils.Lwt_result.Infix in
   let find_actor =
@@ -124,8 +125,12 @@ let index =
       ~permission:Experiment.Guard.Access.index_permission
       database_label
   in
-  let page = Page.Admin.Experiments.index context experiments query in
-  Lwt_result.return page
+  let open Page.Admin.Experiments in
+  (if HttpUtils.Htmx.is_hx_request req then list else index)
+    context
+    experiments
+    query
+  |> Lwt_result.return
 ;;
 
 let new_form req =

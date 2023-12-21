@@ -7,12 +7,13 @@ module Field = Pool_common.Message.Field
 let src = Logs.Src.create "handler.admin.settings_role_permission"
 let active_navigation = "/admin/settings/role-permission"
 
-let show =
+let show req =
   HttpUtils.Htmx.handler
     ~active_navigation
     ~error_path:"/"
     ~query:(module Guard)
     ~create_layout:General.create_tenant_layout
+    req
   @@ fun ({ Pool_context.database_label; user; _ } as context) query ->
   let%lwt actor =
     Pool_context.Utils.find_authorizable_opt database_label user
@@ -24,10 +25,12 @@ let show =
     | Some _actor ->
       Guard.Persistence.RolePermission.find_by query database_label
   in
-  let page =
-    Page.Admin.Settings.RolePermission.index context permissions query
-  in
-  Lwt_result.return page
+  let open Page.Admin.Settings.RolePermission in
+  (if HttpUtils.Htmx.is_hx_request req then list else index)
+    context
+    permissions
+    query
+  |> Lwt_result.return
 ;;
 
 let delete req =

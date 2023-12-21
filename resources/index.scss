@@ -429,3 +429,10 @@ table.simple {
         }
     }
 }
+
+// Text button (https://gitlab.uzh.ch/econ/it/framework/frontend/-/issues/62)
+.btn.is-text,
+.btn.is-text:hover {
+    border: 1px solid transparent;
+
+}
