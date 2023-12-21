@@ -1,11 +1,30 @@
-let convert_settings_terms_to_i18n =
+let convert_settings_terms_to_i18n_en =
   Sihl.Database.Migration.create_step
-    ~label:"convert settings terms to i18n"
+    ~label:"convert settings terms to i18n: EN"
     {sql|
-    INSERT INTO pool_i18n (uuid, i18n_key, language, content) VALUES
-      (UNHEX(REPLACE(UUID(), '-', '')), 'terms_and_conditions', 'EN', 'Nutzungsbedingungen'),
-      (UNHEX(REPLACE(UUID(), '-', '')), 'terms_and_conditions', 'DE', 'Terms and conditions')
-      ON DUPLICATE KEY UPDATE id = id;
+    INSERT INTO pool_i18n (uuid, i18n_key, language, content) VALUES (
+	    UNHEX(REPLACE(UUID(), '-', '')), 
+      'terms_and_conditions', 
+      'EN', 
+		  (SELECT	
+        SUBSTRING_INDEX(SUBSTRING_INDEX(`value`, '["EN"],"', - 1), '"]', 1)	
+        FROM pool_system_settings 
+        WHERE settings_key LIKE '%terms_and_condition%'));
+  |sql}
+;;
+
+let convert_settings_terms_to_i18n_de =
+  Sihl.Database.Migration.create_step
+    ~label:"convert settings terms to i18n: DE"
+    {sql|
+    INSERT INTO pool_i18n (uuid, i18n_key, language, content) VALUES (
+	    UNHEX(REPLACE(UUID(), '-', '')), 
+      'terms_and_conditions', 
+      'DE', 
+		  (SELECT	
+        SUBSTRING_INDEX(SUBSTRING_INDEX(`value`, '["DE"],"', -1), '"]', 1)	
+        FROM pool_system_settings 
+        WHERE settings_key LIKE '%terms_and_condition%'));
   |sql}
 ;;
 
@@ -20,6 +39,7 @@ let delete_settings_entries =
 let migration () =
   Sihl.Database.Migration.(
     empty "202312201325"
-    |> add_step convert_settings_terms_to_i18n
+    |> add_step convert_settings_terms_to_i18n_en
+    |> add_step convert_settings_terms_to_i18n_de
     |> add_step delete_settings_entries)
 ;;
