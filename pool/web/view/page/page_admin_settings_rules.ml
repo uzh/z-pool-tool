@@ -64,9 +64,17 @@ let list Pool_context.{ language; csrf; guardian; _ } rules query =
     |> tr
   in
   let target_id = "permissions-table" in
+  let open Component in
   div
     ~a:[ a_id target_id ]
-    [ Component.Sortable_table.make ~target_id ~cols ~row sort rules ]
+    [ List.create
+        ~url
+        ~target_id
+        language
+        (Sortable_table.make ~target_id ~cols ~row sort)
+        []
+        (rules, query)
+    ]
 ;;
 
 let index (Pool_context.{ language; _ } as context) rules query =

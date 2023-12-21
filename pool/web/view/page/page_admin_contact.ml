@@ -316,12 +316,13 @@ let list Pool_context.{ language; _ } contacts query =
     |> tr ~a
   in
   let target_id = "contacts-list" in
-  Component.List.create
+  let open Component in
+  List.create
     ~url
     ~target_id
     ~legend:(Status.status_icons_table_legend language `All)
     language
-    (Component.Sortable_table.make ~target_id ~cols ~row sort)
+    (Sortable_table.make ~target_id ~cols ~row sort)
     Contact.searchable_by
     (contacts, query)
 ;;

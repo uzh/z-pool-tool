@@ -107,7 +107,7 @@ let experiment_message_templates database_label experiment =
 
 let index req =
   HttpUtils.Htmx.handler
-    ~active_navigation:"/admin/dashboard"
+    ~active_navigation:"/admin/experiments"
     ~error_path:"/admin/experiments"
     ~create_layout
     ~query:(module Experiment)

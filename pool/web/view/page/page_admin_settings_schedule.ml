@@ -39,9 +39,17 @@ let list Pool_context.{ language; _ } schedules query =
     |> CCList.map (CCList.return %> td)
     |> tr
   in
+  let open Component in
   div
     ~a:[ a_id target_id ]
-    [ Component.Sortable_table.make ~target_id ~cols ~row sort schedules ]
+    [ List.create
+        ~url
+        ~target_id
+        language
+        (Sortable_table.make ~target_id ~cols ~row sort)
+        []
+        (schedules, query)
+    ]
 ;;
 
 let index (Pool_context.{ language; _ } as context) schedules query =

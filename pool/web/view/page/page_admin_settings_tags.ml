@@ -85,9 +85,17 @@ let list Pool_context.{ language; _ } tags query =
     |> tr
   in
   let target_id = "tags-table" in
+  let open Component in
   div
     ~a:[ a_id target_id ]
-    [ Component.Sortable_table.make ~target_id ~cols ~row sort tags ]
+    [ List.create
+        ~url
+        ~target_id
+        language
+        (Sortable_table.make ~target_id ~cols ~row sort)
+        []
+        (tags, query)
+    ]
 ;;
 
 let index (Pool_context.{ language; _ } as context) tags query =

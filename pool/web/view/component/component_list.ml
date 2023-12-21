@@ -209,12 +209,13 @@ let sort language sortable_by query =
 
 let create ?legend ~url ~target_id language to_table searchable_by (items, query)
   =
-  div
-    ~a:[ a_id target_id; a_class [ "stack"; "hx-search" ] ]
-    [ searchbar ~url ~target_id language query searchable_by
-    ; CCOption.value ~default:(txt "") legend
+  (if CCList.is_empty searchable_by
+   then []
+   else [ searchbar ~url ~target_id language query searchable_by ])
+  @ [ CCOption.value ~default:(txt "") legend
     ; to_table items
     ; query.pagination
       |> CCOption.map_or ~default:(txt "") (pagination language query)
     ]
+  |> div ~a:[ a_id target_id; a_class [ "stack"; "hx-search" ] ]
 ;;

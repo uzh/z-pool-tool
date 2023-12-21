@@ -66,9 +66,17 @@ let list Pool_context.{ language; _ } location smtp_auth_list query =
     |> tr
   in
   let target_id = "smtp-table" in
+  let open Component in
   div
     ~a:[ a_id target_id ]
-    [ Component.Sortable_table.make ~target_id ~cols ~row sort smtp_auth_list ]
+    [ List.create
+        ~url
+        ~target_id
+        language
+        (Sortable_table.make ~target_id ~cols ~row sort)
+        []
+        (smtp_auth_list, query)
+    ]
 ;;
 
 let index

@@ -57,9 +57,17 @@ let list Pool_context.{ language; _ } location_list query =
     |> tr
   in
   let target_id = "location-table" in
+  let open Component in
   div
     ~a:[ a_id target_id ]
-    [ Component.Sortable_table.make ~target_id ~cols ~row sort location_list ]
+    [ List.create
+        ~url
+        ~target_id
+        language
+        (Sortable_table.make ~target_id ~cols ~row sort)
+        []
+        (location_list, query)
+    ]
 ;;
 
 let index (Pool_context.{ language; _ } as context) location_list query =
