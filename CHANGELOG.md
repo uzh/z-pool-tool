@@ -4,6 +4,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/pool/tree/HEAD)
 
+## [0.5.2](https://github.com/uzh/pool/tree/0.5.2) - 2023-12-21
+
 ### Added
 
 - option to enable min/max number of selected options for a multi_select custom field
