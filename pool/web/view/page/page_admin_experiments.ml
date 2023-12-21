@@ -2,6 +2,7 @@ open Tyxml.Html
 open Component
 open Input
 open Pool_common
+open CCFun
 module HttpUtils = Http_utils
 module Field = Message.Field
 
@@ -79,7 +80,7 @@ let message_template_buttons
     experiment.Experiment.language
     |> CCOption.map (fun experiment_language ->
       CCList.filter
-        CCFun.(Pool_common.Language.equal experiment_language %> not)
+        (Pool_common.Language.equal experiment_language %> not)
         sys_languages)
   in
   message_templates
@@ -108,9 +109,7 @@ let message_templates_html
       experiment
       message_templates
   in
-  let build_path append =
-    CCFun.(prefixed_template_url ~append %> experiment_path)
-  in
+  let build_path append = prefixed_template_url ~append %> experiment_path in
   let edit_path = build_path "edit" in
   let delete_path = build_path "delete", csrf in
   Page_admin_message_template.table
@@ -138,26 +137,24 @@ let list Pool_context.{ language; _ } experiments query =
     ; `custom create_experiment
     ]
   in
-  let rows =
+  let row (experiment : Experiment.t) =
     let open Experiment in
-    let row (experiment : Experiment.t) =
-      [ txt (Title.value experiment.title)
-      ; txt (PublicTitle.value experiment.public_title)
-      ; Format.asprintf
-          "/admin/experiments/%s"
-          (Experiment.Id.value experiment.id)
-        |> Input.link_as_button ~icon:Icon.Eye
-      ]
-    in
-    CCList.map row experiments
+    [ txt (Title.value experiment.title)
+    ; txt (PublicTitle.value experiment.public_title)
+    ; Format.asprintf
+        "/admin/experiments/%s"
+        (Experiment.Id.value experiment.id)
+      |> Input.link_as_button ~icon:Icon.Eye
+    ]
+    |> CCList.map (CCList.return %> td)
+    |> tr
   in
   let target_id = "experiment-list" in
-  let table = Sortable_table.make ~target_id ~cols ~rows sort in
   List.create
     ~url
     ~target_id
     language
-    (fun _ -> table)
+    (Sortable_table.make ~target_id ~cols ~row sort)
     Experiment.searchable_by
     (experiments, query)
 ;;
@@ -199,7 +196,7 @@ let experiment_form
       ~value:(experiment |> CCOption.map_or ~default fnc)
       ~flash_fetcher
   in
-  let value = CCFun.flip (CCOption.map_or ~default:"") experiment in
+  let value = flip (CCOption.map_or ~default:"") experiment in
   let experiment_type_select =
     let open ExperimentType in
     selector

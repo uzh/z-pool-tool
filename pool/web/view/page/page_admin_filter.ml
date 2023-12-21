@@ -1,3 +1,4 @@
+open CCFun
 open Containers
 open Tyxml.Html
 open Pool_common
@@ -17,20 +18,19 @@ let list { Pool_context.language; _ } filter_list query =
     in
     [ `column Filter.column_title; `custom create_filter ]
   in
-  let rows =
+  let row (filter : Filter.t) =
     let open Filter in
-    let row (filter : Filter.t) =
-      let title = Option.map Title.value filter.title in
-      [ txt (Option.get_or ~default:"" title)
-      ; Format.asprintf "/admin/filter/%s/edit" (Filter.Id.value filter.id)
-        |> Component.Input.edit_link
-      ]
-    in
-    CCList.map row filter_list
+    let title = Option.map Title.value filter.title in
+    [ txt (Option.get_or ~default:"" title)
+    ; Format.asprintf "/admin/filter/%s/edit" (Filter.Id.value filter.id)
+      |> Component.Input.edit_link
+    ]
+    |> CCList.map (CCList.return %> td)
+    |> tr
   in
   div
     ~a:[ a_id target_id ]
-    [ Component.Sortable_table.make ~target_id ~cols ~rows sort ]
+    [ Component.Sortable_table.make ~target_id ~cols ~row sort filter_list ]
 ;;
 
 let index ({ Pool_context.language; _ } as context) filter_list query =

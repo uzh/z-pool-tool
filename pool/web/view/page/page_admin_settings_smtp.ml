@@ -1,3 +1,4 @@
+open CCFun
 open Tyxml.Html
 open Component.Input
 module Icon = Component.Icon
@@ -47,31 +48,27 @@ let list Pool_context.{ language; _ } location smtp_auth_list query =
         ]
       [ submit_icon ~classnames:[ "error" ] Icon.TrashOutline ]
   in
-  let rows =
+  let row (auth : SmtpAuth.t) =
     let open SmtpAuth in
-    let row (auth : SmtpAuth.t) =
-      [ auth.label |> Label.value |> txt
-      ; auth.server |> Server.value |> txt
-      ; auth.username |> CCOption.map_or ~default:"" Username.value |> txt
-      ; auth.mechanism |> Mechanism.show |> txt
-      ; auth.protocol |> Protocol.show |> txt
-      ; auth.default |> Default.value |> Utils.Bool.to_string |> txt
-      ; button_group
-          [ edit_link
-              (Format.asprintf
-                 "%s/%s"
-                 (base_path location)
-                 (auth.id |> Id.value))
-          ; delete_button auth
-          ]
-      ]
-    in
-    CCList.map row smtp_auth_list
+    [ auth.label |> Label.value |> txt
+    ; auth.server |> Server.value |> txt
+    ; auth.username |> CCOption.map_or ~default:"" Username.value |> txt
+    ; auth.mechanism |> Mechanism.show |> txt
+    ; auth.protocol |> Protocol.show |> txt
+    ; auth.default |> Default.value |> Utils.Bool.to_string |> txt
+    ; button_group
+        [ edit_link
+            (Format.asprintf "%s/%s" (base_path location) (auth.id |> Id.value))
+        ; delete_button auth
+        ]
+    ]
+    |> CCList.map (CCList.return %> td)
+    |> tr
   in
   let target_id = "smtp-table" in
   div
     ~a:[ a_id target_id ]
-    [ Component.Sortable_table.make ~target_id ~cols ~rows sort ]
+    [ Component.Sortable_table.make ~target_id ~cols ~row sort smtp_auth_list ]
 ;;
 
 let index
@@ -153,7 +150,7 @@ let show
           ; input_element_root
               ~field_type:`Number
               Field.SmtpPort
-              CCFun.(Port.value %> CCInt.to_string)
+              (Port.value %> CCInt.to_string)
               port
           ; input_element
               ?value:(CCOption.map Username.value username)

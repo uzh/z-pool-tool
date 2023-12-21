@@ -321,7 +321,7 @@ let list Pool_context.{ language; _ } contacts query =
     ~target_id
     ~legend:(Status.status_icons_table_legend language `All)
     language
-    (Component.Sortable_table.make_styled ~target_id ~cols ~row sort)
+    (Component.Sortable_table.make ~target_id ~cols ~row sort)
     Contact.searchable_by
     (contacts, query)
 ;;

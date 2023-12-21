@@ -1,3 +1,4 @@
+open CCFun
 open Tyxml.Html
 open Component
 
@@ -61,19 +62,18 @@ let list { Pool_context.language; _ } organizations query =
     in
     [ `column Organisational_unit.column_name; `custom create_btn ]
   in
-  let rows =
+  let row (org : Organisational_unit.t) =
     let open Organisational_unit in
-    let row (org : Organisational_unit.t) =
-      [ txt (Name.value org.name)
-      ; Component.Input.edit_link (ou_path ~id:org.id ~suffix:"edit" ())
-      ]
-    in
-    CCList.map row organizations
+    [ txt (Name.value org.name)
+    ; Component.Input.edit_link (ou_path ~id:org.id ~suffix:"edit" ())
+    ]
+    |> CCList.map (CCList.return %> td)
+    |> tr
   in
   let target_id = "organisations-table" in
   div
     ~a:[ a_id target_id ]
-    [ Component.Sortable_table.make ~target_id ~cols ~rows sort ]
+    [ Component.Sortable_table.make ~target_id ~cols ~row sort organizations ]
 ;;
 
 let index ({ Pool_context.language; _ } as context) organizations query =
