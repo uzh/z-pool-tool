@@ -23,9 +23,13 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 - externalize form action for root gtx key update
 - UI: info icon only on note message boxes
 - show contact again in waiting list, when assignment is deleted
+- email verification for admins
 
 ### Changed
 
+- searchbar: remove sort and adjust UI
+- filter: show contact count and already invited contacts separately
+- don't show assigned contacts on waiting list
 - move signup call to action to settings translations
 - calendar view: show all sessions with link if user has permission
 - allow to mark a multi select field as required (ability to define min/max amount of selections)
