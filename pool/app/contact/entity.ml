@@ -220,8 +220,7 @@ let column_last_name =
 ;;
 
 let column_name =
-  ( Field.Name
-  , "CONCAT_WS(' ', user_users.name, user_users.given_name, user_users.name)" )
+  (Field.Name, "CONCAT_WS(' ', user_users.name, user_users.given_name)")
   |> Query.Column.create
 ;;
 
