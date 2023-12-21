@@ -297,7 +297,7 @@ let list Pool_context.{ language; _ } contacts query =
   let url = Uri.of_string "/admin/contacts" in
   let sort = Component.Sortable_table.{ url; query; language } in
   let cols =
-    [ `field (Message.Field.Name, Contact.column_last_name)
+    [ `field (Message.Field.Name, Contact.column_name)
     ; `column Contact.column_email
     ; `empty
     ]

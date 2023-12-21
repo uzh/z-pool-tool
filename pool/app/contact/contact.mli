@@ -241,6 +241,7 @@ val default_sort : Query.Sort.t
 val default_query : Query.t
 val column_first_name : Query.Column.t
 val column_last_name : Query.Column.t
+val column_name : Query.Column.t
 val column_email : Query.Column.t
 
 module Repo : sig

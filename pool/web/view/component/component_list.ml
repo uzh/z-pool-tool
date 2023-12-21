@@ -147,6 +147,7 @@ let searchbar ~url ~target_id language query searchable_by =
             [ input
                 ~a:
                   ([ a_name search_label
+                   ; a_id search_label
                    ; a_input_type `Search
                    ; a_value
                        (query.search

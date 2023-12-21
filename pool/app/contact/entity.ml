@@ -219,6 +219,12 @@ let column_last_name =
   (Field.Lastname, "user_users.name") |> Query.Column.create
 ;;
 
+let column_name =
+  ( Field.Name
+  , "CONCAT_WS(' ', user_users.name, user_users.given_name, user_users.name)" )
+  |> Query.Column.create
+;;
+
 let searchable_and_sortable_by =
   [ Field.Email, "user_users.email"
   ; Field.Firstname, "user_users.given_name"
@@ -236,17 +242,15 @@ let searchable_by =
 
 let sortable_by =
   let open Pool_common.Message in
-  searchable_and_sortable_by @ [ Field.CreatedAt, "pool_contacts.created_at" ]
-  |> Query.Column.create_list
+  column_name
+  :: (searchable_and_sortable_by
+      @ [ Field.CreatedAt, "pool_contacts.created_at" ]
+      |> Query.Column.create_list)
 ;;
 
 let default_sort =
   let open Query in
-  Sort.
-    { column =
-        Column.create (Pool_common.Message.Field.Lastname, "user_users.name")
-    ; order = SortOrder.Ascending
-    }
+  Sort.{ column = column_name; order = SortOrder.Ascending }
 ;;
 
 let default_query =
