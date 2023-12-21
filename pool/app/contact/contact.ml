@@ -29,7 +29,15 @@ let find_full_cell_phone_verification_by_contact =
   Repo.find_full_cell_phone_verification_by_contact
 ;;
 
-let has_terms_accepted = Event.has_terms_accepted
+let has_terms_accepted pool (contact : t) =
+  let%lwt last_updated = I18n.terms_and_conditions_last_updated pool in
+  let terms_accepted_at =
+    contact.terms_accepted_at |> CCOption.map User.TermsAccepted.value
+  in
+  CCOption.map (Ptime.is_later ~than:last_updated) terms_accepted_at
+  |> CCOption.get_or ~default:false
+  |> Lwt.return
+;;
 
 module Repo = struct
   module Preview = Repo_model.Preview

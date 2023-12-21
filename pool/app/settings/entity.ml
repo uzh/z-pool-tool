@@ -157,9 +157,6 @@ module Value = struct
   type trigger_profile_update_after = TriggerProfileUpdateAfter.t
   [@@deriving eq, show, yojson]
 
-  type terms_and_conditions = TermsAndConditions.t list
-  [@@deriving eq, show, yojson]
-
   type t =
     | DefaultReminderLeadTime of default_reminder_lead_time
     | DefaultTextMsgReminderLeadTime of default_text_msg_reminder_lead_time
@@ -169,7 +166,6 @@ module Value = struct
     | InactiveUserDisableAfter of inactive_user_disable_after
     | InactiveUserWarning of inactive_user_warning
     | TriggerProfileUpdateAfter of trigger_profile_update_after
-    | TermsAndConditions of terms_and_conditions
   [@@deriving eq, show, yojson, variants]
 end
 
@@ -182,7 +178,6 @@ type setting_key =
   | InactiveUserDisableAfter [@name "inactive_user_disable_after"]
   | InactiveUserWarning [@name "inactive_user_warning"]
   | TriggerProfileUpdateAfter [@name "trigger_profile_update_after"]
-  | TermsAndConditions [@name "terms_and_conditions"]
 [@@deriving eq, show, yojson]
 
 type t =
@@ -206,7 +201,6 @@ let action_of_param = function
   | "update_contact_email" -> Ok `UpdateContactEmail
   | "update_emailsuffix" -> Ok `UpdateEmailSuffixes
   | "update_languages" -> Ok `UpdateLanguages
-  | "update_terms_and_conditions" -> Ok `UpdateTermsAndConditions
   | "update_trigger_profile_update_after" -> Ok `UpdateTriggerProfileUpdateAfter
   | _ -> Error Pool_common.Message.DecodeAction
 ;;
@@ -221,7 +215,6 @@ let stringify_action = function
   | `UpdateContactEmail -> "update_contact_email"
   | `UpdateEmailSuffixes -> "update_emailsuffix"
   | `UpdateLanguages -> "update_languages"
-  | `UpdateTermsAndConditions -> "update_terms_and_conditions"
   | `UpdateTriggerProfileUpdateAfter -> "update_trigger_profile_update_after"
 ;;
 

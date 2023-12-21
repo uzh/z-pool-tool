@@ -8,7 +8,6 @@ type event =
   | InactiveUserDisableAfterUpdated of InactiveUser.DisableAfter.t
   | InactiveUserWarningUpdated of InactiveUser.Warning.t
   | LanguagesUpdated of Pool_common.Language.t list
-  | TermsAndConditionsUpdated of TermsAndConditions.t list
   | TriggerProfileUpdateAfterUpdated of TriggerProfileUpdateAfter.t
 [@@deriving eq, show]
 
@@ -40,11 +39,6 @@ let handle_event pool : event -> unit Lwt.t = function
   | InactiveUserWarningUpdated inactive_user_warning ->
     let%lwt () =
       Repo.update pool (Value.InactiveUserWarning inactive_user_warning)
-    in
-    Lwt.return_unit
-  | TermsAndConditionsUpdated terms_and_conditions ->
-    let%lwt () =
-      Repo.update pool (Value.TermsAndConditions terms_and_conditions)
     in
     Lwt.return_unit
   | TriggerProfileUpdateAfterUpdated trigger_update_after ->

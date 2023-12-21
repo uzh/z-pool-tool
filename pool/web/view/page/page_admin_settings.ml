@@ -14,7 +14,6 @@ let show
   inactive_user_disable_after
   inactive_user_warning
   trigger_profile_update_after
-  terms_and_conditions
   default_reminder_lead_time
   default_text_msg_reminder_lead_time
   Pool_context.{ language; csrf; _ }
@@ -47,9 +46,6 @@ let show
       ]
       |> CCList.flatten
     in
-    let terms_and_conditions =
-      CCList.map Settings.TermsAndConditions.value terms_and_conditions
-    in
     let field_elements =
       CCList.map
         (fun (language, selected) ->
@@ -63,17 +59,7 @@ let show
             | false -> []
             | true -> [ a_checked () ]
           in
-          let disabled =
-            match
-              CCList.assoc_opt
-                ~eq:Pool_common.Language.equal
-                language
-                terms_and_conditions
-            with
-            | Some _ -> []
-            | None -> [ a_disabled () ]
-          in
-          let checkbox = input ~a:(attrs @ selected @ disabled) () in
+          let checkbox = input ~a:(attrs @ selected) () in
           div [ checkbox; label [ txt (Pool_common.Language.show language) ] ])
         all_languages
       |> Component.Sortable.create_sortable
@@ -277,43 +263,6 @@ let show
           ]
       ]
   in
-  let terms_and_conditions_html =
-    let terms_and_conditions =
-      CCList.map Settings.TermsAndConditions.value terms_and_conditions
-    in
-    let terms_and_conditions_textareas =
-      CCList.map
-        (fun sys_language ->
-          let field =
-            let open Pool_common in
-            match sys_language with
-            | Language.En -> Message.Field.LanguageEn
-            | Language.De -> Message.Field.LanguageDe
-          in
-          textarea_element
-            language
-            field
-            ~rich_text:true
-            ~value:
-              (CCList.assoc_opt
-                 ~eq:Pool_common.Language.equal
-                 sys_language
-                 terms_and_conditions
-               |> CCOption.map Settings.TermsAndConditions.Terms.value
-               |> CCOption.value ~default:"")
-            ~required:true
-            ~flash_fetcher)
-        Pool_common.Language.all
-    in
-    div
-      [ h2 ~a:[ a_class [ "heading-2" ] ] [ txt "Terms and conditions" ]
-      ; form
-          ~a:(form_attrs `UpdateTermsAndConditions)
-          ([ csrf_element csrf () ]
-           @ terms_and_conditions_textareas
-           @ [ submit () ])
-      ]
-  in
   let default_lead_time =
     let lead_time_form action field value =
       let open Pool_common in
@@ -361,7 +310,6 @@ let show
         ; contact_email_html
         ; inactive_user_html
         ; trigger_profile_update_after_html
-        ; terms_and_conditions_html
         ; default_lead_time
         ]
     ]

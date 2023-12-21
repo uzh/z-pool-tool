@@ -27,9 +27,6 @@ let show req =
     let%lwt trigger_profile_update_after =
       Settings.find_trigger_profile_update_after database_label
     in
-    let%lwt terms_and_conditions =
-      Settings.find_terms_and_conditions database_label
-    in
     let%lwt default_reminder_lead_time =
       Settings.find_default_reminder_lead_time database_label
     in
@@ -44,7 +41,6 @@ let show req =
       inactive_user_disable_after
       inactive_user_warning
       trigger_profile_update_after
-      terms_and_conditions
       default_reminder_lead_time
       default_tet_msg_reminder_lead_time
       context
@@ -66,16 +62,12 @@ let update_settings req =
     Utils.Lwt_result.map_error (fun err ->
       err, redirect_path, [ HttpUtils.urlencoded_to_flash urlencoded ])
     @@
-    let system_languages = Pool_context.Tenant.get_tenant_languages_exn req in
     let events () =
       let command_handler =
         let open CCResult.Infix in
         function
         | `UpdateLanguages ->
           fun m ->
-            let%lwt terms_and_conditions =
-              Settings.find_terms_and_conditions database_label
-            in
             CCList.filter_map
               (fun (k, _) ->
                 match CCList.mem k Pool_common.Language.all_codes with
@@ -83,7 +75,7 @@ let update_settings req =
                 | false -> None)
               m
             |> CCResult.flatten_l
-            >>= UpdateLanguages.handle ~tags terms_and_conditions
+            >>= UpdateLanguages.handle ~tags
             |> lift
         | `UpdateEmailSuffixes -> UpdateEmailSuffixes.handle ~tags %> lift
         | `CreateEmailSuffix ->
@@ -108,8 +100,6 @@ let update_settings req =
             InactiveUser.DisableAfter.(m |> decode >>= handle ~tags) |> lift
         | `UpdateInactiveUserWarning ->
           fun m -> InactiveUser.Warning.(m |> decode >>= handle ~tags) |> lift
-        | `UpdateTermsAndConditions ->
-          UpdateTermsAndConditions.(handle ~tags system_languages) %> lift
         | `UpdateTriggerProfileUpdateAfter ->
           fun m ->
             UpdateTriggerProfileUpdateAfter.(m |> decode >>= handle ~tags)
@@ -150,7 +140,6 @@ module Access : module type of Helpers.Access = struct
       | `UpdateContactEmail -> Command.UpdateContactEmail.effects
       | `UpdateEmailSuffixes -> Command.UpdateEmailSuffixes.effects
       | `UpdateLanguages -> Command.UpdateLanguages.effects
-      | `UpdateTermsAndConditions -> Command.UpdateTermsAndConditions.effects
       | `UpdateTriggerProfileUpdateAfter ->
         Command.UpdateTriggerProfileUpdateAfter.effects
     in

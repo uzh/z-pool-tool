@@ -7,6 +7,7 @@ let find_with_default_content = Repo.find_with_default_content
 let find_by_key = Repo.find_by_key
 let find_by_key_opt = Repo.find_by_key_opt
 let find_all = Repo.find_all
+let terms_and_conditions_last_updated = Repo.terms_and_conditions_last_updated
 
 module I18nPageCache = struct
   open Hashtbl

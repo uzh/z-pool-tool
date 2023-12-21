@@ -83,7 +83,6 @@ val action_of_param
        | `UpdateContactEmail
        | `UpdateEmailSuffixes
        | `UpdateLanguages
-       | `UpdateTermsAndConditions
        | `UpdateTriggerProfileUpdateAfter
        ]
        , Pool_common.Message.error )
@@ -99,7 +98,6 @@ val stringify_action
      | `UpdateContactEmail
      | `UpdateEmailSuffixes
      | `UpdateLanguages
-     | `UpdateTermsAndConditions
      | `UpdateTriggerProfileUpdateAfter
      ]
   -> string
@@ -112,7 +110,6 @@ type event =
   | InactiveUserDisableAfterUpdated of InactiveUser.DisableAfter.t
   | InactiveUserWarningUpdated of InactiveUser.Warning.t
   | LanguagesUpdated of Pool_common.Language.t list
-  | TermsAndConditionsUpdated of TermsAndConditions.t list
   | TriggerProfileUpdateAfterUpdated of TriggerProfileUpdateAfter.t
 
 val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
@@ -135,22 +132,11 @@ val find_trigger_profile_update_after
   :  Pool_database.Label.t
   -> TriggerProfileUpdateAfter.t Lwt.t
 
-val find_terms_and_conditions
-  :  Pool_database.Label.t
-  -> TermsAndConditions.t list Lwt.t
-
-val terms_and_conditions_last_updated : Pool_database.Label.t -> Ptime.t Lwt.t
-
 val default_language_of_list
   :  Pool_common.Language.t list
   -> Pool_common.Language.t
 
 val default_language : Pool_database.Label.t -> Pool_common.Language.t Lwt.t
-
-val terms_and_conditions
-  :  Pool_database.Label.t
-  -> Pool_common.Language.t
-  -> TermsAndConditions.Terms.t Lwt.t
 
 val find_default_reminder_lead_time
   :  Pool_database.Label.t

@@ -39,7 +39,9 @@ let import_confirmation req =
        let%lwt password_policy =
          I18n.find_by_key database_label I18n.Key.PasswordPolicyText language
        in
-       let%lwt terms = Settings.terms_and_conditions database_label language in
+       let%lwt terms =
+         I18n.find_by_key database_label I18n.Key.TermsAndConditions language
+       in
        Page.Public.Import.import_confirmation
          context
          token

@@ -35,16 +35,6 @@ let set_password
   >|+ ignore
 ;;
 
-let has_terms_accepted pool (contact : t) =
-  let%lwt last_updated = Settings.terms_and_conditions_last_updated pool in
-  let terms_accepted_at =
-    contact.terms_accepted_at |> CCOption.map User.TermsAccepted.value
-  in
-  CCOption.map (Ptime.is_later ~than:last_updated) terms_accepted_at
-  |> CCOption.get_or ~default:false
-  |> Lwt.return
-;;
-
 type event =
   | Created of create
   | EmailUpdated of t * User.EmailAddress.t

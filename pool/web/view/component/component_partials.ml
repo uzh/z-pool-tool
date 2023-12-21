@@ -125,15 +125,16 @@ let terms_and_conditions_label language id =
 ;;
 
 let terms_and_conditions_checkbox ?(modal_id = "terms-modal") language terms =
-  let open Pool_common in
-  let terms_accepted_name = Message.Field.(show TermsAccepted) in
+  let terms_accepted_name = Pool_common.Message.Field.(show TermsAccepted) in
   div
-    [ Settings.TermsAndConditions.Terms.value terms
+    [ I18n.content_to_string terms
       |> Unsafe.data
       |> Component_modal.create
            language
            CCFun.(
-             flip Utils.field_to_string Message.Field.TermsAndConditions
+             flip
+               Pool_common.Utils.field_to_string
+               Pool_common.Message.Field.TermsAndConditions
              %> CCString.capitalize_ascii)
            modal_id
     ; div

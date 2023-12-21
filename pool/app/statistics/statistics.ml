@@ -12,7 +12,7 @@ let create database_label ?(period = default_period) () =
   let%lwt reminders_sent = reminders_sent database_label period in
   let%lwt terms_accepted_count = terms_accepted_count database_label period in
   let%lwt terms_last_changed =
-    Settings.terms_and_conditions_last_updated database_label
+    I18n.terms_and_conditions_last_updated database_label
   in
   Lwt.return
     { active_contacts

@@ -71,17 +71,6 @@ let[@warning "-4"] find_trigger_profile_update_after pool =
       Message.(Retrieve Field.TriggerProfileUpdateAfter) |> Utils.failwith)
 ;;
 
-let[@warning "-4"] find_terms_and_conditions pool =
-  let open Utils.Lwt_result.Infix in
-  Repo.find_terms_and_conditions pool
-  ||> fun { value; _ } ->
-  match value with
-  | Value.TermsAndConditions value -> value
-  | _ ->
-    (* Due to Repo function, this state cannot be reached. *)
-    Pool_common.(Message.(Retrieve Field.TermsAndConditions) |> Utils.failwith)
-;;
-
 let[@warning "-4"] find_default_reminder_lead_time pool =
   let open Utils.Lwt_result.Infix in
   Repo.find_default_reminder_lead_time pool
@@ -104,11 +93,6 @@ let[@warning "-4"] find_default_text_msg_reminder_lead_time pool =
     Pool_common.(Message.(Retrieve Field.TextMessageLeadTime) |> Utils.failwith)
 ;;
 
-let terms_and_conditions_last_updated pool =
-  let open Utils.Lwt_result.Infix in
-  Repo.find_terms_and_conditions pool ||> fun { updated_at; _ } -> updated_at
-;;
-
 let default_language_of_list languages =
   languages
   |> CCList.head_opt
@@ -119,9 +103,4 @@ let default_language_of_list languages =
 let default_language pool =
   let open Utils.Lwt_result.Infix in
   find_languages pool ||> default_language_of_list
-;;
-
-let terms_and_conditions pool language =
-  let%lwt terms = find_terms_and_conditions pool in
-  CCList.assoc ~eq:Pool_common.Language.equal language terms |> Lwt.return
 ;;
