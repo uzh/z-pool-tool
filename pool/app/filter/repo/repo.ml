@@ -569,9 +569,8 @@ module Sql = struct
 
   let find_by query pool =
     let select ?(count = false) fragment =
-      if count
-      then select_count fragment
-      else select_filter_sql component_base_query ^ "  " ^ fragment
+      let where = component_base_query ^ "  " ^ fragment in
+      if count then select_count where else select_filter_sql where
     in
     Query.collect_and_count pool (Some query) ~select Repo_entity.t
   ;;
