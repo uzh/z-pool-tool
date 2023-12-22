@@ -8,7 +8,7 @@ let hx_get ~url ~target =
   ]
 ;;
 
-type sort =
+type data_table =
   { url : Uri.t
   ; query : Query.t
   ; language : Pool_common.Language.t
@@ -101,27 +101,27 @@ let make
   ~target_id
   ~cols
   ~row
-  sort
+  data_table
   items
   =
   let default = txt "" in
   let search_bar =
-    sort.search
+    data_table.search
     |> CCOption.map_or
          ~default
          (Component_list.searchbar
-            ~url:sort.url
+            ~url:data_table.url
             ~target_id
-            sort.language
-            sort.query)
+            data_table.language
+            data_table.query)
   in
   let pagination =
-    sort.query.Query.pagination
+    data_table.query.Query.pagination
     |> CCOption.map_or
          ~default
-         (Component_list.pagination sort.language sort.query)
+         (Component_list.pagination data_table.language data_table.query)
   in
-  let thead = make_header target_id cols sort in
+  let thead = make_header target_id cols data_table in
   let rows = CCList.map row items in
   let classes =
     a_class (Component_table.table_classes ?align_top layout ~align_last_end ())

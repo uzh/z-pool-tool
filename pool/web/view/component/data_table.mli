@@ -17,7 +17,7 @@
     table. *)
 
 (** The sort configuration of the table. *)
-type sort =
+type data_table =
   { url : Uri.t (** the URL to which to make the sort requests *)
   ; query : Query.t (** the current URL query string *)
   ; language : Pool_common.Language.t
@@ -40,6 +40,6 @@ val make
   -> target_id:string
   -> cols:col list
   -> row:('a -> [< Html_types.table_content_fun ] Tyxml_html.elt)
-  -> sort
+  -> data_table
   -> 'a list
   -> [> Html_types.div ] Tyxml_html.elt
