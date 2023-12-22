@@ -327,7 +327,11 @@ let index ({ Pool_context.language; _ } as context) contacts query =
     [ h1
         ~a:[ a_class [ "heading-1" ] ]
         [ txt Pool_common.(Utils.nav_link_to_string language I18n.Contacts) ]
-    ; list context contacts query
+    ; div
+        ~a:[ a_class [ "stack" ] ]
+        [ Status.status_icons_table_legend language `All
+        ; list context contacts query
+        ]
     ]
 ;;
 
