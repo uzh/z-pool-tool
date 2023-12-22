@@ -5,7 +5,7 @@ module HttpUtils = Http_utils
 let list Pool_context.{ language; _ } schedules query =
   let open Pool_common in
   let url = Uri.of_string "/admin/settings/schedules" in
-  let sort = Component.Sortable_table.{ url; query; language; search = None } in
+  let sort = Component.DataTable.{ url; query; language; search = None } in
   let cols =
     [ `column Schedule.column_label
     ; `column Schedule.column_scheduled_time
@@ -38,8 +38,7 @@ let list Pool_context.{ language; _ } schedules query =
     |> CCList.map (CCList.return %> td)
     |> tr
   in
-  let open Component in
-  Sortable_table.make ~target_id:"schedule-table" ~cols ~row sort schedules
+  Component.DataTable.make ~target_id:"schedule-table" ~cols ~row sort schedules
 ;;
 
 let index (Pool_context.{ language; _ } as context) schedules query =

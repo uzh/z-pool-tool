@@ -49,7 +49,9 @@ let index req =
     ~create_layout
     req
   @@ fun ({ Pool_context.database_label; _ } as context) query ->
-  let%lwt filter_list, query = Filter.find_by query database_label in
+  let%lwt filter_list, query =
+    Filter.find_all_templates_query query database_label
+  in
   let open Page.Admin.Filter in
   (if HttpUtils.Htmx.is_hx_request req then list else index)
     context

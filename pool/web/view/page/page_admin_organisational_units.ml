@@ -53,7 +53,7 @@ let list { Pool_context.language; _ } organizations query =
   let open Component in
   let url = Uri.of_string (ou_path ()) in
   (* TOOD: Add search bar *)
-  let sort = Component.Sortable_table.{ url; query; language; search = None } in
+  let sort = Component.DataTable.{ url; query; language; search = None } in
   let cols =
     let create_btn : [ | Html_types.flow5 ] elt =
       Input.link_as_button
@@ -72,7 +72,7 @@ let list { Pool_context.language; _ } organizations query =
     |> CCList.map (CCList.return %> td)
     |> tr
   in
-  Sortable_table.make
+  Component.DataTable.make
     ~target_id:"organisations-table"
     ~cols
     ~row

@@ -6,7 +6,7 @@ open Pool_common
 let list { Pool_context.language; _ } filter_list query =
   let url = Uri.of_string "/admin/filter" in
   let sort =
-    Component.Sortable_table.
+    Component.DataTable.
       { url; query; language; search = Some Filter.searchable_by }
   in
   let cols =
@@ -30,8 +30,7 @@ let list { Pool_context.language; _ } filter_list query =
     |> CCList.map (CCList.return %> td)
     |> tr
   in
-  let open Component in
-  Sortable_table.make ~target_id:"filters-list" ~cols ~row sort filter_list
+  Component.DataTable.make ~target_id:"filters-list" ~cols ~row sort filter_list
 ;;
 
 let index ({ Pool_context.language; _ } as context) filter_list query =

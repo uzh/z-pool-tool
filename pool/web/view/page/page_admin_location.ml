@@ -23,7 +23,7 @@ let descriptions_all_languages (location : Pool_location.t) =
 let list Pool_context.{ language; _ } location_list query =
   let url = Uri.of_string "/admin/locations" in
   let sort =
-    Component.Sortable_table.
+    Component.DataTable.
       { url; query; language; search = Some Pool_location.searchable_by }
   in
   let cols =
@@ -61,8 +61,13 @@ let list Pool_context.{ language; _ } location_list query =
     |> tr
   in
   let target_id = "location-table" in
-  let open Component in
-  Sortable_table.make ~align_top:true ~target_id ~cols ~row sort location_list
+  Component.DataTable.make
+    ~align_top:true
+    ~target_id
+    ~cols
+    ~row
+    sort
+    location_list
 ;;
 
 let index (Pool_context.{ language; _ } as context) location_list query =

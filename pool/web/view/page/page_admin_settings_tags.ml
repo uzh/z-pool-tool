@@ -54,7 +54,7 @@ end
 let list Pool_context.{ language; _ } tags query =
   let url = Uri.of_string (tags_path ()) in
   let sort =
-    Component.Sortable_table.
+    Component.DataTable.
       { url; query; language; search = Some Tags.searchable_by }
   in
   let cols =
@@ -87,7 +87,7 @@ let list Pool_context.{ language; _ } tags query =
     |> CCList.map (CCList.return %> td)
     |> tr
   in
-  Component.Sortable_table.make ~target_id:"tags-table" ~cols ~row sort tags
+  Component.DataTable.make ~target_id:"tags-table" ~cols ~row sort tags
 ;;
 
 let index (Pool_context.{ language; _ } as context) tags query =
