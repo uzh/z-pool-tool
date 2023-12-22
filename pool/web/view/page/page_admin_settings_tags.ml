@@ -53,7 +53,10 @@ end
 
 let list Pool_context.{ language; _ } tags query =
   let url = Uri.of_string (tags_path ()) in
-  let sort = Component.Sortable_table.{ url; query; language } in
+  let sort =
+    Component.Sortable_table.
+      { url; query; language; search = Some Tags.searchable_by }
+  in
   let cols =
     let create_tag : [ | Html_types.flow5 ] elt =
       Component.Input.link_as_button
@@ -84,18 +87,7 @@ let list Pool_context.{ language; _ } tags query =
     |> CCList.map (CCList.return %> td)
     |> tr
   in
-  let target_id = "tags-table" in
-  let open Component in
-  div
-    ~a:[ a_id target_id ]
-    [ List.create
-        ~url
-        ~target_id
-        language
-        (Sortable_table.make ~target_id ~cols ~row sort)
-        []
-        (tags, query)
-    ]
+  Component.Sortable_table.make ~target_id:"tags-table" ~cols ~row sort tags
 ;;
 
 let index (Pool_context.{ language; _ } as context) tags query =

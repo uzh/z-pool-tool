@@ -21,6 +21,7 @@ type sort =
   { url : Uri.t (** the URL to which to make the sort requests *)
   ; query : Query.t (** the current URL query string *)
   ; language : Pool_common.Language.t
+  ; search : Query.Column.t list option (** the columns that can be searched for  *)
   (** the language in which to show the table *)
   }
 
@@ -33,11 +34,12 @@ type col =
   ]
 
 val make
-  :  ?layout:[ `Striped | `Simple ]
-  -> ?align_last_end:bool
+  : ?align_last_end:bool
+  -> ?align_top:bool
+  ->  ?layout:[ `Striped | `Simple ]
   -> target_id:string
   -> cols:col list
   -> row:('a -> [< Html_types.table_content_fun ] Tyxml_html.elt)
   -> sort
   -> 'a list
-  -> [> Html_types.table ] Tyxml_html.elt
+  -> [> Html_types.div ] Tyxml_html.elt

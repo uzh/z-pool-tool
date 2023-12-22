@@ -47,14 +47,12 @@ let delete pool =
 
 let find_all_request =
   let open Caqti_request.Infix in
-  Format.asprintf
-    {sql|
-    %s
+  {sql|
     INNER JOIN pool_participation_tags
      	ON pool_tags.uuid = pool_participation_tags.tag_uuid
     WHERE pool_participation_tags.entity_uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}
-    Repo.Sql.select_tag_sql
+  |> Repo.Sql.find_request_sql
   |> Pool_common.Repo.Id.t ->* RepoEntity.t
 ;;
 
@@ -67,9 +65,7 @@ let find_all pool entity =
 
 let find_available_for_experiment_request =
   let open Caqti_request.Infix in
-  Format.asprintf
-    {sql|
-    %s
+  {sql|
     WHERE
     pool_tags.model = $1
     AND pool_tags.uuid NOT IN(
@@ -78,15 +74,13 @@ let find_available_for_experiment_request =
       WHERE
         entity_uuid = UNHEX(REPLACE($2, '-', '')));
     |sql}
-    Repo.Sql.select_tag_sql
+  |> Repo.Sql.find_request_sql
   |> Caqti_type.(t2 RepoEntity.Model.t Id.t) ->* RepoEntity.t
 ;;
 
 let find_available_for_session_request =
   let open Caqti_request.Infix in
-  Format.asprintf
-    {sql|
-    %s
+  {sql|
     WHERE
     pool_tags.model = $1
     AND pool_tags.uuid NOT IN(
@@ -104,7 +98,7 @@ let find_available_for_session_request =
           WHERE
             uuid = UNHEX(REPLACE($2, '-', ''))))
     |sql}
-    Repo.Sql.select_tag_sql
+  |> Repo.Sql.find_request_sql
   |> Caqti_type.(t2 RepoEntity.Model.t Id.t) ->* RepoEntity.t
 ;;
 

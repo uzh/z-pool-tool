@@ -36,6 +36,11 @@ module Sql = struct
     Format.asprintf "%s %s" select_from where_fragment
   ;;
 
+  (* let find_request_sql ?(count = false) where_fragment = let columns = if
+     count then "COUNT(*)" else sql_select_columns |> CCString.concat ", " in
+     Format.asprintf {sql|SELECT %s FROM pool_filter %s|sql} columns
+     where_fragment ;; *)
+
   let find_request =
     let open Caqti_request.Infix in
     {sql|

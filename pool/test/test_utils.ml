@@ -525,7 +525,7 @@ module Repo = struct
 
   let first_tag () =
     let open Utils.Lwt_result.Infix in
-    Tags.find_all Data.database_label ||> CCList.hd
+    Tags.find_all Data.database_label ||> fst ||> CCList.hd
   ;;
 
   let all_experiments () =

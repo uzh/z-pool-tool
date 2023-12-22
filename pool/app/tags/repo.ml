@@ -47,34 +47,31 @@ module Tagged = struct
   ;;
 end
 
+let sql_select_columns =
+  [ Entity.Id.sql_select_fragment ~field:"pool_tags.uuid"
+  ; "pool_tags.title"
+  ; "pool_tags.description"
+  ; "pool_tags.model"
+  ]
+;;
+
 module Sql = struct
   open Caqti_request.Infix
   module Dynparam = Utils.Database.Dynparam
 
-  let select_tag_sql =
-    {sql|
-      SELECT
-        LOWER(CONCAT(
-          SUBSTR(HEX(pool_tags.uuid), 1, 8), '-',
-          SUBSTR(HEX(pool_tags.uuid), 9, 4), '-',
-          SUBSTR(HEX(pool_tags.uuid), 13, 4), '-',
-          SUBSTR(HEX(pool_tags.uuid), 17, 4), '-',
-          SUBSTR(HEX(pool_tags.uuid), 21)
-        )),
-        pool_tags.title,
-        pool_tags.description,
-        pool_tags.model
-      FROM
-        pool_tags
-    |sql}
+  let find_request_sql ?(count = false) where_fragment =
+    let columns =
+      if count then "COUNT(*)" else sql_select_columns |> CCString.concat ", "
+    in
+    Format.asprintf {sql|SELECT %s FROM pool_tags %s|sql} columns where_fragment
   ;;
 
   let find_request =
+    let open Caqti_request.Infix in
     {sql|
-      WHERE
-        pool_tags.uuid = UNHEX(REPLACE(?, '-', ''))
+      WHERE pool_tags.uuid = UNHEX(REPLACE(?, '-', ''))
     |sql}
-    |> Format.asprintf "%s\n%s" select_tag_sql
+    |> find_request_sql
     |> RepoEntity.Id.t ->! RepoEntity.t
   ;;
 
@@ -85,10 +82,10 @@ module Sql = struct
 
   let find_multiple_request ids =
     Format.asprintf
-      {sql|%s WHERE pool_tags.uuid IN (%s)|sql}
-      select_tag_sql
+      {sql| WHERE pool_tags.uuid IN (%s)|sql}
       (CCList.map (fun _ -> Format.asprintf "UNHEX(REPLACE(?, '-', ''))") ids
        |> CCString.concat ",")
+    |> find_request_sql
   ;;
 
   let find_multiple pool ids =
@@ -162,18 +159,8 @@ module Sql = struct
     Utils.Database.collect (Label.value pool) request pv
   ;;
 
-  let find_all_request =
-    Format.asprintf
-      {sql|
-        %s
-        ORDER BY pool_tags.title, pool_tags.model
-      |sql}
-      select_tag_sql
-    |> Caqti_type.unit ->* RepoEntity.t
-  ;;
-
-  let find_all pool =
-    Utils.Database.collect (Label.value pool) find_all_request ()
+  let find_all ?query pool =
+    Query.collect_and_count pool query ~select:find_request_sql RepoEntity.t
   ;;
 
   let select_count where_fragment =
@@ -186,21 +173,12 @@ module Sql = struct
       where_fragment
   ;;
 
-  let find_by query pool =
-    let select ?(count = false) fragment =
-      if count then select_count fragment else select_tag_sql ^ "  " ^ fragment
-    in
-    Query.collect_and_count pool (Some query) ~select RepoEntity.t
-  ;;
-
   let find_all_with_model_request =
-    Format.asprintf
-      {sql|
-        %s
+    {sql|
         WHERE pool_tags.model = ?
         ORDER BY pool_tags.title, pool_tags.model
       |sql}
-      select_tag_sql
+    |> find_request_sql
     |> RepoEntity.Model.t ->* RepoEntity.t
   ;;
 
@@ -244,11 +222,10 @@ module Sql = struct
     Format.asprintf
       {sql|
         %s
-        %s
         ORDER BY pool_tags.title, pool_tags.model
       |sql}
-      select_tag_sql
       (CCOption.map_or ~default:"" (Format.asprintf "WHERE %s") guardian)
+    |> find_request_sql
     |> Caqti_type.unit ->* RepoEntity.t
   ;;
 
@@ -270,13 +247,12 @@ module Sql = struct
   let find_all_validated_with_model_request ?guardian () =
     Format.asprintf
       {sql|
-        %s
         WHERE pool_tags.model = ?
           %s
         ORDER BY pool_tags.title, pool_tags.model
       |sql}
-      select_tag_sql
       (CCOption.map_or ~default:"" (Format.asprintf "AND %s") guardian)
+    |> find_request_sql
     |> RepoEntity.Model.t ->* RepoEntity.t
   ;;
 
@@ -430,14 +406,12 @@ module Sql = struct
 
     let find_all_of_entity_request =
       let open RepoEntity in
-      Format.asprintf
-        {sql|
-          %s
-          JOIN pool_tagging ON pool_tags.uuid = pool_tagging.tag_uuid
-          WHERE pool_tags.model = ?
-            AND pool_tagging.model_uuid = UNHEX(REPLACE(?, '-', ''))
-        |sql}
-        select_tag_sql
+      {sql|
+        JOIN pool_tagging ON pool_tags.uuid = pool_tagging.tag_uuid
+        WHERE pool_tags.model = ?
+          AND pool_tagging.model_uuid = UNHEX(REPLACE(?, '-', ''))
+      |sql}
+      |> find_request_sql
       |> Caqti_type.(t2 Model.t Pool_common.Repo.Id.t ->* t)
     ;;
 
@@ -458,7 +432,6 @@ let find_all_with_model = Sql.find_all_with_model
 let find_all_validated = Sql.find_all_validated
 let find_all_validated_with_model = Sql.find_all_validated_with_model
 let find_all_of_entity = Sql.Tagged.find_all_of_entity
-let find_by = Sql.find_by
 let create_find_all_tag_sql = Sql.Tagged.create_find_all_tag_sql
 let already_exists = Sql.already_exists
 let insert = Sql.insert
