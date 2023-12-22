@@ -52,7 +52,6 @@ let list { Pool_context.language; _ } organizations query =
   let open Pool_common in
   let open Component in
   let url = Uri.of_string (ou_path ()) in
-  (* TOOD: Add search bar *)
   let sort = Component.DataTable.{ url; query; language; search = None } in
   let cols =
     let create_btn : [ | Html_types.flow5 ] elt =
