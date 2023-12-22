@@ -191,7 +191,7 @@ let manage_operators
   Pool_context.{ language; csrf; _ }
   =
   let operator_list =
-    Page_admin_admins.admin_overview ~disable_edit:true language operators
+    Page_admin_admins.static_overview ~disable_edit:true language operators
   in
   let create_operator_form =
     div

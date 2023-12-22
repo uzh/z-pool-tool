@@ -3,12 +3,20 @@ open Component.Input
 open Pool_common
 module Table = Component.Table
 
-let list root_list Pool_context.{ language; csrf; _ } flash_fetcher =
-  let build_root_rows root_list =
-    let open Sihl.Contract.User in
-    let status_toggle (status : Sihl.Contract.User.status) id =
+let table Pool_context.{ language; _ } (admins, query) =
+  let open Admin in
+  let url = Uri.of_string "/admin/admins" in
+  let sort =
+    Component.DataTable.
+      { url; query; language; search = Some Contact.searchable_by }
+  in
+  let cols = Pool_user.[ `column column_name; `column column_email; `empty ] in
+  let row admin =
+    let open Sihl_user in
+    let status_toggle =
+      let user = admin.user in
       let text, style =
-        match status with
+        match user.status with
         | Active -> Message.Disable, "error"
         | Inactive -> Message.Enable, "primary"
       in
@@ -16,26 +24,25 @@ let list root_list Pool_context.{ language; csrf; _ } flash_fetcher =
         ~a:
           [ a_action
               (Sihl.Web.externalize_path
-                 (Format.asprintf "/root/users/%s/toggle-status" id))
+                 (Format.asprintf "/root/users/%s/toggle-status" user.id))
           ; a_method `Post
           ; a_class [ "stack" ]
           ]
         [ submit_element language text ~classnames:[ style ] () ]
     in
-    let thead =
-      Message.[ Field.Email |> Table.field_to_txt language; txt "" ]
-    in
-    let rows =
-      CCList.map
-        (fun root ->
-          let user = root |> Admin.user in
-          let status = status_toggle user.status user.id in
-          [ txt user.email; status ])
-        root_list
-    in
-    Component.Table.horizontal_table `Striped rows ~align_last_end:true ~thead
+    [ txt (Admin.email_address admin |> Pool_user.EmailAddress.value)
+    ; txt (full_name admin)
+    ; status_toggle
+    ]
+    |> CCList.map CCFun.(CCList.return %> td)
+    |> tr
   in
-  let root_list = build_root_rows root_list in
+  Component.DataTable.make ~target_id:"admin-list" ~cols ~row sort admins
+;;
+
+let list root_list (Pool_context.{ language; csrf; _ } as context) flash_fetcher
+  =
+  let root_list = table context root_list in
   div
     ~a:[ a_class [ "trim"; "narrow"; "safety-margin" ] ]
     [ h1

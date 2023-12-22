@@ -3,7 +3,30 @@ open Tyxml.Html
 open Component
 module Status = UserStatus.Admin
 
-let admin_overview ?(disable_edit = false) language admins =
+let list Pool_context.{ language; _ } (admins, query) =
+  let open Admin in
+  let url = Uri.of_string "/admin/admins" in
+  let sort =
+    Component.DataTable.
+      { url; query; language; search = Some Contact.searchable_by }
+  in
+  let cols = Pool_user.[ `column column_name; `column column_email; `empty ] in
+  let row admin =
+    let button =
+      admin
+      |> id
+      |> Id.value
+      |> Format.asprintf "/admin/admins/%s"
+      |> Input.link_as_button ~icon:Icon.Eye
+    in
+    [ txt (full_name_reversed admin); Status.email_with_icons admin; button ]
+    |> CCList.map (CCList.return %> td)
+    |> tr
+  in
+  Component.DataTable.make ~target_id:"admin-list" ~cols ~row sort admins
+;;
+
+let static_overview ?(disable_edit = false) language admins =
   let thead =
     let add_admin =
       Component.Input.link_as_button
@@ -106,13 +129,13 @@ let new_form { Pool_context.language; csrf; _ } =
     ]
 ;;
 
-let index Pool_context.{ language; _ } admins =
+let index (Pool_context.{ language; _ } as context) admins =
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
     [ h1
         ~a:[ a_class [ "heading-1" ] ]
         [ txt Pool_common.(Utils.nav_link_to_string language I18n.Admins) ]
-    ; admin_overview language admins
+    ; list context admins
     ]
 ;;
 

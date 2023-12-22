@@ -11,7 +11,9 @@ let active_navigation = "/root/users"
 
 let index req =
   let context = Pool_context.find_exn req in
-  let%lwt root_list = Admin.find_all Pool_database.root () in
+  let%lwt root_list =
+    Admin.find_by ~query:Admin.default_query Pool_database.root
+  in
   let flash_fetcher = CCFun.flip Sihl.Web.Flash.find req in
   Page.Root.Users.list root_list context flash_fetcher
   |> General.create_root_layout ~active_navigation context

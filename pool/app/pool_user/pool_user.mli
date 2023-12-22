@@ -222,6 +222,14 @@ val user_lastname : Sihl_user.t -> Lastname.t
 val user_fullname : Sihl_user.t -> string
 val user_lastname_firstname : Sihl_user.t -> string
 val user_email_address : Sihl_user.t -> EmailAddress.t
+val searchable_by : Query.Column.t list
+val sortable_by : Query.Column.t list
+val default_sort : Query.Sort.t
+val default_query : Query.t
+val column_first_name : Query.Column.t
+val column_last_name : Query.Column.t
+val column_name : Query.Column.t
+val column_email : Query.Column.t
 
 module FailedLoginAttempt : sig
   module Id : sig

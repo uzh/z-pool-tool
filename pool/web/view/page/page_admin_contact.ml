@@ -293,7 +293,6 @@ let assign_contact_form { Pool_context.csrf; language; _ } contact =
 ;;
 
 let list Pool_context.{ language; _ } contacts query =
-  let open Pool_common in
   let url = Uri.of_string "/admin/contacts" in
   let data_table =
     Component.DataTable.create_meta
@@ -302,12 +301,7 @@ let list Pool_context.{ language; _ } contacts query =
       query
       language
   in
-  let cols =
-    [ `field (Message.Field.Name, Contact.column_name)
-    ; `column Contact.column_email
-    ; `empty
-    ]
-  in
+  let cols = Pool_user.[ `column column_name; `column column_email; `empty ] in
   let row (Contact.{ disabled; _ } as contact) =
     let a =
       if Pool_user.Disabled.value disabled

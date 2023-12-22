@@ -15,6 +15,7 @@ val create : email_verified:Pool_user.EmailVerified.t option -> Sihl_user.t -> t
 val id : t -> Id.t
 val email_address : t -> Pool_user.EmailAddress.t
 val full_name : t -> string
+val full_name_reversed : t -> string
 
 type create =
   { id : Id.t option
@@ -75,7 +76,10 @@ val find_by_email
   -> Pool_user.EmailAddress.t
   -> (t, Pool_common.Message.error) result Lwt.t
 
-val find_all : Pool_database.Label.t -> unit -> t list Lwt.t
+val find_by
+  :  ?query:Query.t
+  -> Pool_database.Label.t
+  -> (t list * Query.t) Lwt.t
 
 val find_all_with_role
   :  ?exclude:(Role.Role.t * Guard.Uuid.Target.t option) list
@@ -88,6 +92,11 @@ val find_all_with_roles
   -> Pool_database.Label.t
   -> (Role.Role.t * Guard.Uuid.Target.t option) list
   -> t list Lwt.t
+
+val searchable_by : Query.Column.t list
+val sortable_by : Query.Column.t list
+val default_sort : Query.Sort.t
+val default_query : Query.t
 
 module Duplicate : sig
   type t
