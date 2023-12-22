@@ -74,6 +74,7 @@ module Root = struct
         ; Migration_202309180820.migration_root ()
         ; Migration_202309211305.migration_root ()
         ; Migration_202309261013.migration_root ()
+        ; Migration_202312200952.migration ()
         ]
       |> sort
     in
