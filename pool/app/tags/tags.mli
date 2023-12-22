@@ -103,7 +103,7 @@ val search_by_title
   -> string
   -> (Id.t * Title.t) list Lwt.t
 
-val find_all
+val find_by
   :  ?query:Query.t
   -> Pool_database.Label.t
   -> (t list * Query.t) Lwt.t

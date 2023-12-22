@@ -198,7 +198,7 @@ val find
 
 val find_all_templates : Pool_database.Label.t -> unit -> t list Lwt.t
 
-val find_all_templates_query
+val find_templates_by
   :  Query.t
   -> Pool_database.Label.t
   -> (t list * Query.t) Lwt.t

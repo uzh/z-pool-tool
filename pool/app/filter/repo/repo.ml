@@ -90,7 +90,7 @@ module Sql = struct
       find_all_templates_request
   ;;
 
-  let find_all_templates_query query pool =
+  let find_templates_by query pool =
     let where = template_condition, Dynparam.empty in
     Query.collect_and_count
       pool
@@ -566,7 +566,7 @@ end
 
 let find = Sql.find
 let find_all_templates = Sql.find_all_templates
-let find_all_templates_query = Sql.find_all_templates_query
+let find_templates_by = Sql.find_templates_by
 let find_template = Sql.find_template
 let find_multiple_templates = Sql.find_multiple_templates
 let find_templates_of_query = Sql.find_templates_of_query

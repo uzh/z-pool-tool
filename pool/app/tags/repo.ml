@@ -159,7 +159,7 @@ module Sql = struct
     Utils.Database.collect (Label.value pool) request pv
   ;;
 
-  let find_all ?query pool =
+  let find_by ?query pool =
     Query.collect_and_count pool query ~select:find_request_sql RepoEntity.t
   ;;
 
@@ -427,7 +427,7 @@ end
 let find = Sql.find
 let find_multiple = Sql.find_multiple
 let search_by_title = Sql.search_by_title
-let find_all = Sql.find_all
+let find_by = Sql.find_by
 let find_all_with_model = Sql.find_all_with_model
 let find_all_validated = Sql.find_all_validated
 let find_all_validated_with_model = Sql.find_all_validated_with_model
