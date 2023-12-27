@@ -9,7 +9,7 @@ let convert_settings_terms_to_i18n_en =
 		  (SELECT	
         SUBSTRING_INDEX(SUBSTRING_INDEX(`value`, '["EN"],"', - 1), '"]', 1)	
         FROM pool_system_settings 
-        WHERE settings_key LIKE '%terms_and_condition%'));
+        WHERE settings_key = "[\"terms_and_conditions\"]"));
   |sql}
 ;;
 
@@ -24,7 +24,7 @@ let convert_settings_terms_to_i18n_de =
 		  (SELECT	
         SUBSTRING_INDEX(SUBSTRING_INDEX(`value`, '["DE"],"', -1), '"]', 1)	
         FROM pool_system_settings 
-        WHERE settings_key LIKE '%terms_and_condition%'));
+        WHERE settings_key = "[\"terms_and_conditions\"]"));
   |sql}
 ;;
 

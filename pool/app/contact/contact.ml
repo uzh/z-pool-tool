@@ -34,8 +34,10 @@ let has_terms_accepted pool (contact : t) =
   let terms_accepted_at =
     contact.terms_accepted_at |> CCOption.map User.TermsAccepted.value
   in
-  CCOption.map (Ptime.is_later ~than:last_updated) terms_accepted_at
-  |> CCOption.get_or ~default:false
+  CCOption.map_or
+    ~default:false
+    (Ptime.is_later ~than:last_updated)
+    terms_accepted_at
   |> Lwt.return
 ;;
 
