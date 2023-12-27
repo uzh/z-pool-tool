@@ -5,6 +5,44 @@ module Dynparam = Utils.Database.Dynparam
 let of_entity = RepoEntity.of_entity
 let to_entity = RepoEntity.to_entity
 
+let sql_select_columns =
+  [ Entity.Id.sql_select_fragment ~field:"pool_sessions.uuid"
+  ; Entity.Id.sql_select_fragment ~field:"pool_sessions.follow_up_to"
+  ; "(SELECT EXISTS (SELECT 1 FROM pool_sessions as s WHERE s.follow_up_to = \
+     pool_sessions.uuid LIMIT 1))"
+  ; "pool_sessions.start"
+  ; "pool_sessions.duration"
+  ; "pool_sessions.description"
+  ; "pool_sessions.limitations"
+  ; Entity.Id.sql_select_fragment ~field:"pool_locations.uuid"
+  ; "pool_sessions.max_participants"
+  ; "pool_sessions.min_participants"
+  ; "pool_sessions.overbook"
+  ; "pool_sessions.email_reminder_lead_time"
+  ; "pool_sessions.email_reminder_sent_at"
+  ; "pool_sessions.text_message_reminder_lead_time"
+  ; "pool_sessions.text_message_reminder_sent_at"
+  ; "COUNT(pool_assignments.id) as assignment_count"
+  ; "COALESCE( SUM(pool_assignments.no_show), 0)"
+  ; "COALESCE( SUM(pool_assignments.participated), 0)"
+  ; "pool_sessions.closed_at"
+  ; "pool_sessions.canceled_at"
+  ; "pool_sessions.created_at"
+  ; "pool_sessions.updated_at"
+  ]
+;;
+
+let joins =
+  {sql|
+    LEFT JOIN pool_assignments
+      ON pool_assignments.session_uuid = pool_sessions.uuid
+      AND pool_assignments.canceled_at IS NULL
+      AND pool_assignments.marked_as_deleted = 0
+    INNER JOIN pool_locations
+      ON pool_locations.uuid = pool_sessions.location_uuid
+  |sql}
+;;
+
 module Sql = struct
   let select_for_calendar ?order_by where =
     let order_by =
@@ -68,63 +106,15 @@ module Sql = struct
       order_by
   ;;
 
-  let find_sql ?order_by where =
-    let order_by =
-      order_by |> CCOption.map_or ~default:"" (Format.asprintf "ORDER BY %s")
+  let find_request_sql ?(count = false) where_fragment =
+    let columns =
+      if count then "COUNT(*)" else sql_select_columns |> CCString.concat ", "
     in
-    let select =
-      {sql|
-        SELECT
-          LOWER(CONCAT(
-            SUBSTR(HEX(pool_sessions.uuid), 1, 8), '-',
-            SUBSTR(HEX(pool_sessions.uuid), 9, 4), '-',
-            SUBSTR(HEX(pool_sessions.uuid), 13, 4), '-',
-            SUBSTR(HEX(pool_sessions.uuid), 17, 4), '-',
-            SUBSTR(HEX(pool_sessions.uuid), 21)
-          )),
-          LOWER(CONCAT(
-            SUBSTR(HEX(pool_sessions.follow_up_to), 1, 8), '-',
-            SUBSTR(HEX(pool_sessions.follow_up_to), 9, 4), '-',
-            SUBSTR(HEX(pool_sessions.follow_up_to), 13, 4), '-',
-            SUBSTR(HEX(pool_sessions.follow_up_to), 17, 4), '-',
-            SUBSTR(HEX(pool_sessions.follow_up_to), 21)
-          )),
-          (SELECT EXISTS (SELECT 1 FROM pool_sessions as s WHERE s.follow_up_to = pool_sessions.uuid LIMIT 1)),
-          pool_sessions.start,
-          pool_sessions.duration,
-          pool_sessions.description,
-          pool_sessions.limitations,
-          LOWER(CONCAT(
-            SUBSTR(HEX(pool_locations.uuid), 1, 8), '-',
-            SUBSTR(HEX(pool_locations.uuid), 9, 4), '-',
-            SUBSTR(HEX(pool_locations.uuid), 13, 4), '-',
-            SUBSTR(HEX(pool_locations.uuid), 17, 4), '-',
-            SUBSTR(HEX(pool_locations.uuid), 21)
-          )),
-          pool_sessions.max_participants,
-          pool_sessions.min_participants,
-          pool_sessions.overbook,
-          pool_sessions.email_reminder_lead_time,
-          pool_sessions.email_reminder_sent_at,
-          pool_sessions.text_message_reminder_lead_time,
-          pool_sessions.text_message_reminder_sent_at,
-          COUNT(pool_assignments.id),
-          COALESCE( SUM(pool_assignments.no_show), 0),
-          COALESCE( SUM(pool_assignments.participated), 0),
-          pool_sessions.closed_at,
-          pool_sessions.canceled_at,
-          pool_sessions.created_at,
-          pool_sessions.updated_at
-        FROM pool_sessions
-        LEFT JOIN pool_assignments
-          ON pool_assignments.session_uuid = pool_sessions.uuid
-          AND pool_assignments.canceled_at IS NULL
-          AND pool_assignments.marked_as_deleted = 0
-        INNER JOIN pool_locations
-          ON pool_locations.uuid = pool_sessions.location_uuid
-      |sql}
-    in
-    Format.asprintf "%s %s GROUP BY pool_sessions.uuid %s" select where order_by
+    Format.asprintf
+      {sql|SELECT %s FROM pool_sessions %s %s GROUP BY pool_sessions.uuid |sql}
+      columns
+      joins
+      where_fragment
   ;;
 
   let find_public_sql where =
@@ -173,7 +163,7 @@ module Sql = struct
     {sql|
       WHERE pool_sessions.uuid = UNHEX(REPLACE(?, '-', ''))
     |sql}
-    |> find_sql
+    |> find_request_sql
     |> Caqti_type.string ->! RepoEntity.t
   ;;
 
@@ -195,7 +185,7 @@ module Sql = struct
          (fun i _ -> Format.asprintf "UNHEX(REPLACE($%n, '-', ''))" (i + 1))
          ids
        |> CCString.concat ",")
-    |> find_sql
+    |> find_request_sql
   ;;
 
   let find_multiple pool ids =
@@ -250,7 +240,7 @@ module Sql = struct
     {sql|
       WHERE pool_sessions.experiment_uuid = UNHEX(REPLACE(?, '-', ''))
     |sql}
-    |> find_sql ~order_by:"pool_sessions.start"
+    |> find_request_sql
     |> Caqti_type.string ->* RepoEntity.t
   ;;
 
@@ -268,7 +258,7 @@ module Sql = struct
         AND pool_sessions.start > NOW()
         AND pool_sessions.canceled_at IS NULL
       |sql}
-    |> find_sql ~order_by:"pool_sessions.start"
+    |> find_request_sql
     |> Caqti_type.string ->* RepoEntity.t
   ;;
 
@@ -380,7 +370,7 @@ module Sql = struct
     {sql|
       WHERE pool_assignments.uuid = UNHEX(REPLACE(?, '-', ''))
     |sql}
-    |> find_sql
+    |> find_request_sql
     |> Caqti_type.string ->! RepoEntity.t
   ;;
 
@@ -513,7 +503,7 @@ module Sql = struct
     |sql}
       reminder_sent_at
       lead_time
-    |> find_sql
+    |> find_request_sql
     |> Caqti_type.(string) ->* RepoEntity.t
   ;;
 
@@ -544,7 +534,7 @@ module Sql = struct
         WHERE pool_sessions.follow_up_to = UNHEX(REPLACE(?, '-', ''))
         AND pool_sessions.canceled_at IS NULL
       |sql}
-    |> find_sql ~order_by:"pool_sessions.start"
+    |> find_request_sql
     |> Caqti_type.string ->* RepoEntity.t
   ;;
 
@@ -565,7 +555,7 @@ module Sql = struct
         AND
           pool_sessions.uuid = UNHEX(REPLACE($1, '-', ''))
       |sql}
-    |> find_sql
+    |> find_request_sql
     |> Caqti_type.string ->! RepoEntity.t
   ;;
 
@@ -589,7 +579,7 @@ module Sql = struct
           pool_sessions.follow_up_to = UNHEX(REPLACE($1, '-', ''))
         )
       |sql}
-    |> find_sql ~order_by:"pool_sessions.start"
+    |> find_request_sql
     |> Caqti_type.string ->* RepoEntity.t
   ;;
 

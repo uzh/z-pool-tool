@@ -614,3 +614,13 @@ let assignment_creatable session =
 ;;
 
 let reminder_resendable = not_closed_or_canceled
+
+open Pool_common.Message
+
+let column_created_at =
+  (Field.Date, "pool_sessions.start") |> Query.Column.create
+;;
+
+let column_no_assignments =
+  (Field.AssignmentCount, "assignment_count") |> Query.Column.create
+;;
