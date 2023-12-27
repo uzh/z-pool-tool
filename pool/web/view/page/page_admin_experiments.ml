@@ -811,47 +811,6 @@ let invitations
          experiment)
 ;;
 
-let sent_invitations
-  (Pool_context.{ language; _ } as context)
-  experiment
-  invitations
-  statistics
-  =
-  let url =
-    Format.asprintf
-      "/experiments/%a/invitations"
-      Experiment.Id.pp
-      experiment.Experiment.id
-    |> Uri.of_string
-  in
-  let invitation_table =
-    Page_admin_invitations.Partials.list context experiment
-  in
-  div
-    ~a:[ a_class [ "stack-lg" ] ]
-    [ div
-        ~a:[ a_class [ "grid-col-2" ] ]
-        [ div
-            ~a:[ a_class [ "stack-xs"; "inset"; "bg-grey-light"; "border" ] ]
-            [ Page_admin_invitations.Partials.statistics language statistics ]
-        ]
-    ; Component.List.create
-        ~url
-        ~target_id:"sent-invitation-search"
-        language
-        invitation_table
-        Invitation.searchable_by
-        invitations
-    ]
-  |> CCList.return
-  |> Layout.Experiment.(
-       create
-         ~active_navigation:I18n.Invitations
-         context
-         (I18n I18n.SentInvitations)
-         experiment)
-;;
-
 let users role experiment applicable_admins currently_assigned context =
   let base_url field admin =
     Format.asprintf

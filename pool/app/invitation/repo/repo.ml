@@ -2,10 +2,27 @@ module RepoEntity = Repo_entity
 module Dynparam = Utils.Database.Dynparam
 module Statistics = Repo_statistics
 
-let to_entity = RepoEntity.to_entity
-let of_entity = RepoEntity.of_entity
-
 module Sql = struct
+  let sql_select_columns =
+    (Pool_common.Id.sql_select_fragment ~field:"pool_invitations.uuid"
+     :: Contact.Repo.sql_select_columns)
+    @ [ "pool_invitations.resent_at"
+      ; "pool_invitations.send_count"
+      ; "pool_invitations.created_at"
+      ; "pool_invitations.updated_at"
+      ]
+  ;;
+
+  let joins =
+    Format.asprintf
+      {sql|
+        LEFT JOIN pool_contacts
+          ON pool_invitations.contact_uuid = pool_contacts.user_uuid
+        %s
+      |sql}
+      Contact.Repo.joins
+  ;;
+
   module MailingInvitationMapping = struct
     let bulk_insert pool invitations mailing_id =
       let insert_sql =
@@ -51,51 +68,15 @@ module Sql = struct
     ;;
   end
 
-  let select_sql ?(count = false) =
-    let select_sql =
-      {sql|
-          LOWER(CONCAT(
-            SUBSTR(HEX(pool_invitations.uuid), 1, 8), '-',
-            SUBSTR(HEX(pool_invitations.uuid), 9, 4), '-',
-            SUBSTR(HEX(pool_invitations.uuid), 13, 4), '-',
-            SUBSTR(HEX(pool_invitations.uuid), 17, 4), '-',
-            SUBSTR(HEX(pool_invitations.uuid), 21)
-          )),
-          LOWER(CONCAT(
-            SUBSTR(HEX(pool_experiments.uuid), 1, 8), '-',
-            SUBSTR(HEX(pool_experiments.uuid), 9, 4), '-',
-            SUBSTR(HEX(pool_experiments.uuid), 13, 4), '-',
-            SUBSTR(HEX(pool_experiments.uuid), 17, 4), '-',
-            SUBSTR(HEX(pool_experiments.uuid), 21)
-          )),
-          LOWER(CONCAT(
-            SUBSTR(HEX(pool_contacts.user_uuid), 1, 8), '-',
-            SUBSTR(HEX(pool_contacts.user_uuid), 9, 4), '-',
-            SUBSTR(HEX(pool_contacts.user_uuid), 13, 4), '-',
-            SUBSTR(HEX(pool_contacts.user_uuid), 17, 4), '-',
-            SUBSTR(HEX(pool_contacts.user_uuid), 21)
-          )),
-          pool_invitations.resent_at,
-          pool_invitations.send_count,
-          pool_invitations.created_at,
-          pool_invitations.updated_at
-        |sql}
+  let find_request_sql ?(count = false) where_fragment =
+    let columns =
+      if count then "COUNT(*)" else CCString.concat ", " sql_select_columns
     in
     Format.asprintf
-      {sql|
-        SELECT
-          %s
-        FROM
-          pool_invitations
-        LEFT JOIN pool_contacts
-          ON pool_invitations.contact_uuid = pool_contacts.user_uuid
-        LEFT JOIN user_users
-          ON pool_contacts.user_uuid = user_users.uuid
-        LEFT JOIN pool_experiments
-          ON pool_invitations.experiment_uuid = pool_experiments.uuid
-        %s
-      |sql}
-      (if count then "COUNT(*)" else select_sql)
+      {sql|SELECT %s FROM pool_invitations %s %s|sql}
+      columns
+      joins
+      where_fragment
   ;;
 
   let find_request =
@@ -104,7 +85,7 @@ module Sql = struct
       WHERE
         pool_invitations.uuid = UNHEX(REPLACE(?, '-', ''))
     |sql}
-    |> select_sql
+    |> find_request_sql
     |> Caqti_type.string ->! RepoEntity.t
   ;;
 
@@ -128,7 +109,12 @@ module Sql = struct
       in
       sql, dyn
     in
-    Query.collect_and_count pool query ~select:select_sql ~where Repo_entity.t
+    Query.collect_and_count
+      pool
+      query
+      ~select:find_request_sql
+      ~where
+      Repo_entity.t
   ;;
 
   let find_by_contact_request =
@@ -137,7 +123,7 @@ module Sql = struct
       WHERE
         contact_uuid = UNHEX(REPLACE(?, '-', '')),
     |sql}
-    |> select_sql
+    |> find_request_sql
     |> Caqti_type.string ->* RepoEntity.t
   ;;
 
@@ -289,7 +275,10 @@ module Sql = struct
               ?
             ) |sql}
           in
-          ( dyn |> Dynparam.add RepoEntity.t (entity |> of_entity experiment_id)
+          ( dyn
+            |> Dynparam.add
+                 RepoEntity.Write.t
+                 (entity |> RepoEntity.Write.of_entity experiment_id)
           , sql @ [ sql_line ] ))
         (Dynparam.empty, [])
         invitations
@@ -326,7 +315,7 @@ module Sql = struct
       AND
         contact_uuid = UNHEX(REPLACE(?, '-', ''))
     |sql}
-    |> select_sql
+    |> find_request_sql
     |> Caqti_type.(t2 string string) ->? RepoEntity.t
   ;;
 
@@ -338,37 +327,11 @@ module Sql = struct
   ;;
 end
 
-let contact_to_invitation pool invitation =
-  let open Utils.Lwt_result.Infix in
-  Contact.find pool invitation.RepoEntity.contact_id >|+ to_entity invitation
-;;
-
-let find pool id =
-  let open Utils.Lwt_result.Infix in
-  (* TODO Implement as transaction *)
-  Sql.find pool id >>= contact_to_invitation pool
-;;
-
-let find_by_experiment ?query pool id =
-  let open Utils.Lwt_result.Infix in
-  (* TODO Implement as transaction *)
-  let%lwt invitations, query = Sql.find_by_experiment ?query pool id in
-  invitations
-  |> Lwt_list.map_s (contact_to_invitation pool)
-  ||> CCList.all_ok
-  >|+ fun invitations -> invitations, query
-;;
+let find pool id = Sql.find pool id
+let find_by_experiment = Sql.find_by_experiment
 
 let find_by_contact pool contact =
-  let open Utils.Lwt_result.Infix in
-  (* TODO Implement as transaction *)
-  contact
-  |> Contact.id
-  |> Sql.find_by_contact pool
-  (* Reload contact from DB, does not allow already made updates of the provided
-     contact record *)
-  >|> Lwt_list.map_s (contact_to_invitation pool)
-  ||> CCList.all_ok
+  contact |> Contact.id |> Sql.find_by_contact pool
 ;;
 
 let find_experiment_id_of_invitation = Sql.find_experiment_id_of_invitation
@@ -379,11 +342,4 @@ let find_multiple_by_experiment_and_contacts =
 
 let resend = Sql.resend
 let bulk_insert = Sql.bulk_insert
-
-let find_by_contact_and_experiment_opt pool experiment_id contact_id =
-  let open Utils.Lwt_result.Infix in
-  Sql.find_by_contact_and_experiment_opt pool experiment_id contact_id
-  >|> function
-  | None -> Lwt_result.return None
-  | Some invitation -> contact_to_invitation pool invitation >|+ CCOption.return
-;;
+let find_by_contact_and_experiment_opt = Sql.find_by_contact_and_experiment_opt

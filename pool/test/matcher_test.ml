@@ -77,10 +77,7 @@ let create_invitations_repo _ () =
   let open Utils.Lwt_result.Infix in
   let pool = Test_utils.Data.database_label in
   let find_invitation_count { Experiment.id; _ } =
-    Invitation.find_by_experiment pool id
-    ||> get_or_failwith
-    ||> fst
-    ||> CCList.length
+    Invitation.find_by_experiment pool id ||> fst ||> CCList.length
   in
   let%lwt tenant = Pool_tenant.find_by_label pool ||> get_or_failwith in
   let%lwt { Experiment.id; _ } = Test_utils.Repo.first_experiment () in
@@ -186,7 +183,7 @@ let expected_resend_events contacts mailing experiment invitation_mail =
         |> Invitation.find_by_contact_and_experiment_opt
              database_label
              experiment.Experiment.id
-        >== CCOption.to_result Pool_common.(Message.NotFound Field.Invitation)
+        ||> CCOption.to_result Pool_common.(Message.NotFound Field.Invitation)
         ||> get_or_failwith)
       contacts
   in

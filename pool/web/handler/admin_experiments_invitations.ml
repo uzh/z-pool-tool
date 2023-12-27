@@ -72,36 +72,29 @@ let index req =
 ;;
 
 let sent_invitations req =
-  let open Utils.Lwt_result.Infix in
   let id = experiment_id req in
   let error_path =
     Format.asprintf "/admin/experiments/%s/invitations" (Experiment.Id.value id)
   in
-  let result ({ Pool_context.database_label; _ } as context) =
-    Utils.Lwt_result.map_error (fun err -> err, error_path)
-    @@ let* experiment = Experiment.find database_label id in
-       let query =
-         let open Invitation in
-         Query.from_request ~searchable_by ~sortable_by req
-       in
-       let%lwt statistics =
-         Invitation.Statistics.by_experiment database_label id
-       in
-       let* invitations =
-         Invitation.find_by_experiment
-           ~query
-           database_label
-           experiment.Experiment.id
-       in
-       Page.Admin.Experiments.sent_invitations
-         context
-         experiment
-         invitations
-         statistics
-       >|> create_layout req context
-       >|+ Sihl.Web.Response.of_html
+  HttpUtils.Htmx.handler
+    ~error_path
+    ~create_layout
+    ~query:(module Invitation)
+    req
+  @@ fun ({ Pool_context.database_label; _ } as context) query ->
+  let open Utils.Lwt_result.Infix in
+  let* experiment = Experiment.find database_label id in
+  let%lwt invitations =
+    Invitation.find_by_experiment ~query database_label experiment.Experiment.id
   in
-  result |> extract_happy_path req
+  let open Page.Admin.Invitations in
+  match HttpUtils.Htmx.is_hx_request req with
+  | true -> Partials.list context experiment invitations |> Lwt_result.return
+  | false ->
+    let%lwt statistics =
+      Invitation.Statistics.by_experiment database_label id
+    in
+    sent_invitations context experiment invitations statistics |> Lwt_result.ok
 ;;
 
 let create req =
