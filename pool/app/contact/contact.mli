@@ -93,6 +93,7 @@ val id : t -> Pool_common.Id.t
 val firstname : t -> Pool_user.Firstname.t
 val lastname : t -> Pool_user.Lastname.t
 val fullname : t -> string
+val user_lastname_firstname : t -> string
 val lastname_firstname : t -> string
 val email_address : t -> Pool_user.EmailAddress.t
 val sexp_of_t : t -> Sexplib0.Sexp.t

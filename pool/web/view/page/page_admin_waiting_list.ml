@@ -3,6 +3,56 @@ open Pool_common
 open Component.Input
 module Table = Component.Table
 module Message = Pool_common.Message
+module DataTable = Component.DataTable
+
+let list { Pool_context.language; _ } experiment (waiting_list_entries, query) =
+  let open Pool_user in
+  let url =
+    experiment.Experiment.id
+    |> Experiment.Id.value
+    |> Format.asprintf "/admin/experiments/%s/waiting-list"
+    |> Uri.of_string
+  in
+  let datatable =
+    DataTable.{ url; query; language; search = Some Waiting_list.searchable_by }
+  in
+  let cols =
+    let open Pool_common in
+    let to_string field =
+      Utils.field_to_string language field |> CCString.capitalize_ascii |> txt
+    in
+    [ `column column_name
+    ; `column column_email
+    ; `custom (to_string Message.Field.CellPhone)
+    ; `custom (to_string Message.Field.SignedUpAt)
+    ; `custom (to_string Message.Field.AdminComment)
+    ]
+  in
+  let row
+    ({ Waiting_list.contact; admin_comment; created_at; _ } : Waiting_list.t)
+    =
+    let open Waiting_list in
+    [ txt (Contact.user_lastname_firstname contact)
+    ; txt (Contact.email_address contact |> EmailAddress.value)
+    ; txt
+        (contact.Contact.cell_phone
+         |> CCOption.map_or ~default:"" CellPhone.value)
+    ; txt (Utils.Time.formatted_date_time created_at)
+    ; admin_comment
+      |> CCOption.map_or ~default:"" AdminComment.value
+      |> HttpUtils.first_n_characters
+      |> HttpUtils.add_line_breaks
+    ]
+    |> CCList.map CCFun.(CCList.return %> td)
+    |> tr
+  in
+  DataTable.make
+    ~target_id:"waiting-list"
+    ~cols
+    ~row
+    datatable
+    waiting_list_entries
+;;
 
 let detail
   (Waiting_list.{ id; contact; experiment; admin_comment; _ } : Waiting_list.t)
@@ -129,61 +179,8 @@ let detail
   |> Layout.Experiment.(create context (NavLink I18n.WaitingList) experiment)
 ;;
 
-let index
-  experiment
-  (waiting_list, query)
-  ({ Pool_context.language; _ } as context)
-  =
-  let waiting_list_path =
-    Format.asprintf
-      "/admin/experiments/%s/waiting-list"
-      (experiment.Experiment.id |> Experiment.Id.value)
-  in
-  let waiting_list_table waiting_list_entries =
-    let thead =
-      (Field.[ Name; Email; CellPhone; SignedUpAt; AdminComment ]
-       |> Component.Table.fields_to_txt language)
-      @ [ txt "" ]
-    in
-    let rows =
-      let open CCOption in
-      CCList.map
-        Contact.(
-          fun ({ Waiting_list.id; contact; admin_comment; created_at; _ } :
-                Waiting_list.t) ->
-            [ txt (fullname contact)
-            ; txt (email_address contact |> Pool_user.EmailAddress.value)
-            ; txt
-                (contact.cell_phone
-                 |> map_or ~default:"" Pool_user.CellPhone.value)
-            ; txt
-                (created_at |> CreatedAt.value |> Utils.Time.formatted_date_time)
-            ; admin_comment
-              |> map_or ~default:"" Waiting_list.AdminComment.value
-              |> HttpUtils.first_n_characters
-              |> HttpUtils.add_line_breaks
-            ; Format.asprintf
-                "%s/%s"
-                waiting_list_path
-                (id |> Waiting_list.Id.value)
-              |> edit_link
-            ])
-        waiting_list_entries
-    in
-    Table.horizontal_table
-      `Striped
-      ~align_top:true
-      ~align_last_end:true
-      ~thead
-      rows
-  in
-  Component.List.create
-    ~url:(Uri.of_string waiting_list_path)
-    ~target_id:"waiting-list-search"
-    language
-    waiting_list_table
-    Waiting_list.searchable_by
-    (waiting_list, query)
+let index context experiment waiting_list =
+  list context experiment waiting_list
   |> CCList.return
   |> Layout.Experiment.(
        create

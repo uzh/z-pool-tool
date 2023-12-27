@@ -155,6 +155,7 @@ end
 let user { user; _ } = user
 let id m = m.user.Sihl_user.id |> Pool_common.Id.of_string
 let fullname m = m.user |> User.user_fullname
+let user_lastname_firstname m = m.user |> User.user_lastname_firstname
 let firstname m = m.user |> User.user_firstname
 let lastname m = m.user |> User.user_lastname
 let lastname_firstname m = m.user |> User.user_lastname_firstname
