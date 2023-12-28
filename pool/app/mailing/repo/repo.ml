@@ -1,42 +1,41 @@
 module RepoEntity = Repo_entity
+module Dynparam = Utils.Database.Dynparam
 
 let to_entity = RepoEntity.to_entity
 let of_entity = RepoEntity.of_entity
 
 module Sql = struct
-  let columns_sql =
-    {sql|
-      LOWER(CONCAT(
-        SUBSTR(HEX(pool_mailing.uuid), 1, 8), '-',
-        SUBSTR(HEX(pool_mailing.uuid), 9, 4), '-',
-        SUBSTR(HEX(pool_mailing.uuid), 13, 4), '-',
-        SUBSTR(HEX(pool_mailing.uuid), 17, 4), '-',
-        SUBSTR(HEX(pool_mailing.uuid), 21)
-      )),
-      LOWER(CONCAT(
-        SUBSTR(HEX(pool_mailing.experiment_uuid), 1, 8), '-',
-        SUBSTR(HEX(pool_mailing.experiment_uuid), 9, 4), '-',
-        SUBSTR(HEX(pool_mailing.experiment_uuid), 13, 4), '-',
-        SUBSTR(HEX(pool_mailing.experiment_uuid), 17, 4), '-',
-        SUBSTR(HEX(pool_mailing.experiment_uuid), 21)
-      )),
-      pool_mailing.`start`,
-      pool_mailing.`end`,
-      pool_mailing.`limit`,
-      pool_mailing.distribution,
-      pool_mailing.created_at,
-      pool_mailing.updated_at
-    |sql}
+  let sql_select_columns =
+    [ Entity.Id.sql_select_fragment ~field:"pool_mailing.uuid"
+    ; Entity.Id.sql_select_fragment ~field:"pool_mailing.experiment_uuid"
+    ]
+    @ [ "pool_mailing.`start`"
+      ; "pool_mailing.`end`"
+      ; "pool_mailing.`limit`"
+      ; "pool_mailing.distribution"
+      ; "pool_mailing.created_at"
+      ; "pool_mailing.updated_at"
+      ]
   ;;
 
-  let select_sql =
+  let find_request_sql ?(count = false) ?(additional_cols = []) where_fragment =
+    let columns =
+      if count
+      then "COUNT(*)"
+      else CCString.concat ", " (sql_select_columns @ additional_cols)
+    in
     Format.asprintf
-      {sql|
-        SELECT
-          %s
-        FROM pool_mailing
-      |sql}
-      columns_sql
+      {sql|SELECT %s FROM pool_mailing %s|sql}
+      columns
+      where_fragment
+  ;;
+
+  let count_column =
+    {sql|
+      (SELECT COUNT(invitation_uuid) 
+      FROM pool_mailing_invitations 
+      WHERE mailing_uuid =  pool_mailing.uuid) as invitation_count
+    |sql}
   ;;
 
   let find_request =
@@ -45,7 +44,7 @@ module Sql = struct
       WHERE
         pool_mailing.uuid = UNHEX(REPLACE(?, '-', ''))
     |sql}
-    |> Format.asprintf "%s\n%s" select_sql
+    |> find_request_sql
     |> RepoEntity.Id.t ->! RepoEntity.t
   ;;
 
@@ -55,19 +54,16 @@ module Sql = struct
     ||> CCOption.to_result Pool_common.Message.(NotFound Field.Mailing)
   ;;
 
+  let select_with_count = find_request_sql ~additional_cols:[ count_column ]
+
   let find_with_detail_request =
     let open Caqti_request.Infix in
     Format.asprintf
       {sql|
-        SELECT
-          %s,
-          (SELECT COUNT(invitation_uuid) FROM pool_mailing_invitations WHERE mailing_uuid = pool_mailing.uuid)
-        FROM pool_mailing
         WHERE
           pool_mailing.uuid = UNHEX(REPLACE(?, '-', ''))
-        ORDER BY pool_mailing.start
       |sql}
-      columns_sql
+    |> select_with_count
     |> RepoEntity.(Id.t ->! Caqti_type.t2 t InvitationCount.t)
   ;;
 
@@ -87,7 +83,7 @@ module Sql = struct
         experiment_uuid = UNHEX(REPLACE(?, '-', ''))
       ORDER BY pool_mailing.start
     |sql}
-    |> Format.asprintf "%s\n%s" select_sql
+    |> find_request_sql
     |> Experiment.Repo.Entity.Id.t ->* RepoEntity.t
   ;;
 
@@ -97,27 +93,24 @@ module Sql = struct
       find_by_experiment_request
   ;;
 
-  let find_by_experiment_with_detail_request =
-    let open Caqti_request.Infix in
-    Format.asprintf
-      {sql|
-        SELECT
-          %s,
-          (SELECT COUNT(invitation_uuid) FROM pool_mailing_invitations WHERE mailing_uuid = pool_mailing.uuid)
-        FROM pool_mailing
-        WHERE
-          experiment_uuid = UNHEX(REPLACE(?, '-', ''))
-        ORDER BY pool_mailing.start
-      |sql}
-      columns_sql
-    |> Experiment.Repo.Entity.Id.t
-       ->* RepoEntity.(Caqti_type.t2 t InvitationCount.t)
-  ;;
-
-  let find_by_experiment_with_details pool =
-    Utils.Database.collect
-      (Pool_database.Label.value pool)
-      find_by_experiment_with_detail_request
+  let find_by_experiment_with_count pool query id =
+    let select = select_with_count in
+    let where =
+      let sql =
+        {sql| pool_mailing.experiment_uuid = UNHEX(REPLACE(?, '-', '')) |sql}
+      in
+      let dyn =
+        Dynparam.(
+          empty |> add Pool_common.Repo.Id.t (Experiment.Id.to_common id))
+      in
+      sql, dyn
+    in
+    Query.collect_and_count
+      pool
+      query
+      ~select
+      ~where
+      RepoEntity.(Caqti_type.t2 t InvitationCount.t)
   ;;
 
   let find_current_request =
@@ -127,7 +120,7 @@ module Sql = struct
         NOW() < pool_mailing.end AND NOW() >= pool_mailing.start
       ORDER BY pool_mailing.start
     |sql}
-    |> Format.asprintf "%s\n%s" select_sql
+    |> find_request_sql
     |> Caqti_type.unit ->* RepoEntity.t
   ;;
 
@@ -145,7 +138,7 @@ module Sql = struct
         $1 < pool_mailing.end AND $2 > pool_mailing.start AND pool_mailing.uuid != UNHEX(REPLACE($3, '-', ''))
       ORDER BY pool_mailing.start
     |sql}
-    |> Format.asprintf "%s\n%s" select_sql
+    |> find_request_sql
     |> Caqti_type.t3 RepoEntity.StartAt.t RepoEntity.EndAt.t RepoEntity.Id.t
        ->* RepoEntity.t
   ;;
@@ -276,7 +269,7 @@ module Sql = struct
             AND pool_mailing.`open`
           ORDER BY pool_mailing.`start`
         |sql}
-        columns_sql
+        (CCString.concat ", " sql_select_columns)
       |> Caqti_type.ptime_span ->* Status.t
     ;;
 
@@ -305,10 +298,14 @@ let find_by_experiment pool id =
   Sql.find_by_experiment pool id ||> CCList.map to_entity
 ;;
 
-let find_by_experiment_with_detail pool id =
+let find_by_experiment_with_count pool query id =
   let open Utils.Lwt_result.Infix in
-  Sql.find_by_experiment_with_details pool id
-  ||> CCList.map (fun (model, count) -> model |> to_entity, count)
+  Sql.find_by_experiment_with_count pool query id
+  ||> fun (mailings, query) ->
+  let mailings =
+    mailings |> CCList.map (fun (model, count) -> model |> to_entity, count)
+  in
+  mailings, query
 ;;
 
 let find_overlaps pool Entity.{ id; start_at; end_at; _ } =

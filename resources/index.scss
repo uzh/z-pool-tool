@@ -436,3 +436,15 @@ table.simple {
     border: 1px solid transparent;
 
 }
+
+// Width base classes
+$i: 1;
+$n: 12;
+
+@while $i < $n +1 {
+    .w-#{$i} {
+        width: percentage(calc(1 / $n) * $i);
+    }
+
+    $i: $i + 1;
+}

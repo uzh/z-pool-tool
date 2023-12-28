@@ -5,7 +5,7 @@ module Guard = Entity_guard
 let find = Repo.find
 let find_with_detail = Repo.find_with_detail
 let find_by_experiment = Repo.find_by_experiment
-let find_by_experiment_with_detail = Repo.find_by_experiment_with_detail
+let find_by_experiment_with_count = Repo.find_by_experiment_with_count
 let find_overlaps = Repo.find_overlaps
 
 module Status = struct
