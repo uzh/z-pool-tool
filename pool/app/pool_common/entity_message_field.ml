@@ -315,39 +315,23 @@ type t =
   | Zip [@name "zip"] [@printer go "zip"]
 [@@deriving eq, show { with_path = false }, yojson, variants, sexp_of]
 
-(* let read_nested str = let open Str in let regex = regexp "\\[\\(.*\\)\\]" in
-   try if string_match regex str 0 then Some (matched_group 1 str) else None
-   with | _ -> None ;; *)
-
-let read_nested2 str =
-  Logs.info (fun m -> m "read nested %s" str);
-  let open Str in
-  (* let regex = regexp "\[(\w+)\]" in *)
-  (* let regex = regexp {|\[(\w+)\]|} in *)
-  let regex = regexp {|\[(.*?)\]|} in
-  Logs.info (fun m -> m "%s" (if string_match regex str 0 then "YES" else "NO"));
-  try if string_match regex str 0 then Some (matched_group 1 str) else None with
-  | _ -> None
-;;
-
 let read_nested str =
-  Logs.info (fun m -> m "read_nested: %s" str);
   let open CCString in
   match contains str '[' && contains str ']' with
   | false -> None
   | true ->
     let open CCList in
-    Logs.info (fun m -> m "%s" "has brackets");
     (try
        str
        |> split_on_char '['
        |> function
        | [ "timeunit_of"; tl ] ->
-         Logs.info (fun m -> m "%s" "equas timeunit_of");
-         let subfield =
-           tl |> split_on_char ']' |> hd |> Utils.Json.read_variant t_of_yojson
-         in
-         Some (TimeUnitOf subfield)
+         tl
+         |> split_on_char ']'
+         |> hd
+         |> Utils.Json.read_variant t_of_yojson
+         |> timeunitof
+         |> CCOption.return
        | _ -> None
      with
      | _ -> None)
