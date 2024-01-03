@@ -170,7 +170,9 @@ let session_page database_label req context session experiment =
   function
   | `Detail ->
     let%lwt current_tags = current_tags () in
-    let* assignments = Assignment.find_by_session database_label session_id in
+    let%lwt assignments =
+      Assignment.find_by_session database_label session_id
+    in
     let access_contact_profiles =
       can_access_contact_profile context experiment_id
     in
@@ -225,7 +227,7 @@ let session_page database_label req context session experiment =
       flash_fetcher
     >|> create_layout
   | `Close ->
-    let* assignments =
+    let%lwt assignments =
       Assignment.find_uncanceled_by_session database_label session.Session.id
     in
     let%lwt participation_tags =
@@ -234,7 +236,9 @@ let session_page database_label req context session experiment =
           database_label
           (Experiment (Experiment.Id.to_common experiment_id)))
     in
-    let* counters = Assignment.counters_of_session database_label session_id in
+    let%lwt counters =
+      Assignment.counters_of_session database_label session_id
+    in
     Page.Admin.Session.close
       ~view_contact_name
       context
@@ -262,7 +266,7 @@ let session_page database_label req context session experiment =
       flash_fetcher
     >|> create_layout
   | `Print ->
-    let* assignments =
+    let%lwt assignments =
       Assignment.find_by_session database_label session.Session.id
     in
     Page.Admin.Session.print
@@ -353,7 +357,7 @@ let update_handler action req =
         |> Lwt_result.lift
       | `Reschedule ->
         let open Cqrs_command.Session_command.Reschedule in
-        let* assignments =
+        let%lwt assignments =
           Assignment.find_uncanceled_by_session
             database_label
             session.Session.id
@@ -419,19 +423,16 @@ let cancel req =
     let* follow_ups =
       Session.find_follow_ups database_label session.Session.id
     in
-    let* assignments =
+    let%lwt assignments =
       session :: follow_ups
       |> Lwt_list.fold_left_s
-           (fun result session ->
-             match result with
-             | Error err -> Lwt_result.fail err
-             | Ok assignments ->
-               Assignment.find_uncanceled_by_session
-                 database_label
-                 session.Session.id
-               >|+ CCList.append assignments)
-           (Ok [])
-      >|+ Assignment.group_by_contact
+           (fun assignments session ->
+             Assignment.find_uncanceled_by_session
+               database_label
+               session.Session.id
+             ||> CCList.append assignments)
+           []
+      ||> Assignment.group_by_contact
     in
     let* notify_via =
       let open Pool_common in
@@ -573,7 +574,7 @@ let close_post req =
     let open Cqrs_command.Session_command in
     let* experiment = Experiment.find database_label experiment_id in
     let* session = Session.find database_label session_id in
-    let* assignments =
+    let%lwt assignments =
       Assignment.find_uncanceled_by_session database_label session.Session.id
     in
     let%lwt participation_tags =
@@ -765,7 +766,7 @@ let resend_reminders req =
     @@
     let* experiment = Experiment.find database_label experiment_id in
     let* session = Session.find database_label session_id in
-    let* assignments =
+    let%lwt assignments =
       Assignment.find_uncanceled_by_session database_label session.Session.id
     in
     let tenant = Pool_context.Tenant.get_tenant_exn req in

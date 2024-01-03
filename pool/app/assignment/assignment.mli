@@ -122,7 +122,7 @@ type session_counters =
 val counters_of_session
   :  Pool_database.Label.t
   -> Session.Id.t
-  -> (session_counters, Pool_common.Message.error) result Lwt.t
+  -> session_counters Lwt.t
 
 val find
   :  Pool_database.Label.t
@@ -152,26 +152,19 @@ val find_all_by_experiment_and_contact_opt
   -> Contact.t
   -> Public.t list Lwt.t
 
-val find_by_session
-  :  Pool_database.Label.t
-  -> Session.Id.t
-  -> (t list, Pool_common.Message.error) result Lwt.t
+val find_by_session : Pool_database.Label.t -> Session.Id.t -> t list Lwt.t
 
 val find_uncanceled_by_session
   :  Pool_database.Label.t
   -> Session.Id.t
-  -> (t list, Pool_common.Message.error) result Lwt.t
+  -> t list Lwt.t
 
 val find_deleted_by_session
   :  Pool_database.Label.t
   -> Session.Id.t
-  -> (t list, Pool_common.Message.error) result Lwt.t
+  -> t list Lwt.t
 
-val find_with_follow_ups
-  :  Pool_database.Label.t
-  -> Id.t
-  -> (t list, Pool_common.Message.error) result Lwt.t
-
+val find_with_follow_ups : Pool_database.Label.t -> Id.t -> t list Lwt.t
 val find_follow_ups : Pool_database.Label.t -> t -> t list Lwt.t
 
 val contact_participation_in_other_assignments

@@ -786,7 +786,7 @@ let cancel_assignment_with_follow_ups _ () =
       ||> fun ({ Public.id; _ } : Public.t) -> id |> Id.value |> Id.of_string
     in
     let%lwt assignments =
-      find_with_follow_ups Data.database_label assignment_id ||> get_or_failwith
+      find_with_follow_ups Data.database_label assignment_id
     in
     AssignmentCommand.Cancel.handle (assignments, parent_session)
     |> get_or_failwith

@@ -73,5 +73,5 @@ let assignments_to_session_counters =
 let counters_of_session database_label session_id =
   let open Utils.Lwt_result.Infix in
   find_uncanceled_by_session database_label session_id
-  >|+ assignments_to_session_counters
+  ||> assignments_to_session_counters
 ;;
