@@ -164,19 +164,29 @@ end = struct
     ?contact_person
     ?organisational_unit
     ?smtp_auth
-    ({ cost_center; description; language; experiment_type; _ } as command : t)
+    ({ cost_center
+     ; description
+     ; language
+     ; experiment_type
+     ; email_session_reminder_lead_time
+     ; email_session_reminder_lead_time_unit
+     ; text_message_session_reminder_lead_time
+     ; text_message_session_reminder_lead_time_unit
+     ; _
+     } as command :
+      t)
     =
     Logs.info ~src (fun m -> m "Handle command Create" ~tags);
     let open CCResult in
     let* email_session_reminder_lead_time =
       Reminder.EmailLeadTime.of_int_opt
-        command.email_session_reminder_lead_time
-        command.email_session_reminder_lead_time_unit
+        email_session_reminder_lead_time
+        email_session_reminder_lead_time_unit
     in
     let* text_message_session_reminder_lead_time =
       Reminder.TextMessageLeadTime.of_int_opt
-        command.text_message_session_reminder_lead_time
-        command.text_message_session_reminder_lead_time_unit
+        text_message_session_reminder_lead_time
+        text_message_session_reminder_lead_time_unit
     in
     let* experiment =
       Experiment.create

@@ -1,6 +1,6 @@
 let store_settings_timespans_in_seconds =
   Sihl.Database.Migration.create_step
-    ~label:"store settings timespans in seconds"
+    ~label:"store settings timespans in seconds instead of days"
     {sql|
       UPDATE
         pool_system_settings

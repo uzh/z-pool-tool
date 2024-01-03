@@ -77,13 +77,6 @@ input[readonly], select[readonly] {
     }
 }
 
-// Flatpicker
-// TODO: Add to framework
-.form-group:not(.horizontal) > .flatpickr-input + .datepicker {
-    margin-top: $space-xs;
-}
-
-
 // Index page
 .index-page>*:nth-child(2) {
     flex-basis: 25%;
