@@ -123,8 +123,12 @@ let message_templates_html
 
 let list Pool_context.{ language; _ } experiments query =
   let url = Uri.of_string "/admin/experiments" in
-  let sort =
-    DataTable.{ url; query; language; search = Some Experiment.searchable_by }
+  let data_table =
+    Component.DataTable.create_meta
+      ~search:Experiment.searchable_by
+      url
+      query
+      language
   in
   let cols =
     let create_experiment : [ | Html_types.flow5 ] elt =
@@ -151,7 +155,7 @@ let list Pool_context.{ language; _ } experiments query =
     |> CCList.map (CCList.return %> td)
     |> tr
   in
-  DataTable.make ~target_id:"experiment-list" ~cols ~row sort experiments
+  DataTable.make ~target_id:"experiment-list" ~cols ~row data_table experiments
 ;;
 
 let index (Pool_context.{ language; _ } as context) experiments query =

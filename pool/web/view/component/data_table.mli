@@ -26,6 +26,13 @@ type data_table =
   (** the columns that can be searched for *)
   }
 
+val create_meta
+  :  ?search:Query.Column.t list
+  -> Uri.t
+  -> Query.t
+  -> Pool_common.Language.t
+  -> data_table
+
 (** A column in the table. Use [`column] for actual database columns, and use [`custom] for arbitrary elements. *)
 type col =
   [ `column of Query.Column.t

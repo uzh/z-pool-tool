@@ -22,9 +22,12 @@ let descriptions_all_languages (location : Pool_location.t) =
 
 let list Pool_context.{ language; _ } location_list query =
   let url = Uri.of_string "/admin/locations" in
-  let sort =
-    Component.DataTable.
-      { url; query; language; search = Some Pool_location.searchable_by }
+  let data_table =
+    Component.DataTable.create_meta
+      ~search:Pool_location.searchable_by
+      url
+      query
+      language
   in
   let cols =
     let create_filter : [ | Html_types.flow5 ] elt =
@@ -60,13 +63,12 @@ let list Pool_context.{ language; _ } location_list query =
     |> CCList.map (CCList.return %> td)
     |> tr
   in
-  let target_id = "location-table" in
   Component.DataTable.make
     ~align_top:true
-    ~target_id
+    ~target_id:"location-table"
     ~cols
     ~row
-    sort
+    data_table
     location_list
 ;;
 

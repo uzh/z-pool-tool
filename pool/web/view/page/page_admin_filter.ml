@@ -5,9 +5,12 @@ open Pool_common
 
 let list { Pool_context.language; _ } filter_list query =
   let url = Uri.of_string "/admin/filter" in
-  let sort =
-    Component.DataTable.
-      { url; query; language; search = Some Filter.searchable_by }
+  let data_table =
+    Component.DataTable.create_meta
+      ~search:Filter.searchable_by
+      url
+      query
+      language
   in
   let cols =
     let create_filter : [ | Html_types.flow5 ] elt =
@@ -30,7 +33,12 @@ let list { Pool_context.language; _ } filter_list query =
     |> CCList.map (CCList.return %> td)
     |> tr
   in
-  Component.DataTable.make ~target_id:"filters-list" ~cols ~row sort filter_list
+  Component.DataTable.make
+    ~target_id:"filters-list"
+    ~cols
+    ~row
+    data_table
+    filter_list
 ;;
 
 let index ({ Pool_context.language; _ } as context) filter_list query =

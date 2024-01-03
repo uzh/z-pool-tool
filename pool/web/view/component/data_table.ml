@@ -15,6 +15,8 @@ type data_table =
   ; search : Query.Column.t list option
   }
 
+let create_meta ?search url query language = { url; query; language; search }
+
 type col =
   [ `column of Query.Column.t
   | `custom of [ | Html_types.flow5 ] Tyxml_html.elt

@@ -53,9 +53,12 @@ end
 
 let list Pool_context.{ language; _ } tags query =
   let url = Uri.of_string (tags_path ()) in
-  let sort =
-    Component.DataTable.
-      { url; query; language; search = Some Tags.searchable_by }
+  let data_table =
+    Component.DataTable.create_meta
+      ~search:Tags.searchable_by
+      url
+      query
+      language
   in
   let cols =
     let create_tag : [ | Html_types.flow5 ] elt =
@@ -87,7 +90,7 @@ let list Pool_context.{ language; _ } tags query =
     |> CCList.map (CCList.return %> td)
     |> tr
   in
-  Component.DataTable.make ~target_id:"tags-table" ~cols ~row sort tags
+  Component.DataTable.make ~target_id:"tags-table" ~cols ~row data_table tags
 ;;
 
 let index (Pool_context.{ language; _ } as context) tags query =

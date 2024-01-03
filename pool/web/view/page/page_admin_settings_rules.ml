@@ -17,7 +17,7 @@ let list Pool_context.{ language; csrf; guardian; _ } rules query =
       guardian
   in
   let url = Uri.of_string (role_permission_path ()) in
-  let sort = Component.DataTable.{ url; query; language; search = None } in
+  let data_table = Component.DataTable.create_meta url query language in
   let cols =
     [ `column Guard.column_role
     ; `column Guard.column_action
@@ -63,7 +63,12 @@ let list Pool_context.{ language; csrf; guardian; _ } rules query =
     |> CCList.map (CCList.return %> td)
     |> tr
   in
-  Component.DataTable.make ~target_id:"permissions-table" ~cols ~row sort rules
+  Component.DataTable.make
+    ~target_id:"permissions-table"
+    ~cols
+    ~row
+    data_table
+    rules
 ;;
 
 let index (Pool_context.{ language; _ } as context) rules query =

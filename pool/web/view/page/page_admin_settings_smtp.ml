@@ -13,7 +13,7 @@ let base_path = function
 
 let list Pool_context.{ language; _ } location smtp_auth_list query =
   let url = Uri.of_string (base_path location) in
-  let sort = Component.DataTable.{ url; query; language; search = None } in
+  let data_table = Component.DataTable.create_meta url query language in
   let cols =
     let create_smtp : [ | Html_types.flow5 ] elt =
       Component.Input.link_as_button
@@ -69,7 +69,7 @@ let list Pool_context.{ language; _ } location smtp_auth_list query =
     ~target_id:"smtp-table"
     ~cols
     ~row
-    sort
+    data_table
     smtp_auth_list
 ;;
 
