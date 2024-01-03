@@ -63,7 +63,7 @@ let list translation_list Pool_context.{ language; csrf; _ } =
     ~a:[ a_class [ "safety-margin"; "trim"; "measure" ] ]
     [ h1
         ~a:[ a_class [ "heading-1" ] ]
-        [ txt Pool_common.(Utils.text_to_string Language.En I18n.I18nTitle) ]
+        [ txt Pool_common.(Utils.nav_link_to_string Language.En I18n.I18n) ]
     ; div ~a:[ a_class [ "stack-lg" ] ] translations
     ]
 ;;

@@ -7,6 +7,7 @@ let terms
   terms
   Pool_context.{ language; query_language; csrf; _ }
   =
+  let terms = terms |> I18n.content_to_string |> Unsafe.data in
   let open Pool_common in
   let externalize = Http_utils.externalize_path_with_lang query_language in
   let notifiaction =
@@ -29,8 +30,7 @@ let terms
     ; div
         ~a:[ a_class [ "stack" ] ]
         [ notifiaction
-        ; div
-            [ terms |> Settings.TermsAndConditions.Terms.value |> Unsafe.data ]
+        ; div [ terms ]
         ; form
             ~a:[ a_action submit_url; a_method `Post; a_class [ "stack" ] ]
             [ csrf_element csrf ()

@@ -14,7 +14,9 @@ let sign_up req =
     let%lwt custom_fields =
       Custom_field.all_prompted_on_registration database_label
     in
-    let%lwt terms = Settings.terms_and_conditions database_label language in
+    let%lwt terms =
+      I18n.find_by_key database_label I18n.Key.TermsAndConditions language
+    in
     Page.Contact.sign_up terms custom_fields context flash_fetcher
     |> create_layout req ~active_navigation:"/signup" context
     >|+ Sihl.Web.Response.of_html
@@ -234,7 +236,9 @@ let terms req =
   let result ({ Pool_context.database_label; language; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, "/login")
     @@ let* contact = Pool_context.find_contact context |> Lwt_result.lift in
-       let%lwt terms = Settings.terms_and_conditions database_label language in
+       let%lwt terms =
+         I18n.find_by_key database_label I18n.Key.TermsAndConditions language
+       in
        let notification =
          req
          |> Sihl.Web.Request.query "redirected"

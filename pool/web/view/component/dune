@@ -5,6 +5,7 @@
   experiment
   filter
   http_utils
+  i18n
   invitation
   message_template
   pool_location

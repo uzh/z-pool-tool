@@ -59,7 +59,6 @@ let to_string = function
   | FilterNrOfSentInvitations -> "Number of contacts already invited:"
   | FollowUpSessionFor -> "Follow-up for:"
   | HomeTitle -> "University Registration Center for Study Participants"
-  | I18nTitle -> "Translations"
   | ImportConfirmationNote ->
     "Please enter a new password. The rest of your data has been automatically \
      taken over."
@@ -162,7 +161,7 @@ let nav_link_to_string = function
   | ExternalDataIds -> "External data ids"
   | Field field -> Locales_en.field_to_string field |> CCString.capitalize_ascii
   | Filter -> "Filter"
-  | I18n -> "Translations"
+  | I18n -> "Texts"
   | Invitations -> "Invitations"
   | Locations -> "Locations"
   | Login -> "Login"

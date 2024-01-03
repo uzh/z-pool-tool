@@ -7,11 +7,9 @@ type create =
   }
 [@@deriving eq, show]
 
-type edit = { content : Content.t } [@@deriving eq, show]
-
 type event =
   | Created of create
-  | Updated of t * edit
+  | Updated of t * Content.t
 [@@deriving eq, show]
 
 let insert_i18n pool i18n =
@@ -27,9 +25,5 @@ let handle_event pool : event -> unit Lwt.t = function
   | Created create ->
     let i18n = Entity.create create.key create.language create.content in
     insert_i18n pool i18n
-  | Updated (property, update) ->
-    let%lwt () =
-      { property with content = update.content } |> Repo.update pool
-    in
-    Lwt.return_unit
+  | Updated (m, content) -> { m with content } |> Repo.update pool
 ;;

@@ -33,7 +33,6 @@ type t =
   | FilterNrOfSentInvitations
   | FollowUpSessionFor
   | HomeTitle
-  | I18nTitle
   | ImportConfirmationNote
   | ImportConfirmationTitle
   | ImportPendingNote

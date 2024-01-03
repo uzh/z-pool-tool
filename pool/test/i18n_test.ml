@@ -6,19 +6,34 @@ let database_label = Test_utils.Data.database_label
 
 let update_terms_and_conditions () =
   let languages = Pool_common.Language.[ En; De ] in
+  let content = "Terms and Conditions" in
+  let terms =
+    CCList.map
+      (fun lang ->
+        I18n.create
+          I18n.Key.TermsAndConditions
+          lang
+          (I18n.Content.of_string content))
+      languages
+  in
   let events =
-    [ "EN", [ "Terms and Conditions" ]; "DE", [ "Nutzungsbedingungen" ] ]
-    |> Cqrs_command.Settings_command.UpdateTermsAndConditions.handle languages
+    let open CCResult in
+    let open I18nCommand.Update in
+    terms
+    |> CCList.map (fun i18n ->
+      [ Common.Message.Field.(show Translation), [ content ] ]
+      |> decode
+      >>= handle i18n)
+    |> CCResult.flatten_l
+    |> CCResult.map CCList.flatten
   in
   let expected =
-    let open CCResult in
-    let* terms =
-      [ "EN", "Terms and Conditions"; "DE", "Nutzungsbedingungen" ]
-      |> CCList.map (fun (language, content) ->
-        Settings.TermsAndConditions.create language content)
-      |> CCResult.flatten_l
-    in
-    Ok [ Settings.TermsAndConditionsUpdated terms |> Pool_event.settings ]
+    terms
+    |> CCList.map (fun i18n ->
+      let content = I18n.Content.of_string content in
+      [ I18n.Updated (i18n, content) |> Pool_event.i18n ])
+    |> CCList.flatten
+    |> CCResult.return
   in
   Alcotest.(
     check

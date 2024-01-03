@@ -5,6 +5,7 @@ module Key : sig
     | PasswordPolicyText
     | PrivacyPolicy
     | SignUpCTA
+    | TermsAndConditions
     | WelcomeText
 
   val create : string -> (t, Pool_common.Message.error) result
@@ -36,8 +37,6 @@ type create =
   ; content : Content.t
   }
 
-type edit = { content : Content.t }
-
 val id : t -> Pool_common.Id.t
 val key : t -> Key.t
 val language : t -> Pool_common.Language.t
@@ -46,7 +45,7 @@ val content_to_string : t -> string
 
 type event =
   | Created of create
-  | Updated of t * edit
+  | Updated of t * Content.t
 
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
@@ -72,6 +71,7 @@ val find_by_key_opt
   -> t option Lwt.t
 
 val find_all : Pool_database.Label.t -> unit -> t list Lwt.t
+val terms_and_conditions_last_updated : Pool_database.Label.t -> Ptime.t Lwt.t
 
 module I18nPageCache : sig
   val clear : unit -> unit

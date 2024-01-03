@@ -139,6 +139,29 @@ module Sql = struct
   let delete_by_key pool =
     Utils.Database.exec (Pool_database.Label.value pool) delete_by_key_request
   ;;
+
+  let terms_and_conditions_last_updated_request =
+    let open Caqti_request.Infix in
+    {sql|
+        SELECT
+          updated_at
+        FROM
+          pool_i18n
+        WHERE
+          i18n_key = ?
+        ORDER BY
+          pool_i18n.updated_at DESC
+        LIMIT 1
+      |sql}
+    |> Caqti_type.(string ->! ptime)
+  ;;
+
+  let terms_and_conditions_last_updated database_label =
+    Utils.Database.find
+      (Pool_database.Label.value database_label)
+      terms_and_conditions_last_updated_request
+      Entity.Key.(show TermsAndConditions)
+  ;;
 end
 
 let find = Sql.find
@@ -149,3 +172,4 @@ let find_all = Sql.find_all
 let insert = Sql.insert
 let update = Sql.update
 let delete_by_key = Sql.delete_by_key
+let terms_and_conditions_last_updated = Sql.terms_and_conditions_last_updated

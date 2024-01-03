@@ -7,28 +7,16 @@ module UpdateLanguages : sig
 
   val handle
     :  ?tags:Logs.Tag.set
-    -> Settings.TermsAndConditions.t list
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 end = struct
   type t = Pool_common.Language.t list
 
-  let handle ?(tags = Logs.Tag.empty) terms command =
+  let handle ?(tags = Logs.Tag.empty) command =
     Logs.info ~src (fun m -> m "Handle command UpdateLanguage" ~tags);
-    let open CCResult in
     match CCList.length command > 0 with
     | false -> Error Pool_common.Message.(NoOptionSelected Field.Language)
-    | true ->
-      let open CCResult.Infix in
-      let terms = CCList.map Settings.TermsAndConditions.value terms in
-      CCList.map
-        (fun l ->
-          CCList.assoc_opt ~eq:Pool_common.Language.equal l terms
-          |> CCOption.to_result Pool_common.Message.TermsAndConditionsMissing)
-        command
-      |> CCResult.flatten_l
-      >>= CCFun.const
-            (Ok [ Settings.LanguagesUpdated command |> Pool_event.settings ])
+    | true -> Ok [ Settings.LanguagesUpdated command |> Pool_event.settings ]
   ;;
 
   let effects = Settings.Guard.Access.update
@@ -253,62 +241,6 @@ end = struct
   let decode data =
     Conformist.decode_and_validate schema data
     |> CCResult.map_err Pool_common.Message.to_conformist_error
-  ;;
-
-  let effects = Settings.Guard.Access.update
-end
-
-module UpdateTermsAndConditions : sig
-  include Common.CommandSig with type t = (string * string list) list
-
-  val handle
-    :  ?tags:Logs.Tag.set
-    -> Pool_common.Language.t list
-    -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
-end = struct
-  type t = (string * string list) list
-
-  let handle ?(tags = Logs.Tag.empty) tenant_languages urlencoded =
-    Logs.info ~src (fun m -> m "Handle command UpdateTermsAndConditions" ~tags);
-    let open CCResult in
-    let ignore_emtpy =
-      CCList.filter_map (fun (lang, terms) ->
-        match lang, terms with
-        | _, None | _, Some "" | "_csrf", _ -> None
-        | _, Some terms -> Some (lang, terms))
-    in
-    let tenant_languages_are_set terms =
-      let result =
-        CCResult.flatten_l
-        @@ CCList.map
-             (fun tenant_language ->
-               CCList.assoc_opt
-                 ~eq:CCString.equal
-                 (tenant_language |> Pool_common.Language.show)
-                 terms
-               |> CCOption.to_result ())
-             tenant_languages
-      in
-      match result with
-      | Error _ -> Error Pool_common.Message.RequestRequiredFields
-      | Ok _ -> Ok terms
-    in
-    let* terms_and_conditions =
-      urlencoded
-      |> CCList.map (fun (l, t) -> l, CCList.head_opt t)
-      |> ignore_emtpy
-      |> tenant_languages_are_set
-      >>= fun urlencoded ->
-      CCResult.flatten_l
-        (CCList.map
-           (CCFun.uncurry Settings.TermsAndConditions.create)
-           urlencoded)
-    in
-    Ok
-      [ Settings.TermsAndConditionsUpdated terms_and_conditions
-        |> Pool_event.settings
-      ]
   ;;
 
   let effects = Settings.Guard.Access.update

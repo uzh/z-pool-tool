@@ -58,7 +58,6 @@ let to_string = function
   | ExperimentListPublicTitle -> "Neuanmeldung zu Experiment-Sessions"
   | ExperimentWaitingListTitle -> "Warteliste"
   | HomeTitle -> "Universitäre Anmeldestelle für Studienteilnehmende"
-  | I18nTitle -> "Übersetzungen"
   | ImportConfirmationNote ->
     "Bitte geben Sie ein neues Paswort an. Ihre restlichen Angaben wurden \
      automatisch übernommen."
@@ -163,7 +162,7 @@ let nav_link_to_string = function
   | ExternalDataIds -> "Externe Daten Identifikatoren"
   | Filter -> "Filter"
   | Field field -> Locales_de.field_to_string field |> CCString.capitalize_ascii
-  | I18n -> "Übersetzungen"
+  | I18n -> "Texte"
   | Invitations -> "Einladungen"
   | Locations -> "Standorte"
   | LoginInformation -> "Anmeldeinformationen"
