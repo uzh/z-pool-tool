@@ -187,3 +187,17 @@ let set_close_default_values ({ no_show; participated; _ } as m) =
 ;;
 
 let boolean_fields = Pool_common.Message.Field.[ NoShow; Participated ]
+
+open Pool_common.Message
+
+let columns_canceled_at =
+  (Field.CanceledAt, "pool_assignments.canceled_at") |> Query.Column.create
+;;
+
+let searchable_by = Pool_user.searchable_by
+let sortable_by = searchable_by @ [ columns_canceled_at ]
+let default_sort = Pool_user.default_sort
+
+let default_query =
+  Query.{ pagination = None; search = None; sort = Some default_sort }
+;;

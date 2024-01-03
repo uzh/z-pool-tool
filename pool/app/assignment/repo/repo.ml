@@ -130,6 +130,19 @@ module Sql = struct
       (Session.Id.value id)
   ;;
 
+  let query_by_session ?query pool id =
+    let where =
+      ( "pool_assignments.session_uuid = UNHEX(REPLACE(?, '-', ''))"
+      , Dynparam.(empty |> add Pool_common.Repo.Id.t id) )
+    in
+    Query.collect_and_count
+      pool
+      query
+      ~select:(find_request_sql ?additional_joins:None)
+      ~where
+      Repo_entity.t
+  ;;
+
   let find_deleted_by_session_request () =
     let open Caqti_request.Infix in
     {sql|
@@ -492,3 +505,4 @@ let contact_participation_in_other_assignments =
 let find_uncanceled_by_session = find_by_session `Uncanceled
 let find_deleted_by_session = find_by_session `Deleted
 let find_by_session = find_by_session `All
+let query_by_session = Sql.query_by_session

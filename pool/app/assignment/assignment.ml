@@ -18,6 +18,7 @@ let find_all_by_experiment_and_contact_opt =
 ;;
 
 let find_by_session = Repo.find_by_session
+let query_by_session = Repo.query_by_session
 let find_uncanceled_by_session = Repo.find_uncanceled_by_session
 let find_deleted_by_session = Repo.find_deleted_by_session
 let find_with_follow_ups = Repo.find_with_follow_ups

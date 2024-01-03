@@ -154,6 +154,12 @@ val find_all_by_experiment_and_contact_opt
 
 val find_by_session : Pool_database.Label.t -> Session.Id.t -> t list Lwt.t
 
+val query_by_session
+  :  ?query:Query.t
+  -> Pool_database.Label.t
+  -> Pool_common.Repo.Id.t
+  -> (t list * Query.t) Lwt.t
+
 val find_uncanceled_by_session
   :  Pool_database.Label.t
   -> Session.Id.t
@@ -180,6 +186,10 @@ val find_external_data_identifiers_by_contact
   -> ExternalDataIdentifier.t list Lwt.t
 
 val group_by_contact : t list -> (Contact.t * t list) list
+val searchable_by : Query.Column.t list
+val sortable_by : Query.Column.t list
+val default_sort : Query.Sort.t
+val default_query : Query.t
 
 type event =
   | Canceled of t
