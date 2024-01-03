@@ -3,7 +3,6 @@ module Reminder = Pool_common.Reminder
 module TimeUnit = Pool_common.Model.TimeUnit
 open CCFun
 
-(* TODO: DRY *)
 type reschedule =
   { start : Session.Start.t
   ; duration : int
@@ -335,7 +334,7 @@ end = struct
     assignments
     experiment
     create_message
-    ({ start; duration; duration_unit } : reschedule)
+    ({ start; duration; duration_unit } : t)
     =
     Logs.info ~src (fun m -> m "Handle command Reschedule" ~tags);
     let open CCResult in
