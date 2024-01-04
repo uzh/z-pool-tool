@@ -259,13 +259,12 @@ let show
         ~a:(form_attrs action)
         [ csrf_element csrf ()
         ; timespan_picker
-            ~label_field:field
             ~hints:[ I18n.TimeSpanPickerHint ]
             ~value:(value |> encode)
             ~required:true
             ~flash_fetcher
             language
-            Message.Field.LeadTime
+            field
         ; submit ()
         ]
     in
