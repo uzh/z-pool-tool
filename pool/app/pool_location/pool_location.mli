@@ -365,7 +365,6 @@ end
 
 val column_name : Query.Column.t
 val column_description : Query.Column.t
-val column_location : Query.Column.t
 val default_query : Query.t
 val searchable_by : Query.Column.t list
 val sortable_by : Query.Column.t list

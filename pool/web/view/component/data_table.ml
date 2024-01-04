@@ -8,11 +8,14 @@ let hx_get ~url ~target =
   ]
 ;;
 
-type sort =
+type data_table =
   { url : Uri.t
   ; query : Query.t
   ; language : Pool_common.Language.t
+  ; search : Query.Column.t list option
   }
+
+let create_meta ?search url query language = { url; query; language; search }
 
 type col =
   [ `column of Query.Column.t
@@ -94,18 +97,38 @@ let make_header target_id cols sort =
 ;;
 
 let make
-  ?(layout = `Striped)
   ?(align_last_end = true)
+  ?align_top
+  ?(layout = `Striped)
   ~target_id
   ~cols
   ~row
-  sort
+  data_table
   items
   =
-  let thead = make_header target_id cols sort in
+  let default = txt "" in
+  let search_bar =
+    data_table.search
+    |> CCOption.map_or
+         ~default
+         (Component_list.searchbar
+            ~url:data_table.url
+            ~target_id
+            data_table.language
+            data_table.query)
+  in
+  let pagination =
+    data_table.query.Query.pagination
+    |> CCOption.map_or
+         ~default
+         (Component_list.pagination data_table.language data_table.query)
+  in
+  let thead = make_header target_id cols data_table in
   let rows = CCList.map row items in
   let classes =
-    a_class (Component_table.table_classes layout ~align_last_end ())
+    a_class (Component_table.table_classes ?align_top layout ~align_last_end ())
   in
-  table ~a:[ classes ] ~thead rows
+  div
+    ~a:[ a_class [ "stack" ]; a_id target_id ]
+    [ search_bar; table ~a:[ classes ] ~thead rows; pagination ]
 ;;

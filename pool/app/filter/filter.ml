@@ -5,8 +5,8 @@ module Human = Entity_human
 module UtilsF = Filter_utils
 
 let find = Repo.find
-let find_by = Repo.find_by
 let find_all_templates = Repo.find_all_templates
+let find_templates_by = Repo.find_templates_by
 let find_template = Repo.find_template
 let find_templates_of_query = Repo.find_templates_of_query
 let find_multiple_templates = Repo.find_multiple_templates

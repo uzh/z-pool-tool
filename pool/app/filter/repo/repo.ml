@@ -15,25 +15,15 @@ let sql_select_columns =
 ;;
 
 module Sql = struct
-  let select_filter_sql where_fragment =
-    let select_from =
-      {sql|
-        SELECT
-          LOWER(CONCAT(
-            SUBSTR(HEX(pool_filter.uuid), 1, 8), '-',
-            SUBSTR(HEX(pool_filter.uuid), 9, 4), '-',
-            SUBSTR(HEX(pool_filter.uuid), 13, 4), '-',
-            SUBSTR(HEX(pool_filter.uuid), 17, 4), '-',
-            SUBSTR(HEX(pool_filter.uuid), 21)
-          )),
-          pool_filter.query,
-          pool_filter.title,
-          pool_filter.created_at,
-          pool_filter.updated_at
-        FROM pool_filter
-      |sql}
+  let find_request_sql ?(count = false) ?joins where_fragment =
+    let columns =
+      if count then "COUNT(*)" else sql_select_columns |> CCString.concat ", "
     in
-    Format.asprintf "%s %s" select_from where_fragment
+    Format.asprintf
+      {sql|SELECT %s FROM pool_filter %s %s|sql}
+      columns
+      (joins |> CCOption.value ~default:"")
+      where_fragment
   ;;
 
   let find_request =
@@ -41,7 +31,7 @@ module Sql = struct
     {sql|
       WHERE pool_filter.uuid = UNHEX(REPLACE(?, '-', ''))
     |sql}
-    |> select_filter_sql
+    |> find_request_sql
     |> Caqti_type.string ->! Repo_entity.t
   ;;
 
@@ -54,13 +44,19 @@ module Sql = struct
     ||> CCOption.to_result Pool_common.Message.(NotFound Field.Filter)
   ;;
 
-  let component_base_query =
+  let joins_experiment =
     {sql|
       LEFT JOIN pool_experiments
         ON pool_filter.uuid = pool_experiments.filter_uuid
-      WHERE pool_experiments.filter_uuid IS NULL
-        AND pool_filter.title IS NOT NULL
     |sql}
+  ;;
+
+  let template_condition =
+    "pool_experiments.filter_uuid IS NULL AND pool_filter.title IS NOT NULL"
+  ;;
+
+  let component_base_query =
+    Format.asprintf "%s WHERE %s" joins_experiment template_condition
   ;;
 
   let find_template_request =
@@ -68,7 +64,7 @@ module Sql = struct
     Format.asprintf
       "%s AND pool_filter.uuid = UNHEX(REPLACE(?, '-', ''))"
       component_base_query
-    |> select_filter_sql
+    |> find_request_sql
     |> Caqti_type.string ->! Repo_entity.t
   ;;
 
@@ -84,7 +80,7 @@ module Sql = struct
   let find_all_templates_request =
     let open Caqti_request.Infix in
     component_base_query
-    |> select_filter_sql
+    |> find_request_sql
     |> Caqti_type.unit ->* Repo_entity.t
   ;;
 
@@ -92,6 +88,16 @@ module Sql = struct
     Utils.Database.collect
       (Pool_database.Label.value pool)
       find_all_templates_request
+  ;;
+
+  let find_templates_by query pool =
+    let where = template_condition, Dynparam.empty in
+    Query.collect_and_count
+      pool
+      (Some query)
+      ~select:(find_request_sql ~joins:joins_experiment)
+      ~where
+      Repo_entity.t
   ;;
 
   let find_multiple_request ids =
@@ -103,7 +109,7 @@ module Sql = struct
          (fun i _ -> Format.asprintf "UNHEX(REPLACE($%n, '-', ''))" (i + 1))
          ids
        |> CCString.concat ",")
-    |> select_filter_sql
+    |> find_request_sql
   ;;
 
   let find_multiple_templates pool ids =
@@ -556,29 +562,11 @@ module Sql = struct
     ||> CCOption.value ~default:0
     ||> CCResult.return
   ;;
-
-  let select_count where_fragment =
-    Format.asprintf
-      {sql|
-        SELECT COUNT(*)
-        FROM pool_filter
-        %s
-      |sql}
-      where_fragment
-  ;;
-
-  let find_by query pool =
-    let select ?(count = false) fragment =
-      let where = component_base_query ^ "  " ^ fragment in
-      if count then select_count where else select_filter_sql where
-    in
-    Query.collect_and_count pool (Some query) ~select Repo_entity.t
-  ;;
 end
 
 let find = Sql.find
-let find_by = Sql.find_by
 let find_all_templates = Sql.find_all_templates
+let find_templates_by = Sql.find_templates_by
 let find_template = Sql.find_template
 let find_multiple_templates = Sql.find_multiple_templates
 let find_templates_of_query = Sql.find_templates_of_query

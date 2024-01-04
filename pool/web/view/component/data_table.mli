@@ -17,12 +17,21 @@
     table. *)
 
 (** The sort configuration of the table. *)
-type sort =
+type data_table =
   { url : Uri.t (** the URL to which to make the sort requests *)
   ; query : Query.t (** the current URL query string *)
   ; language : Pool_common.Language.t
   (** the language in which to show the table *)
+  ; search : Query.Column.t list option
+  (** the columns that can be searched for *)
   }
+
+val create_meta
+  :  ?search:Query.Column.t list
+  -> Uri.t
+  -> Query.t
+  -> Pool_common.Language.t
+  -> data_table
 
 (** A column in the table. Use [`column] for actual database columns, and use [`custom] for arbitrary elements. *)
 type col =
@@ -33,11 +42,12 @@ type col =
   ]
 
 val make
-  :  ?layout:[ `Striped | `Simple ]
-  -> ?align_last_end:bool
+  :  ?align_last_end:bool
+  -> ?align_top:bool
+  -> ?layout:[ `Striped | `Simple ]
   -> target_id:string
   -> cols:col list
   -> row:('a -> [< Html_types.table_content_fun ] Tyxml_html.elt)
-  -> sort
+  -> data_table
   -> 'a list
-  -> [> Html_types.table ] Tyxml_html.elt
+  -> [> Html_types.div ] Tyxml_html.elt

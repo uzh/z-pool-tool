@@ -197,7 +197,11 @@ val find
   -> (t, Pool_common.Message.error) result Lwt.t
 
 val find_all_templates : Pool_database.Label.t -> unit -> t list Lwt.t
-val find_by : Query.t -> Pool_database.Label.t -> (t list * Query.t) Lwt.t
+
+val find_templates_by
+  :  Query.t
+  -> Pool_database.Label.t
+  -> (t list * Query.t) Lwt.t
 
 val find_template
   :  Pool_database.Label.t

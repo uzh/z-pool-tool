@@ -50,11 +50,12 @@ let form { Pool_context.language; csrf; _ } organisational_unit =
 
 let list { Pool_context.language; _ } organizations query =
   let open Pool_common in
+  let open Component in
   let url = Uri.of_string (ou_path ()) in
-  let sort = Component.Sortable_table.{ url; query; language } in
+  let data_table = Component.DataTable.create_meta url query language in
   let cols =
     let create_btn : [ | Html_types.flow5 ] elt =
-      Component.Input.link_as_button
+      Input.link_as_button
         ~style:`Success
         ~icon:Icon.Add
         ~control:(language, Message.(Add (Some Field.OrganisationalUnit)))
@@ -65,23 +66,17 @@ let list { Pool_context.language; _ } organizations query =
   let row (org : Organisational_unit.t) =
     let open Organisational_unit in
     [ txt (Name.value org.name)
-    ; Component.Input.edit_link (ou_path ~id:org.id ~suffix:"edit" ())
+    ; Input.edit_link (ou_path ~id:org.id ~suffix:"edit" ())
     ]
     |> CCList.map (CCList.return %> td)
     |> tr
   in
-  let target_id = "organisations-table" in
-  let open Component in
-  div
-    ~a:[ a_id target_id ]
-    [ List.create
-        ~url
-        ~target_id
-        language
-        (Sortable_table.make ~target_id ~cols ~row sort)
-        []
-        (organizations, query)
-    ]
+  Component.DataTable.make
+    ~target_id:"organisations-table"
+    ~cols
+    ~row
+    data_table
+    organizations
 ;;
 
 let index ({ Pool_context.language; _ } as context) organizations query =

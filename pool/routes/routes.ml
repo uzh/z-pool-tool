@@ -730,7 +730,7 @@ module Admin = struct
           ; post "" ~middlewares:[ Access.update ] update
           ]
         in
-        [ get "" ~middlewares:[ Access.index ] show
+        [ get "" ~middlewares:[ Access.index ] index
         ; get "/create" ~middlewares:[ Access.create ] new_form
         ; post "" ~middlewares:[ Access.create ] create
         ; post "/search" ~middlewares:[ Access.search ] search

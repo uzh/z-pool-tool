@@ -295,7 +295,13 @@ let assign_contact_form { Pool_context.csrf; language; _ } contact =
 let list Pool_context.{ language; _ } contacts query =
   let open Pool_common in
   let url = Uri.of_string "/admin/contacts" in
-  let sort = Component.Sortable_table.{ url; query; language } in
+  let data_table =
+    Component.DataTable.create_meta
+      ~search:Contact.searchable_by
+      url
+      query
+      language
+  in
   let cols =
     [ `field (Message.Field.Name, Contact.column_name)
     ; `column Contact.column_email
@@ -315,16 +321,12 @@ let list Pool_context.{ language; _ } contacts query =
     |> CCList.map (CCList.return %> td)
     |> tr ~a
   in
-  let target_id = "contacts-list" in
-  let open Component in
-  List.create
-    ~url
-    ~target_id
-    ~legend:(Status.status_icons_table_legend language `All)
-    language
-    (Sortable_table.make ~target_id ~cols ~row sort)
-    Contact.searchable_by
-    (contacts, query)
+  Component.DataTable.make
+    ~target_id:"contacts-list"
+    ~cols
+    ~row
+    data_table
+    contacts
 ;;
 
 let index ({ Pool_context.language; _ } as context) contacts query =
@@ -333,7 +335,11 @@ let index ({ Pool_context.language; _ } as context) contacts query =
     [ h1
         ~a:[ a_class [ "heading-1" ] ]
         [ txt Pool_common.(Utils.nav_link_to_string language I18n.Contacts) ]
-    ; list context contacts query
+    ; div
+        ~a:[ a_class [ "stack" ] ]
+        [ Status.status_icons_table_legend language `All
+        ; list context contacts query
+        ]
     ]
 ;;
 

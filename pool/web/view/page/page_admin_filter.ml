@@ -4,9 +4,14 @@ open Tyxml.Html
 open Pool_common
 
 let list { Pool_context.language; _ } filter_list query =
-  let target_id = "filters-list" in
   let url = Uri.of_string "/admin/filter" in
-  let sort = Component.Sortable_table.{ url; query; language } in
+  let data_table =
+    Component.DataTable.create_meta
+      ~search:Filter.searchable_by
+      url
+      query
+      language
+  in
   let cols =
     let create_filter : [ | Html_types.flow5 ] elt =
       Component.Input.link_as_button
@@ -28,17 +33,12 @@ let list { Pool_context.language; _ } filter_list query =
     |> CCList.map (CCList.return %> td)
     |> tr
   in
-  let open Component in
-  div
-    ~a:[ a_id target_id ]
-    [ List.create
-        ~url
-        ~target_id
-        language
-        (Sortable_table.make ~target_id ~cols ~row sort)
-        []
-        (filter_list, query)
-    ]
+  Component.DataTable.make
+    ~target_id:"filters-list"
+    ~cols
+    ~row
+    data_table
+    filter_list
 ;;
 
 let index ({ Pool_context.language; _ } as context) filter_list query =

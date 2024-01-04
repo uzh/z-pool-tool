@@ -3,10 +3,9 @@ open Tyxml.Html
 module HttpUtils = Http_utils
 
 let list Pool_context.{ language; _ } schedules query =
-  let target_id = "schedule-table" in
   let open Pool_common in
   let url = Uri.of_string "/admin/settings/schedules" in
-  let sort = Component.Sortable_table.{ url; query; language } in
+  let data_table = Component.DataTable.create_meta url query language in
   let cols =
     [ `column Schedule.column_label
     ; `column Schedule.column_scheduled_time
@@ -39,17 +38,12 @@ let list Pool_context.{ language; _ } schedules query =
     |> CCList.map (CCList.return %> td)
     |> tr
   in
-  let open Component in
-  div
-    ~a:[ a_id target_id ]
-    [ List.create
-        ~url
-        ~target_id
-        language
-        (Sortable_table.make ~target_id ~cols ~row sort)
-        []
-        (schedules, query)
-    ]
+  Component.DataTable.make
+    ~target_id:"schedule-table"
+    ~cols
+    ~row
+    data_table
+    schedules
 ;;
 
 let index (Pool_context.{ language; _ } as context) schedules query =

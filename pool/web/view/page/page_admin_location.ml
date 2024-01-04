@@ -22,7 +22,13 @@ let descriptions_all_languages (location : Pool_location.t) =
 
 let list Pool_context.{ language; _ } location_list query =
   let url = Uri.of_string "/admin/locations" in
-  let sort = Component.Sortable_table.{ url; query; language } in
+  let data_table =
+    Component.DataTable.create_meta
+      ~search:Pool_location.searchable_by
+      url
+      query
+      language
+  in
   let cols =
     let create_filter : [ | Html_types.flow5 ] elt =
       Component.Input.link_as_button
@@ -36,10 +42,11 @@ let list Pool_context.{ language; _ } location_list query =
     ; `column Pool_location.column_description
     ; `custom
         (span
-           [ Component.Table.field_to_txt
-               language
-               (Query.Column.field Pool_location.column_location)
-           ])
+           Pool_common.
+             [ Utils.text_to_string language I18n.Address
+               |> CCString.capitalize_ascii
+               |> txt
+             ])
     ; `custom create_filter
     ]
   in
@@ -56,18 +63,13 @@ let list Pool_context.{ language; _ } location_list query =
     |> CCList.map (CCList.return %> td)
     |> tr
   in
-  let target_id = "location-table" in
-  let open Component in
-  div
-    ~a:[ a_id target_id ]
-    [ List.create
-        ~url
-        ~target_id
-        language
-        (Sortable_table.make ~target_id ~cols ~row sort)
-        []
-        (location_list, query)
-    ]
+  Component.DataTable.make
+    ~align_top:true
+    ~target_id:"location-table"
+    ~cols
+    ~row
+    data_table
+    location_list
 ;;
 
 let index (Pool_context.{ language; _ } as context) location_list query =
