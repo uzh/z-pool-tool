@@ -190,12 +190,36 @@ let boolean_fields = Pool_common.Message.Field.[ NoShow; Participated ]
 
 open Pool_common.Message
 
-let columns_canceled_at =
+let column_canceled_at =
   (Field.CanceledAt, "pool_assignments.canceled_at") |> Query.Column.create
 ;;
 
-let searchable_by = Pool_user.searchable_by
-let sortable_by = searchable_by @ [ columns_canceled_at ]
+let column_external_data_id =
+  (Field.ExternalDataId, "pool_assignments.external_data_id")
+  |> Query.Column.create
+;;
+
+let column_no_show =
+  (Field.NoShowAbr, "pool_assignments.no_show") |> Query.Column.create
+;;
+
+let column_participated =
+  (Field.ParticipatedAbr, "pool_assignments.participated")
+  |> Query.Column.create
+;;
+
+let searchable_by = Pool_user.searchable_by @ [ column_external_data_id ]
+
+let sortable_by =
+  searchable_by
+  @ [ column_canceled_at
+    ; column_no_show
+    ; column_participated
+    ; column_external_data_id
+    ; Contact.column_cell_phone
+    ]
+;;
+
 let default_sort = Pool_user.default_sort
 
 let default_query =

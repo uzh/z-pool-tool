@@ -236,6 +236,7 @@ module Preview : sig
   val email_address : t -> Pool_user.EmailAddress.t
 end
 
+val column_cell_phone : Query.Column.t
 val searchable_by : Query.Column.t list
 val sortable_by : Query.Column.t list
 val default_sort : Query.Sort.t

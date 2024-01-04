@@ -157,7 +157,7 @@ val find_by_session : Pool_database.Label.t -> Session.Id.t -> t list Lwt.t
 val query_by_session
   :  ?query:Query.t
   -> Pool_database.Label.t
-  -> Pool_common.Repo.Id.t
+  -> Session.Id.t
   -> (t list * Query.t) Lwt.t
 
 val find_uncanceled_by_session
@@ -186,6 +186,10 @@ val find_external_data_identifiers_by_contact
   -> ExternalDataIdentifier.t list Lwt.t
 
 val group_by_contact : t list -> (Contact.t * t list) list
+val column_canceled_at : Query.Column.t
+val column_no_show : Query.Column.t
+val column_participated : Query.Column.t
+val column_external_data_id : Query.Column.t
 val searchable_by : Query.Column.t list
 val sortable_by : Query.Column.t list
 val default_sort : Query.Sort.t

@@ -170,8 +170,12 @@ let session_page database_label req context session experiment =
   function
   | `Detail ->
     let%lwt current_tags = current_tags () in
+    let query =
+      let open Assignment in
+      Query.from_request ~searchable_by ~sortable_by ~default:default_query req
+    in
     let%lwt assignments =
-      Assignment.find_by_session database_label session_id
+      Assignment.query_by_session ~query database_label session_id
     in
     let access_contact_profiles =
       can_access_contact_profile context experiment_id
@@ -279,6 +283,63 @@ let session_page database_label req context session experiment =
     |> Lwt_result.return
 ;;
 
+let show req =
+  let open Helpers.Guard in
+  let experiment_id = experiment_id req in
+  let session_id = session_id req in
+  let error_path =
+    Format.asprintf "/admin/experiments/%s" (Experiment.Id.value experiment_id)
+  in
+  let experiment_target_id =
+    [ Guard.Uuid.target_of Experiment.Id.value experiment_id ]
+  in
+  HttpUtils.Htmx.handler
+    ~error_path
+    ~create_layout
+    ~query:(module Assignment)
+    req
+  @@ fun ({ Pool_context.database_label; _ } as context) query ->
+  let open Utils.Lwt_result.Infix in
+  let* experiment = Experiment.find database_label experiment_id in
+  let* session = Session.find database_label session_id in
+  let view_contact_name = can_read_contact_name context experiment_target_id in
+  let view_contact_info = can_read_contact_info context experiment_target_id in
+  let access_contact_profiles =
+    can_access_contact_profile context experiment_id
+  in
+  let%lwt assignments =
+    Assignment.query_by_session ~query database_label session_id
+  in
+  match HttpUtils.Htmx.is_hx_request req with
+  | false ->
+    let%lwt current_tags =
+      Tags.ParticipationTags.(
+        find_all database_label (Session (Session.Id.to_common session_id)))
+    in
+    Page.Admin.Session.detail
+      ~access_contact_profiles
+      ~view_contact_name
+      ~view_contact_info
+      context
+      experiment
+      session
+      current_tags
+      assignments
+    |> Lwt_result.ok
+  | true ->
+    Page.Admin.Assignment.(
+      data_table
+        ~access_contact_profiles
+        ~view_contact_name
+        ~view_contact_info
+        Assignments
+        context
+        experiment
+        session
+        assignments)
+    |> Lwt_result.return
+;;
+
 let detail page req =
   let open Utils.Lwt_result.Infix in
   let session_id = session_id req in
@@ -305,7 +366,6 @@ let detail page req =
   result |> HttpUtils.extract_happy_path ~src req
 ;;
 
-let show = detail `Detail
 let edit = detail `Edit
 let reschedule_form = detail `Reschedule
 let cancel_form = detail `Cancel

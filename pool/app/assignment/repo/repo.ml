@@ -133,7 +133,7 @@ module Sql = struct
   let query_by_session ?query pool id =
     let where =
       ( "pool_assignments.session_uuid = UNHEX(REPLACE(?, '-', ''))"
-      , Dynparam.(empty |> add Pool_common.Repo.Id.t id) )
+      , Dynparam.(empty |> add Session.Repo.Id.t id) )
     in
     Query.collect_and_count
       pool

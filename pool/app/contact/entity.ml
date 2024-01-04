@@ -207,6 +207,12 @@ module Preview = struct
 end
 
 let profile_completion_cookie = "profile_completion"
+
+let column_cell_phone =
+  (Pool_common.Message.Field.CellPhone, "pool_contacts.cell_phone")
+  |> Query.Column.create
+;;
+
 let searchable_by = Pool_user.searchable_by
 let sortable_by = Pool_user.sortable_by
 let default_sort = Pool_user.default_sort
