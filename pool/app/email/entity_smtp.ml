@@ -180,7 +180,10 @@ let searchable_by =
 ;;
 
 let default_sort_column = column_created_at
-let sortable_by = default_sort_column :: searchable_by
+
+let sortable_by =
+  [ default_sort_column; column_smtp_default_account ] @ searchable_by
+;;
 
 let default_query =
   let open Query in
