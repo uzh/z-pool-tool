@@ -100,7 +100,7 @@ module Partials = struct
   ;;
 
   module ReminderModal = struct
-    let modal_id id = Format.asprintf "%s-reminder" (Assignment.Id.value id)
+    let modal_id id = Format.asprintf "reminder-%s" (Assignment.Id.value id)
     let control = Pool_common.Message.(Send (Some Field.Reminder))
     let title language = Pool_common.(Utils.control_to_string language control)
 
