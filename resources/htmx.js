@@ -13,5 +13,6 @@ export const initHTMX = () => {
     document.addEventListener('htmx:afterSwap', (e) => {
         initSearch(e.detail.elt)
         initNotification()
+        // TODO: Check if js_add_modal_close_listener can be called here generally, maybe integrate to framework
     })
 }

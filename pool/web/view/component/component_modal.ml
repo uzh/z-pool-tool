@@ -54,7 +54,7 @@ let js_modal_add_spinner =
 
 let js_add_modal_close_listener =
   {js|
-    document.addEventListener("htmx:afterSwap", (e) => {
+    document.addEventListener("htmx:afterSettle", (e) => {
       const modal = e.detail.elt;
       if(modal.classList.contains("modal")) {
         modal.querySelector(".modal-close").addEventListener("click", (e) => {

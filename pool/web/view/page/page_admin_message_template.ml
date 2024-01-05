@@ -316,14 +316,6 @@ let preview_template_modal language (label, templates) =
                 ; p [ SmsText.value sms_text |> HttpUtils.add_line_breaks ]
                 ]
             in
-            let _ =
-              [ Field.EmailSubject, EmailSubject.value email_subject |> txt
-              ; Field.EmailText, EmailText.value email_text |> Unsafe.data
-              ; ( Field.SmsText
-                , SmsText.value sms_text |> HttpUtils.add_line_breaks )
-              ]
-              |> Component.Table.vertical_table `Simple language
-            in
             div
               [ h3
                   [ txt
@@ -339,15 +331,14 @@ let preview_template_modal language (label, templates) =
   Component.Modal.create
     ~active:true
     language
-    (fun _ -> Label.show label)
+    (fun _ -> Label.to_human label)
     preview_modal_id
     html
 ;;
 
 let preview_modal_buttons labels =
   let open Message_template in
-  let id = "htmx-" ^ preview_modal_id in
-  let modal = div ~a:[ a_id id ] [] in
+  let modal = div ~a:[ a_id preview_modal_id ] [] in
   labels
   |> CCList.map (fun label ->
     let url =
@@ -359,12 +350,18 @@ let preview_modal_buttons labels =
     li
       [ span
           ~a:
-            [ a_user_data "hx-get" url
-            ; a_user_data "hx-target" ("#" ^ id)
-            ; a_user_data "hx-swap" "innerHTML"
+            [ a_class [ "pointer" ]
+            ; a_user_data "hx-get" url
+            ; a_user_data "hx-target" ("#" ^ preview_modal_id)
+            ; a_user_data "hx-swap" "outerHTML"
             ]
-          [ txt (Label.show label) ]
+          [ txt (Label.to_human label) ]
       ])
   |> ul
-  |> fun buttons -> div [ modal; buttons ]
+  |> fun buttons ->
+  div
+    [ modal
+    ; script (Unsafe.data Component.Modal.js_add_modal_close_listener)
+    ; buttons
+    ]
 ;;

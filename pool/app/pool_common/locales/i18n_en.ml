@@ -315,7 +315,10 @@ Make sure to show links and URLs as plain text.
   | ExperimentMessageTemplates ->
     {|Messages sent to contacts regarding this experiment can be customized if you want to add or remove information. If no experiment-specific template exists, a default template will be used.
 
-If an experiment language is specified, all messages will be sent in this language. The messages will be sent in the contact display language if no experiment-specific language is defined.|}
+If an experiment language is specified, all messages will be sent in this language. The messages will be sent in the contact display language if no experiment-specific language is defined.
+  
+By clicking on the template labels below you can open the default text message:
+|}
   | ExperimentWaitingList ->
     "Contacts that have been invited to this experiment and have placed \
      themselves on the waiting list. They have to be manually assigned to a \

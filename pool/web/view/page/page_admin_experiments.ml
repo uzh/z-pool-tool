@@ -724,13 +724,16 @@ let detail
             ]
         ; Page_admin_message_template.preview_modal_buttons
             (message_templates |> CCList.map fst)
-        ; message_templates_html
-            ~can_update_experiment
-            language
-            csrf
-            experiment
-            sys_languages
-            message_templates
+        ; div
+            ~a:[ a_class [ "gap" ] ]
+            [ message_templates_html
+                ~can_update_experiment
+                language
+                csrf
+                experiment
+                sys_languages
+                message_templates
+            ]
         ]
     in
     let tag_overview =
