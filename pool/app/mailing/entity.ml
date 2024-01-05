@@ -269,8 +269,7 @@ let column_invitation_count =
   (Field.InvitationCount, "invitation_count") |> Query.Column.create
 ;;
 
-(* TODO: Probably does not make sense *)
-let searchable_by = [ column_start ]
+let searchable_by = []
 
 let sortable_by =
   searchable_by @ [ column_end; column_limit; column_invitation_count ]

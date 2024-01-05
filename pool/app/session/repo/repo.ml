@@ -158,6 +158,8 @@ module Sql = struct
     Format.asprintf "%s %s" select where
   ;;
 
+  let order_by_start = Format.asprintf "%s ORDER BY pool_sessions.start"
+
   let find_request =
     let open Caqti_request.Infix in
     {sql|
@@ -241,6 +243,7 @@ module Sql = struct
       WHERE pool_sessions.experiment_uuid = UNHEX(REPLACE(?, '-', ''))
     |sql}
     |> find_request_sql
+    |> order_by_start
     |> Caqti_type.string ->* RepoEntity.t
   ;;
 
@@ -259,6 +262,7 @@ module Sql = struct
         AND pool_sessions.canceled_at IS NULL
       |sql}
     |> find_request_sql
+    |> order_by_start
     |> Caqti_type.string ->* RepoEntity.t
   ;;
 
@@ -535,6 +539,7 @@ module Sql = struct
         AND pool_sessions.canceled_at IS NULL
       |sql}
     |> find_request_sql
+    |> order_by_start
     |> Caqti_type.string ->* RepoEntity.t
   ;;
 
@@ -580,6 +585,7 @@ module Sql = struct
         )
       |sql}
     |> find_request_sql
+    |> order_by_start
     |> Caqti_type.string ->* RepoEntity.t
   ;;
 
