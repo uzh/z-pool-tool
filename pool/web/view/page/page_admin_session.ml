@@ -282,7 +282,9 @@ let session_form
             [ I18n.TimeSpanPickerHint
             ; I18n.DefaultReminderLeadTime (default_value |> encode)
             ]
-          ?value:(CCOption.bind session get_value |> CCOption.map encode)
+          ?value:
+            (CCOption.bind default_value_session get_value
+             |> CCOption.map encode)
           ~flash_fetcher
       ]
   in
@@ -321,7 +323,7 @@ let session_form
             ?value:
               (CCOption.map
                  (fun (s : t) -> s.duration |> Duration.value)
-                 session)
+                 default_value_session)
             ~flash_fetcher
             ~read_only:has_assignments
         ; reschedule_hint ()
