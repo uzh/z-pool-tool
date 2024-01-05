@@ -29,7 +29,12 @@ let enroll_contact_path ?suffix contact_id =
 let heading_with_icons contact =
   h1
     ~a:[ a_class [ "heading-1" ] ]
-    [ Status.identity_with_icons ~context:`All true contact ]
+    [ Status.identity_with_icons
+        Pool_common.Language.En
+        ~context:`All
+        true
+        contact
+    ]
 ;;
 
 let personal_detail
@@ -308,8 +313,8 @@ let list Pool_context.{ language; _ } contacts query =
       then [ a_class [ "bg-red-lighter" ] ]
       else []
     in
-    [ Status.identity_with_icons true contact
-    ; Status.email_with_icons contact
+    [ Status.identity_with_icons language true contact
+    ; Status.email_with_icons language contact
     ; Input.link_as_button ~icon:Icon.Eye (path contact)
     ]
     |> CCList.map (CCList.return %> td)

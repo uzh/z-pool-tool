@@ -12,7 +12,6 @@ let form_action ?path id =
     ~default:base
     (fun path -> Format.asprintf "%s/%s" base path)
     path
-  |> Sihl.Web.externalize_path
 ;;
 
 module Partials = struct

@@ -441,7 +441,7 @@ table.simple {
 $i: 1;
 $n: 12;
 
-@while $i < $n +1 {
+@while $i < $n + 1 {
     .w-#{$i} {
         width: percentage(calc(1 / $n) * $i);
     }

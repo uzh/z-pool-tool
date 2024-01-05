@@ -77,6 +77,11 @@ type t =
   | UploadOutline [@name "upload-outline"] [@printer prt "upload-outline"]
 [@@deriving eq, show]
 
-let to_html ?(classnames = []) icon =
-  i ~a:[ a_class ([ Format.asprintf "icon-%s" (show icon) ] @ classnames) ] []
+let to_html ?title ?(classnames = []) icon =
+  let open CCFun in
+  i
+    ~a:
+      ([ a_class ([ Format.asprintf "icon-%s" (show icon) ] @ classnames) ]
+       @ CCOption.map_or ~default:[] (a_title %> CCList.return) title)
+    []
 ;;

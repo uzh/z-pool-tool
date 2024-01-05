@@ -58,10 +58,13 @@ module Contact = struct
     | `Email -> email_status_icons
   ;;
 
-  let make_icons contact context =
+  let make_icons language contact context =
     icons_by_context context
     |> CCList.filter (has_status contact)
-    |> CCList.map CCFun.(status_to_icon %> Component_icon.to_html)
+    |> CCList.map (fun icon ->
+      icon
+      |> status_to_icon
+      |> Component_icon.to_html ~title:(status_legend_text language icon))
   ;;
 
   let status_icons_table_legend language context =
@@ -83,18 +86,18 @@ module Contact = struct
     else Pool_common.Id.value entity_id
   ;;
 
-  let identity_with_icons ?(context = `Name) view_contact_name contact =
+  let identity_with_icons ?(context = `Name) language view_contact_name contact =
     let text =
       if view_contact_name
       then Contact.lastname_firstname contact
       else Pool_common.Id.value (Contact.id contact)
     in
-    make_icons contact context |> wrap_icons text
+    make_icons language contact context |> wrap_icons text
   ;;
 
-  let email_with_icons contact =
+  let email_with_icons language contact =
     let text = Contact.email_address contact |> Pool_user.EmailAddress.value in
-    make_icons contact `Email |> wrap_icons text
+    make_icons language contact `Email |> wrap_icons text
   ;;
 end
 

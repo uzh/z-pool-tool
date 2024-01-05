@@ -481,7 +481,8 @@ module Partials = struct
                 then
                   div
                     ~a:[ a_class [ "flexrow"; "flex-gap-sm" ] ]
-                    (value :: Status.make_icons assignment.contact `Name)
+                    (value
+                     :: Status.make_icons language assignment.contact `Name)
                 else value)
             in
             let buttons =
