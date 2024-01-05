@@ -283,3 +283,88 @@ let edit
         flash_fetcher
     ]
 ;;
+
+let preview_modal_id = "message-template-preview"
+
+let preview_template_modal language (label, templates) =
+  let open Message_template in
+  let open Pool_common in
+  let field_to_string = Utils.field_to_string_capitalized language in
+  let html =
+    templates
+    |> CCList.map
+         (fun ({ language; email_subject; email_text; sms_text; _ } : t) ->
+            let email_html =
+              div
+                [ h4 [ txt (field_to_string Field.Email) ]
+                ; p
+                    ~a:[ a_class [ "border-bottom" ] ]
+                    [ strong
+                        [ txt
+                            (Format.asprintf
+                               "%s: %s"
+                               (field_to_string Field.EmailSubject)
+                               (EmailSubject.value email_subject))
+                        ]
+                    ]
+                ; p [ EmailText.value email_text |> Unsafe.data ]
+                ]
+            in
+            let text_message_html =
+              div
+                [ h4 [ txt (field_to_string Field.TextMessage) ]
+                ; p [ SmsText.value sms_text |> HttpUtils.add_line_breaks ]
+                ]
+            in
+            let _ =
+              [ Field.EmailSubject, EmailSubject.value email_subject |> txt
+              ; Field.EmailText, EmailText.value email_text |> Unsafe.data
+              ; ( Field.SmsText
+                , SmsText.value sms_text |> HttpUtils.add_line_breaks )
+              ]
+              |> Component.Table.vertical_table `Simple language
+            in
+            div
+              [ h3
+                  [ txt
+                      (Format.asprintf
+                         "%s: %s"
+                         (field_to_string Field.Language)
+                         (Language.show language))
+                  ]
+              ; div ~a:[ a_class [ "stack" ] ] [ email_html; text_message_html ]
+              ])
+    |> div ~a:[ a_class [ "stack" ] ]
+  in
+  Component.Modal.create
+    ~active:true
+    language
+    (fun _ -> Label.show label)
+    preview_modal_id
+    html
+;;
+
+let preview_modal_buttons labels =
+  let open Message_template in
+  let id = "htmx-" ^ preview_modal_id in
+  let modal = div ~a:[ a_id id ] [] in
+  labels
+  |> CCList.map (fun label ->
+    let url =
+      label
+      |> Label.show
+      |> Format.asprintf "/admin/message-template/%s/template-preview"
+      |> Sihl.Web.externalize_path
+    in
+    li
+      [ span
+          ~a:
+            [ a_user_data "hx-get" url
+            ; a_user_data "hx-target" ("#" ^ id)
+            ; a_user_data "hx-swap" "innerHTML"
+            ]
+          [ txt (Label.show label) ]
+      ])
+  |> ul
+  |> fun buttons -> div [ modal; buttons ]
+;;

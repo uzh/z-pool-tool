@@ -9,6 +9,12 @@ let id req field encode =
   Sihl.Web.Router.param req @@ Field.show field |> encode
 ;;
 
+let template_label req =
+  let open Message_template.Label in
+  HttpUtils.find_id read_from_url Pool_common.Message.Field.Label req
+  |> fun label -> CCList.find (equal label) customizable_by_experiment
+;;
+
 let database_label_of_req req =
   let open CCResult in
   Pool_context.(req |> find >|= fun { database_label; _ } -> database_label)
@@ -110,6 +116,29 @@ let update req =
   in
   let redirect = { success = redirect_path; error = redirect_path } in
   write (Update (id, redirect)) req
+;;
+
+let preview_default req =
+  (* let open Utils.Lwt_result.Infix in *)
+  let label = template_label req in
+  let result { Pool_context.database_label; language; _ } =
+    let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+    let () =
+      CCList.iter
+        (fun (k, v) ->
+          Logs.info (fun m -> m "%s: %s" k (CCString.concat ", " v)))
+        urlencoded
+    in
+    let%lwt message_templates =
+      Message_template.find_default_by_label database_label label
+    in
+    Page.Admin.MessageTemplate.preview_template_modal
+      language
+      (label, message_templates)
+    |> HttpUtils.Htmx.html_to_plain_text_response
+    |> Lwt_result.return
+  in
+  result |> HttpUtils.Htmx.handle_error_message ~src req
 ;;
 
 module Access : module type of Helpers.Access = struct

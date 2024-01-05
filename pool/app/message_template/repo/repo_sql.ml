@@ -270,6 +270,27 @@ let find_default_by_label_and_language pool language label =
     (Entity.Label.show label, Pool_common.Language.show language)
 ;;
 
+let find_default_by_label_request =
+  let open Caqti_request.Infix in
+  Format.asprintf
+    {sql|
+    %s
+    WHERE
+      pool_message_templates.label = ?
+    AND
+      pool_message_templates.entity_uuid IS NULL
+    |sql}
+    select_sql
+  |> Caqti_type.string ->! RepoEntity.t
+;;
+
+let find_default_by_label pool label =
+  Utils.Database.collect
+    (Pool_database.Label.value pool)
+    find_default_by_label_request
+    (Entity.Label.show label)
+;;
+
 let find_request =
   let open Caqti_request.Infix in
   Format.asprintf

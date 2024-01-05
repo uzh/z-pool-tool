@@ -112,6 +112,7 @@ val find_default_by_label_and_language
   -> Label.t
   -> t Lwt.t
 
+val find_default_by_label : Pool_database.Label.t -> Label.t -> t list Lwt.t
 val all_default : Pool_database.Label.t -> unit -> t list Lwt.t
 
 val find_all_of_entity_by_label

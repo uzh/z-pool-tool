@@ -18,6 +18,7 @@ let find_default_by_label_and_language pool language label =
             Message.(NotFound Field.MessageTemplate))
 ;;
 
+let find_default_by_label = Repo.find_default_by_label
 let all_default = Repo.all_default
 let find_all_of_entity_by_label = Repo.find_all_of_entity_by_label
 let find_by_label_to_send = Repo.find_by_label_to_send

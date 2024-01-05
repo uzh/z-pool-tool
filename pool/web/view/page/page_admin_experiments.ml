@@ -722,6 +722,8 @@ let detail
                 Utils.hint_to_string language I18n.ExperimentMessageTemplates)
               |> HttpUtils.add_line_breaks
             ]
+        ; Page_admin_message_template.preview_modal_buttons
+            (message_templates |> CCList.map fst)
         ; message_templates_html
             ~can_update_experiment
             language

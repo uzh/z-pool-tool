@@ -14,11 +14,7 @@ let template_id =
     Pool_common.Message.Field.MessageTemplate
 ;;
 
-let template_label req =
-  let open Message_template.Label in
-  HttpUtils.find_id read_from_url Pool_common.Message.Field.Label req
-  |> fun label -> CCList.find (equal label) customizable_by_experiment
-;;
+let template_label = Admin_message_templates.template_label
 
 let experiment_path experiment_id =
   Format.asprintf "/admin/experiments/%s" (Experiment.Id.value experiment_id)
