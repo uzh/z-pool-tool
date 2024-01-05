@@ -297,12 +297,13 @@ let session_form
     ; div
         ~a:[ a_class [ "grid-col-2" ] ]
         [ (let value =
-             (* Don't want start date filled out in form if creating with
-                duplication or follow up *)
-             if CCOption.is_some duplicate || CCOption.is_some follow_up_to
+             (* Don't want start date filled out in form if creating follow
+                up *)
+             if CCOption.is_some follow_up_to
              then None
              else
-               session |> CCOption.map (fun (s : t) -> s.start |> Start.value)
+               default_value_session
+               |> CCOption.map (fun (s : t) -> s.start |> Start.value)
            in
            date_time_picker_element
              language
