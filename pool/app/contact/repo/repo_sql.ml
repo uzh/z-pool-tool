@@ -359,13 +359,13 @@ let find_to_trigger_profile_update_request =
     AND
       pool_contacts.profile_updated_at <= DATE_SUB(NOW(), INTERVAL
         (SELECT value FROM pool_system_settings WHERE settings_key = $1)
-        DAY)
+        SECOND)
     AND
       pool_contacts.profile_update_triggered_at IS NULL
       OR
       (pool_contacts.profile_update_triggered_at <= DATE_SUB(NOW(), INTERVAL
         (SELECT value FROM pool_system_settings WHERE settings_key = $1)
-        DAY))
+        SECOND))
     |sql}
   |> find_request_sql
   |> Caqti_type.(string) ->* Repo_model.t

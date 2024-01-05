@@ -45,6 +45,38 @@ form[class*="stack"] input[type="hidden"]+* {
     @extend .flexcolumn;
 }
 
+.grouped-input {
+    border-radius: $border-radius;
+    border: 1px solid $grey;
+    overflow: hidden;
+
+    select, input {
+        border: none;
+        border-radius: 0;
+    }
+
+    & > * {
+        width: auto;
+    }
+
+    & > .select select {
+        padding-right: $space-base * 2;
+        width: auto;
+        background-color: $grey-light;
+        border-left: 1px solid $grey;
+    }
+}
+
+input[readonly], select[readonly] {
+    background-color: $grey-light;
+    color: $grey-dark;
+    cursor: not-allowed;
+
+    &:hover {
+      background-color: $grey-light;
+    }
+}
+
 // Index page
 .index-page>*:nth-child(2) {
     flex-basis: 25%;

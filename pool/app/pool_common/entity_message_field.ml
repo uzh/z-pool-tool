@@ -8,6 +8,10 @@ let custom _ fmt t =
   Format.pp_print_string fmt name
 ;;
 
+let nested name show fmt t =
+  Format.pp_print_string fmt (Format.asprintf "%s[%s]" name (show t))
+;;
+
 type t =
   | Action [@name "action"] [@printer go "action"]
   | Actor [@name "actor"] [@printer go "actor"]
@@ -290,6 +294,8 @@ type t =
   [@printer go "text_message_reminders_sent_at"]
   | Time [@name "time"] [@printer go "time"]
   | TimeSpan [@name "timespan"] [@printer go "timespan"]
+  | TimeUnit [@name "timeunit"] [@printer go "timeunit"]
+  | TimeUnitOf of t [@name "timeunit_of"] [@printer nested "timeunit_of" show]
   | Title [@name "title"] [@printer go "title"]
   | ToHandle [@name "to_handle"] [@printer go "to_handle"]
   | Token [@name "token"] [@printer go "token"]
@@ -309,7 +315,35 @@ type t =
   | Zip [@name "zip"] [@printer go "zip"]
 [@@deriving eq, show { with_path = false }, yojson, variants, sexp_of]
 
-let read = Utils.Json.read_variant t_of_yojson
+let read_nested str =
+  let open CCString in
+  match contains str '[' && contains str ']' with
+  | false -> None
+  | true ->
+    let open CCList in
+    (try
+       str
+       |> split_on_char '['
+       |> function
+       | [ "timeunit_of"; tl ] ->
+         tl
+         |> split_on_char ']'
+         |> hd
+         |> Utils.Json.read_variant t_of_yojson
+         |> timeunitof
+         |> CCOption.return
+       | _ -> None
+     with
+     | _ -> None)
+;;
+
+let read str =
+  read_nested str
+  |> function
+  | Some m -> m
+  | None -> Utils.Json.read_variant t_of_yojson str
+;;
+
 let url_key m = m |> show |> Format.asprintf ":%s"
 let array_key m = m |> show |> Format.asprintf "%s[]"
 let human_url m = m |> show |> CCString.replace ~sub:"_" ~by:"-"

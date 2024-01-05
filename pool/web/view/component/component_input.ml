@@ -1,6 +1,7 @@
 module HttpUtils = Http_utils
 module Field = Pool_common.Message.Field
 module Icon = Component_icon
+module TimeUnit = Pool_common.Model.TimeUnit
 open Tyxml.Html
 
 let submit_type_to_class = function
@@ -158,6 +159,7 @@ let flatpicker_element
   ?label_field
   ?hints
   ?identifier
+  ?(read_only = false)
   ?(required = false)
   ?flash_fetcher
   ?value
@@ -206,7 +208,9 @@ let flatpicker_element
       `Datetime_local
       name
       id
-      ([ a_value value ] @ flatpicker_attributes)
+      ([ a_value value ]
+       @ (if read_only then [ a_readonly () ] else [])
+       @ flatpicker_attributes)
     |> fun attrs -> if required then attrs @ [ a_required () ] else attrs
   in
   let group_class = Elements.group_class classnames orientation in
@@ -244,6 +248,7 @@ let timespan_picker
   ?hints
   ?identifier
   ?label_field
+  ?(read_only = false)
   ?(required = false)
   ?flash_fetcher
   ?value
@@ -253,11 +258,17 @@ let timespan_picker
   =
   let human_field = CCOption.value ~default:name label_field in
   let input_label = Elements.input_label language human_field None required in
-  let value =
-    flash_fetched_value
-      flash_fetcher
-      (value |> CCOption.map Pool_common.Utils.Time.timespan_to_minutes)
-      name
+  let time_unit, value =
+    let open CCOption.Infix in
+    flash_fetcher
+    >>= (fun flash -> flash (Field.show name))
+    >>= CCInt.of_string
+    >|= Ptime.Span.of_int_s
+    <+> value
+    >|= TimeUnit.ptime_span_to_largest_unit
+    |> function
+    | None -> None, ""
+    | Some (unit, value) -> Some unit, CCInt.to_string value
   in
   let id = Elements.identifier ?identifier human_field in
   let attributes =
@@ -265,6 +276,7 @@ let timespan_picker
       Elements.attributes `Number name id [ a_value value ]
       @ additional_attributes
       @ [ a_input_min (`Number 0); a_step (Some 1.) ]
+      @ if read_only then [ a_readonly () ] else []
     in
     let attrs = if required then a_required () :: attrs else attrs in
     if CCOption.is_some error then a_class [ "is-invalid" ] :: attrs else attrs
@@ -272,7 +284,55 @@ let timespan_picker
   let group_class = Elements.group_class classnames orientation in
   let help = Elements.hints language hints in
   let error = Elements.error language error in
-  let input_element = Elements.apply_orientation attributes orientation in
+  let input_element =
+    let unit_field_name =
+      name |> TimeUnit.named_field |> Pool_common.Message.Field.show
+    in
+    let hidden_unit_field =
+      if read_only
+      then
+        input
+          ~a:
+            [ a_name unit_field_name
+            ; a_input_type `Hidden
+            ; a_value
+                (time_unit
+                 |> CCOption.value ~default:(TimeUnit.all |> CCList.hd)
+                 |> TimeUnit.show)
+            ]
+          ()
+      else txt ""
+    in
+    let timeunit_select =
+      TimeUnit.all
+      |> CCList.map (fun unit ->
+        let selected =
+          time_unit
+          |> CCOption.map_or ~default:false (TimeUnit.equal unit)
+          |> function
+          | true -> [ a_selected () ]
+          | false -> []
+        in
+        option
+          ~a:(a_value (TimeUnit.show unit) :: selected)
+          (txt (TimeUnit.to_human unit)))
+      |> select
+           ~a:
+             (if read_only
+              then [ a_disabled () ]
+              else [ a_name unit_field_name ])
+      |> CCList.return
+      |> div ~a:[ a_class [ "select" ] ]
+    in
+    let input_group =
+      div
+        ~a:[ a_class [ "flexrow"; "grouped-input" ] ]
+        [ input ~a:attributes (); timeunit_select; hidden_unit_field ]
+    in
+    match orientation with
+    | `Vertical -> input_group
+    | `Horizontal -> div ~a:[ a_class [ "input-group" ] ] [ input_group ]
+  in
   div
     ~a:[ a_class group_class ]
     ([ label ~a:[ a_label_for id ] [ txt input_label ]; input_element ]

@@ -73,16 +73,11 @@ module End = struct
 end
 
 module Duration = struct
-  include Pool_common.Model.PtimeSpan
+  module DurationCore = struct
+    let name = Pool_common.Message.Field.Duration
+  end
 
-  let create m =
-    if Ptime.Span.abs m |> Ptime.Span.equal m
-    then Ok m
-    else Error Pool_common.Message.NegativeAmount
-  ;;
-
-  let field = Pool_common.Message.Field.Duration
-  let schema = schema field create
+  include Pool_common.Model.Duration (DurationCore)
 end
 
 module AssignmentCount = struct
@@ -154,9 +149,10 @@ type t =
   ; max_participants : ParticipantAmount.t
   ; min_participants : ParticipantAmount.t
   ; overbook : ParticipantAmount.t
-  ; email_reminder_lead_time : Pool_common.Reminder.LeadTime.t option
+  ; email_reminder_lead_time : Pool_common.Reminder.EmailLeadTime.t option
   ; email_reminder_sent_at : Pool_common.Reminder.SentAt.t option
-  ; text_message_reminder_lead_time : Pool_common.Reminder.LeadTime.t option
+  ; text_message_reminder_lead_time :
+      Pool_common.Reminder.TextMessageLeadTime.t option
   ; text_message_reminder_sent_at : Pool_common.Reminder.SentAt.t option
   ; assignment_count : AssignmentCount.t
   ; no_show_count : NoShowCount.t

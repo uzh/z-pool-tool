@@ -88,10 +88,10 @@ let update_settings req =
             DeleteEmailSuffix.(m |> decode >>= handle ~tags suffixes) |> lift
         | `UpdateDefaultLeadTime ->
           fun m ->
-            UpdateDefaultLeadTime.(m |> decode >>= handle `Email ~tags) |> lift
+            UpdateDefaultEmailLeadTime.(m |> decode >>= handle ~tags) |> lift
         | `UpdateTextMsgDefaultLeadTime ->
           fun m ->
-            UpdateDefaultLeadTime.(m |> decode >>= handle `TextMessage ~tags)
+            UpdateDefaultTextMessageLeadTime.(m |> decode >>= handle ~tags)
             |> lift
         | `UpdateContactEmail ->
           fun m -> UpdateContactEmail.(m |> decode >>= handle ~tags) |> lift
@@ -132,8 +132,9 @@ module Access : module type of Helpers.Access = struct
     let find_effects = function
       | `CreateEmailSuffix -> Command.CreateEmailSuffix.effects
       | `DeleteEmailSuffix -> Command.DeleteEmailSuffix.effects
-      | `UpdateDefaultLeadTime | `UpdateTextMsgDefaultLeadTime ->
-        Command.UpdateDefaultLeadTime.effects
+      | `UpdateDefaultLeadTime -> Command.UpdateDefaultEmailLeadTime.effects
+      | `UpdateTextMsgDefaultLeadTime ->
+        Command.UpdateDefaultTextMessageLeadTime.effects
       | `UpdateInactiveUserDisableAfter ->
         Command.InactiveUser.DisableAfter.effects
       | `UpdateInactiveUserWarning -> Command.InactiveUser.Warning.effects

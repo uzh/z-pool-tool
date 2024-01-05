@@ -35,8 +35,7 @@ let set_sessions_to_past session_ids =
   ||> CCResult.flatten_l
   >|+ CCList.map (fun (session : t) ->
     let session = { session with start = Model.an_hour_ago () } in
-    Updated (Model.session_to_session_base session, session.location, session)
-    |> Pool_event.session)
+    Updated session |> Pool_event.session)
   |>> Pool_event.handle_events database_label
   ||> get_exn
 ;;

@@ -245,6 +245,8 @@ let rec field_to_string =
   | TextMessageRemindersSentAt -> "text message reminders sent at"
   | Time -> "time"
   | TimeSpan -> "time span"
+  | TimeUnit -> "time unit"
+  | TimeUnitOf field -> Format.asprintf "time unit: %s" (field_to_string field)
   | Title -> "title"
   | ToHandle -> "to handle"
   | Token -> "token"
@@ -378,6 +380,8 @@ let rec error_to_string = function
   | Authorization message -> field_message "Unable to authorize: " message ""
   | CannotBeDeleted field ->
     Format.asprintf "%s cannot be deleted." (field_to_string field)
+  | CannotBeUpdated field ->
+    Format.asprintf "%s cannot be updated." (field_to_string field)
   | Conformist errs ->
     CCList.map
       (fun (field, err) ->

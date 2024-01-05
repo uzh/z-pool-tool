@@ -30,9 +30,9 @@ type t =
   ; max_participants : Entity.ParticipantAmount.t
   ; min_participants : Entity.ParticipantAmount.t
   ; overbook : Entity.ParticipantAmount.t
-  ; email_reminder_lead_time : Reminder.LeadTime.t option
+  ; email_reminder_lead_time : Reminder.EmailLeadTime.t option
   ; email_reminder_sent_at : Reminder.SentAt.t option
-  ; text_message_reminder_lead_time : Reminder.LeadTime.t option
+  ; text_message_reminder_lead_time : Reminder.TextMessageLeadTime.t option
   ; text_message_reminder_sent_at : Reminder.SentAt.t option
   ; assignment_count : Entity.AssignmentCount.t
   ; no_show_count : Entity.NoShowCount.t
@@ -199,11 +199,14 @@ let t =
                                     (t2
                                        int
                                        (t2
-                                          (option RepoReminder.LeadTime.t)
+                                          (option RepoReminder.EmailLeadTime.t)
                                           (t2
                                              (option RepoReminder.SentAt.t)
                                              (t2
-                                                (option RepoReminder.LeadTime.t)
+                                                (option
+                                                   RepoReminder
+                                                   .TextMessageLeadTime
+                                                   .t)
                                                 (t2
                                                    (option
                                                       RepoReminder.SentAt.t)
@@ -234,9 +237,9 @@ module Write = struct
     ; max_participants : Entity.ParticipantAmount.t
     ; min_participants : Entity.ParticipantAmount.t
     ; overbook : Entity.ParticipantAmount.t
-    ; email_reminder_lead_time : Reminder.LeadTime.t option
+    ; email_reminder_lead_time : Reminder.EmailLeadTime.t option
     ; email_reminder_sent_at : Reminder.SentAt.t option
-    ; text_message_reminder_lead_time : Reminder.LeadTime.t option
+    ; text_message_reminder_lead_time : Reminder.TextMessageLeadTime.t option
     ; text_message_reminder_sent_at : Reminder.SentAt.t option
     ; closed_at : Ptime.t option
     ; canceled_at : Ptime.t option
@@ -366,7 +369,9 @@ module Write = struct
                                       int
                                       (t2
                                          (option
-                                            Pool_common.Repo.Reminder.LeadTime.t)
+                                            Pool_common.Repo.Reminder
+                                            .EmailLeadTime
+                                            .t)
                                          (t2
                                             (option
                                                Pool_common.Repo.Reminder.SentAt
@@ -374,7 +379,7 @@ module Write = struct
                                             (t2
                                                (option
                                                   Pool_common.Repo.Reminder
-                                                  .LeadTime
+                                                  .TextMessageLeadTime
                                                   .t)
                                                (t2
                                                   (option

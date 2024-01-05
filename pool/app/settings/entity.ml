@@ -1,24 +1,23 @@
 open Ppx_yojson_conv_lib.Yojson_conv
 module Message = Pool_common.Message
+module TimeUnit = Pool_common.Model.TimeUnit
 
-(* TODO [aerben] maybe move to pool common *)
-module Day = struct
-  type t = int [@@deriving eq, show, yojson]
+type command =
+  { time_value : int
+  ; time_unit : TimeUnit.t
+  }
 
-  let to_timespan t = t * 24 * 60 * 60 |> Ptime.Span.of_int_s
-end
+let update_command time_value time_unit = { time_value; time_unit }
 
-module Week = struct
-  type t = int [@@deriving eq, show, yojson]
-
-  let to_timespan t = t * 7 * 24 * 60 * 60 |> Ptime.Span.of_int_s
-end
+let update_schema integer_schema field =
+  Pool_common.Utils.PoolConformist.(
+    make Field.[ integer_schema; TimeUnit.named_schema field () ] update_command)
+;;
 
 module ContactEmail = struct
   include Pool_common.Model.String
 
   let field = Message.Field.ContactEmail
-  (* TODO: email address validation *)
 
   let create email =
     let open Mrmime in
@@ -43,73 +42,30 @@ end
 
 module InactiveUser = struct
   module DisableAfter = struct
-    type t = Day.t [@@deriving eq, show, yojson]
+    module Core = struct
+      let name = Pool_common.Message.Field.InactiveUserDisableAfter
+    end
 
-    let create day =
-      let open CCResult.Infix in
-      day
-      |> CCInt.of_string
-      |> CCOption.to_result Pool_common.Message.(Invalid Field.TimeSpan)
-      >>= fun day ->
-      if day < 0 then Error Pool_common.Message.TimeSpanPositive else Ok day
-    ;;
-
-    let value m = m
-    let to_timespan = Day.to_timespan
-
-    let schema () =
-      Pool_common.Utils.schema_decoder
-        create
-        CCInt.to_string
-        Message.Field.InactiveUserDisableAfter
-    ;;
+    include Pool_common.Model.Duration (Core)
   end
 
   module Warning = struct
-    type t = Day.t [@@deriving eq, show, yojson]
+    module Core = struct
+      let name = Pool_common.Message.Field.InactiveUserWarning
+    end
 
-    let create day =
-      let open CCResult.Infix in
-      let open Pool_common.Message in
-      day
-      |> CCInt.of_string
-      |> CCOption.to_result (Invalid Field.TimeSpan)
-      >>= fun day -> if day < 0 then Error TimeSpanPositive else Ok day
-    ;;
-
-    let value m = m
-    let to_timespan = Day.to_timespan
-
-    let schema () =
-      Pool_common.Utils.schema_decoder
-        create
-        CCInt.to_string
-        Message.Field.InactiveUserWarning
-    ;;
+    include Pool_common.Model.Duration (Core)
   end
 end
 
 module TriggerProfileUpdateAfter = struct
-  type t = Day.t [@@deriving eq, show, yojson]
+  module Core = struct
+    type t
 
-  let create day =
-    let open CCResult.Infix in
-    let open Pool_common.Message in
-    day
-    |> CCInt.of_string
-    |> CCOption.to_result (Invalid Field.TimeSpan)
-    >>= fun day -> if day < 0 then Error TimeSpanPositive else Ok day
-  ;;
+    let name = Pool_common.Message.Field.TriggerProfileUpdateAfter
+  end
 
-  let value m = m
-  let to_timespan = Day.to_timespan
-
-  let schema () =
-    Pool_common.Utils.schema_decoder
-      create
-      CCInt.to_string
-      Message.Field.TriggerProfileUpdateAfter
-  ;;
+  include Pool_common.Model.Duration (Core)
 end
 
 module TermsAndConditions = struct
@@ -136,10 +92,11 @@ module TermsAndConditions = struct
 end
 
 module Value = struct
-  type default_reminder_lead_time = Pool_common.Reminder.LeadTime.t
+  type default_reminder_lead_time = Pool_common.Reminder.EmailLeadTime.t
   [@@deriving eq, show, yojson]
 
-  type default_text_msg_reminder_lead_time = Pool_common.Reminder.LeadTime.t
+  type default_text_msg_reminder_lead_time =
+    Pool_common.Reminder.TextMessageLeadTime.t
   [@@deriving eq, show, yojson]
 
   type tenant_languages = Pool_common.Language.t list

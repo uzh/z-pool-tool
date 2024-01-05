@@ -2,7 +2,10 @@ open CCFun
 open Sexplib.Conv
 open Ppx_yojson_conv_lib.Yojson_conv
 module PoolError = Entity_message
-module Model = Entity_base_model
+
+module Model = struct
+  include Entity_base_model
+end
 
 let print = Utils.ppx_printer
 
@@ -204,25 +207,20 @@ module SortOrder = struct
 end
 
 module Reminder = struct
-  module LeadTime = struct
-    type t = Ptime.Span.t [@@deriving eq, show]
+  module EmailLeadTime = struct
+    module TimeDurationCore = struct
+      let name = Entity_message_field.EmailLeadTime
+    end
 
-    let create m =
-      if Ptime.Span.abs m |> Ptime.Span.equal m
-      then Ok m
-      else Error PoolError.NegativeAmount
-    ;;
+    include Model.Duration (TimeDurationCore)
+  end
 
-    let t_of_yojson = Utils_time.ptime_span_of_yojson
-    let yojson_of_t = Utils_time.yojson_of_ptime_span
-    let value m = m
+  module TextMessageLeadTime = struct
+    module TimeDurationCore = struct
+      let name = Entity_message_field.TextMessageLeadTime
+    end
 
-    let schema ?(field = PoolError.Field.LeadTime) () =
-      let open CCResult in
-      let decode str = Pool_common_utils.Time.parse_time_span str >>= create in
-      let encode span = Pool_common_utils.Time.print_time_span span in
-      Pool_common_utils.schema_decoder decode encode field
-    ;;
+    include Model.Duration (TimeDurationCore)
   end
 
   module SentAt = struct

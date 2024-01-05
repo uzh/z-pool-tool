@@ -180,10 +180,13 @@ let t =
                                              (t2
                                                 (option ExperimentType.t)
                                                 (t2
-                                                   (option Reminder.LeadTime.t)
+                                                   (option
+                                                      Reminder.EmailLeadTime.t)
                                                    (t2
                                                       (option
-                                                         Reminder.LeadTime.t)
+                                                         Reminder
+                                                         .TextMessageLeadTime
+                                                         .t)
                                                       (t2
                                                          (option
                                                             InvitationResetAt.t)
@@ -273,12 +276,13 @@ module Write = struct
                                                            ExperimentType.t)
                                                         (t2
                                                            (option
-                                                              Reminder.LeadTime
+                                                              Reminder
+                                                              .EmailLeadTime
                                                               .t)
                                                            (t2
                                                               (option
                                                                  Reminder
-                                                                 .LeadTime
+                                                                 .TextMessageLeadTime
                                                                  .t)
                                                               (option
                                                                  InvitationResetAt

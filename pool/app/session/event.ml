@@ -2,27 +2,17 @@ open Entity
 
 type base =
   { start : Start.t
-  ; duration : Duration.t
+  ; duration : int
+  ; duration_unit : Pool_common.Model.TimeUnit.t
   ; description : Description.t option
   ; limitations : Limitations.t option
   ; max_participants : ParticipantAmount.t
   ; min_participants : ParticipantAmount.t
   ; overbook : ParticipantAmount.t
-  ; email_reminder_lead_time : Pool_common.Reminder.LeadTime.t option
-  ; text_message_reminder_lead_time : Pool_common.Reminder.LeadTime.t option
-  }
-[@@deriving eq, show]
-
-type update =
-  { start : Start.t option
-  ; duration : Duration.t option
-  ; description : Description.t option
-  ; limitations : Limitations.t option
-  ; max_participants : ParticipantAmount.t
-  ; min_participants : ParticipantAmount.t
-  ; overbook : ParticipantAmount.t
-  ; email_reminder_lead_time : Pool_common.Reminder.LeadTime.t option
-  ; text_message_reminder_lead_time : Pool_common.Reminder.LeadTime.t option
+  ; email_reminder_lead_time : int option
+  ; email_reminder_lead_time_unit : Pool_common.Model.TimeUnit.t option
+  ; text_message_reminder_lead_time : int option
+  ; text_message_reminder_lead_time_unit : Pool_common.Model.TimeUnit.t option
   }
 [@@deriving eq, show]
 
@@ -37,7 +27,7 @@ type event =
   | Canceled of t
   | Closed of t
   | Deleted of t
-  | Updated of (base * Pool_location.t * t)
+  | Updated of t
   | EmailReminderSent of t
   | TextMsgReminderSent of t
   | Rescheduled of (t * reschedule)
@@ -60,33 +50,7 @@ let handle_event pool =
     (* TODO: Check timestamps? Issue #126 *)
     { session with closed_at = Some (Ptime_clock.now ()) } |> Repo.update pool
   | Deleted session -> Repo.delete pool session.id
-  | Updated
-      ( { start
-        ; duration
-        ; description
-        ; limitations
-        ; max_participants
-        ; min_participants
-        ; overbook
-        ; email_reminder_lead_time
-        ; text_message_reminder_lead_time
-        }
-      , location
-      , session ) ->
-    Repo.update
-      pool
-      { session with
-        start
-      ; duration
-      ; limitations
-      ; location
-      ; description
-      ; max_participants
-      ; min_participants
-      ; overbook
-      ; email_reminder_lead_time
-      ; text_message_reminder_lead_time
-      }
+  | Updated session -> Repo.update pool session
   | EmailReminderSent session ->
     { session with
       email_reminder_sent_at = Some (Pool_common.Reminder.SentAt.create_now ())

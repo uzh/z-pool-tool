@@ -1,7 +1,10 @@
 module BaseGuard = Guard
 open Experiment
 module Conformist = Pool_common.Utils.PoolConformist
+module Reminder = Pool_common.Reminder
+module TimeUnit = Pool_common.Model.TimeUnit
 
+let opt = Conformist.optional
 let src = Logs.Src.create "experiment_command.cqrs"
 let to_actor = CCFun.(Admin.id %> BaseGuard.Uuid.actor_of Admin.Id.value)
 let to_target { id; _ } = BaseGuard.Uuid.target_of Id.value id
@@ -23,7 +26,10 @@ let default_command
   show_external_data_id_links
   experiment_type
   email_session_reminder_lead_time
+  email_session_reminder_lead_time_unit
   text_message_session_reminder_lead_time
+  text_message_session_reminder_lead_time_unit
+  : create
   =
   { title
   ; public_title
@@ -37,7 +43,9 @@ let default_command
   ; show_external_data_id_links
   ; experiment_type
   ; email_session_reminder_lead_time
+  ; email_session_reminder_lead_time_unit
   ; text_message_session_reminder_lead_time
+  ; text_message_session_reminder_lead_time_unit
   }
 ;;
 
@@ -54,7 +62,9 @@ let create_command
   show_external_data_id_links
   experiment_type
   email_session_reminder_lead_time
+  email_session_reminder_lead_time_unit
   text_message_session_reminder_lead_time
+  text_message_session_reminder_lead_time_unit
   =
   default_command
     title
@@ -69,7 +79,9 @@ let create_command
     show_external_data_id_links
     experiment_type
     email_session_reminder_lead_time
+    email_session_reminder_lead_time_unit
     text_message_session_reminder_lead_time
+    text_message_session_reminder_lead_time_unit
 ;;
 
 let update_schema command =
@@ -79,21 +91,19 @@ let update_schema command =
       Field.
         [ Title.schema ()
         ; PublicTitle.schema ()
-        ; Conformist.optional @@ Description.schema ()
-        ; Conformist.optional @@ Pool_common.Language.schema ()
-        ; Conformist.optional @@ CostCenter.schema ()
+        ; opt @@ Description.schema ()
+        ; opt @@ Pool_common.Language.schema ()
+        ; opt @@ CostCenter.schema ()
         ; DirectRegistrationDisabled.schema ()
         ; RegistrationDisabled.schema ()
         ; AllowUninvitedSignup.schema ()
         ; ExternalDataRequired.schema ()
         ; ShowExternalDataIdLinks.schema ()
-        ; Conformist.optional @@ ExperimentType.schema ()
-        ; Conformist.optional
-          @@ Reminder.LeadTime.schema ~field:Message.Field.EmailLeadTime ()
-        ; Conformist.optional
-          @@ Reminder.LeadTime.schema
-               ~field:Message.Field.TextMessageLeadTime
-               ()
+        ; opt @@ ExperimentType.schema ()
+        ; opt @@ Reminder.EmailLeadTime.integer_schema ()
+        ; opt @@ TimeUnit.named_schema Reminder.EmailLeadTime.name ()
+        ; opt @@ Reminder.TextMessageLeadTime.integer_schema ()
+        ; opt @@ TimeUnit.named_schema Reminder.TextMessageLeadTime.name ()
         ]
       command)
 ;;
@@ -104,22 +114,25 @@ let create_schema command =
     make
       Field.
         [ Title.schema ()
-        ; Conformist.optional @@ PublicTitle.schema ()
-        ; Conformist.optional @@ Description.schema ()
-        ; Conformist.optional @@ Pool_common.Language.schema ()
-        ; Conformist.optional @@ CostCenter.schema ()
+        ; opt @@ PublicTitle.schema ()
+        ; opt @@ Description.schema ()
+        ; opt @@ Pool_common.Language.schema ()
+        ; opt @@ CostCenter.schema ()
         ; DirectRegistrationDisabled.schema ()
         ; RegistrationDisabled.schema ()
         ; AllowUninvitedSignup.schema ()
         ; ExternalDataRequired.schema ()
         ; ShowExternalDataIdLinks.schema ()
-        ; Conformist.optional @@ ExperimentType.schema ()
-        ; Conformist.optional
-          @@ Reminder.LeadTime.schema ~field:Message.Field.EmailLeadTime ()
-        ; Conformist.optional
-          @@ Reminder.LeadTime.schema
-               ~field:Message.Field.TextMessageLeadTime
+        ; opt @@ ExperimentType.schema ()
+        ; opt
+          @@ Model.Integer.schema Message.Field.EmailLeadTime CCResult.return ()
+        ; opt @@ TimeUnit.named_schema Reminder.EmailLeadTime.name ()
+        ; opt
+          @@ Model.Integer.schema
+               Message.Field.TextMessageLeadTime
+               CCResult.return
                ()
+        ; opt @@ TimeUnit.named_schema Reminder.TextMessageLeadTime.name ()
         ]
       command)
 ;;
@@ -154,15 +167,27 @@ end = struct
     ({ cost_center
      ; description
      ; language
-     ; email_session_reminder_lead_time
      ; experiment_type
+     ; email_session_reminder_lead_time
+     ; email_session_reminder_lead_time_unit
      ; text_message_session_reminder_lead_time
+     ; text_message_session_reminder_lead_time_unit
      ; _
      } as command :
       t)
     =
     Logs.info ~src (fun m -> m "Handle command Create" ~tags);
     let open CCResult in
+    let* email_session_reminder_lead_time =
+      Reminder.EmailLeadTime.of_int_opt
+        email_session_reminder_lead_time
+        email_session_reminder_lead_time_unit
+    in
+    let* text_message_session_reminder_lead_time =
+      Reminder.TextMessageLeadTime.of_int_opt
+        text_message_session_reminder_lead_time
+        text_message_session_reminder_lead_time_unit
+    in
     let* experiment =
       Experiment.create
         ?contact_person_id:(contact_person |> CCOption.map Admin.id)
@@ -224,6 +249,16 @@ end = struct
     =
     Logs.info ~src (fun m -> m "Handle command Update" ~tags);
     let open CCResult in
+    let* email_session_reminder_lead_time =
+      Reminder.EmailLeadTime.of_int_opt
+        command.email_session_reminder_lead_time
+        command.email_session_reminder_lead_time_unit
+    in
+    let* text_message_session_reminder_lead_time =
+      Reminder.TextMessageLeadTime.of_int_opt
+        command.text_message_session_reminder_lead_time
+        command.text_message_session_reminder_lead_time_unit
+    in
     let experiment =
       Experiment.
         { experiment with
@@ -242,10 +277,8 @@ end = struct
         ; external_data_required = command.external_data_required
         ; show_external_data_id_links = command.show_external_data_id_links
         ; experiment_type = command.experiment_type
-        ; email_session_reminder_lead_time =
-            command.email_session_reminder_lead_time
-        ; text_message_session_reminder_lead_time =
-            command.text_message_session_reminder_lead_time
+        ; email_session_reminder_lead_time
+        ; text_message_session_reminder_lead_time
         }
     in
     Ok [ Experiment.Updated experiment |> Pool_event.experiment ]

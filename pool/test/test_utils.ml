@@ -201,7 +201,7 @@ module Model = struct
       let open CCResult in
       CCOption.bind email_session_reminder_lead_time_hours (fun h ->
         Ptime.Span.of_int_s @@ (h * 60 * 60)
-        |> Pool_common.Reminder.LeadTime.create
+        |> Pool_common.Reminder.EmailLeadTime.create
         |> map_err show_error
         |> to_opt)
     in
@@ -413,34 +413,6 @@ module Model = struct
       ; overbook
       ; assignment_count
       ; canceled_at
-      }
-  ;;
-
-  let session_to_session_base
-    ({ Session.start
-     ; duration
-     ; description
-     ; limitations
-     ; max_participants
-     ; min_participants
-     ; overbook
-     ; email_reminder_lead_time
-     ; text_message_reminder_lead_time
-     ; _
-     } :
-      Session.t)
-    : Session.base
-    =
-    Session.
-      { start
-      ; duration
-      ; description
-      ; limitations
-      ; max_participants
-      ; min_participants
-      ; overbook
-      ; email_reminder_lead_time
-      ; text_message_reminder_lead_time
       }
   ;;
 

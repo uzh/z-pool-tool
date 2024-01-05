@@ -86,8 +86,14 @@ module File = struct
 end
 
 module Reminder = struct
-  module LeadTime = struct
-    include Reminder.LeadTime
+  module EmailLeadTime = struct
+    include Reminder.EmailLeadTime
+
+    let t = make_caqti_type Caqti_type.ptime_span create value
+  end
+
+  module TextMessageLeadTime = struct
+    include Reminder.TextMessageLeadTime
 
     let t = make_caqti_type Caqti_type.ptime_span create value
   end

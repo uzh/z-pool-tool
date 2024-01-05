@@ -220,15 +220,14 @@ let experiment_form
       (CCOption.bind experiment (fun { language; _ } -> language))
       ()
   in
-  let lead_time_group field get_value default_value =
+  let lead_time_group field get_value value default_value =
     div
       [ timespan_picker
           language
           field
           ~hints:
             [ I18n.TimeSpanPickerHint
-            ; I18n.DefaultReminderLeadTime
-                (default_value |> Reminder.LeadTime.value)
+            ; I18n.DefaultReminderLeadTime (default_value |> value)
             ]
           ?value:CCOption.(bind experiment get_value)
           ~flash_fetcher
@@ -360,10 +359,12 @@ let experiment_form
                     [ lead_time_group
                         Field.EmailLeadTime
                         email_session_reminder_lead_time_value
+                        Reminder.EmailLeadTime.value
                         default_email_reminder_lead_time
                     ; lead_time_group
                         Field.TextMessageLeadTime
                         text_message_session_reminder_lead_time_value
+                        Reminder.TextMessageLeadTime.value
                         default_text_msg_reminder_lead_time
                     ]
                 ]

@@ -1,4 +1,5 @@
 module Conformist = Pool_common.Utils.PoolConformist
+open Settings
 
 let src = Logs.Src.create "settings.cqrs"
 
@@ -149,23 +150,20 @@ end
 
 module InactiveUser = struct
   module DisableAfter : sig
-    include Common.CommandSig with type t = Settings.InactiveUser.DisableAfter.t
+    include Common.CommandSig with type t = command
 
     val decode
       :  (string * string list) list
       -> (t, Pool_common.Message.error) result
   end = struct
-    type t = Settings.InactiveUser.DisableAfter.t
+    open InactiveUser.DisableAfter
 
-    let command inactive_user_disable_after = inactive_user_disable_after
+    type t = command
 
-    let schema =
-      Conformist.(
-        make Field.[ Settings.InactiveUser.DisableAfter.schema () ] command)
-    ;;
-
-    let handle ?(tags = Logs.Tag.empty) inactive_user_disable_after =
+    let handle ?(tags = Logs.Tag.empty) { time_value; time_unit } =
+      let open CCResult in
       Logs.info ~src (fun m -> m "Handle command DisableAfter" ~tags);
+      let* inactive_user_disable_after = of_int time_value time_unit in
       Ok
         [ Settings.InactiveUserDisableAfterUpdated inactive_user_disable_after
           |> Pool_event.settings
@@ -173,7 +171,9 @@ module InactiveUser = struct
     ;;
 
     let decode data =
-      Conformist.decode_and_validate schema data
+      Conformist.decode_and_validate
+        (update_schema (integer_schema ()) name)
+        data
       |> CCResult.map_err Pool_common.Message.to_conformist_error
     ;;
 
@@ -181,23 +181,20 @@ module InactiveUser = struct
   end
 
   module Warning : sig
-    include Common.CommandSig with type t = Settings.InactiveUser.Warning.t
+    include Common.CommandSig with type t = command
 
     val decode
       :  (string * string list) list
       -> (t, Pool_common.Message.error) result
   end = struct
-    type t = Settings.InactiveUser.Warning.t
+    open InactiveUser.Warning
 
-    let command inactive_user_warning = inactive_user_warning
+    type t = command
 
-    let schema =
-      Conformist.(
-        make Field.[ Settings.InactiveUser.Warning.schema () ] command)
-    ;;
-
-    let handle ?(tags = Logs.Tag.empty) inactive_user_warning =
+    let handle ?(tags = Logs.Tag.empty) { time_value; time_unit } =
+      let open CCResult in
       Logs.info ~src (fun m -> m "Handle command Warning" ~tags);
+      let* inactive_user_warning = of_int time_value time_unit in
       Ok
         [ Settings.InactiveUserWarningUpdated inactive_user_warning
           |> Pool_event.settings
@@ -205,7 +202,9 @@ module InactiveUser = struct
     ;;
 
     let decode data =
-      Conformist.decode_and_validate schema data
+      Conformist.decode_and_validate
+        (update_schema (integer_schema ()) name)
+        data
       |> CCResult.map_err Pool_common.Message.to_conformist_error
     ;;
 
@@ -214,71 +213,89 @@ module InactiveUser = struct
 end
 
 module UpdateTriggerProfileUpdateAfter : sig
-  include Common.CommandSig with type t = Settings.TriggerProfileUpdateAfter.t
+  include Common.CommandSig with type t = command
 
   val decode
     :  (string * string list) list
     -> (t, Pool_common.Message.error) result
 end = struct
-  type t = Settings.TriggerProfileUpdateAfter.t
+  open TriggerProfileUpdateAfter
 
-  let command trigger_update_after = trigger_update_after
+  type t = command
 
-  let schema =
-    Conformist.(
-      make Field.[ Settings.TriggerProfileUpdateAfter.schema () ] command)
-  ;;
-
-  let handle ?(tags = Logs.Tag.empty) inactive_user_warning =
+  let handle ?(tags = Logs.Tag.empty) { time_value; time_unit } =
+    let open CCResult in
     Logs.info ~src (fun m ->
       m "Handle command UpdateTriggerProfileUpdateAfter" ~tags);
+    let* trigger_warning_after = of_int time_value time_unit in
     Ok
-      [ Settings.TriggerProfileUpdateAfterUpdated inactive_user_warning
+      [ Settings.TriggerProfileUpdateAfterUpdated trigger_warning_after
         |> Pool_event.settings
       ]
   ;;
 
   let decode data =
-    Conformist.decode_and_validate schema data
+    Conformist.decode_and_validate (update_schema (integer_schema ()) name) data
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
   let effects = Settings.Guard.Access.update
 end
 
-module UpdateDefaultLeadTime : sig
-  type t = Pool_common.Reminder.LeadTime.t
-
-  val handle
-    :  ?tags:Logs.Tag.set
-    -> [< `Email | `TextMessage ]
-    -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+module UpdateDefaultEmailLeadTime : sig
+  include Common.CommandSig with type t = command
 
   val decode
     :  (string * string list) list
     -> (t, Pool_common.Message.error) result
-
-  val effects : Guard.ValidationSet.t
 end = struct
-  type t = Pool_common.Reminder.LeadTime.t
+  open Pool_common.Reminder.EmailLeadTime
 
-  let schema =
-    Conformist.(make Field.[ Pool_common.Reminder.LeadTime.schema () ] CCFun.id)
-  ;;
+  type t = command
 
-  let handle ?(tags = Logs.Tag.empty) key lead_time =
-    Logs.info ~src (fun m -> m "Handle command UpdateDefaultLeadTime" ~tags);
-    let event =
-      match key with
-      | `Email -> Settings.DefaultReminderLeadTimeUpdated lead_time
-      | `TextMessage -> Settings.DefaultTextMsgReminderLeadTimeUpdated lead_time
-    in
-    Ok [ event |> Pool_event.settings ]
+  let handle ?(tags = Logs.Tag.empty) { time_value; time_unit } =
+    let open CCResult in
+    Logs.info ~src (fun m ->
+      m "Handle command UpdateDefaultEmailLeadTime" ~tags);
+    let* email_lead_time = of_int time_value time_unit in
+    Ok
+      [ Settings.DefaultReminderLeadTimeUpdated email_lead_time
+        |> Pool_event.settings
+      ]
   ;;
 
   let decode data =
-    Conformist.decode_and_validate schema data
+    Conformist.decode_and_validate (update_schema (integer_schema ()) name) data
+    |> CCResult.map_err Pool_common.Message.to_conformist_error
+  ;;
+
+  let effects = Settings.Guard.Access.update
+end
+
+module UpdateDefaultTextMessageLeadTime : sig
+  include Common.CommandSig with type t = command
+
+  val decode
+    :  (string * string list) list
+    -> (t, Pool_common.Message.error) result
+end = struct
+  open Pool_common.Reminder.TextMessageLeadTime
+
+  type t = command
+
+  let handle ?(tags = Logs.Tag.empty) { time_value; time_unit } =
+    let open CCResult in
+    Logs.info ~src (fun m ->
+      m "Handle command UpdateDefaultTextMessageLeadTime" ~tags);
+    let* lead_time = of_int time_value time_unit in
+    Ok
+      [ Settings.DefaultTextMsgReminderLeadTimeUpdated lead_time
+        |> Pool_event.settings
+      ]
+  ;;
+
+  let decode data =
+    Conformist.decode_and_validate (update_schema (integer_schema ()) name) data
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 

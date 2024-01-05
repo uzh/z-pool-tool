@@ -161,7 +161,7 @@ type hint =
   | CustomFieldTypeSelect
   | CustomFieldTypeMultiSelect
   | CustomHtmx of string
-  | DefaultReminderLeadTime of Entity.Reminder.LeadTime.t
+  | DefaultReminderLeadTime of Ptime.Span.t
   | DirectRegistrationDisbled
   | Distribution
   | EmailPlainText
