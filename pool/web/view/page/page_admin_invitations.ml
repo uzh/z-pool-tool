@@ -1,5 +1,6 @@
 open Tyxml.Html
-open Component
+open Component.Input
+module DataTable = Component.DataTable
 
 let form_action ?path id =
   let base =
@@ -11,54 +12,64 @@ let form_action ?path id =
     ~default:base
     (fun path -> Format.asprintf "%s/%s" base path)
     path
-  |> Sihl.Web.externalize_path
 ;;
 
 module Partials = struct
-  let list Pool_context.{ csrf; language; _ } experiment invitation_list =
-    let thead =
-      (Pool_common.Message.Field.[ Contact; ResentAt; Count; CreatedAt ]
-       |> Table.fields_to_txt language)
-      @ [ txt "" ]
+  let list Pool_context.{ language; csrf; _ } experiment (invitations, query) =
+    let open Invitation in
+    let url =
+      form_action ~path:"sent" experiment.Experiment.id |> Uri.of_string
     in
-    let rows =
-      CCList.map
-        (fun (invitation : Invitation.t) ->
-          let open Invitation in
-          [ invitation.contact |> Contact.fullname |> txt
-          ; invitation.resent_at
-            |> CCOption.map_or ~default:"" (fun reset_at ->
-              reset_at
-              |> ResentAt.value
-              |> Pool_common.Utils.Time.formatted_date_time)
-            |> txt
-          ; invitation.send_count |> SendCount.value |> CCInt.to_string |> txt
-          ; invitation.created_at
-            |> Pool_common.CreatedAt.value
-            |> Pool_common.Utils.Time.formatted_date_time
-            |> txt
-          ; form
-              ~a:
-                [ a_method `Post
-                ; a_action
-                    (form_action
-                       ~path:
-                         (Format.asprintf
-                            "%s/resend"
-                            (invitation.Invitation.id |> Pool_common.Id.value))
-                       experiment.Experiment.id)
-                ; a_class [ "flexrow"; "justify-end" ]
-                ]
-              [ Input.csrf_element csrf ()
-              ; Input.submit_element
-                  language
-                  Pool_common.Message.(Resend (Some Field.Invitation))
-                  ()
-              ]
-          ])
-        invitation_list
+    let datatable =
+      DataTable.{ url; query; language; search = Some Invitation.searchable_by }
     in
-    Table.horizontal_table `Striped ~thead rows
+    let cols =
+      [ `column Pool_user.column_name
+      ; `column Pool_user.column_email
+      ; `column column_resent_at
+      ; `column column_count
+      ; `column column_created_at
+      ; `empty
+      ]
+    in
+    let row ({ id; contact; resent_at; send_count; created_at; _ } : t) =
+      let formatted_date = Pool_common.Utils.Time.formatted_date_time in
+      let resend_form =
+        let open Component.Input in
+        form
+          ~a:
+            [ a_method `Post
+            ; a_action
+                (form_action
+                   ~path:
+                     (Format.asprintf "%s/resend" (id |> Pool_common.Id.value))
+                   experiment.Experiment.id
+                 |> Sihl.Web.externalize_path)
+            ; a_class [ "flexrow"; "justify-end" ]
+            ]
+          [ csrf_element csrf ()
+          ; submit_element
+              language
+              Pool_common.Message.(Resend (Some Field.Invitation))
+              ()
+          ]
+      in
+      let open CCFun in
+      [ txt (Contact.lastname_firstname contact)
+      ; txt (Contact.email_address contact |> Pool_user.EmailAddress.value)
+      ; txt
+          (resent_at
+           |> CCOption.map_or
+                ~default:""
+                (ResentAt.value %> Pool_common.Utils.Time.formatted_date_time))
+      ; txt (send_count |> SendCount.value |> CCInt.to_string)
+      ; txt (formatted_date created_at)
+      ; resend_form
+      ]
+      |> CCList.map (CCList.return %> td)
+      |> tr
+    in
+    DataTable.make ~target_id:"experiment-list" ~cols ~row datatable invitations
   ;;
 
   let send_invitation
@@ -99,7 +110,7 @@ module Partials = struct
                     ]
                 ])
               filtered_contacts
-            |> Table.horizontal_table `Striped
+            |> Component.Table.horizontal_table `Striped
         in
         div
           [ h4
@@ -108,12 +119,14 @@ module Partials = struct
           ; form
               ~a:
                 [ a_method `Post
-                ; a_action (form_action experiment.Experiment.id)
+                ; a_action
+                    (form_action experiment.Experiment.id
+                     |> Sihl.Web.externalize_path)
                 ; a_class [ "stack" ]
                 ]
-              [ Input.csrf_element csrf ()
+              [ csrf_element csrf ()
               ; rows
-              ; Input.submit_element
+              ; submit_element
                   language
                   Pool_common.Message.(Send (Some Field.Invitation))
                   ~submit_type:`Success
@@ -133,7 +146,7 @@ module Partials = struct
           Pool_common.(
             Utils.text_to_string language I18n.FilterContactsDescription)
         |> Component.Collapsible.create_note language
-      ; Filter.(
+      ; Component.Filter.(
           filter_form
             ~counts:(matching_filter_count, invitation_count)
             csrf
@@ -187,3 +200,29 @@ module Partials = struct
       ]
   ;;
 end
+
+let sent_invitations
+  (Pool_context.{ language; _ } as context)
+  experiment
+  invitations
+  statistics
+  =
+  let open Pool_common in
+  div
+    ~a:[ a_class [ "stack-lg" ] ]
+    [ div
+        ~a:[ a_class [ "grid-col-2" ] ]
+        [ div
+            ~a:[ a_class [ "stack-xs"; "inset"; "bg-grey-light"; "border" ] ]
+            [ Partials.statistics language statistics ]
+        ]
+    ; Partials.list context experiment invitations
+    ]
+  |> CCList.return
+  |> Layout.Experiment.(
+       create
+         ~active_navigation:I18n.Invitations
+         context
+         (I18n I18n.SentInvitations)
+         experiment)
+;;

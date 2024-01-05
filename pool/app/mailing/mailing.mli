@@ -213,10 +213,11 @@ val find_by_experiment
   -> Experiment.Id.t
   -> t list Lwt.t
 
-val find_by_experiment_with_detail
+val find_by_experiment_with_count
   :  Pool_database.Label.t
+  -> Query.t option
   -> Experiment.Id.t
-  -> (t * InvitationCount.t) list Lwt.t
+  -> ((t * InvitationCount.t) list * Query.t) Lwt.t
 
 val find_overlaps : Pool_database.Label.t -> t -> t list Lwt.t
 
@@ -277,3 +278,11 @@ module Guard : sig
     val delete : Experiment.Id.t -> Id.t -> Guard.ValidationSet.t
   end
 end
+
+val column_start : Query.Column.t
+val column_end : Query.Column.t
+val column_limit : Query.Column.t
+val column_invitation_count : Query.Column.t
+val default_query : Query.t
+val searchable_by : Query.Column.t list
+val sortable_by : Query.Column.t list

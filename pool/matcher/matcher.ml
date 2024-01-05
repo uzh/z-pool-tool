@@ -195,20 +195,17 @@ let events_of_mailings =
         | Filter.MatcherReset _ ->
           contacts
           |> Lwt_list.fold_left_s
-               (fun acc contact ->
-                 match acc with
-                 | Error err -> Lwt_result.fail err
-                 | Ok (invitations, contacts) ->
-                   contact
-                   |> Contact.id
-                   |> Invitation.find_by_contact_and_experiment_opt
-                        pool
-                        experiment.Experiment.id
-                   >|+ (function
-                    | None -> invitations, contacts @ [ contact ]
-                    | Some invitation -> invitations @ [ invitation ], contacts))
-               (Ok ([], []))
-          >>= fun (invitations, contacts) ->
+               (fun (invitations, contacts) contact ->
+                 contact
+                 |> Contact.id
+                 |> Invitation.find_by_contact_and_experiment_opt
+                      pool
+                      experiment.Experiment.id
+                 |> Lwt.map (function
+                   | None -> invitations, contacts @ [ contact ]
+                   | Some invitation -> invitations @ [ invitation ], contacts))
+               ([], [])
+          >|> fun (invitations, contacts) ->
           let* resend_events = resend_existing invitations |> Lwt_result.lift in
           let* create_events = create_new contacts |> Lwt_result.lift in
           Lwt_result.return (create_events @ resend_events))

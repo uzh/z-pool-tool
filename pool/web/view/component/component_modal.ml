@@ -15,13 +15,10 @@ let create ?(active = false) ?subtitle language title id html =
   in
   let attrs =
     let base_classnames = [ "fullscreen-overlay"; "modal" ] in
-    let dataset = a_user_data "modal" id in
     match active with
     | true ->
-      dataset
-      :: [ a_class ("active" :: base_classnames); a_aria "hidden" [ "false" ] ]
-    | false ->
-      dataset :: [ a_class base_classnames; a_aria "hidden" [ "true" ] ]
+      [ a_class ("active" :: base_classnames); a_aria "hidden" [ "false" ] ]
+    | false -> [ a_class base_classnames; a_aria "hidden" [ "true" ] ]
   in
   div
     ~a:(a_id id :: attrs)

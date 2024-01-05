@@ -407,7 +407,6 @@ module AvailableExperiments = struct
     let%lwt () =
       let open Assignment in
       find_by_session database_label session_id
-      ||> get_exn
       ||> CCList.map (fun assignment ->
         Assignment.MarkedAsDeleted assignment |> Pool_event.assignment)
       >|> Pool_event.handle_events database_label

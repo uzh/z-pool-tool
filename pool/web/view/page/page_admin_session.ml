@@ -674,7 +674,7 @@ let detail
   experiment
   (session : Session.t)
   participation_tags
-  assignments
+  (assignments, query)
   =
   let open Pool_common in
   let open Session in
@@ -929,18 +929,63 @@ let detail
       ]
   in
   let assignments_html =
+    let open Page_admin_assignments in
+    let swap_session_modal_id = swap_session_modal_id session in
+    let legend =
+      p
+        [ Utils.hint_to_string language I18n.SessionCloseLegend
+          |> HttpUtils.add_line_breaks
+        ]
+    in
+    let swap_session_modal =
+      div
+        ~a:
+          [ a_id swap_session_modal_id
+          ; a_class [ "fullscreen-overlay"; "modal" ]
+          ]
+        []
+    in
     let assignment_list =
-      Page_admin_assignments.(
-        Partials.overview_list
-          ~allow_session_swap:true
-          ?access_contact_profiles
-          ?view_contact_name
-          ?view_contact_info
-          Session
-          context
-          experiment
-          session
-          assignments)
+      data_table
+        ?access_contact_profiles
+        ?view_contact_name
+        ?view_contact_info
+        Session
+        context
+        experiment
+        session
+        (assignments, query)
+    in
+    let swap_session_modal_js =
+      Format.asprintf
+        {js|
+        const modalId = "%s";
+      %s
+      document.addEventListener("htmx:afterSwap", (e) => {
+        if (e.srcElement.id != modalId) {
+          return
+        }
+        const modal = e.detail.elt;
+        window['pool-tool'].initRichTextEditor(modal);
+
+        modal.querySelector(".modal-close").addEventListener("click", (e) => {
+          modal.classList.remove("active");
+          modal.setAttribute("aria-hidden", "true");
+        })
+
+        const checkbox = modal.querySelector(`[data-toggle]`);
+        const target = document.getElementById(checkbox.dataset.toggle);
+        checkbox.addEventListener("click", (e) => {
+          if(e.currentTarget.checked) {
+            target.classList.remove("hidden");
+          } else {
+            target.classList.add("hidden");
+          }
+        })
+      })
+      |js}
+        swap_session_modal_id
+        (Component.Modal.js_modal_add_spinner swap_session_modal_id)
     in
     div
       ~a:[ a_class [ "stack" ] ]
@@ -971,7 +1016,10 @@ let detail
                       Message.(Print (Some Field.Assignments)))
               ]
           ]
+      ; legend
+      ; swap_session_modal
       ; assignment_list
+      ; script (Unsafe.data swap_session_modal_js)
       ]
   in
   let edit_button =

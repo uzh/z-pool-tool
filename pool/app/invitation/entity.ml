@@ -61,15 +61,28 @@ let email_experiment_elements (experiment : Experiment.t) =
   ]
 ;;
 
+open Pool_common.Message
+
 let searchable_by = Contact.searchable_by
 
+let column_resent_at =
+  Query.Column.create (Field.ResentAt, "pool_invitations.resent_at")
+;;
+
+let column_count =
+  Query.Column.create (Field.Count, "pool_invitations.send_count")
+;;
+
+let column_created_at =
+  Query.Column.create (Field.CreatedAt, "pool_invitations.created_at")
+;;
+
 let sortable_by =
-  searchable_by
-  @ (Pool_common.Message.
-       [ Field.ResentAt, "pool_invitations.resent_at"
-       ; Field.CreatedAt, "pool_invitations.created_at"
-       ]
-     |> Query.Column.create_list)
+  searchable_by @ [ column_count; column_resent_at; column_created_at ]
+;;
+
+let default_query =
+  Query.{ pagination = None; search = None; sort = Some Contact.default_sort }
 ;;
 
 module Statistics = struct

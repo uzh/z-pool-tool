@@ -69,14 +69,10 @@ val find_by_experiment
   :  ?query:Query.t
   -> Pool_database.Label.t
   -> Experiment.Id.t
-  -> (t list * Query.t, Pool_common.Message.error) result Lwt.t
+  -> (t list * Query.t) Lwt.t
 
 val count_by_experiment : Pool_database.Label.t -> Experiment.Id.t -> int Lwt.t
-
-val find_by_contact
-  :  Pool_database.Label.t
-  -> Contact.t
-  -> (t list, Pool_common.Message.error) result Lwt.t
+val find_by_contact : Pool_database.Label.t -> Contact.t -> t list Lwt.t
 
 val find_experiment_id_of_invitation
   :  Pool_database.Label.t
@@ -93,10 +89,14 @@ val find_by_contact_and_experiment_opt
   :  Pool_database.Label.t
   -> Experiment.Id.t
   -> Contact.Id.t
-  -> (t option, Pool_common.Message.error) result Lwt.t
+  -> t option Lwt.t
 
+val column_resent_at : Query.Column.t
+val column_created_at : Query.Column.t
+val column_count : Query.Column.t
 val searchable_by : Query.Column.t list
 val sortable_by : Query.Column.t list
+val default_query : Query.t
 
 module Guard : sig
   module Target : sig

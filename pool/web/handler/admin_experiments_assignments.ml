@@ -36,18 +36,17 @@ let list ?(marked_as_deleted = false) req =
       >|+ Session.group_and_sort
       >|+ CCList.flat_map (fun (session, follow_ups) -> session :: follow_ups)
     in
-    let* html =
+    let html =
       match marked_as_deleted with
       | false ->
         Lwt_list.map_s
           (fun session ->
-            let* assignments =
+            let%lwt assignments =
               Assignment.find_by_session database_label session.Session.id
             in
-            Lwt_result.return (session, assignments))
+            Lwt.return (session, assignments))
           sessions
-        ||> CCList.all_ok
-        >|+ Page.Admin.Assignment.list
+        >|> Page.Admin.Assignment.list
               ~access_contact_profiles
               ~view_contact_name
               ~view_contact_info
@@ -55,17 +54,14 @@ let list ?(marked_as_deleted = false) req =
               context
       | true ->
         Lwt_list.fold_left_s
-          (fun res session ->
-            res
-            |> Lwt_result.lift
-            >>= fun sessions ->
+          (fun sessions session ->
             Assignment.find_deleted_by_session database_label session.Session.id
-            >|+ function
+            ||> function
             | [] -> sessions
             | assignments -> sessions @ [ session, assignments ])
-          (Ok [])
+          []
           sessions
-        >|+ Page.Admin.Assignment.marked_as_deleted
+        >|> Page.Admin.Assignment.marked_as_deleted
               ~access_contact_profiles
               ~view_contact_name
               ~view_contact_info
@@ -126,7 +122,7 @@ let cancel req =
     Utils.Lwt_result.map_error (fun err -> err, redirect_path)
     @@
     let tags = Pool_context.Logger.Tags.req req in
-    let* assignments =
+    let%lwt assignments =
       Assignment.find_with_follow_ups database_label assignment_id
     in
     let* session = Session.find database_label session_id in
@@ -158,7 +154,7 @@ let mark_as_deleted req =
     Utils.Lwt_result.map_error (fun err -> err, redirect_path)
     @@
     let tags = Pool_context.Logger.Tags.req req in
-    let* assignments =
+    let%lwt assignments =
       Assignment.find_with_follow_ups database_label assignment_id
     in
     let events =
@@ -237,7 +233,9 @@ let close_htmx req =
       |> Lwt_result.lift
     in
     let%lwt () = Pool_event.handle_event ~tags database_label event in
-    let* counters = Assignment.counters_of_session database_label session_id in
+    let%lwt counters =
+      Assignment.counters_of_session database_label session_id
+    in
     let updated_fields =
       let open Assignment in
       let fields =

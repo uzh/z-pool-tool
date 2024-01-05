@@ -3,8 +3,7 @@ open Assignment
 let src = Logs.Src.create "session_reminder.service"
 
 let create_reminder_emails pool tenant sys_languages session experiment =
-  let open Utils.Lwt_result.Infix in
-  let* assignments = find_uncanceled_by_session pool session.Session.id in
+  let%lwt assignments = find_uncanceled_by_session pool session.Session.id in
   let%lwt create_message =
     Message_template.SessionReminder.prepare_emails
       pool
@@ -18,8 +17,7 @@ let create_reminder_emails pool tenant sys_languages session experiment =
 ;;
 
 let create_reminder_text_messages pool tenant sys_languages session experiment =
-  let open Utils.Lwt_result.Infix in
-  let* assignments = find_uncanceled_by_session pool session.Session.id in
+  let%lwt assignments = find_uncanceled_by_session pool session.Session.id in
   let%lwt create_message =
     Message_template.SessionReminder.prepare_text_messages
       pool

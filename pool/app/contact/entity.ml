@@ -155,6 +155,7 @@ end
 let user { user; _ } = user
 let id m = m.user.Sihl_user.id |> Pool_common.Id.of_string
 let fullname m = m.user |> User.user_fullname
+let user_lastname_firstname m = m.user |> User.user_lastname_firstname
 let firstname m = m.user |> User.user_firstname
 let lastname m = m.user |> User.user_lastname
 let lastname_firstname m = m.user |> User.user_lastname_firstname
@@ -207,51 +208,12 @@ end
 
 let profile_completion_cookie = "profile_completion"
 
-open Pool_common.Message
-
-let column_email = (Field.Email, "user_users.email") |> Query.Column.create
-
-let column_first_name =
-  (Field.Firstname, "user_users.given_name") |> Query.Column.create
-;;
-
-let column_last_name =
-  (Field.Lastname, "user_users.name") |> Query.Column.create
-;;
-
-let column_name =
-  (Field.Name, "CONCAT_WS(' ', user_users.name, user_users.given_name)")
+let column_cell_phone =
+  (Pool_common.Message.Field.CellPhone, "pool_contacts.cell_phone")
   |> Query.Column.create
 ;;
 
-let searchable_and_sortable_by =
-  [ Field.Email, "user_users.email"
-  ; Field.Firstname, "user_users.given_name"
-  ; Field.Lastname, "user_users.name"
-  ]
-;;
-
-let searchable_by =
-  let open Pool_common.Message in
-  ( Field.Name
-  , "CONCAT_WS(' ', user_users.name, user_users.given_name, user_users.name)" )
-  :: searchable_and_sortable_by
-  |> Query.Column.create_list
-;;
-
-let sortable_by =
-  let open Pool_common.Message in
-  column_name
-  :: (searchable_and_sortable_by
-      @ [ Field.CreatedAt, "pool_contacts.created_at" ]
-      |> Query.Column.create_list)
-;;
-
-let default_sort =
-  let open Query in
-  Sort.{ column = column_name; order = SortOrder.Ascending }
-;;
-
-let default_query =
-  Query.{ pagination = None; search = None; sort = Some default_sort }
-;;
+let searchable_by = Pool_user.searchable_by
+let sortable_by = Pool_user.sortable_by
+let default_sort = Pool_user.default_sort
+let default_query = Pool_user.default_query

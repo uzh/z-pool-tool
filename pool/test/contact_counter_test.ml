@@ -23,9 +23,8 @@ let invitation_mail (_ : Contact.t) = Ok (Common_test.Data.create_email ())
 let find_assignment_by_contact_and_session contact_id session_id =
   let open Assignment in
   find_uncanceled_by_session database_label session_id
-  >|+ CCList.find (fun ({ contact; _ } : Assignment.t) ->
+  ||> CCList.find (fun ({ contact; _ } : Assignment.t) ->
     Contact.(Id.equal (id contact) contact_id))
-  ||> get_exn
 ;;
 
 let set_sessions_to_past session_ids =
@@ -247,7 +246,6 @@ module CancelSession = struct
                  Assignment.find_uncanceled_by_session
                    database_label
                    session.Session.id
-                 ||> get_exn
                  ||> CCList.append assignments)
                []
           ||> Assignment.group_by_contact

@@ -258,3 +258,28 @@ let per_interval interval { start_at; end_at; limit; _ } =
   then 0.
   else limit / duration * Span.to_float_s interval |> max 0. |> min limit
 ;;
+
+open Pool_common.Message
+
+let column_start = (Field.start, "pool_mailing.`start`") |> Query.Column.create
+let column_end = (Field.End, "pool_mailing.`end`") |> Query.Column.create
+let column_limit = (Field.Limit, "pool_mailing.`limit`") |> Query.Column.create
+
+let column_invitation_count =
+  (Field.InvitationCount, "invitation_count") |> Query.Column.create
+;;
+
+let searchable_by = []
+
+let sortable_by =
+  searchable_by @ [ column_end; column_limit; column_invitation_count ]
+;;
+
+let default_sort =
+  let open Query in
+  Sort.{ column = column_start; order = SortOrder.Ascending }
+;;
+
+let default_query =
+  Query.{ pagination = None; search = None; sort = Some default_sort }
+;;

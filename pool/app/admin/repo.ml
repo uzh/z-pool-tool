@@ -38,28 +38,15 @@ module Sql = struct
       (RepoEntity.Write.of_entity t)
   ;;
 
-  let find_request_sql ?order_by ?additional_joins where =
-    let joins =
-      match additional_joins with
-      | None -> joins
-      | Some additional_joins -> Format.asprintf "%s\n%s" joins additional_joins
+  let find_request_sql ?(count = false) where_fragment =
+    let columns =
+      if count then "COUNT(*)" else sql_select_columns |> CCString.concat ", "
     in
-    let order_by = order_by |> CCOption.map (Format.asprintf "ORDER BY %s") in
-    let select_from =
-      Format.asprintf
-        {sql|
-          SELECT
-            %s
-          FROM pool_admins
-            %s
-        |sql}
-        (sql_select_columns |> CCString.concat ", ")
-        joins
-    in
-    let query = Format.asprintf "%s %s" select_from where in
-    match order_by with
-    | Some order_by -> Format.asprintf "%s ORDER BY %s" query order_by
-    | None -> query
+    Format.asprintf
+      {sql|SELECT %s FROM pool_admins %s %s|sql}
+      columns
+      joins
+      where_fragment
   ;;
 
   let find_request caqti_type =
@@ -107,8 +94,8 @@ module Sql = struct
     |> Caqti_type.unit ->* RepoEntity.t
   ;;
 
-  let find_all pool =
-    Utils.Database.collect (Pool_database.Label.value pool) find_all_request
+  let find_by ?query pool =
+    Query.collect_and_count pool query ~select:find_request_sql RepoEntity.t
   ;;
 
   let find_multiple_request ids =
@@ -296,7 +283,7 @@ end
 let insert = Sql.insert
 let find = Sql.find
 let find_by_email = Sql.find_by_email
-let find_all = Sql.find_all
+let find_by = Sql.find_by
 let find_multiple = Sql.find_multiple
 let update = Sql.update
 let update_sign_in_count = Sql.update_sign_in_count

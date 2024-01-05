@@ -1,52 +1,45 @@
 module RepoEntity = Repo_entity
 module Dynparam = Utils.Database.Dynparam
 
-let of_entity = RepoEntity.of_entity
-let to_entity = RepoEntity.to_entity
+let sql_select_columns =
+  (Entity.Id.sql_select_fragment ~field:"pool_assignments.uuid"
+   :: Contact.Repo.sql_select_columns)
+  @ [ "pool_assignments.no_show"
+    ; "pool_assignments.participated"
+    ; "pool_assignments.matches_filter"
+    ; "pool_assignments.canceled_at"
+    ; "pool_assignments.marked_as_deleted"
+    ; "pool_assignments.external_data_id"
+    ; "pool_assignments.reminder_manually_last_sent_at"
+    ; "pool_assignments.created_at"
+    ; "pool_assignments.updated_at"
+    ]
+;;
+
+let joins =
+  Format.asprintf
+    {sql|
+      INNER JOIN pool_contacts
+        ON pool_contacts.user_uuid = pool_assignments.contact_uuid
+      %s
+    |sql}
+    Contact.Repo.joins
+;;
+
+let joins_session =
+  {sql| INNER JOIN pool_sessions ON pool_sessions.uuid = pool_assignments.session_uuid |sql}
+;;
 
 module Sql = struct
-  let select_sql ?(joins = "") where =
+  let find_request_sql ?(additional_joins = []) ?(count = false) where_fragment =
+    let columns =
+      if count then "COUNT(*)" else CCString.concat ", " sql_select_columns
+    in
     Format.asprintf
-      {sql|
-        SELECT
-          LOWER(CONCAT(
-            SUBSTR(HEX(pool_assignments.uuid), 1, 8), '-',
-            SUBSTR(HEX(pool_assignments.uuid), 9, 4), '-',
-            SUBSTR(HEX(pool_assignments.uuid), 13, 4), '-',
-            SUBSTR(HEX(pool_assignments.uuid), 17, 4), '-',
-            SUBSTR(HEX(pool_assignments.uuid), 21)
-          )),
-          LOWER(CONCAT(
-            SUBSTR(HEX(pool_assignments.session_uuid), 1, 8), '-',
-            SUBSTR(HEX(pool_assignments.session_uuid), 9, 4), '-',
-            SUBSTR(HEX(pool_assignments.session_uuid), 13, 4), '-',
-            SUBSTR(HEX(pool_assignments.session_uuid), 17, 4), '-',
-            SUBSTR(HEX(pool_assignments.session_uuid), 21)
-          )),
-          LOWER(CONCAT(
-            SUBSTR(HEX(pool_assignments.contact_uuid), 1, 8), '-',
-            SUBSTR(HEX(pool_assignments.contact_uuid), 9, 4), '-',
-            SUBSTR(HEX(pool_assignments.contact_uuid), 13, 4), '-',
-            SUBSTR(HEX(pool_assignments.contact_uuid), 17, 4), '-',
-            SUBSTR(HEX(pool_assignments.contact_uuid), 21)
-          )),
-          pool_assignments.no_show,
-          pool_assignments.participated,
-          pool_assignments.matches_filter,
-          pool_assignments.canceled_at,
-          pool_assignments.marked_as_deleted,
-          pool_assignments.external_data_id,
-          pool_assignments.reminder_manually_last_sent_at,
-          pool_assignments.created_at,
-          pool_assignments.updated_at
-        FROM
-          pool_assignments
-        %s
-        WHERE
-        %s
-    |sql}
-      joins
-      where
+      {sql|SELECT %s FROM pool_assignments %s %s|sql}
+      columns
+      (joins :: additional_joins |> CCString.concat "\n")
+      where_fragment
   ;;
 
   let select_public_sql ?(joins = "") where =
@@ -74,9 +67,9 @@ module Sql = struct
   let find_request =
     let open Caqti_request.Infix in
     {sql|
-        pool_assignments.uuid = UNHEX(REPLACE(?, '-', ''))
+        WHERE pool_assignments.uuid = UNHEX(REPLACE(?, '-', ''))
     |sql}
-    |> select_sql
+    |> find_request_sql
     |> Caqti_type.string ->! RepoEntity.t
   ;;
 
@@ -90,17 +83,15 @@ module Sql = struct
   ;;
 
   let find_closed_request =
-    let joins =
-      {sql|
-        INNER JOIN pool_sessions ON pool_sessions.uuid = pool_assignments.session_uuid
-      |sql}
-    in
+    let additional_joins = [ joins_session ] in
     let open Caqti_request.Infix in
     {sql|
-        pool_assignments.uuid = UNHEX(REPLACE(?, '-', ''))
-        AND pool_sessions.closed_at IS NOT NULL
+     WHERE
+      pool_assignments.uuid = UNHEX(REPLACE(?, '-', ''))
+    AND 
+      pool_sessions.closed_at IS NOT NULL
     |sql}
-    |> select_sql ~joins
+    |> find_request_sql ~additional_joins
     |> Caqti_type.string ->! RepoEntity.t
   ;;
 
@@ -117,18 +108,17 @@ module Sql = struct
     let open Caqti_request.Infix in
     let id_fragment =
       {sql|
-        pool_assignments.session_uuid = UNHEX(REPLACE(?, '-', ''))
+        WHERE 
+          pool_assignments.session_uuid = UNHEX(REPLACE(?, '-', ''))
         AND
-        pool_assignments.marked_as_deleted = 0
+          pool_assignments.marked_as_deleted = 0
       |sql}
     in
     where_condition
     |> CCOption.map_or
          ~default:id_fragment
          (Format.asprintf "%s AND %s" id_fragment)
-    |> select_sql
-         ~joins:
-           {sql|JOIN user_users ON pool_assignments.contact_uuid = user_users.uuid|sql}
+    |> find_request_sql
     |> Format.asprintf "%s\n ORDER BY user_users.name, user_users.given_name"
     |> Caqti_type.string ->* RepoEntity.t
   ;;
@@ -140,14 +130,28 @@ module Sql = struct
       (Session.Id.value id)
   ;;
 
+  let query_by_session ?query pool id =
+    let where =
+      ( "pool_assignments.session_uuid = UNHEX(REPLACE(?, '-', ''))"
+      , Dynparam.(empty |> add Session.Repo.Id.t id) )
+    in
+    Query.collect_and_count
+      pool
+      query
+      ~select:(find_request_sql ?additional_joins:None)
+      ~where
+      Repo_entity.t
+  ;;
+
   let find_deleted_by_session_request () =
     let open Caqti_request.Infix in
     {sql|
+      WHERE
         pool_assignments.session_uuid = UNHEX(REPLACE(?, '-', ''))
-        AND
+      AND
         pool_assignments.marked_as_deleted = 1
       |sql}
-    |> select_sql
+    |> find_request_sql
     |> Caqti_type.string ->* RepoEntity.t
   ;;
 
@@ -161,11 +165,12 @@ module Sql = struct
   let find_by_contact_request =
     let open Caqti_request.Infix in
     {sql|
-      pool_assignments.contact_uuid = UNHEX(REPLACE(?, '-', ''))
+      WHERE 
+        pool_assignments.contact_uuid = UNHEX(REPLACE(?, '-', ''))
       AND
-      pool_assignments.marked_as_deleted = 0
+        pool_assignments.marked_as_deleted = 0
     |sql}
-    |> select_sql
+    |> find_request_sql
     |> Caqti_type.string ->* RepoEntity.t
   ;;
 
@@ -216,14 +221,10 @@ module Sql = struct
 
   let find_with_follow_ups_request =
     let open Caqti_request.Infix in
-    let joins =
-      {sql|
-        INNER JOIN pool_sessions
-        ON pool_assignments.session_uuid = pool_sessions.uuid
-      |sql}
-    in
+    let additional_joins = [ joins_session ] in
     {sql|
-      pool_assignments.marked_as_deleted = 0
+      WHERE
+        pool_assignments.marked_as_deleted = 0
       AND(
         pool_assignments.uuid = UNHEX(REPLACE($1, '-', ''))
         OR(
@@ -232,7 +233,7 @@ module Sql = struct
           pool_assignments.contact_uuid = (SELECT contact_uuid FROM pool_assignments WHERE pool_assignments.uuid = UNHEX(REPLACE($1, '-', '')))
         ))
     |sql}
-    |> select_sql ~joins
+    |> find_request_sql ~additional_joins
     |> Caqti_type.string ->* RepoEntity.t
   ;;
 
@@ -245,20 +246,16 @@ module Sql = struct
 
   let find_followups_request =
     let open Caqti_request.Infix in
-    let joins =
-      {sql|
-        INNER JOIN pool_sessions
-        ON pool_assignments.session_uuid = pool_sessions.uuid
-      |sql}
-    in
+    let additional_joins = [ joins_session ] in
     {sql|
+      WHERE
         pool_sessions.follow_up_to = (SELECT session_uuid FROM pool_assignments WHERE pool_assignments.uuid = UNHEX(REPLACE($1, '-', '')))
       AND
         pool_assignments.contact_uuid = UNHEX(REPLACE($2, '-', ''))
       AND
         pool_assignments.marked_as_deleted = 0
     |sql}
-    |> select_sql ~joins
+    |> find_request_sql ~additional_joins
     |> Caqti_type.(t2 string string) ->* RepoEntity.t
   ;;
 
@@ -334,7 +331,7 @@ module Sql = struct
       ON DUPLICATE KEY UPDATE
         marked_as_deleted = 0
     |sql}
-    |> RepoEntity.t ->. Caqti_type.unit
+    |> RepoEntity.Write.t ->. Caqti_type.unit
   ;;
 
   let insert pool =
@@ -473,66 +470,28 @@ module Sql = struct
   ;;
 end
 
-let contact_to_assignment pool assignment =
-  let open Utils.Lwt_result.Infix in
-  Contact.find pool assignment.RepoEntity.contact_id >|+ to_entity assignment
-;;
-
-let find pool id =
-  let open Utils.Lwt_result.Infix in
-  (* TODO Implement as transaction *)
-  Sql.find pool id >>= contact_to_assignment pool
-;;
-
-let find_closed pool id =
-  let open Utils.Lwt_result.Infix in
-  Sql.find_closed pool id >>= contact_to_assignment pool
-;;
-
+let find = Sql.find
+let find_closed = Sql.find_closed
 let uncanceled_condition = "pool_assignments.canceled_at IS NULL"
 
 let find_by_session filter pool id =
-  let open Utils.Lwt_result.Infix in
-  (* TODO Implement as transaction *)
-  let sql =
-    match filter with
-    | `All -> Sql.find_by_session pool id
-    | `Uncanceled ->
-      Sql.find_by_session ~where_condition:uncanceled_condition pool id
-    | `Deleted -> Sql.find_deleted_by_session pool id
-  in
-  sql >|> Lwt_list.map_s (contact_to_assignment pool) ||> CCList.all_ok
+  match filter with
+  | `All -> Sql.find_by_session pool id
+  | `Uncanceled ->
+    Sql.find_by_session ~where_condition:uncanceled_condition pool id
+  | `Deleted -> Sql.find_deleted_by_session pool id
 ;;
 
 let find_by_contact pool contact =
-  let open Utils.Lwt_result.Infix in
-  (* TODO Implement as transaction *)
-  contact
-  |> Contact.id
-  |> Sql.find_by_contact pool
-  (* Reload contact from DB, does not allow already made updates of the provided
-     contact record *)
-  >|> Lwt_list.map_s (contact_to_assignment pool)
-  ||> CCList.all_ok
+  contact |> Contact.id |> Sql.find_by_contact pool
 ;;
 
-let find_with_follow_ups pool id =
-  let open Utils.Lwt_result.Infix in
-  Sql.find_with_follow_ups pool id
-  >|> Lwt_list.map_s (contact_to_assignment pool)
-  ||> CCList.all_ok
-;;
-
-let find_follow_ups pool m =
-  let open Utils.Lwt_result.Infix in
-  Sql.find_follow_ups pool m
-  ||> CCList.map (CCFun.flip to_entity m.Entity.contact)
-;;
-
+let find_with_follow_ups = Sql.find_with_follow_ups
+let find_follow_ups = Sql.find_follow_ups
 let find_session_id = Sql.find_session_id
 
 let insert pool session_id model =
-  model |> of_entity session_id |> Sql.insert pool
+  model |> RepoEntity.Write.of_entity session_id |> Sql.insert pool
 ;;
 
 let update = Sql.update
@@ -546,3 +505,4 @@ let contact_participation_in_other_assignments =
 let find_uncanceled_by_session = find_by_session `Uncanceled
 let find_deleted_by_session = find_by_session `Deleted
 let find_by_session = find_by_session `All
+let query_by_session = Sql.query_by_session

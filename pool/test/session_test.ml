@@ -1477,7 +1477,6 @@ let close_session_check_contact_figures _ () =
   in
   let%lwt assignments =
     Assignment.find_by_session Data.database_label session.Session.id
-    ||> get_or_failwith
   in
   let find_assignment contact =
     CCList.find

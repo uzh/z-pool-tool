@@ -122,7 +122,7 @@ type session_counters =
 val counters_of_session
   :  Pool_database.Label.t
   -> Session.Id.t
-  -> (session_counters, Pool_common.Message.error) result Lwt.t
+  -> session_counters Lwt.t
 
 val find
   :  Pool_database.Label.t
@@ -152,26 +152,25 @@ val find_all_by_experiment_and_contact_opt
   -> Contact.t
   -> Public.t list Lwt.t
 
-val find_by_session
-  :  Pool_database.Label.t
+val find_by_session : Pool_database.Label.t -> Session.Id.t -> t list Lwt.t
+
+val query_by_session
+  :  ?query:Query.t
+  -> Pool_database.Label.t
   -> Session.Id.t
-  -> (t list, Pool_common.Message.error) result Lwt.t
+  -> (t list * Query.t) Lwt.t
 
 val find_uncanceled_by_session
   :  Pool_database.Label.t
   -> Session.Id.t
-  -> (t list, Pool_common.Message.error) result Lwt.t
+  -> t list Lwt.t
 
 val find_deleted_by_session
   :  Pool_database.Label.t
   -> Session.Id.t
-  -> (t list, Pool_common.Message.error) result Lwt.t
+  -> t list Lwt.t
 
-val find_with_follow_ups
-  :  Pool_database.Label.t
-  -> Id.t
-  -> (t list, Pool_common.Message.error) result Lwt.t
-
+val find_with_follow_ups : Pool_database.Label.t -> Id.t -> t list Lwt.t
 val find_follow_ups : Pool_database.Label.t -> t -> t list Lwt.t
 
 val contact_participation_in_other_assignments
@@ -187,6 +186,14 @@ val find_external_data_identifiers_by_contact
   -> ExternalDataIdentifier.t list Lwt.t
 
 val group_by_contact : t list -> (Contact.t * t list) list
+val column_canceled_at : Query.Column.t
+val column_no_show : Query.Column.t
+val column_participated : Query.Column.t
+val column_external_data_id : Query.Column.t
+val searchable_by : Query.Column.t list
+val sortable_by : Query.Column.t list
+val default_sort : Query.Sort.t
+val default_query : Query.t
 
 type event =
   | Canceled of t

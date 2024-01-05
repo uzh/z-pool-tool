@@ -6,7 +6,6 @@ let assignment pool =
       (fun experiment ->
         let%lwt experiment_invitations, (_ : Query.t) =
           Invitation.find_by_experiment pool experiment.Experiment.id
-          ||> CCResult.get_exn
         in
         let%lwt session =
           Session.find_all_for_experiment pool experiment.Experiment.id

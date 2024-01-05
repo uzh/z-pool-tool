@@ -100,6 +100,7 @@ let make
   ?(align_last_end = true)
   ?align_top
   ?(layout = `Striped)
+  ?(prepend_html = txt "")
   ~target_id
   ~cols
   ~row
@@ -130,5 +131,5 @@ let make
   in
   div
     ~a:[ a_class [ "stack" ]; a_id target_id ]
-    [ search_bar; table ~a:[ classes ] ~thead rows; pagination ]
+    [ search_bar; prepend_html; table ~a:[ classes ] ~thead rows; pagination ]
 ;;

@@ -76,6 +76,10 @@ module Partials = struct
     contact |> Contact.lastname |> Pool_user.Lastname.value |> txt
   ;;
 
+  let contact_lastname_firstname ({ Assignment.contact; _ } : Assignment.t) =
+    contact |> Contact.lastname_firstname |> txt
+  ;;
+
   let contact_email ({ Assignment.contact; _ } : Assignment.t) =
     contact |> Contact.email_address |> Pool_user.EmailAddress.value |> txt
   ;;
@@ -96,7 +100,7 @@ module Partials = struct
   ;;
 
   module ReminderModal = struct
-    let modal_id id = Format.asprintf "%s-reminder" (Assignment.Id.value id)
+    let modal_id id = Format.asprintf "reminder-%s" (Assignment.Id.value id)
     let control = Pool_common.Message.(Send (Some Field.Reminder))
     let title language = Pool_common.(Utils.control_to_string language control)
 
@@ -477,7 +481,8 @@ module Partials = struct
                 then
                   div
                     ~a:[ a_class [ "flexrow"; "flex-gap-sm" ] ]
-                    (value :: Status.make_icons assignment.contact `Name)
+                    (value
+                     :: Status.make_icons language assignment.contact `Name)
                 else value)
             in
             let buttons =
@@ -602,6 +607,246 @@ module Partials = struct
     |> div ~a:[ a_class [ "stack-lg" ] ]
   ;;
 end
+
+let data_table
+  ?(access_contact_profiles = false)
+  ?(view_contact_name = false)
+  ?(view_contact_info = false)
+  ?(is_print = false)
+  redirect
+  (Pool_context.{ language; csrf; _ } as context)
+  experiment
+  session
+  (assignments, query)
+  =
+  let open Pool_common in
+  let open Partials in
+  let open Assignment in
+  let url =
+    Format.asprintf
+      "/admin/experiments/%s/sessions/%s"
+      (experiment.Experiment.id |> Experiment.Id.value)
+      (session.Session.id |> Session.Id.value)
+    |> Uri.of_string
+  in
+  let data_table =
+    Component.DataTable.
+      { url; query; language; search = Some Assignment.searchable_by }
+  in
+  let conditional_left_columns =
+    [ view_contact_name, Pool_user.column_name, contact_lastname_firstname
+    ; view_contact_info, Pool_user.column_email, contact_email
+    ; view_contact_info, Contact.column_cell_phone, contact_cellphone
+    ]
+  in
+  let conditional_right_columns =
+    [ ( Experiment.(external_data_required_value experiment)
+      , column_external_data_id
+      , assignment_external_data_id )
+    ; true, column_canceled_at, canceled_at
+    ]
+  in
+  let swap_session_modal_id = swap_session_modal_id session in
+  let deletable = CCFun.(Assignment.is_deletable %> CCResult.is_ok) in
+  let cancelable m =
+    Session.assignments_cancelable session |> CCResult.is_ok
+    && Assignment.is_cancellable m |> CCResult.is_ok
+  in
+  let session_changeable m =
+    Assignment.session_changeable session m |> CCResult.is_ok
+  in
+  let action { Assignment.id; _ } suffix =
+    assignment_specific_path
+      ~suffix
+      experiment.Experiment.id
+      session.Session.id
+      id
+  in
+  let create_reminder_modal assignment =
+    Assignment.reminder_sendable session assignment |> CCResult.is_ok
+  in
+  let button_form ?(style = `Primary) suffix confirmable control icon assignment
+    =
+    let hidden_redirect_input =
+      input_element
+        ~value:(show_assignment_redirect redirect)
+        language
+        `Hidden
+        Field.Redirect
+    in
+    form
+      ~a:
+        [ a_action (action assignment suffix |> Sihl.Web.externalize_path)
+        ; a_method `Post
+        ; a_user_data
+            "confirmable"
+            Pool_common.(Utils.confirmable_to_string language confirmable)
+        ]
+      [ csrf_element csrf ()
+      ; hidden_redirect_input
+      ; submit_element
+          ~is_text:true
+          ~submit_type:style
+          ~has_icon:icon
+          language
+          control
+          ()
+      ]
+  in
+  let edit m =
+    let action = action m "edit" in
+    link_as_button
+      action
+      ~is_text:true
+      ~control:(language, Pool_common.Message.(Edit None))
+      ~icon:Component.Icon.CreateOutline
+  in
+  let profile_link { Assignment.contact; _ } =
+    let action =
+      Format.asprintf "/admin/contacts/%s" Contact.(id contact |> Id.value)
+    in
+    link_as_button
+      action
+      ~is_text:true
+      ~control:(language, Pool_common.Message.OpenProfile)
+      ~icon:Component.Icon.PersonOutline
+  in
+  let external_data_ids { Assignment.contact; _ } =
+    a
+      ~a:
+        [ a_href
+            (Format.asprintf
+               "%s/%s"
+               (Page_admin_contact.path contact)
+               Field.(human_url ExternalDataId)
+             |> Sihl.Web.externalize_path)
+        ; a_class [ "has-icon"; "primary"; "btn"; "is-text" ]
+        ]
+      [ Icon.(to_html ReorderThree)
+      ; txt Utils.(nav_link_to_string language I18n.ExternalDataIds)
+      ]
+  in
+  let session_change_toggle { Assignment.id; _ } =
+    let action =
+      assignment_specific_path
+        ~suffix:"swap-session"
+        experiment.Experiment.id
+        session.Session.id
+        id
+      |> Sihl.Web.externalize_path
+    in
+    link_as_button
+      "#"
+      ~attributes:
+        [ a_user_data "hx-trigger" "click"
+        ; a_user_data "hx-get" action
+        ; a_user_data "hx-swap" "outerHTML"
+        ; a_user_data "hx-target" (Format.asprintf "#%s" swap_session_modal_id)
+        ]
+      ~is_text:true
+      ~control:(language, Pool_common.Message.ChangeSession)
+      ~icon:Component.Icon.SwapHorizonal
+  in
+  let cancel =
+    button_form
+      ~style:`Error
+      "cancel"
+      I18n.(
+        if session.Session.has_follow_ups
+        then CancelAssignmentWithFollowUps
+        else CancelAssignment)
+      (Message.Cancel None)
+      Component.Icon.Close
+  in
+  let mark_as_deleted =
+    button_form
+      ~style:`Error
+      "mark-as-deleted"
+      I18n.(
+        if session.Session.has_follow_ups
+        then MarkAssignmentWithFollowUpsAsDeleted
+        else MarkAssignmentAsDeleted)
+      Message.MarkAsDeleted
+      Component.Icon.TrashOutline
+  in
+  match CCList.is_empty assignments with
+  | true -> p [ empty language ]
+  | false ->
+    let cols =
+      let left =
+        conditional_left_columns
+        |> CCList.filter_map (fun (check, column, _) ->
+          if check then Some (`column column) else None)
+      in
+      let center = [ `column column_participated; `column column_no_show ] in
+      let right =
+        conditional_right_columns
+        |> CCList.filter_map (fun (check, column, _) ->
+          if check then Some (`column column) else None)
+      in
+      let base = left @ center @ right in
+      if is_print then base else base @ [ `empty ]
+    in
+    let row (assignment : t) =
+      let left =
+        conditional_left_columns
+        |> CCList.filter_map (fun (check, _, to_html) ->
+          if check then Some (to_html assignment) else None)
+      in
+      let center =
+        [ assignment_participated assignment; assignment_no_show assignment ]
+      in
+      let right =
+        conditional_right_columns
+        |> CCList.filter_map (fun (check, _, to_html) ->
+          if check then Some (to_html assignment) else None)
+      in
+      let buttons =
+        [ true, edit
+        ; access_contact_profiles, profile_link
+        ; create_reminder_modal assignment, ReminderModal.button context
+        ; ( Experiment.(show_external_data_id_links_value experiment)
+          , external_data_ids )
+        ; session_changeable assignment, session_change_toggle
+        ; cancelable assignment, cancel
+        ; deletable assignment, mark_as_deleted
+        ]
+        |> CCList.filter_map (fun (active, form) ->
+          if not active then None else Some (form assignment))
+        |> Component.ButtonGroup.dropdown
+        |> CCList.pure
+      in
+      let base = left @ center @ right in
+      (if is_print then base else base @ buttons)
+      |> CCList.map (CCList.return %> td)
+      |> tr
+    in
+    let modals =
+      CCList.filter_map
+        (fun assignment ->
+          match create_reminder_modal assignment with
+          | true ->
+            Some
+              (ReminderModal.modal
+                 context
+                 experiment.Experiment.id
+                 session
+                 assignment)
+          | false -> None)
+        assignments
+      |> function
+      | [] -> None
+      | modals ->
+        Some (div ~a:[ a_class [ "assignment-reminder-modals" ] ] modals)
+    in
+    Component.DataTable.make
+      ~target_id:"assignments-table"
+      ~cols
+      ~row
+      ?prepend_html:modals
+      data_table
+      assignments
+;;
 
 let list
   ?access_contact_profiles

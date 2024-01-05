@@ -13,21 +13,24 @@ let experiment_path ?suffix id =
 ;;
 
 let index req =
-  let open Utils.Lwt_result.Infix in
   let id = experiment_id req in
-  let result ({ Pool_context.database_label; _ } as context) =
-    Utils.Lwt_result.map_error (fun err -> err, experiment_path id)
-    @@ let* experiment = Experiment.find database_label id in
-       let%lwt mailings =
-         Mailing.find_by_experiment_with_detail
-           database_label
-           experiment.Experiment.id
-       in
-       Page.Admin.Mailing.index context experiment mailings
-       >|> create_layout req context
-       >|+ Sihl.Web.Response.of_html
+  let error_path =
+    Format.asprintf "/admin/experiments/%s/mailings" (Experiment.Id.value id)
   in
-  result |> HttpUtils.extract_happy_path ~src req
+  HttpUtils.Htmx.handler ~error_path ~create_layout ~query:(module Mailing) req
+  @@ fun ({ Pool_context.database_label; _ } as context) query ->
+  let open Utils.Lwt_result.Infix in
+  let* experiment = Experiment.find database_label id in
+  let%lwt mailings =
+    Mailing.find_by_experiment_with_count
+      database_label
+      (Some query)
+      experiment.Experiment.id
+  in
+  let open Page.Admin.Mailing in
+  match HttpUtils.Htmx.is_hx_request req with
+  | true -> List.data_list context id mailings |> Lwt_result.return
+  | false -> index context experiment mailings |> Lwt_result.ok
 ;;
 
 let urlencoded_with_distribution urlencoded req =

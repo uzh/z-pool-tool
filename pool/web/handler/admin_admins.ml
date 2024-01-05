@@ -9,15 +9,17 @@ let extract_happy_path = HttpUtils.extract_happy_path ~src
 let create_layout req = General.create_tenant_layout req
 
 let index req =
-  let result ({ Pool_context.database_label; _ } as context) =
-    Utils.Lwt_result.map_error (fun err -> err, "/admin/dashboard")
-    @@
-    let%lwt admin_users = Admin.find_all database_label () in
-    Page.Admin.Admins.index context admin_users
-    |> create_layout req ~active_navigation:"/admin/admins" context
-    >|+ Sihl.Web.Response.of_html
-  in
-  result |> extract_happy_path req
+  HttpUtils.Htmx.handler
+    ~active_navigation:"/admin/admins"
+    ~error_path:"/admin/dashboard"
+    ~query:(module Admin)
+    ~create_layout:General.create_tenant_layout
+    req
+  @@ fun (Pool_context.{ database_label; _ } as context) query ->
+  let%lwt admins = Admin.find_by ~query database_label in
+  let open Page.Admin.Admins in
+  (if HttpUtils.Htmx.is_hx_request req then list else index) context admins
+  |> Lwt_result.return
 ;;
 
 let admin_detail req is_edit =

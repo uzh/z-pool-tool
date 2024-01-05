@@ -7,31 +7,27 @@ let create_layout req = General.create_tenant_layout req
 let experiment_id = HttpUtils.find_id Experiment.Id.of_string Field.Experiment
 
 let index req =
-  let open Utils.Lwt_result.Infix in
   let id = experiment_id req in
-  let error_path =
-    Format.asprintf "/admin/experiments/%s" (Experiment.Id.value id)
+  HttpUtils.Htmx.handler
+    ~error_path:
+      (Format.asprintf "/admin/experiments/%s" (Experiment.Id.value id))
+    ~create_layout
+    ~query:(module Waiting_list)
+    req
+  @@ fun ({ Pool_context.database_label; _ } as context) query ->
+  let open Utils.Lwt_result.Infix in
+  let* experiment = Experiment.find database_label id in
+  let%lwt waiting_list =
+    Waiting_list.find_by_experiment
+      ~query
+      database_label
+      experiment.Experiment.id
   in
-  let result context =
-    Utils.Lwt_result.map_error (fun err -> err, error_path)
-    @@
-    let database_label = context.Pool_context.database_label in
-    let* experiment = Experiment.find database_label id in
-    let query =
-      let open Waiting_list in
-      Query.from_request ~searchable_by ~sortable_by ~default:default_query req
-    in
-    let%lwt waiting_list =
-      Waiting_list.find_by_experiment
-        ~query
-        database_label
-        experiment.Experiment.id
-    in
-    Page.Admin.WaitingList.index experiment waiting_list context
-    >|> create_layout req context
-    >|+ Sihl.Web.Response.of_html
-  in
-  result |> HttpUtils.extract_happy_path ~src req
+  let open Page.Admin.WaitingList in
+  (if HttpUtils.Htmx.is_hx_request req
+   then list context experiment waiting_list |> Lwt.return
+   else index context experiment waiting_list)
+  |> Lwt_result.ok
 ;;
 
 let detail req =

@@ -30,6 +30,17 @@ let full_name { user; _ } =
   |> CCString.concat " "
 ;;
 
+let full_name_reversed { user; _ } =
+  Sihl_user.[ user.name; user.given_name ]
+  |> CCList.filter_map CCFun.id
+  |> CCString.concat " "
+;;
+
+let searchable_by = Pool_user.searchable_by
+let sortable_by = Pool_user.sortable_by
+let default_sort = Pool_user.default_sort
+let default_query = Pool_user.default_query
+
 module Duplicate = struct
   type t =
     { first : t

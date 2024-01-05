@@ -29,7 +29,12 @@ let enroll_contact_path ?suffix contact_id =
 let heading_with_icons contact =
   h1
     ~a:[ a_class [ "heading-1" ] ]
-    [ Status.identity_with_icons ~context:`All true contact ]
+    [ Status.identity_with_icons
+        Pool_common.Language.En
+        ~context:`All
+        true
+        contact
+    ]
 ;;
 
 let personal_detail
@@ -293,7 +298,6 @@ let assign_contact_form { Pool_context.csrf; language; _ } contact =
 ;;
 
 let list Pool_context.{ language; _ } contacts query =
-  let open Pool_common in
   let url = Uri.of_string "/admin/contacts" in
   let data_table =
     Component.DataTable.create_meta
@@ -302,20 +306,15 @@ let list Pool_context.{ language; _ } contacts query =
       query
       language
   in
-  let cols =
-    [ `field (Message.Field.Name, Contact.column_name)
-    ; `column Contact.column_email
-    ; `empty
-    ]
-  in
+  let cols = Pool_user.[ `column column_name; `column column_email; `empty ] in
   let row (Contact.{ disabled; _ } as contact) =
     let a =
       if Pool_user.Disabled.value disabled
       then [ a_class [ "bg-red-lighter" ] ]
       else []
     in
-    [ Status.identity_with_icons true contact
-    ; Status.email_with_icons contact
+    [ Status.identity_with_icons language true contact
+    ; Status.email_with_icons language contact
     ; Input.link_as_button ~icon:Icon.Eye (path contact)
     ]
     |> CCList.map (CCList.return %> td)
