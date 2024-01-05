@@ -717,6 +717,11 @@ let detail
                 Pool_common.(
                   Utils.nav_link_to_string language I18n.MessageTemplates)
             ]
+        ; p
+            [ Pool_common.(
+                Utils.hint_to_string language I18n.ExperimentMessageTemplates)
+              |> HttpUtils.add_line_breaks
+            ]
         ; message_templates_html
             ~can_update_experiment
             language

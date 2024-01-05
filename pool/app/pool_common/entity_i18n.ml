@@ -171,6 +171,7 @@ type hint =
   | ExperimentLanguage
   | ExperimentMailings
   | ExperimentMailingsRegistrationDisabled
+  | ExperimentMessageTemplates
   | ExperimentSessions
   | ExperimentSessionsPublic
   | ExperimentWaitingList
