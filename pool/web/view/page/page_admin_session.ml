@@ -674,12 +674,14 @@ let detail
   experiment
   (session : Session.t)
   participation_tags
+  sys_languages
+  session_reminder_templates
   (assignments, query)
   =
   let open Pool_common in
   let open Session in
   let experiment_id = experiment.Experiment.id in
-  let session_id = Session.Id.value session.id in
+  let session_path = session_path experiment_id session.id in
   let session_link ?style (show, url, control) =
     let style, icon =
       style |> CCOption.map_or ~default:(`Primary, None) CCFun.id
@@ -692,7 +694,7 @@ let detail
         ~classnames:[ "small" ]
         ~style
         ?icon
-        (Format.asprintf "%s/%s" (session_path experiment_id session.id) url)
+        (Format.asprintf "%s/%s" session_path url)
       |> CCOption.pure
   in
   let resend_reminders_modal =
@@ -706,9 +708,7 @@ let detail
       in
       let inner =
         let resend_action =
-          Format.asprintf
-            "%s/resend-reminders"
-            (session_path experiment_id session.id)
+          Format.asprintf "%s/resend-reminders" session_path
           |> Sihl.Web.externalize_path
         in
         let warning =
@@ -876,8 +876,12 @@ let detail
               "%s/%s/follow-up?duplicate_id=%s"
               base
               (Id.value parent_session)
-              session_id
-          | None -> Format.asprintf "%s/create/?duplicate_id=%s" base session_id
+              (Id.value session.id)
+          | None ->
+            Format.asprintf
+              "%s/create/?duplicate_id=%s"
+              base
+              (Id.value session.id)
         in
         link_as_button
           ~control:(language, Message.Duplicate (Some Field.Session))
@@ -919,6 +923,35 @@ let detail
         [ left; right ]
     in
     div ~a:[ a_class [ "stack" ] ] [ table; links ]
+  in
+  let message_templates_html label list =
+    let open Message_template in
+    let build_path append template =
+      Format.asprintf
+        "%s/%s"
+        session_path
+        (Message_template.prefixed_template_url ~append template)
+    in
+    let edit_path = build_path "edit" in
+    let delete_path = build_path "delete", csrf in
+    let buttons =
+      if CCList.is_empty (Message_template.filter_languages sys_languages list)
+      then None
+      else (
+        let path =
+          Format.asprintf "%s/%s" session_path Label.(prefixed_human_url label)
+        in
+        Some (Button.add label path))
+    in
+    div
+      [ h2 ~a:[ a_class [ "heading-2" ] ] [ txt (Label.to_human label) ]
+      ; Page_admin_message_template.table
+          ?buttons
+          ~delete_path
+          language
+          list
+          edit_path
+      ]
   in
   let tags_html =
     div
@@ -1027,14 +1060,17 @@ let detail
       ~icon:Icon.Create
       ~classnames:[ "small" ]
       ~control:(language, Message.(Edit (Some Field.Session)))
-      (Format.asprintf
-         "/admin/experiments/%s/sessions/%s/edit"
-         (Experiment.Id.value experiment_id)
-         session_id)
+      (Format.asprintf "%s/edit" session_path)
   in
   div
     ~a:[ a_class [ "stack-lg" ] ]
-    [ session_overview; tags_html; assignments_html ]
+    [ session_overview
+    ; tags_html
+    ; message_templates_html
+        Message_template.Label.SessionReminder
+        session_reminder_templates
+    ; assignments_html
+    ]
   |> CCList.return
   |> Layout.Experiment.(
        create
@@ -1079,12 +1115,9 @@ let edit
   default_text_msg_reminder_lead_time
   (session : Session.t)
   locations
-  session_reminder_templates
-  sys_languages
   (current_tags, available_tags, experiment_tags)
   flash_fetcher
   =
-  let open Message_template in
   let session_path =
     Format.asprintf
       "%s/%s"
@@ -1107,29 +1140,6 @@ let edit
           ~session
           locations
           ~flash_fetcher
-      ]
-  in
-  let message_templates_html label list =
-    let build_path append =
-      CCFun.(Message_template.prefixed_template_url ~append %> session_path)
-    in
-    let edit_path = build_path "edit" in
-    let delete_path = build_path "delete", csrf in
-    let buttons =
-      if CCList.is_empty (Message_template.filter_languages sys_languages list)
-      then None
-      else (
-        let path = session_path Label.(prefixed_human_url label) in
-        Some (Button.add label path))
-    in
-    div
-      [ h2 ~a:[ a_class [ "heading-2" ] ] [ txt (Label.to_human label) ]
-      ; Page_admin_message_template.table
-          ?buttons
-          ~delete_path
-          language
-          list
-          edit_path
       ]
   in
   let tags_html =
@@ -1176,12 +1186,7 @@ let edit
           ]
       ]
   in
-  div
-    ~a:[ a_class [ "stack-lg" ] ]
-    [ form
-    ; message_templates_html Label.SessionReminder session_reminder_templates
-    ; tags_html
-    ]
+  div ~a:[ a_class [ "stack-lg" ] ] [ form; tags_html ]
   |> CCList.return
   |> Layout.Experiment.(
        create context (Control Message.(Edit (Some Field.Session))) experiment)

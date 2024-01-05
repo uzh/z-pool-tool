@@ -168,37 +168,9 @@ let session_page database_label req context session experiment =
   in
   let create_layout = create_layout req context in
   function
-  | `Detail ->
-    let%lwt current_tags = current_tags () in
-    let query =
-      let open Assignment in
-      Query.from_request ~searchable_by ~sortable_by ~default:default_query req
-    in
-    let%lwt assignments =
-      Assignment.query_by_session ~query database_label session_id
-    in
-    let access_contact_profiles =
-      can_access_contact_profile context experiment_id
-    in
-    Page.Admin.Session.detail
-      ~access_contact_profiles
-      ~view_contact_name
-      ~view_contact_info
-      context
-      experiment
-      session
-      current_tags
-      assignments
-    >|> create_layout
   | `Edit ->
     let%lwt current_tags = current_tags () in
     let%lwt locations = Pool_location.find_all database_label in
-    let%lwt session_reminder_templates =
-      Message_template.find_all_of_entity_by_label
-        database_label
-        (session_id |> Session.Id.to_common)
-        Message_template.Label.SessionReminder
-    in
     let%lwt default_email_reminder_lead_time =
       Settings.find_default_reminder_lead_time database_label
     in
@@ -217,7 +189,6 @@ let session_page database_label req context session experiment =
           database_label
           (Experiment (Experiment.Id.to_common experiment_id)))
     in
-    let sys_languages = Pool_context.Tenant.get_tenant_languages_exn req in
     Page.Admin.Session.edit
       context
       experiment
@@ -225,8 +196,6 @@ let session_page database_label req context session experiment =
       default_text_msg_reminder_lead_time
       session
       locations
-      session_reminder_templates
-      sys_languages
       (current_tags, available_tags, experiment_participation_tags)
       flash_fetcher
     >|> create_layout
@@ -316,6 +285,13 @@ let show req =
       Tags.ParticipationTags.(
         find_all database_label (Session (Session.Id.to_common session_id)))
     in
+    let%lwt session_reminder_templates =
+      Message_template.find_all_of_entity_by_label
+        database_label
+        (session_id |> Session.Id.to_common)
+        Message_template.Label.SessionReminder
+    in
+    let sys_languages = Pool_context.Tenant.get_tenant_languages_exn req in
     Page.Admin.Session.detail
       ~access_contact_profiles
       ~view_contact_name
@@ -324,6 +300,8 @@ let show req =
       experiment
       session
       current_tags
+      sys_languages
+      session_reminder_templates
       assignments
     |> Lwt_result.ok
   | true ->
