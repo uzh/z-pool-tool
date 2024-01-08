@@ -207,6 +207,10 @@ let find_all_by_label_to_send pool ?entity_uuids languages label =
     in
     let (Dynparam.Pack (pt, pv)) = dyn in
     let request = sql |> pt ->! RepoEntity.t in
+    let () =
+      Caqti_request.make_pp_with_param () Format.std_formatter (request, pv)
+    in
+    print_endline "";
     Utils.Database.collect (pool |> Database.Label.value) request pv
 ;;
 
@@ -289,6 +293,17 @@ let find_default_by_label pool label =
     (Pool_database.Label.value pool)
     find_default_by_label_request
     (Entity.Label.show label)
+;;
+
+let find_defaults_by_label_and_entity pool ?entity_uuids languages label =
+  (* Removing the last uuid from the entity_uuids to make sure the entity
+     default is returned *)
+  let entity_uuids =
+    match entity_uuids with
+    | None | Some [] | Some (_ :: []) -> []
+    | Some list -> CCList.(list |> rev |> tl |> rev)
+  in
+  find_all_by_label_to_send pool ~entity_uuids languages label
 ;;
 
 let find_request =

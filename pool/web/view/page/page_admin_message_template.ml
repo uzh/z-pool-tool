@@ -336,32 +336,55 @@ let preview_template_modal language (label, templates) =
     html
 ;;
 
-let preview_modal_buttons labels =
+type scope =
+  | Experiment of Experiment.Id.t
+  | Session of Session.Id.t
+
+let experiment_help ~scope language labels =
   let open Message_template in
   let modal = div ~a:[ a_id preview_modal_id ] [] in
-  labels
-  |> CCList.map (fun label ->
-    let url =
-      label
-      |> Label.show
-      |> Format.asprintf "/admin/message-template/%s/template-preview"
-      |> Sihl.Web.externalize_path
+  let help_text =
+    p
+      [ Pool_common.(
+          Utils.hint_to_string language I18n.ExperimentMessageTemplates)
+        |> HttpUtils.add_line_breaks
+      ]
+  in
+  let modal_triggers =
+    let open Htmx in
+    let hx_vals =
+      let data =
+        match scope with
+        | Experiment id -> Field.(show Experiment), Experiment.Id.value id
+        | Session id -> Field.(show Session), Session.Id.value id
+      in
+      data |> CCList.return |> Htmx.make_hx_vals
     in
-    li
-      [ span
-          ~a:
-            [ a_class [ "pointer" ]
-            ; a_user_data "hx-get" url
-            ; a_user_data "hx-target" ("#" ^ preview_modal_id)
-            ; a_user_data "hx-swap" "outerHTML"
-            ]
-          [ txt (Label.to_human label) ]
-      ])
-  |> ul
-  |> fun buttons ->
+    let list_item label =
+      let url =
+        label
+        |> Label.show
+        |> Format.asprintf "/admin/message-template/%s/template-preview"
+        |> Sihl.Web.externalize_path
+      in
+      li
+        [ span
+            ~a:
+              [ a_class [ "pointer" ]
+              ; hx_get url
+              ; hx_target ("#" ^ preview_modal_id)
+              ; hx_swap "outerHTML"
+              ; hx_vals
+              ]
+            [ txt (Label.to_human label) ]
+        ]
+    in
+    labels |> CCList.map list_item |> ul
+  in
   div
-    [ modal
+    [ help_text
+    ; modal
     ; script (Unsafe.data Component.Modal.js_add_modal_close_listener)
-    ; buttons
+    ; modal_triggers
     ]
 ;;

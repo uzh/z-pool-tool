@@ -717,13 +717,11 @@ let detail
                 Pool_common.(
                   Utils.nav_link_to_string language I18n.MessageTemplates)
             ]
-        ; p
-            [ Pool_common.(
-                Utils.hint_to_string language I18n.ExperimentMessageTemplates)
-              |> HttpUtils.add_line_breaks
-            ]
-        ; Page_admin_message_template.preview_modal_buttons
-            (message_templates |> CCList.map fst)
+        ; Page_admin_message_template.(
+            experiment_help
+              ~scope:(Experiment experiment.id)
+              language
+              (message_templates |> CCList.map fst))
         ; div
             ~a:[ a_class [ "gap" ] ]
             [ message_templates_html

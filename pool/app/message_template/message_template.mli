@@ -135,6 +135,13 @@ val find_all_by_label_to_send
   -> Label.t
   -> t list Lwt.t
 
+val find_defaults_by_label_and_entity
+  :  Pool_database.Label.t
+  -> ?entity_uuids:Pool_common.Id.t list
+  -> Pool_common.Language.t list
+  -> Label.t
+  -> t list Lwt.t
+
 val filter_languages
   :  ?exclude:Pool_common.Language.t list
   -> Pool_common.Language.t list

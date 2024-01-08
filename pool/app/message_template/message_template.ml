@@ -23,6 +23,7 @@ let all_default = Repo.all_default
 let find_all_of_entity_by_label = Repo.find_all_of_entity_by_label
 let find_by_label_to_send = Repo.find_by_label_to_send
 let find_all_by_label_to_send = Repo.find_all_by_label_to_send
+let find_defaults_by_label_and_entity = Repo.find_defaults_by_label_and_entity
 let default_sender_of_pool = Email.Service.default_sender_of_pool
 
 let sender_of_contact_person pool admin =

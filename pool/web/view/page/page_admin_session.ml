@@ -945,12 +945,17 @@ let detail
     in
     div
       [ h2 ~a:[ a_class [ "heading-2" ] ] [ txt (Label.to_human label) ]
-      ; Page_admin_message_template.table
-          ?buttons
-          ~delete_path
-          language
-          list
-          edit_path
+      ; Page_admin_message_template.(
+          experiment_help ~scope:(Session session.id) language [ label ])
+      ; div
+          ~a:[ a_class [ "gap" ] ]
+          [ Page_admin_message_template.table
+              ?buttons
+              ~delete_path
+              language
+              list
+              edit_path
+          ]
       ]
   in
   let tags_html =
