@@ -313,7 +313,7 @@ Make sure to show links and URLs as plain text.
   | ExperimentMailingsRegistrationDisabled ->
     {|Registration to this experiment is currently disabled. Invitations will still be sent out if a mailing is created, but contacts won't be able to sign up for a session.|}
   | ExperimentMessageTemplates ->
-    {|Messages sent to contacts regarding this experiment can be customized if you want to add or remove information. If no experiment-specific template exists, a default template will be used.
+    {|Messages sent to contacts regarding this experiment or session can be customized if you want to add or remove information. The template is selected in the following hierarchy: session-specific > experiment-specific > default.
 
 If an experiment language is specified, all messages will be sent in this language. The messages will be sent in the contact display language if no experiment-specific language is defined.
   

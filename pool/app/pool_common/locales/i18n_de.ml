@@ -319,7 +319,7 @@ Beim Einladen von Kontakten bevorzugt der Filter den überschreibenden Wert, wen
   | ExperimentMailingsRegistrationDisabled ->
     {|Die Registrierung für dieses Experiment ist derzeit deaktiviert. Einladungen werden weiterhin verschickt, wenn ein Mailing erstellt wird, aber die Kontakte können sich nicht für eine Session anmelden.|}
   | ExperimentMessageTemplates ->
-    {|Nachrichten bezüglich dieses Experiments, die an Kontakte gesendet werden, können angepasst werden, wenn Sie Informationen hinzufügen oder entfernen möchten. Wenn keine experimentenspezifische Vorlage existiert, wird eine Standardvorlage verwendet.
+    {|Nachrichten bezüglich dieses Experiments oder Session, die an Kontakte gesendet werden, können angepasst werden, wenn Sie Informationen hinzufügen oder entfernen möchten. Die Vorlage wird in der folgenden Hierarchie ausgewählt: Session-spezifisch > Experiment-spezifisch > Standard
 
 Wenn eine Experimentsprache angegeben ist, werden alle Nachrichten in dieser Sprache gesendet. Wenn keine experimentenspezifische Sprache definiert ist, werden die Nachrichten in der Anzeigesprache des Kontakts gesendet.|}
   | ResendRemindersChannel ->

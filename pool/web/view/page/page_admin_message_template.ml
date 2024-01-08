@@ -297,17 +297,15 @@ let preview_template_modal language (label, templates) =
             let email_html =
               div
                 [ h4 [ txt (field_to_string Field.Email) ]
-                ; p
-                    ~a:[ a_class [ "border-bottom" ] ]
-                    [ strong
-                        [ txt
-                            (Format.asprintf
-                               "%s: %s"
-                               (field_to_string Field.EmailSubject)
-                               (EmailSubject.value email_subject))
-                        ]
+                ; div
+                    ~a:[ a_class [ "stack-sm" ] ]
+                    [ p
+                        ~a:[ a_class [ "border-bottom" ] ]
+                        [ strong [ txt (EmailSubject.value email_subject) ] ]
+                    ; div
+                        ~a:[ a_class [ "force-normalize-fonts" ] ]
+                        [ EmailText.value email_text |> Unsafe.data ]
                     ]
-                ; p [ EmailText.value email_text |> Unsafe.data ]
                 ]
             in
             let text_message_html =
@@ -370,13 +368,13 @@ let experiment_help ~scope language labels =
       li
         [ span
             ~a:
-              [ a_class [ "pointer" ]
+              [ a_class [ "pointer"; "has-icon" ]
               ; hx_get url
               ; hx_target ("#" ^ preview_modal_id)
               ; hx_swap "outerHTML"
               ; hx_vals
               ]
-            [ txt (Label.to_human label) ]
+            [ txt (Label.to_human label); Icon.(to_html OpenOutline) ]
         ]
     in
     labels |> CCList.map list_item |> ul
