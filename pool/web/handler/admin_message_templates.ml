@@ -159,7 +159,7 @@ let preview_default req =
           find_param key |> CCOption.map uuids_fnc)
         |> CCOption.value ~default:(Lwt_result.return [])
       in
-      Message_template.find_defaults_by_label_and_entity
+      Message_template.find_entity_defaults_by_label
         database_label
         ~entity_uuids
         sys_languages

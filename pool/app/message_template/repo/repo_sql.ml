@@ -79,137 +79,6 @@ let update pool t =
   Utils.Database.exec (Database.Label.value pool) update_request t
 ;;
 
-(* The template are prioritised according to the entity_uuids list, from left to
-   right. If none are found, the default template will be returned. *)
-let find_by_label_to_send pool ?entity_uuids language label =
-  let open Utils.Lwt_result.Infix in
-  let open Caqti_request.Infix in
-  let select_where =
-    Format.asprintf
-      {sql|
-        %s
-        WHERE
-          pool_message_templates.label = $1
-        AND 
-          pool_message_templates.language = $2
-        %s
-      |sql}
-      select_sql
-  in
-  let dyn =
-    Dynparam.(
-      empty
-      |> add Caqti_type.string (Label.show label)
-      |> add Caqti_type.string (Pool_common.Language.show language))
-  in
-  let select_where, order_by, dyn =
-    match entity_uuids with
-    | None | Some [] ->
-      ( select_where {sql| AND pool_message_templates.entity_uuid IS NULL |sql}
-      , None
-      , dyn )
-    | Some entity_uuids ->
-      let id_list, dyn =
-        CCList.foldi
-          (fun (id_list, dyn) i entity_uuid ->
-            let index = i + 3 in
-            ( Format.asprintf "UNHEX(REPLACE($%i, '-', ''))" index :: id_list
-            , dyn
-              |> Dynparam.add
-                   Caqti_type.string
-                   (Pool_common.Id.value entity_uuid) ))
-          ([], dyn)
-          entity_uuids
-      in
-      let ids = id_list |> CCString.concat "," in
-      let order_by = Format.asprintf {| FIELD(entity_uuid, %s) DESC |} ids in
-      ( Format.asprintf
-          {sql| AND(
-              pool_message_templates.entity_uuid IS NULL
-              OR
-              pool_message_templates.entity_uuid IN (%s))
-          |sql}
-          ids
-        |> select_where
-      , Some order_by
-      , dyn )
-  in
-  let (Dynparam.Pack (pt, pv)) = dyn in
-  let with_limit = Format.asprintf "%s LIMIT 1" in
-  let request =
-    let sql =
-      with_limit
-      @@
-      match order_by with
-      | None -> select_where
-      | Some order_by -> Format.asprintf "%s ORDER BY %s" select_where order_by
-    in
-    sql |> pt ->! RepoEntity.t
-  in
-  Utils.Database.find (pool |> Database.Label.value) request pv
-  ||> fun ({ language; _ } as t) -> t, language
-;;
-
-let find_all_by_entity_uuid_and_label_request dyn languages entity_uuid =
-  let languages_sql, dyn =
-    CCList.fold_left
-      (fun (params, dyn) lang ->
-        "?" :: params, dyn |> Dynparam.add Pool_common.Repo.Language.t lang)
-      ([], dyn)
-      languages
-    |> fun (params, dyn) ->
-    ( params
-      |> CCString.concat ","
-      |> Format.asprintf "pool_message_templates.language IN (%s)"
-    , dyn )
-  in
-  let base =
-    Format.asprintf "%s WHERE label = ? AND %s " select_sql languages_sql
-  in
-  let dyn, sql =
-    match entity_uuid with
-    | None ->
-      ( dyn
-      , Format.asprintf "%s AND pool_message_templates.entity_uuid IS NULL" base
-      )
-    | Some id ->
-      ( dyn |> Dynparam.add Pool_common.Repo.Id.t id
-      , Format.asprintf
-          "%s AND pool_message_templates.entity_uuid = UNHEX(REPLACE(?, '-', \
-           ''))"
-          base )
-  in
-  let dyn, order =
-    CCList.fold_left
-      (fun (dyn, order) lang ->
-        dyn |> Dynparam.add Pool_common.Repo.Language.t lang, "?" :: order)
-      (dyn, [])
-      languages
-  in
-  ( dyn
-  , Format.asprintf
-      "%s ORDER BY FIELD(pool_message_templates.language, %s)"
-      sql
-      (CCString.concat "," order) )
-;;
-
-let find_all_by_label_to_send pool ?entity_uuids languages label =
-  if CCList.is_empty languages
-  then Lwt.return []
-  else
-    let open Utils.Lwt_result.Infix in
-    let open Caqti_request.Infix in
-    find_by_label_to_send pool ?entity_uuids Pool_common.Language.En label
-    >|> fun ({ entity_uuid; _ }, _) ->
-    let dyn = Dynparam.(empty |> add Caqti_type.string (Label.show label)) in
-    let dyn, sql =
-      find_all_by_entity_uuid_and_label_request dyn languages entity_uuid
-    in
-    let (Dynparam.Pack (pt, pv)) = dyn in
-    let request = sql |> pt ->! RepoEntity.t in
-    Utils.Database.collect (pool |> Database.Label.value) request pv
-;;
-
 let find_all_default_request =
   let open Caqti_request.Infix in
   Format.asprintf
@@ -291,7 +160,83 @@ let find_default_by_label pool label =
     (Entity.Label.show label)
 ;;
 
-let find_defaults_by_label_and_entity pool ?entity_uuids languages label =
+let find_by_label_and_language_to_send pool ?entity_uuids label language =
+  let open Caqti_request.Infix in
+  let dyn =
+    Dynparam.(
+      empty
+      |> add Caqti_type.string (Label.show label)
+      |> add Caqti_type.string (Pool_common.Language.show language))
+  in
+  let where =
+    {sql|
+    WHERE
+    pool_message_templates.label = $1 
+    AND
+    pool_message_templates.language = $2
+  |sql}
+  in
+  let where, dyn =
+    match entity_uuids with
+    | None | Some [] ->
+      ( Format.asprintf "%s AND pool_message_templates.entity_uuid IS NULL" where
+      , dyn )
+    | Some ids ->
+      let dyn, ids =
+        ids
+        |> CCList.foldi
+             (fun (dyn, ids) i entity_uuid ->
+               let dyn =
+                 Dynparam.(
+                   dyn
+                   |> add Caqti_type.string (Pool_common.Id.value entity_uuid))
+               in
+               let ids =
+                 ids
+                 @ [ Format.asprintf "UNHEX(REPLACE($%i, '-', ''))" (i + 3) ]
+               in
+               dyn, ids)
+             (dyn, [])
+      in
+      let where =
+        let ids = ids |> CCString.concat ", " in
+        Format.asprintf
+          {sql|
+                %s
+                AND(entity_uuid IS NULL
+                    OR entity_uuid IN(%s))
+                ORDER BY
+                  ISNULL(pool_message_templates.entity_uuid),
+                  FIELD(pool_message_templates.entity_uuid, %s)
+                LIMIT 1
+              |sql}
+          where
+          ids
+          ids
+      in
+      where, dyn
+  in
+  let sql = Format.asprintf "%s\n%s" select_sql where in
+  let (Dynparam.Pack (pt, pv)) = dyn in
+  let request = sql |> pt ->! RepoEntity.t in
+  Utils.Database.find (pool |> Database.Label.value) request pv
+;;
+
+(* The template are prioritised according to the entity_uuids list, from left to
+   right. If none are found, the default template will be returned. *)
+let find_all_by_label_to_send pool ?entity_uuids languages label =
+  if CCList.is_empty languages
+  then Lwt.return []
+  else (
+    match entity_uuids with
+    | None | Some [] -> find_default_by_label pool label
+    | Some entity_uuids ->
+      languages
+      |> Lwt_list.map_s
+           (find_by_label_and_language_to_send pool label ~entity_uuids))
+;;
+
+let find_entity_defaults_by_label pool ?entity_uuids languages label =
   (* Removing the last uuid from the entity_uuids to make sure the entity
      default is returned *)
   let entity_uuids =
