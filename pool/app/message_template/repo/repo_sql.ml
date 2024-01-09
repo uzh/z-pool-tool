@@ -225,11 +225,20 @@ let find_by_label_and_language_to_send pool ?entity_uuids label language =
 (* The template are prioritised according to the entity_uuids list, from left to
    right. If none are found, the default template will be returned. *)
 let find_all_by_label_to_send pool ?entity_uuids languages label =
+  let open Utils.Lwt_result.Infix in
   if CCList.is_empty languages
   then Lwt.return []
   else (
     match entity_uuids with
-    | None | Some [] -> find_default_by_label pool label
+    | None | Some [] ->
+      languages
+      |> Lwt_list.map_s (fun lang ->
+        find_default_by_label_and_language pool lang label
+        ||> CCOption.get_exn_or
+              (Format.asprintf
+                 "Default message template %s (%s) is missing"
+                 (Label.show label)
+                 (Pool_common.Language.show lang)))
     | Some entity_uuids ->
       languages
       |> Lwt_list.map_s
@@ -237,8 +246,8 @@ let find_all_by_label_to_send pool ?entity_uuids languages label =
 ;;
 
 let find_entity_defaults_by_label pool ?entity_uuids languages label =
-  (* Removing the last uuid from the entity_uuids to make sure the entity
-     default is returned *)
+  (* Removing the last uuid from the entity_uuids to so the entity default is
+     returned *)
   let entity_uuids =
     match entity_uuids with
     | None | Some [] | Some (_ :: []) -> []

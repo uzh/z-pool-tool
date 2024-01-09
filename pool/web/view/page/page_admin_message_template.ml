@@ -2,19 +2,14 @@ open Tyxml.Html
 open Component.Input
 module Field = Pool_common.Message.Field
 
-type scope =
-  | Default
+type entity =
   | Experiment of Experiment.Id.t
   | Session of Session.Id.t
 
-let scope_hx_vals scope =
-  let data =
-    match scope with
-    | Default -> []
-    | Experiment id -> [ Field.(show Experiment), Experiment.Id.value id ]
-    | Session id -> [ Field.(show Session), Session.Id.value id ]
-  in
-  data |> Htmx.make_hx_vals
+let entity_hx_vals entity =
+  match entity with
+  | Experiment id -> [ Field.(show Experiment), Experiment.Id.value id ]
+  | Session id -> [ Field.(show Session), Session.Id.value id ]
 ;;
 
 let template_label_url label suffix =
@@ -110,7 +105,7 @@ let index { Pool_context.language; _ } templates =
 
 let template_inputs
   { Pool_context.language; _ }
-  ?(disable_reset_button = false)
+  ?entity
   ?(hide_text_message_input = false)
   ?languages
   ?fixed_language
@@ -123,11 +118,14 @@ let template_inputs
   let value = CCFun.flip (CCOption.map_or ~default:"") template in
   let open Message_template in
   let reset_button =
-    if disable_reset_button
+    if CCOption.is_none entity
     then txt ""
     else
       let open Htmx in
       let hx_vals =
+        let entity_vals =
+          entity |> CCOption.map entity_hx_vals |> CCOption.value ~default:[]
+        in
         languages
         |> CCOption.map (fun languages ->
           let open CCList in
@@ -135,46 +133,31 @@ let template_inputs
           >|= Pool_common.Language.show
           |> CCString.concat ","
           |> CCPair.make Field.(show AvailableLanguages)
-          |> return
+          |> CCList.cons' entity_vals
           |> make_hx_vals
           |> return)
         |> CCOption.value ~default:[]
       in
-      let hidden_language_fields =
-        (* This can be removed if hx-vals are sent correctly *)
-        CCOption.map_or
-          ~default:[]
-          (CCList.map (fun lang ->
-             input
-               ~a:
-                 [ a_input_type `Checkbox
-                 ; a_name Field.(show AvailableLanguages)
-                 ; a_value Pool_common.Language.(show lang)
-                 ]
-               ()))
-          languages
-        |> div ~a:[ a_class [ "hidden" ] ]
-      in
       div
         [ span
             ~a:
-              (hx_vals
-               @ [ hx_swap "outerHTML"
-                 ; hx_target ("#" ^ id)
-                 ; hx_trigger "click" (* ; hx_params Field.(show Language) *)
-                 ; hx_params
-                     (CCString.concat
-                        ","
-                        Field.[ show Language; Field.(show AvailableLanguages) ])
-                 ; hx_post (template_label_url template_label "reset")
-                 ; a_class [ "pointer" ]
-                 ])
+              ([ hx_swap "outerHTML"
+               ; hx_target ("#" ^ id)
+               ; hx_trigger "click"
+               ; hx_post (template_label_url template_label "reset")
+               ; a_class [ "pointer" ]
+               ]
+               @ hx_vals)
             [ txt "Reset to default (TODO)" ]
-        ; hidden_language_fields
         ]
   in
   let language_select =
     let open Pool_common.Language in
+    let selected =
+      CCOption.(
+        selected_language
+        <+> CCOption.map (fun { language; _ } -> language) template)
+    in
     let languages_select () =
       match languages with
       | None -> div []
@@ -185,7 +168,7 @@ let template_inputs
           Field.Language
           show
           languages
-          selected_language
+          selected
           ()
     in
     fixed_language
@@ -279,6 +262,7 @@ type template_form_input =
 
 let template_form
   ({ Pool_context.language; query_language; csrf; _ } as context)
+  ?entity
   ?(hide_text_message_input = false)
   ?languages
   ?text_elements
@@ -320,6 +304,7 @@ let template_form
       ([ csrf_element csrf ()
        ; template_inputs
            context
+           ?entity
            ~hide_text_message_input
            ?languages
            ?fixed_language
@@ -416,7 +401,7 @@ let preview_template_modal language (label, templates) =
     html
 ;;
 
-let experiment_help ~scope language labels =
+let experiment_help ~entity language labels =
   let open Message_template in
   let modal = div ~a:[ a_id preview_modal_id ] [] in
   let help_text =
@@ -428,7 +413,7 @@ let experiment_help ~scope language labels =
   in
   let modal_triggers =
     let open Htmx in
-    let hx_vals = scope_hx_vals scope in
+    let hx_vals = entity_hx_vals entity in
     let list_item label =
       li
         [ span
@@ -437,7 +422,7 @@ let experiment_help ~scope language labels =
               ; hx_get (template_label_url label "template-preview")
               ; hx_target ("#" ^ preview_modal_id)
               ; hx_swap "outerHTML"
-              ; hx_vals
+              ; make_hx_vals hx_vals
               ]
             [ txt (Label.to_human label); Icon.(to_html OpenOutline) ]
         ]

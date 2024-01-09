@@ -120,6 +120,7 @@ let update req =
 
 let default_templates_from_request req ?languages database_label params =
   let open Utils.Lwt_result.Infix in
+  let open Page.Admin.MessageTemplate in
   let label = template_label req in
   let languages =
     languages
@@ -127,39 +128,45 @@ let default_templates_from_request req ?languages database_label params =
          ~default:(Pool_context.Tenant.get_tenant_languages_exn req)
   in
   let find_param field = HttpUtils.find_in_urlencoded_opt field params in
-  let experiment_uuids experiment_id =
+  let experiment_entity experiment_id =
     let open Experiment in
     let experiment_id = Id.of_string experiment_id in
     let* experiment = find database_label experiment_id in
-    Lwt_result.return [ Id.to_common experiment.id ]
+    let entity = Experiment experiment_id in
+    Lwt_result.return ([ Id.to_common experiment.id ], entity)
   in
-  let session_uuids session_id =
+  let session_entity session_id =
     let open Session in
     let session_id = Id.of_string session_id in
     let* session = find database_label session_id in
     let* experiment =
       Experiment.find_of_session database_label (Id.to_common session.id)
     in
+    let entity = Session session_id in
     Lwt_result.return
-      [ Experiment.Id.to_common experiment.Experiment.id
-      ; Id.to_common session.id
-      ]
+      ( [ Experiment.Id.to_common experiment.Experiment.id
+        ; Id.to_common session.id
+        ]
+      , entity )
   in
   let entities =
-    Field.[ Session, session_uuids; Experiment, experiment_uuids ]
+    [ Field.Session, session_entity; Field.Experiment, experiment_entity ]
   in
-  let* entity_uuids =
+  let* entity_uuids, entity =
     entities
-    |> CCList.find_map (fun (key, uuids_fnc) ->
-      find_param key |> CCOption.map uuids_fnc)
-    |> CCOption.value ~default:(Lwt_result.return [])
+    |> CCList.find_map (fun (key, entity_fnc) ->
+      find_param key |> CCOption.map entity_fnc)
+    |> CCOption.value
+         ~default:(Lwt_result.fail Pool_common.Message.(NotFound Field.Context))
   in
-  Message_template.find_entity_defaults_by_label
-    database_label
-    ~entity_uuids
-    languages
-    label
-  |> Lwt_result.ok
+  let%lwt templates =
+    Message_template.find_entity_defaults_by_label
+      database_label
+      ~entity_uuids
+      languages
+      label
+  in
+  Lwt_result.return (templates, entity)
 ;;
 
 let preview_default req =
@@ -167,7 +174,7 @@ let preview_default req =
   let label = template_label req in
   let result { Pool_context.database_label; language; _ } =
     let query_params = Sihl.Web.Request.query_list req in
-    let* message_templates =
+    let* message_templates, _ =
       default_templates_from_request req database_label query_params
     in
     Page.Admin.MessageTemplate.preview_template_modal
@@ -198,24 +205,27 @@ let reset_to_default_htmx req =
       |> CCList.map Pool_common.Language.create
       |> CCList.all_ok
     in
-    let* message_template =
+    let* message_templates, entity =
       default_templates_from_request
         req
         ~languages:[ template_language ]
         database_label
         urlencoded
-      >== CCFun.(
-            CCList.head_opt
-            %> CCOption.to_result
-                 Pool_common.Message.(NotFound Field.MessageTemplate))
+    in
+    let* template =
+      message_templates
+      |> CCList.head_opt
+      |> CCOption.to_result Pool_common.Message.(NotFound Field.MessageTemplate)
+      |> Lwt_result.lift
     in
     let flash_fetcher = CCFun.const None in
-    (* TODO: languages, flash_fetcher *)
+    (* TODO: flash_fetcher *)
     Page.Admin.MessageTemplate.template_inputs
+      ~entity
       ~languages
       context
-      message_template.Message_template.label
-      (Some message_template)
+      template.Message_template.label
+      (Some template)
       flash_fetcher
     |> HttpUtils.Htmx.html_to_plain_text_response
     |> Lwt_result.return

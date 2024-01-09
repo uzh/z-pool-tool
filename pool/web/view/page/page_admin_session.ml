@@ -946,7 +946,7 @@ let detail
     div
       [ h2 ~a:[ a_class [ "heading-2" ] ] [ txt (Label.to_human label) ]
       ; Page_admin_message_template.(
-          experiment_help ~scope:(Session session.id) language [ label ])
+          experiment_help ~entity:(Session session.id) language [ label ])
       ; div
           ~a:[ a_class [ "gap" ] ]
           [ Page_admin_message_template.table
@@ -1653,8 +1653,10 @@ let message_template_form
       tenant
       label
   in
-  Page_admin_message_template.template_form
+  let open Page_admin_message_template in
+  template_form
     context
+    ~entity:(Session session.Session.id)
     ~text_elements
     ?languages
     input

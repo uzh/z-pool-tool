@@ -719,7 +719,7 @@ let detail
             ]
         ; Page_admin_message_template.(
             experiment_help
-              ~scope:(Experiment experiment.id)
+              ~entity:(Experiment experiment.id)
               language
               (message_templates |> CCList.map fst))
         ; div
@@ -893,8 +893,10 @@ let message_template_form
       tenant
       label
   in
-  Page_admin_message_template.template_form
+  let open Page_admin_message_template in
+  template_form
     context
+    ~entity:(Experiment experiment.Experiment.id)
     ?languages
     ~text_elements
     ?fixed_language:experiment.Experiment.language
