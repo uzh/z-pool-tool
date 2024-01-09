@@ -57,7 +57,6 @@ let to_string = function
     "Aktuell gibt es keine Experimente an den Sie teilnehmen können."
   | ExperimentListPublicTitle -> "Neuanmeldung zu Experiment-Sessions"
   | ExperimentWaitingListTitle -> "Warteliste"
-  | HomeTitle -> "Universitäre Anmeldestelle für Studienteilnehmende"
   | ImportConfirmationNote ->
     "Bitte geben Sie ein neues Paswort an. Ihre restlichen Angaben wurden \
      automatisch übernommen."

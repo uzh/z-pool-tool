@@ -58,7 +58,6 @@ let to_string = function
     "Number of contacts meeting the criteria of this filter:"
   | FilterNrOfSentInvitations -> "Number of contacts already invited:"
   | FollowUpSessionFor -> "Follow-up for:"
-  | HomeTitle -> "University Registration Center for Study Participants"
   | ImportConfirmationNote ->
     "Please enter a new password. The rest of your data has been automatically \
      taken over."
