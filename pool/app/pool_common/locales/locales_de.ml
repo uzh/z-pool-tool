@@ -22,6 +22,7 @@ let rec field_to_string =
   | Assignments -> "Anmeldungen"
   | AssignmentsCreated -> "Sessionanmeldungen"
   | Assistants -> "Assistenten"
+  | AvailableLanguages -> "Verfügbare Sprachen"
   | Building -> "Gebäude"
   | CanceledAt -> "Abgesagt am"
   | CellPhone -> "Mobiltelefon"
