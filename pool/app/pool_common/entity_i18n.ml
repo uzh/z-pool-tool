@@ -32,7 +32,6 @@ type t =
   | FilterNrOfContacts
   | FilterNrOfSentInvitations
   | FollowUpSessionFor
-  | HomeTitle
   | ImportConfirmationNote
   | ImportConfirmationTitle
   | ImportPendingNote

@@ -107,12 +107,8 @@ let index
               [ a_class
                   [ "bg-grey-light"; "border"; "border-radius"; "inset-lg" ]
               ]
-            ([ h1
-                 ~a:[ a_class [ "heading-1" ] ]
-                 [ txt (text_to_string Pool_common.I18n.HomeTitle) ]
-             ; div [ welcome_text |> I18n.content_to_string |> Unsafe.data ]
-             ]
-             @ sign_up_cta
+            ((div [ welcome_text |> I18n.content_to_string |> Unsafe.data ]
+              :: sign_up_cta)
              @ partner_html)
         ; div
             ~a:[ a_class [ "flexcolumn"; "stack" ] ]
