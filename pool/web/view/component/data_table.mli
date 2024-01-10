@@ -46,6 +46,7 @@ val make
   -> ?align_top:bool
   -> ?layout:[ `Striped | `Simple ]
   -> ?prepend_html:[ | Html_types.flow5 ] Tyxml_html.elt
+  -> ?th_class:string list
   -> target_id:string
   -> cols:col list
   -> row:('a -> [< Html_types.table_content_fun ] Tyxml_html.elt)

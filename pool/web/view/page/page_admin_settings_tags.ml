@@ -74,6 +74,7 @@ let list Pool_context.{ language; _ } tags query =
     ; `custom create_tag
     ]
   in
+  let th_class = [ "w-4"; "w-4"; "w-2"; "w-2" ] in
   let row (tag : Tags.t) =
     let open Tags in
     let buttons tag =
@@ -90,7 +91,13 @@ let list Pool_context.{ language; _ } tags query =
     |> CCList.map (CCList.return %> td)
     |> tr
   in
-  Component.DataTable.make ~target_id:"tags-table" ~cols ~row data_table tags
+  Component.DataTable.make
+    ~th_class
+    ~target_id:"tags-table"
+    ~cols
+    ~row
+    data_table
+    tags
 ;;
 
 let index (Pool_context.{ language; _ } as context) tags query =

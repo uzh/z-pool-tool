@@ -32,6 +32,7 @@ module Partials = struct
       ; `empty
       ]
     in
+    let th_class = [ "w-2"; "w-3"; "w-2"; "w-1"; "w-2"; "w-2" ] in
     let row ({ id; contact; resent_at; send_count; created_at; _ } : t) =
       let formatted_date = Pool_common.Utils.Time.formatted_date_time in
       let resend_form =
@@ -69,7 +70,13 @@ module Partials = struct
       |> CCList.map (CCList.return %> td)
       |> tr
     in
-    DataTable.make ~target_id:"experiment-list" ~cols ~row datatable invitations
+    DataTable.make
+      ~th_class
+      ~target_id:"experiment-list"
+      ~cols
+      ~row
+      datatable
+      invitations
   ;;
 
   let send_invitation

@@ -35,6 +35,7 @@ let list { Pool_context.language; _ } filter_list query =
   in
   Component.DataTable.make
     ~target_id:"filters-list"
+    ~th_class:[ "w-10"; "w-2" ]
     ~cols
     ~row
     data_table

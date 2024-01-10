@@ -787,6 +787,7 @@ let data_table
       let base = left @ center @ right in
       if is_print then base else base @ [ `empty ]
     in
+    let th_class = [ "w-3"; "w-3"; "w-2"; "w-1"; "w-1"; "w-2" ] in
     let row (assignment : t) =
       let left =
         conditional_left_columns
@@ -840,6 +841,7 @@ let data_table
         Some (div ~a:[ a_class [ "assignment-reminder-modals" ] ] modals)
     in
     Component.DataTable.make
+      ~th_class
       ~target_id:"assignments-table"
       ~cols
       ~row

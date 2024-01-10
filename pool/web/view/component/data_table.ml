@@ -81,8 +81,14 @@ let make_sortable_head target_id sort col field =
      else [ make_name sort field ])
 ;;
 
-let make_head target_id sort column =
+let make_head ?classname target_id sort column =
+  let attrs =
+    match classname with
+    | None -> []
+    | Some classname -> [ a_class [ classname ] ]
+  in
   th
+    ~a:attrs
     [ (match column with
        | `custom el -> el
        | `empty -> txt ""
@@ -92,8 +98,14 @@ let make_head target_id sort column =
     ]
 ;;
 
-let make_header target_id cols sort =
-  thead [ tr (CCList.map (make_head target_id sort) cols) ]
+let make_header ?th_class target_id cols sort =
+  let classname i = CCOption.bind th_class (CCFun.flip CCList.nth_opt i) in
+  thead
+    [ tr
+        (CCList.mapi
+           (fun i col -> make_head ?classname:(classname i) target_id sort col)
+           cols)
+    ]
 ;;
 
 let make
@@ -101,6 +113,7 @@ let make
   ?align_top
   ?(layout = `Striped)
   ?(prepend_html = txt "")
+  ?th_class
   ~target_id
   ~cols
   ~row
@@ -124,7 +137,7 @@ let make
          ~default
          (Component_list.pagination data_table.language data_table.query)
   in
-  let thead = make_header target_id cols data_table in
+  let thead = make_header ?th_class target_id cols data_table in
   let rows = CCList.map row items in
   let classes =
     a_class (Component_table.table_classes ?align_top layout ~align_last_end ())

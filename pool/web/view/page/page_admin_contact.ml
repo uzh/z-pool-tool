@@ -307,6 +307,7 @@ let list Pool_context.{ language; _ } contacts query =
       language
   in
   let cols = Pool_user.[ `column column_name; `column column_email; `empty ] in
+  let th_class = [ "w-5"; "w-5"; "w-2" ] in
   let row (Contact.{ disabled; _ } as contact) =
     let a =
       if Pool_user.Disabled.value disabled
@@ -322,6 +323,7 @@ let list Pool_context.{ language; _ } contacts query =
   in
   Component.DataTable.make
     ~target_id:"contacts-list"
+    ~th_class
     ~cols
     ~row
     data_table

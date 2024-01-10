@@ -11,6 +11,7 @@ let list Pool_context.{ language; _ } (admins, query) =
       { url; query; language; search = Some Contact.searchable_by }
   in
   let cols = Pool_user.[ `column column_name; `column column_email; `empty ] in
+  let th_class = [ "w-5"; "w-5"; "w-2" ] in
   let row admin =
     let button =
       admin
@@ -23,7 +24,13 @@ let list Pool_context.{ language; _ } (admins, query) =
     |> CCList.map (CCList.return %> td)
     |> tr
   in
-  Component.DataTable.make ~target_id:"admin-list" ~cols ~row sort admins
+  Component.DataTable.make
+    ~th_class
+    ~target_id:"admin-list"
+    ~cols
+    ~row
+    sort
+    admins
 ;;
 
 let static_overview ?(disable_edit = false) language admins =

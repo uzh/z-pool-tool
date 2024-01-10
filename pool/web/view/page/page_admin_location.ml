@@ -50,13 +50,12 @@ let list Pool_context.{ language; _ } location_list query =
     ; `custom create_filter
     ]
   in
+  let th_class = [ "w-3"; "w-4"; "w-4"; "w-1" ] in
   let row (location : Pool_location.t) =
     let open Pool_location in
-    [ span ~a:[ a_class [ "nobr" ] ] [ txt (Name.value location.name) ]
+    [ txt (Name.value location.name)
     ; descriptions_all_languages location
-    ; p
-        ~a:[ a_class [ "nobr" ] ]
-        [ Component.Partials.address_to_html language location.address ]
+    ; Component.Partials.address_to_html language location.address
     ; Format.asprintf "/admin/locations/%s" (Pool_location.Id.value location.id)
       |> Component.Input.link_as_button ~icon:Component.Icon.Eye
     ]
@@ -66,6 +65,7 @@ let list Pool_context.{ language; _ } location_list query =
   Component.DataTable.make
     ~align_top:true
     ~target_id:"location-table"
+    ~th_class
     ~cols
     ~row
     data_table

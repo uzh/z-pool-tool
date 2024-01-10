@@ -28,6 +28,7 @@ let list { Pool_context.language; _ } experiment (waiting_list_entries, query) =
     ; `custom (to_string Message.Field.AdminComment)
     ]
   in
+  let th_class = [ "w-3"; "w-3"; "w-2"; "w-2"; "w-2" ] in
   let row
     ({ Waiting_list.contact; admin_comment; created_at; _ } : Waiting_list.t)
     =
@@ -48,6 +49,7 @@ let list { Pool_context.language; _ } experiment (waiting_list_entries, query) =
   in
   DataTable.make
     ~target_id:"waiting-list"
+    ~th_class
     ~cols
     ~row
     datatable

@@ -147,6 +147,7 @@ module List = struct
       ; `custom (new_btn ())
       ]
     in
+    let th_class = [ "w-3"; "w-3"; "w-2"; "w-2"; "w-2" ] in
     let row (mailing, count) =
       let open Mailing in
       let buttons = buttons experiment_id mailing language csrf in
@@ -159,7 +160,7 @@ module List = struct
       |> CCList.map CCFun.(CCList.return %> td)
       |> tr
     in
-    DataTable.make ~target_id:"mailing-list" ~cols ~row sort mailings
+    DataTable.make ~th_class ~target_id:"mailing-list" ~cols ~row sort mailings
   ;;
 
   let overlapping Pool_context.{ language; _ } experiment_id mailings =
