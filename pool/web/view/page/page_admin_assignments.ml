@@ -260,7 +260,7 @@ module Partials = struct
                       ~hide_text_message_input:true
                       context
                       Message_template.Label.AssignmentSessionChange
-                      (Some swap_session_template)
+                      swap_session_template
                       ~languages
                       ?fixed_language:experiment.Experiment.language
                       ~selected_language:

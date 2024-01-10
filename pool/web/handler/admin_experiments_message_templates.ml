@@ -36,28 +36,30 @@ let form form_context req =
   let result ({ Pool_context.database_label; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, experiment_path experiment_id)
     @@
+    let open Message_template in
     let flash_fetcher key = Sihl.Web.Flash.find key req in
     let tenant = Pool_context.Tenant.get_tenant_exn req in
     let* experiment = Experiment.find database_label experiment_id in
-    let* template, available_languages, label =
+    let* form_context, available_languages, label =
+      let experiment_id = experiment_id |> Experiment.Id.to_common in
       match form_context with
       | New label ->
-        let exclude =
-          CCOption.map CCList.return experiment.Experiment.language
-        in
-        let%lwt available_languages =
+        let%lwt languages =
           Pool_context.Tenant.get_tenant_languages_exn req
-          |> Message_template.missing_template_languages
-               database_label
-               (experiment_id |> Experiment.Id.to_common)
-               label
-               ?exclude
-          ||> CCOption.return
+          |> missing_template_languages database_label experiment_id label
         in
-        Lwt_result.return (None, available_languages, label)
-      | Edit id ->
-        let* template = Message_template.find database_label id in
-        Lwt_result.return (Some template, None, template.Message_template.label)
+        let%lwt template =
+          find_entity_defaults_by_label
+            database_label
+            ~entity_uuids:[ experiment_id ]
+            languages
+            label
+          ||> CCList.hd
+        in
+        Lwt_result.return (`Create template, Some languages, label)
+      | Edit template_id ->
+        let* template = Message_template.find database_label template_id in
+        Lwt_result.return (`Update template, None, template.label)
     in
     Page.Admin.Experiments.message_template_form
       context
@@ -65,7 +67,7 @@ let form form_context req =
       experiment
       available_languages
       label
-      template
+      form_context
       flash_fetcher
     >|> create_layout req context
     >|+ Sihl.Web.Response.of_html

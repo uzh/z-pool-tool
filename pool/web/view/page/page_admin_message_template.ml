@@ -111,11 +111,10 @@ let template_inputs
   ?fixed_language
   ?selected_language
   template_label
-  (template : Message_template.t option)
+  (template : Message_template.t)
   flash_fetcher
   =
   let id = "message-template-inputs" in
-  let value = CCFun.flip (CCOption.map_or ~default:"") template in
   let open Message_template in
   let reset_button =
     if CCOption.is_none entity
@@ -154,9 +153,7 @@ let template_inputs
   let language_select =
     let open Pool_common.Language in
     let selected =
-      CCOption.(
-        selected_language
-        <+> CCOption.map (fun { language; _ } -> language) template)
+      CCOption.value ~default:template.language selected_language
     in
     let languages_select () =
       match languages with
@@ -168,7 +165,7 @@ let template_inputs
           Field.Language
           show
           languages
-          selected
+          (Some selected)
           ()
     in
     fixed_language
@@ -216,7 +213,7 @@ let template_inputs
             ; a_required ()
             ; a_user_data "plain-text-for" Field.(show EmailText)
             ]
-          (txt (value (fun t -> t.plain_text |> PlainText.value)))
+          (txt (template.plain_text |> PlainText.value))
       ; span
           ~a:[ a_class [ "help" ] ]
           [ Pool_common.(Utils.hint_to_string language I18n.EmailPlainText)
@@ -230,7 +227,7 @@ let template_inputs
     else
       textarea_element
         ~rich_text:false
-        ~value:(value (fun t -> t.sms_text |> SmsText.value))
+        ~value:(template.sms_text |> SmsText.value)
         Field.SmsText
   in
   div
@@ -242,23 +239,24 @@ let template_inputs
             language
             ~flash_fetcher
             ~required:true
-            ~value:(value (fun t -> t.email_subject |> EmailSubject.value))
+            ~value:(template.email_subject |> EmailSubject.value)
             `Text
             Field.EmailSubject
         ; language_select
         ]
     ; textarea_element
         ~rich_text:true
-        ~value:(value (fun t -> t.email_text |> EmailText.value))
+        ~value:(template.email_text |> EmailText.value)
         Field.EmailText
     ; plain_text_element
     ; text_message_input
     ]
 ;;
 
-type template_form_input =
-  | New of Message_template.Label.t
-  | Existing of Message_template.t
+type template_form_context =
+  [ `Create of Message_template.t
+  | `Update of Message_template.t
+  ]
 
 let template_form
   ({ Pool_context.language; query_language; csrf; _ } as context)
@@ -267,19 +265,20 @@ let template_form
   ?languages
   ?text_elements
   ?fixed_language
-  input
+  (form_context : template_form_context)
   action
   flash_fetcher
   =
   let open Message_template in
   let externalize = Http_utils.externalize_path_with_lang query_language in
-  let submit, template, label =
+  let submit, template =
     let open Pool_common.Message in
     let field = Field.MessageTemplate |> CCOption.pure in
-    match input with
-    | New label -> Create field, None, label
-    | Existing t -> Update field, Some t, t.label
+    match form_context with
+    | `Create t -> Create field, t
+    | `Update t -> Update field, t
   in
+  let label = template.label in
   let hint =
     label
     |> Message_template.template_hint
@@ -345,7 +344,7 @@ let edit
     ; template_form
         context
         ~text_elements
-        (Existing template)
+        (`Update template)
         action
         flash_fetcher
     ]

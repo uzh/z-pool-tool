@@ -675,25 +675,36 @@ let message_template_form ?template_id label req =
         |> Experiment.Id.value
         |> Format.asprintf "/admin/experiments/%s/edit" ))
     @@
+    let open Message_template in
     let flash_fetcher key = Sihl.Web.Flash.find key req in
     let tenant = Pool_context.Tenant.get_tenant_exn req in
     let* experiment = Experiment.find database_label experiment_id in
     let* session = Session.find database_label session_id in
-    let* template =
-      template_id
-      |> CCOption.map_or ~default:(Lwt_result.return None) (fun id ->
-        Message_template.find database_label id >|+ CCOption.pure)
-    in
-    let%lwt available_languages =
+    let* form_context, available_languages =
       match template_id with
       | None ->
-        Pool_context.Tenant.get_tenant_languages_exn req
-        |> Message_template.missing_template_languages
-             database_label
-             (session_id |> Session.Id.to_common)
-             label
-        ||> CCOption.return
-      | Some _ -> Lwt.return_none
+        let%lwt languages =
+          Pool_context.Tenant.get_tenant_languages_exn req
+          |> missing_template_languages
+               database_label
+               (session_id |> Session.Id.to_common)
+               label
+        in
+        let%lwt template =
+          find_entity_defaults_by_label
+            database_label
+            ~entity_uuids:
+              [ Experiment.Id.to_common experiment_id
+              ; Session.Id.to_common session_id
+              ]
+            languages
+            label
+          ||> CCList.hd
+        in
+        Lwt_result.return (`Create template, Some languages)
+      | Some template_id ->
+        let* template = Message_template.find database_label template_id in
+        Lwt_result.return (`Update template, None)
     in
     Page.Admin.Session.message_template_form
       context
@@ -702,7 +713,7 @@ let message_template_form ?template_id label req =
       session
       available_languages
       label
-      template
+      form_context
       flash_fetcher
     >|> create_layout req context
     >|+ Sihl.Web.Response.of_html
@@ -735,10 +746,7 @@ let new_session_reminder_post req =
 
 let edit_template req =
   let template_id = template_id req in
-  message_template_form
-    ~template_id
-    Message_template.Label.ExperimentInvitation
-    req
+  message_template_form ~template_id Message_template.Label.SessionReminder req
 ;;
 
 let update_template req =

@@ -858,33 +858,32 @@ let message_template_form
   experiment
   languages
   label
-  template
+  form_context
   flash_fetcher
   =
   let open Message_template in
-  let action, input =
-    let open Page_admin_message_template in
+  let open Pool_common in
+  let control_to_title control =
+    Layout.Experiment.Text
+      (Format.asprintf
+         "%s %s"
+         (control |> Utils.control_to_string language)
+         (label |> Label.to_human |> CCString.lowercase_ascii))
+  in
+  let control =
+    match form_context with
+    | `Create _ -> Message.(Create None)
+    | `Update _ -> Message.(Edit None)
+  in
+  let action =
     let path =
       Format.asprintf
         "/admin/experiments/%s/%s"
         Experiment.(Id.value experiment.Experiment.id)
     in
-    match template with
-    | None -> path (Label.prefixed_human_url label), New label
-    | Some template -> path (prefixed_template_url template), Existing template
-  in
-  let title =
-    let open Pool_common in
-    let open Layout.Experiment in
-    (match template with
-     | None -> Message.(Create None)
-     | Some _ -> Message.(Edit None))
-    |> fun control ->
-    Text
-      (Format.asprintf
-         "%s %s"
-         (control |> Utils.control_to_string language)
-         (label |> Label.to_human |> CCString.lowercase_ascii))
+    match form_context with
+    | `Create t -> path (Label.prefixed_human_url t.label)
+    | `Update t -> path (prefixed_template_url t)
   in
   let text_elements =
     Component.MessageTextElements.message_template_help
@@ -900,9 +899,9 @@ let message_template_form
     ?languages
     ~text_elements
     ?fixed_language:experiment.Experiment.language
-    input
+    form_context
     action
     flash_fetcher
   |> CCList.return
-  |> Layout.Experiment.create context title experiment
+  |> Layout.Experiment.create context (control_to_title control) experiment
 ;;

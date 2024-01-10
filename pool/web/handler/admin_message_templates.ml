@@ -225,7 +225,7 @@ let reset_to_default_htmx req =
       ~languages
       context
       template.Message_template.label
-      (Some template)
+      template
       flash_fetcher
     |> HttpUtils.Htmx.html_to_plain_text_response
     |> Lwt_result.return
