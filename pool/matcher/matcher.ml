@@ -235,7 +235,7 @@ let create_invitation_events interval pools =
                  in
                  mailing
                  |> find_experiment
-                 >>= has_spots
+                 |>> has_spots
                  >== validate
                  >|- Pool_common.Utils.with_log_error ~level:Logs.Warning
                  ||> CCResult.to_opt)

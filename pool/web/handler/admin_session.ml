@@ -42,7 +42,7 @@ let list req =
     @@
     let experiment_id = experiment_id req in
     let* experiment = Experiment.find database_label experiment_id in
-    let* sessions =
+    let%lwt sessions =
       Session.find_all_for_experiment database_label experiment_id
     in
     let grouped_sessions, chronological =
@@ -261,7 +261,7 @@ let session_page database_label req context session experiment =
       flash_fetcher
     >|> create_layout
   | `Cancel ->
-    let* follow_ups = Session.find_follow_ups database_label session_id in
+    let%lwt follow_ups = Session.find_follow_ups database_label session_id in
     Page.Admin.Session.cancel
       context
       experiment
@@ -396,7 +396,7 @@ let update_handler action req =
     let tenant = Pool_context.Tenant.get_tenant_exn req in
     let* session = Session.find database_label session_id in
     let* experiment = Experiment.find database_label experiment_id in
-    let* follow_ups =
+    let%lwt follow_ups =
       Session.find_follow_ups database_label session.Session.id
     in
     let* parent =
@@ -480,7 +480,7 @@ let cancel req =
     let tags = Pool_context.Logger.Tags.req req in
     let* experiment = Experiment.find database_label experiment_id in
     let* session = Session.find database_label session_id in
-    let* follow_ups =
+    let%lwt follow_ups =
       Session.find_follow_ups database_label session.Session.id
     in
     let%lwt assignments =
@@ -565,7 +565,7 @@ let delete req =
     let tags = Pool_context.Logger.Tags.req req in
     let session_id = session_id req in
     let* session = Session.find database_label session_id in
-    let* follow_ups = Session.find_follow_ups database_label session_id in
+    let%lwt follow_ups = Session.find_follow_ups database_label session_id in
     let%lwt templates =
       let open Message_template in
       find_all_of_entity_by_label

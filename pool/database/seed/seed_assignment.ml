@@ -9,12 +9,9 @@ let assignment pool =
         in
         let%lwt session =
           Session.find_all_for_experiment pool experiment.Experiment.id
-          >|+ CCList.hd
-          ||> CCResult.get_exn
+          ||> CCList.hd
         in
-        let%lwt follow_ups =
-          Session.find_follow_ups pool session.Session.id ||> CCResult.get_exn
-        in
+        let%lwt follow_ups = Session.find_follow_ups pool session.Session.id in
         Lwt.return (session, follow_ups, experiment_invitations))
       experiments
   in

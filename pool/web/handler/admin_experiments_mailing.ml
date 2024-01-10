@@ -53,7 +53,7 @@ let new_form req =
   let result ({ Pool_context.database_label; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, experiment_path id)
     @@ let* experiment = Experiment.find database_label id in
-       let* is_bookable =
+       let%lwt is_bookable =
          Session.has_bookable_spots_for_experiments
            database_label
            experiment.Experiment.id

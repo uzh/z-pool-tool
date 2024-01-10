@@ -274,6 +274,11 @@ module Repo : sig
   module Name : sig
     val t : Name.t Caqti_type.t
   end
+
+  val sql_select_columns : string list
+  val t : Repo_entity.t Caqti_type.t
+  val to_entity : Repo_entity.t -> Entity_file_mapping.file list -> t
+  val of_entity : t -> Repo_entity.t
 end
 
 val find
