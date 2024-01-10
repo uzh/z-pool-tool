@@ -188,22 +188,40 @@ let preview_default req =
 
 let reset_to_default_htmx req =
   let open Utils.Lwt_result.Infix in
+  let open Message_template in
   let result ({ Pool_context.database_label; _ } as context) =
     let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+    let* current_template =
+      let open Message_template in
+      let open CCOption in
+      HttpUtils.find_in_urlencoded_opt Field.MessageTemplate urlencoded
+      >|= (fun id ->
+            id |> Id.of_string |> find database_label >|+ CCOption.return)
+      |> CCOption.value ~default:(Lwt_result.return None)
+    in
     let* template_language =
-      HttpUtils.find_in_urlencoded Field.Language urlencoded
-      |> Lwt_result.lift
-      >== Pool_common.Language.create
+      match current_template with
+      | Some ({ language; _ } : t) -> Lwt_result.return language
+      | None ->
+        HttpUtils.find_in_urlencoded Field.Language urlencoded
+        |> Lwt_result.lift
+        >== Pool_common.Language.create
     in
     let* languages =
-      HttpUtils.find_in_urlencoded Field.AvailableLanguages urlencoded
-      |> Lwt_result.lift
-      >|+ CCString.split_on_char ','
-      >|+ CCList.map CCString.trim
-      >== fun language_strings ->
-      language_strings
-      |> CCList.map Pool_common.Language.create
-      |> CCList.all_ok
+      let open CCList in
+      Lwt_result.lift
+      @@ (HttpUtils.find_in_urlencoded_opt Field.AvailableLanguages urlencoded
+          |> function
+          | Some languages ->
+            languages
+            |> CCString.split_on_char ','
+            >|= CCString.trim
+            |> fun language_strings ->
+            language_strings
+            >|= Pool_common.Language.create
+            |> all_ok
+            |> CCResult.map CCOption.return
+          | None -> Ok None)
     in
     let* message_templates, entity =
       default_templates_from_request
@@ -218,14 +236,19 @@ let reset_to_default_htmx req =
       |> CCOption.to_result Pool_common.Message.(NotFound Field.MessageTemplate)
       |> Lwt_result.lift
     in
+    let form_context =
+      if CCOption.is_some current_template
+      then `Update template
+      else `Create template
+    in
     let flash_fetcher = CCFun.const None in
     (* TODO: flash_fetcher *)
     Page.Admin.MessageTemplate.template_inputs
       ~entity
-      ~languages
+      ?languages
       context
-      template.Message_template.label
-      template
+      form_context
+      template.label
       flash_fetcher
     |> HttpUtils.Htmx.html_to_plain_text_response
     |> Lwt_result.return

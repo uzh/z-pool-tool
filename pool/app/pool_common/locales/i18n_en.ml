@@ -572,6 +572,8 @@ let confirmable_to_string confirmable =
    | DeleteMessageTemplate -> "message template", "delete", None
    | DeleteSession -> "session", "delete", None
    | DeleteSmtpServer -> "email Server", "delete", None
+   | LoadDefaultTemplate ->
+     "default template", "load", Some "The current content is overwritten."
    | PublisCustomField ->
      ( "field an all associated options"
      , "publish"

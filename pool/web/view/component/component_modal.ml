@@ -21,7 +21,7 @@ let create ?(active = false) ?subtitle language title id html =
     | false -> [ a_class base_classnames; a_aria "hidden" [ "true" ] ]
   in
   div
-    ~a:(a_id id :: attrs)
+    ~a:([ a_id id; a_user_data "modal" "" ] @ attrs)
     [ div
         ~a:[ a_class [ "modal-body" ] ]
         [ div ~a:[ a_class [ "modal-header" ] ] [ title; subtitle ]

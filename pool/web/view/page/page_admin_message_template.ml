@@ -6,8 +6,12 @@ type entity =
   | Experiment of Experiment.Id.t
   | Session of Session.Id.t
 
-let entity_hx_vals entity =
-  match entity with
+type template_form_context =
+  [ `Create of Message_template.t
+  | `Update of Message_template.t
+  ]
+
+let entity_hx_vals = function
   | Experiment id -> [ Field.(show Experiment), Experiment.Id.value id ]
   | Session id -> [ Field.(show Session), Session.Id.value id ]
 ;;
@@ -110,12 +114,18 @@ let template_inputs
   ?languages
   ?fixed_language
   ?selected_language
+  form_context
   template_label
-  (template : Message_template.t)
   flash_fetcher
   =
   let id = "message-template-inputs" in
   let open Message_template in
+  let open Pool_common in
+  let template =
+    match form_context with
+    | `Create t -> t
+    | `Update t -> t
+  in
   let reset_button =
     if CCOption.is_none entity
     then txt ""
@@ -125,29 +135,43 @@ let template_inputs
         let entity_vals =
           entity |> CCOption.map entity_hx_vals |> CCOption.value ~default:[]
         in
-        languages
-        |> CCOption.map (fun languages ->
-          let open CCList in
+        let template_vals =
+          match form_context with
+          | `Create _ -> []
+          | `Update { id; _ } ->
+            [ Message.Field.(show MessageTemplate), Message_template.Id.value id
+            ]
+        in
+        let language_vals =
           languages
-          >|= Pool_common.Language.show
-          |> CCString.concat ","
-          |> CCPair.make Field.(show AvailableLanguages)
-          |> CCList.cons' entity_vals
-          |> make_hx_vals
-          |> return)
-        |> CCOption.value ~default:[]
+          |> CCOption.map (fun languages ->
+            languages
+            |> CCList.map Language.show
+            |> CCString.concat ","
+            |> CCPair.make Field.(show AvailableLanguages)
+            |> CCList.return)
+          |> CCOption.value ~default:[]
+        in
+        entity_vals @ template_vals @ language_vals |> make_hx_vals
       in
       div
-        [ span
+        ~a:[ a_class [ "flexrow" ] ]
+        [ button
             ~a:
-              ([ hx_swap "outerHTML"
-               ; hx_target ("#" ^ id)
-               ; hx_trigger "click"
-               ; hx_post (template_label_url template_label "reset")
-               ; a_class [ "pointer" ]
-               ]
-               @ hx_vals)
-            [ txt "Reset to default (TODO)" ]
+              [ hx_swap "outerHTML"
+              ; hx_target ("#" ^ id)
+              ; hx_trigger "click"
+              ; hx_post (template_label_url template_label "reset")
+              ; hx_confirm
+                  (Utils.confirmable_to_string
+                     language
+                     I18n.LoadDefaultTemplate)
+              ; hx_vals
+              ; a_class [ "small"; "primary"; "has-icon"; "push" ]
+              ]
+            [ Icon.(to_html RefreshOutline)
+            ; txt (Utils.control_to_string language Message.LoadDefaultTemplate)
+            ]
         ]
   in
   let language_select =
@@ -190,7 +214,7 @@ let template_inputs
           ~a:[ a_class [ "flexrow"; "flex-gap"; "justify-between" ] ]
           [ label
               ~a:[ a_label_for id ]
-              [ Pool_common.(Utils.field_to_string language Field.PlainText)
+              [ Utils.field_to_string language Field.PlainText
                 |> CCString.capitalize_ascii
                 |> Format.asprintf "%s*"
                 |> txt
@@ -200,9 +224,7 @@ let template_inputs
                 [ a_class [ "flexrow"; "flex-gap-sm"; "pointer" ]
                 ; a_user_data "toggle-reset-plaintext" Field.(show EmailText)
                 ]
-              [ txt
-                  Pool_common.(
-                    Utils.control_to_string language Message.ResetPlainText)
+              [ txt (Utils.control_to_string language Message.ResetPlainText)
               ; Component.Icon.(to_html RefreshOutline)
               ]
           ]
@@ -216,7 +238,7 @@ let template_inputs
           (txt (template.plain_text |> PlainText.value))
       ; span
           ~a:[ a_class [ "help" ] ]
-          [ Pool_common.(Utils.hint_to_string language I18n.EmailPlainText)
+          [ Utils.hint_to_string language I18n.EmailPlainText
             |> HttpUtils.add_line_breaks
           ]
       ]
@@ -253,11 +275,6 @@ let template_inputs
     ]
 ;;
 
-type template_form_context =
-  [ `Create of Message_template.t
-  | `Update of Message_template.t
-  ]
-
 let template_form
   ({ Pool_context.language; query_language; csrf; _ } as context)
   ?entity
@@ -265,7 +282,7 @@ let template_form
   ?languages
   ?text_elements
   ?fixed_language
-  (form_context : template_form_context)
+  form_context
   action
   flash_fetcher
   =
@@ -307,8 +324,8 @@ let template_form
            ~hide_text_message_input
            ?languages
            ?fixed_language
+           form_context
            label
-           template
            flash_fetcher
        ]
        @ [ div
@@ -316,7 +333,9 @@ let template_form
              [ submit_element ~classnames:[ "push" ] language submit () ]
          ])
   in
-  div ~a:[ a_class [ "stack" ] ] [ hint; text_elements_html; form ]
+  div
+    ~a:[ a_class [ "stack-lg" ] ]
+    [ div ~a:[ a_class [ "stack" ] ] [ hint; text_elements_html ]; form ]
 ;;
 
 let edit

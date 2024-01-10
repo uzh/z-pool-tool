@@ -11,6 +11,7 @@ let hx_target_closest_group = hx_target "closest .form-group"
 let hx_swap = a_user_data "hx-swap"
 let hx_params = a_user_data "hx-params"
 let hx_vals = a_user_data "hx-vals"
+let hx_confirm = a_user_data "hx-confirm"
 let hx_base_params = [ "_csrf"; "version"; "field" ]
 let contact_profile_hx_post = "/user/update"
 

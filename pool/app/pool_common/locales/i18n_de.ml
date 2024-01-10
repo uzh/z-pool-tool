@@ -591,6 +591,10 @@ let confirmable_to_string confirmable =
    | DeleteMessageTemplate -> "das Nachrichtentemplate", "löschen", None
    | DeleteSession -> "die Session", "löschen", None
    | DeleteSmtpServer -> "E-Mail Server", "löschen", None
+   | LoadDefaultTemplate ->
+     ( "das Standardtemplate"
+     , "laden"
+     , Some "Die aktuellen Inhalte werden dabei überschrieben." )
    | MarkAssignmentAsDeleted -> "die Anmeldung", "als gelöscht markieren", None
    | MarkAssignmentWithFollowUpsAsDeleted ->
      ( "die Anmeldung"

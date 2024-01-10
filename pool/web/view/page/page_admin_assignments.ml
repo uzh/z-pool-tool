@@ -259,8 +259,8 @@ module Partials = struct
                   [ Page_admin_message_template.template_inputs
                       ~hide_text_message_input:true
                       context
+                      (`Create swap_session_template)
                       Message_template.Label.AssignmentSessionChange
-                      swap_session_template
                       ~languages
                       ?fixed_language:experiment.Experiment.language
                       ~selected_language:

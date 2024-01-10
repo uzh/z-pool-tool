@@ -601,6 +601,7 @@ let control_to_string = function
   | EnterNewCellPhone -> "Enter a different number"
   | Filter field -> format_submit "filter" field
   | Login -> format_submit "login" None
+  | LoadDefaultTemplate -> format_submit "load default template" None
   | Manage field -> format_submit "manage" (Some field)
   | MarkAsDeleted -> format_submit "mark as deleted" None
   | More -> format_submit "more" None

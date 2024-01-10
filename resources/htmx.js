@@ -15,6 +15,5 @@ export const initHTMX = () => {
         initSearch(e.detail.elt)
         initRichTextEditor(e.detail.elt)
         initNotification()
-        // TODO: Check if js_add_modal_close_listener can be called here generally, maybe integrate to framework
     })
 }
