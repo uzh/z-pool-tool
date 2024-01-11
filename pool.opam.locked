@@ -12,7 +12,7 @@ homepage: "https://gitlab.uzh.ch/econ/study-coordination/pool"
 doc: "https://gitlab.uzh.ch/econ/study-coordination/pool/doc"
 bug-reports: "https://gitlab.uzh.ch/econ/study-coordination/pool"
 depends: [
-  "angstrom" {= "0.15.0"}
+  "angstrom" {= "0.16.0"}
   "asn1-combinators" {= "0.2.6"}
   "astring" {= "0.8.5"}
   "base" {= "v0.16.3"}
@@ -31,14 +31,14 @@ depends: [
   "caqti-driver-mariadb" {= "2.0.1"}
   "caqti-lwt" {= "2.0.1"}
   "cmdliner" {= "1.2.0"}
-  "cohttp" {= "5.3.0"}
+  "cohttp" {= "5.3.1"}
   "cohttp-lwt" {= "5.3.0"}
   "cohttp-lwt-unix" {= "5.3.0"}
   "coin" {= "0.1.4"}
   "colombe" {= "0.8.0"}
-  "conduit" {= "6.2.0"}
-  "conduit-lwt" {= "6.2.0"}
-  "conduit-lwt-unix" {= "6.2.0"}
+  "conduit" {= "6.2.1"}
+  "conduit-lwt" {= "6.2.1"}
+  "conduit-lwt-unix" {= "6.2.1"}
   "conf-gcc" {= "1.0"}
   "conf-gmp" {= "4"}
   "conf-gmp-powm-sec" {= "3"}
@@ -47,17 +47,17 @@ depends: [
   "conf-mariadb" {= "2"}
   "conf-pkg-config" {= "3"}
   "conformist" {= "0.8.1"}
-  "containers" {= "3.12"}
-  "containers-data" {= "3.12"}
+  "containers" {= "3.13.1"}
+  "containers-data" {= "3.13.1"}
   "cppo" {= "1.6.9"}
   "csexp" {= "1.5.2"}
-  "cstruct" {= "6.0.1"}
+  "cstruct" {= "6.2.0"}
   "ctypes" {= "0.20.2"}
   "digestif" {= "1.1.4"}
   "domain-name" {= "0.4.0"}
-  "dune" {= "3.11.1"}
-  "dune-build-info" {= "3.11.1"}
-  "dune-configurator" {= "3.11.1"}
+  "dune" {= "3.12.1"}
+  "dune-build-info" {= "3.12.1"}
+  "dune-configurator" {= "3.12.1"}
   "duration" {= "0.2.1"}
   "either" {= "1.0.0"}
   "emile" {= "1.1"}
@@ -102,12 +102,12 @@ depends: [
   "mrmime" {= "0.6.0"}
   "mtime" {= "2.0.0"}
   "multipart-form-data" {= "0.3.0"}
-  "num" {= "1.4"}
+  "num" {= "1.5"}
   "ocaml" {= "4.14.1"}
   "ocaml-compiler-libs" {= "v0.12.4"}
   "ocaml-syntax-shims" {= "1.0.0"}
-  "ocaml-version" {= "3.6.2"}
-  "ocamlbuild" {= "0.14.2"}
+  "ocaml-version" {= "3.6.3"}
+  "ocamlbuild" {= "0.14.3"}
   "ocamlfind" {= "1.9.6"}
   "ocamlformat" {= "0.26.1"}
   "ocamlformat-lib" {= "0.26.1"}
@@ -118,12 +118,19 @@ depends: [
   "parsexp" {= "v0.16.0"}
   "pbkdf" {= "1.2.0"}
   "pecu" {= "0.6"}
+  "ppx_base" {= "v0.16.0"}
+  "ppx_cold" {= "v0.16.0"}
+  "ppx_compare" {= "v0.16.0"}
   "ppx_derivers" {= "1.2.1"}
   "ppx_deriving" {= "5.2.1"}
   "ppx_deriving_yojson" {= "3.7.0"}
+  "ppx_enumerate" {= "v0.16.0"}
   "ppx_fields_conv" {= "v0.16.0"}
+  "ppx_globalize" {= "v0.16.0"}
+  "ppx_hash" {= "v0.16.0"}
   "ppx_js_style" {= "v0.16.0"}
   "ppx_sexp_conv" {= "v0.16.0"}
+  "ppx_string" {= "v0.16.0"}
   "ppx_variants_conv" {= "v0.16.0"}
   "ppx_yojson_conv" {= "v0.16.0"}
   "ppx_yojson_conv_lib" {= "v0.16.0"}
@@ -151,8 +158,8 @@ depends: [
   "stdio" {= "v0.16.0"}
   "stdlib-shims" {= "0.3.0"}
   "stringext" {= "1.6.0"}
-  "tls" {= "0.17.1"}
-  "tls-lwt" {= "0.17.1"}
+  "tls" {= "0.17.3"}
+  "tls-lwt" {= "0.17.3"}
   "topkg" {= "1.0.7"}
   "tsort" {= "2.1.0"}
   "tyxml" {= "4.6.0"}
@@ -169,7 +176,7 @@ depends: [
   "uuuu" {= "0.3.0"}
   "variantslib" {= "v0.16.0"}
   "x509" {= "0.16.5"}
-  "yojson" {= "2.1.1"}
+  "yojson" {= "2.1.2"}
   "yuscii" {= "0.3.0"}
   "zarith" {= "1.13"}
 ]
