@@ -131,7 +131,7 @@ module List = struct
     (mailings, query)
     =
     let url = Uri.of_string (mailings_path experiment_id) in
-    let sort = DataTable.{ url; query; language; search = None } in
+    let data_table = Component.DataTable.create_meta url query language in
     let cols =
       let new_btn () =
         link_as_button
@@ -160,7 +160,13 @@ module List = struct
       |> CCList.map CCFun.(CCList.return %> td)
       |> tr
     in
-    DataTable.make ~th_class ~target_id:"mailing-list" ~cols ~row sort mailings
+    DataTable.make
+      ~th_class
+      ~target_id:"mailing-list"
+      ~cols
+      ~row
+      data_table
+      mailings
   ;;
 
   let overlapping Pool_context.{ language; _ } experiment_id mailings =

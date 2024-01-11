@@ -13,8 +13,12 @@ let list { Pool_context.language; _ } experiment (waiting_list_entries, query) =
     |> Format.asprintf "/admin/experiments/%s/waiting-list"
     |> Uri.of_string
   in
-  let datatable =
-    DataTable.{ url; query; language; search = Some Waiting_list.searchable_by }
+  let data_table =
+    Component.DataTable.create_meta
+      ~search:Waiting_list.searchable_by
+      url
+      query
+      language
   in
   let cols =
     let open Pool_common in
@@ -56,7 +60,7 @@ let list { Pool_context.language; _ } experiment (waiting_list_entries, query) =
     ~th_class
     ~cols
     ~row
-    datatable
+    data_table
     waiting_list_entries
 ;;
 

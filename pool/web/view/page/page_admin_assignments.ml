@@ -630,8 +630,11 @@ let data_table
     |> Uri.of_string
   in
   let data_table =
-    Component.DataTable.
-      { url; query; language; search = Some Assignment.searchable_by }
+    Component.DataTable.create_meta
+      ~search:Assignment.searchable_by
+      url
+      query
+      language
   in
   let conditional_left_columns =
     [ view_contact_name, Pool_user.column_name, contact_lastname_firstname

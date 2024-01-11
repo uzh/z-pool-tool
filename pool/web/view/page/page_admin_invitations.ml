@@ -20,8 +20,12 @@ module Partials = struct
     let url =
       form_action ~path:"sent" experiment.Experiment.id |> Uri.of_string
     in
-    let datatable =
-      DataTable.{ url; query; language; search = Some Invitation.searchable_by }
+    let data_table =
+      Component.DataTable.create_meta
+        ~search:Invitation.searchable_by
+        url
+        query
+        language
     in
     let cols =
       [ `column Pool_user.column_name
@@ -75,7 +79,7 @@ module Partials = struct
       ~target_id:"experiment-list"
       ~cols
       ~row
-      datatable
+      data_table
       invitations
   ;;
 

@@ -167,13 +167,14 @@ type t =
   }
 [@@deriving eq, show]
 
-let to_uri_query { pagination; search; sort } =
+let to_uri_query ?(additional_params = []) { pagination; search; sort } =
   [ pagination |> Option.map Pagination.to_query_parts
   ; search |> Option.map Search.to_query_parts
   ; sort |> Option.map Sort.to_query_parts
   ]
   |> List.map (Option.value ~default:[])
   |> List.flatten
+  |> CCList.append additional_params
   |> List.map (fun (k, v) -> Common.Message.Field.show k, [ Uri.pct_encode v ])
 ;;
 

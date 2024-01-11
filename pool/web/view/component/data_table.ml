@@ -13,9 +13,12 @@ type data_table =
   ; query : Query.t
   ; language : Pool_common.Language.t
   ; search : Query.Column.t list option
+  ; additional_url_params : (Pool_common.Message.Field.t * string) list option
   }
 
-let create_meta ?search url query language = { url; query; language; search }
+let create_meta ?additional_url_params ?search url query language =
+  { url; query; language; search; additional_url_params }
+;;
 
 type col =
   [ `column of Query.Column.t
@@ -45,12 +48,12 @@ let direction ({ query; _ } as sort) column =
   else direction
 ;;
 
-let make_url ({ url; query; _ } as sort) column =
+let make_url ({ additional_url_params; url; query; _ } as sort) column =
   let query =
     query
     |> Query.with_sort_order (direction sort column)
     |> Query.with_sort_column column
-    |> Query.to_uri_query
+    |> Query.to_uri_query ?additional_params:additional_url_params
   in
   let url = Uri.with_query url query in
   Format.asprintf "%a" Uri.pp url
@@ -136,7 +139,10 @@ let make
     data_table.query.Query.pagination
     |> CCOption.map_or
          ~default
-         (Component_list.pagination data_table.language data_table.query)
+         (Component_list.pagination
+            ?additional_url_params:data_table.additional_url_params
+            data_table.language
+            data_table.query)
   in
   let thead = make_header ?th_class target_id cols data_table in
   let rows = CCList.map row items in

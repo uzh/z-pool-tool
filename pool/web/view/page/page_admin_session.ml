@@ -464,7 +464,12 @@ let data_table
   let target_id = "session-list" in
   let data_table =
     let url = session_index_path |> Uri.of_string in
-    Component.DataTable.create_meta url query language
+    let additional_url_params =
+      match chronological with
+      | true -> Some [ Message.Field.Chronological, "true" ]
+      | false -> None
+    in
+    Component.DataTable.create_meta ?additional_url_params url query language
   in
   let cols =
     let create_session : [ | Html_types.flow5 ] elt =

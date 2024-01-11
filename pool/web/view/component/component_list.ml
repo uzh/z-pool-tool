@@ -2,7 +2,7 @@ open Tyxml.Html
 open Query
 module Icon = Component_icon
 
-let retain_search_and_sort query =
+let retain_search_and_sort ?additional_url_params query =
   let open Pool_common.Message in
   let search =
     let open Search in
@@ -17,10 +17,17 @@ let retain_search_and_sort query =
       ; Field.SortOrder, order |> SortOrder.show
       ])
   in
-  [ search; sort ] |> CCList.filter_map CCFun.id |> CCList.flatten
+  [ additional_url_params; search; sort ]
+  |> CCList.filter_map CCFun.id
+  |> CCList.flatten
 ;;
 
-let pagination language query { Pagination.page; page_count; _ } =
+let pagination
+  ?additional_url_params
+  language
+  query
+  { Pagination.page; page_count; _ }
+  =
   let max_button_count = 7 in
   let button_count_threshold = 3 in
   let page_list_classes = [ "btn"; "small" ] in
@@ -30,7 +37,8 @@ let pagination language query { Pagination.page; page_count; _ } =
     let open Message in
     add_field_query_params
       "?"
-      ((Field.Page, CCInt.to_string page) :: retain_search_and_sort query)
+      ((Field.Page, CCInt.to_string page)
+       :: retain_search_and_sort ?additional_url_params query)
   in
   let previous =
     let label = Utils.control_to_string language Message.PreviousPage in
