@@ -111,6 +111,7 @@ let make_header ?th_class target_id cols sort =
 let make
   ?(align_last_end = true)
   ?align_top
+  ?(classnames = [])
   ?(layout = `Striped)
   ?(prepend_html = txt "")
   ?th_class
@@ -140,7 +141,9 @@ let make
   let thead = make_header ?th_class target_id cols data_table in
   let rows = CCList.map row items in
   let classes =
-    a_class (Component_table.table_classes ?align_top layout ~align_last_end ())
+    a_class
+      (Component_table.table_classes ?align_top layout ~align_last_end ()
+       @ classnames)
   in
   div
     ~a:[ a_class [ "stack" ]; a_id target_id ]

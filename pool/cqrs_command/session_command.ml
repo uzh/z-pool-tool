@@ -400,7 +400,7 @@ end = struct
     if CCList.is_empty follow_ups |> not
     then Error Pool_common.Message.SessionHasFollowUps
     else
-      let* () = Session.is_deletable session follow_ups in
+      let* () = Session.is_deletable session in
       let delete_template =
         Message_template.deleted %> Pool_event.message_template
       in

@@ -19,8 +19,8 @@ let sql_select_columns =
   ; "pool_sessions.text_message_reminder_lead_time"
   ; "pool_sessions.text_message_reminder_sent_at"
   ; "COUNT(pool_assignments.id) as assignment_count"
-  ; "COALESCE( SUM(pool_assignments.no_show), 0)"
-  ; "COALESCE( SUM(pool_assignments.participated), 0)"
+  ; "COALESCE( SUM(pool_assignments.no_show), 0) as noshow_count"
+  ; "COALESCE( SUM(pool_assignments.participated), 0) as participation_count"
   ; "pool_sessions.closed_at"
   ; "pool_sessions.canceled_at"
   ; "pool_sessions.created_at"
@@ -107,11 +107,14 @@ module Sql = struct
     let columns =
       if count then "COUNT(*)" else sql_select_columns |> CCString.concat ", "
     in
+    let joins = if count then "" else joins in
+    let group_by = if count then "" else "GROUP BY pool_sessions.uuid" in
     Format.asprintf
-      {sql|SELECT %s FROM pool_sessions %s %s GROUP BY pool_sessions.uuid |sql}
+      {sql| SELECT %s FROM pool_sessions %s %s %s |sql}
       columns
       joins
       where_fragment
+      group_by
   ;;
 
   let find_public_sql where =
@@ -271,10 +274,33 @@ module Sql = struct
     prepare_find_multiple pool find_multiple_followups_request parent_ids
   ;;
 
-  let query_grouped_for_experiment ?query pool id =
+  let to_grouped_sessions pool =
+    let open Entity in
+    function
+    | [] -> Lwt.return []
+    | sessions ->
+      let%lwt followups =
+        sessions
+        |> CCList.map (fun ({ id; _ } : t) -> id)
+        |> prepare_find_multiple pool find_multiple_followups_request
+      in
+      let parents =
+        sessions |> CCList.map (fun ({ id; _ } as session) -> id, (session, []))
+      in
+      let followups =
+        followups
+        |> CCList.filter_map (fun ({ Entity.follow_up_to; _ } as session) ->
+          follow_up_to |> CCOption.map (fun parent -> parent, session))
+      in
+      CCList.fold_left Entity.add_follow_ups_to_parents parents followups
+      |> CCList.map snd
+      |> Lwt.return
+  ;;
+
+  let query_grouped_by_experiment ?query pool id =
     let where =
       let sql =
-        {sql| pool_sessions.experiment_uuid = UNHEX(REPLACE(?, '-', '')) |sql}
+        {sql| pool_sessions.follow_up_to IS NULL AND pool_sessions.experiment_uuid = UNHEX(REPLACE(?, '-', '')) |sql}
       in
       let dyn =
         Dynparam.(
@@ -290,7 +316,27 @@ module Sql = struct
         ~where
         Repo_entity.t
     in
+    let%lwt sessions = to_grouped_sessions pool sessions in
     Lwt.return (sessions, query)
+  ;;
+
+  let query_by_experiment ?query pool id =
+    let where =
+      let sql =
+        {sql| pool_sessions.experiment_uuid = UNHEX(REPLACE(?, '-', '')) |sql}
+      in
+      let dyn =
+        Dynparam.(
+          empty |> add Pool_common.Repo.Id.t (Experiment.Id.to_common id))
+      in
+      sql, dyn
+    in
+    Query.collect_and_count
+      pool
+      query
+      ~select:find_request_sql
+      ~where
+      Repo_entity.t
   ;;
 
   let find_all_to_assign_from_waitinglist_request =

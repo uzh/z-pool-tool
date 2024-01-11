@@ -572,12 +572,11 @@ let is_cancellable session =
   Ok ()
 ;;
 
-let is_deletable session follow_ups =
+let is_deletable session =
   let open CCResult.Infix in
   let* () = not_canceled session in
   let* () = not_closed session in
-  let has_follow_ups = CCList.is_empty follow_ups |> not in
-  match has_follow_ups, has_assignments session with
+  match session.has_follow_ups, has_assignments session with
   | true, _ -> Error Pool_common.Message.SessionHasFollowUps
   | _, true -> Error Pool_common.Message.SessionHasAssignments
   | false, false -> Ok ()
@@ -613,10 +612,36 @@ let reminder_resendable = not_closed_or_canceled
 
 open Pool_common.Message
 
-let column_created_at =
-  (Field.Date, "pool_sessions.start") |> Query.Column.create
-;;
+let column_date = (Field.Date, "pool_sessions.start") |> Query.Column.create
 
 let column_no_assignments =
   (Field.AssignmentCount, "assignment_count") |> Query.Column.create
+;;
+
+let column_noshow_count =
+  (Field.NoShowCount, "noshow_count") |> Query.Column.create
+;;
+
+let column_participation_count =
+  (Field.ParticipantCount, "participation_count") |> Query.Column.create
+;;
+
+let searchable_by = []
+
+let sortable_by =
+  searchable_by
+  @ [ column_date
+    ; column_no_assignments
+    ; column_noshow_count
+    ; column_participation_count
+    ]
+;;
+
+let default_sort =
+  let open Query in
+  Sort.{ column = column_date; order = SortOrder.Ascending }
+;;
+
+let default_query =
+  Query.{ pagination = None; search = None; sort = Some default_sort }
 ;;

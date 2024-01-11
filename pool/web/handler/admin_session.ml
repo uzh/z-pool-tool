@@ -35,30 +35,36 @@ let location urlencoded database_label =
 ;;
 
 let list req =
-  let open Utils.Lwt_result.Infix in
-  let error_path = "/admin/dashboard" in
-  let result ({ Pool_context.database_label; _ } as context) =
-    Utils.Lwt_result.map_error (fun err -> err, error_path)
-    @@
-    let experiment_id = experiment_id req in
-    let* experiment = Experiment.find database_label experiment_id in
-    let%lwt sessions =
-      Session.find_all_for_experiment database_label experiment_id
-    in
-    let grouped_sessions, chronological =
-      match
-        Sihl.Web.Request.query
-          Pool_common.Message.Field.(show Chronological)
-          req
-      with
-      | Some "true" -> CCList.map (fun s -> s, []) sessions, true
-      | None | Some _ -> Session.group_and_sort sessions, false
-    in
-    Page.Admin.Session.index context experiment grouped_sessions chronological
-    >|> create_layout req context
-    >|+ Sihl.Web.Response.of_html
+  let experiment_id = experiment_id req in
+  let error_path =
+    Format.asprintf "/admin/experiments/%s" (Experiment.Id.value experiment_id)
   in
-  result |> HttpUtils.extract_happy_path ~src req
+  HttpUtils.Htmx.handler ~error_path ~create_layout ~query:(module Session) req
+  @@ fun ({ Pool_context.database_label; _ } as context) query ->
+  let open Utils.Lwt_result.Infix in
+  let chronological =
+    Sihl.Web.Request.query Pool_common.Message.Field.(show Chronological) req
+    |> CCOption.map_or ~default:false (CCString.equal "true")
+  in
+  let* experiment = Experiment.find database_label experiment_id in
+  let flatten_sessions =
+    CCList.fold_left
+      (fun acc (parent, follow_ups) -> acc @ (parent :: follow_ups))
+      []
+  in
+  let%lwt sessions =
+    match chronological with
+    | true -> Session.query_by_experiment ~query database_label experiment_id
+    | false ->
+      Session.query_grouped_by_experiment ~query database_label experiment_id
+      ||> fun (sessions, query) -> flatten_sessions sessions, query
+  in
+  let open Page.Admin.Session in
+  Lwt_result.ok
+  @@
+  match HttpUtils.Htmx.is_hx_request req with
+  | true -> data_table context experiment sessions chronological |> Lwt.return
+  | false -> index context experiment sessions chronological
 ;;
 
 let new_helper req page =

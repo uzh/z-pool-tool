@@ -44,6 +44,7 @@ type col =
 val make
   :  ?align_last_end:bool
   -> ?align_top:bool
+  -> ?classnames:string list
   -> ?layout:[ `Striped | `Simple ]
   -> ?prepend_html:[ | Html_types.flow5 ] Tyxml_html.elt
   -> ?th_class:string list
