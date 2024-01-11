@@ -26,11 +26,13 @@ let list { Pool_context.language; _ } experiment (waiting_list_entries, query) =
     ; `custom (to_string Message.Field.CellPhone)
     ; `custom (to_string Message.Field.SignedUpAt)
     ; `custom (to_string Message.Field.AdminComment)
+    ; `empty
     ]
   in
   let th_class = [ "w-3"; "w-3"; "w-2"; "w-2"; "w-2" ] in
   let row
-    ({ Waiting_list.contact; admin_comment; created_at; _ } : Waiting_list.t)
+    ({ Waiting_list.id; contact; admin_comment; created_at; _ } :
+      Waiting_list.t)
     =
     let open Waiting_list in
     [ txt (Contact.user_lastname_firstname contact)
@@ -43,6 +45,8 @@ let list { Pool_context.language; _ } experiment (waiting_list_entries, query) =
       |> CCOption.map_or ~default:"" AdminComment.value
       |> HttpUtils.first_n_characters
       |> HttpUtils.add_line_breaks
+    ; Format.asprintf "%s/%s" (Uri.to_string url) (Waiting_list.Id.value id)
+      |> Component.Input.edit_link
     ]
     |> CCList.map CCFun.(CCList.return %> td)
     |> tr
