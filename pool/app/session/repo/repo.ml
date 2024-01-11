@@ -278,22 +278,22 @@ module Sql = struct
     let open Entity in
     function
     | [] -> Lwt.return []
-    | sessions ->
+    | parents ->
       let%lwt followups =
-        sessions
+        parents
         |> CCList.map (fun ({ id; _ } : t) -> id)
         |> prepare_find_multiple pool find_multiple_followups_request
       in
-      let parents =
-        sessions |> CCList.map (fun ({ id; _ } as session) -> id, (session, []))
-      in
-      let followups =
-        followups
-        |> CCList.filter_map (fun ({ Entity.follow_up_to; _ } as session) ->
-          follow_up_to |> CCOption.map (fun parent -> parent, session))
-      in
-      CCList.fold_left Entity.add_follow_ups_to_parents parents followups
-      |> CCList.map snd
+      parents
+      |> CCList.map (fun session ->
+        let followups =
+          CCList.filter
+            (fun { follow_up_to; _ } ->
+              follow_up_to
+              |> CCOption.map_or ~default:false (Entity.Id.equal session.id))
+            followups
+        in
+        session, followups)
       |> Lwt.return
   ;;
 
