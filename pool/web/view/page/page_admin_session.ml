@@ -166,6 +166,33 @@ module Partials = struct
       ~a:[ a_class [ "flexrow" ] ]
       [ Component.ButtonGroup.dropdown ~classnames:[ "push" ] buttons ]
   ;;
+
+  let chronological_toggle language chronological =
+    let open Pool_common in
+    let to_string = CCFun.(Utils.text_to_string language %> txt) in
+    if chronological
+    then
+      div
+        [ p
+            [ txt "Sessions marked with "
+            ; follow_up_icon language
+            ; txt " are follow-up sessions."
+            ]
+        ; a ~a:[ a_href "?" ] [ to_string I18n.SwitchGrouped ]
+        ]
+    else
+      div
+        [ p [ I18n.SessionIndent |> Utils.text_to_string language |> txt ]
+        ; a
+            ~a:
+              [ a_href
+                  (Format.asprintf
+                     "?%s=true"
+                     Message.Field.(show Chronological))
+              ]
+            [ to_string I18n.SwitchChronological ]
+        ]
+  ;;
 end
 
 let location_select language options selected () =
@@ -422,299 +449,6 @@ let reschedule_session
          experiment)
 ;;
 
-let waiting_list_radio_button language session =
-  let open Pool_common in
-  if Session.is_fully_booked session
-  then span [ txt (Utils.error_to_string language Message.SessionFullyBooked) ]
-  else if CCOption.is_some session.Session.follow_up_to
-  then
-    span
-      [ txt
-          (Utils.error_to_string language Message.SessionRegistrationViaParent)
-      ]
-  else (
-    match Session.assignment_creatable session |> CCResult.is_ok with
-    | false -> txt ""
-    | true ->
-      input
-        ~a:
-          [ a_input_type `Radio
-          ; a_name Message.Field.(show Session)
-          ; a_value Session.(session.id |> Id.value)
-          ]
-        ())
-;;
-
-(* TODO: Rewrite, cleanup *)
-let session_row layout chronological language csrf experiment_id (session, _) =
-  let open Pool_common in
-  let open Message in
-  let open Session in
-  let show_field field =
-    Utils.field_to_string language field |> CCString.capitalize_ascii
-  in
-  let delete_form () =
-    if Session.is_deletable session |> CCResult.is_ok
-    then
-      form
-        ~a:
-          [ a_method `Post
-          ; a_action
-              (Format.asprintf
-                 "/admin/experiments/%s/sessions/%s/delete"
-                 (Experiment.Id.value experiment_id)
-                 (Id.value session.id)
-               |> Sihl.Web.externalize_path)
-          ; a_user_data
-              "confirmable"
-              (Utils.confirmable_to_string language I18n.DeleteSession)
-          ]
-        [ csrf_element csrf ()
-        ; submit_element
-            ~has_icon:Icon.Trash
-            ~is_text:true
-            language
-            Message.(Delete None)
-            ~submit_type:`Error
-            ()
-        ]
-    else
-      submit_element
-        ~has_icon:Icon.Trash
-        ~is_text:true
-        language
-        Message.(Delete None)
-        ~submit_type:`Disabled
-        ()
-  in
-  let key_figures = Partials.session_key_figures session in
-  let row_attrs = Partials.row_attrs session in
-  let title =
-    let date = span [ txt (session |> session_date_to_human) ] in
-    match CCOption.is_some session.follow_up_to, chronological with
-    | false, true | false, false -> date
-    | true, true ->
-      div
-        ~a:[ a_class [ "flexrow"; "flex-gap-sm" ] ]
-        [ date; follow_up_icon language ]
-    | true, false -> div ~a:[ a_class [ "inset"; "left" ] ] [ date ]
-  in
-  let close_btn =
-    Format.asprintf
-      "/admin/experiments/%s/sessions/%s/close"
-      (Experiment.Id.value experiment_id)
-      (Id.value session.id)
-    |> link_as_button
-         ~icon:Icon.Create
-         ~is_text:true
-         ~control:(language, Message.Close (Some Field.Session))
-  in
-  let detail_button =
-    Format.asprintf
-      "/admin/experiments/%s/sessions/%s"
-      (Experiment.Id.value experiment_id)
-      (Id.value session.id)
-    |> link_as_button
-         ~is_text:true
-         ~icon:Icon.Eye
-         ~control:(language, Message.SessionDetails)
-  in
-  let base = [ title, Some (show_field Field.Start) ] in
-  let cells =
-    let open Message in
-    match layout with
-    | `SessionOverview ->
-      let buttons =
-        [ true, detail_button
-        ; Session.is_closable session |> CCResult.is_ok, close_btn
-        ; true, delete_form ()
-        ]
-        |> CCList.filter_map (fun (condition, button) ->
-          if condition then Some button else None)
-      in
-      let cells =
-        Session.
-          [ ( txt
-                (CCInt.to_string
-                   (session.assignment_count |> AssignmentCount.value))
-            , Some (show_field Field.AssignmentCount) )
-          ; ( txt
-                (if CCOption.is_some session.closed_at
-                 then
-                   session.no_show_count |> NoShowCount.value |> CCInt.to_string
-                 else "")
-            , Some (show_field Field.NoShowCount) )
-          ; ( txt
-                (if CCOption.is_some session.closed_at
-                 then
-                   session.participant_count
-                   |> ParticipantCount.value
-                   |> CCInt.to_string
-                 else "")
-            , Some (show_field Field.ParticipantCount) )
-          ; txt key_figures, Some key_figures_head
-          ; ( div
-                ~a:[ a_class [ "flexrow" ] ]
-                [ Component.ButtonGroup.dropdown ~classnames:[ "push" ] buttons
-                ]
-            , None )
-          ]
-      in
-      base @ cells
-    | `WaitingList ->
-      let cells =
-        [ ( waiting_list_radio_button language session
-          , Some Pool_common.(Utils.control_to_string language Message.Select) )
-        ; ( txt
-              (CCInt.to_string
-                 (session.assignment_count |> AssignmentCount.value))
-          , Some (show_field Field.AssignmentCount) )
-        ; txt key_figures, Some key_figures_head
-        ]
-      in
-      base @ cells
-  in
-  let cell (value, label) =
-    match label with
-    | None -> td [ value ]
-    | Some label -> td ~a:[ a_user_data "label" label ] [ value ]
-  in
-  cells |> CCList.map cell |> tr ~a:row_attrs
-;;
-
-let session_list
-  layout
-  Pool_context.{ language; csrf; _ }
-  experiment_id
-  grouped_sessions
-  chronological
-  =
-  let open Pool_common in
-  let chronological_id = "chronological-sessions" in
-  let add_session_btn =
-    link_as_button
-      ~style:`Success
-      ~icon:Icon.Add
-      ~classnames:[ "small" ]
-      ~control:(language, Message.(Add (Some Field.Session)))
-      (Format.asprintf
-         "/admin/experiments/%s/sessions/create"
-         (experiment_id |> Experiment.Id.value))
-  in
-  let thead =
-    let open Message in
-    let base = [ Field.Date ] |> Table.fields_to_txt language in
-    let cells =
-      match layout with
-      | `SessionOverview ->
-        base
-        @ ([ Field.AssignmentCount; Field.NoShowCount; Field.ParticipantCount ]
-           |> Table.fields_to_txt language)
-        @ [ txt key_figures_head; add_session_btn ]
-      | `WaitingList ->
-        let to_txt = Table.field_to_txt language in
-        base @ [ txt ""; Field.AssignmentCount |> to_txt; txt key_figures_head ]
-    in
-    cells |> Component.Table.table_head
-  in
-  let rows =
-    let session_row =
-      session_row layout chronological language csrf experiment_id
-    in
-    CCList.flat_map
-      (fun (parent, follow_ups) ->
-        let parent = session_row (parent, follow_ups) in
-        let follow_ups =
-          CCList.map (fun follow_up -> session_row (follow_up, [])) follow_ups
-        in
-        parent :: follow_ups)
-      grouped_sessions
-  in
-  let table =
-    let id = if chronological then [ a_id chronological_id ] else [] in
-    table
-      ~a:
-        ([ a_class
-             [ "table"
-             ; "break-mobile"
-             ; "session-list"
-             ; "striped"
-             ; "align-last-end"
-             ]
-         ]
-         @ id)
-      ~thead
-      rows
-  in
-  let table_legend = Partials.table_legend language in
-  let hover_script =
-    match chronological with
-    | false -> txt ""
-    | true ->
-      let js =
-        {js|
-          const highlight = "highlighted";
-
-          document.addEventListener("DOMContentLoaded", () => {
-            const table = document.getElementById("chronological-sessions");
-            const toggleClass = (e) => {
-              const { id, parentId } = e.currentTarget.dataset;
-              if (parentId) {
-                table
-                  .querySelector(`[data-id='${parentId}']`)
-                  .classList.toggle(highlight);
-              } else {
-                table.querySelectorAll(`[data-parent-id='${id}']`).forEach((tr) => {
-                  tr.classList.toggle(highlight);
-                });
-              }
-              e.currentTarget.classList.toggle(highlight);
-            };
-            table.querySelectorAll("tbody tr").forEach((row) => {
-              row.addEventListener("mouseenter", (e) => {
-                toggleClass(e);
-              });
-              row.addEventListener("mouseleave", (e) => {
-                toggleClass(e);
-              });
-            });
-          });
-      |js}
-      in
-      script (Unsafe.data js)
-  in
-  div
-    ~a:[ a_class [ "stack" ] ]
-    [ p [ I18n.SessionIndent |> Utils.text_to_string language |> txt ]
-    ; a
-        ~a:
-          [ a_href
-              (if chronological
-               then "?"
-               else
-                 Format.asprintf "?%s=true" Message.Field.(show Chronological))
-          ]
-        [ (if chronological
-           then I18n.SwitchGrouped
-           else I18n.SwitchChronological)
-          |> Utils.text_to_string language
-          |> txt
-        ]
-      (* TODO [aerben] allow tables to be sorted generally? *)
-    ; (if chronological
-       then
-         p
-           [ txt "Sessions marked with "
-           ; follow_up_icon language
-           ; txt " are follow-up sessions."
-           ]
-       else txt "")
-    ; table_legend
-    ; table
-    ; hover_script
-    ]
-;;
-
 let data_table
   ({ Pool_context.language; _ } as context)
   experiment
@@ -786,36 +520,54 @@ let index
   chronological
   =
   let open Pool_common in
+  let hover_script =
+    match chronological with
+    | false -> txt ""
+    | true ->
+      let js =
+        {js|
+          const highlight = "highlighted";
+          const initHover = () => {
+              const table = document.getElementById("session-list");
+              const toggleClass = (e) => {
+                  const { id, parentId } = e.currentTarget.dataset;
+                  if (parentId) {
+                      table
+                          .querySelector(`[data-id='${parentId}']`)
+                          .classList.toggle(highlight);
+                  } else {
+                      table.querySelectorAll(`[data-parent-id='${id}']`).forEach((tr) => {
+                          tr.classList.toggle(highlight);
+                      });
+                  }
+                  e.currentTarget.classList.toggle(highlight);
+              };
+              table.querySelectorAll("tbody tr").forEach((row) => {
+                  row.addEventListener("mouseenter", (e) => {
+                      toggleClass(e);
+                  });
+                  row.addEventListener("mouseleave", (e) => {
+                      toggleClass(e);
+                  });
+              });
+          };
+          initHover();
+          document.addEventListener("htmx:afterSettle", () => {
+              initHover();
+          })
+      |js}
+      in
+      script (Unsafe.data js)
+  in
   let chronological_toggle =
-    let to_string = CCFun.(Utils.text_to_string language %> txt) in
-    if chronological
-    then
-      div
-        [ p
-            [ txt "Sessions marked with "
-            ; follow_up_icon language
-            ; txt " are follow-up sessions."
-            ]
-        ; a ~a:[ a_href "?" ] [ to_string I18n.SwitchGrouped ]
-        ]
-    else
-      div
-        [ p [ I18n.SessionIndent |> Utils.text_to_string language |> txt ]
-        ; a
-            ~a:
-              [ a_href
-                  (Format.asprintf
-                     "?%s=true"
-                     Message.Field.(show Chronological))
-              ]
-            [ to_string I18n.SwitchChronological ]
-        ]
+    Partials.chronological_toggle language chronological
   in
   div
     ~a:[ a_class [ "stack" ] ]
     [ chronological_toggle
     ; Partials.table_legend language
     ; data_table context experiment sessions chronological
+    ; hover_script
     ]
   |> CCList.return
   |> Layout.Experiment.(

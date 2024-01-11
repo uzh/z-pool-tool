@@ -60,6 +60,106 @@ let list { Pool_context.language; _ } experiment (waiting_list_entries, query) =
     waiting_list_entries
 ;;
 
+let session_row language chronological session =
+  let open Pool_common in
+  let open Session in
+  let is_followup = CCOption.is_some session.follow_up_to in
+  let show_field field =
+    Utils.field_to_string language field |> CCString.capitalize_ascii
+  in
+  let key_figures = Page_admin_session.Partials.session_key_figures session in
+  let title =
+    let date = span [ txt (session |> session_date_to_human) ] in
+    match is_followup, chronological with
+    | false, true | false, false -> date
+    | true, true ->
+      div
+        ~a:[ a_class [ "flexrow"; "flex-gap-sm" ] ]
+        [ date; Page_admin_session.follow_up_icon language ]
+    | true, false -> div ~a:[ a_class [ "inset"; "left" ] ] [ date ]
+  in
+  let waiting_list_radio_button language session =
+    let open Pool_common in
+    if Session.is_fully_booked session
+    then
+      span [ txt (Utils.error_to_string language Message.SessionFullyBooked) ]
+    else if is_followup
+    then
+      span
+        [ txt
+            (Utils.error_to_string
+               language
+               Message.SessionRegistrationViaParent)
+        ]
+    else (
+      match Session.assignment_creatable session |> CCResult.is_ok with
+      | false -> txt ""
+      | true ->
+        input
+          ~a:
+            [ a_input_type `Radio
+            ; a_name Message.Field.(show Session)
+            ; a_value Session.(session.id |> Id.value)
+            ]
+          ())
+  in
+  let cells =
+    let open Message in
+    [ title, Some (show_field Field.Date)
+    ; ( waiting_list_radio_button language session
+      , Some Pool_common.(Utils.control_to_string language Message.Select) )
+    ; ( txt (CCInt.to_string (session.assignment_count |> AssignmentCount.value))
+      , Some (show_field Field.AssignmentCount) )
+    ; txt key_figures, Some Page_admin_session.key_figures_head
+    ]
+  in
+  let cell (value, label) =
+    match label with
+    | None -> td [ value ]
+    | Some label -> td ~a:[ a_user_data "label" label ] [ value ]
+  in
+  cells |> CCList.map cell |> tr
+;;
+
+let session_list language chronological sessions =
+  let open Pool_common in
+  let thead =
+    let open Message in
+    let to_txt = Table.field_to_txt language in
+    [ to_txt Field.Date
+    ; txt ""
+    ; to_txt Field.AssignmentCount
+    ; txt Page_admin_session.key_figures_head
+    ]
+    |> Component.Table.table_head
+  in
+  let rows =
+    CCList.flat_map
+      (fun (parent, follow_ups) ->
+        let row = session_row language chronological in
+        let parent = row parent in
+        let follow_ups = CCList.map row follow_ups in
+        parent :: follow_ups)
+      sessions
+  in
+  div
+    ~a:[ a_class [ "stack" ] ]
+    [ Page_admin_session.Partials.chronological_toggle language chronological
+    ; table
+        ~a:
+          [ a_class
+              [ "table"
+              ; "break-mobile"
+              ; "session-list"
+              ; "striped"
+              ; "align-last-end"
+              ]
+          ]
+        ~thead
+        rows
+    ]
+;;
+
 let detail
   (Waiting_list.{ id; contact; experiment; admin_comment; _ } : Waiting_list.t)
   sessions
@@ -115,12 +215,7 @@ let detail
                  (I18n.EmtpyList Message.Field.Sessions))
           ]
       else
-        Page_admin_session.session_list
-          `WaitingList
-          context
-          experiment_id
-          sessions
-          chronological
+        session_list language chronological sessions
         |> fun content ->
         match experiment |> Experiment.registration_disabled_value with
         | true ->
