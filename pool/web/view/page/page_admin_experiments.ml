@@ -143,6 +143,7 @@ let list Pool_context.{ language; _ } experiments query =
     ; `custom create_experiment
     ]
   in
+  let th_class = [ "w-6"; "w-4"; "w-2" ] in
   let row (experiment : Experiment.t) =
     let open Experiment in
     [ txt (Title.value experiment.title)
@@ -155,7 +156,13 @@ let list Pool_context.{ language; _ } experiments query =
     |> CCList.map (CCList.return %> td)
     |> tr
   in
-  DataTable.make ~target_id:"experiment-list" ~cols ~row data_table experiments
+  DataTable.make
+    ~target_id:"experiment-list"
+    ~th_class
+    ~cols
+    ~row
+    data_table
+    experiments
 ;;
 
 let index (Pool_context.{ language; _ } as context) experiments query =

@@ -2,9 +2,6 @@ module Database = Pool_database
 module RepoEntity = Repo_entity
 module Dynparam = Utils.Database.Dynparam
 
-let of_entity = RepoEntity.of_entity
-let to_entity = RepoEntity.to_entity
-
 let sql_select_columns =
   [ Entity.Id.sql_select_fragment ~field:"pool_sessions.uuid"
   ; Entity.Id.sql_select_fragment ~field:"pool_sessions.follow_up_to"
@@ -14,7 +11,6 @@ let sql_select_columns =
   ; "pool_sessions.duration"
   ; "pool_sessions.description"
   ; "pool_sessions.limitations"
-  ; Entity.Id.sql_select_fragment ~field:"pool_locations.uuid"
   ; "pool_sessions.max_participants"
   ; "pool_sessions.min_participants"
   ; "pool_sessions.overbook"
@@ -23,13 +19,14 @@ let sql_select_columns =
   ; "pool_sessions.text_message_reminder_lead_time"
   ; "pool_sessions.text_message_reminder_sent_at"
   ; "COUNT(pool_assignments.id) as assignment_count"
-  ; "COALESCE( SUM(pool_assignments.no_show), 0)"
-  ; "COALESCE( SUM(pool_assignments.participated), 0)"
+  ; "COALESCE( SUM(pool_assignments.no_show), 0) as noshow_count"
+  ; "COALESCE( SUM(pool_assignments.participated), 0) as participation_count"
   ; "pool_sessions.closed_at"
   ; "pool_sessions.canceled_at"
   ; "pool_sessions.created_at"
   ; "pool_sessions.updated_at"
   ]
+  @ Pool_location.Repo.sql_select_columns
 ;;
 
 let joins =
@@ -110,11 +107,14 @@ module Sql = struct
     let columns =
       if count then "COUNT(*)" else sql_select_columns |> CCString.concat ", "
     in
+    let joins = if count then "" else joins in
+    let group_by = if count then "" else "GROUP BY pool_sessions.uuid" in
     Format.asprintf
-      {sql|SELECT %s FROM pool_sessions %s %s GROUP BY pool_sessions.uuid |sql}
+      {sql| SELECT %s FROM pool_sessions %s %s %s |sql}
       columns
       joins
       where_fragment
+      group_by
   ;;
 
   let find_public_sql where =
@@ -190,7 +190,7 @@ module Sql = struct
     |> find_request_sql
   ;;
 
-  let find_multiple pool ids =
+  let prepare_find_multiple pool request ids =
     let open Caqti_request.Infix in
     if CCList.is_empty ids
     then Lwt.return []
@@ -202,8 +202,12 @@ module Sql = struct
           Dynparam.empty
           ids
       in
-      let request = find_multiple_request ids |> pt ->* RepoEntity.t in
+      let request = request ids |> pt ->* RepoEntity.t in
       Utils.Database.collect (pool |> Pool_database.Label.value) request pv)
+  ;;
+
+  let find_multiple pool ids =
+    prepare_find_multiple pool find_multiple_request ids
   ;;
 
   let find_contact_is_assigned_by_experiment_request =
@@ -252,6 +256,87 @@ module Sql = struct
       (Database.Label.value pool)
       find_all_for_experiment_request
       (Experiment.Id.value id)
+  ;;
+
+  let find_multiple_followups_request ids =
+    Format.asprintf
+      {sql|
+        WHERE pool_sessions.follow_up_to IN ( %s )
+      |sql}
+      (CCList.mapi
+         (fun i _ -> Format.asprintf "UNHEX(REPLACE($%n, '-', ''))" (i + 1))
+         ids
+       |> CCString.concat ",")
+    |> find_request_sql
+  ;;
+
+  let find_multiple_followups pool parent_ids =
+    prepare_find_multiple pool find_multiple_followups_request parent_ids
+  ;;
+
+  let to_grouped_sessions pool =
+    let open Entity in
+    function
+    | [] -> Lwt.return []
+    | parents ->
+      let%lwt followups =
+        parents
+        |> CCList.map (fun ({ id; _ } : t) -> id)
+        |> prepare_find_multiple pool find_multiple_followups_request
+      in
+      parents
+      |> CCList.map (fun session ->
+        let followups =
+          CCList.filter
+            (fun { follow_up_to; _ } ->
+              follow_up_to
+              |> CCOption.map_or ~default:false (Entity.Id.equal session.id))
+            followups
+        in
+        session, followups)
+      |> Lwt.return
+  ;;
+
+  let query_grouped_by_experiment ?query pool id =
+    let where =
+      let sql =
+        {sql| pool_sessions.follow_up_to IS NULL AND pool_sessions.experiment_uuid = UNHEX(REPLACE(?, '-', '')) |sql}
+      in
+      let dyn =
+        Dynparam.(
+          empty |> add Pool_common.Repo.Id.t (Experiment.Id.to_common id))
+      in
+      sql, dyn
+    in
+    let%lwt sessions, query =
+      Query.collect_and_count
+        pool
+        query
+        ~select:find_request_sql
+        ~where
+        Repo_entity.t
+    in
+    let%lwt sessions = to_grouped_sessions pool sessions in
+    Lwt.return (sessions, query)
+  ;;
+
+  let query_by_experiment ?query pool id =
+    let where =
+      let sql =
+        {sql| pool_sessions.experiment_uuid = UNHEX(REPLACE(?, '-', '')) |sql}
+      in
+      let dyn =
+        Dynparam.(
+          empty |> add Pool_common.Repo.Id.t (Experiment.Id.to_common id))
+      in
+      sql, dyn
+    in
+    Query.collect_and_count
+      pool
+      query
+      ~select:find_request_sql
+      ~where
+      Repo_entity.t
   ;;
 
   let find_all_to_assign_from_waitinglist_request =
@@ -774,38 +859,18 @@ module Sql = struct
   ;;
 end
 
-let location_to_repo_entity pool session =
-  let open Utils.Lwt_result.Infix in
-  Pool_location.find pool session.RepoEntity.location_id >|+ to_entity session
-;;
-
-let add_location_to_multiple pool sessions =
-  let open Utils.Lwt_result.Infix in
-  sessions
-  |> Lwt_list.map_s (location_to_repo_entity pool)
-  ||> CCResult.flatten_l
-;;
-
+(* TODO: solve as join *)
 let location_to_public_repo_entity pool session =
   let open Utils.Lwt_result.Infix in
   Pool_location.find pool session.RepoEntity.Public.location_id
   >|+ RepoEntity.Public.to_entity session
 ;;
 
-let find pool id =
-  let open Utils.Lwt_result.Infix in
-  Sql.find pool id >>= location_to_repo_entity pool
-;;
+let find = Sql.find
+let find_multiple = Sql.find_multiple
 
-let find_multiple pool ids =
-  let open Utils.Lwt_result.Infix in
-  Sql.find_multiple pool ids >|> add_location_to_multiple pool
-;;
-
-let find_contact_is_assigned_by_experiment pool contact_id experiment_id =
-  let open Utils.Lwt_result.Infix in
-  Sql.find_contact_is_assigned_by_experiment pool contact_id experiment_id
-  >|> add_location_to_multiple pool
+let find_contact_is_assigned_by_experiment =
+  Sql.find_contact_is_assigned_by_experiment
 ;;
 
 (* TODO [aerben] these queries are very inefficient, how to circumvent? *)
@@ -821,16 +886,10 @@ let find_public pool id =
   id |> Sql.find_public pool >>= location_to_public_repo_entity pool
 ;;
 
-let find_all_for_experiment pool experiment_id =
-  let open Utils.Lwt_result.Infix in
-  Sql.find_all_for_experiment pool experiment_id
-  >|> add_location_to_multiple pool
-;;
+let find_all_for_experiment = Sql.find_all_for_experiment
 
-let find_all_to_assign_from_waitinglist pool experiment_id =
-  let open Utils.Lwt_result.Infix in
-  Sql.find_all_to_assign_from_waitinglist pool experiment_id
-  >|> add_location_to_multiple pool
+let find_all_to_assign_from_waitinglist =
+  Sql.find_all_to_assign_from_waitinglist
 ;;
 
 let find_all_public_for_experiment pool contact experiment_id =
@@ -849,30 +908,21 @@ let find_public_by_assignment pool assignment_id =
   >>= location_to_public_repo_entity pool
 ;;
 
-let find_by_assignment pool assignment_id =
-  let open Utils.Lwt_result.Infix in
-  Sql.find_by_assignment pool assignment_id >>= location_to_repo_entity pool
-;;
-
-let find_follow_ups pool parent_session_id =
-  let open Utils.Lwt_result.Infix in
-  Sql.find_follow_ups pool parent_session_id >|> add_location_to_multiple pool
-;;
+let find_by_assignment = Sql.find_by_assignment
+let find_follow_ups = Sql.find_follow_ups
 
 let find_open_with_follow_ups pool session_id =
   let open Utils.Lwt_result.Infix in
   Sql.find_open_with_follow_ups pool session_id
-  ||> (function
-         | [] -> Error Pool_common.Message.(NotFound Field.Session)
-         | sessions -> Ok sessions)
-  >>= add_location_to_multiple pool
+  ||> function
+  | [] -> Error Pool_common.Message.(NotFound Field.Session)
+  | sessions -> Ok sessions
 ;;
 
 let find_open pool session_id =
   let open Utils.Lwt_result.Infix in
   Sql.find_open pool session_id
   ||> CCOption.to_result Pool_common.Message.(NotFound Field.Session)
-  >>= location_to_repo_entity pool
 ;;
 
 let find_experiment_id_and_title = Sql.find_experiment_id_and_title
@@ -892,17 +942,7 @@ let find_upcoming_public_by_contact pool contact_id =
   ||> CCResult.flatten_l
 ;;
 
-let find_sessions_to_remind pool =
-  let open Utils.Lwt_result.Infix in
-  Sql.find_sessions_to_remind pool
-  >>= fun (email_reminders, text_message_reminders) ->
-  let* email_reminders = add_location_to_multiple pool email_reminders in
-  let* text_message_reminders =
-    add_location_to_multiple pool text_message_reminders
-  in
-  Lwt_result.return (email_reminders, text_message_reminders)
-;;
-
+let find_sessions_to_remind = Sql.find_sessions_to_remind
 let insert = Sql.insert
 let update = Sql.update
 let delete = Sql.delete

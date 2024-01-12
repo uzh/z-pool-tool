@@ -243,7 +243,7 @@ val group_and_sort : t list -> (t * t list) list
 val is_cancellable : t -> (unit, Pool_common.Message.error) result
 val is_closable : t -> (unit, Pool_common.Message.error) result
 val is_cancelable : t -> (unit, Pool_common.Message.error) result
-val is_deletable : t -> t list -> (unit, Pool_common.Message.error) result
+val is_deletable : t -> (unit, Pool_common.Message.error) result
 val assignments_cancelable : t -> (unit, Pool_common.Message.error) result
 
 val assignments_session_changeable
@@ -263,16 +263,13 @@ val find
   -> Id.t
   -> (t, Pool_common.Message.error) Lwt_result.t
 
-val find_multiple
-  :  Pool_database.Label.t
-  -> Id.t list
-  -> (t list, Pool_common.Message.error) Lwt_result.t
+val find_multiple : Pool_database.Label.t -> Id.t list -> t list Lwt.t
 
 val find_contact_is_assigned_by_experiment
   :  Pool_database.Label.t
   -> Contact.Id.t
   -> Experiment.Id.t
-  -> (t list, Pool_common.Message.error) Lwt_result.t
+  -> t list Lwt.t
 
 val find_public
   :  Pool_database.Label.t
@@ -287,12 +284,12 @@ val find_all_public_by_location
 val find_all_for_experiment
   :  Pool_database.Label.t
   -> Experiment.Id.t
-  -> (t list, Pool_common.Message.error) Lwt_result.t
+  -> t list Lwt.t
 
 val find_all_to_assign_from_waitinglist
   :  Pool_database.Label.t
   -> Experiment.Id.t
-  -> (t list, Pool_common.Message.error) Lwt_result.t
+  -> t list Lwt.t
 
 val find_all_public_for_experiment
   :  Pool_database.Label.t
@@ -332,10 +329,7 @@ val find_sessions_to_remind
   :  Pool_database.Label.t
   -> (t list * t list, Pool_common.Message.error) Lwt_result.t
 
-val find_follow_ups
-  :  Pool_database.Label.t
-  -> Id.t
-  -> (t list, Pool_common.Message.error) Lwt_result.t
+val find_follow_ups : Pool_database.Label.t -> Id.t -> t list Lwt.t
 
 val find_open_with_follow_ups
   :  Pool_database.Label.t
@@ -354,6 +348,18 @@ val find_for_calendar_by_location
   -> end_time:Ptime.t
   -> Calendar.t list Lwt.t
 
+val query_grouped_by_experiment
+  :  ?query:Query.t
+  -> Pool_database.Label.t
+  -> Experiment.Id.t
+  -> ((t * t list) list * Query.t) Lwt.t
+
+val query_by_experiment
+  :  ?query:Query.t
+  -> Pool_database.Label.t
+  -> Experiment.Id.t
+  -> (t list * Query.t) Lwt.t
+
 val find_for_calendar_by_user
   :  Guard.Actor.t
   -> Pool_database.Label.t
@@ -368,12 +374,21 @@ val public_to_email_text : Pool_common.Language.t -> Public.t -> string
 val has_bookable_spots_for_experiments
   :  Pool_database.Label.t
   -> Experiment.Id.t
-  -> (bool, Pool_common.Message.error) result Lwt.t
+  -> bool Lwt.t
 
 val find_all_to_swap_by_experiment
   :  Pool_database.Label.t
   -> Experiment.Id.t
-  -> (t list, Pool_common.Message.error) result Lwt.t
+  -> t list Lwt.t
+
+val column_date : Query.Column.t
+val column_no_assignments : Query.Column.t
+val column_noshow_count : Query.Column.t
+val column_participation_count : Query.Column.t
+val searchable_by : Query.Column.t list
+val sortable_by : Query.Column.t list
+val default_sort : Query.Sort.t
+val default_query : Query.t
 
 module Repo : sig
   module Id : sig

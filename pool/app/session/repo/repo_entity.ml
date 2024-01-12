@@ -1,3 +1,4 @@
+open Entity
 module RepoId = Pool_common.Repo.Id
 module Reminder = Pool_common.Reminder
 module RepoReminder = Pool_common.Repo.Reminder
@@ -18,88 +19,10 @@ module Duration = struct
   let t = Caqti_type.ptime_span
 end
 
-type t =
-  { id : Entity.Id.t
-  ; follow_up_to : Entity.Id.t option
-  ; has_follow_ups : bool
-  ; start : Entity.Start.t
-  ; duration : Ptime.Span.t
-  ; description : Entity.Description.t option
-  ; limitations : Entity.Limitations.t option
-  ; location_id : Pool_location.Id.t
-  ; max_participants : Entity.ParticipantAmount.t
-  ; min_participants : Entity.ParticipantAmount.t
-  ; overbook : Entity.ParticipantAmount.t
-  ; email_reminder_lead_time : Reminder.EmailLeadTime.t option
-  ; email_reminder_sent_at : Reminder.SentAt.t option
-  ; text_message_reminder_lead_time : Reminder.TextMessageLeadTime.t option
-  ; text_message_reminder_sent_at : Reminder.SentAt.t option
-  ; assignment_count : Entity.AssignmentCount.t
-  ; no_show_count : Entity.NoShowCount.t
-  ; participant_count : Entity.ParticipantCount.t
-  ; closed_at : Ptime.t option
-  ; canceled_at : Ptime.t option
-  ; created_at : Pool_common.CreatedAt.t
-  ; updated_at : Pool_common.UpdatedAt.t
-  }
-[@@deriving eq, show]
-
-let of_entity (m : Entity.t) =
-  { id = m.Entity.id
-  ; follow_up_to = m.Entity.follow_up_to
-  ; has_follow_ups = m.Entity.has_follow_ups
-  ; start = m.Entity.start
-  ; duration = m.Entity.duration
-  ; description = m.Entity.description
-  ; limitations = m.Entity.limitations
-  ; location_id = m.Entity.location.Pool_location.id
-  ; max_participants = m.Entity.max_participants
-  ; min_participants = m.Entity.min_participants
-  ; overbook = m.Entity.overbook
-  ; email_reminder_lead_time = m.Entity.email_reminder_lead_time
-  ; email_reminder_sent_at = m.Entity.email_reminder_sent_at
-  ; text_message_reminder_lead_time = m.Entity.text_message_reminder_lead_time
-  ; text_message_reminder_sent_at = m.Entity.text_message_reminder_sent_at
-  ; assignment_count = m.Entity.assignment_count
-  ; no_show_count = m.Entity.no_show_count
-  ; participant_count = m.Entity.participant_count
-  ; closed_at = m.Entity.closed_at
-  ; canceled_at = m.Entity.canceled_at
-  ; created_at = m.Entity.created_at
-  ; updated_at = m.Entity.updated_at
-  }
-;;
-
-let to_entity (m : t) location : Entity.t =
-  Entity.
-    { id = m.id
-    ; follow_up_to = m.follow_up_to
-    ; has_follow_ups = m.has_follow_ups
-    ; start = m.start
-    ; duration = m.duration
-    ; description = m.description
-    ; limitations = m.limitations
-    ; location
-    ; max_participants = m.max_participants
-    ; min_participants = m.min_participants
-    ; overbook = m.overbook
-    ; email_reminder_lead_time = m.email_reminder_lead_time
-    ; email_reminder_sent_at = m.email_reminder_sent_at
-    ; text_message_reminder_lead_time = m.text_message_reminder_lead_time
-    ; text_message_reminder_sent_at = m.text_message_reminder_sent_at
-    ; assignment_count = m.assignment_count
-    ; no_show_count = m.no_show_count
-    ; participant_count = m.participant_count
-    ; closed_at = m.closed_at
-    ; canceled_at = m.canceled_at
-    ; created_at = m.created_at
-    ; updated_at = m.updated_at
-    }
-;;
-
 (* TODO [aerben] these circumvent our smart constructors, good? *)
 let t =
   let encode m =
+    let location = Pool_location.Repo.of_entity m.location in
     Ok
       ( m.id
       , ( m.follow_up_to
@@ -108,21 +31,21 @@ let t =
             , ( m.duration
               , ( m.description
                 , ( m.limitations
-                  , ( m.location_id
-                    , ( m.max_participants
-                      , ( m.min_participants
-                        , ( m.overbook
-                          , ( m.email_reminder_lead_time
-                            , ( m.email_reminder_sent_at
-                              , ( m.text_message_reminder_lead_time
-                                , ( m.text_message_reminder_sent_at
-                                  , ( m.assignment_count
-                                    , ( m.no_show_count
-                                      , ( m.participant_count
-                                        , ( m.closed_at
-                                          , ( m.canceled_at
-                                            , (m.created_at, m.updated_at) ) )
-                                        ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) )
+                  , ( m.max_participants
+                    , ( m.min_participants
+                      , ( m.overbook
+                        , ( m.email_reminder_lead_time
+                          , ( m.email_reminder_sent_at
+                            , ( m.text_message_reminder_lead_time
+                              , ( m.text_message_reminder_sent_at
+                                , ( m.assignment_count
+                                  , ( m.no_show_count
+                                    , ( m.participant_count
+                                      , ( m.closed_at
+                                        , ( m.canceled_at
+                                          , ( m.created_at
+                                            , (m.updated_at, location) ) ) ) )
+                                    ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) )
   in
   let decode
     ( id
@@ -132,21 +55,22 @@ let t =
           , ( duration
             , ( description
               , ( limitations
-                , ( location_id
-                  , ( max_participants
-                    , ( min_participants
-                      , ( overbook
-                        , ( email_reminder_lead_time
-                          , ( email_reminder_sent_at
-                            , ( text_message_reminder_lead_time
-                              , ( text_message_reminder_sent_at
-                                , ( assignment_count
-                                  , ( no_show_count
-                                    , ( participant_count
-                                      , ( closed_at
-                                        , (canceled_at, (created_at, updated_at))
+                , ( max_participants
+                  , ( min_participants
+                    , ( overbook
+                      , ( email_reminder_lead_time
+                        , ( email_reminder_sent_at
+                          , ( text_message_reminder_lead_time
+                            , ( text_message_reminder_sent_at
+                              , ( assignment_count
+                                , ( no_show_count
+                                  , ( participant_count
+                                    , ( closed_at
+                                      , ( canceled_at
+                                        , (created_at, (updated_at, location))
                                         ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) )
     =
+    let location = Pool_location.Repo.to_entity location [] in
     Ok
       { id
       ; follow_up_to
@@ -155,7 +79,7 @@ let t =
       ; duration
       ; description
       ; limitations
-      ; location_id
+      ; location
       ; max_participants
       ; min_participants
       ; overbook
@@ -191,38 +115,38 @@ let t =
                         (t2
                            (option string)
                            (t2
-                              Pool_location.Repo.Id.t
+                              int
                               (t2
                                  int
                                  (t2
                                     int
                                     (t2
-                                       int
+                                       (option RepoReminder.EmailLeadTime.t)
                                        (t2
-                                          (option RepoReminder.EmailLeadTime.t)
+                                          (option RepoReminder.SentAt.t)
                                           (t2
-                                             (option RepoReminder.SentAt.t)
+                                             (option
+                                                RepoReminder.TextMessageLeadTime
+                                                .t)
                                              (t2
-                                                (option
-                                                   RepoReminder
-                                                   .TextMessageLeadTime
-                                                   .t)
+                                                (option RepoReminder.SentAt.t)
                                                 (t2
-                                                   (option
-                                                      RepoReminder.SentAt.t)
+                                                   int
                                                    (t2
                                                       int
                                                       (t2
                                                          int
                                                          (t2
-                                                            int
+                                                            (option ptime)
                                                             (t2
                                                                (option ptime)
                                                                (t2
-                                                                  (option ptime)
+                                                                  ptime
                                                                   (t2
                                                                      ptime
-                                                                     ptime))))))))))))))))))))))
+                                                                     Pool_location
+                                                                     .Repo
+                                                                     .t))))))))))))))))))))))
 ;;
 
 module Write = struct

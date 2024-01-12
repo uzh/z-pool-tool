@@ -20,8 +20,12 @@ module Partials = struct
     let url =
       form_action ~path:"sent" experiment.Experiment.id |> Uri.of_string
     in
-    let datatable =
-      DataTable.{ url; query; language; search = Some Invitation.searchable_by }
+    let data_table =
+      Component.DataTable.create_meta
+        ~search:Invitation.searchable_by
+        url
+        query
+        language
     in
     let cols =
       [ `column Pool_user.column_name
@@ -32,6 +36,7 @@ module Partials = struct
       ; `empty
       ]
     in
+    let th_class = [ "w-2"; "w-3"; "w-2"; "w-1"; "w-2"; "w-2" ] in
     let row ({ id; contact; resent_at; send_count; created_at; _ } : t) =
       let formatted_date = Pool_common.Utils.Time.formatted_date_time in
       let resend_form =
@@ -69,7 +74,13 @@ module Partials = struct
       |> CCList.map (CCList.return %> td)
       |> tr
     in
-    DataTable.make ~target_id:"experiment-list" ~cols ~row datatable invitations
+    DataTable.make
+      ~th_class
+      ~target_id:"experiment-list"
+      ~cols
+      ~row
+      data_table
+      invitations
   ;;
 
   let send_invitation

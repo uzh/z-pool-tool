@@ -748,8 +748,7 @@ let cancel_assignment_with_follow_ups _ () =
   let%lwt parent_session =
     let%lwt () = create_session (Model.in_an_hour ()) in
     Session.find_all_for_experiment Data.database_label experiment.Experiment.id
-    >|+ CCList.hd
-    ||> get_or_failwith
+    ||> CCList.hd
   in
   let%lwt () =
     create_session ~parent_id:parent_session.Session.id (Model.in_two_hours ())
@@ -761,7 +760,6 @@ let cancel_assignment_with_follow_ups _ () =
     in
     let%lwt follow_ups =
       Session.find_follow_ups Data.database_label session.Session.id
-      ||> get_or_failwith
     in
     Lwt.return (session :: follow_ups)
   in

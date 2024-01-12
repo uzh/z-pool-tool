@@ -632,8 +632,11 @@ let data_table
     |> Uri.of_string
   in
   let data_table =
-    Component.DataTable.
-      { url; query; language; search = Some Assignment.searchable_by }
+    Component.DataTable.create_meta
+      ~search:Assignment.searchable_by
+      url
+      query
+      language
   in
   let conditional_left_columns =
     [ view_contact_name, Pool_user.column_name, contact_lastname_firstname
@@ -789,6 +792,7 @@ let data_table
       let base = left @ center @ right in
       if is_print then base else base @ [ `empty ]
     in
+    let th_class = [ "w-3"; "w-3"; "w-2"; "w-1"; "w-1"; "w-2" ] in
     let row (assignment : t) =
       let left =
         conditional_left_columns
@@ -842,6 +846,7 @@ let data_table
         Some (div ~a:[ a_class [ "assignment-reminder-modals" ] ] modals)
     in
     Component.DataTable.make
+      ~th_class
       ~target_id:"assignments-table"
       ~cols
       ~row

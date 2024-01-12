@@ -42,7 +42,7 @@ let set_sessions_to_past session_ids =
 let sign_up_for_session experiment contact session_id =
   let%lwt session = Session.find_open database_label session_id ||> get_exn in
   let%lwt follow_up_sessions =
-    Session.find_follow_ups database_label session_id ||> get_exn
+    Session.find_follow_ups database_label session_id
   in
   Assignment_command.Create.(
     handle { contact; session; follow_up_sessions; experiment })
@@ -237,7 +237,7 @@ module CancelSession = struct
       let%lwt () =
         let open Cqrs_command.Session_command.Cancel in
         let%lwt follow_ups =
-          Session.find_follow_ups database_label session.Session.id ||> get_exn
+          Session.find_follow_ups database_label session.Session.id
         in
         let%lwt assignments =
           session :: follow_ups

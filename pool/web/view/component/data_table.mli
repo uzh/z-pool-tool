@@ -24,10 +24,13 @@ type data_table =
   (** the language in which to show the table *)
   ; search : Query.Column.t list option
   (** the columns that can be searched for *)
+  ; additional_url_params : (Pool_common.Message.Field.t * string) list option
+  (** additional url parameters that will be added to the dynamic parameters of the query, e.g. the language *)
   }
 
 val create_meta
-  :  ?search:Query.Column.t list
+  :  ?additional_url_params:(Pool_common.Message.Field.t * string) list
+  -> ?search:Query.Column.t list
   -> Uri.t
   -> Query.t
   -> Pool_common.Language.t
@@ -44,8 +47,10 @@ type col =
 val make
   :  ?align_last_end:bool
   -> ?align_top:bool
+  -> ?classnames:string list
   -> ?layout:[ `Striped | `Simple ]
   -> ?prepend_html:[ | Html_types.flow5 ] Tyxml_html.elt
+  -> ?th_class:string list
   -> target_id:string
   -> cols:col list
   -> row:('a -> [< Html_types.table_content_fun ] Tyxml_html.elt)

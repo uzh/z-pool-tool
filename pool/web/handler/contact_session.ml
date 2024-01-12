@@ -30,9 +30,9 @@ let show req =
            Lwt.return_error Pool_common.Message.AlreadySignedUpForExperiment
        in
        let* session = Session.find_public database_label id in
-       let* follow_ups =
+       let%lwt follow_ups =
          Session.find_follow_ups database_label id
-         >|+ CCList.map Session.to_public
+         ||> CCList.map Session.to_public
        in
        Page.Contact.Experiment.Assignment.detail
          session

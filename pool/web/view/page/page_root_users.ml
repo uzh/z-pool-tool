@@ -6,9 +6,12 @@ module Table = Component.Table
 let table Pool_context.{ language; _ } (admins, query) =
   let open Admin in
   let url = Uri.of_string "/admin/admins" in
-  let sort =
-    Component.DataTable.
-      { url; query; language; search = Some Contact.searchable_by }
+  let data_table =
+    Component.DataTable.create_meta
+      ~search:Contact.searchable_by
+      url
+      query
+      language
   in
   let cols = Pool_user.[ `column column_name; `column column_email; `empty ] in
   let row admin =
@@ -37,7 +40,7 @@ let table Pool_context.{ language; _ } (admins, query) =
     |> CCList.map CCFun.(CCList.return %> td)
     |> tr
   in
-  Component.DataTable.make ~target_id:"admin-list" ~cols ~row sort admins
+  Component.DataTable.make ~target_id:"admin-list" ~cols ~row data_table admins
 ;;
 
 let list root_list (Pool_context.{ language; csrf; _ } as context) flash_fetcher

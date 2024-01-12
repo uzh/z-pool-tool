@@ -24,7 +24,7 @@ let create req =
          Experiment.find_contact_person database_label experiment
        in
        let* session = Session.find_open database_label id in
-       let* follow_up_sessions = Session.find_follow_ups database_label id in
+       let%lwt follow_up_sessions = Session.find_follow_ups database_label id in
        let tenant = Pool_context.Tenant.get_tenant_exn req in
        let%lwt confirmation_email =
          Message_template.AssignmentConfirmation.prepare

@@ -5,6 +5,24 @@ module Dynparam = Utils.Database.Dynparam
 let to_entity = to_entity
 let of_entity = of_entity
 
+let sql_select_columns =
+  [ Entity.Id.sql_select_fragment ~field:"pool_locations.uuid"
+  ; "pool_locations.name"
+  ; "pool_locations.description"
+  ; "pool_locations.is_virtual"
+  ; "pool_locations.institution"
+  ; "pool_locations.room"
+  ; "pool_locations.building"
+  ; "pool_locations.street"
+  ; "pool_locations.zip"
+  ; "pool_locations.city"
+  ; "pool_locations.link"
+  ; "pool_locations.status"
+  ; "pool_locations.created_at"
+  ; "pool_locations.updated_at"
+  ]
+;;
+
 module Sql = struct
   let select_sql =
     {sql|
@@ -41,6 +59,16 @@ module Sql = struct
         FROM pool_locations
         %s
       |sql}
+      where_fragment
+  ;;
+
+  let find_request_sql ?(count = false) where_fragment =
+    let columns =
+      if count then "COUNT(*)" else CCString.concat ", " sql_select_columns
+    in
+    Format.asprintf
+      {sql|SELECT %s FROM pool_locations %s|sql}
+      columns
       where_fragment
   ;;
 
@@ -282,14 +310,7 @@ let find_all pool =
 let find_by query pool =
   let open Lwt.Syntax in
   let* locations, query =
-    Query.collect_and_count
-      pool
-      (Some query)
-      ~select:(fun ?(count = false) fragment ->
-        if count
-        then Sql.select_count fragment
-        else Format.sprintf "%s %s" Sql.select_sql fragment)
-      t
+    Query.collect_and_count pool (Some query) ~select:Sql.find_request_sql t
   in
   let* locations = Lwt_list.map_s (files_to_location pool) locations in
   Lwt.return (locations, query)

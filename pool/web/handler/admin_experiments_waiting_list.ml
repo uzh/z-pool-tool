@@ -44,7 +44,7 @@ let detail req =
   let result ({ Pool_context.database_label; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, error_path)
     @@ let* waiting_list = Waiting_list.find database_label id in
-       let* sessions =
+       let%lwt sessions =
          Session.find_all_to_assign_from_waitinglist
            database_label
            experiment_id
@@ -147,7 +147,7 @@ let assign_contact req =
       |> Lwt_result.lift
       >>= fun id -> id |> Session.Id.of_string |> find_open database_label
     in
-    let* follow_up_sessions =
+    let%lwt follow_up_sessions =
       Session.find_follow_ups database_label session.Session.id
     in
     let%lwt already_enrolled =

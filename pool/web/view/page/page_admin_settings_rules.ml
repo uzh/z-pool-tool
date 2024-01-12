@@ -25,6 +25,7 @@ let list Pool_context.{ language; csrf; guardian; _ } rules query =
     ; `empty
     ]
   in
+  let th_class = [ "w-3"; "w-3"; "w-3"; "w-3" ] in
   let row (rule : Guard.RolePermission.t) =
     let open Guard.RolePermission in
     let button_form target name submit_type confirm_text role_permission =
@@ -65,6 +66,7 @@ let list Pool_context.{ language; csrf; guardian; _ } rules query =
   in
   Component.DataTable.make
     ~target_id:"permissions-table"
+    ~th_class
     ~cols
     ~row
     data_table

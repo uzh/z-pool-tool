@@ -8,7 +8,6 @@ module Filter = Component_filter
 module Icon = Component_icon
 module Image = Component_image
 module Input = Component_input
-module List = Component_list
 module Location = Component_location
 module MessageTextElements = Component_message_text_elements
 module Modal = Component_modal

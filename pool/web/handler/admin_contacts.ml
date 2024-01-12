@@ -283,9 +283,9 @@ let htmx_experiment_modal req =
   let result ({ Pool_context.database_label; _ } as context) =
     let* contact = Contact.find database_label contact_id in
     let* experiment = Experiment.find database_label experiment_id in
-    let* sessions =
+    let%lwt sessions =
       Session.find_all_for_experiment database_label experiment_id
-      >|+ Session.group_and_sort
+      ||> Session.group_and_sort
     in
     let%lwt matches_filter =
       experiment.Experiment.filter
@@ -328,7 +328,7 @@ let enroll_contact_post req =
       >|+ Session.Id.of_string
       >>= Session.find database_label
     in
-    let* follow_up_sessions =
+    let%lwt follow_up_sessions =
       Session.find_follow_ups database_label session.Session.id
     in
     let%lwt confirmation =

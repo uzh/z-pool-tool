@@ -6,11 +6,15 @@ module Status = UserStatus.Admin
 let list Pool_context.{ language; _ } (admins, query) =
   let open Admin in
   let url = Uri.of_string "/admin/admins" in
-  let sort =
-    Component.DataTable.
-      { url; query; language; search = Some Contact.searchable_by }
+  let data_table =
+    Component.DataTable.create_meta
+      ~search:Contact.searchable_by
+      url
+      query
+      language
   in
   let cols = Pool_user.[ `column column_name; `column column_email; `empty ] in
+  let th_class = [ "w-5"; "w-5"; "w-2" ] in
   let row admin =
     let button =
       admin
@@ -23,7 +27,13 @@ let list Pool_context.{ language; _ } (admins, query) =
     |> CCList.map (CCList.return %> td)
     |> tr
   in
-  Component.DataTable.make ~target_id:"admin-list" ~cols ~row sort admins
+  Component.DataTable.make
+    ~th_class
+    ~target_id:"admin-list"
+    ~cols
+    ~row
+    data_table
+    admins
 ;;
 
 let static_overview ?(disable_edit = false) language admins =

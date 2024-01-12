@@ -31,10 +31,10 @@ let list ?(marked_as_deleted = false) req =
       Helpers.Guard.can_read_contact_info context [ experiment_target_id ]
     in
     let* experiment = Experiment.find database_label id in
-    let* sessions =
+    let%lwt sessions =
       Session.find_all_for_experiment database_label experiment.Experiment.id
-      >|+ Session.group_and_sort
-      >|+ CCList.flat_map (fun (session, follow_ups) -> session :: follow_ups)
+      ||> Session.group_and_sort
+      ||> CCList.flat_map (fun (session, follow_ups) -> session :: follow_ups)
     in
     let html =
       match marked_as_deleted with
@@ -416,13 +416,13 @@ let swap_session_get req =
     let* experiment = Experiment.find database_label experiment_id in
     let* assignment = find database_label assignment_id in
     let* current_session = Session.find database_label session_id in
-    let* assigned_sessions =
+    let%lwt assigned_sessions =
       Session.find_contact_is_assigned_by_experiment
         database_label
         (Contact.id assignment.contact)
         experiment_id
     in
-    let* sessions =
+    let%lwt sessions =
       Session.find_all_to_swap_by_experiment database_label experiment_id
     in
     let template_lang =

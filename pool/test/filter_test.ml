@@ -914,14 +914,10 @@ let filter_by_experiment_participation _ () =
     CCList.nth all_experiments 2 |> Experiment.(fun exp -> exp.id)
   in
   let%lwt first_session =
-    Session.find_all_for_experiment database_label first_experiment
-    ||> get_exn
-    ||> hd
+    Session.find_all_for_experiment database_label first_experiment ||> hd
   in
   let%lwt second_session =
-    Session.find_all_for_experiment database_label second_experiment
-    ||> get_exn
-    ||> hd
+    Session.find_all_for_experiment database_label second_experiment ||> hd
   in
   let%lwt contact = TestContacts.get_contact 2 in
   let handle_events =

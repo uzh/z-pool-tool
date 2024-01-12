@@ -25,6 +25,8 @@ module Pagination : sig
     ; page : Page.t
     ; page_count : PageCount.t
     }
+
+  val to_query_parts : t -> (Pool_common.Message.Field.t * string) list
 end
 
 module Search : sig
@@ -36,6 +38,7 @@ module Search : sig
     }
 
   val query_string : t -> string
+  val to_query_parts : t -> (Pool_common.Message.Field.t * string) list
 end
 
 module Sort : sig
@@ -63,6 +66,8 @@ module Sort : sig
     { column : Column.t
     ; order : SortOrder.t
     }
+
+  val to_query_parts : t -> (Pool_common.Message.Field.t * string) list
 end
 
 type t =
@@ -72,7 +77,12 @@ type t =
   }
 
 val show : t -> string
-val to_uri_query : t -> (string * string list) list
+
+val to_uri_query
+  :  ?additional_params:(Pool_common.Message.Field.t * string) list
+  -> t
+  -> (string * string list) list
+
 val with_sort_order : Sort.SortOrder.t -> t -> t
 val with_sort_column : Column.t -> t -> t
 

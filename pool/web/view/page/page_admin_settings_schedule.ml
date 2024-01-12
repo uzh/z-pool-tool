@@ -13,6 +13,7 @@ let list Pool_context.{ language; _ } schedules query =
     ; `column Schedule.column_last_run_at
     ]
   in
+  let th_class = [ "w-3"; "w-3"; "w-3"; "w-3" ] in
   let row (schedule : Schedule.public) =
     let open Schedule in
     let scheduled =
@@ -39,6 +40,7 @@ let list Pool_context.{ language; _ } schedules query =
     |> tr
   in
   Component.DataTable.make
+    ~th_class
     ~target_id:"schedule-table"
     ~cols
     ~row

@@ -113,9 +113,7 @@ let create pool =
   Lwt_list.iter_s
     (fun experiment ->
       let%lwt sessions =
-        let open Utils.Lwt_result.Infix in
         Session.find_all_for_experiment pool experiment.Experiment.id
-        ||> CCResult.get_exn
       in
       let parent = CCList.hd sessions in
       let (follow_up : Session.t) =
