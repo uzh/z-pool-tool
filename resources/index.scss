@@ -469,6 +469,13 @@ table.simple {
 
 }
 
+// Display EMail Template rich text
+.force-normalize-fonts {
+    h1, h2, h3, h4, h5 {
+        font-size: $body-font-size;
+    }
+}
+
 // Width base classes
 $i: 1;
 $n: 12;

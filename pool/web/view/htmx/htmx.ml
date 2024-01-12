@@ -11,6 +11,7 @@ let hx_target_closest_group = hx_target "closest .form-group"
 let hx_swap = a_user_data "hx-swap"
 let hx_params = a_user_data "hx-params"
 let hx_vals = a_user_data "hx-vals"
+let hx_confirm = a_user_data "hx-confirm"
 let hx_base_params = [ "_csrf"; "version"; "field" ]
 let contact_profile_hx_post = "/user/update"
 
@@ -34,6 +35,15 @@ let multi_select_htmx_attributes =
   [ multi_select_htmx_key, multi_select_htmx_value ]
 ;;
 
+let make_hx_vals vals =
+  Format.asprintf
+    {|{%s}|}
+    (vals
+     |> CCList.map (fun (k, v) -> Format.asprintf "\"%s\": \"%s\"" k v)
+     |> CCString.concat ", ")
+  |> hx_vals
+;;
+
 let base_hx_attributes name version ?action ?(additional_attributes = []) () =
   let params, vals =
     let base_vals =
@@ -49,12 +59,7 @@ let base_hx_attributes name version ?action ?(additional_attributes = []) () =
   [ hx_swap "outerHTML"
   ; hx_params (CCString.concat ", " (CCList.cons name params))
   ; hx_target_closest_group
-  ; hx_vals
-      (Format.asprintf
-         {|{%s}|}
-         (vals
-          |> CCList.map (fun (k, v) -> Format.asprintf "\"%s\": \"%s\"" k v)
-          |> CCString.concat ", "))
+  ; make_hx_vals vals
   ]
   @ CCOption.(CCList.filter_map CCFun.id [ action >|= hx_post ])
 ;;

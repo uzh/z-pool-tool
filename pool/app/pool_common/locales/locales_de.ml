@@ -22,6 +22,7 @@ let rec field_to_string =
   | Assignments -> "Anmeldungen"
   | AssignmentsCreated -> "Sessionanmeldungen"
   | Assistants -> "Assistenten"
+  | AvailableLanguages -> "Verfügbare Sprachen"
   | Building -> "Gebäude"
   | CanceledAt -> "Abgesagt am"
   | CellPhone -> "Mobiltelefon"
@@ -640,6 +641,7 @@ let control_to_string = function
   | EnterNewCellPhone -> "eine andere Nummer eingeben"
   | Filter field -> format_submit "filtern" field
   | Login -> format_submit "login" None
+  | LoadDefaultTemplate -> format_submit "Standardtemplate laden" None
   | Manage field -> format_submit "manage" (Some field)
   | MarkAsDeleted -> format_submit "als gelöscht markieren" None
   | More -> "mehr"

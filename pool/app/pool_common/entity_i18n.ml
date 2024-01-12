@@ -170,6 +170,7 @@ type hint =
   | ExperimentLanguage
   | ExperimentMailings
   | ExperimentMailingsRegistrationDisabled
+  | ExperimentMessageTemplates
   | ExperimentSessions
   | ExperimentSessionsPublic
   | ExperimentWaitingList
@@ -260,13 +261,14 @@ type confirmable =
   | DeleteCustomField
   | DeleteCustomFieldOption
   | DeleteEmailSuffix
-  | DeleteSmtpServer
   | DeleteExperiment
   | DeleteExperimentFilter
   | DeleteFile
   | DeleteMailing
   | DeleteMessageTemplate
   | DeleteSession
+  | DeleteSmtpServer
+  | LoadDefaultTemplate
   | MarkAssignmentAsDeleted
   | MarkAssignmentWithFollowUpsAsDeleted
   | PauseAccount

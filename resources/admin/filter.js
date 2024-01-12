@@ -240,7 +240,6 @@ const updateContactCount = async (form) => {
             const body = { query: JSON.stringify(query), _csrf: csrfToken(form) }
             if (query) {
                 const response = await postIUrlencoded(action, body)
-                console.log(response)
                 const data = await response.json();
                 if (!response.ok) {
                     throw (data.message || response.statusText || globalErrorMsg)

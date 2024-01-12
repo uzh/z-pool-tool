@@ -297,8 +297,14 @@ module Admin = struct
         ; post "" ~middlewares:[ Access.update ] update
         ]
       in
+      let label_specific =
+        [ get "template-preview" ~middlewares:[ Access.index ] preview_default
+        ; post "reset" ~middlewares:[ Access.index ] reset_to_default_htmx
+        ]
+      in
       [ get "" ~middlewares:[ Access.index ] index
-      ; choose ~scope:(MessageTemplate |> url_key) specific
+      ; choose ~scope:(url_key Label) label_specific
+      ; choose ~scope:(url_key MessageTemplate) specific
       ]
     in
     let experiments =

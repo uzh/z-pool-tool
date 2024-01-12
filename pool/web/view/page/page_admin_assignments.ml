@@ -256,20 +256,22 @@ module Partials = struct
                   Field.NotifyContact
               ; div
                   ~a:[ a_id notifier_id; a_class [ "hidden"; "stack" ] ]
-                  (Page_admin_message_template.template_inputs
-                     ~hide_text_message_input:true
-                     context
-                     (Some swap_session_template)
-                     ~languages
-                     ?fixed_language:experiment.Experiment.language
-                     ~selected_language:
-                       swap_session_template.Message_template.language
-                     flash_fetcher)
-              ; submit_element
-                  language
-                  (Pool_common.Message.Save None)
-                  ~submit_type:`Primary
-                  ()
+                  [ Page_admin_message_template.template_inputs
+                      ~hide_text_message_input:true
+                      context
+                      (`Create swap_session_template)
+                      Message_template.Label.AssignmentSessionChange
+                      ~languages
+                      ?fixed_language:experiment.Experiment.language
+                      ~selected_language:
+                        swap_session_template.Message_template.language
+                      ~flash_fetcher
+                  ; submit_element
+                      language
+                      (Pool_common.Message.Save None)
+                      ~submit_type:`Primary
+                      ()
+                  ]
               ; csrf_element csrf ()
               ]
           ]

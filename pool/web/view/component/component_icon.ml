@@ -55,6 +55,7 @@ type t =
   [@printer prt "notifications-off-outline"]
   | NotificationsOutline [@name "notifications-outline"]
   [@printer prt "notifications-outline"]
+  | OpenOutline [@name "open-outline"] [@printer prt "open-outline"]
   | Person [@name "person"] [@printer prt "person"]
   | PersonOutline [@name "person-outline"] [@printer prt "person-outline"]
   | PrevCircleOutline [@name "prev-circle-outline"]

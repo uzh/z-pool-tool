@@ -112,6 +112,7 @@ val find_default_by_label_and_language
   -> Label.t
   -> t Lwt.t
 
+val find_default_by_label : Pool_database.Label.t -> Label.t -> t list Lwt.t
 val all_default : Pool_database.Label.t -> unit -> t list Lwt.t
 
 val find_all_of_entity_by_label
@@ -120,14 +121,21 @@ val find_all_of_entity_by_label
   -> Label.t
   -> t list Lwt.t
 
-val find_by_label_to_send
+val find_by_label_and_language_to_send
   :  Pool_database.Label.t
   -> ?entity_uuids:Pool_common.Id.t list
-  -> Pool_common.Language.t
   -> Label.t
-  -> (t * Pool_common.Language.t) Lwt.t
+  -> Pool_common.Language.t
+  -> t Lwt.t
 
 val find_all_by_label_to_send
+  :  Pool_database.Label.t
+  -> ?entity_uuids:Pool_common.Id.t list
+  -> Pool_common.Language.t list
+  -> Label.t
+  -> t list Lwt.t
+
+val find_entity_defaults_by_label
   :  Pool_database.Label.t
   -> ?entity_uuids:Pool_common.Id.t list
   -> Pool_common.Language.t list

@@ -126,12 +126,11 @@ module LanguageTestsData = struct
   let de = Pool_common.Language.De
 
   let find_message_template experiment language label =
-    find_by_label_to_send
+    find_by_label_and_language_to_send
       database_label
       ~entity_uuids:Experiment.[ experiment.Experiment.id |> Id.to_common ]
       language
       label
-    |> Lwt.map fst
   ;;
 
   let experiment_message_language =
@@ -153,7 +152,7 @@ module LanguageTestsData = struct
 
   let find_template_to_send experiment contact =
     let language = experiment_message_language experiment contact in
-    find_message_template experiment language invitation_label
+    find_message_template experiment invitation_label language
   ;;
 
   let check_template = Alcotest.(check Test_utils.message_template "succeeds")
@@ -223,7 +222,6 @@ let get_template_with_experiment_language_and_template _ () =
 ;;
 
 let get_template_with_language_missing _ () =
-  let open Utils.Lwt_result.Infix in
   let%lwt () =
     let database_label = Test_utils.Data.database_label in
     let label = Message_template.Label.ExperimentInvitation in
@@ -237,13 +235,11 @@ let get_template_with_language_missing _ () =
     in
     let%lwt res =
       Pool_common.Language.[ De; En ]
-      |> Lwt_list.map_s (fun lang ->
-        Message_template.find_by_label_to_send
-          database_label
-          ~entity_uuids:Experiment.[ experiment.id |> Id.to_common ]
-          lang
-          label
-        ||> fst)
+      |> Lwt_list.map_s
+           (Message_template.find_by_label_and_language_to_send
+              database_label
+              ~entity_uuids:Experiment.[ experiment.id |> Id.to_common ]
+              label)
     in
     (* When one entity specific template exists, expect this to be returned
        every time *)
@@ -255,7 +251,6 @@ let get_template_with_language_missing _ () =
 ;;
 
 let get_templates_in_multile_languages _ () =
-  let open Utils.Lwt_result.Infix in
   let%lwt () =
     let database_label = Test_utils.Data.database_label in
     let label = Message_template.Label.ExperimentInvitation in
@@ -271,13 +266,11 @@ let get_templates_in_multile_languages _ () =
     in
     let%lwt res =
       languages
-      |> Lwt_list.map_s (fun lang ->
-        Message_template.find_by_label_to_send
-          database_label
-          ~entity_uuids:Experiment.[ experiment.id |> Id.to_common ]
-          lang
-          label
-        ||> fst)
+      |> Lwt_list.map_s
+           (Message_template.find_by_label_and_language_to_send
+              database_label
+              ~entity_uuids:Experiment.[ experiment.id |> Id.to_common ]
+              label)
     in
     (* Expect all created templates to be returned *)
     Alcotest.(check (list Test_utils.message_template) "succeeds" templates res)
