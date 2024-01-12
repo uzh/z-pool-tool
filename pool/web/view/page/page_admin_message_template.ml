@@ -156,7 +156,7 @@ let template_inputs
       in
       div
         ~a:[ a_class [ "flexrow" ] ]
-        [ button
+        [ span
             ~a:
               [ hx_swap "outerHTML"
               ; hx_target ("#" ^ id)
@@ -167,7 +167,7 @@ let template_inputs
                      language
                      I18n.LoadDefaultTemplate)
               ; hx_vals
-              ; a_class [ "small"; "primary"; "has-icon"; "push" ]
+              ; a_class [ "btn"; "small"; "primary"; "has-icon"; "push" ]
               ]
             [ Icon.(to_html RefreshOutline)
             ; txt (Utils.control_to_string language Message.LoadDefaultTemplate)
