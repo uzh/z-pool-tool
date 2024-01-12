@@ -112,11 +112,11 @@ let template_inputs
   ?entity
   ?(hide_text_message_input = false)
   ?languages
+  ?flash_fetcher
   ?fixed_language
   ?selected_language
   form_context
   template_label
-  flash_fetcher
   =
   let id = "message-template-inputs" in
   let open Message_template in
@@ -204,7 +204,7 @@ let template_inputs
         ())
   in
   let textarea_element ?rich_text ~value =
-    textarea_element language ?rich_text ~value ~flash_fetcher ~required:true
+    textarea_element language ?rich_text ~value ?flash_fetcher ~required:true
   in
   let plain_text_element =
     let id = Field.(show PlainText) in
@@ -259,7 +259,7 @@ let template_inputs
         ~a:[ a_class [ "switcher"; "flex-gap" ] ]
         [ input_element
             language
-            ~flash_fetcher
+            ?flash_fetcher
             ~required:true
             ~value:(template.email_subject |> EmailSubject.value)
             `Text
@@ -324,9 +324,9 @@ let template_form
            ~hide_text_message_input
            ?languages
            ?fixed_language
+           ~flash_fetcher
            form_context
            label
-           flash_fetcher
        ]
        @ [ div
              ~a:[ a_class [ "flexrow" ] ]

@@ -265,7 +265,7 @@ module Partials = struct
                       ?fixed_language:experiment.Experiment.language
                       ~selected_language:
                         swap_session_template.Message_template.language
-                      flash_fetcher
+                      ~flash_fetcher
                   ; submit_element
                       language
                       (Pool_common.Message.Save None)

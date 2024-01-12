@@ -241,7 +241,6 @@ let reset_to_default_htmx req =
       then `Update template
       else `Create template
     in
-    let flash_fetcher = CCFun.const None in
     (* TODO: flash_fetcher *)
     Page.Admin.MessageTemplate.template_inputs
       ~entity
@@ -249,7 +248,6 @@ let reset_to_default_htmx req =
       context
       form_context
       template.label
-      flash_fetcher
     |> HttpUtils.Htmx.html_to_plain_text_response
     |> Lwt_result.return
   in
