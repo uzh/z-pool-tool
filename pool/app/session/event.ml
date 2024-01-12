@@ -4,8 +4,8 @@ type base =
   { start : Start.t
   ; duration : int
   ; duration_unit : Pool_common.Model.TimeUnit.t
-  ; description : Description.t option
-  ; limitations : Limitations.t option
+  ; internal_description : InternalDescription.t option
+  ; public_description : PublicDescription.t option
   ; max_participants : ParticipantAmount.t
   ; min_participants : ParticipantAmount.t
   ; overbook : ParticipantAmount.t

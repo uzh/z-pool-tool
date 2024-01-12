@@ -124,8 +124,8 @@ module DummyData = struct
           |> CCOption.get_exn_or "Invalid start"
           |> Start.create
       ; duration = Duration.create hour |> Pool_common.Utils.get_or_failwith
-      ; description = None
-      ; limitations = None
+      ; internal_description = None
+      ; public_description = None
       ; location
       ; max_participants =
           ParticipantAmount.create 30 |> Pool_common.Utils.get_or_failwith
@@ -156,8 +156,12 @@ module DummyData = struct
       { id = Id.create ()
       ; title = Title.create "The Wallet Game\t" |> get_exn
       ; public_title = PublicTitle.create "public_title" |> get_exn
-      ; description =
-          Description.create "A description for everyone"
+      ; internal_description =
+          InternalDescription.create "An internal description"
+          |> get_exn
+          |> CCOption.return
+      ; public_description =
+          PublicDescription.create "A description for everyone"
           |> get_exn
           |> CCOption.return
       ; language = None

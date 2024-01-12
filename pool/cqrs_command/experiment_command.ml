@@ -16,7 +16,8 @@ let to_role (admin, role, target_uuid) =
 let default_command
   title
   public_title
-  description
+  internal_description
+  public_description
   language
   cost_center
   direct_registration_disabled
@@ -33,7 +34,8 @@ let default_command
   =
   { title
   ; public_title
-  ; description
+  ; internal_description
+  ; public_description
   ; language
   ; cost_center
   ; direct_registration_disabled
@@ -91,7 +93,8 @@ let update_schema command =
       Field.
         [ Title.schema ()
         ; PublicTitle.schema ()
-        ; opt @@ Description.schema ()
+        ; opt @@ InternalDescription.schema ()
+        ; opt @@ PublicDescription.schema ()
         ; opt @@ Pool_common.Language.schema ()
         ; opt @@ CostCenter.schema ()
         ; DirectRegistrationDisabled.schema ()
@@ -115,7 +118,8 @@ let create_schema command =
       Field.
         [ Title.schema ()
         ; opt @@ PublicTitle.schema ()
-        ; opt @@ Description.schema ()
+        ; opt @@ InternalDescription.schema ()
+        ; opt @@ PublicDescription.schema ()
         ; opt @@ Pool_common.Language.schema ()
         ; opt @@ CostCenter.schema ()
         ; DirectRegistrationDisabled.schema ()
@@ -165,7 +169,8 @@ end = struct
     ?organisational_unit
     ?smtp_auth
     ({ cost_center
-     ; description
+     ; internal_description
+     ; public_description
      ; language
      ; experiment_type
      ; email_session_reminder_lead_time
@@ -192,7 +197,8 @@ end = struct
       Experiment.create
         ?contact_person_id:(contact_person |> CCOption.map Admin.id)
         ?cost_center
-        ?description
+        ?internal_description
+        ?public_description
         ?language
         ?email_session_reminder_lead_time
         ?experiment_type
@@ -264,7 +270,8 @@ end = struct
         { experiment with
           title = command.title
         ; public_title = command.public_title
-        ; description = command.description
+        ; internal_description = command.internal_description
+        ; public_description = command.public_description
         ; language = command.language
         ; cost_center = command.cost_center
         ; organisational_unit

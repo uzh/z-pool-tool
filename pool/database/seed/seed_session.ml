@@ -48,8 +48,8 @@ let create pool =
           CCList.map
             (fun ( start
                  , duration
-                 , description
-                 , limitations
+                 , internal_description
+                 , public_description
                  , max
                  , min
                  , overbook
@@ -60,11 +60,12 @@ let create pool =
                 let open Session in
                 let start = Start.create start in
                 let duration = Duration.create duration |> get_or_failwith in
-                let description =
-                  description >>= Description.create %> of_result
+                let internal_description =
+                  internal_description
+                  >>= InternalDescription.create %> of_result
                 in
-                let limitations =
-                  limitations >>= Limitations.create %> of_result
+                let public_description =
+                  public_description >>= PublicDescription.create %> of_result
                 in
                 let max_participants =
                   ParticipantAmount.create max |> get_or_failwith
@@ -93,9 +94,9 @@ let create pool =
                 in
                 let location = CCList.hd locations in
                 create
-                  ?description
+                  ?internal_description
+                  ?public_description
                   ?email_reminder_lead_time
-                  ?limitations
                   ?text_message_reminder_lead_time
                   start
                   duration
@@ -125,11 +126,11 @@ let create pool =
           |> Start.create
         in
         let duration = Duration.create halfhour |> get_or_failwith in
-        let description =
-          Some "MRI Study" >>= Description.create %> of_result
+        let internal_description =
+          Some "MRI Study" >>= InternalDescription.create %> of_result
         in
         Session.create
-          ?description
+          ?internal_description
           ~follow_up_to:parent.Session.id
           start
           duration

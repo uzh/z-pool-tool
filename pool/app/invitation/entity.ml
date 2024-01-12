@@ -56,8 +56,9 @@ type notification_history =
 let email_experiment_elements (experiment : Experiment.t) =
   let open Experiment in
   [ "experimentPublicTitle", experiment.public_title |> PublicTitle.value
-  ; ( "experimentDescription"
-    , experiment.description |> CCOption.map_or ~default:"" Description.value )
+  ; ( "experimentPublicDescription"
+    , experiment.public_description
+      |> CCOption.map_or ~default:"" PublicDescription.value )
   ]
 ;;
 

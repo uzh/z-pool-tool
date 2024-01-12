@@ -26,8 +26,8 @@ module Data = struct
 
     let duration = Ptime.Span.of_int_s 3600
     let duration_unit = TimeUnit.Minutes
-    let description = "Description"
-    let limitations = "Limitations"
+    let internal_description = "Description"
+    let public_description = "Limitations"
     let max_participants = 24
     let min_participants = 5
     let overbook = 0
@@ -47,8 +47,8 @@ module Data = struct
     let start3 = Raw.start3 |> Ptime.to_rfc3339 ~frac_s:12
     let duration = Raw.duration |> Pool_common.Utils.Time.timespan_to_minutes
     let duration_unit = Raw.duration_unit |> TimeUnit.show
-    let description = Raw.description
-    let limitations = Raw.limitations
+    let internal_description = Raw.internal_description
+    let public_description = Raw.public_description
     let max_participants = Raw.max_participants |> string_of_int
     let min_participants = Raw.min_participants |> string_of_int
     let overbook = Raw.overbook |> string_of_int
@@ -63,12 +63,14 @@ module Data = struct
     let start3 = Session.Start.create Raw.start3
     let duration = Session.Duration.create Raw.duration |> CCResult.get_exn
 
-    let description =
-      Session.Description.create Raw.description |> CCResult.get_exn
+    let internal_description =
+      Session.InternalDescription.create Raw.internal_description
+      |> CCResult.get_exn
     ;;
 
-    let limitations =
-      Session.Limitations.create Raw.limitations |> CCResult.get_exn
+    let public_description =
+      Session.PublicDescription.create Raw.public_description
+      |> CCResult.get_exn
     ;;
 
     let max_participants =
@@ -125,8 +127,8 @@ module Data = struct
     [ show Start, [ String.start1 ]
     ; show Duration, [ String.duration ]
     ; show (TimeUnitOf Duration), [ String.duration_unit ]
-    ; show Description, [ String.description ]
-    ; show Limitations, [ String.limitations ]
+    ; show InternalDescription, [ String.internal_description ]
+    ; show PublicDescription, [ String.public_description ]
     ; show MaxParticipants, [ String.max_participants ]
     ; show MinParticipants, [ String.min_participants ]
     ; show Overbook, [ String.overbook ]
@@ -145,7 +147,8 @@ module Data = struct
     [ show Start, [ start ]
     ; show Duration, [ duration ]
     ; show (TimeUnitOf Duration), [ time_unit ]
-    ; show Description, [ description ]
+    ; show InternalDescription, [ description ]
+    ; show PublicDescription, [ description ]
     ; show MaxParticipants, [ max ]
     ; show MinParticipants, [ min ]
     ; show Overbook, [ overbook ]
@@ -158,7 +161,11 @@ module Data = struct
       CCList.Assoc.update
         ~eq:CCString.equal
         ~f:(function
-          | None -> failwith "Key not found"
+          | None ->
+            failwith
+              (Format.asprintf
+                 "Key '%s' not found"
+                 (Pool_common.Message.Field.show k))
           | Some _ -> v)
         (Pool_common.Message.Field.show k)
     in
@@ -214,7 +221,8 @@ let create_invalid_data () =
           [ Start, NotADatetime (start, "1: unexpected end of input")
           ; Duration, NotANumber duration
           ; TimeUnitOf Duration, Invalid TimeUnit
-          ; Description, NoValue
+          ; InternalDescription, NoValue
+          ; PublicDescription, NoValue
           ; MaxParticipants, NotANumber max
           ; MinParticipants, NotANumber min
           ; Overbook, NotANumber overbook
@@ -247,8 +255,8 @@ let create_no_optional () =
   let input =
     let open Data in
     delete_from_input
-      [ Description
-      ; Limitations
+      [ InternalDescription
+      ; PublicDescription
       ; EmailLeadTime
       ; TextMessageLeadTime
       ; SentAt
@@ -291,8 +299,8 @@ let create_full () =
     Session.create
       ~id:session_id
       ~email_reminder_lead_time
-      ~description
-      ~limitations
+      ~internal_description
+      ~public_description
       ~text_message_reminder_lead_time
       start1
       duration
@@ -325,8 +333,8 @@ let create_min_eq_max () =
     Session.create
       ~id:session_id
       ~email_reminder_lead_time
-      ~description
-      ~limitations
+      ~internal_description
+      ~public_description
       ~text_message_reminder_lead_time
       start1
       duration
@@ -380,7 +388,8 @@ let update_invalid_data () =
           [ Start, NotADatetime (start, "1: unexpected end of input")
           ; Duration, NotANumber duration
           ; TimeUnitOf Duration, Invalid TimeUnit
-          ; Description, NoValue
+          ; InternalDescription, NoValue
+          ; PublicDescription, NoValue
           ; MaxParticipants, NotANumber max
           ; MinParticipants, NotANumber min
           ; Overbook, NotANumber overbook
@@ -410,8 +419,8 @@ let update_no_optional () =
   let input =
     let open Data in
     delete_from_input
-      [ Description
-      ; Limitations
+      [ InternalDescription
+      ; PublicDescription
       ; EmailLeadTime
       ; TextMessageLeadTime
       ; SentAt
@@ -427,8 +436,8 @@ let update_no_optional () =
       { session with
         start = start1
       ; duration
-      ; description = None
-      ; limitations = None
+      ; internal_description = None
+      ; public_description = None
       ; max_participants
       ; min_participants
       ; overbook
@@ -454,8 +463,8 @@ let update_full () =
       { session with
         start = start2
       ; duration
-      ; description = Some description
-      ; limitations = Some limitations
+      ; internal_description = Some internal_description
+      ; public_description = Some public_description
       ; max_participants
       ; min_participants
       ; overbook
@@ -482,8 +491,8 @@ let update_min_eq_max () =
       { session with
         start = start1
       ; duration
-      ; description = Some description
-      ; limitations = Some limitations
+      ; internal_description = Some internal_description
+      ; public_description = Some public_description
       ; max_participants = max_participants2
       ; min_participants
       ; overbook
@@ -1088,10 +1097,10 @@ let create_follow_up_later () =
     Session.create
       ~id:session_id
       ~email_reminder_lead_time
-      ~description
+      ~internal_description
       ~follow_up_to:parent_session.Session.id
       (Session.Start.create later_start)
-      ~limitations
+      ~public_description
       ~text_message_reminder_lead_time
       duration
       location
@@ -1144,8 +1153,8 @@ let update_follow_up_later () =
       { session with
         start = Session.Start.create later_start
       ; duration
-      ; description = Some description
-      ; limitations = Some limitations
+      ; internal_description = Some internal_description
+      ; public_description = Some public_description
       ; max_participants
       ; min_participants
       ; overbook
@@ -1243,8 +1252,8 @@ let update_follow_ups_later () =
       { session with
         start = start1
       ; duration
-      ; description = Some description
-      ; limitations = Some limitations
+      ; internal_description = Some internal_description
+      ; public_description = Some public_description
       ; max_participants
       ; min_participants
       ; overbook
@@ -1279,8 +1288,8 @@ let update_follow_ups_later () =
                  { session with
                    start = Start.create later_start
                  ; duration
-                 ; description = Some description
-                 ; limitations = Some limitations
+                 ; internal_description = Some internal_description
+                 ; public_description = Some public_description
                  ; max_participants
                  ; min_participants
                  ; overbook

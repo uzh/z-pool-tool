@@ -29,8 +29,8 @@ let t =
         , ( m.has_follow_ups
           , ( m.start
             , ( m.duration
-              , ( m.description
-                , ( m.limitations
+              , ( m.internal_description
+                , ( m.public_description
                   , ( m.max_participants
                     , ( m.min_participants
                       , ( m.overbook
@@ -53,8 +53,8 @@ let t =
       , ( has_follow_ups
         , ( start
           , ( duration
-            , ( description
-              , ( limitations
+            , ( internal_description
+              , ( public_description
                 , ( max_participants
                   , ( min_participants
                     , ( overbook
@@ -77,8 +77,8 @@ let t =
       ; has_follow_ups
       ; start
       ; duration
-      ; description
-      ; limitations
+      ; internal_description
+      ; public_description
       ; location
       ; max_participants
       ; min_participants
@@ -151,16 +151,16 @@ let t =
 
 module Write = struct
   type t =
-    { id : Entity.Id.t
-    ; follow_up_to : Entity.Id.t option
-    ; start : Entity.Start.t
+    { id : Id.t
+    ; follow_up_to : Id.t option
+    ; start : Start.t
     ; duration : Ptime.Span.t
-    ; description : Entity.Description.t option
-    ; limitations : Entity.Limitations.t option
+    ; internal_description : InternalDescription.t option
+    ; public_description : PublicDescription.t option
     ; location_id : Pool_location.Id.t
-    ; max_participants : Entity.ParticipantAmount.t
-    ; min_participants : Entity.ParticipantAmount.t
-    ; overbook : Entity.ParticipantAmount.t
+    ; max_participants : ParticipantAmount.t
+    ; min_participants : ParticipantAmount.t
+    ; overbook : ParticipantAmount.t
     ; email_reminder_lead_time : Reminder.EmailLeadTime.t option
     ; email_reminder_sent_at : Reminder.SentAt.t option
     ; text_message_reminder_lead_time : Reminder.TextMessageLeadTime.t option
@@ -175,8 +175,8 @@ module Write = struct
        ; follow_up_to
        ; start
        ; duration
-       ; description
-       ; limitations
+       ; internal_description
+       ; public_description
        ; location
        ; max_participants
        ; min_participants
@@ -195,8 +195,8 @@ module Write = struct
     ; follow_up_to
     ; start
     ; duration
-    ; description
-    ; limitations
+    ; internal_description
+    ; public_description
     ; location_id = location.Pool_location.id
     ; max_participants
     ; min_participants
@@ -217,8 +217,8 @@ module Write = struct
         , ( m.follow_up_to
           , ( m.start
             , ( m.duration
-              , ( m.description
-                , ( m.limitations
+              , ( m.internal_description
+                , ( m.public_description
                   , ( m.location_id
                     , ( m.max_participants
                       , ( m.min_participants
@@ -235,8 +235,8 @@ module Write = struct
       , ( follow_up_to
         , ( start
           , ( duration
-            , ( description
-              , ( limitations
+            , ( internal_description
+              , ( public_description
                 , ( location_id
                   , ( max_participants
                     , ( min_participants
@@ -253,8 +253,8 @@ module Write = struct
         ; follow_up_to
         ; start
         ; duration
-        ; description
-        ; limitations
+        ; internal_description
+        ; public_description
         ; location_id
         ; max_participants
         ; min_participants
@@ -322,7 +322,7 @@ module Public = struct
     ; follow_up_to : Entity.Id.t option
     ; start : Entity.Start.t
     ; duration : Ptime.Span.t
-    ; description : Entity.Description.t option
+    ; description : Entity.PublicDescription.t option
     ; location_id : Pool_location.Id.t
     ; max_participants : Entity.ParticipantAmount.t
     ; min_participants : Entity.ParticipantAmount.t
@@ -471,7 +471,7 @@ module Calendar = struct
         , ( experiment_id
           , ( start
             , ( duration
-              , ( description
+              , ( internal_description
                 , ( max_participants
                   , ( min_participants
                     , (overbook, (assignment_count, (location, contact_person)))
@@ -488,7 +488,7 @@ module Calendar = struct
         ; title
         ; start
         ; end_
-        ; description
+        ; internal_description
         ; links
         ; max_participants
         ; min_participants

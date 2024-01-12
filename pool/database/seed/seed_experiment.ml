@@ -43,7 +43,9 @@ let experiments pool =
           let public_title =
             PublicTitle.create public_title |> get_or_failwith
           in
-          let description = Description.create description |> get_or_failwith in
+          let internal_description =
+            InternalDescription.create description |> get_or_failwith
+          in
           let cost_center = cost_center |> CCOption.map CostCenter.of_string in
           let email_session_reminder_lead_time =
             email_session_reminder_lead_time
@@ -64,7 +66,7 @@ let experiments pool =
             title
             public_title
             ?cost_center
-            ~description
+            ~internal_description
             ?email_session_reminder_lead_time
             ~experiment_type:Pool_common.ExperimentType.Lab
             direct_registration_disabled

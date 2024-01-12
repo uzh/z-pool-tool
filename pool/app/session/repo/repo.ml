@@ -9,8 +9,8 @@ let sql_select_columns =
      pool_sessions.uuid LIMIT 1))"
   ; "pool_sessions.start"
   ; "pool_sessions.duration"
-  ; "pool_sessions.description"
-  ; "pool_sessions.limitations"
+  ; "pool_sessions.internal_description"
+  ; "pool_sessions.public_description"
   ; "pool_sessions.max_participants"
   ; "pool_sessions.min_participants"
   ; "pool_sessions.overbook"
@@ -65,7 +65,7 @@ module Sql = struct
         )),
         pool_sessions.start,
         pool_sessions.duration,
-        pool_sessions.description,
+        pool_sessions.internal_description,
         pool_sessions.max_participants,
         pool_sessions.min_participants,
         pool_sessions.overbook,
@@ -137,7 +137,7 @@ module Sql = struct
           )),
           pool_sessions.start,
           pool_sessions.duration,
-          pool_sessions.description,
+          pool_sessions.public_description,
           LOWER(CONCAT(
             SUBSTR(HEX(pool_locations.uuid), 1, 8), '-',
             SUBSTR(HEX(pool_locations.uuid), 9, 4), '-',
@@ -698,8 +698,8 @@ module Sql = struct
         experiment_uuid,
         start,
         duration,
-        description,
-        limitations,
+        internal_description,
+        public_description,
         location_uuid,
         max_participants,
         min_participants,
@@ -748,8 +748,8 @@ module Sql = struct
         follow_up_to = UNHEX(REPLACE($2, '-', '')),
         start = $3,
         duration = $4,
-        description = $5,
-        limitations = $6,
+        internal_description = $5,
+        public_description = $6,
         location_uuid = UNHEX(REPLACE($7, '-', '')),
         max_participants = $8,
         min_participants = $9,

@@ -123,8 +123,8 @@ let public_experiment_params
   in
   [ "experimentId", experiment_id
   ; "experimentPublicTitle", PublicTitle.value public_title
-  ; ( "experimentDescription"
-    , description |> CCOption.map_or ~default:"" Description.value )
+  ; ( "experimentPublicDescription"
+    , description |> CCOption.map_or ~default:"" PublicDescription.value )
   ; "experimentUrl", experiment_url
   ]
 ;;

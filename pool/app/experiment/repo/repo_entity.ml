@@ -15,10 +15,26 @@ module PublicTitle = struct
   let t = Common.make_caqti_type Caqti_type.string create value
 end
 
-module Description = struct
-  include Description
+module InternalDescription = struct
+  include InternalDescription
 
-  let t = Common.make_caqti_type Caqti_type.string create value
+  let t =
+    Common.make_caqti_type
+      Caqti_type.string
+      (of_string %> CCResult.return)
+      value
+  ;;
+end
+
+module PublicDescription = struct
+  include PublicDescription
+
+  let t =
+    Common.make_caqti_type
+      Caqti_type.string
+      (of_string %> CCResult.return)
+      value
+  ;;
 end
 
 module CostCenter = struct
@@ -79,54 +95,58 @@ let t =
       ( m.id
       , ( m.title
         , ( m.public_title
-          , ( m.description
-            , ( m.language
-              , ( m.cost_center
-                , ( m.contact_person_id
-                  , ( m.smtp_auth_id
-                    , ( m.direct_registration_disabled
-                      , ( m.registration_disabled
-                        , ( m.allow_uninvited_signup
-                          , ( m.external_data_required
-                            , ( m.show_external_data_id_links
-                              , ( m.experiment_type
-                                , ( m.email_session_reminder_lead_time
-                                  , ( m.text_message_session_reminder_lead_time
-                                    , ( m.invitation_reset_at
-                                      , ( m.created_at
-                                        , ( m.updated_at
-                                          , (m.filter, m.organisational_unit) )
-                                        ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) )
+          , ( m.internal_description
+            , ( m.public_description
+              , ( m.language
+                , ( m.cost_center
+                  , ( m.contact_person_id
+                    , ( m.smtp_auth_id
+                      , ( m.direct_registration_disabled
+                        , ( m.registration_disabled
+                          , ( m.allow_uninvited_signup
+                            , ( m.external_data_required
+                              , ( m.show_external_data_id_links
+                                , ( m.experiment_type
+                                  , ( m.email_session_reminder_lead_time
+                                    , ( m.text_message_session_reminder_lead_time
+                                      , ( m.invitation_reset_at
+                                        , ( m.created_at
+                                          , ( m.updated_at
+                                            , (m.filter, m.organisational_unit)
+                                            ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) )
+        ) )
   in
   let decode
     ( id
     , ( title
       , ( public_title
-        , ( description
-          , ( language
-            , ( cost_center
-              , ( contact_person_id
-                , ( smtp_auth_id
-                  , ( direct_registration_disabled
-                    , ( registration_disabled
-                      , ( allow_uninvited_signup
-                        , ( external_data_required
-                          , ( show_external_data_id_links
-                            , ( experiment_type
-                              , ( email_session_reminder_lead_time
-                                , ( text_message_session_reminder_lead_time
-                                  , ( invitation_reset_at
-                                    , ( created_at
-                                      , ( updated_at
-                                        , (filter, organisational_unit) ) ) ) )
-                                ) ) ) ) ) ) ) ) ) ) ) ) ) ) )
+        , ( internal_description
+          , ( public_description
+            , ( language
+              , ( cost_center
+                , ( contact_person_id
+                  , ( smtp_auth_id
+                    , ( direct_registration_disabled
+                      , ( registration_disabled
+                        , ( allow_uninvited_signup
+                          , ( external_data_required
+                            , ( show_external_data_id_links
+                              , ( experiment_type
+                                , ( email_session_reminder_lead_time
+                                  , ( text_message_session_reminder_lead_time
+                                    , ( invitation_reset_at
+                                      , ( created_at
+                                        , ( updated_at
+                                          , (filter, organisational_unit) ) ) )
+                                    ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) )
     =
     let open CCResult in
     Ok
       { id
       ; title
       ; public_title
-      ; description
+      ; internal_description
+      ; public_description
       ; language
       ; cost_center
       ; organisational_unit
@@ -158,50 +178,55 @@ let t =
             (t2
                PublicTitle.t
                (t2
-                  (option Description.t)
+                  (option InternalDescription.t)
                   (t2
-                     (option Pool_common.Repo.Language.t)
+                     (option PublicDescription.t)
                      (t2
-                        (option CostCenter.t)
+                        (option Pool_common.Repo.Language.t)
                         (t2
-                           (option Admin.Repo.Entity.Id.t)
+                           (option CostCenter.t)
                            (t2
-                              (option Email.SmtpAuth.RepoEntity.Id.t)
+                              (option Admin.Repo.Entity.Id.t)
                               (t2
-                                 DirectRegistrationDisabled.t
+                                 (option Email.SmtpAuth.RepoEntity.Id.t)
                                  (t2
-                                    RegistrationDisabled.t
+                                    DirectRegistrationDisabled.t
                                     (t2
-                                       AllowUninvitedSignup.t
+                                       RegistrationDisabled.t
                                        (t2
-                                          ExternalDataRequired.t
+                                          AllowUninvitedSignup.t
                                           (t2
-                                             ShowExternalDataIdLinks.t
+                                             ExternalDataRequired.t
                                              (t2
-                                                (option ExperimentType.t)
+                                                ShowExternalDataIdLinks.t
                                                 (t2
-                                                   (option
-                                                      Reminder.EmailLeadTime.t)
+                                                   (option ExperimentType.t)
                                                    (t2
                                                       (option
-                                                         Reminder
-                                                         .TextMessageLeadTime
+                                                         Reminder.EmailLeadTime
                                                          .t)
                                                       (t2
                                                          (option
-                                                            InvitationResetAt.t)
+                                                            Reminder
+                                                            .TextMessageLeadTime
+                                                            .t)
                                                          (t2
-                                                            CreatedAt.t
+                                                            (option
+                                                               InvitationResetAt
+                                                               .t)
                                                             (t2
-                                                               UpdatedAt.t
+                                                               CreatedAt.t
                                                                (t2
-                                                                  (option
-                                                                     Filter.Repo
-                                                                     .t)
-                                                                  (option
-                                                                     Organisational_unit
-                                                                     .Repo
-                                                                     .t))))))))))))))))))))))
+                                                                  UpdatedAt.t
+                                                                  (t2
+                                                                     (option
+                                                                        Filter
+                                                                        .Repo
+                                                                        .t)
+                                                                     (option
+                                                                        Organisational_unit
+                                                                        .Repo
+                                                                        .t)))))))))))))))))))))))
 ;;
 
 module Write = struct
@@ -216,24 +241,25 @@ module Write = struct
         ( m.id
         , ( m.title
           , ( m.public_title
-            , ( m.description
-              , ( m.language
-                , ( m.cost_center
-                  , ( organisational_unit
-                    , ( filter
-                      , ( m.contact_person_id
-                        , ( m.smtp_auth_id
-                          , ( m.direct_registration_disabled
-                            , ( m.registration_disabled
-                              , ( m.allow_uninvited_signup
-                                , ( m.external_data_required
-                                  , ( m.show_external_data_id_links
-                                    , ( m.experiment_type
-                                      , ( m.email_session_reminder_lead_time
-                                        , ( m
-                                              .text_message_session_reminder_lead_time
-                                          , m.invitation_reset_at ) ) ) ) ) ) )
-                            ) ) ) ) ) ) ) ) ) ) )
+            , ( m.internal_description
+              , ( m.public_description
+                , ( m.language
+                  , ( m.cost_center
+                    , ( organisational_unit
+                      , ( filter
+                        , ( m.contact_person_id
+                          , ( m.smtp_auth_id
+                            , ( m.direct_registration_disabled
+                              , ( m.registration_disabled
+                                , ( m.allow_uninvited_signup
+                                  , ( m.external_data_required
+                                    , ( m.show_external_data_id_links
+                                      , ( m.experiment_type
+                                        , ( m.email_session_reminder_lead_time
+                                          , ( m
+                                                .text_message_session_reminder_lead_time
+                                            , m.invitation_reset_at ) ) ) ) ) )
+                                ) ) ) ) ) ) ) ) ) ) ) ) )
     in
     let decode _ = failwith "Write only model" in
     let open Common in
@@ -248,45 +274,48 @@ module Write = struct
               (t2
                  PublicTitle.t
                  (t2
-                    (option Description.t)
+                    (option InternalDescription.t)
                     (t2
-                       (option Pool_common.Repo.Language.t)
+                       (option PublicDescription.t)
                        (t2
-                          (option CostCenter.t)
+                          (option Pool_common.Repo.Language.t)
                           (t2
-                             (option Organisational_unit.Repo.Id.t)
+                             (option CostCenter.t)
                              (t2
-                                (option Id.t)
+                                (option Organisational_unit.Repo.Id.t)
                                 (t2
-                                   (option Admin.Repo.Entity.Id.t)
+                                   (option Id.t)
                                    (t2
-                                      (option Email.SmtpAuth.RepoEntity.Id.t)
+                                      (option Admin.Repo.Entity.Id.t)
                                       (t2
-                                         DirectRegistrationDisabled.t
+                                         (option Email.SmtpAuth.RepoEntity.Id.t)
                                          (t2
-                                            RegistrationDisabled.t
+                                            DirectRegistrationDisabled.t
                                             (t2
-                                               AllowUninvitedSignup.t
+                                               RegistrationDisabled.t
                                                (t2
-                                                  ExternalDataRequired.t
+                                                  AllowUninvitedSignup.t
                                                   (t2
-                                                     ShowExternalDataIdLinks.t
+                                                     ExternalDataRequired.t
                                                      (t2
-                                                        (option
-                                                           ExperimentType.t)
+                                                        ShowExternalDataIdLinks
+                                                        .t
                                                         (t2
                                                            (option
-                                                              Reminder
-                                                              .EmailLeadTime
-                                                              .t)
+                                                              ExperimentType.t)
                                                            (t2
                                                               (option
                                                                  Reminder
-                                                                 .TextMessageLeadTime
+                                                                 .EmailLeadTime
                                                                  .t)
-                                                              (option
-                                                                 InvitationResetAt
-                                                                 .t))))))))))))))))))))
+                                                              (t2
+                                                                 (option
+                                                                    Reminder
+                                                                    .TextMessageLeadTime
+                                                                    .t)
+                                                                 (option
+                                                                    InvitationResetAt
+                                                                    .t)))))))))))))))))))))
   ;;
 end
 
@@ -330,7 +359,7 @@ module Public = struct
            (t2
               PublicTitle.t
               (t2
-                 (option Description.t)
+                 (option PublicDescription.t)
                  (t2
                     (option Pool_common.Repo.Language.t)
                     (t2

@@ -268,10 +268,18 @@ let experiment_form
                 ~flash_fetcher
             ; textarea_element
                 language
-                Field.Description
+                Field.InternalDescription
                 ?value:
-                  (CCOption.bind experiment (fun { description; _ } ->
-                     description |> CCOption.map Description.value))
+                  (CCOption.bind experiment (fun { internal_description; _ } ->
+                     internal_description
+                     |> CCOption.map InternalDescription.value))
+                ~flash_fetcher
+            ; textarea_element
+                language
+                Field.PublicDescription
+                ?value:
+                  (CCOption.bind experiment (fun { public_description; _ } ->
+                     public_description |> CCOption.map PublicDescription.value))
                 ~flash_fetcher
             ; language_select
             ; experiment_type_select
@@ -661,10 +669,14 @@ let detail
           , experiment.experiment_type
             |> CCOption.map_or ~default:"" ExperimentType.show
             |> txt )
-        ; ( Field.Description
-          , experiment.description
+        ; ( Field.InternalDescription
+          , experiment.internal_description
             |> CCOption.map_or ~default:(txt "") (fun desc ->
-              desc |> Description.value |> HttpUtils.add_line_breaks) )
+              desc |> InternalDescription.value |> HttpUtils.add_line_breaks) )
+        ; ( Field.PublicDescription
+          , experiment.public_description
+            |> CCOption.map_or ~default:(txt "") (fun desc ->
+              desc |> PublicDescription.value |> HttpUtils.add_line_breaks) )
         ; ( Field.Language
           , experiment.language
             |> CCOption.map_or ~default (fun lang -> lang |> Language.show)

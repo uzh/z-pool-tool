@@ -8,7 +8,8 @@ let sql_select_columns =
   [ Entity.Id.sql_select_fragment ~field:"pool_experiments.uuid"
   ; "pool_experiments.title"
   ; "pool_experiments.public_title"
-  ; "pool_experiments.description"
+  ; "pool_experiments.internal_description"
+  ; "pool_experiments.public_description"
   ; "pool_experiments.language"
   ; "pool_experiments.cost_center"
   ; Entity.Id.sql_select_fragment ~field:"pool_experiments.contact_person_uuid"
@@ -58,7 +59,8 @@ module Sql = struct
         uuid,
         title,
         public_title,
-        description,
+        internal_description,
+        public_description,
         language,
         cost_center,
         organisational_unit_uuid,
@@ -76,6 +78,7 @@ module Sql = struct
         invitation_reset_at
       ) VALUES (
         UNHEX(REPLACE(?, '-', '')),
+        ?,
         ?,
         ?,
         ?,
@@ -246,22 +249,23 @@ module Sql = struct
       SET
         title = $2,
         public_title = $3,
-        description = $4,
-        language = $5,
-        cost_center = $6,
-        organisational_unit_uuid = UNHEX(REPLACE($7, '-', '')),
-        filter_uuid = UNHEX(REPLACE($8, '-', '')),
-        contact_person_uuid = UNHEX(REPLACE($9, '-', '')),
-        smtp_auth_uuid = UNHEX(REPLACE($10, '-', '')),
-        direct_registration_disabled = $11,
-        registration_disabled = $12,
-        allow_uninvited_signup = $13,
-        external_data_required = $14,
-        show_external_data_id_links = $15,
-        experiment_type = $16,
-        email_session_reminder_lead_time = $17,
-        text_message_session_reminder_lead_time = $18,
-        invitation_reset_at = $19
+        internal_description = $4,
+        public_description = $5,
+        language = $6,
+        cost_center = $7,
+        organisational_unit_uuid = UNHEX(REPLACE($8, '-', '')),
+        filter_uuid = UNHEX(REPLACE($9, '-', '')),
+        contact_person_uuid = UNHEX(REPLACE($10, '-', '')),
+        smtp_auth_uuid = UNHEX(REPLACE($11, '-', '')),
+        direct_registration_disabled = $12,
+        registration_disabled = $13,
+        allow_uninvited_signup = $14,
+        external_data_required = $15,
+        show_external_data_id_links = $16,
+        experiment_type = $17,
+        email_session_reminder_lead_time = $18,
+        text_message_session_reminder_lead_time = $19,
+        invitation_reset_at = $20
       WHERE
         uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}

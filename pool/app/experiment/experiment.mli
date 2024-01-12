@@ -14,7 +14,11 @@ module PublicTitle : sig
   val placeholder : t
 end
 
-module Description : sig
+module InternalDescription : sig
+  include Pool_common.Model.StringSig
+end
+
+module PublicDescription : sig
   include Pool_common.Model.StringSig
 end
 
@@ -62,7 +66,8 @@ type t =
   { id : Id.t
   ; title : Title.t
   ; public_title : PublicTitle.t
-  ; description : Description.t option
+  ; internal_description : InternalDescription.t option
+  ; public_description : PublicDescription.t option
   ; language : Pool_common.Language.t option
   ; cost_center : CostCenter.t option
   ; organisational_unit : Organisational_unit.t option
@@ -92,7 +97,8 @@ val create
   :  ?id:Id.t
   -> ?contact_person_id:Admin.Id.t
   -> ?cost_center:CostCenter.t
-  -> ?description:Description.t
+  -> ?internal_description:InternalDescription.t
+  -> ?public_description:PublicDescription.t
   -> ?language:Pool_common.Language.t
   -> ?email_session_reminder_lead_time:Pool_common.Reminder.EmailLeadTime.t
   -> ?experiment_type:Pool_common.ExperimentType.t
@@ -114,7 +120,8 @@ val create
 type create =
   { title : Title.t
   ; public_title : PublicTitle.t
-  ; description : Description.t option
+  ; internal_description : InternalDescription.t option
+  ; public_description : PublicDescription.t option
   ; language : Pool_common.Language.t option
   ; cost_center : CostCenter.t option
   ; direct_registration_disabled : DirectRegistrationDisabled.t
@@ -138,7 +145,7 @@ module Public : sig
   type t =
     { id : Id.t
     ; public_title : PublicTitle.t
-    ; description : Description.t option
+    ; description : PublicDescription.t option
     ; language : Pool_common.Language.t option
     ; direct_registration_disabled : DirectRegistrationDisabled.t
     ; experiment_type : Pool_common.ExperimentType.t option

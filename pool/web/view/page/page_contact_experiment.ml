@@ -92,7 +92,7 @@ let index
       [ experiment_title experiment
       ; experiment.description
         |> CCOption.map_or ~default:(txt "") (fun desc ->
-          div [ txt (Description.value desc) ])
+          div [ txt (PublicDescription.value desc) ])
       ]
   in
   let experiment_html =
@@ -144,7 +144,7 @@ let index
             [ experiment_title exp
             ; exp.Public.description
               |> CCOption.map_or ~default:(txt "") (fun desc ->
-                Description.value desc |> txt |> CCList.return |> div)
+                PublicDescription.value desc |> txt |> CCList.return |> div)
             ]
         ; session_table
         ]
@@ -309,7 +309,7 @@ let show
         ~a:[ a_class [ "stack" ] ]
         [ experiment.Public.description
           |> CCOption.map_or ~default:(txt "") (fun desc ->
-            p [ desc |> Description.value |> HttpUtils.add_line_breaks ])
+            p [ desc |> PublicDescription.value |> HttpUtils.add_line_breaks ])
         ; html
         ]
     ]
