@@ -241,7 +241,6 @@ let reset_to_default_htmx req =
       then `Update template
       else `Create template
     in
-    (* TODO: flash_fetcher *)
     Page.Admin.MessageTemplate.template_inputs
       ~entity
       ?languages
