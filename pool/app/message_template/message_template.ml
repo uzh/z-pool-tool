@@ -204,12 +204,17 @@ let session_params
   let duration =
     duration |> Duration.value |> Pool_common.Utils.Time.formatted_timespan
   in
+  let description =
+    session.public_description
+    |> CCOption.map_or ~default:"" PublicDescription.value
+  in
   let session_params =
     [ "sessionId", session_id
     ; "sessionStart", start
     ; "sessionDateTime", Session.start_end_to_human session
     ; "sessionDuration", duration
     ; "sessionOverview", session_overview
+    ; "sessionPublicDescription", description
     ]
   in
   match prefix with
