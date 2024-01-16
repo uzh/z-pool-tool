@@ -21,10 +21,17 @@ module PublicTitle = struct
   let placeholder = "###"
 end
 
-module Description = struct
+module InternalDescription = struct
   include Pool_common.Model.String
 
-  let field = Common.Message.Field.Description
+  let field = Common.Message.Field.InternalDescription
+  let schema () = schema field ()
+end
+
+module PublicDescription = struct
+  include Pool_common.Model.String
+
+  let field = Common.Message.Field.PublicDescription
   let schema () = schema field ()
 end
 
@@ -77,7 +84,8 @@ type t =
   { id : Id.t
   ; title : Title.t
   ; public_title : PublicTitle.t
-  ; description : Description.t option
+  ; internal_description : InternalDescription.t option
+  ; public_description : PublicDescription.t option
   ; language : Pool_common.Language.t option
   ; cost_center : CostCenter.t option
   ; organisational_unit : Organisational_unit.t option
@@ -104,7 +112,8 @@ let create
   ?id
   ?contact_person_id
   ?cost_center
-  ?description
+  ?internal_description
+  ?public_description
   ?language
   ?email_session_reminder_lead_time
   ?experiment_type
@@ -126,7 +135,8 @@ let create
     { id = id |> CCOption.value ~default:(Id.create ())
     ; title
     ; public_title
-    ; description
+    ; internal_description
+    ; public_description
     ; language
     ; cost_center
     ; organisational_unit
@@ -177,7 +187,7 @@ module Public = struct
   type t =
     { id : Id.t
     ; public_title : PublicTitle.t
-    ; description : Description.t option
+    ; description : PublicDescription.t option
     ; language : Pool_common.Language.t option
     ; direct_registration_disabled : DirectRegistrationDisabled.t
     ; experiment_type : Pool_common.ExperimentType.t option
@@ -189,7 +199,7 @@ end
 let to_public
   { id
   ; public_title
-  ; description
+  ; public_description
   ; language
   ; direct_registration_disabled
   ; experiment_type
@@ -200,7 +210,7 @@ let to_public
   Public.
     { id
     ; public_title
-    ; description
+    ; description = public_description
     ; language
     ; direct_registration_disabled
     ; experiment_type

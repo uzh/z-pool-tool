@@ -25,7 +25,8 @@ module Data = struct
 
   let title = "New experiment"
   let public_title = "public_experiment_title"
-  let description = "Description"
+  let internal_description = "Internal Description"
+  let public_description = "Public Description"
   let language = Pool_common.Language.En
   let cost_center = "cost_center"
   let direct_registration_disabled = "false"
@@ -39,7 +40,8 @@ module Data = struct
     Pool_common.Message.
       [ Field.(show Title), [ title ]
       ; Field.(show PublicTitle), [ public_title ]
-      ; Field.(show Description), [ description ]
+      ; Field.(show InternalDescription), [ internal_description ]
+      ; Field.(show PublicDescription), [ public_description ]
       ; Field.(show Language), [ Pool_common.Language.show language ]
       ; Field.(show CostCenter), [ cost_center ]
       ; ( Field.(show DirectRegistrationDisabled)
@@ -94,10 +96,14 @@ module Data = struct
     let to_bool = Utils.Bool.of_string in
     let* title = title |> Title.create in
     let* public_title = public_title |> PublicTitle.create in
-    let* description = description |> Description.create in
+    let* internal_description =
+      internal_description |> InternalDescription.create
+    in
+    let* public_description = public_description |> PublicDescription.create in
     Experiment.create
       ~cost_center:(cost_center |> CostCenter.of_string)
-      ~description
+      ~internal_description
+      ~public_description
       ~language
       ~experiment_type:(experiment_type |> Pool_common.ExperimentType.read)
       ?filter
@@ -136,7 +142,7 @@ let create_without_title () =
     Pool_common.Message.Field.
       [ Title |> show, [ "" ]
       ; PublicTitle |> show, [ "public_title" ]
-      ; Description |> show, [ Data.description ]
+      ; InternalDescription |> show, [ Data.internal_description ]
       ]
     |> Http_utils.format_request_boolean_values experiment_boolean_fields
     |> ExperimentCommand.Create.decode

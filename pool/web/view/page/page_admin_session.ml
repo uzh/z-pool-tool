@@ -326,17 +326,19 @@ let session_form
         ; reschedule_hint ()
         ; textarea_element
             language
-            Message.Field.Description
+            Message.Field.InternalDescription
             ~value:
               (value (fun s ->
-                 s.description |> CCOption.map_or ~default:"" Description.value))
+                 s.internal_description
+                 |> CCOption.map_or ~default:"" InternalDescription.value))
             ~flash_fetcher
         ; textarea_element
             language
-            Message.Field.Limitations
+            Message.Field.PublicDescription
             ~value:
               (value (fun s ->
-                 s.limitations |> CCOption.map_or ~default:"" Limitations.value))
+                 s.public_description
+                 |> CCOption.map_or ~default:"" PublicDescription.value))
             ~flash_fetcher
         ; location_select
             language
@@ -765,11 +767,17 @@ let detail
             |> Duration.value
             |> Utils.Time.formatted_timespan
             |> txt )
-        ; ( Field.Description
-          , CCOption.map_or ~default:"" Description.value session.description
+        ; ( Field.InternalDescription
+          , CCOption.map_or
+              ~default:""
+              InternalDescription.value
+              session.internal_description
             |> Http_utils.add_line_breaks )
-        ; ( Field.Limitations
-          , CCOption.map_or ~default:"" Limitations.value session.limitations
+        ; ( Field.PublicDescription
+          , CCOption.map_or
+              ~default:""
+              PublicDescription.value
+              session.public_description
             |> Http_utils.add_line_breaks )
         ; ( Field.Location
           , Component.Partials.location_to_html

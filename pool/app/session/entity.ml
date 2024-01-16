@@ -4,17 +4,17 @@ module Id = struct
   let to_common m = m
 end
 
-module Description = struct
+module InternalDescription = struct
   include Pool_common.Model.String
 
-  let field = Pool_common.Message.Field.Description
+  let field = Pool_common.Message.Field.InternalDescription
   let schema () = schema field ()
 end
 
-module Limitations = struct
+module PublicDescription = struct
   include Pool_common.Model.String
 
-  let field = Pool_common.Message.Field.Limitations
+  let field = Pool_common.Message.Field.PublicDescription
   let schema () = schema field ()
 end
 
@@ -143,8 +143,8 @@ type t =
   ; has_follow_ups : bool
   ; start : Start.t
   ; duration : Ptime.Span.t
-  ; description : Description.t option
-  ; limitations : Limitations.t option
+  ; internal_description : InternalDescription.t option
+  ; public_description : PublicDescription.t option
   ; location : Pool_location.t
   ; max_participants : ParticipantAmount.t
   ; min_participants : ParticipantAmount.t
@@ -177,11 +177,11 @@ type t =
 
 let create
   ?id
-  ?description
+  ?internal_description
+  ?public_description
   ?email_reminder_lead_time
   ?follow_up_to
   ?(has_follow_ups = false)
-  ?limitations
   ?text_message_reminder_lead_time
   start
   duration
@@ -195,8 +195,8 @@ let create
   ; has_follow_ups
   ; start
   ; duration
-  ; description
-  ; limitations
+  ; internal_description
+  ; public_description
   ; location
   ; max_participants
   ; min_participants
@@ -293,7 +293,7 @@ module Public = struct
     ; follow_up_to : Id.t option
     ; start : Start.t
     ; duration : Ptime.Span.t
-    ; description : Description.t option
+    ; description : PublicDescription.t option
     ; location : Pool_location.t
     ; max_participants : ParticipantAmount.t
     ; min_participants : ParticipantAmount.t
@@ -394,7 +394,7 @@ let to_public
    ; follow_up_to
    ; start
    ; duration
-   ; description
+   ; public_description
    ; location
    ; max_participants
    ; min_participants
@@ -410,7 +410,7 @@ let to_public
     ; follow_up_to
     ; start
     ; duration
-    ; description
+    ; description = public_description
     ; location
     ; max_participants
     ; min_participants
@@ -482,7 +482,7 @@ module Calendar = struct
     ; min_participants : ParticipantAmount.t
     ; overbook : ParticipantAmount.t
     ; assignment_count : AssignmentCount.t
-    ; description : Description.t option [@option]
+    ; internal_description : InternalDescription.t option [@option]
     ; location : location
     ; contact_person : contact_person option [@option]
     }

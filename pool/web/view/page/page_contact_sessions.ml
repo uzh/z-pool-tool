@@ -84,7 +84,10 @@ let public_detail language =
         |> Time.formatted_timespan
         |> txt )
     ; ( Field.Description
-      , CCOption.map_or ~default:"" Description.value session.Public.description
+      , CCOption.map_or
+          ~default:""
+          PublicDescription.value
+          session.Public.description
         |> txt )
     ; ( Field.Location
       , session.Session.Public.location

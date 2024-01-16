@@ -178,7 +178,7 @@ module Model = struct
         { id = Experiment.Id.create ()
         ; public_title = PublicTitle.create "public_title" |> get_or_failwith
         ; description =
-            Description.create "A description for everyone"
+            PublicDescription.create "A description for everyone"
             |> get_or_failwith
             |> CCOption.return
         ; language = None
@@ -208,13 +208,13 @@ module Model = struct
     let open Experiment in
     let title = Title.create title |> get_or_failwith in
     let public_title = PublicTitle.create "public_title" |> get_or_failwith in
-    let description =
-      Description.create "A description for everyone" |> get_or_failwith
+    let internal_description =
+      InternalDescription.create "A description for everyone" |> get_or_failwith
     in
     create
       ~id
       ~cost_center:("F-00000-11-22" |> CostCenter.of_string)
-      ~description
+      ~internal_description
       ~experiment_type:Pool_common.ExperimentType.Lab
       ?filter
       ?email_session_reminder_lead_time
@@ -238,7 +238,7 @@ module Model = struct
       Public.
         { id = experiment.id
         ; public_title = experiment.public_title
-        ; description = experiment.description
+        ; description = experiment.public_description
         ; language = experiment.language
         ; direct_registration_disabled = experiment.direct_registration_disabled
         ; experiment_type = experiment.experiment_type
@@ -359,7 +359,7 @@ module Model = struct
           ; follow_up_to
           ; start
           ; duration
-          ; description
+          ; public_description
           ; location
           ; max_participants
           ; min_participants
@@ -376,7 +376,7 @@ module Model = struct
       ; follow_up_to
       ; start
       ; duration
-      ; description
+      ; description = public_description
       ; location
       ; max_participants
       ; min_participants
@@ -391,7 +391,7 @@ module Model = struct
     ; follow_up_to
     ; start
     ; duration
-    ; description
+    ; public_description
     ; location
     ; max_participants
     ; min_participants
@@ -406,7 +406,7 @@ module Model = struct
       ; follow_up_to
       ; start
       ; duration
-      ; description
+      ; description = public_description
       ; location
       ; max_participants
       ; min_participants

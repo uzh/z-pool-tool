@@ -234,7 +234,7 @@ let () =
             "create experiment without title"
             `Quick
             Experiment_test.create_without_title
-        ; test_case "upate experiment" `Quick Experiment_test.update
+        ; test_case "update experiment" `Quick Experiment_test.update
         ; test_case
             "add ou and contact person"
             `Quick

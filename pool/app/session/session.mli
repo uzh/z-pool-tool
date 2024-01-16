@@ -4,11 +4,11 @@ module Id : sig
   val to_common : t -> Pool_common.Id.t
 end
 
-module Description : sig
+module InternalDescription : sig
   include Pool_common.Model.StringSig
 end
 
-module Limitations : sig
+module PublicDescription : sig
   include Pool_common.Model.StringSig
 end
 
@@ -42,8 +42,8 @@ type base =
   { start : Start.t
   ; duration : int
   ; duration_unit : Pool_common.Model.TimeUnit.t
-  ; description : Description.t option
-  ; limitations : Limitations.t option
+  ; internal_description : InternalDescription.t option
+  ; public_description : PublicDescription.t option
   ; max_participants : ParticipantAmount.t
   ; min_participants : ParticipantAmount.t
   ; overbook : ParticipantAmount.t
@@ -99,8 +99,8 @@ type t =
   ; has_follow_ups : bool
   ; start : Start.t
   ; duration : Duration.t
-  ; description : Description.t option
-  ; limitations : Limitations.t option
+  ; internal_description : InternalDescription.t option
+  ; public_description : PublicDescription.t option
   ; location : Pool_location.t
   ; max_participants : ParticipantAmount.t
   ; min_participants : ParticipantAmount.t
@@ -122,11 +122,11 @@ type t =
 
 val create
   :  ?id:Id.t
-  -> ?description:Description.t
+  -> ?internal_description:InternalDescription.t
+  -> ?public_description:PublicDescription.t
   -> ?email_reminder_lead_time:Pool_common.Reminder.EmailLeadTime.t
   -> ?follow_up_to:Id.t
   -> ?has_follow_ups:bool
-  -> ?limitations:Limitations.t
   -> ?text_message_reminder_lead_time:Pool_common.Reminder.TextMessageLeadTime.t
   -> Start.t
   -> Duration.t
@@ -166,7 +166,7 @@ module Public : sig
     ; follow_up_to : Id.t option
     ; start : Start.t
     ; duration : Duration.t
-    ; description : Description.t option
+    ; description : PublicDescription.t option
     ; location : Pool_location.t
     ; max_participants : ParticipantAmount.t
     ; min_participants : ParticipantAmount.t
@@ -228,7 +228,7 @@ module Calendar : sig
     ; min_participants : ParticipantAmount.t
     ; overbook : ParticipantAmount.t
     ; assignment_count : AssignmentCount.t
-    ; description : Description.t option
+    ; internal_description : InternalDescription.t option
     ; location : location
     ; contact_person : contact_person option
     }

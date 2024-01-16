@@ -3,7 +3,8 @@ open Entity
 type create =
   { title : Title.t
   ; public_title : PublicTitle.t
-  ; description : Description.t option
+  ; internal_description : InternalDescription.t option
+  ; public_description : PublicDescription.t option
   ; language : Pool_common.Language.t option
   ; cost_center : CostCenter.t option
   ; direct_registration_disabled : DirectRegistrationDisabled.t

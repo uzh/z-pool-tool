@@ -15,8 +15,8 @@ let command
   start
   duration
   duration_unit
-  description
-  limitations
+  internal_description
+  public_description
   max_participants
   min_participants
   overbook
@@ -30,8 +30,8 @@ let command
     { start
     ; duration
     ; duration_unit
-    ; description
-    ; limitations
+    ; internal_description
+    ; public_description
     ; max_participants
     ; min_participants
     ; overbook
@@ -50,8 +50,8 @@ let schema =
         [ Session.Start.schema ()
         ; Session.Duration.integer_schema ()
         ; TimeUnit.named_schema Session.Duration.name ()
-        ; Conformist.optional @@ Session.Description.schema ()
-        ; Conformist.optional @@ Session.Limitations.schema ()
+        ; Conformist.optional @@ Session.InternalDescription.schema ()
+        ; Conformist.optional @@ Session.PublicDescription.schema ()
         ; Session.ParticipantAmount.schema Message.Field.MaxParticipants
         ; Session.ParticipantAmount.schema Message.Field.MinParticipants
         ; Session.ParticipantAmount.schema Message.Field.Overbook
@@ -151,8 +151,8 @@ end = struct
     location
     (Session.
        { start
-       ; description
-       ; limitations
+       ; internal_description
+       ; public_description
        ; max_participants
        ; min_participants
        ; overbook
@@ -177,10 +177,10 @@ end = struct
     let session =
       Session.create
         ?id:session_id
-        ?description
+        ?internal_description
+        ?public_description
         ?email_reminder_lead_time
         ?follow_up_to:(parent_session |> CCOption.map (fun s -> s.Session.id))
-        ?limitations
         ?text_message_reminder_lead_time
         start
         duration
@@ -228,8 +228,8 @@ end = struct
     location
     (Session.
        { start
-       ; description
-       ; limitations
+       ; internal_description
+       ; public_description
        ; max_participants
        ; min_participants
        ; overbook
@@ -267,9 +267,9 @@ end = struct
         { session with
           start
         ; duration
-        ; limitations
+        ; internal_description
+        ; public_description
         ; location
-        ; description
         ; max_participants
         ; min_participants
         ; overbook
