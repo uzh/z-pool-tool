@@ -92,7 +92,7 @@ let index
       [ experiment_title experiment
       ; experiment.description
         |> CCOption.map_or ~default:(txt "") (fun desc ->
-          div [ txt (PublicDescription.value desc) ])
+          div [ HttpUtils.add_line_breaks (PublicDescription.value desc) ])
       ]
   in
   let experiment_html =
