@@ -211,7 +211,7 @@ let session_params
   let session_params =
     [ "sessionId", session_id
     ; "sessionStart", start
-    ; "sessionDateTime", Session.start_end_to_human session
+    ; "sessionDateTime", Session.start_end_with_duration_human session
     ; "sessionDuration", duration
     ; "sessionOverview", session_overview
     ; "sessionPublicDescription", description

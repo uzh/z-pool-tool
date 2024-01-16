@@ -64,7 +64,7 @@ let timespan_to_minutes timespan =
     timespan / 60 |> CCInt.to_string)
 ;;
 
-let format_datetime_with_span start duration =
+let format_start_end start duration =
   let end_time =
     Ptime.add_span start duration |> CCOption.get_exn_or "end time not in range"
   in
@@ -74,9 +74,15 @@ let format_datetime_with_span start duration =
     else formatted_date_time
   in
   Format.asprintf
-    "%s - %s (%s)"
+    "%s - %s"
     (formatted_date_time start)
     (format_end_date end_time)
+;;
+
+let format_start_end_with_duration start duration =
+  Format.asprintf
+    "%s (%s)"
+    (format_start_end start duration)
     (formatted_timespan duration)
 ;;
 

@@ -49,7 +49,7 @@ let session_item layout language (experiment : Experiment.Public.t) session =
           ; br ()
           ]
         else [])
-       @ [ txt (Session.Public.start_end_to_human session) ])
+       @ [ txt (Session.Public.start_end_with_duration_human session) ])
   ; session.Public.location |> Component.Location.preview
   ]
   |> fun cells ->

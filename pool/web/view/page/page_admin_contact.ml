@@ -146,7 +146,7 @@ let assign_contact_experiment_modal
         ]
   in
   let session_select =
-    let label = Session.start_end_to_human in
+    let label = Session.start_end_with_duration_human in
     let follow_up_row session = div [ txt (label session) ] in
     let row (session, follow_ups) =
       let tooltip, attribs =

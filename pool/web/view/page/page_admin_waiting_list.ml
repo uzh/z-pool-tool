@@ -73,7 +73,7 @@ let session_row language chronological session =
   in
   let key_figures = Page_admin_session.Partials.session_key_figures session in
   let title =
-    let date = span [ txt (session |> start_end_to_human) ] in
+    let date = span [ txt (session |> start_end_with_duration_human) ] in
     match is_followup, chronological with
     | false, true | false, false -> date
     | true, true ->

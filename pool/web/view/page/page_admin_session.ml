@@ -72,7 +72,7 @@ module Partials = struct
   ;;
 
   let session_row_title language chronological session =
-    let date = span [ txt (session |> start_end_to_human) ] in
+    let date = span [ txt (session |> start_end_with_duration_human) ] in
     match CCOption.is_some session.follow_up_to, chronological with
     | false, true | false, false -> date
     | true, true ->
@@ -764,11 +764,7 @@ let detail
       in
       let rows =
         let amount amt = amt |> ParticipantAmount.value |> string_of_int in
-        [ ( Field.Start
-          , session.start
-            |> Start.value
-            |> Utils.Time.formatted_date_time
-            |> txt )
+        [ Field.Start, session |> Session.start_end_human |> txt
         ; ( Field.Duration
           , session.duration
             |> Duration.value

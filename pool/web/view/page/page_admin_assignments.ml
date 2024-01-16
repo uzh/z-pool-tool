@@ -208,7 +208,7 @@ module Partials = struct
     in
     let option_formatter m =
       let open Session in
-      let str = start_end_to_human m in
+      let str = start_end_with_duration_human m in
       match m.follow_up_to with
       | Some _ -> Unsafe.data (Format.asprintf "&nbsp;&nbsp;&nbsp;%s" str)
       | None -> txt str
@@ -958,7 +958,7 @@ let edit
                 Utils.field_to_string language Message.Field.Session
                 |> CCString.capitalize_ascii)
           ]
-      ; p [ session |> Session.start_end_to_human |> txt ]
+      ; p [ session |> Session.start_end_with_duration_human |> txt ]
       ; Component.Location.preview session.location
       ]
   in
