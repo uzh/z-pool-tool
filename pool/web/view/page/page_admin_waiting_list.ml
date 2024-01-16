@@ -5,7 +5,12 @@ module Table = Component.Table
 module Message = Pool_common.Message
 module DataTable = Component.DataTable
 
-let list { Pool_context.language; _ } experiment (waiting_list_entries, query) =
+let list
+  { Pool_context.language; _ }
+  ~access_contact_profiles
+  experiment
+  (waiting_list_entries, query)
+  =
   let open Pool_user in
   let url =
     experiment.Experiment.id
@@ -39,7 +44,9 @@ let list { Pool_context.language; _ } experiment (waiting_list_entries, query) =
       Waiting_list.t)
     =
     let open Waiting_list in
-    [ txt (Contact.user_lastname_firstname contact)
+    [ Page_admin_contact.contact_lastname_firstname
+        access_contact_profiles
+        contact
     ; txt (Contact.email_address contact |> EmailAddress.value)
     ; txt
         (contact.Contact.cell_phone
@@ -294,8 +301,8 @@ let detail
   |> Layout.Experiment.(create context (NavLink I18n.WaitingList) experiment)
 ;;
 
-let index context experiment waiting_list =
-  list context experiment waiting_list
+let index ~access_contact_profiles context experiment waiting_list =
+  list ~access_contact_profiles context experiment waiting_list
   |> CCList.return
   |> Layout.Experiment.(
        create

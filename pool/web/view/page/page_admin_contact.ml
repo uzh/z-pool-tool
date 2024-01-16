@@ -11,6 +11,13 @@ let path =
   Contact.id %> Pool_common.Id.value %> Format.asprintf "/admin/contacts/%s"
 ;;
 
+let contact_lastname_firstname access_contact_profiles contact =
+  let text = contact |> Contact.lastname_firstname |> txt in
+  match access_contact_profiles with
+  | true -> a ~a:[ a_href (path contact |> Sihl.Web.externalize_path) ] [ text ]
+  | false -> text
+;;
+
 let enroll_contact_modal_id = "enroll-modal"
 
 let enroll_contact_path ?suffix contact_id =

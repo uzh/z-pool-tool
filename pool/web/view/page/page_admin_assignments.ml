@@ -76,10 +76,6 @@ module Partials = struct
     contact |> Contact.lastname |> Pool_user.Lastname.value |> txt
   ;;
 
-  let contact_lastname_firstname ({ Assignment.contact; _ } : Assignment.t) =
-    contact |> Contact.lastname_firstname |> txt
-  ;;
-
   let contact_email ({ Assignment.contact; _ } : Assignment.t) =
     contact |> Contact.email_address |> Pool_user.EmailAddress.value |> txt
   ;;
@@ -639,7 +635,12 @@ let data_table
       language
   in
   let conditional_left_columns =
-    [ view_contact_name, Pool_user.column_name, contact_lastname_firstname
+    [ ( view_contact_name
+      , Pool_user.column_name
+      , fun { contact; _ } ->
+          Page_admin_contact.contact_lastname_firstname
+            access_contact_profiles
+            contact )
     ; view_contact_info, Pool_user.column_email, contact_email
     ; view_contact_info, Contact.column_cell_phone, contact_cellphone
     ]
