@@ -3,7 +3,7 @@ let rename_experiment_description =
     ~label:"rename experiment description"
     {sql|
       ALTER TABLE pool_experiments
-        RENAME COLUMN description TO public_description
+        RENAME COLUMN description TO internal_description
     |sql}
 ;;
 
@@ -12,7 +12,7 @@ let add_internal_experiment_description =
     ~label:"add internal experiment description"
     {sql|
       ALTER TABLE pool_experiments
-        ADD COLUMN internal_description text AFTER public_title
+        ADD COLUMN public_description text AFTER internal_description
     |sql}
 ;;
 
