@@ -72,7 +72,7 @@ module Partials = struct
   ;;
 
   let session_row_title language chronological session =
-    let date = span [ txt (session |> session_date_to_human) ] in
+    let date = span [ txt (session |> start_end_to_human) ] in
     match CCOption.is_some session.follow_up_to, chronological with
     | false, true | false, false -> date
     | true, true ->
@@ -489,7 +489,7 @@ let data_table
       link_as_button
         ~style:`Success
         ~icon:Icon.Add
-        ~classnames:[ "small" ]
+        ~classnames:[ "small"; "nobr" ]
         ~control:(language, Message.(Add (Some Field.Session)))
         (Format.asprintf "%s/create" session_index_path)
     in
@@ -501,7 +501,7 @@ let data_table
     ; `custom create_session
     ]
   in
-  let th_class = [ "w-2"; "w-2"; "w-2"; "w-2"; "w-2"; "w-2" ] in
+  let th_class = [ "w-3"; "w-2"; "w-2"; "w-2"; "w-2"; "w-1" ] in
   let row
     ({ Session.assignment_count
      ; no_show_count
