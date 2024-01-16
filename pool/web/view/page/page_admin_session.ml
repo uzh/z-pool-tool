@@ -32,6 +32,13 @@ let session_path experiment_id session_id =
     Session.(session_id |> Id.value)
 ;;
 
+let some_session_is_followup sessions =
+  sessions
+  |> CCList.find_opt (fun { Session.follow_up_to; _ } ->
+    CCOption.is_some follow_up_to)
+  |> CCOption.is_some
+;;
+
 module Partials = struct
   open Session
 
@@ -581,7 +588,9 @@ let index
       script (Unsafe.data js)
   in
   let chronological_toggle =
-    Partials.chronological_toggle language chronological
+    if sessions |> fst |> some_session_is_followup
+    then Partials.chronological_toggle language chronological
+    else txt ""
   in
   div
     ~a:[ a_class [ "stack" ] ]

@@ -146,9 +146,19 @@ let session_list language chronological sessions =
         parent :: follow_ups)
       sessions
   in
+  let chronological_toggle =
+    let open Page_admin_session in
+    if sessions
+       |> CCList.fold_left
+            (fun acc (session, followups) -> acc @ (session :: followups))
+            []
+       |> some_session_is_followup
+    then Page_admin_session.Partials.chronological_toggle language chronological
+    else txt ""
+  in
   div
     ~a:[ a_class [ "stack" ] ]
-    [ Page_admin_session.Partials.chronological_toggle language chronological
+    [ chronological_toggle
     ; table
         ~a:
           [ a_class
