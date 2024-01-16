@@ -92,7 +92,7 @@ let index
       [ experiment_title experiment
       ; experiment.description
         |> CCOption.map_or ~default:(txt "") (fun desc ->
-          div [ HttpUtils.add_line_breaks (PublicDescription.value desc) ])
+          p [ desc |> PublicDescription.value |> HttpUtils.add_line_breaks ])
       ]
   in
   let experiment_html =
@@ -144,8 +144,9 @@ let index
             [ experiment_title exp
             ; exp.Public.description
               |> CCOption.map_or ~default:(txt "") (fun desc ->
-                PublicDescription.value desc
-                |> Utils.Html.handle_line_breaks div)
+                p
+                  [ desc |> PublicDescription.value |> HttpUtils.add_line_breaks
+                  ])
             ]
         ; session_table
         ]
