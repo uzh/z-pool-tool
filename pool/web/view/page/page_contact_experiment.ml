@@ -144,7 +144,8 @@ let index
             [ experiment_title exp
             ; exp.Public.description
               |> CCOption.map_or ~default:(txt "") (fun desc ->
-                PublicDescription.value desc |> txt |> CCList.return |> div)
+                PublicDescription.value desc
+                |> Utils.Html.handle_line_breaks div)
             ]
         ; session_table
         ]
