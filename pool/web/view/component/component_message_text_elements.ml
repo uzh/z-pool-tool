@@ -115,6 +115,7 @@ module DummyData = struct
   ;;
 
   let create_session () =
+    let get_or_failwith = Pool_common.Utils.get_or_failwith in
     Session.
       { id = Session.Id.create ()
       ; follow_up_to = None
@@ -123,22 +124,20 @@ module DummyData = struct
           Ptime.add_span (Ptime_clock.now ()) hour
           |> CCOption.get_exn_or "Invalid start"
           |> Start.create
-      ; duration = Duration.create hour |> Pool_common.Utils.get_or_failwith
-      ; internal_description = None
-      ; public_description = None
+      ; duration = Duration.create hour |> get_or_failwith
+      ; internal_description =
+          "Internal description"
+          |> InternalDescription.of_string
+          |> CCOption.return
+      ; public_description =
+          "Public description" |> PublicDescription.of_string |> CCOption.return
       ; location
-      ; max_participants =
-          ParticipantAmount.create 30 |> Pool_common.Utils.get_or_failwith
-      ; min_participants =
-          ParticipantAmount.create 1 |> Pool_common.Utils.get_or_failwith
-      ; overbook =
-          ParticipantAmount.create 4 |> Pool_common.Utils.get_or_failwith
-      ; assignment_count =
-          0 |> AssignmentCount.create |> Pool_common.Utils.get_or_failwith
-      ; no_show_count =
-          0 |> NoShowCount.create |> Pool_common.Utils.get_or_failwith
-      ; participant_count =
-          0 |> ParticipantCount.create |> Pool_common.Utils.get_or_failwith
+      ; max_participants = ParticipantAmount.create 30 |> get_or_failwith
+      ; min_participants = ParticipantAmount.create 1 |> get_or_failwith
+      ; overbook = ParticipantAmount.create 4 |> get_or_failwith
+      ; assignment_count = 0 |> AssignmentCount.create |> get_or_failwith
+      ; no_show_count = 0 |> NoShowCount.create |> get_or_failwith
+      ; participant_count = 0 |> ParticipantCount.create |> get_or_failwith
       ; email_reminder_lead_time = None
       ; email_reminder_sent_at = None
       ; text_message_reminder_lead_time = None
