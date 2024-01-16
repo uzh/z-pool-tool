@@ -23,6 +23,7 @@ let follow_up_icon language =
 ;;
 
 let key_figures_head = "Min / Max (Overbook)"
+let int_to_txt i = i |> CCInt.to_string |> txt
 
 let session_path experiment_id session_id =
   Format.asprintf
@@ -495,17 +496,27 @@ let data_table
   in
   let th_class = [ "w-2"; "w-2"; "w-2"; "w-2"; "w-2"; "w-2" ] in
   let row
-    ({ Session.assignment_count; no_show_count; participant_count; _ } as
-     session :
+    ({ Session.assignment_count
+     ; no_show_count
+     ; participant_count
+     ; closed_at
+     ; _
+     } as session :
       Session.t)
     =
     let open Partials in
     let row_attrs = Partials.row_attrs session in
-    let int_to_string i = i |> CCInt.to_string |> txt in
+    let no_show_count, participant_count =
+      match CCOption.is_some closed_at with
+      | true ->
+        ( no_show_count |> NoShowCount.value |> int_to_txt
+        , participant_count |> ParticipantCount.value |> int_to_txt )
+      | false -> txt "", txt ""
+    in
     [ session_row_title language chronological session
-    ; assignment_count |> AssignmentCount.value |> int_to_string
-    ; no_show_count |> NoShowCount.value |> int_to_string
-    ; participant_count |> ParticipantCount.value |> int_to_string
+    ; assignment_count |> AssignmentCount.value |> int_to_txt
+    ; no_show_count
+    ; participant_count
     ; Partials.session_key_figures session |> txt
     ; Partials.button_dropdown context experiment.Experiment.id session
     ]
@@ -731,32 +742,16 @@ let detail
                 ] ))
           session.follow_up_to
       in
-      let counters =
-        let length lst = lst |> CCList.length |> CCInt.to_string |> txt in
-        let open Assignment in
-        let assignment_count =
-          ( Field.AssignmentCount
-          , session.assignment_count
-            |> AssignmentCount.value
-            |> CCInt.to_string
-            |> txt )
-        in
-        match session.Session.closed_at with
-        | None -> [ assignment_count ]
-        | Some (_ : Ptime.t) ->
-          assignment_count
-          :: [ ( Field.NoShowCount
-               , assignments
-                 |> CCList.filter (fun { no_show; _ } ->
-                   no_show |> CCOption.map_or ~default:false NoShow.value)
-                 |> length )
-             ; ( Field.Participated
-               , assignments
-                 |> CCList.filter (fun { participated; _ } ->
-                   participated
-                   |> CCOption.map_or ~default:false Participated.value)
-                 |> length )
-             ]
+      let no_show_count, participant_count =
+        (fun (no_show_count, participant_count) ->
+          ( (Field.NoShowCount, no_show_count)
+          , (Field.Participated, participant_count) ))
+        @@
+        match CCOption.is_some session.closed_at with
+        | true ->
+          ( session.no_show_count |> NoShowCount.value |> int_to_txt
+          , session.participant_count |> ParticipantCount.value |> int_to_txt )
+        | false -> txt "", txt ""
       in
       let rows =
         let amount amt = amt |> ParticipantAmount.value |> string_of_int in
@@ -789,6 +784,10 @@ let detail
         ; Field.MaxParticipants, amount session.max_participants |> txt
         ; Field.MinParticipants, amount session.min_participants |> txt
         ; Field.Overbook, amount session.overbook |> txt
+        ; ( Field.AssignmentCount
+          , session.assignment_count |> AssignmentCount.value |> int_to_txt )
+        ; no_show_count
+        ; participant_count
         ]
         |> fun rows ->
         let canceled =
@@ -808,10 +807,7 @@ let detail
             , format session.text_message_reminder_sent_at )
           ]
         in
-        rows
-        @ counters
-        @ time_stamps
-        @ ([ canceled; closed ] |> CCList.filter_map CCFun.id)
+        rows @ time_stamps @ ([ canceled; closed ] |> CCList.filter_map CCFun.id)
       in
       Table.vertical_table `Striped language ~align_top:true
       @@ CCOption.map_or ~default:rows (CCList.cons' rows) parent
