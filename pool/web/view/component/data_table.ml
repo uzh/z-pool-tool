@@ -395,9 +395,6 @@ let make
     | None, Some filter -> Some filter
     | None, None -> None
   in
-  (* let filter_block = filter_parts |> CCOption.map_or ~default:(txt "") (fun
-     parts -> div ~a:[ a_class [ "border"; "inset" ] ] [ div ~a:[ a_class [
-     "grid-col-4" ] ] parts ; resetbar data_table.language ]) in *)
   let filter_block =
     filter_parts
     |> CCOption.map_or ~default:(txt "") (fun parts ->
