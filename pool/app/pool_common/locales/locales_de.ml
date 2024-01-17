@@ -100,6 +100,8 @@ let rec field_to_string =
   | GtxApiKey -> "GTX Api Key"
   | HideCanceled -> "Abgesagte ausblenden"
   | HideClosed -> "Geschlossene ausblenden"
+  | HidePaused -> "Pausierte ausblenden"
+  | HideUnverified -> "Unverifizierte ausblenden"
   | Hint -> "Hint"
   | Host -> "Host"
   | I18n -> "Übersetzung"

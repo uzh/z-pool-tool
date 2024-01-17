@@ -212,7 +212,29 @@ let column_cell_phone =
   |> Query.Column.create
 ;;
 
-let filterable_by = None
+let column_hide_paused =
+  Query.Column.create
+    (Pool_common.Message.Field.HidePaused, "pool_contacts.paused")
+;;
+
+let column_hide_unverified =
+  Query.Column.create
+    (Pool_common.Message.Field.HideUnverified, "pool_contacts.email_verified")
+;;
+
+let filterable_by =
+  Some
+    Query.Filter.Condition.Human.
+      [ HideNone column_hide_unverified; HideBool column_hide_paused ]
+;;
+
+let default_filter =
+  let open Query.Filter in
+  [ Condition.(HideSome (column_hide_unverified, false))
+  ; Condition.(HideBool (column_hide_paused, false))
+  ]
+;;
+
 let searchable_by = Pool_user.searchable_by
 let sortable_by = Pool_user.sortable_by
 let default_sort = Pool_user.default_sort

@@ -31,6 +31,9 @@ let from_request
       | Human.HideBool col ->
         let value = find_column col in
         value >>= Utils.Bool.of_string_opt >|= hidebool col
+      | Human.HideNone col ->
+        let value = find_column col in
+        value >>= Utils.Bool.of_string_opt >|= hidenone col
       | Human.HideSome col ->
         let value = find_column col in
         value >>= Utils.Bool.of_string_opt >|= hidesome col

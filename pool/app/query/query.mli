@@ -80,6 +80,7 @@ module Filter : sig
     module Human : sig
       type t =
         | HideBool of Column.t
+        | HideNone of Column.t
         | HideSome of Column.t
         | Select of Column.t * select_option list
 
@@ -90,12 +91,14 @@ module Filter : sig
 
     type t =
       | HideBool of Column.t * bool
+      | HideNone of Column.t * bool
       | HideSome of Column.t * bool
       | Select of Column.t * select_option
 
     val equal : t -> t -> bool
     val pp : Format.formatter -> t -> unit
     val hidebool : Column.t -> bool -> t
+    val hidenone : Column.t -> bool -> t
     val hidesome : Column.t -> bool -> t
     val select : Column.t -> select_option -> t
     val column : t -> Column.t

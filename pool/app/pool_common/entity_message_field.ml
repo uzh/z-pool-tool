@@ -124,6 +124,8 @@ type t =
   | GtxApiKey [@name "gtx_api_key"] [@printer go "gtx_api_key"]
   | HideCanceled [@name "hide_canceled"] [@printer go "hide_canceled"]
   | HideClosed [@name "hide_closed"] [@printer go "hide_closed"]
+  | HidePaused [@name "hide_paused"] [@printer go "hide_paused"]
+  | HideUnverified [@name "hide_unverified"] [@printer go "hide_unverified"]
   | Hint [@name "hint"] [@printer go "hint"]
   | Host [@name "host"] [@printer go "host"]
   | I18n [@name "i18n"] [@printer go "i18n"]

@@ -168,6 +168,7 @@ module Filter = struct
     module Human = struct
       type t =
         | HideBool of Column.t
+        | HideNone of Column.t
         | HideSome of Column.t
         | Select of Column.t * select_option list
       [@@deriving eq, show]
@@ -175,12 +176,16 @@ module Filter = struct
 
     type t =
       | HideBool of Column.t * bool
+      | HideNone of Column.t * bool
       | HideSome of Column.t * bool
       | Select of Column.t * select_option
     [@@deriving eq, show, variants]
 
     let column = function
-      | HideBool (col, _) | HideSome (col, _) | Select (col, _) -> col
+      | HideBool (col, _)
+      | HideNone (col, _)
+      | HideSome (col, _)
+      | Select (col, _) -> col
     ;;
   end
 
@@ -191,7 +196,7 @@ module Filter = struct
     let open Condition in
     t
     |> CCList.map (function
-      | HideBool (col, value) | HideSome (col, value) ->
+      | HideBool (col, value) | HideNone (col, value) | HideSome (col, value) ->
         Column.field col, Pool_common.Model.Boolean.stringify value
       | Select _ -> failwith "TODO")
   ;;
@@ -202,18 +207,20 @@ module Filter = struct
          (fun default conditon ->
            let dyn, sql = default in
            let open Condition in
+           let add_to_sql operator col =
+             sql @ [ Format.asprintf operator (Column.to_sql col) ]
+           in
            match conditon with
            | HideBool (col, hide) ->
              if hide
              then
                ( dyn |> Dynparam.add Caqti_type.bool hide
-               , sql @ [ Format.asprintf "%s != ?" (Column.to_sql col) ] )
+               , add_to_sql "%s != ?" col )
              else default
+           | HideNone (col, hide) ->
+             if hide then dyn, add_to_sql "%s IS NOT NULL" col else default
            | HideSome (col, hide) ->
-             if hide
-             then
-               dyn, sql @ [ Format.asprintf "%s IS NULl" (Column.to_sql col) ]
-             else default
+             if hide then dyn, add_to_sql "%s IS NULL" col else default
            | Select _ -> failwith "TODO")
          (dyn, [])
     |> fun (dyn, sql) ->

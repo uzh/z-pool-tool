@@ -308,6 +308,7 @@ let list Pool_context.{ language; _ } contacts query =
   let url = Uri.of_string "/admin/contacts" in
   let data_table =
     Component.DataTable.create_meta
+      ?filter:Contact.filterable_by
       ~search:Contact.searchable_by
       url
       query
