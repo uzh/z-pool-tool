@@ -174,7 +174,6 @@ module Filter = struct
     end
 
     type t =
-      (* TODO: Bool may be removed *)
       | HideBool of Column.t * bool
       | HideSome of Column.t * bool
       | Select of Column.t * select_option
