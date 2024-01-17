@@ -127,23 +127,27 @@ let personal_detail
 let assign_contact_experiment_modal
   { Pool_context.language; csrf; _ }
   contact_id
-  experiment
+  (experiment : Experiment.t)
   sessions
   matches_filter
   =
   let open Pool_common in
   let title language = Utils.text_to_string language I18n.EnrollInExperiment in
+  let registration_disabled =
+    Experiment.(experiment.registration_disabled |> RegistrationDisabled.value)
+  in
   let notification =
-    match matches_filter with
-    | true -> txt ""
-    | false ->
-      Component.Notification.notification
-        language
-        `Error
-        [ p
-            Utils.
-              [ txt (hint_to_string language I18n.ContactDoesNotMatchFilter) ]
-        ]
+    I18n.
+      [ not matches_filter, ContactEnrollmentDoesNotMatchFilter
+      ; registration_disabled, ContactEnrollmentRegistrationDisabled
+      ]
+    |> CCList.filter_map (fun (show, i18n) ->
+      if show
+      then Some (p [ Utils.hint_to_string language i18n |> txt ])
+      else None)
+    |> function
+    | [] -> txt ""
+    | msg -> Component.Notification.notification language `Error msg
   in
   let session_select =
     let label = Session.start_end_to_human in
@@ -222,7 +226,7 @@ let assign_contact_experiment_list
     ; a_user_data "hx-target" (Format.asprintf "#%s" enroll_contact_modal_id)
     ]
   in
-  let assignable experiment_id =
+  let assignable_attrs experiment_id =
     a_class base_class :: htmx_attribs experiment_id
   in
   let not_matching_filter experiment_id =
@@ -239,15 +243,15 @@ let assign_contact_experiment_list
            ]
        ]
      | experiments ->
+       let open DirectEnrollment in
        CCList.map
-         (fun DirectEnrollment.(
-                { id; title; public_title; matches_filter; _ } as experiment) ->
+         (fun ({ id; title; public_title; matches_filter; _ } as experiment) ->
            let attrs =
-             if not (DirectEnrollment.assignable experiment)
+             if not (assignable experiment)
              then disabled
              else if not matches_filter
              then not_matching_filter id
-             else assignable id
+             else assignable_attrs id
            in
            div
              ~a:attrs

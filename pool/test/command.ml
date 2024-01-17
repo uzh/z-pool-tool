@@ -171,6 +171,11 @@ let () =
             Assignment_test
             .assign_to_experiment_with_direct_registration_disabled
         ; test_case
+            "assign to experiment with direct registration disabled as admin"
+            `Quick
+            Assignment_test
+            .assign_to_experiment_with_direct_registration_disabled_as_admin
+        ; test_case
             "assign user from waiting list"
             `Quick
             Assignment_test.assign_contact_from_waiting_list

@@ -78,6 +78,7 @@ module Create : sig
 
   val handle
     :  ?tags:Logs.Tag.set
+    -> ?direct_enrollment_by_admin:bool
     -> t
     -> (Assignment.t -> Sihl_email.t)
     -> bool
@@ -94,6 +95,7 @@ end = struct
 
   let handle
     ?(tags = Logs.Tag.empty)
+    ?(direct_enrollment_by_admin = false)
     { contact; session; follow_up_sessions; experiment }
     confirmation_email
     already_enrolled
@@ -106,11 +108,14 @@ end = struct
     else
       let* () =
         let open Experiment in
-        (experiment.direct_registration_disabled
-         |> DirectRegistrationDisabled.value
-         || experiment.registration_disabled |> RegistrationDisabled.value)
-        |> Utils.bool_to_result_not
-             Pool_common.Message.(DirectRegistrationIsDisabled)
+        if direct_enrollment_by_admin
+        then Ok ()
+        else
+          (experiment.direct_registration_disabled
+           |> DirectRegistrationDisabled.value
+           || experiment.registration_disabled |> RegistrationDisabled.value)
+          |> Utils.bool_to_result_not
+               Pool_common.Message.(DirectRegistrationIsDisabled)
       in
       let* creation_events =
         assignment_creation_and_confirmation_events

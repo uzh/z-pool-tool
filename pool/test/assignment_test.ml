@@ -318,6 +318,35 @@ let assign_to_experiment_with_direct_registration_disabled () =
   check_result expected events
 ;;
 
+let assign_to_experiment_with_direct_registration_disabled_as_admin () =
+  let { session; experiment; contact } = assignment_data () in
+  let assignment = Assignment.create contact in
+  let experiment =
+    Experiment.
+      { experiment with
+        direct_registration_disabled =
+          true |> Experiment.DirectRegistrationDisabled.create
+      }
+  in
+  let events =
+    let open AssignmentCommand.Create in
+    let command = { contact; session; follow_up_sessions = []; experiment } in
+    handle ~direct_enrollment_by_admin:true command confirmation_email false
+  in
+  let expected =
+    Ok
+      [ Email.(
+          Sent
+            (confirmation_email assignment, experiment.Experiment.smtp_auth_id))
+        |> Pool_event.email
+      ; Assignment.Created (assignment, session.Session.id)
+        |> Pool_event.assignment
+      ; update_assignment_count_event ~step:1 contact
+      ]
+  in
+  check_result expected events
+;;
+
 let assign_to_session_contact_is_already_assigned () =
   let { session; experiment; contact } = assignment_data () in
   let already_assigned = true in
