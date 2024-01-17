@@ -167,7 +167,7 @@ module Filter = struct
   module Condition = struct
     module Human = struct
       type t =
-        | HideBool of Column.t
+        | HideTrue of Column.t
         | HideNone of Column.t
         | HideSome of Column.t
         | Select of Column.t * select_option list
@@ -175,14 +175,14 @@ module Filter = struct
     end
 
     type t =
-      | HideBool of Column.t * bool
+      | HideTrue of Column.t * bool
       | HideNone of Column.t * bool
       | HideSome of Column.t * bool
       | Select of Column.t * select_option
     [@@deriving eq, show, variants]
 
     let column = function
-      | HideBool (col, _)
+      | HideTrue (col, _)
       | HideNone (col, _)
       | HideSome (col, _)
       | Select (col, _) -> col
@@ -196,7 +196,7 @@ module Filter = struct
     let open Condition in
     t
     |> CCList.map (function
-      | HideBool (col, value) | HideNone (col, value) | HideSome (col, value) ->
+      | HideTrue (col, value) | HideNone (col, value) | HideSome (col, value) ->
         Column.field col, Pool_common.Model.Boolean.stringify value
       | Select _ -> failwith "TODO")
   ;;
@@ -211,7 +211,7 @@ module Filter = struct
              sql @ [ Format.asprintf operator (Column.to_sql col) ]
            in
            match conditon with
-           | HideBool (col, hide) ->
+           | HideTrue (col, hide) ->
              if hide
              then
                ( dyn |> Dynparam.add Caqti_type.bool hide

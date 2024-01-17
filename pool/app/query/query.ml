@@ -28,9 +28,9 @@ let from_request
     >>= fun filterable_by ->
     filterable_by
     |> CCList.filter_map (function
-      | Human.HideBool col ->
+      | Human.HideTrue col ->
         let value = find_column col in
-        value >>= Utils.Bool.of_string_opt >|= hidebool col
+        value >>= Utils.Bool.of_string_opt >|= hidetrue col
       | Human.HideNone col ->
         let value = find_column col in
         value >>= Utils.Bool.of_string_opt >|= hidenone col

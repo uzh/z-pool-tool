@@ -225,13 +225,13 @@ let column_hide_unverified =
 let filterable_by =
   Some
     Query.Filter.Condition.Human.
-      [ HideNone column_hide_unverified; HideBool column_hide_paused ]
+      [ HideNone column_hide_unverified; HideTrue column_hide_paused ]
 ;;
 
 let default_filter =
   let open Query.Filter in
   [ Condition.(HideSome (column_hide_unverified, false))
-  ; Condition.(HideBool (column_hide_paused, false))
+  ; Condition.(HideTrue (column_hide_paused, false))
   ]
 ;;
 
