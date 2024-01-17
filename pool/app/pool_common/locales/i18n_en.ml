@@ -208,9 +208,12 @@ When inviting contacts, the filter will prefer the overriding value if both are 
     A detailed list with all role permissions is available for recruiters only.|}
   | ContactCurrentCellPhone cell_phone ->
     Format.asprintf "Your current phone number is %s." cell_phone
-  | ContactDoesNotMatchFilter ->
+  | ContactEnrollmentDoesNotMatchFilter ->
     "The contact does not meet the criteria specified in the filter for this \
      experiment, but can still be enrolled."
+  | ContactEnrollmentRegistrationDisabled ->
+    "Registration for this experiment is currently disabled. Contacts cannot \
+     enroll themselves for this experiment."
   | ContactNoCellPhone -> "You have not yet verified a phone number."
   | ContactLanguage ->
     "Some experiments choose to communicate in a different language, \

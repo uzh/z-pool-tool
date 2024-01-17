@@ -136,7 +136,8 @@ type hint =
   | AssignmentsMarkedAsClosed
   | AssistantRole
   | ContactCurrentCellPhone of string
-  | ContactDoesNotMatchFilter
+  | ContactEnrollmentDoesNotMatchFilter
+  | ContactEnrollmentRegistrationDisabled
   | ContactNoCellPhone
   | ContactEnterCellPhoneToken of string
   | ContactLanguage

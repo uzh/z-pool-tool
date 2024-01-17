@@ -211,9 +211,12 @@ Beim Einladen von Kontakten bevorzugt der Filter den überschreibenden Wert, wen
      Eine detaillierte Liste mit allen Rollenberechtigungen ist nur für Recruiter verfügbar.|}
   | ContactCurrentCellPhone cell_phone ->
     Format.asprintf "Ihre aktuelle Mobiltelefonnummer lautet %s." cell_phone
-  | ContactDoesNotMatchFilter ->
+  | ContactEnrollmentDoesNotMatchFilter ->
     "Der Kontakt erfüllt nicht die im Filter bestimmten Kriterien für dieses \
      Experiment, kann jedoch trotzdem angemeldet werden."
+  | ContactEnrollmentRegistrationDisabled ->
+    "Die Registrierung für dieses Experiment ist derzeit deaktiviert. Kontakte \
+     können sich nicht selbst für dieses Experiment einschreiben."
   | ContactNoCellPhone -> "Sie haben noch keine Mobiltelefonnummer verifiziert."
   | ContactEnterCellPhoneToken cell_phone ->
     Format.asprintf

@@ -171,12 +171,8 @@ module DirectEnrollment = struct
     }
   [@@deriving eq, show]
 
-  let assignable
-    { available_spots; registration_disabled; contact_already_assigned; _ }
-    =
-    available_spots
-    && (not registration_disabled)
-    && not contact_already_assigned
+  let assignable { available_spots; contact_already_assigned; _ } =
+    available_spots && not contact_already_assigned
   ;;
 end
 
