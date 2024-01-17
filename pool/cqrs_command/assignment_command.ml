@@ -78,7 +78,7 @@ module Create : sig
 
   val handle
     :  ?tags:Logs.Tag.set
-    -> ?ignore_registration_disabled:bool
+    -> ?direct_enrollment_by_admin:bool
     -> t
     -> (Assignment.t -> Sihl_email.t)
     -> bool
@@ -95,7 +95,7 @@ end = struct
 
   let handle
     ?(tags = Logs.Tag.empty)
-    ?(ignore_registration_disabled = false)
+    ?(direct_enrollment_by_admin = false)
     { contact; session; follow_up_sessions; experiment }
     confirmation_email
     already_enrolled
@@ -108,7 +108,7 @@ end = struct
     else
       let* () =
         let open Experiment in
-        if ignore_registration_disabled
+        if direct_enrollment_by_admin
         then Ok ()
         else
           (experiment.direct_registration_disabled
