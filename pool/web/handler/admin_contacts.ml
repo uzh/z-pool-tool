@@ -352,6 +352,7 @@ let enroll_contact_post req =
       let open Cqrs_command.Assignment_command.Create in
       handle
         ~tags
+        ~ignore_registration_disabled:true
         { contact; session; follow_up_sessions; experiment }
         confirmation
         contact_is_enrolled
