@@ -236,6 +236,7 @@ module Preview : sig
 end
 
 val column_cell_phone : Query.Column.t
+val filterable_by : Query.Filter.human option
 val searchable_by : Query.Column.t list
 val sortable_by : Query.Column.t list
 val default_sort : Query.Sort.t

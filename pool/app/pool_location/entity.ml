@@ -166,6 +166,7 @@ let column_created_at =
   (Field.CreatedAt, "pool_locations.created_at") |> Query.Column.create
 ;;
 
+let filterable_by = None
 let searchable_by = [ column_name; column_description ]
 let default_sort_column = column_created_at
 let sortable_by = default_sort_column :: searchable_by

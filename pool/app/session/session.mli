@@ -386,8 +386,10 @@ val column_date : Query.Column.t
 val column_no_assignments : Query.Column.t
 val column_noshow_count : Query.Column.t
 val column_participation_count : Query.Column.t
+val filterable_by : Query.Filter.human option
 val searchable_by : Query.Column.t list
 val sortable_by : Query.Column.t list
+val default_filter : Query.Filter.t
 val default_sort : Query.Sort.t
 val default_query : Query.t
 

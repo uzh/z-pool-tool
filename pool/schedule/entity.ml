@@ -126,6 +126,7 @@ let column_created_at =
   (Field.CreatedAt, "pool_schedules.created_at") |> Query.Column.create
 ;;
 
+let filterable_by = None
 let searchable_by = [ column_label ]
 let sortable_by = [ column_scheduled_time; column_status; column_last_run_at ]
 let default_sort_column = column_created_at

@@ -85,7 +85,7 @@ module Bool = struct
     let mem = CCList.mem ~eq s in
     if mem handled_true_values
     then Some true
-    else if mem handled_true_values
+    else if mem handled_false_values
     then Some false
     else None
   ;;

@@ -225,6 +225,7 @@ let column_created_at =
   (Field.CreatedAt, "role_permissions.created_at") |> Query.Column.create
 ;;
 
+let filterable_by = None
 let searchable_by = [ column_role; column_model; column_action ]
 let default_sort_column = column_created_at
 let sortable_by = default_sort_column :: searchable_by

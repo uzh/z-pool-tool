@@ -96,6 +96,8 @@ let rec field_to_string =
   | Firstname -> "firstname"
   | FollowUpSession -> "follow-up session"
   | GtxApiKey -> "GTX Api Key"
+  | HideCanceled -> "Hide canceled"
+  | HideClosed -> "Hide closed"
   | Hint -> "hint"
   | Host -> "host"
   | I18n -> "translation"

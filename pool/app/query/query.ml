@@ -1,6 +1,7 @@
 include Entity
 
 let from_request
+  ?(filterable_by : Filter.human option)
   ?(searchable_by : Column.t list option)
   ?(sortable_by : Column.t list option)
   ?(default : t option)
@@ -17,6 +18,26 @@ let from_request
     >>= function
     | "" -> None
     | str -> Some str
+  in
+  let filter =
+    let open Filter in
+    let open Condition in
+    let open CCOption in
+    let find_column col = col |> Column.field |> find in
+    filterable_by
+    >>= fun filterable_by ->
+    filterable_by
+    |> CCList.filter_map (function
+      | Human.HideBool col ->
+        let value = find_column col in
+        value >>= Utils.Bool.of_string_opt >|= hidebool col
+      | Human.HideSome col ->
+        let value = find_column col in
+        value >>= Utils.Bool.of_string_opt >|= hidesome col
+      | Human.Select _ -> failwith "TODO")
+    |> function
+    | [] -> None
+    | conditions -> Some conditions
   in
   let pagination =
     let open Pagination in
@@ -44,15 +65,20 @@ let from_request
     >>= fun columns ->
     find Field.Order >|= Field.read >>= Sort.create ?order columns
   in
-  create ~pagination ?search ?sort () |> apply_default ~default
+  create ~pagination ?filter ?search ?sort () |> apply_default ~default
 ;;
 
-let empty () = { pagination = None; search = None; sort = None }
+let empty () = { pagination = None; search = None; sort = None; filter = None }
 
 let append_query_to_sql dyn where t =
   let format = Format.asprintf in
   let open CCOption in
   let pagination = t >>= pagination >|= Pagination.to_sql in
+  let dyn, where =
+    t
+    >>= (fun { filter; _ } -> filter >|= Filter.to_sql ?where dyn)
+    |> value ~default:(dyn, where)
+  in
   let dyn, search =
     t >>= search |> CCOption.map_or ~default:(dyn, None) (Search.to_sql dyn)
   in
@@ -84,13 +110,13 @@ let collect_and_count
   =
   let open Utils.Database in
   let open Caqti_request.Infix in
+  let database_label = Pool_database.Label.value database_label in
   let where, dyn =
     CCOption.map_or
       ~default:(None, Dynparam.empty)
       (fun (where, dyn) -> Some where, dyn)
       where
   in
-  let database_label = Pool_database.Label.value database_label in
   let Dynparam.Pack (pt, pv), where, paginate_and_sort =
     append_query_to_sql dyn where query
   in

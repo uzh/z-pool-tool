@@ -185,6 +185,8 @@ let sortable_by =
   [ default_sort_column; column_smtp_default_account ] @ searchable_by
 ;;
 
+let filterable_by = None
+
 let default_query =
   let open Query in
   let sort =

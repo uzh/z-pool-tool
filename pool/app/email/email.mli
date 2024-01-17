@@ -214,6 +214,7 @@ module SmtpAuth : sig
   val column_smtp_mechanism : Query.Column.t
   val column_smtp_protocol : Query.Column.t
   val column_smtp_default_account : Query.Column.t
+  val filterable_by : Query.Filter.human option
   val default_query : Query.t
   val searchable_by : Query.Column.t list
   val sortable_by : Query.Column.t list

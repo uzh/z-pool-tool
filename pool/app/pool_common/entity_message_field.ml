@@ -122,6 +122,8 @@ type t =
   | FollowUpSession [@name "follow_up_session"]
   [@printer go "follow_up_session"]
   | GtxApiKey [@name "gtx_api_key"] [@printer go "gtx_api_key"]
+  | HideCanceled [@name "hide_canceled"] [@printer go "hide_canceled"]
+  | HideClosed [@name "hide_closed"] [@printer go "hide_closed"]
   | Hint [@name "hint"] [@printer go "hint"]
   | Host [@name "host"] [@printer go "host"]
   | I18n [@name "i18n"] [@printer go "i18n"]

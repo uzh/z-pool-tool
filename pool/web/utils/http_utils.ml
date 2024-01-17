@@ -342,6 +342,7 @@ let first_n_characters ?(n = 47) m =
 
 module type Queryable = sig
   val default_query : Query.t
+  val filterable_by : Query.Filter.human option
   val searchable_by : Query.Column.t list
   val sortable_by : Query.Column.t list
 end
@@ -421,6 +422,7 @@ module Htmx = struct
     @@ fun context ->
     let query =
       Query.from_request
+        ?filterable_by:Q.filterable_by
         ~searchable_by:Q.searchable_by
         ~sortable_by:Q.sortable_by
         ~default:Q.default_query

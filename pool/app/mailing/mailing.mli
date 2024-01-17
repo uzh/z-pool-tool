@@ -284,5 +284,6 @@ val column_end : Query.Column.t
 val column_limit : Query.Column.t
 val column_invitation_count : Query.Column.t
 val default_query : Query.t
+val filterable_by : Query.Filter.human option
 val searchable_by : Query.Column.t list
 val sortable_by : Query.Column.t list

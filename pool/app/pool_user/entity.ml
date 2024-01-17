@@ -360,5 +360,10 @@ let default_sort =
 ;;
 
 let default_query =
-  Query.{ pagination = None; search = None; sort = Some default_sort }
+  Query.
+    { pagination = None
+    ; search = None
+    ; sort = Some default_sort
+    ; filter = None
+    }
 ;;

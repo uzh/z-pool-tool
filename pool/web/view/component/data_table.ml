@@ -13,12 +13,13 @@ type data_table =
   { url : Uri.t
   ; query : Query.t
   ; language : Pool_common.Language.t
+  ; filter : Query.Filter.human option
   ; search : Query.Column.t list option
   ; additional_url_params : (Pool_common.Message.Field.t * string) list option
   }
 
-let create_meta ?additional_url_params ?search url query language =
-  { url; query; language; search; additional_url_params }
+let create_meta ?additional_url_params ?filter ?search url query language =
+  { url; query; language; filter; search; additional_url_params }
 ;;
 
 type col =
@@ -72,6 +73,63 @@ let sort_icon sort col =
     | Descending -> Icon.CaretDown
   in
   Component_icon.to_html icon
+;;
+
+let filter { additional_url_params; language; url; query; _ } target_id filter =
+  let open Query in
+  let hx_attribs new_condition =
+    let filter =
+      query.filter
+      |> CCOption.map_or ~default:[] (fun filter ->
+        let open Filter.Condition in
+        filter
+        |> CCList.filter (fun condition ->
+          Column.equal (column condition) (column new_condition) |> not))
+      |> CCList.cons new_condition
+    in
+    let url =
+      Uri.with_query
+        url
+        (Query.to_uri_query
+           ?additional_params:additional_url_params
+           { query with search = None; pagination = None; filter = Some filter })
+      |> Format.asprintf "%a" Uri.pp
+      |> Sihl.Web.externalize_path
+    in
+    a_user_data "hx-trigger" "change" :: hx_get ~url ~target:("#" ^ target_id)
+  in
+  let make_filter =
+    let open Filter in
+    let open Condition in
+    let is_checked col =
+      CCOption.bind
+        query.filter
+        (CCList.find_opt (fun condition ->
+           condition |> Filter.Condition.column |> Column.equal col))
+      |> CCOption.map_or ~default:false (function
+        | HideBool (_, value) | HideSome (_, value) -> value
+        | Select _ -> false)
+    in
+    let checkbox_filter col variant =
+      let checkbox col value condition =
+        Component_input.checkbox_element
+          ~additional_attributes:(hx_attribs condition)
+          ~value
+          language
+          (Column.field col)
+      in
+      col
+      |> is_checked
+      |> fun checked -> variant col (not checked) |> checkbox col checked
+    in
+    function
+    | Human.HideBool col -> checkbox_filter col hidebool
+    | Human.HideSome col -> checkbox_filter col hidesome
+    | Human.Select _ -> txt "SELECT"
+  in
+  filter
+  |> CCList.map make_filter
+  |> div ~a:[ a_class [ "flexrow"; "flex-gap" ] ]
 ;;
 
 let pagination
@@ -289,6 +347,9 @@ let make
   items
   =
   let default = txt "" in
+  let filter =
+    data_table.filter |> CCOption.map_or ~default (filter data_table target_id)
+  in
   let search_bar =
     data_table.search
     |> CCOption.map_or ~default (searchbar ~target_id data_table)
@@ -306,5 +367,10 @@ let make
   in
   div
     ~a:[ a_class [ "stack" ]; a_id target_id ]
-    [ search_bar; prepend_html; table ~a:[ classes ] ~thead rows; pagination ]
+    [ filter
+    ; search_bar
+    ; prepend_html
+    ; table ~a:[ classes ] ~thead rows
+    ; pagination
+    ]
 ;;

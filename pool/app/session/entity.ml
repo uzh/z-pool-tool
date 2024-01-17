@@ -646,6 +646,31 @@ let default_sort =
   Sort.{ column = column_date; order = SortOrder.Ascending }
 ;;
 
+let column_canceled =
+  Query.Column.create (Field.HideCanceled, "pool_sessions.canceled_at")
+;;
+
+let column_closed =
+  Query.Column.create (Field.HideClosed, "pool_sessions.closed_at")
+;;
+
+let filterable_by =
+  Some
+    Query.Filter.Condition.Human.
+      [ HideSome column_canceled; HideSome column_closed ]
+;;
+
+let default_filter =
+  let open Query in
+  let open Filter in
+  [ Condition.(HideSome (column_canceled, true)) ]
+;;
+
 let default_query =
-  Query.{ pagination = None; search = None; sort = Some default_sort }
+  Query.
+    { pagination = None
+    ; search = None
+    ; sort = Some default_sort
+    ; filter = Some default_filter
+    }
 ;;

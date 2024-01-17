@@ -70,8 +70,51 @@ module Sort : sig
   val to_query_parts : t -> (Pool_common.Message.Field.t * string) list
 end
 
+module Filter : sig
+  type select_option = Pool_common.Message.Field.t * string
+
+  val equal_select_option : select_option -> select_option -> bool
+  val pp_select_option : Format.formatter -> select_option -> unit
+
+  module Condition : sig
+    module Human : sig
+      type t =
+        | HideBool of Column.t
+        | HideSome of Column.t
+        | Select of Column.t * select_option list
+
+      val equal : t -> t -> bool
+      val show : t -> string
+      val pp : Format.formatter -> t -> unit
+    end
+
+    type t =
+      | HideBool of Column.t * bool
+      | HideSome of Column.t * bool
+      | Select of Column.t * select_option
+
+    val equal : t -> t -> bool
+    val pp : Format.formatter -> t -> unit
+    val hidebool : Column.t -> bool -> t
+    val hidesome : Column.t -> bool -> t
+    val select : Column.t -> select_option -> t
+    val column : t -> Column.t
+  end
+
+  type human = Condition.Human.t list
+
+  val show_human : human -> string
+
+  type t = Condition.t list
+
+  val equal : t -> t -> bool
+  val show : t -> string
+  val pp : Format.formatter -> t -> unit
+end
+
 type t =
-  { pagination : Pagination.t option
+  { filter : Filter.t option
+  ; pagination : Pagination.t option
   ; search : Search.t option
   ; sort : Sort.t option
   }
@@ -87,14 +130,16 @@ val with_sort_order : Sort.SortOrder.t -> t -> t
 val with_sort_column : Column.t -> t -> t
 
 val create
-  :  ?pagination:Pagination.t
+  :  ?filter:Filter.t
+  -> ?pagination:Pagination.t
   -> ?search:Search.t
   -> ?sort:Sort.t
   -> unit
   -> t
 
 val from_request
-  :  ?searchable_by:Column.t list
+  :  ?filterable_by:Filter.human
+  -> ?searchable_by:Column.t list
   -> ?sortable_by:Column.t list
   -> ?default:t
   -> Rock.Request.t

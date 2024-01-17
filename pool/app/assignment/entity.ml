@@ -208,6 +208,7 @@ let column_participated =
   |> Query.Column.create
 ;;
 
+let filterable_by = None
 let searchable_by = Pool_user.searchable_by @ [ column_external_data_id ]
 
 let sortable_by =
@@ -223,5 +224,10 @@ let sortable_by =
 let default_sort = Pool_user.default_sort
 
 let default_query =
-  Query.{ pagination = None; search = None; sort = Some default_sort }
+  Query.
+    { pagination = None
+    ; search = None
+    ; sort = Some default_sort
+    ; filter = None
+    }
 ;;

@@ -36,6 +36,7 @@ let full_name_reversed { user; _ } =
   |> CCString.concat " "
 ;;
 
+let filterable_by = None
 let searchable_by = Pool_user.searchable_by
 let sortable_by = Pool_user.sortable_by
 let default_sort = Pool_user.default_sort

@@ -482,7 +482,12 @@ let data_table
       | true -> Some [ Message.Field.Chronological, "true" ]
       | false -> None
     in
-    Component.DataTable.create_meta ?additional_url_params url query language
+    Component.DataTable.create_meta
+      ?additional_url_params
+      ?filter:filterable_by
+      url
+      query
+      language
   in
   let cols =
     let create_session : [ | Html_types.flow5 ] elt =

@@ -78,12 +78,19 @@ let column_created_at =
   Query.Column.create (Field.CreatedAt, "pool_invitations.created_at")
 ;;
 
+let filterable_by = None
+
 let sortable_by =
   searchable_by @ [ column_count; column_resent_at; column_created_at ]
 ;;
 
 let default_query =
-  Query.{ pagination = None; search = None; sort = Some Contact.default_sort }
+  Query.
+    { pagination = None
+    ; search = None
+    ; sort = Some Contact.default_sort
+    ; filter = None
+    }
 ;;
 
 module Statistics = struct
