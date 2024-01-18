@@ -122,6 +122,7 @@ let tenant_form
         language
         `Text
         Field.Url
+        ~hints:Pool_common.I18n.[ TenantUrl ]
         ~value:(value (fun t -> t.url |> Url.value))
         ~flash_fetcher
         ~required:true

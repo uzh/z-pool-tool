@@ -248,6 +248,7 @@ type hint =
   | TemplateTextElementsHint
   | TenantDatabaseLabel
   | TenantDatabaseUrl
+  | TenantUrl
   | TextLengthMin of int
   | TextLengthMax of int
   | TimeSpanPickerHint

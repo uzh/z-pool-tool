@@ -562,6 +562,7 @@ Es können nur Sitzungen mit freien Plätzen ausgewählt werden.|}
   | TenantDatabaseUrl ->
     {|Die Datenbank URL, nach folgendem Schema:
     mariadb://<user>:<pw>@<host>:<port>/<database>|}
+  | TenantUrl -> "Die URL des Tenants ohne Protokoll, z.B.: pool.uzh.ch"
   | TextLengthMin i -> error_to_string (Entity_message.TextLengthMin i)
   | TextLengthMax i -> error_to_string (Entity_message.TextLengthMax i)
   | TimeSpanPickerHint -> "Zeitdauer in Minuten."
