@@ -4,6 +4,23 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/pool/tree/HEAD)
 
+## [0.5.3](https://github.com/uzh/pool/tree/0.5.3) - 2024-01-18
+
+### Added
+- modal to display current default message template for experiments and sessions
+
+### Changed
+
+- moved terms and conditions from settings page to texts page
+- integrate search bar in sortable table
+- allow time unit to be specified for all timespan inputs
+- remove home title translation
+- allow direct enrollment by admins to experiments with disabled registration
+- split experiment and session description in public and internal 
+
+### Fixed
+- waiting list displays enrolled contacts if assignment is marked as deleted
+
 ## [0.5.2](https://github.com/uzh/pool/tree/0.5.2) - 2023-12-21
 
 ### Added
