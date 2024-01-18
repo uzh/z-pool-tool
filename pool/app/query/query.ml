@@ -31,7 +31,9 @@ let from_request
       | Human.Checkbox col ->
         let value = find_column col in
         value >>= Utils.Bool.of_string_opt >|= checkbox col
-      | Human.Select _ -> failwith "TODO")
+      | Human.Select (col, options) ->
+        let value = find_column col in
+        value >>= SelectOption.find_by_value options >|= select col)
     |> function
     | [] -> None
     | conditions -> Some conditions

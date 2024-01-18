@@ -71,30 +71,48 @@ module Sort : sig
 end
 
 module Filter : sig
-  type select_option = Pool_common.Message.Field.t * string
+  module SelectOption : sig
+    type label = (Pool_common.Language.t * string) list
 
-  val equal_select_option : select_option -> select_option -> bool
-  val pp_select_option : Format.formatter -> select_option -> unit
+    val equal_label : label -> label -> bool
+    val pp_label : Format.formatter -> label -> unit
+    val show_label : label -> string
+
+    type t =
+      { label : label
+      ; value : string
+      }
+
+    val equal : t -> t -> bool
+    val pp : Format.formatter -> t -> unit
+    val show : t -> string
+    val create : label -> string -> t
+    val value : t -> string
+    val label : Pool_common.Language.t -> t -> string
+    val find_by_value : t list -> string -> t option
+  end
 
   module Condition : sig
     module Human : sig
       type t =
         | Checkbox of Column.t
-        | Select of Column.t * select_option list
+        | Select of Column.t * SelectOption.t list
 
       val equal : t -> t -> bool
       val show : t -> string
       val pp : Format.formatter -> t -> unit
+      val column : t -> Column.t
     end
 
     type t =
       | Checkbox of Column.t * bool
-      | Select of Column.t * select_option
+      | Select of Column.t * SelectOption.t
 
     val equal : t -> t -> bool
     val pp : Format.formatter -> t -> unit
     val checkbox : Column.t -> bool -> t
-    val select : Column.t -> select_option -> t
+    val select : Column.t -> SelectOption.t -> t
+    val show : t -> string
     val column : t -> Column.t
   end
 

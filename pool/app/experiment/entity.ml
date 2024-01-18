@@ -272,7 +272,40 @@ let column_created_at =
   (Field.CreatedAt, "pool_experiments.created_at") |> Query.Column.create
 ;;
 
-let filterable_by = None
+let column_experiment_type =
+  (Field.ExperimentType, "pool_experiments.experiment_type")
+  |> Query.Column.create
+;;
+
+let experiment_type_filter =
+  let open Query.Filter in
+  let open Pool_common.ExperimentType in
+  let languages = Pool_common.Language.all in
+  let options =
+    all
+    |> CCList.map (fun exp_type ->
+      let label =
+        languages
+        |> CCList.map (fun lang ->
+          lang, show exp_type |> CCString.capitalize_ascii)
+      in
+      let value = show exp_type in
+      SelectOption.create label value)
+  in
+  Condition.Human.Select (column_experiment_type, options)
+;;
+
+let column_direct_registration =
+  Query.Column.create
+    (Field.HideClosed, "pool_experiments.registration_disabled = 1")
+;;
+
+let filterable_by =
+  Some
+    Query.Filter.Condition.Human.
+      [ experiment_type_filter; Checkbox column_direct_registration ]
+;;
+
 let searchable_by = [ column_title; column_public_title ]
 let default_sort_column = column_created_at
 let sortable_by = default_sort_column :: searchable_by

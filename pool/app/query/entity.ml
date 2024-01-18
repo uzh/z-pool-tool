@@ -161,20 +161,43 @@ module Sort = struct
 end
 
 module Filter = struct
-  type select_option = Pool_common.Message.Field.t * string
-  [@@deriving eq, show]
+  module SelectOption = struct
+    type label = (Pool_common.Language.t * string) list [@@deriving eq, show]
+
+    type t =
+      { label : label
+      ; value : string
+      }
+    [@@deriving eq, show]
+
+    let create label value = { label; value }
+
+    let label language { label; _ } =
+      CCList.assoc ~eq:Pool_common.Language.equal language label
+    ;;
+
+    let value { value; _ } = value
+
+    let find_by_value options param =
+      CCList.find_opt (fun { value; _ } -> CCString.equal value param) options
+    ;;
+  end
 
   module Condition = struct
     module Human = struct
       type t =
         | Checkbox of Column.t
-        | Select of Column.t * select_option list
+        | Select of Column.t * SelectOption.t list
       [@@deriving eq, show]
+
+      let column = function
+        | Checkbox col | Select (col, _) -> col
+      ;;
     end
 
     type t =
       | Checkbox of Column.t * bool
-      | Select of Column.t * select_option
+      | Select of Column.t * SelectOption.t
     [@@deriving eq, show, variants]
 
     let column = function
@@ -191,7 +214,7 @@ module Filter = struct
     |> CCList.map (function
       | Checkbox (col, active) ->
         Column.field col, Pool_common.Model.Boolean.stringify active
-      | Select _ -> failwith "TODO")
+      | Select (col, option) -> Column.field col, SelectOption.value option)
   ;;
 
   let to_sql ?where dyn (m : t) =
@@ -203,7 +226,9 @@ module Filter = struct
            match conditon with
            | Checkbox (col, active) ->
              if active then dyn, sql @ [ Column.to_sql col ] else default
-           | Select _ -> failwith "TODO")
+           | Select (col, option) ->
+             ( dyn |> Dynparam.add Caqti_type.string (SelectOption.value option)
+             , sql @ [ Format.asprintf "%s = ?" (Column.to_sql col) ] ))
          (dyn, [])
     |> fun (dyn, sql) ->
     match sql with

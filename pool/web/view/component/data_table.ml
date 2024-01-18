@@ -3,7 +3,7 @@ module Icon = Component_icon
 
 let hx_get ~url ~target =
   [ a_user_data "hx-get" url
-  ; a_user_data "hx-push-url" url
+  ; a_user_data "hx-replace-url" "true"
   ; a_user_data "hx-target" target
   ; a_user_data "hx-swap" "innerHTML"
   ]
@@ -77,16 +77,7 @@ let sort_icon sort col =
 
 let filter { additional_url_params; language; url; query; _ } target_id filter =
   let open Query in
-  let hx_attribs new_condition =
-    let filter =
-      query.filter
-      |> CCOption.map_or ~default:[] (fun filter ->
-        let open Filter.Condition in
-        filter
-        |> CCList.filter (fun condition ->
-          Column.equal (column condition) (column new_condition) |> not))
-      |> CCList.cons new_condition
-    in
+  let hx_attribs filter =
     let url =
       Uri.with_query
         url
@@ -98,33 +89,62 @@ let filter { additional_url_params; language; url; query; _ } target_id filter =
     in
     a_user_data "hx-trigger" "change" :: hx_get ~url ~target:("#" ^ target_id)
   in
-  let make_filter =
+  let make_filter condition =
     let open Filter in
     let open Condition in
-    let is_checked col =
-      CCOption.bind
-        query.filter
-        (CCList.find_opt (fun condition ->
-           condition |> Filter.Condition.column |> Column.equal col))
-      |> CCOption.map_or ~default:false (function
-        | Checkbox (_, value) -> value
-        | Select _ -> false)
+    let params, current =
+      let default = [], None in
+      match query.filter with
+      | None | Some [] -> default
+      | Some conditions ->
+        conditions
+        |> CCList.fold_left
+             (fun (params, current) cur ->
+               match Column.equal (column cur) (Human.column condition) with
+               | true -> params, Some cur
+               | false -> params @ [ cur ], current)
+             default
     in
-    let checkbox_filter col variant =
-      let checkbox col value condition =
+    let checkbox_filter col =
+      let is_checked =
+        current
+        |> CCOption.map_or ~default:false (function
+          | Checkbox (_, value) -> value
+          | Select _ -> false)
+      in
+      let html_checkbox col value condition =
         Component_input.checkbox_element
-          ~additional_attributes:(hx_attribs condition)
+          ~additional_attributes:(hx_attribs (condition :: params))
           ~value
           language
           (Column.field col)
       in
-      col
-      |> is_checked
-      |> fun checked -> variant col (not checked) |> checkbox col checked
+      checkbox col (not is_checked) |> html_checkbox col is_checked
     in
-    function
-    | Human.Checkbox col -> checkbox_filter col checkbox
-    | Human.Select _ -> txt "SELECT"
+    let select_filter col options =
+      let open SelectOption in
+      let attributes = hx_attribs params in
+      let selected =
+        let open CCOption in
+        current
+        >>= function
+        | Select (_, { value; _ }) -> SelectOption.find_by_value options value
+        | Checkbox _ -> None
+      in
+      Component_input.selector
+        ~add_empty:true
+        ~attributes
+        ~option_formatter:(label language)
+        language
+        (Column.field col)
+        value
+        options
+        selected
+        ()
+    in
+    match condition with
+    | Human.Checkbox col -> checkbox_filter col
+    | Human.Select (col, options) -> select_filter col options
   in
   filter
   |> CCList.map make_filter
