@@ -647,23 +647,23 @@ let default_sort =
 ;;
 
 let column_canceled =
-  Query.Column.create (Field.HideCanceled, "pool_sessions.canceled_at")
+  Query.Column.create (Field.HideCanceled, "pool_sessions.canceled_at IS NULL")
 ;;
 
 let column_closed =
-  Query.Column.create (Field.HideClosed, "pool_sessions.closed_at")
+  Query.Column.create (Field.HideClosed, "pool_sessions.closed_at IS NULL")
 ;;
 
 let filterable_by =
   Some
     Query.Filter.Condition.Human.
-      [ HideSome column_canceled; HideSome column_closed ]
+      [ Checkbox column_canceled; Checkbox column_closed ]
 ;;
 
 let default_filter =
   let open Query in
   let open Filter in
-  [ Condition.(HideSome (column_canceled, true)) ]
+  [ Condition.(Checkbox (column_canceled, true)) ]
 ;;
 
 let default_query =

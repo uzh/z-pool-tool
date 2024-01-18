@@ -214,24 +214,25 @@ let column_cell_phone =
 
 let column_hide_paused =
   Query.Column.create
-    (Pool_common.Message.Field.HidePaused, "pool_contacts.paused")
+    (Pool_common.Message.Field.HidePaused, "pool_contacts.paused = 0")
 ;;
 
 let column_hide_unverified =
   Query.Column.create
-    (Pool_common.Message.Field.HideUnverified, "pool_contacts.email_verified")
+    ( Pool_common.Message.Field.HideUnverified
+    , "pool_contacts.email_verified IS NOT NULL" )
 ;;
 
 let filterable_by =
   Some
     Query.Filter.Condition.Human.
-      [ HideNone column_hide_unverified; HideTrue column_hide_paused ]
+      [ Checkbox column_hide_unverified; Checkbox column_hide_paused ]
 ;;
 
 let default_filter =
   let open Query.Filter in
-  [ Condition.(HideSome (column_hide_unverified, false))
-  ; Condition.(HideTrue (column_hide_paused, false))
+  [ Condition.(Checkbox (column_hide_unverified, true))
+  ; Condition.(Checkbox (column_hide_paused, true))
   ]
 ;;
 

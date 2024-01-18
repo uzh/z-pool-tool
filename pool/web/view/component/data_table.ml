@@ -107,8 +107,7 @@ let filter { additional_url_params; language; url; query; _ } target_id filter =
         (CCList.find_opt (fun condition ->
            condition |> Filter.Condition.column |> Column.equal col))
       |> CCOption.map_or ~default:false (function
-        | HideTrue (_, value) | HideNone (_, value) | HideSome (_, value) ->
-          value
+        | Checkbox (_, value) -> value
         | Select _ -> false)
     in
     let checkbox_filter col variant =
@@ -124,9 +123,7 @@ let filter { additional_url_params; language; url; query; _ } target_id filter =
       |> fun checked -> variant col (not checked) |> checkbox col checked
     in
     function
-    | Human.HideTrue col -> checkbox_filter col hidetrue
-    | Human.HideNone col -> checkbox_filter col hidenone
-    | Human.HideSome col -> checkbox_filter col hidesome
+    | Human.Checkbox col -> checkbox_filter col checkbox
     | Human.Select _ -> txt "SELECT"
   in
   filter

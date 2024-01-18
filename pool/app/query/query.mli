@@ -79,9 +79,7 @@ module Filter : sig
   module Condition : sig
     module Human : sig
       type t =
-        | HideTrue of Column.t
-        | HideNone of Column.t
-        | HideSome of Column.t
+        | Checkbox of Column.t
         | Select of Column.t * select_option list
 
       val equal : t -> t -> bool
@@ -90,16 +88,12 @@ module Filter : sig
     end
 
     type t =
-      | HideTrue of Column.t * bool
-      | HideNone of Column.t * bool
-      | HideSome of Column.t * bool
+      | Checkbox of Column.t * bool
       | Select of Column.t * select_option
 
     val equal : t -> t -> bool
     val pp : Format.formatter -> t -> unit
-    val hidetrue : Column.t -> bool -> t
-    val hidenone : Column.t -> bool -> t
-    val hidesome : Column.t -> bool -> t
+    val checkbox : Column.t -> bool -> t
     val select : Column.t -> select_option -> t
     val column : t -> Column.t
   end

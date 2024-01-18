@@ -28,15 +28,9 @@ let from_request
     >>= fun filterable_by ->
     filterable_by
     |> CCList.filter_map (function
-      | Human.HideTrue col ->
+      | Human.Checkbox col ->
         let value = find_column col in
-        value >>= Utils.Bool.of_string_opt >|= hidetrue col
-      | Human.HideNone col ->
-        let value = find_column col in
-        value >>= Utils.Bool.of_string_opt >|= hidenone col
-      | Human.HideSome col ->
-        let value = find_column col in
-        value >>= Utils.Bool.of_string_opt >|= hidesome col
+        value >>= Utils.Bool.of_string_opt >|= checkbox col
       | Human.Select _ -> failwith "TODO")
     |> function
     | [] -> None
