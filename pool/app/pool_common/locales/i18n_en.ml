@@ -547,6 +547,7 @@ Only sessions with open spots can be selected.|}
   | TenantDatabaseUrl ->
     {|The database URL, according to the following scheme:
      mariadb://<user>:<pw>@<host>:<port>/<database>|}
+  | TenantUrl -> "The URL of the tenant without protocol, e.g.: pool.uzh.ch"
   | TextLengthMin i -> error_to_string (Entity_message.TextLengthMin i)
   | TextLengthMax i -> error_to_string (Entity_message.TextLengthMax i)
   | TimeSpanPickerHint -> "Time duration in minutes"
