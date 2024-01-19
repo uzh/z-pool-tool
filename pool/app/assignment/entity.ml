@@ -208,7 +208,15 @@ let column_participated =
   |> Query.Column.create
 ;;
 
-let filterable_by = None
+let column_marked_as_deleted =
+  Query.Column.create
+    (Field.HideMakedAsDeleted, "pool_assignments.marked_as_deleted = 0")
+;;
+
+let filterable_by =
+  Some Query.Filter.Condition.Human.[ Checkbox column_marked_as_deleted ]
+;;
+
 let searchable_by = Pool_user.searchable_by @ [ column_external_data_id ]
 
 let sortable_by =
@@ -228,6 +236,7 @@ let default_query =
     { pagination = None
     ; search = None
     ; sort = Some default_sort
-    ; filter = None
+    ; filter =
+        Some Filter.Condition.[ Checkbox (column_marked_as_deleted, true) ]
     }
 ;;

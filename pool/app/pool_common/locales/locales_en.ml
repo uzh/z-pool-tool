@@ -98,6 +98,7 @@ let rec field_to_string =
   | GtxApiKey -> "GTX Api Key"
   | HideCanceled -> "Hide canceled"
   | HideClosed -> "Hide closed"
+  | HideMakedAsDeleted -> "Hide marked as deleted"
   | HidePaused -> "Hide paused"
   | HideUnverified -> "Hide unverified"
   | Hint -> "hint"

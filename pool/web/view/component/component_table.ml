@@ -35,8 +35,12 @@ let legend_color_item classname =
 ;;
 
 let legend_icon_item icon =
-  div ~a:[ a_class [ "legend-item" ] ] [ Component_icon.to_html icon ]
+  div
+    ~a:[ a_class [ "legend-item"; "justify-center" ] ]
+    [ Component_icon.to_html icon ]
 ;;
+
+let legend_text_item text = div ~a:[ a_class [ "legend-item" ] ] [ txt text ]
 
 let table_legend items =
   items

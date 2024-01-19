@@ -929,12 +929,7 @@ let detail
   let assignments_html =
     let open Page_admin_assignments in
     let swap_session_modal_id = swap_session_modal_id session in
-    let legend =
-      p
-        [ Utils.hint_to_string language I18n.SessionCloseLegend
-          |> HttpUtils.add_line_breaks
-        ]
-    in
+    let legend = Partials.table_legend language in
     let swap_session_modal =
       div
         ~a:
@@ -1487,10 +1482,7 @@ let close
               (Utils.field_to_string language Message.Field.Participants
                |> CCString.capitalize_ascii)
           ]
-      ; p
-          [ Utils.hint_to_string language I18n.SessionCloseLegend
-            |> HttpUtils.add_line_breaks
-          ]
+      ; Page_admin_assignments.Partials.table_legend ~hide_deleted:true language
       ; p
           [ Utils.hint_to_string language I18n.SessionCloseHints |> Unsafe.data
           ]

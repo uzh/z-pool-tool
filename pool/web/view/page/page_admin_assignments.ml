@@ -41,6 +41,24 @@ let read_assignment_redirect m =
 module Partials = struct
   open Assignment
 
+  let table_legend ?(hide_deleted = false) language =
+    let open Pool_common in
+    let open Component.Table in
+    let deleted =
+      [ ( Utils.field_to_string language Field.MarkedAsDeleted
+        , legend_color_item "bg-red-lighter" )
+      ]
+    in
+    let to_string = Utils.hint_to_string language in
+    let base =
+      I18n.
+        [ to_string SessionCloseLegendNoShow, legend_text_item "NS"
+        ; to_string SessionCloseLegendParticipated, legend_text_item "P"
+        ]
+    in
+    (if hide_deleted then base else base @ deleted) |> table_legend
+  ;;
+
   let empty language =
     Pool_common.(
       Utils.text_to_string language (I18n.EmtpyList Message.Field.Assignments))
@@ -543,10 +561,7 @@ module Partials = struct
           (Component.Modal.js_modal_add_spinner swap_session_modal_id)
       in
       div
-        [ p
-            [ Utils.hint_to_string language I18n.SessionCloseLegend
-              |> HttpUtils.add_line_breaks
-            ]
+        [ table_legend language
         ; div
             ~a:
               [ a_id swap_session_modal_id
@@ -629,6 +644,7 @@ let data_table
   in
   let data_table =
     Component.DataTable.create_meta
+      ?filter:Assignment.filterable_by
       ~search:Assignment.searchable_by
       url
       query
@@ -795,6 +811,11 @@ let data_table
     in
     let th_class = [ "w-3"; "w-3"; "w-2"; "w-1"; "w-1"; "w-2" ] in
     let row (assignment : t) =
+      let tr cells =
+        match assignment.marked_as_deleted |> MarkedAsDeleted.value with
+        | true -> tr ~a:[ a_class [ "bg-red-lighter" ] ] cells
+        | false -> tr cells
+      in
       let left =
         conditional_left_columns
         |> CCList.filter_map (fun (check, _, to_html) ->
