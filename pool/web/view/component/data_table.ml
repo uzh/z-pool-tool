@@ -83,7 +83,7 @@ let filter { additional_url_params; language; url; query; _ } target_id filter =
         url
         (Query.to_uri_query
            ?additional_params:additional_url_params
-           { query with search = None; pagination = None; filter = Some filter })
+           { query with pagination = None; filter = Some filter })
       |> Format.asprintf "%a" Uri.pp
       |> Sihl.Web.externalize_path
     in
@@ -146,9 +146,20 @@ let filter { additional_url_params; language; url; query; _ } target_id filter =
     | Human.Checkbox col -> checkbox_filter col
     | Human.Select (col, options) -> select_filter col options
   in
+  let open Filter.Condition.Human in
   filter
-  |> CCList.map make_filter
-  |> div ~a:[ a_class [ "flexrow"; "flex-gap" ] ]
+  |> CCList.partition_filter_map (fun cond ->
+    match cond with
+    | Checkbox _ -> `Right (make_filter cond)
+    | Select _ -> `Left (make_filter cond))
+  |> fun (checkboxes, selects) ->
+  let wrap ?(classname = []) = function
+    | [] -> txt ""
+    | html -> div ~a:[ a_class ("stack-sm" :: classname) ] html
+  in
+  div
+    ~a:[ a_class [ "switcher-sm"; "flex-gap" ] ]
+    [ wrap checkboxes; wrap ~classname:[ "toggle-list" ] selects ]
 ;;
 
 let pagination
@@ -283,33 +294,40 @@ let searchbar
         ~a:[ a_label_for search_label ]
         [ search_field |> Utils.field_to_string_capitalized language |> txt ]
     ; div
-        ~a:[ a_class [ "flexrow"; "flex-gap"; "flexcolumn-mobile" ] ]
-        [ div
-            ~a:[ a_class [ "flexcolumn"; "grow" ] ]
-            [ input
-                ~a:
-                  ([ a_name search_label
-                   ; a_id search_label
-                   ; a_input_type `Search
-                   ; a_value
-                       (query.search
-                        |> CCOption.map_or ~default:"" Search.query_string)
-                   ; a_user_data
-                       "hx-trigger"
-                       "input changed delay:300ms, search"
-                   ]
-                   @ hx_get ~url ~target:("#" ^ target_id))
-                ()
-            ; span
-                ~a:[ a_class [ "help" ] ]
-                [ I18n.SearchByFields (CCList.map Column.field searchable_by)
-                  |> Utils.hint_to_string language
-                  |> txt
-                ]
+        ~a:[ a_class [ "flexcolumn"; "grow" ] ]
+        [ input
+            ~a:
+              ([ a_name search_label
+               ; a_id search_label
+               ; a_input_type `Search
+               ; a_value
+                   (query.search
+                    |> CCOption.map_or ~default:"" Search.query_string)
+               ; a_user_data "hx-trigger" "input changed delay:300ms, search"
+               ]
+               @ hx_get ~url ~target:("#" ^ target_id))
+            ()
+        ; span
+            ~a:[ a_class [ "help" ] ]
+            [ I18n.SearchByFields (CCList.map Column.field searchable_by)
+              |> Utils.hint_to_string language
+              |> txt
             ]
-        ; a
-            ~a:[ a_class [ "btn"; "small"; "is-text"; "gap-sm" ]; a_href "?" ]
-            [ txt (Utils.control_to_string language Message.(Reset None)) ]
+        ]
+    ]
+;;
+
+let resetbar language =
+  let open Pool_common in
+  div
+    ~a:[ a_class [ "flexcolumn"; "justify-center" ] ]
+    [ a
+        ~a:[ a_class [ "btn"; "small"; "has-icon"; "is-text" ]; a_href "?" ]
+        [ Component_icon.(to_html RefreshOutline)
+        ; txt
+            (Utils.control_to_string
+               language
+               Message.(Reset (Some Field.Filter)))
         ]
     ]
 ;;
@@ -366,12 +384,21 @@ let make
   items
   =
   let default = txt "" in
-  let filter =
-    data_table.filter |> CCOption.map_or ~default (filter data_table target_id)
-  in
   let search_bar =
-    data_table.search
-    |> CCOption.map_or ~default (searchbar ~target_id data_table)
+    data_table.search |> CCOption.map (searchbar ~target_id data_table)
+  in
+  let filter_bar =
+    data_table.filter |> CCOption.map (filter data_table target_id)
+  in
+  let filter_block =
+    [ search_bar; filter_bar ]
+    |> CCList.filter_map CCFun.id
+    |> fun parts ->
+    div
+      ~a:[ a_class [ "flexrow"; "flex-gap"; "flexcolumn-mobile" ] ]
+      [ div ~a:[ a_class [ "switcher"; "grow"; "flex-gap" ] ] parts
+      ; resetbar data_table.language
+      ]
   in
   let pagination =
     data_table.query.Query.pagination
@@ -386,10 +413,5 @@ let make
   in
   div
     ~a:[ a_class [ "stack" ]; a_id target_id ]
-    [ filter
-    ; search_bar
-    ; prepend_html
-    ; table ~a:[ classes ] ~thead rows
-    ; pagination
-    ]
+    [ filter_block; prepend_html; table ~a:[ classes ] ~thead rows; pagination ]
 ;;
