@@ -348,6 +348,8 @@ module TimeUnit = struct
   include SelectorType (Core)
   include Core
 
+  let default_unit = Minutes
+
   let read m =
     m |> Format.asprintf "[\"%s\"]" |> Yojson.Safe.from_string |> t_of_yojson
   ;;

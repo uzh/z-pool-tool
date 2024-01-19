@@ -308,7 +308,8 @@ let timespan_picker
       |> CCList.map (fun unit ->
         let selected =
           time_unit
-          |> CCOption.map_or ~default:false (TimeUnit.equal unit)
+          |> CCOption.value ~default:TimeUnit.default_unit
+          |> TimeUnit.equal unit
           |> function
           | true -> [ a_selected () ]
           | false -> []
