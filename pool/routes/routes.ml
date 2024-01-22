@@ -673,7 +673,12 @@ module Admin = struct
         ; choose ~scope:"group" groups
         ]
       in
+      let settings =
+        let open CustomFieldSettings in
+        [ get "" ~middlewares:[] show (* TODO: ACCESS*) ]
+      in
       [ get "" ~middlewares:[ Access.index ] redirect
+      ; choose ~scope:"settings" settings
       ; choose ~scope:(Model |> url_key) models
       ]
     in

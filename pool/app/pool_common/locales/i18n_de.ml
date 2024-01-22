@@ -17,6 +17,10 @@ let to_string = function
   | Closed -> "Geschlossen"
   | ContactWaitingListEmpty -> "Sie sind aktuell auf keiner Warteliste."
   | ContactWaitingListTitle -> "Auf der Warteliste"
+  | CustomFieldsSettings ->
+    "In der folgenden Liste können Sie bestimmen, in welcher Tabelle \
+     zusätzlich zu den Kontaktangaben auch die individuellen Angaben angezeigt \
+     werden sollen."
   | DashboardProfileCompletionText ->
     "Ihr Profil ist unvollständig. Um zu mehr Experimenten eingeladen zu \
      werden, vervollständigen Sie Ihr Profil."

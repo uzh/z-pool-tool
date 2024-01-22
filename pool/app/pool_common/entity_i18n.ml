@@ -9,6 +9,7 @@ type t =
   | Closed
   | ContactWaitingListEmpty
   | ContactWaitingListTitle
+  | CustomFieldsSettings
   | DashboardProfileCompletionText
   | DashboardProfileCompletionTitle
   | DashboardTitle

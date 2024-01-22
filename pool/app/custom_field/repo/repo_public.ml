@@ -206,10 +206,6 @@ module Sql = struct
       |> Lwt.return
   ;;
 
-  let table_view_condition = function
-    | `SesionClose -> "show_on_session_close_screen = 1"
-  ;;
-
   let find_by_contacts_and_fields_request contact_ids field_ids =
     let id_list counter ids =
       CCList.mapi

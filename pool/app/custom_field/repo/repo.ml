@@ -283,8 +283,8 @@ module Sql = struct
     Repo_option.destroy_by_custom_field pool (Entity.id t)
   ;;
 
-  let table_view_condition = function
-    | `SesionClose -> "show_on_session_close_screen = 1"
+  let table_view_column = function
+    | `SesionClose -> "show_on_session_close_screen"
   ;;
 
   let find_by_table_view_request table_view =
@@ -292,9 +292,9 @@ module Sql = struct
     Format.asprintf
       {sql|
         WHERE pool_custom_fields.model = $1
-        AND %s
+        AND %s = 1
       |sql}
-      (table_view_condition table_view)
+      (table_view_column table_view)
     |> select_sql
     |> Caqti_type.string ->* Repo_entity.t
   ;;
