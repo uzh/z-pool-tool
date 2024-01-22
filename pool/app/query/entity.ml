@@ -160,15 +160,98 @@ module Sort = struct
   ;;
 end
 
+module Filter = struct
+  module SelectOption = struct
+    type label = (Pool_common.Language.t * string) list [@@deriving eq, show]
+
+    type t =
+      { label : label
+      ; value : string
+      }
+    [@@deriving eq, show]
+
+    let create label value = { label; value }
+
+    let label language { label; _ } =
+      CCList.assoc ~eq:Pool_common.Language.equal language label
+    ;;
+
+    let value { value; _ } = value
+
+    let find_by_value options param =
+      CCList.find_opt (fun { value; _ } -> CCString.equal value param) options
+    ;;
+  end
+
+  module Condition = struct
+    module Human = struct
+      type t =
+        | Checkbox of Column.t
+        | Select of Column.t * SelectOption.t list
+      [@@deriving eq, show]
+
+      let column = function
+        | Checkbox col | Select (col, _) -> col
+      ;;
+    end
+
+    type t =
+      | Checkbox of Column.t * bool
+      | Select of Column.t * SelectOption.t
+    [@@deriving eq, show, variants]
+
+    let column = function
+      | Checkbox (col, _) | Select (col, _) -> col
+    ;;
+  end
+
+  type human = Condition.Human.t list [@@deriving eq, show]
+  type t = Condition.t list [@@deriving eq, show]
+
+  let to_query_parts t =
+    let open Condition in
+    t
+    |> CCList.map (function
+      | Checkbox (col, active) ->
+        Column.field col, Pool_common.Model.Boolean.stringify active
+      | Select (col, option) -> Column.field col, SelectOption.value option)
+  ;;
+
+  let to_sql ?where dyn (m : t) =
+    m
+    |> CCList.fold_left
+         (fun default conditon ->
+           let dyn, sql = default in
+           let open Condition in
+           match conditon with
+           | Checkbox (col, active) ->
+             if active then dyn, sql @ [ Column.to_sql col ] else default
+           | Select (col, option) ->
+             ( dyn |> Dynparam.add Caqti_type.string (SelectOption.value option)
+             , sql @ [ Format.asprintf "%s = ?" (Column.to_sql col) ] ))
+         (dyn, [])
+    |> fun (dyn, sql) ->
+    match sql with
+    | [] -> dyn, where
+    | sql ->
+      let conditions = CCString.concat " AND " sql in
+      (match where with
+       | None -> dyn, Some conditions
+       | Some where -> dyn, Some (Format.asprintf "%s AND %s" where conditions))
+  ;;
+end
+
 type t =
-  { pagination : Pagination.t option
+  { filter : Filter.t option
+  ; pagination : Pagination.t option
   ; search : Search.t option
   ; sort : Sort.t option
   }
 [@@deriving eq, show]
 
-let to_uri_query ?(additional_params = []) { pagination; search; sort } =
-  [ pagination |> Option.map Pagination.to_query_parts
+let to_uri_query ?(additional_params = []) { filter; pagination; search; sort } =
+  [ filter |> CCOption.map Filter.to_query_parts
+  ; pagination |> Option.map Pagination.to_query_parts
   ; search |> Option.map Search.to_query_parts
   ; sort |> Option.map Sort.to_query_parts
   ]
@@ -178,10 +261,14 @@ let to_uri_query ?(additional_params = []) { pagination; search; sort } =
   |> List.map (fun (k, v) -> Common.Message.Field.show k, [ Uri.pct_encode v ])
 ;;
 
+let filter { filter; _ } = filter
 let pagination { pagination; _ } = pagination
 let search { search; _ } = search
 let sort { sort; _ } = sort
-let create ?pagination ?search ?sort () = { pagination; search; sort }
+
+let create ?filter ?pagination ?search ?sort () =
+  { filter; pagination; search; sort }
+;;
 
 let with_sort_order order t =
   let sort = t.sort |> Option.map (fun sort -> Sort.{ sort with order }) in
@@ -202,7 +289,8 @@ let set_page_count ({ pagination; _ } as t) row_count =
 
 let apply_default ~default t =
   let open CCOption.Infix in
+  let filter = t.filter <+> (default >>= filter) in
   let search = t.search <+> (default >>= search) in
   let sort = t.sort <+> (default >>= sort) in
-  { t with sort; search }
+  { t with filter; sort; search }
 ;;

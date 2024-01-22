@@ -1,6 +1,7 @@
 open Tyxml.Html
 open Component
 open Input
+open CCFun.Infix
 module Message = Pool_common.Message
 
 let session_title (s : Session.t) =
@@ -23,12 +24,20 @@ let follow_up_icon language =
 ;;
 
 let key_figures_head = "Min / Max (Overbook)"
+let int_to_txt = CCInt.to_string %> txt
 
 let session_path experiment_id session_id =
   Format.asprintf
     "/admin/experiments/%s/sessions/%s"
     Experiment.(Id.value experiment_id)
     Session.(session_id |> Id.value)
+;;
+
+let some_session_is_followup sessions =
+  sessions
+  |> CCList.find_opt (fun { Session.follow_up_to; _ } ->
+    CCOption.is_some follow_up_to)
+  |> CCOption.is_some
 ;;
 
 module Partials = struct
@@ -64,7 +73,7 @@ module Partials = struct
   ;;
 
   let session_row_title language chronological session =
-    let date = span [ txt (session |> session_date_to_human) ] in
+    let date = span [ txt (session |> start_end_with_duration_human) ] in
     match CCOption.is_some session.follow_up_to, chronological with
     | false, true | false, false -> date
     | true, true ->
@@ -282,7 +291,9 @@ let session_form
             [ I18n.TimeSpanPickerHint
             ; I18n.DefaultReminderLeadTime (default_value |> encode)
             ]
-          ?value:(CCOption.bind session get_value |> CCOption.map encode)
+          ?value:
+            (CCOption.bind default_value_session get_value
+             |> CCOption.map encode)
           ~flash_fetcher
       ]
   in
@@ -297,12 +308,13 @@ let session_form
     ; div
         ~a:[ a_class [ "grid-col-2" ] ]
         [ (let value =
-             (* Don't want start date filled out in form if creating with
-                duplication or follow up *)
-             if CCOption.is_some duplicate || CCOption.is_some follow_up_to
+             (* Don't want start date filled out in form if creating follow
+                up *)
+             if CCOption.is_some follow_up_to
              then None
              else
-               session |> CCOption.map (fun (s : t) -> s.start |> Start.value)
+               default_value_session
+               |> CCOption.map (fun (s : t) -> s.start |> Start.value)
            in
            date_time_picker_element
              language
@@ -320,7 +332,7 @@ let session_form
             ?value:
               (CCOption.map
                  (fun (s : t) -> s.duration |> Duration.value)
-                 session)
+                 default_value_session)
             ~flash_fetcher
             ~read_only:has_assignments
         ; reschedule_hint ()
@@ -471,14 +483,19 @@ let data_table
       | true -> Some [ Message.Field.Chronological, "true" ]
       | false -> None
     in
-    Component.DataTable.create_meta ?additional_url_params url query language
+    Component.DataTable.create_meta
+      ?additional_url_params
+      ?filter:filterable_by
+      url
+      query
+      language
   in
   let cols =
     let create_session : [ | Html_types.flow5 ] elt =
       link_as_button
         ~style:`Success
         ~icon:Icon.Add
-        ~classnames:[ "small" ]
+        ~classnames:[ "small"; "nobr" ]
         ~control:(language, Message.(Add (Some Field.Session)))
         (Format.asprintf "%s/create" session_index_path)
     in
@@ -490,19 +507,29 @@ let data_table
     ; `custom create_session
     ]
   in
-  let th_class = [ "w-2"; "w-2"; "w-2"; "w-2"; "w-2"; "w-2" ] in
+  let th_class = [ "w-3"; "w-2"; "w-2"; "w-2"; "w-2"; "w-1" ] in
   let row
-    ({ Session.assignment_count; no_show_count; participant_count; _ } as
-     session :
+    ({ Session.assignment_count
+     ; no_show_count
+     ; participant_count
+     ; closed_at
+     ; _
+     } as session :
       Session.t)
     =
     let open Partials in
     let row_attrs = Partials.row_attrs session in
-    let int_to_string i = i |> CCInt.to_string |> txt in
+    let no_show_count, participant_count =
+      match CCOption.is_some closed_at with
+      | true ->
+        ( no_show_count |> NoShowCount.value |> int_to_txt
+        , participant_count |> ParticipantCount.value |> int_to_txt )
+      | false -> txt "", txt ""
+    in
     [ session_row_title language chronological session
-    ; assignment_count |> AssignmentCount.value |> int_to_string
-    ; no_show_count |> NoShowCount.value |> int_to_string
-    ; participant_count |> ParticipantCount.value |> int_to_string
+    ; assignment_count |> AssignmentCount.value |> int_to_txt
+    ; no_show_count
+    ; participant_count
     ; Partials.session_key_figures session |> txt
     ; Partials.button_dropdown context experiment.Experiment.id session
     ]
@@ -567,7 +594,9 @@ let index
       script (Unsafe.data js)
   in
   let chronological_toggle =
-    Partials.chronological_toggle language chronological
+    if sessions |> fst |> some_session_is_followup
+    then Partials.chronological_toggle language chronological
+    else txt ""
   in
   div
     ~a:[ a_class [ "stack" ] ]
@@ -728,40 +757,20 @@ let detail
                 ] ))
           session.follow_up_to
       in
-      let counters =
-        let length lst = lst |> CCList.length |> CCInt.to_string |> txt in
-        let open Assignment in
-        let assignment_count =
-          ( Field.AssignmentCount
-          , session.assignment_count
-            |> AssignmentCount.value
-            |> CCInt.to_string
-            |> txt )
-        in
-        match session.Session.closed_at with
-        | None -> [ assignment_count ]
-        | Some (_ : Ptime.t) ->
-          assignment_count
-          :: [ ( Field.NoShowCount
-               , assignments
-                 |> CCList.filter (fun { no_show; _ } ->
-                   no_show |> CCOption.map_or ~default:false NoShow.value)
-                 |> length )
-             ; ( Field.Participated
-               , assignments
-                 |> CCList.filter (fun { participated; _ } ->
-                   participated
-                   |> CCOption.map_or ~default:false Participated.value)
-                 |> length )
-             ]
+      let no_show_count, participant_count =
+        (fun (no_show_count, participant_count) ->
+          ( (Field.NoShowCount, no_show_count)
+          , (Field.Participated, participant_count) ))
+        @@
+        match CCOption.is_some session.closed_at with
+        | true ->
+          ( session.no_show_count |> NoShowCount.value |> int_to_txt
+          , session.participant_count |> ParticipantCount.value |> int_to_txt )
+        | false -> txt "", txt ""
       in
       let rows =
         let amount amt = amt |> ParticipantAmount.value |> string_of_int in
-        [ ( Field.Start
-          , session.start
-            |> Start.value
-            |> Utils.Time.formatted_date_time
-            |> txt )
+        [ Field.Start, session |> Session.start_end_human |> txt
         ; ( Field.Duration
           , session.duration
             |> Duration.value
@@ -786,6 +795,10 @@ let detail
         ; Field.MaxParticipants, amount session.max_participants |> txt
         ; Field.MinParticipants, amount session.min_participants |> txt
         ; Field.Overbook, amount session.overbook |> txt
+        ; ( Field.AssignmentCount
+          , session.assignment_count |> AssignmentCount.value |> int_to_txt )
+        ; no_show_count
+        ; participant_count
         ]
         |> fun rows ->
         let canceled =
@@ -805,10 +818,7 @@ let detail
             , format session.text_message_reminder_sent_at )
           ]
         in
-        rows
-        @ counters
-        @ time_stamps
-        @ ([ canceled; closed ] |> CCList.filter_map CCFun.id)
+        rows @ time_stamps @ ([ canceled; closed ] |> CCList.filter_map CCFun.id)
       in
       Table.vertical_table `Striped language ~align_top:true
       @@ CCOption.map_or ~default:rows (CCList.cons' rows) parent
@@ -920,12 +930,7 @@ let detail
   let assignments_html =
     let open Page_admin_assignments in
     let swap_session_modal_id = swap_session_modal_id session in
-    let legend =
-      p
-        [ Utils.hint_to_string language I18n.SessionCloseLegend
-          |> HttpUtils.add_line_breaks
-        ]
-    in
+    let legend = Partials.table_legend language in
     let swap_session_modal =
       div
         ~a:
@@ -1478,10 +1483,7 @@ let close
               (Utils.field_to_string language Message.Field.Participants
                |> CCString.capitalize_ascii)
           ]
-      ; p
-          [ Utils.hint_to_string language I18n.SessionCloseLegend
-            |> HttpUtils.add_line_breaks
-          ]
+      ; Page_admin_assignments.Partials.table_legend ~hide_deleted:true language
       ; p
           [ Utils.hint_to_string language I18n.SessionCloseHints |> Unsafe.data
           ]

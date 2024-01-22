@@ -70,8 +70,66 @@ module Sort : sig
   val to_query_parts : t -> (Pool_common.Message.Field.t * string) list
 end
 
+module Filter : sig
+  module SelectOption : sig
+    type label = (Pool_common.Language.t * string) list
+
+    val equal_label : label -> label -> bool
+    val pp_label : Format.formatter -> label -> unit
+    val show_label : label -> string
+
+    type t =
+      { label : label
+      ; value : string
+      }
+
+    val equal : t -> t -> bool
+    val pp : Format.formatter -> t -> unit
+    val show : t -> string
+    val create : label -> string -> t
+    val value : t -> string
+    val label : Pool_common.Language.t -> t -> string
+    val find_by_value : t list -> string -> t option
+  end
+
+  module Condition : sig
+    module Human : sig
+      type t =
+        | Checkbox of Column.t
+        | Select of Column.t * SelectOption.t list
+
+      val equal : t -> t -> bool
+      val show : t -> string
+      val pp : Format.formatter -> t -> unit
+      val column : t -> Column.t
+    end
+
+    type t =
+      | Checkbox of Column.t * bool
+      | Select of Column.t * SelectOption.t
+
+    val equal : t -> t -> bool
+    val pp : Format.formatter -> t -> unit
+    val checkbox : Column.t -> bool -> t
+    val select : Column.t -> SelectOption.t -> t
+    val show : t -> string
+    val column : t -> Column.t
+  end
+
+  type human = Condition.Human.t list
+
+  val show_human : human -> string
+
+  type t = Condition.t list
+
+  val equal : t -> t -> bool
+  val show : t -> string
+  val pp : Format.formatter -> t -> unit
+end
+
 type t =
-  { pagination : Pagination.t option
+  { filter : Filter.t option
+  ; pagination : Pagination.t option
   ; search : Search.t option
   ; sort : Sort.t option
   }
@@ -87,14 +145,16 @@ val with_sort_order : Sort.SortOrder.t -> t -> t
 val with_sort_column : Column.t -> t -> t
 
 val create
-  :  ?pagination:Pagination.t
+  :  ?filter:Filter.t
+  -> ?pagination:Pagination.t
   -> ?search:Search.t
   -> ?sort:Sort.t
   -> unit
   -> t
 
 val from_request
-  :  ?searchable_by:Column.t list
+  :  ?filterable_by:Filter.human
+  -> ?searchable_by:Column.t list
   -> ?sortable_by:Column.t list
   -> ?default:t
   -> Rock.Request.t

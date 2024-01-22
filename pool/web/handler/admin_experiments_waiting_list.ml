@@ -17,6 +17,9 @@ let index req =
   @@ fun ({ Pool_context.database_label; _ } as context) query ->
   let open Utils.Lwt_result.Infix in
   let* experiment = Experiment.find database_label id in
+  let access_contact_profiles =
+    Helpers.Guard.can_access_contact_profile context id
+  in
   let%lwt waiting_list =
     Waiting_list.find_by_experiment
       ~query
@@ -25,8 +28,9 @@ let index req =
   in
   let open Page.Admin.WaitingList in
   (if HttpUtils.Htmx.is_hx_request req
-   then list context experiment waiting_list |> Lwt.return
-   else index context experiment waiting_list)
+   then
+     list ~access_contact_profiles context experiment waiting_list |> Lwt.return
+   else index ~access_contact_profiles context experiment waiting_list)
   |> Lwt_result.ok
 ;;
 

@@ -255,8 +255,12 @@ let session_date_to_human (session : t) =
   session.start |> Start.value |> Pool_common.Utils.Time.formatted_date_time
 ;;
 
-let start_end_to_human ({ start; duration; _ } : t) =
-  Utils.Ptime.format_datetime_with_span start duration
+let start_end_with_duration_human ({ start; duration; _ } : t) =
+  Utils.Ptime.format_start_end_with_duration start duration
+;;
+
+let start_end_human ({ start; duration; _ } : t) =
+  Utils.Ptime.format_start_end start duration
 ;;
 
 let compare_start s1 s2 = Start.compare s1.start s2.start
@@ -384,8 +388,8 @@ module Public = struct
     |> CCOption.get_exn_or "Session end not in range"
   ;;
 
-  let start_end_to_human ({ start; duration; _ } : t) =
-    Utils.Ptime.format_datetime_with_span start duration
+  let start_end_with_duration_human ({ start; duration; _ } : t) =
+    Utils.Ptime.format_start_end_with_duration start duration
   ;;
 end
 
@@ -642,6 +646,24 @@ let default_sort =
   Sort.{ column = column_date; order = SortOrder.Ascending }
 ;;
 
-let default_query =
-  Query.{ pagination = None; search = None; sort = Some default_sort }
+let column_canceled =
+  Query.Column.create (Field.HideCanceled, "pool_sessions.canceled_at IS NULL")
 ;;
+
+let column_closed =
+  Query.Column.create (Field.HideClosed, "pool_sessions.closed_at IS NULL")
+;;
+
+let filterable_by =
+  Some
+    Query.Filter.Condition.Human.
+      [ Checkbox column_canceled; Checkbox column_closed ]
+;;
+
+let default_filter =
+  let open Query in
+  let open Filter in
+  Condition.[ Checkbox (column_canceled, true); Checkbox (column_closed, true) ]
+;;
+
+let default_query = Query.create ~sort:default_sort ~filter:default_filter ()

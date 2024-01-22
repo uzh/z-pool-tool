@@ -138,13 +138,21 @@ input[readonly], select[readonly] {
     }
 }
 
-@supports (display: grid) {
-    .grid-col-4 {
-        grid-template-columns: repeat(4, 1fr);
+.filter-bar-reset {
+    grid-column: 4;
 
-        @include until($tablet-breakpoint) {
-            grid-template-columns: repeat(2, 1fr);
-        }
+    @include until($desktop-breakpoint) {
+        grid-column: 2;
+    }
+    
+    @include until($tablet-breakpoint) {
+        grid-column: 1;
+    }
+}
+
+@include until($tablet-breakpoint) {
+    [class*="grid-"] .search-bar {
+        grid-column: span 1;
     }
 }
 
@@ -244,7 +252,6 @@ abbr[title] {
 .legend-item {
     width: $space-base;
     display: flex;
-    justify-content: center;
 }
 
 .legend-color {

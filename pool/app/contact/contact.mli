@@ -93,7 +93,6 @@ val id : t -> Pool_common.Id.t
 val firstname : t -> Pool_user.Firstname.t
 val lastname : t -> Pool_user.Lastname.t
 val fullname : t -> string
-val user_lastname_firstname : t -> string
 val lastname_firstname : t -> string
 val email_address : t -> Pool_user.EmailAddress.t
 val sexp_of_t : t -> Sexplib0.Sexp.t
@@ -237,6 +236,7 @@ module Preview : sig
 end
 
 val column_cell_phone : Query.Column.t
+val filterable_by : Query.Filter.human option
 val searchable_by : Query.Column.t list
 val sortable_by : Query.Column.t list
 val default_sort : Query.Sort.t

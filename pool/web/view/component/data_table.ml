@@ -3,7 +3,7 @@ module Icon = Component_icon
 
 let hx_get ~url ~target =
   [ a_user_data "hx-get" url
-  ; a_user_data "hx-push-url" url
+  ; a_user_data "hx-replace-url" "true"
   ; a_user_data "hx-target" target
   ; a_user_data "hx-swap" "innerHTML"
   ]
@@ -13,12 +13,13 @@ type data_table =
   { url : Uri.t
   ; query : Query.t
   ; language : Pool_common.Language.t
+  ; filter : Query.Filter.human option
   ; search : Query.Column.t list option
   ; additional_url_params : (Pool_common.Message.Field.t * string) list option
   }
 
-let create_meta ?additional_url_params ?search url query language =
-  { url; query; language; search; additional_url_params }
+let create_meta ?additional_url_params ?filter ?search url query language =
+  { url; query; language; filter; search; additional_url_params }
 ;;
 
 type col =
@@ -72,6 +73,91 @@ let sort_icon sort col =
     | Descending -> Icon.CaretDown
   in
   Component_icon.to_html icon
+;;
+
+let filter { additional_url_params; language; url; query; _ } target_id filter =
+  let open Query in
+  let hx_attribs filter =
+    let url =
+      Uri.with_query
+        url
+        (Query.to_uri_query
+           ?additional_params:additional_url_params
+           { query with pagination = None; filter = Some filter })
+      |> Format.asprintf "%a" Uri.pp
+      |> Sihl.Web.externalize_path
+    in
+    a_user_data "hx-trigger" "change" :: hx_get ~url ~target:("#" ^ target_id)
+  in
+  let make_filter condition =
+    let open Filter in
+    let open Condition in
+    let params, current =
+      let default = [], None in
+      match query.filter with
+      | None | Some [] -> default
+      | Some conditions ->
+        conditions
+        |> CCList.fold_left
+             (fun (params, current) cur ->
+               match Column.equal (column cur) (Human.column condition) with
+               | true -> params, Some cur
+               | false -> params @ [ cur ], current)
+             default
+    in
+    let checkbox_filter col =
+      let is_checked =
+        current
+        |> CCOption.map_or ~default:false (function
+          | Checkbox (_, value) -> value
+          | Select _ -> false)
+      in
+      let html_checkbox col value condition =
+        Component_input.checkbox_element
+          ~additional_attributes:(hx_attribs (condition :: params))
+          ~value
+          language
+          (Column.field col)
+      in
+      checkbox col (not is_checked) |> html_checkbox col is_checked
+    in
+    let select_filter col options =
+      let open SelectOption in
+      let attributes = hx_attribs params in
+      let selected =
+        let open CCOption in
+        current
+        >>= function
+        | Select (_, { value; _ }) -> SelectOption.find_by_value options value
+        | Checkbox _ -> None
+      in
+      Component_input.selector
+        ~add_empty:true
+        ~attributes
+        ~option_formatter:(label language)
+        language
+        (Column.field col)
+        value
+        options
+        selected
+        ()
+    in
+    match condition with
+    | Human.Checkbox col -> checkbox_filter col
+    | Human.Select (col, options) -> select_filter col options
+  in
+  let open Filter.Condition.Human in
+  filter
+  |> CCList.partition_filter_map (fun cond ->
+    match cond with
+    | Checkbox _ -> `Right (make_filter cond)
+    | Select _ -> `Left (make_filter cond))
+  |> fun (checkboxes, selects) ->
+  let wrap ?(classname = []) = function
+    | [] -> txt ""
+    | html -> div ~a:[ a_class ("stack-sm" :: classname) ] html
+  in
+  [ wrap checkboxes; wrap ~classname:[ "toggle-list" ] selects ]
 ;;
 
 let pagination
@@ -201,38 +287,45 @@ let searchbar
     |> Sihl.Web.externalize_path
   in
   div
-    ~a:[ a_class [ "form-group" ] ]
+    ~a:[ a_class [ "form-group"; "span-2"; "search-bar" ] ]
     [ label
         ~a:[ a_label_for search_label ]
         [ search_field |> Utils.field_to_string_capitalized language |> txt ]
     ; div
-        ~a:[ a_class [ "flexrow"; "flex-gap"; "flexcolumn-mobile" ] ]
-        [ div
-            ~a:[ a_class [ "flexcolumn"; "grow" ] ]
-            [ input
-                ~a:
-                  ([ a_name search_label
-                   ; a_id search_label
-                   ; a_input_type `Search
-                   ; a_value
-                       (query.search
-                        |> CCOption.map_or ~default:"" Search.query_string)
-                   ; a_user_data
-                       "hx-trigger"
-                       "input changed delay:300ms, search"
-                   ]
-                   @ hx_get ~url ~target:("#" ^ target_id))
-                ()
-            ; span
-                ~a:[ a_class [ "help" ] ]
-                [ I18n.SearchByFields (CCList.map Column.field searchable_by)
-                  |> Utils.hint_to_string language
-                  |> txt
-                ]
+        ~a:[ a_class [ "flexcolumn"; "grow" ] ]
+        [ input
+            ~a:
+              ([ a_name search_label
+               ; a_id search_label
+               ; a_input_type `Search
+               ; a_value
+                   (query.search
+                    |> CCOption.map_or ~default:"" Search.query_string)
+               ; a_user_data "hx-trigger" "input changed delay:300ms, search"
+               ]
+               @ hx_get ~url ~target:("#" ^ target_id))
+            ()
+        ; span
+            ~a:[ a_class [ "help" ] ]
+            [ I18n.SearchByFields (CCList.map Column.field searchable_by)
+              |> Utils.hint_to_string language
+              |> txt
             ]
-        ; a
-            ~a:[ a_class [ "btn"; "small"; "is-text"; "gap-sm" ]; a_href "?" ]
-            [ txt (Utils.control_to_string language Message.(Reset None)) ]
+        ]
+    ]
+;;
+
+let resetbar language =
+  let open Pool_common in
+  div
+    ~a:[ a_class [ "flexrow"; "justify-end"; "gap"; "filter-bar-reset" ] ]
+    [ a
+        ~a:[ a_class [ "btn"; "small"; "has-icon"; "is-text" ]; a_href "?" ]
+        [ Component_icon.(to_html RefreshOutline)
+        ; txt
+            (Utils.control_to_string
+               language
+               Message.(Reset (Some Field.Filter)))
         ]
     ]
 ;;
@@ -290,8 +383,30 @@ let make
   =
   let default = txt "" in
   let search_bar =
-    data_table.search
-    |> CCOption.map_or ~default (searchbar ~target_id data_table)
+    data_table.search |> CCOption.map (searchbar ~target_id data_table)
+  in
+  let filter_bar =
+    data_table.filter |> CCOption.map (filter data_table target_id)
+  in
+  let filter_parts =
+    match search_bar, filter_bar with
+    | Some search, Some filter -> Some (search :: filter)
+    | Some search, None -> Some [ search ]
+    | None, Some filter -> Some filter
+    | None, None -> None
+  in
+  (* let filter_block = filter_parts |> CCOption.map_or ~default:(txt "") (fun
+     parts -> div ~a:[ a_class [ "border"; "inset" ] ] [ div ~a:[ a_class [
+     "grid-col-4" ] ] parts ; resetbar data_table.language ]) in *)
+  let filter_block =
+    filter_parts
+    |> CCOption.map_or ~default:(txt "") (fun parts ->
+      div
+        ~a:[ a_class [ "border"; "inset" ] ]
+        [ div
+            ~a:[ a_class [ "grid-col-4" ] ]
+            (parts @ [ resetbar data_table.language ])
+        ])
   in
   let pagination =
     data_table.query.Query.pagination
@@ -306,5 +421,5 @@ let make
   in
   div
     ~a:[ a_class [ "stack" ]; a_id target_id ]
-    [ search_bar; prepend_html; table ~a:[ classes ] ~thead rows; pagination ]
+    [ filter_block; prepend_html; table ~a:[ classes ] ~thead rows; pagination ]
 ;;

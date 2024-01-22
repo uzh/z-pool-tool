@@ -359,6 +359,4 @@ let default_sort =
   Sort.{ column = column_name; order = SortOrder.Ascending }
 ;;
 
-let default_query =
-  Query.{ pagination = None; search = None; sort = Some default_sort }
-;;
+let default_query = Query.create ~sort:default_sort ()

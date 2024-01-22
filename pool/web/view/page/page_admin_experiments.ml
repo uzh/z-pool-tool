@@ -125,6 +125,7 @@ let list Pool_context.{ language; _ } experiments query =
   let url = Uri.of_string "/admin/experiments" in
   let data_table =
     Component.DataTable.create_meta
+      ?filter:Experiment.filterable_by
       ~search:Experiment.searchable_by
       url
       query

@@ -93,6 +93,7 @@ val find_all_with_roles
   -> (Role.Role.t * Guard.Uuid.Target.t option) list
   -> t list Lwt.t
 
+val filterable_by : Query.Filter.human option
 val searchable_by : Query.Column.t list
 val sortable_by : Query.Column.t list
 val default_sort : Query.Sort.t

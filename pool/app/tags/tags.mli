@@ -194,5 +194,6 @@ val column_title : Query.Column.t
 val column_description : Query.Column.t
 val column_model : Query.Column.t
 val default_query : Query.t
+val filterable_by : Query.Filter.human option
 val searchable_by : Query.Column.t list
 val sortable_by : Query.Column.t list

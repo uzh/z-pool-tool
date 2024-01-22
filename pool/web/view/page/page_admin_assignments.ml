@@ -41,6 +41,24 @@ let read_assignment_redirect m =
 module Partials = struct
   open Assignment
 
+  let table_legend ?(hide_deleted = false) language =
+    let open Pool_common in
+    let open Component.Table in
+    let deleted =
+      [ ( Utils.field_to_string language Field.MarkedAsDeleted
+        , legend_color_item "bg-red-lighter" )
+      ]
+    in
+    let to_string = Utils.hint_to_string language in
+    let base =
+      I18n.
+        [ to_string SessionCloseLegendNoShow, legend_text_item "NS"
+        ; to_string SessionCloseLegendParticipated, legend_text_item "P"
+        ]
+    in
+    (if hide_deleted then base else base @ deleted) |> table_legend
+  ;;
+
   let empty language =
     Pool_common.(
       Utils.text_to_string language (I18n.EmtpyList Message.Field.Assignments))
@@ -74,10 +92,6 @@ module Partials = struct
 
   let contact_lastname ({ Assignment.contact; _ } : Assignment.t) =
     contact |> Contact.lastname |> Pool_user.Lastname.value |> txt
-  ;;
-
-  let contact_lastname_firstname ({ Assignment.contact; _ } : Assignment.t) =
-    contact |> Contact.lastname_firstname |> txt
   ;;
 
   let contact_email ({ Assignment.contact; _ } : Assignment.t) =
@@ -208,7 +222,7 @@ module Partials = struct
     in
     let option_formatter m =
       let open Session in
-      let str = start_end_to_human m in
+      let str = start_end_with_duration_human m in
       match m.follow_up_to with
       | Some _ -> Unsafe.data (Format.asprintf "&nbsp;&nbsp;&nbsp;%s" str)
       | None -> txt str
@@ -547,10 +561,7 @@ module Partials = struct
           (Component.Modal.js_modal_add_spinner swap_session_modal_id)
       in
       div
-        [ p
-            [ Utils.hint_to_string language I18n.SessionCloseLegend
-              |> HttpUtils.add_line_breaks
-            ]
+        [ table_legend language
         ; div
             ~a:
               [ a_id swap_session_modal_id
@@ -633,13 +644,19 @@ let data_table
   in
   let data_table =
     Component.DataTable.create_meta
+      ?filter:Assignment.filterable_by
       ~search:Assignment.searchable_by
       url
       query
       language
   in
   let conditional_left_columns =
-    [ view_contact_name, Pool_user.column_name, contact_lastname_firstname
+    [ ( view_contact_name
+      , Pool_user.column_name
+      , fun { contact; _ } ->
+          Page_admin_contact.contact_lastname_firstname
+            access_contact_profiles
+            contact )
     ; view_contact_info, Pool_user.column_email, contact_email
     ; view_contact_info, Contact.column_cell_phone, contact_cellphone
     ]
@@ -794,6 +811,11 @@ let data_table
     in
     let th_class = [ "w-3"; "w-3"; "w-2"; "w-1"; "w-1"; "w-2" ] in
     let row (assignment : t) =
+      let tr cells =
+        match assignment.marked_as_deleted |> MarkedAsDeleted.value with
+        | true -> tr ~a:[ a_class [ "bg-red-lighter" ] ] cells
+        | false -> tr cells
+      in
       let left =
         conditional_left_columns
         |> CCList.filter_map (fun (check, _, to_html) ->
@@ -958,7 +980,7 @@ let edit
                 Utils.field_to_string language Message.Field.Session
                 |> CCString.capitalize_ascii)
           ]
-      ; p [ session |> Session.start_end_to_human |> txt ]
+      ; p [ session |> Session.start_end_with_duration_human |> txt ]
       ; Component.Location.preview session.location
       ]
   in

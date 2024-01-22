@@ -268,14 +268,35 @@ let column_created_at =
   (Field.CreatedAt, "pool_experiments.created_at") |> Query.Column.create
 ;;
 
-let searchable_by = [ column_title; column_public_title ]
-let default_sort_column = column_created_at
-let sortable_by = default_sort_column :: searchable_by
-
-let default_query =
-  let open Query in
-  let sort =
-    Sort.{ column = default_sort_column; order = SortOrder.Descending }
-  in
-  create ~sort ()
+let column_experiment_type =
+  (Field.ExperimentType, "pool_experiments.experiment_type")
+  |> Query.Column.create
 ;;
+
+let experiment_type_filter =
+  let open Query.Filter in
+  let open Pool_common.ExperimentType in
+  let languages = Pool_common.Language.all in
+  let options =
+    all
+    |> CCList.map (fun exp_type ->
+      let label =
+        languages
+        |> CCList.map (fun lang ->
+          lang, show exp_type |> CCString.capitalize_ascii)
+      in
+      let value = show exp_type in
+      SelectOption.create label value)
+  in
+  Condition.Human.Select (column_experiment_type, options)
+;;
+
+let filterable_by = Some [ experiment_type_filter ]
+let searchable_by = [ column_title; column_public_title ]
+let sortable_by = column_created_at :: searchable_by
+
+let default_sort =
+  Query.Sort.{ column = column_created_at; order = SortOrder.Descending }
+;;
+
+let default_query = Query.create ~sort:default_sort ()

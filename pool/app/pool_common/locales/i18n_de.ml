@@ -514,9 +514,10 @@ Die folgenden Folgesessions existieren:|}
 Wenn keine der Checkboxen angewählt ist, bedeutet das, dass der Kontakt erschienen ist, aber nicht teilgenommen hat.|}
       (Locales_de.field_to_string Entity_message_field.NoShow)
       (Locales_de.field_to_string Entity_message_field.Participated)
-  | SessionCloseLegend ->
-    {|NS: Der Kontakt ist nicht an der Session erschienen
-    P: Der Kontakt hat am Experiment teilgenommen|}
+  | SessionCloseLegendNoShow ->
+    "Der Kontakt ist nicht an der Session erschienen"
+  | SessionCloseLegendParticipated ->
+    "Der Kontakt hat am Experiment teilgenommen"
   | SessionReminderLeadTime ->
     "Die Vorlaufzeit bestimmt, wie lange vor dem Start der Session die \
      Erinnerungen an die Kontakte verschickt wird."

@@ -94,6 +94,7 @@ val find_by_contact_and_experiment_opt
 val column_resent_at : Query.Column.t
 val column_created_at : Query.Column.t
 val column_count : Query.Column.t
+val filterable_by : Query.Filter.human option
 val searchable_by : Query.Column.t list
 val sortable_by : Query.Column.t list
 val default_query : Query.t

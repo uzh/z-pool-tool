@@ -190,6 +190,7 @@ val column_canceled_at : Query.Column.t
 val column_no_show : Query.Column.t
 val column_participated : Query.Column.t
 val column_external_data_id : Query.Column.t
+val filterable_by : Query.Filter.human option
 val searchable_by : Query.Column.t list
 val sortable_by : Query.Column.t list
 val default_sort : Query.Sort.t

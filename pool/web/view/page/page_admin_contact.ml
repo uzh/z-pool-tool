@@ -11,6 +11,13 @@ let path =
   Contact.id %> Pool_common.Id.value %> Format.asprintf "/admin/contacts/%s"
 ;;
 
+let contact_lastname_firstname access_contact_profiles contact =
+  let text = contact |> Contact.lastname_firstname |> txt in
+  match access_contact_profiles with
+  | true -> a ~a:[ a_href (path contact |> Sihl.Web.externalize_path) ] [ text ]
+  | false -> text
+;;
+
 let enroll_contact_modal_id = "enroll-modal"
 
 let enroll_contact_path ?suffix contact_id =
@@ -150,7 +157,7 @@ let assign_contact_experiment_modal
     | msg -> Component.Notification.notification language `Error msg
   in
   let session_select =
-    let label = Session.start_end_to_human in
+    let label = Session.start_end_with_duration_human in
     let follow_up_row session = div [ txt (label session) ] in
     let row (session, follow_ups) =
       let tooltip, attribs =
@@ -305,6 +312,7 @@ let list Pool_context.{ language; _ } contacts query =
   let url = Uri.of_string "/admin/contacts" in
   let data_table =
     Component.DataTable.create_meta
+      ?filter:Contact.filterable_by
       ~search:Contact.searchable_by
       url
       query

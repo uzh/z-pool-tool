@@ -501,9 +501,9 @@ The following follow-up sessions exist:|}
       (Locales_en.field_to_string Entity_message_field.NoShow |> capitalize)
       (Locales_en.field_to_string Entity_message_field.Participated
        |> capitalize)
-  | SessionCloseLegend ->
-    {|NS: the contact did not show up
-  P: the contact participated in the experiment|}
+  | SessionCloseLegendNoShow -> "the contact did not show up"
+  | SessionCloseLegendParticipated ->
+    "the contact participated in the experiment"
   | SearchByFields fields ->
     Format.asprintf
       "Search by: %s"

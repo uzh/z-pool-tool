@@ -143,7 +143,8 @@ val is_fully_booked : t -> bool
 val available_spots : t -> int
 val has_assignments : t -> bool
 val session_date_to_human : t -> string
-val start_end_to_human : t -> string
+val start_end_with_duration_human : t -> string
+val start_end_human : t -> string
 
 type event =
   | Created of (t * Experiment.Id.t)
@@ -182,7 +183,7 @@ module Public : sig
   val assignment_creatable : t -> (unit, Pool_common.Message.error) result
   val group_and_sort : t list -> (t * t list) list
   val get_session_end : t -> Ptime.t
-  val start_end_to_human : t -> string
+  val start_end_with_duration_human : t -> string
 end
 
 val to_public : t -> Public.t
@@ -385,8 +386,10 @@ val column_date : Query.Column.t
 val column_no_assignments : Query.Column.t
 val column_noshow_count : Query.Column.t
 val column_participation_count : Query.Column.t
+val filterable_by : Query.Filter.human option
 val searchable_by : Query.Column.t list
 val sortable_by : Query.Column.t list
+val default_filter : Query.Filter.t
 val default_sort : Query.Sort.t
 val default_query : Query.t
 

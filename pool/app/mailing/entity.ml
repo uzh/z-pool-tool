@@ -269,6 +269,7 @@ let column_invitation_count =
   (Field.InvitationCount, "invitation_count") |> Query.Column.create
 ;;
 
+let filterable_by = None
 let searchable_by = []
 
 let sortable_by =
@@ -280,6 +281,4 @@ let default_sort =
   Sort.{ column = column_start; order = SortOrder.Ascending }
 ;;
 
-let default_query =
-  Query.{ pagination = None; search = None; sort = Some default_sort }
-;;
+let default_query = Query.create ~sort:default_sort ()

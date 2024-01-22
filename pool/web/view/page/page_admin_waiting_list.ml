@@ -5,7 +5,12 @@ module Table = Component.Table
 module Message = Pool_common.Message
 module DataTable = Component.DataTable
 
-let list { Pool_context.language; _ } experiment (waiting_list_entries, query) =
+let list
+  { Pool_context.language; _ }
+  ~access_contact_profiles
+  experiment
+  (waiting_list_entries, query)
+  =
   let open Pool_user in
   let url =
     experiment.Experiment.id
@@ -39,7 +44,9 @@ let list { Pool_context.language; _ } experiment (waiting_list_entries, query) =
       Waiting_list.t)
     =
     let open Waiting_list in
-    [ txt (Contact.user_lastname_firstname contact)
+    [ Page_admin_contact.contact_lastname_firstname
+        access_contact_profiles
+        contact
     ; txt (Contact.email_address contact |> EmailAddress.value)
     ; txt
         (contact.Contact.cell_phone
@@ -73,7 +80,7 @@ let session_row language chronological session =
   in
   let key_figures = Page_admin_session.Partials.session_key_figures session in
   let title =
-    let date = span [ txt (session |> session_date_to_human) ] in
+    let date = span [ txt (session |> start_end_with_duration_human) ] in
     match is_followup, chronological with
     | false, true | false, false -> date
     | true, true ->
@@ -146,9 +153,19 @@ let session_list language chronological sessions =
         parent :: follow_ups)
       sessions
   in
+  let chronological_toggle =
+    let open Page_admin_session in
+    if sessions
+       |> CCList.fold_left
+            (fun acc (session, followups) -> acc @ (session :: followups))
+            []
+       |> some_session_is_followup
+    then Page_admin_session.Partials.chronological_toggle language chronological
+    else txt ""
+  in
   div
     ~a:[ a_class [ "stack" ] ]
-    [ Page_admin_session.Partials.chronological_toggle language chronological
+    [ chronological_toggle
     ; table
         ~a:
           [ a_class
@@ -284,8 +301,8 @@ let detail
   |> Layout.Experiment.(create context (NavLink I18n.WaitingList) experiment)
 ;;
 
-let index context experiment waiting_list =
-  list context experiment waiting_list
+let index ~access_contact_profiles context experiment waiting_list =
+  list ~access_contact_profiles context experiment waiting_list
   |> CCList.return
   |> Layout.Experiment.(
        create

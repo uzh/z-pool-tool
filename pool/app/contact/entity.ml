@@ -155,7 +155,6 @@ end
 let user { user; _ } = user
 let id m = m.user.Sihl_user.id |> Pool_common.Id.of_string
 let fullname m = m.user |> User.user_fullname
-let user_lastname_firstname m = m.user |> User.user_lastname_firstname
 let firstname m = m.user |> User.user_firstname
 let lastname m = m.user |> User.user_lastname
 let lastname_firstname m = m.user |> User.user_lastname_firstname
@@ -211,6 +210,30 @@ let profile_completion_cookie = "profile_completion"
 let column_cell_phone =
   (Pool_common.Message.Field.CellPhone, "pool_contacts.cell_phone")
   |> Query.Column.create
+;;
+
+let column_hide_paused =
+  Query.Column.create
+    (Pool_common.Message.Field.HidePaused, "pool_contacts.paused = 0")
+;;
+
+let column_hide_unverified =
+  Query.Column.create
+    ( Pool_common.Message.Field.HideUnverified
+    , "pool_contacts.email_verified IS NOT NULL" )
+;;
+
+let filterable_by =
+  Some
+    Query.Filter.Condition.Human.
+      [ Checkbox column_hide_unverified; Checkbox column_hide_paused ]
+;;
+
+let default_filter =
+  let open Query.Filter in
+  [ Condition.(Checkbox (column_hide_unverified, true))
+  ; Condition.(Checkbox (column_hide_paused, true))
+  ]
 ;;
 
 let searchable_by = Pool_user.searchable_by

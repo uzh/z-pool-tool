@@ -234,7 +234,8 @@ type hint =
   | SessionCloseParticipationTagsSelected
   | SessionCloseNoParticipationTagsSelected
   | SessionCloseHints
-  | SessionCloseLegend
+  | SessionCloseLegendNoShow
+  | SessionCloseLegendParticipated
   | SessionRegistrationFollowUpHint
   | SessionRegistrationHint
   | SessionReminderLeadTime

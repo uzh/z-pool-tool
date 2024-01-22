@@ -39,6 +39,7 @@ let create ?(id = Pool_common.Id.create ()) contact experiment admin_comment =
   }
 ;;
 
+let filterable_by = None
 let searchable_by = Contact.searchable_by
 
 let sortable_by =
@@ -47,6 +48,4 @@ let sortable_by =
      |> Query.Column.create_list)
 ;;
 
-let default_query =
-  Query.{ pagination = None; search = None; sort = Some Contact.default_sort }
-;;
+let default_query = Query.create ~sort:Contact.default_sort ()

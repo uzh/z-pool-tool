@@ -22,6 +22,8 @@ type data_table =
   ; query : Query.t (** the current URL query string *)
   ; language : Pool_common.Language.t
   (** the language in which to show the table *)
+  ; filter : Query.Filter.human option
+  (** the columns that can be filtered by *)
   ; search : Query.Column.t list option
   (** the columns that can be searched for *)
   ; additional_url_params : (Pool_common.Message.Field.t * string) list option
@@ -30,6 +32,7 @@ type data_table =
 
 val create_meta
   :  ?additional_url_params:(Pool_common.Message.Field.t * string) list
+  -> ?filter:Query.Filter.human
   -> ?search:Query.Column.t list
   -> Uri.t
   -> Query.t
