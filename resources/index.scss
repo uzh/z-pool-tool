@@ -351,6 +351,51 @@ table.simple {
     }
 }
 
+.session-close-table .custom-data {
+    display: flex;
+    & > * {
+        flex-basis: 100%;
+    }
+}
+
+@include mobile { 
+    
+    .session-close-header .custom-data > * {
+        display: none;
+    }
+
+    .session-close-table .striped {      
+        & > * {
+            flex-direction: column;
+            & > * + * {
+                margin-top: $space-sm;
+            }
+        }
+
+        & > * > * {
+            width: 100%;
+        }
+    }
+
+    .custom-data {
+        flex-direction: column;
+        
+        & > * + * {
+            margin-top: $space-xs;
+        }
+        
+        & > * {
+            flex-direction: row;
+        }
+
+        [data-label]:before {
+            content: attr(data-label);
+            width: 30%;
+            font-weight: $font-weight-bold;    
+        }
+    }
+}
+
 // Modal
 .assignment-reminder-modals .modal-body {
     width: 500px;

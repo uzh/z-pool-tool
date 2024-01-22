@@ -432,20 +432,23 @@ let reschedule_session
             (Utils.confirmable_to_string language I18n.RescheduleSession)
         ]
       [ csrf_element csrf ()
-      ; date_time_picker_element
-          language
-          Message.Field.Start
-          ~required:true
-          ~flash_fetcher
-          ~value:(session.start |> Start.value)
-          ~disable_past:true
-      ; timespan_picker
-          language
-          ~required:true
-          Message.Field.Duration
-          ~hints:[ I18n.TimeSpanPickerHint ]
-          ~value:(session.duration |> Duration.value)
-          ~flash_fetcher
+      ; div
+          ~a:[ a_class [ "grid-col-2" ] ]
+          [ date_time_picker_element
+              language
+              Message.Field.Start
+              ~required:true
+              ~flash_fetcher
+              ~value:(session.start |> Start.value)
+              ~disable_past:true
+          ; timespan_picker
+              language
+              ~required:true
+              Message.Field.Duration
+              ~hints:[ I18n.TimeSpanPickerHint ]
+              ~value:(session.duration |> Duration.value)
+              ~flash_fetcher
+          ]
       ; div
           ~a:[ a_class [ "flexrow" ] ]
           [ submit_element
@@ -1252,6 +1255,7 @@ let close_assignment_htmx_form
     div
       ~a:[ a_class [ "form-group" ] ]
       [ div
+          ~a:[ a_class [ "flexrow"; "justify-center" ] ]
           [ input
               ~a:
                 ([ a_input_type `Checkbox; a_name (Field.show field) ]
@@ -1321,7 +1325,7 @@ let close_assignment_htmx_form
       ; a_user_data "hx-trigger" "change"
       ; a_user_data "hx-swap" "outerHTML"
       ; a_user_data "assignment" (Id.value id)
-      ; a_class [ "flexcolumn"; "stack-sm" ]
+      ; a_class [ "flexcolumn"; "stack-sm"; "w-4" ]
       ]
     [ csrf_element csrf ()
     ; div
@@ -1390,19 +1394,23 @@ let close
             Pool_common.(Utils.text_to_string language I18n.AssignmentListEmpty)
         ]
     | assignments ->
+      let identity_width = "w-3" in
+      let custom_data_width = "w-5" in
       let thead =
         let form_header =
           div
-            ~a:[ a_class [ "flexrow"; "inset-sm" ] ]
+            ~a:[ a_class [ "flexrow"; "w-4" ] ]
             [ div
                 ~a:[ a_class [ "push"; "session-close-checkboxes" ] ]
                 [ div [ strong [ txt "P" ] ]; div [ strong [ txt "NS" ] ] ]
             ]
         in
-        (txt ""
-         :: (custom_fields
-             |> CCList.map (fun field ->
-               txt (Custom_field.name_value language field))))
+        [ div ~a:[ a_class [ identity_width ] ] []
+        ; custom_fields
+          |> CCList.map (fun field ->
+            div [ txt (Custom_field.name_value language field) ])
+          |> div ~a:[ a_class [ custom_data_width; "custom-data" ] ]
+        ]
         @ [ form_header ]
       in
       CCList.map
@@ -1418,9 +1426,13 @@ let close
                     (fun public -> public |> Public.id |> Id.equal (id field))
                     custom_data
                   |> CCOption.map_or
-                       ~default:(txt "")
-                       (Component.CustomField.answer_to_html user language))
+                       ~default:(div [ txt "" ])
+                       (Component.CustomField.answer_to_html
+                          ~add_data_label:true
+                          user
+                          language))
                 custom_fields)
+            |> div ~a:[ a_class [ custom_data_width; "custom-data" ] ]
           in
           let identity =
             Component.UserStatus.Contact.identity
@@ -1428,12 +1440,23 @@ let close
               contact
               (Assignment.Id.to_common id)
           in
-          (strong [ txt identity ] :: custom_field_cells)
-          @ [ close_assignment_htmx_form context experiment session assignment ])
+          [ div ~a:[ a_class [ identity_width ] ] [ strong [ txt identity ] ]
+          ; custom_field_cells
+          ; close_assignment_htmx_form context experiment session assignment
+          ])
         assignments
-      |> Table.horizontal_table `Striped ~thead ~align_top:true
-      |> fun table ->
-      let counters = session_counters language counters in
+      |> CCList.map (div ~a:[ a_class [ "inset-sm"; "flexrow" ] ])
+      |> fun rows ->
+      let table =
+        div
+          ~a:[ a_class [ "session-close-table" ] ]
+          [ div
+              ~a:[ a_class [ "flexrow"; "inset-sm"; "session-close-header" ] ]
+              thead
+          ; div ~a:[ a_class [ "striped" ] ] rows
+          ; session_counters language counters
+          ]
+      in
       let scripts =
         Format.asprintf
           {js|
@@ -1464,7 +1487,7 @@ let close
           Field.(show NoShow)
           Field.(show Participated)
       in
-      div [ table; counters; script (Unsafe.data scripts) ]
+      div [ table; script (Unsafe.data scripts) ]
   in
   let submit_session_close =
     form
