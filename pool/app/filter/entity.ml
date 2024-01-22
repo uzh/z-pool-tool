@@ -748,13 +748,10 @@ let column_created_at =
 
 let filterable_by = None
 let searchable_by = [ column_title ]
-let default_sort_column = column_created_at
-let sortable_by = default_sort_column :: searchable_by
+let sortable_by = column_created_at :: searchable_by
 
-let default_query =
-  let open Query in
-  let sort =
-    Sort.{ column = default_sort_column; order = SortOrder.Descending }
-  in
-  create ~sort ()
+let default_sort =
+  Query.Sort.{ column = column_created_at; order = SortOrder.Descending }
 ;;
+
+let default_query = Query.create ~sort:default_sort ()

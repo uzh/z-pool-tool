@@ -666,11 +666,4 @@ let default_filter =
   [ Condition.(Checkbox (column_canceled, true)) ]
 ;;
 
-let default_query =
-  Query.
-    { pagination = None
-    ; search = None
-    ; sort = Some default_sort
-    ; filter = Some default_filter
-    }
-;;
+let default_query = Query.create ~sort:default_sort ~filter:default_filter ()

@@ -231,12 +231,8 @@ let sortable_by =
 
 let default_sort = Pool_user.default_sort
 
-let default_query =
-  Query.
-    { pagination = None
-    ; search = None
-    ; sort = Some default_sort
-    ; filter =
-        Some Filter.Condition.[ Checkbox (column_marked_as_deleted, true) ]
-    }
+let default_filter =
+  Query.Filter.Condition.[ Checkbox (column_marked_as_deleted, true) ]
 ;;
+
+let default_query = Query.create ~sort:default_sort ~filter:default_filter ()

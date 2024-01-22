@@ -48,11 +48,4 @@ let sortable_by =
      |> Query.Column.create_list)
 ;;
 
-let default_query =
-  Query.
-    { pagination = None
-    ; search = None
-    ; sort = Some Contact.default_sort
-    ; filter = None
-    }
-;;
+let default_query = Query.create ~sort:Contact.default_sort ()
