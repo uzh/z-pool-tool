@@ -169,7 +169,7 @@ val find_uncanceled_by_session
 val find_for_session_close_screen
   :  Pool_database.Label.t
   -> Session.Id.t
-  -> t list Lwt.t
+  -> (t list * Custom_field.t list) Lwt.t
 
 val find_deleted_by_session
   :  Pool_database.Label.t

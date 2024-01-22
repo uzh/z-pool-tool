@@ -418,9 +418,10 @@ module SelectOption = struct
 end
 
 module Public = struct
+  (* TODO: Move entity uuid to answer? *)
   type 'a public =
     { id : Id.t
-    ; entity_uuid : Pool_common.Id.t
+    ; entity_uuid : Pool_common.Id.t option
     ; name : Name.t
     ; hint : Hint.t
     ; validation : 'a Validation.t

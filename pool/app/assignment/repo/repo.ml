@@ -514,7 +514,8 @@ let find_for_session_close_screen pool session_id =
   let contact_ids =
     assignments |> CCList.map (fun { Entity.contact; _ } -> Contact.id contact)
   in
-  let%lwt custom_fields =
+  let%lwt custom_fields = Custom_field.find_by_table_view pool `SesionClose in
+  let%lwt public_fields =
     Custom_field.find_public_by_contacts_and_view
       pool
       true
@@ -532,7 +533,7 @@ let find_for_session_close_screen pool session_id =
           (fun field ->
             field
             |> Custom_field.Public.entity_id
-            |> Pool_common.Id.equal contact_id
+            |> CCOption.map_or ~default:false (Pool_common.Id.equal contact_id)
             |> function
             | true -> `Left field
             | false -> `Right field)
@@ -543,5 +544,6 @@ let find_for_session_close_screen pool session_id =
       in
       assign_custom_fields result rest tl
   in
-  assign_custom_fields [] custom_fields assignments |> Lwt.return
+  (assign_custom_fields [] public_fields assignments, custom_fields)
+  |> Lwt.return
 ;;

@@ -30,7 +30,9 @@ let answer_to_html user language (custom_field : Custom_field.Public.t) =
       in
       div
         ~a:[ a_class [ "flexcolumn"; "stack-xs" ] ]
-        [ span [ map_or to_html value ]; admin_input ]
+        [ value |> CCOption.map to_html |> map_or CCFun.(CCList.return %> span)
+        ; admin_input
+        ]
   in
   let select_option_to_html = SelectOption.Public.name language %> txt in
   match custom_field with

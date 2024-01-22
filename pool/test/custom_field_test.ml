@@ -124,7 +124,7 @@ module Data = struct
     in
     let field_type = field_type m in
     let id = id m in
-    let entity_uuid = Pool_common.Id.create () in
+    let entity_uuid = Some (Pool_common.Id.create ()) in
     let hint = hint m in
     let name = name m in
     let required = required m in

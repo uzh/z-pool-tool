@@ -88,7 +88,7 @@ module CustomFieldData = struct
       let version = 0 |> Pool_common.Version.of_int in
       Public.Number
         ( { Public.id = id field
-          ; entity_uuid = Pool_common.Id.create ()
+          ; entity_uuid = Some (Pool_common.Id.create ())
           ; name = name field
           ; hint = hint field
           ; validation = Validation.pure
@@ -136,7 +136,7 @@ module CustomFieldData = struct
       let version = 0 |> Pool_common.Version.of_int in
       Public.Date
         ( { Public.id = id field
-          ; entity_uuid = Pool_common.Id.create ()
+          ; entity_uuid = Some (Pool_common.Id.create ())
           ; name = name field
           ; hint = hint field
           ; validation = Validation.pure
@@ -214,7 +214,7 @@ module CustomFieldData = struct
       let version = 0 |> Pool_common.Version.of_int in
       Public.Select
         ( { Public.id = id field
-          ; entity_uuid = Pool_common.Id.create ()
+          ; entity_uuid = Some (Pool_common.Id.create ())
           ; name = name field
           ; hint = hint field
           ; validation = Validation.pure
@@ -296,7 +296,7 @@ module CustomFieldData = struct
     let version = 0 |> Pool_common.Version.of_int in
     Public.Number
       ( { Public.id = id admin_override_nr_field
-        ; entity_uuid = Pool_common.Id.create ()
+        ; entity_uuid = Some (Pool_common.Id.create ())
         ; name = name admin_override_nr_field
         ; hint = hint admin_override_nr_field
         ; validation = Validation.pure
@@ -392,7 +392,7 @@ module CustomFieldData = struct
     let version = 0 |> Pool_common.Version.of_int in
     Public.MultiSelect
       ( { Public.id = id multi_select_custom_field
-        ; entity_uuid = Pool_common.Id.create ()
+        ; entity_uuid = Some (Pool_common.Id.create ())
         ; name = name multi_select_custom_field
         ; hint = hint multi_select_custom_field
         ; validation = Validation.pure

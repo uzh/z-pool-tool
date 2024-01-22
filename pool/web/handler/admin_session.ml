@@ -206,12 +206,7 @@ let session_page database_label req context session experiment =
       flash_fetcher
     >|> create_layout
   | `Close ->
-    (* TODO: If I have to get the custom_fields separately like this I can
-       refactor the public query to directly filter by flag *)
-    let%lwt custom_fields =
-      Custom_field.find_by_table_view database_label `SesionClose
-    in
-    let%lwt assignments =
+    let%lwt assignments, custom_fields =
       Assignment.find_for_session_close_screen database_label session.Session.id
     in
     let%lwt participation_tags =

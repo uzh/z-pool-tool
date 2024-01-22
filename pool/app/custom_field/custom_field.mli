@@ -232,7 +232,7 @@ end
 module Public : sig
   type 'a public =
     { id : Id.t
-    ; entity_uuid : Pool_common.Id.t
+    ; entity_uuid : Pool_common.Id.t option
     ; name : Name.t
     ; hint : Hint.t
     ; validation : 'a Validation.t
@@ -271,7 +271,7 @@ module Public : sig
   val pp : Format.formatter -> t -> unit
   val show : t -> string
   val id : t -> Id.t
-  val entity_id : t -> Pool_common.Id.t
+  val entity_id : t -> Pool_common.Id.t option
   val name_value : Pool_common.Language.t -> t -> string
   val hint : Pool_common.Language.t -> t -> Hint.hint option
   val required : t -> Required.t

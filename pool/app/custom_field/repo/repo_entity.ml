@@ -290,7 +290,7 @@ end
 module Public = struct
   type repo =
     { id : Id.t
-    ; entity_uuid : Pool_common.Id.t
+    ; entity_uuid : Pool_common.Id.t option
     ; name : Name.t
     ; hint : Hint.t
     ; validation : Yojson.Safe.t
@@ -624,7 +624,7 @@ module Public = struct
         (t2
            Common.Repo.Id.t
            (t2
-              Common.Repo.Id.t
+              (option Common.Repo.Id.t)
               (t2
                  Name.t
                  (t2
