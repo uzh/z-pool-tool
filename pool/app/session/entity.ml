@@ -663,7 +663,7 @@ let filterable_by =
 let default_filter =
   let open Query in
   let open Filter in
-  [ Condition.(Checkbox (column_canceled, true)) ]
+  Condition.[ Checkbox (column_canceled, true); Checkbox (column_closed, true) ]
 ;;
 
 let default_query = Query.create ~sort:default_sort ~filter:default_filter ()
