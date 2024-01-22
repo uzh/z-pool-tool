@@ -295,17 +295,7 @@ let experiment_type_filter =
   Condition.Human.Select (column_experiment_type, options)
 ;;
 
-let column_direct_registration =
-  Query.Column.create
-    (Field.HideClosed, "pool_experiments.registration_disabled = 1")
-;;
-
-let filterable_by =
-  Some
-    Query.Filter.Condition.Human.
-      [ experiment_type_filter; Checkbox column_direct_registration ]
-;;
-
+let filterable_by = Some [ experiment_type_filter ]
 let searchable_by = [ column_title; column_public_title ]
 let sortable_by = column_created_at :: searchable_by
 
