@@ -307,6 +307,12 @@ module Sql = struct
       Entity.Model.(show Contact)
     >|> multiple_to_entity pool Repo_entity.to_entity get_field_type get_id
   ;;
+
+  let update_table_view_flag pool custom_fields = 
+    let dyn = CCList.fold_left (fun dyn field -> 
+        dyn |> Dynparam.add Caqti_type.string
+      )
+      (Dynparam.(empty |> add Caqti_type.string (Entity.Model.(show Contact))))
 end
 
 let find_by_model = Sql.find_by_model
