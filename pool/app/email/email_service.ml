@@ -4,21 +4,25 @@ module Queue = Sihl_queue.MariaDb
 module Cache = struct
   open Hashtbl
 
-  let tbl : (SmtpAuth.Id.t, Pool_database.Label.t * SmtpAuth.Write.t) t =
+  let tbl : (SmtpAuth.Id.t * Pool_database.Label.t, SmtpAuth.Write.t) t =
     create 5
   ;;
 
-  let find_by_id id = find_opt tbl id
+  let find_by_id datbase_label id = find_opt tbl (id, datbase_label)
 
   let find_default pool =
     tbl
-    |> to_seq_values
-    |> Seq.find (fun (database_label, { SmtpAuth.Write.default; _ }) ->
+    |> to_seq
+    |> Seq.find (fun ((_, database_label), { SmtpAuth.Write.default; _ }) ->
       SmtpAuth.Default.value default
       && Pool_database.Label.equal pool database_label)
+    |> CCOption.map snd
   ;;
 
-  let add ((_, { SmtpAuth.Write.id; _ }) as m) = replace tbl id m
+  let add database_label ({ SmtpAuth.Write.id; _ } as m) =
+    replace tbl (id, database_label) m
+  ;;
+
   let update = add
   let clear () = clear tbl
 end
@@ -182,7 +186,7 @@ module Smtp = struct
       let open Pool_common.Utils in
       let cached =
         match smtp_auth_id with
-        | Some id -> Cache.find_by_id id
+        | Some id -> Cache.find_by_id database_label id
         | None -> Cache.find_default database_label
       in
       match cached with
@@ -198,9 +202,9 @@ module Smtp = struct
                 ~tags:(Pool_database.Logger.Tags.create database_label)
           ||> get_or_failwith
         in
-        let () = Cache.add (database_label, auth) in
+        let () = Cache.add database_label auth in
         Lwt.return auth
-      | Some ((_ : Pool_database.Label.t), auth) -> Lwt.return auth
+      | Some auth -> Lwt.return auth
     in
     let username = CCOption.(config.Write.username >|= Username.value) in
     let password = CCOption.(config.Write.password >|= Password.value) in
