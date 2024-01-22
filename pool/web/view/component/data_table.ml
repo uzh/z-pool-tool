@@ -157,9 +157,7 @@ let filter { additional_url_params; language; url; query; _ } target_id filter =
     | [] -> txt ""
     | html -> div ~a:[ a_class ("stack-sm" :: classname) ] html
   in
-  div
-    ~a:[ a_class [ "switcher-sm"; "flex-gap" ] ]
-    [ wrap checkboxes; wrap ~classname:[ "toggle-list" ] selects ]
+  [ wrap checkboxes; wrap ~classname:[ "toggle-list" ] selects ]
 ;;
 
 let pagination
@@ -289,7 +287,7 @@ let searchbar
     |> Sihl.Web.externalize_path
   in
   div
-    ~a:[ a_class [ "form-group" ] ]
+    ~a:[ a_class [ "form-group"; "span-2"; "search-bar" ] ]
     [ label
         ~a:[ a_label_for search_label ]
         [ search_field |> Utils.field_to_string_capitalized language |> txt ]
@@ -320,7 +318,7 @@ let searchbar
 let resetbar language =
   let open Pool_common in
   div
-    ~a:[ a_class [ "flexcolumn"; "justify-center" ] ]
+    ~a:[ a_class [ "flexrow"; "justify-end"; "gap"; "filter-bar-reset" ] ]
     [ a
         ~a:[ a_class [ "btn"; "small"; "has-icon"; "is-text" ]; a_href "?" ]
         [ Component_icon.(to_html RefreshOutline)
@@ -390,15 +388,25 @@ let make
   let filter_bar =
     data_table.filter |> CCOption.map (filter data_table target_id)
   in
+  let filter_parts =
+    match search_bar, filter_bar with
+    | Some search, Some filter -> Some (search :: filter)
+    | Some search, None -> Some [ search ]
+    | None, Some filter -> Some filter
+    | None, None -> None
+  in
+  (* let filter_block = filter_parts |> CCOption.map_or ~default:(txt "") (fun
+     parts -> div ~a:[ a_class [ "border"; "inset" ] ] [ div ~a:[ a_class [
+     "grid-col-4" ] ] parts ; resetbar data_table.language ]) in *)
   let filter_block =
-    [ search_bar; filter_bar ]
-    |> CCList.filter_map CCFun.id
-    |> fun parts ->
-    div
-      ~a:[ a_class [ "flexrow"; "flex-gap"; "flexcolumn-mobile" ] ]
-      [ div ~a:[ a_class [ "switcher"; "grow"; "flex-gap" ] ] parts
-      ; resetbar data_table.language
-      ]
+    filter_parts
+    |> CCOption.map_or ~default:(txt "") (fun parts ->
+      div
+        ~a:[ a_class [ "border"; "inset" ] ]
+        [ div
+            ~a:[ a_class [ "grid-col-4" ] ]
+            (parts @ [ resetbar data_table.language ])
+        ])
   in
   let pagination =
     data_table.query.Query.pagination
