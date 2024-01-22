@@ -1,6 +1,7 @@
 open Tyxml.Html
 open Component
 open Input
+open CCFun.Infix
 module Message = Pool_common.Message
 
 let session_title (s : Session.t) =
@@ -23,7 +24,7 @@ let follow_up_icon language =
 ;;
 
 let key_figures_head = "Min / Max (Overbook)"
-let int_to_txt i = i |> CCInt.to_string |> txt
+let int_to_txt = CCInt.to_string %> txt
 
 let session_path experiment_id session_id =
   Format.asprintf

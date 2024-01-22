@@ -67,7 +67,7 @@ let from_request
   create ~pagination ?filter ?search ?sort () |> apply_default ~default
 ;;
 
-let empty () = { pagination = None; search = None; sort = None; filter = None }
+let empty () = create ()
 
 let append_query_to_sql dyn where t =
   let format = Format.asprintf in
