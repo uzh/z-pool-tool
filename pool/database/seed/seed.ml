@@ -2,6 +2,7 @@ module Root = struct
   let create () =
     let%lwt () = Seed_tenant.create () in
     let%lwt () = Seed_guard.create Pool_database.root in
+    let%lwt () = Seed_guard.role_assignment_root Pool_database.root in
     let%lwt () = Seed_smtp.create Pool_database.root in
     Lwt.return_unit
   ;;
@@ -25,6 +26,8 @@ module Tenant = struct
           ; Seed_filter.filter
           ; Seed_smtp.create
           ; Seed_organisational_units.create
+          ; Seed_guard.create
+          ; Seed_guard.role_assignment
           ]
           @ if is_test then [] else [ Seed_user.contacts ]
         in

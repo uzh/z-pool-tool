@@ -9,11 +9,9 @@ include Backend
 module RolePermission = struct
   include RolePermission
 
-  let from_sql =
-    {sql| 
+  let from_sql = {sql|
     guardian_role_permissions AS role_permissions
   |sql}
-  ;;
 
   let std_filter_sql = {sql| role_permissions.mark_as_deleted IS NULL |sql}
 
@@ -97,14 +95,17 @@ module Actor = struct
 
   let can_assign_roles database_label actor =
     let open Utils.Lwt_result.Infix in
-    ActorRole.find_by_actor ~ctx:(Pool_database.to_ctx database_label) actor
-    ||> CCList.flat_map (fun { Core.ActorRole.role; target_uuid; _ } ->
+    let ctx = Pool_database.to_ctx database_label in
+    ActorRole.find_by_actor ~ctx actor
+    >|> Lwt_list.map_s (fun { Core.ActorRole.role; target_uuid; _ } ->
       match target_uuid with
       | None ->
-        BaseRole.Role.can_assign_roles role |> CCList.map (fun r -> r, None)
+        RoleAssignment.can_assign_roles ~ctx role
+        ||> CCList.map (fun r -> r, None)
       | Some uuid ->
-        BaseRole.Role.can_assign_roles role
-        |> CCList.map (fun r -> r, Some uuid))
+        RoleAssignment.can_assign_roles ~ctx role
+        ||> CCList.map (fun r -> r, Some uuid))
+    ||> CCList.flatten
   ;;
 
   let validate_assign_role database_label actor role =
@@ -178,6 +179,17 @@ module ActorRole = struct
     (database_label, actor)
     |> CCCache.(with_cache ~cb Cache.lru_find_by_actor find_by_actor')
   ;;
+end
+
+module RoleAssignment = struct
+  include RoleAssignment
+  open Pool_database
+
+  let find_all label = find_all ~ctx:(to_ctx label)
+  let find_all_by_role label = find_all_by_role ~ctx:(to_ctx label)
+  let insert label = insert ~ctx:(to_ctx label)
+  let delete label = delete ~ctx:(to_ctx label)
+  let can_assign_roles label = can_assign_roles ~ctx:(to_ctx label)
 end
 
 let validate

@@ -65,13 +65,6 @@ module Role = struct
     ]
   ;;
 
-  let can_assign_roles (role : t) : t list =
-    match role with
-    | `Admin | `Assistant | `Experimenter | `LocationManager -> []
-    | `Recruiter -> [ `Admin; `Assistant; `Experimenter; `LocationManager ]
-    | `Operator -> all
-  ;;
-
   type input_type =
     | QueryExperiments
     | QueryLocations

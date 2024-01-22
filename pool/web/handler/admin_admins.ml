@@ -26,8 +26,9 @@ let admin_detail req is_edit =
   let result ({ Pool_context.csrf; database_label; language; _ } as context) =
     let%lwt available_roles =
       Helpers.Guard.find_roles_of_ctx context
-      ||> CCList.flat_map (fun ({ Guard.ActorRole.role; _ }, _, _) ->
-        Role.Role.can_assign_roles role)
+      >|> Lwt_list.map_s (fun ({ Guard.ActorRole.role; _ }, _, _) ->
+        Guard.Persistence.RoleAssignment.can_assign_roles database_label role)
+      ||> CCList.flatten
     in
     Utils.Lwt_result.map_error (fun err -> err, "/admin/admins")
     @@
