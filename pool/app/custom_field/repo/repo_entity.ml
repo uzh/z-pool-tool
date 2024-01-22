@@ -290,6 +290,7 @@ end
 module Public = struct
   type repo =
     { id : Id.t
+    ; entity_uuid : Pool_common.Id.t
     ; name : Name.t
     ; hint : Hint.t
     ; validation : Yojson.Safe.t
@@ -332,6 +333,7 @@ module Public = struct
     is_admin
     select_options
     { id
+    ; entity_uuid
     ; name
     ; hint
     ; validation
@@ -369,6 +371,7 @@ module Public = struct
       in
       Public.Boolean
         ( { Public.id
+          ; entity_uuid
           ; name
           ; hint
           ; validation = Validation.pure
@@ -391,6 +394,7 @@ module Public = struct
       in
       Public.Date
         ( { Public.id
+          ; entity_uuid
           ; name
           ; hint
           ; validation = Validation.pure
@@ -414,6 +418,7 @@ module Public = struct
       let validation = validation_schema Validation.Number.schema in
       Public.Number
         ( { Public.id
+          ; entity_uuid
           ; name
           ; hint
           ; validation
@@ -451,6 +456,7 @@ module Public = struct
       in
       Public.Select
         ( { Public.id
+          ; entity_uuid
           ; name
           ; hint
           ; validation = Validation.pure
@@ -499,6 +505,7 @@ module Public = struct
       in
       Public.MultiSelect
         ( { Public.id
+          ; entity_uuid
           ; name
           ; hint
           ; validation
@@ -523,6 +530,7 @@ module Public = struct
       let validation = validation_schema Validation.Text.schema in
       Public.Text
         ( { Public.id
+          ; entity_uuid
           ; name
           ; hint
           ; validation
@@ -575,22 +583,24 @@ module Public = struct
     in
     let decode
       ( id
-      , ( name
-        , ( hint
-          , ( validation
-            , ( field_type
-              , ( required
-                , ( custom_field_group_id
-                  , ( admin_override
-                    , ( admin_input_only
-                      , ( prompt_on_registration
-                        , ( answer_id
-                          , ( answer_value
-                            , (answer_admin_value, (version, admin_version)) )
-                          ) ) ) ) ) ) ) ) ) ) )
+      , ( entity_uuid
+        , ( name
+          , ( hint
+            , ( validation
+              , ( field_type
+                , ( required
+                  , ( custom_field_group_id
+                    , ( admin_override
+                      , ( admin_input_only
+                        , ( prompt_on_registration
+                          , ( answer_id
+                            , ( answer_value
+                              , (answer_admin_value, (version, admin_version))
+                              ) ) ) ) ) ) ) ) ) ) ) ) )
       =
       Ok
         { id
+        ; entity_uuid
         ; name
         ; hint
         ; validation
@@ -614,32 +624,36 @@ module Public = struct
         (t2
            Common.Repo.Id.t
            (t2
-              Name.t
+              Common.Repo.Id.t
               (t2
-                 Hint.t
+                 Name.t
                  (t2
-                    Validation.t
+                    Hint.t
                     (t2
-                       FieldType.t
+                       Validation.t
                        (t2
-                          Required.t
+                          FieldType.t
                           (t2
-                             (option Common.Repo.Id.t)
+                             Required.t
                              (t2
-                                AdminOverride.t
+                                (option Common.Repo.Id.t)
                                 (t2
-                                   AdminInputOnly.t
+                                   AdminOverride.t
                                    (t2
-                                      PromptOnRegistration.t
+                                      AdminInputOnly.t
                                       (t2
-                                         (option Common.Repo.Id.t)
+                                         PromptOnRegistration.t
                                          (t2
-                                            (option Caqti_type.string)
+                                            (option Common.Repo.Id.t)
                                             (t2
                                                (option Caqti_type.string)
                                                (t2
-                                                  (option Common.Repo.Version.t)
-                                                  (option Common.Repo.Version.t))))))))))))))))
+                                                  (option Caqti_type.string)
+                                                  (t2
+                                                     (option
+                                                        Common.Repo.Version.t)
+                                                     (option
+                                                        Common.Repo.Version.t)))))))))))))))))
   ;;
 end
 

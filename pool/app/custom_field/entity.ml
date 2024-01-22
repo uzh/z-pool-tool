@@ -420,6 +420,7 @@ end
 module Public = struct
   type 'a public =
     { id : Id.t
+    ; entity_uuid : Pool_common.Id.t
     ; name : Name.t
     ; hint : Hint.t
     ; validation : 'a Validation.t
@@ -454,6 +455,16 @@ module Public = struct
     | Number ({ id; _ }, _)
     | Select ({ id; _ }, _, _)
     | Text ({ id; _ }, _) -> id
+  ;;
+
+  let entity_id (t : t) =
+    match t with
+    | Boolean ({ entity_uuid; _ }, _)
+    | Date ({ entity_uuid; _ }, _)
+    | MultiSelect ({ entity_uuid; _ }, _, _)
+    | Number ({ entity_uuid; _ }, _)
+    | Select ({ entity_uuid; _ }, _, _)
+    | Text ({ entity_uuid; _ }, _) -> entity_uuid
   ;;
 
   let name_value lang (t : t) =

@@ -1225,15 +1225,13 @@ let session_counters
     ]
 ;;
 
-let close_assignment_htmx_row
+let close_assignment_htmx_form
   { Pool_context.language; csrf; _ }
   (experiment : Experiment.t)
-  ~view_contact_name
   ?(updated_fields = [])
   session
   ?counters
-  ({ Assignment.id; no_show; participated; external_data_id; contact; _ } as
-   assignment)
+  ({ Assignment.id; no_show; participated; external_data_id; _ } as assignment)
   =
   let open Assignment in
   let open Pool_common.Utils in
@@ -1264,12 +1262,6 @@ let close_assignment_htmx_row
       ]
   in
   let default_bool fnc = CCOption.map_or ~default:false fnc in
-  let identity =
-    Component.UserStatus.Contact.identity
-      view_contact_name
-      contact
-      (Assignment.Id.to_common id)
-  in
   let action =
     Format.asprintf "%s/assignments/%s/close" session_path (Id.value id)
     |> Sihl.Web.externalize_path
@@ -1320,7 +1312,8 @@ let close_assignment_htmx_row
       let error_to_item err =
         error_to_string language err |> txt |> CCList.return |> li
       in
-      CCList.map error_to_item errors |> ul ~a:[ a_class [ "color-red" ] ])
+      CCList.map error_to_item errors
+      |> ul ~a:[ a_class [ "color-red"; "flexrow" ] ])
   in
   form
     ~a:
@@ -1328,22 +1321,12 @@ let close_assignment_htmx_row
       ; a_user_data "hx-trigger" "change"
       ; a_user_data "hx-swap" "outerHTML"
       ; a_user_data "assignment" (Id.value id)
-      ; a_class [ "flexcolumn"; "stack-sm"; "inset-sm" ]
+      ; a_class [ "flexcolumn"; "stack-sm"; "align-end" ]
       ]
-    [ div
+    [ csrf_element csrf ()
+    ; div
         ~a:[ a_class [ "flexrow"; "flex-gap-sm" ] ]
-        [ csrf_element csrf ()
-        ; div
-            ~a:
-              [ a_class
-                  [ "grow"
-                  ; "flexrow"
-                  ; "flex-gap-sm"
-                  ; "flexcolumn-mobile"
-                  ; "justify-between"
-                  ]
-              ]
-            [ strong [ txt identity ]; external_data_field ]
+        [ external_data_field
         ; div
             ~a:[ a_class [ "session-close-checkboxes" ] ]
             [ checkbox_element
@@ -1365,6 +1348,7 @@ let close
   experiment
   (session : Session.t)
   assignments
+  (_ : Custom_field.t list)
   participation_tags
   counters
   =
@@ -1407,13 +1391,17 @@ let close
         ]
     | assignments ->
       CCList.map
-        (close_assignment_htmx_row
-           context
-           experiment
-           ~view_contact_name
-           session)
+        (fun ({ Assignment.id; contact; _ } as assignment) ->
+          let identity =
+            Component.UserStatus.Contact.identity
+              view_contact_name
+              contact
+              (Assignment.Id.to_common id)
+          in
+          [ strong [ txt identity ] ]
+          @ [ close_assignment_htmx_form context experiment session assignment ])
         assignments
-      |> div ~a:[ a_class [ "flexcolumn"; "striped" ] ]
+      |> Table.horizontal_table `Striped ~align_last_end:true
       |> fun table ->
       let header =
         div

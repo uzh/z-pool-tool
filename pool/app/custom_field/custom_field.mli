@@ -232,6 +232,7 @@ end
 module Public : sig
   type 'a public =
     { id : Id.t
+    ; entity_uuid : Pool_common.Id.t
     ; name : Name.t
     ; hint : Hint.t
     ; validation : 'a Validation.t
@@ -270,6 +271,7 @@ module Public : sig
   val pp : Format.formatter -> t -> unit
   val show : t -> string
   val id : t -> Id.t
+  val entity_id : t -> Pool_common.Id.t
   val name_value : Pool_common.Language.t -> t -> string
   val hint : Pool_common.Language.t -> t -> Hint.hint option
   val required : t -> Required.t
@@ -458,6 +460,11 @@ val find
   -> Id.t
   -> (t, Pool_common.Message.error) result Lwt.t
 
+val find_by_table_view
+  :  Pool_database.Label.t
+  -> [< `SesionClose ]
+  -> t list Lwt.t
+
 val find_all_by_contact
   :  Pool_database.Label.t
   -> Pool_context.user
@@ -503,6 +510,13 @@ val all_required_answered
 
 val all_answered : Pool_database.Label.t -> Pool_common.Id.t -> bool Lwt.t
 val all_prompted_on_registration : Pool_database.Label.t -> Public.t list Lwt.t
+
+val find_public_by_contacts_and_view
+  :  Pool_database.Label.t
+  -> bool
+  -> Contact.Id.t list
+  -> [< `SesionClose ]
+  -> Public.t list Lwt.t
 
 val find_option
   :  Pool_database.Label.t

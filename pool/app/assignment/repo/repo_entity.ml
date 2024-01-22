@@ -64,6 +64,7 @@ let t =
       ; marked_as_deleted
       ; external_data_id
       ; reminder_manually_last_sent_at
+      ; custom_fields = None
       ; created_at
       ; updated_at
       }

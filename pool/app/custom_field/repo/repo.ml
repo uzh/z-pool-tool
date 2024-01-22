@@ -282,6 +282,31 @@ module Sql = struct
     in
     Repo_option.destroy_by_custom_field pool (Entity.id t)
   ;;
+
+  let table_view_condition = function
+    | `SesionClose -> "show_on_session_close_screen = 1"
+  ;;
+
+  let find_by_table_view_request table_view =
+    let open Caqti_request.Infix in
+    Format.asprintf
+      {sql|
+        WHERE pool_custom_fields.model = $1
+        AND %s
+      |sql}
+      (table_view_condition table_view)
+    |> select_sql
+    |> Caqti_type.string ->* Repo_entity.t
+  ;;
+
+  let find_by_table_view pool table_view =
+    let open Utils.Lwt_result.Infix in
+    Utils.Database.collect
+      (Database.Label.value pool)
+      (find_by_table_view_request table_view)
+      Entity.Model.(show Contact)
+    >|> multiple_to_entity pool Repo_entity.to_entity get_field_type get_id
+  ;;
 end
 
 let find_by_model = Sql.find_by_model

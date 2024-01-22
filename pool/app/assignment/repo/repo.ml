@@ -506,3 +506,42 @@ let find_uncanceled_by_session = find_by_session `Uncanceled
 let find_deleted_by_session = find_by_session `Deleted
 let find_by_session = find_by_session `All
 let query_by_session = Sql.query_by_session
+
+let find_for_session_close_screen pool session_id =
+  let open Utils.Lwt_result.Infix in
+  find_uncanceled_by_session pool session_id
+  >|> fun assignments ->
+  let contact_ids =
+    assignments |> CCList.map (fun { Entity.contact; _ } -> Contact.id contact)
+  in
+  let%lwt custom_fields =
+    Custom_field.find_public_by_contacts_and_view
+      pool
+      true
+      contact_ids
+      `SesionClose
+  in
+  let rec assign_custom_fields result custom_fields = function
+    | [] -> result
+    | hd :: tl ->
+      let contact_id =
+        hd.Entity.contact |> Contact.id |> Contact.Id.to_common
+      in
+      let current, rest =
+        CCList.partition_filter_map
+          (fun field ->
+            field
+            |> Custom_field.Public.entity_id
+            |> Pool_common.Id.equal contact_id
+            |> function
+            | true -> `Left field
+            | false -> `Right field)
+          custom_fields
+      in
+      let result =
+        result @ [ Entity.{ hd with custom_fields = Some current } ]
+      in
+      assign_custom_fields result rest tl
+  in
+  assign_custom_fields [] custom_fields assignments |> Lwt.return
+;;

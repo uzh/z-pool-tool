@@ -6,6 +6,7 @@ let find_by_model = Repo.find_by_model
 let find_by_group = Repo.find_by_group
 let find_ungrouped_by_model = Repo.find_ungrouped_by_model
 let find = Repo.find
+let find_by_table_view = Repo.Sql.find_by_table_view
 
 let find_of_contact ?(required = false) pool user id =
   let open Pool_context in
@@ -51,6 +52,7 @@ let find_by_contact = Repo_public.find_by_contact
 let all_required_answered = Repo_public.all_required_answered
 let all_answered = Repo_public.all_answered
 let all_prompted_on_registration = Repo_public.all_prompted_on_registration
+let find_public_by_contacts_and_view = Repo_public.Sql.find_by_contacts_and_view
 let find_option = Repo_option.find
 
 let find_options_by_field pool id =

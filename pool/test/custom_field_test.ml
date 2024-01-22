@@ -124,6 +124,7 @@ module Data = struct
     in
     let field_type = field_type m in
     let id = id m in
+    let entity_uuid = Pool_common.Id.create () in
     let hint = hint m in
     let name = name m in
     let required = required m in
@@ -140,6 +141,7 @@ module Data = struct
       in
       Public.Boolean
         ( { Public.id
+          ; entity_uuid
           ; name
           ; hint
           ; validation = Validation.pure
@@ -157,6 +159,7 @@ module Data = struct
       in
       Public.Date
         ( { Public.id
+          ; entity_uuid
           ; name
           ; hint
           ; validation = Validation.pure
@@ -177,6 +180,7 @@ module Data = struct
       let validation = validation_schema Validation.MultiSelect.schema in
       Public.MultiSelect
         ( { Public.id
+          ; entity_uuid
           ; name
           ; hint
           ; validation
@@ -195,6 +199,7 @@ module Data = struct
       let validation = validation_schema Validation.Number.schema in
       Public.Number
         ( { Public.id
+          ; entity_uuid
           ; name
           ; hint
           ; validation
@@ -213,6 +218,7 @@ module Data = struct
       in
       Public.Select
         ( { Public.id
+          ; entity_uuid
           ; name
           ; hint
           ; validation = Validation.pure
@@ -232,6 +238,7 @@ module Data = struct
       let validation = validation_schema Validation.Text.schema in
       Public.Text
         ( { Public.id
+          ; entity_uuid
           ; name
           ; hint
           ; validation
