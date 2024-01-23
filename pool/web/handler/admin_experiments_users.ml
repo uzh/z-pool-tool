@@ -34,12 +34,10 @@ let index role req =
       Admin.find_all_with_role database_label current_roles
     in
     let%lwt hint =
-      role
-      |> function
-      | `Assistants ->
-        I18n.(find_by_key database_label Key.AssistantRoleHint) language
-      | `Experimenter ->
-        I18n.(find_by_key database_label Key.ExperimenterRoleHint) language
+      (match role with
+       | `Assistants -> I18n.Key.AssistantRoleHint
+       | `Experimenter -> I18n.Key.ExperimenterRoleHint)
+      |> CCFun.flip (I18n.find_by_key database_label) language
     in
     let* experiment = Experiment.find database_label id in
     Page.Admin.Experiments.users
