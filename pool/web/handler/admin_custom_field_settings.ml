@@ -39,25 +39,11 @@ let update req =
         req
     in
     let%lwt contact_fields = find_by_model database_label Model.Contact in
-    let active, inactive =
-      CCList.partition_filter_map
-        (fun field ->
-          let active = show_on_session_close_page field in
-          CCList.find_opt
-            (fun selected_id ->
-              selected_id |> Id.of_string |> Id.equal (id field))
-            selected
-          |> function
-          | Some (_ : string) when not active -> `Left field
-          | None when active -> `Right field
-          | Some (_ : string) | None -> `Drop)
-        contact_fields
-    in
     let events =
       Cqrs_command.Custom_field_settings_command.UpdateVisibilitySettings.handle
         ~tags
-        ~active
-        ~inactive
+        ~selected
+        contact_fields
         ()
       |> Lwt_result.lift
     in

@@ -628,3 +628,30 @@ module ValidationTests = struct
     ()
   ;;
 end
+
+module Settings = struct
+  let update_visibility _ =
+    let open Custom_field in
+    let field1 =
+      Data.custom_text_field () |> set_show_on_session_close_page true
+    in
+    let field2 = Data.custom_text_field () in
+    let field3 = Data.custom_text_field () in
+    let selected = [ field2 |> id |> Id.value ] in
+    let expected =
+      (* Expect fields that have not been updated to be ignored *)
+      let active = [ field2 |> set_show_on_session_close_page true ] in
+      let inactive = [ field1 |> set_show_on_session_close_page false ] in
+      active @ inactive
+      |> CCList.map (fun field -> Updated field |> Pool_event.custom_field)
+      |> CCResult.return
+    in
+    let result =
+      Cqrs_command.Custom_field_settings_command.UpdateVisibilitySettings.handle
+        ~selected
+        [ field1; field2; field3 ]
+        ()
+    in
+    Test_utils.check_result expected result
+  ;;
+end

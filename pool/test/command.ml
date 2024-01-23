@@ -476,6 +476,10 @@ let () =
             "validate multi select custom field"
             `Quick
             Custom_field_test.ValidationTests.validate_multi_select_field
+        ; test_case
+            "update visibility settings"
+            `Quick
+            Custom_field_test.Settings.update_visibility
         ] )
     ; ( "matcher"
       , [ test_case
