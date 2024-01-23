@@ -318,7 +318,7 @@ let searchbar
 let resetbar language =
   let open Pool_common in
   div
-    ~a:[ a_class [ "flexrow"; "justify-end"; "gap"; "filter-bar-reset" ] ]
+    ~a:[ a_class [ "flexrow"; "justify-end"; "filter-bar-reset" ] ]
     [ a
         ~a:[ a_class [ "btn"; "small"; "has-icon"; "is-text" ]; a_href "?" ]
         [ Component_icon.(to_html RefreshOutline)
