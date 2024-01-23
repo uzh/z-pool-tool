@@ -8,7 +8,11 @@ module Key = struct
     let field = Pool_common.Message.Field.Key
 
     type t =
+      | AssistantRoleHint [@name "assistant_role_hint"]
+      [@printer print "assistant_role_hint"]
       | CreditsText [@name "credits_text"] [@printer print "credits_text"]
+      | ExperimenterRoleHint [@name "experimenter_role_hint"]
+      [@printer print "experimenter_role_hint"]
       | GreetingsText [@name "greetings_text"] [@printer print "greetings_text"]
       | PasswordPolicyText [@name "password_policy_text"]
       [@printer print "password_policy_text"]
@@ -24,7 +28,9 @@ module Key = struct
   include Core
 
   let is_rich_text = function
+    | AssistantRoleHint
     | CreditsText
+    | ExperimenterRoleHint
     | GreetingsText
     | PrivacyPolicy
     | SignUpCTA

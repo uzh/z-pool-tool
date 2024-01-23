@@ -14,7 +14,7 @@ let admin_id =
 
 let index role req =
   let open Utils.Lwt_result.Infix in
-  let result ({ Pool_context.database_label; _ } as context) =
+  let result ({ Pool_context.database_label; language; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, "/admin/experiments")
     @@
     let id = experiment_id req in
@@ -33,8 +33,17 @@ let index role req =
     let%lwt currently_assigned =
       Admin.find_all_with_role database_label current_roles
     in
+    let%lwt hint =
+      role
+      |> function
+      | `Assistants ->
+        I18n.(find_by_key database_label Key.AssistantRoleHint) language
+      | `Experimenter ->
+        I18n.(find_by_key database_label Key.ExperimenterRoleHint) language
+    in
     let* experiment = Experiment.find database_label id in
     Page.Admin.Experiments.users
+      ~hint
       role
       experiment
       applicable_admins

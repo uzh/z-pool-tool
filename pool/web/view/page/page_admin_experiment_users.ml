@@ -2,14 +2,16 @@ open Tyxml.Html
 open Component.Input
 
 let role_assignment
+  ?hint
   base_url
   field
-  Pool_context.{ language; csrf; _ }
+  { Pool_context.language; csrf; _ }
   ~assign
   ~unassign
   ~applicable:available
   ~current:existing
   =
+  let open CCFun in
   let column ?hint title lst =
     let html =
       match hint, CCList.is_empty lst with
@@ -24,10 +26,9 @@ let role_assignment
       ; html
       ]
   in
-  let open Pool_common in
-  let open I18n in
   let form action admin =
     let url, control, style =
+      let open Pool_common in
       match action with
       | `Assign -> assign, Message.(Assign None), `Success
       | `Unassign -> unassign, Message.(Unassign None), `Error
@@ -52,6 +53,7 @@ let role_assignment
     ; delete
     ]
   in
+  let open Pool_common.I18n in
   let existing =
     existing
     |> CCList.map (form `Unassign)
@@ -60,13 +62,11 @@ let role_assignment
   let available =
     available |> CCList.map (form `Assign) |> column RoleApplicableToAssign
   in
-  let[@warning "-4"] main_hint =
-    (match field with
-     | Field.Assistants -> Some I18n.AssistantRole
-     | Field.Experimenter -> Some I18n.ExperimenterRole
-     | _ -> None)
-    |> CCOption.map_or ~default:(txt "") (fun hint ->
-      p [ Utils.hint_to_string language hint |> HttpUtils.add_line_breaks ])
+  let main_hint =
+    CCOption.map_or
+      ~default:(txt "")
+      (I18n.content_to_string %> Unsafe.data %> CCList.return %> div)
+      hint
   in
   div
     ~a:[ a_class [ "stack-lg" ] ]

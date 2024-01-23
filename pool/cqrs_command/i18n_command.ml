@@ -29,7 +29,9 @@ end = struct
     let system_events =
       let open Key in
       match property |> key with
+      | AssistantRoleHint
       | CreditsText
+      | ExperimenterRoleHint
       | GreetingsText
       | PasswordPolicyText
       | SignUpCTA
