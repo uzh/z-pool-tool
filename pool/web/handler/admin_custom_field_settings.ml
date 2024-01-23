@@ -4,11 +4,6 @@ module Url = Page.Admin.CustomFields.Url
 
 let src = Logs.Src.create "handler.admin.custom_field_settings"
 let create_layout req = General.create_tenant_layout req
-
-let boolean_fields =
-  Custom_field.boolean_fields |> CCList.map Message.Field.show
-;;
-
 let settings_path = "/admin/custom-fields/settings"
 
 let show req =
