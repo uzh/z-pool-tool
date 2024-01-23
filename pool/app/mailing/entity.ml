@@ -286,4 +286,9 @@ let default_sort =
   Sort.{ column = column_start; order = SortOrder.Ascending }
 ;;
 
-let default_query = create ~sort:default_sort ()
+let default_filter =
+  let open Filter in
+  Condition.[ Checkbox (column_past, true) ]
+;;
+
+let default_query = create ~sort:default_sort ~filter:default_filter ()
