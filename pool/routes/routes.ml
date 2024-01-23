@@ -675,7 +675,9 @@ module Admin = struct
       in
       let settings =
         let open CustomFieldSettings in
-        [ get "" ~middlewares:[] show (* TODO: ACCESS*) ]
+        [ get "" ~middlewares:[] show
+        ; post "" ~middlewares:[] update (* TODO: ACCESS*)
+        ]
       in
       [ get "" ~middlewares:[ Access.index ] redirect
       ; choose ~scope:"settings" settings

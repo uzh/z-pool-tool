@@ -68,7 +68,8 @@ module Sql = struct
         pool_custom_fields.admin_view_only,
         pool_custom_fields.admin_input_only,
         pool_custom_fields.prompt_on_registration,
-        pool_custom_fields.published_at
+        pool_custom_fields.published_at,
+        pool_custom_fields.show_on_session_close_screen
       FROM pool_custom_fields
       %s
       %s
@@ -162,6 +163,7 @@ module Sql = struct
         admin_view_only,
         admin_input_only,
         prompt_on_registration,
+        show_on_session_close_screen,
         position
       ) VALUES (
         UNHEX(REPLACE($1, '-', '')),
@@ -178,6 +180,7 @@ module Sql = struct
         $12,
         $13,
         $14,
+        $15,
         (SELECT
           COUNT(*)
           FROM pool_custom_fields AS f
@@ -215,7 +218,8 @@ module Sql = struct
         admin_override = $11,
         admin_view_only = $12,
         admin_input_only = $13,
-        prompt_on_registration = $14
+        prompt_on_registration = $14,
+        show_on_session_close_screen = $15
       WHERE
         uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}
@@ -307,12 +311,6 @@ module Sql = struct
       Entity.Model.(show Contact)
     >|> multiple_to_entity pool Repo_entity.to_entity get_field_type get_id
   ;;
-
-  let update_table_view_flag pool custom_fields = 
-    let dyn = CCList.fold_left (fun dyn field -> 
-        dyn |> Dynparam.add Caqti_type.string
-      )
-      (Dynparam.(empty |> add Caqti_type.string (Entity.Model.(show Contact))))
 end
 
 let find_by_model = Sql.find_by_model

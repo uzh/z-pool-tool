@@ -58,6 +58,7 @@ module CustomFieldData = struct
       ; admin_input_only = Data.admin_input_only
       ; published_at = published
       ; prompt_on_registration = false |> PromptOnRegistration.create
+      ; show_on_session_close_page = false
       }
     |> encoder
   ;;
@@ -283,6 +284,7 @@ module CustomFieldData = struct
         ; admin_input_only = Data.admin_input_only
         ; published_at = published
         ; prompt_on_registration = false |> PromptOnRegistration.create
+        ; show_on_session_close_page = false
         })
   ;;
 
@@ -376,6 +378,7 @@ module CustomFieldData = struct
         ; admin_input_only = Data.admin_input_only
         ; published_at = published
         ; prompt_on_registration = false |> PromptOnRegistration.create
+        ; show_on_session_close_page = false
         }
       , multi_select_options )
   ;;

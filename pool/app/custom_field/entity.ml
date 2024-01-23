@@ -657,6 +657,7 @@ type 'a custom_field =
   ; admin_input_only : AdminInputOnly.t
   ; prompt_on_registration : PromptOnRegistration.t
   ; published_at : PublishedAt.t option
+  ; show_on_session_close_page : bool
   }
 [@@deriving eq, show]
 
@@ -688,6 +689,7 @@ let create
   prompt_on_registration
   =
   let open CCResult in
+  let show_on_session_close_page = false in
   let required = if admin_input_only then false else required in
   let admin_input_only = admin_view_only || admin_input_only in
   match (field_type : FieldType.t) with
@@ -708,6 +710,7 @@ let create
          ; admin_input_only
          ; published_at
          ; prompt_on_registration
+         ; show_on_session_close_page
          })
   | FieldType.Date ->
     Ok
@@ -726,6 +729,7 @@ let create
          ; admin_input_only
          ; published_at
          ; prompt_on_registration
+         ; show_on_session_close_page
          })
   | FieldType.Number ->
     let validation = Validation.Number.schema validation in
@@ -745,6 +749,7 @@ let create
          ; admin_input_only
          ; published_at
          ; prompt_on_registration
+         ; show_on_session_close_page
          })
   | FieldType.Text ->
     let validation = Validation.Text.schema validation in
@@ -764,6 +769,7 @@ let create
          ; admin_input_only
          ; published_at
          ; prompt_on_registration
+         ; show_on_session_close_page
          })
   | FieldType.MultiSelect ->
     let validation = Validation.MultiSelect.schema validation in
@@ -783,6 +789,7 @@ let create
            ; admin_input_only
            ; published_at
            ; prompt_on_registration
+           ; show_on_session_close_page
            }
          , select_options ))
   | FieldType.Select ->
@@ -802,6 +809,7 @@ let create
            ; admin_input_only
            ; published_at
            ; prompt_on_registration
+           ; show_on_session_close_page
            }
          , select_options ))
 ;;
@@ -931,6 +939,26 @@ let prompt_on_registration = function
   | Text { prompt_on_registration; _ } -> prompt_on_registration
 ;;
 
+let show_on_session_close_page = function
+  | Boolean { show_on_session_close_page; _ }
+  | Date { show_on_session_close_page; _ }
+  | Number { show_on_session_close_page; _ }
+  | MultiSelect ({ show_on_session_close_page; _ }, _)
+  | Select ({ show_on_session_close_page; _ }, _)
+  | Text { show_on_session_close_page; _ } -> show_on_session_close_page
+;;
+
+let set_show_on_session_close_page status = function
+  | Boolean field -> Boolean { field with show_on_session_close_page = status }
+  | Date field -> Date { field with show_on_session_close_page = status }
+  | Number field -> Number { field with show_on_session_close_page = status }
+  | MultiSelect (field, options) ->
+    MultiSelect ({ field with show_on_session_close_page = status }, options)
+  | Select (field, options) ->
+    Select ({ field with show_on_session_close_page = status }, options)
+  | Text field -> Text { field with show_on_session_close_page = status }
+;;
+
 let field_type = function
   | Boolean _ -> FieldType.Boolean
   | Date _ -> FieldType.Date
@@ -992,6 +1020,7 @@ module Write = struct
     ; admin_view_only : AdminViewOnly.t
     ; admin_input_only : AdminInputOnly.t
     ; prompt_on_registration : PromptOnRegistration.t
+    ; show_on_session_close_screen : bool
     }
   [@@deriving eq, show]
 end
