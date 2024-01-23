@@ -7,9 +7,11 @@ let make_tabs html links =
   let nav =
     CCList.map
       (fun (label, url, active) ->
-        if active
-        then span ~a:[ a_class [ "active" ] ] [ txt label ]
-        else a ~a:[ a_href (Sihl.Web.externalize_path url) ] [ txt label ])
+        match active, url with
+        | true, _ | false, None ->
+          span ~a:[ a_class [ "active" ] ] [ txt label ]
+        | _, Some url ->
+          a ~a:[ a_href (Sihl.Web.externalize_path url) ] [ txt label ])
       links
     |> fun links ->
     div

@@ -48,8 +48,10 @@ let rec build_nav_links
     in
     CCList.fold_left
       (fun init { NavElement.url; children; _ } ->
-        init || is_active url || find_is_active children)
-      (is_active url)
+        match url with
+        | None -> init || find_is_active children
+        | Some url -> init || is_active url || find_is_active children)
+      (CCOption.map_or ~default:false is_active url)
       children
   in
   let is_active = find_is_active children in
@@ -69,9 +71,9 @@ let rec build_nav_links
       let base = [ "nav-link" ] in
       if is_active then "active" :: base else base
     in
-    if is_active || CCList.is_empty children |> not
-    then [ span ~a:[ a_class classnames ] label ]
-    else
+    match is_active, url with
+    | true, _ | false, None -> [ span ~a:[ a_class classnames ] label ]
+    | _, Some url ->
       [ a
           ~a:
             [ a_href (Http_utils.externalize_path_with_lang query_language url)

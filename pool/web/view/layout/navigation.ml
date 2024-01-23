@@ -28,17 +28,14 @@ module NavElements = struct
 
     let element ?contact ?prefix () =
       Parent
-        ( prefixed ?prefix "/user"
-        , nav_link
-        , Guard.ValidationSet.empty
-        , dropdown ?contact ?prefix () )
+        (None, nav_link, Guard.ValidationSet.empty, dropdown ?contact ?prefix ())
       |> NavElement.create ~icon
     ;;
 
     let nav ?contact ?prefix () =
       let item =
         Parent
-          ( prefixed ?prefix "/user"
+          ( None
           , nav_link
           , Guard.ValidationSet.empty
           , dropdown ?contact ?prefix () )
@@ -68,7 +65,7 @@ module NavElements = struct
     let settings =
       let children =
         [ Parent
-            ( "/admin/custom-fields"
+            ( Some "/admin/custom-fields"
             , CustomFields
             , Custom_field.Guard.Access.index
             , [ Single
@@ -103,8 +100,7 @@ module NavElements = struct
       let validation_set =
         CCList.map validation_set children |> Guard.ValidationSet.or_
       in
-      Parent ("/admin/settings", Settings, validation_set, children)
-      |> NavElement.create
+      Parent (None, Settings, validation_set, children) |> NavElement.create
     in
     let user =
       let children =
@@ -116,8 +112,7 @@ module NavElements = struct
         Guard.ValidationSet.Or
           [ Contact.Guard.Access.index; Admin.Guard.Access.index ]
       in
-      Parent ("/admin/users", Users, validation_set, children)
-      |> NavElement.create
+      Parent (None, Users, validation_set, children) |> NavElement.create
     in
     let dashboard =
       Single ("/admin/dashboard", Dashboard, Guard.ValidationSet.empty)
@@ -154,8 +149,7 @@ module NavElements = struct
       let validation_set =
         CCList.map validation_set children |> Guard.ValidationSet.or_
       in
-      Parent ("/root/settings", Settings, validation_set, children)
-      |> NavElement.create
+      Parent (None, Settings, validation_set, children) |> NavElement.create
     in
     [ tenants
     ; users

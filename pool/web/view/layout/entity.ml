@@ -4,7 +4,7 @@ module Language = Pool_common.Language
 
 type raw =
   | Single of string * I18n.nav_link * Guard.ValidationSet.t
-  | Parent of string * I18n.nav_link * Guard.ValidationSet.t * raw list
+  | Parent of string option * I18n.nav_link * Guard.ValidationSet.t * raw list
 
 let validation_set = function
   | Single (_, _, validation_set) | Parent (_, _, validation_set, _) ->
@@ -13,7 +13,7 @@ let validation_set = function
 
 module NavElement = struct
   type t =
-    { url : string
+    { url : string option
     ; label : I18n.nav_link
     ; icon : Icon.t option
     ; validation_set : Guard.ValidationSet.t
@@ -25,17 +25,17 @@ module NavElement = struct
       ?icon
       ?(children = [])
       ?(validation_set = Guard.ValidationSet.empty)
-      url
+      ?url
       label
       =
       { icon; children; validation_set; url; label }
     in
     function
     | Single (url, label, validation_set) ->
-      build ?icon ~validation_set url label
+      build ?icon ~validation_set ~url label
     | Parent (url, label, validation_set, children) ->
       let children = children |> CCList.map create in
-      build ~children ~validation_set url label
+      build ~children ~validation_set ?url label
   ;;
 
   let login ?(prefix = "") () =
