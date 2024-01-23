@@ -5,7 +5,11 @@ module Language = Pool_common.Language
 let database_label = Test_utils.Data.database_label
 
 let save_custom_fields custom_field contact =
-  let public = Custom_field_test.Data.to_public custom_field in
+  let public =
+    Custom_field_test.Data.to_public
+      Contact.(contact |> id |> Id.to_common)
+      custom_field
+  in
   let events =
     [ Custom_field.Created custom_field |> Pool_event.custom_field
     ; Custom_field.Published custom_field |> Pool_event.custom_field
@@ -52,7 +56,11 @@ let update_custom_field _ () =
     let open Custom_field in
     let contact = Test_utils.Model.create_contact () in
     let custom_field = Custom_field_test.Data.custom_text_field () in
-    let public = Custom_field_test.Data.to_public custom_field in
+    let public =
+      Custom_field_test.Data.to_public
+        Contact.(id contact |> Id.to_common)
+        custom_field
+    in
     let%lwt () = save_custom_fields custom_field contact in
     let language = Pool_common.Language.En in
     let field = Public.to_common_field language public in
@@ -98,7 +106,11 @@ let partial_update_exec
   let%lwt () =
     let open Custom_field in
     let contact = Test_utils.Model.create_contact () in
-    let public = Custom_field_test.Data.to_public custom_field in
+    let public =
+      Custom_field_test.Data.to_public
+        Contact.(id contact |> Id.to_common)
+        custom_field
+    in
     let%lwt () = save_custom_fields custom_field contact in
     let language = Pool_common.Language.En in
     let field = Public.to_common_field language public in
@@ -156,7 +168,9 @@ let set_value_of_none_required_field_to_null _ () =
   let custom_field = Custom_field_test.Data.custom_text_field () in
   let value = "" in
   let[@warning "-4"] expected =
-    let public = Custom_field_test.Data.to_public custom_field in
+    let public =
+      Custom_field_test.Data.to_public (Pool_common.Id.create ()) custom_field
+    in
     match public with
     | Public.Text (public, _) ->
       Custom_field.PartialUpdate.(

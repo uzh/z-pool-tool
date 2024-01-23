@@ -5,6 +5,7 @@ module Answer : sig
 
   type 'a t =
     { id : Id.t
+    ; entity_uuid : Pool_common.Id.t
     ; value : 'a option
     ; admin_value : 'a option
     }
@@ -12,7 +13,14 @@ module Answer : sig
   val equal : ('a -> 'a -> bool) -> 'a t -> 'a t -> bool
   val pp : (Format.formatter -> 'a -> unit) -> Format.formatter -> 'a t -> unit
   val show : (Format.formatter -> 'a -> unit) -> 'a t -> string
-  val create : ?id:Id.t -> ?admin_value:'a -> 'a option -> 'a t
+
+  val create
+    :  ?id:Id.t
+    -> ?admin_value:'a
+    -> Pool_common.Id.t
+    -> 'a option
+    -> 'a t
+
   val id : 'a t -> Id.t
   val value : 'a t -> 'a option
   val admin_value : 'a t -> 'a option
@@ -232,7 +240,6 @@ end
 module Public : sig
   type 'a public =
     { id : Id.t
-    ; entity_uuid : Pool_common.Id.t option
     ; name : Name.t
     ; hint : Hint.t
     ; validation : 'a Validation.t
@@ -419,6 +426,7 @@ end
 
 val validate_htmx
   :  is_admin:bool
+  -> entity_uuid:Pool_common.Id.t
   -> string list
   -> Public.t
   -> (Public.t, Pool_common.Message.error) result

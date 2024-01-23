@@ -293,7 +293,6 @@ end
 module Public = struct
   type repo =
     { id : Id.t
-    ; entity_uuid : Pool_common.Id.t option
     ; name : Name.t
     ; hint : Hint.t
     ; validation : Yojson.Safe.t
@@ -304,6 +303,7 @@ module Public = struct
     ; admin_input_only : AdminInputOnly.t
     ; prompt_on_registration : PromptOnRegistration.t
     ; answer_id : Pool_common.Id.t option
+    ; answer_entity_uuid : Pool_common.Id.t option
     ; answer_value : string option
     ; answer_admin_value : string option
     ; version : Pool_common.Version.t option
@@ -313,6 +313,7 @@ module Public = struct
 
   let create_answer
     id
+    entity_uuid
     ~is_admin
     ~admin_override
     ~answer_value
@@ -320,23 +321,22 @@ module Public = struct
     parse_value
     =
     let open CCOption.Infix in
-    match id with
-    | None -> None
-    | Some id ->
+    match id, entity_uuid with
+    | None, None | None, Some _ | Some _, None -> None
+    | Some id, Some entity_uuid ->
       let value = answer_value >>= parse_value in
       let admin_value =
         if is_admin && admin_override
         then answer_admin_value >>= parse_value
         else None
       in
-      Entity_answer.create ~id ?admin_value value |> CCOption.pure
+      Entity_answer.create ~id ?admin_value entity_uuid value |> CCOption.pure
   ;;
 
   let to_entity
     is_admin
     select_options
     { id
-    ; entity_uuid
     ; name
     ; hint
     ; validation
@@ -346,6 +346,7 @@ module Public = struct
     ; admin_input_only
     ; prompt_on_registration
     ; answer_id
+    ; answer_entity_uuid
     ; answer_value
     ; answer_admin_value
     ; version
@@ -366,6 +367,7 @@ module Public = struct
       let answer =
         create_answer
           answer_id
+          answer_entity_uuid
           ~is_admin
           ~admin_override
           ~answer_value
@@ -374,7 +376,6 @@ module Public = struct
       in
       Public.Boolean
         ( { Public.id
-          ; entity_uuid
           ; name
           ; hint
           ; validation = Validation.pure
@@ -389,6 +390,7 @@ module Public = struct
       let answer =
         create_answer
           answer_id
+          answer_entity_uuid
           ~is_admin
           ~admin_override
           ~answer_value
@@ -397,7 +399,6 @@ module Public = struct
       in
       Public.Date
         ( { Public.id
-          ; entity_uuid
           ; name
           ; hint
           ; validation = Validation.pure
@@ -412,6 +413,7 @@ module Public = struct
       let answer =
         create_answer
           answer_id
+          answer_entity_uuid
           ~is_admin
           ~admin_override
           ~answer_value
@@ -421,7 +423,6 @@ module Public = struct
       let validation = validation_schema Validation.Number.schema in
       Public.Number
         ( { Public.id
-          ; entity_uuid
           ; name
           ; hint
           ; validation
@@ -445,6 +446,7 @@ module Public = struct
         in
         create_answer
           answer_id
+          answer_entity_uuid
           ~is_admin
           ~admin_override
           ~answer_value
@@ -459,7 +461,6 @@ module Public = struct
       in
       Public.Select
         ( { Public.id
-          ; entity_uuid
           ; name
           ; hint
           ; validation = Validation.pure
@@ -500,6 +501,7 @@ module Public = struct
         in
         create_answer
           answer_id
+          answer_entity_uuid
           ~is_admin
           ~admin_override
           ~answer_value
@@ -508,7 +510,6 @@ module Public = struct
       in
       Public.MultiSelect
         ( { Public.id
-          ; entity_uuid
           ; name
           ; hint
           ; validation
@@ -524,6 +525,7 @@ module Public = struct
       let answer =
         create_answer
           answer_id
+          answer_entity_uuid
           ~is_admin
           ~admin_override
           ~answer_value
@@ -533,7 +535,6 @@ module Public = struct
       let validation = validation_schema Validation.Text.schema in
       Public.Text
         ( { Public.id
-          ; entity_uuid
           ; name
           ; hint
           ; validation
@@ -586,24 +587,23 @@ module Public = struct
     in
     let decode
       ( id
-      , ( entity_uuid
-        , ( name
-          , ( hint
-            , ( validation
-              , ( field_type
-                , ( required
-                  , ( custom_field_group_id
-                    , ( admin_override
-                      , ( admin_input_only
-                        , ( prompt_on_registration
-                          , ( answer_id
+      , ( name
+        , ( hint
+          , ( validation
+            , ( field_type
+              , ( required
+                , ( custom_field_group_id
+                  , ( admin_override
+                    , ( admin_input_only
+                      , ( prompt_on_registration
+                        , ( answer_id
+                          , ( answer_entity_uuid
                             , ( answer_value
                               , (answer_admin_value, (version, admin_version))
                               ) ) ) ) ) ) ) ) ) ) ) ) )
       =
       Ok
         { id
-        ; entity_uuid
         ; name
         ; hint
         ; validation
@@ -614,6 +614,7 @@ module Public = struct
         ; prompt_on_registration
         ; custom_field_group_id
         ; answer_id
+        ; answer_entity_uuid
         ; answer_value
         ; answer_admin_value
         ; version
@@ -627,25 +628,25 @@ module Public = struct
         (t2
            Common.Repo.Id.t
            (t2
-              (option Common.Repo.Id.t)
+              Name.t
               (t2
-                 Name.t
+                 Hint.t
                  (t2
-                    Hint.t
+                    Validation.t
                     (t2
-                       Validation.t
+                       FieldType.t
                        (t2
-                          FieldType.t
+                          Required.t
                           (t2
-                             Required.t
+                             (option Common.Repo.Id.t)
                              (t2
-                                (option Common.Repo.Id.t)
+                                AdminOverride.t
                                 (t2
-                                   AdminOverride.t
+                                   AdminInputOnly.t
                                    (t2
-                                      AdminInputOnly.t
+                                      PromptOnRegistration.t
                                       (t2
-                                         PromptOnRegistration.t
+                                         (option Common.Repo.Id.t)
                                          (t2
                                             (option Common.Repo.Id.t)
                                             (t2

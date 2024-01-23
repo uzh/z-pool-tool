@@ -396,11 +396,12 @@ let completion_post req =
     @@
     let tags = tags req in
     let* contact = Pool_context.find_contact context |> Lwt_result.lift in
+    let contact_id = Contact.id contact in
     let%lwt custom_fields =
       Custom_field.find_unanswered_ungrouped_required_by_contact
         database_label
         user
-        (Contact.id contact)
+        contact_id
     in
     let events =
       let open Utils.Lwt_result.Infix in
@@ -408,12 +409,13 @@ let completion_post req =
         Cqrs_command.Custom_field_answer_command.UpdateMultiple.handle
           ~tags
           user
-          (Contact.id contact)
+          contact_id
       in
       Helpers_custom_field.answer_and_validate_multiple
         req
         urlencoded
         language
+        (Contact.Id.to_common contact_id)
         custom_fields
       >== fun fields -> fields |> CCList.map handle |> CCList.all_ok
     in

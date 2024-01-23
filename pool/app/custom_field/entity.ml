@@ -418,10 +418,8 @@ module SelectOption = struct
 end
 
 module Public = struct
-  (* TODO: Move entity uuid to answer? *)
   type 'a public =
     { id : Id.t
-    ; entity_uuid : Pool_common.Id.t option
     ; name : Name.t
     ; hint : Hint.t
     ; validation : 'a Validation.t
@@ -458,14 +456,16 @@ module Public = struct
     | Text ({ id; _ }, _) -> id
   ;;
 
-  let entity_id (t : t) =
-    match t with
-    | Boolean ({ entity_uuid; _ }, _)
-    | Date ({ entity_uuid; _ }, _)
-    | MultiSelect ({ entity_uuid; _ }, _, _)
-    | Number ({ entity_uuid; _ }, _)
-    | Select ({ entity_uuid; _ }, _, _)
-    | Text ({ entity_uuid; _ }, _) -> entity_uuid
+  let entity_id =
+    let open Entity_answer in
+    let open CCOption.Infix in
+    function
+    | Boolean (_, answer) -> answer >|= entity_uuid
+    | Date (_, answer) -> answer >|= entity_uuid
+    | MultiSelect (_, _, answer) -> answer >|= entity_uuid
+    | Number (_, answer) -> answer >|= entity_uuid
+    | Select (_, _, answer) -> answer >|= entity_uuid
+    | Text (_, answer) -> answer >|= entity_uuid
   ;;
 
   let name_value lang (t : t) =

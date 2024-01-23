@@ -78,18 +78,17 @@ module CustomFieldData = struct
       create_custom_field "Nr of siblings" (fun a -> Custom_field.Number a)
     ;;
 
-    let public is_admin answer_value =
+    let public ?(entity_uuid = Pool_common.Id.create ()) is_admin answer_value =
       let open Custom_field in
       let open Custom_field_test in
       let answer =
         match is_admin with
-        | true -> Answer.create ?admin_value:answer_value None
-        | false -> Answer.create answer_value
+        | true -> Answer.create ?admin_value:answer_value entity_uuid None
+        | false -> Answer.create entity_uuid answer_value
       in
       let version = 0 |> Pool_common.Version.of_int in
       Public.Number
         ( { Public.id = id field
-          ; entity_uuid = Some (Pool_common.Id.create ())
           ; name = name field
           ; hint = hint field
           ; validation = Validation.pure
@@ -126,18 +125,17 @@ module CustomFieldData = struct
 
     let field = create_custom_field "Birthday" (fun a -> Custom_field.Date a)
 
-    let public is_admin answer_value =
+    let public ?(entity_uuid = Pool_common.Id.create ()) is_admin answer_value =
       let open Custom_field in
       let open Custom_field_test in
       let answer =
         match is_admin with
-        | true -> Answer.create ?admin_value:answer_value None
-        | false -> Answer.create answer_value
+        | true -> Answer.create ?admin_value:answer_value entity_uuid None
+        | false -> Answer.create entity_uuid answer_value
       in
       let version = 0 |> Pool_common.Version.of_int in
       Public.Date
         ( { Public.id = id field
-          ; entity_uuid = Some (Pool_common.Id.create ())
           ; name = name field
           ; hint = hint field
           ; validation = Validation.pure
@@ -204,18 +202,17 @@ module CustomFieldData = struct
       create_custom_field "Select" (fun a -> Custom_field.Select (a, options))
     ;;
 
-    let public is_admin answer =
+    let public ?(entity_uuid = Pool_common.Id.create ()) is_admin answer =
       let open Custom_field in
       let open Custom_field_test in
       let answer =
         match is_admin with
-        | true -> Answer.create ?admin_value:answer None
-        | false -> Answer.create answer
+        | true -> Answer.create ?admin_value:answer entity_uuid None
+        | false -> Answer.create entity_uuid answer
       in
       let version = 0 |> Pool_common.Version.of_int in
       Public.Select
         ( { Public.id = id field
-          ; entity_uuid = Some (Pool_common.Id.create ())
           ; name = name field
           ; hint = hint field
           ; validation = Validation.pure
@@ -288,17 +285,20 @@ module CustomFieldData = struct
         })
   ;;
 
-  let admin_override_nr_field_public is_admin answer_value =
+  let admin_override_nr_field_public
+    ?(entity_uuid = Pool_common.Id.create ())
+    is_admin
+    answer_value
+    =
     let open Custom_field in
     let answer =
       match is_admin with
-      | true -> Answer.create ~admin_value:answer_value None
-      | false -> Answer.create (Some answer_value)
+      | true -> Answer.create ~admin_value:answer_value entity_uuid None
+      | false -> Answer.create entity_uuid (Some answer_value)
     in
     let version = 0 |> Pool_common.Version.of_int in
     Public.Number
       ( { Public.id = id admin_override_nr_field
-        ; entity_uuid = Some (Pool_common.Id.create ())
         ; name = name admin_override_nr_field
         ; hint = hint admin_override_nr_field
         ; validation = Validation.pure
@@ -383,19 +383,21 @@ module CustomFieldData = struct
       , multi_select_options )
   ;;
 
-  let multi_select_custom_field_public answer_index =
+  let multi_select_custom_field_public
+    ?(entity_uuid = Pool_common.Id.create ())
+    answer_index
+    =
     let open Custom_field in
     let open Custom_field_test in
     let answer =
       multi_select_options_public_by_index answer_index
       |> CCOption.pure
-      |> Answer.create
+      |> Answer.create entity_uuid
       |> CCOption.pure
     in
     let version = 0 |> Pool_common.Version.of_int in
     Public.MultiSelect
       ( { Public.id = id multi_select_custom_field
-        ; entity_uuid = Some (Pool_common.Id.create ())
         ; name = name multi_select_custom_field
         ; hint = hint multi_select_custom_field
         ; validation = Validation.pure

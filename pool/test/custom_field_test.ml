@@ -116,7 +116,7 @@ module Data = struct
 
   let answer_id = Answer.Id.create ()
 
-  let to_public ?(field_options = []) (m : Custom_field.t) =
+  let to_public ?(field_options = []) entity_uuid (m : Custom_field.t) =
     let open Custom_field in
     let validation_schema schema =
       let validation = validation_to_yojson m in
@@ -124,7 +124,6 @@ module Data = struct
     in
     let field_type = field_type m in
     let id = id m in
-    let entity_uuid = Some (Pool_common.Id.create ()) in
     let hint = hint m in
     let name = name m in
     let required = required m in
@@ -136,12 +135,11 @@ module Data = struct
     match field_type with
     | FieldType.Boolean ->
       let answer =
-        { Answer.id = answer_id; value = Some true; admin_value }
+        { Answer.id = answer_id; entity_uuid; value = Some true; admin_value }
         |> CCOption.pure
       in
       Public.Boolean
         ( { Public.id
-          ; entity_uuid
           ; name
           ; hint
           ; validation = Validation.pure
@@ -154,12 +152,15 @@ module Data = struct
         , answer )
     | FieldType.Date ->
       let answer =
-        { Answer.id = answer_id; value = Some (1970, 1, 1); admin_value }
+        { Answer.id = answer_id
+        ; entity_uuid
+        ; value = Some (1970, 1, 1)
+        ; admin_value
+        }
         |> CCOption.pure
       in
       Public.Date
         ( { Public.id
-          ; entity_uuid
           ; name
           ; hint
           ; validation = Validation.pure
@@ -175,12 +176,11 @@ module Data = struct
         field_options
         |> CCList.head_opt
         |> CCOption.map CCList.pure
-        |> Answer.create ~id:answer_id
+        |> Answer.create ~id:answer_id entity_uuid
       in
       let validation = validation_schema Validation.MultiSelect.schema in
       Public.MultiSelect
         ( { Public.id
-          ; entity_uuid
           ; name
           ; hint
           ; validation
@@ -194,12 +194,12 @@ module Data = struct
         , Some answer )
     | FieldType.Number ->
       let answer =
-        { Answer.id = answer_id; value = Some 3; admin_value } |> CCOption.pure
+        { Answer.id = answer_id; entity_uuid; value = Some 3; admin_value }
+        |> CCOption.pure
       in
       let validation = validation_schema Validation.Number.schema in
       Public.Number
         ( { Public.id
-          ; entity_uuid
           ; name
           ; hint
           ; validation
@@ -214,11 +214,11 @@ module Data = struct
       let answer =
         CCList.head_opt field_options
         |> fun option ->
-        { Answer.id = answer_id; value = option; admin_value } |> CCOption.pure
+        { Answer.id = answer_id; entity_uuid; value = option; admin_value }
+        |> CCOption.pure
       in
       Public.Select
         ( { Public.id
-          ; entity_uuid
           ; name
           ; hint
           ; validation = Validation.pure
@@ -232,13 +232,12 @@ module Data = struct
         , answer )
     | FieldType.Text ->
       let answer =
-        { Answer.id = answer_id; value = Some "test"; admin_value }
+        { Answer.id = answer_id; entity_uuid; value = Some "test"; admin_value }
         |> CCOption.pure
       in
       let validation = validation_schema Validation.Text.schema in
       Public.Text
         ( { Public.id
-          ; entity_uuid
           ; name
           ; hint
           ; validation
@@ -459,6 +458,9 @@ module ValidationTests = struct
   open Custom_field
   open Pool_common
 
+  let contact = Test_utils.Model.create_contact ()
+  let contact_id = Contact.(contact |> id |> Id.to_common)
+
   let check_result expected generated =
     let open Alcotest in
     let field = testable Public.pp Public.equal in
@@ -481,9 +483,15 @@ module ValidationTests = struct
         ]
     in
     let custom_field =
-      Data.custom_text_field ~validation () |> Data.to_public
+      Data.custom_text_field ~validation () |> Data.to_public contact_id
     in
-    let validate value = validate_htmx ~is_admin:false [ value ] custom_field in
+    let validate value =
+      validate_htmx
+        ~is_admin:false
+        ~entity_uuid:contact_id
+        [ value ]
+        custom_field
+    in
     let validate_too_short () =
       let result = validate "x" in
       let expected = Error (Message.TextLengthMin min_length) in
@@ -524,10 +532,14 @@ module ValidationTests = struct
         ]
     in
     let custom_field =
-      Data.custom_number_field ~validation () |> Data.to_public
+      Data.custom_number_field ~validation () |> Data.to_public contact_id
     in
     let validate value =
-      validate_htmx ~is_admin:false [ CCInt.to_string value ] custom_field
+      validate_htmx
+        ~is_admin:false
+        ~entity_uuid:contact_id
+        [ CCInt.to_string value ]
+        custom_field
     in
     let validate_too_small () =
       let result = validate 1 in
@@ -577,11 +589,12 @@ module ValidationTests = struct
     in
     let custom_field =
       Data.custom_multi_select_field ~validation ~select_options ()
-      |> Data.to_public ~field_options:public_options
+      |> Data.to_public ~field_options:public_options contact_id
     in
     let validate options =
       validate_htmx
         ~is_admin:false
+        ~entity_uuid:contact_id
         (CCList.map SelectOption.(fun { Public.id; _ } -> Id.value id) options)
         custom_field
     in

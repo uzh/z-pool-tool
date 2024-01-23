@@ -59,8 +59,6 @@ module Sql = struct
 
   let sql_select_columns =
     [ Entity.Id.sql_select_fragment ~field:"pool_custom_fields.uuid"
-    ; Entity.Id.sql_select_fragment
-        ~field:"pool_custom_field_answers.entity_uuid"
     ; "pool_custom_fields.name"
     ; "pool_custom_fields.hint"
     ; "pool_custom_fields.validation"
@@ -72,6 +70,8 @@ module Sql = struct
     ; "pool_custom_fields.admin_input_only"
     ; "pool_custom_fields.prompt_on_registration"
     ; Entity.Id.sql_select_fragment ~field:"pool_custom_field_answers.uuid"
+    ; Entity.Id.sql_select_fragment
+        ~field:"pool_custom_field_answers.entity_uuid"
     ; "pool_custom_field_answers.value"
     ; "pool_custom_field_answers.admin_value"
     ; "pool_custom_field_answers.version"

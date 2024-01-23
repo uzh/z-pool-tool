@@ -52,6 +52,7 @@ let sign_up_create req =
                req
                urlencoded
                language
+               user_id
        in
        let tenant = Pool_context.Tenant.get_tenant_exn req in
        let* email_address =

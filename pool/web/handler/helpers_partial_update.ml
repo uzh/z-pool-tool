@@ -103,14 +103,11 @@ let update ?contact req =
         Contact.(contact |> id)
       ||> with_redirect back_path
     in
+    let contact_id = Contact.id contact in
     let* custom_field =
       field_id
       |> CCOption.map_or ~default:(Lwt_result.return None) (fun id ->
-        Custom_field.find_by_contact
-          ~is_admin
-          database_label
-          (Contact.id contact)
-          id
+        Custom_field.find_by_contact ~is_admin database_label contact_id id
         ||> with_redirect back_path
         >|+ CCOption.pure)
     in
@@ -136,14 +133,13 @@ let update ?contact req =
         let hx_post =
           Htmx.(
             if is_admin
-            then admin_profile_hx_post (Contact.id contact)
+            then admin_profile_hx_post contact_id
             else contact_profile_hx_post)
           |> path_with_lang
           |> Sihl.Web.externalize_path
         in
         let hx_delete =
-          field_id
-          |> CCOption.map (Htmx.admin_profile_hx_delete (Contact.id contact))
+          field_id |> CCOption.map (Htmx.admin_profile_hx_delete contact_id)
         in
         let open Pool_common.Message in
         match partial_update with
