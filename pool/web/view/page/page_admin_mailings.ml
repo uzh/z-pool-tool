@@ -32,6 +32,15 @@ let mailing_detail_btn experiment_id mailing =
   detail_mailing_path experiment_id mailing |> link_as_button ~icon:Icon.Eye
 ;;
 
+let table_legend language =
+  let open Pool_common in
+  let open Component.Table in
+  table_legend
+    I18n.
+      [ Utils.text_to_string language Past, legend_color_item "bg-green-lighter"
+      ]
+;;
+
 let distribution_sort_select language ?field current_order =
   let open Mailing.Distribution.SortOrder in
   let select_name =
@@ -131,7 +140,13 @@ module List = struct
     (mailings, query)
     =
     let url = Uri.of_string (mailings_path experiment_id) in
-    let data_table = Component.DataTable.create_meta url query language in
+    let data_table =
+      Component.DataTable.create_meta
+        ?filter:Mailing.filterable_by
+        url
+        query
+        language
+    in
     let cols =
       let new_btn () =
         link_as_button
@@ -150,6 +165,9 @@ module List = struct
     let th_class = [ "w-3"; "w-3"; "w-2"; "w-2"; "w-2" ] in
     let row (mailing, count) =
       let open Mailing in
+      let attrs =
+        if is_past mailing then [ a_class [ "bg-green-lighter" ] ] else []
+      in
       let buttons = buttons experiment_id mailing language csrf in
       [ mailing.start_at |> StartAt.to_human |> txt
       ; mailing.end_at |> EndAt.to_human |> txt
@@ -158,7 +176,7 @@ module List = struct
       ; buttons
       ]
       |> CCList.map CCFun.(CCList.return %> td)
-      |> tr
+      |> tr ~a:attrs
     in
     DataTable.make
       ~th_class
@@ -187,10 +205,12 @@ module List = struct
   ;;
 end
 
-let index context experiment mailings =
+let index ({ Pool_context.language; _ } as context) experiment mailings =
   let experiment_id = experiment.Experiment.id in
   let open Pool_common in
-  List.(data_list context experiment_id mailings)
+  div
+    ~a:[ a_class [ "stack" ] ]
+    [ table_legend language; List.(data_list context experiment_id mailings) ]
   |> CCList.return
   |> Layout.Experiment.(
        create

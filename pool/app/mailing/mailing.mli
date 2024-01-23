@@ -162,6 +162,7 @@ val pp : Format.formatter -> t -> unit
 val show : t -> string
 val equal : t -> t -> bool
 val per_interval : Ptime.span -> t -> CCFloat.t
+val is_past : t -> bool
 
 val create
   :  ?allow_start_in_past:bool

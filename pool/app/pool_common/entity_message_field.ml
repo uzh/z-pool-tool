@@ -127,6 +127,7 @@ type t =
   | HideMakedAsDeleted [@name "hide_marked_as_deleted"]
   [@printer go "hide_marked_as_deleted"]
   | HidePaused [@name "hide_paused"] [@printer go "hide_paused"]
+  | HidePast [@name "hide_past"] [@printer go "hide_past"]
   | HideUnverified [@name "hide_unverified"] [@printer go "hide_unverified"]
   | Hint [@name "hint"] [@printer go "hint"]
   | Host [@name "host"] [@printer go "host"]
