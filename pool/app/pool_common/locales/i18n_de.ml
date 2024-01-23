@@ -119,6 +119,7 @@ Sie kommen für mehr Experimente in Frage, umso kompletter Ihr Profil ist.|}
   | SelectedTagsEmpty -> "Keine Tags zugewiesen"
   | SessionDetailTitle start ->
     Format.asprintf "Session am %s" (Utils_time.formatted_date_time start)
+  | SessionCloseScreen -> "Bildschirm zum Beenden der Sessions"
   | SessionIndent -> "Einrückungen groupieren Folgesessions."
   | SessionReminder -> "Sessionerinnerung"
   | SessionRegistrationTitle -> "Für diese Session anmelden"

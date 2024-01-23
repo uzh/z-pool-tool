@@ -66,6 +66,7 @@ type t =
   | SelectedTags
   | SelectedTagsEmpty
   | SessionDetailTitle of Ptime.t
+  | SessionCloseScreen
   | SessionIndent
   | SessionReminder
   | SessionRegistrationTitle

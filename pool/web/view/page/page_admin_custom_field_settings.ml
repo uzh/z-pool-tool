@@ -28,6 +28,7 @@ let show { Pool_context.csrf; language; _ } contact_fields =
     ~a:[ a_class [ "trim"; "safety-margin"; "measure" ] ]
     [ h1 [ txt Utils.(nav_link_to_string language I18n.CustomFields) ]
     ; p [ txt Utils.(text_to_string language I18n.CustomFieldsSettings) ]
+    ; h2 [ txt (Utils.text_to_string language I18n.SessionCloseScreen) ]
     ; form
         ~a:[ a_method `Post; a_action action; a_class [ "flexcolumn" ] ]
         [ Input.csrf_element csrf ()
