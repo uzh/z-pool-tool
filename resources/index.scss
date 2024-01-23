@@ -343,7 +343,7 @@ table.simple {
     width: 5rem;
     align-items: flex-start;
     padding-top: $space-xs;
-
+    margin-left: auto;
     &>* {
         flex-basis: 50%;
         display: flex;

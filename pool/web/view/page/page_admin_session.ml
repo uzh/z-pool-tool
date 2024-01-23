@@ -1221,7 +1221,7 @@ let session_counters
             ]
         ]
     ; div
-        ~a:[ a_class [ "push"; "session-close-checkboxes" ] ]
+        ~a:[ a_class [ "session-close-checkboxes" ] ]
         [ div [ strong [ CCInt.to_string num_participations |> txt ] ]
         ; div [ strong [ CCInt.to_string num_no_shows |> txt ] ]
         ]
@@ -1401,7 +1401,7 @@ let close
           div
             ~a:[ a_class [ "flexrow"; "w-4" ] ]
             [ div
-                ~a:[ a_class [ "push"; "session-close-checkboxes" ] ]
+                ~a:[ a_class [ "session-close-checkboxes" ] ]
                 [ div [ strong [ txt "P" ] ]; div [ strong [ txt "NS" ] ] ]
             ]
         in
