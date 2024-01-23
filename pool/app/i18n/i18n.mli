@@ -1,6 +1,8 @@
 module Key : sig
   type t =
+    | AssistantRoleHint
     | CreditsText
+    | ExperimenterRoleHint
     | GreetingsText
     | PasswordPolicyText
     | PrivacyPolicy

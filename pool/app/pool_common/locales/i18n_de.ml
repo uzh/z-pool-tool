@@ -204,11 +204,6 @@ Beim Einladen von Kontakten bevorzugt der Filter den überschreibenden Wert, wen
     "Diese Anmeldungen wurden als gelöscht markiert. Insofern die Kontakte den \
      Experimentkriterien noch entsprechen, können Sie sich erneut an Sessions \
      anmelden."
-  | AssistantRole ->
-    {|Als Assistent des 'Recruiters' haben sie verschiedene zusätzliche Rechte, um bei administrativen Aufgaben zu helfen, z.B. beim Telefon-Screening von Experimenten auf der Warteliste oder bei der Durchführung und Schliessung von Sessions.
-     Ein Assistent kann das vollständige Benutzerprofil für die Teilnahme an dem Experiment lesen, dem er/sie zugewiesen ist.
-
-     Eine detaillierte Liste mit allen Rollenberechtigungen ist nur für Recruiter verfügbar.|}
   | ContactCurrentCellPhone cell_phone ->
     Format.asprintf "Ihre aktuelle Mobiltelefonnummer lautet %s." cell_phone
   | ContactEnrollmentDoesNotMatchFilter ->
@@ -302,11 +297,6 @@ Beim Einladen von Kontakten bevorzugt der Filter den überschreibenden Wert, wen
   | ExperimentContactPerson ->
     "Die E-Mail-Adresse des ausgewählten Nutzers wird als 'reply-to' Adresse \
      für alle experimentbezogenen E-Mails verwendet."
-  | ExperimenterRole ->
-    {|Ein Experimentator hat nur eingeschränkte Rechte, die Rolle kann hauptsächlich nur die Informationen lesen und darf Sitzungen schließen.
-    Der Experimentator kann die Namen der teilnehmenden Kontakte des Experiments lesen, dem er/sie zugewiesen ist.
-
-    Eine detaillierte Liste mit allen Rollenberechtigungen ist nur für Recruiter verfügbar.|}
   | ExperimentLanguage ->
     "ist eine Experimentsprache definiert, werden alle Nachrichten, die dieses \
      Experiment betreffen, in dieser Sprache gesendet, ohne Rücksicht auf die \

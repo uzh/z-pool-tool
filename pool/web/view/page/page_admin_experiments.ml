@@ -1,9 +1,9 @@
 open Tyxml.Html
 open Component
 open Input
-open Pool_common
 open CCFun
 module HttpUtils = Http_utils
+module Message = Pool_common.Message
 module Field = Message.Field
 
 let build_experiment_path experiment =
@@ -167,6 +167,7 @@ let list Pool_context.{ language; _ } experiments query =
 ;;
 
 let index (Pool_context.{ language; _ } as context) experiments query =
+  let open Pool_common in
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
     [ h1
@@ -186,6 +187,7 @@ let experiment_form
   default_text_msg_reminder_lead_time
   flash_fetcher
   =
+  let open Pool_common in
   let open Experiment in
   let action =
     match experiment with
@@ -217,7 +219,7 @@ let experiment_form
       ()
   in
   let language_select =
-    let open Pool_common.Language in
+    let open Language in
     selector
       ~add_empty:true
       ~hints:[ I18n.ExperimentLanguage ]
@@ -312,7 +314,7 @@ let experiment_form
                     contact_persons
                     (CCOption.bind experiment (fun exp -> exp.contact_person_id))
                     Field.ContactPerson
-                    ~hints:[ Pool_common.I18n.ExperimentContactPerson ]
+                    ~hints:[ I18n.ExperimentContactPerson ]
                     ()
                 ; selector
                     language
@@ -414,6 +416,7 @@ let create
   smtp_auth_list
   flash_fetcher
   =
+  let open Pool_common in
   div
     ~a:[ a_class [ "trim"; "safety-margin"; "stack" ] ]
     [ h1
@@ -485,6 +488,7 @@ let edit
     else txt ""
   in
   let tags =
+    let open Pool_common in
     div
       ~a:[ a_class [ "stack" ] ]
       [ h2
@@ -526,6 +530,7 @@ let detail
   participation_tags
   ({ Pool_context.language; csrf; guardian; _ } as context)
   =
+  let open Pool_common in
   let can_update_experiment =
     Guard.PermissionOnTarget.validate
       (Experiment.Guard.Access.update_permission_on_target id)
@@ -591,12 +596,10 @@ let detail
       | None -> txt ""
       | Some reset_at ->
         span
-          [ Pool_common.(
-              Utils.hint_to_string
-                language
-                (I18n.ResetInvitationsLastReset
-                   (InvitationResetAt.value reset_at))
-              |> Unsafe.data)
+          [ Utils.hint_to_string
+              language
+              (I18n.ResetInvitationsLastReset (InvitationResetAt.value reset_at))
+            |> Unsafe.data
           ]
     in
     div
@@ -624,11 +627,7 @@ let detail
           ]
       ; div
           ~a:[ a_class [ "grow"; "flexcolumn" ] ]
-          [ span
-              [ txt
-                  Pool_common.(
-                    Utils.hint_to_string language I18n.ResetInvitations)
-              ]
+          [ span [ txt (Utils.hint_to_string language I18n.ResetInvitations) ]
           ; last_reset_at
           ]
       ]
@@ -641,9 +640,8 @@ let detail
           [ h2
               ~a:[ a_class [ "heading-2" ] ]
               [ txt
-                  Pool_common.(
-                    Utils.field_to_string language Message.Field.Settings
-                    |> CCString.capitalize_ascii)
+                  (Utils.field_to_string language Message.Field.Settings
+                   |> CCString.capitalize_ascii)
               ]
           ; reset_invitation_form
           ; delete_form
@@ -712,15 +710,11 @@ let detail
           , show_external_data_id_links_value |> boolean_value )
         ; ( Field.ExperimentEmailReminderLeadTime
           , email_session_reminder_lead_time_value experiment
-            |> CCOption.map_or
-                 ~default:"-"
-                 Pool_common.Utils.Time.formatted_timespan
+            |> CCOption.map_or ~default:"-" Utils.Time.formatted_timespan
             |> txt )
         ; ( Field.ExperimentTextMessageReminderLeadTime
           , text_message_session_reminder_lead_time_value experiment
-            |> CCOption.map_or
-                 ~default:"-"
-                 Pool_common.Utils.Time.formatted_timespan
+            |> CCOption.map_or ~default:"-" Utils.Time.formatted_timespan
             |> txt )
         ; ( Field.InvitationResetAt
           , experiment.invitation_reset_at
@@ -733,10 +727,7 @@ let detail
       div
         [ h3
             ~a:[ a_class [ "heading-3" ] ]
-            [ txt
-                Pool_common.(
-                  Utils.nav_link_to_string language I18n.MessageTemplates)
-            ]
+            [ txt (Utils.nav_link_to_string language I18n.MessageTemplates) ]
         ; Page_admin_message_template.(
             experiment_help
               ~entity:(Experiment experiment.id)
@@ -759,11 +750,11 @@ let detail
         div
           [ h3
               ~a:[ a_class [ "heading-3" ] ]
-              Pool_common.[ Utils.nav_link_to_string language title |> txt ]
+              [ Utils.nav_link_to_string language title |> txt ]
           ; Component.Tag.tag_list language tags
           ]
       in
-      Pool_common.I18n.[ Tags, tags; ParticipationTags, participation_tags ]
+      I18n.[ Tags, tags; ParticipationTags, participation_tags ]
       |> CCList.map build
       |> div ~a:[ a_class [ "switcher"; "flex-gap" ] ]
     in
@@ -807,6 +798,7 @@ let invitations
   filtered_contacts
   ({ Pool_context.language; _ } as context)
   =
+  let open Pool_common in
   [ div
       ~a:[ a_class [ "stack" ] ]
       [ p
@@ -840,7 +832,7 @@ let invitations
          experiment)
 ;;
 
-let users role experiment applicable_admins currently_assigned context =
+let users ?hint role experiment applicable_admins currently_assigned context =
   let base_url field admin =
     Format.asprintf
       "/admin/experiments/%s/%s/%s"
@@ -856,6 +848,7 @@ let users role experiment applicable_admins currently_assigned context =
     | `Experimenter -> Field.Experimenter
   in
   Page_admin_experiment_users.role_assignment
+    ?hint
     (base_url field)
     field
     context
@@ -866,9 +859,9 @@ let users role experiment applicable_admins currently_assigned context =
   |> CCList.return
   |> Layout.Experiment.(
        create
-         ~active_navigation:(I18n.Field field)
+         ~active_navigation:(Pool_common.I18n.Field field)
          context
-         (NavLink (I18n.Field field))
+         (NavLink (Pool_common.I18n.Field field))
          experiment)
 ;;
 

@@ -134,7 +134,6 @@ type hint =
   | AssignmentConfirmationMessageFollowUps
   | AssignContactFromWaitingList
   | AssignmentsMarkedAsClosed
-  | AssistantRole
   | ContactCurrentCellPhone of string
   | ContactEnrollmentDoesNotMatchFilter
   | ContactEnrollmentRegistrationDisabled
@@ -167,7 +166,6 @@ type hint =
   | EmailPlainText
   | ExperimentAssignment
   | ExperimentContactPerson
-  | ExperimenterRole
   | ExperimentLanguage
   | ExperimentMailings
   | ExperimentMailingsRegistrationDisabled

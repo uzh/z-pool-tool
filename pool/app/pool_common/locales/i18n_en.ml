@@ -201,11 +201,6 @@ When inviting contacts, the filter will prefer the overriding value if both are 
   | AssignmentsMarkedAsClosed ->
     "These assignments have been marked as deleted. Provided that the contacts \
      still meet the experiment criteria, they can register for sessions again."
-  | AssistantRole ->
-    {|As an assistant of the recruiter, they have several additional rights to help with administrative tasks, e.g. handling the telephone screening for waiting list experiments or running and closing the sessions.
-    An assistant can read the full user profile for usert attending on the experiment he/she's assigned to.
-
-    A detailed list with all role permissions is available for recruiters only.|}
   | ContactCurrentCellPhone cell_phone ->
     Format.asprintf "Your current phone number is %s." cell_phone
   | ContactEnrollmentDoesNotMatchFilter ->
@@ -296,11 +291,6 @@ Make sure to show links and URLs as plain text.
   | ExperimentContactPerson ->
     "The selected user's email address will be used as 'reply-to' address for \
      all experiment-related emails."
-  | ExperimenterRole ->
-    {|An experimenter has limited rights, the role can mainly just read the information and is allowed to close sessions.
-      The experimenter can read the names of attending contacts to the experiment he/she's assigned to.
-
-      A detailed list with all role permissions is available for recruiters only.|}
   | ExperimentLanguage ->
     "If an experiment language is defined, all messages regarding this \
      experiment will be sent in this language, disregarding the contact \
@@ -318,7 +308,7 @@ Make sure to show links and URLs as plain text.
     {|Messages sent to contacts regarding this experiment or session can be customized if you want to add or remove information. The template is selected in the following hierarchy: session-specific > experiment-specific > default.
 
 If an experiment language is specified, all messages will be sent in this language. The messages will be sent in the contact display language if no experiment-specific language is defined.
-  
+
 By clicking on the template labels below you can open the default text message:
 |}
   | ExperimentWaitingList ->
