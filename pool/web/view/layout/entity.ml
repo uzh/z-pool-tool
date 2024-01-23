@@ -2,6 +2,15 @@ module I18n = Pool_common.I18n
 module Icon = Component.Icon
 module Language = Pool_common.Language
 
+type raw =
+  | Single of string * I18n.nav_link * Guard.ValidationSet.t
+  | Parent of string * I18n.nav_link * Guard.ValidationSet.t * raw list
+
+let validation_set = function
+  | Single (_, _, validation_set) | Parent (_, _, validation_set, _) ->
+    validation_set
+;;
+
 module NavElement = struct
   type t =
     { url : string
@@ -11,33 +20,37 @@ module NavElement = struct
     ; children : t list
     }
 
-  let create
-    ?icon
-    ?(children = [])
-    ?(validation_set = Guard.ValidationSet.empty)
-    url
-    label
-    =
-    { url; label; icon; validation_set; children }
-  ;;
-
-  let create_all =
-    CCList.map (fun (url, label, icon, children) ->
-      create ~children ?icon url label)
-  ;;
-
-  let create_all_req = CCList.map (fun (url, label) -> create url label)
-
-  let create_all_req_with_set =
-    CCList.map (fun (url, label, validation_set) ->
-      create ~validation_set url label)
+  let rec create ?icon =
+    let build
+      ?icon
+      ?(children = [])
+      ?(validation_set = Guard.ValidationSet.empty)
+      url
+      label
+      =
+      { icon; children; validation_set; url; label }
+    in
+    function
+    | Single (url, label, validation_set) ->
+      build ?icon ~validation_set url label
+    | Parent (url, label, validation_set, children) ->
+      let children = children |> CCList.map create in
+      build ~children ~validation_set url label
   ;;
 
   let login ?(prefix = "") () =
-    create Format.(asprintf "%s/login" prefix) I18n.Login
+    create
+      (Single
+         ( Format.(asprintf "%s/login" prefix)
+         , I18n.Login
+         , Guard.ValidationSet.empty ))
   ;;
 
   let logout ?(prefix = "") () =
-    create Format.(asprintf "%s/logout" prefix) I18n.Logout
+    create
+      (Single
+         ( Format.(asprintf "%s/logout" prefix)
+         , I18n.Logout
+         , Guard.ValidationSet.empty ))
   ;;
 end

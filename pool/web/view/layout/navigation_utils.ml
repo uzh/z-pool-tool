@@ -37,6 +37,7 @@ let filter_items ?validate ?actor ?(guardian = []) items =
 let rec build_nav_links
   ?(mobile = false)
   ?active_navigation
+  ?(first_level = true)
   language
   query_language
   { NavElement.url; label; icon; children; _ }
@@ -83,14 +84,24 @@ let rec build_nav_links
   | [] -> li nav_link
   | children ->
     let parent_attrs, list_attrs =
-      (* NOTE: Desktop UI only supports one nested navigation group *)
       if mobile
       then [], [ a_class [ "children" ] ]
-      else [ a_class [ "has-dropdown" ] ], [ a_class [ "dropdown" ] ]
+      else (
+        let parent_class =
+          if first_level
+          then [ "has-dropdown" ]
+          else [ "has-dropdown"; "right" ]
+        in
+        [ a_class parent_class ], [ a_class [ "dropdown" ] ])
     in
     let build_rec =
       CCList.map
-        (build_nav_links ~mobile ?active_navigation language query_language)
+        (build_nav_links
+           ~mobile
+           ~first_level:false
+           ?active_navigation
+           language
+           query_language)
       %> ul ~a:list_attrs
     in
     nav_link @ [ build_rec children ] |> li ~a:parent_attrs
