@@ -68,7 +68,8 @@ module Sql = struct
         pool_custom_fields.admin_view_only,
         pool_custom_fields.admin_input_only,
         pool_custom_fields.prompt_on_registration,
-        pool_custom_fields.published_at
+        pool_custom_fields.published_at,
+        pool_custom_fields.show_on_session_close_screen
       FROM pool_custom_fields
       %s
       %s
@@ -162,6 +163,7 @@ module Sql = struct
         admin_view_only,
         admin_input_only,
         prompt_on_registration,
+        show_on_session_close_screen,
         position
       ) VALUES (
         UNHEX(REPLACE($1, '-', '')),
@@ -178,6 +180,7 @@ module Sql = struct
         $12,
         $13,
         $14,
+        $15,
         (SELECT
           COUNT(*)
           FROM pool_custom_fields AS f
@@ -215,7 +218,8 @@ module Sql = struct
         admin_override = $11,
         admin_view_only = $12,
         admin_input_only = $13,
-        prompt_on_registration = $14
+        prompt_on_registration = $14,
+        show_on_session_close_screen = $15
       WHERE
         uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}
@@ -281,6 +285,31 @@ module Sql = struct
         (t |> Entity.id |> Entity.Id.value)
     in
     Repo_option.destroy_by_custom_field pool (Entity.id t)
+  ;;
+
+  let table_view_column = function
+    | `SesionClose -> "show_on_session_close_screen"
+  ;;
+
+  let find_by_table_view_request table_view =
+    let open Caqti_request.Infix in
+    Format.asprintf
+      {sql|
+        WHERE pool_custom_fields.model = $1
+        AND %s = 1
+      |sql}
+      (table_view_column table_view)
+    |> select_sql
+    |> Caqti_type.string ->* Repo_entity.t
+  ;;
+
+  let find_by_table_view pool table_view =
+    let open Utils.Lwt_result.Infix in
+    Utils.Database.collect
+      (Database.Label.value pool)
+      (find_by_table_view_request table_view)
+      Entity.Model.(show Contact)
+    >|> multiple_to_entity pool Repo_entity.to_entity get_field_type get_id
   ;;
 end
 

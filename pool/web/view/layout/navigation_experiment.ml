@@ -58,10 +58,11 @@ let nav_elements { Experiment.id; direct_registration_disabled; _ } =
   in
   left @ waiting_list_nav @ right
   |> CCList.map (fun (url, label, set) ->
-    ( Format.asprintf "/admin/experiments/%s/%s" (Experiment.Id.value id) url
-    , label
-    , set ))
-  |> NavElement.create_all_req_with_set
+    Single
+      ( Format.asprintf "/admin/experiments/%s/%s" (Experiment.Id.value id) url
+      , label
+      , set )
+    |> NavElement.create)
 ;;
 
 let combine ?buttons ?hint language title children =

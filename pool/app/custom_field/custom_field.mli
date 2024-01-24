@@ -5,6 +5,7 @@ module Answer : sig
 
   type 'a t =
     { id : Id.t
+    ; entity_uuid : Pool_common.Id.t
     ; value : 'a option
     ; admin_value : 'a option
     }
@@ -12,7 +13,14 @@ module Answer : sig
   val equal : ('a -> 'a -> bool) -> 'a t -> 'a t -> bool
   val pp : (Format.formatter -> 'a -> unit) -> Format.formatter -> 'a t -> unit
   val show : (Format.formatter -> 'a -> unit) -> 'a t -> string
-  val create : ?id:Id.t -> ?admin_value:'a -> 'a option -> 'a t
+
+  val create
+    :  ?id:Id.t
+    -> ?admin_value:'a
+    -> Pool_common.Id.t
+    -> 'a option
+    -> 'a t
+
   val id : 'a t -> Id.t
   val value : 'a t -> 'a option
   val admin_value : 'a t -> 'a option
@@ -270,6 +278,7 @@ module Public : sig
   val pp : Format.formatter -> t -> unit
   val show : t -> string
   val id : t -> Id.t
+  val entity_id : t -> Pool_common.Id.t option
   val name_value : Pool_common.Language.t -> t -> string
   val hint : Pool_common.Language.t -> t -> Hint.hint option
   val required : t -> Required.t
@@ -345,6 +354,7 @@ type 'a custom_field =
   ; admin_input_only : AdminInputOnly.t
   ; prompt_on_registration : PromptOnRegistration.t
   ; published_at : PublishedAt.t option
+  ; show_on_session_close_page : bool
   }
 
 type t =
@@ -394,6 +404,8 @@ val admin_override : t -> AdminOverride.t
 val admin_view_only : t -> AdminViewOnly.t
 val admin_input_only : t -> AdminInputOnly.t
 val prompt_on_registration : t -> PromptOnRegistration.t
+val show_on_session_close_page : t -> bool
+val set_show_on_session_close_page : bool -> t -> t
 val field_type : t -> FieldType.t
 val validation_strings : t -> (string * string) list
 val validation_to_yojson : t -> Yojson.Safe.t
@@ -414,6 +426,7 @@ end
 
 val validate_htmx
   :  is_admin:bool
+  -> entity_uuid:Pool_common.Id.t
   -> string list
   -> Public.t
   -> (Public.t, Pool_common.Message.error) result
@@ -457,6 +470,11 @@ val find
   :  Pool_database.Label.t
   -> Id.t
   -> (t, Pool_common.Message.error) result Lwt.t
+
+val find_by_table_view
+  :  Pool_database.Label.t
+  -> [< `SesionClose ]
+  -> t list Lwt.t
 
 val find_all_by_contact
   :  Pool_database.Label.t
@@ -503,6 +521,13 @@ val all_required_answered
 
 val all_answered : Pool_database.Label.t -> Pool_common.Id.t -> bool Lwt.t
 val all_prompted_on_registration : Pool_database.Label.t -> Public.t list Lwt.t
+
+val find_public_by_contacts_and_view
+  :  Pool_database.Label.t
+  -> bool
+  -> Contact.Id.t list
+  -> [< `SesionClose ]
+  -> Public.t list Lwt.t
 
 val find_option
   :  Pool_database.Label.t

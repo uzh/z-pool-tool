@@ -2,6 +2,7 @@ let answer_and_validate_multiple
   req
   urlencoded
   language
+  entity_uuid
   (custom_fields : Custom_field.Public.t list)
   =
   let open Utils.Lwt_result.Infix in
@@ -24,7 +25,8 @@ let answer_and_validate_multiple
          CCList.assoc_opt ~eq:CCString.equal id urlencoded
          |> CCOption.value ~default:[]
          |> Lwt.return)
-      ||> fun value -> (Custom_field.validate_htmx ~is_admin:false value) field)
+      ||> fun value ->
+      (Custom_field.validate_htmx ~is_admin:false ~entity_uuid value) field)
     custom_fields
   ||> CCList.all_ok
 ;;

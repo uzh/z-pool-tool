@@ -57,46 +57,37 @@ module Sql = struct
     |sql}
   ;;
 
+  let sql_select_columns =
+    [ Entity.Id.sql_select_fragment ~field:"pool_custom_fields.uuid"
+    ; "pool_custom_fields.name"
+    ; "pool_custom_fields.hint"
+    ; "pool_custom_fields.validation"
+    ; "pool_custom_fields.field_type"
+    ; "pool_custom_fields.required"
+    ; Entity.Id.sql_select_fragment
+        ~field:"pool_custom_fields.custom_field_group_uuid"
+    ; "pool_custom_fields.admin_override"
+    ; "pool_custom_fields.admin_input_only"
+    ; "pool_custom_fields.prompt_on_registration"
+    ; Entity.Id.sql_select_fragment ~field:"pool_custom_field_answers.uuid"
+    ; Entity.Id.sql_select_fragment
+        ~field:"pool_custom_field_answers.entity_uuid"
+    ; "pool_custom_field_answers.value"
+    ; "pool_custom_field_answers.admin_value"
+    ; "pool_custom_field_answers.version"
+    ; "pool_custom_field_answers.admin_version"
+    ]
+  ;;
+
   let select_sql =
     Format.asprintf
       {sql|
       SELECT
-        LOWER(CONCAT(
-          SUBSTR(HEX(pool_custom_fields.uuid), 1, 8), '-',
-          SUBSTR(HEX(pool_custom_fields.uuid), 9, 4), '-',
-          SUBSTR(HEX(pool_custom_fields.uuid), 13, 4), '-',
-          SUBSTR(HEX(pool_custom_fields.uuid), 17, 4), '-',
-          SUBSTR(HEX(pool_custom_fields.uuid), 21)
-        )),
-        pool_custom_fields.name,
-        pool_custom_fields.hint,
-        pool_custom_fields.validation,
-        pool_custom_fields.field_type,
-        pool_custom_fields.required,
-        LOWER(CONCAT(
-          SUBSTR(HEX(pool_custom_fields.custom_field_group_uuid), 1, 8), '-',
-          SUBSTR(HEX(pool_custom_fields.custom_field_group_uuid), 9, 4), '-',
-          SUBSTR(HEX(pool_custom_fields.custom_field_group_uuid), 13, 4), '-',
-          SUBSTR(HEX(pool_custom_fields.custom_field_group_uuid), 17, 4), '-',
-          SUBSTR(HEX(pool_custom_fields.custom_field_group_uuid), 21)
-        )),
-        pool_custom_fields.admin_override,
-        pool_custom_fields.admin_input_only,
-        pool_custom_fields.prompt_on_registration,
-        LOWER(CONCAT(
-          SUBSTR(HEX(pool_custom_field_answers.uuid), 1, 8), '-',
-          SUBSTR(HEX(pool_custom_field_answers.uuid), 9, 4), '-',
-          SUBSTR(HEX(pool_custom_field_answers.uuid), 13, 4), '-',
-          SUBSTR(HEX(pool_custom_field_answers.uuid), 17, 4), '-',
-          SUBSTR(HEX(pool_custom_field_answers.uuid), 21)
-        )),
-        pool_custom_field_answers.value,
-        pool_custom_field_answers.admin_value,
-        pool_custom_field_answers.version,
-        pool_custom_field_answers.admin_version
+        %s
       FROM pool_custom_fields
       %s
     |sql}
+      (sql_select_columns |> CCString.concat ", ")
       answers_left_join
   ;;
 
@@ -213,6 +204,67 @@ module Sql = struct
       fields
       |> Repo_entity.Public.to_ungrouped_entities is_admin options
       |> Lwt.return
+  ;;
+
+  let find_by_contacts_and_fields_request contact_ids field_ids =
+    let id_list counter ids =
+      CCList.mapi
+        (fun i _ ->
+          Format.asprintf "UNHEX(REPLACE($%n, '-', ''))" (i + counter + 1))
+        ids
+      |> CCString.concat ","
+    in
+    Format.asprintf
+      {sql|
+        SELECT %s
+        FROM pool_custom_fields
+        LEFT JOIN pool_custom_field_answers
+          ON pool_custom_field_answers.custom_field_uuid = pool_custom_fields.uuid
+        WHERE 
+          pool_custom_fields.uuid in ( %s )
+          AND pool_custom_field_answers.entity_uuid in ( %s )
+        ORDER BY 
+          pool_custom_fields.position
+      |sql}
+      (CCString.concat ", " sql_select_columns)
+      (id_list 0 field_ids)
+      (id_list (CCList.length field_ids) contact_ids)
+  ;;
+
+  let find_by_contacts_and_view pool is_admin contact_ids view =
+    let open Utils.Lwt_result.Infix in
+    let open Caqti_request.Infix in
+    if CCList.is_empty contact_ids
+    then Lwt.return []
+    else
+      Repo.Sql.find_by_table_view pool view
+      >|> function
+      | [] -> Lwt.return []
+      | fields ->
+        let field_ids = CCList.map Entity.id fields in
+        let dyn =
+          let add_ids decode ids dyn =
+            CCList.fold_left
+              (fun dyn id ->
+                dyn |> Dynparam.add Caqti_type.string (id |> decode))
+              dyn
+              ids
+          in
+          Dynparam.empty
+          |> add_ids Entity.Id.value field_ids
+          |> add_ids Contact.Id.value contact_ids
+        in
+        let (Dynparam.Pack (pt, pv)) = dyn in
+        let request =
+          find_by_contacts_and_fields_request contact_ids field_ids
+          |> pt ->* Repo_entity.Public.t
+        in
+        Utils.Database.collect (pool |> Database.Label.value) request pv
+        >|> fun fields ->
+        let%lwt options = get_options_of_multiple pool fields in
+        fields
+        |> Repo_entity.Public.to_ungrouped_entities is_admin options
+        |> Lwt.return
   ;;
 
   let find_by_contact_request is_admin =

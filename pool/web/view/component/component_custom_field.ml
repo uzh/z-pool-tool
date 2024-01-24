@@ -1,6 +1,11 @@
 open Tyxml.Html
 
-let answer_to_html user language (custom_field : Custom_field.Public.t) =
+let answer_to_html
+  ?(add_data_label = false)
+  user
+  language
+  (custom_field : Custom_field.Public.t)
+  =
   let open CCFun in
   let open Custom_field in
   let open Public in
@@ -28,9 +33,20 @@ let answer_to_html user language (custom_field : Custom_field.Public.t) =
             ; to_html admin_value
             ]
       in
+      let attribs =
+        match add_data_label with
+        | false -> []
+        | true ->
+          [ a_user_data
+              "label"
+              Custom_field.Public.(name_value language custom_field)
+          ]
+      in
       div
-        ~a:[ a_class [ "flexcolumn"; "stack-xs" ] ]
-        [ span [ map_or to_html value ]; admin_input ]
+        ~a:([ a_class [ "flexcolumn"; "stack-xs" ] ] @ attribs)
+        [ value |> CCOption.map to_html |> map_or CCFun.(CCList.return %> span)
+        ; admin_input
+        ]
   in
   let select_option_to_html = SelectOption.Public.name language %> txt in
   match custom_field with

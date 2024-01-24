@@ -9,6 +9,7 @@ type t =
   | Closed
   | ContactWaitingListEmpty
   | ContactWaitingListTitle
+  | CustomFieldsSettings
   | DashboardProfileCompletionText
   | DashboardProfileCompletionTitle
   | DashboardTitle
@@ -65,6 +66,7 @@ type t =
   | SelectedTags
   | SelectedTagsEmpty
   | SessionDetailTitle of Ptime.t
+  | SessionCloseScreen
   | SessionIndent
   | SessionReminder
   | SessionRegistrationTitle

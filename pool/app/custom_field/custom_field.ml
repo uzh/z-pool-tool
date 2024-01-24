@@ -6,6 +6,7 @@ let find_by_model = Repo.find_by_model
 let find_by_group = Repo.find_by_group
 let find_ungrouped_by_model = Repo.find_ungrouped_by_model
 let find = Repo.find
+let find_by_table_view = Repo.Sql.find_by_table_view
 
 let find_of_contact ?(required = false) pool user id =
   let open Pool_context in
@@ -51,6 +52,7 @@ let find_by_contact = Repo_public.find_by_contact
 let all_required_answered = Repo_public.all_required_answered
 let all_answered = Repo_public.all_answered
 let all_prompted_on_registration = Repo_public.all_prompted_on_registration
+let find_public_by_contacts_and_view = Repo_public.Sql.find_by_contacts_and_view
 let find_option = Repo_option.find
 
 let find_options_by_field pool id =
@@ -73,16 +75,16 @@ module Repo = struct
   end
 end
 
-let create_answer is_admin answer new_value =
+let create_answer is_admin entity_uuid answer new_value =
   let id = Answer.id_opt answer in
   let value = CCOption.bind answer Answer.value in
   (match is_admin with
-   | true -> Answer.create ?id ~admin_value:new_value value
-   | false -> Answer.create ?id (Some new_value))
+   | true -> Answer.create ?id entity_uuid ~admin_value:new_value value
+   | false -> Answer.create ?id entity_uuid (Some new_value))
   |> CCOption.pure
 ;;
 
-let validate_htmx ~is_admin value (m : Public.t) =
+let validate_htmx ~is_admin ~entity_uuid value (m : Public.t) =
   let open Public in
   let open CCResult.Infix in
   let no_value = Error Pool_common.Message.NoValue in
@@ -103,7 +105,7 @@ let validate_htmx ~is_admin value (m : Public.t) =
     single_value
     >|= Utils.Bool.of_string
     |> CCOption.value ~default:false
-    |> create_answer is_admin answer
+    |> create_answer is_admin entity_uuid answer
     |> to_field
   | Date (public, answer) ->
     let to_field a = Public.Date (public, a) in
@@ -111,7 +113,7 @@ let validate_htmx ~is_admin value (m : Public.t) =
      | Some value, _ ->
        value
        |> Ptime.date_of_string
-       >|= create_answer is_admin answer
+       >|= create_answer is_admin entity_uuid answer
        >|= to_field
      | None, false -> to_field None |> CCResult.return
      | None, true -> no_value)
@@ -130,7 +132,7 @@ let validate_htmx ~is_admin value (m : Public.t) =
               Pool_common.Message.(Invalid Field.CustomFieldOption))
        |> CCList.all_ok
        >>= validate validation
-       >|= create_answer is_admin answer
+       >|= create_answer is_admin entity_uuid answer
        >|= to_field)
   | Number (({ validation; _ } as public), answer) ->
     let to_field a = Public.Number (public, a) in
@@ -140,7 +142,7 @@ let validate_htmx ~is_admin value (m : Public.t) =
        |> CCInt.of_string
        |> CCOption.to_result Message.(NotANumber value)
        >>= validate validation
-       >|= create_answer is_admin answer
+       >|= create_answer is_admin entity_uuid answer
        >|= to_field
      | None, false -> Ok (to_field None)
      | None, true -> no_value)
@@ -153,7 +155,7 @@ let validate_htmx ~is_admin value (m : Public.t) =
          (fun option -> Id.equal option.Public.id (Id.of_string value))
          options
        |> CCOption.to_result Message.InvalidOptionSelected
-       >|= create_answer is_admin answer
+       >|= create_answer is_admin entity_uuid answer
        >|= to_field
      | None, false -> Ok (to_field None)
      | None, true -> no_value)
@@ -163,7 +165,7 @@ let validate_htmx ~is_admin value (m : Public.t) =
      | Some value, _ ->
        value
        |> validate validation
-       >|= create_answer is_admin answer
+       >|= create_answer is_admin entity_uuid answer
        >|= to_field
      | None, false -> Ok (to_field None)
      | None, true -> no_value)
@@ -182,6 +184,7 @@ let validate_partial_update
     then Error Pool_common.Message.(MeantimeUpdate field)
     else t |> increment_version |> CCResult.return
   in
+  let entity_uuid = Contact.(contact |> id |> Id.to_common) in
   let validate schema =
     let schema =
       Pool_common.Utils.PoolConformist.(make Field.[ schema () ] CCFun.id)
@@ -225,7 +228,7 @@ let validate_partial_update
       |> CCOption.to_result Pool_common.Message.InvalidHtmxRequest
       |> Lwt_result.lift
       >>= check_permission
-      >>= CCFun.(validate_htmx ~is_admin value %> Lwt_result.lift)
+      >>= CCFun.(validate_htmx ~is_admin ~entity_uuid value %> Lwt_result.lift)
     in
     let old_v = Public.version custom_field in
     custom_field |> custom |> check_version old_v |> Lwt_result.lift

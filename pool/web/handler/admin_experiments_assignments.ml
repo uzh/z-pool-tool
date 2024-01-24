@@ -205,11 +205,6 @@ let close_htmx req =
       ||> HttpUtils.format_request_boolean_values boolean_fields
       ||> HttpUtils.remove_empty_values
     in
-    let view_contact_name =
-      Helpers.Guard.can_read_contact_name
-        context
-        [ Guard.Uuid.target_of Experiment.Id.value experiment_id ]
-    in
     let* experiment = Experiment.find database_label experiment_id in
     let* session = Session.find database_label session_id in
     let* assignment = Assignment.find database_label assignment_id in
@@ -257,12 +252,11 @@ let close_htmx req =
       | Some id1, Some id2 when ExternalDataId.equal id1 id2 -> fields
       | _ -> Field.ExternalDataId :: fields
     in
-    Page.Admin.Session.close_assignment_htmx_row
+    Page.Admin.Session.close_assignment_htmx_form
       ~counters
       ~updated_fields
       context
       experiment
-      ~view_contact_name
       session
       updated_assignment
     |> HttpUtils.Htmx.html_to_plain_text_response

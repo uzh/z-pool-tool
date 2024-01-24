@@ -3,6 +3,7 @@ module Contacts = Admin_contacts
 module CustomField = Admin_custom_fields
 module CustomFieldGroup = Admin_custom_field_groups
 module CustomFieldOption = Admin_custom_field_options
+module CustomFieldSettings = Admin_custom_field_settings
 module Experiments = Admin_experiments
 module Filter = Admin_filter
 module I18n = Admin_i18n

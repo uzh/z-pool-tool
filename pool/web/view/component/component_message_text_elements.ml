@@ -196,6 +196,7 @@ module DummyData = struct
     ; marked_as_deleted = MarkedAsDeleted.init
     ; external_data_id = Some (ExternalDataId.of_string "DATA_ID")
     ; reminder_manually_last_sent_at = None
+    ; custom_fields = None
     ; created_at = Ptime_clock.now ()
     ; updated_at = Ptime_clock.now ()
     }

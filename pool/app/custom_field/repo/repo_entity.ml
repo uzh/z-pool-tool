@@ -226,6 +226,7 @@ module Write = struct
       ; admin_view_only = admin_view_only t
       ; admin_input_only = admin_input_only t
       ; prompt_on_registration = prompt_on_registration t
+      ; show_on_session_close_screen = show_on_session_close_page t
       }
   ;;
 
@@ -245,8 +246,10 @@ module Write = struct
                         , ( m.admin_hint
                           , ( m.admin_override
                             , ( m.admin_view_only
-                              , (m.admin_input_only, m.prompt_on_registration)
-                              ) ) ) ) ) ) ) ) ) ) ) )
+                              , ( m.admin_input_only
+                                , ( m.prompt_on_registration
+                                  , m.show_on_session_close_screen ) ) ) ) ) )
+                      ) ) ) ) ) ) ) )
     in
     let decode _ =
       failwith
@@ -283,7 +286,7 @@ module Write = struct
                                             AdminViewOnly.t
                                             (t2
                                                AdminInputOnly.t
-                                               PromptOnRegistration.t))))))))))))))
+                                               (t2 PromptOnRegistration.t bool)))))))))))))))
   ;;
 end
 
@@ -300,6 +303,7 @@ module Public = struct
     ; admin_input_only : AdminInputOnly.t
     ; prompt_on_registration : PromptOnRegistration.t
     ; answer_id : Pool_common.Id.t option
+    ; answer_entity_uuid : Pool_common.Id.t option
     ; answer_value : string option
     ; answer_admin_value : string option
     ; version : Pool_common.Version.t option
@@ -309,6 +313,7 @@ module Public = struct
 
   let create_answer
     id
+    entity_uuid
     ~is_admin
     ~admin_override
     ~answer_value
@@ -316,16 +321,16 @@ module Public = struct
     parse_value
     =
     let open CCOption.Infix in
-    match id with
-    | None -> None
-    | Some id ->
+    match id, entity_uuid with
+    | None, None | None, Some _ | Some _, None -> None
+    | Some id, Some entity_uuid ->
       let value = answer_value >>= parse_value in
       let admin_value =
         if is_admin && admin_override
         then answer_admin_value >>= parse_value
         else None
       in
-      Entity_answer.create ~id ?admin_value value |> CCOption.pure
+      Entity_answer.create ~id ?admin_value entity_uuid value |> CCOption.pure
   ;;
 
   let to_entity
@@ -341,6 +346,7 @@ module Public = struct
     ; admin_input_only
     ; prompt_on_registration
     ; answer_id
+    ; answer_entity_uuid
     ; answer_value
     ; answer_admin_value
     ; version
@@ -361,6 +367,7 @@ module Public = struct
       let answer =
         create_answer
           answer_id
+          answer_entity_uuid
           ~is_admin
           ~admin_override
           ~answer_value
@@ -383,6 +390,7 @@ module Public = struct
       let answer =
         create_answer
           answer_id
+          answer_entity_uuid
           ~is_admin
           ~admin_override
           ~answer_value
@@ -405,6 +413,7 @@ module Public = struct
       let answer =
         create_answer
           answer_id
+          answer_entity_uuid
           ~is_admin
           ~admin_override
           ~answer_value
@@ -437,6 +446,7 @@ module Public = struct
         in
         create_answer
           answer_id
+          answer_entity_uuid
           ~is_admin
           ~admin_override
           ~answer_value
@@ -491,6 +501,7 @@ module Public = struct
         in
         create_answer
           answer_id
+          answer_entity_uuid
           ~is_admin
           ~admin_override
           ~answer_value
@@ -514,6 +525,7 @@ module Public = struct
       let answer =
         create_answer
           answer_id
+          answer_entity_uuid
           ~is_admin
           ~admin_override
           ~answer_value
@@ -585,9 +597,10 @@ module Public = struct
                     , ( admin_input_only
                       , ( prompt_on_registration
                         , ( answer_id
-                          , ( answer_value
-                            , (answer_admin_value, (version, admin_version)) )
-                          ) ) ) ) ) ) ) ) ) ) )
+                          , ( answer_entity_uuid
+                            , ( answer_value
+                              , (answer_admin_value, (version, admin_version))
+                              ) ) ) ) ) ) ) ) ) ) ) ) )
       =
       Ok
         { id
@@ -601,6 +614,7 @@ module Public = struct
         ; prompt_on_registration
         ; custom_field_group_id
         ; answer_id
+        ; answer_entity_uuid
         ; answer_value
         ; answer_admin_value
         ; version
@@ -634,12 +648,16 @@ module Public = struct
                                       (t2
                                          (option Common.Repo.Id.t)
                                          (t2
-                                            (option Caqti_type.string)
+                                            (option Common.Repo.Id.t)
                                             (t2
                                                (option Caqti_type.string)
                                                (t2
-                                                  (option Common.Repo.Version.t)
-                                                  (option Common.Repo.Version.t))))))))))))))))
+                                                  (option Caqti_type.string)
+                                                  (t2
+                                                     (option
+                                                        Common.Repo.Version.t)
+                                                     (option
+                                                        Common.Repo.Version.t)))))))))))))))))
   ;;
 end
 
@@ -659,6 +677,7 @@ type repo =
   ; admin_input_only : AdminInputOnly.t
   ; prompt_on_registration : PromptOnRegistration.t
   ; published_at : PublishedAt.t option
+  ; show_on_session_close_page : bool
   }
 
 let t =
@@ -680,8 +699,9 @@ let t =
                       , ( admin_override
                         , ( admin_view_only
                           , ( admin_input_only
-                            , (prompt_on_registration, published_at) ) ) ) ) )
-                  ) ) ) ) ) ) ) )
+                            , ( prompt_on_registration
+                              , (published_at, show_on_session_close_page) ) )
+                          ) ) ) ) ) ) ) ) ) ) ) )
     =
     let open CCResult in
     Ok
@@ -700,6 +720,7 @@ let t =
       ; admin_input_only
       ; prompt_on_registration
       ; published_at
+      ; show_on_session_close_page
       }
   in
   Caqti_type.(
@@ -734,7 +755,7 @@ let t =
                                              AdminInputOnly.t
                                              (t2
                                                 PromptOnRegistration.t
-                                                (option PublishedAt.t))))))))))))))))
+                                                (t2 (option PublishedAt.t) bool))))))))))))))))
 ;;
 
 let to_entity
@@ -754,6 +775,7 @@ let to_entity
   ; admin_input_only
   ; prompt_on_registration
   ; published_at
+  ; show_on_session_close_page
   }
   =
   let validation_schema schema =
@@ -776,6 +798,7 @@ let to_entity
       ; admin_input_only
       ; prompt_on_registration
       ; published_at
+      ; show_on_session_close_page
       }
   | FieldType.Date ->
     Date
@@ -793,6 +816,7 @@ let to_entity
       ; admin_input_only
       ; prompt_on_registration
       ; published_at
+      ; show_on_session_close_page
       }
   | FieldType.Number ->
     let validation = validation_schema Validation.Number.schema in
@@ -811,6 +835,7 @@ let to_entity
       ; admin_input_only
       ; prompt_on_registration
       ; published_at
+      ; show_on_session_close_page
       }
   | FieldType.Select ->
     let options =
@@ -834,6 +859,7 @@ let to_entity
         ; admin_input_only
         ; prompt_on_registration
         ; published_at
+        ; show_on_session_close_page
         }
       , options )
   | FieldType.MultiSelect ->
@@ -859,6 +885,7 @@ let to_entity
         ; admin_input_only
         ; prompt_on_registration
         ; published_at
+        ; show_on_session_close_page
         }
       , options )
   | FieldType.Text ->
@@ -878,5 +905,6 @@ let to_entity
       ; admin_input_only
       ; prompt_on_registration
       ; published_at
+      ; show_on_session_close_page
       }
 ;;

@@ -37,6 +37,7 @@ let filter_items ?validate ?actor ?(guardian = []) items =
 let rec build_nav_links
   ?(mobile = false)
   ?active_navigation
+  ?(first_level = true)
   language
   query_language
   { NavElement.url; label; icon; children; _ }
@@ -47,8 +48,10 @@ let rec build_nav_links
     in
     CCList.fold_left
       (fun init { NavElement.url; children; _ } ->
-        init || is_active url || find_is_active children)
-      (is_active url)
+        match url with
+        | None -> init || find_is_active children
+        | Some url -> init || is_active url || find_is_active children)
+      (CCOption.map_or ~default:false is_active url)
       children
   in
   let is_active = find_is_active children in
@@ -68,9 +71,9 @@ let rec build_nav_links
       let base = [ "nav-link" ] in
       if is_active then "active" :: base else base
     in
-    if is_active || CCList.is_empty children |> not
-    then [ span ~a:[ a_class classnames ] label ]
-    else
+    match is_active, url with
+    | true, _ | false, None -> [ span ~a:[ a_class classnames ] label ]
+    | _, Some url ->
       [ a
           ~a:
             [ a_href (Http_utils.externalize_path_with_lang query_language url)
@@ -83,14 +86,24 @@ let rec build_nav_links
   | [] -> li nav_link
   | children ->
     let parent_attrs, list_attrs =
-      (* NOTE: Desktop UI only supports one nested navigation group *)
       if mobile
       then [], [ a_class [ "children" ] ]
-      else [ a_class [ "has-dropdown" ] ], [ a_class [ "dropdown" ] ]
+      else (
+        let parent_class =
+          if first_level
+          then [ "has-dropdown" ]
+          else [ "has-dropdown"; "right" ]
+        in
+        [ a_class parent_class ], [ a_class [ "dropdown" ] ])
     in
     let build_rec =
       CCList.map
-        (build_nav_links ~mobile ?active_navigation language query_language)
+        (build_nav_links
+           ~mobile
+           ~first_level:false
+           ?active_navigation
+           language
+           query_language)
       %> ul ~a:list_attrs
     in
     nav_link @ [ build_rec children ] |> li ~a:parent_attrs

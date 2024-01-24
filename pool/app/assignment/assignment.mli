@@ -46,6 +46,7 @@ type t =
   ; marked_as_deleted : MarkedAsDeleted.t
   ; external_data_id : ExternalDataId.t option
   ; reminder_manually_last_sent_at : Pool_common.Reminder.SentAt.t option
+  ; custom_fields : Custom_field.Public.t list option
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
   }
@@ -164,6 +165,11 @@ val find_uncanceled_by_session
   :  Pool_database.Label.t
   -> Session.Id.t
   -> t list Lwt.t
+
+val find_for_session_close_screen
+  :  Pool_database.Label.t
+  -> Session.Id.t
+  -> (t list * Custom_field.t list) Lwt.t
 
 val find_deleted_by_session
   :  Pool_database.Label.t

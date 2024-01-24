@@ -57,6 +57,7 @@ type t =
   ; marked_as_deleted : MarkedAsDeleted.t
   ; external_data_id : ExternalDataId.t option
   ; reminder_manually_last_sent_at : Pool_common.Reminder.SentAt.t option
+  ; custom_fields : Custom_field.Public.t list option
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
   }
@@ -82,6 +83,7 @@ let create
   ; marked_as_deleted
   ; external_data_id
   ; reminder_manually_last_sent_at
+  ; custom_fields = None
   ; created_at = Pool_common.CreatedAt.create ()
   ; updated_at = Pool_common.UpdatedAt.create ()
   }

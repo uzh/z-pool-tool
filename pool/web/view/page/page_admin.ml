@@ -5,6 +5,7 @@ module Contact = Page_admin_contact
 module CustomFields = Page_admin_custom_fields
 module CustomFieldOptions = Page_admin_custom_field_options
 module CustomFieldGroups = Page_admin_custom_field_groups
+module CustomFieldSettings = Page_admin_custom_field_settings
 module Experiments = Page_admin_experiments
 module Filter = Page_admin_filter
 module I18n = Page_admin_i18n

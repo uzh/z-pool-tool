@@ -17,6 +17,10 @@ let to_string = function
   | Closed -> "Geschlossen"
   | ContactWaitingListEmpty -> "Sie sind aktuell auf keiner Warteliste."
   | ContactWaitingListTitle -> "Auf der Warteliste"
+  | CustomFieldsSettings ->
+    "In der folgenden Liste können Sie bestimmen, in welcher Tabelle \
+     zusätzlich zu den Kontaktangaben auch die individuellen Angaben angezeigt \
+     werden sollen."
   | DashboardProfileCompletionText ->
     "Ihr Profil ist unvollständig. Um zu mehr Experimenten eingeladen zu \
      werden, vervollständigen Sie Ihr Profil."
@@ -115,6 +119,7 @@ Sie kommen für mehr Experimente in Frage, umso kompletter Ihr Profil ist.|}
   | SelectedTagsEmpty -> "Keine Tags zugewiesen"
   | SessionDetailTitle start ->
     Format.asprintf "Session am %s" (Utils_time.formatted_date_time start)
+  | SessionCloseScreen -> "Bildschirm zum Beenden der Sessions"
   | SessionIndent -> "Einrückungen groupieren Folgesessions."
   | SessionReminder -> "Sessionerinnerung"
   | SessionRegistrationTitle -> "Für diese Session anmelden"

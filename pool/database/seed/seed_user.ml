@@ -24,13 +24,18 @@ let answer_custom_fields fields contact =
   let select_random options =
     Random.int (List.length options) |> CCList.nth options
   in
+  let entity_uuid = Contact.(contact |> id |> Id.to_common) in
   CCList.filter_map
     (function
       | (Select (public, options, _) : Public.t) ->
-        let answer = Some (select_random options) |> Answer.create in
+        let answer =
+          Some (select_random options) |> Answer.create entity_uuid
+        in
         Public.Select (public, options, Some answer) |> CCOption.pure
       | MultiSelect (public, options, _) ->
-        let answer = Some [ select_random options ] |> Answer.create in
+        let answer =
+          Some [ select_random options ] |> Answer.create entity_uuid
+        in
         Public.MultiSelect (public, options, Some answer) |> CCOption.pure
       | Boolean _ | Date _ | Number _ | Text _ -> None)
     fields

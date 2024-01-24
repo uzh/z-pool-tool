@@ -58,6 +58,7 @@ module CustomFieldData = struct
       ; admin_input_only = Data.admin_input_only
       ; published_at = published
       ; prompt_on_registration = false |> PromptOnRegistration.create
+      ; show_on_session_close_page = false
       }
     |> encoder
   ;;
@@ -77,13 +78,13 @@ module CustomFieldData = struct
       create_custom_field "Nr of siblings" (fun a -> Custom_field.Number a)
     ;;
 
-    let public is_admin answer_value =
+    let public ?(entity_uuid = Pool_common.Id.create ()) is_admin answer_value =
       let open Custom_field in
       let open Custom_field_test in
       let answer =
         match is_admin with
-        | true -> Answer.create ?admin_value:answer_value None
-        | false -> Answer.create answer_value
+        | true -> Answer.create ?admin_value:answer_value entity_uuid None
+        | false -> Answer.create entity_uuid answer_value
       in
       let version = 0 |> Pool_common.Version.of_int in
       Public.Number
@@ -124,13 +125,13 @@ module CustomFieldData = struct
 
     let field = create_custom_field "Birthday" (fun a -> Custom_field.Date a)
 
-    let public is_admin answer_value =
+    let public ?(entity_uuid = Pool_common.Id.create ()) is_admin answer_value =
       let open Custom_field in
       let open Custom_field_test in
       let answer =
         match is_admin with
-        | true -> Answer.create ?admin_value:answer_value None
-        | false -> Answer.create answer_value
+        | true -> Answer.create ?admin_value:answer_value entity_uuid None
+        | false -> Answer.create entity_uuid answer_value
       in
       let version = 0 |> Pool_common.Version.of_int in
       Public.Date
@@ -201,13 +202,13 @@ module CustomFieldData = struct
       create_custom_field "Select" (fun a -> Custom_field.Select (a, options))
     ;;
 
-    let public is_admin answer =
+    let public ?(entity_uuid = Pool_common.Id.create ()) is_admin answer =
       let open Custom_field in
       let open Custom_field_test in
       let answer =
         match is_admin with
-        | true -> Answer.create ?admin_value:answer None
-        | false -> Answer.create answer
+        | true -> Answer.create ?admin_value:answer entity_uuid None
+        | false -> Answer.create entity_uuid answer
       in
       let version = 0 |> Pool_common.Version.of_int in
       Public.Select
@@ -280,15 +281,20 @@ module CustomFieldData = struct
         ; admin_input_only = Data.admin_input_only
         ; published_at = published
         ; prompt_on_registration = false |> PromptOnRegistration.create
+        ; show_on_session_close_page = false
         })
   ;;
 
-  let admin_override_nr_field_public is_admin answer_value =
+  let admin_override_nr_field_public
+    ?(entity_uuid = Pool_common.Id.create ())
+    is_admin
+    answer_value
+    =
     let open Custom_field in
     let answer =
       match is_admin with
-      | true -> Answer.create ~admin_value:answer_value None
-      | false -> Answer.create (Some answer_value)
+      | true -> Answer.create ~admin_value:answer_value entity_uuid None
+      | false -> Answer.create entity_uuid (Some answer_value)
     in
     let version = 0 |> Pool_common.Version.of_int in
     Public.Number
@@ -372,17 +378,21 @@ module CustomFieldData = struct
         ; admin_input_only = Data.admin_input_only
         ; published_at = published
         ; prompt_on_registration = false |> PromptOnRegistration.create
+        ; show_on_session_close_page = false
         }
       , multi_select_options )
   ;;
 
-  let multi_select_custom_field_public answer_index =
+  let multi_select_custom_field_public
+    ?(entity_uuid = Pool_common.Id.create ())
+    answer_index
+    =
     let open Custom_field in
     let open Custom_field_test in
     let answer =
       multi_select_options_public_by_index answer_index
       |> CCOption.pure
-      |> Answer.create
+      |> Answer.create entity_uuid
       |> CCOption.pure
     in
     let version = 0 |> Pool_common.Version.of_int in
