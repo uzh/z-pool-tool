@@ -53,6 +53,7 @@ type t =
   | NoEntries of Entity_message.Field.t
   | Note
   | OurPartners
+  | Past
   | ProfileCompletionText
   | Reminder
   | ResendReminders

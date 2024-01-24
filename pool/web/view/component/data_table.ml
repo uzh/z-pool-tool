@@ -318,9 +318,9 @@ let searchbar
 let resetbar language =
   let open Pool_common in
   div
-    ~a:[ a_class [ "flexrow"; "justify-end"; "gap"; "filter-bar-reset" ] ]
+    ~a:[ a_class [ "flexrow"; "justify-end"; "filter-bar-reset" ] ]
     [ a
-        ~a:[ a_class [ "btn"; "small"; "has-icon"; "is-text" ]; a_href "?" ]
+        ~a:[ a_class [ "has-icon"; "undecorated"; "color-dark" ]; a_href "?" ]
         [ Component_icon.(to_html RefreshOutline)
         ; txt
             (Utils.control_to_string
@@ -399,7 +399,7 @@ let make
     filter_parts
     |> CCOption.map_or ~default:(txt "") (fun parts ->
       div
-        ~a:[ a_class [ "border"; "inset" ] ]
+        ~a:[ a_class [ "border"; "inset-sm" ] ]
         [ div
             ~a:[ a_class [ "grid-col-4" ] ]
             (parts @ [ resetbar data_table.language ])

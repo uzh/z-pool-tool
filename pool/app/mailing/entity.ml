@@ -259,21 +259,26 @@ let per_interval interval { start_at; end_at; limit; _ } =
   else limit / duration * Span.to_float_s interval |> max 0. |> min limit
 ;;
 
-open Pool_common.Message
+let is_past { end_at; _ } = Ptime.is_later ~than:end_at (Ptime_clock.now ())
 
-let column_start = (Field.start, "pool_mailing.`start`") |> Query.Column.create
-let column_end = (Field.End, "pool_mailing.`end`") |> Query.Column.create
-let column_limit = (Field.Limit, "pool_mailing.`limit`") |> Query.Column.create
+open Pool_common.Message
+open Query
+
+let column_start = (Field.start, "pool_mailing.`start`") |> Column.create
+let column_end = (Field.End, "pool_mailing.`end`") |> Column.create
+let column_limit = (Field.Limit, "pool_mailing.`limit`") |> Column.create
 
 let column_invitation_count =
-  (Field.InvitationCount, "invitation_count") |> Query.Column.create
+  (Field.InvitationCount, "invitation_count") |> Column.create
 ;;
 
-let filterable_by = None
+let column_past = (Field.HidePast, "pool_mailing.end >= NOW()") |> Column.create
+let filterable_by = Some Filter.Condition.Human.[ Checkbox column_past ]
 let searchable_by = []
 
 let sortable_by =
-  searchable_by @ [ column_end; column_limit; column_invitation_count ]
+  searchable_by
+  @ [ column_start; column_end; column_limit; column_invitation_count ]
 ;;
 
 let default_sort =
@@ -281,4 +286,9 @@ let default_sort =
   Sort.{ column = column_start; order = SortOrder.Ascending }
 ;;
 
-let default_query = Query.create ~sort:default_sort ()
+let default_filter =
+  let open Filter in
+  Condition.[ Checkbox (column_past, true) ]
+;;
+
+let default_query = create ~sort:default_sort ~filter:default_filter ()

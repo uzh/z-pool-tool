@@ -78,6 +78,7 @@ let to_string = function
     Format.asprintf "There are no %s yet." (Locales_en.field_to_string field)
   | Note -> "Note"
   | OurPartners -> "Our partners"
+  | Past -> "Past"
   | ProfileCompletionText ->
     {|The following information is required to be invited to experiments. Further information can be entered in your profile afterwards.
 
