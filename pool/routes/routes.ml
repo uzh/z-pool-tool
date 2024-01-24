@@ -675,7 +675,7 @@ module Admin = struct
       in
       let settings =
         let open CustomFieldSettings in
-        [ get "" ~middlewares:[ Access.show ] show
+        [ get "" ~middlewares:[ Access.index ] index
         ; post "" ~middlewares:[ Access.update ] update
         ]
       in

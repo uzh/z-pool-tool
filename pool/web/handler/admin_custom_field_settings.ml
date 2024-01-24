@@ -6,7 +6,7 @@ let src = Logs.Src.create "handler.admin.custom_field_settings"
 let create_layout req = General.create_tenant_layout req
 let settings_path = "/admin/custom-fields/settings"
 
-let show req =
+let index req =
   let open Utils.Lwt_result.Infix in
   let result ({ Pool_context.database_label; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, "/admin/custom-fields")
@@ -57,14 +57,12 @@ let update req =
   result |> HttpUtils.extract_happy_path ~src req
 ;;
 
-module Access : sig
-  val show : Rock.Middleware.t
-  val update : Rock.Middleware.t
-end = struct
+module Access : module type of Helpers.Access = struct
   module Command = Cqrs_command.Custom_field_settings_command
   module Guardian = Middleware.Guardian
+  include Helpers.Access
 
-  let show =
+  let index =
     Command.UpdateVisibilitySettings.effects |> Guardian.validate_admin_entity
   ;;
 

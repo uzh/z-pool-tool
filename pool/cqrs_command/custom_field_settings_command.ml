@@ -3,15 +3,21 @@ module Conformist = Pool_common.Utils.PoolConformist
 let src = Logs.Src.create "custom_field_settings.cqrs"
 
 module UpdateVisibilitySettings : sig
+  include Common.CommandSig
+
+  type t = Custom_field.t list
+
   val handle
     :  ?tags:Logs.Tag.set
     -> selected:string list
-    -> Custom_field.t list
+    -> t
     -> unit
     -> (Pool_event.t list, Pool_common.Message.error) result
 
   val effects : Guard.ValidationSet.t
 end = struct
+  type t = Custom_field.t list
+
   let handle ?(tags = Logs.Tag.empty) ~selected fields () =
     Logs.info ~src (fun m -> m "Handle command UpdateVisibilitySettings" ~tags);
     let open Custom_field in
