@@ -4,9 +4,29 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/pool/tree/HEAD)
 
+## [0.5.4](https://github.com/uzh/pool/tree/0.5.4) - 2024-01-24
+
+### Added
+
+- filter for assignments, sessions, experiments and mailings
+- contact id as message temmplate text element
+
+### Changed
+
+- define minutes as default time unit
+- prefill session data when duplicating or when creating followup session
+- link participants to their profile page on assignment list
+- move hardcoded role descriptions to translations
+
+### Fixed
+
+- Smtp auth cache differs between tenants
+- order follow up sessions by start date
+
 ## [0.5.3](https://github.com/uzh/pool/tree/0.5.3) - 2024-01-18
 
 ### Added
+
 - modal to display current default message template for experiments and sessions
 
 ### Changed
