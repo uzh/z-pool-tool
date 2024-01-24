@@ -268,6 +268,7 @@ module Sql = struct
          ids
        |> CCString.concat ",")
     |> find_request_sql
+    |> order_by_start
   ;;
 
   let find_multiple_followups pool parent_ids =
