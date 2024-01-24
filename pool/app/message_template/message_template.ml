@@ -104,7 +104,8 @@ let prepare_manual_email
 
 let global_params layout user =
   Pool_user.
-    [ "name", user |> user_fullname
+    [ "contactId", user.Sihl_user.id
+    ; "name", user |> user_fullname
     ; "firstname", user |> user_firstname |> Firstname.value
     ; "lastname", user |> user_lastname |> Lastname.value
     ; "siteTitle", layout.site_title
