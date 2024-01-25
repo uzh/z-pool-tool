@@ -234,7 +234,7 @@ module Write = struct
                     (t2
                        Database.Repo.t
                        (t2
-                          GtxApiKey.t
+                          (option GtxApiKey.t)
                           (t2
                              (option Styles.Write.t)
                              (t2

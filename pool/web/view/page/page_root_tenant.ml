@@ -32,20 +32,6 @@ let database_fields tenant language flash_fetcher =
 
 let map_or = CCOption.map_or ~default:""
 
-let gtx_api_inputs ~flash_fetcher language =
-  div
-    ~a:[ a_class [ "stack" ] ]
-    [ input_element language `Text Field.GtxApiKey ~flash_fetcher ~required:true
-    ; input_element
-        language
-        `Text
-        Field.TestPhoneNumber
-        ~flash_fetcher
-        ~required:true
-        ~hints:[ Pool_common.I18n.TestPhoneNumber ]
-    ]
-;;
-
 let tenant_form
   ?(tenant : Pool_tenant.t option)
   Pool_context.{ language; csrf; _ }
@@ -91,11 +77,6 @@ let tenant_form
         ; download
         ])
   in
-  let gtx_api_key_input =
-    if CCOption.is_none tenant
-    then gtx_api_inputs ~flash_fetcher language
-    else txt ""
-  in
   form
     ~a:
       [ a_method `Post
@@ -126,7 +107,6 @@ let tenant_form
         ~value:(value (fun t -> t.url |> Url.value))
         ~flash_fetcher
         ~required:true
-    ; gtx_api_key_input
     ; language_select
     ; (if CCOption.is_some tenant
        then txt ""
@@ -274,30 +254,6 @@ let tenant_detail_sub_form language field form_html =
     ]
 ;;
 
-let update_gtx_api_key_form
-  (tenant : Pool_tenant.t)
-  Pool_context.{ language; csrf; _ }
-  flash_fetcher
-  =
-  let action =
-    Format.asprintf
-      "/root/tenants/%s/update-gtx-api-key"
-      (Id.value tenant.Pool_tenant.id)
-  in
-  form
-    ~a:
-      [ a_action (Sihl.Web.externalize_path action)
-      ; a_method `Post
-      ; a_enctype "multipart/form-data"
-      ; a_class [ "stack" ]
-      ]
-    [ csrf_element csrf ()
-    ; gtx_api_inputs ~flash_fetcher language
-    ; submit_element language Message.(Update (Some Field.GtxApiKey)) ()
-    ]
-  |> tenant_detail_sub_form language Message.Field.GtxApiKey
-;;
-
 let detail
   (tenant : Pool_tenant.t)
   (Pool_context.{ language; csrf; _ } as context)
@@ -395,7 +351,6 @@ let detail
         [ tenant_form ~tenant context flash_fetcher
         ; delete_file_forms
         ; database_form
-        ; update_gtx_api_key_form tenant context flash_fetcher
         ; p
             [ a
                 ~a:[ a_href (Sihl.Web.externalize_path "/root/tenants") ]

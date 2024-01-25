@@ -50,7 +50,6 @@ Provide all fields to create a new tenant:
           let url = Url.create database_url |> failwith in
           test_and_create url label |> Lwt.map failwith
         in
-        let api_key = "api key" |> Pool_tenant.GtxApiKey.of_string in
         Cqrs_command.Pool_tenant_command.Create.decode
           [ "title", [ title ]
           ; "description", [ description ]
@@ -64,7 +63,7 @@ Provide all fields to create a new tenant:
           ; "firstname", [ firstname ]
           ; "lastname", [ lastname ]
           ]
-        >>= Cqrs_command.Pool_tenant_command.Create.handle database api_key
+        >>= Cqrs_command.Pool_tenant_command.Create.handle database
         |> Pool_common.Utils.get_or_failwith
         |> Lwt_list.iter_s (Pool_event.handle_event Pool_database.root)
       in

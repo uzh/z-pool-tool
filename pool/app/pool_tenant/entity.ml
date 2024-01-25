@@ -155,7 +155,7 @@ module Write = struct
     ; description : Description.t option
     ; url : Url.t
     ; database : Database.t
-    ; gtx_api_key : GtxApiKey.t
+    ; gtx_api_key : GtxApiKey.t option
     ; styles : Styles.Write.t option
     ; icon : Icon.Write.t option
     ; maintenance : Maintenance.t
@@ -166,22 +166,13 @@ module Write = struct
     }
   [@@deriving eq, show]
 
-  let create
-    title
-    description
-    url
-    database
-    gtx_api_key
-    styles
-    icon
-    default_language
-    =
+  let create title description url database styles icon default_language =
     { id = Id.create ()
     ; title
     ; description
     ; url
     ; database
-    ; gtx_api_key
+    ; gtx_api_key = None
     ; styles
     ; icon
     ; maintenance = Maintenance.create false

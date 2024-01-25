@@ -54,12 +54,7 @@ let create req =
         |> Create.decode
         |> Lwt_result.lift
       in
-      let* gtx_api_key =
-        Update.validated_gtx_api_key ~tags decoded.title urlencoded
-      in
-      let events =
-        Create.handle ~tags database gtx_api_key decoded |> Lwt_result.lift
-      in
+      let events = Create.handle ~tags database decoded |> Lwt_result.lift in
       events >|> HttpUtils.File.cleanup_upload Database.root files
     in
     let handle = Lwt_list.iter_s (Pool_event.handle_event Pool_database.root) in

@@ -41,7 +41,6 @@ module Create : sig
   val handle
     :  ?tags:Logs.Tag.set
     -> Pool_database.t
-    -> Pool_tenant.GtxApiKey.t
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
@@ -86,7 +85,7 @@ end = struct
         command)
   ;;
 
-  let handle ?(tags = Logs.Tag.empty) database gtx_api_key (command : t) =
+  let handle ?(tags = Logs.Tag.empty) database (command : t) =
     Logs.info ~src (fun m -> m "Handle command Create" ~tags);
     let tenant =
       Pool_tenant.Write.create
@@ -94,7 +93,6 @@ end = struct
         command.description
         command.url
         database
-        gtx_api_key
         command.styles
         command.icon
         command.default_language

@@ -138,7 +138,7 @@ module Write : sig
     ; description : Description.t option
     ; url : Url.t
     ; database : Database.t
-    ; gtx_api_key : GtxApiKey.t
+    ; gtx_api_key : GtxApiKey.t option
     ; styles : Styles.Write.t option
     ; icon : Icon.Write.t option
     ; maintenance : Maintenance.t
@@ -153,7 +153,6 @@ module Write : sig
     -> Description.t option
     -> Url.t
     -> Database.t
-    -> GtxApiKey.t
     -> Styles.Write.t option
     -> Icon.Write.t option
     -> Pool_common.Language.t

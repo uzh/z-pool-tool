@@ -82,5 +82,5 @@ let handle_event pool : event -> unit Lwt.t = function
     Lwt.return_unit
   | GtxApiKeyUpdated (tenant, gtx_api_key) ->
     let open Entity.Write in
-    { tenant with gtx_api_key } |> Repo.update Database.root
+    { tenant with gtx_api_key = Some gtx_api_key } |> Repo.update Database.root
 ;;
