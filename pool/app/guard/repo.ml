@@ -185,11 +185,26 @@ module RoleAssignment = struct
   include RoleAssignment
   open Pool_database
 
-  let find_all label = find_all ~ctx:(to_ctx label)
+  let find_all ?query pool =
+    Query.collect_and_count
+      pool
+      query
+      ~select:find_request_sql
+      Backend.Repo.Model.role_assignment
+  ;;
+
   let find_all_by_role label = find_all_by_role ~ctx:(to_ctx label)
   let insert label = insert ~ctx:(to_ctx label)
   let delete label = delete ~ctx:(to_ctx label)
   let can_assign_roles label = can_assign_roles ~ctx:(to_ctx label)
+
+  open Pool_common.Message
+
+  let column_role = (Field.Role, "assign_roles.role") |> Query.Column.create
+
+  let column_target_role =
+    (Field.AssignableRole, "assign_roles.target_role") |> Query.Column.create
+  ;;
 end
 
 let validate

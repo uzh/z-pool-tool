@@ -17,6 +17,7 @@ let rec field_to_string =
   | AreaCode -> "area code"
   | Argument -> "argument"
   | AssetId -> "asset identifier"
+  | AssignableRole -> "assignable role"
   | Assignment -> "assignment"
   | AssignmentCount -> "no. assignments"
   | Assignments -> "assignments"

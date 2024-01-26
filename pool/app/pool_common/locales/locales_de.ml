@@ -17,6 +17,7 @@ let rec field_to_string =
   | AreaCode -> "Vorwahl"
   | Argument -> "Argument"
   | AssetId -> "Anlagen Identifier"
+  | AssignableRole -> "zuweisbare Rolle"
   | Assignment -> "Anmeldung"
   | AssignmentCount -> "Anmeldungen"
   | Assignments -> "Anmeldungen"

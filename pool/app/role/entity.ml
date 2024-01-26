@@ -101,6 +101,7 @@ module Target = struct
     | `Permission
     | `Queue
     | `Role
+    | `RoleAssignment
     | `Schedule
     | `Session
     | `SessionClose
@@ -141,6 +142,7 @@ module Target = struct
     | "permission", [] -> Ok `Permission
     | "queue", [] -> Ok `Queue
     | "role", [] -> Ok `Role
+    | "roleassignment", [] -> Ok `RoleAssignment
     | "schedule", [] -> Ok `Schedule
     | "session", [] -> Ok `Session
     | "sessionclose", [] -> Ok `SessionClose
@@ -178,6 +180,7 @@ module Target = struct
     ; `Permission
     ; `Queue
     ; `Role
+    ; `RoleAssignment
     ; `Schedule
     ; `Session
     ; `SessionClose

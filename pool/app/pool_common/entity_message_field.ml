@@ -29,6 +29,7 @@ type t =
   | AreaCode [@name "area_code"] [@printer go "area_code"]
   | Argument [@name "argument"] [@printer go "argument"]
   | AssetId [@name "asset_id"] [@printer go "asset_id"]
+  | AssignableRole [@name "assignable_role"] [@printer go "assignable_role"]
   | Assignment [@name "assignment"] [@printer go "assignment"]
   | AssignmentCount [@name "assignment_count"] [@printer go "assignment_count"]
   | Assignments [@name "assignments"] [@printer go "assignments"]

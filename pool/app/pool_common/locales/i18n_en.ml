@@ -7,6 +7,7 @@ let to_string = function
   | Activity -> "activity"
   | Address -> "address"
   | AdminComment -> "admin comment"
+  | AssignableRoles -> "assignable roles"
   | AssignmentEditTagsWarning ->
     "Please note that editing the assignment does not assign or remove any \
      tags from the contact that may have been assigned by participating in \
@@ -606,6 +607,7 @@ let confirmable_to_string confirmable =
      "option", "publish", Some "You will not be able to delete the it anymore."
    | ReactivateAccount -> "account", "reactivate", None
    | RemoveTag -> "tag", "remove", None
+   | RemoveAssignableRole -> "assignable role", "delete", None
    | RemoveRule -> "rule", "delete", None
    | RescheduleSession -> "session", "reschedule", None
    | ResetInvitations ->

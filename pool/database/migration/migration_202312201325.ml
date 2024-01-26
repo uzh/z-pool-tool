@@ -3,12 +3,12 @@ let convert_settings_terms_to_i18n_en =
     ~label:"convert settings terms to i18n: EN"
     {sql|
     INSERT INTO pool_i18n (uuid, i18n_key, language, content) VALUES (
-	    UNHEX(REPLACE(UUID(), '-', '')), 
-      'terms_and_conditions', 
-      'EN', 
-		  (SELECT	
-        SUBSTRING_INDEX(SUBSTRING_INDEX(`value`, '["EN"],"', - 1), '"]', 1)	
-        FROM pool_system_settings 
+      UNHEX(REPLACE(UUID(), '-', '')),
+      'terms_and_conditions',
+      'EN',
+      (SELECT
+        SUBSTRING_INDEX(SUBSTRING_INDEX(`value`, '["EN"],"', - 1), '"]', 1)
+        FROM pool_system_settings
         WHERE settings_key = "[\"terms_and_conditions\"]"));
   |sql}
 ;;
@@ -18,12 +18,12 @@ let convert_settings_terms_to_i18n_de =
     ~label:"convert settings terms to i18n: DE"
     {sql|
     INSERT INTO pool_i18n (uuid, i18n_key, language, content) VALUES (
-	    UNHEX(REPLACE(UUID(), '-', '')), 
-      'terms_and_conditions', 
-      'DE', 
-		  (SELECT	
-        SUBSTRING_INDEX(SUBSTRING_INDEX(`value`, '["DE"],"', -1), '"]', 1)	
-        FROM pool_system_settings 
+      UNHEX(REPLACE(UUID(), '-', '')),
+      'terms_and_conditions',
+      'DE',
+      (SELECT
+        SUBSTRING_INDEX(SUBSTRING_INDEX(`value`, '["DE"],"', -1), '"]', 1)
+        FROM pool_system_settings
         WHERE settings_key = "[\"terms_and_conditions\"]"));
   |sql}
 ;;

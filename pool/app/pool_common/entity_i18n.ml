@@ -2,6 +2,7 @@ type t =
   | Activity
   | Address
   | AdminComment
+  | AssignableRoles
   | AssignmentEditTagsWarning
   | AssignmentListEmpty
   | AvailableSpots
@@ -284,6 +285,7 @@ type confirmable =
   | PublisCustomField
   | PublisCustomFieldOption
   | ReactivateAccount
+  | RemoveAssignableRole
   | RemoveRule
   | RemoveTag
   | RescheduleSession

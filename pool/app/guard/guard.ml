@@ -181,6 +181,13 @@ let create_where
   | None, None -> Lwt.return_none
 ;;
 
+module RoleAssignment = struct
+  include RoleAssignment
+
+  let column_role = Repo.RoleAssignment.column_role
+  let column_target_role = Repo.RoleAssignment.column_target_role
+end
+
 module Access = struct
   open ValidationSet
   open Permission

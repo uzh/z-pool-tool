@@ -6,6 +6,7 @@ let to_string = function
   | Activity -> "Aktivität"
   | Address -> "Addresse"
   | AdminComment -> "Administrator Kommentar"
+  | AssignableRoles -> "zuweisbare Rollen"
   | AssignmentEditTagsWarning ->
     "Bitte beachten Sie, dass durch die Bearbeitung der Anmeldung keine Tags \
      zugewiesen oder entfernt werden, die durch die Teilnahme an dieser \
@@ -632,6 +633,7 @@ let confirmable_to_string confirmable =
      , "publizieren"
      , Some "Sie werden die Option nicht mehr löschen können." )
    | ReactivateAccount -> "den Account", "reaktivieren", None
+   | RemoveAssignableRole -> "die zuweisbare Rolle", "löschen", None
    | RemoveRule -> "die Regel", "löschen", None
    | RemoveTag -> "den Tag", "entfernen", None
    | RescheduleSession -> "die Session", "verschieben", None
