@@ -51,3 +51,17 @@ let update req =
   in
   result |> HttpUtils.extract_happy_path ~src req
 ;;
+
+module Access : sig
+  include module type of Helpers.Access
+
+  val index : Rock.Middleware.t
+  val update : Rock.Middleware.t
+end = struct
+  include Helpers.Access
+  module Guardian = Middleware.Guardian
+  module Command = Cqrs_command.Settings_command.UpdateGtxApiKey
+
+  let index = Command.effects |> Guardian.validate_admin_entity
+  let update = Command.effects |> Guardian.validate_admin_entity
+end

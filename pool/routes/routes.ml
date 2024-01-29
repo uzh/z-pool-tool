@@ -752,8 +752,8 @@ module Admin = struct
       in
       let text_messages =
         let open TextMessages in
-        [ get "" ~middlewares:[] index (* TODO: Access*)
-        ; post "" ~middlewares:[] update
+        [ get "" ~middlewares:[ Access.index ] index
+        ; post "" ~middlewares:[ Access.update ] update
         ]
       in
       [ get "" ~middlewares:[ Access.index ] show
