@@ -36,6 +36,7 @@ let list ?(marked_as_deleted = false) req =
       ||> Session.group_and_sort
       ||> CCList.flat_map (fun (session, follow_ups) -> session :: follow_ups)
     in
+    let text_messages_enabled = Pool_context.Tenant.text_messages_enabled req in
     let html =
       match marked_as_deleted with
       | false ->
@@ -52,6 +53,7 @@ let list ?(marked_as_deleted = false) req =
               ~view_contact_info
               experiment
               context
+              text_messages_enabled
       | true ->
         Lwt_list.fold_left_s
           (fun sessions session ->
@@ -67,6 +69,7 @@ let list ?(marked_as_deleted = false) req =
               ~view_contact_info
               experiment
               context
+              text_messages_enabled
     in
     html >|> create_layout req context >|+ Sihl.Web.Response.of_html
   in
@@ -433,6 +436,9 @@ let swap_session_get req =
           template_lang
           Label.AssignmentSessionChange)
     in
+    let text_messages_disabled =
+      Pool_context.Tenant.text_messages_enabled req
+    in
     let tenant_languages = Pool_context.Tenant.get_tenant_languages_exn req in
     let flash_fetcher key = Sihl.Web.Flash.find key req in
     Page.Admin.Assignment.Partials.swap_session_form
@@ -445,6 +451,7 @@ let swap_session_get req =
       swap_session_template
       tenant_languages
       flash_fetcher
+      text_messages_disabled
     |> HttpUtils.Htmx.html_to_plain_text_response
     |> Lwt_result.return
   in

@@ -236,6 +236,9 @@ let reset_to_default_htmx req =
       |> CCOption.to_result Pool_common.Message.(NotFound Field.MessageTemplate)
       |> Lwt_result.lift
     in
+    let text_messages_disabled =
+      Pool_context.Tenant.text_messages_enabled req
+    in
     let form_context =
       if CCOption.is_some current_template
       then `Update template
@@ -245,6 +248,7 @@ let reset_to_default_htmx req =
       ~entity
       ?languages
       context
+      text_messages_disabled
       form_context
       template.label
     |> HttpUtils.Htmx.html_to_plain_text_response

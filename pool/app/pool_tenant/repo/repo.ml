@@ -105,7 +105,8 @@ module Sql = struct
       let api_key =
         match full with
         | true -> "pool_tenant.gtx_api_key,"
-        | false -> ""
+        | false ->
+          {|gtx_api_key IS NOT NULL AND gtx_api_key <> "" AS text_messages_enabled,|}
       in
       Format.asprintf
         {sql|
@@ -326,6 +327,7 @@ let set_logos tenant logos =
     ; maintenance = tenant.maintenance
     ; disabled = tenant.disabled
     ; default_language = tenant.default_language
+    ; text_messages_enabled = tenant.text_messages_enabled
     ; created_at = tenant.created_at
     ; updated_at = tenant.updated_at
     }

@@ -91,6 +91,9 @@ let new_helper req page =
        let%lwt default_text_msg_reminder_lead_time =
          Settings.find_default_text_msg_reminder_lead_time database_label
        in
+       let text_messages_enabled =
+         Pool_context.Tenant.text_messages_enabled req
+       in
        let html =
          match page with
          | `FollowUp ->
@@ -104,6 +107,7 @@ let new_helper req page =
              duplicate_session
              parent_session
              locations
+             text_messages_enabled
              flash_fetcher
            |> Lwt_result.ok
          | `Parent ->
@@ -114,6 +118,7 @@ let new_helper req page =
              default_text_msg_reminder_lead_time
              duplicate_session
              locations
+             text_messages_enabled
              flash_fetcher
            |> Lwt_result.ok
        in
@@ -195,6 +200,7 @@ let session_page database_label req context session experiment =
           database_label
           (Experiment (Experiment.Id.to_common experiment_id)))
     in
+    let text_messages_enabled = Pool_context.Tenant.text_messages_enabled req in
     Page.Admin.Session.edit
       context
       experiment
@@ -203,6 +209,7 @@ let session_page database_label req context session experiment =
       session
       locations
       (current_tags, available_tags, experiment_participation_tags)
+      text_messages_enabled
       flash_fetcher
     >|> create_layout
   | `Close ->
@@ -283,6 +290,7 @@ let show req =
   let access_contact_profiles =
     can_access_contact_profile context experiment_id
   in
+  let text_messages_enabled = Pool_context.Tenant.text_messages_enabled req in
   let%lwt assignments =
     Assignment.query_by_session ~query database_label session_id
   in
@@ -309,6 +317,7 @@ let show req =
       current_tags
       sys_languages
       session_reminder_templates
+      text_messages_enabled
       assignments
     |> Lwt_result.ok
   | true ->
@@ -321,6 +330,7 @@ let show req =
         context
         experiment
         session
+        text_messages_enabled
         assignments)
     |> Lwt_result.return
 ;;

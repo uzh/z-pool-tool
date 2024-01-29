@@ -114,6 +114,10 @@ module Tenant = struct
 
   let get_tenant_languages_exn = find_key_exn (fun c -> c.tenant_languages)
   let get_tenant_exn = find_key_exn (fun c -> c.tenant)
+
+  let text_messages_enabled =
+    find_key_exn (fun c -> c.tenant.Pool_tenant.text_messages_enabled)
+  ;;
 end
 
 (* Logging *)

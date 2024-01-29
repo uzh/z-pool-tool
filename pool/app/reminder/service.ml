@@ -115,7 +115,7 @@ let send_tenant_reminder ({ Pool_tenant.database_label; _ } as tenant) =
   let open Utils.Lwt_result.Infix in
   let run () =
     let* email_reminders, text_message_reminders =
-      Session.find_sessions_to_remind database_label
+      Session.find_sessions_to_remind tenant
     in
     let* events =
       create_reminder_events tenant email_reminders text_message_reminders

@@ -344,6 +344,8 @@ By clicking on the template labels below you can open the default text message:
      location."
   | I18nText str -> str
   | MailingLimit -> "Max. generated Invitations during the mailing."
+  | GtxKeyMissing ->
+    "No GTX Api key is stored, which is why no text messages are sent."
   | MessageTemplateAccountSuspensionNotification ->
     "This message will be sent to a user after the account has been \
      temporarily suspended because of too many failed login attempts."

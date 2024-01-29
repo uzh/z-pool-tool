@@ -123,6 +123,7 @@ module Partials = struct
       experiment_id
       session
       { Assignment.id; contact; reminder_manually_last_sent_at; _ }
+      text_messages_enabled
       =
       let open Pool_common.Reminder in
       let action =
@@ -134,10 +135,8 @@ module Partials = struct
         |> Sihl.Web.externalize_path
       in
       let available_channels =
-        let open Channel in
-        match contact.Contact.cell_phone with
-        | None -> CCList.remove ~eq:equal ~key:TextMessage all
-        | Some _ -> all
+        Channel.filtered_channels
+          (CCOption.is_some contact.Contact.cell_phone && text_messages_enabled)
       in
       let html =
         let format = Component.Utils.format_reminder_sent_opt ~default:"-" in
@@ -211,6 +210,7 @@ module Partials = struct
     swap_session_template
     languages
     flash_fetcher
+    text_messages_disabled
     =
     let action =
       assignment_specific_path
@@ -273,6 +273,7 @@ module Partials = struct
                   [ Page_admin_message_template.template_inputs
                       ~hide_text_message_input:true
                       context
+                      text_messages_disabled
                       (`Create swap_session_template)
                       Message_template.Label.AssignmentSessionChange
                       ~languages
@@ -310,6 +311,7 @@ module Partials = struct
     experiment
     session
     assignments
+    text_messages_enabled
     =
     let open Pool_common in
     let default = txt "" in
@@ -525,6 +527,7 @@ module Partials = struct
                       experiment.Experiment.id
                       session
                       assignment
+                      text_messages_enabled
                   ]
               | false -> modals
             in
@@ -587,6 +590,7 @@ module Partials = struct
     (Pool_context.{ language; _ } as context)
     experiment
     assignments
+    text_messages_enabled
     =
     CCList.map
       (fun (session, assignments) ->
@@ -615,6 +619,7 @@ module Partials = struct
               experiment
               session
               assignments
+              text_messages_enabled
           ])
       assignments
     |> div ~a:[ a_class [ "stack-lg" ] ]
@@ -630,6 +635,7 @@ let data_table
   (Pool_context.{ language; csrf; _ } as context)
   experiment
   session
+  text_messages_enabled
   (assignments, query)
   =
   let open Pool_common in
@@ -859,7 +865,8 @@ let data_table
                  context
                  experiment.Experiment.id
                  session
-                 assignment)
+                 assignment
+                 text_messages_enabled)
           | false -> None)
         assignments
       |> function
@@ -883,6 +890,7 @@ let list
   ?view_contact_info
   ({ Experiment.id; _ } as experiment)
   ({ Pool_context.language; _ } as context)
+  text_messages_enabled
   assignments
   =
   [ div
@@ -907,6 +915,7 @@ let list
           context
           experiment
           assignments
+          text_messages_enabled
       ]
   ]
   |> Layout.Experiment.(
@@ -924,6 +933,7 @@ let marked_as_deleted
   ?view_contact_info
   experiment
   (Pool_context.{ language; _ } as context)
+  text_messages_enabled
   assignments
   =
   let html =
@@ -943,6 +953,7 @@ let marked_as_deleted
         context
         experiment
         assignments
+        text_messages_enabled
     in
     div ~a:[ a_class [ "stack-lg" ] ] [ notification; list ] |> CCList.return
   in

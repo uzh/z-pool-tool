@@ -150,6 +150,7 @@ let new_form req =
     let%lwt contact_persons =
       contact_person_roles None |> Admin.find_all_with_roles database_label
     in
+    let text_messages_enabled = Pool_context.Tenant.text_messages_enabled req in
     let%lwt smtp_auth_list = Email.SmtpAuth.find_all database_label in
     Page.Admin.Experiments.create
       context
@@ -158,6 +159,7 @@ let new_form req =
       default_text_msg_reminder_lead_time
       contact_persons
       smtp_auth_list
+      text_messages_enabled
       flash_fetcher
     |> create_layout req context
     >|+ Sihl.Web.Response.of_html
@@ -289,6 +291,9 @@ let detail edit req =
        in
        let%lwt experiment_tags = find_tags Tags.Model.Experiment in
        let%lwt participation_tags = find_tags Tags.Model.Contact in
+       let text_messages_enabled =
+         Pool_context.Tenant.text_messages_enabled req
+       in
        Page.Admin.Experiments.edit
          ~allowed_to_assign
          experiment
@@ -300,6 +305,7 @@ let detail edit req =
          smtp_auth_list
          (experiment_tags, current_tags)
          (participation_tags, current_participation_tags)
+         text_messages_enabled
          flash_fetcher
        |> Lwt_result.ok)
     >>= create_layout req context

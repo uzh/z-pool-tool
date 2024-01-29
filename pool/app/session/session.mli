@@ -327,7 +327,7 @@ val find_experiment_id_and_title
   -> (Experiment.Id.t * string, Pool_common.Message.error) Lwt_result.t
 
 val find_sessions_to_remind
-  :  Pool_database.Label.t
+  :  Pool_tenant.t
   -> (t list * t list, Pool_common.Message.error) Lwt_result.t
 
 val find_follow_ups : Pool_database.Label.t -> Id.t -> t list Lwt.t

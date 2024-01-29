@@ -362,6 +362,9 @@ Wenn Sie die Erinnerungen jetzt manuell auslösen werden über den gewählten Na
     "Standorte, an denen Experimente durchgeführt werden. Jede Session muss \
      eine Location haben."
   | MailingLimit -> "Max. generierte Einladungen pro Mailing."
+  | GtxKeyMissing ->
+    "Es wirde kein GTX Api Key hinterlegt, weshalb keine Textnachrichten \
+     verschickt werden."
   | MessageTemplateAccountSuspensionNotification ->
     "Diese Nachricht wird an einen Benutzer gesendet, nachdem sein Konto wegen \
      zu vieler fehlgeschlagener Anmeldeversuche vorübergehend gesperrt wurde."

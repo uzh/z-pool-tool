@@ -18,6 +18,7 @@ let show
   default_reminder_lead_time
   default_text_msg_reminder_lead_time
   Pool_context.{ language; csrf; _ }
+  text_messages_enabled
   flash_fetcher
   =
   let action_path action =
@@ -269,6 +270,28 @@ let show
         ; submit ()
         ]
     in
+    let text_message_lead_time =
+      let input_el =
+        lead_time_form
+          `UpdateTextMsgDefaultLeadTime
+          Message.Field.TextMessageLeadTime
+          default_text_msg_reminder_lead_time
+          Pool_common.Reminder.TextMessageLeadTime.value
+      in
+      match text_messages_enabled with
+      | true -> input_el
+      | false ->
+        div
+          ~a:[ a_class [ "stack" ] ]
+          [ Pool_common.(
+              I18n.GtxKeyMissing
+              |> Utils.hint_to_string language
+              |> txt
+              |> CCList.return
+              |> Component.Notification.notification language `Warning)
+          ; input_el
+          ]
+    in
     div
       [ h2 [ txt "Reminder lead time" ]
       ; p
@@ -283,11 +306,7 @@ let show
               Message.Field.EmailLeadTime
               default_reminder_lead_time
               Pool_common.Reminder.EmailLeadTime.value
-          ; lead_time_form
-              `UpdateTextMsgDefaultLeadTime
-              Message.Field.TextMessageLeadTime
-              default_text_msg_reminder_lead_time
-              Pool_common.Reminder.TextMessageLeadTime.value
+          ; text_message_lead_time
           ]
       ]
   in

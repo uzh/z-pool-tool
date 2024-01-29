@@ -185,6 +185,7 @@ let experiment_form
   smtp_auth_list
   default_email_reminder_lead_time
   default_text_msg_reminder_lead_time
+  text_messages_enabled
   flash_fetcher
   =
   let open Pool_common in
@@ -230,9 +231,23 @@ let experiment_form
       (CCOption.bind experiment (fun { language; _ } -> language))
       ()
   in
-  let lead_time_group field get_value value default_value =
+  let lead_time_group field get_value value default_value hint =
+    let hint =
+      hint
+      |> CCOption.map_or
+           ~default:(txt "")
+           Pool_common.(
+             fun hint ->
+               hint
+               |> Utils.hint_to_string language
+               |> txt
+               |> CCList.return
+               |> Component.Notification.notification language `Warning)
+    in
     div
-      [ timespan_picker
+      ~a:[ a_class [ "stack" ] ]
+      [ hint
+      ; timespan_picker
           language
           field
           ~hints:
@@ -379,11 +394,15 @@ let experiment_form
                         email_session_reminder_lead_time_value
                         Reminder.EmailLeadTime.value
                         default_email_reminder_lead_time
+                        None
                     ; lead_time_group
                         Field.TextMessageLeadTime
                         text_message_session_reminder_lead_time_value
                         Reminder.TextMessageLeadTime.value
                         default_text_msg_reminder_lead_time
+                        (if text_messages_enabled
+                         then None
+                         else Some I18n.GtxKeyMissing)
                     ]
                 ]
             ]
@@ -414,6 +433,7 @@ let create
   default_text_msg_reminder_lead_time
   contact_persons
   smtp_auth_list
+  text_messages_enabled
   flash_fetcher
   =
   let open Pool_common in
@@ -432,6 +452,7 @@ let create
         smtp_auth_list
         default_email_reminder_lead_time
         default_text_msg_reminder_lead_time
+        text_messages_enabled
         flash_fetcher
     ]
 ;;
@@ -447,6 +468,7 @@ let edit
   smtp_auth_list
   (available_tags, current_tags)
   (available_participation_tags, current_participation_tags)
+  text_messages_enabled
   flash_fetcher
   =
   let form =
@@ -458,6 +480,7 @@ let edit
       smtp_auth_list
       default_email_reminder_lead_time
       default_text_msg_reminder_lead_time
+      text_messages_enabled
       flash_fetcher
   in
   let tags_html (available, current) field =
@@ -913,6 +936,7 @@ let message_template_form
     ~text_elements
     ?fixed_language:experiment.Experiment.language
     form_context
+    tenant.Pool_tenant.text_messages_enabled
     action
     flash_fetcher
   |> CCList.return

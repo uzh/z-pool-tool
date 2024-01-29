@@ -597,23 +597,30 @@ module Sql = struct
     |> Caqti_type.(string) ->* RepoEntity.t
   ;;
 
-  let find_sessions_to_remind pool =
+  let find_sessions_to_remind
+    { Pool_tenant.database_label; text_messages_enabled; _ }
+    =
     let email_default_lead_time =
       Settings.default_email_session_reminder_lead_time_key_yojson
     in
     let text_message_default_lead_time =
       Settings.default_text_message_session_reminder_lead_time_key_yojson
     in
-    let collect = Utils.Database.collect (Database.Label.value pool) in
+    let collect =
+      Utils.Database.collect (Database.Label.value database_label)
+    in
     let%lwt email_reminders =
       collect
         (find_sessions_to_remind_request `Email)
         (email_default_lead_time |> Yojson.Safe.to_string)
     in
     let%lwt text_msg_reminders =
-      collect
-        (find_sessions_to_remind_request `TextMessage)
-        (text_message_default_lead_time |> Yojson.Safe.to_string)
+      if text_messages_enabled
+      then
+        collect
+          (find_sessions_to_remind_request `TextMessage)
+          (text_message_default_lead_time |> Yojson.Safe.to_string)
+      else Lwt.return []
     in
     Lwt_result.return (email_reminders, text_msg_reminders)
   ;;

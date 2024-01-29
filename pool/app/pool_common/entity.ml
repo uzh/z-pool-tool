@@ -244,6 +244,11 @@ module Reminder = struct
 
     include Entity_base_model.SelectorType (Core)
     include Core
+
+    let filtered_channels = function
+      | true -> all
+      | false -> CCList.remove ~eq:equal ~key:TextMessage all
+    ;;
   end
 end
 

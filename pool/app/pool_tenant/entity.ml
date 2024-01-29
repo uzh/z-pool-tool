@@ -123,6 +123,7 @@ type t =
   ; maintenance : Maintenance.t
   ; disabled : Disabled.t
   ; default_language : Common.Language.t
+  ; text_messages_enabled : bool
   ; created_at : CreatedAt.t
   ; updated_at : UpdatedAt.t
   }
@@ -142,6 +143,7 @@ module Read = struct
     ; maintenance : Maintenance.t
     ; disabled : Disabled.t
     ; default_language : Common.Language.t
+    ; text_messages_enabled : bool
     ; created_at : CreatedAt.t
     ; updated_at : UpdatedAt.t
     }

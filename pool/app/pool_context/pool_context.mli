@@ -63,6 +63,7 @@ module Tenant : sig
   val set : Rock.Request.t -> t -> Rock.Request.t
   val get_tenant_languages_exn : Rock.Request.t -> Pool_common.Language.t list
   val get_tenant_exn : Rock.Request.t -> Pool_tenant.t
+  val text_messages_enabled : Rock.Request.t -> bool
 end
 
 val sexp_of_t : t -> Sexplib.Sexp.t

@@ -1614,8 +1614,23 @@ let send_session_reminders_with_default_leat_time _ () =
   in
   let%lwt session1 = update_session session1 in
   let%lwt session2 = update_session session2 in
+  let%lwt _, text_message_reminders =
+    Session.find_sessions_to_remind tenant ||> get_exn
+  in
+  (* Expect list to be empty as no GTX API Key is set *)
+  let () =
+    CCList.is_empty text_message_reminders
+    |> Alcotest.(check bool) "succeeds" true
+  in
+  let%lwt () =
+    let open Pool_tenant in
+    let%lwt write = Pool_tenant.find_full tenant.id ||> get_exn in
+    GtxApiKeyUpdated (write, GtxApiKey.of_string "api-key")
+    |> handle_event tenant.database_label
+  in
+  let%lwt tenant = Pool_tenant.find_by_label database_label ||> get_exn in
   let%lwt email_reminders, text_message_reminders =
-    Session.find_sessions_to_remind database_label
+    Session.find_sessions_to_remind tenant
     ||> get_exn
     ||> fun (email_reminders, text_message_reminders) ->
     let open Session in

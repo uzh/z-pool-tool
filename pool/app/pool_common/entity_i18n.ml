@@ -182,6 +182,7 @@ type hint =
   | I18nText of string
   | LocationFiles
   | LocationsIndex
+  | GtxKeyMissing
   | MailingLimit
   | MessageTemplateAccountSuspensionNotification
   | MessageTemplateAssignmentConfirmation

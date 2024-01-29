@@ -219,6 +219,7 @@ module Data = struct
       ; maintenance = Maintenance.create false
       ; disabled = Disabled.create false
       ; default_language = Common.Language.En
+      ; text_messages_enabled = false
       ; created_at = Common.CreatedAt.create ()
       ; updated_at = Common.UpdatedAt.create ()
       }

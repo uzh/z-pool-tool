@@ -34,6 +34,7 @@ let show req =
     let%lwt default_tet_msg_reminder_lead_time =
       Settings.find_default_text_msg_reminder_lead_time database_label
     in
+    let text_messages_enabled = Pool_context.Tenant.text_messages_enabled req in
     let flash_fetcher key = Sihl.Web.Flash.find key req in
     Page.Admin.Settings.show
       languages
@@ -45,6 +46,7 @@ let show req =
       default_reminder_lead_time
       default_tet_msg_reminder_lead_time
       context
+      text_messages_enabled
       flash_fetcher
     |> create_layout req ~active_navigation:"/admin/settings" context
     >|+ Sihl.Web.Response.of_html

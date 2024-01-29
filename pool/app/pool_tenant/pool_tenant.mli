@@ -122,6 +122,7 @@ type t =
   ; maintenance : Maintenance.t
   ; disabled : Disabled.t
   ; default_language : Pool_common.Language.t
+  ; text_messages_enabled : bool
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
   }
