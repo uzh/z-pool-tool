@@ -188,6 +188,7 @@ let nav_link_to_string = function
   | SystemSettings -> "System settings"
   | Tags -> "Tags"
   | Tenants -> "Tenants"
+  | TextMessages -> "Text messages"
   | Users -> "Users"
   | WaitingList -> "Waiting list"
 ;;

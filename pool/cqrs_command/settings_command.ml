@@ -301,3 +301,49 @@ end = struct
 
   let effects = Settings.Guard.Access.update
 end
+
+module UpdateGtxApiKey : sig
+  include Common.CommandSig with type t = Pool_tenant.GtxApiKey.t
+
+  val validated_gtx_api_key
+    :  tags:Logs.Tag.set
+    -> Pool_tenant.Title.t
+    -> Conformist.input
+    -> (Pool_tenant.GtxApiKey.t, Conformist.error_msg) Lwt_result.t
+
+  val handle
+    :  ?tags:Logs.Tag.set
+    -> Pool_tenant.Write.t
+    -> t
+    -> (Pool_event.t list, Pool_common.Message.error) result
+end = struct
+  type t = Pool_tenant.GtxApiKey.t
+
+  let validated_gtx_api_key ~tags title urlencoded =
+    let open Utils.Lwt_result.Infix in
+    let schema =
+      Conformist.(
+        make
+          Field.
+            [ Pool_tenant.GtxApiKey.schema ()
+            ; Pool_user.CellPhone.schema_test_cell_phone ()
+            ]
+          CCPair.make)
+    in
+    Conformist.decode_and_validate schema urlencoded
+    |> Lwt_result.lift
+    >|- Pool_common.Message.to_conformist_error
+    >>= fun (api_key, phone_nr) ->
+    Text_message.Service.test_api_key ~tags api_key phone_nr title
+  ;;
+
+  let handle ?(tags = Logs.Tag.empty) tenant gtx_api_key =
+    Logs.info ~src (fun m -> m "Handle command UpdateGtxApiKey" ~tags);
+    Ok
+      [ Pool_tenant.GtxApiKeyUpdated (tenant, gtx_api_key)
+        |> Pool_event.pool_tenant
+      ]
+  ;;
+
+  let effects = Guard.Access.update
+end

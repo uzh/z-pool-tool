@@ -127,6 +127,7 @@ type nav_link =
   | SystemSettings
   | Tags
   | Tenants
+  | TextMessages
   | Users
   | WaitingList
 [@@deriving eq]

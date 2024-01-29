@@ -6,6 +6,7 @@ module RolePermission = Admin_settings_rules
 module Schedule = Admin_settings_schedule
 module Smtp = Admin_settings_smtp
 module Tags = Admin_settings_tags
+module TextMessages = Admin_settings_text_messages
 
 let src = Logs.Src.create "handler.admin.settings"
 let create_layout req = General.create_tenant_layout req

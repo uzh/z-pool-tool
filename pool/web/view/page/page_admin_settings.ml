@@ -6,6 +6,7 @@ module RolePermission = Page_admin_settings_rules
 module Schedule = Page_admin_settings_schedule
 module Smtp = Page_admin_settings_smtp
 module Tags = Page_admin_settings_tags
+module TextMessage = Page_admin_settings_text_messages
 
 let show
   tenant_languages
