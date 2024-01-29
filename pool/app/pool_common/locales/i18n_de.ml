@@ -566,7 +566,6 @@ Es können nur Sitzungen mit freien Plätzen ausgewählt werden.|}
   | TenantUrl -> "Die URL des Tenants ohne Protokoll, z.B.: pool.uzh.ch"
   | TextLengthMin i -> error_to_string (Entity_message.TextLengthMin i)
   | TextLengthMax i -> error_to_string (Entity_message.TextLengthMax i)
-  | TimeSpanPickerHint -> "Zeitdauer in Minuten."
   | WaitingListPhoneMissingContact ->
     "Sie haben in Ihrem Profil noch keine Telefonnummer angegenen. Wir bitten \
      Sie, eine Telefonnummer anzugeben, damit das Rekrutierungsteam Sie \

@@ -250,10 +250,7 @@ let experiment_form
       ; timespan_picker
           language
           field
-          ~hints:
-            [ I18n.TimeSpanPickerHint
-            ; I18n.DefaultReminderLeadTime (default_value |> value)
-            ]
+          ~hints:[ I18n.DefaultReminderLeadTime (default_value |> value) ]
           ?value:CCOption.(bind experiment get_value)
           ~flash_fetcher
       ]

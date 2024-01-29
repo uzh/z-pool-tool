@@ -256,12 +256,10 @@ let show
   in
   let default_lead_time =
     let lead_time_form action field value encode =
-      let open Pool_common in
       form
         ~a:(form_attrs action)
         [ csrf_element csrf ()
         ; timespan_picker
-            ~hints:[ I18n.TimeSpanPickerHint ]
             ~value:(value |> encode)
             ~required:true
             ~flash_fetcher

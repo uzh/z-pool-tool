@@ -548,7 +548,6 @@ Only sessions with open spots can be selected.|}
   | TenantUrl -> "The URL of the tenant without protocol, e.g.: pool.uzh.ch"
   | TextLengthMin i -> error_to_string (Entity_message.TextLengthMin i)
   | TextLengthMax i -> error_to_string (Entity_message.TextLengthMax i)
-  | TimeSpanPickerHint -> "Time duration in minutes"
   | WaitingListPhoneMissingContact ->
     "You have not entered a phone number in your profile yet. Please provide a \
      phone number so that the recruitment team can contact you."

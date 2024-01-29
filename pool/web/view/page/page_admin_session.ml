@@ -302,10 +302,7 @@ let session_form
       ; timespan_picker
           language
           field
-          ~hints:
-            [ I18n.TimeSpanPickerHint
-            ; I18n.DefaultReminderLeadTime (default_value |> encode)
-            ]
+          ~hints:[ I18n.DefaultReminderLeadTime (default_value |> encode) ]
           ?value:
             (CCOption.bind default_value_session get_value
              |> CCOption.map encode)
@@ -343,7 +340,6 @@ let session_form
             language
             ~required:true
             Message.Field.Duration
-            ~hints:[ I18n.TimeSpanPickerHint ]
             ?value:
               (CCOption.map
                  (fun (s : t) -> s.duration |> Duration.value)
@@ -462,7 +458,6 @@ let reschedule_session
               language
               ~required:true
               Message.Field.Duration
-              ~hints:[ I18n.TimeSpanPickerHint ]
               ~value:(session.duration |> Duration.value)
               ~flash_fetcher
           ]

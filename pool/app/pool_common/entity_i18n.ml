@@ -255,7 +255,6 @@ type hint =
   | TenantUrl
   | TextLengthMin of int
   | TextLengthMax of int
-  | TimeSpanPickerHint
   | WaitingListPhoneMissingContact
 [@@deriving variants]
 
