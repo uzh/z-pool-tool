@@ -183,22 +183,43 @@ let create_where
 
 module RoleAssignment = struct
   include RoleAssignment
+  open Repo.RoleAssignment
 
-  let column_role = Repo.RoleAssignment.column_role
-  let column_target_role = Repo.RoleAssignment.column_target_role
+  let column_role = column_role
+  let column_target_role = column_target_role
+  let searchable_by = searchable_by
+  let sortable_by = sortable_by
+  let default_query = default_query
+  let filterable_by = None
 end
 
 module Access = struct
   open ValidationSet
   open Permission
 
-  let create_role = one_of_tuple (Create, `Role, None)
-  let read_role = one_of_tuple (Read, `Role, None)
-  let read_permission = one_of_tuple (Read, `Permission, None)
-  let update_role = one_of_tuple (Update, `Role, None)
-  let delete_role = one_of_tuple (Delete, `Role, None)
-  let manage_role = one_of_tuple (Manage, `Role, None)
-  let manage_permission = one_of_tuple (Manage, `Permission, None)
+  module Role = struct
+    let create = one_of_tuple (Create, `Role, None)
+    let read = one_of_tuple (Read, `Role, None)
+    let update = one_of_tuple (Update, `Role, None)
+    let delete = one_of_tuple (Delete, `Role, None)
+    let manage = one_of_tuple (Manage, `Role, None)
+  end
+
+  module Permission = struct
+    let create = one_of_tuple (Create, `Permission, None)
+    let read = one_of_tuple (Read, `Permission, None)
+    let update = one_of_tuple (Update, `Permission, None)
+    let delete = one_of_tuple (Delete, `Permission, None)
+    let manage = one_of_tuple (Manage, `Permission, None)
+  end
+
+  module RoleAssignment = struct
+    let create = one_of_tuple (Create, `RoleAssignment, None)
+    let read = one_of_tuple (Read, `RoleAssignment, None)
+    let update = one_of_tuple (Update, `RoleAssignment, None)
+    let delete = one_of_tuple (Delete, `RoleAssignment, None)
+    let manage = one_of_tuple (Manage, `RoleAssignment, None)
+  end
 end
 
 let column_role = Repo.column_role

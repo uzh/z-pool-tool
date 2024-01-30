@@ -156,6 +156,7 @@ let to_string = function
 
 let nav_link_to_string = function
   | Admins -> "Admins"
+  | AssignableRoles -> "Assignable Roles"
   | Assignments -> "Assignments"
   | ContactInformation -> "Contact information"
   | Contacts -> "Contacts"
@@ -461,6 +462,9 @@ If you trigger the reminders manually now, no more automatic reminders will be s
       "If no %s is specified, the role includes all %s."
       (Locales_en.field_to_string singular)
       (Locales_en.field_to_string plural)
+  | RoleAssignmentIntro ->
+    "The 'role' in the following list has permission to assign the 'assignable \
+     role' to other admins."
   | RolePermissionsIntro ->
     {|All existing permissions which are defined for roles of the tenant.|}
   | ScheduleEvery sec ->
@@ -622,7 +626,5 @@ let confirmable_to_string confirmable =
   |> fun (obj, action, additive) ->
   Format.asprintf "Are you sure you want to %s the %s?" action obj
   |> fun msg ->
-  additive
-  |> CCOption.map_or ~default:msg (fun additive ->
-    Format.asprintf "%s %s" msg additive)
+  additive |> CCOption.map_or ~default:msg (Format.asprintf "%s %s" msg)
 ;;

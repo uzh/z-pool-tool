@@ -200,10 +200,29 @@ module RoleAssignment = struct
 
   open Pool_common.Message
 
-  let column_role = (Field.Role, "assign_roles.role") |> Query.Column.create
+  let column_role =
+    (Field.Role, "guardian_assign_roles.role") |> Query.Column.create
+  ;;
 
   let column_target_role =
-    (Field.AssignableRole, "assign_roles.target_role") |> Query.Column.create
+    (Field.AssignableRole, "guardian_assign_roles.target_role")
+    |> Query.Column.create
+  ;;
+
+  let column_created_at =
+    (Field.CreatedAt, "guardian_assign_roles.created_at") |> Query.Column.create
+  ;;
+
+  let searchable_by = [ column_role; column_target_role ]
+  let default_sort_column = column_created_at
+  let sortable_by = default_sort_column :: searchable_by
+
+  let default_query =
+    let open Query in
+    let sort =
+      Sort.{ column = default_sort_column; order = SortOrder.Descending }
+    in
+    create ~sort ()
   ;;
 end
 

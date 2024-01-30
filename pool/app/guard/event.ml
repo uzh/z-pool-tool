@@ -21,12 +21,14 @@ type event =
   | ActorPermissionSaved of ActorPermission.t list
   | RolePermissionDeleted of RolePermission.t
   | ActorPermissionDeleted of ActorPermission.t
+  | RoleAssignmentCreated of RoleAssignment.t
+  | RoleAssignmentDeleted of RoleAssignment.t * string option
 [@@deriving eq, show]
 
-let handle_event pool : event -> unit Lwt.t =
+let handle_event database_label : event -> unit Lwt.t =
   let open Utils.Lwt_result.Infix in
-  let tags = Pool_database.Logger.Tags.create pool in
-  let ctx = [ "pool", Pool_database.Label.value pool ] in
+  let tags = Pool_database.Logger.Tags.create database_label in
+  let ctx = [ "pool", Pool_database.Label.value database_label ] in
   function
   | DefaultRestored permissions ->
     let%lwt (_ : (RolePermission.t list, RolePermission.t list) result) =
@@ -64,4 +66,8 @@ let handle_event pool : event -> unit Lwt.t =
             Utils.with_log_result_error ~src ~tags Message.authorization)
     in
     Lwt.return_unit
+  | RoleAssignmentCreated role ->
+    Repo.RoleAssignment.insert database_label [ role ]
+  | RoleAssignmentDeleted (role, comment) ->
+    Repo.RoleAssignment.delete ?comment database_label role
 ;;

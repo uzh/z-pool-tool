@@ -84,7 +84,11 @@ module NavElements = struct
         ; Single
             ( "/admin/settings/role-permission"
             , RolePermissions
-            , Guard.Access.read_permission )
+            , Guard.Access.Permission.read )
+        ; Single
+            ( "/admin/settings/role-assignment"
+            , AssignableRoles
+            , Guard.Access.RoleAssignment.read )
         ; Single ("/admin/settings/tags", Tags, Tags.Guard.Access.index)
         ; Single
             ( "/admin/message-template"

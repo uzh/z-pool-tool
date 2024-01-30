@@ -23,11 +23,11 @@ end = struct
   type t = Guard.RolePermission.t
 
   let handle ?(tags = Logs.Tag.empty) role_permission =
-    Logs.info ~src (fun m -> m "Handle command Create" ~tags);
+    Logs.info ~src (fun m -> m "Handle command CreateRolePermission" ~tags);
     Ok [ Guard.RolePermissionSaved [ role_permission ] |> Pool_event.guard ]
   ;;
 
-  let effects = Guard.Access.manage_permission
+  let effects = Guard.Access.Permission.manage
 end
 
 module DeleteRolePermission : sig
@@ -41,11 +41,43 @@ end = struct
   type t = Guard.RolePermission.t
 
   let handle ?(tags = Logs.Tag.empty) role_permissino =
-    Logs.info ~src (fun m -> m "Handle command Create" ~tags);
+    Logs.info ~src (fun m -> m "Handle command DeleteRolePermission" ~tags);
     Ok [ Guard.RolePermissionDeleted role_permissino |> Pool_event.guard ]
   ;;
 
-  let effects = Guard.Access.manage_permission
+  let effects = Guard.Access.Permission.manage
+end
+
+module CreateRoleAssignment : sig
+  include Common.CommandSig with type t = Guard.RoleAssignment.t
+end = struct
+  type t = Guard.RoleAssignment.t
+
+  let handle ?(tags = Logs.Tag.empty) role =
+    Logs.info ~src (fun m -> m "Handle command CreateRoleAssignment" ~tags);
+    Ok [ Guard.RoleAssignmentCreated role |> Pool_event.guard ]
+  ;;
+
+  let effects = Guard.Access.RoleAssignment.create
+end
+
+module DeleteRoleAssignment : sig
+  include Common.CommandSig with type t = Guard.RoleAssignment.t
+
+  val handle
+    :  ?tags:Logs.Tag.set
+    -> ?comment:string
+    -> Guard.RoleAssignment.t
+    -> (Pool_event.t list, Pool_common.Message.error) result
+end = struct
+  type t = Guard.RoleAssignment.t
+
+  let handle ?(tags = Logs.Tag.empty) ?comment role =
+    Logs.info ~src (fun m -> m "Handle command DeleteRoleAssignment" ~tags);
+    Ok [ Guard.RoleAssignmentDeleted (role, comment) |> Pool_event.guard ]
+  ;;
+
+  let effects = Guard.Access.RoleAssignment.delete
 end
 
 module GrantRoles : sig
@@ -70,7 +102,7 @@ end = struct
       ]
   ;;
 
-  let effects = Guard.Access.create_role
+  let effects = Guard.Access.Role.create
 end
 
 module RevokeRole : sig
@@ -93,5 +125,5 @@ end = struct
       ]
   ;;
 
-  let effects = Guard.Access.delete_role
+  let effects = Guard.Access.Role.delete
 end
