@@ -1,5 +1,6 @@
 open CCFun
 include Sihl.Contract.Queue
+include Entity
 module Guard = Entity_guard
 
 let src = Logs.Src.create "queue.service"
@@ -16,6 +17,7 @@ let increment_tries (retry_delay : Ptime.Span.t) (job_instance : instance) =
 
 let registered_jobs : job' list ref = ref []
 let find = Repo.find
+let find_by = Repo.find_by
 let count_workable = Repo.count_workable
 
 let run_job

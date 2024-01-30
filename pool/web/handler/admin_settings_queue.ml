@@ -1,4 +1,3 @@
-open CCFun
 open Utils.Lwt_result.Infix
 module Field = Pool_common.Message.Field
 module HttpUtils = Http_utils
@@ -8,14 +7,17 @@ let src = Logs.Src.create "handler.admin.settings_queue"
 let active_navigation = "/admin/settings/queue"
 
 let show req =
-  let result ({ Pool_context.database_label; _ } as context) =
-    Email.Service.Queue.search ~ctx:(Pool_database.to_ctx database_label) ()
-    ||> fst %> Page.Admin.Settings.Queue.index context
-    >|> General.create_tenant_layout req ~active_navigation context
-    >|+ Sihl.Web.Response.of_html
-    >|- fun err -> err, "/"
-  in
-  result |> HttpUtils.extract_happy_path ~src req
+  HttpUtils.Htmx.handler
+    ~active_navigation:"/admin/settings/queue"
+    ~error_path:"/admin"
+    ~create_layout:General.create_tenant_layout
+    ~query:(module Queue)
+    req
+  @@ fun ({ Pool_context.database_label; _ } as context) query ->
+  let%lwt queue = Queue.find_by ~query database_label in
+  let open Page.Admin.Settings.Queue in
+  (if HttpUtils.Htmx.is_hx_request req then data_table else index) context queue
+  |> Lwt_result.return
 ;;
 
 let detail req =

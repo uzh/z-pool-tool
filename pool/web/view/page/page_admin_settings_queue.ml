@@ -3,34 +3,65 @@ module HttpUtils = Http_utils
 
 let formatted_date_time = Pool_common.Utils.Time.formatted_date_time
 
-let queue_overview language queued_jobs =
+let data_table Pool_context.{ language; _ } (queued_jobs, query) =
   let open Pool_common in
-  let thead =
-    (Message.Field.[ Name; Status; Input; LastError; LastErrorAt; NextRunAt ]
-     |> Component.Table.fields_to_txt language)
-    @ [ txt "" ]
+  let open Queue in
+  let url = Uri.of_string "/admin/settings/queue" in
+  let data_table =
+    Component.DataTable.create_meta
+      ?filter:filterable_by
+      ~search:searchable_by
+      url
+      query
+      language
   in
-  CCList.map
-    (fun { Sihl_queue.id
-         ; name
-         ; status
-         ; input
-         ; last_error
-         ; last_error_at
-         ; next_run_at
-         ; _
-         } ->
-      [ txt name
-      ; txt (Sihl.Contract.Queue.show_instance_status status)
-      ; txt (CCString.take 80 input)
-      ; txt (CCOption.value ~default:"-" last_error)
-      ; txt (last_error_at |> CCOption.map_or ~default:"-" formatted_date_time)
-      ; txt (next_run_at |> formatted_date_time)
-      ; Format.asprintf "/admin/settings/queue/%s" id
-        |> Component.Input.link_as_button ~icon:Component.Icon.Eye
-      ])
+  let cols =
+    let field_to_string field =
+      Utils.field_to_string_capitalized language field |> txt
+    in
+    [ `column column_job_name
+    ; `column column_job_status
+    ; `custom (field_to_string Message.Field.Input)
+    ; `custom (field_to_string Message.Field.LastError)
+    ; `column column_last_error_at
+    ; `column column_next_run
+    ; `empty
+    ]
+  in
+  let th_class = [ "w-1"; "w-1"; "w-4"; "w-2"; "w-1"; "w-1" ] in
+  let row
+    { Sihl_queue.id
+    ; name
+    ; status
+    ; input
+    ; last_error
+    ; last_error_at
+    ; next_run_at
+    ; _
+    }
+    =
+    let formatted_date_time date =
+      span ~a:[ a_class [ "nobr" ] ] [ txt (formatted_date_time date) ]
+    in
+    [ txt name
+    ; txt (Status.sihl_queue_to_human status)
+    ; span ~a:[ a_class [ "word-break-all" ] ] [ txt (CCString.take 80 input) ]
+    ; txt (CCOption.value ~default:"-" last_error)
+    ; last_error_at |> CCOption.map_or ~default:(txt "-") formatted_date_time
+    ; next_run_at |> formatted_date_time
+    ; Format.asprintf "/admin/settings/queue/%s" id
+      |> Component.Input.link_as_button ~icon:Component.Icon.Eye
+    ]
+    |> CCList.map CCFun.(CCList.return %> td)
+    |> tr
+  in
+  Component.DataTable.make
+    ~target_id:"queue-ob-list"
+    ~th_class
+    ~cols
+    ~row
+    data_table
     queued_jobs
-  |> Component.Table.horizontal_table `Striped ~align_last_end:true ~thead
 ;;
 
 let job_detail
@@ -87,8 +118,8 @@ let layout language children =
     ]
 ;;
 
-let index Pool_context.{ language; _ } jobs =
-  queue_overview language jobs |> layout language
+let index (Pool_context.{ language; _ } as context) job =
+  data_table context job |> layout language
 ;;
 
 let detail Pool_context.{ language; _ } job =
