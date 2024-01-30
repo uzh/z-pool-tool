@@ -220,6 +220,10 @@ abbr[title] {
     white-space: nowrap;
 }
 
+.word-break-all {
+    word-break: break-all;
+}
+
 // Color
 .table.striped tr:nth-child(1n).bg-green-lighter {
     background-color: $green-lighter;

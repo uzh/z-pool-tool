@@ -1,3 +1,4 @@
+module Dynparam = Utils.Database.Dynparam
 open CCFun
 open Ppx_yojson_conv_lib.Yojson_conv
 
@@ -122,35 +123,33 @@ let update label job_instance =
     job_instance
 ;;
 
-let select_from_fragment =
-  {sql|
-    SELECT
-      LOWER(CONCAT(
-        SUBSTR(HEX(uuid), 1, 8), '-',
-        SUBSTR(HEX(uuid), 9, 4), '-',
-        SUBSTR(HEX(uuid), 13, 4), '-',
-        SUBSTR(HEX(uuid), 17, 4), '-',
-        SUBSTR(HEX(uuid), 21)
-        )),
-      name,
-      input,
-      tries,
-      next_run_at,
-      max_tries,
-      status,
-      last_error,
-      last_error_at,
-      tag,
-      ctx
-    FROM queue_jobs
-  |sql}
+let sql_select_columns =
+  [ Pool_common.Id.sql_select_fragment ~field:"queue_jobs.uuid"
+  ; "queue_jobs.name"
+  ; "queue_jobs.input"
+  ; "queue_jobs.tries"
+  ; "queue_jobs.next_run_at"
+  ; "queue_jobs.max_tries"
+  ; "queue_jobs.status"
+  ; "queue_jobs.last_error"
+  ; "queue_jobs.last_error_at"
+  ; "queue_jobs.tag"
+  ; "queue_jobs.ctx"
+  ]
+;;
+
+let find_request_sql ?(count = false) where_fragment =
+  let columns =
+    if count then "COUNT(*)" else sql_select_columns |> CCString.concat ", "
+  in
+  Format.asprintf {sql|SELECT %s FROM queue_jobs %s|sql} columns where_fragment
 ;;
 
 let find_request =
   let open Caqti_request.Infix in
   Format.asprintf
     {sql| %s WHERE queue_jobs.uuid = UNHEX(REPLACE(?, '-', '')) |sql}
-    select_from_fragment
+    (sql_select_columns |> CCString.concat ". ")
   |> Pool_common.Repo.Id.t ->? job
 ;;
 
@@ -160,19 +159,23 @@ let find label id =
   ||> CCOption.to_result Pool_common.Message.(NotFound Field.Queue)
 ;;
 
+let find_by ?query pool =
+  Query.collect_and_count pool query ~select:find_request_sql job
+;;
+
 let find_workable_query ?(count = false) () =
-  let select =
-    if count then "SELECT COUNT(*) FROM queue_jobs" else select_from_fragment
+  let columns =
+    if count then "COUNT(*)" else sql_select_columns |> CCString.concat ","
   in
   Format.asprintf
     {sql|
-      %s
+      SELECT %s FROM queue_jobs
       WHERE status = "pending"
         AND next_run_at <= NOW()
         AND tries < max_tries
       ORDER BY id ASC
     |sql}
-    select
+    columns
 ;;
 
 let find_workable_request =
