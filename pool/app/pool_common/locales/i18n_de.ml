@@ -221,7 +221,7 @@ Beim Einladen von Kontakten bevorzugt der Filter den überschreibenden Wert, wen
   | ContactNoCellPhone -> "Sie haben noch keine Mobiltelefonnummer verifiziert."
   | ContactEnterCellPhoneToken cell_phone ->
     Format.asprintf
-      "PBitte geben Sie den Verifizierungscode ein, den wir Ihnen an %s \
+      "Bitte geben Sie den Verifizierungscode ein, den wir Ihnen an %s \
        geschickt haben. Der Code ist eine Stunde lang gültig."
       cell_phone
   | ContactLanguage ->
