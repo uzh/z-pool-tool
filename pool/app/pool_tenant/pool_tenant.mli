@@ -122,6 +122,7 @@ type t =
   ; maintenance : Maintenance.t
   ; disabled : Disabled.t
   ; default_language : Pool_common.Language.t
+  ; text_messages_enabled : bool
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
   }
@@ -138,7 +139,7 @@ module Write : sig
     ; description : Description.t option
     ; url : Url.t
     ; database : Database.t
-    ; gtx_api_key : GtxApiKey.t
+    ; gtx_api_key : GtxApiKey.t option
     ; styles : Styles.Write.t option
     ; icon : Icon.Write.t option
     ; maintenance : Maintenance.t
@@ -153,7 +154,6 @@ module Write : sig
     -> Description.t option
     -> Url.t
     -> Database.t
-    -> GtxApiKey.t
     -> Styles.Write.t option
     -> Icon.Write.t option
     -> Pool_common.Language.t
@@ -184,6 +184,7 @@ type event =
   | ActivateMaintenance of Write.t
   | DeactivateMaintenance of Write.t
   | GtxApiKeyUpdated of Write.t * GtxApiKey.t
+  | GtxApiKeyRemoved of Write.t
 
 val handle_event : Database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool

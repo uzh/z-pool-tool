@@ -92,6 +92,10 @@ module NavElements = struct
             , Message_template.Guard.Access.index )
         ; Single ("/admin/i18n", I18n, I18nGuard.Access.index)
         ; Single
+            ( "/admin/settings/text-messages"
+            , TextMessages
+            , Settings.Guard.Access.update )
+        ; Single
             ( "/admin/organisational-unit"
             , OrganisationalUnits
             , Organisational_unit.Guard.Access.index )

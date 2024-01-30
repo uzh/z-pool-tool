@@ -144,7 +144,7 @@ module Data = struct
     let* title = title |> Title.create in
     let* description = description |> Description.create >|= CCOption.return in
     let* url = url |> Url.create in
-    let gtx_api_key = gtx_api_key |> GtxApiKey.of_string in
+    let gtx_api_key = gtx_api_key |> GtxApiKey.of_string |> CCOption.return in
     Ok
       Write.
         { id = Id.create ()
@@ -219,6 +219,7 @@ module Data = struct
       ; maintenance = Maintenance.create false
       ; disabled = Disabled.create false
       ; default_language = Common.Language.En
+      ; text_messages_enabled = false
       ; created_at = Common.CreatedAt.create ()
       ; updated_at = Common.UpdatedAt.create ()
       }
@@ -328,9 +329,7 @@ let[@warning "-4"] create_tenant () =
   let open Data in
   let root_events =
     let open CCResult.Infix in
-    let api_key = gtx_api_key |> Pool_tenant.GtxApiKey.of_string in
-    Pool_tenant_command.Create.(
-      Data.urlencoded |> decode >>= handle database api_key)
+    Pool_tenant_command.Create.(Data.urlencoded |> decode >>= handle database)
   in
   let ( tenant_id
       , created_at
@@ -379,7 +378,6 @@ let[@warning "-4"] create_tenant () =
       in
       let* url = url |> Pool_tenant.Url.create in
       let* default_language = default_language |> Common.Language.create in
-      let gtx_api_key = Data.gtx_api_key |> Pool_tenant.GtxApiKey.of_string in
       Ok
         Pool_tenant.Write.
           { id = tenant_id
@@ -387,7 +385,7 @@ let[@warning "-4"] create_tenant () =
           ; description
           ; url
           ; database
-          ; gtx_api_key
+          ; gtx_api_key = None
           ; styles = styles |> CCOption.return
           ; icon = icon |> CCOption.return
           ; maintenance = Pool_tenant.Maintenance.create false

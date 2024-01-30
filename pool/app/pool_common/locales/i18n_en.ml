@@ -188,6 +188,7 @@ let nav_link_to_string = function
   | SystemSettings -> "System settings"
   | Tags -> "Tags"
   | Tenants -> "Tenants"
+  | TextMessages -> "Text messages"
   | Users -> "Users"
   | WaitingList -> "Waiting list"
 ;;
@@ -343,6 +344,9 @@ By clicking on the template labels below you can open the default text message:
      location."
   | I18nText str -> str
   | MailingLimit -> "Max. generated Invitations during the mailing."
+  | GtxKeyMissing ->
+    "No GTX Api key is stored, which is why no text messages are sent."
+  | GtxKeyStored -> "A GTX Api key is stored. Text message service is running."
   | MessageTemplateAccountSuspensionNotification ->
     "This message will be sent to a user after the account has been \
      temporarily suspended because of too many failed login attempts."
@@ -545,7 +549,6 @@ Only sessions with open spots can be selected.|}
   | TenantUrl -> "The URL of the tenant without protocol, e.g.: pool.uzh.ch"
   | TextLengthMin i -> error_to_string (Entity_message.TextLengthMin i)
   | TextLengthMax i -> error_to_string (Entity_message.TextLengthMax i)
-  | TimeSpanPickerHint -> "Time duration in minutes"
   | WaitingListPhoneMissingContact ->
     "You have not entered a phone number in your profile yet. Please provide a \
      phone number so that the recruitment team can contact you."
@@ -566,6 +569,12 @@ let confirmable_to_string confirmable =
    | DeleteExperiment -> "experiment", "delete", None
    | DeleteExperimentFilter -> "filter", "delete", None
    | DeleteFile -> " file", "delete", None
+   | DeleteGtxApiKey ->
+     ( "GTX Api key"
+     , "delete"
+     , Some
+         "Text messages can no longer be sent without a GTX Api key. This \
+          action will disable any sending of text messages." )
    | DeleteMailing -> "mailing", "delete", None
    | DeleteMessageTemplate -> "message template", "delete", None
    | DeleteSession -> "session", "delete", None

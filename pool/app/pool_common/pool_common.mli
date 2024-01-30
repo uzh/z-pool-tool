@@ -195,6 +195,7 @@ module Reminder : sig
     val equal : t -> t -> bool
     val read : string -> t
     val all : t list
+    val filtered_channels : bool -> t list
   end
 end
 

@@ -108,12 +108,13 @@ let t =
         , ( m.description
           , ( Url.value m.url
             , ( m.database_label
-              , ( m.styles
-                , ( m.icon
-                  , ( m.maintenance
-                    , ( m.disabled
-                      , (m.default_language, (m.created_at, m.updated_at)) ) )
-                  ) ) ) ) ) ) )
+              , ( m.text_messages_enabled
+                , ( m.styles
+                  , ( m.icon
+                    , ( m.maintenance
+                      , ( m.disabled
+                        , (m.default_language, (m.created_at, m.updated_at)) )
+                      ) ) ) ) ) ) ) ) )
   in
   let decode
     ( id
@@ -121,11 +122,12 @@ let t =
       , ( description
         , ( url
           , ( database_label
-            , ( styles
-              , ( icon
-                , ( maintenance
-                  , (disabled, (default_language, (created_at, updated_at))) )
-                ) ) ) ) ) ) )
+            , ( text_messages_enabled
+              , ( styles
+                , ( icon
+                  , ( maintenance
+                    , (disabled, (default_language, (created_at, updated_at)))
+                    ) ) ) ) ) ) ) ) )
     =
     Ok
       { id
@@ -138,6 +140,7 @@ let t =
       ; maintenance
       ; disabled
       ; default_language
+      ; text_messages_enabled
       ; created_at
       ; updated_at
       }
@@ -157,18 +160,20 @@ let t =
                   (t2
                      Database.Repo.Label.t
                      (t2
-                        (option Styles.t)
+                        Caqti_type.bool
                         (t2
-                           (option Icon.t)
+                           (option Styles.t)
                            (t2
-                              Maintenance.t
+                              (option Icon.t)
                               (t2
-                                 Disabled.t
+                                 Maintenance.t
                                  (t2
-                                    Pool_common.Repo.Language.t
+                                    Disabled.t
                                     (t2
-                                       Common.Repo.CreatedAt.t
-                                       Common.Repo.UpdatedAt.t))))))))))))
+                                       Pool_common.Repo.Language.t
+                                       (t2
+                                          Common.Repo.CreatedAt.t
+                                          Common.Repo.UpdatedAt.t)))))))))))))
 ;;
 
 module Write = struct
@@ -234,7 +239,7 @@ module Write = struct
                     (t2
                        Database.Repo.t
                        (t2
-                          GtxApiKey.t
+                          (option GtxApiKey.t)
                           (t2
                              (option Styles.Write.t)
                              (t2

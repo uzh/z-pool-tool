@@ -750,11 +750,19 @@ module Admin = struct
         ; choose ~scope:(Tag |> url_key) specific
         ]
       in
+      let text_messages =
+        let open TextMessages in
+        [ get "" ~middlewares:[ Access.index ] index
+        ; post "" ~middlewares:[ Access.update ] update
+        ; post "delete" ~middlewares:[ Access.delete ] delete
+        ]
+      in
       [ get "" ~middlewares:[ Access.index ] show
       ; choose ~scope:"/queue" queue
       ; choose ~scope:"/role-permission" role_permission
       ; choose ~scope:"/smtp" smtp
       ; choose ~scope:"/tags" tags
+      ; choose ~scope:"/text-messages" text_messages
       ; post "/:action" ~middlewares:[ Access.update ] update_settings
       ; get "/schedules" ~middlewares:[ Schedule.Access.index ] Schedule.show
       ]

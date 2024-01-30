@@ -190,6 +190,7 @@ let nav_link_to_string = function
   | SystemSettings -> "Systemeinstellungen"
   | Tags -> "Tags"
   | Tenants -> "Tenants"
+  | TextMessages -> "SMS"
   | Users -> "Benutzer"
   | WaitingList -> "Warteliste"
 ;;
@@ -361,6 +362,11 @@ Wenn Sie die Erinnerungen jetzt manuell auslösen werden über den gewählten Na
     "Standorte, an denen Experimente durchgeführt werden. Jede Session muss \
      eine Location haben."
   | MailingLimit -> "Max. generierte Einladungen pro Mailing."
+  | GtxKeyMissing ->
+    "Es wurde kein GTX Api Key hinterlegt, weshalb keine Textnachrichten \
+     verschickt werden."
+  | GtxKeyStored ->
+    "Ein GTX Api-Schlüssel ist hinterlegt. Textnachrichten werden verschickt."
   | MessageTemplateAccountSuspensionNotification ->
     "Diese Nachricht wird an einen Benutzer gesendet, nachdem sein Konto wegen \
      zu vieler fehlgeschlagener Anmeldeversuche vorübergehend gesperrt wurde."
@@ -562,7 +568,6 @@ Es können nur Sitzungen mit freien Plätzen ausgewählt werden.|}
   | TenantUrl -> "Die URL des Tenants ohne Protokoll, z.B.: pool.uzh.ch"
   | TextLengthMin i -> error_to_string (Entity_message.TextLengthMin i)
   | TextLengthMax i -> error_to_string (Entity_message.TextLengthMax i)
-  | TimeSpanPickerHint -> "Zeitdauer in Minuten."
   | WaitingListPhoneMissingContact ->
     "Sie haben in Ihrem Profil noch keine Telefonnummer angegenen. Wir bitten \
      Sie, eine Telefonnummer anzugeben, damit das Rekrutierungsteam Sie \
@@ -587,6 +592,13 @@ let confirmable_to_string confirmable =
    | DeleteExperiment -> "das Experiment", "löschen", None
    | DeleteExperimentFilter -> "den Filter", "löschen", None
    | DeleteFile -> "die Datei", "löschen", None
+   | DeleteGtxApiKey ->
+     ( "den GTX Api Key"
+     , "löschen"
+     , Some
+         "Ohne einen hinterlegten GTX Api Key können keine Textnachrichten \
+          mehr verschickt werden. Diese Aktion wird jeglichen Versand von \
+          Textnachrichten deaktivieren." )
    | DeleteMailing -> "den Versand", "löschen", None
    | DeleteMessageTemplate -> "das Nachrichtentemplate", "löschen", None
    | DeleteSession -> "die Session", "löschen", None

@@ -115,6 +115,7 @@ let template_inputs
   ?flash_fetcher
   ?fixed_language
   ?selected_language
+  text_messages_enabled
   form_context
   template_label
   =
@@ -246,11 +247,24 @@ let template_inputs
   let text_message_input =
     if hide_text_message_input
     then txt ""
-    else
-      textarea_element
-        ~rich_text:false
-        ~value:(template.sms_text |> SmsText.value)
-        Field.SmsText
+    else (
+      let text_area =
+        textarea_element
+          ~rich_text:false
+          ~value:(template.sms_text |> SmsText.value)
+          Field.SmsText
+      in
+      match text_messages_enabled with
+      | true -> text_area
+      | false ->
+        div
+          ~a:[ a_class [ "stack" ] ]
+          [ Utils.hint_to_string language I18n.GtxKeyMissing
+            |> txt
+            |> CCList.return
+            |> Component.Notification.notification language `Warning
+          ; text_area
+          ])
   in
   div
     ~a:[ a_class [ "stack" ]; a_id id ]
@@ -283,6 +297,7 @@ let template_form
   ?text_elements
   ?fixed_language
   form_context
+  text_messages_disabled
   action
   flash_fetcher
   =
@@ -325,6 +340,7 @@ let template_form
            ?languages
            ?fixed_language
            ~flash_fetcher
+           text_messages_disabled
            form_context
            label
        ]
@@ -364,6 +380,7 @@ let edit
         context
         ~text_elements
         (`Update template)
+        tenant.Pool_tenant.text_messages_enabled
         action
         flash_fetcher
     ]

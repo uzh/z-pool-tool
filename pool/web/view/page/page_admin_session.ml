@@ -228,6 +228,7 @@ let session_form
   ?(follow_up_to : Session.t option)
   ?(duplicate : Session.t option)
   locations
+  text_messages_enabled
   ~flash_fetcher
   =
   let open CCFun in
@@ -282,15 +283,26 @@ let session_form
       ( Format.asprintf "%s/%s" base Session.(session.id |> Id.value)
       , Message.(Update (Some Field.Session)) )
   in
-  let lead_time_group field get_value encode default_value =
+  let lead_time_group field get_value encode default_value warning =
+    let warning =
+      warning
+      |> CCOption.map_or
+           ~default:(txt "")
+           Pool_common.(
+             fun hint ->
+               hint
+               |> Utils.hint_to_string language
+               |> txt
+               |> CCList.return
+               |> Component.Notification.notification language `Warning)
+    in
     div
-      [ timespan_picker
+      ~a:[ a_class [ "stack" ] ]
+      [ warning
+      ; timespan_picker
           language
           field
-          ~hints:
-            [ I18n.TimeSpanPickerHint
-            ; I18n.DefaultReminderLeadTime (default_value |> encode)
-            ]
+          ~hints:[ I18n.DefaultReminderLeadTime (default_value |> encode) ]
           ?value:
             (CCOption.bind default_value_session get_value
              |> CCOption.map encode)
@@ -328,7 +340,6 @@ let session_form
             language
             ~required:true
             Message.Field.Duration
-            ~hints:[ I18n.TimeSpanPickerHint ]
             ?value:
               (CCOption.map
                  (fun (s : t) -> s.duration |> Duration.value)
@@ -392,6 +403,7 @@ let session_form
                 Reminder.EmailLeadTime.value
                 (experiment.Experiment.email_session_reminder_lead_time
                  |> CCOption.value ~default:default_email_reminder_lead_time)
+                None
             ; lead_time_group
                 Message.Field.TextMessageLeadTime
                 (fun (s : t) -> s.text_message_reminder_lead_time)
@@ -399,6 +411,7 @@ let session_form
                 (experiment.Experiment.text_message_session_reminder_lead_time
                  |> CCOption.value ~default:default_text_msg_reminder_lead_time
                 )
+                (if text_messages_enabled then None else Some I18n.GtxKeyMissing)
             ]
         ]
     ; div
@@ -445,7 +458,6 @@ let reschedule_session
               language
               ~required:true
               Message.Field.Duration
-              ~hints:[ I18n.TimeSpanPickerHint ]
               ~value:(session.duration |> Duration.value)
               ~flash_fetcher
           ]
@@ -625,6 +637,7 @@ let new_form
   default_text_msg_reminder_lead_time
   duplicate_session
   locations
+  text_messages_enabled
   flash_fetcher
   =
   session_form
@@ -635,6 +648,7 @@ let new_form
     default_text_msg_reminder_lead_time
     ?duplicate:duplicate_session
     locations
+    text_messages_enabled
     ~flash_fetcher
   |> CCList.return
   |> Layout.Experiment.(
@@ -651,6 +665,7 @@ let detail
   participation_tags
   sys_languages
   session_reminder_templates
+  text_messages_enabled
   (assignments, query)
   =
   let open Pool_common in
@@ -714,7 +729,7 @@ let detail
                   language
                   Message.Field.MessageChannel
                   Channel.show
-                  Channel.all
+                  Channel.(filtered_channels text_messages_enabled)
                   None
                   ~option_formatter:(fun channel ->
                     Channel.show channel
@@ -951,6 +966,7 @@ let detail
         context
         experiment
         session
+        text_messages_enabled
         (assignments, query)
     in
     let swap_session_modal_js =
@@ -1062,7 +1078,8 @@ let print
         context
         experiment
         session
-        assignments)
+        assignments
+        false)
   in
   let title =
     Pool_common.(Utils.text_to_string language (session_title session))
@@ -1080,6 +1097,7 @@ let edit
   (session : Session.t)
   locations
   (current_tags, available_tags, experiment_tags)
+  text_messages_enabled
   flash_fetcher
   =
   let session_path =
@@ -1103,6 +1121,7 @@ let edit
           default_text_msg_reminder_lead_time
           ~session
           locations
+          text_messages_enabled
           ~flash_fetcher
       ]
   in
@@ -1164,6 +1183,7 @@ let follow_up
   duplicate_session
   (parent_session : Session.t)
   locations
+  text_messages_enabled
   flash_fetcher
   =
   let open Pool_common in
@@ -1187,6 +1207,7 @@ let follow_up
         ~follow_up_to:parent_session
         ?duplicate:duplicate_session
         locations
+        text_messages_enabled
         ~flash_fetcher
     ]
   |> CCList.return
@@ -1646,6 +1667,7 @@ let message_template_form
     ~text_elements
     ?languages
     form_context
+    tenant.Pool_tenant.text_messages_enabled
     action
     flash_fetcher
   |> CCList.return

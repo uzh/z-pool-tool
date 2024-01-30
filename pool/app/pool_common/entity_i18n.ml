@@ -127,6 +127,7 @@ type nav_link =
   | SystemSettings
   | Tags
   | Tenants
+  | TextMessages
   | Users
   | WaitingList
 [@@deriving eq]
@@ -181,6 +182,8 @@ type hint =
   | I18nText of string
   | LocationFiles
   | LocationsIndex
+  | GtxKeyMissing
+  | GtxKeyStored
   | MailingLimit
   | MessageTemplateAccountSuspensionNotification
   | MessageTemplateAssignmentConfirmation
@@ -253,7 +256,6 @@ type hint =
   | TenantUrl
   | TextLengthMin of int
   | TextLengthMax of int
-  | TimeSpanPickerHint
   | WaitingListPhoneMissingContact
 [@@deriving variants]
 
@@ -268,6 +270,7 @@ type confirmable =
   | DeleteExperiment
   | DeleteExperimentFilter
   | DeleteFile
+  | DeleteGtxApiKey
   | DeleteMailing
   | DeleteMessageTemplate
   | DeleteSession
