@@ -183,6 +183,7 @@ type hint =
   | LocationFiles
   | LocationsIndex
   | GtxKeyMissing
+  | GtxKeyStored
   | MailingLimit
   | MessageTemplateAccountSuspensionNotification
   | MessageTemplateAssignmentConfirmation
@@ -269,6 +270,7 @@ type confirmable =
   | DeleteExperiment
   | DeleteExperimentFilter
   | DeleteFile
+  | DeleteGtxApiKey
   | DeleteMailing
   | DeleteMessageTemplate
   | DeleteSession

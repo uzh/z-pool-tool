@@ -365,6 +365,8 @@ Wenn Sie die Erinnerungen jetzt manuell auslösen werden über den gewählten Na
   | GtxKeyMissing ->
     "Es wurde kein GTX Api Key hinterlegt, weshalb keine Textnachrichten \
      verschickt werden."
+  | GtxKeyStored ->
+    "Ein GTX Api-Schlüssel ist hinterlegt. Textnachrichten werden verschickt."
   | MessageTemplateAccountSuspensionNotification ->
     "Diese Nachricht wird an einen Benutzer gesendet, nachdem sein Konto wegen \
      zu vieler fehlgeschlagener Anmeldeversuche vorübergehend gesperrt wurde."
@@ -590,6 +592,13 @@ let confirmable_to_string confirmable =
    | DeleteExperiment -> "das Experiment", "löschen", None
    | DeleteExperimentFilter -> "den Filter", "löschen", None
    | DeleteFile -> "die Datei", "löschen", None
+   | DeleteGtxApiKey ->
+     ( "den GTX Api Key"
+     , "löschen"
+     , Some
+         "Ohne einen hinterlegten GTX Api Key können keine Textnachrichten \
+          mehr verschickt werden. Diese Aktion wird jeglichen Versand von \
+          Textnachrichten deaktivieren." )
    | DeleteMailing -> "den Versand", "löschen", None
    | DeleteMessageTemplate -> "das Nachrichtentemplate", "löschen", None
    | DeleteSession -> "die Session", "löschen", None

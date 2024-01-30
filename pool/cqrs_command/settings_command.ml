@@ -347,3 +347,21 @@ end = struct
 
   let effects = Guard.Access.update
 end
+
+module RemoveGtxApiKey : sig
+  include Common.CommandSig with type t = Pool_tenant.Write.t
+
+  val handle
+    :  ?tags:Logs.Tag.set
+    -> t
+    -> (Pool_event.t list, Pool_common.Message.error) result
+end = struct
+  type t = Pool_tenant.Write.t
+
+  let handle ?(tags = Logs.Tag.empty) tenant =
+    Logs.info ~src (fun m -> m "Handle command RemoveGtxApiKey" ~tags);
+    Ok [ Pool_tenant.GtxApiKeyRemoved tenant |> Pool_event.pool_tenant ]
+  ;;
+
+  let effects = Guard.Access.update
+end

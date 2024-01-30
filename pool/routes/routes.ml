@@ -754,6 +754,7 @@ module Admin = struct
         let open TextMessages in
         [ get "" ~middlewares:[ Access.index ] index
         ; post "" ~middlewares:[ Access.update ] update
+        ; post "delete" ~middlewares:[ Access.delete ] delete
         ]
       in
       [ get "" ~middlewares:[ Access.index ] show

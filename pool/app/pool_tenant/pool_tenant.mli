@@ -184,6 +184,7 @@ type event =
   | ActivateMaintenance of Write.t
   | DeactivateMaintenance of Write.t
   | GtxApiKeyUpdated of Write.t * GtxApiKey.t
+  | GtxApiKeyRemoved of Write.t
 
 val handle_event : Database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool

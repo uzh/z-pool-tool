@@ -346,6 +346,7 @@ By clicking on the template labels below you can open the default text message:
   | MailingLimit -> "Max. generated Invitations during the mailing."
   | GtxKeyMissing ->
     "No GTX Api key is stored, which is why no text messages are sent."
+  | GtxKeyStored -> "A GTX Api key is stored. Text message service is running."
   | MessageTemplateAccountSuspensionNotification ->
     "This message will be sent to a user after the account has been \
      temporarily suspended because of too many failed login attempts."
@@ -568,6 +569,12 @@ let confirmable_to_string confirmable =
    | DeleteExperiment -> "experiment", "delete", None
    | DeleteExperimentFilter -> "filter", "delete", None
    | DeleteFile -> " file", "delete", None
+   | DeleteGtxApiKey ->
+     ( "GTX Api key"
+     , "delete"
+     , Some
+         "Text messages can no longer be sent without a GTX Api key. This \
+          action will disable any sending of text messages." )
    | DeleteMailing -> "mailing", "delete", None
    | DeleteMessageTemplate -> "message template", "delete", None
    | DeleteSession -> "session", "delete", None

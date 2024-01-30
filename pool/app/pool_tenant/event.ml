@@ -27,6 +27,7 @@ type event =
   | ActivateMaintenance of Write.t
   | DeactivateMaintenance of Write.t
   | GtxApiKeyUpdated of Write.t * GtxApiKey.t
+  | GtxApiKeyRemoved of Write.t
 [@@deriving eq, show]
 
 let handle_event pool : event -> unit Lwt.t = function
@@ -83,4 +84,7 @@ let handle_event pool : event -> unit Lwt.t = function
   | GtxApiKeyUpdated (tenant, gtx_api_key) ->
     let open Entity.Write in
     { tenant with gtx_api_key = Some gtx_api_key } |> Repo.update Database.root
+  | GtxApiKeyRemoved tenant ->
+    let open Entity.Write in
+    { tenant with gtx_api_key = None } |> Repo.update Database.root
 ;;
