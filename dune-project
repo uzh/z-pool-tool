@@ -89,7 +89,7 @@
    (= v0.16.0))
   canary
   (guardian
-   (= 0.3.0))
+   (= 0.3.1))
   ;; Test/Dev dependencies
   (alcotest-lwt :with-test)
   (ppx_inline_test :with-test)))
