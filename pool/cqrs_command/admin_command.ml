@@ -245,5 +245,12 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let effects = Admin.Guard.Access.create
+  let effects =
+    let open Guard in
+    let open ValidationSet in
+    Or
+      [ one_of_tuple (Permission.Create, `AdminPromote, None)
+      ; Admin.Guard.Access.create
+      ]
+  ;;
 end
