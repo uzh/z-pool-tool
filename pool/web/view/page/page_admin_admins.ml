@@ -3,8 +3,12 @@ open Tyxml.Html
 open Component
 module Status = UserStatus.Admin
 
-let list Pool_context.{ language; _ } (admins, query) =
+let list Pool_context.{ language; guardian; _ } (admins, query) =
+  let open Guard in
   let open Admin in
+  let can_add_admin =
+    PermissionOnTarget.(validate (create Permission.Create `Admin) guardian)
+  in
   let url = Uri.of_string "/admin/admins" in
   let data_table =
     Component.DataTable.create_meta
@@ -13,7 +17,20 @@ let list Pool_context.{ language; _ } (admins, query) =
       query
       language
   in
-  let cols = Pool_user.[ `column column_name; `column column_email; `empty ] in
+  let cols =
+    let create : [ | Html_types.flow5 ] elt =
+      Component.Input.link_as_button
+        ~style:`Success
+        ~icon:Icon.Add
+        ~control:(language, Pool_common.Message.(Add (Some Field.Admin)))
+        "/admin/admins/new"
+    in
+    Pool_user.
+      [ `column column_name
+      ; `column column_email
+      ; (if can_add_admin then `custom create else `empty)
+      ]
+  in
   let th_class = [ "w-5"; "w-5"; "w-2" ] in
   let row admin =
     let button =
