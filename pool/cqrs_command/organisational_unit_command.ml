@@ -49,8 +49,8 @@ end = struct
   let handle ?(tags = Logs.Tag.empty) ou name =
     Logs.info ~src (fun m -> m "Handle command Update" ~tags);
     Ok
-      Organisational_unit.
-        [ Updated (ou, name) |> Pool_event.organisational_unit ]
+      [ Organisational_unit.Updated (ou, name) |> Pool_event.organisational_unit
+      ]
   ;;
 
   let effects = Organisational_unit.Guard.Access.update

@@ -904,7 +904,8 @@ let find_all_public_for_experiment pool contact experiment_id =
   let open Utils.Lwt_result.Infix in
   Experiment.find_public pool experiment_id contact
   >>= fun experiment ->
-  experiment.Experiment.Public.id
+  experiment
+  |> Experiment.Public.id
   |> Sql.find_all_public_for_experiment pool
   >|> Lwt_list.map_s (location_to_public_repo_entity pool)
   ||> CCResult.flatten_l

@@ -20,7 +20,7 @@ let session_item layout language (experiment : Experiment.Public.t) session =
           [ a_href
               (Format.asprintf
                  "/experiments/%s/sessions/%s"
-                 Experiment.(experiment.Public.id |> Id.value)
+                 Experiment.(experiment |> Public.id |> Id.value)
                  (session.Public.id |> Id.value)
                |> Sihl.Web.externalize_path)
           ]

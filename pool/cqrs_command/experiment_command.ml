@@ -266,27 +266,26 @@ end = struct
         command.text_message_session_reminder_lead_time_unit
     in
     let experiment =
-      Experiment.
-        { experiment with
-          title = command.title
-        ; public_title = command.public_title
-        ; internal_description = command.internal_description
-        ; public_description = command.public_description
-        ; language = command.language
-        ; cost_center = command.cost_center
-        ; organisational_unit
-        ; contact_person_id = CCOption.map Admin.id contact_person
-        ; smtp_auth_id =
-            CCOption.map Email.SmtpAuth.(fun ({ id; _ } : t) -> id) smtp
-        ; direct_registration_disabled = command.direct_registration_disabled
-        ; registration_disabled = command.registration_disabled
-        ; allow_uninvited_signup = command.allow_uninvited_signup
-        ; external_data_required = command.external_data_required
-        ; show_external_data_id_links = command.show_external_data_id_links
-        ; experiment_type = command.experiment_type
-        ; email_session_reminder_lead_time
-        ; text_message_session_reminder_lead_time
-        }
+      { experiment with
+        Experiment.title = command.title
+      ; public_title = command.public_title
+      ; internal_description = command.internal_description
+      ; public_description = command.public_description
+      ; language = command.language
+      ; cost_center = command.cost_center
+      ; organisational_unit
+      ; contact_person_id = CCOption.map Admin.id contact_person
+      ; smtp_auth_id =
+          CCOption.map Email.SmtpAuth.(fun ({ id; _ } : t) -> id) smtp
+      ; direct_registration_disabled = command.direct_registration_disabled
+      ; registration_disabled = command.registration_disabled
+      ; allow_uninvited_signup = command.allow_uninvited_signup
+      ; external_data_required = command.external_data_required
+      ; show_external_data_id_links = command.show_external_data_id_links
+      ; experiment_type = command.experiment_type
+      ; email_session_reminder_lead_time
+      ; text_message_session_reminder_lead_time
+      }
     in
     Ok [ Experiment.Updated experiment |> Pool_event.experiment ]
   ;;
@@ -510,7 +509,7 @@ end = struct
     let* query = Filter.validate_query key_list template_list query in
     let id = Pool_common.Id.create () in
     let filter = Filter.create ~id None query in
-    let experiment = Experiment.{ experiment with filter = Some filter } in
+    let experiment = { experiment with Experiment.filter = Some filter } in
     Ok
       [ Filter.Created filter |> Pool_event.filter
       ; Experiment.Updated experiment |> Pool_event.experiment

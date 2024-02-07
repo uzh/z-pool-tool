@@ -22,13 +22,14 @@ end = struct
     =
     let open Experiment.Public in
     Logs.info ~src (fun m -> m "Handle command Create" ~tags);
-    if command.Waiting_list.experiment.direct_registration_disabled
+    if command.Waiting_list.experiment
+       |> direct_registration_disabled
        |> Experiment.DirectRegistrationDisabled.value
     then
       Ok
         [ Waiting_list.Created command |> Pool_event.waiting_list
         ; Email.Sent
-            (confimration_email, command.Waiting_list.experiment.smtp_auth_id)
+            (confimration_email, command.Waiting_list.experiment |> smtp_auth_id)
           |> Pool_event.email
         ]
     else Error Pool_common.Message.NotEligible

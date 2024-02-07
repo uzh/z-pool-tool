@@ -1,3 +1,4 @@
+open CCFun
 module ExperimentCommand = Cqrs_command.Experiment_command
 module Model = Test_utils.Model
 
@@ -92,16 +93,17 @@ module Data = struct
 
   let experiment =
     let open CCResult in
-    let open Experiment in
     let to_bool = Utils.Bool.of_string in
-    let* title = title |> Title.create in
-    let* public_title = public_title |> PublicTitle.create in
+    let* title = title |> Experiment.Title.create in
+    let* public_title = public_title |> Experiment.PublicTitle.create in
     let* internal_description =
-      internal_description |> InternalDescription.create
+      internal_description |> Experiment.InternalDescription.create
     in
-    let* public_description = public_description |> PublicDescription.create in
+    let* public_description =
+      public_description |> Experiment.PublicDescription.create
+    in
     Experiment.create
-      ~cost_center:(cost_center |> CostCenter.of_string)
+      ~cost_center:(cost_center |> Experiment.CostCenter.of_string)
       ~internal_description
       ~public_description
       ~language
@@ -111,11 +113,19 @@ module Data = struct
       public_title
       (direct_registration_disabled
        |> to_bool
-       |> DirectRegistrationDisabled.create)
-      (registration_disabled |> to_bool |> RegistrationDisabled.create)
-      (allow_uninvited_signup |> to_bool |> AllowUninvitedSignup.create)
-      (external_data_required |> to_bool |> ExternalDataRequired.create)
-      (show_external_data_id_links |> to_bool |> ShowExternalDataIdLinks.create)
+       |> Experiment.DirectRegistrationDisabled.create)
+      (registration_disabled
+       |> to_bool
+       |> Experiment.RegistrationDisabled.create)
+      (allow_uninvited_signup
+       |> to_bool
+       |> Experiment.AllowUninvitedSignup.create)
+      (external_data_required
+       |> to_bool
+       |> Experiment.ExternalDataRequired.create)
+      (show_external_data_id_links
+       |> to_bool
+       |> Experiment.ShowExternalDataIdLinks.create)
   ;;
 end
 
@@ -239,7 +249,7 @@ let delete_with_sessions () =
 let delete_with_filter () =
   let experiment = Model.create_experiment () in
   let filter = Filter.create None (Filter_test.nr_of_siblings_filter ()) in
-  let experiment = Experiment.{ experiment with filter = Some filter } in
+  let experiment = { experiment with Experiment.filter = Some filter } in
   let system_event_id = System_event.Id.create () in
   let events =
     let session_count = 0 in
@@ -280,7 +290,7 @@ let autofill_public_title _ () =
   let with_title = Model.create_experiment () in
   let%lwt () =
     [ without_title; with_title ]
-    |> CCList.map CCFun.(created %> Pool_event.experiment)
+    |> CCList.map (created %> Pool_event.experiment)
     |> Pool_event.handle_events database_label
   in
   let find id = Experiment.find database_label id ||> get_exn in
@@ -326,7 +336,7 @@ module AvailableExperiments = struct
     in
     let%lwt res =
       (* Expect the experiment to be found *)
-      let public = experiment |> Model.experiment_to_public_experiment in
+      let public = experiment |> Experiment.to_public in
       Experiment.find_all_public_by_contact database_label contact
       ||> CCList.find_opt (Experiment.Public.equal public)
       ||> CCOption.is_some
@@ -340,7 +350,7 @@ module AvailableExperiments = struct
     let%lwt experiment =
       Experiment.find database_label experiment_id
       ||> get_exn
-      ||> Test_utils.Model.experiment_to_public_experiment
+      ||> Experiment.to_public
     in
     let%lwt contact = Contact.find database_label contact_id ||> get_exn in
     let%lwt session =
@@ -383,9 +393,9 @@ module AvailableExperiments = struct
     let%lwt experiment_available =
       (* Expect the experiment not to be found after session cancellation to
          enable reregistration of contact *)
-      Experiment.find_all_public_by_contact database_label contact
-      ||> CCList.find_opt (fun experiment ->
-        Experiment.(Id.equal experiment.Public.id experiment_id))
+      let open Experiment in
+      find_all_public_by_contact database_label contact
+      ||> CCList.find_opt (Public.id %> Id.equal experiment_id)
       ||> CCOption.is_some
     in
     let%lwt upcomming_session_found =
@@ -420,9 +430,9 @@ module AvailableExperiments = struct
     let%lwt experiment_available =
       (* Expect the experiment not to be found after session cancellation to
          enable reregistration of contact *)
-      Experiment.find_all_public_by_contact database_label contact
-      ||> CCList.find_opt (fun experiment ->
-        Experiment.(Id.equal experiment.Public.id experiment_id))
+      let open Experiment in
+      find_all_public_by_contact database_label contact
+      ||> CCList.find_opt (Public.id %> Id.equal experiment_id)
       ||> CCOption.is_some
     in
     let%lwt upcomming_session_not_found =

@@ -189,6 +189,7 @@ let experiment_form
   flash_fetcher
   =
   let open Pool_common in
+  let context_language = language in
   let open Experiment in
   let action =
     match experiment with
@@ -200,7 +201,7 @@ let experiment_form
   in
   let checkbox_element ?hints ?(default = false) field fnc =
     checkbox_element
-      language
+      context_language
       ?hints
       field
       ~value:(experiment |> CCOption.map_or ~default fnc)
@@ -210,11 +211,11 @@ let experiment_form
   let experiment_type_select =
     let open ExperimentType in
     selector
-      language
+      context_language
       Field.ExperimentType
       show
       all
-      (CCOption.bind experiment (fun (e : Experiment.t) -> e.experiment_type))
+      (CCOption.bind experiment experiment_type)
       ~add_empty:true
       ~flash_fetcher
       ()
@@ -224,11 +225,11 @@ let experiment_form
     selector
       ~add_empty:true
       ~hints:[ I18n.ExperimentLanguage ]
-      language
+      context_language
       Message.Field.Language
       show
       all
-      (CCOption.bind experiment (fun { language; _ } -> language))
+      (CCOption.bind experiment language)
       ()
   in
   let lead_time_group field get_value value default_value hint =
@@ -239,16 +240,16 @@ let experiment_form
            Pool_common.(
              fun hint ->
                hint
-               |> Utils.hint_to_string language
+               |> Utils.hint_to_string context_language
                |> txt
                |> CCList.return
-               |> Component.Notification.notification language `Warning)
+               |> Component.Notification.notification context_language `Warning)
     in
     div
       ~a:[ a_class [ "stack" ] ]
       [ hint
       ; timespan_picker
-          language
+          context_language
           field
           ~hints:[ I18n.DefaultReminderLeadTime (default_value |> value) ]
           ?value:CCOption.(bind experiment get_value)
@@ -268,86 +269,84 @@ let experiment_form
         [ div
             ~a:[ a_class [ "grid-col-2" ] ]
             [ input_element
-                language
+                context_language
                 `Text
                 Field.Title
                 ~value:(value title_value)
                 ~required:true
                 ~flash_fetcher
             ; input_element
-                language
+                context_language
                 `Text
                 Field.PublicTitle
                 ~value:(value public_title_value)
                 ~required:(CCOption.is_some experiment)
                 ~flash_fetcher
             ; textarea_element
-                language
+                context_language
                 Field.InternalDescription
                 ?value:
-                  (CCOption.bind experiment (fun { internal_description; _ } ->
-                     internal_description
-                     |> CCOption.map InternalDescription.value))
+                  (CCOption.bind
+                     experiment
+                     (internal_description
+                      %> CCOption.map InternalDescription.value))
                 ~flash_fetcher
             ; textarea_element
-                language
+                context_language
                 Field.PublicDescription
                 ?value:
-                  (CCOption.bind experiment (fun { public_description; _ } ->
-                     public_description |> CCOption.map PublicDescription.value))
+                  (CCOption.bind
+                     experiment
+                     (public_description %> CCOption.map PublicDescription.value))
                 ~flash_fetcher
             ; language_select
             ; experiment_type_select
             ; input_element
-                language
+                context_language
                 `Text
                 Field.CostCenter
                 ?value:
-                  (CCOption.bind experiment (fun e ->
-                     e.cost_center |> CCOption.map CostCenter.value))
+                  (CCOption.bind
+                     experiment
+                     (cost_center %> CCOption.map CostCenter.value))
                 ~flash_fetcher
             ; organisational_units_selector
-                language
+                context_language
                 organisational_units
-                (CCOption.bind experiment (fun ex -> ex.organisational_unit))
+                (CCOption.bind experiment organisational_unit)
             ]
         ; div
             [ h3
                 ~a:[ a_class [ "heading-3" ] ]
                 [ txt
                     (Utils.text_to_string
-                       language
+                       context_language
                        I18n.ExperimentMessagingSubtitle)
                 ]
             ; div
                 ~a:[ a_class [ "grid-col-2" ] ]
                 [ admin_select
-                    language
+                    context_language
                     contact_persons
-                    (CCOption.bind experiment (fun exp -> exp.contact_person_id))
+                    (CCOption.bind experiment contact_person_id)
                     Field.ContactPerson
                     ~hints:[ I18n.ExperimentContactPerson ]
                     ()
-                ; selector
-                    language
-                    Field.Smtp
-                    Email.SmtpAuth.(fun ({ id; _ } : t) -> Id.value id)
-                    smtp_auth_list
-                    CCOption.(
-                      experiment
-                      >>= fun { smtp_auth_id; _ } ->
-                      smtp_auth_id
-                      >>= Email.SmtpAuth.(
-                            fun smtp_auth_id ->
-                              CCList.find_opt
-                                (fun ({ id; _ } : t) ->
-                                  Id.equal id smtp_auth_id)
-                                smtp_auth_list))
-                    ~option_formatter:
-                      Email.SmtpAuth.(fun { label; _ } -> Label.value label)
-                    ~flash_fetcher
-                    ~add_empty:true
-                    ()
+                ; (let open Email.SmtpAuth in
+                   selector
+                     context_language
+                     Field.Smtp
+                     (id %> Id.value)
+                     smtp_auth_list
+                     CCOption.(
+                       experiment
+                       >>= smtp_auth_id
+                       >>= fun smtp_id ->
+                       CCList.find_opt (id %> Id.equal smtp_id) smtp_auth_list)
+                     ~option_formatter:(fun { label; _ } -> Label.value label)
+                     ~flash_fetcher
+                     ~add_empty:true
+                     ())
                 ]
             ]
         ; div
@@ -375,13 +374,15 @@ let experiment_form
         ; div
             [ h3
                 ~a:[ a_class [ "heading-3" ] ]
-                [ txt (Utils.text_to_string language I18n.SessionReminder) ]
+                [ txt
+                    (Utils.text_to_string context_language I18n.SessionReminder)
+                ]
             ; div
                 ~a:[ a_class [ "stack" ] ]
                 [ p
                     [ txt
                         (Utils.text_to_string
-                           language
+                           context_language
                            I18n.ExperimentSessionReminderHint)
                     ]
                 ; div
@@ -408,9 +409,9 @@ let experiment_form
         ~a:[ a_class [ "flexrow" ] ]
         [ div
             ~a:[ a_class [ "push"; "flexrow"; "flex-gap-lg" ] ]
-            [ reset_form_button language
+            [ reset_form_button context_language
             ; submit_element
-                language
+                context_language
                 Message.(
                   let field = Some Field.Experiment in
                   match experiment with
@@ -540,7 +541,7 @@ let edit
 ;;
 
 let detail
-  ({ Experiment.id; _ } as experiment)
+  experiment
   session_count
   message_templates
   sys_languages
@@ -551,9 +552,10 @@ let detail
   ({ Pool_context.language; csrf; guardian; _ } as context)
   =
   let open Pool_common in
+  let experiment_id = Experiment.id experiment in
   let can_update_experiment =
     Guard.PermissionOnTarget.validate
-      (Experiment.Guard.Access.update_permission_on_target id)
+      (Experiment.Guard.Access.update_permission_on_target experiment_id)
       guardian
   in
   let notifications =
@@ -593,7 +595,7 @@ let detail
                   (Sihl.Web.externalize_path
                      (Format.asprintf
                         "/admin/experiments/%s/delete"
-                        (experiment.Experiment.id |> Experiment.Id.value)))
+                        (experiment_id |> Experiment.Id.value)))
               ; a_user_data
                   "confirmable"
                   (Utils.confirmable_to_string language I18n.DeleteExperiment)
@@ -610,15 +612,15 @@ let detail
         ]
   in
   let reset_invitation_form =
-    let open Experiment in
     let last_reset_at =
-      match experiment.invitation_reset_at with
+      match experiment |> Experiment.invitation_reset_at with
       | None -> txt ""
       | Some reset_at ->
         span
           [ Utils.hint_to_string
               language
-              (I18n.ResetInvitationsLastReset (InvitationResetAt.value reset_at))
+              (I18n.ResetInvitationsLastReset
+                 (Experiment.InvitationResetAt.value reset_at))
             |> Unsafe.data
           ]
     in
@@ -670,7 +672,6 @@ let detail
     else []
   in
   let bool_to_string = Utils.bool_to_string language in
-  let open Experiment in
   let vertical_table =
     Table.vertical_table
       ~classnames:[ "layout-fixed" ]
@@ -680,32 +681,42 @@ let detail
   in
   let html =
     let experiment_table =
+      let open Experiment in
       let boolean_value fnc = fnc experiment |> bool_to_string |> txt in
       let default = "" in
       Message.
-        [ Field.PublicTitle, experiment.public_title |> PublicTitle.value |> txt
+        [ ( Field.PublicTitle
+          , experiment |> public_title |> PublicTitle.value |> txt )
         ; ( Field.ExperimentType
-          , experiment.experiment_type
-            |> CCOption.map_or ~default:"" ExperimentType.show
+          , experiment
+            |> experiment_type
+            |> CCOption.map_or ~default ExperimentType.show
             |> txt )
         ; ( Field.InternalDescription
-          , experiment.internal_description
-            |> CCOption.map_or ~default:(txt "") (fun desc ->
-              desc |> InternalDescription.value |> HttpUtils.add_line_breaks) )
+          , experiment
+            |> internal_description
+            |> CCOption.map_or
+                 ~default:(txt "")
+                 (InternalDescription.value %> HttpUtils.add_line_breaks) )
         ; ( Field.PublicDescription
-          , experiment.public_description
-            |> CCOption.map_or ~default:(txt "") (fun desc ->
-              desc |> PublicDescription.value |> HttpUtils.add_line_breaks) )
+          , experiment
+            |> public_description
+            |> CCOption.map_or
+                 ~default:(txt "")
+                 (PublicDescription.value %> HttpUtils.add_line_breaks) )
         ; ( Field.Language
-          , experiment.language
-            |> CCOption.map_or ~default (fun lang -> lang |> Language.show)
+          , experiment
+            |> language
+            |> CCOption.map_or ~default Language.show
             |> txt )
         ; ( Field.CostCenter
-          , experiment.cost_center
+          , experiment
+            |> cost_center
             |> CCOption.map_or ~default CostCenter.value
             |> txt )
         ; ( Field.OrganisationalUnit
-          , experiment.organisational_unit
+          , experiment
+            |> organisational_unit
             |> CCOption.map_or
                  ~default
                  Organisational_unit.(fun ou -> ou.name |> Name.value)
@@ -737,7 +748,8 @@ let detail
             |> CCOption.map_or ~default:"-" Utils.Time.formatted_timespan
             |> txt )
         ; ( Field.InvitationResetAt
-          , experiment.invitation_reset_at
+          , experiment
+            |> invitation_reset_at
             |> CCOption.map_or ~default:"-" InvitationResetAt.to_human
             |> txt )
         ]
@@ -750,7 +762,7 @@ let detail
             [ txt (Utils.nav_link_to_string language I18n.MessageTemplates) ]
         ; Page_admin_message_template.(
             experiment_help
-              ~entity:(Experiment experiment.id)
+              ~entity:(Experiment experiment_id)
               language
               (message_templates |> CCList.map fst))
         ; div
@@ -793,7 +805,7 @@ let detail
         ~control:(language, Message.(Edit (Some Field.Experiment)))
         (Format.asprintf
            "/admin/experiments/%s/edit"
-           (experiment.id |> Experiment.Id.value))
+           (experiment_id |> Experiment.Id.value))
       |> CCOption.some
     else None
   in

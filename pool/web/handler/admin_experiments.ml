@@ -71,9 +71,7 @@ let contact_person_from_urlencoded database_label urlencoded experiment_id =
 ;;
 
 let organisational_unit_from_urlencoded urlencoded database_label =
-  let query id =
-    Organisational_unit.(id |> Id.of_string |> find database_label)
-  in
+  let query = Organisational_unit.(Id.of_string %> find database_label) in
   find_entity_in_urlencoded urlencoded Field.OrganisationalUnit query
 ;;
 

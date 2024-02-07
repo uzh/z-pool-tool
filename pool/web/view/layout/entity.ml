@@ -2,13 +2,24 @@ module I18n = Pool_common.I18n
 module Icon = Component.Icon
 module Language = Pool_common.Language
 
-type raw =
-  | Single of string * I18n.nav_link * Guard.ValidationSet.t
-  | Parent of string option * I18n.nav_link * Guard.ValidationSet.t * raw list
+type validation =
+  | AlwaysOn
+  | OnChildren
+  | Set of Guard.ValidationSet.t
+  | CanAssign of (Role.Role.t * Guard.Uuid.Target.t option)
 
-let validation_set = function
-  | Single (_, _, validation_set) | Parent (_, _, validation_set, _) ->
-    validation_set
+type raw =
+  | Single of string * I18n.nav_link * validation
+  | Parent of string option * I18n.nav_link * validation * raw list
+
+let single url nav_link validation = Single (url, nav_link, validation)
+
+let parent ?url ?(validation = OnChildren) nav_link raw =
+  Parent (url, nav_link, validation, raw)
+;;
+
+let validation = function
+  | Single (_, _, validation) | Parent (_, _, validation, _) -> validation
 ;;
 
 module NavElement = struct
@@ -16,7 +27,7 @@ module NavElement = struct
     { url : string option
     ; label : I18n.nav_link
     ; icon : Icon.t option
-    ; validation_set : Guard.ValidationSet.t
+    ; validation : validation
     ; children : t list
     }
 
@@ -24,33 +35,28 @@ module NavElement = struct
     let build
       ?icon
       ?(children = [])
-      ?(validation_set = Guard.ValidationSet.empty)
+      ?(validation = Set Guard.ValidationSet.empty)
       ?url
       label
       =
-      { icon; children; validation_set; url; label }
+      { icon; children; validation; url; label }
     in
     function
-    | Single (url, label, validation_set) ->
-      build ?icon ~validation_set ~url label
-    | Parent (url, label, validation_set, children) ->
+    | Single (url, label, validation) -> build ?icon ~validation ~url label
+    | Parent (url, label, validation, children) ->
       let children = children |> CCList.map create in
-      build ~children ~validation_set ?url label
+      build ~children ~validation ?url label
   ;;
 
   let login ?(prefix = "") () =
-    create
-      (Single
-         ( Format.(asprintf "%s/login" prefix)
-         , I18n.Login
-         , Guard.ValidationSet.empty ))
+    Set Guard.ValidationSet.empty
+    |> single Format.(asprintf "%s/login" prefix) I18n.Login
+    |> create
   ;;
 
   let logout ?(prefix = "") () =
-    create
-      (Single
-         ( Format.(asprintf "%s/logout" prefix)
-         , I18n.Logout
-         , Guard.ValidationSet.empty ))
+    Set Guard.ValidationSet.empty
+    |> single Format.(asprintf "%s/logout" prefix) I18n.Logout
+    |> create
   ;;
 end

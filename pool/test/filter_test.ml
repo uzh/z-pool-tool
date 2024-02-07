@@ -513,7 +513,7 @@ let test_filter expected contact filter { Experiment.id; _ } =
 
 let save_filter filter experiment =
   [ Filter.Created filter |> Pool_event.filter
-  ; Experiment.(Updated { experiment with filter = Some filter })
+  ; Experiment.Updated { experiment with Experiment.filter = Some filter }
     |> Pool_event.experiment
   ]
   |> Lwt_list.iter_s (Pool_event.handle_event Data.database_label)
@@ -727,7 +727,9 @@ let filter_by_select_field _ () =
 ;;
 
 let retrieve_fitleterd_and_ordered_contacts _ () =
+  let open CCFun in
   let open Test_utils in
+  let open Utils.Lwt_result.Infix in
   let pool = Data.database_label in
   let%lwt () =
     let%lwt () =
@@ -739,7 +741,7 @@ let retrieve_fitleterd_and_ordered_contacts _ () =
     let find_contact = Seed.Contacts.find_contact_by_id pool in
     let%lwt contact_one = find_contact 11 in
     let%lwt contact_two = find_contact 12 in
-    let%lwt { Experiment.id; _ } = Repo.first_experiment () in
+    let%lwt id = Repo.first_experiment () ||> Experiment.(id %> Id.to_common) in
     let filter =
       let open Filter in
       Pred
@@ -768,7 +770,7 @@ let retrieve_fitleterd_and_ordered_contacts _ () =
         find_filtered_contacts
           ~order_by
           Data.database_label
-          (Matcher Experiment.(id |> Id.to_common))
+          (Matcher id)
           (Some filter))
       |> Lwt.map get_exn
     in

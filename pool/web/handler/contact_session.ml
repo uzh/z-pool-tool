@@ -22,7 +22,7 @@ let show req =
        let* () =
          Assignment.find_all_by_experiment_and_contact_opt
            database_label
-           experiment.Experiment.Public.id
+           (experiment |> Experiment.Public.id)
            contact
          >|> function
          | [] -> Lwt.return_ok ()

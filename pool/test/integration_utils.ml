@@ -117,10 +117,9 @@ module WaitingListRepo = struct
       |> Pool_event.waiting_list
       |> Pool_event.handle_event Data.database_label
     in
-    Waiting_list.find_by_contact_and_experiment
-      Data.database_label
-      contact
-      experiment.Experiment.Public.id
+    experiment
+    |> Experiment.Public.id
+    |> Waiting_list.find_by_contact_and_experiment Data.database_label contact
   ;;
 end
 

@@ -21,7 +21,7 @@ let handle_event pool : event -> unit Lwt.t =
     let write =
       Repo_entity.Write.create
         (Contact.id contact)
-        experiment.Experiment.Public.id
+        (experiment |> Experiment.Public.id)
         None
     in
     let%lwt () = Repo.insert pool write in

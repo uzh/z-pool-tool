@@ -3,7 +3,13 @@ open Tyxml.Html
 open Entity
 module CommonUtils = Pool_common.Utils
 
-let filter_items ?validate ?actor ?(guardian = []) items =
+let filter_items
+  ?validate
+  ?actor
+  ?(guardian = [])
+  ?(can_assign_roles = [])
+  items
+  =
   let open Guard in
   match validate, actor with
   | (None | Some false), _ -> items
@@ -11,24 +17,46 @@ let filter_items ?validate ?actor ?(guardian = []) items =
   | Some true, Some actor ->
     let rec filter_nav items =
       CCList.filter_map
-        (fun ({ NavElement.validation_set; children; _ } as element) ->
-          try
-            let self =
-              Persistence.PermissionOnTarget.validate_set
-                ~any_id:true
-                guardian
-                Pool_common.Message.authorization
-                validation_set
-                actor
+        (fun ({ NavElement.validation; children; _ } as element) ->
+          let with_children () =
+            let children = filter_nav children in
+            Some NavElement.{ element with children }
+          in
+          match validation with
+          | AlwaysOn -> with_children ()
+          | OnChildren ->
+            (match filter_nav children with
+             | [] -> None
+             | children -> Some NavElement.{ element with children })
+          | Set validation_set ->
+            (try
+               let self =
+                 Persistence.PermissionOnTarget.validate_set
+                   ~any_id:true
+                   guardian
+                   Pool_common.Message.authorization
+                   validation_set
+                   actor
+               in
+               match self with
+               | Ok () when CCList.is_empty children -> Some element
+               | Ok () -> with_children ()
+               | Error _ -> None
+             with
+             | _ -> None)
+          | CanAssign (target_role, target_uuid) ->
+            let filter_entity_and_target (role, target) =
+              let open CCOption in
+              Role.Role.equal role target_role
+              && map2 Uuid.Target.equal target target_uuid
+                 |> value ~default:true
             in
-            match self with
-            | Ok () when CCList.is_empty children -> Some element
-            | Ok () ->
-              let children = filter_nav children in
-              Some NavElement.{ element with children }
-            | Error _ -> None
-          with
-          | _ -> None)
+            can_assign_roles
+            |> CCList.filter filter_entity_and_target
+            |> (function
+             | [] -> None
+             | _ when CCList.is_empty children -> Some element
+             | _ -> with_children ()))
         items
     in
     filter_nav items
@@ -110,15 +138,22 @@ let rec build_nav_links
 ;;
 
 let create_main
-  { Pool_context.query_language; language; guardian; _ }
+  { Pool_context.database_label; query_language; language; guardian; _ }
   items
   ?validate
   ?actor
   ?active_navigation
   mobile
   =
+  let%lwt can_assign_roles =
+    CCOption.map_or
+      ~default:(Lwt.return [])
+      (fun { Guard.Actor.uuid; _ } ->
+        Guard.Persistence.Actor.can_assign_roles database_label uuid)
+      actor
+  in
   let nav_links =
-    filter_items ?validate ?actor ~guardian items
+    filter_items ?validate ?actor ~can_assign_roles ~guardian items
     |> CCList.map
          (build_nav_links ~mobile ?active_navigation language query_language)
   in

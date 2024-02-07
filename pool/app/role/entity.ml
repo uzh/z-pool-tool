@@ -89,6 +89,7 @@ module Target = struct
     | `CustomField
     | `CustomFieldGroup
     | `Experiment
+    | `ExperimentRole
     | `Filter
     | `I18n
     | `Invitation
@@ -130,6 +131,7 @@ module Target = struct
     | "customfield", [] -> Ok `CustomField
     | "customfieldgroup", [] -> Ok `CustomFieldGroup
     | "experiment", [] -> Ok `Experiment
+    | "experimentrole", [] -> Ok `ExperimentRole
     | "filter", [] -> Ok `Filter
     | "i18n", [] -> Ok `I18n
     | "invitation", [] -> Ok `Invitation
@@ -168,6 +170,7 @@ module Target = struct
     ; `CustomField
     ; `CustomFieldGroup
     ; `Experiment
+    ; `ExperimentRole
     ; `Filter
     ; `I18n
     ; `Invitation

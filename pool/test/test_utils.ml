@@ -173,20 +173,15 @@ module Model = struct
   ;;
 
   let create_public_experiment () =
-    Experiment.(
-      Public.
-        { id = Experiment.Id.create ()
-        ; public_title = PublicTitle.create "public_title" |> get_or_failwith
-        ; description =
-            PublicDescription.create "A description for everyone"
-            |> get_or_failwith
-            |> CCOption.return
-        ; language = None
-        ; direct_registration_disabled =
-            false |> DirectRegistrationDisabled.create
-        ; experiment_type = Some Pool_common.ExperimentType.Lab
-        ; smtp_auth_id = None
-        })
+    let open Experiment in
+    Public.create
+      ~description:
+        (PublicDescription.create "A description for everyone"
+         |> get_or_failwith)
+      ~experiment_type:Pool_common.ExperimentType.Lab
+      (Id.create ())
+      (PublicTitle.create "public_title" |> get_or_failwith)
+      (DirectRegistrationDisabled.create false)
   ;;
 
   let create_experiment
@@ -205,45 +200,34 @@ module Model = struct
         |> map_err show_error
         |> to_opt)
     in
-    let open Experiment in
-    let title = Title.create title |> get_or_failwith in
-    let public_title = PublicTitle.create "public_title" |> get_or_failwith in
-    let internal_description =
-      InternalDescription.create "A description for everyone" |> get_or_failwith
+    let title = Experiment.Title.create title |> get_or_failwith in
+    let public_title =
+      Experiment.PublicTitle.create "public_title" |> get_or_failwith
     in
-    create
+    let internal_description =
+      Experiment.InternalDescription.create "A description for everyone"
+      |> get_or_failwith
+    in
+    Experiment.create
       ~id
-      ~cost_center:("F-00000-11-22" |> CostCenter.of_string)
+      ~cost_center:("F-00000-11-22" |> Experiment.CostCenter.of_string)
       ~internal_description
       ~experiment_type:Pool_common.ExperimentType.Lab
       ?filter
       ?email_session_reminder_lead_time
       title
       public_title
-      (DirectRegistrationDisabled.create false)
-      (RegistrationDisabled.create false)
-      (AllowUninvitedSignup.create false)
-      (ExternalDataRequired.create false)
-      (ShowExternalDataIdLinks.create false)
+      (Experiment.DirectRegistrationDisabled.create false)
+      (Experiment.RegistrationDisabled.create false)
+      (Experiment.AllowUninvitedSignup.create false)
+      (Experiment.ExternalDataRequired.create false)
+      (Experiment.ShowExternalDataIdLinks.create false)
     |> get_or_failwith
   ;;
 
   let create_organisational_unit () =
     let open Organisational_unit in
     Name.create "SNS" |> get_or_failwith |> create
-  ;;
-
-  let experiment_to_public_experiment (experiment : Experiment.t) =
-    Experiment.(
-      Public.
-        { id = experiment.id
-        ; public_title = experiment.public_title
-        ; description = experiment.public_description
-        ; language = experiment.language
-        ; direct_registration_disabled = experiment.direct_registration_disabled
-        ; experiment_type = experiment.experiment_type
-        ; smtp_auth_id = None
-        })
   ;;
 
   let create_waiting_list () =

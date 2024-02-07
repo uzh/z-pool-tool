@@ -1292,8 +1292,10 @@ let close_assignment_htmx_form
     |> Sihl.Web.externalize_path
   in
   let external_data_field =
-    let open Experiment in
-    match experiment.external_data_required |> ExternalDataRequired.value with
+    match
+      Experiment.(
+        experiment |> external_data_required |> ExternalDataRequired.value)
+    with
     | false -> txt ""
     | true ->
       let value =

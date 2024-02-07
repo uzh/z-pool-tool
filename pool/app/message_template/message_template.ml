@@ -44,9 +44,12 @@ let sender_of_experiment pool experiment =
         (Admin.email_address %> Lwt.return)
 ;;
 
-let sender_of_public_experiment pool { Experiment.Public.id; _ } =
+let sender_of_public_experiment pool experiment =
   let open Utils.Lwt_result.Infix in
-  Experiment.find pool id |>> sender_of_experiment pool
+  experiment
+  |> Experiment.Public.id
+  |> Experiment.find pool
+  |>> sender_of_experiment pool
 ;;
 
 let filter_languages ?(exclude = []) available templates =
@@ -113,19 +116,19 @@ let global_params layout user =
     ]
 ;;
 
-let public_experiment_params
-  layout
-  { Experiment.Public.id; public_title; description; _ }
-  =
+let public_experiment_params layout experiment =
   let open Experiment in
-  let experiment_id = id |> Id.value in
+  let experiment_id = experiment |> Public.id |> Id.value in
   let experiment_url =
     Format.asprintf "experiments/%s" experiment_id |> to_absolute_path layout
   in
   [ "experimentId", experiment_id
-  ; "experimentPublicTitle", PublicTitle.value public_title
+  ; ( "experimentPublicTitle"
+    , experiment |> Public.public_title |> PublicTitle.value )
   ; ( "experimentPublicDescription"
-    , description |> CCOption.map_or ~default:"" PublicDescription.value )
+    , experiment
+      |> Public.description
+      |> CCOption.map_or ~default:"" PublicDescription.value )
   ; "experimentUrl", experiment_url
   ]
 ;;
@@ -1047,7 +1050,7 @@ module WaitingListConfirmation = struct
     let layout = layout_from_tenant tenant in
     let%lwt template =
       find_by_label_and_language_to_send
-        ~entity_uuids:Experiment.[ experiment.Public.id |> Id.to_common ]
+        ~entity_uuids:Experiment.[ experiment |> Public.id |> Id.to_common ]
         database_label
         Label.WaitingListConfirmation
         language

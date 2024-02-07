@@ -93,6 +93,9 @@ type t =
   }
 [@@deriving eq, show, sexp_of]
 
+let id m = m.id
+let label m = m.label
+
 type smtp = t
 
 type update_password =
