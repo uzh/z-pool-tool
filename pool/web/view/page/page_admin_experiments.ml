@@ -864,7 +864,16 @@ let invitations
          experiment)
 ;;
 
-let users ?hint role experiment applicable_admins currently_assigned context =
+let users
+  ?hint
+  ?can_assign
+  ?can_unassign
+  role
+  experiment
+  applicable_admins
+  currently_assigned
+  context
+  =
   let base_url field admin =
     Format.asprintf
       "/admin/experiments/%s/%s/%s"
@@ -881,6 +890,8 @@ let users ?hint role experiment applicable_admins currently_assigned context =
   in
   Page_admin_experiment_users.role_assignment
     ?hint
+    ?can_assign
+    ?can_unassign
     (base_url field)
     field
     context

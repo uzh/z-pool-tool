@@ -3,6 +3,8 @@ open Component.Input
 
 let role_assignment
   ?hint
+  ?(can_assign = false)
+  ?(can_unassign = false)
   base_url
   field
   { Pool_context.language; csrf; _ }
@@ -27,31 +29,35 @@ let role_assignment
       ]
   in
   let form action admin =
-    let url, control, style =
+    let show, url, control, style =
       let open Pool_common in
       match action with
-      | `Assign -> assign, Message.(Assign None), `Success
-      | `Unassign -> unassign, Message.(Unassign None), `Error
+      | `Assign -> can_assign, assign, Message.(Assign None), `Success
+      | `Unassign -> can_unassign, unassign, Message.(Unassign None), `Error
     in
-    let delete =
-      form
-        ~a:
-          [ a_action (Format.asprintf "%s/%s" (base_url admin) url)
-          ; a_method `Post
-          ]
-        [ csrf_element csrf ()
-        ; submit_element
-            ~submit_type:style
-            ~classnames:[ "small" ]
-            language
-            control
-            ()
+    let button =
+      if show
+      then
+        [ form
+            ~a:
+              [ a_action (Format.asprintf "%s/%s" (base_url admin) url)
+              ; a_method `Post
+              ]
+            [ csrf_element csrf ()
+            ; submit_element
+                ~submit_type:style
+                ~classnames:[ "small" ]
+                language
+                control
+                ()
+            ]
         ]
+      else []
     in
     [ admin |> Admin.email_address |> Pool_user.EmailAddress.value |> txt
     ; admin |> Admin.full_name |> txt
-    ; delete
     ]
+    @ button
   in
   let open Pool_common.I18n in
   let existing =

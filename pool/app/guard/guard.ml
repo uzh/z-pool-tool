@@ -27,7 +27,13 @@ let location_manager_permissions : RolePermission.t list =
   ; `LocationManager, Read, `ContactName
   ; `LocationManager, Read, `ContactInfo
   ; `LocationManager, Read, `Session
-  ; `LocationManager, Read, `RoleLocationManager
+  ]
+  |> map_role_permission
+;;
+
+let location_manager_role_permissions : RolePermission.t list =
+  let open Core.Permission in
+  [ `LocationManager, Read, `RoleLocationManager
   ; `LocationManager, Create, `RoleLocationManager
   ; `LocationManager, Read, `RoleAssistant
   ; `LocationManager, Read, `RoleExperimenter
@@ -66,11 +72,19 @@ let recruiter_permissions : RolePermission.t list =
   ; `Recruiter, Manage, `Tag
   ; `Recruiter, Read, `Tenant
   ; `Recruiter, Manage, `WaitingList
-  ; `Recruiter, Manage, `RoleLocationManager
+  ]
+  |> map_role_permission
+;;
+
+let recruiter_role_permissions : RolePermission.t list =
+  let open Core.Permission in
+  [ `Recruiter, Manage, `RoleAdmin
   ; `Recruiter, Manage, `RoleAssistant
   ; `Recruiter, Manage, `RoleExperimenter
+  ; `Recruiter, Manage, `RoleLocationManager
   ; `Recruiter, Read, `RoleRecruiter
   ; `Recruiter, Create, `RoleRecruiter
+  ; `Recruiter, Read, `RoleOperator
   ]
   |> map_role_permission
 ;;
@@ -88,9 +102,19 @@ let assistant_permissions : RolePermission.t list =
   ; `Assistant, Read, `Experiment
   ; `Assistant, Read, `WaitingList
   ; `Assistant, Update, `WaitingList
+  ]
+  |> map_role_permission
+;;
+
+let assistant_role_permissions : RolePermission.t list =
+  let open Core.Permission in
+  [ `Assistant, Read, `RoleAdmin
+  ; `Assistant, Create, `RoleAdmin
   ; `Assistant, Read, `RoleAssistant
   ; `Assistant, Create, `RoleAssistant
   ; `Assistant, Read, `RoleExperimenter
+  ; `Assistant, Read, `RoleLocationManager
+  ; `Assistant, Read, `RoleRecruiter
   ]
   |> map_role_permission
 ;;
@@ -109,18 +133,43 @@ let experimenter_permissions : RolePermission.t list =
   |> map_role_permission
 ;;
 
-let operator_permissions : RolePermission.t list =
+let experimenter_role_permissions : RolePermission.t list =
   let open Core.Permission in
-  CCList.flat_map (fun role -> [ `Operator, Manage, role ]) Role.Target.all
+  [ `Experimenter, Read, `RoleAdmin
+  ; `Experimenter, Read, `RoleAssistant
+  ; `Experimenter, Read, `RoleExperimenter
+  ; `Experimenter, Read, `RoleLocationManager
+  ; `Experimenter, Read, `RoleRecruiter
+  ]
+  |> map_role_permission
+;;
+
+let operator_permissions role_assignments : RolePermission.t list =
+  let open Core.Permission in
+  Role.Target.all
+  |> CCList.filter (fun m ->
+    CCList.exists
+      (Role.Target.equal m)
+      (Role.Role.all |> CCList.map Core.Utils.find_assignable_target_role)
+    == role_assignments)
+  |> CCList.flat_map (fun role -> [ `Operator, Manage, role ])
   |> map_role_permission
 ;;
 
 let all_role_permissions =
-  operator_permissions
+  operator_permissions false
   @ recruiter_permissions
   @ assistant_permissions
   @ experimenter_permissions
   @ location_manager_permissions
+;;
+
+let all_role_assignment_permissions =
+  operator_permissions true
+  @ recruiter_role_permissions
+  @ assistant_role_permissions
+  @ experimenter_role_permissions
+  @ location_manager_role_permissions
 ;;
 
 let actor_to_model_permission pool permission model actor =
