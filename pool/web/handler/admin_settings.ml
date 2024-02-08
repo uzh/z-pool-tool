@@ -3,7 +3,6 @@ module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 module Queue = Admin_settings_queue
 module RolePermission = Admin_settings_rules
-module RoleAssignment = Admin_settings_role_assignment
 module Schedule = Admin_settings_schedule
 module Smtp = Admin_settings_smtp
 module Tags = Admin_settings_tags

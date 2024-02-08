@@ -48,38 +48,6 @@ end = struct
   let effects = Guard.Access.Permission.manage
 end
 
-module CreateRoleAssignment : sig
-  include Common.CommandSig with type t = Guard.RoleAssignment.t
-end = struct
-  type t = Guard.RoleAssignment.t
-
-  let handle ?(tags = Logs.Tag.empty) role =
-    Logs.info ~src (fun m -> m "Handle command CreateRoleAssignment" ~tags);
-    Ok [ Guard.RoleAssignmentCreated role |> Pool_event.guard ]
-  ;;
-
-  let effects = Guard.Access.RoleAssignment.create
-end
-
-module DeleteRoleAssignment : sig
-  include Common.CommandSig with type t = Guard.RoleAssignment.t
-
-  val handle
-    :  ?tags:Logs.Tag.set
-    -> ?comment:string
-    -> Guard.RoleAssignment.t
-    -> (Pool_event.t list, Pool_common.Message.error) result
-end = struct
-  type t = Guard.RoleAssignment.t
-
-  let handle ?(tags = Logs.Tag.empty) ?comment role =
-    Logs.info ~src (fun m -> m "Handle command DeleteRoleAssignment" ~tags);
-    Ok [ Guard.RoleAssignmentDeleted (role, comment) |> Pool_event.guard ]
-  ;;
-
-  let effects = Guard.Access.RoleAssignment.delete
-end
-
 module GrantRoles : sig
   include Common.CommandSig with type t = grant_role
 end = struct

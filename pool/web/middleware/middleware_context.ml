@@ -67,11 +67,10 @@ let context () =
       let%lwt query_lang, language, guardian =
         let to_actor = Admin.id %> Guard.Uuid.actor_of Admin.Id.value in
         let combine roles = Lwt.return (None, Pool_common.Language.En, roles) in
-        let ctx = Pool_database.to_ctx database_label in
         match user with
         | Admin admin ->
           to_actor admin
-          |> Guard.Persistence.ActorRole.permissions_of_actor ~ctx
+          |> Guard.Persistence.ActorRole.permissions_of_actor database_label
           >|> combine
         | (Guest | Contact _) when is_root -> combine []
         | Contact _ | Guest ->

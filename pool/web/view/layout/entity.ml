@@ -6,7 +6,6 @@ type validation =
   | AlwaysOn
   | OnChildren
   | Set of Guard.ValidationSet.t
-  | CanAssign of (Role.Role.t * Guard.Uuid.Target.t option)
 
 type raw =
   | Single of string * I18n.nav_link * validation

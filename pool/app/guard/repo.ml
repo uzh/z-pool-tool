@@ -1,3 +1,4 @@
+open CCFun
 module BaseRole = Role
 
 module Backend =
@@ -45,6 +46,8 @@ module RolePermission = struct
       ~select
       Backend.Entity.RolePermission.t
   ;;
+
+  let insert pool = insert ~ctx:(Pool_database.to_ctx pool)
 end
 
 let src = Logs.Src.create "guard"
@@ -95,17 +98,27 @@ module Actor = struct
 
   let can_assign_roles database_label actor =
     let open Utils.Lwt_result.Infix in
-    let ctx = Pool_database.to_ctx database_label in
-    ActorRole.find_by_actor ~ctx actor
-    >|> Lwt_list.map_s (fun { Core.ActorRole.role; target_uuid; _ } ->
-      match target_uuid with
-      | None ->
-        RoleAssignment.can_assign_roles ~ctx role
-        ||> CCList.map (fun r -> r, None)
-      | Some uuid ->
-        RoleAssignment.can_assign_roles ~ctx role
-        ||> CCList.map (fun r -> r, Some uuid))
-    ||> CCList.flatten
+    ActorRole.permissions_of_actor
+      ~ctx:(Pool_database.to_ctx database_label)
+      actor.Core.Actor.uuid
+    ||> CCList.filter_map
+          (fun { Core.PermissionOnTarget.permission; model; target_uuid } ->
+             let open Core in
+             let has_permission =
+               Permission.(equal Create permission || equal Manage permission)
+             in
+             let is_assign_role =
+               CCList.exists
+                 (Utils.find_assignable_target_role %> Role.Target.equal model)
+                 Role.Role.all
+             in
+             if has_permission && is_assign_role
+             then
+               model
+               |> Utils.find_assignable_role
+               |> CCResult.map_or ~default:None (fun model ->
+                 Some (model, target_uuid))
+             else None)
   ;;
 
   let validate_assign_role database_label actor role =
@@ -179,50 +192,9 @@ module ActorRole = struct
     (database_label, actor)
     |> CCCache.(with_cache ~cb Cache.lru_find_by_actor find_by_actor')
   ;;
-end
 
-module RoleAssignment = struct
-  include RoleAssignment
-  open Pool_database
-
-  let find_all ?query pool =
-    Query.collect_and_count
-      pool
-      query
-      ~select:find_request_sql
-      Backend.Repo.Model.role_assignment
-  ;;
-
-  let find_all_by_role label = find_all_by_role ~ctx:(to_ctx label)
-  let insert label = insert ~ctx:(to_ctx label)
-  let delete label = delete ~ctx:(to_ctx label)
-  let can_assign_roles label = can_assign_roles ~ctx:(to_ctx label)
-
-  open Pool_common.Message
-
-  let column_role =
-    (Field.Role, "guardian_assign_roles.role") |> Query.Column.create
-  ;;
-
-  let column_target_role =
-    (Field.AssignableRole, "guardian_assign_roles.target_role")
-    |> Query.Column.create
-  ;;
-
-  let column_created_at =
-    (Field.CreatedAt, "guardian_assign_roles.created_at") |> Query.Column.create
-  ;;
-
-  let searchable_by = [ column_role; column_target_role ]
-  let default_sort_column = column_created_at
-  let sortable_by = default_sort_column :: searchable_by
-
-  let default_query =
-    let open Query in
-    let sort =
-      Sort.{ column = default_sort_column; order = SortOrder.Descending }
-    in
-    create ~sort ()
+  let permissions_of_actor database_label =
+    permissions_of_actor ~ctx:(Pool_database.to_ctx database_label)
   ;;
 end
 

@@ -721,14 +721,6 @@ module Admin = struct
         ; post "remove" ~middlewares:[ Access.delete ] delete
         ]
       in
-      let role_assignment =
-        let open RoleAssignment in
-        [ get "" ~middlewares:[ Access.index ] show
-        ; post "" ~middlewares:[ Access.create ] create
-        ; get "/create" ~middlewares:[ Access.create ] new_form
-        ; post "/remove" ~middlewares:[ Access.delete ] delete
-        ]
-      in
       let smtp =
         let open Smtp in
         let specific =
@@ -768,7 +760,6 @@ module Admin = struct
       [ get "" ~middlewares:[ Access.index ] show
       ; choose ~scope:"/queue" queue
       ; choose ~scope:"/role-permission" role_permission
-      ; choose ~scope:"/role-assignment" role_assignment
       ; choose ~scope:"/smtp" smtp
       ; choose ~scope:"/tags" tags
       ; choose ~scope:"/text-messages" text_messages

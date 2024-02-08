@@ -82,7 +82,7 @@ let operator_works _ () =
     let* () =
       let open Guard in
       RolePermission.create `Operator Permission.Manage `Contact
-      |> Persistence.RolePermission.insert ~ctx
+      |> Persistence.RolePermission.insert Test_utils.Data.database_label
       >|- to_error
       ||> CCFun.tap (fun _ -> Persistence.Cache.clear ())
     in

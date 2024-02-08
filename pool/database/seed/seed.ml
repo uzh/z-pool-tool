@@ -2,7 +2,6 @@ module Root = struct
   let create () =
     let%lwt () = Seed_tenant.create () in
     let%lwt () = Seed_guard.create Pool_database.root in
-    let%lwt () = Seed_guard.role_assignment_root Pool_database.root in
     let%lwt () = Seed_smtp.create Pool_database.root in
     Lwt.return_unit
   ;;
@@ -31,7 +30,7 @@ module Tenant = struct
           @
           if is_test
           then []
-          else [ Seed_user.contacts; Seed_guard.role_assignment ]
+          else [ Seed_user.contacts; Seed_guard.create_role_assignments ]
         in
         seeds |> Lwt_list.iter_s (fun fnc -> fnc pool))
       db_pools

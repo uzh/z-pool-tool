@@ -125,9 +125,7 @@ let all_role_permissions =
 
 let actor_to_model_permission pool permission model actor =
   let open Utils.Lwt_result.Infix in
-  Persistence.ActorRole.permissions_of_actor
-    ~ctx:(Pool_database.to_ctx pool)
-    actor.Actor.uuid
+  Persistence.ActorRole.permissions_of_actor pool actor.Actor.uuid
   ||> PermissionOnTarget.permission_of_model permission model
 ;;
 
@@ -195,18 +193,6 @@ let create_where
   | None, None -> Lwt.return_none
 ;;
 
-module RoleAssignment = struct
-  include RoleAssignment
-  open Repo.RoleAssignment
-
-  let column_role = column_role
-  let column_target_role = column_target_role
-  let searchable_by = searchable_by
-  let sortable_by = sortable_by
-  let default_query = default_query
-  let filterable_by = None
-end
-
 module Access = struct
   open ValidationSet
   open Permission
@@ -267,14 +253,6 @@ module Access = struct
     let update = one_of_tuple (Update, `Permission, None)
     let delete = one_of_tuple (Delete, `Permission, None)
     let manage = one_of_tuple (Manage, `Permission, None)
-  end
-
-  module RoleAssignment = struct
-    let create = one_of_tuple (Create, `RoleAssignment, None)
-    let read = one_of_tuple (Read, `RoleAssignment, None)
-    let update = one_of_tuple (Update, `RoleAssignment, None)
-    let delete = one_of_tuple (Delete, `RoleAssignment, None)
-    let manage = one_of_tuple (Manage, `RoleAssignment, None)
   end
 end
 

@@ -3,7 +3,6 @@ open Component.Input
 module Message = Pool_common.Message
 module Queue = Page_admin_settings_queue
 module RolePermission = Page_admin_settings_rules
-module RoleAssignment = Page_admin_settings_role_assignment
 module Schedule = Page_admin_settings_schedule
 module Smtp = Page_admin_settings_smtp
 module Tags = Page_admin_settings_tags

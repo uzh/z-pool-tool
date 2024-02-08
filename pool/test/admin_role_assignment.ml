@@ -54,6 +54,10 @@ module Data = struct
   let create_operator ?(firstname = "Operator") database_label =
     [ `Operator, None ] |> create_admin database_label firstname
   ;;
+
+  let create_recruiter ?(firstname = "Recruiter") database_label =
+    [ `Recruiter, None ] |> create_admin database_label firstname
+  ;;
 end
 
 let target_has_role db target (target_role, target_uuid) () =
@@ -68,12 +72,9 @@ let target_has_role db target (target_role, target_uuid) () =
 ;;
 
 let handle_validated_events db target actor role =
-  let open Guard in
   let open GuardianCommand in
   let grant_role role = { target; roles = [ role ] } in
-  let validate actor role =
-    Guard.Persistence.Actor.validate_assign_role db actor.Actor.uuid role
-  in
+  let validate = Guard.Persistence.Actor.validate_assign_role db in
   validate actor role
   >|+ grant_role
   >== GrantRoles.handle
@@ -81,14 +82,14 @@ let handle_validated_events db target actor role =
   >|+ Guard.Persistence.Cache.clear
 ;;
 
-let handle_create_role_assignment_events db role_assignment =
-  GuardianCommand.CreateRoleAssignment.handle role_assignment
+let handle_create_role_permission_events db role_permission =
+  GuardianCommand.CreateRolePermission.handle role_permission
   |> Lwt_result.lift
   |>> Pool_event.handle_events db
 ;;
 
-let handle_delete_role_assignment_events db role_assignment =
-  GuardianCommand.DeleteRoleAssignment.handle role_assignment
+let handle_delete_role_permission_events db role_permission =
+  GuardianCommand.DeleteRolePermission.handle role_permission
   |> Lwt_result.lift
   |>> Pool_event.handle_events db
 ;;
@@ -99,13 +100,15 @@ let assignable_roles _ () =
   let%lwt exp1, exp2 =
     Repo.all_experiments () ||> CCList.(fun e -> hd e, nth e 1)
   in
-  let%lwt operator =
-    Data.create_operator ~firstname:"OperatorAssignable" db >|> to_actor db
+  let%lwt recruiter =
+    Data.create_recruiter ~firstname:"RecruiterAssignable" db >|> to_actor db
   in
   let%lwt targetOne = Data.create_assistant db "AssistantAssignableOne" exp2 in
   let%lwt targetTwo = Data.create_assistant db "AssistantAssignableTwo" exp2 in
   let new_role = `Experimenter in
-  let assignable_role = RoleAssignment.create `Operator new_role in
+  let assignable_role =
+    RolePermission.create `Recruiter Permission.Create `RoleExperimenter
+  in
   let validate_role_assignment target should_success =
     let role = new_role, Some Experiment.(exp1.id |> Uuid.target_of Id.value) in
     let expected, (msg : (string -> 'a, Format.formatter, unit, string) format4)
@@ -116,8 +119,8 @@ let assignable_roles _ () =
         ( Error Pool_common.Message.PermissionDeniedGrantRole
         , "Target shouldn't has the granted role (%s)" )
     in
-    handle_validated_events db target operator role
-    ||> check_result "Grant experimenter rights as operator" expected
+    handle_validated_events db target recruiter role
+    ||> check_result "Grant experimenter rights as recruiter" expected
     >|> target_has_role db target role
     ||> Alcotest.(check bool) (role_message msg role) should_success
   in
@@ -127,7 +130,7 @@ let assignable_roles _ () =
   (* Add the role assignment to the database *)
   let%lwt () =
     assignable_role
-    |> handle_create_role_assignment_events db
+    |> handle_create_role_permission_events db
     ||> get_or_failwith
   in
   (* The reevaluation of the role assignment should work now *)
@@ -135,7 +138,7 @@ let assignable_roles _ () =
   (* Remove the assignable role *)
   let%lwt () =
     assignable_role
-    |> handle_delete_role_assignment_events db
+    |> handle_delete_role_permission_events db
     ||> get_or_failwith
   in
   (* As the assignable role is deleted, assignment shouldn't be possible *)
@@ -153,9 +156,11 @@ let grant_roles _ () =
   let%lwt actor = Data.create_assistant db "Assistant1" exp1 >|> to_actor db in
   let%lwt target = Data.create_assistant db "Assistant2" exp2 in
   let%lwt () =
-    [ `Operator, `Assistant; `Operator, `Experimenter ]
-    |> CCList.map (uncurry RoleAssignment.create)
-    |> Persistence.RoleAssignment.insert db
+    [ `Operator, `RoleAssistant; `Operator, `RoleExperimenter ]
+    |> CCList.map (fun (role, target) ->
+      RolePermission.create role Permission.Create target)
+    |> Lwt_list.iter_s (fun m ->
+      Persistence.RolePermission.insert db m ||> CCResult.get_or_failwith)
   in
   let target_has_role = target_has_role db target in
   let handle_validated_events = handle_validated_events db target in
