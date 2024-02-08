@@ -172,7 +172,7 @@ module InactiveUser = struct
 
     let decode data =
       Conformist.decode_and_validate
-        (update_schema (integer_schema ()) name)
+        (update_duration_schema (integer_schema ()) name)
         data
       |> CCResult.map_err Pool_common.Message.to_conformist_error
     ;;
@@ -203,7 +203,7 @@ module InactiveUser = struct
 
     let decode data =
       Conformist.decode_and_validate
-        (update_schema (integer_schema ()) name)
+        (update_duration_schema (integer_schema ()) name)
         data
       |> CCResult.map_err Pool_common.Message.to_conformist_error
     ;;
@@ -235,7 +235,9 @@ end = struct
   ;;
 
   let decode data =
-    Conformist.decode_and_validate (update_schema (integer_schema ()) name) data
+    Conformist.decode_and_validate
+      (update_duration_schema (integer_schema ()) name)
+      data
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
@@ -265,7 +267,9 @@ end = struct
   ;;
 
   let decode data =
-    Conformist.decode_and_validate (update_schema (integer_schema ()) name) data
+    Conformist.decode_and_validate
+      (update_duration_schema (integer_schema ()) name)
+      data
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
@@ -295,7 +299,9 @@ end = struct
   ;;
 
   let decode data =
-    Conformist.decode_and_validate (update_schema (integer_schema ()) name) data
+    Conformist.decode_and_validate
+      (update_duration_schema (integer_schema ()) name)
+      data
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
@@ -364,4 +370,68 @@ end = struct
   ;;
 
   let effects = Guard.Access.update
+end
+
+module UserImportReminder = struct
+  module UpdateFirstReminder : sig
+    include Common.CommandSig with type t = command
+
+    val decode
+      :  (string * string list) list
+      -> (t, Pool_common.Message.error) result
+  end = struct
+    open UserImportReminder.FirstReminderAfter
+
+    type t = command
+
+    let handle ?(tags = Logs.Tag.empty) { time_value; time_unit } =
+      let open CCResult in
+      Logs.info ~src (fun m -> m "Handle command UpdateFirstReminder" ~tags);
+      let* first_reminder_after = of_int time_value time_unit in
+      Ok
+        [ Settings.UserImportFirstReminderAfterUpdated first_reminder_after
+          |> Pool_event.settings
+        ]
+    ;;
+
+    let decode data =
+      Conformist.decode_and_validate
+        (update_duration_schema (integer_schema ()) name)
+        data
+      |> CCResult.map_err Pool_common.Message.to_conformist_error
+    ;;
+
+    let effects = Settings.Guard.Access.update
+  end
+
+  module UpdateSecondReminder : sig
+    include Common.CommandSig with type t = command
+
+    val decode
+      :  (string * string list) list
+      -> (t, Pool_common.Message.error) result
+  end = struct
+    open UserImportReminder.SecondReminderAfter
+
+    type t = command
+
+    let handle ?(tags = Logs.Tag.empty) { time_value; time_unit } =
+      let open CCResult in
+      Logs.info ~src (fun m -> m "Handle command SecondReminderAfter" ~tags);
+      let* second_reminder_after = of_int time_value time_unit in
+      Ok
+        [ Settings.UserImportSecondReminderAfterUpdated second_reminder_after
+          |> Pool_event.settings
+        ]
+    ;;
+
+    let decode data =
+      Conformist.decode_and_validate
+        (update_duration_schema (integer_schema ()) name)
+        data
+      |> CCResult.map_err Pool_common.Message.to_conformist_error
+    ;;
+
+    let effects = Settings.Guard.Access.update
+  end
 end

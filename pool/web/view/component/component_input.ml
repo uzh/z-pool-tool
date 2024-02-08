@@ -243,11 +243,13 @@ let date_time_picker_element ?value =
 
 let timespan_picker
   ?(additional_attributes = [])
+  ?enabled_time_units
   ?(orientation = `Vertical)
   ?(classnames = [])
   ?hints
   ?identifier
   ?label_field
+  ?min_value
   ?(read_only = false)
   ?(required = false)
   ?flash_fetcher
@@ -275,8 +277,9 @@ let timespan_picker
     let attrs =
       Elements.attributes `Number name id [ a_value value ]
       @ additional_attributes
-      @ [ a_input_min (`Number 0); a_step (Some 1.) ]
-      @ if read_only then [ a_readonly () ] else []
+      @ [ a_input_min (CCOption.value ~default:(`Number 0) min_value)
+        ; a_step (Some 1.)
+        ]
     in
     let attrs = if required then a_required () :: attrs else attrs in
     if CCOption.is_some error then a_class [ "is-invalid" ] :: attrs else attrs
@@ -305,6 +308,10 @@ let timespan_picker
     in
     let timeunit_select =
       TimeUnit.all
+      |> CCList.filter (fun unit ->
+        match enabled_time_units with
+        | None -> true
+        | Some enabled -> CCList.mem unit enabled)
       |> CCList.map (fun unit ->
         let selected =
           time_unit

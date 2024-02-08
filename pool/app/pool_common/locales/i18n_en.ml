@@ -552,6 +552,9 @@ Only sessions with open spots can be selected.|}
   | WaitingListPhoneMissingContact ->
     "You have not entered a phone number in your profile yet. Please provide a \
      phone number so that the recruitment team can contact you."
+  | UserImportInterval ->
+    {|<p>Define after how many days a reminder will be sent to contacts that have not confirmed the import yet.</p>
+<p><strong>The second reminder will be sent after the accumulated duration of both settings.</strong></p>|}
 ;;
 
 let confirmable_to_string confirmable =

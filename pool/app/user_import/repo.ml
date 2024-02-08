@@ -82,6 +82,21 @@ module RepoEntity = struct
                           (t2 Common.CreatedAt.t Common.UpdatedAt.t))))))))
   ;;
 
+  let reminder_settings_caqti =
+    let open Settings.UserImportReminder in
+    let encode (first_reminder, second_reminder) =
+      Ok
+        ( FirstReminderAfter.value first_reminder
+        , SecondReminderAfter.value second_reminder )
+    in
+    let decode _ =
+      failwith
+        Pool_common.(
+          Message.WriteOnlyModel |> Utils.error_to_string Language.En)
+    in
+    Caqti_type.(custom ~encode ~decode (t2 ptime_span ptime_span))
+  ;;
+
   module Write = struct
     type t =
       { user_uuid : Pool_common.Id.t
@@ -242,7 +257,6 @@ let update pool t =
 ;;
 
 let find_admins_request ~where limit =
-  let open Caqti_request.Infix in
   Format.asprintf
     {sql|
       SELECT
@@ -259,43 +273,51 @@ let find_admins_request ~where limit =
     ([ Admin.Repo.joins; joins ] |> CCString.concat "\n")
     where
     limit
-  |> Caqti_type.(unit ->* t2 Admin.Repo.Entity.t RepoEntity.t)
 ;;
 
 let reminder_where_clause =
   {sql|
     pool_user_imports.notification_sent_at IS NOT NULL
-    AND pool_user_imports.notification_sent_at < NOW() - INTERVAL 1 WEEK
+    AND pool_user_imports.notification_sent_at < NOW() - INTERVAL $1 SECOND
     AND pool_user_imports.reminder_count < 2
     AND (
       pool_user_imports.last_reminder_sent_at IS NULL
-      OR pool_user_imports.last_reminder_sent_at < NOW() - INTERVAL 1 WEEK)
+      OR pool_user_imports.last_reminder_sent_at < NOW() - INTERVAL $2 SECOND)
   |sql}
 ;;
 
 let find_admins_to_notify pool limit =
+  let open Caqti_request.Infix in
   Utils.Database.collect
     (Pool_database.Label.value pool)
     (find_admins_request
        ~where:
          {|pool_admins.import_pending = 1
           AND pool_user_imports.notification_sent_at IS NULL|}
-       limit)
+       limit
+     |> Caqti_type.(unit ->* t2 Admin.Repo.Entity.t RepoEntity.t))
 ;;
 
-let find_admins_to_remind pool limit =
+let find_admins_to_remind reminder_settings pool limit () =
+  let open Caqti_request.Infix in
+  let request =
+    find_admins_request
+      ~where:
+        (Format.asprintf
+           "pool_admins.import_pending = 1 AND %s"
+           reminder_where_clause)
+      limit
+    |> Caqti_type.(
+         RepoEntity.reminder_settings_caqti
+         ->* t2 Admin.Repo.Entity.t RepoEntity.t)
+  in
   Utils.Database.collect
     (Pool_database.Label.value pool)
-    (find_admins_request
-       ~where:
-         (Format.asprintf
-            "pool_admins.import_pending = 1 AND %s"
-            reminder_where_clause)
-       limit)
+    request
+    reminder_settings
 ;;
 
 let find_contacts_request ~where limit =
-  let open Caqti_request.Infix in
   Format.asprintf
     {sql|
       SELECT
@@ -313,10 +335,10 @@ let find_contacts_request ~where limit =
     ([ Contact.Repo.joins; joins ] |> CCString.concat "\n")
     where
     limit
-  |> Caqti_type.(unit ->* t2 Contact.Repo.Entity.t RepoEntity.t)
 ;;
 
 let find_contacts_to_notify pool limit =
+  let open Caqti_request.Infix in
   Utils.Database.collect
     (Pool_database.Label.value pool)
     (find_contacts_request
@@ -324,18 +346,27 @@ let find_contacts_to_notify pool limit =
          {| pool_contacts.import_pending = 1
           AND pool_contacts.disabled = 0
           AND pool_user_imports.notification_sent_at IS NULL|}
-       limit)
+       limit
+     |> Caqti_type.(unit ->* t2 Contact.Repo.Entity.t RepoEntity.t))
 ;;
 
-let find_contacts_to_remind pool limit =
+let find_contacts_to_remind reminder_settings pool limit () =
+  let open Caqti_request.Infix in
+  let request =
+    find_contacts_request
+      ~where:
+        (Format.asprintf
+           {sql| pool_contacts.import_pending = 1
+         AND pool_contacts.disabled = 0
+         AND %s |sql}
+           reminder_where_clause)
+      limit
+    |> Caqti_type.(
+         RepoEntity.reminder_settings_caqti
+         ->* t2 Contact.Repo.Entity.t RepoEntity.t)
+  in
   Utils.Database.collect
     (Pool_database.Label.value pool)
-    (find_contacts_request
-       ~where:
-         (Format.asprintf
-            {sql| pool_contacts.import_pending = 1
-            AND pool_contacts.disabled = 0
-            AND %s |sql}
-            reminder_where_clause)
-       limit)
+    request
+    reminder_settings
 ;;

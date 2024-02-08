@@ -9,7 +9,7 @@ type command =
 
 let update_command time_value time_unit = { time_value; time_unit }
 
-let update_schema integer_schema field =
+let update_duration_schema integer_schema field =
   Pool_common.Utils.PoolConformist.(
     make Field.[ integer_schema; TimeUnit.named_schema field () ] update_command)
 ;;
@@ -91,6 +91,28 @@ module TermsAndConditions = struct
   let value m = m
 end
 
+module UserImportReminder = struct
+  module FirstReminderAfter = struct
+    module Core = struct
+      type t
+
+      let name = Pool_common.Message.Field.FirstReminder
+    end
+
+    include Pool_common.Model.Duration (Core)
+  end
+
+  module SecondReminderAfter = struct
+    module Core = struct
+      type t
+
+      let name = Pool_common.Message.Field.SecondReminder
+    end
+
+    include Pool_common.Model.Duration (Core)
+  end
+end
+
 module Value = struct
   type default_reminder_lead_time = Pool_common.Reminder.EmailLeadTime.t
   [@@deriving eq, show, yojson]
@@ -123,6 +145,8 @@ module Value = struct
     | InactiveUserDisableAfter of inactive_user_disable_after
     | InactiveUserWarning of inactive_user_warning
     | TriggerProfileUpdateAfter of trigger_profile_update_after
+    | UserImportFirstReminder of UserImportReminder.FirstReminderAfter.t
+    | UserImportSecondReminder of UserImportReminder.SecondReminderAfter.t
   [@@deriving eq, show, yojson, variants]
 end
 
@@ -135,6 +159,8 @@ type setting_key =
   | InactiveUserDisableAfter [@name "inactive_user_disable_after"]
   | InactiveUserWarning [@name "inactive_user_warning"]
   | TriggerProfileUpdateAfter [@name "trigger_profile_update_after"]
+  | UserImportFirstReminderAfter [@name "user_import_first_reminder_after"]
+  | UserImportSecondReminderAfter [@name "user_import_second_reminder_after"]
 [@@deriving eq, show, yojson]
 
 type t =
@@ -159,6 +185,8 @@ let action_of_param = function
   | "update_emailsuffix" -> Ok `UpdateEmailSuffixes
   | "update_languages" -> Ok `UpdateLanguages
   | "update_trigger_profile_update_after" -> Ok `UpdateTriggerProfileUpdateAfter
+  | "user_import_first_reminder_after" -> Ok `UserImportFirstReminderAfter
+  | "user_import_second_reminder_after" -> Ok `UserImportSecondReminderAfter
   | _ -> Error Pool_common.Message.DecodeAction
 ;;
 
@@ -173,6 +201,8 @@ let stringify_action = function
   | `UpdateEmailSuffixes -> "update_emailsuffix"
   | `UpdateLanguages -> "update_languages"
   | `UpdateTriggerProfileUpdateAfter -> "update_trigger_profile_update_after"
+  | `UserImportFirstReminderAfter -> "user_import_first_reminder_after"
+  | `UserImportSecondReminderAfter -> "user_import_second_reminder_after"
 ;;
 
 let default_email_session_reminder_lead_time_key_yojson =

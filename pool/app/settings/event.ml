@@ -10,6 +10,10 @@ type event =
   | InactiveUserWarningUpdated of InactiveUser.Warning.t
   | LanguagesUpdated of Pool_common.Language.t list
   | TriggerProfileUpdateAfterUpdated of TriggerProfileUpdateAfter.t
+  | UserImportFirstReminderAfterUpdated of
+      UserImportReminder.FirstReminderAfter.t
+  | UserImportSecondReminderAfterUpdated of
+      UserImportReminder.SecondReminderAfter.t
 [@@deriving eq, show]
 
 let handle_event pool : event -> unit Lwt.t = function
@@ -47,4 +51,8 @@ let handle_event pool : event -> unit Lwt.t = function
       Repo.update pool (Value.TriggerProfileUpdateAfter trigger_update_after)
     in
     Lwt.return_unit
+  | UserImportFirstReminderAfterUpdated first_reminder_after ->
+    Repo.update pool (Value.UserImportFirstReminder first_reminder_after)
+  | UserImportSecondReminderAfterUpdated second_reminder_after ->
+    Repo.update pool (Value.UserImportSecondReminder second_reminder_after)
 ;;
