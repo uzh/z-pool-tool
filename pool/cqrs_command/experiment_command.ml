@@ -419,7 +419,10 @@ end = struct
       ]
   ;;
 
-  let effects id = Experiment.Guard.Access.update id
+  let effects id =
+    let target_uuid = BaseGuard.Uuid.target_of Id.value id in
+    BaseGuard.Access.Role.Assignment.Assistant.create ~target_uuid ()
+  ;;
 end
 
 module UnassignAssistant : sig
@@ -441,7 +444,10 @@ end = struct
       ]
   ;;
 
-  let effects id = Experiment.Guard.Access.update id
+  let effects id =
+    let target_uuid = BaseGuard.Uuid.target_of Id.value id in
+    BaseGuard.Access.Role.Assignment.Assistant.delete ~target_uuid ()
+  ;;
 end
 
 module AssignExperimenter : sig
@@ -463,7 +469,10 @@ end = struct
       ]
   ;;
 
-  let effects id = Experiment.Guard.Access.update id
+  let effects id =
+    let target_uuid = BaseGuard.Uuid.target_of Id.value id in
+    BaseGuard.Access.Role.Assignment.Experimenter.create ~target_uuid ()
+  ;;
 end
 
 module UnassignExperimenter : sig
@@ -485,7 +494,10 @@ end = struct
       ]
   ;;
 
-  let effects id = Experiment.Guard.Access.update id
+  let effects id =
+    let target_uuid = BaseGuard.Uuid.target_of Id.value id in
+    BaseGuard.Access.Role.Assignment.Experimenter.delete ~target_uuid ()
+  ;;
 end
 
 module CreateFilter : sig

@@ -23,17 +23,17 @@ let title_to_string language text =
 
 let nav_elements experiment =
   let open Guard in
+  let open Access.Role.Assignment in
   let open I18n in
   let open Experiment in
   let id = experiment |> id in
+  let target_uuid = Uuid.target_of Id.value id in
   let left =
     [ "", Overview, Set (Guard.Access.read id)
-    ; ( "assistants"
-      , Field Field.Assistants
-      , CanAssign (`Assistant, Some (Uuid.target_of Id.value id)) )
+    ; "assistants", Field Field.Assistants, Set (Assistant.read ~target_uuid ())
     ; ( "experimenter"
       , Field Field.Experimenter
-      , CanAssign (`Experimenter, Some (Uuid.target_of Id.value id)) )
+      , Set (Experimenter.read ~target_uuid ()) )
     ; "invitations", Invitations, Set (Invitation.Guard.Access.index id)
     ]
   in
@@ -110,21 +110,10 @@ let create
   let%lwt actor =
     Pool_context.Utils.find_authorizable_opt database_label user
   in
-  let%lwt can_assign_roles =
-    CCOption.map_or
-      ~default:(Lwt.return [])
-      (fun { Guard.Actor.uuid; _ } ->
-        Guard.Persistence.Actor.can_assign_roles database_label uuid)
-      actor
-  in
   let html = combine ?buttons ?hint language title content in
   let subpage =
     nav_elements experiment
-    |> Navigation_utils.filter_items
-         ~validate:true
-         ?actor
-         ~can_assign_roles
-         ~guardian
+    |> Navigation_utils.filter_items ~validate:true ?actor ~guardian
     |> CCFun.flip (Navigation_tab.create ?active_navigation language) html
   in
   with_heading experiment subpage |> Lwt.return

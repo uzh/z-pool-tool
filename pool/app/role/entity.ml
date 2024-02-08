@@ -102,14 +102,20 @@ module Target = struct
     | `Permission
     | `Queue
     | `Role
+    | `RoleAdmin
     | `RoleAssignment
+    | `RoleAssistant
+    | `RoleExperimenter
+    | `RoleLocationManager
+    | `RoleOperator
+    | `RoleRecruiter
     | `Schedule
     | `Session
     | `SessionClose
-    | `SystemSetting
     | `Smtp
     | `Statistics
     | `System
+    | `SystemSetting
     | `Tag
     | `Tenant
     | `WaitingList
@@ -144,14 +150,20 @@ module Target = struct
     | "permission", [] -> Ok `Permission
     | "queue", [] -> Ok `Queue
     | "role", [] -> Ok `Role
+    | "roleadmin", [] -> Ok `RoleAdmin
     | "roleassignment", [] -> Ok `RoleAssignment
+    | "roleassistant", [] -> Ok `RoleAssistant
+    | "roleexperimenter", [] -> Ok `RoleExperimenter
+    | "rolelocationmanager", [] -> Ok `RoleLocationManager
+    | "roleoperator", [] -> Ok `RoleOperator
+    | "rolerecruiter", [] -> Ok `RoleRecruiter
     | "schedule", [] -> Ok `Schedule
     | "session", [] -> Ok `Session
     | "sessionclose", [] -> Ok `SessionClose
-    | "systemsetting", [] -> Ok `SystemSetting
     | "smtp", [] -> Ok `Smtp
     | "statistics", [] -> Ok `Statistics
     | "system", [] -> Ok `System
+    | "systemsetting", [] -> Ok `SystemSetting
     | "tag", [] -> Ok `Tag
     | "tenant", [] -> Ok `Tenant
     | "waitinglist", [] -> Ok `WaitingList
@@ -162,6 +174,7 @@ module Target = struct
 
   let all =
     [ `Admin
+    ; `Schedule
     ; `AdminPromote
     ; `Assignment
     ; `Contact
@@ -176,21 +189,26 @@ module Target = struct
     ; `Invitation
     ; `Location
     ; `LocationFile
+    ; `Mailing
     ; `Message
     ; `MessageTemplate
     ; `OrganisationalUnit
-    ; `Mailing
     ; `Permission
     ; `Queue
     ; `Role
+    ; `RoleAdmin
     ; `RoleAssignment
-    ; `Schedule
+    ; `RoleAssistant
+    ; `RoleExperimenter
+    ; `RoleLocationManager
+    ; `RoleOperator
+    ; `RoleRecruiter
     ; `Session
     ; `SessionClose
-    ; `SystemSetting
     ; `Smtp
     ; `Statistics
     ; `System
+    ; `SystemSetting
     ; `Tag
     ; `Tenant
     ; `WaitingList

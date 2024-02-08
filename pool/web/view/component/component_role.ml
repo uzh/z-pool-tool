@@ -30,11 +30,11 @@ let target_path ({ Guard.ActorRole.target_uuid; _ }, target_model, _) =
       | `CustomFieldGroup -> Some (build "custom-fields/contact/group" uuid)
       | `Filter -> Some (build "filter" uuid)
       | `Tag -> Some (build "settings/tags" uuid)
-      | `ExperimentRole
       | `AdminPromote
       | `Assignment
       | `ContactInfo
       | `ContactName
+      | `ExperimentRole
       | `I18n
       | `Invitation
       | `LocationFile
@@ -45,14 +45,20 @@ let target_path ({ Guard.ActorRole.target_uuid; _ }, target_model, _) =
       | `Permission
       | `Queue
       | `Role
+      | `RoleAdmin
       | `RoleAssignment
+      | `RoleAssistant
+      | `RoleExperimenter
+      | `RoleLocationManager
+      | `RoleOperator
+      | `RoleRecruiter
       | `Schedule
       | `Session
       | `SessionClose
-      | `SystemSetting
       | `Smtp
       | `Statistics
       | `System
+      | `SystemSetting
       | `Tenant
       | `WaitingList -> None)
     target_uuid

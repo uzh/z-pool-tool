@@ -121,7 +121,6 @@ module Access : sig
 end = struct
   include Helpers.Access
   open Guard
-  open ValidationSet
   open Cqrs_command.Experiment_command
   module Field = Pool_common.Message.Field
 
@@ -131,8 +130,14 @@ end = struct
 
   let index_assistants =
     (fun req ->
-      let expand = CCFun.flip experiment_effects req in
-      Or [ expand AssignAssistant.effects; expand UnassignAssistant.effects ])
+      let target_uuid =
+        Middleware.Guardian.id_effects
+          Uuid.Target.of_string
+          Field.Experiment
+          CCFun.id
+          req
+      in
+      Access.Role.Assignment.Assistant.read ?target_uuid ())
     |> Middleware.Guardian.validate_generic
   ;;
 
@@ -150,11 +155,14 @@ end = struct
 
   let index_experimenter =
     (fun req ->
-      let expand = CCFun.flip experiment_effects req in
-      Or
-        [ expand AssignExperimenter.effects
-        ; expand UnassignExperimenter.effects
-        ])
+      let target_uuid =
+        Middleware.Guardian.id_effects
+          Uuid.Target.of_string
+          Field.Experiment
+          CCFun.id
+          req
+      in
+      Access.Role.Assignment.Experimenter.read ?target_uuid ())
     |> Middleware.Guardian.validate_generic
   ;;
 

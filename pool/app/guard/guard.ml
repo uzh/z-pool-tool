@@ -27,6 +27,11 @@ let location_manager_permissions : RolePermission.t list =
   ; `LocationManager, Read, `ContactName
   ; `LocationManager, Read, `ContactInfo
   ; `LocationManager, Read, `Session
+  ; `LocationManager, Read, `RoleLocationManager
+  ; `LocationManager, Create, `RoleLocationManager
+  ; `LocationManager, Read, `RoleAssistant
+  ; `LocationManager, Read, `RoleExperimenter
+  ; `LocationManager, Read, `RoleRecruiter
   ]
   |> map_role_permission
 ;;
@@ -61,6 +66,11 @@ let recruiter_permissions : RolePermission.t list =
   ; `Recruiter, Manage, `Tag
   ; `Recruiter, Read, `Tenant
   ; `Recruiter, Manage, `WaitingList
+  ; `Recruiter, Manage, `RoleLocationManager
+  ; `Recruiter, Manage, `RoleAssistant
+  ; `Recruiter, Manage, `RoleExperimenter
+  ; `Recruiter, Read, `RoleRecruiter
+  ; `Recruiter, Create, `RoleRecruiter
   ]
   |> map_role_permission
 ;;
@@ -78,6 +88,9 @@ let assistant_permissions : RolePermission.t list =
   ; `Assistant, Read, `Experiment
   ; `Assistant, Read, `WaitingList
   ; `Assistant, Update, `WaitingList
+  ; `Assistant, Read, `RoleAssistant
+  ; `Assistant, Create, `RoleAssistant
+  ; `Assistant, Read, `RoleExperimenter
   ]
   |> map_role_permission
 ;;
@@ -91,6 +104,7 @@ let experimenter_permissions : RolePermission.t list =
   ; `Experimenter, Read, `Assignment
   ; `Experimenter, Update, `Assignment
   ; `Experimenter, Read, `Experiment
+  ; `Experimenter, Read, `RoleExperimenter
   ]
   |> map_role_permission
 ;;
@@ -203,6 +217,48 @@ module Access = struct
     let update = one_of_tuple (Update, `Role, None)
     let delete = one_of_tuple (Delete, `Role, None)
     let manage = one_of_tuple (Manage, `Role, None)
+
+    module Assignment = struct
+      module Assistant = struct
+        let model = `RoleAssistant
+
+        let create ?target_uuid () =
+          PermissionOnTarget.create ?target_uuid Create model |> one
+        ;;
+
+        let read ?target_uuid () =
+          PermissionOnTarget.create ?target_uuid Read model |> one
+        ;;
+
+        let delete ?target_uuid () =
+          PermissionOnTarget.create ?target_uuid Delete model |> one
+        ;;
+
+        let manage ?target_uuid () =
+          PermissionOnTarget.create ?target_uuid Manage model |> one
+        ;;
+      end
+
+      module Experimenter = struct
+        let model = `RoleExperimenter
+
+        let create ?target_uuid () =
+          PermissionOnTarget.create ?target_uuid Create model |> one
+        ;;
+
+        let read ?target_uuid () =
+          PermissionOnTarget.create ?target_uuid Read model |> one
+        ;;
+
+        let delete ?target_uuid () =
+          PermissionOnTarget.create ?target_uuid Delete model |> one
+        ;;
+
+        let manage ?target_uuid () =
+          PermissionOnTarget.create ?target_uuid Manage model |> one
+        ;;
+      end
+    end
   end
 
   module Permission = struct
