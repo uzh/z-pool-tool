@@ -152,3 +152,170 @@ let confirm_as_contact_integration _ () =
   in
   Lwt.return_unit
 ;;
+
+module Repo = struct
+  let set_contact_import_pending pool id =
+    let request =
+      let open Caqti_request.Infix in
+      {sql|
+          UPDATE
+            pool_contacts
+          SET
+            import_pending = 1
+          WHERE
+            user_uuid = UNHEX(REPLACE($1, '-', ''))
+        |sql}
+      |> Caqti_type.(string ->. unit)
+    in
+    Utils.Database.exec
+      (Pool_database.Label.value pool)
+      request
+      (Contact.Id.value id)
+  ;;
+
+  let set_import_timestamp_to_past pool days id =
+    let request =
+      let open Caqti_request.Infix in
+      {sql|
+          UPDATE
+            pool_user_imports
+          SET
+            notification_sent_at = notification_sent_at - INTERVAL $2 DAY
+          WHERE
+            user_uuid = UNHEX(REPLACE($1, '-', ''))
+        |sql}
+      |> Caqti_type.(t2 string int ->. unit)
+    in
+    Utils.Database.exec
+      (Pool_database.Label.value pool)
+      request
+      (Contact.Id.value id, days)
+  ;;
+
+  type testable_import = Contact.t * User_import.t [@@deriving eq, show]
+
+  let user_import = Alcotest.testable pp_testable_import equal_testable_import
+
+  let create_contact =
+    Integration_utils.ContactRepo.create ~with_terms_accepted:true
+  ;;
+
+  let limit = 5
+  let database_label = Test_utils.Data.database_label
+  let contact_id_1 = Contact.Id.create ()
+  let contact_id_2 = Contact.Id.create ()
+
+  let reminder_settings database_label =
+    let open Settings in
+    let%lwt first_reminder_after =
+      find_user_import_first_reminder_after database_label
+    in
+    let%lwt second_reminder_after =
+      find_user_import_second_reminder_after database_label
+    in
+    Lwt.return (first_reminder_after, second_reminder_after)
+  ;;
+
+  let init () =
+    let token () = Pool_common.Id.(() |> create |> value) in
+    let%lwt contact1 = create_contact ~id:contact_id_1 () in
+    let%lwt contact2 = create_contact ~id:contact_id_2 () in
+    let import1 =
+      create_user_import ~token:(token ()) (Pool_context.Contact contact1)
+    in
+    let import2 =
+      create_user_import ~token:(token ()) (Pool_context.Contact contact2)
+    in
+    let%lwt () =
+      [ contact_id_1; contact_id_2 ]
+      |> Lwt_list.iter_s (set_contact_import_pending database_label)
+    in
+    [ import2; import1 ]
+    |> Lwt_list.iter_s (fun import -> User_import.insert database_label import)
+  ;;
+
+  let import_of_contact contact_id =
+    let open Utils.Lwt_result.Infix in
+    let%lwt contact = Contact.find database_label contact_id ||> get_exn in
+    let%lwt import =
+      User_import.find_pending_by_user_id_opt database_label contact_id
+      ||> CCOption.get_exn_or "Import not found"
+    in
+    Lwt.return (contact, import)
+  ;;
+
+  let find_contacts_to_notify _ () =
+    let%lwt () = init () in
+    let%lwt contacts_to_notify =
+      User_import.find_contacts_to_notify database_label limit ()
+    in
+    let%lwt expected =
+      [ contact_id_1; contact_id_2 ] |> Lwt_list.map_s import_of_contact
+    in
+    let () =
+      Alcotest.(check (list user_import) "succeeds" expected contacts_to_notify)
+    in
+    let%lwt () =
+      contacts_to_notify
+      |> CCList.map (fun (_, import) -> User_import.Notified import)
+      |> Lwt_list.iter_s (User_import.handle_event database_label)
+    in
+    (* Expect list to be empty *)
+    let%lwt contacts_to_notify =
+      User_import.find_contacts_to_notify database_label limit ()
+    in
+    let () =
+      Alcotest.(check (list user_import) "succeeds" [] contacts_to_notify)
+    in
+    Lwt.return_unit
+  ;;
+
+  let find_contacts_to_remind _ () =
+    let%lwt reminder_settings = reminder_settings database_label in
+    let%lwt contacts_to_remind =
+      User_import.find_contacts_to_remind
+        reminder_settings
+        database_label
+        limit
+        ()
+    in
+    (* Expect list to be empty *)
+    let () =
+      Alcotest.(check (list user_import) "succeeds" [] contacts_to_remind)
+    in
+    let%lwt () =
+      [ contact_id_1; contact_id_2 ]
+      |> Lwt_list.iter_s (set_import_timestamp_to_past database_label 8)
+    in
+    (* Expect both imports to be returned *)
+    let%lwt contacts_to_remind =
+      User_import.find_contacts_to_remind
+        reminder_settings
+        database_label
+        limit
+        ()
+    in
+    let%lwt expected =
+      [ contact_id_1; contact_id_2 ] |> Lwt_list.map_s import_of_contact
+    in
+    let () =
+      Alcotest.(check (list user_import) "succeeds" expected contacts_to_remind)
+    in
+    (* Expect list to be empty with increased duration *)
+    let first_reminder_after =
+      Settings.UserImportReminder.FirstReminderAfter.of_int_s (60 * 60 * 24 * 10)
+      |> get_exn
+    in
+    let%lwt contacts_to_remind =
+      User_import.find_contacts_to_remind
+        (first_reminder_after, snd reminder_settings)
+        database_label
+        limit
+        ()
+    in
+    let () =
+      Alcotest.(check (list user_import) "succeeds" [] contacts_to_remind)
+    in
+    Lwt.return_unit
+  ;;
+end

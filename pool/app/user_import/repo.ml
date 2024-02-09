@@ -370,3 +370,24 @@ let find_contacts_to_remind reminder_settings pool limit () =
     request
     reminder_settings
 ;;
+
+let insert_request =
+  let open Caqti_request.Infix in
+  {sql|
+    INSERT INTO pool_user_imports (
+      user_uuid,
+      token
+    ) VALUES (
+      UNHEX(REPLACE($1, '-', '')),
+      $2
+    )
+  |sql}
+  |> Caqti_type.(t2 string string ->. unit)
+;;
+
+let insert pool t =
+  Utils.Database.exec
+    (Pool_database.Label.value pool)
+    insert_request
+    (t.user_uuid |> Pool_common.Id.value, t.token |> Token.value)
+;;

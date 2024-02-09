@@ -29,6 +29,10 @@ type t =
   ; updated_at : Pool_common.UpdatedAt.t
   }
 
+val pp : Format.formatter -> t -> unit
+val show : t -> string
+val equal : t -> t -> bool
+
 val find_pending_by_token
   :  Pool_database.Label.t
   -> Token.t
@@ -53,6 +57,22 @@ val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
 val handle_event : Pool_tenant.Database.Label.t -> event -> unit Lwt.t
+val insert : Pool_tenant.Database.Label.t -> t -> unit Lwt.t
+val update : Pool_tenant.Database.Label.t -> t -> unit Lwt.t
+
+val find_contacts_to_notify
+  :  Pool_tenant.Database.Label.t
+  -> int
+  -> unit
+  -> (Contact.t * t) list Lwt.t
+
+val find_contacts_to_remind
+  :  Settings.UserImportReminder.FirstReminderAfter.t
+     * Settings.UserImportReminder.SecondReminderAfter.t
+  -> Pool_tenant.Database.Label.t
+  -> int
+  -> unit
+  -> (Contact.t * t) list Lwt.t
 
 module Repo : sig
   val sql_select_columns : string list
