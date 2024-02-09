@@ -573,6 +573,7 @@ let rec error_to_string = function
   | TimeSpanPositive -> "Time span must be positive!"
   | TokenAlreadyUsed -> "The token was already used."
   | TokenInvalidFormat -> "Invalid Token Format!"
+  | TooShort -> "The duration specified is too short."
   | Undefined field -> field_message "Undefined" (field_to_string field) ""
   | Uniqueness field ->
     field_message "" (field_to_string field) "must be unique."

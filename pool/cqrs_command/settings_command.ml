@@ -387,7 +387,7 @@ module UserImportReminder = struct
     let handle ?(tags = Logs.Tag.empty) { time_value; time_unit } =
       let open CCResult in
       Logs.info ~src (fun m -> m "Handle command UpdateFirstReminder" ~tags);
-      let* first_reminder_after = of_int time_value time_unit in
+      let* first_reminder_after = of_int time_value time_unit >>= validate in
       Ok
         [ Settings.UserImportFirstReminderAfterUpdated first_reminder_after
           |> Pool_event.settings
@@ -418,7 +418,7 @@ module UserImportReminder = struct
     let handle ?(tags = Logs.Tag.empty) { time_value; time_unit } =
       let open CCResult in
       Logs.info ~src (fun m -> m "Handle command SecondReminderAfter" ~tags);
-      let* second_reminder_after = of_int time_value time_unit in
+      let* second_reminder_after = of_int time_value time_unit >>= validate in
       Ok
         [ Settings.UserImportSecondReminderAfterUpdated second_reminder_after
           |> Pool_event.settings

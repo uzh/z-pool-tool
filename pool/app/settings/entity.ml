@@ -92,6 +92,12 @@ module TermsAndConditions = struct
 end
 
 module UserImportReminder = struct
+  let validate m =
+    let open Ptime.Span in
+    let day = 60 * 60 * 24 |> of_int_s in
+    if m >= day then Ok m else Error Pool_common.Message.TooShort
+  ;;
+
   module FirstReminderAfter = struct
     module Core = struct
       type t
@@ -100,6 +106,8 @@ module UserImportReminder = struct
     end
 
     include Pool_common.Model.Duration (Core)
+
+    let validate = validate
   end
 
   module SecondReminderAfter = struct
@@ -110,6 +118,8 @@ module UserImportReminder = struct
     end
 
     include Pool_common.Model.Duration (Core)
+
+    let validate = validate
   end
 end
 

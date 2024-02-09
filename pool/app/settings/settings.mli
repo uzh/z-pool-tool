@@ -49,10 +49,14 @@ end
 module UserImportReminder : sig
   module FirstReminderAfter : sig
     include Pool_common.Model.DurationSig
+
+    val validate : t -> (t, Pool_common.Message.error) result
   end
 
   module SecondReminderAfter : sig
     include Pool_common.Model.DurationSig
+
+    val validate : t -> (t, Pool_common.Message.error) result
   end
 end
 
