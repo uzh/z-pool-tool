@@ -207,13 +207,9 @@ module Repo = struct
 
   let reminder_settings database_label =
     let open Settings in
-    let%lwt first_reminder_after =
-      find_user_import_first_reminder_after database_label
-    in
-    let%lwt second_reminder_after =
-      find_user_import_second_reminder_after database_label
-    in
-    Lwt.return (first_reminder_after, second_reminder_after)
+    Lwt.both
+      (find_user_import_first_reminder_after database_label)
+      (find_user_import_second_reminder_after database_label)
   ;;
 
   let init () =

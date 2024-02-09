@@ -574,7 +574,7 @@ Es können nur Sitzungen mit freien Plätzen ausgewählt werden.|}
      kontaktieren kann."
   | UserImportInterval ->
     {|<p>Legen Sie fest, nach wie vielen Tagen eine Erinnerung an Kontakte gesendet werden soll, die den Import noch nicht bestätigt haben.</p>
-<p><strong>Die zweite Erinnerung wird nach der kumulierten Dauer der beiden Einstellungen gesendet.</strong></p>|}
+<p><strong>Die Einstellung "Zweite Erinnerung" legt fest, wie lange nach der ersten Erinnerung die zweite Erinnerung gesendet wird.</strong></p>|}
 ;;
 
 let confirmable_to_string confirmable =

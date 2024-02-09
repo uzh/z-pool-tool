@@ -554,7 +554,7 @@ Only sessions with open spots can be selected.|}
      phone number so that the recruitment team can contact you."
   | UserImportInterval ->
     {|<p>Define after how many days a reminder will be sent to contacts that have not confirmed the import yet.</p>
-<p><strong>The second reminder will be sent after the accumulated duration of both settings.</strong></p>|}
+<p><strong>The 'second reminder' setting defines how long after the first reminder the second reminder is sent.</strong></p>|}
 ;;
 
 let confirmable_to_string confirmable =
