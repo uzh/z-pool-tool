@@ -106,7 +106,7 @@ type t =
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
   }
-[@@deriving eq, show, fields ~getters]
+[@@deriving eq, fields ~getters, show]
 
 let create
   ?id
