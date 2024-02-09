@@ -81,7 +81,6 @@ end
 module Target = struct
   type t =
     [ `Admin
-    | `AdminPromote
     | `Assignment
     | `Contact
     | `ContactInfo
@@ -129,7 +128,6 @@ module Target = struct
     Guardian.Utils.decompose_variant_string
     %> function
     | "admin", [] -> Ok `Admin
-    | "adminpromote", [] -> Ok `AdminPromote
     | "assignment", [] -> Ok `Assignment
     | "contact", [] -> Ok `Contact
     | "contactinfo", [] -> Ok `ContactInfo
@@ -175,7 +173,6 @@ module Target = struct
   let all =
     [ `Admin
     ; `Schedule
-    ; `AdminPromote
     ; `Assignment
     ; `Contact
     ; `ContactInfo
