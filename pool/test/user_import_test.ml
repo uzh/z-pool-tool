@@ -154,6 +154,8 @@ let confirm_as_contact_integration _ () =
 ;;
 
 module Repo = struct
+  open Utils.Lwt_result.Infix
+
   let set_contact_import_pending pool id =
     let request =
       let open Caqti_request.Infix in
@@ -204,6 +206,7 @@ module Repo = struct
   let database_label = Test_utils.Data.database_label
   let contact_id_1 = Contact.Id.create ()
   let contact_id_2 = Contact.Id.create ()
+  let sort_testable = CCList.sort (fun (c1, _) (c2, _) -> Contact.compare c1 c2)
 
   let reminder_settings database_label =
     let open Settings in
@@ -231,7 +234,6 @@ module Repo = struct
   ;;
 
   let import_of_contact contact_id =
-    let open Utils.Lwt_result.Infix in
     Lwt.both
       (Contact.find database_label contact_id ||> get_exn)
       (User_import.find_pending_by_user_id_opt database_label contact_id
@@ -242,9 +244,12 @@ module Repo = struct
     let%lwt () = init () in
     let%lwt contacts_to_notify =
       User_import.find_contacts_to_notify database_label limit ()
+      ||> sort_testable
     in
     let%lwt expected =
-      [ contact_id_1; contact_id_2 ] |> Lwt_list.map_s import_of_contact
+      [ contact_id_1; contact_id_2 ]
+      |> Lwt_list.map_s import_of_contact
+      ||> sort_testable
     in
     let () =
       Alcotest.(check (list user_import) "succeeds" expected contacts_to_notify)
@@ -288,9 +293,12 @@ module Repo = struct
         database_label
         limit
         ()
+      ||> sort_testable
     in
     let%lwt expected =
-      [ contact_id_1; contact_id_2 ] |> Lwt_list.map_s import_of_contact
+      [ contact_id_1; contact_id_2 ]
+      |> Lwt_list.map_s import_of_contact
+      ||> sort_testable
     in
     let () =
       Alcotest.(check (list user_import) "succeeds" expected contacts_to_remind)
