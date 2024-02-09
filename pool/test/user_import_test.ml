@@ -232,12 +232,10 @@ module Repo = struct
 
   let import_of_contact contact_id =
     let open Utils.Lwt_result.Infix in
-    let%lwt contact = Contact.find database_label contact_id ||> get_exn in
-    let%lwt import =
-      User_import.find_pending_by_user_id_opt database_label contact_id
-      ||> CCOption.get_exn_or "Import not found"
-    in
-    Lwt.return (contact, import)
+    Lwt.both
+      (Contact.find database_label contact_id ||> get_exn)
+      (User_import.find_pending_by_user_id_opt database_label contact_id
+       ||> CCOption.get_exn_or "Import not found")
   ;;
 
   let find_contacts_to_notify _ () =
