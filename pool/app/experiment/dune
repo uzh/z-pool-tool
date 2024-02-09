@@ -2,6 +2,7 @@
  (name experiment)
  (libraries
   contact
+  email
   filter
   guard
   organisational_unit

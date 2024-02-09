@@ -58,6 +58,8 @@ let pp_verification_event formatter (event : verification_event) : unit =
 
 type event =
   | Sent of (Sihl_email.t * SmtpAuth.Id.t option)
+  | SentWithPoolQueue of
+      ((Sihl_email.t * SmtpAuth.Id.t option) * Message_history.create)
   | BulkSent of (Sihl_email.t * SmtpAuth.Id.t option) list
   | SmtpCreated of SmtpAuth.Write.t
   | SmtpEdited of SmtpAuth.t
@@ -67,6 +69,8 @@ type event =
 
 let handle_event pool : event -> unit Lwt.t = function
   | Sent email -> Email_service.dispatch pool email
+  | SentWithPoolQueue (email, message_history) ->
+    Email_service.dispatch pool ~message_history email
   | BulkSent emails -> Email_service.dispatch_all pool emails
   | SmtpCreated ({ SmtpAuth.Write.id; _ } as created) ->
     let open Utils.Lwt_result.Infix in

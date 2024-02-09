@@ -326,13 +326,17 @@ module Job = struct
   ;;
 end
 
-let dispatch database_label (email, smtp_auth_id) =
+let dispatch database_label ?message_history (email, smtp_auth_id) =
+  let callback =
+    message_history |> CCOption.map (Message_history.callback database_label)
+  in
   Logs.debug ~src (fun m ->
     m
       ~tags:(Pool_database.Logger.Tags.create database_label)
       "Dispatch email to %s"
       email.Sihl_email.recipient);
   Queue.dispatch
+    ?callback
     ~ctx:(Pool_database.to_ctx database_label)
     (Entity.create_job email smtp_auth_id
      |> intercept_prepare

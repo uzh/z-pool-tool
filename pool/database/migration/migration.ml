@@ -141,6 +141,7 @@ module Tenant = struct
         ; Migration_202401191048.migration ()
         ; Migration_202401221730.migration ()
         ; Migration_202402081615.migration ()
+        ; Migration_202402091434.migration ()
         ; Migration_202402150942.migration ()
         ]
       |> sort
