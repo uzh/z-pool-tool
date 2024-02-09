@@ -267,6 +267,7 @@ module Service : sig
 
   val dispatch
     :  Pool_database.Label.t
+    -> ?message_history:Message_history.create
     -> Entity.email * SmtpAuth.Id.t option
     -> unit Lwt.t
 
@@ -305,6 +306,8 @@ val pp_verification_event : Format.formatter -> verification_event -> unit
 
 type event =
   | Sent of (Sihl_email.t * SmtpAuth.Id.t option)
+  | SentWithPoolQueue of
+      ((Sihl_email.t * SmtpAuth.Id.t option) * Message_history.create)
   | BulkSent of (Sihl_email.t * SmtpAuth.Id.t option) list
   | SmtpCreated of SmtpAuth.Write.t
   | SmtpEdited of SmtpAuth.t

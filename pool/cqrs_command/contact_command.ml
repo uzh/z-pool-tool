@@ -88,11 +88,20 @@ end = struct
         Custom_field.AnsweredOnSignup (field, user_id)
         |> Pool_event.custom_field)
     in
+    let message_history =
+      Message_history.
+        { entity_uuids = [ user_id ]
+        ; message_template =
+            Message_template.Label.(
+              EmailVerification |> show |> CCOption.return)
+        }
+    in
     Ok
       ([ Contact.Created contact |> Pool_event.contact
        ; Email.Created (unverified_email, token, user_id)
          |> Pool_event.email_verification
-       ; Email.Sent (verification_email, None) |> Pool_event.email
+       ; Email.SentWithPoolQueue ((verification_email, None), message_history)
+         |> Pool_event.email
        ]
        @ custom_field_events)
   ;;
