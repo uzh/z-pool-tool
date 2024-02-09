@@ -93,6 +93,28 @@ let[@warning "-4"] find_default_text_msg_reminder_lead_time pool =
     Pool_common.(Message.(Retrieve Field.TextMessageLeadTime) |> Utils.failwith)
 ;;
 
+let[@warning "-4"] find_user_import_first_reminder_after pool =
+  let open Utils.Lwt_result.Infix in
+  Repo.Sql.find pool Repo.RepoEntity.t Entity.UserImportFirstReminderAfter
+  ||> fun { value; _ } ->
+  match value with
+  | Value.UserImportFirstReminder value -> value
+  | _ ->
+    (* Due to Repo function, this state cannot be reached. *)
+    Pool_common.(Message.(Retrieve Field.FirstReminder) |> Utils.failwith)
+;;
+
+let[@warning "-4"] find_user_import_second_reminder_after pool =
+  let open Utils.Lwt_result.Infix in
+  Repo.Sql.find pool Repo.RepoEntity.t Entity.UserImportSecondReminderAfter
+  ||> fun { value; _ } ->
+  match value with
+  | Value.UserImportSecondReminder value -> value
+  | _ ->
+    (* Due to Repo function, this state cannot be reached. *)
+    Pool_common.(Message.(Retrieve Field.SecondReminder) |> Utils.failwith)
+;;
+
 let default_language_of_list languages =
   languages
   |> CCList.head_opt

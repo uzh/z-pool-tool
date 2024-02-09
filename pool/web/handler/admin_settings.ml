@@ -31,8 +31,14 @@ let show req =
     let%lwt default_reminder_lead_time =
       Settings.find_default_reminder_lead_time database_label
     in
-    let%lwt default_tet_msg_reminder_lead_time =
+    let%lwt default_text_msg_reminder_lead_time =
       Settings.find_default_text_msg_reminder_lead_time database_label
+    in
+    let%lwt user_import_first_reminder =
+      Settings.find_user_import_first_reminder_after database_label
+    in
+    let%lwt user_import_second_reminder =
+      Settings.find_user_import_second_reminder_after database_label
     in
     let text_messages_enabled = Pool_context.Tenant.text_messages_enabled req in
     let flash_fetcher key = Sihl.Web.Flash.find key req in
@@ -44,7 +50,9 @@ let show req =
       inactive_user_warning
       trigger_profile_update_after
       default_reminder_lead_time
-      default_tet_msg_reminder_lead_time
+      default_text_msg_reminder_lead_time
+      user_import_first_reminder
+      user_import_second_reminder
       context
       text_messages_enabled
       flash_fetcher
@@ -107,6 +115,16 @@ let update_settings req =
           fun m ->
             UpdateTriggerProfileUpdateAfter.(m |> decode >>= handle ~tags)
             |> lift
+        | `UserImportFirstReminderAfter ->
+          fun m ->
+            UserImportReminder.UpdateFirstReminder.(
+              m |> decode >>= handle ~tags)
+            |> lift
+        | `UserImportSecondReminderAfter ->
+          fun m ->
+            UserImportReminder.UpdateSecondReminder.(
+              m |> decode >>= handle ~tags)
+            |> lift
       in
       Sihl.Web.Router.param req "action"
       |> Settings.action_of_param
@@ -146,6 +164,10 @@ module Access : module type of Helpers.Access = struct
       | `UpdateLanguages -> Command.UpdateLanguages.effects
       | `UpdateTriggerProfileUpdateAfter ->
         Command.UpdateTriggerProfileUpdateAfter.effects
+      | `UserImportFirstReminderAfter ->
+        Command.UserImportReminder.UpdateFirstReminder.effects
+      | `UserImportSecondReminderAfter ->
+        Command.UserImportReminder.UpdateSecondReminder.effects
     in
     flip Sihl.Web.Router.param "action"
     %> Settings.action_of_param

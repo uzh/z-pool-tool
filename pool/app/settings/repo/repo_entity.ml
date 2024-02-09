@@ -23,7 +23,13 @@ let encode_key_value value =
      , yojson_of_inactive_user_warning v )
    | TriggerProfileUpdateAfter v ->
      ( yojson_of_setting_key TriggerProfileUpdateAfter
-     , yojson_of_trigger_profile_update_after v ))
+     , yojson_of_trigger_profile_update_after v )
+   | UserImportFirstReminder v ->
+     ( yojson_of_setting_key UserImportFirstReminderAfter
+     , UserImportReminder.FirstReminderAfter.yojson_of_t v )
+   | UserImportSecondReminder v ->
+     ( yojson_of_setting_key UserImportSecondReminderAfter
+     , UserImportReminder.SecondReminderAfter.yojson_of_t v ))
   |> fun (m, k) -> m |> Yojson.Safe.to_string, k |> Yojson.Safe.to_string
 ;;
 
@@ -59,6 +65,14 @@ let t =
         value
         |> trigger_profile_update_after_of_yojson
         |> triggerprofileupdateafter
+      | UserImportFirstReminderAfter ->
+        value
+        |> UserImportReminder.FirstReminderAfter.t_of_yojson
+        |> userimportfirstreminder
+      | UserImportSecondReminderAfter ->
+        value
+        |> UserImportReminder.SecondReminderAfter.t_of_yojson
+        |> userimportsecondreminder
     in
     Ok { value; created_at; updated_at }
   in

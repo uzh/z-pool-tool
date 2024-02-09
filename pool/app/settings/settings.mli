@@ -3,7 +3,7 @@ type command =
   ; time_unit : Pool_common.Model.TimeUnit.t
   }
 
-val update_schema
+val update_duration_schema
   :  (Pool_common.Message.error, int) Pool_common.Utils.PoolConformist.Field.t
   -> Pool_common.Message.Field.t
   -> ( Pool_common.Message.error
@@ -46,6 +46,20 @@ module TermsAndConditions : sig
   val value : t -> Pool_common.Language.t * Terms.t
 end
 
+module UserImportReminder : sig
+  module FirstReminderAfter : sig
+    include Pool_common.Model.DurationSig
+
+    val validate : t -> (t, Pool_common.Message.error) result
+  end
+
+  module SecondReminderAfter : sig
+    include Pool_common.Model.DurationSig
+
+    val validate : t -> (t, Pool_common.Message.error) result
+  end
+end
+
 module Value : sig
   type t
 end
@@ -64,6 +78,8 @@ val action_of_param
        | `UpdateEmailSuffixes
        | `UpdateLanguages
        | `UpdateTriggerProfileUpdateAfter
+       | `UserImportFirstReminderAfter
+       | `UserImportSecondReminderAfter
        ]
        , Pool_common.Message.error )
        result
@@ -79,6 +95,8 @@ val stringify_action
      | `UpdateEmailSuffixes
      | `UpdateLanguages
      | `UpdateTriggerProfileUpdateAfter
+     | `UserImportFirstReminderAfter
+     | `UserImportSecondReminderAfter
      ]
   -> string
 
@@ -92,6 +110,10 @@ type event =
   | InactiveUserWarningUpdated of InactiveUser.Warning.t
   | LanguagesUpdated of Pool_common.Language.t list
   | TriggerProfileUpdateAfterUpdated of TriggerProfileUpdateAfter.t
+  | UserImportFirstReminderAfterUpdated of
+      UserImportReminder.FirstReminderAfter.t
+  | UserImportSecondReminderAfterUpdated of
+      UserImportReminder.SecondReminderAfter.t
 
 val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
@@ -126,6 +148,14 @@ val find_default_reminder_lead_time
 val find_default_text_msg_reminder_lead_time
   :  Pool_database.Label.t
   -> Pool_common.Reminder.TextMessageLeadTime.t Lwt.t
+
+val find_user_import_first_reminder_after
+  :  Pool_database.Label.t
+  -> UserImportReminder.FirstReminderAfter.t Lwt.t
+
+val find_user_import_second_reminder_after
+  :  Pool_database.Label.t
+  -> UserImportReminder.SecondReminderAfter.t Lwt.t
 
 val default_email_session_reminder_lead_time_key_yojson : Yojson.Safe.t
 val default_text_message_session_reminder_lead_time_key_yojson : Yojson.Safe.t

@@ -3,6 +3,13 @@ let get_or_failwith = Pool_common.Utils.get_or_failwith
 let interval_s = 15 * 60
 let limit = 50 (* equals 4'800 emails a day *)
 
+let reminder_settings database_label =
+  let open Settings in
+  Lwt.both
+    (find_user_import_first_reminder_after database_label)
+    (find_user_import_second_reminder_after database_label)
+;;
+
 let run database_label =
   let open Utils.Lwt_result.Infix in
   let%lwt import_message =
@@ -16,11 +23,14 @@ let run database_label =
     CCList.map (fun (contact, import) -> `Contact contact, import)
   in
   let run_limit fcn decode limit = fcn database_label limit () ||> decode in
+  let%lwt reminder_settings = reminder_settings database_label in
   let tasks =
     [ run_limit Repo.find_admins_to_notify to_admin, Event.notified
     ; run_limit Repo.find_contacts_to_notify to_contact, Event.notified
-    ; run_limit Repo.find_admins_to_remind to_admin, Event.reminded
-    ; run_limit Repo.find_contacts_to_remind to_contact, Event.reminded
+    ; ( run_limit (Repo.find_admins_to_remind reminder_settings) to_admin
+      , Event.reminded )
+    ; ( run_limit (Repo.find_contacts_to_remind reminder_settings) to_contact
+      , Event.reminded )
     ]
   in
   let make_events (messages, events) (contact, import) event_fnc =

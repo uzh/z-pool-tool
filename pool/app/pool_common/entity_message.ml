@@ -129,6 +129,7 @@ type error =
   | TimeSpanPositive
   | TokenAlreadyUsed
   | TokenInvalidFormat
+  | TooShort
   | Undefined of Field.t
   | Uniqueness of Field.t
   | WriteOnlyModel

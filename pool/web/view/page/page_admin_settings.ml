@@ -17,6 +17,8 @@ let show
   trigger_profile_update_after
   default_reminder_lead_time
   default_text_msg_reminder_lead_time
+  user_import_first_reminder
+  user_import_second_reminder
   Pool_context.{ language; csrf; _ }
   text_messages_enabled
   flash_fetcher
@@ -308,6 +310,45 @@ let show
           ]
       ]
   in
+  let user_import_reminder =
+    let open Settings.UserImportReminder in
+    let enabled_time_units = [ Pool_common.Model.TimeUnit.Days ] in
+    let timespan_picker field value =
+      timespan_picker
+        ~enabled_time_units
+        ~min_value:(`Number 1)
+        ~required:true
+        language
+        field
+        ~value
+    in
+    div
+      [ h2 ~a:[ a_class [ "heading-2" ] ] [ txt "User import" ]
+      ; div
+          [ Pool_common.(Utils.hint_to_string language I18n.UserImportInterval)
+            |> Unsafe.data
+          ]
+      ; div
+          ~a:[ a_class [ "stack"; "gap" ] ]
+          [ form
+              ~a:(form_attrs `UserImportFirstReminderAfter)
+              [ csrf_element csrf ()
+              ; timespan_picker
+                  Message.Field.FirstReminder
+                  (user_import_first_reminder |> FirstReminderAfter.value)
+              ; submit ()
+              ]
+          ; form
+              ~a:(form_attrs `UserImportSecondReminderAfter)
+              [ csrf_element csrf ()
+              ; timespan_picker
+                  Message.Field.SecondReminder
+                  (user_import_second_reminder |> SecondReminderAfter.value)
+              ; submit ()
+              ]
+          ]
+      ]
+  in
   div
     ~a:[ a_class [ "trim"; "narrow"; "safety-margin" ] ]
     [ h1 ~a:[ a_class [ "heading-1" ] ] [ txt "Settings" ]
@@ -319,6 +360,7 @@ let show
         ; inactive_user_html
         ; trigger_profile_update_after_html
         ; default_lead_time
+        ; user_import_reminder
         ]
     ]
 ;;

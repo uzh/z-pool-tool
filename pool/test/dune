@@ -24,6 +24,7 @@
   reminder
   tags
   tenant
+  user_import
   utils
   waiting_list)
  (preprocess

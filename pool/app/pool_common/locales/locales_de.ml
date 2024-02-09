@@ -96,6 +96,7 @@ let rec field_to_string =
   | Filesize -> "Dateigrösse"
   | Filter -> "Filter"
   | Firstname -> "Vorname"
+  | FirstReminder -> "Erste Erinnerung"
   | FollowUpSession -> "Folgesession"
   | GtxApiKey -> "GTX Api Key"
   | HideCanceled -> "Abgesagte ausblenden"
@@ -209,6 +210,7 @@ let rec field_to_string =
   | ScheduledTime -> "Geplante Zeit"
   | ScheduledTimeSpan -> "Wiederholungs Interval"
   | Search -> "Suche"
+  | SecondReminder -> "Zweite Erinnerung"
   | SentAt -> "Verschickt am"
   | Session -> "Session"
   | Sessions -> "Sessions"
@@ -610,6 +612,7 @@ let rec error_to_string = function
   | TimeSpanPositive -> "Zeitspanne muss grösser als 0 sein!"
   | TokenAlreadyUsed -> "Das Token wurde bereits verwendet."
   | TokenInvalidFormat -> "Ungültiges Token Format!"
+  | TooShort -> "Die angegebene Dauer ist zu kurz."
   | Undefined field ->
     field_message "" (field_to_string field) "ist undefiniert."
   | Uniqueness field ->
