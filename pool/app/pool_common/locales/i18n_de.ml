@@ -475,10 +475,6 @@ Wenn Sie die Erinnerungen jetzt manuell auslösen werden über den gewählten Na
       "Wenn kein %s angegeben wird, gilt die Rolle für alle %s."
       (Locales_en.field_to_string singular)
       (Locales_en.field_to_string plural)
-  | RoleAssignmentIntro ->
-    "Gelistet werden alle Rollen die zugewiesen werden können, hierbei hat die \
-     'Rolle' jeweils die Berechtigung die 'zuweisbare Rolle' jemandem \
-     zuzuweisen."
   | RolePermissionsIntro ->
     {|Alle Berechtigungen, welche für Rollen des Tenants existieren.|}
   | ScheduleEvery sec ->

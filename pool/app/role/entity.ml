@@ -102,7 +102,6 @@ module Target = struct
     | `Queue
     | `Role
     | `RoleAdmin
-    | `RoleAssignment
     | `RoleAssistant
     | `RoleExperimenter
     | `RoleLocationManager
@@ -149,7 +148,6 @@ module Target = struct
     | "queue", [] -> Ok `Queue
     | "role", [] -> Ok `Role
     | "roleadmin", [] -> Ok `RoleAdmin
-    | "roleassignment", [] -> Ok `RoleAssignment
     | "roleassistant", [] -> Ok `RoleAssistant
     | "roleexperimenter", [] -> Ok `RoleExperimenter
     | "rolelocationmanager", [] -> Ok `RoleLocationManager
@@ -194,7 +192,6 @@ module Target = struct
     ; `Queue
     ; `Role
     ; `RoleAdmin
-    ; `RoleAssignment
     ; `RoleAssistant
     ; `RoleExperimenter
     ; `RoleLocationManager

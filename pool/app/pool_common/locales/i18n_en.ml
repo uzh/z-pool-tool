@@ -462,9 +462,6 @@ If you trigger the reminders manually now, no more automatic reminders will be s
       "If no %s is specified, the role includes all %s."
       (Locales_en.field_to_string singular)
       (Locales_en.field_to_string plural)
-  | RoleAssignmentIntro ->
-    "The 'role' in the following list has permission to assign the 'assignable \
-     role' to other admins."
   | RolePermissionsIntro ->
     {|All existing permissions which are defined for roles of the tenant.|}
   | ScheduleEvery sec ->

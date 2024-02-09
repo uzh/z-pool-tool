@@ -45,7 +45,6 @@ let target_path ({ Guard.ActorRole.target_uuid; _ }, target_model, _) =
       | `Queue
       | `Role
       | `RoleAdmin
-      | `RoleAssignment
       | `RoleAssistant
       | `RoleExperimenter
       | `RoleLocationManager
