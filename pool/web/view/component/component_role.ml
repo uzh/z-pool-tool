@@ -33,7 +33,6 @@ let target_path ({ Guard.ActorRole.target_uuid; _ }, target_model, _) =
       | `Assignment
       | `ContactInfo
       | `ContactName
-      | `ExperimentRole
       | `I18n
       | `Invitation
       | `LocationFile

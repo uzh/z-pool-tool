@@ -6,7 +6,6 @@ let to_string = function
   | Activity -> "Aktivität"
   | Address -> "Addresse"
   | AdminComment -> "Administrator Kommentar"
-  | AssignableRoles -> "zuweisbare Rollen"
   | AssignmentEditTagsWarning ->
     "Bitte beachten Sie, dass durch die Bearbeitung der Anmeldung keine Tags \
      zugewiesen oder entfernt werden, die durch die Teilnahme an dieser \
@@ -35,16 +34,22 @@ let to_string = function
   | EmailConfirmationNote ->
     "Bitte prüfen Sie zunächst Ihre E-Mails und bestätigen Sie Ihre Adresse."
   | EmailConfirmationTitle -> "Bestätigung Ihrer E-Mail Adresse"
-  | ExperimentNewTitle -> "Neues Experiment erstellen"
-  | ExperimentSessionReminderHint ->
-    "Dies sind Standardeinstellungen für die Sessions dieses Experiment. Diese \
-     Einstellungen können pro Session angepasst werden."
+  | EmptyListGeneric -> "Es konnten keine Einträge gefunden werden."
   | EmtpyList field ->
     Format.asprintf
       "Es sind keine %s vorhanden."
       (Locales_de.field_to_string field)
-  | EmptyListGeneric -> "Es konnten keine Einträge gefunden werden."
   | EnrollInExperiment -> "Zum Experiment anmelden"
+  | ExperimentListEmpty ->
+    "Aktuell gibt es keine Experimente an den Sie teilnehmen können."
+  | ExperimentListPublicTitle -> "Neuanmeldung zu Experiment-Sessions"
+  | ExperimentListTitle -> "Experimente"
+  | ExperimentMessagingSubtitle -> "Nachrichtenversand"
+  | ExperimentNewTitle -> "Neues Experiment erstellen"
+  | ExperimentSessionReminderHint ->
+    "Dies sind Standardeinstellungen für die Sessions dieses Experiment. Diese \
+     Einstellungen können pro Session angepasst werden."
+  | ExperimentWaitingListTitle -> "Warteliste"
   | Files -> "Dateien"
   | FilterContactsDescription ->
     {|<p>Um Kontakte zu diesem Experiment einzuladen, folgen Sie diesen Schritten:</p>
@@ -57,11 +62,6 @@ let to_string = function
     "Anzahl der Kontakte, die den Kriterien dieses Filters entsprechen:"
   | FilterNrOfSentInvitations -> "Anzahl bereits eingeladener Kontakte:"
   | FollowUpSessionFor -> "Folgesession für:"
-  | ExperimentListTitle -> "Experimente"
-  | ExperimentListEmpty ->
-    "Aktuell gibt es keine Experimente an den Sie teilnehmen können."
-  | ExperimentListPublicTitle -> "Neuanmeldung zu Experiment-Sessions"
-  | ExperimentWaitingListTitle -> "Warteliste"
   | ImportConfirmationNote ->
     "Bitte geben Sie ein neues Paswort an. Ihre restlichen Angaben wurden \
      automatisch übernommen."
@@ -75,17 +75,6 @@ let to_string = function
     "Diese Tabelle zeigt, wie oft die Kontakte die Einladung zu diesem \
      Experiment erhalten haben."
   | LocationDetails -> "Standortdetails"
-  | NoEntries field ->
-    Format.asprintf
-      "Es existiert noch keine %s."
-      (Locales_de.field_to_string field)
-  | Note -> "Hinweis"
-  | OurPartners -> "Unsere Partner"
-  | Past -> "Vergangen"
-  | ProfileCompletionText ->
-    {|Die folgenden Angaben werden benötigt, um an Experimente eingeladen werden zu können. Weitere Angaben können anschliessend in Ihrem Profil gemacht werden.
-
-Sie kommen für mehr Experimente in Frage, umso kompletter Ihr Profil ist.|}
   | LocationFileNew -> "Neue Datei zu Standort hinzufügen"
   | LocationListTitle -> "Standorte"
   | LocationNewTitle -> "Neuer Standort erstellen"
@@ -96,19 +85,32 @@ Sie kommen für mehr Experimente in Frage, umso kompletter Ihr Profil ist.|}
     Format.asprintf "Versand vom %s" (Utils_time.formatted_date_time start)
   | MailingDistributionDescription ->
     {|<ol>
-  <li>Wählen Sie aus, nach welchem Feld und in welcher Reihenfolge Sie die Kontakte sortieren möchten.</li>
-  <li>Drücken Sie die Schaltfläche "Hinzufügen", um den Sortierparameter hinzuzufügen.</li>
-  <li>Wiederholen Sie diesen Vorgang, um weitere Parameter hinzuzufügen. Sie können sie durch "drag and drop" sortieren.</li>
-</ol>|}
+      <li>Wählen Sie aus, nach welchem Feld und in welcher Reihenfolge Sie die Kontakte sortieren möchten.</li>
+      <li>Drücken Sie die Schaltfläche "Hinzufügen", um den Sortierparameter hinzuzufügen.</li>
+      <li>Wiederholen Sie diesen Vorgang, um weitere Parameter hinzuzufügen. Sie können sie durch "drag and drop" sortieren.</li>
+    </ol>|}
   | MailingExperimentSessionFullyBooked ->
     "Alle Sessions sind ausgebucht. Es werden keine Einladungen versendet \
      (unabhängig ob z.Z. Mailings aktiv sind).\n\n\
      Füge zusätzliche Sessions zum Experiment hinzu."
   | MailingNewTitle -> "Neuen Versand erstellen"
-  | ExperimentMessagingSubtitle -> "Nachrichtenversand"
-  | ResetPasswordLink | ResetPasswordTitle -> "Passwort zurücksetzen"
+  | NoEntries field ->
+    Format.asprintf
+      "Es existiert noch keine %s."
+      (Locales_de.field_to_string field)
+  | Note -> "Hinweis"
+  | OurPartners -> "Unsere Partner"
+  | Past -> "Vergangen"
+  | PastExperimentListPublicTitle -> "Teilgenommene Experimente"
+  | PastSessionsTitle -> "Ihre vergangenen Sessions"
+  | PoolStatistics -> "Pool-Statistik"
+  | ProfileCompletionText ->
+    {|Die folgenden Angaben werden benötigt, um an Experimente eingeladen werden zu können. Weitere Angaben können anschliessend in Ihrem Profil gemacht werden.
+
+Sie kommen für mehr Experimente in Frage, umso kompletter Ihr Profil ist.|}
   | Reminder -> "Erinnerung"
   | ResendReminders -> "Erinnerungen erneut schicken"
+  | ResetPasswordLink | ResetPasswordTitle -> "Passwort zurücksetzen"
   | RoleApplicableToAssign -> "Zuweisbare Benutzer"
   | RoleCurrentlyAssigned -> "Aktuell zugewiesen"
   | RoleCurrentlyNoneAssigned field ->
@@ -116,15 +118,15 @@ Sie kommen für mehr Experimente in Frage, umso kompletter Ihr Profil ist.|}
       "Aktuell sind keine %s zugewiesen."
       (Locales_de.field_to_string field)
   | RolesGranted -> "Zugewiesene Rollen"
-  | SentInvitations -> "Versendete Einladungen"
   | SelectedTags -> "Aktuell zugewiesene Tags"
   | SelectedTagsEmpty -> "Keine Tags zugewiesen"
+  | SentInvitations -> "Versendete Einladungen"
+  | SessionCloseScreen -> "Bildschirm zum Beenden der Sessions"
   | SessionDetailTitle start ->
     Format.asprintf "Session am %s" (Utils_time.formatted_date_time start)
-  | SessionCloseScreen -> "Bildschirm zum Beenden der Sessions"
   | SessionIndent -> "Einrückungen groupieren Folgesessions."
-  | SessionReminder -> "Sessionerinnerung"
   | SessionRegistrationTitle -> "Für diese Session anmelden"
+  | SessionReminder -> "Sessionerinnerung"
   | SignUpAcceptTermsAndConditions -> "Ich akzeptiere die Nutzungsbedingungen."
   | SignUpTitle -> "Anmeldung"
   | SortUngroupedFields -> "Nicht gruppierte Felder sortieren"
@@ -143,9 +145,6 @@ Sie kommen für mehr Experimente in Frage, umso kompletter Ihr Profil ist.|}
   | TextTemplates -> "Textelemente"
   | UpcomingSessionsListEmpty ->
     "Sie sind aktuell an keine kommenden Sessions angemeldet."
-  | PastExperimentListPublicTitle -> "Teilgenommene Experimente"
-  | PastSessionsTitle -> "Ihre vergangenen Sessions"
-  | PoolStatistics -> "Pool-Statistik"
   | UpcomingSessionsTitle -> "Ihre nächsten Sessions"
   | UserProfileDetailsSubtitle -> "Persönliche Angaben"
   | UserProfileLoginSubtitle -> "Anmeldeinformationen"
@@ -158,7 +157,6 @@ Sie kommen für mehr Experimente in Frage, umso kompletter Ihr Profil ist.|}
 
 let nav_link_to_string = function
   | Admins -> "Administratoren"
-  | AssignableRoles -> "Zuweisbare Rollen"
   | Assignments -> "Anmeldungen"
   | ContactInformation -> "Kontaktangaben"
   | Contacts -> "Kontakte"
@@ -167,13 +165,13 @@ let nav_link_to_string = function
   | Dashboard -> "Dashboard"
   | Experiments -> "Experimente"
   | ExternalDataIds -> "Externe Daten Identifikatoren"
-  | Filter -> "Filter"
   | Field field -> Locales_de.field_to_string field |> CCString.capitalize_ascii
+  | Filter -> "Filter"
   | I18n -> "Texte"
   | Invitations -> "Einladungen"
   | Locations -> "Standorte"
-  | LoginInformation -> "Anmeldeinformationen"
   | Login -> "Login"
+  | LoginInformation -> "Anmeldeinformationen"
   | Logout -> "Logout"
   | Mailings -> "Versand"
   | MessageTemplates -> "Nachrichtentemplates"
@@ -205,10 +203,10 @@ Beim Einladen von Kontakten bevorzugt der Filter den überschreibenden Wert, wen
   | AllowUninvitedSignup ->
     "Alle Kontakte (eingeladen oder nicht), können sich für das Experiment \
      anmelden."
-  | AssignmentConfirmationMessageFollowUps ->
-    "Sie wurden außerdem den folgenden Folgesitzungen zugewiesen:"
   | AssignContactFromWaitingList ->
     "Wählen Sie die Session, zu welcher Sie den Kontakt zuweisen wollen."
+  | AssignmentConfirmationMessageFollowUps ->
+    "Sie wurden außerdem den folgenden Folgesitzungen zugewiesen:"
   | AssignmentsMarkedAsClosed ->
     "Diese Anmeldungen wurden als gelöscht markiert. Insofern die Kontakte den \
      Experimentkriterien noch entsprechen, können Sie sich erneut an Sessions \
@@ -221,20 +219,20 @@ Beim Einladen von Kontakten bevorzugt der Filter den überschreibenden Wert, wen
   | ContactEnrollmentRegistrationDisabled ->
     "Die Registrierung für dieses Experiment ist derzeit deaktiviert. Kontakte \
      können sich nicht selbst für dieses Experiment einschreiben."
-  | ContactNoCellPhone -> "Sie haben noch keine Mobiltelefonnummer verifiziert."
   | ContactEnterCellPhoneToken cell_phone ->
     Format.asprintf
-      "Bitte geben Sie den Verifizierungscode ein, den wir Ihnen an %s \
+      "Bitte geben Sie den Verifizierungscode ein, den wir Ihnen an %s   \
        geschickt haben. Der Code ist eine Stunde lang gültig."
       cell_phone
   | ContactLanguage ->
     "Bei einigen Experimenten wird in einer anderen Sprache kommuniziert, ohne \
      Rücksicht auf die Kontaktsprache."
-  | ContactPhoneNumberVerificationWasReset ->
-    "Sie können nun eine neue Telefonnummer eingeben."
+  | ContactNoCellPhone -> "Sie haben noch keine Mobiltelefonnummer verifiziert."
   | ContactOnWaitingList ->
     "Sie stehen auf der Warteliste. Das Rekrutierungsteam wird Sie einer \
      Session zuweisen."
+  | ContactPhoneNumberVerificationWasReset ->
+    "Sie können nun eine neue Telefonnummer eingeben."
   | ContactProfileVisibleOverride ->
     "Wenn Sie diese Werte überschreiben werden die Änderungen dem Kontakt \
      angezeigt."
@@ -262,7 +260,6 @@ Beim Einladen von Kontakten bevorzugt der Filter den überschreibenden Wert, wen
     "Fragen, die Kontakte beantworten können, bzw. müssen. Anhand dieser \
      Informationen werden die Kontakte zu Experimenten eingeladen."
   | CustomFieldExperimentModel -> "Anpassbare Attribute für Experimente."
-  | CustomFieldSessionModel -> "Anpassbare Attribute für Sessions."
   | CustomFieldGroups ->
     {|Gruppen, nach denen benutzerdefinierte Felder gruppiert werden können. Das Gruppieren von benutzerdefinierten Feldern hat keine keine Auswirkungen auf ihre Funktionalität. Sie hat lediglich grafische Auswirkungen.|}
   | CustomFieldNoContactValue -> "Durch Kontakt nicht beantwortet"
@@ -274,18 +271,19 @@ Beim Einladen von Kontakten bevorzugt der Filter den überschreibenden Wert, wen
     "Ist diese Option aktiviert, wird dieses Feld bereits bei der \
      Registrierung abgefragt, jedoch dem Kontakt nicht mehr im Benutzerprofil \
      angezeigt."
+  | CustomFieldSessionModel -> "Anpassbare Attribute für Sessions."
   | CustomFieldSort field ->
     Format.asprintf
       "In dieser Reihenfolge werden die %s den Kontakten angezeigt."
       (Locales_de.field_to_string field)
+  | CustomFieldTypeMultiSelect -> hint_to_string CustomFieldTypeSelect
+  | CustomFieldTypeSelect ->
+    "Nachdem das Feld erstellt wurde, können Sie die verfügbaren Optionen im \
+     Abschnitt 'Option' erstellen."
   | CustomFieldTypeText ->
     "Bitte berücksichtigen Sie, dass die Datenqualität bei Texteingaben tiefer \
      ist. Falls die Daten in einer anderen Form erhoben werden können, ist \
      dies zu bevorzugen."
-  | CustomFieldTypeSelect ->
-    "Nachdem das Feld erstellt wurde, können Sie die verfügbaren Optionen im \
-     Abschnitt 'Option' erstellen."
-  | CustomFieldTypeMultiSelect -> hint_to_string CustomFieldTypeSelect
   | CustomHtmx s -> s
   | DefaultReminderLeadTime lead_time ->
     Format.asprintf
@@ -323,39 +321,27 @@ Beim Einladen von Kontakten bevorzugt der Filter den überschreibenden Wert, wen
     {|Nachrichten bezüglich dieses Experiments oder Session, die an Kontakte gesendet werden, können angepasst werden, wenn Sie Informationen hinzufügen oder entfernen möchten. Die Vorlage wird in der folgenden Hierarchie ausgewählt: Session-spezifisch > Experiment-spezifisch > Standard
 
 Wenn eine Experimentsprache angegeben ist, werden alle Nachrichten in dieser Sprache gesendet. Wenn keine experimentenspezifische Sprache definiert ist, werden die Nachrichten in der Anzeigesprache des Kontakts gesendet.|}
-  | ResendRemindersChannel ->
-    "Wenn Sie sich dafür entscheiden, die Erinnerungen als Textnachrichten zu \
-     versenden, erhalten Kontakte, die keine verifizierte Handynummer haben, \
-     die Erinnerung per E-Mail."
-  | ResendRemindersWarning ->
-    {sql|Es wurden noch keine automatischen Erinnerungen für diese Session verschickt. Stellen Sie sicher, dass das Nachrichtentemplate korrekt ist, falls Sie die Erinnerungen jetzt auslösen wollen.
-
-Wenn Sie die Erinnerungen jetzt manuell auslösen werden über den gewählten Nachrichtenkanal keine automatischen Erinnerungen mehr verschickt.|sql}
-  | ExperimentWaitingList ->
-    "Kontakte, die zu diesem Experiment eingeladen wurden, und sich auf die \
-     Warteliste gesetzt haben. Sie müssen manuell einer Session zugewiesen \
-     werden."
   | ExperimentSessions ->
     {|Alle existierenden Session dieses Experiments.
-  Sobald sich jemand angemeldet hat, kann die Session nicht mehr gelöscht werden.
-  |}
+  Sobald sich jemand angemeldet hat, kann die Session nicht mehr gelöscht werden.|}
   | ExperimentSessionsPublic ->
     "Hinweis: Möglicherweise werden einzelne Sessions oder komplette \
      Experimente nicht mehr angezeigt, obwohl im E-Mail aufgeführt. Sobald \
      alle verfügbaren Plätze einer Session belegt sind wird es nichtmehr \
      angezeigt."
+  | ExperimentWaitingList ->
+    "Kontakte, die zu diesem Experiment eingeladen wurden, und sich auf die \
+     Warteliste gesetzt haben. Sie müssen manuell einer Session zugewiesen \
+     werden."
   | ExternalDataRequired ->
     "Pro Anmeldung ist ein Identifikator für externe Daten obligatorisch \
      (spätestens wenn eine Session abgeschlossen wird)."
-  | TestPhoneNumber ->
-    "Bitte geben Sie eine Telefonnummer an, an die wir eine einzige \
-     Testnachricht schicken können, um den API Key zu verifizieren. Die Nummer \
-     muss im Format +41791234567 sein."
+  | GtxKeyMissing ->
+    "Es wurde kein GTX Api Key hinterlegt, weshalb keine Textnachrichten \
+     verschickt werden."
+  | GtxKeyStored ->
+    "Ein GTX Api-Schlüssel ist hinterlegt. Textnachrichten werden verschickt."
   | I18nText str -> str
-  | MissingMessageTemplates ->
-    "Die folgenden Nachrichtenvorlagen sind nicht vorhanden. Die \
-     Standardnachricht wird an Kontakte gesendet, die eine dieser Sprachen als \
-     ihre Kommunikationssprache ausgewählt haben."
   | LocationFiles ->
     "Zusatzinformationen zum Standort, wie z.B. eine Wegbeschreibung. \
      Kontakte, die an einer Session an diesem Standort teilnehmen, können auf \
@@ -364,11 +350,6 @@ Wenn Sie die Erinnerungen jetzt manuell auslösen werden über den gewählten Na
     "Standorte, an denen Experimente durchgeführt werden. Jede Session muss \
      eine Location haben."
   | MailingLimit -> "Max. generierte Einladungen pro Mailing."
-  | GtxKeyMissing ->
-    "Es wurde kein GTX Api Key hinterlegt, weshalb keine Textnachrichten \
-     verschickt werden."
-  | GtxKeyStored ->
-    "Ein GTX Api-Schlüssel ist hinterlegt. Textnachrichten werden verschickt."
   | MessageTemplateAccountSuspensionNotification ->
     "Diese Nachricht wird an einen Benutzer gesendet, nachdem sein Konto wegen \
      zu vieler fehlgeschlagener Anmeldeversuche vorübergehend gesperrt wurde."
@@ -421,8 +402,12 @@ Wenn Sie die Erinnerungen jetzt manuell auslösen werden über den gewählten Na
   | MessageTemplateWaitingListConfirmation ->
     "Diese Nachricht bestätigt die erfolgreiche Eintragung in eine \
      Experiment-Warteliste."
-  | NumberIsSecondsHint -> "Anzahl Sekunden"
+  | MissingMessageTemplates ->
+    "Die folgenden Nachrichtenvorlagen sind nicht vorhanden. Die \
+     Standardnachricht wird an Kontakte gesendet, die eine dieser Sprachen als \
+     ihre Kommunikationssprache ausgewählt haben."
   | NumberIsDaysHint -> "Anzahl Tage"
+  | NumberIsSecondsHint -> "Anzahl Sekunden"
   | NumberIsWeeksHint -> "Anzahl Wochen"
   | NumberMax i -> error_to_string (Entity_message.NumberMax i)
   | NumberMin i -> error_to_string (Entity_message.NumberMin i)
@@ -463,6 +448,14 @@ Wenn Sie die Erinnerungen jetzt manuell auslösen werden über den gewählten Na
   | RescheduleSession ->
     "Wenn Sie eine Session verschieben werden alle an dieser Session \
      registrierten Kontakte automatisch informiert."
+  | ResendRemindersChannel ->
+    "Wenn Sie sich dafür entscheiden, die Erinnerungen als Textnachrichten zu \
+     versenden, erhalten Kontakte, die keine verifizierte Handynummer haben, \
+     die Erinnerung per E-Mail."
+  | ResendRemindersWarning ->
+    {sql|Es wurden noch keine automatischen Erinnerungen für diese Session verschickt. Stellen Sie sicher, dass das Nachrichtentemplate korrekt ist, falls Sie die Erinnerungen jetzt auslösen wollen.
+
+Wenn Sie die Erinnerungen jetzt manuell auslösen werden über den gewählten Nachrichtenkanal keine automatischen Erinnerungen mehr verschickt.|sql}
   | ResetInvitations ->
     "Einladungen zurücksetzen, alle bisherigen Einladungen werden für \
      zukünftige Versande ignoriert."
@@ -477,10 +470,6 @@ Wenn Sie die Erinnerungen jetzt manuell auslösen werden über den gewählten Na
       (Locales_en.field_to_string plural)
   | RolePermissionsIntro ->
     {|Alle Berechtigungen, welche für Rollen des Tenants existieren.|}
-  | ScheduleEvery sec ->
-    sec
-    |> Pool_common_utils.Time.formatted_timespan
-    |> Format.asprintf "alle %s"
   | ScheduleAt time ->
     time
     |> Pool_common_utils.Time.formatted_date_time
@@ -488,30 +477,28 @@ Wenn Sie die Erinnerungen jetzt manuell auslösen werden über den gewählten Na
   | ScheduledIntro ->
     {|Informationen über alle periodischen Hintergrund-Prozesse.
 
-    Beachte: Wenn die Applikation neugestartet wird, werden alle auf "stopped" gesetzt
-    |}
+    Beachte: Wenn die Applikation neugestartet wird, werden alle auf "stopped" gesetzt|}
+  | ScheduleEvery sec ->
+    sec
+    |> Pool_common_utils.Time.formatted_timespan
+    |> Format.asprintf "alle %s"
   | SearchByFields fields ->
     Format.asprintf
       "Suche nach: %s"
       (fields |> CCList.map Locales_en.field_to_string |> CCString.concat ", ")
+  | SelectedDateIsPast -> "Das gewählte Datum liegt in der Vergangenheit."
   | SelectedOptionsCountMax i ->
     error_to_string (Entity_message.SelectedOptionsCountMax i)
   | SelectedOptionsCountMin i ->
     error_to_string (Entity_message.SelectedOptionsCountMin i)
+  | SessionCancellationMessageFollowUps ->
+    "Dazugehörige Folgesessions wurden evenfalls abgesagt:"
   | SessionCancellationWithFollowups ->
     {|Wenn Sie diese Sitzung absagen, werden auch alle Folgesessions abgesagt.
 
 Die folgenden Folgesessions existieren:|}
-  | SessionCancellationMessageFollowUps ->
-    "Dazugehörige Folgesessions wurden evenfalls abgesagt:"
   | SessionCancelMessage ->
     "Dieser Grund wird allen angemeldeten Kontakten gezeigt."
-  | SessionCloseParticipationTagsSelected ->
-    "Die folgenden Tags werden allen Teilnehmer/innen zugewiesen, die an \
-     diesem Experiment teilgenommen haben:"
-  | SessionCloseNoParticipationTagsSelected ->
-    "Es wurden keine Tags ausgewählt, die den Teilnehmer/innen zugewiesen \
-     werden, die an diesem Experiment teilgenommen haben."
   | SessionCloseHints ->
     Format.asprintf
       {|<strong>%s</strong> und <strong>%s</strong> schliessen sich gegenseitig aus.<br>
@@ -522,21 +509,26 @@ Wenn keine der Checkboxen angewählt ist, bedeutet das, dass der Kontakt erschie
     "Der Kontakt ist nicht an der Session erschienen"
   | SessionCloseLegendParticipated ->
     "Der Kontakt hat am Experiment teilgenommen"
-  | SessionReminderLeadTime ->
-    "Die Vorlaufzeit bestimmt, wie lange vor dem Start der Session die \
-     Erinnerungen an die Kontakte verschickt wird."
-  | SessionReminderLanguageHint ->
-    "Falls sie einen eigenen Erinnerungstext angeben, wählen Sie dessen \
-     Sprache hier."
-  | SettingsNoEmailSuffixes ->
-    "Es sind keine Email-Endungen definiert, die zugelassen sind. Das \
-     bedeutet, dass alle Email-Endungen erlaubt sind."
-  | SessionRegistrationHint ->
-    "Die Registrierung für eine Session ist verbindlich."
+  | SessionCloseNoParticipationTagsSelected ->
+    "Es wurden keine Tags ausgewählt, die den Teilnehmer/innen zugewiesen \
+     werden, die an diesem Experiment teilgenommen haben."
+  | SessionCloseParticipationTagsSelected ->
+    "Die folgenden Tags werden allen Teilnehmer/innen zugewiesen, die an \
+     diesem Experiment teilgenommen haben:"
   | SessionRegistrationFollowUpHint ->
     "Die Registrierung für eine Session inkl. allen Folgesessions ist \
      verbindlich."
-  | SelectedDateIsPast -> "Das gewählte Datum liegt in der Vergangenheit."
+  | SessionRegistrationHint ->
+    "Die Registrierung für eine Session ist verbindlich."
+  | SessionReminderLanguageHint ->
+    "Falls sie einen eigenen Erinnerungstext angeben, wählen Sie dessen \
+     Sprache hier."
+  | SessionReminderLeadTime ->
+    "Die Vorlaufzeit bestimmt, wie lange vor dem Start der Session die \
+     Erinnerungen an die Kontakte verschickt wird."
+  | SettingsNoEmailSuffixes ->
+    "Es sind keine Email-Endungen definiert, die zugelassen sind. Das \
+     bedeutet, dass alle Email-Endungen erlaubt sind."
   | SignUpForWaitingList ->
     "Das Rekrutierungsteam wird sich mit Ihnen in Verbindung setzen, um Ihnen \
      einen Termin zuzuweisen, wenn ein freier Platz vorhanden ist."
@@ -547,11 +539,9 @@ Wenn keine der Checkboxen angewählt ist, bedeutet das, dass der Kontakt erschie
   | SmtpSettingsIntro ->
     {|Die folgende Konfiguration wird vom E-Mail Service verwendet.
 
-    Beachte: Bei Verwendung des Mechanismus für "LOGIN" muss ein Benutzername und Passwort angegeben werden.
-    |}
+    Beachte: Bei Verwendung des Mechanismus für "LOGIN" muss ein Benutzername und Passwort angegeben werden.|}
   | SwapSessions ->
-    {|Das Ändern der Session wird nur diese Anmeldung anpassen. Wenn es \
-     Folgezuweisungen gibt, müssen diese manuell aktualisiert werden.
+    {|Das Ändern der Session wird nur diese Anmeldung anpassen. Wenn es Folgezuweisungen gibt, müssen diese manuell aktualisiert werden.
 
 Es können nur Sitzungen mit freien Plätzen ausgewählt werden.|}
   | TagsIntro ->
@@ -568,15 +558,19 @@ Es können nur Sitzungen mit freien Plätzen ausgewählt werden.|}
     {|Die Datenbank URL, nach folgendem Schema:
     mariadb://<user>:<pw>@<host>:<port>/<database>|}
   | TenantUrl -> "Die URL des Tenants ohne Protokoll, z.B.: pool.uzh.ch"
-  | TextLengthMin i -> error_to_string (Entity_message.TextLengthMin i)
+  | TestPhoneNumber ->
+    "Bitte geben Sie eine Telefonnummer an, an die wir eine einzige \
+     Testnachricht schicken können, um den API Key zu verifizieren. Die Nummer \
+     muss im Format +41791234567 sein."
   | TextLengthMax i -> error_to_string (Entity_message.TextLengthMax i)
+  | TextLengthMin i -> error_to_string (Entity_message.TextLengthMin i)
+  | UserImportInterval ->
+    {|<p>Legen Sie fest, nach wie vielen Tagen eine Erinnerung an Kontakte gesendet werden soll, die den Import noch nicht bestätigt haben.</p>
+<p><strong>Die Einstellung "Zweite Erinnerung" legt fest, wie lange nach der ersten Erinnerung die zweite Erinnerung gesendet wird.</strong></p>|}
   | WaitingListPhoneMissingContact ->
     "Sie haben in Ihrem Profil noch keine Telefonnummer angegenen. Wir bitten \
      Sie, eine Telefonnummer anzugeben, damit das Rekrutierungsteam Sie \
      kontaktieren kann."
-  | UserImportInterval ->
-    {|<p>Legen Sie fest, nach wie vielen Tagen eine Erinnerung an Kontakte gesendet werden soll, die den Import noch nicht bestätigt haben.</p>
-<p><strong>Die Einstellung "Zweite Erinnerung" legt fest, wie lange nach der ersten Erinnerung die zweite Erinnerung gesendet wird.</strong></p>|}
 ;;
 
 let confirmable_to_string confirmable =
@@ -625,16 +619,15 @@ let confirmable_to_string confirmable =
      , Some
          "Dieser wird nicht mehr für Experimente eingeladen und kann sich \
           nicht mehr für solche registrieren." )
-   | PublisCustomField ->
+   | PublishCustomField ->
      ( "das Feld und alle dazugehörigen Optionen"
      , "publizieren"
      , Some "Sie werden das Feld nicht mehr löschen können." )
-   | PublisCustomFieldOption ->
+   | PublishCustomFieldOption ->
      ( "die Option"
      , "publizieren"
      , Some "Sie werden die Option nicht mehr löschen können." )
    | ReactivateAccount -> "den Account", "reaktivieren", None
-   | RemoveAssignableRole -> "die zuweisbare Rolle", "löschen", None
    | RemoveRule -> "die Regel", "löschen", None
    | RemoveTag -> "den Tag", "entfernen", None
    | RescheduleSession -> "die Session", "verschieben", None

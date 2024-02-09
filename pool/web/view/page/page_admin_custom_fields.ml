@@ -726,7 +726,7 @@ let field_buttons language csrf current_model field =
              (action field "publish")
              Message.(Publish (Some Field.CustomField))
              `Success
-             I18n.PublisCustomField
+             I18n.PublishCustomField
          ])
 ;;
 

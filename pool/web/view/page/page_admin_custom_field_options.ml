@@ -105,7 +105,7 @@ let field_buttons language csrf custom_field option =
              (action option "publish")
              Pool_common.Message.(Publish (Some Field.CustomFieldOption))
              `Success
-             I18n.PublisCustomFieldOption
+             I18n.PublishCustomFieldOption
          ])
 ;;
 
