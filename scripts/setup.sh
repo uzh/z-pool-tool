@@ -12,7 +12,7 @@ repo_uzh=https://github.com/uzh
 repo_sihl=$repo_oxi/sihl.git#56ce27c46de0f43426f7cbbb49386dd15e8688e6
 
 # pin Sihl repos to ensure edge is available
-opam pin add -yn sihl $repo_sihl 
+opam pin add -yn sihl $repo_sihl
 opam pin add -yn sihl-cache $repo_sihl
 opam pin add -yn sihl-email $repo_sihl
 opam pin add -yn sihl-queue $repo_sihl
@@ -24,7 +24,7 @@ opam pin add -yn letters $repo_oxi/letters.git#0.3.3
 
 # pin custom libraries
 opam pin add -yn canary $repo_uzh/canary.git#02cf40e029268560e160ca032850426e387aa598
-opam pin add -yn guardian $repo_uzh/guardian.git#9f68a2afa4a3517cbb2f85d0748fb7e00ab8e226
+opam pin add -yn guardian $repo_uzh/guardian.git#b17e373345cb1e09777747248dbb107520bb0c9a
 
 opam pin add -yn pool .
 OPAMSOLVERTIMEOUT=180 opam depext -y pool

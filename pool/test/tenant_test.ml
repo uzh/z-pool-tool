@@ -69,7 +69,6 @@ module Data = struct
 
   module Smtp = struct
     let id = SmtpAuth.Id.create ()
-    let label = database_label
     let server = "smtp.uzh.ch"
     let port = 587
     let username = "engineering@econ.uzh.ch"
@@ -79,7 +78,7 @@ module Data = struct
 
     let urlencoded ?(default = true) () =
       let open Common.Message in
-      [ Field.SmtpLabel, [ label ]
+      [ Field.SmtpLabel, [ database_label ]
       ; Field.SmtpServer, [ server ]
       ; Field.SmtpPort, [ port |> CCInt.to_string ]
       ; Field.SmtpUsername, [ username ]
@@ -92,10 +91,11 @@ module Data = struct
     ;;
 
     let create () =
+      let new_id = id in
       let open CCResult in
       let open Email.SmtpAuth in
       let auth =
-        let* label = label |> Label.create in
+        let* label = database_label |> Label.create in
         let* server = server |> Server.create in
         let* port = port |> Port.create in
         let* username =
@@ -108,7 +108,7 @@ module Data = struct
         let protocol = fst protocol in
         let default = Default.create true in
         Write.create
-          ~id
+          ~id:new_id
           label
           server
           port
@@ -133,8 +133,15 @@ module Data = struct
       ; _
       }
       =
-      SmtpAuth.
-        { id; label; server; port; username; mechanism; protocol; default }
+      { SmtpAuth.id
+      ; label
+      ; server
+      ; port
+      ; username
+      ; mechanism
+      ; protocol
+      ; default
+      }
     ;;
   end
 

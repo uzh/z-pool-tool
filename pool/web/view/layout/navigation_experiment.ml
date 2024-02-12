@@ -21,47 +21,40 @@ let title_to_string language text =
   | Text str -> str
 ;;
 
-let nav_elements { Experiment.id; direct_registration_disabled; _ } =
+let nav_elements experiment =
   let open Guard in
-  let open ValidationSet in
+  let open Access.Role.Assignment in
   let open I18n in
+  let open Experiment in
+  let id = experiment |> id in
+  let target_uuid = Uuid.target_of Id.value id in
   let left =
-    let exp_and_any_of_model role =
-      let open Permission in
-      And
-        [ Experiment.Guard.Access.update id
-        ; Or
-            [ one_of_tuple (Create, role, None)
-            ; read_entity role
-            ; one_of_tuple (Update, role, None)
-            ; one_of_tuple (Delete, role, None)
-            ]
-        ]
-    in
-    [ "", Overview, Experiment.Guard.Access.read id
-    ; "assistants", Field Field.Assistants, exp_and_any_of_model `Role
-    ; "experimenter", Field Field.Experimenter, exp_and_any_of_model `Role
-    ; "invitations", Invitations, Invitation.Guard.Access.index id
+    [ "", Overview, Set (Guard.Access.read id)
+    ; "assistants", Field Field.Assistants, Set (Assistant.read ~target_uuid ())
+    ; ( "experimenter"
+      , Field Field.Experimenter
+      , Set (Experimenter.read ~target_uuid ()) )
+    ; "invitations", Invitations, Set (Invitation.Guard.Access.index id)
     ]
   in
   let right =
-    [ "sessions", Sessions, Session.Guard.Access.index id
-    ; "assignments", Assignments, Assignment.Guard.Access.index id
-    ; "mailings", Mailings, Mailing.Guard.Access.index id
+    [ "sessions", Sessions, Set (Session.Guard.Access.index id)
+    ; "assignments", Assignments, Set (Assignment.Guard.Access.index id)
+    ; "mailings", Mailings, Set (Mailing.Guard.Access.index id)
     ]
   in
   let waiting_list_nav =
-    if Experiment.(
-         DirectRegistrationDisabled.value direct_registration_disabled)
-    then [ "waiting-list", WaitingList, Waiting_list.Guard.Access.index id ]
+    if experiment
+       |> direct_registration_disabled
+       |> DirectRegistrationDisabled.value
+    then
+      [ "waiting-list", WaitingList, Set (Waiting_list.Guard.Access.index id) ]
     else []
   in
   left @ waiting_list_nav @ right
   |> CCList.map (fun (url, label, set) ->
     Single
-      ( Format.asprintf "/admin/experiments/%s/%s" (Experiment.Id.value id) url
-      , label
-      , set )
+      (Format.asprintf "/admin/experiments/%s/%s" (Id.value id) url, label, set)
     |> NavElement.create)
 ;;
 
@@ -94,12 +87,13 @@ let combine ?buttons ?hint language title children =
   title @ [ div ~a:[ a_class [ "gap-lg" ] ] children ]
 ;;
 
-let with_heading ({ Experiment.title; _ } : Experiment.t) children =
+let with_heading experiment children =
+  let open Experiment in
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
     [ h1
         ~a:[ a_class [ "heading-1" ] ]
-        [ txt Experiment.(title |> Title.value) ]
+        [ experiment |> title |> Title.value |> txt ]
     ; children
     ]
 ;;

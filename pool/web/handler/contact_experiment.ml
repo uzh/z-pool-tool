@@ -51,9 +51,7 @@ let show req =
       HttpUtils.find_id Experiment.Id.of_string Experiment req
     in
     let* contact = Pool_context.find_contact context |> Lwt_result.lift in
-    let* ({ Experiment.Public.id; _ } as experiment) =
-      Experiment.find_public database_label id contact
-    in
+    let* experiment = Experiment.find_public database_label id contact in
     let* grouped_sessions =
       Session.find_all_public_for_experiment database_label contact id
       >|+ Session.Public.group_and_sort

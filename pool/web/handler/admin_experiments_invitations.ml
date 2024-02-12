@@ -15,19 +15,19 @@ let index req =
   in
   let result ({ Pool_context.database_label; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, error_path)
-    @@ let* ({ Experiment.id; filter; _ } as experiment) =
-         Experiment.find database_label id
-       in
+    @@ let* experiment = id |> Experiment.find database_label in
+       let open Experiment in
+       let common_exp_id = experiment |> id |> Id.to_common in
        let%lwt key_list = Filter.all_keys database_label in
        let%lwt template_list = Filter.find_all_templates database_label () in
        let%lwt query_experiments, query_tags =
-         match filter with
+         match experiment |> filter with
          | None -> Lwt.return ([], [])
          | Some filter ->
            Lwt.both
              (filter
               |> Filter.all_query_experiments
-              |> Experiment.search_multiple_by_id database_label)
+              |> search_multiple_by_id database_label)
              (filter
               |> Filter.all_query_tags
               |> Tags.find_multiple database_label)
@@ -40,20 +40,21 @@ let index req =
              find_filtered_contacts
                ~limit:50
                database_label
-               (Matcher (id |> Experiment.Id.to_common))
-               filter)
+               (Matcher common_exp_id)
+               (experiment |> filter))
            >|+ CCOption.pure
        in
        let* matching_filter_count =
          let open Filter in
-         let open Experiment in
          count_filtered_contacts
            database_label
-           (Matcher (Id.to_common id))
-           (experiment.filter |> CCOption.map (fun { Filter.query; _ } -> query))
+           (Matcher common_exp_id)
+           (experiment
+            |> filter
+            |> CCOption.map (fun { Filter.query; _ } -> query))
        in
        let%lwt invitation_count =
-         Invitation.count_by_experiment database_label id
+         experiment |> id |> Invitation.count_by_experiment database_label
        in
        Page.Admin.Experiments.invitations
          experiment

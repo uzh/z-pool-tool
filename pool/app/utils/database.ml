@@ -212,7 +212,7 @@ let truncate_table_names_request =
   {sql|
     SELECT TABLE_NAME
     FROM INFORMATION_SCHEMA.`TABLES`
-    WHERE TABLE_SCHEMA IN (DATABASE()) AND TABLE_NAME NOT IN ('core_migration_state', 'pool_message_templates', 'guardian_role_permissions', 'pool_i18n', 'pool_system_settings')
+    WHERE TABLE_SCHEMA IN (DATABASE()) AND TABLE_NAME NOT IN ('core_migration_state', 'pool_message_templates', 'pool_i18n', 'pool_system_settings')
   |sql}
   |> Caqti_type.(unit ->* string) ~oneshot:true
 ;;

@@ -151,6 +151,9 @@ module SmtpAuth : sig
     ; default : Default.t
     }
 
+  val id : t -> Id.t
+  val label : t -> Label.t
+
   type smtp = t
 
   type update_password =

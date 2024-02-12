@@ -31,9 +31,8 @@ let decode_update data =
 ;;
 
 let assignment_effect action uuid =
-  let open Guard in
   let target_id = uuid |> Guard.Uuid.target_of Assignment.Id.value in
-  ValidationSet.one_of_tuple (action, `Assignment, Some target_id)
+  Guard.ValidationSet.one_of_tuple (action, `Assignment, Some target_id)
 ;;
 
 let assignment_creation_and_confirmation_events
@@ -238,12 +237,11 @@ end = struct
   ;;
 
   let effects experiment_id waiting_list_id =
-    let open Guard in
-    ValidationSet.(
-      And
-        [ Waiting_list.Guard.Access.update experiment_id waiting_list_id
-        ; Assignment.Guard.Access.create experiment_id
-        ])
+    let open Guard.ValidationSet in
+    And
+      [ Waiting_list.Guard.Access.update experiment_id waiting_list_id
+      ; Assignment.Guard.Access.create experiment_id
+      ]
   ;;
 end
 

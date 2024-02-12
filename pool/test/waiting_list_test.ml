@@ -10,11 +10,10 @@ let create () =
   let experiment = Model.create_public_experiment () in
   let confirmation = Test_utils.Model.create_email () in
   let experiment =
-    Experiment.Public.
-      { experiment with
-        direct_registration_disabled =
-          true |> Experiment.DirectRegistrationDisabled.create
-      }
+    Experiment.(
+      true
+      |> DirectRegistrationDisabled.create
+      |> Public.update_direct_registration_disabled experiment)
   in
   let contact = Model.create_contact () in
   let command = { experiment; contact } in
@@ -48,11 +47,10 @@ let create_with_direct_registration_enabled () =
   let experiment = Model.create_public_experiment () in
   let confirmation = Test_utils.Model.create_email () in
   let experiment =
-    Experiment.Public.
-      { experiment with
-        direct_registration_disabled =
-          false |> Experiment.DirectRegistrationDisabled.create
-      }
+    Experiment.(
+      false
+      |> DirectRegistrationDisabled.create
+      |> Public.update_direct_registration_disabled experiment)
   in
   let contact = Model.create_contact () in
   let command = { experiment; contact } in
@@ -99,8 +97,7 @@ module PendingWaitingLists = struct
       ContactRepo.create ~id:contact_id ~with_terms_accepted:true ()
     in
     let%lwt experiment =
-      ExperimentRepo.create ~id:experiment_id ()
-      ||> Model.experiment_to_public_experiment
+      ExperimentRepo.create ~id:experiment_id () ||> Experiment.to_public
     in
     let%lwt (_ : Waiting_list.t) =
       WaitingListRepo.create experiment contact ()
@@ -123,7 +120,7 @@ module PendingWaitingLists = struct
     let%lwt experiment =
       Experiment.find database_label experiment_id
       ||> get_exn
-      ||> Test_utils.Model.experiment_to_public_experiment
+      ||> Experiment.to_public
     in
     let%lwt contact = Contact.find database_label contact_id ||> get_exn in
     let%lwt session =
@@ -149,7 +146,7 @@ module PendingWaitingLists = struct
     let%lwt experiment =
       Experiment.find database_label experiment_id
       ||> get_exn
-      ||> Test_utils.Model.experiment_to_public_experiment
+      ||> Experiment.to_public
     in
     let%lwt contact = Contact.find database_label contact_id ||> get_exn in
     let%lwt session = Session.find database_label session_id ||> get_exn in

@@ -214,10 +214,10 @@ let contact_name_filter name =
   |> create None
 ;;
 
-let store_filter experiment filter =
+let store_filter experiment new_filter =
   let%lwt () =
-    [ Filter.Created filter |> Pool_event.filter
-    ; Experiment.(Updated { experiment with filter = Some filter })
+    [ Filter.Created new_filter |> Pool_event.filter
+    ; Experiment.(Updated { experiment with filter = Some new_filter })
       |> Pool_event.experiment
     ]
     |> Pool_event.handle_events database_label

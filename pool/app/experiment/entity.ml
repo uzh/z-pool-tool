@@ -106,7 +106,7 @@ type t =
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
   }
-[@@deriving eq, show]
+[@@deriving eq, fields ~getters, show]
 
 let create
   ?id
@@ -190,6 +190,37 @@ module Public = struct
     ; smtp_auth_id : Email.SmtpAuth.Id.t option
     }
   [@@deriving eq, show]
+
+  let create
+    ?description
+    ?language
+    ?experiment_type
+    ?smtp_auth_id
+    id
+    public_title
+    direct_registration_disabled
+    =
+    { id
+    ; public_title
+    ; description
+    ; language
+    ; direct_registration_disabled
+    ; experiment_type
+    ; smtp_auth_id
+    }
+  ;;
+
+  let update_direct_registration_disabled (m : t) direct_registration_disabled =
+    { m with direct_registration_disabled }
+  ;;
+
+  let id (m : t) = m.id
+  let public_title (m : t) = m.public_title
+  let description (m : t) = m.description
+  let language (m : t) = m.language
+  let direct_registration_disabled (m : t) = m.direct_registration_disabled
+  let experiment_type (m : t) = m.experiment_type
+  let smtp_auth_id (m : t) = m.smtp_auth_id
 end
 
 let to_public
@@ -203,15 +234,14 @@ let to_public
   ; _
   }
   =
-  Public.
-    { id
-    ; public_title
-    ; description = public_description
-    ; language
-    ; direct_registration_disabled
-    ; experiment_type
-    ; smtp_auth_id
-    }
+  { Public.id
+  ; public_title
+  ; description = public_description
+  ; language
+  ; direct_registration_disabled
+  ; experiment_type
+  ; smtp_auth_id
+  }
 ;;
 
 let email_session_reminder_lead_time_value m =

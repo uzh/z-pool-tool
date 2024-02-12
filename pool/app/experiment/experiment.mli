@@ -92,6 +92,35 @@ type t =
 val equal : t -> t -> bool
 val pp : Format.formatter -> t -> unit
 val show : t -> string
+val id : t -> Id.t
+val title : t -> Title.t
+val public_title : t -> PublicTitle.t
+val internal_description : t -> InternalDescription.t option
+val public_description : t -> PublicDescription.t option
+val language : t -> Pool_common.Language.t option
+val cost_center : t -> CostCenter.t option
+val organisational_unit : t -> Organisational_unit.t option
+val filter : t -> Filter.t option
+val contact_person_id : t -> Admin.Id.t option
+val smtp_auth_id : t -> Email.SmtpAuth.Id.t option
+val direct_registration_disabled : t -> DirectRegistrationDisabled.t
+val registration_disabled : t -> RegistrationDisabled.t
+val allow_uninvited_signup : t -> AllowUninvitedSignup.t
+val external_data_required : t -> ExternalDataRequired.t
+val show_external_data_id_links : t -> ShowExternalDataIdLinks.t
+val experiment_type : t -> Pool_common.ExperimentType.t option
+
+val email_session_reminder_lead_time
+  :  t
+  -> Pool_common.Reminder.EmailLeadTime.t option
+
+val text_message_session_reminder_lead_time
+  :  t
+  -> Pool_common.Reminder.TextMessageLeadTime.t option
+
+val invitation_reset_at : t -> InvitationResetAt.t option
+val created_at : t -> Ptime.t
+val updated_at : t -> Ptime.t
 
 val create
   :  ?id:Id.t
@@ -142,19 +171,34 @@ val pp_create : Format.formatter -> create -> unit
 val show_create : create -> string
 
 module Public : sig
-  type t =
-    { id : Id.t
-    ; public_title : PublicTitle.t
-    ; description : PublicDescription.t option
-    ; language : Pool_common.Language.t option
-    ; direct_registration_disabled : DirectRegistrationDisabled.t
-    ; experiment_type : Pool_common.ExperimentType.t option
-    ; smtp_auth_id : Email.SmtpAuth.Id.t option
-    }
+  type t
 
   val equal : t -> t -> bool
   val pp : Format.formatter -> t -> unit
   val show : t -> string
+
+  val create
+    :  ?description:PublicDescription.t
+    -> ?language:Pool_common.Language.t
+    -> ?experiment_type:Pool_common.ExperimentType.t
+    -> ?smtp_auth_id:Email.SmtpAuth.Id.t
+    -> Id.t
+    -> PublicTitle.t
+    -> DirectRegistrationDisabled.t
+    -> t
+
+  val id : t -> Id.t
+  val public_title : t -> PublicTitle.t
+  val description : t -> PublicDescription.t option
+  val language : t -> Pool_common.Language.t option
+  val direct_registration_disabled : t -> DirectRegistrationDisabled.t
+  val experiment_type : t -> Pool_common.ExperimentType.t option
+  val smtp_auth_id : t -> Email.SmtpAuth.Id.t option
+
+  val update_direct_registration_disabled
+    :  t
+    -> DirectRegistrationDisabled.t
+    -> t
 end
 
 val to_public : t -> Public.t

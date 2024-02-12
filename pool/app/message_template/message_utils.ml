@@ -217,10 +217,8 @@ let experiment_message_language
   experiment_or_contact_lang sys_langs contact language
 ;;
 
-let public_experiment_message_language
-  sys_langs
-  ({ Experiment.Public.language; _ } : Experiment.Public.t)
-  contact
-  =
-  experiment_or_contact_lang sys_langs contact language
+let public_experiment_message_language sys_langs experiment contact =
+  experiment
+  |> Experiment.Public.language
+  |> experiment_or_contact_lang sys_langs contact
 ;;

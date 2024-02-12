@@ -249,7 +249,7 @@ end = struct
     let open Guard in
     let open ValidationSet in
     Or
-      [ one_of_tuple (Permission.Create, `AdminPromote, None)
+      [ one_of_tuple (Permission.Create, `RoleAdmin, None)
       ; Admin.Guard.Access.create
       ]
   ;;

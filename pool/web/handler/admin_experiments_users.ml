@@ -14,11 +14,11 @@ let admin_id =
 
 let index role req =
   let open Utils.Lwt_result.Infix in
-  let result ({ Pool_context.database_label; language; _ } as context) =
+  let result ({ Pool_context.database_label; language; user; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, "/admin/experiments")
     @@
     let id = experiment_id req in
-    let current_roles =
+    let current_roles : Role.Role.t * Guard.Uuid.Target.t option =
       let id = id |> Guard.Uuid.target_of Experiment.Id.value in
       match role with
       | `Assistants -> `Assistant, Some id
@@ -40,8 +40,29 @@ let index role req =
       |> CCFun.flip (I18n.find_by_key database_label) language
     in
     let* experiment = Experiment.find database_label id in
+    let%lwt can_assign, can_unassign =
+      match%lwt
+        Pool_context.Utils.find_authorizable_opt database_label user
+      with
+      | None -> Lwt.return (false, false)
+      | Some actor ->
+        let open Guard in
+        let role, target_uuid = current_roles in
+        let check permission =
+          PermissionOnTarget.create
+            ?target_uuid
+            permission
+            (role |> Utils.find_assignable_target_role)
+          |> ValidationSet.one
+          |> CCFun.flip (Guard.Persistence.validate database_label) actor
+          ||> CCResult.is_ok
+        in
+        Lwt.both (check Permission.Create) (check Permission.Delete)
+    in
     Page.Admin.Experiments.users
       ~hint
+      ~can_assign
+      ~can_unassign
       role
       experiment
       applicable_admins
@@ -121,7 +142,6 @@ module Access : sig
 end = struct
   include Helpers.Access
   open Guard
-  open ValidationSet
   open Cqrs_command.Experiment_command
   module Field = Pool_common.Message.Field
 
@@ -131,8 +151,14 @@ end = struct
 
   let index_assistants =
     (fun req ->
-      let expand = CCFun.flip experiment_effects req in
-      Or [ expand AssignAssistant.effects; expand UnassignAssistant.effects ])
+      let target_uuid =
+        Middleware.Guardian.id_effects
+          Uuid.Target.of_string
+          Field.Experiment
+          CCFun.id
+          req
+      in
+      Access.Role.Assignment.Assistant.read ?target_uuid ())
     |> Middleware.Guardian.validate_generic
   ;;
 
@@ -150,11 +176,14 @@ end = struct
 
   let index_experimenter =
     (fun req ->
-      let expand = CCFun.flip experiment_effects req in
-      Or
-        [ expand AssignExperimenter.effects
-        ; expand UnassignExperimenter.effects
-        ])
+      let target_uuid =
+        Middleware.Guardian.id_effects
+          Uuid.Target.of_string
+          Field.Experiment
+          CCFun.id
+          req
+      in
+      Access.Role.Assignment.Experimenter.read ?target_uuid ())
     |> Middleware.Guardian.validate_generic
   ;;
 

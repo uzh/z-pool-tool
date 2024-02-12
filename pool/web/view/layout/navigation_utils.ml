@@ -11,24 +11,33 @@ let filter_items ?validate ?actor ?(guardian = []) items =
   | Some true, Some actor ->
     let rec filter_nav items =
       CCList.filter_map
-        (fun ({ NavElement.validation_set; children; _ } as element) ->
-          try
-            let self =
-              Persistence.PermissionOnTarget.validate_set
-                ~any_id:true
-                guardian
-                Pool_common.Message.authorization
-                validation_set
-                actor
-            in
-            match self with
-            | Ok () when CCList.is_empty children -> Some element
-            | Ok () ->
-              let children = filter_nav children in
-              Some NavElement.{ element with children }
-            | Error _ -> None
-          with
-          | _ -> None)
+        (fun ({ NavElement.validation; children; _ } as element) ->
+          let with_children () =
+            let children = filter_nav children in
+            Some NavElement.{ element with children }
+          in
+          match validation with
+          | AlwaysOn -> with_children ()
+          | OnChildren ->
+            (match filter_nav children with
+             | [] -> None
+             | children -> Some NavElement.{ element with children })
+          | Set validation_set ->
+            (try
+               let self =
+                 Persistence.PermissionOnTarget.validate_set
+                   ~any_id:true
+                   guardian
+                   Pool_common.Message.authorization
+                   validation_set
+                   actor
+               in
+               match self with
+               | Ok () when CCList.is_empty children -> Some element
+               | Ok () -> with_children ()
+               | Error _ -> None
+             with
+             | _ -> None))
         items
     in
     filter_nav items

@@ -117,7 +117,7 @@ module LanguageTestsData = struct
   let invitation_label = Label.ExperimentInvitation
 
   let create_experiment ?language () =
-    Experiment.{ (Test_utils.Model.create_experiment ()) with language }
+    { (Test_utils.Model.create_experiment ()) with Experiment.language }
   ;;
 
   let contact_de = Test_utils.Model.create_contact ~language:Language.De ()

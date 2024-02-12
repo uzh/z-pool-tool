@@ -18,8 +18,8 @@ type t =
   | DontHaveAnAccount
   | EmailConfirmationNote
   | EmailConfirmationTitle
-  | EmtpyList of Entity_message.Field.t
   | EmptyListGeneric
+  | EmtpyList of Entity_message.Field.t
   | EnrollInExperiment
   | ExperimentListEmpty
   | ExperimentListPublicTitle
@@ -54,6 +54,9 @@ type t =
   | Note
   | OurPartners
   | Past
+  | PastExperimentListPublicTitle
+  | PastSessionsTitle
+  | PoolStatistics
   | ProfileCompletionText
   | Reminder
   | ResendReminders
@@ -63,14 +66,14 @@ type t =
   | RoleCurrentlyAssigned
   | RoleCurrentlyNoneAssigned of Entity_message.Field.t
   | RolesGranted
-  | SentInvitations
   | SelectedTags
   | SelectedTagsEmpty
-  | SessionDetailTitle of Ptime.t
+  | SentInvitations
   | SessionCloseScreen
+  | SessionDetailTitle of Ptime.t
   | SessionIndent
-  | SessionReminder
   | SessionRegistrationTitle
+  | SessionReminder
   | SignUpAcceptTermsAndConditions
   | SignUpTitle
   | SortUngroupedFields
@@ -82,9 +85,6 @@ type t =
   | TermsAndConditionsUpdated
   | TextTemplates
   | UpcomingSessionsListEmpty
-  | PastExperimentListPublicTitle
-  | PastSessionsTitle
-  | PoolStatistics
   | UpcomingSessionsTitle
   | UserProfileDetailsSubtitle
   | UserProfileLoginSubtitle
@@ -135,17 +135,17 @@ type nav_link =
 type hint =
   | AdminOverwriteContactValues
   | AllowUninvitedSignup
-  | AssignmentConfirmationMessageFollowUps
   | AssignContactFromWaitingList
+  | AssignmentConfirmationMessageFollowUps
   | AssignmentsMarkedAsClosed
   | ContactCurrentCellPhone of string
   | ContactEnrollmentDoesNotMatchFilter
   | ContactEnrollmentRegistrationDisabled
-  | ContactNoCellPhone
   | ContactEnterCellPhoneToken of string
   | ContactLanguage
-  | ContactPhoneNumberVerificationWasReset
+  | ContactNoCellPhone
   | ContactOnWaitingList
+  | ContactPhoneNumberVerificationWasReset
   | ContactProfileVisibleOverride
   | CustomFieldAdminInputOnly
   | CustomFieldAdminOverride
@@ -160,9 +160,9 @@ type hint =
   | CustomFieldPromptOnRegistration
   | CustomFieldSessionModel
   | CustomFieldSort of Entity_message.Field.t
-  | CustomFieldTypeText
-  | CustomFieldTypeSelect
   | CustomFieldTypeMultiSelect
+  | CustomFieldTypeSelect
+  | CustomFieldTypeText
   | CustomHtmx of string
   | DefaultReminderLeadTime of Ptime.Span.t
   | DirectRegistrationDisbled
@@ -178,12 +178,11 @@ type hint =
   | ExperimentSessionsPublic
   | ExperimentWaitingList
   | ExternalDataRequired
-  | TestPhoneNumber
+  | GtxKeyMissing
+  | GtxKeyStored
   | I18nText of string
   | LocationFiles
   | LocationsIndex
-  | GtxKeyMissing
-  | GtxKeyStored
   | MailingLimit
   | MessageTemplateAccountSuspensionNotification
   | MessageTemplateAssignmentConfirmation
@@ -225,9 +224,9 @@ type hint =
   | ResetInvitationsLastReset of Ptime.t
   | RoleIntro of Entity_message.Field.t * Entity_message.Field.t
   | RolePermissionsIntro
-  | ScheduleEvery of Ptime.Span.t
   | ScheduleAt of Ptime.t
   | ScheduledIntro
+  | ScheduleEvery of Ptime.Span.t
   | SearchByFields of Entity_message.Field.t list
   | SelectedDateIsPast
   | SelectedOptionsCountMax of int
@@ -235,15 +234,15 @@ type hint =
   | SessionCancellationMessageFollowUps
   | SessionCancellationWithFollowups
   | SessionCancelMessage
-  | SessionCloseParticipationTagsSelected
-  | SessionCloseNoParticipationTagsSelected
   | SessionCloseHints
   | SessionCloseLegendNoShow
   | SessionCloseLegendParticipated
+  | SessionCloseNoParticipationTagsSelected
+  | SessionCloseParticipationTagsSelected
   | SessionRegistrationFollowUpHint
   | SessionRegistrationHint
-  | SessionReminderLeadTime
   | SessionReminderLanguageHint
+  | SessionReminderLeadTime
   | SettingsNoEmailSuffixes
   | SignUpForWaitingList
   | SmtpSettingsDefaultFlag
@@ -254,8 +253,9 @@ type hint =
   | TenantDatabaseLabel
   | TenantDatabaseUrl
   | TenantUrl
-  | TextLengthMin of int
+  | TestPhoneNumber
   | TextLengthMax of int
+  | TextLengthMin of int
   | UserImportInterval
   | WaitingListPhoneMissingContact
 [@@deriving variants]
@@ -281,8 +281,8 @@ type confirmable =
   | MarkAssignmentWithFollowUpsAsDeleted
   | PauseAccount
   | PromoteContact
-  | PublisCustomField
-  | PublisCustomFieldOption
+  | PublishCustomField
+  | PublishCustomFieldOption
   | ReactivateAccount
   | RemoveRule
   | RemoveTag

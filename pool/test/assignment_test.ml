@@ -72,7 +72,7 @@ let create_with_experiment_smtp () =
   let smtp_auth_id = Email.SmtpAuth.Id.create () in
   let assignment = Assignment.create contact in
   let experiment =
-    Experiment.{ experiment with smtp_auth_id = Some smtp_auth_id }
+    { experiment with Experiment.smtp_auth_id = Some smtp_auth_id }
   in
   let events =
     let command =

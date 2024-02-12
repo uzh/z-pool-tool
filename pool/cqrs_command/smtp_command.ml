@@ -152,13 +152,13 @@ end = struct
     (command : t)
     =
     let open CCResult in
-    let open SmtpAuth in
     Logs.info ~src (fun m -> m "Handle command Edit" ~tags);
     let default =
+      let open CCFun.Infix in
+      let open SmtpAuth in
       let force_default =
         default_smtp
-        |> CCOption.map_or ~default:true (fun ({ id; _ } : t) ->
-          Id.equal id smtp_auth.id)
+        |> CCOption.map_or ~default:true (id %> Id.equal (id smtp_auth))
       in
       (force_default || Default.value command.default) |> Default.create
     in

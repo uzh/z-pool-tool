@@ -43,6 +43,10 @@ let suite =
               guest_cannot_update_language
           ; test_case "use parametric roles" `Slow operator_works
           ; test_case
+              "test adding of role assignments"
+              `Slow
+              Admin_role_assignment.assignable_roles
+          ; test_case
               "grant valid and invalid roles"
               `Slow
               Admin_role_assignment.grant_roles

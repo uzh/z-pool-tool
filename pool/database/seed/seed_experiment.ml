@@ -30,6 +30,7 @@ let experiments pool =
     ]
   in
   let events =
+    let open Experiment in
     CCList.map
       (fun ( title
            , public_title
@@ -38,7 +39,6 @@ let experiments pool =
            , direct_registration_disabled
            , email_session_reminder_lead_time ) ->
         let experiment =
-          let open Experiment in
           let title = Title.create title |> get_or_failwith in
           let public_title =
             PublicTitle.create public_title |> get_or_failwith

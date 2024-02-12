@@ -23,24 +23,13 @@ module NavElements = struct
        else [])
       @ [ "/user/login-information", LoginInformation ]
       |> CCList.map (fun (url, field) ->
-        Single (prefixed ?prefix url, field, Guard.ValidationSet.empty))
-    ;;
-
-    let element ?contact ?prefix () =
-      Parent
-        (None, nav_link, Guard.ValidationSet.empty, dropdown ?contact ?prefix ())
-      |> NavElement.create ~icon
+        Single (prefixed ?prefix url, field, AlwaysOn))
     ;;
 
     let nav ?contact ?prefix () =
-      let item =
-        Parent
-          ( None
-          , nav_link
-          , Guard.ValidationSet.empty
-          , dropdown ?contact ?prefix () )
-      in
-      NavElement.create ~icon item
+      dropdown ?contact ?prefix ()
+      |> parent ~validation:AlwaysOn nav_link
+      |> NavElement.create ~icon
     ;;
   end
 
@@ -52,9 +41,9 @@ module NavElements = struct
   let contact context =
     let open I18n in
     let links =
-      [ Single ("/experiments", Experiments, Guard.ValidationSet.empty)
+      [ Single ("/experiments", Experiments, Set Guard.ValidationSet.empty)
         |> NavElement.create
-      ; Profile.element ~contact:true ()
+      ; Profile.nav ~contact:true ()
       ]
     in
     links @ [ NavElement.logout () ] |> NavUtils.with_language_switch context
@@ -64,66 +53,67 @@ module NavElements = struct
     let open I18n in
     let settings =
       let children =
-        [ Parent
-            ( Some "/admin/custom-fields"
-            , CustomFields
-            , Custom_field.Guard.Access.index
-            , [ Single
-                  ( "/admin/custom-fields/settings"
-                  , Settings
-                  , Custom_field.Guard.Access.index )
-              ] )
-        ; Single ("/admin/filter", Filter, Filter.Guard.Access.index)
-        ; Single
-            ("/admin/locations", Locations, Pool_location.Guard.Access.index)
-        ; Single ("/admin/settings/queue", Queue, Queue.Guard.Access.index)
-        ; Single ("/admin/settings", SystemSettings, Settings.Guard.Access.index)
-        ; Single
-            ("/admin/settings/schedules", Schedules, Schedule.Guard.Access.index)
-        ; Single ("/admin/settings/smtp", Smtp, Email.Guard.Access.Smtp.index)
-        ; Single
-            ( "/admin/settings/role-permission"
-            , RolePermissions
-            , Guard.Access.read_permission )
-        ; Single ("/admin/settings/tags", Tags, Tags.Guard.Access.index)
-        ; Single
-            ( "/admin/message-template"
-            , MessageTemplates
-            , Message_template.Guard.Access.index )
-        ; Single ("/admin/i18n", I18n, I18nGuard.Access.index)
-        ; Single
-            ( "/admin/settings/text-messages"
-            , TextMessages
-            , Settings.Guard.Access.update )
-        ; Single
-            ( "/admin/organisational-unit"
-            , OrganisationalUnits
-            , Organisational_unit.Guard.Access.index )
+        [ parent
+            ~url:"/admin/custom-fields"
+            ~validation:(Set Custom_field.Guard.Access.index)
+            CustomFields
+            [ single
+                "/admin/custom-fields/settings"
+                Settings
+                (Set Custom_field.Guard.Access.index)
+            ]
+        ; single "/admin/filter" Filter (Set Filter.Guard.Access.index)
+        ; single
+            "/admin/locations"
+            Locations
+            (Set Pool_location.Guard.Access.index)
+        ; single "/admin/settings/queue" Queue (Set Queue.Guard.Access.index)
+        ; single
+            "/admin/settings"
+            SystemSettings
+            (Set Settings.Guard.Access.index)
+        ; single
+            "/admin/settings/schedules"
+            Schedules
+            (Set Schedule.Guard.Access.index)
+        ; single "/admin/settings/smtp" Smtp (Set Email.Guard.Access.Smtp.index)
+        ; single
+            "/admin/settings/role-permission"
+            RolePermissions
+            (Set Guard.Access.Permission.read)
+        ; single "/admin/settings/tags" Tags (Set Tags.Guard.Access.index)
+        ; single
+            "/admin/message-template"
+            MessageTemplates
+            (Set Message_template.Guard.Access.index)
+        ; single "/admin/i18n" I18n (Set I18nGuard.Access.index)
+        ; single
+            "/admin/settings/text-messages"
+            TextMessages
+            (Set Settings.Guard.Access.update)
+        ; single
+            "/admin/organisational-unit"
+            OrganisationalUnits
+            (Set Organisational_unit.Guard.Access.index)
         ]
       in
-      let validation_set =
-        CCList.map validation_set children |> Guard.ValidationSet.or_
-      in
-      Parent (None, Settings, validation_set, children) |> NavElement.create
+      Parent (None, Settings, OnChildren, children) |> NavElement.create
     in
     let user =
-      let children =
-        [ Single ("/admin/contacts", Contacts, Contact.Guard.Access.index)
-        ; Single ("/admin/admins", Admins, Admin.Guard.Access.index)
-        ]
-      in
-      let validation_set =
-        Guard.ValidationSet.Or
-          [ Contact.Guard.Access.index; Admin.Guard.Access.index ]
-      in
-      Parent (None, Users, validation_set, children) |> NavElement.create
-    in
-    let dashboard =
-      Single ("/admin/dashboard", Dashboard, Guard.ValidationSet.empty)
+      [ single "/admin/contacts" Contacts (Set Contact.Guard.Access.index)
+      ; single "/admin/admins" Admins (Set Admin.Guard.Access.index)
+      ]
+      |> parent Users
       |> NavElement.create
     in
+    let dashboard =
+      single "/admin/dashboard" Dashboard AlwaysOn |> NavElement.create
+    in
     let experiments =
-      Single ("/admin/experiments", Experiments, Experiment.Guard.Access.index)
+      single
+        "/admin/experiments"
+        Experiments
+        (Set Experiment.Guard.Access.index)
       |> NavElement.create
     in
     [ dashboard
@@ -139,21 +129,17 @@ module NavElements = struct
   let root context =
     let open I18n in
     let tenants =
-      Single ("/root/tenants", Tenants, Pool_tenant.Guard.Access.index)
+      single "/root/tenants" Tenants (Set Pool_tenant.Guard.Access.index)
       |> NavElement.create
     in
     let users =
-      Single ("/root/users", Users, Admin.Guard.Access.index)
+      single "/root/users" Users (Set Admin.Guard.Access.index)
       |> NavElement.create
     in
     let settings =
-      let children =
-        [ Single ("/root/settings/smtp", Smtp, Email.Guard.Access.Smtp.index) ]
-      in
-      let validation_set =
-        CCList.map validation_set children |> Guard.ValidationSet.or_
-      in
-      Parent (None, Settings, validation_set, children) |> NavElement.create
+      [ single "/root/settings/smtp" Smtp (Set Email.Guard.Access.Smtp.index) ]
+      |> parent Settings
+      |> NavElement.create
     in
     [ tenants
     ; users

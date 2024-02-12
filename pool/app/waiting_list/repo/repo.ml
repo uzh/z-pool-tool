@@ -91,11 +91,9 @@ module Sql = struct
         |sql}
       in
       let dyn =
-        let open Experiment in
-        Dynparam.(
-          empty
-          |> add Pool_common.Repo.Id.t (Id.to_common id)
-          |> add Pool_common.Repo.Id.t (Id.to_common id))
+        let open Dynparam in
+        let add_id = add Pool_common.Repo.Id.t (Experiment.Id.to_common id) in
+        empty |> add_id |> add_id
       in
       sql, dyn
     in

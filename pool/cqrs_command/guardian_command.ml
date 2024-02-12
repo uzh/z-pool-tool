@@ -23,11 +23,11 @@ end = struct
   type t = Guard.RolePermission.t
 
   let handle ?(tags = Logs.Tag.empty) role_permission =
-    Logs.info ~src (fun m -> m "Handle command Create" ~tags);
+    Logs.info ~src (fun m -> m "Handle command CreateRolePermission" ~tags);
     Ok [ Guard.RolePermissionSaved [ role_permission ] |> Pool_event.guard ]
   ;;
 
-  let effects = Guard.Access.manage_permission
+  let effects = Guard.Access.Permission.manage
 end
 
 module DeleteRolePermission : sig
@@ -41,11 +41,11 @@ end = struct
   type t = Guard.RolePermission.t
 
   let handle ?(tags = Logs.Tag.empty) role_permissino =
-    Logs.info ~src (fun m -> m "Handle command Create" ~tags);
+    Logs.info ~src (fun m -> m "Handle command DeleteRolePermission" ~tags);
     Ok [ Guard.RolePermissionDeleted role_permissino |> Pool_event.guard ]
   ;;
 
-  let effects = Guard.Access.manage_permission
+  let effects = Guard.Access.Permission.manage
 end
 
 module GrantRoles : sig
@@ -70,7 +70,7 @@ end = struct
       ]
   ;;
 
-  let effects = Guard.Access.create_role
+  let effects = Guard.Access.Role.create
 end
 
 module RevokeRole : sig
@@ -93,5 +93,5 @@ end = struct
       ]
   ;;
 
-  let effects = Guard.Access.delete_role
+  let effects = Guard.Access.Role.delete
 end

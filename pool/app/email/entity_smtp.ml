@@ -91,7 +91,7 @@ type t =
   ; protocol : Protocol.t
   ; default : Default.t
   }
-[@@deriving eq, show, sexp_of]
+[@@deriving eq, fields ~getters, show, sexp_of]
 
 type smtp = t
 

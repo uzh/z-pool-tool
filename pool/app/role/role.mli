@@ -5,8 +5,6 @@ end
 module Role : sig
   include Guardian.RoleSig with type t = Entity.Role.t
 
-  val can_assign_roles : t -> t list
-
   type input_type =
     | QueryExperiments
     | QueryLocations

@@ -65,13 +65,6 @@ module Role = struct
     ]
   ;;
 
-  let can_assign_roles (role : t) : t list =
-    match role with
-    | `Admin | `Assistant | `Experimenter | `LocationManager -> []
-    | `Recruiter -> [ `Admin; `Assistant; `Experimenter; `LocationManager ]
-    | `Operator -> all
-  ;;
-
   type input_type =
     | QueryExperiments
     | QueryLocations
@@ -88,7 +81,6 @@ end
 module Target = struct
   type t =
     [ `Admin
-    | `AdminPromote
     | `Assignment
     | `Contact
     | `ContactInfo
@@ -108,13 +100,19 @@ module Target = struct
     | `Permission
     | `Queue
     | `Role
+    | `RoleAdmin
+    | `RoleAssistant
+    | `RoleExperimenter
+    | `RoleLocationManager
+    | `RoleOperator
+    | `RoleRecruiter
     | `Schedule
     | `Session
     | `SessionClose
-    | `SystemSetting
     | `Smtp
     | `Statistics
     | `System
+    | `SystemSetting
     | `Tag
     | `Tenant
     | `WaitingList
@@ -128,7 +126,6 @@ module Target = struct
     Guardian.Utils.decompose_variant_string
     %> function
     | "admin", [] -> Ok `Admin
-    | "adminpromote", [] -> Ok `AdminPromote
     | "assignment", [] -> Ok `Assignment
     | "contact", [] -> Ok `Contact
     | "contactinfo", [] -> Ok `ContactInfo
@@ -148,13 +145,19 @@ module Target = struct
     | "permission", [] -> Ok `Permission
     | "queue", [] -> Ok `Queue
     | "role", [] -> Ok `Role
+    | "roleadmin", [] -> Ok `RoleAdmin
+    | "roleassistant", [] -> Ok `RoleAssistant
+    | "roleexperimenter", [] -> Ok `RoleExperimenter
+    | "rolelocationmanager", [] -> Ok `RoleLocationManager
+    | "roleoperator", [] -> Ok `RoleOperator
+    | "rolerecruiter", [] -> Ok `RoleRecruiter
     | "schedule", [] -> Ok `Schedule
     | "session", [] -> Ok `Session
     | "sessionclose", [] -> Ok `SessionClose
-    | "systemsetting", [] -> Ok `SystemSetting
     | "smtp", [] -> Ok `Smtp
     | "statistics", [] -> Ok `Statistics
     | "system", [] -> Ok `System
+    | "systemsetting", [] -> Ok `SystemSetting
     | "tag", [] -> Ok `Tag
     | "tenant", [] -> Ok `Tenant
     | "waitinglist", [] -> Ok `WaitingList
@@ -165,7 +168,7 @@ module Target = struct
 
   let all =
     [ `Admin
-    ; `AdminPromote
+    ; `Schedule
     ; `Assignment
     ; `Contact
     ; `ContactInfo
@@ -178,20 +181,25 @@ module Target = struct
     ; `Invitation
     ; `Location
     ; `LocationFile
+    ; `Mailing
     ; `Message
     ; `MessageTemplate
     ; `OrganisationalUnit
-    ; `Mailing
     ; `Permission
     ; `Queue
     ; `Role
-    ; `Schedule
+    ; `RoleAdmin
+    ; `RoleAssistant
+    ; `RoleExperimenter
+    ; `RoleLocationManager
+    ; `RoleOperator
+    ; `RoleRecruiter
     ; `Session
     ; `SessionClose
-    ; `SystemSetting
     ; `Smtp
     ; `Statistics
     ; `System
+    ; `SystemSetting
     ; `Tag
     ; `Tenant
     ; `WaitingList

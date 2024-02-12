@@ -34,21 +34,22 @@ let to_string = function
   | EmailConfirmationNote ->
     "Please check your emails and confirm your address first."
   | EmailConfirmationTitle -> "Email confirmation"
+  | EmptyListGeneric -> "No entries were found."
   | EmtpyList field ->
     Format.asprintf
       "Currently, there are no %s available."
       (Locales_en.field_to_string field)
-  | EmptyListGeneric -> "No entries were found."
   | EnrollInExperiment -> "Enroll in experiment"
-  | ExperimentNewTitle -> "Create new experiment"
-  | ExperimentListTitle -> "Experiments"
   | ExperimentListEmpty ->
     "Currently there are no experiments you can participate."
   | ExperimentListPublicTitle -> "Register for experiment sessions"
-  | ExperimentWaitingListTitle -> "Waiting list"
+  | ExperimentListTitle -> "Experiments"
+  | ExperimentMessagingSubtitle -> "Messaging"
+  | ExperimentNewTitle -> "Create new experiment"
   | ExperimentSessionReminderHint ->
     "These are default settings for the sessions of this experiment. These \
      settings can be overwritten for each session."
+  | ExperimentWaitingListTitle -> "Waiting list"
   | Files -> "Files"
   | FilterContactsDescription ->
     {|<p>To start inviting contacts to this experiment, follow those steps:</p>
@@ -74,15 +75,6 @@ let to_string = function
     "This table shows how often contacts received the invitation to this \
      experiment."
   | LocationDetails -> "Location details"
-  | NoEntries field ->
-    Format.asprintf "There are no %s yet." (Locales_en.field_to_string field)
-  | Note -> "Note"
-  | OurPartners -> "Our partners"
-  | Past -> "Past"
-  | ProfileCompletionText ->
-    {|The following information is required to be invited to experiments. Further information can be entered in your profile afterwards.
-
-    You will be considered for more experiments, the more complete your profile is.|}
   | LocationFileNew -> "Add file to location"
   | LocationListTitle -> "Location"
   | LocationNewTitle -> "Create new location"
@@ -102,10 +94,21 @@ let to_string = function
      if mailings are active at the moment).\n\n\
      Add additional sessions to the experiment."
   | MailingNewTitle -> "Create new mailing"
-  | ExperimentMessagingSubtitle -> "Messaging"
-  | ResetPasswordLink | ResetPasswordTitle -> "Reset password"
+  | NoEntries field ->
+    Format.asprintf "There are no %s yet." (Locales_en.field_to_string field)
+  | Note -> "Note"
+  | OurPartners -> "Our partners"
+  | Past -> "Past"
+  | PastExperimentListPublicTitle -> "Experiments participated"
+  | PastSessionsTitle -> "Your past sessions"
+  | PoolStatistics -> "Pool statistics"
+  | ProfileCompletionText ->
+    {|The following information is required to be invited to experiments. Further information can be entered in your profile afterwards.
+
+    You will be considered for more experiments, the more complete your profile is.|}
   | Reminder -> "Reminder"
   | ResendReminders -> "Resend reminders"
+  | ResetPasswordLink | ResetPasswordTitle -> "Reset password"
   | RoleApplicableToAssign -> "Applicable users"
   | RoleCurrentlyAssigned -> "Currently assigned"
   | RoleCurrentlyNoneAssigned field ->
@@ -113,15 +116,15 @@ let to_string = function
       "Currently there are no %s assigned."
       (Locales_en.field_to_string field)
   | RolesGranted -> "Granted roles"
-  | SentInvitations -> "Sent invitations"
   | SelectedTags -> "Currently assigned tags"
   | SelectedTagsEmpty -> "No tags assigned"
+  | SentInvitations -> "Sent invitations"
+  | SessionCloseScreen -> "Session close screen"
   | SessionDetailTitle start ->
     Format.asprintf "Session at %s" (Utils_time.formatted_date_time start)
-  | SessionCloseScreen -> "Session close screen"
   | SessionIndent -> "Indentations group follow-up sessions."
-  | SessionReminder -> "Session reminder"
   | SessionRegistrationTitle -> "Register for this session"
+  | SessionReminder -> "Session reminder"
   | SignUpAcceptTermsAndConditions -> "I accept the terms and conditions."
   | SignUpTitle -> "Sign up"
   | SortUngroupedFields -> "Sort ungrouped fields"
@@ -140,9 +143,6 @@ let to_string = function
   | TextTemplates -> "text templates"
   | UpcomingSessionsListEmpty ->
     "You are not currently enrolled in any upcoming sessions."
-  | PastExperimentListPublicTitle -> "Experiments participated"
-  | PastSessionsTitle -> "Your past sessions"
-  | PoolStatistics -> "Pool statistics"
   | UpcomingSessionsTitle -> "Your upcoming sessions"
   | UserProfileDetailsSubtitle -> "Personal details"
   | UserProfileLoginSubtitle -> "Login information"
@@ -200,10 +200,10 @@ let rec hint_to_string = function
 When inviting contacts, the filter will prefer the overriding value if both are available.|}
   | AllowUninvitedSignup ->
     "All contacts (invited or not) will be able to sign up for the experiment."
-  | AssignmentConfirmationMessageFollowUps ->
-    "You also have been assigned to the following followup sessions:"
   | AssignContactFromWaitingList ->
     "Select the session to which you want to assign the contact."
+  | AssignmentConfirmationMessageFollowUps ->
+    "You also have been assigned to the following followup sessions:"
   | AssignmentsMarkedAsClosed ->
     "These assignments have been marked as deleted. Provided that the contacts \
      still meet the experiment criteria, they can register for sessions again."
@@ -215,20 +215,20 @@ When inviting contacts, the filter will prefer the overriding value if both are 
   | ContactEnrollmentRegistrationDisabled ->
     "Registration for this experiment is currently disabled. Contacts cannot \
      enroll themselves for this experiment."
-  | ContactNoCellPhone -> "You have not yet verified a phone number."
-  | ContactLanguage ->
-    "Some experiments choose to communicate in a different language, \
-     disregarding your contact language."
   | ContactEnterCellPhoneToken cell_phone ->
     Format.asprintf
       "Please enter the verification code we sent yout to %s. The code is \
        valid for one hour."
       cell_phone
-  | ContactPhoneNumberVerificationWasReset ->
-    "You can enter a different phone number now."
+  | ContactLanguage ->
+    "Some experiments choose to communicate in a different language, \
+     disregarding your contact language."
+  | ContactNoCellPhone -> "You have not yet verified a phone number."
   | ContactOnWaitingList ->
     "You are on the waiting list. The recruitment team will assign you to a \
      session."
+  | ContactPhoneNumberVerificationWasReset ->
+    "You can enter a different phone number now."
   | ContactProfileVisibleOverride ->
     "If you overwrite these values, the changes will be visible to the contact."
   | CustomFieldAdminInputOnly ->
@@ -254,7 +254,6 @@ When inviting contacts, the filter will prefer the overriding value if both are 
     "Questions that contacts can, or must, answer. Based on this information, \
      contacts are invited to take part in experiments."
   | CustomFieldExperimentModel -> "Customziable attributes for experiments."
-  | CustomFieldSessionModel -> "Customziable attributes for sessions."
   | CustomFieldGroups ->
     {|Groups to group custom fields by. Grouping custom fields does not have any effect on their functionality. It only has a graphical impact.|}
   | CustomFieldNoContactValue -> "Not answered by contact"
@@ -265,22 +264,23 @@ When inviting contacts, the filter will prefer the overriding value if both are 
     "If this option is enabled, this field is already prompted during \
      registration, but is no longer displayed to the contact in the user \
      profile."
+  | CustomFieldSessionModel -> "Customziable attributes for sessions."
   | CustomFieldSort field ->
     Format.asprintf
       "The %s will be displayed to the contacts in this order."
       (Locales_en.field_to_string field)
-  | CustomFieldTypeText ->
-    "Please take into account that the data quality is lower for text entries. \
-     If the data can be collected in another form, this is preferable."
+  | CustomFieldTypeMultiSelect -> hint_to_string CustomFieldTypeSelect
   | CustomFieldTypeSelect ->
     "You will be able to create the available options in the section 'Option' \
      after the custom field is created."
-  | CustomFieldTypeMultiSelect -> hint_to_string CustomFieldTypeSelect
+  | CustomFieldTypeText ->
+    "Please take into account that the data quality is lower for text entries. \
+     If the data can be collected in another form, this is preferable."
+  | CustomHtmx s -> s
   | DefaultReminderLeadTime lead_time ->
     Format.asprintf
       "If left blank, the default lead time of %s is applied."
       (lead_time |> Utils_time.formatted_timespan)
-  | CustomHtmx s -> s
   | DirectRegistrationDisbled ->
     "If this option is enabled, contacts can join the waiting list but cannot \
      directly enroll in the experiment."
@@ -317,10 +317,6 @@ If an experiment language is specified, all messages will be sent in this langua
 
 By clicking on the template labels below you can open the default text message:
 |}
-  | ExperimentWaitingList ->
-    "Contacts that have been invited to this experiment and have placed \
-     themselves on the waiting list. They have to be manually assigned to a \
-     session."
   | ExperimentSessions ->
     {|All existing session of this experiment.
       Once someone has registered for the session, it can no longer be deleted.
@@ -329,12 +325,17 @@ By clicking on the template labels below you can open the default text message:
     "Please note: Maybe sessions or completed experiments are no longer \
      displayed, although listed in the email. Once all the available seats are \
      assigned a session, it is no longer displayed."
+  | ExperimentWaitingList ->
+    "Contacts that have been invited to this experiment and have placed \
+     themselves on the waiting list. They have to be manually assigned to a \
+     session."
   | ExternalDataRequired ->
     "An external data identifier is required for every assignement (latest \
      when a session is closed)."
-  | TestPhoneNumber ->
-    "Please provide a phone number where we can send a single test message to \
-     verify the api key. The number must have the format +41791234567."
+  | GtxKeyMissing ->
+    "No GTX Api key is stored, which is why no text messages are sent."
+  | GtxKeyStored -> "A GTX Api key is stored. Text message service is running."
+  | I18nText str -> str
   | LocationFiles ->
     "Additional information about the location, such as directions. Contacts \
      who are participating in a session at this location can access access \
@@ -342,11 +343,7 @@ By clicking on the template labels below you can open the default text message:
   | LocationsIndex ->
     "Locations, where experiments are conducted. Every session has to have a \
      location."
-  | I18nText str -> str
   | MailingLimit -> "Max. generated Invitations during the mailing."
-  | GtxKeyMissing ->
-    "No GTX Api key is stored, which is why no text messages are sent."
-  | GtxKeyStored -> "A GTX Api key is stored. Text message service is running."
   | MessageTemplateAccountSuspensionNotification ->
     "This message will be sent to a user after the account has been \
      temporarily suspended because of too many failed login attempts."
@@ -400,8 +397,8 @@ By clicking on the template labels below you can open the default text message:
     "The following message templates are missing. The default message will be \
      sent to contacts who selected one of those languages as their \
      communication language."
-  | NumberIsSecondsHint -> "Nr. of seconds"
   | NumberIsDaysHint -> "Nr. of days"
+  | NumberIsSecondsHint -> "Nr. of seconds"
   | NumberIsWeeksHint -> "Nr. of weeks"
   | NumberMax i -> error_to_string (Entity_message.NumberMax i)
   | NumberMin i -> error_to_string (Entity_message.NumberMin i)
@@ -438,6 +435,9 @@ By clicking on the template labels below you can open the default text message:
   | RegistrationDisabled ->
     "If this option is activated, contacts can neither register nor join the \
      waiting list. The experiment is not visible to the contacts."
+  | RescheduleSession ->
+    "When you reschedule a session, all registered contacts are automatically \
+     informed."
   | ResendRemindersChannel ->
     "If you choose to resend the reminders as text messages, contacts without \
      a verified cell phone number will receive the reminder via email."
@@ -445,9 +445,6 @@ By clicking on the template labels below you can open the default text message:
     {|No automatic reminders have been sent for this session yet. Make sure that the message template is correct if you want to trigger the reminders now.
 
 If you trigger the reminders manually now, no more automatic reminders will be sent via the selected message channel.|}
-  | RescheduleSession ->
-    "When you reschedule a session, all registered contacts are automatically \
-     informed."
   | ResetInvitations ->
     "Resets invitations, all previous invitations up to the now will be \
      ignored."
@@ -462,10 +459,6 @@ If you trigger the reminders manually now, no more automatic reminders will be s
       (Locales_en.field_to_string plural)
   | RolePermissionsIntro ->
     {|All existing permissions which are defined for roles of the tenant.|}
-  | ScheduleEvery sec ->
-    sec
-    |> Pool_common_utils.Time.formatted_timespan
-    |> Format.asprintf "every %s"
   | ScheduleAt time ->
     time
     |> Pool_common_utils.Time.formatted_date_time
@@ -475,50 +468,54 @@ If you trigger the reminders manually now, no more automatic reminders will be s
 
       Note: When the application restarts all active schedules get stopped.
       |}
+  | ScheduleEvery sec ->
+    sec
+    |> Pool_common_utils.Time.formatted_timespan
+    |> Format.asprintf "every %s"
+  | SearchByFields fields ->
+    Format.asprintf
+      "Search by: %s"
+      (fields |> CCList.map Locales_en.field_to_string |> CCString.concat ", ")
+  | SelectedDateIsPast -> "The selected date is in the past."
   | SelectedOptionsCountMax i ->
     error_to_string (Entity_message.SelectedOptionsCountMax i)
   | SelectedOptionsCountMin i ->
     error_to_string (Entity_message.SelectedOptionsCountMin i)
+  | SessionCancellationMessageFollowUps ->
+    "Associated follow-up sessions were canceled as well:"
   | SessionCancellationWithFollowups ->
     {|Cancelling this session will also cancel all follow-up sessions.
 
-The following follow-up sessions exist:|}
-  | SessionCancellationMessageFollowUps ->
-    "Associated follow-up sessions were canceled as well:"
+  The following follow-up sessions exist:|}
   | SessionCancelMessage ->
     "This reason will be provided to all contacts assigned to this session."
-  | SessionCloseParticipationTagsSelected ->
-    "The following tags are assigned to all participants who took part in this \
-     experiment:"
-  | SessionCloseNoParticipationTagsSelected ->
-    "No tags were selected to be assigned to the participants who participated \
-     in this experiment."
   | SessionCloseHints ->
     Format.asprintf
       {|<strong>%s</strong> and <strong>%s</strong> are mutually exclusive.<br>
-  If none of the two checkboxes is checked, it equals to 'show up but did not participate'|}
+    If none of the two checkboxes is checked, it equals to 'show up but did not participate'|}
       (Locales_en.field_to_string Entity_message_field.NoShow |> capitalize)
       (Locales_en.field_to_string Entity_message_field.Participated
        |> capitalize)
   | SessionCloseLegendNoShow -> "the contact did not show up"
   | SessionCloseLegendParticipated ->
     "the contact participated in the experiment"
-  | SearchByFields fields ->
-    Format.asprintf
-      "Search by: %s"
-      (fields |> CCList.map Locales_en.field_to_string |> CCString.concat ", ")
-  | SelectedDateIsPast -> "The selected date is in the past."
-  | SettingsNoEmailSuffixes ->
-    "There are no email suffixes defined that are allowed. This means that all \
-     email suffixes are allowed."
+  | SessionCloseNoParticipationTagsSelected ->
+    "No tags were selected to be assigned to the participants who participated \
+     in this experiment."
+  | SessionCloseParticipationTagsSelected ->
+    "The following tags are assigned to all participants who took part in this \
+     experiment:"
+  | SessionRegistrationFollowUpHint ->
+    "The registration for a session incl. all follow up sessions is binding."
+  | SessionRegistrationHint -> "The registration for a session is binding."
+  | SessionReminderLanguageHint ->
+    "If you provide a custom reminder text, select its language here."
   | SessionReminderLeadTime ->
     "The lead time determines how long before the start of the session the \
      reminders are sent to the contacts"
-  | SessionReminderLanguageHint ->
-    "If you provide a custom reminder text, select its language here."
-  | SessionRegistrationHint -> "The registration for a session is binding."
-  | SessionRegistrationFollowUpHint ->
-    "The registration for a session incl. all follow up sessions is binding."
+  | SettingsNoEmailSuffixes ->
+    "There are no email suffixes defined that are allowed. This means that all \
+     email suffixes are allowed."
   | SignUpForWaitingList ->
     "The recruitment team will contact you, to assign you to a session, if \
      there is a free place."
@@ -547,14 +544,17 @@ Only sessions with open spots can be selected.|}
     {|The database URL, according to the following scheme:
      mariadb://<user>:<pw>@<host>:<port>/<database>|}
   | TenantUrl -> "The URL of the tenant without protocol, e.g.: pool.uzh.ch"
-  | TextLengthMin i -> error_to_string (Entity_message.TextLengthMin i)
+  | TestPhoneNumber ->
+    "Please provide a phone number where we can send a single test message to \
+     verify the api key. The number must have the format +41791234567."
   | TextLengthMax i -> error_to_string (Entity_message.TextLengthMax i)
-  | WaitingListPhoneMissingContact ->
-    "You have not entered a phone number in your profile yet. Please provide a \
-     phone number so that the recruitment team can contact you."
+  | TextLengthMin i -> error_to_string (Entity_message.TextLengthMin i)
   | UserImportInterval ->
     {|<p>Define after how many days a reminder will be sent to contacts that have not confirmed the import yet.</p>
 <p><strong>The 'second reminder' setting defines how long after the first reminder the second reminder is sent.</strong></p>|}
+  | WaitingListPhoneMissingContact ->
+    "You have not entered a phone number in your profile yet. Please provide a \
+     phone number so that the recruitment team can contact you."
 ;;
 
 let confirmable_to_string confirmable =
@@ -584,10 +584,6 @@ let confirmable_to_string confirmable =
    | DeleteSmtpServer -> "email Server", "delete", None
    | LoadDefaultTemplate ->
      "default template", "load", Some "The current content is overwritten."
-   | PublisCustomField ->
-     ( "field an all associated options"
-     , "publish"
-     , Some "You will not be able to delete it field anymore." )
    | MarkAssignmentAsDeleted -> "assignment as deleted", "mark", None
    | MarkAssignmentWithFollowUpsAsDeleted ->
      ( "assignment as deleted"
@@ -602,11 +598,15 @@ let confirmable_to_string confirmable =
      , Some
          "The contact will no longer be invited for experiments and can no \
           longer register for them." )
-   | PublisCustomFieldOption ->
+   | PublishCustomField ->
+     ( "field an all associated options"
+     , "publish"
+     , Some "You will not be able to delete it field anymore." )
+   | PublishCustomFieldOption ->
      "option", "publish", Some "You will not be able to delete the it anymore."
    | ReactivateAccount -> "account", "reactivate", None
-   | RemoveTag -> "tag", "remove", None
    | RemoveRule -> "rule", "delete", None
+   | RemoveTag -> "tag", "remove", None
    | RescheduleSession -> "session", "reschedule", None
    | ResetInvitations ->
      ( "invitations"
@@ -620,7 +620,5 @@ let confirmable_to_string confirmable =
   |> fun (obj, action, additive) ->
   Format.asprintf "Are you sure you want to %s the %s?" action obj
   |> fun msg ->
-  additive
-  |> CCOption.map_or ~default:msg (fun additive ->
-    Format.asprintf "%s %s" msg additive)
+  additive |> CCOption.map_or ~default:msg (Format.asprintf "%s %s" msg)
 ;;

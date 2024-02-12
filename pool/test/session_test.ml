@@ -1332,7 +1332,7 @@ let reschedule_with_experiment_smtp () =
   let experiment = Model.create_experiment () in
   let smtp_auth_id = Email.SmtpAuth.Id.create () in
   let experiment =
-    Experiment.{ experiment with smtp_auth_id = Some smtp_auth_id }
+    { experiment with Experiment.smtp_auth_id = Some smtp_auth_id }
   in
   let assignment = Test_utils.Model.create_assignment () in
   let create_message _ _ _ =

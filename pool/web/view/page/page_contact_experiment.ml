@@ -1,9 +1,26 @@
+open CCFun
 open Tyxml.Html
 open Component.Input
 module PageSession = Page_contact_sessions
 module Assignment = Page_contact_assignment
 module HttpUtils = Http_utils
 module Field = Pool_common.Message.Field
+
+let experiment_public_description =
+  let open Experiment in
+  Public.description
+  %> CCOption.map_or
+       ~default:(txt "")
+       (PublicDescription.value
+        %> HttpUtils.add_line_breaks
+        %> CCList.return
+        %> p)
+;;
+
+let experiment_title =
+  let open Experiment in
+  Public.public_title %> PublicTitle.value %> txt
+;;
 
 let index
   experiment_list
@@ -13,7 +30,6 @@ let index
   custom_fields_ansered
   Pool_context.{ language; _ }
   =
-  let open Experiment in
   let list_html ?empty_msg ?note title classnames list =
     div
       [ h2
@@ -67,12 +83,12 @@ let index
           ~a:
             [ a_href
                 (Sihl.Web.externalize_path
-                   (Format.asprintf "/experiments/%s" (Id.value id)))
+                   (Format.asprintf "/experiments/%s" (Experiment.Id.value id)))
             ]
           [ txt Pool_common.(Message.More |> Utils.control_to_string language) ]
       ]
   in
-  let experiment_title { Public.id; public_title; _ } =
+  let experiment_title exp =
     div
       ~a:
         [ a_class [ "flexrow"; "flex-gap"; "justify-between"; "align-center" ] ]
@@ -80,23 +96,18 @@ let index
           ~a:[ a_class [ "grow" ] ]
           [ h4
               ~a:[ a_class [ "word-wrap-break" ] ]
-              [ strong [ txt (PublicTitle.value public_title) ] ]
+              [ strong [ exp |> experiment_title ] ]
           ]
-      ; experiment_link id
+      ; exp |> Experiment.Public.id |> experiment_link
       ]
   in
-  let experiment_item (experiment : Public.t) =
-    let open Public in
+  let experiment_item exp =
     div
       ~a:[ a_class [ "flexcolumn"; "stack-sm"; "inset-sm" ] ]
-      [ experiment_title experiment
-      ; experiment.description
-        |> CCOption.map_or ~default:(txt "") (fun desc ->
-          p [ desc |> PublicDescription.value |> HttpUtils.add_line_breaks ])
-      ]
+      [ experiment_title exp; experiment_public_description exp ]
   in
+  let open Pool_common.I18n in
   let experiment_html =
-    let open Pool_common.I18n in
     experiment_list
     |> CCList.map experiment_item
     |> list_html
@@ -106,7 +117,6 @@ let index
          [ "striped" ]
   in
   let past_experiments_html =
-    let open Pool_common.I18n in
     match past_experiments with
     | [] -> txt ""
     | past_experiments ->
@@ -115,7 +125,7 @@ let index
       |> list_html PastExperimentListPublicTitle [ "striped" ]
   in
   let session_html =
-    let experiment_overview ((exp : Public.t), parent, follow_ups) =
+    let experiment_overview ((exp : Experiment.Public.t), parent, follow_ups) =
       let thead = Field.[ Some Start; Some Location ] in
       let session_item = PageSession.session_item `Upcoming language exp in
       let sessions = parent :: follow_ups in
@@ -141,13 +151,7 @@ let index
         ~a:[ a_class [ "flexcolumn"; "stack" ] ]
         [ div
             ~a:[ a_class [ "stack-sm" ] ]
-            [ experiment_title exp
-            ; exp.Public.description
-              |> CCOption.map_or ~default:(txt "") (fun desc ->
-                p
-                  [ desc |> PublicDescription.value |> HttpUtils.add_line_breaks
-                  ])
-            ]
+            [ experiment_title exp; experiment_public_description exp ]
         ; session_table
         ]
     in
@@ -200,7 +204,6 @@ let show
   contact
   Pool_context.{ language; csrf; _ }
   =
-  let open Experiment in
   let open Pool_common in
   let hint_to_string = Utils.hint_to_string language in
   let form_control, submit_class =
@@ -230,7 +233,7 @@ let show
     let form_action =
       Format.asprintf
         "/experiments/%s/waiting-list/"
-        (experiment.Public.id |> Experiment.Id.value)
+        Experiment.(experiment |> Public.id |> Id.value)
       |> (fun url ->
            if user_is_enlisted then Format.asprintf "%s/remove" url else url)
       |> Sihl.Web.externalize_path
@@ -288,12 +291,14 @@ let show
   let html =
     match upcoming_sessions, past_sessions with
     | [], [] ->
-      (match
-         DirectRegistrationDisabled.value
-           experiment.Public.direct_registration_disabled
-       with
-       | false -> session_list grouped_sessions
-       | true -> div [ waiting_list_form () ])
+      Experiment.(
+        (match
+           experiment
+           |> Public.direct_registration_disabled
+           |> DirectRegistrationDisabled.value
+         with
+         | false -> session_list grouped_sessions
+         | true -> div [ waiting_list_form () ]))
     | upcoming_sessions, past_sessions ->
       let open Pool_common.I18n in
       div
@@ -306,13 +311,9 @@ let show
     ~a:[ a_class [ "trim"; "measure"; "safety-margin" ] ]
     [ h1
         ~a:[ a_class [ "heading-1"; "word-wrap-break" ] ]
-        [ txt (PublicTitle.value experiment.Public.public_title) ]
+        [ experiment |> experiment_title ]
     ; div
         ~a:[ a_class [ "stack" ] ]
-        [ experiment.Public.description
-          |> CCOption.map_or ~default:(txt "") (fun desc ->
-            p [ desc |> PublicDescription.value |> HttpUtils.add_line_breaks ])
-        ; html
-        ]
+        [ experiment |> experiment_public_description; html ]
     ]
 ;;

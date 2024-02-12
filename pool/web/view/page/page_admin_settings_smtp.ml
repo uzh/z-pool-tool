@@ -92,14 +92,16 @@ let show
   Pool_context.{ language; csrf; _ }
   location
   flash_fetcher
-  { SmtpAuth.id; label; server; port; username; mechanism; protocol; default }
+  ({ SmtpAuth.server; port; username; mechanism; protocol; default; _ } as
+   smtp_auth)
   =
+  let open SmtpAuth in
   let action_path sub =
     Sihl.Web.externalize_path
       (Format.asprintf
          "%s/%s%s"
          (base_path location)
-         (SmtpAuth.Id.value id)
+         (smtp_auth |> id |> Id.value)
          sub)
   in
   let submit
@@ -142,12 +144,11 @@ let show
       field
   in
   let smtp_details =
-    let open SmtpAuth in
     div
       [ form
           ~a:(action_path "" |> form_attrs)
           [ csrf_element csrf ()
-          ; input_element_root Field.SmtpLabel Label.value label
+          ; input_element_root Field.SmtpLabel Label.value (smtp_auth |> label)
           ; input_element_root Field.SmtpServer Server.value server
           ; input_element_root
               ~field_type:`Number

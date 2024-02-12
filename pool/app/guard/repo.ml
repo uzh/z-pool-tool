@@ -1,3 +1,4 @@
+open CCFun
 module BaseRole = Role
 
 module Backend =
@@ -9,11 +10,9 @@ include Backend
 module RolePermission = struct
   include RolePermission
 
-  let from_sql =
-    {sql| 
+  let from_sql = {sql|
     guardian_role_permissions AS role_permissions
   |sql}
-  ;;
 
   let std_filter_sql = {sql| role_permissions.mark_as_deleted IS NULL |sql}
 
@@ -47,6 +46,8 @@ module RolePermission = struct
       ~select
       Backend.Entity.RolePermission.t
   ;;
+
+  let insert pool = insert ~ctx:(Pool_database.to_ctx pool)
 end
 
 let src = Logs.Src.create "guard"
@@ -97,14 +98,27 @@ module Actor = struct
 
   let can_assign_roles database_label actor =
     let open Utils.Lwt_result.Infix in
-    ActorRole.find_by_actor ~ctx:(Pool_database.to_ctx database_label) actor
-    ||> CCList.flat_map (fun { Core.ActorRole.role; target_uuid; _ } ->
-      match target_uuid with
-      | None ->
-        BaseRole.Role.can_assign_roles role |> CCList.map (fun r -> r, None)
-      | Some uuid ->
-        BaseRole.Role.can_assign_roles role
-        |> CCList.map (fun r -> r, Some uuid))
+    ActorRole.permissions_of_actor
+      ~ctx:(Pool_database.to_ctx database_label)
+      actor.Core.Actor.uuid
+    ||> CCList.filter_map
+          (fun { Core.PermissionOnTarget.permission; model; target_uuid } ->
+             let open Core in
+             let has_permission =
+               Permission.(equal Create permission || equal Manage permission)
+             in
+             let is_assign_role =
+               CCList.exists
+                 (Utils.find_assignable_target_role %> Role.Target.equal model)
+                 Role.Role.all
+             in
+             if has_permission && is_assign_role
+             then
+               model
+               |> Utils.find_assignable_role
+               |> CCResult.map_or ~default:None (fun model ->
+                 Some (model, target_uuid))
+             else None)
   ;;
 
   let validate_assign_role database_label actor role =
@@ -177,6 +191,10 @@ module ActorRole = struct
     in
     (database_label, actor)
     |> CCCache.(with_cache ~cb Cache.lru_find_by_actor find_by_actor')
+  ;;
+
+  let permissions_of_actor database_label =
+    permissions_of_actor ~ctx:(Pool_database.to_ctx database_label)
   ;;
 end
 

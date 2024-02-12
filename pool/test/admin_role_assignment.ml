@@ -51,10 +51,100 @@ module Data = struct
     |> create_admin database_label firstname
   ;;
 
-  let create_operator database_label =
-    [ `Operator, None ] |> create_admin database_label "Operator"
+  let create_operator ?(firstname = "Operator") database_label =
+    [ `Operator, None ] |> create_admin database_label firstname
+  ;;
+
+  let create_recruiter ?(firstname = "Recruiter") database_label =
+    [ `Recruiter, None ] |> create_admin database_label firstname
   ;;
 end
+
+let target_has_role db target (target_role, target_uuid) () =
+  let open Guard in
+  let actor = Uuid.actor_of Admin.Id.value (Admin.id target) in
+  let actor_role = ActorRole.create ?target_uuid actor target_role in
+  let%lwt actor_roles =
+    Persistence.ActorRole.find_by_actor db actor
+    ||> CCList.map (fun (role, _, _) -> role)
+  in
+  actor_roles |> CCList.mem ~eq:ActorRole.equal actor_role |> Lwt.return
+;;
+
+let handle_validated_events db target actor role =
+  let open GuardianCommand in
+  let grant_role role = { target; roles = [ role ] } in
+  let validate = Guard.Persistence.Actor.validate_assign_role db in
+  validate actor role
+  >|+ grant_role
+  >== GrantRoles.handle
+  |>> Pool_event.handle_events db
+  >|+ Guard.Persistence.Cache.clear
+;;
+
+let handle_create_role_permission_events db role_permission =
+  GuardianCommand.CreateRolePermission.handle role_permission
+  |> Lwt_result.lift
+  |>> Pool_event.handle_events db
+;;
+
+let handle_delete_role_permission_events db role_permission =
+  GuardianCommand.DeleteRolePermission.handle role_permission
+  |> Lwt_result.lift
+  |>> Pool_event.handle_events db
+;;
+
+let assignable_roles _ () =
+  let open Guard in
+  let db = Test_utils.Data.database_label in
+  let%lwt exp1, exp2 =
+    Repo.all_experiments () ||> CCList.(fun e -> hd e, nth e 1)
+  in
+  let%lwt recruiter =
+    Data.create_recruiter ~firstname:"RecruiterAssignable" db >|> to_actor db
+  in
+  let%lwt targetOne = Data.create_assistant db "AssistantAssignableOne" exp2 in
+  let%lwt targetTwo = Data.create_assistant db "AssistantAssignableTwo" exp2 in
+  let new_role = `Experimenter in
+  let assignable_role =
+    RolePermission.create `Recruiter Permission.Create `RoleExperimenter
+  in
+  let validate_role_assignment target should_success =
+    let role = new_role, Some Experiment.(exp1.id |> Uuid.target_of Id.value) in
+    let expected, (msg : (string -> 'a, Format.formatter, unit, string) format4)
+      =
+      if should_success
+      then Ok (), "Target has the granted role (%s)"
+      else
+        ( Error Pool_common.Message.PermissionDeniedGrantRole
+        , "Target shouldn't has the granted role (%s)" )
+    in
+    handle_validated_events db target recruiter role
+    ||> check_result "Grant experimenter rights as recruiter" expected
+    >|> target_has_role db target role
+    ||> Alcotest.(check bool) (role_message msg role) should_success
+  in
+  (* As the assignable role isn't created yet, the first validation should
+     fail *)
+  let%lwt () = validate_role_assignment targetOne false in
+  (* Add the role assignment to the database *)
+  let%lwt () =
+    assignable_role
+    |> handle_create_role_permission_events db
+    ||> get_or_failwith
+  in
+  (* The reevaluation of the role assignment should work now *)
+  let%lwt () = validate_role_assignment targetOne true in
+  (* Remove the assignable role *)
+  let%lwt () =
+    assignable_role
+    |> handle_delete_role_permission_events db
+    ||> get_or_failwith
+  in
+  (* As the assignable role is deleted, assignment shouldn't be possible *)
+  let%lwt () = validate_role_assignment targetTwo false in
+  Lwt.return_unit
+;;
 
 let grant_roles _ () =
   let open Guard in
@@ -65,27 +155,15 @@ let grant_roles _ () =
   let%lwt operator = Data.create_operator db >|> to_actor db in
   let%lwt actor = Data.create_assistant db "Assistant1" exp1 >|> to_actor db in
   let%lwt target = Data.create_assistant db "Assistant2" exp2 in
-  let target_has_role (target_role, target_uuid) () =
-    let actor = Uuid.actor_of Admin.Id.value (Admin.id target) in
-    let actor_role = ActorRole.create ?target_uuid actor target_role in
-    let%lwt actor_roles =
-      Persistence.ActorRole.find_by_actor db actor
-      ||> CCList.map (fun (role, _, _) -> role)
-    in
-    actor_roles |> CCList.mem ~eq:ActorRole.equal actor_role |> Lwt.return
+  let%lwt () =
+    [ `Operator, `RoleAssistant; `Operator, `RoleExperimenter ]
+    |> CCList.map (fun (role, target) ->
+      RolePermission.create role Permission.Create target)
+    |> Lwt_list.iter_s (fun m ->
+      Persistence.RolePermission.insert db m ||> CCResult.get_or_failwith)
   in
-  let handle_validated_events actor role =
-    let open GuardianCommand in
-    let grant_role role = { target; roles = [ role ] } in
-    let validate actor role =
-      Guard.Persistence.Actor.validate_assign_role db actor.Actor.uuid role
-    in
-    validate actor role
-    >|+ grant_role
-    >== GrantRoles.handle
-    |>> Pool_event.handle_events db
-    >|+ Guard.Persistence.Cache.clear
-  in
+  let target_has_role = target_has_role db target in
+  let handle_validated_events = handle_validated_events db target in
   let%lwt () =
     let role =
       `Experimenter, Some Experiment.(exp1.id |> Uuid.target_of Id.value)

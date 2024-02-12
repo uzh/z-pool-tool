@@ -15,6 +15,8 @@ val equal : t -> t -> bool
 val pp : Format.formatter -> t -> unit
 val show : t -> string
 val create : ?id:Id.t -> Name.t -> t
+val id : t -> Id.t
+val name : t -> Name.t
 
 type event =
   | Created of t

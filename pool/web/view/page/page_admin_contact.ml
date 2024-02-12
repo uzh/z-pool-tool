@@ -217,7 +217,6 @@ let assign_contact_experiment_list
   contact_id
   experiments
   =
-  let open Experiment in
   let base_class = [ "data-item" ] in
   let disabled =
     [ a_class ([ "bg-grey-light"; "not-allowed" ] @ base_class) ]
@@ -250,6 +249,7 @@ let assign_contact_experiment_list
            ]
        ]
      | experiments ->
+       let open Experiment in
        let open DirectEnrollment in
        CCList.map
          (fun ({ id; title; public_title; matches_filter; _ } as experiment) ->

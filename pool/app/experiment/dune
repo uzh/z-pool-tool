@@ -10,6 +10,11 @@
   sihl
   tenant)
  (preprocess
-  (pps lwt_ppx ppx_deriving.eq ppx_deriving.show ppx_variants_conv)))
+  (pps
+   lwt_ppx
+   ppx_deriving.eq
+   ppx_deriving.show
+   ppx_fields_conv
+   ppx_variants_conv)))
 
 (include_subdirs unqualified)

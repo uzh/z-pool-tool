@@ -1,3 +1,9 @@
+open Guard
+
 let create pool =
-  Guard.(DefaultRestored Guard.all_role_permissions |> handle_event pool)
+  DefaultRestored Guard.all_role_permissions |> handle_event pool
+;;
+
+let create_role_assignments pool =
+  DefaultRestored Guard.all_role_assignment_permissions |> handle_event pool
 ;;

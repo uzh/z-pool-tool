@@ -3,7 +3,6 @@ open Tyxml.Html
 open Component
 
 let ou_path ?suffix ?id () =
-  let open Organisational_unit in
   let base_path =
     Format.asprintf
       "/admin/%s"
@@ -12,7 +11,8 @@ let ou_path ?suffix ?id () =
   let default =
     match id with
     | None -> base_path
-    | Some id -> Format.asprintf "%s/%s" base_path (Id.value id)
+    | Some id ->
+      Format.asprintf "%s/%s" base_path (Organisational_unit.Id.value id)
   in
   CCOption.map_or ~default (Format.asprintf "%s/%s" default) suffix
 ;;

@@ -31,6 +31,17 @@ let location_manager_permissions : RolePermission.t list =
   |> map_role_permission
 ;;
 
+let location_manager_role_permissions : RolePermission.t list =
+  let open Core.Permission in
+  [ `LocationManager, Read, `RoleLocationManager
+  ; `LocationManager, Create, `RoleLocationManager
+  ; `LocationManager, Read, `RoleAssistant
+  ; `LocationManager, Read, `RoleExperimenter
+  ; `LocationManager, Read, `RoleRecruiter
+  ]
+  |> map_role_permission
+;;
+
 let recruiter_permissions : RolePermission.t list =
   let open Core.Permission in
   [ `Recruiter, Create, `Admin
@@ -65,6 +76,19 @@ let recruiter_permissions : RolePermission.t list =
   |> map_role_permission
 ;;
 
+let recruiter_role_permissions : RolePermission.t list =
+  let open Core.Permission in
+  [ `Recruiter, Manage, `RoleAdmin
+  ; `Recruiter, Manage, `RoleAssistant
+  ; `Recruiter, Manage, `RoleExperimenter
+  ; `Recruiter, Manage, `RoleLocationManager
+  ; `Recruiter, Read, `RoleRecruiter
+  ; `Recruiter, Create, `RoleRecruiter
+  ; `Recruiter, Read, `RoleOperator
+  ]
+  |> map_role_permission
+;;
+
 let assistant_permissions : RolePermission.t list =
   let open Core.Permission in
   [ `Assistant, Read, `Contact
@@ -82,6 +106,19 @@ let assistant_permissions : RolePermission.t list =
   |> map_role_permission
 ;;
 
+let assistant_role_permissions : RolePermission.t list =
+  let open Core.Permission in
+  [ `Assistant, Read, `RoleAdmin
+  ; `Assistant, Create, `RoleAdmin
+  ; `Assistant, Read, `RoleAssistant
+  ; `Assistant, Create, `RoleAssistant
+  ; `Assistant, Read, `RoleExperimenter
+  ; `Assistant, Read, `RoleLocationManager
+  ; `Assistant, Read, `RoleRecruiter
+  ]
+  |> map_role_permission
+;;
+
 let experimenter_permissions : RolePermission.t list =
   let open Core.Permission in
   [ `Experimenter, Read, `ContactName
@@ -91,29 +128,53 @@ let experimenter_permissions : RolePermission.t list =
   ; `Experimenter, Read, `Assignment
   ; `Experimenter, Update, `Assignment
   ; `Experimenter, Read, `Experiment
+  ; `Experimenter, Read, `RoleExperimenter
   ]
   |> map_role_permission
 ;;
 
-let operator_permissions : RolePermission.t list =
+let experimenter_role_permissions : RolePermission.t list =
   let open Core.Permission in
-  CCList.flat_map (fun role -> [ `Operator, Manage, role ]) Role.Target.all
+  [ `Experimenter, Read, `RoleAdmin
+  ; `Experimenter, Read, `RoleAssistant
+  ; `Experimenter, Read, `RoleExperimenter
+  ; `Experimenter, Read, `RoleLocationManager
+  ; `Experimenter, Read, `RoleRecruiter
+  ]
+  |> map_role_permission
+;;
+
+let operator_permissions role_assignments : RolePermission.t list =
+  let open Core.Permission in
+  Role.Target.all
+  |> CCList.filter (fun m ->
+    CCList.exists
+      (Role.Target.equal m)
+      (Role.Role.all |> CCList.map Core.Utils.find_assignable_target_role)
+    == role_assignments)
+  |> CCList.flat_map (fun role -> [ `Operator, Manage, role ])
   |> map_role_permission
 ;;
 
 let all_role_permissions =
-  operator_permissions
+  operator_permissions false
   @ recruiter_permissions
   @ assistant_permissions
   @ experimenter_permissions
   @ location_manager_permissions
 ;;
 
+let all_role_assignment_permissions =
+  operator_permissions true
+  @ recruiter_role_permissions
+  @ assistant_role_permissions
+  @ experimenter_role_permissions
+  @ location_manager_role_permissions
+;;
+
 let actor_to_model_permission pool permission model actor =
   let open Utils.Lwt_result.Infix in
-  Persistence.ActorRole.permissions_of_actor
-    ~ctx:(Pool_database.to_ctx pool)
-    actor.Actor.uuid
+  Persistence.ActorRole.permissions_of_actor pool actor.Actor.uuid
   ||> PermissionOnTarget.permission_of_model permission model
 ;;
 
@@ -185,13 +246,63 @@ module Access = struct
   open ValidationSet
   open Permission
 
-  let create_role = one_of_tuple (Create, `Role, None)
-  let read_role = one_of_tuple (Read, `Role, None)
-  let read_permission = one_of_tuple (Read, `Permission, None)
-  let update_role = one_of_tuple (Update, `Role, None)
-  let delete_role = one_of_tuple (Delete, `Role, None)
-  let manage_role = one_of_tuple (Manage, `Role, None)
-  let manage_permission = one_of_tuple (Manage, `Permission, None)
+  module Role = struct
+    let create = one_of_tuple (Create, `Role, None)
+    let read = one_of_tuple (Read, `Role, None)
+    let update = one_of_tuple (Update, `Role, None)
+    let delete = one_of_tuple (Delete, `Role, None)
+    let manage = one_of_tuple (Manage, `Role, None)
+
+    module Assignment = struct
+      module Assistant = struct
+        let model = `RoleAssistant
+
+        let create ?target_uuid () =
+          PermissionOnTarget.create ?target_uuid Create model |> one
+        ;;
+
+        let read ?target_uuid () =
+          PermissionOnTarget.create ?target_uuid Read model |> one
+        ;;
+
+        let delete ?target_uuid () =
+          PermissionOnTarget.create ?target_uuid Delete model |> one
+        ;;
+
+        let manage ?target_uuid () =
+          PermissionOnTarget.create ?target_uuid Manage model |> one
+        ;;
+      end
+
+      module Experimenter = struct
+        let model = `RoleExperimenter
+
+        let create ?target_uuid () =
+          PermissionOnTarget.create ?target_uuid Create model |> one
+        ;;
+
+        let read ?target_uuid () =
+          PermissionOnTarget.create ?target_uuid Read model |> one
+        ;;
+
+        let delete ?target_uuid () =
+          PermissionOnTarget.create ?target_uuid Delete model |> one
+        ;;
+
+        let manage ?target_uuid () =
+          PermissionOnTarget.create ?target_uuid Manage model |> one
+        ;;
+      end
+    end
+  end
+
+  module Permission = struct
+    let create = one_of_tuple (Create, `Permission, None)
+    let read = one_of_tuple (Read, `Permission, None)
+    let update = one_of_tuple (Update, `Permission, None)
+    let delete = one_of_tuple (Delete, `Permission, None)
+    let manage = one_of_tuple (Manage, `Permission, None)
+  end
 end
 
 let column_role = Repo.column_role
