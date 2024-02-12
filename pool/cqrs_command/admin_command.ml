@@ -93,7 +93,7 @@ module UpdatePassword : sig
 
   val handle
     :  ?tags:Logs.Tag.set
-    -> ?notification:Sihl_email.t
+    -> ?notification:Email.job
     -> Admin.t
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
@@ -148,8 +148,7 @@ end = struct
         |> Pool_event.admin)
        :: CCOption.map_or
             ~default:[]
-            (fun note ->
-              Email.Sent (note, None) |> Pool_event.email |> CCList.return)
+            (fun note -> Email.Sent note |> Pool_event.email |> CCList.return)
             notification)
   ;;
 

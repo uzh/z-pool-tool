@@ -11,6 +11,8 @@ type create =
 val pp_create : Format.formatter -> create -> unit
 val show_create : create -> string
 val equal_create : create -> create -> bool
+val create_of_yojson : Yojson.Safe.t -> create
+val yojson_of_create : create -> Yojson.Safe.t
 
 val create
   :  ?message_template:string

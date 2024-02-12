@@ -157,15 +157,14 @@ let update_email req =
            (match%lwt Admin.user_is_admin database_label user with
             | true ->
               let* notification = change_attempt_notification () in
-              Lwt_result.return
-                [ Email.Sent (notification, None) |> Pool_event.email ]
+              Lwt_result.return [ Email.Sent notification |> Pool_event.email ]
             | false ->
               let* contact = Contact.find_by_user database_label user in
               (match contact.Contact.email_verified with
                | Some _ ->
                  let* notification = change_attempt_notification () in
                  Lwt_result.return
-                   [ Email.Sent (notification, None) |> Pool_event.email ]
+                   [ Email.Sent notification |> Pool_event.email ]
                | None -> send_verification_mail (Some contact)))
        in
        let%lwt () = Pool_event.handle_events ~tags database_label events in

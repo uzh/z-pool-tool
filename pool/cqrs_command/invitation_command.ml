@@ -5,14 +5,6 @@ let contact_partition invited =
     CCList.mem ~eq:Pool_common.Id.equal (Contact.id contact) invited)
 ;;
 
-let prepare_emails experiment create_message =
-  let open CCResult in
-  CCList.map (fun contact ->
-    contact
-    |> create_message
-    >|= fun msg -> msg, experiment.Experiment.smtp_auth_id)
-;;
-
 let contact_update_on_invitation_sent contacts =
   let open CCFun in
   let open CCList in
@@ -31,7 +23,7 @@ module Create : sig
     ; contacts : Contact.t list
     ; invited_contacts : Pool_common.Id.t list
     ; create_message :
-        Contact.t -> (Sihl_email.t, Pool_common.Message.error) result
+        Contact.t -> (Email.job, Pool_common.Message.error) result
     }
 
   val handle
@@ -47,7 +39,7 @@ end = struct
     ; contacts : Contact.t list
     ; invited_contacts : Pool_common.Id.t list
     ; create_message :
-        Contact.t -> (Sihl_email.t, Pool_common.Message.error) result
+        Contact.t -> (Email.job, Pool_common.Message.error) result
     }
 
   let handle
@@ -59,7 +51,7 @@ end = struct
     let open CCFun in
     let errors, contacts = contact_partition invited_contacts contacts in
     let errors = CCList.map (Contact.id %> Pool_common.Id.value) errors in
-    let emails = prepare_emails experiment create_message contacts in
+    let emails = contacts |> CCList.map create_message in
     if CCList.is_empty errors |> not
     then Error Pool_common.Message.(AlreadyInvitedToExperiment errors)
     else (
@@ -81,38 +73,26 @@ end
 module Resend : sig
   include Common.CommandSig
 
-  type t =
-    { invitation : Invitation.t
-    ; experiment : Experiment.t
-    }
+  type t = Invitation.t
 
   val handle
     :  ?tags:Logs.Tag.set
     -> ?mailing_id:Mailing.Id.t
-    -> (Contact.t -> (Sihl_email.t, Pool_common.Message.error) result)
+    -> (Contact.t -> (Email.job, Pool_common.Message.error) result)
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
   val effects : Experiment.Id.t -> Pool_common.Id.t -> Guard.ValidationSet.t
 end = struct
-  type t =
-    { invitation : Invitation.t
-    ; experiment : Experiment.t
-    }
+  type t = Invitation.t
 
-  let handle
-    ?(tags = Logs.Tag.empty)
-    ?mailing_id
-    create_email
-    ({ invitation; experiment } : t)
-    =
+  let handle ?(tags = Logs.Tag.empty) ?mailing_id create_email (invitation : t) =
     let open CCResult in
     Logs.info ~src (fun m -> m "Handle command Resend" ~tags);
     let* email = create_email invitation.Invitation.contact in
     Ok
       [ Invitation.Resent (invitation, mailing_id) |> Pool_event.invitation
-      ; Email.Sent (email, experiment.Experiment.smtp_auth_id)
-        |> Pool_event.email
+      ; Email.Sent email |> Pool_event.email
       ]
   ;;
 

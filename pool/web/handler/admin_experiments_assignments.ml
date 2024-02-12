@@ -389,7 +389,7 @@ let remind req =
       let open CCResult.Infix in
       urlencoded
       |> decode
-      >>= handle ~tags create_messages experiment session assignment
+      >>= handle ~tags create_messages session assignment
       |> Lwt_result.lift
     in
     let handle events =
@@ -504,7 +504,7 @@ let swap_session_post req =
           ~new_session
           ~old_session:current_session
           assignment
-        ||> fun msg -> CCOption.return (msg, experiment.Experiment.smtp_auth_id)
+        ||> CCOption.return
     in
     let events =
       SwapSession.handle

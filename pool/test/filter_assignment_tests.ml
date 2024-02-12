@@ -2,6 +2,7 @@ let ( let@ ) = Result.bind
 let ( let* ) x f = Lwt_result.bind (Lwt_result.lift x) f
 let ( let& ) = Lwt_result.bind
 let test_db = Test_utils.Data.database_label
+let email_job email = Email.create_job email None None
 
 let session ~experiment =
   let open Session in
@@ -147,7 +148,8 @@ let assignment ~experiment ~session ~contact =
             ~sender:"sender"
             ~recipient:"recipient"
             ~subject:"subject"
-            "body")
+            "body"
+          |> email_job)
         already_enrolled)
   in
   let& () = Pool_event.handle_events test_db events |> Lwt_result.ok in
@@ -169,6 +171,7 @@ let invitation ~experiment ~contacts =
                 ~recipient:"recipient"
                 ~subject:"subject"
                 "body"
+              |> email_job
               |> Result.ok)
         ; mailing = None
         })

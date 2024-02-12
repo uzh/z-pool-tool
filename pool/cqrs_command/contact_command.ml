@@ -22,7 +22,7 @@ module SignUp : sig
     -> Custom_field.Public.t list
     -> Email.Token.t
     -> User.EmailAddress.t
-    -> Sihl_email.t
+    -> Email.job
     -> Pool_common.Language.t option
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
@@ -88,20 +88,11 @@ end = struct
         Custom_field.AnsweredOnSignup (field, user_id)
         |> Pool_event.custom_field)
     in
-    let message_history =
-      Message_history.
-        { entity_uuids = [ user_id ]
-        ; message_template =
-            Message_template.Label.(
-              EmailVerification |> show |> CCOption.return)
-        }
-    in
     Ok
       ([ Contact.Created contact |> Pool_event.contact
        ; Email.Created (unverified_email, token, user_id)
          |> Pool_event.email_verification
-       ; Email.SentWithPoolQueue ((verification_email, None), message_history)
-         |> Pool_event.email
+       ; Email.Sent verification_email |> Pool_event.email
        ]
        @ custom_field_events)
   ;;
@@ -218,7 +209,7 @@ module UpdatePassword : sig
   val handle
     :  ?tags:Logs.Tag.set
     -> Contact.t
-    -> Sihl_email.t
+    -> Email.job
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
@@ -270,7 +261,7 @@ end = struct
           , command.new_password
           , command.password_confirmation )
         |> Pool_event.contact
-      ; Email.Sent (notification, None) |> Pool_event.email
+      ; Email.Sent notification |> Pool_event.email
       ]
   ;;
 
@@ -291,7 +282,7 @@ module RequestEmailValidation : sig
     :  ?tags:Logs.Tag.set
     -> ?allowed_email_suffixes:Settings.EmailSuffix.t list
     -> Email.Token.t
-    -> Sihl_email.t
+    -> Email.job
     -> Contact.t
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
@@ -314,7 +305,7 @@ end = struct
     Ok
       [ Email.Created (email, token, Contact.id contact)
         |> Pool_event.email_verification
-      ; Email.Sent (verification_email, None) |> Pool_event.email
+      ; Email.Sent verification_email |> Pool_event.email
       ]
   ;;
 
@@ -376,7 +367,7 @@ module SendProfileUpdateTrigger : sig
 
   type t =
     { contacts : Contact.t list
-    ; emails : Sihl_email.t list
+    ; emails : Email.job list
     }
 
   val handle
@@ -388,12 +379,11 @@ module SendProfileUpdateTrigger : sig
 end = struct
   type t =
     { contacts : Contact.t list
-    ; emails : Sihl_email.t list
+    ; emails : Email.job list
     }
 
   let handle ?(tags = Logs.Tag.empty) ({ contacts; emails } : t) =
     Logs.info ~src (fun m -> m "Handle command SendProfileUpdateTrigger" ~tags);
-    let emails = emails |> CCList.map (fun msg -> msg, None) in
     Ok
       [ Contact.ProfileUpdateTriggeredAtUpdated contacts |> Pool_event.contact
       ; Email.BulkSent emails |> Pool_event.email
@@ -409,7 +399,7 @@ module SendRegistrationAttemptNotifitacion : sig
   val handle
     :  ?tags:Logs.Tag.set
     -> t
-    -> Sihl_email.t
+    -> Email.job
     -> (Pool_event.t list, Pool_common.Message.error) result
 
   val effects : Contact.Id.t -> Guard.ValidationSet.t
@@ -420,7 +410,7 @@ end = struct
     Logs.info ~src (fun m ->
       m "Handle command SendRegistrationAttemptNotifitacion" ~tags);
     Ok
-      [ Email.Sent (email, None) |> Pool_event.email
+      [ Email.Sent email |> Pool_event.email
       ; Contact.RegistrationAttemptNotificationSent contact
         |> Pool_event.contact
       ]

@@ -441,7 +441,6 @@ let update_handler action req =
               follow_ups
               session
               assignments
-              experiment
               create_message
     in
     let%lwt () = Pool_event.handle_events ~tags database_label events in
@@ -530,7 +529,6 @@ let cancel req =
       >>= handle
             ~tags
             (session :: follow_ups)
-            experiment
             assignments
             create_email
             create_text_message
@@ -847,7 +845,7 @@ let resend_reminders req =
       let open Cqrs_command.Session_command.ResendReminders in
       urlencoded
       |> decode
-      >>= handle ~tags create_messages experiment session assignments
+      >>= handle ~tags create_messages session assignments
       |> Lwt_result.lift
     in
     let%lwt () = Pool_event.handle_events ~tags database_label events in

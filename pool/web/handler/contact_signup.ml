@@ -83,6 +83,7 @@ let sign_up_create req =
              token
              firstname
              lastname
+             user_id
          in
          decoded
          |> handle

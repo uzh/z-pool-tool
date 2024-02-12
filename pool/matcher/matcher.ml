@@ -185,7 +185,7 @@ let events_of_mailings =
                 ~tags
                 ~mailing_id:mailing.Mailing.id
                 create_message
-                { invitation; experiment }))
+                invitation))
           |> CCList.all_ok
           |> CCResult.map CCList.flatten
         in
