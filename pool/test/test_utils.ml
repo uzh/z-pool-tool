@@ -290,11 +290,11 @@ module Model = struct
       "Hello"
   ;;
 
-  let email_to_job email = Email.create_job email None None
+  let email_to_job email = Email.create_job email
 
   let create_email_job ?smtp_auth_id ?message_history () =
     let email = create_email () in
-    Email.create_job email smtp_auth_id message_history
+    Email.create_job ?smtp_auth_id ?message_history email
   ;;
 
   let create_text_message

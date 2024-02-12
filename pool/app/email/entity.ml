@@ -136,6 +136,6 @@ type job =
   }
 [@@deriving eq, show, yojson]
 
-let create_job email smtp_auth_id message_history =
+let create_job ?smtp_auth_id ?message_history email =
   { email; smtp_auth_id; message_history }
 ;;

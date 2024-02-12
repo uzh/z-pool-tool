@@ -296,8 +296,8 @@ module AccountSuspensionNotification = struct
     let layout = layout_from_tenant tenant in
     let params = email_params layout user in
     let email = prepare_email language template sender email layout params in
-    Email.create_job email None (Some (message_history user))
-    |> Lwt_result.return
+    let message_history = message_history user in
+    Email.create_job ~message_history email |> Lwt_result.return
   ;;
 end
 
@@ -360,7 +360,7 @@ module AssignmentConfirmation = struct
     let%lwt template = template pool experiment language in
     let layout = layout_from_tenant tenant in
     let%lwt sender = sender_of_contact_person pool admin_contact in
-    let smtp_auth = experiment.Experiment.smtp_auth_id in
+    let smtp_auth_id = experiment.Experiment.smtp_auth_id in
     let fnc assignment =
       let params =
         email_params
@@ -376,7 +376,7 @@ module AssignmentConfirmation = struct
         prepare_email language template sender email_address layout params
       in
       let message_history = message_history experiment session assignment in
-      Email.create_job email smtp_auth (Some message_history)
+      Email.create_job ~message_history ?smtp_auth_id email
     in
     Lwt.return fnc
   ;;
@@ -418,6 +418,7 @@ module AssignmentSessionChange = struct
     =
     let layout = layout_from_tenant tenant in
     let%lwt sender = sender_of_experiment pool experiment in
+    let smtp_auth_id = experiment.Experiment.smtp_auth_id in
     let params =
       email_params
         message.ManualMessage.language
@@ -428,11 +429,8 @@ module AssignmentSessionChange = struct
         assignment
     in
     let email = prepare_manual_email message layout params sender in
-    Email.create_job
-      email
-      None
-      (Some (message_history experiment new_session assignment))
-    |> Lwt.return
+    let message_history = message_history experiment new_session assignment in
+    Email.create_job ?smtp_auth_id ~message_history email |> Lwt.return
   ;;
 end
 
@@ -478,8 +476,8 @@ module ContactEmailChangeAttempt = struct
         layout
         (email_params layout tenant_url user)
     in
-    let history = message_history user in
-    Email.create_job email None (Some history) |> Lwt_result.return
+    let message_history = message_history user in
+    Email.create_job ~message_history email |> Lwt_result.return
   ;;
 end
 
@@ -513,8 +511,8 @@ module ContactRegistrationAttempt = struct
         layout
         (email_params layout tenant_url user)
     in
-    let history = message_history user in
-    Email.create_job email None (Some history) |> Lwt.return
+    let message_history = message_history user in
+    Email.create_job ~message_history email |> Lwt.return
   ;;
 end
 
@@ -551,8 +549,8 @@ module EmailVerification = struct
         layout
         (email_params layout validation_url contact)
     in
-    let history = message_history (Contact.user contact) in
-    Email.create_job email None (Some history) |> Lwt.return
+    let message_history = message_history (Contact.user contact) in
+    Email.create_job ~message_history email |> Lwt.return
   ;;
 end
 
@@ -582,6 +580,7 @@ module ExperimentInvitation = struct
         Label.ExperimentInvitation
     in
     let%lwt tenant_url = Pool_tenant.Url.of_pool pool in
+    let smtp_auth_id = experiment.Experiment.smtp_auth_id in
     let%lwt sender = sender_of_experiment pool experiment in
     let layout = layout_from_tenant tenant in
     let fnc (contact : Contact.t) =
@@ -602,9 +601,8 @@ module ExperimentInvitation = struct
           layout
           params
       in
-      let history = message_history experiment contact in
-      Email.create_job email experiment.Experiment.smtp_auth_id (Some history)
-      |> CCResult.return
+      let message_history = message_history experiment contact in
+      Email.create_job ?smtp_auth_id ~message_history email |> CCResult.return
     in
     Lwt.return fnc
   ;;
@@ -617,6 +615,7 @@ module ExperimentInvitation = struct
       find_by_label_and_language_to_send database_label label language
     in
     let%lwt tenant_url = Pool_tenant.Url.of_pool database_label in
+    let smtp_auth_id = experiment.Experiment.smtp_auth_id in
     let%lwt sender = sender_of_experiment database_label experiment in
     let layout = layout_from_tenant tenant in
     let params = email_params layout experiment tenant_url contact in
@@ -629,9 +628,8 @@ module ExperimentInvitation = struct
         layout
         params
     in
-    let history = message_history experiment contact in
-    Email.create_job email experiment.Experiment.smtp_auth_id (Some history)
-    |> Lwt.return
+    let message_history = message_history experiment contact in
+    Email.create_job ~message_history ?smtp_auth_id email |> Lwt.return
   ;;
 end
 
@@ -654,7 +652,8 @@ module PasswordChange = struct
         layout
         (email_params layout user)
     in
-    Email.create_job email None (Some (message_history user)) |> Lwt.return
+    let message_history = message_history user in
+    Email.create_job ~message_history email |> Lwt.return
   ;;
 end
 
@@ -707,8 +706,8 @@ module PasswordReset = struct
         layout
         (email_params layout reset_url user)
     in
-    let history = message_history user in
-    Email.create_job email None (Some history) |> Lwt_result.return
+    let message_history = message_history user in
+    Email.create_job ~message_history email |> Lwt_result.return
   ;;
 end
 
@@ -771,8 +770,8 @@ module ProfileUpdateTrigger = struct
           layout
           (email_params layout url contact)
       in
-      let history = message_history (Contact.user contact) in
-      Email.create_job email None (Some history) |> CCResult.return
+      let message_history = message_history (Contact.user contact) in
+      Email.create_job ~message_history email |> CCResult.return
     in
     Lwt.return fnc
   ;;
@@ -834,9 +833,9 @@ module SessionCancellation = struct
           layout
           params
       in
-      let history = message_history experiment session contact in
-      Email.create_job email experiment.Experiment.smtp_auth_id (Some history)
-      |> CCResult.return
+      let smtp_auth_id = experiment.Experiment.smtp_auth_id in
+      let message_history = message_history experiment session contact in
+      Email.create_job ~message_history ?smtp_auth_id email |> CCResult.return
     in
     Lwt.return fnc
   ;;
@@ -927,9 +926,9 @@ module SessionReminder = struct
         layout
         params
     in
-    let history = message_history experiment session contact in
-    Email.create_job email experiment.Experiment.smtp_auth_id (Some history)
-    |> Lwt.return
+    let message_history = message_history experiment session contact in
+    let smtp_auth_id = experiment.Experiment.smtp_auth_id in
+    Email.create_job ~message_history ?smtp_auth_id email |> Lwt.return
   ;;
 
   let prepare_emails pool tenant sys_langs experiment session =
@@ -965,11 +964,8 @@ module SessionReminder = struct
           params
       in
       let message_history = message_history experiment session contact in
-      Email.create_job
-        email
-        experiment.Experiment.smtp_auth_id
-        (Some message_history)
-      |> CCResult.return
+      let smtp_auth_id = experiment.Experiment.smtp_auth_id in
+      Email.create_job ~message_history ?smtp_auth_id email |> CCResult.return
     in
     Lwt.return fnc
   ;;
@@ -1058,9 +1054,9 @@ module SessionReschedule = struct
           layout
           params
       in
-      let history = message_history experiment session contact in
-      Email.create_job email experiment.Experiment.smtp_auth_id (Some history)
-      |> CCResult.return
+      let message_history = message_history experiment session contact in
+      let smtp_auth_id = experiment.Experiment.smtp_auth_id in
+      Email.create_job ~message_history ?smtp_auth_id email |> CCResult.return
     in
     Lwt.return fnc
   ;;
@@ -1113,7 +1109,7 @@ module SignUpVerification = struct
         layout
         (email_params layout verification_url firstname lastname)
     in
-    Email.create_job email None (Some message_history) |> Lwt.return
+    Email.create_job ~message_history email |> Lwt.return
   ;;
 end
 
@@ -1177,8 +1173,8 @@ module UserImport = struct
         layout
         (email_params layout confirmation_url user)
     in
-    let history = message_history user in
-    Email.create_job email None (Some history)
+    let message_history = message_history user in
+    Email.create_job ~message_history email
   ;;
 end
 
@@ -1212,10 +1208,8 @@ module WaitingListConfirmation = struct
     let email =
       prepare_email language template sender email_address layout params
     in
-    Email.create_job
-      email
-      (Experiment.Public.smtp_auth_id experiment)
-      (Some (message_history experiment contact))
-    |> Lwt_result.return
+    let message_history = message_history experiment contact in
+    let smtp_auth_id = Experiment.Public.smtp_auth_id experiment in
+    Email.create_job ~message_history ?smtp_auth_id email |> Lwt_result.return
   ;;
 end

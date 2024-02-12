@@ -38,7 +38,7 @@ let confirmation_email experiment assignment =
       ; bcc = []
       }
   in
-  Email.create_job email experiment.Experiment.smtp_auth_id None
+  Email.create_job ?smtp_auth_id:experiment.Experiment.smtp_auth_id email
 ;;
 
 let update_assignment_count_event ~step contact =

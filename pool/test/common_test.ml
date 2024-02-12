@@ -19,7 +19,7 @@ let validate_email _ () =
   let email = Data.create_email () in
   let smtp_auth_id = None in
   let { Email.email; _ } =
-    Email.create_job email smtp_auth_id None
+    Email.create_job ?smtp_auth_id email
     |> intercept_prepare
     |> Test_utils.get_or_failwith
   in

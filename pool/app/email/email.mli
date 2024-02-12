@@ -230,9 +230,9 @@ type job =
   }
 
 val create_job
-  :  Sihl.Contract.Email.t
-  -> SmtpAuth.Id.t option
-  -> Message_history.create option
+  :  ?smtp_auth_id:SmtpAuth.Id.t
+  -> ?message_history:Message_history.create
+  -> Sihl.Contract.Email.t
   -> job
 
 module Service : sig

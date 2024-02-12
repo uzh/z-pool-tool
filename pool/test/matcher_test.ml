@@ -33,18 +33,17 @@ let create_message ?sender (_ : Contact.t) =
     sender
     |> CCOption.map_or ~default:"it@econ.uzh.ch" Pool_user.EmailAddress.value
   in
-  let email =
-    Sihl_email.
-      { sender
-      ; recipient = "contact@econ.uzh.ch"
-      ; subject = "Invitation"
-      ; text = ""
-      ; html = None
-      ; cc = []
-      ; bcc = []
-      }
-  in
-  Email.create_job email None None |> CCResult.return
+  Sihl_email.
+    { sender
+    ; recipient = "contact@econ.uzh.ch"
+    ; subject = "Invitation"
+    ; text = ""
+    ; html = None
+    ; cc = []
+    ; bcc = []
+    }
+  |> Email.create_job
+  |> CCResult.return
 ;;
 
 let create_invitations_model () =
