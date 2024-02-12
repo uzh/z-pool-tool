@@ -4,6 +4,20 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/pool/tree/HEAD)
 
+## [0.5.5](https://github.com/uzh/pool/tree/0.5.5) - 2024-02-12
+
+### Added
+
+- changable reminder interval for imported contacts/admins
+
+### Changed
+
+- sortable job queue UI
+
+### Fixed
+
+- make GTX key optional, show message if not set
+
 ## [0.5.4](https://github.com/uzh/pool/tree/0.5.4) - 2024-01-24
 
 ### Added
@@ -36,7 +50,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 - allow time unit to be specified for all timespan inputs
 - remove home title translation
 - allow direct enrollment by admins to experiments with disabled registration
-- split experiment and session description in public and internal 
+- split experiment and session description in public and internal
 
 ### Fixed
 - waiting list displays enrolled contacts if assignment is marked as deleted
