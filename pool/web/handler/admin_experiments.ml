@@ -172,7 +172,7 @@ let create req =
     ||> HttpUtils.format_request_boolean_values experiment_boolean_fields
     ||> HttpUtils.remove_empty_values
   in
-  let result { Pool_context.database_label; _ } =
+  let result { Pool_context.database_label; user; _ } =
     Utils.Lwt_result.map_error (fun err ->
       ( err
       , "/admin/experiments/create"
@@ -186,12 +186,37 @@ let create req =
       organisational_unit_from_urlencoded urlencoded database_label
     in
     let* smtp_auth = smtp_auth_from_urlencoded urlencoded database_label in
+    let id = Experiment.Id.create () in
+    let%lwt role_events =
+      let open Guard in
+      let actor =
+        let admin_only = true in
+        Pool_context.Utils.find_authorizable ~admin_only database_label user
+      in
+      let has_general_experimenter_permission actor =
+        PermissionOnTarget.create Permission.Manage `Experiment
+        |> ValidationSet.one
+        |> flip (Persistence.validate database_label) actor
+        ||> CCResult.is_ok
+      in
+      match%lwt
+        Lwt.both actor (actor |>> has_general_experimenter_permission)
+      with
+      | Ok actor, Ok false ->
+        ActorRole.create
+          ~target_uuid:(Uuid.target_of Experiment.Id.value id)
+          actor.Actor.uuid
+          `Experimenter
+        |> fun role ->
+        RolesGranted [ role ] |> Pool_event.guard |> CCList.return |> Lwt.return
+      | (Ok _ | Error _), (Ok _ | Error _) -> Lwt.return []
+    in
     let events =
       let open CCResult.Infix in
       let open Cqrs_command.Experiment_command.Create in
       urlencoded
       |> decode
-      >>= handle ~tags ?contact_person ?organisational_unit ?smtp_auth
+      >>= handle ~tags ~id ?contact_person ?organisational_unit ?smtp_auth
       |> Lwt_result.lift
     in
     let handle events =
@@ -204,7 +229,7 @@ let create req =
             ~success:[ Pool_common.Message.(Created Field.Experiment) ]
         ]
     in
-    events |>> handle
+    events >|+ flip ( @ ) role_events |>> handle
   in
   result |> HttpUtils.extract_happy_path_with_actions ~src req
 ;;
