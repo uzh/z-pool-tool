@@ -10,6 +10,14 @@ let reminder_settings database_label =
     (find_user_import_second_reminder_after database_label)
 ;;
 
+let message_history user =
+  let open Message_history in
+  { entity_uuids = [ user.Sihl_user.id |> Pool_common.Id.of_string ]
+  ; message_template =
+      Message_template.Label.(show SignUpVerification) |> CCOption.return
+  }
+;;
+
 let run database_label =
   let open Utils.Lwt_result.Infix in
   let%lwt import_message =
@@ -33,10 +41,10 @@ let run database_label =
       , Event.reminded )
     ]
   in
-  let make_events (messages, events) (contact, import) event_fnc =
-    let message = import_message contact import.Entity.token in
+  let make_events (jobs, events) (user, import) event_fnc =
+    let job = import_message user import.Entity.token in
     let event = event_fnc import in
-    (message, None) :: messages, event :: events
+    job :: jobs, event :: events
   in
   let rec folder limit tasks events =
     if limit <= 0

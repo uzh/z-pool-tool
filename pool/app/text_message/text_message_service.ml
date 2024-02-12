@@ -119,6 +119,7 @@ let intercept_prepare database_label ({ recipient; _ } as job) =
             ~subject
             (format_message job)
       ; smtp_auth_id = None
+      ; message_history = None
       }
     |> Lwt.return_ok
   | false, None ->

@@ -33,8 +33,7 @@ let create () =
       [ Invitation.(
           Created { contacts = [ contact ]; mailing = None; experiment })
         |> Pool_event.invitation
-      ; Email.BulkSent [ email, experiment.Experiment.smtp_auth_id ]
-        |> Pool_event.email
+      ; Email.BulkSent [ email ] |> Pool_event.email
       ; contact_update
       ]
   in
@@ -58,7 +57,7 @@ let create_with_experiment_smtp () =
       [ Invitation.(
           Created { contacts = [ contact ]; mailing = None; experiment })
         |> Pool_event.invitation
-      ; Email.BulkSent [ email, Some smtp_auth_id ] |> Pool_event.email
+      ; Email.BulkSent [ email ] |> Pool_event.email
       ; contact_update
       ]
   in
@@ -69,15 +68,18 @@ let resend () =
   let open InvitationCommand.Resend in
   let invitation = create_invitation () in
   let experiment = Model.create_experiment () in
-  let email = Test_utils.Model.create_email () in
+  let email =
+    Test_utils.Model.create_email_job
+      ?smtp_auth_id:experiment.Experiment.smtp_auth_id
+      ()
+  in
   let create_messge _ = Ok email in
-  let events = handle create_messge { invitation; experiment } in
+  let events = handle create_messge invitation in
   let expected =
     let open CCResult in
     Ok
       [ Invitation.(Resent (invitation, None)) |> Pool_event.invitation
-      ; Email.Sent (email, experiment.Experiment.smtp_auth_id)
-        |> Pool_event.email
+      ; Email.Sent email |> Pool_event.email
       ]
   in
   Test_utils.check_result expected events

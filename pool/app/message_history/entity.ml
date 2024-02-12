@@ -1,3 +1,5 @@
+open Ppx_yojson_conv_lib.Yojson_conv
+
 type t =
   { entity_uuid : Pool_common.Id.t
   ; job : Sihl_queue.instance
@@ -10,7 +12,7 @@ type create =
   { entity_uuids : Pool_common.Id.t list
   ; message_template : string option
   }
-[@@deriving show, eq]
+[@@deriving show, eq, yojson]
 
 let create ?message_template ~entity_uuid job =
   { entity_uuid; job; message_template }

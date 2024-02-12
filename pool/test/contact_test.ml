@@ -25,6 +25,10 @@ let allowed_email_suffixes =
 
 let tenant = Tenant_test.Data.full_tenant |> CCResult.get_exn
 
+let email_job ?smtp_auth_id ?message_history email =
+  Email.create_job email smtp_auth_id message_history
+;;
+
 let confirmation_mail contact =
   let email =
     Contact.(contact |> email_address |> Pool_user.EmailAddress.value)
@@ -43,6 +47,7 @@ let confirmation_mail contact =
     ; cc = []
     ; bcc = []
     }
+  |> email_job
 ;;
 
 let sign_up_contact contact_info =
@@ -114,6 +119,7 @@ let verification_email (email_address, _, _, _, _) =
     ; cc = []
     ; bcc = []
     }
+  |> email_job
 ;;
 
 let sign_up_not_allowed_suffix () =
@@ -199,7 +205,7 @@ let sign_up () =
     Ok
       [ Contact.Created contact |> Pool_event.contact
       ; Email.Created (email, token, user_id) |> Pool_event.email_verification
-      ; Email.Sent (verification_email, None) |> Pool_event.email
+      ; Email.Sent verification_email |> Pool_event.email
       ]
   in
   check_result expected events
@@ -272,7 +278,7 @@ let update_password () =
             |> Pool_common.Utils.get_or_failwith
           , new_password |> Pool_user.PasswordConfirmed.create )
         |> Pool_event.contact
-      ; Email.Sent (confirmation_mail, None) |> Pool_event.email
+      ; Email.Sent confirmation_mail |> Pool_event.email
       ]
   in
   check_result expected events
@@ -433,7 +439,7 @@ let request_email_validation () =
     Ok
       [ Email.Created (new_email, token, Contact.id contact)
         |> Pool_event.email_verification
-      ; Email.Sent (verification_email, None) |> Pool_event.email
+      ; Email.Sent verification_email |> Pool_event.email
       ]
   in
   check_result expected events
@@ -552,6 +558,7 @@ let should_not_send_registration_notification _ () =
         ; cc = []
         ; bcc = []
         }
+      |> email_job
       |> Cqrs_command.Contact_command.SendRegistrationAttemptNotifitacion.handle
            contact
       |> Test_utils.get_or_failwith

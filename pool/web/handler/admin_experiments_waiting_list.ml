@@ -192,12 +192,7 @@ let assign_contact req =
       let open Cqrs_command.Assignment_command.CreateFromWaitingList in
       (handle
          ~tags
-         { experiment
-         ; session
-         ; follow_up_sessions
-         ; waiting_list
-         ; already_enrolled
-         })
+         { session; follow_up_sessions; waiting_list; already_enrolled })
         confirmation_email
       |> Lwt_result.lift
     in

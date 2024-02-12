@@ -290,6 +290,13 @@ module Model = struct
       "Hello"
   ;;
 
+  let email_to_job email = Email.create_job email None None
+
+  let create_email_job ?smtp_auth_id ?message_history () =
+    let email = create_email () in
+    Email.create_job email smtp_auth_id message_history
+  ;;
+
   let create_text_message
     ?(sender = Pool_tenant.Title.of_string "UAST")
     cell_phone

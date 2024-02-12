@@ -291,7 +291,7 @@ module Job = struct
   let send =
     let open CCFun in
     let open Utils.Lwt_result.Infix in
-    let handle ?ctx { Entity.email; smtp_auth_id } =
+    let handle ?ctx { Entity.email; smtp_auth_id; _ } =
       let database_label =
         let open CCOption in
         ctx
@@ -326,7 +326,7 @@ module Job = struct
   ;;
 end
 
-let dispatch database_label ?message_history (email, smtp_auth_id) =
+let dispatch database_label ({ Entity.email; message_history; _ } as job) =
   let callback =
     message_history |> CCOption.map (Message_history.callback database_label)
   in
@@ -338,21 +338,17 @@ let dispatch database_label ?message_history (email, smtp_auth_id) =
   Queue.dispatch
     ?callback
     ~ctx:(Pool_database.to_ctx database_label)
-    (Entity.create_job email smtp_auth_id
-     |> intercept_prepare
-     |> Pool_common.Utils.get_or_failwith)
+    (job |> intercept_prepare |> Pool_common.Utils.get_or_failwith)
     Job.send
 ;;
 
-let dispatch_all database_label jobs =
+let dispatch_all database_label (jobs : Entity.job list) =
   let recipients, jobs =
     jobs
     |> CCList.fold_left
-         (fun (recipients, jobs) (email, smtp_auth_id) ->
+         (fun (recipients, jobs) ({ Entity.email; _ } as job) ->
            let job =
-             Entity.create_job email smtp_auth_id
-             |> intercept_prepare
-             |> Pool_common.Utils.get_or_failwith
+             job |> intercept_prepare |> Pool_common.Utils.get_or_failwith
            in
            email.Sihl_email.recipient :: recipients, job :: jobs)
          ([], [])
