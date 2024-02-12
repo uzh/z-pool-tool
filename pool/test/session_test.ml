@@ -554,7 +554,7 @@ let delete_session_with_follow_ups () =
 (* TODO: Add history? *)
 
 let create_email_job experiment email =
-  Email.create_job email experiment.Experiment.smtp_auth_id None
+  Email.create_job ?smtp_auth_id:experiment.Experiment.smtp_auth_id email
 ;;
 
 let create_cancellation_message experiment reason contact =
@@ -565,7 +565,7 @@ let create_cancellation_message experiment reason contact =
   let email =
     reason |> Session.CancellationReason.value |> flip Sihl_email.set_text email
   in
-  Email.create_job email experiment.Experiment.smtp_auth_id None
+  Email.create_job ?smtp_auth_id:experiment.Experiment.smtp_auth_id email
   |> CCResult.return
 ;;
 
@@ -1360,7 +1360,9 @@ let reschedule_with_experiment_smtp () =
   in
   let expected =
     let email = Test_utils.Model.create_email () in
-    let job = Email.create_job email experiment.Experiment.smtp_auth_id None in
+    let job =
+      Email.create_job ?smtp_auth_id:experiment.Experiment.smtp_auth_id email
+    in
     Ok
       [ Session.Rescheduled (session, rescheduled command) |> Pool_event.session
       ; Email.BulkSent [ job ] |> Pool_event.email
