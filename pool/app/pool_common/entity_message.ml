@@ -226,6 +226,7 @@ type control =
   | Login
   | Manage of Field.t
   | MarkAsDeleted
+  | MessageHistory
   | More
   | NextPage
   | OpenProfile

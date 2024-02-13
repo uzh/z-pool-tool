@@ -369,20 +369,30 @@ let detail
       ~a:[ a_class [ "heading-3" ] ]
       Pool_common.[ Utils.nav_link_to_string language nav |> txt ]
   in
+  let buttons =
+    let contact_path = path contact in
+    let edit =
+      Format.asprintf "%s/edit" contact_path
+      |> Input.link_as_button
+           ~icon:Icon.Create
+           ~classnames:[ "small" ]
+           ~control:Pool_common.(language, Message.(Edit (Some Field.Contact)))
+    in
+    let messages =
+      Format.asprintf "%s/messages" contact_path
+      |> Input.link_as_button
+           ~is_text:true
+           ~icon:Icon.Mail
+           ~classnames:[ "small" ]
+           ~control:Pool_common.(language, Message.(MessageHistory))
+    in
+    div ~a:[ a_class [ "flexrow"; "flex-gap" ] ] [ messages; edit ]
+  in
   div
     ~a:[ a_class [ "trim"; "safety-margin"; "stack-lg" ] ]
     [ div
         ~a:[ a_class [ "flexrow"; "wrap"; "flex-gap"; "justify-between" ] ]
-        [ div [ heading_with_icons contact ]
-        ; contact
-          |> path
-          |> Format.asprintf "%s/edit"
-          |> Input.link_as_button
-               ~icon:Icon.Create
-               ~classnames:[ "small" ]
-               ~control:
-                 Pool_common.(language, Message.(Edit (Some Field.Contact)))
-        ]
+        [ div [ heading_with_icons contact ]; buttons ]
     ; personal_detail ?admin_comment ~custom_fields ~tags user language contact
     ; div
         [ subtitle Pool_common.I18n.ExternalDataIds
