@@ -326,23 +326,53 @@ module Job = struct
   ;;
 end
 
-let dispatch database_label ({ Entity.email; message_history; _ } as job) =
-  let callback =
-    message_history
-    |> CCOption.map (Message_history.create_from_queue_instance database_label)
+let callback database_label (job_instance : Sihl_queue.instance) =
+  let open Entity in
+  let job =
+    job_instance.Sihl_queue.input
+    |> Yojson.Safe.from_string
+    |> Entity.job_of_yojson
   in
+  match job.message_history with
+  | None -> Lwt.return_unit
+  | Some message_history ->
+    Message_history.create_from_queue_instance
+      database_label
+      message_history
+      job_instance
+;;
+
+let dispatch database_label ({ Entity.email; _ } as job) =
+  let callback = callback database_label in
   Logs.debug ~src (fun m ->
     m
       ~tags:(Pool_database.Logger.Tags.create database_label)
       "Dispatch email to %s"
       email.Sihl_email.recipient);
   Queue.dispatch
-    ?callback
+    ~callback
     ~ctx:(Pool_database.to_ctx database_label)
     (job |> intercept_prepare |> Pool_common.Utils.get_or_failwith)
     Job.send
 ;;
 
 let dispatch_all database_label (jobs : Entity.job list) =
-  jobs |> Lwt_list.iter_s (dispatch database_label)
+  let callback = callback database_label in
+  let recipients, jobs =
+    jobs
+    |> CCList.fold_left
+         (fun (recipients, jobs) ({ Entity.email; _ } as job) ->
+           email.Sihl_email.recipient :: recipients, job :: jobs)
+         ([], [])
+  in
+  Logs.debug ~src (fun m ->
+    m
+      ~tags:(Pool_database.Logger.Tags.create database_label)
+      "Dispatch email to %s"
+      ([%show: string list] recipients));
+  Queue.dispatch_all
+    ~callback
+    ~ctx:(Pool_database.to_ctx database_label)
+    jobs
+    Job.send
 ;;
