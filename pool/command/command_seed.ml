@@ -3,7 +3,7 @@ let root_data =
   let description = "Seed development data to root database" in
   Command_utils.make_no_args name description (fun () ->
     let%lwt () = Database.Root.setup () in
-    let%lwt () = Database.Root.Seed.create () in
+    let%lwt () = Seed.Root.create () in
     Lwt.return_some ())
 ;;
 
@@ -15,7 +15,7 @@ let root_data_clean =
   Command_utils.make_no_args name description (fun () ->
     let%lwt () = Database.Root.setup () in
     let%lwt () = Utils.Database.clean_all Database.Root.label in
-    let%lwt () = Database.Root.Seed.create () in
+    let%lwt () = Seed.Root.create () in
     Lwt.return_some ())
 ;;
 
@@ -25,7 +25,7 @@ let seed_tenant_clean ?is_test db_pools =
       CCFun.(Pool_database.Label.value %> Utils.Database.clean_all)
       db_pools
   in
-  let%lwt () = Database.Tenant.Seed.create ?is_test db_pools () in
+  let%lwt () = Seed.Tenant.create ?is_test db_pools () in
   Lwt.return_some ()
 ;;
 
@@ -34,7 +34,7 @@ let tenant_data =
   let description = "Seed development data to tenant databases" in
   Command_utils.make_no_args name description (fun () ->
     let%lwt db_pools = Command_utils.setup_databases () in
-    let%lwt () = Database.Tenant.Seed.create db_pools () in
+    let%lwt () = Seed.Tenant.create db_pools () in
     Lwt.return_some ())
 ;;
 
@@ -74,6 +74,6 @@ let tenant_data_contacts_specific =
      database"
   in
   Command_utils.make_pool_specific name description (fun pool ->
-    let%lwt () = Database.Tenant.Seed.create_contacts pool () in
+    let%lwt () = Seed.Tenant.create_contacts pool () in
     Lwt.return_some ())
 ;;

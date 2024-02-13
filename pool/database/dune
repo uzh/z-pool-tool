@@ -1,26 +1,6 @@
 (library
  (name database)
- (libraries
-  admin
-  assignment
-  conformist
-  contact
-  email
-  experiment
-  i18n
-  invitation
-  logger
-  mailing
-  message_template
-  organisational_unit
-  pool_location
-  pool_user
-  service
-  session
-  sihl
-  tenant
-  utils
-  waiting_list)
+ (libraries conformist guard logger pool_tenant service sihl utils)
  (preprocess
   (pps lwt_ppx ppx_deriving.eq ppx_deriving.show ppx_yojson_conv)))
 

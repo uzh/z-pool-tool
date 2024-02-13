@@ -1,3 +1,5 @@
+module Assets = Seed_assets
+
 module Root = struct
   let create () =
     let%lwt () = Seed_tenant.create () in

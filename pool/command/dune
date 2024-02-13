@@ -9,6 +9,7 @@
   pool_user
   queue
   reminder
+  seed
   service
   settings
   sihl

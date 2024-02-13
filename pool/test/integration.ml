@@ -358,7 +358,7 @@ let suite =
               `Slow
               Repo.find_contacts_to_remind
           ] )
-    ; "cleanup", [ test_case "clean up test database" `Slow Seed.cleanup ]
+    ; "cleanup", [ test_case "clean up test database" `Slow Test_seed.cleanup ]
     ]
 ;;
 
@@ -377,6 +377,6 @@ let () =
     (let open Test_utils in
      let%lwt () = setup_test () in
      let%lwt _ = Sihl.Container.start_services services in
-     let%lwt () = Seed.create Data.database_label () in
+     let%lwt () = Test_seed.create Data.database_label () in
      Alcotest_lwt.run "integration" @@ suite)
 ;;
