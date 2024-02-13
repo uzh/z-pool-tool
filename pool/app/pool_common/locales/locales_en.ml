@@ -615,6 +615,7 @@ let control_to_string = function
   | LoadDefaultTemplate -> format_submit "load default template" None
   | Manage field -> format_submit "manage" (Some field)
   | MarkAsDeleted -> format_submit "mark as deleted" None
+  | MessageHistory -> "message history"
   | More -> format_submit "more" None
   | NextPage -> "next"
   | OpenProfile -> "show profile"
