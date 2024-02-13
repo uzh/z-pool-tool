@@ -55,13 +55,17 @@ let find_request_sql ?(count = false) where_fragment =
 let find_request =
   let open Caqti_request.Infix in
   Format.asprintf
-    {sql| %s WHERE queue_jobs.uuid = UNHEX(REPLACE(?, '-', '')) |sql}
-    (sql_select_columns |> CCString.concat ". ")
+    {sql| SELECT %s FROM queue_jobs WHERE queue_jobs.uuid = UNHEX(REPLACE(?, '-', '')) |sql}
+    (sql_select_columns |> CCString.concat ", ")
   |> Pool_common.Repo.Id.t ->? job
 ;;
 
 let find label id =
   let open Utils.Lwt_result.Infix in
+  let () =
+    Caqti_request.make_pp_with_param () Format.std_formatter (find_request, id)
+  in
+  print_endline "";
   Utils.Database.find_opt (Pool_database.Label.value label) find_request id
   ||> CCOption.to_result Pool_common.Message.(NotFound Field.Queue)
 ;;
