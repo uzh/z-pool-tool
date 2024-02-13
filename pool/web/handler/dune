@@ -11,6 +11,7 @@
   http_utils
   layout
   mailing
+  message_history
   message_template
   middleware
   page

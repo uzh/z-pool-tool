@@ -539,3 +539,16 @@ let external_data_ids { Pool_context.language; _ } contact external_data_ids =
     ; table
     ]
 ;;
+
+let message_history ({ Pool_context.language; _ } as context) contact messages =
+  div
+    ~a:[ a_class [ "trim"; "safety-margin" ] ]
+    [ h1
+        ~a:[ a_class [ "heading-1" ] ]
+        [ txt Pool_common.(Utils.nav_link_to_string language I18n.Contacts) ]
+    ; Page_admin_message_history.list
+        context
+        Contact.(contact |> id |> Id.to_common)
+        messages
+    ]
+;;
