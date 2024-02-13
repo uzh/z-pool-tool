@@ -80,7 +80,7 @@ let job_status_filter =
   let open Query.Filter in
   let open Status in
   let options = build_options all show in
-  Condition.Human.Select (column_job_name, options)
+  Condition.Human.Select (column_job_status, options)
 ;;
 
 let searchable_by = [ column_input ]

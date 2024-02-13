@@ -58,7 +58,7 @@ let find_by_entity_request =
 
 let query_by_entity ?query pool entity_uuid =
   let where =
-    ( "pool_message_history.entity_uuid = UNHEX(REPLACE($1, '-', ''))"
+    ( "pool_message_history.entity_uuid = UNHEX(REPLACE(?, '-', ''))"
     , Dynparam.(empty |> add Pool_common.Repo.Id.t entity_uuid) )
   in
   Query.collect_and_count
