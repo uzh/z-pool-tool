@@ -8,7 +8,15 @@ let path = Contact.id %> Id.value %> Format.asprintf "/admin/contacts/%s"
 
 let list Pool_context.{ language; _ } url (messages, query) =
   let open Queue in
-  let data_table = Component.DataTable.create_meta url query language in
+  let data_table =
+    let open History in
+    Component.DataTable.create_meta
+      ?filter:filterable_by
+      ~search:searchable_by
+      url
+      query
+      language
+  in
   let cols = Page_admin_settings_queue.data_table_head language `history in
   let th_class = [ "w-2"; "w-2"; "w-2"; "w-2"; "w-2" ] in
   let row m =
