@@ -631,7 +631,7 @@ let send_reminder_invalid () =
          ())
   in
   let create_tet_message _ cell_phone =
-    Ok (Model.create_text_message cell_phone)
+    Ok (Model.create_text_message_job cell_phone)
   in
   let channel = Pool_common.Reminder.Channel.Email in
   let assignment1 =
