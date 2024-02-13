@@ -11,7 +11,7 @@ let reminder_settings database_label =
 ;;
 
 let message_history user =
-  let open Message_history in
+  let open Queue.History in
   { entity_uuids = [ user.Sihl_user.id |> Pool_common.Id.of_string ]
   ; message_template =
       Message_template.Label.(show SignUpVerification) |> CCOption.return

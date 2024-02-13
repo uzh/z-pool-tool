@@ -226,12 +226,12 @@ end
 type job =
   { email : Sihl.Contract.Email.t
   ; smtp_auth_id : SmtpAuth.Id.t option
-  ; message_history : Message_history.create option
+  ; message_history : Queue.History.create option
   }
 
 val create_job
   :  ?smtp_auth_id:SmtpAuth.Id.t
-  -> ?message_history:Message_history.create
+  -> ?message_history:Queue.History.create
   -> Sihl.Contract.Email.t
   -> job
 

@@ -7,7 +7,7 @@ module Field = Message.Field
 let path = Contact.id %> Id.value %> Format.asprintf "/admin/contacts/%s"
 
 let list Pool_context.{ language; _ } url (messages, query) =
-  let open Message_history in
+  let open Queue.History in
   let data_table = Component.DataTable.create_meta url query language in
   let field_to_txt = Utils.field_to_string_capitalized language %> txt in
   let cols =

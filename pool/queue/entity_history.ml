@@ -4,7 +4,6 @@ type t =
   { entity_uuid : Pool_common.Id.t
   ; job : Sihl_queue.instance
   ; message_template : string option
-  (* Should I pass a UUID? entity_specific templates can be deleted *)
   }
 [@@deriving show, fields]
 

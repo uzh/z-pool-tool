@@ -1,4 +1,5 @@
 module SmtpAuth = Entity.SmtpAuth
+module History = Queue.History
 module Queue = Sihl_queue.MariaDb
 
 module Cache = struct
@@ -336,7 +337,7 @@ let callback database_label (job_instance : Sihl_queue.instance) =
   match job.message_history with
   | None -> Lwt.return_unit
   | Some message_history ->
-    Message_history.create_from_queue_instance
+    History.create_from_queue_instance
       database_label
       message_history
       job_instance

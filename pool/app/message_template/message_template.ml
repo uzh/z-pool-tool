@@ -240,7 +240,7 @@ let assignment_params { Assignment.id; external_data_id; _ } =
 
 let user_message_history label user =
   let entity_uuids = [ user.Sihl_user.id |> Pool_common.Id.of_string ] in
-  Message_history.{ entity_uuids; message_template = Some (Label.show label) }
+  Queue.History.{ entity_uuids; message_template = Some (Label.show label) }
 ;;
 
 let experiment_message_history label experiment contact =
@@ -249,7 +249,7 @@ let experiment_message_history label experiment contact =
     ; Experiment.(experiment.Experiment.id |> Id.to_common)
     ]
   in
-  Message_history.{ entity_uuids; message_template = Some (Label.show label) }
+  Queue.History.{ entity_uuids; message_template = Some (Label.show label) }
 ;;
 
 let public_experiment_message_history label experiment contact =
@@ -258,7 +258,7 @@ let public_experiment_message_history label experiment contact =
     ; Experiment.(experiment |> Public.id |> Id.to_common)
     ]
   in
-  Message_history.{ entity_uuids; message_template = Some (Label.show label) }
+  Queue.History.{ entity_uuids; message_template = Some (Label.show label) }
 ;;
 
 let session_message_history label experiment session contact =
@@ -268,7 +268,7 @@ let session_message_history label experiment session contact =
     ; Experiment.(experiment.Experiment.id |> Id.to_common)
     ]
   in
-  Message_history.{ entity_uuids; message_template = Some (Label.show label) }
+  Queue.History.{ entity_uuids; message_template = Some (Label.show label) }
 ;;
 
 module AccountSuspensionNotification = struct
@@ -335,7 +335,7 @@ module AssignmentConfirmation = struct
       ; contact |> Contact.id
       ]
     in
-    Message_history.{ entity_uuids; message_template = Some (Label.show label) }
+    Queue.History.{ entity_uuids; message_template = Some (Label.show label) }
   ;;
 
   let template pool experiment language =
@@ -394,7 +394,7 @@ module AssignmentSessionChange = struct
       ; contact |> Contact.id
       ]
     in
-    Message_history.{ entity_uuids; message_template = Some (Label.show label) }
+    Queue.History.{ entity_uuids; message_template = Some (Label.show label) }
   ;;
 
   let base_params layout contact = contact.Contact.user |> global_params layout
@@ -1079,7 +1079,7 @@ module SignUpVerification = struct
   ;;
 
   let message_history user_id =
-    let open Message_history in
+    let open Queue.History in
     { entity_uuids = [ user_id ]
     ; message_template = Label.show label |> CCOption.return
     }
