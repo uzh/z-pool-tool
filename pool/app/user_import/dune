@@ -8,6 +8,7 @@
   pool_common
   pool_database
   pool_tenant
+  queue
   schedule
   utils)
  (preprocess

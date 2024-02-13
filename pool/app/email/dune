@@ -2,11 +2,11 @@
  (name email)
  (libraries
   i18n
-  message_history
   pool_common
   pool_database
   pool_tenant
   pool_user
+  queue
   query
   service
   utils)

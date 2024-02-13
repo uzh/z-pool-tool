@@ -1,4 +1,4 @@
-open Entity
+open Entity_history
 open CCFun
 open Ppx_yojson_conv_lib.Yojson_conv
 

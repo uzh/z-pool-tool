@@ -1,26 +1,11 @@
 module Dynparam = Utils.Database.Dynparam
 module Database = Pool_database
 
-let sql_select_job_queue_columns =
-  [ Pool_common.Id.sql_select_fragment ~field:"queue_jobs.uuid"
-  ; "queue_jobs.name"
-  ; "queue_jobs.input"
-  ; "queue_jobs.tries"
-  ; "queue_jobs.next_run_at"
-  ; "queue_jobs.max_tries"
-  ; "queue_jobs.status"
-  ; "queue_jobs.last_error"
-  ; "queue_jobs.last_error_at"
-  ; "queue_jobs.tag"
-  ; "queue_jobs.ctx"
-  ]
-;;
-
 let sql_select_columns =
   [ Pool_common.Id.sql_select_fragment ~field:"pool_message_history.entity_uuid"
   ; "pool_message_history.message_template"
   ]
-  @ sql_select_job_queue_columns
+  @ Repo.sql_select_columns
 ;;
 
 let joins =

@@ -186,3 +186,20 @@ let register ?(jobs = []) () =
   let configuration = Sihl.Configuration.make () in
   Sihl.Container.Service.create ~configuration lifecycle
 ;;
+
+module History = struct
+  include Entity_history
+
+  let create_from_queue_instance
+    database_label
+    { entity_uuids; message_template }
+    (job_instance : Sihl_queue.instance)
+    =
+    entity_uuids
+    |> Lwt_list.iter_s (fun entity_uuid ->
+      create ?message_template ~entity_uuid job_instance
+      |> Repo_history.insert database_label)
+  ;;
+
+  let query_by_entity = Repo_history.query_by_entity
+end

@@ -8,6 +8,7 @@
   pool_database
   pool_tenant
   pool_user
+  queue
   service
   session
   settings

@@ -1,6 +1,21 @@
 module Dynparam = Utils.Database.Dynparam
 
-let job = Message_history.Repo.Entity.sihl_queue_job_caqti
+let job = Repo_entity.sihl_queue_job_caqti
+
+let sql_select_columns =
+  [ Pool_common.Id.sql_select_fragment ~field:"queue_jobs.uuid"
+  ; "queue_jobs.name"
+  ; "queue_jobs.input"
+  ; "queue_jobs.tries"
+  ; "queue_jobs.next_run_at"
+  ; "queue_jobs.max_tries"
+  ; "queue_jobs.status"
+  ; "queue_jobs.last_error"
+  ; "queue_jobs.last_error_at"
+  ; "queue_jobs.tag"
+  ; "queue_jobs.ctx"
+  ]
+;;
 
 let update_request =
   let open Caqti_request.Infix in
@@ -29,8 +44,6 @@ let update label job_instance =
     update_request
     job_instance
 ;;
-
-let sql_select_columns = Message_history.Repo.sql_select_job_queue_columns
 
 let find_request_sql ?(count = false) where_fragment =
   let columns =
