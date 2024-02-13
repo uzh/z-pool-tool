@@ -1,0 +1,26 @@
+(library
+ (name seed)
+ (libraries
+  admin
+  assignment
+  conformist
+  contact
+  email
+  experiment
+  i18n
+  invitation
+  logger
+  mailing
+  message_template
+  organisational_unit
+  pool_location
+  pool_user
+  session
+  sihl
+  tenant
+  utils
+  waiting_list)
+ (preprocess
+  (pps lwt_ppx ppx_deriving.eq ppx_deriving.show ppx_yojson_conv)))
+
+(include_subdirs unqualified)

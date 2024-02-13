@@ -538,11 +538,11 @@ let accept_terms_and_conditions () =
 let should_not_send_registration_notification _ () =
   let database_label = Test_utils.Data.database_label in
   let%lwt () =
-    let contact_data = Seed.Contacts.create_contact 12 |> CCList.pure in
+    let contact_data = Test_seed.Contacts.create_contact 12 |> CCList.pure in
     let%lwt () =
-      Seed.Contacts.create ~contact_data Test_utils.Data.database_label
+      Test_seed.Contacts.create ~contact_data Test_utils.Data.database_label
     in
-    let%lwt contact = Seed.Contacts.find_contact_by_id database_label 12 in
+    let%lwt contact = Test_seed.Contacts.find_contact_by_id database_label 12 in
     let%lwt () =
       Sihl_email.
         { sender = "test@econ.uzh.ch"

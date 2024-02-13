@@ -1,4 +1,4 @@
-module Contacts = Seed_contacts
+module Contacts = Test_seed_contacts
 
 let create db_pool () =
   let%lwt () = Contacts.create db_pool in

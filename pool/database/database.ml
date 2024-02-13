@@ -1,7 +1,5 @@
 let src = Logs.Src.create "database"
 
-module SeedAssets = Seed_assets
-
 type config =
   { url : string
   ; pool_size : int option
@@ -51,7 +49,6 @@ module Root = struct
   let label = Pool_database.(Label.value root)
 
   module Migration = Migration.Root
-  module Seed = Seed.Root
 
   let add () =
     let open CCResult in
@@ -76,7 +73,6 @@ module Tenant = struct
   let label = "tenant"
 
   module Migration = Migration.Tenant
-  module Seed = Seed.Tenant
 
   let setup_functions = [ Guard.Persistence.start ]
 

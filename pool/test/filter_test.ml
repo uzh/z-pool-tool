@@ -1,4 +1,5 @@
 open Test_utils
+module TestSeed = Test_seed
 module Operator = Filter.Operator
 
 let equal_operator = FilterHelper.equal
@@ -18,13 +19,13 @@ let convert_id = CCFun.(Experiment.Id.value %> Pool_common.Id.of_string)
 
 module TestContacts = struct
   let all () =
-    Seed.Contacts.contact_ids |> Contact.find_multiple Data.database_label
+    TestSeed.Contacts.contact_ids |> Contact.find_multiple Data.database_label
   ;;
 
   let get_contact index =
     let open Utils.Lwt_result.Infix in
     index
-    |> CCList.nth Seed.Contacts.contact_ids
+    |> CCList.nth TestSeed.Contacts.contact_ids
     |> Contact.find Data.database_label
     ||> get_exn
   ;;
@@ -733,12 +734,12 @@ let retrieve_fitleterd_and_ordered_contacts _ () =
   let pool = Data.database_label in
   let%lwt () =
     let%lwt () =
-      Seed.Contacts.(
+      TestSeed.Contacts.(
         [ 11; 12 ]
         |> CCList.map create_contact
         |> fun contact_data -> create ~contact_data Data.database_label)
     in
-    let find_contact = Seed.Contacts.find_contact_by_id pool in
+    let find_contact = TestSeed.Contacts.find_contact_by_id pool in
     let%lwt contact_one = find_contact 11 in
     let%lwt contact_two = find_contact 12 in
     let%lwt id = Repo.first_experiment () ||> Experiment.(id %> Id.to_common) in

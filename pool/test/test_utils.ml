@@ -61,10 +61,10 @@ let get_or_failwith res =
 ;;
 
 let file_to_storage file =
-  let open Database.SeedAssets in
+  let open Seed.Assets in
   let stored_file =
     Sihl_storage.
-      { id = file.Database.SeedAssets.id
+      { id = file.Seed.Assets.id
       ; filename = file.filename
       ; filesize = file.filesize
       ; mime = file.mime
@@ -75,8 +75,8 @@ let file_to_storage file =
   Lwt.return_unit
 ;;
 
-let dummy_to_file (dummy : Database.SeedAssets.file) =
-  let open Database.SeedAssets in
+let dummy_to_file (dummy : Seed.Assets.file) =
+  let open Seed.Assets in
   let open Pool_common in
   let name = File.Name.create dummy.filename |> get_or_failwith in
   let filesize = File.Size.create dummy.filesize |> get_or_failwith in

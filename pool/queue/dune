@@ -4,6 +4,7 @@
   canary
   containers
   database
+  message_history
   pool_database
   pool_tenant
   schedule
