@@ -3,8 +3,26 @@ module HttpUtils = Http_utils
 
 let formatted_date_time = Pool_common.Utils.Time.formatted_date_time
 
-let data_table Pool_context.{ language; _ } (queued_jobs, query) =
+let data_table_head language =
   let open Pool_common in
+  let open Queue in
+  let field_to_string field =
+    Utils.field_to_string_capitalized language field |> txt
+  in
+  let name = `column column_job_name in
+  let status = `column column_job_status in
+  let input = `custom (field_to_string Message.Field.Input) in
+  let last_error = `custom (field_to_string Message.Field.LastError) in
+  let last_error_at = `column column_last_error_at in
+  let next_run = `column column_next_run in
+  function
+  | `settings ->
+    [ name; status; input; last_error; last_error_at; next_run; `empty ]
+  | `history ->
+    [ name; `empty; status; last_error; last_error_at; next_run; `empty ]
+;;
+
+let data_table Pool_context.{ language; _ } (queued_jobs, query) =
   let open Queue in
   let url = Uri.of_string "/admin/settings/queue" in
   let data_table =
@@ -15,19 +33,7 @@ let data_table Pool_context.{ language; _ } (queued_jobs, query) =
       query
       language
   in
-  let cols =
-    let field_to_string field =
-      Utils.field_to_string_capitalized language field |> txt
-    in
-    [ `column column_job_name
-    ; `column column_job_status
-    ; `custom (field_to_string Message.Field.Input)
-    ; `custom (field_to_string Message.Field.LastError)
-    ; `column column_last_error_at
-    ; `column column_next_run
-    ; `empty
-    ]
-  in
+  let cols = data_table_head language `settings in
   let th_class = [ "w-1"; "w-1"; "w-4"; "w-2"; "w-1"; "w-1" ] in
   let row
     { Sihl_queue.id
