@@ -62,9 +62,6 @@ let find_request =
 
 let find label id =
   let open Utils.Lwt_result.Infix in
-  let () =
-    Caqti_request.make_pp_with_param () Format.std_formatter (find_request, id)
-  in
   print_endline "";
   Utils.Database.find_opt (Pool_database.Label.value label) find_request id
   ||> CCOption.to_result Pool_common.Message.(NotFound Field.Queue)
