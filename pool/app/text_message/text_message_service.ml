@@ -52,6 +52,18 @@ let get_api_key database_label =
   ||> Pool_common.Utils.get_or_failwith
 ;;
 
+let parse_job_json str =
+  try Ok (str |> Yojson.Safe.from_string |> job_of_yojson) with
+  | Yojson.Json_error job ->
+    Logs.err ~src (fun m ->
+      m
+        ~tags:Pool_database.(Logger.Tags.create root)
+        "Serialized message string was NULL, can not deserialize message. \
+         Please fix the string manually and reset the job instance. Error: %s"
+        job);
+    Error "Invalid serialized message string received"
+;;
+
 let request_body { recipient; text; sender } =
   [ "from", [ Pool_tenant.Title.value sender ]
   ; "to", [ CellPhone.value recipient ]
@@ -230,18 +242,7 @@ let test_api_key ~tags api_key cell_phone tenant_title =
 module Job = struct
   let send =
     let encode = Entity.yojson_of_job %> Yojson.Safe.to_string in
-    let decode msg =
-      try Ok (job_of_yojson (Yojson.Safe.from_string msg)) with
-      | Yojson.Json_error job ->
-        Logs.err ~src (fun m ->
-          m
-            ~tags:Pool_database.(Logger.Tags.create root)
-            "Serialized message string was NULL, can not deserialize message. \
-             Please fix the string manually and reset the job instance. Error: \
-             %s"
-            job);
-        Error "Invalid serialized message string received"
-    in
+    let decode = parse_job_json in
     Sihl.Contract.Queue.create_job
       handle
       ~max_tries:10
@@ -255,9 +256,7 @@ end
 let callback database_label (job_instance : Sihl_queue.instance) =
   let open Entity in
   let job =
-    job_instance.Sihl_queue.input
-    |> Yojson.Safe.from_string
-    |> Entity.job_of_yojson
+    parse_job_json job_instance.Sihl_queue.input |> CCResult.get_or_failwith
   in
   match job.message_history with
   | None -> Lwt.return_unit

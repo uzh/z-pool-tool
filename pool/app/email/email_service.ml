@@ -79,6 +79,18 @@ let console () =
     (Sihl.Configuration.read_bool "EMAIL_CONSOLE")
 ;;
 
+let parse_job_json str =
+  try Ok (str |> Yojson.Safe.from_string |> Entity.job_of_yojson) with
+  | Yojson.Json_error job ->
+    Logs.err ~src (fun m ->
+      m
+        ~tags
+        "Serialized email string was NULL, can not deserialize email. Please \
+         fix the string manually and reset the job instance. Error: %s"
+        job);
+    Error "Invalid serialized email string received"
+;;
+
 let redirected_email
   new_recipient
   (Sihl_email.{ recipient; subject; cc; bcc; text; _ } as email)
@@ -305,18 +317,7 @@ module Job = struct
         (Printexc.to_string %> Lwt.return_error)
     in
     let encode = Entity.yojson_of_job %> Yojson.Safe.to_string in
-    let decode email =
-      try Ok (email |> Yojson.Safe.from_string |> Entity.job_of_yojson) with
-      | Yojson.Json_error msg ->
-        Logs.err ~src (fun m ->
-          m
-            ~tags
-            "Serialized email string was NULL, can not deserialize email. \
-             Please fix the string manually and reset the job instance. Error: \
-             %s"
-            msg);
-        Error "Invalid serialized email string received"
-    in
+    let decode = parse_job_json in
     Sihl.Contract.Queue.create_job
       handle
       ~max_tries:10
@@ -330,9 +331,7 @@ end
 let callback database_label (job_instance : Sihl_queue.instance) =
   let open Entity in
   let job =
-    job_instance.Sihl_queue.input
-    |> Yojson.Safe.from_string
-    |> Entity.job_of_yojson
+    parse_job_json job_instance.Sihl_queue.input |> CCResult.get_or_failwith
   in
   match job.message_history with
   | None -> Lwt.return_unit
