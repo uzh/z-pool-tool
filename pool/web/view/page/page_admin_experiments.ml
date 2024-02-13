@@ -962,3 +962,25 @@ let message_template_form
   |> CCList.return
   |> Layout.Experiment.create context (control_to_title control) experiment
 ;;
+
+let message_history_url { Experiment.id; _ } =
+  Uri.of_string
+    (Format.asprintf "/admin/experiments/%s/messages" (Experiment.Id.value id))
+;;
+
+let message_history context experiment messages =
+  let open Pool_common in
+  let html =
+    Page_admin_message_history.list
+      context
+      (message_history_url experiment)
+      messages
+  in
+  Layout.Experiment.(
+    create
+      ~active_navigation:I18n.MessageHistory
+      context
+      (NavLink I18n.MessageHistory)
+      experiment
+      [ html ])
+;;

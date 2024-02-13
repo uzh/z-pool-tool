@@ -379,12 +379,15 @@ let detail
            ~control:Pool_common.(language, Message.(Edit (Some Field.Contact)))
     in
     let messages =
-      Format.asprintf "%s/messages" contact_path
-      |> Input.link_as_button
-           ~is_text:true
-           ~icon:Icon.Mail
-           ~classnames:[ "small" ]
-           ~control:Pool_common.(language, Message.(MessageHistory))
+      let path =
+        Format.asprintf "%s/messages" contact_path |> Sihl.Web.externalize_path
+      in
+      a
+        ~a:[ a_class [ "btn small primary is-text has-icon" ]; a_href path ]
+        [ Icon.(to_html Mail)
+        ; txt
+            Pool_common.(Utils.nav_link_to_string language I18n.MessageHistory)
+        ]
     in
     div ~a:[ a_class [ "flexrow"; "flex-gap" ] ] [ messages; edit ]
   in
@@ -550,15 +553,27 @@ let external_data_ids { Pool_context.language; _ } contact external_data_ids =
     ]
 ;;
 
+let message_history_url contact =
+  Uri.of_string
+    (Format.asprintf
+       "/admin/contacts/%s/messages"
+       Contact.(contact |> id |> Id.value))
+;;
+
 let message_history ({ Pool_context.language; _ } as context) contact messages =
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
     [ h1
         ~a:[ a_class [ "heading-1" ] ]
-        [ txt Pool_common.(Utils.nav_link_to_string language I18n.Contacts) ]
+        [ txt
+            Pool_common.(
+              Utils.text_to_string
+                language
+                I18n.(MessageHistory (Contact.lastname_firstname contact)))
+        ]
     ; Page_admin_message_history.list
         context
-        Contact.(contact |> id |> Id.to_common)
+        (message_history_url contact)
         messages
     ]
 ;;

@@ -94,6 +94,7 @@ let to_string = function
      if mailings are active at the moment).\n\n\
      Add additional sessions to the experiment."
   | MailingNewTitle -> "Create new mailing"
+  | MessageHistory name -> Format.asprintf "Message history of %s" name
   | NoEntries field ->
     Format.asprintf "There are no %s yet." (Locales_en.field_to_string field)
   | Note -> "Note"
@@ -172,6 +173,7 @@ let nav_link_to_string = function
   | LoginInformation -> "Login information"
   | Logout -> "Logout"
   | Mailings -> "Mailings"
+  | MessageHistory -> "Message history"
   | MessageTemplates -> "Message templates"
   | OrganisationalUnits -> "Organisational units"
   | Overview -> "Overview"

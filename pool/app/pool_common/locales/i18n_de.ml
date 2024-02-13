@@ -94,6 +94,7 @@ let to_string = function
      (unabhängig ob z.Z. Mailings aktiv sind).\n\n\
      Füge zusätzliche Sessions zum Experiment hinzu."
   | MailingNewTitle -> "Neuen Versand erstellen"
+  | MessageHistory name -> Format.asprintf "Nachrichtenverlauf von %s" name
   | NoEntries field ->
     Format.asprintf
       "Es existiert noch keine %s."
@@ -174,6 +175,7 @@ let nav_link_to_string = function
   | LoginInformation -> "Anmeldeinformationen"
   | Logout -> "Logout"
   | Mailings -> "Versand"
+  | MessageHistory -> "Nachrichtenverlauf"
   | MessageTemplates -> "Nachrichtentemplates"
   | OrganisationalUnits -> "Organisationseinheiten"
   | Overview -> "Übersicht"

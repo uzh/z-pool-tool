@@ -41,6 +41,7 @@ let nav_elements experiment =
     [ "sessions", Sessions, Set (Session.Guard.Access.index id)
     ; "assignments", Assignments, Set (Assignment.Guard.Access.index id)
     ; "mailings", Mailings, Set (Mailing.Guard.Access.index id)
+    ; "messages", MessageHistory, Set Queue.Guard.Access.index
     ]
   in
   let waiting_list_nav =

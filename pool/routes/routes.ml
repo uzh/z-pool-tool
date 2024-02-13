@@ -528,6 +528,7 @@ module Admin = struct
               "/contact-count"
               ~middlewares:[ Access.read ]
               Handler.Admin.Filter.count_contacts
+          ; get "/messages" ~middlewares:[] message_history (* TODO: Access *)
           ; choose ~scope:"/assistants" assistants
           ; choose ~scope:"/experimenter" experimenter
           ; choose ~scope:"/invitations" invitations

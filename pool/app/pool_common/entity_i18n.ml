@@ -50,6 +50,7 @@ type t =
   | MailingDistributionDescription
   | MailingExperimentSessionFullyBooked
   | MailingNewTitle
+  | MessageHistory of string
   | NoEntries of Entity_message.Field.t
   | Note
   | OurPartners
@@ -111,6 +112,7 @@ type nav_link =
   | LoginInformation
   | Logout
   | Mailings
+  | MessageHistory
   | MessageTemplates
   | OrganisationalUnits
   | Overview

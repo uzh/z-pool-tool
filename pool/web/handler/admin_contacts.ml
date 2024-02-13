@@ -391,7 +391,8 @@ let message_history req =
   in
   let open Page.Admin in
   (if HttpUtils.Htmx.is_hx_request req
-   then MessageHistory.list context contact_id messages
+   then
+     MessageHistory.list context (Contact.message_history_url contact) messages
    else Contact.message_history context contact messages)
   |> Lwt_result.return
 ;;
