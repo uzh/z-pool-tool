@@ -12,6 +12,7 @@ module I18n = Page_admin_i18n
 module Invitations = Page_admin_invitations
 module Location = Page_admin_location
 module Mailing = Page_admin_mailings
+module MessageHistory = Page_admin_message_history
 module MessageTemplate = Page_admin_message_template
 module OrganisationalUnit = Page_admin_organisational_units
 module Session = Page_admin_session

@@ -1,8 +1,8 @@
-let create_message_history_table =
+let create_pool_message_history_table =
   Sihl.Database.Migration.create_step
-    ~label:"create message_history table"
+    ~label:"create pool_message_history table"
     {sql|
-      CREATE TABLE IF NOT EXISTS message_history (
+      CREATE TABLE IF NOT EXISTS pool_message_history (
         `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
         `queue_job_uuid` binary(16) NOT NULL,
         `entity_uuid` binary(16) NOT NULL,
@@ -18,8 +18,8 @@ let add_fk_contraint_to_entity_queue_jobs =
   Sihl.Database.Migration.create_step
     ~label:"add fk contraint to entity_queue_jobs"
     {sql|
-      ALTER TABLE message_history
-        ADD CONSTRAINT fk_message_history
+      ALTER TABLE pool_message_history
+        ADD CONSTRAINT fk_pool_message_history
         FOREIGN KEY (queue_job_uuid) REFERENCES queue_jobs(uuid)
     |sql}
 ;;
@@ -28,7 +28,7 @@ let add_unique_contraint_to_entity_queue_jobs =
   Sihl.Database.Migration.create_step
     ~label:"add unique contraint to entity_queue_jobs"
     {sql|
-      ALTER TABLE message_history
+      ALTER TABLE pool_message_history
         ADD CONSTRAINT unique_queue_job_entity_combination UNIQUE (queue_job_uuid, entity_uuid)
     |sql}
 ;;
@@ -37,14 +37,14 @@ let add_entity_uuid_index =
   Sihl.Database.Migration.create_step
     ~label:"add entity uuid index"
     {sql|
-      CREATE INDEX entity_uuid ON message_history (entity_uuid)
+      CREATE INDEX entity_uuid ON pool_message_history (entity_uuid)
     |sql}
 ;;
 
 let migration () =
   Sihl.Database.Migration.(
     empty "202402091434"
-    |> add_step create_message_history_table
+    |> add_step create_pool_message_history_table
     |> add_step add_fk_contraint_to_entity_queue_jobs
     |> add_step add_unique_contraint_to_entity_queue_jobs
     |> add_step add_entity_uuid_index)

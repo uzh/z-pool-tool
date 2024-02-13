@@ -328,7 +328,8 @@ end
 
 let dispatch database_label ({ Entity.email; message_history; _ } as job) =
   let callback =
-    message_history |> CCOption.map (Message_history.callback database_label)
+    message_history
+    |> CCOption.map (Message_history.create_from_queue_instance database_label)
   in
   Logs.debug ~src (fun m ->
     m
@@ -343,20 +344,5 @@ let dispatch database_label ({ Entity.email; message_history; _ } as job) =
 ;;
 
 let dispatch_all database_label (jobs : Entity.job list) =
-  let recipients, jobs =
-    jobs
-    |> CCList.fold_left
-         (fun (recipients, jobs) ({ Entity.email; _ } as job) ->
-           let job =
-             job |> intercept_prepare |> Pool_common.Utils.get_or_failwith
-           in
-           email.Sihl_email.recipient :: recipients, job :: jobs)
-         ([], [])
-  in
-  Logs.debug ~src (fun m ->
-    m
-      ~tags:(Pool_database.Logger.Tags.create database_label)
-      "Dispatch email to %s"
-      ([%show: string list] recipients));
-  Queue.dispatch_all ~ctx:(Pool_database.to_ctx database_label) jobs Job.send
+  jobs |> Lwt_list.iter_s (dispatch database_label)
 ;;

@@ -603,6 +603,7 @@ module Admin = struct
         ; post "pause" ~middlewares:[ Access.update ] toggle_paused
         ; get "/edit" ~middlewares:[ Access.update ] edit
         ; post "/promote" ~middlewares:[ Access.promote ] promote
+        ; get "/messages" ~middlewares:[] message_history (* TODO: Access *)
         ; choose
             ~middlewares:[ Access.update ]
             ~scope:(Experiments |> human_url)

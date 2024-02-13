@@ -370,6 +370,32 @@ let enroll_contact_post req =
   result |> HttpUtils.extract_happy_path ~src req
 ;;
 
+let message_history req =
+  let contact_id = contact_id req in
+  let error_path =
+    Format.asprintf "/admin/contacts/%s" (Contact.Id.value contact_id)
+  in
+  HttpUtils.Htmx.handler
+    ~error_path
+    ~query:(module Message_history)
+    ~create_layout:General.create_tenant_layout
+    req
+  @@ fun (Pool_context.{ database_label; _ } as context) query ->
+  let open Utils.Lwt_result.Infix in
+  let* contact = Contact.find database_label contact_id in
+  let%lwt messages =
+    Message_history.query_by_entity
+      ~query
+      database_label
+      (Contact.Id.to_common contact_id)
+  in
+  let open Page.Admin in
+  (if HttpUtils.Htmx.is_hx_request req
+   then MessageHistory.list context contact_id messages
+   else Contact.message_history context contact messages)
+  |> Lwt_result.return
+;;
+
 module Tags = Admin_contacts_tags
 
 module Access : sig
