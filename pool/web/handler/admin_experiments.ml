@@ -517,6 +517,38 @@ module Filter = struct
   ;;
 end
 
+let message_history req =
+  let experiment_id = experiment_id req in
+  let error_path =
+    Format.asprintf "/admin/experiments/%s" (Experiment.Id.value experiment_id)
+  in
+  HttpUtils.Htmx.handler
+    ~error_path
+    ~query:(module Message_history)
+    ~create_layout:General.create_tenant_layout
+    req
+  @@ fun (Pool_context.{ database_label; _ } as context) query ->
+  let open Utils.Lwt_result.Infix in
+  let* experiment = Experiment.find database_label experiment_id in
+  let%lwt messages =
+    Message_history.query_by_entity
+      ~query
+      database_label
+      (Experiment.Id.to_common experiment_id)
+  in
+  let open Page.Admin in
+  Lwt_result.ok
+  @@
+  if HttpUtils.Htmx.is_hx_request req
+  then
+    MessageHistory.list
+      context
+      (Experiments.message_history_url experiment)
+      messages
+    |> Lwt.return
+  else Experiments.message_history context experiment messages
+;;
+
 module Tags = Admin_experiments_tags
 
 module Access : sig

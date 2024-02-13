@@ -659,7 +659,6 @@ let control_to_string = function
   | LoadDefaultTemplate -> format_submit "Standardtemplate laden" None
   | Manage field -> format_submit "manage" (Some field)
   | MarkAsDeleted -> format_submit "als gelöscht markieren" None
-  | MessageHistory -> "Nachrichtenverlauf"
   | More -> "mehr"
   | NextPage -> "weiter"
   | OpenProfile -> "Profil anzeigen"
