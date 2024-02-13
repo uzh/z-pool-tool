@@ -574,7 +574,7 @@ let create_cancellation_text_message
   (_ : Contact.t)
   cell_phone
   =
-  Model.create_text_message cell_phone |> CCResult.return
+  Model.create_text_message_job cell_phone |> CCResult.return
 ;;
 
 let cancel_no_reason () =
@@ -1379,8 +1379,8 @@ let resend_reminders_invalid () =
   let create_email _ =
     Model.create_email () |> create_email_job experiment |> CCResult.return
   in
-  let create_tet_message _ cell_phone =
-    Ok (Model.create_text_message cell_phone)
+  let create_text_message _ cell_phone =
+    Ok (Model.create_text_message_job cell_phone)
   in
   let channel = Pool_common.Reminder.Channel.Email in
   let session = Model.create_session () in
@@ -1389,7 +1389,7 @@ let resend_reminders_invalid () =
   let closed_at = Ptime_clock.now () in
   let session2 = Session.{ session with closed_at = Some closed_at } in
   let handle session =
-    handle (create_email, create_tet_message) session assignments channel
+    handle (create_email, create_text_message) session assignments channel
   in
   let res1 = handle session1 in
   let () =
@@ -1429,7 +1429,7 @@ let resend_reminders_valid () =
     Model.create_email () |> create_email_job experiment |> CCResult.return
   in
   let create_text_message _ cell_phone =
-    Ok (Model.create_text_message cell_phone)
+    Ok (Model.create_text_message_job cell_phone)
   in
   let handle channel =
     handle (create_email, create_text_message) session assignments channel
@@ -1453,7 +1453,7 @@ let resend_reminders_valid () =
     Ok
       [ Email.BulkSent [ create_email () |> CCResult.get_exn ]
         |> Pool_event.email
-      ; Text_message.BulkSent [ Model.create_text_message cell_phone ]
+      ; Text_message.BulkSent [ Model.create_text_message_job cell_phone ]
         |> Pool_event.text_message
       ; Session.TextMsgReminderSent session |> Pool_event.session
       ]

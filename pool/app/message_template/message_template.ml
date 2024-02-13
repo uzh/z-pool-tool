@@ -713,6 +713,7 @@ end
 
 module PhoneVerification = struct
   let label = Label.PhoneVerification
+  let message_history = user_message_history label
 
   let message_params token =
     [ "token", Pool_common.VerificationCode.value token ]
@@ -722,6 +723,7 @@ module PhoneVerification = struct
     pool
     message_language
     (tenant : Pool_tenant.t)
+    contact
     cell_phone
     token
     =
@@ -729,11 +731,14 @@ module PhoneVerification = struct
     let%lwt { sms_text; _ } =
       find_by_label_and_language_to_send pool label message_language
     in
-    render_and_create
-      cell_phone
-      tenant.Pool_tenant.title
-      (sms_text, message_params token)
-    |> Lwt_result.return
+    let message =
+      render_and_create
+        cell_phone
+        tenant.Pool_tenant.title
+        (sms_text, message_params token)
+    in
+    let message_history = message_history (Contact.user contact) in
+    Text_message.create_job ~message_history message |> Lwt_result.return
   ;;
 end
 
@@ -872,8 +877,14 @@ module SessionCancellation = struct
           reason
           contact
       in
-      Text_message.render_and_create cell_phone title (template.sms_text, params)
-      |> CCResult.return
+      let message =
+        Text_message.render_and_create
+          cell_phone
+          title
+          (template.sms_text, params)
+      in
+      let message_history = message_history experiment session contact in
+      Text_message.create_job ~message_history message |> CCResult.return
     in
     Lwt.return fnc
   ;;
@@ -941,7 +952,7 @@ module SessionReminder = struct
           ]
         pool
         sys_langs
-        Label.SessionReminder
+        label
     in
     let%lwt sender = sender_of_experiment pool experiment in
     let layout = layout_from_tenant tenant in
@@ -999,8 +1010,14 @@ module SessionReminder = struct
         find_template_by_language templates message_language
       in
       let params = email_params lang layout experiment session assignment in
-      Text_message.render_and_create cell_phone title (template.sms_text, params)
-      |> CCResult.return
+      let message =
+        Text_message.render_and_create
+          cell_phone
+          title
+          (template.sms_text, params)
+      in
+      let message_history = message_history experiment session contact in
+      Text_message.create_job ~message_history message |> CCResult.return
     in
     Lwt.return fnc
   ;;

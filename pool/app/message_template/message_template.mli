@@ -347,9 +347,10 @@ module PhoneVerification : sig
     :  Pool_database.Label.t
     -> Pool_common.Language.t
     -> Pool_tenant.t
+    -> Contact.t
     -> Pool_user.CellPhone.t
     -> Pool_common.VerificationCode.t
-    -> (Text_message.t, Pool_common.Message.error) result Lwt.t
+    -> (Text_message.job, Pool_common.Message.error) result Lwt.t
 end
 
 module ProfileUpdateTrigger : sig
@@ -398,7 +399,7 @@ module SessionCancellation : sig
     -> (Session.CancellationReason.t
         -> Contact.t
         -> Pool_user.CellPhone.t
-        -> (Text_message.t, Pool_common.Message.error) result)
+        -> (Text_message.job, Pool_common.Message.error) result)
          Lwt.t
 end
 
@@ -436,7 +437,7 @@ module SessionReminder : sig
     -> Session.t
     -> (Assignment.t
         -> Pool_user.CellPhone.t
-        -> (Text_message.t, Pool_common.Message.error) result)
+        -> (Text_message.job, Pool_common.Message.error) result)
          Lwt.t
 end
 

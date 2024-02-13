@@ -17,6 +17,13 @@ type t =
   }
 [@@deriving eq, show, yojson]
 
+type job =
+  { message : t
+  ; message_history : Queue.History.create option [@yojson.option]
+  }
+[@@deriving eq, show, yojson]
+
+let create_job ?message_history message = { message; message_history }
 let create recipient sender text = { recipient; sender; text }
 
 let render_and_create recipient sender (text, params) =

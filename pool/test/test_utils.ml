@@ -304,6 +304,11 @@ module Model = struct
     Text_message.render_and_create cell_phone sender ("Hello world", [])
   ;;
 
+  let create_text_message_job ?sender ?message_history cell_phone =
+    let message = create_text_message ?sender cell_phone in
+    Text_message.create_job ?message_history message
+  ;;
+
   let hour = Ptime.Span.of_int_s @@ (60 * 60)
 
   let an_hour_ago () =

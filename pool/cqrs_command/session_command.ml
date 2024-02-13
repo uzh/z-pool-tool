@@ -420,7 +420,7 @@ module Cancel : sig
     -> (t
         -> Contact.t
         -> Pool_user.CellPhone.t
-        -> (Text_message.t, Pool_common.Message.error) result)
+        -> (Text_message.job, Pool_common.Message.error) result)
     -> Pool_common.NotifyVia.t list
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
@@ -623,7 +623,7 @@ module ResendReminders : sig
     -> (Assignment.t -> (Email.job, Pool_common.Message.error) result)
        * (Assignment.t
           -> Pool_user.CellPhone.t
-          -> (Text_message.t, Pool_common.Message.error) result)
+          -> (Text_message.job, Pool_common.Message.error) result)
     -> Session.t
     -> Assignment.t list
     -> t

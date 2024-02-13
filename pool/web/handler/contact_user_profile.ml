@@ -248,6 +248,7 @@ let update_cell_phone req =
            database_label
            language
            tenant
+           contact
            cell_phone
            token
          |>> Text_message.Service.send database_label
@@ -341,6 +342,7 @@ let resend_token req =
            database_label
            language
            tenant
+           contact
            cell_phone
            verification_code
          |>> Text_message.Service.send database_label
