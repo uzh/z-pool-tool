@@ -363,6 +363,9 @@ let dispatch_all database_label (jobs : Entity.job list) =
     jobs
     |> CCList.fold_left
          (fun (recipients, jobs) ({ Entity.email; _ } as job) ->
+           let job =
+             job |> intercept_prepare |> Pool_common.Utils.get_or_failwith
+           in
            email.Sihl_email.recipient :: recipients, job :: jobs)
          ([], [])
   in
