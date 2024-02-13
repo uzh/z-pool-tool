@@ -23,12 +23,8 @@ let column_created_at =
   (Field.CreatedAt, "pool_message_history.created_at") |> Query.Column.create
 ;;
 
-let filterable_by = None
-let searchable_by = []
-let sortable_by = [ column_created_at ]
-
-let default_sort =
-  Query.Sort.{ column = column_created_at; order = SortOrder.Descending }
-;;
-
-let default_query = Query.create ~sort:default_sort ()
+let filterable_by = Entity.filterable_by
+let searchable_by = Entity.searchable_by
+let sortable_by = Entity.sortable_by
+let default_sort = Entity.default_sort
+let default_query = Entity.default_query
