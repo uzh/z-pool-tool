@@ -18,8 +18,8 @@ type event =
   | RolesGranted of ActorRole.t list
   | RolesRevoked of ActorRole.t list
   | RolePermissionSaved of RolePermission.t list
-  | ActorPermissionSaved of ActorPermission.t list
   | RolePermissionDeleted of RolePermission.t
+  | ActorPermissionSaved of ActorPermission.t list
   | ActorPermissionDeleted of ActorPermission.t
 [@@deriving eq, show]
 

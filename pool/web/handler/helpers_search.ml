@@ -66,6 +66,17 @@ let htmx_search_helper
           validate database_label (read id) actor ||> CCResult.is_ok)
       in
       execute_search search_tags query_results
+    | `Admin ->
+      let open Component.Search.Admin in
+      let open Admin.Guard.Access in
+      let%lwt exclude = entities_to_exclude Admin.Id.of_string in
+      let search_experiment value actor =
+        Admin.search_by_name ~exclude database_label value
+        >|> Lwt_list.filter_s (fun admin ->
+          let id = Admin.id admin in
+          validate database_label (read id) actor ||> CCResult.is_ok)
+      in
+      execute_search search_experiment query_results
   in
   result
   |> HttpUtils.Htmx.handle_error_message ~error_as_notification:true ~src req

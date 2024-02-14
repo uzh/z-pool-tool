@@ -7,6 +7,111 @@ module Backend =
 
 include Backend
 
+module ActorPermission = struct
+  include ActorPermission
+
+  let from_sql = {sql| guardian_actor_permissions AS actor_permissions |sql}
+  let std_filter_sql = {sql| actor_permissions.mark_as_deleted IS NULL |sql}
+
+  let select_sql =
+    {sql|
+      guardianDecodeUuid(actor_permissions.actor_uuid),
+      actor_permissions.permission,
+      actor_permissions.target_model,
+      guardianDecodeUuid(actor_permissions.target_uuid),
+      COALESCE(
+          CONCAT(user.given_name, ' ', user.name, ' (', user.email, ')'),
+          guardianDecodeUuid(actor_permissions.actor_uuid)
+          ),
+      targets.model,
+      COALESCE(
+          exp.title,
+          CONCAT(session_exp.title, ': Session at ', DATE_FORMAT(sessions.start, '%d.%m.%Y %H:%i')),
+          locations.name
+          )
+    |sql}
+  ;;
+
+  let joins =
+    {sql|
+      LEFT JOIN pool_experiments AS exp
+        ON actor_permissions.target_uuid = exp.uuid
+      LEFT JOIN pool_sessions AS sessions
+        ON actor_permissions.target_uuid = sessions.uuid
+      LEFT JOIN pool_experiments AS session_exp
+        ON sessions.experiment_uuid = session_exp.uuid
+      LEFT JOIN pool_locations AS locations
+        ON actor_permissions.target_uuid = locations.uuid
+      LEFT JOIN user_users AS user
+        ON actor_permissions.actor_uuid = user.uuid
+      LEFT JOIN guardian_targets AS targets
+        ON target_uuid = targets.uuid
+    |sql}
+  ;;
+
+  let select ?(count = false) fragment =
+    let select_sql = if count then {sql| COUNT(*) |sql} else select_sql in
+    Format.sprintf
+      "SELECT\n  %s\nFROM  %s\n %s\n WHERE\n  %s\n %s"
+      select_sql
+      from_sql
+      joins
+      std_filter_sql
+      fragment
+  ;;
+
+  let expanded =
+    Caqti_type.(
+      t4
+        Backend.Entity.ActorPermission.t
+        string
+        (option Backend.Entity.TargetModel.t)
+        (option string))
+  ;;
+
+  let find_by query pool =
+    Query.collect_and_count pool (Some query) ~select expanded
+  ;;
+
+  let insert pool = insert ~ctx:(Pool_database.to_ctx pool)
+
+  open Pool_common.Message
+
+  let column_actor =
+    (Field.Actor, "actor_permissions.actor_uuid") |> Query.Column.create
+  ;;
+
+  let column_action =
+    (Field.Permission, "actor_permissions.permission") |> Query.Column.create
+  ;;
+
+  let column_model =
+    (Field.Model, "actor_permissions.target_model") |> Query.Column.create
+  ;;
+
+  let column_target =
+    (Field.Target, "actor_permissions.target_uuid") |> Query.Column.create
+  ;;
+
+  let column_created_at =
+    (Field.CreatedAt, "actor_permissions.created_at") |> Query.Column.create
+  ;;
+
+  let filterable_by = None
+
+  let searchable_by =
+    [ column_actor; column_action; column_model; column_target ]
+  ;;
+
+  let sortable_by = column_created_at :: searchable_by
+
+  let default_sort =
+    Query.Sort.{ column = column_created_at; order = SortOrder.Descending }
+  ;;
+
+  let default_query = Query.create ~sort:default_sort ()
+end
+
 module RolePermission = struct
   include RolePermission
 
@@ -25,18 +130,13 @@ module RolePermission = struct
   ;;
 
   let select ?(count = false) fragment =
-    if count
-    then
-      Format.sprintf
-        {sql| SELECT COUNT(*) from guardian_role_permissions %s |sql}
-        fragment
-    else
-      Format.sprintf
-        "SELECT\n  %s\nFROM  %s\n  WHERE\n  %s\n %s"
-        select_sql
-        from_sql
-        std_filter_sql
-        fragment
+    let select_sql = if count then {sql| COUNT(*) |sql} else select_sql in
+    Format.sprintf
+      "SELECT\n  %s\nFROM  %s\n  WHERE\n  %s\n %s"
+      select_sql
+      from_sql
+      std_filter_sql
+      fragment
   ;;
 
   let find_by query pool =
@@ -48,6 +148,32 @@ module RolePermission = struct
   ;;
 
   let insert pool = insert ~ctx:(Pool_database.to_ctx pool)
+
+  open Pool_common.Message
+
+  let column_role = (Field.Role, "role_permissions.role") |> Query.Column.create
+
+  let column_model =
+    (Field.Model, "role_permissions.target_model") |> Query.Column.create
+  ;;
+
+  let column_action =
+    (Field.Action, "role_permissions.permission") |> Query.Column.create
+  ;;
+
+  let column_created_at =
+    (Field.CreatedAt, "role_permissions.created_at") |> Query.Column.create
+  ;;
+
+  let filterable_by = None
+  let searchable_by = [ column_role; column_model; column_action ]
+  let sortable_by = column_created_at :: searchable_by
+
+  let default_sort =
+    Query.Sort.{ column = column_created_at; order = SortOrder.Descending }
+  ;;
+
+  let default_query = Query.create ~sort:default_sort ()
 end
 
 let src = Logs.Src.create "guard"
@@ -226,29 +352,3 @@ let validate
   (database_label, validation_set, any_id, actor)
   |> CCCache.(with_cache ~cb Cache.lru_validation validate')
 ;;
-
-open Pool_common.Message
-
-let column_role = (Field.Role, "role_permissions.role") |> Query.Column.create
-
-let column_model =
-  (Field.Model, "role_permissions.target_model") |> Query.Column.create
-;;
-
-let column_action =
-  (Field.Action, "role_permissions.permission") |> Query.Column.create
-;;
-
-let column_created_at =
-  (Field.CreatedAt, "role_permissions.created_at") |> Query.Column.create
-;;
-
-let filterable_by = None
-let searchable_by = [ column_role; column_model; column_action ]
-let sortable_by = column_created_at :: searchable_by
-
-let default_sort =
-  Query.Sort.{ column = column_created_at; order = SortOrder.Descending }
-;;
-
-let default_query = Query.create ~sort:default_sort ()

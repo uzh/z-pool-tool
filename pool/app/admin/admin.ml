@@ -25,6 +25,8 @@ let find_all_with_roles ?exclude pool roles =
   >|> Repo.find_multiple pool
 ;;
 
+let search_by_name = Repo.Sql.search_by_name
+
 let user_is_admin pool (user : Sihl_user.t) =
   if Sihl_user.is_admin user
   then (

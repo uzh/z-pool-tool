@@ -31,3 +31,14 @@ module Utils = struct
     | _ -> Error Pool_common.Message.(NotFound Field.Role)
   ;;
 end
+
+module Permission = struct
+  include Permission
+
+  let all = [ Create; Read; Update; Delete; Manage ]
+
+  let of_string_res permission =
+    try of_string permission |> CCResult.return with
+    | _ -> Error Pool_common.Message.(NotFound Field.Permission)
+  ;;
+end

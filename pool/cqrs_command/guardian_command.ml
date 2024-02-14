@@ -40,9 +40,9 @@ module DeleteRolePermission : sig
 end = struct
   type t = Guard.RolePermission.t
 
-  let handle ?(tags = Logs.Tag.empty) role_permissino =
+  let handle ?(tags = Logs.Tag.empty) role_permission =
     Logs.info ~src (fun m -> m "Handle command DeleteRolePermission" ~tags);
-    Ok [ Guard.RolePermissionDeleted role_permissino |> Pool_event.guard ]
+    Ok [ Guard.RolePermissionDeleted role_permission |> Pool_event.guard ]
   ;;
 
   let effects = Guard.Access.Permission.manage
@@ -94,4 +94,40 @@ end = struct
   ;;
 
   let effects = Guard.Access.Role.delete
+end
+
+module CreateActorPermission : sig
+  include Common.CommandSig with type t = Guard.ActorPermission.t
+
+  val handle
+    :  ?tags:Logs.Tag.set
+    -> Guard.ActorPermission.t
+    -> (Pool_event.t list, Pool_common.Message.error) result
+end = struct
+  type t = Guard.ActorPermission.t
+
+  let handle ?(tags = Logs.Tag.empty) permission =
+    Logs.info ~src (fun m -> m "Handle command CreateActorPermission" ~tags);
+    Ok [ Guard.ActorPermissionSaved [ permission ] |> Pool_event.guard ]
+  ;;
+
+  let effects = Guard.Access.Permission.manage
+end
+
+module DeleteActorPermission : sig
+  include Common.CommandSig with type t = Guard.ActorPermission.t
+
+  val handle
+    :  ?tags:Logs.Tag.set
+    -> Guard.ActorPermission.t
+    -> (Pool_event.t list, Pool_common.Message.error) result
+end = struct
+  type t = Guard.ActorPermission.t
+
+  let handle ?(tags = Logs.Tag.empty) permission =
+    Logs.info ~src (fun m -> m "Handle command DeleteActorPermission" ~tags);
+    Ok [ Guard.ActorPermissionDeleted permission |> Pool_event.guard ]
+  ;;
+
+  let effects = Guard.Access.Permission.manage
 end

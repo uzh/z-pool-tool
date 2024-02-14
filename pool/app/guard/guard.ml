@@ -305,10 +305,29 @@ module Access = struct
   end
 end
 
-let column_role = Repo.column_role
-let column_model = Repo.column_model
-let column_action = Repo.column_action
-let filterable_by = Repo.filterable_by
-let searchable_by = Repo.searchable_by
-let sortable_by = Repo.sortable_by
-let default_query = Repo.default_query
+module RolePermission = struct
+  include RolePermission
+  open Repo.RolePermission
+
+  let column_role = column_role
+  let column_model = column_model
+  let column_action = column_action
+  let filterable_by = filterable_by
+  let searchable_by = searchable_by
+  let sortable_by = sortable_by
+  let default_query = default_query
+end
+
+module ActorPermission = struct
+  include ActorPermission
+  open Repo.ActorPermission
+
+  let column_actor = column_actor
+  let column_action = column_action
+  let column_model = column_model
+  let column_target = column_target
+  let filterable_by = filterable_by
+  let searchable_by = searchable_by
+  let sortable_by = sortable_by
+  let default_query = default_query
+end

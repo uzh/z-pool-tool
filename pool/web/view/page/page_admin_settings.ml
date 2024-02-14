@@ -2,6 +2,7 @@ open Tyxml.Html
 open Component.Input
 module Message = Pool_common.Message
 module Queue = Page_admin_settings_queue
+module ActorPermission = Page_admin_settings_actor_permissions
 module RolePermission = Page_admin_settings_permissions
 module Schedule = Page_admin_settings_schedule
 module Smtp = Page_admin_settings_smtp

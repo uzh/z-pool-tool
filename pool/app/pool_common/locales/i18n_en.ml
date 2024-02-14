@@ -154,6 +154,7 @@ let to_string = function
 ;;
 
 let nav_link_to_string = function
+  | ActorPermissions -> "Personal Permissions"
   | Admins -> "Admins"
   | Assignments -> "Assignments"
   | ContactInformation -> "Contact information"
@@ -605,6 +606,7 @@ let confirmable_to_string confirmable =
    | PublishCustomFieldOption ->
      "option", "publish", Some "You will not be able to delete the it anymore."
    | ReactivateAccount -> "account", "reactivate", None
+   | RemovePermission -> "permission", "delete", None
    | RemoveRule -> "rule", "delete", None
    | RemoveTag -> "tag", "remove", None
    | RescheduleSession -> "session", "reschedule", None
