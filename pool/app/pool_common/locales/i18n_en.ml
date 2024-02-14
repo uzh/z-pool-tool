@@ -41,8 +41,8 @@ let to_string = function
       (Locales_en.field_to_string field)
   | EnrollInExperiment -> "Enroll in experiment"
   | ExperimentListEmpty ->
-    "Currently there are no experiments you can participate."
-  | ExperimentListPublicTitle -> "Register for experiment sessions"
+    "Currently, there are no experiments you can participate in."
+  | ExperimentListPublicTitle -> "Registering for experiment sessions"
   | ExperimentListTitle -> "Experiments"
   | ExperimentMessagingSubtitle -> "Messaging"
   | ExperimentNewTitle -> "Create new experiment"
@@ -113,7 +113,7 @@ let to_string = function
   | RoleCurrentlyAssigned -> "Currently assigned"
   | RoleCurrentlyNoneAssigned field ->
     Format.asprintf
-      "Currently there are no %s assigned."
+      "Currently, there are no %s assigned."
       (Locales_en.field_to_string field)
   | RolesGranted -> "Granted roles"
   | SelectedTags -> "Currently assigned tags"
@@ -123,7 +123,7 @@ let to_string = function
   | SessionDetailTitle start ->
     Format.asprintf "Session at %s" (Utils_time.formatted_date_time start)
   | SessionIndent -> "Indentations group follow-up sessions."
-  | SessionRegistrationTitle -> "Register for this session"
+  | SessionRegistrationTitle -> "Registering for this session"
   | SessionReminder -> "Session reminder"
   | SignUpAcceptTermsAndConditions -> "I accept the terms and conditions."
   | SignUpTitle -> "Sign up"
@@ -322,9 +322,9 @@ By clicking on the template labels below you can open the default text message:
       Once someone has registered for the session, it can no longer be deleted.
     |}
   | ExperimentSessionsPublic ->
-    "Please note: Maybe sessions or completed experiments are no longer \
-     displayed, although listed in the email. Once all the available seats are \
-     assigned a session, it is no longer displayed."
+    "Please note: Sessions or completed experiments may no longer be \
+     displayed, although listed in your email. Once all the available seats \
+     are assigned, a session is no longer displayed."
   | ExperimentWaitingList ->
     "Contacts that have been invited to this experiment and have placed \
      themselves on the waiting list. They have to be manually assigned to a \

@@ -33,7 +33,7 @@ let to_string = function
   | DontHaveAnAccount -> "Noch kein Zugang?"
   | EmailConfirmationNote ->
     "Bitte prüfen Sie zunächst Ihre E-Mails und bestätigen Sie Ihre Adresse."
-  | EmailConfirmationTitle -> "Bestätigung Ihrer E-Mail Adresse"
+  | EmailConfirmationTitle -> "Bestätigung Ihrer E-Mail-Adresse"
   | EmptyListGeneric -> "Es konnten keine Einträge gefunden werden."
   | EmtpyList field ->
     Format.asprintf
@@ -41,7 +41,7 @@ let to_string = function
       (Locales_de.field_to_string field)
   | EnrollInExperiment -> "Zum Experiment anmelden"
   | ExperimentListEmpty ->
-    "Aktuell gibt es keine Experimente an den Sie teilnehmen können."
+    "Aktuell gibt es keine Experimente, an denen Sie teilnehmen können."
   | ExperimentListPublicTitle -> "Neuanmeldung zu Experiment-Sessions"
   | ExperimentListTitle -> "Experimente"
   | ExperimentMessagingSubtitle -> "Nachrichtenversand"
@@ -327,7 +327,7 @@ Wenn eine Experimentsprache angegeben ist, werden alle Nachrichten in dieser Spr
   | ExperimentSessionsPublic ->
     "Hinweis: Möglicherweise werden einzelne Sessions oder komplette \
      Experimente nicht mehr angezeigt, obwohl im E-Mail aufgeführt. Sobald \
-     alle verfügbaren Plätze einer Session belegt sind wird es nichtmehr \
+     alle verfügbaren Plätze einer Session belegt sind, wird sie nicht mehr \
      angezeigt."
   | ExperimentWaitingList ->
     "Kontakte, die zu diesem Experiment eingeladen wurden, und sich auf die \
