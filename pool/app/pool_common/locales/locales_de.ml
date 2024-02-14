@@ -33,7 +33,7 @@ let rec field_to_string =
   | ConfirmedAt -> "Bestätigt am"
   | Contact -> "Kontakt"
   | ContactCount -> "Anzahl Kontakte"
-  | ContactEmail -> "Kontakt E-Mail Adresse"
+  | ContactEmail -> "Kontakt E-Mail-Adresse"
   | ContactLanguage -> "Kontakt- & Anzeigesprache"
   | ContactPerson -> "Kontaktperson"
   | Contacts -> "Kontakte"
@@ -63,9 +63,9 @@ let rec field_to_string =
   | DistributionField -> "Feld"
   | Duration -> "Dauer"
   | Email -> "E-Mail"
-  | EmailAddress -> "E-Mail Adresse"
-  | EmailAddressUnverified -> "Unverifizierte E-Mail Adresse"
-  | EmailAddressVerified -> "Verifizierte E-Mail Adresse"
+  | EmailAddress -> "E-Mail-Adresse"
+  | EmailAddressUnverified -> "Unverifizierte E-Mail-Adresse"
+  | EmailAddressVerified -> "Verifizierte E-Mail-Adresse"
   | EmailLeadTime -> "Email Vorlaufzeit"
   | EmailRemindersSentAt -> "Email Erinnerungen verschickt am"
   | EmailSubject -> "E-Mail Betreff"
@@ -297,10 +297,10 @@ let success_to_string : success -> string = function
   | Deleted field ->
     field_message "" (field_to_string field) "wurde erfolgreich gelöscht."
   | EmailConfirmationMessage ->
-    "Eine E-Mail wurde an deine E-Mail Adresse zur Verifizierung gesendet, \
-     falls die angegebene E-Mail Adresse noch verfügbar ist."
+    "Eine E-Mail wurde an deine E-Mail-Adresse zur Verifizierung gesendet, \
+     falls die angegebene E-Mail-Adresse verfügbar ist."
   | EmailUpdateConfirmationMessage ->
-    {|Falls die angegebene E-Mail-Adresse noch verfügbar ist, wurde eine E-Mail mit einem Bestätigungslink an diese Adresse geschickt. Bitte bestätige die Adresse mit dem Öffnen dieses Links.
+    {|Falls die angegebene E-Mail-Adresse verfügbar ist, wurde eine E-Mail mit einem Bestätigungslink an diese Adresse geschickt. Bitte bestätige die Adresse mit dem Öffnen dieses Links.
 
 Solange die neue E-Mail-Adresse nicht bestätigt ist, wird weiterhin die aktuelle Adresse verwendet.|}
   | EmailVerified -> "E-Mail erfolgreich verifiziert."
@@ -316,7 +316,7 @@ Solange die neue E-Mail-Adresse nicht bestätigt ist, wird weiterhin die aktuell
   | PasswordChanged -> "Passwort wurde geändert."
   | PasswordReset -> "Passwort ist zurückgesetzt, du kannst dich nun einloggen."
   | PasswordResetSuccessMessage ->
-    "Falls ein Account zu der von dir eingegebenen E-Mail Adresse existiert,  \
+    "Falls ein Account zu der von dir eingegebenen E-Mail-Adresse existiert,  \
      wird dir ein E-Mail mit einem Link zur Passwort zurücksetzung gesendet."
   | CellPhoneTokenSent ->
     "Es wurde eine Textnachricht zur Überprüfung an Ihr Telefon gesendet. \
@@ -419,7 +419,7 @@ let rec error_to_string = function
   | ContactDoesNotMatchFilter ->
     "Der Kontakt erfüllt die im Filter bestimmten Kriterien nicht."
   | ContactSignupInvalidEmail ->
-    "Bitte eine valide und nicht bereits verwendete E-Mail Adresse verwenden."
+    "Bitte eine valide und nicht bereits verwendete E-Mail-Adresse verwenden."
   | ContactUnconfirmed -> "Teilnehmer noch nicht verifiziert!"
   | CustomFieldNoOptions -> "Es muss mindestens eine Option existieren."
   | CustomFieldTypeChangeNotAllowed ->
@@ -435,14 +435,14 @@ let rec error_to_string = function
     "Sie können sich nicht selbst für dieses Experiment anmelden."
   | Disabled field ->
     field_message "" (field_to_string field) "ist deaktiviert."
-  | EmailAddressMissingAdmin -> "Bitte Admin E-Mail Adresse angeben."
-  | EmailAddressMissingRoot -> "Bitte Root E-Mail Adresse angeben."
-  | EmailAlreadyInUse -> "E-Mail Adresse wird bereits verwendet."
+  | EmailAddressMissingAdmin -> "Bitte Admin E-Mail-Adresse angeben."
+  | EmailAddressMissingRoot -> "Bitte Root E-Mail-Adresse angeben."
+  | EmailAlreadyInUse -> "E-Mail-Adresse wird bereits verwendet."
   | EmailDeleteAlreadyVerified ->
-    "E-Mail Adresse ist bereits verifiziert, kann nicht gelöscht werden."
+    "E-Mail-Adresse ist bereits verifiziert, kann nicht gelöscht werden."
   | EmailIdenticalToCurrent ->
-    "Die angegebene E-Mail Adresse ist identisch mit der aktuellen."
-  | EmailMalformed -> "Fehlerhafte E-Mail Adresse"
+    "Die angegebene E-Mail-Adresse ist identisch mit der aktuellen."
+  | EmailMalformed -> "Fehlerhafte E-Mail-Adresse"
   | EmailInterceptionError error ->
     Format.asprintf "Email interception error: %s" error
   | EndBeforeStart -> "Das Ende liegt vor oder dem Start."
@@ -536,7 +536,7 @@ let rec error_to_string = function
       "Das Passwort muss eines der folgenden Zeichen enthalten: %s"
       (chars |> CCList.map CCString.of_char |> CCString.concat " ")
   | PasswordResetFailMessage ->
-    "Falls ein Account zu der von dir eingegebenen E-Mail Adresse existiert,  \
+    "Falls ein Account zu der von dir eingegebenen E-Mail-Adresse existiert,  \
      wird dir ein E-Mail mit einem Link zur Passwort zurücksetzung gesendet."
   | PasswordResetInvalidData -> "Ungültiges Token oder Passwort."
   | PermissionDeniedCreateRule ->
