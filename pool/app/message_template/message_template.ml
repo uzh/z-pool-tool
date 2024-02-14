@@ -327,11 +327,10 @@ module AssignmentConfirmation = struct
     @ assignment_params assignment
   ;;
 
-  let message_history experiment session { Assignment.id; contact; _ } =
+  let message_history experiment session { contact; _ } =
     let entity_uuids =
       [ experiment.Experiment.id |> Experiment.Id.to_common
       ; session.Session.id |> Session.Id.to_common
-      ; id |> Assignment.Id.to_common
       ; contact |> Contact.id
       ]
     in
@@ -348,13 +347,13 @@ module AssignmentConfirmation = struct
 
   let prepare
     ?follow_up_sessions
-    pool
     tenant
     contact
     experiment
     session
     admin_contact
     =
+    let pool = tenant.Pool_tenant.database_label in
     let%lwt sys_langs = Settings.find_languages pool in
     let language = experiment_message_language sys_langs experiment contact in
     let%lwt template = template pool experiment language in
@@ -385,12 +384,16 @@ end
 module AssignmentSessionChange = struct
   let label = Label.AssignmentSessionChange
 
-  (* TODO: Old or new session? both? *)
-  let message_history experiment session { Assignment.id; contact; _ } =
+  let message_history
+    experiment
+    new_session
+    old_session
+    { Assignment.contact; _ }
+    =
     let entity_uuids =
       [ experiment.Experiment.id |> Experiment.Id.to_common
-      ; session.Session.id |> Session.Id.to_common
-      ; id |> Assignment.Id.to_common
+      ; new_session.Session.id |> Session.Id.to_common
+      ; old_session.Session.id |> Session.Id.to_common
       ; contact |> Contact.id
       ]
     in
@@ -414,8 +417,8 @@ module AssignmentSessionChange = struct
     @ assignment_params assignment
   ;;
 
-  let create pool message tenant experiment ~new_session ~old_session assignment
-    =
+  let create message tenant experiment ~new_session ~old_session assignment =
+    let pool = tenant.Pool_tenant.database_label in
     let layout = layout_from_tenant tenant in
     let%lwt sender = sender_of_experiment pool experiment in
     let smtp_auth_id = experiment.Experiment.smtp_auth_id in
@@ -429,7 +432,9 @@ module AssignmentSessionChange = struct
         assignment
     in
     let email = prepare_manual_email message layout params sender in
-    let message_history = message_history experiment new_session assignment in
+    let message_history =
+      message_history experiment new_session old_session assignment
+    in
     Email.create_job ?smtp_auth_id ~message_history email |> Lwt.return
   ;;
 end
@@ -448,8 +453,9 @@ module ContactEmailChangeAttempt = struct
       ]
   ;;
 
-  let create pool tenant user =
+  let create tenant user =
     let open Utils.Lwt_result.Infix in
+    let pool = tenant.Pool_tenant.database_label in
     let* message_language =
       let%lwt sys_langs = Settings.find_languages pool in
       match%lwt Admin.user_is_admin pool user with
@@ -495,7 +501,8 @@ module ContactRegistrationAttempt = struct
       ]
   ;;
 
-  let create pool message_language tenant user =
+  let create message_language tenant user =
+    let pool = tenant.Pool_tenant.database_label in
     let%lwt template =
       find_by_label_and_language_to_send pool label message_language
     in
@@ -638,7 +645,8 @@ module PasswordChange = struct
   let label = Label.PasswordChange
   let message_history = user_message_history label
 
-  let create pool language tenant user =
+  let create language tenant user =
+    let pool = tenant.Pool_tenant.database_label in
     let%lwt template = find_by_label_and_language_to_send pool label language in
     let layout = layout_from_tenant tenant in
     let email_address = Pool_user.user_email_address user in

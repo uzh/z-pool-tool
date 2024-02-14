@@ -338,7 +338,6 @@ let enroll_contact_post req =
       in
       Message_template.AssignmentConfirmation.prepare
         ~follow_up_sessions
-        database_label
         tenant
         contact
         experiment

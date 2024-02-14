@@ -229,6 +229,8 @@ type job =
   ; message_history : Queue.History.create option
   }
 
+val job_message_history : job -> Queue.History.create option
+
 val create_job
   :  ?smtp_auth_id:SmtpAuth.Id.t
   -> ?message_history:Queue.History.create

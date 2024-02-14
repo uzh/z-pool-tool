@@ -149,10 +149,7 @@ let update_email req =
          | None -> send_verification_mail None
          | Some user ->
            let change_attempt_notification () =
-             Message_template.ContactEmailChangeAttempt.create
-               database_label
-               tenant
-               user
+             Message_template.ContactEmailChangeAttempt.create tenant user
            in
            (match%lwt Admin.user_is_admin database_label user with
             | true ->
@@ -191,7 +188,6 @@ let update_password req =
        let tenant = Pool_context.Tenant.get_tenant_exn req in
        let%lwt notification =
          Message_template.PasswordChange.create
-           database_label
            language
            tenant
            contact.Contact.user

@@ -18,6 +18,7 @@ module Id = struct
   let value m = m
   let to_common m = m
   let of_common m = m
+  let compare = CCString.compare
 
   let schema ?(field = PoolError.Field.Id) () =
     Pool_common_utils.schema_decoder (of_string %> CCResult.return) value field

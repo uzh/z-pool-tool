@@ -43,6 +43,11 @@ let phone_nr =
   Alcotest.testable Pool_user.CellPhone.pp Pool_user.CellPhone.equal
 ;;
 
+let message_history_crate =
+  let open Queue.History in
+  Alcotest.testable pp_create equal_create
+;;
+
 (* Helper functions *)
 
 let setup_test () =
@@ -290,8 +295,6 @@ module Model = struct
       "Hello"
   ;;
 
-  let email_to_job email = Email.create_job email
-
   let create_email_job ?smtp_auth_id ?message_history () =
     let email = create_email () in
     Email.create_job ?smtp_auth_id ?message_history email
@@ -478,6 +481,20 @@ module Model = struct
     ; plain_text = "Hello" |> PlainText.create |> exn
     ; sms_text = "Hello" |> SmsText.create |> exn
     }
+  ;;
+
+  let create_manual_message
+    ?(recipient = "foo@bar.com" |> Pool_user.EmailAddress.of_string)
+    ()
+    =
+    let open Message_template in
+    Message_template.ManualMessage.
+      { recipient
+      ; language = Pool_common.Language.En
+      ; email_subject = EmailSubject.of_string "subject"
+      ; email_text = EmailText.of_string "<p>hello</p>"
+      ; plain_text = PlainText.of_string "hellp"
+      }
   ;;
 end
 

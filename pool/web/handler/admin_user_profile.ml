@@ -43,7 +43,6 @@ module MakeUserProfile (Config : module type of Config) = struct
          let tenant = Pool_context.Tenant.get_tenant_exn req in
          let%lwt notification =
            Message_template.PasswordChange.create
-             database_label
              language
              tenant
              (Admin.user admin)

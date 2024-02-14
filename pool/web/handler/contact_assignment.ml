@@ -29,7 +29,6 @@ let create req =
        let%lwt confirmation_email =
          Message_template.AssignmentConfirmation.prepare
            ~follow_up_sessions
-           database_label
            tenant
            contact
            experiment
