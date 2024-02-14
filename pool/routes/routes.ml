@@ -528,7 +528,10 @@ module Admin = struct
               "/contact-count"
               ~middlewares:[ Access.read ]
               Handler.Admin.Filter.count_contacts
-          ; get "/messages" ~middlewares:[] message_history (* TODO: Access *)
+          ; get
+              "/messages"
+              ~middlewares:[ Access.message_history ]
+              message_history
           ; choose ~scope:"/assistants" assistants
           ; choose ~scope:"/experimenter" experimenter
           ; choose ~scope:"/invitations" invitations
@@ -604,7 +607,10 @@ module Admin = struct
         ; post "pause" ~middlewares:[ Access.update ] toggle_paused
         ; get "/edit" ~middlewares:[ Access.update ] edit
         ; post "/promote" ~middlewares:[ Access.promote ] promote
-        ; get "/messages" ~middlewares:[] message_history (* TODO: Access *)
+        ; get
+            "/messages"
+            ~middlewares:[ Access.message_history ]
+            message_history
         ; choose
             ~middlewares:[ Access.update ]
             ~scope:(Experiments |> human_url)
