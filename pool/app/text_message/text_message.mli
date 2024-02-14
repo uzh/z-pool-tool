@@ -13,6 +13,7 @@ type job =
   ; message_history : Queue.History.create option
   }
 
+val job_message_history : job -> Queue.History.create option
 val create_job : ?message_history:Queue.History.create -> t -> job
 
 val render_and_create

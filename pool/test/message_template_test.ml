@@ -356,7 +356,6 @@ let assignment_creation_with_sender _ () =
     let%lwt admin = Admin.find database_label admin_id ||> get_exn in
     let%lwt confirmation_email =
       Message_template.AssignmentConfirmation.prepare
-        database_label
         tenant
         contact
         experiment

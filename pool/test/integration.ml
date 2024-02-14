@@ -184,6 +184,45 @@ let suite =
               `Slow
               assignment_creation_with_sender
           ] )
+    ; Message_history.(
+        ( "message_history"
+        , [ test_case "initialize message history data" `Slow initialize
+          ; test_case
+              "account suspension message history"
+              `Slow
+              account_suspension_notification
+          ; test_case
+              "assignment confirmation message history"
+              `Slow
+              assignment_confirmation
+          ; test_case
+              "assignment session change message history"
+              `Slow
+              assignment_session_change
+          ; test_case
+              "contact email change attempt message history"
+              `Slow
+              contact_email_change_attempt
+          ; test_case
+              "contact registration attempt message history"
+              `Slow
+              contact_registration_attempt
+          ; test_case
+              "email verification attempt message history"
+              `Slow
+              email_verification
+          ; test_case
+              "experiment invitation message history"
+              `Slow
+              experiment_invitation
+          ; test_case "password change message history" `Slow password_change
+          ; test_case "password reset message history" `Slow password_reset
+          ; test_case
+              "phone verification message history"
+              `Slow
+              phone_verification
+          ; test_case "session reminder message history" `Slow session_reminder
+          ] ))
     ; ( "assignment"
       , Assignment_test.
           [ test_case

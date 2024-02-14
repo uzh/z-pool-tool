@@ -222,7 +222,6 @@ module AssignmentConfirmation : sig
 
   val prepare
     :  ?follow_up_sessions:Session.t list
-    -> Pool_database.Label.t
     -> Pool_tenant.t
     -> Contact.t
     -> Experiment.t
@@ -242,8 +241,7 @@ module AssignmentSessionChange : sig
     -> (string * string) list
 
   val create
-    :  Pool_database.Label.t
-    -> ManualMessage.t
+    :  ManualMessage.t
     -> Pool_tenant.t
     -> Experiment.t
     -> new_session:Session.t
@@ -260,8 +258,7 @@ module ContactEmailChangeAttempt : sig
     -> (string * string) list
 
   val create
-    :  Pool_database.Label.t
-    -> Pool_tenant.t
+    :  Pool_tenant.t
     -> Sihl_user.t
     -> (Email.job, Pool_common.Message.error) Lwt_result.t
 end
@@ -274,8 +271,7 @@ module ContactRegistrationAttempt : sig
     -> (string * string) list
 
   val create
-    :  Pool_database.Label.t
-    -> Pool_common.Language.t
+    :  Pool_common.Language.t
     -> Pool_tenant.t
     -> Sihl_user.t
     -> Email.job Lwt.t
@@ -318,8 +314,7 @@ module PasswordChange : sig
   val email_params : email_layout -> Sihl_user.t -> (string * string) list
 
   val create
-    :  Pool_database.Label.t
-    -> Pool_common.Language.t
+    :  Pool_common.Language.t
     -> Pool_tenant.t
     -> Sihl_user.t
     -> Email.job Lwt.t

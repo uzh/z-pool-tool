@@ -17,14 +17,12 @@ let get_experiment experiment_id =
   experiment_id |> Experiment.find database_label |> Lwt.map get_exn
 ;;
 
-let email_to_job = Test_utils.Model.email_to_job
-
 let confirmation_mail (_ : Assignment.t) =
-  Common_test.Data.create_email () |> email_to_job
+  Common_test.Data.create_email () |> Email.create_job
 ;;
 
 let invitation_mail (_ : Contact.t) =
-  Common_test.Data.create_email () |> email_to_job |> CCResult.return
+  Common_test.Data.create_email () |> Email.create_job |> CCResult.return
 ;;
 
 let find_assignment_by_contact_and_session contact_id session_id =
@@ -262,7 +260,7 @@ module CancelSession = struct
         handle
           (session :: follow_ups)
           assignments
-          (fun _ _ -> Ok (email |> email_to_job))
+          (fun _ _ -> Ok (Email.create_job email))
           Session_test.create_cancellation_text_message
           [ Pool_common.NotifyVia.Email ]
           reason

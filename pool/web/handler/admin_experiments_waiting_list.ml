@@ -181,7 +181,6 @@ let assign_contact req =
       in
       Message_template.AssignmentConfirmation.prepare
         ~follow_up_sessions
-        database_label
         tenant
         contact
         experiment

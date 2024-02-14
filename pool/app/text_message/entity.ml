@@ -23,6 +23,7 @@ type job =
   }
 [@@deriving eq, show, yojson]
 
+let job_message_history { message_history; _ } = message_history
 let create_job ?message_history message = { message; message_history }
 let create recipient sender text = { recipient; sender; text }
 

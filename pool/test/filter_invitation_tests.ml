@@ -104,7 +104,7 @@ let invitation ~experiment ~contacts =
                 ~recipient:"recipient"
                 ~subject:"subject"
                 "body"
-              |> Test_utils.Model.email_to_job
+              |> Email.create_job
               |> Result.ok)
         ; mailing = None
         })

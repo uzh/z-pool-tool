@@ -497,7 +497,6 @@ let swap_session_post req =
             }
         in
         Message_template.AssignmentSessionChange.create
-          database_label
           msg
           tenant
           experiment
