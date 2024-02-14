@@ -404,6 +404,7 @@ module Access : sig
   val external_data_ids : Rock.Middleware.t
   val delete_answer : Rock.Middleware.t
   val promote : Rock.Middleware.t
+  val message_history : Rock.Middleware.t
 end = struct
   include Helpers.Access
   module ContactCommand = Cqrs_command.Contact_command
@@ -462,4 +463,8 @@ end = struct
   ;;
 
   let promote = Admin.Guard.Access.create |> Guardian.validate_admin_entity
+
+  let message_history =
+    Queue.Guard.Access.index |> Guardian.validate_admin_entity
+  ;;
 end

@@ -534,6 +534,7 @@ module Access : sig
   module Filter : module type of Helpers.Access
 
   val search : Rock.Middleware.t
+  val message_history : Rock.Middleware.t
 end = struct
   module Field = Pool_common.Message.Field
   module ExperimentCommand = Cqrs_command.Experiment_command
@@ -598,4 +599,8 @@ end = struct
   end
 
   let search = index
+
+  let message_history =
+    Queue.Guard.Access.index |> Guardian.validate_admin_entity
+  ;;
 end
