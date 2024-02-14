@@ -718,7 +718,11 @@ module Admin = struct
       let open Settings in
       let queue =
         let open Queue in
-        let specific = [ get "" ~middlewares:[ Access.read ] detail ] in
+        let specific =
+          [ get "" ~middlewares:[ Access.read ] detail
+          ; post "resend" ~middlewares:[ Access.resend ] resend
+          ]
+        in
         [ get "" ~middlewares:[ Access.index ] show
         ; choose ~scope:(Queue |> url_key) specific
         ]

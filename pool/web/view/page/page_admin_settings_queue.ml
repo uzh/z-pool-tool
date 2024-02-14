@@ -1,7 +1,10 @@
 open Tyxml.Html
+open Component
 module HttpUtils = Http_utils
+module Message = Pool_common.Message
 
 let formatted_date_time = Pool_common.Utils.Time.formatted_date_time
+let base_path = "/admin/settings/queue"
 
 let data_table_head language =
   let open Pool_common in
@@ -24,7 +27,7 @@ let data_table_head language =
 
 let data_table Pool_context.{ language; _ } (queued_jobs, query) =
   let open Queue in
-  let url = Uri.of_string "/admin/settings/queue" in
+  let url = Uri.of_string base_path in
   let data_table =
     Component.DataTable.create_meta
       ?filter:filterable_by
@@ -93,7 +96,7 @@ let job_detail
       language
   in
   let job_detail =
-    let open Pool_common.Message in
+    let open Message in
     [ Field.Name, name |> txt
     ; ( Field.Input
       , input
@@ -114,13 +117,34 @@ let job_detail
   div [ job_detail ]
 ;;
 
-let layout language children =
+let layout ?buttons language children =
+  let buttons_html =
+    buttons
+    |> CCOption.map_or
+         ~default:(txt "")
+         (div ~a:[ a_class [ "flexrow"; "flex-gap" ] ])
+  in
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
-    [ h1
-        ~a:[ a_class [ "heading-1" ] ]
-        [ txt Pool_common.(Utils.nav_link_to_string language I18n.Queue) ]
-    ; children
+    [ div
+        ~a:
+          [ a_class
+              [ "flexrow"
+              ; "justify-between"
+              ; "align-center"
+              ; "flex-gap"
+              ; "flexcolumn-mobile"
+              ]
+          ]
+        [ div
+            [ h1
+                ~a:[ a_class [ "heading-1" ] ]
+                [ txt Pool_common.(Utils.nav_link_to_string language I18n.Queue)
+                ]
+            ]
+        ; buttons_html
+        ]
+    ; div ~a:[ a_class [ "gap-lg" ] ] [ children ]
     ]
 ;;
 
@@ -128,6 +152,29 @@ let index (Pool_context.{ language; _ } as context) job =
   data_table context job |> layout language
 ;;
 
-let detail Pool_context.{ language; _ } job =
-  job_detail language job |> layout language
+let resend_form Pool_context.{ csrf; language; _ } job =
+  form
+    ~a:
+      [ a_action
+          (Format.asprintf "%s/%s/resend" base_path job.Sihl_queue.id
+           |> Sihl.Web.externalize_path)
+      ; a_method `Post
+      ]
+    [ Input.csrf_element csrf ()
+    ; Input.submit_element
+        language
+        Message.(Resend (Some Field.Message))
+        ~classnames:[ "small" ]
+        ~has_icon:Icon.RefreshOutline
+        ()
+    ]
+;;
+
+let detail Pool_context.({ language; _ } as context) job =
+  let buttons =
+    if Queue.resendable job |> CCResult.is_ok
+    then Some [ resend_form context job ]
+    else None
+  in
+  job_detail language job |> layout ?buttons language
 ;;

@@ -328,6 +328,8 @@ Solange die neue E-Mail-Adresse nicht bestätigt ist, wird weiterhin die aktuell
   | RemindersResent -> "Die Erinnerungen wirden erneut versendet."
   | Rescheduled field ->
     field_message "" (field_to_string field) "wurden erfolgreich verschoben."
+  | Resent field ->
+    field_message "" (field_to_string field) "wurden erneut verschickt."
   | ResetInvitations ->
     "Einladungsversand zurückgesetzt. Bei kommenden versanden werden frühere \
      Einladungen ignoriert respektive die Einladung erneut versendet."
@@ -479,6 +481,7 @@ let rec error_to_string = function
       ""
       (field |> field_to_string |> CCString.trim)
       "wurde als gelöscht markiert."
+  | JobPending -> "Der Auftrag ist noch pendent."
   | LoginProvideDetails -> "Bitte Email Adresse und Passwort eintragen."
   | MeantimeUpdate field ->
     field_message

@@ -202,4 +202,5 @@ module History = struct
   ;;
 
   let query_by_entity = Repo_history.query_by_entity
+  let find_related = Repo_history.find_related
 end

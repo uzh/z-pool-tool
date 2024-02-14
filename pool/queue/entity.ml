@@ -37,6 +37,8 @@ end
 
 open Pool_common.Message
 
+let is_pending job = job.Sihl_queue.status = Sihl_queue.(Pending)
+let resendable job = if is_pending job then Error JobPending else Ok job
 let column_job_name = (Field.Name, "queue_jobs.name") |> Query.Column.create
 
 let column_job_status =

@@ -229,6 +229,7 @@ type job =
   ; message_history : Queue.History.create option
   }
 
+val parse_job_json : string -> (job, Pool_common.Message.error) result
 val job_message_history : job -> Queue.History.create option
 
 val create_job

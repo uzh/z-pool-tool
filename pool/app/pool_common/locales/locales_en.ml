@@ -326,6 +326,8 @@ As long as the new e-mail address has not been confirmed, the current address wi
   | RemindersResent -> "The reminders have been resent."
   | Rescheduled field ->
     field_message "" (field_to_string field) "was successfully rescheduled."
+  | Resent field ->
+    field_message "" (field_to_string field) "was successfully resent."
   | ResetInvitations ->
     "Reset Invitations. In upcomming mailings, previous invitations will be \
      considered to reinvite."
@@ -459,6 +461,7 @@ let rec error_to_string = function
       ""
       (field |> field_to_string |> CCString.trim)
       "has been marked as deleted."
+  | JobPending -> "The job is still pending."
   | LoginProvideDetails -> "Please provide email and password"
   | MeantimeUpdate field ->
     field_message "" (field_to_string field) "was updated in the meantime!"

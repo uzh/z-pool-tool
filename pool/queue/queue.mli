@@ -9,6 +9,7 @@ module JobName : sig
   val t_of_yojson : Yojson.Safe.t -> t
   val yojson_of_t : t -> Yojson.Safe.t
   val equal : t -> t -> bool
+  val read : string -> t
 end
 
 module Status : sig
@@ -48,6 +49,12 @@ val find_by
 val count_workable
   :  Pool_database.Label.t
   -> (int, Pool_common.Message.error) Lwt_result.t
+
+val is_pending : Sihl_queue.instance -> bool
+
+val resendable
+  :  Sihl_queue.instance
+  -> (Sihl_queue.instance, Pool_common.Message.error) Result.t
 
 val column_job_name : Query.Column.t
 val column_job_status : Query.Column.t
@@ -101,11 +108,18 @@ module History : sig
     -> Pool_database.Label.t
     -> Pool_common.Id.t
     -> (t list * Query.t) Lwt.t
+
+  val find_related
+    :  Pool_database.Label.t
+    -> Sihl_queue.instance
+    -> [< `contact | `experiment ]
+    -> Pool_common.Id.t option Lwt.t
 end
 
 module Guard : sig
   module Access : sig
     val index : Guard.ValidationSet.t
     val read : Guard.ValidationSet.t
+    val resend : Guard.ValidationSet.t
   end
 end
