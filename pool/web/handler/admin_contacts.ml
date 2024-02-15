@@ -338,7 +338,6 @@ let enroll_contact_post req =
       in
       Message_template.AssignmentConfirmation.prepare
         ~follow_up_sessions
-        database_label
         tenant
         contact
         experiment
@@ -370,6 +369,33 @@ let enroll_contact_post req =
   result |> HttpUtils.extract_happy_path ~src req
 ;;
 
+let message_history req =
+  let contact_id = contact_id req in
+  let error_path =
+    Format.asprintf "/admin/contacts/%s" (Contact.Id.value contact_id)
+  in
+  HttpUtils.Htmx.handler
+    ~error_path
+    ~query:(module Queue.History)
+    ~create_layout:General.create_tenant_layout
+    req
+  @@ fun (Pool_context.{ database_label; _ } as context) query ->
+  let open Utils.Lwt_result.Infix in
+  let* contact = Contact.find database_label contact_id in
+  let%lwt messages =
+    Queue.History.query_by_entity
+      ~query
+      database_label
+      (Contact.Id.to_common contact_id)
+  in
+  let open Page.Admin in
+  (if HttpUtils.Htmx.is_hx_request req
+   then
+     MessageHistory.list context (Contact.message_history_url contact) messages
+   else Contact.message_history context contact messages)
+  |> Lwt_result.return
+;;
+
 module Tags = Admin_contacts_tags
 
 module Access : sig
@@ -378,6 +404,7 @@ module Access : sig
   val external_data_ids : Rock.Middleware.t
   val delete_answer : Rock.Middleware.t
   val promote : Rock.Middleware.t
+  val message_history : Rock.Middleware.t
 end = struct
   include Helpers.Access
   module ContactCommand = Cqrs_command.Contact_command
@@ -436,4 +463,8 @@ end = struct
   ;;
 
   let promote = Admin.Guard.Access.create |> Guardian.validate_admin_entity
+
+  let message_history =
+    Queue.Guard.Access.index |> Guardian.validate_admin_entity
+  ;;
 end

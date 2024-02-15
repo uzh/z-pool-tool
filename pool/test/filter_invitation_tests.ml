@@ -104,6 +104,7 @@ let invitation ~experiment ~contacts =
                 ~recipient:"recipient"
                 ~subject:"subject"
                 "body"
+              |> Email.create_job
               |> Result.ok)
         ; mailing = None
         })

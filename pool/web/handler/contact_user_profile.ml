@@ -149,23 +149,19 @@ let update_email req =
          | None -> send_verification_mail None
          | Some user ->
            let change_attempt_notification () =
-             Message_template.ContactEmailChangeAttempt.create
-               database_label
-               tenant
-               user
+             Message_template.ContactEmailChangeAttempt.create tenant user
            in
            (match%lwt Admin.user_is_admin database_label user with
             | true ->
               let* notification = change_attempt_notification () in
-              Lwt_result.return
-                [ Email.Sent (notification, None) |> Pool_event.email ]
+              Lwt_result.return [ Email.Sent notification |> Pool_event.email ]
             | false ->
               let* contact = Contact.find_by_user database_label user in
               (match contact.Contact.email_verified with
                | Some _ ->
                  let* notification = change_attempt_notification () in
                  Lwt_result.return
-                   [ Email.Sent (notification, None) |> Pool_event.email ]
+                   [ Email.Sent notification |> Pool_event.email ]
                | None -> send_verification_mail (Some contact)))
        in
        let%lwt () = Pool_event.handle_events ~tags database_label events in
@@ -192,7 +188,6 @@ let update_password req =
        let tenant = Pool_context.Tenant.get_tenant_exn req in
        let%lwt notification =
          Message_template.PasswordChange.create
-           database_label
            language
            tenant
            contact.Contact.user
@@ -249,6 +244,7 @@ let update_cell_phone req =
            database_label
            language
            tenant
+           contact
            cell_phone
            token
          |>> Text_message.Service.send database_label
@@ -342,6 +338,7 @@ let resend_token req =
            database_label
            language
            tenant
+           contact
            cell_phone
            verification_code
          |>> Text_message.Service.send database_label

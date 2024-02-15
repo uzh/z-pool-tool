@@ -4,6 +4,8 @@
   conformist
   database
   guard
+  email
+  i18n
   pool_common
   pool_database
   pool_tenant

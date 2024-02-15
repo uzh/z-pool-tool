@@ -197,7 +197,7 @@ let resend req =
     in
     let events =
       let open Cqrs_command.Invitation_command.Resend in
-      handle ~tags create_email { invitation; experiment } |> Lwt.return
+      handle ~tags create_email invitation |> Lwt.return
     in
     let handle events =
       let%lwt () =

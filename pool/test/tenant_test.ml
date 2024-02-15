@@ -8,7 +8,7 @@ module SmtpAuth = Email.SmtpAuth
 let fail_with = Test_utils.get_or_failwith
 
 module Data = struct
-  open Database.SeedAssets
+  open Seed.Assets
 
   module Asset = struct
     let styles = dummy_css () |> fun { id; _ } -> id

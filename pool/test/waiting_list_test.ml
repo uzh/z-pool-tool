@@ -8,7 +8,11 @@ let database_label = Test_utils.Data.database_label
 let create () =
   let open Waiting_list in
   let experiment = Model.create_public_experiment () in
-  let confirmation = Test_utils.Model.create_email () in
+  let confirmation =
+    Test_utils.Model.create_email_job
+      ?smtp_auth_id:(Experiment.Public.smtp_auth_id experiment)
+      ()
+  in
   let experiment =
     Experiment.(
       true
@@ -24,7 +28,7 @@ let create () =
   let expected =
     Ok
       [ Waiting_list.Created command |> Pool_event.waiting_list
-      ; Email.Sent (confirmation, None) |> Pool_event.email
+      ; Email.Sent confirmation |> Pool_event.email
       ]
   in
   Test_utils.check_result expected events
@@ -45,7 +49,11 @@ let delete () =
 let create_with_direct_registration_enabled () =
   let open Waiting_list in
   let experiment = Model.create_public_experiment () in
-  let confirmation = Test_utils.Model.create_email () in
+  let confirmation =
+    Test_utils.Model.create_email_job
+      ?smtp_auth_id:(Experiment.Public.smtp_auth_id experiment)
+      ()
+  in
   let experiment =
     Experiment.(
       false

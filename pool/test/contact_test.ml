@@ -43,6 +43,7 @@ let confirmation_mail contact =
     ; cc = []
     ; bcc = []
     }
+  |> Email.create_job
 ;;
 
 let sign_up_contact contact_info =
@@ -114,6 +115,7 @@ let verification_email (email_address, _, _, _, _) =
     ; cc = []
     ; bcc = []
     }
+  |> Email.create_job
 ;;
 
 let sign_up_not_allowed_suffix () =
@@ -199,7 +201,7 @@ let sign_up () =
     Ok
       [ Contact.Created contact |> Pool_event.contact
       ; Email.Created (email, token, user_id) |> Pool_event.email_verification
-      ; Email.Sent (verification_email, None) |> Pool_event.email
+      ; Email.Sent verification_email |> Pool_event.email
       ]
   in
   check_result expected events
@@ -272,7 +274,7 @@ let update_password () =
             |> Pool_common.Utils.get_or_failwith
           , new_password |> Pool_user.PasswordConfirmed.create )
         |> Pool_event.contact
-      ; Email.Sent (confirmation_mail, None) |> Pool_event.email
+      ; Email.Sent confirmation_mail |> Pool_event.email
       ]
   in
   check_result expected events
@@ -433,7 +435,7 @@ let request_email_validation () =
     Ok
       [ Email.Created (new_email, token, Contact.id contact)
         |> Pool_event.email_verification
-      ; Email.Sent (verification_email, None) |> Pool_event.email
+      ; Email.Sent verification_email |> Pool_event.email
       ]
   in
   check_result expected events
@@ -536,11 +538,11 @@ let accept_terms_and_conditions () =
 let should_not_send_registration_notification _ () =
   let database_label = Test_utils.Data.database_label in
   let%lwt () =
-    let contact_data = Seed.Contacts.create_contact 12 |> CCList.pure in
+    let contact_data = Test_seed.Contacts.create_contact 12 |> CCList.pure in
     let%lwt () =
-      Seed.Contacts.create ~contact_data Test_utils.Data.database_label
+      Test_seed.Contacts.create ~contact_data Test_utils.Data.database_label
     in
-    let%lwt contact = Seed.Contacts.find_contact_by_id database_label 12 in
+    let%lwt contact = Test_seed.Contacts.find_contact_by_id database_label 12 in
     let%lwt () =
       Sihl_email.
         { sender = "test@econ.uzh.ch"
@@ -552,6 +554,7 @@ let should_not_send_registration_notification _ () =
         ; cc = []
         ; bcc = []
         }
+      |> Email.create_job
       |> Cqrs_command.Contact_command.SendRegistrationAttemptNotifitacion.handle
            contact
       |> Test_utils.get_or_failwith

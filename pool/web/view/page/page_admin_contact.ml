@@ -369,20 +369,33 @@ let detail
       ~a:[ a_class [ "heading-3" ] ]
       Pool_common.[ Utils.nav_link_to_string language nav |> txt ]
   in
+  let buttons =
+    let contact_path = path contact in
+    let edit =
+      Format.asprintf "%s/edit" contact_path
+      |> Input.link_as_button
+           ~icon:Icon.Create
+           ~classnames:[ "small" ]
+           ~control:Pool_common.(language, Message.(Edit (Some Field.Contact)))
+    in
+    let messages =
+      let path =
+        Format.asprintf "%s/messages" contact_path |> Sihl.Web.externalize_path
+      in
+      a
+        ~a:[ a_class [ "btn small primary is-text has-icon" ]; a_href path ]
+        [ Icon.(to_html Mail)
+        ; txt
+            Pool_common.(Utils.nav_link_to_string language I18n.MessageHistory)
+        ]
+    in
+    div ~a:[ a_class [ "flexrow"; "flex-gap" ] ] [ messages; edit ]
+  in
   div
     ~a:[ a_class [ "trim"; "safety-margin"; "stack-lg" ] ]
     [ div
         ~a:[ a_class [ "flexrow"; "wrap"; "flex-gap"; "justify-between" ] ]
-        [ div [ heading_with_icons contact ]
-        ; contact
-          |> path
-          |> Format.asprintf "%s/edit"
-          |> Input.link_as_button
-               ~icon:Icon.Create
-               ~classnames:[ "small" ]
-               ~control:
-                 Pool_common.(language, Message.(Edit (Some Field.Contact)))
-        ]
+        [ div [ heading_with_icons contact ]; buttons ]
     ; personal_detail ?admin_comment ~custom_fields ~tags user language contact
     ; div
         [ subtitle Pool_common.I18n.ExternalDataIds
@@ -537,5 +550,30 @@ let external_data_ids { Pool_context.language; _ } contact external_data_ids =
             Pool_common.(Utils.nav_link_to_string language I18n.ExternalDataIds)
         ]
     ; table
+    ]
+;;
+
+let message_history_url contact =
+  Uri.of_string
+    (Format.asprintf
+       "/admin/contacts/%s/messages"
+       Contact.(contact |> id |> Id.value))
+;;
+
+let message_history ({ Pool_context.language; _ } as context) contact messages =
+  div
+    ~a:[ a_class [ "trim"; "safety-margin" ] ]
+    [ h1
+        ~a:[ a_class [ "heading-1" ] ]
+        [ txt
+            Pool_common.(
+              Utils.text_to_string
+                language
+                I18n.(MessageHistory (Contact.lastname_firstname contact)))
+        ]
+    ; Page_admin_message_history.list
+        context
+        (message_history_url contact)
+        messages
     ]
 ;;

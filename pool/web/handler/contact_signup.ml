@@ -83,6 +83,7 @@ let sign_up_create req =
              token
              firstname
              lastname
+             user_id
          in
          decoded
          |> handle
@@ -127,7 +128,6 @@ let sign_up_create req =
                  contact
                  |> Contact.user
                  |> Message_template.ContactRegistrationAttempt.create
-                      database_label
                       (CCOption.value
                          ~default:language
                          contact.Contact.language)

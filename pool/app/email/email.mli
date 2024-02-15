@@ -226,7 +226,16 @@ end
 type job =
   { email : Sihl.Contract.Email.t
   ; smtp_auth_id : SmtpAuth.Id.t option
+  ; message_history : Queue.History.create option
   }
+
+val job_message_history : job -> Queue.History.create option
+
+val create_job
+  :  ?smtp_auth_id:SmtpAuth.Id.t
+  -> ?message_history:Queue.History.create
+  -> Sihl.Contract.Email.t
+  -> job
 
 module Service : sig
   module Queue : Sihl.Contract.Queue.Sig
@@ -264,17 +273,8 @@ module Service : sig
     -> Pool_user.EmailAddress.t Lwt.t
 
   val intercept_prepare : job -> (job, Pool_common.Message.error) result
-
-  val dispatch
-    :  Pool_database.Label.t
-    -> Entity.email * SmtpAuth.Id.t option
-    -> unit Lwt.t
-
-  val dispatch_all
-    :  Pool_database.Label.t
-    -> (Entity.email * SmtpAuth.Id.t option) list
-    -> unit Lwt.t
-
+  val dispatch : Pool_database.Label.t -> job -> unit Lwt.t
+  val dispatch_all : Pool_database.Label.t -> job list -> unit Lwt.t
   val lifecycle : Sihl.Container.lifecycle
   val register : unit -> Sihl.Container.Service.t
 end
@@ -304,8 +304,8 @@ val equal_verification_event : verification_event -> verification_event -> bool
 val pp_verification_event : Format.formatter -> verification_event -> unit
 
 type event =
-  | Sent of (Sihl_email.t * SmtpAuth.Id.t option)
-  | BulkSent of (Sihl_email.t * SmtpAuth.Id.t option) list
+  | Sent of job
+  | BulkSent of job list
   | SmtpCreated of SmtpAuth.Write.t
   | SmtpEdited of SmtpAuth.t
   | SmtpDeleted of SmtpAuth.Id.t
@@ -316,5 +316,5 @@ val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
 val verification_event_name : verification_event -> string
-val sent : Sihl_email.t * SmtpAuth.Id.t option -> event
-val bulksent : (Sihl_email.t * SmtpAuth.Id.t option) list -> event
+val sent : job -> event
+val bulksent : job list -> event

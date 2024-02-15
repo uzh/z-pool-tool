@@ -330,9 +330,9 @@ let experiment_invitation_with_sender _ () =
     let[@warning "-4"] res =
       match events with
       | [ Pool_event.Invitation _
-        ; Pool_event.Email (Email.BulkSent [ (email, _) ])
+        ; Pool_event.Email (Email.BulkSent [ job ])
         ; Pool_event.Contact _
-        ] -> email.Sihl_email.sender
+        ] -> job.Email.email.Sihl_email.sender
       | _ -> failwith "Event missmatch"
     in
     Alcotest.(check string "succeeds" admin_email res);
@@ -356,7 +356,6 @@ let assignment_creation_with_sender _ () =
     let%lwt admin = Admin.find database_label admin_id ||> get_exn in
     let%lwt confirmation_email =
       Message_template.AssignmentConfirmation.prepare
-        database_label
         tenant
         contact
         experiment
@@ -365,7 +364,11 @@ let assignment_creation_with_sender _ () =
       ||> fun fnc -> fnc (Assignment.create contact)
     in
     Alcotest.(
-      check string "succeeds" admin_email confirmation_email.Sihl_email.sender)
+      check
+        string
+        "succeeds"
+        admin_email
+        confirmation_email.Email.email.Sihl_email.sender)
     |> Lwt.return
   in
   Lwt.return_unit

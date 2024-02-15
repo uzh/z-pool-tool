@@ -6,6 +6,7 @@
   pool_database
   pool_tenant
   pool_user
+  queue
   query
   service
   utils)

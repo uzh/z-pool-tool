@@ -297,11 +297,10 @@ module Reschedule : sig
     -> Session.t list
     -> Session.t
     -> Assignment.t list
-    -> Experiment.t
     -> (Contact.t
         -> Session.Start.t
         -> Session.Duration.t
-        -> (Sihl_email.t, Pool_common.Message.error) result)
+        -> (Email.job, Pool_common.Message.error) result)
     -> t
     -> (Pool_event.t list, Conformist.error_msg) result
 
@@ -332,7 +331,6 @@ end = struct
     follow_up_sessions
     session
     assignments
-    experiment
     create_message
     ({ start; duration; duration_unit } : t)
     =
@@ -351,8 +349,7 @@ end = struct
       let open Assignment in
       assignments
       |> CCList.map (fun ({ contact; _ } : t) ->
-        create_message contact start duration
-        >|= fun msg -> msg, experiment.Experiment.smtp_auth_id)
+        create_message contact start duration)
       |> CCResult.flatten_l
     in
     Ok
@@ -418,13 +415,12 @@ module Cancel : sig
   val handle
     :  ?tags:Logs.Tag.set
     -> Session.t list
-    -> Experiment.t
     -> (Contact.t * Assignment.t list) list
-    -> (t -> Contact.t -> (Sihl_email.t, Pool_common.Message.error) result)
+    -> (t -> Contact.t -> (Email.job, Pool_common.Message.error) result)
     -> (t
         -> Contact.t
         -> Pool_user.CellPhone.t
-        -> (Text_message.t, Pool_common.Message.error) result)
+        -> (Text_message.job, Pool_common.Message.error) result)
     -> Pool_common.NotifyVia.t list
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
@@ -437,7 +433,6 @@ end = struct
   let handle
     ?(tags = Logs.Tag.empty)
     sessions
-    experiment
     (assignments : (Contact.t * Assignment.t list) list)
     email_fn
     text_message_fn
@@ -464,9 +459,7 @@ end = struct
     let* notification_events =
       let open Pool_common.NotifyVia in
       let email_event contact =
-        email_fn reason contact
-        >|= fun msg ->
-        Email.sent (msg, experiment.Experiment.smtp_auth_id) |> Pool_event.email
+        email_fn reason contact >|= Email.sent >|= Pool_event.email
       in
       let text_msg_event contact phone_number =
         text_message_fn reason contact phone_number
@@ -627,11 +620,10 @@ module ResendReminders : sig
 
   val handle
     :  ?tags:Logs.Tag.set
-    -> (Assignment.t -> (Sihl_email.t, Pool_common.Message.error) result)
+    -> (Assignment.t -> (Email.job, Pool_common.Message.error) result)
        * (Assignment.t
           -> Pool_user.CellPhone.t
-          -> (Text_message.t, Pool_common.Message.error) result)
-    -> Experiment.t
+          -> (Text_message.job, Pool_common.Message.error) result)
     -> Session.t
     -> Assignment.t list
     -> t
@@ -649,7 +641,6 @@ end = struct
   let handle
     ?(tags = Logs.Tag.empty)
     (create_email, create_text_message)
-    experiment
     session
     assignments
     channel
@@ -657,11 +648,6 @@ end = struct
     Logs.info ~src (fun m -> m "Handle command ResendReminders" ~tags);
     let open Pool_common.Reminder.Channel in
     let open CCResult.Infix in
-    let create_email assignment =
-      assignment
-      |> create_email
-      >|= fun email -> email, experiment.Experiment.smtp_auth_id
-    in
     let* () = Session.reminder_resendable session in
     let* events =
       match channel with

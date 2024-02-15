@@ -43,6 +43,11 @@ let phone_nr =
   Alcotest.testable Pool_user.CellPhone.pp Pool_user.CellPhone.equal
 ;;
 
+let message_history_crate =
+  let open Queue.History in
+  Alcotest.testable pp_create equal_create
+;;
+
 (* Helper functions *)
 
 let setup_test () =
@@ -61,10 +66,10 @@ let get_or_failwith res =
 ;;
 
 let file_to_storage file =
-  let open Database.SeedAssets in
+  let open Seed.Assets in
   let stored_file =
     Sihl_storage.
-      { id = file.Database.SeedAssets.id
+      { id = file.Seed.Assets.id
       ; filename = file.filename
       ; filesize = file.filesize
       ; mime = file.mime
@@ -75,8 +80,8 @@ let file_to_storage file =
   Lwt.return_unit
 ;;
 
-let dummy_to_file (dummy : Database.SeedAssets.file) =
-  let open Database.SeedAssets in
+let dummy_to_file (dummy : Seed.Assets.file) =
+  let open Seed.Assets in
   let open Pool_common in
   let name = File.Name.create dummy.filename |> get_or_failwith in
   let filesize = File.Size.create dummy.filesize |> get_or_failwith in
@@ -290,11 +295,21 @@ module Model = struct
       "Hello"
   ;;
 
+  let create_email_job ?smtp_auth_id ?message_history () =
+    let email = create_email () in
+    Email.create_job ?smtp_auth_id ?message_history email
+  ;;
+
   let create_text_message
     ?(sender = Pool_tenant.Title.of_string "UAST")
     cell_phone
     =
     Text_message.render_and_create cell_phone sender ("Hello world", [])
+  ;;
+
+  let create_text_message_job ?sender ?message_history cell_phone =
+    let message = create_text_message ?sender cell_phone in
+    Text_message.create_job ?message_history message
   ;;
 
   let hour = Ptime.Span.of_int_s @@ (60 * 60)
@@ -466,6 +481,20 @@ module Model = struct
     ; plain_text = "Hello" |> PlainText.create |> exn
     ; sms_text = "Hello" |> SmsText.create |> exn
     }
+  ;;
+
+  let create_manual_message
+    ?(recipient = "foo@bar.com" |> Pool_user.EmailAddress.of_string)
+    ()
+    =
+    let open Message_template in
+    Message_template.ManualMessage.
+      { recipient
+      ; language = Pool_common.Language.En
+      ; email_subject = EmailSubject.of_string "subject"
+      ; email_text = EmailText.of_string "<p>hello</p>"
+      ; plain_text = PlainText.of_string "hellp"
+      }
   ;;
 end
 

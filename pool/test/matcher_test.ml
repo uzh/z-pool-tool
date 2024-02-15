@@ -10,16 +10,9 @@ let sort_events =
   CCList.stable_sort Pool_event.(fun a b -> CCString.compare (show a) (show b))
 ;;
 
-let expected_events
-  ({ Experiment.smtp_auth_id; _ } as experiment)
-  mailing
-  contacts
-  create_message
-  =
+let expected_events experiment mailing contacts create_message =
   let emails =
-    CCList.map create_message contacts
-    |> CCResult.(flatten_l %> get_exn)
-    |> CCList.map (fun msg -> msg, smtp_auth_id)
+    CCList.map create_message contacts |> CCResult.(flatten_l %> get_exn)
   in
   let events =
     [ Invitation.(Created { contacts; mailing; experiment })
@@ -49,6 +42,7 @@ let create_message ?sender (_ : Contact.t) =
     ; cc = []
     ; bcc = []
     }
+  |> Email.create_job
   |> CCResult.return
 ;;
 
@@ -159,9 +153,7 @@ open Utils.Lwt_result.Infix
 
 let expected_create_events contacts mailing experiment invitation_mail =
   let emails =
-    contacts
-    |> CCList.map
-         CCFun.(invitation_mail %> get_or_failwith %> fun mail -> mail, None)
+    contacts |> CCList.map CCFun.(invitation_mail %> get_or_failwith)
   in
   [ Invitation.(Created { contacts; mailing = Some mailing; experiment })
     |> Pool_event.invitation
@@ -192,8 +184,7 @@ let expected_resend_events contacts mailing experiment invitation_mail =
     [ Invitation.Resent (invitation, Some mailing.Mailing.id)
       |> Pool_event.invitation
     ; Email.Sent
-        ( invitation_mail invitation.Invitation.contact |> get_or_failwith
-        , experiment.Experiment.smtp_auth_id )
+        (invitation_mail invitation.Invitation.contact |> get_or_failwith)
       |> Pool_event.email
     ])
   |> Lwt.return

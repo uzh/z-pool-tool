@@ -36,7 +36,6 @@ let assignment_effect action uuid =
 ;;
 
 let assignment_creation_and_confirmation_events
-  experiment
   confirmation_email
   session
   follow_up_sessions
@@ -54,10 +53,7 @@ let assignment_creation_and_confirmation_events
   in
   let main_assignment = create contact in
   let confirmation_email = confirmation_email main_assignment in
-  let email_event =
-    Email.Sent (confirmation_email, experiment.Experiment.smtp_auth_id)
-    |> Pool_event.email
-  in
+  let email_event = Email.Sent confirmation_email |> Pool_event.email in
   let create_events =
     Created (main_assignment, session.Session.id) :: follow_up_events
     |> CCList.map Pool_event.assignment
@@ -79,7 +75,7 @@ module Create : sig
     :  ?tags:Logs.Tag.set
     -> ?direct_enrollment_by_admin:bool
     -> t
-    -> (Assignment.t -> Sihl_email.t)
+    -> (Assignment.t -> Email.job)
     -> bool
     -> (Pool_event.t list, Pool_common.Message.error) result
 
@@ -118,7 +114,6 @@ end = struct
       in
       let* creation_events =
         assignment_creation_and_confirmation_events
-          experiment
           confirmation_email
           session
           follow_up_sessions
@@ -177,8 +172,7 @@ module CreateFromWaitingList : sig
   include Common.CommandSig
 
   type t =
-    { experiment : Experiment.t
-    ; session : Session.t
+    { session : Session.t
     ; follow_up_sessions : Session.t list
     ; waiting_list : Waiting_list.t
     ; already_enrolled : bool
@@ -187,14 +181,13 @@ module CreateFromWaitingList : sig
   val handle
     :  ?tags:Logs.Tag.set
     -> t
-    -> (Assignment.t -> Sihl_email.t)
+    -> (Assignment.t -> Email.job)
     -> (Pool_event.t list, Pool_common.Message.error) result
 
   val effects : Experiment.Id.t -> Pool_common.Id.t -> Guard.ValidationSet.t
 end = struct
   type t =
-    { experiment : Experiment.t
-    ; session : Session.t
+    { session : Session.t
     ; follow_up_sessions : Session.t list
     ; waiting_list : Waiting_list.t
     ; already_enrolled : bool
@@ -202,8 +195,7 @@ end = struct
 
   let handle
     ?(tags = Logs.Tag.empty)
-    ({ experiment; session; follow_up_sessions; waiting_list; already_enrolled } :
-      t)
+    ({ session; follow_up_sessions; waiting_list; already_enrolled } : t)
     confirmation_email
     =
     let all_sessions = session :: follow_up_sessions in
@@ -220,7 +212,6 @@ end = struct
       let contact = waiting_list.Waiting_list.contact in
       let* creation_events =
         assignment_creation_and_confirmation_events
-          experiment
           confirmation_email
           session
           follow_up_sessions
@@ -356,11 +347,10 @@ module SendReminder : sig
 
   val handle
     :  ?tags:Logs.Tag.set
-    -> (Assignment.t -> (Sihl_email.t, Pool_common.Message.error) result)
+    -> (Assignment.t -> (Email.job, Pool_common.Message.error) result)
        * (Assignment.t
           -> Pool_user.CellPhone.t
-          -> (Text_message.t, Pool_common.Message.error) result)
-    -> Experiment.t
+          -> (Text_message.job, Pool_common.Message.error) result)
     -> Session.t
     -> Assignment.t
     -> t
@@ -378,7 +368,6 @@ end = struct
   let handle
     ?(tags = Logs.Tag.empty)
     (create_email, create_text_message)
-    experiment
     session
     ({ Assignment.contact; _ } as assignment)
     channel
@@ -386,11 +375,6 @@ end = struct
     Logs.info ~src (fun m -> m "Handle command ResendReminders" ~tags);
     let open Pool_common.Reminder in
     let open CCResult.Infix in
-    let create_email assignment =
-      assignment
-      |> create_email
-      >|= fun email -> email, experiment.Experiment.smtp_auth_id
-    in
     let* () = Assignment.reminder_sendable session assignment in
     let* msg_event =
       let open Channel in
@@ -447,7 +431,7 @@ module SwapSession : sig
     -> current_session:Session.t
     -> new_session:Session.t
     -> Assignment.t
-    -> (Sihl_email.t * Email.SmtpAuth.Id.t option) option
+    -> Email.job option
     -> (Pool_event.t list, Pool_common.Message.error) result
 
   val decode

@@ -17,8 +17,13 @@ let get_experiment experiment_id =
   experiment_id |> Experiment.find database_label |> Lwt.map get_exn
 ;;
 
-let confirmation_mail (_ : Assignment.t) = Common_test.Data.create_email ()
-let invitation_mail (_ : Contact.t) = Ok (Common_test.Data.create_email ())
+let confirmation_mail (_ : Assignment.t) =
+  Common_test.Data.create_email () |> Email.create_job
+;;
+
+let invitation_mail (_ : Contact.t) =
+  Common_test.Data.create_email () |> Email.create_job |> CCResult.return
+;;
 
 let find_assignment_by_contact_and_session contact_id session_id =
   let open Assignment in
@@ -218,7 +223,7 @@ module CancelSession = struct
       ()
   ;;
 
-  let test_cancellation experiment contact_id initial_nr_assignments test_cases =
+  let test_cancellation contact_id initial_nr_assignments test_cases =
     let%lwt contact = get_contact contact_id in
     let test_result expected_nr_assignments =
       let%lwt res = get_contact contact_id in
@@ -254,9 +259,8 @@ module CancelSession = struct
         let reason = "Some reason" |> Session.CancellationReason.of_string in
         handle
           (session :: follow_ups)
-          experiment
           assignments
-          (fun _ _ -> Ok email)
+          (fun _ _ -> Ok (Email.create_job email))
           Session_test.create_cancellation_text_message
           [ Pool_common.NotifyVia.Email ]
           reason
@@ -269,7 +273,7 @@ module CancelSession = struct
   let without_followups _ () =
     let%lwt contact, experiment, session, _ = initialize () in
     let%lwt () = sign_up_for_session experiment contact session.Session.id in
-    test_cancellation experiment (Contact.id contact) 1 [ session, 0 ]
+    test_cancellation (Contact.id contact) 1 [ session, 0 ]
   ;;
 
   let follow_up _ () =
@@ -280,11 +284,7 @@ module CancelSession = struct
       followup_session |> CCOption.get_exn_or "Follow up session is required"
     in
     let%lwt () = sign_up_for_session experiment contact session.Session.id in
-    test_cancellation
-      experiment
-      (Contact.id contact)
-      2
-      [ followup_session, 1; session, 0 ]
+    test_cancellation (Contact.id contact) 2 [ followup_session, 1; session, 0 ]
   ;;
 
   let main_with_follow_up _ () =
@@ -292,7 +292,7 @@ module CancelSession = struct
       initialize ~followup_session_id:(Session.Id.create ()) ()
     in
     let%lwt () = sign_up_for_session experiment contact session.Session.id in
-    test_cancellation experiment (Contact.id contact) 2 [ session, 0 ]
+    test_cancellation (Contact.id contact) 2 [ session, 0 ]
   ;;
 end
 

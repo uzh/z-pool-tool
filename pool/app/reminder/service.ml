@@ -39,11 +39,7 @@ let create_reminder_text_messages pool tenant sys_languages session experiment =
 let create_email_events data =
   data
   |> CCList.fold_left
-       (fun (session_events, emails)
-         (session, { Experiment.smtp_auth_id; _ }, reminders) ->
-         let reminders =
-           reminders |> CCList.map (fun email -> email, smtp_auth_id)
-         in
+       (fun (session_events, emails) (session, reminders) ->
          ( (Session.EmailReminderSent session |> Pool_event.session)
            :: session_events
          , reminders @ emails ))
@@ -85,7 +81,7 @@ let create_reminder_events
           sys_languages
           session
           experiment
-        >|+ fun emails -> session, experiment, emails)
+        >|+ fun emails -> session, emails)
       email_reminders
     ||> CCResult.flatten_l
     >|+ create_email_events

@@ -1,4 +1,5 @@
 module SmtpAuth = Entity.SmtpAuth
+module History = Queue.History
 module Queue = Sihl_queue.MariaDb
 
 module Cache = struct
@@ -76,6 +77,18 @@ let console () =
   CCOption.get_or
     ~default:(Sihl.Configuration.is_development ())
     (Sihl.Configuration.read_bool "EMAIL_CONSOLE")
+;;
+
+let parse_job_json str =
+  try Ok (str |> Yojson.Safe.from_string |> Entity.job_of_yojson) with
+  | Yojson.Json_error job ->
+    Logs.err ~src (fun m ->
+      m
+        ~tags
+        "Serialized email string was NULL, can not deserialize email. Please \
+         fix the string manually and reset the job instance. Error: %s"
+        job);
+    Error "Invalid serialized email string received"
 ;;
 
 let redirected_email
@@ -277,7 +290,7 @@ let stop () = Lwt.return_unit
 let lifecycle =
   Sihl.Container.create_lifecycle
     Sihl.Contract.Email.name
-    ~dependencies:(fun () -> [ Sihl.Database.lifecycle ])
+    ~dependencies:(fun () -> [ Database.lifecycle ])
     ~start
     ~stop
 ;;
@@ -291,7 +304,7 @@ module Job = struct
   let send =
     let open CCFun in
     let open Utils.Lwt_result.Infix in
-    let handle ?ctx { Entity.email; smtp_auth_id } =
+    let handle ?ctx { Entity.email; smtp_auth_id; _ } =
       let database_label =
         let open CCOption in
         ctx
@@ -304,18 +317,7 @@ module Job = struct
         (Printexc.to_string %> Lwt.return_error)
     in
     let encode = Entity.yojson_of_job %> Yojson.Safe.to_string in
-    let decode email =
-      try Ok (email |> Yojson.Safe.from_string |> Entity.job_of_yojson) with
-      | Yojson.Json_error msg ->
-        Logs.err ~src (fun m ->
-          m
-            ~tags
-            "Serialized email string was NULL, can not deserialize email. \
-             Please fix the string manually and reset the job instance. Error: \
-             %s"
-            msg);
-        Error "Invalid serialized email string received"
-    in
+    let decode = parse_job_json in
     Sihl.Contract.Queue.create_job
       handle
       ~max_tries:10
@@ -326,29 +328,42 @@ module Job = struct
   ;;
 end
 
-let dispatch database_label (email, smtp_auth_id) =
+let callback database_label (job_instance : Sihl_queue.instance) =
+  let open Entity in
+  let job =
+    parse_job_json job_instance.Sihl_queue.input |> CCResult.get_or_failwith
+  in
+  match job.message_history with
+  | None -> Lwt.return_unit
+  | Some message_history ->
+    History.create_from_queue_instance
+      database_label
+      message_history
+      job_instance
+;;
+
+let dispatch database_label ({ Entity.email; _ } as job) =
+  let callback = callback database_label in
   Logs.debug ~src (fun m ->
     m
       ~tags:(Pool_database.Logger.Tags.create database_label)
       "Dispatch email to %s"
       email.Sihl_email.recipient);
   Queue.dispatch
+    ~callback
     ~ctx:(Pool_database.to_ctx database_label)
-    (Entity.create_job email smtp_auth_id
-     |> intercept_prepare
-     |> Pool_common.Utils.get_or_failwith)
+    (job |> intercept_prepare |> Pool_common.Utils.get_or_failwith)
     Job.send
 ;;
 
-let dispatch_all database_label jobs =
+let dispatch_all database_label (jobs : Entity.job list) =
+  let callback = callback database_label in
   let recipients, jobs =
     jobs
     |> CCList.fold_left
-         (fun (recipients, jobs) (email, smtp_auth_id) ->
+         (fun (recipients, jobs) ({ Entity.email; _ } as job) ->
            let job =
-             Entity.create_job email smtp_auth_id
-             |> intercept_prepare
-             |> Pool_common.Utils.get_or_failwith
+             job |> intercept_prepare |> Pool_common.Utils.get_or_failwith
            in
            email.Sihl_email.recipient :: recipients, job :: jobs)
          ([], [])
@@ -358,5 +373,9 @@ let dispatch_all database_label jobs =
       ~tags:(Pool_database.Logger.Tags.create database_label)
       "Dispatch email to %s"
       ([%show: string list] recipients));
-  Queue.dispatch_all ~ctx:(Pool_database.to_ctx database_label) jobs Job.send
+  Queue.dispatch_all
+    ~callback
+    ~ctx:(Pool_database.to_ctx database_label)
+    jobs
+    Job.send
 ;;

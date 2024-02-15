@@ -132,7 +132,12 @@ let pp_email = Sihl.Contract.Email.pp
 type job =
   { email : email
   ; smtp_auth_id : SmtpAuth.Id.t option [@yojson.option]
+  ; message_history : Queue.History.create option [@yojson.option]
   }
 [@@deriving eq, show, yojson]
 
-let create_job email smtp_auth_id = { email; smtp_auth_id }
+let job_message_history { message_history; _ } = message_history
+
+let create_job ?smtp_auth_id ?message_history email =
+  { email; smtp_auth_id; message_history }
+;;

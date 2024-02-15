@@ -1,7 +1,7 @@
 (library
  (name contact)
  (libraries
-  email
+  i18n
   guard
   pool_common
   pool_user
