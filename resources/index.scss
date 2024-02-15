@@ -17,6 +17,17 @@ h1,
     word-wrap: break-word;
 }
 
+.word-wrap-break {
+    -ms-word-break: break-word;
+    
+    /* Non standard for webkit */
+    word-break: break-word;
+    -webkit-hyphens: auto;
+    -moz-hyphens: auto;
+    -ms-hyphens: auto;
+    hyphens: auto;
+}
+
 .color-orange,
 [class*="orange-on-"] {
     color: $orange;

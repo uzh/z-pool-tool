@@ -24,12 +24,14 @@ let show req =
 
 let detail req =
   let result ({ Pool_context.database_label; _ } as context) =
+    Lwt_result.map_error (fun err -> err, "/admin/settings/queue")
+    @@
     let id = job_id req in
-    Queue.find database_label id
-    >|+ Page.Admin.Settings.Queue.detail context
-    >>= General.create_tenant_layout req ~active_navigation:base_path context
+    let* queue_instance = Queue.find database_label id in
+    let* job = Command.parse_instance_job queue_instance |> Lwt_result.lift in
+    Page.Admin.Settings.Queue.detail context queue_instance job
+    |> General.create_tenant_layout req ~active_navigation:base_path context
     >|+ Sihl.Web.Response.of_html
-    >|- fun err -> err, "/admin/settings/queue"
   in
   result |> HttpUtils.extract_happy_path ~src req
 ;;

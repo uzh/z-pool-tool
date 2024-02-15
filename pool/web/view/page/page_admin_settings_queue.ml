@@ -73,11 +73,45 @@ let data_table Pool_context.{ language; _ } (queued_jobs, query) =
     queued_jobs
 ;;
 
-let job_detail
+let render_email_html html =
+  let style = "<style>section { word-break: break-all; } </style>" in
+  let html =
+    Format.asprintf
+      "<template shadowrootmode=\"closed\">%s %s</template>"
+      html
+      style
+  in
+  div ~a:[ a_class [ "border" ] ] Unsafe.[ data html ]
+;;
+
+let[@warning "-27"] email_job_instance_detail { Email.email; _ } =
+  let { Sihl_email.sender; recipient; subject; text; html; _ } = email in
+  let open Message in
+  [ Field.Sender, txt sender
+  ; Field.Recipient, txt recipient
+  ; Field.EmailSubject, txt subject
+  ; Field.EmailText, html |> CCOption.map_or ~default:(txt "") render_email_html
+  ; ( Field.PlainText
+    , div
+        ~a:[ a_class [ "word-wrap-break" ] ]
+        [ HttpUtils.add_line_breaks text ] )
+  ]
+;;
+
+let[@warning "-27"] text_message_job_instance_detail { Text_message.message; _ }
+  =
+  let open Text_message in
+  let { recipient; sender; text } = message in
+  let open Message in
+  [ Field.Recipient, txt (Pool_user.CellPhone.value recipient)
+  ; Field.Sender, txt (Pool_tenant.Title.value sender)
+  ; Field.SmsText, Content.value text |> HttpUtils.add_line_breaks
+  ]
+;;
+
+let queue_instance_detail
   language
-  { Sihl_queue.name
-  ; input
-  ; tries
+  { Sihl_queue.tries
   ; next_run_at
   ; max_tries
   ; status
@@ -86,70 +120,46 @@ let job_detail
   ; tag
   ; _
   }
+  job
   =
   let default = "-" in
   let vertical_table =
     Component.Table.vertical_table
-      ~classnames:[ "layout-fixed" ]
       ~align_top:true
+      ~th_class:[ "w-2" ]
       `Striped
       language
   in
   let job_detail =
+    match job with
+    | `EmailJob email -> email_job_instance_detail email
+    | `TextMessageJob msg -> text_message_job_instance_detail msg
+  in
+  let queue_instance_detail =
     let open Message in
-    [ Field.Name, name |> txt
-    ; ( Field.Input
-      , input
-        |> Yojson.Safe.from_string
-        |> Yojson.Safe.pretty_to_string
-        |> HttpUtils.add_line_breaks )
-    ; Field.Tag, tag |> CCOption.value ~default |> txt
-    ; Field.Tries, tries |> CCInt.to_string |> txt
-    ; Field.MaxTries, max_tries |> CCInt.to_string |> txt
-    ; Field.Status, status |> Sihl.Contract.Queue.show_instance_status |> txt
-    ; ( Field.LastErrorAt
-      , last_error_at |> CCOption.map_or ~default formatted_date_time |> txt )
-    ; Field.LastError, last_error |> CCOption.value ~default |> txt
-    ; Field.NextRunAt, next_run_at |> formatted_date_time |> txt
-    ]
+    job_detail
+    @ [ Field.Tag, tag |> CCOption.value ~default |> txt
+      ; Field.Tries, tries |> CCInt.to_string |> txt
+      ; Field.MaxTries, max_tries |> CCInt.to_string |> txt
+      ; Field.Status, status |> Sihl.Contract.Queue.show_instance_status |> txt
+      ; ( Field.LastErrorAt
+        , last_error_at |> CCOption.map_or ~default formatted_date_time |> txt )
+      ; Field.LastError, last_error |> CCOption.value ~default |> txt
+      ; Field.NextRunAt, next_run_at |> formatted_date_time |> txt
+      ]
     |> vertical_table
   in
-  div [ job_detail ]
-;;
-
-let layout ?buttons language children =
-  let buttons_html =
-    buttons
-    |> CCOption.map_or
-         ~default:(txt "")
-         (div ~a:[ a_class [ "flexrow"; "flex-gap" ] ])
-  in
-  div
-    ~a:[ a_class [ "trim"; "safety-margin" ] ]
-    [ div
-        ~a:
-          [ a_class
-              [ "flexrow"
-              ; "justify-between"
-              ; "align-center"
-              ; "flex-gap"
-              ; "flexcolumn-mobile"
-              ]
-          ]
-        [ div
-            [ h1
-                ~a:[ a_class [ "heading-1" ] ]
-                [ txt Pool_common.(Utils.nav_link_to_string language I18n.Queue)
-                ]
-            ]
-        ; buttons_html
-        ]
-    ; div ~a:[ a_class [ "gap-lg" ] ] [ children ]
-    ]
+  div [ queue_instance_detail ]
 ;;
 
 let index (Pool_context.{ language; _ } as context) job =
-  data_table context job |> layout language
+  let title =
+    h1
+      ~a:[ a_class [ "heading-1" ] ]
+      [ txt Pool_common.(Utils.nav_link_to_string language I18n.Queue) ]
+  in
+  let html = data_table context job in
+  div ~a:[ a_class [ "gap-lg"; "trim"; "safety-margin" ] ] [ title; html ]
 ;;
 
 let resend_form Pool_context.{ csrf; language; _ } job =
@@ -170,11 +180,47 @@ let resend_form Pool_context.{ csrf; language; _ } job =
     ]
 ;;
 
-let detail Pool_context.({ language; _ } as context) job =
-  let buttons =
-    if Queue.resendable job |> CCResult.is_ok
-    then Some [ resend_form context job ]
-    else None
+let detail Pool_context.({ language; _ } as context) instance job =
+  let buttons_html =
+    if Queue.resendable instance |> CCResult.is_ok
+    then
+      div
+        ~a:[ a_class [ "flexrow"; "flex-gap" ] ]
+        [ resend_form context instance ]
+    else txt ""
   in
-  job_detail language job |> layout ?buttons language
+  let html =
+    div
+      ~a:[ a_class [ "gap-lg" ] ]
+      [ queue_instance_detail language instance job ]
+  in
+  let title =
+    let { Sihl_queue.name; last_error_at; _ } = instance in
+    div
+      ~a:
+        [ a_class
+            [ "flexrow"
+            ; "justify-between"
+            ; "align-center"
+            ; "flex-gap"
+            ; "flexcolumn-mobile"
+            ]
+        ]
+      [ div
+          [ h1
+              ~a:[ a_class [ "heading-1" ] ]
+              [ Format.asprintf
+                  "%s%s"
+                  name
+                  (last_error_at
+                   |> CCOption.map_or
+                        ~default:""
+                        CCFun.(formatted_date_time %> Format.asprintf " (%s)"))
+                |> txt
+              ]
+          ]
+      ; buttons_html
+      ]
+  in
+  div ~a:[ a_class [ "gap-lg"; "trim"; "safety-margin" ] ] [ title; html ]
 ;;

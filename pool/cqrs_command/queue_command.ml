@@ -33,19 +33,23 @@ let update_text_message_job ?contact (Text_message.{ message; _ } as job) =
   { job with message }
 ;;
 
-let update_job ?contact ?experiment { Sihl_queue.name; input; _ } =
+let parse_instance_job { Sihl_queue.name; input; _ } =
   let open Queue.JobName in
   (try Ok (name |> read) with
    | _ -> Error Message.(Invalid Field.Input))
   >>= function
-  | SendEmail ->
-    Email.parse_job_json input
-    >|= update_email_job ?contact ?experiment
-    >|= fun job -> `email job
+  | SendEmail -> Email.parse_job_json input >|= fun job -> `EmailJob job
   | SendTextMessage ->
-    Text_message.parse_job_json input
-    >|= update_text_message_job ?contact
-    >|= fun job -> `textmessage job
+    Text_message.parse_job_json input >|= fun job -> `TextMessageJob job
+;;
+
+let update_job ?contact ?experiment instance =
+  instance
+  |> parse_instance_job
+  >|= function
+  | `EmailJob job -> `EmailJob (job |> update_email_job ?contact ?experiment)
+  | `TextMessageJob job ->
+    `TextMessageJob (job |> update_text_message_job ?contact)
 ;;
 
 module Resend : sig
@@ -64,8 +68,9 @@ end = struct
     job
     |> update_job ?contact ?experiment
     >|= function
-    | `email job -> [ Email.Sent job |> Pool_event.email ]
-    | `textmessage job -> [ Text_message.Sent job |> Pool_event.text_message ]
+    | `EmailJob job -> [ Email.Sent job |> Pool_event.email ]
+    | `TextMessageJob job ->
+      [ Text_message.Sent job |> Pool_event.text_message ]
   ;;
 
   let effects = Queue.Guard.Access.resend
