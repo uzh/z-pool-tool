@@ -137,11 +137,11 @@ let queue_instance_detail
   in
   let queue_instance_detail =
     let open Message in
-    job_detail
+    ((Field.Status, strong [ status |> Queue.Status.sihl_queue_to_human |> txt ])
+     :: job_detail)
     @ [ Field.Tag, tag |> CCOption.value ~default |> txt
       ; Field.Tries, tries |> CCInt.to_string |> txt
       ; Field.MaxTries, max_tries |> CCInt.to_string |> txt
-      ; Field.Status, status |> Sihl.Contract.Queue.show_instance_status |> txt
       ; ( Field.LastErrorAt
         , last_error_at |> CCOption.map_or ~default formatted_date_time |> txt )
       ; Field.LastError, last_error |> CCOption.value ~default |> txt
