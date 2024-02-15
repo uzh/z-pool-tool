@@ -290,7 +290,7 @@ let stop () = Lwt.return_unit
 let lifecycle =
   Sihl.Container.create_lifecycle
     Sihl.Contract.Email.name
-    ~dependencies:(fun () -> [ Sihl.Database.lifecycle ])
+    ~dependencies:(fun () -> [ Database.lifecycle ])
     ~start
     ~stop
 ;;
