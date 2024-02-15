@@ -1,5 +1,7 @@
 module Key : sig
   type t =
+    | ActorPermissionCreateHint
+    | ActorPermissionHint
     | AssistantRoleHint
     | CreditsText
     | ExperimenterRoleHint

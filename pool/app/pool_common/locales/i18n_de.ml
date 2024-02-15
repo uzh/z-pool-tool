@@ -156,6 +156,7 @@ Sie kommen für mehr Experimente in Frage, umso kompletter Ihr Profil ist.|}
 ;;
 
 let nav_link_to_string = function
+  | ActorPermissions -> "Persönliche Berechtigungen"
   | Admins -> "Administratoren"
   | Assignments -> "Anmeldungen"
   | ContactInformation -> "Kontaktangaben"
@@ -628,6 +629,7 @@ let confirmable_to_string confirmable =
      , "publizieren"
      , Some "Sie werden die Option nicht mehr löschen können." )
    | ReactivateAccount -> "den Account", "reaktivieren", None
+   | RemovePermission -> "die Erlaubnis", "löschen", None
    | RemoveRule -> "die Regel", "löschen", None
    | RemoveTag -> "den Tag", "entfernen", None
    | RescheduleSession -> "die Session", "verschieben", None

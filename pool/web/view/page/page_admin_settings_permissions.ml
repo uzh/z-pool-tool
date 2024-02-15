@@ -19,9 +19,9 @@ let list Pool_context.{ language; csrf; guardian; _ } rules query =
   let url = Uri.of_string (role_permission_path ()) in
   let data_table = Component.DataTable.create_meta url query language in
   let cols =
-    [ `column Guard.column_role
-    ; `column Guard.column_action
-    ; `column Guard.column_model
+    [ `column Guard.RolePermission.column_role
+    ; `column Guard.RolePermission.column_action
+    ; `column Guard.RolePermission.column_model
     ; `empty
     ]
   in

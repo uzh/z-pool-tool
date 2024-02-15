@@ -38,6 +38,7 @@ let query_results to_item items =
 ;;
 
 let multi_search
+  ?(query_field = query_field)
   language
   field
   multi_search
@@ -315,5 +316,49 @@ module RoleTarget = struct
       field
       (Dynamic (dynamic_search (hx_url admin_id) `Post))
       ()
+  ;;
+end
+
+module Admin = struct
+  open Admin
+
+  let field = Field.Admin
+  let placeholder = "Search by admin name or email"
+
+  let to_label admin =
+    Format.asprintf
+      "%s (%s)"
+      (admin |> Admin.user |> Pool_user.user_fullname)
+      (admin |> Admin.email_address |> Pool_user.EmailAddress.value)
+  ;;
+
+  let to_value = Admin.id %> Id.value
+
+  let hx_url admin_id =
+    Format.asprintf "/admin/admins/%s/search-role" Admin.(Id.value admin_id)
+  ;;
+
+  let dynamic_search ?(selected = []) hx_url hx_method =
+    { hx_url; hx_method; to_label; to_value; selected }
+  ;;
+
+  let create ?selected ~disabled language =
+    let dynamic_search =
+      dynamic_search ?selected "/admin/admins/search" `Post
+    in
+    multi_search
+      ~query_field:Field.(SearchOf Admin)
+      ~disabled
+      ~is_filter:true
+      ~tag_name:Pool_common.Message.Field.(ValueOf Admin)
+      language
+      field
+      (Dynamic dynamic_search)
+      ()
+  ;;
+
+  let query_results language items =
+    CCList.map (default_query_results_item ~to_label ~to_value) items
+    |> with_empty_message language
   ;;
 end

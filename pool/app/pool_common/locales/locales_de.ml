@@ -1,6 +1,9 @@
 open Entity_message
 
 let rec field_to_string =
+  let combine one two =
+    CCString.concat ": " [ field_to_string one; field_to_string two ]
+  in
   let open Field in
   function
   | Action -> "Aktion"
@@ -211,6 +214,7 @@ let rec field_to_string =
   | ScheduledTime -> "Geplante Zeit"
   | ScheduledTimeSpan -> "Wiederholungs Interval"
   | Search -> "Suche"
+  | SearchOf field -> combine Search field
   | SecondReminder -> "Zweite Erinnerung"
   | SentAt -> "Verschickt am"
   | Session -> "Session"
@@ -260,8 +264,7 @@ let rec field_to_string =
   | Time -> "Uhrzeit"
   | TimeSpan -> "Zeitspanne"
   | TimeUnit -> "Zeiteinheit"
-  | TimeUnitOf field ->
-    Format.asprintf "Zeiteinheit: %s" (field_to_string field)
+  | TimeUnitOf field -> combine TimeUnit field
   | Title -> "Titel"
   | ToHandle -> "zu bearbeiten"
   | Token -> "Token"
@@ -273,6 +276,7 @@ let rec field_to_string =
   | User -> "Benutzer"
   | Validation -> "Validierung"
   | Value -> "Wert"
+  | ValueOf field -> combine Value field
   | Verified -> "Verifiziert"
   | Version -> "Version"
   | Virtual -> "Virtuell"

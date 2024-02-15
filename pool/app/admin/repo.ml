@@ -51,7 +51,7 @@ module Sql = struct
 
   let find_request caqti_type =
     {sql|
-      WHERE 
+      WHERE
         user_users.uuid = UNHEX(REPLACE(?, '-', ''))
     |sql}
     |> find_request_sql
@@ -69,7 +69,7 @@ module Sql = struct
 
   let find_by_email_request caqti_type =
     {sql|
-      WHERE 
+      WHERE
         user_users.email = ?
     |sql}
     |> find_request_sql
@@ -277,6 +277,56 @@ module Sql = struct
       let (module Connection : Caqti_lwt.CONNECTION) = connection in
       Connection.exec request input)
     |> Utils.Database.exec_as_transaction (Pool_database.Label.value pool)
+  ;;
+
+  let search_by_name_and_email_request ?conditions limit =
+    let default_contidion =
+      {sql|
+        (user_users.email LIKE ? OR CONCAT(user_users.given_name, ' ', user_users.name, ' ', user_users.given_name) LIKE ? )
+      |sql}
+    in
+    let where =
+      CCOption.map_or
+        ~default:default_contidion
+        (Format.asprintf "%s AND %s" default_contidion)
+        conditions
+    in
+    Format.asprintf
+      "SELECT %s FROM pool_admins %s WHERE %s LIMIT %i"
+      (sql_select_columns |> CCString.concat ", ")
+      joins
+      where
+      limit
+  ;;
+
+  let search_by_name_and_email
+    ?(dyn = Dynparam.empty)
+    ?exclude
+    ?(limit = 20)
+    pool
+    query
+    =
+    let open Caqti_request.Infix in
+    let exclude_ids =
+      Utils.Database.exclude_ids "pool_admins.uuid" Entity.Id.value
+    in
+    let add_query = Dynparam.add Caqti_type.string ("%" ^ query ^ "%") in
+    let dyn = dyn |> add_query |> add_query in
+    let dyn, exclude =
+      exclude |> CCOption.map_or ~default:(dyn, None) (exclude_ids dyn)
+    in
+    let conditions =
+      [ exclude ]
+      |> CCList.filter_map CCFun.id
+      |> function
+      | [] -> None
+      | conditions -> conditions |> CCString.concat " AND " |> CCOption.return
+    in
+    let (Dynparam.Pack (pt, pv)) = dyn in
+    let request =
+      search_by_name_and_email_request ?conditions limit |> pt ->* RepoEntity.t
+    in
+    Utils.Database.collect (pool |> Pool_database.Label.value) request pv
   ;;
 end
 

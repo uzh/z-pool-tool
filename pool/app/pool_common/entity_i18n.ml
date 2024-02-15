@@ -93,6 +93,7 @@ type t =
   | WaitingListIsDisabled
 
 type nav_link =
+  | ActorPermissions
   | Admins
   | Assignments
   | ContactInformation
@@ -284,6 +285,7 @@ type confirmable =
   | PublishCustomField
   | PublishCustomFieldOption
   | ReactivateAccount
+  | RemovePermission
   | RemoveRule
   | RemoveTag
   | RescheduleSession
