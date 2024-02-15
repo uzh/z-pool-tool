@@ -11,7 +11,7 @@ let show req =
   HttpUtils.Htmx.handler
     ~active_navigation
     ~error_path:"/"
-    ~query:(module Guard)
+    ~query:(module Guard.RolePermission)
     ~create_layout:General.create_tenant_layout
     req
   @@ fun ({ Pool_context.database_label; user; _ } as context) query ->

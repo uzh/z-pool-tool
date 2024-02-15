@@ -16,51 +16,53 @@ let roles_path ?suffix admin =
   CCOption.map_or ~default (Format.asprintf "%s%s" default) suffix
 ;;
 
-let target_path ({ Guard.ActorRole.target_uuid; _ }, target_model, _) =
+let create_target_path ?uuid =
   let build path =
-    Guard.Uuid.Target.to_string %> Format.asprintf "/admin/%s/%s/" path
+    CCOption.map_or ~default:"" Guard.Uuid.Target.to_string
+    %> Format.asprintf "/admin/%s/%s/" path
+    %> Sihl.Web.externalize_path
   in
-  CCOption.map2
-    (fun uuid -> function
-      | `Experiment -> Some (build "experiments" uuid)
-      | `Location -> Some (build "locations" uuid)
-      | `Admin -> Some (build "admins" uuid)
-      | `Contact -> Some (build "contacts" uuid)
-      | `CustomField -> Some (build "custom-fields/contact/field" uuid)
-      | `CustomFieldGroup -> Some (build "custom-fields/contact/group" uuid)
-      | `Filter -> Some (build "filter" uuid)
-      | `Tag -> Some (build "settings/tags" uuid)
-      | `Assignment
-      | `ContactInfo
-      | `ContactName
-      | `I18n
-      | `Invitation
-      | `LocationFile
-      | `Mailing
-      | `Message
-      | `MessageTemplate
-      | `OrganisationalUnit
-      | `Permission
-      | `Queue
-      | `Role
-      | `RoleAdmin
-      | `RoleAssistant
-      | `RoleExperimenter
-      | `RoleLocationManager
-      | `RoleOperator
-      | `RoleRecruiter
-      | `Schedule
-      | `Session
-      | `SessionClose
-      | `Smtp
-      | `Statistics
-      | `System
-      | `SystemSetting
-      | `Tenant
-      | `WaitingList -> None)
-    target_uuid
-    target_model
-  |> CCOption.flatten
+  flip CCOption.bind (function
+    | `Experiment -> Some (build "experiments" uuid)
+    | `Location -> Some (build "locations" uuid)
+    | `Admin -> Some (build "admins" uuid)
+    | `Contact -> Some (build "contacts" uuid)
+    | `CustomField -> Some (build "custom-fields/contact/field" uuid)
+    | `CustomFieldGroup -> Some (build "custom-fields/contact/group" uuid)
+    | `Filter -> Some (build "filter" uuid)
+    | `Tag -> Some (build "settings/tags" uuid)
+    | `Assignment
+    | `ContactInfo
+    | `ContactName
+    | `I18n
+    | `Invitation
+    | `LocationFile
+    | `Mailing
+    | `Message
+    | `MessageTemplate
+    | `OrganisationalUnit
+    | `Permission
+    | `Queue
+    | `Role
+    | `RoleAdmin
+    | `RoleAssistant
+    | `RoleExperimenter
+    | `RoleLocationManager
+    | `RoleOperator
+    | `RoleRecruiter
+    | `Schedule
+    | `Session
+    | `SessionClose
+    | `Smtp
+    | `Statistics
+    | `System
+    | `SystemSetting
+    | `Tenant
+    | `WaitingList -> None)
+;;
+
+let target_path ({ Guard.ActorRole.target_uuid; _ }, target_model, _) =
+  create_target_path ?uuid:target_uuid target_model
 ;;
 
 module List = struct
@@ -242,6 +244,106 @@ module Search = struct
               ~a:[ a_class [ stack; "grow"; "role-search-wrapper" ] ]
               [ role_form ]
           ]
+      ]
+  ;;
+end
+
+module ActorPermissionSearch = struct
+  let action_path = Format.asprintf "/admin/settings/actor-permission/%s"
+
+  let value_form ?(empty = false) language =
+    let open Component_search in
+    function
+    | `Admin when not empty -> Admin.create ~disabled:false language
+    | `Experiment when not empty ->
+      Experiment.filter_multi_search ~disabled:false language
+    | _ -> div []
+  ;;
+
+  let actor_form ?flash_fetcher language csrf =
+    let toggle_id = "actor-search" in
+    let actor_form = value_form language `Admin in
+    let attributes =
+      Utils.htmx_attribs
+        ~action:(action_path "toggle-target")
+        ~trigger:"change"
+        ~swap:"innerHTML"
+        ~target:(Utils.as_target_id toggle_id)
+        ~allow_empty_values:true
+        ()
+    in
+    let init_permission = Some Guard.Permission.Create in
+    let permission_selector =
+      Component_input.selector
+        ~classnames:[ "w-2" ]
+        ~attributes
+        ~required:true
+        ~read_only:true
+        ?flash_fetcher
+        language
+        Field.Permission
+        Guard.Permission.show
+        Guard.Permission.all
+        init_permission
+        ()
+    in
+    let model_selector =
+      Component_input.selector
+        ~classnames:[ "w-2" ]
+        ~attributes
+        ~required:true
+        ~read_only:true
+        ?flash_fetcher
+        language
+        Field.Model
+        Role.Target.show
+        Role.Target.actor_permission
+        (CCList.head_opt Role.Target.actor_permission)
+        ()
+    in
+    let submit_btn =
+      Component_input.submit_element
+        language
+        ~classnames:[ "push"; "align-self-end" ]
+        Pool_common.Message.(Add None)
+        ()
+    in
+    let value_form =
+      value_form
+        ~empty:
+          (init_permission
+           |> CCOption.map_or ~default:true Guard.Permission.(equal Create))
+        language
+        `Experiment
+    in
+    form
+      ~a:
+        [ a_action (action_path "" |> Sihl.Web.externalize_path)
+        ; a_method `Post
+        ; a_class [ "stack" ]
+        ]
+      [ Component_input.csrf_element csrf ()
+      ; div
+          ~a:[ a_class [ "flexrow"; "flex-gap" ] ]
+          [ div ~a:[ a_class [ "w-4" ] ] [ actor_form ]
+          ; permission_selector
+          ; model_selector
+          ; div ~a:[ a_id toggle_id; a_class [ "w-4" ] ] [ value_form ]
+          ]
+      ; div ~a:[ a_class [ "flexrow"; "flex-gap" ] ] [ submit_btn ]
+      ]
+  ;;
+
+  let input_form ?flash_fetcher csrf language () =
+    let create = actor_form ?flash_fetcher language csrf in
+    div
+      ~a:[ a_class [ "trim"; "actor-search" ] ]
+      [ div
+          ~a:
+            [ a_id "actor-search-form"
+            ; a_user_data "detect-unsaved-changes" ""
+            ]
+          [ div ~a:[ a_class [ "grow"; "actor-search-wrapper" ] ] [ create ] ]
       ]
   ;;
 end

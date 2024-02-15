@@ -17,4 +17,6 @@ end
 
 module Target : sig
   include Guardian.RoleSig with type t = Entity.Target.t
+
+  val actor_permission : t list
 end

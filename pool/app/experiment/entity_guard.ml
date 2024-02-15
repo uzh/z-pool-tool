@@ -27,8 +27,8 @@ module Access = struct
   ;;
 
   let index_permission = Read
-  let index = one_of_tuple (index_permission, `Experiment, None)
   let create = one_of_tuple (Create, `Experiment, None)
+  let index = or_ [ one_of_tuple (index_permission, `Experiment, None); create ]
   let read ?model = experiment ?model Read %> one
   let update_permission_on_target ?model = experiment ?model Update
   let update ?model = update_permission_on_target ?model %> one

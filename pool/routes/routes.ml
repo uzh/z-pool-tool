@@ -580,6 +580,7 @@ module Admin = struct
       [ get "" ~middlewares:[ Access.index ] index
       ; post "" ~middlewares:[ Access.create ] create_admin
       ; get "/new" ~middlewares:[ Access.create ] new_form
+      ; post "/search" ~middlewares:[ Access.search ] search
       ; choose ~scope:(Admin |> url_key) specific
       ]
     in
@@ -727,6 +728,18 @@ module Admin = struct
         ; choose ~scope:(Queue |> url_key) specific
         ]
       in
+      let actor_permission =
+        let open ActorPermission in
+        [ get "" ~middlewares:[ Access.index ] show
+        ; get "/new" ~middlewares:[ Access.create ] new_form
+        ; post "" ~middlewares:[ Access.create ] create
+        ; post "remove" ~middlewares:[ Access.delete ] delete
+        ; post
+            "/toggle-target"
+            ~middlewares:[ Access.create ]
+            handle_toggle_target
+        ]
+      in
       let role_permission =
         let open RolePermission in
         [ get "" ~middlewares:[ Access.index ] show
@@ -771,6 +784,7 @@ module Admin = struct
       in
       [ get "" ~middlewares:[ Access.index ] show
       ; choose ~scope:"/queue" queue
+      ; choose ~scope:"/actor-permission" actor_permission
       ; choose ~scope:"/role-permission" role_permission
       ; choose ~scope:"/smtp" smtp
       ; choose ~scope:"/tags" tags

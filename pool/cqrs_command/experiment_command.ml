@@ -151,6 +151,7 @@ module Create : sig
 
   val handle
     :  ?tags:Logs.Tag.set
+    -> ?id:Id.t
     -> ?contact_person:Admin.t
     -> ?organisational_unit:Organisational_unit.t
     -> ?smtp_auth:Email.SmtpAuth.t
@@ -165,6 +166,7 @@ end = struct
 
   let handle
     ?(tags = Logs.Tag.empty)
+    ?(id = Id.create ())
     ?contact_person
     ?organisational_unit
     ?smtp_auth
@@ -195,6 +197,7 @@ end = struct
     in
     let* experiment =
       Experiment.create
+        ~id
         ?contact_person_id:(contact_person |> CCOption.map Admin.id)
         ?cost_center
         ?internal_description

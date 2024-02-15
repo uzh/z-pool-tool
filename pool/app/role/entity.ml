@@ -205,4 +205,6 @@ module Target = struct
     ; `WaitingList
     ]
   ;;
+
+  let actor_permission = [ `Experiment ]
 end

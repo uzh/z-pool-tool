@@ -81,6 +81,10 @@ module NavElements = struct
             "/admin/settings/role-permission"
             RolePermissions
             (Set Guard.Access.Permission.read)
+        ; single
+            "/admin/settings/actor-permission"
+            ActorPermissions
+            (Set Guard.Access.Permission.read)
         ; single "/admin/settings/tags" Tags (Set Tags.Guard.Access.index)
         ; single
             "/admin/message-template"

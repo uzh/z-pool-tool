@@ -54,13 +54,24 @@ let detail req =
            experiment_id
        in
        let grouped_sessions, chronological =
+         let open Session in
+         let sessions = group_and_sort sessions in
+         let sort_sessions (s1 : t) (s2 : t) =
+           Start.compare s1.start s2.start
+         in
          match
            Sihl.Web.Request.query
              Pool_common.Message.Field.(show Chronological)
              req
          with
-         | Some "true" -> CCList.map (fun s -> s, []) sessions, true
-         | None | Some _ -> Session.group_and_sort sessions, false
+         | Some "true" ->
+           let open CCList in
+           ( sessions
+             |> flat_map (fun (parent, follow_ups) -> parent :: follow_ups)
+             |> sort sort_sessions
+             |> map (fun s -> s, [])
+           , true )
+         | None | Some _ -> sessions, false
        in
        let flash_fetcher key = Sihl.Web.Flash.find key req in
        Page.Admin.WaitingList.detail

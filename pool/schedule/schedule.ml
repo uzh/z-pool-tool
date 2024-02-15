@@ -139,7 +139,14 @@ let start () =
 ;;
 
 let stop = Registered.stop_all_active
-let lifecycle = Sihl.Container.create_lifecycle "pool schedule" ~start ~stop
+
+let lifecycle =
+  Sihl.Container.create_lifecycle
+    "pool schedule"
+    ~dependencies:(fun () -> [ Database.lifecycle ])
+    ~start
+    ~stop
+;;
 
 let register ?(schedules = []) () =
   CCList.iter Registered.add_base schedules;

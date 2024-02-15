@@ -551,8 +551,6 @@ let delete_session_with_follow_ups () =
   check_result (Error Pool_common.Message.SessionHasFollowUps) res
 ;;
 
-(* TODO: Add history? *)
-
 let create_email_job experiment email =
   Email.create_job ?smtp_auth_id:experiment.Experiment.smtp_auth_id email
 ;;

@@ -143,7 +143,7 @@ let email_verification =
   let email_text =
     [ p
         [ txt
-            "Du hast kürzlich eine neue E-Mail Adresse zu deinem Account \
+            "Du hast kürzlich eine neue E-Mail-Adresse zu deinem Account \
              hinzugefügt."
         ; br ()
         ; txt "Nutze diesen"
@@ -165,9 +165,9 @@ let email_verification =
     |> html_to_string
     |> EmailText.of_string
   in
-  let email_subject = "Neue E-Mail Adresse" |> EmailSubject.of_string in
+  let email_subject = "Neue E-Mail-Adresse" |> EmailSubject.of_string in
   let sms_text =
-    {|Du hast kürzlich eine neue E-Mail Adresse zu deinem Account hinzugefügt.
+    {|Du hast kürzlich eine neue E-Mail-Adresse zu deinem Account hinzugefügt.
 
 {verificationUrl}
 

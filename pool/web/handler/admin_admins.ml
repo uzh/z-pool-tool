@@ -295,11 +295,16 @@ let revoke_role ({ Rock.Request.target; _ } as req) =
   result |> extract_happy_path req
 ;;
 
+let search =
+  Helpers.Search.htmx_search_helper ~query_field:Field.(SearchOf Admin) `Admin
+;;
+
 module Access : sig
   include module type of Helpers.Access
 
   val grant_role : Rock.Middleware.t
   val revoke_role : Rock.Middleware.t
+  val search : Rock.Middleware.t
 end = struct
   include Helpers.Access
   module Command = Cqrs_command.Admin_command
@@ -333,4 +338,6 @@ end = struct
     GuardianCommand.RevokeRole.effects
     |> Middleware.Guardian.validate_admin_entity
   ;;
+
+  let search = index
 end
