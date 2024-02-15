@@ -337,7 +337,7 @@ module ActorPermissionSearch = struct
   let input_form ?flash_fetcher csrf language () =
     let create = actor_form ?flash_fetcher language csrf in
     div
-      ~a:[ a_class [ "trim"; "safety-margin"; "actor-search" ] ]
+      ~a:[ a_class [ "trim"; "actor-search" ] ]
       [ div
           ~a:
             [ a_id "actor-search-form"

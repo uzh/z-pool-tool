@@ -119,18 +119,34 @@ let list Pool_context.{ language; csrf; guardian; _ } actor_permissions query =
     actor_permissions
 ;;
 
-let index (Pool_context.{ language; _ } as context) rules query =
-  div
-    ~a:[ a_class [ "trim"; "safety-margin" ] ]
-    [ h1
-        ~a:[ a_class [ "heading-1" ] ]
-        [ txt
-            Pool_common.(Utils.nav_link_to_string language I18n.RolePermissions)
-        ]
-    ; p
-        [ Pool_common.(Utils.hint_to_string language I18n.RolePermissionsIntro)
-          |> HttpUtils.add_line_breaks
-        ]
-    ; list context rules query
-    ]
+let read_hint =
+  CCOption.map_or
+    ~default:[]
+    (I18n.content_to_string %> Unsafe.data %> CCList.return)
+;;
+
+let index ?hint (Pool_context.{ language; _ } as context) rules query =
+  let open Pool_common in
+  [ h1
+      ~a:[ a_class [ "heading-1" ] ]
+      [ txt (Utils.nav_link_to_string language I18n.ActorPermissions) ]
+  ]
+  @ read_hint hint
+  @ [ list context rules query ]
+  |> div ~a:[ a_class [ "trim"; "safety-margin" ] ]
+;;
+
+let create ?hint Pool_context.{ language; _ } children =
+  let open Pool_common in
+  [ h1
+      ~a:[ a_class [ "heading-1" ] ]
+      [ txt
+          (Utils.control_to_string
+             language
+             Message.(Create (Some Field.Permission)))
+      ]
+  ]
+  @ read_hint hint
+  @ children
+  |> div ~a:[ a_class [ "trim"; "safety-margin" ] ]
 ;;

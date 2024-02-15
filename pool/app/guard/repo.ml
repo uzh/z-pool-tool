@@ -74,42 +74,6 @@ module ActorPermission = struct
   ;;
 
   let insert pool = insert ~ctx:(Pool_database.to_ctx pool)
-
-  open Pool_common.Message
-
-  let column_actor =
-    (Field.Actor, "actor_permissions.actor_uuid") |> Query.Column.create
-  ;;
-
-  let column_action =
-    (Field.Permission, "actor_permissions.permission") |> Query.Column.create
-  ;;
-
-  let column_model =
-    (Field.Model, "actor_permissions.target_model") |> Query.Column.create
-  ;;
-
-  let column_target =
-    (Field.Target, "actor_permissions.target_uuid") |> Query.Column.create
-  ;;
-
-  let column_created_at =
-    (Field.CreatedAt, "actor_permissions.created_at") |> Query.Column.create
-  ;;
-
-  let filterable_by = None
-
-  let searchable_by =
-    [ column_actor; column_action; column_model; column_target ]
-  ;;
-
-  let sortable_by = column_created_at :: searchable_by
-
-  let default_sort =
-    Query.Sort.{ column = column_created_at; order = SortOrder.Descending }
-  ;;
-
-  let default_query = Query.create ~sort:default_sort ()
 end
 
 module RolePermission = struct
@@ -148,32 +112,6 @@ module RolePermission = struct
   ;;
 
   let insert pool = insert ~ctx:(Pool_database.to_ctx pool)
-
-  open Pool_common.Message
-
-  let column_role = (Field.Role, "role_permissions.role") |> Query.Column.create
-
-  let column_model =
-    (Field.Model, "role_permissions.target_model") |> Query.Column.create
-  ;;
-
-  let column_action =
-    (Field.Action, "role_permissions.permission") |> Query.Column.create
-  ;;
-
-  let column_created_at =
-    (Field.CreatedAt, "role_permissions.created_at") |> Query.Column.create
-  ;;
-
-  let filterable_by = None
-  let searchable_by = [ column_role; column_model; column_action ]
-  let sortable_by = column_created_at :: searchable_by
-
-  let default_sort =
-    Query.Sort.{ column = column_created_at; order = SortOrder.Descending }
-  ;;
-
-  let default_query = Query.create ~sort:default_sort ()
 end
 
 let src = Logs.Src.create "guard"

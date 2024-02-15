@@ -93,7 +93,7 @@ val find_all_with_roles
   -> (Role.Role.t * Guard.Uuid.Target.t option) list
   -> t list Lwt.t
 
-val search_by_name
+val search_by_name_and_email
   :  ?dyn:Utils.Database.Dynparam.t
   -> ?exclude:Id.t list
   -> ?limit:int

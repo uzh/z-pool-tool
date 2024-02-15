@@ -14,12 +14,15 @@ let show req =
     ~query:(module Guard.ActorPermission)
     ~create_layout:General.create_tenant_layout
     req
-  @@ fun ({ Pool_context.database_label; _ } as context) query ->
+  @@ fun ({ Pool_context.database_label; language; _ } as context) query ->
   let%lwt permissions, query =
     Guard.Persistence.ActorPermission.find_by query database_label
   in
+  let%lwt hint =
+    I18n.(find_by_key database_label Key.ActorPermissionHint) language
+  in
   let open Page.Admin.Settings.ActorPermission in
-  (if HttpUtils.Htmx.is_hx_request req then list else index)
+  (if HttpUtils.Htmx.is_hx_request req then list else index ~hint)
     context
     permissions
     query
@@ -65,13 +68,20 @@ let delete req =
 ;;
 
 let new_form req =
-  let result ({ Pool_context.csrf; language; _ } as context) =
+  let result ({ Pool_context.csrf; database_label; language; _ } as context) =
     let flash_fetcher = CCFun.flip Sihl.Web.Flash.find req in
-    Component.Role.ActorPermissionSearch.input_form
-      ~flash_fetcher
-      csrf
-      language
-      ()
+    let%lwt hint =
+      I18n.(find_by_key database_label Key.ActorPermissionCreateHint) language
+    in
+    Page.Admin.Settings.ActorPermission.create
+      ~hint
+      context
+      [ Component.Role.ActorPermissionSearch.input_form
+          ~flash_fetcher
+          csrf
+          language
+          ()
+      ]
     |> General.create_tenant_layout req ~active_navigation context
     >|+ Sihl.Web.Response.of_html
     >|- fun err -> err, Format.asprintf "%s/new" active_navigation

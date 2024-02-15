@@ -71,7 +71,7 @@ let htmx_search_helper
       let open Admin.Guard.Access in
       let%lwt exclude = entities_to_exclude Admin.Id.of_string in
       let search_experiment value actor =
-        Admin.search_by_name ~exclude database_label value
+        Admin.search_by_name_and_email ~exclude database_label value
         >|> Lwt_list.filter_s (fun admin ->
           let id = Admin.id admin in
           validate database_label (read id) actor ||> CCResult.is_ok)

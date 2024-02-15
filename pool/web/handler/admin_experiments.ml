@@ -187,29 +187,26 @@ let create req =
     in
     let* smtp_auth = smtp_auth_from_urlencoded urlencoded database_label in
     let id = Experiment.Id.create () in
+    let* actor =
+      Pool_context.Utils.find_authorizable ~admin_only:true database_label user
+    in
     let%lwt role_events =
       let open Guard in
-      let actor =
-        let admin_only = true in
-        Pool_context.Utils.find_authorizable ~admin_only database_label user
-      in
       let has_general_experimenter_permission actor =
         PermissionOnTarget.create Permission.Manage `Experiment
         |> ValidationSet.one
         |> flip (Persistence.validate database_label) actor
         ||> CCResult.is_ok
       in
-      match%lwt
-        Lwt.both actor (actor |>> has_general_experimenter_permission)
-      with
-      | Ok actor, Ok false ->
+      match%lwt actor |> has_general_experimenter_permission with
+      | false ->
         ActorRole.create
           ~target_uuid:(Uuid.target_of Experiment.Id.value id)
           actor.Actor.uuid
           `Experimenter
         |> fun role ->
         RolesGranted [ role ] |> Pool_event.guard |> CCList.return |> Lwt.return
-      | (Ok _ | Error _), (Ok _ | Error _) -> Lwt.return []
+      | true -> Lwt.return []
     in
     let events =
       let open CCResult.Infix in

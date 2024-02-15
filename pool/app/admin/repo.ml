@@ -279,7 +279,7 @@ module Sql = struct
     |> Utils.Database.exec_as_transaction (Pool_database.Label.value pool)
   ;;
 
-  let search_by_name_request ?conditions limit =
+  let search_by_name_and_email_request ?conditions limit =
     let default_contidion =
       {sql|
         (user_users.email LIKE ? OR CONCAT(user_users.given_name, ' ', user_users.name, ' ', user_users.given_name) LIKE ? )
@@ -299,7 +299,13 @@ module Sql = struct
       limit
   ;;
 
-  let search_by_name ?(dyn = Dynparam.empty) ?exclude ?(limit = 20) pool query =
+  let search_by_name_and_email
+    ?(dyn = Dynparam.empty)
+    ?exclude
+    ?(limit = 20)
+    pool
+    query
+    =
     let open Caqti_request.Infix in
     let exclude_ids =
       Utils.Database.exclude_ids "pool_admins.uuid" Entity.Id.value
@@ -318,7 +324,7 @@ module Sql = struct
     in
     let (Dynparam.Pack (pt, pv)) = dyn in
     let request =
-      search_by_name_request ?conditions limit |> pt ->* RepoEntity.t
+      search_by_name_and_email_request ?conditions limit |> pt ->* RepoEntity.t
     in
     Utils.Database.collect (pool |> Pool_database.Label.value) request pv
   ;;
