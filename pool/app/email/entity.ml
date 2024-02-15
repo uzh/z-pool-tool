@@ -133,6 +133,7 @@ type job =
   { email : email
   ; smtp_auth_id : SmtpAuth.Id.t option [@yojson.option]
   ; message_history : Queue.History.create option [@yojson.option]
+  ; resent : Pool_common.Id.t option [@yojson.option]
   }
 [@@deriving eq, show, yojson]
 
@@ -144,5 +145,5 @@ let parse_job_json str =
 let job_message_history { message_history; _ } = message_history
 
 let create_job ?smtp_auth_id ?message_history email =
-  { email; smtp_auth_id; message_history }
+  { email; smtp_auth_id; message_history; resent = None }
 ;;

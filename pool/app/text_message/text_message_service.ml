@@ -132,6 +132,7 @@ let intercept_prepare database_label ({ message; _ } as job) =
             (format_message message)
       ; smtp_auth_id = None
       ; message_history = None
+      ; resent = None
       }
     |> Lwt.return_ok
   | false, None ->

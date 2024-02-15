@@ -39,6 +39,7 @@ type t =
   | ImportPendingTitle
   | InvitationsStatistics
   | InvitationsStatisticsIntro
+  | JobCloneOf
   | LocationDetails
   | LocationFileNew
   | LocationListTitle

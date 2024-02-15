@@ -15,6 +15,7 @@ val create : Pool_user.CellPhone.t -> Pool_tenant.Title.t -> Content.t -> t
 type job =
   { message : t
   ; message_history : Queue.History.create option
+  ; resent : Pool_common.Id.t option
   }
 
 val parse_job_json : string -> (job, Pool_common.Message.error) result

@@ -84,7 +84,7 @@ let render_email_html html =
   div ~a:[ a_class [ "border" ] ] Unsafe.[ data html ]
 ;;
 
-let[@warning "-27"] email_job_instance_detail { Email.email; _ } =
+let email_job_instance_detail { Email.email; _ } =
   let { Sihl_email.sender; recipient; subject; text; html; _ } = email in
   let open Message in
   [ Field.Sender, txt sender
@@ -98,8 +98,7 @@ let[@warning "-27"] email_job_instance_detail { Email.email; _ } =
   ]
 ;;
 
-let[@warning "-27"] text_message_job_instance_detail { Text_message.message; _ }
-  =
+let text_message_job_instance_detail { Text_message.message; _ } =
   let open Text_message in
   let { recipient; sender; text } = message in
   let open Message in
@@ -130,6 +129,28 @@ let queue_instance_detail
       `Striped
       language
   in
+  let clone_link =
+    let link id =
+      let open Pool_common in
+      let id = Id.value id in
+      div
+        [ txt (Utils.text_to_string language I18n.JobCloneOf)
+        ; txt " "
+        ; a
+            ~a:
+              [ a_href
+                  (Format.asprintf "%s/%s" base_path id
+                   |> Sihl.Web.externalize_path)
+              ]
+            [ txt id ]
+        ]
+    in
+    CCOption.map_or ~default:(txt "") link
+    @@
+    match job with
+    | `EmailJob { Email.resent; _ } -> resent
+    | `TextMessageJob { Text_message.resent; _ } -> resent
+  in
   let job_detail =
     match job with
     | `EmailJob email -> email_job_instance_detail email
@@ -149,7 +170,7 @@ let queue_instance_detail
       ]
     |> vertical_table
   in
-  div [ queue_instance_detail ]
+  div ~a:[ a_class [ "stack" ] ] [ clone_link; queue_instance_detail ]
 ;;
 
 let index (Pool_context.{ language; _ } as context) job =

@@ -227,6 +227,7 @@ type job =
   { email : Sihl.Contract.Email.t
   ; smtp_auth_id : SmtpAuth.Id.t option
   ; message_history : Queue.History.create option
+  ; resent : Pool_common.Id.t option
   }
 
 val parse_job_json : string -> (job, Pool_common.Message.error) result

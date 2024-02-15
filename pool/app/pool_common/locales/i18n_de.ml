@@ -74,6 +74,7 @@ let to_string = function
   | InvitationsStatisticsIntro ->
     "Diese Tabelle zeigt, wie oft die Kontakte die Einladung zu diesem \
      Experiment erhalten haben."
+  | JobCloneOf -> "Dieser Hintergrundjob ist eine Kopie von"
   | LocationDetails -> "Standortdetails"
   | LocationFileNew -> "Neue Datei zu Standort hinzufügen"
   | LocationListTitle -> "Standorte"

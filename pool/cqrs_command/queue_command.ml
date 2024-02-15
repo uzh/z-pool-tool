@@ -4,7 +4,12 @@ open CCResult.Infix
 
 let src = Logs.Src.create "queue.cqrs"
 
-let update_email_job ?contact ?experiment (Email.{ email; _ } as job) =
+let update_email_job
+  ?contact
+  ?experiment
+  instance_id
+  (Email.{ email; _ } as job)
+  =
   let open Email in
   let email_address =
     CCOption.map
@@ -20,17 +25,22 @@ let update_email_job ?contact ?experiment (Email.{ email; _ } as job) =
   { job with
     email
   ; smtp_auth_id = CCOption.bind experiment Experiment.smtp_auth_id
+  ; resent = Some instance_id
   }
 ;;
 
-let update_text_message_job ?contact (Text_message.{ message; _ } as job) =
+let update_text_message_job
+  ?contact
+  instance_id
+  (Text_message.{ message; _ } as job)
+  =
   let open Text_message in
   let recipient =
     CCOption.bind contact (fun contact -> contact.Contact.cell_phone)
     |> CCOption.value ~default:message.recipient
   in
   let message = { message with recipient } in
-  { job with message }
+  { job with message; resent = Some instance_id }
 ;;
 
 let parse_instance_job { Sihl_queue.name; input; _ } =
@@ -43,13 +53,14 @@ let parse_instance_job { Sihl_queue.name; input; _ } =
     Text_message.parse_job_json input >|= fun job -> `TextMessageJob job
 ;;
 
-let update_job ?contact ?experiment instance =
+let update_job ?contact ?experiment ({ Sihl_queue.id; _ } as instance) =
+  let id = Pool_common.Id.of_string id in
   instance
   |> parse_instance_job
   >|= function
-  | `EmailJob job -> `EmailJob (job |> update_email_job ?contact ?experiment)
+  | `EmailJob job -> `EmailJob (job |> update_email_job ?contact ?experiment id)
   | `TextMessageJob job ->
-    `TextMessageJob (job |> update_text_message_job ?contact)
+    `TextMessageJob (job |> update_text_message_job ?contact id)
 ;;
 
 module Resend : sig
@@ -63,9 +74,9 @@ module Resend : sig
 end = struct
   type t = Sihl_queue.instance
 
-  let handle ?contact ?experiment job =
-    let* job = Queue.resendable job in
-    job
+  let handle ?contact ?experiment queue_instance =
+    let* queue_instance = Queue.resendable queue_instance in
+    queue_instance
     |> update_job ?contact ?experiment
     >|= function
     | `EmailJob job -> [ Email.Sent job |> Pool_event.email ]
