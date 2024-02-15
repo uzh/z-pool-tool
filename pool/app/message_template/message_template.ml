@@ -305,6 +305,7 @@ module AssignmentConfirmation = struct
   open Assignment
 
   let label = Label.AssignmentConfirmation
+  let message_history = session_message_history label
   let base_params layout contact = contact.Contact.user |> global_params layout
 
   let email_params
@@ -325,16 +326,6 @@ module AssignmentConfirmation = struct
     @ experiment_params layout experiment
     @ session_params ?follow_up_sessions layout language session
     @ assignment_params assignment
-  ;;
-
-  let message_history experiment session { contact; _ } =
-    let entity_uuids =
-      [ experiment.Experiment.id |> Experiment.Id.to_common
-      ; session.Session.id |> Session.Id.to_common
-      ; contact |> Contact.id
-      ]
-    in
-    Queue.History.{ entity_uuids; message_template = Some (Label.show label) }
   ;;
 
   let template pool experiment language =
@@ -374,7 +365,9 @@ module AssignmentConfirmation = struct
       let email =
         prepare_email language template sender email_address layout params
       in
-      let message_history = message_history experiment session assignment in
+      let message_history =
+        message_history experiment session assignment.contact
+      in
       Email.create_job ~message_history ?smtp_auth_id email
     in
     Lwt.return fnc
