@@ -189,6 +189,7 @@ type hint =
   | LocationsIndex
   | MailingLimit
   | MessageTemplateAccountSuspensionNotification
+  | MessageTemplateAssignmentCancellation
   | MessageTemplateAssignmentConfirmation
   | MessageTemplateAssignmentSessionChange
   | MessageTemplateContactEmailChangeAttempt

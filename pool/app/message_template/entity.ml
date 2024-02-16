@@ -10,6 +10,8 @@ module Label = struct
   type t =
     | AccountSuspensionNotification [@name "account_suspension_notification"]
     [@printer print "account_suspension_notification"]
+    | AssignmentCancellation [@name "assignment_cancellation"]
+    [@printer print "assignment_cancellation"]
     | AssignmentConfirmation [@name "assignment_confirmation"]
     [@printer print "assignment_confirmation"]
     | AssignmentSessionChange [@name "assignment_session_change"]
@@ -146,6 +148,7 @@ let template_hint label =
   match label with
   | AccountSuspensionNotification ->
     MessageTemplateAccountSuspensionNotification
+  | AssignmentCancellation -> MessageTemplateAssignmentCancellation
   | AssignmentConfirmation -> MessageTemplateAssignmentConfirmation
   | AssignmentSessionChange -> MessageTemplateAssignmentSessionChange
   | ContactEmailChangeAttempt -> MessageTemplateContactEmailChangeAttempt

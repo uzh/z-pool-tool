@@ -133,11 +133,17 @@ end
 module Cancel : sig
   include Common.CommandSig with type t = Assignment.t list * Session.t
 
+  val handle
+    :  ?tags:Logs.Tag.set
+    -> Email.job
+    -> t
+    -> (Pool_event.t list, Pool_common.Message.error) result
+
   val effects : Experiment.Id.t -> Assignment.Id.t -> Guard.ValidationSet.t
 end = struct
   type t = Assignment.t list * Session.t
 
-  let handle ?(tags = Logs.Tag.empty) (assignments, session)
+  let handle ?(tags = Logs.Tag.empty) notification_email (assignments, session)
     : (Pool_event.t list, Pool_common.Message.error) result
     =
     let open CCResult in
@@ -162,7 +168,9 @@ end = struct
       |> Contact.updated
       |> Pool_event.contact
     in
-    Ok (cancel_events @ [ decrease_assignment_count ])
+    Ok
+      ((cancel_events @ [ decrease_assignment_count ])
+       @ [ Email.Sent notification_email |> Pool_event.email ])
   ;;
 
   let effects = Assignment.Guard.Access.update
