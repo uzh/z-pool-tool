@@ -14,9 +14,7 @@ let language = Pool_common.Language.En
 
 let initialize _ () =
   let%lwt (_ : Experiment.t) = ExperimentRepo.create ~id:experiment_id () in
-  let%lwt contact =
-    ContactRepo.create ~id:contact_id ~name:"TIMOTIMOTIMOTIMOTIMO" ()
-  in
+  let%lwt contact = ContactRepo.create ~id:contact_id () in
   let%lwt session = SessionRepo.create ~id:session_id experiment_id () in
   let%lwt (_ : Assignment.t) =
     AssignmentRepo.create ~id:assignment_id session contact
@@ -287,3 +285,149 @@ let session_reminder _ () =
   let () = check_history_create expected text_msg_res in
   Lwt.return_unit
 ;;
+
+module Resend = struct
+  module Command = Cqrs_command.Queue_command
+  module Model = Test_utils.Model
+
+  let cell_phone = "+41791234567" |> Pool_user.CellPhone.of_string
+
+  let to_queue_job ?(status = Sihl_queue.Succeeded) name input =
+    let now = Ptime_clock.now () in
+    Sihl_queue.
+      { id = Pool_common.Id.(create () |> value)
+      ; name = Queue.JobName.show name
+      ; input = Yojson.Safe.to_string input
+      ; tries = 0
+      ; max_tries = 10
+      ; next_run_at = now
+      ; status
+      ; last_error = None
+      ; last_error_at = None
+      ; tag = None
+      ; ctx = database_label |> Pool_database.to_ctx
+      }
+  ;;
+
+  let email_queue_job ?status () =
+    Model.create_email_job ()
+    |> Email.yojson_of_job
+    |> to_queue_job ?status Queue.JobName.SendEmail
+  ;;
+
+  let text_message_queue_job ?status () =
+    Model.create_text_message_job cell_phone
+    |> Text_message.yojson_of_job
+    |> to_queue_job ?status Queue.JobName.SendTextMessage
+  ;;
+
+  let test events expected =
+    Alcotest.(
+      check
+        (result (list Test_utils.event) Test_utils.error)
+        "succeeds"
+        expected
+        events)
+  ;;
+
+  let resend_pending () =
+    let email_job = email_queue_job ~status:Sihl_queue.Pending () in
+    let events = Command.Resend.handle email_job in
+    let expected = Error Pool_common.Message.JobPending in
+    Alcotest.(
+      check
+        (result (list Test_utils.event) Test_utils.error)
+        "succeeds"
+        expected
+        events)
+  ;;
+
+  let resend_unchanged () =
+    let email_job = email_queue_job () in
+    let events = Command.Resend.handle email_job in
+    let expected =
+      let job =
+        Email.
+          { (Model.create_email_job ()) with
+            resent = Some (Pool_common.Id.of_string email_job.Sihl_queue.id)
+          }
+      in
+      Ok [ Email.(Sent job) |> Pool_event.email ]
+    in
+    test events expected;
+    let text_message_job = text_message_queue_job () in
+    let events = Command.Resend.handle text_message_job in
+    let expected =
+      let job =
+        Text_message.
+          { (Model.create_text_message_job cell_phone) with
+            resent =
+              Some (Pool_common.Id.of_string text_message_job.Sihl_queue.id)
+          }
+      in
+      Ok [ Text_message.(Sent job) |> Pool_event.text_message ]
+    in
+    test events expected
+  ;;
+
+  let resend_updated_recipient () =
+    let open Pool_user in
+    let email_job = email_queue_job () in
+    let updated_cellphone = CellPhone.of_string "+41799999999" in
+    let updated_email_address = "updated@email.com" in
+    let contact =
+      let open Contact in
+      let contact = Model.create_contact () in
+      let sihl_user =
+        Sihl_user.{ (user contact) with email = updated_email_address }
+      in
+      { contact with cell_phone = Some updated_cellphone; user = sihl_user }
+    in
+    let events = Command.Resend.handle ~contact email_job in
+    let expected =
+      let job =
+        Email.
+          { (Model.create_email_job ~recipient:updated_email_address ()) with
+            resent = Some (Pool_common.Id.of_string email_job.Sihl_queue.id)
+          }
+      in
+      Ok [ Email.(Sent job) |> Pool_event.email ]
+    in
+    test events expected;
+    let text_message_job = text_message_queue_job () in
+    let events = Command.Resend.handle ~contact text_message_job in
+    let expected =
+      let job =
+        Text_message.
+          { (Model.create_text_message_job updated_cellphone) with
+            resent =
+              Some (Pool_common.Id.of_string text_message_job.Sihl_queue.id)
+          }
+      in
+      Ok [ Text_message.(Sent job) |> Pool_event.text_message ]
+    in
+    test events expected
+  ;;
+
+  let resend_updated_smtp () =
+    let email_job = email_queue_job () in
+    let updated_smtp_auth_id = Email.SmtpAuth.Id.create () in
+    let experiment =
+      Experiment.
+        { (Model.create_experiment ()) with
+          smtp_auth_id = Some updated_smtp_auth_id
+        }
+    in
+    let events = Command.Resend.handle ~experiment email_job in
+    let expected =
+      let job =
+        Email.
+          { (Model.create_email_job ~smtp_auth_id:updated_smtp_auth_id ()) with
+            resent = Some (Pool_common.Id.of_string email_job.Sihl_queue.id)
+          }
+      in
+      Ok [ Email.(Sent job) |> Pool_event.email ]
+    in
+    test events expected
+  ;;
+end
