@@ -209,6 +209,8 @@ Beim Einladen von Kontakten bevorzugt der Filter den überschreibenden Wert, wen
      anmelden."
   | AssignContactFromWaitingList ->
     "Wählen Sie die Session, zu welcher Sie den Kontakt zuweisen wollen."
+  | AssignmentCancellationMessageFollowUps ->
+    "Die Anmeldung zu folgenden Sessions wurde ebenfalls annulliert:"
   | AssignmentConfirmationMessageFollowUps ->
     "Sie wurden außerdem den folgenden Folgesitzungen zugewiesen:"
   | AssignmentsMarkedAsClosed ->

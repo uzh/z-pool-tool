@@ -140,6 +140,7 @@ type hint =
   | AdminOverwriteContactValues
   | AllowUninvitedSignup
   | AssignContactFromWaitingList
+  | AssignmentCancellationMessageFollowUps
   | AssignmentConfirmationMessageFollowUps
   | AssignmentsMarkedAsClosed
   | ContactCurrentCellPhone of string

@@ -319,7 +319,7 @@ module AssignmentCancellation = struct
     let follow_up_sessions =
       CCOption.map
         (fun lst ->
-          lst, Pool_common.I18n.AssignmentConfirmationMessageFollowUps)
+          lst, Pool_common.I18n.AssignmentCancellationMessageFollowUps)
         follow_up_sessions
     in
     base_params layout assignment.contact

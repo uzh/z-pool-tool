@@ -206,6 +206,8 @@ When inviting contacts, the filter will prefer the overriding value if both are 
     "All contacts (invited or not) will be able to sign up for the experiment."
   | AssignContactFromWaitingList ->
     "Select the session to which you want to assign the contact."
+  | AssignmentCancellationMessageFollowUps ->
+    "Your assignments to the following sessions have also been cancelled:"
   | AssignmentConfirmationMessageFollowUps ->
     "You also have been assigned to the following followup sessions:"
   | AssignmentsMarkedAsClosed ->
