@@ -23,7 +23,7 @@ opam pin add -yn conformist $repo_oxi/conformist.git#aa7b95d1f39215cdaab8cf96d76
 opam pin add -yn letters $repo_oxi/letters.git#0.3.3
 
 # pin custom libraries
-opam pin add -yn canary $repo_uzh/canary.git#02cf40e029268560e160ca032850426e387aa598
+opam pin add -yn canary $repo_uzh/canary.git#4b84df140c8d9401cc1197698ede3f02daddfa81
 opam pin add -yn guardian $repo_uzh/guardian.git#020e876b8737b7cc2a54509f714a313eb1559c66
 
 opam pin add -yn pool .
