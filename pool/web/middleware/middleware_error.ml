@@ -75,7 +75,11 @@ let reporter (request : Rock.Request.t) =
       asprintf "%s\n\n%s\n\n%s\n" error trace request
     in
     let%lwt res =
-      Gitlab_notify.notify ~additional (Failure exn) (Printexc.get_backtrace ())
+      Gitlab_notify.notify
+        ~labels:[ "bug"; "exception" ]
+        ~additional
+        (Failure exn)
+        (Printexc.get_backtrace ())
     in
     match res with
     | Ok iid ->

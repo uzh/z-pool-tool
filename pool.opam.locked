@@ -26,7 +26,7 @@ depends: [
   "bos" {= "0.2.1"}
   "ca-certs" {= "0.2.3"}
   "camlp-streams" {= "5.0.1"}
-  "canary" {= "0.0.1"}
+  "canary" {= "0.0.2"}
   "caqti" {= "2.0.1"}
   "caqti-driver-mariadb" {= "2.0.1"}
   "caqti-lwt" {= "2.0.1"}
@@ -70,7 +70,7 @@ depends: [
   "fmt" {= "0.9.0"}
   "fpath" {= "0.7.3"}
   "gmap" {= "0.3.0"}
-  "guardian" {= "0.3.0"}
+  "guardian" {= "0.3.1"}
   "hkdf" {= "1.0.4"}
   "hmap" {= "0.8.1"}
   "httpaf" {= "0.7.1"}
@@ -199,40 +199,40 @@ name: "pool"
 pin-depends: [
   [
     "sihl-user.4.0.0"
-    "git+https://github.com/oxidizing/sihl.git#56ce27c46de0f43426f7cbbb49386dd15e8688e6"
+    "git+https://github.com/oxidizing/sihl.git#d1250a2ff807dd1731f6ccd6250061215cdf73bf"
   ]
   [
     "sihl-token.4.0.0"
-    "git+https://github.com/oxidizing/sihl.git#56ce27c46de0f43426f7cbbb49386dd15e8688e6"
+    "git+https://github.com/oxidizing/sihl.git#d1250a2ff807dd1731f6ccd6250061215cdf73bf"
   ]
   [
     "sihl-storage.4.0.0"
-    "git+https://github.com/oxidizing/sihl.git#56ce27c46de0f43426f7cbbb49386dd15e8688e6"
+    "git+https://github.com/oxidizing/sihl.git#d1250a2ff807dd1731f6ccd6250061215cdf73bf"
   ]
   [
     "sihl-queue.4.0.0"
-    "git+https://github.com/oxidizing/sihl.git#56ce27c46de0f43426f7cbbb49386dd15e8688e6"
+    "git+https://github.com/oxidizing/sihl.git#d1250a2ff807dd1731f6ccd6250061215cdf73bf"
   ]
   [
     "sihl-email.4.0.0"
-    "git+https://github.com/oxidizing/sihl.git#56ce27c46de0f43426f7cbbb49386dd15e8688e6"
+    "git+https://github.com/oxidizing/sihl.git#d1250a2ff807dd1731f6ccd6250061215cdf73bf"
   ]
   [
     "sihl-cache.4.0.0"
-    "git+https://github.com/oxidizing/sihl.git#56ce27c46de0f43426f7cbbb49386dd15e8688e6"
+    "git+https://github.com/oxidizing/sihl.git#d1250a2ff807dd1731f6ccd6250061215cdf73bf"
   ]
   [
-    "guardian.0.3.0"
-    "git+https://github.com/uzh/guardian.git#9f68a2afa4a3517cbb2f85d0748fb7e00ab8e226"
+    "guardian.0.3.1"
+    "git+https://github.com/uzh/guardian.git#020e876b8737b7cc2a54509f714a313eb1559c66"
   ]
   [
-    "canary.0.0.1"
-    "git+https://github.com/uzh/canary.git#02cf40e029268560e160ca032850426e387aa598"
+    "canary.0.0.2"
+    "git+https://github.com/uzh/canary.git#4b84df140c8d9401cc1197698ede3f02daddfa81"
   ]
   ["letters.0.3.3" "git+https://github.com/oxidizing/letters.git#0.3.3"]
   [
     "sihl.4.0.0"
-    "git+https://github.com/oxidizing/sihl.git#56ce27c46de0f43426f7cbbb49386dd15e8688e6"
+    "git+https://github.com/oxidizing/sihl.git#d1250a2ff807dd1731f6ccd6250061215cdf73bf"
   ]
   [
     "conformist.0.8.1"
