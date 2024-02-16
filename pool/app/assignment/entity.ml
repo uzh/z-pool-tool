@@ -215,8 +215,15 @@ let column_marked_as_deleted =
     (Field.HideMakedAsDeleted, "pool_assignments.marked_as_deleted = 0")
 ;;
 
+let column_canceled =
+  Query.Column.create
+    (Field.HideCanceled, "pool_assignments.canceled_at IS NULL")
+;;
+
 let filterable_by =
-  Some Query.Filter.Condition.Human.[ Checkbox column_marked_as_deleted ]
+  Some
+    Query.Filter.Condition.Human.
+      [ Checkbox column_marked_as_deleted; Checkbox column_canceled ]
 ;;
 
 let searchable_by = Pool_user.searchable_by @ [ column_external_data_id ]
