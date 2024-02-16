@@ -70,7 +70,7 @@ let tenant_form
         | Some file ->
           div
             ~a:[ a_class [ "gap-xs" ] ]
-            [ a ~a:[ a_href (File.path file) ] [ txt "Download" ] ]
+            [ a ~a:[ a_href (File.externalized_path file) ] [ txt "Download" ] ]
       in
       div
         [ input_element_file language field ~allow_multiple ~required
@@ -272,7 +272,7 @@ let detail
                    [ a_class [ "aspect-ratio"; "contain" ]
                    ; a_style "width: 200px"
                    ]
-                 [ img ~src:(File.path file) ~alt:"" () ]
+                 [ img ~src:(File.externalized_path file) ~alt:"" () ]
              ; form
                  ~a:
                    [ a_action
