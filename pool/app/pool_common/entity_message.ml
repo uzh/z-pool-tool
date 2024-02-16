@@ -66,6 +66,7 @@ type error =
   | InvalidHtmxRequest
   | InvalidOptionSelected
   | IsMarkedAsDeleted of Field.t
+  | JobPending
   | LoginProvideDetails
   | MeantimeUpdate of Field.t
   | Missing of Field.t
@@ -164,6 +165,7 @@ type success =
   | RemovedFromWaitingList
   | RemindersResent
   | Rescheduled of Field.t
+  | Resent of Field.t
   | ResetInvitations
   | RoleAssigned
   | RoleUnassigned

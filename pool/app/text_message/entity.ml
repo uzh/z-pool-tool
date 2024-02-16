@@ -20,11 +20,21 @@ type t =
 type job =
   { message : t
   ; message_history : Queue.History.create option [@yojson.option]
+  ; resent : Pool_common.Id.t option
   }
 [@@deriving eq, show, yojson]
 
+let parse_job_json str =
+  try Ok (str |> Yojson.Safe.from_string |> job_of_yojson) with
+  | _ -> Error Pool_common.Message.(Invalid Field.Input)
+;;
+
 let job_message_history { message_history; _ } = message_history
-let create_job ?message_history message = { message; message_history }
+
+let create_job ?message_history message =
+  { message; message_history; resent = None }
+;;
+
 let create recipient sender text = { recipient; sender; text }
 
 let render_and_create recipient sender (text, params) =

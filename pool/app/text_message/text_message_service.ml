@@ -53,15 +53,14 @@ let get_api_key database_label =
 ;;
 
 let parse_job_json str =
-  try Ok (str |> Yojson.Safe.from_string |> job_of_yojson) with
-  | Yojson.Json_error job ->
+  Entity.parse_job_json str
+  |> CCResult.map_err (fun _ ->
     Logs.err ~src (fun m ->
       m
-        ~tags:Pool_database.(Logger.Tags.create root)
         "Serialized message string was NULL, can not deserialize message. \
          Please fix the string manually and reset the job instance. Error: %s"
-        job);
-    Error "Invalid serialized message string received"
+        str);
+    "Invalid serialized message string received")
 ;;
 
 let request_body { recipient; text; sender } =
@@ -133,6 +132,7 @@ let intercept_prepare database_label ({ message; _ } as job) =
             (format_message message)
       ; smtp_auth_id = None
       ; message_history = None
+      ; resent = None
       }
     |> Lwt.return_ok
   | false, None ->
@@ -254,7 +254,6 @@ module Job = struct
 end
 
 let callback database_label (job_instance : Sihl_queue.instance) =
-  let open Entity in
   let job =
     parse_job_json job_instance.Sihl_queue.input |> CCResult.get_or_failwith
   in

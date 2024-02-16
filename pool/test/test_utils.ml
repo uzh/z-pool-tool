@@ -295,8 +295,8 @@ module Model = struct
       "Hello"
   ;;
 
-  let create_email_job ?smtp_auth_id ?message_history () =
-    let email = create_email () in
+  let create_email_job ?recipient ?smtp_auth_id ?message_history () =
+    let email = create_email ?recipient () in
     Email.create_job ?smtp_auth_id ?message_history email
   ;;
 

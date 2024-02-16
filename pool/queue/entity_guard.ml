@@ -5,4 +5,5 @@ module Access = struct
 
   let index = one_of_tuple (Read, `Queue, None)
   let read = one_of_tuple (Read, `Queue, None)
+  let resend = one_of_tuple (Create, `Queue, None)
 end

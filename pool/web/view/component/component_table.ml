@@ -126,13 +126,18 @@ let responsive_horizontal_table
        rows)
 ;;
 
-let vertical_table layout language ?align_top ?(classnames = []) rows =
+let vertical_table layout language ?align_top ?(classnames = []) ?th_class rows =
   let classes = table_classes layout ?align_top ~align_last_end:false () in
+  let table_head html =
+    match th_class with
+    | None -> th html
+    | Some classes -> th ~a:[ a_class classes ] html
+  in
   table
     ~a:[ a_class (classes @ classnames) ]
     (CCList.map
        (fun (label, value) ->
-         [ th
+         [ table_head
              [ txt
                  (Pool_common.Utils.field_to_string language label
                   |> CCString.capitalize_ascii)

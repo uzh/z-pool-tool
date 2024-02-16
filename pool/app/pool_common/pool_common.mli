@@ -135,6 +135,7 @@ module File : sig
   val id : t -> Id.t
   val size : t -> Size.t
   val path : t -> string
+  val externalized_path : t -> string
   val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
 end
 

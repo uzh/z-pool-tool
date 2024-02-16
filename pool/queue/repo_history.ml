@@ -68,3 +68,32 @@ let query_by_entity ?query pool entity_uuid =
     ~where
     Repo_entity.t
 ;;
+
+let find_related_request entity =
+  let joins =
+    match entity with
+    | `contact ->
+      {sql| INNER JOIN pool_contacts ON entity_uuid = pool_contacts.user_uuid |sql}
+    | `experiment ->
+      {sql| INNER JOIN pool_experiments ON entity_uuid = pool_experiments.uuid |sql}
+  in
+  let open Caqti_request.Infix in
+  Format.asprintf
+    {sql|
+      SELECT 
+        %s 
+      FROM pool_message_history
+        %s
+      WHERE queue_job_uuid = UNHEX(REPLACE(?, '-', ''))
+    |sql}
+    (Pool_common.Id.sql_select_fragment ~field:"entity_uuid")
+    joins
+  |> Caqti_type.(string ->? Pool_common.Repo.Id.t)
+;;
+
+let find_related pool { Sihl_queue.id; _ } entity =
+  Utils.Database.find_opt
+    (Pool_database.Label.value pool)
+    (find_related_request entity)
+    id
+;;

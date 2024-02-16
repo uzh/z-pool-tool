@@ -133,11 +133,17 @@ type job =
   { email : email
   ; smtp_auth_id : SmtpAuth.Id.t option [@yojson.option]
   ; message_history : Queue.History.create option [@yojson.option]
+  ; resent : Pool_common.Id.t option [@yojson.option]
   }
 [@@deriving eq, show, yojson]
+
+let parse_job_json str =
+  try Ok (str |> Yojson.Safe.from_string |> job_of_yojson) with
+  | _ -> Error Pool_common.Message.(Invalid Field.Input)
+;;
 
 let job_message_history { message_history; _ } = message_history
 
 let create_job ?smtp_auth_id ?message_history email =
-  { email; smtp_auth_id; message_history }
+  { email; smtp_auth_id; message_history; resent = None }
 ;;

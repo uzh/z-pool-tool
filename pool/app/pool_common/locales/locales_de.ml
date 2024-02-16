@@ -200,6 +200,7 @@ let rec field_to_string =
   | Queue -> "Warteschlange"
   | RandomOrder -> "Wähle die Kontakte in zufälliger Reihenfolge."
   | Reason -> "Grund"
+  | Recipient -> "Empfänger"
   | Redirect -> "Weiterleitung"
   | RegistrationDisabled -> "Registrierung deaktiviert"
   | Reminder -> "Erinnerung"
@@ -216,6 +217,7 @@ let rec field_to_string =
   | Search -> "Suche"
   | SearchOf field -> combine Search field
   | SecondReminder -> "Zweite Erinnerung"
+  | Sender -> "Absender"
   | SentAt -> "Verschickt am"
   | Session -> "Session"
   | Sessions -> "Sessions"
@@ -332,6 +334,8 @@ Solange die neue E-Mail-Adresse nicht bestätigt ist, wird weiterhin die aktuell
   | RemindersResent -> "Die Erinnerungen wirden erneut versendet."
   | Rescheduled field ->
     field_message "" (field_to_string field) "wurden erfolgreich verschoben."
+  | Resent field ->
+    field_message "" (field_to_string field) "wurden erneut verschickt."
   | ResetInvitations ->
     "Einladungsversand zurückgesetzt. Bei kommenden versanden werden frühere \
      Einladungen ignoriert respektive die Einladung erneut versendet."
@@ -483,6 +487,7 @@ let rec error_to_string = function
       ""
       (field |> field_to_string |> CCString.trim)
       "wurde als gelöscht markiert."
+  | JobPending -> "Der Auftrag ist noch pendent."
   | LoginProvideDetails -> "Bitte Email Adresse und Passwort eintragen."
   | MeantimeUpdate field ->
     field_message

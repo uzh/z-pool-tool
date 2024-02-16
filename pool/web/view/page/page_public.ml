@@ -94,7 +94,8 @@ let index
           ~a:[ a_class [ "grid-col-4"; "flex-gap" ] ]
           (CCList.map
              (fun logo ->
-               img ~src:(Pool_common.File.path logo) ~alt:"" () |> aspect_ratio)
+               img ~src:(Pool_common.File.externalized_path logo) ~alt:"" ()
+               |> aspect_ratio)
              (tenant.Pool_tenant.partner_logo |> Pool_tenant.PartnerLogos.value))
       ]
   in
@@ -115,7 +116,7 @@ let index
             (CCList.map
                (fun logo ->
                  img
-                   ~src:(Pool_common.File.path logo)
+                   ~src:(Pool_common.File.externalized_path logo)
                    ~alt:
                      (Format.asprintf
                         "Logo %s"

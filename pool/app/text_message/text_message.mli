@@ -4,15 +4,22 @@ module Content : sig
   val value : t -> string
 end
 
-type t
+type t =
+  { recipient : Pool_user.CellPhone.t
+  ; sender : Pool_tenant.Title.t
+  ; text : Content.t
+  }
 
 val create : Pool_user.CellPhone.t -> Pool_tenant.Title.t -> Content.t -> t
 
 type job =
   { message : t
   ; message_history : Queue.History.create option
+  ; resent : Pool_common.Id.t option
   }
 
+val parse_job_json : string -> (job, Pool_common.Message.error) result
+val yojson_of_job : job -> Yojson.Safe.t
 val job_message_history : job -> Queue.History.create option
 val create_job : ?message_history:Queue.History.create -> t -> job
 

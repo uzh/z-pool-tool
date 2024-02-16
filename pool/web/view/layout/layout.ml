@@ -38,7 +38,8 @@ module Tenant = struct
     let head_tags =
       let favicon =
         tenant.icon
-        |> CCOption.(map (Icon.value %> File.path %> favicon) %> to_list)
+        |> CCOption.(
+             map (Icon.value %> File.externalized_path %> favicon) %> to_list)
       in
       [ charset; viewport ] @ stylesheets @ favicon
     in
