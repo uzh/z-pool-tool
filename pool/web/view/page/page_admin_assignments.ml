@@ -65,10 +65,11 @@ module Partials = struct
     |> txt
   ;;
 
-  (* TODO[timhub]: replace with icon when it is added to framework *)
-  let boolean_value = function
-    | false -> "x" |> txt
-    | true -> "✓" |> txt
+  let boolean_value =
+    let open Icon in
+    function
+    | false -> to_html Close
+    | true -> to_html Checkmark
   ;;
 
   let assignment_id { Assignment.id; _ } = id |> Assignment.Id.value |> txt
