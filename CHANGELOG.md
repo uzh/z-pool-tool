@@ -4,6 +4,29 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/pool/tree/HEAD)
 
+## [0.6.0](https://github.com/uzh/pool/tree/0.6.0) - 2024-02-19
+
+### Added
+
+- Message History to experiment/contact
+- Message History allow resend
+- Exception notifier adds `Bug` and `Exception` labels
+- Experimenter gets set if not general Experiment permission exist
+- UI: define personal experiment create permission
+- inform contact about cancellation
+- session duration for follow ups within session confirmation email
+
+### Fixed
+
+- Staging email logo path
+- Don't show sessions without parent session
+- spelling
+- show main session as long as the follow up isn't closed
+
+### Changes
+
+- use `Role<Role>` (e.g. `RoleAssistant`) target models to specify who can assign/unassign roles
+
 ## [0.5.5](https://github.com/uzh/pool/tree/0.5.5) - 2024-02-12
 
 ### Added
