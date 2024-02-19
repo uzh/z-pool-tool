@@ -436,29 +436,33 @@ let remind req =
   result |> HttpUtils.extract_happy_path ~src req
 ;;
 
-let swap_session_get req =
+let swap_session_get_helper action req =
   let open Assignment in
   let experiment_id, session_id, assignment_id = ids_from_request req in
   let result ({ Pool_context.database_label; _ } as context) =
     let open Utils.Lwt_result.Infix in
     let* experiment = Experiment.find database_label experiment_id in
     let* assignment = find database_label assignment_id in
-    let* current_session = Session.find database_label session_id in
-    let%lwt assigned_sessions =
-      Session.find_contact_is_assigned_by_experiment
-        database_label
-        (Contact.id assignment.contact)
-        experiment_id
-    in
-    let%lwt sessions =
-      Session.find_all_to_swap_by_experiment database_label experiment_id
-    in
-    let template_lang =
-      let system_languages = Pool_context.Tenant.get_tenant_languages_exn req in
-      Message_template.experiment_message_language
-        system_languages
-        experiment
-        assignment.contact
+    let* template_lang =
+      match action with
+      | `OpenModal ->
+        let system_languages =
+          Pool_context.Tenant.get_tenant_languages_exn req
+        in
+        Message_template.experiment_message_language
+          system_languages
+          experiment
+          assignment.contact
+        |> Lwt_result.return
+      | `ToggleLanguage ->
+        let open CCResult.Infix in
+        req
+        |> Sihl.Web.Request.query_list
+        |> CCList.assoc_opt ~eq:CCString.equal Field.(show Language)
+        |> CCFun.flip CCOption.bind CCList.head_opt
+        |> CCOption.to_result Pool_common.Message.(NotFound Field.Language)
+        >>= Pool_common.Language.create
+        |> Lwt_result.lift
     in
     let%lwt swap_session_template =
       Message_template.(
@@ -472,23 +476,51 @@ let swap_session_get req =
     in
     let tenant_languages = Pool_context.Tenant.get_tenant_languages_exn req in
     let flash_fetcher key = Sihl.Web.Flash.find key req in
-    Page.Admin.Assignment.Partials.swap_session_form
-      context
-      experiment
-      current_session
-      assignment
-      assigned_sessions
-      sessions
-      swap_session_template
-      tenant_languages
-      flash_fetcher
-      text_messages_disabled
-    |> HttpUtils.Htmx.html_to_plain_text_response
-    |> Lwt_result.return
+    let response html =
+      html |> HttpUtils.Htmx.html_to_plain_text_response |> Lwt_result.return
+    in
+    match action with
+    | `OpenModal ->
+      let* current_session = Session.find database_label session_id in
+      let%lwt assigned_sessions =
+        Session.find_contact_is_assigned_by_experiment
+          database_label
+          (Contact.id assignment.contact)
+          experiment_id
+      in
+      let%lwt sessions =
+        Session.find_all_to_swap_by_experiment database_label experiment_id
+      in
+      Page.Admin.Assignment.Partials.swap_session_form
+        context
+        experiment
+        current_session
+        assignment
+        assigned_sessions
+        sessions
+        swap_session_template
+        tenant_languages
+        flash_fetcher
+        text_messages_disabled
+      |> response
+    | `ToggleLanguage ->
+      Page.Admin.Assignment.Partials.swap_session_notification_form_fields
+        context
+        experiment
+        session_id
+        assignment_id
+        tenant_languages
+        swap_session_template
+        flash_fetcher
+        text_messages_disabled
+      |> response
   in
   result
   |> HttpUtils.Htmx.handle_error_message ~error_as_notification:true ~src req
 ;;
+
+let swap_session_get = swap_session_get_helper `OpenModal
+let swap_session_toggle_language = swap_session_get_helper `ToggleLanguage
 
 let swap_session_post req =
   let open Utils.Lwt_result.Infix in
