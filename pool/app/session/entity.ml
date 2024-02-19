@@ -524,10 +524,7 @@ let to_email_text language { start; duration; location; _ } =
 ;;
 
 let follow_up_sessions_to_email_list follow_ups =
-  follow_ups
-  |> CCList.map (fun session ->
-    session.start |> Start.value |> Pool_common.Utils.Time.formatted_date_time)
-  |> CCString.concat "\n"
+  follow_ups |> CCList.map start_end_with_duration_human |> CCString.concat "\n"
 ;;
 
 let public_to_email_text
