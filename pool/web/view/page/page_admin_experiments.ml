@@ -128,22 +128,16 @@ module Statistics = struct
       ]
     in
     div
-      ~a:[ a_class [ "switcher"; "flex-gap" ] ]
-      [ div
-          [ h3
-              [ txt
-                  Pool_common.(
-                    Utils.text_to_string language I18n.ExperimentStatistics)
-              ]
-          ; experiment_statistics |> to_table
-          ; h4
-              [ txt
-                  Pool_common.(
-                    Utils.nav_link_to_string language I18n.Assignments)
-              ]
-          ; assignments_statistics |> to_table
+      [ h3
+          [ txt
+              Pool_common.(
+                Utils.text_to_string language I18n.ExperimentStatistics)
           ]
-      ; div []
+      ; experiment_statistics |> to_table
+      ; h4
+          [ txt Pool_common.(Utils.nav_link_to_string language I18n.Assignments)
+          ]
+      ; assignments_statistics |> to_table
       ]
   ;;
 end
@@ -878,9 +872,14 @@ let detail
     [ div
         ~a:[ a_class [ "stack-lg" ] ]
         ([ notifications
-         ; experiment_table
+         ; div
+             ~a:[ a_class [ "switcher-lg"; "flex-gap"; "align-start" ] ]
+             [ experiment_table
+             ; div
+                 ~a:[ a_class [ "border"; "inset"; "bg-grey-light" ] ]
+                 [ statistics ]
+             ]
          ; tag_overview
-         ; statistics
          ; message_template
          ]
          @ setting)
