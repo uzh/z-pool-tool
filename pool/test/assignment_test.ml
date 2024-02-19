@@ -97,11 +97,15 @@ let create_with_experiment_smtp () =
 let canceled () =
   let session = Model.create_session () in
   let assignment = Model.create_assignment () in
-  let events = AssignmentCommand.Cancel.handle ([ assignment ], session) in
+  let notification_email = Model.create_email_job () in
+  let events =
+    AssignmentCommand.Cancel.handle notification_email ([ assignment ], session)
+  in
   let expected =
     Ok
       [ Assignment.Canceled assignment |> Pool_event.assignment
       ; update_assignment_count_event ~step:(-1) assignment.Assignment.contact
+      ; Email.Sent notification_email |> Pool_event.email
       ]
   in
   check_result expected events
@@ -111,6 +115,7 @@ let canceled_with_closed_session () =
   let hour = Ptime.Span.of_int_s @@ (60 * 60) in
   let session = Model.create_session () in
   let closed_at = Ptime_clock.now () in
+  let notification_email = Model.create_email_job () in
   let session =
     Session.
       { session with
@@ -122,7 +127,9 @@ let canceled_with_closed_session () =
       }
   in
   let assignment = Model.create_assignment () in
-  let events = AssignmentCommand.Cancel.handle ([ assignment ], session) in
+  let events =
+    AssignmentCommand.Cancel.handle notification_email ([ assignment ], session)
+  in
   let expected =
     Error
       (Pool_common.Message.SessionAlreadyClosed
@@ -607,11 +614,14 @@ let marked_closed_with_followups_as_deleted () =
 let cancel_deleted_assignment () =
   let session = Model.(create_session ~start:(an_hour_ago ()) ()) in
   let assignment = Model.create_assignment () in
+  let notification_email = Model.create_email_job () in
   let assignment =
     Assignment.
       { assignment with marked_as_deleted = MarkedAsDeleted.create true }
   in
-  let events = AssignmentCommand.Cancel.handle ([ assignment ], session) in
+  let events =
+    AssignmentCommand.Cancel.handle notification_email ([ assignment ], session)
+  in
   let expected =
     Error Pool_common.Message.(IsMarkedAsDeleted Field.Assignment)
   in
@@ -797,7 +807,10 @@ let cancel_assignment_with_follow_ups _ () =
     let%lwt assignments =
       find_with_follow_ups Data.database_label assignment_id
     in
-    AssignmentCommand.Cancel.handle (assignments, parent_session)
+    let notification_email = Model.create_email_job () in
+    AssignmentCommand.Cancel.handle
+      notification_email
+      (assignments, parent_session)
     |> get_or_failwith
     |> Pool_event.handle_events Data.database_label
   in

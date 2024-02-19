@@ -252,6 +252,15 @@ let message_template_help
   | AccountSuspensionNotification ->
     let contact = create_contact () in
     AccountSuspensionNotification.email_params layout contact.Contact.user
+  | AssignmentCancellation ->
+    let session = create_session () in
+    AssignmentCancellation.email_params
+      ~follow_up_sessions:[ create_follow_up session.Session.id ]
+      language
+      layout
+      (create_experiment ())
+      session
+      (create_assignment ())
   | AssignmentConfirmation ->
     let session = create_session () in
     AssignmentConfirmation.email_params

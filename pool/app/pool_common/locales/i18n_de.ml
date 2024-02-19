@@ -209,6 +209,8 @@ Beim Einladen von Kontakten bevorzugt der Filter den überschreibenden Wert, wen
      anmelden."
   | AssignContactFromWaitingList ->
     "Wählen Sie die Session, zu welcher Sie den Kontakt zuweisen wollen."
+  | AssignmentCancellationMessageFollowUps ->
+    "Die Anmeldung zu folgenden Sessions wurde ebenfalls annulliert:"
   | AssignmentConfirmationMessageFollowUps ->
     "Sie wurden außerdem den folgenden Folgesitzungen zugewiesen:"
   | AssignmentsMarkedAsClosed ->
@@ -357,6 +359,9 @@ Wenn eine Experimentsprache angegeben ist, werden alle Nachrichten in dieser Spr
   | MessageTemplateAccountSuspensionNotification ->
     "Diese Nachricht wird an einen Benutzer gesendet, nachdem sein Konto wegen \
      zu vieler fehlgeschlagener Anmeldeversuche vorübergehend gesperrt wurde."
+  | MessageTemplateAssignmentCancellation ->
+    "Diese Nachricht wird verwendet, um Kontakte über die Annullierung einer \
+     Sessionanmeldung zu informieren."
   | MessageTemplateAssignmentConfirmation ->
     "Diese Nachricht wird an Kontakte gesendet, nachdem sie sich erfolgreich \
      für eine Sitzung angemeldet haben."

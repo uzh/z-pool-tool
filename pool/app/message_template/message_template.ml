@@ -301,6 +301,78 @@ module AccountSuspensionNotification = struct
   ;;
 end
 
+module AssignmentCancellation = struct
+  open Assignment
+
+  let label = Label.AssignmentCancellation
+  let message_history = session_message_history label
+  let base_params layout contact = contact.Contact.user |> global_params layout
+
+  let email_params
+    ?follow_up_sessions
+    language
+    layout
+    experiment
+    session
+    assignment
+    =
+    let follow_up_sessions =
+      CCOption.map
+        (fun lst ->
+          lst, Pool_common.I18n.AssignmentCancellationMessageFollowUps)
+        follow_up_sessions
+    in
+    base_params layout assignment.contact
+    @ experiment_params layout experiment
+    @ session_params ?follow_up_sessions layout language session
+    @ assignment_params assignment
+  ;;
+
+  let template pool experiment language =
+    find_by_label_and_language_to_send
+      ~entity_uuids:[ Experiment.Id.to_common experiment.Experiment.id ]
+      pool
+      label
+      language
+  ;;
+
+  let create
+    ?follow_up_sessions
+    tenant
+    experiment
+    session
+    assignment
+    admin_contact
+    =
+    let pool = tenant.Pool_tenant.database_label in
+    let%lwt sys_langs = Settings.find_languages pool in
+    let language =
+      experiment_message_language sys_langs experiment assignment.contact
+    in
+    let%lwt template = template pool experiment language in
+    let layout = layout_from_tenant tenant in
+    let%lwt sender = sender_of_contact_person pool admin_contact in
+    let smtp_auth_id = experiment.Experiment.smtp_auth_id in
+    let params =
+      email_params
+        ?follow_up_sessions
+        language
+        layout
+        experiment
+        session
+        assignment
+    in
+    let email_address = assignment.contact |> Contact.email_address in
+    let email =
+      prepare_email language template sender email_address layout params
+    in
+    let message_history =
+      message_history experiment session assignment.contact
+    in
+    Email.create_job ~message_history ?smtp_auth_id email |> Lwt.return
+  ;;
+end
+
 module AssignmentConfirmation = struct
   open Assignment
 

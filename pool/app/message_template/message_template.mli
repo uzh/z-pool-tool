@@ -5,6 +5,7 @@ end
 module Label : sig
   type t =
     | AccountSuspensionNotification
+    | AssignmentCancellation
     | AssignmentConfirmation
     | AssignmentSessionChange
     | ContactEmailChangeAttempt
@@ -208,6 +209,26 @@ module AccountSuspensionNotification : sig
     :  Pool_tenant.t
     -> Sihl_user.t
     -> (Email.job, Pool_common.Message.error) result Lwt.t
+end
+
+module AssignmentCancellation : sig
+  val email_params
+    :  ?follow_up_sessions:Session.t list
+    -> Pool_common.Language.t
+    -> email_layout
+    -> Experiment.t
+    -> Session.t
+    -> Assignment.t
+    -> (string * string) list
+
+  val create
+    :  ?follow_up_sessions:Session.t list
+    -> Pool_tenant.t
+    -> Experiment.t
+    -> Session.t
+    -> Assignment.t
+    -> Admin.t option
+    -> Email.job Lwt.t
 end
 
 module AssignmentConfirmation : sig

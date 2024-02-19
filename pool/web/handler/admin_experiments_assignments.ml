@@ -118,19 +118,50 @@ let ids_and_redirect_from_req req =
 
 let cancel req =
   let open Utils.Lwt_result.Infix in
-  let%lwt _, session_id, assignment_id, redirect_path =
+  let%lwt experiment_id, session_id, assignment_id, redirect_path =
     ids_and_redirect_from_req req
   in
   let result { Pool_context.database_label; _ } =
     Utils.Lwt_result.map_error (fun err -> err, redirect_path)
     @@
     let tags = Pool_context.Logger.Tags.req req in
+    let tenant = Pool_context.Tenant.get_tenant_exn req in
+    let* experiment = Experiment.find database_label experiment_id in
+    let* session = Session.find database_label session_id in
     let%lwt assignments =
       Assignment.find_with_follow_ups database_label assignment_id
     in
-    let* session = Session.find database_label session_id in
+    let* cancellation_notification =
+      let* assignment =
+        CCList.find_opt
+          (fun { Assignment.id; _ } -> Assignment.Id.equal id assignment_id)
+          assignments
+        |> CCOption.to_result Pool_common.(Message.NotFound Field.Assignment)
+        |> Lwt_result.lift
+      in
+      let%lwt follow_up_sessions =
+        Session.find_follow_ups database_label session_id
+        ||> function
+        | [] -> None
+        | sessions -> Some sessions
+      in
+      let%lwt contact_person =
+        Experiment.find_contact_person database_label experiment
+      in
+      Message_template.AssignmentCancellation.create
+        ?follow_up_sessions
+        tenant
+        experiment
+        session
+        assignment
+        contact_person
+      |> Lwt_result.ok
+    in
     let events =
-      Cqrs_command.Assignment_command.Cancel.handle ~tags (assignments, session)
+      Cqrs_command.Assignment_command.Cancel.handle
+        ~tags
+        cancellation_notification
+        (assignments, session)
       |> Lwt.return
     in
     let handle events =

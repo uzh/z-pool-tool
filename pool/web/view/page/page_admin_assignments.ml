@@ -65,10 +65,11 @@ module Partials = struct
     |> txt
   ;;
 
-  (* TODO[timhub]: replace with icon when it is added to framework *)
-  let boolean_value = function
-    | false -> "x" |> txt
-    | true -> "✓" |> txt
+  let boolean_value =
+    let open Icon in
+    function
+    | false -> to_html Close
+    | true -> to_html Checkmark
   ;;
 
   let assignment_id { Assignment.id; _ } = id |> Assignment.Id.value |> txt
@@ -797,91 +798,88 @@ let data_table
       Message.MarkAsDeleted
       Component.Icon.TrashOutline
   in
-  match CCList.is_empty assignments with
-  | true -> p [ empty language ]
-  | false ->
-    let cols =
-      let left =
-        conditional_left_columns
-        |> CCList.filter_map (fun (check, column, _) ->
-          if check then Some (`column column) else None)
-      in
-      let center = [ `column column_participated; `column column_no_show ] in
-      let right =
-        conditional_right_columns
-        |> CCList.filter_map (fun (check, column, _) ->
-          if check then Some (`column column) else None)
-      in
-      let base = left @ center @ right in
-      if is_print then base else base @ [ `empty ]
+  let cols =
+    let left =
+      conditional_left_columns
+      |> CCList.filter_map (fun (check, column, _) ->
+        if check then Some (`column column) else None)
     in
-    let th_class = [ "w-3"; "w-3"; "w-2"; "w-1"; "w-1"; "w-2" ] in
-    let row (assignment : t) =
-      let tr cells =
-        match assignment.marked_as_deleted |> MarkedAsDeleted.value with
-        | true -> tr ~a:[ a_class [ "bg-red-lighter" ] ] cells
-        | false -> tr cells
-      in
-      let left =
-        conditional_left_columns
-        |> CCList.filter_map (fun (check, _, to_html) ->
-          if check then Some (to_html assignment) else None)
-      in
-      let center =
-        [ assignment_participated assignment; assignment_no_show assignment ]
-      in
-      let right =
-        conditional_right_columns
-        |> CCList.filter_map (fun (check, _, to_html) ->
-          if check then Some (to_html assignment) else None)
-      in
-      let buttons =
-        [ true, edit
-        ; access_contact_profiles, profile_link
-        ; create_reminder_modal assignment, ReminderModal.button context
-        ; ( Experiment.(show_external_data_id_links_value experiment)
-          , external_data_ids )
-        ; session_changeable assignment, session_change_toggle
-        ; cancelable assignment, cancel
-        ; deletable assignment, mark_as_deleted
-        ]
-        |> CCList.filter_map (fun (active, form) ->
-          if not active then None else Some (form assignment))
-        |> Component.ButtonGroup.dropdown
-        |> CCList.pure
-      in
-      let base = left @ center @ right in
-      (if is_print then base else base @ buttons)
-      |> CCList.map (CCList.return %> td)
-      |> tr
+    let center = [ `column column_participated; `column column_no_show ] in
+    let right =
+      conditional_right_columns
+      |> CCList.filter_map (fun (check, column, _) ->
+        if check then Some (`column column) else None)
     in
-    let modals =
-      CCList.filter_map
-        (fun assignment ->
-          match create_reminder_modal assignment with
-          | true ->
-            Some
-              (ReminderModal.modal
-                 context
-                 experiment.Experiment.id
-                 session
-                 assignment
-                 text_messages_enabled)
-          | false -> None)
-        assignments
-      |> function
-      | [] -> None
-      | modals ->
-        Some (div ~a:[ a_class [ "assignment-reminder-modals" ] ] modals)
+    let base = left @ center @ right in
+    if is_print then base else base @ [ `empty ]
+  in
+  let th_class = [ "w-3"; "w-3"; "w-2"; "w-1"; "w-1"; "w-2" ] in
+  let row (assignment : t) =
+    let tr cells =
+      match assignment.marked_as_deleted |> MarkedAsDeleted.value with
+      | true -> tr ~a:[ a_class [ "bg-red-lighter" ] ] cells
+      | false -> tr cells
     in
-    Component.DataTable.make
-      ~th_class
-      ~target_id:"assignments-table"
-      ~cols
-      ~row
-      ?prepend_html:modals
-      data_table
+    let left =
+      conditional_left_columns
+      |> CCList.filter_map (fun (check, _, to_html) ->
+        if check then Some (to_html assignment) else None)
+    in
+    let center =
+      [ assignment_participated assignment; assignment_no_show assignment ]
+    in
+    let right =
+      conditional_right_columns
+      |> CCList.filter_map (fun (check, _, to_html) ->
+        if check then Some (to_html assignment) else None)
+    in
+    let buttons =
+      [ true, edit
+      ; access_contact_profiles, profile_link
+      ; create_reminder_modal assignment, ReminderModal.button context
+      ; ( Experiment.(show_external_data_id_links_value experiment)
+        , external_data_ids )
+      ; session_changeable assignment, session_change_toggle
+      ; cancelable assignment, cancel
+      ; deletable assignment, mark_as_deleted
+      ]
+      |> CCList.filter_map (fun (active, form) ->
+        if not active then None else Some (form assignment))
+      |> Component.ButtonGroup.dropdown
+      |> CCList.pure
+    in
+    let base = left @ center @ right in
+    (if is_print then base else base @ buttons)
+    |> CCList.map (CCList.return %> td)
+    |> tr
+  in
+  let modals =
+    CCList.filter_map
+      (fun assignment ->
+        match create_reminder_modal assignment with
+        | true ->
+          Some
+            (ReminderModal.modal
+               context
+               experiment.Experiment.id
+               session
+               assignment
+               text_messages_enabled)
+        | false -> None)
       assignments
+    |> function
+    | [] -> None
+    | modals ->
+      Some (div ~a:[ a_class [ "assignment-reminder-modals" ] ] modals)
+  in
+  Component.DataTable.make
+    ~th_class
+    ~target_id:"assignments-table"
+    ~cols
+    ~row
+    ?prepend_html:modals
+    data_table
+    assignments
 ;;
 
 let list
