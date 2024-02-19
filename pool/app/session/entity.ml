@@ -651,7 +651,16 @@ let column_canceled =
 ;;
 
 let column_closed =
-  Query.Column.create (Field.HideClosed, "pool_sessions.closed_at IS NULL")
+  Query.Column.create
+    ( Field.HideClosed
+    , {sql|
+        (pool_sessions.closed_at IS NULL OR EXISTS (
+          SELECT TRUE
+          FROM pool_sessions AS s
+          WHERE pool_sessions.`uuid` = s.follow_up_to AND s.closed_at IS NULL
+        ))
+      |sql}
+    )
 ;;
 
 let filterable_by =
