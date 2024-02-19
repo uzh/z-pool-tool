@@ -1,1 +1,1 @@
-let to_string = "0.5.5"
+let to_string = "0.6.0"
