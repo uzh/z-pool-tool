@@ -27,6 +27,7 @@ type t =
   | ExperimentMessagingSubtitle
   | ExperimentNewTitle
   | ExperimentSessionReminderHint
+  | ExperimentStatistics
   | ExperimentWaitingListTitle
   | Files
   | FilterContactsDescription
@@ -181,6 +182,8 @@ type hint =
   | ExperimentMessageTemplates
   | ExperimentSessions
   | ExperimentSessionsPublic
+  | ExperimentStatisticsRegistrationPossible
+  | ExperimentStatisticsSendingInvitations
   | ExperimentWaitingList
   | ExternalDataRequired
   | GtxKeyMissing

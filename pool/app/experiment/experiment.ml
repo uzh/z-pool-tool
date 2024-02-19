@@ -61,3 +61,27 @@ let find_contact_person database_label { contact_person_id; _ } =
   |> CCOption.map_or ~default:Lwt.return_none (fun id ->
     id |> Admin.find database_label ||> CCResult.to_opt)
 ;;
+
+module Statistics = struct
+  include Statistics
+  module Repo = Repo_statistics
+
+  let create pool id =
+    let%lwt registration_possible = Repo.registration_possible pool id in
+    let%lwt sending_invitations = Repo.sending_invitations pool id in
+    let%lwt session_count = Repo.session_count pool id in
+    let%lwt sent_invitation_count = Repo.sent_invitation_count pool id in
+    let%lwt showup_count = Repo.showup_count pool id in
+    let%lwt noshow_count = Repo.noshow_count pool id in
+    let%lwt participation_count = Repo.participation_count pool id in
+    Lwt.return
+      { registration_possible
+      ; sending_invitations
+      ; session_count
+      ; sent_invitation_count
+      ; showup_count
+      ; noshow_count
+      ; participation_count
+      }
+  ;;
+end

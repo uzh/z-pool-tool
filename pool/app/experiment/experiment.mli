@@ -414,6 +414,75 @@ module Guard : sig
   end
 end
 
+module Statistics : sig
+  module RegistrationPossible : sig
+    include Pool_common.Model.BooleanSig
+
+    val field : Pool_common.Message.Field.t
+    val hint : Pool_common.I18n.hint
+  end
+
+  module SendingInvitations : sig
+    type t =
+      | No
+      | Sending
+      | Scheduled
+
+    val show : t -> string
+    val field : Pool_common.Message.Field.t
+    val hint : Pool_common.I18n.hint
+  end
+
+  module SessionCount : sig
+    include Pool_common.Model.IntegerSig
+
+    val field : Pool_common.Message.Field.t
+  end
+
+  module SentInvitationCount : sig
+    include Pool_common.Model.IntegerSig
+
+    val field : Pool_common.Message.Field.t
+  end
+
+  module ShowUpCount : sig
+    include Pool_common.Model.IntegerSig
+
+    val field : Pool_common.Message.Field.t
+  end
+
+  module NoShowCount : sig
+    include Pool_common.Model.IntegerSig
+
+    val field : Pool_common.Message.Field.t
+  end
+
+  module ParticipationCount : sig
+    include Pool_common.Model.IntegerSig
+
+    val field : Pool_common.Message.Field.t
+  end
+
+  type t =
+    { registration_possible : RegistrationPossible.t
+    ; sending_invitations : SendingInvitations.t
+    ; session_count : SessionCount.t
+    ; sent_invitation_count : SentInvitationCount.t
+    ; showup_count : ShowUpCount.t
+    ; noshow_count : NoShowCount.t
+    ; participation_count : ParticipationCount.t
+    }
+
+  val registration_possible : t -> RegistrationPossible.t
+  val sending_invitations : t -> SendingInvitations.t
+  val session_count : t -> SessionCount.t
+  val sent_invitation_count : t -> SentInvitationCount.t
+  val showup_count : t -> ShowUpCount.t
+  val noshow_count : t -> NoShowCount.t
+  val participation_count : t -> ParticipationCount.t
+  val create : Pool_database.Label.t -> Id.t -> t Lwt.t
+end
+
 val column_title : Query.Column.t
 val column_public_title : Query.Column.t
 val default_query : Query.t

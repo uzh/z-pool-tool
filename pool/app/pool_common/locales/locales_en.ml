@@ -202,6 +202,7 @@ let rec field_to_string =
   | Redirect -> "redirect"
   | Reminder -> "reminder"
   | RegistrationDisabled -> "registration disabled"
+  | RegistrationPossible -> "registration possible"
   | LastRemindedAt -> "reminded at"
   | ReminderCount -> "nr of reminders"
   | RemindersSent -> "reminders sent"
@@ -217,7 +218,9 @@ let rec field_to_string =
   | SearchOf field -> combine Search field
   | SecondReminder -> "second reminder"
   | Sender -> "sender"
+  | SendingInvitations -> "Sending invitations"
   | SentAt -> "sent at"
+  | SessionCount -> "no. sessions"
   | Session -> "session"
   | Sessions -> "sessions"
   | Setting -> "setting"

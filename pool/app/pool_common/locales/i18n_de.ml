@@ -49,6 +49,7 @@ let to_string = function
   | ExperimentSessionReminderHint ->
     "Dies sind Standardeinstellungen für die Sessions dieses Experiment. Diese \
      Einstellungen können pro Session angepasst werden."
+  | ExperimentStatistics -> "Experimentstatistik"
   | ExperimentWaitingListTitle -> "Warteliste"
   | Files -> "Dateien"
   | FilterContactsDescription ->
@@ -335,6 +336,13 @@ Wenn eine Experimentsprache angegeben ist, werden alle Nachrichten in dieser Spr
      Experimente nicht mehr angezeigt, obwohl im E-Mail aufgeführt. Sobald \
      alle verfügbaren Plätze einer Session belegt sind, wird sie nicht mehr \
      angezeigt."
+  | ExperimentStatisticsRegistrationPossible ->
+    "Dies gilt als richtig, wenn die Registrierung nicht deaktiviert ist und \
+     es zukünftige Sessions mit freien Plätzen gibt."
+  | ExperimentStatisticsSendingInvitations ->
+    {|Sending: Derzeit läuft ein Mailing.
+  
+Scheduled: Es läuft kein Mailing, aber zukünftige Mailings sind geplant|}
   | ExperimentWaitingList ->
     "Kontakte, die zu diesem Experiment eingeladen wurden, und sich auf die \
      Warteliste gesetzt haben. Sie müssen manuell einer Session zugewiesen \

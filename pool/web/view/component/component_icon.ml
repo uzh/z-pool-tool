@@ -86,3 +86,8 @@ let to_html ?title ?(classnames = []) icon =
        @ CCOption.map_or ~default:[] (a_title %> CCList.return) title)
     []
 ;;
+
+let bool_to_icon = function
+  | false -> to_html Close
+  | true -> to_html Checkmark
+;;
