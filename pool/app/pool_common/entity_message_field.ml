@@ -99,6 +99,7 @@ type t =
   | Exclude [@name "exclude"] [@printer go "exclude"]
   | ExcludeRolesOf [@name "exclude_roles_of"] [@printer go "exclude_roles_of"]
   | Experiment [@name "experiment"] [@printer go "experiment"]
+  | ExperimentCount [@name "experiment_count"] [@printer go "experiment_count"]
   | Experiments [@name "experiments"] [@printer go "experiments"]
   | Experimenter [@name "experimenter"] [@printer go "experimenter"]
   | ExperimentEmailReminderLeadTime

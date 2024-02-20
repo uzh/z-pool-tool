@@ -78,6 +78,7 @@ let rec field_to_string =
   | Exclude -> "Ausgenommen"
   | ExcludeRolesOf -> "Ausgenommen (Rollen von jmd)"
   | Experiment -> "Experiment"
+  | ExperimentCount -> "Anz. Experimente"
   | Experiments -> "Experimente"
   | Experimenter -> "Experimenter"
   | ExperimentEmailReminderLeadTime ->

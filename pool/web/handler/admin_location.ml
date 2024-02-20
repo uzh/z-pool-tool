@@ -192,11 +192,16 @@ let detail edit req =
     let states = Pool_location.Status.all in
     Page.Admin.Location.(
       match edit with
-      | false -> detail location context
+      | false ->
+        let%lwt statistics =
+          Pool_location.Statistics.create database_label id
+        in
+        detail location statistics context |> Lwt.return
       | true ->
         let flash_fetcher key = Sihl.Web.Flash.find key req in
-        form ~location ~states context tenant_languages flash_fetcher)
-    |> Lwt.return_ok
+        form ~location ~states context tenant_languages flash_fetcher
+        |> Lwt.return)
+    |> Lwt_result.ok
     >>= create_layout req context
     >|+ Sihl.Web.Response.of_html
   in

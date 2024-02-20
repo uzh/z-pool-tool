@@ -4,6 +4,18 @@ open Tyxml.Html
 open Component.Input
 module Message = Pool_common.Message
 
+let make_statistics language t =
+  let open Pool_location.Statistics in
+  let int_to_txt i = i |> CCInt.to_string |> txt in
+  [ ExperimentCount.(field, t |> experiment_count |> value |> int_to_txt)
+  ; AssignmentCount.(field, t |> assignment_count |> value |> int_to_txt)
+  ; ShowUpCount.(field, t |> showup_count |> value |> int_to_txt)
+  ; NoShowCount.(field, t |> noshow_count |> value |> int_to_txt)
+  ; ParticipationCount.(field, t |> participation_count |> value |> int_to_txt)
+  ]
+  |> Component.Table.vertical_table `Striped language
+;;
+
 let descriptions_all_languages (location : Pool_location.t) =
   let open Pool_location in
   location.description
@@ -549,7 +561,11 @@ module SessionList = struct
   ;;
 end
 
-let detail (location : Pool_location.t) Pool_context.{ csrf; language; _ } =
+let detail
+  (location : Pool_location.t)
+  statistics
+  Pool_context.{ csrf; language; _ }
+  =
   let open Pool_location in
   let location_details =
     let open Pool_common.Message in
@@ -560,11 +576,7 @@ let detail (location : Pool_location.t) Pool_context.{ csrf; language; _ } =
     ; Field.Link, location.link |> CCOption.map_or ~default:"" Link.value |> txt
     ; Field.Status, location.status |> Status.show |> txt (* TODO: Show files *)
     ]
-    |> Component.Table.vertical_table
-         ~classnames:[ "gap" ]
-         `Striped
-         ~align_top:true
-         language
+    |> Component.Table.vertical_table `Striped ~align_top:true language
   in
   let edit_button =
     link_as_button
@@ -611,7 +623,19 @@ let detail (location : Pool_location.t) Pool_context.{ csrf; language; _ } =
                         ]
                     ; div [ edit_button ]
                     ]
-                ; location_details
+                ; div
+                    ~a:[ a_class [ "gap-lg" ] ]
+                    [ div
+                        ~a:
+                          [ a_class [ "switcher-lg"; "flex-gap"; "align-start" ]
+                          ]
+                        [ location_details
+                        ; div
+                            ~a:
+                              [ a_class [ "inset"; "border"; "bg-grey-light" ] ]
+                            [ make_statistics language statistics ]
+                        ]
+                    ]
                 ]
             ; public_page_link
             ; FileList.create csrf language location
