@@ -15,11 +15,12 @@ let find_targets_grantable_by_admin = Repo.find_targets_grantable_by_admin
 module Statistics = struct
   include Entity_statistics
 
-  let create = Repo_statistics.statistics
+  let current_year () = Ptime_clock.now () |> Ptime.to_year
+  let create ?(year = current_year ()) = Repo_statistics.statistics year
 
   let year_select () =
     let num_years = 10 in
-    let current_year = Ptime_clock.now () |> Ptime.to_year in
+    let current_year = current_year () in
     CCList.range current_year (current_year - num_years)
   ;;
 end

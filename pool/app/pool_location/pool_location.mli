@@ -362,7 +362,7 @@ module Statistics : sig
   val showup_count : t -> ShowUpCount.t
   val noshow_count : t -> NoShowCount.t
   val participation_count : t -> ParticipationCount.t
-  val create : Pool_database.Label.t -> Id.t -> t Lwt.t
+  val create : ?year:int -> Pool_database.Label.t -> Id.t -> t Lwt.t
   val year_select : unit -> int list
 end
 

@@ -216,13 +216,17 @@ let statistics req =
   let id = id req Field.Location Pool_location.Id.of_string in
   let result { Pool_context.database_label; language; _ } =
     let* year =
-      let open CCOption.Infix in
-      Sihl.Web.Request.query Field.(show Year) req
-      >>= CCInt.of_string
-      |> CCOption.to_result Pool_common.Message.(NotFound Field.Year)
+      HttpUtils.find_query_param
+        req
+        Field.Year
+        CCFun.Infix.(
+          CCInt.of_string
+          %> CCOption.to_result Pool_common.Message.(Invalid Field.Year))
       |> Lwt_result.lift
     in
-    let%lwt statistics = Pool_location.Statistics.create database_label id in
+    let%lwt statistics =
+      Pool_location.Statistics.create ~year database_label id
+    in
     Page.Admin.Location.make_statistics ~year language id statistics
     |> Http_utils.Htmx.html_to_plain_text_response
     |> Lwt.return_ok

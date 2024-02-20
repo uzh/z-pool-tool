@@ -35,13 +35,17 @@ let statistics_requeset =
       INNER JOIN pool_locations L ON S.location_uuid = L.uuid
     WHERE
       S.location_uuid = UNHEX(REPLACE(?, '-', ''))
+      AND YEAR(S.start) = ?
       AND S.canceled_at IS NULL
       AND A.canceled_at IS NULL
       AND A.marked_as_deleted = 0
   |sql}
-  |> Repo_entity.Id.t ->! statistics
+  |> Caqti_type.(t2 Repo_entity.Id.t int) ->! statistics
 ;;
 
-let statistics pool =
-  Utils.Database.find (Pool_database.Label.value pool) statistics_requeset
+let statistics year pool id =
+  Utils.Database.find
+    (Pool_database.Label.value pool)
+    statistics_requeset
+    (id, year)
 ;;
