@@ -71,9 +71,9 @@ module Statistics = struct
     let%lwt sending_invitations = Repo.sending_invitations pool id in
     let%lwt session_count = Repo.session_count pool id in
     let%lwt sent_invitation_count = Repo.sent_invitation_count pool id in
-    let%lwt showup_count = Repo.showup_count pool id in
-    let%lwt noshow_count = Repo.noshow_count pool id in
-    let%lwt participation_count = Repo.participation_count pool id in
+    let%lwt showup_count, noshow_count, participation_count =
+      Repo.assignment_counts pool id
+    in
     Lwt.return
       { registration_possible
       ; sending_invitations

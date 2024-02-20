@@ -133,39 +133,26 @@ let sent_invitation_count pool =
     sent_invitation_count_request
 ;;
 
-let assignment_count_request where =
+let assignment_counts_request =
   let open Caqti_request.Infix in
-  Format.asprintf
-    {sql|
+  {sql|
       SELECT
-        COUNT(*)
+        COALESCE(SUM(pool_assignments.no_show), 0),
+        COALESCE(SUM(pool_assignments.no_show = 0), 0),
+        COALESCE(SUM(pool_assignments.participated), 0)
       FROM
         pool_assignments
       INNER JOIN
         pool_sessions ON pool_sessions.uuid = pool_assignments.session_uuid
       WHERE
         pool_sessions.experiment_uuid = UNHEX(REPLACE(?, '-', ''))
-      AND
-        %s
+        AND pool_sessions.canceled_at IS NULL
+        AND pool_assignments.marked_as_deleted = 0
+        AND pool_assignments.canceled_at IS NULL
     |sql}
-    where
-  |> Caqti_type.(Repo_entity.Id.t ->! int)
+  |> Caqti_type.(Repo_entity.Id.t ->! t3 int int int)
 ;;
 
-let showup_count pool =
-  {sql| pool_assignments.no_show = 0 |sql}
-  |> assignment_count_request
-  |> Utils.Database.find (Pool_database.Label.value pool)
-;;
-
-let noshow_count pool =
-  {sql| pool_assignments.no_show = 1 |sql}
-  |> assignment_count_request
-  |> Utils.Database.find (Pool_database.Label.value pool)
-;;
-
-let participation_count pool =
-  {sql| pool_assignments.participated = 1 |sql}
-  |> assignment_count_request
-  |> Utils.Database.find (Pool_database.Label.value pool)
+let assignment_counts pool =
+  Utils.Database.find (Pool_database.Label.value pool) assignment_counts_request
 ;;
