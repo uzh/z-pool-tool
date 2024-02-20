@@ -201,6 +201,52 @@ module Partials = struct
     ;;
   end
 
+  let swap_session_notification_form_fields
+    context
+    (experiment : Experiment.t)
+    session_id
+    assignment_id
+    languages
+    swap_session_template
+    flash_fetcher
+    text_messages_disabled
+    =
+    let id = "swap-session-notification-form" in
+    let language_select_attriutes =
+      if CCList.length languages > 1
+      then (
+        let action =
+          assignment_specific_path
+            ~suffix:"swap-session/template-language"
+            experiment.Experiment.id
+            session_id
+            assignment_id
+        in
+        Some
+          Htmx.
+            [ hx_target ("#" ^ id)
+            ; hx_trigger "change"
+            ; hx_swap "innerHTML"
+            ; hx_get (action |> Sihl.Web.externalize_path)
+            ])
+      else None
+    in
+    div
+      ~a:[ a_id id ]
+      [ Page_admin_message_template.template_inputs
+          ?language_select_attriutes
+          ~hide_text_message_input:true
+          context
+          text_messages_disabled
+          (`Create swap_session_template)
+          Message_template.Label.AssignmentSessionChange
+          ~languages
+          ?fixed_language:experiment.Experiment.language
+          ~selected_language:swap_session_template.Message_template.language
+          ~flash_fetcher
+      ]
+  ;;
+
   let swap_session_form
     ({ Pool_context.language; csrf; _ } as context)
     experiment
@@ -271,17 +317,15 @@ module Partials = struct
                   Field.NotifyContact
               ; div
                   ~a:[ a_id notifier_id; a_class [ "hidden"; "stack" ] ]
-                  [ Page_admin_message_template.template_inputs
-                      ~hide_text_message_input:true
+                  [ swap_session_notification_form_fields
                       context
+                      experiment
+                      session.Session.id
+                      assignment.id
+                      languages
+                      swap_session_template
+                      flash_fetcher
                       text_messages_disabled
-                      (`Create swap_session_template)
-                      Message_template.Label.AssignmentSessionChange
-                      ~languages
-                      ?fixed_language:experiment.Experiment.language
-                      ~selected_language:
-                        swap_session_template.Message_template.language
-                      ~flash_fetcher
                   ; submit_element
                       language
                       (Pool_common.Message.Save None)

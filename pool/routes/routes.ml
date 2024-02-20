@@ -382,14 +382,15 @@ module Admin = struct
                   "/mark-as-deleted"
                   ~middlewares:[ Access.mark_as_deleted ]
                   mark_as_deleted
-              ; get
-                  "swap-session"
-                  ~middlewares:[ Access.update ]
-                  swap_session_get
-              ; post
-                  "swap-session"
-                  ~middlewares:[ Access.update ]
-                  swap_session_post
+              ; choose
+                  ~scope:"swap-session"
+                  [ get "" ~middlewares:[ Access.update ] swap_session_get
+                  ; post "" ~middlewares:[ Access.update ] swap_session_post
+                  ; get
+                      "template-language"
+                      ~middlewares:[ Access.update ]
+                      swap_session_toggle_language
+                  ]
               ]
             in
             [ choose ~scope:(Assignment |> url_key) specific ]

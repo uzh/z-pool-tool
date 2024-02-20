@@ -112,6 +112,7 @@ let template_inputs
   ?entity
   ?(hide_text_message_input = false)
   ?languages
+  ?language_select_attriutes
   ?flash_fetcher
   ?fixed_language
   ?selected_language
@@ -185,6 +186,7 @@ let template_inputs
       | None -> div []
       | Some languages ->
         selector
+          ?attributes:language_select_attriutes
           ~required:true
           language
           Field.Language

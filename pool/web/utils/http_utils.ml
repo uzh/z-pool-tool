@@ -83,6 +83,14 @@ let find_query_lang req =
       %> CCOption.of_result
 ;;
 
+let find_query_param req field decode =
+  let open CCResult.Infix in
+  let open Pool_common in
+  Sihl.Web.Request.query (Message.Field.show field) req
+  |> CCOption.to_result Message.(NotFound field)
+  >>= decode
+;;
+
 let path_with_language lang path =
   lang
   |> CCOption.map (fun lang ->
