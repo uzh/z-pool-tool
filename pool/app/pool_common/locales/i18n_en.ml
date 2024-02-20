@@ -82,6 +82,7 @@ let to_string = function
   | LocationNewTitle -> "Create new location"
   | LocationNoFiles -> "There are no files for this location."
   | LocationNoSessions -> "No sessions found for this location."
+  | LocationStatistics -> "Location statistics"
   | LoginTitle -> "Login"
   | MailingDetailTitle start ->
     Format.asprintf "Mailing at %s" (Utils_time.formatted_date_time start)

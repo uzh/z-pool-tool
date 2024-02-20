@@ -7,13 +7,23 @@ module Message = Pool_common.Message
 let make_statistics language t =
   let open Pool_location.Statistics in
   let int_to_txt i = i |> CCInt.to_string |> txt in
-  [ ExperimentCount.(field, t |> experiment_count |> value |> int_to_txt)
-  ; AssignmentCount.(field, t |> assignment_count |> value |> int_to_txt)
-  ; ShowUpCount.(field, t |> showup_count |> value |> int_to_txt)
-  ; NoShowCount.(field, t |> noshow_count |> value |> int_to_txt)
-  ; ParticipationCount.(field, t |> participation_count |> value |> int_to_txt)
-  ]
-  |> Component.Table.vertical_table `Striped language
+  div
+    [ h3
+        [ Pool_common.(Utils.text_to_string language I18n.LocationStatistics)
+          |> txt
+        ]
+    ; [ ExperimentCount.(field, t |> experiment_count |> value |> int_to_txt)
+      ; AssignmentCount.(field, t |> assignment_count |> value |> int_to_txt)
+      ; ShowUpCount.(field, t |> showup_count |> value |> int_to_txt)
+      ; NoShowCount.(field, t |> noshow_count |> value |> int_to_txt)
+      ; ParticipationCount.(
+          field, t |> participation_count |> value |> int_to_txt)
+      ]
+      |> Component.Table.vertical_table
+           ~classnames:[ "fixed" ]
+           `Striped
+           language
+    ]
 ;;
 
 let descriptions_all_languages (location : Pool_location.t) =

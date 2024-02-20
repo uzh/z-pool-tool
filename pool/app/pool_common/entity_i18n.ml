@@ -47,6 +47,7 @@ type t =
   | LocationNewTitle
   | LocationNoFiles
   | LocationNoSessions
+  | LocationStatistics
   | LoginTitle
   | MailingDetailTitle of Ptime.t
   | MailingDistributionDescription
