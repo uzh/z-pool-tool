@@ -54,46 +54,33 @@ let registration_possible pool id =
       id
 ;;
 
-let mailing_sending_request =
+let sending_invitations_request =
   let open Caqti_request.Infix in
   {sql|
-    SELECT EXISTS(
-      SELECT
-        1
-      FROM
-        pool_mailing
-      WHERE
-        experiment_uuid = UNHEX(REPLACE(?, '-', ''))
-        AND pool_mailing.start <= NOW()
-        AND pool_mailing.end >= NOW())
-    |sql}
-  |> Caqti_type.(Repo_entity.Id.t ->! bool)
-;;
-
-let mailing_scheduled_request =
-  let open Caqti_request.Infix in
-  {sql|
-    SELECT EXISTS(
-      SELECT
-        1
-      FROM
-        pool_mailing
-      WHERE
-        experiment_uuid = UNHEX(REPLACE(?, '-', ''))
-        AND pool_mailing.start >= NOW())
-    |sql}
-  |> Caqti_type.(Repo_entity.Id.t ->! bool)
+    SELECT 
+      DISTINCT (CASE 
+          WHEN CURRENT_TIMESTAMP BETWEEN start AND end THEN 'sending'
+          WHEN start > CURRENT_TIMESTAMP THEN 'scheduled'
+          ELSE 'no'
+      END) AS status
+    FROM 
+      pool_mailing
+    WHERE 
+      experiment_uuid = UNHEX(REPLACE(?, '-', ''))
+      ORDER BY FIELD(status, 'sending', 'scheduled', 'no')
+      LIMIT 1
+  |sql}
+  |> Caqti_type.(Repo_entity.Id.t ->! string)
 ;;
 
 let sending_invitations pool id =
+  let open Utils.Lwt_result.Infix in
   let open Statistics.SendingInvitations in
-  let find req = Utils.Database.find (Pool_database.Label.value pool) req id in
-  match%lwt find mailing_sending_request with
-  | true -> Lwt.return Sending
-  | false ->
-    (match%lwt find mailing_scheduled_request with
-     | true -> Lwt.return Scheduled
-     | false -> Lwt.return No)
+  Utils.Database.find
+    (Pool_database.Label.value pool)
+    sending_invitations_request
+    id
+  ||> read
 ;;
 
 let session_count_request =

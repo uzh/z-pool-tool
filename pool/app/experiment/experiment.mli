@@ -480,7 +480,11 @@ module Statistics : sig
   val showup_count : t -> ShowUpCount.t
   val noshow_count : t -> NoShowCount.t
   val participation_count : t -> ParticipationCount.t
-  val create : Pool_database.Label.t -> Id.t -> t Lwt.t
+
+  val create
+    :  Pool_database.Label.t
+    -> Id.t
+    -> (t, Pool_common.Message.error) Lwt_result.t
 end
 
 val column_title : Query.Column.t

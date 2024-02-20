@@ -1,14 +1,12 @@
-let printer = Utils.ppx_printer
-
-open Pool_common
-module Field = Message.Field
+module Field = Pool_common.Message.Field
+module Model = Pool_common.Model
 
 module RegistrationPossible = struct
   include Model.Boolean
 
   let field = Field.RegistrationPossible
   let schema = schema field
-  let hint = I18n.ExperimentStatisticsRegistrationPossible
+  let hint = Pool_common.I18n.ExperimentStatisticsRegistrationPossible
 end
 
 module SendingInvitations = struct
@@ -16,16 +14,21 @@ module SendingInvitations = struct
     let field = Pool_common.Message.Field.SendingInvitations
 
     type t =
-      | No [@name "no"] [@printer printer "no"]
-      | Sending [@name "sending"] [@printer printer "sending"]
-      | Scheduled [@name "scheduld"] [@printer printer "scheduld"]
+      | No [@name "no"] [@printer Utils.ppx_printer "no"]
+      | Sending [@name "sending"] [@printer Utils.ppx_printer "sending"]
+      | Scheduled [@name "scheduled"] [@printer Utils.ppx_printer "scheduled"]
     [@@deriving enum, eq, ord, sexp_of, show { with_path = false }, yojson]
   end
 
   include Pool_common.Model.SelectorType (Core)
   include Core
 
-  let hint = I18n.ExperimentStatisticsSendingInvitations
+  let read str =
+    try Ok (Utils.Json.read_variant t_of_yojson str) with
+    | _ -> Error (Pool_common.Message.Invalid field)
+  ;;
+
+  let hint = Pool_common.I18n.ExperimentStatisticsSendingInvitations
 end
 
 module SessionCount = struct

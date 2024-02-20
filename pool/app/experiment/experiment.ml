@@ -67,14 +67,15 @@ module Statistics = struct
   module Repo = Repo_statistics
 
   let create pool id =
+    let open Utils.Lwt_result.Infix in
     let%lwt registration_possible = Repo.registration_possible pool id in
-    let%lwt sending_invitations = Repo.sending_invitations pool id in
+    let* sending_invitations = Repo.sending_invitations pool id in
     let%lwt session_count = Repo.session_count pool id in
     let%lwt sent_invitation_count = Repo.sent_invitation_count pool id in
     let%lwt showup_count, noshow_count, participation_count =
       Repo.assignment_counts pool id
     in
-    Lwt.return
+    Lwt_result.return
       { registration_possible
       ; sending_invitations
       ; session_count
