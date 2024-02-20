@@ -2,7 +2,7 @@ import { Calendar } from '@fullcalendar/core';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import listPlugin from '@fullcalendar/list';
-import 'tippy.js/dist/svg-arrow.css';
+import tippy from 'tippy.js';
 import { notifyUser } from "./utils"
 import { generateColor } from "../utils/color"
 
@@ -88,13 +88,12 @@ export const initCalendar = () => {
                 },
                 eventDidMount: function (info) {
                     tippy(info.el, {
-                        allowHTML: true,
-                        appendTo: el,
                         arrow: false,
                         content: tooltipContent(info.event, hideLocation),
+                        allowHTML: true,
+                        placement: 'right',
                         delay: [200, 0],
                         interactive: true,
-                        placement: 'right',
                         trigger: 'click',
                     });
                 },
