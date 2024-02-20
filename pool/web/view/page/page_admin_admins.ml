@@ -187,9 +187,9 @@ let detail ({ Pool_context.language; _ } as context) admin granted_roles =
   |> div ~a:[ a_class [ "trim"; "safety-margin" ] ]
 ;;
 
-let edit context editabe_admin granted_roles top_element =
+let edit context editable_admin granted_roles top_element =
   let open Sihl.Contract.User in
-  let user = Admin.user editabe_admin in
+  let user = Admin.user editable_admin in
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
     ([ h1
@@ -201,6 +201,10 @@ let edit context editabe_admin granted_roles top_element =
                 (user.name |> Option.value ~default:""))
          ]
      ]
-     @ roles_list ~is_edit:true ~top_element context editabe_admin granted_roles
-    )
+     @ roles_list
+         ~is_edit:true
+         ~top_element
+         context
+         editable_admin
+         granted_roles)
 ;;

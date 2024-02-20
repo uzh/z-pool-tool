@@ -76,7 +76,7 @@ let reporter (request : Rock.Request.t) =
     in
     let%lwt res =
       Gitlab_notify.notify
-        ~labels:[ "bug"; "exception" ]
+        ~labels:[ "Bug"; "exception" ]
         ~additional
         (Failure exn)
         (Printexc.get_backtrace ())
