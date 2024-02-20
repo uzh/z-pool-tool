@@ -89,6 +89,7 @@ export const initCalendar = () => {
                 eventDidMount: function (info) {
                     tippy(info.el, {
                         arrow: false,
+                        appendTo: el,
                         content: tooltipContent(info.event, hideLocation),
                         allowHTML: true,
                         placement: 'right',
