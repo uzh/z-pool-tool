@@ -455,13 +455,10 @@ let swap_session_get_helper action req =
           assignment.contact
         |> Lwt_result.return
       | `ToggleLanguage ->
-        let open CCResult.Infix in
-        req
-        |> Sihl.Web.Request.query_list
-        |> CCList.assoc_opt ~eq:CCString.equal Field.(show Language)
-        |> CCFun.flip CCOption.bind CCList.head_opt
-        |> CCOption.to_result Pool_common.Message.(NotFound Field.Language)
-        >>= Pool_common.Language.create
+        HttpUtils.find_query_param
+          req
+          Field.Language
+          Pool_common.Language.create
         |> Lwt_result.lift
     in
     let* swap_session_template =
