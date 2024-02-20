@@ -25,22 +25,19 @@ let statistics_requeset =
   {sql|
     SELECT
       COUNT(DISTINCT S.experiment_uuid),
-      COUNT(A.id) AS num_assignments,
-      SUM(A.no_show = 0) AS showups,
-      SUM(A.no_show) AS no_shows,
-      SUM(A.participated) AS participations
+      COUNT(A.id),
+      COALESCE(SUM(A.no_show = 0), 0),
+      COALESCE(SUM(A.no_show), 0),
+      COALESCE(SUM(A.participated), 0)
     FROM
       pool_assignments A
       INNER JOIN pool_sessions S ON A.session_uuid = S.uuid
-      LEFT JOIN pool_locations L ON S.location_uuid = L.uuid
+      INNER JOIN pool_locations L ON S.location_uuid = L.uuid
     WHERE
       S.location_uuid = UNHEX(REPLACE(?, '-', ''))
       AND S.canceled_at IS NULL
       AND A.canceled_at IS NULL
       AND A.marked_as_deleted = 0
-    GROUP BY
-      L.uuid,
-      YEAR(S.start)
   |sql}
   |> Repo_entity.Id.t ->! statistics
 ;;
