@@ -4,25 +4,59 @@ open Tyxml.Html
 open Component.Input
 module Message = Pool_common.Message
 
-let make_statistics language t =
-  let open Pool_location.Statistics in
+let base_path = "/admin/locations"
+
+let location_specific_path ?suffix id =
+  let path = Format.asprintf "%s/%s" base_path (Pool_location.Id.value id) in
+  match suffix with
+  | None -> path
+  | Some suffix -> Format.asprintf "%s/%s" path suffix
+;;
+
+let make_statistics ?year language location_id t =
+  let open Pool_location in
+  let open Statistics in
   let int_to_txt i = i |> CCInt.to_string |> txt in
+  let id = Format.asprintf "location-%s" (Id.value location_id) in
+  let table =
+    [ ExperimentCount.(field, t |> experiment_count |> value |> int_to_txt)
+    ; AssignmentCount.(field, t |> assignment_count |> value |> int_to_txt)
+    ; ShowUpCount.(field, t |> showup_count |> value |> int_to_txt)
+    ; NoShowCount.(field, t |> noshow_count |> value |> int_to_txt)
+    ; ParticipationCount.(
+        field, t |> participation_count |> value |> int_to_txt)
+    ]
+    |> Component.Table.vertical_table ~classnames:[ "fixed" ] `Striped language
+  in
+  let htmx =
+    Htmx.
+      [ hx_get
+          (location_id
+           |> location_specific_path ~suffix:"statistics"
+           |> Sihl.Web.externalize_path)
+      ; hx_trigger "change"
+      ; hx_target ("#" ^ id)
+      ; hx_swap "outerHTML"
+      ]
+  in
   div
+    ~a:[ a_id id ]
     [ h3
         [ Pool_common.(Utils.text_to_string language I18n.LocationStatistics)
           |> txt
         ]
-    ; [ ExperimentCount.(field, t |> experiment_count |> value |> int_to_txt)
-      ; AssignmentCount.(field, t |> assignment_count |> value |> int_to_txt)
-      ; ShowUpCount.(field, t |> showup_count |> value |> int_to_txt)
-      ; NoShowCount.(field, t |> noshow_count |> value |> int_to_txt)
-      ; ParticipationCount.(
-          field, t |> participation_count |> value |> int_to_txt)
-      ]
-      |> Component.Table.vertical_table
-           ~classnames:[ "fixed" ]
-           `Striped
-           language
+    ; div
+        ~a:[ a_class [ "stack" ] ]
+        [ selector
+            ~attributes:htmx
+            language
+            Message.Field.Year
+            CCInt.to_string
+            (year_select ())
+            year
+            ()
+        ; table
+        ]
     ]
 ;;
 
@@ -43,7 +77,7 @@ let descriptions_all_languages (location : Pool_location.t) =
 ;;
 
 let list Pool_context.{ language; _ } location_list query =
-  let url = Uri.of_string "/admin/locations" in
+  let url = Uri.of_string base_path in
   let data_table =
     Component.DataTable.create_meta
       ~search:Pool_location.searchable_by
@@ -58,7 +92,7 @@ let list Pool_context.{ language; _ } location_list query =
         ~icon:Component.Icon.Add
         ~classnames:[ "small"; "nobr" ]
         ~control:(language, Pool_common.Message.(Add (Some Field.Location)))
-        "admin/locations/create"
+        (Format.asprintf "%s/create" base_path)
     in
     [ `column Pool_location.column_name
     ; `column Pool_location.column_description
@@ -78,7 +112,7 @@ let list Pool_context.{ language; _ } location_list query =
     [ txt (Name.value location.name)
     ; descriptions_all_languages location
     ; Component.Partials.address_to_html language location.address
-    ; Format.asprintf "/admin/locations/%s" (Pool_location.Id.value location.id)
+    ; location_specific_path location.id
       |> Component.Input.link_as_button ~icon:Component.Icon.Eye
     ]
     |> CCList.map (CCList.return %> td)
@@ -117,9 +151,7 @@ let file_form
   Pool_context.{ language; csrf; _ }
   =
   let open Pool_location in
-  let action =
-    location.id |> Id.value |> Format.asprintf "/admin/locations/%s/files"
-  in
+  let action = location_specific_path ~suffix:"files" location.id in
   let label_select =
     let open Mapping.Label in
     selector language Message.Field.Label show labels None ()
@@ -174,12 +206,11 @@ let form
   flash_fetcher
   =
   let open Pool_location in
-  let path = "/admin/locations" in
   let default = "" in
   let action =
     location
-    |> CCOption.map_or ~default:path (fun { id; _ } ->
-      id |> Id.value |> Format.asprintf "%s/%s" path)
+    |> CCOption.map_or ~default:base_path (fun { id; _ } ->
+      location_specific_path id)
   in
   let value field_fcn decode_fcn =
     let open CCOption.Infix in
@@ -440,9 +471,7 @@ module FileList = struct
     let open Pool_common in
     a
       ~a:
-        [ location_id
-          |> Pool_location.Id.value
-          |> Format.asprintf "/admin/locations/%s/files/create"
+        [ location_specific_path ~suffix:"files/create" location_id
           |> Sihl.Web.externalize_path
           |> a_href
         ]
@@ -456,9 +485,7 @@ module FileList = struct
       ~icon:Icon.Create
       ~classnames:[ "small" ]
       ~control:(language, Message.(Add (Some Field.File)))
-      (id
-       |> Pool_location.Id.value
-       |> Format.asprintf "/admin/locations/%s/files/create")
+      (location_specific_path ~suffix:"files/create" id)
   ;;
 
   let thead language location_id =
@@ -593,9 +620,7 @@ let detail
       ~icon:Icon.Create
       ~classnames:[ "small" ]
       ~control:(language, Pool_common.Message.(Edit (Some Field.Location)))
-      (Format.asprintf
-         "/admin/locations/%s/edit"
-         (location.Pool_location.id |> Id.value))
+      (location_specific_path ~suffix:"edit" location.Pool_location.id)
   in
   let public_page_link =
     p
@@ -643,7 +668,7 @@ let detail
                         ; div
                             ~a:
                               [ a_class [ "inset"; "border"; "bg-grey-light" ] ]
-                            [ make_statistics language statistics ]
+                            [ make_statistics language location.id statistics ]
                         ]
                     ]
                 ]

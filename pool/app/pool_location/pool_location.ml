@@ -16,4 +16,10 @@ module Statistics = struct
   include Entity_statistics
 
   let create = Repo_statistics.statistics
+
+  let year_select () =
+    let num_years = 10 in
+    let current_year = Ptime_clock.now () |> Ptime.to_year in
+    CCList.range current_year (current_year - num_years)
+  ;;
 end

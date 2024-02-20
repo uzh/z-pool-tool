@@ -287,6 +287,7 @@ let rec field_to_string =
   | Version -> "Version"
   | Virtual -> "Virtuell"
   | WaitingList -> "Warteliste"
+  | Year -> "Jahr"
   | Zip -> "PLZ"
 ;;
 

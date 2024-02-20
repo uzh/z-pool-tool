@@ -339,6 +339,7 @@ type t =
   | Version [@name "version"] [@printer go "version"]
   | Virtual [@name "virtual"] [@printer go "virtual"]
   | WaitingList [@name "waiting_list"] [@printer go "waiting_list"]
+  | Year [@name "year"] [@printer go "year"]
   | Zip [@name "zip"] [@printer go "zip"]
 [@@deriving eq, show { with_path = false }, yojson, variants, sexp_of]
 

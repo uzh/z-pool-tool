@@ -211,6 +211,26 @@ let detail edit req =
 let show = detail false
 let edit = detail true
 
+let statistics req =
+  let open Utils.Lwt_result.Infix in
+  let id = id req Field.Location Pool_location.Id.of_string in
+  let result { Pool_context.database_label; language; _ } =
+    let* year =
+      let open CCOption.Infix in
+      Sihl.Web.Request.query Field.(show Year) req
+      >>= CCInt.of_string
+      |> CCOption.to_result Pool_common.Message.(NotFound Field.Year)
+      |> Lwt_result.lift
+    in
+    let%lwt statistics = Pool_location.Statistics.create database_label id in
+    Page.Admin.Location.make_statistics ~year language id statistics
+    |> Http_utils.Htmx.html_to_plain_text_response
+    |> Lwt.return_ok
+  in
+  result
+  |> Http_utils.Htmx.handle_error_message ~error_as_notification:true ~src req
+;;
+
 let update req =
   let open Utils.Lwt_result.Infix in
   let result { Pool_context.database_label; _ } =
