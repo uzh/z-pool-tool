@@ -52,6 +52,12 @@
     }
 }
 
+// Week view
+.fc-timegrid-event-harness .fc-event {
+    max-width: 100%;
+    overflow: hidden;
+}
+
 .tippy-content {
     min-width: 19rem;
 

@@ -89,6 +89,7 @@ export const initCalendar = () => {
                 eventDidMount: function (info) {
                     tippy(info.el, {
                         arrow: false,
+                        appendTo: el,
                         content: tooltipContent(info.event, hideLocation),
                         allowHTML: true,
                         placement: 'right',
@@ -106,6 +107,7 @@ export const initCalendar = () => {
                 windowResize: function () {
                     this.changeView(determineView())
                 },
+                slotEventOverlap: false
             }).render();
         } catch (error) {
             console.error(error)
