@@ -107,6 +107,7 @@ export const initCalendar = () => {
                 windowResize: function () {
                     this.changeView(determineView())
                 },
+                slotEventOverlap: false
             }).render();
         } catch (error) {
             console.error(error)
