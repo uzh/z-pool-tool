@@ -464,12 +464,18 @@ let swap_session_get_helper action req =
         >>= Pool_common.Language.create
         |> Lwt_result.lift
     in
-    let%lwt swap_session_template =
+    let* swap_session_template =
       Message_template.(
-        find_default_by_label_and_language
+        find_entity_defaults_by_label
+          ~entity_uuids:
+            [ Session.Id.to_common session_id
+            ; Experiment.Id.to_common experiment_id
+            ]
           database_label
-          template_lang
+          [ template_lang ]
           Label.AssignmentSessionChange)
+      ||> CCList.head_opt
+      ||> CCOption.to_result Pool_common.Message.(NotFound Field.Template)
     in
     let text_messages_disabled =
       Pool_context.Tenant.text_messages_enabled req
