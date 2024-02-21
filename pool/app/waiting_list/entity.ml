@@ -27,7 +27,7 @@ type t =
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
   }
-[@@deriving eq, show]
+[@@deriving eq, show, fields ~getters]
 
 let create ?(id = Pool_common.Id.create ()) contact experiment admin_comment =
   { id

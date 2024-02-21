@@ -53,7 +53,7 @@ module Update : sig
 end = struct
   type t = Waiting_list.update
 
-  let command admin_comment = Waiting_list.{ admin_comment }
+  let command admin_comment = { Waiting_list.admin_comment }
 
   let schema =
     Conformist.(

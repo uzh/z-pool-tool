@@ -468,7 +468,7 @@ let assign_contact_from_waiting_list_to_disabled_experiment () =
       }
   in
   let waiting_list = Model.create_waiting_list () in
-  let waiting_list = Waiting_list.{ waiting_list with experiment } in
+  let waiting_list = { waiting_list with Waiting_list.experiment } in
   let already_enrolled = false in
   let confirmation_email = confirmation_email experiment in
   let events =

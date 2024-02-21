@@ -32,7 +32,7 @@ let handle req action =
             contact
             experiment
         in
-        Waiting_list.{ contact; experiment }
+        { Waiting_list.contact; experiment }
         |> Create.handle ~tags confirmation_email
         |> Lwt_result.lift
       | `Destroy ->
