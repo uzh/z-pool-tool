@@ -24,7 +24,10 @@ let make_tabs html links =
           ~a:[ a_input_type `Checkbox; a_class [ "toggle" ]; a_id toggle_id ]
           ()
       ; nav
-          ~a:[ a_class [ "tab-nav"; "toggle-body"; "flexrow"; "flex-gap" ] ]
+          ~a:
+            [ a_class
+                [ "tab-nav"; "toggle-body"; "flexrow"; "wrap"; "flex-gap-sm" ]
+            ]
           links
       ]
   in
