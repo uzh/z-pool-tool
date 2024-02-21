@@ -57,12 +57,10 @@ let create
         | None -> [ field ]
         | Some hint -> [ field; br (); i [ txt hint ] ]
       in
-      tr [ th head; td [ value ] ])
+      tr [ th ~a:[ a_class [ "w-10" ] ] head; td [ value ] ])
     |> table
          ~a:
-           [ a_class
-               ("fixed"
-                :: Component_table.table_classes `Simple ~align_top:true ())
+           [ a_class (Component_table.table_classes `Simple ~align_top:true ())
            ]
     |> fun figures -> div [ title; figures ]
   in

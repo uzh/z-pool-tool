@@ -113,7 +113,6 @@ module Sql = struct
     let columns =
       if count then "COUNT(*)" else sql_select_columns |> CCString.concat ", "
     in
-    let joins = if count then "" else joins in
     let group_by = if count then "" else "GROUP BY pool_sessions.uuid" in
     Format.asprintf
       {sql| SELECT %s FROM pool_sessions %s %s %s |sql}
@@ -851,27 +850,34 @@ module Sql = struct
     CCOption.to_list guardian |> CCString.concat " AND " |> Lwt.return
   ;;
 
-  let find_incomplete_by_admin_request guardian_conditions =
-    let open Caqti_request.Infix in
-    Format.asprintf
-      {sql|
-        WHERE %s
-        AND pool_sessions.closed_at IS NULL
-        AND pool_sessions.canceled_at IS NULL
-        AND (pool_sessions.start + INTERVAL duration SECOND) < NOW()
-      |sql}
-      guardian_conditions
-    |> find_request_sql
-    |> order_by_start
-    |> Caqti_type.unit ->* RepoEntity.t
-  ;;
+  (* let find_incomplete_by_admin_request guardian_conditions = let open
+     Caqti_request.Infix in Format.asprintf {sql| WHERE %s AND
+     pool_sessions.closed_at IS NULL AND pool_sessions.canceled_at IS NULL AND
+     (pool_sessions.start + INTERVAL duration SECOND) < NOW() |sql}
+     guardian_conditions |> find_request_sql |> order_by_start |>
+     Caqti_type.unit ->* RepoEntity.t ;; *)
 
-  let find_incomplete_by_admin actor pool =
+  let find_incomplete_by_admin ?query actor pool =
     let%lwt guardian_conditions = find_by_user_params pool actor in
-    Utils.Database.collect
-      (Database.Label.value pool)
-      (find_incomplete_by_admin_request guardian_conditions)
-      ()
+    let where =
+      let sql =
+        Format.asprintf
+          {sql|
+            %s
+            AND pool_sessions.closed_at IS NULL
+            AND pool_sessions.canceled_at IS NULL
+            AND (pool_sessions.start + INTERVAL duration SECOND) < NOW()
+          |sql}
+          guardian_conditions
+      in
+      sql, Dynparam.empty
+    in
+    Query.collect_and_count
+      pool
+      query
+      ~select:find_request_sql
+      ~where
+      Repo_entity.t
   ;;
 
   let find_for_calendar_by_user actor pool ~start_time ~end_time =

@@ -805,6 +805,7 @@ module Admin = struct
     let dashboard =
       Dashboard.
         [ get "/dashboard" index
+        ; get "/dashboard/incomplete-sessions" incomplete_sessions
         ; get "/statistics" ~middlewares:[ Access.Statistics.read ] statistics
         ]
     in

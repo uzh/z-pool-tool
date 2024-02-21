@@ -11,6 +11,11 @@ let statistics_from_request req database_label =
   Lwt.return (period, statistics)
 ;;
 
+let incomplete_sessions_query req =
+  let open Session in
+  Query.from_request ~sortable_by ~default:incomplete_default_query req
+;;
+
 let index req =
   let result ({ Pool_context.database_label; user; _ } as context) =
     let open Utils.Lwt_result.Infix in
@@ -28,13 +33,33 @@ let index req =
       | false -> Lwt.return_none
     in
     let%lwt incomplete_sessions =
-      Session.find_incomplete_by_admin actor database_label
+      Session.find_incomplete_by_admin
+        ~query:(incomplete_sessions_query req)
+        actor
+        database_label
     in
     Page.Admin.Dashboard.index statistics incomplete_sessions context
     |> create_layout req ~active_navigation:"/admin/dashboard" context
     >|+ Sihl.Web.Response.of_html
   in
   result |> Http_utils.extract_happy_path ~src req
+;;
+
+let incomplete_sessions req =
+  let result { Pool_context.database_label; language; user; _ } =
+    let open Utils.Lwt_result.Infix in
+    let* actor = Pool_context.Utils.find_authorizable database_label user in
+    let%lwt incomplete_sessions =
+      Session.find_incomplete_by_admin
+        ~query:(incomplete_sessions_query req)
+        actor
+        database_label
+    in
+    Page.Admin.Dashboard.Partials.session_overview language incomplete_sessions
+    |> Http_utils.Htmx.html_to_plain_text_response
+    |> Lwt_result.return
+  in
+  result |> Http_utils.Htmx.handle_error_message req
 ;;
 
 let statistics req =

@@ -371,9 +371,10 @@ val find_for_calendar_by_user
   -> Calendar.t list Lwt.t
 
 val find_incomplete_by_admin
-  :  Guard.Actor.t
+  :  ?query:Query.t
+  -> Guard.Actor.t
   -> Pool_database.Label.t
-  -> t list Lwt.t
+  -> (t list * Query.t) Lwt.t
 
 val to_email_text : Pool_common.Language.t -> t -> string
 val follow_up_sessions_to_email_list : t list -> string
@@ -399,6 +400,7 @@ val sortable_by : Query.Column.t list
 val default_filter : Query.Filter.t
 val default_sort : Query.Sort.t
 val default_query : Query.t
+val incomplete_default_query : Query.t
 
 module Repo : sig
   module Id : sig

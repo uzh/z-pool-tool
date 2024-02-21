@@ -676,3 +676,4 @@ let default_filter =
 ;;
 
 let default_query = Query.create ~sort:default_sort ~filter:default_filter ()
+let incomplete_default_query = Query.create ~sort:default_sort ()
