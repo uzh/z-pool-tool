@@ -82,7 +82,7 @@ module Statistics = struct
         ]
     in
     let to_table =
-      Component.Table.vertical_table ~classnames:[ "fixed" ] `Striped language
+      Component.Table.vertical_table ~th_class:[ "w-8" ] `Simple language
     in
     let registration_possible_html =
       let open RegistrationPossible in
@@ -575,7 +575,7 @@ let edit
            |> build_experiment_path experiment)
       in
       div
-        ~a:[ a_class [ "switcher-lg"; "flex-gap" ] ]
+        ~a:[ a_class [ "grid-col-2"; "flex-gap" ] ]
         [ Tag.add_tags_form context ~existing:current available assign_action
         ; Component.Tag.tag_form
             ~label:Pool_common.I18n.SelectedTags
@@ -873,8 +873,8 @@ let detail
         ~a:[ a_class [ "stack-lg" ] ]
         ([ notifications
          ; div
-             ~a:[ a_class [ "switcher-lg"; "flex-gap"; "align-start" ] ]
-             [ experiment_table
+             ~a:[ a_class [ "grid-col-3"; "align-start" ] ]
+             [ div ~a:[ a_class [ "span-2" ] ] [ experiment_table ]
              ; div
                  ~a:[ a_class [ "border"; "inset"; "bg-grey-light" ] ]
                  [ statistics ]
