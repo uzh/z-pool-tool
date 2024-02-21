@@ -613,7 +613,12 @@ let detail
     ; Field.Link, location.link |> CCOption.map_or ~default:"" Link.value |> txt
     ; Field.Status, location.status |> Status.show |> txt (* TODO: Show files *)
     ]
-    |> Component.Table.vertical_table `Striped ~align_top:true language
+    |> Component.Table.vertical_table
+         ~align_top:true
+         ~break_mobile:true
+         ~th_class:[ "w-4" ]
+         `Striped
+         language
   in
   let edit_button =
     link_as_button
@@ -661,10 +666,8 @@ let detail
                 ; div
                     ~a:[ a_class [ "gap-lg" ] ]
                     [ div
-                        ~a:
-                          [ a_class [ "switcher-lg"; "flex-gap"; "align-start" ]
-                          ]
-                        [ location_details
+                        ~a:[ a_class [ "grid-col-3" ] ]
+                        [ div ~a:[ a_class [ "span-2" ] ] [ location_details ]
                         ; div
                             ~a:
                               [ a_class [ "inset"; "border"; "bg-grey-light" ] ]
