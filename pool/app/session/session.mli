@@ -368,6 +368,11 @@ val find_for_calendar_by_user
   -> end_time:Ptime.t
   -> Calendar.t list Lwt.t
 
+val find_incomplete_by_admin
+  :  Guard.Actor.t
+  -> Pool_database.Label.t
+  -> t list Lwt.t
+
 val to_email_text : Pool_common.Language.t -> t -> string
 val follow_up_sessions_to_email_list : t list -> string
 val public_to_email_text : Pool_common.Language.t -> Public.t -> string

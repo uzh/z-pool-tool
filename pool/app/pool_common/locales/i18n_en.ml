@@ -71,6 +71,7 @@ let to_string = function
     "The import of your user is not completed yet. Please check your inbox or \
      contact an administrator."
   | ImportPendingTitle -> "Pending import"
+  | IncompleteSessions -> "Incomplete sessions"
   | InvitationsStatistics -> "Invitation statistics"
   | InvitationsStatisticsIntro ->
     "This table shows how often contacts received the invitation to this \

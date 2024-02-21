@@ -802,10 +802,15 @@ module Admin = struct
       ; post "/update-password" update_password
       ]
     in
+    let dashboard =
+      Dashboard.
+        [ get "/dashboard" index
+        ; get "/statistics" ~middlewares:[ Access.Statistics.read ] statistics
+        ]
+    in
     choose
       ~middlewares
-      [ get "/dashboard" dashboard
-      ; get "/statistics" ~middlewares:[ Access.Statistics.read ] statistics
+      [ choose dashboard
       ; choose ~scope:"/settings" settings
       ; choose ~scope:"/user" profile
       ; choose ~scope:"/i18n" i18n

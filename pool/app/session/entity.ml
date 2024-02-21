@@ -249,8 +249,6 @@ type notification_history =
        [@equal fun _ _ -> true]
   }
 
-let find_by_experiment (_ : string) : t list Lwt.t = Lwt.return []
-
 let session_date_to_human (session : t) =
   session.start |> Start.value |> Pool_common.Utils.Time.formatted_date_time
 ;;

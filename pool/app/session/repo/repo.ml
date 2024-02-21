@@ -103,9 +103,13 @@ module Sql = struct
       order_by
   ;;
 
-  let find_request_sql ?(count = false) where_fragment =
+  let find_request_sql ?additional_joins ?(count = false) where_fragment =
     let columns =
       if count then "COUNT(*)" else sql_select_columns |> CCString.concat ", "
+    in
+    let joins =
+      additional_joins
+      |> CCOption.map_or ~default:joins (Format.asprintf "%s\n%s" joins)
     in
     let joins = if count then "" else joins in
     let group_by = if count then "" else "GROUP BY pool_sessions.uuid" in
@@ -313,7 +317,7 @@ module Sql = struct
       Query.collect_and_count
         pool
         query
-        ~select:find_request_sql
+        ~select:(find_request_sql ?additional_joins:None)
         ~where
         Repo_entity.t
     in
@@ -335,7 +339,7 @@ module Sql = struct
     Query.collect_and_count
       pool
       query
-      ~select:find_request_sql
+      ~select:(find_request_sql ?additional_joins:None)
       ~where
       Repo_entity.t
   ;;
@@ -820,8 +824,7 @@ module Sql = struct
     select_for_calendar ~order_by:"pool_sessions.start"
   ;;
 
-  let find_for_calendar_by_user actor pool ~start_time ~end_time =
-    let open Caqti_request.Infix in
+  let find_by_user_params pool actor =
     let open Utils.Lwt_result.Infix in
     let experiment_checks = [ Format.asprintf "pool_experiments.uuid IN %s" ] in
     let session_checks =
@@ -844,12 +847,47 @@ module Sql = struct
       | "" -> None
       | query -> Some (Format.asprintf "(%s)" query)
     in
+    CCOption.to_list guardian |> CCString.concat " AND " |> Lwt.return
+  ;;
+
+  let find_incomplete_by_admin_request guardian_conditions =
+    let open Caqti_request.Infix in
+    let additional_joins =
+      {sql|
+        INNER JOIN pool_experiments
+        ON pool_sessions.experiment_uuid = pool_experiments.uuid
+      |sql}
+    in
+    Format.asprintf
+      {sql|
+        WHERE %s
+        AND pool_sessions.closed_at IS NULL
+        AND pool_sessions.canceled_at IS NULL
+        AND (pool_sessions.start + INTERVAL duration SECOND) < NOW()
+      |sql}
+      guardian_conditions
+    |> find_request_sql ~additional_joins
+    |> order_by_start
+    |> Caqti_type.unit ->* RepoEntity.t
+  ;;
+
+  let find_incomplete_by_admin actor pool =
+    let%lwt guardian_conditions = find_by_user_params pool actor in
+    Utils.Database.collect
+      (Database.Label.value pool)
+      (find_incomplete_by_admin_request guardian_conditions)
+      ()
+  ;;
+
+  let find_for_calendar_by_user actor pool ~start_time ~end_time =
+    let open Caqti_request.Infix in
+    let%lwt guardian_conditions = find_by_user_params pool actor in
     let sql =
       [ "pool_sessions.start > ?"
       ; "pool_sessions.start < ?"
       ; "pool_sessions.canceled_at IS NULL"
+      ; guardian_conditions
       ]
-      @ CCOption.to_list guardian
       |> CCString.concat " AND "
     in
     let (Dynparam.Pack (pt, pv)) =

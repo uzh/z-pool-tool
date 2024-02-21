@@ -38,6 +38,7 @@ type t =
   | ImportConfirmationTitle
   | ImportPendingNote
   | ImportPendingTitle
+  | IncompleteSessions
   | InvitationsStatistics
   | InvitationsStatisticsIntro
   | JobCloneOf
