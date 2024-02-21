@@ -77,7 +77,7 @@ let custom_fields_layout ?hint language current_model html =
       all
       |> CCList.map (fun f ->
         ( f |> show |> CCString.capitalize_ascii
-        , f |> Url.index_path
+        , f |> Url.index_path |> CCOption.return
         , equal current_model f )))
   in
   let html =
