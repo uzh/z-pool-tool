@@ -752,8 +752,9 @@ let detail
   let bool_to_string = Utils.bool_to_string language in
   let vertical_table =
     Table.vertical_table
-      ~classnames:[ "layout-fixed" ]
       ~align_top:true
+      ~break_mobile:true
+      ~th_class:[ "w-4" ]
       `Striped
       language
   in
