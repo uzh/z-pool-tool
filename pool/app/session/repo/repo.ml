@@ -25,6 +25,8 @@ let sql_select_columns =
   ; "pool_sessions.canceled_at"
   ; "pool_sessions.created_at"
   ; "pool_sessions.updated_at"
+  ; Experiment.Id.sql_select_fragment ~field:"pool_experiments.uuid"
+  ; "pool_experiments.title"
   ]
   @ Pool_location.Repo.sql_select_columns
 ;;
@@ -37,6 +39,8 @@ let joins =
       AND pool_assignments.marked_as_deleted = 0
     INNER JOIN pool_locations
       ON pool_locations.uuid = pool_sessions.location_uuid
+    INNER JOIN pool_experiments
+      ON pool_experiments.uuid = pool_sessions.experiment_uuid
   |sql}
 ;;
 
@@ -103,13 +107,9 @@ module Sql = struct
       order_by
   ;;
 
-  let find_request_sql ?additional_joins ?(count = false) where_fragment =
+  let find_request_sql ?(count = false) where_fragment =
     let columns =
       if count then "COUNT(*)" else sql_select_columns |> CCString.concat ", "
-    in
-    let joins =
-      additional_joins
-      |> CCOption.map_or ~default:joins (Format.asprintf "%s\n%s" joins)
     in
     let joins = if count then "" else joins in
     let group_by = if count then "" else "GROUP BY pool_sessions.uuid" in
@@ -317,7 +317,7 @@ module Sql = struct
       Query.collect_and_count
         pool
         query
-        ~select:(find_request_sql ?additional_joins:None)
+        ~select:find_request_sql
         ~where
         Repo_entity.t
     in
@@ -339,7 +339,7 @@ module Sql = struct
     Query.collect_and_count
       pool
       query
-      ~select:(find_request_sql ?additional_joins:None)
+      ~select:find_request_sql
       ~where
       Repo_entity.t
   ;;
@@ -579,8 +579,6 @@ module Sql = struct
     let open Caqti_request.Infix in
     Format.asprintf
       {sql|
-    INNER JOIN pool_experiments
-      ON pool_experiments.uuid = pool_sessions.experiment_uuid
     WHERE
       %s
     AND
@@ -852,12 +850,6 @@ module Sql = struct
 
   let find_incomplete_by_admin_request guardian_conditions =
     let open Caqti_request.Infix in
-    let additional_joins =
-      {sql|
-        INNER JOIN pool_experiments
-        ON pool_sessions.experiment_uuid = pool_experiments.uuid
-      |sql}
-    in
     Format.asprintf
       {sql|
         WHERE %s
@@ -866,7 +858,7 @@ module Sql = struct
         AND (pool_sessions.start + INTERVAL duration SECOND) < NOW()
       |sql}
       guardian_conditions
-    |> find_request_sql ~additional_joins
+    |> find_request_sql
     |> order_by_start
     |> Caqti_type.unit ->* RepoEntity.t
   ;;

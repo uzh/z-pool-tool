@@ -104,6 +104,7 @@ let create pool =
                   max_participants
                   min_participants
                   overbook
+                  experiment.Experiment.id
               in
               Session.Created (session, experiment.Experiment.id))
             session_data
@@ -138,6 +139,7 @@ let create pool =
           parent.max_participants
           parent.min_participants
           parent.overbook
+          experiment.Experiment.id
       in
       Session.handle_event pool
       @@ Session.Created (follow_up, experiment.Experiment.id))

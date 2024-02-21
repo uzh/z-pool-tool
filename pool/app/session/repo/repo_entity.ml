@@ -2,6 +2,7 @@ open Entity
 module RepoId = Pool_common.Repo.Id
 module Reminder = Pool_common.Reminder
 module RepoReminder = Pool_common.Repo.Reminder
+module Experiment = Experiment.Repo.Entity
 
 module Id = struct
   include RepoId
@@ -44,8 +45,11 @@ let t =
                                       , ( m.closed_at
                                         , ( m.canceled_at
                                           , ( m.created_at
-                                            , (m.updated_at, location) ) ) ) )
-                                    ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) )
+                                            , ( m.updated_at
+                                              , ( m.experiment_id
+                                                , (m.experiment_title, location)
+                                                ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) )
+                ) ) ) ) ) )
   in
   let decode
     ( id
@@ -67,8 +71,12 @@ let t =
                                   , ( participant_count
                                     , ( closed_at
                                       , ( canceled_at
-                                        , (created_at, (updated_at, location))
-                                        ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) )
+                                        , ( created_at
+                                          , ( updated_at
+                                            , ( experiment_id
+                                              , (experiment_title, location) )
+                                            ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) )
+        ) ) )
     =
     let location = Pool_location.Repo.to_entity location [] in
     Ok
@@ -92,6 +100,8 @@ let t =
       ; participant_count
       ; closed_at
       ; canceled_at
+      ; experiment_id
+      ; experiment_title
       ; created_at
       ; updated_at
       }
@@ -144,9 +154,17 @@ let t =
                                                                   ptime
                                                                   (t2
                                                                      ptime
-                                                                     Pool_location
-                                                                     .Repo
-                                                                     .t))))))))))))))))))))))
+                                                                     (t2
+                                                                        Experiment
+                                                                        .Id
+                                                                        .t
+                                                                        (t2
+                                                                           Experiment
+                                                                           .Title
+                                                                           .t
+                                                                           Pool_location
+                                                                           .Repo
+                                                                           .t))))))))))))))))))))))))
 ;;
 
 module Write = struct
@@ -505,9 +523,9 @@ module Calendar = struct
         (t2
            RepoId.t
            (t2
-              Experiment.Repo.Entity.Title.t
+              Experiment.Title.t
               (t2
-                 Experiment.Repo.Entity.Id.t
+                 Experiment.Id.t
                  (t2
                     Start.t
                     (t2

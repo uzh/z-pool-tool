@@ -42,6 +42,7 @@ let session ~experiment =
       max_participants
       min_participants
       overbook
+      experiment.Experiment.id
   in
   let events =
     [ Pool_location.created pool_location |> Pool_event.pool_location

@@ -279,6 +279,7 @@ let create_no_optional () =
       max_participants
       min_participants
       overbook
+      experiment_id
   in
   check_result
     (Ok [ Pool_event.Session (Session.Created (session, experiment_id)) ])
@@ -308,6 +309,7 @@ let create_full () =
       max_participants
       min_participants
       overbook
+      experiment_id
   in
   check_result
     (Ok [ Pool_event.Session (Session.Created (session, experiment_id)) ])
@@ -342,6 +344,7 @@ let create_min_eq_max () =
       max_participants2
       min_participants
       overbook
+      experiment_id
   in
   check_result
     (Ok [ Pool_event.Session (Session.Created (session, experiment_id)) ])
@@ -1101,6 +1104,7 @@ let create_follow_up_later () =
       max_participants
       min_participants
       overbook
+      experiment_id
   in
   check_result
     (Ok [ Pool_event.Session (Session.Created (session, experiment_id)) ])

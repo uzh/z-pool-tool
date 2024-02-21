@@ -188,6 +188,7 @@ end = struct
         max_participants
         min_participants
         overbook
+        experiment_id
     in
     Ok [ Session.Created (session, experiment_id) |> Pool_event.session ]
   ;;
