@@ -1,10 +1,10 @@
 open Tyxml.Html
 module Icon = Component_icon
 
-let hx_get ~url ~target =
+let hx_get ~url ~target_id ~push_url =
   [ a_user_data "hx-get" url
-  ; a_user_data "hx-replace-url" "true"
-  ; a_user_data "hx-target" target
+  ; a_user_data "hx-replace-url" (Utils.Bool.to_string push_url)
+  ; a_user_data "hx-target" ("#" ^ target_id)
   ; a_user_data "hx-swap" "innerHTML"
   ]
 ;;
@@ -15,11 +15,20 @@ type data_table =
   ; language : Pool_common.Language.t
   ; filter : Query.Filter.human option
   ; search : Query.Column.t list option
+  ; push_url : bool
   ; additional_url_params : (Pool_common.Message.Field.t * string) list option
   }
 
-let create_meta ?additional_url_params ?filter ?search url query language =
-  { url; query; language; filter; search; additional_url_params }
+let create_meta
+  ?additional_url_params
+  ?filter
+  ?search
+  ?(push_url = true)
+  url
+  query
+  language
+  =
+  { url; query; language; filter; search; additional_url_params; push_url }
 ;;
 
 type col =
@@ -75,7 +84,11 @@ let sort_icon sort col =
   Component_icon.to_html icon
 ;;
 
-let filter { additional_url_params; language; url; query; _ } target_id filter =
+let filter
+  { additional_url_params; language; url; query; push_url; _ }
+  target_id
+  filter
+  =
   let open Query in
   let hx_attribs filter =
     let url =
@@ -87,7 +100,7 @@ let filter { additional_url_params; language; url; query; _ } target_id filter =
       |> Format.asprintf "%a" Uri.pp
       |> Sihl.Web.externalize_path
     in
-    a_user_data "hx-trigger" "change" :: hx_get ~url ~target:("#" ^ target_id)
+    a_user_data "hx-trigger" "change" :: hx_get ~url ~target_id ~push_url
   in
   let make_filter condition =
     let open Filter in
@@ -161,7 +174,8 @@ let filter { additional_url_params; language; url; query; _ } target_id filter =
 ;;
 
 let pagination
-  { additional_url_params; language; url; query; _ }
+  ~target_id
+  { additional_url_params; language; url; query; push_url; _ }
   { Query.Pagination.page; page_count; _ }
   =
   let max_button_count = 7 in
@@ -182,6 +196,11 @@ let pagination
     |> Sihl.Web.externalize_path
   in
   let open Pagination in
+  let hx_params page =
+    let url = add_page_param page in
+    hx_get ~url ~target_id ~push_url
+  in
+  let arrow_classes = [ "has-icon"; "undecorated"; "pointer" ] in
   let previous =
     let label = Utils.control_to_string language Message.PreviousPage in
     let icon = Icon.(to_html ~classnames:[ "icon-lg" ] PrevCircleOutline) in
@@ -189,10 +208,8 @@ let pagination
     then
       a
         ~a:
-          [ a_href (add_page_param (Page.value page - 1))
-          ; a_class [ "has-icon"; "undecorated" ]
-          ; a_aria "label" [ label ]
-          ]
+          ([ a_class arrow_classes; a_aria "label" [ label ] ]
+           @ hx_params (Page.value page - 1))
         [ icon; span ~a:[ a_class [ "hidden-mobile" ] ] [ txt label ] ]
     else span ~a:[ a_class [ "has-icon" ] ] [ icon ]
   in
@@ -203,10 +220,8 @@ let pagination
     then
       a
         ~a:
-          [ a_href (add_page_param (Page.value page + 1))
-          ; a_class [ "has-icon"; "undecorated" ]
-          ; a_aria "label" [ label ]
-          ]
+          ([ a_class arrow_classes; a_aria "label" [ label ] ]
+           @ hx_params (Page.value page + 1))
         [ span ~a:[ a_class [ "hidden-mobile" ] ] [ txt label ]; icon ]
     else span ~a:[ a_class [ "has-icon" ] ] [ icon ]
   in
@@ -221,7 +236,7 @@ let pagination
             [ txt (CCInt.to_string i) ]
         else
           a
-            ~a:[ a_href (add_page_param i); a_class page_list_classes ]
+            ~a:([ a_class page_list_classes ] @ hx_params i)
             [ txt (CCInt.to_string i) ])
     in
     let wrap = div ~a:[ a_class [ "flexrow"; "flex-gap-xs" ] ] in
@@ -271,7 +286,7 @@ let pagination
 
 let searchbar
   ~target_id
-  { additional_url_params; url; query; language; _ }
+  { additional_url_params; url; query; language; push_url; _ }
   searchable_by
   =
   let open Pool_common in
@@ -303,7 +318,7 @@ let searchbar
                     |> CCOption.map_or ~default:"" Search.query_string)
                ; a_user_data "hx-trigger" "input changed delay:300ms, search"
                ]
-               @ hx_get ~url ~target:("#" ^ target_id))
+               @ hx_get ~url ~target_id ~push_url)
             ()
         ; span
             ~a:[ a_class [ "help" ] ]
@@ -334,7 +349,7 @@ let make_sortable_head target_id sort col field =
   let url = make_url sort col |> Sihl.Web.externalize_path in
   span
     ~a:
-      (hx_get ~url ~target:("#" ^ target_id)
+      (hx_get ~url ~target_id ~push_url:sort.push_url
        @ [ a_class [ "has-icon"; "pointer" ] ])
     (if is_selected sort col
      then [ make_name sort field; sort_icon sort col ]
@@ -407,7 +422,7 @@ let make
   in
   let pagination =
     data_table.query.Query.pagination
-    |> CCOption.map_or ~default (pagination data_table)
+    |> CCOption.map_or ~default (pagination ~target_id data_table)
   in
   let thead = make_header ?th_class target_id cols data_table in
   let rows = CCList.map row items in

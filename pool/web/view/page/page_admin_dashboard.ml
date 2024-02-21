@@ -14,7 +14,9 @@ module Partials = struct
         session.experiment.Experiment.id
         session.id
     in
-    let data_table = Component.DataTable.create_meta url query language in
+    let data_table =
+      Component.DataTable.create_meta url query language ~push_url:false
+    in
     let th_class = [ "w-4"; "w-4"; "w-4" ] in
     let cols =
       [ `column column_date
