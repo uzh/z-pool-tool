@@ -44,16 +44,16 @@ let index statistics incomplete_sessions Pool_context.{ language; _ } =
       [ heading_2 I18n.UpcomingSessionsTitle; Component.Calendar.(create User) ]
   in
   let incomplete_sessions_html =
-    match CCList.is_empty incomplete_sessions with
-    | true ->
-      div
-        [ txt Pool_common.(Utils.text_to_string language I18n.EmptyListGeneric)
-        ]
-    | false ->
-      div
-        [ heading_2 I18n.IncompleteSessions
-        ; Partials.session_overview language incomplete_sessions
-        ]
+    let html =
+      match CCList.is_empty incomplete_sessions with
+      | true ->
+        p
+          [ txt
+              Pool_common.(Utils.text_to_string language I18n.EmptyListGeneric)
+          ]
+      | false -> Partials.session_overview language incomplete_sessions
+    in
+    div [ heading_2 I18n.IncompleteSessions; html ]
   in
   let statistics_html =
     statistics
