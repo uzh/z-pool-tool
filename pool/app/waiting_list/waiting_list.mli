@@ -28,6 +28,10 @@ type t =
 
 val equal : t -> t -> bool
 val pp : Format.formatter -> t -> unit
+val id : t -> Id.t
+val contact : t -> Contact.t
+val experiment : t -> Experiment.t
+val admin_comment : t -> AdminComment.t option
 
 type create =
   { experiment : Experiment.Public.t

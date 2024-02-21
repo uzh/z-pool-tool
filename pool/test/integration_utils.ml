@@ -113,7 +113,7 @@ end
 module WaitingListRepo = struct
   let create experiment contact () =
     let%lwt () =
-      Waiting_list.(Created { experiment; contact })
+      Waiting_list.Created { Waiting_list.experiment; contact }
       |> Pool_event.waiting_list
       |> Pool_event.handle_event Data.database_label
     in

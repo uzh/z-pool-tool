@@ -1,3 +1,4 @@
+open CCFun.Infix
 open Tyxml.Html
 open Pool_common
 open Component.Input
@@ -6,8 +7,8 @@ module Message = Pool_common.Message
 module DataTable = Component.DataTable
 
 let list
+  ?(access_contact_profiles = false)
   { Pool_context.language; _ }
-  ~access_contact_profiles
   experiment
   (waiting_list_entries, query)
   =
@@ -38,12 +39,35 @@ let list
     ; `empty
     ]
   in
+  let profile_link =
+    Waiting_list.contact
+    %> Contact.(id %> Id.value)
+    %> Format.asprintf "/admin/contacts/%s"
+    %> link_as_button
+         ~is_text:true
+         ~control:(language, Pool_common.Message.OpenProfile)
+         ~icon:Component.Icon.PersonOutline
+  in
   let th_class = [ "w-3"; "w-3"; "w-2"; "w-2"; "w-2" ] in
   let row
-    ({ Waiting_list.id; contact; admin_comment; created_at; _ } :
+    ({ Waiting_list.contact; admin_comment; created_at; _ } as waiting_list :
       Waiting_list.t)
     =
-    let open Waiting_list in
+    let edit =
+      Waiting_list.(id %> Id.value)
+      %> Format.asprintf "%s/%s" (Uri.to_string url)
+      %> link_as_button
+           ~is_text:true
+           ~control:(language, Pool_common.Message.(Edit None))
+           ~icon:Component.Icon.CreateOutline
+    in
+    let buttons =
+      [ true, edit; access_contact_profiles, profile_link ]
+      |> CCList.filter_map (fun (active, form) ->
+        if not active then None else Some (form waiting_list))
+      |> Component.ButtonGroup.dropdown
+      |> CCList.pure
+    in
     [ Page_admin_contact.contact_lastname_firstname
         access_contact_profiles
         contact
@@ -53,12 +77,11 @@ let list
          |> CCOption.map_or ~default:"" CellPhone.value)
     ; txt (Utils.Time.formatted_date_time created_at)
     ; admin_comment
-      |> CCOption.map_or ~default:"" AdminComment.value
+      |> CCOption.map_or ~default:"" Waiting_list.AdminComment.value
       |> HttpUtils.first_n_characters
       |> HttpUtils.add_line_breaks
-    ; Format.asprintf "%s/%s" (Uri.to_string url) (Waiting_list.Id.value id)
-      |> Component.Input.edit_link
     ]
+    @ buttons
     |> CCList.map CCFun.(CCList.return %> td)
     |> tr
   in
@@ -301,8 +324,8 @@ let detail
   |> Layout.Experiment.(create context (NavLink I18n.WaitingList) experiment)
 ;;
 
-let index ~access_contact_profiles context experiment waiting_list =
-  list ~access_contact_profiles context experiment waiting_list
+let index ?access_contact_profiles context experiment waiting_list =
+  list ?access_contact_profiles context experiment waiting_list
   |> CCList.return
   |> Layout.Experiment.(
        create
