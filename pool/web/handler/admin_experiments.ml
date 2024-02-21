@@ -266,6 +266,7 @@ let detail edit req =
          |> CCOption.map_or ~default:(Lwt_result.return None) (fun id ->
            Email.SmtpAuth.find database_label id >|+ CCOption.return)
        in
+       let* statistics = Experiment.Statistics.create database_label id in
        Page.Admin.Experiments.detail
          experiment
          session_count
@@ -275,6 +276,7 @@ let detail edit req =
          smtp_auth
          current_tags
          current_participation_tags
+         statistics
          context
        |> Lwt_result.ok
      | true ->

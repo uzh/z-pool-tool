@@ -65,6 +65,83 @@ let notifications
        |> Notification.notification language `Warning)
 ;;
 
+module Statistics = struct
+  open Experiment.Statistics
+
+  let make language statistics =
+    let int_to_txt i = i |> CCInt.to_string |> txt in
+    let with_tooltip html tooltip =
+      div
+        ~a:[ a_class [ "has-icon flex-gap-sm" ] ]
+        [ span [ html ]
+        ; div
+            ~a:[ a_class [ "tooltip-wrapper" ] ]
+            [ Icon.(to_html HelpOutline)
+            ; p ~a:[ a_class [ "tooltip" ] ] [ tooltip ]
+            ]
+        ]
+    in
+    let to_table =
+      Component.Table.vertical_table ~th_class:[ "w-8" ] `Simple language
+    in
+    let registration_possible_html =
+      let open RegistrationPossible in
+      let html =
+        statistics
+        |> registration_possible
+        |> value
+        |> Pool_common.Utils.bool_to_string language
+        |> txt
+      in
+      let tooltip = hint |> Pool_common.Utils.hint_to_string language |> txt in
+      with_tooltip html tooltip
+    in
+    let sending_invitations_html =
+      let open SendingInvitations in
+      let html =
+        statistics
+        |> sending_invitations
+        |> show
+        |> CCString.capitalize_ascii
+        |> txt
+      in
+      let tooltip =
+        hint
+        |> Pool_common.Utils.hint_to_string language
+        |> HttpUtils.add_line_breaks
+      in
+      with_tooltip html tooltip
+    in
+    let experiment_statistics =
+      [ RegistrationPossible.field, registration_possible_html
+      ; SendingInvitations.field, sending_invitations_html
+      ; SessionCount.(field, statistics |> session_count |> value |> int_to_txt)
+      ; SentInvitationCount.(
+          field, statistics |> sent_invitation_count |> value |> int_to_txt)
+      ]
+    in
+    let assignments_statistics =
+      [ ShowUpCount.(field, statistics |> showup_count |> value |> int_to_txt)
+      ; NoShowCount.(field, statistics |> noshow_count |> value |> int_to_txt)
+      ; ParticipationCount.(
+          field, statistics |> participation_count |> value |> int_to_txt)
+      ]
+    in
+    div
+      [ h3
+          [ txt
+              Pool_common.(
+                Utils.text_to_string language I18n.ExperimentStatistics)
+          ]
+      ; experiment_statistics |> to_table
+      ; h4
+          [ txt Pool_common.(Utils.nav_link_to_string language I18n.Assignments)
+          ]
+      ; assignments_statistics |> to_table
+      ]
+  ;;
+end
+
 let message_template_buttons
   can_update_experiment
   sys_languages
@@ -498,7 +575,7 @@ let edit
            |> build_experiment_path experiment)
       in
       div
-        ~a:[ a_class [ "switcher-lg"; "flex-gap" ] ]
+        ~a:[ a_class [ "grid-col-2"; "flex-gap" ] ]
         [ Tag.add_tags_form context ~existing:current available assign_action
         ; Component.Tag.tag_form
             ~label:Pool_common.I18n.SelectedTags
@@ -549,6 +626,7 @@ let detail
   smtp_account
   tags
   participation_tags
+  statistics
   ({ Pool_context.language; csrf; guardian; _ } as context)
   =
   let open Pool_common in
@@ -674,8 +752,9 @@ let detail
   let bool_to_string = Utils.bool_to_string language in
   let vertical_table =
     Table.vertical_table
-      ~classnames:[ "layout-fixed" ]
       ~align_top:true
+      ~break_mobile:true
+      ~th_class:[ "w-4" ]
       `Striped
       language
   in
@@ -755,6 +834,7 @@ let detail
         ]
       |> vertical_table
     in
+    let statistics = Statistics.make language statistics in
     let message_template =
       div
         [ h3
@@ -792,7 +872,17 @@ let detail
     in
     [ div
         ~a:[ a_class [ "stack-lg" ] ]
-        ([ notifications; experiment_table; tag_overview; message_template ]
+        ([ notifications
+         ; div
+             ~a:[ a_class [ "grid-col-3"; "align-start" ] ]
+             [ div ~a:[ a_class [ "span-2" ] ] [ experiment_table ]
+             ; div
+                 ~a:[ a_class [ "border"; "inset"; "bg-grey-light" ] ]
+                 [ statistics ]
+             ]
+         ; tag_overview
+         ; message_template
+         ]
          @ setting)
     ]
   in

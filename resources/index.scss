@@ -319,6 +319,12 @@ table.width-auto {
     width: auto;
 }
 
+@include mobile {
+    .table.break-mobile th {
+        display: none;
+    }
+}
+
 // Copy to clipboard
 [data-clipboard] {
     cursor: copy;

@@ -49,6 +49,7 @@ let to_string = function
   | ExperimentSessionReminderHint ->
     "These are default settings for the sessions of this experiment. These \
      settings can be overwritten for each session."
+  | ExperimentStatistics -> "Experiment statistics"
   | ExperimentWaitingListTitle -> "Waiting list"
   | Files -> "Files"
   | FilterContactsDescription ->
@@ -331,6 +332,13 @@ By clicking on the template labels below you can open the default text message:
     "Please note: Sessions or completed experiments may no longer be \
      displayed, although listed in your email. Once all the available seats \
      are assigned, a session is no longer displayed."
+  | ExperimentStatisticsRegistrationPossible ->
+    "This is considered true if registration is not disabled and there are \
+     future sessions with available slots."
+  | ExperimentStatisticsSendingInvitations ->
+    {|Sending: A mailing is currently running.
+
+Scheduled: No mailing is running, but future mailings are scheduled.|}
   | ExperimentWaitingList ->
     "Contacts that have been invited to this experiment and have placed \
      themselves on the waiting list. They have to be manually assigned to a \

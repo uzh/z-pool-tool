@@ -65,22 +65,18 @@ module Partials = struct
     |> txt
   ;;
 
-  let boolean_value =
-    let open Icon in
-    function
-    | false -> to_html Close
-    | true -> to_html Checkmark
-  ;;
-
   let assignment_id { Assignment.id; _ } = id |> Assignment.Id.value |> txt
 
   let assignment_participated { Assignment.participated; _ } =
     participated
-    |> CCOption.map_or ~default:(txt "") (Participated.value %> boolean_value)
+    |> CCOption.map_or
+         ~default:(txt "")
+         (Participated.value %> Icon.bool_to_icon)
   ;;
 
   let assignment_no_show { Assignment.no_show; _ } =
-    no_show |> CCOption.map_or ~default:(txt "") (NoShow.value %> boolean_value)
+    no_show
+    |> CCOption.map_or ~default:(txt "") (NoShow.value %> Icon.bool_to_icon)
   ;;
 
   let assignment_external_data_id { Assignment.external_data_id; _ } =

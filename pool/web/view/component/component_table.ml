@@ -126,8 +126,19 @@ let responsive_horizontal_table
        rows)
 ;;
 
-let vertical_table layout language ?align_top ?(classnames = []) ?th_class rows =
-  let classes = table_classes layout ?align_top ~align_last_end:false () in
+let vertical_table
+  layout
+  language
+  ?align_top
+  ?(break_mobile = false)
+  ?(classnames = [])
+  ?th_class
+  rows
+  =
+  let classes =
+    table_classes layout ?align_top ~align_last_end:false ()
+    @ if break_mobile then [ "break-mobile" ] else []
+  in
   let table_head html =
     match th_class with
     | None -> th html
@@ -137,12 +148,12 @@ let vertical_table layout language ?align_top ?(classnames = []) ?th_class rows 
     ~a:[ a_class (classes @ classnames) ]
     (CCList.map
        (fun (label, value) ->
-         [ table_head
-             [ txt
-                 (Pool_common.Utils.field_to_string language label
-                  |> CCString.capitalize_ascii)
-             ]
-         ; td [ value ]
+         let label =
+           Pool_common.Utils.field_to_string language label
+           |> CCString.capitalize_ascii
+         in
+         [ table_head [ label |> txt ]
+         ; td ~a:[ a_user_data "label" label ] [ value ]
          ]
          |> tr)
        rows)
