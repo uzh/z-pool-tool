@@ -351,7 +351,7 @@ let assignment_creation_with_sender _ () =
       Experiment.find database_label experiment_id ||> get_exn
     in
     let%lwt session =
-      Integration_utils.SessionRepo.create ~id:session_id experiment_id ()
+      Integration_utils.SessionRepo.create ~id:session_id experiment ()
     in
     let%lwt admin = Admin.find database_label admin_id ||> get_exn in
     let%lwt confirmation_email =

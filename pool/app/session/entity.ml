@@ -166,8 +166,7 @@ type t =
     (* TODO [aerben] make type for canceled_at? *)
     closed_at : Ptime.t option
   ; canceled_at : Ptime.t option
-  ; experiment_id : Experiment.Id.t
-  ; experiment_title : Experiment.Title.t
+  ; experiment : Experiment.t
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
   }
@@ -193,9 +192,8 @@ let create
   max_participants
   min_participants
   overbook
-  experiment_id
+  experiment
   =
-  let experiment_title = "TODO" |> Experiment.Title.of_string in
   { id = id |> CCOption.value ~default:(Id.create ())
   ; follow_up_to
   ; has_follow_ups
@@ -216,8 +214,7 @@ let create
   ; participant_count = 0
   ; closed_at = None
   ; canceled_at = None
-  ; experiment_id
-  ; experiment_title
+  ; experiment
   ; created_at = Ptime_clock.now ()
   ; updated_at = Ptime_clock.now ()
   }

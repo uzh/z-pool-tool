@@ -114,7 +114,7 @@ module DummyData = struct
     }
   ;;
 
-  let create_session { Experiment.id; title; _ } =
+  let create_session experiment =
     let get_or_failwith = Pool_common.Utils.get_or_failwith in
     Session.
       { id = Session.Id.create ()
@@ -146,8 +146,7 @@ module DummyData = struct
       ; canceled_at = None
       ; created_at = Pool_common.CreatedAt.create ()
       ; updated_at = Pool_common.UpdatedAt.create ()
-      ; experiment_id = id
-      ; experiment_title = title
+      ; experiment
       }
   ;;
 

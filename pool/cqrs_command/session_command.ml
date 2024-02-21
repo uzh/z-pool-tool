@@ -131,7 +131,7 @@ module Create : sig
     :  ?tags:Logs.Tag.set
     -> ?parent_session:Session.t
     -> ?session_id:Session.Id.t
-    -> Experiment.Id.t
+    -> Experiment.t
     -> Pool_location.t
     -> t
     -> (Pool_event.t list, Conformist.error_msg) result
@@ -147,7 +147,7 @@ end = struct
     ?(tags = Logs.Tag.empty)
     ?parent_session
     ?session_id
-    experiment_id
+    experiment
     location
     (Session.
        { start
@@ -188,9 +188,9 @@ end = struct
         max_participants
         min_participants
         overbook
-        experiment_id
+        experiment
     in
-    Ok [ Session.Created (session, experiment_id) |> Pool_event.session ]
+    Ok [ Session.Created session |> Pool_event.session ]
   ;;
 
   let decode data =

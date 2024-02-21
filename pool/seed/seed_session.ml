@@ -104,9 +104,9 @@ let create pool =
                   max_participants
                   min_participants
                   overbook
-                  experiment.Experiment.id
+                  experiment
               in
-              Session.Created (session, experiment.Experiment.id))
+              Session.Created session)
             session_data
         in
         Lwt_list.iter_s (Session.handle_event pool) main_session_events)
@@ -139,9 +139,8 @@ let create pool =
           parent.max_participants
           parent.min_participants
           parent.overbook
-          experiment.Experiment.id
+          experiment
       in
-      Session.handle_event pool
-      @@ Session.Created (follow_up, experiment.Experiment.id))
+      Session.handle_event pool @@ Session.Created follow_up)
     experiments
 ;;

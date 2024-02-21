@@ -25,23 +25,25 @@ let sql_select_columns =
   ; "pool_sessions.canceled_at"
   ; "pool_sessions.created_at"
   ; "pool_sessions.updated_at"
-  ; Experiment.Id.sql_select_fragment ~field:"pool_experiments.uuid"
-  ; "pool_experiments.title"
   ]
+  @ Experiment.Repo.sql_select_columns
   @ Pool_location.Repo.sql_select_columns
 ;;
 
 let joins =
-  {sql|
-    LEFT JOIN pool_assignments
-      ON pool_assignments.session_uuid = pool_sessions.uuid
-      AND pool_assignments.canceled_at IS NULL
-      AND pool_assignments.marked_as_deleted = 0
-    INNER JOIN pool_locations
-      ON pool_locations.uuid = pool_sessions.location_uuid
-    INNER JOIN pool_experiments
-      ON pool_experiments.uuid = pool_sessions.experiment_uuid
-  |sql}
+  Format.asprintf
+    {sql|
+      LEFT JOIN pool_assignments
+        ON pool_assignments.session_uuid = pool_sessions.uuid
+        AND pool_assignments.canceled_at IS NULL
+        AND pool_assignments.marked_as_deleted = 0
+      INNER JOIN pool_locations
+        ON pool_locations.uuid = pool_sessions.location_uuid
+      INNER JOIN pool_experiments
+        ON pool_experiments.uuid = pool_sessions.experiment_uuid
+      %s
+    |sql}
+    Experiment.Repo.joins
 ;;
 
 module Sql = struct
@@ -743,11 +745,12 @@ module Sql = struct
     |> Caqti_type.(t2 string RepoEntity.Write.t ->. unit)
   ;;
 
-  let insert pool (experiment_id, session) =
+  let insert pool session =
     Utils.Database.exec
       (Database.Label.value pool)
       insert_request
-      (experiment_id, session |> RepoEntity.Write.entity_to_write)
+      ( Experiment.(Id.value session.Entity.experiment.id)
+      , session |> RepoEntity.Write.entity_to_write )
   ;;
 
   let update_request =

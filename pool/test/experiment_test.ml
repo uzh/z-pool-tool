@@ -348,13 +348,11 @@ module AvailableExperiments = struct
   let exclude_experiment_after_registration_for_session _ () =
     let open Utils.Lwt_result.Infix in
     let%lwt experiment =
-      Experiment.find database_label experiment_id
-      ||> get_exn
-      ||> Experiment.to_public
+      Experiment.find database_label experiment_id ||> get_exn
     in
     let%lwt contact = Contact.find database_label contact_id ||> get_exn in
     let%lwt session =
-      Integration_utils.SessionRepo.create ~id:session_id experiment_id ()
+      Integration_utils.SessionRepo.create ~id:session_id experiment ()
     in
     let%lwt (_ : Assignment.t) =
       Integration_utils.AssignmentRepo.create session contact
@@ -362,8 +360,10 @@ module AvailableExperiments = struct
     let%lwt experiment_not_available =
       (* Expect the experiment not to be found after registration for a
          session *)
-      Experiment.find_all_public_by_contact database_label contact
-      ||> CCList.find_opt (Experiment.Public.equal experiment)
+      let open Experiment in
+      find_all_public_by_contact database_label contact
+      ||> CCList.find_opt (fun public ->
+        Id.equal (Public.id public) experiment.id)
       ||> CCOption.is_none
     in
     let%lwt upcomming_session_found =

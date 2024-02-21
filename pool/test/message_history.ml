@@ -13,9 +13,9 @@ let assignment_id = Assignment.Id.create ()
 let language = Pool_common.Language.En
 
 let initialize _ () =
-  let%lwt (_ : Experiment.t) = ExperimentRepo.create ~id:experiment_id () in
+  let%lwt experiment = ExperimentRepo.create ~id:experiment_id () in
   let%lwt contact = ContactRepo.create ~id:contact_id () in
-  let%lwt session = SessionRepo.create ~id:session_id experiment_id () in
+  let%lwt session = SessionRepo.create ~id:session_id experiment () in
   let%lwt (_ : Assignment.t) =
     AssignmentRepo.create ~id:assignment_id session contact
   in
@@ -103,7 +103,7 @@ let assignment_session_change _ () =
   let%lwt contact = find_contact () in
   let%lwt experiment = find_experiment () in
   let%lwt session = find_session () in
-  let%lwt new_session = SessionRepo.create experiment_id () in
+  let%lwt new_session = SessionRepo.create experiment () in
   let%lwt assignment = find_assignment () in
   let message =
     Test_utils.Model.create_manual_message

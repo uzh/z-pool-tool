@@ -130,7 +130,7 @@ module SessionRepo = struct
     ?follow_up_to
     ?start
     ?email_reminder_sent_at
-    experiment_id
+    experiment
     ()
     =
     let%lwt location =
@@ -143,10 +143,11 @@ module SessionRepo = struct
         ?follow_up_to
         ?start
         ?email_reminder_sent_at
+        ~experiment
         ()
     in
     let%lwt () =
-      Session.(Created (session, experiment_id))
+      Session.(Created session)
       |> Pool_event.session
       |> Pool_event.handle_event Data.database_label
     in

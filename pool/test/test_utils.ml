@@ -335,7 +335,7 @@ module Model = struct
     ?follow_up_to
     ?start
     ?email_reminder_sent_at
-    ?(experiment_id = Experiment.Id.create ())
+    ?(experiment = create_experiment ())
     ()
     =
     let open Session in
@@ -348,7 +348,7 @@ module Model = struct
       (ParticipantAmount.create 30 |> get_or_failwith)
       (ParticipantAmount.create 1 |> get_or_failwith)
       (ParticipantAmount.create 4 |> get_or_failwith)
-      experiment_id
+      experiment
     |> fun session -> { session with email_reminder_sent_at }
   ;;
 

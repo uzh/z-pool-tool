@@ -23,7 +23,7 @@ type reschedule =
 [@@deriving eq, show]
 
 type event =
-  | Created of (t * Experiment.Id.t)
+  | Created of t
   | Canceled of t
   | Closed of t
   | Deleted of t
@@ -36,10 +36,8 @@ type event =
 let handle_event pool =
   let open Utils.Lwt_result.Infix in
   function
-  | Created (session, experiment_id) ->
-    let%lwt () =
-      Repo.insert pool (Experiment.Id.value experiment_id, session)
-    in
+  | Created session ->
+    let%lwt () = Repo.insert pool session in
     Entity_guard.Target.to_authorizable ~ctx:(Pool_database.to_ctx pool) session
     ||> Pool_common.Utils.get_or_failwith
     ||> fun (_ : Guard.Target.t) -> ()

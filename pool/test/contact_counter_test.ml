@@ -117,11 +117,11 @@ let initialize contact_id experiment_id session_id ?followup_session_id () =
     ContactRepo.create ~id:contact_id ~with_terms_accepted:true ()
   in
   let%lwt experiment = ExperimentRepo.create ~id:experiment_id () in
-  let%lwt session = SessionRepo.create ~id:session_id experiment_id () in
+  let%lwt session = SessionRepo.create ~id:session_id experiment () in
   let%lwt follow_up_session =
     followup_session_id
     |> CCOption.map_or ~default:Lwt.return_none (fun id ->
-      SessionRepo.create ~id ~follow_up_to:session_id experiment_id ()
+      SessionRepo.create ~id ~follow_up_to:session_id experiment ()
       |> Lwt.map CCOption.return)
   in
   Lwt.return (contact, experiment, session, follow_up_session)

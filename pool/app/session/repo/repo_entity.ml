@@ -46,10 +46,8 @@ let t =
                                         , ( m.canceled_at
                                           , ( m.created_at
                                             , ( m.updated_at
-                                              , ( m.experiment_id
-                                                , (m.experiment_title, location)
-                                                ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) )
-                ) ) ) ) ) )
+                                              , (m.experiment, location) ) ) )
+                                        ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) )
   in
   let decode
     ( id
@@ -72,11 +70,9 @@ let t =
                                     , ( closed_at
                                       , ( canceled_at
                                         , ( created_at
-                                          , ( updated_at
-                                            , ( experiment_id
-                                              , (experiment_title, location) )
-                                            ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) )
-        ) ) )
+                                          , (updated_at, (experiment, location))
+                                          ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) )
+    )
     =
     let location = Pool_location.Repo.to_entity location [] in
     Ok
@@ -100,8 +96,7 @@ let t =
       ; participant_count
       ; closed_at
       ; canceled_at
-      ; experiment_id
-      ; experiment_title
+      ; experiment
       ; created_at
       ; updated_at
       }
@@ -156,15 +151,10 @@ let t =
                                                                      ptime
                                                                      (t2
                                                                         Experiment
-                                                                        .Id
                                                                         .t
-                                                                        (t2
-                                                                           Experiment
-                                                                           .Title
-                                                                           .t
-                                                                           Pool_location
-                                                                           .Repo
-                                                                           .t))))))))))))))))))))))))
+                                                                        Pool_location
+                                                                        .Repo
+                                                                        .t)))))))))))))))))))))))
 ;;
 
 module Write = struct

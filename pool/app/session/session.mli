@@ -116,8 +116,7 @@ type t =
   ; (* TODO [aerben] make type for canceled_at? *)
     closed_at : Ptime.t option
   ; canceled_at : Ptime.t option
-  ; experiment_id : Experiment.Id.t
-  ; experiment_title : Experiment.Title.t
+  ; experiment : Experiment.t
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
   }
@@ -136,7 +135,7 @@ val create
   -> ParticipantAmount.t
   -> ParticipantAmount.t
   -> ParticipantAmount.t
-  -> Experiment.Id.t
+  -> Experiment.t
   -> t
 
 val equal : t -> t -> bool
@@ -150,7 +149,7 @@ val start_end_with_duration_human : t -> string
 val start_end_human : t -> string
 
 type event =
-  | Created of (t * Experiment.Id.t)
+  | Created of t
   | Canceled of t
   | Closed of t
   | Deleted of t
