@@ -34,6 +34,12 @@ let location urlencoded database_label =
   >>= Pool_location.find database_label
 ;;
 
+let default_lead_time_settings database_label =
+  Lwt.both
+    (Settings.find_default_reminder_lead_time database_label)
+    (Settings.find_default_text_msg_reminder_lead_time database_label)
+;;
+
 let list req =
   let experiment_id = experiment_id req in
   let error_path =
@@ -77,19 +83,10 @@ let new_helper req page =
   let result ({ Pool_context.database_label; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, error_path)
     @@ let* experiment = Experiment.find database_label id in
-       let%lwt duplicate_session =
-         match Sihl.Web.Request.query "duplicate_id" req with
-         | Some id ->
-           id |> Id.of_string |> find database_label ||> CCResult.to_opt
-         | None -> Lwt.return None
-       in
        let%lwt locations = Pool_location.find_all database_label in
        let flash_fetcher = flip Sihl.Web.Flash.find req in
-       let%lwt default_email_reminder_lead_time =
-         Settings.find_default_reminder_lead_time database_label
-       in
-       let%lwt default_text_msg_reminder_lead_time =
-         Settings.find_default_text_msg_reminder_lead_time database_label
+       let%lwt default_leadtime_settings =
+         default_lead_time_settings database_label
        in
        let text_messages_enabled =
          Pool_context.Tenant.text_messages_enabled req
@@ -102,21 +99,17 @@ let new_helper req page =
            Page.Admin.Session.follow_up
              context
              experiment
-             default_email_reminder_lead_time
-             default_text_msg_reminder_lead_time
-             duplicate_session
+             default_leadtime_settings
              parent_session
              locations
              text_messages_enabled
              flash_fetcher
            |> Lwt_result.ok
-         | `Parent ->
+         | `New ->
            Page.Admin.Session.new_form
              context
              experiment
-             default_email_reminder_lead_time
-             default_text_msg_reminder_lead_time
-             duplicate_session
+             default_leadtime_settings
              locations
              text_messages_enabled
              flash_fetcher
@@ -127,8 +120,115 @@ let new_helper req page =
   result |> HttpUtils.extract_happy_path ~src req
 ;;
 
-let new_form req = new_helper req `Parent
+let new_form req = new_helper req `New
 let follow_up req = new_helper req `FollowUp
+
+let duplication_session_data req database_label =
+  let open Utils.Lwt_result.Infix in
+  let open Session in
+  let experiment_id = experiment_id req in
+  let session_id = session_id req in
+  let* experiment = Experiment.find database_label experiment_id in
+  let* session = find database_label session_id in
+  let* parent_session =
+    session.follow_up_to
+    |> CCOption.map_or ~default:(Lwt_result.return None) (fun id ->
+      find database_label id >|+ CCOption.return)
+  in
+  let%lwt followups = find_follow_ups database_label session_id in
+  Lwt_result.return (experiment, session, followups, parent_session)
+;;
+
+let duplicate req =
+  let open Utils.Lwt_result.Infix in
+  let experiment_id = experiment_id req in
+  let error_path =
+    Format.asprintf
+      "/admin/experiments/%s/sessions"
+      (experiment_id |> Experiment.Id.value)
+  in
+  let result ({ Pool_context.database_label; _ } as context) =
+    Utils.Lwt_result.map_error (fun err -> err, error_path)
+    @@ let* experiment, session, followups, parent_session =
+         duplication_session_data req database_label
+       in
+       let flash_fetcher = flip Sihl.Web.Flash.find req in
+       Page.Admin.Session.duplicate
+         context
+         experiment
+         session
+         ?parent_session
+         followups
+         flash_fetcher
+       >|> create_layout req context
+       >|+ Sihl.Web.Response.of_html
+  in
+  result |> HttpUtils.extract_happy_path ~src req
+;;
+
+let duplicate_form_htmx req =
+  let open Utils.Lwt_result.Infix in
+  let result { Pool_context.language; database_label; _ } =
+    let* _, session, followups, parent_session =
+      duplication_session_data req database_label
+    in
+    let* counter =
+      Sihl.Web.Request.query "counter" req
+      |> CCFun.flip CCOption.bind CCInt.of_string
+      |> CCOption.to_result Pool_common.(Message.InvalidHtmxRequest)
+      |> Lwt_result.lift
+      >|+ ( + ) 1
+    in
+    Page.Admin.Session.duplicate_form
+      ?parent_session
+      language
+      session
+      followups
+      counter
+    |> HttpUtils.Htmx.html_to_plain_text_response
+    |> Lwt_result.return
+  in
+  result |> HttpUtils.Htmx.handle_error_message ~src req
+;;
+
+let duplicate_post req =
+  let open Utils.Lwt_result.Infix in
+  let experiment_id = experiment_id req in
+  let session_id = session_id req in
+  let sessions_path =
+    Format.asprintf
+      "/admin/experiments/%s/sessions"
+      (Experiment.Id.value experiment_id)
+  in
+  let error_path =
+    Format.asprintf
+      "%s/%s/duplicate"
+      sessions_path
+      (Session.Id.value session_id)
+  in
+  let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+  let result { Pool_context.database_label; _ } =
+    Utils.Lwt_result.map_error (fun err ->
+      err, error_path, [ HttpUtils.urlencoded_to_flash urlencoded ])
+    @@
+    let tags = Pool_context.Logger.Tags.req req in
+    let* experiment, session, followups, parent_session =
+      duplication_session_data req database_label
+    in
+    let* events =
+      let open Cqrs_command.Session_command.Duplicate in
+      urlencoded
+      |> handle ~tags ?parent_session experiment session followups
+      |> Lwt_result.lift
+    in
+    let%lwt () = Pool_event.handle_events ~tags database_label events in
+    Http_utils.redirect_to_with_actions
+      sessions_path
+      [ Message.set ~success:[ Pool_common.Message.(Created Field.Sessions) ] ]
+    |> Lwt_result.ok
+  in
+  result |> HttpUtils.extract_happy_path_with_actions ~src req
+;;
 
 let create req =
   let id = experiment_id req in
@@ -186,11 +286,8 @@ let session_page database_label req context session experiment =
   | `Edit ->
     let%lwt current_tags = current_tags () in
     let%lwt locations = Pool_location.find_all database_label in
-    let%lwt default_email_reminder_lead_time =
-      Settings.find_default_reminder_lead_time database_label
-    in
-    let%lwt default_text_msg_reminder_lead_time =
-      Settings.find_default_text_msg_reminder_lead_time database_label
+    let%lwt default_leadtime_settings =
+      default_lead_time_settings database_label
     in
     let%lwt available_tags =
       Tags.ParticipationTags.(
@@ -208,8 +305,7 @@ let session_page database_label req context session experiment =
     Page.Admin.Session.edit
       context
       experiment
-      default_email_reminder_lead_time
-      default_text_msg_reminder_lead_time
+      default_leadtime_settings
       session
       locations
       (current_tags, available_tags, experiment_participation_tags)

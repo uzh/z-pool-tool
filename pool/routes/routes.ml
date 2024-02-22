@@ -415,6 +415,12 @@ module Admin = struct
           ; get "/close" ~middlewares:[ Access.close ] close
           ; post "/close" ~middlewares:[ Access.close ] close_post
           ; get "/print" ~middlewares:[ Access.read ] print
+          ; get "/duplicate" ~middlewares:[ Access.create ] duplicate
+          ; post "/duplicate" ~middlewares:[ Access.create ] duplicate_post
+          ; get
+              "/duplicate/form"
+              ~middlewares:[ Access.create ]
+              duplicate_form_htmx
           ; post
               "/resend-reminders"
               ~middlewares:[ Access.update ]

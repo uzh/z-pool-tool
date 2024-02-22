@@ -201,6 +201,122 @@ end = struct
   let effects exp_id = Session.Guard.Access.create exp_id
 end
 
+module Duplicate : sig
+  include Common.CommandSig with type t = (string * string list) list
+
+  val handle
+    :  ?tags:Logs.Tag.set
+    -> ?parent_session:Session.t
+    -> Experiment.t
+    -> Session.t
+    -> Session.t list
+    -> t
+    -> (Pool_event.t list, Conformist.error_msg) result
+
+  val effects : Experiment.Id.t -> Guard.ValidationSet.t
+end = struct
+  type t = (string * string list) list
+
+  let parse_urlencoded urlencoded
+    : ((int, (Session.Id.t * Session.Start.t) list) CCList.Assoc.t, 'b) Result.t
+    =
+    let error = Pool_common.Message.InvalidRequest in
+    let open CCResult in
+    let start_of_string str =
+      Pool_common.Utils.Time.parse_time str >|= Session.Start.create
+    in
+    let parse_row id group value =
+      let to_result = CCOption.to_result in
+      let* group = CCInt.of_string group |> to_result error in
+      let* start =
+        CCList.head_opt value |> to_result error >>= start_of_string
+      in
+      Ok (group, (Session.Id.of_string id, start))
+    in
+    urlencoded
+    |> CCList.fold_left
+         (fun acc (key, value) ->
+           let open CCString in
+           match acc with
+           | Error _ -> acc
+           | Ok (acc : (int * (Session.Id.t * Session.Start.t) list) list) ->
+             key
+             |> replace ~which:`Right ~sub:"]" ~by:""
+             |> split ~by:"["
+             |> (function
+              | [ id; group ] ->
+                parse_row id group value
+                >|= fun (group, data) ->
+                let eq = CCInt.equal in
+                let current =
+                  CCList.assoc_opt ~eq group acc |> CCOption.value ~default:[]
+                in
+                let res = CCList.Assoc.set ~eq group (data :: current) acc in
+                res
+              | _ -> Ok acc))
+         (Ok [])
+  ;;
+
+  let handle
+    ?(tags = Logs.Tag.empty)
+    ?parent_session
+    experiment
+    session
+    followups
+    (urlencoded : t)
+    =
+    let open CCResult in
+    Logs.info ~src (fun m -> m "Handle command Duplicate" ~tags);
+    let validate_and_merge_session ?parent template start =
+      if starts_after_parent parent start
+      then Error Pool_common.Message.FollowUpIsEarlierThanMain
+      else
+        Ok
+          Session.
+            { template with
+              id = Id.create ()
+            ; start
+            ; follow_up_to = parent |> CCOption.map (fun session -> session.id)
+            }
+    in
+    let find_start session_id data
+      : (Session.Start.t, Pool_common.Message.error) Result.t
+      =
+      CCList.find_opt (fun (id, _) -> Session.Id.equal id session_id) data
+      |> CCOption.to_result Pool_common.Message.(Missing Field.Start)
+      >|= snd
+    in
+    let created session =
+      Session.Created (session, experiment.Experiment.id) |> Pool_event.session
+    in
+    let build_session ?parent form_data session =
+      find_start session.Session.id form_data
+      >>= validate_and_merge_session ?parent session
+    in
+    urlencoded
+    |> parse_urlencoded
+    >>= CCList.fold_left
+          (fun acc (_, form_data) ->
+            acc
+            >>= fun acc ->
+            let sessions =
+              let* parent_clone =
+                build_session ?parent:parent_session form_data session
+              in
+              let* followup_clones =
+                followups
+                |> CCList.map (build_session ~parent:parent_clone form_data)
+                |> CCList.all_ok
+              in
+              Ok (parent_clone :: followup_clones)
+            in
+            sessions >|= CCList.map created >|= CCList.append acc)
+          (Ok [])
+  ;;
+
+  let effects exp_id = Session.Guard.Access.create exp_id
+end
+
 module Update : sig
   include Common.CommandSig with type t = Session.base
 

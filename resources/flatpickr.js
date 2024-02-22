@@ -42,17 +42,30 @@ export function initDatepicker(container = document) {
     flatpickr.localize({ firstDayOfWeek: 1 })
     const renderDatepickers = (container) => {
         [...container.getElementsByClassName(datePickerClass)].forEach(e => {
-            var { disablePast, disableFuture, disableTime } = e.dataset;
-            var classlist = Array.from(e.classList);
-            var dateFormat = disableTime ? "Y-m-d" : "Z";
-            var altFormat = disableTime ? "d.m.Y" : "d.m.Y H:i";
+            const { disablePast, disableFuture, disableTime, minDate: dataMinDate } = e.dataset;
+            const classlist = Array.from(e.classList);
+            const dateFormat = disableTime ? "Y-m-d" : "Z";
+            const altFormat = disableTime ? "d.m.Y" : "d.m.Y H:i";
             const formGroup = e.closest(".form-group");
-            var f = flatpickr(e, {
+
+            const parsedMinDate = dataMinDate && new Date(dataMinDate);
+
+            let minDate = null;
+            let now = new Date();
+            if (disablePast && parsedMinDate) {
+                minDate = parsedMinDate > now ? parsedMinDate : now;
+            } else if (parsedMinDate) {
+                minDate = parsedMinDate
+            } else if (disablePast) {
+                minDate = now
+            }
+
+            const f = flatpickr(e, {
                 ...globalConfig(e),
                 altFormat,
                 dateFormat,
                 enableTime: !disableTime,
-                minDate: disablePast ? new Date() : null,
+                minDate,
                 maxDate: disableFuture ? new Date() : null,
                 onChange: function (selectedDates, dateStr, instance) {
                     const helpText = formGroup.querySelector(".datepicker-msg")
