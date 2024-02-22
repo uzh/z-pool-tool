@@ -74,6 +74,7 @@ let rec field_to_string =
   | EmailSubject -> "email subject"
   | EmailSuffix -> "email suffix"
   | EmailText -> "email text"
+  | EmailsSent -> "total emails sent"
   | End -> "end"
   | Exclude -> "exclude"
   | ExcludeRolesOf -> "exclude roles of"

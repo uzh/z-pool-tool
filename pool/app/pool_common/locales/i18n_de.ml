@@ -139,6 +139,7 @@ Sie kommen für mehr Experimente in Frage, umso kompletter Ihr Profil ist.|}
     "Es wurden keine Sessions gefunden, der Sie diesen Kontakt zuweisen können."
   | SwitchChronological -> "Zu chronologische Ansicht wechseln"
   | SwitchGrouped -> "Zu gruppierter Ansicht wechseln"
+  | System -> "System"
   | TermsAndConditionsLastUpdated ptime ->
     Format.asprintf
       "Zuletzt angepasst: %s"

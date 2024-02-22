@@ -64,6 +64,13 @@ module RemindersSent = struct
   let schema = schema field
 end
 
+module EmailsSent = struct
+  include KeyFigure
+
+  let field = Field.EmailsSent
+  let schema = schema field
+end
+
 type period =
   | Min15
   | Hour1
@@ -124,5 +131,6 @@ type t =
   ; assignments_created : AssignmentsCreated.t
   ; invitations_sent : InvitationsSent.t
   ; reminders_sent : RemindersSent.t
+  ; emails_sent : EmailsSent.t
   }
 [@@deriving eq, show, yojson]

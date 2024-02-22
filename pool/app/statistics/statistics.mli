@@ -46,6 +46,12 @@ module RemindersSent : sig
   val field : Pool_common.Message.Field.t
 end
 
+module EmailsSent : sig
+  include Pool_common.Model.IntegerSig
+
+  val field : Pool_common.Message.Field.t
+end
+
 type period =
   | Min15
   | Hour1
@@ -68,6 +74,7 @@ type t =
   ; assignments_created : AssignmentsCreated.t
   ; invitations_sent : InvitationsSent.t
   ; reminders_sent : RemindersSent.t
+  ; emails_sent : EmailsSent.t
   }
 
 val create : Pool_database.Label.t -> ?period:period -> unit -> t Lwt.t

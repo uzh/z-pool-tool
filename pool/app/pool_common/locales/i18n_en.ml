@@ -137,6 +137,7 @@ let to_string = function
     "No sessions were found to which you can assign this contact."
   | SwitchChronological -> "Switch to chronological view"
   | SwitchGrouped -> "Switch to grouped view"
+  | System -> "System"
   | TermsAndConditionsLastUpdated ptime ->
     Format.asprintf
       "Last updated: %s"

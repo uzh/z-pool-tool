@@ -85,6 +85,7 @@ type t =
   | SwapSessionsListEmpty
   | SwitchChronological
   | SwitchGrouped
+  | System
   | TermsAndConditionsLastUpdated of Ptime.t
   | TermsAndConditionsTitle
   | TermsAndConditionsUpdated

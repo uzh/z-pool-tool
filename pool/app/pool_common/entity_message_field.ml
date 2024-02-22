@@ -95,6 +95,7 @@ type t =
   | EmailSubject [@name "email_subject"] [@printer go "email_subject"]
   | EmailSuffix [@name "email_suffix"] [@printer go "email_suffix"]
   | EmailText [@name "email_text"] [@printer go "email_text"]
+  | EmailsSent [@name "emails_sent"] [@printer go "emails_sent"]
   | End [@name "end"] [@printer go "end"]
   | Exclude [@name "exclude"] [@printer go "exclude"]
   | ExcludeRolesOf [@name "exclude_roles_of"] [@printer go "exclude_roles_of"]
