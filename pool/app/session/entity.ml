@@ -176,8 +176,6 @@ type t =
 (* TODO [aerben] do session copying *)
 (* TODO [aerben] write tests *)
 
-(* TODO: This could be removed and Write.t could be passed to the event
-   directly *)
 let create
   ?id
   ?internal_description
