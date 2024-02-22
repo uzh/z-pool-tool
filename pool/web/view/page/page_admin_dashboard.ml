@@ -3,12 +3,12 @@ open Pool_common
 module Field = Message.Field
 
 module Partials = struct
-  let session_overview language (sessions, query) =
+  let session_overview (target_id, url) language (sessions, query) =
     let open Session in
     let field_to_string field =
       Utils.field_to_string language field |> CCString.capitalize_ascii |> txt
     in
-    let url = Uri.of_string "/admin/dashboard/incomplete-sessions" in
+    let url = url |> Format.asprintf "/admin/dashboard/%s" |> Uri.of_string in
     let session_path session =
       Page_admin_session.session_path
         session.experiment.Experiment.id
@@ -26,6 +26,11 @@ module Partials = struct
       ]
     in
     let row ({ experiment; _ } as session) =
+      let row_attribs =
+        if CCOption.is_some session.canceled_at
+        then [ a_class [ "bg-red-lighter" ] ]
+        else []
+      in
       [ txt (start_end_with_duration_human session)
       ; span
           ~a:[ a_class [ "word-break-all" ] ]
@@ -35,19 +40,26 @@ module Partials = struct
           Input.link_as_button ~icon:Icon.OpenOutline (session_path session))
       ]
       |> CCList.map CCFun.(CCList.return %> td)
-      |> tr
+      |> tr ~a:row_attribs
     in
-    Component.DataTable.make
-      ~th_class
-      ~target_id:"incomplete-sessions-list"
-      ~cols
-      ~row
-      data_table
-      sessions
+    Component.DataTable.make ~th_class ~target_id ~cols ~row data_table sessions
+  ;;
+
+  let incomplete_sessions_list =
+    session_overview ("incomplete-sessions-list", "incomplete-sessions")
+  ;;
+
+  let upcoming_sessions_list =
+    session_overview ("upcoming-sessions-list", "upcoming-sessions")
   ;;
 end
 
-let index statistics incomplete_sessions Pool_context.{ language; _ } =
+let index
+  statistics
+  upcoming_sessions
+  incomplete_sessions
+  Pool_context.{ language; _ }
+  =
   let heading_2 title =
     h2
       ~a:[ a_class [ "heading-2" ] ]
@@ -57,10 +69,16 @@ let index statistics incomplete_sessions Pool_context.{ language; _ } =
     div
       [ heading_2 I18n.UpcomingSessionsTitle; Component.Calendar.(create User) ]
   in
+  let upcoming_sessions_html =
+    div
+      [ heading_2 I18n.UpcomingSessionsTitle
+      ; Partials.upcoming_sessions_list language upcoming_sessions
+      ]
+  in
   let incomplete_sessions_html =
     div
       [ heading_2 I18n.IncompleteSessions
-      ; Partials.session_overview language incomplete_sessions
+      ; Partials.incomplete_sessions_list language incomplete_sessions
       ]
   in
   let statistics_html =
@@ -78,7 +96,8 @@ let index statistics incomplete_sessions Pool_context.{ language; _ } =
         [ txt (Utils.text_to_string language I18n.DashboardTitle) ]
     ; div
         ~a:[ a_class [ "stack-lg" ] ]
-        [ calendar_html
+        [ upcoming_sessions_html
+        ; calendar_html
         ; div
             ~a:[ a_class [ "grid-col-3" ] ]
             [ statistics_html

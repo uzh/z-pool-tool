@@ -30,6 +30,7 @@ let find_open = Repo.find_open
 let find_for_calendar_by_location = Repo.find_for_calendar_by_location
 let find_for_calendar_by_user = Repo.find_for_calendar_by_user
 let find_incomplete_by_admin = Repo.Sql.find_incomplete_by_admin
+let find_upcoming_by_admin = Repo.Sql.find_upcoming_by_admin
 let query_grouped_by_experiment = Repo.Sql.query_grouped_by_experiment
 let query_by_experiment = Repo.Sql.query_by_experiment
 

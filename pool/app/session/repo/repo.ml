@@ -111,15 +111,18 @@ module Sql = struct
 
   let find_request_sql ?(count = false) where_fragment =
     let columns =
-      if count then "COUNT(*)" else sql_select_columns |> CCString.concat ", "
+      if count then "1" else sql_select_columns |> CCString.concat ", "
     in
-    let group_by = if count then "" else "GROUP BY pool_sessions.uuid" in
-    Format.asprintf
-      {sql| SELECT %s FROM pool_sessions %s %s %s |sql}
-      columns
-      joins
-      where_fragment
-      group_by
+    let query =
+      Format.asprintf
+        {sql| SELECT %s FROM pool_sessions %s %s GROUP BY pool_sessions.uuid |sql}
+        columns
+        joins
+        where_fragment
+    in
+    match count with
+    | false -> query
+    | true -> Format.asprintf "SELECT COUNT(*) FROM (%s) c" query
   ;;
 
   let find_public_sql where =
@@ -850,26 +853,10 @@ module Sql = struct
     CCOption.to_list guardian |> CCString.concat " AND " |> Lwt.return
   ;;
 
-  (* let find_incomplete_by_admin_request guardian_conditions = let open
-     Caqti_request.Infix in Format.asprintf {sql| WHERE %s AND
-     pool_sessions.closed_at IS NULL AND pool_sessions.canceled_at IS NULL AND
-     (pool_sessions.start + INTERVAL duration SECOND) < NOW() |sql}
-     guardian_conditions |> find_request_sql |> order_by_start |>
-     Caqti_type.unit ->* RepoEntity.t ;; *)
-
-  let find_incomplete_by_admin ?query actor pool =
+  let query_by_admin where ?query actor pool =
     let%lwt guardian_conditions = find_by_user_params pool actor in
     let where =
-      let sql =
-        Format.asprintf
-          {sql|
-            %s
-            AND pool_sessions.closed_at IS NULL
-            AND pool_sessions.canceled_at IS NULL
-            AND (pool_sessions.start + INTERVAL duration SECOND) < NOW()
-          |sql}
-          guardian_conditions
-      in
+      let sql = Format.asprintf "%s AND %s" guardian_conditions where in
       sql, Dynparam.empty
     in
     Query.collect_and_count
@@ -878,6 +865,23 @@ module Sql = struct
       ~select:find_request_sql
       ~where
       Repo_entity.t
+  ;;
+
+  let find_incomplete_by_admin =
+    {sql|
+      pool_sessions.closed_at IS NULL
+      AND pool_sessions.canceled_at IS NULL
+      AND (pool_sessions.start + INTERVAL duration SECOND) < NOW()
+    |sql}
+    |> query_by_admin
+  ;;
+
+  let find_upcoming_by_admin =
+    {sql|
+      (pool_sessions.start + INTERVAL duration SECOND) > NOW()
+      AND pool_sessions.closed_at IS NULL
+    |sql}
+    |> query_by_admin
   ;;
 
   let find_for_calendar_by_user actor pool ~start_time ~end_time =
