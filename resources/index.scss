@@ -565,4 +565,8 @@ $n: 12;
     [class*='grid-col-'] [class*='span-'] {
         grid-column: span 1;
     }
-  }
+}
+
+[class*='grid-col-'].stretch-only-child  > *:only-child{
+    grid-column: 1 / -1;
+}

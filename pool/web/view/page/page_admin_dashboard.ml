@@ -58,6 +58,7 @@ let index
   statistics
   upcoming_sessions
   incomplete_sessions
+  recruiter_layout
   Pool_context.{ language; _ }
   =
   let heading_2 title =
@@ -65,44 +66,46 @@ let index
       ~a:[ a_class [ "heading-2" ] ]
       [ txt (Utils.text_to_string language title) ]
   in
-  let calendar_html =
-    div
-      [ heading_2 I18n.UpcomingSessionsTitle; Component.Calendar.(create User) ]
-  in
   let upcoming_sessions_html =
+    let calendar_html = Component.Calendar.(create User) in
+    let session_list =
+      Partials.upcoming_sessions_list language upcoming_sessions
+    in
+    let elements = [ session_list; calendar_html ] in
+    let html = if recruiter_layout then CCList.rev elements else elements in
     div
       [ heading_2 I18n.UpcomingSessionsTitle
-      ; Partials.upcoming_sessions_list language upcoming_sessions
+      ; div ~a:[ a_class [ "stack-lg" ] ] html
       ]
   in
-  let incomplete_sessions_html =
-    div
-      [ heading_2 I18n.IncompleteSessions
-      ; Partials.incomplete_sessions_list language incomplete_sessions
-      ]
-  in
-  let statistics_html =
-    statistics
-    |> CCOption.map_or ~default:(txt "") (fun statistics ->
+  let recruiter_information =
+    let statistics_html =
+      statistics
+      |> CCOption.map_or ~default:(txt "") (fun statistics ->
+        div
+          [ heading_2 I18n.PoolStatistics
+          ; Component.Statistics.create language statistics
+          ])
+    in
+    let incomplete_sessions_html =
       div
-        [ heading_2 I18n.PoolStatistics
-        ; Component.Statistics.create language statistics
-        ])
+        [ heading_2 I18n.IncompleteSessions
+        ; Partials.incomplete_sessions_list language incomplete_sessions
+        ]
+    in
+    div
+      ~a:[ a_class [ "grid-col-3"; "stretch-only-child" ] ]
+      [ statistics_html
+      ; div ~a:[ a_class [ "span-2" ] ] [ incomplete_sessions_html ]
+      ]
   in
+  let elements = [ upcoming_sessions_html; recruiter_information ] in
+  let html = if recruiter_layout then CCList.rev elements else elements in
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
     [ h1
         ~a:[ a_class [ "heading-1" ] ]
         [ txt (Utils.text_to_string language I18n.DashboardTitle) ]
-    ; div
-        ~a:[ a_class [ "stack-lg" ] ]
-        [ upcoming_sessions_html
-        ; calendar_html
-        ; div
-            ~a:[ a_class [ "grid-col-3" ] ]
-            [ statistics_html
-            ; div ~a:[ a_class [ "span-2" ] ] [ incomplete_sessions_html ]
-            ]
-        ]
+    ; div ~a:[ a_class [ "stack-xl" ] ] html
     ]
 ;;

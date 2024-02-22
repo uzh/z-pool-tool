@@ -22,6 +22,14 @@ let index req =
     Utils.Lwt_result.map_error (fun err -> err, "/error")
     @@
     let* actor = Pool_context.Utils.find_authorizable database_label user in
+    let%lwt recruiter_layout =
+      let open Guard in
+      let open CCList in
+      let recruiter_roles : Role.Role.t list = [ `Operator; `Recruiter ] in
+      Persistence.ActorRole.find_by_actor database_label actor.Actor.uuid
+      ||> find_opt (fun (role, _, _) -> mem role.ActorRole.role recruiter_roles)
+      ||> CCOption.is_some
+    in
     let%lwt statistics =
       Guard.Persistence.validate
         database_label
@@ -43,6 +51,7 @@ let index req =
       statistics
       upcoming_sessions
       incomplete_sessions
+      recruiter_layout
       context
     |> create_layout req ~active_navigation:"/admin/dashboard" context
     >|+ Sihl.Web.Response.of_html
