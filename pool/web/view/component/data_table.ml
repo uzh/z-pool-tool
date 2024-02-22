@@ -9,6 +9,10 @@ let hx_get ~url ~target_id ~push_url =
   ]
 ;;
 
+let generic_empty language =
+  Pool_common.(Utils.text_to_string language I18n.EmptyListGeneric)
+;;
+
 type data_table =
   { url : Uri.t
   ; query : Query.t
@@ -426,6 +430,11 @@ let make
   in
   let thead = make_header ?th_class target_id cols data_table in
   let rows = CCList.map row items in
+  let empty_msg =
+    if CCList.is_empty items
+    then div [ txt (generic_empty data_table.language) ]
+    else txt ""
+  in
   let classes =
     a_class
       (Component_table.table_classes ?align_top layout ~align_last_end ()
@@ -433,5 +442,10 @@ let make
   in
   div
     ~a:[ a_class [ "stack" ]; a_id target_id ]
-    [ filter_block; prepend_html; table ~a:[ classes ] ~thead rows; pagination ]
+    [ filter_block
+    ; prepend_html
+    ; table ~a:[ classes ] ~thead rows
+    ; empty_msg
+    ; pagination
+    ]
 ;;
