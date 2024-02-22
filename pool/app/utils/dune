@@ -1,5 +1,10 @@
 (library
  (name utils)
- (libraries mirage-crypto-pk mirage-crypto-rng-lwt containers sihl)
+ (libraries
+  containers
+  mirage-crypto-pk
+  mirage-crypto-rng-lwt
+  pool_canary
+  sihl)
  (preprocess
   (pps lwt_ppx ppx_deriving.eq ppx_deriving.show ppx_variants_conv)))

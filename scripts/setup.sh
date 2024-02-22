@@ -23,8 +23,8 @@ opam pin add -yn conformist $repo_oxi/conformist.git#aa7b95d1f39215cdaab8cf96d76
 opam pin add -yn letters $repo_oxi/letters.git#0.3.3
 
 # pin custom libraries
-opam pin add -yn canary $repo_uzh/canary.git#4b84df140c8d9401cc1197698ede3f02daddfa81
 opam pin add -yn guardian $repo_uzh/guardian.git#ed36bc1251fd336f8b2fc848fc3122432ad23873
+opam pin add -yn canary $repo_uzh/canary.git#d1c9879ed98a904b358fcc52f4769659f71ae884
 
 opam pin add -yn pool .
 OPAMSOLVERTIMEOUT=180 opam depext -y pool

@@ -1,0 +1,5 @@
+(library
+ (name pool_canary)
+ (libraries canary sihl)
+ (preprocess
+  (pps lwt_ppx ppx_fields_conv)))

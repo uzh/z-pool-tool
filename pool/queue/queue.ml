@@ -163,10 +163,7 @@ let create_schedule () =
   create "job_queue" interval periodic_fcn
 ;;
 
-let start =
-  Notifier.before_start ();
-  create_schedule %> Schedule.add_and_start
-;;
+let start = create_schedule %> Schedule.add_and_start
 
 let stop () =
   registered_jobs := [];
@@ -176,7 +173,8 @@ let stop () =
 let lifecycle =
   Sihl.Container.create_lifecycle
     "Multitenant Queue"
-    ~dependencies:(fun () -> [ Database.lifecycle; Schedule.lifecycle ])
+    ~dependencies:(fun () ->
+      [ Pool_canary.lifecycle; Database.lifecycle; Schedule.lifecycle ])
     ~start
     ~stop
 ;;
