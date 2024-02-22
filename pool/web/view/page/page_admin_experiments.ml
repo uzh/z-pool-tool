@@ -143,7 +143,6 @@ module Statistics = struct
 end
 
 let message_template_buttons
-  can_update_experiment
   sys_languages
   (experiment : Experiment.t)
   message_templates
@@ -151,7 +150,7 @@ let message_template_buttons
   let open Message_template in
   let build_button label =
     build_experiment_path experiment Label.(prefixed_human_url label)
-    |> Button.add label
+    |> Button.add ~is_text:true label
   in
   let exclude =
     experiment.Experiment.language
@@ -165,8 +164,15 @@ let message_template_buttons
     if CCList.is_empty (filter_languages ?exclude sys_languages templates)
     then None
     else label |> build_button |> CCOption.pure)
-  |> div ~a:[ a_class [ "flexrow"; "flex-gap"; "justify-end" ] ]
-  |> fun buttons -> if can_update_experiment then Some buttons else None
+  |> fun buttons ->
+  div
+    ~a:[ a_class [ "flexrow" ] ]
+    [ Component.ButtonGroup.dropdown
+        ~icon:Icon.Add
+        ~icon_style:[ "small"; "success" ]
+        ~classnames:[ "push" ]
+        buttons
+    ]
 ;;
 
 let message_templates_html
@@ -180,17 +186,15 @@ let message_templates_html
   let open Message_template in
   let experiment_path = build_experiment_path experiment in
   let buttons =
-    message_template_buttons
-      can_update_experiment
-      sys_languages
-      experiment
-      message_templates
+    if can_update_experiment
+    then message_template_buttons sys_languages experiment message_templates
+    else txt ""
   in
   let build_path append = prefixed_template_url ~append %> experiment_path in
   let edit_path = build_path "edit" in
   let delete_path = build_path "delete", csrf in
   Page_admin_message_template.table
-    ?buttons
+    ~buttons
     ~can_update_experiment
     ~delete_path
     language
