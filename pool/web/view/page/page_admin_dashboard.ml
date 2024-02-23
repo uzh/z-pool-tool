@@ -69,7 +69,11 @@ let index
   let upcoming_sessions_html =
     let calendar_html = Component.Calendar.(create User) in
     let session_list =
-      Partials.upcoming_sessions_list language upcoming_sessions
+      div
+        ~a:[ a_class [ "stack" ] ]
+        [ Page_admin_session.Partials.table_legend ~hide_closed:true language
+        ; Partials.upcoming_sessions_list language upcoming_sessions
+        ]
     in
     let elements = [ session_list; calendar_html ] in
     let html = if recruiter_layout then CCList.rev elements else elements in
