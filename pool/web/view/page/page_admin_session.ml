@@ -707,7 +707,7 @@ let duplicate_form
   let input_name { id; _ } =
     Format.asprintf "%s[%i]" (Session.Id.value id) form_id
   in
-  let input ?value session =
+  let input ?min_input_el ?value session =
     let name = input_name session in
     let label_txt =
       Format.asprintf
@@ -716,9 +716,13 @@ let duplicate_form
       |> txt
     in
     let attrs =
-      match parent_session with
-      | None -> []
-      | Some parent -> [ min_date parent ]
+      let min_date = parent_session |> CCOption.map min_date in
+      let min_input_el =
+        min_input_el
+        |> CCOption.map (fun min_input ->
+          a_user_data "min-input-element" (input_name min_input))
+      in
+      [ min_date; min_input_el ] |> CCList.filter_map CCFun.id
     in
     div
       ~a:[ a_class [ "form-group" ] ]
@@ -752,7 +756,7 @@ let duplicate_form
   let main = div [ input session ] |> wrap Message.Field.MainSession in
   let followups =
     followups
-    |> CCList.map (fun session -> input session)
+    |> CCList.map (input ~min_input_el:session)
     |> div ~a:[ a_class [ "stack" ] ]
     |> wrap Message.Field.FollowUpSession
   in
