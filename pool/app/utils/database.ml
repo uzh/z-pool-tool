@@ -42,6 +42,9 @@ let raise_caqti_error ?req ?tags =
     let name = "Caqti error: `Unsupported" in
     let%lwt () = notify (Failure name) "" (comment ()) in
     failwith name
+  | Error (`Connect_failed _ as err) ->
+    Logs.err ~src (fun m -> m ?tags "%s" (show err));
+    failwith "Could not connect to database, please try again later."
   | (Error #t | Ok _) as resp ->
     CCResult.map_err
       (show %> CCFun.tap (fun err -> Logs.err ~src (fun m -> m ?tags "%s" err)))
