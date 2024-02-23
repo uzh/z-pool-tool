@@ -152,14 +152,12 @@ let duplicate req =
     @@ let* experiment, session, followups, parent_session =
          duplication_session_data req database_label
        in
-       let flash_fetcher = flip Sihl.Web.Flash.find req in
        Page.Admin.Session.duplicate
          context
          experiment
          session
          ?parent_session
          followups
-         flash_fetcher
        >|> create_layout req context
        >|+ Sihl.Web.Response.of_html
   in
@@ -206,7 +204,9 @@ let duplicate_post req =
       sessions_path
       (Session.Id.value session_id)
   in
-  let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+  let%lwt urlencoded =
+    Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
+  in
   let result { Pool_context.database_label; _ } =
     Utils.Lwt_result.map_error (fun err ->
       err, error_path, [ HttpUtils.urlencoded_to_flash urlencoded ])

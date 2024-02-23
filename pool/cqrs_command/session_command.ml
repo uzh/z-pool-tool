@@ -267,17 +267,37 @@ end = struct
     =
     let open CCResult in
     Logs.info ~src (fun m -> m "Handle command Duplicate" ~tags);
-    let validate_and_merge_session ?parent template start =
+    let validate_and_merge_session
+      ?parent
+      { Session.internal_description
+      ; public_description
+      ; email_reminder_lead_time
+      ; text_message_reminder_lead_time
+      ; duration
+      ; location
+      ; max_participants
+      ; min_participants
+      ; overbook
+      ; _
+      }
+      start
+      =
       if starts_after_parent parent start
       then Error Pool_common.Message.FollowUpIsEarlierThanMain
       else
         Ok
-          Session.
-            { template with
-              id = Id.create ()
-            ; start
-            ; follow_up_to = parent |> CCOption.map (fun session -> session.id)
-            }
+          (Session.create
+             ?follow_up_to:(parent |> CCOption.map (fun { Session.id; _ } -> id))
+             ?internal_description
+             ?public_description
+             ?email_reminder_lead_time
+             ?text_message_reminder_lead_time
+             start
+             duration
+             location
+             max_participants
+             min_participants
+             overbook)
     in
     let find_start session_id data
       : (Session.Start.t, Pool_common.Message.error) Result.t

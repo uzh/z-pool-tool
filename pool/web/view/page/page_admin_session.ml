@@ -690,17 +690,24 @@ let new_form
        create context (Control Message.(Create (Some Field.Session))) experiment)
 ;;
 
-let duplicate_form
-  ?flash_fetcher
-  ?parent_session
-  language
-  session
-  followups
-  form_id
-  =
+let duplicate_form ?parent_session language session followups form_id =
   let open Session in
   let open Pool_common in
-  let _ = flash_fetcher in
+  let remove_button =
+    if form_id = 0
+    then txt ""
+    else
+      div
+        ~a:[ a_class [ "full-width"; "flexrow" ] ]
+        [ button
+            ~a:
+              [ a_class [ "error"; "has-icon"; "small"; "push" ]
+              ; a_button_type `Button
+              ; a_user_data "remove-group" ""
+              ]
+            [ Component.Icon.(to_html TrashOutline) ]
+        ]
+  in
   let min_date ({ start; _ } : t) =
     Start.value start |> Component.Input.flatpickr_min
   in
@@ -736,6 +743,7 @@ let duplicate_form
              ; a_user_data
                  "warn-past"
                  (Utils.hint_to_string language I18n.SelectedDateIsPast)
+             ; a_required ()
              ]
              @ attrs)
           ()
@@ -765,16 +773,15 @@ let duplicate_form
       [ a_class [ "grid-col-2"; "border-bottom"; "inset"; "vertical" ]
       ; a_user_data "duplicate-form" (CCInt.to_string form_id)
       ]
-    [ main; followups ]
+    [ remove_button; main; followups ]
 ;;
 
 let duplicate
   ({ Pool_context.language; csrf; _ } as context)
+  ?parent_session
   experiment
   session
   followups
-  ?parent_session
-  flash_fetcher
   =
   (* TODO: Also display parent, if exists *)
   let parent_info =
@@ -811,14 +818,7 @@ let duplicate
       [ Component.Input.csrf_element csrf ()
       ; div
           ~a:[ a_id subform_wrapper ]
-          [ duplicate_form
-              ~flash_fetcher
-              ?parent_session
-              language
-              session
-              followups
-              0
-          ]
+          [ duplicate_form ?parent_session language session followups 0 ]
       ; div
           ~a:[ a_class [ "flexrow"; "gap" ] ]
           [ div

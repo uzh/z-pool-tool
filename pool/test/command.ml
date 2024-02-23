@@ -286,153 +286,143 @@ let () =
             Mailing_test.create_with_start_now
         ] )
     ; ( "session"
-      , [ test_case
-            "create session empty data fails"
-            `Quick
-            Session_test.create_empty_data
-        ; test_case
-            "create session invalid data fails"
-            `Quick
-            Session_test.create_invalid_data
-        ; test_case
-            "create session min participants greater than max participants \
-             fails"
-            `Quick
-            Session_test.create_min_gt_max
-        ; test_case
-            "create session optionals omitted succeeds"
-            `Quick
-            Session_test.create_no_optional
-        ; test_case
-            "create session all info succeeds"
-            `Quick
-            Session_test.create_full
-        ; test_case
-            "create session min participants equal max participants succeeds"
-            `Quick
-            Session_test.create_min_eq_max
-        ; test_case
-            "update session empty data fails"
-            `Quick
-            Session_test.update_empty_data
-        ; test_case
-            "update session invalid data fails"
-            `Quick
-            Session_test.update_invalid_data
-        ; test_case
-            "update session min participants greater than max participants \
-             fails"
-            `Quick
-            Session_test.update_min_gt_max
-        ; test_case
-            "update session optionals omitted succeeds"
-            `Quick
-            Session_test.update_no_optional
-        ; test_case
-            "update session all info succeeds"
-            `Quick
-            Session_test.update_full
-        ; test_case
-            "update session min participants greater than max participants \
-             succeeds"
-            `Quick
-            Session_test.update_min_eq_max
-        ; test_case "delete session succeeds" `Quick Session_test.delete
-        ; test_case
-            "delete closed session fails"
-            `Quick
-            Session_test.delete_closed_session
-        ; test_case
-            "delete session with assignments fails"
-            `Quick
-            Session_test.delete_session_with_assignments
-        ; test_case
-            "delete session with follow ups fails"
-            `Quick
-            Session_test.delete_session_with_follow_ups
-        ; test_case
-            "cancel session without reason fails"
-            `Quick
-            Session_test.cancel_no_reason
-        ; test_case
-            "cancel session without message channels fails"
-            `Quick
-            Session_test.cancel_no_message_channels
-        ; test_case
-            "cancel session in past fails"
-            `Quick
-            Session_test.cancel_in_past
-        ; test_case
-            "cancel session already canceled fails"
-            `Quick
-            Session_test.cancel_already_canceled
-        ; test_case "cancel session succeeds" `Quick Session_test.cancel_valid
-        ; test_case
-            "cancel valid with missing phone number"
-            `Quick
-            Session_test.cancel_valid_with_missing_cell_phone
-        ; test_case
-            "cancel with email and text notification"
-            `Quick
-            Session_test.cancel_with_email_and_text_notification
-        ; test_case "close session" `Quick Session_test.close_valid
-        ; test_case
-            "close session with valid assignments"
-            `Quick
-            Session_test.close_valid_with_assignments
-        ; test_case
-            "close session with deleted assignment"
-            `Quick
-            Session_test.close_with_deleted_assignment
-        ; test_case
-            "close session with invalid participation"
-            `Quick
-            Session_test.validate_invalid_participation
-        ; test_case
-            "close unparticipated assignment with followup"
-            `Quick
-            Session_test.close_unparticipated_with_followup
-        ; test_case
-            "create follow up earlier than parent fails"
-            `Quick
-            Session_test.create_follow_up_earlier
-        ; test_case
-            "create follow up later than parent succeeds"
-            `Quick
-            Session_test.create_follow_up_later
-        ; test_case
-            "update follow up earlier than parent fails"
-            `Quick
-            Session_test.update_follow_up_earlier
-        ; test_case
-            "update follow up later than parent succeeds"
-            `Quick
-            Session_test.update_follow_up_later
-        ; test_case
-            "update with follow ups earlier fails"
-            `Quick
-            Session_test.update_follow_ups_earlier
-        ; test_case
-            "update with follow ups later succeeds"
-            `Quick
-            Session_test.update_follow_ups_later
-        ; test_case
-            "reschedule session to past"
-            `Quick
-            Session_test.reschedule_to_past
-        ; test_case
-            "reschedule with experiment smtp auth"
-            `Quick
-            Session_test.reschedule_with_experiment_smtp
-        ; test_case
-            "resend reminders invalid"
-            `Quick
-            Session_test.resend_reminders_invalid
-        ; test_case
-            "resend reminders valid"
-            `Quick
-            Session_test.resend_reminders_valid
-        ] )
+      , Session_test.
+          [ test_case "create session empty data fails" `Quick create_empty_data
+          ; test_case
+              "create session invalid data fails"
+              `Quick
+              create_invalid_data
+          ; test_case
+              "create session min participants greater than max participants \
+               fails"
+              `Quick
+              create_min_gt_max
+          ; test_case
+              "create session optionals omitted succeeds"
+              `Quick
+              create_no_optional
+          ; test_case "create session all info succeeds" `Quick create_full
+          ; test_case
+              "create session min participants equal max participants succeeds"
+              `Quick
+              create_min_eq_max
+          ; test_case "update session empty data fails" `Quick update_empty_data
+          ; test_case
+              "update session invalid data fails"
+              `Quick
+              update_invalid_data
+          ; test_case
+              "update session min participants greater than max participants \
+               fails"
+              `Quick
+              update_min_gt_max
+          ; test_case
+              "update session optionals omitted succeeds"
+              `Quick
+              update_no_optional
+          ; test_case "update session all info succeeds" `Quick update_full
+          ; test_case
+              "update session min participants greater than max participants \
+               succeeds"
+              `Quick
+              update_min_eq_max
+          ; test_case "delete session succeeds" `Quick delete
+          ; test_case "delete closed session fails" `Quick delete_closed_session
+          ; test_case
+              "delete session with assignments fails"
+              `Quick
+              delete_session_with_assignments
+          ; test_case
+              "delete session with follow ups fails"
+              `Quick
+              delete_session_with_follow_ups
+          ; test_case
+              "cancel session without reason fails"
+              `Quick
+              cancel_no_reason
+          ; test_case
+              "cancel session without message channels fails"
+              `Quick
+              cancel_no_message_channels
+          ; test_case "cancel session in past fails" `Quick cancel_in_past
+          ; test_case
+              "cancel session already canceled fails"
+              `Quick
+              cancel_already_canceled
+          ; test_case "cancel session succeeds" `Quick cancel_valid
+          ; test_case
+              "cancel valid with missing phone number"
+              `Quick
+              cancel_valid_with_missing_cell_phone
+          ; test_case
+              "cancel with email and text notification"
+              `Quick
+              cancel_with_email_and_text_notification
+          ; test_case "close session" `Quick close_valid
+          ; test_case
+              "close session with valid assignments"
+              `Quick
+              close_valid_with_assignments
+          ; test_case
+              "close session with deleted assignment"
+              `Quick
+              close_with_deleted_assignment
+          ; test_case
+              "close session with invalid participation"
+              `Quick
+              validate_invalid_participation
+          ; test_case
+              "close unparticipated assignment with followup"
+              `Quick
+              close_unparticipated_with_followup
+          ; test_case
+              "create follow up earlier than parent fails"
+              `Quick
+              create_follow_up_earlier
+          ; test_case
+              "create follow up later than parent succeeds"
+              `Quick
+              create_follow_up_later
+          ; test_case
+              "update follow up earlier than parent fails"
+              `Quick
+              update_follow_up_earlier
+          ; test_case
+              "update follow up later than parent succeeds"
+              `Quick
+              update_follow_up_later
+          ; test_case
+              "update with follow ups earlier fails"
+              `Quick
+              update_follow_ups_earlier
+          ; test_case
+              "update with follow ups later succeeds"
+              `Quick
+              update_follow_ups_later
+          ; test_case "reschedule session to past" `Quick reschedule_to_past
+          ; test_case
+              "reschedule with experiment smtp auth"
+              `Quick
+              reschedule_with_experiment_smtp
+          ; test_case "resend reminders invalid" `Quick resend_reminders_invalid
+          ; test_case "resend reminders valid" `Quick resend_reminders_valid
+          ; test_case
+              "duplicate single session"
+              `Quick
+              Duplication.single_session
+          ; test_case
+              "duplicate session with followup"
+              `Quick
+              Duplication.with_followup
+          ; test_case
+              "duplicate with missing value "
+              `Quick
+              Duplication.missing_value
+          ; test_case
+              "duplicate with followup starting before main "
+              `Quick
+              Duplication.followup_before_main
+          ] )
     ; ( "custom_field"
       , [ test_case "create custom field" `Quick Custom_field_test.create
         ; test_case
