@@ -32,6 +32,12 @@ let csrf_attibs ?id csrf =
   | None -> attribs
 ;;
 
+let flatpickr_min value =
+  value
+  |> Pool_common.Model.Ptime.date_time_to_flatpickr
+  |> a_user_data "min-date"
+;;
+
 module Elements = struct
   let input_label language name label_field required =
     let base =
@@ -157,6 +163,7 @@ let flatpicker_element
   ?(classnames = [])
   ?error
   ?label_field
+  ?min_value
   ?hints
   ?identifier
   ?(read_only = false)
@@ -201,6 +208,8 @@ let flatpicker_element
         ; disable_hours, "disable-time", "true"
         ; disable_future, "disable-future", "true"
         ]
+    @ (min_value
+       |> CCOption.map_or ~default:[] CCFun.(flatpickr_min %> CCList.return))
   in
   let id = Elements.identifier ?identifier name in
   let attributes =

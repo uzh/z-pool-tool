@@ -337,6 +337,10 @@ let session_form
            date_time_picker_element
              language
              Message.Field.Start
+             ?min_value:
+               (follow_up_to
+                |> CCOption.map
+                     Session.(fun ({ start; _ } : t) -> Start.value start))
              ~required:true
              ~flash_fetcher
              ?value
@@ -698,9 +702,7 @@ let duplicate_form
   let open Pool_common in
   let _ = flash_fetcher in
   let min_date ({ start; _ } : t) =
-    Start.value start
-    |> Model.Ptime.date_time_to_flatpickr
-    |> a_user_data "min-date"
+    Start.value start |> Component.Input.flatpickr_min
   in
   let input_name { id; _ } =
     Format.asprintf "%s[%i]" (Session.Id.value id) form_id
