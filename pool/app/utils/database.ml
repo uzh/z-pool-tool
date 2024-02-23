@@ -33,7 +33,13 @@ let raise_caqti_error ?req ?tags =
   let notify exn trace =
     CCOption.map_or ~default:(Lwt.return ()) (fun additional ->
       let%lwt (_ : (unit, string) result) =
-        Pool_canary.notify ~src ?tags ~labels:[ "Bug" ] ~additional exn trace
+        Pool_canary.notify
+          ~src
+          ?tags
+          ~labels:[ "Bug"; "exception" ]
+          ~additional
+          exn
+          trace
       in
       Lwt.return ())
   in
