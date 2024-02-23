@@ -2,11 +2,11 @@
  (name middleware)
  (libraries
   admin
-  canary
   contact
   http_utils
   layout
   page
+  pool_canary
   service
   sihl
   tenant

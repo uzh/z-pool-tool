@@ -2,7 +2,8 @@ let src = Logs.Src.create "run"
 let () = Printexc.record_backtrace true
 
 let worker_services =
-  [ Database.register ()
+  [ Pool_canary.register ()
+  ; Database.register ()
   ; Service.Storage.register ()
   ; Schedule.register ()
   ; Queue.register
@@ -19,7 +20,8 @@ let worker_services =
 ;;
 
 let services =
-  [ Database.register ()
+  [ Pool_canary.register ()
+  ; Database.register ()
   ; Service.User.register ~commands:[] ()
   ; Service.Token.register ()
   ; Email.Service.register ()
@@ -76,7 +78,6 @@ let () =
             Pool_common.Message.NotHandled (Printexc.to_string exn)
             |> Pool_common.Utils.with_log_error ~src
             |> ignore);
-      Logger.create_logs_dir ();
-      Lwt.return @@ Middleware.Error.before_start ())
+      Lwt.return @@ Logger.create_logs_dir ())
     |> run ~commands ~log_reporter:Logger.reporter)
 ;;

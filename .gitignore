@@ -3,6 +3,8 @@ _esy/
 _build/
 public/
 guardian/
+canary/
+!pool/canary/
 
 # ocamlbuild targets
 *.byte

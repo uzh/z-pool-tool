@@ -4,6 +4,7 @@
   canary
   containers
   database
+  pool_canary
   pool_database
   pool_tenant
   schedule

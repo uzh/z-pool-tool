@@ -8,6 +8,7 @@
   command
   database
   guard
+  pool_canary
   queue
   reminder
   routes

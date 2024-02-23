@@ -1,3 +1,4 @@
+open CCFun.Infix
 module Lwt_result = Lwt_trace
 
 let src = Logs.Src.create "utils.database"
@@ -20,18 +21,42 @@ module Dynparam = struct
   let add t x (Pack (t', x')) = Pack (Caqti_type.t2 t' t, (x', x))
 end
 
-let raise_caqti_error ?tags =
+let raise_caqti_error ?req ?tags =
   let open Caqti_error in
+  let comment () =
+    req
+    |> CCOption.map
+         (Caqti_request.make_pp_with_param () Format.str_formatter
+          %> Format.flush_str_formatter
+          %> Format.asprintf "\nRequest and Input:\n```\n%s\n```\n")
+  in
+  let notify exn trace =
+    CCOption.map_or ~default:(Lwt.return ()) (fun additional ->
+      let%lwt (_ : (unit, string) result) =
+        Pool_canary.notify
+          ~src
+          ?tags
+          ~labels:[ "Bug"; "exception" ]
+          ~additional
+          exn
+          trace
+      in
+      Lwt.return ())
+  in
   function
   | Error `Unsupported ->
-    Logs.err ~src (fun m -> m ?tags "Caqti error unsupported");
-    failwith "Caqti error unsupported"
-  | (Error #t | Ok _) as x ->
-    (match x with
-     | Ok res -> res
-     | Error err ->
-       Logs.err ~src (fun m -> m ?tags "%s" @@ show err);
-       failwith (show err))
+    let name = "Caqti error: `Unsupported" in
+    let%lwt () = notify (Failure name) "" (comment ()) in
+    failwith name
+  | Error (`Connect_failed _ as err) ->
+    Logs.err ~src (fun m -> m ?tags "%s" (show err));
+    failwith "Could not connect to database, please try again later."
+  | (Error #t | Ok _) as resp ->
+    CCResult.map_err
+      (show %> CCFun.tap (fun err -> Logs.err ~src (fun m -> m ?tags "%s" err)))
+      resp
+    |> CCResult.get_or_failwith
+    |> Lwt.return
 ;;
 
 let find database_label request input =
@@ -41,7 +66,8 @@ let find database_label request input =
     ~ctx:[ "pool", database_label ]
     (fun connection ->
       let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-      Connection.find request input ||> raise_caqti_error ~tags)
+      Connection.find request input
+      >|> raise_caqti_error ~req:(request, input) ~tags)
 ;;
 
 let find_opt database_label request input =
@@ -51,7 +77,8 @@ let find_opt database_label request input =
     ~ctx:[ "pool", database_label ]
     (fun connection ->
       let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-      Connection.find_opt request input ||> raise_caqti_error ~tags)
+      Connection.find_opt request input
+      >|> raise_caqti_error ~req:(request, input) ~tags)
 ;;
 
 let collect database_label request input =
@@ -61,7 +88,8 @@ let collect database_label request input =
     ~ctx:[ "pool", database_label ]
     (fun connection ->
       let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-      Connection.collect_list request input ||> raise_caqti_error ~tags)
+      Connection.collect_list request input
+      >|> raise_caqti_error ~req:(request, input) ~tags)
 ;;
 
 let exec database_label request input =
@@ -71,7 +99,8 @@ let exec database_label request input =
     ~ctx:[ "pool", database_label ]
     (fun connection ->
       let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-      Connection.exec request input ||> raise_caqti_error ~tags)
+      Connection.exec request input
+      >|> raise_caqti_error ~req:(request, input) ~tags)
 ;;
 
 let transaction database_label fnc =
@@ -116,7 +145,7 @@ let transaction database_label fnc =
                   (Caqti_error.show err));
               Lwt.fail exn))
     pool
-  ||> raise_caqti_error ~tags
+  >|> raise_caqti_error ~tags
 ;;
 
 let find_as_transaction database_label ?(setup = []) ?(cleanup = []) fnc =
@@ -124,8 +153,7 @@ let find_as_transaction database_label ?(setup = []) ?(cleanup = []) fnc =
   let tags = Logger.Tags.create database_label in
   let fnc connection =
     let exec_each =
-      Lwt_list.iter_s (fun request ->
-        request connection ||> raise_caqti_error ~tags)
+      Lwt_list.iter_s (fun fcn -> fcn connection >|> raise_caqti_error ~tags)
     in
     let%lwt () = exec_each setup in
     let* result = fnc connection in
@@ -140,8 +168,7 @@ let exec_as_transaction database_label commands =
   let tags = Logger.Tags.create database_label in
   let fnc connection =
     let exec_each =
-      Lwt_list.iter_s (fun request ->
-        request connection ||> raise_caqti_error ~tags)
+      Lwt_list.iter_s (fun fcn -> fcn connection >|> raise_caqti_error ~tags)
     in
     exec_each commands ||> CCResult.return
   in
@@ -181,12 +208,12 @@ let with_disabled_fk_check database_label f =
     (fun connection ->
       let module Connection = (val connection : Caqti_lwt.CONNECTION) in
       let%lwt () =
-        Connection.exec set_fk_check_request false ||> raise_caqti_error ~tags
+        Connection.exec set_fk_check_request false >|> raise_caqti_error ~tags
       in
       (f connection)
         (* Use PPX for backtrace *)
         [%lwt.finally
-          Connection.exec set_fk_check_request true ||> raise_caqti_error ~tags])
+          Connection.exec set_fk_check_request true >|> raise_caqti_error ~tags])
 ;;
 
 let message_templates_cleanup_requeset =
@@ -241,6 +268,8 @@ let clean_all database_label =
   with_disabled_fk_check database_label (fun connection ->
     let module Connection = (val connection : Caqti_lwt.CONNECTION) in
     Lwt_list.iter_s
-      (fun request -> Connection.exec request () ||> raise_caqti_error ~tags)
+      (fun request ->
+        Connection.exec request ()
+        >|> raise_caqti_error ~req:(request, ()) ~tags)
       clean_reqs)
 ;;

@@ -1,6 +1,7 @@
 (library
  (name service)
  (libraries
+  canary
   sihl
   sihl-email
   sihl-queue
@@ -9,4 +10,4 @@
   sihl-user
   utils)
  (preprocess
-  (pps lwt_ppx)))
+  (pps lwt_ppx ppx_fields_conv)))
