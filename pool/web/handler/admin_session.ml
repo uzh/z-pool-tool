@@ -189,29 +189,19 @@ let duplicate_form_htmx req =
   result |> HttpUtils.Htmx.handle_error_message ~src req
 ;;
 
-let duplicate_post req =
+let duplicate_post_htmx req =
   let open Utils.Lwt_result.Infix in
   let experiment_id = experiment_id req in
-  let session_id = session_id req in
   let sessions_path =
     Format.asprintf
       "/admin/experiments/%s/sessions"
       (Experiment.Id.value experiment_id)
   in
-  let error_path =
-    Format.asprintf
-      "%s/%s/duplicate"
-      sessions_path
-      (Session.Id.value session_id)
-  in
-  let%lwt urlencoded =
-    Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
-  in
   let result { Pool_context.database_label; _ } =
-    Utils.Lwt_result.map_error (fun err ->
-      err, error_path, [ HttpUtils.urlencoded_to_flash urlencoded ])
-    @@
     let tags = Pool_context.Logger.Tags.req req in
+    let%lwt urlencoded =
+      Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
+    in
     let* experiment, session, followups, parent_session =
       duplication_session_data req database_label
     in
@@ -222,12 +212,16 @@ let duplicate_post req =
       |> Lwt_result.lift
     in
     let%lwt () = Pool_event.handle_events ~tags database_label events in
-    Http_utils.redirect_to_with_actions
+    HttpUtils.Htmx.htmx_redirect
+      ~actions:
+        [ Message.set ~success:[ Pool_common.Message.(Created Field.Sessions) ]
+        ]
       sessions_path
-      [ Message.set ~success:[ Pool_common.Message.(Created Field.Sessions) ] ]
+      ()
     |> Lwt_result.ok
   in
-  result |> HttpUtils.extract_happy_path_with_actions ~src req
+  result
+  |> HttpUtils.Htmx.handle_error_message ~error_as_notification:true ~src req
 ;;
 
 let create req =

@@ -806,15 +806,41 @@ let duplicate
   in
   let subform_wrapper = "session-duplication-subforms" in
   let session_path = session_path experiment.Experiment.id session.Session.id in
+  let add_subform_button =
+    button
+      ~a:
+        Htmx.
+          [ a_class [ "success"; "has-icon" ]
+          ; hx_trigger "click"
+          ; hx_get
+              (Format.asprintf "%s/duplicate/form" session_path
+               |> Sihl.Web.externalize_path)
+          ; hx_target ("#" ^ subform_wrapper)
+          ; hx_swap "beforeend"
+          ]
+      [ Icon.(to_html Add) ]
+  in
+  let submit_button =
+    button
+      ~a:
+        Htmx.
+          [ a_class [ "primary" ]
+          ; hx_trigger "click"
+          ; hx_swap "none"
+          ; hx_post
+              (Format.sprintf "%s/duplicate" session_path
+               |> Sihl.Web.externalize_path)
+          ]
+      [ txt
+          Pool_common.(
+            Utils.control_to_string
+              language
+              (Message.Create (Some Field.Sessions)))
+      ]
+  in
   let form =
     form
-      ~a:
-        [ a_id "session-duplication-form"
-        ; a_method `Post
-        ; a_action
-            (Format.sprintf "%s/duplicate" session_path
-             |> Sihl.Web.externalize_path)
-        ]
+      ~a:[ a_id "session-duplication-form" ]
       [ Component.Input.csrf_element csrf ()
       ; div
           ~a:[ a_id subform_wrapper ]
@@ -823,23 +849,7 @@ let duplicate
           ~a:[ a_class [ "flexrow"; "gap" ] ]
           [ div
               ~a:[ a_class [ "flexrow"; "flex-gap"; "push" ] ]
-              [ button
-                  ~a:
-                    Htmx.
-                      [ a_class [ "success"; "has-icon"; "push" ]
-                      ; hx_trigger "click"
-                      ; hx_get
-                          (Format.asprintf "%s/duplicate/form" session_path
-                           |> Sihl.Web.externalize_path)
-                      ; hx_target ("#" ^ subform_wrapper)
-                      ; hx_swap "beforeend"
-                      ]
-                  [ Icon.(to_html Add) ]
-              ; Component.Input.submit_element
-                  language
-                  (Pool_common.Message.Create (Some Field.Sessions))
-                  ()
-              ]
+              [ add_subform_button; submit_button ]
           ]
       ]
   in

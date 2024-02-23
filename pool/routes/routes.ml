@@ -416,7 +416,7 @@ module Admin = struct
           ; post "/close" ~middlewares:[ Access.close ] close_post
           ; get "/print" ~middlewares:[ Access.read ] print
           ; get "/duplicate" ~middlewares:[ Access.create ] duplicate
-          ; post "/duplicate" ~middlewares:[ Access.create ] duplicate_post
+          ; post "/duplicate" ~middlewares:[ Access.create ] duplicate_post_htmx
           ; get
               "/duplicate/form"
               ~middlewares:[ Access.create ]
