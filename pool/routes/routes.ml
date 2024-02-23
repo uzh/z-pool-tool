@@ -517,7 +517,7 @@ module Admin = struct
       in
       let specific =
         Experiments.
-          [ get "" ~middlewares:[ Access.read ] show
+          [ get "" ~middlewares:[ Access.index ] show
           ; post "" ~middlewares:[ Access.update ] update
           ; get "/edit" ~middlewares:[ Access.update ] edit
           ; post "/delete" ~middlewares:[ Access.delete ] delete
