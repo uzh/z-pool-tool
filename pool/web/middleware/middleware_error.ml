@@ -33,9 +33,13 @@ let reporter
 
 let error () =
   Sihl.Web.Middleware.error
-    ~reporter:(fun req exn ->
-      match%lwt reporter req exn with
-      | Ok _ -> Lwt.return_unit
-      | Error err -> failwith err)
+    ~reporter:(fun req ({ Sihl.Web.Middleware.exn; _ } as excn) ->
+      if CCString.find ~sub:"Failed to connect to" exn >= 0
+         && CCString.find ~sub:"host" exn >= 0
+      then Logs.err ~src (fun m -> m "Try again later: %s" exn) |> Lwt.return
+      else (
+        match%lwt reporter req excn with
+        | Ok _ -> Lwt.return_unit
+        | Error err -> failwith err))
     ()
 ;;
