@@ -182,21 +182,21 @@ let asset = Contact_location.asset
 
 let detail edit req =
   let open Utils.Lwt_result.Infix in
+  let open Pool_location in
   let error_path = "/admin/locations" in
   let result ({ Pool_context.database_label; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, error_path)
     @@
-    let id = id req Field.Location Pool_location.Id.of_string in
-    let* location = Pool_location.find database_label id in
+    let id = id req Field.Location Id.of_string in
+    let* location = find database_label id in
     let tenant_languages = Pool_context.Tenant.get_tenant_languages_exn req in
-    let states = Pool_location.Status.all in
+    let states = Status.all in
     Page.Admin.Location.(
       match edit with
       | false ->
-        let%lwt statistics =
-          Pool_location.Statistics.create database_label id
-        in
-        detail location statistics context |> Lwt.return
+        let%lwt statistics = Statistics.create database_label id in
+        let%lwt statistics_year_range = Statistics.year_select database_label in
+        detail location statistics statistics_year_range context |> Lwt.return
       | true ->
         let flash_fetcher key = Sihl.Web.Flash.find key req in
         form ~location ~states context tenant_languages flash_fetcher
@@ -213,7 +213,8 @@ let edit = detail true
 
 let statistics req =
   let open Utils.Lwt_result.Infix in
-  let id = id req Field.Location Pool_location.Id.of_string in
+  let open Pool_location in
+  let id = id req Field.Location Id.of_string in
   let result { Pool_context.database_label; language; _ } =
     let* year =
       HttpUtils.find_query_param
@@ -224,10 +225,14 @@ let statistics req =
           %> CCOption.to_result Pool_common.Message.(Invalid Field.Year))
       |> Lwt_result.lift
     in
-    let%lwt statistics =
-      Pool_location.Statistics.create ~year database_label id
-    in
-    Page.Admin.Location.make_statistics ~year language id statistics
+    let%lwt statistics = Statistics.create ~year database_label id in
+    let%lwt statistics_year_range = Statistics.year_select database_label in
+    Page.Admin.Location.make_statistics
+      ~year
+      statistics_year_range
+      language
+      id
+      statistics
     |> Http_utils.Htmx.html_to_plain_text_response
     |> Lwt.return_ok
   in

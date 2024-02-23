@@ -13,7 +13,7 @@ let location_specific_path ?suffix id =
   | Some suffix -> Format.asprintf "%s/%s" path suffix
 ;;
 
-let make_statistics ?year language location_id t =
+let make_statistics ?year year_range language location_id t =
   let open Pool_location in
   let open Statistics in
   let int_to_txt i = i |> CCInt.to_string |> txt in
@@ -52,7 +52,7 @@ let make_statistics ?year language location_id t =
             language
             Message.Field.Year
             CCInt.to_string
-            (year_select ())
+            year_range
             year
             ()
         ; table
@@ -601,6 +601,7 @@ end
 let detail
   (location : Pool_location.t)
   statistics
+  statistics_year_range
   Pool_context.{ csrf; language; _ }
   =
   let open Pool_location in
@@ -671,7 +672,12 @@ let detail
                         ; div
                             ~a:
                               [ a_class [ "inset"; "border"; "bg-grey-light" ] ]
-                            [ make_statistics language location.id statistics ]
+                            [ make_statistics
+                                statistics_year_range
+                                language
+                                location.id
+                                statistics
+                            ]
                         ]
                     ]
                 ]

@@ -99,13 +99,13 @@ let statistics req =
 ;;
 
 module Access : sig
-  module Statistics : sig
-    val read : Rock.Middleware.t
-  end
+  module Statistics : module type of Helpers.Access
 end = struct
   module Guardian = Middleware.Guardian
 
   module Statistics = struct
+    include Helpers.Access
+
     let read = Statistics.Guard.Access.read |> Guardian.validate_admin_entity
   end
 end

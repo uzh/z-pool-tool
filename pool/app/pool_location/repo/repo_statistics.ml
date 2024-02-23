@@ -49,3 +49,24 @@ let statistics year pool id =
     statistics_requeset
     (id, year)
 ;;
+
+let find_statistics_starting_year_request =
+  let open Caqti_request.Infix in
+  {sql|
+    SELECT
+      YEAR(COALESCE(created_at, NOW()))
+    FROM
+      pool_assignments
+    ORDER BY
+      created_at ASC
+    LIMIT 1
+  |sql}
+  |> Caqti_type.(unit ->! int)
+;;
+
+let find_statistics_starting_year pool =
+  Utils.Database.find
+    (Pool_database.Label.value pool)
+    find_statistics_starting_year_request
+    ()
+;;
