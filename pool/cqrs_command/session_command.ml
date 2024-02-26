@@ -251,8 +251,7 @@ end = struct
                 let current =
                   CCList.assoc_opt ~eq group acc |> CCOption.value ~default:[]
                 in
-                let res = CCList.Assoc.set ~eq group (data :: current) acc in
-                res
+                CCList.Assoc.set ~eq group (data :: current) acc
               | _ -> Ok acc))
          (Ok [])
   ;;
@@ -324,9 +323,10 @@ end = struct
                 build_session ?parent:parent_session form_data session
               in
               let* followup_clones =
+                let open CCList in
                 followups
-                |> CCList.map (build_session ~parent:parent_clone form_data)
-                |> CCList.all_ok
+                >|= build_session ~parent:parent_clone form_data
+                |> all_ok
               in
               Ok (parent_clone :: followup_clones)
             in

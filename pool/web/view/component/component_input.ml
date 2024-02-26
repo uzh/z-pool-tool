@@ -32,10 +32,9 @@ let csrf_attibs ?id csrf =
   | None -> attribs
 ;;
 
-let flatpickr_min value =
-  value
-  |> Pool_common.Model.Ptime.date_time_to_flatpickr
-  |> a_user_data "min-date"
+let flatpickr_min =
+  CCFun.(
+    Pool_common.Model.Ptime.date_time_to_flatpickr %> a_user_data "min-date")
 ;;
 
 module Elements = struct
