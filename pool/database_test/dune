@@ -1,0 +1,22 @@
+(library
+ (name database_test)
+ (libraries
+  caqti
+  caqti-driver-mariadb
+  caqti-lwt
+  caqti-lwt.unix
+  containers
+  containers-data
+  guardian
+  logs
+  lwt
+  uri)
+ (preprocess
+  (pps
+   lwt_ppx
+   ppx_deriving_yojson
+   ppx_deriving.eq
+   ppx_deriving.make
+   ppx_deriving.ord
+   ppx_deriving.show
+   ppx_string)))
