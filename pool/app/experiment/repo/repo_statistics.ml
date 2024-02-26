@@ -30,9 +30,9 @@ let has_open_sessions_request =
       s.experiment_uuid = UNHEX(REPLACE(?, '-', ''))
       AND canceled_at IS NULL
       AND closed_at IS NULL
-      AND 
-        (assignments.count IS NULL 
-          OR 
+      AND
+        (assignments.count IS NULL
+          OR
         assignments.count < s.max_participants + s.overbook)
     |sql}
   |> Caqti_type.(Repo_entity.Id.t ->! bool)
@@ -57,18 +57,20 @@ let registration_possible pool id =
 let sending_invitations_request =
   let open Caqti_request.Infix in
   {sql|
-    SELECT 
-      DISTINCT (CASE 
+    SELECT COALESCE(
+    (SELECT
+      DISTINCT (CASE
           WHEN CURRENT_TIMESTAMP BETWEEN start AND end THEN 'sending'
           WHEN start > CURRENT_TIMESTAMP THEN 'scheduled'
           ELSE 'no'
       END) AS status
-    FROM 
+    FROM
       pool_mailing
-    WHERE 
+    WHERE
       experiment_uuid = UNHEX(REPLACE(?, '-', ''))
       ORDER BY FIELD(status, 'sending', 'scheduled', 'no')
-      LIMIT 1
+      LIMIT 1),
+    'no')
   |sql}
   |> Caqti_type.(Repo_entity.Id.t ->! string)
 ;;
