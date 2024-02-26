@@ -694,19 +694,15 @@ let duplicate_form ?parent_session language session followups form_id =
   let open Session in
   let open Pool_common in
   let remove_button =
+    let classes style = [ style; "has-icon" ] in
+    let make_button style attributes =
+      button
+        ~a:([ a_class (classes style); a_button_type `Button ] @ attributes)
+        [ Component.Icon.(to_html TrashOutline) ]
+    in
     if form_id = 0
-    then txt ""
-    else
-      div
-        ~a:[ a_class [ "full-width"; "flexrow" ] ]
-        [ button
-            ~a:
-              [ a_class [ "error"; "has-icon"; "small"; "push" ]
-              ; a_button_type `Button
-              ; a_user_data "remove-group" ""
-              ]
-            [ Component.Icon.(to_html TrashOutline) ]
-        ]
+    then make_button "disabled" [ a_disabled () ]
+    else make_button "error" [ a_user_data "remove-group" "" ]
   in
   let min_date ({ start; _ } : t) =
     Start.value start |> Component.Input.flatpickr_min
@@ -763,17 +759,22 @@ let duplicate_form ?parent_session language session followups form_id =
   in
   let main = div [ input session ] |> wrap Message.Field.MainSession in
   let followups =
-    followups
-    |> CCList.map (input ~min_input_el:session)
-    |> div ~a:[ a_class [ "stack" ] ]
-    |> wrap Message.Field.FollowUpSession
+    if CCList.is_empty followups
+    then div [ txt "" ]
+    else
+      followups
+      |> CCList.map (input ~min_input_el:session)
+      |> div ~a:[ a_class [ "stack" ] ]
+      |> wrap Message.Field.FollowUpSession
   in
   div
     ~a:
-      [ a_class [ "grid-col-2"; "border-bottom"; "inset"; "vertical" ]
+      [ a_class [ "border-bottom"; "inset"; "vertical"; "flexrow"; "flex-gap" ]
       ; a_user_data "duplicate-form" (CCInt.to_string form_id)
       ]
-    [ remove_button; main; followups ]
+    [ div ~a:[ a_class [ "grid-col-2"; "grow" ] ] [ main; followups ]
+    ; div ~a:[ a_class [ "flexcolumn"; "justify-end" ] ] [ remove_button ]
+    ]
 ;;
 
 let duplicate
@@ -783,29 +784,56 @@ let duplicate
   session
   followups
   =
-  (* TODO: Also display parent, if exists *)
-  let parent_info =
-    let followup_html =
+  let open Session in
+  let session_info =
+    let session_link session =
+      span
+        ~a:[ a_class [ "has-icon" ] ]
+        [ txt (Session.start_end_with_duration_human session)
+        ; a
+            ~a:
+              [ a_href
+                  (session_path experiment.Experiment.id session.id
+                   |> Sihl.Web.externalize_path)
+              ; a_target "_blank"
+              ]
+            [ Icon.(to_html OpenOutline) ]
+        ]
+    in
+    let main = session_link session in
+    let wrap ~inset =
+      let classname =
+        [ "flexcolumn"; "stack-sm" ] @ if inset then [ "inset"; "left" ] else []
+      in
+      div ~a:[ a_class classname ]
+    in
+    let session_list =
       match followups with
-      | [] -> txt ""
+      | [] -> wrap ~inset:false [ main ]
       | followups ->
-        div
-          [ txt "All followup sessions are going to be duplicated as well:"
-          ; br ()
-          ; ul
-              (followups
-               |> CCList.map (fun session ->
-                 li [ txt (Session.session_date_to_human session) ]))
+        let items = CCList.map session_link followups in
+        items
+        |> wrap ~inset:true
+        |> fun followups -> [ main; followups ] |> wrap ~inset:false
+    in
+    div
+      ~a:[ a_class [ "gap-lg" ] ]
+      [ p
+          [ txt
+              Pool_common.(
+                Utils.hint_to_string language I18n.DuplicateSessionList)
           ]
-    in
-    let session_info =
-      session_base_information language session
-      |> Component.Table.vertical_table ~align_top:true `Striped language
-    in
-    div ~a:[ a_class [ "stack" ] ] [ session_info; followup_html ]
+      ; session_list
+      ]
+  in
+  let hint =
+    Pool_common.(Utils.hint_to_string language I18n.DuplicateSession)
+    |> txt
+    |> CCList.return
+    |> Component.Notification.notification language `Warning
   in
   let subform_wrapper = "session-duplication-subforms" in
-  let session_path = session_path experiment.Experiment.id session.Session.id in
+  let session_path = session_path experiment.Experiment.id session.id in
   let add_subform_button =
     button
       ~a:
@@ -853,7 +881,7 @@ let duplicate
           ]
       ]
   in
-  [ div ~a:[ a_class [ "stack" ] ] [ parent_info; form ] ]
+  [ div ~a:[ a_class [ "stack" ] ] [ hint; session_info; form ] ]
   |> Layout.Experiment.(
        create
          context

@@ -1764,7 +1764,7 @@ module Duplication = struct
     in
     let expected =
       data
-      |> CCList.map (fun (_, _, start) ->
+      |> CCList.map (fun (session, _, start) ->
         Session.{ session with id = Session.Id.create (); start })
       |> CCResult.return
     in
@@ -1775,10 +1775,18 @@ module Duplication = struct
     let experiment = Model.create_experiment () in
     let session = Model.create_session () in
     let followup =
-      Model.create_session
-        ~follow_up_to:session.id
-        ~start:(add_timespan session Model.hour)
-        ()
+      let session =
+        Model.create_session
+          ~follow_up_to:session.id
+          ~start:(add_timespan session Model.hour)
+          ()
+      in
+      let create_amount i = i |> ParticipantAmount.create |> get_or_failwith in
+      { session with
+        min_participants = create_amount 1
+      ; max_participants = create_amount 1
+      ; overbook = create_amount 0
+      }
     in
     let data =
       [ session, 0, add_timespan session Model.hour
@@ -1792,14 +1800,10 @@ module Duplication = struct
       |> CCResult.map get_event_sessions
     in
     let expected =
-      let main = { session with start = add_timespan session Model.hour } in
-      let followup =
-        { followup with
-          start = add_timespan followup Model.hour
-        ; follow_up_to = Some main.id
-        }
-      in
-      Ok [ main; followup ]
+      data
+      |> CCList.map (fun (session, _, start) ->
+        Session.{ session with id = Session.Id.create (); start })
+      |> CCResult.return
     in
     check_sessions expected events
   ;;

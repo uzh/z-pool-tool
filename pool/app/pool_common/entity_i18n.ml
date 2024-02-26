@@ -176,6 +176,8 @@ type hint =
   | DefaultReminderLeadTime of Ptime.Span.t
   | DirectRegistrationDisbled
   | Distribution
+  | DuplicateSession
+  | DuplicateSessionList
   | EmailPlainText
   | ExperimentAssignment
   | ExperimentContactPerson
