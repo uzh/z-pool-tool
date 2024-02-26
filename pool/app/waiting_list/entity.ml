@@ -39,13 +39,17 @@ let create ?(id = Pool_common.Id.create ()) contact experiment admin_comment =
   }
 ;;
 
-let filterable_by = None
-let searchable_by = Contact.searchable_by
-
-let sortable_by =
-  searchable_by
-  @ (Pool_common.Message.[ Field.CreatedAt, "pool_waiting_list.created_at" ]
-     |> Query.Column.create_list)
+let column_signed_up_at =
+  Pool_common.Message.(Field.SignedUpAt, "pool_waiting_list.created_at")
+  |> Query.Column.create
 ;;
 
-let default_query = Query.create ~sort:Contact.default_sort ()
+let default_sort =
+  let open Query in
+  Sort.{ column = column_signed_up_at; order = SortOrder.Ascending }
+;;
+
+let filterable_by = None
+let searchable_by = Contact.searchable_by
+let sortable_by = searchable_by @ [ column_signed_up_at ]
+let default_query = Query.create ~sort:default_sort ()

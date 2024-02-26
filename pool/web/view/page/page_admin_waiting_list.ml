@@ -34,7 +34,7 @@ let list
     [ `column column_name
     ; `column column_email
     ; `custom (to_string Message.Field.CellPhone)
-    ; `custom (to_string Message.Field.SignedUpAt)
+    ; `column Waiting_list.column_signed_up_at
     ; `custom (to_string Message.Field.AdminComment)
     ; `empty
     ]
