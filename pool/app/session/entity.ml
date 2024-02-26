@@ -166,6 +166,7 @@ type t =
     (* TODO [aerben] make type for canceled_at? *)
     closed_at : Ptime.t option
   ; canceled_at : Ptime.t option
+  ; experiment : Experiment.t
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
   }
@@ -189,6 +190,7 @@ let create
   max_participants
   min_participants
   overbook
+  experiment
   =
   { id = id |> CCOption.value ~default:(Id.create ())
   ; follow_up_to
@@ -210,6 +212,7 @@ let create
   ; participant_count = 0
   ; closed_at = None
   ; canceled_at = None
+  ; experiment
   ; created_at = Ptime_clock.now ()
   ; updated_at = Ptime_clock.now ()
   }
@@ -248,8 +251,6 @@ type notification_history =
   ; queue_entries : (Sihl_email.t * Sihl_queue.instance) list
        [@equal fun _ _ -> true]
   }
-
-let find_by_experiment (_ : string) : t list Lwt.t = Lwt.return []
 
 let session_date_to_human (session : t) =
   session.start |> Start.value |> Pool_common.Utils.Time.formatted_date_time
@@ -673,3 +674,4 @@ let default_filter =
 ;;
 
 let default_query = Query.create ~sort:default_sort ~filter:default_filter ()
+let incomplete_default_query = Query.create ~sort:default_sort ()

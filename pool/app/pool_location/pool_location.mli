@@ -324,6 +324,48 @@ module Human : sig
   val description : Pool_common.Language.t -> t -> string option
 end
 
+module Statistics : sig
+  module ExperimentCount : sig
+    include Pool_common.Model.IntegerSig
+
+    val field : Pool_common.Message.Field.t
+  end
+
+  module AssignmentCount : sig
+    include Pool_common.Model.IntegerSig
+
+    val field : Pool_common.Message.Field.t
+  end
+
+  module ShowUpCount : sig
+    include Pool_common.Model.IntegerSig
+
+    val field : Pool_common.Message.Field.t
+  end
+
+  module NoShowCount : sig
+    include Pool_common.Model.IntegerSig
+
+    val field : Pool_common.Message.Field.t
+  end
+
+  module ParticipationCount : sig
+    include Pool_common.Model.IntegerSig
+
+    val field : Pool_common.Message.Field.t
+  end
+
+  type t
+
+  val experiment_count : t -> ExperimentCount.t
+  val assignment_count : t -> AssignmentCount.t
+  val showup_count : t -> ShowUpCount.t
+  val noshow_count : t -> NoShowCount.t
+  val participation_count : t -> ParticipationCount.t
+  val create : ?year:int -> Pool_database.Label.t -> Id.t -> t Lwt.t
+  val year_select : Pool_database.Label.t -> int list Lwt.t
+end
+
 module Guard : sig
   module Target : sig
     val to_authorizable

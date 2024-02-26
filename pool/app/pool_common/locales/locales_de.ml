@@ -74,10 +74,12 @@ let rec field_to_string =
   | EmailSubject -> "E-Mail Betreff"
   | EmailSuffix -> "E-Mail Endung"
   | EmailText -> "E-Mail Text"
+  | EmailsSent -> "Insgesamt gesendete E-Mails"
   | End -> "Ende"
   | Exclude -> "Ausgenommen"
   | ExcludeRolesOf -> "Ausgenommen (Rollen von jmd)"
   | Experiment -> "Experiment"
+  | ExperimentCount -> "Anz. Experimente"
   | Experiments -> "Experimente"
   | Experimenter -> "Experimenter"
   | ExperimentEmailReminderLeadTime ->
@@ -286,6 +288,7 @@ let rec field_to_string =
   | Version -> "Version"
   | Virtual -> "Virtuell"
   | WaitingList -> "Warteliste"
+  | Year -> "Jahr"
   | Zip -> "PLZ"
 ;;
 

@@ -6,8 +6,11 @@ module HttpUtils = Http_utils
 module Message = Pool_common.Message
 module Field = Message.Field
 
-let build_experiment_path experiment =
-  Format.asprintf "/admin/experiments/%s/%s" Experiment.(Id.value experiment.id)
+let build_experiment_path ?suffix experiment =
+  let base =
+    Format.asprintf "/admin/experiments/%s" Experiment.(Id.value experiment.id)
+  in
+  suffix |> CCOption.map_or ~default:base (Format.asprintf "%s/%s" base)
 ;;
 
 let notifications
@@ -149,8 +152,8 @@ let message_template_buttons
   =
   let open Message_template in
   let build_button label =
-    build_experiment_path experiment Label.(prefixed_human_url label)
-    |> Button.add ~is_text:true label
+    build_experiment_path ~suffix:Label.(prefixed_human_url label) experiment
+    |> Button.add label
   in
   let exclude =
     experiment.Experiment.language
@@ -184,13 +187,15 @@ let message_templates_html
   message_templates
   =
   let open Message_template in
-  let experiment_path = build_experiment_path experiment in
+  let experiment_path suffix = build_experiment_path ~suffix experiment in
   let buttons =
     if can_update_experiment
     then message_template_buttons sys_languages experiment message_templates
     else txt ""
   in
-  let build_path append = prefixed_template_url ~append %> experiment_path in
+  let build_path append template =
+    experiment_path (prefixed_template_url ~append template)
+  in
   let edit_path = build_path "edit" in
   let delete_path = build_path "delete", csrf in
   Page_admin_message_template.table
@@ -566,17 +571,21 @@ let edit
     if allowed_to_assign
     then (
       let remove_action tag =
-        Format.asprintf
-          "%s/%s/remove"
-          Field.(field |> human_url)
-          Tags.(Id.value tag.Tags.id)
-        |> build_experiment_path experiment
+        let suffix =
+          Format.asprintf
+            "%s/%s/remove"
+            Field.(field |> human_url)
+            Tags.(Id.value tag.Tags.id)
+        in
+        build_experiment_path ~suffix experiment
       in
       let assign_action =
-        Http_utils.externalize_path_with_lang
-          query_language
-          (Format.asprintf "%s/assign" Field.(field |> human_url)
-           |> build_experiment_path experiment)
+        let path =
+          build_experiment_path
+            ~suffix:(Format.asprintf "%s/assign" Field.(field |> human_url))
+            experiment
+        in
+        Http_utils.externalize_path_with_lang query_language path
       in
       div
         ~a:[ a_class [ "grid-col-2"; "flex-gap" ] ]
@@ -674,10 +683,8 @@ let detail
             ~a:
               [ a_method `Post
               ; a_action
-                  (Sihl.Web.externalize_path
-                     (Format.asprintf
-                        "/admin/experiments/%s/delete"
-                        (experiment_id |> Experiment.Id.value)))
+                  (build_experiment_path ~suffix:"delete" experiment
+                   |> Sihl.Web.externalize_path)
               ; a_user_data
                   "confirmable"
                   (Utils.confirmable_to_string language I18n.DeleteExperiment)
@@ -712,10 +719,8 @@ let detail
           ~a:
             [ a_method `Post
             ; a_action
-                (Sihl.Web.externalize_path
-                   (Format.asprintf
-                      "/admin/experiments/%s/reset-invitations"
-                      (experiment.Experiment.id |> Experiment.Id.value)))
+                (build_experiment_path ~suffix:"reset-invitations" experiment
+                 |> Sihl.Web.externalize_path)
             ; a_user_data
                 "confirmable"
                 (Utils.confirmable_to_string language I18n.ResetInvitations)
@@ -897,9 +902,7 @@ let detail
         ~icon:Icon.Create
         ~classnames:[ "small" ]
         ~control:(language, Message.(Edit (Some Field.Experiment)))
-        (Format.asprintf
-           "/admin/experiments/%s/edit"
-           (experiment_id |> Experiment.Id.value))
+        (build_experiment_path ~suffix:"edit" experiment)
       |> CCOption.some
     else None
   in
@@ -931,9 +934,7 @@ let invitations
           [ a
               ~a:
                 [ a_href
-                    (experiment.Experiment.id
-                     |> Experiment.Id.value
-                     |> Format.asprintf "admin/experiments/%s/invitations/sent"
+                    (build_experiment_path ~suffix:"invitations/sent" experiment
                      |> Sihl.Web.externalize_path)
                 ]
               [ txt (Utils.text_to_string language I18n.SentInvitations) ]
@@ -969,12 +970,13 @@ let users
   context
   =
   let base_url field admin =
-    Format.asprintf
-      "/admin/experiments/%s/%s/%s"
-      Experiment.(experiment.id |> Id.value)
-      (Field.show field)
-      (Admin.id admin |> Admin.Id.value)
-    |> Sihl.Web.externalize_path
+    let suffix =
+      Format.asprintf
+        "%s/%s"
+        (Field.show field)
+        (Admin.id admin |> Admin.Id.value)
+    in
+    build_experiment_path ~suffix experiment |> Sihl.Web.externalize_path
   in
   let field =
     let open Message in
@@ -1026,11 +1028,7 @@ let message_template_form
     | `Update _ -> Message.(Edit None)
   in
   let action =
-    let path =
-      Format.asprintf
-        "/admin/experiments/%s/%s"
-        Experiment.(Id.value experiment.Experiment.id)
-    in
+    let path suffix = build_experiment_path ~suffix experiment in
     match form_context with
     | `Create t -> path (Label.prefixed_human_url t.label)
     | `Update t -> path (prefixed_template_url t)
@@ -1057,9 +1055,8 @@ let message_template_form
   |> Layout.Experiment.create context (control_to_title control) experiment
 ;;
 
-let message_history_url { Experiment.id; _ } =
-  Uri.of_string
-    (Format.asprintf "/admin/experiments/%s/messages" (Experiment.Id.value id))
+let message_history_url =
+  build_experiment_path ~suffix:"messages" %> Uri.of_string
 ;;
 
 let message_history context experiment messages =

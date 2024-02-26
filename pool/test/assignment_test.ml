@@ -760,9 +760,10 @@ let cancel_assignment_with_follow_ups _ () =
   (* Save sessions in Database *)
   let create_session ?parent_id start =
     let session =
-      Model.(create_session ?follow_up_to:parent_id ~start ~location ())
+      Model.(
+        create_session ?follow_up_to:parent_id ~start ~location ~experiment ())
     in
-    Session.Created (session, experiment.Experiment.id)
+    Session.Created session
     |> Pool_event.session
     |> Pool_event.handle_event Data.database_label
   in

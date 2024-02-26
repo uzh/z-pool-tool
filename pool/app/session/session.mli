@@ -116,6 +116,7 @@ type t =
   ; (* TODO [aerben] make type for canceled_at? *)
     closed_at : Ptime.t option
   ; canceled_at : Ptime.t option
+  ; experiment : Experiment.t
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
   }
@@ -134,6 +135,7 @@ val create
   -> ParticipantAmount.t
   -> ParticipantAmount.t
   -> ParticipantAmount.t
+  -> Experiment.t
   -> t
 
 val equal : t -> t -> bool
@@ -147,7 +149,7 @@ val start_end_with_duration_human : t -> string
 val start_end_human : t -> string
 
 type event =
-  | Created of (t * Experiment.Id.t)
+  | Created of t
   | Canceled of t
   | Closed of t
   | Deleted of t
@@ -368,6 +370,18 @@ val find_for_calendar_by_user
   -> end_time:Ptime.t
   -> Calendar.t list Lwt.t
 
+val find_incomplete_by_admin
+  :  ?query:Query.t
+  -> Guard.Actor.t
+  -> Pool_database.Label.t
+  -> (t list * Query.t) Lwt.t
+
+val find_upcoming_by_admin
+  :  ?query:Query.t
+  -> Guard.Actor.t
+  -> Pool_database.Label.t
+  -> (t list * Query.t) Lwt.t
+
 val to_email_text : Pool_common.Language.t -> t -> string
 val follow_up_sessions_to_email_list : t list -> string
 val public_to_email_text : Pool_common.Language.t -> Public.t -> string
@@ -392,6 +406,7 @@ val sortable_by : Query.Column.t list
 val default_filter : Query.Filter.t
 val default_sort : Query.Sort.t
 val default_query : Query.t
+val incomplete_default_query : Query.t
 
 module Repo : sig
   module Id : sig

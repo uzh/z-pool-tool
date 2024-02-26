@@ -245,6 +245,7 @@ module Admin = struct
       in
       let specific =
         [ get "" ~middlewares:[ Access.index ] show
+        ; get "/statistics" ~middlewares:[ Access.index ] statistics
         ; get "/edit" ~middlewares:[ Access.update ] edit
         ; post "" ~middlewares:[ Access.update ] update
         ; choose ~scope:"/files" files
@@ -801,10 +802,17 @@ module Admin = struct
       ; post "/update-password" update_password
       ]
     in
+    let dashboard =
+      Dashboard.
+        [ get "/dashboard" index
+        ; get "/dashboard/upcoming-sessions" upcoming_sessions
+        ; get "/dashboard/incomplete-sessions" incomplete_sessions
+        ; get "/statistics" ~middlewares:[ Access.Statistics.read ] statistics
+        ]
+    in
     choose
       ~middlewares
-      [ get "/dashboard" dashboard
-      ; get "/statistics" ~middlewares:[ Access.Statistics.read ] statistics
+      [ choose dashboard
       ; choose ~scope:"/settings" settings
       ; choose ~scope:"/user" profile
       ; choose ~scope:"/i18n" i18n

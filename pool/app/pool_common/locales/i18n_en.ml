@@ -71,6 +71,7 @@ let to_string = function
     "The import of your user is not completed yet. Please check your inbox or \
      contact an administrator."
   | ImportPendingTitle -> "Pending import"
+  | IncompleteSessions -> "Incomplete sessions"
   | InvitationsStatistics -> "Invitation statistics"
   | InvitationsStatisticsIntro ->
     "This table shows how often contacts received the invitation to this \
@@ -82,6 +83,7 @@ let to_string = function
   | LocationNewTitle -> "Create new location"
   | LocationNoFiles -> "There are no files for this location."
   | LocationNoSessions -> "No sessions found for this location."
+  | LocationStatistics -> "Location statistics"
   | LoginTitle -> "Login"
   | MailingDetailTitle start ->
     Format.asprintf "Mailing at %s" (Utils_time.formatted_date_time start)
@@ -135,6 +137,7 @@ let to_string = function
     "No sessions were found to which you can assign this contact."
   | SwitchChronological -> "Switch to chronological view"
   | SwitchGrouped -> "Switch to grouped view"
+  | System -> "System"
   | TermsAndConditionsLastUpdated ptime ->
     Format.asprintf
       "Last updated: %s"

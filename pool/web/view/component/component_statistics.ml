@@ -2,6 +2,10 @@ open Tyxml.Html
 open Statistics
 module Field = Pool_common.Message.Field
 
+type title =
+  | NavLink of Pool_common.I18n.nav_link
+  | Text of Pool_common.I18n.t
+
 let create
   language
   ( period
@@ -14,6 +18,7 @@ let create
     ; assignments_created
     ; invitations_sent
     ; reminders_sent
+    ; emails_sent
     } )
   =
   let open Pool_common in
@@ -40,9 +45,12 @@ let create
     let title =
       title
       |> CCOption.map_or ~default:(txt "") (fun title ->
-        h4
-          ~a:[ a_class [ "heading-4" ] ]
-          [ txt (Utils.nav_link_to_string language title) ])
+        let text =
+          match title with
+          | NavLink navlink -> Utils.nav_link_to_string language navlink
+          | Text text -> Utils.text_to_string language text
+        in
+        h4 ~a:[ a_class [ "heading-4" ] ] [ txt text ])
     in
     figures
     |> CCList.map (fun (field, value, hint) ->
@@ -57,12 +65,10 @@ let create
         | None -> [ field ]
         | Some hint -> [ field; br (); i [ txt hint ] ]
       in
-      tr [ th head; td [ value ] ])
+      tr [ th ~a:[ a_class [ "w-10" ] ] head; td [ value ] ])
     |> table
          ~a:
-           [ a_class
-               ("fixed"
-                :: Component_table.table_classes `Simple ~align_top:true ())
+           [ a_class (Component_table.table_classes `Simple ~align_top:true ())
            ]
     |> fun figures -> div [ title; figures ]
   in
@@ -91,6 +97,9 @@ let create
     ; RemindersSent.(field, to_txt (value reminders_sent), None)
     ]
   in
+  let system_figures =
+    [ EmailsSent.(field, to_txt (value emails_sent), None) ]
+  in
   div
     ~a:[ a_class [ "flexcolumn"; "stack" ]; a_user_data "statistics" "" ]
     Pool_common.I18n.
@@ -107,8 +116,9 @@ let create
           ; div
               ~a:[ a_class [ "stack" ] ]
               [ period_select
-              ; create_table ~title:Contacts user_figures
-              ; create_table ~title:Experiments experiment_figures
+              ; create_table ~title:(NavLink Contacts) user_figures
+              ; create_table ~title:(NavLink Experiments) experiment_figures
+              ; create_table ~title:(Text System) system_figures
               ]
           ]
       ]

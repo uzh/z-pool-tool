@@ -38,6 +38,7 @@ type t =
   | ImportConfirmationTitle
   | ImportPendingNote
   | ImportPendingTitle
+  | IncompleteSessions
   | InvitationsStatistics
   | InvitationsStatisticsIntro
   | JobCloneOf
@@ -47,6 +48,7 @@ type t =
   | LocationNewTitle
   | LocationNoFiles
   | LocationNoSessions
+  | LocationStatistics
   | LoginTitle
   | MailingDetailTitle of Ptime.t
   | MailingDistributionDescription
@@ -83,6 +85,7 @@ type t =
   | SwapSessionsListEmpty
   | SwitchChronological
   | SwitchGrouped
+  | System
   | TermsAndConditionsLastUpdated of Ptime.t
   | TermsAndConditionsTitle
   | TermsAndConditionsUpdated

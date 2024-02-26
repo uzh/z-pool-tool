@@ -26,18 +26,24 @@ let sql_select_columns =
   ; "pool_sessions.created_at"
   ; "pool_sessions.updated_at"
   ]
+  @ Experiment.Repo.sql_select_columns
   @ Pool_location.Repo.sql_select_columns
 ;;
 
 let joins =
-  {sql|
-    LEFT JOIN pool_assignments
-      ON pool_assignments.session_uuid = pool_sessions.uuid
-      AND pool_assignments.canceled_at IS NULL
-      AND pool_assignments.marked_as_deleted = 0
-    INNER JOIN pool_locations
-      ON pool_locations.uuid = pool_sessions.location_uuid
-  |sql}
+  Format.asprintf
+    {sql|
+      LEFT JOIN pool_assignments
+        ON pool_assignments.session_uuid = pool_sessions.uuid
+        AND pool_assignments.canceled_at IS NULL
+        AND pool_assignments.marked_as_deleted = 0
+      INNER JOIN pool_locations
+        ON pool_locations.uuid = pool_sessions.location_uuid
+      INNER JOIN pool_experiments
+        ON pool_experiments.uuid = pool_sessions.experiment_uuid
+      %s
+    |sql}
+    Experiment.Repo.joins
 ;;
 
 module Sql = struct
@@ -105,16 +111,18 @@ module Sql = struct
 
   let find_request_sql ?(count = false) where_fragment =
     let columns =
-      if count then "COUNT(*)" else sql_select_columns |> CCString.concat ", "
+      if count then "1" else sql_select_columns |> CCString.concat ", "
     in
-    let joins = if count then "" else joins in
-    let group_by = if count then "" else "GROUP BY pool_sessions.uuid" in
-    Format.asprintf
-      {sql| SELECT %s FROM pool_sessions %s %s %s |sql}
-      columns
-      joins
-      where_fragment
-      group_by
+    let query =
+      Format.asprintf
+        {sql| SELECT %s FROM pool_sessions %s %s GROUP BY pool_sessions.uuid |sql}
+        columns
+        joins
+        where_fragment
+    in
+    match count with
+    | false -> query
+    | true -> Format.asprintf "SELECT COUNT(*) FROM (%s) c" query
   ;;
 
   let find_public_sql where =
@@ -575,8 +583,6 @@ module Sql = struct
     let open Caqti_request.Infix in
     Format.asprintf
       {sql|
-    INNER JOIN pool_experiments
-      ON pool_experiments.uuid = pool_sessions.experiment_uuid
     WHERE
       %s
     AND
@@ -741,11 +747,12 @@ module Sql = struct
     |> Caqti_type.(t2 string RepoEntity.Write.t ->. unit)
   ;;
 
-  let insert pool (experiment_id, session) =
+  let insert pool session =
     Utils.Database.exec
       (Database.Label.value pool)
       insert_request
-      (experiment_id, session |> RepoEntity.Write.entity_to_write)
+      ( Experiment.(Id.value session.Entity.experiment.id)
+      , session |> RepoEntity.Write.entity_to_write )
   ;;
 
   let update_request =
@@ -820,8 +827,7 @@ module Sql = struct
     select_for_calendar ~order_by:"pool_sessions.start"
   ;;
 
-  let find_for_calendar_by_user actor pool ~start_time ~end_time =
-    let open Caqti_request.Infix in
+  let find_by_user_params pool actor =
     let open Utils.Lwt_result.Infix in
     let experiment_checks = [ Format.asprintf "pool_experiments.uuid IN %s" ] in
     let session_checks =
@@ -844,12 +850,49 @@ module Sql = struct
       | "" -> None
       | query -> Some (Format.asprintf "(%s)" query)
     in
+    CCOption.to_list guardian |> CCString.concat " AND " |> Lwt.return
+  ;;
+
+  let query_by_admin where ?query actor pool =
+    let%lwt guardian_conditions = find_by_user_params pool actor in
+    let where =
+      let sql = Format.asprintf "%s AND %s" guardian_conditions where in
+      sql, Dynparam.empty
+    in
+    Query.collect_and_count
+      pool
+      query
+      ~select:find_request_sql
+      ~where
+      Repo_entity.t
+  ;;
+
+  let find_incomplete_by_admin =
+    {sql|
+      pool_sessions.closed_at IS NULL
+      AND pool_sessions.canceled_at IS NULL
+      AND (pool_sessions.start + INTERVAL duration SECOND) < NOW()
+    |sql}
+    |> query_by_admin
+  ;;
+
+  let find_upcoming_by_admin =
+    {sql|
+      (pool_sessions.start + INTERVAL duration SECOND) > NOW()
+      AND pool_sessions.closed_at IS NULL
+    |sql}
+    |> query_by_admin
+  ;;
+
+  let find_for_calendar_by_user actor pool ~start_time ~end_time =
+    let open Caqti_request.Infix in
+    let%lwt guardian_conditions = find_by_user_params pool actor in
     let sql =
       [ "pool_sessions.start > ?"
       ; "pool_sessions.start < ?"
       ; "pool_sessions.canceled_at IS NULL"
+      ; guardian_conditions
       ]
-      @ CCOption.to_list guardian
       |> CCString.concat " AND "
     in
     let (Dynparam.Pack (pt, pv)) =

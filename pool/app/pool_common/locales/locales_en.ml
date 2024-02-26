@@ -74,10 +74,12 @@ let rec field_to_string =
   | EmailSubject -> "email subject"
   | EmailSuffix -> "email suffix"
   | EmailText -> "email text"
+  | EmailsSent -> "total emails sent"
   | End -> "end"
   | Exclude -> "exclude"
   | ExcludeRolesOf -> "exclude roles of"
   | Experiment -> "experiment"
+  | ExperimentCount -> "no. experiments"
   | Experiments -> "experiments"
   | ExperimentEmailReminderLeadTime ->
     Format.asprintf "experiment specific email %s" (field_to_string LeadTime)
@@ -285,6 +287,7 @@ let rec field_to_string =
   | Version -> "version"
   | Virtual -> "virtual"
   | WaitingList -> "waiting list"
+  | Year -> "year"
   | Zip -> "zip code"
 ;;
 

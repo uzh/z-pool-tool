@@ -95,10 +95,12 @@ type t =
   | EmailSubject [@name "email_subject"] [@printer go "email_subject"]
   | EmailSuffix [@name "email_suffix"] [@printer go "email_suffix"]
   | EmailText [@name "email_text"] [@printer go "email_text"]
+  | EmailsSent [@name "emails_sent"] [@printer go "emails_sent"]
   | End [@name "end"] [@printer go "end"]
   | Exclude [@name "exclude"] [@printer go "exclude"]
   | ExcludeRolesOf [@name "exclude_roles_of"] [@printer go "exclude_roles_of"]
   | Experiment [@name "experiment"] [@printer go "experiment"]
+  | ExperimentCount [@name "experiment_count"] [@printer go "experiment_count"]
   | Experiments [@name "experiments"] [@printer go "experiments"]
   | Experimenter [@name "experimenter"] [@printer go "experimenter"]
   | ExperimentEmailReminderLeadTime
@@ -338,6 +340,7 @@ type t =
   | Version [@name "version"] [@printer go "version"]
   | Virtual [@name "virtual"] [@printer go "virtual"]
   | WaitingList [@name "waiting_list"] [@printer go "waiting_list"]
+  | Year [@name "year"] [@printer go "year"]
   | Zip [@name "zip"] [@printer go "zip"]
 [@@deriving eq, show { with_path = false }, yojson, variants, sexp_of]
 

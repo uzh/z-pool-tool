@@ -148,10 +148,14 @@ let create req =
     @@
     let database_label = context.Pool_context.database_label in
     let* location = location urlencoded database_label in
+    let* experiment = Experiment.find database_label id in
     let* events =
       let open CCResult.Infix in
       let open Cqrs_command.Session_command.Create in
-      urlencoded |> decode >>= handle ~tags id location |> Lwt_result.lift
+      urlencoded
+      |> decode
+      >>= handle ~tags experiment location
+      |> Lwt_result.lift
     in
     let%lwt () = Pool_event.handle_events ~tags database_label events in
     Http_utils.redirect_to_with_actions
@@ -597,12 +601,13 @@ let create_follow_up req =
     let tags = Pool_context.Logger.Tags.req req in
     let* location = location urlencoded database_label in
     let* session = Session.find database_label session_id in
+    let* experiment = Experiment.find database_label experiment_id in
     let* events =
       let open CCResult.Infix in
       let open Cqrs_command.Session_command.Create in
       urlencoded
       |> decode
-      >>= handle ~tags ~parent_session:session experiment_id location
+      >>= handle ~tags ~parent_session:session experiment location
       |> Lwt_result.lift
     in
     let%lwt () = Pool_event.handle_events ~tags database_label events in

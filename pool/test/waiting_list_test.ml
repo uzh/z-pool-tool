@@ -126,23 +126,23 @@ module PendingWaitingLists = struct
   let exclude_after_assignign_to_session _ () =
     let open Utils.Lwt_result.Infix in
     let%lwt experiment =
-      Experiment.find database_label experiment_id
-      ||> get_exn
-      ||> Experiment.to_public
+      Experiment.find database_label experiment_id ||> get_exn
     in
     let%lwt contact = Contact.find database_label contact_id ||> get_exn in
     let%lwt session =
-      Integration_utils.SessionRepo.create ~id:session_id experiment_id ()
+      Integration_utils.SessionRepo.create ~id:session_id experiment ()
     in
     let%lwt (_ : Assignment.t) =
       Integration_utils.AssignmentRepo.create session contact
     in
     let%lwt res =
       let open CCFun in
-      Experiment.find_pending_waitinglists_by_contact
+      let open Experiment in
+      find_pending_waitinglists_by_contact
         Test_utils.Data.database_label
         contact
-      ||> CCList.find_opt (Experiment.Public.equal experiment)
+      ||> CCList.find_opt (fun public ->
+            Id.equal (Public.id public) experiment_id)
           %> CCOption.is_none
     in
     let () = Alcotest.(check bool "succeeds" true res) in

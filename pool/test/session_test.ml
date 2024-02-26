@@ -184,11 +184,9 @@ end
 let create_empty_data () =
   let open CCResult.Infix in
   let input = [] in
-  let experiment_id = Experiment.Id.create () in
+  let experiment = Model.create_experiment () in
   let location = Location_test.create_location () in
-  let res =
-    SessionC.Create.(input |> decode >>= handle experiment_id location)
-  in
+  let res = SessionC.Create.(input |> decode >>= handle experiment location) in
   check_result
     (Error
        (let open Pool_common.Message in
@@ -209,11 +207,11 @@ let create_invalid_data () =
   let open Pool_common.Message in
   let open Field in
   let open Data.Invalid in
-  let experiment_id = Experiment.Id.create () in
+  let experiment = Model.create_experiment () in
   let location = Location_test.create_location () in
   let res =
     SessionC.Create.(
-      Data.invalid_input |> decode >>= handle experiment_id location)
+      Data.invalid_input |> decode >>= handle experiment location)
   in
   check_result
     (Error
@@ -240,11 +238,9 @@ let create_min_gt_max () =
     let open Pool_common.Message.Field in
     update_input [ MaxParticipants, "5"; MinParticipants, "6" ]
   in
-  let experiment_id = Experiment.Id.create () in
+  let experiment = Model.create_experiment () in
   let location = Location_test.create_location () in
-  let res =
-    SessionC.Create.(input |> decode >>= handle experiment_id location)
-  in
+  let res = SessionC.Create.(input |> decode >>= handle experiment location) in
   check_result (Error (Smaller (MaxParticipants, MinParticipants))) res
 ;;
 
@@ -263,11 +259,10 @@ let create_no_optional () =
       ; AssignmentCount
       ]
   in
-  let experiment_id = Experiment.Id.create () in
+  let experiment = Model.create_experiment () in
   let location = Location_test.create_location () in
   let res =
-    SessionC.Create.(
-      input |> decode >>= handle ~session_id experiment_id location)
+    SessionC.Create.(input |> decode >>= handle ~session_id experiment location)
   in
   let session =
     let open Data.Validated in
@@ -279,20 +274,19 @@ let create_no_optional () =
       max_participants
       min_participants
       overbook
+      experiment
   in
-  check_result
-    (Ok [ Pool_event.Session (Session.Created (session, experiment_id)) ])
-    res
+  check_result (Ok [ Pool_event.Session (Session.Created session) ]) res
 ;;
 
 let create_full () =
   let open CCResult.Infix in
-  let experiment_id = Experiment.Id.create () in
+  let experiment = Model.create_experiment () in
   let session_id = Session.Id.create () in
   let location = Location_test.create_location () in
   let res =
     SessionC.Create.(
-      Data.input |> decode >>= handle ~session_id experiment_id location)
+      Data.input |> decode >>= handle ~session_id experiment location)
   in
   let session =
     let open Data.Validated in
@@ -308,10 +302,9 @@ let create_full () =
       max_participants
       min_participants
       overbook
+      experiment
   in
-  check_result
-    (Ok [ Pool_event.Session (Session.Created (session, experiment_id)) ])
-    res
+  check_result (Ok [ Pool_event.Session (Session.Created session) ]) res
 ;;
 
 let create_min_eq_max () =
@@ -322,11 +315,10 @@ let create_min_eq_max () =
     let open Pool_common.Message.Field in
     update_input [ MaxParticipants, "5"; MinParticipants, "5" ]
   in
-  let experiment_id = Experiment.Id.create () in
+  let experiment = Model.create_experiment () in
   let location = Location_test.create_location () in
   let res =
-    SessionC.Create.(
-      input |> decode >>= handle ~session_id experiment_id location)
+    SessionC.Create.(input |> decode >>= handle ~session_id experiment location)
   in
   let session =
     let open Data.Validated in
@@ -342,10 +334,9 @@ let create_min_eq_max () =
       max_participants2
       min_participants
       overbook
+      experiment
   in
-  check_result
-    (Ok [ Pool_event.Session (Session.Created (session, experiment_id)) ])
-    res
+  check_result (Ok [ Pool_event.Session (Session.Created session) ]) res
 ;;
 
 let update_empty_data () =
@@ -1052,12 +1043,12 @@ let create_follow_up_earlier () =
   let open Pool_common.Message in
   let location = Location_test.create_location () in
   let session = Test_utils.Model.create_session ~location () in
-  let experiment_id = Experiment.Id.create () in
+  let experiment = Model.create_experiment () in
   let res =
     SessionC.Create.(
       Data.input
       |> decode
-      >>= handle ~parent_session:session experiment_id location)
+      >>= handle ~parent_session:session experiment location)
   in
   check_result (Error FollowUpIsEarlierThanMain) res
 ;;
@@ -1067,7 +1058,7 @@ let create_follow_up_later () =
   let location = Location_test.create_location () in
   let parent_session = Test_utils.Model.create_session ~location () in
   let session_id = Session.Id.create () in
-  let experiment_id = Experiment.Id.create () in
+  let experiment = Model.create_experiment () in
   let later_start =
     parent_session.Session.start
     |> Session.Start.value
@@ -1082,9 +1073,7 @@ let create_follow_up_later () =
   in
   let res =
     SessionC.Create.(
-      input
-      |> decode
-      >>= handle ~session_id ~parent_session experiment_id location)
+      input |> decode >>= handle ~session_id ~parent_session experiment location)
   in
   let session =
     let open Data.Validated in
@@ -1101,10 +1090,9 @@ let create_follow_up_later () =
       max_participants
       min_participants
       overbook
+      experiment
   in
-  check_result
-    (Ok [ Pool_event.Session (Session.Created (session, experiment_id)) ])
-    res
+  check_result (Ok [ Pool_event.Session (Session.Created session) ]) res
 ;;
 
 let update_follow_up_earlier () =
@@ -1466,7 +1454,7 @@ let close_session_check_contact_figures _ () =
   let open Test_utils in
   let%lwt experiment = Repo.first_experiment () in
   let%lwt session =
-    SessionRepo.create ~start:(Model.an_hour_ago ()) experiment.Experiment.id ()
+    SessionRepo.create ~start:(Model.an_hour_ago ()) experiment ()
   in
   let%lwt participated_c = ContactRepo.create ~with_terms_accepted:true () in
   let%lwt show_up_c = ContactRepo.create ~with_terms_accepted:true () in
@@ -1583,11 +1571,7 @@ let send_session_reminders_with_default_leat_time _ () =
       |> Ptime.Span.of_int_s
       |> Test_utils.Model.session_start_in
     in
-    SessionRepo.create
-      ~start
-      ?email_reminder_sent_at
-      experiment.Experiment.id
-      ()
+    SessionRepo.create ~start ?email_reminder_sent_at experiment ()
   in
   let%lwt session1 = create_session 16 in
   let%lwt session2 =

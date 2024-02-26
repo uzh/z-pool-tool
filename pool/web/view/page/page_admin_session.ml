@@ -43,15 +43,17 @@ let some_session_is_followup sessions =
 module Partials = struct
   open Session
 
-  let table_legend language =
+  let table_legend ?(hide_closed = false) language =
     let open Pool_common in
     let to_string = Utils.text_to_string language in
     let open Component.Table in
-    table_legend
-      I18n.
-        [ to_string Closed, legend_color_item "bg-green-lighter"
-        ; to_string Canceled, legend_color_item "bg-red-lighter"
-        ]
+    let canceled =
+      I18n.(to_string Canceled, legend_color_item "bg-red-lighter")
+    in
+    let closed =
+      I18n.(to_string Closed, legend_color_item "bg-green-lighter")
+    in
+    (if hide_closed then [ canceled ] else [ closed; canceled ]) |> table_legend
   ;;
 
   let row_classnames { canceled_at; closed_at; follow_up_to; _ } =

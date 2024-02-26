@@ -71,6 +71,7 @@ let to_string = function
     "Der Import Ihres Users ist noch nicht abgeschlossen. Bitte kontrollieren \
      Sie Ihren Posteingang oder kontaktieren Sie einen Administrator."
   | ImportPendingTitle -> "Pendenter Import"
+  | IncompleteSessions -> "Nicht abgeschlossene Sessions"
   | InvitationsStatistics -> "Einladungsstatistik"
   | InvitationsStatisticsIntro ->
     "Diese Tabelle zeigt, wie oft die Kontakte die Einladung zu diesem \
@@ -82,6 +83,7 @@ let to_string = function
   | LocationNewTitle -> "Neuer Standort erstellen"
   | LocationNoFiles -> "Es existieren keine Dateien zu diesem Standort."
   | LocationNoSessions -> "Keine Sessions für diesen Standort gefunden."
+  | LocationStatistics -> "Standortstatistik"
   | LoginTitle -> "Login"
   | MailingDetailTitle start ->
     Format.asprintf "Versand vom %s" (Utils_time.formatted_date_time start)
@@ -137,6 +139,7 @@ Sie kommen für mehr Experimente in Frage, umso kompletter Ihr Profil ist.|}
     "Es wurden keine Sessions gefunden, der Sie diesen Kontakt zuweisen können."
   | SwitchChronological -> "Zu chronologische Ansicht wechseln"
   | SwitchGrouped -> "Zu gruppierter Ansicht wechseln"
+  | System -> "System"
   | TermsAndConditionsLastUpdated ptime ->
     Format.asprintf
       "Zuletzt angepasst: %s"

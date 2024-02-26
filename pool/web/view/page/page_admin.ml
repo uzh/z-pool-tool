@@ -1,4 +1,3 @@
-open Tyxml.Html
 module Admins = Page_admin_admins
 module Assignment = Page_admin_assignments
 module Contact = Page_admin_contact
@@ -6,6 +5,7 @@ module CustomFields = Page_admin_custom_fields
 module CustomFieldOptions = Page_admin_custom_field_options
 module CustomFieldGroups = Page_admin_custom_field_groups
 module CustomFieldSettings = Page_admin_custom_field_settings
+module Dashboard = Page_admin_dashboard
 module Experiments = Page_admin_experiments
 module Filter = Page_admin_filter
 module I18n = Page_admin_i18n
@@ -19,37 +19,3 @@ module Session = Page_admin_session
 module Settings = Page_admin_settings
 module WaitingList = Page_admin_waiting_list
 include Page_admin_edit
-
-let dashboard statistics Pool_context.{ language; _ } =
-  let open Pool_common in
-  let heading_2 title =
-    h2
-      ~a:[ a_class [ "heading-2" ] ]
-      [ txt (Utils.text_to_string language title) ]
-  in
-  let statistics_html =
-    statistics
-    |> CCOption.map_or ~default:(txt "") (fun statistics ->
-      div
-        ~a:[ a_class [ "grid-col-2" ] ]
-        [ div
-            [ heading_2 I18n.PoolStatistics
-            ; Component.Statistics.create language statistics
-            ]
-        ])
-  in
-  div
-    ~a:[ a_class [ "trim"; "safety-margin" ] ]
-    [ h1
-        ~a:[ a_class [ "heading-1" ] ]
-        [ txt (Utils.text_to_string language I18n.DashboardTitle) ]
-    ; div
-        ~a:[ a_class [ "stack-lg" ] ]
-        [ div
-            [ heading_2 I18n.UpcomingSessionsTitle
-            ; Component.Calendar.(create User)
-            ]
-        ; statistics_html
-        ]
-    ]
-;;

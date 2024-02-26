@@ -42,10 +42,11 @@ let session ~experiment =
       max_participants
       min_participants
       overbook
+      experiment
   in
   let events =
     [ Pool_location.created pool_location |> Pool_event.pool_location
-    ; Session.Created (session, experiment.Experiment.id) |> Pool_event.session
+    ; Session.Created session |> Pool_event.session
     ]
   in
   let& () = Pool_event.handle_events test_db events |> Lwt_result.ok in

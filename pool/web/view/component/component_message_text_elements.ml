@@ -114,7 +114,7 @@ module DummyData = struct
     }
   ;;
 
-  let create_session () =
+  let create_session experiment =
     let get_or_failwith = Pool_common.Utils.get_or_failwith in
     Session.
       { id = Session.Id.create ()
@@ -146,6 +146,7 @@ module DummyData = struct
       ; canceled_at = None
       ; created_at = Pool_common.CreatedAt.create ()
       ; updated_at = Pool_common.UpdatedAt.create ()
+      ; experiment
       }
   ;;
 
@@ -240,7 +241,9 @@ let message_template_help
   let create_public_experiment () =
     create_experiment () |> Experiment.to_public
   in
-  let create_session () = value ~default:(create_session ()) session in
+  let create_session () =
+    value ~default:(create_session (create_experiment ())) session
+  in
   let create_follow_up session_id =
     Session.{ (create_session ()) with follow_up_to = Some session_id }
   in

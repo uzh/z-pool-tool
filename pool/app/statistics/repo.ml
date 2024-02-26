@@ -1,64 +1,3 @@
-open Entity
-
-module RepoEntity = struct
-  open CCFun.Infix
-
-  let int_caqti of_int value =
-    Pool_common.Repo.make_caqti_type
-      Caqti_type.int
-      (of_int %> CCResult.return)
-      value
-  ;;
-
-  module ActiveContacts = struct
-    include ActiveContacts
-
-    let t = int_caqti of_int value
-  end
-
-  module PendingContactImports = struct
-    include PendingContactImports
-
-    let t = int_caqti of_int value
-  end
-
-  module SignUpCount = struct
-    include SignUpCount
-
-    let t = int_caqti of_int value
-  end
-
-  module LoginCount = struct
-    include LoginCount
-
-    let t = int_caqti of_int value
-  end
-
-  module TermsAcceptedCount = struct
-    include TermsAcceptedCount
-
-    let t = int_caqti of_int value
-  end
-
-  module AssignmentsCreated = struct
-    include AssignmentsCreated
-
-    let t = int_caqti of_int value
-  end
-
-  module InvitationsSent = struct
-    include InvitationsSent
-
-    let t = int_caqti of_int value
-  end
-
-  module RemindersSent = struct
-    include RemindersSent
-
-    let t = int_caqti of_int value
-  end
-end
-
 let count_contacts_select =
   {sql|
     SELECT
@@ -78,7 +17,7 @@ let count_contacts_select =
 
 let active_contacts_request =
   let open Caqti_request.Infix in
-  count_contacts_select |> Caqti_type.(unit ->! RepoEntity.ActiveContacts.t)
+  count_contacts_select |> Caqti_type.(unit ->! int)
 ;;
 
 let active_contacts pool =
@@ -100,7 +39,7 @@ let pending_contact_imports_request =
       user_users.admin = 0
       AND pool_contacts.import_pending = 1
   |sql}
-  |> Caqti_type.(unit ->! RepoEntity.PendingContactImports.t)
+  |> Caqti_type.(unit ->! int)
 ;;
 
 let pending_contact_imports pool =
@@ -122,7 +61,7 @@ let login_count_request period =
         last_sign_in_at >= (NOW() - INTERVAL %s)
     |sql}
     (Entity.period_to_sql period)
-  |> Caqti_type.(unit ->! RepoEntity.LoginCount.t)
+  |> Caqti_type.(unit ->! int)
 ;;
 
 let login_count pool period =
@@ -150,7 +89,7 @@ let sign_up_count_request period =
         pool_contacts.terms_accepted_at IS NOT NULL
     |sql}
     (Entity.period_to_sql period)
-  |> Caqti_type.(unit ->! RepoEntity.SignUpCount.t)
+  |> Caqti_type.(unit ->! int)
 ;;
 
 let sign_up_count pool period =
@@ -174,7 +113,7 @@ let assignments_created_request period =
         AND pool_assignments.marked_as_deleted = 0
     |sql}
     (Entity.period_to_sql period)
-  |> Caqti_type.(unit ->! RepoEntity.AssignmentsCreated.t)
+  |> Caqti_type.(unit ->! int)
 ;;
 
 let assignments_created pool period =
@@ -191,7 +130,7 @@ let invitations_sent_request period =
       SELECT COUNT(*) FROM pool_invitations WHERE created_at >= (NOW() - INTERVAL %s);
     |sql}
     (Entity.period_to_sql period)
-  |> Caqti_type.(unit ->! RepoEntity.InvitationsSent.t)
+  |> Caqti_type.(unit ->! int)
 ;;
 
 let invitations_sent pool period =
@@ -216,7 +155,7 @@ let reminders_sent_request period =
         AND pool_assignments.canceled_at IS NULL
     |sql}
     (Entity.period_to_sql period)
-  |> Caqti_type.(unit ->! RepoEntity.RemindersSent.t)
+  |> Caqti_type.(unit ->! int)
 ;;
 
 let reminders_sent pool period =
@@ -235,12 +174,30 @@ let terms_accepted_count_request period =
     |sql}
     count_contacts_select
     (Entity.period_to_sql period)
-  |> Caqti_type.(unit ->! RepoEntity.TermsAcceptedCount.t)
+  |> Caqti_type.(unit ->! int)
 ;;
 
 let terms_accepted_count pool period =
   Utils.Database.find
     (Pool_database.Label.value pool)
     (terms_accepted_count_request period)
+    ()
+;;
+
+let total_emails_sent_request period =
+  let open Caqti_request.Infix in
+  Format.asprintf
+    {sql|
+      SELECT COUNT(*) FROM queue_jobs
+      WHERE last_error_at >= (NOW() - INTERVAL %s)
+    |sql}
+    (Entity.period_to_sql period)
+  |> Caqti_type.(unit ->! int)
+;;
+
+let total_emails_sent pool period =
+  Utils.Database.find
+    (Pool_database.Label.value pool)
+    (total_emails_sent_request period)
     ()
 ;;
