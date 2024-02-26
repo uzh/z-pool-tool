@@ -208,6 +208,8 @@ val find_gtx_api_key_by_label
   :  Pool_database.Label.t
   -> (GtxApiKey.t, Pool_common.Message.error) result Lwt.t
 
+val create_public_url : Url.t -> string -> string
+
 type handle_list_recruiters = unit -> Sihl_user.t list Lwt.t
 type handle_list_tenants = unit -> t list Lwt.t
 

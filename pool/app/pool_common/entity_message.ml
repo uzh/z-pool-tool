@@ -233,6 +233,7 @@ type control =
   | OpenProfile
   | PauseAccount
   | PleaseSelect
+  | PoolOptOut
   | PreviousPage
   | PromoteContact
   | PublicPage

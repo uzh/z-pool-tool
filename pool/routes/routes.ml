@@ -138,6 +138,7 @@ module Contact = struct
       [ get "/user/personal-details" UserProfile.personal_details
       ; get "/user/login-information" UserProfile.login_information
       ; get "/user/contact-information" UserProfile.contact_information
+      ; get "/user/pause-account" UserProfile.pause_account
       ; post "/user/update" UserProfile.update
       ; post "/user/update/pause" UserProfile.toggle_paused
       ; post "/user/update-email" UserProfile.update_email

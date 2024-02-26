@@ -15,6 +15,12 @@ let find_databases = Repo.find_databases Database.root
 let find_database_by_label = Repo.find_database_by_label Database.root
 let find_gtx_api_key_by_label = Repo.find_gtx_api_key_by_label Database.root
 
+let create_public_url pool_url path =
+  path
+  |> Sihl.Web.externalize_path
+  |> Format.asprintf "https://%s%s" (Url.value pool_url)
+;;
+
 type handle_list_recruiters = unit -> Sihl_user.t list Lwt.t
 type handle_list_tenants = unit -> t list Lwt.t
 

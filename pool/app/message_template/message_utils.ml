@@ -1,5 +1,7 @@
 open Entity
 
+let create_public_url = Pool_tenant.create_public_url
+
 type email_layout =
   { link : string
   ; logo_alt : string
@@ -7,12 +9,6 @@ type email_layout =
   ; site_title : string
   }
 [@@deriving eq, show { with_path = false }]
-
-let create_public_url pool_url path =
-  path
-  |> Sihl.Web.externalize_path
-  |> Format.asprintf "https://%s%s" (Pool_tenant.Url.value pool_url)
-;;
 
 let create_public_url_with_params pool_url path params =
   params
@@ -109,8 +105,20 @@ let html_to_string html =
   Format.asprintf "%a" (Tyxml.Html.pp_elt ~indent:true ()) html
 ;;
 
-let combine_html language html_title =
+let opt_out_link_html language { link; _ } =
+  let text =
+    Pool_common.(Utils.control_to_string language Message.PoolOptOut)
+  in
+  let url = Format.asprintf "%s/user/pause-account" link in
   let open Tyxml.Html in
+  div ~a:[ a_style "margin-bottom: 16px;" ] [ a ~a:[ a_href url ] [ txt text ] ]
+;;
+
+let combine_html ?(optout_link = false) language layout html_title =
+  let open Tyxml.Html in
+  let opt_out_html =
+    if optout_link then opt_out_link_html language layout else txt ""
+  in
   let current_year = () |> Ptime_clock.now |> Ptime.to_year in
   let email_header =
     head
@@ -139,9 +147,9 @@ let combine_html language html_title =
     body
       ~a:[ a_style "margin:0; padding:0;" ]
       [ div
-          ~a:[ a_style "margin: 1em 1em 1em 1em; max-width: 50em;" ]
-          [ section
-              ~a:[ a_style "margin-bottom: 1em;" ]
+          ~a:[ a_style "margin: 16px 16px 16px 16px; max-width: 50em;" ]
+          [ div
+              ~a:[ a_style "margin-bottom: 16px;" ]
               [ a
                   ~a:[ a_href "{logoHref}" ]
                   [ img
@@ -153,12 +161,17 @@ let combine_html language html_title =
                       ()
                   ]
               ]
-          ; section
-              ~a:[ a_style "padding-top: 1em; color: #383838;" ]
+          ; div
+              ~a:[ a_style "padding-top: 16px; color: #383838;" ]
               [ txt "{emailText}" ]
-          ; footer
-              ~a:[ a_style "margin-top: 4em;" ]
-              [ div
+          ; div
+              ~a:
+                [ a_style
+                    "margin-top: 32px; padding-top: 32px; border-top: 1px \
+                     solid currentcolor"
+                ]
+              [ opt_out_html
+              ; div
                   ~a:[ a_style "text-align:center" ]
                   [ p
                       [ txt

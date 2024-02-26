@@ -69,13 +69,15 @@ let missing_template_languages database_label entity_id label ?exclude languages
 
 let prepare_email language template sender email layout params =
   let open Sihl_email in
-  let { Entity.email_subject; email_text; plain_text; _ } = template in
+  let { Entity.email_subject; email_text; plain_text; label; _ } = template in
+  let optout_link = add_optout_link label in
   let mail =
     { sender = Pool_user.EmailAddress.value sender
     ; recipient = Pool_user.EmailAddress.value email
     ; subject = email_subject
     ; text = PlainText.value plain_text
-    ; html = Some (combine_html language (Some email_subject))
+    ; html =
+        Some (combine_html ~optout_link language layout (Some email_subject))
     ; cc = []
     ; bcc = []
     }
@@ -96,7 +98,7 @@ let prepare_manual_email
     ; recipient = Pool_user.EmailAddress.value recipient
     ; subject = email_subject
     ; text = PlainText.value plain_text
-    ; html = Some (combine_html language (Some email_subject))
+    ; html = Some (combine_html language layout (Some email_subject))
     ; cc = []
     ; bcc = []
     }

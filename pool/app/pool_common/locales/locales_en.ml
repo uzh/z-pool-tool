@@ -636,6 +636,7 @@ let control_to_string = function
   | OpenProfile -> "show profile"
   | PauseAccount -> format_submit "pause account" None
   | PleaseSelect -> format_submit "please select" None
+  | PoolOptOut -> "I no longer wish to receive these emails."
   | PreviousPage -> "previous"
   | PromoteContact -> format_submit "promote contact" None
   | Print field -> format_submit "print" field
