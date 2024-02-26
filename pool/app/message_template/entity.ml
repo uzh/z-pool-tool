@@ -166,25 +166,3 @@ let template_hint label =
   | UserImport -> MessageTemplateUserImport
   | WaitingListConfirmation -> MessageTemplateWaitingListConfirmation
 ;;
-
-let add_optout_link =
-  let open Label in
-  function
-  | ExperimentInvitation | UserImport -> true
-  | AccountSuspensionNotification
-  | AssignmentCancellation
-  | AssignmentConfirmation
-  | AssignmentSessionChange
-  | ContactEmailChangeAttempt
-  | ContactRegistrationAttempt
-  | EmailVerification
-  | PasswordChange
-  | PasswordReset
-  | PhoneVerification
-  | ProfileUpdateTrigger
-  | SignUpVerification
-  | SessionCancellation
-  | SessionReminder
-  | SessionReschedule
-  | WaitingListConfirmation -> false
-;;

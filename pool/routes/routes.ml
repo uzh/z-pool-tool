@@ -84,6 +84,8 @@ module Public = struct
             ; get "/import-pending" Import.import_pending
             ; get "/import-confirmation" Import.import_confirmation
             ; post "/import-confirmation" Import.import_confirmation_post
+            ; get "/unsubscribe" Import.unsubscribe
+            ; post "/unsubscribe" Import.unsubscribe_post
             ]
         ; choose
             ~middlewares:

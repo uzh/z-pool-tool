@@ -10,6 +10,20 @@ type email_layout =
   }
 [@@deriving eq, show { with_path = false }]
 
+type opt_out_link =
+  | Verified
+  | Unverified of string
+
+let opt_out_link_url { link; _ } = function
+  | Verified -> Format.asprintf "%s/user/pause-account" link
+  | Unverified token ->
+    Format.asprintf
+      "%s/unsubscribe?%s=%s"
+      link
+      Pool_common.Message.Field.(show Token)
+      token
+;;
+
 let create_public_url_with_params pool_url path params =
   params
   |> Pool_common.Message.add_field_query_params path
@@ -105,19 +119,20 @@ let html_to_string html =
   Format.asprintf "%a" (Tyxml.Html.pp_elt ~indent:true ()) html
 ;;
 
-let opt_out_link_html language { link; _ } =
+let opt_out_html language layout opt_out =
   let text =
     Pool_common.(Utils.control_to_string language Message.PoolOptOut)
   in
-  let url = Format.asprintf "%s/user/pause-account" link in
+  let url = opt_out_link_url layout opt_out in
   let open Tyxml.Html in
   div ~a:[ a_style "margin-bottom: 16px;" ] [ a ~a:[ a_href url ] [ txt text ] ]
 ;;
 
-let combine_html ?(optout_link = false) language layout html_title =
+let combine_html ?optout_link language layout html_title =
   let open Tyxml.Html in
   let opt_out_html =
-    if optout_link then opt_out_link_html language layout else txt ""
+    optout_link
+    |> CCOption.map_or ~default:(txt "") (opt_out_html language layout)
   in
   let current_year = () |> Ptime_clock.now |> Ptime.to_year in
   let email_header =

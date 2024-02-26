@@ -67,17 +67,17 @@ let missing_template_languages database_label entity_id label ?exclude languages
   filter_languages ?exclude languages existing |> Lwt.return
 ;;
 
-let prepare_email language template sender email layout params =
+let prepare_email ?optout_link language template sender email layout params =
+  (* TODO: Add opt out link to plain text *)
   let open Sihl_email in
-  let { Entity.email_subject; email_text; plain_text; label; _ } = template in
-  let optout_link = add_optout_link label in
+  let { Entity.email_subject; email_text; plain_text; _ } = template in
   let mail =
     { sender = Pool_user.EmailAddress.value sender
     ; recipient = Pool_user.EmailAddress.value email
     ; subject = email_subject
     ; text = PlainText.value plain_text
     ; html =
-        Some (combine_html ~optout_link language layout (Some email_subject))
+        Some (combine_html ?optout_link language layout (Some email_subject))
     ; cc = []
     ; bcc = []
     }
@@ -631,6 +631,7 @@ end
 module ExperimentInvitation = struct
   let label = Label.ExperimentInvitation
   let message_history = experiment_message_history label
+  let optout_link = Verified
 
   let email_params layout experiment public_url contact =
     let open Experiment in
@@ -668,6 +669,7 @@ module ExperimentInvitation = struct
       let params = email_params layout experiment tenant_url contact in
       let email =
         prepare_email
+          ~optout_link
           lang
           template
           sender
@@ -695,6 +697,7 @@ module ExperimentInvitation = struct
     let params = email_params layout experiment tenant_url contact in
     let email =
       prepare_email
+        ~optout_link
         language
         template
         sender
@@ -1255,9 +1258,15 @@ module UserImport = struct
         ]
       |> create_public_url_with_params url "/import-confirmation"
     in
+    let optout_link =
+      match user with
+      | `Contact _ -> Some (Unverified token)
+      | `Admin _ -> None
+    in
     let template = Hashtbl.find templates language in
     let email =
       prepare_email
+        ?optout_link
         language
         template
         sender

@@ -451,7 +451,7 @@ let pause_account req =
   let open Utils.Lwt_result.Infix in
   let redirect_path = "/user/personal-details" in
   let result context =
-    Page.Contact.pause_account context
+    Page.Contact.pause_account context ()
     |> create_layout req context
     >|+ Sihl.Web.Response.of_html
     >|- fun err -> err, redirect_path
