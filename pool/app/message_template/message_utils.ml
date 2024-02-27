@@ -220,8 +220,7 @@ let combine_plain_text language email_layout plain_text =
   | None -> plain
   | Some opt_out ->
     let url = opt_out_link_url email_layout opt_out in
-    let unsubscribe = Format.asprintf "%s%s: %s" text control url in
-    Format.asprintf "%s\n%s" plain unsubscribe
+    Format.asprintf "%s\n\n%s%s: %s" plain text control url
 ;;
 
 let find_template_by_language templates lang =
