@@ -38,21 +38,37 @@ function globalConfig(e) {
     }
 }
 
+const isDate = date => date && date.getMonth() ? true : false
+
+const largestDate = (dates) => {
+    const filtered = dates.filter((date) => isDate(date))
+    return filtered.length ? filtered.reduce(((a, b) => a > b ? a : b), 0) : null;
+}
+
 export function initDatepicker(container = document) {
     flatpickr.localize({ firstDayOfWeek: 1 })
     const renderDatepickers = (container) => {
         [...container.getElementsByClassName(datePickerClass)].forEach(e => {
-            var { disablePast, disableFuture, disableTime } = e.dataset;
-            var classlist = Array.from(e.classList);
-            var dateFormat = disableTime ? "Y-m-d" : "Z";
-            var altFormat = disableTime ? "d.m.Y" : "d.m.Y H:i";
+            const { disablePast, disableFuture, disableTime, minDate: dataMinDate, minInputElement } = e.dataset;
+            const classlist = Array.from(e.classList);
+            const dateFormat = disableTime ? "Y-m-d" : "Z";
+            const altFormat = disableTime ? "d.m.Y" : "d.m.Y H:i";
             const formGroup = e.closest(".form-group");
-            var f = flatpickr(e, {
+            const minInputEl = minInputElement && document.querySelector(`[name="${minInputElement}"]`);
+            const minInputElValue = minInputEl && minInputEl.value
+            const minInputElementDate = minInputElValue && new Date(minInputElValue)
+
+            const parsedMinDate = dataMinDate && new Date(dataMinDate);
+            const nowDate = disablePast && new Date()
+
+            const minDate = largestDate([parsedMinDate, minInputElementDate, nowDate])
+
+            const f = flatpickr(e, {
                 ...globalConfig(e),
                 altFormat,
                 dateFormat,
                 enableTime: !disableTime,
-                minDate: disablePast ? new Date() : null,
+                minDate,
                 maxDate: disableFuture ? new Date() : null,
                 onChange: function (selectedDates, dateStr, instance) {
                     const helpText = formGroup.querySelector(".datepicker-msg")
@@ -70,6 +86,13 @@ export function initDatepicker(container = document) {
                 }
             })
             f._input.onkeydown = () => false
+            if (minInputEl) {
+                minInputEl.addEventListener("change", (e) => {
+                    const value = new Date(e.currentTarget.value)
+                    const minDate = largestDate([value, parsedMinDate, nowDate]);
+                    f.set('minDate', minDate)
+                })
+            }
         });
     }
     renderDatepickers(container)

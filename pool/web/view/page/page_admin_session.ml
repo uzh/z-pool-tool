@@ -224,11 +224,10 @@ let session_form
   csrf
   language
   (experiment : Experiment.t)
-  default_email_reminder_lead_time
-  default_text_msg_reminder_lead_time
+  (default_email_reminder_lead_time, default_text_msg_reminder_lead_time)
   ?(session : Session.t option)
   ?(follow_up_to : Session.t option)
-  ?(duplicate : Session.t option)
+  ?(duplicate : (Session.t * Session.t list) option)
   locations
   text_messages_enabled
   ~flash_fetcher
@@ -236,6 +235,11 @@ let session_form
   let open CCFun in
   let open Session in
   let open Pool_common in
+  let duplicate_parent, _ =
+    match duplicate with
+    | Some (parent, followups) -> Some parent, Some followups
+    | None -> None, None
+  in
   let has_assignments =
     session
     |> CCOption.map_or ~default:false (fun s -> s |> Session.has_assignments)
@@ -244,7 +248,7 @@ let session_form
     (* Prefill the form with values if making a duplicate, editing a session or
        creating a follow up to a parent. The importance is 1. duplicate, 2.
        session editing, 3. follow_up_to *)
-    CCOption.(duplicate <+> session <+> follow_up_to)
+    CCOption.(duplicate_parent <+> session <+> follow_up_to)
   in
   let reschedule_hint () =
     match session, has_assignments with
@@ -333,6 +337,10 @@ let session_form
            date_time_picker_element
              language
              Message.Field.Start
+             ?min_value:
+               (follow_up_to
+                |> CCOption.map
+                     Session.(fun ({ start; _ } : t) -> Start.value start))
              ~required:true
              ~flash_fetcher
              ?value
@@ -420,6 +428,35 @@ let session_form
         ~a:[ a_class [ "flexrow" ] ]
         [ submit_element ~classnames:[ "push" ] language submit () ]
     ]
+;;
+
+let session_base_information language session =
+  let open Session in
+  let amount amt = amt |> ParticipantAmount.value |> string_of_int in
+  [ Field.Start, session |> Session.start_end_human |> txt
+  ; ( Field.Duration
+    , session.duration
+      |> Duration.value
+      |> Pool_common.Utils.Time.formatted_timespan
+      |> txt )
+  ; ( Field.InternalDescription
+    , CCOption.map_or
+        ~default:""
+        InternalDescription.value
+        session.internal_description
+      |> Http_utils.add_line_breaks )
+  ; ( Field.PublicDescription
+    , CCOption.map_or
+        ~default:""
+        PublicDescription.value
+        session.public_description
+      |> Http_utils.add_line_breaks )
+  ; ( Field.Location
+    , Component.Partials.location_to_html language session.Session.location )
+  ; Field.MaxParticipants, amount session.max_participants |> txt
+  ; Field.MinParticipants, amount session.min_participants |> txt
+  ; Field.Overbook, amount session.overbook |> txt
+  ]
 ;;
 
 let reschedule_session
@@ -635,9 +672,7 @@ let index
 let new_form
   ({ Pool_context.language; csrf; _ } as context)
   experiment
-  default_email_reminder_lead_time
-  default_text_msg_reminder_lead_time
-  duplicate_session
+  default_leadtime_settings
   locations
   text_messages_enabled
   flash_fetcher
@@ -646,15 +681,212 @@ let new_form
     csrf
     language
     experiment
-    default_email_reminder_lead_time
-    default_text_msg_reminder_lead_time
-    ?duplicate:duplicate_session
+    default_leadtime_settings
     locations
     text_messages_enabled
     ~flash_fetcher
   |> CCList.return
   |> Layout.Experiment.(
        create context (Control Message.(Create (Some Field.Session))) experiment)
+;;
+
+let duplicate_form ?parent_session language session followups form_id =
+  let open Session in
+  let open Pool_common in
+  let remove_button =
+    let classes style = [ style; "has-icon" ] in
+    let make_button style attributes =
+      button
+        ~a:([ a_class (classes style); a_button_type `Button ] @ attributes)
+        [ Component.Icon.(to_html TrashOutline) ]
+    in
+    if form_id = 0
+    then make_button "disabled" [ a_disabled () ]
+    else make_button "error" [ a_user_data "remove-group" "" ]
+  in
+  let min_date ({ start; _ } : t) =
+    Start.value start |> Component.Input.flatpickr_min
+  in
+  let input_name { id; _ } =
+    Format.asprintf "%s[%i]" (Session.Id.value id) form_id
+  in
+  let input ?min_input_el ?value session =
+    let name = input_name session in
+    let label_txt =
+      Format.asprintf
+        "Session from %s"
+        (Session.start_end_with_duration_human session)
+      |> txt
+    in
+    let attrs =
+      let min_date = parent_session |> CCOption.map min_date in
+      let min_input_el =
+        min_input_el
+        |> CCOption.map (fun min_input ->
+          a_user_data "min-input-element" (input_name min_input))
+      in
+      [ min_date; min_input_el ] |> CCList.filter_map CCFun.id
+    in
+    div
+      ~a:[ a_class [ "form-group" ] ]
+      [ label ~a:[ a_label_for name ] [ label_txt ]
+      ; input
+          ~a:
+            ([ a_id name
+             ; a_name name
+             ; a_class [ "datepicker" ]
+             ; a_value (CCOption.value ~default:"" value)
+             ; a_user_data
+                 "warn-past"
+                 (Utils.hint_to_string language I18n.SelectedDateIsPast)
+             ; a_required ()
+             ]
+             @ attrs)
+          ()
+      ; span ~a:[ a_class [ "help"; "datepicker-msg"; "error-message" ] ] []
+      ]
+  in
+  let wrap title html =
+    div
+      ~a:[ a_class [ "flexcolumn" ] ]
+      [ h4
+          [ Utils.field_to_string language title
+            |> CCString.capitalize_ascii
+            |> txt
+          ]
+      ; html
+      ]
+  in
+  let main = div [ input session ] |> wrap Message.Field.MainSession in
+  let followups =
+    if CCList.is_empty followups
+    then div [ txt "" ]
+    else
+      followups
+      |> CCList.map (input ~min_input_el:session)
+      |> div ~a:[ a_class [ "stack" ] ]
+      |> wrap Message.Field.FollowUpSession
+  in
+  div
+    ~a:
+      [ a_class [ "border-bottom"; "inset"; "vertical"; "flexrow"; "flex-gap" ]
+      ; a_user_data "duplicate-form" (CCInt.to_string form_id)
+      ]
+    [ div ~a:[ a_class [ "grid-col-2"; "grow" ] ] [ main; followups ]
+    ; div ~a:[ a_class [ "flexcolumn"; "justify-end" ] ] [ remove_button ]
+    ]
+;;
+
+let duplicate
+  ({ Pool_context.language; csrf; _ } as context)
+  ?parent_session
+  experiment
+  session
+  followups
+  =
+  let open Session in
+  let session_info =
+    let session_link session =
+      span
+        ~a:[ a_class [ "has-icon" ] ]
+        [ txt (Session.start_end_with_duration_human session)
+        ; a
+            ~a:
+              [ a_href
+                  (session_path experiment.Experiment.id session.id
+                   |> Sihl.Web.externalize_path)
+              ; a_target "_blank"
+              ]
+            [ Icon.(to_html OpenOutline) ]
+        ]
+    in
+    let main = session_link session in
+    let wrap ~inset =
+      let classname =
+        [ "flexcolumn"; "stack-sm" ] @ if inset then [ "inset"; "left" ] else []
+      in
+      div ~a:[ a_class classname ]
+    in
+    let session_list =
+      match followups with
+      | [] -> wrap ~inset:false [ main ]
+      | followups ->
+        let items = CCList.map session_link followups in
+        items
+        |> wrap ~inset:true
+        |> fun followups -> [ main; followups ] |> wrap ~inset:false
+    in
+    div
+      ~a:[ a_class [ "gap-lg" ] ]
+      [ p
+          [ txt
+              Pool_common.(
+                Utils.hint_to_string language I18n.DuplicateSessionList)
+          ]
+      ; session_list
+      ]
+  in
+  let hint =
+    Pool_common.(Utils.hint_to_string language I18n.DuplicateSession)
+    |> txt
+    |> CCList.return
+    |> Component.Notification.notification language `Warning
+  in
+  let subform_wrapper = "session-duplication-subforms" in
+  let session_path = session_path experiment.Experiment.id session.id in
+  let add_subform_button =
+    button
+      ~a:
+        Htmx.
+          [ a_class [ "success"; "has-icon" ]
+          ; hx_trigger "click"
+          ; hx_get
+              (Format.asprintf "%s/duplicate/form" session_path
+               |> Sihl.Web.externalize_path)
+          ; hx_target ("#" ^ subform_wrapper)
+          ; hx_swap "beforeend"
+          ]
+      [ Icon.(to_html Add) ]
+  in
+  let submit_button =
+    button
+      ~a:
+        Htmx.
+          [ a_class [ "primary" ]
+          ; hx_trigger "click"
+          ; hx_swap "none"
+          ; hx_post
+              (Format.sprintf "%s/duplicate" session_path
+               |> Sihl.Web.externalize_path)
+          ]
+      [ txt
+          Pool_common.(
+            Utils.control_to_string
+              language
+              (Message.Create (Some Field.Sessions)))
+      ]
+  in
+  let form =
+    form
+      ~a:[ a_id "session-duplication-form" ]
+      [ Component.Input.csrf_element csrf ()
+      ; div
+          ~a:[ a_id subform_wrapper ]
+          [ duplicate_form ?parent_session language session followups 0 ]
+      ; div
+          ~a:[ a_class [ "flexrow"; "gap" ] ]
+          [ div
+              ~a:[ a_class [ "flexrow"; "flex-gap"; "push" ] ]
+              [ add_subform_button; submit_button ]
+          ]
+      ]
+  in
+  [ div ~a:[ a_class [ "stack" ] ] [ hint; session_info; form ] ]
+  |> Layout.Experiment.(
+       create
+         context
+         (Control Message.(Duplicate (Some Field.Session)))
+         experiment)
 ;;
 
 let detail
@@ -789,37 +1021,12 @@ let detail
         | false -> txt "", txt ""
       in
       let rows =
-        let amount amt = amt |> ParticipantAmount.value |> string_of_int in
-        [ Field.Start, session |> Session.start_end_human |> txt
-        ; ( Field.Duration
-          , session.duration
-            |> Duration.value
-            |> Utils.Time.formatted_timespan
-            |> txt )
-        ; ( Field.InternalDescription
-          , CCOption.map_or
-              ~default:""
-              InternalDescription.value
-              session.internal_description
-            |> Http_utils.add_line_breaks )
-        ; ( Field.PublicDescription
-          , CCOption.map_or
-              ~default:""
-              PublicDescription.value
-              session.public_description
-            |> Http_utils.add_line_breaks )
-        ; ( Field.Location
-          , Component.Partials.location_to_html
-              language
-              session.Session.location )
-        ; Field.MaxParticipants, amount session.max_participants |> txt
-        ; Field.MinParticipants, amount session.min_participants |> txt
-        ; Field.Overbook, amount session.overbook |> txt
-        ; ( Field.AssignmentCount
-          , session.assignment_count |> AssignmentCount.value |> int_to_txt )
-        ; no_show_count
-        ; participant_count
-        ]
+        session_base_information language session
+        @ [ ( Field.AssignmentCount
+            , session.assignment_count |> AssignmentCount.value |> int_to_txt )
+          ; no_show_count
+          ; participant_count
+          ]
         |> fun rows ->
         let canceled =
           session.canceled_at
@@ -851,18 +1058,7 @@ let detail
             (Experiment.Id.value experiment_id)
         in
         let link =
-          match session.follow_up_to with
-          | Some parent_session ->
-            Format.asprintf
-              "%s/%s/follow-up?duplicate_id=%s"
-              base
-              (Id.value parent_session)
-              (Id.value session.id)
-          | None ->
-            Format.asprintf
-              "%s/create/?duplicate_id=%s"
-              base
-              (Id.value session.id)
+          Format.asprintf "%s/%s/duplicate" base (Id.value session.id)
         in
         link_as_button
           ~control:(language, Message.Duplicate (Some Field.Session))
@@ -1094,8 +1290,7 @@ let print
 let edit
   ({ Pool_context.language; csrf; _ } as context)
   experiment
-  default_email_reminder_lead_time
-  default_text_msg_reminder_lead_time
+  default_leadtime_settings
   (session : Session.t)
   locations
   (current_tags, available_tags, experiment_tags)
@@ -1119,8 +1314,7 @@ let edit
           csrf
           language
           experiment
-          default_email_reminder_lead_time
-          default_text_msg_reminder_lead_time
+          default_leadtime_settings
           ~session
           locations
           text_messages_enabled
@@ -1179,10 +1373,9 @@ let edit
 
 let follow_up
   ({ Pool_context.language; csrf; _ } as context)
+  ?duplicate
   experiment
-  default_email_reminder_lead_time
-  default_text_msg_reminder_lead_time
-  duplicate_session
+  default_leadtime_settings
   (parent_session : Session.t)
   locations
   text_messages_enabled
@@ -1204,10 +1397,9 @@ let follow_up
         csrf
         language
         experiment
-        default_email_reminder_lead_time
-        default_text_msg_reminder_lead_time
+        default_leadtime_settings
+        ?duplicate
         ~follow_up_to:parent_session
-        ?duplicate:duplicate_session
         locations
         text_messages_enabled
         ~flash_fetcher

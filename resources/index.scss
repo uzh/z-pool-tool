@@ -56,6 +56,10 @@ form[class*="stack"] input[type="hidden"]+* {
     @extend .flexcolumn;
 }
 
+.datepicker-msg:empty {
+    display: none;
+}
+
 .grouped-input {
     border-radius: $border-radius;
     border: 1px solid $grey;

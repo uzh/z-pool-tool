@@ -1664,3 +1664,183 @@ let send_session_reminders_with_default_leat_time _ () =
   let () = check_result expected res in
   Lwt.return_unit
 ;;
+
+module Duplication = struct
+  open Test_utils
+  open Session
+
+  let equal_start a b =
+    let open Ptime in
+    let open Session.Start in
+    Ptime.diff (value a) (value b) |> Span.to_float_s |> CCFloat.abs < 1.
+  ;;
+
+  let equal_session (a : t) (b : t) =
+    let open Session in
+    let open Pool_common.Reminder in
+    (* The ID's are generated in the command handle function, therefore we do
+       not compare the ids but check wheater 'follow_up_to is set or not' *)
+    let equal_id _ _ = true in
+    let amount_equal = ParticipantAmount.equal in
+    CCOption.equal equal_id a.follow_up_to b.follow_up_to
+    && CCOption.equal
+         InternalDescription.equal
+         a.internal_description
+         b.internal_description
+    && CCOption.equal
+         PublicDescription.equal
+         a.public_description
+         b.public_description
+    && CCOption.equal
+         EmailLeadTime.equal
+         a.email_reminder_lead_time
+         b.email_reminder_lead_time
+    && CCOption.equal
+         TextMessageLeadTime.equal
+         a.text_message_reminder_lead_time
+         b.text_message_reminder_lead_time
+    && equal_start a.start b.start
+    && Duration.equal a.duration b.duration
+    && Pool_location.equal a.location b.location
+    && amount_equal a.max_participants b.max_participants
+    && amount_equal a.min_participants b.min_participants
+    && amount_equal a.overbook b.overbook
+  ;;
+
+  let testable_session = Alcotest.testable Session.pp equal_session
+  let expect_error = check_result
+
+  let check_sessions =
+    let open Alcotest in
+    check (result (list testable_session) error) "succeeds"
+  ;;
+
+  let[@warning "-4"] get_event_sessions =
+    let open Session in
+    CCList.filter_map (function
+      | Pool_event.Session (Created session) -> Some session
+      | _ -> None)
+  ;;
+
+  let input_name group session =
+    Format.asprintf "%s[%i]" Session.(Id.value session.id) group
+  ;;
+
+  let handle_timespan_update fnc ({ Session.start; _ } : Session.t) timespan =
+    fnc (Session.Start.value start) timespan
+    |> CCOption.get_exn_or "Invalid timespan provided"
+    |> Session.Start.create
+  ;;
+
+  let add_timespan = handle_timespan_update Ptime.add_span
+  let sub_timespan = handle_timespan_update Ptime.sub_span
+
+  let start_to_string start =
+    start
+    |> Session.Start.value
+    |> Pool_common.Model.Ptime.date_time_to_flatpickr
+  ;;
+
+  let data_to_urlencded =
+    CCList.map (fun (session, group, start) ->
+      input_name group session, [ start_to_string start ])
+  ;;
+
+  let to_event session = Session.Created session |> Pool_event.session
+
+  let single_session () =
+    let session = Model.create_session () in
+    let data =
+      [ session, 0, add_timespan session Model.hour
+      ; session, 1, add_timespan session Model.hour
+      ]
+    in
+    let events =
+      data
+      |> data_to_urlencded
+      |> SessionC.Duplicate.handle session []
+      |> CCResult.map get_event_sessions
+    in
+    let expected =
+      data
+      |> CCList.map (fun (session, _, start) ->
+        Session.{ session with id = Session.Id.create (); start })
+      |> CCResult.return
+    in
+    check_sessions expected events
+  ;;
+
+  let with_followup () =
+    let session = Model.create_session () in
+    let followup =
+      let session =
+        Model.create_session
+          ~follow_up_to:session.id
+          ~start:(add_timespan session Model.hour)
+          ()
+      in
+      let create_amount i = i |> ParticipantAmount.create |> get_or_failwith in
+      { session with
+        min_participants = create_amount 1
+      ; max_participants = create_amount 1
+      ; overbook = create_amount 0
+      }
+    in
+    let data =
+      [ session, 0, add_timespan session Model.hour
+      ; followup, 0, add_timespan followup Model.hour
+      ]
+    in
+    let events =
+      data
+      |> data_to_urlencded
+      |> SessionC.Duplicate.handle session [ followup ]
+      |> CCResult.map get_event_sessions
+    in
+    let expected =
+      data
+      |> CCList.map (fun (session, _, start) ->
+        Session.{ session with id = Session.Id.create (); start })
+      |> CCResult.return
+    in
+    check_sessions expected events
+  ;;
+
+  let missing_value () =
+    let session = Model.create_session () in
+    let followup =
+      Model.create_session
+        ~follow_up_to:session.id
+        ~start:(add_timespan session Model.hour)
+        ()
+    in
+    let data = [ session, 0, add_timespan session Model.hour ] in
+    let events =
+      data
+      |> data_to_urlencded
+      |> SessionC.Duplicate.handle session [ followup ]
+    in
+    expect_error (Error Pool_common.Message.(Missing Field.Start)) events
+  ;;
+
+  let followup_before_main () =
+    let session = Model.create_session () in
+    let followup =
+      Model.create_session
+        ~follow_up_to:session.id
+        ~start:(add_timespan session Model.hour)
+        ()
+    in
+    let data =
+      [ session, 0, add_timespan session Model.hour
+      ; followup, 0, sub_timespan session Model.hour
+      ]
+    in
+    let events =
+      data
+      |> data_to_urlencded
+      |> SessionC.Duplicate.handle session [ followup ]
+    in
+    expect_error (Error Pool_common.Message.FollowUpIsEarlierThanMain) events
+  ;;
+end

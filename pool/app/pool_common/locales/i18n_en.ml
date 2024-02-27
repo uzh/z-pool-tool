@@ -297,6 +297,11 @@ When inviting contacts, the filter will prefer the overriding value if both are 
   | Distribution ->
     "The distribution can be used to influence which invitations are sent \
      first."
+  | DuplicateSession ->
+    "The session will be duplicated with all its follow-up sessions. The \
+     information of the session and its follow-ups will be transferred to its \
+     corresponding clone."
+  | DuplicateSessionList -> "The following sessions will be cloned:"
   | EmailPlainText ->
     {|Using plain text email as a fallback ensures universal readability and accessibility. You can copy the rich text from above by using the button on the top right corner of this textarea.
 Make sure to show links and URLs as plain text.

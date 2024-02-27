@@ -305,6 +305,11 @@ Beim Einladen von Kontakten bevorzugt der Filter den überschreibenden Wert, wen
   | Distribution ->
     "Mit der Verteilung kann beeinflusst werden, welche Einladungen als erstes \
      versendet werden."
+  | DuplicateSession ->
+    "Die Session wird mit all ihren Folgesessions dupliziert. Die \
+     Informationen der Session und ihrer Folgesessions werden auf den \
+     entsprechenden Klon übertragen."
+  | DuplicateSessionList -> "Die folgenden Sessions werden geklont:"
   | EmailPlainText ->
     {|Die Verwendung von E-Mails im Klartext als Ausweichlösung gewährleistet eine universelle Lesbarkeit und Barrierefreiheit. Sie können den Rich-Text von oben kopieren, indem Sie die Schaltfläche in der oberen rechten Ecke dieses Textfeldes verwenden.
   Achten Sie darauf, Links und URLs als reinen Text anzuzeigen.|}
