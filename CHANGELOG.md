@@ -9,7 +9,6 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 ### Added
 
 - admin dashboard: add incomplete and upcoming sessions
-- contact detail: show previous and upcoming sessions
 - switch session: refresh template when switching language for contact notification
 - session duplication: create multiple at once (incl. one level of follow ups)
 - experiment: statistics on detail page
