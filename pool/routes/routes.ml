@@ -84,6 +84,8 @@ module Public = struct
             ; get "/import-pending" Import.import_pending
             ; get "/import-confirmation" Import.import_confirmation
             ; post "/import-confirmation" Import.import_confirmation_post
+            ; get "/unsubscribe" Import.unsubscribe
+            ; post "/unsubscribe" Import.unsubscribe_post
             ]
         ; choose
             ~middlewares:
@@ -138,6 +140,7 @@ module Contact = struct
       [ get "/user/personal-details" UserProfile.personal_details
       ; get "/user/login-information" UserProfile.login_information
       ; get "/user/contact-information" UserProfile.contact_information
+      ; get "/user/pause-account" UserProfile.pause_account
       ; post "/user/update" UserProfile.update
       ; post "/user/update/pause" UserProfile.toggle_paused
       ; post "/user/update-email" UserProfile.update_email

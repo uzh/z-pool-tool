@@ -447,6 +447,18 @@ let completion_post req =
   result |> HttpUtils.extract_happy_path_with_actions ~src req
 ;;
 
+let pause_account req =
+  let open Utils.Lwt_result.Infix in
+  let redirect_path = "/user/personal-details" in
+  let result context =
+    Page.Contact.pause_account context ()
+    |> create_layout req context
+    >|+ Sihl.Web.Response.of_html
+    >|- fun err -> err, redirect_path
+  in
+  result |> HttpUtils.extract_happy_path ~src req
+;;
+
 let toggle_paused req =
   let open Utils.Lwt_result.Infix in
   let redirect_path = "/user/personal-details" in

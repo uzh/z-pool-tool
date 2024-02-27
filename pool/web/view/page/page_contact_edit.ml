@@ -448,3 +448,29 @@ let contact_information
   div [ div ~a:[ a_class [ "grid-col-2"; "gap-lg" ] ] [ form ] ]
   |> contact_profile_layout language Pool_common.I18n.ContactInformation
 ;;
+
+let pause_account Pool_context.{ language; query_language; csrf; _ } ?token () =
+  let open Pool_common in
+  let action =
+    match token with
+    | None -> "/user/update/pause" |> Sihl.Web.externalize_path
+    | Some token ->
+      Message.add_field_query_params
+        "/unsubscribe"
+        [ Message.Field.Token, User_import.Token.value token ]
+      |> HttpUtils.externalize_path_with_lang query_language
+  in
+  let open Utils in
+  div
+    ~a:[ a_class [ "trim"; "safety-margin" ] ]
+    [ h1 [ txt (control_to_string language Message.PauseAccount) ]
+    ; p [ txt (hint_to_string language I18n.PauseAccountContact) ]
+    ; p [ txt (confirmable_to_string language I18n.PauseAccount) ]
+    ; form
+        ~a:[ a_method `Post; a_action action ]
+        Component.Input.
+          [ csrf_element csrf ()
+          ; submit_element language Message.PauseAccount ()
+          ]
+    ]
+;;

@@ -1,5 +1,7 @@
 open Entity
 
+let create_public_url = Pool_tenant.create_public_url
+
 type email_layout =
   { link : string
   ; logo_alt : string
@@ -8,10 +10,18 @@ type email_layout =
   }
 [@@deriving eq, show { with_path = false }]
 
-let create_public_url pool_url path =
-  path
-  |> Sihl.Web.externalize_path
-  |> Format.asprintf "https://%s%s" (Pool_tenant.Url.value pool_url)
+type opt_out_link =
+  | Verified
+  | Unverified of string
+
+let opt_out_link_url { link; _ } = function
+  | Verified -> Format.asprintf "%s/user/pause-account" link
+  | Unverified token ->
+    Format.asprintf
+      "%s/unsubscribe?%s=%s"
+      link
+      Pool_common.Message.Field.(show Token)
+      token
 ;;
 
 let create_public_url_with_params pool_url path params =
@@ -109,8 +119,32 @@ let html_to_string html =
   Format.asprintf "%a" (Tyxml.Html.pp_elt ~indent:true ()) html
 ;;
 
-let combine_html language html_title =
+let opt_out_texts language =
+  let open Pool_common in
+  match language with
+  | Language.En ->
+    ( "If you no longer wish to participate in any studies, you can "
+    , "unsubscribe here." )
+  | Language.De ->
+    ( "Falls Sie an keinen weiteren Studien teilnehmen möchten, können Sie sich "
+    , "hier abmelden." )
+;;
+
+let opt_out_html language layout opt_out =
+  let text, control = opt_out_texts language in
+  let url = opt_out_link_url layout opt_out in
   let open Tyxml.Html in
+  p
+    ~a:[ a_style "margin-top: 0;" ]
+    [ txt text; a ~a:[ a_href url ] [ txt control ] ]
+;;
+
+let combine_html ?optout_link language layout html_title =
+  let open Tyxml.Html in
+  let opt_out_html =
+    optout_link
+    |> CCOption.map_or ~default:(txt "") (opt_out_html language layout)
+  in
   let current_year = () |> Ptime_clock.now |> Ptime.to_year in
   let email_header =
     head
@@ -139,9 +173,9 @@ let combine_html language html_title =
     body
       ~a:[ a_style "margin:0; padding:0;" ]
       [ div
-          ~a:[ a_style "margin: 1em 1em 1em 1em; max-width: 50em;" ]
-          [ section
-              ~a:[ a_style "margin-bottom: 1em;" ]
+          ~a:[ a_style "margin: 16px 16px 16px 16px; max-width: 50em;" ]
+          [ div
+              ~a:[ a_style "margin-bottom: 16px;" ]
               [ a
                   ~a:[ a_href "{logoHref}" ]
                   [ img
@@ -153,19 +187,20 @@ let combine_html language html_title =
                       ()
                   ]
               ]
-          ; section
-              ~a:[ a_style "padding-top: 1em; color: #383838;" ]
+          ; div
+              ~a:[ a_style "padding-top: 16px; color: #383838;" ]
               [ txt "{emailText}" ]
-          ; footer
-              ~a:[ a_style "margin-top: 4em;" ]
-              [ div
-                  ~a:[ a_style "text-align:center" ]
-                  [ p
-                      [ txt
-                          (Format.asprintf
-                             "Copyright © %i {siteTitle}"
-                             current_year)
-                      ]
+          ; div
+              ~a:
+                [ a_style "margin-top: 48px; color: #7f7f7f; font-size: 0.8rem;"
+                ]
+              [ opt_out_html
+              ; p
+                  ~a:[ a_style "text-align: center; margin-bottom: 0;" ]
+                  [ txt
+                      (Format.asprintf
+                         "Copyright © %i {siteTitle}"
+                         current_year)
                   ]
               ]
           ]
@@ -176,6 +211,16 @@ let combine_html language html_title =
     email_header
     email_body
   |> html_to_string
+;;
+
+let combine_plain_text language email_layout plain_text =
+  let plain = PlainText.value plain_text in
+  let text, control = opt_out_texts language in
+  function
+  | None -> plain
+  | Some opt_out ->
+    let url = opt_out_link_url email_layout opt_out in
+    Format.asprintf "%s\n\n%s%s: %s" plain text control url
 ;;
 
 let find_template_by_language templates lang =
