@@ -109,6 +109,7 @@ let to_string = function
   | PastExperimentListPublicTitle -> "Teilgenommene Experimente"
   | PastSessionsTitle -> "Ihre vergangenen Sessions"
   | PoolStatistics -> "Pool-Statistik"
+  | PoolOptOut -> "Ich möchte diese Emails in Zukunft nicht mehr erhalten."
   | ProfileCompletionText ->
     {|Die folgenden Angaben werden benötigt, um an Experimente eingeladen werden zu können. Weitere Angaben können anschliessend in Ihrem Profil gemacht werden.
 

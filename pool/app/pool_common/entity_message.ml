@@ -233,7 +233,6 @@ type control =
   | OpenProfile
   | PauseAccount
   | PleaseSelect
-  | PoolOptOut
   | PreviousPage
   | PromoteContact
   | PublicPage
@@ -260,6 +259,7 @@ type control =
   | Stop of Field.t option
   | ToggleAll
   | Unassign of Field.t option
+  | Unsubscribe
   | Update of Field.t option
   | UpdateOrder
   | Verify of Field.t option

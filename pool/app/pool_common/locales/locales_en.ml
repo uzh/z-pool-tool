@@ -636,7 +636,6 @@ let control_to_string = function
   | OpenProfile -> "show profile"
   | PauseAccount -> format_submit "pause account" None
   | PleaseSelect -> format_submit "please select" None
-  | PoolOptOut -> "I no longer wish to receive these emails."
   | PreviousPage -> "previous"
   | PromoteContact -> format_submit "promote contact" None
   | Print field -> format_submit "print" field
@@ -667,6 +666,7 @@ let control_to_string = function
   | Stop field -> format_submit "stop" field
   | ToggleAll -> "toggle all"
   | Unassign field -> format_submit "unassign" field
+  | Unsubscribe -> "unsubscribe"
   | Update field -> format_submit "update" field
   | UpdateOrder -> format_submit "update order" None
   | Verify field -> format_submit "verify" field

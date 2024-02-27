@@ -119,13 +119,27 @@ let html_to_string html =
   Format.asprintf "%a" (Tyxml.Html.pp_elt ~indent:true ()) html
 ;;
 
+let stacked ?style =
+  let styles =
+    let base = "margin-bottom: 16px;" in
+    style |> CCOption.map_or ~default:base (Format.asprintf "%s%s" base)
+  in
+  Tyxml.Html.(div ~a:[ a_style styles ])
+;;
+
 let opt_out_html language layout opt_out =
-  let text =
-    Pool_common.(Utils.control_to_string language Message.PoolOptOut)
+  let open Pool_common in
+  let text = Utils.text_to_string language I18n.PoolOptOut in
+  let control =
+    Utils.control_to_string language Message.Unsubscribe
+    |> CCString.capitalize_ascii
   in
   let url = opt_out_link_url layout opt_out in
   let open Tyxml.Html in
-  div ~a:[ a_style "margin-bottom: 16px;" ] [ a ~a:[ a_href url ] [ txt text ] ]
+  stacked
+    [ span ~a:[ a_style "margin-right: 8px;" ] [ txt text ]
+    ; a ~a:[ a_href url ] [ txt "» "; txt control ]
+    ]
 ;;
 
 let combine_html ?optout_link language layout html_title =
@@ -182,18 +196,18 @@ let combine_html ?optout_link language layout html_title =
           ; div
               ~a:
                 [ a_style
-                    "margin-top: 32px; padding-top: 32px; border-top: 1px \
-                     solid currentcolor"
+                    "margin-top: 32px; padding: 16px; border: 1px solid \
+                     #b5b5b5; background-color: #fafafa; color: #363636; \
+                     font-size: 0.8rem;"
                 ]
-              [ opt_out_html
-              ; div
-                  ~a:[ a_style "text-align:center" ]
-                  [ p
-                      [ txt
-                          (Format.asprintf
-                             "Copyright © %i {siteTitle}"
-                             current_year)
-                      ]
+              [ stacked [ strong [ txt layout.site_title ] ]
+              ; opt_out_html
+              ; stacked
+                  ~style:"text-align:center; margin-bottom: 0;"
+                  [ txt
+                      (Format.asprintf
+                         "Copyright © %i {siteTitle}"
+                         current_year)
                   ]
               ]
           ]

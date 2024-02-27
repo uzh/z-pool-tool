@@ -61,6 +61,7 @@ type t =
   | Past
   | PastExperimentListPublicTitle
   | PastSessionsTitle
+  | PoolOptOut
   | PoolStatistics
   | ProfileCompletionText
   | Reminder
