@@ -1718,7 +1718,7 @@ module Duplication = struct
   let[@warning "-4"] get_event_sessions =
     let open Session in
     CCList.filter_map (function
-      | Pool_event.Session (Created session) -> Some (fst session)
+      | Pool_event.Session (Created session) -> Some session
       | _ -> None)
   ;;
 
@@ -1746,12 +1746,9 @@ module Duplication = struct
       input_name group session, [ start_to_string start ])
   ;;
 
-  let to_event experiment session =
-    Session.Created (session, experiment.Experiment.id) |> Pool_event.session
-  ;;
+  let to_event session = Session.Created session |> Pool_event.session
 
   let single_session () =
-    let experiment = Model.create_experiment () in
     let session = Model.create_session () in
     let data =
       [ session, 0, add_timespan session Model.hour
@@ -1761,7 +1758,7 @@ module Duplication = struct
     let events =
       data
       |> data_to_urlencded
-      |> SessionC.Duplicate.handle experiment session []
+      |> SessionC.Duplicate.handle session []
       |> CCResult.map get_event_sessions
     in
     let expected =
@@ -1774,7 +1771,6 @@ module Duplication = struct
   ;;
 
   let with_followup () =
-    let experiment = Model.create_experiment () in
     let session = Model.create_session () in
     let followup =
       let session =
@@ -1798,7 +1794,7 @@ module Duplication = struct
     let events =
       data
       |> data_to_urlencded
-      |> SessionC.Duplicate.handle experiment session [ followup ]
+      |> SessionC.Duplicate.handle session [ followup ]
       |> CCResult.map get_event_sessions
     in
     let expected =
@@ -1811,7 +1807,6 @@ module Duplication = struct
   ;;
 
   let missing_value () =
-    let experiment = Model.create_experiment () in
     let session = Model.create_session () in
     let followup =
       Model.create_session
@@ -1823,13 +1818,12 @@ module Duplication = struct
     let events =
       data
       |> data_to_urlencded
-      |> SessionC.Duplicate.handle experiment session [ followup ]
+      |> SessionC.Duplicate.handle session [ followup ]
     in
     expect_error (Error Pool_common.Message.(Missing Field.Start)) events
   ;;
 
   let followup_before_main () =
-    let experiment = Model.create_experiment () in
     let session = Model.create_session () in
     let followup =
       Model.create_session
@@ -1845,7 +1839,7 @@ module Duplication = struct
     let events =
       data
       |> data_to_urlencded
-      |> SessionC.Duplicate.handle experiment session [ followup ]
+      |> SessionC.Duplicate.handle session [ followup ]
     in
     expect_error (Error Pool_common.Message.FollowUpIsEarlierThanMain) events
   ;;

@@ -207,7 +207,6 @@ module Duplicate : sig
   val handle
     :  ?tags:Logs.Tag.set
     -> ?parent_session:Session.t
-    -> Experiment.t
     -> Session.t
     -> Session.t list
     -> t
@@ -259,7 +258,6 @@ end = struct
   let handle
     ?(tags = Logs.Tag.empty)
     ?parent_session
-    experiment
     session
     followups
     (urlencoded : t)
@@ -277,6 +275,7 @@ end = struct
       ; max_participants
       ; min_participants
       ; overbook
+      ; experiment
       ; _
       }
       start
@@ -296,7 +295,8 @@ end = struct
              location
              max_participants
              min_participants
-             overbook)
+             overbook
+             experiment)
     in
     let find_start session_id data
       : (Session.Start.t, Pool_common.Message.error) Result.t
@@ -305,9 +305,7 @@ end = struct
       |> CCOption.to_result Pool_common.Message.(Missing Field.Start)
       >|= snd
     in
-    let created session =
-      Session.Created (session, experiment.Experiment.id) |> Pool_event.session
-    in
+    let created session = Session.Created session |> Pool_event.session in
     let build_session ?parent form_data session =
       find_start session.Session.id form_data
       >>= validate_and_merge_session ?parent session

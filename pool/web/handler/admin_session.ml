@@ -202,13 +202,13 @@ let duplicate_post_htmx req =
     let%lwt urlencoded =
       Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
     in
-    let* experiment, session, followups, parent_session =
+    let* _, session, followups, parent_session =
       duplication_session_data req database_label
     in
     let* events =
       let open Cqrs_command.Session_command.Duplicate in
       urlencoded
-      |> handle ~tags ?parent_session experiment session followups
+      |> handle ~tags ?parent_session session followups
       |> Lwt_result.lift
     in
     let%lwt () = Pool_event.handle_events ~tags database_label events in
