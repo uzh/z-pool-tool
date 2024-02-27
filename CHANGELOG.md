@@ -4,6 +4,27 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/pool/tree/HEAD)
 
+## [0.6.1](https://github.com/uzh/pool/tree/0.6.1) - 2024-02-27
+
+### Added
+
+- admin dashboard: add incomplete and upcoming sessions
+- contact detail: show previous and upcoming sessions
+- switch session: refresh template when switching language for contact notification
+- session duplication: create multiple at once (incl. one level of follow ups)
+- experiment: statistics on detail page
+- waiting list: button dropdown with profile link
+- waiting list: allow sortable for signed up at
+- report sql errors with canary
+- invitation/migration emails: add opt out link (information to pause the account)
+
+### Fixed
+
+- calendar week view
+- experiment detail view on mobile
+- some of the translations
+- Guardian access permissions for specific permissions
+
 ## [0.6.0](https://github.com/uzh/pool/tree/0.6.0) - 2024-02-19
 
 ### Added
