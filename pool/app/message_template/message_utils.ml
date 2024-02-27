@@ -119,27 +119,24 @@ let html_to_string html =
   Format.asprintf "%a" (Tyxml.Html.pp_elt ~indent:true ()) html
 ;;
 
-let stacked ?style =
-  let styles =
-    let base = "margin-bottom: 16px;" in
-    style |> CCOption.map_or ~default:base (Format.asprintf "%s%s" base)
-  in
-  Tyxml.Html.(div ~a:[ a_style styles ])
+let opt_out_texts language =
+  let open Pool_common in
+  match language with
+  | Language.En ->
+    ( "If you no longer wish to participate in any studies, you can "
+    , "unsubscribe here." )
+  | Language.De ->
+    ( "Falls Sie an keinen weiteren Studien teilnehmen möchten, können Sie sich "
+    , "hier abmelden." )
 ;;
 
 let opt_out_html language layout opt_out =
-  let open Pool_common in
-  let text = Utils.text_to_string language I18n.PoolOptOut in
-  let control =
-    Utils.control_to_string language Message.Unsubscribe
-    |> CCString.capitalize_ascii
-  in
+  let text, control = opt_out_texts language in
   let url = opt_out_link_url layout opt_out in
   let open Tyxml.Html in
-  stacked
-    [ span ~a:[ a_style "margin-right: 8px;" ] [ txt text ]
-    ; a ~a:[ a_href url ] [ txt "» "; txt control ]
-    ]
+  p
+    ~a:[ a_style "margin-top: 0;" ]
+    [ txt text; a ~a:[ a_href url ] [ txt control ] ]
 ;;
 
 let combine_html ?optout_link language layout html_title =
@@ -195,15 +192,11 @@ let combine_html ?optout_link language layout html_title =
               [ txt "{emailText}" ]
           ; div
               ~a:
-                [ a_style
-                    "margin-top: 32px; padding: 16px; border: 1px solid \
-                     #b5b5b5; background-color: #fafafa; color: #363636; \
-                     font-size: 0.8rem;"
+                [ a_style "margin-top: 48px; color: #7f7f7f; font-size: 0.8rem;"
                 ]
-              [ stacked [ strong [ txt layout.site_title ] ]
-              ; opt_out_html
-              ; stacked
-                  ~style:"text-align:center; margin-bottom: 0;"
+              [ opt_out_html
+              ; p
+                  ~a:[ a_style "text-align: center; margin-bottom: 0;" ]
                   [ txt
                       (Format.asprintf
                          "Copyright © %i {siteTitle}"
@@ -218,6 +211,17 @@ let combine_html ?optout_link language layout html_title =
     email_header
     email_body
   |> html_to_string
+;;
+
+let combine_plain_text language email_layout plain_text =
+  let plain = PlainText.value plain_text in
+  let text, control = opt_out_texts language in
+  function
+  | None -> plain
+  | Some opt_out ->
+    let url = opt_out_link_url email_layout opt_out in
+    let unsubscribe = Format.asprintf "%s%s: %s" text control url in
+    Format.asprintf "%s\n%s" plain unsubscribe
 ;;
 
 let find_template_by_language templates lang =

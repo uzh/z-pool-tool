@@ -666,7 +666,6 @@ let control_to_string = function
   | Stop field -> format_submit "stop" field
   | ToggleAll -> "toggle all"
   | Unassign field -> format_submit "unassign" field
-  | Unsubscribe -> "unsubscribe"
   | Update field -> format_submit "update" field
   | UpdateOrder -> format_submit "update order" None
   | Verify field -> format_submit "verify" field

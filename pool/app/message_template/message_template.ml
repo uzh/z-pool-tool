@@ -68,14 +68,13 @@ let missing_template_languages database_label entity_id label ?exclude languages
 ;;
 
 let prepare_email ?optout_link language template sender email layout params =
-  (* TODO: Add opt out link to plain text *)
   let open Sihl_email in
   let { Entity.email_subject; email_text; plain_text; _ } = template in
   let mail =
     { sender = Pool_user.EmailAddress.value sender
     ; recipient = Pool_user.EmailAddress.value email
     ; subject = email_subject
-    ; text = PlainText.value plain_text
+    ; text = combine_plain_text language layout plain_text optout_link
     ; html =
         Some (combine_html ?optout_link language layout (Some email_subject))
     ; cc = []

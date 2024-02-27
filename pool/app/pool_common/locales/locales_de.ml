@@ -705,7 +705,6 @@ let control_to_string = function
   | Stop field -> format_submit "stoppen" field
   | ToggleAll -> "alle umschalten"
   | Unassign field -> format_submit "entfernen" field
-  | Unsubscribe -> "abmelden"
   | Update field -> format_submit "aktualisieren" field
   | UpdateOrder -> "Reihenfolge anpassen"
   | Verify field -> format_submit "verifizieren" field
