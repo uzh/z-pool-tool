@@ -451,12 +451,6 @@ let contact_information
 
 let pause_account Pool_context.{ language; query_language; csrf; _ } ?token () =
   let open Pool_common in
-  (* let action = Sihl.Web.externalize_path @@ match token with | None ->
-     "/user/update/pause" | Some token -> let lang_param = CCOption.map_or
-     ~default:[] (fun lang -> [ ( Message.Field.Language , lang |> Language.show
-     |> CCString.lowercase_ascii ) ]) query_language in
-     Message.add_field_query_params "/unsubscribe" ([ Message.Field.Token, token
-     ] @ lang_param) in *)
   let action =
     match token with
     | None -> "/user/update/pause" |> Sihl.Web.externalize_path

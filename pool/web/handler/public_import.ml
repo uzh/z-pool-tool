@@ -165,11 +165,12 @@ let unsubscribe_post req =
           |> Lwt_result.lift
           |>> fun events ->
           let%lwt () = Pool_event.handle_events ~tags database_label events in
-          Http_utils.redirect_to_with_actions
-            "/index"
-            [ Http_utils.Message.set
-                ~success:[ Pool_common.Message.(PausedToggled true) ]
-            ])
+          Http_utils.(
+            redirect_to_with_actions
+              (path_with_language query_language "/index")
+              [ Message.set
+                  ~success:[ Pool_common.Message.(PausedToggled true) ]
+              ]))
   in
   result |> Http_utils.extract_happy_path ~src req
 ;;
