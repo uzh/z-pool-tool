@@ -37,6 +37,7 @@ let pending_contact_imports_request =
       INNER JOIN user_users ON user_users.uuid = pool_contacts.user_uuid
     WHERE
       user_users.admin = 0
+      AND pool_contacts.disabled = 0
       AND pool_contacts.import_pending = 1
   |sql}
   |> Caqti_type.(unit ->! int)
