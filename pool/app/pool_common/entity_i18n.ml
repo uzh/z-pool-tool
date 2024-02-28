@@ -59,7 +59,7 @@ type t =
   | Note
   | OurPartners
   | Past
-  | PastExperimentListPublicTitle
+  | ParticipatedExperiments
   | PastSessionsTitle
   | PoolStatistics
   | ProfileCompletionText

@@ -363,6 +363,7 @@ let detail
   tags
   external_data_ids
   custom_fields
+  past_experiments
   =
   let subtitle nav =
     h3
@@ -391,6 +392,17 @@ let detail
     in
     div ~a:[ a_class [ "flexrow"; "flex-gap" ] ] [ messages; edit ]
   in
+  let past_experiments_html =
+    let experiments, query = past_experiments in
+    div
+      [ h3
+          [ txt
+              Pool_common.(
+                Utils.text_to_string language I18n.ParticipatedExperiments)
+          ]
+      ; Page_admin_experiments.list context experiments query
+      ]
+  in
   div
     ~a:[ a_class [ "trim"; "safety-margin"; "stack-lg" ] ]
     [ div
@@ -404,6 +416,7 @@ let detail
     ; div
         ~a:[ a_class [ "grid-col-2" ] ]
         [ assign_contact_form context contact ]
+    ; past_experiments_html
     ]
 ;;
 

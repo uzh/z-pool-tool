@@ -336,6 +336,12 @@ val find_targets_grantable_by_admin
   -> string
   -> (Id.t * Title.t) list Lwt.t
 
+val query_past_experiments_by_contact
+  :  ?query:Query.t
+  -> Pool_database.Label.t
+  -> Contact.t
+  -> (t list * Query.t) Lwt.t
+
 val possible_participant_count : t -> int Lwt.t
 val possible_participants : t -> Contact.t list Lwt.t
 val title_value : t -> string

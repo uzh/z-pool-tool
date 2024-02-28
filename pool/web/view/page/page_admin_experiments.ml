@@ -254,12 +254,13 @@ let list Pool_context.{ language; _ } experiments query =
 
 let index (Pool_context.{ language; _ } as context) experiments query =
   let open Pool_common in
+  let experiment_list = list context experiments query in
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
     [ h1
         ~a:[ a_class [ "heading-1" ] ]
         [ txt (Utils.text_to_string language I18n.ExperimentListTitle) ]
-    ; list context experiments query
+    ; experiment_list
     ]
 ;;
 

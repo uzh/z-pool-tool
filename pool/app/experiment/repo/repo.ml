@@ -39,9 +39,13 @@ let joins =
   |sql}
 ;;
 
-let find_request_sql ?(count = false) where_fragment =
+let find_request_sql ?additional_joins ?(count = false) where_fragment =
   let columns =
     if count then "COUNT(*)" else sql_select_columns |> CCString.concat ", "
+  in
+  let joins =
+    additional_joins
+    |> CCOption.map_or ~default:joins (Format.asprintf "%s\n%s" joins)
   in
   Format.asprintf
     {sql|SELECT %s FROM pool_experiments %s %s|sql}
@@ -166,7 +170,7 @@ module Sql = struct
     Query.collect_and_count
       pool
       query
-      ~select:find_request_sql
+      ~select:(find_request_sql ?additional_joins:None)
       ?where
       Repo_entity.t
   ;;
@@ -518,6 +522,38 @@ module Sql = struct
         |> add Caqti_type.string Role.Role.(show role))
     in
     search ~conditions ~joins ~dyn ?exclude database_label query
+  ;;
+
+  let participated_experiments_by_content_where
+    ?(dyn = Dynparam.empty)
+    contact_id
+    =
+    let joins =
+      {sql|
+        INNER JOIN pool_sessions ON pool_sessions.experiment_uuid = pool_experiments.uuid
+          AND pool_sessions.closed_at IS NOT NULL
+        INNER JOIN pool_assignments ON pool_assignments.session_uuid = pool_sessions.uuid
+          AND pool_assignments.canceled_at IS NULL
+       |sql}
+    in
+    let where =
+      {sql| pool_assignments.contact_uuid = UNHEX(REPLACE($1, '-', '')) |sql}
+    in
+    ( ( where
+      , dyn |> Dynparam.add Caqti_type.string (Contact.Id.value contact_id) )
+    , joins )
+  ;;
+
+  let query_past_experiments_by_contact ?query pool contact =
+    let where, additional_joins =
+      participated_experiments_by_content_where (Contact.id contact)
+    in
+    Query.collect_and_count
+      pool
+      query
+      ~select:(find_request_sql ~additional_joins)
+      ~where
+      Repo_entity.t
   ;;
 end
 

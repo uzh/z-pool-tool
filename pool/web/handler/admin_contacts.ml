@@ -36,6 +36,11 @@ let index req =
   |> Lwt_result.return
 ;;
 
+let experiments_query_from_req req =
+  let open Experiment in
+  Query.from_request ~sortable_by ~default:default_query req
+;;
+
 let detail_view action req =
   let open Utils.Lwt_result.Infix in
   let result ({ Pool_context.database_label; user; _ } as context) =
@@ -66,6 +71,13 @@ let detail_view action req =
              user
              (Contact.id contact)
          in
+         let%lwt past_experiments =
+           let query = experiments_query_from_req req in
+           Experiment.query_past_experiments_by_contact
+             ~query
+             database_label
+             contact
+         in
          Page.Admin.Contact.detail
            ?admin_comment
            context
@@ -73,6 +85,7 @@ let detail_view action req =
            contact_tags
            external_data_ids
            custom_fields
+           past_experiments
          |> create_layout req context
          >|+ Sihl.Web.Response.of_html
        | `Edit ->

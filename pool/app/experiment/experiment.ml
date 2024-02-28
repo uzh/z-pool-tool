@@ -45,6 +45,11 @@ let search_multiple_by_id = Repo.search_multiple_by_id
 let find_to_enroll_directly = Repo.find_to_enroll_directly
 let contact_is_enrolled = Repo.contact_is_enrolled
 let find_targets_grantable_by_admin = Repo.find_targets_grantable_by_admin
+
+let query_past_experiments_by_contact =
+  Repo.Sql.query_past_experiments_by_contact
+;;
+
 let possible_participant_count _ = Lwt.return 0
 let possible_participants _ = Lwt.return []
 
