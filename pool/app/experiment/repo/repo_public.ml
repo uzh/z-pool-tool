@@ -1,4 +1,5 @@
 module RepoEntity = Repo_entity
+module Dynparam = Utils.Database.Dynparam
 
 let select_from_experiments_sql ?(distinct = false) where_fragment =
   let select_from =
@@ -162,25 +163,18 @@ let find_pending_waitinglists_by_contact pool contact =
     (Contact.id contact)
 ;;
 
-let find_past_experiments_by_contact_request =
-  let open Caqti_request.Infix in
-  {sql|
-    INNER JOIN pool_sessions ON pool_sessions.experiment_uuid = pool_experiments.uuid
-      AND pool_sessions.closed_at IS NOT NULL
-    INNER JOIN pool_assignments ON pool_assignments.session_uuid = pool_sessions.uuid
-      AND pool_assignments.canceled_at IS NULL
-    WHERE
-      pool_assignments.contact_uuid = UNHEX(REPLACE($1, '-', ''))
-  |sql}
-  |> select_from_experiments_sql ~distinct:true
-  |> Pool_common.Repo.Id.t ->* RepoEntity.Public.t
-;;
-
 let find_past_experiments_by_contact pool contact =
-  Utils.Database.collect
-    (Pool_database.Label.value pool)
-    find_past_experiments_by_contact_request
-    (Contact.id contact)
+  let open Caqti_request.Infix in
+  let (where, dyn), joins =
+    Repo.Sql.participated_experiments_by_content_where (Contact.id contact)
+  in
+  let (Dynparam.Pack (pt, pv)) = dyn in
+  let request =
+    Format.asprintf "%s WHERE %s" joins where
+    |> select_from_experiments_sql ~distinct:true
+    |> pt ->! RepoEntity.Public.t
+  in
+  Utils.Database.collect (Pool_database.Label.value pool) request pv
 ;;
 
 let where_contact_can_access =
