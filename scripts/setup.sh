@@ -20,11 +20,11 @@ opam pin add -yn sihl-storage $repo_sihl
 opam pin add -yn sihl-token $repo_sihl
 opam pin add -yn sihl-user $repo_sihl
 opam pin add -yn conformist $repo_oxi/conformist.git#aa7b95d1f39215cdaab8cf96d765d63e41d5f8a6
-opam pin add -yn letters $repo_oxi/letters.git#0.3.3
+opam pin add -yn letters $repo_oxi/letters.git#c38446b15c9e68cab0f77814f6509cae9861efeb
 
 # pin custom libraries
 opam pin add -yn guardian $repo_uzh/guardian.git#ed36bc1251fd336f8b2fc848fc3122432ad23873
-opam pin add -yn canary $repo_uzh/canary.git#62f93e9194e56ee70d8e95935405708a4322db88
+opam pin add -yn canary $repo_uzh/canary.git#92a2cbf2fa9a7c831a4a1ddfbb2b46fd56399e4d
 
 opam pin add -yn pool .
 OPAMSOLVERTIMEOUT=180 opam depext -y pool

@@ -99,11 +99,11 @@ depends: [
   "menhirCST" {= "20231231"}
   "menhirLib" {= "20231231"}
   "menhirSdk" {= "20231231"}
-  "mirage-crypto" {= "0.11.2"}
-  "mirage-crypto-ec" {= "0.11.2"}
-  "mirage-crypto-pk" {= "0.11.2"}
-  "mirage-crypto-rng" {= "0.11.2"}
-  "mirage-crypto-rng-lwt" {= "0.11.2"}
+  "mirage-crypto" {= "0.11.3"}
+  "mirage-crypto-ec" {= "0.11.3"}
+  "mirage-crypto-pk" {= "0.11.3"}
+  "mirage-crypto-rng" {= "0.11.3"}
+  "mirage-crypto-rng-lwt" {= "0.11.3"}
   "mrmime" {= "0.6.0"}
   "mtime" {= "2.0.0"}
   "multipart-form-data" {= "0.3.0"}
@@ -231,13 +231,16 @@ pin-depends: [
   ]
   [
     "guardian.0.3.1"
-    "git+https://github.com/uzh/guardian.git#020e876b8737b7cc2a54509f714a313eb1559c66"
+    "git+https://github.com/uzh/guardian.git#ed36bc1251fd336f8b2fc848fc3122432ad23873"
   ]
   [
     "canary.0.0.3"
-    "git+https://github.com/uzh/canary.git#62f93e9194e56ee70d8e95935405708a4322db88"
+    "git+https://github.com/uzh/canary.git#92a2cbf2fa9a7c831a4a1ddfbb2b46fd56399e4d"
   ]
-  ["letters.0.3.3" "git+https://github.com/oxidizing/letters.git#0.3.3"]
+  [
+    "letters.0.3.3"
+    "git+https://github.com/oxidizing/letters.git#c38446b15c9e68cab0f77814f6509cae9861efeb"
+  ]
   [
     "sihl.4.0.0"
     "git+https://github.com/oxidizing/sihl.git#d1250a2ff807dd1731f6ccd6250061215cdf73bf"
