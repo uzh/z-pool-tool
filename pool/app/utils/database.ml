@@ -44,6 +44,7 @@ let raise_caqti_error ?req ?tags =
       Lwt.return ())
   in
   function
+  | Ok resp -> Lwt.return resp
   | Error `Unsupported ->
     let name = "Caqti error: `Unsupported" in
     let%lwt () = notify (Failure name) "" (comment ()) in
@@ -51,12 +52,9 @@ let raise_caqti_error ?req ?tags =
   | Error (`Connect_failed _ as err) ->
     Logs.err ~src (fun m -> m ?tags "%s" (show err));
     failwith "Could not connect to database, please try again later."
-  | (Error #t | Ok _) as resp ->
-    CCResult.map_err
-      (show %> CCFun.tap (fun err -> Logs.err ~src (fun m -> m ?tags "%s" err)))
-      resp
-    |> CCResult.get_or_failwith
-    |> Lwt.return
+  | Error (#t as resp) ->
+    let%lwt () = notify (Exn resp) "" (comment ()) in
+    failwith (show resp)
 ;;
 
 let find database_label request input =
