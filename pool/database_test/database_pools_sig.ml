@@ -9,17 +9,10 @@ module type Sig = sig
   val add_pool : ?required:bool -> ?pool_size:int -> string -> string -> status
   val drop_pool : string -> unit Lwt.t
 
-  val find
+  val query
     :  ?ctx:(string * string) list
-    -> ('a, 'b, [< `One ]) Caqti_request.t
-    -> 'a
-    -> ('b, Caqti_error.t) Lwt_result.t
-
-  val find_opt
-    :  ?ctx:(string * string) list
-    -> ('a, 'b, [< `One | `Zero ]) Caqti_request.t
-    -> 'a
-    -> ('b option, Caqti_error.t) Lwt_result.t
+    -> (Caqti_lwt.connection -> ('a, Caqti_error.t) Lwt_result.t)
+    -> ('a, Caqti_error.t) Lwt_result.t
 
   val collect
     :  ?ctx:(string * string) list
@@ -33,16 +26,17 @@ module type Sig = sig
     -> 'a
     -> (unit, Caqti_error.t) Lwt_result.t
 
-  val transaction
+  val find
     :  ?ctx:(string * string) list
-    -> (Caqti_lwt.connection -> ('a, Caqti_error.t) Lwt_result.t)
-    -> ('a, Caqti_error.t) Lwt_result.t
-
-  val exec_with_connection
-    :  ('a, unit, [< `Zero ]) Caqti_request.t
+    -> ('a, 'b, [< `One ]) Caqti_request.t
     -> 'a
-    -> (module Caqti_lwt.CONNECTION)
-    -> (unit, Caqti_error.t) Lwt_result.t
+    -> ('b, Caqti_error.t) Lwt_result.t
+
+  val find_opt
+    :  ?ctx:(string * string) list
+    -> ('a, 'b, [< `One | `Zero ]) Caqti_request.t
+    -> 'a
+    -> ('b option, Caqti_error.t) Lwt_result.t
 
   val populate
     :  ?ctx:(string * string) list
@@ -51,4 +45,14 @@ module type Sig = sig
     -> 'a Caqti_type.t
     -> 'a list
     -> (unit, Caqti_error.t) Lwt_result.t
+
+  val transaction
+    :  ?ctx:(string * string) list
+    -> (Caqti_lwt.connection -> ('a, Caqti_error.t) Lwt_result.t)
+    -> ('a, Caqti_error.t) Lwt_result.t
+
+  val transaction_exn
+    :  ?ctx:(string * string) list
+    -> (Caqti_lwt.connection -> ('a, Caqti_error.t) Lwt_result.t)
+    -> 'a Lwt.t
 end

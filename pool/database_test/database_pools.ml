@@ -149,9 +149,8 @@ module Make (Config : ConfigSig) = struct
           main_pool_ref := Some pool;
           ()
         | Error _ ->
-          (* This case shouldn't be reached because the database connection is
-             required on a SinglePool config *)
-          ()
+          failwith
+            "Missing database connection: required for SinglePool configuration"
       in
       connect ~required:true store name database_url |> show name
     | SinglePool _ -> ()
@@ -198,6 +197,45 @@ module Make (Config : ConfigSig) = struct
       fcn pool
   ;;
 
+  let query ?ctx f =
+    Caqti_lwt_unix.Pool.use (fun connection -> f connection) |> map_fetched ?ctx
+  ;;
+
+  let collect ?ctx request input =
+    query ?ctx (fun connection ->
+      let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+      Connection.collect_list request input)
+  ;;
+
+  let exec ?ctx request input =
+    query ?ctx (fun connection ->
+      let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+      Connection.exec request input)
+  ;;
+
+  let find_opt ?ctx request input =
+    query ?ctx (fun connection ->
+      let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+      Connection.find_opt request input)
+  ;;
+
+  let find ?ctx request input =
+    query ?ctx (fun connection ->
+      let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+      Connection.find request input)
+  ;;
+
+  let populate ?ctx table columns request input =
+    query ?ctx (fun connection ->
+      let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+      Connection.populate
+        ~table
+        ~columns
+        request
+        (Caqti_lwt.Stream.of_list input)
+      |> Lwt.map Caqti_error.uncongested)
+  ;;
+
   let transaction
     ?ctx
     (f : Caqti_lwt.connection -> ('a, Caqti_error.t) Lwt_result.t)
@@ -229,57 +267,4 @@ module Make (Config : ConfigSig) = struct
   ;;
 
   let transaction_exn ?ctx = transaction ?ctx %> Lwt.map (get_or_raise ?ctx ())
-
-  let exec_with_connection
-    (request : ('a, unit, [< `Zero ]) Caqti_request.t)
-    (input : 'a)
-    (connection : (module Caqti_lwt.CONNECTION))
-    : (unit, Caqti_error.t) Lwt_result.t
-    =
-    let (module Connection : Caqti_lwt.CONNECTION) = connection in
-    Connection.exec request input
-  ;;
-
-  let query ?ctx f =
-    let open Lwt.Infix in
-    Caqti_lwt_unix.Pool.use (fun connection -> f connection >|= CCResult.return)
-    |> map_fetched ?ctx
-  ;;
-
-  let query' ?ctx f = query ?ctx f |> Lwt.map (get_or_raise ?ctx ())
-
-  let find_opt ?ctx request input =
-    query' ?ctx (fun connection ->
-      let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-      Connection.find_opt request input)
-  ;;
-
-  let find ?ctx request input =
-    query' ?ctx (fun connection ->
-      let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-      Connection.find request input)
-  ;;
-
-  let collect ?ctx request input =
-    query' ?ctx (fun connection ->
-      let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-      Connection.collect_list request input)
-  ;;
-
-  let exec ?ctx request input =
-    query' ?ctx (fun connection ->
-      let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-      Connection.exec request input)
-  ;;
-
-  let populate ?ctx table columns request input =
-    query' ?ctx (fun connection ->
-      let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-      Connection.populate
-        ~table
-        ~columns
-        request
-        (Caqti_lwt.Stream.of_list input)
-      |> Lwt.map Caqti_error.uncongested)
-  ;;
 end

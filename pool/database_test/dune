@@ -1,16 +1,7 @@
 (library
  (name database_test)
- (libraries
-  caqti
-  caqti-driver-mariadb
-  caqti-lwt
-  caqti-lwt.unix
-  containers
-  containers-data
-  guardian
-  logs
-  lwt
-  uri)
+ (libraries containers caqti-lwt.unix lwt)
+ (wrapped true)
  (preprocess
   (pps
    lwt_ppx

@@ -19,25 +19,4 @@ module type ConfigSig = sig
 end
 
 module DefaultConfig : ConfigSig
-
-module type Sig = Database_pools_sig.Sig
-
-module Make : functor (Config : ConfigSig) -> sig
-  include Sig
-
-  val transaction_exn
-    :  ?ctx:(string * string) list
-    -> (Caqti_lwt.connection -> ('a, Caqti_error.t) Lwt_result.t)
-    -> 'a Lwt.t
-
-  val query
-    :  ?ctx:(string * string) list
-    -> (Caqti_lwt.connection -> 'a Lwt.t)
-    -> ('a, Caqti_error.t) Lwt_result.t
-
-  val query'
-    :  ?ctx:(string * string) list
-    -> (Caqti_lwt.connection -> 'a Lwt.t)
-    -> 'a Lwt.t
-end
-[@@warning "-67"]
+module Make : functor (_ : ConfigSig) -> Database_pools_sig.Sig
